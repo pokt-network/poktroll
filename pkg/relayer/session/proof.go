@@ -3,6 +3,7 @@ package session
 import (
 	"context"
 
+	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
@@ -58,18 +59,18 @@ func (rs *relayerSessionsManager) mapWaitForEarliestSubmitProofsHeight(
 		ctx context.Context,
 		sessionTrees []relayer.SessionTree,
 	) (_ []relayer.SessionTree, skip bool) {
-		return rs.waitForEarliestSubmitProofsHeightAndGenerateProof(
+		return rs.waitForEarliestSubmitProofsHeightAndGenerateProofs(
 			ctx, sessionTrees, failSubmitProofsSessionsCh,
 		), false
 	}
 }
 
-// waitForEarliestSubmitProofsHeightAndGenerateProof calculates and waits for
+// waitForEarliestSubmitProofsHeightAndGenerateProofs calculates and waits for
 // (blocking until) the earliest block height, allowed by the protocol, at which
 // proofs can be submitted for a session number which were claimed at createClaimHeight.
 // It is calculated relative to createClaimHeight using on-chain governance parameters
 // and randomized input.
-func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGenerateProof(
+func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGenerateProofs(
 	ctx context.Context,
 	sessionTrees []relayer.SessionTree,
 	failSubmitProofsSessionsCh chan<- []relayer.SessionTree,
@@ -100,33 +101,13 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 	// Use a channel to block until all proofs for the sessionTrees have been generated.
 	proofsGeneratedCh := make(chan []relayer.SessionTree)
 	defer close(proofsGeneratedCh)
-	go func() {
-		// Separate the sessionTrees into those that failed to generate a proof
-		// and those that succeeded, then send them on their respective channels.
-		failedProofs := []relayer.SessionTree{}
-		successProofs := []relayer.SessionTree{}
-		for _, sessionTree := range sessionTrees {
-			// Generate the proof path for the sessionTree using the previously committed
-			// submitProofWindowStartBlock hash.
-			path := proofkeeper.GetPathForProof(
-				submitProofWindowStartBlock.Hash(),
-				sessionTree.GetSessionHeader().GetSessionId(),
-			)
-
-			// If the proof cannot be generated, add the sessionTree to the failedProofs.
-			if _, err := sessionTree.ProveClosest(path); err != nil {
-				failedProofs = append(failedProofs, sessionTree)
-				continue
-			}
-
-			// If the proof was generated successfully, add the sessionTree to the
-			// successProofs slice that will be sent to the proof submission step.
-			successProofs = append(successProofs, sessionTree)
-		}
-
-		failSubmitProofsSessionsCh <- failedProofs
-		proofsGeneratedCh <- successProofs
-	}()
+	go rs.goProveClaims(
+		ctx,
+		sessionTrees,
+		submitProofWindowStartBlock,
+		proofsGeneratedCh,
+		failSubmitProofsSessionsCh,
+	)
 
 	// Wait for the earliest submitProofsHeight to be reached before proceeding.
 	earliestSubmitProofsHeight := protocol.GetEarliestSubmitProofHeight(ctx, submitProofWindowStartBlock)
@@ -178,4 +159,45 @@ func (rs *relayerSessionsManager) newMapProveSessionsFn(
 
 		return either.Success(sessionTrees), false
 	}
+}
+
+// goProveClaims generates the proofs corresponding to the given sessionTrees,
+// then sends the successful and failed proofs to their respective channels.
+func (rs *relayerSessionsManager) goProveClaims(
+	ctx context.Context,
+	sessionTrees []relayer.SessionTree,
+	submitProofWindowStartBlock client.Block,
+	proofsGeneratedCh chan<- []relayer.SessionTree,
+	failSubmitProofsSessionsCh chan<- []relayer.SessionTree,
+) {
+	// Separate the sessionTrees into those that failed to generate a proof
+	// and those that succeeded, then send them on their respective channels.
+	failedProofs := []relayer.SessionTree{}
+	successProofs := []relayer.SessionTree{}
+	for _, sessionTree := range sessionTrees {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
+		// Generate the proof path for the sessionTree using the previously committed
+		// submitProofWindowStartBlock hash.
+		path := proofkeeper.GetPathForProof(
+			submitProofWindowStartBlock.Hash(),
+			sessionTree.GetSessionHeader().GetSessionId(),
+		)
+
+		// If the proof cannot be generated, add the sessionTree to the failedProofs.
+		if _, err := sessionTree.ProveClosest(path); err != nil {
+			failedProofs = append(failedProofs, sessionTree)
+			continue
+		}
+
+		// If the proof was generated successfully, add the sessionTree to the
+		// successProofs slice that will be sent to the proof submission step.
+		successProofs = append(successProofs, sessionTree)
+	}
+
+	failSubmitProofsSessionsCh <- failedProofs
+	proofsGeneratedCh <- successProofs
 }

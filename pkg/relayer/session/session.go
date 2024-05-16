@@ -163,6 +163,8 @@ func (rs *relayerSessionsManager) ensureSessionTree(sessionHeader *sessiontypes.
 
 // mapBlockToSessionsToClaimFn returns a new MapFn which maps committed blocks to
 // a list of sessions which can be claimed as of that block.
+// TODO_IMPROVE: Add the ability for the process to resume where it left off in
+// case the process is restarted or the connection is dropped and reconnected.
 func (rs *relayerSessionsManager) mapBlockToSessionsToClaimFn(
 	sessionsToClaimsPublishCh chan<- []relayer.SessionTree,
 ) channel.ForEachFn[client.Block] {
@@ -172,7 +174,7 @@ func (rs *relayerSessionsManager) mapBlockToSessionsToClaimFn(
 
 		// onTimeSessions are the sessions that are still within their grace period.
 		// They are on time and will wait for their create claim window to open.
-		// They will be emitted once the late ones, that should no longer wait are emitted.
+		// They will be emitted last, after all the late sessions have been emitted.
 		var onTimeSessions []relayer.SessionTree
 
 		// Check if there are sessions that need to enter the claim/proof phase as their
@@ -186,6 +188,13 @@ func (rs *relayerSessionsManager) mapBlockToSessionsToClaimFn(
 			// before emitting the on-time sessions.
 			var lateSessions []relayer.SessionTree
 
+			// !IsWithinGracePeriod is checking for sessions to claim with <= operator,
+			// which means that it would include sessions that were supposed to be
+			// claimed in previous block heights too.
+			// These late sessions might have their create claim window closed and are
+			// no longer eligible to be claimed, but that's not always the case.
+			// Once claim window closing is implemented, they will be filtered out
+			// downstream at the waitForEarliestCreateClaimsHeight step.
 			if !IsWithinGracePeriod(endBlockHeight, block.Height()) {
 				// Iterate over the sessionsTrees that have grace period ending at this
 				// block height and add them to the list of sessionTrees to be published.

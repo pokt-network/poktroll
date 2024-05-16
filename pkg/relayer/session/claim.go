@@ -103,22 +103,12 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 
 	claimsFlushedCh := make(chan []relayer.SessionTree)
 	defer close(claimsFlushedCh)
-	go func() {
-		failedClaims := []relayer.SessionTree{}
-		flushedClaims := []relayer.SessionTree{}
-		for _, sessionTree := range sessionTrees {
-			// This session should no longer be updated
-			if _, err := sessionTree.Flush(); err != nil {
-				failedClaims = append(failedClaims, sessionTree)
-				continue
-			}
-
-			flushedClaims = append(flushedClaims, sessionTree)
-		}
-
-		failSubmitProofsSessionsCh <- failedClaims
-		claimsFlushedCh <- flushedClaims
-	}()
+	go rs.goCreateClaimRoots(
+		ctx,
+		sessionTrees,
+		failSubmitProofsSessionsCh,
+		claimsFlushedCh,
+	)
 
 	rs.logger.Info().
 		Int64("create_claim_window_start_height", createClaimsWindowStartBlock.Height()).
@@ -172,4 +162,33 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 
 		return either.Success(sessionTrees), false
 	}
+}
+
+// goCreateClaimRoots creates the claim roots corresponding to the given sessionTrees,
+// then sends the successful and failed claims to their respective channels.
+func (rs *relayerSessionsManager) goCreateClaimRoots(
+	ctx context.Context,
+	sessionTrees []relayer.SessionTree,
+	failSubmitProofsSessionsCh chan<- []relayer.SessionTree,
+	claimsFlushedCh chan<- []relayer.SessionTree,
+) {
+	failedClaims := []relayer.SessionTree{}
+	flushedClaims := []relayer.SessionTree{}
+	for _, sessionTree := range sessionTrees {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
+		// This session should no longer be updated
+		if _, err := sessionTree.Flush(); err != nil {
+			failedClaims = append(failedClaims, sessionTree)
+			continue
+		}
+
+		flushedClaims = append(flushedClaims, sessionTree)
+	}
+
+	failSubmitProofsSessionsCh <- failedClaims
+	claimsFlushedCh <- flushedClaims
 }

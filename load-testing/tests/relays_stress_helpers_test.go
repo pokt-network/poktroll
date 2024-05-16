@@ -43,10 +43,6 @@ import (
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-// skipNotifyDownstreamSteps is a flag that indicates whether the downstream steps
-// should receive and process the current notification.
-const skipNotifyDownstreamSteps = true
-
 // actorLoadTestIncrementPlans is a struct that holds the parameters for incrementing
 // all actors over the course of the load test.
 //
@@ -160,7 +156,7 @@ func (s *relaysSuite) mapSessionInfoForLoadTestDurationFn(
 	) (_ *sessionInfoNotif, skip bool) {
 		blockHeight := block.Height()
 		if blockHeight <= s.latestBlock.Height() {
-			return nil, skipNotifyDownstreamSteps
+			return nil, true
 		}
 
 		sessionInfo := &sessionInfoNotif{
@@ -185,7 +181,7 @@ func (s *relaysSuite) mapSessionInfoForLoadTestDurationFn(
 
 			// The test is not to be started yet, skip the notification to the downstream
 			// observables until the first block of the next session is reached.
-			return nil, skipNotifyDownstreamSteps
+			return nil, true
 		}
 
 		// If the test has not started, set the start block height to the current block height.
@@ -201,16 +197,17 @@ func (s *relaysSuite) mapSessionInfoForLoadTestDurationFn(
 		}
 
 		// If the test duration is reached, stop sending requests
-		if blockHeight >= s.testStartHeight+s.relayLoadDurationBlocks {
+		sendRelaysEndHeight := s.testStartHeight + s.relayLoadDurationBlocks
+		if blockHeight >= sendRelaysEndHeight {
 
 			logger.Info().Msg("Stop sending relays, waiting for last claims and proofs to be submitted")
 			// Wait for one more session to let the last claims and proofs be submitted.
-			testEndBlockHeight := s.testStartHeight + s.testDurationBlocks
-			if blockHeight > testEndBlockHeight {
+			testEndHeight := s.testStartHeight + s.testDurationBlocks
+			if blockHeight > testEndHeight {
 				s.cancelCtx()
 			}
 
-			return nil, skipNotifyDownstreamSteps
+			return nil, true
 		}
 
 		testProgressBlocksRelativeToTestStartHeight := blockHeight - s.testStartHeight + 1
@@ -245,7 +242,7 @@ func (s *relaysSuite) mapSessionInfoForLoadTestDurationFn(
 		prevBatchTime = now
 
 		// Forward the session info notification to the downstream observables.
-		return sessionInfo, !skipNotifyDownstreamSteps
+		return sessionInfo, false
 	}
 }
 
@@ -267,7 +264,7 @@ func (s *relaysSuite) validateActorLoadTestIncrementPlans(plans *actorLoadTestIn
 
 // maxActorBlocksToFinalIncrementEnd returns the longest duration it takes to
 // increment the number of all actors to their maxActorCount plus one increment
-// duration accounting for the last increment to execute.
+// duration to account for the last increment to execute.
 func (plans *actorLoadTestIncrementPlans) maxActorBlocksToFinalIncrementEnd() int64 {
 	return math.Max(
 		plans.gateways.blocksToFinalIncrementEnd(),
@@ -409,7 +406,7 @@ func (s *relaysSuite) mapSessionInfoWhenStakingNewSuppliersAndGatewaysFn(
 
 		// If no need to be processed in this block, skip the rest of the process.
 		if len(newApps) == 0 && len(newGateways) == 0 && len(newSuppliers) == 0 {
-			return nil, skipNotifyDownstreamSteps
+			return nil, true
 		}
 
 		return &stakingInfoNotif{
@@ -417,7 +414,7 @@ func (s *relaysSuite) mapSessionInfoWhenStakingNewSuppliersAndGatewaysFn(
 			newApps:          newApps,
 			newGateways:      newGateways,
 			newSuppliers:     newSuppliers,
-		}, !skipNotifyDownstreamSteps
+		}, false
 	}
 }
 
@@ -447,12 +444,12 @@ func (s *relaysSuite) mapStakingInfoWhenStakingAndDelegatingNewApps(
 
 	// If no apps or gateways are to be staked, skip the rest of the process.
 	if len(notif.newApps) == 0 && len(notif.newGateways) == 0 {
-		return nil, skipNotifyDownstreamSteps
+		return nil, true
 	}
 
 	s.sendStakeAndDelegateAppsTxs(&notif.sessionInfoNotif, notif.newApps, notif.newGateways)
 
-	return notif, !skipNotifyDownstreamSteps
+	return notif, false
 }
 
 // sendFundAvailableActorsTx uses the funding account to generate bank.SendMsg
@@ -686,11 +683,11 @@ func (plan *actorLoadTestIncrementPlan) shouldIncrementActorCount(
 	nextSessionNumber := sessionInfo.sessionNumber + 1 - initialSessionNumber
 	isSessionStartHeight := sessionInfo.blockHeight == sessionInfo.sessionStartBlockHeight
 	isActorIncrementHeight := nextSessionNumber%actorSessionIncRate == 0
-	maxActorNumReached := actorCount == plan.maxActorCount
+	maxActorCountReached := actorCount == plan.maxActorCount
 
 	// Only increment the actor if the session has started, the session number is a multiple
-	// of the actorSessionIncRate, and the maxActorNumReached has not been reached.
-	return isSessionStartHeight && !maxActorNumReached && isActorIncrementHeight
+	// of the actorSessionIncRate, and the maxActorCountReached has not been reached.
+	return isSessionStartHeight && !maxActorCountReached && isActorIncrementHeight
 }
 
 // shouldIncrementSupplier returns true if the supplier should be incremented based on
@@ -708,12 +705,12 @@ func (plan *actorLoadTestIncrementPlan) shouldIncrementSupplierCount(
 	nextSessionNumber := sessionInfo.sessionNumber + 1 - initialSessionNumber
 	isSessionEndHeight := sessionInfo.blockHeight == sessionInfo.sessionEndBlockHeight
 	isActorIncrementHeight := nextSessionNumber%supplierSessionIncRate == 0
-	maxSupplierNumReached := actorCount == plan.maxActorCount
+	maxSupplierCountReached := actorCount == plan.maxActorCount
 
 	// Only increment the supplier if the session is at its last block, the next
 	// session number is a multiple of the supplierSessionIncRate and the
-	// maxSupplierNumReached has not been reached.
-	return isSessionEndHeight && !maxSupplierNumReached && isActorIncrementHeight
+	// maxSupplierCountReached has not been reached.
+	return isSessionEndHeight && !maxSupplierCountReached && isActorIncrementHeight
 }
 
 // addActor populates the actors's amount to stake and accAddress using the
@@ -862,15 +859,19 @@ func (s *relaysSuite) sendStakeGatewaysTxs(
 }
 
 // signWithRetries signs the transaction with the keyName provided, retrying
-// up to signTxMaxRetries times if the signing fails.
+// up to maxRetries times if the signing fails.
+// TODO_INVESTIGATE: SignTx randomly fails at retrieving the account info with
+// the error post failed: Post "http://localhost:36657": EOF. This might be due to
+// concurrent requests trying to access the same account info and needs to be investigated.
 func (s *relaysSuite) signWithRetries(
-	actor *accountInfo,
+	actorKeyName string,
 	txBuilder sdkclient.TxBuilder,
+	maxRetries int,
 ) (err error) {
 	// All messages have to be signed by the keyName provided.
 	// TODO_TECHDEBT: Extend the txContext to support multiple signers.
-	for i := 0; i < signTxMaxRetries; i++ {
-		err := s.txContext.SignTx(actor.keyName, txBuilder, false, false)
+	for i := 0; i < maxRetries; i++ {
+		err := s.txContext.SignTx(actorKeyName, txBuilder, false, false)
 		if err == nil {
 			return nil
 		}
@@ -896,7 +897,7 @@ func (s *relaysSuite) sendPendingMsgsTx(actor *accountInfo) {
 	// TODO_HACK: Sometimes SignTx fails at retrieving the account info with
 	// the error post failed: Post "http://localhost:36657": EOF.
 	// A retry mechanism is added to avoid this issue.
-	err = s.signWithRetries(actor, txBuilder)
+	err = s.signWithRetries(actor.keyName, txBuilder, signTxMaxRetries)
 	require.NoError(s, err)
 
 	// Serialize transactions.
@@ -927,33 +928,12 @@ func (s *relaysSuite) waitForTxsToBeCommitted() (txResults []*types.TxResult) {
 		txResult := <-ch
 		txResults = append(txResults, txResult)
 
-		// Since s.latestBlock is continuously updated, asynchronously,
-		s.waitUntilLatestBlockHeightEquals(txResult.Height)
-
 		// The number of transactions to be observed is not available in the TxResult
 		// event, so this number is taken from the last block event.
-		var numTxs int
 		// The block received from s.latestBlock may be the previous one, it is
 		// necessary to wait until the block matching the txResult height is received
 		// in order to get the right number of transaction events to collect.
-		for {
-			// If the latest block height is greater than the txResult height,
-			// then there is no way to know how many transactions to collect and the
-			// should be test is canceled.
-			// TODO_IMPROVEMENT: Cache the transactions count of each observed block
-			// to avoid this issue.
-			if s.latestBlock.Height() > txResult.Height {
-				s.cancelCtx()
-				s.Fatal("Block height is greater than the txResult height")
-			}
-			if s.latestBlock.Height() == txResult.Height {
-				numTxs = len(s.latestBlock.Txs())
-				break
-			}
-			// If the block height does lesser than the txResult's height, then wait
-			// for the next block.
-			time.Sleep(10 * time.Millisecond)
-		}
+		numTxs := s.waitUntilLatestBlockHeightEquals(txResult.Height)
 
 		// If all transactions are observed, break the loop.
 		if len(txResults) == numTxs {
@@ -965,7 +945,7 @@ func (s *relaysSuite) waitForTxsToBeCommitted() (txResults []*types.TxResult) {
 
 // waitUntilLatestBlockHeightEquals blocks until s.latestBlock.Height() equals the targetHeight.
 // NB: s.latestBlock is updated asynchronously via a subscription to the block client observable.
-func (s *relaysSuite) waitUntilLatestBlockHeightEquals(targetHeight int64) {
+func (s *relaysSuite) waitUntilLatestBlockHeightEquals(targetHeight int64) int {
 	if s.latestBlock.Height() > targetHeight {
 		logger.Info().
 			Int64("currentHeight", s.latestBlock.Height()).
@@ -974,11 +954,16 @@ func (s *relaysSuite) waitUntilLatestBlockHeightEquals(targetHeight int64) {
 	}
 
 	for {
+		// If the latest block height is greater than the txResult height,
+		// then there is no way to know how many transactions to collect and the
+		// should be test is canceled.
+		// TODO_IMPROVEMENT: Cache the transactions count of each observed block
+		// to avoid this issue.
 		if s.latestBlock.Height() > targetHeight {
 			s.Fatal("latest block height is greater than the txResult height; tx event not observed")
 		}
 		if s.latestBlock.Height() == targetHeight {
-			break
+			return len(s.latestBlock.Txs())
 		}
 		// If the block height does not match the txResult height, wait for the next block.
 		time.Sleep(10 * time.Millisecond)
@@ -1232,7 +1217,7 @@ func (s *relaysSuite) sendAdjustMaxDelegationsParamTx(maxGateways int64) {
 
 	s.fundingAccountInfo.addPendingMsg(authzExecMsg)
 
-	s.sendPendingMsgsTx(s.latestBlock.Height(), s.fundingAccountInfo)
+	s.sendPendingMsgsTx(s.fundingAccountInfo)
 }
 
 // ensureUpdatedMaxDelegations checks if the max_delegated_gateways parameter is updated
