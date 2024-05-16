@@ -24,7 +24,7 @@ func TestMsgUpdateParam_UpdateMinRelayDifficultyBitsOnly(t *testing.T) {
 	// Update the min relay difficulty bits
 	updateParamMsg := &tokenomicstypes.MsgUpdateParam{
 		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		Name:      tokenomicstypes.NameComputeUnitsToTokensMultiplier,
+		Name:      tokenomicstypes.ParamComputeUnitsToTokensMultiplier,
 		AsType:    &tokenomicstypes.MsgUpdateParam_AsInt64{AsInt64: expectedComputeUnitsToTokensMultiplier},
 	}
 	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)

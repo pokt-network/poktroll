@@ -10,7 +10,7 @@ import (
 // parameter in the genesis state of the service module.
 // TODO_BLOCKER: Revisit default param values for service fee
 const (
-	NameAddServiceFee    = "add_service_fee"
+	ParamAddServiceFee   = "add_service_fee"
 	DefaultAddServiceFee = 1000000000 // 1000 POKT
 )
 

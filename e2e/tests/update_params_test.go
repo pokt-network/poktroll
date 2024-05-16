@@ -306,7 +306,7 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 
 	switch moduleName {
 	case tokenomicstypes.ModuleName:
-		computeUnitsToTokensMultiplier := uint64(s.expectedModuleParams[moduleName][tokenomicstypes.NameComputeUnitsToTokensMultiplier].value.(int64))
+		computeUnitsToTokensMultiplier := uint64(s.expectedModuleParams[moduleName][tokenomicstypes.ParamComputeUnitsToTokensMultiplier].value.(int64))
 		assertUpdatedParams(s,
 			[]byte(res.Stdout),
 			&tokenomicstypes.QueryParamsResponse{
@@ -316,7 +316,7 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 			},
 		)
 	case prooftypes.ModuleName:
-		minRelayDifficultyBits := uint64(s.expectedModuleParams[moduleName][prooftypes.NameMinRelayDifficultyBits].value.(int64))
+		minRelayDifficultyBits := uint64(s.expectedModuleParams[moduleName][prooftypes.ParamMinRelayDifficultyBits].value.(int64))
 		assertUpdatedParams(s,
 			[]byte(res.Stdout),
 			&prooftypes.QueryParamsResponse{
@@ -326,7 +326,7 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 			},
 		)
 	case sessiontypes.ModuleName:
-		numBlocksPerSession := uint64(s.expectedModuleParams[moduleName][sessiontypes.NameNumBlocksPerSession].value.(int64))
+		numBlocksPerSession := uint64(s.expectedModuleParams[moduleName][sessiontypes.ParamNumBlocksPerSession].value.(int64))
 		assertUpdatedParams(s,
 			[]byte(res.Stdout),
 			&sessiontypes.QueryParamsResponse{
@@ -336,7 +336,7 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 			},
 		)
 	case apptypes.ModuleName:
-		maxDelegatedGateways := uint64(s.expectedModuleParams[moduleName][apptypes.NameMaxDelegatedGateways].value.(int64))
+		maxDelegatedGateways := uint64(s.expectedModuleParams[moduleName][apptypes.ParamMaxDelegatedGateways].value.(int64))
 		assertUpdatedParams(s,
 			[]byte(res.Stdout),
 			&apptypes.QueryParamsResponse{
@@ -346,7 +346,7 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 			},
 		)
 	case servicetypes.ModuleName:
-		addServiceFee := uint64(s.expectedModuleParams[moduleName][servicetypes.NameAddServiceFee].value.(int64))
+		addServiceFee := uint64(s.expectedModuleParams[moduleName][servicetypes.ParamAddServiceFee].value.(int64))
 		assertUpdatedParams(s,
 			[]byte(res.Stdout),
 			&servicetypes.QueryParamsResponse{

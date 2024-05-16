@@ -24,7 +24,7 @@ func (k msgServer) UpdateParam(
 	params := k.GetParams(ctx)
 
 	switch msg.Name {
-	case types.NameComputeUnitsToTokensMultiplier:
+	case types.ParamComputeUnitsToTokensMultiplier:
 		value, ok := msg.AsType.(*types.MsgUpdateParam_AsInt64)
 		if !ok {
 			return nil, fmt.Errorf("unsupported value type for %s param: %T", msg.Name, msg.AsType)

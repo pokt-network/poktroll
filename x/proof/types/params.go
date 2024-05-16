@@ -6,7 +6,7 @@ var (
 	_ paramtypes.ParamSet = (*Params)(nil)
 
 	KeyMinRelayDifficultyBits            = []byte("MinRelayDifficultyBits")
-	NameMinRelayDifficultyBits           = "min_relay_difficulty_bits"
+	ParamMinRelayDifficultyBits          = "min_relay_difficulty_bits"
 	DefaultMinRelayDifficultyBits uint64 = 0 // TODO_BLOCKER(#142, #401): Determine the default value.
 )
 

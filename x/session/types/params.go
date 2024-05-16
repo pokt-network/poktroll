@@ -4,7 +4,7 @@ import paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
 const (
 	DefaultNumBlocksPerSession = 4
-	NameNumBlocksPerSession    = "num_blocks_per_session"
+	ParamNumBlocksPerSession   = "num_blocks_per_session"
 )
 
 var (

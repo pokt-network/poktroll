@@ -100,7 +100,7 @@ func (s *suite) newTokenomicsMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 
 	for paramName, paramValue := range params {
 		switch paramName {
-		case tokenomicstypes.NameComputeUnitsToTokensMultiplier:
+		case tokenomicstypes.ParamComputeUnitsToTokensMultiplier:
 			msgUpdateParams.Params.ComputeUnitsToTokensMultiplier = uint64(paramValue.value.(int64))
 		default:
 			s.Fatalf("unexpected %q type param name %q", paramValue.typeStr, paramName)
@@ -120,7 +120,7 @@ func (s *suite) newProofMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 	for paramName, paramValue := range params {
 		s.Logf("paramName: %s, value: %v", paramName, paramValue.value)
 		switch paramName {
-		case prooftypes.NameMinRelayDifficultyBits:
+		case prooftypes.ParamMinRelayDifficultyBits:
 			msgUpdateParams.Params.MinRelayDifficultyBits = uint64(paramValue.value.(int64))
 		default:
 			s.Fatalf("unexpected %q type param name %q", paramValue.typeStr, paramName)
@@ -140,7 +140,7 @@ func (s *suite) newSessionMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 	for paramName, paramValue := range params {
 		s.Logf("paramName: %s, value: %v", paramName, paramValue.value)
 		switch paramName {
-		case sessiontypes.NameNumBlocksPerSession:
+		case sessiontypes.ParamNumBlocksPerSession:
 			msgUpdateParams.Params.NumBlocksPerSession = uint64(paramValue.value.(int64))
 		default:
 			s.Fatalf("unexpected %q type param name %q", paramValue.typeStr, paramName)
@@ -160,7 +160,7 @@ func (s *suite) newAppMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 	for paramName, paramValue := range params {
 		s.Logf("paramName: %s, value: %v", paramName, paramValue.value)
 		switch paramName {
-		case apptypes.NameMaxDelegatedGateways:
+		case apptypes.ParamMaxDelegatedGateways:
 			msgUpdateParams.Params.MaxDelegatedGateways = uint64(paramValue.value.(int64))
 		default:
 			s.Fatalf("unexpected %q type param name %q", paramValue.typeStr, paramName)
@@ -180,7 +180,7 @@ func (s *suite) newServiceMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 	for paramName, paramValue := range params {
 		s.Logf("paramName: %s, value: %v", paramName, paramValue.value)
 		switch paramName {
-		case servicetypes.NameAddServiceFee:
+		case servicetypes.ParamAddServiceFee:
 			msgUpdateParams.Params.AddServiceFee = uint64(paramValue.value.(int64))
 		default:
 			s.Fatalf("unexpected %q type param name %q", paramValue.typeStr, paramName)
