@@ -6,14 +6,14 @@ sidebar_position: 0
 - [Release binaries](#release-binaries)
 - [Installing from source](#installing-from-source)
   - [Prerequisites](#prerequisites)
-- [Homebrew](#homebrew)
+- [Homebrew and Tea](#homebrew-and-tea)
 - [Windows Users](#windows-users)
 
 ## Release binaries
 
 Pre-built binaries are available on our [releases page](https://github.com/pokt-network/poktroll/releases).
 
-This snippet downloads/upgrades the binary to the latest released version (Linux and macOS only):
+The following snippet downloads/upgrades the binary to the latest released version (Linux and macOS only):
 
 ```bash
 # Download the correct binary based on the OS and architecture
@@ -34,6 +34,7 @@ poktrolld version
 ### Prerequisites
 
 Ensure you have the following installed:
+
 - [Go](https://go.dev/doc/install) (version 1.18 or later)
 - [Ignite CLI](https://docs.ignite.com/welcome/install)
 
@@ -50,12 +51,17 @@ Verify it worked by running:
 poktrolld --help
 ```
 
-## Homebrew
+## Homebrew and Tea
 
 :::tip
-We have an [open GitHub issue](https://github.com/pokt-network/poktroll/issues/535) to introduce `poktrolld` to brew. Please reach out to us in the ticket if you want to pick this ticket!
+We have an [open GitHub issue](https://github.com/pokt-network/poktroll/issues/535)
+to introduce `poktrolld` to [brew](https://brew.sh/) and [tea](https://tea.xyz/).
+
+Please reach out to us in the ticket if you want to pick this ticket!
 :::
 
 ## Windows Users
 
-Currently, we do not support native Windows installation. Windows users are encouraged to use [Windows Subsystem for Linux (WSL)](https://docs.microsoft.com/en-us/windows/wsl/install) and follow the Linux installation instructions.
+Currently, we do not support native Windows installation. Windows users are encouraged
+to use [Windows Subsystem for Linux (WSL)](https://docs.microsoft.com/en-us/windows/wsl/install)
+and follow the Linux installation instructions.
