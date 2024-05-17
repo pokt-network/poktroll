@@ -127,7 +127,11 @@ func (rc *ringClient) VerifyRelayRequestSignature(
 	// Get the ring for the application address of the relay request.
 	sessionEndHeight := sessionHeader.GetSessionEndBlockHeight()
 	appAddress := sessionHeader.GetApplicationAddress()
-	expectedAppRingPoints, err := rc.getRingPointsForAddressAtHeight(ctx, appAddress, sessionEndHeight)
+	expectedRelayRingPointsForApp, err := rc.getRingPointsForAddressAtHeight(
+		ctx,
+		appAddress,
+		sessionEndHeight,
+	)
 	if err != nil {
 		return ErrRingClientInvalidRelayRequest.Wrapf(
 			"error getting ring for application address %s: %v", appAddress, err,
@@ -136,7 +140,7 @@ func (rc *ringClient) VerifyRelayRequestSignature(
 
 	// Check that the expected ring signature points map contains the public keys
 	// in the relay request's ring signature.
-	if !ringPointsContain(expectedAppRingPoints, relayRequestRingSig) {
+	if !ringPointsContain(expectedRelayRingPointsForApp, relayRequestRingSig) {
 		return ErrRingClientInvalidRelayRequestSignature.Wrapf(
 			"ring signature in the relay request does not match the expected one for the app %s", appAddress,
 		)
@@ -220,7 +224,9 @@ func (rc *ringClient) addressesToPubKeys(
 }
 
 // getRingPointsForAddressAtHeight returns a map of the ring points for the given
-// application
+// application at a specific height. It takes into account the application itself
+// as well as all the addresses it delegated to. It returns a map of encoded
+// ring points to Point objects (i.e. public keys).
 func (rc *ringClient) getRingPointsForAddressAtHeight(
 	ctx context.Context,
 	appAddress string,
@@ -239,7 +245,12 @@ func (rc *ringClient) getRingPointsForAddressAtHeight(
 
 	ringPoints := make(map[string]ringtypes.Point, len(points))
 	for _, point := range points {
-		ringPoints[string(point.Encode())] = point
+		// Use the point's encoded bytes as the key in the map to identify it and
+		// avoid nested loops when checking for its existence.
+		// Since it's not possible to use bytes slices as keys in a map, we convert
+		// the point to a string before using it as a key.
+		keyFromPoint := string(point.Encode())
+		ringPoints[keyFromPoint] = point
 	}
 
 	// Return the ring the constructed from the points retrieved above.
@@ -292,10 +303,15 @@ func GetRingAddressesAtBlock(app *apptypes.Application, blockHeight int64) []str
 // in the given ring signature.
 func ringPointsContain(
 	ringPoints map[string]ringtypes.Point,
-	signature *ring.RingSig,
+	ringSig *ring.RingSig,
 ) bool {
-	for _, point := range signature.PublicKeys() {
-		if _, ok := ringPoints[string(point.Encode())]; !ok {
+	for _, publicKey := range ringSig.PublicKeys() {
+		// Use the keyFromPoint's encoded bytes as the key in the map to identify it and
+		// avoid nested loops when checking for its existence.
+		// Since it's not possible to use bytes slices as keys in a map, we convert
+		// the point to a string before using it as a key.
+		keyFromPoint := string(publicKey.Encode())
+		if _, ok := ringPoints[keyFromPoint]; !ok {
 			return false
 		}
 	}
