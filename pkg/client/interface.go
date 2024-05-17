@@ -276,4 +276,5 @@ type SessionQueryClient interface {
 	) (*sessiontypes.Session, error)
 	// GetParams queries the chain for the current session module parameters.
 	GetParams(ctx context.Context) (*sessiontypes.Params, error)
+	GetSessionGracePeriodBlockCount(ctx context.Context, blockHeight int64) (uint64, error)
 }
