@@ -48,6 +48,8 @@ type relayerSessionsManager struct {
 
 	// storesDirectory points to a path on disk where KVStore data files are created.
 	storesDirectory string
+
+	sessionQueryClient client.SessionQueryClient
 }
 
 // NewRelayerSessions creates a new relayerSessions.
@@ -73,6 +75,7 @@ func NewRelayerSessions(
 		deps,
 		&rs.blockClient,
 		&rs.supplierClient,
+		&rs.sessionQueryClient,
 	); err != nil {
 		return nil, err
 	}
