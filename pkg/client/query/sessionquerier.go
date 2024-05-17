@@ -98,3 +98,19 @@ func (sessq *sessionQuerier) GetSessionGracePeriodBlockCount(
 
 	return sessionkeeper.SessionGracePeriod * numBlocksPerSession, nil
 }
+
+// IsWithinGracePeriod checks if the grace period for the session has ended
+// and signals whether it is time to create a claim for it.
+func (sessq *sessionQuerier) IsWithinGracePeriod(
+	ctx context.Context,
+	sessionEndBlockHeight,
+	currentBlockHeight int64,
+) (bool, error) {
+	sessionGracePeriodEndBlocks, err := sessq.GetSessionGracePeriodBlockCount(ctx, currentBlockHeight)
+	if err != nil {
+		return false, err
+	}
+
+	sessionGracePeriodEndHeight := sessionEndBlockHeight + int64(sessionGracePeriodEndBlocks)
+	return currentBlockHeight <= sessionGracePeriodEndHeight, nil
+}

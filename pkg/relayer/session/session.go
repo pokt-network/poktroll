@@ -197,7 +197,7 @@ func (rs *relayerSessionsManager) mapBlockToSessionsToClaim(
 		// downstream at the waitForEarliestCreateClaimsHeight step.
 		// TODO_BLOCKER: Introduce governance claim and proof window durations,
 		// implement off-chain window closing and on-chain window checks.
-		isWithinGracePeriod, err := rs.IsWithinGracePeriod(ctx, endBlockHeight, block.Height())
+		isWithinGracePeriod, err := rs.sessionQueryClient.IsWithinGracePeriod(ctx, endBlockHeight, block.Height())
 		if err != nil {
 			// TODO_IMPROVE
 			rs.logger.Error().Err(err).Msg("failed to check if within grace period")
@@ -327,24 +327,6 @@ func (rs *relayerSessionsManager) mapAddMinedRelayToSessionTree(
 
 	// Skip because this map function only outputs errors.
 	return nil, true
-}
-
-// IsWithinGracePeriod checks if the grace period for the session has ended
-// and signals whether it is time to create a claim for it.
-//
-// TODO_TECHDEBT: move to the SessionQueryClient.
-func (rs *relayerSessionsManager) IsWithinGracePeriod(
-	ctx context.Context,
-	sessionEndBlockHeight,
-	currentBlockHeight int64,
-) (bool, error) {
-	sessionGracePeriodEndBlocks, err := rs.sessionQueryClient.GetSessionGracePeriodBlockCount(ctx, currentBlockHeight)
-	if err != nil {
-		return false, err
-	}
-
-	sessionGracePeriodEndHeight := sessionEndBlockHeight + int64(sessionGracePeriodEndBlocks)
-	return currentBlockHeight <= sessionGracePeriodEndHeight, nil
 }
 
 // IsPastGracePeriod checks if the grace period for the session, given its end
