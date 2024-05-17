@@ -6,15 +6,14 @@ import (
 
 	"cosmossdk.io/depinject"
 	"github.com/golang/mock/gomock"
-	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/supplier"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
+	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/testclient/testtx"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
 // NewLocalnetClient creates and returns a new supplier client that connects to
@@ -50,19 +49,17 @@ func NewOneTimeClaimProofSupplierClient(
 	ctrl := gomock.NewController(t)
 	supplierClientMock := mockclient.NewMockSupplierClient(ctrl)
 	supplierClientMock.EXPECT().
-		CreateClaim(
+		CreateClaims(
 			gomock.Eq(ctx),
-			gomock.AssignableToTypeOf(sessiontypes.SessionHeader{}),
-			gomock.AssignableToTypeOf([]byte{}),
+			gomock.AssignableToTypeOf([]*relayer.SessionClaim{}),
 		).
 		Return(nil).
 		Times(1)
 
 	supplierClientMock.EXPECT().
-		SubmitProof(
+		SubmitProofs(
 			gomock.Eq(ctx),
-			gomock.AssignableToTypeOf(sessiontypes.SessionHeader{}),
-			gomock.AssignableToTypeOf((*smt.SparseMerkleClosestProof)(nil)),
+			gomock.AssignableToTypeOf([]*relayer.SessionProof{}),
 		).
 		Return(nil).
 		Times(1)

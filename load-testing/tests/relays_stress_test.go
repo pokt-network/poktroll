@@ -50,7 +50,7 @@ const (
 )
 
 // NB: +1 to skip the "actor" column.
-const initialactorCountColIdx = iota + 1
+const initialActorCountColIdx = iota + 1
 
 // NB: +1 to skip the "actor" column.
 const (
@@ -58,6 +58,18 @@ const (
 	blocksPerIncrementColIdx
 	maxAmountColIdx
 )
+
+// The current txClient implementation only supports online mode signing, which
+// is simpler to implement since it is querying the signer account info from the
+// blockchain node and abstracting the need to manually manage the sequence number.
+// The sequence number is needed to ensure that the transactions are signed in the
+// correct order and that the transactions are not replayed. See:
+// * https://github.com/cosmos/cosmos-sdk/blob/main/proto/cosmos/tx/v1beta1/tx.proto#L164
+// * https://github.com/cosmos/cosmos-sdk/blob/main/x/auth/client/tx.go#L59
+// The load test sometimes fail to fetch the account information and retries are needed.
+// By observing the number of retries needed in the test environment, signing always
+// succeeded after the second retry a safe number of retries was chosen to be 3.
+const signTxMaxRetries = 3
 
 var (
 	// maxConcurrentRequestLimit is the maximum number of concurrent requests that can be made.
@@ -140,12 +152,20 @@ type relaysSuite struct {
 	// appInitialCount is the number of active applications at the start of the test.
 	appInitialCount int64
 
-	// startBlockHeight is the block height at which the test started.
+	// testStartHeight is the block height at which the test started.
 	// It is used to calculate the progress of the test.
-	startBlockHeight int64
-	// testDurationBlocks is the duration of the test in blocks.
-	// It is used to determine when the test is done.
+	testStartHeight int64
+
+	// relayLoadDurationBlocks is the duration in blocks it takes to send all relay requests.
+	// After this duration, the test suite will stop sending relay requests, but will continue
+	// to submit claims and proofs.
 	// It is calculated as the longest duration of the three actor increments.
+	relayLoadDurationBlocks int64
+
+	// testDurationBlocks is the duration of the test in blocks and is used to determine
+	// when the test is done.
+	// It is calculated as the time it takes to send all relay requests plus the time
+	// it takes so submit all claims and proofs.
 	testDurationBlocks int64
 
 	// gatewayUrls is a map of gatewayKeyName->URL representing the provisioned gateways.
@@ -184,6 +204,14 @@ type relaysSuite struct {
 	// activeSuppliers is the list of suppliers that are currently staked and
 	// ready to handle relay requests.
 	activeSuppliers []*accountInfo
+
+	// Number of claims and proofs observed on-chain during the test.
+	currentProofCount int
+	currentClaimCount int
+
+	// expectedClaimsAndProofsCount is the expected number of claims and proofs
+	// to be committed on-chain during the test.
+	expectedClaimsAndProofsCount int
 }
 
 // accountInfo contains the account info needed to build and send transactions.
@@ -283,6 +311,9 @@ func (s *relaysSuite) LocalnetIsRunning() {
 	// Initialize the provisioned gateways and suppliers from the load test manifest.
 	s.initializeProvisionedActors()
 
+	// Initialize the on-chain claims and proofs counter.
+	s.countClaimAndProofs()
+
 	// Some suppliers may already be staked at genesis, ensure that staking during
 	// this test succeeds by increasing the sake amount.
 	minStakeAmount := s.getProvisionedActorsCurrentStakedAmount()
@@ -300,9 +331,9 @@ func (s *relaysSuite) ARateOfRelayRequestsPerSecondIsSentPerApplication(appRPS s
 func (s *relaysSuite) TheFollowingInitialActorsAreStaked(table gocuke.DataTable) {
 	// Store the initial counts of the actors to be staked to be used later in the test,
 	// when information about max actors to be staked is available.
-	s.gatewayInitialCount = table.Cell(gatewayRowIdx, initialactorCountColIdx).Int64()
-	s.appInitialCount = table.Cell(applicationRowIdx, initialactorCountColIdx).Int64()
-	s.supplierInitialCount = table.Cell(supplierRowIdx, initialactorCountColIdx).Int64()
+	s.gatewayInitialCount = table.Cell(gatewayRowIdx, initialActorCountColIdx).Int64()
+	s.appInitialCount = table.Cell(applicationRowIdx, initialActorCountColIdx).Int64()
+	s.supplierInitialCount = table.Cell(supplierRowIdx, initialActorCountColIdx).Int64()
 }
 
 func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
@@ -310,10 +341,15 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 	plans := s.parseActorLoadTestIncrementPlans(table)
 	s.validateActorLoadTestIncrementPlans(plans)
 
-	// The test duration is the longest duration of the three actor increments.
+	// The relay load duration is the longest duration of the three actor increments.
 	// The duration of each actor is calculated as how many blocks it takes to
 	// increment the actor count to the maximum.
-	s.testDurationBlocks = plans.maxDurationBlocks()
+	s.relayLoadDurationBlocks = plans.maxActorBlocksToFinalIncrementEnd()
+
+	// The test duration indicates when the test is complete.
+	// It is calculated as the relay load duration plus the time it takes to
+	// submit all claims and proofs.
+	s.testDurationBlocks = plans.totalDurationBlocks()
 
 	// Adjust the max delegations parameter to the max gateways to permit all
 	// applications to delegate to all gateways.
@@ -413,27 +449,18 @@ func (s *relaysSuite) ALoadOfConcurrentRelayRequestsAreSentFromTheApplications()
 	<-s.ctx.Done()
 }
 
-// TODO_UPNEXT: Complete & comment.
-func (s *relaysSuite) PairsOfClaimAndProofMessagesShouldBeCommittedOnchain(a string) {
-	txEventsCtx, cancelTxEvents := context.WithCancel(s.ctx)
-	_ = cancelTxEvents
-
-	// TODO_IMPROVE: This would be more idiomatic & less verbose as a channel.ForEach operation.
-	txEventsCh := s.newTxEventsObs.Subscribe(txEventsCtx).Ch()
-	for txEvent := range txEventsCh {
-		// TODO_IMPROVE: refactor this and other similar loops over events.
-		for _, event := range txEvent.Result.Events {
-			if event.Type != "message" {
-				continue
-			}
-
-			if hasEventAttr(event.Attributes, "action", EventActionMsgCreateClaim) {
-				// TODO_TECHDEBT: match up claims & proofs and assert their quantity.
-			}
-
-			if hasEventAttr(event.Attributes, "action", EventActionMsgSubmitProof) {
-				// TODO_TECHDEBT: match up claims & proofs and assert their quantity.
-			}
-		}
-	}
+func (s *relaysSuite) TheCorrectPairsCountOfClaimAndProofMessagesShouldBeCommittedOnchain() {
+	require.Equal(s,
+		s.currentClaimCount,
+		s.currentProofCount,
+		"claims and proofs count mismatch",
+	)
+	// TODO_TECHDEBT: The current counting mechanism for the expected claims and proofs
+	// is not accurate. The expected claims and proofs count should be calculated based
+	// on the effectively sent relay requests.
+	//require.Equal(s,
+	//	s.expectedClaimsAndProofsCount,
+	//	s.currentProofCount,
+	//	"unexpected claims and proofs count",
+	//)
 }

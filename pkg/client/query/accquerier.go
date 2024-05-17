@@ -2,6 +2,7 @@ package query
 
 import (
 	"context"
+	"sync"
 
 	"cosmossdk.io/depinject"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
@@ -23,7 +24,8 @@ type accQuerier struct {
 
 	// accountCache is a cache of accounts that have already been queried.
 	// TODO_TECHDEBT: Add a size limit to the cache and consider an LRU cache.
-	accountCache map[string]types.AccountI
+	accountCache   map[string]types.AccountI
+	accountCacheMu sync.Mutex
 }
 
 // NewAccountQuerier returns a new instance of a client.AccountQueryClient by
@@ -51,6 +53,9 @@ func (aq *accQuerier) GetAccount(
 	ctx context.Context,
 	address string,
 ) (types.AccountI, error) {
+	aq.accountCacheMu.Lock()
+	defer aq.accountCacheMu.Unlock()
+
 	if foundAccount, isAccountFound := aq.accountCache[address]; isAccountFound {
 		return foundAccount, nil
 	}

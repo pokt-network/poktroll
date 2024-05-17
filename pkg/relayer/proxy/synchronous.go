@@ -101,7 +101,6 @@ func (sync *synchronousRPCServer) Stop(ctx context.Context) error {
 func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	startTime := time.Now()
 	ctx := request.Context()
-	defer request.Body.Close()
 
 	sync.logger.Debug().Msg("serving synchronous relay request")
 	listenAddress := sync.serverConfig.ListenAddress
@@ -109,6 +108,7 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 	// Extract the relay request from the request body.
 	sync.logger.Debug().Msg("extracting relay request from request body")
 	relayRequest, err := sync.newRelayRequest(request)
+	request.Body.Close()
 	if err != nil {
 		sync.replyWithError(ctx, []byte{}, writer, listenAddress, "", err)
 		sync.logger.Warn().Err(err).Msg("failed serving relay request")
@@ -248,6 +248,7 @@ func (sync *synchronousRPCServer) serveHTTP(
 	// that will be sent to the proxied (i.e. staked for) service.
 	// (see https://pkg.go.dev/net/http#Request) Body field type.
 	requestBodyReader := io.NopCloser(bytes.NewBuffer(relayRequest.Payload))
+	defer requestBodyReader.Close()
 	sync.logger.Debug().
 		Str("request_payload", string(relayRequest.Payload)).
 		Msg("serving relay request")
@@ -296,6 +297,7 @@ func (sync *synchronousRPCServer) serveHTTP(
 	if err != nil {
 		return nil, err
 	}
+	defer httpResponse.Body.Close()
 
 	responseBody, err := decodeHTTPResponseBody(httpResponse)
 	if err != nil {

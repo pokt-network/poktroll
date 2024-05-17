@@ -16,6 +16,7 @@ import (
 	"cosmossdk.io/depinject"
 	"cosmossdk.io/math"
 	"github.com/cometbft/cometbft/abci/types"
+	sdkclient "github.com/cosmos/cosmos-sdk/client"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -134,13 +135,12 @@ func (s *relaysSuite) initializeProvisionedActors() {
 
 // mapSessionInfoForLoadTestDurationFn returns a MapFn that maps over the session info
 // notification (each block) to determine when to start the test, when to send relay
-// batches & when to stop the test. If the current block is not the beginning of a session,
-// it waits for the next session to start before notifying (skipping meanwhile). Each
-// time it notifies, it also sends a relayBatchInfo to the given relayBatchInfoPublishCh
+// batches & when to stop sending relays and when to stop the test (after waiting
+// for the claims and proofs to be submitted).
+// If the current block is not the beginning of a session, it waits for the next
+// session to start before notifying (skipping meanwhile).
+// Each time it notifies, it also sends a relayBatchInfo to the given relayBatchInfoPublishCh
 // such that the corresponding pipeline branch will send a relay batch.
-//
-// TODO_UPNEXT(@bryanchriswhite): Update this comment to reflect downstream changes;
-// i.e., relay batch notifications are not sent for the last session grace period + 1 session length.
 func (s *relaysSuite) mapSessionInfoForLoadTestDurationFn(
 	relayBatchInfoPublishCh chan<- *relayBatchInfoNotif,
 ) channel.MapFn[client.Block, *sessionInfoNotif] {
@@ -189,27 +189,37 @@ func (s *relaysSuite) mapSessionInfoForLoadTestDurationFn(
 		// It is updated only once at the start of the test.
 		if waitingForFirstSession {
 			// Record the block height at the start of the first session under load.
-			// Given the checks above, we are guaranteed this is the start of a new session.
-			s.startBlockHeight = blockHeight
+			s.testStartHeight = blockHeight
 			// Mark the test as started.
 			waitingForFirstSession = false
 
-			s.Logf("Test starting at block height: %d", s.startBlockHeight)
+			logger.Info().Msgf("Test starting at block height: %d", s.testStartHeight)
 		}
 
+		// If the test duration is reached, stop sending requests
+		sendRelaysEndHeight := s.testStartHeight + s.relayLoadDurationBlocks
+		if blockHeight >= sendRelaysEndHeight {
+
+			logger.Info().Msg("Stop sending relays, waiting for last claims and proofs to be submitted")
+			// Wait for one more session to let the last claims and proofs be submitted.
+			testEndHeight := s.testStartHeight + s.testDurationBlocks
+			if blockHeight > testEndHeight {
+				s.cancelCtx()
+			}
+
+			return nil, true
+		}
+
+		testProgressBlocksRelativeToTestStartHeight := blockHeight - s.testStartHeight + 1
 		// Log the test progress.
 		infoLogger.Msgf(
 			"test progress blocks: %d/%d",
-			blockHeight-s.startBlockHeight, s.testDurationBlocks,
+			testProgressBlocksRelativeToTestStartHeight, s.relayLoadDurationBlocks,
 		)
 
-		// If the test duration is reached, cancel the context to stop the test.
-		testEndBlockHeight := s.startBlockHeight + s.testDurationBlocks
-		if blockHeight >= testEndBlockHeight {
-			logger.Info().Msg("Test done, canceling scenario context")
-			s.cancelCtx()
-
-			return nil, true
+		if sessionInfo.blockHeight == sessionInfo.sessionEndBlockHeight {
+			newSessionsCount := len(s.activeApplications) * len(s.activeSuppliers)
+			s.expectedClaimsAndProofsCount = s.expectedClaimsAndProofsCount + newSessionsCount
 		}
 
 		// If the current block is the start of any new session, activate the prepared
@@ -252,13 +262,14 @@ func (s *relaysSuite) validateActorLoadTestIncrementPlans(plans *actorLoadTestIn
 	)
 }
 
-// maxDurationBlocks returns the longest duration until the proof corresponding to
-// the session in which the maxActorCount for each actor type has been committed.
-func (plans *actorLoadTestIncrementPlans) maxDurationBlocks() int64 {
+// maxActorBlocksToFinalIncrementEnd returns the longest duration it takes to
+// increment the number of all actors to their maxActorCount plus one increment
+// duration to account for the last increment to execute.
+func (plans *actorLoadTestIncrementPlans) maxActorBlocksToFinalIncrementEnd() int64 {
 	return math.Max(
-		plans.gateways.durationBlocks(),
-		plans.apps.durationBlocks(),
-		plans.suppliers.durationBlocks(),
+		plans.gateways.blocksToFinalIncrementEnd(),
+		plans.apps.blocksToFinalIncrementEnd(),
+		plans.suppliers.blocksToFinalIncrementEnd(),
 	)
 }
 
@@ -324,13 +335,13 @@ func (plans *actorLoadTestIncrementPlans) validateMaxAmounts(t gocuke.TestingT) 
 	)
 }
 
-// durationBlocks returns the number of blocks which will have elapsed when the
+// totalDurationBlocks returns the number of blocks which will have elapsed when the
 // proof corresponding to the session in which the maxActorCount for the given actor
 // has been committed.
-func (plan *actorLoadTestIncrementPlan) durationBlocks() int64 {
+func (plans *actorLoadTestIncrementPlans) totalDurationBlocks() int64 {
 	// The last block of the last session SHOULD align with the last block of the
 	// last increment duration (i.e. **after** maxActorCount actors are activated).
-	blocksToLastSessionEnd := plan.blocksToMaxAmountIncrementEnd()
+	blocksToLastSessionEnd := plans.maxActorBlocksToFinalIncrementEnd()
 
 	sessionGracePeriodBlocks := keeper.GetSessionGracePeriodBlockCount()
 	blocksToLastProofWindowEnd := blocksToLastSessionEnd + sessionGracePeriodBlocks
@@ -340,17 +351,18 @@ func (plan *actorLoadTestIncrementPlan) durationBlocks() int64 {
 	return blocksToLastProofWindowEnd + keeper.NumBlocksPerSession
 }
 
-// blocksToMaxAmountIncrementStart returns the number of blocks that will have
+// blocksToFinalIncrementStart returns the number of blocks that will have
 // elapsed when the maxActorCount for the given actor has been committed.
-func (plan *actorLoadTestIncrementPlan) blocksToMaxAmountIncrementStart() int64 {
-	return plan.maxActorCount / plan.actorIncrementCount * plan.blocksPerIncrement
+func (plan *actorLoadTestIncrementPlan) blocksToFinalIncrementStart() int64 {
+	actorIncrementNum := plan.maxActorCount - plan.initialActorCount
+	return actorIncrementNum / plan.actorIncrementCount * plan.blocksPerIncrement
 }
 
-// blocksToMaxAmountIncrementEnd returns the number of blocks that will have
+// blocksToFinalIncrementEnd returns the number of blocks that will have
 // elapsed when one increment duration **after** the maxActorCount for the given
 // actor has been committed.
-func (plan *actorLoadTestIncrementPlan) blocksToMaxAmountIncrementEnd() int64 {
-	return plan.blocksToMaxAmountIncrementStart() + plan.blocksPerIncrement
+func (plan *actorLoadTestIncrementPlan) blocksToFinalIncrementEnd() int64 {
+	return plan.blocksToFinalIncrementStart() + plan.blocksPerIncrement
 }
 
 // mapSessionInfoWhenStakingNewSuppliersAndGatewaysFn returns a mapFn which asynchronously maps
@@ -371,19 +383,24 @@ func (s *relaysSuite) mapSessionInfoWhenStakingNewSuppliersAndGatewaysFn(
 	return func(ctx context.Context, notif *sessionInfoNotif) (*stakingInfoNotif, bool) {
 		var newSuppliers []*accountInfo
 		activeSuppliers := int64(len(s.activeSuppliers))
-		if suppliersPlan.shouldIncrementActorCount(notif, activeSuppliers) {
+		// Suppliers increment is different from the other actors and have a dedicated
+		// method since they are activated at the end of the session so they are
+		// available for the beginning of the next one.
+		// This is because the suppliers involvement is out of control of the test
+		// suite and is driven by the AppGateServer's supplier endpoint selection.
+		if suppliersPlan.shouldIncrementSupplierCount(notif, activeSuppliers, s.testStartHeight) {
 			newSuppliers = s.sendStakeSuppliersTxs(notif, &suppliersPlan)
 		}
 
 		var newGateways []*accountInfo
 		activeGateways := int64(len(s.activeGateways))
-		if gatewaysPlan.shouldIncrementActorCount(notif, activeGateways) {
+		if gatewaysPlan.shouldIncrementActorCount(notif, activeGateways, s.testStartHeight) {
 			newGateways = s.sendStakeGatewaysTxs(notif, &gatewaysPlan)
 		}
 
 		var newApps []*accountInfo
 		activeApps := int64(len(s.activeApplications))
-		if appsPlan.shouldIncrementActorCount(notif, activeApps) {
+		if appsPlan.shouldIncrementActorCount(notif, activeApps, s.testStartHeight) {
 			newApps = s.sendFundNewAppsTx(notif, &appsPlan)
 		}
 
@@ -401,11 +418,11 @@ func (s *relaysSuite) mapSessionInfoWhenStakingNewSuppliersAndGatewaysFn(
 	}
 }
 
-// mapStakingInfoWhenStakingAndDelegatingNewApps returns a MapFn which asynchronously maps over the
-// staking info notification. It is notified when one or more actors have been
-// newly staked. For each notification received, it waits for the new actors'
-// staking/funding txs to be committed before sending staking & delegation txs
-// for new applications.
+// mapStakingInfoWhenStakingAndDelegatingNewApps is a MapFn which asynchronously
+// maps over the staking info notification.
+// It is notified when one or more actors have been newly staked.
+// For each notification received, it waits for the new actors' staking/funding
+// txs to be committed before sending staking & delegation txs for new applications.
 func (s *relaysSuite) mapStakingInfoWhenStakingAndDelegatingNewApps(
 	_ context.Context,
 	notif *stakingInfoNotif,
@@ -445,7 +462,7 @@ func (s *relaysSuite) sendFundAvailableActorsTx(
 		// It is assumed that the suppliers keyNames are sequential, starting from 1
 		// and that the keyName is formatted as "supplier%d".
 		keyName := fmt.Sprintf("supplier%d", i+1)
-		supplier := s.addActor(keyName)
+		supplier := s.addActor(keyName, supplierStakeAmount)
 
 		// Add a bank.MsgSend message to fund the supplier.
 		s.addPendingFundMsg(supplier.accAddress, sdk.NewCoins(supplierStakeAmount))
@@ -458,7 +475,7 @@ func (s *relaysSuite) sendFundAvailableActorsTx(
 		// It is assumed that the gateways keyNames are sequential, starting from 1
 		// and that the keyName is formatted as "gateway%d".
 		keyName := fmt.Sprintf("gateway%d", i+1)
-		gateway := s.addGateway(keyName)
+		gateway := s.addActor(keyName, gatewayStakeAmount)
 
 		// Add a bank.MsgSend message to fund the gateway.
 		s.addPendingFundMsg(gateway.accAddress, sdk.NewCoins(gatewayStakeAmount))
@@ -472,7 +489,7 @@ func (s *relaysSuite) sendFundAvailableActorsTx(
 		// Determine the application funding amount based on the remaining test duration.
 		// for the initial applications, the funding is done at the start of the test,
 		// so the current block height is used.
-		appFundingAmount := s.getAppFundingAmount(s.startBlockHeight)
+		appFundingAmount := s.getAppFundingAmount(s.testStartHeight)
 		// The application is created with the keyName formatted as "app-%d",
 		// starting from 1.
 		application := s.createApplicationAccount(i+1, appFundingAmount)
@@ -485,7 +502,7 @@ func (s *relaysSuite) sendFundAvailableActorsTx(
 	// Send all the funding account's pending messages in a single transaction.
 	// This is done to avoid sending multiple transactions to fund the initial actors.
 	// pendingMsgs is reset after the transaction is sent.
-	s.sendPendingMsgsTx(s.latestBlock.Height(), s.fundingAccountInfo)
+	s.sendPendingMsgsTx(s.fundingAccountInfo)
 
 	return suppliers, gateways, applications
 }
@@ -524,13 +541,13 @@ func (s *relaysSuite) sendFundNewAppsTx(
 			appCount+appsToFund,
 		)
 
-	appFundingAmount := s.getAppFundingAmount(sessionInfo.sessionEndBlockHeight + 1)
+	appFundingAmount := s.getAppFundingAmount(sessionInfo.sessionEndBlockHeight)
 	for appIdx := int64(0); appIdx < appsToFund; appIdx++ {
 		app := s.createApplicationAccount(appCount+appIdx+1, appFundingAmount)
 		s.addPendingFundMsg(app.accAddress, sdk.NewCoins(app.amountToStake))
 		newApps = append(newApps, app)
 	}
-	s.sendPendingMsgsTx(sessionInfo.blockHeight, s.fundingAccountInfo)
+	s.sendPendingMsgsTx(s.fundingAccountInfo)
 
 	// Then new applications are returned so the caller can construct delegation messages
 	// given the existing gateways.
@@ -568,7 +585,7 @@ func (s *relaysSuite) createApplicationAccount(
 // remaining test duration in blocks, the relay rate per application, the relay
 // cost, and the block duration.
 func (s *relaysSuite) getAppFundingAmount(currentBlockHeight int64) sdk.Coin {
-	currentTestDuration := s.startBlockHeight + s.testDurationBlocks - currentBlockHeight
+	currentTestDuration := s.testStartHeight + s.relayLoadDurationBlocks - currentBlockHeight
 	// Multiply by 2 to make sure the application does not run out of funds
 	// based on the number of relays it needs to send. Theoretically, `+1` should
 	// be enough, but probabilistic and time based mechanisms make it hard
@@ -621,7 +638,7 @@ func (s *relaysSuite) sendStakeAndDelegateAppsTxs(
 		for _, gateway := range newGateways {
 			s.addPendingDelegateToGatewayMsg(app, gateway)
 		}
-		s.sendPendingMsgsTx(sessionInfo.blockHeight, app)
+		s.sendPendingMsgsTx(app)
 	}
 
 	// Broadcast a single tx per new application which stakes and delegates
@@ -634,12 +651,12 @@ func (s *relaysSuite) sendStakeAndDelegateAppsTxs(
 		for _, gateway := range newGateways {
 			s.addPendingDelegateToGatewayMsg(app, gateway)
 		}
-		s.sendPendingMsgsTx(sessionInfo.blockHeight, app)
+		s.sendPendingMsgsTx(app)
 	}
 }
 
 // sendDelegateInitialAppsTxs pairs all applications with all gateways by generating
-// and sending DelegateMsgs in a single transaction for each aplication.
+// and sending DelegateMsgs in a single transaction for each application.
 func (s *relaysSuite) sendDelegateInitialAppsTxs(apps, gateways []*accountInfo) {
 	for _, app := range apps {
 		// Accumulate the delegate messages for all gateways given the application.
@@ -647,7 +664,7 @@ func (s *relaysSuite) sendDelegateInitialAppsTxs(apps, gateways []*accountInfo) 
 			s.addPendingDelegateToGatewayMsg(app, gateway)
 		}
 		// Send the application's delegate messages in a single transaction.
-		s.sendPendingMsgsTx(s.latestBlock.Height(), app)
+		s.sendPendingMsgsTx(app)
 	}
 }
 
@@ -658,22 +675,47 @@ func (s *relaysSuite) sendDelegateInitialAppsTxs(apps, gateways []*accountInfo) 
 func (plan *actorLoadTestIncrementPlan) shouldIncrementActorCount(
 	sessionInfo *sessionInfoNotif,
 	actorCount int64,
+	startBlockHeight int64,
 ) bool {
+	initialSessionNumber := keeper.GetSessionNumber(startBlockHeight)
 	// TODO_TECHDEBT(#21): replace with gov param query when available.
 	actorSessionIncRate := plan.blocksPerIncrement / keeper.NumBlocksPerSession
-	nextSessionNumber := sessionInfo.sessionNumber + 1
+	nextSessionNumber := sessionInfo.sessionNumber + 1 - initialSessionNumber
 	isSessionStartHeight := sessionInfo.blockHeight == sessionInfo.sessionStartBlockHeight
 	isActorIncrementHeight := nextSessionNumber%actorSessionIncRate == 0
-	maxActorNumReached := actorCount == plan.maxActorCount
+	maxActorCountReached := actorCount == plan.maxActorCount
 
 	// Only increment the actor if the session has started, the session number is a multiple
-	// of the actorSessionIncRate, and the maxActors has not been reached.
-	return isSessionStartHeight && isActorIncrementHeight && !maxActorNumReached
+	// of the actorSessionIncRate, and the maxActorCountReached has not been reached.
+	return isSessionStartHeight && !maxActorCountReached && isActorIncrementHeight
 }
 
-// addActor returns an accountInfo populated with the accAddress corresponding to
-// the given keyName in the current keyring.
-func (s *relaysSuite) addActor(keyName string) *accountInfo {
+// shouldIncrementSupplier returns true if the supplier should be incremented based on
+// the sessionInfo provided and the supplier's scaling parameters.
+// Suppliers stake transactions are sent at the end of the session so they are
+// available for the beginning of the next one.
+func (plan *actorLoadTestIncrementPlan) shouldIncrementSupplierCount(
+	sessionInfo *sessionInfoNotif,
+	actorCount int64,
+	startBlockHeight int64,
+) bool {
+	initialSessionNumber := keeper.GetSessionNumber(startBlockHeight)
+	// TODO_TECHDEBT(#21): replace with gov param query when available.
+	supplierSessionIncRate := plan.blocksPerIncrement / keeper.NumBlocksPerSession
+	nextSessionNumber := sessionInfo.sessionNumber + 1 - initialSessionNumber
+	isSessionEndHeight := sessionInfo.blockHeight == sessionInfo.sessionEndBlockHeight
+	isActorIncrementHeight := nextSessionNumber%supplierSessionIncRate == 0
+	maxSupplierCountReached := actorCount == plan.maxActorCount
+
+	// Only increment the supplier if the session is at its last block, the next
+	// session number is a multiple of the supplierSessionIncRate and the
+	// maxSupplierCountReached has not been reached.
+	return isSessionEndHeight && !maxSupplierCountReached && isActorIncrementHeight
+}
+
+// addActor populates the actors's amount to stake and accAddress using the
+// keyName provided in the corresponding provisioned actors slice.
+func (s *relaysSuite) addActor(keyName string, actorStakeAmount sdk.Coin) *accountInfo {
 	keyRecord, err := s.txContext.GetKeyring().Key(keyName)
 	require.NoError(s, err)
 
@@ -684,7 +726,7 @@ func (s *relaysSuite) addActor(keyName string) *accountInfo {
 		accAddress:    accAddress,
 		keyName:       keyName,
 		pendingMsgs:   []sdk.Msg{},
-		amountToStake: supplierStakeAmount,
+		amountToStake: actorStakeAmount,
 	}
 }
 
@@ -738,30 +780,13 @@ func (s *relaysSuite) sendStakeSuppliersTxs(
 
 	for supplierIdx := int64(0); supplierIdx < suppliersToStake; supplierIdx++ {
 		keyName := fmt.Sprintf("supplier%d", supplierCount+supplierIdx+1)
-		supplier := s.addActor(keyName)
+		supplier := s.addActor(keyName, supplierStakeAmount)
 		s.addPendingStakeSupplierMsg(supplier)
-		s.sendPendingMsgsTx(sessionInfo.blockHeight, supplier)
+		s.sendPendingMsgsTx(supplier)
 		newSuppliers = append(newSuppliers, supplier)
 	}
 
 	return newSuppliers
-}
-
-// addGateway returns a populated gateway's accAddress using the keyName provided
-// in the provisioned gateways slice.
-func (s *relaysSuite) addGateway(keyName string) *accountInfo {
-	keyRecord, err := s.txContext.GetKeyring().Key(keyName)
-	require.NoError(s, err)
-
-	accAddress, err := keyRecord.GetAddress()
-	require.NoError(s, err)
-
-	return &accountInfo{
-		accAddress:    accAddress,
-		keyName:       keyName,
-		pendingMsgs:   []sdk.Msg{},
-		amountToStake: gatewayStakeAmount,
-	}
 }
 
 // addPendingStakeGatewayMsg generates a MsgStakeGateway message to stake a given
@@ -779,17 +804,17 @@ func (s *relaysSuite) sendInitialActorsStakeMsgs(
 ) {
 	for _, supplier := range suppliers {
 		s.addPendingStakeSupplierMsg(supplier)
-		s.sendPendingMsgsTx(s.latestBlock.Height(), supplier)
+		s.sendPendingMsgsTx(supplier)
 	}
 
 	for _, gateway := range gateways {
 		s.addPendingStakeGatewayMsg(gateway)
-		s.sendPendingMsgsTx(s.latestBlock.Height(), gateway)
+		s.sendPendingMsgsTx(gateway)
 	}
 
 	for _, application := range applications {
 		s.addPendingStakeApplicationMsg(application)
-		s.sendPendingMsgsTx(s.latestBlock.Height(), application)
+		s.sendPendingMsgsTx(application)
 	}
 }
 
@@ -822,9 +847,9 @@ func (s *relaysSuite) sendStakeGatewaysTxs(
 
 	for gwIdx := int64(0); gwIdx < gatewaysToStake; gwIdx++ {
 		keyName := fmt.Sprintf("gateway%d", gatewayCount+gwIdx+1)
-		gateway := s.addGateway(keyName)
+		gateway := s.addActor(keyName, gatewayStakeAmount)
 		s.addPendingStakeGatewayMsg(gateway)
-		s.sendPendingMsgsTx(sessionInfo.blockHeight, gateway)
+		s.sendPendingMsgsTx(gateway)
 		newGateways = append(newGateways, gateway)
 	}
 
@@ -833,8 +858,30 @@ func (s *relaysSuite) sendStakeGatewaysTxs(
 	return newGateways
 }
 
+// signWithRetries signs the transaction with the keyName provided, retrying
+// up to maxRetries times if the signing fails.
+// TODO_INVESTIGATE: SignTx randomly fails at retrieving the account info with
+// the error post failed: Post "http://localhost:36657": EOF. This might be due to
+// concurrent requests trying to access the same account info and needs to be investigated.
+func (s *relaysSuite) signWithRetries(
+	actorKeyName string,
+	txBuilder sdkclient.TxBuilder,
+	maxRetries int,
+) (err error) {
+	// All messages have to be signed by the keyName provided.
+	// TODO_TECHDEBT: Extend the txContext to support multiple signers.
+	for i := 0; i < maxRetries; i++ {
+		err := s.txContext.SignTx(actorKeyName, txBuilder, false, false)
+		if err == nil {
+			return nil
+		}
+	}
+
+	return err
+}
+
 // sendPendingMsgsTx sends a transaction with the provided messages using the keyName provided.
-func (s *relaysSuite) sendPendingMsgsTx(height int64, actor *accountInfo) {
+func (s *relaysSuite) sendPendingMsgsTx(actor *accountInfo) {
 	// Do not send empty message transactions as trying to do so will make SignTx to fail.
 	if len(actor.pendingMsgs) == 0 {
 		return
@@ -844,15 +891,14 @@ func (s *relaysSuite) sendPendingMsgsTx(height int64, actor *accountInfo) {
 	err := txBuilder.SetMsgs(actor.pendingMsgs...)
 	require.NoError(s, err)
 
-	txBuilder.SetTimeoutHeight(uint64(height + 2))
+	txBuilder.SetTimeoutHeight(uint64(s.latestBlock.Height() + 1))
 	txBuilder.SetGasLimit(690000042)
 
-	// All messages have to be signed by the keyName provided.
-	// TODO_TECHDEBT: Extend the txContext to support multiple signers.
-	err = s.txContext.SignTx(actor.keyName, txBuilder, false, false)
-	if err != nil {
-		require.NoError(s, err)
-	}
+	// TODO_HACK: Sometimes SignTx fails at retrieving the account info with
+	// the error post failed: Post "http://localhost:36657": EOF.
+	// A retry mechanism is added to avoid this issue.
+	err = s.signWithRetries(actor.keyName, txBuilder, signTxMaxRetries)
+	require.NoError(s, err)
 
 	// Serialize transactions.
 	txBz, err := s.txContext.EncodeTx(txBuilder)
@@ -882,12 +928,12 @@ func (s *relaysSuite) waitForTxsToBeCommitted() (txResults []*types.TxResult) {
 		txResult := <-ch
 		txResults = append(txResults, txResult)
 
-		// Since s.latestBlock is continuously updated, asynchronously,
-		s.waitUntilLatestBlockHeightEquals(txResult.Height)
-
 		// The number of transactions to be observed is not available in the TxResult
 		// event, so this number is taken from the last block event.
-		numTxs := len(s.latestBlock.Txs())
+		// The block received from s.latestBlock may be the previous one, it is
+		// necessary to wait until the block matching the txResult height is received
+		// in order to get the right number of transaction events to collect.
+		numTxs := s.waitUntilLatestBlockHeightEquals(txResult.Height)
 
 		// If all transactions are observed, break the loop.
 		if len(txResults) == numTxs {
@@ -899,13 +945,25 @@ func (s *relaysSuite) waitForTxsToBeCommitted() (txResults []*types.TxResult) {
 
 // waitUntilLatestBlockHeightEquals blocks until s.latestBlock.Height() equals the targetHeight.
 // NB: s.latestBlock is updated asynchronously via a subscription to the block client observable.
-func (s *relaysSuite) waitUntilLatestBlockHeightEquals(targetHeight int64) {
+func (s *relaysSuite) waitUntilLatestBlockHeightEquals(targetHeight int64) int {
+	if s.latestBlock.Height() > targetHeight {
+		logger.Info().
+			Int64("currentHeight", s.latestBlock.Height()).
+			Int64("targetHeight", targetHeight).
+			Msg("Waiting for target block to be committed")
+	}
+
 	for {
+		// If the latest block height is greater than the txResult height,
+		// then there is no way to know how many transactions to collect and the
+		// should be test is canceled.
+		// TODO_IMPROVEMENT: Cache the transactions count of each observed block
+		// to avoid this issue.
 		if s.latestBlock.Height() > targetHeight {
 			s.Fatal("latest block height is greater than the txResult height; tx event not observed")
 		}
 		if s.latestBlock.Height() == targetHeight {
-			break
+			return len(s.latestBlock.Txs())
 		}
 		// If the block height does not match the txResult height, wait for the next block.
 		time.Sleep(10 * time.Millisecond)
@@ -973,8 +1031,7 @@ func (s *relaysSuite) ensureFundedActors(
 
 		// If no transfer event is found for the actor, the test is canceled.
 		if !actorFunded {
-			s.cancelCtx()
-			s.Fatal("actor not funded")
+			s.logAndAbortTest(txResults, "actor not funded")
 			return
 		}
 	}
@@ -1014,13 +1071,7 @@ func (s *relaysSuite) ensureStakedActors(
 		// If no message event is found for the actor, log the transaction results
 		// and cancel the test.
 		if !actorStaked {
-			for _, txResult := range txResults {
-				if txResult.Result.Log != "" {
-					logger.Error().Msgf("tx result log: %s", txResult.Result.Log)
-				}
-			}
-			s.cancelCtx()
-			s.Fatalf("actor %s not staked", actor.keyName)
+			s.logAndAbortTest(txResults, fmt.Sprintf("actor not staked: %s", actor.keyName))
 			return
 		}
 	}
@@ -1062,8 +1113,7 @@ func (s *relaysSuite) ensureDelegatedApps(
 		// If the number of delegatees is not equal to the number of gateways,
 		// the test is canceled.
 		if numDelegatees != len(gateways) {
-			s.cancelCtx()
-			s.Fatal("applications not delegated to all gateways")
+			s.logAndAbortTest(txResults, "applications not delegated to all gateways")
 			return
 		}
 	}
@@ -1123,7 +1173,7 @@ func (s *relaysSuite) activatePreparedActors(notif *sessionInfoNotif) {
 			Int64("prepared_gws", int64(len(s.preparedGateways))).
 			Msg("activating prepared actors")
 
-		// Activate teh prepared actors and prune the prepared lists.
+		// Activate the prepared actors and prune the prepared lists.
 
 		s.activeApplications = append(s.activeApplications, s.preparedApplications...)
 		s.preparedApplications = []*accountInfo{}
@@ -1167,7 +1217,7 @@ func (s *relaysSuite) sendAdjustMaxDelegationsParamTx(maxGateways int64) {
 
 	s.fundingAccountInfo.addPendingMsg(authzExecMsg)
 
-	s.sendPendingMsgsTx(s.latestBlock.Height(), s.fundingAccountInfo)
+	s.sendPendingMsgsTx(s.fundingAccountInfo)
 }
 
 // ensureUpdatedMaxDelegations checks if the max_delegated_gateways parameter is updated
@@ -1183,7 +1233,7 @@ func (s *relaysSuite) ensureUpdatedMaxDelegations(maxGateways int64) {
 
 	if res.Params.MaxDelegatedGateways != uint64(maxGateways) {
 		s.cancelCtx()
-		s.Fatal("gateways not delegated to all applications")
+		s.Fatal("Failed to update max delegated gateways parameter")
 	}
 }
 
@@ -1212,8 +1262,33 @@ func (s *relaysSuite) parseActorLoadTestIncrementPlans(table gocuke.DataTable) *
 	}
 }
 
+// countClaimAndProofs asynchronously counts the number of claim and proof messages
+// in the observed transaction events.
+func (s *relaysSuite) countClaimAndProofs() {
+	channel.ForEach(
+		s.ctx,
+		s.newTxEventsObs,
+		func(ctx context.Context, txEvent *types.TxResult) {
+			for _, event := range txEvent.Result.Events {
+				if event.Type != "message" {
+					continue
+				}
+
+				if hasEventAttr(event.Attributes, "action", EventActionMsgCreateClaim) {
+					s.currentClaimCount++
+				}
+
+				if hasEventAttr(event.Attributes, "action", EventActionMsgSubmitProof) {
+					s.currentProofCount++
+				}
+
+			}
+		},
+	)
+}
+
 // forEachStakedAndDelegatedAppPrepareApp is a ForEachFn that waits for txs which
-// were broadcast in previous pipeline stages have been commited. It ensures that
+// were broadcast in previous pipeline stages have been committed. It ensures that
 // new applications were successfully staked and all application actors are delegated
 // to all gateways. Then it adds the new application actors to the prepared set, to
 // be activated & used in the next session.
@@ -1251,12 +1326,13 @@ func (s *relaysSuite) forEachRelayBatchSendBatch(_ context.Context, relayBatchIn
 	batchWaitGroup.Add(relaysPerSec * int(blockDuration))
 
 	for i := 0; i < relaysPerSec*int(blockDuration); i++ {
+		iterationTime := relayBatchInfo.nextBatchTime.Add(time.Duration(i+1) * relayInterval)
 		batchLimiter.Go(s.ctx, func() {
 
 			relaysSent := s.numRelaysSent.Add(1) - 1
 
 			// Generate the relay payload with unique request IDs.
-			relayPayload := fmt.Sprintf(relayPayloadFmt, relayRequestMethod, relaysSent)
+			relayPayload := fmt.Sprintf(relayPayloadFmt, relayRequestMethod, relaysSent+1)
 
 			// Send the relay request.
 			s.sendRelay(relaysSent, relayPayload)
@@ -1269,15 +1345,28 @@ func (s *relaysSuite) forEachRelayBatchSendBatch(_ context.Context, relayBatchIn
 			//	Int("total_apps", len(relayBatchInfo.appAccounts)).
 			//	Int("total_gws", len(relayBatchInfo.gateways)).
 			//	Str("time", time.Now().Format(time.RFC3339Nano)).
-			//	Msgf("sending relay #%d", numRelaysSent)
+			//	Msgf("sending relay #%d", relaysSent)
 
 			batchWaitGroup.Done()
 		})
 
 		// Sleep for the interval between each relay request.
-		time.Sleep(relayInterval)
+		sleepDuration := time.Until(iterationTime)
+		if sleepDuration > 0 {
+			time.Sleep(sleepDuration)
+		}
 	}
 
 	// Wait until all relay requests in the batch are sent.
 	batchWaitGroup.Wait()
+}
+
+func (s *relaysSuite) logAndAbortTest(txResults []*types.TxResult, errorMsg string) {
+	for _, txResult := range txResults {
+		if txResult.Result.Log != "" {
+			logger.Error().Msgf("tx result log: %s", txResult.Result.Log)
+		}
+	}
+	s.cancelCtx()
+	s.Fatal(errorMsg)
 }
