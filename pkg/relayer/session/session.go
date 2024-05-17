@@ -12,7 +12,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/logging"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
-	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
@@ -167,8 +166,9 @@ func (rs *relayerSessionsManager) ensureSessionTree(sessionHeader *sessiontypes.
 // TODO_IMPROVE: Add the ability for the process to resume where it left off in
 // case the process is restarted or the connection is dropped and reconnected.
 func (rs *relayerSessionsManager) mapBlockToSessionsToClaim(
-	_ context.Context, block client.Block,
-) ([]relayer.SessionTree, bool) {
+	ctx context.Context,
+	block client.Block,
+) (sessionTrees []relayer.SessionTree, skip bool) {
 	rs.sessionsTreesMu.Lock()
 	defer rs.sessionsTreesMu.Unlock()
 
@@ -197,7 +197,14 @@ func (rs *relayerSessionsManager) mapBlockToSessionsToClaim(
 		// downstream at the waitForEarliestCreateClaimsHeight step.
 		// TODO_BLOCKER: Introduce governance claim and proof window durations,
 		// implement off-chain window closing and on-chain window checks.
-		if !IsWithinGracePeriod(endBlockHeight, block.Height()) {
+		isWithinGracePeriod, err := rs.IsWithinGracePeriod(ctx, endBlockHeight, block.Height())
+		if err != nil {
+			// TODO_IMPROVE
+			rs.logger.Error().Err(err).Msg("failed to check if within grace period")
+			return nil, true
+		}
+
+		if isWithinGracePeriod {
 			// Iterate over the sessionsTrees that have grace period ending at this
 			// block height and add them to the list of sessionTrees to be published.
 			for _, sessionTree := range sessionsTreesEndingAtBlockHeight {
@@ -324,8 +331,20 @@ func (rs *relayerSessionsManager) mapAddMinedRelayToSessionTree(
 
 // IsWithinGracePeriod checks if the grace period for the session has ended
 // and signals whether it is time to create a claim for it.
-func IsWithinGracePeriod(sessionEndBlockHeight, currentBlockHeight int64) bool {
-	return currentBlockHeight <= sessionEndBlockHeight+sessionkeeper.GetSessionGracePeriodBlockCount()
+//
+// TODO_TECHDEBT: move to the SessionQueryClient.
+func (rs *relayerSessionsManager) IsWithinGracePeriod(
+	ctx context.Context,
+	sessionEndBlockHeight,
+	currentBlockHeight int64,
+) (bool, error) {
+	sessionGracePeriodEndBlocks, err := rs.sessionQueryClient.GetSessionGracePeriodBlockCount(ctx, currentBlockHeight)
+	if err != nil {
+		return false, err
+	}
+
+	sessionGracePeriodEndHeight := sessionEndBlockHeight + int64(sessionGracePeriodEndBlocks)
+	return currentBlockHeight <= sessionGracePeriodEndHeight, nil
 }
 
 // IsPastGracePeriod checks if the grace period for the session, given its end
