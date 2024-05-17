@@ -7,6 +7,7 @@ import (
 	"github.com/cosmos/gogoproto/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/client"
+	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -65,6 +66,7 @@ func (sessq *sessionQuerier) GetSession(
 	return res.Session, nil
 }
 
+// TODO_IN_THIS_PR: godoc comments...
 func (sessq *sessionQuerier) GetParams(ctx context.Context) (*sessiontypes.Params, error) {
 	req := &sessiontypes.QueryParamsRequest{}
 	res, err := sessq.sessionQuerier.Params(ctx, req)
@@ -72,4 +74,27 @@ func (sessq *sessionQuerier) GetParams(ctx context.Context) (*sessiontypes.Param
 		return nil, ErrQuerySessionParams.Wrapf("[%v]", err)
 	}
 	return &res.Params, nil
+}
+
+// TODO_TECHDEBT: We don't really want to have to query the params for every method call.
+// Once `ModuleParamsClient` is implemented, use its replay observable's `#Last` method
+// to get the most recently (asynchronously) observed (and cached) value.
+//
+// TODO_IN_THIS_PR: godoc comments...
+func (sessq *sessionQuerier) GetSessionGracePeriodBlockCount(
+	ctx context.Context,
+	queryHeight int64,
+) (uint64, error) {
+	paramsRes, err := sessq.sessionQuerier.Params(ctx, &sessiontypes.QueryParamsRequest{})
+	if err != nil {
+		return 0, err
+	}
+
+	// TODO_BLOCKER: Use `queryHeight` & some alternate queries to retrieve
+	// the value of session params at that height.
+	_ = queryHeight
+
+	numBlocksPerSession := paramsRes.GetParams().NumBlocksPerSession
+
+	return sessionkeeper.SessionGracePeriod * numBlocksPerSession, nil
 }
