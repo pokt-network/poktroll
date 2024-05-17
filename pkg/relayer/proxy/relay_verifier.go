@@ -3,7 +3,6 @@ package proxy
 import (
 	"context"
 
-	sessiontypes "github.com/pokt-network/poktroll/pkg/relayer/session"
 	"github.com/pokt-network/poktroll/x/service/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -99,7 +98,12 @@ func (rp *relayerProxy) getTargetSessionBlockHeight(
 	if sessionEndblockHeight < currentBlockHeight {
 		// Do not process the `RelayRequest` if the session has expired and the current
 		// block height is outside the session's grace period.
-		if sessiontypes.IsWithinGracePeriod(sessionEndblockHeight, currentBlockHeight) {
+		isWithinGracePeriod, err := rp.IsWithinGracePeriod(ctx, sessionEndblockHeight, currentBlockHeight)
+		if err != nil {
+			return 0, err
+		}
+
+		if isWithinGracePeriod {
 			// The RelayRequest's session has expired but is still within the
 			// grace period so process it as if the session is still active.
 			return sessionEndblockHeight, nil
@@ -114,4 +118,22 @@ func (rp *relayerProxy) getTargetSessionBlockHeight(
 
 	// The RelayRequest's session is active so return the current block height.
 	return currentBlockHeight, nil
+}
+
+// IsWithinGracePeriod checks if the grace period for the session has ended
+// and signals whether it is time to create a claim for it.
+//
+// TODO_TECHDEBT: move to the SessionQueryClient.
+func (rp *relayerProxy) IsWithinGracePeriod(
+	ctx context.Context,
+	sessionEndBlockHeight,
+	currentBlockHeight int64,
+) (bool, error) {
+	sessionGracePeriodEndBlocks, err := rp.sessionQuerier.GetSessionGracePeriodBlockCount(ctx, currentBlockHeight)
+	if err != nil {
+		return false, err
+	}
+
+	sessionGracePeriodEndHeight := sessionEndBlockHeight + int64(sessionGracePeriodEndBlocks)
+	return currentBlockHeight <= sessionGracePeriodEndHeight, nil
 }
