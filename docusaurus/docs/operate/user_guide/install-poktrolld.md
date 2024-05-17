@@ -5,7 +5,9 @@ sidebar_position: 0
 
 - [Release binaries](#release-binaries)
 - [Installing from source](#installing-from-source)
+  - [Prerequisites](#prerequisites)
 - [Homebrew](#homebrew)
+- [Windows Users](#windows-users)
 
 ## Release binaries
 
@@ -29,6 +31,12 @@ poktrolld version
 
 ## Installing from source
 
+### Prerequisites
+
+Ensure you have the following installed:
+- [Go](https://go.dev/doc/install) (version 1.18 or later)
+- [Ignite CLI](https://docs.ignite.com/welcome/install)
+
 ```bash
 git clone https://github.com/pokt-network/poktroll.git
 cd poktroll
@@ -47,3 +55,7 @@ poktrolld --help
 :::tip
 We have an [open GitHub issue](https://github.com/pokt-network/poktroll/issues/535) to introduce `poktrolld` to brew. Please reach out to us in the ticket if you want to pick this ticket!
 :::
+
+## Windows Users
+
+Currently, we do not support native Windows installation. Windows users are encouraged to use [Windows Subsystem for Linux (WSL)](https://docs.microsoft.com/en-us/windows/wsl/install) and follow the Linux installation instructions.
