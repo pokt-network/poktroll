@@ -48,9 +48,10 @@ import (
 //
 // TODO_UPNEXT(@red-One, @bryanchriswhite) move to a new file.
 type actorLoadTestIncrementPlans struct {
-	apps      actorLoadTestIncrementPlan
-	gateways  actorLoadTestIncrementPlan
-	suppliers actorLoadTestIncrementPlan
+	apps            actorLoadTestIncrementPlan
+	gateways        actorLoadTestIncrementPlan
+	suppliers       actorLoadTestIncrementPlan
+	persistentChain bool
 }
 
 // actorLoadTestIncrementPlan is a struct that holds the parameters for incrementing
@@ -118,17 +119,23 @@ func (s *relaysSuite) initFundingAccount(fundingAccountKeyName string) {
 // initializeProvisionedActors parses the load test manifest and initializes the
 // gateway and supplier keyNames and the URLs used to send requests to.
 func (s *relaysSuite) initializeProvisionedActors() {
-	loadTestManifestContent, err := os.ReadFile(loadTestManifestPath)
+	loadTestManifestContent, err := os.ReadFile(flagManifestFilePath)
 	require.NoError(s, err)
 
-	provisionedActors, err := config.ParseLoadTestManifest(loadTestManifestContent)
+	loadTestManifest, err := config.ParseLoadTestManifest(loadTestManifestContent)
 	require.NoError(s, err)
 
-	for _, gateway := range provisionedActors.Gateways {
-		s.gatewayUrls[gateway.KeyName] = gateway.ExposedUrl
+	s.persistentChain = loadTestManifest.PersistentChain
+
+	for _, gateway := range loadTestManifest.Gateways {
+		if s.persistentChain {
+			s.gatewayUrls[gateway.Address] = gateway.ExposedUrl
+		} else {
+			s.gatewayUrls[gateway.KeyName] = gateway.ExposedUrl
+		}
 	}
 
-	for _, supplier := range provisionedActors.Suppliers {
+	for _, supplier := range loadTestManifest.Suppliers {
 		s.suppliersUrls[supplier.KeyName] = supplier.ExposedUrl
 	}
 }
@@ -248,6 +255,10 @@ func (s *relaysSuite) mapSessionInfoForLoadTestDurationFn(
 
 // validateActorLoadTestIncrementPlans
 func (s *relaysSuite) validateActorLoadTestIncrementPlans(plans *actorLoadTestIncrementPlans) {
+	if s.persistentChain {
+		return
+	}
+
 	plans.validateAppSupplierPermutations(s)
 	plans.validateIncrementRates(s)
 	plans.validateMaxAmounts(s)
@@ -266,6 +277,10 @@ func (s *relaysSuite) validateActorLoadTestIncrementPlans(plans *actorLoadTestIn
 // increment the number of all actors to their maxActorCount plus one increment
 // duration to account for the last increment to execute.
 func (plans *actorLoadTestIncrementPlans) maxActorBlocksToFinalIncrementEnd() int64 {
+	if plans.persistentChain {
+		return plans.apps.blocksToFinalIncrementEnd()
+	}
+
 	return math.Max(
 		plans.gateways.blocksToFinalIncrementEnd(),
 		plans.apps.blocksToFinalIncrementEnd(),
@@ -457,6 +472,30 @@ func (s *relaysSuite) mapStakingInfoWhenStakingAndDelegatingNewApps(
 func (s *relaysSuite) sendFundAvailableActorsTx(
 	plans *actorLoadTestIncrementPlans,
 ) (suppliers, gateways, applications []*accountInfo) {
+	// Send all the funding account's pending messages in a single transaction.
+	// This is done to avoid sending multiple transactions to fund the initial actors.
+	// pendingMsgs is reset after the transaction is sent.
+	defer s.sendPendingMsgsTx(s.fundingAccountInfo)
+	// Fund accounts for **initial** applications only.
+	// Additional applications are generated and funded as they're incremented.
+	for i := int64(0); i < s.appInitialCount; i++ {
+		// Determine the application funding amount based on the remaining test duration.
+		// for the initial applications, the funding is done at the start of the test,
+		// so the current block height is used.
+		appFundingAmount := s.getAppFundingAmount(s.testStartHeight)
+		// The application is created with the keyName formatted as "app-%d",
+		// starting from 1.
+		application := s.createApplicationAccount(i+1, appFundingAmount)
+		// Add a bank.MsgSend message to fund the application.
+		s.addPendingFundMsg(application.accAddress, sdk.NewCoins(application.amountToStake))
+
+		applications = append(applications, application)
+	}
+
+	if s.persistentChain {
+		return suppliers, gateways, applications
+	}
+
 	// Fund accounts for **all** suppliers that will be used over the duration of the test.
 	for i := int64(0); i < plans.suppliers.maxActorCount; i++ {
 		// It is assumed that the suppliers keyNames are sequential, starting from 1
@@ -482,27 +521,6 @@ func (s *relaysSuite) sendFundAvailableActorsTx(
 
 		gateways = append(gateways, gateway)
 	}
-
-	// Fund accounts for **initial** applications only.
-	// Additional applications are generated and funded as they're incremented.
-	for i := int64(0); i < s.appInitialCount; i++ {
-		// Determine the application funding amount based on the remaining test duration.
-		// for the initial applications, the funding is done at the start of the test,
-		// so the current block height is used.
-		appFundingAmount := s.getAppFundingAmount(s.testStartHeight)
-		// The application is created with the keyName formatted as "app-%d",
-		// starting from 1.
-		application := s.createApplicationAccount(i+1, appFundingAmount)
-		// Add a bank.MsgSend message to fund the application.
-		s.addPendingFundMsg(application.accAddress, sdk.NewCoins(application.amountToStake))
-
-		applications = append(applications, application)
-	}
-
-	// Send all the funding account's pending messages in a single transaction.
-	// This is done to avoid sending multiple transactions to fund the initial actors.
-	// pendingMsgs is reset after the transaction is sent.
-	s.sendPendingMsgsTx(s.fundingAccountInfo)
 
 	return suppliers, gateways, applications
 }
@@ -677,17 +695,21 @@ func (plan *actorLoadTestIncrementPlan) shouldIncrementActorCount(
 	actorCount int64,
 	startBlockHeight int64,
 ) bool {
+	maxActorCountReached := actorCount == plan.maxActorCount
+	if maxActorCountReached {
+		return false
+	}
+
 	initialSessionNumber := keeper.GetSessionNumber(startBlockHeight)
 	// TODO_TECHDEBT(#21): replace with gov param query when available.
 	actorSessionIncRate := plan.blocksPerIncrement / keeper.NumBlocksPerSession
 	nextSessionNumber := sessionInfo.sessionNumber + 1 - initialSessionNumber
 	isSessionStartHeight := sessionInfo.blockHeight == sessionInfo.sessionStartBlockHeight
 	isActorIncrementHeight := nextSessionNumber%actorSessionIncRate == 0
-	maxActorCountReached := actorCount == plan.maxActorCount
 
 	// Only increment the actor if the session has started, the session number is a multiple
 	// of the actorSessionIncRate, and the maxActorCountReached has not been reached.
-	return isSessionStartHeight && !maxActorCountReached && isActorIncrementHeight
+	return isSessionStartHeight && isActorIncrementHeight
 }
 
 // shouldIncrementSupplier returns true if the supplier should be incremented based on
@@ -699,18 +721,22 @@ func (plan *actorLoadTestIncrementPlan) shouldIncrementSupplierCount(
 	actorCount int64,
 	startBlockHeight int64,
 ) bool {
+	maxSupplierCountReached := actorCount == plan.maxActorCount
+	if maxSupplierCountReached {
+		return false
+	}
+
 	initialSessionNumber := keeper.GetSessionNumber(startBlockHeight)
 	// TODO_TECHDEBT(#21): replace with gov param query when available.
 	supplierSessionIncRate := plan.blocksPerIncrement / keeper.NumBlocksPerSession
 	nextSessionNumber := sessionInfo.sessionNumber + 1 - initialSessionNumber
 	isSessionEndHeight := sessionInfo.blockHeight == sessionInfo.sessionEndBlockHeight
 	isActorIncrementHeight := nextSessionNumber%supplierSessionIncRate == 0
-	maxSupplierCountReached := actorCount == plan.maxActorCount
 
 	// Only increment the supplier if the session is at its last block, the next
 	// session number is a multiple of the supplierSessionIncRate and the
 	// maxSupplierCountReached has not been reached.
-	return isSessionEndHeight && !maxSupplierCountReached && isActorIncrementHeight
+	return isSessionEndHeight && isActorIncrementHeight
 }
 
 // addActor populates the actors's amount to stake and accAddress using the
@@ -1239,27 +1265,38 @@ func (s *relaysSuite) ensureUpdatedMaxDelegations(maxGateways int64) {
 
 // parseActorLoadTestIncrementPlans parses the actor load test increment plans
 // from the given table and returns the actorLoadTestIncrementPlans struct.
-func (s *relaysSuite) parseActorLoadTestIncrementPlans(table gocuke.DataTable) *actorLoadTestIncrementPlans {
-	return &actorLoadTestIncrementPlans{
-		gateways: actorLoadTestIncrementPlan{
-			initialActorCount:   s.gatewayInitialCount,
-			actorIncrementCount: table.Cell(gatewayRowIdx, actorIncrementAmountColIdx).Int64(),
-			blocksPerIncrement:  table.Cell(gatewayRowIdx, blocksPerIncrementColIdx).Int64(),
-			maxActorCount:       table.Cell(gatewayRowIdx, maxAmountColIdx).Int64(),
-		},
+func (s *relaysSuite) parseActorLoadTestIncrementPlans(
+	table gocuke.DataTable,
+) *actorLoadTestIncrementPlans {
+	actorPlans := &actorLoadTestIncrementPlans{
 		apps: actorLoadTestIncrementPlan{
 			initialActorCount:   s.appInitialCount,
 			actorIncrementCount: table.Cell(applicationRowIdx, actorIncrementAmountColIdx).Int64(),
 			blocksPerIncrement:  table.Cell(applicationRowIdx, blocksPerIncrementColIdx).Int64(),
 			maxActorCount:       table.Cell(applicationRowIdx, maxAmountColIdx).Int64(),
 		},
-		suppliers: actorLoadTestIncrementPlan{
-			initialActorCount:   s.supplierInitialCount,
-			actorIncrementCount: table.Cell(supplierRowIdx, actorIncrementAmountColIdx).Int64(),
-			blocksPerIncrement:  table.Cell(supplierRowIdx, blocksPerIncrementColIdx).Int64(),
-			maxActorCount:       table.Cell(supplierRowIdx, maxAmountColIdx).Int64(),
-		},
+		persistentChain: s.persistentChain,
 	}
+
+	if s.persistentChain {
+		return actorPlans
+	}
+
+	actorPlans.gateways = actorLoadTestIncrementPlan{
+		initialActorCount:   s.gatewayInitialCount,
+		actorIncrementCount: table.Cell(gatewayRowIdx, actorIncrementAmountColIdx).Int64(),
+		blocksPerIncrement:  table.Cell(gatewayRowIdx, blocksPerIncrementColIdx).Int64(),
+		maxActorCount:       table.Cell(gatewayRowIdx, maxAmountColIdx).Int64(),
+	}
+
+	actorPlans.suppliers = actorLoadTestIncrementPlan{
+		initialActorCount:   s.supplierInitialCount,
+		actorIncrementCount: table.Cell(supplierRowIdx, actorIncrementAmountColIdx).Int64(),
+		blocksPerIncrement:  table.Cell(supplierRowIdx, blocksPerIncrementColIdx).Int64(),
+		maxActorCount:       table.Cell(supplierRowIdx, maxAmountColIdx).Int64(),
+	}
+
+	return actorPlans
 }
 
 // countClaimAndProofs asynchronously counts the number of claim and proof messages
@@ -1369,4 +1406,21 @@ func (s *relaysSuite) logAndAbortTest(txResults []*types.TxResult, errorMsg stri
 	}
 	s.cancelCtx()
 	s.Fatal(errorMsg)
+}
+
+func (s *relaysSuite) populateWithKnownGateways(
+	plans *actorLoadTestIncrementPlans,
+) (gateways []*accountInfo) {
+	s.gatewayInitialCount = int64(len(s.gatewayUrls))
+	plans.gateways.maxActorCount = s.gatewayInitialCount
+	plans.gateways.initialActorCount = s.gatewayInitialCount
+	for gwAddress := range s.gatewayUrls {
+		gateway := &accountInfo{
+			accAddress: sdk.MustAccAddressFromBech32(gwAddress),
+			keyName:    gwAddress,
+		}
+		gateways = append(gateways, gateway)
+	}
+
+	return gateways
 }

@@ -11,6 +11,9 @@ import (
 type ProvisionedActorConfig struct {
 	// KeyName is the **name** of the key in the keyring to be used by the given actor.
 	KeyName string `yaml:"key_name"`
+	// Address is the address of the actor, which is used to identify already staked
+	// actors in the network in persistent chains.
+	Address string `yaml:"address"`
 	// ExposedUrl is the URL where the actor is expected to be reachable.
 	ExposedUrl string `yaml:"exposed_url"`
 }
@@ -18,8 +21,11 @@ type ProvisionedActorConfig struct {
 // LoadTestManifestYAML is the struct which the load test manifest is deserialized into.
 // It contains the list of suppliers and gateways that the load test expects to be pre-provisioned.
 type LoadTestManifestYAML struct {
-	Suppliers []ProvisionedActorConfig `yaml:"suppliers"`
-	Gateways  []ProvisionedActorConfig `yaml:"gateways"`
+	// PersistentChain is a flag that indicates whether the test is expected to be
+	// run on localnet or long living chains (i.e. TestNet/DevNet).
+	PersistentChain bool                     `yaml:"persistent_chain"`
+	Suppliers       []ProvisionedActorConfig `yaml:"suppliers"`
+	Gateways        []ProvisionedActorConfig `yaml:"gateways"`
 }
 
 // ParseLoadTestManifest reads the load test manifest from the given byte slice
@@ -40,8 +46,30 @@ func ParseLoadTestManifest(manifestContent []byte) (*LoadTestManifestYAML, error
 		return nil, ErrLoadTestInvalidManifest.Wrap("empty gateways entry")
 	}
 
-	if len(parsedManifest.Suppliers) == 0 {
+	if len(parsedManifest.Suppliers) == 0 && !parsedManifest.PersistentChain {
 		return nil, ErrLoadTestInvalidManifest.Wrap("empty suppliers entry")
+	}
+
+	for _, gateway := range parsedManifest.Gateways {
+		if gateway.KeyName == "" && !parsedManifest.PersistentChain {
+			return nil, ErrLoadTestInvalidManifest.Wrap("empty gateway key name")
+		}
+
+		if gateway.Address == "" && parsedManifest.PersistentChain {
+			return nil, ErrLoadTestInvalidManifest.Wrap("empty gateway address")
+		}
+
+		if gateway.ExposedUrl == "" {
+			return nil, ErrLoadTestInvalidManifest.Wrap("empty gateway server url")
+		}
+
+		if _, err := url.Parse(gateway.ExposedUrl); err != nil {
+			return nil, ErrLoadTestInvalidManifest.Wrapf("invalid supplier server url: %s", err)
+		}
+	}
+
+	if parsedManifest.PersistentChain {
+		return &parsedManifest, nil
 	}
 
 	for _, supplier := range parsedManifest.Suppliers {
@@ -54,20 +82,6 @@ func ParseLoadTestManifest(manifestContent []byte) (*LoadTestManifestYAML, error
 		}
 
 		if _, err := url.Parse(supplier.ExposedUrl); err != nil {
-			return nil, ErrLoadTestInvalidManifest.Wrapf("invalid supplier server url: %s", err)
-		}
-	}
-
-	for _, gateway := range parsedManifest.Gateways {
-		if gateway.KeyName == "" {
-			return nil, ErrLoadTestInvalidManifest.Wrap("empty gateway key name")
-		}
-
-		if gateway.ExposedUrl == "" {
-			return nil, ErrLoadTestInvalidManifest.Wrap("empty gateway server url")
-		}
-
-		if _, err := url.Parse(gateway.ExposedUrl); err != nil {
 			return nil, ErrLoadTestInvalidManifest.Wrapf("invalid supplier server url: %s", err)
 		}
 	}

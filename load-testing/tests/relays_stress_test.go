@@ -44,8 +44,8 @@ const (
 // presented as rows in a table.
 // NB: +1 to skip the header row.
 const (
-	gatewayRowIdx = iota + 1
-	applicationRowIdx
+	applicationRowIdx = iota + 1
+	gatewayRowIdx
 	supplierRowIdx
 )
 
@@ -85,10 +85,6 @@ var (
 	// testService is the service ID for that all applications and suppliers will
 	// be using in this test.
 	testService = &sharedtypes.Service{Id: "anvil"}
-	// loadTestManifestPath is the path to the load test manifest file.
-	// It is used to initialize the provisioned gateways and suppliers used in the test.
-	// TODO_TECHDEBT: Get the path of the load test manifest from CLI flags.
-	loadTestManifestPath = "../../loadtest_manifest.yaml"
 	// blockDuration is the duration of a block in seconds.
 	// NB: This value SHOULD be equal to `timeout_propose` in `config.yml`.
 	blockDuration = int64(2)
@@ -212,6 +208,10 @@ type relaysSuite struct {
 	// expectedClaimsAndProofsCount is the expected number of claims and proofs
 	// to be committed on-chain during the test.
 	expectedClaimsAndProofsCount int
+
+	// persistentChain is a flag that indicates whether the test is expected to be
+	// run on localnet or long living chains (i.e. TestNet/DevNet).
+	persistentChain bool
 }
 
 // accountInfo contains the account info needed to build and send transactions.
@@ -331,8 +331,14 @@ func (s *relaysSuite) ARateOfRelayRequestsPerSecondIsSentPerApplication(appRPS s
 func (s *relaysSuite) TheFollowingInitialActorsAreStaked(table gocuke.DataTable) {
 	// Store the initial counts of the actors to be staked to be used later in the test,
 	// when information about max actors to be staked is available.
-	s.gatewayInitialCount = table.Cell(gatewayRowIdx, initialActorCountColIdx).Int64()
 	s.appInitialCount = table.Cell(applicationRowIdx, initialActorCountColIdx).Int64()
+	// If the chain is persistent, the gateway and supplier counts are not controlled
+	// by the test suite, so the initial counts are not stored.
+	if s.persistentChain {
+		return
+	}
+
+	s.gatewayInitialCount = table.Cell(gatewayRowIdx, initialActorCountColIdx).Int64()
 	s.supplierInitialCount = table.Cell(supplierRowIdx, initialActorCountColIdx).Int64()
 }
 
@@ -355,9 +361,11 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 	// applications to delegate to all gateways.
 	// This is to ensure that requests are distributed evenly across all gateways
 	// at any given time.
-	s.sendAdjustMaxDelegationsParamTx(plans.gateways.maxActorCount)
-	s.waitForTxsToBeCommitted()
-	s.ensureUpdatedMaxDelegations(plans.gateways.maxActorCount)
+	if !s.persistentChain {
+		s.sendAdjustMaxDelegationsParamTx(plans.gateways.maxActorCount)
+		s.waitForTxsToBeCommitted()
+		s.ensureUpdatedMaxDelegations(plans.gateways.maxActorCount)
+	}
 
 	// Fund all the provisioned suppliers and gateways since their addresses are
 	// known and they are not created on the fly, while funding only the initially
@@ -387,6 +395,10 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 
 	// Update the list of staked suppliers.
 	s.activeSuppliers = append(s.activeSuppliers, suppliers...)
+
+	if s.persistentChain {
+		gateways = s.populateWithKnownGateways(plans)
+	}
 
 	// Delegate the initial applications to the initial gateways
 	s.sendDelegateInitialAppsTxs(applications, gateways)

@@ -11,12 +11,19 @@ import (
 )
 
 var (
-	flagLogLevel string
-	logger       polylog.Logger
+	flagLogLevel         string
+	flagManifestFilePath string = "../../loadtest_manifest.yaml"
+	logger               polylog.Logger
 )
 
 func init() {
 	flag.StringVar(&flagLogLevel, "log-level", "", "Specifies the log level for the runner")
+	flag.StringVar(
+		&flagManifestFilePath,
+		"manifest",
+		"../../loadtest_manifest.yaml",
+		"Specifies the path to the load test manifest file",
+	)
 }
 
 func TestMain(m *testing.M) {
