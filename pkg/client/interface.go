@@ -278,4 +278,5 @@ type SessionQueryClient interface {
 	GetParams(ctx context.Context) (*sessiontypes.Params, error)
 	GetSessionGracePeriodBlockCount(ctx context.Context, blockHeight int64) (uint64, error)
 	IsWithinGracePeriod(ctx context.Context, sessionEndBlockHeight, currentBlockHeight int64) (bool, error)
+	IsPastGracePeriod(ctx context.Context, sessionEndBlockHeight, currentBlockHeight int64) (bool, error)
 }
