@@ -218,10 +218,16 @@ func (rs *relayerSessionsManager) mapBlockToSessionsToClaim(
 					continue
 				}
 
+				isPastSessionGracePeriod, err := rs.sessionQueryClient.IsPastGracePeriod(ctx, endBlockHeight, block.Height())
+				if err != nil {
+					rs.logger.Error().Err(err).Msg("failed to check if past grace period")
+					return nil, true
+				}
+
 				// Separate the sessions that are on-time from the ones that are late.
 				// If the session is past its grace period, it is considered late,
 				// otherwise it is on time and will be emitted last.
-				if IsPastGracePeriod(endBlockHeight, block.Height()) {
+				if isPastSessionGracePeriod {
 					lateSessions = append(lateSessions, sessionTree)
 				} else {
 					onTimeSessions = append(onTimeSessions, sessionTree)
@@ -327,10 +333,4 @@ func (rs *relayerSessionsManager) mapAddMinedRelayToSessionTree(
 
 	// Skip because this map function only outputs errors.
 	return nil, true
-}
-
-// IsPastGracePeriod checks if the grace period for the session, given its end
-// block height, has ended.
-func IsPastGracePeriod(sessionEndBlockHeight, currentBlockHeight int64) bool {
-	return currentBlockHeight > sessionEndBlockHeight+sessionkeeper.GetSessionGracePeriodBlockCount()
 }

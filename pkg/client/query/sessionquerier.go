@@ -112,5 +112,23 @@ func (sessq *sessionQuerier) IsWithinGracePeriod(
 	}
 
 	sessionGracePeriodEndHeight := sessionEndBlockHeight + int64(sessionGracePeriodEndBlocks)
+
 	return currentBlockHeight <= sessionGracePeriodEndHeight, nil
+}
+
+// IsPastGracePeriod checks if the grace period for the session, given its end
+// block height, has ended.
+func (sessq *sessionQuerier) IsPastGracePeriod(
+	ctx context.Context,
+	sessionEndBlockHeight,
+	queryHeight int64,
+) (bool, error) {
+	sessionGracePeriodBlockCount, err := sessq.GetSessionGracePeriodBlockCount(ctx, queryHeight)
+	if err != nil {
+		return false, err
+	}
+
+	sessionGracePeriodEndHeight := sessionEndBlockHeight + int64(sessionGracePeriodBlockCount)
+
+	return queryHeight > sessionGracePeriodEndHeight, nil
 }
