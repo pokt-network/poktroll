@@ -2,7 +2,6 @@ package miner
 
 import (
 	"context"
-	"hash"
 
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
@@ -32,9 +31,6 @@ var (
 // TODO_BLOCKER: The relay hashing and relay difficulty mechanisms & values must come
 // from on-chain.
 type miner struct {
-	// relayHasher is a function which returns a hash.Hash interfact type. It is
-	// used to hash serialized relays to measure their mining difficulty.
-	relayHasher func() hash.Hash
 	// relayDifficultyBits is the minimum difficulty that a relay must have to be
 	// volume / reward applicable.
 	relayDifficultyBits int

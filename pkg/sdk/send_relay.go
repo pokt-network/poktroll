@@ -27,6 +27,7 @@ func (sdk *poktrollSDK) SendRelay(
 ) (response *types.RelayResponse, err error) {
 	// Retrieve the request's payload.
 	payloadBz, err := io.ReadAll(request.Body)
+	request.Body.Close()
 	if err != nil {
 		return nil, ErrSDKHandleRelay.Wrapf("reading request body: %s", err)
 	}
@@ -90,6 +91,7 @@ func (sdk *poktrollSDK) SendRelay(
 
 	// Read the response body bytes.
 	relayResponseBz, err := io.ReadAll(relayHTTPResponse.Body)
+	relayHTTPResponse.Body.Close()
 	if err != nil {
 		return nil, ErrSDKHandleRelay.Wrapf("error reading relay response body: %s", err)
 	}
