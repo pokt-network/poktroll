@@ -6,7 +6,7 @@ sidebar_position: 0
 - [Release binaries](#release-binaries)
 - [Installing from source](#installing-from-source)
   - [Prerequisites](#prerequisites)
-- [Homebrew and Tea](#homebrew-and-tea)
+- [Homebrew and pkgx](#homebrew-and-pkgx)
 - [Windows Users](#windows-users)
 
 ## Release binaries
@@ -51,11 +51,11 @@ Verify it worked by running:
 poktrolld --help
 ```
 
-## Homebrew and Tea
+## Homebrew and pkgx
 
 :::tip
 We have an [open GitHub issue](https://github.com/pokt-network/poktroll/issues/535)
-to introduce `poktrolld` to [brew](https://brew.sh/) and [tea](https://tea.xyz/).
+to introduce `poktrolld` to [brew](https://brew.sh/) and [pkgx](https://github.com/pkgxdev/pkgx).
 
 Please reach out to us in the ticket if you want to pick this ticket!
 :::
