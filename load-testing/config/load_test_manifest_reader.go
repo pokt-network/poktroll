@@ -24,6 +24,8 @@ type LoadTestManifestYAML struct {
 	// PersistentChain is a flag that indicates whether the test is expected to be
 	// run on localnet or long living chains (i.e. TestNet/DevNet).
 	PersistentChain bool                     `yaml:"persistent_chain"`
+	TestNetNode     string                   `yaml:"testnet_node"`
+	ServiceId       string                   `yaml:"service_id"`
 	Suppliers       []ProvisionedActorConfig `yaml:"suppliers"`
 	Gateways        []ProvisionedActorConfig `yaml:"gateways"`
 }
@@ -48,6 +50,14 @@ func ParseLoadTestManifest(manifestContent []byte) (*LoadTestManifestYAML, error
 
 	if len(parsedManifest.Suppliers) == 0 && !parsedManifest.PersistentChain {
 		return nil, ErrLoadTestInvalidManifest.Wrap("empty suppliers entry")
+	}
+
+	if parsedManifest.TestNetNode == "" && parsedManifest.PersistentChain {
+		return nil, ErrLoadTestInvalidManifest.Wrap("empty testnet node url")
+	}
+
+	if parsedManifest.ServiceId == "" {
+		return nil, ErrLoadTestInvalidManifest.Wrap("empty service id")
 	}
 
 	for _, gateway := range parsedManifest.Gateways {

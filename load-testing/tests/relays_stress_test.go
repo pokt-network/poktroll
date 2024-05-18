@@ -4,6 +4,7 @@ package tests
 
 import (
 	"context"
+	"net/url"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -14,6 +15,7 @@ import (
 	"cosmossdk.io/math"
 	"github.com/cometbft/cometbft/abci/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/pokt-network/poktroll/testutil/testclient"
 	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
 
@@ -76,15 +78,14 @@ var (
 	// By default, it is set to the number of logical CPUs available to the process.
 	maxConcurrentRequestLimit = runtime.GOMAXPROCS(0)
 	// fundingAccountKeyName is the key name of the account used to fund other accounts.
-	// TODO_TECHDEBT(#512): Replace with `faucet`
-	fundingAccountKeyName = "pnf"
+	fundingAccountKeyName = "faucet"
 	// supplierStakeAmount is the amount of tokens to stake by suppliers.
 	supplierStakeAmount sdk.Coin
 	// gatewayStakeAmount is the amount of tokens to stake by gateways.
 	gatewayStakeAmount sdk.Coin
-	// testService is the service ID for that all applications and suppliers will
+	// testedService is the service ID for that all applications and suppliers will
 	// be using in this test.
-	testService = &sharedtypes.Service{Id: "anvil"}
+	testedService *sharedtypes.Service
 	// blockDuration is the duration of a block in seconds.
 	// NB: This value SHOULD be equal to `timeout_propose` in `config.yml`.
 	blockDuration = int64(2)
@@ -286,6 +287,33 @@ func (s *relaysSuite) LocalnetIsRunning() {
 	s.gatewayUrls = make(map[string]string)
 	s.suppliersUrls = make(map[string]string)
 
+	// Parse the load test manifest.
+	loadTestParams := s.initializeLoadTestParams()
+
+	// Set the tested service ID from the load test manifest.
+	testedService = &sharedtypes.Service{Id: loadTestParams.ServiceId}
+
+	// If the test is run on a persistent chain, set the CometLocalTCPURL and
+	// CometLocalWebsocketURL to the TestNetNode URL. These variables are used
+	// by the testtx txClient to send transactions to the network.
+	if s.persistentChain {
+		testclient.CometLocalTCPURL = loadTestParams.TestNetNode
+
+		webSocketURL, err := url.Parse(loadTestParams.TestNetNode)
+		require.NoError(s, err)
+
+		if webSocketURL.Scheme == "https" {
+			webSocketURL.Scheme = "wss"
+		} else {
+			webSocketURL.Scheme = "ws"
+		}
+		testclient.CometLocalWebsocketURL = webSocketURL.String() + "/websocket"
+
+		// Update the block duration when running on a persistent chain.
+		// TODO_TECHDEBT: Get the block duration value from the chain or the manifest.
+		blockDuration = 60
+	}
+
 	// Set up the blockClient that will be notifying the suite about the committed blocks.
 	s.blockClient = testblock.NewLocalnetClient(s.ctx, s.TestingT.(*testing.T))
 	channel.ForEach(
@@ -307,9 +335,6 @@ func (s *relaysSuite) LocalnetIsRunning() {
 
 	// Initialize the funding account.
 	s.initFundingAccount(fundingAccountKeyName)
-
-	// Initialize the provisioned gateways and suppliers from the load test manifest.
-	s.initializeProvisionedActors()
 
 	// Initialize the on-chain claims and proofs counter.
 	s.countClaimAndProofs()
@@ -333,7 +358,7 @@ func (s *relaysSuite) TheFollowingInitialActorsAreStaked(table gocuke.DataTable)
 	// when information about max actors to be staked is available.
 	s.appInitialCount = table.Cell(applicationRowIdx, initialActorCountColIdx).Int64()
 	// If the chain is persistent, the gateway and supplier counts are not controlled
-	// by the test suite, so the initial counts are not stored.
+	// by the test suite and the initial counts are not stored.
 	if s.persistentChain {
 		return
 	}
@@ -357,11 +382,11 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 	// submit all claims and proofs.
 	s.testDurationBlocks = plans.totalDurationBlocks()
 
-	// Adjust the max delegations parameter to the max gateways to permit all
-	// applications to delegate to all gateways.
-	// This is to ensure that requests are distributed evenly across all gateways
-	// at any given time.
 	if !s.persistentChain {
+		// Adjust the max delegations parameter to the max gateways to permit all
+		// applications to delegate to all gateways.
+		// This is to ensure that requests are distributed evenly across all gateways
+		// at any given time.
 		s.sendAdjustMaxDelegationsParamTx(plans.gateways.maxActorCount)
 		s.waitForTxsToBeCommitted()
 		s.ensureUpdatedMaxDelegations(plans.gateways.maxActorCount)
@@ -396,6 +421,8 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 	// Update the list of staked suppliers.
 	s.activeSuppliers = append(s.activeSuppliers, suppliers...)
 
+	// In a persistent chain environment, the available gateways and their corresponding
+	// addresses are added without staking them.
 	if s.persistentChain {
 		gateways = s.populateWithKnownGateways(plans)
 	}

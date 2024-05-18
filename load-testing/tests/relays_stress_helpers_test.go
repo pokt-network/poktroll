@@ -116,9 +116,9 @@ func (s *relaysSuite) initFundingAccount(fundingAccountKeyName string) {
 	}
 }
 
-// initializeProvisionedActors parses the load test manifest and initializes the
+// initializeLoadTestParams parses the load test manifest and initializes the
 // gateway and supplier keyNames and the URLs used to send requests to.
-func (s *relaysSuite) initializeProvisionedActors() {
+func (s *relaysSuite) initializeLoadTestParams() *config.LoadTestManifestYAML {
 	loadTestManifestContent, err := os.ReadFile(flagManifestFilePath)
 	require.NoError(s, err)
 
@@ -128,6 +128,9 @@ func (s *relaysSuite) initializeProvisionedActors() {
 	s.persistentChain = loadTestManifest.PersistentChain
 
 	for _, gateway := range loadTestManifest.Gateways {
+		// In the case of persistent chain, the test has no entry for the gateway
+		// and no keyName is provided. The gateway address is used to identify the
+		// gateway in the network.
 		if s.persistentChain {
 			s.gatewayUrls[gateway.Address] = gateway.ExposedUrl
 		} else {
@@ -138,6 +141,8 @@ func (s *relaysSuite) initializeProvisionedActors() {
 	for _, supplier := range loadTestManifest.Suppliers {
 		s.suppliersUrls[supplier.KeyName] = supplier.ExposedUrl
 	}
+
+	return loadTestManifest
 }
 
 // mapSessionInfoForLoadTestDurationFn returns a MapFn that maps over the session info
@@ -255,6 +260,8 @@ func (s *relaysSuite) mapSessionInfoForLoadTestDurationFn(
 
 // validateActorLoadTestIncrementPlans
 func (s *relaysSuite) validateActorLoadTestIncrementPlans(plans *actorLoadTestIncrementPlans) {
+	// In persistent chain mode increment plans are skipped and there is no need
+	// to validate them.
 	if s.persistentChain {
 		return
 	}
@@ -370,6 +377,9 @@ func (plans *actorLoadTestIncrementPlans) totalDurationBlocks() int64 {
 // elapsed when the maxActorCount for the given actor has been committed.
 func (plan *actorLoadTestIncrementPlan) blocksToFinalIncrementStart() int64 {
 	actorIncrementNum := plan.maxActorCount - plan.initialActorCount
+	if actorIncrementNum == 0 {
+		return 0
+	}
 	return actorIncrementNum / plan.actorIncrementCount * plan.blocksPerIncrement
 }
 
@@ -621,7 +631,7 @@ func (s *relaysSuite) addPendingStakeApplicationMsg(application *accountInfo) {
 	application.addPendingMsg(apptypes.NewMsgStakeApplication(
 		application.accAddress.String(),
 		application.amountToStake,
-		[]*sharedtypes.ApplicationServiceConfig{{Service: testService}},
+		[]*sharedtypes.ApplicationServiceConfig{{Service: testedService}},
 	))
 }
 
@@ -766,7 +776,7 @@ func (s *relaysSuite) addPendingStakeSupplierMsg(supplier *accountInfo) {
 		supplier.amountToStake,
 		[]*sharedtypes.SupplierServiceConfig{
 			{
-				Service: testService,
+				Service: testedService,
 				Endpoints: []*sharedtypes.SupplierEndpoint{
 					{
 						Url:     s.suppliersUrls[supplier.keyName],
@@ -1013,7 +1023,7 @@ func (s *relaysSuite) sendRelay(iteration uint64, relayPayload string) (appKeyNa
 	gatewayUrl.RawQuery = query.Encode()
 
 	// Use the pre-defined service ID that all application and suppliers are staking for.
-	gatewayUrl.Path = testService.Id
+	gatewayUrl.Path = testedService.Id
 
 	// TODO_TECHDEBT: Capture the relay response to check for failing relays.
 	_, err = http.DefaultClient.Post(
@@ -1275,9 +1285,11 @@ func (s *relaysSuite) parseActorLoadTestIncrementPlans(
 			blocksPerIncrement:  table.Cell(applicationRowIdx, blocksPerIncrementColIdx).Int64(),
 			maxActorCount:       table.Cell(applicationRowIdx, maxAmountColIdx).Int64(),
 		},
-		persistentChain: s.persistentChain,
 	}
 
+	// If the persistentChain flag is set, the gateway and supplier actors are not
+	// incremented and all the staking and scaling logic is skipped.
+	// Their actorPlan is not needed in that case.
 	if s.persistentChain {
 		return actorPlans
 	}
@@ -1408,6 +1420,9 @@ func (s *relaysSuite) logAndAbortTest(txResults []*types.TxResult, errorMsg stri
 	s.Fatal(errorMsg)
 }
 
+// populateWithKnownApplications creates a list of gateways based on the gatewayUrls
+// provided in the test manifest. It is used in persistent chain tests where the
+// gateways are not under the test's control and are expected to be already staked.
 func (s *relaysSuite) populateWithKnownGateways(
 	plans *actorLoadTestIncrementPlans,
 ) (gateways []*accountInfo) {
