@@ -6,10 +6,9 @@ devnet-test-e2e:
 
       You may need to run `make trigger_ci` to submit an empty commit that'll trigger the tests.
 
-      Note: When `devnet-test-e2e` is added, `devnet` and `push-image` are automatically assigned to the PR.
+      [GCP workloads (change the namespace)](https://console.cloud.google.com/kubernetes/workload/overview?project=protocol-us-central1-d505)
+      [Network overview dashboard](https://grafana.poktroll.com/d/b799a130-3789-416d-aa7f-de5f4599cf03/network-overview?orgId=1&var-namespace=devnet-issue-{issue-id})
 
-      GCP workloads (change the namespace): https://console.cloud.google.com/kubernetes/workload/overview?project=protocol-us-central1-d505
-      Network overview dashboard (change the network name): https://grafana.poktroll.com/d/b799a130-3789-416d-aa7f-de5f4599cf03/network-overview
     label:
       - devnet
       - push-image
