@@ -84,6 +84,9 @@ if localnet_config["observability"]["enabled"]:
     )
     helm_repo("grafana-helm-repo", "https://grafana.github.io/helm-charts")
 
+    # Increase timeout for building the image
+    update_settings(k8s_upsert_timeout_secs=60)
+
     helm_resource(
         "observability",
         "prometheus-community/kube-prometheus-stack",
