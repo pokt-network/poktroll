@@ -7,7 +7,7 @@ import (
 	"github.com/cosmos/gogoproto/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/client"
-	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
+	"github.com/pokt-network/poktroll/x/session"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -95,25 +95,24 @@ func (sessq *sessionQuerier) GetSessionGracePeriodBlockCount(
 	_ = queryHeight
 
 	numBlocksPerSession := paramsRes.GetParams().NumBlocksPerSession
-
-	return sessionkeeper.SessionGracePeriod * numBlocksPerSession, nil
+	return session.GetSessionGracePeriodBlockCount(numBlocksPerSession), nil
 }
 
 // IsWithinGracePeriod checks if the grace period for the session has ended
 // and signals whether it is time to create a claim for it.
 func (sessq *sessionQuerier) IsWithinGracePeriod(
 	ctx context.Context,
-	sessionEndBlockHeight,
-	currentBlockHeight int64,
+	sessionEndHeight,
+	queryHeight int64,
 ) (bool, error) {
-	sessionGracePeriodEndBlocks, err := sessq.GetSessionGracePeriodBlockCount(ctx, currentBlockHeight)
+	paramsRes, err := sessq.sessionQuerier.Params(ctx, &sessiontypes.QueryParamsRequest{})
 	if err != nil {
 		return false, err
 	}
 
-	sessionGracePeriodEndHeight := sessionEndBlockHeight + int64(sessionGracePeriodEndBlocks)
+	numBlocksPerSession := paramsRes.GetParams().NumBlocksPerSession
 
-	return currentBlockHeight <= sessionGracePeriodEndHeight, nil
+	return session.IsWithinGracePeriod(numBlocksPerSession, sessionEndHeight, queryHeight), nil
 }
 
 // IsPastGracePeriod checks if the grace period for the session, given its end
@@ -123,12 +122,12 @@ func (sessq *sessionQuerier) IsPastGracePeriod(
 	sessionEndBlockHeight,
 	queryHeight int64,
 ) (bool, error) {
-	sessionGracePeriodBlockCount, err := sessq.GetSessionGracePeriodBlockCount(ctx, queryHeight)
+	paramsRes, err := sessq.sessionQuerier.Params(ctx, &sessiontypes.QueryParamsRequest{})
 	if err != nil {
 		return false, err
 	}
 
-	sessionGracePeriodEndHeight := sessionEndBlockHeight + int64(sessionGracePeriodBlockCount)
+	numBlocksPerSession := paramsRes.GetParams().NumBlocksPerSession
 
-	return queryHeight > sessionGracePeriodEndHeight, nil
+	return session.IsPastGracePeriod(numBlocksPerSession, sessionEndBlockHeight, queryHeight), nil
 }
