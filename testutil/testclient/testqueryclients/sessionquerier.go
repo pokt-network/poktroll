@@ -9,6 +9,7 @@ import (
 	"github.com/golang/mock/gomock"
 
 	"github.com/pokt-network/poktroll/testutil/mockclient"
+	"github.com/pokt-network/poktroll/x/session"
 	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -58,6 +59,14 @@ func NewTestSessionQueryClient(
 		}).
 		AnyTimes()
 
+	sessionQuerier.EXPECT().IsWithinGracePeriod(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(IsWithinDefaultGracePeriod).
+		AnyTimes()
+
+	sessionQuerier.EXPECT().IsPastGracePeriod(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(IsPastDefaultGracePeriod).
+		AnyTimes()
+
 	return sessionQuerier
 }
 
@@ -98,4 +107,14 @@ func AddToExistingSessions(
 	t.Cleanup(func() {
 		delete(sessionsMap, sessionId)
 	})
+}
+
+func IsWithinDefaultGracePeriod(_ context.Context, sessionEndHeight, queryHeight int64) (bool, error) {
+	numBlocksPerSession := sessiontypes.DefaultParams().NumBlocksPerSession
+	return session.IsWithinGracePeriod(numBlocksPerSession, sessionEndHeight, queryHeight), nil
+}
+
+func IsPastDefaultGracePeriod(_ context.Context, sessionEndHeight, queryHeight int64) (bool, error) {
+	numBlocksPerSession := sessiontypes.DefaultParams().NumBlocksPerSession
+	return session.IsPastGracePeriod(numBlocksPerSession, sessionEndHeight, queryHeight), nil
 }
