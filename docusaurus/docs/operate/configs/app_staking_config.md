@@ -38,7 +38,7 @@ poktrolld tx application stake-application \
   --config ./stake_config.yaml \
   --keyring-backend test \
   --from application1 \
-  --node tcp://poktroll-node:36657
+  --node tcp://poktroll-node:26657
 ```
 
 ## Configuration

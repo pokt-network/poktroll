@@ -176,19 +176,19 @@ you can click in the top left corner to view its [grafana dashboard](http://loca
 You can query the status of the blockchain using `poktrolld` by running:
 
 ```bash
-poktrolld status --node=tcp://127.0.0.1:36657 | jq
+poktrolld status --node=tcp://127.0.0.1:26657 | jq
 ```
 
 Alternatively, you use the [CometBFT](https://github.com/cometbft/cometbft) status directly at:
 
 ```bash
-curl -s -X POST localhost:36657/status | jq
+curl -s -X POST localhost:26657/status | jq
 ```
 
 Or at latest block at:
 
 ```bash
-curl -s -X POST localhost:36657/block | jq
+curl -s -X POST localhost:26657/block | jq
 ```
 
 For example, you can get the height of the blockchain by visiting the
@@ -196,7 +196,7 @@ For example, you can get the height of the blockchain by visiting the
 or from the CLI like so:
 
 ```bash
-curl -s -X POST localhost:36657/block | jq '.result.block.last_commit.height'
+curl -s -X POST localhost:26657/block | jq '.result.block.last_commit.height'
 ```
 
 ## 2. Fund New Accounts
@@ -276,7 +276,7 @@ You can send some uPOKT to your `shannon_supplier` by running:
 poktrolld \
   tx bank send \
   faucet $SHANNON_SUPPLIER 420000000000069upokt \
-  --node tcp://127.0.0.1:36657 \
+  --node tcp://127.0.0.1:26657 \
   --home=./localnet/poktrolld
 ```
 
@@ -299,7 +299,7 @@ Let's do the same thing for the `shannon_application`:
 poktrolld \
   tx bank send \
   faucet $SHANNON_APPLICATION 420000000000069upokt \
-  --node tcp://127.0.0.1:36657 \
+  --node tcp://127.0.0.1:26657 \
   --home=./localnet/poktrolld
 ```
 
@@ -382,7 +382,7 @@ poktrolld \
   --config shannon_supplier_config.yaml \
   --keyring-backend test \
   --from shannon_supplier \
-  --node tcp://127.0.0.1:36657 \
+  --node tcp://127.0.0.1:26657 \
   --home=./localnet/poktrolld \
   --yes
 ```
@@ -390,7 +390,7 @@ poktrolld \
 And verify that the supplier is now staked with:
 
 ```bash
-poktrolld query supplier show-supplier $SHANNON_SUPPLIER --node tcp://127.0.0.1:36657
+poktrolld query supplier show-supplier $SHANNON_SUPPLIER --node tcp://127.0.0.1:26657
 ```
 
 ### 3.4 Prepare the RelayMiner configuration
@@ -409,9 +409,9 @@ metrics:
   enabled: true
   addr: :9090
 pocket_node:
-  query_node_rpc_url: tcp://127.0.0.1:36657
-  query_node_grpc_url: tcp://127.0.0.1:36658
-  tx_node_rpc_url: tcp://127.0.0.1:36657
+  query_node_rpc_url: tcp://127.0.0.1:26657
+  query_node_grpc_url: tcp://127.0.0.1:9090
+  tx_node_rpc_url: tcp://127.0.0.1:26657
 suppliers:
   - service_id: anvil
     listen_url: http://localhost:6942
@@ -488,14 +488,14 @@ poktrolld --home=./localnet/poktrolld \
   --config shannon_app_config.yaml \
   --keyring-backend test \
   --from shannon_application \
-  --node tcp://127.0.0.1:36657 \
+  --node tcp://127.0.0.1:26657 \
   --yes
 ```
 
 And verify that the application is now staked with:
 
 ```bash
-poktrolld query application show-application $SHANNON_APPLICATION --node tcp://127.0.0.1:36657
+poktrolld query application show-application $SHANNON_APPLICATION --node tcp://127.0.0.1:26657
 ```
 
 You can also you re-run, `make app_list` you should see that `SHANNON_APPLICATION` is now staked as an app:
@@ -510,8 +510,8 @@ The following example should get you started:
 
 ```yaml
 cat <<EOF >> shannon_appgate_config.yaml
-query_node_rpc_url: tcp://127.0.0.1:36657
-query_node_grpc_url: tcp://127.0.0.1:36658
+query_node_rpc_url: tcp://127.0.0.1:26657
+query_node_grpc_url: tcp://127.0.0.1:9090
 self_signing: true
 signing_key: shannon_application
 listening_endpoint: http://localhost:42042
@@ -535,7 +535,7 @@ And the start the appgate server locally:
 poktrolld appgate-server \
   --config shannon_appgate_config.yaml \
   --keyring-backend test \
-  --node tcp://127.0.0.1:36657 \
+  --node tcp://127.0.0.1:26657 \
   --home=./localnet/poktrolld
 ```
 

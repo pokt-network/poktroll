@@ -36,11 +36,11 @@ done
 
 # Check we can reach the validator endpoint
 echo "Checking HTTP status for the validator endpoint..."
-HTTP_STATUS=$(curl -s -o /dev/null -w '%{http_code}' http://${NAMESPACE}-validator-poktrolld:36657)
+HTTP_STATUS=$(curl -s -o /dev/null -w '%{http_code}' http://${NAMESPACE}-validator-poktrolld:26657)
 if [[ "${HTTP_STATUS}" -eq 200 ]]; then
-    echo "HTTP request to ${NAMESPACE}-validator-poktrolld:36657 returned 200 OK."
+    echo "HTTP request to ${NAMESPACE}-validator-poktrolld:26657 returned 200 OK."
 else
-    echo "HTTP request to ${NAMESPACE}-validator-poktrolld:36657 did not return 200 OK. Status code: ${HTTP_STATUS}. Retrying in 10 seconds..."
+    echo "HTTP request to ${NAMESPACE}-validator-poktrolld:26657 did not return 200 OK. Status code: ${HTTP_STATUS}. Retrying in 10 seconds..."
     sleep 10
 fi
 

@@ -38,7 +38,7 @@ poktrolld tx supplier stake-supplier \
   --config ./stake_config.yaml \
   --keyring-backend test \
   --from supplier1 \
-  --node tcp://poktroll-node:36657
+  --node tcp://poktroll-node:26657
 ```
 
 ## Configuration

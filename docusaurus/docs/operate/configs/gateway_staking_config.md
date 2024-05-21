@@ -37,7 +37,7 @@ poktrolld tx gateway stake-gateway \
   --config ./stake_config.yaml \
   --keyring-backend test \
   --from gateway1 \
-  --node tcp://poktroll-node:36657
+  --node tcp://poktroll-node:26657
 ```
 
 ## Configuration
