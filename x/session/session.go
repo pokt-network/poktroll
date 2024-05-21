@@ -4,18 +4,24 @@ import (
 	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 )
 
+// GetSessionGracePeriodBlockCount returns the number of blocks in the grace period
+// given some numBlocksPerSession.
 func GetSessionGracePeriodBlockCount(numBlocksPerSession uint64) uint64 {
 	return sessionkeeper.SessionGracePeriod * numBlocksPerSession
 }
 
-func IsWithinGracePeriod(numBlocksPerSession uint64, sessionEndHeight, queryHeight int64) bool {
+// IsWithinGracePeriod returns true if the grace period for the session ending with
+// sessionEndHeight has not yet elapsed, given currentHeight.
+func IsWithinGracePeriod(numBlocksPerSession uint64, sessionEndHeight, currentHeight int64) bool {
 	sessionGracePeriodBlockCount := GetSessionGracePeriodBlockCount(numBlocksPerSession)
 	sessionGracePeriodEndHeight := sessionEndHeight + int64(sessionGracePeriodBlockCount)
-	return queryHeight <= sessionGracePeriodEndHeight
+	return currentHeight <= sessionGracePeriodEndHeight
 }
 
-func IsPastGracePeriod(numBlocksPerSession uint64, sessionEndHeight, queryHeight int64) bool {
+// IsPastGracePeriod returns true if the grace period for the session ending with
+// sessionEndHeight has elapsed, given currentHeight.
+func IsPastGracePeriod(numBlocksPerSession uint64, sessionEndHeight, currentHeight int64) bool {
 	sessionGracePeriodBlockCount := GetSessionGracePeriodBlockCount(numBlocksPerSession)
 	sessionGracePeriodEndHeight := sessionEndHeight + int64(sessionGracePeriodBlockCount)
-	return queryHeight > sessionGracePeriodEndHeight
+	return currentHeight > sessionGracePeriodEndHeight
 }

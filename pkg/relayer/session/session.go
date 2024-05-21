@@ -199,7 +199,6 @@ func (rs *relayerSessionsManager) mapBlockToSessionsToClaim(
 		// implement off-chain window closing and on-chain window checks.
 		isWithinGracePeriod, err := rs.sessionQueryClient.IsWithinGracePeriod(ctx, endBlockHeight, block.Height())
 		if err != nil {
-			// TODO_IMPROVE
 			rs.logger.Error().Err(err).Msg("failed to check if within grace period")
 			return nil, true
 		}
