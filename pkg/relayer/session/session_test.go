@@ -20,6 +20,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/relayer/session"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
+	"github.com/pokt-network/poktroll/testutil/testclient/testqueryclients"
 	"github.com/pokt-network/poktroll/testutil/testclient/testsupplier"
 	"github.com/pokt-network/poktroll/testutil/testpolylog"
 	"github.com/pokt-network/poktroll/testutil/testrelayer"
@@ -71,7 +72,9 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 		).
 		AnyTimes()
 
-	deps := depinject.Supply(blockClient, blockQueryClientMock, supplierClient)
+	sessionQueryClientMock := testqueryclients.NewTestSessionQueryClient(t)
+
+	deps := depinject.Supply(blockClient, blockQueryClientMock, supplierClient, sessionQueryClientMock)
 	storesDirectoryOpt := testrelayer.WithTempStoresDirectory(t)
 
 	// Create a new relayer sessions manager.
