@@ -5,13 +5,12 @@ import (
 
 	"cosmossdk.io/depinject"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	"github.com/pokt-network/smt"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/keyring"
 	"github.com/pokt-network/poktroll/pkg/polylog"
+	"github.com/pokt-network/poktroll/pkg/relayer"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
 var _ client.SupplierClient = (*supplierClient)(nil)
@@ -59,79 +58,87 @@ func NewSupplierClient(
 	return sClient, nil
 }
 
-// SubmitProof constructs a submit proof message then signs and broadcasts it
-// to the network via #txClient. It blocks until the transaction is included in
-// a block or times out.
-func (sClient *supplierClient) SubmitProof(
+// SubmitProofs constructs submit proof messages into a single transaction
+// then signs and broadcasts it to the network via #txClient. It blocks until
+// the transaction is included in a block or times out.
+func (sClient *supplierClient) SubmitProofs(
 	ctx context.Context,
-	sessionHeader sessiontypes.SessionHeader,
-	proof *smt.SparseMerkleClosestProof,
+	sessionProofs []*relayer.SessionProof,
 ) error {
 	logger := polylog.Ctx(ctx)
 
-	proofBz, err := proof.Marshal()
-	if err != nil {
-		return err
+	msgs := make([]cosmostypes.Msg, len(sessionProofs))
+
+	for i, sessionProof := range sessionProofs {
+		// TODO(@bryanchriswhite): reconcile splitting of supplier & proof modules
+		//  with off-chain pkgs/nomenclature.
+		msgs[i] = &prooftypes.MsgSubmitProof{
+			SupplierAddress: sClient.signingKeyAddr.String(),
+			SessionHeader:   sessionProof.SessionHeader,
+			Proof:           sessionProof.ProofBz,
+		}
 	}
 
-	// TODO(@bryanchriswhite): reconcile splitting of supplier & proof modules
-	//  with off-chain pkgs/nomenclature.
-	msg := &prooftypes.MsgSubmitProof{
-		SupplierAddress: sClient.signingKeyAddr.String(),
-		SessionHeader:   &sessionHeader,
-		Proof:           proofBz,
-	}
-	eitherErr := sClient.txClient.SignAndBroadcast(ctx, msg)
+	eitherErr := sClient.txClient.SignAndBroadcast(ctx, msgs...)
 	err, errCh := eitherErr.SyncOrAsyncError()
 	if err != nil {
 		return err
 	}
 
-	// TODO_IMPROVE: log details related to what & how much is being proven
-	logger.Info().
-		Fields(map[string]any{
-			"supplier_addr": sClient.signingKeyAddr.String(),
-			"app_addr":      sessionHeader.ApplicationAddress,
-			"session_id":    sessionHeader.SessionId,
-			"service":       sessionHeader.Service.Id,
-		}).
-		Msg("submitted a new proof")
+	for _, sessionProof := range sessionProofs {
+		sessionHeader := sessionProof.SessionHeader
+		// TODO_IMPROVE: log details related to what & how much is being proven
+		logger.Info().
+			Fields(map[string]any{
+				"supplier_addr": sClient.signingKeyAddr.String(),
+				"app_addr":      sessionHeader.ApplicationAddress,
+				"session_id":    sessionHeader.SessionId,
+				"service":       sessionHeader.Service.Id,
+			}).
+			Msg("submitted new proof")
+	}
 
 	return <-errCh
 }
 
-// CreateClaim constructs a creates claim message then signs and broadcasts it
-// to the network via #txClient. It blocks until the transaction is included in
-// a block or times out.
-func (sClient *supplierClient) CreateClaim(
+// CreateClaim constructs create claim messages into a single transaction
+// then signs and broadcasts it to the network via #txClient. It blocks until
+// the transaction is included in a block or times out.
+func (sClient *supplierClient) CreateClaims(
 	ctx context.Context,
-	sessionHeader sessiontypes.SessionHeader,
-	rootHash []byte,
+	sessionClaims []*relayer.SessionClaim,
 ) error {
 	logger := polylog.Ctx(ctx)
 
+	msgs := make([]cosmostypes.Msg, len(sessionClaims))
+
 	// TODO(@bryanchriswhite): reconcile splitting of supplier & proof modules
 	//  with off-chain pkgs/nomenclature.
-	msg := &prooftypes.MsgCreateClaim{
-		SupplierAddress: sClient.signingKeyAddr.String(),
-		SessionHeader:   &sessionHeader,
-		RootHash:        rootHash,
+	for i, sessionClaim := range sessionClaims {
+		msgs[i] = &prooftypes.MsgCreateClaim{
+			SupplierAddress: sClient.signingKeyAddr.String(),
+			SessionHeader:   sessionClaim.SessionHeader,
+			RootHash:        sessionClaim.RootHash,
+		}
 	}
-	eitherErr := sClient.txClient.SignAndBroadcast(ctx, msg)
+	eitherErr := sClient.txClient.SignAndBroadcast(ctx, msgs...)
 	err, errCh := eitherErr.SyncOrAsyncError()
 	if err != nil {
 		return err
 	}
 
-	// TODO_IMPROVE: log details related to how much is claimed
-	logger.Info().
-		Fields(map[string]any{
-			"supplier_addr": sClient.signingKeyAddr.String(),
-			"app_addr":      sessionHeader.ApplicationAddress,
-			"session_id":    sessionHeader.SessionId,
-			"service":       sessionHeader.Service.Id,
-		}).
-		Msg("created a new claim")
+	for _, rootHashWithSessionHeader := range sessionClaims {
+		sessionHeader := rootHashWithSessionHeader.SessionHeader
+		// TODO_IMPROVE: log details related to how much is claimed
+		logger.Info().
+			Fields(map[string]any{
+				"supplier_addr": sClient.signingKeyAddr.String(),
+				"app_addr":      sessionHeader.ApplicationAddress,
+				"session_id":    sessionHeader.SessionId,
+				"service":       sessionHeader.Service.Id,
+			}).
+			Msg("created a new claim")
+	}
 
 	return <-errCh
 }

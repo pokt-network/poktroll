@@ -17,10 +17,11 @@ func WithOutput(output io.Writer) polylog.LoggerOption {
 }
 
 // WithLevel returns an option function that configures the logger level for zerolog.
-func WithLevel(level zerolog.Level) polylog.LoggerOption {
+func WithLevel(level polylog.Level) polylog.LoggerOption {
+	zeroLevel := zerolog.Level(level.Int())
 	return func(logger polylog.Logger) {
-		zl := logger.(*zerologLogger).Logger
-		logger.(*zerologLogger).Logger = zl.Level(level)
+		zeroLogger := logger.(*zerologLogger).Logger
+		logger.(*zerologLogger).Logger = zeroLogger.Level(zeroLevel)
 	}
 }
 

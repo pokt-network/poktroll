@@ -17,15 +17,16 @@ package client
 import (
 	"context"
 
-	comettypes "github.com/cometbft/cometbft/rpc/core/types"
+	cometrpctypes "github.com/cometbft/cometbft/rpc/core/types"
+	comettypes "github.com/cometbft/cometbft/types"
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	"github.com/pokt-network/smt"
 
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
+	"github.com/pokt-network/poktroll/pkg/relayer"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -35,24 +36,21 @@ import (
 // able to construct blockchain transactions from pocket protocol-specific messages
 // related to its role.
 type SupplierClient interface {
-	// CreateClaim sends a claim message which creates an on-chain commitment by
+	// CreateClaims sends claim messages which creates an on-chain commitment by
 	// calling supplier to the given smt.SparseMerkleSumTree root hash of the given
 	// session's mined relays.
-	CreateClaim(
+	CreateClaims(
 		ctx context.Context,
-		sessionHeader sessiontypes.SessionHeader,
-		rootHash []byte,
+		sessionClaims []*relayer.SessionClaim,
 	) error
-	// SubmitProof sends a proof message which contains the
-	// smt.SparseMerkleClosestProof, corresponding to some previously created claim
-	// for the same session. The proof is validated on-chain as part of the pocket
-	// protocol.
+	// SubmitProof sends proof messages which contain the smt.SparseMerkleClosestProof,
+	// corresponding to some previously created claim for the same session.
+	// The proof is validated on-chain as part of the pocket protocol.
 	// TODO_IMPROVE(#427): Use SparseCompactClosestProof here to reduce
 	// the amount of data stored on-chain.
-	SubmitProof(
+	SubmitProofs(
 		ctx context.Context,
-		sessionHeader sessiontypes.SessionHeader,
-		proof *smt.SparseMerkleClosestProof,
+		sessionProofs []*relayer.SessionProof,
 	) error
 }
 
@@ -102,7 +100,7 @@ type TxContext interface {
 		ctx context.Context,
 		txHash []byte,
 		prove bool,
-	) (*comettypes.ResultTx, error)
+	) (*cometrpctypes.ResultTx, error)
 }
 
 // Block is an interface which abstracts the details of a block to its minimal
@@ -110,6 +108,7 @@ type TxContext interface {
 type Block interface {
 	Height() int64
 	Hash() []byte
+	Txs() []comettypes.Tx
 }
 
 // Redelegation is an interface which wraps the EventRedelegation event
@@ -228,6 +227,15 @@ type TxClientOption func(TxClient)
 
 // SupplierClientOption defines a function type that modifies the SupplierClient.
 type SupplierClientOption func(SupplierClient)
+
+// DelegationClientOption defines a function type that modifies the DelegationClient.
+type DelegationClientOption func(DelegationClient)
+
+// BlockClientOption defines a function type that modifies the BlockClient.
+type BlockClientOption func(BlockClient)
+
+// EventsReplayClientOption defines a function type that modifies the ReplayClient.
+type EventsReplayClientOption[T any] func(EventsReplayClient[T])
 
 // AccountQueryClient defines an interface that enables the querying of the
 // on-chain account information

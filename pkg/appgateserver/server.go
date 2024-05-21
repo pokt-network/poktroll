@@ -73,7 +73,7 @@ type appGateServer struct {
 	endpointSelectionIndexMu sync.Mutex
 
 	// endpointSelectionIndex is the index of the last selected endpoint.
-	// It is used to cycle through the available endpoints in a round-robin fashion.
+	// It is used to cycle through the available endpoints using a round-robin strategy.
 	endpointSelectionIndex int
 }
 
@@ -175,6 +175,7 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 
 	// Read the request body bytes.
 	requestPayloadBz, err := io.ReadAll(request.Body)
+	request.Body.Close()
 	if err != nil {
 		app.replyWithError(
 			ctx,

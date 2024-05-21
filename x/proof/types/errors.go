@@ -27,4 +27,6 @@ var (
 	ErrProofInvalidSessionId          = sdkerrors.Register(ModuleName, 1116, "invalid session ID")
 	ErrProofInvalidSessionEndHeight   = sdkerrors.Register(ModuleName, 1117, "invalid session end height")
 	ErrProofInvalidSessionStartHeight = sdkerrors.Register(ModuleName, 1118, "invalid session start height")
+	ErrProofParamNameInvalid          = sdkerrors.Register(ModuleName, 1119, "the provided param name is invalid")
+	ErrProofParamInvalid              = sdkerrors.Register(ModuleName, 1120, "the provided param is invalid")
 )

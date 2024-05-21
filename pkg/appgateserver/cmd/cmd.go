@@ -10,7 +10,6 @@ import (
 
 	"cosmossdk.io/depinject"
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/cmd/signals"
@@ -100,7 +99,7 @@ func runAppGateServer(cmd *cobra.Command, _ []string) error {
 
 	// TODO_TECHDEBT: populate logger from the config (ideally, from viper).
 	loggerOpts := []polylog.LoggerOption{
-		polyzero.WithLevel(zerolog.DebugLevel),
+		polyzero.WithLevel(polyzero.DebugLevel),
 		polyzero.WithOutput(os.Stderr),
 	}
 
@@ -192,6 +191,7 @@ func setupAppGateServerDependencies(
 	supplierFuncs := []config.SupplierFn{
 		config.NewSupplyLoggerFromCtx(ctx),
 		config.NewSupplyEventsQueryClientFn(queryNodeRPCURL),   // leaf
+		config.NewSupplyBlockQueryClientFn(queryNodeRPCURL),    // leaf
 		config.NewSupplyBlockClientFn(queryNodeRPCURL),         // leaf
 		config.NewSupplyQueryClientContextFn(queryNodeGRPCURL), // leaf
 		config.NewSupplyDelegationClientFn(),                   // leaf

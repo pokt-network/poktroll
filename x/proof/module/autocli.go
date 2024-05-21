@@ -62,6 +62,12 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 				// 	Short:          "Send a submit-proof tx",
 				// 	PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "sessionHeader"}, {ProtoField: "proof"}},
 				// },
+				// {
+				// 	RpcMethod: "UpdateParam",
+				// 	Use:       "update-param [name] [value]",
+				// 	Short:     "Send a update-param tx",
+				// 	PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "name"}, {ProtoField: "as_type"}},
+				// },
 				// this line is used by ignite scaffolding # autocli/tx
 			},
 		},

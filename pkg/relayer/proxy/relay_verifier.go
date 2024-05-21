@@ -15,6 +15,14 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	relayRequest *types.RelayRequest,
 	supplierService *sharedtypes.Service,
 ) error {
+	// Get the block height at which the relayRequest should be processed.
+	// Check if the relayRequest is on time or within the session's grace period
+	// before attempting to verify the relayRequest signature.
+	sessionBlockHeight, err := rp.getTargetSessionBlockHeight(ctx, relayRequest)
+	if err != nil {
+		return err
+	}
+
 	// Verify the relayRequest metadata, signature, session header and other
 	// basic validation.
 	if err := rp.ringCache.VerifyRelayRequestSignature(ctx, relayRequest); err != nil {
@@ -37,12 +45,6 @@ func (rp *relayerProxy) VerifyRelayRequest(
 			"service_id":          sessionHeader.GetService().GetId(),
 		}).
 		Msg("verifying relay request session")
-
-	// Get the block height at which the relayRequest should be processed.
-	sessionBlockHeight, err := rp.getTargetSessionBlockHeight(ctx, relayRequest)
-	if err != nil {
-		return err
-	}
 
 	// Query for the current session to check if relayRequest sessionId matches the current session.
 	session, err := rp.sessionQuerier.GetSession(

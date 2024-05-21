@@ -27,6 +27,7 @@ func (sdk *poktrollSDK) SendRelay(
 ) (response *types.RelayResponse, err error) {
 	// Retrieve the request's payload.
 	payloadBz, err := io.ReadAll(request.Body)
+	request.Body.Close()
 	if err != nil {
 		return nil, ErrSDKHandleRelay.Wrapf("reading request body: %s", err)
 	}
@@ -42,7 +43,8 @@ func (sdk *poktrollSDK) SendRelay(
 
 	// Get the application's signer.
 	appAddress := supplierEndpoint.Header.ApplicationAddress
-	appRing, err := sdk.ringCache.GetRingForAddress(ctx, appAddress)
+	sessionEndHeight := supplierEndpoint.Header.SessionEndBlockHeight
+	appRing, err := sdk.ringCache.GetRingForAddressAtHeight(ctx, appAddress, sessionEndHeight)
 	if err != nil {
 		return nil, ErrSDKHandleRelay.Wrapf("getting app ring: %s", err)
 	}
@@ -89,6 +91,7 @@ func (sdk *poktrollSDK) SendRelay(
 
 	// Read the response body bytes.
 	relayResponseBz, err := io.ReadAll(relayHTTPResponse.Body)
+	relayHTTPResponse.Body.Close()
 	if err != nil {
 		return nil, ErrSDKHandleRelay.Wrapf("error reading relay response body: %s", err)
 	}

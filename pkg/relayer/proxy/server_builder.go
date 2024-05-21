@@ -17,7 +17,7 @@ import (
 // attempting to retrieve the supplier's on-chain record.
 // This is useful for testing and development purposes, where the supplier
 // may not be staked before the relay miner starts.
-const supplierStakeWaitTime = 5
+const supplierStakeWaitTime = 1
 
 // BuildProvidedServices builds the advertised relay servers from the supplier's on-chain advertised services.
 // It populates the relayerProxy's `advertisedRelayServers` map of servers for each service, where each server

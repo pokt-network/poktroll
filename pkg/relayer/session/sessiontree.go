@@ -40,6 +40,9 @@ type sessionTree struct {
 	// proof is the generated proof for the session given a proofPath.
 	proof *smt.SparseMerkleClosestProof
 
+	// proofBz is the marshaled proof for the session.
+	proofBz []byte
+
 	// treeStore is the KVStore used to store the SMST.
 	treeStore badger.BadgerKVStore
 
@@ -149,13 +152,36 @@ func (st *sessionTree) ProveClosest(path []byte) (proof *smt.SparseMerkleClosest
 		return nil, err
 	}
 
-	st.sessionSMT = smt.ImportSparseMerkleSumTrie(st.treeStore, sha256.New(), st.claimedRoot, smt.WithValueHasher(nil))
+	sessionSMT := smt.ImportSparseMerkleSumTrie(st.treeStore, sha256.New(), st.claimedRoot, smt.WithValueHasher(nil))
 
 	// Generate the proof and cache it along with the path for which it was generated.
-	st.proof, err = st.sessionSMT.ProveClosest(path)
-	st.proofPath = path
+	proof, err = sessionSMT.ProveClosest(path)
+	if err != nil {
+		return nil, err
+	}
 
-	return st.proof, err
+	proofBz, err := proof.Marshal()
+	if err != nil {
+		return nil, err
+	}
+
+	// If no error occurred, cache the proof and the path for which it was generated.
+	st.sessionSMT = sessionSMT
+	st.proofPath = path
+	st.proof = proof
+	st.proofBz = proofBz
+
+	return st.proof, nil
+}
+
+// GetProofBz returns the marshaled proof for the session.
+func (st *sessionTree) GetProofBz() []byte {
+	return st.proofBz
+}
+
+// GetProof returns the proof for the SMST if it has been generated or nil otherwise.
+func (st *sessionTree) GetProof() *smt.SparseMerkleClosestProof {
+	return st.proof
 }
 
 // Flush gets the root hash of the SMST needed for submitting the claim;
@@ -189,6 +215,11 @@ func (st *sessionTree) Flush() (SMSTRoot []byte, err error) {
 	return st.claimedRoot, nil
 }
 
+// GetClaimRoot returns the root hash of the SMST needed for creating the claim.
+func (st *sessionTree) GetClaimRoot() []byte {
+	return st.claimedRoot
+}
+
 // Delete deletes the SMST from the KVStore and removes the sessionTree from the RelayerSessionsManager.
 // WARNING: This function deletes the KVStore associated to the session and should be
 // called only after the proof has been successfully submitted on-chain and the servicer
@@ -208,7 +239,7 @@ func (st *sessionTree) Delete() error {
 	}
 
 	// Delete the KVStore from disk
-	return os.RemoveAll(filepath.Dir(st.storePath))
+	return os.RemoveAll(st.storePath)
 }
 
 // StartClaiming marks the session tree as being picked up for claiming,

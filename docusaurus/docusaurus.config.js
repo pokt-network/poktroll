@@ -120,6 +120,12 @@ const config = {
             sidebarId: "planningSidebar",
             label: "🗒️ Planning",
           },
+          {
+            type: "docSidebar",
+            position: "left",
+            sidebarId: "exploreSidebar",
+            label: "🗺 Explore",
+          },
         ],
       },
       footer: {

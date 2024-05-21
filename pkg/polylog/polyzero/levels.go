@@ -36,6 +36,23 @@ func Levels() []Level {
 	}
 }
 
+// ParseLevel returns the polyzero.Level for the given string. It returns InfoLevel
+// if the string is not recognized.
+func ParseLevel(level string) polylog.Level {
+	switch level {
+	case "debug", "Debug", "DEBUG":
+		return DebugLevel
+	case "info", "Info", "INFO":
+		return InfoLevel
+	case "warn", "Warn", "WARN":
+		return WarnLevel
+	case "error", "Error", "ERROR":
+		return ErrorLevel
+	default:
+		return InfoLevel
+	}
+}
+
 // String implements polylog.Level#String().
 func (lvl Level) String() string {
 	return zerolog.Level(lvl).String()

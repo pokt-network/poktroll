@@ -67,6 +67,7 @@ api/poktroll/**/*.go-E
 
 # Relase artifacts produced by `ignite chain build --release`
 release
+release_binaries
 
 # Only keep one go module in our codebase
 go.work.sum
@@ -91,5 +92,7 @@ summary.html
 # Quickstart helpers
 shannon_appgate_config.yaml
 shannon_app_config.yaml
+shannon_relayminer_config.yaml
+shannon_supplier_config.yaml
 
 gentx-*.json

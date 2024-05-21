@@ -26,6 +26,7 @@ var _ POKTRollSDK = (*poktrollSDK)(nil)
 type POKTRollSDKConfig struct {
 	QueryNodeGRPCUrl *url.URL
 	QueryNodeUrl     *url.URL
+	ConnRetryLimit   int
 	PrivateKey       cryptotypes.PrivKey
 	Deps             depinject.Config
 }

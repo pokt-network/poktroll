@@ -84,6 +84,9 @@ if localnet_config["observability"]["enabled"]:
     )
     helm_repo("grafana-helm-repo", "https://grafana.github.io/helm-charts")
 
+    # Increase timeout for building the image
+    update_settings(k8s_upsert_timeout_secs=60)
+
     helm_resource(
         "observability",
         "prometheus-community/kube-prometheus-stack",
@@ -179,7 +182,7 @@ local_resource(
 docker_build_with_restart(
     "poktrolld",
     ".",
-    dockerfile_contents="""FROM golang:1.21.6
+    dockerfile_contents="""FROM golang:1.22.2
 RUN apt-get -q update && apt-get install -qyy curl jq less
 RUN go install github.com/go-delve/delve/cmd/dlv@latest
 COPY bin/poktrolld /usr/local/bin/poktrolld

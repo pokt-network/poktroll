@@ -13,6 +13,7 @@ import (
 type POKTRollSDK interface {
 	// GetApplications queries a list of all on-chain applications, optionally filtered by
 	// delegated gateway
+	// TODO(@redone): Replace `options GetApplicationsOptions` with `options ...GetApplicationsOptions`
 	GetApplications(ctx context.Context, options GetApplicationsOptions) ([]apptypes.Application, error)
 
 	// GetSessionSupplierEndpoints returns the suppliers endpoints of the current session for
