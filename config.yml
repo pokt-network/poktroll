@@ -66,6 +66,7 @@ validators:
   - name: validator1
     bonded: 900000000upokt
     app:
+      minimum-gas-prices: "0.01upokt"
       telemetry:
         enabled: true
         prometheus-retention-time: "600" # seconds
