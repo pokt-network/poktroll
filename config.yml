@@ -51,6 +51,10 @@ accounts:
     mnemonic: "elder spatial erosion soap athlete tide subject recipe also awkward head pattern cart version beach usual oxygen confirm erupt diamond maze smooth census garment"
     coins:
       - 300000000upokt
+  - name: unauthorized
+    mnemonic: "abuse tumble whip pioneer immense pipe method note upon glory switch rail metal camp gasp top require rain party total struggle glance between fossil"
+    coins:
+      - 100000upokt
 faucet:
   name: faucet
   coins:

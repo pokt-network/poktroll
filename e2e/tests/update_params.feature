@@ -5,7 +5,6 @@ Feature: Params Namespace
      Given the user has the pocketd binary installed
      And all "tokenomics" module params are set to their default values
      And an authz grant from the "gov" "module" account to the "pnf" "user" account for the "/poktroll.tokenomics.MsgUpdateParams" message exists
-     And a key and account exist for the "unauthorized" user
      When the "unauthorized" account sends an authz exec message to update all "tokenomics" module params
        | name                               | value | type  |
        | compute_units_to_tokens_multiplier | 666   | int64 |
@@ -64,7 +63,6 @@ Feature: Params Namespace
     Given the user has the pocketd binary installed
     And all "proof" module params are set to their default values
     And an authz grant from the "gov" "module" account to the "pnf" "user" account for the "/poktroll.proof.MsgUpdateParams" message exists
-    And a key and account exist for the "unauthorized" user
     When the "unauthorized" account sends an authz exec message to update "proof" the module param
       | name                       | value | type  |
       | "min_relay_difficulty_bits | 666   | int64 |
