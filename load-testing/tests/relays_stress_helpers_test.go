@@ -48,10 +48,10 @@ import (
 //
 // TODO_UPNEXT(@red-One, @bryanchriswhite) move to a new file.
 type actorLoadTestIncrementPlans struct {
-	apps            actorLoadTestIncrementPlan
-	gateways        actorLoadTestIncrementPlan
-	suppliers       actorLoadTestIncrementPlan
-	persistentChain bool
+	apps             actorLoadTestIncrementPlan
+	gateways         actorLoadTestIncrementPlan
+	suppliers        actorLoadTestIncrementPlan
+	isEphemeralChain bool
 }
 
 // actorLoadTestIncrementPlan is a struct that holds the parameters for incrementing
@@ -125,17 +125,16 @@ func (s *relaysSuite) initializeLoadTestParams() *config.LoadTestManifestYAML {
 	loadTestManifest, err := config.ParseLoadTestManifest(loadTestManifestContent)
 	require.NoError(s, err)
 
-	s.persistentChain = loadTestManifest.PersistentChain
+	s.isEphemeralChain = loadTestManifest.IsEphemeralChain
 
 	for _, gateway := range loadTestManifest.Gateways {
-		// In the case of persistent chain, the test has no entry for the gateway
-		// and no keyName is provided. The gateway address is used to identify the
-		// gateway in the network.
-		if s.persistentChain {
-			s.gatewayUrls[gateway.Address] = gateway.ExposedUrl
-		} else {
-			s.gatewayUrls[gateway.KeyName] = gateway.ExposedUrl
+		gatewayId := gateway.Address
+		// In the case of non-ephemeral chain load testing, the test uses the
+		// gateway's keyName as the gatewayId.
+		if s.isEphemeralChain {
+			gatewayId = gateway.KeyName
 		}
+		s.gatewayUrls[gatewayId] = gateway.ExposedUrl
 	}
 
 	for _, supplier := range loadTestManifest.Suppliers {
@@ -260,9 +259,11 @@ func (s *relaysSuite) mapSessionInfoForLoadTestDurationFn(
 
 // validateActorLoadTestIncrementPlans
 func (s *relaysSuite) validateActorLoadTestIncrementPlans(plans *actorLoadTestIncrementPlans) {
-	// In persistent chain mode increment plans are skipped and there is no need
-	// to validate them.
-	if s.persistentChain {
+	// In the case of non-ephemeral chains load testing, there is no need to validate
+	// that the increment plans are in sync since the gateways and suppliers are
+	// already staked and there is no need to synchronize any staking or funding
+	// transaction submission.
+	if !s.isEphemeralChain {
 		return
 	}
 
@@ -284,7 +285,9 @@ func (s *relaysSuite) validateActorLoadTestIncrementPlans(plans *actorLoadTestIn
 // increment the number of all actors to their maxActorCount plus one increment
 // duration to account for the last increment to execute.
 func (plans *actorLoadTestIncrementPlans) maxActorBlocksToFinalIncrementEnd() int64 {
-	if plans.persistentChain {
+	// In non-ephemeral chains load testing, the applications are the only actors
+	// being scaled, so the test duration depends only on the applications' scaling plan
+	if !plans.isEphemeralChain {
 		return plans.apps.blocksToFinalIncrementEnd()
 	}
 
@@ -502,7 +505,9 @@ func (s *relaysSuite) sendFundAvailableActorsTx(
 		applications = append(applications, application)
 	}
 
-	if s.persistentChain {
+	// In the case of non-ephemeral chains load testing, only the applications are funded.
+	// The gateways and suppliers are already staked and there is no need to fund them.
+	if !s.isEphemeralChain {
 		return suppliers, gateways, applications
 	}
 
@@ -1287,10 +1292,10 @@ func (s *relaysSuite) parseActorLoadTestIncrementPlans(
 		},
 	}
 
-	// If the persistentChain flag is set, the gateway and supplier actors are not
-	// incremented and all the staking and scaling logic is skipped.
+	// In the case of non-ephemeral chain load testing, the gateway and supplier
+	// actors are not incremented and all the staking and scaling logic is skipped.
 	// Their actorPlan is not needed in that case.
-	if s.persistentChain {
+	if !s.isEphemeralChain {
 		return actorPlans
 	}
 
@@ -1421,7 +1426,7 @@ func (s *relaysSuite) logAndAbortTest(txResults []*types.TxResult, errorMsg stri
 }
 
 // populateWithKnownApplications creates a list of gateways based on the gatewayUrls
-// provided in the test manifest. It is used in persistent chain tests where the
+// provided in the test manifest. It is used in non-ephemeral chain tests where the
 // gateways are not under the test's control and are expected to be already staked.
 func (s *relaysSuite) populateWithKnownGateways(
 	plans *actorLoadTestIncrementPlans,

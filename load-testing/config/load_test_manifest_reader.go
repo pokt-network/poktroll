@@ -21,13 +21,13 @@ type ProvisionedActorConfig struct {
 // LoadTestManifestYAML is the struct which the load test manifest is deserialized into.
 // It contains the list of suppliers and gateways that the load test expects to be pre-provisioned.
 type LoadTestManifestYAML struct {
-	// PersistentChain is a flag that indicates whether the test is expected to be
+	// IsEphemeralChain is a flag that indicates whether the test is expected to be
 	// run on localnet or long living chains (i.e. TestNet/DevNet).
-	PersistentChain bool                     `yaml:"persistent_chain"`
-	TestNetNode     string                   `yaml:"testnet_node"`
-	ServiceId       string                   `yaml:"service_id"`
-	Suppliers       []ProvisionedActorConfig `yaml:"suppliers"`
-	Gateways        []ProvisionedActorConfig `yaml:"gateways"`
+	IsEphemeralChain bool                     `yaml:"is_ephemeral_chain"`
+	TestNetNode      string                   `yaml:"testnet_node"`
+	ServiceId        string                   `yaml:"service_id"`
+	Suppliers        []ProvisionedActorConfig `yaml:"suppliers"`
+	Gateways         []ProvisionedActorConfig `yaml:"gateways"`
 }
 
 // ParseLoadTestManifest reads the load test manifest from the given byte slice
@@ -44,57 +44,95 @@ func ParseLoadTestManifest(manifestContent []byte) (*LoadTestManifestYAML, error
 		return nil, ErrLoadTestManifestUnmarshalYAML.Wrapf("%s", err)
 	}
 
-	if len(parsedManifest.Gateways) == 0 {
-		return nil, ErrLoadTestInvalidManifest.Wrap("empty gateways entry")
+	if parsedManifest.IsEphemeralChain {
+		return validatedEphemeralChainManifest(&parsedManifest)
 	}
 
-	if len(parsedManifest.Suppliers) == 0 && !parsedManifest.PersistentChain {
-		return nil, ErrLoadTestInvalidManifest.Wrap("empty suppliers entry")
+	return validatedNonEphemeralChainManifest(&parsedManifest)
+}
+
+func validatedEphemeralChainManifest(manifest *LoadTestManifestYAML) (*LoadTestManifestYAML, error) {
+	if len(manifest.Gateways) == 0 {
+		return nil, ErrEphemeralChainLoadTestInvalidManifest.Wrap("empty gateways entry")
 	}
 
-	if parsedManifest.TestNetNode == "" && parsedManifest.PersistentChain {
-		return nil, ErrLoadTestInvalidManifest.Wrap("empty testnet node url")
+	if len(manifest.Suppliers) == 0 {
+		return nil, ErrEphemeralChainLoadTestInvalidManifest.Wrap("empty suppliers entry")
 	}
 
-	if parsedManifest.ServiceId == "" {
-		return nil, ErrLoadTestInvalidManifest.Wrap("empty service id")
+	if len(manifest.ServiceId) == 0 {
+		return nil, ErrEphemeralChainLoadTestInvalidManifest.Wrap("empty service id")
 	}
 
-	for _, gateway := range parsedManifest.Gateways {
-		if gateway.KeyName == "" && !parsedManifest.PersistentChain {
-			return nil, ErrLoadTestInvalidManifest.Wrap("empty gateway key name")
+	for _, gateway := range manifest.Gateways {
+		if len(gateway.KeyName) == 0 {
+			return nil, ErrEphemeralChainLoadTestInvalidManifest.Wrap("empty gateway key name")
 		}
 
-		if gateway.Address == "" && parsedManifest.PersistentChain {
-			return nil, ErrLoadTestInvalidManifest.Wrap("empty gateway address")
+		if len(gateway.Address) > 0 {
+			return nil, ErrEphemeralChainLoadTestInvalidManifest.Wrap("gateway address forbidden")
 		}
 
-		if gateway.ExposedUrl == "" {
-			return nil, ErrLoadTestInvalidManifest.Wrap("empty gateway server url")
+		if len(gateway.ExposedUrl) == 0 {
+			return nil, ErrEphemeralChainLoadTestInvalidManifest.Wrap("empty gateway server url")
 		}
 
 		if _, err := url.Parse(gateway.ExposedUrl); err != nil {
-			return nil, ErrLoadTestInvalidManifest.Wrapf("invalid supplier server url: %s", err)
+			return nil, ErrEphemeralChainLoadTestInvalidManifest.Wrapf("invalid supplier server url: %s", err)
 		}
 	}
 
-	if parsedManifest.PersistentChain {
-		return &parsedManifest, nil
-	}
-
-	for _, supplier := range parsedManifest.Suppliers {
-		if supplier.KeyName == "" {
-			return nil, ErrLoadTestInvalidManifest.Wrap("empty supplier key name")
+	for _, supplier := range manifest.Suppliers {
+		if len(supplier.KeyName) == 0 {
+			return nil, ErrEphemeralChainLoadTestInvalidManifest.Wrap("empty supplier key name")
 		}
 
-		if supplier.ExposedUrl == "" {
-			return nil, ErrLoadTestInvalidManifest.Wrap("empty supplier server url")
+		if len(supplier.ExposedUrl) == 0 {
+			return nil, ErrEphemeralChainLoadTestInvalidManifest.Wrap("empty supplier server url")
 		}
 
 		if _, err := url.Parse(supplier.ExposedUrl); err != nil {
-			return nil, ErrLoadTestInvalidManifest.Wrapf("invalid supplier server url: %s", err)
+			return nil, ErrEphemeralChainLoadTestInvalidManifest.Wrapf("invalid supplier server url: %s", err)
 		}
 	}
 
-	return &parsedManifest, nil
+	return manifest, nil
+}
+
+func validatedNonEphemeralChainManifest(manifest *LoadTestManifestYAML) (*LoadTestManifestYAML, error) {
+	if len(manifest.Gateways) == 0 {
+		return nil, ErrNonEphemeralChainLoadTestInvalidManifest.Wrap("empty gateways entry")
+	}
+
+	if len(manifest.Suppliers) > 0 {
+		return nil, ErrNonEphemeralChainLoadTestInvalidManifest.Wrap("suppliers entry forbidden")
+	}
+
+	if len(manifest.TestNetNode) == 0 {
+		return nil, ErrNonEphemeralChainLoadTestInvalidManifest.Wrap("empty testnet node url")
+	}
+
+	if len(manifest.ServiceId) == 0 {
+		return nil, ErrNonEphemeralChainLoadTestInvalidManifest.Wrap("empty service id")
+	}
+
+	for _, gateway := range manifest.Gateways {
+		if len(gateway.KeyName) > 0 {
+			return nil, ErrNonEphemeralChainLoadTestInvalidManifest.Wrap("gateway keyName forbidden")
+		}
+
+		if len(gateway.Address) == 0 {
+			return nil, ErrNonEphemeralChainLoadTestInvalidManifest.Wrap("empty gateway address")
+		}
+
+		if len(gateway.ExposedUrl) == 0 {
+			return nil, ErrNonEphemeralChainLoadTestInvalidManifest.Wrap("empty gateway server url")
+		}
+
+		if _, err := url.Parse(gateway.ExposedUrl); err != nil {
+			return nil, ErrNonEphemeralChainLoadTestInvalidManifest.Wrapf("invalid supplier server url: %s", err)
+		}
+	}
+
+	return manifest, nil
 }

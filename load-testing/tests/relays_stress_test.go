@@ -210,9 +210,9 @@ type relaysSuite struct {
 	// to be committed on-chain during the test.
 	expectedClaimsAndProofsCount int
 
-	// persistentChain is a flag that indicates whether the test is expected to be
-	// run on localnet or long living chains (i.e. TestNet/DevNet).
-	persistentChain bool
+	// isEphemeralChain is a flag that indicates whether the test is expected to be
+	// run on ephemeral chain setups like localnet or long living ones (i.e. Test/DevNet).
+	isEphemeralChain bool
 }
 
 // accountInfo contains the account info needed to build and send transactions.
@@ -293,15 +293,16 @@ func (s *relaysSuite) LocalnetIsRunning() {
 	// Set the tested service ID from the load test manifest.
 	testedService = &sharedtypes.Service{Id: loadTestParams.ServiceId}
 
-	// If the test is run on a persistent chain, set the CometLocalTCPURL and
+	// If the test is run on a non-ephemeral chain, set the CometLocalTCPURL and
 	// CometLocalWebsocketURL to the TestNetNode URL. These variables are used
 	// by the testtx txClient to send transactions to the network.
-	if s.persistentChain {
+	if !s.isEphemeralChain {
 		testclient.CometLocalTCPURL = loadTestParams.TestNetNode
 
 		webSocketURL, err := url.Parse(loadTestParams.TestNetNode)
 		require.NoError(s, err)
 
+		// TestNet nodes may be exposed over HTTPS, so adjust the scheme accordingly.
 		if webSocketURL.Scheme == "https" {
 			webSocketURL.Scheme = "wss"
 		} else {
@@ -309,7 +310,7 @@ func (s *relaysSuite) LocalnetIsRunning() {
 		}
 		testclient.CometLocalWebsocketURL = webSocketURL.String() + "/websocket"
 
-		// Update the block duration when running on a persistent chain.
+		// Update the block duration when running the test on a non-ephemeral chain.
 		// TODO_TECHDEBT: Get the block duration value from the chain or the manifest.
 		blockDuration = 60
 	}
@@ -357,9 +358,9 @@ func (s *relaysSuite) TheFollowingInitialActorsAreStaked(table gocuke.DataTable)
 	// Store the initial counts of the actors to be staked to be used later in the test,
 	// when information about max actors to be staked is available.
 	s.appInitialCount = table.Cell(applicationRowIdx, initialActorCountColIdx).Int64()
-	// If the chain is persistent, the gateway and supplier counts are not controlled
-	// by the test suite and the initial counts are not stored.
-	if s.persistentChain {
+	// In the case of non-ephemeral chains, the gateway and supplier counts are
+	// not under the test suite control and the initial counts are not stored.
+	if !s.isEphemeralChain {
 		return
 	}
 
@@ -382,7 +383,7 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 	// submit all claims and proofs.
 	s.testDurationBlocks = plans.totalDurationBlocks()
 
-	if !s.persistentChain {
+	if !s.isEphemeralChain {
 		// Adjust the max delegations parameter to the max gateways to permit all
 		// applications to delegate to all gateways.
 		// This is to ensure that requests are distributed evenly across all gateways
@@ -421,9 +422,10 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 	// Update the list of staked suppliers.
 	s.activeSuppliers = append(s.activeSuppliers, suppliers...)
 
-	// In a persistent chain environment, the available gateways and their corresponding
-	// addresses are added without staking them.
-	if s.persistentChain {
+	// In the case of non-ephemeral chain load tests, the available gateways are
+	// not incrementally staked, but are already staked and delegated to, add all
+	// of them to the list of active gateways at the beginning of the test.
+	if !s.isEphemeralChain {
 		gateways = s.populateWithKnownGateways(plans)
 	}
 

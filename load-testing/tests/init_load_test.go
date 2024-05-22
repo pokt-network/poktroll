@@ -4,6 +4,7 @@ package tests
 
 import (
 	"flag"
+	"path/filepath"
 	"testing"
 
 	"github.com/pokt-network/poktroll/pkg/polylog"
@@ -11,8 +12,9 @@ import (
 )
 
 var (
+	defaultManifestPath  = filepath.Join("..", "..", "localnet_loadtest_manifest.yaml")
 	flagLogLevel         string
-	flagManifestFilePath string = "../../loadtest_manifest.yaml"
+	flagManifestFilePath string
 	logger               polylog.Logger
 )
 
@@ -21,7 +23,7 @@ func init() {
 	flag.StringVar(
 		&flagManifestFilePath,
 		"manifest",
-		"../../loadtest_manifest.yaml",
+		defaultManifestPath,
 		"Specifies the path to the load test manifest file",
 	)
 }
