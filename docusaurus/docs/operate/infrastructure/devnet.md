@@ -11,6 +11,13 @@ This page is only relevant to you if you are part of the core protocol team at G
 
 :::
 
+## Table of Contents <!-- omit in toc -->
+
+- [GCP Console](#gcp-console)
+- [Grafana logs](#grafana-logs)
+- [Infrastructure Provisioning](#infrastructure-provisioning)
+- [Configuration](#configuration)
+
 ## GCP Console
 
 https://console.cloud.google.com/kubernetes/workload/overview?project=protocol-us-central1-d505&pageState=(%22savedViews%22:(%22i%22:%22a39690ef57a74a59b7550d42ac7655bc%22,%22c%22:%5B%5D,%22n%22:%5B%22devnet-issue-152%22%5D))
@@ -31,7 +38,7 @@ https://grafana.poktroll.com/explore?schemaVersion=1&panes=%7B%22TtK%22:%7B%22da
 - One of the manifests provisioned is an [ArgoCD ApplicationSet](https://github.com/pokt-network/protocol-infra/blob/main/clusters/protocol-us-central1/devnets-github-label.yaml) that monitors our GitHub labels and provisions a network for each GitHub issue tagged with the `devnet` label.
 - As part of our CI process, when a GitHub issue is labeled `devnet-test-e2e`, we execute a [script](https://github.com/pokt-network/poktroll/blob/main/.github/workflows-helpers/run-e2e-test.sh#L1) that creates a [Kubernetes Job](https://github.com/pokt-network/poktroll/blob/main/.github/workflows-helpers/run-e2e-test-job-template.yaml) for that DevNet.
 - When the PR is closed or the label is removed, the infrastructure is cleaned up.
-- We have an option to provision presistent devnets by creating a devnet yaml file in [this directory](https://github.com/pokt-network/protocol-infra/tree/main/devnets-configs) ([ArgoCD Application that monitors this directory](https://github.com/pokt-network/protocol-infra/blob/main/clusters/protocol-us-central1/devnets-persistent.yaml) for reference). 
+- We have an option to provision presistent devnets by creating a devnet yaml file in [this directory](https://github.com/pokt-network/protocol-infra/tree/main/devnets-configs) ([ArgoCD Application that monitors this directory](https://github.com/pokt-network/protocol-infra/blob/main/clusters/protocol-us-central1/devnets-persistent.yaml) for reference).
 
 ## Configuration
 
