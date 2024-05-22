@@ -122,7 +122,7 @@ func GetDefaultSessionGracePeriodBlockCount(_ context.Context, sessionEndHeight 
 	return int64(session.GetSessionGracePeriodBlockCount(numBlocksPerSession)), nil
 }
 
-func GetSDefaultessionGracePeriodEndHeight(_ context.Context, sessionEndHeight int64) (int64, error) {
+func GetDefaultSessionGracePeriodEndHeight(_ context.Context, sessionEndHeight int64) (int64, error) {
 	numBlocksPerSession := sessiontypes.DefaultParams().NumBlocksPerSession
 	return session.GetSessionGracePeriodEndHeight(numBlocksPerSession, sessionEndHeight), nil
 }
