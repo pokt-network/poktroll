@@ -496,6 +496,11 @@ func (s *relaysSuite) TheCorrectPairsCountOfClaimAndProofMessagesShouldBeCommitt
 		s.currentProofCount,
 		"claims and proofs count mismatch",
 	)
+
+	logger.Info().
+		Int("claims", s.currentClaimCount).
+		Int("proofs", s.currentProofCount).
+		Msg("Claims and proofs count")
 	// TODO_TECHDEBT: The current counting mechanism for the expected claims and proofs
 	// is not accurate. The expected claims and proofs count should be calculated based
 	// on the effectively sent relay requests.

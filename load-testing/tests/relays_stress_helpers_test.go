@@ -1036,12 +1036,16 @@ func (s *relaysSuite) sendRelay(iteration uint64, relayPayload string) (appKeyNa
 	gatewayUrl.Path = testedService.Id
 
 	// TODO_TECHDEBT: Capture the relay response to check for failing relays.
-	_, err = http.DefaultClient.Post(
-		gatewayUrl.String(),
-		"application/json",
-		strings.NewReader(relayPayload),
-	)
-	require.NoError(s, err)
+	// Send the relay request within a goroutine to avoid blocking the test batches
+	// when suppliers or gateways are unresponsive.
+	go func(gwURL, payload string) {
+		_, err = http.DefaultClient.Post(
+			gwURL,
+			"application/json",
+			strings.NewReader(payload),
+		)
+		require.NoError(s, err)
+	}(gatewayUrl.String(), relayPayload)
 
 	return application.keyName, gateway.keyName
 }
