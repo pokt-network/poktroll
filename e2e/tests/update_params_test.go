@@ -15,7 +15,12 @@ import (
 	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
 
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	servicetypes "github.com/pokt-network/poktroll/x/service/types"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
@@ -48,6 +53,31 @@ func (s *suite) AllModuleParamsAreSetToTheirDefaultValues(moduleName string) {
 		var proofParamsRes prooftypes.QueryParamsResponse
 		s.cdc.MustUnmarshalJSON([]byte(res.Stdout), &proofParamsRes)
 		require.Equal(s, prooftypes.DefaultParams(), proofParamsRes.GetParams())
+
+	case sessiontypes.ModuleName:
+		var sessionParamsRes sessiontypes.QueryParamsResponse
+		s.cdc.MustUnmarshalJSON([]byte(res.Stdout), &sessionParamsRes)
+		require.Equal(s, sessiontypes.DefaultParams(), sessionParamsRes.GetParams())
+
+	case apptypes.ModuleName:
+		var appParamsRes apptypes.QueryParamsResponse
+		s.cdc.MustUnmarshalJSON([]byte(res.Stdout), &appParamsRes)
+		require.Equal(s, apptypes.DefaultParams(), appParamsRes.GetParams())
+
+	case gatewaytypes.ModuleName:
+		var gatewayParamsRes gatewaytypes.QueryParamsResponse
+		s.cdc.MustUnmarshalJSON([]byte(res.Stdout), &gatewayParamsRes)
+		require.Equal(s, gatewaytypes.DefaultParams(), gatewayParamsRes.GetParams())
+
+	case suppliertypes.ModuleName:
+		var supplierParamsRes suppliertypes.QueryParamsResponse
+		s.cdc.MustUnmarshalJSON([]byte(res.Stdout), &supplierParamsRes)
+		require.Equal(s, suppliertypes.DefaultParams(), supplierParamsRes.GetParams())
+
+	case servicetypes.ModuleName:
+		var serviceParamsRes servicetypes.QueryParamsResponse
+		s.cdc.MustUnmarshalJSON([]byte(res.Stdout), &serviceParamsRes)
+		require.Equal(s, servicetypes.DefaultParams(), serviceParamsRes.GetParams())
 
 	default:
 		s.Fatalf("unexpected module name: (%v)", moduleName)
@@ -117,17 +147,6 @@ func (s *suite) AnAuthzGrantFromTheAccountToTheAccountForTheMessageExists(
 	// Update the state of the suite with the granter & grantee names.
 	s.granterName = granterName
 	s.granteeName = granteeName
-}
-
-// AKeyAndAccountExistForTheUser checks if a key with the given name exists in the keyring,
-// and if not, adds a new key with the given name to the keyring. It then checks if an account
-// corresponding the the new key exists.
-func (s *suite) AKeyAndAccountExistForTheUser(keyName string) {
-	if !s.keyExistsInKeyring(keyName) {
-		s.addKeyToKeyring(keyName)
-	}
-
-	s.ensureAccountForKeyName(keyName)
 }
 
 // AllModuleParamsShouldBeSetToTheirDefaultValues asserts that all module params are set to their default values.
@@ -276,7 +295,7 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 
 	switch moduleName {
 	case tokenomicstypes.ModuleName:
-		computeUnitsToTokensMultiplier := uint64(s.expectedModuleParams[moduleName][computeUnitsToTokensMultipler].value.(int64))
+		computeUnitsToTokensMultiplier := uint64(s.expectedModuleParams[moduleName][tokenomicstypes.ParamComputeUnitsToTokensMultiplier].value.(int64))
 		assertUpdatedParams(s,
 			[]byte(res.Stdout),
 			&tokenomicstypes.QueryParamsResponse{
@@ -286,12 +305,42 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 			},
 		)
 	case prooftypes.ModuleName:
-		minRelayDifficultyBits := uint64(s.expectedModuleParams[moduleName][minRelayDifficultyBits].value.(int64))
+		minRelayDifficultyBits := uint64(s.expectedModuleParams[moduleName][prooftypes.ParamMinRelayDifficultyBits].value.(int64))
 		assertUpdatedParams(s,
 			[]byte(res.Stdout),
 			&prooftypes.QueryParamsResponse{
 				Params: prooftypes.Params{
 					MinRelayDifficultyBits: minRelayDifficultyBits,
+				},
+			},
+		)
+	case sessiontypes.ModuleName:
+		numBlocksPerSession := uint64(s.expectedModuleParams[moduleName][sessiontypes.ParamNumBlocksPerSession].value.(int64))
+		assertUpdatedParams(s,
+			[]byte(res.Stdout),
+			&sessiontypes.QueryParamsResponse{
+				Params: sessiontypes.Params{
+					NumBlocksPerSession: numBlocksPerSession,
+				},
+			},
+		)
+	case apptypes.ModuleName:
+		maxDelegatedGateways := uint64(s.expectedModuleParams[moduleName][apptypes.ParamMaxDelegatedGateways].value.(int64))
+		assertUpdatedParams(s,
+			[]byte(res.Stdout),
+			&apptypes.QueryParamsResponse{
+				Params: apptypes.Params{
+					MaxDelegatedGateways: maxDelegatedGateways,
+				},
+			},
+		)
+	case servicetypes.ModuleName:
+		addServiceFee := uint64(s.expectedModuleParams[moduleName][servicetypes.ParamAddServiceFee].value.(int64))
+		assertUpdatedParams(s,
+			[]byte(res.Stdout),
+			&servicetypes.QueryParamsResponse{
+				Params: servicetypes.Params{
+					AddServiceFee: addServiceFee,
 				},
 			},
 		)

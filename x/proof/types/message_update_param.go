@@ -47,7 +47,7 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 
 	// Parameter name must be supported by this module.
 	switch msg.Name {
-	case NameMinRelayDifficultyBits:
+	case ParamMinRelayDifficultyBits:
 		return msg.paramTypeIsInt64()
 	default:
 		return ErrProofParamNameInvalid.Wrapf("unsupported name param %q", msg.Name)

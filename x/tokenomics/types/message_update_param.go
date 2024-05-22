@@ -45,7 +45,7 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 
 	// Parameter name must be supported by this module.
 	switch msg.Name {
-	case NameComputeUnitsToTokensMultiplier:
+	case ParamComputeUnitsToTokensMultiplier:
 		return msg.paramTypeIsInt64()
 	default:
 		return ErrTokenomicsParamNameInvalid.Wrapf("unsupported name param %q", msg.Name)

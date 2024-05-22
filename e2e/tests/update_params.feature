@@ -5,7 +5,6 @@ Feature: Params Namespace
      Given the user has the pocketd binary installed
      And all "tokenomics" module params are set to their default values
      And an authz grant from the "gov" "module" account to the "pnf" "user" account for the "/poktroll.tokenomics.MsgUpdateParams" message exists
-     And a key and account exist for the "unauthorized" user
      When the "unauthorized" account sends an authz exec message to update all "tokenomics" module params
        | name                               | value | type  |
        | compute_units_to_tokens_multiplier | 666   | int64 |
@@ -33,6 +32,17 @@ Feature: Params Namespace
       | min_relay_difficulty_bits | 8     | int64 |
     Then all "proof" module params should be updated
 
+  # NB: If you are reading this and the proof module has parameters
+  # that are not being updated in this test, please update the test.
+  Scenario: An authorized user updates all "session" module params
+    Given the user has the pocketd binary installed
+    And all "session" module params are set to their default values
+    And an authz grant from the "gov" "module" account to the "pnf" "user" account for the "/poktroll.session.MsgUpdateParams" message exists
+    When the "pnf" account sends an authz exec message to update all "session" module params
+      | name                   | value | type  |
+      | num_blocks_per_session | 10    | int64 |
+    Then all "session" module params should be updated
+
   # NB: If you are reading this and any module has parameters that
   # are not being updated in this test, please update the test.
   Scenario Outline: An authorized user updates individual <module> module params
@@ -49,11 +59,10 @@ Feature: Params Namespace
       | tokenomics | /poktroll.tokenomics.MsgUpdateParam | compute_units_to_tokens_multiplier | 68          | int64      |
       | proof      | /poktroll.proof.MsgUpdateParam      | min_relay_difficulty_bits          | 12          | int64      |
 
-  Scenario: An unauthorized cannot update individual module params
+  Scenario: An unauthorized user cannot update individual module params
     Given the user has the pocketd binary installed
     And all "proof" module params are set to their default values
     And an authz grant from the "gov" "module" account to the "pnf" "user" account for the "/poktroll.proof.MsgUpdateParams" message exists
-    And a key and account exist for the "unauthorized" user
     When the "unauthorized" account sends an authz exec message to update "proof" the module param
       | name                       | value | type  |
       | "min_relay_difficulty_bits | 666   | int64 |
