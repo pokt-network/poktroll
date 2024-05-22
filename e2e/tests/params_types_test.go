@@ -2,11 +2,6 @@
 
 package e2e
 
-const (
-	computeUnitsToTokensMultipler = "compute_units_to_tokens_multiplier"
-	minRelayDifficultyBits        = "min_relay_difficulty_bits"
-)
-
 type (
 	// moduleNameKey is the key for a module name in the module params map.
 	moduleNameKey = string

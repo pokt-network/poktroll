@@ -6,7 +6,7 @@ var (
 	_ paramtypes.ParamSet = (*Params)(nil)
 
 	KeyMinRelayDifficultyBits            = []byte("MinRelayDifficultyBits")
-	NameMinRelayDifficultyBits           = "min_relay_difficulty_bits"
+	ParamMinRelayDifficultyBits          = "min_relay_difficulty_bits"
 	DefaultMinRelayDifficultyBits uint64 = 0 // TODO_BLOCKER(#142, #401): Determine the default value.
 )
 
@@ -53,11 +53,11 @@ func (params *Params) ValidateBasic() error {
 func ValidateMinRelayDifficultyBits(v interface{}) error {
 	difficulty, ok := v.(uint64)
 	if !ok {
-		return ErrProofParamNameInvalid.Wrapf("invalid parameter type: %T", v)
+		return ErrProofParamInvalid.Wrapf("invalid parameter type: %T", v)
 	}
 
 	if difficulty < 0 {
-		return ErrProofParamNameInvalid.Wrapf("invalid ValidateMinRelayDifficultyBits: (%v)", difficulty)
+		return ErrProofParamInvalid.Wrapf("invalid MinRelayDifficultyBits: (%v)", difficulty)
 	}
 
 	return nil

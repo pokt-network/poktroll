@@ -5,7 +5,7 @@
         "@type": "/poktroll.tokenomics.MsgUpdateParam",
         "authority": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
         "name": "compute_units_to_tokens_multiplier",
-        "as_int64": "69"
+        "as_int64": "42"
       }
     ]
   }
