@@ -78,7 +78,7 @@ var (
 	// By default, it is set to the number of logical CPUs available to the process.
 	maxConcurrentRequestLimit = runtime.GOMAXPROCS(0)
 	// fundingAccountKeyName is the key name of the account used to fund other accounts.
-	fundingAccountKeyName = "faucet"
+	fundingAccountKeyName = "pnf"
 	// supplierStakeAmount is the amount of tokens to stake by suppliers.
 	supplierStakeAmount sdk.Coin
 	// gatewayStakeAmount is the amount of tokens to stake by gateways.
@@ -383,7 +383,7 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 	// submit all claims and proofs.
 	s.testDurationBlocks = plans.totalDurationBlocks()
 
-	if !s.isEphemeralChain {
+	if s.isEphemeralChain {
 		// Adjust the max delegations parameter to the max gateways to permit all
 		// applications to delegate to all gateways.
 		// This is to ensure that requests are distributed evenly across all gateways
