@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	defaultManifestPath  = filepath.Join("..", "..", "localnet_loadtest_manifest.yaml")
+	defaultManifestPath  = filepath.Join("load-testing", "localnet_loadtest_manifest.yaml")
 	flagLogLevel         string
 	flagManifestFilePath string
 	logger               polylog.Logger

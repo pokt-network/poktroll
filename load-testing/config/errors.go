@@ -7,5 +7,5 @@ var (
 	ErrLoadTestManifestEmpty                    = sdkerrors.Register(codespace, 2100, "empty load test manifest")
 	ErrLoadTestManifestUnmarshalYAML            = sdkerrors.Register(codespace, 2101, "manifest reader cannot unmarshal yaml content")
 	ErrEphemeralChainLoadTestInvalidManifest    = sdkerrors.Register(codespace, 2102, "invalid ephemeral chain load test manifest")
-	ErrNonEphemeralChainLoadTestInvalidManifest = sdkerrors.Register(codespace, 2102, "invalid non-ephemeral chain load test manifest")
+	ErrNonEphemeralChainLoadTestInvalidManifest = sdkerrors.Register(codespace, 2103, "invalid non-ephemeral chain load test manifest")
 )

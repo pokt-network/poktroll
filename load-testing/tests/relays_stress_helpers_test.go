@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
@@ -119,7 +120,11 @@ func (s *relaysSuite) initFundingAccount(fundingAccountKeyName string) {
 // initializeLoadTestParams parses the load test manifest and initializes the
 // gateway and supplier keyNames and the URLs used to send requests to.
 func (s *relaysSuite) initializeLoadTestParams() *config.LoadTestManifestYAML {
-	loadTestManifestContent, err := os.ReadFile(flagManifestFilePath)
+	workingDirectory, err := os.Getwd()
+	require.NoError(s, err)
+
+	manifestPath := filepath.Join(workingDirectory, "..", "..", flagManifestFilePath)
+	loadTestManifestContent, err := os.ReadFile(manifestPath)
 	require.NoError(s, err)
 
 	loadTestManifest, err := config.ParseLoadTestManifest(loadTestManifestContent)
