@@ -9,7 +9,10 @@ import (
 // DefaultAddServiceFee is the default value for the add service fee
 // parameter in the genesis state of the service module.
 // TODO_BLOCKER: Revisit default param values for service fee
-const DefaultAddServiceFee = 1000000000 // 1000 POKT
+const (
+	ParamAddServiceFee   = "add_service_fee"
+	DefaultAddServiceFee = 1000000000 // 1000 POKT
+)
 
 var (
 	_ paramtypes.ParamSet = (*Params)(nil)

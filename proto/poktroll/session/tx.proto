@@ -33,7 +33,7 @@ message MsgUpdateParams {
 
   // params defines the x/session parameters to update.
   // NOTE: All parameters must be supplied.
-  Params params = 2 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+  Params params = 2 [(gogoproto.jsontag) = "params",(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
 }
 
 // MsgUpdateParamsResponse defines the response structure for executing a
