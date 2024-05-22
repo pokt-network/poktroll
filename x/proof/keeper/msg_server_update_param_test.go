@@ -24,7 +24,7 @@ func TestMsgUpdateParam_UpdateMinRelayDifficultyBitsOnly(t *testing.T) {
 	// Update the min relay difficulty bits
 	updateParamMsg := &prooftypes.MsgUpdateParam{
 		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		Name:      prooftypes.NameMinRelayDifficultyBits,
+		Name:      prooftypes.ParamMinRelayDifficultyBits,
 		AsType:    &prooftypes.MsgUpdateParam_AsInt64{AsInt64: expectedMinRelayDifficultyBits},
 	}
 	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
