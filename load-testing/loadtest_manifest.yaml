@@ -4,11 +4,24 @@ is_ephemeral_chain: false
 # testnet_node is the URL of the node that the load test will use to query the
 # chain and submit transactions.
 testnet_node: https://testnet-validated-validator-rpc.poktroll.com
-# The service ID to request relays from.
-service_id: "0021"
 # In non-ephemeral chains, the gateways are identified by their address.
+
+# The service ID to use for the load test.
+service_id: protocol-anvil
+
+# List of pre-provisioned gateways used for load testing.
+# These gateways will be progressively staked and delegated to during the load test.
 gateways:
-  # address is the bech32 pokt address of the gateway.
-  - address: pokt16sty9mjdh4u2fwgj8ptufg42cysvh6gsyx6wfp
-    # The url used to send relays to the gateway on.
-    exposed_url: http://localhost:84
+  # keyName that is available in the load test's environment keyring, used to
+  # identify the gateway and sign relays and transactions with.
+  # It must be the same as the one provided in the `appgate_server_config.yaml` file.
+  - address: pokt18anvrjyxvh2mc3agmxxhd047yna6ccfy2y97cs
+    exposed_url: https://testnet-gateway-1.poktroll.com:443
+  - address: pokt1gdwgchpz56uyr2m2g29gvuu3lc8fe3649ew2am
+    exposed_url: https://testnet-gateway-2.poktroll.com:443
+  - address: pokt1mm0xn9kxu789las3d4ehfndq3vudnujpdmkpjl
+    exposed_url: https://testnet-gateway-3.poktroll.com:443
+  - address: pokt13an9w8plrpvf0vq2jywcc4xc5ggz3tkhmlj4uq
+    exposed_url: https://testnet-gateway-4.poktroll.com:443
+  - address: pokt1y0pawkkgd8659n2mq6r80pgu50xkuzn5s62nfj
+    exposed_url: https://testnet-gateway-5.poktroll.com:443
