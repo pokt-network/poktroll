@@ -15,6 +15,7 @@ const (
 
 var (
 	ParamsKey = []byte("p_proof")
+
 	// KeyDelimiter is the delimiter for composite keys.
 	KeyDelimiter = []byte("/")
 )

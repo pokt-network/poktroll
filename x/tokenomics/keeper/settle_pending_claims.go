@@ -20,12 +20,28 @@ const (
 )
 
 // SettlePendingClaims settles all pending (i.e. expiring) claims.
-// If a claim is expired and requires a proof and a proof IS available -> it's settled.
-// If a claim is expired and requires a proof and a proof IS NOT available -> it's deleted.
-// If a claim is expired and does NOT require a proof -> it's settled.
-// Events are emitted for each claim that is settled or removed.
-// On-chain Claims & Proofs are deleted after they're settled or expired to free up space.
-func (k Keeper) SettlePendingClaims(ctx sdk.Context) (numClaimsSettled, numClaimsExpired uint64, err error) {
+//
+// Logic:
+//
+//	If a claim is expired and requires a proof and a proof IS available -> it's settled.
+//	If a claim is expired and requires a proof and a proof IS NOT available -> it's deleted.
+//	If a claim is expired and does NOT require a proof -> it's settled.
+//
+// Side effects:
+//
+//	Events are emitted for each claim that is settled or removed.
+//	On-chain Claims & Proofs are deleted after they're settled or expired to free up space.
+//
+// Returns:
+//
+//	numClaimsSettled: the number of claims that were settled.
+//	numClaimsExpired: the number of claims that expired without being settled.
+//	computeUnitsPerServiceMap: a map of service IDs to the total compute units settled for that service.
+func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
+	numClaimsSettled, numClaimsExpired uint64,
+	computeUnitsPerServiceMap map[string]uint64,
+	err error,
+) {
 	logger := k.Logger().With("method", "SettlePendingClaims")
 
 	isSuccessful := false
@@ -50,6 +66,8 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (numClaimsSettled, numClaim
 
 	logger.Info(fmt.Sprintf("found %d expiring claims at block height %d", len(expiringClaims), blockHeight))
 
+	computeUnitsPerServiceMap = make(map[string]uint64)
+
 	for _, claim := range expiringClaims {
 		// Retrieve the number of compute units in the claim for the events emitted
 		root := (smt.MerkleRoot)(claim.GetRootHash())
@@ -69,8 +87,8 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (numClaimsSettled, numClaim
 					Claim:        &claim,
 					ComputeUnits: claimComputeUnits,
 				}
-				if err := ctx.EventManager().EmitTypedEvent(&claimExpiredEvent); err != nil {
-					return 0, 0, err
+				if err = ctx.EventManager().EmitTypedEvent(&claimExpiredEvent); err != nil {
+					return
 				}
 				// The claim & proof are no longer necessary, so there's no need for them
 				// to take up on-chain space.
@@ -84,9 +102,9 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (numClaimsSettled, numClaim
 		}
 
 		// Manage the mint & burn accounting for the claim.
-		if err := k.SettleSessionAccounting(ctx, &claim); err != nil {
+		if err = k.SettleSessionAccounting(ctx, &claim); err != nil {
 			logger.Error(fmt.Sprintf("error settling session accounting for claim %q: %v", claim.SessionHeader.SessionId, err))
-			return 0, 0, err
+			return
 		}
 
 		claimSettledEvent := types.EventClaimSettled{
@@ -94,13 +112,14 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (numClaimsSettled, numClaim
 			ComputeUnits:  claimComputeUnits,
 			ProofRequired: isProofRequiredForClaim,
 		}
-		if err := ctx.EventManager().EmitTypedEvent(&claimSettledEvent); err != nil {
-			return 0, 0, err
+		if err = ctx.EventManager().EmitTypedEvent(&claimSettledEvent); err != nil {
+			return
 		}
 
 		// The claim & proof are no longer necessary, so there's no need for them
 		// to take up on-chain space.
 		k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierAddress)
+
 		// Whether or not the proof is required, the supplier may have submitted one
 		// so we need to delete it either way. If we don't have the if structure,
 		// a safe error will be printed, but it can be confusing to the operator
@@ -109,6 +128,9 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (numClaimsSettled, numClaim
 			k.proofKeeper.RemoveProof(ctx, sessionId, claim.SupplierAddress)
 		}
 
+		// Tally the total number of compute units settled for each service
+		computeUnitsPerServiceMap[claim.SessionHeader.Service.Id] += claimComputeUnits
+
 		numClaimsSettled++
 		logger.Info(fmt.Sprintf("Successfully settled claim for session ID %q at block height %d", claim.SessionHeader.SessionId, blockHeight))
 	}
@@ -116,7 +138,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (numClaimsSettled, numClaim
 	logger.Info(fmt.Sprintf("settled %d and expired %d claims at block height %d", numClaimsSettled, numClaimsExpired, blockHeight))
 
 	isSuccessful = true
-	return numClaimsSettled, numClaimsExpired, nil
+	return
 }
 
 // getExpiringClaims returns all claims that are expiring at the current block height.

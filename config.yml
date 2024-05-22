@@ -182,3 +182,6 @@ genesis:
     session:
       params:
         num_blocks_per_session: 4
+    proof:
+      params:
+        min_relay_difficulty_bits: 0

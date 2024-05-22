@@ -31,7 +31,7 @@ func (k msgServer) UpdateParam(
 		}
 		minRelayDifficultyBits := uint64(value.AsInt64)
 
-		if err := types.ValidateMinRelayDifficultyBits(minRelayDifficultyBits); err != nil {
+		if err := types.ValidateRelayDifficultyBits(minRelayDifficultyBits); err != nil {
 			return nil, err
 		}
 

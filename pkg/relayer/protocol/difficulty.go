@@ -16,6 +16,10 @@ func MustCountDifficultyBits(bz []byte) int {
 	return diff
 }
 
+// TODO_IN_THIS_PR(@Olshansk): Prepare up next work to switch from counting
+// leading zeroes to a general purpose difficulty calculation method similar
+// to Bitcoin; https://bitcoin.stackexchange.com/questions/121920/is-it-always-possible-to-find-a-number-whose-hash-starts-with-a-certain-number-o
+//
 // CountHashDifficultyBits returns the number of leading zero bits in the given byte
 // slice. It returns an error if the byte slice is all zero bits.
 //
