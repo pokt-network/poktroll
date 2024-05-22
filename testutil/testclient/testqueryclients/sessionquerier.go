@@ -59,6 +59,14 @@ func NewTestSessionQueryClient(
 		}).
 		AnyTimes()
 
+	sessionQuerier.EXPECT().GetSessionGracePeriodBlockCount(gomock.Any(), gomock.Any()).
+		DoAndReturn(GetSessionGracePeriodBlockCount).
+		AnyTimes()
+
+	sessionQuerier.EXPECT().GetSessionGracePeriodEndHeight(gomock.Any(), gomock.Any()).
+		DoAndReturn(GetSessionGracePeriodEndHeight).
+		AnyTimes()
+
 	sessionQuerier.EXPECT().IsWithinGracePeriod(gomock.Any(), gomock.Any(), gomock.Any()).
 		DoAndReturn(IsWithinDefaultGracePeriod).
 		AnyTimes()
@@ -107,6 +115,16 @@ func AddToExistingSessions(
 	t.Cleanup(func() {
 		delete(sessionsMap, sessionId)
 	})
+}
+
+func GetSessionGracePeriodBlockCount(_ context.Context, sessionEndHeight int64) (int64, error) {
+	numBlocksPerSession := sessiontypes.DefaultParams().NumBlocksPerSession
+	return int64(session.GetSessionGracePeriodBlockCount(numBlocksPerSession)), nil
+}
+
+func GetSessionGracePeriodEndHeight(_ context.Context, sessionEndHeight int64) (int64, error) {
+	numBlocksPerSession := sessiontypes.DefaultParams().NumBlocksPerSession
+	return session.GetSessionGracePeriodEndHeight(numBlocksPerSession, sessionEndHeight), nil
 }
 
 func IsWithinDefaultGracePeriod(_ context.Context, sessionEndHeight, queryHeight int64) (bool, error) {

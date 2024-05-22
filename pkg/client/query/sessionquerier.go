@@ -80,6 +80,24 @@ func (sessq *sessionQuerier) GetParams(ctx context.Context) (*sessiontypes.Param
 	return &res.Params, nil
 }
 
+// GetSessionGracePeriodEndHeight returns the height at which the grace period for
+// the session ending with sessionEndHeight elapses.
+func (sessq *sessionQuerier) GetSessionGracePeriodEndHeight(
+	ctx context.Context,
+	sessionEndHeight int64,
+) (int64, error) {
+	params, err := sessq.GetParams(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	// TODO_BLOCKER(#543): Use the values of session params at `sessionEndHeight`.
+	_ = sessionEndHeight
+
+	numBlocksPerSession := params.GetNumBlocksPerSession()
+	return session.GetSessionGracePeriodEndHeight(numBlocksPerSession, sessionEndHeight), nil
+}
+
 // GetSessionGracePeriodBlockCount returns the number of blocks in the grace period
 // for the session which includes queryHeight.
 func (sessq *sessionQuerier) GetSessionGracePeriodBlockCount(

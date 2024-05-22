@@ -276,6 +276,9 @@ type SessionQueryClient interface {
 	) (*sessiontypes.Session, error)
 	// GetParams queries the chain for the current session module parameters.
 	GetParams(ctx context.Context) (*sessiontypes.Params, error)
+	// GetSessionGracePeriodEndHeight returns the height at which the grace period for
+	// the session ending with sessionEndHeight elapses.
+	GetSessionGracePeriodEndHeight(ctx context.Context, sessionEndHeight int64) (int64, error)
 	// GetSessionGracePeriodBlockCount returns the number of blocks in the grace period
 	// for the session which includes queryHeight.
 	GetSessionGracePeriodBlockCount(ctx context.Context, queryHeight int64) (uint64, error)
