@@ -20,7 +20,7 @@ type sharedQuerier struct {
 	sharedQuerier sharedtypes.QueryClient
 }
 
-// NewSessionQuerier returns a new instance of a client.SessionQueryClient by
+// NewSharedQuerier returns a new instance of a client.SharedQueryClient by
 // injecting the dependecies provided by the depinject.Config.
 //
 // Required dependencies:

@@ -72,9 +72,9 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 		).
 		AnyTimes()
 
-	sessionQueryClientMock := testqueryclients.NewTestSessionQueryClient(t)
+	sharedQueryClientMock := testqueryclients.NewTestSharedQueryClient(t)
 
-	deps := depinject.Supply(blockClient, blockQueryClientMock, supplierClient, sessionQueryClientMock)
+	deps := depinject.Supply(blockClient, blockQueryClientMock, supplierClient, sharedQueryClientMock)
 	storesDirectoryOpt := testrelayer.WithTempStoresDirectory(t)
 
 	// Create a new relayer sessions manager.

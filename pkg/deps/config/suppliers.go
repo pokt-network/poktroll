@@ -395,3 +395,18 @@ func NewSupplyBlockQueryClientFn(queryNodeRPCUrl *url.URL) SupplierFn {
 		return depinject.Configs(deps, depinject.Supply(blockQueryClient)), nil
 	}
 }
+
+func NewSharedQueryClientFn() SupplierFn {
+	return func(
+		_ context.Context,
+		deps depinject.Config,
+		_ *cobra.Command,
+	) (depinject.Config, error) {
+		sharedQuerier, err := query.NewSharedQuerier(deps)
+		if err != nil {
+			return nil, err
+		}
+
+		return depinject.Configs(deps, depinject.Supply(sharedQuerier)), nil
+	}
+}

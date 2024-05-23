@@ -48,6 +48,8 @@ type relayerSessionsManager struct {
 
 	// storesDirectory points to a path on disk where KVStore data files are created.
 	storesDirectory string
+
+	sharedQueryClient client.SharedQueryClient
 }
 
 // NewRelayerSessions creates a new relayerSessions.
@@ -73,6 +75,7 @@ func NewRelayerSessions(
 		deps,
 		&rs.blockClient,
 		&rs.supplierClient,
+		&rs.sharedQueryClient,
 	); err != nil {
 		return nil, err
 	}
@@ -175,6 +178,15 @@ func (rs *relayerSessionsManager) mapBlockToSessionsToClaim(
 	// They will be emitted last, after all the late sessions have been emitted.
 	var onTimeSessions []relayer.SessionTree
 
+	// TODO_IMPROVE(#543): Params are currently queried each block.
+	sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
+	if err != nil {
+		rs.logger.Error().Err(err).Msg("unable to query shared module params")
+		return nil, true
+	}
+
+	numBlocksPerSession := sharedParams.NumBlocksPerSession
+
 	// Check if there are sessions that need to enter the claim/proof phase as their
 	// end block height was the one before the last committed block or earlier.
 	// Iterate over the sessionsTrees map to get the ones that end at a block height
@@ -186,7 +198,7 @@ func (rs *relayerSessionsManager) mapBlockToSessionsToClaim(
 		// before emitting the on-time sessions.
 		var lateSessions []relayer.SessionTree
 
-		// !IsWithinGracePeriod is checking for sessions to claim with <= operator,
+		// Checking for sessions to claim with <= operator,
 		// which means that it would include sessions that were supposed to be
 		// claimed in previous block heights too.
 		// These late sessions might have their create claim window closed and are
@@ -195,7 +207,7 @@ func (rs *relayerSessionsManager) mapBlockToSessionsToClaim(
 		// downstream at the waitForEarliestCreateClaimsHeight step.
 		// TODO_BLOCKER: Introduce governance claim and proof window durations,
 		// implement off-chain window closing and on-chain window checks.
-		if !shared.IsGracePeriodElapsed(sessionEndHeight, block.Height()) {
+		if sessionEndHeight+shared.SessionGracePeriodBlocks <= block.Height() {
 			// Iterate over the sessionsTrees that have grace period ending at this
 			// block height and add them to the list of sessionTrees to be published.
 			for _, sessionTree := range sessionsTreesEndingAtBlockHeight {
@@ -212,7 +224,9 @@ func (rs *relayerSessionsManager) mapBlockToSessionsToClaim(
 				// Separate the sessions that are on-time from the ones that are late.
 				// If the session is past its grace period, it is considered late,
 				// otherwise it is on time and will be emitted last.
-				if shared.IsGracePeriodElapsed(sessionEndHeight, block.Height()) {
+				sessionGracePeriodEndHeight := sessionEndHeight + shared.SessionGracePeriodBlocks
+				nextSessionEndHeight := sessionGracePeriodEndHeight + int64(numBlocksPerSession)
+				if nextSessionEndHeight >= block.Height() {
 					lateSessions = append(lateSessions, sessionTree)
 				} else {
 					onTimeSessions = append(onTimeSessions, sessionTree)
