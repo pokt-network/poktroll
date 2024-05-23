@@ -11,13 +11,15 @@ This page is only relevant to you if you are part of the core protocol team at G
 
 :::
 
+## Table of Contents <!-- omit in toc -->
+
 - [Infrastructure provisioning](#infrastructure-provisioning)
 - [Version upgrade](#version-upgrade)
 - [Regenesis procedure](#regenesis-procedure)
 
 ## Infrastructure provisioning
 
-- K8s cluster is provisioned by Grove internal tooling;
+- K8s cluster is provisioned by Grove internal tooling
 - We set up ArgoCD on the cluster and configure it to sync the [main/root application on the cluster](https://github.com/pokt-network/protocol-infra/blob/main/clusters/protocol-us-central1-app.yaml).
 - ArgoCD, using this ArgoCD Application, provisions all the resources and other ArgoCD Applications that are included with that ArgoCD Application. This approach follows [ArgoCD App of Apps pattern](https://argo-cd.readthedocs.io/en/stable/operator-manual/cluster-bootstrapping/).
 - As a part of that ArgoCD Application we have resources such as StatefulSets and COnfigMaps that describe configuration and infrastructure to run validators and seed nodes. Examples:
