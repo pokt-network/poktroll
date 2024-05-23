@@ -207,7 +207,7 @@ func (rs *relayerSessionsManager) mapBlockToSessionsToClaim(
 		// downstream at the waitForEarliestCreateClaimsHeight step.
 		// TODO_BLOCKER: Introduce governance claim and proof window durations,
 		// implement off-chain window closing and on-chain window checks.
-		if sessionEndHeight+shared.SessionGracePeriodBlocks <= block.Height() {
+		if shared.GetSessionGracePeriodEndHeight(sessionEndHeight) <= block.Height() {
 			// Iterate over the sessionsTrees that have grace period ending at this
 			// block height and add them to the list of sessionTrees to be published.
 			for _, sessionTree := range sessionsTreesEndingAtBlockHeight {
@@ -224,7 +224,7 @@ func (rs *relayerSessionsManager) mapBlockToSessionsToClaim(
 				// Separate the sessions that are on-time from the ones that are late.
 				// If the session is past its grace period, it is considered late,
 				// otherwise it is on time and will be emitted last.
-				sessionGracePeriodEndHeight := sessionEndHeight + shared.SessionGracePeriodBlocks
+				sessionGracePeriodEndHeight := shared.GetSessionGracePeriodEndHeight(sessionEndHeight)
 				nextSessionEndHeight := sessionGracePeriodEndHeight + int64(numBlocksPerSession)
 				if nextSessionEndHeight >= block.Height() {
 					lateSessions = append(lateSessions, sessionTree)

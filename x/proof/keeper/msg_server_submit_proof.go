@@ -440,8 +440,7 @@ func (k msgServer) validateClosestPath(
 	// into account the heights, windows and grace periods into helper functions.
 	// TODO_BLOCKER@(@Olshansk): Update `blockHeight` to be the value of when the `ProofWindow`
 	// opens once the variable is added.
-	sessionEndBlockHeightWithGracePeriod := sessionHeader.GetSessionEndBlockHeight() +
-		shared.SessionGracePeriodBlocks
+	sessionEndBlockHeightWithGracePeriod := shared.GetSessionGracePeriodEndHeight(sessionHeader.GetSessionEndBlockHeight())
 	blockHash := k.sessionKeeper.GetBlockHash(ctx, sessionEndBlockHeightWithGracePeriod)
 
 	// TODO: Investigate "proof for the path provided does not match one expected by the on-chain protocol"
