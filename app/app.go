@@ -1,7 +1,8 @@
 package app
 
 import (
-	// this line is used by starport scaffolding # stargate/app/moduleImport
+	sharedmodulekeeper "github.com/pokt-network/poktroll/x/shared/keeper"
+// this line is used by starport scaffolding # stargate/app/moduleImport
 	"io"
 	"os"
 	"path/filepath"
@@ -131,7 +132,8 @@ type App struct {
 	SessionKeeper     sessionmodulekeeper.Keeper
 	ProofKeeper       proofmodulekeeper.Keeper
 	TokenomicsKeeper  tokenomicsmodulekeeper.Keeper
-	// this line is used by starport scaffolding # stargate/app/keeperDeclaration
+	SharedKeeper sharedmodulekeeper.Keeper
+// this line is used by starport scaffolding # stargate/app/keeperDeclaration
 
 	// simulation manager
 	sm *module.SimulationManager
@@ -276,6 +278,7 @@ func New(
 		&app.SessionKeeper,
 		&app.ProofKeeper,
 		&app.TokenomicsKeeper,
+		&app.SharedKeeper,
 		// this line is used by starport scaffolding # stargate/app/keeperDefinition
 	); err != nil {
 		panic(err)
