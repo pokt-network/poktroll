@@ -49,6 +49,7 @@ type relayerSessionsManager struct {
 	// storesDirectory points to a path on disk where KVStore data files are created.
 	storesDirectory string
 
+	// sharedQueryClient is used to query shared module parameters.
 	sharedQueryClient client.SharedQueryClient
 }
 

@@ -277,7 +277,9 @@ type SessionQueryClient interface {
 	) (*sessiontypes.Session, error)
 }
 
+// SharedQueryClient defines an interface that enables the querying of the
+// on-chain shared module information.
 type SharedQueryClient interface {
-	// GetParams queries the chain for the current session module parameters.
+	// GetParams queries the chain for the current shared module parameters.
 	GetParams(ctx context.Context) (*sharedtypes.Params, error)
 }
