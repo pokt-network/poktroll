@@ -1,8 +1,14 @@
 package shared
 
+// NumBlocksPerSession is a place-holder that will be removed once the respective governance
+// parameter is implemented.
+//
+// TODO_BLOCKER(#517): Remove direct usage of these constants in helper functions
+// when they will be replaced by governance params
 const NumBlocksPerSession = 4
 
-// SessionGracePeriodBlocks SHOULD be a multiple of
+// SessionGracePeriodBlocks is the number of blocks after the session ends before the
+// "session grace period" is considered to have elapsed.
 const SessionGracePeriodBlocks = 4
 
 // GetSessionStartBlockHeight returns the block height at which the session starts

@@ -21,11 +21,6 @@ var SHA3HashLen = crypto.SHA3_256.Size()
 
 // TODO_BLOCKER(#21): Make these configurable governance param
 const (
-	// TODO_BLOCKER: Remove direct usage of these constants in helper functions
-	// when they will be replaced by governance params
-
-	// Duration of the grace period in number of sessions
-
 	NumSupplierPerSession       = 15
 	SessionIDComponentDelimiter = "."
 )
