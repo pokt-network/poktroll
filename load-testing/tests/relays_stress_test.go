@@ -78,7 +78,7 @@ var (
 	// By default, it is set to the number of logical CPUs available to the process.
 	maxConcurrentRequestLimit = runtime.GOMAXPROCS(0)
 	// fundingAccountAddress is the key name of the account used to fund other accounts.
-	fundingAccountAddress = "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw"
+	fundingAccountAddress = "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw" // address for pnf account
 	// supplierStakeAmount is the amount of tokens to stake by suppliers.
 	supplierStakeAmount sdk.Coin
 	// gatewayStakeAmount is the amount of tokens to stake by gateways.
@@ -227,7 +227,6 @@ type relaysSuite struct {
 type accountInfo struct {
 	// The address of the account available in the keyring used by the test.
 	address       string
-	accAddress    sdk.AccAddress
 	amountToStake sdk.Coin
 	// pendingMsgs is a list of messages that are pending to be sent by the account.
 	// It is used to accumulate messages to be sent in a single transaction to avoid
@@ -276,17 +275,24 @@ func (s *relaysSuite) LocalnetIsRunning() {
 	// not persisted across test runs.
 	signals.GoOnExitSignal(func() {
 		for _, app := range append(s.activeApplications, s.preparedApplications...) {
-			_ = s.txContext.GetKeyring().DeleteByAddress(app.accAddress)
+			accAddress := sdk.MustAccAddressFromBech32(app.address)
+
+			_ = s.txContext.GetKeyring().DeleteByAddress(accAddress)
 		}
 		s.cancelCtx()
 	})
 
 	s.Cleanup(func() {
 		for _, app := range s.activeApplications {
-			s.txContext.GetKeyring().DeleteByAddress(app.accAddress)
+			accAddress := sdk.MustAccAddressFromBech32(app.address)
+
+			s.txContext.GetKeyring().DeleteByAddress(accAddress)
 		}
 		for _, app := range s.preparedApplications {
-			s.txContext.GetKeyring().DeleteByAddress(app.accAddress)
+			accAddress, err := sdk.AccAddressFromBech32(app.address)
+			require.NoError(s, err)
+
+			s.txContext.GetKeyring().DeleteByAddress(accAddress)
 		}
 	})
 

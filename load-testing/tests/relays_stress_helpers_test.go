@@ -113,7 +113,6 @@ func (s *relaysSuite) initFundingAccount(fundingAccountAddress string) {
 
 	s.fundingAccountInfo = &accountInfo{
 		address:     fundingAccountAddress,
-		accAddress:  accAddress,
 		pendingMsgs: []sdk.Msg{},
 	}
 }
@@ -501,7 +500,7 @@ func (s *relaysSuite) sendFundAvailableActorsTx(
 		// The application is created with the keyName formatted as "app-%d" starting from 1.
 		application := s.createApplicationAccount(i+1, appFundingAmount)
 		// Add a bank.MsgSend message to fund the application.
-		s.addPendingFundMsg(application.accAddress, sdk.NewCoins(application.amountToStake))
+		s.addPendingFundMsg(application.address, sdk.NewCoins(application.amountToStake))
 
 		applications = append(applications, application)
 	}
@@ -515,14 +514,14 @@ func (s *relaysSuite) sendFundAvailableActorsTx(
 	// Fund accounts for **all** suppliers that will be used over the duration of the test.
 	suppliersAdded := int64(0)
 	for _, supplierAddress := range s.availableSupplierAddresses {
-		if suppliersAdded > plans.suppliers.maxActorCount {
+		if suppliersAdded >= plans.suppliers.maxActorCount {
 			break
 		}
 
 		supplier := s.addActor(supplierAddress, supplierStakeAmount)
 
 		// Add a bank.MsgSend message to fund the supplier.
-		s.addPendingFundMsg(supplier.accAddress, sdk.NewCoins(supplierStakeAmount))
+		s.addPendingFundMsg(supplier.address, sdk.NewCoins(supplierStakeAmount))
 
 		suppliers = append(suppliers, supplier)
 		suppliersAdded++
@@ -531,13 +530,13 @@ func (s *relaysSuite) sendFundAvailableActorsTx(
 	// Fund accounts for **all** gateways that will be used over the duration of the test.
 	gatewaysAdded := int64(0)
 	for _, gatewayAddress := range s.availableGatewayAddresses {
-		if gatewaysAdded > plans.gateways.maxActorCount {
+		if gatewaysAdded >= plans.gateways.maxActorCount {
 			break
 		}
 		gateway := s.addActor(gatewayAddress, gatewayStakeAmount)
 
 		// Add a bank.MsgSend message to fund the gateway.
-		s.addPendingFundMsg(gateway.accAddress, sdk.NewCoins(gatewayStakeAmount))
+		s.addPendingFundMsg(gateway.address, sdk.NewCoins(gatewayStakeAmount))
 
 		gateways = append(gateways, gateway)
 		gatewaysAdded++
@@ -547,9 +546,11 @@ func (s *relaysSuite) sendFundAvailableActorsTx(
 }
 
 // addPendingFundMsg appends a bank.MsgSend message into the funding account's pending messages accumulation.
-func (s *relaysSuite) addPendingFundMsg(addr sdk.AccAddress, coins sdk.Coins) {
+func (s *relaysSuite) addPendingFundMsg(addr string, coins sdk.Coins) {
+	accAddress := sdk.MustAccAddressFromBech32(addr)
+	fundingAccountAccAddress := sdk.MustAccAddressFromBech32(s.fundingAccountInfo.address)
 	s.fundingAccountInfo.addPendingMsg(
-		banktypes.NewMsgSend(s.fundingAccountInfo.accAddress, addr, coins),
+		banktypes.NewMsgSend(fundingAccountAccAddress, accAddress, coins),
 	)
 }
 
@@ -583,7 +584,7 @@ func (s *relaysSuite) sendFundNewAppsTx(
 	appFundingAmount := s.getAppFundingAmount(sessionInfo.sessionEndBlockHeight)
 	for appIdx := int64(0); appIdx < appsToFund; appIdx++ {
 		app := s.createApplicationAccount(appCount+appIdx+1, appFundingAmount)
-		s.addPendingFundMsg(app.accAddress, sdk.NewCoins(app.amountToStake))
+		s.addPendingFundMsg(app.address, sdk.NewCoins(app.amountToStake))
 		newApps = append(newApps, app)
 	}
 	s.sendPendingMsgsTx(s.fundingAccountInfo)
@@ -613,7 +614,6 @@ func (s *relaysSuite) createApplicationAccount(
 	require.NoError(s, err)
 
 	return &accountInfo{
-		accAddress:    accAddress,
 		address:       accAddress.String(),
 		pendingMsgs:   []sdk.Msg{},
 		amountToStake: amountToStake,
@@ -640,7 +640,7 @@ func (s *relaysSuite) getAppFundingAmount(currentBlockHeight int64) sdk.Coin {
 // then delegating to multiple gateways in the same transaction.
 func (s *relaysSuite) addPendingStakeApplicationMsg(application *accountInfo) {
 	application.addPendingMsg(apptypes.NewMsgStakeApplication(
-		application.accAddress.String(),
+		application.address,
 		application.amountToStake,
 		[]*sharedtypes.ApplicationServiceConfig{{Service: testedService}},
 	))
@@ -651,8 +651,8 @@ func (s *relaysSuite) addPendingStakeApplicationMsg(application *accountInfo) {
 // pending messages.
 func (s *relaysSuite) addPendingDelegateToGatewayMsg(application, gateway *accountInfo) {
 	application.addPendingMsg(apptypes.NewMsgDelegateToGateway(
-		application.accAddress.String(),
-		gateway.accAddress.String(),
+		application.address,
+		gateway.address,
 	))
 }
 
@@ -763,14 +763,13 @@ func (plan *actorLoadTestIncrementPlan) shouldIncrementSupplierCount(
 // addActor populates the actors's amount to stake and accAddress using the
 // address provided in the corresponding provisioned actors slice.
 func (s *relaysSuite) addActor(actorAddress string, actorStakeAmount sdk.Coin) *accountInfo {
-	accAddress, err := sdk.AccAddressFromBech32(actorAddress)
+	accAddress := sdk.MustAccAddressFromBech32(actorAddress)
 	keyRecord, err := s.txContext.GetKeyring().KeyByAddress(accAddress)
 	require.NoError(s, err)
 	require.NotNil(s, keyRecord)
 
 	return &accountInfo{
-		accAddress:    accAddress,
-		address:       accAddress.String(),
+		address:       actorAddress,
 		pendingMsgs:   []sdk.Msg{},
 		amountToStake: actorStakeAmount,
 	}
@@ -782,7 +781,7 @@ func (s *relaysSuite) addActor(actorAddress string, actorStakeAmount sdk.Coin) *
 // messages in a single supplier transaction.
 func (s *relaysSuite) addPendingStakeSupplierMsg(supplier *accountInfo) {
 	supplier.addPendingMsg(suppliertypes.NewMsgStakeSupplier(
-		supplier.accAddress.String(),
+		supplier.address,
 		supplier.amountToStake,
 		[]*sharedtypes.SupplierServiceConfig{
 			{
@@ -839,7 +838,7 @@ func (s *relaysSuite) sendStakeSuppliersTxs(
 // gateway then appends it to the gateway account's pending messages.
 func (s *relaysSuite) addPendingStakeGatewayMsg(gateway *accountInfo) {
 	gateway.addPendingMsg(gatewaytypes.NewMsgStakeGateway(
-		gateway.accAddress.String(),
+		gateway.address,
 		gateway.amountToStake,
 	))
 }
@@ -941,8 +940,10 @@ func (s *relaysSuite) sendPendingMsgsTx(actor *accountInfo) {
 	txBuilder.SetTimeoutHeight(uint64(s.latestBlock.Height() + 1))
 	txBuilder.SetGasLimit(690000042)
 
-	keyRecord, err := s.txContext.GetKeyring().KeyByAddress(actor.accAddress)
+	accAddress := sdk.MustAccAddressFromBech32(actor.address)
+	keyRecord, err := s.txContext.GetKeyring().KeyByAddress(accAddress)
 	require.NoError(s, err)
+	require.NotNil(s, keyRecord)
 
 	// TODO_HACK: Sometimes SignTx fails at retrieving the account info with
 	// the error post failed: Post "http://localhost:36657": EOF.
@@ -1032,7 +1033,7 @@ func (s *relaysSuite) sendRelay(iteration uint64, relayPayload string) (appAddre
 
 	// Include the application address in the query to the gateway.
 	query := gatewayUrl.Query()
-	query.Add("applicationAddr", application.accAddress.String())
+	query.Add("applicationAddr", application.address)
 	query.Add("relayCount", fmt.Sprintf("%d", iteration))
 	gatewayUrl.RawQuery = query.Encode()
 
@@ -1070,9 +1071,8 @@ func (s *relaysSuite) ensureFundedActors(
 				}
 
 				attrs := event.Attributes
-				addr := actor.accAddress.String()
 				// Check if the actor is the recipient of the transfer event.
-				if actorFunded = hasEventAttr(attrs, "recipient", addr); actorFunded {
+				if actorFunded = hasEventAttr(attrs, "recipient", actor.address); actorFunded {
 					break
 				}
 			}
@@ -1108,9 +1108,8 @@ func (s *relaysSuite) ensureStakedActors(
 				}
 
 				attrs := event.Attributes
-				addr := actor.accAddress.String()
 				// Check if the actor is the sender of the message event.
-				if hasEventAttr(attrs, "action", msg) && hasEventAttr(attrs, "sender", addr) {
+				if hasEventAttr(attrs, "action", msg) && hasEventAttr(attrs, "sender", actor.address) {
 					actorStaked = true
 					break
 				}
@@ -1147,7 +1146,7 @@ func (s *relaysSuite) ensureDelegatedApps(
 				}
 
 				attrs := event.Attributes
-				appAddr := fmt.Sprintf("%q", application.accAddress.String())
+				appAddr := fmt.Sprintf("%q", application.address)
 				// Skip the event if the application is not the delegator.
 				if !hasEventAttr(attrs, "app_address", appAddr) {
 					break
@@ -1155,7 +1154,7 @@ func (s *relaysSuite) ensureDelegatedApps(
 
 				// Check if the application is delegated to each of the gateways.
 				for _, gateway := range gateways {
-					gwAddr := fmt.Sprintf("%q", gateway.accAddress.String())
+					gwAddr := fmt.Sprintf("%q", gateway.address)
 					if hasEventAttr(attrs, "gateway_address", gwAddr) {
 						numDelegatees++
 						break
@@ -1265,7 +1264,7 @@ func (s *relaysSuite) sendAdjustMaxDelegationsParamTx(maxGateways int64) {
 	require.NoError(s, err)
 
 	authzExecMsg := &authz.MsgExec{
-		Grantee: s.fundingAccountInfo.accAddress.String(),
+		Grantee: s.fundingAccountInfo.address,
 		Msgs:    []*codectypes.Any{appMsgUpdateParamsAny},
 	}
 
@@ -1449,8 +1448,7 @@ func (s *relaysSuite) populateWithKnownGateways(
 	plans.gateways.initialActorCount = s.gatewayInitialCount
 	for gwAddress := range s.gatewayUrls {
 		gateway := &accountInfo{
-			accAddress: sdk.MustAccAddressFromBech32(gwAddress),
-			address:    gwAddress,
+			address: gwAddress,
 		}
 		gateways = append(gateways, gateway)
 	}
