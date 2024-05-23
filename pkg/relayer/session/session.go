@@ -227,7 +227,7 @@ func (rs *relayerSessionsManager) mapBlockToSessionsToClaim(
 				// Separate the sessions that are on-time from the ones that are late.
 				// If the session is past its grace period, it is considered late,
 				// otherwise it is on time and will be emitted last.
-				if sessionGracePeriodEndHeight+int64(numBlocksPerSession) >= block.Height() {
+				if sessionGracePeriodEndHeight+int64(numBlocksPerSession) < block.Height() {
 					lateSessions = append(lateSessions, sessionTree)
 				} else {
 					onTimeSessions = append(onTimeSessions, sessionTree)
