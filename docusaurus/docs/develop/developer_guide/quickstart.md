@@ -655,7 +655,7 @@ We went through a low of steps above just so you can get a feel for how things w
 
 That said, you can dynamically scale the number of any actors in LocalNet by ony changing one line!
 
-Go to our [localnet tutorial](../infrastructure/localnet.md) to learn more.
+Go to our [localnet tutorial](../../operate/infrastructure/localnet.md) to learn more.
 
 ## 7. Explore the tools
 
