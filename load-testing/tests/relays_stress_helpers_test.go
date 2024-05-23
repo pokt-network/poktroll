@@ -102,23 +102,24 @@ func (s *relaysSuite) setupTxEventListeners() {
 }
 
 // initFundingAccount initializes the account that will be funding the onchain actors.
-func (s *relaysSuite) initFundingAccount(fundingAccountKeyName string) {
+func (s *relaysSuite) initFundingAccount(fundingAccountAddress string) {
 	// The funding account record should already exist in the keyring.
-	fundingAccountKeyRecord, err := s.txContext.GetKeyring().Key(fundingAccountKeyName)
+	accAddress, err := sdk.AccAddressFromBech32(fundingAccountAddress)
 	require.NoError(s, err)
 
-	fundingAccountAddress, err := fundingAccountKeyRecord.GetAddress()
+	fundingAccountKeyRecord, err := s.txContext.GetKeyring().KeyByAddress(accAddress)
 	require.NoError(s, err)
+	require.NotNil(s, fundingAccountKeyRecord)
 
 	s.fundingAccountInfo = &accountInfo{
-		keyName:     fundingAccountKeyName,
-		accAddress:  fundingAccountAddress,
+		address:     fundingAccountAddress,
+		accAddress:  accAddress,
 		pendingMsgs: []sdk.Msg{},
 	}
 }
 
 // initializeLoadTestParams parses the load test manifest and initializes the
-// gateway and supplier keyNames and the URLs used to send requests to.
+// gateway and supplier addresses and the URLs used to send requests to.
 func (s *relaysSuite) initializeLoadTestParams() *config.LoadTestManifestYAML {
 	workingDirectory, err := os.Getwd()
 	require.NoError(s, err)
@@ -133,17 +134,13 @@ func (s *relaysSuite) initializeLoadTestParams() *config.LoadTestManifestYAML {
 	s.isEphemeralChain = loadTestManifest.IsEphemeralChain
 
 	for _, gateway := range loadTestManifest.Gateways {
-		gatewayId := gateway.Address
-		// In the case of non-ephemeral chain load testing, the test uses the
-		// gateway's keyName as the gatewayId.
-		if s.isEphemeralChain {
-			gatewayId = gateway.KeyName
-		}
-		s.gatewayUrls[gatewayId] = gateway.ExposedUrl
+		s.gatewayUrls[gateway.Address] = gateway.ExposedUrl
+		s.availableGatewayAddresses = append(s.availableGatewayAddresses, gateway.Address)
 	}
 
 	for _, supplier := range loadTestManifest.Suppliers {
-		s.suppliersUrls[supplier.KeyName] = supplier.ExposedUrl
+		s.suppliersUrls[supplier.Address] = supplier.ExposedUrl
+		s.availableSupplierAddresses = append(s.availableSupplierAddresses, supplier.Address)
 	}
 
 	return loadTestManifest
@@ -501,8 +498,7 @@ func (s *relaysSuite) sendFundAvailableActorsTx(
 		// for the initial applications, the funding is done at the start of the test,
 		// so the current block height is used.
 		appFundingAmount := s.getAppFundingAmount(s.testStartHeight)
-		// The application is created with the keyName formatted as "app-%d",
-		// starting from 1.
+		// The application is created with the keyName formatted as "app-%d" starting from 1.
 		application := s.createApplicationAccount(i+1, appFundingAmount)
 		// Add a bank.MsgSend message to fund the application.
 		s.addPendingFundMsg(application.accAddress, sdk.NewCoins(application.amountToStake))
@@ -517,29 +513,34 @@ func (s *relaysSuite) sendFundAvailableActorsTx(
 	}
 
 	// Fund accounts for **all** suppliers that will be used over the duration of the test.
-	for i := int64(0); i < plans.suppliers.maxActorCount; i++ {
-		// It is assumed that the suppliers keyNames are sequential, starting from 1
-		// and that the keyName is formatted as "supplier%d".
-		keyName := fmt.Sprintf("supplier%d", i+1)
-		supplier := s.addActor(keyName, supplierStakeAmount)
+	suppliersAdded := int64(0)
+	for _, supplierAddress := range s.availableSupplierAddresses {
+		if suppliersAdded > plans.suppliers.maxActorCount {
+			break
+		}
+
+		supplier := s.addActor(supplierAddress, supplierStakeAmount)
 
 		// Add a bank.MsgSend message to fund the supplier.
 		s.addPendingFundMsg(supplier.accAddress, sdk.NewCoins(supplierStakeAmount))
 
 		suppliers = append(suppliers, supplier)
+		suppliersAdded++
 	}
 
 	// Fund accounts for **all** gateways that will be used over the duration of the test.
-	for i := int64(0); i < plans.gateways.maxActorCount; i++ {
-		// It is assumed that the gateways keyNames are sequential, starting from 1
-		// and that the keyName is formatted as "gateway%d".
-		keyName := fmt.Sprintf("gateway%d", i+1)
-		gateway := s.addActor(keyName, gatewayStakeAmount)
+	gatewaysAdded := int64(0)
+	for _, gatewayAddress := range s.availableGatewayAddresses {
+		if gatewaysAdded > plans.gateways.maxActorCount {
+			break
+		}
+		gateway := s.addActor(gatewayAddress, gatewayStakeAmount)
 
 		// Add a bank.MsgSend message to fund the gateway.
 		s.addPendingFundMsg(gateway.accAddress, sdk.NewCoins(gatewayStakeAmount))
 
 		gateways = append(gateways, gateway)
+		gatewaysAdded++
 	}
 
 	return suppliers, gateways, applications
@@ -613,7 +614,7 @@ func (s *relaysSuite) createApplicationAccount(
 
 	return &accountInfo{
 		accAddress:    accAddress,
-		keyName:       keyName,
+		address:       accAddress.String(),
 		pendingMsgs:   []sdk.Msg{},
 		amountToStake: amountToStake,
 	}
@@ -760,17 +761,16 @@ func (plan *actorLoadTestIncrementPlan) shouldIncrementSupplierCount(
 }
 
 // addActor populates the actors's amount to stake and accAddress using the
-// keyName provided in the corresponding provisioned actors slice.
-func (s *relaysSuite) addActor(keyName string, actorStakeAmount sdk.Coin) *accountInfo {
-	keyRecord, err := s.txContext.GetKeyring().Key(keyName)
+// address provided in the corresponding provisioned actors slice.
+func (s *relaysSuite) addActor(actorAddress string, actorStakeAmount sdk.Coin) *accountInfo {
+	accAddress, err := sdk.AccAddressFromBech32(actorAddress)
+	keyRecord, err := s.txContext.GetKeyring().KeyByAddress(accAddress)
 	require.NoError(s, err)
-
-	accAddress, err := keyRecord.GetAddress()
-	require.NoError(s, err)
+	require.NotNil(s, keyRecord)
 
 	return &accountInfo{
 		accAddress:    accAddress,
-		keyName:       keyName,
+		address:       accAddress.String(),
 		pendingMsgs:   []sdk.Msg{},
 		amountToStake: actorStakeAmount,
 	}
@@ -789,7 +789,7 @@ func (s *relaysSuite) addPendingStakeSupplierMsg(supplier *accountInfo) {
 				Service: testedService,
 				Endpoints: []*sharedtypes.SupplierEndpoint{
 					{
-						Url:     s.suppliersUrls[supplier.keyName],
+						Url:     s.suppliersUrls[supplier.address],
 						RpcType: sharedtypes.RPCType_JSON_RPC,
 					},
 				},
@@ -825,8 +825,8 @@ func (s *relaysSuite) sendStakeSuppliersTxs(
 		)
 
 	for supplierIdx := int64(0); supplierIdx < suppliersToStake; supplierIdx++ {
-		keyName := fmt.Sprintf("supplier%d", supplierCount+supplierIdx+1)
-		supplier := s.addActor(keyName, supplierStakeAmount)
+		supplierAddress := s.availableSupplierAddresses[supplierCount+supplierIdx]
+		supplier := s.addActor(supplierAddress, supplierStakeAmount)
 		s.addPendingStakeSupplierMsg(supplier)
 		s.sendPendingMsgsTx(supplier)
 		newSuppliers = append(newSuppliers, supplier)
@@ -864,7 +864,7 @@ func (s *relaysSuite) sendInitialActorsStakeMsgs(
 	}
 }
 
-// sendStakeGatewaysTxs stakes the next gatewayInc number of gateways, picks their keyName
+// sendStakeGatewaysTxs stakes the next gatewayInc number of gateways, picks their address
 // from the provisioned gateways list and sends the corresponding stake transactions.
 func (s *relaysSuite) sendStakeGatewaysTxs(
 	sessionInfo *sessionInfoNotif,
@@ -892,8 +892,8 @@ func (s *relaysSuite) sendStakeGatewaysTxs(
 		)
 
 	for gwIdx := int64(0); gwIdx < gatewaysToStake; gwIdx++ {
-		keyName := fmt.Sprintf("gateway%d", gatewayCount+gwIdx+1)
-		gateway := s.addActor(keyName, gatewayStakeAmount)
+		gatewayAddress := s.availableGatewayAddresses[gatewayCount+gwIdx]
+		gateway := s.addActor(gatewayAddress, gatewayStakeAmount)
 		s.addPendingStakeGatewayMsg(gateway)
 		s.sendPendingMsgsTx(gateway)
 		newGateways = append(newGateways, gateway)
@@ -926,7 +926,8 @@ func (s *relaysSuite) signWithRetries(
 	return err
 }
 
-// sendPendingMsgsTx sends a transaction with the provided messages using the keyName provided.
+// sendPendingMsgsTx sends a transaction with the provided messages using the keyName
+// corresponding to the provided actor's address.
 func (s *relaysSuite) sendPendingMsgsTx(actor *accountInfo) {
 	// Do not send empty message transactions as trying to do so will make SignTx to fail.
 	if len(actor.pendingMsgs) == 0 {
@@ -940,10 +941,13 @@ func (s *relaysSuite) sendPendingMsgsTx(actor *accountInfo) {
 	txBuilder.SetTimeoutHeight(uint64(s.latestBlock.Height() + 1))
 	txBuilder.SetGasLimit(690000042)
 
+	keyRecord, err := s.txContext.GetKeyring().KeyByAddress(actor.accAddress)
+	require.NoError(s, err)
+
 	// TODO_HACK: Sometimes SignTx fails at retrieving the account info with
 	// the error post failed: Post "http://localhost:36657": EOF.
 	// A retry mechanism is added to avoid this issue.
-	err = s.signWithRetries(actor.keyName, txBuilder, signTxMaxRetries)
+	err = s.signWithRetries(keyRecord.Name, txBuilder, signTxMaxRetries)
 	require.NoError(s, err)
 
 	// Serialize transactions.
@@ -1019,11 +1023,11 @@ func (s *relaysSuite) waitUntilLatestBlockHeightEquals(targetHeight int64) int {
 // sendRelay sends a relay request from an application to a gateway by using
 // the iteration argument to select the application and gateway using a
 // round-robin strategy.
-func (s *relaysSuite) sendRelay(iteration uint64, relayPayload string) (appKeyName, gwKeyName string) {
+func (s *relaysSuite) sendRelay(iteration uint64, relayPayload string) (appAddress, gwAddress string) {
 	gateway := s.activeGateways[iteration%uint64(len(s.activeGateways))]
 	application := s.activeApplications[iteration%uint64(len(s.activeApplications))]
 
-	gatewayUrl, err := url.Parse(s.gatewayUrls[gateway.keyName])
+	gatewayUrl, err := url.Parse(s.gatewayUrls[gateway.address])
 	require.NoError(s, err)
 
 	// Include the application address in the query to the gateway.
@@ -1047,7 +1051,7 @@ func (s *relaysSuite) sendRelay(iteration uint64, relayPayload string) (appKeyNa
 		require.NoError(s, err)
 	}(gatewayUrl.String(), relayPayload)
 
-	return application.keyName, gateway.keyName
+	return application.address, gateway.address
 }
 
 // ensureFundedActors checks if the actors are funded by observing the transfer events
@@ -1121,7 +1125,7 @@ func (s *relaysSuite) ensureStakedActors(
 		// If no message event is found for the actor, log the transaction results
 		// and cancel the test.
 		if !actorStaked {
-			s.logAndAbortTest(txResults, fmt.Sprintf("actor not staked: %s", actor.keyName))
+			s.logAndAbortTest(txResults, fmt.Sprintf("actor not staked: %s", actor.address))
 			return
 		}
 	}
@@ -1403,8 +1407,8 @@ func (s *relaysSuite) forEachRelayBatchSendBatch(_ context.Context, relayBatchIn
 			//logger.Debug().
 			//	Int64("session_num", relayBatchInfo.sessionNumber).
 			//	Int64("block_height", relayBatchInfo.blockHeight).
-			//	Str("app", appKeyName).
-			//	Str("gw", gwKeyName).
+			//	Str("app", appAddress).
+			//	Str("gw", gwAddress).
 			//	Int("total_apps", len(relayBatchInfo.appAccounts)).
 			//	Int("total_gws", len(relayBatchInfo.gateways)).
 			//	Str("time", time.Now().Format(time.RFC3339Nano)).
@@ -1446,7 +1450,7 @@ func (s *relaysSuite) populateWithKnownGateways(
 	for gwAddress := range s.gatewayUrls {
 		gateway := &accountInfo{
 			accAddress: sdk.MustAccAddressFromBech32(gwAddress),
-			keyName:    gwAddress,
+			address:    gwAddress,
 		}
 		gateways = append(gateways, gateway)
 	}

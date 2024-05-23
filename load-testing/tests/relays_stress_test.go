@@ -77,8 +77,8 @@ var (
 	// maxConcurrentRequestLimit is the maximum number of concurrent requests that can be made.
 	// By default, it is set to the number of logical CPUs available to the process.
 	maxConcurrentRequestLimit = runtime.GOMAXPROCS(0)
-	// fundingAccountKeyName is the key name of the account used to fund other accounts.
-	fundingAccountKeyName = "pnf"
+	// fundingAccountAddress is the key name of the account used to fund other accounts.
+	fundingAccountAddress = "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw"
 	// supplierStakeAmount is the amount of tokens to stake by suppliers.
 	supplierStakeAmount sdk.Coin
 	// gatewayStakeAmount is the amount of tokens to stake by gateways.
@@ -165,25 +165,33 @@ type relaysSuite struct {
 	// it takes so submit all claims and proofs.
 	testDurationBlocks int64
 
-	// gatewayUrls is a map of gatewayKeyName->URL representing the provisioned gateways.
+	// gatewayUrls is a map of gatewayAddress->URL representing the provisioned gateways.
 	// These gateways are not staked yet but have their off-chain instance running
 	// and ready to be staked and used in the test.
-	// Since AppGateServers are pre-provisioned, and already assigned a signingKeyName
+	// Since AppGateServers are pre-provisioned, and already assigned a signingAddress
 	// and an URL to send relays to, the test suite does not create new ones but picks
 	// from this list.
 	// The max gateways used in the test must be less than or equal to the number of
 	// provisioned gateways.
 	gatewayUrls map[string]string
-	// suppliersUrls is a map of supplierKeyName->URL representing the provisioned suppliers.
+	// availableGatewayAddresses is the list of available gateway addresses to be used
+	// in the test. It is populated from the gatewayUrls map.
+	// It is used to ensure that the gateways are staked in the order they are provisioned.
+	availableGatewayAddresses []string
+	// suppliersUrls is a map of supplierAddress->URL representing the provisioned suppliers.
 	// These suppliers are not staked yet but have their off-chain instance running
 	// and ready to be staked and used in the test.
-	// Since RelayMiners are pre-provisioned, and already assigned a signingKeyName
+	// Since RelayMiners are pre-provisioned, and already assigned a signingAddress
 	// and an URL, the test suite does not create new ones but picks from this list.
 	// The max suppliers used in the test must be less than or equal to the number of
 	// provisioned suppliers.
 	suppliersUrls map[string]string
+	// availableSupplierAddresses is the list of available supplier addresses to be used
+	// in the test. It is populated from the suppliersUrls map.
+	// It is used to ensure that the suppliers are staked in the order they are provisioned.
+	availableSupplierAddresses []string
 
-	// fundingAccountInfo is the account entry corresponding to the fundingAccountKeyName.
+	// fundingAccountInfo is the account entry corresponding to the fundingAccountAddress.
 	// It is used to send transactions to fund other accounts.
 	fundingAccountInfo *accountInfo
 	// preparedGateways is the list of gateways that are already staked, delegated
@@ -217,8 +225,8 @@ type relaysSuite struct {
 
 // accountInfo contains the account info needed to build and send transactions.
 type accountInfo struct {
-	// keyName is the key name of the account available in the keyring used by the test.
-	keyName       string
+	// The address of the account available in the keyring used by the test.
+	address       string
 	accAddress    sdk.AccAddress
 	amountToStake sdk.Coin
 	// pendingMsgs is a list of messages that are pending to be sent by the account.
@@ -268,21 +276,21 @@ func (s *relaysSuite) LocalnetIsRunning() {
 	// not persisted across test runs.
 	signals.GoOnExitSignal(func() {
 		for _, app := range append(s.activeApplications, s.preparedApplications...) {
-			_ = s.txContext.GetKeyring().Delete(app.keyName)
+			_ = s.txContext.GetKeyring().DeleteByAddress(app.accAddress)
 		}
 		s.cancelCtx()
 	})
 
 	s.Cleanup(func() {
 		for _, app := range s.activeApplications {
-			s.txContext.GetKeyring().Delete(app.keyName)
+			s.txContext.GetKeyring().DeleteByAddress(app.accAddress)
 		}
 		for _, app := range s.preparedApplications {
-			s.txContext.GetKeyring().Delete(app.keyName)
+			s.txContext.GetKeyring().DeleteByAddress(app.accAddress)
 		}
 	})
 
-	// Initialize the provisioned gateway and suppliers keyName->URL map that will
+	// Initialize the provisioned gateway and suppliers address->URL map that will
 	// be populated from the load test manifest.
 	s.gatewayUrls = make(map[string]string)
 	s.suppliersUrls = make(map[string]string)
@@ -335,7 +343,7 @@ func (s *relaysSuite) LocalnetIsRunning() {
 	s.setupTxEventListeners()
 
 	// Initialize the funding account.
-	s.initFundingAccount(fundingAccountKeyName)
+	s.initFundingAccount(fundingAccountAddress)
 
 	// Initialize the on-chain claims and proofs counter.
 	s.countClaimAndProofs()

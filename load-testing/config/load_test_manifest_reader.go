@@ -9,10 +9,8 @@ import (
 // ProvisionedActorConfig is used to represent the signing key used & URL exposed
 // by the pre-provisioned gateway & supplier actors that the load test expects.
 type ProvisionedActorConfig struct {
-	// KeyName is the **name** of the key in the keyring to be used by the given actor.
-	KeyName string `yaml:"key_name"`
-	// Address is the address of the actor, which is used to identify already staked
-	// actors in the network in persistent chains.
+	// The address used to identify the actor. In an ephemeral chain, the corresponding
+	// account must be present in the keyring to be able to stake.
 	Address string `yaml:"address"`
 	// ExposedUrl is the URL where the actor is expected to be reachable.
 	ExposedUrl string `yaml:"exposed_url"`
@@ -22,7 +20,7 @@ type ProvisionedActorConfig struct {
 // It contains the list of suppliers and gateways that the load test expects to be pre-provisioned.
 type LoadTestManifestYAML struct {
 	// IsEphemeralChain is a flag that indicates whether the test is expected to be
-	// run on localnet or long living chains (i.e. TestNet/DevNet).
+	// run on LocalNet or long-living remote chain (i.e. TestNet/DevNet).
 	IsEphemeralChain bool                     `yaml:"is_ephemeral_chain"`
 	TestNetNode      string                   `yaml:"testnet_node"`
 	ServiceId        string                   `yaml:"service_id"`
@@ -65,12 +63,8 @@ func validatedEphemeralChainManifest(manifest *LoadTestManifestYAML) (*LoadTestM
 	}
 
 	for _, gateway := range manifest.Gateways {
-		if len(gateway.KeyName) == 0 {
-			return nil, ErrEphemeralChainLoadTestInvalidManifest.Wrap("empty gateway key name")
-		}
-
-		if len(gateway.Address) > 0 {
-			return nil, ErrEphemeralChainLoadTestInvalidManifest.Wrap("gateway address forbidden")
+		if len(gateway.Address) == 0 {
+			return nil, ErrEphemeralChainLoadTestInvalidManifest.Wrap("empty gateway address")
 		}
 
 		if len(gateway.ExposedUrl) == 0 {
@@ -83,8 +77,8 @@ func validatedEphemeralChainManifest(manifest *LoadTestManifestYAML) (*LoadTestM
 	}
 
 	for _, supplier := range manifest.Suppliers {
-		if len(supplier.KeyName) == 0 {
-			return nil, ErrEphemeralChainLoadTestInvalidManifest.Wrap("empty supplier key name")
+		if len(supplier.Address) == 0 {
+			return nil, ErrEphemeralChainLoadTestInvalidManifest.Wrap("empty supplier address")
 		}
 
 		if len(supplier.ExposedUrl) == 0 {
@@ -117,10 +111,6 @@ func validatedNonEphemeralChainManifest(manifest *LoadTestManifestYAML) (*LoadTe
 	}
 
 	for _, gateway := range manifest.Gateways {
-		if len(gateway.KeyName) > 0 {
-			return nil, ErrNonEphemeralChainLoadTestInvalidManifest.Wrap("gateway keyName forbidden")
-		}
-
 		if len(gateway.Address) == 0 {
 			return nil, ErrNonEphemeralChainLoadTestInvalidManifest.Wrap("empty gateway address")
 		}
