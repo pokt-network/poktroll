@@ -80,8 +80,13 @@ func (s *suite) AllModuleParamsAreSetToTheirDefaultValues(moduleName string) {
 		s.cdc.MustUnmarshalJSON([]byte(res.Stdout), &serviceParamsRes)
 		require.Equal(s, servicetypes.DefaultParams(), serviceParamsRes.GetParams())
 
+	case sharedtypes.ModuleName:
+		var sharedParamsRes sharedtypes.QueryParamsResponse
+		s.cdc.MustUnmarshalJSON([]byte(res.Stdout), &sharedParamsRes)
+		require.Equal(s, sharedtypes.DefaultParams(), sharedParamsRes.GetParams())
+
 	default:
-		s.Fatalf("unexpected module name: (%v)", moduleName)
+		s.Fatalf("ERROR: unexpected module name: (%v)", moduleName)
 	}
 }
 
@@ -315,7 +320,7 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 				},
 			},
 		)
-	case sessiontypes.ModuleName:
+	case sharedtypes.ModuleName:
 		numBlocksPerSession := uint64(s.expectedModuleParams[moduleName][sharedtypes.ParamNumBlocksPerSession].value.(int64))
 		assertUpdatedParams(s,
 			[]byte(res.Stdout),
@@ -346,7 +351,7 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 			},
 		)
 	default:
-		s.Fatalf("unexpected module name %q", moduleName)
+		s.Fatalf("ERROR: unexpected module name %q", moduleName)
 	}
 }
 
