@@ -20,6 +20,7 @@ import (
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
@@ -315,11 +316,11 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 			},
 		)
 	case sessiontypes.ModuleName:
-		numBlocksPerSession := uint64(s.expectedModuleParams[moduleName][sessiontypes.ParamNumBlocksPerSession].value.(int64))
+		numBlocksPerSession := uint64(s.expectedModuleParams[moduleName][sharedtypes.ParamNumBlocksPerSession].value.(int64))
 		assertUpdatedParams(s,
 			[]byte(res.Stdout),
-			&sessiontypes.QueryParamsResponse{
-				Params: sessiontypes.Params{
+			&sharedtypes.QueryParamsResponse{
+				Params: sharedtypes.Params{
 					NumBlocksPerSession: numBlocksPerSession,
 				},
 			},
