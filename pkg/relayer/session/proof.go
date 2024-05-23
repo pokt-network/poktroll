@@ -12,6 +12,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/protocol"
 	proofkeeper "github.com/pokt-network/poktroll/x/proof/keeper"
+	"github.com/pokt-network/poktroll/x/shared"
 )
 
 // submitProofs maps over the given claimedSessions observable.
@@ -78,14 +79,7 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 	// first one from the group to calculate the earliest height for proof submission.
 	sessionEndHeight := sessionTrees[0].GetSessionHeader().GetSessionEndBlockHeight()
 
-	sessionGracePeriodEndHeight, err := rs.sessionQueryClient.GetSessionGracePeriodEndHeight(ctx, sessionEndHeight)
-	if err != nil {
-		// TODO_IMPROVE: It may be useful for the retry mechanism which consumes the
-		// observable which corresponds to failSubmitProofsSessionsCh to have a
-		// reference to the error which caused the proof submission to fail.
-		// In this case, the error may not be persistent.
-		failSubmitProofsSessionsCh <- sessionTrees
-	}
+	sessionGracePeriodEndHeight := shared.GetSessionGracePeriodEndHeight(sessionEndHeight)
 
 	// TODO_TECHDEBT(#516): Centralize the business logic that involves taking
 	// into account the heights, windows and grace periods into helper functions.

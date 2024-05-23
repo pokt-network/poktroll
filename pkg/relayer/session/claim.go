@@ -11,6 +11,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/logging"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/protocol"
+	"github.com/pokt-network/poktroll/x/shared"
 )
 
 // createClaims maps over the sessionsToClaimObs observable. For each claim batch, it:
@@ -41,6 +42,10 @@ func (rs *relayerSessionsManager) createClaims(
 	)
 
 	// TODO_TECHDEBT: pass failed create claim sessions to some retry mechanism.
+	// TODO_IMPROVE: It may be useful for the retry mechanism which consumes the
+	// observable which corresponds to failSubmitProofsSessionsCh to have a
+	// reference to the error which caused the proof submission to fail.
+	// In this case, the error may not be persistent.
 	_ = failedCreateClaimSessionsObs
 	logging.LogErrors(ctx, filter.EitherError(ctx, eitherClaimedSessionsObs))
 
@@ -85,15 +90,7 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 	// into account the heights, windows and grace periods into helper functions.
 	// An additional block is added to permit to relays arriving at the last block
 	// of the session to be included in the claim before the smt is closed.
-	sessionGracePeriodEndHeight, err := rs.sessionQueryClient.GetSessionGracePeriodEndHeight(ctx, sessionEndHeight)
-	if err != nil {
-		// TODO_IMPROVE: It may be useful for the retry mechanism which consumes the
-		// observable which corresponds to failSubmitProofsSessionsCh to have a
-		// reference to the error which caused the proof submission to fail.
-		// In this case, the error may not be persistent.
-		failSubmitProofsSessionsCh <- sessionTrees
-	}
-
+	sessionGracePeriodEndHeight := shared.GetSessionGracePeriodEndHeight(sessionEndHeight)
 	createClaimsWindowStartHeight := sessionGracePeriodEndHeight + 1
 
 	// TODO_BLOCKER: query the on-chain governance parameter once available.

@@ -9,14 +9,14 @@ import (
 	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
 	ringtypes "github.com/athanorlabs/go-dleq/types"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
-	ring "github.com/noot/ring-go"
+	"github.com/noot/ring-go"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/crypto"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	"github.com/pokt-network/poktroll/x/service/types"
-	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
+	"github.com/pokt-network/poktroll/x/shared"
 )
 
 var _ crypto.RingClient = (*ringClient)(nil)
@@ -265,7 +265,7 @@ func (rc *ringClient) getRingPointsForAddressAtHeight(
 // gateways that have been undelegated after the target session end height.
 func GetRingAddressesAtBlock(app *apptypes.Application, blockHeight int64) []string {
 	// Get the target session end height at which we want to get the active delegations.
-	targetSessionEndHeight := uint64(sessionkeeper.GetSessionEndBlockHeight(blockHeight))
+	targetSessionEndHeight := uint64(shared.GetSessionEndBlockHeight(blockHeight))
 	// Get the current active delegations for the application and use them as a base.
 	activeDelegationsAtHeight := app.DelegateeGatewayAddresses
 

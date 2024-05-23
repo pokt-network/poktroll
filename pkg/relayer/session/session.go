@@ -13,6 +13,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	"github.com/pokt-network/poktroll/x/shared"
 )
 
 var _ relayer.RelayerSessionsManager = (*relayerSessionsManager)(nil)
@@ -47,8 +48,6 @@ type relayerSessionsManager struct {
 
 	// storesDirectory points to a path on disk where KVStore data files are created.
 	storesDirectory string
-
-	sessionQueryClient client.SessionQueryClient
 }
 
 // NewRelayerSessions creates a new relayerSessions.
@@ -74,7 +73,6 @@ func NewRelayerSessions(
 		deps,
 		&rs.blockClient,
 		&rs.supplierClient,
-		&rs.sessionQueryClient,
 	); err != nil {
 		return nil, err
 	}
@@ -181,7 +179,7 @@ func (rs *relayerSessionsManager) mapBlockToSessionsToClaim(
 	// end block height was the one before the last committed block or earlier.
 	// Iterate over the sessionsTrees map to get the ones that end at a block height
 	// lower than the current block height.
-	for endBlockHeight, sessionsTreesEndingAtBlockHeight := range rs.sessionsTrees {
+	for sessionEndHeight, sessionsTreesEndingAtBlockHeight := range rs.sessionsTrees {
 		// Late sessions are the ones that have their session grace period elapsed
 		// and should already have been claimed.
 		// Group them by their end block height and emit each group separately
@@ -197,13 +195,7 @@ func (rs *relayerSessionsManager) mapBlockToSessionsToClaim(
 		// downstream at the waitForEarliestCreateClaimsHeight step.
 		// TODO_BLOCKER: Introduce governance claim and proof window durations,
 		// implement off-chain window closing and on-chain window checks.
-		isWithinGracePeriod, err := rs.sessionQueryClient.IsWithinGracePeriod(ctx, endBlockHeight, block.Height())
-		if err != nil {
-			rs.logger.Error().Err(err).Msg("failed to check if within grace period")
-			return nil, true
-		}
-
-		if isWithinGracePeriod {
+		if !shared.IsGracePeriodElapsed(sessionEndHeight, block.Height()) {
 			// Iterate over the sessionsTrees that have grace period ending at this
 			// block height and add them to the list of sessionTrees to be published.
 			for _, sessionTree := range sessionsTreesEndingAtBlockHeight {
@@ -217,16 +209,10 @@ func (rs *relayerSessionsManager) mapBlockToSessionsToClaim(
 					continue
 				}
 
-				isPastSessionGracePeriod, err := rs.sessionQueryClient.IsPastGracePeriod(ctx, endBlockHeight, block.Height())
-				if err != nil {
-					rs.logger.Error().Err(err).Msg("failed to check if past grace period")
-					return nil, true
-				}
-
 				// Separate the sessions that are on-time from the ones that are late.
 				// If the session is past its grace period, it is considered late,
 				// otherwise it is on time and will be emitted last.
-				if isPastSessionGracePeriod {
+				if shared.IsGracePeriodElapsed(sessionEndHeight, block.Height()) {
 					lateSessions = append(lateSessions, sessionTree)
 				} else {
 					onTimeSessions = append(onTimeSessions, sessionTree)

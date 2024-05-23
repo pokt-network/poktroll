@@ -7,7 +7,6 @@ import (
 	"github.com/cosmos/gogoproto/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/client"
-	"github.com/pokt-network/poktroll/x/session"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -64,92 +63,4 @@ func (sessq *sessionQuerier) GetSession(
 		)
 	}
 	return res.Session, nil
-}
-
-// GetParams queries & returns the session module on-chain parameters.
-//
-// TODO_TECHDEBT(#543): We don't really want to have to query the params for every method call.
-// Once `ModuleParamsClient` is implemented, use its replay observable's `#Last` method
-// to get the most recently (asynchronously) observed (and cached) value.
-func (sessq *sessionQuerier) GetParams(ctx context.Context) (*sessiontypes.Params, error) {
-	req := &sessiontypes.QueryParamsRequest{}
-	res, err := sessq.sessionQuerier.Params(ctx, req)
-	if err != nil {
-		return nil, ErrQuerySessionParams.Wrapf("[%v]", err)
-	}
-	return &res.Params, nil
-}
-
-// GetSessionGracePeriodEndHeight returns the height at which the grace period for
-// the session ending with sessionEndHeight elapses.
-func (sessq *sessionQuerier) GetSessionGracePeriodEndHeight(
-	ctx context.Context,
-	sessionEndHeight int64,
-) (int64, error) {
-	params, err := sessq.GetParams(ctx)
-	if err != nil {
-		return 0, err
-	}
-
-	// TODO_BLOCKER(#543): Use the values of session params at `sessionEndHeight`.
-	_ = sessionEndHeight
-
-	numBlocksPerSession := params.GetNumBlocksPerSession()
-	return session.GetSessionGracePeriodEndHeight(numBlocksPerSession, sessionEndHeight), nil
-}
-
-// GetSessionGracePeriodBlockCount returns the number of blocks in the grace period
-// for the session which includes queryHeight.
-func (sessq *sessionQuerier) GetSessionGracePeriodBlockCount(
-	ctx context.Context,
-	sessionEndHeight int64,
-) (uint64, error) {
-	params, err := sessq.GetParams(ctx)
-	if err != nil {
-		return 0, err
-	}
-
-	// TODO_BLOCKER(#543): Use the values of session params at `sessionEndHeight`.
-	_ = sessionEndHeight
-
-	numBlocksPerSession := params.GetNumBlocksPerSession()
-	return session.GetSessionGracePeriodBlockCount(numBlocksPerSession), nil
-}
-
-// IsWithinGracePeriod returns true if the grace period for the session ending with
-// sessionEndHeight has not yet elapsed, given currentHeight.
-func (sessq *sessionQuerier) IsWithinGracePeriod(
-	ctx context.Context,
-	sessionEndHeight,
-	currentHeight int64,
-) (bool, error) {
-	params, err := sessq.GetParams(ctx)
-	if err != nil {
-		return false, err
-	}
-
-	// TODO_BLOCKER(#543): Use the values of session params at `sessionEndHeight`.
-	_ = sessionEndHeight
-
-	numBlocksPerSession := params.GetNumBlocksPerSession()
-	return session.IsWithinGracePeriod(numBlocksPerSession, sessionEndHeight, currentHeight), nil
-}
-
-// IsPastGracePeriod returns true if the grace period for the session ending with
-// sessionEndHeight has elapsed, given currentHeight.
-func (sessq *sessionQuerier) IsPastGracePeriod(
-	ctx context.Context,
-	sessionEndHeight,
-	currentHeight int64,
-) (bool, error) {
-	paramsRes, err := sessq.sessionQuerier.Params(ctx, &sessiontypes.QueryParamsRequest{})
-	if err != nil {
-		return false, err
-	}
-
-	// TODO_BLOCKER(#543): Use the values of session params at `sessionEndHeight`.
-	_ = sessionEndHeight
-
-	numBlocksPerSession := paramsRes.GetParams().NumBlocksPerSession
-	return session.IsPastGracePeriod(numBlocksPerSession, sessionEndHeight, currentHeight), nil
 }

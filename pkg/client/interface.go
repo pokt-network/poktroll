@@ -274,18 +274,9 @@ type SessionQueryClient interface {
 		serviceId string,
 		blockHeight int64,
 	) (*sessiontypes.Session, error)
+}
+
+type SharedQueryClient interface {
 	// GetParams queries the chain for the current session module parameters.
-	GetParams(ctx context.Context) (*sessiontypes.Params, error)
-	// GetSessionGracePeriodEndHeight returns the height at which the grace period for
-	// the session ending with sessionEndHeight elapses.
-	GetSessionGracePeriodEndHeight(ctx context.Context, sessionEndHeight int64) (int64, error)
-	// GetSessionGracePeriodBlockCount returns the number of blocks in the grace period
-	// for the session which includes queryHeight.
-	GetSessionGracePeriodBlockCount(ctx context.Context, queryHeight int64) (uint64, error)
-	// IsWithinGracePeriod returns true if the grace period for the session ending with
-	// sessionEndHeight has not yet elapsed, given currentHeight.
-	IsWithinGracePeriod(ctx context.Context, sessionEndHeight, currentHeight int64) (bool, error)
-	// IsPastGracePeriod returns true if the grace period for the session ending with
-	// sessionEndHeight has elapsed, given currentHeight.
-	IsPastGracePeriod(ctx context.Context, sessionEndHeight, currentHeight int64) (bool, error)
+	GetParams(ctx context.Context) (*sharedtypes.Params, error)
 }

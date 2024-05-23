@@ -19,8 +19,8 @@ import (
 	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/proof/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
-	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	"github.com/pokt-network/poktroll/x/shared"
 )
 
 // SMT specification used for the proof verification.
@@ -441,7 +441,7 @@ func (k msgServer) validateClosestPath(
 	// TODO_BLOCKER@(@Olshansk): Update `blockHeight` to be the value of when the `ProofWindow`
 	// opens once the variable is added.
 	sessionEndBlockHeightWithGracePeriod := sessionHeader.GetSessionEndBlockHeight() +
-		sessionkeeper.GetSessionGracePeriodBlockCount()
+		shared.SessionGracePeriodBlocks
 	blockHash := k.sessionKeeper.GetBlockHash(ctx, sessionEndBlockHeightWithGracePeriod)
 
 	// TODO: Investigate "proof for the path provided does not match one expected by the on-chain protocol"

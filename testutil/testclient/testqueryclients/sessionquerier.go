@@ -9,9 +9,9 @@ import (
 	"github.com/golang/mock/gomock"
 
 	"github.com/pokt-network/poktroll/testutil/mockclient"
-	"github.com/pokt-network/poktroll/x/session"
 	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -59,22 +59,6 @@ func NewTestSessionQueryClient(
 		}).
 		AnyTimes()
 
-	sessionQuerier.EXPECT().GetSessionGracePeriodBlockCount(gomock.Any(), gomock.Any()).
-		DoAndReturn(GetDefaultSessionGracePeriodBlockCount).
-		AnyTimes()
-
-	sessionQuerier.EXPECT().GetSessionGracePeriodEndHeight(gomock.Any(), gomock.Any()).
-		DoAndReturn(GetDefaultSessionGracePeriodEndHeight).
-		AnyTimes()
-
-	sessionQuerier.EXPECT().IsWithinGracePeriod(gomock.Any(), gomock.Any(), gomock.Any()).
-		DoAndReturn(IsWithinDefaultGracePeriod).
-		AnyTimes()
-
-	sessionQuerier.EXPECT().IsPastGracePeriod(gomock.Any(), gomock.Any(), gomock.Any()).
-		DoAndReturn(IsPastDefaultGracePeriod).
-		AnyTimes()
-
 	return sessionQuerier
 }
 
@@ -96,11 +80,11 @@ func AddToExistingSessions(
 			Service:                 &sharedtypes.Service{Id: serviceId},
 			ApplicationAddress:      appAddress,
 			SessionId:               sessionId,
-			SessionStartBlockHeight: sessionkeeper.GetSessionStartBlockHeight(blockHeight),
-			SessionEndBlockHeight:   sessionkeeper.GetSessionEndBlockHeight(blockHeight),
+			SessionStartBlockHeight: shared.GetSessionStartBlockHeight(blockHeight),
+			SessionEndBlockHeight:   shared.GetSessionEndBlockHeight(blockHeight),
 		},
-		NumBlocksPerSession: sessionkeeper.NumBlocksPerSession,
-		SessionNumber:       sessionkeeper.GetSessionNumber(blockHeight),
+		NumBlocksPerSession: shared.NumBlocksPerSession,
+		SessionNumber:       shared.GetSessionNumber(blockHeight),
 		SessionId:           sessionId,
 		Suppliers:           []*sharedtypes.Supplier{},
 	}
@@ -115,24 +99,4 @@ func AddToExistingSessions(
 	t.Cleanup(func() {
 		delete(sessionsMap, sessionId)
 	})
-}
-
-func GetDefaultSessionGracePeriodBlockCount(_ context.Context, sessionEndHeight int64) (int64, error) {
-	numBlocksPerSession := sessiontypes.DefaultParams().NumBlocksPerSession
-	return int64(session.GetSessionGracePeriodBlockCount(numBlocksPerSession)), nil
-}
-
-func GetDefaultSessionGracePeriodEndHeight(_ context.Context, sessionEndHeight int64) (int64, error) {
-	numBlocksPerSession := sessiontypes.DefaultParams().NumBlocksPerSession
-	return session.GetSessionGracePeriodEndHeight(numBlocksPerSession, sessionEndHeight), nil
-}
-
-func IsWithinDefaultGracePeriod(_ context.Context, sessionEndHeight, queryHeight int64) (bool, error) {
-	numBlocksPerSession := sessiontypes.DefaultParams().NumBlocksPerSession
-	return session.IsWithinGracePeriod(numBlocksPerSession, sessionEndHeight, queryHeight), nil
-}
-
-func IsPastDefaultGracePeriod(_ context.Context, sessionEndHeight, queryHeight int64) (bool, error) {
-	numBlocksPerSession := sessiontypes.DefaultParams().NumBlocksPerSession
-	return session.IsPastGracePeriod(numBlocksPerSession, sessionEndHeight, queryHeight), nil
 }

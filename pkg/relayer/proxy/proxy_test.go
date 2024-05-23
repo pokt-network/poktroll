@@ -17,7 +17,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/relayer/config"
 	"github.com/pokt-network/poktroll/pkg/relayer/proxy"
 	"github.com/pokt-network/poktroll/testutil/testproxy"
-	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
+	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -346,14 +346,14 @@ func TestRelayerProxy_Relays(t *testing.T) {
 	// blockOutsideSessionGracePeriod is the block height that is after the first
 	// session's grace period and within the second session's grace period,
 	// meaning a relay should not be handled at this block height.
-	blockOutsideSessionGracePeriod := blockHeight +
-		sessionkeeper.NumBlocksPerSession +
-		sessionkeeper.GetSessionGracePeriodBlockCount()
+	blockOutsideSessionGracePeriod := int64(blockHeight +
+		shared.NumBlocksPerSession +
+		shared.SessionGracePeriodBlocks)
 
 	// blockWithinSessionGracePeriod is the block height that is after the first
 	// session but within its session's grace period, meaning a relay should be
 	// handled at this block height.
-	blockWithinSessionGracePeriod := blockHeight + sessionkeeper.GetSessionGracePeriodBlockCount()
+	blockWithinSessionGracePeriod := int64(blockHeight + shared.SessionGracePeriodBlocks)
 
 	tests := []struct {
 		desc string
@@ -656,7 +656,7 @@ func sendRequestWithDifferentSession(
 	test *testproxy.TestBehavior,
 ) (errCode int32, errorMessage string) {
 	// Use a block height that generates a different session ID
-	blockHeightAfterSessionGracePeriod := blockHeight + sessionkeeper.GetSessionGracePeriodBlockCount()
+	blockHeightAfterSessionGracePeriod := int64(blockHeight + shared.SessionGracePeriodBlocks)
 	req := testproxy.GenerateRelayRequest(
 		test,
 		appPrivateKey,
