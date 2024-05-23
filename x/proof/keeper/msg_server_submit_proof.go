@@ -438,7 +438,7 @@ func (k msgServer) validateClosestPath(
 	//
 	// TODO_TECHDEBT(@red-0ne): Centralize the business logic that involves taking
 	// into account the heights, windows and grace periods into helper functions.
-	// TODO_BLOCKER@(@Olshansk): Update `blockHeight` to be the value of when the `ProofWindow`
+	// TODO_BLOCKER@(#516): Update `blockHeight` to be the value of when the `ProofWindow`
 	// opens once the variable is added.
 	sessionEndBlockHeightWithGracePeriod := sessionHeader.GetSessionEndBlockHeight() +
 		sessionkeeper.GetSessionGracePeriodBlockCount()
