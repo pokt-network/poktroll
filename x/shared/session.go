@@ -43,6 +43,8 @@ func GetSessionNumber(blockHeight int64) int64 {
 	return ((blockHeight - 1) / NumBlocksPerSession) + 1
 }
 
+// GetSessionGracePeriodEndHeight returns the block height at which the grace period
+// for the session ending with sessionEndHeight elapses.
 func GetSessionGracePeriodEndHeight(sessionEndHeight int64) int64 {
 	return sessionEndHeight + SessionGracePeriodBlocks
 }
