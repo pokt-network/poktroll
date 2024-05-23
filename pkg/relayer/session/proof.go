@@ -83,8 +83,9 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 
 	// TODO_TECHDEBT(#516): Centralize the business logic that involves taking
 	// into account the heights, windows and grace periods into helper functions.
+	// TODO_BLOCKER(#516): The proof submission window SHOULD NOT overlap with the claim window.
 	submitProofsWindowStartHeight := sessionGracePeriodEndHeight + 1
-	// TODO_BLOCKER: query the on-chain governance parameter once available.
+	// TODO_BLOCKER(#516): query the on-chain governance parameter once available.
 	// + claimproofparams.GovSubmitProofWindowStartHeightOffset
 
 	// we wait for submitProofsWindowStartHeight to be received before proceeding since we need its hash
@@ -94,10 +95,14 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 
 	// TODO_BLOCKER(@bryanchriswhite): The block that'll be used as a source of entropy for
 	// which branch(es) to prove should be deterministic and use on-chain governance params.
-	// submitProofWindowStartBlock is the block that will have its hash used as the
+	// sessionPathBlock is the block that will have its hash used as the
 	// source of entropy for all the session trees in that batch, waiting for it to
 	// be received before proceeding.
-	submitProofWindowStartBlock := rs.waitForBlock(ctx, submitProofsWindowStartHeight)
+	sessionPathBlock := rs.waitForBlock(ctx, sessionGracePeriodEndHeight)
+	// TODO_BLOCKER(#516): Wait one more block to ensure that a claim submitted at the earliest
+	// possible height is committed. This delay will also need to account for claim/proof
+	// window offsets which will be added in the future.
+	_ = rs.waitForBlock(ctx, submitProofsWindowStartHeight)
 
 	// Generate proofs for all sessionTrees concurrently while waiting for the
 	// earliest submitProofsHeight (pseudorandom submission distribution) to be reached.
@@ -107,13 +112,13 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 	go rs.goProveClaims(
 		ctx,
 		sessionTrees,
-		submitProofWindowStartBlock,
+		sessionPathBlock,
 		proofsGeneratedCh,
 		failSubmitProofsSessionsCh,
 	)
 
 	// Wait for the earliest submitProofsHeight to be reached before proceeding.
-	earliestSubmitProofsHeight := protocol.GetEarliestSubmitProofHeight(ctx, submitProofWindowStartBlock)
+	earliestSubmitProofsHeight := protocol.GetEarliestSubmitProofHeight(ctx, sessionPathBlock)
 	_ = rs.waitForBlock(ctx, earliestSubmitProofsHeight)
 
 	// Once the earliest submitProofsHeight has been reached, and all proofs have
@@ -166,11 +171,11 @@ func (rs *relayerSessionsManager) newMapProveSessionsFn(
 
 // goProveClaims generates the proofs corresponding to the given sessionTrees,
 // then sends the successful and failed proofs to their respective channels.
-// This function MUST to be run as a goroutine.
+// This function MUST be run as a goroutine.
 func (rs *relayerSessionsManager) goProveClaims(
 	ctx context.Context,
 	sessionTrees []relayer.SessionTree,
-	submitProofWindowStartBlock client.Block,
+	sessionPathBlock client.Block,
 	proofsGeneratedCh chan<- []relayer.SessionTree,
 	failSubmitProofsSessionsCh chan<- []relayer.SessionTree,
 ) {
@@ -185,9 +190,9 @@ func (rs *relayerSessionsManager) goProveClaims(
 		default:
 		}
 		// Generate the proof path for the sessionTree using the previously committed
-		// submitProofWindowStartBlock hash.
+		// sessionPathBlock hash.
 		path := proofkeeper.GetPathForProof(
-			submitProofWindowStartBlock.Hash(),
+			sessionPathBlock.Hash(),
 			sessionTree.GetSessionHeader().GetSessionId(),
 		)
 
