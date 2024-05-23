@@ -149,17 +149,6 @@ func (s *suite) AnAuthzGrantFromTheAccountToTheAccountForTheMessageExists(
 	s.granteeName = granteeName
 }
 
-// AKeyAndAccountExistForTheUser checks if a key with the given name exists in the keyring,
-// and if not, adds a new key with the given name to the keyring. It then checks if an account
-// corresponding the the new key exists.
-func (s *suite) AKeyAndAccountExistForTheUser(keyName string) {
-	if !s.keyExistsInKeyring(keyName) {
-		s.addKeyToKeyring(keyName)
-	}
-
-	s.ensureAccountForKeyName(keyName)
-}
-
 // AllModuleParamsShouldBeSetToTheirDefaultValues asserts that all module params are set to their default values.
 func (s *suite) AllModuleParamsShouldBeSetToTheirDefaultValues(moduleName string) {
 	s.AllModuleParamsAreSetToTheirDefaultValues(moduleName)
