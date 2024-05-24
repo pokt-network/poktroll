@@ -79,12 +79,16 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 	// first one from the group to calculate the earliest height for proof submission.
 	sessionEndHeight := sessionTrees[0].GetSessionHeader().GetSessionEndBlockHeight()
 
-	sessionGracePeriodEndHeight := shared.GetSessionGracePeriodEndHeight(sessionEndHeight)
-
 	// TODO_TECHDEBT(#516): Centralize the business logic that involves taking
 	// into account the heights, windows and grace periods into helper functions.
-	// TODO_BLOCKER(#516): The proof submission window SHOULD NOT overlap with the claim window.
-	submitProofsWindowStartHeight := sessionGracePeriodEndHeight + 1
+	// TODO_BLOCKER(#516): The proof submission window SHOULD NOT overlap with the
+	// claim window. The proof submission window start SHOULD be relative to the
+	// claim window end.
+	sessionGracePeriodEndHeight := shared.GetSessionGracePeriodEndHeight(sessionEndHeight)
+	// An additional block is added to permit to relays arriving at the last block
+	// of the session to be included in the claim before the smt is closed.
+	createClaimsWindowStartHeight := sessionGracePeriodEndHeight + 1
+	submitProofsWindowStartHeight := createClaimsWindowStartHeight
 	// TODO_BLOCKER(#516): query the on-chain governance parameter once available.
 	// + claimproofparams.GovSubmitProofWindowStartHeightOffset
 
