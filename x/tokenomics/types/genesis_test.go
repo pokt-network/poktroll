@@ -3,8 +3,9 @@ package types_test
 import (
 	"testing"
 
-	"github.com/pokt-network/poktroll/x/tokenomics/types"
 	"github.com/stretchr/testify/require"
+
+	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 func TestGenesisState_Validate(t *testing.T) {
@@ -25,14 +26,14 @@ func TestGenesisState_Validate(t *testing.T) {
 					ComputeUnitsToTokensMultiplier: 1,
 				},
 				RelayMiningDifficultyList: []types.RelayMiningDifficulty{
-	{
-		ServiceId: "0",
-},
-	{
-		ServiceId: "1",
-},
-},
-// this line is used by starport scaffolding # types/genesis/validField
+					{
+						ServiceId: "0",
+					},
+					{
+						ServiceId: "1",
+					},
+				},
+				// this line is used by starport scaffolding # types/genesis/validField
 			},
 			isValid: true,
 		},
@@ -47,20 +48,20 @@ func TestGenesisState_Validate(t *testing.T) {
 			isValid: false,
 		},
 		{
-	desc:     "duplicated relayMiningDifficulty",
-	genState: &types.GenesisState{
-		RelayMiningDifficultyList: []types.RelayMiningDifficulty{
-			{
-				ServiceId: "0",
-},
-			{
-				ServiceId: "0",
-},
+			desc: "duplicated relayMiningDifficulty",
+			genState: &types.GenesisState{
+				RelayMiningDifficultyList: []types.RelayMiningDifficulty{
+					{
+						ServiceId: "0",
+					},
+					{
+						ServiceId: "0",
+					},
+				},
+			},
+			isValid: false,
 		},
-	},
-	valid:    false,
-},
-// this line is used by starport scaffolding # types/genesis/testcase
+		// this line is used by starport scaffolding # types/genesis/testcase
 	}
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {

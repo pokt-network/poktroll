@@ -5,10 +5,10 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/pokt-network/poktroll/x/tokenomics/keeper"
-	"github.com/pokt-network/poktroll/x/tokenomics/types"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
+	"github.com/pokt-network/poktroll/x/tokenomics/keeper"
+	"github.com/pokt-network/poktroll/x/tokenomics/types"
 	"github.com/stretchr/testify/require"
 )
 
@@ -19,7 +19,7 @@ func createNRelayMiningDifficulty(keeper keeper.Keeper, ctx context.Context, n i
 	items := make([]types.RelayMiningDifficulty, n)
 	for i := range items {
 		items[i].ServiceId = strconv.Itoa(i)
-        
+
 		keeper.SetRelayMiningDifficulty(ctx, items[i])
 	}
 	return items
@@ -30,8 +30,7 @@ func TestRelayMiningDifficultyGet(t *testing.T) {
 	items := createNRelayMiningDifficulty(keeper, ctx, 10)
 	for _, item := range items {
 		rst, found := keeper.GetRelayMiningDifficulty(ctx,
-		    item.ServiceId,
-            
+			item.ServiceId,
 		)
 		require.True(t, found)
 		require.Equal(t,
@@ -45,12 +44,10 @@ func TestRelayMiningDifficultyRemove(t *testing.T) {
 	items := createNRelayMiningDifficulty(keeper, ctx, 10)
 	for _, item := range items {
 		keeper.RemoveRelayMiningDifficulty(ctx,
-		    item.ServiceId,
-            
+			item.ServiceId,
 		)
 		_, found := keeper.GetRelayMiningDifficulty(ctx,
-		    item.ServiceId,
-            
+			item.ServiceId,
 		)
 		require.False(t, found)
 	}

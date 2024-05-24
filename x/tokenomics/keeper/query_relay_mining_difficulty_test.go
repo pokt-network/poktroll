@@ -1,7 +1,7 @@
 package keeper_test
 
 import (
-    "strconv"
+	"strconv"
 	"testing"
 
 	"github.com/cosmos/cosmos-sdk/types/query"
@@ -9,9 +9,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/pokt-network/poktroll/x/tokenomics/types"
-	"github.com/pokt-network/poktroll/testutil/nullify"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
+	"github.com/pokt-network/poktroll/testutil/nullify"
+	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 // Prevent strconv unused error
@@ -27,28 +27,25 @@ func TestRelayMiningDifficultyQuerySingle(t *testing.T) {
 		err      error
 	}{
 		{
-			desc:     "First",
-			request:  &types.QueryGetRelayMiningDifficultyRequest{
-			    ServiceId: msgs[0].ServiceId,
-                
+			desc: "First",
+			request: &types.QueryGetRelayMiningDifficultyRequest{
+				ServiceId: msgs[0].ServiceId,
 			},
 			response: &types.QueryGetRelayMiningDifficultyResponse{RelayMiningDifficulty: msgs[0]},
 		},
 		{
-			desc:     "Second",
-			request:  &types.QueryGetRelayMiningDifficultyRequest{
-			    ServiceId: msgs[1].ServiceId,
-                
+			desc: "Second",
+			request: &types.QueryGetRelayMiningDifficultyRequest{
+				ServiceId: msgs[1].ServiceId,
 			},
 			response: &types.QueryGetRelayMiningDifficultyResponse{RelayMiningDifficulty: msgs[1]},
 		},
 		{
-			desc:    "KeyNotFound",
+			desc: "KeyNotFound",
 			request: &types.QueryGetRelayMiningDifficultyRequest{
-			    ServiceId:strconv.Itoa(100000),
-                
+				ServiceId: strconv.Itoa(100000),
 			},
-			err:     status.Error(codes.NotFound, "not found"),
+			err: status.Error(codes.NotFound, "not found"),
 		},
 		{
 			desc: "InvalidRequest",
@@ -92,9 +89,9 @@ func TestRelayMiningDifficultyQueryPaginated(t *testing.T) {
 			require.NoError(t, err)
 			require.LessOrEqual(t, len(resp.RelayMiningDifficulty), step)
 			require.Subset(t,
-            	nullify.Fill(msgs),
-            	nullify.Fill(resp.RelayMiningDifficulty),
-            )
+				nullify.Fill(msgs),
+				nullify.Fill(resp.RelayMiningDifficulty),
+			)
 		}
 	})
 	t.Run("ByKey", func(t *testing.T) {
@@ -105,9 +102,9 @@ func TestRelayMiningDifficultyQueryPaginated(t *testing.T) {
 			require.NoError(t, err)
 			require.LessOrEqual(t, len(resp.RelayMiningDifficulty), step)
 			require.Subset(t,
-            	nullify.Fill(msgs),
-            	nullify.Fill(resp.RelayMiningDifficulty),
-            )
+				nullify.Fill(msgs),
+				nullify.Fill(resp.RelayMiningDifficulty),
+			)
 			next = resp.Pagination.NextKey
 		}
 	})

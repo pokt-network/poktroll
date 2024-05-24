@@ -20,7 +20,7 @@ func (gs GenesisState) Validate() error {
 	relayMiningDifficultyIndexMap := make(map[string]struct{})
 
 	for _, elem := range gs.RelayMiningDifficultyList {
-		index := string(RelayMiningDifficultyKey(elem.Service_Id))
+		index := string(RelayMiningDifficultyKey(elem.ServiceId))
 		if _, ok := relayMiningDifficultyIndexMap[index]; ok {
 			return fmt.Errorf("duplicated index for relayMiningDifficulty")
 		}
