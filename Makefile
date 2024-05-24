@@ -835,8 +835,8 @@ params_update_proof_min_relay_difficulty_bits: ## Update the proof module params
 
 ### Session Module Params ###
 .PHONY: params_update_session_all
-params_update_session_all: ## Update the session module params
-	poktrolld tx authz exec ./tools/scripts/params/session_all.json $(PARAM_FLAGS)
+params_update_shared_all: ## Update the session module params
+	poktrolld tx authz exec ./tools/scripts/params/shared_all.json $(PARAM_FLAGS)
 
 .PHONY: params_query_all
 params_query_all: check_jq ## Query the params from all available modules
