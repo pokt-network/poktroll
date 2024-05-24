@@ -3,11 +3,14 @@ package poktroll.tokenomics;
 
 option go_package = "github.com/pokt-network/poktroll/x/tokenomics/types";
 
-import "amino/amino.proto";
-import "gogoproto/gogo.proto";
-import "google/api/annotations.proto";
+message RelayMiningDifficulty {
+  string serviceId = 1;
+  int32 blockHeight = 2;
+  uint64 numRelaysEma = 3;
+  string hashTarget = 4;
 
-import "poktroll/tokenomics/params.proto";
+}
+
 
 // RelayMiningDifficulty is a message used to compute, store, update and access
 // the latest relay mining difficulty for each service.

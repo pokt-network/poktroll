@@ -2,51 +2,69 @@ package keeper
 
 import (
 	"context"
-	"fmt"
 
 	"cosmossdk.io/store/prefix"
+	storetypes "cosmossdk.io/store/types"
 	"github.com/cosmos/cosmos-sdk/runtime"
-
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-// UpsertRelayMiningDifficulty set a specific relay mining difficulty in the store.
-func (k Keeper) UpsertRelayMiningDifficulty(
-	ctx context.Context,
-	difficulty types.RelayMiningDifficulty,
-) {
-	logger := k.Logger().With("method", "UpsertRelayMiningDifficulty")
-
-	difficultyBz := k.cdc.MustMarshal(&difficulty)
-
-	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
-	primaryStore := prefix.NewStore(storeAdapter, types.KeyPrefix(types.RelayMiningDifficultyKeyPrefix))
-
-	primaryKey := types.RelayMiningDifficultyKey(difficulty.ServiceId)
-	primaryStore.Set(primaryKey, difficultyBz)
-
-	logger.Info(
-		fmt.Sprintf("upserted relay mining difficulty for service %s at height %d", difficulty.ServiceId, difficulty.BlockHeight),
-	)
+// SetRelayMiningDifficulty set a specific relayMiningDifficulty in the store from its index
+func (k Keeper) SetRelayMiningDifficulty(ctx context.Context, relayMiningDifficulty types.RelayMiningDifficulty) {
+    storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
+	store :=  prefix.NewStore(storeAdapter, types.KeyPrefix(types.RelayMiningDifficultyKeyPrefix))
+	b := k.cdc.MustMarshal(&relayMiningDifficulty)
+	store.Set(types.RelayMiningDifficultyKey(
+        relayMiningDifficulty.ServiceId,
+    ), b)
 }
 
-// GetClaim returns a claim from its index
+// GetRelayMiningDifficulty returns a relayMiningDifficulty from its index
 func (k Keeper) GetRelayMiningDifficulty(
-	ctx context.Context, serviceId string,
-) (
-	difficulty types.RelayMiningDifficulty, isFound bool,
+    ctx context.Context,
+    serviceId string,
+    
+) (val types.RelayMiningDifficulty, found bool) {
+    storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
+	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.RelayMiningDifficultyKeyPrefix))
+
+	b := store.Get(types.RelayMiningDifficultyKey(
+        serviceId,
+    ))
+    if b == nil {
+        return val, false
+    }
+
+	k.cdc.MustUnmarshal(b, &val)
+	return val, true
+}
+
+// RemoveRelayMiningDifficulty removes a relayMiningDifficulty from the store
+func (k Keeper) RemoveRelayMiningDifficulty(
+    ctx context.Context,
+    serviceId string,
+    
 ) {
-	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
-	primaryStore := prefix.NewStore(storeAdapter, types.KeyPrefix(types.RelayMiningDifficultyKeyPrefix))
+    storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
+	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.RelayMiningDifficultyKeyPrefix))
+	store.Delete(types.RelayMiningDifficultyKey(
+	    serviceId,
+    ))
+}
 
-	primaryKey := types.RelayMiningDifficultyKey(serviceId)
-	difficultyBz := primaryStore.Get(primaryKey)
+// GetAllRelayMiningDifficulty returns all relayMiningDifficulty
+func (k Keeper) GetAllRelayMiningDifficulty(ctx context.Context) (list []types.RelayMiningDifficulty) {
+    storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
+    store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.RelayMiningDifficultyKeyPrefix))
+	iterator := storetypes.KVStorePrefixIterator(store, []byte{})
 
-	if difficultyBz == nil {
-		return types.RelayMiningDifficulty{}, false
+	defer iterator.Close()
+
+	for ; iterator.Valid(); iterator.Next() {
+		var val types.RelayMiningDifficulty
+		k.cdc.MustUnmarshal(iterator.Value(), &val)
+        list = append(list, val)
 	}
 
-	k.cdc.MustUnmarshal(difficultyBz, &difficulty)
-
-	return difficulty, true
+    return
 }

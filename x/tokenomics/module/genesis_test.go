@@ -15,7 +15,15 @@ func TestGenesis(t *testing.T) {
 	genesisState := types.GenesisState{
 		Params: types.DefaultParams(),
 
-		// this line is used by starport scaffolding # genesis/test/state
+		RelayMiningDifficultyList: []types.RelayMiningDifficulty{
+		{
+			ServiceId: "0",
+},
+		{
+			ServiceId: "1",
+},
+	},
+	// this line is used by starport scaffolding # genesis/test/state
 	}
 
 	k, ctx, _, _ := keepertest.TokenomicsKeeper(t)
@@ -26,5 +34,6 @@ func TestGenesis(t *testing.T) {
 	nullify.Fill(&genesisState)
 	nullify.Fill(got)
 
-	// this line is used by starport scaffolding # genesis/test/assert
+	require.ElementsMatch(t, genesisState.RelayMiningDifficultyList, got.RelayMiningDifficultyList)
+// this line is used by starport scaffolding # genesis/test/assert
 }
