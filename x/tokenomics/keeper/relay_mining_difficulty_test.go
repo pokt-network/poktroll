@@ -5,49 +5,50 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
 	"github.com/pokt-network/poktroll/x/tokenomics/keeper"
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
-	"github.com/stretchr/testify/require"
 )
 
 // Prevent strconv unused error
 var _ = strconv.IntSize
 
 func createNRelayMiningDifficulty(keeper keeper.Keeper, ctx context.Context, n int) []types.RelayMiningDifficulty {
-	items := make([]types.RelayMiningDifficulty, n)
-	for i := range items {
-		items[i].ServiceId = strconv.Itoa(i)
+	difficulties := make([]types.RelayMiningDifficulty, n)
+	for idx := range difficulties {
+		difficulties[idx].ServiceId = strconv.Itoa(idx)
 
-		keeper.SetRelayMiningDifficulty(ctx, items[i])
+		keeper.SetRelayMiningDifficulty(ctx, difficulties[idx])
 	}
-	return items
+	return difficulties
 }
 
 func TestRelayMiningDifficultyGet(t *testing.T) {
 	keeper, ctx := keepertest.TokenomicsKeeper(t)
-	items := createNRelayMiningDifficulty(keeper, ctx, 10)
-	for _, item := range items {
+	difficulties := createNRelayMiningDifficulty(keeper, ctx, 10)
+	for _, difficulty := range difficulties {
 		rst, found := keeper.GetRelayMiningDifficulty(ctx,
-			item.ServiceId,
+			difficulty.ServiceId,
 		)
 		require.True(t, found)
 		require.Equal(t,
-			nullify.Fill(&item),
+			nullify.Fill(&difficulty),
 			nullify.Fill(&rst),
 		)
 	}
 }
 func TestRelayMiningDifficultyRemove(t *testing.T) {
 	keeper, ctx := keepertest.TokenomicsKeeper(t)
-	items := createNRelayMiningDifficulty(keeper, ctx, 10)
-	for _, item := range items {
+	difficulties := createNRelayMiningDifficulty(keeper, ctx, 10)
+	for _, difficulty := range difficulties {
 		keeper.RemoveRelayMiningDifficulty(ctx,
-			item.ServiceId,
+			difficulty.ServiceId,
 		)
 		_, found := keeper.GetRelayMiningDifficulty(ctx,
-			item.ServiceId,
+			difficulty.ServiceId,
 		)
 		require.False(t, found)
 	}
@@ -55,9 +56,9 @@ func TestRelayMiningDifficultyRemove(t *testing.T) {
 
 func TestRelayMiningDifficultyGetAll(t *testing.T) {
 	keeper, ctx := keepertest.TokenomicsKeeper(t)
-	items := createNRelayMiningDifficulty(keeper, ctx, 10)
+	difficulties := createNRelayMiningDifficulty(keeper, ctx, 10)
 	require.ElementsMatch(t,
-		nullify.Fill(items),
+		nullify.Fill(difficulties),
 		nullify.Fill(keeper.GetAllRelayMiningDifficulty(ctx)),
 	)
 }
