@@ -1,6 +1,9 @@
 package keeper
 
 import (
+	"fmt"
+	"math"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	proofkeeper "github.com/pokt-network/poktroll/x/proof/keeper"
@@ -19,7 +22,8 @@ const (
 
 	// The target number of relays we want the network to mine for a specific
 	// service (across all applications & suppliers) per session when claims
-	// are aggregated.
+	// are aggregated. This number is manually controlled based on how large
+	// we want the off-chain trees to grow.
 	targetNumRelays = uint64(10e4)
 )
 
@@ -29,7 +33,7 @@ func (k Keeper) UpdateRelayMiningDifficulty(
 	ctx sdk.Context,
 	relaysPerServiceMap map[string]uint64,
 ) error {
-	// logger := k.Logger().With("method", "UpdateRelayMiningDifficulty")
+	logger := k.Logger().With("method", "UpdateRelayMiningDifficulty")
 
 	for serviceId, numRelays := range relaysPerServiceMap {
 		prevDifficulty, found := k.GetRelayMiningDifficulty(ctx, serviceId)
@@ -52,10 +56,7 @@ func (k Keeper) UpdateRelayMiningDifficulty(
 		prevRelaysEma := prevDifficulty.NumRelaysEma
 		newRelaysEma := computeEma(alpha, prevRelaysEma, numRelays)
 
-		// prevRelay
-		// newRelayMiningDifficultyHash := targetNumRelays / float64(newRelaysEma)
-		difficultyHash := []byte{}
-
+		difficultyHash := computeNewDifficultyHash(targetNumRelays, newRelaysEma)
 		newDifficulty := types.RelayMiningDifficulty{
 			ServiceId:    serviceId,
 			BlockHeight:  ctx.BlockHeight(),
@@ -66,10 +67,31 @@ func (k Keeper) UpdateRelayMiningDifficulty(
 		k.UpsertRelayMiningDifficulty(ctx, newDifficulty)
 
 		// TODO_IN_THIS_PR: Emit an event for this.
-		// logger.Info(fmt.Sprintf("Updated relay mining difficulty for service %s from %f to %f", serviceId, prevRelayMiningDifficulty, newRelayMiningDifficulty))
+		logger.Info(fmt.Sprintf("Updated relay mining difficulty for service %s from %v to %v", serviceId, prevDifficulty.Difficulty, newDifficulty.Difficulty))
 
 	}
 	return nil
+}
+
+func computeNewDifficultyHash(targetNumRelays, newRelaysEma uint64) []byte {
+	// The target number of relays we want the network to mine is greater than
+	// the actual, so we don't need to scale to anything outside the default.
+	if targetNumRelays > newRelaysEma {
+		return defaultDifficultyHash()
+	}
+
+	log2 := func(x float64) float64 {
+		return math.Log(x) / math.Ln2
+	}
+
+	// Given we are dealing with a bitwise distribution, we are trying to compute
+	// the number of leading zeros we need so probabilistically, only T relays
+	// are stored in the trees, even though R relays are flowing through the network.
+	// 	(0.5)^x = (T/R)
+	// 	x = -ln2(T/R)
+	numLeadingZeroes := -log2(float64(targetNumRelays) / float64(newRelaysEma))
+	numBytes := proofkeeper.SmtSpec.PathHasherSize()
+	return leadingZeroBitsToTargetDifficultyHash(int(numLeadingZeroes), numBytes)
 }
 
 // computeEma computes the EMA at time t, given the EMA at time t-1, the raw
@@ -108,25 +130,3 @@ func leadingZeroBitsToTargetDifficultyHash(numLeadingZeroBits int, numBytes int)
 
 	return targetDifficultyHah
 }
-
-// 1: T ← 104
-// ▷ Target claims by blockchain.
-// 2: α ← 0.1 ▷ Exponential Moving Average Parameter.
-// 3: U ← 4 ▷ Number of blocks per difficulty update.
-// 4: Rema ← 0 ▷ Estimated blockchain relays, averaged by EMA.
-// 5: p ← 1 ▷ Initial blockchain hash collision probability.
-// 6: height ← 0
-// 7: while True do
-// 8: C ← getAllClaims() ▷ Get all relay claims.
-// 9: R ← C
-// p
-// 10: Rema ← αR + (1 − α)Rema
-// 11: if height%U == 0 then
-// 12: p ← T
-// Rema
-// 13: if p > 1 then
-// 14: p ← 1 ▷ If total relays are lower than target, disable relay mining.
-// 15: end if
-// 16: end if
-// 17: height ← +1
-// 18: end while
