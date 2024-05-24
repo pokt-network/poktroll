@@ -1,9 +1,11 @@
 package keeper
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	proofkeeper "github.com/pokt-network/poktroll/x/proof/keeper"
+	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 // TODO_IN_THIS_PR: Prepare future work to decided if these should be
@@ -15,43 +17,96 @@ const (
 	// Usually, alpha = 2 / (N+1), where N is the number of periods.
 	emaSmoothingFactor = float64(0.1)
 
-	// The target number of compute units per service across all applications
-	// and suppliers at the end of every session.
-	// The target determines how to modulate the relay mining difficulty.
-	targetComputeUnits = uint64(10e4)
-
-	
+	// The target number of relays we want the network to mine for a specific
+	// service (across all applications & suppliers) per session when claims
+	// are aggregated.
+	targetNumRelays = uint64(10e4)
 )
 
 // UpdateRelayMiningDifficulty updates the on-chain relay mining difficulty
 // based on the amount of on-chain volume.
 func (k Keeper) UpdateRelayMiningDifficulty(
 	ctx sdk.Context,
-	computeUnitsPerServiceMap map[string]uint64,
+	relaysPerServiceMap map[string]uint64,
 ) error {
-	logger := k.Logger().With("method", "UpdateRelayMiningDifficulty")
+	// logger := k.Logger().With("method", "UpdateRelayMiningDifficulty")
 
-	for serviceId, computeUnits := range computeUnitsPerServiceMap {
-		prevDifficultyTarget, found := k.GetRelayMiningDifficulty(serviceId)
+	for serviceId, numRelays := range relaysPerServiceMap {
+		prevDifficulty, found := k.GetRelayMiningDifficulty(ctx, serviceId)
 		if !found {
-
-		prevRelay
-		newEma := computeEma(emaSmoothingFactor, revEMA, float64(computeUnits))
-		if err := k.SetRelayMiningDifficulty(serviceId, newEma); err != nil {
-			logger.Error(fmt.Sprintf("failed to update relay mining difficulty: %v", err))
-			return err
+			// If the difficulty is not found, we initialize it with a default.
+			prevDifficulty = types.RelayMiningDifficulty{
+				ServiceId:    serviceId,
+				BlockHeight:  ctx.BlockHeight(),
+				NumRelaysEma: 0,
+				Difficulty:   defaultDifficultyHash(),
+			}
 		}
-		logger.Info(fmt.Sprintf("Updated relay mining difficulty for service %s from %f to %f", serviceId, k.GetRelayMiningDifficulty(serviceId), computeUnits))
-	}
 
+		// TODO_IN_THIS_PR: Should we compute this?
+		// N := ctx.BlockHeight() - prevDifficulty.BlockHeight
+		// alpha := 2 / (1 + N)
+		alpha := emaSmoothingFactor
+
+		// Compute the updated EMA of the number of relays.
+		prevRelaysEma := prevDifficulty.NumRelaysEma
+		newRelaysEma := computeEma(alpha, prevRelaysEma, numRelays)
+
+		// prevRelay
+		// newRelayMiningDifficultyHash := targetNumRelays / float64(newRelaysEma)
+		difficultyHash := []byte{}
+
+		newDifficulty := types.RelayMiningDifficulty{
+			ServiceId:    serviceId,
+			BlockHeight:  ctx.BlockHeight(),
+			NumRelaysEma: newRelaysEma,
+			Difficulty:   difficultyHash,
+		}
+
+		k.UpsertRelayMiningDifficulty(ctx, newDifficulty)
+
+		// TODO_IN_THIS_PR: Emit an event for this.
+		// logger.Info(fmt.Sprintf("Updated relay mining difficulty for service %s from %f to %f", serviceId, prevRelayMiningDifficulty, newRelayMiningDifficulty))
+
+	}
 	return nil
 }
 
 // computeEma computes the EMA at time t, given the EMA at time t-1, the raw
 // data revealed at time t, and the smoothing factor α
 // Src: https://en.wikipedia.org/wiki/Exponential_smoothing
-func computeEma(alpha, prevEma, currValue float64) float64 {
-	return alpha*currValue + (1-alpha)*prevEma
+func computeEma(alpha float64, prevEma, currValue uint64) uint64 {
+	return uint64(alpha*float64(currValue) + (1-alpha)*float64(prevEma))
+}
+
+func defaultDifficultyHash() []byte {
+	numBytes := proofkeeper.SmtSpec.PathHasherSize()
+	numDefaultLeadingZeroBits := int(prooftypes.DefaultMinRelayDifficultyBits)
+	return leadingZeroBitsToTargetDifficultyHash(numDefaultLeadingZeroBits, numBytes)
+}
+
+// leadingZeroBitsToTargetDifficultyHash generates a slice of bytes with the specified number of leading zero bits
+func leadingZeroBitsToTargetDifficultyHash(numLeadingZeroBits int, numBytes int) []byte {
+	targetDifficultyHah := make([]byte, numBytes)
+
+	// Set everything to ones initially
+	for i := range targetDifficultyHah {
+		targetDifficultyHah[i] = 0xff
+	}
+
+	// Set full zero bytes
+	fullZeroBytes := numLeadingZeroBits / 8
+	for i := 0; i < fullZeroBytes; i++ {
+		targetDifficultyHah[i] = 0
+	}
+
+	// Set remaining bits in the next byte
+	remainingZeroBits := numLeadingZeroBits % 8
+	if remainingZeroBits > 0 {
+		targetDifficultyHah[fullZeroBytes] = byte(0xff >> remainingZeroBits)
+	}
+
+	return targetDifficultyHah
 }
 
 // 1: T ← 104

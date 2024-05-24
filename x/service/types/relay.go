@@ -10,6 +10,8 @@ import (
 // It is used as helper in the case that the relay is already marshaled and
 // centralizes the hasher used.
 func GetHashFromBytes(relayBz []byte) [32]byte {
+	// TODO_TECHDEBT(#446): Can we centralize `sha256` somehow so it only appears
+	// once throughout the entire codebase when it comes to relay hashing.
 	return sha256.Sum256(relayBz)
 }
 

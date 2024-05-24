@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 
 	"cosmossdk.io/store/prefix"
 	"github.com/cosmos/cosmos-sdk/runtime"
@@ -9,37 +10,43 @@ import (
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-// UpsertClaim set a specific claim in the store from its index
+// UpsertRelayMiningDifficulty set a specific relay mining difficulty in the store.
 func (k Keeper) UpsertRelayMiningDifficulty(
 	ctx context.Context,
-	serviceId string,
-	difficultyTarget []byte,
-	// ?? blockHeight uint64,
-	// ?? blockHeight uint64,
+	difficulty types.RelayMiningDifficulty,
 ) {
-	// claimBz := k.cdc.MustMarshal(&claim)
+	logger := k.Logger().With("method", "UpsertRelayMiningDifficulty")
+
+	difficultyBz := k.cdc.MustMarshal(&difficulty)
+
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	primaryStore := prefix.NewStore(storeAdapter, types.KeyPrefix(types.RelayMiningDifficultyKeyPrefix))
-	primaryKey := types.RelayMiningDifficultyKey(serviceId)
-	primaryStore.Set(primaryKey, difficultyTarget)
+
+	primaryKey := types.RelayMiningDifficultyKey(difficulty.ServiceId)
+	primaryStore.Set(primaryKey, difficultyBz)
+
+	logger.Info(
+		fmt.Sprintf("upserted relay mining difficulty for service %s at height %d", difficulty.ServiceId, difficulty.BlockHeight),
+	)
 }
 
 // GetClaim returns a claim from its index
 func (k Keeper) GetRelayMiningDifficulty(
-	ctx context.Context,
-	serviceId string,
+	ctx context.Context, serviceId string,
 ) (
-	difficultyTarget []byte,
-	isDifficultyTargetFound bool,
+	difficulty types.RelayMiningDifficulty, isFound bool,
 ) {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	primaryStore := prefix.NewStore(storeAdapter, types.KeyPrefix(types.RelayMiningDifficultyKeyPrefix))
 
 	primaryKey := types.RelayMiningDifficultyKey(serviceId)
-	difficultyTarget = primaryStore.Get(primaryKey)
+	difficultyBz := primaryStore.Get(primaryKey)
 
-	if difficultyTarget == nil {
-		return nil, false
+	if difficultyBz == nil {
+		return types.RelayMiningDifficulty{}, false
 	}
-	return difficultyTarget, true
+
+	k.cdc.MustUnmarshal(difficultyBz, &difficulty)
+
+	return difficulty, true
 }

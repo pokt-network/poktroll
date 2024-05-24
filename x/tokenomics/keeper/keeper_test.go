@@ -2,7 +2,6 @@ package keeper_test
 
 import (
 	"context"
-	"testing"
 	"time"
 
 	"cosmossdk.io/math"
@@ -21,8 +20,8 @@ import (
 	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	tokenomicskeeper "github.com/pokt-network/poktroll/x/tokenomics/keeper"
-	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
+	// tokenomicskeeper "github.com/pokt-network/poktroll/x/tokenomics/keeper"
+	// tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 const (

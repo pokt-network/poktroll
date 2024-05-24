@@ -24,6 +24,7 @@ import (
 )
 
 // SMT specification used for the proof verification.
+// TODO_IN_THIS_PR: Should we move this to the `types` package?
 var (
 	hasher  hash.Hash
 	SmtSpec smt.TrieSpec

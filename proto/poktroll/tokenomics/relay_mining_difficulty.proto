@@ -1,0 +1,23 @@
+syntax = "proto3";
+package poktroll.tokenomics;
+
+option go_package = "github.com/pokt-network/poktroll/x/tokenomics/types";
+
+import "amino/amino.proto";
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+
+import "poktroll/tokenomics/params.proto";
+
+// RelayMiningDifficulty is a message used to compute, store, update and access
+// the latest relay mining difficulty for each service.
+message RelayMiningDifficulty {
+    // The service ID this relay mining difficulty is associated with.
+    string service_id = 1;;
+    // The block height at which this relay mining difficulty was computed.
+    int64 block_height = 2;
+    // The latest exponential moving average of the number of relays for this service.
+    uint64 num_relays_ema = 4;
+    // The latest relay mining difficulty for this service.
+    bytes difficulty = 5;
+}

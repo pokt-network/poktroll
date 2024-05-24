@@ -36,10 +36,10 @@ const (
 //
 //	numClaimsSettled: the number of claims that were settled.
 //	numClaimsExpired: the number of claims that expired without being settled.
-//	computeUnitsPerServiceMap: a map of service IDs to the total compute units settled for that service.
+//	relaysPerServiceMap: a map of service IDs to the total number of relays settled for that service.
 func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 	numClaimsSettled, numClaimsExpired uint64,
-	computeUnitsPerServiceMap map[string]uint64,
+	relaysPerServiceMap map[string]uint64,
 	err error,
 ) {
 	logger := k.Logger().With("method", "SettlePendingClaims")
@@ -66,7 +66,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 
 	logger.Info(fmt.Sprintf("found %d expiring claims at block height %d", len(expiringClaims), blockHeight))
 
-	computeUnitsPerServiceMap = make(map[string]uint64)
+	relaysPerServiceMap = make(map[string]uint64)
 
 	for _, claim := range expiringClaims {
 		// Retrieve the number of compute units in the claim for the events emitted
@@ -128,8 +128,10 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 			k.proofKeeper.RemoveProof(ctx, sessionId, claim.SupplierAddress)
 		}
 
-		// Tally the total number of compute units settled for each service
-		computeUnitsPerServiceMap[claim.SessionHeader.Service.Id] += claimComputeUnits
+		// Tally the total number of relays settled for each service
+		// TODO_IN_THIS_PR: Update to `root.LeafCount()` instead of `claimComputeUnits`
+		// because that's what we actually want to track.
+		relaysPerServiceMap[claim.SessionHeader.Service.Id] += claimComputeUnits
 
 		numClaimsSettled++
 		logger.Info(fmt.Sprintf("Successfully settled claim for session ID %q at block height %d", claim.SessionHeader.SessionId, blockHeight))

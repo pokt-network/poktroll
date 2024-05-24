@@ -122,7 +122,7 @@ func (s *suite) newProofMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 		switch paramName {
 		case prooftypes.ParamMinRelayDifficultyBits:
 			msgUpdateParams.Params.MinRelayDifficultyBits = uint64(paramValue.value.(int64))
-		case prooftypes.ParamRelayDifficultyBits:
+		case prooftypes.ParamRelayDifficulty:
 			s.Fatalf("RelayDifficultyBits is an on-chain parameter and cannot be updated through governance proposals")
 		default:
 			s.Fatalf("unexpected %q type param name %q", paramValue.typeStr, paramName)

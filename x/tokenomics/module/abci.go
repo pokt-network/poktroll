@@ -22,7 +22,7 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) error {
 	//    even without a proof to be able to scale to unbounded Claims & Proofs.
 	// 2. Implementation - This cannot be done from the `x/proof` module because
 	//    it would create a circular dependency.
-	numClaimsSettled, numClaimsExpired, computeUnitsPerServiceMap, err := k.SettlePendingClaims(ctx)
+	numClaimsSettled, numClaimsExpired, relaysPerServiceMap, err := k.SettlePendingClaims(ctx)
 	if err != nil {
 		logger.Error(fmt.Sprintf("failed to settle pending claims: %v", err))
 		return err
@@ -31,7 +31,7 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) error {
 
 	// Update relay mining difficulty based on the amount of on-chain volume
 	// TODO_IN_THIS_PR: Discuss if we should do this on every endBlocker or periodically.
-	err = k.UpdateRelayMiningDifficulty(ctx, computeUnitsPerServiceMap)
+	err = k.UpdateRelayMiningDifficulty(ctx, relaysPerServiceMap)
 	if err != nil {
 		logger.Error(fmt.Sprintf("failed to update relay mining difficulty: %v", err))
 	}

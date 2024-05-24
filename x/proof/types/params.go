@@ -12,8 +12,8 @@ var (
 
 	// RelayDifficultyBits is a parameter that cannot be updated through governance
 	// proposals. It is modulated non-interactively only through on-chain events.
-	KeyRelayDifficultyBits   = []byte("RelayDifficultyBits")
-	ParamRelayDifficultyBits = "relay_difficulty_bits"
+	KeyRelayDifficulty   = []byte("RelayDifficultyBits")
+	ParamRelayDifficulty = "relay_difficulty_bits"
 )
 
 // ParamKeyTable the param key table for launch module
