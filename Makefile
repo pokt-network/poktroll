@@ -381,8 +381,16 @@ test_e2e_settlement: test_e2e_env ## Run only the E2E suite that exercises the s
 	go test -v ./e2e/tests/... -tags=e2e,test --features-path=0_settlement.feature
 
 .PHONY: test_load_relays_stress
-test_load_relays_stress: test_e2e_env ## Run the stress test for E2E relays.
-	go test -v -count=1 ./load-testing/tests/... -tags=load,test -run LoadRelays --log-level=debug --timeout=30m
+test_load_relays_stress: ## Run the stress test for E2E relays on non-ephemeral chains
+	go test -v -count=1 ./load-testing/tests/... \
+	-tags=load,test -run LoadRelays --log-level=debug --timeout=30m \
+	--manifest ./load-testing/loadtest_manifest.yaml
+
+.PHONY: test_localnet_load_relays_stress
+test_localnet_load_relays_stress: test_e2e_env ## Run the stress test for E2E relays.
+	go test -v -count=1 ./load-testing/tests/... \
+	-tags=load,test -run LoadRelays --log-level=debug --timeout=30m \
+	--manifest ./load-testing/localnet_loadtest_manifest.yaml
 
 .PHONY: go_test_verbose
 go_test_verbose: check_go_version ## Run all go tests verbosely
