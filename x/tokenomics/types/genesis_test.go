@@ -24,7 +24,15 @@ func TestGenesisState_Validate(t *testing.T) {
 				Params: types.Params{
 					ComputeUnitsToTokensMultiplier: 1,
 				},
-				// this line is used by starport scaffolding # types/genesis/validField
+				RelayMiningDifficultyList: []types.RelayMiningDifficulty{
+	{
+		ServiceId: "0",
+},
+	{
+		ServiceId: "1",
+},
+},
+// this line is used by starport scaffolding # types/genesis/validField
 			},
 			isValid: true,
 		},
@@ -38,7 +46,21 @@ func TestGenesisState_Validate(t *testing.T) {
 			},
 			isValid: false,
 		},
-		// this line is used by starport scaffolding # types/genesis/testcase
+		{
+	desc:     "duplicated relayMiningDifficulty",
+	genState: &types.GenesisState{
+		RelayMiningDifficultyList: []types.RelayMiningDifficulty{
+			{
+				ServiceId: "0",
+},
+			{
+				ServiceId: "0",
+},
+		},
+	},
+	valid:    false,
+},
+// this line is used by starport scaffolding # types/genesis/testcase
 	}
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {

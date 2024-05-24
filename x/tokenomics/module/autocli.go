@@ -21,7 +21,18 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 				// Example:
 				// $ poktrolld q tokenomics params --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
 				// 				},
-				// this line is used by ignite scaffolding # autocli/query
+				{
+			RpcMethod: "RelayMiningDifficultyAll",
+			Use: "list-relay-mining-difficulty",
+			Short: "List all relay-mining-difficulty",
+		},
+		{
+			RpcMethod: "RelayMiningDifficulty",
+			Use: "show-relay-mining-difficulty [id]",
+			Short: "Shows a relay-mining-difficulty",
+			PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "serviceId"},},
+		},
+		// this line is used by ignite scaffolding # autocli/query
 			},
 		},
 		Tx: &autocliv1.ServiceCommandDescriptor{
