@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/pokt-network/poktroll/pkg/sdk"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/shannon-sdk/sdk"
 )
 
 // TODO_IMPROVE: Use a more sophisticated endpoint selection strategy.

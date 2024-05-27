@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 	"sync"
 
 	"go.uber.org/multierr"
@@ -290,4 +291,20 @@ func randRequestId() string {
 		))
 	}
 	return base64.StdEncoding.EncodeToString(requestIdBz)
+}
+
+// RPCToWebsocketURL converts the provided URL into a websocket URL string that can
+// be used to subscribe to onchain events and query the chain via a client
+// context or send transactions via a tx client context.
+func RPCToWebsocketURL(hostUrl *url.URL) string {
+	switch hostUrl.Scheme {
+	case "http":
+		fallthrough
+	case "ws":
+		fallthrough
+	case "tcp":
+		return fmt.Sprintf("ws://%s/websocket", hostUrl.Host)
+	default:
+		return fmt.Sprintf("wss://%s/websocket", hostUrl.Host)
+	}
 }

@@ -2,6 +2,7 @@ package appgateserver
 
 import (
 	"context"
+	"io"
 	"net/http"
 
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -33,17 +34,25 @@ func (app *appGateServer) handleSynchronousRelay(
 	}
 
 	// Get a supplier URL and address for the given service and session.
-	supplierEndpoint, err := app.getRelayerUrl(
-		serviceId,
-		rpcType,
-		sessionSuppliers.SuppliersEndpoints,
-		request,
-	)
+	endpoints := sessionSuppliers.SuppliersEndpoints
+	supplierEndpoint, err := app.getRelayerUrl(serviceId, rpcType, endpoints, request)
 	if err != nil {
 		return ErrAppGateHandleRelay.Wrapf("getting supplier URL: %s", err)
 	}
 
-	relayResponse, err := app.sdk.SendRelay(ctx, supplierEndpoint, *request)
+	requestBodyBz, err := io.ReadAll(request.Body)
+	if err != nil {
+		return ErrAppGateHandleRelay.Wrapf("reading request body: %s", err)
+	}
+	request.Body.Close()
+
+	relayResponse, err := app.sdk.SendRelay(
+		ctx,
+		supplierEndpoint,
+		requestBodyBz,
+		request.Method,
+		request.Header,
+	)
 	if err != nil {
 		return err
 	}

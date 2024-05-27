@@ -21,7 +21,7 @@ import (
 	querytypes "github.com/pokt-network/poktroll/pkg/client/query/types"
 	"github.com/pokt-network/poktroll/pkg/partials"
 	"github.com/pokt-network/poktroll/pkg/polylog"
-	"github.com/pokt-network/poktroll/pkg/sdk"
+	"github.com/pokt-network/shannon-sdk/sdk"
 )
 
 // SigningInformation is a struct that holds information related to the signing
@@ -57,9 +57,9 @@ type appGateServer struct {
 	// and get the public key to verify the relay response signature.
 	clientCtx querytypes.Context
 
-	// sdk is the POKTRollSDK that the appGateServer uses to query for the current session
+	// sdk is the ShannonSDK that the appGateServer uses to query for the current session
 	// and send relay requests to the supplier.
-	sdk sdk.POKTRollSDK
+	sdk *sdk.ShannonSDK
 
 	// listeningEndpoint is the endpoint that the appGateServer will listen on.
 	listeningEndpoint *url.URL
