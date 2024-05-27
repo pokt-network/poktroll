@@ -1,10 +1,9 @@
-package tokenomics
+package shared
 
 import (
 	"context"
 	"encoding/json"
-
-	// this line is used by starport scaffolding # 1
+	"fmt"
 
 	"cosmossdk.io/core/appmodule"
 	"cosmossdk.io/core/store"
@@ -19,9 +18,11 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 
-	tokenomicsmodule "github.com/pokt-network/poktroll/api/poktroll/tokenomics/module"
-	"github.com/pokt-network/poktroll/x/tokenomics/keeper"
-	"github.com/pokt-network/poktroll/x/tokenomics/types"
+	// this line is used by starport scaffolding # 1
+
+	modulev1 "github.com/pokt-network/poktroll/api/poktroll/shared/module"
+	"github.com/pokt-network/poktroll/x/shared/keeper"
+	"github.com/pokt-network/poktroll/x/shared/types"
 )
 
 var (
@@ -74,7 +75,7 @@ func (AppModuleBasic) DefaultGenesis(cdc codec.JSONCodec) json.RawMessage {
 func (AppModuleBasic) ValidateGenesis(cdc codec.JSONCodec, config client.TxEncodingConfig, bz json.RawMessage) error {
 	var genState types.GenesisState
 	if err := cdc.UnmarshalJSON(bz, &genState); err != nil {
-		return types.ErrTokenomicsUnmarshalInvalid.Wrapf("invalid genesis state: %v", err)
+		return fmt.Errorf("failed to unmarshal %s genesis state: %w", types.ModuleName, err)
 	}
 	return genState.Validate()
 }
@@ -94,29 +95,29 @@ func (AppModuleBasic) RegisterGRPCGatewayRoutes(clientCtx client.Context, mux *r
 type AppModule struct {
 	AppModuleBasic
 
-	tokenomicsKeeper keeper.Keeper
-	accountKeeper    types.AccountKeeper
-	bankKeeper       types.BankKeeper
+	keeper        keeper.Keeper
+	accountKeeper types.AccountKeeper
+	bankKeeper    types.BankKeeper
 }
 
 func NewAppModule(
 	cdc codec.Codec,
-	tokenomicsKeeper keeper.Keeper,
+	keeper keeper.Keeper,
 	accountKeeper types.AccountKeeper,
 	bankKeeper types.BankKeeper,
 ) AppModule {
 	return AppModule{
-		AppModuleBasic:   NewAppModuleBasic(cdc),
-		tokenomicsKeeper: tokenomicsKeeper,
-		accountKeeper:    accountKeeper,
-		bankKeeper:       bankKeeper,
+		AppModuleBasic: NewAppModuleBasic(cdc),
+		keeper:         keeper,
+		accountKeeper:  accountKeeper,
+		bankKeeper:     bankKeeper,
 	}
 }
 
 // RegisterServices registers a gRPC query service to respond to the module-specific gRPC queries
 func (am AppModule) RegisterServices(cfg module.Configurator) {
-	types.RegisterMsgServer(cfg.MsgServer(), keeper.NewMsgServerImpl(am.tokenomicsKeeper))
-	types.RegisterQueryServer(cfg.QueryServer(), am.tokenomicsKeeper)
+	types.RegisterMsgServer(cfg.MsgServer(), keeper.NewMsgServerImpl(am.keeper))
+	types.RegisterQueryServer(cfg.QueryServer(), am.keeper)
 }
 
 // RegisterInvariants registers the invariants of the module. If an invariant deviates from its predicted value, the InvariantRegistry triggers appropriate logic (most often the chain will be halted)
@@ -128,12 +129,12 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, gs json.Ra
 	// Initialize global index to index in genesis state
 	cdc.MustUnmarshalJSON(gs, &genState)
 
-	InitGenesis(ctx, am.tokenomicsKeeper, genState)
+	InitGenesis(ctx, am.keeper, genState)
 }
 
 // ExportGenesis returns the module's exported genesis state as raw JSON bytes.
 func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.RawMessage {
-	genState := ExportGenesis(ctx, am.tokenomicsKeeper)
+	genState := ExportGenesis(ctx, am.keeper)
 	return cdc.MustMarshalJSON(genState)
 }
 
@@ -150,9 +151,8 @@ func (am AppModule) BeginBlock(_ context.Context) error {
 
 // EndBlock contains the logic that is automatically triggered at the end of each block.
 // The end block implementation is optional.
-func (am AppModule) EndBlock(goCtx context.Context) error {
-	ctx := sdk.UnwrapSDKContext(goCtx)
-	return EndBlocker(ctx, am.tokenomicsKeeper)
+func (am AppModule) EndBlock(_ context.Context) error {
+	return nil
 }
 
 // IsOnePerModuleType implements the depinject.OnePerModuleType interface.
@@ -166,7 +166,10 @@ func (am AppModule) IsAppModule() {}
 // ----------------------------------------------------------------------------
 
 func init() {
-	appmodule.Register(&tokenomicsmodule.Module{}, appmodule.Provide(ProvideModule))
+	appmodule.Register(
+		&modulev1.Module{},
+		appmodule.Provide(ProvideModule),
+	)
 }
 
 type ModuleInputs struct {
@@ -174,20 +177,18 @@ type ModuleInputs struct {
 
 	StoreService store.KVStoreService
 	Cdc          codec.Codec
-	Config       *tokenomicsmodule.Module
+	Config       *modulev1.Module
 	Logger       log.Logger
 
-	AccountKeeper     types.AccountKeeper
-	BankKeeper        types.BankKeeper
-	ApplicationKeeper types.ApplicationKeeper
-	ProofKeeper       types.ProofKeeper
+	AccountKeeper types.AccountKeeper
+	BankKeeper    types.BankKeeper
 }
 
 type ModuleOutputs struct {
 	depinject.Out
 
-	TokenomicsKeeper keeper.Keeper
-	Module           appmodule.AppModule
+	SharedKeeper keeper.Keeper
+	Module       appmodule.AppModule
 }
 
 func ProvideModule(in ModuleInputs) ModuleOutputs {
@@ -201,10 +202,6 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 		in.StoreService,
 		in.Logger,
 		authority.String(),
-		in.BankKeeper,
-		in.AccountKeeper,
-		in.ApplicationKeeper,
-		in.ProofKeeper,
 	)
 	m := NewAppModule(
 		in.Cdc,
@@ -213,5 +210,5 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 		in.BankKeeper,
 	)
 
-	return ModuleOutputs{TokenomicsKeeper: k, Module: m}
+	return ModuleOutputs{SharedKeeper: k, Module: m}
 }

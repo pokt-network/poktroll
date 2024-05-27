@@ -1,9 +1,5 @@
 package types
 
-import (
-	"fmt"
-)
-
 // DefaultGenesis returns the default genesis state
 func DefaultGenesis() *GenesisState {
 	return &GenesisState{
@@ -22,7 +18,7 @@ func (gs GenesisState) Validate() error {
 	for _, elem := range gs.RelayMiningDifficultyList {
 		index := string(RelayMiningDifficultyKey(elem.ServiceId))
 		if _, ok := relayMiningDifficultyIndexMap[index]; ok {
-			return fmt.Errorf("duplicated index for relayMiningDifficulty")
+			return ErrTokenomicsDuplicateIndex.Wrapf("duplicated index for relayMiningDifficulty: %s", index)
 		}
 		relayMiningDifficultyIndexMap[index] = struct{}{}
 	}

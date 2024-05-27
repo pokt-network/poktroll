@@ -22,4 +22,9 @@ message RelayMiningDifficulty {
     // and the difficulty has 4 leading zero bits, then the target hash would be:
     // 0b0000111... (until 32 bytes are filled up).
     bytes target_hash = 4;
+
+    // TODO_BLOCKER_BETA(@Olshansk): Add a `hash_algorithm` field either in this
+    // structure or elsewhere so we can support changing it over time. There should
+    // be one source of truth, somewhere on chain, to stay in sync with the SMT
+    // configuration.
 }

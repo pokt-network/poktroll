@@ -21,10 +21,10 @@ func TestRelayMiningDifficultyQuerySingle(t *testing.T) {
 	keeper, ctx := keepertest.TokenomicsKeeper(t)
 	msgs := createNRelayMiningDifficulty(keeper, ctx, 2)
 	tests := []struct {
-		desc     string
-		request  *types.QueryGetRelayMiningDifficultyRequest
-		response *types.QueryGetRelayMiningDifficultyResponse
-		err      error
+		desc        string
+		request     *types.QueryGetRelayMiningDifficultyRequest
+		response    *types.QueryGetRelayMiningDifficultyResponse
+		expectedErr error
 	}{
 		{
 			desc: "First",
@@ -45,18 +45,18 @@ func TestRelayMiningDifficultyQuerySingle(t *testing.T) {
 			request: &types.QueryGetRelayMiningDifficultyRequest{
 				ServiceId: strconv.Itoa(100000),
 			},
-			err: status.Error(codes.NotFound, "not found"),
+			expectedErr: status.Error(codes.NotFound, "not found"),
 		},
 		{
-			desc: "InvalidRequest",
-			err:  status.Error(codes.InvalidArgument, "invalid request"),
+			desc:        "InvalidRequest",
+			expectedErr: status.Error(codes.InvalidArgument, "invalid request"),
 		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.desc, func(t *testing.T) {
 			response, err := keeper.RelayMiningDifficulty(ctx, tc.request)
-			if tc.err != nil {
-				require.ErrorIs(t, err, tc.err)
+			if tc.expectedErr != nil {
+				require.ErrorIs(t, err, tc.expectedErr)
 			} else {
 				require.NoError(t, err)
 				require.Equal(t,
