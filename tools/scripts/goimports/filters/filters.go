@@ -46,6 +46,10 @@ func PathMatchesTestGo(path string) (bool, error) {
 	return strings.HasSuffix(path, "_test.go"), nil
 }
 
+func PathMatchesPulsarGo(path string) (bool, error) {
+	return strings.HasSuffix(path, ".pulsar.go"), nil
+}
+
 // ContentMatchesEmptyImportScaffold matches files that can't be goimport'd due
 // to ignite incompatibility.
 func ContentMatchesEmptyImportScaffold(path string) (bool, error) {
@@ -66,6 +70,14 @@ func containsEmptyImportScaffold(goSrcPath string) (isEmptyImport bool, _ error)
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
+
+	// The default buffer size is 64KB, which is insufficient.
+	// Set a larger buffer size (e.g., 1 MB) to avoid the following error:
+	// bufio.Scanner: token too long
+	const maxBufferSize = 1024 * 1024 // 1 MB
+	buf := make([]byte, maxBufferSize)
+	scanner.Buffer(buf, maxBufferSize)
+
 	scanner.Split(importBlockSplit)
 
 	for scanner.Scan() {
