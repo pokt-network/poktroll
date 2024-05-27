@@ -74,7 +74,7 @@ func (AppModuleBasic) DefaultGenesis(cdc codec.JSONCodec) json.RawMessage {
 func (AppModuleBasic) ValidateGenesis(cdc codec.JSONCodec, config client.TxEncodingConfig, bz json.RawMessage) error {
 	var genState types.GenesisState
 	if err := cdc.UnmarshalJSON(bz, &genState); err != nil {
-		return types.ErrTokenomicsUnmarshalInvalid.Wrapf("invalid genesis state: %w", err)
+		return types.ErrTokenomicsUnmarshalInvalid.Wrapf("invalid genesis state: %v", err)
 	}
 	return genState.Validate()
 }
