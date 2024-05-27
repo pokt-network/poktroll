@@ -1,6 +1,10 @@
 package app
 
 import (
+	sharedmodulev1 "github.com/pokt-network/poktroll/api/poktroll/shared/module"
+	_ "github.com/pokt-network/poktroll/x/shared/module" // import for side-effects
+	sharedmoduletypes "github.com/pokt-network/poktroll/x/shared/types"
+
 	// this line is used by starport scaffolding # stargate/app/moduleImport
 	"time"
 
@@ -136,6 +140,7 @@ var (
 		sessionmoduletypes.ModuleName,
 		proofmoduletypes.ModuleName,
 		tokenomicsmoduletypes.ModuleName,
+		sharedmoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/initGenesis
 	}
 
@@ -167,6 +172,7 @@ var (
 		sessionmoduletypes.ModuleName,
 		proofmoduletypes.ModuleName,
 		tokenomicsmoduletypes.ModuleName,
+		sharedmoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/beginBlockers
 	}
 
@@ -192,6 +198,7 @@ var (
 		sessionmoduletypes.ModuleName,
 		proofmoduletypes.ModuleName,
 		tokenomicsmoduletypes.ModuleName,
+		sharedmoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/endBlockers
 	}
 
@@ -374,6 +381,10 @@ var (
 			{
 				Name:   tokenomicsmoduletypes.ModuleName,
 				Config: appconfig.WrapAny(&tokenomicsmodulev1.Module{}),
+			},
+			{
+				Name:   sharedmoduletypes.ModuleName,
+				Config: appconfig.WrapAny(&sharedmodulev1.Module{}),
 			},
 			// this line is used by starport scaffolding # stargate/app/moduleConfig
 		},
