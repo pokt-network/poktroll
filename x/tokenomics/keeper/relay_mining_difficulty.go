@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 
 	"cosmossdk.io/store/prefix"
 	storetypes "cosmossdk.io/store/types"
@@ -33,6 +34,7 @@ func (k Keeper) GetRelayMiningDifficulty(
 		serviceId,
 	))
 	if difficultyBz == nil {
+		difficulty.ServiceId = serviceId
 		return difficulty, false
 	}
 
@@ -44,10 +46,20 @@ func (k Keeper) GetRelayMiningDifficulty(
 func (k Keeper) RemoveRelayMiningDifficulty(
 	ctx context.Context,
 	serviceId string,
-
 ) {
+	logger := k.Logger().With("method", "RemoveRelayMiningDifficulty")
+
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.RelayMiningDifficultyKeyPrefix))
+	difficultyKey := types.RelayMiningDifficultyKey(
+		serviceId,
+	)
+
+	if !store.Has(difficultyKey) {
+		logger.Warn(fmt.Sprintf("trying to delete a non-existing relayMiningDifficulty for service: %s", serviceId))
+		return
+	}
+
 	store.Delete(types.RelayMiningDifficultyKey(
 		serviceId,
 	))

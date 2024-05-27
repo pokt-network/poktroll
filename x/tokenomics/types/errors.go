@@ -22,4 +22,6 @@ var (
 	ErrTokenomicsApplicationNewStakeInvalid = sdkerrors.Register(ModuleName, 1115, "application stake cannot be reduced to a -ve amount")
 	ErrTokenomicsParamNameInvalid           = sdkerrors.Register(ModuleName, 1116, "the provided param name is invalid")
 	ErrTokenomicsParamInvalid               = sdkerrors.Register(ModuleName, 1117, "the provided param is invalid")
+	ErrTokenomicsUnmarshalInvalid           = sdkerrors.Register(ModuleName, 1118, "failed to unmarshal the provided bytes")
+	ErrTokenomicsDuplicateIndex             = sdkerrors.Register(ModuleName, 1119, "cannot have a duplicate index")
 )

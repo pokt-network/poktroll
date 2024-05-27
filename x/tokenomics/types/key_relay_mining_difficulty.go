@@ -15,8 +15,8 @@ func RelayMiningDifficultyKey(
 ) []byte {
 	var key []byte
 
-	serviceIdBytes := []byte(serviceId)
-	key = append(key, serviceIdBytes...)
+	serviceIdBz := []byte(serviceId)
+	key = append(key, serviceIdBz...)
 	key = append(key, []byte("/")...)
 
 	return key
