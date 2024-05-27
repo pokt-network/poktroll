@@ -94,7 +94,7 @@ func NewRelayerSessions(
 	channel.ForEach(
 		ctx,
 		rs.blockClient.CommittedBlocksSequence(ctx),
-		rs.mapBlockToSessionsToClaimFn(sessionsToClaimPublishCh),
+		rs.forEachBlockClaimSessionsFn(sessionsToClaimPublishCh),
 	)
 
 	return rs, nil
@@ -165,11 +165,19 @@ func (rs *relayerSessionsManager) ensureSessionTree(sessionHeader *sessiontypes.
 	return sessionTree, nil
 }
 
-// mapBlockToSessionsToClaimFn returns a new MapFn which maps committed blocks to
-// a list of sessions which can be claimed as of that block.
+// forEachBlockClaimSessionsFn returns a new ForEachFn that sends a lists of sessions which
+// are eligible to be claimed at each block height on sessionsToClaimsPublishCh, effectively
+// mapping committed blocks to a list of sessions which can be claimed as of that block.
+// If "late" sessions are found, they are emitted as quickly as possible & are expected
+// to bypass downstream delay operations. "late" sessions are emitted, as they're discovered
+// (by iterating over map keys), as a distinct notifications from "on-time" sessions & other
+// "late" sessions. Under nominal conditions, only one set of "on-time" sessions (w/ the same
+// session start/end heights) should be present in the rs.sessionsTrees map. "Late" sessions
+// are expected to present in the presence of network interruptions, restarts, or other
+// disruptions to the relayminer process.
 // TODO_IMPROVE: Add the ability for the process to resume where it left off in
 // case the process is restarted or the connection is dropped and reconnected.
-func (rs *relayerSessionsManager) mapBlockToSessionsToClaimFn(
+func (rs *relayerSessionsManager) forEachBlockClaimSessionsFn(
 	sessionsToClaimsPublishCh chan<- []relayer.SessionTree,
 ) channel.ForEachFn[client.Block] {
 	return func(ctx context.Context, block client.Block) {
