@@ -15,12 +15,12 @@ func TestParams_ValidateNumBlocksPerSession(t *testing.T) {
 		{
 			desc:                "invalid type",
 			numBlocksPerSession: "invalid",
-			err:                 ErrSessionParamInvalid.Wrapf("invalid parameter type: %T", "invalid"),
+			err:                 ErrSharedParamInvalid.Wrapf("invalid parameter type: %T", "invalid"),
 		},
 		{
 			desc:                "zero NumBlocksPerSession",
 			numBlocksPerSession: uint64(0),
-			err:                 ErrSessionParamInvalid.Wrapf("invalid NumBlocksPerSession: (%v)", uint64(0)),
+			err:                 ErrSharedParamInvalid.Wrapf("invalid NumBlocksPerSession: (%v)", uint64(0)),
 		},
 		{
 			desc:                "valid NumBlocksPerSession",
