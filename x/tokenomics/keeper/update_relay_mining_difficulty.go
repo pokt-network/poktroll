@@ -43,7 +43,7 @@ func (k Keeper) UpdateRelayMiningDifficulty(
 	for serviceId, numRelays := range relaysPerServiceMap {
 		prevDifficulty, found := k.GetRelayMiningDifficulty(ctx, serviceId)
 		if !found {
-			logger.Warn(fmt.Sprintf("No previous relay mining difficulty found for service %s. Initializing with default difficulty %v", serviceId, prevDifficulty.TargetHash))
+			types.ErrTokenomicsMissingRelayMiningDifficulty.Wrapf("No previous relay mining difficulty found for service %s. Initializing with default difficulty %v", serviceId, prevDifficulty.TargetHash)
 			// If a previous difficulty for the service is not found, we initialize
 			// it with a default.
 			prevDifficulty = types.RelayMiningDifficulty{
