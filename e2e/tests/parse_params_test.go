@@ -109,6 +109,15 @@ func (s *suite) newTokenomicsMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 	return proto.Message(msgUpdateParams)
 }
 
+func (s *suite) newTokenomicsMsgUpdateParamsToDefault(params paramsMap) cosmostypes.Msg {
+	authority := authtypes.NewModuleAddress(s.granterName).String()
+	msgUpdateParams := &tokenomicstypes.MsgUpdateParams{
+		Authority: authority,
+		Params:    tokenomicstypes.DefaultParams(),
+	}
+	return proto.Message(msgUpdateParams)
+}
+
 func (s *suite) newProofMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 	authority := authtypes.NewModuleAddress(s.granterName).String()
 
@@ -125,6 +134,15 @@ func (s *suite) newProofMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 		default:
 			s.Fatalf("unexpected %q type param name %q", paramValue.typeStr, paramName)
 		}
+	}
+	return proto.Message(msgUpdateParams)
+}
+
+func (s *suite) newProofMsgUpdateParamsToDefault(params paramsMap) cosmostypes.Msg {
+	authority := authtypes.NewModuleAddress(s.granterName).String()
+	msgUpdateParams := &prooftypes.MsgUpdateParams{
+		Authority: authority,
+		Params:    prooftypes.DefaultParams(),
 	}
 	return proto.Message(msgUpdateParams)
 }

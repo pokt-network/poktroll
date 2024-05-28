@@ -31,6 +31,9 @@ const (
 	// txFeesCoinStr is the string representation of the amount & denom of tokens
 	// which are sufficient to pay for tx fees in the test.
 	txFeesCoinStr = "1000000upokt"
+	// PNF is the account that acts on behalf of the DAO and is therefore the only
+	// one authorized to perform certain actions such as updating params.
+	pnfKeyName = "pnf"
 )
 
 // AllModuleParamsAreSetToTheirDefaultValues asserts that all module params are set to their default values.
@@ -41,6 +44,7 @@ func (s *suite) AllModuleParamsAreSetToTheirDefaultValues(moduleName string) {
 		"params",
 		fmt.Sprintf("--%s=json", cometcli.OutputFlag),
 	}
+
 	res, err := s.pocketd.RunCommandOnHost("", argsAndFlags...)
 	require.NoError(s, err)
 
@@ -156,6 +160,27 @@ func (s *suite) AnAuthzGrantFromTheAccountToTheAccountForTheMessageExists(
 }
 
 // AllModuleParamsShouldBeSetToTheirDefaultValues asserts that all module params are set to their default values.
+func (s *suite) AllModuleParamsAreResetToTheirDefaultValues() {
+	// defaultParamsList := []interface{
+	// 	apptypes.DefaultParams(),
+	// 	gatewaytypes.DefaultParams(),
+	// 	prooftypes.DefaultParams(),
+	// 	servicetypes.DefaultParams(),
+	// 	sessiontypes.DefaultParams(),
+	// 	sharedtypes.DefaultParams(),
+	// 	suppliertypes.DefaultParams(),
+	// 	tokenomicstypes.DefaultParams(),
+	// }
+
+	params := apptypes.DefaultParams()
+
+	// for _, defaultParams := range defaultParamsList {
+	txJSONFile := s.newTempUpdateParamsTxJSONFile(defaultParams)
+	s.sendAuthzExecTx(pnfKeyName, txJSONFile.Name())
+	// }
+}
+
+// AllModuleParamsShouldBeSetToTheirDefaultValues asserts that all module params are set to their default values.
 func (s *suite) AllModuleParamsShouldBeSetToTheirDefaultValues(moduleName string) {
 	s.AllModuleParamsAreSetToTheirDefaultValues(moduleName)
 }
@@ -251,7 +276,7 @@ func (s *suite) fundAddress(addr string, coin cosmostypes.Coin) {
 		"tx",
 		"bank",
 		"send",
-		"pnf",
+		pnfKeyName,
 		addr,
 		coin.String(),
 		"--yes",
