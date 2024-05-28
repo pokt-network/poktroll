@@ -9,6 +9,9 @@ const NumBlocksPerSession = 4
 
 // SessionGracePeriodBlocks is the number of blocks after the session ends before the
 // "session grace period" is considered to have elapsed.
+//
+// TODO_BLOCKER: This is a place-holder that will be removed once the respective
+// governance parameter is implemented.
 const SessionGracePeriodBlocks = 4
 
 // GetSessionStartBlockHeight returns the block height at which the session starts
