@@ -35,4 +35,5 @@ type GatewayKeeper interface {
 // SharedKeeper defines the expected interface needed to retrieve shared information.
 type SharedKeeper interface {
 	GetParams(ctx context.Context) sharedtypes.Params
+	GetSessionEndHeight(ctx context.Context, queryHeight int64) int64
 }

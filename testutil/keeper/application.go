@@ -24,6 +24,7 @@ import (
 	"github.com/pokt-network/poktroll/x/application/keeper"
 	"github.com/pokt-network/poktroll/x/application/types"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
+	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -72,6 +73,11 @@ func ApplicationKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 	mockSharedKeeper.EXPECT().GetParams(gomock.Any()).
 		DoAndReturn(func(_ context.Context) sharedtypes.Params {
 			return sharedtypes.DefaultParams()
+		}).
+		AnyTimes()
+	mockSharedKeeper.EXPECT().GetSessionEndHeight(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, queryHeight int64) int64 {
+			return shared.GetDefaultSessionEndHeight(queryHeight)
 		}).
 		AnyTimes()
 
