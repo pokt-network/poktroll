@@ -61,6 +61,7 @@ Feature: Params Namespace
       | tokenomics | /poktroll.tokenomics.MsgUpdateParam | compute_units_to_tokens_multiplier | 68          | int64      |
       | proof      | /poktroll.proof.MsgUpdateParam      | min_relay_difficulty_bits          | 12          | int64      |
       | shared     | /poktroll.shared.MsgUpdateParam     | num_blocks_per_session             | 8           | int64      |
+      | shared     | /poktroll.shared.MsgUpdateParam     | claim_window_open_offset_blocks    | 4           | int64      |
 
   Scenario: An unauthorized user cannot update individual module params
     Given the user has the pocketd binary installed

@@ -12,4 +12,5 @@ message Params {
   option (gogoproto.equal) = true;
 
   uint64 num_blocks_per_session = 1 [(gogoproto.jsontag) = "num_blocks_per_session"];
+  uint64 claim_window_open_offset_blocks = 2 [(gogoproto.jsontag) = "claim_window_open_offset_blocks"];
 }
