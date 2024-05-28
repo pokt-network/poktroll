@@ -14,42 +14,51 @@ const NumBlocksPerSession = 4
 // governance parameter is implemented.
 const SessionGracePeriodBlocks = 4
 
-// GetSessionStartBlockHeight returns the block height at which the session starts
+// GetDefaultSessionStartHeight returns the block height at which the session starts
+// given the default shared on-chain parameters.
 // Returns 0 if the block height is not a consensus produced block.
 // Example: If NumBlocksPerSession == 4, sessions start at blocks 1, 5, 9, etc.
-func GetSessionStartBlockHeight(blockHeight int64) int64 {
-	if blockHeight <= 0 {
+func GetDefaultSessionStartHeight(queryHeight int64) int64 {
+	if queryHeight <= 0 {
 		return 0
 	}
+
+	numBlocksPerSession := int64(sharedtypes.DefaultParams().NumBlocksPerSession)
 
 	// TODO_BLOCKER(#543): If the num_blocks_per_session param has ever been changed,
 	// this function may cause unexpected behavior.
-	return blockHeight - ((blockHeight - 1) % NumBlocksPerSession)
+	return queryHeight - ((queryHeight - 1) % numBlocksPerSession)
 }
 
-// GetSessionEndBlockHeight returns the block height at which the session ends
+// GetDefaultSessionEndHeight returns the block height at which the session ends,
+// given the default shared on-chain parameters.
 // Returns 0 if the block height is not a consensus produced block.
 // Example: If NumBlocksPerSession == 4, sessions end at blocks 4, 8, 11, etc.
-func GetSessionEndBlockHeight(blockHeight int64) int64 {
-	if blockHeight <= 0 {
+func GetDefaultSessionEndHeight(queryHeight int64) int64 {
+	if queryHeight <= 0 {
 		return 0
 	}
 
-	return GetSessionStartBlockHeight(blockHeight) + NumBlocksPerSession - 1
+	numBlocksPerSession := int64(sharedtypes.DefaultParams().NumBlocksPerSession)
+
+	return GetDefaultSessionStartHeight(queryHeight) + numBlocksPerSession - 1
 }
 
-// GetSessionNumber returns the session number given the block height.
+// GetDefaultSessionNumber returns the session number given the block height given the
+// default on-chain shared parameters.
 // Returns session number 0 if the block height is not a consensus produced block.
 // Returns session number 1 for block 1 to block NumBlocksPerSession - 1 (inclusive).
 // i.e. If NubBlocksPerSession == 4, session == 1 for [1, 4], session == 2 for [5, 8], etc.
-func GetSessionNumber(blockHeight int64) int64 {
-	if blockHeight <= 0 {
+func GetDefaultSessionNumber(queryHeight int64) int64 {
+	if queryHeight <= 0 {
 		return 0
 	}
 
+	numBlocksPerSession := int64(sharedtypes.DefaultParams().NumBlocksPerSession)
+
 	// TODO_BLOCKER(#543): If the num_blocks_per_session param has ever been changed,
 	// this function may cause unexpected behavior.
-	return ((blockHeight - 1) / NumBlocksPerSession) + 1
+	return ((queryHeight - 1) / numBlocksPerSession) + 1
 }
 
 // GetSessionGracePeriodEndHeight returns the block height at which the grace period
