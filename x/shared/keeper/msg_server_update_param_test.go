@@ -20,7 +20,6 @@ func TestMsgUpdateParam_UpdateNumBlocksPerSession(t *testing.T) {
 	msgSrv := keeper.NewMsgServerImpl(k)
 
 	// Set the parameters to their default values
-	//k, msgSrv, ctx := setupMsgServer(t)
 	defaultParams := sharedtypes.DefaultParams()
 	require.NoError(t, k.SetParams(ctx, defaultParams))
 
