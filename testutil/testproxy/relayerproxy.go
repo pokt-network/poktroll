@@ -104,25 +104,30 @@ func WithRelayerProxyDependenciesForBlockHeight(
 		applicationQueryClient := testqueryclients.NewTestApplicationQueryClient(test.t)
 		sessionQueryClient := testqueryclients.NewTestSessionQueryClient(test.t)
 		supplierQueryClient := testqueryclients.NewTestSupplierQueryClient(test.t)
+		sharedQueryClient := testqueryclients.NewTestSharedQueryClient(test.t)
 
 		blockClient := testblock.NewAnyTimeLastBlockBlockClient(test.t, []byte{}, blockHeight)
 		keyring, _ := testkeyring.NewTestKeyringWithKey(test.t, keyName)
 
 		redelegationObs, _ := channel.NewReplayObservable[client.Redelegation](test.ctx, 1)
 		delegationClient := testdelegation.NewAnyTimesRedelegationsSequence(test.ctx, test.t, "", redelegationObs)
-		ringCache := testrings.NewRingCacheWithMockDependencies(test.ctx, test.t, accountQueryClient, applicationQueryClient, delegationClient)
 
-		deps := depinject.Supply(
-			logger,
-			accountQueryClient,
-			ringCache,
-			blockClient,
-			sessionQueryClient,
-			supplierQueryClient,
-			keyring,
+		ringCacheDeps := depinject.Supply(accountQueryClient, applicationQueryClient, delegationClient, sharedQueryClient)
+		ringCache := testrings.NewRingCacheWithMockDependencies(test.ctx, test.t, ringCacheDeps)
+
+		testDeps := depinject.Configs(
+			ringCacheDeps,
+			depinject.Supply(
+				logger,
+				ringCache,
+				blockClient,
+				sessionQueryClient,
+				supplierQueryClient,
+				keyring,
+			),
 		)
 
-		test.Deps = deps
+		test.Deps = testDeps
 	}
 }
 
