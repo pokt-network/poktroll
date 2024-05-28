@@ -68,3 +68,16 @@ func GetSessionGracePeriodEndHeight(sessionEndHeight int64) int64 {
 func IsGracePeriodElapsed(sessionEndHeight, currentHeight int64) bool {
 	return currentHeight > GetSessionGracePeriodEndHeight(sessionEndHeight)
 }
+
+// GetClaimWindowOpenHeight calculates & returns the earliest block height at which
+// claims can be created for the session which includes queryHeight, given the passed
+// shared module parameters.
+func GetClaimWindowOpenHeight(sharedParams *sharedtypes.Params, queryHeight int64) int64 {
+	sessionEndHeight := GetSessionEndHeight(sharedParams, queryHeight)
+
+	// An additional block is added to permit to relays arriving at the last block
+	// of the session to be included in the claim before the smt is closed.
+	sessionGracePeriodEndHeight := GetSessionGracePeriodEndHeight(sessionEndHeight)
+	claimWindowOpenOffsetBlocks := int64(sharedParams.GetClaimWindowOpenOffsetBlocks())
+	return claimWindowOpenOffsetBlocks + sessionGracePeriodEndHeight + 1
+}

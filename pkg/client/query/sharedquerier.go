@@ -7,6 +7,7 @@ import (
 	"github.com/cosmos/gogoproto/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -52,4 +53,21 @@ func (sq *sharedQuerier) GetParams(ctx context.Context) (*sharedtypes.Params, er
 		return nil, ErrQuerySessionParams.Wrapf("[%v]", err)
 	}
 	return &res.Params, nil
+}
+
+// GetClaimWindowOpenHeight calculates & returns the earliest block height at which
+// claims can be created for the session which includes queryHeight. It queries the
+// current on-chain shared module params in order to facilitate this.
+//
+// TODO_TECHDEBT(#543): We don't really want to have to query the params for every method call.
+// Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
+// to get the most recently (asynchronously) observed (and cached) value.
+// TODO_BLOCKER(#543): We also don't really want to use the current value of the params.
+// Instead, we should be using the value that the params had for the session given by blockHeight.
+func (sq *sharedQuerier) GetClaimWindowOpenHeight(ctx context.Context, queryHeight int64) (int64, error) {
+	sharedParams, err := sq.GetParams(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return shared.GetClaimWindowOpenHeight(sharedParams, queryHeight), nil
 }

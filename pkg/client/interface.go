@@ -285,4 +285,8 @@ type SessionQueryClient interface {
 type SharedQueryClient interface {
 	// GetParams queries the chain for the current shared module parameters.
 	GetParams(ctx context.Context) (*sharedtypes.Params, error)
+	// GetClaimWindowOpenHeight calculates & returns the earliest block height at which
+	// claims can be created for the session which includes queryHeight. It queries the
+	// current queries on-chain params in order to facilitate this.
+	GetClaimWindowOpenHeight(ctx context.Context, queryHeight int64) (int64, error)
 }
