@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -13,8 +12,7 @@ func (k msgServer) UpdateParam(ctx context.Context, msg *types.MsgUpdateParam) (
 	}
 
 	if k.GetAuthority() != msg.Authority {
-		//return nil, types.ErrSharedInvalidSigner.Wrapf("invalid authority; expected %s, got %s", k.GetAuthority(), msg.Authority)
-		return nil, fmt.Errorf("%s", "...")
+		return nil, types.ErrSharedInvalidSigner.Wrapf("invalid authority; expected %s, got %s", k.GetAuthority(), msg.Authority)
 	}
 
 	params := k.GetParams(ctx)
@@ -23,7 +21,7 @@ func (k msgServer) UpdateParam(ctx context.Context, msg *types.MsgUpdateParam) (
 	case types.ParamNumBlocksPerSession:
 		value, ok := msg.AsType.(*types.MsgUpdateParam_AsInt64)
 		if !ok {
-			return nil, fmt.Errorf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
+			return nil, types.ErrSharedParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
 		}
 		numBlocksPerSession := uint64(value.AsInt64)
 
@@ -33,7 +31,7 @@ func (k msgServer) UpdateParam(ctx context.Context, msg *types.MsgUpdateParam) (
 
 		params.NumBlocksPerSession = numBlocksPerSession
 	default:
-		return nil, fmt.Errorf("unsupported param %q", msg.Name)
+		return nil, types.ErrSharedParamInvalid.Wrapf("unsupported param %q", msg.Name)
 	}
 
 	if err := k.SetParams(ctx, params); err != nil {
