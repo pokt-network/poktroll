@@ -285,28 +285,16 @@ func (rc *ringClient) GetRingAddressesAtBlock(
 	if err != nil {
 		return nil, err
 	}
-	return getRingAddressesAtBlock(sharedParams, app, blockHeight), nil
+	return GetRingAddressesAtBlock(sharedParams, app, blockHeight), nil
 }
 
-// GetDefaultRingAddressesAtBlock returns the active gateway addresses that need to be
+// GetRingAddressesAtBlock returns the active gateway addresses that need to be
 // used to construct the ring in order to validate that the given app should pay for.
 // It takes into account both active delegations and pending undelegations that
 // should still be part of the ring at the given block height.
 // The ring addresses slice is reconstructed by adding back the past delegated
 // gateways that have been undelegated after the target session end height.
-// **This function uses the default shared module parameters.**
-func GetDefaultRingAddressesAtBlock(app *apptypes.Application, blockHeight int64) []string {
-	sharedParams := sharedtypes.DefaultParams()
-	return getRingAddressesAtBlock(&sharedParams, app, blockHeight)
-}
-
-// getRingAddressesAtBlock returns the active gateway addresses that need to be
-// used to construct the ring in order to validate that the given app should pay for.
-// It takes into account both active delegations and pending undelegations that
-// should still be part of the ring at the given block height.
-// The ring addresses slice is reconstructed by adding back the past delegated
-// gateways that have been undelegated after the target session end height.
-func getRingAddressesAtBlock(
+func GetRingAddressesAtBlock(
 	sharedParams *sharedtypes.Params,
 	app *apptypes.Application,
 	blockHeight int64,
