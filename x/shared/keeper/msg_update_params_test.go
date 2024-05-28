@@ -23,7 +23,7 @@ func TestMsgUpdateParams(t *testing.T) {
 		expErrMsg string
 	}{
 		{
-			name: "invalid authority",
+			name: "invalid: authority address invalid",
 			input: &types.MsgUpdateParams{
 				Authority: "invalid",
 				Params:    params,
@@ -32,15 +32,16 @@ func TestMsgUpdateParams(t *testing.T) {
 			expErrMsg: "invalid authority",
 		},
 		{
-			name: "send enabled param",
+			name: "invalid: send empty params",
 			input: &types.MsgUpdateParams{
 				Authority: k.GetAuthority(),
 				Params:    types.Params{},
 			},
-			expErr: false,
+			expErr:    true,
+			expErrMsg: "invalid NumBlocksPerSession: (0): the provided param is invalid",
 		},
 		{
-			name: "all good",
+			name: "valid: send default params",
 			input: &types.MsgUpdateParams{
 				Authority: k.GetAuthority(),
 				Params:    params,

@@ -20,6 +20,7 @@ import (
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
@@ -79,8 +80,13 @@ func (s *suite) AllModuleParamsAreSetToTheirDefaultValues(moduleName string) {
 		s.cdc.MustUnmarshalJSON([]byte(res.Stdout), &serviceParamsRes)
 		require.Equal(s, servicetypes.DefaultParams(), serviceParamsRes.GetParams())
 
+	case sharedtypes.ModuleName:
+		var sharedParamsRes sharedtypes.QueryParamsResponse
+		s.cdc.MustUnmarshalJSON([]byte(res.Stdout), &sharedParamsRes)
+		require.Equal(s, sharedtypes.DefaultParams(), sharedParamsRes.GetParams())
+
 	default:
-		s.Fatalf("unexpected module name: (%v)", moduleName)
+		s.Fatalf("ERROR: unexpected module name: (%v)", moduleName)
 	}
 }
 
@@ -314,12 +320,12 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 				},
 			},
 		)
-	case sessiontypes.ModuleName:
-		numBlocksPerSession := uint64(s.expectedModuleParams[moduleName][sessiontypes.ParamNumBlocksPerSession].value.(int64))
+	case sharedtypes.ModuleName:
+		numBlocksPerSession := uint64(s.expectedModuleParams[moduleName][sharedtypes.ParamNumBlocksPerSession].value.(int64))
 		assertUpdatedParams(s,
 			[]byte(res.Stdout),
-			&sessiontypes.QueryParamsResponse{
-				Params: sessiontypes.Params{
+			&sharedtypes.QueryParamsResponse{
+				Params: sharedtypes.Params{
 					NumBlocksPerSession: numBlocksPerSession,
 				},
 			},
@@ -345,7 +351,7 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 			},
 		)
 	default:
-		s.Fatalf("unexpected module name %q", moduleName)
+		s.Fatalf("ERROR: unexpected module name %q", moduleName)
 	}
 }
 
