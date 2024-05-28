@@ -38,6 +38,7 @@ func (s *suite) allModulesMsgUpdateParamsToDefaultsAny() []*codectypes.Any {
 		s.msgUpdateParamsToDefaultsAny(suppliertypes.ModuleName),
 		s.msgUpdateParamsToDefaultsAny(prooftypes.ModuleName),
 		s.msgUpdateParamsToDefaultsAny(tokenomicstypes.ModuleName),
+		s.msgUpdateParamsToDefaultsAny(sharedtypes.ModuleName),
 	}
 }
 
