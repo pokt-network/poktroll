@@ -19,12 +19,12 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/testutil/network"
+	testsession "github.com/pokt-network/poktroll/testutil/session"
 	"github.com/pokt-network/poktroll/testutil/testkeyring"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	proof "github.com/pokt-network/poktroll/x/proof/module"
 	"github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
@@ -130,7 +130,7 @@ func networkWithClaimObjects(
 				claim := createClaim(
 					t, net, ctx,
 					supplierAcct.Address.String(),
-					shared.GetDefaultSessionStartHeight(blockHeight),
+					testsession.GetDefaultSessionStartHeight(blockHeight),
 					appAcct.Address.String(),
 				)
 				claims = append(claims, *claim)
@@ -160,7 +160,7 @@ func encodeSessionHeader(
 		Service:                 &sharedtypes.Service{Id: testServiceId},
 		SessionId:               sessionId,
 		SessionStartBlockHeight: sessionStartHeight,
-		SessionEndBlockHeight:   shared.GetDefaultSessionEndHeight(sessionStartHeight),
+		SessionEndBlockHeight:   testsession.GetDefaultSessionEndHeight(sessionStartHeight),
 	}
 	cdc := codec.NewProtoCodec(codectypes.NewInterfaceRegistry())
 	sessionHeaderBz := cdc.MustMarshalJSON(sessionHeader)
@@ -210,7 +210,7 @@ func createClaim(
 			Service:                 &sharedtypes.Service{Id: testServiceId},
 			SessionId:               sessionId,
 			SessionStartBlockHeight: sessionStartHeight,
-			SessionEndBlockHeight:   shared.GetDefaultSessionEndHeight(sessionStartHeight),
+			SessionEndBlockHeight:   testsession.GetDefaultSessionEndHeight(sessionStartHeight),
 		},
 		RootHash: rootHash,
 	}

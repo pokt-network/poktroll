@@ -12,10 +12,10 @@ import (
 
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
+	testsession "github.com/pokt-network/poktroll/testutil/session"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
@@ -52,7 +52,7 @@ func TestSettleSessionAccounting_HandleAppGoingIntoDebt(t *testing.T) {
 			},
 			SessionId:               "session_id",
 			SessionStartBlockHeight: 1,
-			SessionEndBlockHeight:   shared.GetDefaultSessionEndHeight(1),
+			SessionEndBlockHeight:   testsession.GetDefaultSessionEndHeight(1),
 		},
 		RootHash: smstRootWithSum(appStake.Amount.Uint64() + 1), // More than the app stake
 	}
@@ -93,7 +93,7 @@ func TestSettleSessionAccounting_AppNotFound(t *testing.T) {
 			},
 			SessionId:               "session_id",
 			SessionStartBlockHeight: 1,
-			SessionEndBlockHeight:   shared.GetDefaultSessionEndHeight(1),
+			SessionEndBlockHeight:   testsession.GetDefaultSessionEndHeight(1),
 		},
 		RootHash: smstRootWithSum(42),
 	}
@@ -297,7 +297,7 @@ func baseClaim(appAddr, supplierAddr string, sum uint64) prooftypes.Claim {
 			},
 			SessionId:               "session_id",
 			SessionStartBlockHeight: 1,
-			SessionEndBlockHeight:   shared.GetDefaultSessionEndHeight(1),
+			SessionEndBlockHeight:   testsession.GetDefaultSessionEndHeight(1),
 		},
 		RootHash: smstRootWithSum(sum),
 	}
