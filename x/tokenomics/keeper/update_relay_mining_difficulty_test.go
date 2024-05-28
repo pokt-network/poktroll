@@ -8,57 +8,78 @@ import (
 
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/x/tokenomics/keeper"
+	tokenomicskeeper "github.com/pokt-network/poktroll/x/tokenomics/keeper"
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-// TODO_IN_THIS_PR: Finish this test and consider others we should add
 func TestUpdateRelayMiningDifficulty_General(t *testing.T) {
 	keeper, ctx := keepertest.TokenomicsKeeper(t)
 
+	// Introduce svc1 for the first time
 	relaysPerServiceMap := map[string]uint64{
-		"svc1": 1e3,
+		"svc1": 1e3, // new service
 	}
 	err := keeper.UpdateRelayMiningDifficulty(ctx, relaysPerServiceMap)
 	require.NoError(t, err)
 
-	difficultySvc1, found := keeper.GetRelayMiningDifficulty(ctx, "svc1")
+	// The first time svc1 difficulty is updated, the relay EMA will be equal
+	// to the first value provided.
+	difficultySvc11, found := keeper.GetRelayMiningDifficulty(ctx, "svc1")
 	require.True(t, found)
-	require.Equal(t, uint64(1e3), difficultySvc1.NumRelaysEma)
+	require.Equal(t, uint64(1e3), difficultySvc11.NumRelaysEma)
 
+	// Update svc1 and introduce svc2 for the first time
 	relaysPerServiceMap = map[string]uint64{
-		"svc1": 1e10,
-		"svc2": 1e5,
+		"svc1": 1e10, // higher than the first value above
+		"svc2": 1e5,  // new service
 	}
 	err = keeper.UpdateRelayMiningDifficulty(ctx, relaysPerServiceMap)
 	require.NoError(t, err)
 
-	difficultySvc1, found = keeper.GetRelayMiningDifficulty(ctx, "svc1")
+	difficultySvc12, found := keeper.GetRelayMiningDifficulty(ctx, "svc1")
 	require.True(t, found)
-	// require.Equal(t, uint64(1e10), difficultySvc1.NumRelaysEma)
+	// Verify that the svc1 relay ema is strictly higher than the first value
+	// above, but strictly lower than the second value because of the rolling average.
+	require.Greater(t, difficultySvc12.NumRelaysEma, difficultySvc11.NumRelaysEma)
+	require.Less(t, difficultySvc12.NumRelaysEma, uint64(1e10))
+	// Because the number of relays went up, there are more leading zeroes in the
+	// target hash, so the number is lower than it was before.
+	require.Less(t, difficultySvc12.TargetHash, difficultySvc11.TargetHash)
 
-	difficultySvc2, found := keeper.GetRelayMiningDifficulty(ctx, "svc2")
+	// The first time svc2 difficulty is updated, so the num relays ema is
+	// equal to the first value provided.
+	difficultySvc21, found := keeper.GetRelayMiningDifficulty(ctx, "svc2")
 	require.True(t, found)
-	require.Equal(t, uint64(1e10), difficultySvc2.NumRelaysEma)
+	require.Equal(t, uint64(1e5), difficultySvc21.NumRelaysEma)
 
+	// Update svc1 and svc2 and introduce svc3 for the first time
 	relaysPerServiceMap = map[string]uint64{
-		"svc1": 1e10,
-		"svc2": 1e5,
-		"svc3": 1e10,
+		"svc1": 1e12, // higher than the second value above
+		"svc2": 1e2,  // lower than the first value above
+		"svc3": 1e10, // new service
 	}
 	err = keeper.UpdateRelayMiningDifficulty(ctx, relaysPerServiceMap)
 	require.NoError(t, err)
 
-	difficultySvc1, found = keeper.GetRelayMiningDifficulty(ctx, "svc1")
+	// svc1 relays went up so the target hash is now a smaller number (more leading zeroes)
+	// because the difficulty is higher.
+	difficultySvc13, found := keeper.GetRelayMiningDifficulty(ctx, "svc1")
 	require.True(t, found)
-	require.Equal(t, uint64(1e10), difficultySvc1.NumRelaysEma)
+	require.Greater(t, difficultySvc13.NumRelaysEma, difficultySvc12.NumRelaysEma)
+	require.Less(t, difficultySvc13.TargetHash, difficultySvc12.TargetHash)
 
-	difficultySvc2, found = keeper.GetRelayMiningDifficulty(ctx, "svc2")
+	// svc2 relay ema went down so the target hash is now a larger number (less leading zeroes)
+	difficultySvc22, found := keeper.GetRelayMiningDifficulty(ctx, "svc2")
 	require.True(t, found)
-	require.Equal(t, uint64(1e10), difficultySvc2.NumRelaysEma)
+	require.Less(t, difficultySvc22.NumRelaysEma, difficultySvc21.NumRelaysEma)
+	// Since the relays EMA is lower than the target, the difficulty hash is all 1s
+	require.Less(t, difficultySvc22.NumRelaysEma, tokenomicskeeper.TargetNumRelays)
+	require.Equal(t, difficultySvc22.TargetHash, makeBytesFullOfOnes(32))
 
-	difficultySvc3, found := keeper.GetRelayMiningDifficulty(ctx, "svc3")
+	// svc3 is new so the relay ema is equal to the first value provided
+	difficultySvc31, found := keeper.GetRelayMiningDifficulty(ctx, "svc3")
 	require.True(t, found)
-	require.Equal(t, uint64(1e10), difficultySvc3.NumRelaysEma)
+	require.Equal(t, uint64(1e10), difficultySvc31.NumRelaysEma)
 }
 
 func TestUpdateRelayMiningDifficulty_FirstDifficulty(t *testing.T) {

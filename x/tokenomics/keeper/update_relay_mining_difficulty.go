@@ -109,9 +109,9 @@ func ComputeNewDifficultyTargetHash(targetNumRelays, newRelaysEma uint64) []byte
 	// (0.5)^num_leading_zeroes = (num_target_relay / num_total_relays)
 	// (0.5)^x = (T/R)
 	// 	x = -ln2(T/R)
-	numLeadingZeroes := -log2(float64(targetNumRelays) / float64(newRelaysEma))
+	numLeadingZeroBits := int(-log2(float64(targetNumRelays) / float64(newRelaysEma)))
 	numBytes := proofkeeper.SmtSpec.PathHasherSize()
-	return LeadingZeroBitsToTargetDifficultyHash(int(numLeadingZeroes), numBytes)
+	return LeadingZeroBitsToTargetDifficultyHash(numLeadingZeroBits, numBytes)
 }
 
 // defaultDifficultyTargetHash returns the default difficulty target hash with
