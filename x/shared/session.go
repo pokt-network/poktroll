@@ -20,6 +20,8 @@ const SessionGracePeriodBlocks = 4
 // given the default shared on-chain parameters.
 // Returns 0 if the block height is not a consensus produced block.
 // Example: If NumBlocksPerSession == 4, sessions start at blocks 1, 5, 9, etc.
+//
+// TODO_TECHDEBT(#517): Move this function to shared testutils.
 func GetDefaultSessionStartHeight(queryHeight int64) int64 {
 	sharedParams := sharedtypes.DefaultParams()
 	return GetSessionStartHeight(&sharedParams, queryHeight)
@@ -45,6 +47,8 @@ func GetSessionStartHeight(sharedParams *sharedtypes.Params, queryHeight int64) 
 // given the default shared on-chain parameters.
 // Returns 0 if the block height is not a consensus produced block.
 // Example: If NumBlocksPerSession == 4, sessions end at blocks 4, 8, 11, etc.
+//
+// TODO_TECHDEBT(#517): Move this function to shared testutils.
 func GetDefaultSessionEndHeight(queryHeight int64) int64 {
 	sharedParams := sharedtypes.DefaultParams()
 	return GetSessionEndHeight(&sharedParams, queryHeight)
@@ -69,6 +73,8 @@ func GetSessionEndHeight(sharedParams *sharedtypes.Params, queryHeight int64) in
 // Returns session number 0 if the block height is not a consensus produced block.
 // Returns session number 1 for block 1 to block NumBlocksPerSession - 1 (inclusive).
 // i.e. If NubBlocksPerSession == 4, session == 1 for [1, 4], session == 2 for [5, 8], etc.
+//
+// TODO_TECHDEBT(#517): Move this function to shared testutils.
 func GetDefaultSessionNumber(queryHeight int64) int64 {
 	sharedParams := sharedtypes.DefaultParams()
 	return GetSessionNumber(&sharedParams, queryHeight)

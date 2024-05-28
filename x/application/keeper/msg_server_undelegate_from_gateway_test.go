@@ -536,7 +536,15 @@ func createAppStakeDelegateAndUndelegate(
 func getUndelegationPruningBlockHeight(blockHeight int64) (pruningHeihgt int64) {
 	nextSessionStartHeight := shared.GetDefaultSessionEndHeight(blockHeight) + 1
 
-	return nextSessionStartHeight + keeper.GetDefaultNumBlocksUndelegationRetention()
+	return nextSessionStartHeight + getDefaultNumBlocksUndelegationRetention()
+}
+
+// getNumBlocksUndelegationRetention returns the number of blocks for which
+// undelegations should be kept before being pruned, given the default shared
+// module parameters.
+func getDefaultNumBlocksUndelegationRetention() int64 {
+	sharedParams := sharedtypes.DefaultParams()
+	return keeper.GetNumBlocksUndelegationRetention(&sharedParams)
 }
 
 // getDefaultRingAddressesAtBlock returns the active gateway addresses that need to be

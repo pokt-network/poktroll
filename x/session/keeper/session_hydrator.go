@@ -99,6 +99,9 @@ func (k Keeper) hydrateSessionMetadata(ctx context.Context, sh *sessionHydrator)
 		)
 	}
 
+	// TODO_UPNEXT(#517): Refactor session module to use current on-chain shared
+	// parameters instead of their corresponding constant stand-ins.
+
 	sh.session.NumBlocksPerSession = shared.NumBlocksPerSession
 	sh.session.SessionNumber = shared.GetDefaultSessionNumber(sh.blockHeight)
 
