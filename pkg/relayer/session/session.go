@@ -168,11 +168,19 @@ func (rs *relayerSessionsManager) ensureSessionTree(sessionHeader *sessiontypes.
 // forEachBlockClaimSessionsFn returns a new ForEachFn that sends a lists of sessions which
 // are eligible to be claimed at each block height on sessionsToClaimsPublishCh, effectively
 // mapping committed blocks to a list of sessions which can be claimed as of that block.
-// If "late" sessions are found, they are emitted as quickly as possible & are expected
+//
+// forEachBlockClaimSessionsFn returns a new ForEachFn that is called once for each block height.
+// Given the current sessions in the rs.sessionsTrees map at the time of each call, it:
+// - fetches the current shared module params
+// - builds a list of "on-time" & "late" sessions that are eligible to be claimed as of a given block height
+// - sends "late" & "on-time" sessions on sessionsToClaimsPublishCh as distinct notifications
+//
+// If "late" sessions are found, they are emitted as quickly as possible and are expected
 // to bypass downstream delay operations. "late" sessions are emitted, as they're discovered
-// (by iterating over map keys), as a distinct notifications from "on-time" sessions & other
-// "late" sessions. Under nominal conditions, only one set of "on-time" sessions (w/ the same
-// session start/end heights) should be present in the rs.sessionsTrees map. "Late" sessions
+// (by iterating over map keys).
+//
+// Under nominal conditions, only one set of "on-time" sessions (w/ the same session start/end heights)
+// should be present in the rs.sessionsTrees map. "Late" sessions
 // are expected to present in the presence of network interruptions, restarts, or other
 // disruptions to the relayminer process.
 // TODO_IMPROVE: Add the ability for the process to resume where it left off in
