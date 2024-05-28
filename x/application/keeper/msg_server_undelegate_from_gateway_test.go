@@ -535,5 +535,5 @@ func createAppStakeDelegateAndUndelegate(
 func getUndelegationPruningBlockHeight(blockHeight int64) (pruningHeihgt int64) {
 	nextSessionStartHeight := shared.GetDefaultSessionEndHeight(blockHeight) + 1
 
-	return nextSessionStartHeight + keeper.GetNumBlocksUndelegationRetention()
+	return nextSessionStartHeight + keeper.GetDefaultNumBlocksUndelegationRetention()
 }
