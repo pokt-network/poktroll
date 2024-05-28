@@ -43,11 +43,11 @@ func NewSharedQuerier(deps depinject.Config) (client.SharedQueryClient, error) {
 // GetParams queries & returns the shared module on-chain parameters.
 //
 // TODO_TECHDEBT(#543): We don't really want to have to query the params for every method call.
-// Once `ModuleParamsClient` is implemented, use its replay observable's `#Last` method
+// Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
 // to get the most recently (asynchronously) observed (and cached) value.
-func (sessq *sharedQuerier) GetParams(ctx context.Context) (*sharedtypes.Params, error) {
+func (sq *sharedQuerier) GetParams(ctx context.Context) (*sharedtypes.Params, error) {
 	req := &sharedtypes.QueryParamsRequest{}
-	res, err := sessq.sharedQuerier.Params(ctx, req)
+	res, err := sq.sharedQuerier.Params(ctx, req)
 	if err != nil {
 		return nil, ErrQuerySessionParams.Wrapf("[%v]", err)
 	}
