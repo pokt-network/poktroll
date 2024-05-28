@@ -6,7 +6,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-var _ sdk.Msg = &MsgUpdateParam{}
+var _ sdk.Msg = (*MsgUpdateParam)(nil)
 
 // NewMsgUpdateParam creates a new MsgUpdateParam instance for a single
 // governance parameter update.
