@@ -2,16 +2,46 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/poktroll/x/shared/types"
 )
 
-func (k msgServer) UpdateParam(goCtx context.Context, msg *types.MsgUpdateParam) (*types.MsgUpdateParamResponse, error) {
-	ctx := sdk.UnwrapSDKContext(goCtx)
+func (k msgServer) UpdateParam(ctx context.Context, msg *types.MsgUpdateParam) (*types.MsgUpdateParamResponse, error) {
+	if err := msg.ValidateBasic(); err != nil {
+		return nil, err
+	}
 
-	// TODO: Handling the message
-	_ = ctx
+	if k.GetAuthority() != msg.Authority {
+		//return nil, types.ErrSharedInvalidSigner.Wrapf("invalid authority; expected %s, got %s", k.GetAuthority(), msg.Authority)
+		return nil, fmt.Errorf("%s", "...")
+	}
 
-	return &types.MsgUpdateParamResponse{}, nil
+	params := k.GetParams(ctx)
+
+	switch msg.Name {
+	case types.ParamNumBlocksPerSession:
+		value, ok := msg.AsType.(*types.MsgUpdateParam_AsInt64)
+		if !ok {
+			return nil, fmt.Errorf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
+		}
+		numBlocksPerSession := uint64(value.AsInt64)
+
+		if err := types.ValidateNumBlocksPerSession(numBlocksPerSession); err != nil {
+			return nil, err
+		}
+
+		params.NumBlocksPerSession = numBlocksPerSession
+	default:
+		return nil, fmt.Errorf("unsupported param %q", msg.Name)
+	}
+
+	if err := k.SetParams(ctx, params); err != nil {
+		return nil, err
+	}
+
+	updatedParams := k.GetParams(ctx)
+	return &types.MsgUpdateParamResponse{
+		Params: &updatedParams,
+	}, nil
 }
