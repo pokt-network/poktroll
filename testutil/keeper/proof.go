@@ -57,6 +57,7 @@ type ProofModuleKeepers struct {
 	prooftypes.SupplierKeeper
 	prooftypes.ApplicationKeeper
 	prooftypes.AccountKeeper
+	prooftypes.SharedKeeper
 
 	Codec *codec.ProtoCodec
 }
@@ -84,6 +85,7 @@ func ProofKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 	mockSessionKeeper := mocks.NewMockSessionKeeper(ctrl)
 	mockAppKeeper := mocks.NewMockApplicationKeeper(ctrl)
 	mockAccountKeeper := mocks.NewMockAccountKeeper(ctrl)
+	mockSharedKeeper := mocks.NewMockSharedKeeper(ctrl)
 
 	k := keeper.NewKeeper(
 		cdc,
@@ -93,6 +95,7 @@ func ProofKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 		mockSessionKeeper,
 		mockAppKeeper,
 		mockAccountKeeper,
+		mockSharedKeeper,
 	)
 
 	ctx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
@@ -114,6 +117,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 		apptypes.StoreKey,
 		gatewaytypes.StoreKey,
 		authtypes.StoreKey,
+		sharedtypes.StoreKey,
 	)
 
 	// Construct a multistore & mount store keys for each keeper that will interact with the state store.
@@ -150,6 +154,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 		logger,
 		authority.String(),
 	)
+	require.NoError(t, sharedKeeper.SetParams(ctx, sharedtypes.DefaultParams()))
 
 	// Construct gateway keeper with a mocked bank keeper.
 	gatewayKeeper := gatewaykeeper.NewKeeper(
@@ -206,6 +211,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 		sessionKeeper,
 		appKeeper,
 		accountKeeper,
+		sharedKeeper,
 	)
 	require.NoError(t, proofKeeper.SetParams(ctx, types.DefaultParams()))
 
@@ -215,6 +221,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 		SupplierKeeper:    &supplierKeeper,
 		ApplicationKeeper: &appKeeper,
 		AccountKeeper:     &accountKeeper,
+		SharedKeeper:      &sharedKeeper,
 
 		Codec: cdc,
 	}
