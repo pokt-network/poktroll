@@ -12,8 +12,6 @@ import (
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-// TODO_IN_THIS_PR: Prepare future work to decided if these should be
-// constants, governance parameters or computed in some other way.
 const (
 	// Exponential moving average (ema) smoothing factor, commonly known as alpha.
 	// Usually, alpha = 2 / (N+1), where N is the number of periods.
