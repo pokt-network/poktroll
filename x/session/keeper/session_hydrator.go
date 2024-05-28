@@ -99,14 +99,14 @@ func (k Keeper) hydrateSessionMetadata(ctx context.Context, sh *sessionHydrator)
 		)
 	}
 
-	// TODO_UPNEXT(#517): Refactor session module to use current on-chain shared
-	// parameters instead of their corresponding constant stand-ins.
+	// TODO_BLOCKER(#543): If the num_blocks_per_session param has ever been changed,
+	// this function may cause unexpected behavior for historical sessions.
+	sharedParams := k.sharedKeeper.GetParams(ctx)
+	sh.session.NumBlocksPerSession = int64(sharedParams.NumBlocksPerSession)
+	sh.session.SessionNumber = shared.GetSessionNumber(&sharedParams, sh.blockHeight)
 
-	sh.session.NumBlocksPerSession = shared.NumBlocksPerSession
-	sh.session.SessionNumber = shared.GetDefaultSessionNumber(sh.blockHeight)
-
-	sh.sessionHeader.SessionStartBlockHeight = shared.GetDefaultSessionStartHeight(sh.blockHeight)
-	sh.sessionHeader.SessionEndBlockHeight = shared.GetDefaultSessionEndHeight(sh.blockHeight)
+	sh.sessionHeader.SessionStartBlockHeight = shared.GetSessionStartHeight(&sharedParams, sh.blockHeight)
+	sh.sessionHeader.SessionEndBlockHeight = shared.GetSessionEndHeight(&sharedParams, sh.blockHeight)
 	return nil
 }
 
@@ -121,7 +121,8 @@ func (k Keeper) hydrateSessionID(ctx context.Context, sh *sessionHydrator) error
 		return types.ErrSessionHydration.Wrapf("invalid service: %v", sh.sessionHeader.Service)
 	}
 
-	sh.sessionHeader.SessionId, sh.sessionIDBz = GetSessionId(
+	sh.sessionHeader.SessionId, sh.sessionIDBz = k.GetSessionId(
+		ctx,
 		sh.sessionHeader.ApplicationAddress,
 		sh.sessionHeader.Service.Id,
 		prevHashBz,
@@ -269,7 +270,37 @@ func sha3Hash(bz []byte) []byte {
 // GetSessionId returns the string and bytes representation of the sessionId
 // given the application public key, service ID, block hash, and block height
 // that is used to get the session start block height.
+func (k Keeper) GetSessionId(
+	ctx context.Context,
+	appPubKey,
+	serviceId string,
+	blockHashBz []byte,
+	blockHeight int64,
+) (sessionId string, sessionIdBz []byte) {
+	sharedParams := k.sharedKeeper.GetParams(ctx)
+	return GetSessionId(&sharedParams, appPubKey, serviceId, blockHashBz, blockHeight)
+}
+
+// GetDefaultSessionId returns the string and bytes representation of the sessionId
+// given the application public key, service ID, block hash, and block height
+// that is used to get the session start block height.
+//
+// TODO_TECHDEBT(#517): Move this to a shared testutil.
+func GetDefaultSessionId(
+	appPubKey,
+	serviceId string,
+	blockHashBz []byte,
+	blockHeight int64,
+) (sessionId string, sessionIdBz []byte) {
+	sharedParams := sharedtypes.DefaultParams()
+	return GetSessionId(&sharedParams, appPubKey, serviceId, blockHashBz, blockHeight)
+}
+
+// GetSessionId returns the string and bytes representation of the sessionId
+// given the application public key, service ID, block hash, and block height
+// that is used to get the session start block height.
 func GetSessionId(
+	sharedParams *sharedtypes.Params,
 	appPubKey,
 	serviceId string,
 	blockHashBz []byte,
@@ -278,7 +309,7 @@ func GetSessionId(
 	appPubKeyBz := []byte(appPubKey)
 	serviceIdBz := []byte(serviceId)
 
-	blockHeightBz := getSessionStartBlockHeightBz(blockHeight)
+	blockHeightBz := getSessionStartBlockHeightBz(sharedParams, blockHeight)
 	sessionIdBz = concatWithDelimiter(
 		SessionIDComponentDelimiter,
 		blockHashBz,
@@ -293,8 +324,8 @@ func GetSessionId(
 
 // getSessionStartBlockHeightBz returns the bytes representation of the session
 // start block height given the block height.
-func getSessionStartBlockHeightBz(blockHeight int64) []byte {
-	sessionStartBlockHeight := shared.GetDefaultSessionStartHeight(blockHeight)
+func getSessionStartBlockHeightBz(sharedParams *sharedtypes.Params, blockHeight int64) []byte {
+	sessionStartBlockHeight := shared.GetSessionStartHeight(sharedParams, blockHeight)
 	sessionStartBlockHeightBz := make([]byte, 8)
 	binary.LittleEndian.PutUint64(sessionStartBlockHeightBz, uint64(sessionStartBlockHeight))
 	return sessionStartBlockHeightBz
