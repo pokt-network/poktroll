@@ -198,8 +198,8 @@ func (rs *relayerSessionsManager) forEachBlockClaimSessionsFn(
 		var onTimeSessions []relayer.SessionTree
 
 		// TODO_TECHDEBT(#543): We don't really want to have to query the params for every method call.
-	// Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
-	// to get the most recently (asynchronously) observed (and cached) value.
+		// Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
+		// to get the most recently (asynchronously) observed (and cached) value.
 		sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
 		if err != nil {
 			rs.logger.Error().Err(err).Msg("unable to query shared module params")
