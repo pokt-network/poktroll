@@ -3,8 +3,9 @@ package types_test
 import (
 	"testing"
 
-	"github.com/pokt-network/poktroll/x/tokenomics/types"
 	"github.com/stretchr/testify/require"
+
+	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 func TestGenesisState_Validate(t *testing.T) {
@@ -24,6 +25,14 @@ func TestGenesisState_Validate(t *testing.T) {
 				Params: types.Params{
 					ComputeUnitsToTokensMultiplier: 1,
 				},
+				RelayMiningDifficultyList: []types.RelayMiningDifficulty{
+					{
+						ServiceId: "0",
+					},
+					{
+						ServiceId: "1",
+					},
+				},
 				// this line is used by starport scaffolding # types/genesis/validField
 			},
 			isValid: true,
@@ -35,6 +44,20 @@ func TestGenesisState_Validate(t *testing.T) {
 					ComputeUnitsToTokensMultiplier: 0,
 				},
 				// this line is used by starport scaffolding # types/genesis/validField
+			},
+			isValid: false,
+		},
+		{
+			desc: "duplicated relayMiningDifficulty",
+			genState: &types.GenesisState{
+				RelayMiningDifficultyList: []types.RelayMiningDifficulty{
+					{
+						ServiceId: "0",
+					},
+					{
+						ServiceId: "0",
+					},
+				},
 			},
 			isValid: false,
 		},
