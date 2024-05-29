@@ -66,7 +66,15 @@ type TokenomicsModuleKeepers struct {
 // and tokenomics keepers during construction of the aggregation.
 type TokenomicsKeepersOpt func(context.Context, *TokenomicsModuleKeepers) context.Context
 
-func TokenomicsKeeper(t testing.TB) (
+func TokenomicsKeeper(t testing.TB) (tokenomicsKeeper tokenomicskeeper.Keeper, ctx context.Context) {
+	t.Helper()
+	k, ctx, _, _ := TokenomicsKeeperWithActorAddrs(t)
+	return k, ctx
+}
+
+// TODO_TECHDEBT: Have the callers use the keepers to find `appAddr` and `supplierAddr`
+// rather than returning them explicitly.
+func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 	tokenomicsKeeper tokenomicskeeper.Keeper,
 	ctx context.Context,
 	appAddr string,

@@ -405,7 +405,7 @@ func GenerateRelayRequest(
 	payload []byte,
 ) *servicetypes.RelayRequest {
 	appAddress := GetAddressFromPrivateKey(test, privKey)
-	sessionId, _ := testsession.GetDefaultSessionId(appAddress, serviceId, blockHashBz, blockHeight)
+	sessionId, _ := testsession.GetSessionIdWithDefaultParams(appAddress, serviceId, blockHashBz, blockHeight)
 
 	return &servicetypes.RelayRequest{
 		Meta: servicetypes.RelayRequestMetadata{
@@ -413,8 +413,8 @@ func GenerateRelayRequest(
 				ApplicationAddress:      appAddress,
 				SessionId:               string(sessionId[:]),
 				Service:                 &sharedtypes.Service{Id: serviceId},
-				SessionStartBlockHeight: testsession.GetDefaultSessionStartHeight(blockHeight),
-				SessionEndBlockHeight:   testsession.GetDefaultSessionEndHeight(blockHeight),
+				SessionStartBlockHeight: testsession.GetSessionStartHeightWithDefaultParams(blockHeight),
+				SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(blockHeight),
 			},
 			// The returned relay is unsigned and must be signed elsewhere for functionality
 			Signature: []byte(""),

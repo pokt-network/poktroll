@@ -174,9 +174,9 @@ func (s *relaysSuite) mapSessionInfoForLoadTestDurationFn(
 
 		sessionInfo := &sessionInfoNotif{
 			blockHeight:             blockHeight,
-			sessionNumber:           testsession.GetDefaultSessionNumber(blockHeight),
-			sessionStartBlockHeight: testsession.GetDefaultSessionStartHeight(blockHeight),
-			sessionEndBlockHeight:   testsession.GetDefaultSessionEndHeight(blockHeight),
+			sessionNumber:           testsession.GetSessionNumberWithDefaultParams(blockHeight),
+			sessionStartBlockHeight: testsession.GetSessionStartHeightWithDefaultParams(blockHeight),
+			sessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(blockHeight),
 		}
 
 		infoLogger := logger.Info().
@@ -721,7 +721,7 @@ func (plan *actorLoadTestIncrementPlan) shouldIncrementActorCount(
 		return false
 	}
 
-	initialSessionNumber := testsession.GetDefaultSessionNumber(startBlockHeight)
+	initialSessionNumber := testsession.GetSessionNumberWithDefaultParams(startBlockHeight)
 	// TODO_TECHDEBT(#21): replace with gov param query when available.
 	actorSessionIncRate := plan.blocksPerIncrement / sharedtypes.DefaultNumBlocksPerSession
 	nextSessionNumber := sessionInfo.sessionNumber + 1 - initialSessionNumber
@@ -747,7 +747,7 @@ func (plan *actorLoadTestIncrementPlan) shouldIncrementSupplierCount(
 		return false
 	}
 
-	initialSessionNumber := testsession.GetDefaultSessionNumber(startBlockHeight)
+	initialSessionNumber := testsession.GetSessionNumberWithDefaultParams(startBlockHeight)
 	// TODO_TECHDEBT(#21): replace with gov param query when available.
 	supplierSessionIncRate := plan.blocksPerIncrement / sharedtypes.DefaultNumBlocksPerSession
 	nextSessionNumber := sessionInfo.sessionNumber + 1 - initialSessionNumber
