@@ -37,6 +37,7 @@ message MsgUpdateParams {
 // MsgUpdateParams message.
 message MsgUpdateParamsResponse {}
 
+// MsgUpdateParam is the Msg/UpdateParam request type to update a single param.
 message MsgUpdateParam {
   option (cosmos.msg.v1.signer) = "authority";
 
@@ -51,6 +52,8 @@ message MsgUpdateParam {
   }
 }
 
+// MsgUpdateParamResponse defines the response structure for executing a
+// MsgUpdateParam message after a single param update.
 message MsgUpdateParamResponse {
   Params params = 1;
 }

@@ -10,12 +10,12 @@ import (
 
 func TestMsgUpdateParam_ValidateBasic(t *testing.T) {
 	tests := []struct {
-		name        string
+		desc        string
 		msg         MsgUpdateParam
 		expectedErr error
 	}{
 		{
-			name: "invalid: authority address invalid",
+			desc: "invalid: authority address invalid",
 			msg: MsgUpdateParam{
 				Authority: "invalid_address",
 				Name:      "", // Doesn't matter for this test
@@ -23,7 +23,7 @@ func TestMsgUpdateParam_ValidateBasic(t *testing.T) {
 			},
 			expectedErr: ErrSharedInvalidAddress,
 		}, {
-			name: "invalid: param name incorrect (non-existent)",
+			desc: "invalid: param name incorrect (non-existent)",
 			msg: MsgUpdateParam{
 				Authority: sample.AccAddress(),
 				Name:      "WRONG_num_blocks_per_session",
@@ -31,7 +31,7 @@ func TestMsgUpdateParam_ValidateBasic(t *testing.T) {
 			},
 			expectedErr: ErrSharedParamNameInvalid,
 		}, {
-			name: "invalid: incorrect param type",
+			desc: "invalid: incorrect param type",
 			msg: MsgUpdateParam{
 				Authority: sample.AccAddress(),
 				Name:      ParamNumBlocksPerSession,
@@ -39,7 +39,7 @@ func TestMsgUpdateParam_ValidateBasic(t *testing.T) {
 			},
 			expectedErr: ErrSharedParamInvalid,
 		}, {
-			name: "valid: correct authority, param name, and type",
+			desc: "valid: correct authority, param name, and type",
 			msg: MsgUpdateParam{
 				Authority: sample.AccAddress(),
 				Name:      ParamNumBlocksPerSession,
@@ -48,7 +48,7 @@ func TestMsgUpdateParam_ValidateBasic(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		t.Run(tt.desc, func(t *testing.T) {
 			err := tt.msg.ValidateBasic()
 			if tt.expectedErr != nil {
 				require.ErrorContains(t, err, tt.expectedErr.Error())
