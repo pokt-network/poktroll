@@ -124,6 +124,7 @@ func (m *MsgUpdateParamsResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_MsgUpdateParamsResponse proto.InternalMessageInfo
 
+// MsgUpdateParam is the Msg/UpdateParam request type to update a single param.
 type MsgUpdateParam struct {
 	// authority is the address that controls the module (defaults to x/gov unless overwritten).
 	Authority string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
@@ -240,6 +241,8 @@ func (*MsgUpdateParam) XXX_OneofWrappers() []interface{} {
 	}
 }
 
+// MsgUpdateParamResponse defines the response structure for executing a
+// MsgUpdateParam message after a single param update.
 type MsgUpdateParamResponse struct {
 	Params *Params `protobuf:"bytes,1,opt,name=params,proto3" json:"params,omitempty"`
 }

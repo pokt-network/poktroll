@@ -2114,6 +2114,7 @@ func (*MsgUpdateParamsResponse) Descriptor() ([]byte, []int) {
 	return file_poktroll_shared_tx_proto_rawDescGZIP(), []int{1}
 }
 
+// MsgUpdateParam is the Msg/UpdateParam request type to update a single param.
 type MsgUpdateParam struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -2214,6 +2215,8 @@ func (*MsgUpdateParam_AsInt64) isMsgUpdateParam_AsType() {}
 
 func (*MsgUpdateParam_AsBytes) isMsgUpdateParam_AsType() {}
 
+// MsgUpdateParamResponse defines the response structure for executing a
+// MsgUpdateParam message after a single param update.
 type MsgUpdateParamResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
