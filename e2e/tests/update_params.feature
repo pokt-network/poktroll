@@ -1,14 +1,16 @@
 Feature: Params Namespace
   #  TODO_DOCUMENT(@Olshansk): Document all of the on-chain governance parameters.
 
-   Scenario: An unauthorized user cannot update a module params
-     Given the user has the pocketd binary installed
-     And all "tokenomics" module params are set to their default values
-     And an authz grant from the "gov" "module" account to the "pnf" "user" account for the "/poktroll.tokenomics.MsgUpdateParams" message exists
-     When the "unauthorized" account sends an authz exec message to update all "tokenomics" module params
-       | name                               | value | type  |
-       | compute_units_to_tokens_multiplier | 666   | int64 |
-     Then all "tokenomics" module params should be set to their default values
+  Background:
+  
+  Scenario: An unauthorized user cannot update a module params
+    Given the user has the pocketd binary installed
+    And all "tokenomics" module params are set to their default values
+    And an authz grant from the "gov" "module" account to the "pnf" "user" account for the "/poktroll.tokenomics.MsgUpdateParams" message exists
+    When the "unauthorized" account sends an authz exec message to update all "tokenomics" module params
+      | name                               | value | type  |
+      | compute_units_to_tokens_multiplier | 666   | int64 |
+    Then all "tokenomics" module params should be set to their default values
 
   # NB: If you are reading this and the tokenomics module has parameters
   # that are not being updated in this test, please update the test.
