@@ -102,17 +102,17 @@ func (s *relaysSuite) setupTxEventListeners() {
 }
 
 // initFundingAccount initializes the account that will be funding the onchain actors.
-func (s *relaysSuite) initFundingAccount(fundingAccountKeyName string) {
+func (s *relaysSuite) initFundingAccount(fundingAccountAddress string) {
 	// The funding account record should already exist in the keyring.
-	fundingAccountKeyRecord, err := s.txContext.GetKeyring().Key(fundingAccountKeyName) //KeyByAddress(accAddress)
+	accAddress, err := sdk.AccAddressFromBech32(fundingAccountAddress)
+	require.NoError(s, err)
+
+	fundingAccountKeyRecord, err := s.txContext.GetKeyring().KeyByAddress(accAddress)
 	require.NoError(s, err)
 	require.NotNil(s, fundingAccountKeyRecord)
 
-	fundingAccountAddress, err := fundingAccountKeyRecord.GetAddress()
-	require.NoError(s, err)
-
 	s.fundingAccountInfo = &accountInfo{
-		address:     fundingAccountAddress.String(),
+		address:     fundingAccountAddress,
 		pendingMsgs: []sdk.Msg{},
 	}
 }

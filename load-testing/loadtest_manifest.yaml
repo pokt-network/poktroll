@@ -6,6 +6,9 @@ is_ephemeral_chain: false
 testnet_node: https://testnet-validated-validator-rpc.poktroll.com
 # The service ID to request relays from.
 service_id: "0021"
+# The address of the account that will be used to fund the the application accounts
+# so that they can stake on the network.
+funding_account_address: pokt14eh973xt99s7edugnyvd5d5u50d6j0hysw2vsm
 # In non-ephemeral chains, the gateways are identified by their address.
 gateways:
   # address is the bech32 pokt address of the gateway.
