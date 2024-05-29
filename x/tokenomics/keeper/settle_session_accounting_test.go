@@ -80,7 +80,7 @@ func TestSettleSessionAccounting_AppStakeTooLow(t *testing.T) {
 }
 
 func TestSettleSessionAccounting_AppNotFound(t *testing.T) {
-	keeper, ctx, _, supplierAddr := testkeeper.TokenomicsKeeper(t)
+	keeper, ctx, _, supplierAddr := testkeeper.TokenomicsKeeperWithActorAddrs(t)
 
 	// The base claim whose root will be customized for testing purposes
 	claim := prooftypes.Claim{
@@ -104,7 +104,7 @@ func TestSettleSessionAccounting_AppNotFound(t *testing.T) {
 }
 
 func TestSettleSessionAccounting_InvalidRoot(t *testing.T) {
-	keeper, ctx, appAddr, supplierAddr := testkeeper.TokenomicsKeeper(t)
+	keeper, ctx, appAddr, supplierAddr := testkeeper.TokenomicsKeeperWithActorAddrs(t)
 
 	// Define test cases
 	tests := []struct {
@@ -189,7 +189,7 @@ func TestSettleSessionAccounting_InvalidRoot(t *testing.T) {
 }
 
 func TestSettleSessionAccounting_InvalidClaim(t *testing.T) {
-	keeper, ctx, appAddr, supplierAddr := testkeeper.TokenomicsKeeper(t)
+	keeper, ctx, appAddr, supplierAddr := testkeeper.TokenomicsKeeperWithActorAddrs(t)
 
 	// Define test cases
 	tests := []struct {
