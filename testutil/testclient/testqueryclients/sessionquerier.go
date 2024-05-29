@@ -47,7 +47,7 @@ func NewTestSessionQueryClient(
 			serviceId string,
 			blockHeight int64,
 		) (session *sessiontypes.Session, err error) {
-			sessionId, _ := testsession.GetDefaultSessionId(address, serviceId, blockHashBz, blockHeight)
+			sessionId, _ := testsession.GetSessionIdWithDefaultParams(address, serviceId, blockHashBz, blockHeight)
 
 			session, ok := sessionsMap[sessionId]
 			if !ok {
@@ -72,18 +72,18 @@ func AddToExistingSessions(
 ) {
 	t.Helper()
 
-	sessionId, _ := testsession.GetDefaultSessionId(appAddress, serviceId, blockHashBz, blockHeight)
+	sessionId, _ := testsession.GetSessionIdWithDefaultParams(appAddress, serviceId, blockHashBz, blockHeight)
 
 	session := sessiontypes.Session{
 		Header: &sessiontypes.SessionHeader{
 			Service:                 &sharedtypes.Service{Id: serviceId},
 			ApplicationAddress:      appAddress,
 			SessionId:               sessionId,
-			SessionStartBlockHeight: testsession.GetDefaultSessionStartHeight(blockHeight),
-			SessionEndBlockHeight:   testsession.GetDefaultSessionEndHeight(blockHeight),
+			SessionStartBlockHeight: testsession.GetSessionStartHeightWithDefaultParams(blockHeight),
+			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(blockHeight),
 		},
 		NumBlocksPerSession: sharedtypes.DefaultNumBlocksPerSession,
-		SessionNumber:       testsession.GetDefaultSessionNumber(blockHeight),
+		SessionNumber:       testsession.GetSessionNumberWithDefaultParams(blockHeight),
 		SessionId:           sessionId,
 		Suppliers:           []*sharedtypes.Supplier{},
 	}

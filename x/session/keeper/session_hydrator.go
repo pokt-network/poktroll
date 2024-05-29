@@ -281,9 +281,9 @@ func (k Keeper) GetSessionId(
 	return GetSessionId(&sharedParams, appPubKey, serviceId, blockHashBz, blockHeight)
 }
 
-// GetSessionId returns the string and bytes representation of the sessionId
-// given the application public key, service ID, block hash, and block height
-// that is used to get the session start block height.
+// GetSessionId returns the string and bytes representation of the sessionId for the
+// session containing blockHeight, given the shared on-chain parameters, application
+// public key, service ID, and block hash.
 func GetSessionId(
 	sharedParams *sharedtypes.Params,
 	appPubKey,
@@ -308,7 +308,8 @@ func GetSessionId(
 }
 
 // getSessionStartBlockHeightBz returns the bytes representation of the session
-// start block height given the block height.
+// start height for the session containing blockHeight, given the shared on-chain
+// parameters.
 func getSessionStartBlockHeightBz(sharedParams *sharedtypes.Params, blockHeight int64) []byte {
 	sessionStartBlockHeight := shared.GetSessionStartHeight(sharedParams, blockHeight)
 	sessionStartBlockHeightBz := make([]byte, 8)

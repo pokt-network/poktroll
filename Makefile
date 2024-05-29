@@ -380,14 +380,18 @@ test_e2e_session: test_e2e_env ## Run only the E2E suite that exercises the sess
 test_e2e_settlement: test_e2e_env ## Run only the E2E suite that exercises the session & tokenomics settlement
 	go test -v ./e2e/tests/... -tags=e2e,test --features-path=0_settlement.feature
 
+.PHONY: test_e2e_params
+test_e2e_params: test_e2e_env ## Run only the E2E suite that exercises parameter updates for all modules
+	go test -v ./e2e/tests/... -tags=e2e,test --features-path=update_params.feature
+
 .PHONY: test_load_relays_stress
 test_load_relays_stress: ## Run the stress test for E2E relays on non-ephemeral chains
 	go test -v -count=1 ./load-testing/tests/... \
 	-tags=load,test -run LoadRelays --log-level=debug --timeout=30m \
 	--manifest ./load-testing/loadtest_manifest.yaml
 
-.PHONY: test_localnet_load_relays_stress
-test_localnet_load_relays_stress: test_e2e_env ## Run the stress test for E2E relays.
+.PHONY: test_load_relays_stress_localnet
+test_load_relays_stress_localnet: test_e2e_env ## Run the stress test for E2E relays.
 	go test -v -count=1 ./load-testing/tests/... \
 	-tags=load,test -run LoadRelays --log-level=debug --timeout=30m \
 	--manifest ./load-testing/localnet_loadtest_manifest.yaml

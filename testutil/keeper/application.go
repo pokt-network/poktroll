@@ -77,7 +77,7 @@ func ApplicationKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 		AnyTimes()
 	mockSharedKeeper.EXPECT().GetSessionEndHeight(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, queryHeight int64) int64 {
-			return testsession.GetDefaultSessionEndHeight(queryHeight)
+			return testsession.GetSessionEndHeightWithDefaultParams(queryHeight)
 		}).
 		AnyTimes()
 
