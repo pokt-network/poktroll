@@ -29,12 +29,20 @@ func (k msgServer) CreateClaim(ctx context.Context, msg *types.MsgCreateClaim) (
 	}
 
 	sessionHeader := msg.GetSessionHeader()
+
+	// Compare msg session header w/ on-chain session header.
 	session, err := k.queryAndValidateSessionHeader(
 		ctx,
 		sessionHeader,
 		msg.GetSupplierAddress(),
 	)
 	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	// Validate claim message commit height is within the respective session's
+	// claim creation window.
+	if err := k.validateClaimWindow(ctx, sessionHeader); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
