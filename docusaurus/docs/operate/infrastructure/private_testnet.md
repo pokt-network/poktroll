@@ -1,6 +1,6 @@
 ---
 title: Private TestNet
-sidebar_position: 1
+sidebar_position: 5
 ---
 
 # Private TestNet <!-- omit in toc -->

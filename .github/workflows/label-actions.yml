@@ -1,4 +1,4 @@
-name: 'Label Actions'
+name: "Label Actions"
 
 on:
   issues:
@@ -18,4 +18,5 @@ jobs:
   action:
     runs-on: ubuntu-latest
     steps:
-      - uses: dessant/label-actions@v3
+      # TODO: switch to `dessant/label-actions@v3` when https://github.com/dessant/label-actions/pull/29 is merged.
+      - uses: okdas/label-actions@patch-1

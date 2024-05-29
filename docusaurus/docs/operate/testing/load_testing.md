@@ -26,7 +26,7 @@ We use [k6](https://k6.io/) for load testing. For detailed information about k6 
 ## Dependencies
 
 - [k6](https://grafana.com/docs/k6/latest/get-started/installation/)
-- (For local suite execution) [LocalNet](../localnet.md)
+- (For local suite execution) [LocalNet](../infrastructure/localnet.md)
 
 ## How to run tests
 
