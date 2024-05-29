@@ -300,7 +300,7 @@ func newTestClaimMsg(
 			Service:                 service,
 			SessionId:               sessionId,
 			SessionStartBlockHeight: sessionStartHeight,
-			SessionEndBlockHeight:   shared.GetDefaultSessionEndHeight(sessionStartHeight),
+			SessionEndBlockHeight:   shared.GetSessionEndHeightWithDefaultParams(sessionStartHeight),
 		},
 		merkleRoot,
 	)
