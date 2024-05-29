@@ -390,8 +390,8 @@ test_load_relays_stress: ## Run the stress test for E2E relays on non-ephemeral 
 	-tags=load,test -run LoadRelays --log-level=debug --timeout=30m \
 	--manifest ./load-testing/loadtest_manifest.yaml
 
-.PHONY: test_localnet_load_relays_stress
-test_localnet_load_relays_stress: test_e2e_env ## Run the stress test for E2E relays.
+.PHONY: test_load_relays_stress_localnet
+test_load_relays_stress_localnet: test_e2e_env ## Run the stress test for E2E relays.
 	go test -v -count=1 ./load-testing/tests/... \
 	-tags=load,test -run LoadRelays --log-level=debug --timeout=30m \
 	--manifest ./load-testing/localnet_loadtest_manifest.yaml
