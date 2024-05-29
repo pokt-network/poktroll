@@ -3,7 +3,7 @@ package keeper
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
+	"github.com/pokt-network/poktroll/x/shared"
 )
 
 // NumSessionsAppToGatewayUndelegationRetention is the number of sessions for which
@@ -45,6 +45,6 @@ func (k Keeper) EndBlockerPruneAppToGatewayPendingUndelegation(ctx sdk.Context) 
 // GetNumBlocksUndelegationRetention returns the number of blocks for which
 // undelegations should be kept before being pruned.
 func GetNumBlocksUndelegationRetention() int64 {
-	return sessionkeeper.GetSessionGracePeriodBlockCount() +
-		(sessionkeeper.NumBlocksPerSession * NumSessionsAppToGatewayUndelegationRetention)
+	return shared.SessionGracePeriodBlocks +
+		(shared.NumBlocksPerSession * NumSessionsAppToGatewayUndelegationRetention)
 }

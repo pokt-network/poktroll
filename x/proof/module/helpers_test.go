@@ -23,8 +23,8 @@ import (
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	proof "github.com/pokt-network/poktroll/x/proof/module"
 	"github.com/pokt-network/poktroll/x/proof/types"
-	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
@@ -130,7 +130,7 @@ func networkWithClaimObjects(
 				claim := createClaim(
 					t, net, ctx,
 					supplierAcct.Address.String(),
-					sessionkeeper.GetSessionStartBlockHeight(blockHeight),
+					shared.GetSessionStartBlockHeight(blockHeight),
 					appAcct.Address.String(),
 				)
 				claims = append(claims, *claim)
@@ -160,7 +160,7 @@ func encodeSessionHeader(
 		Service:                 &sharedtypes.Service{Id: testServiceId},
 		SessionId:               sessionId,
 		SessionStartBlockHeight: sessionStartHeight,
-		SessionEndBlockHeight:   sessionkeeper.GetSessionEndBlockHeight(sessionStartHeight),
+		SessionEndBlockHeight:   shared.GetSessionEndBlockHeight(sessionStartHeight),
 	}
 	cdc := codec.NewProtoCodec(codectypes.NewInterfaceRegistry())
 	sessionHeaderBz := cdc.MustMarshalJSON(sessionHeader)
@@ -210,7 +210,7 @@ func createClaim(
 			Service:                 &sharedtypes.Service{Id: testServiceId},
 			SessionId:               sessionId,
 			SessionStartBlockHeight: sessionStartHeight,
-			SessionEndBlockHeight:   sessionkeeper.GetSessionEndBlockHeight(sessionStartHeight),
+			SessionEndBlockHeight:   shared.GetSessionEndBlockHeight(sessionStartHeight),
 		},
 		RootHash: rootHash,
 	}
