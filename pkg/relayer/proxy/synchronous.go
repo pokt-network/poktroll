@@ -257,6 +257,11 @@ func (sync *synchronousRPCServer) serveHTTP(
 		Str("destination_url", serviceConfig.BackendUrl.String()).
 		Msg("building relay request payload to service")
 
+	// The host and scheme of the upstream request URL are replaced with the host and
+	// scheme of the service's backend URL to ensure that the request is sent to the
+	// correct service, while path and query parameters and headers of the upstream
+	// request are preserved to ensure that the request complies with the requested
+	// service's API.
 	// Parse the upstream request URL then replace the host and scheme with the
 	// service's backend URL's.
 	requestUrl, err := url.Parse(upstreamRequest.URL)

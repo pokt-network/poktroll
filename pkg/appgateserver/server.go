@@ -169,12 +169,8 @@ func (app *appGateServer) Stop(ctx context.Context) error {
 func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	ctx := app.logger.WithContext(request.Context())
 
-	// Extract the serviceId from the request path.
-	path := request.URL.Path
-	serviceId := strings.Split(path, "/")[1]
-
-	// Remove the serviceId from the request path which is specific AppGateServer.
-	request.URL.Path = strings.Replace(path, serviceId, "", 1)
+	newUrlPath, serviceId := extractServiceId(request.URL.Path)
+	request.URL.Path = newUrlPath
 
 	// Read the request body bytes.
 	requestPayloadBz, err := io.ReadAll(request.Body)
@@ -304,6 +300,27 @@ func (app *appGateServer) ServePprof(ctx context.Context, addr string) error {
 	}()
 
 	return nil
+}
+
+// extractServiceId extracts the serviceId from the request path and returns it
+// along with the new request path that is stripped of the serviceId.
+func extractServiceId(urlPath string) (newUrlPath string, serviceId string) {
+	// Extract the serviceId from the request path.
+	serviceId = strings.Split(urlPath, "/")[1]
+
+	// Remove the serviceId from the request path which is specific AppGateServer.
+	// The remaining path is the path of the request that will be serialized and
+	// sent to sent to the supplier within a RelayRequest. For example:
+	// * If a request to the Backend service has to ba made with the path "/backend/relay"
+	// * The client has to send the request to the AppGateServer with the path
+	//   "/serviceId/backend/relay"
+	// * The AppGateServer will remove the serviceId from the path and send the request
+	//   and serialize the request to send to the supplier with the path "/backend/relay"
+	//
+	// This is specific to the AppGateServer and other gateways may have different
+	// means of identifying the service that the request is for.
+	newUrlPath = strings.Replace(urlPath, serviceId, "", 1)
+	return newUrlPath, serviceId
 }
 
 type appGateServerOption func(*appGateServer)
