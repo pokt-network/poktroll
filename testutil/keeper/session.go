@@ -134,6 +134,7 @@ func SessionKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 
 	mockAppKeeper := defaultAppKeeperMock(t)
 	mockSupplierKeeper := defaultSupplierKeeperMock(t)
+	mockSharedKeeper := defaultSharedKeeperMock(t)
 
 	k := keeper.NewKeeper(
 		cdc,
@@ -144,6 +145,7 @@ func SessionKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 		mockBankKeeper,
 		mockAppKeeper,
 		mockSupplierKeeper,
+		mockSharedKeeper,
 	)
 
 	// TODO_TECHDEBT: See the comment at the bottom of this file explaining
@@ -214,6 +216,17 @@ func defaultSupplierKeeperMock(t testing.TB) types.SupplierKeeper {
 	mockSupplierKeeper.EXPECT().GetAllSuppliers(gomock.Any()).AnyTimes().Return(allSuppliers)
 
 	return mockSupplierKeeper
+}
+
+func defaultSharedKeeperMock(t testing.TB) types.SharedKeeper {
+	t.Helper()
+	ctrl := gomock.NewController(t)
+
+	mockSharedKeeper := mocks.NewMockSharedKeeper(ctrl)
+	mockSharedKeeper.EXPECT().GetParams(gomock.Any()).
+		Return(sharedtypes.DefaultParams()).
+		AnyTimes()
+	return mockSharedKeeper
 }
 
 // TODO_TECHDEBT: Figure out how to vary the supplierKeep on a per test basis with exposing `SupplierKeeper publically`

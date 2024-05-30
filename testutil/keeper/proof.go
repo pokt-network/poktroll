@@ -199,6 +199,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 		sessionmocks.NewMockBankKeeper(ctrl),
 		appKeeper,
 		supplierKeeper,
+		sharedKeeper,
 	)
 	require.NoError(t, sessionKeeper.SetParams(ctx, sessiontypes.DefaultParams()))
 

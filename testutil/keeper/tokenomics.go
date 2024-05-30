@@ -291,6 +291,7 @@ func NewTokenomicsModuleKeepers(
 		bankKeeper,
 		appKeeper,
 		supplierKeeper,
+		sharedKeeper,
 	)
 	require.NoError(t, sessionKeeper.SetParams(ctx, sessiontypes.DefaultParams()))
 
