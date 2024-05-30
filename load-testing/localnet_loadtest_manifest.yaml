@@ -6,7 +6,7 @@ is_ephemeral_chain: true
 service_id: anvil
 # The address of the account that will be used to fund the the application,
 # gateway and supplier accounts so that they can stake on the network.
-funding_account_address: pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw
+funding_account_address: pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw # address for pnf account
 
 # List of pre-provisioned suppliers used for load testing.
 # Thse suppliers will be progressively staked during the load test, according
