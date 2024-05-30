@@ -9,7 +9,7 @@ import (
 
 	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/application/types"
-	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
+	"github.com/pokt-network/poktroll/x/shared"
 )
 
 func (k msgServer) UndelegateFromGateway(ctx context.Context, msg *types.MsgUndelegateFromGateway) (*types.MsgUndelegateFromGatewayResponse, error) {
@@ -80,7 +80,7 @@ func (k Keeper) recordPendingUndelegation(
 	gatewayAddress string,
 	currentBlockHeight int64,
 ) {
-	sessionEndHeight := uint64(sessionkeeper.GetSessionEndBlockHeight(currentBlockHeight))
+	sessionEndHeight := uint64(shared.GetSessionEndBlockHeight(currentBlockHeight))
 	undelegatingGatewayListAtBlock := app.PendingUndelegations[sessionEndHeight]
 
 	// Add the gateway address to the undelegated gateways list if it's not already there.

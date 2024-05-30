@@ -11,5 +11,5 @@ message Params {
   option (amino.name) = "poktroll/x/shared/Params";
   option (gogoproto.equal) = true;
 
-  
+  uint64 num_blocks_per_session = 1 [(gogoproto.jsontag) = "num_blocks_per_session"];
 }

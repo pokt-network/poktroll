@@ -20,11 +20,8 @@ func TestGenesisState_Validate(t *testing.T) {
 			isValid:  true,
 		},
 		{
-			desc: "valid genesis state",
+			desc:     "valid genesis state",
 			genState: &types.GenesisState{
-				Params: types.Params{
-					NumBlocksPerSession: 1,
-				},
 
 				// this line is used by starport scaffolding # types/genesis/validField
 			},

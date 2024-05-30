@@ -1,0 +1,15 @@
+temperature: 0.5
+maxTokens: 4096
+---
+<system>
+You are a principal software engineer.
+</system>
+
+{{{ input }}}
+
+You have been provided two files:
+1. A source code file
+2. A unit test file
+
+Please provide a list of unit test names/descriptions that you believe
+are still missing. Do not actually implement them.

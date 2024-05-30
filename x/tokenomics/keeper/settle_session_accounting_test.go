@@ -14,8 +14,8 @@ import (
 	"github.com/pokt-network/poktroll/testutil/sample"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
-	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
@@ -52,7 +52,7 @@ func TestSettleSessionAccounting_HandleAppGoingIntoDebt(t *testing.T) {
 			},
 			SessionId:               "session_id",
 			SessionStartBlockHeight: 1,
-			SessionEndBlockHeight:   sessionkeeper.GetSessionEndBlockHeight(1),
+			SessionEndBlockHeight:   shared.GetSessionEndBlockHeight(1),
 		},
 		RootHash: smstRootWithSum(appStake.Amount.Uint64() + 1), // More than the app stake
 	}
@@ -80,7 +80,7 @@ func TestSettleSessionAccounting_AppStakeTooLow(t *testing.T) {
 }
 
 func TestSettleSessionAccounting_AppNotFound(t *testing.T) {
-	keeper, ctx, _, supplierAddr := testkeeper.TokenomicsKeeper(t)
+	keeper, ctx, _, supplierAddr := testkeeper.TokenomicsKeeperWithActorAddrs(t)
 
 	// The base claim whose root will be customized for testing purposes
 	claim := prooftypes.Claim{
@@ -93,7 +93,7 @@ func TestSettleSessionAccounting_AppNotFound(t *testing.T) {
 			},
 			SessionId:               "session_id",
 			SessionStartBlockHeight: 1,
-			SessionEndBlockHeight:   sessionkeeper.GetSessionEndBlockHeight(1),
+			SessionEndBlockHeight:   shared.GetSessionEndBlockHeight(1),
 		},
 		RootHash: smstRootWithSum(42),
 	}
@@ -104,7 +104,7 @@ func TestSettleSessionAccounting_AppNotFound(t *testing.T) {
 }
 
 func TestSettleSessionAccounting_InvalidRoot(t *testing.T) {
-	keeper, ctx, appAddr, supplierAddr := testkeeper.TokenomicsKeeper(t)
+	keeper, ctx, appAddr, supplierAddr := testkeeper.TokenomicsKeeperWithActorAddrs(t)
 
 	// Define test cases
 	tests := []struct {
@@ -189,7 +189,7 @@ func TestSettleSessionAccounting_InvalidRoot(t *testing.T) {
 }
 
 func TestSettleSessionAccounting_InvalidClaim(t *testing.T) {
-	keeper, ctx, appAddr, supplierAddr := testkeeper.TokenomicsKeeper(t)
+	keeper, ctx, appAddr, supplierAddr := testkeeper.TokenomicsKeeperWithActorAddrs(t)
 
 	// Define test cases
 	tests := []struct {
@@ -297,7 +297,7 @@ func baseClaim(appAddr, supplierAddr string, sum uint64) prooftypes.Claim {
 			},
 			SessionId:               "session_id",
 			SessionStartBlockHeight: 1,
-			SessionEndBlockHeight:   sessionkeeper.GetSessionEndBlockHeight(1),
+			SessionEndBlockHeight:   shared.GetSessionEndBlockHeight(1),
 		},
 		RootHash: smstRootWithSum(sum),
 	}

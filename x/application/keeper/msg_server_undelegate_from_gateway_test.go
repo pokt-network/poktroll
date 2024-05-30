@@ -14,7 +14,7 @@ import (
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/x/application/keeper"
 	"github.com/pokt-network/poktroll/x/application/types"
-	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
+	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -316,7 +316,7 @@ func TestMsgServer_UndelegateFromGateway_DelegationIsActiveUntilNextSession(t *t
 
 	// Verify that the gateway is added to the pending undelegation list with the
 	// right sessionEndHeight as the map key.
-	sessionEndHeight := uint64(sessionkeeper.GetSessionEndBlockHeight(undelegationHeight))
+	sessionEndHeight := uint64(shared.GetSessionEndBlockHeight(undelegationHeight))
 	require.Contains(t,
 		app.PendingUndelegations[sessionEndHeight].GatewayAddresses,
 		pendingUndelegateFromAddr,
@@ -347,8 +347,7 @@ func TestMsgServer_UndelegateFromGateway_DelegationIsActiveUntilNextSession(t *t
 
 	// Increment the block height past the tested session's grace period and run
 	// the pruning undelegations logic again.
-	sessionGracePeriodBlockCount := uint64(sessionkeeper.GetSessionGracePeriodBlockCount())
-	afterSessionGracePeriodHeight := int64(sessionEndHeight + sessionGracePeriodBlockCount + 1)
+	afterSessionGracePeriodHeight := int64(sessionEndHeight + shared.SessionGracePeriodBlocks + 1)
 	sdkCtx = sdkCtx.WithBlockHeight(afterSessionGracePeriodHeight)
 	k.EndBlockerPruneAppToGatewayPendingUndelegation(sdkCtx)
 
@@ -385,7 +384,7 @@ func TestMsgServer_UndelegateFromGateway_DelegationIsPrunedAfterRetentionPeriod(
 
 	// Verify that the the pending undelegation map no longer contains the
 	// sessionEndHeight key.
-	sessionEndHeight := uint64(sessionkeeper.GetSessionEndBlockHeight(undelegationHeight))
+	sessionEndHeight := uint64(shared.GetSessionEndBlockHeight(undelegationHeight))
 	require.Empty(t, app.PendingUndelegations[sessionEndHeight])
 
 	// Verify that the reconstructed delegatee gateway list can no longer include
@@ -424,7 +423,7 @@ func TestMsgServer_UndelegateFromGateway_RedelegationAfterUndelegationAtTheSameS
 
 	// Verify that the gateway is also present in the pending undelegation list with the
 	// right sessionEndHeight as the map key.
-	sessionEndHeight := uint64(sessionkeeper.GetSessionEndBlockHeight(undelegationHeight))
+	sessionEndHeight := uint64(shared.GetSessionEndBlockHeight(undelegationHeight))
 	require.Contains(t,
 		app.PendingUndelegations[sessionEndHeight].GatewayAddresses,
 		gatewayAddrToRedelegate,
@@ -534,7 +533,7 @@ func createAppStakeDelegateAndUndelegate(
 // getUndelegationPruningBlockHeight returns the block height at which undelegations
 // should be pruned for a given undlegation block height.
 func getUndelegationPruningBlockHeight(blockHeight int64) (pruningHeihgt int64) {
-	nextSessionStartHeight := sessionkeeper.GetSessionEndBlockHeight(blockHeight) + 1
+	nextSessionStartHeight := shared.GetSessionEndBlockHeight(blockHeight) + 1
 
 	return nextSessionStartHeight + keeper.GetNumBlocksUndelegationRetention()
 }

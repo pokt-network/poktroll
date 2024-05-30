@@ -11,6 +11,7 @@ import (
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -79,11 +80,11 @@ func AddToExistingSessions(
 			Service:                 &sharedtypes.Service{Id: serviceId},
 			ApplicationAddress:      appAddress,
 			SessionId:               sessionId,
-			SessionStartBlockHeight: sessionkeeper.GetSessionStartBlockHeight(blockHeight),
-			SessionEndBlockHeight:   sessionkeeper.GetSessionEndBlockHeight(blockHeight),
+			SessionStartBlockHeight: shared.GetSessionStartBlockHeight(blockHeight),
+			SessionEndBlockHeight:   shared.GetSessionEndBlockHeight(blockHeight),
 		},
-		NumBlocksPerSession: sessionkeeper.NumBlocksPerSession,
-		SessionNumber:       sessionkeeper.GetSessionNumber(blockHeight),
+		NumBlocksPerSession: shared.NumBlocksPerSession,
+		SessionNumber:       shared.GetSessionNumber(blockHeight),
 		SessionId:           sessionId,
 		Suppliers:           []*sharedtypes.Supplier{},
 	}

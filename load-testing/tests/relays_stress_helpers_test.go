@@ -39,7 +39,7 @@ import (
 	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
-	"github.com/pokt-network/poktroll/x/session/keeper"
+	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
@@ -173,9 +173,9 @@ func (s *relaysSuite) mapSessionInfoForLoadTestDurationFn(
 
 		sessionInfo := &sessionInfoNotif{
 			blockHeight:             blockHeight,
-			sessionNumber:           keeper.GetSessionNumber(blockHeight),
-			sessionStartBlockHeight: keeper.GetSessionStartBlockHeight(blockHeight),
-			sessionEndBlockHeight:   keeper.GetSessionEndBlockHeight(blockHeight),
+			sessionNumber:           shared.GetSessionNumber(blockHeight),
+			sessionStartBlockHeight: shared.GetSessionStartBlockHeight(blockHeight),
+			sessionEndBlockHeight:   shared.GetSessionEndBlockHeight(blockHeight),
 		}
 
 		infoLogger := logger.Info().
@@ -330,15 +330,15 @@ func (plans *actorLoadTestIncrementPlans) validateAppSupplierPermutations(t gocu
 // Otherwise, the expected baseline for several metrics will be periodically skewed.
 func (plans *actorLoadTestIncrementPlans) validateIncrementRates(t gocuke.TestingT) {
 	require.Truef(t,
-		plans.gateways.blocksPerIncrement%keeper.NumBlocksPerSession == 0,
+		plans.gateways.blocksPerIncrement%shared.NumBlocksPerSession == 0,
 		"gateway increment rate must be a multiple of the session length",
 	)
 	require.Truef(t,
-		plans.suppliers.blocksPerIncrement%keeper.NumBlocksPerSession == 0,
+		plans.suppliers.blocksPerIncrement%shared.NumBlocksPerSession == 0,
 		"supplier increment rate must be a multiple of the session length",
 	)
 	require.Truef(t,
-		plans.apps.blocksPerIncrement%keeper.NumBlocksPerSession == 0,
+		plans.apps.blocksPerIncrement%shared.NumBlocksPerSession == 0,
 		"app increment rate must be a multiple of the session length",
 	)
 }
@@ -369,12 +369,11 @@ func (plans *actorLoadTestIncrementPlans) totalDurationBlocks() int64 {
 	// last increment duration (i.e. **after** maxActorCount actors are activated).
 	blocksToLastSessionEnd := plans.maxActorBlocksToFinalIncrementEnd()
 
-	sessionGracePeriodBlocks := keeper.GetSessionGracePeriodBlockCount()
-	blocksToLastProofWindowEnd := blocksToLastSessionEnd + sessionGracePeriodBlocks
+	blocksToLastProofWindowEnd := blocksToLastSessionEnd + shared.SessionGracePeriodBlocks
 
 	// Add one session length so that the duration is inclusive of the block which
 	// commits the last session's proof.
-	return blocksToLastProofWindowEnd + keeper.NumBlocksPerSession
+	return blocksToLastProofWindowEnd + shared.NumBlocksPerSession
 }
 
 // blocksToFinalIncrementStart returns the number of blocks that will have
@@ -721,9 +720,9 @@ func (plan *actorLoadTestIncrementPlan) shouldIncrementActorCount(
 		return false
 	}
 
-	initialSessionNumber := keeper.GetSessionNumber(startBlockHeight)
+	initialSessionNumber := shared.GetSessionNumber(startBlockHeight)
 	// TODO_TECHDEBT(#21): replace with gov param query when available.
-	actorSessionIncRate := plan.blocksPerIncrement / keeper.NumBlocksPerSession
+	actorSessionIncRate := plan.blocksPerIncrement / shared.NumBlocksPerSession
 	nextSessionNumber := sessionInfo.sessionNumber + 1 - initialSessionNumber
 	isSessionStartHeight := sessionInfo.blockHeight == sessionInfo.sessionStartBlockHeight
 	isActorIncrementHeight := nextSessionNumber%actorSessionIncRate == 0
@@ -747,9 +746,9 @@ func (plan *actorLoadTestIncrementPlan) shouldIncrementSupplierCount(
 		return false
 	}
 
-	initialSessionNumber := keeper.GetSessionNumber(startBlockHeight)
+	initialSessionNumber := shared.GetSessionNumber(startBlockHeight)
 	// TODO_TECHDEBT(#21): replace with gov param query when available.
-	supplierSessionIncRate := plan.blocksPerIncrement / keeper.NumBlocksPerSession
+	supplierSessionIncRate := plan.blocksPerIncrement / shared.NumBlocksPerSession
 	nextSessionNumber := sessionInfo.sessionNumber + 1 - initialSessionNumber
 	isSessionEndHeight := sessionInfo.blockHeight == sessionInfo.sessionEndBlockHeight
 	isActorIncrementHeight := nextSessionNumber%supplierSessionIncRate == 0

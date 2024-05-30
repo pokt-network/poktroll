@@ -13,7 +13,7 @@ import (
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
@@ -74,8 +74,8 @@ func (s *suite) paramsMapToMsgUpdateParams(moduleName string, paramsMap paramsMa
 		msgUpdateParams = s.newTokenomicsMsgUpdateParams(paramsMap)
 	case prooftypes.ModuleName:
 		msgUpdateParams = s.newProofMsgUpdateParams(paramsMap)
-	case sessiontypes.ModuleName:
-		msgUpdateParams = s.newSessionMsgUpdateParams(paramsMap)
+	case sharedtypes.ModuleName:
+		msgUpdateParams = s.newSharedMsgUpdateParams(paramsMap)
 	case apptypes.ModuleName:
 		msgUpdateParams = s.newAppMsgUpdateParams(paramsMap)
 	case servicetypes.ModuleName:
@@ -129,18 +129,18 @@ func (s *suite) newProofMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 	return proto.Message(msgUpdateParams)
 }
 
-func (s *suite) newSessionMsgUpdateParams(params paramsMap) cosmostypes.Msg {
+func (s *suite) newSharedMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 	authority := authtypes.NewModuleAddress(s.granterName).String()
 
-	msgUpdateParams := &sessiontypes.MsgUpdateParams{
+	msgUpdateParams := &sharedtypes.MsgUpdateParams{
 		Authority: authority,
-		Params:    sessiontypes.Params{},
+		Params:    sharedtypes.Params{},
 	}
 
 	for paramName, paramValue := range params {
 		s.Logf("paramName: %s, value: %v", paramName, paramValue.value)
 		switch paramName {
-		case sessiontypes.ParamNumBlocksPerSession:
+		case sharedtypes.ParamNumBlocksPerSession:
 			msgUpdateParams.Params.NumBlocksPerSession = uint64(paramValue.value.(int64))
 		default:
 			s.Fatalf("unexpected %q type param name %q", paramValue.typeStr, paramName)

@@ -377,7 +377,7 @@ func NewSupplyShannonSDKFn(signingKeyName string) SupplierFn {
 	}
 }
 
-// newSupplyBlockQueryClientFn returns a function which constructs a
+// NewSupplyBlockQueryClientFn returns a function which constructs a
 // BlockQueryClient instance and returns a new depinject.Config which
 // is supplied with the given deps and the new BlockQueryClient.
 func NewSupplyBlockQueryClientFn(queryNodeRPCUrl *url.URL) SupplierFn {
@@ -392,5 +392,23 @@ func NewSupplyBlockQueryClientFn(queryNodeRPCUrl *url.URL) SupplierFn {
 		}
 
 		return depinject.Configs(deps, depinject.Supply(blockQueryClient)), nil
+	}
+}
+
+// NewSupplySharedQueryClientFn returns a function which constructs a
+// SharedQueryClient instance and returns a new depinject.Config which
+// is supplied with the given deps and the new SharedQueryClient.
+func NewSupplySharedQueryClientFn() SupplierFn {
+	return func(
+		_ context.Context,
+		deps depinject.Config,
+		_ *cobra.Command,
+	) (depinject.Config, error) {
+		sharedQuerier, err := query.NewSharedQuerier(deps)
+		if err != nil {
+			return nil, err
+		}
+
+		return depinject.Configs(deps, depinject.Supply(sharedQuerier)), nil
 	}
 }

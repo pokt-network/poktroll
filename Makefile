@@ -380,6 +380,10 @@ test_e2e_session: test_e2e_env ## Run only the E2E suite that exercises the sess
 test_e2e_settlement: test_e2e_env ## Run only the E2E suite that exercises the session & tokenomics settlement
 	go test -v ./e2e/tests/... -tags=e2e,test --features-path=0_settlement.feature
 
+.PHONY: test_e2e_params
+test_e2e_params: test_e2e_env ## Run only the E2E suite that exercises parameter updates for all modules
+	go test -v ./e2e/tests/... -tags=e2e,test --features-path=update_params.feature
+
 .PHONY: test_load_relays_stress
 test_load_relays_stress: ## Run the stress test for E2E relays on non-ephemeral chains
 	go test -v -count=1 ./load-testing/tests/... \
@@ -835,8 +839,8 @@ params_update_proof_min_relay_difficulty_bits: ## Update the proof module params
 
 ### Session Module Params ###
 .PHONY: params_update_session_all
-params_update_session_all: ## Update the session module params
-	poktrolld tx authz exec ./tools/scripts/params/session_all.json $(PARAM_FLAGS)
+params_update_shared_all: ## Update the session module params
+	poktrolld tx authz exec ./tools/scripts/params/shared_all.json $(PARAM_FLAGS)
 
 .PHONY: params_query_all
 params_query_all: check_jq ## Query the params from all available modules

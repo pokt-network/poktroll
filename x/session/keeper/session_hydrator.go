@@ -12,6 +12,7 @@ import (
 	_ "golang.org/x/crypto/sha3"
 
 	"github.com/pokt-network/poktroll/x/session/types"
+	"github.com/pokt-network/poktroll/x/shared"
 	sharedhelpers "github.com/pokt-network/poktroll/x/shared/helpers"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -20,11 +21,6 @@ var SHA3HashLen = crypto.SHA3_256.Size()
 
 // TODO_BLOCKER(#21): Make these configurable governance param
 const (
-	// TODO_BLOCKER: Remove direct usage of these constants in helper functions
-	// when they will be replaced by governance params
-	NumBlocksPerSession = 4
-	// Duration of the grace period in number of sessions
-	SessionGracePeriod          = 1
 	NumSupplierPerSession       = 15
 	SessionIDComponentDelimiter = "."
 )
@@ -103,11 +99,11 @@ func (k Keeper) hydrateSessionMetadata(ctx context.Context, sh *sessionHydrator)
 		)
 	}
 
-	sh.session.NumBlocksPerSession = NumBlocksPerSession
-	sh.session.SessionNumber = GetSessionNumber(sh.blockHeight)
+	sh.session.NumBlocksPerSession = shared.NumBlocksPerSession
+	sh.session.SessionNumber = shared.GetSessionNumber(sh.blockHeight)
 
-	sh.sessionHeader.SessionStartBlockHeight = GetSessionStartBlockHeight(sh.blockHeight)
-	sh.sessionHeader.SessionEndBlockHeight = GetSessionEndBlockHeight(sh.blockHeight)
+	sh.sessionHeader.SessionStartBlockHeight = shared.GetSessionStartBlockHeight(sh.blockHeight)
+	sh.sessionHeader.SessionEndBlockHeight = shared.GetSessionEndBlockHeight(sh.blockHeight)
 	return nil
 }
 
@@ -267,39 +263,6 @@ func sha3Hash(bz []byte) []byte {
 	return hasher.Sum(nil)
 }
 
-// GetSessionStartBlockHeight returns the block height at which the session starts
-// Returns 0 if the block height is not a consensus produced block.
-// Example: If NumBlocksPerSession == 4, sessions start at blocks 1, 5, 9, etc.
-func GetSessionStartBlockHeight(blockHeight int64) int64 {
-	if blockHeight <= 0 {
-		return 0
-	}
-	return blockHeight - ((blockHeight - 1) % NumBlocksPerSession)
-}
-
-// GetSessionEndBlockHeight returns the block height at which the session ends
-// Returns 0 if the block height is not a consensus produced block.
-// Example: If NumBlocksPerSession == 4, sessions end at blocks 4, 8, 11, etc.
-func GetSessionEndBlockHeight(blockHeight int64) int64 {
-	if blockHeight <= 0 {
-		return 0
-	}
-
-	return GetSessionStartBlockHeight(blockHeight) + NumBlocksPerSession - 1
-}
-
-// GetSessionNumber returns the session number given the block height.
-// Returns session number 0 if the block height is not a consensus produced block.
-// Returns session number 1 for block 1 to block NumBlocksPerSession - 1 (inclusive).
-// i.e. If NubBlocksPerSession == 4, session == 1 for [1, 4], session == 2 for [5, 8], etc.
-func GetSessionNumber(blockHeight int64) int64 {
-	if blockHeight <= 0 {
-		return 0
-	}
-
-	return ((blockHeight - 1) / NumBlocksPerSession) + 1
-}
-
 // GetSessionId returns the string and bytes representation of the sessionId
 // given the application public key, service ID, block hash, and block height
 // that is used to get the session start block height.
@@ -325,16 +288,10 @@ func GetSessionId(
 	return sessionId, sessionIdBz
 }
 
-// GetSessionGracePeriodBlockCount returns the number of blocks in the session
-// grace period.
-func GetSessionGracePeriodBlockCount() int64 {
-	return SessionGracePeriod * NumBlocksPerSession
-}
-
 // getSessionStartBlockHeightBz returns the bytes representation of the session
 // start block height given the block height.
 func getSessionStartBlockHeightBz(blockHeight int64) []byte {
-	sessionStartBlockHeight := GetSessionStartBlockHeight(blockHeight)
+	sessionStartBlockHeight := shared.GetSessionStartBlockHeight(blockHeight)
 	sessionStartBlockHeightBz := make([]byte, 8)
 	binary.LittleEndian.PutUint64(sessionStartBlockHeightBz, uint64(sessionStartBlockHeight))
 	return sessionStartBlockHeightBz

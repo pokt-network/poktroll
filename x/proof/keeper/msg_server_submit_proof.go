@@ -19,8 +19,8 @@ import (
 	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/proof/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
-	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	"github.com/pokt-network/poktroll/x/shared"
 )
 
 // SMT specification used for the proof verification.
@@ -438,15 +438,14 @@ func (k msgServer) validateClosestPath(
 	//
 	// TODO_TECHDEBT(@red-0ne): Centralize the business logic that involves taking
 	// into account the heights, windows and grace periods into helper functions.
-	// TODO_BLOCKER@(@Olshansk): Update `blockHeight` to be the value of when the `ProofWindow`
+	// TODO_BLOCKER@(#516): Update `blockHeight` to be the value of when the `ProofWindow`
 	// opens once the variable is added.
-	sessionEndBlockHeightWithGracePeriod := sessionHeader.GetSessionEndBlockHeight() +
-		sessionkeeper.GetSessionGracePeriodBlockCount()
-	blockHash := k.sessionKeeper.GetBlockHash(ctx, sessionEndBlockHeightWithGracePeriod)
+	sessionGracePeriodEndHeight := shared.GetSessionGracePeriodEndHeight(sessionHeader.GetSessionEndBlockHeight())
+	blockHash := k.sessionKeeper.GetBlockHash(ctx, sessionGracePeriodEndHeight)
 
 	// TODO: Investigate "proof for the path provided does not match one expected by the on-chain protocol"
 	// error that may occur due to block height differing from the off-chain part.
-	fmt.Println("E2E_DEBUG: height for block hash when verifying the proof", sessionEndBlockHeightWithGracePeriod, sessionHeader.GetSessionId())
+	fmt.Println("E2E_DEBUG: height for block hash when verifying the proof", sessionGracePeriodEndHeight, sessionHeader.GetSessionId())
 
 	expectedProofPath := GetPathForProof(blockHash, sessionHeader.GetSessionId())
 	if !bytes.Equal(proof.Path, expectedProofPath) {

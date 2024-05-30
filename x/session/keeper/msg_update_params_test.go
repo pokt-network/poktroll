@@ -35,7 +35,7 @@ func TestMsgUpdateParams(t *testing.T) {
 				Authority: k.GetAuthority(),
 				Params:    types.Params{},
 			},
-			shouldError: true,
+			shouldError: false,
 		},
 		{
 			desc: "valid: send default params",

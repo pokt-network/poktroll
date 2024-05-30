@@ -12,8 +12,8 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/logging"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
-	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	"github.com/pokt-network/poktroll/x/shared"
 )
 
 var _ relayer.RelayerSessionsManager = (*relayerSessionsManager)(nil)
@@ -48,6 +48,9 @@ type relayerSessionsManager struct {
 
 	// storesDirectory points to a path on disk where KVStore data files are created.
 	storesDirectory string
+
+	// sharedQueryClient is used to query shared module parameters.
+	sharedQueryClient client.SharedQueryClient
 }
 
 // NewRelayerSessions creates a new relayerSessions.
@@ -73,6 +76,7 @@ func NewRelayerSessions(
 		deps,
 		&rs.blockClient,
 		&rs.supplierClient,
+		&rs.sharedQueryClient,
 	); err != nil {
 		return nil, err
 	}
@@ -164,8 +168,9 @@ func (rs *relayerSessionsManager) ensureSessionTree(sessionHeader *sessiontypes.
 // TODO_IMPROVE: Add the ability for the process to resume where it left off in
 // case the process is restarted or the connection is dropped and reconnected.
 func (rs *relayerSessionsManager) mapBlockToSessionsToClaim(
-	_ context.Context, block client.Block,
-) ([]relayer.SessionTree, bool) {
+	ctx context.Context,
+	block client.Block,
+) (sessionTrees []relayer.SessionTree, skip bool) {
 	rs.sessionsTreesMu.Lock()
 	defer rs.sessionsTreesMu.Unlock()
 
@@ -174,18 +179,31 @@ func (rs *relayerSessionsManager) mapBlockToSessionsToClaim(
 	// They will be emitted last, after all the late sessions have been emitted.
 	var onTimeSessions []relayer.SessionTree
 
+	// TODO_TECHDEBT(#543): We don't really want to have to query the params for every method call.
+	// Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
+	// to get the most recently (asynchronously) observed (and cached) value.
+	sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
+	if err != nil {
+		rs.logger.Error().Err(err).Msg("unable to query shared module params")
+		return nil, true
+	}
+
+	numBlocksPerSession := sharedParams.NumBlocksPerSession
+
 	// Check if there are sessions that need to enter the claim/proof phase as their
 	// end block height was the one before the last committed block or earlier.
 	// Iterate over the sessionsTrees map to get the ones that end at a block height
 	// lower than the current block height.
-	for endBlockHeight, sessionsTreesEndingAtBlockHeight := range rs.sessionsTrees {
+	for sessionEndHeight, sessionsTreesEndingAtBlockHeight := range rs.sessionsTrees {
 		// Late sessions are the ones that have their session grace period elapsed
 		// and should already have been claimed.
 		// Group them by their end block height and emit each group separately
 		// before emitting the on-time sessions.
 		var lateSessions []relayer.SessionTree
 
-		// !IsWithinGracePeriod is checking for sessions to claim with <= operator,
+		sessionGracePeriodEndHeight := shared.GetSessionGracePeriodEndHeight(sessionEndHeight)
+
+		// Checking for sessions to claim with <= operator,
 		// which means that it would include sessions that were supposed to be
 		// claimed in previous block heights too.
 		// These late sessions might have their create claim window closed and are
@@ -194,7 +212,7 @@ func (rs *relayerSessionsManager) mapBlockToSessionsToClaim(
 		// downstream at the waitForEarliestCreateClaimsHeight step.
 		// TODO_BLOCKER: Introduce governance claim and proof window durations,
 		// implement off-chain window closing and on-chain window checks.
-		if !IsWithinGracePeriod(endBlockHeight, block.Height()) {
+		if sessionGracePeriodEndHeight <= block.Height() {
 			// Iterate over the sessionsTrees that have grace period ending at this
 			// block height and add them to the list of sessionTrees to be published.
 			for _, sessionTree := range sessionsTreesEndingAtBlockHeight {
@@ -211,7 +229,7 @@ func (rs *relayerSessionsManager) mapBlockToSessionsToClaim(
 				// Separate the sessions that are on-time from the ones that are late.
 				// If the session is past its grace period, it is considered late,
 				// otherwise it is on time and will be emitted last.
-				if IsPastGracePeriod(endBlockHeight, block.Height()) {
+				if sessionGracePeriodEndHeight+int64(numBlocksPerSession) < block.Height() {
 					lateSessions = append(lateSessions, sessionTree)
 				} else {
 					onTimeSessions = append(onTimeSessions, sessionTree)
@@ -317,16 +335,4 @@ func (rs *relayerSessionsManager) mapAddMinedRelayToSessionTree(
 
 	// Skip because this map function only outputs errors.
 	return nil, true
-}
-
-// IsWithinGracePeriod checks if the grace period for the session has ended
-// and signals whether it is time to create a claim for it.
-func IsWithinGracePeriod(sessionEndBlockHeight, currentBlockHeight int64) bool {
-	return currentBlockHeight <= sessionEndBlockHeight+sessionkeeper.GetSessionGracePeriodBlockCount()
-}
-
-// IsPastGracePeriod checks if the grace period for the session, given its end
-// block height, has ended.
-func IsPastGracePeriod(sessionEndBlockHeight, currentBlockHeight int64) bool {
-	return currentBlockHeight > sessionEndBlockHeight+sessionkeeper.GetSessionGracePeriodBlockCount()
 }
