@@ -19,8 +19,7 @@ const SessionGracePeriodBlocks = 4
 // GetSessionStartHeightWithDefaultParams returns the block height at which the
 // session containing queryHeight starts, given the default shared on-chain
 // parameters.
-// Returns 0 if the block height is not a consensus produced block.
-// Example: If NumBlocksPerSession == 4, sessions start at blocks 1, 5, 9, etc.
+// See GetSessionStartHeight for more details.
 //
 // TODO_TECHDEBT(#517): Move this function to shared testutils.
 func GetSessionStartHeightWithDefaultParams(queryHeight int64) int64 {
@@ -46,8 +45,7 @@ func GetSessionStartHeight(sharedParams *sharedtypes.Params, queryHeight int64) 
 
 // GetSessionEndHeightWithDefaultParams returns the block height at which the session
 // containing queryHeight ends, given the default shared on-chain parameters.
-// Returns 0 if the block height is not a consensus produced block.
-// Example: If NumBlocksPerSession == 4, sessions end at blocks 4, 8, 11, etc.
+// See GetSessionEndHeight for more details.
 //
 // TODO_TECHDEBT(#517): Move this function to shared testutils.
 func GetSessionEndHeightWithDefaultParams(queryHeight int64) int64 {
@@ -71,9 +69,7 @@ func GetSessionEndHeight(sharedParams *sharedtypes.Params, queryHeight int64) in
 
 // GetSessionNumberWithDefaultParams returns the session number of the session
 // containing queryHeight, given the default on-chain shared parameters.
-// Returns session number 0 if the block height is not a consensus produced block.
-// Returns session number 1 for block 1 to block NumBlocksPerSession - 1 (inclusive).
-// i.e. If NubBlocksPerSession == 4, session == 1 for [1, 4], session == 2 for [5, 8], etc.
+// See GetSessionNumber for more details.
 //
 // TODO_TECHDEBT(#517): Move this function to shared testutils.
 func GetSessionNumberWithDefaultParams(queryHeight int64) int64 {
@@ -83,7 +79,6 @@ func GetSessionNumberWithDefaultParams(queryHeight int64) int64 {
 
 // GetSessionNumber returns the session number of the session containing queryHeight,
 // given the passed on-chain shared parameters.
-// shared on-chain parameters.
 // Returns session number 0 if the block height is not a consensus produced block.
 // Returns session number 1 for block 1 to block NumBlocksPerSession - 1 (inclusive).
 // i.e. If NubBlocksPerSession == 4, session == 1 for [1, 4], session == 2 for [5, 8], etc.
