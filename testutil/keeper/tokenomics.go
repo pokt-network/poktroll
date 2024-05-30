@@ -303,6 +303,7 @@ func NewTokenomicsModuleKeepers(
 		sessionKeeper,
 		appKeeper,
 		accountKeeper,
+		sharedKeeper,
 	)
 
 	// Construct a real tokenomics keeper so that claims & tokenomics can be created.
