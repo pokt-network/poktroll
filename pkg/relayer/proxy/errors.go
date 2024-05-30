@@ -9,7 +9,7 @@ var (
 	ErrRelayerProxyUnsupportedRPCType        = sdkerrors.Register(codespace, 1, "unsupported rpc type")
 	ErrRelayerProxyInvalidSession            = sdkerrors.Register(codespace, 2, "invalid session in relayer request")
 	ErrRelayerProxyInvalidSupplier           = sdkerrors.Register(codespace, 3, "supplier does not belong to session")
-	ErrRelayerProxyUndefinedSigningKeyName   = sdkerrors.Register(codespace, 4, "supplier signing key name is undefined")
+	ErrRelayerProxyUndefinedSigningKeyName   = sdkerrors.Register(codespace, 4, "supplier signing key names are undefined")
 	ErrRelayerServicesConfigsUndefined       = sdkerrors.Register(codespace, 5, "services configurations are undefined")
 	ErrRelayerProxyInvalidRelayRequest       = sdkerrors.Register(codespace, 6, "invalid relay request")
 	ErrRelayerProxyInvalidRelayResponse      = sdkerrors.Register(codespace, 7, "invalid relay response")

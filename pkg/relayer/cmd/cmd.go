@@ -202,6 +202,7 @@ func setupRelayerDependencies(
 		config.NewSupplyRingCacheFn(),
 		supplyTxFactory,
 		supplyTxContext,
+		// TODO_IN_THIS_PR: should we have many txclients - one for each key?
 		newSupplyTxClientFn(signingKeyName),
 		newSupplySupplierClientFn(signingKeyName),
 		newSupplyRelayerProxyFn(signingKeyName, servicesConfigMap),

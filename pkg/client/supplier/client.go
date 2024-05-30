@@ -17,8 +17,8 @@ var _ client.SupplierClient = (*supplierClient)(nil)
 
 // supplierClient
 type supplierClient struct {
-	signingKeyName string
-	signingKeyAddr cosmostypes.AccAddress
+	signingKeyNames []string
+	signingKeyAddrs map[string]cosmostypes.AccAddress
 
 	txClient client.TxClient
 	txCtx    client.TxContext
@@ -148,15 +148,17 @@ func (sClient *supplierClient) CreateClaims(
 // If signingKeyName is empty or the keyring does not contain the corresponding
 // key, an error is returned.
 func (sClient *supplierClient) validateConfigAndSetDefaults() error {
-	signingAddr, err := keyring.KeyNameToAddr(
-		sClient.signingKeyName,
-		sClient.txCtx.GetKeyring(),
-	)
-	if err != nil {
-		return err
-	}
+	for _, signingKeyName := range sClient.signingKeyNames {
+		signingAddr, err := keyring.KeyNameToAddr(
+			signingKeyName,
+			sClient.txCtx.GetKeyring(),
+		)
+		if err != nil {
+			return err
+		}
 
-	sClient.signingKeyAddr = signingAddr
+		sClient.signingKeyAddrs[signingKeyName] = signingAddr
+	}
 
 	return nil
 }

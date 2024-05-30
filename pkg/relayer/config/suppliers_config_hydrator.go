@@ -13,6 +13,21 @@ func (relayMinerConfig *RelayMinerConfig) HydrateSuppliers(
 			return err
 		}
 
+		// If SigningKeyNames are not specified for this supplierConfig, we want
+		// it to use the default list from the root of the config.
+		if len(supplierConfig.SigningKeyNames) == 0 {
+			// If neither lists are specified - we need to throw an error to let
+			// user configure the signing keys.
+			if len(relayMinerConfig.DefaultSigningKeyNames) == 0 {
+				return ErrRelayMinerConfigInvalidSigningKeyName.Wrapf(
+					"'default_signing_key_names' is not configured and 'signing_key_names' is empty for the supplier %s",
+					yamlSupplierConfig.ServiceId,
+				)
+			}
+
+			supplierConfig.SigningKeyNames = relayMinerConfig.DefaultSigningKeyNames
+		}
+
 		// Supplier name should be unique
 		if _, ok := existingSuppliers[yamlSupplierConfig.ServiceId]; ok {
 			return ErrRelayMinerConfigInvalidSupplier.Wrapf(

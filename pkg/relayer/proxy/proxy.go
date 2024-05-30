@@ -25,10 +25,10 @@ var _ relayer.RelayerProxy = (*relayerProxy)(nil)
 type relayerProxy struct {
 	logger polylog.Logger
 
-	// signingKeyName is the supplier's key name in the Cosmos's keybase. It is used along with the keyring to
+	// signingKeyName is the list of supplier's key names in the Cosmos's keybase. It is used along with the keyring to
 	// get the supplier address and sign the relay responses.
-	signingKeyName string
-	keyring        keyring.Keyring
+	signingKeyNames []string
+	keyring         keyring.Keyring
 
 	// blockClient is the client used to get the block at the latest height from the blockchain
 	// and be notified of new incoming blocks. It is used to update the current session data.
@@ -159,7 +159,7 @@ func (rp *relayerProxy) ServedRelays() relayer.RelaysObservable {
 // validateConfig validates the relayer proxy's configuration options and returns an error if it is invalid.
 // TODO_TEST: Add tests for validating these configurations.
 func (rp *relayerProxy) validateConfig() error {
-	if rp.signingKeyName == "" {
+	if rp.signingKeyNames == nil || len(rp.signingKeyNames) == 0 {
 		return ErrRelayerProxyUndefinedSigningKeyName
 	}
 
