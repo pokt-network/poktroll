@@ -57,6 +57,10 @@ func (params *Params) ValidateBasic() error {
 		return err
 	}
 
+	if err := ValidateClaimWindowOpenOffsetBlocks(params.ClaimWindowOpenOffsetBlocks); err != nil {
+		return err
+	}
+
 	return nil
 }
 
