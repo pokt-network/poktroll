@@ -77,8 +77,8 @@ var (
 	// maxConcurrentRequestLimit is the maximum number of concurrent requests that can be made.
 	// By default, it is set to the number of logical CPUs available to the process.
 	maxConcurrentRequestLimit = runtime.GOMAXPROCS(0)
-	// fundingAccountAddress is the key name of the account used to fund other accounts.
-	fundingAccountAddress = "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw" // address for pnf account
+	// fundingAccountAddress is the address of the account used to fund other accounts.
+	fundingAccountAddress string
 	// supplierStakeAmount is the amount of tokens to stake by suppliers.
 	supplierStakeAmount sdk.Coin
 	// gatewayStakeAmount is the amount of tokens to stake by gateways.
@@ -191,7 +191,7 @@ type relaysSuite struct {
 	// It is used to ensure that the suppliers are staked in the order they are provisioned.
 	availableSupplierAddresses []string
 
-	// fundingAccountInfo is the account entry corresponding to the fundingAccountAddress.
+	// fundingAccountInfo is the account entry corresponding to the fundingAccountKeyName.
 	// It is used to send transactions to fund other accounts.
 	fundingAccountInfo *accountInfo
 	// preparedGateways is the list of gateways that are already staked, delegated
@@ -349,7 +349,7 @@ func (s *relaysSuite) LocalnetIsRunning() {
 	s.setupTxEventListeners()
 
 	// Initialize the funding account.
-	s.initFundingAccount(fundingAccountAddress)
+	s.initFundingAccount(loadTestParams.FundingAccountAddress)
 
 	// Initialize the on-chain claims and proofs counter.
 	s.countClaimAndProofs()
