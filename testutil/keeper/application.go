@@ -21,10 +21,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/testutil/application/mocks"
+	testsession "github.com/pokt-network/poktroll/testutil/session"
 	"github.com/pokt-network/poktroll/x/application/keeper"
 	"github.com/pokt-network/poktroll/x/application/types"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
-	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -77,7 +77,7 @@ func ApplicationKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 		AnyTimes()
 	mockSharedKeeper.EXPECT().GetSessionEndHeight(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, queryHeight int64) int64 {
-			return shared.GetSessionEndHeightWithDefaultParams(queryHeight)
+			return testsession.GetSessionEndHeightWithDefaultParams(queryHeight)
 		}).
 		AnyTimes()
 

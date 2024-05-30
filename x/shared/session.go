@@ -2,30 +2,12 @@ package shared
 
 import sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 
-// NumBlocksPerSession is a place-holder that will be removed once the respective governance
-// parameter is implemented.
-//
-// TODO_BLOCKER(#517): Remove direct usage of these constants in helper functions
-// when they will be replaced by governance params
-const NumBlocksPerSession = 4
-
 // SessionGracePeriodBlocks is the number of blocks after the session ends before the
 // "session grace period" is considered to have elapsed.
 //
 // TODO_BLOCKER: This is a place-holder that will be removed once the respective
 // governance parameter is implemented.
 const SessionGracePeriodBlocks = 4
-
-// GetSessionStartHeightWithDefaultParams returns the block height at which the
-// session containing queryHeight starts, given the default shared on-chain
-// parameters.
-// See GetSessionStartHeight for more details.
-//
-// TODO_TECHDEBT(#517): Move this function to shared testutils.
-func GetSessionStartHeightWithDefaultParams(queryHeight int64) int64 {
-	sharedParams := sharedtypes.DefaultParams()
-	return GetSessionStartHeight(&sharedParams, queryHeight)
-}
 
 // GetSessionStartHeight returns the block height at which the session containing
 // queryHeight starts, given the passed shared on-chain parameters.
@@ -43,16 +25,6 @@ func GetSessionStartHeight(sharedParams *sharedtypes.Params, queryHeight int64) 
 	return queryHeight - ((queryHeight - 1) % numBlocksPerSession)
 }
 
-// GetSessionEndHeightWithDefaultParams returns the block height at which the session
-// containing queryHeight ends, given the default shared on-chain parameters.
-// See GetSessionEndHeight for more details.
-//
-// TODO_TECHDEBT(#517): Move this function to shared testutils.
-func GetSessionEndHeightWithDefaultParams(queryHeight int64) int64 {
-	sharedParams := sharedtypes.DefaultParams()
-	return GetSessionEndHeight(&sharedParams, queryHeight)
-}
-
 // GetSessionEndHeight returns the block height at which the session containing
 // queryHeight ends, given the passed shared on-chain parameters.
 // Returns 0 if the block height is not a consensus produced block.
@@ -67,18 +39,9 @@ func GetSessionEndHeight(sharedParams *sharedtypes.Params, queryHeight int64) in
 	return GetSessionStartHeight(sharedParams, queryHeight) + numBlocksPerSession - 1
 }
 
-// GetSessionNumberWithDefaultParams returns the session number of the session
-// containing queryHeight, given the default on-chain shared parameters.
-// See GetSessionNumber for more details.
-//
-// TODO_TECHDEBT(#517): Move this function to shared testutils.
-func GetSessionNumberWithDefaultParams(queryHeight int64) int64 {
-	sharedParams := sharedtypes.DefaultParams()
-	return GetSessionNumber(&sharedParams, queryHeight)
-}
-
 // GetSessionNumber returns the session number of the session containing queryHeight,
 // given the passed on-chain shared parameters.
+// shared on-chain parameters.
 // Returns session number 0 if the block height is not a consensus produced block.
 // Returns session number 1 for block 1 to block NumBlocksPerSession - 1 (inclusive).
 // i.e. If NubBlocksPerSession == 4, session == 1 for [1, 4], session == 2 for [5, 8], etc.

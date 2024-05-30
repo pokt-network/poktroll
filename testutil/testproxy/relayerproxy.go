@@ -26,15 +26,14 @@ import (
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer/config"
 	"github.com/pokt-network/poktroll/pkg/signer"
+	testsession "github.com/pokt-network/poktroll/testutil/session"
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
 	"github.com/pokt-network/poktroll/testutil/testclient/testdelegation"
 	"github.com/pokt-network/poktroll/testutil/testclient/testkeyring"
 	"github.com/pokt-network/poktroll/testutil/testclient/testqueryclients"
 	testrings "github.com/pokt-network/poktroll/testutil/testcrypto/rings"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
-	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -276,7 +275,7 @@ func WithSuccessiveSessions(
 				test.t,
 				appAddress,
 				serviceId,
-				shared.NumBlocksPerSession*int64(i),
+				sharedtypes.DefaultNumBlocksPerSession*int64(i),
 				sessionSuppliers,
 			)
 		}
@@ -406,7 +405,7 @@ func GenerateRelayRequest(
 	payload []byte,
 ) *servicetypes.RelayRequest {
 	appAddress := GetAddressFromPrivateKey(test, privKey)
-	sessionId, _ := sessionkeeper.GetSessionIdWithDefaultParams(appAddress, serviceId, blockHashBz, blockHeight)
+	sessionId, _ := testsession.GetSessionIdWithDefaultParams(appAddress, serviceId, blockHashBz, blockHeight)
 
 	return &servicetypes.RelayRequest{
 		Meta: servicetypes.RelayRequestMetadata{
@@ -414,8 +413,8 @@ func GenerateRelayRequest(
 				ApplicationAddress:      appAddress,
 				SessionId:               string(sessionId[:]),
 				Service:                 &sharedtypes.Service{Id: serviceId},
-				SessionStartBlockHeight: shared.GetSessionStartHeightWithDefaultParams(blockHeight),
-				SessionEndBlockHeight:   shared.GetSessionEndHeightWithDefaultParams(blockHeight),
+				SessionStartBlockHeight: testsession.GetSessionStartHeightWithDefaultParams(blockHeight),
+				SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(blockHeight),
 			},
 			// The returned relay is unsigned and must be signed elsewhere for functionality
 			Signature: []byte(""),

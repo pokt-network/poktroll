@@ -281,21 +281,6 @@ func (k Keeper) GetSessionId(
 	return GetSessionId(&sharedParams, appPubKey, serviceId, blockHashBz, blockHeight)
 }
 
-// GetSessionIdWithDefaultParams returns the string and bytes representation of the
-// sessionId for the session containing blockHeight, given the default shared on-chain
-// parameters, application public key, service ID, and block hash.
-//
-// TODO_TECHDEBT(#517): Move this to a shared testutil.
-func GetSessionIdWithDefaultParams(
-	appPubKey,
-	serviceId string,
-	blockHashBz []byte,
-	blockHeight int64,
-) (sessionId string, sessionIdBz []byte) {
-	sharedParams := sharedtypes.DefaultParams()
-	return GetSessionId(&sharedParams, appPubKey, serviceId, blockHashBz, blockHeight)
-}
-
 // GetSessionId returns the string and bytes representation of the sessionId for the
 // session containing blockHeight, given the shared on-chain parameters, application
 // public key, service ID, and block hash.

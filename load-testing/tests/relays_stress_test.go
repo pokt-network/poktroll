@@ -15,9 +15,10 @@ import (
 	"cosmossdk.io/math"
 	"github.com/cometbft/cometbft/abci/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/pokt-network/poktroll/testutil/testclient"
 	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
+
+	"github.com/pokt-network/poktroll/testutil/testclient"
 
 	"github.com/pokt-network/poktroll/cmd/signals"
 	"github.com/pokt-network/poktroll/pkg/client"
@@ -133,6 +134,9 @@ type relaysSuite struct {
 	newTxEventsObs observable.Observable[*types.TxResult]
 	// txContext is the transaction context used to sign and send transactions.
 	txContext client.TxContext
+	// sharedParams is the shared on-chain parameters used in the test.
+	// It is queried at the beginning of the test.
+	sharedParams *sharedtypes.Params
 
 	// numRelaysSent is the number of relay requests sent during the test.
 	numRelaysSent atomic.Uint64
@@ -354,6 +358,9 @@ func (s *relaysSuite) LocalnetIsRunning() {
 	// Initialize the on-chain claims and proofs counter.
 	s.countClaimAndProofs()
 
+	// Query for the current shared on-chain params.
+	s.querySharedParams()
+
 	// Some suppliers may already be staked at genesis, ensure that staking during
 	// this test succeeds by increasing the sake amount.
 	minStakeAmount := s.getProvisionedActorsCurrentStakedAmount()
@@ -395,7 +402,7 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 	// The test duration indicates when the test is complete.
 	// It is calculated as the relay load duration plus the time it takes to
 	// submit all claims and proofs.
-	s.testDurationBlocks = plans.totalDurationBlocks()
+	s.testDurationBlocks = plans.totalDurationBlocks(s.sharedParams)
 
 	if s.isEphemeralChain {
 		// Adjust the max delegations parameter to the max gateways to permit all
