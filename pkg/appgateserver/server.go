@@ -173,6 +173,9 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 	path := request.URL.Path
 	serviceId := strings.Split(path, "/")[1]
 
+	// Remove the serviceId from the request path which is specific AppGateServer.
+	request.URL.Path = strings.Replace(path, serviceId, "", 1)
+
 	// Read the request body bytes.
 	requestPayloadBz, err := io.ReadAll(request.Body)
 	request.Body.Close()

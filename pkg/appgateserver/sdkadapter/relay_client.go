@@ -38,21 +38,18 @@ func NewRelayClient(
 func (r sdkRelayClient) SendRequest(
 	ctx context.Context,
 	urlStr string,
-	body []byte,
-	method string,
-	header map[string][]string,
+	requestBz []byte,
 ) ([]byte, error) {
 	requestUrl, err := url.Parse(urlStr)
 	if err != nil {
 		return nil, err
 	}
 
-	bodyReader := io.NopCloser(bytes.NewReader(body))
+	bodyReader := io.NopCloser(bytes.NewReader(requestBz))
 	defer bodyReader.Close()
 
 	request := &http.Request{
-		Method: method,
-		Header: header,
+		Method: http.MethodPost,
 		Body:   bodyReader,
 		URL:    requestUrl,
 	}

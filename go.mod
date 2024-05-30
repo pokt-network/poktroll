@@ -42,7 +42,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.18.1
 	github.com/hashicorp/go-metrics v0.5.2
 	github.com/noot/ring-go v0.0.0-20231019173746-6c4b33bcf03f
-	github.com/pokt-network/shannon-sdk v0.0.0-20240527183027-58a641e4b918
+	github.com/pokt-network/shannon-sdk v0.0.0-20240529234125-8a8e93aab157
 	github.com/pokt-network/smt v0.10.2
 	github.com/pokt-network/smt/kvstore/badger v0.0.0-20240109205447-868237978c0b
 	github.com/prometheus/client_golang v1.18.0

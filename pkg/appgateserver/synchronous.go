@@ -2,9 +2,9 @@ package appgateserver
 
 import (
 	"context"
-	"io"
 	"net/http"
 
+	httpcodec "github.com/pokt-network/poktroll/pkg/httpcodec"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -40,29 +40,39 @@ func (app *appGateServer) handleSynchronousRelay(
 		return ErrAppGateHandleRelay.Wrapf("getting supplier URL: %s", err)
 	}
 
-	requestBodyBz, err := io.ReadAll(request.Body)
+	// Serialize the request to be sent to the supplier as a RelayRequest.Payload
+	// which will include the url, request body, method, and headers.
+	requestBz, err := httpcodec.SerializeHTTPRequest(request)
 	if err != nil {
-		return ErrAppGateHandleRelay.Wrapf("reading request body: %s", err)
+		return ErrAppGateHandleRelay.Wrapf("serializing request: %s", err)
 	}
-	request.Body.Close()
 
-	relayResponse, err := app.sdk.SendRelay(
-		ctx,
-		supplierEndpoint,
-		requestBodyBz,
-		request.Method,
-		request.Header,
-	)
+	relayResponse, err := app.sdk.SendRelay(ctx, supplierEndpoint, requestBz)
 	if err != nil {
 		return err
 	}
 
+	// Deserialize the RelayResponse payload to get the serviceResponse that will
+	// be forwarded to the client.
+	serviceResponse, err := httpcodec.DeserializeHTTPResponse(relayResponse.Payload)
+	if err != nil {
+		return ErrAppGateHandleRelay.Wrapf("deserializing response: %s", err)
+	}
+
 	app.logger.Debug().
-		Str("relay_response_payload", string(relayResponse.Payload)).
+		Str("relay_response_payload", string(serviceResponse.Body)).
 		Msg("writing relay response payload")
 
-	// Reply with the RelayResponse payload.
-	if _, err := writer.Write(relayResponse.Payload); err != nil {
+	// Reply to the client with the service's response status code and headers.
+	writer.WriteHeader(serviceResponse.StatusCode)
+	for key, values := range serviceResponse.Header {
+		for _, value := range values {
+			writer.Header().Add(key, value)
+		}
+	}
+
+	// Transmit the service's response body to the client.
+	if _, err := writer.Write(serviceResponse.Body); err != nil {
 		return ErrAppGateHandleRelay.Wrapf("writing relay response payload: %s", err)
 	}
 

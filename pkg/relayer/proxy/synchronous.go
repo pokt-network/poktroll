@@ -9,10 +9,12 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"path"
 	"time"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 
+	"github.com/pokt-network/poktroll/pkg/httpcodec"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/config"
@@ -194,7 +196,7 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 	relayRequestSizeBytes.With("service_id", supplierService.Id).
 		Observe(float64(relayRequest.Size()))
 
-	relay, err := sync.serveHTTP(ctx, serviceConfig, supplierService, request, relayRequest)
+	relay, err := sync.serveHTTP(ctx, serviceConfig, supplierService, relayRequest)
 	if err != nil {
 		// Reply with an error if the relay could not be served.
 		sync.replyWithError(ctx, requestPayload, writer, listenAddress, supplierService.Id, err)
@@ -230,7 +232,6 @@ func (sync *synchronousRPCServer) serveHTTP(
 	ctx context.Context,
 	serviceConfig *config.RelayMinerSupplierServiceConfig,
 	supplierService *sharedtypes.Service,
-	request *http.Request,
 	relayRequest *types.RelayRequest,
 ) (*types.Relay, error) {
 	// Verify the relay request signature and session.
@@ -244,14 +245,11 @@ func (sync *synchronousRPCServer) serveHTTP(
 		return nil, err
 	}
 
-	// Get the relayRequest payload's `io.ReadCloser` to add it to the http.Request
-	// that will be sent to the proxied (i.e. staked for) service.
-	// (see https://pkg.go.dev/net/http#Request) Body field type.
-	requestBodyReader := io.NopCloser(bytes.NewBuffer(relayRequest.Payload))
-	defer requestBodyReader.Close()
-	sync.logger.Debug().
-		Str("request_payload", string(relayRequest.Payload)).
-		Msg("serving relay request")
+	// Deserialize the relay request payload to get the upstream HTTP request.
+	upstreamRequest, err := httpcodec.DeserializeHTTPRequest(relayRequest.Payload)
+	if err != nil {
+		return nil, err
+	}
 
 	// Build the request to be sent to the native service by substituting
 	// the destination URL's host with the native service's listen address.
@@ -259,12 +257,52 @@ func (sync *synchronousRPCServer) serveHTTP(
 		Str("destination_url", serviceConfig.BackendUrl.String()).
 		Msg("building relay request payload to service")
 
+	// Parse the upstream request URL then replace the host and scheme with the
+	// service's backend URL's.
+	requestUrl, err := url.Parse(upstreamRequest.URL)
+	if err != nil {
+		return nil, err
+	}
+	requestUrl.Host = serviceConfig.BackendUrl.Host
+	requestUrl.Scheme = serviceConfig.BackendUrl.Scheme
+
+	// Prepend the path of the service's backend URL to the path of the upstream request.
+	// This is done to ensure that the request complies with the service's backend URL,
+	// while preserving the path of the original request.
+	// This is particularly important for RESTful APIs where the path is used to
+	// determine the resource being accessed.
+	// For example, if the service's backend URL is "http://host:8080/api/v1",
+	// and the upstream request path is "/users", the final request path will be
+	// "http://host:8080/api/v1/users".
+	requestUrl.Path = path.Join(serviceConfig.BackendUrl.Path, requestUrl.Path)
+
+	// Merge the query parameters of the upstream request with the query parameters
+	// of the service's backend URL.
+	// This is done to ensure that the query parameters of the original request are
+	// passed and that the service's backend URL query parameters are also included.
+	// This is important for RESTful APIs where query parameters are used to filter
+	// and paginate resources.
+	// For example, if the service's backend URL is "http://host:8080/api/v1?key=abc",
+	// and the upstream request has a query parameter "page=1", the final request URL
+	// will be "http://host:8080/api/v1?key=abc&page=1".
+	query := requestUrl.Query()
+	for key, values := range serviceConfig.BackendUrl.Query() {
+		for _, value := range values {
+			query.Add(key, value)
+		}
+	}
+	requestUrl.RawQuery = query.Encode()
+
+	// TODO_TEST(red0ne): Test the request URL construction with different upstream
+	// request paths and query parameters.
+	// Use the same method, headers, and body as the original request to query the
+	// backend URL.
 	relayHTTPRequest := &http.Request{
-		Method: request.Method,
-		Header: request.Header,
-		URL:    serviceConfig.BackendUrl,
+		Method: upstreamRequest.Method,
+		Header: upstreamRequest.Header,
+		URL:    requestUrl,
 		Host:   serviceConfig.BackendUrl.Host,
-		Body:   requestBodyReader,
+		Body:   io.NopCloser(bytes.NewReader(upstreamRequest.Body)),
 	}
 
 	if serviceConfig.Authentication != nil {
@@ -274,9 +312,11 @@ func (sync *synchronousRPCServer) serveHTTP(
 		)
 	}
 
-	// Add the headers to the request.
+	// Add any service configuration specific headers to the request, such as
+	// authentication or authorization headers. These will override any upstream
+	// request headers with the same key.
 	for key, value := range serviceConfig.Headers {
-		relayHTTPRequest.Header.Add(key, value)
+		relayHTTPRequest.Header.Set(key, value)
 	}
 
 	// Configure the HTTP client to use the appropriate transport based on the
@@ -305,14 +345,21 @@ func (sync *synchronousRPCServer) serveHTTP(
 	}
 	defer responseBody.Close()
 
-	// Build the relay response from the native service response
-	// Use relayRequest.Meta.SessionHeader on the relayResponse session header since it was verified to be valid
-	// and has to be the same as the relayResponse session header.
+	// Serialize the service response to be sent back to the client.
+	// This will include the status code, headers, and body.
+	responseBz, err := httpcodec.SerializeHTTPResponse(httpResponse)
+	if err != nil {
+		return nil, err
+	}
+
 	sync.logger.Debug().
 		Str("relay_request_session_header", relayRequest.Meta.SessionHeader.String()).
 		Msg("building relay response protobuf from service response")
 
-	relayResponse, err := sync.newRelayResponse(responseBody, relayRequest.Meta.SessionHeader)
+	// Build the relay response using the original service's response.
+	// Use relayRequest.Meta.SessionHeader on the relayResponse session header since it
+	// was verified to be valid and has to be the same as the relayResponse session header.
+	relayResponse, err := sync.newRelayResponse(responseBz, relayRequest.Meta.SessionHeader)
 	if err != nil {
 		return nil, err
 	}
