@@ -13,9 +13,9 @@ import (
 
 var _ sdk.RelayClient = (*sdkRelayClient)(nil)
 
-// sdkRelayClient is a wrapper around the http.Client that implements the
-// ShannonSDK sdk.RelayClient interface.
-// It is used to send relay requests to RelayMiners.
+// sdkRelayClient struc is a ShannonSDK compatible relay client that sends
+// serialized relay requests to the given URL and returns the corresponding
+// serialized relay response.
 type sdkRelayClient struct {
 	client *http.Client
 }

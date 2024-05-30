@@ -9,16 +9,13 @@ import (
 
 var _ sdk.Signer = (*signer)(nil)
 
-// signer is a struct that implements the ShannonSDK sdk.Signer interface.
-// It is used to cache and return the signing key in hex format.
+// signer is a struct that caches and returns the signing key in hex format.
 type signer struct {
 	signingKey string
 }
 
 // NewSigner creates a new ShannonSDK compatible signer with the given signing key.
-func NewSigner(
-	signingKey cryptotypes.PrivKey,
-) (sdk.Signer, error) {
+func NewSigner(signingKey cryptotypes.PrivKey) (sdk.Signer, error) {
 	signingKeyHex := hex.EncodeToString(signingKey.Bytes())
 	signer := &signer{
 		signingKey: signingKeyHex,

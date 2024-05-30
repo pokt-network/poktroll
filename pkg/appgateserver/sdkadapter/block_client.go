@@ -11,8 +11,7 @@ import (
 
 var _ sdk.BlockClient = (*sdkBlockClient)(nil)
 
-// sdkBlockClient is wrapper around the client.BlockClient that implements the
-// ShannonSDK sdk.BlockClient
+// sdkBlockClient is used used by the ShannonSDK to query the latest block height.
 type sdkBlockClient struct {
 	client client.BlockClient
 }
