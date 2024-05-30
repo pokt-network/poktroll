@@ -76,7 +76,7 @@ type txClient struct {
 	commitTimeoutHeightOffset int64
 	// signingKeyName is the name of the key in the keyring to use for signing
 	// transactions.
-	signingKeyName string
+	signingKeyNames string
 	// signingAddr is the address of the signing key referenced by signingKeyName.
 	// It is hydrated from the keyring by calling Keyring#Key() with signingKeyName.
 	signingAddr cosmostypes.AccAddress

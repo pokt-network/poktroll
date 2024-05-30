@@ -312,7 +312,7 @@ func (sync *synchronousRPCServer) serveHTTP(
 		Str("relay_request_session_header", relayRequest.Meta.SessionHeader.String()).
 		Msg("building relay response protobuf from service response")
 
-	relayResponse, err := sync.newRelayResponse(responseBody, relayRequest.Meta.SessionHeader)
+	relayResponse, err := sync.newRelayResponse(responseBody, relayRequest.Meta.SessionHeader, relayRequest.Meta.SupplierAddress)
 	if err != nil {
 		return nil, err
 	}

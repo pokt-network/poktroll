@@ -71,7 +71,7 @@ type RelayerProxy interface {
 	// and append the signature to the RelayResponse.
 	// TODO_TECHDEBT(@red-0ne): This method should be moved out of the RelayerProxy interface
 	// that should not be responsible for signing relay responses.
-	SignRelayResponse(relayResponse *servicetypes.RelayResponse) error
+	SignRelayResponse(relayResponse *servicetypes.RelayResponse, supplierAddr string) error
 }
 
 type RelayerProxyOption func(RelayerProxy)

@@ -10,9 +10,9 @@ import (
 // TODO_TECHDEBT(@red-0ne): This method should be moved out of the RelayerProxy interface
 // that should not be responsible for signing relay responses.
 // See https://github.com/pokt-network/poktroll/issues/160 for a better design.
-func (rp *relayerProxy) SignRelayResponse(relayResponse *types.RelayResponse) error {
+func (rp *relayerProxy) SignRelayResponse(relayResponse *types.RelayResponse, supplierAddr string) error {
 	// create a simple signer for the request
-	signer := signer.NewSimpleSigner(rp.keyring, rp.signingKeyName)
+	signer := signer.NewSimpleSignerByAddress(rp.keyring, supplierAddr)
 
 	// extract and hash the relay response's signable bytes
 	signableBz, err := relayResponse.GetSignableBytesHash()
