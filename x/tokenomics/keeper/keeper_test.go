@@ -60,7 +60,7 @@ func (s *TestSuite) SetupTest() {
 			Service:                 &sharedtypes.Service{Id: testServiceId},
 			SessionId:               "session_id",
 			SessionStartBlockHeight: 1,
-			SessionEndBlockHeight:   shared.GetSessionEndBlockHeight(1),
+			SessionEndBlockHeight:   shared.GetSessionEndHeightWithDefaultParams(1),
 		},
 		RootHash: smstRootWithSum(69),
 	}

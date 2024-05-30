@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"cosmossdk.io/log"
-	math "cosmossdk.io/math"
+	"cosmossdk.io/math"
 	"cosmossdk.io/store"
 	"cosmossdk.io/store/metrics"
 	storetypes "cosmossdk.io/store/types"
@@ -38,6 +38,7 @@ import (
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	sharedkeeper "github.com/pokt-network/poktroll/x/shared/keeper"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	supplierkeeper "github.com/pokt-network/poktroll/x/supplier/keeper"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
@@ -239,6 +240,14 @@ func NewTokenomicsModuleKeepers(
 	bankKeeper.MintCoins(ctx, suppliertypes.ModuleName, sdk.NewCoins(sdk.NewCoin("upokt", math.NewInt(1000000000000))))
 	bankKeeper.MintCoins(ctx, apptypes.ModuleName, sdk.NewCoins(sdk.NewCoin("upokt", math.NewInt(1000000000000))))
 
+	// Construct a real shared keeper.
+	sharedKeeper := sharedkeeper.NewKeeper(
+		cdc,
+		runtime.NewKVStoreService(keys[sharedtypes.StoreKey]),
+		logger,
+		authority.String(),
+	)
+
 	// Construct gateway keeper with a mocked bank keeper.
 	gatewayKeeper := gatewaykeeper.NewKeeper(
 		cdc,
@@ -258,6 +267,7 @@ func NewTokenomicsModuleKeepers(
 		bankKeeper,
 		accountKeeper,
 		gatewayKeeper,
+		sharedKeeper,
 	)
 	require.NoError(t, appKeeper.SetParams(ctx, apptypes.DefaultParams()))
 

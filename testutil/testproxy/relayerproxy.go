@@ -409,8 +409,8 @@ func GenerateRelayRequest(
 				ApplicationAddress:      appAddress,
 				SessionId:               string(sessionId[:]),
 				Service:                 &sharedtypes.Service{Id: serviceId},
-				SessionStartBlockHeight: shared.GetSessionStartBlockHeight(blockHeight),
-				SessionEndBlockHeight:   shared.GetSessionEndBlockHeight(blockHeight),
+				SessionStartBlockHeight: shared.GetSessionStartHeightWithDefaultParams(blockHeight),
+				SessionEndBlockHeight:   shared.GetSessionEndHeightWithDefaultParams(blockHeight),
 			},
 			// The returned relay is unsigned and must be signed elsewhere for functionality
 			Signature: []byte(""),

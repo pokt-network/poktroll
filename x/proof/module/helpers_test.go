@@ -130,7 +130,7 @@ func networkWithClaimObjects(
 				claim := createClaim(
 					t, net, ctx,
 					supplierAcct.Address.String(),
-					shared.GetSessionStartBlockHeight(blockHeight),
+					shared.GetSessionStartHeightWithDefaultParams(blockHeight),
 					appAcct.Address.String(),
 				)
 				claims = append(claims, *claim)
@@ -160,7 +160,7 @@ func encodeSessionHeader(
 		Service:                 &sharedtypes.Service{Id: testServiceId},
 		SessionId:               sessionId,
 		SessionStartBlockHeight: sessionStartHeight,
-		SessionEndBlockHeight:   shared.GetSessionEndBlockHeight(sessionStartHeight),
+		SessionEndBlockHeight:   shared.GetSessionEndHeightWithDefaultParams(sessionStartHeight),
 	}
 	cdc := codec.NewProtoCodec(codectypes.NewInterfaceRegistry())
 	sessionHeaderBz := cdc.MustMarshalJSON(sessionHeader)
@@ -210,7 +210,7 @@ func createClaim(
 			Service:                 &sharedtypes.Service{Id: testServiceId},
 			SessionId:               sessionId,
 			SessionStartBlockHeight: sessionStartHeight,
-			SessionEndBlockHeight:   shared.GetSessionEndBlockHeight(sessionStartHeight),
+			SessionEndBlockHeight:   shared.GetSessionEndHeightWithDefaultParams(sessionStartHeight),
 		},
 		RootHash: rootHash,
 	}

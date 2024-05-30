@@ -99,11 +99,14 @@ func (k Keeper) hydrateSessionMetadata(ctx context.Context, sh *sessionHydrator)
 		)
 	}
 
-	sh.session.NumBlocksPerSession = shared.NumBlocksPerSession
-	sh.session.SessionNumber = shared.GetSessionNumber(sh.blockHeight)
+	// TODO_UPNEXT(#517): Refactor session module to use current on-chain shared
+	// parameters instead of their corresponding constant stand-ins.
 
-	sh.sessionHeader.SessionStartBlockHeight = shared.GetSessionStartBlockHeight(sh.blockHeight)
-	sh.sessionHeader.SessionEndBlockHeight = shared.GetSessionEndBlockHeight(sh.blockHeight)
+	sh.session.NumBlocksPerSession = shared.NumBlocksPerSession
+	sh.session.SessionNumber = shared.GetSessionNumberWithDefaultParams(sh.blockHeight)
+
+	sh.sessionHeader.SessionStartBlockHeight = shared.GetSessionStartHeightWithDefaultParams(sh.blockHeight)
+	sh.sessionHeader.SessionEndBlockHeight = shared.GetSessionEndHeightWithDefaultParams(sh.blockHeight)
 	return nil
 }
 
@@ -291,7 +294,7 @@ func GetSessionId(
 // getSessionStartBlockHeightBz returns the bytes representation of the session
 // start block height given the block height.
 func getSessionStartBlockHeightBz(blockHeight int64) []byte {
-	sessionStartBlockHeight := shared.GetSessionStartBlockHeight(blockHeight)
+	sessionStartBlockHeight := shared.GetSessionStartHeightWithDefaultParams(blockHeight)
 	sessionStartBlockHeightBz := make([]byte, 8)
 	binary.LittleEndian.PutUint64(sessionStartBlockHeightBz, uint64(sessionStartBlockHeight))
 	return sessionStartBlockHeightBz
