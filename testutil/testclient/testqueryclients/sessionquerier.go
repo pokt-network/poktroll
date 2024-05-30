@@ -9,7 +9,7 @@ import (
 	"github.com/golang/mock/gomock"
 
 	"github.com/pokt-network/poktroll/testutil/mockclient"
-	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
+	testsession "github.com/pokt-network/poktroll/testutil/session"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -47,7 +47,7 @@ func NewTestSessionQueryClient(
 			serviceId string,
 			blockHeight int64,
 		) (session *sessiontypes.Session, err error) {
-			sessionId, _ := sessionkeeper.GetSessionId(address, serviceId, blockHashBz, blockHeight)
+			sessionId, _ := testsession.GetSessionIdWithDefaultParams(address, serviceId, blockHashBz, blockHeight)
 
 			session, ok := sessionsMap[sessionId]
 			if !ok {
@@ -72,18 +72,18 @@ func AddToExistingSessions(
 ) {
 	t.Helper()
 
-	sessionId, _ := sessionkeeper.GetSessionId(appAddress, serviceId, blockHashBz, blockHeight)
+	sessionId, _ := testsession.GetSessionIdWithDefaultParams(appAddress, serviceId, blockHashBz, blockHeight)
 
 	session := sessiontypes.Session{
 		Header: &sessiontypes.SessionHeader{
 			Service:                 &sharedtypes.Service{Id: serviceId},
 			ApplicationAddress:      appAddress,
 			SessionId:               sessionId,
-			SessionStartBlockHeight: sessionkeeper.GetSessionStartBlockHeight(blockHeight),
-			SessionEndBlockHeight:   sessionkeeper.GetSessionEndBlockHeight(blockHeight),
+			SessionStartBlockHeight: testsession.GetSessionStartHeightWithDefaultParams(blockHeight),
+			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(blockHeight),
 		},
-		NumBlocksPerSession: sessionkeeper.NumBlocksPerSession,
-		SessionNumber:       sessionkeeper.GetSessionNumber(blockHeight),
+		NumBlocksPerSession: sharedtypes.DefaultNumBlocksPerSession,
+		SessionNumber:       testsession.GetSessionNumberWithDefaultParams(blockHeight),
 		SessionId:           sessionId,
 		Suppliers:           []*sharedtypes.Supplier{},
 	}

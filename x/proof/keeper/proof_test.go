@@ -11,9 +11,9 @@ import (
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
 	"github.com/pokt-network/poktroll/testutil/sample"
+	testsession "github.com/pokt-network/poktroll/testutil/session"
 	"github.com/pokt-network/poktroll/x/proof/keeper"
 	"github.com/pokt-network/poktroll/x/proof/types"
-	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -37,7 +37,7 @@ func createNProofs(keeper keeper.Keeper, ctx context.Context, n int) []types.Pro
 				Service:                 &sharedtypes.Service{Id: testServiceId},
 				SessionId:               fmt.Sprintf("session-%d", i),
 				SessionStartBlockHeight: 1,
-				SessionEndBlockHeight:   sessionkeeper.GetSessionEndBlockHeight(1),
+				SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
 			},
 			ClosestMerkleProof: nil,
 		}

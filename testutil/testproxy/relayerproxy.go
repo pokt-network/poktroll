@@ -15,7 +15,7 @@ import (
 	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
 	ringtypes "github.com/athanorlabs/go-dleq/types"
 	keyringtypes "github.com/cosmos/cosmos-sdk/crypto/keyring"
-	secp256k1 "github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/types/bech32"
 	"github.com/pokt-network/ring-go"
@@ -26,13 +26,13 @@ import (
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer/config"
 	"github.com/pokt-network/poktroll/pkg/signer"
+	testsession "github.com/pokt-network/poktroll/testutil/session"
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
 	"github.com/pokt-network/poktroll/testutil/testclient/testdelegation"
-	testkeyring "github.com/pokt-network/poktroll/testutil/testclient/testkeyring"
+	"github.com/pokt-network/poktroll/testutil/testclient/testkeyring"
 	"github.com/pokt-network/poktroll/testutil/testclient/testqueryclients"
 	testrings "github.com/pokt-network/poktroll/testutil/testcrypto/rings"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
-	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -103,25 +103,30 @@ func WithRelayerProxyDependenciesForBlockHeight(
 		applicationQueryClient := testqueryclients.NewTestApplicationQueryClient(test.t)
 		sessionQueryClient := testqueryclients.NewTestSessionQueryClient(test.t)
 		supplierQueryClient := testqueryclients.NewTestSupplierQueryClient(test.t)
+		sharedQueryClient := testqueryclients.NewTestSharedQueryClient(test.t)
 
 		blockClient := testblock.NewAnyTimeLastBlockBlockClient(test.t, []byte{}, blockHeight)
 		keyring, _ := testkeyring.NewTestKeyringWithKey(test.t, keyName)
 
 		redelegationObs, _ := channel.NewReplayObservable[client.Redelegation](test.ctx, 1)
 		delegationClient := testdelegation.NewAnyTimesRedelegationsSequence(test.ctx, test.t, "", redelegationObs)
-		ringCache := testrings.NewRingCacheWithMockDependencies(test.ctx, test.t, accountQueryClient, applicationQueryClient, delegationClient)
 
-		deps := depinject.Supply(
-			logger,
-			accountQueryClient,
-			ringCache,
-			blockClient,
-			sessionQueryClient,
-			supplierQueryClient,
-			keyring,
+		ringCacheDeps := depinject.Supply(accountQueryClient, applicationQueryClient, delegationClient, sharedQueryClient)
+		ringCache := testrings.NewRingCacheWithMockDependencies(test.ctx, test.t, ringCacheDeps)
+
+		testDeps := depinject.Configs(
+			ringCacheDeps,
+			depinject.Supply(
+				logger,
+				ringCache,
+				blockClient,
+				sessionQueryClient,
+				supplierQueryClient,
+				keyring,
+			),
 		)
 
-		test.Deps = deps
+		test.Deps = testDeps
 	}
 }
 
@@ -270,7 +275,7 @@ func WithSuccessiveSessions(
 				test.t,
 				appAddress,
 				serviceId,
-				sessionkeeper.NumBlocksPerSession*int64(i),
+				sharedtypes.DefaultNumBlocksPerSession*int64(i),
 				sessionSuppliers,
 			)
 		}
@@ -400,7 +405,7 @@ func GenerateRelayRequest(
 	payload []byte,
 ) *servicetypes.RelayRequest {
 	appAddress := GetAddressFromPrivateKey(test, privKey)
-	sessionId, _ := sessionkeeper.GetSessionId(appAddress, serviceId, blockHashBz, blockHeight)
+	sessionId, _ := testsession.GetSessionIdWithDefaultParams(appAddress, serviceId, blockHashBz, blockHeight)
 
 	return &servicetypes.RelayRequest{
 		Meta: servicetypes.RelayRequestMetadata{
@@ -408,8 +413,8 @@ func GenerateRelayRequest(
 				ApplicationAddress:      appAddress,
 				SessionId:               string(sessionId[:]),
 				Service:                 &sharedtypes.Service{Id: serviceId},
-				SessionStartBlockHeight: sessionkeeper.GetSessionStartBlockHeight(blockHeight),
-				SessionEndBlockHeight:   sessionkeeper.GetSessionEndBlockHeight(blockHeight),
+				SessionStartBlockHeight: testsession.GetSessionStartHeightWithDefaultParams(blockHeight),
+				SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(blockHeight),
 			},
 			// The returned relay is unsigned and must be signed elsewhere for functionality
 			Signature: []byte(""),

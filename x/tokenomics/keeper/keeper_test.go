@@ -16,9 +16,9 @@ import (
 	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
+	testsession "github.com/pokt-network/poktroll/testutil/session"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
-	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	tokenomicskeeper "github.com/pokt-network/poktroll/x/tokenomics/keeper"
@@ -60,7 +60,7 @@ func (s *TestSuite) SetupTest() {
 			Service:                 &sharedtypes.Service{Id: testServiceId},
 			SessionId:               "session_id",
 			SessionStartBlockHeight: 1,
-			SessionEndBlockHeight:   sessionkeeper.GetSessionEndBlockHeight(1),
+			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
 		},
 		RootHash: smstRootWithSum(69),
 	}

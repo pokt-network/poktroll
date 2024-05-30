@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"cosmossdk.io/depinject"
-	grpc "github.com/cosmos/gogoproto/grpc"
+	"github.com/cosmos/gogoproto/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"

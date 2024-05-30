@@ -39,6 +39,7 @@ import (
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	sharedkeeper "github.com/pokt-network/poktroll/x/shared/keeper"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	supplierkeeper "github.com/pokt-network/poktroll/x/supplier/keeper"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
@@ -56,6 +57,7 @@ type ProofModuleKeepers struct {
 	prooftypes.SupplierKeeper
 	prooftypes.ApplicationKeeper
 	prooftypes.AccountKeeper
+	prooftypes.SharedKeeper
 
 	Codec *codec.ProtoCodec
 }
@@ -83,6 +85,7 @@ func ProofKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 	mockSessionKeeper := mocks.NewMockSessionKeeper(ctrl)
 	mockAppKeeper := mocks.NewMockApplicationKeeper(ctrl)
 	mockAccountKeeper := mocks.NewMockAccountKeeper(ctrl)
+	mockSharedKeeper := mocks.NewMockSharedKeeper(ctrl)
 
 	k := keeper.NewKeeper(
 		cdc,
@@ -92,6 +95,7 @@ func ProofKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 		mockSessionKeeper,
 		mockAppKeeper,
 		mockAccountKeeper,
+		mockSharedKeeper,
 	)
 
 	ctx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
@@ -113,6 +117,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 		apptypes.StoreKey,
 		gatewaytypes.StoreKey,
 		authtypes.StoreKey,
+		sharedtypes.StoreKey,
 	)
 
 	// Construct a multistore & mount store keys for each keeper that will interact with the state store.
@@ -142,6 +147,15 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 		authority.String(),
 	)
 
+	// Construct a real shared keeper.
+	sharedKeeper := sharedkeeper.NewKeeper(
+		cdc,
+		runtime.NewKVStoreService(keys[sharedtypes.StoreKey]),
+		logger,
+		authority.String(),
+	)
+	require.NoError(t, sharedKeeper.SetParams(ctx, sharedtypes.DefaultParams()))
+
 	// Construct gateway keeper with a mocked bank keeper.
 	gatewayKeeper := gatewaykeeper.NewKeeper(
 		cdc,
@@ -161,6 +175,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 		applicationmocks.NewMockBankKeeper(ctrl),
 		accountKeeper,
 		gatewayKeeper,
+		sharedKeeper,
 	)
 	require.NoError(t, appKeeper.SetParams(ctx, apptypes.DefaultParams()))
 
@@ -184,6 +199,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 		sessionmocks.NewMockBankKeeper(ctrl),
 		appKeeper,
 		supplierKeeper,
+		sharedKeeper,
 	)
 	require.NoError(t, sessionKeeper.SetParams(ctx, sessiontypes.DefaultParams()))
 
@@ -196,6 +212,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 		sessionKeeper,
 		appKeeper,
 		accountKeeper,
+		sharedKeeper,
 	)
 	require.NoError(t, proofKeeper.SetParams(ctx, types.DefaultParams()))
 
@@ -205,6 +222,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 		SupplierKeeper:    &supplierKeeper,
 		ApplicationKeeper: &appKeeper,
 		AccountKeeper:     &accountKeeper,
+		SharedKeeper:      &sharedKeeper,
 
 		Codec: cdc,
 	}

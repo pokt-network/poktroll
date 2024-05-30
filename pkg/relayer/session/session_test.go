@@ -20,10 +20,11 @@ import (
 	"github.com/pokt-network/poktroll/pkg/relayer/session"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
+	"github.com/pokt-network/poktroll/testutil/testclient/testqueryclients"
 	"github.com/pokt-network/poktroll/testutil/testclient/testsupplier"
 	"github.com/pokt-network/poktroll/testutil/testpolylog"
 	"github.com/pokt-network/poktroll/testutil/testrelayer"
-	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
+	"github.com/pokt-network/poktroll/x/shared"
 )
 
 func TestRelayerSessionsManager_Start(t *testing.T) {
@@ -71,7 +72,9 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 		).
 		AnyTimes()
 
-	deps := depinject.Supply(blockClient, blockQueryClientMock, supplierClient)
+	sharedQueryClientMock := testqueryclients.NewTestSharedQueryClient(t)
+
+	deps := depinject.Supply(blockClient, blockQueryClientMock, supplierClient, sharedQueryClientMock)
 	storesDirectoryOpt := testrelayer.WithTempStoresDirectory(t)
 
 	// Create a new relayer sessions manager.
@@ -101,7 +104,7 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 
 	// Calculate the session grace period end block height to emit that block height
 	// to the blockPublishCh to trigger claim creation for the session.
-	sessionGracePeriodEndBlockHeight := int64(sessionEndHeight + sessionkeeper.GetSessionGracePeriodBlockCount())
+	sessionGracePeriodEndBlockHeight := int64(sessionEndHeight + shared.SessionGracePeriodBlocks)
 
 	// Publish a block to the blockPublishCh to trigger claim creation for the session.
 	// TODO_TECHDEBT: assumes claiming at sessionGracePeriodEndBlockHeight is valid.
