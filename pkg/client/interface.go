@@ -64,6 +64,11 @@ type TxClient interface {
 	) either.AsyncError
 }
 
+// TxClientMap wraps TxClients for multiple
+type TxClientMap struct {
+	TxClients map[string]TxClient
+}
+
 // TxContext provides an interface which consolidates the operational dependencies
 // required to facilitate the sender side of the transaction lifecycle: build, sign,
 // encode, broadcast, and query (optional).

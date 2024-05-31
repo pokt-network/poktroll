@@ -15,6 +15,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/cmd/signals"
+	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/supplier"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
 	txtypes "github.com/pokt-network/poktroll/pkg/client/tx/types"
@@ -204,7 +205,7 @@ func setupRelayerDependencies(
 		supplyTxFactory,
 		supplyTxContext,
 		// TODO_IN_THIS_PR: Provision a tx client per key. Don't quite understand how to then use a tx client on per-signing-key basis (some sort of map?)
-		newSupplyTxClientFn(signingKeyName),
+		newSupplyTxClientsFn(signingKeyNames),
 		newSupplySupplierClientFn(signingKeyNames),
 		newSupplyRelayerProxyFn(signingKeyNames, servicesConfigMap),
 		newSupplyRelayerSessionsManagerFn(smtStorePath, signingKeyNames),
@@ -263,27 +264,30 @@ func supplyTxContext(
 	return depinject.Configs(deps, depinject.Supply(txContext)), nil
 }
 
-// newSupplyTxClientFn returns a function which constructs a TxClient
+// newSupplyTxClientsFn returns a function which constructs a TxClient
 // instance and returns a new depinject.Config which is supplied with
 // the given deps and the new TxClient.
-func newSupplyTxClientFn(signingKeyName string) config.SupplierFn {
+func newSupplyTxClientsFn(signingKeyNames []string) config.SupplierFn {
 	return func(
 		ctx context.Context,
 		deps depinject.Config,
 		_ *cobra.Command,
 	) (depinject.Config, error) {
-		txClient, err := tx.NewTxClient(
-			ctx,
-			deps,
-			tx.WithSigningKeyName(signingKeyName),
-			// TODO_TECHDEBT: populate this from some config.
-			tx.WithCommitTimeoutBlocks(tx.DefaultCommitTimeoutHeightOffset),
-		)
-		if err != nil {
-			return nil, err
+		var txClients = &client.TxClientMap{}
+		for _, signingKeyName := range signingKeyNames {
+			txClient, err := tx.NewTxClient(
+				ctx,
+				deps,
+				tx.WithSigningKeyName(signingKeyName),
+				// TODO_TECHDEBT: populate this from some config.
+				tx.WithCommitTimeoutBlocks(tx.DefaultCommitTimeoutHeightOffset),
+			)
+			if err != nil {
+				return nil, err
+			}
+			txClients.TxClients[signingKeyName] = txClient
 		}
-
-		return depinject.Configs(deps, depinject.Supply(txClient)), nil
+		return depinject.Configs(deps, depinject.Supply(txClients)), nil
 	}
 }
 

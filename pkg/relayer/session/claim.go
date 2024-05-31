@@ -149,6 +149,7 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 
 		sessionClaims := []*relayer.SessionClaim{}
 		for _, session := range sessionTrees {
+			// TODO_IN_THIS_PR: should have a map[keyName/address]sessionClaims
 			sessionClaims = append(sessionClaims, &relayer.SessionClaim{
 				RootHash:      session.GetClaimRoot(),
 				SessionHeader: session.GetSessionHeader(),

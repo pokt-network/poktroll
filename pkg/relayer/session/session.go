@@ -45,6 +45,7 @@ type relayerSessionsManager struct {
 	blockClient client.BlockClient
 
 	// supplierClient is used to create claims and submit proofs for sessions.
+	// TODO_IN_THIS_PR: should be a map
 	supplierClient client.SupplierClient
 
 	// pendingTxMu is used to prevent concurrent txs with the same sequence number.
@@ -133,6 +134,7 @@ func (rs *relayerSessionsManager) Stop() {
 
 // SessionsToClaim returns an observable that notifies when sessions are ready to be claimed.
 func (rs *relayerSessionsManager) InsertRelays(relays relayer.MinedRelaysObservable) {
+	// TODO_IN_THIS_PR: potentially use a map[keyname/address]relayObs instead
 	rs.relayObs = relays
 }
 
