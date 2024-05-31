@@ -71,8 +71,7 @@ func (k Keeper) UpdateRelayMiningDifficulty(
 		}
 		k.SetRelayMiningDifficulty(ctx, newDifficulty)
 
-		// TODO_UPNEXT(#542, @Olshansk): Emit an event for the updated difficulty.
-		// SHould we do this in this PR?
+		// TODO_IN_THIS_PR_OR_UPNEXT(#542, @Olshansk): Emit an event for the updated difficulty.
 		logger.Info(fmt.Sprintf("Updated relay mining difficulty for service %s at height %d from %v to %v", serviceId, sdkCtx.BlockHeight(), prevDifficulty.TargetHash, newDifficulty.TargetHash))
 
 	}
