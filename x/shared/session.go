@@ -69,9 +69,8 @@ func IsGracePeriodElapsed(sessionEndHeight, currentHeight int64) bool {
 	return currentHeight > GetSessionGracePeriodEndHeight(sessionEndHeight)
 }
 
-// GetClaimWindowOpenHeight returns the block height at which the claim window opens.
-// This height is *inclusive*, meaning that if all other offsets were 0, this is the
-// earliest height at which a claim could be committed.
+// GetClaimWindowOpenHeight returns the block height at which the claim window of
+// the session that includes queryHeight opens, given the passed sharedParams.
 func GetClaimWindowOpenHeight(sharedParams *sharedtypes.Params, queryHeight int64) int64 {
 	sessionEndHeight := GetSessionEndHeight(sharedParams, queryHeight)
 
