@@ -12,11 +12,10 @@ func WithStoresDirectory(storesDirectory string) relayer.RelayerSessionsManagerO
 	}
 }
 
-// WithSigningKeyName sets the names of the keys which
+// WithSigningKeyName sets the names of the keys which are then used to get the addresses
+// to save them in sessionTree.
 func WithSigningKeyNames(keyNames []string) relayer.RelayerSessionsManagerOption {
 	return func(sClient relayer.RelayerSessionsManager) {
 		sClient.(*relayerSessionsManager).signingKeyNames = keyNames
 	}
 }
-
-// TODO_IN_THIS_COMMIT: add With

@@ -25,7 +25,10 @@ var _ relayer.RelayerProxy = (*relayerProxy)(nil)
 type relayerProxy struct {
 	logger polylog.Logger
 
-	keyring keyring.Keyring
+	// signingKeyNames are the supplier's key name in the Cosmos's keybase. They are used along with the keyring to
+	// get the supplier address and sign the relay responses.
+	signingKeyNames []string
+	keyring         keyring.Keyring
 
 	// blockClient is the client used to get the block at the latest height from the blockchain
 	// and be notified of new incoming blocks. It is used to update the current session data.
@@ -59,8 +62,8 @@ type relayerProxy struct {
 	// ringCache is used to obtain and store the ring for the application.
 	ringCache crypto.RingCache
 
-	// supplierAddress is the address of the supplier that the relayer proxy is running for.
-	supplierAddress string
+	// supplierAddresses are the address of the suppliers that the relayer proxy is running for.
+	supplierAddresses map[string]struct{}
 }
 
 // NewRelayerProxy creates a new relayer proxy with the given dependencies or returns

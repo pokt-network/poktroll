@@ -206,8 +206,8 @@ func setupRelayerDependencies(
 		// TODO_IN_THIS_PR: Provision a tx client per key. Don't quite understand how to then use a tx client on per-signing-key basis (some sort of map?)
 		newSupplyTxClientFn(signingKeyName),
 		newSupplySupplierClientFn(signingKeyNames),
-		newSupplyRelayerProxyFn(signingKeyName, servicesConfigMap),
-		newSupplyRelayerSessionsManagerFn(smtStorePath),
+		newSupplyRelayerProxyFn(signingKeyNames, servicesConfigMap),
+		newSupplyRelayerSessionsManagerFn(smtStorePath, signingKeyNames),
 	}
 
 	return config.SupplyConfig(ctx, cmd, supplierFuncs)
@@ -312,7 +312,7 @@ func newSupplySupplierClientFn(signingKeyNames []string) config.SupplierFn {
 // RelayerProxy instance and returns a new depinject.Config which
 // is supplied with the given deps and the new RelayerProxy.
 func newSupplyRelayerProxyFn(
-	signingKeyName string,
+	signingKeyNames []string,
 	servicesConfigMap map[string]*relayerconfig.RelayMinerServerConfig,
 ) config.SupplierFn {
 	return func(
@@ -322,7 +322,7 @@ func newSupplyRelayerProxyFn(
 	) (depinject.Config, error) {
 		relayerProxy, err := proxy.NewRelayerProxy(
 			deps,
-			proxy.WithSigningKeyName(signingKeyName),
+			proxy.WithSigningKeyNames(signingKeyNames),
 			proxy.WithServicesConfigMap(servicesConfigMap),
 		)
 		if err != nil {
@@ -336,7 +336,7 @@ func newSupplyRelayerProxyFn(
 // newSupplyRelayerSessionsManagerFn returns a function which constructs a
 // RelayerSessionsManager instance and returns a new depinject.Config which
 // is supplied with the given deps and the new RelayerSessionsManager.
-func newSupplyRelayerSessionsManagerFn(smtStorePath string) config.SupplierFn {
+func newSupplyRelayerSessionsManagerFn(smtStorePath string, signingKeyNames []string) config.SupplierFn {
 	return func(
 		ctx context.Context,
 		deps depinject.Config,
@@ -345,6 +345,7 @@ func newSupplyRelayerSessionsManagerFn(smtStorePath string) config.SupplierFn {
 		relayerSessionsManager, err := session.NewRelayerSessions(
 			ctx, deps,
 			session.WithStoresDirectory(smtStorePath),
+			session.WithSigningKeyNames(signingKeyNames),
 		)
 		if err != nil {
 			return nil, err

@@ -23,58 +23,64 @@ const supplierStakeWaitTime = 1
 // It populates the relayerProxy's `advertisedRelayServers` map of servers for each service, where each server
 // is responsible for listening for incoming relay requests and relaying them to the supported proxied service.
 func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
-	// Get the supplier address from the keyring
-	supplierKey, err := rp.keyring.Key(rp.signingKeyName)
-	if err != nil {
-		return err
-	}
+	for _, signingKeyName := range rp.signingKeyNames {
+		// Get the supplier address from the keyring
+		supplierKey, err := rp.keyring.Key(signingKeyName)
+		if err != nil {
+			return err
+		}
 
-	supplierAddress, err := supplierKey.GetAddress()
-	if err != nil {
-		return err
-	}
+		supplierAddress, err := supplierKey.GetAddress()
+		if err != nil {
+			return err
+		}
 
-	// Prevent the RelayMiner from stopping by waiting until its associated supplier
-	// is staked and its on-chain record retrieved.
-	supplier, err := rp.waitForSupplierToStake(ctx, supplierAddress.String())
-	if err != nil {
-		return err
-	}
+		// TODO_IMPROVMENT: with some node runners running many suppliers on one relay-miner
+		// we should not block the whole process from running. However, we should show warnings/errors in logs
+		// that their stake is different from the supplier configuration
 
-	// Check that the supplier's advertised services' endpoints are present in
-	// the server config and handled by a server
-	// Iterate over the supplier's advertised services then iterate over each
-	// service's endpoint
-	for _, service := range supplier.Services {
-		for _, endpoint := range service.Endpoints {
-			endpointUrl, err := url.Parse(endpoint.Url)
-			if err != nil {
-				return err
-			}
-			found := false
-			// Iterate over the server configs and check if `endpointUrl` is present
-			// in any of the server config's suppliers' service's PubliclyExposedEndpoints
-			for _, serverConfig := range rp.serverConfigs {
-				supplierService, ok := serverConfig.SupplierConfigsMap[service.Service.Id]
-				if ok && slices.Contains(supplierService.PubliclyExposedEndpoints, endpointUrl.Hostname()) {
-					found = true
-					break
+		// Prevent the RelayMiner from stopping by waiting until its associated supplier
+		// is staked and its on-chain record retrieved.
+		supplier, err := rp.waitForSupplierToStake(ctx, supplierAddress.String())
+		if err != nil {
+			return err
+		}
+
+		// Check that the supplier's advertised services' endpoints are present in
+		// the server config and handled by a server
+		// Iterate over the supplier's advertised services then iterate over each
+		// service's endpoint
+		for _, service := range supplier.Services {
+			for _, endpoint := range service.Endpoints {
+				endpointUrl, err := url.Parse(endpoint.Url)
+				if err != nil {
+					return err
+				}
+				found := false
+				// Iterate over the server configs and check if `endpointUrl` is present
+				// in any of the server config's suppliers' service's PubliclyExposedEndpoints
+				for _, serverConfig := range rp.serverConfigs {
+					supplierService, ok := serverConfig.SupplierConfigsMap[service.Service.Id]
+					if ok && slices.Contains(supplierService.PubliclyExposedEndpoints, endpointUrl.Hostname()) {
+						found = true
+						break
+					}
+				}
+
+				if !found {
+					return ErrRelayerProxyServiceEndpointNotHandled.Wrapf(
+						"service endpoint %s not handled by the relay miner",
+						endpoint.Url,
+					)
 				}
 			}
-
-			if !found {
-				return ErrRelayerProxyServiceEndpointNotHandled.Wrapf(
-					"service endpoint %s not handled by the relay miner",
-					endpoint.Url,
-				)
-			}
 		}
-	}
 
-	rp.supplierAddress = supplier.Address
+		rp.supplierAddresses[supplier.Address] = struct{}{}
 
-	if rp.servers, err = rp.initializeProxyServers(supplier.Services); err != nil {
-		return err
+		if rp.servers, err = rp.initializeProxyServers(supplier.Services); err != nil {
+			return err
+		}
 	}
 
 	return nil

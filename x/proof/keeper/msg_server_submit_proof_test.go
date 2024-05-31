@@ -962,6 +962,7 @@ func newEmptySessionTree(
 	// Construct a session tree to add relays to and generate a proof from.
 	sessionTree, err := session.NewSessionTree(
 		sessionTreeHeader,
+		// TODO_IN_THIS_COMMIT: add supplier address here
 		testSessionTreeStoreDir,
 		func(*sessiontypes.SessionHeader) {},
 	)
