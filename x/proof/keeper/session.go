@@ -102,7 +102,6 @@ func (k msgServer) validateClaimWindow(
 	}
 
 	// Ensure the current block height is BEFORE the claim window close height.
-	// TODO_IN_THIS_PR: ensure no off-by-one error; > vs >= & 👆.
 	if currentHeight > claimWindowCloseHeight {
 		return types.ErrProofClaimOutsideOfWindow.Wrapf(
 			"current block height %d is greater than session claim window close height %d",
