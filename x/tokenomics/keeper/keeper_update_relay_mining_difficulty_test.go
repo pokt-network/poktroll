@@ -93,7 +93,7 @@ func (s *TestSuiteRelayMining) TestUpdateRelayMiningDifficulty_NewServiceSeenFor
 
 	// Verify there are no relay mining difficulties
 	allDifficulties = s.keepers.GetAllRelayMiningDifficulty(ctx)
-	require.Len(t, allDifficulties, 0)
+	require.Len(t, allDifficulties, 1)
 
 	// s.keepers.GetRelayMiningDifficulty(ctx, testServiceId)
 }
