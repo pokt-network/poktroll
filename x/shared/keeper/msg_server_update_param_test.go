@@ -138,7 +138,7 @@ func TestMsgUpdateParam_UpdateProofWindowCloseOffsetBlocks(t *testing.T) {
 	// Ensure the default values are different from the new values we want to set
 	require.NotEqual(t, uint64(expectedProofWindowCloseOffestBlocks), defaultParams.ProofWindowCloseOffsetBlocks)
 
-	// Update the claim window close offset blocks param
+	// Update the proof window close offset blocks param
 	updateParamMsg := &sharedtypes.MsgUpdateParam{
 		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		Name:      sharedtypes.ParamProofWindowCloseOffsetBlocks,
