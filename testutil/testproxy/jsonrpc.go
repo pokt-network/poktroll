@@ -9,20 +9,20 @@ import (
 	"github.com/pokt-network/shannon-sdk/httpcodec"
 )
 
-// JSONRpcError is the error struct for the JSON RPC response
+// JSONRpcError is the error struct for the JSON RPC response payload.
 type JSONRpcError struct {
 	Code    int32  `json:"code"`
 	Message string `json:"message"`
 }
 
-// JSONRpcErrorReply is the error reply struct for the JSON RPC response
+// JSONRpcErrorReply is the error reply struct for the JSON RPC response payload.
 type JSONRpcErrorReply struct {
 	Id      int32  `json:"id"`
 	Jsonrpc string `json:"jsonrpc"`
 	Error   *JSONRpcError
 }
 
-// prepareJsonRPCResponse prepares a hard-coded JsonRPC payload for a specific response.
+// prepareJsonRPCResponse prepares a hard-coded JsonRPC response.
 func prepareJsonRPCResponse() []byte {
 	bodyBz := []byte(`{"jsonrpc":"2.0","id":1,"result":"some result"}`)
 
@@ -37,7 +37,7 @@ func prepareJsonRPCResponse() []byte {
 	return responseBz
 }
 
-// PrepareJsonRPCRequest prepares a hard-coded JsonRPC payload for a specific request.
+// PrepareJsonRPCRequest prepares a hard-coded JsonRPC request.
 func PrepareJsonRPCRequest() []byte {
 	bodyBz := []byte(`{"method":"someMethod","id":1,"jsonrpc":"2.0","params":["someParam"]}`)
 	request := &http.Request{
