@@ -90,12 +90,9 @@ func (k msgServer) validateClaimWindow(
 
 	// Get the current block height.
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
-	// TODO_IN_THIS_PR: ensure this is the correct height!
-	// I.e. it's either the height at which the claim would be committed, or the one prior.
 	currentHeight := sdkCtx.BlockHeight()
 
 	// Ensure the current block height is AFTER the claim window open height.
-	// TODO_IN_THIS_PR: ensure no off-by-one error; > vs >= & 👆.
 	if currentHeight < claimWindowOpenHeight {
 		return types.ErrProofClaimOutsideOfWindow.Wrapf(
 			"current block height %d is less than session claim window open height %d",
