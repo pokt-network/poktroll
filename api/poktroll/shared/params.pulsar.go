@@ -533,8 +533,13 @@ type Params struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	NumBlocksPerSession          uint64 `protobuf:"varint,1,opt,name=num_blocks_per_session,json=numBlocksPerSession,proto3" json:"num_blocks_per_session,omitempty"`
-	ClaimWindowOpenOffsetBlocks  uint64 `protobuf:"varint,2,opt,name=claim_window_open_offset_blocks,json=claimWindowOpenOffsetBlocks,proto3" json:"claim_window_open_offset_blocks,omitempty"`
+	// num_blocks_per_session is the number of blocks between the session start & end heights.
+	NumBlocksPerSession uint64 `protobuf:"varint,1,opt,name=num_blocks_per_session,json=numBlocksPerSession,proto3" json:"num_blocks_per_session,omitempty"`
+	// claim_window_open_offset_blocks is the number of blocks after the session grace
+	// period height, at which the claim window opens.
+	ClaimWindowOpenOffsetBlocks uint64 `protobuf:"varint,2,opt,name=claim_window_open_offset_blocks,json=claimWindowOpenOffsetBlocks,proto3" json:"claim_window_open_offset_blocks,omitempty"`
+	// claim_window_close_offset_blocks is the number of blocks after the claim window
+	// open height, at which the claim window closes.
 	ClaimWindowCloseOffsetBlocks uint64 `protobuf:"varint,3,opt,name=claim_window_close_offset_blocks,json=claimWindowCloseOffsetBlocks,proto3" json:"claim_window_close_offset_blocks,omitempty"`
 }
 

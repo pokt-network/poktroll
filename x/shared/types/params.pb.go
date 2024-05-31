@@ -26,8 +26,13 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 // Params defines the parameters for the module.
 type Params struct {
-	NumBlocksPerSession          uint64 `protobuf:"varint,1,opt,name=num_blocks_per_session,json=numBlocksPerSession,proto3" json:"num_blocks_per_session"`
-	ClaimWindowOpenOffsetBlocks  uint64 `protobuf:"varint,2,opt,name=claim_window_open_offset_blocks,json=claimWindowOpenOffsetBlocks,proto3" json:"claim_window_open_offset_blocks"`
+	// num_blocks_per_session is the number of blocks between the session start & end heights.
+	NumBlocksPerSession uint64 `protobuf:"varint,1,opt,name=num_blocks_per_session,json=numBlocksPerSession,proto3" json:"num_blocks_per_session"`
+	// claim_window_open_offset_blocks is the number of blocks after the session grace
+	// period height, at which the claim window opens.
+	ClaimWindowOpenOffsetBlocks uint64 `protobuf:"varint,2,opt,name=claim_window_open_offset_blocks,json=claimWindowOpenOffsetBlocks,proto3" json:"claim_window_open_offset_blocks"`
+	// claim_window_close_offset_blocks is the number of blocks after the claim window
+	// open height, at which the claim window closes.
 	ClaimWindowCloseOffsetBlocks uint64 `protobuf:"varint,3,opt,name=claim_window_close_offset_blocks,json=claimWindowCloseOffsetBlocks,proto3" json:"claim_window_close_offset_blocks"`
 }
 
