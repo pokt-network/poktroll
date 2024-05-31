@@ -81,9 +81,8 @@ func GetClaimWindowOpenHeight(sharedParams *sharedtypes.Params, queryHeight int6
 	return claimWindowOpenOffsetBlocks + sessionGracePeriodEndHeight + 1
 }
 
-// GetClaimWindowCloseHeight returns the block height at which the claim window closes.
-// This height is *inclusive*, meaning that if all other offsets were 0, this is the
-// latest height at which a claim could be committed.
+// GetClaimWindowCloseHeight returns the block height at which the claim window of
+// the session that includes queryHeight closes, given the passed sharedParams.
 func GetClaimWindowCloseHeight(sharedParams *sharedtypes.Params, sessionEndHeight int64) int64 {
 	return GetSessionGracePeriodEndHeight(sessionEndHeight) +
 		int64(sharedParams.GetClaimWindowOpenOffsetBlocks()) +
