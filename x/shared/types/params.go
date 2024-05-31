@@ -13,7 +13,7 @@ const (
 	ParamClaimWindowCloseOffsetBlocks   = "claim_window_close_offset_blocks"
 	DefaultProofWindowOpenOffsetBlocks  = 0
 	ParamProofWindowOpenOffsetBlocks    = "proof_window_open_offset_blocks"
-	DefaultProofWindowCloseOffsetBlocks = 0
+	DefaultProofWindowCloseOffsetBlocks = 4
 	ParamProofWindowCloseOffsetBlocks   = "proof_window_close_offset_blocks"
 )
 
