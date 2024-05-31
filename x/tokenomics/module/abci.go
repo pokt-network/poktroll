@@ -24,7 +24,8 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) error {
 	}
 	logger.Info(fmt.Sprintf("settled %d claims and expired %d claims", numClaimsSettled, numClaimsExpired))
 
-	//
+	// Update the relay mining difficulty for every service that settled pending
+	// claims based on how many estimated relays were serviced for it.
 	err = k.UpdateRelayMiningDifficulty(ctx, relaysPerServiceMap)
 	if err != nil {
 		logger.Error(fmt.Sprintf("could not update relay mining difficulty due to error %v", err))
