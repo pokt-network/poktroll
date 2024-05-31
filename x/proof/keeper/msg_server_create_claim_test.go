@@ -103,8 +103,9 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 
 			sessionHeader := sessionRes.GetSession().GetHeader()
 
-			// Increment the block height to the claim window open height.
-			sdkCtx = sdkCtx.WithBlockHeight(test.getClaimHeight(ctx, keepers, sessionHeader))
+			// Increment the block height to the test claim height.
+			testClaimHeight := test.getClaimHeight(ctx, keepers, sessionHeader)
+			sdkCtx = sdkCtx.WithBlockHeight(testClaimHeight)
 			ctx = sdkCtx
 
 			claimMsg := newTestClaimMsg(t,
