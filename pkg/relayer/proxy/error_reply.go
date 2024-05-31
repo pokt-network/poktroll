@@ -14,7 +14,7 @@ import (
 // to the server itself and not to the relayed request.
 func (sync *synchronousRPCServer) replyWithError(
 	ctx context.Context,
-	payloadBz []byte,
+	requestBz []byte,
 	writer http.ResponseWriter,
 	listenAddress string,
 	serviceId string,
@@ -22,7 +22,7 @@ func (sync *synchronousRPCServer) replyWithError(
 ) {
 	relaysErrorsTotal.With("service_id", serviceId).Add(1)
 
-	responseBz, err := partials.GetErrorReply(ctx, payloadBz, err)
+	responseBz, err := partials.GetErrorReply(ctx, requestBz, err)
 	if err != nil {
 		sync.logger.Error().Err(err).
 			Str("service_id", serviceId).

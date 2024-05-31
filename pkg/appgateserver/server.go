@@ -123,6 +123,8 @@ func NewAppGateServer(
 
 	// TODO_CONSIDERATION: Use app.listeningEndpoint scheme to determine which
 	// kind of server to create (HTTP, HTTPS, TCP, UNIX, etc...)
+	// TODO_BLOCKER(red0ne): Use TCP server for the AppGateServer to have generic support
+	// of RPCTypes.
 	app.server = &http.Server{Addr: app.listeningEndpoint.Host}
 
 	return app, nil
@@ -198,6 +200,7 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 	app.logger.Debug().Msg("determining request type")
 
 	// Get the type of the request by doing a partial unmarshal of the payload
+	// TODO_TECHDEBT(#511): Move request RPCType detection to shannon-sdk
 	requestType, err := partials.GetRequestType(ctx, requestPayloadBz)
 	if err != nil {
 		app.replyWithError(ctx, requestPayloadBz, writer, serviceId, "unknown", ErrAppGateHandleRelay)

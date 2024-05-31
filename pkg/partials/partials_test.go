@@ -1,9 +1,13 @@
 package partials
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
+	"net/http"
+	"net/url"
 	"testing"
 
 	sdkerror "cosmossdk.io/errors"
@@ -12,6 +16,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/testutil/testpolylog"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/shannon-sdk/httpcodec"
 )
 
 // TODO(@h5law): Expand coverage with more test cases when more request types
@@ -58,8 +63,18 @@ func TestPartials_GetErrorReply(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			// build a serialized http request to detect the RPC type from
+			httpReq := &http.Request{
+				Method: http.MethodPost,
+				Header: http.Header{},
+				URL:    &url.URL{},
+				Body:   io.NopCloser(bytes.NewReader(test.payload)),
+			}
+			httpReqBz, err := httpcodec.SerializeHTTPRequest(httpReq)
+			require.NoError(t, err)
+
 			// Generate the error reply
-			replyBz, err := GetErrorReply(logCtx, test.payload, test.err)
+			replyBz, err := GetErrorReply(logCtx, httpReqBz, test.err)
 			if test.expectedErr != nil {
 				require.ErrorIs(t, err, test.expectedErr)
 				return

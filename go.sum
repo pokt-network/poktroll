@@ -978,8 +978,8 @@ github.com/pkg/profile v1.7.0/go.mod h1:8Uer0jas47ZQMJ7VD+OHknK4YDY07LPUC6dEvqDj
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 h1:Jamvg5psRIccs7FGNTlIRMkT8wgtp5eCXdBlqhYGL6U=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
-github.com/pokt-network/shannon-sdk v0.0.0-20240529234125-8a8e93aab157 h1:xEZZZvcG6UgUfAoXYPV0TSHBH2o3mhdHaMHGmdon6Z8=
-github.com/pokt-network/shannon-sdk v0.0.0-20240529234125-8a8e93aab157/go.mod h1:zv9dX5uTB5ydtkaHWed1PDufuxPAd7EB5QYkcGvi2No=
+github.com/pokt-network/shannon-sdk v0.0.0-20240531084020-43df98548f05 h1:nzfotdHOQteElAO106yl+PND0edRByKDh91fFj3LvsQ=
+github.com/pokt-network/shannon-sdk v0.0.0-20240531084020-43df98548f05/go.mod h1:zv9dX5uTB5ydtkaHWed1PDufuxPAd7EB5QYkcGvi2No=
 github.com/pokt-network/smt v0.10.2 h1:7OCimi2qN9kPwv+UDbUqaFYLaVMed3DYO8AbY8R0rNo=
 github.com/pokt-network/smt v0.10.2/go.mod h1:S4Ho4OPkK2v2vUCHNtA49XDjqUC/OFYpBbynRVYmxvA=
 github.com/pokt-network/smt/kvstore/badger v0.0.0-20240109205447-868237978c0b h1:TjfgV3vgW0zW47Br/OgUXD4M8iyR74EYanbFfN4ed8o=

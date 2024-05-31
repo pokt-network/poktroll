@@ -138,7 +138,7 @@ func WithServicesConfigMap(
 			for serviceId, supplierConfig := range serviceConfig.SupplierConfigsMap {
 				server := &http.Server{Addr: supplierConfig.ServiceConfig.BackendUrl.Host}
 				server.Handler = http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-					w.Write(prepareJsonRPCResponsePayload())
+					w.Write(prepareJsonRPCResponse())
 				})
 				go func() { server.ListenAndServe() }()
 				go func() {
