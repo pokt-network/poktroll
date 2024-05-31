@@ -57,5 +57,28 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 		return nil, err
 	}
 
+	// Keeping track of all possible signing key names
+	// TODO_IN_THIS_PR: move to a separate method.
+	var uniqueSigningKeyNames = map[string]bool{}
+	for _, signingKeyName := range relayMinerConfig.DefaultSigningKeyNames {
+		_, ok := uniqueSigningKeyNames[signingKeyName]
+		if !ok {
+			uniqueSigningKeyNames[signingKeyName] = true
+		}
+	}
+	for _, server := range relayMinerConfig.Servers {
+		for _, supplier := range server.SupplierConfigsMap {
+			for _, signingKeyName := range supplier.SigningKeyNames {
+				_, ok := uniqueSigningKeyNames[signingKeyName]
+				if !ok {
+					uniqueSigningKeyNames[signingKeyName] = true
+				}
+			}
+		}
+	}
+	for keyName := range uniqueSigningKeyNames {
+		relayMinerConfig.UniqueSigningKeyNames = append(relayMinerConfig.UniqueSigningKeyNames, keyName)
+	}
+
 	return relayMinerConfig, nil
 }

@@ -39,6 +39,7 @@ jobs:
         run: ignite chain build -v --debug --skip-proto
 
       - name: Set up Docker Buildx
+        # TODO_IN_THIS_PR: add devnet-test-e2e
         if: (github.ref == 'refs/heads/main') || (contains(github.event.pull_request.labels.*.name, 'push-image'))
         uses: docker/setup-buildx-action@v3
 

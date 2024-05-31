@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"sync"
 
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+
 	"github.com/pokt-network/smt"
 	"github.com/pokt-network/smt/kvstore/badger"
 
@@ -28,6 +30,7 @@ type sessionTree struct {
 	// sessionSMT is the SMST (Sparse Merkle State Trie) corresponding the session.
 	sessionSMT smt.SparseMerkleSumTrie
 
+	supplierAddress *cosmostypes.AccAddress
 	// claimedRoot is the root hash of the SMST needed for submitting the claim.
 	// If it holds a non-nil value, it means that the SMST has been flushed,
 	// committed to disk and no more updates can be made to it. A non-nil value also

@@ -11,3 +11,12 @@ func WithStoresDirectory(storesDirectory string) relayer.RelayerSessionsManagerO
 		relSessionMgr.(*relayerSessionsManager).storesDirectory = storesDirectory
 	}
 }
+
+// WithSigningKeyName sets the names of the keys which
+func WithSigningKeyNames(keyNames []string) relayer.RelayerSessionsManagerOption {
+	return func(sClient relayer.RelayerSessionsManager) {
+		sClient.(*relayerSessionsManager).signingKeyNames = keyNames
+	}
+}
+
+// TODO_IN_THIS_COMMIT: add With

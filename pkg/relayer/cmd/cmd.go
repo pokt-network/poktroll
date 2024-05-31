@@ -182,7 +182,8 @@ func setupRelayerDependencies(
 		txNodeRPCUrl = parsedFlagNodeRPCUrl
 	}
 
-	signingKeyName := relayMinerConfig.SigningKeyName
+	// signingKeyName := relayMinerConfig.SigningKeyName
+	signingKeyNames := relayMinerConfig.UniqueSigningKeyNames
 	servicesConfigMap := relayMinerConfig.Servers
 	smtStorePath := relayMinerConfig.SmtStorePath
 
@@ -202,9 +203,9 @@ func setupRelayerDependencies(
 		config.NewSupplyRingCacheFn(),
 		supplyTxFactory,
 		supplyTxContext,
-		// TODO_IN_THIS_PR: should we have many txclients - one for each key?
+		// TODO_IN_THIS_PR: Provision a tx client per key. Don't quite understand how to then use a tx client on per-signing-key basis (some sort of map?)
 		newSupplyTxClientFn(signingKeyName),
-		newSupplySupplierClientFn(signingKeyName),
+		newSupplySupplierClientFn(signingKeyNames),
 		newSupplyRelayerProxyFn(signingKeyName, servicesConfigMap),
 		newSupplyRelayerSessionsManagerFn(smtStorePath),
 	}
@@ -289,7 +290,7 @@ func newSupplyTxClientFn(signingKeyName string) config.SupplierFn {
 // newSupplySupplierClientFn returns a function which constructs a
 // SupplierClient instance and returns a new depinject.Config which is
 // supplied with the given deps and the new SupplierClient.
-func newSupplySupplierClientFn(signingKeyName string) config.SupplierFn {
+func newSupplySupplierClientFn(signingKeyNames []string) config.SupplierFn {
 	return func(
 		_ context.Context,
 		deps depinject.Config,
@@ -297,7 +298,7 @@ func newSupplySupplierClientFn(signingKeyName string) config.SupplierFn {
 	) (depinject.Config, error) {
 		supplierClient, err := supplier.NewSupplierClient(
 			deps,
-			supplier.WithSigningKeyName(signingKeyName),
+			supplier.WithSigningKeyNames(signingKeyNames),
 		)
 		if err != nil {
 			return nil, err

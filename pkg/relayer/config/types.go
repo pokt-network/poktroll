@@ -1,6 +1,8 @@
 package config
 
-import "net/url"
+import (
+	"net/url"
+)
 
 type RelayMinerServerType int
 
@@ -83,6 +85,20 @@ type RelayMinerConfig struct {
 	Pprof                  *RelayMinerPprofConfig
 	Servers                map[string]*RelayMinerServerConfig
 	SmtStorePath           string
+
+	// UniqueSigningKeyNames is not exposed in the config file, but it is useful because
+	// it keeps track of all possible signing key names.
+	// TODO_IN_THIS_PR: check if we can save addresses as values so we just resolve them once here
+	UniqueSigningKeyNames []string
+
+	// This parameter is not exposed in the config file, but it is useful because:
+	// 1. It keeps track of all possible signing key names we use across all suppliers
+	// 2. Removes the need to resolve the account address from the key name in future
+	// SigningKeyNamesAddresses map[string]cosmostypes.AccAddress
+	// keyring.KeyNameToAddr(
+	// 	signingKeyName,
+	// 	sClient.txCtx.GetKeyring(),
+	// )
 }
 
 // RelayMinerPocketNodeConfig is the structure resulting from parsing the pocket

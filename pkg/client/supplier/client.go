@@ -22,6 +22,9 @@ type supplierClient struct {
 
 	txClient client.TxClient
 	txCtx    client.TxContext
+
+	// txClients map[string]client.TxClient
+	// txCtxs    map[string]client.TxContext
 }
 
 // NewSupplierClient constructs a new SupplierClient with the given dependencies
@@ -32,7 +35,7 @@ type supplierClient struct {
 //   - client.TxContext
 //
 // Available options:
-//   - WithSigningKeyName
+//   - WithSigningKeyNames
 func NewSupplierClient(
 	deps depinject.Config,
 	opts ...client.SupplierClientOption,
@@ -73,7 +76,7 @@ func (sClient *supplierClient) SubmitProofs(
 		// TODO(@bryanchriswhite): reconcile splitting of supplier & proof modules
 		//  with off-chain pkgs/nomenclature.
 		msgs[i] = &prooftypes.MsgSubmitProof{
-			SupplierAddress: sClient.signingKeyAddr.String(),
+			SupplierAddress: sessionProof.SupplierAddress.String(),
 			SessionHeader:   sessionProof.SessionHeader,
 			Proof:           sessionProof.ProofBz,
 		}
@@ -90,7 +93,7 @@ func (sClient *supplierClient) SubmitProofs(
 		// TODO_IMPROVE: log details related to what & how much is being proven
 		logger.Info().
 			Fields(map[string]any{
-				"supplier_addr": sClient.signingKeyAddr.String(),
+				"supplier_addr": sessionProof.SupplierAddress.String(),
 				"app_addr":      sessionHeader.ApplicationAddress,
 				"session_id":    sessionHeader.SessionId,
 				"service":       sessionHeader.Service.Id,
@@ -116,7 +119,7 @@ func (sClient *supplierClient) CreateClaims(
 	//  with off-chain pkgs/nomenclature.
 	for i, sessionClaim := range sessionClaims {
 		msgs[i] = &prooftypes.MsgCreateClaim{
-			SupplierAddress: sClient.signingKeyAddr.String(),
+			SupplierAddress: sessionClaim.SupplierAddress.String(),
 			SessionHeader:   sessionClaim.SessionHeader,
 			RootHash:        sessionClaim.RootHash,
 		}
@@ -132,7 +135,7 @@ func (sClient *supplierClient) CreateClaims(
 		// TODO_IMPROVE: log details related to how much is claimed
 		logger.Info().
 			Fields(map[string]any{
-				"supplier_addr": sClient.signingKeyAddr.String(),
+				"supplier_addr": rootHashWithSessionHeader.SupplierAddress.String(),
 				"app_addr":      sessionHeader.ApplicationAddress,
 				"session_id":    sessionHeader.SessionId,
 				"service":       sessionHeader.Service.Id,

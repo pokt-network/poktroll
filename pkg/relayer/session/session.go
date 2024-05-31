@@ -148,6 +148,7 @@ func (rs *relayerSessionsManager) ensureSessionTree(sessionHeader *sessiontypes.
 	// If the sessionTree does not exist, create it.
 	var err error
 	if !ok {
+		// TODO_IN_THIS_COMMIT: add supplier address here
 		sessionTree, err = NewSessionTree(sessionHeader, rs.storesDirectory, rs.removeFromRelayerSessions)
 		if err != nil {
 			return nil, err

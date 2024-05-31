@@ -74,7 +74,7 @@ type txClient struct {
 	// commitTimeoutHeightOffset is the number of blocks after the latest block
 	// that a transactions should be considered errored if it has not been committed.
 	commitTimeoutHeightOffset int64
-	// signingKeyName is the name of the key in the keyring to use for signing
+	// signingKeyNames are the names of the key in the keyring to use for signing
 	// transactions.
 	signingKeyNames string
 	// signingAddr is the address of the signing key referenced by signingKeyName.
