@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"context"
 	"testing"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
@@ -23,74 +24,112 @@ import (
 var defaultMerkleRoot = []byte{0, 1, 0, 1}
 
 func TestMsgServer_CreateClaim_Success(t *testing.T) {
-	// Set block height to 1 so there is a valid session on-chain.
-	blockHeightOpt := keepertest.WithBlockHeight(1)
-	keepers, ctx := keepertest.NewProofModuleKeepers(t, blockHeightOpt)
-	srv := keeper.NewMsgServerImpl(*keepers.Keeper)
-
-	// The base session start height used for testing
-	sessionStartHeight := int64(1)
-
-	service := &sharedtypes.Service{Id: testServiceId}
-	supplierAddr := sample.AccAddress()
-	appAddr := sample.AccAddress()
-
-	keepers.SetSupplier(ctx, sharedtypes.Supplier{
-		Address: supplierAddr,
-		Services: []*sharedtypes.SupplierServiceConfig{
-			{Service: service},
+	tests := []struct {
+		desc           string
+		getClaimHeight func(
+			ctx context.Context,
+			keepers *keepertest.ProofModuleKeepers,
+			sessionHeader *sessiontypes.SessionHeader,
+		) int64
+	}{
+		{
+			desc: "claim window open height",
+			getClaimHeight: func(
+				ctx context.Context,
+				keepers *keepertest.ProofModuleKeepers,
+				sessionHeader *sessiontypes.SessionHeader,
+			) int64 {
+				sharedParams := keepers.SharedKeeper.GetParams(ctx)
+				return shared.GetClaimWindowOpenHeight(
+					&sharedParams,
+					sessionHeader.GetSessionEndBlockHeight(),
+				)
+			},
 		},
-	})
-
-	keepers.SetApplication(ctx, apptypes.Application{
-		Address: appAddr,
-		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
-			{Service: service},
+		{
+			desc: "claim window close height minus one",
+			getClaimHeight: func(
+				ctx context.Context,
+				keepers *keepertest.ProofModuleKeepers,
+				sessionHeader *sessiontypes.SessionHeader,
+			) int64 {
+				sharedParams := keepers.SharedKeeper.GetParams(ctx)
+				return shared.GetClaimWindowCloseHeight(
+					&sharedParams,
+					sessionHeader.GetSessionEndBlockHeight(),
+				)
+			},
 		},
-	})
+	}
 
-	sessionRes, err := keepers.GetSession(
-		ctx,
-		&sessiontypes.QueryGetSessionRequest{
-			ApplicationAddress: appAddr,
-			Service:            service,
-			BlockHeight:        1,
-		},
-	)
-	require.NoError(t, err)
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			// Set block height to 1 so there is a valid session on-chain.
+			blockHeightOpt := keepertest.WithBlockHeight(1)
+			keepers, ctx := keepertest.NewProofModuleKeepers(t, blockHeightOpt)
+			sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+			srv := keeper.NewMsgServerImpl(*keepers.Keeper)
 
-	// Increment the block height to the claim window open height.
-	sessionHeader := sessionRes.GetSession().GetHeader()
-	sharedParams := keepers.SharedKeeper.GetParams(ctx)
-	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
-	ctx = sdkCtx.WithBlockHeight(
-		shared.GetClaimWindowOpenHeight(
-			&sharedParams,
-			sessionHeader.GetSessionEndBlockHeight(),
-		),
-	)
+			// The base session start height used for testing
+			sessionStartHeight := int64(1)
 
-	claimMsg := newTestClaimMsg(t,
-		sessionStartHeight,
-		sessionRes.GetSession().GetSessionId(),
-		supplierAddr,
-		appAddr,
-		service,
-		defaultMerkleRoot,
-	)
-	createClaimRes, err := srv.CreateClaim(ctx, claimMsg)
-	require.NoError(t, err)
-	require.NotNil(t, createClaimRes)
+			service := &sharedtypes.Service{Id: testServiceId}
+			supplierAddr := sample.AccAddress()
+			appAddr := sample.AccAddress()
 
-	claimRes, err := keepers.AllClaims(ctx, &types.QueryAllClaimsRequest{})
-	require.NoError(t, err)
+			keepers.SetSupplier(ctx, sharedtypes.Supplier{
+				Address: supplierAddr,
+				Services: []*sharedtypes.SupplierServiceConfig{
+					{Service: service},
+				},
+			})
 
-	claims := claimRes.GetClaims()
-	require.Lenf(t, claims, 1, "expected 1 claim, got %d", len(claims))
-	require.Equal(t, claimMsg.SessionHeader.SessionId, claims[0].GetSessionHeader().GetSessionId())
-	require.Equal(t, claimMsg.SupplierAddress, claims[0].GetSupplierAddress())
-	require.Equal(t, claimMsg.SessionHeader.GetSessionEndBlockHeight(), claims[0].GetSessionHeader().GetSessionEndBlockHeight())
-	require.Equal(t, claimMsg.RootHash, claims[0].GetRootHash())
+			keepers.SetApplication(ctx, apptypes.Application{
+				Address: appAddr,
+				ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
+					{Service: service},
+				},
+			})
+
+			sessionRes, err := keepers.GetSession(
+				ctx,
+				&sessiontypes.QueryGetSessionRequest{
+					ApplicationAddress: appAddr,
+					Service:            service,
+					BlockHeight:        1,
+				},
+			)
+			require.NoError(t, err)
+
+			sessionHeader := sessionRes.GetSession().GetHeader()
+
+			// Increment the block height to the claim window open height.
+			sdkCtx = sdkCtx.WithBlockHeight(test.getClaimHeight(ctx, keepers, sessionHeader))
+			ctx = sdkCtx
+
+			claimMsg := newTestClaimMsg(t,
+				sessionStartHeight,
+				sessionRes.GetSession().GetSessionId(),
+				supplierAddr,
+				appAddr,
+				service,
+				defaultMerkleRoot,
+			)
+			createClaimRes, err := srv.CreateClaim(ctx, claimMsg)
+			require.NoError(t, err)
+			require.NotNil(t, createClaimRes)
+
+			claimRes, err := keepers.AllClaims(ctx, &types.QueryAllClaimsRequest{})
+			require.NoError(t, err)
+
+			claims := claimRes.GetClaims()
+			require.Lenf(t, claims, 1, "expected 1 claim, got %d", len(claims))
+			require.Equal(t, claimMsg.SessionHeader.SessionId, claims[0].GetSessionHeader().GetSessionId())
+			require.Equal(t, claimMsg.SupplierAddress, claims[0].GetSupplierAddress())
+			require.Equal(t, claimMsg.SessionHeader.GetSessionEndBlockHeight(), claims[0].GetSessionHeader().GetSessionEndBlockHeight())
+			require.Equal(t, claimMsg.RootHash, claims[0].GetRootHash())
+		})
+	}
 }
 
 func TestMsgServer_CreateClaim_OutsideOfWindow(t *testing.T) {
@@ -134,6 +173,15 @@ func TestMsgServer_CreateClaim_OutsideOfWindow(t *testing.T) {
 
 	sessionHeader := sessionRes.GetSession().GetHeader()
 
+	claimWindowOpenHeight := shared.GetClaimWindowOpenHeight(
+		&sharedParams,
+		sessionHeader.GetSessionEndBlockHeight(),
+	)
+
+	// Increment the block height to one block before the claim window open height.
+	sdkCtx = sdkCtx.WithBlockHeight(claimWindowOpenHeight - 1)
+	ctx = sdkCtx
+
 	// Attempt to create a claim before the claim window open height.
 	claimMsg := newTestClaimMsg(t,
 		sessionStartHeight,
@@ -156,15 +204,13 @@ func TestMsgServer_CreateClaim_OutsideOfWindow(t *testing.T) {
 	claims := claimRes.GetClaims()
 	require.Lenf(t, claims, 0, "expected 0 claim, got %d", len(claims))
 
-	// Increment the block height to one block after the claim window close height.
-	// TODO_IN_THIS_PR: decide if the claim window close height should be a valid
-	// commit height for the claim.
-	sdkCtx = sdkCtx.WithBlockHeight(
-		shared.GetClaimWindowCloseHeight(
-			&sharedParams,
-			sessionHeader.GetSessionEndBlockHeight(),
-		) + 1,
+	claimWindowCloseHeight := shared.GetClaimWindowCloseHeight(
+		&sharedParams,
+		sessionHeader.GetSessionEndBlockHeight(),
 	)
+
+	// Increment the block height to one block after the claim window close height.
+	sdkCtx = sdkCtx.WithBlockHeight(claimWindowCloseHeight + 1)
 	ctx = sdkCtx
 
 	// Attempt to create a claim after the claim window close height.
@@ -180,7 +226,7 @@ func TestMsgServer_CreateClaim_OutsideOfWindow(t *testing.T) {
 	require.ErrorContains(t, err, types.ErrProofClaimOutsideOfWindow.Wrapf(
 		"current block height %d is greater than session claim window close height %d",
 		sdkCtx.BlockHeight(),
-		shared.GetClaimWindowOpenHeight(&sharedParams, sessionHeader.GetSessionEndBlockHeight()),
+		claimWindowCloseHeight,
 	).Error())
 
 	claimRes, err = keepers.AllClaims(ctx, &types.QueryAllClaimsRequest{})
