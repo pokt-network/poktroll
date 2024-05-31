@@ -41,7 +41,7 @@ func TestMsgUpdateParam_ValidateBasic(t *testing.T) {
 			},
 			expectedErr: ErrTokenomicsParamInvalid,
 		}, {
-			name: "valid: correct authority and param name",
+			name: "valid: correct authority, param name, and type",
 			msg: MsgUpdateParam{
 				Authority: sample.AccAddress(),
 				Name:      ParamComputeUnitsToTokensMultiplier,

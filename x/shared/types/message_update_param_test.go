@@ -10,50 +10,45 @@ import (
 
 func TestMsgUpdateParam_ValidateBasic(t *testing.T) {
 	tests := []struct {
-		name string
-		msg  MsgUpdateParam
-
+		desc        string
+		msg         MsgUpdateParam
 		expectedErr error
 	}{
 		{
-			name: "invalid: authority address invalid",
+			desc: "invalid: authority address invalid",
 			msg: MsgUpdateParam{
 				Authority: "invalid_address",
 				Name:      "", // Doesn't matter for this test
 				AsType:    &MsgUpdateParam_AsInt64{AsInt64: 1},
 			},
-
-			expectedErr: ErrProofInvalidAddress,
+			expectedErr: ErrSharedInvalidAddress,
 		}, {
-			name: "invalid: param name incorrect (non-existent)",
+			desc: "invalid: param name incorrect (non-existent)",
 			msg: MsgUpdateParam{
 				Authority: sample.AccAddress(),
-				Name:      "WRONG_min_relay_difficulty_bits",
+				Name:      "WRONG_num_blocks_per_session",
 				AsType:    &MsgUpdateParam_AsInt64{AsInt64: 1},
 			},
-
-			expectedErr: ErrProofParamNameInvalid,
+			expectedErr: ErrSharedParamNameInvalid,
 		}, {
-			name: "invalid: incorrect param type",
+			desc: "invalid: incorrect param type",
 			msg: MsgUpdateParam{
 				Authority: sample.AccAddress(),
-				Name:      ParamMinRelayDifficultyBits,
+				Name:      ParamNumBlocksPerSession,
 				AsType:    &MsgUpdateParam_AsString{AsString: "invalid"},
 			},
-			expectedErr: ErrProofParamInvalid,
+			expectedErr: ErrSharedParamInvalid,
 		}, {
-			name: "valid: correct authority, param name, and type",
+			desc: "valid: correct authority, param name, and type",
 			msg: MsgUpdateParam{
 				Authority: sample.AccAddress(),
-				Name:      ParamMinRelayDifficultyBits,
+				Name:      ParamNumBlocksPerSession,
 				AsType:    &MsgUpdateParam_AsInt64{AsInt64: 1},
 			},
-
-			expectedErr: nil,
 		},
 	}
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		t.Run(tt.desc, func(t *testing.T) {
 			err := tt.msg.ValidateBasic()
 			if tt.expectedErr != nil {
 				require.ErrorContains(t, err, tt.expectedErr.Error())
