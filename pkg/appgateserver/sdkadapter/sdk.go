@@ -33,6 +33,11 @@ func NewShannonSDKAdapter(
 		return nil, err
 	}
 
+	sharedParamsClient, err := query.NewSharedQuerier(deps)
+	if err != nil {
+		return nil, err
+	}
+
 	blockClient, err := NewBlockClient(ctx, deps)
 	if err != nil {
 		return nil, err
@@ -52,6 +57,7 @@ func NewShannonSDKAdapter(
 		applicationClient,
 		sessionClient,
 		accountClient,
+		sharedParamsClient,
 		blockClient,
 		relayClient,
 		signer,
