@@ -82,7 +82,7 @@ func (s *suite) paramsMapToMsgUpdateParams(moduleName string, paramsMap paramsMa
 		msgUpdateParams = s.newServiceMsgUpdateParams(paramsMap)
 	// NB: gateway & supplier modules currently have no parameters
 	default:
-		err := fmt.Errorf("unexpected module name %q", moduleName)
+		err := fmt.Errorf("ERROR: unexpected module name %q", moduleName)
 		s.Fatal(err)
 		panic(err)
 	}
@@ -255,8 +255,35 @@ func (s *suite) newMsgUpdateParam(
 				},
 			})
 		}
+	case sharedtypes.ModuleName:
+		switch param.typeStr {
+		case "string":
+			msg = proto.Message(&sharedtypes.MsgUpdateParam{
+				Authority: authority,
+				Name:      param.name,
+				AsType: &sharedtypes.MsgUpdateParam_AsString{
+					AsString: param.value.(string),
+				},
+			})
+		case "int64":
+			msg = proto.Message(&sharedtypes.MsgUpdateParam{
+				Authority: authority,
+				Name:      param.name,
+				AsType: &sharedtypes.MsgUpdateParam_AsInt64{
+					AsInt64: param.value.(int64),
+				},
+			})
+		case "bytes":
+			msg = proto.Message(&sharedtypes.MsgUpdateParam{
+				Authority: authority,
+				Name:      param.name,
+				AsType: &sharedtypes.MsgUpdateParam_AsBytes{
+					AsBytes: param.value.([]byte),
+				},
+			})
+		}
 	default:
-		err := fmt.Errorf("unexpected module name %q", moduleName)
+		err := fmt.Errorf("ERROR: unexpected module name %q", moduleName)
 		s.Fatal(err)
 		panic(err)
 	}

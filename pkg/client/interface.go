@@ -102,6 +102,9 @@ type TxContext interface {
 		txHash []byte,
 		prove bool,
 	) (*cometrpctypes.ResultTx, error)
+
+	// GetClientCtx returns the cosmos-sdk client context associated with the transaction context.
+	GetClientCtx() cosmosclient.Context
 }
 
 // Block is an interface which abstracts the details of a block to its minimal

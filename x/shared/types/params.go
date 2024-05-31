@@ -56,11 +56,11 @@ func (params *Params) ValidateBasic() error {
 func ValidateNumBlocksPerSession(v interface{}) error {
 	numBlocksPerSession, ok := v.(uint64)
 	if !ok {
-		return ErrSessionParamInvalid.Wrapf("invalid parameter type: %T", v)
+		return ErrSharedParamInvalid.Wrapf("invalid parameter type: %T", v)
 	}
 
 	if numBlocksPerSession < 1 {
-		return ErrSessionParamInvalid.Wrapf("invalid NumBlocksPerSession: (%v)", numBlocksPerSession)
+		return ErrSharedParamInvalid.Wrapf("invalid NumBlocksPerSession: (%v)", numBlocksPerSession)
 	}
 
 	return nil

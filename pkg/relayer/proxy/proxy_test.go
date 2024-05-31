@@ -348,7 +348,7 @@ func TestRelayerProxy_Relays(t *testing.T) {
 	// session's grace period and within the second session's grace period,
 	// meaning a relay should not be handled at this block height.
 	blockOutsideSessionGracePeriod := int64(blockHeight +
-		shared.NumBlocksPerSession +
+		sharedtypes.DefaultNumBlocksPerSession +
 		shared.SessionGracePeriodBlocks)
 
 	// blockWithinSessionGracePeriod is the block height that is after the first

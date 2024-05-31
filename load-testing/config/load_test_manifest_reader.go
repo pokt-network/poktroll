@@ -21,11 +21,12 @@ type ProvisionedActorConfig struct {
 type LoadTestManifestYAML struct {
 	// IsEphemeralChain is a flag that indicates whether the test is expected to be
 	// run on LocalNet or long-living remote chain (i.e. TestNet/DevNet).
-	IsEphemeralChain bool                     `yaml:"is_ephemeral_chain"`
-	TestNetNode      string                   `yaml:"testnet_node"`
-	ServiceId        string                   `yaml:"service_id"`
-	Suppliers        []ProvisionedActorConfig `yaml:"suppliers"`
-	Gateways         []ProvisionedActorConfig `yaml:"gateways"`
+	IsEphemeralChain      bool                     `yaml:"is_ephemeral_chain"`
+	TestNetNode           string                   `yaml:"testnet_node"`
+	ServiceId             string                   `yaml:"service_id"`
+	Suppliers             []ProvisionedActorConfig `yaml:"suppliers"`
+	Gateways              []ProvisionedActorConfig `yaml:"gateways"`
+	FundingAccountAddress string                   `yaml:"funding_account_address"`
 }
 
 // ParseLoadTestManifest reads the load test manifest from the given byte slice
@@ -60,6 +61,10 @@ func validatedEphemeralChainManifest(manifest *LoadTestManifestYAML) (*LoadTestM
 
 	if len(manifest.ServiceId) == 0 {
 		return nil, ErrEphemeralChainLoadTestInvalidManifest.Wrap("empty service id")
+	}
+
+	if len(manifest.FundingAccountAddress) == 0 {
+		return nil, ErrEphemeralChainLoadTestInvalidManifest.Wrap("empty funding account address")
 	}
 
 	for _, gateway := range manifest.Gateways {
@@ -108,6 +113,10 @@ func validatedNonEphemeralChainManifest(manifest *LoadTestManifestYAML) (*LoadTe
 
 	if len(manifest.ServiceId) == 0 {
 		return nil, ErrNonEphemeralChainLoadTestInvalidManifest.Wrap("empty service id")
+	}
+
+	if len(manifest.FundingAccountAddress) == 0 {
+		return nil, ErrNonEphemeralChainLoadTestInvalidManifest.Wrap("empty funding account address")
 	}
 
 	for _, gateway := range manifest.Gateways {

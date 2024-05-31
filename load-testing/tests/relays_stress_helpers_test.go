@@ -32,9 +32,11 @@ import (
 	"github.com/pokt-network/poktroll/load-testing/config"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/events"
+	"github.com/pokt-network/poktroll/pkg/client/query"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/sync2"
+	testsession "github.com/pokt-network/poktroll/testutil/session"
 	"github.com/pokt-network/poktroll/testutil/testclient"
 	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -173,9 +175,9 @@ func (s *relaysSuite) mapSessionInfoForLoadTestDurationFn(
 
 		sessionInfo := &sessionInfoNotif{
 			blockHeight:             blockHeight,
-			sessionNumber:           shared.GetSessionNumber(blockHeight),
-			sessionStartBlockHeight: shared.GetSessionStartBlockHeight(blockHeight),
-			sessionEndBlockHeight:   shared.GetSessionEndBlockHeight(blockHeight),
+			sessionNumber:           testsession.GetSessionNumberWithDefaultParams(blockHeight),
+			sessionStartBlockHeight: testsession.GetSessionStartHeightWithDefaultParams(blockHeight),
+			sessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(blockHeight),
 		}
 
 		infoLogger := logger.Info().
@@ -187,7 +189,7 @@ func (s *relaysSuite) mapSessionInfoForLoadTestDurationFn(
 		if waitingForFirstSession && blockHeight != sessionInfo.sessionStartBlockHeight {
 			countDownToTestStart := sessionInfo.sessionEndBlockHeight - blockHeight + 1
 			infoLogger.Msgf(
-				"waiting for next session to start: in %d blocks",
+				"waiting for next testsession to start: in %d blocks",
 				countDownToTestStart,
 			)
 
@@ -269,7 +271,7 @@ func (s *relaysSuite) validateActorLoadTestIncrementPlans(plans *actorLoadTestIn
 	}
 
 	plans.validateAppSupplierPermutations(s)
-	plans.validateIncrementRates(s)
+	plans.validateIncrementRates(s, s.sharedParams)
 	plans.validateMaxAmounts(s)
 
 	require.Truef(s,
@@ -328,17 +330,22 @@ func (plans *actorLoadTestIncrementPlans) validateAppSupplierPermutations(t gocu
 
 // validateIncrementRates ensures that the increment rates are multiples of the session length.
 // Otherwise, the expected baseline for several metrics will be periodically skewed.
-func (plans *actorLoadTestIncrementPlans) validateIncrementRates(t gocuke.TestingT) {
+func (plans *actorLoadTestIncrementPlans) validateIncrementRates(
+	t gocuke.TestingT,
+	sharedParams *sharedtypes.Params,
+) {
+	numBlocksPerSession := int64(sharedParams.GetNumBlocksPerSession())
+
 	require.Truef(t,
-		plans.gateways.blocksPerIncrement%shared.NumBlocksPerSession == 0,
+		plans.gateways.blocksPerIncrement%numBlocksPerSession == 0,
 		"gateway increment rate must be a multiple of the session length",
 	)
 	require.Truef(t,
-		plans.suppliers.blocksPerIncrement%shared.NumBlocksPerSession == 0,
+		plans.suppliers.blocksPerIncrement%numBlocksPerSession == 0,
 		"supplier increment rate must be a multiple of the session length",
 	)
 	require.Truef(t,
-		plans.apps.blocksPerIncrement%shared.NumBlocksPerSession == 0,
+		plans.apps.blocksPerIncrement%numBlocksPerSession == 0,
 		"app increment rate must be a multiple of the session length",
 	)
 }
@@ -364,7 +371,7 @@ func (plans *actorLoadTestIncrementPlans) validateMaxAmounts(t gocuke.TestingT) 
 // totalDurationBlocks returns the number of blocks which will have elapsed when the
 // proof corresponding to the session in which the maxActorCount for the given actor
 // has been committed.
-func (plans *actorLoadTestIncrementPlans) totalDurationBlocks() int64 {
+func (plans *actorLoadTestIncrementPlans) totalDurationBlocks(sharedParams *sharedtypes.Params) int64 {
 	// The last block of the last session SHOULD align with the last block of the
 	// last increment duration (i.e. **after** maxActorCount actors are activated).
 	blocksToLastSessionEnd := plans.maxActorBlocksToFinalIncrementEnd()
@@ -373,7 +380,7 @@ func (plans *actorLoadTestIncrementPlans) totalDurationBlocks() int64 {
 
 	// Add one session length so that the duration is inclusive of the block which
 	// commits the last session's proof.
-	return blocksToLastProofWindowEnd + shared.NumBlocksPerSession
+	return blocksToLastProofWindowEnd + int64(sharedParams.GetNumBlocksPerSession())
 }
 
 // blocksToFinalIncrementStart returns the number of blocks that will have
@@ -416,19 +423,19 @@ func (s *relaysSuite) mapSessionInfoWhenStakingNewSuppliersAndGatewaysFn(
 		// available for the beginning of the next one.
 		// This is because the suppliers involvement is out of control of the test
 		// suite and is driven by the AppGateServer's supplier endpoint selection.
-		if suppliersPlan.shouldIncrementSupplierCount(notif, activeSuppliers, s.testStartHeight) {
+		if suppliersPlan.shouldIncrementSupplierCount(s.sharedParams, notif, activeSuppliers, s.testStartHeight) {
 			newSuppliers = s.sendStakeSuppliersTxs(notif, &suppliersPlan)
 		}
 
 		var newGateways []*accountInfo
 		activeGateways := int64(len(s.activeGateways))
-		if gatewaysPlan.shouldIncrementActorCount(notif, activeGateways, s.testStartHeight) {
+		if gatewaysPlan.shouldIncrementActorCount(s.sharedParams, notif, activeGateways, s.testStartHeight) {
 			newGateways = s.sendStakeGatewaysTxs(notif, &gatewaysPlan)
 		}
 
 		var newApps []*accountInfo
 		activeApps := int64(len(s.activeApplications))
-		if appsPlan.shouldIncrementActorCount(notif, activeApps, s.testStartHeight) {
+		if appsPlan.shouldIncrementActorCount(s.sharedParams, notif, activeApps, s.testStartHeight) {
 			newApps = s.sendFundNewAppsTx(notif, &appsPlan)
 		}
 
@@ -711,6 +718,7 @@ func (s *relaysSuite) sendDelegateInitialAppsTxs(apps, gateways []*accountInfo) 
 //
 // TODO_UPNEXT(@red-One, @bryanchriswhite) move to a new file.
 func (plan *actorLoadTestIncrementPlan) shouldIncrementActorCount(
+	sharedParams *sharedtypes.Params,
 	sessionInfo *sessionInfoNotif,
 	actorCount int64,
 	startBlockHeight int64,
@@ -720,9 +728,9 @@ func (plan *actorLoadTestIncrementPlan) shouldIncrementActorCount(
 		return false
 	}
 
-	initialSessionNumber := shared.GetSessionNumber(startBlockHeight)
+	initialSessionNumber := testsession.GetSessionNumberWithDefaultParams(startBlockHeight)
 	// TODO_TECHDEBT(#21): replace with gov param query when available.
-	actorSessionIncRate := plan.blocksPerIncrement / shared.NumBlocksPerSession
+	actorSessionIncRate := plan.blocksPerIncrement / int64(sharedParams.GetNumBlocksPerSession())
 	nextSessionNumber := sessionInfo.sessionNumber + 1 - initialSessionNumber
 	isSessionStartHeight := sessionInfo.blockHeight == sessionInfo.sessionStartBlockHeight
 	isActorIncrementHeight := nextSessionNumber%actorSessionIncRate == 0
@@ -737,6 +745,7 @@ func (plan *actorLoadTestIncrementPlan) shouldIncrementActorCount(
 // Suppliers stake transactions are sent at the end of the session so they are
 // available for the beginning of the next one.
 func (plan *actorLoadTestIncrementPlan) shouldIncrementSupplierCount(
+	sharedParams *sharedtypes.Params,
 	sessionInfo *sessionInfoNotif,
 	actorCount int64,
 	startBlockHeight int64,
@@ -746,9 +755,9 @@ func (plan *actorLoadTestIncrementPlan) shouldIncrementSupplierCount(
 		return false
 	}
 
-	initialSessionNumber := shared.GetSessionNumber(startBlockHeight)
+	initialSessionNumber := testsession.GetSessionNumberWithDefaultParams(startBlockHeight)
 	// TODO_TECHDEBT(#21): replace with gov param query when available.
-	supplierSessionIncRate := plan.blocksPerIncrement / shared.NumBlocksPerSession
+	supplierSessionIncRate := plan.blocksPerIncrement / int64(sharedParams.GetNumBlocksPerSession())
 	nextSessionNumber := sessionInfo.sessionNumber + 1 - initialSessionNumber
 	isSessionEndHeight := sessionInfo.blockHeight == sessionInfo.sessionEndBlockHeight
 	isActorIncrementHeight := nextSessionNumber%supplierSessionIncRate == 0
@@ -1350,6 +1359,21 @@ func (s *relaysSuite) countClaimAndProofs() {
 			}
 		},
 	)
+}
+
+// querySharedParams queries the current on-chain shared module parameters for use
+// over the duration of the test.
+func (s *relaysSuite) querySharedParams() {
+	s.Helper()
+
+	deps := depinject.Supply(s.txContext.GetClientCtx())
+	sharedQueryClient, err := query.NewSharedQuerier(deps)
+	require.NoError(s, err)
+
+	sharedParams, err := sharedQueryClient.GetParams(s.ctx)
+	require.NoError(s, err)
+
+	s.sharedParams = sharedParams
 }
 
 // forEachStakedAndDelegatedAppPrepareApp is a ForEachFn that waits for txs which

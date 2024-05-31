@@ -390,8 +390,8 @@ test_load_relays_stress: ## Run the stress test for E2E relays on non-ephemeral 
 	-tags=load,test -run LoadRelays --log-level=debug --timeout=30m \
 	--manifest ./load-testing/loadtest_manifest.yaml
 
-.PHONY: test_localnet_load_relays_stress
-test_localnet_load_relays_stress: test_e2e_env ## Run the stress test for E2E relays.
+.PHONY: test_load_relays_stress_localnet
+test_load_relays_stress_localnet: test_e2e_env ## Run the stress test for E2E relays.
 	go test -v -count=1 ./load-testing/tests/... \
 	-tags=load,test -run LoadRelays --log-level=debug --timeout=30m \
 	--manifest ./load-testing/localnet_loadtest_manifest.yaml
@@ -837,10 +837,14 @@ params_update_proof_all: ## Update the proof module params
 params_update_proof_min_relay_difficulty_bits: ## Update the proof module params
 	poktrolld tx authz exec ./tools/scripts/params/proof_min_relay_difficulty_bits.json $(PARAM_FLAGS)
 
-### Session Module Params ###
-.PHONY: params_update_session_all
+### Shared Module Params ###
+.PHONY: params_update_shared_all
 params_update_shared_all: ## Update the session module params
 	poktrolld tx authz exec ./tools/scripts/params/shared_all.json $(PARAM_FLAGS)
+
+.PHONY: params_update_shared_num_blocks_per_session
+params_update_shared_num_blocks_per_session: ## Update the shared module params
+	poktrolld tx authz exec ./tools/scripts/params/shared_num_blocks_per_session.json $(PARAM_FLAGS)
 
 .PHONY: params_query_all
 params_query_all: check_jq ## Query the params from all available modules
