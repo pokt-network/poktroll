@@ -174,67 +174,66 @@ func TestMsgServer_CreateClaim_OutsideOfWindow(t *testing.T) {
 
 	sessionHeader := sessionRes.GetSession().GetHeader()
 
-	claimWindowOpenHeight := shared.GetClaimWindowOpenHeight(
-		&sharedParams,
-		sessionHeader.GetSessionEndBlockHeight(),
-	)
-
-	// Increment the block height to one block before the claim window open height.
-	sdkCtx = sdkCtx.WithBlockHeight(claimWindowOpenHeight - 1)
-	ctx = sdkCtx
-
-	// Attempt to create a claim before the claim window open height.
-	claimMsg := newTestClaimMsg(t,
-		sessionStartHeight,
-		sessionRes.GetSession().GetSessionId(),
-		supplierAddr,
-		appAddr,
-		service,
-		defaultMerkleRoot,
-	)
-	_, err = srv.CreateClaim(ctx, claimMsg)
-	require.ErrorContains(t, err, types.ErrProofClaimOutsideOfWindow.Wrapf(
-		"current block height %d is less than session claim window open height %d",
-		sdkCtx.BlockHeight(),
-		shared.GetClaimWindowOpenHeight(&sharedParams, sessionHeader.GetSessionEndBlockHeight()),
-	).Error())
-
-	claimRes, err := keepers.AllClaims(ctx, &types.QueryAllClaimsRequest{})
-	require.NoError(t, err)
-
-	claims := claimRes.GetClaims()
-	require.Lenf(t, claims, 0, "expected 0 claim, got %d", len(claims))
-
 	claimWindowCloseHeight := shared.GetClaimWindowCloseHeight(
 		&sharedParams,
 		sessionHeader.GetSessionEndBlockHeight(),
 	)
 
-	// Increment the block height to one block after the claim window close height.
-	sdkCtx = sdkCtx.WithBlockHeight(claimWindowCloseHeight + 1)
-	ctx = sdkCtx
-
-	// Attempt to create a claim after the claim window close height.
-	claimMsg = newTestClaimMsg(t,
-		sessionStartHeight,
-		sessionRes.GetSession().GetSessionId(),
-		supplierAddr,
-		appAddr,
-		service,
-		defaultMerkleRoot,
+	claimWindowOpenHeight := shared.GetClaimWindowOpenHeight(
+		&sharedParams,
+		sessionHeader.GetSessionEndBlockHeight(),
 	)
-	_, err = srv.CreateClaim(ctx, claimMsg)
-	require.ErrorContains(t, err, types.ErrProofClaimOutsideOfWindow.Wrapf(
-		"current block height %d is greater than session claim window close height %d",
-		sdkCtx.BlockHeight(),
-		claimWindowCloseHeight,
-	).Error())
 
-	claimRes, err = keepers.AllClaims(ctx, &types.QueryAllClaimsRequest{})
-	require.NoError(t, err)
+	tests := []struct {
+		desc        string
+		claimHeight int64
+		expectedErr error
+	}{
+		{
+			desc:        "claim window open height minus one",
+			claimHeight: claimWindowOpenHeight - 1,
+			expectedErr: types.ErrProofClaimOutsideOfWindow.Wrapf(
+				"current block height %d is less than session claim window open height %d",
+				claimWindowOpenHeight-1,
+				shared.GetClaimWindowOpenHeight(&sharedParams, sessionHeader.GetSessionEndBlockHeight()),
+			),
+		},
+		{
+			desc:        "claim window close height plus one",
+			claimHeight: claimWindowCloseHeight + 1,
+			expectedErr: types.ErrProofClaimOutsideOfWindow.Wrapf(
+				"current block height %d is greater than session claim window close height %d",
+				claimWindowCloseHeight+1,
+				claimWindowCloseHeight,
+			),
+		},
+	}
 
-	claims = claimRes.GetClaims()
-	require.Lenf(t, claims, 0, "expected 0 claim, got %d", len(claims))
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			// Increment the block height to the test claim height.
+			sdkCtx = sdkCtx.WithBlockHeight(test.claimHeight)
+			ctx = sdkCtx
+
+			// Attempt to create a claim at the test claim height.
+			claimMsg := newTestClaimMsg(t,
+				sessionStartHeight,
+				sessionRes.GetSession().GetSessionId(),
+				supplierAddr,
+				appAddr,
+				service,
+				defaultMerkleRoot,
+			)
+			_, err = srv.CreateClaim(ctx, claimMsg)
+			require.ErrorContains(t, err, test.expectedErr.Error())
+
+			claimRes, err := keepers.AllClaims(ctx, &types.QueryAllClaimsRequest{})
+			require.NoError(t, err)
+
+			claims := claimRes.GetClaims()
+			require.Lenf(t, claims, 0, "expected 0 claim, got %d", len(claims))
+		})
+	}
 }
 
 func TestMsgServer_CreateClaim_Error(t *testing.T) {
