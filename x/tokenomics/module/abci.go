@@ -10,7 +10,7 @@ import (
 
 // EndBlocker called at every block and settles all pending claims.
 func EndBlocker(ctx sdk.Context, k keeper.Keeper) error {
-	fmt.Println("OLSHANSK: EndBlocker")
+	fmt.Println("OLSH: tokenomics.EndBlocker1")
 	logger := k.Logger().With("method", "EndBlocker")
 	// NB: There are two main reasons why we settle expiring claims in the end
 	// instead of when a proof is submitted:
@@ -24,7 +24,7 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) error {
 		return err
 	}
 	logger.Info(fmt.Sprintf("settled %d claims and expired %d claims", numClaimsSettled, numClaimsExpired))
-
+	fmt.Println("OLSH: tokenomics.EndBlocker2")
 	// Update the relay mining difficulty for every service that settled pending
 	// claims based on how many estimated relays were serviced for it.
 	err = k.UpdateRelayMiningDifficulty(ctx, relaysPerServiceMap)
@@ -33,6 +33,6 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) error {
 		return err
 	}
 	logger.Info(fmt.Sprintf("successfully updated the relay mining difficulty for %d services", len(relaysPerServiceMap)))
-
+	fmt.Println("OLSH: tokenomics.EndBlocker3")
 	return nil
 }

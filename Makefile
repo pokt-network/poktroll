@@ -396,17 +396,17 @@ test_load_relays_stress_localnet: test_e2e_env ## Run the stress test for E2E re
 	-tags=load,test -run LoadRelays --log-level=debug --timeout=30m \
 	--manifest ./load-testing/localnet_loadtest_manifest.yaml
 
-.PHONY: go_test_verbose
-go_test_verbose: check_go_version ## Run all go tests verbosely
+.PHONY: test_verbose
+test_verbose: check_go_version ## Run all go tests verbosely
 	go test -count=1 -v -race -tags test ./...
 
-.PHONY: go_test
-go_test: check_go_version ## Run all go tests showing detailed output only on failures
-	go test -count=1 -race -tags test ./...
-
-.PHONY: go_test_integration
-go_test_integration: check_go_version ## Run all go tests, including integration
+.PHONY: test_all
+test_all: check_go_version ## Run all go tests
 	go test -count=1 -v -race -tags test,integration ./...
+
+.PHONY: test_integration
+test_integration: check_go_version ## Run all integration tests
+	go test -v -count=1 ./tests/integration/...
 
 .PHONY: itest
 itest: check_go_version ## Run tests iteratively (see usage for more)
