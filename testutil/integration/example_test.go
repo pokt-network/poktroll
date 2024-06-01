@@ -262,7 +262,7 @@ func TestExample(t *testing.T) {
 		stakingtypes.ModuleName: stakingModule,
 	}
 
-	integrationApp := integration.NewIntegrationApp2(
+	integrationApp := integration.NewIntegrationApp(
 		t,
 		newCtx,
 		logger,
@@ -279,18 +279,21 @@ func TestExample(t *testing.T) {
 
 	minttypes.RegisterQueryServer(integrationApp.QueryHelper(), mintkeeper.NewQueryServerImpl(mintKeeper))
 
-	params := minttypes.DefaultParams()
-	params.BlocksPerYear = 10000
+	params := tokenomicstypes.DefaultParams()
+	params.ComputeUnitsToTokensMultiplier = 42
 
-	// now we can use the application to test a mint message
-
-	result, err := integrationApp.RunMsg(&minttypes.MsgUpdateParams{
+	req := &tokenomicstypes.MsgUpdateParam{
 		Authority: authority.String(),
-		Params:    params,
-	},
-		// integration.WithAutomaticCommit(),
+		Name:      "compute_units_to_tokens_multiplier",
+		AsType:    &tokenomicstypes.MsgUpdateParam_AsInt64{AsInt64: 10},
+	}
+
+	result, err := integrationApp.RunMsg(
+		req,
 		integration.WithAutomaticFinalizeBlock(),
-	)
+	) // integration.WithAutomaticCommit(),
+	// ,
+
 	require.NoError(t, err)
 
 	// in this example the result is an empty response, a nil check is enough
@@ -298,17 +301,17 @@ func TestExample(t *testing.T) {
 	require.NotNil(t, result, "unexpected nil result")
 
 	// we now check the result
-	resp := minttypes.MsgUpdateParamsResponse{}
+	resp := tokenomicstypes.MsgUpdateParamResponse{}
 	err = cdc.Unmarshal(result.Value, &resp)
 	require.NoError(t, err)
 
 	sdkCtx := sdk.UnwrapSDKContext(integrationApp.Context())
 
 	// we should also check the state of the application
-	got, err := mintKeeper.Params.Get(sdkCtx)
-	require.NoError(t, err)
+	gotParams := tokenomicsKeeper.GetParams(sdkCtx)
+	// require.NoError(t, err)
 
 	// require.True(t, cmp.Equal(got, params), "expected mint params to be %v, got %v", params, got)
-	fmt.Println(got.BlocksPerYear) // Output: 10000
+	fmt.Println(gotParams.ComputeUnitsToTokensMultiplier) // Output: 10000
 
 }

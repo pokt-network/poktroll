@@ -34,7 +34,7 @@ type App struct {
 	queryHelper   *baseapp.QueryServiceTestHelper
 }
 
-func NewIntegrationApp2(
+func NewIntegrationApp(
 	t *testing.T,
 	sdkCtx sdk.Context,
 	logger log.Logger,
@@ -60,15 +60,16 @@ func NewIntegrationApp2(
 	bApp := baseapp.NewBaseApp(appName, logger, db, txConfig.TxDecoder(), baseapp.SetChainID(appName))
 	bApp.MountKVStores(keys)
 
-	bApp.SetInitChainer(func(ctx sdk.Context, _ *cmtabcitypes.RequestInitChain) (*cmtabcitypes.ResponseInitChain, error) {
-		for _, mod := range modules {
-			if m, ok := mod.(module.HasGenesis); ok {
-				m.InitGenesis(ctx, cdc, m.DefaultGenesis(cdc))
+	bApp.SetInitChainer(
+		func(ctx sdk.Context, _ *cmtabcitypes.RequestInitChain) (*cmtabcitypes.ResponseInitChain, error) {
+			for _, mod := range modules {
+				if m, ok := mod.(module.HasGenesis); ok {
+					m.InitGenesis(ctx, cdc, m.DefaultGenesis(cdc))
+				}
 			}
-		}
 
-		return &cmtabcitypes.ResponseInitChain{}, nil
-	})
+			return &cmtabcitypes.ResponseInitChain{}, nil
+		})
 
 	bApp.SetBeginBlocker(func(_ sdk.Context) (sdk.BeginBlock, error) {
 		return moduleManager.BeginBlock(sdkCtx)
