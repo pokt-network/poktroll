@@ -1,14 +1,16 @@
 package integration
 
 import (
-	"fmt"
 	"testing"
+	"time"
 
 	"cosmossdk.io/core/appmodule"
+	coreheader "cosmossdk.io/core/header"
 	"cosmossdk.io/log"
 	"cosmossdk.io/store"
 	"cosmossdk.io/store/metrics"
 	storetypes "cosmossdk.io/store/types"
+	abci "github.com/cometbft/cometbft/abci/types"
 	cmtabcitypes "github.com/cometbft/cometbft/abci/types"
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	dbm "github.com/cosmos/cosmos-db"
@@ -24,14 +26,9 @@ import (
 	authsims "github.com/cosmos/cosmos-sdk/x/auth/simulation"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	pooltypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
-	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
-	"github.com/cosmos/cosmos-sdk/x/staking"
-	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
-	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app"
@@ -44,6 +41,8 @@ import (
 	proofkeeper "github.com/pokt-network/poktroll/x/proof/keeper"
 	proof "github.com/pokt-network/poktroll/x/proof/module"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
+	session "github.com/pokt-network/poktroll/x/session/module"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedkeeper "github.com/pokt-network/poktroll/x/shared/keeper"
 	shared "github.com/pokt-network/poktroll/x/shared/module"
@@ -54,7 +53,19 @@ import (
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-const appName = "integration-app"
+const appName = "poktroll-integration-app"
+
+// App is a test application that can be used to test the integration of modules.
+type App struct {
+	*baseapp.BaseApp
+
+	Ctx           sdk.Context
+	Cdc           codec.Codec
+	Logger        log.Logger
+	Authority     sdk.AccAddress
+	ModuleManager module.Manager
+	QueryHelper   *baseapp.QueryServiceTestHelper
+}
 
 func NewIntegrationApp(
 	t *testing.T,
@@ -65,7 +76,8 @@ func NewIntegrationApp(
 	cdc codec.Codec,
 	modules map[string]appmodule.AppModule,
 	msgRouter *baseapp.MsgServiceRouter,
-	grpcRouter *baseapp.GRPCQueryRouter,
+	// grpcRouter *baseapp.GRPCQueryRouter,
+	queryHelper *baseapp.QueryServiceTestHelper,
 ) *App {
 	t.Helper()
 
@@ -75,9 +87,6 @@ func NewIntegrationApp(
 	moduleManager := module.NewManagerFromMap(modules)
 	basicModuleManager := module.NewBasicManagerFromManager(moduleManager, nil)
 	basicModuleManager.RegisterInterfaces(interfaceRegistry)
-
-	// configurator := module.NewConfigurator(cdc, msgRouter, grpcRouter)
-	// moduleManager.RegisterServices(configurator)
 
 	txConfig := authtx.NewTxConfig(codec.NewProtoCodec(interfaceRegistry), authtx.DefaultSignModes)
 	bApp := baseapp.NewBaseApp(appName, logger, db, txConfig.TxDecoder(), baseapp.SetChainID(appName))
@@ -103,8 +112,8 @@ func NewIntegrationApp(
 
 	msgRouter.SetInterfaceRegistry(interfaceRegistry)
 	bApp.SetMsgServiceRouter(msgRouter)
-	grpcRouter.SetInterfaceRegistry(interfaceRegistry)
-	// bApp.S(grpcRouter)
+
+	// grpcRouter.SetInterfaceRegistry(interfaceRegistry)
 
 	err := bApp.LoadLatestVersion()
 	require.NoError(t, err, "failed to load latest version")
@@ -115,7 +124,9 @@ func NewIntegrationApp(
 	_, err = bApp.Commit()
 	require.NoError(t, err, "failed to commit")
 
-	cometHeader := cmtproto.Header{ChainID: appName}
+	cometHeader := cmtproto.Header{
+		ChainID: appName,
+		Height:  2}
 	ctx := sdkCtx.WithBlockHeader(cometHeader).WithIsCheckTx(true)
 
 	return &App{
@@ -125,20 +136,8 @@ func NewIntegrationApp(
 		Ctx:           ctx,
 		Cdc:           cdc,
 		ModuleManager: *moduleManager,
-		QueryHelper:   baseapp.NewQueryServerTestHelper(ctx, interfaceRegistry),
+		QueryHelper:   queryHelper,
 	}
-}
-
-// App is a test application that can be used to test the integration of modules.
-type App struct {
-	*baseapp.BaseApp
-
-	Ctx           sdk.Context
-	Cdc           codec.Codec
-	Logger        log.Logger
-	Authority     sdk.AccAddress
-	ModuleManager module.Manager
-	QueryHelper   *baseapp.QueryServiceTestHelper
 }
 
 func NewCompleteIntegrationApp(t *testing.T) *App {
@@ -146,7 +145,6 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 
 	// Register the codec for all the interfacesPrepare all the interfaces
 	registry := codectypes.NewInterfaceRegistry()
-	minttypes.RegisterInterfaces(registry)
 	tokenomicstypes.RegisterInterfaces(registry)
 	banktypes.RegisterInterfaces(registry)
 	gatewaytypes.RegisterInterfaces(registry)
@@ -168,15 +166,12 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		apptypes.StoreKey,
 		suppliertypes.StoreKey,
 		prooftypes.StoreKey,
-		authtypes.StoreKey,
-		minttypes.StoreKey,
-		stakingtypes.StoreKey)
+		authtypes.StoreKey)
 
 	// Prepare the context
-	// logger := log.NewTestLogger(t)
-	logger := log.NewNopLogger()
+	logger := log.NewNopLogger() // log.NewTestLogger(t)
 	cms := CreateMultiStore(storeKeys, logger)
-	newCtx := sdk.NewContext(cms, cmtproto.Header{}, true, logger)
+	ctx := sdk.NewContext(cms, cmtproto.Header{}, true, logger)
 
 	// Get the authority address
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName)
@@ -184,18 +179,15 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	// Prepare the account keeper
 	addrCodec := addresscodec.NewBech32Codec(app.AccountAddressPrefix)
 	macPerms := map[string][]string{
-		pooltypes.ModuleName:           {},
-		minttypes.ModuleName:           {authtypes.Minter},
-		stakingtypes.BondedPoolName:    {authtypes.Burner, authtypes.Staking},
-		stakingtypes.NotBondedPoolName: {authtypes.Burner, authtypes.Staking},
-		banktypes.ModuleName:           {authtypes.Minter, authtypes.Burner},
-		tokenomicstypes.ModuleName:     {authtypes.Minter, authtypes.Burner},
-		gatewaytypes.ModuleName:        {authtypes.Minter, authtypes.Burner, authtypes.Staking},
-		sessiontypes.ModuleName:        {authtypes.Minter, authtypes.Burner},
-		apptypes.ModuleName:            {authtypes.Minter, authtypes.Burner, authtypes.Staking},
-		suppliertypes.ModuleName:       {authtypes.Minter, authtypes.Burner, authtypes.Staking},
+		banktypes.ModuleName:       {authtypes.Minter, authtypes.Burner},
+		tokenomicstypes.ModuleName: {authtypes.Minter, authtypes.Burner},
+		gatewaytypes.ModuleName:    {authtypes.Minter, authtypes.Burner, authtypes.Staking},
+		sessiontypes.ModuleName:    {authtypes.Minter, authtypes.Burner},
+		apptypes.ModuleName:        {authtypes.Minter, authtypes.Burner, authtypes.Staking},
+		suppliertypes.ModuleName:   {authtypes.Minter, authtypes.Burner, authtypes.Staking},
 	}
 
+	// Prepare the account keeper and module
 	accountKeeper := authkeeper.NewAccountKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKeys[authtypes.StoreKey]),
@@ -223,17 +215,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		authority.String(),
 		logger)
 
-	stakingKeeper := stakingkeeper.NewKeeper(
-		cdc,
-		runtime.NewKVStoreService(storeKeys[stakingtypes.StoreKey]),
-		accountKeeper,
-		bankKeeper,
-		authority.String(),
-		addresscodec.NewBech32Codec(sdk.Bech32PrefixValAddr),
-		addresscodec.NewBech32Codec(sdk.Bech32PrefixConsAddr),
-	)
-	stakingModule := staking.NewAppModule(cdc, stakingKeeper, accountKeeper, bankKeeper, nil)
-
+	// Prepare the shared keeper and module
 	sharedKeeper := sharedkeeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKeys[apptypes.StoreKey]),
@@ -247,6 +229,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		bankKeeper,
 	)
 
+	// Prepare the gateway keeper and module
 	gatewayKeeper := gatewaykeeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKeys[apptypes.StoreKey]),
@@ -261,6 +244,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		bankKeeper,
 	)
 
+	// Prepare the application keeper and module
 	applicationKeeper := appkeeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKeys[apptypes.StoreKey]),
@@ -278,12 +262,32 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		bankKeeper,
 	)
 
+	// Prepare the session keeper and module
+	sessionKeeper := sessionkeeper.NewKeeper(
+		cdc,
+		runtime.NewKVStoreService(storeKeys[sessiontypes.StoreKey]),
+		logger,
+		authority.String(),
+		accountKeeper,
+		bankKeeper,
+		applicationKeeper,
+		nil, // supplierKeeper
+		sharedKeeper,
+	)
+	sessionModule := session.NewAppModule(
+		cdc,
+		sessionKeeper,
+		accountKeeper,
+		bankKeeper,
+	)
+
+	// Prepare the proof keeper and module
 	proofKeeper := proofkeeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKeys[prooftypes.StoreKey]),
 		logger,
 		authority.String(),
-		nil, // sessionk
+		sessionKeeper,
 		applicationKeeper,
 		accountKeeper,
 		sharedKeeper,
@@ -294,6 +298,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		accountKeeper,
 	)
 
+	// Prepare the tokenomics keeper and module
 	tokenomicsKeeper := tokenomicskeeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKeys[tokenomicstypes.StoreKey]),
@@ -311,39 +316,42 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		bankKeeper,
 	)
 
+	// Prepare the message & query routers
 	msgRouter := baseapp.NewMsgServiceRouter()
-	grpcRouter := baseapp.NewGRPCQueryRouter()
+	queryRouter := baseapp.NewQueryServerTestHelper(ctx, registry)
 
+	// Prepare the list of modules
 	modules := map[string]appmodule.AppModule{
 		tokenomicstypes.ModuleName: tokenomicsModule,
-		// banktypes.ModuleName:       bankModule,
-		sharedtypes.ModuleName:  sharedModule,
-		gatewaytypes.ModuleName: gatewayModule,
-		// sessiontypes.ModuleName:    sessionModule,
-		apptypes.ModuleName: applicationModule,
-		// suppliertypes.ModuleName:   supplierModule,
-		prooftypes.ModuleName: proofModule,
-		authtypes.ModuleName:  authModule,
-		// minttypes.ModuleName:    mintModule,
-		stakingtypes.ModuleName: stakingModule,
+		sharedtypes.ModuleName:     sharedModule,
+		gatewaytypes.ModuleName:    gatewayModule,
+		apptypes.ModuleName:        applicationModule,
+		prooftypes.ModuleName:      proofModule,
+		authtypes.ModuleName:       authModule,
+		sessiontypes.ModuleName:    sessionModule,
 	}
 
+	// Initialize the integration app
 	integrationApp := NewIntegrationApp(
 		t,
-		newCtx,
+		ctx,
 		logger,
 		authority,
 		storeKeys,
 		cdc,
 		modules,
 		msgRouter,
-		grpcRouter,
+		queryRouter,
 	)
 
+	// Register the message servers
 	authtypes.RegisterMsgServer(msgRouter, authkeeper.NewMsgServerImpl(accountKeeper))
 	tokenomicstypes.RegisterMsgServer(msgRouter, tokenomicskeeper.NewMsgServerImpl(tokenomicsKeeper))
+	prooftypes.RegisterMsgServer(msgRouter, proofkeeper.NewMsgServerImpl(proofKeeper))
 
-	// sdkCtx := sdk.UnwrapSDKContext(integrationApp.Context())
+	// Register query servers
+	tokenomicstypes.RegisterQueryServer(queryRouter, tokenomicsKeeper)
+	prooftypes.RegisterQueryServer(queryRouter, proofKeeper)
 
 	return integrationApp
 }
@@ -354,7 +362,9 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 // The result of the message execution is returned as an Any type.
 // That any type can be unmarshaled to the expected response type.
 // If the message execution fails, an error is returned.
-func (app *App) RunMsg(msg sdk.Msg, option ...Option) (*codectypes.Any, error) {
+func (app *App) RunMsg(t *testing.T, msg sdk.Msg, option ...Option) *codectypes.Any {
+	t.Helper()
+
 	// set options
 	cfg := &Config{}
 	for _, opt := range option {
@@ -364,60 +374,69 @@ func (app *App) RunMsg(msg sdk.Msg, option ...Option) (*codectypes.Any, error) {
 	if cfg.AutomaticCommit {
 		defer func() {
 			_, err := app.Commit()
-			if err != nil {
-				panic(err)
-			}
+			require.NoError(t, err, "failed to commit")
+			app.nextBlockCtx()
 		}()
 	}
 
 	if cfg.AutomaticFinalizeBlock {
 		height := app.LastBlockHeight() + 1
-		if _, err := app.FinalizeBlock(&cmtabcitypes.RequestFinalizeBlock{
+		_, err := app.FinalizeBlock(&cmtabcitypes.RequestFinalizeBlock{
 			Height: height,
 			DecidedLastCommit: cmtabcitypes.CommitInfo{
 				Votes: []cmtabcitypes.VoteInfo{{}},
 			},
-		}); err != nil {
-			return nil, fmt.Errorf("failed to run finalize block: %w", err)
-		}
+		})
+		require.NoError(t, err, "failed to finalize block")
 	}
 
 	app.Logger.Info("Running msg", "msg", msg.String())
 
 	handler := app.MsgServiceRouter().Handler(msg)
-	if handler == nil {
-		return nil, fmt.Errorf("handler is nil, can't route message %s: %+v", sdk.MsgTypeURL(msg), msg)
-	}
+	require.NotNil(t, handler, "handler not found for message %s", sdk.MsgTypeURL(msg))
 
 	msgResult, err := handler(app.Ctx, msg)
-	if err != nil {
-		return nil, fmt.Errorf("failed to execute message %s: %w", sdk.MsgTypeURL(msg), err)
-	}
+	require.NoError(t, err, "failed to execute message %s", sdk.MsgTypeURL(msg))
 
 	var response *codectypes.Any
 	if len(msgResult.MsgResponses) > 0 {
 		msgResponse := msgResult.MsgResponses[0]
-		if msgResponse == nil {
-			return nil, fmt.Errorf("got nil msg response %s in message result: %s", sdk.MsgTypeURL(msg), msgResult.String())
-		}
-
+		require.NotNil(t, msgResponse, "unexpected nil msg response %s in message result: %s", sdk.MsgTypeURL(msg), msgResult.String())
 		response = msgResponse
 	}
 
-	return response, nil
+	return response
 }
 
-// Context returns the application context. It can be unwrapped to a sdk.Context,
-// with the sdk.UnwrapSDKContext function.
-// func (app *App) Context() context.Context {
-// 	return app.Ctx
-// }
+func (app *App) NextBlock(t *testing.T) {
+	t.Helper()
 
-// QueryHelper returns the application query helper.
-// It can be used when registering query services.
-// func (app *App) QueryHelper() *baseapp.QueryServiceTestHelper {
-// 	return app.queryHelper
-// }
+	_, err := app.FinalizeBlock(&abci.RequestFinalizeBlock{
+		Height: app.Ctx.BlockHeight(),
+		Time:   app.Ctx.BlockTime()})
+	require.NoError(t, err)
+
+	_, err = app.Commit()
+	require.NoError(t, err)
+
+	app.nextBlockCtx()
+}
+
+func (app *App) nextBlockCtx() {
+	newBlockTime := app.Ctx.BlockTime().Add(time.Duration(1) * time.Second)
+
+	header := app.Ctx.BlockHeader()
+	header.Time = newBlockTime
+	header.Height++
+
+	newCtx := app.BaseApp.NewUncachedContext(false, header).
+		WithHeaderInfo(coreheader.Info{
+			Height: header.Height,
+			Time:   header.Time,
+		})
+
+	app.Ctx = newCtx
+}
 
 // CreateMultiStore is a helper for setting up multiple stores for provided modules.
 func CreateMultiStore(keys map[string]*storetypes.KVStoreKey, logger log.Logger) storetypes.CommitMultiStore {

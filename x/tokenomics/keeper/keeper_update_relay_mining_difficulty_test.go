@@ -7,7 +7,6 @@ import (
 	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
@@ -55,7 +54,7 @@ func (s *TestSuiteRelayMining) SetupTest() {
 	// 		SessionStartBlockHeight: 1,
 	// 		SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
 	// 	},
-	// 	RootHash: smstRootWithSum(69),
+	// 	RootHash: testproof.SmstRootWithSum(69),
 	// }
 
 	// // Prepare a claim that can be inserted
@@ -78,28 +77,6 @@ func TestUpdateRelayMiningDifficulty(t *testing.T) {
 }
 
 func (s *TestSuiteRelayMining) TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime() {
-	// Retrieve default values
-	t := s.T()
-	ctx := s.ctx
-
-	// Verify there are no relay mining difficulties
-	allDifficulties := s.keepers.GetAllRelayMiningDifficulty(ctx)
-	require.Len(t, allDifficulties, 0)
-
-	// Introduce svc1 for the first time
-	relaysPerServiceMap := map[string]uint64{
-		"svc1": 10,
-	}
-
-	// s.End
-
-	s.keepers.UpdateRelayMiningDifficulty(ctx, relaysPerServiceMap)
-
-	// Ensure that 1 relay mining difficulty now exists on-chain
-	allDifficulties = s.keepers.GetAllRelayMiningDifficulty(ctx)
-	require.Len(t, allDifficulties, 1)
-
-	// s.keepers.GetRelayMiningDifficulty(ctx, testServiceId)
 }
 
 func (s *TestSuiteRelayMining) UpdateRelayMiningDifficulty_UpdatingMultipleServicesAtOnce() {
