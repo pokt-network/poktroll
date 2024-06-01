@@ -10,6 +10,7 @@ import (
 
 // EndBlocker called at every block and settles all pending claims.
 func EndBlocker(ctx sdk.Context, k keeper.Keeper) error {
+	fmt.Println("OLSHANSK: EndBlocker")
 	logger := k.Logger().With("method", "EndBlocker")
 	// NB: There are two main reasons why we settle expiring claims in the end
 	// instead of when a proof is submitted:

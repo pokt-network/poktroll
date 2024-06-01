@@ -16,6 +16,14 @@ import (
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 )
 
+// TODO_IN_THIS_PR:
+// - Need to trigger EndBlocker
+// - Need to verify its idempotent
+// - Investigate how to get stats
+// - Look into the guage
+// - Look into adding a dashboard
+// - Look into updating the SMT for this
+
 func init() {
 	cmd.InitSDKConfig()
 }
@@ -73,25 +81,21 @@ func (s *TestSuiteRelayMining) TestUpdateRelayMiningDifficulty_NewServiceSeenFor
 	// Retrieve default values
 	t := s.T()
 	ctx := s.ctx
-	// sdkCtx := sdk.UnwrapSDKContext(ctx)
-
-	// // 0. Add the claim & verify it exists
-	// claim := s.claim
-	// s.keepers.UpsertClaim(ctx, claim)
-	// claims := s.keepers.GetAllClaims(ctx)
-	// s.Require().Len(claims, 1)
 
 	// Verify there are no relay mining difficulties
 	allDifficulties := s.keepers.GetAllRelayMiningDifficulty(ctx)
 	require.Len(t, allDifficulties, 0)
 
+	// Introduce svc1 for the first time
 	relaysPerServiceMap := map[string]uint64{
-		"service1": 10,
+		"svc1": 10,
 	}
+
+	// s.End
 
 	s.keepers.UpdateRelayMiningDifficulty(ctx, relaysPerServiceMap)
 
-	// Verify there are no relay mining difficulties
+	// Ensure that 1 relay mining difficulty now exists on-chain
 	allDifficulties = s.keepers.GetAllRelayMiningDifficulty(ctx)
 	require.Len(t, allDifficulties, 1)
 
