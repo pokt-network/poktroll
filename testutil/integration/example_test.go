@@ -22,8 +22,6 @@ import (
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
-	"github.com/cosmos/cosmos-sdk/x/mint"
-	mintkeeper "github.com/cosmos/cosmos-sdk/x/mint/keeper"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
@@ -39,6 +37,8 @@ import (
 	gatewaykeeper "github.com/pokt-network/poktroll/x/gateway/keeper"
 	gateway "github.com/pokt-network/poktroll/x/gateway/module"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
+	proofkeeper "github.com/pokt-network/poktroll/x/proof/keeper"
+	proof "github.com/pokt-network/poktroll/x/proof/module"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedkeeper "github.com/pokt-network/poktroll/x/shared/keeper"
@@ -60,7 +60,7 @@ func TestExample(t *testing.T) {
 
 	// Register the codec for all the interfacesPrepare all the interfaces
 	registry := codectypes.NewInterfaceRegistry()
-	minttypes.RegisterInterfaces(registry)
+	// minttypes.RegisterInterfaces(registry)
 	tokenomicstypes.RegisterInterfaces(registry)
 	banktypes.RegisterInterfaces(registry)
 	gatewaytypes.RegisterInterfaces(registry)
@@ -150,22 +150,22 @@ func TestExample(t *testing.T) {
 	// slashingModule := slashing.NewAppModule(cdc, slashingKeeper, accountKeeper, bankKeeper, stakingKeeper, cdc.InterfaceRegistry(), cometInfoService)
 	// evidenceModule := evidence.NewAppModule(cdc, *evidenceKeeper, cometInfoService)
 
-	mintKeeper := mintkeeper.NewKeeper(
-		cdc,
-		runtime.NewKVStoreService(storeKeys[minttypes.StoreKey]),
-		stakingKeeper, // stakingKeeper is nil because we don't test staking
-		accountKeeper,
-		bankKeeper,
-		authtypes.FeeCollectorName,
-		authority.String(),
-	)
-	mintModule := mint.NewAppModule(
-		cdc,
-		mintKeeper,
-		accountKeeper,
-		nil, // inflationKeeper is nil because we don't test inflation
-		nil, // subspace is nil because we don't test params (which is legacy anyway)
-	)
+	// mintKeeper := mintkeeper.NewKeeper(
+	// 	cdc,
+	// 	runtime.NewKVStoreService(storeKeys[minttypes.StoreKey]),
+	// 	stakingKeeper, // stakingKeeper is nil because we don't test staking
+	// 	accountKeeper,
+	// 	bankKeeper,
+	// 	authtypes.FeeCollectorName,
+	// 	authority.String(),
+	// )
+	// mintModule := mint.NewAppModule(
+	// 	cdc,
+	// 	mintKeeper,
+	// 	accountKeeper,
+	// 	nil, // inflationKeeper is nil because we don't test inflation
+	// 	nil, // subspace is nil because we don't test params (which is legacy anyway)
+	// )
 
 	sharedKeeper := sharedkeeper.NewKeeper(
 		cdc,
@@ -202,13 +202,29 @@ func TestExample(t *testing.T) {
 		bankKeeper,
 		accountKeeper,
 		gatewayKeeper,
-		nil, // sharedKeeper,
+		sharedKeeper,
 	)
 	applicationModule := application.NewAppModule(
 		cdc,
 		applicationKeeper,
 		accountKeeper,
 		bankKeeper,
+	)
+
+	proofKeeper := proofkeeper.NewKeeper(
+		cdc,
+		runtime.NewKVStoreService(storeKeys[prooftypes.StoreKey]),
+		logger,
+		authority.String(),
+		nil, // sessionk
+		applicationKeeper,
+		accountKeeper,
+		sharedKeeper,
+	)
+	proofModule := proof.NewAppModule(
+		cdc,
+		proofKeeper,
+		accountKeeper,
 	)
 
 	tokenomicsKeeper := tokenomicskeeper.NewKeeper(
@@ -219,7 +235,7 @@ func TestExample(t *testing.T) {
 		bankKeeper,
 		accountKeeper,
 		applicationKeeper,
-		nil, //proofKeeper,
+		proofKeeper,
 	)
 	tokenomicsModule := tokenomics.NewAppModule(
 		cdc,
@@ -256,9 +272,9 @@ func TestExample(t *testing.T) {
 		// sessiontypes.ModuleName:    sessionModule,
 		apptypes.ModuleName: applicationModule,
 		// suppliertypes.ModuleName:   supplierModule,
-		// prooftypes.ModuleName:      proofModule,
-		authtypes.ModuleName:    authModule,
-		minttypes.ModuleName:    mintModule,
+		prooftypes.ModuleName: proofModule,
+		authtypes.ModuleName:  authModule,
+		// minttypes.ModuleName:    mintModule,
 		stakingtypes.ModuleName: stakingModule,
 	}
 
@@ -274,10 +290,10 @@ func TestExample(t *testing.T) {
 	)
 
 	authtypes.RegisterMsgServer(msgRouter, authkeeper.NewMsgServerImpl(accountKeeper))
-	minttypes.RegisterMsgServer(msgRouter, mintkeeper.NewMsgServerImpl(mintKeeper))
+	// minttypes.RegisterMsgServer(msgRouter, mintkeeper.NewMsgServerImpl(mintKeeper))
 	tokenomicstypes.RegisterMsgServer(msgRouter, tokenomicskeeper.NewMsgServerImpl(tokenomicsKeeper))
 
-	minttypes.RegisterQueryServer(integrationApp.QueryHelper(), mintkeeper.NewQueryServerImpl(mintKeeper))
+	// minttypes.RegisterQueryServer(integrationApp.QueryHelper(), mintkeeper.NewQueryServerImpl(mintKeeper))
 
 	params := tokenomicstypes.DefaultParams()
 	params.ComputeUnitsToTokensMultiplier = 42
@@ -291,9 +307,8 @@ func TestExample(t *testing.T) {
 	result, err := integrationApp.RunMsg(
 		req,
 		integration.WithAutomaticFinalizeBlock(),
-	) // integration.WithAutomaticCommit(),
-	// ,
-
+		integration.WithAutomaticCommit(),
+	)
 	require.NoError(t, err)
 
 	// in this example the result is an empty response, a nil check is enough
