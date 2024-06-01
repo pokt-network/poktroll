@@ -27,7 +27,8 @@ type sessionsTreesMap = map[int64]map[string]relayer.SessionTree
 type relayerSessionsManager struct {
 	logger polylog.Logger
 
-	relayObs relayer.MinedRelaysObservable
+	// relayObs key is the signing key name.
+	relayObs map[string]relayer.MinedRelaysObservable
 
 	// sessionsToClaimObs notifies about sessions that are ready to be claimed.
 	sessionsToClaimObs observable.Observable[[]relayer.SessionTree]
@@ -106,20 +107,22 @@ func NewRelayerSessions(
 // network as necessary.
 // It IS NOT BLOCKING as map operations run in their own goroutines.
 func (rs *relayerSessionsManager) Start(ctx context.Context) {
-	// NB: must cast back to generic observable type to use with Map.
-	// relayer.MinedRelaysObservable cannot be an alias due to gomock's lack of
-	// support for generic types.
-	relayObs := observable.Observable[*relayer.MinedRelay](rs.relayObs)
+	for _, signingKeyName := range rs.signingKeyNames {
+		// NB: must cast back to generic observable type to use with Map.
+		// relayer.MinedRelaysObservable cannot be an alias due to gomock's lack of
+		// support for generic types.
+		relayObs := observable.Observable[*relayer.MinedRelay](rs.relayObs[signingKeyName])
 
-	// Map eitherMinedRelays to a new observable of an error type which is
-	// notified if an error was encountered while attempting to add the relay to
-	// the session tree.
-	miningErrorsObs := channel.Map(ctx, relayObs, rs.mapAddMinedRelayToSessionTree)
-	logging.LogErrors(ctx, miningErrorsObs)
+		// Map eitherMinedRelays to a new observable of an error type which is
+		// notified if an error was encountered while attempting to add the relay to
+		// the session tree.
+		miningErrorsObs := channel.Map(ctx, relayObs, rs.mapAddMinedRelayToSessionTree)
+		logging.LogErrors(ctx, miningErrorsObs)
 
-	// Start claim/proof pipeline.
-	claimedSessionsObs := rs.createClaims(ctx)
-	rs.submitProofs(ctx, claimedSessionsObs)
+		// Start claim/proof pipeline.
+		claimedSessionsObs := rs.createClaims(ctx)
+		rs.submitProofs(ctx, claimedSessionsObs)
+	}
 }
 
 // Stop unsubscribes all observables from the InsertRelays observable which
@@ -129,12 +132,15 @@ func (rs *relayerSessionsManager) Start(ctx context.Context) {
 // and/or ensure that the state at each pipeline stage is persisted to disk
 // and exit as early as possible.
 func (rs *relayerSessionsManager) Stop() {
-	rs.relayObs.UnsubscribeAll()
+	for _, v := range rs.relayObs {
+		v.UnsubscribeAll()
+	}
 }
 
 // SessionsToClaim returns an observable that notifies when sessions are ready to be claimed.
 func (rs *relayerSessionsManager) InsertRelays(relays relayer.MinedRelaysObservable) {
 	// TODO_IN_THIS_PR: potentially use a map[keyname/address]relayObs instead
+	// TODO_IN_THIS_COMMIT: figure out how to get an address from relays, or add an argument to `InsertRelays`.
 	rs.relayObs = relays
 }
 
@@ -277,7 +283,7 @@ func (rs *relayerSessionsManager) validateConfig() error {
 		return ErrSessionTreeUndefinedStoresDirectory
 	}
 
-	// TODO_IN_THIS_COMMIT: signingKeyNames
+	// TODO_IN_THIS_COMMIT: check signingKeyNames?
 
 	return nil
 }

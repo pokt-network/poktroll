@@ -58,7 +58,6 @@ type SupplierClient interface {
 // derived from cosmos-sdk messages, in a cosmos-sdk based blockchain network.
 type TxClient interface {
 	SignAndBroadcast(
-		// TODO_IN_THIS_PR: do we need to add address here as well?
 		ctx context.Context,
 		msgs ...cosmostypes.Msg,
 	) either.AsyncError

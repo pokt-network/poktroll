@@ -150,8 +150,8 @@ type RelayMinerSupplierConfig struct {
 	// embed a TLS config.
 	ServiceConfig *RelayMinerSupplierServiceConfig
 
-	// TODO_IN_THIS_PR: should it override or add key names? Let's override for now
-	// SigningKeyNames: a list of key names that overrides `DefaultSigningKeyNames`.
+	// SigningKeyNames: a list of key names that can accept relays for that supplier.
+	// If empty, we copy the values from `DefaultSigningKeyNames`.
 	SigningKeyNames []string
 }
 

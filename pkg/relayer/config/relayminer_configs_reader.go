@@ -1,6 +1,8 @@
 package config
 
 import (
+	"slices"
+
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -59,26 +61,15 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 
 	// Keeping track of all possible signing key names
 	// TODO_IN_THIS_PR: move to a separate method.
-	var uniqueSigningKeyNames = map[string]bool{}
-	for _, signingKeyName := range relayMinerConfig.DefaultSigningKeyNames {
-		_, ok := uniqueSigningKeyNames[signingKeyName]
-		if !ok {
-			uniqueSigningKeyNames[signingKeyName] = true
-		}
-	}
 	for _, server := range relayMinerConfig.Servers {
 		for _, supplier := range server.SupplierConfigsMap {
 			for _, signingKeyName := range supplier.SigningKeyNames {
-				_, ok := uniqueSigningKeyNames[signingKeyName]
-				if !ok {
-					uniqueSigningKeyNames[signingKeyName] = true
-				}
+				relayMinerConfig.UniqueSigningKeyNames = append(relayMinerConfig.UniqueSigningKeyNames, signingKeyName)
 			}
 		}
 	}
-	for keyName := range uniqueSigningKeyNames {
-		relayMinerConfig.UniqueSigningKeyNames = append(relayMinerConfig.UniqueSigningKeyNames, keyName)
-	}
+	slices.Sort(relayMinerConfig.UniqueSigningKeyNames)
+	relayMinerConfig.UniqueSigningKeyNames = slices.Compact(relayMinerConfig.UniqueSigningKeyNames)
 
 	return relayMinerConfig, nil
 }
