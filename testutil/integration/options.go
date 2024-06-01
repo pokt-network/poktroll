@@ -1,6 +1,6 @@
 package integration
 
-// Config is the configuration for the integration app.
+// Config is the configuration for the testing integration app.
 type Config struct {
 	AutomaticFinalizeBlock bool
 	AutomaticCommit        bool
