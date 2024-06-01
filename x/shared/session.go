@@ -1,6 +1,8 @@
 package shared
 
-import sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+import (
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+)
 
 // SessionGracePeriodBlocks is the number of blocks after the session ends before the
 // "session grace period" is considered to have elapsed.
@@ -52,8 +54,8 @@ func GetSessionNumber(sharedParams *sharedtypes.Params, queryHeight int64) int64
 
 	numBlocksPerSession := int64(sharedParams.GetNumBlocksPerSession())
 
-	// TODO_BLOCKER(#543): If the num_blocks_per_session param has ever been changed,
-	// this function may cause unexpected behavior.
+	// TODO_BLOCKER(#543): If the num_blocks_per_session param has ever been
+	// changed, this function may cause unexpected behavior.
 	return ((queryHeight - 1) / numBlocksPerSession) + 1
 }
 

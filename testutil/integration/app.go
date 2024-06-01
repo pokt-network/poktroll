@@ -76,7 +76,6 @@ func NewIntegrationApp(
 	cdc codec.Codec,
 	modules map[string]appmodule.AppModule,
 	msgRouter *baseapp.MsgServiceRouter,
-	// grpcRouter *baseapp.GRPCQueryRouter,
 	queryHelper *baseapp.QueryServiceTestHelper,
 ) *App {
 	t.Helper()
@@ -113,8 +112,6 @@ func NewIntegrationApp(
 	msgRouter.SetInterfaceRegistry(interfaceRegistry)
 	bApp.SetMsgServiceRouter(msgRouter)
 
-	// grpcRouter.SetInterfaceRegistry(interfaceRegistry)
-
 	err := bApp.LoadLatestVersion()
 	require.NoError(t, err, "failed to load latest version")
 
@@ -146,6 +143,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	// Register the codec for all the interfacesPrepare all the interfaces
 	registry := codectypes.NewInterfaceRegistry()
 	tokenomicstypes.RegisterInterfaces(registry)
+	sharedtypes.RegisterInterfaces(registry)
 	banktypes.RegisterInterfaces(registry)
 	gatewaytypes.RegisterInterfaces(registry)
 	authtypes.RegisterInterfaces(registry)
@@ -159,6 +157,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 
 	// Prepare all the store keys
 	storeKeys := storetypes.NewKVStoreKeys(
+		sharedtypes.StoreKey,
 		tokenomicstypes.StoreKey,
 		banktypes.StoreKey,
 		gatewaytypes.StoreKey,
@@ -218,10 +217,11 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	// Prepare the shared keeper and module
 	sharedKeeper := sharedkeeper.NewKeeper(
 		cdc,
-		runtime.NewKVStoreService(storeKeys[apptypes.StoreKey]),
+		runtime.NewKVStoreService(storeKeys[sharedtypes.StoreKey]),
 		logger,
 		authority.String(),
 	)
+	sharedKeeper.SetParams(ctx, sharedtypes.DefaultParams())
 	sharedModule := shared.NewAppModule(
 		cdc,
 		sharedKeeper,
@@ -232,11 +232,12 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	// Prepare the gateway keeper and module
 	gatewayKeeper := gatewaykeeper.NewKeeper(
 		cdc,
-		runtime.NewKVStoreService(storeKeys[apptypes.StoreKey]),
+		runtime.NewKVStoreService(storeKeys[gatewaytypes.StoreKey]),
 		logger,
 		authority.String(),
 		bankKeeper,
 	)
+	gatewayKeeper.SetParams(ctx, gatewaytypes.DefaultParams())
 	gatewayModule := gateway.NewAppModule(
 		cdc,
 		gatewayKeeper,
@@ -255,6 +256,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		gatewayKeeper,
 		sharedKeeper,
 	)
+	applicationKeeper.SetParams(ctx, apptypes.DefaultParams())
 	applicationModule := application.NewAppModule(
 		cdc,
 		applicationKeeper,
@@ -274,6 +276,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		nil, // supplierKeeper
 		sharedKeeper,
 	)
+	sessionKeeper.SetParams(ctx, sessiontypes.DefaultParams())
 	sessionModule := session.NewAppModule(
 		cdc,
 		sessionKeeper,
@@ -292,6 +295,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		accountKeeper,
 		sharedKeeper,
 	)
+	proofKeeper.SetParams(ctx, prooftypes.DefaultParams())
 	proofModule := proof.NewAppModule(
 		cdc,
 		proofKeeper,
@@ -309,6 +313,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		applicationKeeper,
 		proofKeeper,
 	)
+	tokenomicsKeeper.SetParams(ctx, tokenomicstypes.DefaultParams())
 	tokenomicsModule := tokenomics.NewAppModule(
 		cdc,
 		tokenomicsKeeper,
@@ -352,6 +357,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	// Register query servers
 	tokenomicstypes.RegisterQueryServer(queryRouter, tokenomicsKeeper)
 	prooftypes.RegisterQueryServer(queryRouter, proofKeeper)
+	sharedtypes.RegisterQueryServer(queryRouter, sharedKeeper)
 
 	return integrationApp
 }

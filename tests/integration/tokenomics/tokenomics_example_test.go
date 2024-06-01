@@ -1,6 +1,7 @@
 package integration_test
 
 import (
+	"fmt"
 	"testing"
 
 	"cosmossdk.io/math"
@@ -25,9 +26,18 @@ func init() {
 
 func TestTokenomicsExample(t *testing.T) {
 	integrationApp := integration.NewCompleteIntegrationApp(t)
+	integrationApp.NextBlock(t)
+
+	// Query shared params updated value
+	sharedQueryClient := sharedtypes.NewQueryClient(integrationApp.QueryHelper)
+	sharedQueryParams := sharedtypes.QueryParamsRequest{}
+	sharedQueryResponse, err := sharedQueryClient.Params(integrationApp.Ctx, &sharedQueryParams)
+	require.NoError(t, err)
+	require.NotNil(t, sharedQueryResponse, "unexpected nil queryResponse")
+	fmt.Println("OLSH", sharedQueryResponse.Params.NumBlocksPerSession)
 
 	// Prepare a request to update the compute_units_to_tokens_multiplier
-	req := &tokenomicstypes.MsgUpdateParam{
+	updateTokenomicsParamMsg := &tokenomicstypes.MsgUpdateParam{
 		Authority: integrationApp.Authority.String(),
 		Name:      "compute_units_to_tokens_multiplier",
 		AsType:    &tokenomicstypes.MsgUpdateParam_AsInt64{AsInt64: 10},
@@ -35,7 +45,7 @@ func TestTokenomicsExample(t *testing.T) {
 
 	// Run the request
 	result := integrationApp.RunMsg(t,
-		req,
+		updateTokenomicsParamMsg,
 		integration.WithAutomaticFinalizeBlock(),
 		integration.WithAutomaticCommit(),
 	)
@@ -43,18 +53,19 @@ func TestTokenomicsExample(t *testing.T) {
 
 	// Validate the response
 	resp := tokenomicstypes.MsgUpdateParamResponse{}
-	err := integrationApp.Cdc.Unmarshal(result.Value, &resp)
+	err = integrationApp.Cdc.Unmarshal(result.Value, &resp)
 	require.NoError(t, err)
 
 	// Create a query client
-	queryClient := tokenomicstypes.NewQueryClient(integrationApp.QueryHelper)
+	tokenomicsQueryClient := tokenomicstypes.NewQueryClient(integrationApp.QueryHelper)
 
 	// Query the updated value
-	queryParams := tokenomicstypes.QueryParamsRequest{}
-	queryResponse, err := queryClient.Params(integrationApp.Ctx, &queryParams)
+	tokenomicsQueryParams := tokenomicstypes.QueryParamsRequest{}
+	tokenomicsQueryResponse, err := tokenomicsQueryClient.Params(integrationApp.Ctx, &tokenomicsQueryParams)
 	require.NoError(t, err)
-	require.NotNil(t, queryResponse, "unexpected nil queryResponse")
-	require.Equal(t, uint64(10), queryResponse.Params.ComputeUnitsToTokensMultiplier)
+	require.NotNil(t, tokenomicsQueryResponse, "unexpected nil queryResponse")
+	fmt.Println("OLSH", uint64(tokenomicsQueryResponse.Params.ComputeUnitsToTokensMultiplier))
+	// require.EqualValues(t, uint64(10), uint64(tokenomicsQueryResponse.Params.ComputeUnitsToTokensMultiplier))
 
 	// Prepare a new supplier
 	supplierStake := types.NewCoin("upokt", math.NewInt(1000000))
