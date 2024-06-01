@@ -204,9 +204,8 @@ func setupRelayerDependencies(
 		config.NewSupplyRingCacheFn(),
 		supplyTxFactory,
 		supplyTxContext,
-		// TODO_IN_THIS_PR: Provision a tx client per key. Don't quite understand how to then use a tx client on per-signing-key basis (some sort of map?)
 		newSupplyTxClientsFn(signingKeyNames),
-		newSupplySupplierClientFn(signingKeyNames),
+		newSupplySupplierClientsFn(signingKeyNames),
 		newSupplyRelayerProxyFn(signingKeyNames, servicesConfigMap),
 		newSupplyRelayerSessionsManagerFn(smtStorePath, signingKeyNames),
 	}
@@ -256,6 +255,7 @@ func supplyTxContext(
 	deps depinject.Config,
 	_ *cobra.Command,
 ) (depinject.Config, error) {
+	// TODO_IN_THIS_PR: do we need new context per key?
 	txContext, err := tx.NewTxContext(deps)
 	if err != nil {
 		return nil, err
@@ -291,24 +291,27 @@ func newSupplyTxClientsFn(signingKeyNames []string) config.SupplierFn {
 	}
 }
 
-// newSupplySupplierClientFn returns a function which constructs a
+// newSupplySupplierClientsFn returns a function which constructs a
 // SupplierClient instance and returns a new depinject.Config which is
 // supplied with the given deps and the new SupplierClient.
-func newSupplySupplierClientFn(signingKeyNames []string) config.SupplierFn {
+func newSupplySupplierClientsFn(signingKeyNames []string) config.SupplierFn {
 	return func(
 		_ context.Context,
 		deps depinject.Config,
 		_ *cobra.Command,
 	) (depinject.Config, error) {
-		supplierClient, err := supplier.NewSupplierClient(
-			deps,
-			supplier.WithSigningKeyNames(signingKeyNames),
-		)
-		if err != nil {
-			return nil, err
+		suppliers := &supplier.SupplierClientMap{}
+		for _, signingKeyName := range signingKeyNames {
+			supplierClient, err := supplier.NewSupplierClient(
+				deps,
+				supplier.WithSigningKeyName(signingKeyName),
+			)
+			if err != nil {
+				return nil, err
+			}
+			suppliers.Clients[signingKeyName] = supplierClient
 		}
-
-		return depinject.Configs(deps, depinject.Supply(supplierClient)), nil
+		return depinject.Configs(deps, depinject.Supply(suppliers)), nil
 	}
 }
 

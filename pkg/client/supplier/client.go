@@ -17,25 +17,28 @@ var _ client.SupplierClient = (*supplierClient)(nil)
 
 // supplierClient
 type supplierClient struct {
-	signingKeyNames []string
-	signingKeyAddrs map[string]cosmostypes.AccAddress
+	signingKeyName string
+	signingKeyAddr cosmostypes.AccAddress
 
-	txClient client.TxClient
-	txCtx    client.TxContext
+	txClients client.TxClientMap
+	txCtx     client.TxContext
+}
 
-	// txClients map[string]client.TxClient
-	// txCtxs    map[string]client.TxContext
+// SupplierClientMap
+// TODO_IN_THIS_PR: move into appropriate place (where?)
+type SupplierClientMap struct {
+	Clients map[string]*supplierClient
 }
 
 // NewSupplierClient constructs a new SupplierClient with the given dependencies
 // and options. If a signingKeyName is not configured, an error will be returned.
 //
 // Required dependencies:
-//   - client.TxClient
+//   - client.TxClientMap
 //   - client.TxContext
 //
 // Available options:
-//   - WithSigningKeyNames
+//   - WithSigningKeyName
 func NewSupplierClient(
 	deps depinject.Config,
 	opts ...client.SupplierClientOption,
@@ -44,7 +47,7 @@ func NewSupplierClient(
 
 	if err := depinject.Inject(
 		deps,
-		&sClient.txClient,
+		&sClient.txClients,
 		&sClient.txCtx,
 	); err != nil {
 		return nil, err
@@ -82,7 +85,7 @@ func (sClient *supplierClient) SubmitProofs(
 		}
 	}
 
-	eitherErr := sClient.txClient.SignAndBroadcast(ctx, msgs...)
+	eitherErr := sClient.txClient().SignAndBroadcast(ctx, msgs...)
 	err, errCh := eitherErr.SyncOrAsyncError()
 	if err != nil {
 		return err
@@ -124,7 +127,7 @@ func (sClient *supplierClient) CreateClaims(
 			RootHash:        sessionClaim.RootHash,
 		}
 	}
-	eitherErr := sClient.txClient.SignAndBroadcast(ctx, msgs...)
+	eitherErr := sClient.txClient().SignAndBroadcast(ctx, msgs...)
 	err, errCh := eitherErr.SyncOrAsyncError()
 	if err != nil {
 		return err
@@ -151,17 +154,19 @@ func (sClient *supplierClient) CreateClaims(
 // If signingKeyName is empty or the keyring does not contain the corresponding
 // key, an error is returned.
 func (sClient *supplierClient) validateConfigAndSetDefaults() error {
-	for _, signingKeyName := range sClient.signingKeyNames {
-		signingAddr, err := keyring.KeyNameToAddr(
-			signingKeyName,
-			sClient.txCtx.GetKeyring(),
-		)
-		if err != nil {
-			return err
-		}
-
-		sClient.signingKeyAddrs[signingKeyName] = signingAddr
+	signingAddr, err := keyring.KeyNameToAddr(
+		sClient.signingKeyName,
+		sClient.txCtx.GetKeyring(),
+	)
+	if err != nil {
+		return err
 	}
 
+	sClient.signingKeyAddr = signingAddr
+
 	return nil
+}
+
+func (sClient *supplierClient) txClient() client.TxClient {
+	return sClient.txClients.TxClients[sClient.signingKeyName]
 }
