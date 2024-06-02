@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"bytes"
 	"compress/gzip"
 	"context"
 	"crypto/tls"
@@ -105,26 +106,25 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 	ctx := request.Context()
 
 	sync.logger.Debug().Msg("serving synchronous relay request")
-	listenAddress := sync.serverConfig.ListenAddress
 
 	// Extract the relay request from the request body.
 	sync.logger.Debug().Msg("extracting relay request from request body")
 	relayRequest, err := sync.newRelayRequest(request)
 	request.Body.Close()
 	if err != nil {
-		sync.replyWithError(ctx, []byte{}, writer, listenAddress, "", err)
+		emptyRelayRequest := &types.RelayRequest{Payload: []byte{}}
+		sync.replyWithError(err, emptyRelayRequest, true, writer)
 		sync.logger.Warn().Err(err).Msg("failed serving relay request")
 		return
 	}
 
 	if err := relayRequest.ValidateBasic(); err != nil {
-		sync.replyWithError(ctx, relayRequest.Payload, writer, listenAddress, "", err)
+		sync.replyWithError(err, relayRequest, false, writer)
 		sync.logger.Warn().Err(err).Msg("failed validating relay response")
 		return
 	}
 
 	supplierService := relayRequest.Meta.SessionHeader.Service
-	requestPayload := relayRequest.Payload
 
 	originHost := request.Host
 	// When the proxy is behind a reverse proxy, or is getting its requests from
@@ -147,7 +147,7 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 	// Add the http scheme to the originHost to parse it as a URL.
 	originHostUrl, err := url.Parse(fmt.Sprintf("http://%s", originHost))
 	if err != nil {
-		sync.replyWithError(ctx, requestPayload, writer, listenAddress, supplierService.Id, err)
+		sync.replyWithError(err, relayRequest, true, writer)
 		return
 	}
 
@@ -173,14 +173,7 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 	}
 
 	if serviceConfig == nil {
-		sync.replyWithError(
-			ctx,
-			requestPayload,
-			writer,
-			listenAddress,
-			supplierService.Id,
-			ErrRelayerProxyServiceEndpointNotHandled,
-		)
+		sync.replyWithError(ErrRelayerProxyServiceEndpointNotHandled, relayRequest, true, writer)
 		return
 	}
 
@@ -199,14 +192,14 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 	relay, err := sync.serveHTTP(ctx, serviceConfig, supplierService, relayRequest)
 	if err != nil {
 		// Reply with an error if the relay could not be served.
-		sync.replyWithError(ctx, requestPayload, writer, listenAddress, supplierService.Id, err)
+		sync.replyWithError(err, relayRequest, true, writer)
 		sync.logger.Warn().Err(err).Msg("failed serving relay request")
 		return
 	}
 
 	// Send the relay response to the client.
 	if err := sync.sendRelayResponse(relay.Res, writer); err != nil {
-		sync.replyWithError(ctx, requestPayload, writer, listenAddress, supplierService.Id, err)
+		sync.replyWithError(err, relayRequest, true, writer)
 		sync.logger.Warn().Err(err).Msg("failed sending relay response")
 		return
 	}
@@ -246,7 +239,18 @@ func (sync *synchronousRPCServer) serveHTTP(
 	}
 
 	// Deserialize the relay request payload to get the upstream HTTP request.
-	relayHTTPRequest, err := httpcodec.DeserializeHTTPRequest(relayRequest.Payload)
+	httpRequest, err := httpcodec.DeserializeHTTPRequest(relayRequest.Payload)
+	if err != nil {
+		return nil, err
+	}
+
+	bodyReader := io.NopCloser(bytes.NewReader(httpRequest.Body))
+
+	relayHTTPRequest, err := http.NewRequest(
+		httpRequest.Method,
+		httpRequest.Url,
+		bodyReader,
+	)
 	if err != nil {
 		return nil, err
 	}

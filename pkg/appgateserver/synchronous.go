@@ -2,8 +2,8 @@ package appgateserver
 
 import (
 	"context"
-	"io"
 	"net/http"
+	"strings"
 
 	httpcodec "github.com/pokt-network/shannon-sdk/httpcodec"
 
@@ -60,29 +60,25 @@ func (app *appGateServer) handleSynchronousRelay(
 	if err != nil {
 		return ErrAppGateHandleRelay.Wrapf("deserializing response: %s", err)
 	}
-	serviceResponseBodyBz, err := io.ReadAll(serviceResponse.Body)
-	serviceResponse.Body.Close()
-	if err != nil {
-		return ErrAppGateHandleRelay.Wrapf("reading response: body %s", err)
-	}
 
 	app.logger.Debug().
-		Str("relay_response_payload", string(serviceResponseBodyBz)).
+		Str("relay_response_payload", string(serviceResponse.Body)).
 		Msg("writing relay response payload")
 
 	// Reply to the client with the service's response status code and headers.
 	// At this point the AppGateServer has not generated any internal errors, so
 	// the whole response will be forwarded to the client as is, including the
 	// status code and headers, be it an error or not.
-	writer.WriteHeader(serviceResponse.StatusCode)
-	for key, values := range serviceResponse.Header {
+	writer.WriteHeader(int(serviceResponse.StatusCode))
+	for key, valuesStr := range serviceResponse.Header {
+		values := strings.Split(valuesStr, ",")
 		for _, value := range values {
 			writer.Header().Add(key, value)
 		}
 	}
 
 	// Transmit the service's response body to the client.
-	if _, err := writer.Write(serviceResponseBodyBz); err != nil {
+	if _, err := writer.Write(serviceResponse.Body); err != nil {
 		return ErrAppGateHandleRelay.Wrapf("writing relay response payload: %s", err)
 	}
 

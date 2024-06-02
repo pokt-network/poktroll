@@ -13,15 +13,17 @@ import (
 	"sync"
 
 	"cosmossdk.io/depinject"
+	"github.com/pokt-network/shannon-sdk/httpcodec"
+	"github.com/pokt-network/shannon-sdk/rpcdetect"
+	"github.com/pokt-network/shannon-sdk/sdk"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	metrics "github.com/slok/go-http-metrics/metrics/prometheus"
 	metricsmiddleware "github.com/slok/go-http-metrics/middleware"
 	middlewarestd "github.com/slok/go-http-metrics/middleware/std"
 
 	querytypes "github.com/pokt-network/poktroll/pkg/client/query/types"
-	"github.com/pokt-network/poktroll/pkg/partials"
 	"github.com/pokt-network/poktroll/pkg/polylog"
-	"github.com/pokt-network/shannon-sdk/sdk"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // SigningInformation is a struct that holds information related to the signing
@@ -177,14 +179,23 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 	// Read the request body bytes.
 	requestPayloadBz, err := io.ReadAll(request.Body)
 	request.Body.Close()
+	headers := make(map[string]string)
+	for key := range request.Header {
+		headers[key] = strings.Join(request.Header.Values(key), ",")
+	}
+	httpRequest := &httpcodec.HTTPRequest{
+		Method: request.Method,
+		Header: headers,
+		Url:    request.URL.String(),
+		Body:   requestPayloadBz,
+	}
 	if err != nil {
 		app.replyWithError(
-			ctx,
-			requestPayloadBz,
+			ErrAppGateHandleRelay.Wrapf("reading relay request body: %s", err),
+			httpRequest,
+			true,
 			writer,
 			serviceId,
-			"unknown",
-			ErrAppGateHandleRelay.Wrapf("reading relay request body: %s", err),
 		)
 		// TODO_IMPROVE: log additional info?
 		app.logger.Error().Err(err).Msg("failed reading relay request body")
@@ -201,9 +212,9 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 
 	// Get the type of the request by doing a partial unmarshal of the payload
 	// TODO_TECHDEBT(#511): Move request RPCType detection to shannon-sdk
-	requestType, err := partials.GetRequestType(ctx, requestPayloadBz)
-	if err != nil {
-		app.replyWithError(ctx, requestPayloadBz, writer, serviceId, "unknown", ErrAppGateHandleRelay)
+	requestType := rpcdetect.GetRPCType(httpRequest)
+	if requestType == sharedtypes.RPCType_UNKNOWN_RPC {
+		app.replyWithError(ErrAppGateHandleRelay, httpRequest, true, writer, serviceId)
 		// TODO_IMPROVE: log additional info?
 		app.logger.Error().Err(err).Msg("failed getting request type")
 
@@ -216,7 +227,7 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 		appAddress = request.URL.Query().Get("applicationAddr")
 	}
 	if appAddress == "" {
-		app.replyWithError(ctx, requestPayloadBz, writer, serviceId, requestType.String(), ErrAppGateMissingAppAddress)
+		app.replyWithError(ErrAppGateMissingAppAddress, httpRequest, false, writer, serviceId)
 		// TODO_IMPROVE: log additional info?
 		app.logger.Error().Msg("no application address provided")
 
@@ -234,7 +245,7 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 		ctx, appAddress, serviceId, requestType, request, writer); err != nil {
 
 		// Reply with an error response if there was an error handling the relay.
-		app.replyWithError(ctx, requestPayloadBz, writer, serviceId, requestType.String(), err)
+		app.replyWithError(err, httpRequest, false, writer, serviceId)
 		// TODO_IMPROVE: log additional info?
 		app.logger.Error().Err(err).Msg("failed handling relay")
 
