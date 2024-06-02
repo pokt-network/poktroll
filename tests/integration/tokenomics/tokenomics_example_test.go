@@ -8,7 +8,6 @@ import (
 	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
 	integration "github.com/pokt-network/poktroll/testutil/integration"
 	testproof "github.com/pokt-network/poktroll/testutil/proof"
-	testsession "github.com/pokt-network/poktroll/testutil/session"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -60,27 +59,37 @@ func TestTokenomicsExample(t *testing.T) {
 	require.NotNil(t, tokenomicsQueryResponse, "unexpected nil queryResponse")
 	require.EqualValues(t, uint64(11), uint64(tokenomicsQueryResponse.Params.ComputeUnitsToTokensMultiplier))
 
-	sessionHeader := &sessiontypes.SessionHeader{
+	sessionQueryClient := sessiontypes.NewQueryClient(integrationApp.QueryHelper())
+	getSessionReq := sessiontypes.QueryGetSessionRequest{
 		ApplicationAddress: integrationApp.DefaultApplication.Address,
-		Service: &sharedtypes.Service{
-			Id:   "svc1",
-			Name: "svcName1",
-		},
-		SessionId:               "session_id",
-		SessionStartBlockHeight: 1,
-		SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
+		Service:            integrationApp.DefaultService,
+		BlockHeight:        3,
 	}
+	getSessionRes, err := sessionQueryClient.GetSession(integrationApp.SdkCtx(), &getSessionReq)
+	require.NoError(t, err)
+	require.NotNil(t, getSessionRes, "unexpected nil queryResponse")
 
-	claim := prooftypes.Claim{
-		SupplierAddress: integrationApp.DefaultSupplier.Address,
-		SessionHeader:   sessionHeader,
-		RootHash:        testproof.SmstRootWithSum(uint64(1)),
-	}
+	// sessionHeader := &sessiontypes.SessionHeader{
+	// 	ApplicationAddress: integrationApp.DefaultApplication.Address,
+	// 	Service: &sharedtypes.Service{
+	// 		Id:   "svc1",
+	// 		Name: "svcName1",
+	// 	},
+	// 	SessionId:               "session_id",
+	// 	SessionStartBlockHeight: 1,
+	// 	SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
+	// }
+
+	// claim := prooftypes.Claim{
+	// 	SupplierAddress: integrationApp.DefaultSupplier.Address,
+	// 	SessionHeader:   getSessionRes.Session.Header,
+	// 	RootHash:        testproof.SmstRootWithSum(uint64(1)),
+	// }
 
 	createClaimMsg := prooftypes.MsgCreateClaim{
 		SupplierAddress: integrationApp.DefaultSupplier.Address,
-		SessionHeader:   sessionHeader,
-		RootHash:        claim.RootHash,
+		SessionHeader:   getSessionRes.Session.Header,
+		RootHash:        testproof.SmstRootWithSum(uint64(1)),
 	}
 
 	integrationApp.NextBlock(t)
