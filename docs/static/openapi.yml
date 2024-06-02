@@ -15929,403 +15929,6 @@ paths:
               parameters.
       tags:
         - Msg
-  /pokt-network/poktroll/application/application:
-    get:
-      operationId: PoktrollApplicationQuery_AllApplications
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-            properties:
-              applications:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    address:
-                      type: string
-                      title: >-
-                        The Bech32 address of the application using cosmos'
-                        ScalarDescriptor to ensure deterministic encoding
-                    stake:
-                      title: The total amount of uPOKT the application has staked
-                      type: object
-                      properties:
-                        denom:
-                          type: string
-                        amount:
-                          type: string
-                      description: >-
-                        Coin defines a token with a denomination and an amount.
-
-
-                        NOTE: The amount field is an Int which implements the
-                        custom method
-
-                        signatures required by gogoproto.
-                    service_configs:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          service:
-                            title: >-
-                              The Service for which the application is
-                              configured
-                            type: object
-                            properties:
-                              id:
-                                type: string
-                                description: Unique identifier for the service
-                                title: >-
-                                  For example, what if we want to request a
-                                  session for a certain service but with some
-                                  additional configs that identify it?
-                              name:
-                                type: string
-                                description: >-
-                                  (Optional) Semantic human readable name for
-                                  the service
-                                title: >-
-                                  TODO_TECHDEBT: Name is currently unused but
-                                  acts as a reminder that an optional onchain
-                                  representation of the service is necessary
-                        title: >-
-                          ApplicationServiceConfig holds the service
-                          configuration the application stakes for
-                      title: >-
-                        The list of services this appliccation is configured to
-                        request service for
-                    delegatee_gateway_addresses:
-                      type: array
-                      items:
-                        type: string
-                      description: >-
-                        TODO_TECHDEBT: Rename `delegatee_gateway_addresses` to
-                        `gateway_addresses_delegated_to`.
-
-                        Ensure to rename all relevant configs, comments,
-                        variables, function names, etc as well.
-
-
-                        The Bech32 encoded addresses for all delegatee Gateways,
-                        in a non-nullable slice
-                    pending_undelegations:
-                      type: object
-                      additionalProperties:
-                        type: object
-                        properties:
-                          gateway_addresses:
-                            type: array
-                            items:
-                              type: string
-                        description: >-
-                          UndelegatingGatewayList is used as the Value of
-                          `pending_undelegations`.
-
-                          It is required to store a repeated list of strings as
-                          a map value.
-                      description: >-
-                        A map from sessionEndHeights to a list of Gateways.
-
-                        The key is the height of the last block of the session
-                        during which the
-
-                        respective undelegation was committed.
-
-                        The value is a list of gateways being undelegated from.
-
-                        TODO_DOCUMENT(@red-0ne): Need to document the flow from
-                        this comment
-
-                        so its clear to everyone why this is necessary;
-                        https://github.com/pokt-network/poktroll/issues/476#issuecomment-2052639906.
-                  title: >-
-                    Application defines the type used to store an on-chain
-                    definition and state for an application
-              pagination:
-                type: object
-                properties:
-                  next_key:
-                    type: string
-                    format: byte
-                    description: |-
-                      next_key is the key to be passed to PageRequest.key to
-                      query the next page most efficiently. It will be empty if
-                      there are no more results.
-                  total:
-                    type: string
-                    format: uint64
-                    title: >-
-                      total is total number of results available if
-                      PageRequest.count_total
-
-                      was set, its value is undefined otherwise
-                description: >-
-                  PageResponse is to be embedded in gRPC response messages where
-                  the
-
-                  corresponding request message has used PageRequest.
-
-                   message SomeResponse {
-                           repeated Bar results = 1;
-                           PageResponse page = 2;
-                   }
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    '@type':
-                      type: string
-                  additionalProperties: {}
-      parameters:
-        - name: pagination.key
-          description: |-
-            key is a value returned in PageResponse.next_key to begin
-            querying the next page most efficiently. Only one of offset or key
-            should be set.
-          in: query
-          required: false
-          type: string
-          format: byte
-        - name: pagination.offset
-          description: >-
-            offset is a numeric offset that can be used when key is unavailable.
-
-            It is less efficient than using key. Only one of offset or key
-            should
-
-            be set.
-          in: query
-          required: false
-          type: string
-          format: uint64
-        - name: pagination.limit
-          description: >-
-            limit is the total number of results to be returned in the result
-            page.
-
-            If left empty it will default to a value to be set by each app.
-          in: query
-          required: false
-          type: string
-          format: uint64
-        - name: pagination.count_total
-          description: >-
-            count_total is set to true  to indicate that the result set should
-            include
-
-            a count of the total number of items available for pagination in
-            UIs.
-
-            count_total is only respected when offset is used. It is ignored
-            when key
-
-            is set.
-          in: query
-          required: false
-          type: boolean
-        - name: pagination.reverse
-          description: >-
-            reverse is set to true if results are to be returned in the
-            descending order.
-
-
-            Since: cosmos-sdk 0.43
-          in: query
-          required: false
-          type: boolean
-      tags:
-        - Query
-  /pokt-network/poktroll/application/application/{address}:
-    get:
-      summary: Queries a list of Application items.
-      operationId: PoktrollApplicationQuery_Application
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-            properties:
-              application:
-                type: object
-                properties:
-                  address:
-                    type: string
-                    title: >-
-                      The Bech32 address of the application using cosmos'
-                      ScalarDescriptor to ensure deterministic encoding
-                  stake:
-                    title: The total amount of uPOKT the application has staked
-                    type: object
-                    properties:
-                      denom:
-                        type: string
-                      amount:
-                        type: string
-                    description: >-
-                      Coin defines a token with a denomination and an amount.
-
-
-                      NOTE: The amount field is an Int which implements the
-                      custom method
-
-                      signatures required by gogoproto.
-                  service_configs:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        service:
-                          title: The Service for which the application is configured
-                          type: object
-                          properties:
-                            id:
-                              type: string
-                              description: Unique identifier for the service
-                              title: >-
-                                For example, what if we want to request a
-                                session for a certain service but with some
-                                additional configs that identify it?
-                            name:
-                              type: string
-                              description: >-
-                                (Optional) Semantic human readable name for the
-                                service
-                              title: >-
-                                TODO_TECHDEBT: Name is currently unused but acts
-                                as a reminder that an optional onchain
-                                representation of the service is necessary
-                      title: >-
-                        ApplicationServiceConfig holds the service configuration
-                        the application stakes for
-                    title: >-
-                      The list of services this appliccation is configured to
-                      request service for
-                  delegatee_gateway_addresses:
-                    type: array
-                    items:
-                      type: string
-                    description: >-
-                      TODO_TECHDEBT: Rename `delegatee_gateway_addresses` to
-                      `gateway_addresses_delegated_to`.
-
-                      Ensure to rename all relevant configs, comments,
-                      variables, function names, etc as well.
-
-
-                      The Bech32 encoded addresses for all delegatee Gateways,
-                      in a non-nullable slice
-                  pending_undelegations:
-                    type: object
-                    additionalProperties:
-                      type: object
-                      properties:
-                        gateway_addresses:
-                          type: array
-                          items:
-                            type: string
-                      description: >-
-                        UndelegatingGatewayList is used as the Value of
-                        `pending_undelegations`.
-
-                        It is required to store a repeated list of strings as a
-                        map value.
-                    description: >-
-                      A map from sessionEndHeights to a list of Gateways.
-
-                      The key is the height of the last block of the session
-                      during which the
-
-                      respective undelegation was committed.
-
-                      The value is a list of gateways being undelegated from.
-
-                      TODO_DOCUMENT(@red-0ne): Need to document the flow from
-                      this comment
-
-                      so its clear to everyone why this is necessary;
-                      https://github.com/pokt-network/poktroll/issues/476#issuecomment-2052639906.
-                title: >-
-                  Application defines the type used to store an on-chain
-                  definition and state for an application
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    '@type':
-                      type: string
-                  additionalProperties: {}
-      parameters:
-        - name: address
-          in: path
-          required: true
-          type: string
-      tags:
-        - Query
-  /pokt-network/poktroll/application/params:
-    get:
-      summary: Parameters queries the parameters of the module.
-      operationId: PoktrollApplicationQuery_Params
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-            properties:
-              params:
-                description: params holds all the parameters of this module.
-                type: object
-                properties:
-                  max_delegated_gateways:
-                    type: string
-                    format: uint64
-            description: >-
-              QueryParamsResponse is response type for the Query/Params RPC
-              method.
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    '@type':
-                      type: string
-                  additionalProperties: {}
-      tags:
-        - Query
   /poktroll.application.Msg/DelegateToGateway:
     post:
       operationId: PoktrollApplicationMsg_DelegateToGateway
@@ -17262,6 +16865,61 @@ paths:
             description: MsgUpdateParams is the Msg/UpdateParams request type.
       tags:
         - Msg
+  /poktroll.session.Msg/UpdateParams:
+    post:
+      summary: |-
+        UpdateParams defines a (governance) operation for updating the module
+        parameters. The authority defaults to the x/gov module account.
+      operationId: PoktrollSessionMsg_UpdateParams
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            description: >-
+              MsgUpdateParamsResponse defines the response structure for
+              executing a
+
+              MsgUpdateParams message.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    '@type':
+                      type: string
+                  additionalProperties: {}
+      parameters:
+        - name: body
+          description: MsgUpdateParams is the Msg/UpdateParams request type.
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              authority:
+                type: string
+                description: >-
+                  authority is the address that controls the module (defaults to
+                  x/gov unless overwritten).
+              params:
+                description: |-
+                  params defines the x/session parameters to update.
+                  NOTE: All parameters must be supplied.
+                type: object
+            description: MsgUpdateParams is the Msg/UpdateParams request type.
+      tags:
+        - Msg
   /pokt-network/poktroll/session/get_session:
     get:
       summary: Queries the session given app_address, service and block_height.
@@ -17651,6 +17309,42 @@ paths:
               params:
                 description: params holds all the parameters of this module.
                 type: object
+            description: >-
+              QueryParamsResponse is response type for the Query/Params RPC
+              method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    '@type':
+                      type: string
+                  additionalProperties: {}
+      tags:
+        - Query
+  /pokt-network/poktroll/shared/params:
+    get:
+      summary: Parameters queries the parameters of the module.
+      operationId: PoktrollSharedQuery_Params
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              params:
+                description: params holds all the parameters of this module.
+                type: object
                 properties:
                   num_blocks_per_session:
                     type: string
@@ -17678,22 +17372,17 @@ paths:
                   additionalProperties: {}
       tags:
         - Query
-  /poktroll.session.Msg/UpdateParams:
+  /poktroll.shared.Msg/UpdateParam:
     post:
-      summary: |-
-        UpdateParams defines a (governance) operation for updating the module
-        parameters. The authority defaults to the x/gov module account.
-      operationId: PoktrollSessionMsg_UpdateParams
+      operationId: PoktrollSharedMsg_UpdateParam
       responses:
         '200':
           description: A successful response.
           schema:
             type: object
-            description: >-
-              MsgUpdateParamsResponse defines the response structure for
-              executing a
-
-              MsgUpdateParams message.
+            properties:
+              params:
+                type: string
         default:
           description: An unexpected error response.
           schema:
@@ -17714,7 +17403,6 @@ paths:
                   additionalProperties: {}
       parameters:
         - name: body
-          description: MsgUpdateParams is the Msg/UpdateParams request type.
           in: body
           required: true
           schema:
@@ -17722,57 +17410,12 @@ paths:
             properties:
               authority:
                 type: string
-                description: >-
-                  authority is the address that controls the module (defaults to
-                  x/gov unless overwritten).
-              params:
-                description: |-
-                  params defines the x/session parameters to update.
-                  NOTE: All parameters must be supplied.
-                type: object
-                properties:
-                  num_blocks_per_session:
-                    type: string
-                    format: uint64
-            description: MsgUpdateParams is the Msg/UpdateParams request type.
+              name:
+                type: string
+              asType:
+                type: string
       tags:
         - Msg
-  /pokt-network/poktroll/shared/params:
-    get:
-      summary: Parameters queries the parameters of the module.
-      operationId: PoktrollSharedQuery_Params
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-            properties:
-              params:
-                description: params holds all the parameters of this module.
-                type: object
-            description: >-
-              QueryParamsResponse is response type for the Query/Params RPC
-              method.
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    '@type':
-                      type: string
-                  additionalProperties: {}
-      tags:
-        - Query
   /poktroll.shared.Msg/UpdateParams:
     post:
       summary: |-
@@ -17821,11 +17464,12 @@ paths:
                   authority is the address that controls the module (defaults to
                   x/gov unless overwritten).
               params:
-                description: |-
-                  params defines the module parameters to update.
-
-                  NOTE: All parameters must be supplied.
+                description: 'NOTE: All parameters must be supplied.'
                 type: object
+                properties:
+                  num_blocks_per_session:
+                    type: string
+                    format: uint64
             description: MsgUpdateParams is the Msg/UpdateParams request type.
       tags:
         - Msg
@@ -24770,483 +24414,6 @@ definitions:
     description: |-
       Version defines the versioning scheme used to negotiate the IBC verison in
       the connection handshake.
-  cosmos.base.query.v1beta1.PageRequest:
-    type: object
-    properties:
-      key:
-        type: string
-        format: byte
-        description: |-
-          key is a value returned in PageResponse.next_key to begin
-          querying the next page most efficiently. Only one of offset or key
-          should be set.
-      offset:
-        type: string
-        format: uint64
-        description: |-
-          offset is a numeric offset that can be used when key is unavailable.
-          It is less efficient than using key. Only one of offset or key should
-          be set.
-      limit:
-        type: string
-        format: uint64
-        description: >-
-          limit is the total number of results to be returned in the result
-          page.
-
-          If left empty it will default to a value to be set by each app.
-      count_total:
-        type: boolean
-        description: >-
-          count_total is set to true  to indicate that the result set should
-          include
-
-          a count of the total number of items available for pagination in UIs.
-
-          count_total is only respected when offset is used. It is ignored when
-          key
-
-          is set.
-      reverse:
-        type: boolean
-        description: >-
-          reverse is set to true if results are to be returned in the descending
-          order.
-
-
-          Since: cosmos-sdk 0.43
-    description: |-
-      message SomeRequest {
-               Foo some_parameter = 1;
-               PageRequest pagination = 2;
-       }
-    title: |-
-      PageRequest is to be embedded in gRPC request messages for efficient
-      pagination. Ex:
-  cosmos.base.query.v1beta1.PageResponse:
-    type: object
-    properties:
-      next_key:
-        type: string
-        format: byte
-        description: |-
-          next_key is the key to be passed to PageRequest.key to
-          query the next page most efficiently. It will be empty if
-          there are no more results.
-      total:
-        type: string
-        format: uint64
-        title: |-
-          total is total number of results available if PageRequest.count_total
-          was set, its value is undefined otherwise
-    description: |-
-      PageResponse is to be embedded in gRPC response messages where the
-      corresponding request message has used PageRequest.
-
-       message SomeResponse {
-               repeated Bar results = 1;
-               PageResponse page = 2;
-       }
-  poktroll.application.Application:
-    type: object
-    properties:
-      address:
-        type: string
-        title: >-
-          The Bech32 address of the application using cosmos' ScalarDescriptor
-          to ensure deterministic encoding
-      stake:
-        title: The total amount of uPOKT the application has staked
-        type: object
-        properties:
-          denom:
-            type: string
-          amount:
-            type: string
-        description: |-
-          Coin defines a token with a denomination and an amount.
-
-          NOTE: The amount field is an Int which implements the custom method
-          signatures required by gogoproto.
-      service_configs:
-        type: array
-        items:
-          type: object
-          properties:
-            service:
-              title: The Service for which the application is configured
-              type: object
-              properties:
-                id:
-                  type: string
-                  description: Unique identifier for the service
-                  title: >-
-                    For example, what if we want to request a session for a
-                    certain service but with some additional configs that
-                    identify it?
-                name:
-                  type: string
-                  description: (Optional) Semantic human readable name for the service
-                  title: >-
-                    TODO_TECHDEBT: Name is currently unused but acts as a
-                    reminder that an optional onchain representation of the
-                    service is necessary
-          title: >-
-            ApplicationServiceConfig holds the service configuration the
-            application stakes for
-        title: >-
-          The list of services this appliccation is configured to request
-          service for
-      delegatee_gateway_addresses:
-        type: array
-        items:
-          type: string
-        description: >-
-          TODO_TECHDEBT: Rename `delegatee_gateway_addresses` to
-          `gateway_addresses_delegated_to`.
-
-          Ensure to rename all relevant configs, comments, variables, function
-          names, etc as well.
-
-
-          The Bech32 encoded addresses for all delegatee Gateways, in a
-          non-nullable slice
-      pending_undelegations:
-        type: object
-        additionalProperties:
-          type: object
-          properties:
-            gateway_addresses:
-              type: array
-              items:
-                type: string
-          description: >-
-            UndelegatingGatewayList is used as the Value of
-            `pending_undelegations`.
-
-            It is required to store a repeated list of strings as a map value.
-        description: >-
-          A map from sessionEndHeights to a list of Gateways.
-
-          The key is the height of the last block of the session during which
-          the
-
-          respective undelegation was committed.
-
-          The value is a list of gateways being undelegated from.
-
-          TODO_DOCUMENT(@red-0ne): Need to document the flow from this comment
-
-          so its clear to everyone why this is necessary;
-          https://github.com/pokt-network/poktroll/issues/476#issuecomment-2052639906.
-    title: >-
-      Application defines the type used to store an on-chain definition and
-      state for an application
-  poktroll.application.Params:
-    type: object
-    properties:
-      max_delegated_gateways:
-        type: string
-        format: uint64
-    description: Params defines the parameters for the module.
-  poktroll.application.QueryAllApplicationsResponse:
-    type: object
-    properties:
-      applications:
-        type: array
-        items:
-          type: object
-          properties:
-            address:
-              type: string
-              title: >-
-                The Bech32 address of the application using cosmos'
-                ScalarDescriptor to ensure deterministic encoding
-            stake:
-              title: The total amount of uPOKT the application has staked
-              type: object
-              properties:
-                denom:
-                  type: string
-                amount:
-                  type: string
-              description: >-
-                Coin defines a token with a denomination and an amount.
-
-
-                NOTE: The amount field is an Int which implements the custom
-                method
-
-                signatures required by gogoproto.
-            service_configs:
-              type: array
-              items:
-                type: object
-                properties:
-                  service:
-                    title: The Service for which the application is configured
-                    type: object
-                    properties:
-                      id:
-                        type: string
-                        description: Unique identifier for the service
-                        title: >-
-                          For example, what if we want to request a session for
-                          a certain service but with some additional configs
-                          that identify it?
-                      name:
-                        type: string
-                        description: >-
-                          (Optional) Semantic human readable name for the
-                          service
-                        title: >-
-                          TODO_TECHDEBT: Name is currently unused but acts as a
-                          reminder that an optional onchain representation of
-                          the service is necessary
-                title: >-
-                  ApplicationServiceConfig holds the service configuration the
-                  application stakes for
-              title: >-
-                The list of services this appliccation is configured to request
-                service for
-            delegatee_gateway_addresses:
-              type: array
-              items:
-                type: string
-              description: >-
-                TODO_TECHDEBT: Rename `delegatee_gateway_addresses` to
-                `gateway_addresses_delegated_to`.
-
-                Ensure to rename all relevant configs, comments, variables,
-                function names, etc as well.
-
-
-                The Bech32 encoded addresses for all delegatee Gateways, in a
-                non-nullable slice
-            pending_undelegations:
-              type: object
-              additionalProperties:
-                type: object
-                properties:
-                  gateway_addresses:
-                    type: array
-                    items:
-                      type: string
-                description: >-
-                  UndelegatingGatewayList is used as the Value of
-                  `pending_undelegations`.
-
-                  It is required to store a repeated list of strings as a map
-                  value.
-              description: >-
-                A map from sessionEndHeights to a list of Gateways.
-
-                The key is the height of the last block of the session during
-                which the
-
-                respective undelegation was committed.
-
-                The value is a list of gateways being undelegated from.
-
-                TODO_DOCUMENT(@red-0ne): Need to document the flow from this
-                comment
-
-                so its clear to everyone why this is necessary;
-                https://github.com/pokt-network/poktroll/issues/476#issuecomment-2052639906.
-          title: >-
-            Application defines the type used to store an on-chain definition
-            and state for an application
-      pagination:
-        type: object
-        properties:
-          next_key:
-            type: string
-            format: byte
-            description: |-
-              next_key is the key to be passed to PageRequest.key to
-              query the next page most efficiently. It will be empty if
-              there are no more results.
-          total:
-            type: string
-            format: uint64
-            title: >-
-              total is total number of results available if
-              PageRequest.count_total
-
-              was set, its value is undefined otherwise
-        description: |-
-          PageResponse is to be embedded in gRPC response messages where the
-          corresponding request message has used PageRequest.
-
-           message SomeResponse {
-                   repeated Bar results = 1;
-                   PageResponse page = 2;
-           }
-  poktroll.application.QueryGetApplicationResponse:
-    type: object
-    properties:
-      application:
-        type: object
-        properties:
-          address:
-            type: string
-            title: >-
-              The Bech32 address of the application using cosmos'
-              ScalarDescriptor to ensure deterministic encoding
-          stake:
-            title: The total amount of uPOKT the application has staked
-            type: object
-            properties:
-              denom:
-                type: string
-              amount:
-                type: string
-            description: >-
-              Coin defines a token with a denomination and an amount.
-
-
-              NOTE: The amount field is an Int which implements the custom
-              method
-
-              signatures required by gogoproto.
-          service_configs:
-            type: array
-            items:
-              type: object
-              properties:
-                service:
-                  title: The Service for which the application is configured
-                  type: object
-                  properties:
-                    id:
-                      type: string
-                      description: Unique identifier for the service
-                      title: >-
-                        For example, what if we want to request a session for a
-                        certain service but with some additional configs that
-                        identify it?
-                    name:
-                      type: string
-                      description: (Optional) Semantic human readable name for the service
-                      title: >-
-                        TODO_TECHDEBT: Name is currently unused but acts as a
-                        reminder that an optional onchain representation of the
-                        service is necessary
-              title: >-
-                ApplicationServiceConfig holds the service configuration the
-                application stakes for
-            title: >-
-              The list of services this appliccation is configured to request
-              service for
-          delegatee_gateway_addresses:
-            type: array
-            items:
-              type: string
-            description: >-
-              TODO_TECHDEBT: Rename `delegatee_gateway_addresses` to
-              `gateway_addresses_delegated_to`.
-
-              Ensure to rename all relevant configs, comments, variables,
-              function names, etc as well.
-
-
-              The Bech32 encoded addresses for all delegatee Gateways, in a
-              non-nullable slice
-          pending_undelegations:
-            type: object
-            additionalProperties:
-              type: object
-              properties:
-                gateway_addresses:
-                  type: array
-                  items:
-                    type: string
-              description: >-
-                UndelegatingGatewayList is used as the Value of
-                `pending_undelegations`.
-
-                It is required to store a repeated list of strings as a map
-                value.
-            description: >-
-              A map from sessionEndHeights to a list of Gateways.
-
-              The key is the height of the last block of the session during
-              which the
-
-              respective undelegation was committed.
-
-              The value is a list of gateways being undelegated from.
-
-              TODO_DOCUMENT(@red-0ne): Need to document the flow from this
-              comment
-
-              so its clear to everyone why this is necessary;
-              https://github.com/pokt-network/poktroll/issues/476#issuecomment-2052639906.
-        title: >-
-          Application defines the type used to store an on-chain definition and
-          state for an application
-  poktroll.application.QueryParamsResponse:
-    type: object
-    properties:
-      params:
-        description: params holds all the parameters of this module.
-        type: object
-        properties:
-          max_delegated_gateways:
-            type: string
-            format: uint64
-    description: QueryParamsResponse is response type for the Query/Params RPC method.
-  poktroll.application.UndelegatingGatewayList:
-    type: object
-    properties:
-      gateway_addresses:
-        type: array
-        items:
-          type: string
-    description: |-
-      UndelegatingGatewayList is used as the Value of `pending_undelegations`.
-      It is required to store a repeated list of strings as a map value.
-  poktroll.shared.ApplicationServiceConfig:
-    type: object
-    properties:
-      service:
-        title: The Service for which the application is configured
-        type: object
-        properties:
-          id:
-            type: string
-            description: Unique identifier for the service
-            title: >-
-              For example, what if we want to request a session for a certain
-              service but with some additional configs that identify it?
-          name:
-            type: string
-            description: (Optional) Semantic human readable name for the service
-            title: >-
-              TODO_TECHDEBT: Name is currently unused but acts as a reminder
-              that an optional onchain representation of the service is
-              necessary
-    title: >-
-      ApplicationServiceConfig holds the service configuration the application
-      stakes for
-  poktroll.shared.Service:
-    type: object
-    properties:
-      id:
-        type: string
-        description: Unique identifier for the service
-        title: >-
-          For example, what if we want to request a session for a certain
-          service but with some additional configs that identify it?
-      name:
-        type: string
-        description: (Optional) Semantic human readable name for the service
-        title: >-
-          TODO_TECHDEBT: Name is currently unused but acts as a reminder that an
-          optional onchain representation of the service is necessary
-    title: >-
-      Service message to encapsulate unique and semantic identifiers for a
-      service on the network
   poktroll.application.MsgDelegateToGateway:
     type: object
     properties:
@@ -25365,6 +24532,54 @@ definitions:
     description: |-
       MsgUpdateParamsResponse defines the response structure for executing a
       MsgUpdateParams message.
+  poktroll.application.Params:
+    type: object
+    properties:
+      max_delegated_gateways:
+        type: string
+        format: uint64
+    description: Params defines the parameters for the module.
+  poktroll.shared.ApplicationServiceConfig:
+    type: object
+    properties:
+      service:
+        title: The Service for which the application is configured
+        type: object
+        properties:
+          id:
+            type: string
+            description: Unique identifier for the service
+            title: >-
+              For example, what if we want to request a session for a certain
+              service but with some additional configs that identify it?
+          name:
+            type: string
+            description: (Optional) Semantic human readable name for the service
+            title: >-
+              TODO_TECHDEBT: Name is currently unused but acts as a reminder
+              that an optional onchain representation of the service is
+              necessary
+    title: >-
+      ApplicationServiceConfig holds the service configuration the application
+      stakes for
+  poktroll.shared.Service:
+    type: object
+    properties:
+      id:
+        type: string
+        description: Unique identifier for the service
+        title: >-
+          For example, what if we want to request a session for a certain
+          service but with some additional configs that identify it?
+      name:
+        type: string
+        description: (Optional) Semantic human readable name for the service
+        title: >-
+          TODO_TECHDEBT: Name is currently unused but acts as a reminder that an
+          optional onchain representation of the service is necessary
+    title: >-
+      Service message to encapsulate unique and semantic identifiers for a
+      service on the network
   poktroll.gateway.MsgStakeGateway:
     type: object
     properties:
@@ -25771,13 +24986,133 @@ definitions:
           This will be deducted from the signer's account balance,
           and transferred to the pocket network foundation.
     description: Params defines the parameters for the module.
-  poktroll.session.Params:
+  poktroll.session.MsgUpdateParams:
     type: object
     properties:
-      num_blocks_per_session:
+      authority:
         type: string
-        format: uint64
+        description: >-
+          authority is the address that controls the module (defaults to x/gov
+          unless overwritten).
+      params:
+        description: |-
+          params defines the x/session parameters to update.
+          NOTE: All parameters must be supplied.
+        type: object
+    description: MsgUpdateParams is the Msg/UpdateParams request type.
+  poktroll.session.MsgUpdateParamsResponse:
+    type: object
+    description: |-
+      MsgUpdateParamsResponse defines the response structure for executing a
+      MsgUpdateParams message.
+  poktroll.session.Params:
+    type: object
     description: Params defines the parameters for the module.
+  poktroll.application.Application:
+    type: object
+    properties:
+      address:
+        type: string
+        title: >-
+          The Bech32 address of the application using cosmos' ScalarDescriptor
+          to ensure deterministic encoding
+      stake:
+        title: The total amount of uPOKT the application has staked
+        type: object
+        properties:
+          denom:
+            type: string
+          amount:
+            type: string
+        description: |-
+          Coin defines a token with a denomination and an amount.
+
+          NOTE: The amount field is an Int which implements the custom method
+          signatures required by gogoproto.
+      service_configs:
+        type: array
+        items:
+          type: object
+          properties:
+            service:
+              title: The Service for which the application is configured
+              type: object
+              properties:
+                id:
+                  type: string
+                  description: Unique identifier for the service
+                  title: >-
+                    For example, what if we want to request a session for a
+                    certain service but with some additional configs that
+                    identify it?
+                name:
+                  type: string
+                  description: (Optional) Semantic human readable name for the service
+                  title: >-
+                    TODO_TECHDEBT: Name is currently unused but acts as a
+                    reminder that an optional onchain representation of the
+                    service is necessary
+          title: >-
+            ApplicationServiceConfig holds the service configuration the
+            application stakes for
+        title: >-
+          The list of services this appliccation is configured to request
+          service for
+      delegatee_gateway_addresses:
+        type: array
+        items:
+          type: string
+        description: >-
+          TODO_TECHDEBT: Rename `delegatee_gateway_addresses` to
+          `gateway_addresses_delegated_to`.
+
+          Ensure to rename all relevant configs, comments, variables, function
+          names, etc as well.
+
+
+          The Bech32 encoded addresses for all delegatee Gateways, in a
+          non-nullable slice
+      pending_undelegations:
+        type: object
+        additionalProperties:
+          type: object
+          properties:
+            gateway_addresses:
+              type: array
+              items:
+                type: string
+          description: >-
+            UndelegatingGatewayList is used as the Value of
+            `pending_undelegations`.
+
+            It is required to store a repeated list of strings as a map value.
+        description: >-
+          A map from sessionEndHeights to a list of Gateways.
+
+          The key is the height of the last block of the session during which
+          the
+
+          respective undelegation was committed.
+
+          The value is a list of gateways being undelegated from.
+
+          TODO_DOCUMENT(@red-0ne): Need to document the flow from this comment
+
+          so its clear to everyone why this is necessary;
+          https://github.com/pokt-network/poktroll/issues/476#issuecomment-2052639906.
+    title: >-
+      Application defines the type used to store an on-chain definition and
+      state for an application
+  poktroll.application.UndelegatingGatewayList:
+    type: object
+    properties:
+      gateway_addresses:
+        type: array
+        items:
+          type: string
+    description: |-
+      UndelegatingGatewayList is used as the Value of `pending_undelegations`.
+      It is required to store a repeated list of strings as a map value.
   poktroll.session.QueryGetSessionResponse:
     type: object
     properties:
@@ -26085,10 +25420,6 @@ definitions:
       params:
         description: params holds all the parameters of this module.
         type: object
-        properties:
-          num_blocks_per_session:
-            type: string
-            format: uint64
     description: QueryParamsResponse is response type for the Query/Params RPC method.
   poktroll.session.Session:
     type: object
@@ -26671,31 +26002,12 @@ definitions:
     title: >-
       SupplierServiceConfig holds the service configuration the supplier stakes
       for
-  poktroll.session.MsgUpdateParams:
-    type: object
-    properties:
-      authority:
-        type: string
-        description: >-
-          authority is the address that controls the module (defaults to x/gov
-          unless overwritten).
-      params:
-        description: |-
-          params defines the x/session parameters to update.
-          NOTE: All parameters must be supplied.
-        type: object
-        properties:
-          num_blocks_per_session:
-            type: string
-            format: uint64
-    description: MsgUpdateParams is the Msg/UpdateParams request type.
-  poktroll.session.MsgUpdateParamsResponse:
-    type: object
-    description: |-
-      MsgUpdateParamsResponse defines the response structure for executing a
-      MsgUpdateParams message.
   poktroll.shared.Params:
     type: object
+    properties:
+      num_blocks_per_session:
+        type: string
+        format: uint64
     description: Params defines the parameters for the module.
   poktroll.shared.QueryParamsResponse:
     type: object
@@ -26703,7 +26015,25 @@ definitions:
       params:
         description: params holds all the parameters of this module.
         type: object
+        properties:
+          num_blocks_per_session:
+            type: string
+            format: uint64
     description: QueryParamsResponse is response type for the Query/Params RPC method.
+  poktroll.shared.MsgUpdateParam:
+    type: object
+    properties:
+      authority:
+        type: string
+      name:
+        type: string
+      asType:
+        type: string
+  poktroll.shared.MsgUpdateParamResponse:
+    type: object
+    properties:
+      params:
+        type: string
   poktroll.shared.MsgUpdateParams:
     type: object
     properties:
@@ -26713,11 +26043,12 @@ definitions:
           authority is the address that controls the module (defaults to x/gov
           unless overwritten).
       params:
-        description: |-
-          params defines the module parameters to update.
-
-          NOTE: All parameters must be supplied.
+        description: 'NOTE: All parameters must be supplied.'
         type: object
+        properties:
+          num_blocks_per_session:
+            type: string
+            format: uint64
     description: MsgUpdateParams is the Msg/UpdateParams request type.
   poktroll.shared.MsgUpdateParamsResponse:
     type: object
