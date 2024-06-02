@@ -1,6 +1,8 @@
 package shared
 
 import (
+	"fmt"
+
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -53,7 +55,7 @@ func GetSessionNumber(sharedParams *sharedtypes.Params, queryHeight int64) int64
 	}
 
 	numBlocksPerSession := int64(sharedParams.GetNumBlocksPerSession())
-
+	fmt.Println("OLSH numBlocksPerSession", numBlocksPerSession)
 	// TODO_BLOCKER(#543): If the num_blocks_per_session param has ever been
 	// changed, this function may cause unexpected behavior.
 	return ((queryHeight - 1) / numBlocksPerSession) + 1

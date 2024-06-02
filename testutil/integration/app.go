@@ -7,6 +7,7 @@ import (
 	"cosmossdk.io/core/appmodule"
 	coreheader "cosmossdk.io/core/header"
 	"cosmossdk.io/log"
+	"cosmossdk.io/math"
 	"cosmossdk.io/store"
 	"cosmossdk.io/store/metrics"
 	storetypes "cosmossdk.io/store/types"
@@ -19,6 +20,7 @@ import (
 	addresscodec "github.com/cosmos/cosmos-sdk/codec/address"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/runtime"
+	"github.com/cosmos/cosmos-sdk/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/auth"
@@ -32,6 +34,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app"
+	"github.com/pokt-network/poktroll/testutil/sample"
 	appkeeper "github.com/pokt-network/poktroll/x/application/keeper"
 	application "github.com/pokt-network/poktroll/x/application/module"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -41,12 +44,17 @@ import (
 	proofkeeper "github.com/pokt-network/poktroll/x/proof/keeper"
 	proof "github.com/pokt-network/poktroll/x/proof/module"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
+	service "github.com/pokt-network/poktroll/x/service/module"
+	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	session "github.com/pokt-network/poktroll/x/session/module"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedkeeper "github.com/pokt-network/poktroll/x/shared/keeper"
 	shared "github.com/pokt-network/poktroll/x/shared/module"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	supplierkeeper "github.com/pokt-network/poktroll/x/supplier/keeper"
+	supplier "github.com/pokt-network/poktroll/x/supplier/module"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tokenomicskeeper "github.com/pokt-network/poktroll/x/tokenomics/keeper"
 	tokenomics "github.com/pokt-network/poktroll/x/tokenomics/module"
@@ -59,22 +67,26 @@ const appName = "poktroll-integration-app"
 type App struct {
 	*baseapp.BaseApp
 
-	Ctx           sdk.Context
-	Cdc           codec.Codec
-	Logger        log.Logger
-	Authority     sdk.AccAddress
-	ModuleManager module.Manager
-	QueryHelper   *baseapp.QueryServiceTestHelper
+	sdkCtx        sdk.Context
+	cdc           codec.Codec
+	logger        log.Logger
+	authority     sdk.AccAddress
+	moduleManager module.Manager
+	queryHelper   *baseapp.QueryServiceTestHelper
+
+	DefaultService     *sharedtypes.Service
+	DefaultApplication *apptypes.Application
+	DefaultSupplier    *sharedtypes.Supplier
 }
 
 func NewIntegrationApp(
 	t *testing.T,
 	sdkCtx sdk.Context,
+	cdc codec.Codec,
 	logger log.Logger,
 	authority sdk.AccAddress,
-	keys map[string]*storetypes.KVStoreKey,
-	cdc codec.Codec,
 	modules map[string]appmodule.AppModule,
+	keys map[string]*storetypes.KVStoreKey,
 	msgRouter *baseapp.MsgServiceRouter,
 	queryHelper *baseapp.QueryServiceTestHelper,
 ) *App {
@@ -123,17 +135,18 @@ func NewIntegrationApp(
 
 	cometHeader := cmtproto.Header{
 		ChainID: appName,
-		Height:  2}
+		Height:  2,
+	}
 	ctx := sdkCtx.WithBlockHeader(cometHeader).WithIsCheckTx(true)
 
 	return &App{
 		BaseApp:       bApp,
-		Logger:        logger,
-		Authority:     authority,
-		Ctx:           ctx,
-		Cdc:           cdc,
-		ModuleManager: *moduleManager,
-		QueryHelper:   queryHelper,
+		logger:        logger,
+		authority:     authority,
+		sdkCtx:        ctx,
+		cdc:           cdc,
+		moduleManager: *moduleManager,
+		queryHelper:   queryHelper,
 	}
 }
 
@@ -151,6 +164,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	apptypes.RegisterInterfaces(registry)
 	suppliertypes.RegisterInterfaces(registry)
 	prooftypes.RegisterInterfaces(registry)
+	servicetypes.RegisterInterfaces(registry)
 	authtypes.RegisterInterfaces(registry)
 
 	cdc := codec.NewProtoCodec(registry)
@@ -165,12 +179,16 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		apptypes.StoreKey,
 		suppliertypes.StoreKey,
 		prooftypes.StoreKey,
+		servicetypes.StoreKey,
 		authtypes.StoreKey)
 
 	// Prepare the context
 	logger := log.NewNopLogger() // log.NewTestLogger(t)
 	cms := CreateMultiStore(storeKeys, logger)
-	ctx := sdk.NewContext(cms, cmtproto.Header{}, true, logger)
+	sdkCtx := sdk.NewContext(cms, cmtproto.Header{
+		ChainID: appName,
+		Height:  1,
+	}, true, logger)
 
 	// Get the authority address
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName)
@@ -221,10 +239,23 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		logger,
 		authority.String(),
 	)
-	sharedKeeper.SetParams(ctx, sharedtypes.DefaultParams())
 	sharedModule := shared.NewAppModule(
 		cdc,
 		sharedKeeper,
+		accountKeeper,
+		bankKeeper,
+	)
+
+	serviceKeeper := servicekeeper.NewKeeper(
+		cdc,
+		runtime.NewKVStoreService(storeKeys[servicetypes.StoreKey]),
+		logger,
+		authority.String(),
+		bankKeeper,
+	)
+	serviceModule := service.NewAppModule(
+		cdc,
+		serviceKeeper,
 		accountKeeper,
 		bankKeeper,
 	)
@@ -237,7 +268,6 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		authority.String(),
 		bankKeeper,
 	)
-	gatewayKeeper.SetParams(ctx, gatewaytypes.DefaultParams())
 	gatewayModule := gateway.NewAppModule(
 		cdc,
 		gatewayKeeper,
@@ -256,10 +286,23 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		gatewayKeeper,
 		sharedKeeper,
 	)
-	applicationKeeper.SetParams(ctx, apptypes.DefaultParams())
 	applicationModule := application.NewAppModule(
 		cdc,
 		applicationKeeper,
+		accountKeeper,
+		bankKeeper,
+	)
+
+	supplierKeeper := supplierkeeper.NewKeeper(
+		cdc,
+		runtime.NewKVStoreService(storeKeys[suppliertypes.StoreKey]),
+		logger,
+		authority.String(),
+		bankKeeper,
+	)
+	supplierModule := supplier.NewAppModule(
+		cdc,
+		supplierKeeper,
 		accountKeeper,
 		bankKeeper,
 	)
@@ -273,10 +316,9 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		accountKeeper,
 		bankKeeper,
 		applicationKeeper,
-		nil, // supplierKeeper
+		supplierKeeper,
 		sharedKeeper,
 	)
-	sessionKeeper.SetParams(ctx, sessiontypes.DefaultParams())
 	sessionModule := session.NewAppModule(
 		cdc,
 		sessionKeeper,
@@ -295,7 +337,6 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		accountKeeper,
 		sharedKeeper,
 	)
-	proofKeeper.SetParams(ctx, prooftypes.DefaultParams())
 	proofModule := proof.NewAppModule(
 		cdc,
 		proofKeeper,
@@ -313,7 +354,6 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		applicationKeeper,
 		proofKeeper,
 	)
-	tokenomicsKeeper.SetParams(ctx, tokenomicstypes.DefaultParams())
 	tokenomicsModule := tokenomics.NewAppModule(
 		cdc,
 		tokenomicsKeeper,
@@ -323,43 +363,127 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 
 	// Prepare the message & query routers
 	msgRouter := baseapp.NewMsgServiceRouter()
-	queryRouter := baseapp.NewQueryServerTestHelper(ctx, registry)
+	queryHelper := baseapp.NewQueryServerTestHelper(sdkCtx, registry)
 
 	// Prepare the list of modules
 	modules := map[string]appmodule.AppModule{
 		tokenomicstypes.ModuleName: tokenomicsModule,
+		servicetypes.ModuleName:    serviceModule,
 		sharedtypes.ModuleName:     sharedModule,
 		gatewaytypes.ModuleName:    gatewayModule,
 		apptypes.ModuleName:        applicationModule,
+		suppliertypes.ModuleName:   supplierModule,
 		prooftypes.ModuleName:      proofModule,
 		authtypes.ModuleName:       authModule,
 		sessiontypes.ModuleName:    sessionModule,
 	}
 
-	// Initialize the integration app
+	// Initialize the integration integrationApp
 	integrationApp := NewIntegrationApp(
 		t,
-		ctx,
+		sdkCtx,
+		cdc,
 		logger,
 		authority,
-		storeKeys,
-		cdc,
 		modules,
+		storeKeys,
 		msgRouter,
-		queryRouter,
+		queryHelper,
 	)
 
 	// Register the message servers
-	authtypes.RegisterMsgServer(msgRouter, authkeeper.NewMsgServerImpl(accountKeeper))
 	tokenomicstypes.RegisterMsgServer(msgRouter, tokenomicskeeper.NewMsgServerImpl(tokenomicsKeeper))
+	servicetypes.RegisterMsgServer(msgRouter, servicekeeper.NewMsgServerImpl(serviceKeeper))
+	sharedtypes.RegisterMsgServer(msgRouter, sharedkeeper.NewMsgServerImpl(sharedKeeper))
+	gatewaytypes.RegisterMsgServer(msgRouter, gatewaykeeper.NewMsgServerImpl(gatewayKeeper))
+	apptypes.RegisterMsgServer(msgRouter, appkeeper.NewMsgServerImpl(applicationKeeper))
+	suppliertypes.RegisterMsgServer(msgRouter, supplierkeeper.NewMsgServerImpl(supplierKeeper))
 	prooftypes.RegisterMsgServer(msgRouter, proofkeeper.NewMsgServerImpl(proofKeeper))
+	authtypes.RegisterMsgServer(msgRouter, authkeeper.NewMsgServerImpl(accountKeeper))
+	sessiontypes.RegisterMsgServer(msgRouter, sessionkeeper.NewMsgServerImpl(sessionKeeper))
 
 	// Register query servers
-	tokenomicstypes.RegisterQueryServer(queryRouter, tokenomicsKeeper)
-	prooftypes.RegisterQueryServer(queryRouter, proofKeeper)
-	sharedtypes.RegisterQueryServer(queryRouter, sharedKeeper)
+	tokenomicstypes.RegisterQueryServer(queryHelper, tokenomicsKeeper)
+	servicetypes.RegisterQueryServer(queryHelper, serviceKeeper)
+	sharedtypes.RegisterQueryServer(queryHelper, sharedKeeper)
+	gatewaytypes.RegisterQueryServer(queryHelper, gatewayKeeper)
+	apptypes.RegisterQueryServer(queryHelper, applicationKeeper)
+	suppliertypes.RegisterQueryServer(queryHelper, supplierKeeper)
+	prooftypes.RegisterQueryServer(queryHelper, proofKeeper)
+	// authtypes.RegisterQueryServer(queryHelper, accountKeeper)
+	sessiontypes.RegisterQueryServer(queryHelper, sessionKeeper)
+
+	integrationApp.NextBlock(t)
+
+	err := sharedKeeper.SetParams(integrationApp.sdkCtx, sharedtypes.DefaultParams())
+	require.NoError(t, err)
+	err = tokenomicsKeeper.SetParams(sdkCtx, tokenomicstypes.DefaultParams())
+	require.NoError(t, err)
+	err = proofKeeper.SetParams(sdkCtx, prooftypes.DefaultParams())
+	require.NoError(t, err)
+	err = sessionKeeper.SetParams(sdkCtx, sessiontypes.DefaultParams())
+	require.NoError(t, err)
+	err = gatewayKeeper.SetParams(sdkCtx, gatewaytypes.DefaultParams())
+	require.NoError(t, err)
+	err = applicationKeeper.SetParams(sdkCtx, apptypes.DefaultParams())
+	require.NoError(t, err)
+
+	// Prepare a new service
+	defaultService := sharedtypes.Service{
+		Id:   "svc1",
+		Name: "svcName1",
+	}
+	serviceKeeper.SetService(integrationApp.sdkCtx, defaultService)
+	integrationApp.DefaultService = &defaultService
+
+	// Prepare a new supplier
+	supplierStake := types.NewCoin("upokt", math.NewInt(1000000))
+	defaultSupplier := sharedtypes.Supplier{
+		Address: sample.AccAddress(),
+		Stake:   &supplierStake,
+		Services: []*sharedtypes.SupplierServiceConfig{
+			{
+				Service: &defaultService,
+			},
+		},
+	}
+	supplierKeeper.SetSupplier(integrationApp.sdkCtx, defaultSupplier)
+	integrationApp.DefaultSupplier = &defaultSupplier
+
+	// Prepare a new application
+	appStake := types.NewCoin("upokt", math.NewInt(1000000))
+	defaultApplication := apptypes.Application{
+		Address: sample.AccAddress(),
+		Stake:   &appStake,
+		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
+			{
+				Service: &defaultService,
+			},
+		},
+	}
+	applicationKeeper.SetApplication(integrationApp.sdkCtx, defaultApplication)
+	integrationApp.DefaultApplication = &defaultApplication
+
+	integrationApp.NextBlock(t)
 
 	return integrationApp
+}
+
+func (app *App) Codec() codec.Codec {
+	return app.cdc
+}
+
+func (app *App) SdkCtx() sdk.Context {
+	return app.sdkCtx
+}
+
+func (app *App) Authority() string {
+	return app.authority.String()
+}
+
+func (app *App) QueryHelper() *baseapp.QueryServiceTestHelper {
+	app.queryHelper.Ctx = app.sdkCtx
+	return app.queryHelper
 }
 
 // RunMsg provides the ability to run a message and return the response.
@@ -381,7 +505,7 @@ func (app *App) RunMsg(t *testing.T, msg sdk.Msg, option ...Option) *codectypes.
 		defer func() {
 			_, err := app.Commit()
 			require.NoError(t, err, "failed to commit")
-			app.nextBlockCtx()
+			app.nextBlockUpdateCtx()
 		}()
 	}
 
@@ -396,12 +520,12 @@ func (app *App) RunMsg(t *testing.T, msg sdk.Msg, option ...Option) *codectypes.
 		require.NoError(t, err, "failed to finalize block")
 	}
 
-	app.Logger.Info("Running msg", "msg", msg.String())
+	app.logger.Info("Running msg", "msg", msg.String())
 
 	handler := app.MsgServiceRouter().Handler(msg)
 	require.NotNil(t, handler, "handler not found for message %s", sdk.MsgTypeURL(msg))
 
-	msgResult, err := handler(app.Ctx, msg)
+	msgResult, err := handler(app.sdkCtx, msg)
 	require.NoError(t, err, "failed to execute message %s", sdk.MsgTypeURL(msg))
 
 	var response *codectypes.Any
@@ -418,30 +542,31 @@ func (app *App) NextBlock(t *testing.T) {
 	t.Helper()
 
 	_, err := app.FinalizeBlock(&abci.RequestFinalizeBlock{
-		Height: app.Ctx.BlockHeight(),
-		Time:   app.Ctx.BlockTime()})
+		Height: app.sdkCtx.BlockHeight(),
+		Time:   app.sdkCtx.BlockTime()})
 	require.NoError(t, err)
 
 	_, err = app.Commit()
 	require.NoError(t, err)
 
-	app.nextBlockCtx()
+	app.nextBlockUpdateCtx()
 }
 
-func (app *App) nextBlockCtx() {
-	newBlockTime := app.Ctx.BlockTime().Add(time.Duration(1) * time.Second)
+func (app *App) nextBlockUpdateCtx() {
+	prevCtx := app.sdkCtx
 
-	header := app.Ctx.BlockHeader()
-	header.Time = newBlockTime
+	header := prevCtx.BlockHeader()
+	header.Time = prevCtx.BlockTime().Add(time.Duration(1) * time.Second)
 	header.Height++
 
-	newCtx := app.BaseApp.NewUncachedContext(false, header).
+	app.sdkCtx = app.BaseApp.NewUncachedContext(true, header).
 		WithHeaderInfo(coreheader.Info{
 			Height: header.Height,
-			Time:   header.Time,
+			// Hash: ??
+			Time:    header.Time,
+			ChainID: appName,
+			// AppHash: ??
 		})
-
-	app.Ctx = newCtx
 }
 
 // CreateMultiStore is a helper for setting up multiple stores for provided modules.
