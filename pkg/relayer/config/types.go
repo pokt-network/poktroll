@@ -1,8 +1,6 @@
 package config
 
-import (
-	"net/url"
-)
+import "net/url"
 
 type RelayMinerServerType int
 

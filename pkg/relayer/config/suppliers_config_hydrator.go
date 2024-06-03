@@ -25,6 +25,7 @@ func (relayMinerConfig *RelayMinerConfig) HydrateSuppliers(
 				)
 			}
 
+			// Otherwise assign the DefaultSigningKeyNames to this supplier.
 			supplierConfig.SigningKeyNames = relayMinerConfig.DefaultSigningKeyNames
 		}
 

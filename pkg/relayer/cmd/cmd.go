@@ -264,9 +264,9 @@ func supplyTxContext(
 	return depinject.Configs(deps, depinject.Supply(txContext)), nil
 }
 
-// newSupplyTxClientsFn returns a function which constructs a TxClient
-// instance and returns a new depinject.Config which is supplied with
-// the given deps and the new TxClient.
+// newSupplyTxClientsFn returns a function which constructs a TxClientMap
+// instance and returns a new depinject. Config which is supplied with
+// the given deps and the new TxClientMap.
 func newSupplyTxClientsFn(signingKeyNames []string) config.SupplierFn {
 	return func(
 		ctx context.Context,
@@ -294,8 +294,8 @@ func newSupplyTxClientsFn(signingKeyNames []string) config.SupplierFn {
 }
 
 // newSupplySupplierClientsFn returns a function which constructs a
-// SupplierClient instance and returns a new depinject.Config which is
-// supplied with the given deps and the new SupplierClient.
+// SupplierClientMap instance and returns a new depinject. Config which is
+// supplied with the given deps and the new SupplierClientMap.
 func newSupplySupplierClientsFn(signingKeyNames []string) config.SupplierFn {
 	return func(
 		_ context.Context,
