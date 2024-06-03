@@ -5,7 +5,7 @@ import (
 	"io"
 	"net/http"
 
-	httpcodec "github.com/pokt-network/shannon-sdk/httpcodec"
+	sdktypes "github.com/pokt-network/shannon-sdk/types"
 
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -44,7 +44,7 @@ func (app *appGateServer) handleSynchronousRelay(
 
 	// Serialize the request to be sent to the supplier as a RelayRequest.Payload
 	// which will include the url, request body, method, and headers.
-	requestBz, err := httpcodec.SerializeHTTPRequest(request)
+	requestBz, err := sdktypes.SerializeHTTPRequest(request)
 	if err != nil {
 		return ErrAppGateHandleRelay.Wrapf("serializing request: %s", err)
 	}
@@ -56,7 +56,7 @@ func (app *appGateServer) handleSynchronousRelay(
 
 	// Deserialize the RelayResponse payload to get the serviceResponse that will
 	// be forwarded to the client.
-	serviceResponse, err := httpcodec.DeserializeHTTPResponse(relayResponse.Payload)
+	serviceResponse, err := sdktypes.DeserializeHTTPResponse(relayResponse.Payload)
 	if err != nil {
 		return ErrAppGateHandleRelay.Wrapf("deserializing response: %s", err)
 	}

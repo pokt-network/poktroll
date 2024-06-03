@@ -11,12 +11,12 @@ import (
 	"testing"
 
 	sdkerror "cosmossdk.io/errors"
+	sdktypes "github.com/pokt-network/shannon-sdk/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/testutil/testpolylog"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	"github.com/pokt-network/shannon-sdk/httpcodec"
 )
 
 // TODO(@h5law): Expand coverage with more test cases when more request types
@@ -70,7 +70,7 @@ func TestPartials_GetErrorReply(t *testing.T) {
 				URL:    &url.URL{},
 				Body:   io.NopCloser(bytes.NewReader(test.payload)),
 			}
-			httpReqBz, err := httpcodec.SerializeHTTPRequest(httpReq)
+			httpReqBz, err := sdktypes.SerializeHTTPRequest(httpReq)
 			require.NoError(t, err)
 
 			// Generate the error reply

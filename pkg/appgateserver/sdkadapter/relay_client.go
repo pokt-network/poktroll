@@ -36,10 +36,10 @@ func NewRelayClient(
 // SendRequest sends a serialized relay request to the given RelayMiner URL
 // with the given body, method and headers.
 // It is the mean of communication between the AppGateServer and the RelayMiner
-// to relay requests but has no knowledge about the content that is being relayed.
-// TODO_BLOCKER: Currently, the communication between the AppGateServer and the
-// RelayMiner uses HTTP. This should be changed to a more generic one, such as
-// pure TCP.
+// to relay requests, but has no knowledge about the content that is being relayed.
+// TODO_RESEARCH: Currently, the communication between the AppGateServer and the
+// RelayMiner uses HTTP. This could be changed to a more generic and performant
+// one, such as pure TCP.
 func (r sdkRelayClient) SendRequest(
 	ctx context.Context,
 	urlStr string,

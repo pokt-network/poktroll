@@ -123,8 +123,9 @@ func NewAppGateServer(
 
 	// TODO_CONSIDERATION: Use app.listeningEndpoint scheme to determine which
 	// kind of server to create (HTTP, HTTPS, TCP, UNIX, etc...)
-	// TODO_BLOCKER(red0ne): Use TCP server for the AppGateServer to have generic support
-	// of RPCTypes.
+	// TODO_RESEARCH: Currently, the communication between the AppGateServer and the
+	// RelayMiner uses HTTP. This could be changed to a more generic and performant
+	// one, such as pure TCP.
 	app.server = &http.Server{Addr: app.listeningEndpoint.Host}
 
 	return app, nil
@@ -200,7 +201,7 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 	app.logger.Debug().Msg("determining request type")
 
 	// Get the type of the request by doing a partial unmarshal of the payload
-	// TODO_TECHDEBT(#511): Move request RPCType detection to shannon-sdk
+	// TODO_BLOCKER(#511): Move request RPCType detection to shannon-sdk
 	requestType, err := partials.GetRequestType(ctx, requestPayloadBz)
 	if err != nil {
 		app.replyWithError(ctx, requestPayloadBz, writer, serviceId, "unknown", ErrAppGateHandleRelay)
@@ -311,17 +312,19 @@ func extractServiceId(urlPath string) (newUrlPath string, serviceId string) {
 	// Extract the serviceId from the request path.
 	serviceId = strings.Split(urlPath, "/")[1]
 
-	// Remove the serviceId from the request path which is specific AppGateServer.
+	// Remove the serviceId from the request path which is specific AppGateServer business logic.
 	// The remaining path is the path of the request that will be serialized and
-	// sent to sent to the supplier within a RelayRequest. For example:
-	// * If a request to the Backend service has to ba made with the path "/backend/relay"
-	// * The client has to send the request to the AppGateServer with the path
+	// sent to sent to the supplier within a RelayRequest.
+	// For example:
+	// * Assume a request to the Backend service has to be made with the path "/backend/relay"
+	// * The AppGateServer expects the request from the client to have the path
 	//   "/serviceId/backend/relay"
-	// * The AppGateServer will remove the serviceId from the path and send the request
-	//   and serialize the request to send to the supplier with the path "/backend/relay"
+	// * The AppGateServer will remove the serviceId from the path, serialize the request
+	// and send it to the supplier with the path "/backend/relay"
 	//
-	// This is specific to the AppGateServer and other gateways may have different
-	// means of identifying the service that the request is for.
+	// This is specific logic to how the AppGateServer functions. Other gateways
+	// may have different means or approaches of identifying the service that the
+	// request is for (e.g. POST data).
 	newUrlPath = strings.Replace(urlPath, serviceId, "", 1)
 	return newUrlPath, serviceId
 }

@@ -4,10 +4,11 @@ import (
 	"context"
 	"io"
 
+	sdktypes "github.com/pokt-network/shannon-sdk/types"
+
 	"github.com/pokt-network/poktroll/pkg/partials/payloads"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	"github.com/pokt-network/shannon-sdk/httpcodec"
 )
 
 // GetRequestType returns the request type for the given payload.
@@ -30,24 +31,24 @@ func GetRequestType(ctx context.Context, payloadBz []byte) (sharedtypes.RPCType,
 func GetErrorReply(
 	ctx context.Context,
 	requestBz []byte,
-	err error,
+	upstreamError error,
 ) ([]byte, error) {
-	// TODO_HACK(red0ne): This is a hack to extract the payload from the request
+	// TODO_HACK(#221): This is a hack to extract the payload from the request
 	// until partials package is refactored to handle the request directly.
-	request, er := httpcodec.DeserializeHTTPRequest(requestBz)
-	if er != nil {
-		return nil, er
+	request, err := sdktypes.DeserializeHTTPRequest(requestBz)
+	if err != nil {
+		return nil, err
 	}
-	payloadBz, er := io.ReadAll(request.Body)
-	if er != nil {
-		return nil, er
+	payloadBz, err := io.ReadAll(request.Body)
+	if err != nil {
+		return nil, err
 	}
 
-	partialRequest, er := PartiallyUnmarshalRequest(ctx, payloadBz)
-	if er != nil {
-		return nil, er
+	partialRequest, err := PartiallyUnmarshalRequest(ctx, payloadBz)
+	if err != nil {
+		return nil, err
 	}
-	return partialRequest.GenerateErrorPayload(err)
+	return partialRequest.GenerateErrorPayload(upstreamError)
 }
 
 // GetComputeUnits returns the compute units for the RPC request provided

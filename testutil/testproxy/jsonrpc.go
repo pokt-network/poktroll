@@ -5,25 +5,38 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"testing"
 
-	"github.com/pokt-network/shannon-sdk/httpcodec"
+	sdktypes "github.com/pokt-network/shannon-sdk/types"
+	"github.com/stretchr/testify/require"
 )
 
-// JSONRpcError is the error struct for the JSON RPC response payload.
-type JSONRpcError struct {
+// JSONRPCError is the error struct for the JSONRPC response payload.
+type JSONRPCError struct {
 	Code    int32  `json:"code"`
 	Message string `json:"message"`
 }
 
-// JSONRpcErrorReply is the error reply struct for the JSON RPC response payload.
-type JSONRpcErrorReply struct {
+// JSONRPCErrorReply is the error reply struct for the JSON-RPC response payload.
+type JSONRPCErrorReply struct {
 	Id      int32  `json:"id"`
 	Jsonrpc string `json:"jsonrpc"`
-	Error   *JSONRpcError
+	Error   *JSONRPCError
 }
 
-// prepareJsonRPCResponse prepares a hard-coded JsonRPC response.
-func prepareJsonRPCResponse() []byte {
+// prepareJSONRPCResponse constructs a hard-coded JSON-RPC http.Response and
+// returns the corresponding sdk serialized POKTHTTPResponse.
+// It uses a default StatusOK and "application/json" content type, along with
+// the provided hard-coded body bytes.
+// The function then serializes the entire generated http.Response into an sdk
+// serialized POKTHTTPResponse to be embedded in a RelayResponse.Payload.
+// Unlike PrepareJSONRPCRequest, this function is not exported as it is
+// exclusively used within the testutil/testproxy package for serving a
+// hard-coded JSON-RPC response.
+// This function is intended solely for testing purposes and should not be used
+// in production code.
+func prepareJSONRPCResponse(t *testing.T) []byte {
+	t.Helper()
 	bodyBz := []byte(`{"jsonrpc":"2.0","id":1,"result":"some result"}`)
 
 	response := &http.Response{
@@ -33,12 +46,23 @@ func prepareJsonRPCResponse() []byte {
 	}
 	response.Header.Set("Content-Type", "application/json")
 
-	responseBz, _ := httpcodec.SerializeHTTPResponse(response)
+	responseBz, err := sdktypes.SerializeHTTPResponse(response)
+	require.NoError(t, err)
 	return responseBz
 }
 
-// PrepareJsonRPCRequest prepares a hard-coded JsonRPC request.
-func PrepareJsonRPCRequest() []byte {
+// PrepareJSONRPCRequest constructs a hard-coded JSON-RPC http.Request and
+// returns the corresponding sdk serialized POKTHTTPRequest.
+// It uses the default POST method and "application/json" content type, along
+// with the provided hard-coded body bytes.
+// The function then serializes the entire generated http.Request into an sdk
+// serialized POKTHTTPRequest to be embedded in a RelayRequest.Payload.
+// Unlike prepareJSONRPCResponse, this function is exported to be used in
+// the pkg/relayer/proxy/proxy_test testing code.
+// This function is intended solely for testing purposes and should not be used
+// in production code.
+func PrepareJSONRPCRequest(t *testing.T) []byte {
+	t.Helper()
 	bodyBz := []byte(`{"method":"someMethod","id":1,"jsonrpc":"2.0","params":["someParam"]}`)
 	request := &http.Request{
 		Method: http.MethodPost,
@@ -48,6 +72,7 @@ func PrepareJsonRPCRequest() []byte {
 	}
 	request.Header.Set("Content-Type", "application/json")
 
-	requestBz, _ := httpcodec.SerializeHTTPRequest(request)
+	requestBz, err := sdktypes.SerializeHTTPRequest(request)
+	require.NoError(t, err)
 	return requestBz
 }

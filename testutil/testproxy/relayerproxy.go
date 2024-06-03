@@ -142,7 +142,7 @@ func WithServicesConfigMap(
 			for serviceId, supplierConfig := range serviceConfig.SupplierConfigsMap {
 				server := &http.Server{Addr: supplierConfig.ServiceConfig.BackendUrl.Host}
 				server.Handler = http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-					w.Write(prepareJsonRPCResponse())
+					w.Write(prepareJSONRPCResponse(test.t))
 				})
 				go func() { server.ListenAndServe() }()
 				go func() {
@@ -342,7 +342,7 @@ func GetRelayResponseError(t *testing.T, res *http.Response) (errCode int32, err
 		return 0, "cannot unmarshal request body"
 	}
 
-	var payload JSONRpcErrorReply
+	var payload JSONRPCErrorReply
 	err = json.Unmarshal(relayResponse.Payload, &payload)
 	if err != nil {
 		return 0, "cannot unmarshal request payload"

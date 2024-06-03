@@ -12,7 +12,7 @@ import (
 	"time"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
-	"github.com/pokt-network/shannon-sdk/httpcodec"
+	sdktypes "github.com/pokt-network/shannon-sdk/types"
 
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
@@ -58,7 +58,9 @@ type synchronousRPCServer struct {
 // relay requests and forwards them to the supported proxied service endpoint.
 // It takes the serviceId, endpointUrl, and the main RelayerProxy as arguments
 // and returns a RelayServer that listens to incoming RelayRequests.
-// TODO_BLOCKER(red0ne): Use TCP server for the Gateway->RelayMiner communication.
+// TODO_RESEARCH: Currently, the communication between the AppGateServer and the
+// RelayMiner uses HTTP. This could be changed to a more generic and performant
+// one, such as pure TCP.
 func NewSynchronousServer(
 	logger polylog.Logger,
 	serverConfig *config.RelayMinerServerConfig,
@@ -246,15 +248,15 @@ func (sync *synchronousRPCServer) serveHTTP(
 	}
 
 	// Deserialize the relay request payload to get the upstream HTTP request.
-	relayHTTPRequest, err := httpcodec.DeserializeHTTPRequest(relayRequest.Payload)
+	relayHTTPRequest, err := sdktypes.DeserializeHTTPRequest(relayRequest.Payload)
 	if err != nil {
 		return nil, err
 	}
 
 	// Build the request to be sent to the native service by substituting
 	// the destination URL's host with the native service's listen address.
-	// This logic is specific to the RelayMiner, and Gateways do not need to
-	// have have knowledge of it.
+	// This business logic is specific to the RelayMiner, and Gateways do not need
+	// to have have knowledge of it.
 	// It is the translation of the full Gateway->RelayMiner request to a
 	// RelayMiner->BackendService and needs to be as transparent as possible.
 	// The reply being sent back to the Gateway needs to be the same as the original,
@@ -265,13 +267,10 @@ func (sync *synchronousRPCServer) serveHTTP(
 		Str("destination_url", serviceConfig.BackendUrl.String()).
 		Msg("building relay request payload to service")
 
-	// The host and scheme of the upstream request URL are replaced with the host and
-	// scheme of the service's backend URL to ensure that the request is sent to the
-	// correct service, while path and query parameters and headers of the upstream
-	// request are preserved to ensure that the request complies with the requested
-	// service's API.
-	// Parse the upstream request URL then replace the host and scheme with the
-	// service's backend URL's.
+	// Replace the upstream request URL with the host and scheme of the service
+	// backend's while preserving the other components.
+	// This is to ensure that the request complies with the requested service's API,
+	// while being served from another location.
 	requestUrl := relayHTTPRequest.URL
 	requestUrl.Host = serviceConfig.BackendUrl.Host
 	requestUrl.Scheme = serviceConfig.BackendUrl.Scheme
@@ -351,7 +350,7 @@ func (sync *synchronousRPCServer) serveHTTP(
 
 	// Serialize the service response to be sent back to the client.
 	// This will include the status code, headers, and body.
-	responseBz, err := httpcodec.SerializeHTTPResponse(httpResponse)
+	responseBz, err := sdktypes.SerializeHTTPResponse(httpResponse)
 	if err != nil {
 		return nil, err
 	}
