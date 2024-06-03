@@ -144,18 +144,23 @@ func (rs *relayerSessionsManager) newMapProveSessionsFn(
 			return either.Success(sessionTrees), false
 		}
 
-		sessionProofs := []*relayer.SessionProof{}
-		for _, sessionTree := range sessionTrees {
-			sessionProofs = append(sessionProofs, &relayer.SessionProof{
-				ProofBz:       sessionTree.GetProofBz(),
-				SessionHeader: sessionTree.GetSessionHeader(),
+		// Map key is the supplier address.
+		sessionProofs := map[string][]*relayer.SessionProof{}
+		for _, session := range sessionTrees {
+			supplierAddr := session.SupplierAddress().String()
+			sessionProofs[supplierAddr] = append(sessionProofs[supplierAddr], &relayer.SessionProof{
+				ProofBz:       session.GetProofBz(),
+				SessionHeader: session.GetSessionHeader(),
 			})
 		}
 
-		// SubmitProof ensures on-chain proof inclusion so we can safely prune the tree.
-		if err := rs.supplierClient.SubmitProofs(ctx, sessionProofs); err != nil {
-			failedSubmitProofSessionsCh <- sessionTrees
-			return either.Error[[]relayer.SessionTree](err), false
+		// Submit proofs for each supplier address in `sessionTrees`.
+		for k, _ := range sessionProofs {
+			// SubmitProof ensures on-chain proof inclusion so we can safely prune the tree.
+			if err := rs.supplierClients[k].SubmitProofs(ctx, sessionProofs[k]); err != nil {
+				failedSubmitProofSessionsCh <- sessionTrees
+				return either.Error[[]relayer.SessionTree](err), false
+			}
 		}
 
 		for _, sessionTree := range sessionTrees {

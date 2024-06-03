@@ -28,7 +28,7 @@ type relayerSessionsManager struct {
 	logger polylog.Logger
 
 	// relayObs key is the signing key name.
-	relayObs map[string]relayer.MinedRelaysObservable
+	relayObs relayer.MinedRelaysObservable
 
 	// sessionsToClaimObs notifies about sessions that are ready to be claimed.
 	sessionsToClaimObs observable.Observable[[]relayer.SessionTree]
@@ -45,9 +45,8 @@ type relayerSessionsManager struct {
 	// blockClient is used to get the notifications of committed blocks.
 	blockClient client.BlockClient
 
-	// supplierClient is used to create claims and submit proofs for sessions.
-	// TODO_IN_THIS_PR: should be a map
-	supplierClient client.SupplierClient
+	// supplierClients is used to create claims and submit proofs for sessions.
+	supplierClients map[string]client.SupplierClient
 
 	// pendingTxMu is used to prevent concurrent txs with the same sequence number.
 	pendingTxMu sync.Mutex
@@ -60,7 +59,7 @@ type relayerSessionsManager struct {
 //
 // Required dependencies:
 //   - client.BlockClient
-//   - client.SupplierClient
+//   - client.SupplierClientMap
 //
 // Available options:
 //   - WithStoresDirectory
@@ -79,7 +78,7 @@ func NewRelayerSessions(
 	if err := depinject.Inject(
 		deps,
 		&rs.blockClient,
-		&rs.supplierClient,
+		&rs.supplierClients,
 	); err != nil {
 		return nil, err
 	}
@@ -107,22 +106,20 @@ func NewRelayerSessions(
 // network as necessary.
 // It IS NOT BLOCKING as map operations run in their own goroutines.
 func (rs *relayerSessionsManager) Start(ctx context.Context) {
-	for _, signingKeyName := range rs.signingKeyNames {
-		// NB: must cast back to generic observable type to use with Map.
-		// relayer.MinedRelaysObservable cannot be an alias due to gomock's lack of
-		// support for generic types.
-		relayObs := observable.Observable[*relayer.MinedRelay](rs.relayObs[signingKeyName])
+	// NB: must cast back to generic observable type to use with Map.
+	// relayer.MinedRelaysObservable cannot be an alias due to gomock's lack of
+	// support for generic types.
+	relayObs := observable.Observable[*relayer.MinedRelay](rs.relayObs)
 
-		// Map eitherMinedRelays to a new observable of an error type which is
-		// notified if an error was encountered while attempting to add the relay to
-		// the session tree.
-		miningErrorsObs := channel.Map(ctx, relayObs, rs.mapAddMinedRelayToSessionTree)
-		logging.LogErrors(ctx, miningErrorsObs)
+	// Map eitherMinedRelays to a new observable of an error type which is
+	// notified if an error was encountered while attempting to add the relay to
+	// the session tree.
+	miningErrorsObs := channel.Map(ctx, relayObs, rs.mapAddMinedRelayToSessionTree)
+	logging.LogErrors(ctx, miningErrorsObs)
 
-		// Start claim/proof pipeline.
-		claimedSessionsObs := rs.createClaims(ctx)
-		rs.submitProofs(ctx, claimedSessionsObs)
-	}
+	// Start claim/proof pipeline.
+	claimedSessionsObs := rs.createClaims(ctx)
+	rs.submitProofs(ctx, claimedSessionsObs)
 }
 
 // Stop unsubscribes all observables from the InsertRelays observable which
@@ -132,9 +129,7 @@ func (rs *relayerSessionsManager) Start(ctx context.Context) {
 // and/or ensure that the state at each pipeline stage is persisted to disk
 // and exit as early as possible.
 func (rs *relayerSessionsManager) Stop() {
-	for _, v := range rs.relayObs {
-		v.UnsubscribeAll()
-	}
+	rs.relayObs.UnsubscribeAll()
 }
 
 // SessionsToClaim returns an observable that notifies when sessions are ready to be claimed.

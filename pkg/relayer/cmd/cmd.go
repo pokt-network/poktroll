@@ -285,7 +285,7 @@ func newSupplyTxClientsFn(signingKeyNames []string) config.SupplierFn {
 			if err != nil {
 				return nil, err
 			}
-			txClients.TxClients[signingKeyName] = txClient
+			txClients.TxClients[txClient.Address().String()] = txClient
 		}
 		return depinject.Configs(deps, depinject.Supply(txClients)), nil
 	}
@@ -300,7 +300,7 @@ func newSupplySupplierClientsFn(signingKeyNames []string) config.SupplierFn {
 		deps depinject.Config,
 		_ *cobra.Command,
 	) (depinject.Config, error) {
-		suppliers := &supplier.SupplierClientMap{}
+		suppliers := &client.SupplierClientMap{}
 		for _, signingKeyName := range signingKeyNames {
 			supplierClient, err := supplier.NewSupplierClient(
 				deps,
@@ -309,7 +309,7 @@ func newSupplySupplierClientsFn(signingKeyNames []string) config.SupplierFn {
 			if err != nil {
 				return nil, err
 			}
-			suppliers.Clients[signingKeyName] = supplierClient
+			suppliers.SupplierClients[supplierClient.Address().String()] = supplierClient
 		}
 		return depinject.Configs(deps, depinject.Supply(suppliers)), nil
 	}

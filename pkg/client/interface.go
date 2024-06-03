@@ -52,6 +52,14 @@ type SupplierClient interface {
 		ctx context.Context,
 		sessionProofs []*relayer.SessionProof,
 	) error
+
+	Address() *cosmostypes.AccAddress
+}
+
+// SupplierClientMap
+// Map key is an address
+type SupplierClientMap struct {
+	SupplierClients map[string]SupplierClient
 }
 
 // TxClient provides a synchronous interface initiating and waiting for transactions
@@ -61,9 +69,12 @@ type TxClient interface {
 		ctx context.Context,
 		msgs ...cosmostypes.Msg,
 	) either.AsyncError
+
+	Address() *cosmostypes.AccAddress
 }
 
 // TxClientMap wraps TxClients for multiple
+// Map key is an address
 type TxClientMap struct {
 	TxClients map[string]TxClient
 }

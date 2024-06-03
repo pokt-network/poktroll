@@ -24,12 +24,6 @@ type supplierClient struct {
 	txCtx     client.TxContext
 }
 
-// SupplierClientMap
-// TODO_IN_THIS_PR: move into appropriate place (where?)
-type SupplierClientMap struct {
-	Clients map[string]*supplierClient
-}
-
 // NewSupplierClient constructs a new SupplierClient with the given dependencies
 // and options. If a signingKeyName is not configured, an error will be returned.
 //
@@ -147,6 +141,10 @@ func (sClient *supplierClient) CreateClaims(
 	}
 
 	return <-errCh
+}
+
+func (sClient *supplierClient) Address() *cosmostypes.AccAddress {
+	return &sClient.signingKeyAddr
 }
 
 // validateConfigAndSetDefaults attempts to get the address from the keyring

@@ -262,3 +262,8 @@ func (st *sessionTree) StartClaiming() error {
 	st.isClaiming = true
 	return nil
 }
+
+// SupplierAddress
+func (st *sessionTree) SupplierAddress() *cosmostypes.AccAddress {
+	return st.supplierAddress
+}
