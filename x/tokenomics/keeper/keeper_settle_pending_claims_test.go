@@ -15,7 +15,7 @@ import (
 
 	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
-	testproof "github.com/pokt-network/poktroll/testutil/proof"
+	testutilproof "github.com/pokt-network/poktroll/testutil/proof"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	testsession "github.com/pokt-network/poktroll/testutil/session"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -63,7 +63,7 @@ func (s *TestSuite) SetupTest() {
 			SessionStartBlockHeight: 1,
 			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
 		},
-		RootHash: testproof.SmstRootWithSum(69),
+		RootHash: testutilproof.SmstRootWithSum(69),
 	}
 
 	// Prepare a claim that can be inserted
@@ -135,7 +135,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequiredAndNotProv
 	// Create a claim that requires a proof
 	claim := s.claim
 	numComputeUnits := uint64(tokenomicskeeper.ProofRequiredComputeUnits + 1)
-	claim.RootHash = testproof.SmstRootWithSum(numComputeUnits)
+	claim.RootHash = testutilproof.SmstRootWithSum(numComputeUnits)
 
 	// 0. Add the claim & verify it exists
 	s.keepers.UpsertClaim(ctx, claim)
@@ -174,7 +174,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimSettled_ProofRequiredAndProvide
 	// Create a claim that requires a proof
 	claim := s.claim
 	numComputeUnits := uint64(tokenomicskeeper.ProofRequiredComputeUnits + 1)
-	claim.RootHash = testproof.SmstRootWithSum(numComputeUnits)
+	claim.RootHash = testutilproof.SmstRootWithSum(numComputeUnits)
 
 	// 0. Add the claim & verify it exists
 	s.keepers.UpsertClaim(ctx, claim)
@@ -216,7 +216,7 @@ func (s *TestSuite) TestSettlePendingClaims_Settles_WhenAProofIsNotRequired() {
 	// Create a claim that does not require a proof
 	claim := s.claim
 	numComputeUnits := uint64(tokenomicskeeper.ProofRequiredComputeUnits - 1)
-	claim.RootHash = testproof.SmstRootWithSum(numComputeUnits)
+	claim.RootHash = testutilproof.SmstRootWithSum(numComputeUnits)
 
 	// 0. Add the claim & verify it exists
 	s.keepers.UpsertClaim(ctx, claim)

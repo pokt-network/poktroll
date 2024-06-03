@@ -63,10 +63,13 @@ import (
 
 const appName = "poktroll-integration-app"
 
-// App is a test application that can be used to test the integration of modules.
+// App is a test application that can be used to test the behaviour when none
+// of the modules are mocked and their integration (cross module interaction)
+// needs to be validated.
 type App struct {
 	*baseapp.BaseApp
 
+	// Internal state of the App needed for properly configuring the blockchain.
 	sdkCtx        sdk.Context
 	cdc           codec.Codec
 	logger        log.Logger
@@ -74,11 +77,16 @@ type App struct {
 	moduleManager module.Manager
 	queryHelper   *baseapp.QueryServiceTestHelper
 
+	// Some default helper fixtures for general testing.
+	// They're publically exposed and should/could be improve and expand on
+	// over time.
 	DefaultService     *sharedtypes.Service
 	DefaultApplication *apptypes.Application
 	DefaultSupplier    *sharedtypes.Supplier
 }
 
+// NewIntegrationApp creates a new instance of the App with the provided details
+// on how the modules should be configured.
 func NewIntegrationApp(
 	t *testing.T,
 	sdkCtx sdk.Context,
@@ -133,6 +141,9 @@ func NewIntegrationApp(
 	_, err = bApp.Commit()
 	require.NoError(t, err, "failed to commit")
 
+	// TODO_HACK(@Olshansk): I needed to set the height to 2 so downstream logic
+	// works. I'm not 100% sure why, but believe it's a result of genesis and the
+	// first block being special and iterated over during the setup process.
 	cometHeader := cmtproto.Header{
 		ChainID: appName,
 		Height:  2,
@@ -150,10 +161,15 @@ func NewIntegrationApp(
 	}
 }
 
+// NewCompleteIntegrationApp creates a new instance of the App, abstracting out
+// all of the internal details and complexities of the application setup.
+// TODO_TECHDEBT: Not all of the modules are created here (e.g. minting module),
+// so it is up to the developer to add / improve / update this function over time
+// as the need arise.
 func NewCompleteIntegrationApp(t *testing.T) *App {
 	t.Helper()
 
-	// Register the codec for all the interfacesPrepare all the interfaces
+	// Prepare & register the codec for all the interfaces
 	registry := codectypes.NewInterfaceRegistry()
 	tokenomicstypes.RegisterInterfaces(registry)
 	sharedtypes.RegisterInterfaces(registry)
@@ -167,6 +183,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	servicetypes.RegisterInterfaces(registry)
 	authtypes.RegisterInterfaces(registry)
 
+	// Prepare the codec
 	cdc := codec.NewProtoCodec(registry)
 
 	// Prepare all the store keys
@@ -183,7 +200,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		authtypes.StoreKey)
 
 	// Prepare the context
-	logger := log.NewNopLogger() // log.NewTestLogger(t)
+	logger := log.NewNopLogger() // Use this if you need more output: log.NewTestLogger(t)
 	cms := CreateMultiStore(storeKeys, logger)
 	sdkCtx := sdk.NewContext(cms, cmtproto.Header{
 		ChainID: appName,
@@ -221,6 +238,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		nil, // subspace is nil because we don't test params (which is legacy anyway)
 	)
 
+	// Prepare the bank keeper
 	blockedAddresses := map[string]bool{
 		accountKeeper.GetAuthority(): false,
 	}
@@ -246,6 +264,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		bankKeeper,
 	)
 
+	// Prepare the service keeper and module
 	serviceKeeper := servicekeeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKeys[servicetypes.StoreKey]),
@@ -293,6 +312,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		bankKeeper,
 	)
 
+	// Prepare the supplier keeper and module
 	supplierKeeper := supplierkeeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKeys[suppliertypes.StoreKey]),
@@ -410,11 +430,14 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	apptypes.RegisterQueryServer(queryHelper, applicationKeeper)
 	suppliertypes.RegisterQueryServer(queryHelper, supplierKeeper)
 	prooftypes.RegisterQueryServer(queryHelper, proofKeeper)
+	// TODO_TECHDEBT: What is the query server for authtypes?
 	// authtypes.RegisterQueryServer(queryHelper, accountKeeper)
 	sessiontypes.RegisterQueryServer(queryHelper, sessionKeeper)
 
+	// Nee to go to the next block to finalize the genesis and setup
 	integrationApp.NextBlock(t)
 
+	// Set the default params for all the modules
 	err := sharedKeeper.SetParams(integrationApp.sdkCtx, sharedtypes.DefaultParams())
 	require.NoError(t, err)
 	err = tokenomicsKeeper.SetParams(sdkCtx, tokenomicstypes.DefaultParams())
@@ -428,7 +451,9 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	err = applicationKeeper.SetParams(sdkCtx, apptypes.DefaultParams())
 	require.NoError(t, err)
 
-	// Prepare a new service
+	// Prepare default testing fixtures
+
+	// Prepare a new default service
 	defaultService := sharedtypes.Service{
 		Id:   "svc1",
 		Name: "svcName1",
@@ -436,7 +461,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	serviceKeeper.SetService(integrationApp.sdkCtx, defaultService)
 	integrationApp.DefaultService = &defaultService
 
-	// Prepare a new supplier
+	// Prepare a new default supplier
 	supplierStake := types.NewCoin("upokt", math.NewInt(1000000))
 	defaultSupplier := sharedtypes.Supplier{
 		Address: sample.AccAddress(),
@@ -450,7 +475,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	supplierKeeper.SetSupplier(integrationApp.sdkCtx, defaultSupplier)
 	integrationApp.DefaultSupplier = &defaultSupplier
 
-	// Prepare a new application
+	// Prepare a new default application
 	appStake := types.NewCoin("upokt", math.NewInt(1000000))
 	defaultApplication := apptypes.Application{
 		Address: sample.AccAddress(),
@@ -464,23 +489,30 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	applicationKeeper.SetApplication(integrationApp.sdkCtx, defaultApplication)
 	integrationApp.DefaultApplication = &defaultApplication
 
+	// Commit all the changes above by committing, finalizing and moving
+	// to the next block.
 	integrationApp.NextBlock(t)
 
 	return integrationApp
 }
 
+// Codec returns the codec used by the application.
 func (app *App) Codec() codec.Codec {
 	return app.cdc
 }
 
+// SdkCtx returns the context used by the application.
 func (app *App) SdkCtx() sdk.Context {
 	return app.sdkCtx
 }
 
+// Authority returns the authority address used by the application.
 func (app *App) Authority() string {
 	return app.authority.String()
 }
 
+// QueryHelper returns the query helper used by the application that can be
+// used to submit queries to the application.
 func (app *App) QueryHelper() *baseapp.QueryServiceTestHelper {
 	app.queryHelper.Ctx = app.sdkCtx
 	return app.queryHelper
@@ -501,6 +533,7 @@ func (app *App) RunMsg(t *testing.T, msg sdk.Msg, option ...Option) *codectypes.
 		opt(cfg)
 	}
 
+	// If configured, commit after the message is executed.
 	if cfg.AutomaticCommit {
 		defer func() {
 			_, err := app.Commit()
@@ -509,6 +542,7 @@ func (app *App) RunMsg(t *testing.T, msg sdk.Msg, option ...Option) *codectypes.
 		}()
 	}
 
+	// If configured, finalize the block after the message is executed.
 	if cfg.AutomaticFinalizeBlock {
 		height := app.LastBlockHeight() + 1
 		_, err := app.FinalizeBlock(&cmtabcitypes.RequestFinalizeBlock{
@@ -538,6 +572,8 @@ func (app *App) RunMsg(t *testing.T, msg sdk.Msg, option ...Option) *codectypes.
 	return response
 }
 
+// NextBlock commits and finalizes all existing transactions. It then updates
+// and advances the context of the App.
 func (app *App) NextBlock(t *testing.T) {
 	t.Helper()
 
@@ -552,6 +588,8 @@ func (app *App) NextBlock(t *testing.T) {
 	app.nextBlockUpdateCtx()
 }
 
+// nextBlockUpdateCtx updates the context of the app while update the state to
+// the next block.
 func (app *App) nextBlockUpdateCtx() {
 	prevCtx := app.sdkCtx
 
@@ -562,10 +600,10 @@ func (app *App) nextBlockUpdateCtx() {
 	app.sdkCtx = app.BaseApp.NewUncachedContext(true, header).
 		WithHeaderInfo(coreheader.Info{
 			Height: header.Height,
-			// Hash: ??
+			// Hash: ?? // TODO_TECHDEBT: Do we have to set it here? If so, What should this be?
 			Time:    header.Time,
 			ChainID: appName,
-			// AppHash: ??
+			// AppHash: ?? // TODO_TECHDEBT: Do we have to set it here? If so, What should this be?
 		})
 }
 

@@ -115,8 +115,8 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 			k.proofKeeper.RemoveProof(ctx, sessionId, claim.SupplierAddress)
 		}
 
-		// TODO_IN_THIS_PR: I need the number of relays (leafs in the tree), not compute units!!!
-		// This only works when each relay is 1 compute unit.
+		// TODO_UPNEXT(@Olshansk, #542): We need the number of relays (leafs in the tree),
+		// not compute units. This would require updates to the SMT itself.
 		relaysPerServiceMap[claim.SessionHeader.Service.Id] += claimComputeUnits
 
 		numClaimsSettled++

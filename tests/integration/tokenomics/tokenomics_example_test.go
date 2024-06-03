@@ -7,7 +7,7 @@ import (
 
 	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
 	integration "github.com/pokt-network/poktroll/testutil/integration"
-	testproof "github.com/pokt-network/poktroll/testutil/proof"
+	testutilproof "github.com/pokt-network/poktroll/testutil/proof"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -18,10 +18,16 @@ func init() {
 	cmd.InitSDKConfig()
 }
 
-func TestTokenomicsExample(t *testing.T) {
+// This is an example integration test @Olshansk was developing while implementing
+// `testutil/integration/app.go` to test and verify different behaviours from
+// setup, querying, running messages, etc...
+// TODO_TECHDEBT: Delete this once other integration tests exist or refactor
+// it to be something more concrete and useful.Decide if this should be deleted
+func TestTokenomicsIntegrationExample(t *testing.T) {
+	// Create a new integration app
 	integrationApp := integration.NewCompleteIntegrationApp(t)
 
-	// Query shared params updated value
+	// Query and validated the default shared params
 	sharedQueryClient := sharedtypes.NewQueryClient(integrationApp.QueryHelper())
 	sharedQueryParams := sharedtypes.QueryParamsRequest{}
 	sharedQueryResponse, err := sharedQueryClient.Params(integrationApp.SdkCtx(), &sharedQueryParams)
@@ -44,56 +50,42 @@ func TestTokenomicsExample(t *testing.T) {
 	)
 	require.NotNil(t, result, "unexpected nil result")
 
-	// Validate the response
+	// Validate the response is correct and that the value was updated
 	resp := tokenomicstypes.MsgUpdateParamResponse{}
 	err = integrationApp.Codec().Unmarshal(result.Value, &resp)
 	require.NoError(t, err)
 
-	// Create a query client
 	tokenomicsQueryClient := tokenomicstypes.NewQueryClient(integrationApp.QueryHelper())
 
-	// Query the updated value
 	tokenomicsQueryParams := tokenomicstypes.QueryParamsRequest{}
 	tokenomicsQueryResponse, err := tokenomicsQueryClient.Params(integrationApp.SdkCtx(), &tokenomicsQueryParams)
 	require.NoError(t, err)
 	require.NotNil(t, tokenomicsQueryResponse, "unexpected nil queryResponse")
 	require.EqualValues(t, uint64(11), uint64(tokenomicsQueryResponse.Params.ComputeUnitsToTokensMultiplier))
 
+	// Commit & finalize the current block, then moving to the next one.
+	integrationApp.NextBlock(t)
+
+	// Prepare a request to query a session so it can be used for the claim below.create a claim
 	sessionQueryClient := sessiontypes.NewQueryClient(integrationApp.QueryHelper())
 	getSessionReq := sessiontypes.QueryGetSessionRequest{
 		ApplicationAddress: integrationApp.DefaultApplication.Address,
 		Service:            integrationApp.DefaultService,
 		BlockHeight:        3,
 	}
+	// Query the session
 	getSessionRes, err := sessionQueryClient.GetSession(integrationApp.SdkCtx(), &getSessionReq)
 	require.NoError(t, err)
 	require.NotNil(t, getSessionRes, "unexpected nil queryResponse")
 
-	// sessionHeader := &sessiontypes.SessionHeader{
-	// 	ApplicationAddress: integrationApp.DefaultApplication.Address,
-	// 	Service: &sharedtypes.Service{
-	// 		Id:   "svc1",
-	// 		Name: "svcName1",
-	// 	},
-	// 	SessionId:               "session_id",
-	// 	SessionStartBlockHeight: 1,
-	// 	SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
-	// }
-
-	// claim := prooftypes.Claim{
-	// 	SupplierAddress: integrationApp.DefaultSupplier.Address,
-	// 	SessionHeader:   getSessionRes.Session.Header,
-	// 	RootHash:        testproof.SmstRootWithSum(uint64(1)),
-	// }
-
+	// Create a new claim
 	createClaimMsg := prooftypes.MsgCreateClaim{
 		SupplierAddress: integrationApp.DefaultSupplier.Address,
 		SessionHeader:   getSessionRes.Session.Header,
-		RootHash:        testproof.SmstRootWithSum(uint64(1)),
+		RootHash:        testutilproof.SmstRootWithSum(uint64(1)),
 	}
 
-	integrationApp.NextBlock(t)
-
+	// Run the message to create the claim
 	result = integrationApp.RunMsg(t,
 		&createClaimMsg,
 		integration.WithAutomaticFinalizeBlock(),

@@ -6,6 +6,8 @@ import (
 	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
 )
 
+// TODO_UPNEXT(@Olshansk, #571): Implement these tests
+
 func init() {
 	cmd.InitSDKConfig()
 }

@@ -32,6 +32,6 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) error {
 		return err
 	}
 	logger.Info(fmt.Sprintf("successfully updated the relay mining difficulty for %d services", len(relaysPerServiceMap)))
-	fmt.Println("OLSH: tokenomics.EndBlocker")
+
 	return nil
 }

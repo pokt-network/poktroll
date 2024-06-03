@@ -78,13 +78,13 @@ func (k Keeper) UpdateRelayMiningDifficulty(
 			logger.Info(fmt.Sprintf("Initialized RelayMiningDifficulty for service %s at height %d with difficulty %x", serviceId, sdkCtx.BlockHeight(), newDifficulty.TargetHash))
 			continue
 		} else if !bytes.Equal(prevDifficulty.TargetHash, newDifficulty.TargetHash) {
-			// TODO_IN_THIS_PR_OR_UPNEXT(#542, @Olshansk): Emit an event for the updated difficulty.
+			// TODO_UPNEXT((#542, @Olshansk): Emit an event for the updated difficulty.
 			logger.Info(fmt.Sprintf("Updated RelayMiningDifficulty for service %s at height %d from %x to %x", serviceId, sdkCtx.BlockHeight(), prevDifficulty.TargetHash, newDifficulty.TargetHash))
 		} else {
 			logger.Info(fmt.Sprintf("No change in RelayMiningDifficulty for service %s at height %d. Current difficulty: %x", serviceId, sdkCtx.BlockHeight(), newDifficulty.TargetHash))
 		}
-
 	}
+
 	return nil
 }
 
