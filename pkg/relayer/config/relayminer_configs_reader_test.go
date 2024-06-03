@@ -61,8 +61,8 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 					QueryNodeGRPCUrl: &url.URL{Scheme: "tcp", Host: "127.0.0.1:36658"},
 					TxNodeRPCUrl:     &url.URL{Scheme: "tcp", Host: "127.0.0.1:36659"},
 				},
-				SigningKeyName: "supplier1",
-				SmtStorePath:   "smt_stores",
+				DefaultSigningKeyNames: []string{"supplier1"},
+				SmtStorePath:           "smt_stores",
 				Servers: map[string]*config.RelayMinerServerConfig{
 					"http://127.0.0.1:8080": {
 						ListenAddress:        "127.0.0.1:8080",
@@ -128,8 +128,8 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 					QueryNodeGRPCUrl: &url.URL{Scheme: "tcp", Host: "127.0.0.1:36658"},
 					TxNodeRPCUrl:     &url.URL{Scheme: "tcp", Host: "127.0.0.1:36659"},
 				},
-				SigningKeyName: "supplier1",
-				SmtStorePath:   "smt_stores",
+				DefaultSigningKeyNames: []string{"supplier1"},
+				SmtStorePath:           "smt_stores",
 				Servers: map[string]*config.RelayMinerServerConfig{
 					"http://127.0.0.1:8080": {
 						ListenAddress:        "127.0.0.1:8080",
@@ -195,8 +195,8 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 					QueryNodeGRPCUrl: &url.URL{Scheme: "tcp", Host: "127.0.0.1:36658"},
 					TxNodeRPCUrl:     &url.URL{Scheme: "tcp", Host: "127.0.0.1:36659"},
 				},
-				SigningKeyName: "supplier1",
-				SmtStorePath:   "smt_stores",
+				DefaultSigningKeyNames: []string{"supplier1"},
+				SmtStorePath:           "smt_stores",
 				Servers: map[string]*config.RelayMinerServerConfig{
 					"http://127.0.0.1:8080": {
 						ListenAddress:        "127.0.0.1:8080",
@@ -246,8 +246,8 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 					QueryNodeGRPCUrl: &url.URL{Scheme: "tcp", Host: "127.0.0.1:36658"},
 					TxNodeRPCUrl:     &url.URL{Scheme: "tcp", Host: "127.0.0.1:36659"},
 				},
-				SigningKeyName: "supplier1",
-				SmtStorePath:   "smt_stores",
+				DefaultSigningKeyNames: []string{"supplier1"},
+				SmtStorePath:           "smt_stores",
 				Servers: map[string]*config.RelayMinerServerConfig{
 					"http://127.0.0.1:8080": {
 						ListenAddress:        "127.0.0.1:8080",
@@ -626,8 +626,8 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 
 			require.Equal(
 				t,
-				test.expectedConfig.SigningKeyName,
-				config.SigningKeyName,
+				test.expectedConfig.DefaultSigningKeyNames,
+				config.DefaultSigningKeyNames,
 			)
 
 			require.Equal(

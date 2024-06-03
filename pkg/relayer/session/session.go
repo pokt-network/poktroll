@@ -27,13 +27,12 @@ type sessionsTreesMap = map[int64]map[string]relayer.SessionTree
 type relayerSessionsManager struct {
 	logger polylog.Logger
 
-	// relayObs key is the signing key name.
 	relayObs relayer.MinedRelaysObservable
 
 	// sessionsToClaimObs notifies about sessions that are ready to be claimed.
 	sessionsToClaimObs observable.Observable[[]relayer.SessionTree]
 
-	signingKeyNames []string
+	// signingKeyNames []string
 
 	// sessionTrees is a map of block heights pointing to a map of SessionTrees
 	// indexed by their sessionId.
@@ -46,7 +45,7 @@ type relayerSessionsManager struct {
 	blockClient client.BlockClient
 
 	// supplierClients is used to create claims and submit proofs for sessions.
-	supplierClients map[string]client.SupplierClient
+	supplierClients client.SupplierClientMap
 
 	// pendingTxMu is used to prevent concurrent txs with the same sequence number.
 	pendingTxMu sync.Mutex
@@ -134,8 +133,6 @@ func (rs *relayerSessionsManager) Stop() {
 
 // SessionsToClaim returns an observable that notifies when sessions are ready to be claimed.
 func (rs *relayerSessionsManager) InsertRelays(relays relayer.MinedRelaysObservable) {
-	// TODO_IN_THIS_PR: potentially use a map[keyname/address]relayObs instead
-	// TODO_IN_THIS_COMMIT: figure out how to get an address from relays, or add an argument to `InsertRelays`.
 	rs.relayObs = relays
 }
 
@@ -161,7 +158,6 @@ func (rs *relayerSessionsManager) ensureSessionTree(relayMetadata *types.RelayRe
 
 	// If the sessionTree does not exist, create it.
 	if !ok {
-		// TODO_IN_THIS_COMMIT: add supplier address here
 		sessionTree, err = NewSessionTree(sessionHeader, &address, rs.storesDirectory, rs.removeFromRelayerSessions)
 		if err != nil {
 			return nil, err
@@ -278,8 +274,6 @@ func (rs *relayerSessionsManager) validateConfig() error {
 		return ErrSessionTreeUndefinedStoresDirectory
 	}
 
-	// TODO_IN_THIS_COMMIT: check signingKeyNames?
-
 	return nil
 }
 
@@ -318,8 +312,6 @@ func (rs *relayerSessionsManager) mapAddMinedRelayToSessionTree(
 	// TODO_CONSIDERATION: if we get the session header from the response, there
 	// is no possibility that we forgot to hydrate it (i.e. blindly trust the client).
 	relayMetadata := relay.GetReq().GetMeta()
-
-	// TODO_IN_THIS_COMMIT: supplier addr here?
 	smst, err := rs.ensureSessionTree(&relayMetadata)
 	if err != nil {
 		// TODO_IMPROVE: log additional info?

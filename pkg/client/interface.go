@@ -56,7 +56,7 @@ type SupplierClient interface {
 	Address() *cosmostypes.AccAddress
 }
 
-// SupplierClientMap
+// SupplierClientMap so we can depinject many supplier clients
 // Map key is an address
 type SupplierClientMap struct {
 	SupplierClients map[string]SupplierClient
@@ -73,7 +73,7 @@ type TxClient interface {
 	Address() *cosmostypes.AccAddress
 }
 
-// TxClientMap wraps TxClients for multiple
+// TxClientMap wraps TxClients so we can depinject many tx clients
 // Map key is an address
 type TxClientMap struct {
 	TxClients map[string]TxClient

@@ -356,7 +356,7 @@ func newSupplyRelayerSessionsManagerFn(smtStorePath string, signingKeyNames []st
 		relayerSessionsManager, err := session.NewRelayerSessions(
 			ctx, deps,
 			session.WithStoresDirectory(smtStorePath),
-			session.WithSigningKeyNames(signingKeyNames),
+			// session.WithSigningKeyNames(signingKeyNames),
 		)
 		if err != nil {
 			return nil, err
@@ -367,13 +367,14 @@ func newSupplyRelayerSessionsManagerFn(smtStorePath string, signingKeyNames []st
 }
 
 func uniqueSigningKeyNames(relayMinerConfig *relayerconfig.RelayMinerConfig) []string {
+	var uniqueKeyNames []string
 	for _, server := range relayMinerConfig.Servers {
 		for _, supplier := range server.SupplierConfigsMap {
 			for _, signingKeyName := range supplier.SigningKeyNames {
-				relayMinerConfig.UniqueSigningKeyNames = append(relayMinerConfig.UniqueSigningKeyNames, signingKeyName)
+				uniqueKeyNames = append(uniqueKeyNames, signingKeyName)
 			}
 		}
 	}
-	slices.Sort(relayMinerConfig.UniqueSigningKeyNames)
-	return slices.Compact(relayMinerConfig.UniqueSigningKeyNames)
+	slices.Sort(uniqueKeyNames)
+	return slices.Compact(uniqueKeyNames)
 }

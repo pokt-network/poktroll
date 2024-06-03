@@ -165,6 +165,8 @@ func (sClient *supplierClient) validateConfigAndSetDefaults() error {
 	return nil
 }
 
+// Since we inject a map of TxClients instead of having just one (so we support multiple suppliers),
+// we need a helper to return the TxClient for the supplier that is currently being used.
 func (sClient *supplierClient) txClient() client.TxClient {
 	return sClient.txClients.TxClients[sClient.signingKeyAddr.String()]
 }
