@@ -47,10 +47,11 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 
 	// Parameter name must be supported by this module.
 	switch msg.Name {
-	case ParamNumBlocksPerSession:
+	case ParamNumBlocksPerSession,
+		ParamClaimWindowOpenOffsetBlocks:
 		return msg.paramTypeIsInt64()
 	default:
-		return ErrSharedParamNameInvalid.Wrapf("unsupported name param %q", msg.Name)
+		return ErrSharedParamNameInvalid.Wrapf("unsupported param %q", msg.Name)
 	}
 }
 

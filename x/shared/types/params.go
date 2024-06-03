@@ -5,13 +5,16 @@ import (
 )
 
 const (
-	DefaultNumBlocksPerSession = 4
-	ParamNumBlocksPerSession   = "num_blocks_per_session"
+	DefaultNumBlocksPerSession         = 4
+	ParamNumBlocksPerSession           = "num_blocks_per_session"
+	DefaultClaimWindowOpenOffsetBlocks = 0
+	ParamClaimWindowOpenOffsetBlocks   = "claim_window_open_offset_blocks"
 )
 
 var (
-	_                      paramtypes.ParamSet = (*Params)(nil)
-	KeyNumBlocksPerSession                     = []byte("NumBlocksPerSession")
+	_                              paramtypes.ParamSet = (*Params)(nil)
+	KeyNumBlocksPerSession                             = []byte("NumBlocksPerSession")
+	KeyClaimWindowOpenOffsetBlocks                     = []byte("ClaimWindowOpenOffsetBlocks")
 )
 
 // ParamKeyTable the param key table for launch module
@@ -22,7 +25,8 @@ func ParamKeyTable() paramtypes.KeyTable {
 // NewParams creates a new Params instance
 func NewParams() Params {
 	return Params{
-		NumBlocksPerSession: DefaultNumBlocksPerSession,
+		NumBlocksPerSession:         DefaultNumBlocksPerSession,
+		ClaimWindowOpenOffsetBlocks: DefaultClaimWindowOpenOffsetBlocks,
 	}
 }
 
@@ -39,12 +43,21 @@ func (params *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 			&params.NumBlocksPerSession,
 			ValidateNumBlocksPerSession,
 		),
+		paramtypes.NewParamSetPair(
+			KeyClaimWindowOpenOffsetBlocks,
+			&params.ClaimWindowOpenOffsetBlocks,
+			ValidateClaimWindowOpenOffsetBlocks,
+		),
 	}
 }
 
 // Validate validates the set of params
 func (params *Params) ValidateBasic() error {
 	if err := ValidateNumBlocksPerSession(params.NumBlocksPerSession); err != nil {
+		return err
+	}
+
+	if err := ValidateClaimWindowOpenOffsetBlocks(params.ClaimWindowOpenOffsetBlocks); err != nil {
 		return err
 	}
 
@@ -61,6 +74,17 @@ func ValidateNumBlocksPerSession(v interface{}) error {
 
 	if numBlocksPerSession < 1 {
 		return ErrSharedParamInvalid.Wrapf("invalid NumBlocksPerSession: (%v)", numBlocksPerSession)
+	}
+
+	return nil
+}
+
+// ValidateClaimWindowOpenOffsetBlocks validates the ClaimWindowOpenOffsetBlocks param
+// NB: The argument is an interface type to satisfy the ParamSetPair function signature.
+func ValidateClaimWindowOpenOffsetBlocks(v interface{}) error {
+	_, ok := v.(uint64)
+	if !ok {
+		return ErrSharedParamInvalid.Wrapf("invalid parameter type: %T", v)
 	}
 
 	return nil

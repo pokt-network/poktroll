@@ -321,13 +321,23 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 			},
 		)
 	case sharedtypes.ModuleName:
-		numBlocksPerSession := uint64(s.expectedModuleParams[moduleName][sharedtypes.ParamNumBlocksPerSession].value.(int64))
+		params := sharedtypes.DefaultParams()
+		paramsMap := s.expectedModuleParams[moduleName]
+
+		numBlocksPerSessionParam, ok := paramsMap[sharedtypes.ParamNumBlocksPerSession]
+		if ok {
+			params.NumBlocksPerSession = uint64(numBlocksPerSessionParam.value.(int64))
+		}
+
+		claimWindowOpenOffsetBlocksParam, ok := paramsMap[sharedtypes.ParamClaimWindowOpenOffsetBlocks]
+		if ok {
+			params.ClaimWindowOpenOffsetBlocks = uint64(claimWindowOpenOffsetBlocksParam.value.(int64))
+		}
+
 		assertUpdatedParams(s,
 			[]byte(res.Stdout),
 			&sharedtypes.QueryParamsResponse{
-				Params: sharedtypes.Params{
-					NumBlocksPerSession: numBlocksPerSession,
-				},
+				Params: params,
 			},
 		)
 	case apptypes.ModuleName:
