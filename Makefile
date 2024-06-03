@@ -1,30 +1,11 @@
 .SILENT:
 
-SHELL = /bin/sh
-POKTROLLD_HOME ?= ./localnet/poktrolld
-POCKET_NODE ?= tcp://127.0.0.1:36657 # The pocket node (validator in the localnet context)
-TESTNET_RPC ?= https://testnet-validated-validator-rpc.poktroll.com/ # TestNet RPC endpoint for validator maintained by Grove. Needs to be update if there's another "primary" testnet.
-APPGATE_SERVER ?= http://localhost:42069
-GATEWAY_URL ?= http://localhost:42079
-POCKET_ADDR_PREFIX = pokt
-CHAIN_ID = poktroll
+ifeq (,$(wildcard ./.env.dev))
+$(error ".env.dev file not found!")
+endif
 
-# The domain ending in ".town" is staging, ".city" is production
-GROVE_GATEWAY_STAGING_ETH_MAINNET = https://eth-mainnet.rpc.grove.town
-# The "protocol" field here instructs the Grove gateway which network to use
-JSON_RPC_DATA_ETH_BLOCK_HEIGHT = '{"protocol": "shannon-testnet","jsonrpc":"2.0","id":"0","method":"eth_blockNumber", "params": []}'
-
-# On-chain module account addresses. Search for `func TestModuleAddress` in the
-# codebase to get an understanding of how we got these values.
-APPLICATION_MODULE_ADDRESS = pokt1rl3gjgzexmplmds3tq3r3yk84zlwdl6djzgsvm
-SUPPLIER_MODULE_ADDRESS = pokt1j40dzzmn6cn9kxku7a5tjnud6hv37vesr5ccaa
-GATEWAY_MODULE_ADDRESS = pokt1f6j7u6875p2cvyrgjr0d2uecyzah0kget9vlpl
-SERVICE_MODULE_ADDRESS = pokt1nhmtqf4gcmpxu0p6e53hpgtwj0llmsqpxtumcf
-GOV_ADDRESS = pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t
-# PNF acts on behalf of the DAO and who AUTHZ must delegate to
-PNF_ADDRESS = pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw
-
-MODULES := application gateway pocket service session supplier proof tokenomics
+include .env.dev
+export $(shell sed 's/=.*//' .env.dev)
 
 BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
 COMMIT := $(shell git log -1 --format='%H')
@@ -109,6 +90,7 @@ help: ## Prints all the targets in all the Makefiles
 
 # TODO_DOCUMENT: All of the `check_` helpers can be installed differently depending
 # on the user's OS and enviornment.
+# NB: For mac users, you may need to install with the proper linkers: https://github.com/golang/go/issues/65940
 
 .PHONY: check_go_version
 # Internal helper target - check go version
@@ -306,7 +288,7 @@ localnet_down: ## Delete resources created by localnet
 	tilt down
 
 .PHONY: localnet_regenesis
-localnet_regenesis: check_yq acc_initialize_pubkeys_warn_message ## Regenerate the localnet genesis file
+localnet_regenesis: check_yq warn_message_acc_initialize_pubkeys ## Regenerate the localnet genesis file
 # NOTE: intentionally not using --home <dir> flag to avoid overwriting the test keyring
 	@echo "Initializing chain..."
 	@set -e
@@ -351,7 +333,7 @@ go_imports: check_go_version ## Run goimports on all go files
 #############
 
 .PHONY: test_e2e_env
-test_e2e_env: acc_initialize_pubkeys_warn_message ## Setup the default env vars for E2E tests
+test_e2e_env: warn_message_acc_initialize_pubkeys ## Setup the default env vars for E2E tests
 	export POCKET_NODE=$(POCKET_NODE) && \
 	export APPGATE_SERVER=$(APPGATE_SERVER) && \
 	export POKTROLLD_HOME=../../$(POKTROLLD_HOME)
@@ -385,36 +367,32 @@ test_e2e_params: test_e2e_env ## Run only the E2E suite that exercises parameter
 	go test -v ./e2e/tests/... -tags=e2e,test --features-path=update_params.feature
 
 .PHONY: test_load_relays_stress
-test_load_relays_stress: ## Run the stress test for E2E relays on non-ephemeral chains
+test_load_relays_stress: ## Run the stress test for E2E relays on a persistent (non-ephemeral) remote chains
 	go test -v -count=1 ./load-testing/tests/... \
 	-tags=load,test -run LoadRelays --log-level=debug --timeout=30m \
 	--manifest ./load-testing/loadtest_manifest.yaml
 
 .PHONY: test_load_relays_stress_localnet
-test_load_relays_stress_localnet: test_e2e_env ## Run the stress test for E2E relays.
+test_load_relays_stress_localnet: warn_message_local_stress_test test_e2e_env ## Run the stress test for E2E relays on LocalNet.
 	go test -v -count=1 ./load-testing/tests/... \
 	-tags=load,test -run LoadRelays --log-level=debug --timeout=30m \
 	--manifest ./load-testing/localnet_loadtest_manifest.yaml
 
-.PHONY: go_test_verbose
-go_test_verbose: check_go_version ## Run all go tests verbosely
+.PHONY: test_verbose
+test_verbose: check_go_version ## Run all go tests verbosely
 	go test -count=1 -v -race -tags test ./...
 
-.PHONY: go_test
-go_test: check_go_version ## Run all go tests showing detailed output only on failures
+.PHONY: test_all
+test_all: check_go_version ## Run all go tests showing detailed output only on failures
 	go test -count=1 -race -tags test ./...
 
-.PHONY: go_test_integration
-go_test_integration: check_go_version ## Run all go tests, including integration
+.PHONY: test_integration
+test_integration: check_go_version ## Run all go tests, including integration
 	go test -count=1 -v -race -tags test,integration ./...
 
 .PHONY: itest
 itest: check_go_version ## Run tests iteratively (see usage for more)
 	./tools/scripts/itest.sh $(filter-out $@,$(MAKECMDGOALS))
-# catch-all target for itest
-%:
-	# no-op
-	@:
 
 .PHONY: go_mockgen
 go_mockgen: ## Use `mockgen` to generate mocks used for testing purposes of all the modules.
@@ -440,7 +418,7 @@ go_testgen_accounts: ## Generate test accounts for usage in test environments
 go_develop: check_ignite_version proto_regen go_mockgen ## Generate protos and mocks
 
 .PHONY: go_develop_and_test
-go_develop_and_test: go_develop go_test ## Generate protos, mocks and run all tests
+go_develop_and_test: go_develop test_all ## Generate protos, mocks and run all tests
 
 #############
 ### TODOS ###
@@ -762,15 +740,35 @@ acc_initialize_pubkeys: ## Make sure the account keeper has public keys for all 
 			--node $(POCKET_NODE) \
 			--chain-id $(CHAIN_ID);)
 
-.PHONY: acc_initialize_pubkeys_warn_message
-acc_initialize_pubkeys_warn_message: ## Print a warning message about the need to run `make acc_initialize_pubkeys`
+########################
+### Warning Messages ###
+########################
+
+.PHONY: warn_message_acc_initialize_pubkeys
+warn_message_acc_initialize_pubkeys: ## Print a warning message about the need to run `make acc_initialize_pubkeys`
 	@echo "+----------------------------------------------------------------------------------+"
 	@echo "|                                                                                  |"
-	@echo "|     IMPORTANT: Please run the following command once to initialize E2E tests     |"
-	@echo "|     after the network has started:                                               |"
-	@echo "|         make acc_initialize_pubkeys                                              |"
+	@echo "|     IMPORTANT: Please run the following command once to initialize               |"
+	@echo "|                E2E tests after the network has started:                          |"
+	@echo "|                                                                                  |"
+	@echo "|     make acc_initialize_pubkeys                                                  |"
 	@echo "|                                                                                  |"
 	@echo "+----------------------------------------------------------------------------------+"
+
+
+.PHONY: warn_message_local_stress_test
+warn_message_local_stress_test: ## Print a warning message when kicking off a local E2E relay stress test
+	@echo "+-----------------------------------------------------------------------------------------------+"
+	@echo "|                                                                                               |"
+	@echo "|     IMPORTANT: Please read the following before continuing with the stress test.              |"
+	@echo "|                                                                                               |"
+	@echo "|     1. Review the # of suppliers & gateways in 'load-testing/localnet_loadtest_manifest.yaml' |"
+	@echo "|     2. Update 'localnet_config.yaml' to reflect what you found in (1)                         |"
+	@echo "|                                                                                               |"
+	@echo "|     TODO_DOCUMENT: Move this into proper documentation w/ clearer explanations                |"
+	@echo "|                                                                                               |"
+	@echo "+-----------------------------------------------------------------------------------------------+"
+
 
 
 ##############
@@ -982,3 +980,11 @@ grove_staging_eth_block_height: ## Sends a relay through the staging grove gatew
 	curl $(GROVE_GATEWAY_STAGING_ETH_MAINNET)/v1/$(GROVE_STAGING_PORTAL_APP_ID) \
 		-H 'Content-Type: application/json' \
 		--data $(SHANNON_JSON_RPC_DATA_ETH_BLOCK_HEIGHT)
+
+#################
+### Catch all ###
+#################
+
+%:
+	@echo "Error: target '$@' not found."
+	@exit 1

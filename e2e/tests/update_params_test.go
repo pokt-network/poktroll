@@ -10,8 +10,10 @@ import (
 	"time"
 
 	cometcli "github.com/cometbft/cometbft/libs/cli"
+	"github.com/cosmos/cosmos-sdk/codec/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/cosmos/gogoproto/proto"
 	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
 
@@ -31,6 +33,9 @@ const (
 	// txFeesCoinStr is the string representation of the amount & denom of tokens
 	// which are sufficient to pay for tx fees in the test.
 	txFeesCoinStr = "1000000upokt"
+	// PNF is the account that acts on behalf of the DAO and is therefore the only
+	// one authorized to perform certain actions such as updating params.
+	pnfKeyName = "pnf"
 )
 
 // AllModuleParamsAreSetToTheirDefaultValues asserts that all module params are set to their default values.
@@ -219,6 +224,31 @@ func (s *suite) TheModuleParamShouldBeUpdated(moduleName, paramName string) {
 	s.assertExpectedModuleParamsUpdated(moduleName)
 }
 
+// AllModuleParamsShouldBeSetToTheirDefaultValues asserts that all module params are set to their default values.
+func (s *suite) AllModuleParamsAreResetToTheirDefaultValues() {
+	var anyMsgs []*types.Any
+	authority := authtypes.NewModuleAddress(s.granterName).String()
+
+	// Application module params
+	msgUpdateParams := &apptypes.MsgUpdateParams{
+		Authority: authority,
+		Params:    apptypes.DefaultParams()}
+	anyMsg, err := types.NewAnyWithValue(msgUpdateParams)
+	require.NoError(s, err)
+	anyMsgs = append(anyMsgs, anyMsg)
+
+	// gatewaytypes.DefaultParams(),
+	// prooftypes.DefaultParams(),
+	// servicetypes.DefaultParams(),
+	// sessiontypes.DefaultParams(),
+	// sharedtypes.DefaultParams(),
+	// suppliertypes.DefaultParams(),
+	// tokenomicstypes.DefaultParams(),
+
+	file := s.newTempTxJSONFile(anyMsgs)
+	s.sendAuthzExecTx(authority, file.Name())
+}
+
 // TheModuleParamShouldBeSetToItsDefaultValue asserts that the given param for the
 // given module has been set to its default value.
 func (s *suite) TheModuleParamShouldBeSetToItsDefaultValue(moduleName string, paramName string) {
@@ -251,7 +281,7 @@ func (s *suite) fundAddress(addr string, coin cosmostypes.Coin) {
 		"tx",
 		"bank",
 		"send",
-		"pnf",
+		pnfKeyName,
 		addr,
 		coin.String(),
 		"--yes",
@@ -384,4 +414,22 @@ func assertUpdatedParams[P cosmostypes.Msg](
 	err := s.cdc.UnmarshalJSON(queryParamsResJSON, queryParamsMsg)
 	require.NoError(s, err)
 	require.EqualValues(s, expectedParamsRes, queryParamsMsg)
+}
+
+func (s *suite) newTokenomicsMsgUpdateParamsToDefault(params paramsMap) cosmostypes.Msg {
+	authority := authtypes.NewModuleAddress(s.granterName).String()
+	msgUpdateParams := &tokenomicstypes.MsgUpdateParams{
+		Authority: authority,
+		Params:    tokenomicstypes.DefaultParams(),
+	}
+	return proto.Message(msgUpdateParams)
+}
+
+func (s *suite) newProofMsgUpdateParamsToDefault(params paramsMap) cosmostypes.Msg {
+	authority := authtypes.NewModuleAddress(s.granterName).String()
+	msgUpdateParams := &prooftypes.MsgUpdateParams{
+		Authority: authority,
+		Params:    prooftypes.DefaultParams(),
+	}
+	return proto.Message(msgUpdateParams)
 }
