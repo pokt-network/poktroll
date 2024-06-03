@@ -52,7 +52,7 @@ type SupplierClient interface {
 		ctx context.Context,
 		sessionProofs []*relayer.SessionProof,
 	) error
-
+	// Address returns the address of the SupplierClient.
 	Address() *cosmostypes.AccAddress
 }
 
@@ -70,6 +70,7 @@ type TxClient interface {
 		msgs ...cosmostypes.Msg,
 	) either.AsyncError
 
+	// Address returns the address of the TxClient.
 	Address() *cosmostypes.AccAddress
 }
 
