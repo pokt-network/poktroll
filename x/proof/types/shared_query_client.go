@@ -32,7 +32,7 @@ func (sharedQueryClient *SharedKeeperQueryClient) GetParams(
 }
 
 // GetClaimWindowOpenHeight returns the block height at which the claim window of
-// the session that includes queryHeight opens, given the on-chain shared module params.
+// the session that includes queryHeight opens.
 //
 // TODO_TECHDEBT(#543): We don't really want to have to query the params for every method call.
 // Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
