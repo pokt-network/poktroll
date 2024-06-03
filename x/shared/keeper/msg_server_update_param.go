@@ -30,6 +30,30 @@ func (k msgServer) UpdateParam(ctx context.Context, msg *types.MsgUpdateParam) (
 		}
 
 		params.NumBlocksPerSession = numBlocksPerSession
+	case types.ParamClaimWindowOpenOffsetBlocks:
+		value, ok := msg.AsType.(*types.MsgUpdateParam_AsInt64)
+		if !ok {
+			return nil, types.ErrSharedParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
+		}
+		claimWindowOpenOffsetBlocks := uint64(value.AsInt64)
+
+		if err := types.ValidateClaimWindowOpenOffsetBlocks(claimWindowOpenOffsetBlocks); err != nil {
+			return nil, err
+		}
+
+		params.ClaimWindowOpenOffsetBlocks = claimWindowOpenOffsetBlocks
+	case types.ParamClaimWindowCloseOffsetBlocks:
+		value, ok := msg.AsType.(*types.MsgUpdateParam_AsInt64)
+		if !ok {
+			return nil, types.ErrSharedParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
+		}
+		claimWindowCloseOffsetBlocks := uint64(value.AsInt64)
+
+		if err := types.ValidateClaimWindowCloseOffsetBlocks(claimWindowCloseOffsetBlocks); err != nil {
+			return nil, err
+		}
+
+		params.ClaimWindowCloseOffsetBlocks = claimWindowCloseOffsetBlocks
 	default:
 		return nil, types.ErrSharedParamInvalid.Wrapf("unsupported param %q", msg.Name)
 	}

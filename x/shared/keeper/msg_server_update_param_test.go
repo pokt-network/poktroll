@@ -26,7 +26,7 @@ func TestMsgUpdateParam_UpdateNumBlocksPerSession(t *testing.T) {
 	// Ensure the default values are different from the new values we want to set
 	require.NotEqual(t, uint64(expectedNumBlocksPerSession), defaultParams.NumBlocksPerSession)
 
-	// Update the min relay difficulty bits
+	// Update the number of blocks per session
 	updateParamMsg := &sharedtypes.MsgUpdateParam{
 		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		Name:      sharedtypes.ParamNumBlocksPerSession,
@@ -37,6 +37,62 @@ func TestMsgUpdateParam_UpdateNumBlocksPerSession(t *testing.T) {
 
 	require.Equal(t, uint64(expectedNumBlocksPerSession), res.Params.NumBlocksPerSession)
 
-	// TODO_BLOCKER: once we have more than one param per module, add assertions
-	// here which ensure that other params were not changed!
+	// Ensure the other parameters are unchanged
+	require.Equal(t, defaultParams.ClaimWindowOpenOffsetBlocks, res.Params.ClaimWindowOpenOffsetBlocks)
+}
+
+func TestMsgUpdateParam_UpdateClaimWindowOpenOffsetBlocks(t *testing.T) {
+	var expectedClaimWindowOpenOffestBlocks int64 = 4
+
+	k, ctx := keepertest.SharedKeeper(t)
+	msgSrv := keeper.NewMsgServerImpl(k)
+
+	// Set the parameters to their default values
+	defaultParams := sharedtypes.DefaultParams()
+	require.NoError(t, k.SetParams(ctx, defaultParams))
+
+	// Ensure the default values are different from the new values we want to set
+	require.NotEqual(t, uint64(expectedClaimWindowOpenOffestBlocks), defaultParams.ClaimWindowOpenOffsetBlocks)
+
+	// Update the claim window open offset blocks param
+	updateParamMsg := &sharedtypes.MsgUpdateParam{
+		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+		Name:      sharedtypes.ParamClaimWindowOpenOffsetBlocks,
+		AsType:    &sharedtypes.MsgUpdateParam_AsInt64{AsInt64: expectedClaimWindowOpenOffestBlocks},
+	}
+	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
+	require.NoError(t, err)
+
+	require.Equal(t, uint64(expectedClaimWindowOpenOffestBlocks), res.Params.ClaimWindowOpenOffsetBlocks)
+
+	// Ensure the other parameters are unchanged
+	require.Equal(t, defaultParams.NumBlocksPerSession, res.Params.NumBlocksPerSession)
+}
+
+func TestMsgUpdateParam_UpdateClaimWindowCloseOffsetBlocks(t *testing.T) {
+	var expectedClaimWindowCloseOffestBlocks int64 = 8
+
+	k, ctx := keepertest.SharedKeeper(t)
+	msgSrv := keeper.NewMsgServerImpl(k)
+
+	// Set the parameters to their default values
+	defaultParams := sharedtypes.DefaultParams()
+	require.NoError(t, k.SetParams(ctx, defaultParams))
+
+	// Ensure the default values are different from the new values we want to set
+	require.NotEqual(t, uint64(expectedClaimWindowCloseOffestBlocks), defaultParams.ClaimWindowCloseOffsetBlocks)
+
+	// Update the claim window close offset blocks param
+	updateParamMsg := &sharedtypes.MsgUpdateParam{
+		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+		Name:      sharedtypes.ParamClaimWindowCloseOffsetBlocks,
+		AsType:    &sharedtypes.MsgUpdateParam_AsInt64{AsInt64: expectedClaimWindowCloseOffestBlocks},
+	}
+	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
+	require.NoError(t, err)
+
+	require.Equal(t, uint64(expectedClaimWindowCloseOffestBlocks), res.Params.ClaimWindowCloseOffsetBlocks)
+
+	// Ensure the other parameters are unchanged
+	require.Equal(t, defaultParams.NumBlocksPerSession, res.Params.NumBlocksPerSession)
 }

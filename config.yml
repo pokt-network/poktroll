@@ -186,3 +186,5 @@ genesis:
     shared:
       params:
         num_blocks_per_session: 4
+        claim_window_open_offset_blocks: 0
+        claim_window_close_offset_blocks: 4
