@@ -755,7 +755,6 @@ warn_message_acc_initialize_pubkeys: ## Print a warning message about the need t
 	@echo "|                                                                                  |"
 	@echo "+----------------------------------------------------------------------------------+"
 
-
 .PHONY: warn_message_local_stress_test
 warn_message_local_stress_test: ## Print a warning message when kicking off a local E2E relay stress test
 	@echo "+-----------------------------------------------------------------------------------------------+"
@@ -765,11 +764,9 @@ warn_message_local_stress_test: ## Print a warning message when kicking off a lo
 	@echo "|     1. Review the # of suppliers & gateways in 'load-testing/localnet_loadtest_manifest.yaml' |"
 	@echo "|     2. Update 'localnet_config.yaml' to reflect what you found in (1)                         |"
 	@echo "|                                                                                               |"
-	@echo "|     TODO_DOCUMENT: Move this into proper documentation w/ clearer explanations                |"
+	@echo "|     TODO_DOCUMENT(@olshansk): Move this into proper documentation w/ clearer explanations     |"
 	@echo "|                                                                                               |"
 	@echo "+-----------------------------------------------------------------------------------------------+"
-
-
 
 ##############
 ### Claims ###

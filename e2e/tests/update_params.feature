@@ -2,7 +2,9 @@ Feature: Params Namespace
   #  TODO_DOCUMENT(@Olshansk): Document all of the on-chain governance parameters.
 
   Background:
-    Given all module params are reset to their default values
+    Given the user has the pocketd binary installed
+    And an authz grant from the "gov" "module" account to the "pnf" "user" account for the "/poktroll.tokenomics.MsgUpdateParams" message exists
+    Then all module params are reset to their default values
 
   Scenario: An unauthorized user cannot update a module params
     Given the user has the pocketd binary installed

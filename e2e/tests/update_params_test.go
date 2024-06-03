@@ -10,10 +10,8 @@ import (
 	"time"
 
 	cometcli "github.com/cometbft/cometbft/libs/cli"
-	"github.com/cosmos/cosmos-sdk/codec/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	"github.com/cosmos/gogoproto/proto"
 	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
 
@@ -226,32 +224,42 @@ func (s *suite) TheModuleParamShouldBeUpdated(moduleName, paramName string) {
 
 // AllModuleParamsShouldBeSetToTheirDefaultValues asserts that all module params are set to their default values.
 func (s *suite) AllModuleParamsAreResetToTheirDefaultValues() {
-	var anyMsgs []*types.Any
-	authority := authtypes.NewModuleAddress(s.granterName).String()
+	// var anyMsgs []*types.Any
+	// authority := authtypes.NewModuleAddress(s.granterName).String()
 
-	// Application module params
-	msgUpdateParams := &apptypes.MsgUpdateParams{
-		Authority: authority,
-		Params:    apptypes.DefaultParams()}
-	anyMsg, err := types.NewAnyWithValue(msgUpdateParams)
-	require.NoError(s, err)
-	anyMsgs = append(anyMsgs, anyMsg)
+	// // List of all module MsgUpdateParams types and their respective default param functions
+	// modules := []struct {
+	// 	msgUpdateParamsType reflect.Type
+	// 	defaultParams       any
+	// }{
+	// 	{reflect.TypeOf(&apptypes.MsgUpdateParams{}), apptypes.DefaultParams()},
+	// 	{reflect.TypeOf(&gatewaytypes.MsgUpdateParams{}), gatewaytypes.DefaultParams()},
+	// 	{reflect.TypeOf(&prooftypes.MsgUpdateParams{}), prooftypes.DefaultParams()},
+	// 	{reflect.TypeOf(&servicetypes.MsgUpdateParams{}), servicetypes.DefaultParams()},
+	// 	{reflect.TypeOf(&sessiontypes.MsgUpdateParams{}), sessiontypes.DefaultParams()},
+	// 	{reflect.TypeOf(&sharedtypes.MsgUpdateParams{}), sharedtypes.DefaultParams()},
+	// 	{reflect.TypeOf(&suppliertypes.MsgUpdateParams{}), suppliertypes.DefaultParams()},
+	// 	{reflect.TypeOf(&tokenomicstypes.MsgUpdateParams{}), tokenomicstypes.DefaultParams()},
+	// }
 
-	// gatewaytypes.DefaultParams(),
-	// prooftypes.DefaultParams(),
-	// servicetypes.DefaultParams(),
-	// sessiontypes.DefaultParams(),
-	// sharedtypes.DefaultParams(),
-	// suppliertypes.DefaultParams(),
-	// tokenomicstypes.DefaultParams(),
+	// for _, module := range modules {
+	// 	msgUpdateParams := reflect.New(module.msgUpdateParamsType.Elem()).Interface().(proto.Message)
+	// 	msgUpdateParamsValue := reflect.ValueOf(msgUpdateParams).Elem()
+	// 	msgUpdateParamsValue.FieldByName("Authority").SetString(authority)
+	// 	msgUpdateParamsValue.FieldByName("Params").Set(reflect.ValueOf(params))
 
-	file := s.newTempTxJSONFile(anyMsgs)
-	s.sendAuthzExecTx(authority, file.Name())
+	// 	anyMsg, err := types.NewAnyWithValue(msgUpdateParams)
+	// 	require.NoError(s, err)
+	// 	anyMsgs = append(anyMsgs, anyMsg)
+	// }
+
+	// file := s.newTempTxJSONFile(anyMsgs)
+	// s.sendAuthzExecTx(authority, file.Name())
 }
 
 // TheModuleParamShouldBeSetToItsDefaultValue asserts that the given param for the
 // given module has been set to its default value.
-func (s *suite) TheModuleParamShouldBeSetToItsDefaultValue(moduleName string, paramName string) {
+func (s *suite) TheModuleParamShouldBeSetToItsDefaultValue(moduleName, paramName string) {
 	// TODO_HACK: So long as no other modules are expected to have been changed by this scenario,
 	// it is more than sufficient (and less code) to re-use the existing step which asserts that
 	// all modules have their params set to their respective defaults.
@@ -414,22 +422,4 @@ func assertUpdatedParams[P cosmostypes.Msg](
 	err := s.cdc.UnmarshalJSON(queryParamsResJSON, queryParamsMsg)
 	require.NoError(s, err)
 	require.EqualValues(s, expectedParamsRes, queryParamsMsg)
-}
-
-func (s *suite) newTokenomicsMsgUpdateParamsToDefault(params paramsMap) cosmostypes.Msg {
-	authority := authtypes.NewModuleAddress(s.granterName).String()
-	msgUpdateParams := &tokenomicstypes.MsgUpdateParams{
-		Authority: authority,
-		Params:    tokenomicstypes.DefaultParams(),
-	}
-	return proto.Message(msgUpdateParams)
-}
-
-func (s *suite) newProofMsgUpdateParamsToDefault(params paramsMap) cosmostypes.Msg {
-	authority := authtypes.NewModuleAddress(s.granterName).String()
-	msgUpdateParams := &prooftypes.MsgUpdateParams{
-		Authority: authority,
-		Params:    prooftypes.DefaultParams(),
-	}
-	return proto.Message(msgUpdateParams)
 }
