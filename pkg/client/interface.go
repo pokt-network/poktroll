@@ -286,6 +286,6 @@ type SharedQueryClient interface {
 	// GetParams queries the chain for the current shared module parameters.
 	GetParams(ctx context.Context) (*sharedtypes.Params, error)
 	// GetClaimWindowOpenHeight returns the block height at which the claim window of
-	// the session that includes queryHeight opens, given the on-chain shared module params.
+	// the session that includes queryHeight opens.
 	GetClaimWindowOpenHeight(ctx context.Context, queryHeight int64) (int64, error)
 }
