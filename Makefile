@@ -854,6 +854,10 @@ params_update_shared_claim_window_open_offset_blocks: ## Update the shared modul
 params_update_shared_claim_window_close_offset_blocks: ## Update the shared module params
 	poktrolld tx authz exec ./tools/scripts/params/shared_claim_window_close_offset_blocks.json $(PARAM_FLAGS)
 
+.PHONY: params_update_shared_proof_window_open_offset_blocks
+params_update_shared_proof_window_open_offset_blocks: ## Update the shared module params
+	poktrolld tx authz exec ./tools/scripts/params/shared_proof_window_open_offset_blocks.json $(PARAM_FLAGS)
+
 .PHONY: params_query_all
 params_query_all: check_jq ## Query the params from all available modules
 	@for module in $(MODULES); do \
