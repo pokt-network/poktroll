@@ -144,6 +144,8 @@ func (s *suite) newSharedMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 			msgUpdateParams.Params.NumBlocksPerSession = uint64(paramValue.value.(int64))
 		case sharedtypes.ParamClaimWindowOpenOffsetBlocks:
 			msgUpdateParams.Params.ClaimWindowOpenOffsetBlocks = uint64(paramValue.value.(int64))
+		case sharedtypes.ParamClaimWindowCloseOffsetBlocks:
+			msgUpdateParams.Params.ClaimWindowCloseOffsetBlocks = uint64(paramValue.value.(int64))
 		default:
 			s.Fatalf("unexpected %q type param name %q", paramValue.typeStr, paramName)
 		}

@@ -334,6 +334,11 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 			params.ClaimWindowOpenOffsetBlocks = uint64(claimWindowOpenOffsetBlocksParam.value.(int64))
 		}
 
+		claimWindowCloseOffsetBlocksParam, ok := paramsMap[sharedtypes.ParamClaimWindowCloseOffsetBlocks]
+		if ok {
+			params.ClaimWindowCloseOffsetBlocks = uint64(claimWindowCloseOffsetBlocksParam.value.(int64))
+		}
+
 		assertUpdatedParams(s,
 			[]byte(res.Stdout),
 			&sharedtypes.QueryParamsResponse{

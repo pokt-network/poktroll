@@ -44,6 +44,7 @@ Feature: Params Namespace
       | name                             | value | type  |
       | num_blocks_per_session           | 8     | int64 |
       | claim_window_open_offset_blocks  | 8     | int64 |
+      | claim_window_close_offset_blocks | 8     | int64 |
     Then all "shared" module params should be updated
 
   # NB: If you are reading this and any module has parameters that
@@ -63,6 +64,7 @@ Feature: Params Namespace
       | proof      | /poktroll.proof.MsgUpdateParam      | min_relay_difficulty_bits          | 12          | int64      |
       | shared     | /poktroll.shared.MsgUpdateParam     | num_blocks_per_session             | 8           | int64      |
       | shared     | /poktroll.shared.MsgUpdateParam     | claim_window_open_offset_blocks    | 8           | int64      |
+      | shared     | /poktroll.shared.MsgUpdateParam     | claim_window_close_offset_blocks   | 8           | int64      |
 
   Scenario: An unauthorized user cannot update individual module params
     Given the user has the pocketd binary installed

@@ -54,7 +54,7 @@ func TestMsgUpdateParam_UpdateClaimWindowOpenOffsetBlocks(t *testing.T) {
 	// Ensure the default values are different from the new values we want to set
 	require.NotEqual(t, uint64(expectedClaimWindowOpenOffestBlocks), defaultParams.ClaimWindowOpenOffsetBlocks)
 
-	// Update the claim window open offset blocks
+	// Update the claim window open offset blocks param
 	updateParamMsg := &sharedtypes.MsgUpdateParam{
 		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		Name:      sharedtypes.ParamClaimWindowOpenOffsetBlocks,
@@ -64,6 +64,34 @@ func TestMsgUpdateParam_UpdateClaimWindowOpenOffsetBlocks(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, uint64(expectedClaimWindowOpenOffestBlocks), res.Params.ClaimWindowOpenOffsetBlocks)
+
+	// Ensure the other parameters are unchanged
+	require.Equal(t, defaultParams.NumBlocksPerSession, res.Params.NumBlocksPerSession)
+}
+
+func TestMsgUpdateParam_UpdateClaimWindowCloseOffsetBlocks(t *testing.T) {
+	var expectedClaimWindowCloseOffestBlocks int64 = 8
+
+	k, ctx := keepertest.SharedKeeper(t)
+	msgSrv := keeper.NewMsgServerImpl(k)
+
+	// Set the parameters to their default values
+	defaultParams := sharedtypes.DefaultParams()
+	require.NoError(t, k.SetParams(ctx, defaultParams))
+
+	// Ensure the default values are different from the new values we want to set
+	require.NotEqual(t, uint64(expectedClaimWindowCloseOffestBlocks), defaultParams.ClaimWindowCloseOffsetBlocks)
+
+	// Update the claim window close offset blocks param
+	updateParamMsg := &sharedtypes.MsgUpdateParam{
+		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+		Name:      sharedtypes.ParamClaimWindowCloseOffsetBlocks,
+		AsType:    &sharedtypes.MsgUpdateParam_AsInt64{AsInt64: expectedClaimWindowCloseOffestBlocks},
+	}
+	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
+	require.NoError(t, err)
+
+	require.Equal(t, uint64(expectedClaimWindowCloseOffestBlocks), res.Params.ClaimWindowCloseOffsetBlocks)
 
 	// Ensure the other parameters are unchanged
 	require.Equal(t, defaultParams.NumBlocksPerSession, res.Params.NumBlocksPerSession)
