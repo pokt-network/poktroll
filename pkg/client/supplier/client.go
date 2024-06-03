@@ -127,12 +127,12 @@ func (sClient *supplierClient) CreateClaims(
 		return err
 	}
 
-	for _, rootHashWithSessionHeader := range sessionClaims {
-		sessionHeader := rootHashWithSessionHeader.SessionHeader
+	for _, claim := range sessionClaims {
+		sessionHeader := claim.SessionHeader
 		// TODO_IMPROVE: log details related to how much is claimed
 		logger.Info().
 			Fields(map[string]any{
-				"supplier_addr": rootHashWithSessionHeader.SupplierAddress.String(),
+				"supplier_addr": claim.SupplierAddress.String(),
 				"app_addr":      sessionHeader.ApplicationAddress,
 				"session_id":    sessionHeader.SessionId,
 				"service":       sessionHeader.Service.Id,
@@ -166,5 +166,5 @@ func (sClient *supplierClient) validateConfigAndSetDefaults() error {
 }
 
 func (sClient *supplierClient) txClient() client.TxClient {
-	return sClient.txClients.TxClients[sClient.signingKeyName]
+	return sClient.txClients.TxClients[sClient.signingKeyAddr.String()]
 }

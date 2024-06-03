@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"slices"
 
 	"cosmossdk.io/depinject"
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
@@ -183,8 +184,7 @@ func setupRelayerDependencies(
 		txNodeRPCUrl = parsedFlagNodeRPCUrl
 	}
 
-	// signingKeyName := relayMinerConfig.SigningKeyName
-	signingKeyNames := relayMinerConfig.UniqueSigningKeyNames
+	signingKeyNames := uniqueSigningKeyNames(relayMinerConfig)
 	servicesConfigMap := relayMinerConfig.Servers
 	smtStorePath := relayMinerConfig.SmtStorePath
 
@@ -285,6 +285,8 @@ func newSupplyTxClientsFn(signingKeyNames []string) config.SupplierFn {
 			if err != nil {
 				return nil, err
 			}
+
+			// Making sure we use addresses as keys.
 			txClients.TxClients[txClient.Address().String()] = txClient
 		}
 		return depinject.Configs(deps, depinject.Supply(txClients)), nil
@@ -309,6 +311,8 @@ func newSupplySupplierClientsFn(signingKeyNames []string) config.SupplierFn {
 			if err != nil {
 				return nil, err
 			}
+
+			// Making sure we use addresses as keys.
 			suppliers.SupplierClients[supplierClient.Address().String()] = supplierClient
 		}
 		return depinject.Configs(deps, depinject.Supply(suppliers)), nil
@@ -360,4 +364,16 @@ func newSupplyRelayerSessionsManagerFn(smtStorePath string, signingKeyNames []st
 
 		return depinject.Configs(deps, depinject.Supply(relayerSessionsManager)), nil
 	}
+}
+
+func uniqueSigningKeyNames(relayMinerConfig *relayerconfig.RelayMinerConfig) []string {
+	for _, server := range relayMinerConfig.Servers {
+		for _, supplier := range server.SupplierConfigsMap {
+			for _, signingKeyName := range supplier.SigningKeyNames {
+				relayMinerConfig.UniqueSigningKeyNames = append(relayMinerConfig.UniqueSigningKeyNames, signingKeyName)
+			}
+		}
+	}
+	slices.Sort(relayMinerConfig.UniqueSigningKeyNames)
+	return slices.Compact(relayMinerConfig.UniqueSigningKeyNames)
 }
