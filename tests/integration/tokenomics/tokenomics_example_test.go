@@ -27,7 +27,7 @@ func TestTokenomicsIntegrationExample(t *testing.T) {
 	// Create a new integration app
 	integrationApp := integration.NewCompleteIntegrationApp(t)
 
-	// Query and validated the default shared params
+	// Query and validate the default shared params
 	sharedQueryClient := sharedtypes.NewQueryClient(integrationApp.QueryHelper())
 	sharedQueryParams := sharedtypes.QueryParamsRequest{}
 	sharedQueryResponse, err := sharedQueryClient.Params(integrationApp.SdkCtx(), &sharedQueryParams)
