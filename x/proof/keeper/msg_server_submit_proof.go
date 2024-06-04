@@ -51,7 +51,7 @@ func init() {
 // could (theoretically) batch multiple proofs (signed by the corresponding supplier)
 // into one transaction to save on transaction fees.
 func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (*types.MsgSubmitProofResponse, error) {
-	// TODO_BLOCKER_DISCUSS: A potential issue with doing proof validation inside
+	// TODO_MAINNET: A potential issue with doing proof validation inside
 	// `SubmitProof` is that we will not be storing false proofs on-chain (e.g. for slashing purposes).
 	// This could be considered a feature (e.g. less state bloat against sybil attacks)
 	// or a bug (i.e. no mechanisms for slashing suppliers who submit false proofs).
@@ -67,7 +67,7 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 	)
 
 	/*
-		TODO_DOCUMENT(@bryanchriswhite): Document these steps in proof
+		TODO_BLOCKER(@bryanchriswhite): Document these steps in proof
 		verification, link to the doc for reference and delete the comments.
 
 		## Actions (error if anything fails)
@@ -138,7 +138,7 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 		)
 	}
 
-	// TODO_IMPROVE(#427): Utilize smt.VerifyCompactClosestProof here to
+	// TODO_MAINNET(#427): Utilize smt.VerifyCompactClosestProof here to
 	// reduce on-chain storage requirements for proofs.
 	// Get the relay request and response from the proof.GetClosestMerkleProof.
 	relayBz := sparseMerkleClosestProof.GetValueHash(&SmtSpec)
@@ -401,7 +401,7 @@ func validateMiningDifficulty(relayBz []byte, minRelayDifficultyBits uint64) err
 		)
 	}
 
-	// TODO: Devise a test that tries to attack the network and ensure that there
+	// TODO_MAINNET: Devise a test that tries to attack the network and ensure that there
 	// is sufficient telemetry.
 	if uint64(relayDifficultyBits) < minRelayDifficultyBits {
 		return types.ErrProofInvalidRelay.Wrapf(
@@ -444,7 +444,7 @@ func (k msgServer) validateClosestPath(
 	sessionGracePeriodEndHeight := shared.GetSessionGracePeriodEndHeight(sessionHeader.GetSessionEndBlockHeight())
 	blockHash := k.sessionKeeper.GetBlockHash(ctx, sessionGracePeriodEndHeight)
 
-	// TODO: Investigate "proof for the path provided does not match one expected by the on-chain protocol"
+	// TODO_BETA: Investigate "proof for the path provided does not match one expected by the on-chain protocol"
 	// error that may occur due to block height differing from the off-chain part.
 	fmt.Println("E2E_DEBUG: height for block hash when verifying the proof", sessionGracePeriodEndHeight, sessionHeader.GetSessionId())
 

@@ -46,7 +46,7 @@ func (k msgServer) CreateClaim(ctx context.Context, msg *types.MsgCreateClaim) (
 		)
 
 	/*
-		TODO_INCOMPLETE:
+		TODO_BLOCKER(@bryanchriswhite):
 
 		### Msg distribution validation (depends on sessionRes validation)
 		1. [ ] governance-based earliest block offset
@@ -74,6 +74,6 @@ func (k msgServer) CreateClaim(ctx context.Context, msg *types.MsgCreateClaim) (
 	logger.Info("created new claim")
 
 	isSuccessful = true
-	// TODO: return the claim in the response.
+	// TODO_BETA: return the claim in the response.
 	return &types.MsgCreateClaimResponse{}, nil
 }

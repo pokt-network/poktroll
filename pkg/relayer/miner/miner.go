@@ -92,7 +92,7 @@ func (mnr *miner) mapMineRelay(
 	_ context.Context,
 	relay *servicetypes.Relay,
 ) (_ either.Either[*relayer.MinedRelay], skip bool) {
-	// TODO_TECHDEBT(#446): Centralize the configuration for the SMT spec.
+	// TODO_TECHDEBT(@red-0ne, #446): Centralize the configuration for the SMT spec.
 	// TODO_TECHDEBT(@red-0ne): marshal using canonical codec.
 	relayBz, err := relay.Marshal()
 	if err != nil {

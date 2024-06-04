@@ -282,7 +282,7 @@ func WithSuccessiveSessions(
 	}
 }
 
-// TODO_TECHDEBT(@red-0ne): This function only supports JSON-RPC requests and
+// TODO_BLOCKER(@red-0ne): This function only supports JSON-RPC requests and
 // needs to have its http.Request "Content-Type" header passed-in as a parameter
 // and take out the GetRelayResponseError function which parses JSON-RPC responses
 // to make it RPC-type agnostic.

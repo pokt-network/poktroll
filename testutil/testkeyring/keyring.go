@@ -16,7 +16,7 @@ import (
 // pre-generated accounts to populated the provided keyring, kr. It then returns
 // the pre-generated accounts which were used.
 //
-// TODO_CONSIDERATION: Returning a new PreGeneratedAccountIterator instead of
+// TODO_TECHDEBT: Returning a new PreGeneratedAccountIterator instead of
 // the slice of accounts could be more idiomatic. It would only contain keys which
 // are known to be in the keyring.
 func CreatePreGeneratedKeyringAccounts(

@@ -12,7 +12,7 @@ var (
 	_ paramtypes.ParamSet = (*Params)(nil)
 
 	KeyMaxDelegatedGateways = []byte("MaxDelegatedGateways")
-	// TODO: Determine the default value
+	// TODO_MAINNET: Determine the default value
 	DefaultMaxDelegatedGateways uint64 = 7
 )
 

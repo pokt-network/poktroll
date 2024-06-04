@@ -20,7 +20,7 @@ func NewMsgSubmitProof(supplierAddress string, sessionHeader *sessiontypes.Sessi
 // ValidateBasic ensures that the bech32 address strings for the supplier and
 // application addresses are valid and that the proof and service ID are not empty.
 //
-// TODO_TECHDEBT: Call `msg.GetSessionHeader().ValidateBasic()` once its implemented
+// TODO_BETA: Call `msg.GetSessionHeader().ValidateBasic()` once its implemented
 func (msg *MsgSubmitProof) ValidateBasic() error {
 	if _, err := sdk.AccAddressFromBech32(msg.GetSupplierAddress()); err != nil {
 		return sdkerrors.ErrInvalidAddress.Wrapf(
