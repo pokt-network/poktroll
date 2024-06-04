@@ -439,17 +439,17 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	integrationApp.NextBlock(t)
 
 	// Set the default params for all the modules
-	err := sharedKeeper.SetParams(integrationApp.sdkCtx, sharedtypes.DefaultParams())
+	err := sharedKeeper.SetParams(integrationApp.SdkCtx(), sharedtypes.DefaultParams())
 	require.NoError(t, err)
-	err = tokenomicsKeeper.SetParams(sdkCtx, tokenomicstypes.DefaultParams())
+	err = tokenomicsKeeper.SetParams(integrationApp.SdkCtx(), tokenomicstypes.DefaultParams())
 	require.NoError(t, err)
-	err = proofKeeper.SetParams(sdkCtx, prooftypes.DefaultParams())
+	err = proofKeeper.SetParams(integrationApp.SdkCtx(), prooftypes.DefaultParams())
 	require.NoError(t, err)
-	err = sessionKeeper.SetParams(sdkCtx, sessiontypes.DefaultParams())
+	err = sessionKeeper.SetParams(integrationApp.SdkCtx(), sessiontypes.DefaultParams())
 	require.NoError(t, err)
-	err = gatewayKeeper.SetParams(sdkCtx, gatewaytypes.DefaultParams())
+	err = gatewayKeeper.SetParams(integrationApp.SdkCtx(), gatewaytypes.DefaultParams())
 	require.NoError(t, err)
-	err = applicationKeeper.SetParams(sdkCtx, apptypes.DefaultParams())
+	err = applicationKeeper.SetParams(integrationApp.SdkCtx(), apptypes.DefaultParams())
 	require.NoError(t, err)
 
 	// Prepare default testing fixtures
