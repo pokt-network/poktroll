@@ -52,7 +52,7 @@ func (k Keeper) UpdateRelayMiningDifficulty(
 			}
 		}
 
-		// TODO_CONSIDERATION: We could potentially compute the smoothing factor
+		// TODO_MAINNET(@Olshansk): We could potentially compute the smoothing factor
 		// using a common formula, such as alpha = 2 / (N+1), where N is the number
 		// of periods.
 		// N := ctx.BlockHeight() - prevDifficulty.BlockHeight

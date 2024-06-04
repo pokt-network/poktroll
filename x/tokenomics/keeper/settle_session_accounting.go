@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	// TODO_TECHDEBT: Retrieve this from the SMT package
+	// TODO_TECHDEBT(@Olshansk): Retrieve this from the SMT package
 	// The number of bytes expected to be contained in the root hash being
 	// claimed in order to represent both the digest and the sum.
 	smstRootSize = 40
@@ -75,7 +75,7 @@ func (k Keeper) SettleSessionAccounting(
 	// Retrieve the sum of the root as a proxy into the amount of work done
 	root := (smt.MerkleRoot)(claim.GetRootHash())
 
-	// TODO_DISCUSS: This check should be the responsibility of the SMST package
+	// TODO_BLOCKER(@Olshansk): This check should be the responsibility of the SMST package
 	// since it's used to get compute units from the root hash.
 	if root == nil || len(root) != smstRootSize {
 		logger.Error(fmt.Sprintf("received an invalid root hash of size: %d", len(root)))

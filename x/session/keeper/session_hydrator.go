@@ -19,7 +19,7 @@ import (
 
 var SHA3HashLen = crypto.SHA3_256.Size()
 
-// TODO_BLOCKER(#21): Make these configurable governance param
+// TODO_BLOCKER(@bryanchriswhite, #21): Make these configurable governance param
 const (
 	NumSupplierPerSession       = 15
 	SessionIDComponentDelimiter = "."
@@ -89,7 +89,7 @@ func (k Keeper) HydrateSession(ctx context.Context, sh *sessionHydrator) (*types
 
 // hydrateSessionMetadata hydrates metadata related to the session such as the height at which the session started, its number, the number of blocks per session, etc..
 func (k Keeper) hydrateSessionMetadata(ctx context.Context, sh *sessionHydrator) error {
-	// TODO_TECHDEBT: Add a test if `blockHeight` is ahead of the current chain or what this node is aware of
+	// TODO_TEST: Add a test if `blockHeight` is ahead of the current chain or what this node is aware of
 
 	lastCommittedBlockHeight := sdk.UnwrapSDKContext(ctx).BlockHeight()
 	if sh.blockHeight > lastCommittedBlockHeight {
@@ -99,7 +99,7 @@ func (k Keeper) hydrateSessionMetadata(ctx context.Context, sh *sessionHydrator)
 		)
 	}
 
-	// TODO_BLOCKER(#543): If the num_blocks_per_session param has ever been changed,
+	// TODO_BLOCKER(@bryanchriswhite, #543): If the num_blocks_per_session param has ever been changed,
 	// this function may cause unexpected behavior for historical sessions.
 	sharedParams := k.sharedKeeper.GetParams(ctx)
 	sh.session.NumBlocksPerSession = int64(sharedParams.NumBlocksPerSession)
@@ -114,8 +114,8 @@ func (k Keeper) hydrateSessionMetadata(ctx context.Context, sh *sessionHydrator)
 func (k Keeper) hydrateSessionID(ctx context.Context, sh *sessionHydrator) error {
 	prevHashBz := k.GetBlockHash(ctx, sh.sessionHeader.SessionStartBlockHeight)
 
-	// TODO_TECHDEBT: In the future, we will need to validate that the Service is a valid service depending on whether
-	// or not its permissioned or permissionless
+	// TODO_MAINNET: In the future, we will need to validate that the Service is
+	// a valid service depending on whether or not its permissioned or permissionless
 
 	if !sharedhelpers.IsValidService(sh.sessionHeader.Service) {
 		return types.ErrSessionHydration.Wrapf("invalid service: %v", sh.sessionHeader.Service)
@@ -207,9 +207,10 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 	return nil
 }
 
-// TODO_INVESTIGATE: We are using a `Go` native implementation for a pseudo-random number generator. In order
-// for it to be language agnostic, a general purpose algorithm MUST be used.
-// pseudoRandomSelection returns a random subset of the candidates.
+// TODO_BETA: We are using a `Go` native implementation for a pseudo-random
+// number generator. In order for it to be language agnostic, a general purpose
+// algorithm MUST be used. pseudoRandomSelection returns a random subset of the
+// candidates.
 func pseudoRandomSelection(
 	candidates []*sharedtypes.Supplier,
 	numTarget int,

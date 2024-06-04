@@ -6,7 +6,7 @@ title: Observability guidelines
 # Work in progress <!-- omit in toc -->
 
 :::warning
-We are still refining our observability guidelines. If in doubt - please reach out on `#protocol-public` channel on 
+We are still refining our observability guidelines. If in doubt - please reach out on `#protocol-public` channel on
 [Grove Discord](https://discord.gg/build-with-grove).
 :::
 
@@ -15,12 +15,11 @@ We are still refining our observability guidelines. If in doubt - please reach o
   - [Types of Metrics](#types-of-metrics)
   - [High Cardinality Considerations](#high-cardinality-considerations)
   - [Best Practices](#best-practices)
-  - [\[TODO(@okdas)\] Examples](#todookdas-examples)
+  - [Examples](#examples)
   - [Counter](#counter)
   - [Gauage](#gauage)
   - [Histogram](#histogram)
 - [Logs](#logs)
-
 
 ## Metrics
 
@@ -57,10 +56,10 @@ the memory usage and reduce the performance of the Prometheus server. To mitigat
 - **Documentation:** Document each custom metric, including its purpose and any labels used.
 - **Consistency:** Follow the Prometheus Metric and Label Naming Guide for consistent naming and labeling. See more at [Prometheus Naming Guide](https://prometheus.io/docs/practices/naming/).
 
-### [TODO(@okdas)] Examples
+### Examples
 
 :::warning
-This is a placeholder section so our team remembers to add it in the future.
+TODO_DOCUMENT(@okdas): This is a placeholder section so our team remembers to add it in the future.
 :::
 
 ### Counter

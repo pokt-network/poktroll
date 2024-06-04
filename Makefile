@@ -76,8 +76,8 @@ endif
 ### Dependencies ###
 ####################
 
-# TODO: Add other dependencies (ignite, docker, k8s, etc) here
-# TODO(@okdas): bump `golangci-lint` when we upgrade golang to 1.21+
+# TODO_IMPROVE(@okdas): Add other dependencies (ignite, docker, k8s, etc) here
+# TODO_BLOCKER(@okdas): bump `golangci-lint` when we upgrade golang to 1.21+
 .PHONY: install_ci_deps
 install_ci_deps: ## Installs `mockgen` and other go tools
 	go install "github.com/golang/mock/mockgen@v1.6.0" && mockgen --version
@@ -106,9 +106,6 @@ help: ## Prints all the targets in all the Makefiles
 ##############
 ### Checks ###
 ##############
-
-# TODO_DOCUMENT: All of the `check_` helpers can be installed differently depending
-# on the user's OS and enviornment.
 
 .PHONY: check_go_version
 # Internal helper target - check go version
@@ -330,7 +327,7 @@ send_relay_delegating_app: # Send a relay through the gateway as an application 
 	--data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' \
 	$(GATEWAY_URL)/anvil?applicationAddr=$$appAddr
 
-# TODO_BLOCKER(@okdas): Figure out how to copy these over w/ a functional state.
+# TODO_TECHDEBT(@okdas): Figure out how to copy these over w/ a functional state.
 # cp ${HOME}/.poktroll/config/app.toml $(POKTROLLD_HOME)/config/app.toml
 # cp ${HOME}/.poktroll/config/config.toml $(POKTROLLD_HOME)/config/config.toml
 # cp ${HOME}/.poktroll/config/client.toml $(POKTROLLD_HOME)/config/client.toml
