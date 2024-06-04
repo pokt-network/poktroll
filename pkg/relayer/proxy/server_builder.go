@@ -62,7 +62,8 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 				// in any of the server config's suppliers' service's PubliclyExposedEndpoints
 				for _, serverConfig := range rp.serverConfigs {
 					supplierService, ok := serverConfig.SupplierConfigsMap[service.Service.Id]
-					if ok && slices.Contains(supplierService.PubliclyExposedEndpoints, endpointUrl.Hostname()) {
+					hostname := endpointUrl.Hostname()
+					if ok && slices.Contains(supplierService.PubliclyExposedEndpoints, hostname) {
 						found = true
 						break
 					}

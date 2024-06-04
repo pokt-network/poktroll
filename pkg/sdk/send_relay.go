@@ -35,8 +35,9 @@ func (sdk *poktrollSDK) SendRelay(
 	// Prepare the relay request.
 	relayRequest := &types.RelayRequest{
 		Meta: types.RelayRequestMetadata{
-			SessionHeader: supplierEndpoint.Header,
-			Signature:     nil, // signature added below
+			SessionHeader:   supplierEndpoint.Header,
+			Signature:       nil, // signature added below
+			SupplierAddress: supplierEndpoint.SupplierAddress,
 		},
 		Payload: payloadBz,
 	}
