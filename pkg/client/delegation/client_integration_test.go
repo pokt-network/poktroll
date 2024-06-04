@@ -1,7 +1,7 @@
 package delegation_test
 
 // TODO_TECHDEBT(@bryanchriswhite): Consider refactoring / deleting these tests
-// to 
+// to
 
 import (
 	"context"
