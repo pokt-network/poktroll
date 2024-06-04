@@ -54,7 +54,7 @@ func TestTokenomicsIntegrationExample(t *testing.T) {
 	updateTokenomicsParamRes := tokenomicstypes.MsgUpdateParamResponse{}
 	err = integrationApp.Codec().Unmarshal(result.Value, &updateTokenomicsParamRes)
 	require.NoError(t, err)
-	require.EqualValues(t, uint64(11), updateTokenomicsParamRes.Params.ComputeUnitsToTokensMultiplier)
+	require.EqualValues(t, uint64(11), uint64(updateTokenomicsParamRes.Params.ComputeUnitsToTokensMultiplier))
 
 	// Commit & finalize the current block, then moving to the next one.
 	integrationApp.NextBlock(t)
