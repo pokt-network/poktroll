@@ -32,8 +32,6 @@ type relayerSessionsManager struct {
 	// sessionsToClaimObs notifies about sessions that are ready to be claimed.
 	sessionsToClaimObs observable.Observable[[]relayer.SessionTree]
 
-	// signingKeyNames []string
-
 	// sessionTrees is a map of block heights pointing to a map of SessionTrees
 	// indexed by their sessionId.
 	// The block height index is used to know when the sessions contained in the entry should be closed,
