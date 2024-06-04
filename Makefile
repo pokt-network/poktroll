@@ -440,7 +440,7 @@ go_testgen_accounts: ## Generate test accounts for usage in test environments
 go_develop: check_ignite_version proto_regen go_mockgen ## Generate protos and mocks
 
 .PHONY: go_develop_and_test
-go_develop_and_test: go_develop go_test ## Generate protos, mocks and run all tests
+go_develop_and_test: go_develop test_all ## Generate protos, mocks and run all tests
 
 #############
 ### TODOS ###

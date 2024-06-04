@@ -38,7 +38,7 @@ func TestTokenomicsIntegrationExample(t *testing.T) {
 	// Prepare a request to update the compute_units_to_tokens_multiplier
 	updateTokenomicsParamMsg := &tokenomicstypes.MsgUpdateParam{
 		Authority: integrationApp.Authority(),
-		Name:      sharedtypes.ParamComputeUnitesToTokensMultiplier,
+		Name:      tokenomicstypes.ParamComputeUnitsToTokensMultiplier,
 		AsType:    &tokenomicstypes.MsgUpdateParam_AsInt64{AsInt64: 11},
 	}
 
@@ -54,8 +54,7 @@ func TestTokenomicsIntegrationExample(t *testing.T) {
 	updateTokenomicsParamRes := tokenomicstypes.MsgUpdateParamResponse{}
 	err = integrationApp.Codec().Unmarshal(result.Value, &updateTokenomicsParamRes)
 	require.NoError(t, err)
-	require.Equal(t, computeUnitsToTokensMultiplier, updateTokenomicsParamRes.Params.ComputeUnitsToTokensMultiplier)
-
+	require.Equal(t, 11, updateTokenomicsParamRes.Params.ComputeUnitsToTokensMultiplier)
 
 	// Commit & finalize the current block, then moving to the next one.
 	integrationApp.NextBlock(t)
