@@ -1,0 +1,19 @@
+default_signing_key_names: [supplier1]
+smt_store_path: smt_stores
+metrics:
+  enabled: true
+  addr: :39090
+pocket_node:
+  query_node_rpc_url: tcp://127.0.0.1:36657
+  query_node_grpc_url: tcp://127.0.0.1:36658
+  tx_node_rpc_url: tcp://127.0.0.1:36657
+suppliers:
+  - service_id: anvil
+    listen_url: http://localhost:6942
+    service_config:
+      backend_url: http://localhost:8081
+      publicly_exposed_endpoints:
+        - localhost
+pprof:
+  enabled: false
+  addr: localhost:6060
