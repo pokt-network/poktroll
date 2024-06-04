@@ -16,7 +16,7 @@ import (
 	_ "github.com/pokt-network/poktroll/testutil/testpolylog"
 	proof "github.com/pokt-network/poktroll/x/proof/module"
 	"github.com/pokt-network/poktroll/x/proof/types"
-	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func TestClaim_Show(t *testing.T) {
@@ -128,12 +128,12 @@ func TestClaim_List(t *testing.T) {
 	// independent constant, which requires us to temporarily align the
 	// with the num blocks per session. See the `forloop` in `networkWithClaimObjects`
 	// that has a TODO_HACK as well.
-	require.Equal(t, 0, numSuppliers*numApps%sessionkeeper.NumBlocksPerSession)
+	require.Equal(t, 0, numSuppliers*numApps%sharedtypes.DefaultNumBlocksPerSession)
 
-	numSessions := numSuppliers * numApps / sessionkeeper.NumBlocksPerSession
+	numSessions := numSuppliers * numApps / sharedtypes.DefaultNumBlocksPerSession
 
 	// Submitting one claim per block for simplicity
-	numClaimsPerSession := sessionkeeper.NumBlocksPerSession
+	numClaimsPerSession := sharedtypes.DefaultNumBlocksPerSession
 	totalClaims := numSessions * numClaimsPerSession
 
 	net, claims := networkWithClaimObjects(t, numSessions, numSuppliers, numApps)

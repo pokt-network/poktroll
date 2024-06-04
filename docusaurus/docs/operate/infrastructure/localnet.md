@@ -1,5 +1,5 @@
 ---
-sidebar_position: 1
+sidebar_position: 2
 title: LocalNet
 ---
 
@@ -21,7 +21,7 @@ needed to send an end-to-end relay.
   - [Report issues](#report-issues)
   - [TL;DR](#tldr)
 - [Developing with LocalNet](#developing-with-localnet)
-  - [localnet\_config.yaml](#localnet_configyaml)
+  - [localnet_config.yaml](#localnet_configyaml)
   - [Scaling network actors](#scaling-network-actors)
   - [Off-chain actors configuration](#off-chain-actors-configuration)
   - [Modify Kubernetes workloads](#modify-kubernetes-workloads)

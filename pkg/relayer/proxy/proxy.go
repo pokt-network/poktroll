@@ -38,8 +38,9 @@ type relayerProxy struct {
 	// which contains the supported services, RPC types, and endpoints, etc...
 	supplierQuerier client.SupplierQueryClient
 
-	// sessionQuerier is the querier used to get the current session from the blockchain,
-	// which is needed to check if the relay proxy should be serving an incoming relay request.
+	// sessionQuerier is the query client used to get the current session & session params
+	// from the blockchain, which are needed to check if the relay proxy should be serving an
+	// incoming relay request.
 	sessionQuerier client.SessionQueryClient
 
 	// servers is a map of listenAddress -> RelayServer provided by the relayer proxy,

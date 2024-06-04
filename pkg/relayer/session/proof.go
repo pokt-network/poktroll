@@ -12,7 +12,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/protocol"
 	proofkeeper "github.com/pokt-network/poktroll/x/proof/keeper"
-	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
+	"github.com/pokt-network/poktroll/x/shared"
 )
 
 // submitProofs maps over the given claimedSessions observable.
@@ -79,12 +79,16 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 	// first one from the group to calculate the earliest height for proof submission.
 	sessionEndHeight := sessionTrees[0].GetSessionHeader().GetSessionEndBlockHeight()
 
-	sessionGracePeriodEndHeight := sessionkeeper.GetSessionGracePeriodBlockCount() + sessionEndHeight
-
 	// TODO_TECHDEBT(#516): Centralize the business logic that involves taking
 	// into account the heights, windows and grace periods into helper functions.
-	// TODO_BLOCKER(#516): The proof submission window SHOULD NOT overlap with the claim window.
-	submitProofsWindowStartHeight := sessionGracePeriodEndHeight + 1
+	// TODO_BLOCKER(#516): The proof submission window SHOULD NOT overlap with the
+	// claim window. The proof submission window start SHOULD be relative to the
+	// claim window end.
+	sessionGracePeriodEndHeight := shared.GetSessionGracePeriodEndHeight(sessionEndHeight)
+	// An additional block is added to permit to relays arriving at the last block
+	// of the session to be included in the claim before the smt is closed.
+	createClaimsWindowStartHeight := sessionGracePeriodEndHeight + 1
+	submitProofsWindowStartHeight := createClaimsWindowStartHeight
 	// TODO_BLOCKER(#516): query the on-chain governance parameter once available.
 	// + claimproofparams.GovSubmitProofWindowStartHeightOffset
 
@@ -95,7 +99,7 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 
 	// TODO_BLOCKER(@bryanchriswhite): The block that'll be used as a source of entropy for
 	// which branch(es) to prove should be deterministic and use on-chain governance params.
-	// submitProofWindowStartBlock is the block that will have its hash used as the
+	// sessionPathBlock is the block that will have its hash used as the
 	// source of entropy for all the session trees in that batch, waiting for it to
 	// be received before proceeding.
 	sessionPathBlock := rs.waitForBlock(ctx, sessionGracePeriodEndHeight)

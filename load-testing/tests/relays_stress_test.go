@@ -15,9 +15,10 @@ import (
 	"cosmossdk.io/math"
 	"github.com/cometbft/cometbft/abci/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/pokt-network/poktroll/testutil/testclient"
 	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
+
+	"github.com/pokt-network/poktroll/testutil/testclient"
 
 	"github.com/pokt-network/poktroll/cmd/signals"
 	"github.com/pokt-network/poktroll/pkg/client"
@@ -77,8 +78,8 @@ var (
 	// maxConcurrentRequestLimit is the maximum number of concurrent requests that can be made.
 	// By default, it is set to the number of logical CPUs available to the process.
 	maxConcurrentRequestLimit = runtime.GOMAXPROCS(0)
-	// fundingAccountAddress is the key name of the account used to fund other accounts.
-	fundingAccountAddress = "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw" // address for pnf account
+	// fundingAccountAddress is the address of the account used to fund other accounts.
+	fundingAccountAddress string
 	// supplierStakeAmount is the amount of tokens to stake by suppliers.
 	supplierStakeAmount sdk.Coin
 	// gatewayStakeAmount is the amount of tokens to stake by gateways.
@@ -133,6 +134,9 @@ type relaysSuite struct {
 	newTxEventsObs observable.Observable[*types.TxResult]
 	// txContext is the transaction context used to sign and send transactions.
 	txContext client.TxContext
+	// sharedParams is the shared on-chain parameters used in the test.
+	// It is queried at the beginning of the test.
+	sharedParams *sharedtypes.Params
 
 	// numRelaysSent is the number of relay requests sent during the test.
 	numRelaysSent atomic.Uint64
@@ -191,7 +195,7 @@ type relaysSuite struct {
 	// It is used to ensure that the suppliers are staked in the order they are provisioned.
 	availableSupplierAddresses []string
 
-	// fundingAccountInfo is the account entry corresponding to the fundingAccountAddress.
+	// fundingAccountInfo is the account entry corresponding to the fundingAccountKeyName.
 	// It is used to send transactions to fund other accounts.
 	fundingAccountInfo *accountInfo
 	// preparedGateways is the list of gateways that are already staked, delegated
@@ -349,10 +353,13 @@ func (s *relaysSuite) LocalnetIsRunning() {
 	s.setupTxEventListeners()
 
 	// Initialize the funding account.
-	s.initFundingAccount(fundingAccountAddress)
+	s.initFundingAccount(loadTestParams.FundingAccountAddress)
 
 	// Initialize the on-chain claims and proofs counter.
 	s.countClaimAndProofs()
+
+	// Query for the current shared on-chain params.
+	s.querySharedParams()
 
 	// Some suppliers may already be staked at genesis, ensure that staking during
 	// this test succeeds by increasing the sake amount.
@@ -395,7 +402,7 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 	// The test duration indicates when the test is complete.
 	// It is calculated as the relay load duration plus the time it takes to
 	// submit all claims and proofs.
-	s.testDurationBlocks = plans.totalDurationBlocks()
+	s.testDurationBlocks = plans.totalDurationBlocks(s.sharedParams)
 
 	if s.isEphemeralChain {
 		// Adjust the max delegations parameter to the max gateways to permit all

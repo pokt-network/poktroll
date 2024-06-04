@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"cosmossdk.io/depinject"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/stretchr/testify/require"
 
@@ -305,6 +306,9 @@ func createRingCache(ctx context.Context, t *testing.T, appAddress string) (cryp
 	delegationClient := testdelegation.NewAnyTimesRedelegationsSequence(ctx, t, appAddress, redelegationObs)
 	accQuerier := testqueryclients.NewTestAccountQueryClient(t)
 	appQuerier := testqueryclients.NewTestApplicationQueryClient(t)
-	rc := testrings.NewRingCacheWithMockDependencies(ctx, t, accQuerier, appQuerier, delegationClient)
+	sharedQuerier := testqueryclients.NewTestSharedQueryClient(t)
+
+	ringCacheDeps := depinject.Supply(accQuerier, appQuerier, delegationClient, sharedQuerier)
+	rc := testrings.NewRingCacheWithMockDependencies(ctx, t, ringCacheDeps)
 	return rc, redelegationPublishCh
 }

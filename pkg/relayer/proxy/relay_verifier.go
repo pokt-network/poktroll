@@ -3,8 +3,8 @@ package proxy
 import (
 	"context"
 
-	sessiontypes "github.com/pokt-network/poktroll/pkg/relayer/session"
 	"github.com/pokt-network/poktroll/x/service/types"
+	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -104,7 +104,7 @@ func (rp *relayerProxy) getTargetSessionBlockHeight(
 	if sessionEndblockHeight < currentBlockHeight {
 		// Do not process the `RelayRequest` if the session has expired and the current
 		// block height is outside the session's grace period.
-		if sessiontypes.IsWithinGracePeriod(sessionEndblockHeight, currentBlockHeight) {
+		if !shared.IsGracePeriodElapsed(sessionEndblockHeight, currentBlockHeight) {
 			// The RelayRequest's session has expired but is still within the
 			// grace period so process it as if the session is still active.
 			return sessionEndblockHeight, nil

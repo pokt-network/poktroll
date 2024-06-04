@@ -9,7 +9,6 @@ import (
 
 	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/application/types"
-	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 )
 
 func (k msgServer) UndelegateFromGateway(ctx context.Context, msg *types.MsgUndelegateFromGateway) (*types.MsgUndelegateFromGatewayResponse, error) {
@@ -55,7 +54,7 @@ func (k msgServer) UndelegateFromGateway(ctx context.Context, msg *types.MsgUnde
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	currentBlock := sdkCtx.BlockHeight()
 
-	k.recordPendingUndelegation(&foundApp, msg.GatewayAddress, currentBlock)
+	k.recordPendingUndelegation(ctx, &foundApp, msg.GatewayAddress, currentBlock)
 
 	// Update the application store with the new delegation
 	k.SetApplication(ctx, foundApp)
@@ -76,11 +75,12 @@ func (k msgServer) UndelegateFromGateway(ctx context.Context, msg *types.MsgUnde
 // recordPendingUndelegation adds the given gateway address to the application's
 // pending undelegations list.
 func (k Keeper) recordPendingUndelegation(
+	ctx context.Context,
 	app *types.Application,
 	gatewayAddress string,
 	currentBlockHeight int64,
 ) {
-	sessionEndHeight := uint64(sessionkeeper.GetSessionEndBlockHeight(currentBlockHeight))
+	sessionEndHeight := uint64(k.sharedKeeper.GetSessionEndHeight(ctx, currentBlockHeight))
 	undelegatingGatewayListAtBlock := app.PendingUndelegations[sessionEndHeight]
 
 	// Add the gateway address to the undelegated gateways list if it's not already there.

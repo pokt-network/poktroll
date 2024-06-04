@@ -33,8 +33,8 @@ import (
 	"github.com/pokt-network/poktroll/x/proof/keeper"
 	"github.com/pokt-network/poktroll/x/proof/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
-	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -96,6 +96,7 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 		polyzero.NewLogger(),
 		types.NewAppKeeperQueryClient(keepers.ApplicationKeeper),
 		types.NewAccountKeeperQueryClient(keepers.AccountKeeper),
+		types.NewSharedKeeperQueryClient(keepers.SharedKeeper),
 	))
 	require.NoError(t, err)
 
@@ -213,6 +214,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 		polyzero.NewLogger(),
 		types.NewAppKeeperQueryClient(keepers.ApplicationKeeper),
 		types.NewAccountKeeperQueryClient(keepers.AccountKeeper),
+		types.NewSharedKeeperQueryClient(keepers.SharedKeeper),
 	))
 	require.NoError(t, err)
 
@@ -1066,7 +1068,7 @@ func createClaimAndStoreBlockHash(
 	// into account the heights, windows and grace periods into helper functions.
 	proofSubmissionHeight :=
 		claimMsg.GetSessionHeader().GetSessionEndBlockHeight() +
-			sessionkeeper.GetSessionGracePeriodBlockCount()
+			shared.SessionGracePeriodBlocks
 
 	// Set block height to be after the session grace period.
 	blockHeightCtx := keepertest.SetBlockHeight(ctx, proofSubmissionHeight)
