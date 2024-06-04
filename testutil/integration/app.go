@@ -525,11 +525,11 @@ func (app *App) QueryHelper() *baseapp.QueryServiceTestHelper {
 // The result of the message execution is returned as an Any type.
 // That any type can be unmarshaled to the expected response type.
 // If the message execution fails, an error is returned.
-func (app *App) RunMsg(t *testing.T, msg sdk.Msg, option ...Option) *codectypes.Any {
+func (app *App) RunMsg(t *testing.T, msg sdk.Msg, option ...RunOption) *codectypes.Any {
 	t.Helper()
 
 	// set options
-	cfg := &Config{}
+	cfg := &RunConfig{}
 	for _, opt := range option {
 		opt(cfg)
 	}
@@ -589,8 +589,10 @@ func (app *App) NextBlock(t *testing.T) {
 	app.nextBlockUpdateCtx()
 }
 
-// nextBlockUpdateCtx updates the context of the app while update the state to
-// the next block.
+// nextBlockUpdateCtx is responsible for updating the app's (receiver) context
+// to the next block. It does not trigger ABCI specific business logic but manages
+// app.sdkCtx related metadata so downstream queries and transactions are executed
+// in the correct context.
 func (app *App) nextBlockUpdateCtx() {
 	prevCtx := app.sdkCtx
 

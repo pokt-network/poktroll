@@ -18,8 +18,10 @@ func TestNewSupplierClient_Localnet(t *testing.T) {
 	supplierClient := testsupplier.NewLocalnetClient(t, signingKeyName)
 	require.NotNil(t, supplierClient)
 
-	// The method signature of `CreateClaims` has changed since this test
-	// was first written, and will need to be tackled as part of
+	// TODO_TECHDEBT: The method signature of `CreateClaims` has changed since this test
+	// was first written, and will need to be tackled as part of the TODO_TECHDEBT
+	// above.
+	//
 	// var rootHash []byte
 	// sessionHeader := sessiontypes.SessionHeader{
 	// 	ApplicationAddress:      "",
