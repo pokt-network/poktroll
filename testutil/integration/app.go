@@ -197,7 +197,8 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		suppliertypes.StoreKey,
 		prooftypes.StoreKey,
 		servicetypes.StoreKey,
-		authtypes.StoreKey)
+		authtypes.StoreKey,
+	)
 
 	// Prepare the context
 	logger := log.NewNopLogger() // Use this if you need more output: log.NewTestLogger(t)
