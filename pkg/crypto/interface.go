@@ -5,7 +5,7 @@ import (
 	"context"
 
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
-	ring "github.com/noot/ring-go"
+	ring "github.com/pokt-network/ring-go"
 
 	"github.com/pokt-network/poktroll/x/service/types"
 )
