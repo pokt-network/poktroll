@@ -869,6 +869,10 @@ ignite_acc_list: ## List all the accounts in LocalNet
 ignite_poktrolld_build: check_go_version check_ignite_version ## Build the poktrolld binary using Ignite
 	ignite chain build --skip-proto --debug -v -o $(shell go env GOPATH)/bin
 
+.PHONY: ignite_openapi_gen
+ignite_openapi_gen: ## Generate the OpenAPI spec for the Ignite API
+	ignite generate openapi --yes
+
 ##################
 ### CI Helpers ###
 ##################
@@ -922,10 +926,6 @@ ignite_release_extract_binaries: ## Extracts binaries from the release archives
 go_docs: check_godoc ## Generate documentation for the project
 	echo "Visit http://localhost:6060/pkg/github.com/pokt-network/poktroll/"
 	godoc -http=:6060
-
-.PHONY: openapi_gen
-openapi_gen: ## Generate the OpenAPI spec for the Ignite API
-	ignite generate openapi --yes
 
 .PHONY: docusaurus_start
 docusaurus_start: check_npm check_node ## Start the Docusaurus server
