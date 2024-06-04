@@ -435,7 +435,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	// authtypes.RegisterQueryServer(queryHelper, accountKeeper)
 	sessiontypes.RegisterQueryServer(queryHelper, sessionKeeper)
 
-	// Nee to go to the next block to finalize the genesis and setup
+	// Need to go to the next block to finalize the genesis and setup
 	integrationApp.NextBlock(t)
 
 	// Set the default params for all the modules
