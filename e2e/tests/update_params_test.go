@@ -10,8 +10,10 @@ import (
 	"time"
 
 	cometcli "github.com/cometbft/cometbft/libs/cli"
+	"github.com/cosmos/cosmos-sdk/codec/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/cosmos/gogoproto/proto"
 	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
 
@@ -224,37 +226,37 @@ func (s *suite) TheModuleParamShouldBeUpdated(moduleName, paramName string) {
 
 // AllModuleParamsShouldBeSetToTheirDefaultValues asserts that all module params are set to their default values.
 func (s *suite) AllModuleParamsAreResetToTheirDefaultValues() {
-	// var anyMsgs []*types.Any
-	// authority := authtypes.NewModuleAddress(s.granterName).String()
+	var anyMsgs []*types.Any
+	authority := authtypes.NewModuleAddress(s.granterName).String()
 
-	// // List of all module MsgUpdateParams types and their respective default param functions
-	// modules := []struct {
-	// 	msgUpdateParamsType reflect.Type
-	// 	defaultParams       any
-	// }{
-	// 	{reflect.TypeOf(&apptypes.MsgUpdateParams{}), apptypes.DefaultParams()},
-	// 	{reflect.TypeOf(&gatewaytypes.MsgUpdateParams{}), gatewaytypes.DefaultParams()},
-	// 	{reflect.TypeOf(&prooftypes.MsgUpdateParams{}), prooftypes.DefaultParams()},
-	// 	{reflect.TypeOf(&servicetypes.MsgUpdateParams{}), servicetypes.DefaultParams()},
-	// 	{reflect.TypeOf(&sessiontypes.MsgUpdateParams{}), sessiontypes.DefaultParams()},
-	// 	{reflect.TypeOf(&sharedtypes.MsgUpdateParams{}), sharedtypes.DefaultParams()},
-	// 	{reflect.TypeOf(&suppliertypes.MsgUpdateParams{}), suppliertypes.DefaultParams()},
-	// 	{reflect.TypeOf(&tokenomicstypes.MsgUpdateParams{}), tokenomicstypes.DefaultParams()},
-	// }
+	// List of all module MsgUpdateParams types and their respective default param functions
+	modules := []struct {
+		msgUpdateParamsType reflect.Type
+		defaultParams       any
+	}{
+		{reflect.TypeOf(&apptypes.MsgUpdateParams{}), apptypes.DefaultParams()},
+		{reflect.TypeOf(&gatewaytypes.MsgUpdateParams{}), gatewaytypes.DefaultParams()},
+		{reflect.TypeOf(&prooftypes.MsgUpdateParams{}), prooftypes.DefaultParams()},
+		{reflect.TypeOf(&servicetypes.MsgUpdateParams{}), servicetypes.DefaultParams()},
+		{reflect.TypeOf(&sessiontypes.MsgUpdateParams{}), sessiontypes.DefaultParams()},
+		{reflect.TypeOf(&sharedtypes.MsgUpdateParams{}), sharedtypes.DefaultParams()},
+		{reflect.TypeOf(&suppliertypes.MsgUpdateParams{}), suppliertypes.DefaultParams()},
+		{reflect.TypeOf(&tokenomicstypes.MsgUpdateParams{}), tokenomicstypes.DefaultParams()},
+	}
 
-	// for _, module := range modules {
-	// 	msgUpdateParams := reflect.New(module.msgUpdateParamsType.Elem()).Interface().(proto.Message)
-	// 	msgUpdateParamsValue := reflect.ValueOf(msgUpdateParams).Elem()
-	// 	msgUpdateParamsValue.FieldByName("Authority").SetString(authority)
-	// 	msgUpdateParamsValue.FieldByName("Params").Set(reflect.ValueOf(params))
+	for _, module := range modules {
+		msgUpdateParams := reflect.New(module.msgUpdateParamsType.Elem()).Interface().(proto.Message)
+		msgUpdateParamsValue := reflect.ValueOf(msgUpdateParams).Elem()
+		msgUpdateParamsValue.FieldByName("Authority").SetString(authority)
+		msgUpdateParamsValue.FieldByName("Params").Set(reflect.ValueOf(module.defaultParams))
 
-	// 	anyMsg, err := types.NewAnyWithValue(msgUpdateParams)
-	// 	require.NoError(s, err)
-	// 	anyMsgs = append(anyMsgs, anyMsg)
-	// }
+		anyMsg, err := types.NewAnyWithValue(msgUpdateParams)
+		require.NoError(s, err)
+		anyMsgs = append(anyMsgs, anyMsg)
+	}
 
-	// file := s.newTempTxJSONFile(anyMsgs)
-	// s.sendAuthzExecTx(authority, file.Name())
+	file := s.newTempTxJSONFile(anyMsgs)
+	s.sendAuthzExecTx(authority, file.Name())
 }
 
 // TheModuleParamShouldBeSetToItsDefaultValue asserts that the given param for the
