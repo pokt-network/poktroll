@@ -51,17 +51,11 @@ func TestTokenomicsIntegrationExample(t *testing.T) {
 	require.NotNil(t, result, "unexpected nil result")
 
 	// Validate the response is correct and that the value was updated
-	resp := tokenomicstypes.MsgUpdateParamResponse{}
-	err = integrationApp.Codec().Unmarshal(result.Value, &resp)
+	updateTokenomicsParamRes := tokenomicstypes.MsgUpdateParamResponse{}
+	err = integrationApp.Codec().Unmarshal(result.Value, &updateTokenomicsParamRes)
 	require.NoError(t, err)
+	require.Equal(t, computeUnitsToTokensMultiplier, updateTokenomicsParamRes.Params.ComputeUnitsToTokensMultiplier)
 
-	tokenomicsQueryClient := tokenomicstypes.NewQueryClient(integrationApp.QueryHelper())
-
-	tokenomicsQueryParams := tokenomicstypes.QueryParamsRequest{}
-	tokenomicsQueryResponse, err := tokenomicsQueryClient.Params(integrationApp.SdkCtx(), &tokenomicsQueryParams)
-	require.NoError(t, err)
-	require.NotNil(t, tokenomicsQueryResponse, "unexpected nil queryResponse")
-	require.EqualValues(t, uint64(11), uint64(tokenomicsQueryResponse.Params.ComputeUnitsToTokensMultiplier))
 
 	// Commit & finalize the current block, then moving to the next one.
 	integrationApp.NextBlock(t)
