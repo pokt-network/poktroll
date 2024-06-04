@@ -17,7 +17,7 @@ func WithAutomaticFinalizeBlock() Option {
 }
 
 // WithAutomaticCommit enables automatic commit.
-// This means that the integration app will automatically commit the state after each msgs.
+// This means that the integration app will automatically commit the state after each msg.
 func WithAutomaticCommit() Option {
 	return func(cfg *Config) {
 		cfg.AutomaticCommit = true
