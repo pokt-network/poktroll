@@ -5,16 +5,14 @@ package types
 
 import (
 	fmt "fmt"
-	io "io"
-	math "math"
-	math_bits "math/bits"
-
 	_ "github.com/cosmos/cosmos-proto"
 	types "github.com/cosmos/cosmos-sdk/types"
 	_ "github.com/cosmos/gogoproto/gogoproto"
 	proto "github.com/cosmos/gogoproto/proto"
-
 	types1 "github.com/pokt-network/poktroll/x/shared/types"
+	io "io"
+	math "math"
+	math_bits "math/bits"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -33,7 +31,7 @@ type Application struct {
 	Address        string                             `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
 	Stake          *types.Coin                        `protobuf:"bytes,2,opt,name=stake,proto3" json:"stake,omitempty"`
 	ServiceConfigs []*types1.ApplicationServiceConfig `protobuf:"bytes,3,rep,name=service_configs,json=serviceConfigs,proto3" json:"service_configs,omitempty"`
-	// TODO_MAINNET: Rename `delegatee_gateway_addresses` to `gateway_addresses_delegated_to`.
+	// TODO_BETA: Rename `delegatee_gateway_addresses` to `gateway_addresses_delegated_to`.
 	// Ensure to rename all relevant configs, comments, variables, function names, etc as well.
 	DelegateeGatewayAddresses []string `protobuf:"bytes,4,rep,name=delegatee_gateway_addresses,json=delegateeGatewayAddresses,proto3" json:"delegatee_gateway_addresses,omitempty"`
 	// A map from sessionEndHeights to a list of Gateways.

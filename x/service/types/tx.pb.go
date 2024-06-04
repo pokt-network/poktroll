@@ -129,7 +129,7 @@ var xxx_messageInfo_MsgUpdateParamsResponse proto.InternalMessageInfo
 // MsgAddService defines a message for adding a new message to the network.
 // Services can be added by any actor in the network making them truly
 // permissionless.
-// TODO_IMPLEMENT: Add Champions / Sources once its fully defined.
+// TODO_BETA: Add Champions / Sources once its fully defined.
 type MsgAddService struct {
 	Address string        `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
 	Service types.Service `protobuf:"bytes,2,opt,name=service,proto3" json:"service"`
