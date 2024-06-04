@@ -165,7 +165,7 @@ func NewIntegrationApp(
 // all of the internal details and complexities of the application setup.
 // TODO_TECHDEBT: Not all of the modules are created here (e.g. minting module),
 // so it is up to the developer to add / improve / update this function over time
-// as the need arise.
+// as the need arises.
 func NewCompleteIntegrationApp(t *testing.T) *App {
 	t.Helper()
 
