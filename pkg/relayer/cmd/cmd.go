@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"slices"
 
 	"cosmossdk.io/depinject"
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
@@ -360,15 +359,22 @@ func newSupplyTxClientsFn(ctx context.Context, deps depinject.Config, signingKey
 	return depinject.Configs(deps, depinject.Supply(txClient)), nil
 }
 
+// uniqueSigningKeyNames goes through RelayMiner configuration and returns a list of unique
+// singning key names.
 func uniqueSigningKeyNames(relayMinerConfig *relayerconfig.RelayMinerConfig) []string {
-	var uniqueKeyNames []string
+	uniqueKeyMap := make(map[string]bool)
 	for _, server := range relayMinerConfig.Servers {
 		for _, supplier := range server.SupplierConfigsMap {
 			for _, signingKeyName := range supplier.SigningKeyNames {
-				uniqueKeyNames = append(uniqueKeyNames, signingKeyName)
+				uniqueKeyMap[signingKeyName] = true
 			}
 		}
 	}
-	slices.Sort(uniqueKeyNames)
-	return slices.Compact(uniqueKeyNames)
+
+	uniqueKeyNames := make([]string, 0, len(uniqueKeyMap))
+	for key := range uniqueKeyMap {
+		uniqueKeyNames = append(uniqueKeyNames, key)
+	}
+
+	return uniqueKeyNames
 }

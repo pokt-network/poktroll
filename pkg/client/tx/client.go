@@ -276,10 +276,6 @@ func (txnClient *txClient) SignAndBroadcast(
 	return txnClient.addPendingTransactions(normalizeTxHashHex(txResponse.TxHash), timeoutHeight)
 }
 
-func (txnClient *txClient) Address() *cosmostypes.AccAddress {
-	return &txnClient.signingAddr
-}
-
 // validateConfigAndSetDefaults ensures that the necessary configurations for the
 // txClient are set, and populates any missing defaults.
 //

@@ -70,9 +70,6 @@ type TxClient interface {
 		ctx context.Context,
 		msgs ...cosmostypes.Msg,
 	) either.AsyncError
-
-	// Address returns the address of the TxClient.
-	Address() *cosmostypes.AccAddress
 }
 
 // TxContext provides an interface which consolidates the operational dependencies

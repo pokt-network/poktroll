@@ -28,7 +28,7 @@ type supplierClient struct {
 // and options. If a signingKeyName is not configured, an error will be returned.
 //
 // Required dependencies:
-//   - client.TxClientMap
+//   - client.TxClient
 //   - client.TxContext
 //
 // Available options:
