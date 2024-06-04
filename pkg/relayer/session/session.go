@@ -43,7 +43,7 @@ type relayerSessionsManager struct {
 	blockClient client.BlockClient
 
 	// supplierClients is used to create claims and submit proofs for sessions.
-	supplierClients client.SupplierClientMap
+	supplierClients *client.SupplierClientMap
 
 	// pendingTxMu is used to prevent concurrent txs with the same sequence number.
 	pendingTxMu sync.Mutex

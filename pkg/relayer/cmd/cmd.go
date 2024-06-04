@@ -205,7 +205,7 @@ func setupRelayerDependencies(
 		config.NewSupplyRingCacheFn(),
 		supplyTxFactory,
 		supplyTxContext,
-		newSupplyTxClientsFn(signingKeyNames),
+		// newSupplyTxClientsFn(signingKeyNames),
 		newSupplySupplierClientsFn(signingKeyNames),
 		newSupplyRelayerProxyFn(signingKeyNames, servicesConfigMap),
 		newSupplyRelayerSessionsManagerFn(smtStorePath),
@@ -301,7 +301,7 @@ func newSupplyTxClientsFn(signingKeyNames []string) config.SupplierFn {
 // supplied with the given deps and the new SupplierClientMap.
 func newSupplySupplierClientsFn(signingKeyNames []string) config.SupplierFn {
 	return func(
-		_ context.Context,
+		ctx context.Context,
 		deps depinject.Config,
 		_ *cobra.Command,
 	) (depinject.Config, error) {
@@ -309,8 +309,23 @@ func newSupplySupplierClientsFn(signingKeyNames []string) config.SupplierFn {
 			SupplierClients: make(map[string]client.SupplierClient),
 		}
 		for _, signingKeyName := range signingKeyNames {
-			supplierClient, err := supplier.NewSupplierClient(
+
+			txClient, err := tx.NewTxClient(
+				ctx,
 				deps,
+				tx.WithSigningKeyName(signingKeyName),
+				// TODO_TECHDEBT: populate this from some config.
+				tx.WithCommitTimeoutBlocks(tx.DefaultCommitTimeoutHeightOffset),
+			)
+			if err != nil {
+				return nil, err
+			}
+
+			//
+			// supplierClientDeps = ...
+
+			supplierClient, err := supplier.NewSupplierClient(
+				depinject.Configs(deps, depinject.Supply(txClient)),
 				supplier.WithSigningKeyName(signingKeyName),
 			)
 			if err != nil {

@@ -77,6 +77,7 @@ type TxClient interface {
 
 // TxClientMap wraps TxClients so we can depinject many tx clients
 // Map key is an address
+// TODO_IN_THIS_PR: remove
 type TxClientMap struct {
 	TxClients map[string]TxClient
 }

@@ -20,8 +20,12 @@ type supplierClient struct {
 	signingKeyName string
 	signingKeyAddr cosmostypes.AccAddress
 
+	// TODO_IN_THIS_PR: remove
 	txClients client.TxClientMap
-	txCtx     client.TxContext
+
+	//
+	txClient client.TxClient
+	txCtx    client.TxContext
 }
 
 // NewSupplierClient constructs a new SupplierClient with the given dependencies
@@ -38,10 +42,11 @@ func NewSupplierClient(
 	opts ...client.SupplierClientOption,
 ) (*supplierClient, error) {
 	sClient := &supplierClient{}
+	txClientsMap := &client.TxClientMap{}
 
 	if err := depinject.Inject(
 		deps,
-		&sClient.txClients,
+		&sClient.txClient,
 		&sClient.txCtx,
 	); err != nil {
 		return nil, err
@@ -54,6 +59,8 @@ func NewSupplierClient(
 	if err := sClient.validateConfigAndSetDefaults(); err != nil {
 		return nil, err
 	}
+
+	sClient.txClient = txClientsMap.TxClients[sClient.signingKeyAddr.String()]
 
 	return sClient, nil
 }
@@ -79,7 +86,7 @@ func (sClient *supplierClient) SubmitProofs(
 		}
 	}
 
-	eitherErr := sClient.txClient().SignAndBroadcast(ctx, msgs...)
+	eitherErr := sClient.txClient.SignAndBroadcast(ctx, msgs...)
 	err, errCh := eitherErr.SyncOrAsyncError()
 	if err != nil {
 		return err
@@ -121,7 +128,7 @@ func (sClient *supplierClient) CreateClaims(
 			RootHash:        sessionClaim.RootHash,
 		}
 	}
-	eitherErr := sClient.txClient().SignAndBroadcast(ctx, msgs...)
+	eitherErr := sClient.txClient.SignAndBroadcast(ctx, msgs...)
 	err, errCh := eitherErr.SyncOrAsyncError()
 	if err != nil {
 		return err
@@ -165,8 +172,8 @@ func (sClient *supplierClient) validateConfigAndSetDefaults() error {
 	return nil
 }
 
-// Since we inject a map of TxClients instead of having just one (so we support multiple suppliers),
-// we need a helper to return the TxClient for the supplier that is currently being used.
-func (sClient *supplierClient) txClient() client.TxClient {
-	return sClient.txClients.TxClients[sClient.signingKeyAddr.String()]
-}
+// // Since we inject a map of TxClients instead of having just one (so we support multiple suppliers),
+// // we need a helper to return the TxClient for the supplier that is currently being used.
+// func (sClient *supplierClient) txClient() client.TxClient {
+// 	return sClient.txClients.TxClients[sClient.signingKeyAddr.String()]
+// }
