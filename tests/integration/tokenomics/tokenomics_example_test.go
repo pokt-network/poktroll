@@ -38,7 +38,7 @@ func TestTokenomicsIntegrationExample(t *testing.T) {
 	// Prepare a request to update the compute_units_to_tokens_multiplier
 	updateTokenomicsParamMsg := &tokenomicstypes.MsgUpdateParam{
 		Authority: integrationApp.Authority(),
-		Name:      "compute_units_to_tokens_multiplier",
+		Name:      sharedtypes.ParamComputeUnitesToTokensMultiplier,
 		AsType:    &tokenomicstypes.MsgUpdateParam_AsInt64{AsInt64: 11},
 	}
 
