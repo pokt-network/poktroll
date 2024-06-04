@@ -59,7 +59,7 @@ func GetEarliestSubmitProofHeight(ctx context.Context, submitProofWindowStartBlo
 	rngSeed, _ := binary.Varint(earliestSubmitProofBlockHash)
 	randomNumber := rand.NewSource(rngSeed).Int63()
 
-	// TODO_BLOCKER: query the on-chain governance parameter once available.
+	// TODO_BLOCKER(@bryanchriswhite): query the on-chain governance parameter once available.
 	// randSubmitProofHeightOffset := randomNumber % (claimproofparams.GovSubmitProofIntervalBlocks - claimproofparams.GovSubmitProofWindowBlocks - 1)
 	_ = randomNumber
 	randSubmitProofHeightOffset := int64(0)

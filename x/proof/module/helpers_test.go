@@ -134,7 +134,7 @@ func networkWithClaimObjects(
 					appAcct.Address.String(),
 				)
 				claims = append(claims, *claim)
-				// TODO_HACK(#196, @Olshansk): Move this outside of the forloop
+				// TODO_HACK(#196): Move this outside of the forloop
 				// so that the test iteration is faster. The current issue has
 				// to do with a "incorrect account sequence timestamp" error
 				require.NoError(t, net.WaitForNextBlock())

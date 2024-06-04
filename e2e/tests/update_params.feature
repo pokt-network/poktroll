@@ -1,7 +1,4 @@
 Feature: Params Namespace
-  #  TODO_DOCUMENT(@Olshansk): Document all of the on-chain governance parameters.
-
-  Background:
 
   Scenario: An unauthorized user cannot update a module params
     Given the user has the pocketd binary installed

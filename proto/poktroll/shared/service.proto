@@ -6,8 +6,6 @@ package poktroll.shared;
 
 option go_package = "github.com/pokt-network/poktroll/x/shared/types";
 
-// TODO_CLEANUP(@Olshansk): Add native optional identifiers once its supported; https://github.com/ignite/cli/issues/3698
-
 // Service message to encapsulate unique and semantic identifiers for a service on the network
 message Service {
   // For example, what if we want to request a session for a certain service but with some additional configs that identify it?

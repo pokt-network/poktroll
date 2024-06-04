@@ -2,8 +2,7 @@ package protocol
 
 import "math/bits"
 
-// TODO_BLOCKER: Revisit this part of the algorithm after initial TestNet Launch.
-// TODO_TEST: Add extensive tests for the core relay mining business logic.
+// TODO_BLOCKER(@Olshansk): Revisit this part of the algorithm after initial TestNet Launch.
 
 // MustCountDifficultyBits returns the number of leading zero bits in the given
 // byte slice. It panics if an error is encountered.

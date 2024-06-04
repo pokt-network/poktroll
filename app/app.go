@@ -1,7 +1,6 @@
 package app
 
 import (
-	sharedmodulekeeper "github.com/pokt-network/poktroll/x/shared/keeper"
 	// this line is used by starport scaffolding # stargate/app/moduleImport
 	"io"
 	"os"
@@ -62,6 +61,7 @@ import (
 	proofmodulekeeper "github.com/pokt-network/poktroll/x/proof/keeper"
 	servicemodulekeeper "github.com/pokt-network/poktroll/x/service/keeper"
 	sessionmodulekeeper "github.com/pokt-network/poktroll/x/session/keeper"
+	sharedmodulekeeper "github.com/pokt-network/poktroll/x/shared/keeper"
 	suppliermodulekeeper "github.com/pokt-network/poktroll/x/supplier/keeper"
 	tokenomicsmodulekeeper "github.com/pokt-network/poktroll/x/tokenomics/keeper"
 )
@@ -192,7 +192,6 @@ func New(
 		appBuilder *runtime.AppBuilder
 
 		// merge the AppConfig and other configuration in one config
-		// TODO_BLOCKER(@Olshansk): Revisit the advanced configuration and understand if/where it fits in Shannon
 		appConfig = depinject.Configs(
 			AppConfig(),
 			depinject.Supply(

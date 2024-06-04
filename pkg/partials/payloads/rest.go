@@ -18,7 +18,7 @@ type PartialRESTPayload struct {
 // is returned, if however the struct does not contain all the required fields
 // the success return value is false and a nil payload is returned.
 func PartiallyUnmarshalRESTPayload(payloadBz []byte) (restPayload *PartialRESTPayload, success bool) {
-	// TODO(@h5law): Implement this function
+	// TODO_IMPLEMENT(@red-0ne): Implement this function
 	return nil, false
 }
 
@@ -27,7 +27,7 @@ func PartiallyUnmarshalRESTPayload(payloadBz []byte) (restPayload *PartialRESTPa
 // It uses a non-pointer receiver to ensure the default values of unset fields
 // are present
 func (r PartialRESTPayload) ValidateBasic(ctx context.Context) error {
-	// TODO(@h5law): Implement this function
+	// TODO_IMPLEMENT(@red-0ne): Implement this function
 	var err error
 	return err
 }
@@ -40,12 +40,12 @@ func (r *PartialRESTPayload) GetRPCType() types.RPCType {
 // GenerateErrorPayload creates a REST error payload using the headers from the
 // request payload.
 func (r *PartialRESTPayload) GenerateErrorPayload(err error) ([]byte, error) {
-	// TODO(@h5law): Implement this method
+	// TODO_IMPLEMENT(@red-0ne): Implement this method
 	return nil, nil
 }
 
 // GetRPCComputeUnits returns the compute units for the RPC request
 func (r *PartialRESTPayload) GetRPCComputeUnits(ctx context.Context) (uint64, error) {
-	// TODO(@h5law): Implement this method
+	// TODO_IMPLEMENT(@red-0ne): Implement this method
 	return 0, nil
 }

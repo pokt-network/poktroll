@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	// TODO_BLOCKER/TODO_UPNEXT(@Olshansk): Implement this properly. Using a constant
+	// TODO_BLOCKER(@bryanchriswhite): Implement this properly. Using a constant
 	// for "probabilistic proofs" is just a simple placeholder mechanism to get
 	// #359 over the finish line.
 	ProofRequiredComputeUnits = 100
@@ -126,12 +126,12 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (numClaimsSettled, numClaim
 func (k Keeper) getExpiringClaims(ctx sdk.Context) (expiringClaims []prooftypes.Claim) {
 	blockHeight := ctx.BlockHeight()
 
-	// TODO_BLOCKER: query the on-chain governance parameter once available.
+	// TODO_BLOCKER(@bryanchriswhite): query the on-chain governance parameter once available.
 	// `* 3` is just a random factor Olshansky added for now to make sure expiration
 	// doesn't happen immediately after a session's grace period is complete.
 	submitProofWindowEndHeight := shared.SessionGracePeriodBlocks * int64(3)
 
-	// TODO_BLOCKER(@Olshansk): Optimize this by indexing claims appropriately
+	// TODO_OPTIMIZE: Optimize this by indexing claims appropriately
 	// and only retrieving the claims that need to be settled rather than all
 	// of them and iterating through them one by one.
 	claims := k.proofKeeper.GetAllClaims(ctx)

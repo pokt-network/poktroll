@@ -77,6 +77,6 @@ func (j *PartialJSONPayload) GenerateErrorPayload(err error) ([]byte, error) {
 
 // GetRPCComputeUnits returns the compute units for the RPC request
 func (j *PartialJSONPayload) GetRPCComputeUnits(ctx context.Context) (uint64, error) {
-	// TODO(@h5law): Implement this method
+	// TODO_IMPLEMENT(@red-0ne): Implement this method
 	return 0, nil
 }

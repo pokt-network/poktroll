@@ -25,7 +25,7 @@ const (
 	// the off-chain SMTs, across all suppliers, for each service.
 	// It indirectly drives the off-chain resource requirements of the network
 	// in additional to playing a critical role in Relay Mining.
-	// TODO_UPNEXT(#542, @Olshansk): Make this a governance parameter.
+	// TODO_BLOCKER(@Olshansk, #542): Make this a governance parameter.
 	TargetNumRelays = uint64(10e4)
 )
 
@@ -71,7 +71,7 @@ func (k Keeper) UpdateRelayMiningDifficulty(
 		}
 		k.SetRelayMiningDifficulty(ctx, newDifficulty)
 
-		// TODO_UPNEXT(#542, @Olshansk): Emit an event for the updated difficulty.
+		// TODO_BLOCKER(@Olshansk, #542): Emit an event for the updated difficulty.
 		logger.Info(fmt.Sprintf("Updated relay mining difficulty for service %s at height %d from %v to %v", serviceId, sdkCtx.BlockHeight(), prevDifficulty.TargetHash, newDifficulty.TargetHash))
 
 	}

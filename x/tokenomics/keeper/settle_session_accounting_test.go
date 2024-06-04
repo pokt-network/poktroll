@@ -20,9 +20,6 @@ import (
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-// TODO_TEST(@bryanchriswhite, @Olshansk): Improve tokenomics tests (i.e. checking balances)
-// once in-memory network integration tests are supported.
-
 func TestSettleSessionAccounting_HandleAppGoingIntoDebt(t *testing.T) {
 	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t)
 

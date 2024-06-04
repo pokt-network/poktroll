@@ -5,12 +5,6 @@ title: LocalNet
 
 # LocalNet <!-- omit in toc -->
 
-<!--
-  TODO_IMPROVE(@olshansk, @okdas):
-  - Add a video showing how to use & run LocalNet
-  - Add a component diagram outlining the infrastructure
-  -  -->
-
 ## Background <!-- omit in toc -->
 
 This document walks you through launching a LocalNet that brings up a k8s cluster

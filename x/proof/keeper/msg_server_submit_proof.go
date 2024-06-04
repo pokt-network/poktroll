@@ -180,7 +180,7 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 	logger.Info("successfully compared relay response session header")
 
 	// Verify the relay request's signature.
-	// TODO_TECHDEBT(@h5law): Fetch the correct ring for the session this relay is from.
+	// TODO_BLOCKER(@red-0ne): Fetch the correct ring for the session this relay is from.
 	if err := k.ringClient.VerifyRelayRequestSignature(ctx, relayReq); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
@@ -460,7 +460,7 @@ func (k msgServer) validateClosestPath(
 }
 
 func GetPathForProof(blockHash []byte, sessionId string) []byte {
-	// TODO_BLOCKER(@Olshansk, @red-0ne, @h5law): We need to replace the return
+	// TODO_BLOCKER(@Olshansk): We need to replace the return
 	// statement below and change all relevant parts in the codebase.
 	// See the conversation in the following thread for more details: https://github.com/pokt-network/poktroll/pull/406#discussion_r1520790083
 	path := make([]byte, SmtSpec.PathHasherSize())

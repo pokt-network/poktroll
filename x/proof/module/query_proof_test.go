@@ -1,6 +1,6 @@
 package proof_test
 
-// TODO_UPNEXT(@Olshansk): Add these tests back in after merging on-chain Proof persistence.
+// TODO_BLOCKER(@Olshansk): Add these tests back in after merging on-chain Proof persistence.
 // Prevent strconv unused error
 // var _ = strconv.IntSize
 //

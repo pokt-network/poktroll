@@ -48,7 +48,7 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 
 // Validate validates the set of params
 func (p Params) Validate() error {
-	// TODO(@h5law): Look into better validation
+	// TODO_MAINNET: Look into better validation
 	if p.AddServiceFee < DefaultAddServiceFee {
 		return ErrServiceInvalidServiceFee.Wrapf(
 			"AddServiceFee param %d uPOKT: got %d",
