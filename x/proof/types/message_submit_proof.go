@@ -46,7 +46,7 @@ func (msg *MsgSubmitProof) ValidateBasic() error {
 		return ErrProofInvalidProof.Wrap("proof cannot be empty")
 	}
 
-	// TODO_BLOCKER: attempt to deserialize the proof for additional validation.
+	// TODO_MAINNET: attempt to deserialize the proof for additional validation.
 
 	return nil
 }

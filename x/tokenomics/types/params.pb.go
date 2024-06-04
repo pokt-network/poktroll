@@ -27,7 +27,6 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 // Params defines the parameters for the tokenomics module.
 type Params struct {
 	// The amount of upokt that a compute unit should translate to when settling a session.
-	// TODO_DOCUMENT(@Olshansk): Make sure to document the units of this parameter (or the map) once finalized.
 	ComputeUnitsToTokensMultiplier uint64 `protobuf:"varint,1,opt,name=compute_units_to_tokens_multiplier,json=computeUnitsToTokensMultiplier,proto3" json:"compute_units_to_tokens_multiplier" yaml:"compute_units_to_tokens_multiplier"`
 }
 

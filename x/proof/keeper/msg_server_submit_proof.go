@@ -43,8 +43,8 @@ func init() {
 // A proof that's stored on-chain is what leads to rewards (i.e. inflation)
 // downstream, making the series of checks a critical part of the protocol.
 //
-// TODO_BLOCKER: Prevent proof upserts after the tokenomics module has processed
-// the respective session.
+// TODO_BLOCKER(@bryanchriswhite): Prevent proof upserts after the tokenomics
+// module has processed the respective session.
 //
 // Note: The entity sending the SubmitProof messages does not necessarily need
 // to correspond to the supplier signing the proof. For example, a single entity
@@ -235,8 +235,9 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 	}
 	logger.Info(fmt.Sprintf("queried and validated the claim for session ID %q", sessionHeader.SessionId))
 
-	// TODO_BLOCKER: check if this proof already exists and return an appropriate error
-	// in any case where the supplier should no longer be able to update the given proof.
+	// TODO_BLOCKER(@Olshansk): check if this proof already exists and return an
+	// appropriate error in any case where the supplier should no longer be able
+	// to update the given proof.
 	k.UpsertProof(ctx, proof)
 	logger.Info("successfully upserted the proof")
 

@@ -30,7 +30,7 @@ func NewMinedRelay(
 	}
 
 	// TODO_TECHDEBT(#446): Centralize the configuration for the SMT spec.
-	// TODO_BLOCKER: marshal using canonical codec.
+	// TODO_TECHDEBT(@red-0ne): marshal using canonical codec.
 	relayBz, err := relay.Marshal()
 	require.NoError(t, err)
 	relayHashArr := servicetypes.GetHashFromBytes(relayBz)

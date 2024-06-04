@@ -11,8 +11,8 @@ import (
 )
 
 func (k msgServer) CreateClaim(ctx context.Context, msg *types.MsgCreateClaim) (*types.MsgCreateClaimResponse, error) {
-	// TODO_BLOCKER: Prevent Claim upserts after the ClaimWindow is closed.
-	// TODO_BLOCKER: Validate the signature on the Claim message corresponds to the supplier before Upserting.
+	// TODO_BLOCKER(@bryanchriswhite): Prevent Claim upserts after the ClaimWindow is closed.
+	// TODO_BLOCKER(@bryanchriswhite): Validate the signature on the Claim message corresponds to the supplier before Upserting.
 
 	isSuccessful := false
 	defer telemetry.EventSuccessCounter(
@@ -66,8 +66,9 @@ func (k msgServer) CreateClaim(ctx context.Context, msg *types.MsgCreateClaim) (
 		RootHash:        msg.GetRootHash(),
 	}
 
-	// TODO_BLOCKER: check if this claim already exists and return an appropriate error
-	// in any case where the supplier should no longer be able to update the given proof.
+	// TODO_BLOCKER(@Olshansk): check if this claim already exists and return an
+	// appropriate error in any case where the supplier should no longer be able
+	// to update the given proof.
 	k.Keeper.UpsertClaim(ctx, claim)
 
 	logger.Info("created new claim")

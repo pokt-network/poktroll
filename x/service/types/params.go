@@ -8,7 +8,7 @@ import (
 
 // DefaultAddServiceFee is the default value for the add service fee
 // parameter in the genesis state of the service module.
-// TODO_BLOCKER: Revisit default param values for service fee
+// TODO_BETA: Revisit default param values for service fee
 const (
 	ParamAddServiceFee   = "add_service_fee"
 	DefaultAddServiceFee = 1000000000 // 1000 POKT
@@ -66,7 +66,7 @@ func validateAddServiceFee(v interface{}) error {
 		return fmt.Errorf("invalid parameter type: %T", v)
 	}
 
-	// TODO_BLOCKER: implement validation
+	// TODO_BETA: implement validation
 	_ = addServiceFee
 
 	return nil

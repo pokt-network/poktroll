@@ -56,7 +56,7 @@ func TestSettleSessionAccounting_HandleAppGoingIntoDebt(t *testing.T) {
 
 	err := keepers.SettleSessionAccounting(ctx, &claim)
 	require.NoError(t, err)
-	// TODO_BLOCKER: Need to make sure the application is unstaked at this point in time.
+	// TODO_TEST: Need to make sure the application is unstaked at this point in time.
 }
 
 func TestSettleSessionAccounting_ValidAccounting(t *testing.T) {

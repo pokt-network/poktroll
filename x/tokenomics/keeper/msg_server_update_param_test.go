@@ -32,5 +32,4 @@ func TestMsgUpdateParam_UpdateMinRelayDifficultyBitsOnly(t *testing.T) {
 
 	// Ensure the new values are set correctly
 	require.Equal(t, uint64(expectedComputeUnitsToTokensMultiplier), res.Params.ComputeUnitsToTokensMultiplier)
-	// TODO_BLOCKER: once we have more than one param per module, add assertions here which ensure that other params were not changed!
 }
