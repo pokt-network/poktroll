@@ -29,11 +29,11 @@ func TestTokenomicsIntegrationExample(t *testing.T) {
 
 	// Query and validate the default shared params
 	sharedQueryClient := sharedtypes.NewQueryClient(integrationApp.QueryHelper())
-	sharedQueryParams := sharedtypes.QueryParamsRequest{}
-	sharedQueryResponse, err := sharedQueryClient.Params(integrationApp.SdkCtx(), &sharedQueryParams)
+	sharedParamsReq := sharedtypes.QueryParamsRequest{}
+	sharedQueryRes, err := sharedQueryClient.Params(integrationApp.SdkCtx(), &sharedParamsReq)
 	require.NoError(t, err)
-	require.NotNil(t, sharedQueryResponse, "unexpected nil queryResponse")
-	require.EqualValues(t, uint64(4), sharedQueryResponse.Params.NumBlocksPerSession)
+	require.NotNil(t, sharedQueryRes, "unexpected nil params query response")
+	require.EqualValues(t, sharedtypes.DefaultParams(), sharedQueryRes.GetParams())
 
 	// Prepare a request to update the compute_units_to_tokens_multiplier
 	updateTokenomicsParamMsg := &tokenomicstypes.MsgUpdateParam{
