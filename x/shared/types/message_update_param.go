@@ -37,27 +37,29 @@ func NewMsgUpdateParam(authority string, name string, value any) (*MsgUpdatePara
 func (msg *MsgUpdateParam) ValidateBasic() error {
 	// Validate the address
 	if _, err := sdk.AccAddressFromBech32(msg.Authority); err != nil {
-		return ErrProofInvalidAddress.Wrapf("invalid authority address %s; (%v)", msg.Authority, err)
+		return ErrSharedInvalidAddress.Wrapf("invalid authority address %s; (%v)", msg.Authority, err)
 	}
 
 	// Parameter value cannot be nil.
 	if msg.AsType == nil {
-		return ErrProofParamInvalid.Wrap("missing param AsType")
+		return ErrSharedParamInvalid.Wrap("missing param AsType")
 	}
 
 	// Parameter name must be supported by this module.
 	switch msg.Name {
-	case ParamMinRelayDifficultyBits:
+	case ParamNumBlocksPerSession,
+		ParamClaimWindowOpenOffsetBlocks,
+		ParamClaimWindowCloseOffsetBlocks:
 		return msg.paramTypeIsInt64()
 	default:
-		return ErrProofParamNameInvalid.Wrapf("unsupported param %q", msg.Name)
+		return ErrSharedParamNameInvalid.Wrapf("unsupported param %q", msg.Name)
 	}
 }
 
 // paramTypeIsInt64 checks if the parameter type is int64, returning an error if not.
 func (msg *MsgUpdateParam) paramTypeIsInt64() error {
 	if _, ok := msg.AsType.(*MsgUpdateParam_AsInt64); !ok {
-		return ErrProofParamInvalid.Wrapf(
+		return ErrSharedParamInvalid.Wrapf(
 			"invalid type for param %q expected %T, got %T",
 			msg.Name, &MsgUpdateParam_AsInt64{},
 			msg.AsType,

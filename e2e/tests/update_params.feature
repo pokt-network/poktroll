@@ -2,7 +2,7 @@ Feature: Params Namespace
   #  TODO_DOCUMENT(@Olshansk): Document all of the on-chain governance parameters.
 
   Background:
-  
+
   Scenario: An unauthorized user cannot update a module params
     Given the user has the pocketd binary installed
     And all "tokenomics" module params are set to their default values
@@ -41,8 +41,10 @@ Feature: Params Namespace
     And all "shared" module params are set to their default values
     And an authz grant from the "gov" "module" account to the "pnf" "user" account for the "/poktroll.shared.MsgUpdateParams" message exists
     When the "pnf" account sends an authz exec message to update all "shared" module params
-      | name                   | value | type  |
-      | num_blocks_per_session | 10    | int64 |
+      | name                             | value | type  |
+      | num_blocks_per_session           | 8     | int64 |
+      | claim_window_open_offset_blocks  | 8     | int64 |
+      | claim_window_close_offset_blocks | 8     | int64 |
     Then all "shared" module params should be updated
 
   # NB: If you are reading this and any module has parameters that
@@ -52,7 +54,7 @@ Feature: Params Namespace
     And all "<module>" module params are set to their default values
     And an authz grant from the "gov" "module" account to the "pnf" "user" account for the "<message_type>" message exists
     When the "pnf" account sends an authz exec message to update "<module>" the module param
-      | name           | value           | type           |
+      | name         | value         | type         |
       | <param_name> | <param_value> | <param_type> |
     Then the "<module>" module param "<param_name>" should be updated
 
@@ -60,6 +62,9 @@ Feature: Params Namespace
       | module     | message_type                        | param_name                         | param_value | param_type |
       | tokenomics | /poktroll.tokenomics.MsgUpdateParam | compute_units_to_tokens_multiplier | 68          | int64      |
       | proof      | /poktroll.proof.MsgUpdateParam      | min_relay_difficulty_bits          | 12          | int64      |
+      | shared     | /poktroll.shared.MsgUpdateParam     | num_blocks_per_session             | 8           | int64      |
+      | shared     | /poktroll.shared.MsgUpdateParam     | claim_window_open_offset_blocks    | 8           | int64      |
+      | shared     | /poktroll.shared.MsgUpdateParam     | claim_window_close_offset_blocks   | 8           | int64      |
 
   Scenario: An unauthorized user cannot update individual module params
     Given the user has the pocketd binary installed
