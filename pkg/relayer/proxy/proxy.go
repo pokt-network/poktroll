@@ -64,8 +64,9 @@ type relayerProxy struct {
 	ringCache crypto.RingCache
 
 	// supplierAddresses are the address of the suppliers that the relayer proxy is running for.
-	// We use this in relay verification to check if we should process the relay.
-	supplierAddresses map[string]struct{}
+	// We use this in relay verification to check if we should process the relay, and to
+	// resolve which signing key name to use for signing.
+	supplierAddresses map[string]string
 }
 
 // NewRelayerProxy creates a new relayer proxy with the given dependencies or returns

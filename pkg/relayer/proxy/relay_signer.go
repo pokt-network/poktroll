@@ -12,7 +12,7 @@ import (
 // See https://github.com/pokt-network/poktroll/issues/160 for a better design.
 func (rp *relayerProxy) SignRelayResponse(relayResponse *types.RelayResponse, supplierAddr string) error {
 	// create a simple signer for the request
-	signer := signer.NewSimpleSignerByAddress(rp.keyring, supplierAddr)
+	signer := signer.NewSimpleSigner(rp.keyring, rp.supplierAddresses[supplierAddr])
 
 	// extract and hash the relay response's signable bytes
 	signableBz, err := relayResponse.GetSignableBytesHash()
