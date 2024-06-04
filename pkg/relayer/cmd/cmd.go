@@ -205,7 +205,6 @@ func setupRelayerDependencies(
 		config.NewSupplyRingCacheFn(),
 		supplyTxFactory,
 		supplyTxContext,
-		// newSupplyTxClientsFn(signingKeyNames),
 		newSupplySupplierClientsFn(signingKeyNames),
 		newSupplyRelayerProxyFn(signingKeyNames, servicesConfigMap),
 		newSupplyRelayerSessionsManagerFn(smtStorePath),
@@ -265,37 +264,6 @@ func supplyTxContext(
 	return depinject.Configs(deps, depinject.Supply(txContext)), nil
 }
 
-// newSupplyTxClientsFn returns a function which constructs a TxClientMap
-// instance and returns a new depinject. Config which is supplied with
-// the given deps and the new TxClientMap.
-func newSupplyTxClientsFn(signingKeyNames []string) config.SupplierFn {
-	return func(
-		ctx context.Context,
-		deps depinject.Config,
-		_ *cobra.Command,
-	) (depinject.Config, error) {
-		var txClients = &client.TxClientMap{
-			TxClients: make(map[string]client.TxClient),
-		}
-		for _, signingKeyName := range signingKeyNames {
-			txClient, err := tx.NewTxClient(
-				ctx,
-				deps,
-				tx.WithSigningKeyName(signingKeyName),
-				// TODO_TECHDEBT: populate this from some config.
-				tx.WithCommitTimeoutBlocks(tx.DefaultCommitTimeoutHeightOffset),
-			)
-			if err != nil {
-				return nil, err
-			}
-
-			// Making sure we use addresses as keys.
-			txClients.TxClients[txClient.Address().String()] = txClient
-		}
-		return depinject.Configs(deps, depinject.Supply(txClients)), nil
-	}
-}
-
 // newSupplySupplierClientsFn returns a function which constructs a
 // SupplierClientMap instance and returns a new depinject. Config which is
 // supplied with the given deps and the new SupplierClientMap.
@@ -309,23 +277,13 @@ func newSupplySupplierClientsFn(signingKeyNames []string) config.SupplierFn {
 			SupplierClients: make(map[string]client.SupplierClient),
 		}
 		for _, signingKeyName := range signingKeyNames {
-
-			txClient, err := tx.NewTxClient(
-				ctx,
-				deps,
-				tx.WithSigningKeyName(signingKeyName),
-				// TODO_TECHDEBT: populate this from some config.
-				tx.WithCommitTimeoutBlocks(tx.DefaultCommitTimeoutHeightOffset),
-			)
+			txClientDepinjectConfig, err := newSupplyTxClientsFn(ctx, deps, signingKeyName)
 			if err != nil {
 				return nil, err
 			}
 
-			//
-			// supplierClientDeps = ...
-
 			supplierClient, err := supplier.NewSupplierClient(
-				depinject.Configs(deps, depinject.Supply(txClient)),
+				txClientDepinjectConfig,
 				supplier.WithSigningKeyName(signingKeyName),
 			)
 			if err != nil {
@@ -383,6 +341,23 @@ func newSupplyRelayerSessionsManagerFn(smtStorePath string) config.SupplierFn {
 
 		return depinject.Configs(deps, depinject.Supply(relayerSessionsManager)), nil
 	}
+}
+
+// newSupplyTxClientFn returns a new depinject.Config which is supplied with
+// the given deps and the new TxClient.
+func newSupplyTxClientsFn(ctx context.Context, deps depinject.Config, signingKeyName string) (depinject.Config, error) {
+	txClient, err := tx.NewTxClient(
+		ctx,
+		deps,
+		tx.WithSigningKeyName(signingKeyName),
+		// TODO_TECHDEBT: populate this from some config.
+		tx.WithCommitTimeoutBlocks(tx.DefaultCommitTimeoutHeightOffset),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return depinject.Configs(deps, depinject.Supply(txClient)), nil
 }
 
 func uniqueSigningKeyNames(relayMinerConfig *relayerconfig.RelayMinerConfig) []string {

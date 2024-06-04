@@ -75,13 +75,6 @@ type TxClient interface {
 	Address() *cosmostypes.AccAddress
 }
 
-// TxClientMap wraps TxClients so we can depinject many tx clients
-// Map key is an address
-// TODO_IN_THIS_PR: remove
-type TxClientMap struct {
-	TxClients map[string]TxClient
-}
-
 // TxContext provides an interface which consolidates the operational dependencies
 // required to facilitate the sender side of the transaction lifecycle: build, sign,
 // encode, broadcast, and query (optional).

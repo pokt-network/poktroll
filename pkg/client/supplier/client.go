@@ -20,10 +20,6 @@ type supplierClient struct {
 	signingKeyName string
 	signingKeyAddr cosmostypes.AccAddress
 
-	// TODO_IN_THIS_PR: remove
-	txClients client.TxClientMap
-
-	//
 	txClient client.TxClient
 	txCtx    client.TxContext
 }
@@ -42,7 +38,6 @@ func NewSupplierClient(
 	opts ...client.SupplierClientOption,
 ) (*supplierClient, error) {
 	sClient := &supplierClient{}
-	txClientsMap := &client.TxClientMap{}
 
 	if err := depinject.Inject(
 		deps,
@@ -59,8 +54,6 @@ func NewSupplierClient(
 	if err := sClient.validateConfigAndSetDefaults(); err != nil {
 		return nil, err
 	}
-
-	sClient.txClient = txClientsMap.TxClients[sClient.signingKeyAddr.String()]
 
 	return sClient, nil
 }

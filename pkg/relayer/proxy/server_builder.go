@@ -23,6 +23,7 @@ const supplierStakeWaitTime = 1
 // It populates the relayerProxy's `advertisedRelayServers` map of servers for each service, where each server
 // is responsible for listening for incoming relay requests and relaying them to the supported proxied service.
 func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
+	rp.supplierAddresses = make(map[string]struct{})
 	for _, signingKeyName := range rp.signingKeyNames {
 		// Get the supplier address from the keyring
 		supplierKey, err := rp.keyring.Key(signingKeyName)
