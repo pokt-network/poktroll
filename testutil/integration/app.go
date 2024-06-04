@@ -210,7 +210,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	// Get the authority address
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName)
 
-	// Prepare the account keeper
+	// Prepare the account keeper dependencies
 	addrCodec := addresscodec.NewBech32Codec(app.AccountAddressPrefix)
 	macPerms := map[string][]string{
 		banktypes.ModuleName:       {authtypes.Minter, authtypes.Burner},
