@@ -66,7 +66,7 @@ func TestTokenomicsIntegrationExample(t *testing.T) {
 	// Commit & finalize the current block, then moving to the next one.
 	integrationApp.NextBlock(t)
 
-	// Prepare a request to query a session so it can be used for the claim below.create a claim
+	// Prepare a request to query a session so it can be used to create a claim.
 	sessionQueryClient := sessiontypes.NewQueryClient(integrationApp.QueryHelper())
 	getSessionReq := sessiontypes.QueryGetSessionRequest{
 		ApplicationAddress: integrationApp.DefaultApplication.Address,
