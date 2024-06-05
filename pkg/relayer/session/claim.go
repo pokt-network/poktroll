@@ -161,8 +161,9 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 			supplierAddr := session.SupplierAddress().String()
 
 			sessionClaims[supplierAddr] = append(sessionClaims[supplierAddr], &relayer.SessionClaim{
-				RootHash:      session.GetClaimRoot(),
-				SessionHeader: session.GetSessionHeader(),
+				RootHash:        session.GetClaimRoot(),
+				SessionHeader:   session.GetSessionHeader(),
+				SupplierAddress: *session.SupplierAddress(),
 			})
 		}
 
