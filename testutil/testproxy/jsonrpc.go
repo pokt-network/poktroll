@@ -26,15 +26,18 @@ type JSONRPCErrorReply struct {
 
 // prepareJSONRPCResponse constructs a hard-coded JSON-RPC http.Response and
 // returns the corresponding sdk serialized POKTHTTPResponse.
+//
 // It uses a default StatusOK and "application/json" content type, along with
 // the provided hard-coded body bytes.
 // The function then serializes the entire generated http.Response into an sdk
 // serialized POKTHTTPResponse to be embedded in a RelayResponse.Payload.
-// Unlike PrepareJSONRPCRequest, this function is not exported as it is
+//
+// Unlike PrepareJSONRPCRequest, this function is NOT EXPORTED as it is
 // exclusively used within the testutil/testproxy package for serving a
 // hard-coded JSON-RPC response.
-// This function is intended solely for testing purposes and should not be used
-// in production code.
+//
+// IMPORTANT: This function is intended solely for testing purposes and
+// SHOULD NOT be used in production code.
 func prepareJSONRPCResponse(t *testing.T) []byte {
 	t.Helper()
 	bodyBz := []byte(`{"jsonrpc":"2.0","id":1,"result":"some result"}`)
@@ -53,14 +56,17 @@ func prepareJSONRPCResponse(t *testing.T) []byte {
 
 // PrepareJSONRPCRequest constructs a hard-coded JSON-RPC http.Request and
 // returns the corresponding sdk serialized POKTHTTPRequest.
+//
 // It uses the default POST method and "application/json" content type, along
 // with the provided hard-coded body bytes.
 // The function then serializes the entire generated http.Request into an sdk
 // serialized POKTHTTPRequest to be embedded in a RelayRequest.Payload.
-// Unlike prepareJSONRPCResponse, this function is exported to be used in
+//
+// Unlike prepareJSONRPCResponse, this function IS EXPORTED to be used in
 // the pkg/relayer/proxy/proxy_test testing code.
-// This function is intended solely for testing purposes and should not be used
-// in production code.
+//
+// IMPORTANT: This function is intended solely for testing purposes and
+// SHOULD NOT be used in production code.
 func PrepareJSONRPCRequest(t *testing.T) []byte {
 	t.Helper()
 	bodyBz := []byte(`{"method":"someMethod","id":1,"jsonrpc":"2.0","params":["someParam"]}`)

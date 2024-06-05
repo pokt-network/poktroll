@@ -123,7 +123,7 @@ func NewAppGateServer(
 
 	// TODO_CONSIDERATION: Use app.listeningEndpoint scheme to determine which
 	// kind of server to create (HTTP, HTTPS, TCP, UNIX, etc...)
-	// TODO_RESEARCH: Currently, the communication between the AppGateServer and the
+	// TODO_RESEARCH(#590): Currently, the communication between the AppGateServer and the
 	// RelayMiner uses HTTP. This could be changed to a more generic and performant
 	// one, such as pure TCP.
 	app.server = &http.Server{Addr: app.listeningEndpoint.Host}

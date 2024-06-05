@@ -37,7 +37,7 @@ func NewRelayClient(
 // with the given body, method and headers.
 // It is the mean of communication between the AppGateServer and the RelayMiner
 // to relay requests, but has no knowledge about the content that is being relayed.
-// TODO_RESEARCH: Currently, the communication between the AppGateServer and the
+// TODO_RESEARCH(#590): Currently, the communication between the AppGateServer and the
 // RelayMiner uses HTTP. This could be changed to a more generic and performant
 // one, such as pure TCP.
 func (r sdkRelayClient) SendRequest(
