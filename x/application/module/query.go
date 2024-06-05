@@ -3,15 +3,14 @@ package application
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
-
 	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/x/application/types"
 )
 
 // GetQueryCmd returns the cli query commands for this module
-// TODO_TECHDEBT(#370): remove if custom query commands are consolidated into AutoCLI.
+// TODO_TECHDEBT(@bryanchriswhite, #370): remove if custom query commands are consolidated into AutoCLI.
 func (am AppModule) GetQueryCmd() *cobra.Command {
 	// Group application queries under a subcommand
 	cmd := &cobra.Command{

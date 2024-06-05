@@ -25,6 +25,7 @@ import (
 	"github.com/pokt-network/poktroll/testutil/testpolylog"
 	"github.com/pokt-network/poktroll/testutil/testrelayer"
 	"github.com/pokt-network/poktroll/x/shared"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func TestRelayerSessionsManager_Start(t *testing.T) {
@@ -104,20 +105,22 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 
 	// Calculate the session grace period end block height to emit that block height
 	// to the blockPublishCh to trigger claim creation for the session.
-	sessionGracePeriodEndBlockHeight := int64(sessionEndHeight + shared.SessionGracePeriodBlocks)
+	//sessionClaimWindowOpenHeight := int64(sessionEndHeight + shared.SessionGracePeriodBlocks)
+	sharedParams := sharedtypes.DefaultParams()
+	sessionClaimWindowOpenHeight := shared.GetClaimWindowOpenHeight(&sharedParams, sessionEndHeight)
 
 	// Publish a block to the blockPublishCh to trigger claim creation for the session.
-	// TODO_TECHDEBT: assumes claiming at sessionGracePeriodEndBlockHeight is valid.
+	// TODO_BLOCKER(@bryanchriswhite, #516): assumes claiming at sessionClaimWindowOpenHeight is valid.
 	// This will likely change in future work.
-	triggerClaimBlock := testblock.NewAnyTimesBlock(t, emptyBlockHash, sessionGracePeriodEndBlockHeight)
+	triggerClaimBlock := testblock.NewAnyTimesBlock(t, emptyBlockHash, sessionClaimWindowOpenHeight)
 	blockPublishCh <- triggerClaimBlock
 
 	// TODO_IMPROVE: ensure correctness of persisted session trees here.
 
 	// Publish a block to the blockPublishCh to trigger proof submission for the session.
-	// TODO_TECHDEBT: assumes proving at sessionGracePeriodEndBlockHeight + 1 is valid.
+	// TODO_BLOCKER(@bryanchriswhite, #516): assumes proving at sessionClaimWindowOpenHeight + 1 is valid.
 	// This will likely change in future work.
-	triggerProofBlock := testblock.NewAnyTimesBlock(t, emptyBlockHash, sessionGracePeriodEndBlockHeight+1)
+	triggerProofBlock := testblock.NewAnyTimesBlock(t, emptyBlockHash, sessionClaimWindowOpenHeight+1)
 	blockPublishCh <- triggerProofBlock
 
 	// Wait a tick to allow the relayer sessions manager to process asynchronously.

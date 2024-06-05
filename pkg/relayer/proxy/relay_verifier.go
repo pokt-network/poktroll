@@ -64,7 +64,8 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	// - serviceId (which is not provided by the relayRequest)
 	// - applicationAddress (which is used to to verify the relayRequest signature)
 	//
-	// TODO_BLOCKER: Revisit the assumptions above but good enough for now.
+	// TODO_BLOCKER(@Olshansk): Revisit the assumptions above and updated this if
+	// structure if necessary.
 	if session.SessionId != sessionHeader.GetSessionId() {
 		return ErrRelayerProxyInvalidSession.Wrapf(
 			"session mismatch, expecting: %+v, got: %+v",

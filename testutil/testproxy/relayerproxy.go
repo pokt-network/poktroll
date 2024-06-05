@@ -18,7 +18,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/types/bech32"
-	"github.com/noot/ring-go"
+	"github.com/pokt-network/ring-go"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/client"
@@ -282,7 +282,7 @@ func WithSuccessiveSessions(
 	}
 }
 
-// TODO_TECHDEBT(@red-0ne): This function only supports JSON-RPC requests and
+// TODO_BLOCKER(@red-0ne): This function only supports JSON-RPC requests and
 // needs to have its http.Request "Content-Type" header passed-in as a parameter
 // and take out the GetRelayResponseError function which parses JSON-RPC responses
 // to make it RPC-type agnostic.

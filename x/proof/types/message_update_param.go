@@ -50,7 +50,7 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 	case ParamMinRelayDifficultyBits:
 		return msg.paramTypeIsInt64()
 	default:
-		return ErrProofParamNameInvalid.Wrapf("unsupported name param %q", msg.Name)
+		return ErrProofParamNameInvalid.Wrapf("unsupported param %q", msg.Name)
 	}
 }
 

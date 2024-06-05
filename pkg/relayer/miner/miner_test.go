@@ -129,7 +129,7 @@ func unmarshalHexMinedRelay(
 	err = relay.Unmarshal(relayBz)
 	require.NoError(t, err)
 
-	// TODO_TECHDEBT(#446): Centralize the configuration for the SMT spec.
+	// TODO_TECHDEBT(@red-0ne, #446): Centralize the configuration for the SMT spec.
 	relayHashArr := servicetypes.GetHashFromBytes(relayBz)
 	relayHash := relayHashArr[:]
 

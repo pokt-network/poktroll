@@ -7,7 +7,7 @@ var (
 
 	KeyMinRelayDifficultyBits            = []byte("MinRelayDifficultyBits")
 	ParamMinRelayDifficultyBits          = "min_relay_difficulty_bits"
-	DefaultMinRelayDifficultyBits uint64 = 0 // TODO_BLOCKER(#142, #401): Determine the default value.
+	DefaultMinRelayDifficultyBits uint64 = 0 // TODO_MAINNET(#142, #401): Determine the default value.
 )
 
 // ParamKeyTable the param key table for launch module

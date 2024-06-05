@@ -21,7 +21,7 @@ const (
 
 	// defaultBlocksReplayLimit is the number of blocks that the replay
 	// observable returned by LastNBlocks() will be able to replay.
-	// TODO_TECHDEBT/TODO_FUTURE: add a `blocksReplayLimit` field to the blockReplayClient
+	// TODO_TECHDEBT: add a `blocksReplayLimit` field to the blockReplayClient
 	// struct that defaults to this but can be overridden via an option.
 	defaultBlocksReplayLimit = 100
 )

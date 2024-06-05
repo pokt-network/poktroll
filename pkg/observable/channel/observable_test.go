@@ -249,7 +249,7 @@ func TestChannelObservable_UnsubscribeObservers(t *testing.T) {
 	}
 }
 
-// TODO_INCOMPLETE/TODO_TECHDEBT: Implement `TestChannelObservable_ConcurrentSubUnSub`
+// TODO_IMPROVE: Implement `TestChannelObservable_ConcurrentSubUnSub`
 func TestChannelObservable_ConcurrentSubUnSub(t *testing.T) {
 	t.Skip("add coverage: subscribing and unsubscribing concurrently should not race")
 }
@@ -323,7 +323,7 @@ func TestChannelObservable_SequentialPublishAndUnsubscription(t *testing.T) {
 	}
 }
 
-// TODO_TECHDEBT/TODO_INCOMPLETE: add coverage for active observers closing when publishCh closes.
+// TODO_IMPROVE: add coverage for active observers closing when publishCh closes.
 func TestChannelObservable_ObserversCloseOnPublishChannelClose(t *testing.T) {
 	t.Skip("add coverage: all observers should unsubscribe when publishCh closes")
 }
