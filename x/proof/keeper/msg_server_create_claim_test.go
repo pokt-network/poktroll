@@ -1,7 +1,6 @@
 package keeper_test
 
 import (
-	"context"
 	"testing"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
@@ -27,37 +26,21 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 	tests := []struct {
 		desc              string
 		getClaimMsgHeight func(
-			ctx context.Context,
-			keepers *keepertest.ProofModuleKeepers,
-			sessionHeader *sessiontypes.SessionHeader,
+			sharedParams *sharedtypes.Params,
+			queryHeight int64,
 		) int64
 	}{
 		{
-			desc: "claim message height equals claim window open height",
-			getClaimMsgHeight: func(
-				ctx context.Context,
-				keepers *keepertest.ProofModuleKeepers,
-				sessionHeader *sessiontypes.SessionHeader,
-			) int64 {
-				sharedParams := keepers.SharedKeeper.GetParams(ctx)
-				return shared.GetClaimWindowOpenHeight(
-					&sharedParams,
-					sessionHeader.GetSessionEndBlockHeight(),
-				)
-			},
+			desc:              "claim message height equals claim window open height",
+			getClaimMsgHeight: shared.GetClaimWindowOpenHeight,
 		},
 		{
 			desc: "claim message height equals claim window close height minus one",
 			getClaimMsgHeight: func(
-				ctx context.Context,
-				keepers *keepertest.ProofModuleKeepers,
-				sessionHeader *sessiontypes.SessionHeader,
+				sharedParams *sharedtypes.Params,
+				queryHeight int64,
 			) int64 {
-				sharedParams := keepers.SharedKeeper.GetParams(ctx)
-				return shared.GetClaimWindowCloseHeight(
-					&sharedParams,
-					sessionHeader.GetSessionEndBlockHeight(),
-				)
+				return shared.GetClaimWindowCloseHeight(sharedParams, queryHeight) - 1
 			},
 		},
 	}
@@ -108,7 +91,8 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 			sessionHeader := sessionRes.GetSession().GetHeader()
 
 			// Increment the block height to the test claim height.
-			testClaimHeight := test.getClaimMsgHeight(ctx, keepers, sessionHeader)
+			sharedParams := keepers.SharedKeeper.GetParams(ctx)
+			testClaimHeight := test.getClaimMsgHeight(&sharedParams, sessionHeader.GetSessionEndBlockHeight())
 			sdkCtx = sdkCtx.WithBlockHeight(testClaimHeight)
 			ctx = sdkCtx
 
