@@ -7,8 +7,6 @@ import (
 	"path/filepath"
 	"sync"
 
-	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-
 	"github.com/pokt-network/smt"
 	"github.com/pokt-network/smt/kvstore/badger"
 
@@ -30,7 +28,7 @@ type sessionTree struct {
 	// sessionSMT is the SMST (Sparse Merkle State Trie) corresponding the session.
 	sessionSMT smt.SparseMerkleSumTrie
 
-	supplierAddress *cosmostypes.AccAddress
+	supplierAddress *string
 
 	// claimedRoot is the root hash of the SMST needed for submitting the claim.
 	// If it holds a non-nil value, it means that the SMST has been flushed,
@@ -71,7 +69,7 @@ type sessionTree struct {
 // It returns an error if the KVStore fails to be created.
 func NewSessionTree(
 	sessionHeader *sessiontypes.SessionHeader,
-	supplierAddress *cosmostypes.AccAddress,
+	supplierAddress string,
 	storesDirectory string,
 	removeFromRelayerSessions func(sessionHeader *sessiontypes.SessionHeader),
 ) (relayer.SessionTree, error) {
@@ -98,7 +96,7 @@ func NewSessionTree(
 		treeStore:       treeStore,
 		sessionSMT:      trie,
 		sessionMu:       &sync.Mutex{},
-		supplierAddress: supplierAddress,
+		supplierAddress: &supplierAddress,
 
 		removeFromRelayerSessions: removeFromRelayerSessions,
 	}
@@ -264,6 +262,6 @@ func (st *sessionTree) StartClaiming() error {
 }
 
 // SupplierAddress
-func (st *sessionTree) SupplierAddress() *cosmostypes.AccAddress {
-	return st.supplierAddress
+func (st *sessionTree) SupplierAddress() string {
+	return *st.supplierAddress
 }

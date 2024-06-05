@@ -151,11 +151,11 @@ func (rs *relayerSessionsManager) newMapProveSessionsFn(
 		// Map key is the supplier address.
 		sessionProofs := map[string][]*relayer.SessionProof{}
 		for _, session := range sessionTrees {
-			supplierAddr := session.SupplierAddress().String()
+			supplierAddr := session.SupplierAddress()
 			sessionProofs[supplierAddr] = append(sessionProofs[supplierAddr], &relayer.SessionProof{
 				ProofBz:         session.GetProofBz(),
 				SessionHeader:   session.GetSessionHeader(),
-				SupplierAddress: *session.SupplierAddress(),
+				SupplierAddress: supplierAddr,
 			})
 		}
 

@@ -73,7 +73,7 @@ func (sClient *supplierClient) SubmitProofs(
 		// TODO(@bryanchriswhite): reconcile splitting of supplier & proof modules
 		//  with off-chain pkgs/nomenclature.
 		msgs[i] = &prooftypes.MsgSubmitProof{
-			SupplierAddress: sessionProof.SupplierAddress.String(),
+			SupplierAddress: sessionProof.SupplierAddress,
 			SessionHeader:   sessionProof.SessionHeader,
 			Proof:           sessionProof.ProofBz,
 		}
@@ -90,7 +90,7 @@ func (sClient *supplierClient) SubmitProofs(
 		// TODO_IMPROVE: log details related to what & how much is being proven
 		logger.Info().
 			Fields(map[string]any{
-				"supplier_addr": sessionProof.SupplierAddress.String(),
+				"supplier_addr": sessionProof.SupplierAddress,
 				"app_addr":      sessionHeader.ApplicationAddress,
 				"session_id":    sessionHeader.SessionId,
 				"service":       sessionHeader.Service.Id,
@@ -116,7 +116,7 @@ func (sClient *supplierClient) CreateClaims(
 	//  with off-chain pkgs/nomenclature.
 	for i, sessionClaim := range sessionClaims {
 		msgs[i] = &prooftypes.MsgCreateClaim{
-			SupplierAddress: sessionClaim.SupplierAddress.String(),
+			SupplierAddress: sessionClaim.SupplierAddress,
 			SessionHeader:   sessionClaim.SessionHeader,
 			RootHash:        sessionClaim.RootHash,
 		}
@@ -132,7 +132,7 @@ func (sClient *supplierClient) CreateClaims(
 		// TODO_IMPROVE: log details related to how much is claimed
 		logger.Info().
 			Fields(map[string]any{
-				"supplier_addr": claim.SupplierAddress.String(),
+				"supplier_addr": claim.SupplierAddress,
 				"app_addr":      sessionHeader.ApplicationAddress,
 				"session_id":    sessionHeader.SessionId,
 				"service":       sessionHeader.Service.Id,

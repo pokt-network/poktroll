@@ -1,7 +1,6 @@
 package relayer
 
 import (
-	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
@@ -17,7 +16,7 @@ type MinedRelay struct {
 // It is used to submit a proof batches to the chain.
 type SessionProof struct {
 	ProofBz         []byte
-	SupplierAddress cosmostypes.AccAddress
+	SupplierAddress string
 	SessionHeader   *sessiontypes.SessionHeader
 }
 
@@ -25,6 +24,6 @@ type SessionProof struct {
 // It is used to submit a claim batches to the chain.
 type SessionClaim struct {
 	RootHash        []byte
-	SupplierAddress cosmostypes.AccAddress
+	SupplierAddress string
 	SessionHeader   *sessiontypes.SessionHeader
 }

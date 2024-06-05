@@ -2,10 +2,10 @@ package session
 
 import (
 	"context"
+	"log"
 	"sync"
 
 	"cosmossdk.io/depinject"
-	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/observable"
@@ -155,20 +155,17 @@ func (rs *relayerSessionsManager) ensureSessionTree(relayMetadata *types.RelayRe
 	// Get the sessionTree for the given session.
 	sessionTree, ok := sessionsTrees[sessionHeader.SessionId]
 
-	address, err := cosmostypes.AccAddressFromBech32(relayMetadata.SupplierAddress)
-	if err != nil {
-		return nil, err
-	}
-
 	// If the sessionTree does not exist, create it.
 	if !ok {
-		sessionTree, err = NewSessionTree(sessionHeader, &address, rs.storesDirectory, rs.removeFromRelayerSessions)
+		sessionTree, err := NewSessionTree(sessionHeader, relayMetadata.SupplierAddress, rs.storesDirectory, rs.removeFromRelayerSessions)
 		if err != nil {
 			return nil, err
 		}
 
 		sessionsTrees[sessionHeader.SessionId] = sessionTree
 	}
+
+	log.Println(sessionTree)
 
 	return sessionTree, nil
 }

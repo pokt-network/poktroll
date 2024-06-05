@@ -158,12 +158,12 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 		// Map key is the supplier address.
 		sessionClaims := map[string][]*relayer.SessionClaim{}
 		for _, session := range sessionTrees {
-			supplierAddr := session.SupplierAddress().String()
+			supplierAddr := session.SupplierAddress()
 
 			sessionClaims[supplierAddr] = append(sessionClaims[supplierAddr], &relayer.SessionClaim{
 				RootHash:        session.GetClaimRoot(),
 				SessionHeader:   session.GetSessionHeader(),
-				SupplierAddress: *session.SupplierAddress(),
+				SupplierAddress: supplierAddr,
 			})
 		}
 

@@ -32,7 +32,8 @@ const (
 
 var (
 	// helpers used for tests that are initialized in init()
-	supplierKeyName string
+	supplierKeyName  string
+	supplierKeyNames []string
 
 	// supplierEndpoints is the map of serviceName -> []SupplierEndpoint
 	// where serviceName is the name of the service the supplier staked for
@@ -57,6 +58,7 @@ var (
 
 func init() {
 	supplierKeyName = "supplierKeyName"
+	supplierKeyNames = []string{supplierKeyName}
 	appPrivateKey = secp256k1.GenPrivKey()
 
 	supplierEndpoints = map[string][]*sharedtypes.SupplierEndpoint{
@@ -138,7 +140,7 @@ func TestRelayerProxy_StartAndStop(t *testing.T) {
 	// Create a RelayerProxy
 	rp, err := proxy.NewRelayerProxy(
 		test.Deps,
-		proxy.WithSigningKeyName(supplierKeyName),
+		proxy.WithSigningKeyNames(supplierKeyNames),
 		proxy.WithServicesConfigMap(servicesConfigMap),
 	)
 	require.NoError(t, err)
@@ -170,7 +172,7 @@ func TestRelayerProxy_InvalidSupplierKeyName(t *testing.T) {
 
 	rp, err := proxy.NewRelayerProxy(
 		test.Deps,
-		proxy.WithSigningKeyName("wrongKeyName"),
+		proxy.WithSigningKeyNames([]string{"wrongKeyName"}),
 		proxy.WithServicesConfigMap(servicesConfigMap),
 	)
 	require.NoError(t, err)
@@ -186,7 +188,7 @@ func TestRelayerProxy_MissingSupplierKeyName(t *testing.T) {
 
 	_, err := proxy.NewRelayerProxy(
 		test.Deps,
-		proxy.WithSigningKeyName(""),
+		proxy.WithSigningKeyNames([]string{""}),
 		proxy.WithServicesConfigMap(servicesConfigMap),
 	)
 	require.Error(t, err)
@@ -200,7 +202,7 @@ func TestRelayerProxy_EmptyServicesConfigMap(t *testing.T) {
 
 	_, err := proxy.NewRelayerProxy(
 		test.Deps,
-		proxy.WithSigningKeyName(supplierKeyName),
+		proxy.WithSigningKeyNames(supplierKeyNames),
 		proxy.WithServicesConfigMap(make(map[string]*config.RelayMinerServerConfig)),
 	)
 	require.Error(t, err)
@@ -235,7 +237,7 @@ func TestRelayerProxy_UnsupportedRpcType(t *testing.T) {
 
 	rp, err := proxy.NewRelayerProxy(
 		test.Deps,
-		proxy.WithSigningKeyName(supplierKeyName),
+		proxy.WithSigningKeyNames(supplierKeyNames),
 		proxy.WithServicesConfigMap(servicesConfigMap),
 	)
 	require.NoError(t, err)
@@ -289,7 +291,7 @@ func TestRelayerProxy_UnsupportedTransportType(t *testing.T) {
 
 	rp, err := proxy.NewRelayerProxy(
 		test.Deps,
-		proxy.WithSigningKeyName(supplierKeyName),
+		proxy.WithSigningKeyNames(supplierKeyNames),
 		proxy.WithServicesConfigMap(unsupportedTransportProxy),
 	)
 	require.NoError(t, err)
@@ -332,7 +334,7 @@ func TestRelayerProxy_NonConfiguredSupplierServices(t *testing.T) {
 
 	rp, err := proxy.NewRelayerProxy(
 		test.Deps,
-		proxy.WithSigningKeyName(supplierKeyName),
+		proxy.WithSigningKeyNames(supplierKeyNames),
 		proxy.WithServicesConfigMap(missingServicesProxy),
 	)
 	require.NoError(t, err)
@@ -523,7 +525,7 @@ func TestRelayerProxy_Relays(t *testing.T) {
 
 			rp, err := proxy.NewRelayerProxy(
 				testBehavior.Deps,
-				proxy.WithSigningKeyName(supplierKeyName),
+				proxy.WithSigningKeyNames(supplierKeyNames),
 				proxy.WithServicesConfigMap(servicesConfigMap),
 			)
 			require.NoError(t, err)
