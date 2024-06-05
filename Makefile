@@ -2,7 +2,9 @@
 
 SHELL = /bin/sh
 
-# TODO_CONSIDERATION: Should we just source `.env.dev`?
+# TODO_IMPROVE: Look into how we can we source `.env.dev` and have everything
+# here work.
+
 # ifneq (,$(wildcard .env))
 # include .env
 # export $(shell sed 's/=.*//' .env)
