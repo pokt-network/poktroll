@@ -226,6 +226,8 @@ func GatewayModuleGenesisStateWithAddresses(t *testing.T, addresses []string) *g
 	return state
 }
 
+// ProofModuleGenesisStateWithClaims generates a GenesisState object with the
+// given claims. It returns the populated GenesisState object.
 func ProofModuleGenesisStateWithClaims(t *testing.T, claims []prooftypes.Claim) *prooftypes.GenesisState {
 	t.Helper()
 

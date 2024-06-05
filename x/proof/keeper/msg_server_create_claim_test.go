@@ -65,13 +65,17 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
 			// Set block height to 1 so there is a valid session on-chain.
-			blockHeightOpt := keepertest.WithBlockHeight(1)
+			blockHeight := int64(1)
+			blockHeightOpt := keepertest.WithBlockHeight(blockHeight)
+
+			// Create a new set of proof module keepers. This isolates each test
+			// case from side effects of other test cases.
 			keepers, ctx := keepertest.NewProofModuleKeepers(t, blockHeightOpt)
 			sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 			srv := keeper.NewMsgServerImpl(*keepers.Keeper)
 
 			// The base session start height used for testing
-			sessionStartHeight := int64(1)
+			sessionStartHeight := blockHeight
 
 			service := &sharedtypes.Service{Id: testServiceId}
 			supplierAddr := sample.AccAddress()
@@ -96,7 +100,7 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 				&sessiontypes.QueryGetSessionRequest{
 					ApplicationAddress: appAddr,
 					Service:            service,
-					BlockHeight:        1,
+					BlockHeight:        blockHeight,
 				},
 			)
 			require.NoError(t, err)
@@ -108,6 +112,7 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 			sdkCtx = sdkCtx.WithBlockHeight(testClaimHeight)
 			ctx = sdkCtx
 
+			// Create a claim.
 			claimMsg := newTestClaimMsg(t,
 				sessionStartHeight,
 				sessionRes.GetSession().GetSessionId(),
@@ -120,15 +125,21 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 			require.NoError(t, err)
 			require.NotNil(t, createClaimRes)
 
+			// Query for all claims.
 			claimRes, err := keepers.AllClaims(ctx, &types.QueryAllClaimsRequest{})
 			require.NoError(t, err)
 
 			claims := claimRes.GetClaims()
 			require.Lenf(t, claims, 1, "expected 1 claim, got %d", len(claims))
-			require.Equal(t, claimMsg.SessionHeader.SessionId, claims[0].GetSessionHeader().GetSessionId())
-			require.Equal(t, claimMsg.SupplierAddress, claims[0].GetSupplierAddress())
-			require.Equal(t, claimMsg.SessionHeader.GetSessionEndBlockHeight(), claims[0].GetSessionHeader().GetSessionEndBlockHeight())
-			require.Equal(t, claimMsg.RootHash, claims[0].GetRootHash())
+
+			// Ensure that the claim was created successfully and assert that it
+			// matches the MsgCreateClaim.
+			claim := claims[0]
+			claimSessionHeader := claim.GetSessionHeader()
+			require.Equal(t, claimMsg.SessionHeader.SessionId, claimSessionHeader.GetSessionId())
+			require.Equal(t, claimMsg.SupplierAddress, claim.GetSupplierAddress())
+			require.Equal(t, claimMsg.SessionHeader.GetSessionEndBlockHeight(), claimSessionHeader.GetSessionEndBlockHeight())
+			require.Equal(t, claimMsg.RootHash, claim.GetRootHash())
 		})
 	}
 }
