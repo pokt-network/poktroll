@@ -11,6 +11,8 @@ const (
 	ParamClaimWindowOpenOffsetBlocks    = "claim_window_open_offset_blocks"
 	DefaultClaimWindowCloseOffsetBlocks = 4
 	ParamClaimWindowCloseOffsetBlocks   = "claim_window_close_offset_blocks"
+	DefaultProofWindowOpenOffsetBlocks  = 0
+	ParamProofWindowOpenOffsetBlocks    = "proof_window_open_offset_blocks"
 )
 
 var (
@@ -18,6 +20,7 @@ var (
 	KeyNumBlocksPerSession                              = []byte("NumBlocksPerSession")
 	KeyClaimWindowOpenOffsetBlocks                      = []byte("ClaimWindowOpenOffsetBlocks")
 	KeyClaimWindowCloseOffsetBlocks                     = []byte("ClaimWindowCloseOffsetBlocks")
+	KeyProofWindowOpenOffsetBlocks                      = []byte("ProofWindowOpenOffsetBlocks")
 )
 
 // ParamKeyTable the param key table for launch module
@@ -31,6 +34,7 @@ func NewParams() Params {
 		NumBlocksPerSession:          DefaultNumBlocksPerSession,
 		ClaimWindowOpenOffsetBlocks:  DefaultClaimWindowOpenOffsetBlocks,
 		ClaimWindowCloseOffsetBlocks: DefaultClaimWindowCloseOffsetBlocks,
+		ProofWindowOpenOffsetBlocks:  DefaultProofWindowOpenOffsetBlocks,
 	}
 }
 
@@ -57,6 +61,11 @@ func (params *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 			&params.ClaimWindowCloseOffsetBlocks,
 			ValidateClaimWindowCloseOffsetBlocks,
 		),
+		paramtypes.NewParamSetPair(
+			KeyProofWindowOpenOffsetBlocks,
+			&params.ProofWindowOpenOffsetBlocks,
+			ValidateProofWindowOpenOffsetBlocks,
+		),
 	}
 }
 
@@ -71,6 +80,10 @@ func (params *Params) ValidateBasic() error {
 	}
 
 	if err := ValidateClaimWindowCloseOffsetBlocks(params.ClaimWindowCloseOffsetBlocks); err != nil {
+		return err
+	}
+
+	if err := ValidateProofWindowOpenOffsetBlocks(params.ProofWindowOpenOffsetBlocks); err != nil {
 		return err
 	}
 
@@ -106,6 +119,17 @@ func ValidateClaimWindowOpenOffsetBlocks(v interface{}) error {
 // ValidateClaimWindowCloseOffsetBlocks validates the ClaimWindowCloseOffsetBlocks param
 // NB: The argument is an interface type to satisfy the ParamSetPair function signature.
 func ValidateClaimWindowCloseOffsetBlocks(v interface{}) error {
+	_, ok := v.(uint64)
+	if !ok {
+		return ErrSharedParamInvalid.Wrapf("invalid parameter type: %T", v)
+	}
+
+	return nil
+}
+
+// ValidateProofWindowOpenOffsetBlocks validates the ProofWindowOpenOffsetBlocks param
+// NB: The argument is an interface type to satisfy the ParamSetPair function signature.
+func ValidateProofWindowOpenOffsetBlocks(v interface{}) error {
 	_, ok := v.(uint64)
 	if !ok {
 		return ErrSharedParamInvalid.Wrapf("invalid parameter type: %T", v)
