@@ -17,8 +17,8 @@ CHAIN_ID = poktroll
 
 # The domain ending in ".town" is staging, ".city" is production
 GROVE_GATEWAY_STAGING_ETH_MAINNET = https://eth-mainnet.rpc.grove.town
-# The "protocol" field here instructs the Grove gateway which network to use
-JSON_RPC_DATA_ETH_BLOCK_HEIGHT = '{"protocol": "shannon-testnet","jsonrpc":"2.0","id":"0","method":"eth_blockNumber", "params": []}'
+# JSON RPC data for a test relay request
+JSON_RPC_DATA_ETH_BLOCK_HEIGHT = '{"jsonrpc":"2.0","id":"0","method":"eth_blockNumber", "params": []}'
 
 # On-chain module account addresses. Search for `func TestModuleAddress` in the
 # codebase to get an understanding of how we got these values.
@@ -1001,7 +1001,8 @@ act_reviewdog: check_act check_gh ## Run the reviewdog workflow locally like so:
 grove_staging_eth_block_height: ## Sends a relay through the staging grove gateway to the eth-mainnet chain. Must have GROVE_STAGING_PORTAL_APP_ID environment variable set.
 	curl $(GROVE_GATEWAY_STAGING_ETH_MAINNET)/v1/$(GROVE_STAGING_PORTAL_APP_ID) \
 		-H 'Content-Type: application/json' \
-		--data $(SHANNON_JSON_RPC_DATA_ETH_BLOCK_HEIGHT)
+		-H 'Protocol: shannon-testnet' \
+		--data $(JSON_RPC_DATA_ETH_BLOCK_HEIGHT)
 
 #################
 ### Catch all ###
