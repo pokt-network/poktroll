@@ -31,7 +31,7 @@ type Application struct {
 	Address        string                             `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
 	Stake          *types.Coin                        `protobuf:"bytes,2,opt,name=stake,proto3" json:"stake,omitempty"`
 	ServiceConfigs []*types1.ApplicationServiceConfig `protobuf:"bytes,3,rep,name=service_configs,json=serviceConfigs,proto3" json:"service_configs,omitempty"`
-	// TODO_TECHDEBT: Rename `delegatee_gateway_addresses` to `gateway_addresses_delegated_to`.
+	// TODO_BETA: Rename `delegatee_gateway_addresses` to `gateway_addresses_delegated_to`.
 	// Ensure to rename all relevant configs, comments, variables, function names, etc as well.
 	DelegateeGatewayAddresses []string `protobuf:"bytes,4,rep,name=delegatee_gateway_addresses,json=delegateeGatewayAddresses,proto3" json:"delegatee_gateway_addresses,omitempty"`
 	// A map from sessionEndHeights to a list of Gateways.

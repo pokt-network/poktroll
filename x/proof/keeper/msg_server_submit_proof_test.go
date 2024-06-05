@@ -17,7 +17,7 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	signingtypes "github.com/cosmos/cosmos-sdk/types/tx/signing"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	"github.com/noot/ring-go"
+	"github.com/pokt-network/ring-go"
 	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
@@ -491,7 +491,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			),
 		},
 		{
-			// TODO_TEST(community): expand: test case to cover each session header field.
+			// TODO_TEST: expand: test case to cover each session header field.
 			desc: "relay response session header must match proof session header",
 			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
 				// Construct a session tree with 1 relay with a session header containing
@@ -1036,7 +1036,7 @@ func newTestProofMsg(
 
 // createClaimAndStoreBlockHash creates a valid claim, submits it on-chain,
 // and on success, stores the block hash for retrieval at future heights.
-// TODO_CONSIDERATION(@bryanchriswhite): Consider if we could/should split
+// TODO_TECHDEBT(@bryanchriswhite): Consider if we could/should split
 // this into two functions.
 func createClaimAndStoreBlockHash(
 	ctx context.Context,

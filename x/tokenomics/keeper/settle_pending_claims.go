@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	// TODO_BLOCKER/TODO_UPNEXT(@Olshansk): Implement this properly. Using a constant
+	// TODO_BLOCKER(@bryanchriswhite): Implement this properly. Using a constant
 	// for "probabilistic proofs" is just a simple placeholder mechanism to get
 	// #359 over the finish line.
 	ProofRequiredComputeUnits = 100
@@ -136,12 +136,12 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 func (k Keeper) getExpiringClaims(ctx sdk.Context) (expiringClaims []prooftypes.Claim) {
 	blockHeight := ctx.BlockHeight()
 
-	// TODO_BLOCKER: query the on-chain governance parameter once available.
+	// TODO_BLOCKER(@bryanchriswhite): query the on-chain governance parameter once available.
 	// `* 3` is just a random factor Olshansky added for now to make sure expiration
 	// doesn't happen immediately after a session's grace period is complete.
 	submitProofWindowEndHeight := shared.SessionGracePeriodBlocks * int64(3)
 
-	// TODO_BLOCKER(@Olshansk): Optimize this by indexing claims appropriately
+	// TODO_TECHDEBT: Optimize this by indexing claims appropriately
 	// and only retrieving the claims that need to be settled rather than all
 	// of them and iterating through them one by one.
 	claims := k.proofKeeper.GetAllClaims(ctx)
@@ -161,13 +161,13 @@ func (k Keeper) getExpiringClaims(ctx sdk.Context) (expiringClaims []prooftypes.
 // isProofRequiredForClaim checks if a proof is required for a claim.
 // If it is not, the claim will be settled without a proof.
 // If it is, the claim will only be settled if a valid proof is available.
-// TODO_TECHDEBT(#419): Document safety assumptions of the probabilistic proofs mechanism.
+// TODO_BLOCKER(@bryanchriswhite, #419): Document safety assumptions of the probabilistic proofs mechanism.
 func (k Keeper) isProofRequiredForClaim(_ sdk.Context, claim *prooftypes.Claim) bool {
 	// NB: Assumption that claim is non-nil and has a valid root sum because it
 	// is retrieved from the store and validated, on-chain, at time of creation.
 	root := (smt.MerkleRoot)(claim.GetRootHash())
 	claimComputeUnits := root.Sum()
-	// TODO_BLOCKER(#419): This is just VERY BASIC placeholder logic to have something
+	// TODO_BLOCKER(@Olshansk, #419): This is just VERY BASIC placeholder logic to have something
 	// in place while we implement proper probabilistic proofs. If you're reading it,
 	// do not overthink it and look at the documents linked in #419.
 	if claimComputeUnits < ProofRequiredComputeUnits {

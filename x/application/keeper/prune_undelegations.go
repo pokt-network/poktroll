@@ -13,7 +13,7 @@ import (
 // undelegation from applications to gateways are delayed before being pruned.
 // TODO_DOCUMENT(@red-0ne): Need to document the flow from this comment
 // so its clear to everyone why this is necessary; https://github.com/pokt-network/poktroll/issues/476#issuecomment-2052639906.
-// TODO_CONSIDERATION(#516): Should this be configurable? Note that it should
+// TODO_MAINNET(#516): Should this be configurable? Note that it should
 // likely be a function of SubmitProofCloseWindowNumBlocks once implemented.
 const NumSessionsAppToGatewayUndelegationRetention = 2
 

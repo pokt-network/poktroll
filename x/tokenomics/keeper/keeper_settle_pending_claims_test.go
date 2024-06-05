@@ -112,7 +112,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimPendingBeforeSettlement() {
 
 	// 2. Settle pending claims just after the session ended.
 	// Expectations: Claims should not be settled because the proof window hasn't closed yet.
-	// TODO_IMPROVE(@red-0ne, @Olshansk): Use the governance parameters for more
+	// TODO_BLOCKER(@red-0ne): Use the governance parameters for more
 	// precise block heights once they are implemented.
 	blockHeight = claim.SessionHeader.SessionEndBlockHeight + 2 // session ended but proof window is still open
 	sdkCtx = sdkCtx.WithBlockHeight(blockHeight)
@@ -144,7 +144,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequiredAndNotProv
 
 	// 1. Settle pending claims after proof window closes
 	// Expectation: All (1) claims should be expired.
-	// TODO_IMPROVE(@red-0ne, @Olshansk): Use the governance parameters for more precise block heights once they are implemented.
+	// TODO_BLOCKER(@red-0ne): Use the governance parameters for more precise block heights once they are implemented.
 	blockHeight := claim.SessionHeader.SessionEndBlockHeight * 10 // proof window has definitely closed at this point
 	sdkCtx = sdkCtx.WithBlockHeight(blockHeight)
 	numClaimsSettled, numClaimsExpired, _, err := s.keepers.SettlePendingClaims(sdkCtx)
@@ -186,7 +186,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimSettled_ProofRequiredAndProvide
 
 	// 1. Settle pending claims after proof window closes
 	// Expectation: All (1) claims should be claimed.
-	// TODO_IMPROVE(@red-0ne, @Olshansk): Use the governance parameters for more precise block heights once they are implemented.
+	// TODO_BLOCKER(@red-0ne): Use the governance parameters for more precise block heights once they are implemented.
 	blockHeight := s.claim.SessionHeader.SessionEndBlockHeight * 10 // proof window has definitely closed at this point
 	sdkCtx = sdkCtx.WithBlockHeight(blockHeight)
 	numClaimsSettled, numClaimsExpired, _, err := s.keepers.SettlePendingClaims(sdkCtx)
@@ -225,7 +225,7 @@ func (s *TestSuite) TestSettlePendingClaims_Settles_WhenAProofIsNotRequired() {
 
 	// 1. Settle pending claims after proof window closes
 	// Expectation: All (1) claims should be claimed.
-	// TODO_IMPROVE(@red-0ne, @Olshansk): Use the governance parameters for more precise block heights once they are implemented.
+	// TODO_BLOCKER(@red-0ne): Use the governance parameters for more precise block heights once they are implemented.
 	blockHeight := claim.SessionHeader.SessionEndBlockHeight * 10 // proof window has definitely closed at this point
 	sdkCtx = sdkCtx.WithBlockHeight(blockHeight)
 	numClaimsSettled, numClaimsExpired, _, err := s.keepers.SettlePendingClaims(sdkCtx)
