@@ -268,30 +268,30 @@ func sha3Hash(bz []byte) []byte {
 }
 
 // GetSessionId returns the string and bytes representation of the sessionId
-// given the application public key, service ID, block hash, and block height
+// given the application address, service ID, block hash, and block height
 // that is used to get the session start block height.
 func (k Keeper) GetSessionId(
 	ctx context.Context,
-	appPubKey,
+	appAddr,
 	serviceId string,
 	blockHashBz []byte,
 	blockHeight int64,
 ) (sessionId string, sessionIdBz []byte) {
 	sharedParams := k.sharedKeeper.GetParams(ctx)
-	return GetSessionId(&sharedParams, appPubKey, serviceId, blockHashBz, blockHeight)
+	return GetSessionId(&sharedParams, appAddr, serviceId, blockHashBz, blockHeight)
 }
 
 // GetSessionId returns the string and bytes representation of the sessionId for the
 // session containing blockHeight, given the shared on-chain parameters, application
-// public key, service ID, and block hash.
+// address, service ID, and block hash.
 func GetSessionId(
 	sharedParams *sharedtypes.Params,
-	appPubKey,
+	appAddr,
 	serviceId string,
 	blockHashBz []byte,
 	blockHeight int64,
 ) (sessionId string, sessionIdBz []byte) {
-	appPubKeyBz := []byte(appPubKey)
+	appPubKeyBz := []byte(appAddr)
 	serviceIdBz := []byte(serviceId)
 
 	blockHeightBz := getSessionStartBlockHeightBz(sharedParams, blockHeight)
