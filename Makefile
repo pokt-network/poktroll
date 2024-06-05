@@ -115,7 +115,7 @@ help: ## Prints all the targets in all the Makefiles
 ##############
 
 # TODO_DOCUMENT: All of the `check_` helpers can be installed differently depending
-# on the user's OS and enviornment.
+# on the user's OS and environment.
 # NB: For mac users, you may need to install with the proper linkers: https://github.com/golang/go/issues/65940
 
 .PHONY: check_go_version
