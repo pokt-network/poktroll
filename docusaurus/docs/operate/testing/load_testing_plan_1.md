@@ -5,13 +5,6 @@ title: Load Testing - Plan #1
 
 # Load Test #1 - Plan <!-- omit in toc -->
 
-:::warning
-
-TODO(@Olshansk, @okdas, @red-0ne, @RawthiL): Please reference the [forum post](https://forum.pokt.network/t/block-sizes-claims-and-proofs-in-the-multi-gateway-era/5060/9) for
-an understanding of how it affects the load test plan in practice.
-
-:::
-
 _This document outlines the first load test for the Shannon upgrade. IT **IS NOT** intended to be an exhaustive evaluation of the entire system's performance. **IT IS** intended to give visibility into the business logic of the platform, and create a baseline for future load tests._
 
 - _All Poktroll `loadtest` issues on GitHub can be found [here](https://github.com/pokt-network/poktroll/issues?q=label%3Aloadtest+sort%3Aupdated-desc)._
@@ -20,6 +13,7 @@ _This document outlines the first load test for the Shannon upgrade. IT **IS NOT
 
 - [Goals](#goals)
 - [Non-Goals](#non-goals)
+- [Origin Document](#origin-document)
 - [Load Profiles](#load-profiles)
   - [Variable Parameters](#variable-parameters)
   - [Constant Parameter](#constant-parameter)
@@ -58,6 +52,13 @@ _This document outlines the first load test for the Shannon upgrade. IT **IS NOT
 6. `Mimicking the scale` of Morse (v0) today
 7. Accounting for `Failure cases`, since the primary focus is just evaluating happy path scale
 8. Anything to do with `Quality of Service` as it is concerned from today’s Gateway POV
+
+## Origin Document
+
+This [forum post](https://forum.pokt.network/t/block-sizes-claims-and-proofs-in-the-multi-gateway-era/5060/9) from Morse
+is a good starting point to gain an understanding of why load testing is important and critical in Shannon.
+
+https://forum.pokt.network/t/block-sizes-claims-and-proofs-in-the-multi-gateway-era/5060/9
 
 ## Load Profiles
 
@@ -124,11 +125,11 @@ pie showData
 - `Data Availability State` - `Disk` could be a limiting factor depending on how quickly state grows
 
 |                         | RAM | CPU | Network | Disk | Time |
-|-------------------------|-----|-----|---------|------|------|
-| Proof Validation        | ❓   | ❓   |         |      | ❓    |
-| Block Generation        | ❓   |     |         |      |      |
-| Block Publishing        |     |     | ❓       |      |      |
-| Data Availability State |     |     |         | ❓    |      |
+| ----------------------- | --- | --- | ------- | ---- | ---- |
+| Proof Validation        | ❓  | ❓  |         |      | ❓   |
+| Block Generation        | ❓  |     |         |      |      |
+| Block Publishing        |     |     | ❓      |      |      |
+| Data Availability State |     |     |         | ❓   |      |
 
 #### 3. AppGate Server (Application, Gateway, etc…)
 
@@ -142,11 +143,11 @@ pie showData
 - `Response handling` - Slow supplier responses could increase pending relays at the AppGate level (i.e. RAM)
 
 |                    | RAM | CPU | Network | Disk | Time |
-|--------------------|-----|-----|---------|------|------|
-| Relay Proxies      |     |     | ❓       |      | ❓    |
-| Caches & State     | ❓   | ❓   |         |      |      |
-| Request Processing |     |     |         |      | ❓    |
-| ???                |     |     |         | ❓    |      |
+| ------------------ | --- | --- | ------- | ---- | ---- |
+| Relay Proxies      |     |     | ❓      |      | ❓   |
+| Caches & State     | ❓  | ❓  |         |      |      |
+| Request Processing |     |     |         |      | ❓   |
+| ???                |     |     |         | ❓   |      |
 
 #### 4. RelayMiner (Supplier, SMT, etc..)
 
@@ -160,11 +161,11 @@ pie showData
 - `Request generation` - Generating the actual response to the request via the dummy service
 
 |                     | RAM | CPU | Network | Disk | Time |
-|---------------------|-----|-----|---------|------|------|
-| SMT                 | ❓   | ❓   |         | ❓    | ❓    |
-| Caches & State      | ❓   |     |         |      |      |
-| Request Processing  |     |     |         |      | ❓    |
-| Response Generation |     | ❓   | ❓       |      | ❓    |
+| ------------------- | --- | --- | ------- | ---- | ---- |
+| SMT                 | ❓  | ❓  |         | ❓   | ❓   |
+| Caches & State      | ❓  |     |         |      |      |
+| Request Processing  |     |     |         |      | ❓   |
+| Response Generation |     | ❓  | ❓      |      | ❓   |
 
 ### Out-of-scope
 

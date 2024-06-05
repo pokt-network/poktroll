@@ -11,8 +11,8 @@ CHAIN_ID = poktroll
 
 # The domain ending in ".town" is staging, ".city" is production
 GROVE_GATEWAY_STAGING_ETH_MAINNET = https://eth-mainnet.rpc.grove.town
-# The "protocol" field here instructs the Grove gateway which network to use
-JSON_RPC_DATA_ETH_BLOCK_HEIGHT = '{"protocol": "shannon-testnet","jsonrpc":"2.0","id":"0","method":"eth_blockNumber", "params": []}'
+# JSON RPC data for a test relay request
+JSON_RPC_DATA_ETH_BLOCK_HEIGHT = '{"jsonrpc":"2.0","id":"0","method":"eth_blockNumber", "params": []}'
 
 # On-chain module account addresses. Search for `func TestModuleAddress` in the
 # codebase to get an understanding of how we got these values.
@@ -76,8 +76,8 @@ endif
 ### Dependencies ###
 ####################
 
-# TODO: Add other dependencies (ignite, docker, k8s, etc) here
-# TODO(@okdas): bump `golangci-lint` when we upgrade golang to 1.21+
+# TODO_IMPROVE(@okdas): Add other dependencies (ignite, docker, k8s, etc) here
+# TODO_BLOCKER(@okdas): bump `golangci-lint` when we upgrade golang to 1.21+
 .PHONY: install_ci_deps
 install_ci_deps: ## Installs `mockgen` and other go tools
 	go install "github.com/golang/mock/mockgen@v1.6.0" && mockgen --version
@@ -106,9 +106,6 @@ help: ## Prints all the targets in all the Makefiles
 ##############
 ### Checks ###
 ##############
-
-# TODO_DOCUMENT: All of the `check_` helpers can be installed differently depending
-# on the user's OS and enviornment.
 
 .PHONY: check_go_version
 # Internal helper target - check go version
@@ -330,7 +327,7 @@ send_relay_delegating_app: # Send a relay through the gateway as an application 
 	--data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' \
 	$(GATEWAY_URL)/anvil?applicationAddr=$$appAddr
 
-# TODO_BLOCKER(@okdas): Figure out how to copy these over w/ a functional state.
+# TODO_TECHDEBT(@okdas): Figure out how to copy these over w/ a functional state.
 # cp ${HOME}/.poktroll/config/app.toml $(POKTROLLD_HOME)/config/app.toml
 # cp ${HOME}/.poktroll/config/config.toml $(POKTROLLD_HOME)/config/config.toml
 # cp ${HOME}/.poktroll/config/client.toml $(POKTROLLD_HOME)/config/client.toml
@@ -825,7 +822,7 @@ params_update_tokenomics_all: ## Update the tokenomics module params
 	poktrolld tx authz exec ./tools/scripts/params/tokenomics_all.json $(PARAM_FLAGS)
 
 .PHONY: params_update_tokenomics_compute_units_to_tokens_multiplier
-params_update_tokenomics_compute_units_to_tokens_multiplier: ## Update the tokenomics module params
+params_update_tokenomics_compute_units_to_tokens_multiplier: ## Update the tokenomics module compute_units_to_tokens_multiplier param
 	poktrolld tx authz exec ./tools/scripts/params/tokenomics_compute_units_to_tokens_multiplier.json $(PARAM_FLAGS)
 
 ### Proof Module Params ###
@@ -834,7 +831,7 @@ params_update_proof_all: ## Update the proof module params
 	poktrolld tx authz exec ./tools/scripts/params/proof_all.json $(PARAM_FLAGS)
 
 .PHONY: params_update_proof_min_relay_difficulty_bits
-params_update_proof_min_relay_difficulty_bits: ## Update the proof module params
+params_update_proof_min_relay_difficulty_bits: ## Update the proof module min_relay_difficulty_bits param
 	poktrolld tx authz exec ./tools/scripts/params/proof_min_relay_difficulty_bits.json $(PARAM_FLAGS)
 
 ### Shared Module Params ###
@@ -843,16 +840,20 @@ params_update_shared_all: ## Update the session module params
 	poktrolld tx authz exec ./tools/scripts/params/shared_all.json $(PARAM_FLAGS)
 
 .PHONY: params_update_shared_num_blocks_per_session
-params_update_shared_num_blocks_per_session: ## Update the shared module params
+params_update_shared_num_blocks_per_session: ## Update the shared module num_blocks_per_session param
 	poktrolld tx authz exec ./tools/scripts/params/shared_num_blocks_per_session.json $(PARAM_FLAGS)
 
 .PHONY: params_update_shared_claim_window_open_offset_blocks
-params_update_shared_claim_window_open_offset_blocks: ## Update the shared module params
+params_update_shared_claim_window_open_offset_blocks: ## Update the shared module claim_window_open_offset_blocks param
 	poktrolld tx authz exec ./tools/scripts/params/shared_claim_window_open_offset_blocks.json $(PARAM_FLAGS)
 
 .PHONY: params_update_shared_claim_window_close_offset_blocks
-params_update_shared_claim_window_close_offset_blocks: ## Update the shared module params
+params_update_shared_claim_window_close_offset_blocks: ## Update the shared module claim_window_close_offset_blocks param
 	poktrolld tx authz exec ./tools/scripts/params/shared_claim_window_close_offset_blocks.json $(PARAM_FLAGS)
+
+.PHONY: params_update_shared_proof_window_open_offset_blocks
+params_update_shared_proof_window_open_offset_blocks: ## Update the shared module proof_window_open_offset_blocks param
+	poktrolld tx authz exec ./tools/scripts/params/shared_proof_window_open_offset_blocks.json $(PARAM_FLAGS)
 
 .PHONY: params_query_all
 params_query_all: check_jq ## Query the params from all available modules
@@ -981,4 +982,5 @@ act_reviewdog: check_act check_gh ## Run the reviewdog workflow locally like so:
 grove_staging_eth_block_height: ## Sends a relay through the staging grove gateway to the eth-mainnet chain. Must have GROVE_STAGING_PORTAL_APP_ID environment variable set.
 	curl $(GROVE_GATEWAY_STAGING_ETH_MAINNET)/v1/$(GROVE_STAGING_PORTAL_APP_ID) \
 		-H 'Content-Type: application/json' \
-		--data $(SHANNON_JSON_RPC_DATA_ETH_BLOCK_HEIGHT)
+		-H 'Protocol: shannon-testnet' \
+		--data $(JSON_RPC_DATA_ETH_BLOCK_HEIGHT)

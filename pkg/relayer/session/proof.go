@@ -79,9 +79,9 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 	// first one from the group to calculate the earliest height for proof submission.
 	sessionEndHeight := sessionTrees[0].GetSessionHeader().GetSessionEndBlockHeight()
 
-	// TODO_TECHDEBT(#516): Centralize the business logic that involves taking
+	// TODO_TECHDEBT(@bryanchriswhite, #516): Centralize the business logic that involves taking
 	// into account the heights, windows and grace periods into helper functions.
-	// TODO_BLOCKER(#516): The proof submission window SHOULD NOT overlap with the
+	// TODO_BLOCKER(@bryanchriswhite, #516): The proof submission window SHOULD NOT overlap with the
 	// claim window. The proof submission window start SHOULD be relative to the
 	// claim window end.
 	sessionGracePeriodEndHeight := shared.GetSessionGracePeriodEndHeight(sessionEndHeight)
@@ -89,7 +89,7 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 	// of the session to be included in the claim before the smt is closed.
 	createClaimsWindowStartHeight := sessionGracePeriodEndHeight + 1
 	submitProofsWindowStartHeight := createClaimsWindowStartHeight
-	// TODO_BLOCKER(#516): query the on-chain governance parameter once available.
+	// TODO_BLOCKER(@bryanchriswhite, #516): query the on-chain governance parameter once available.
 	// + claimproofparams.GovSubmitProofWindowStartHeightOffset
 
 	// we wait for submitProofsWindowStartHeight to be received before proceeding since we need its hash
@@ -103,7 +103,7 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 	// source of entropy for all the session trees in that batch, waiting for it to
 	// be received before proceeding.
 	sessionPathBlock := rs.waitForBlock(ctx, sessionGracePeriodEndHeight)
-	// TODO_BLOCKER(#516): Wait one more block to ensure that a claim submitted at the earliest
+	// TODO_BLOCKER(@bryanchriswhite, #516): Wait one more block to ensure that a claim submitted at the earliest
 	// possible height is committed. This delay will also need to account for claim/proof
 	// window offsets which will be added in the future.
 	_ = rs.waitForBlock(ctx, submitProofsWindowStartHeight)

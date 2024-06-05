@@ -47,7 +47,7 @@ func GetComputeUnits(ctx context.Context, payloadBz []byte) (uint64, error) {
 	return partialRequest.GetRPCComputeUnits(ctx)
 }
 
-// TODO_BLOCKER(@h5law): This function currently only supports JSON-RPC and must
+// TODO_BLOCKER(@red-0ne): This function currently only supports JSON-RPC and must
 // be extended to other request types.
 // PartiallyUnmarshalRequest unmarshals the payload into a partial request
 // that contains only the fields necessary to generate an error response and
@@ -66,6 +66,6 @@ func PartiallyUnmarshalRequest(ctx context.Context, payloadBz []byte) (PartialPa
 	if jsonPayload != nil {
 		return jsonPayload, nil
 	}
-	// TODO(@h5law): Handle other request types
-	return nil, ErrPartialUnrecognisedRequestFormat.Wrapf("got: %s", string(payloadBz))
+	// TODO_BLOCKER(@red-0ne): Handle other request types
+	return nil, ErrPartialUnrecognizedRequestFormat.Wrapf("got: %s", string(payloadBz))
 }

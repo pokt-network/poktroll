@@ -9,7 +9,7 @@ var (
 
 	KeyComputeUnitsToTokensMultiplier            = []byte("ComputeUnitsToTokensMultiplier")
 	ParamComputeUnitsToTokensMultiplier          = "compute_units_to_tokens_multiplier"
-	DefaultComputeUnitsToTokensMultiplier uint64 = 42 // TODO_BLOCKER: Determine the default value.
+	DefaultComputeUnitsToTokensMultiplier uint64 = 42 // TODO_MAINNET: Determine the default value.
 )
 
 // ParamKeyTable the param key table for launch module

@@ -47,7 +47,7 @@ type SupplierClient interface {
 	// SubmitProof sends proof messages which contain the smt.SparseMerkleClosestProof,
 	// corresponding to some previously created claim for the same session.
 	// The proof is validated on-chain as part of the pocket protocol.
-	// TODO_IMPROVE(#427): Use SparseCompactClosestProof here to reduce
+	// TODO_MAINNET(#427): Use SparseCompactClosestProof here to reduce
 	// the amount of data stored on-chain.
 	SubmitProofs(
 		ctx context.Context,

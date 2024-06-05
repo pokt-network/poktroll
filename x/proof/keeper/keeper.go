@@ -69,7 +69,7 @@ func NewKeeper(
 	// and AccountKeeperQueryClient that are thin wrappers around the Application and
 	// Account keepers respectively to satisfy the RingClient needs.
 	//
-	// TODO_IMPROVE_CONSIDERATION: Make ring signature verification a stateless
+	// TODO_MAINNET(@red-0ne): Make ring signature verification a stateless
 	// function and get rid of the RingClient and its dependencies by moving
 	// application ring retrieval to the application keeper, and making it
 	// retrievable using the application query client for off-chain actors. Signature

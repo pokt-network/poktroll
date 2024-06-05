@@ -96,7 +96,7 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 		return nil
 	}
 
-	// TODO_BLOCKER: query the on-chain governance parameter once available.
+	// TODO_BLOCKER(@bryanchriswhite): query the on-chain governance parameter once available.
 	// + claimproofparams.GovCreateClaimWindowStartHeightOffset
 
 	// we wait for createClaimsWindowOpenHeight to be received before proceeding since we need its hash

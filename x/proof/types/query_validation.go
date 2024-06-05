@@ -19,7 +19,7 @@ func (query *QueryGetClaimRequest) ValidateBasic() error {
 		return ErrProofInvalidAddress.Wrapf("invalid supplier address for claim being retrieved %s; (%v)", query.SupplierAddress, err)
 	}
 
-	// TODO_TECHDEBT: Validate the session ID once we have a deterministic way to generate it
+	// TODO_BLOCKER(@bryanchriswhite): Validate the session ID once we have a deterministic way to generate it
 	if query.SessionId == "" {
 		return ErrProofInvalidSessionId.Wrapf("invalid session ID for claim being retrieved %s", query.SessionId)
 	}
@@ -40,7 +40,7 @@ func (query *QueryAllClaimsRequest) ValidateBasic() error {
 	case *QueryAllClaimsRequest_SessionId:
 		logger.Warn().
 			Str("session_id", filter.SessionId).
-			Msg("TODO_TECHDEBT: Validate the session ID once we have a deterministic way to generate it")
+			Msg("TODO_BLOCKER(@bryanchriswhite): Validate the session ID once we have a deterministic way to generate it")
 
 	case *QueryAllClaimsRequest_SessionEndHeight:
 		if filter.SessionEndHeight < 0 {
@@ -57,7 +57,7 @@ func (query *QueryGetProofRequest) ValidateBasic() error {
 		return ErrProofInvalidAddress.Wrapf("invalid supplier address for proof being retrieved %s; (%v)", query.SupplierAddress, err)
 	}
 
-	// TODO_TECHDEBT: Validate the session ID once we have a deterministic way to generate it
+	// TODO_BLOCKER(@bryanchriswhite): Validate the session ID once we have a deterministic way to generate it
 	if query.SessionId == "" {
 		return ErrProofInvalidSessionId.Wrapf("invalid session ID for proof being retrieved %s", query.SessionId)
 	}
@@ -78,7 +78,7 @@ func (query *QueryAllProofsRequest) ValidateBasic() error {
 	case *QueryAllProofsRequest_SessionId:
 		logger.Warn().
 			Str("session_id", filter.SessionId).
-			Msg("TODO_TECHDEBT: Validate the session ID once we have a deterministic way to generate it")
+			Msg("TODO_BLOCKER(@bryanchriswhite): Validate the session ID once we have a deterministic way to generate it")
 
 	case *QueryAllProofsRequest_SessionEndHeight:
 		if filter.SessionEndHeight < 0 {
