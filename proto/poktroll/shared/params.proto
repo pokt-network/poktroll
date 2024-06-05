@@ -19,4 +19,7 @@ message Params {
   // claim_window_close_offset_blocks is the number of blocks after the claim window
   // open height, at which the claim window closes.
   uint64 claim_window_close_offset_blocks = 3 [(gogoproto.jsontag) = "claim_window_close_offset_blocks"];
+  // proof_window_open_offset_blocks is the number of blocks after the claim window
+  // close height, at which the proof window opens.
+  uint64 proof_window_open_offset_blocks = 4 [(gogoproto.jsontag) = "proof_window_open_offset_blocks"];
 }

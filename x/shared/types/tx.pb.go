@@ -130,7 +130,6 @@ type MsgUpdateParam struct {
 	Authority string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
 	Name      string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	// Types that are valid to be assigned to AsType:
-	//
 	//	*MsgUpdateParam_AsString
 	//	*MsgUpdateParam_AsInt64
 	//	*MsgUpdateParam_AsBytes
