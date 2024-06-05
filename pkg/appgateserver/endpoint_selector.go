@@ -9,10 +9,11 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-// TODO_IMPROVE: Use a more sophisticated endpoint selection strategy.
-// Future optimizations (e.g. Quality-of-Service) can be introduced here.
-// TODO(@h5law): Look into different endpoint selection depending on their suitability.
-// getRelayerUrl gets the URL of the relayer for the given service.
+// getRelayerUrl returns the next relayer endpoint to use for the given serviceId and rpcType.
+// NB: This is a naive implementation of the endpoint selection strategy.
+// It is intentionally kept simple for the sake of a clear example, and future
+// optimizations (i.e. quality of service implementations) are left as an exercise
+// to gateways.
 func (app *appGateServer) getRelayerUrl(
 	serviceId string,
 	rpcType sharedtypes.RPCType,

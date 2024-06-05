@@ -10,8 +10,6 @@ import (
 	"github.com/pokt-network/poktroll/x/gateway/types"
 )
 
-// TODO_IMPROVE(@Olshansk): Add more logging to staking & unstaking branches (success, failure, etc...).
-
 func (k msgServer) StakeGateway(
 	goCtx context.Context,
 	msg *types.MsgStakeGateway,

@@ -393,7 +393,7 @@ func decodeHTTPResponseBody(httpResponse *http.Response) (io.ReadCloser, error) 
 	switch httpResponse.Header.Get("Content-Encoding") {
 	case "gzip":
 		return gzip.NewReader(httpResponse.Body)
-	// TODO: Add other algorithms, or an alternative would be to switch to http
+	// TODO_IMPROVE(@okdas): Add other algorithms, or an alternative would be to switch to http
 	// client that manages all low-level HTTP decisions for us, something like
 	// https://github.com/imroc/req, https://github.com/valyala/fasthttp or
 	// https://github.com/go-resty/resty

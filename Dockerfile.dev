@@ -23,7 +23,7 @@ RUN mv /poktroll/bin/ignite /usr/bin/ && mv /poktroll/bin/poktrolld /usr/bin/
 
 RUN make localnet_regenesis
 
-# TODO_TECHDEBT(@okdas): Ports are not documented as they will soon be changed with a document to follow
+# TODO_DOCUMENT(@okdas): Ports are not documented as they will soon be changed with a document to follow
 EXPOSE 8545
 EXPOSE 8546
 EXPOSE 8547

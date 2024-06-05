@@ -11,7 +11,7 @@ import (
 
 func TestGetParams(t *testing.T) {
 	k, ctx, _, _ := testkeeper.TokenomicsKeeperWithActorAddrs(t)
-	// TODO_INVESTIGATE(#394): Params tests don't assert initial state.
+	// TODO_TECHDEBT(@bryanchriswhite, #394): Params tests don't assert initial state.
 	params := types.DefaultParams()
 
 	require.NoError(t, k.SetParams(ctx, params))

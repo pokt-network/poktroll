@@ -110,7 +110,7 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 	sessionClaimWindowOpenHeight := shared.GetClaimWindowOpenHeight(&sharedParams, sessionEndHeight)
 
 	// Publish a block to the blockPublishCh to trigger claim creation for the session.
-	// TODO_TECHDEBT(#516): assumes claiming at sessionClaimWindowOpenHeight is valid.
+	// TODO_BLOCKER(@bryanchriswhite, #516): assumes claiming at sessionClaimWindowOpenHeight is valid.
 	// This will likely change in future work.
 	triggerClaimBlock := testblock.NewAnyTimesBlock(t, emptyBlockHash, sessionClaimWindowOpenHeight)
 	blockPublishCh <- triggerClaimBlock
@@ -118,7 +118,7 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 	// TODO_IMPROVE: ensure correctness of persisted session trees here.
 
 	// Publish a block to the blockPublishCh to trigger proof submission for the session.
-	// TODO_TECHDEBT(#516): assumes proving at sessionClaimWindowOpenHeight + 1 is valid.
+	// TODO_BLOCKER(@bryanchriswhite, #516): assumes proving at sessionClaimWindowOpenHeight + 1 is valid.
 	// This will likely change in future work.
 	triggerProofBlock := testblock.NewAnyTimesBlock(t, emptyBlockHash, sessionClaimWindowOpenHeight+1)
 	blockPublishCh <- triggerProofBlock

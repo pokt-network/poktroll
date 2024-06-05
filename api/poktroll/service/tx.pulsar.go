@@ -1818,9 +1818,7 @@ func (*MsgUpdateParamsResponse) Descriptor() ([]byte, []int) {
 // MsgAddService defines a message for adding a new message to the network.
 // Services can be added by any actor in the network making them truly
 // permissionless.
-// TODO_DOCUMENT(@h5law): This is a key function in making services
-// permissionless, document it's usage and design - in docusaurus covering how
-// the entire process works.
+// TODO_BETA: Add Champions / Sources once its fully defined.
 type MsgAddService struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

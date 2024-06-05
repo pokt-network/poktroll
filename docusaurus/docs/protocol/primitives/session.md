@@ -7,7 +7,7 @@ sidebar_position: 1
 
 :::warning
 
-TODO(@Olshansk): This is just a placeholder. Use the session part of the [utility spec](https://github.com/pokt-network/pocket-network-protocol/tree/main/utility) to fill this section out.
+TODO_DOCUMENT(@Olshansk): This is just a placeholder. Use the session part of the [utility spec](https://github.com/pokt-network/pocket-network-protocol/tree/main/utility) to fill this section out.
 
 :::
 

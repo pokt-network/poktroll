@@ -19,8 +19,8 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-// TODO(@h5law): Expand coverage with more test cases when more request types
-// are implemented in the partials package.
+// TODO_TEST(@red-0ne): Expand coverage with more test cases when more request
+// types are implemented in the partials package.
 func TestPartials_GetErrorReply(t *testing.T) {
 	_, logCtx := testpolylog.NewLoggerWithCtx(
 		context.Background(),
@@ -46,18 +46,18 @@ func TestPartials_GetErrorReply(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
-			name:          "invalid json - unrecognised payload",
+			name:          "invalid json - unrecognized payload",
 			err:           errors.New("test error"),
 			payload:       []byte(`{"invalid": "payload"}`),
 			expectedReply: nil,
-			expectedErr:   ErrPartialUnrecognisedRequestFormat,
+			expectedErr:   ErrPartialUnrecognizedRequestFormat,
 		},
 		{
-			name:          "invalid - unrecognised payload",
+			name:          "invalid - unrecognized payload",
 			err:           errors.New("test error"),
 			payload:       []byte("invalid payload"),
 			expectedReply: nil,
-			expectedErr:   ErrPartialUnrecognisedRequestFormat,
+			expectedErr:   ErrPartialUnrecognizedRequestFormat,
 		},
 	}
 

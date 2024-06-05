@@ -38,7 +38,7 @@ func TestGenesisState_Validate(t *testing.T) {
 						RootHash: []byte{1, 2, 3},
 					},
 				},
-				// TODO_BLOCKER: finish genesis proof list validation.
+				// TODO_TEST: finish genesis proof list validation.
 				//ProofList: []types.Proof{
 				//	{
 				//		SupplierAddress:    sample.AccAddress(),
@@ -112,7 +112,7 @@ func TestGenesisState_Validate(t *testing.T) {
 			},
 			isValid: false,
 		},
-		// TODO_BLOCKER: finish genesis proof list validation.
+		// TODO_TEST:: finish genesis proof list validation.
 		//{
 		//	desc: "duplicated proof",
 		//	genState: &types.GenesisState{
