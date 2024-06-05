@@ -224,7 +224,7 @@ func (s *suite) TheModuleParamShouldBeUpdated(moduleName, paramName string) {
 	s.assertExpectedModuleParamsUpdated(moduleName)
 }
 
-// AllModuleParamsShouldBeSetToTheirDefaultValues asserts that all module params are set to their default values.
+// AllModuleParamsShouldBeSetToTheirDefaultValues ensures that all module params are set to their default values.
 func (s *suite) AllModuleParamsAreResetToTheirDefaultValues() {
 	var anyMsgs []*types.Any
 
