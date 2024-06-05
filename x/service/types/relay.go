@@ -84,7 +84,7 @@ func (res RelayResponse) GetSignableBytesHash() ([32]byte, error) {
 // and SupplierSignature fields.
 // TODO_TEST: Add tests for RelayResponse validation
 func (res *RelayResponse) ValidateBasic() error {
-	// TODO_FUTURE: if a client gets a response with an invalid/incomplete
+	// TODO: if a client gets a response with an invalid/incomplete
 	// SessionHeader, consider sending an on-chain challenge, lowering their
 	// QoS, or other future work.
 

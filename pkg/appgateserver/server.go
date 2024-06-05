@@ -224,7 +224,7 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 	// Put the request body bytes back into the request body.
 	request.Body = io.NopCloser(bytes.NewBuffer(requestPayloadBz))
 
-	// TODO(@h5law, @red0ne): Add support for asynchronous relays, and switch on
+	// TODO_IMPROVE(@red-0ne): Add support for asynchronous relays, and switch on
 	// the request type here.
 	// TODO_RESEARCH: Should this be started in a goroutine, to allow for
 	// concurrent requests from numerous applications?

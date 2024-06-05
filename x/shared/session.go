@@ -5,8 +5,8 @@ import sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 // SessionGracePeriodBlocks is the number of blocks after the session ends before the
 // "session grace period" is considered to have elapsed.
 //
-// TODO_BLOCKER: This is a place-holder that will be removed once the respective
-// governance parameter is implemented.
+// TODO_BLOCKER(@bryanchriswhite): This is a place-holder that will be removed
+// once the respective governance parameter is implemented.
 const SessionGracePeriodBlocks = 4
 
 // GetSessionStartHeight returns the block height at which the session containing
@@ -20,7 +20,7 @@ func GetSessionStartHeight(sharedParams *sharedtypes.Params, queryHeight int64) 
 
 	numBlocksPerSession := int64(sharedParams.GetNumBlocksPerSession())
 
-	// TODO_BLOCKER(#543): If the num_blocks_per_session param has ever been changed,
+	// TODO_BLOCKER(@bryanchriswhite, #543): If the num_blocks_per_session param has ever been changed,
 	// this function may cause unexpected behavior.
 	return queryHeight - ((queryHeight - 1) % numBlocksPerSession)
 }
@@ -52,7 +52,7 @@ func GetSessionNumber(sharedParams *sharedtypes.Params, queryHeight int64) int64
 
 	numBlocksPerSession := int64(sharedParams.GetNumBlocksPerSession())
 
-	// TODO_BLOCKER(#543): If the num_blocks_per_session param has ever been changed,
+	// TODO_BLOCKER(@bryanchriswhite, #543): If the num_blocks_per_session param has ever been changed,
 	// this function may cause unexpected behavior.
 	return ((queryHeight - 1) / numBlocksPerSession) + 1
 }

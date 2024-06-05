@@ -28,7 +28,7 @@ func init() {
 }
 
 // IsValidService checks if the provided ServiceId struct has valid fields
-// TODO_TECHDEBT: Refactor to a `Service#ValidateBasic` method.
+// TODO_TECHDEBT(BETA): Refactor to a `Service#ValidateBasic` method.
 func IsValidService(service *sharedtypes.Service) bool {
 	// Check if service Id and Name are valid using the provided helper functions
 	return service != nil &&
@@ -37,7 +37,7 @@ func IsValidService(service *sharedtypes.Service) bool {
 }
 
 // IsValidServiceId checks if the input string is a valid serviceId
-// TODO_TECHDEBT: Refactor to a `ServiceId#ValidateBasic` method.
+// TODO_TECHDEBT(BETA): Refactor to a `ServiceId#ValidateBasic` method.
 func IsValidServiceId(serviceId string) bool {
 	// ServiceId CANNOT be empty
 	if len(serviceId) == 0 {

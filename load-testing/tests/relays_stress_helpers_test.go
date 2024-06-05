@@ -49,7 +49,7 @@ import (
 // actorLoadTestIncrementPlans is a struct that holds the parameters for incrementing
 // all actors over the course of the load test.
 //
-// TODO_UPNEXT(@red-One, @bryanchriswhite) move to a new file.
+// TODO_TECHDEBT(@bryanchriswhite): move to a new file.
 type actorLoadTestIncrementPlans struct {
 	apps             actorLoadTestIncrementPlan
 	gateways         actorLoadTestIncrementPlan
@@ -60,7 +60,7 @@ type actorLoadTestIncrementPlans struct {
 // actorLoadTestIncrementPlan is a struct that holds the parameters for incrementing
 // the number of any single actor type over the course of the load test.
 //
-// TODO_UPNEXT(@red-One, @bryanchriswhite) move to a new file.
+// TODO_TECHDEBT(@bryanchriswhite): move to a new file.
 type actorLoadTestIncrementPlan struct {
 	// initialActorCount is the number of actors which will be ready
 	// (i.e., funded, staked, and delegated, if applicable) at the start
@@ -716,7 +716,7 @@ func (s *relaysSuite) sendDelegateInitialAppsTxs(apps, gateways []*accountInfo) 
 // shouldIncrementActor returns true if the actor should be incremented based on
 // the sessionInfo provided and the actor's scaling parameters.
 //
-// TODO_UPNEXT(@red-One, @bryanchriswhite) move to a new file.
+// TODO_TECHDEBT(@bryanchriswhite): move to a new file.
 func (plan *actorLoadTestIncrementPlan) shouldIncrementActorCount(
 	sharedParams *sharedtypes.Params,
 	sessionInfo *sessionInfoNotif,
@@ -729,7 +729,7 @@ func (plan *actorLoadTestIncrementPlan) shouldIncrementActorCount(
 	}
 
 	initialSessionNumber := testsession.GetSessionNumberWithDefaultParams(startBlockHeight)
-	// TODO_TECHDEBT(#21): replace with gov param query when available.
+	// TODO_BLOCKER(@bryanchriswhite): replace with gov param query when available.
 	actorSessionIncRate := plan.blocksPerIncrement / int64(sharedParams.GetNumBlocksPerSession())
 	nextSessionNumber := sessionInfo.sessionNumber + 1 - initialSessionNumber
 	isSessionStartHeight := sessionInfo.blockHeight == sessionInfo.sessionStartBlockHeight
@@ -756,7 +756,7 @@ func (plan *actorLoadTestIncrementPlan) shouldIncrementSupplierCount(
 	}
 
 	initialSessionNumber := testsession.GetSessionNumberWithDefaultParams(startBlockHeight)
-	// TODO_TECHDEBT(#21): replace with gov param query when available.
+	// TODO_BLOCKER(@bryanchriswhite): replace with gov param query when available.
 	supplierSessionIncRate := plan.blocksPerIncrement / int64(sharedParams.GetNumBlocksPerSession())
 	nextSessionNumber := sessionInfo.sessionNumber + 1 - initialSessionNumber
 	isSessionEndHeight := sessionInfo.blockHeight == sessionInfo.sessionEndBlockHeight
@@ -913,7 +913,7 @@ func (s *relaysSuite) sendStakeGatewaysTxs(
 
 // signWithRetries signs the transaction with the keyName provided, retrying
 // up to maxRetries times if the signing fails.
-// TODO_INVESTIGATE: SignTx randomly fails at retrieving the account info with
+// TODO_MAINNET: SignTx randomly fails at retrieving the account info with
 // the error post failed: Post "http://localhost:36657": EOF. This might be due to
 // concurrent requests trying to access the same account info and needs to be investigated.
 func (s *relaysSuite) signWithRetries(
@@ -1016,7 +1016,7 @@ func (s *relaysSuite) waitUntilLatestBlockHeightEquals(targetHeight int64) int {
 		// If the latest block height is greater than the txResult height,
 		// then there is no way to know how many transactions to collect and the
 		// should be test is canceled.
-		// TODO_IMPROVEMENT: Cache the transactions count of each observed block
+		// TODO_MAINNET: Cache the transactions count of each observed block
 		// to avoid this issue.
 		if s.latestBlock.Height() > targetHeight {
 			s.Fatal("latest block height is greater than the txResult height; tx event not observed")
@@ -1048,7 +1048,7 @@ func (s *relaysSuite) sendRelay(iteration uint64, relayPayload string) (appAddre
 	// Use the pre-defined service ID that all application and suppliers are staking for.
 	gatewayUrl.Path = testedService.Id
 
-	// TODO_TECHDEBT: Capture the relay response to check for failing relays.
+	// TODO_MAINNET: Capture the relay response to check for failing relays.
 	// Send the relay request within a goroutine to avoid blocking the test batches
 	// when suppliers or gateways are unresponsive.
 	go func(gwURL, payload string) {

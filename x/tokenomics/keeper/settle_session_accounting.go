@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	// TODO_TECHDEBT: Retrieve this from the SMT package
+	// TODO_TECHDEBT(@Olshansk): Retrieve this from the SMT package
 	// The number of bytes expected to be contained in the root hash being
 	// claimed in order to represent both the digest and the sum.
 	smstRootSize = 40
@@ -29,7 +29,7 @@ const (
 // ASSUMPTION: It is assumed the caller of this function validated the claim
 // against a proof BEFORE calling this function.
 //
-// TODO_BLOCKER(@Olshansk): Is there a way to limit who can call this function?
+// TODO_MAINNET(@Olshansk): Research if there's a way to limit who can call this function?
 func (k Keeper) SettleSessionAccounting(
 	ctx context.Context,
 	claim *prooftypes.Claim,
@@ -75,7 +75,7 @@ func (k Keeper) SettleSessionAccounting(
 	// Retrieve the sum of the root as a proxy into the amount of work done
 	root := (smt.MerkleRoot)(claim.GetRootHash())
 
-	// TODO_DISCUSS: This check should be the responsibility of the SMST package
+	// TODO_BLOCKER(@Olshansk): This check should be the responsibility of the SMST package
 	// since it's used to get compute units from the root hash.
 	if root == nil || len(root) != smstRootSize {
 		logger.Error(fmt.Sprintf("received an invalid root hash of size: %d", len(root)))
@@ -153,13 +153,13 @@ func (k Keeper) SettleSessionAccounting(
 			settlementAmtuPOKT,
 			application.Stake,
 		))
-		// TODO_BLOCKER(@Olshansk, @RawthiL): The application was over-serviced in the last session so it basically
+		// TODO_MAINNET(@Olshansk, @RawthiL): The application was over-serviced in the last session so it basically
 		// goes "into debt". Need to design a way to handle this when we implement
 		// probabilistic proofs and add all the parameter logic. Do we touch the application balance?
 		// Do we just let it go into debt? Do we penalize the application? Do we unstake it? Etc...
 		settlementAmt = sdk.NewCoin("upokt", math.Int(application.Stake.Amount))
 		settlementAmtuPOKT = sdk.NewCoins(settlementAmt)
-		// TODO_BLOCKER: The application should be immediately unstaked at this point in time
+		// TODO_BLOCKER(@Olshansk): The application should be immediately unstaked at this point in time
 	}
 
 	// Burn uPOKT from the application module account which was held in escrow

@@ -25,7 +25,7 @@ This page is only relevant to you if you are part of the core protocol team at G
 - As a part of that ArgoCD Application we have resources such as StatefulSets and ConfigMaps that describe configuration and infrastructure to run validators and seed nodes. Examples:
   - [testnet-validated.yaml](https://github.com/pokt-network/protocol-infra/blob/main/clusters/protocol-us-central1/testnet-validated.yaml)
   - [testnet-validated-seed.yaml](https://github.com/pokt-network/protocol-infra/blob/main/clusters/protocol-us-central1/testnet-validated-seed.yaml)
-  <!-- TODO(@okdas): improve the setup because this requires an abstraction. -->
+  <!-- TODO_DOCUMENT(@okdas): improve the setup because this requires an abstraction. -->
 
 ## Version upgrade
 

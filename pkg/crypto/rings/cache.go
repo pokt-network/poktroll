@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"cosmossdk.io/depinject"
-	ring "github.com/noot/ring-go"
+	ring "github.com/pokt-network/ring-go"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/crypto"
