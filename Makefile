@@ -825,7 +825,7 @@ params_update_tokenomics_all: ## Update the tokenomics module params
 	poktrolld tx authz exec ./tools/scripts/params/tokenomics_all.json $(PARAM_FLAGS)
 
 .PHONY: params_update_tokenomics_compute_units_to_tokens_multiplier
-params_update_tokenomics_compute_units_to_tokens_multiplier: ## Update the tokenomics module params
+params_update_tokenomics_compute_units_to_tokens_multiplier: ## Update the tokenomics module compute_units_to_tokens_multiplier param
 	poktrolld tx authz exec ./tools/scripts/params/tokenomics_compute_units_to_tokens_multiplier.json $(PARAM_FLAGS)
 
 ### Proof Module Params ###
@@ -834,7 +834,7 @@ params_update_proof_all: ## Update the proof module params
 	poktrolld tx authz exec ./tools/scripts/params/proof_all.json $(PARAM_FLAGS)
 
 .PHONY: params_update_proof_min_relay_difficulty_bits
-params_update_proof_min_relay_difficulty_bits: ## Update the proof module params
+params_update_proof_min_relay_difficulty_bits: ## Update the proof module min_relay_difficulty_bits param
 	poktrolld tx authz exec ./tools/scripts/params/proof_min_relay_difficulty_bits.json $(PARAM_FLAGS)
 
 ### Shared Module Params ###
@@ -843,19 +843,19 @@ params_update_shared_all: ## Update the session module params
 	poktrolld tx authz exec ./tools/scripts/params/shared_all.json $(PARAM_FLAGS)
 
 .PHONY: params_update_shared_num_blocks_per_session
-params_update_shared_num_blocks_per_session: ## Update the shared module params
+params_update_shared_num_blocks_per_session: ## Update the shared module num_blocks_per_session param
 	poktrolld tx authz exec ./tools/scripts/params/shared_num_blocks_per_session.json $(PARAM_FLAGS)
 
 .PHONY: params_update_shared_claim_window_open_offset_blocks
-params_update_shared_claim_window_open_offset_blocks: ## Update the shared module params
+params_update_shared_claim_window_open_offset_blocks: ## Update the shared module claim_window_open_offset_blocks param
 	poktrolld tx authz exec ./tools/scripts/params/shared_claim_window_open_offset_blocks.json $(PARAM_FLAGS)
 
 .PHONY: params_update_shared_claim_window_close_offset_blocks
-params_update_shared_claim_window_close_offset_blocks: ## Update the shared module params
+params_update_shared_claim_window_close_offset_blocks: ## Update the shared module claim_window_close_offset_blocks param
 	poktrolld tx authz exec ./tools/scripts/params/shared_claim_window_close_offset_blocks.json $(PARAM_FLAGS)
 
 .PHONY: params_update_shared_proof_window_open_offset_blocks
-params_update_shared_proof_window_open_offset_blocks: ## Update the shared module params
+params_update_shared_proof_window_open_offset_blocks: ## Update the shared module proof_window_open_offset_blocks param
 	poktrolld tx authz exec ./tools/scripts/params/shared_proof_window_open_offset_blocks.json $(PARAM_FLAGS)
 
 .PHONY: params_query_all
