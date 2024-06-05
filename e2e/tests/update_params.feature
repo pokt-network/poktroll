@@ -42,6 +42,8 @@ Feature: Params Namespace
       | num_blocks_per_session           | 8     | int64 |
       | claim_window_open_offset_blocks  | 8     | int64 |
       | claim_window_close_offset_blocks | 8     | int64 |
+      | proof_window_open_offset_blocks  | 8     | int64 |
+      | proof_window_close_offset_blocks | 8     | int64 |
     Then all "shared" module params should be updated
 
   # NB: If you are reading this and any module has parameters that
