@@ -227,7 +227,6 @@ func (s *suite) TheModuleParamShouldBeUpdated(moduleName, paramName string) {
 // AllModuleParamsShouldBeSetToTheirDefaultValues asserts that all module params are set to their default values.
 func (s *suite) AllModuleParamsAreResetToTheirDefaultValues() {
 	var anyMsgs []*types.Any
-	authority := authtypes.NewModuleAddress(s.granterName).String()
 
 	// List of all module MsgUpdateParams types and their respective default param functions
 	modules := []struct {
@@ -247,7 +246,7 @@ func (s *suite) AllModuleParamsAreResetToTheirDefaultValues() {
 	for _, module := range modules {
 		msgUpdateParams := reflect.New(module.msgUpdateParamsType.Elem()).Interface().(proto.Message)
 		msgUpdateParamsValue := reflect.ValueOf(msgUpdateParams).Elem()
-		msgUpdateParamsValue.FieldByName("Authority").SetString(authority)
+		msgUpdateParamsValue.FieldByName("Authority").SetString(s.granteeName)
 		msgUpdateParamsValue.FieldByName("Params").Set(reflect.ValueOf(module.defaultParams))
 
 		anyMsg, err := types.NewAnyWithValue(msgUpdateParams)
@@ -256,7 +255,7 @@ func (s *suite) AllModuleParamsAreResetToTheirDefaultValues() {
 	}
 
 	file := s.newTempTxJSONFile(anyMsgs)
-	s.sendAuthzExecTx(authority, file.Name())
+	s.sendAuthzExecTx(s.granteeName, file.Name())
 }
 
 // TheModuleParamShouldBeSetToItsDefaultValue asserts that the given param for the
