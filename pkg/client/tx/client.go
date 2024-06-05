@@ -39,7 +39,7 @@ const (
 	txWithSenderAddrQueryFmt = "tm.event='Tx' AND message.sender='%s'"
 )
 
-// TODO_TECHDEBT(@bryanchriswhite/@h5law): Refactor this to use the EventsReplayClient
+// TODO_TECHDEBT(@bryanchriswhite): Refactor this to use the EventsReplayClient
 // In order to simplify the logic of the TxClient
 var _ client.TxClient = (*txClient)(nil)
 

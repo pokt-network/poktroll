@@ -34,7 +34,7 @@ jobs:
 
       # This is commented out because proto generated code is now tracked in the
       # repo so this step is skipped.
-      # TODO_IMPROVE: Have a step that regenerates the proto files and ensures
+      # TODO_IMPROVE(@okdas): Have a step that regenerates the proto files and ensures
       # if they are up to date. See https://github.com/pokt-network/poktroll/pull/544#issuecomment-2123063491
       # - name: Generate protobufs
       #   run: make proto_regen

@@ -20,9 +20,6 @@ import (
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-// TODO_TEST(@bryanchriswhite, @Olshansk): Improve tokenomics tests (i.e. checking balances)
-// once in-memory network integration tests are supported.
-
 func TestSettleSessionAccounting_HandleAppGoingIntoDebt(t *testing.T) {
 	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t)
 
@@ -59,7 +56,7 @@ func TestSettleSessionAccounting_HandleAppGoingIntoDebt(t *testing.T) {
 
 	err := keepers.SettleSessionAccounting(ctx, &claim)
 	require.NoError(t, err)
-	// TODO_BLOCKER: Need to make sure the application is unstaked at this point in time.
+	// TODO_TEST: Need to make sure the application is unstaked at this point in time.
 }
 
 func TestSettleSessionAccounting_ValidAccounting(t *testing.T) {

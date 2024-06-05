@@ -179,7 +179,7 @@ func parseEndpointRPCType(endpoint YAMLServiceEndpoint) (sharedtypes.RPCType, er
 	switch strings.ToLower(endpoint.RPCType) {
 	case "json_rpc":
 		return sharedtypes.RPCType_JSON_RPC, nil
-	// TODO(@red-0ne): This hasn't been implemented yet but is part of the
+	// TODO_BLOCKER(@red-0ne): This hasn't been implemented yet but is part of the
 	// configurations, which is why we're not returning an error here.
 	case "rest":
 		return sharedtypes.RPCType_REST, nil
