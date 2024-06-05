@@ -27,7 +27,7 @@ const (
 
 	// defaultRedelegationsReplayLimit is the number of redelegations that the
 	// replay observable returned by LastNRedelegations() will be able to replay.
-	// TODO_TECHDEBT/TODO_FUTURE: add a `redelegationsReplayLimit` field to the
+	// TODO_TECHDEBT: add a `redelegationsReplayLimit` field to the
 	// delegation client struct that defaults to this but can be overridden via
 	// an option in future work.
 	defaultRedelegationsReplayLimit = 100

@@ -147,7 +147,7 @@ flowchart
 
 ### Subscriptions
 
-_TODO_DOCUMENTATION(@bryanchriswhite): Add Legend_
+TODO_DOCUMENT(@bryanchriswhite): Add Legend
 
 ```mermaid
 ---

@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	ringtypes "github.com/athanorlabs/go-dleq/types"
-	ring "github.com/noot/ring-go"
+	ring "github.com/pokt-network/ring-go"
 )
 
 var _ Signer = (*RingSigner)(nil)

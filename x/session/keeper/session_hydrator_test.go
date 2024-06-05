@@ -51,7 +51,7 @@ func TestSession_HydrateSession_Success_BaseCase(t *testing.T) {
 }
 
 func TestSession_HydrateSession_Metadata(t *testing.T) {
-	// TODO_TECHDEBT: Extend these tests once `NumBlocksPerSession` is configurable.
+	// TODO_TEST: Extend these tests once `NumBlocksPerSession` is configurable.
 	// Currently assumes NumBlocksPerSession=4
 	tests := []struct {
 		desc        string
@@ -136,7 +136,7 @@ func TestSession_HydrateSession_Metadata(t *testing.T) {
 }
 
 func TestSession_HydrateSession_SessionId(t *testing.T) {
-	// TODO_TECHDEBT: Extend these tests once `NumBlocksPerSession` is configurable.
+	// TODO_TEST: Extend these tests once `NumBlocksPerSession` is configurable.
 	// Currently assumes NumBlocksPerSession=4
 	tests := []struct {
 		desc string
@@ -220,7 +220,7 @@ func TestSession_HydrateSession_SessionId(t *testing.T) {
 	}
 }
 
-// TODO_TECHDEBT: Expand these tests to account for application joining/leaving the network at different heights as well changing the services they support
+// TODO_TEST: Expand these tests to account for application joining/leaving the network at different heights as well changing the services they support
 func TestSession_HydrateSession_Application(t *testing.T) {
 	tests := []struct {
 		// Description
@@ -264,7 +264,7 @@ func TestSession_HydrateSession_Application(t *testing.T) {
 
 			expectedErr: types.ErrSessionHydration,
 		},
-		// TODO_TECHDEBT: Add tests for when:
+		// TODO_TEST: Add tests for when:
 		// - Application join/leaves (stakes/unstakes) altogether
 		// - Application adds/removes certain services mid-session
 		// - Application increases stakes mid-session
@@ -287,9 +287,9 @@ func TestSession_HydrateSession_Application(t *testing.T) {
 	}
 }
 
-// TODO_TECHDEBT: Expand these tests to account for supplier joining/leaving the network at different heights as well changing the services they support
+// TODO_TEST: Expand these tests to account for supplier joining/leaving the network at different heights as well changing the services they support
 func TestSession_HydrateSession_Suppliers(t *testing.T) {
-	// TODO_TECHDEBT: Extend these tests once `NumBlocksPerSession` is configurable.
+	// TODO_TEST: Extend these tests once `NumBlocksPerSession` is configurable.
 	// Currently assumes NumSupplierPerSession=15
 	tests := []struct {
 		// Description
@@ -321,11 +321,11 @@ func TestSession_HydrateSession_Suppliers(t *testing.T) {
 			numExpectedSuppliers: 1,
 			expectedErr:          nil,
 		},
-		// TODO_TECHDEBT: Add this test once we make the num suppliers per session configurable
+		// TODO_TEST: Add this test once we make the num suppliers per session configurable
 		// {
 		// 	name: "num_suppliers_available > num_suppliers_per_session_param",
 		// },
-		// TODO_TECHDEBT: Add tests for when:
+		// TODO_TEST: Add tests for when:
 		// - Supplier join/leaves (stakes/unstakes) altogether
 		// - Supplier adds/removes certain services mid-session
 		// - Supplier increases stakes mid-session

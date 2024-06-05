@@ -12,7 +12,6 @@ message Params {
   option (gogoproto.equal) = true;
 
   // The amount of upokt that a compute unit should translate to when settling a session.
-  // TODO_DOCUMENT(@Olshansk): Make sure to document the units of this parameter (or the map) once finalized.
   uint64 compute_units_to_tokens_multiplier = 1 [(gogoproto.jsontag) = "compute_units_to_tokens_multiplier", (gogoproto.moretags) = "yaml:\"compute_units_to_tokens_multiplier\""];
 
   // IMPORTANT: Make sure to update all related files if you're modifying or adding a new parameter.

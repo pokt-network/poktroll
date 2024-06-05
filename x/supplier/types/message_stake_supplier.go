@@ -29,7 +29,8 @@ func (msg *MsgStakeSupplier) ValidateBasic() error {
 		return ErrSupplierInvalidAddress.Wrapf("invalid supplier address %s; (%v)", msg.Address, err)
 	}
 
-	// TODO_TECHDEBT: Centralize stake related verification and share across different parts of the source code
+	// TODO_MAINNET: Centralize stake related verification and share across different
+	// parts of the source code
 	// Validate the stake amount
 	if msg.Stake == nil {
 		return ErrSupplierInvalidStake.Wrap("nil supplier stake")

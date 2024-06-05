@@ -5,12 +5,6 @@ title: LocalNet
 
 # LocalNet <!-- omit in toc -->
 
-<!--
-  TODO_IMPROVE(@olshansk, @okdas):
-  - Add a video showing how to use & run LocalNet
-  - Add a component diagram outlining the infrastructure
-  -  -->
-
 ## Background <!-- omit in toc -->
 
 This document walks you through launching a LocalNet that brings up a k8s cluster
@@ -102,9 +96,6 @@ The local cluster is dependant on the latest available helm charts available at
 If you need to modify Kubernetes resources in your local setup, follow these steps.
 
 Clone the helm charts locally:
-
-TODO_TECHDEBT(@okdas): Embed `helm-charts` in this repo so we are always using a
-local version.
 
 ```bash
 cd .. && git clone git@github.com:pokt-network/helm-charts.git

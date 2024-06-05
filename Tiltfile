@@ -41,7 +41,7 @@ localnet_config_defaults = {
         "count": 1,
         "delve": {"enabled": False},
     },
-    # TODO(#511): Add support for `REST` and enabled this.
+    # TODO_BLOCKER(@red-0ne, #511): Add support for `REST` and enabled this.
     "ollama": {
         "enabled": False,
         "model": "qwen:0.5b",
@@ -143,7 +143,7 @@ secret_create_generic(
 configmap_create(
     "poktrolld-configs", from_file=listdir("localnet/poktrolld/config/"), watch=True
 )
-# TODO(@okdas): Import validator keys when we switch to `poktrolld` helm chart
+# TODO_BLOCKER(@okdas): Import validator keys when we switch to `poktrolld` helm chart
 # by uncommenting the following lines:
 # load("ext://secret", "secret_create_generic")
 # secret_create_generic(
