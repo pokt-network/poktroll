@@ -118,11 +118,7 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 	}
 
 	// Validate the session header.
-	if _, err := k.queryAndValidateSessionHeader(
-		ctx,
-		sessionHeader,
-		supplierAddr,
-	); err != nil {
+	if _, err := k.queryAndValidateSessionHeader(ctx, msg); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 	logger.Info("queried and validated the session header")

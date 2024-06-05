@@ -25,16 +25,16 @@ var defaultMerkleRoot = []byte{0, 1, 0, 1}
 
 func TestMsgServer_CreateClaim_Success(t *testing.T) {
 	tests := []struct {
-		desc           string
-		getClaimHeight func(
+		desc              string
+		getClaimMsgHeight func(
 			ctx context.Context,
 			keepers *keepertest.ProofModuleKeepers,
 			sessionHeader *sessiontypes.SessionHeader,
 		) int64
 	}{
 		{
-			desc: "claim window open height",
-			getClaimHeight: func(
+			desc: "claim message height equals claim window open height",
+			getClaimMsgHeight: func(
 				ctx context.Context,
 				keepers *keepertest.ProofModuleKeepers,
 				sessionHeader *sessiontypes.SessionHeader,
@@ -47,8 +47,8 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 			},
 		},
 		{
-			desc: "claim window close height minus one",
-			getClaimHeight: func(
+			desc: "claim message height equals claim window close height minus one",
+			getClaimMsgHeight: func(
 				ctx context.Context,
 				keepers *keepertest.ProofModuleKeepers,
 				sessionHeader *sessiontypes.SessionHeader,
@@ -104,7 +104,7 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 			sessionHeader := sessionRes.GetSession().GetHeader()
 
 			// Increment the block height to the test claim height.
-			testClaimHeight := test.getClaimHeight(ctx, keepers, sessionHeader)
+			testClaimHeight := test.getClaimMsgHeight(ctx, keepers, sessionHeader)
 			sdkCtx = sdkCtx.WithBlockHeight(testClaimHeight)
 			ctx = sdkCtx
 
@@ -133,7 +133,7 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 	}
 }
 
-func TestMsgServer_CreateClaim_OutsideOfWindow(t *testing.T) {
+func TestMsgServer_CreateClaim_Error_OutsideOfWindow(t *testing.T) {
 	// Set block height to 1 so there is a valid session on-chain.
 	blockHeightOpt := keepertest.WithBlockHeight(1)
 	keepers, ctx := keepertest.NewProofModuleKeepers(t, blockHeightOpt)
@@ -185,13 +185,13 @@ func TestMsgServer_CreateClaim_OutsideOfWindow(t *testing.T) {
 	)
 
 	tests := []struct {
-		desc        string
-		claimHeight int64
-		expectedErr error
+		desc           string
+		claimMsgHeight int64
+		expectedErr    error
 	}{
 		{
-			desc:        "claim window open height minus one",
-			claimHeight: claimWindowOpenHeight - 1,
+			desc:           "claim message height equals claim window open height minus one",
+			claimMsgHeight: claimWindowOpenHeight - 1,
 			expectedErr: types.ErrProofClaimOutsideOfWindow.Wrapf(
 				"current block height %d is less than session claim window open height %d",
 				claimWindowOpenHeight-1,
@@ -199,8 +199,8 @@ func TestMsgServer_CreateClaim_OutsideOfWindow(t *testing.T) {
 			),
 		},
 		{
-			desc:        "claim window close height plus one",
-			claimHeight: claimWindowCloseHeight + 1,
+			desc:           "claim message height equals claim window close height plus one",
+			claimMsgHeight: claimWindowCloseHeight + 1,
 			expectedErr: types.ErrProofClaimOutsideOfWindow.Wrapf(
 				"current block height %d is greater than session claim window close height %d",
 				claimWindowCloseHeight+1,
@@ -212,7 +212,7 @@ func TestMsgServer_CreateClaim_OutsideOfWindow(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
 			// Increment the block height to the test claim height.
-			sdkCtx = sdkCtx.WithBlockHeight(test.claimHeight)
+			sdkCtx = sdkCtx.WithBlockHeight(test.claimMsgHeight)
 			ctx = sdkCtx
 
 			// Attempt to create a claim at the test claim height.

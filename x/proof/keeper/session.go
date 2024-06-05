@@ -11,14 +11,22 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
+type msgWithSessionAndSupplier interface {
+	GetSessionHeader() *sessiontypes.SessionHeader
+	GetSupplierAddress() string
+}
+
 // queryAndValidateSessionHeader ensures that a session with the sessionID of the given session
 // header exists and that this session includes the supplier with the given address.
+// It returns a session which is hydrated with the on-chain session data.
 func (k msgServer) queryAndValidateSessionHeader(
 	ctx context.Context,
-	sessionHeader *sessiontypes.SessionHeader,
-	supplierAddr string,
+	msg msgWithSessionAndSupplier,
 ) (*sessiontypes.Session, error) {
-	logger := k.Logger()
+	logger := k.Logger().With("method", "queryAndValidateSessionHeader")
+
+	sessionHeader := msg.GetSessionHeader()
+	supplierAddr := msg.GetSupplierAddress()
 
 	sessionReq := &sessiontypes.QueryGetSessionRequest{
 		ApplicationAddress: sessionHeader.GetApplicationAddress(),
@@ -73,20 +81,22 @@ func (k msgServer) queryAndValidateSessionHeader(
 }
 
 // validateClaimWindow returns an error if the given session is not eligible for claiming.
+// It *assumes* that the msg's session header is a valid on-chain session with correct
+// height fields. First call #queryAndValidateSessionHeader to ensure any user-provided
+// session header is valid and correctly hydrated.
 func (k msgServer) validateClaimWindow(
 	ctx context.Context,
-	sessionHeader *sessiontypes.SessionHeader,
+	msg *types.MsgCreateClaim,
 ) error {
-	logger := k.Logger()
-
+	logger := k.Logger().With("method", "validateClaimWindow")
+	sessionHeader := msg.GetSessionHeader()
 	sharedParams := k.sharedKeeper.GetParams(ctx)
 
-	// Get the on-chain session end height for the given session header.
-	sessionEndHeight := shared.GetSessionEndHeight(&sharedParams, sessionHeader.GetSessionEndBlockHeight())
+	sessionEndHeight := sessionHeader.GetSessionEndBlockHeight()
 
 	// Get the claim window open and close heights for the given session header.
-	claimWindowOpenHeight := shared.GetClaimWindowOpenHeight(&sharedParams, sessionHeader.GetSessionEndBlockHeight())
-	claimWindowCloseHeight := shared.GetClaimWindowCloseHeight(&sharedParams, sessionHeader.GetSessionEndBlockHeight())
+	claimWindowOpenHeight := shared.GetClaimWindowOpenHeight(&sharedParams, sessionEndHeight)
+	claimWindowCloseHeight := shared.GetClaimWindowCloseHeight(&sharedParams, sessionEndHeight)
 
 	// Get the current block height.
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
@@ -116,6 +126,7 @@ func (k msgServer) validateClaimWindow(
 			"session_end_height", sessionEndHeight,
 			"claim_window_open_height", claimWindowOpenHeight,
 			"claim_window_close_height", claimWindowCloseHeight,
+			"supplier_addr", msg.GetSupplierAddress(),
 		).
 		Debug("validated claim window")
 
