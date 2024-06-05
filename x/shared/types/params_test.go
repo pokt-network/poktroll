@@ -100,3 +100,33 @@ func TestParams_ValidateClaimWindowCloseOffsetBlocks(t *testing.T) {
 		})
 	}
 }
+
+func TestParams_ValidateProofWindowOpenOffsetBlocks(t *testing.T) {
+	tests := []struct {
+		desc                        string
+		claimWindowOpenOffsetBlocks any
+		err                         error
+	}{
+		{
+			desc:                        "invalid type",
+			claimWindowOpenOffsetBlocks: "invalid",
+			err:                         ErrSharedParamInvalid.Wrapf("invalid parameter type: %T", "invalid"),
+		},
+		{
+			desc:                        "valid ProofWindowOpenOffsetBlocks",
+			claimWindowOpenOffsetBlocks: uint64(4),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			err := ValidateProofWindowOpenOffsetBlocks(tt.claimWindowOpenOffsetBlocks)
+			if tt.err != nil {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), tt.err.Error())
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}

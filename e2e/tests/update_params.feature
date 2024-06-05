@@ -62,6 +62,7 @@ Feature: Params Namespace
       | shared     | /poktroll.shared.MsgUpdateParam     | num_blocks_per_session             | 8           | int64      |
       | shared     | /poktroll.shared.MsgUpdateParam     | claim_window_open_offset_blocks    | 8           | int64      |
       | shared     | /poktroll.shared.MsgUpdateParam     | claim_window_close_offset_blocks   | 8           | int64      |
+      | shared     | /poktroll.shared.MsgUpdateParam     | proof_window_open_offset_blocks    | 8           | int64      |
 
   Scenario: An unauthorized user cannot update individual module params
     Given the user has the pocketd binary installed
