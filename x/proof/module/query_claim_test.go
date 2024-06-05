@@ -70,7 +70,7 @@ func TestClaim_Show(t *testing.T) {
 			// NB: this is *NOT* a gRPC status error because the bech32 parse
 			// error occurs during request validation (i.e. client-side).
 			expectedErr: types.ErrProofInvalidAddress.Wrapf(
-				// TODO_CONSIDERATION: prefer using "%q" in error format strings
+				// TODO_TECHDEBT: prefer using "%q" in error format strings
 				// to disambiguate empty string from space or no output.
 				"invalid supplier address for claim being retrieved %s; (decoding bech32 failed: invalid separator index -1)",
 				"invalid_bech32_supplier_address",

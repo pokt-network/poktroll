@@ -1,3 +1,3 @@
 package proof
 
-// TODO_NEXT(@bryanchriswhite #140): add comprehensive CLI test coverage for creating claims.
+// TODO_TEST(@bryanchriswhite, #140): add comprehensive CLI test coverage for creating claims.

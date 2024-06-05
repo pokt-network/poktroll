@@ -97,7 +97,7 @@ func RunEventMethodTests(
 	// method to call on the logger using reflect and for the sub-test
 	// descriptions.
 	//
-	// TODO_TECHDEBT/TODO_COMMUNITY: `strings.Title()` is deprecated. Follow
+	// TODO_TECHDEBT: `strings.Title()` is deprecated. Follow
 	// migration guidance in godocs: https://pkg.go.dev/strings@go1.21.4#Title.
 	levelMethodName := strings.Title(level.String())
 

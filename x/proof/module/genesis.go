@@ -8,7 +8,6 @@ import (
 )
 
 // InitGenesis initializes the module's state from a provided genesis state.
-// TODO_TECHDEBT(@Olshansk): Remove existing claims from genesis.
 func InitGenesis(ctx context.Context, k keeper.Keeper, genState types.GenesisState) {
 	// Set all the claim
 	for _, claim := range genState.ClaimList {

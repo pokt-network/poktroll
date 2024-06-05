@@ -31,7 +31,4 @@ func TestMsgUpdateParam_UpdateMinRelayDifficultyBitsOnly(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, uint64(expectedMinRelayDifficultyBits), res.Params.MinRelayDifficultyBits)
-
-	// TODO_BLOCKER: once we have more than one param per module, add assertions
-	// here which ensure that other params were not changed!
 }

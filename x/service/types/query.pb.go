@@ -116,7 +116,7 @@ func (m *QueryParamsResponse) GetParams() Params {
 }
 
 type QueryGetServiceRequest struct {
-	// TODO: We could support getting services by name.
+	// TODO_IMPROVE: We could support getting services by name.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 }
 

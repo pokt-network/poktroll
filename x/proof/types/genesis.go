@@ -20,7 +20,7 @@ func (gs GenesisState) Validate() error {
 
 	// Ensure claims are unique with respect to a given session ID and supplier address.
 	for _, claim := range gs.ClaimList {
-		// TODO_BLOCKER: ensure the corresponding supplier exists and is staked.
+		// TODO_TEST: ensure the corresponding supplier exists and is staked.
 
 		if claim.GetRootHash() == nil {
 			return fmt.Errorf("root hash cannot be nil")
