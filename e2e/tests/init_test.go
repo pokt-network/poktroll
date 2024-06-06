@@ -34,6 +34,10 @@ import (
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
+const (
+	numQueryRetries = uint8(3)
+)
+
 var (
 	addrRe          *regexp.Regexp
 	amountRe        *regexp.Regexp
@@ -358,7 +362,7 @@ func (s *suite) TheSessionForApplicationAndServiceContainsTheSupplier(appName st
 		serviceId,
 		fmt.Sprintf("--%s=json", cometcli.OutputFlag),
 	}
-	res, err := s.pocketd.RunCommandOnHost("", argsAndFlags...)
+	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, argsAndFlags...)
 	require.NoError(s, err, "error getting session for app %s and service %q", appName, serviceId)
 
 	var resp sessiontypes.QueryGetSessionResponse
@@ -402,7 +406,7 @@ func (s *suite) getStakedAmount(actorType, accName string) (int, bool) {
 		actorType,
 		fmt.Sprintf("list-%s", actorType),
 	}
-	res, err := s.pocketd.RunCommandOnHost("", args...)
+	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, args...)
 	require.NoError(s, err, "error getting %s", actorType)
 	s.pocketd.result = res
 
@@ -448,7 +452,7 @@ func (s *suite) buildAppMap() {
 		"list-application",
 		fmt.Sprintf("--%s=json", cometcli.OutputFlag),
 	}
-	res, err := s.pocketd.RunCommandOnHost("", argsAndFlags...)
+	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, argsAndFlags...)
 	require.NoError(s, err, "error getting application list")
 	s.pocketd.result = res
 	var resp apptypes.QueryAllApplicationsResponse
@@ -467,7 +471,7 @@ func (s *suite) buildSupplierMap() {
 		"list-supplier",
 		fmt.Sprintf("--%s=json", cometcli.OutputFlag),
 	}
-	res, err := s.pocketd.RunCommandOnHost("", argsAndFlags...)
+	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, argsAndFlags...)
 	require.NoError(s, err, "error getting supplier list")
 	s.pocketd.result = res
 	var resp suppliertypes.QueryAllSuppliersResponse
@@ -489,7 +493,7 @@ func (s *suite) getAccBalance(accName string) int {
 		"balances",
 		accNameToAddrMap[accName],
 	}
-	res, err := s.pocketd.RunCommandOnHost("", args...)
+	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, args...)
 	require.NoError(s, err, "error getting balance")
 	s.pocketd.result = res
 

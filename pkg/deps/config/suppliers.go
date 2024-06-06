@@ -11,6 +11,7 @@ import (
 	"github.com/cosmos/gogoproto/grpc"
 	"github.com/spf13/cobra"
 
+	"github.com/pokt-network/poktroll/pkg/appgateserver/sdkadapter"
 	"github.com/pokt-network/poktroll/pkg/client/block"
 	"github.com/pokt-network/poktroll/pkg/client/delegation"
 	"github.com/pokt-network/poktroll/pkg/client/events"
@@ -19,7 +20,6 @@ import (
 	txtypes "github.com/pokt-network/poktroll/pkg/client/tx/types"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/pkg/polylog"
-	"github.com/pokt-network/poktroll/pkg/sdk"
 )
 
 // SupplierFn is a function that is used to supply a depinject config.
@@ -69,7 +69,7 @@ func NewSupplyEventsQueryClientFn(queryNodeRPCURL *url.URL) SupplierFn {
 		_ *cobra.Command,
 	) (depinject.Config, error) {
 		// Convert the host to a websocket URL
-		queryNodeWebsocketURL := sdk.RPCToWebsocketURL(queryNodeRPCURL)
+		queryNodeWebsocketURL := events.RPCToWebsocketURL(queryNodeRPCURL)
 		eventsQueryClient := events.NewEventsQueryClient(queryNodeWebsocketURL)
 
 		return depinject.Configs(deps, depinject.Supply(eventsQueryClient)), nil
@@ -341,9 +341,9 @@ func NewSupplyRingCacheFn() SupplierFn {
 	}
 }
 
-// NewSupplyPOKTRollSDKFn supplies a depinject config with a POKTRollSDK given
+// NewSupplyShannonSDKFn supplies a depinject config with a ShannonSDK given
 // the signing key name.
-func NewSupplyPOKTRollSDKFn(signingKeyName string) SupplierFn {
+func NewSupplyShannonSDKFn(signingKeyName string) SupplierFn {
 	return func(
 		ctx context.Context,
 		deps depinject.Config,
@@ -367,14 +367,13 @@ func NewSupplyPOKTRollSDKFn(signingKeyName string) SupplierFn {
 			return nil, err
 		}
 
-		config := &sdk.POKTRollSDKConfig{PrivateKey: privateKey, Deps: deps}
-		poktrollSDK, err := sdk.NewPOKTRollSDK(ctx, config)
+		shannonSDK, err := sdkadapter.NewShannonSDKAdapter(ctx, privateKey, deps)
 		if err != nil {
 			return nil, err
 		}
 
 		// Supply the session querier to the provided deps
-		return depinject.Configs(deps, depinject.Supply(poktrollSDK)), nil
+		return depinject.Configs(deps, depinject.Supply(shannonSDK)), nil
 	}
 }
 

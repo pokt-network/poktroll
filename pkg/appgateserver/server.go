@@ -21,7 +21,7 @@ import (
 	querytypes "github.com/pokt-network/poktroll/pkg/client/query/types"
 	"github.com/pokt-network/poktroll/pkg/partials"
 	"github.com/pokt-network/poktroll/pkg/polylog"
-	"github.com/pokt-network/poktroll/pkg/sdk"
+	"github.com/pokt-network/shannon-sdk/sdk"
 )
 
 // SigningInformation is a struct that holds information related to the signing
@@ -57,9 +57,9 @@ type appGateServer struct {
 	// and get the public key to verify the relay response signature.
 	clientCtx querytypes.Context
 
-	// sdk is the POKTRollSDK that the appGateServer uses to query for the current session
+	// sdk is the ShannonSDK that the appGateServer uses to query for the current session
 	// and send relay requests to the supplier.
-	sdk sdk.POKTRollSDK
+	sdk *sdk.ShannonSDK
 
 	// listeningEndpoint is the endpoint that the appGateServer will listen on.
 	listeningEndpoint *url.URL
@@ -123,6 +123,9 @@ func NewAppGateServer(
 
 	// TODO_CONSIDERATION: Use app.listeningEndpoint scheme to determine which
 	// kind of server to create (HTTP, HTTPS, TCP, UNIX, etc...)
+	// TODO_RESEARCH(#590): Currently, the communication between the AppGateServer and the
+	// RelayMiner uses HTTP. This could be changed to a more generic and performant
+	// one, such as pure TCP.
 	app.server = &http.Server{Addr: app.listeningEndpoint.Host}
 
 	return app, nil
@@ -169,9 +172,8 @@ func (app *appGateServer) Stop(ctx context.Context) error {
 func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	ctx := app.logger.WithContext(request.Context())
 
-	// Extract the serviceId from the request path.
-	path := request.URL.Path
-	serviceId := strings.Split(path, "/")[1]
+	newUrlPath, serviceId := extractServiceId(request.URL.Path)
+	request.URL.Path = newUrlPath
 
 	// Read the request body bytes.
 	requestPayloadBz, err := io.ReadAll(request.Body)
@@ -199,6 +201,7 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 	app.logger.Debug().Msg("determining request type")
 
 	// Get the type of the request by doing a partial unmarshal of the payload
+	// TODO_BLOCKER(#511): Move request RPCType detection to shannon-sdk
 	requestType, err := partials.GetRequestType(ctx, requestPayloadBz)
 	if err != nil {
 		app.replyWithError(ctx, requestPayloadBz, writer, serviceId, "unknown", ErrAppGateHandleRelay)
@@ -301,6 +304,29 @@ func (app *appGateServer) ServePprof(ctx context.Context, addr string) error {
 	}()
 
 	return nil
+}
+
+// extractServiceId extracts the serviceId from the request path and returns it
+// along with the new request path that is stripped of the serviceId.
+func extractServiceId(urlPath string) (newUrlPath string, serviceId string) {
+	// Extract the serviceId from the request path.
+	serviceId = strings.Split(urlPath, "/")[1]
+
+	// Remove the serviceId from the request path which is specific AppGateServer business logic.
+	// The remaining path is the path of the request that will be serialized and
+	// sent to sent to the supplier within a RelayRequest.
+	// For example:
+	// * Assume a request to the Backend service has to be made with the path "/backend/relay"
+	// * The AppGateServer expects the request from the client to have the path
+	//   "/serviceId/backend/relay"
+	// * The AppGateServer will remove the serviceId from the path, serialize the request
+	// and send it to the supplier with the path "/backend/relay"
+	//
+	// This is specific logic to how the AppGateServer functions. Other gateways
+	// may have different means or approaches of identifying the service that the
+	// request is for (e.g. POST data).
+	newUrlPath = strings.Replace(urlPath, serviceId, "", 1)
+	return newUrlPath, serviceId
 }
 
 type appGateServerOption func(*appGateServer)

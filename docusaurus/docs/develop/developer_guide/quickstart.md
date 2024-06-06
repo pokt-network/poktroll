@@ -131,7 +131,7 @@ There are some flaky tests, so you can re-run with the following command without
 needing to regenerate the mocks and types:
 
 ```bash
-make go_test
+make test_all
 ```
 
 ### 1.4 Create a `k8s` cluster
