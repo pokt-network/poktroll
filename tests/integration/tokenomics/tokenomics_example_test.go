@@ -1,6 +1,7 @@
 package integration_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -56,20 +57,35 @@ func TestTokenomicsIntegrationExample(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, uint64(11), uint64(updateTokenomicsParamRes.Params.ComputeUnitsToTokensMultiplier))
 
-	// Commit & finalize the current block, then moving to the next one.
-	integrationApp.NextBlock(t)
-
 	// Prepare a request to query a session so it can be used to create a claim.
 	sessionQueryClient := sessiontypes.NewQueryClient(integrationApp.QueryHelper())
 	getSessionReq := sessiontypes.QueryGetSessionRequest{
 		ApplicationAddress: integrationApp.DefaultApplication.Address,
 		Service:            integrationApp.DefaultService,
-		BlockHeight:        3,
+		BlockHeight:        integrationApp.SdkCtx().BlockHeight(),
 	}
+
 	// Query the session
 	getSessionRes, err := sessionQueryClient.GetSession(integrationApp.SdkCtx(), &getSessionReq)
 	require.NoError(t, err)
 	require.NotNil(t, getSessionRes, "unexpected nil queryResponse")
+	sessionEndHeight := int(getSessionRes.Session.Header.SessionEndBlockHeight)
+
+	// Figure out how many blocks we need to wait until the claim window is open
+	// Query and validate the default shared params
+	sharedQueryClient = sharedtypes.NewQueryClient(integrationApp.QueryHelper())
+	sharedParamsReq = sharedtypes.QueryParamsRequest{}
+	sharedQueryRes, err = sharedQueryClient.Params(integrationApp.SdkCtx(), &sharedParamsReq)
+	require.NoError(t, err)
+	claimOpenWindowNumBlocks := int(sharedQueryRes.Params.ClaimWindowOpenOffsetBlocks)
+
+	// Need to wait until the claim window is open
+	currentBlockHeight := int(integrationApp.SdkCtx().BlockHeight())
+	numBlocksUntilClaimWindowIsOpen := int(sessionEndHeight + claimOpenWindowNumBlocks - currentBlockHeight)
+	fmt.Println("OLSH", numBlocksUntilClaimWindowIsOpen, sessionEndHeight, claimOpenWindowNumBlocks, currentBlockHeight)
+	for i := 0; i < numBlocksUntilClaimWindowIsOpen; i++ {
+		integrationApp.NextBlock(t)
+	}
 
 	// Create a new claim
 	createClaimMsg := prooftypes.MsgCreateClaim{

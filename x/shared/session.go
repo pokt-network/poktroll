@@ -76,16 +76,24 @@ func IsGracePeriodElapsed(sessionEndHeight, currentHeight int64) bool {
 func GetClaimWindowOpenHeight(sharedParams *sharedtypes.Params, queryHeight int64) int64 {
 	sessionEndHeight := GetSessionEndHeight(sharedParams, queryHeight)
 
-	// An additional block is added to permit to relays arriving at the last block
-	// of the session to be included in the claim before the smt is closed.
-	sessionGracePeriodEndHeight := GetSessionGracePeriodEndHeight(sessionEndHeight)
 	claimWindowOpenOffsetBlocks := int64(sharedParams.GetClaimWindowOpenOffsetBlocks())
-	return claimWindowOpenOffsetBlocks + sessionGracePeriodEndHeight + 1
+	// TODO_IN_THIS_PR_DISCUSS: I don't think this should include `sessionGracePeriodEndHeight` because:
+	//     1. Window should open irrespective of grace period.
+	//     2. If, during the grace period, a new claim is submitted. It is upserted.
+	//     3. The soonest a claim window should open is "EndSession + ClaimWindowOpen"
+	// TODO_IN_THIS_PR: Why is there a `+1`	here?
+	// return claimWindowOpenOffsetBlocks + sessionGracePeriodEndHeight + 1
+	return sessionEndHeight + claimWindowOpenOffsetBlocks
 }
 
 // GetClaimWindowCloseHeight returns the block height at which the claim window of
 // the session that includes queryHeight closes, given the passed sharedParams.
 func GetClaimWindowCloseHeight(sharedParams *sharedtypes.Params, queryHeight int64) int64 {
+	sessionEndHeight := GetSessionEndHeight(sharedParams, queryHeight)
+	// An additional block is added to permit to relays arriving at the last block
+	// of the session to be included in the claim before the smt is closed.
+	sessionGracePeriodEndHeight := GetSessionGracePeriodEndHeight(sessionEndHeight)
 	return GetClaimWindowOpenHeight(sharedParams, queryHeight) +
+		sessionGracePeriodEndHeight +
 		int64(sharedParams.GetClaimWindowCloseOffsetBlocks())
 }

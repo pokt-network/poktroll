@@ -395,7 +395,7 @@ test_e2e_params: test_e2e_env ## Run only the E2E suite that exercises parameter
 	go test -v ./e2e/tests/... -tags=e2e,test --features-path=update_params.feature
 
 .PHONY: test_load_relays_stress
-test_load_relays_stress: ## Run the stress test for E2E relays on a persistent (non-ephemeral) remote chains
+test_load_relays_stress: ## Run the stress test for E2E relays on a persistent (non-ephemeral) remote chain
 	go test -v -count=1 ./load-testing/tests/... \
 	-tags=load,test -run LoadRelays --log-level=debug --timeout=30m \
 	--manifest ./load-testing/loadtest_manifest.yaml
