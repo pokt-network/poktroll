@@ -1,6 +1,15 @@
 .SILENT:
 
 SHELL = /bin/sh
+
+# TODO_IMPROVE: Look into how we can we source `.env.dev` and have everything
+# here work.
+
+# ifneq (,$(wildcard .env))
+# include .env
+# export $(shell sed 's/=.*//' .env)
+# endif
+
 POKTROLLD_HOME ?= ./localnet/poktrolld
 POCKET_NODE ?= tcp://127.0.0.1:36657 # The pocket node (validator in the localnet context)
 TESTNET_RPC ?= https://testnet-validated-validator-rpc.poktroll.com/ # TestNet RPC endpoint for validator maintained by Grove. Needs to be update if there's another "primary" testnet.
@@ -106,6 +115,10 @@ help: ## Prints all the targets in all the Makefiles
 ##############
 ### Checks ###
 ##############
+
+# TODO_DOCUMENT: All of the `check_` helpers can be installed differently depending
+# on the user's OS and environment.
+# NB: For mac users, you may need to install with the proper linkers: https://github.com/golang/go/issues/65940
 
 .PHONY: check_go_version
 # Internal helper target - check go version
@@ -303,7 +316,7 @@ localnet_down: ## Delete resources created by localnet
 	tilt down
 
 .PHONY: localnet_regenesis
-localnet_regenesis: check_yq acc_initialize_pubkeys_warn_message ## Regenerate the localnet genesis file
+localnet_regenesis: check_yq warn_message_acc_initialize_pubkeys ## Regenerate the localnet genesis file
 # NOTE: intentionally not using --home <dir> flag to avoid overwriting the test keyring
 	@echo "Initializing chain..."
 	@set -e
@@ -348,7 +361,7 @@ go_imports: check_go_version ## Run goimports on all go files
 #############
 
 .PHONY: test_e2e_env
-test_e2e_env: acc_initialize_pubkeys_warn_message ## Setup the default env vars for E2E tests
+test_e2e_env: warn_message_acc_initialize_pubkeys ## Setup the default env vars for E2E tests
 	export POCKET_NODE=$(POCKET_NODE) && \
 	export APPGATE_SERVER=$(APPGATE_SERVER) && \
 	export POKTROLLD_HOME=../../$(POKTROLLD_HOME)
@@ -382,36 +395,32 @@ test_e2e_params: test_e2e_env ## Run only the E2E suite that exercises parameter
 	go test -v ./e2e/tests/... -tags=e2e,test --features-path=update_params.feature
 
 .PHONY: test_load_relays_stress
-test_load_relays_stress: ## Run the stress test for E2E relays on non-ephemeral chains
+test_load_relays_stress: ## Run the stress test for E2E relays on a persistent (non-ephemeral) remote chains
 	go test -v -count=1 ./load-testing/tests/... \
 	-tags=load,test -run LoadRelays --log-level=debug --timeout=30m \
 	--manifest ./load-testing/loadtest_manifest.yaml
 
 .PHONY: test_load_relays_stress_localnet
-test_load_relays_stress_localnet: test_e2e_env ## Run the stress test for E2E relays.
+test_load_relays_stress_localnet: warn_message_local_stress_test test_e2e_env ## Run the stress test for E2E relays on LocalNet.
 	go test -v -count=1 ./load-testing/tests/... \
 	-tags=load,test -run LoadRelays --log-level=debug --timeout=30m \
 	--manifest ./load-testing/localnet_loadtest_manifest.yaml
 
-.PHONY: go_test_verbose
-go_test_verbose: check_go_version ## Run all go tests verbosely
+.PHONY: test_verbose
+test_verbose: check_go_version ## Run all go tests verbosely
 	go test -count=1 -v -race -tags test ./...
 
-.PHONY: go_test
-go_test: check_go_version ## Run all go tests showing detailed output only on failures
+.PHONY: test_all
+test_all: check_go_version ## Run all go tests showing detailed output only on failures
 	go test -count=1 -race -tags test ./...
 
-.PHONY: go_test_integration
-go_test_integration: check_go_version ## Run all go tests, including integration
+.PHONY: test_integration
+test_integration: check_go_version ## Run all go tests, including integration
 	go test -count=1 -v -race -tags test,integration ./...
 
 .PHONY: itest
 itest: check_go_version ## Run tests iteratively (see usage for more)
 	./tools/scripts/itest.sh $(filter-out $@,$(MAKECMDGOALS))
-# catch-all target for itest
-%:
-	# no-op
-	@:
 
 .PHONY: go_mockgen
 go_mockgen: ## Use `mockgen` to generate mocks used for testing purposes of all the modules.
@@ -437,7 +446,7 @@ go_testgen_accounts: ## Generate test accounts for usage in test environments
 go_develop: check_ignite_version proto_regen go_mockgen ## Generate protos and mocks
 
 .PHONY: go_develop_and_test
-go_develop_and_test: go_develop go_test ## Generate protos, mocks and run all tests
+go_develop_and_test: go_develop test_all ## Generate protos, mocks and run all tests
 
 #############
 ### TODOS ###
@@ -759,16 +768,33 @@ acc_initialize_pubkeys: ## Make sure the account keeper has public keys for all 
 			--node $(POCKET_NODE) \
 			--chain-id $(CHAIN_ID);)
 
-.PHONY: acc_initialize_pubkeys_warn_message
-acc_initialize_pubkeys_warn_message: ## Print a warning message about the need to run `make acc_initialize_pubkeys`
+########################
+### Warning Messages ###
+########################
+
+.PHONY: warn_message_acc_initialize_pubkeys
+warn_message_acc_initialize_pubkeys: ## Print a warning message about the need to run `make acc_initialize_pubkeys`
 	@echo "+----------------------------------------------------------------------------------+"
 	@echo "|                                                                                  |"
-	@echo "|     IMPORTANT: Please run the following command once to initialize E2E tests     |"
-	@echo "|     after the network has started:                                               |"
-	@echo "|         make acc_initialize_pubkeys                                              |"
+	@echo "|     IMPORTANT: Please run the following command once to initialize               |"
+	@echo "|                E2E tests after the network has started:                          |"
+	@echo "|                                                                                  |"
+	@echo "|     make acc_initialize_pubkeys                                                  |"
 	@echo "|                                                                                  |"
 	@echo "+----------------------------------------------------------------------------------+"
 
+.PHONY: warn_message_local_stress_test
+warn_message_local_stress_test: ## Print a warning message when kicking off a local E2E relay stress test
+	@echo "+-----------------------------------------------------------------------------------------------+"
+	@echo "|                                                                                               |"
+	@echo "|     IMPORTANT: Please read the following before continuing with the stress test.              |"
+	@echo "|                                                                                               |"
+	@echo "|     1. Review the # of suppliers & gateways in 'load-testing/localnet_loadtest_manifest.yaml' |"
+	@echo "|     2. Update 'localnet_config.yaml' to reflect what you found in (1)                         |"
+	@echo "|                                                                                               |"
+	@echo "|     TODO_DOCUMENT(@olshansk): Move this into proper documentation w/ clearer explanations     |"
+	@echo "|                                                                                               |"
+	@echo "+-----------------------------------------------------------------------------------------------+"
 
 ##############
 ### Claims ###
@@ -875,6 +901,10 @@ ignite_acc_list: ## List all the accounts in LocalNet
 ignite_poktrolld_build: check_go_version check_ignite_version ## Build the poktrolld binary using Ignite
 	ignite chain build --skip-proto --debug -v -o $(shell go env GOPATH)/bin
 
+.PHONY: ignite_openapi_gen
+ignite_openapi_gen: ## Generate the OpenAPI spec for the Ignite API
+	ignite generate openapi --yes
+
 ##################
 ### CI Helpers ###
 ##################
@@ -929,10 +959,6 @@ go_docs: check_godoc ## Generate documentation for the project
 	echo "Visit http://localhost:6060/pkg/github.com/pokt-network/poktroll/"
 	godoc -http=:6060
 
-.PHONY: openapi_gen
-openapi_gen: ## Generate the OpenAPI spec for the Ignite API
-	ignite generate openapi --yes
-
 .PHONY: docusaurus_start
 docusaurus_start: check_npm check_node ## Start the Docusaurus server
 	(cd docusaurus && npm i && npm run start)
@@ -984,3 +1010,11 @@ grove_staging_eth_block_height: ## Sends a relay through the staging grove gatew
 		-H 'Content-Type: application/json' \
 		-H 'Protocol: shannon-testnet' \
 		--data $(JSON_RPC_DATA_ETH_BLOCK_HEIGHT)
+
+#################
+### Catch all ###
+#################
+
+%:
+	@echo "Error: target '$@' not found."
+	@exit 1
