@@ -32,3 +32,26 @@ func TestMsgUpdateParam_UpdateMinRelayDifficultyBitsOnly(t *testing.T) {
 
 	require.Equal(t, uint64(expectedMinRelayDifficultyBits), res.Params.MinRelayDifficultyBits)
 }
+
+func TestMsgUpdateParam_UpdateProofRequestProbabilityOnly(t *testing.T) {
+	var expectedProofRequestProbability float32 = 0.1
+
+	// Set the parameters to their default values
+	k, msgSrv, ctx := setupMsgServer(t)
+	defaultParams := prooftypes.DefaultParams()
+	require.NoError(t, k.SetParams(ctx, defaultParams))
+
+	// Ensure the default values are different from the new values we want to set
+	require.NotEqual(t, uint64(expectedProofRequestProbability), defaultParams.ProofRequestProbability)
+
+	// Update the proof request probability
+	updateParamMsg := &prooftypes.MsgUpdateParam{
+		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+		Name:      prooftypes.ParamProofRequestProbability,
+		AsType:    &prooftypes.MsgUpdateParam_AsFloat{AsFloat: expectedProofRequestProbability},
+	}
+	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
+	require.NoError(t, err)
+
+	require.Equal(t, expectedProofRequestProbability, res.Params.ProofRequestProbability)
+}

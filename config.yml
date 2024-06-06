@@ -183,6 +183,9 @@ genesis:
     service:
       params:
         add_service_fee: "1000000000"
+    proof:
+      params:
+        proof_request_probability: "0.25"
     shared:
       params:
         num_blocks_per_session: 4

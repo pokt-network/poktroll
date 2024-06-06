@@ -11,8 +11,16 @@ message Params {
   option (amino.name) = "poktroll/x/proof/Params";
   option (gogoproto.equal) = true;
 
-  // The minimum difficulty in bits for a relay to be included in a Merkle proof.
+  // min_relay_difficulty_bits is the minimum difficulty in bits for a relay to
+  //  be included in a Merkle proof.
   uint64 min_relay_difficulty_bits = 1 [(gogoproto.jsontag) = "min_relay_difficulty_bits"];
+
+  // proof_request_probability is the probability of a session requiring a proof
+  // if it's cost is below the ProofRequirementThreshold.
+  float proof_request_probability = 2 [(gogoproto.jsontag) = "proof_request_probability"];
+
+  // TODO_UPNEXT(@bryanchriswhite, #579): Add proof_requirement_threshold
+  // TODO_UPNEXT(@bryanchriswhite, #579): Add proof_missing_penalty
 
   // IMPORTANT: Make sure to update all related files if you're modifying or adding a new parameter.
   // Try the following grep to find all related places: `grep -r compute_units_to_tokens_multiplier`

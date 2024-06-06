@@ -47,6 +47,14 @@ const (
 var (
 	blockHeaderHash         []byte
 	expectedMerkleProofPath []byte
+
+	// testProofParams sets:
+	//  - the minimum relay difficulty bits to zero so that these tests don't need to mine for valid relays.
+	//  - the proof request probability to 1 so that all test sessions require a proof.
+	testProofParams = types.Params{
+		MinRelayDifficultyBits:  0,
+		ProofRequestProbability: 1,
+	}
 )
 
 func init() {
@@ -85,9 +93,8 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 			sharedParams := keepers.SharedKeeper.GetParams(ctx)
 			sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 
-			// Ensure the minimum relay difficulty bits is set to zero so this test
-			// doesn't need to mine for valid relays.
-			err := keepers.Keeper.SetParams(ctx, types.NewParams(0))
+			// Set proof keeper params to disable relaymining and always require a proof.
+			err := keepers.Keeper.SetParams(ctx, testProofParams)
 			require.NoError(t, err)
 
 			// Construct a keyring to hold the keypairs for the accounts used in the test.
@@ -187,9 +194,8 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 	}
 	keepers, ctx := keepertest.NewProofModuleKeepers(t, opts...)
 
-	// Ensure the minimum relay difficulty bits is set to zero so this test
-	// doesn't need to mine for valid relays.
-	err := keepers.Keeper.SetParams(ctx, types.NewParams(0))
+	// Set proof keeper params to disable relaymining and always require a proof.
+	err := keepers.Keeper.SetParams(ctx, testProofParams)
 	require.NoError(t, err)
 
 	// Construct a keyring to hold the keypairs for the accounts used in the test.
@@ -326,7 +332,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 
 	// Ensure the minimum relay difficulty bits is set to zero so that test cases
 	// don't need to mine for valid relays.
-	err := keepers.Keeper.SetParams(ctx, types.NewParams(0))
+	err := keepers.Keeper.SetParams(ctx, testProofParams)
 	require.NoError(t, err)
 
 	// Construct a keyring to hold the keypairs for the accounts used in the test.
