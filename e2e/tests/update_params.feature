@@ -1,5 +1,10 @@
 Feature: Params Namespace
 
+  Scenario: All params are reset to their default values
+    Given the user has the pocketd binary installed
+    And an authz grant from the "gov" "module" account to the "pnf" "user" account for the "/poktroll.tokenomics.MsgUpdateParams" message exists
+    Then all module params are reset to their default values
+
   Scenario: An unauthorized user cannot update a module params
     Given the user has the pocketd binary installed
     And all "tokenomics" module params are set to their default values

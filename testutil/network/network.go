@@ -19,6 +19,7 @@ import (
 	appmodule "github.com/pokt-network/poktroll/x/application/module"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
+	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
@@ -222,6 +223,17 @@ func GatewayModuleGenesisStateWithAddresses(t *testing.T, addresses []string) *g
 		}
 		state.GatewayList = append(state.GatewayList, gateway)
 	}
+	return state
+}
+
+// ProofModuleGenesisStateWithClaims generates a GenesisState object with the
+// given claims. It returns the populated GenesisState object.
+func ProofModuleGenesisStateWithClaims(t *testing.T, claims []prooftypes.Claim) *prooftypes.GenesisState {
+	t.Helper()
+
+	state := prooftypes.DefaultGenesis()
+	state.ClaimList = claims
+
 	return state
 }
 
