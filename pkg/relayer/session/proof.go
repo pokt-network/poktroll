@@ -160,9 +160,9 @@ func (rs *relayerSessionsManager) newMapProveSessionsFn(
 		}
 
 		// Submit proofs for each supplier address in `sessionTrees`.
-		for k, _ := range sessionProofs {
+		for supplierAddr := range sessionProofs {
 			// SubmitProof ensures on-chain proof inclusion so we can safely prune the tree.
-			if err := rs.supplierClients.SupplierClients[k].SubmitProofs(ctx, sessionProofs[k]); err != nil {
+			if err := rs.supplierClients.SupplierClients[supplierAddr].SubmitProofs(ctx, sessionProofs[supplierAddr]); err != nil {
 				failedSubmitProofSessionsCh <- sessionTrees
 				return either.Error[[]relayer.SessionTree](err), false
 			}

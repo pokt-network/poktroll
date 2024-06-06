@@ -399,7 +399,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			desc: "relay must be deserializable",
 			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
 				// Construct a session tree to which we'll add 1 unserializable relay.
-				mangledRelaySessionTree := newEmptySessionTree(t, validSessionHeader)
+				mangledRelaySessionTree := newEmptySessionTree(t, validSessionHeader, supplierAddr)
 
 				// Add the mangled relay to the session tree.
 				err = mangledRelaySessionTree.Update([]byte{1}, mangledRelayBz, 1)
@@ -556,7 +556,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 
 				// Construct a session tree with 1 relay with a session header containing
 				// a session ID that doesn't match the expected session ID.
-				invalidRequestSignatureSessionTree := newEmptySessionTree(t, validSessionHeader)
+				invalidRequestSignatureSessionTree := newEmptySessionTree(t, validSessionHeader, supplierAddr)
 
 				// Add the relay to the session tree.
 				err = invalidRequestSignatureSessionTree.Update([]byte{1}, invalidRequestSignatureRelayBz, 1)
@@ -618,7 +618,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 
 				// Construct a session tree with 1 relay with a session header containing
 				// a session ID that doesn't match the expected session ID.
-				invalidResponseSignatureSessionTree := newEmptySessionTree(t, validSessionHeader)
+				invalidResponseSignatureSessionTree := newEmptySessionTree(t, validSessionHeader, supplierAddr)
 
 				// Add the relay to the session tree.
 				err = invalidResponseSignatureSessionTree.Update([]byte{1}, relayBz, 1)
@@ -930,7 +930,7 @@ func newFilledSessionTree(
 	t.Helper()
 
 	// Initialize an empty session tree with the given session header.
-	sessionTree := newEmptySessionTree(t, sessionTreeHeader)
+	sessionTree := newEmptySessionTree(t, sessionTreeHeader, supplierAddr)
 
 	// Add numRelays of relays to the session tree.
 	fillSessionTree(
@@ -949,6 +949,7 @@ func newFilledSessionTree(
 func newEmptySessionTree(
 	t *testing.T,
 	sessionTreeHeader *sessiontypes.SessionHeader,
+	supplierAddr string,
 ) relayer.SessionTree {
 	t.Helper()
 
@@ -961,9 +962,12 @@ func newEmptySessionTree(
 		_ = os.RemoveAll(testSessionTreeStoreDir)
 	})
 
+	AccAddress := cosmostypes.MustAccAddressFromBech32(supplierAddr)
+
 	// Construct a session tree to add relays to and generate a proof from.
 	sessionTree, err := session.NewSessionTree(
 		sessionTreeHeader,
+		&AccAddress,
 		testSessionTreeStoreDir,
 		func(*sessiontypes.SessionHeader) {},
 	)

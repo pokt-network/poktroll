@@ -263,7 +263,7 @@ func (st *sessionTree) StartClaiming() error {
 	return nil
 }
 
-// SupplierAddress
+// SupplierAddress returns a CosmosSDK address of the supplier this sessionTree belongs to.
 func (st *sessionTree) SupplierAddress() *cosmostypes.AccAddress {
 	return st.supplierAddress
 }

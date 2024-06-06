@@ -254,7 +254,7 @@ func supplyTxContext(
 	deps depinject.Config,
 	_ *cobra.Command,
 ) (depinject.Config, error) {
-	// TODO_IN_THIS_PR: do we need new context per key?
+	// TODO_CONSIDERATION: do we need new context per key?
 	txContext, err := tx.NewTxContext(deps)
 	if err != nil {
 		return nil, err

@@ -78,9 +78,9 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	}
 
 	// Check if the relayRequest is allowed to be served by the relayer proxy.
+	_, isSupplierAddressPresent := rp.AddressToSigningKeyNameMap[meta.GetSupplierAddress()]
 	for _, supplier := range session.Suppliers {
-		// TODO_IN_THIS_PR: does that make sense?
-		_, isSupplierAddressPresent := rp.supplierAddresses[meta.GetSupplierAddress()]
+		// Verify if the supplier address in the session matches the one in the relayRequest.
 		if isSupplierAddressPresent && supplier.Address == meta.GetSupplierAddress() {
 			return nil
 		}

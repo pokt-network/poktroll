@@ -168,8 +168,8 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 		}
 
 		// Create claims for each supplier address in `sessionTrees`.
-		for k, _ := range sessionClaims {
-			if err := rs.supplierClients.SupplierClients[k].CreateClaims(ctx, sessionClaims[k]); err != nil {
+		for supplierAddr := range sessionClaims {
+			if err := rs.supplierClients.SupplierClients[supplierAddr].CreateClaims(ctx, sessionClaims[supplierAddr]); err != nil {
 				failedCreateClaimsSessionsPublishCh <- sessionTrees
 				return either.Error[[]relayer.SessionTree](err), false
 			}

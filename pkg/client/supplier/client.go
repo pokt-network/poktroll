@@ -143,6 +143,7 @@ func (sClient *supplierClient) CreateClaims(
 	return <-errCh
 }
 
+// Address returns an address of the supplier client.
 func (sClient *supplierClient) Address() *cosmostypes.AccAddress {
 	return &sClient.signingKeyAddr
 }

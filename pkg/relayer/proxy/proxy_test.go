@@ -138,7 +138,7 @@ func TestRelayerProxy_StartAndStop(t *testing.T) {
 	// Create a RelayerProxy
 	rp, err := proxy.NewRelayerProxy(
 		test.Deps,
-		proxy.WithSigningKeyName(supplierKeyName),
+		proxy.WithSigningKeyNames([]string{supplierKeyName}),
 		proxy.WithServicesConfigMap(servicesConfigMap),
 	)
 	require.NoError(t, err)
@@ -170,7 +170,7 @@ func TestRelayerProxy_InvalidSupplierKeyName(t *testing.T) {
 
 	rp, err := proxy.NewRelayerProxy(
 		test.Deps,
-		proxy.WithSigningKeyName("wrongKeyName"),
+		proxy.WithSigningKeyNames([]string{"wrongKeyName"}),
 		proxy.WithServicesConfigMap(servicesConfigMap),
 	)
 	require.NoError(t, err)
@@ -186,7 +186,7 @@ func TestRelayerProxy_MissingSupplierKeyName(t *testing.T) {
 
 	_, err := proxy.NewRelayerProxy(
 		test.Deps,
-		proxy.WithSigningKeyName(""),
+		proxy.WithSigningKeyNames([]string{""}),
 		proxy.WithServicesConfigMap(servicesConfigMap),
 	)
 	require.Error(t, err)
@@ -200,7 +200,7 @@ func TestRelayerProxy_EmptyServicesConfigMap(t *testing.T) {
 
 	_, err := proxy.NewRelayerProxy(
 		test.Deps,
-		proxy.WithSigningKeyName(supplierKeyName),
+		proxy.WithSigningKeyNames([]string{supplierKeyName}),
 		proxy.WithServicesConfigMap(make(map[string]*config.RelayMinerServerConfig)),
 	)
 	require.Error(t, err)
@@ -235,7 +235,7 @@ func TestRelayerProxy_UnsupportedRpcType(t *testing.T) {
 
 	rp, err := proxy.NewRelayerProxy(
 		test.Deps,
-		proxy.WithSigningKeyName(supplierKeyName),
+		proxy.WithSigningKeyNames([]string{supplierKeyName}),
 		proxy.WithServicesConfigMap(servicesConfigMap),
 	)
 	require.NoError(t, err)
@@ -289,7 +289,7 @@ func TestRelayerProxy_UnsupportedTransportType(t *testing.T) {
 
 	rp, err := proxy.NewRelayerProxy(
 		test.Deps,
-		proxy.WithSigningKeyName(supplierKeyName),
+		proxy.WithSigningKeyNames([]string{supplierKeyName}),
 		proxy.WithServicesConfigMap(unsupportedTransportProxy),
 	)
 	require.NoError(t, err)
@@ -332,7 +332,7 @@ func TestRelayerProxy_NonConfiguredSupplierServices(t *testing.T) {
 
 	rp, err := proxy.NewRelayerProxy(
 		test.Deps,
-		proxy.WithSigningKeyName(supplierKeyName),
+		proxy.WithSigningKeyNames([]string{supplierKeyName}),
 		proxy.WithServicesConfigMap(missingServicesProxy),
 	)
 	require.NoError(t, err)
@@ -523,7 +523,7 @@ func TestRelayerProxy_Relays(t *testing.T) {
 
 			rp, err := proxy.NewRelayerProxy(
 				testBehavior.Deps,
-				proxy.WithSigningKeyName(supplierKeyName),
+				proxy.WithSigningKeyNames([]string{supplierKeyName}),
 				proxy.WithServicesConfigMap(servicesConfigMap),
 			)
 			require.NoError(t, err)

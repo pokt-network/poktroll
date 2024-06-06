@@ -24,6 +24,7 @@ message RelayRequestMetadata {
   // application in both cases.
   bytes signature = 2;
 
+  // TODO_IN_THIS_PR: Re-evaluate
   // The supplier address the relay is sent to. It is being used on the RelayMiner to 
   // route to the correct supplier.
   string supplier_address = 3 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the application, using cosmos' ScalarDescriptor to ensure deterministic encoding

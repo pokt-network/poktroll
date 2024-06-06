@@ -87,6 +87,7 @@ type RelayRequestMetadata struct {
 	// application has delegated to. The signature is made using the ring of the
 	// application in both cases.
 	Signature []byte `protobuf:"bytes,2,opt,name=signature,proto3" json:"signature,omitempty"`
+	// TODO_IN_THIS_PR: Re-evaluate
 	// The supplier address the relay is sent to. It is being used on the RelayMiner to
 	// route to the correct supplier.
 	SupplierAddress string `protobuf:"bytes,3,opt,name=supplier_address,json=supplierAddress,proto3" json:"supplier_address,omitempty"`

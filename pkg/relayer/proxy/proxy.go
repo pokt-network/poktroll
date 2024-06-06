@@ -64,10 +64,11 @@ type relayerProxy struct {
 	// ringCache is used to obtain and store the ring for the application.
 	ringCache crypto.RingCache
 
-	// supplierAddresses are the address of the suppliers that the relayer proxy is running for.
-	// We use this in relay verification to check if we should process the relay, and to
-	// resolve which signing key name to use for signing.
-	supplierAddresses map[string]string
+	// AddressToSigningKeyNameMap is a map with CosmoSDK address as a key, and their keyring signing key name as a value
+	// We use this map in:
+	// 1. Relay verification to check if the incoming relay matches the supplier hosted by the relay miner;
+	// 2. Relay signing to resolve which keyring key name to use for signing;
+	AddressToSigningKeyNameMap map[string]string
 }
 
 // NewRelayerProxy creates a new relayer proxy with the given dependencies or returns
