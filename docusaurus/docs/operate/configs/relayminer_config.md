@@ -15,7 +15,10 @@ and which domains to accept queries from._
 - [Usage](#usage)
 - [Structure](#structure)
 - [Global options](#global-options)
-  - [`signing_key_name`](#signing_key_name)
+  - [`default_signing_key_names`](#default_signing_key_names)
+    - [Example Configuration](#example-configuration)
+    - [How It Works](#how-it-works)
+    - [Benefits](#benefits)
   - [`smt_store_path`](#smt_store_path)
   - [`metrics`](#metrics)
   - [`pprof`](#pprof)
@@ -25,6 +28,10 @@ and which domains to accept queries from._
   - [`tx_node_rpc_url`](#tx_node_rpc_url)
 - [Suppliers](#suppliers)
   - [`service_id`](#service_id)
+  - [`signing_key_names`](#signing_key_names)
+    - [Example Configuration](#example-configuration-1)
+    - [How It Works](#how-it-works-1)
+    - [Benefits](#benefits-1)
   - [`listen_url`](#listen_url)
   - [`service_config`](#service_config)
     - [`backend_url`](#backend_url)
@@ -104,22 +111,39 @@ and `supplier` specific sections and configurations.
 ## Global options
 
 ```yaml
-signing_key_name: <string>
+default_signing_key_names: [ <string>, <string> ]
 smt_store_path: <string>
 ```
 
-### `signing_key_name`
+### `default_signing_key_names`
 
-_`Required`_
+_`Required`_ if `suppliers.*.signing_key_names` is not specified. 
 
-The name of the key that will be used to sign transactions, derive the public key
-and the corresponding address. This key name MUST be present in the keyring that is used
-to start the `RelayMiner` instance.
+This configuration option specifies a list of key names from the keyring that the `RelayMiner` will use to sign transactions. These keys are used to derive the public key and the corresponding address, which are essential for interacting with the Pocket network. Each key name listed here must be present in the keyring used to start the `RelayMiner` instance.
+
+#### Example Configuration
+```yaml
+default_signing_key_names:
+  - keyname1
+  - keyname2
+```
+
+In this example, `keyname1` and `keyname2` are the names of keys in the keyring that will be used to sign transactions.
+
+#### How It Works
+
+- If a supplier does not specify its own `signing_key_names`, the supplier will use the keys listed in `default_signing_key_names`.
+- You can specify more than one key, allowing the `RelayMiner` to operate multiple suppliers with different keys/addresses.
+- This setup is useful for running multiple RelayMiner instances across different regions or for redundancy.
+
+#### Benefits
+
+- **Redundancy**: Multiple RelayMiner instances can be configured with the same signing keys to provide redundant or geographically distributed services.
+- **Flexibility**: Allows for the configuration of multiple suppliers with different keys if needed.
 
 :::note
 
-Multiple `RelayMiner`s can be configured with the same `signing_key_name` to
-sign `RelayResponse`s and submit `Claim`s and `Proof`s transactions to the Pocket
+Multiple `RelayMiner`s can be configured with the same signing keys to sign `RelayResponse`s and submit `Claim`s and `Proof`s transactions to the Pocket
 network. (e.g. This is useful for a `Supplier` that is willing to provide redundant
 or geographically distributed services.)
 
@@ -127,19 +151,19 @@ or geographically distributed services.)
 flowchart
 
     subgraph USW[US West]
-        RM1["Relay Miner 1 <br> (signing_key_name=Supplier1)"]
+        RM1["Relay Miner 1 <br> (signing_key_names=[Supplier1])"]
     end
 
     subgraph USE[US East]
-        RM2["Relay Miner 2 <br> (signing_key_name=Supplier1)"]
+        RM2["Relay Miner 2 <br> (signing_key_names=[Supplier1])"]
     end
 
     subgraph EUC[EU Central]
-        RM3["Relay Miner 3 <br> (signing_key_name=Supplier1)"]
+        RM3["Relay Miner 3 <br> (signing_key_names=[Supplier1])"]
     end
 
     subgraph CAC[CA Central]
-        RM4["Relay Miner 4 <br> (signing_key_name=Supplier2)"]
+        RM4["Relay Miner 4 <br> (signing_key_names=[Supplier2])"]
     end
 
     subgraph PB[POKT Blockchain]
@@ -154,10 +178,7 @@ flowchart
     S2 -.- RM4
 ```
 
-TODO(#528): It is not currently possible to have a single `RelayMiner` instance
-running with multiple `signing_key_name`s as this would involve more complex logic
-and/or configuration to determine which key to use, especially in the case of
-`Supplier`s that have overlapping services provided.
+TODO(#528): Currently, it is not possible to run a single RelayMiner instance with multiple `signing_key_names` due to the complexity in determining which key to use for each supplier, especially if suppliers have overlapping services. This feature will be available once issue #528 is resolved.
 
 TL;DR A 1:N Supplier:RelayMiner is possible, but a 1:N RelayMiner:Supplier relationship
 is not until #528 is complete.
@@ -281,6 +302,41 @@ a service provided by the `Supplier` and served by the `RelayMiner` instance.
 
 It MUST match the `Service.Id` specified by the supplier when staking for the
 service.
+
+### `signing_key_names`
+
+_`Required`_ if `default_signing_key_names` is empty.
+
+This option specifies the list of signing key names specific to a supplier. If a supplier does not provide its own `signing_key_names`, the `RelayMiner` will use the `default_signing_key_names`.
+
+#### Example Configuration
+
+```yaml
+default_signing_key_names:
+  - supplier_key2
+  - supplier_key3
+suppliers:
+  # This supplier will only run for `supplier_key1` and `supplier_key4` keys
+  - service_id: supplier1
+    signing_key_names:
+      - supplier_key1
+      - supplier_key4
+    # ... the rest of the config
+
+  # This supplier will only run for `supplier_key2` and `supplier_key3` keys
+  - service_id: supplier2
+    signing_key_names: []
+    # ... the rest of the config
+```
+#### How It Works
+
+- If `signing_key_names` are specified for a supplier, the `RelayMiner` will use these keys instead of the `default_signing_key_names`.
+- This allows each supplier to have a unique set of keys for signing transactions, providing flexibility and better key management.
+
+#### Benefits
+
+- **Granular Control**: Allows each supplier to have its own specific keys, enhancing security and management.
+- **Fallback Mechanism**: If signing_key_names are not specified, the RelayMiner falls back to `default_signing_key_names`, ensuring continuity of operations.
 
 ### `listen_url`
 
