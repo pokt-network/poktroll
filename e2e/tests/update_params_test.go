@@ -46,7 +46,7 @@ func (s *suite) AllModuleParamsAreSetToTheirDefaultValues(moduleName string) {
 		"params",
 		fmt.Sprintf("--%s=json", cometcli.OutputFlag),
 	}
-	res, err := s.pocketd.RunCommandOnHost("", argsAndFlags...)
+	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, argsAndFlags...)
 	require.NoError(s, err)
 
 	switch moduleName {
@@ -134,7 +134,7 @@ func (s *suite) AnAuthzGrantFromTheAccountToTheAccountForTheMessageExists(
 		granterAddr, granteeAddr, msgType,
 		fmt.Sprintf("--%s=json", cometcli.OutputFlag),
 	}
-	res, err := s.pocketd.RunCommandOnHost("", argsAndFlags...)
+	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, argsAndFlags...)
 	require.NoError(s, err)
 
 	// Unmarshal the JSON response into the grantsRes struct.
@@ -335,7 +335,7 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 		"params",
 		fmt.Sprintf("--%s=json", cometcli.OutputFlag),
 	}
-	res, err := s.pocketd.RunCommandOnHost("", argsAndFlags...)
+	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, argsAndFlags...)
 	require.NoError(s, err)
 
 	switch moduleName {

@@ -4,7 +4,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/pokt-network/poktroll/pkg/sdk"
+	sdktypes "github.com/pokt-network/shannon-sdk/types"
+
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -16,15 +17,15 @@ import (
 func (app *appGateServer) getRelayerUrl(
 	serviceId string,
 	rpcType sharedtypes.RPCType,
-	supplierEndpoints []*sdk.SingleSupplierEndpoint,
+	supplierEndpoints []*sdktypes.SingleSupplierEndpoint,
 	request *http.Request,
-) (supplierEndpoint *sdk.SingleSupplierEndpoint, err error) {
+) (supplierEndpoint *sdktypes.SingleSupplierEndpoint, err error) {
 	// Filter out the supplier endpoints that match the requested serviceId.
-	validSupplierEndpoints := make([]*sdk.SingleSupplierEndpoint, 0, len(supplierEndpoints))
+	validSupplierEndpoints := make([]*sdktypes.SingleSupplierEndpoint, 0, len(supplierEndpoints))
 
 	for _, supplierEndpoint := range supplierEndpoints {
 		// Skip services that don't match the requested serviceId.
-		if supplierEndpoint.Header.Service.Id != serviceId {
+		if supplierEndpoint.SessionHeader.Service.Id != serviceId {
 			continue
 		}
 
