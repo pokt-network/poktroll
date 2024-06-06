@@ -2,7 +2,10 @@ package appgateserver
 
 import (
 	"context"
+	"io"
 	"net/http"
+
+	sdktypes "github.com/pokt-network/shannon-sdk/types"
 
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -33,27 +36,53 @@ func (app *appGateServer) handleSynchronousRelay(
 	}
 
 	// Get a supplier URL and address for the given service and session.
-	supplierEndpoint, err := app.getRelayerUrl(
-		serviceId,
-		rpcType,
-		sessionSuppliers.SuppliersEndpoints,
-		request,
-	)
+	endpoints := sessionSuppliers.SuppliersEndpoints
+	supplierEndpoint, err := app.getRelayerUrl(serviceId, rpcType, endpoints, request)
 	if err != nil {
 		return ErrAppGateHandleRelay.Wrapf("getting supplier URL: %s", err)
 	}
 
-	relayResponse, err := app.sdk.SendRelay(ctx, supplierEndpoint, *request)
+	// Serialize the request to be sent to the supplier as a RelayRequest.Payload
+	// which will include the url, request body, method, and headers.
+	requestBz, err := sdktypes.SerializeHTTPRequest(request)
+	if err != nil {
+		return ErrAppGateHandleRelay.Wrapf("serializing request: %s", err)
+	}
+
+	relayResponse, err := app.sdk.SendRelay(ctx, supplierEndpoint, requestBz)
 	if err != nil {
 		return err
 	}
 
+	// Deserialize the RelayResponse payload to get the serviceResponse that will
+	// be forwarded to the client.
+	serviceResponse, err := sdktypes.DeserializeHTTPResponse(relayResponse.Payload)
+	if err != nil {
+		return ErrAppGateHandleRelay.Wrapf("deserializing response: %s", err)
+	}
+	serviceResponseBodyBz, err := io.ReadAll(serviceResponse.Body)
+	serviceResponse.Body.Close()
+	if err != nil {
+		return ErrAppGateHandleRelay.Wrapf("reading response: body %s", err)
+	}
+
 	app.logger.Debug().
-		Str("relay_response_payload", string(relayResponse.Payload)).
+		Str("relay_response_payload", string(serviceResponseBodyBz)).
 		Msg("writing relay response payload")
 
-	// Reply with the RelayResponse payload.
-	if _, err := writer.Write(relayResponse.Payload); err != nil {
+	// Reply to the client with the service's response status code and headers.
+	// At this point the AppGateServer has not generated any internal errors, so
+	// the whole response will be forwarded to the client as is, including the
+	// status code and headers, be it an error or not.
+	writer.WriteHeader(serviceResponse.StatusCode)
+	for key, values := range serviceResponse.Header {
+		for _, value := range values {
+			writer.Header().Add(key, value)
+		}
+	}
+
+	// Transmit the service's response body to the client.
+	if _, err := writer.Write(serviceResponseBodyBz); err != nil {
 		return ErrAppGateHandleRelay.Wrapf("writing relay response payload: %s", err)
 	}
 

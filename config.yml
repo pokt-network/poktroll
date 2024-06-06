@@ -189,3 +189,4 @@ genesis:
         claim_window_open_offset_blocks: 0
         claim_window_close_offset_blocks: 4
         proof_window_open_offset_blocks: 0
+        proof_window_close_offset_blocks: 4

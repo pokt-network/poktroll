@@ -111,6 +111,16 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 		ringClient,
 	)
 
+	// Advance the block height to the claim window open height.
+	sharedParams := keepers.SharedKeeper.GetParams(ctx)
+	claimMsgHeight := shared.GetClaimWindowOpenHeight(
+		&sharedParams,
+		sessionHeader.GetSessionEndBlockHeight(),
+	)
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	sdkCtx = sdkCtx.WithBlockHeight(claimMsgHeight)
+	ctx = sdkCtx
+
 	// Create a valid claim.
 	createClaimAndStoreBlockHash(
 		ctx, t, 1,
@@ -228,6 +238,16 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 		keyRing,
 		ringClient,
 	)
+
+	// Advance the block height to the claim window open height.
+	sharedParams := keepers.SharedKeeper.GetParams(ctx)
+	claimMsgHeight := shared.GetClaimWindowOpenHeight(
+		&sharedParams,
+		validSessionHeader.GetSessionEndBlockHeight(),
+	)
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	sdkCtx = sdkCtx.WithBlockHeight(claimMsgHeight)
+	ctx = sdkCtx
 
 	// Create a valid claim for the expected session and update the block hash
 	// store for the corresponding session.
@@ -849,6 +869,16 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 
 				wrongMerkleRootBz, err := wrongMerkleRootSessionTree.Flush()
 				require.NoError(t, err)
+
+				// Advance the block height to the claim window open height.
+				sharedParams := keepers.SharedKeeper.GetParams(ctx)
+				claimMsgHeight := shared.GetClaimWindowOpenHeight(
+					&sharedParams,
+					validSessionHeader.GetSessionEndBlockHeight(),
+				)
+				sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+				sdkCtx = sdkCtx.WithBlockHeight(claimMsgHeight)
+				ctx = sdkCtx
 
 				// Create a claim with the incorrect Merkle root.
 				wrongMerkleRootClaimMsg := newTestClaimMsg(t,

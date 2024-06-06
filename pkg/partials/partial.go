@@ -2,6 +2,9 @@ package partials
 
 import (
 	"context"
+	"io"
+
+	sdktypes "github.com/pokt-network/shannon-sdk/types"
 
 	"github.com/pokt-network/poktroll/pkg/partials/payloads"
 	"github.com/pokt-network/poktroll/pkg/polylog"
@@ -25,12 +28,27 @@ func GetRequestType(ctx context.Context, payloadBz []byte) (sharedtypes.RPCType,
 
 // GetErrorReply returns an error reply for the given payload and error,
 // in the correct format required by the request type.
-func GetErrorReply(ctx context.Context, payloadBz []byte, err error) ([]byte, error) {
-	partialRequest, er := PartiallyUnmarshalRequest(ctx, payloadBz)
-	if er != nil {
-		return nil, er
+func GetErrorReply(
+	ctx context.Context,
+	requestBz []byte,
+	upstreamError error,
+) ([]byte, error) {
+	// TODO_HACK(#221): This is a hack to extract the payload from the request
+	// until partials package is refactored to handle the request directly.
+	request, err := sdktypes.DeserializeHTTPRequest(requestBz)
+	if err != nil {
+		return nil, err
 	}
-	return partialRequest.GenerateErrorPayload(err)
+	payloadBz, err := io.ReadAll(request.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	partialRequest, err := PartiallyUnmarshalRequest(ctx, payloadBz)
+	if err != nil {
+		return nil, err
+	}
+	return partialRequest.GenerateErrorPayload(upstreamError)
 }
 
 // GetComputeUnits returns the compute units for the RPC request provided
@@ -49,7 +67,7 @@ func GetComputeUnits(ctx context.Context, payloadBz []byte) (uint64, error) {
 
 // TODO_BLOCKER(@red-0ne): This function currently only supports JSON-RPC and must
 // be extended to other request types.
-// PartiallyUnmarshalRequest unmarshals the payload into a partial request
+// PartiallyUnmarshalRequest unmarshals the request into a partial request
 // that contains only the fields necessary to generate an error response and
 // handle accounting for the request's method.
 func PartiallyUnmarshalRequest(ctx context.Context, payloadBz []byte) (PartialPayload, error) {
