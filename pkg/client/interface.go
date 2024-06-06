@@ -57,8 +57,8 @@ type SupplierClient interface {
 	Address() *cosmostypes.AccAddress
 }
 
-// SupplierClientMap so we can depinject many supplier clients
-// Map key is an address
+// SupplierClientMap is a helper struct needed to depinject multiple supplier clients.
+// The inner structure maps a supplier address to a list of supplier clients for that address.
 type SupplierClientMap struct {
 	SupplierClients map[string]SupplierClient
 }
