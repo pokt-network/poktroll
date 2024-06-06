@@ -20,7 +20,6 @@ import (
 	"github.com/pokt-network/poktroll/x/proof/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	"github.com/pokt-network/poktroll/x/shared"
 )
 
 // SMT specification used for the proof verification.
@@ -432,12 +431,10 @@ func (k msgServer) validateClosestPath(
 	//
 	// Since smt.ProveClosest is defined in terms of submitProofWindowStartHeight,
 	// this block's hash needs to be used for validation too.
-	//
-	// TODO_TECHDEBT(@red-0ne): Centralize the business logic that involves taking
-	// into account the heights, windows and grace periods into helper functions.
-	// TODO_BLOCKER(@bryanchriswhite, #516): Update `blockHeight` to be the value of when the `ProofWindow`
-	// opens once the variable is added.
-	sessionGracePeriodEndHeight := shared.GetSessionGracePeriodEndHeight(sessionHeader.GetSessionEndBlockHeight())
+	sessionGracePeriodEndHeight, err := k.sharedQuerier.GetSessionGracePeriodEndHeight(ctx, sessionHeader.GetSessionEndBlockHeight())
+	if err != nil {
+		return err
+	}
 	blockHash := k.sessionKeeper.GetBlockHash(ctx, sessionGracePeriodEndHeight)
 
 	// TODO_BETA: Investigate "proof for the path provided does not match one expected by the on-chain protocol"
