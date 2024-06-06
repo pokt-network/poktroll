@@ -43,7 +43,7 @@ func (k msgServer) CreateClaim(ctx context.Context, msg *types.MsgCreateClaim) (
 	// Validate claim message commit height is within the respective session's
 	// claim creation window using the on-chain session header.
 	if err := k.validateClaimWindow(ctx, msg); err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 
 	logger = logger.

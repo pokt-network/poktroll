@@ -35,13 +35,8 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 			getClaimMsgHeight: shared.GetClaimWindowOpenHeight,
 		},
 		{
-			desc: "claim message height equals claim window close height minus one",
-			getClaimMsgHeight: func(
-				sharedParams *sharedtypes.Params,
-				queryHeight int64,
-			) int64 {
-				return shared.GetClaimWindowCloseHeight(sharedParams, queryHeight) - 1
-			},
+			desc:              "claim message height equals claim window close height",
+			getClaimMsgHeight: shared.GetClaimWindowCloseHeight,
 		},
 	}
 
@@ -187,19 +182,25 @@ func TestMsgServer_CreateClaim_Error_OutsideOfWindow(t *testing.T) {
 		{
 			desc:           "claim message height equals claim window open height minus one",
 			claimMsgHeight: claimWindowOpenHeight - 1,
-			expectedErr: types.ErrProofClaimOutsideOfWindow.Wrapf(
-				"current block height %d is less than session claim window open height %d",
-				claimWindowOpenHeight-1,
-				shared.GetClaimWindowOpenHeight(&sharedParams, sessionHeader.GetSessionEndBlockHeight()),
+			expectedErr: status.Error(
+				codes.FailedPrecondition,
+				types.ErrProofClaimOutsideOfWindow.Wrapf(
+					"current block height %d is less than session claim window open height %d",
+					claimWindowOpenHeight-1,
+					shared.GetClaimWindowOpenHeight(&sharedParams, sessionHeader.GetSessionEndBlockHeight()),
+				).Error(),
 			),
 		},
 		{
 			desc:           "claim message height equals claim window close height plus one",
 			claimMsgHeight: claimWindowCloseHeight + 1,
-			expectedErr: types.ErrProofClaimOutsideOfWindow.Wrapf(
-				"current block height %d is greater than session claim window close height %d",
-				claimWindowCloseHeight+1,
-				claimWindowCloseHeight,
+			expectedErr: status.Error(
+				codes.FailedPrecondition,
+				types.ErrProofClaimOutsideOfWindow.Wrapf(
+					"current block height %d is greater than session claim window close height %d",
+					claimWindowCloseHeight+1,
+					claimWindowCloseHeight,
+				).Error(),
 			),
 		},
 	}
