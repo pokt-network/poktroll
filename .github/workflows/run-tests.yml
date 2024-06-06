@@ -46,4 +46,4 @@ jobs:
         run: make go_lint
 
       - name: Test
-        run: make go_test
+        run: make test_all

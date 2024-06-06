@@ -1,5 +1,10 @@
 Feature: Params Namespace
 
+  Scenario: All params are reset to their default values
+    Given the user has the pocketd binary installed
+    And an authz grant from the "gov" "module" account to the "pnf" "user" account for the "/poktroll.tokenomics.MsgUpdateParams" message exists
+    Then all module params are reset to their default values
+
   Scenario: An unauthorized user cannot update a module params
     Given the user has the pocketd binary installed
     And all "tokenomics" module params are set to their default values
@@ -42,6 +47,8 @@ Feature: Params Namespace
       | num_blocks_per_session           | 8     | int64 |
       | claim_window_open_offset_blocks  | 8     | int64 |
       | claim_window_close_offset_blocks | 8     | int64 |
+      | proof_window_open_offset_blocks  | 8     | int64 |
+      | proof_window_close_offset_blocks | 8     | int64 |
     Then all "shared" module params should be updated
 
   # NB: If you are reading this and any module has parameters that
@@ -62,6 +69,7 @@ Feature: Params Namespace
       | shared     | /poktroll.shared.MsgUpdateParam     | num_blocks_per_session             | 8           | int64      |
       | shared     | /poktroll.shared.MsgUpdateParam     | claim_window_open_offset_blocks    | 8           | int64      |
       | shared     | /poktroll.shared.MsgUpdateParam     | claim_window_close_offset_blocks   | 8           | int64      |
+      | shared     | /poktroll.shared.MsgUpdateParam     | proof_window_open_offset_blocks    | 8           | int64      |
 
   Scenario: An unauthorized user cannot update individual module params
     Given the user has the pocketd binary installed

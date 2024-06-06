@@ -10,8 +10,10 @@ import (
 	"time"
 
 	cometcli "github.com/cometbft/cometbft/libs/cli"
+	"github.com/cosmos/cosmos-sdk/codec/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/cosmos/gogoproto/proto"
 	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
 
@@ -31,6 +33,9 @@ const (
 	// txFeesCoinStr is the string representation of the amount & denom of tokens
 	// which are sufficient to pay for tx fees in the test.
 	txFeesCoinStr = "1000000upokt"
+	// PNF is the account that acts on behalf of the DAO and is therefore the only
+	// one authorized to perform certain actions such as updating params.
+	pnfKeyName = "pnf"
 )
 
 // AllModuleParamsAreSetToTheirDefaultValues asserts that all module params are set to their default values.
@@ -41,7 +46,7 @@ func (s *suite) AllModuleParamsAreSetToTheirDefaultValues(moduleName string) {
 		"params",
 		fmt.Sprintf("--%s=json", cometcli.OutputFlag),
 	}
-	res, err := s.pocketd.RunCommandOnHost("", argsAndFlags...)
+	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, argsAndFlags...)
 	require.NoError(s, err)
 
 	switch moduleName {
@@ -129,7 +134,7 @@ func (s *suite) AnAuthzGrantFromTheAccountToTheAccountForTheMessageExists(
 		granterAddr, granteeAddr, msgType,
 		fmt.Sprintf("--%s=json", cometcli.OutputFlag),
 	}
-	res, err := s.pocketd.RunCommandOnHost("", argsAndFlags...)
+	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, argsAndFlags...)
 	require.NoError(s, err)
 
 	// Unmarshal the JSON response into the grantsRes struct.
@@ -219,9 +224,43 @@ func (s *suite) TheModuleParamShouldBeUpdated(moduleName, paramName string) {
 	s.assertExpectedModuleParamsUpdated(moduleName)
 }
 
+// AllModuleParamsShouldBeSetToTheirDefaultValues ensures that all module params are set to their default values.
+func (s *suite) AllModuleParamsAreResetToTheirDefaultValues() {
+	var anyMsgs []*types.Any
+
+	// List of all module MsgUpdateParams types and their respective default param functions
+	modules := []struct {
+		msgUpdateParamsType reflect.Type
+		defaultParams       any
+	}{
+		{reflect.TypeOf(&apptypes.MsgUpdateParams{}), apptypes.DefaultParams()},
+		{reflect.TypeOf(&gatewaytypes.MsgUpdateParams{}), gatewaytypes.DefaultParams()},
+		{reflect.TypeOf(&prooftypes.MsgUpdateParams{}), prooftypes.DefaultParams()},
+		{reflect.TypeOf(&servicetypes.MsgUpdateParams{}), servicetypes.DefaultParams()},
+		{reflect.TypeOf(&sessiontypes.MsgUpdateParams{}), sessiontypes.DefaultParams()},
+		{reflect.TypeOf(&sharedtypes.MsgUpdateParams{}), sharedtypes.DefaultParams()},
+		{reflect.TypeOf(&suppliertypes.MsgUpdateParams{}), suppliertypes.DefaultParams()},
+		{reflect.TypeOf(&tokenomicstypes.MsgUpdateParams{}), tokenomicstypes.DefaultParams()},
+	}
+
+	for _, module := range modules {
+		msgUpdateParams := reflect.New(module.msgUpdateParamsType.Elem()).Interface().(proto.Message)
+		msgUpdateParamsValue := reflect.ValueOf(msgUpdateParams).Elem()
+		msgUpdateParamsValue.FieldByName("Authority").SetString(s.granteeName)
+		msgUpdateParamsValue.FieldByName("Params").Set(reflect.ValueOf(module.defaultParams))
+
+		anyMsg, err := types.NewAnyWithValue(msgUpdateParams)
+		require.NoError(s, err)
+		anyMsgs = append(anyMsgs, anyMsg)
+	}
+
+	file := s.newTempTxJSONFile(anyMsgs)
+	s.sendAuthzExecTx(s.granteeName, file.Name())
+}
+
 // TheModuleParamShouldBeSetToItsDefaultValue asserts that the given param for the
 // given module has been set to its default value.
-func (s *suite) TheModuleParamShouldBeSetToItsDefaultValue(moduleName string, paramName string) {
+func (s *suite) TheModuleParamShouldBeSetToItsDefaultValue(moduleName, paramName string) {
 	// TODO_HACK: So long as no other modules are expected to have been changed by this scenario,
 	// it is more than sufficient (and less code) to re-use the existing step which asserts that
 	// all modules have their params set to their respective defaults.
@@ -251,7 +290,7 @@ func (s *suite) fundAddress(addr string, coin cosmostypes.Coin) {
 		"tx",
 		"bank",
 		"send",
-		"pnf",
+		pnfKeyName,
 		addr,
 		coin.String(),
 		"--yes",
@@ -296,7 +335,7 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 		"params",
 		fmt.Sprintf("--%s=json", cometcli.OutputFlag),
 	}
-	res, err := s.pocketd.RunCommandOnHost("", argsAndFlags...)
+	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, argsAndFlags...)
 	require.NoError(s, err)
 
 	switch moduleName {
@@ -337,6 +376,16 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 		claimWindowCloseOffsetBlocksParam, ok := paramsMap[sharedtypes.ParamClaimWindowCloseOffsetBlocks]
 		if ok {
 			params.ClaimWindowCloseOffsetBlocks = uint64(claimWindowCloseOffsetBlocksParam.value.(int64))
+		}
+
+		proofWindowOpenOffsetBlocksParam, ok := paramsMap[sharedtypes.ParamProofWindowOpenOffsetBlocks]
+		if ok {
+			params.ProofWindowOpenOffsetBlocks = uint64(proofWindowOpenOffsetBlocksParam.value.(int64))
+		}
+
+		proofWindowCloseOffsetBlocksParam, ok := paramsMap[sharedtypes.ParamProofWindowCloseOffsetBlocks]
+		if ok {
+			params.ProofWindowCloseOffsetBlocks = uint64(proofWindowCloseOffsetBlocksParam.value.(int64))
 		}
 
 		assertUpdatedParams(s,

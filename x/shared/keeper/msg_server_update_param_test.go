@@ -96,3 +96,59 @@ func TestMsgUpdateParam_UpdateClaimWindowCloseOffsetBlocks(t *testing.T) {
 	// Ensure the other parameters are unchanged
 	require.Equal(t, defaultParams.NumBlocksPerSession, res.Params.NumBlocksPerSession)
 }
+
+func TestMsgUpdateParam_UpdateProofWindowOpenOffsetBlocks(t *testing.T) {
+	var expectedProofWindowOpenOffestBlocks int64 = 8
+
+	k, ctx := keepertest.SharedKeeper(t)
+	msgSrv := keeper.NewMsgServerImpl(k)
+
+	// Set the parameters to their default values
+	defaultParams := sharedtypes.DefaultParams()
+	require.NoError(t, k.SetParams(ctx, defaultParams))
+
+	// Ensure the default values are different from the new values we want to set
+	require.NotEqual(t, uint64(expectedProofWindowOpenOffestBlocks), defaultParams.ProofWindowOpenOffsetBlocks)
+
+	// Update the proof window open offset blocks param
+	updateParamMsg := &sharedtypes.MsgUpdateParam{
+		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+		Name:      sharedtypes.ParamProofWindowOpenOffsetBlocks,
+		AsType:    &sharedtypes.MsgUpdateParam_AsInt64{AsInt64: expectedProofWindowOpenOffestBlocks},
+	}
+	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
+	require.NoError(t, err)
+
+	require.Equal(t, uint64(expectedProofWindowOpenOffestBlocks), res.Params.ProofWindowOpenOffsetBlocks)
+
+	// Ensure the other parameters are unchanged
+	require.Equal(t, defaultParams.NumBlocksPerSession, res.Params.NumBlocksPerSession)
+}
+
+func TestMsgUpdateParam_UpdateProofWindowCloseOffsetBlocks(t *testing.T) {
+	var expectedProofWindowCloseOffestBlocks int64 = 8
+
+	k, ctx := keepertest.SharedKeeper(t)
+	msgSrv := keeper.NewMsgServerImpl(k)
+
+	// Set the parameters to their default values
+	defaultParams := sharedtypes.DefaultParams()
+	require.NoError(t, k.SetParams(ctx, defaultParams))
+
+	// Ensure the default values are different from the new values we want to set
+	require.NotEqual(t, uint64(expectedProofWindowCloseOffestBlocks), defaultParams.ProofWindowCloseOffsetBlocks)
+
+	// Update the proof window close offset blocks param
+	updateParamMsg := &sharedtypes.MsgUpdateParam{
+		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+		Name:      sharedtypes.ParamProofWindowCloseOffsetBlocks,
+		AsType:    &sharedtypes.MsgUpdateParam_AsInt64{AsInt64: expectedProofWindowCloseOffestBlocks},
+	}
+	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
+	require.NoError(t, err)
+
+	require.Equal(t, uint64(expectedProofWindowCloseOffestBlocks), res.Params.ProofWindowCloseOffsetBlocks)
+
+	// Ensure the other parameters are unchanged
+	require.Equal(t, defaultParams.NumBlocksPerSession, res.Params.NumBlocksPerSession)
+}

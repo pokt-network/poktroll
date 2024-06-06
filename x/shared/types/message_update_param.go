@@ -49,7 +49,9 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 	switch msg.Name {
 	case ParamNumBlocksPerSession,
 		ParamClaimWindowOpenOffsetBlocks,
-		ParamClaimWindowCloseOffsetBlocks:
+		ParamClaimWindowCloseOffsetBlocks,
+		ParamProofWindowOpenOffsetBlocks,
+		ParamProofWindowCloseOffsetBlocks:
 		return msg.paramTypeIsInt64()
 	default:
 		return ErrSharedParamNameInvalid.Wrapf("unsupported param %q", msg.Name)
