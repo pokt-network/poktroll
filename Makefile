@@ -864,6 +864,10 @@ params_update_proof_min_relay_difficulty_bits: ## Update the proof module min_re
 params_update_proof_proof_request_probability: ## Update the proof module proof_request_probability param
 	poktrolld tx authz exec ./tools/scripts/params/proof_proof_request_probability.json $(PARAM_FLAGS)
 
+.PHONY: params_update_proof_proof_requirement_threshold
+params_update_proof_proof_requirement_threshold: ## Update the proof module proof_requirement_threshold param
+	poktrolld tx authz exec ./tools/scripts/params/proof_proof_requirement_threshold.json $(PARAM_FLAGS)
+
 ### Shared Module Params ###
 .PHONY: params_update_shared_all
 params_update_shared_all: ## Update the session module params

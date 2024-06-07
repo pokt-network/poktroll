@@ -24,8 +24,8 @@ func TestParams_ValidateMinRelayDifficulty(t *testing.T) {
 	}{
 		{
 			desc:                   "invalid type",
-			minRelayDifficultyBits: "invalid",
-			expectedErr:            prooftypes.ErrProofParamInvalid.Wrapf("invalid parameter type: %T", "invalid"),
+			minRelayDifficultyBits: int64(-1),
+			expectedErr:            prooftypes.ErrProofParamInvalid.Wrapf("invalid parameter type: int64"),
 		},
 		{
 			desc:                   "valid MinRelayDifficultyBits",
@@ -46,7 +46,7 @@ func TestParams_ValidateMinRelayDifficulty(t *testing.T) {
 	}
 }
 
-func TestParams_ValidateProofRequiredProbability(t *testing.T) {
+func TestParams_ValidateProofRequestProbability(t *testing.T) {
 	tests := []struct {
 		desc                    string
 		proofRequestProbability any
@@ -76,6 +76,36 @@ func TestParams_ValidateProofRequiredProbability(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
 			err := prooftypes.ValidateProofRequestProbability(tt.proofRequestProbability)
+			if tt.expectedErr != nil {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), tt.expectedErr.Error())
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestParams_ValidateProofRequiredThreshold(t *testing.T) {
+	tests := []struct {
+		desc                      string
+		proofRequirementThreshold any
+		expectedErr               error
+	}{
+		{
+			desc:                      "invalid type",
+			proofRequirementThreshold: int64(-1),
+			expectedErr:               prooftypes.ErrProofParamInvalid.Wrapf("invalid parameter type: int64"),
+		},
+		{
+			desc:                      "valid ProofRequirementThreshold",
+			proofRequirementThreshold: uint64(20),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			err := prooftypes.ValidateProofRequirementThreshold(tt.proofRequirementThreshold)
 			if tt.expectedErr != nil {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), tt.expectedErr.Error())
