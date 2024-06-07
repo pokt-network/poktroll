@@ -78,6 +78,9 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 	deps := depinject.Supply(blockClient, blockQueryClientMock, supplierClient, sharedQueryClientMock)
 	storesDirectoryOpt := testrelayer.WithTempStoresDirectory(t)
 
+	// TODO_IN_THIS_PR: figure out how to make depinject happy in the test:
+	// can't resolve type github.com/pokt-network/poktroll/pkg/client/*client.SupplierClientMap for github.com/pokt-network/poktroll/pkg/relayer/session.NewRelayerSessions (/Users/dk/pocket/poktroll/pkg/relayer/session/session.go:78):
+
 	// Create a new relayer sessions manager.
 	relayerSessionsManager, err := session.NewRelayerSessions(ctx, deps, storesDirectoryOpt)
 	require.NoError(t, err)

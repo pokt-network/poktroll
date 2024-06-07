@@ -38,7 +38,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
-				signing_key_name: supplier1
+				default_signing_key_names: [ supplier1 ]
 				smt_store_path: smt_stores
 				suppliers:
 				  - service_id: ethereum
@@ -98,7 +98,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
-				signing_key_name: supplier1
+				default_signing_key_names: [ supplier1 ]
 				smt_store_path: smt_stores
 				suppliers:
 				  - service_id: ethereum
@@ -175,7 +175,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				pocket_node:
 				  query_node_grpc_url: tcp://127.0.0.1:36658
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
-				signing_key_name: supplier1
+				default_signing_key_names: [ supplier1 ]
 				smt_store_path: smt_stores
 				suppliers:
 				  - service_id: ethereum
@@ -227,7 +227,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
-				signing_key_name: supplier1
+				default_signing_key_names: [ supplier1 ]
 				smt_store_path: smt_stores
 				suppliers:
 				  - service_id: ethereum
@@ -279,7 +279,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
 				  tx_node_rpc_url: &tcp://127.0.0.1:36659
-				signing_key_name: supplier1
+				default_signing_key_names: [ supplier1 ]
 				smt_store_path: smt_stores
 				suppliers:
 				  - service_id: ethereum
@@ -300,7 +300,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  # explicitly omitted tx node grpc url
 				  query_node_grpc_url: tcp://127.0.0.1:36658
-				signing_key_name: supplier1
+				default_signing_key_names: [ supplier1 ]
 				smt_store_path: smt_stores
 				suppliers:
 				  - service_id: ethereum
@@ -320,7 +320,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: &tcp://127.0.0.1:36658
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
-				signing_key_name: supplier1
+				default_signing_key_names: [ supplier1 ]
 				smt_store_path: smt_stores
 				suppliers:
 				  - service_id: ethereum
@@ -342,7 +342,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				  query_node_rpc_url: &tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
-				signing_key_name: supplier1
+				default_signing_key_names: [ supplier1 ]
 				smt_store_path: smt_stores
 				suppliers:
 				  - service_id: ethereum
@@ -364,7 +364,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				  # explicitly omitted query node rpc url
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
-				signing_key_name: supplier1
+				default_signing_key_names: [ supplier1 ]
 				smt_store_path: smt_stores
 				suppliers:
 				  - service_id: ethereum
@@ -408,7 +408,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
-				signing_key_name: supplier1
+				default_signing_key_names: [ supplier1 ]
 				# explicitly omitted smt store path
 				suppliers:
 				  - service_id: ethereum
@@ -430,7 +430,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
-				signing_key_name: supplier1
+				default_signing_key_names: [ supplier1 ]
 				smt_store_path: smt_stores
 				suppliers:
 				  - service_id: ethereum
@@ -452,7 +452,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
-				signing_key_name: supplier1
+				default_signing_key_names: [ supplier1 ]
 				smt_store_path: smt_stores
 				suppliers:
 				  - service_id: ethereum
@@ -473,7 +473,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
-				signing_key_name: supplier1
+				default_signing_key_names: [ supplier1 ]
 				smt_store_path: smt_stores
 				suppliers:
 				  - listen_url: http://127.0.0.1:8080
@@ -494,7 +494,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
-				signing_key_name: supplier1
+				default_signing_key_names: [ supplier1 ]
 				smt_store_path: smt_stores
 				suppliers:
 				  - service_id: # explicitly empty supplier name
@@ -516,7 +516,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
-				signing_key_name: supplier1
+				default_signing_key_names: [ supplier1 ]
 				smt_store_path: smt_stores
 				suppliers:
 				  - service_id: ethereum
@@ -538,7 +538,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
-				signing_key_name: supplier1
+				default_signing_key_names: [ supplier1 ]
 				smt_store_path: smt_stores
 				suppliers:
 				  - service_id: ethereum
@@ -560,7 +560,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
-				signing_key_name: supplier1
+				default_signing_key_names: [ supplier1 ]
 				smt_store_path: smt_stores
 				suppliers:
 				  - service_id: ethereum
@@ -581,7 +581,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
-				signing_key_name: supplier1
+				default_signing_key_names: [ supplier1 ]
 				smt_store_path: smt_stores
 				suppliers:
 				  - service_id: ethereum

@@ -79,7 +79,7 @@ type relayerProxy struct {
 //   - client.BlockClient
 //
 // Available options:
-//   - WithSigningKeyName
+//   - WithSigningKeyNames
 //   - WithServicesConfigMap
 func NewRelayerProxy(
 	deps depinject.Config,
@@ -164,7 +164,7 @@ func (rp *relayerProxy) ServedRelays() relayer.RelaysObservable {
 // validateConfig validates the relayer proxy's configuration options and returns an error if it is invalid.
 // TODO_TEST: Add tests for validating these configurations.
 func (rp *relayerProxy) validateConfig() error {
-	if rp.signingKeyNames == nil || len(rp.signingKeyNames) == 0 {
+	if rp.signingKeyNames == nil || len(rp.signingKeyNames) == 0 || rp.signingKeyNames[0] == "" {
 		return ErrRelayerProxyUndefinedSigningKeyName
 	}
 
