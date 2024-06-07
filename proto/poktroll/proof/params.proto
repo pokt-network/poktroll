@@ -12,11 +12,11 @@ message Params {
   option (gogoproto.equal) = true;
 
   // min_relay_difficulty_bits is the minimum difficulty in bits for a relay to
-  //  be included in a Merkle proof.
+  // be included in a Merkle proof.
   uint64 min_relay_difficulty_bits = 1 [(gogoproto.jsontag) = "min_relay_difficulty_bits"];
 
   // proof_request_probability is the probability of a session requiring a proof
-  // if it's cost is below the ProofRequirementThreshold.
+  // if it's cost (i.e. compute unit consumption) is below the ProofRequirementThreshold.
   float proof_request_probability = 2 [(gogoproto.jsontag) = "proof_request_probability"];
 
   // TODO_UPNEXT(@bryanchriswhite, #579): Add proof_requirement_threshold
