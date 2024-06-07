@@ -35,6 +35,18 @@ func (k msgServer) UpdateParam(
 		}
 
 		params.MinRelayDifficultyBits = minRelayDifficultyBits
+	case types.ParamProofRequestProbability:
+		value, ok := msg.AsType.(*types.MsgUpdateParam_AsFloat)
+		if !ok {
+			return nil, types.ErrProofParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
+		}
+		proofRequestProbability := value.AsFloat
+
+		if err := types.ValidateProofRequestProbability(proofRequestProbability); err != nil {
+			return nil, err
+		}
+
+		params.ProofRequestProbability = proofRequestProbability
 	default:
 		return nil, types.ErrProofParamInvalid.Wrapf("unsupported param %q", msg.Name)
 	}
