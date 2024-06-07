@@ -105,7 +105,7 @@ func (k msgServer) validateClaimWindow(
 	// Ensure the current block height is AFTER the claim window open height.
 	if currentHeight < claimWindowOpenHeight {
 		return types.ErrProofClaimOutsideOfWindow.Wrapf(
-			"current block height %d is less than session claim window open height %d",
+			"current block height (%d) is less than session claim window open height (%d)",
 			currentHeight,
 			claimWindowOpenHeight,
 		)
@@ -114,7 +114,7 @@ func (k msgServer) validateClaimWindow(
 	// Ensure the current block height is BEFORE the claim window close height.
 	if currentHeight > claimWindowCloseHeight {
 		return types.ErrProofClaimOutsideOfWindow.Wrapf(
-			"current block height %d is greater than session claim window close height %d",
+			"current block height (%d) is greater than session claim window close height (%d)",
 			currentHeight,
 			claimWindowCloseHeight,
 		)
@@ -158,7 +158,7 @@ func (k msgServer) validateProofWindow(
 	// Ensure the current block height is AFTER the proof window open height.
 	if currentHeight < proofWindowOpenHeight {
 		return types.ErrProofProofOutsideOfWindow.Wrapf(
-			"current block height %d is less than session proof window open height %d",
+			"current block height (%d) is less than session proof window open height (%d)",
 			currentHeight,
 			proofWindowOpenHeight,
 		)
@@ -167,7 +167,7 @@ func (k msgServer) validateProofWindow(
 	// Ensure the current block height is BEFORE the proof window close height.
 	if currentHeight > proofWindowCloseHeight {
 		return types.ErrProofProofOutsideOfWindow.Wrapf(
-			"current block height %d is greater than session proof window close height %d",
+			"current block height (%d) is greater than session proof window close height (%d)",
 			currentHeight,
 			proofWindowCloseHeight,
 		)
