@@ -57,12 +57,6 @@ type SupplierClient interface {
 	Address() *cosmostypes.AccAddress
 }
 
-// SupplierClientMap is a helper struct needed to depinject multiple supplier clients.
-// The inner structure maps a supplier address to a list of supplier clients for that address.
-type SupplierClientMap struct {
-	SupplierClients map[string]SupplierClient
-}
-
 // TxClient provides a synchronous interface initiating and waiting for transactions
 // derived from cosmos-sdk messages, in a cosmos-sdk based blockchain network.
 type TxClient interface {

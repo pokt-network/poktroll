@@ -16,6 +16,7 @@ func NewMinedRelay(
 	t *testing.T,
 	sessionStartHeight int64,
 	sessionEndHeight int64,
+	supplierAddress string,
 ) *relayer.MinedRelay {
 	relay := servicetypes.Relay{
 		Req: &servicetypes.RelayRequest{
@@ -24,6 +25,7 @@ func NewMinedRelay(
 					SessionStartBlockHeight: sessionStartHeight,
 					SessionEndBlockHeight:   sessionEndHeight,
 				},
+				SupplierAddress: supplierAddress,
 			},
 		},
 		Res: &servicetypes.RelayResponse{},

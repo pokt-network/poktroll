@@ -15,8 +15,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/cmd/signals"
-	"github.com/pokt-network/poktroll/pkg/client"
-	"github.com/pokt-network/poktroll/pkg/client/supplier"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
 	txtypes "github.com/pokt-network/poktroll/pkg/client/tx/types"
 	"github.com/pokt-network/poktroll/pkg/deps/config"
@@ -204,7 +202,7 @@ func setupRelayerDependencies(
 		config.NewSupplyRingCacheFn(),
 		supplyTxFactory,
 		supplyTxContext,
-		newSupplySupplierClientsFn(signingKeyNames),
+		config.NewSupplySupplierClientsFn(signingKeyNames),
 		newSupplyRelayerProxyFn(signingKeyNames, servicesConfigMap),
 		newSupplyRelayerSessionsManagerFn(smtStorePath),
 	}
@@ -263,39 +261,6 @@ func supplyTxContext(
 	return depinject.Configs(deps, depinject.Supply(txContext)), nil
 }
 
-// newSupplySupplierClientsFn returns a function which constructs a
-// SupplierClientMap instance and returns a new depinject. Config which is
-// supplied with the given deps and the new SupplierClientMap.
-func newSupplySupplierClientsFn(signingKeyNames []string) config.SupplierFn {
-	return func(
-		ctx context.Context,
-		deps depinject.Config,
-		_ *cobra.Command,
-	) (depinject.Config, error) {
-		suppliers := &client.SupplierClientMap{
-			SupplierClients: make(map[string]client.SupplierClient),
-		}
-		for _, signingKeyName := range signingKeyNames {
-			txClientDepinjectConfig, err := newSupplyTxClientsFn(ctx, deps, signingKeyName)
-			if err != nil {
-				return nil, err
-			}
-
-			supplierClient, err := supplier.NewSupplierClient(
-				txClientDepinjectConfig,
-				supplier.WithSigningKeyName(signingKeyName),
-			)
-			if err != nil {
-				return nil, err
-			}
-
-			// Making sure we use addresses as keys.
-			suppliers.SupplierClients[supplierClient.Address().String()] = supplierClient
-		}
-		return depinject.Configs(deps, depinject.Supply(suppliers)), nil
-	}
-}
-
 // newSupplyRelayerProxyFn returns a function which constructs a
 // RelayerProxy instance and returns a new depinject.Config which
 // is supplied with the given deps and the new RelayerProxy.
@@ -340,23 +305,6 @@ func newSupplyRelayerSessionsManagerFn(smtStorePath string) config.SupplierFn {
 
 		return depinject.Configs(deps, depinject.Supply(relayerSessionsManager)), nil
 	}
-}
-
-// newSupplyTxClientFn returns a new depinject.Config which is supplied with
-// the given deps and the new TxClient.
-func newSupplyTxClientsFn(ctx context.Context, deps depinject.Config, signingKeyName string) (depinject.Config, error) {
-	txClient, err := tx.NewTxClient(
-		ctx,
-		deps,
-		tx.WithSigningKeyName(signingKeyName),
-		// TODO_TECHDEBT: populate this from some config.
-		tx.WithCommitTimeoutBlocks(tx.DefaultCommitTimeoutHeightOffset),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return depinject.Configs(deps, depinject.Supply(txClient)), nil
 }
 
 // uniqueSigningKeyNames goes through RelayMiner configuration and returns a list of unique
