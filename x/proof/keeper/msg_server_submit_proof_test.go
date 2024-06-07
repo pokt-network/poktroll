@@ -275,7 +275,7 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 			expectedErr: status.Error(
 				codes.FailedPrecondition,
 				types.ErrProofProofOutsideOfWindow.Wrapf(
-					"current block height %d is less than session proof window open height %d",
+					"current block height (%d) is less than session proof window open height (%d)",
 					int64(proofWindowOpenHeight)-1,
 					proofWindowOpenHeight,
 				).Error(),
@@ -287,7 +287,7 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 			expectedErr: status.Error(
 				codes.FailedPrecondition,
 				types.ErrProofProofOutsideOfWindow.Wrapf(
-					"current block height %d is greater than session proof window close height %d",
+					"current block height (%d) is greater than session proof window close height (%d)",
 					int64(proofWindowCloseHeight)+1,
 					proofWindowCloseHeight,
 				).Error(),
