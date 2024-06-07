@@ -36,6 +36,7 @@ Feature: Params Namespace
       | min_relay_difficulty_bits   | 8     | int64 |
       | proof_request_probability   | 0.1   | float |
       | proof_requirement_threshold | 100   | int64 |
+      | proof_missing_penalty       | 500   | int64 |
     Then all "proof" module params should be updated
 
   # NB: If you are reading this and the proof module has parameters
@@ -70,6 +71,7 @@ Feature: Params Namespace
       | proof      | /poktroll.proof.MsgUpdateParam      | min_relay_difficulty_bits          | 12          | int64      |
       | proof      | /poktroll.proof.MsgUpdateParam      | proof_request_probability          | 0.1         | float      |
       | proof      | /poktroll.proof.MsgUpdateParam      | proof_requirement_threshold        | 100         | int64      |
+      | proof      | /poktroll.proof.MsgUpdateParam      | proof_missing_penalty              | 500         | int64      |
       | shared     | /poktroll.shared.MsgUpdateParam     | num_blocks_per_session             | 8           | int64      |
       | shared     | /poktroll.shared.MsgUpdateParam     | claim_window_open_offset_blocks    | 8           | int64      |
       | shared     | /poktroll.shared.MsgUpdateParam     | claim_window_close_offset_blocks   | 8           | int64      |

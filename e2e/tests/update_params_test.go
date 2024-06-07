@@ -368,6 +368,11 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 			params.ProofRequirementThreshold = uint64(proofRequirementThreshold.value.(int64))
 		}
 
+		proofMissingPenalty, ok := paramsMap[prooftypes.ParamProofMissingPenalty]
+		if ok {
+			params.ProofMissingPenalty = uint64(proofMissingPenalty.value.(int64))
+		}
+
 		assertUpdatedParams(s,
 			[]byte(res.Stdout),
 			&prooftypes.QueryParamsResponse{

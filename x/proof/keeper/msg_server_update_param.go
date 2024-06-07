@@ -59,6 +59,18 @@ func (k msgServer) UpdateParam(
 		}
 
 		params.ProofRequirementThreshold = proofRequirementThreshold
+	case types.ParamProofMissingPenalty:
+		value, ok := msg.AsType.(*types.MsgUpdateParam_AsInt64)
+		if !ok {
+			return nil, types.ErrProofParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
+		}
+		proofMissingPenalty := uint64(value.AsInt64)
+
+		if err := types.ValidateProofMissingPenalty(proofMissingPenalty); err != nil {
+			return nil, err
+		}
+
+		params.ProofMissingPenalty = proofMissingPenalty
 	default:
 		return nil, types.ErrProofParamInvalid.Wrapf("unsupported param %q", msg.Name)
 	}

@@ -14,6 +14,9 @@ var (
 	KeyProofRequirementThreshold             = []byte("ProofRequirementThreshold")
 	ParamProofRequirementThreshold           = "proof_requirement_threshold"
 	DefaultProofRequirementThreshold uint64  = 20 // See: https://github.com/pokt-network/pocket-core/blob/staging/docs/proposals/probabilistic_proofs.md
+	KeyProofMissingPenalty                   = []byte("ProofMissingPenalty")
+	ParamProofMissingPenalty                 = "proof_missing_penalty"
+	DefaultProofMissingPenalty       uint64  = 320 // See: https://github.com/pokt-network/pocket-core/blob/staging/docs/proposals/probabilistic_proofs.md
 )
 
 // ParamKeyTable the param key table for launch module
@@ -26,11 +29,13 @@ func NewParams(
 	minRelayDifficultyBits uint64,
 	proofRequestProbability float32,
 	proofRequirementThreshold uint64,
+	proofMissingPenalty uint64,
 ) Params {
 	return Params{
 		MinRelayDifficultyBits:    minRelayDifficultyBits,
 		ProofRequestProbability:   proofRequestProbability,
 		ProofRequirementThreshold: proofRequirementThreshold,
+		ProofMissingPenalty:       proofMissingPenalty,
 	}
 }
 
@@ -40,6 +45,7 @@ func DefaultParams() Params {
 		DefaultMinRelayDifficultyBits,
 		DefaultProofRequestProbability,
 		DefaultProofRequirementThreshold,
+		DefaultProofMissingPenalty,
 	)
 }
 
@@ -61,6 +67,11 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 			&p.ProofRequirementThreshold,
 			ValidateProofRequirementThreshold,
 		),
+		paramtypes.NewParamSetPair(
+			KeyProofMissingPenalty,
+			&p.ProofMissingPenalty,
+			ValidateProofMissingPenalty,
+		),
 	}
 }
 
@@ -76,6 +87,10 @@ func (params *Params) ValidateBasic() error {
 	}
 
 	if err := ValidateProofRequirementThreshold(params.ProofRequirementThreshold); err != nil {
+		return err
+	}
+
+	if err := ValidateProofMissingPenalty(params.ProofMissingPenalty); err != nil {
 		return err
 	}
 
@@ -115,6 +130,17 @@ func ValidateProofRequestProbability(v interface{}) error {
 // ValidateProofRequirementThreshold validates the ProofRequirementThreshold param.
 // NB: The argument is an interface type to satisfy the ParamSetPair function signature.
 func ValidateProofRequirementThreshold(v interface{}) error {
+	_, ok := v.(uint64)
+	if !ok {
+		return ErrProofParamInvalid.Wrapf("invalid parameter type: %T", v)
+	}
+
+	return nil
+}
+
+// ValidateProofMissingPenalty validates the ProofMissingPenalty param.
+// NB: The argument is an interface type to satisfy the ParamSetPair function signature.
+func ValidateProofMissingPenalty(v interface{}) error {
 	_, ok := v.(uint64)
 	if !ok {
 		return ErrProofParamInvalid.Wrapf("invalid parameter type: %T", v)

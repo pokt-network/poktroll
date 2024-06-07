@@ -868,6 +868,10 @@ params_update_proof_proof_request_probability: ## Update the proof module proof_
 params_update_proof_proof_requirement_threshold: ## Update the proof module proof_requirement_threshold param
 	poktrolld tx authz exec ./tools/scripts/params/proof_proof_requirement_threshold.json $(PARAM_FLAGS)
 
+.PHONY: params_update_proof_proof_missing_penalty
+params_update_proof_proof_missing_penalty: ## Update the proof module proof_missing_penalty param
+	poktrolld tx authz exec ./tools/scripts/params/proof_proof_missing_penalty.json $(PARAM_FLAGS)
+
 ### Shared Module Params ###
 .PHONY: params_update_shared_all
 params_update_shared_all: ## Update the session module params

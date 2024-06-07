@@ -53,6 +53,8 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 		return msg.paramTypeIsFloat()
 	case ParamProofRequirementThreshold:
 		return msg.paramTypeIsInt64()
+	case ParamProofMissingPenalty:
+		return msg.paramTypeIsInt64()
 	default:
 		return ErrProofParamNameInvalid.Wrapf("unsupported param %q", msg.Name)
 	}

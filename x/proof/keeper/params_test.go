@@ -115,3 +115,33 @@ func TestParams_ValidateProofRequirementThreshold(t *testing.T) {
 		})
 	}
 }
+
+func TestParams_ValidateProofMissingPenalty(t *testing.T) {
+	tests := []struct {
+		desc                string
+		proofMissingPenalty any
+		expectedErr         error
+	}{
+		{
+			desc:                "invalid type",
+			proofMissingPenalty: int64(-1),
+			expectedErr:         prooftypes.ErrProofParamInvalid.Wrapf("invalid parameter type: int64"),
+		},
+		{
+			desc:                "valid ProofMissingPenalty",
+			proofMissingPenalty: uint64(320),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			err := prooftypes.ValidateProofMissingPenalty(tt.proofMissingPenalty)
+			if tt.expectedErr != nil {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), tt.expectedErr.Error())
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}

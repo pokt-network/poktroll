@@ -187,6 +187,7 @@ genesis:
       params:
         proof_request_probability: "0.25"
         proof_requirement_threshold: 20
+        proof_missing_penalty: 320
     shared:
       params:
         num_blocks_per_session: 4
