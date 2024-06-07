@@ -379,8 +379,8 @@ func TestRelayerProxy_Relays(t *testing.T) {
 
 			// expectedErrCode is because the proxy won't be able to unmarshal the request
 			// so it does not know how to format the error response
-			expectedErrCode: 0,
-			expectedErrMsg:  "cannot unmarshal request payload",
+			expectedErrCode: -32000,
+			expectedErrMsg:  "proto: RelayRequest: wiretype end group for non-group",
 		},
 		{
 			desc: "Missing signature from relay request",
@@ -706,7 +706,7 @@ func sendRequestWithSignatureForDifferentPayload(
 	}
 	request.Header.Set("Content-Type", "application/json")
 
-	requestBz, err := sdktypes.SerializeHTTPRequest(request)
+	_, requestBz, err := sdktypes.SerializeHTTPRequest(request)
 	require.NoError(t, err)
 
 	// Alter the request payload so the hash doesn't match the one used by the signature

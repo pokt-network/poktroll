@@ -15,4 +15,5 @@ var (
 	ErrRelayerProxyInvalidRelayResponse      = sdkerrors.Register(codespace, 7, "invalid relay response")
 	ErrRelayerProxyServiceEndpointNotHandled = sdkerrors.Register(codespace, 8, "service endpoint not handled by relayer proxy")
 	ErrRelayerProxyUnsupportedTransportType  = sdkerrors.Register(codespace, 9, "unsupported proxy transport type")
+	ErrRelayerProxyInternalError             = sdkerrors.Register(codespace, 10, "internal error")
 )

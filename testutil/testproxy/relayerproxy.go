@@ -19,6 +19,7 @@ import (
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/types/bech32"
 	"github.com/pokt-network/ring-go"
+	sdktypes "github.com/pokt-network/shannon-sdk/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/client"
@@ -142,7 +143,7 @@ func WithServicesConfigMap(
 			for serviceId, supplierConfig := range serviceConfig.SupplierConfigsMap {
 				server := &http.Server{Addr: supplierConfig.ServiceConfig.BackendUrl.Host}
 				server.Handler = http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-					w.Write(prepareJSONRPCResponse(test.t))
+					sendJSONRPCResponse(test.t, w)
 				})
 				go func() { server.ListenAndServe() }()
 				go func() {
@@ -338,14 +339,22 @@ func GetRelayResponseError(t *testing.T, res *http.Response) (errCode int32, err
 
 	relayResponse := &servicetypes.RelayResponse{}
 	err = relayResponse.Unmarshal(responseBody)
+	require.NoError(t, err)
+
+	// If the relayResponse basic validation fails then consider the payload as an error.
+	if err := relayResponse.ValidateBasic(); err != nil {
+		return -32000, string(relayResponse.Payload)
+	}
+
+	response, err := sdktypes.DeserializeHTTPResponse(relayResponse.Payload)
 	if err != nil {
-		return 0, "cannot unmarshal request body"
+		return 0, "cannot unmarshal response"
 	}
 
 	var payload JSONRPCErrorReply
-	err = json.Unmarshal(relayResponse.Payload, &payload)
+	err = json.Unmarshal(response.BodyBz, &payload)
 	if err != nil {
-		return 0, "cannot unmarshal request payload"
+		return 0, "cannot unmarshal response payload"
 	}
 
 	if payload.Error == nil {
