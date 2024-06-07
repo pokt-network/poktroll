@@ -82,6 +82,7 @@ func GetClaimWindowOpenHeight(sharedParams *sharedtypes.Params, queryHeight int6
 	//     2. If, during the grace period, a new claim is submitted. It is upserted.
 	//     3. The soonest a claim window should open is "EndSession + ClaimWindowOpen"
 	// TODO_IN_THIS_PR: Why is there a `+1`	here?
+	// sessionGracePeriodEndHeight := GetSessionGracePeriodEndHeight(sessionEndHeight)
 	// return claimWindowOpenOffsetBlocks + sessionGracePeriodEndHeight + 1
 	return sessionEndHeight + claimWindowOpenOffsetBlocks
 }
