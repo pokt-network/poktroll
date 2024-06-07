@@ -11,7 +11,7 @@ import (
 )
 
 func TestMsgUpdateParam_UpdateMinRelayDifficultyBitsOnly(t *testing.T) {
-	var expectedMinRelayDifficultyBits int64 = 8
+	var expectedMinRelayDifficultyBits uint64 = 8
 
 	// Set the parameters to their default values
 	k, msgSrv, ctx := setupMsgServer(t)
@@ -19,18 +19,18 @@ func TestMsgUpdateParam_UpdateMinRelayDifficultyBitsOnly(t *testing.T) {
 	require.NoError(t, k.SetParams(ctx, defaultParams))
 
 	// Ensure the default values are different from the new values we want to set
-	require.NotEqual(t, uint64(expectedMinRelayDifficultyBits), defaultParams.MinRelayDifficultyBits)
+	require.NotEqual(t, expectedMinRelayDifficultyBits, defaultParams.MinRelayDifficultyBits)
 
 	// Update the min relay difficulty bits
 	updateParamMsg := &prooftypes.MsgUpdateParam{
 		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		Name:      prooftypes.ParamMinRelayDifficultyBits,
-		AsType:    &prooftypes.MsgUpdateParam_AsInt64{AsInt64: expectedMinRelayDifficultyBits},
+		AsType:    &prooftypes.MsgUpdateParam_AsInt64{AsInt64: int64(expectedMinRelayDifficultyBits)},
 	}
 	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.NoError(t, err)
 
-	require.Equal(t, uint64(expectedMinRelayDifficultyBits), res.Params.MinRelayDifficultyBits)
+	require.Equal(t, expectedMinRelayDifficultyBits, res.Params.MinRelayDifficultyBits)
 }
 
 func TestMsgUpdateParam_UpdateProofRequestProbabilityOnly(t *testing.T) {
@@ -42,7 +42,7 @@ func TestMsgUpdateParam_UpdateProofRequestProbabilityOnly(t *testing.T) {
 	require.NoError(t, k.SetParams(ctx, defaultParams))
 
 	// Ensure the default values are different from the new values we want to set
-	require.NotEqual(t, uint64(expectedProofRequestProbability), defaultParams.ProofRequestProbability)
+	require.NotEqual(t, expectedProofRequestProbability, defaultParams.ProofRequestProbability)
 
 	// Update the proof request probability
 	updateParamMsg := &prooftypes.MsgUpdateParam{
