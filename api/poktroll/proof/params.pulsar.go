@@ -481,11 +481,10 @@ type Params struct {
 	unknownFields protoimpl.UnknownFields
 
 	// min_relay_difficulty_bits is the minimum difficulty in bits for a relay to
-	//
-	//	be included in a Merkle proof.
+	// be included in a Merkle proof.
 	MinRelayDifficultyBits uint64 `protobuf:"varint,1,opt,name=min_relay_difficulty_bits,json=minRelayDifficultyBits,proto3" json:"min_relay_difficulty_bits,omitempty"`
 	// proof_request_probability is the probability of a session requiring a proof
-	// if it's cost is below the ProofRequirementThreshold.
+	// if it's cost (i.e. compute unit consumption) is below the ProofRequirementThreshold.
 	ProofRequestProbability float32 `protobuf:"fixed32,2,opt,name=proof_request_probability,json=proofRequestProbability,proto3" json:"proof_request_probability,omitempty"`
 }
 
