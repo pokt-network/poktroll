@@ -28,14 +28,22 @@ func (k msgServer) CreateClaim(ctx context.Context, msg *types.MsgCreateClaim) (
 		return nil, err
 	}
 
-	sessionHeader := msg.GetSessionHeader()
-	session, err := k.queryAndValidateSessionHeader(
-		ctx,
-		sessionHeader,
-		msg.GetSupplierAddress(),
-	)
+	// Compare msg session header w/ on-chain session header.
+	session, err := k.queryAndValidateSessionHeader(ctx, msg)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	// Use the session header from the on-chain hydrated session.
+	sessionHeader := session.GetHeader()
+
+	// Set the session header to the on-chain hydrated session header.
+	msg.SessionHeader = sessionHeader
+
+	// Validate claim message commit height is within the respective session's
+	// claim creation window using the on-chain session header.
+	if err := k.validateClaimWindow(ctx, msg); err != nil {
+		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 
 	logger = logger.

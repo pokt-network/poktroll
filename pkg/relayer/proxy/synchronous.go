@@ -325,6 +325,13 @@ func (sync *synchronousRPCServer) serveHTTP(
 		Header: headers,
 		Body:   io.NopCloser(bytes.NewReader(poktHTTPRequest.BodyBz)),
 	}
+	requestUrl.RawQuery = query.Encode()
+
+	// TODO_TEST(red0ne): Test the request URL construction with different upstream
+	// request paths and query parameters.
+	// Use the same method, headers, and body as the original request to query the
+	// backend URL.
+	httpRequest.Host = serviceConfig.BackendUrl.Host
 
 	if serviceConfig.Authentication != nil {
 		httpRequest.SetBasicAuth(

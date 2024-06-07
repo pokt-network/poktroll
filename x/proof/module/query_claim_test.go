@@ -136,6 +136,10 @@ func TestClaim_List(t *testing.T) {
 	numClaimsPerSession := sharedtypes.DefaultNumBlocksPerSession
 	totalClaims := numSessions * numClaimsPerSession
 
+	// TODO_FLAKY(@red-0ne): Ths following line in this test is flaky because test configuration
+	// and management is hard (see details above). To verify if it's functioning
+	// independently, please run:
+	// $ make itest 2 5 ./x/proof/module -- -run TestClaim_List
 	net, claims := networkWithClaimObjects(t, numSessions, numSuppliers, numApps)
 
 	ctx := net.Validators[0].ClientCtx
