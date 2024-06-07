@@ -86,7 +86,7 @@ func TestParams_ValidateProofRequestProbability(t *testing.T) {
 	}
 }
 
-func TestParams_ValidateProofRequiredThreshold(t *testing.T) {
+func TestParams_ValidateProofRequirementThreshold(t *testing.T) {
 	tests := []struct {
 		desc                      string
 		proofRequirementThreshold any
