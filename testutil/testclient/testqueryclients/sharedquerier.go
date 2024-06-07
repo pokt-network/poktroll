@@ -36,5 +36,25 @@ func NewTestSharedQueryClient(
 		).
 		AnyTimes()
 
+	sharedQuerier.EXPECT().
+		GetProofWindowOpenHeight(gomock.Any(), gomock.Any()).
+		DoAndReturn(
+			func(ctx context.Context, queryHeight int64) (int64, error) {
+				sharedParams := sharedtypes.DefaultParams()
+				return shared.GetProofWindowOpenHeight(&sharedParams, queryHeight), nil
+			},
+		).
+		AnyTimes()
+
+	sharedQuerier.EXPECT().
+		GetSessionGracePeriodEndHeight(gomock.Any(), gomock.Any()).
+		DoAndReturn(
+			func(ctx context.Context, queryHeight int64) (int64, error) {
+				sharedParams := sharedtypes.DefaultParams()
+				return shared.GetSessionGracePeriodEndHeight(&sharedParams, queryHeight), nil
+			},
+		).
+		AnyTimes()
+
 	return sharedQuerier
 }

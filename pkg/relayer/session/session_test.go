@@ -105,22 +105,18 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 
 	// Calculate the session grace period end block height to emit that block height
 	// to the blockPublishCh to trigger claim creation for the session.
-	//sessionClaimWindowOpenHeight := int64(sessionEndHeight + shared.SessionGracePeriodBlocks)
 	sharedParams := sharedtypes.DefaultParams()
 	sessionClaimWindowOpenHeight := shared.GetClaimWindowOpenHeight(&sharedParams, sessionEndHeight)
 
 	// Publish a block to the blockPublishCh to trigger claim creation for the session.
-	// TODO_BLOCKER(@bryanchriswhite, #516): assumes claiming at sessionClaimWindowOpenHeight is valid.
-	// This will likely change in future work.
 	triggerClaimBlock := testblock.NewAnyTimesBlock(t, emptyBlockHash, sessionClaimWindowOpenHeight)
 	blockPublishCh <- triggerClaimBlock
 
 	// TODO_IMPROVE: ensure correctness of persisted session trees here.
 
 	// Publish a block to the blockPublishCh to trigger proof submission for the session.
-	// TODO_BLOCKER(@bryanchriswhite, #516): assumes proving at sessionClaimWindowOpenHeight + 1 is valid.
-	// This will likely change in future work.
-	triggerProofBlock := testblock.NewAnyTimesBlock(t, emptyBlockHash, sessionClaimWindowOpenHeight+1)
+	sessionProofWindowOpenHeight := shared.GetProofWindowOpenHeight(&sharedParams, sessionEndHeight)
+	triggerProofBlock := testblock.NewAnyTimesBlock(t, emptyBlockHash, sessionProofWindowOpenHeight)
 	blockPublishCh <- triggerProofBlock
 
 	// Wait a tick to allow the relayer sessions manager to process asynchronously.
