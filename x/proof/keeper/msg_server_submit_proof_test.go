@@ -56,7 +56,129 @@ func init() {
 }
 
 func TestMsgServer_SubmitProof_Success(t *testing.T) {
+	tests := []struct {
+		desc              string
+		getProofMsgHeight func(
+			sharedParams *sharedtypes.Params,
+			queryHeight int64,
+		) int64
+	}{
+		{
+			desc:              "proof message height equals proof window open height",
+			getProofMsgHeight: shared.GetProofWindowOpenHeight,
+		},
+		{
+			desc:              "proof message height equals proof window close height",
+			getProofMsgHeight: shared.GetProofWindowCloseHeight,
+		},
+	}
 
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			opts := []keepertest.ProofKeepersOpt{
+				// Set block hash so we can have a deterministic expected on-chain proof requested by the protocol.
+				keepertest.WithBlockHash(blockHeaderHash),
+				// Set block height to 1 so there is a valid session on-chain.
+				keepertest.WithBlockHeight(1),
+			}
+			keepers, ctx := keepertest.NewProofModuleKeepers(t, opts...)
+			sharedParams := keepers.SharedKeeper.GetParams(ctx)
+			sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+
+			// Ensure the minimum relay difficulty bits is set to zero so this test
+			// doesn't need to mine for valid relays.
+			err := keepers.Keeper.SetParams(ctx, types.NewParams(0))
+			require.NoError(t, err)
+
+			// Construct a keyring to hold the keypairs for the accounts used in the test.
+			keyRing := keyring.NewInMemory(keepers.Codec)
+
+			// Create accounts in the account keeper with corresponding keys in the keyring for the application and supplier.
+			supplierAddr := createAccount(ctx, t, supplierUid, keyRing, keepers).GetAddress().String()
+			appAddr := createAccount(ctx, t, "app", keyRing, keepers).GetAddress().String()
+
+			service := &sharedtypes.Service{Id: testServiceId}
+
+			// Add a supplier and application pair that are expected to be in the session.
+			keepers.AddServiceActors(ctx, t, service, supplierAddr, appAddr)
+
+			// Get the session for the application/supplier pair which is expected
+			// to be claimed and for which a valid proof would be accepted.
+			// Given the setup above, it is guaranteed that the supplier created
+			// will be part of the session.
+			sessionHeader := keepers.GetSessionHeader(ctx, t, appAddr, service, 1)
+
+			// Construct a proof message server from the proof keeper.
+			srv := keeper.NewMsgServerImpl(*keepers.Keeper)
+
+			// Prepare a ring client to sign & validate relays.
+			ringClient, err := rings.NewRingClient(depinject.Supply(
+				polyzero.NewLogger(),
+				types.NewAppKeeperQueryClient(keepers.ApplicationKeeper),
+				types.NewAccountKeeperQueryClient(keepers.AccountKeeper),
+				types.NewSharedKeeperQueryClient(keepers.SharedKeeper),
+			))
+			require.NoError(t, err)
+
+			// Submit the corresponding proof.
+			numRelays := uint(5)
+			sessionTree := newFilledSessionTree(
+				ctx, t,
+				numRelays,
+				supplierUid, supplierAddr,
+				sessionHeader, sessionHeader, sessionHeader,
+				keyRing,
+				ringClient,
+			)
+
+			// Advance the block height to the test claim msg height.
+			claimMsgHeight := shared.GetClaimWindowOpenHeight(
+				&sharedParams,
+				sessionHeader.GetSessionEndBlockHeight(),
+			)
+			sdkCtx = sdkCtx.WithBlockHeight(claimMsgHeight)
+			ctx = sdkCtx
+
+			// Create a valid claim.
+			createClaimAndStoreBlockHash(
+				ctx, t, 1,
+				supplierAddr,
+				appAddr,
+				service,
+				sessionTree,
+				sessionHeader,
+				srv,
+				keepers,
+			)
+
+			// Advance the block height to the test proof msg height.
+			proofMsgHeight := test.getProofMsgHeight(&sharedParams, sessionHeader.GetSessionEndBlockHeight())
+			sdkCtx = sdkCtx.WithBlockHeight(proofMsgHeight)
+			ctx = sdkCtx
+
+			proofMsg := newTestProofMsg(t,
+				supplierAddr,
+				sessionHeader,
+				sessionTree,
+				expectedMerkleProofPath,
+			)
+			submitProofRes, err := srv.SubmitProof(ctx, proofMsg)
+			require.NoError(t, err)
+			require.NotNil(t, submitProofRes)
+
+			proofRes, err := keepers.AllProofs(ctx, &types.QueryAllProofsRequest{})
+			require.NoError(t, err)
+
+			proofs := proofRes.GetProofs()
+			require.Lenf(t, proofs, 1, "expected 1 proof, got %d", len(proofs))
+			require.Equal(t, proofMsg.SessionHeader.SessionId, proofs[0].GetSessionHeader().GetSessionId())
+			require.Equal(t, proofMsg.SupplierAddress, proofs[0].GetSupplierAddress())
+			require.Equal(t, proofMsg.SessionHeader.GetSessionEndBlockHeight(), proofs[0].GetSessionHeader().GetSessionEndBlockHeight())
+		})
+	}
+}
+
+func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 	opts := []keepertest.ProofKeepersOpt{
 		// Set block hash so we can have a deterministic expected on-chain proof requested by the protocol.
 		keepertest.WithBlockHash(blockHeaderHash),
@@ -133,24 +255,63 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 		keepers,
 	)
 
-	proofMsg := newTestProofMsg(t,
-		supplierAddr,
-		sessionHeader,
-		sessionTree,
-		expectedMerkleProofPath,
-	)
-	submitProofRes, err := srv.SubmitProof(ctx, proofMsg)
-	require.NoError(t, err)
-	require.NotNil(t, submitProofRes)
+	proofWindowOpenHeight := shared.GetProofWindowOpenHeight(&sharedParams, sessionHeader.GetSessionEndBlockHeight())
+	proofWindowCloseHeight := shared.GetProofWindowCloseHeight(&sharedParams, sessionHeader.GetSessionEndBlockHeight())
 
-	proofRes, err := keepers.AllProofs(ctx, &types.QueryAllProofsRequest{})
-	require.NoError(t, err)
+	tests := []struct {
+		desc           string
+		proofMsgHeight int64
+		expectedErr    error
+	}{
+		{
+			desc:           "proof message height equals proof window open height minus one",
+			proofMsgHeight: int64(proofWindowOpenHeight) - 1,
+			expectedErr: status.Error(
+				codes.FailedPrecondition,
+				types.ErrProofProofOutsideOfWindow.Wrapf(
+					"current block height (%d) is less than session proof window open height (%d)",
+					int64(proofWindowOpenHeight)-1,
+					proofWindowOpenHeight,
+				).Error(),
+			),
+		},
+		{
+			desc:           "proof message height equals proof window close height plus one",
+			proofMsgHeight: int64(proofWindowCloseHeight) + 1,
+			expectedErr: status.Error(
+				codes.FailedPrecondition,
+				types.ErrProofProofOutsideOfWindow.Wrapf(
+					"current block height (%d) is greater than session proof window close height (%d)",
+					int64(proofWindowCloseHeight)+1,
+					proofWindowCloseHeight,
+				).Error(),
+			),
+		},
+	}
 
-	proofs := proofRes.GetProofs()
-	require.Lenf(t, proofs, 1, "expected 1 proof, got %d", len(proofs))
-	require.Equal(t, proofMsg.SessionHeader.SessionId, proofs[0].GetSessionHeader().GetSessionId())
-	require.Equal(t, proofMsg.SupplierAddress, proofs[0].GetSupplierAddress())
-	require.Equal(t, proofMsg.SessionHeader.GetSessionEndBlockHeight(), proofs[0].GetSessionHeader().GetSessionEndBlockHeight())
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			// Advance the block height to the test proof msg height.
+			sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+			sdkCtx = sdkCtx.WithBlockHeight(test.proofMsgHeight)
+			ctx = sdkCtx
+
+			proofMsg := newTestProofMsg(t,
+				supplierAddr,
+				sessionHeader,
+				sessionTree,
+				expectedMerkleProofPath,
+			)
+			_, err := srv.SubmitProof(ctx, proofMsg)
+			require.ErrorContains(t, err, test.expectedErr.Error())
+
+			proofRes, err := keepers.AllProofs(ctx, &types.QueryAllProofsRequest{})
+			require.NoError(t, err)
+
+			proofs := proofRes.GetProofs()
+			require.Lenf(t, proofs, 0, "expected 0 proof, got %d", len(proofs))
+		})
+	}
 }
 
 func TestMsgServer_SubmitProof_Error(t *testing.T) {
@@ -299,6 +460,13 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 	wrongClosestProofPath := make([]byte, len(expectedMerkleProofPath))
 	copy(wrongClosestProofPath, expectedMerkleProofPath)
 	copy(wrongClosestProofPath, "wrong closest proof path")
+
+	// Increment the block height to the test proof height.
+	proofMsgHeight := shared.GetProofWindowOpenHeight(
+		&sharedParams,
+		validSessionHeader.GetSessionEndBlockHeight(),
+	)
+	ctx = cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(proofMsgHeight)
 
 	tests := []struct {
 		desc        string
@@ -804,57 +972,6 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			),
 		},
 		{
-			desc: "claim and proof session start heights must match",
-			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
-				// Advance the block height to shift the session start height.
-				sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
-				ctx = sdkCtx.WithBlockHeight(3)
-				t.Cleanup(resetBlockHeightFn(&ctx))
-
-				// Construct new proof message.
-				return newTestProofMsg(t,
-					supplierAddr,
-					&wrongSessionStartHeightHeader,
-					validSessionTree,
-					expectedMerkleProofPath,
-				)
-			},
-			expectedErr: status.Error(
-				codes.FailedPrecondition,
-				types.ErrProofInvalidRelay.Wrapf(
-					"session headers session start heights mismatch; expected: %d, got: %d",
-					2,
-					1,
-				).Error(),
-			),
-		},
-		{
-			desc: "claim and proof session end heights must match",
-			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
-				// Advance the block height such that no hydration errors can occur when
-				// getting a session with start height less than the current block height.
-				setBlockHeight(&ctx, 3)
-				// Reset the block height to zero after this test case.
-				t.Cleanup(resetBlockHeightFn(&ctx))
-
-				// Construct new proof message.
-				return newTestProofMsg(t,
-					supplierAddr,
-					&wrongSessionEndHeightHeader,
-					validSessionTree,
-					expectedMerkleProofPath,
-				)
-			},
-			expectedErr: status.Error(
-				codes.FailedPrecondition,
-				types.ErrProofInvalidRelay.Wrapf(
-					"session headers session end heights mismatch; expected: %d, got: %d",
-					3,
-					4,
-				).Error(),
-			),
-		},
-		{
 			desc: "Valid proof cannot validate claim with an incorrect root",
 			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
 				numRelays := uint(10)
@@ -870,7 +987,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 				wrongMerkleRootBz, err := wrongMerkleRootSessionTree.Flush()
 				require.NoError(t, err)
 
-				// Advance the block height to the claim window open height.
+				// Reset the block height to the test claim msg height.
 				sharedParams := keepers.SharedKeeper.GetParams(ctx)
 				claimMsgHeight := shared.GetClaimWindowOpenHeight(
 					&sharedParams,
@@ -891,6 +1008,9 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 				)
 				_, err = srv.CreateClaim(ctx, wrongMerkleRootClaimMsg)
 				require.NoError(t, err)
+
+				// Advance the block height to the test proof msg height.
+				ctx = cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(proofMsgHeight)
 
 				return newTestProofMsg(t,
 					supplierAddr,

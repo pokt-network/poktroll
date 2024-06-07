@@ -95,3 +95,10 @@ func GetProofWindowOpenHeight(sharedParams *sharedtypes.Params, queryHeight int6
 	return GetClaimWindowCloseHeight(sharedParams, queryHeight) +
 		int64(sharedParams.GetProofWindowOpenOffsetBlocks())
 }
+
+// GetProofWindowCloseHeight returns the block height at which the proof window of
+// the session that includes queryHeight closes, given the passed sharedParams.
+func GetProofWindowCloseHeight(sharedParams *sharedtypes.Params, queryHeight int64) int64 {
+	return GetProofWindowOpenHeight(sharedParams, queryHeight) +
+		int64(sharedParams.GetProofWindowCloseOffsetBlocks())
+}
