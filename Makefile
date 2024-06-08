@@ -420,7 +420,7 @@ test_all_with_integration: check_go_version ## Run all go tests, including those
 
 .PHONY: test_integration
 test_integration: check_go_version ## Run only the in-memory integration "unit" tests
-	go test -v -count=1 ./tests/integration/...
+	go test -count=1 -v -race -tags test,integration ./tests/integration/...
 
 .PHONY: itest
 itest: check_go_version ## Run tests iteratively (see usage for more)
