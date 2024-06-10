@@ -105,6 +105,9 @@ if localnet_config["observability"]["enabled"]:
         resource_deps=["grafana-helm-repo"],
     )
 
+    # TODO_BUG(@okdas): There is an occasional issue where grafana hits a "Database locked"
+    # error when updating grafana. There is likely a weird race condition happening
+    # that requires a restart of LocalNet. Look into it.
     k8s_resource(
         new_name="grafana",
         workload="observability",
