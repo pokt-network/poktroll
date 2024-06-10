@@ -8,12 +8,13 @@ import (
 
 var _ sdk.Msg = (*MsgAddService)(nil)
 
-func NewMsgAddService(address, serviceId, serviceName string) *MsgAddService {
+func NewMsgAddService(address, serviceId, serviceName string, computeUnitsPerRelay uint64) *MsgAddService {
 	return &MsgAddService{
 		Address: address,
 		Service: types.Service{
-			Id:   serviceId,
-			Name: serviceName,
+			Id:                   serviceId,
+			Name:                 serviceName,
+			ComputeUnitsPerRelay: computeUnitsPerRelay,
 		},
 	}
 }
@@ -29,6 +30,17 @@ func (msg *MsgAddService) ValidateBasic() error {
 	}
 	if msg.Service.Name == "" {
 		return ErrServiceMissingName
+	}
+	if err := ValidateComputeUnitsPerRelay(msg.Service.ComputeUnitsPerRelay); err != nil {
+		return err
+	}
+	return nil
+}
+
+// ValidateComputeUnitsPerRelay makes sure the compute units per relay is a valid value
+func ValidateComputeUnitsPerRelay(computeUnitsPerRelay uint64) error {
+	if computeUnitsPerRelay == 0 {
+		return ErrServiceInvalidComputUnitsPerRelay.Wrap("compute units per relay must be greater than 0")
 	}
 	return nil
 }

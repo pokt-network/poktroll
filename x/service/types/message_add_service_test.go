@@ -37,10 +37,17 @@ func TestMsgAddService_ValidateBasic(t *testing.T) {
 			},
 			expectedErr: ErrServiceMissingName,
 		}, {
+			desc: "valid service supplier address - no compute units per relay",
+			msg: MsgAddService{
+				Address: sample.AccAddress(),
+				Service: sharedtypes.Service{Id: "svc1", Name: "service name", ComputeUnitsPerRelay: 0},
+			},
+			expectedErr: ErrServiceInvalidComputUnitsPerRelay,
+		}, {
 			desc: "valid service supplier address and service",
 			msg: MsgAddService{
 				Address: sample.AccAddress(),
-				Service: sharedtypes.Service{Id: "svc1", Name: "service name"},
+				Service: sharedtypes.Service{Id: "svc1", Name: "service name", ComputeUnitsPerRelay: 1},
 			},
 			expectedErr: nil,
 		},
