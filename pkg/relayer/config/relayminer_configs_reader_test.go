@@ -91,6 +91,66 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 			},
 		},
 		{
+			desc: "valid: relay miner config with signing key configured on supplier level",
+
+			inputConfigYAML: `
+				pocket_node:
+				  query_node_rpc_url: tcp://127.0.0.1:36657
+				  query_node_grpc_url: tcp://127.0.0.1:36658
+				  tx_node_rpc_url: tcp://127.0.0.1:36659
+				smt_store_path: smt_stores
+				suppliers:
+				  - service_id: ethereum
+				    listen_url: http://127.0.0.1:8080
+					signing_key_names: [ supplier1 ]
+				    service_config:
+				      backend_url: http://anvil.servicer:8545
+				      authentication:
+				        username: user
+				        password: pwd
+				      headers: {}
+							publicly_exposed_endpoints:
+								- ethereum.devnet1.poktroll.com
+								- ethereum
+				`,
+
+			expectedErr: nil,
+			expectedConfig: &config.RelayMinerConfig{
+				PocketNode: &config.RelayMinerPocketNodeConfig{
+					QueryNodeRPCUrl:  &url.URL{Scheme: "tcp", Host: "127.0.0.1:36657"},
+					QueryNodeGRPCUrl: &url.URL{Scheme: "tcp", Host: "127.0.0.1:36658"},
+					TxNodeRPCUrl:     &url.URL{Scheme: "tcp", Host: "127.0.0.1:36659"},
+				},
+				SmtStorePath: "smt_stores",
+				Servers: map[string]*config.RelayMinerServerConfig{
+					"http://127.0.0.1:8080": {
+						ListenAddress:        "127.0.0.1:8080",
+						ServerType:           config.RelayMinerServerTypeHTTP,
+						XForwardedHostLookup: false,
+						SupplierConfigsMap: map[string]*config.RelayMinerSupplierConfig{
+							"ethereum": {
+								ServiceId:  "ethereum",
+								ServerType: config.RelayMinerServerTypeHTTP,
+								ServiceConfig: &config.RelayMinerSupplierServiceConfig{
+									BackendUrl: &url.URL{Scheme: "http", Host: "anvil.servicer:8545"},
+									Authentication: &config.RelayMinerSupplierServiceAuthentication{
+										Username: "user",
+										Password: "pwd",
+									},
+									Headers: map[string]string{},
+								},
+								PubliclyExposedEndpoints: []string{
+									"ethereum.devnet1.poktroll.com",
+									"ethereum",
+								},
+								SigningKeyNames: []string{"supplier1"},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
 			desc: "valid: multiple suppliers, single server",
 
 			inputConfigYAML: `
@@ -379,7 +439,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 			expectedErr: config.ErrRelayMinerConfigInvalidNodeUrl,
 		},
 		{
-			desc: "invalid: missing signing key name",
+			desc: "invalid: missing both default and supplier signing key names",
 
 			inputConfigYAML: `
 				pocket_node:
