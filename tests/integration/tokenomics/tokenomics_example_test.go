@@ -1,7 +1,6 @@
 package integration_test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -81,8 +80,7 @@ func TestTokenomicsIntegrationExample(t *testing.T) {
 
 	// Need to wait until the claim window is open
 	currentBlockHeight := int(integrationApp.SdkCtx().BlockHeight())
-	numBlocksUntilClaimWindowIsOpen := int(sessionEndHeight + claimOpenWindowNumBlocks - currentBlockHeight)
-	fmt.Println("OLSH", numBlocksUntilClaimWindowIsOpen, sessionEndHeight, claimOpenWindowNumBlocks, currentBlockHeight)
+	numBlocksUntilClaimWindowIsOpen := int(sessionEndHeight + claimOpenWindowNumBlocks - currentBlockHeight + 1)
 	for i := 0; i < numBlocksUntilClaimWindowIsOpen; i++ {
 		integrationApp.NextBlock(t)
 	}

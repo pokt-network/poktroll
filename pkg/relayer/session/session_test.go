@@ -109,8 +109,7 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 	sessionClaimWindowOpenHeight := shared.GetClaimWindowOpenHeight(&sharedParams, sessionEndHeight)
 
 	// Publish a block to the blockPublishCh to trigger claim creation for the session.
-	// TODO_IN_THIS_PR: Remove -2 after the discussion in GetClaimWindowOpenHeight
-	triggerClaimBlock := testblock.NewAnyTimesBlock(t, emptyBlockHash, sessionClaimWindowOpenHeight+2)
+	triggerClaimBlock := testblock.NewAnyTimesBlock(t, emptyBlockHash, sessionClaimWindowOpenHeight)
 	blockPublishCh <- triggerClaimBlock
 
 	// TODO_IMPROVE: ensure correctness of persisted session trees here.

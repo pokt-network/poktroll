@@ -9,7 +9,7 @@ import (
 //
 // TODO_BLOCKER(@bryanchriswhite): This is a place-holder that will be removed
 // once the respective governance parameter is implemented.
-const SessionGracePeriodBlocks = 4
+const SessionGracePeriodBlocks = 2
 
 // GetSessionStartHeight returns the block height at which the session containing
 // queryHeight starts, given the passed shared on-chain parameters.
@@ -76,13 +76,8 @@ func IsGracePeriodElapsed(sharedParams *sharedtypes.Params, queryHeight, current
 // the session that includes queryHeight opens, given the passed sharedParams.
 func GetClaimWindowOpenHeight(sharedParams *sharedtypes.Params, queryHeight int64) int64 {
 	sessionEndHeight := GetSessionEndHeight(sharedParams, queryHeight)
-
 	claimWindowOpenOffsetBlocks := int64(sharedParams.GetClaimWindowOpenOffsetBlocks())
-	// TODO_IN_THIS_PR_DISCUSS: I don't think this should include `sessionGracePeriodEndHeight` because:
-	//     1. Window should open irrespective of grace period.
-	//     2. If, during the grace period, a new claim is submitted. It is upserted.
-	//     3. The soonest a claim window should open is "EndSession + ClaimWindowOpen"
-	// An additional block is added to permit to relays arriving at the last block
+	// NB: An additional block is added to permit to relays arriving at the last block
 	// of the session to be included in the claim before the smt is closed.
 	return sessionEndHeight + claimWindowOpenOffsetBlocks + 1
 }
