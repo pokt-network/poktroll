@@ -31,7 +31,12 @@ localnet_config_defaults = {
         },
         "delve": {"enabled": False},
     },
-    "observability": {"enabled": True},
+    "observability": {
+        "enabled": True,
+        "grafana": {
+            "defaultDashboardsEnabled": False
+        },
+    },
     "relayminers": {"count": 1, "delve": {"enabled": False}},
     "gateways": {
         "count": 1,
@@ -92,6 +97,7 @@ if localnet_config["observability"]["enabled"]:
         "prometheus-community/kube-prometheus-stack",
         flags=[
             "--values=./localnet/kubernetes/observability-prometheus-stack.yaml",
+            "--set=grafana.defaultDashboardsEnabled=" + str(localnet_config["observability"]["grafana"]["defaultDashboardsEnabled"]),
         ],
         resource_deps=["prometheus-community"],
     )
