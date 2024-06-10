@@ -43,10 +43,11 @@ func TestSettleSessionAccounting_HandleAppGoingIntoDebt(t *testing.T) {
 		SupplierAddress: supplier.Address,
 		SessionHeader: &sessiontypes.SessionHeader{
 			ApplicationAddress: app.Address,
-			Service: &sharedtypes.Service{
-				Id:   "svc1",
-				Name: "svcName1",
-			},
+			Service: sharedtypes.NewService(
+				"svc1",
+				"svcName1",
+				1,
+			),
 			SessionId:               "session_id",
 			SessionStartBlockHeight: 1,
 			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
@@ -84,10 +85,11 @@ func TestSettleSessionAccounting_AppNotFound(t *testing.T) {
 		SupplierAddress: supplierAddr,
 		SessionHeader: &sessiontypes.SessionHeader{
 			ApplicationAddress: sample.AccAddress(), // Random address
-			Service: &sharedtypes.Service{
-				Id:   "svc1",
-				Name: "svcName1",
-			},
+			Service: sharedtypes.NewService(
+				"svc1",
+				"svcName1",
+				1,
+			),
 			SessionId:               "session_id",
 			SessionStartBlockHeight: 1,
 			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
@@ -288,10 +290,11 @@ func baseClaim(appAddr, supplierAddr string, sum uint64) prooftypes.Claim {
 		SupplierAddress: supplierAddr,
 		SessionHeader: &sessiontypes.SessionHeader{
 			ApplicationAddress: appAddr,
-			Service: &sharedtypes.Service{
-				Id:   "svc1",
-				Name: "svcName1",
-			},
+			Service: sharedtypes.NewService(
+				"svc1",
+				"svcName1",
+				1,
+			),
 			SessionId:               "session_id",
 			SessionStartBlockHeight: 1,
 			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),

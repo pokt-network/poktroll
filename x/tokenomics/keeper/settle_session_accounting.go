@@ -5,7 +5,6 @@ import (
 	math "cosmossdk.io/math"
 	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/smt"
 
 	"github.com/pokt-network/poktroll/telemetry"
@@ -102,13 +101,8 @@ func (k Keeper) SettleSessionAccounting(
 
 	logger.Info(fmt.Sprintf("About to start settling claim for %d compute units", claimComputeUnits))
 
-	computeUnitsPerRelay := sessionHeader.Service.ComputeUnitsPerRelay
-	if computeUnitsPerRelay == 0 {
-		computeUnitsPerRelay = sharedtypes.DefaultComputeUnitsPerRelay
-	}
-
 	// Calculate the amount of tokens to mint & burn
-	settlementAmt = k.getCoinFromComputeUnits(ctx, root, computeUnitsPerRelay)
+	settlementAmt = k.getCoinFromComputeUnits(ctx, root, sessionHeader.Service.ComputeUnitsPerRelay)
 	settlementAmtuPOKT := sdk.NewCoins(settlementAmt)
 
 	logger.Info(fmt.Sprintf(

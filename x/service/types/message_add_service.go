@@ -2,7 +2,6 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-
 	"github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -11,11 +10,11 @@ var _ sdk.Msg = (*MsgAddService)(nil)
 func NewMsgAddService(address, serviceId, serviceName string, computeUnitsPerRelay uint64) *MsgAddService {
 	return &MsgAddService{
 		Address: address,
-		Service: types.Service{
-			Id:                   serviceId,
-			Name:                 serviceName,
-			ComputeUnitsPerRelay: computeUnitsPerRelay,
-		},
+		Service: *types.NewService(
+			serviceId,
+			serviceName,
+			computeUnitsPerRelay,
+		),
 	}
 }
 
