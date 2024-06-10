@@ -93,7 +93,7 @@ func GetClaimWindowCloseHeight(sharedParams *sharedtypes.Params, queryHeight int
 	sessionEndHeight := GetSessionEndHeight(sharedParams, queryHeight)
 	// An additional block is added to permit to relays arriving at the last block
 	// of the session to be included in the claim before the smt is closed.
-	sessionGracePeriodEndHeight := GetSessionGracePeriodEndHeight(sessionEndHeight)
+	sessionGracePeriodEndHeight := GetSessionGracePeriodEndHeight(sharedParams, sessionEndHeight)
 	return GetClaimWindowOpenHeight(sharedParams, queryHeight) +
 		sessionGracePeriodEndHeight +
 		int64(sharedParams.GetClaimWindowCloseOffsetBlocks())
