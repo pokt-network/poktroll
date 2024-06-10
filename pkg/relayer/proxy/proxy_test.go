@@ -94,6 +94,7 @@ func init() {
 					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						BackendUrl: &url.URL{Scheme: "http", Host: "127.0.0.1:8545", Path: "/"},
 					},
+					SigningKeyNames: []string{supplierKeyName},
 				},
 				secondaryService: {
 					ServiceId:                secondaryService,
@@ -102,6 +103,7 @@ func init() {
 					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						BackendUrl: &url.URL{Scheme: "http", Host: "127.0.0.1:8546", Path: "/"},
 					},
+					SigningKeyNames: []string{supplierKeyName},
 				},
 			},
 		},
