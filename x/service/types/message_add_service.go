@@ -5,6 +5,10 @@ import (
 	"github.com/pokt-network/poktroll/x/shared/types"
 )
 
+const (
+	DefaultComputeUnitsPerRelay uint64 = 1
+)
+
 var _ sdk.Msg = (*MsgAddService)(nil)
 
 func NewMsgAddService(address, serviceId, serviceName string, computeUnitsPerRelay uint64) *MsgAddService {

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -9,14 +10,13 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/x/service/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 var _ = strconv.Itoa(0)
 
 func CmdAddService() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "add-service <service_id> <service_name> <compute_units_per_relay>",
+		Use:   fmt.Sprintf("add-service <service_id> <service_name> <compute_units_per_relay: default={%d}>", types.DefaultComputeUnitsPerRelay),
 		Short: "Add a new service to the network",
 		Long: `Add a new service to the network that will be available for applications,
 gateways and suppliers to use. The service id MUST be unique but the service name doesn't have to be.
@@ -28,7 +28,7 @@ $ poktrolld tx service add-service "svc1" "service_one" --keyring-backend test -
 			serviceIdStr := args[0]
 			serviceNameStr := args[1]
 
-			computeUnitsPerRelay := sharedtypes.DefaultComputeUnitsPerRelay
+			computeUnitsPerRelay := types.DefaultComputeUnitsPerRelay
 			// if compute units per relay argument is provided
 			if len(args) > 2 {
 				computeUnitsPerRelay, err = strconv.ParseUint(args[2], 10, 64)
