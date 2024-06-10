@@ -464,8 +464,7 @@ func TestRelayerProxy_Relays(t *testing.T) {
 			expectedErrMsg:  "invalid relay request signature or bytes",
 		},
 		{
-			desc: "Successful relay",
-
+			desc:                 "Successful relay",
 			relayerProxyBehavior: defaultRelayerProxyBehavior,
 			inputScenario:        sendRequestWithSuccessfulReply,
 
@@ -474,7 +473,7 @@ func TestRelayerProxy_Relays(t *testing.T) {
 		},
 		{
 			desc: "Successful late relay with session grace period",
-
+			// here
 			relayerProxyBehavior: []func(*testproxy.TestBehavior){
 				// blockHeight is past the first session but within its session grace period
 				testproxy.WithRelayerProxyDependenciesForBlockHeight(
@@ -571,6 +570,7 @@ func sendRequestWithMissingSignature(
 		appPrivateKey,
 		defaultService,
 		blockHeight,
+		supplierKeyName,
 		testproxy.PrepareJSONRPCRequest(t),
 	)
 	req.Meta.Signature = nil
@@ -586,6 +586,7 @@ func sendRequestWithInvalidSignature(
 		appPrivateKey,
 		defaultService,
 		blockHeight,
+		supplierKeyName,
 		testproxy.PrepareJSONRPCRequest(t),
 	)
 	req.Meta.Signature = []byte("invalid signature")
@@ -603,6 +604,7 @@ func sendRequestWithMissingSessionHeaderApplicationAddress(
 		randomPrivKey,
 		defaultService,
 		blockHeight,
+		supplierKeyName,
 		testproxy.PrepareJSONRPCRequest(t),
 	)
 
@@ -626,6 +628,7 @@ func sendRequestWithNonStakedApplicationAddress(
 		randomPrivKey,
 		defaultService,
 		blockHeight,
+		supplierKeyName,
 		testproxy.PrepareJSONRPCRequest(t),
 	)
 
@@ -644,6 +647,7 @@ func sendRequestWithRingSignatureMismatch(
 		appPrivateKey,
 		defaultService,
 		blockHeight,
+		supplierKeyName,
 		testproxy.PrepareJSONRPCRequest(t),
 	)
 
@@ -665,6 +669,7 @@ func sendRequestWithDifferentSession(
 		appPrivateKey,
 		defaultService,
 		blockHeightAfterSessionGracePeriod,
+		supplierKeyName,
 		testproxy.PrepareJSONRPCRequest(t),
 	)
 	req.Meta.Signature = testproxy.GetApplicationRingSignature(t, req, appPrivateKey)
@@ -681,6 +686,7 @@ func sendRequestWithInvalidRelaySupplier(
 		appPrivateKey,
 		defaultService,
 		blockHeight,
+		supplierKeyName,
 		testproxy.PrepareJSONRPCRequest(t),
 	)
 	req.Meta.Signature = testproxy.GetApplicationRingSignature(t, req, appPrivateKey)
@@ -696,6 +702,7 @@ func sendRequestWithSignatureForDifferentPayload(
 		test, appPrivateKey,
 		defaultService,
 		blockHeight,
+		supplierKeyName,
 		testproxy.PrepareJSONRPCRequest(t),
 	)
 	req.Meta.Signature = testproxy.GetApplicationRingSignature(t, req, appPrivateKey)
@@ -726,9 +733,12 @@ func sendRequestWithSuccessfulReply(
 		appPrivateKey,
 		defaultService,
 		blockHeight,
+		supplierKeyName,
 		testproxy.PrepareJSONRPCRequest(t),
 	)
 	req.Meta.Signature = testproxy.GetApplicationRingSignature(t, req, appPrivateKey)
+
+	fmt.Printf("DIMA req.Meta.SupplierAddress = testproxy.GetAddressFromKeyName(test, supplierKeyName): %s", req.Meta.SupplierAddress)
 
 	return testproxy.MarshalAndSend(test, servicesConfigMap, defaultRelayMinerServer, defaultService, req)
 }
@@ -745,6 +755,7 @@ func sendRequestWithCustomSessionHeight(
 			appPrivateKey,
 			defaultService,
 			requestSessionBlockHeight,
+			supplierKeyName,
 			testproxy.PrepareJSONRPCRequest(t),
 		)
 		req.Meta.Signature = testproxy.GetApplicationRingSignature(t, req, appPrivateKey)

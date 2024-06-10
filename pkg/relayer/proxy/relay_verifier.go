@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/pokt-network/poktroll/x/service/types"
 	"github.com/pokt-network/poktroll/x/shared"
@@ -79,12 +80,19 @@ func (rp *relayerProxy) VerifyRelayRequest(
 
 	// Check if the relayRequest is allowed to be served by the relayer proxy.
 	_, isSupplierAddressPresent := rp.AddressToSigningKeyNameMap[meta.GetSupplierAddress()]
+	if !isSupplierAddressPresent {
+		return ErrRelayerProxyMissingSupplierAddress
+	}
+
 	for _, supplier := range session.Suppliers {
 		// Verify if the supplier address in the session matches the one in the relayRequest.
 		if isSupplierAddressPresent && supplier.Address == meta.GetSupplierAddress() {
 			return nil
 		}
 	}
+
+	fmt.Println(meta.SupplierAddress)
+	fmt.Println(session)
 
 	return ErrRelayerProxyInvalidSupplier
 }
