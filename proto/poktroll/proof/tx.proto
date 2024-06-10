@@ -59,6 +59,7 @@ message MsgUpdateParam {
     string as_string = 3 [(gogoproto.jsontag) = "as_string"];
     int64 as_int64 = 6 [(gogoproto.jsontag) = "as_int64"];
     bytes as_bytes = 7 [(gogoproto.jsontag) = "as_bytes"];
+    float as_float = 8 [(gogoproto.jsontag) = "as_float"];
   }
 }
 
