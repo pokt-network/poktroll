@@ -289,7 +289,11 @@ func TestTxClient_SignAndBroadcast_CheckTxError(t *testing.T) {
 		ctx                  = context.Background()
 	)
 
-	t.Log("TODO_FLAKY: Known flaky test - TestTxClient_SignAndBroadcast_CheckTxError")
+	t.Log(`TODO_FLAKY: Known flaky test: 'TestTxClient_SignAndBroadcast_CheckTxError'
+
+Run the following command a few times to verify it passes at least once:
+
+$ go test -v -count=1 -run TestTxClient_SignAndBroadcast_CheckTxError ./pkg/client/tx/...`)
 
 	keyring, signingKey := testkeyring.NewTestKeyringWithKey(t, testSigningKeyName)
 
