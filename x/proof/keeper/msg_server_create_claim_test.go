@@ -185,7 +185,7 @@ func TestMsgServer_CreateClaim_Error_OutsideOfWindow(t *testing.T) {
 			expectedErr: status.Error(
 				codes.FailedPrecondition,
 				types.ErrProofClaimOutsideOfWindow.Wrapf(
-					"current block height %d is less than session claim window open height %d",
+					"current block height (%d) is less than session claim window open height (%d)",
 					claimWindowOpenHeight-1,
 					shared.GetClaimWindowOpenHeight(&sharedParams, sessionHeader.GetSessionEndBlockHeight()),
 				).Error(),
@@ -197,7 +197,7 @@ func TestMsgServer_CreateClaim_Error_OutsideOfWindow(t *testing.T) {
 			expectedErr: status.Error(
 				codes.FailedPrecondition,
 				types.ErrProofClaimOutsideOfWindow.Wrapf(
-					"current block height %d is greater than session claim window close height %d",
+					"current block height (%d) is greater than session claim window close height (%d)",
 					claimWindowCloseHeight+1,
 					claimWindowCloseHeight,
 				).Error(),

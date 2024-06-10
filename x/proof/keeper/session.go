@@ -105,7 +105,7 @@ func (k msgServer) validateClaimWindow(
 	// Ensure the current block height is AFTER the claim window open height.
 	if currentHeight < claimWindowOpenHeight {
 		return types.ErrProofClaimOutsideOfWindow.Wrapf(
-			"current block height %d is less than session claim window open height %d",
+			"current block height (%d) is less than session claim window open height (%d)",
 			currentHeight,
 			claimWindowOpenHeight,
 		)
@@ -114,7 +114,7 @@ func (k msgServer) validateClaimWindow(
 	// Ensure the current block height is BEFORE the claim window close height.
 	if currentHeight > claimWindowCloseHeight {
 		return types.ErrProofClaimOutsideOfWindow.Wrapf(
-			"current block height %d is greater than session claim window close height %d",
+			"current block height (%d) is greater than session claim window close height (%d)",
 			currentHeight,
 			claimWindowCloseHeight,
 		)
@@ -129,6 +129,59 @@ func (k msgServer) validateClaimWindow(
 			"supplier_addr", msg.GetSupplierAddress(),
 		).
 		Debug("validated claim window")
+
+	return nil
+}
+
+// validateProofWindow returns an error if the given session is not eligible for proving.
+// It *assumes* that the msg's session header is a valid on-chain session with correct
+// height fields. First call #queryAndValidateSessionHeader to ensure any user-provided
+// session header is valid and correctly hydrated.
+func (k msgServer) validateProofWindow(
+	ctx context.Context,
+	msg *types.MsgSubmitProof,
+) error {
+	logger := k.Logger().With("method", "validateProofWindow")
+	sessionHeader := msg.GetSessionHeader()
+	sharedParams := k.sharedKeeper.GetParams(ctx)
+
+	sessionEndHeight := sessionHeader.GetSessionEndBlockHeight()
+
+	// Get the proof window open and close heights for the given session header.
+	proofWindowOpenHeight := shared.GetProofWindowOpenHeight(&sharedParams, sessionEndHeight)
+	proofWindowCloseHeight := shared.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
+
+	// Get the current block height.
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	currentHeight := sdkCtx.BlockHeight()
+
+	// Ensure the current block height is AFTER the proof window open height.
+	if currentHeight < proofWindowOpenHeight {
+		return types.ErrProofProofOutsideOfWindow.Wrapf(
+			"current block height (%d) is less than session proof window open height (%d)",
+			currentHeight,
+			proofWindowOpenHeight,
+		)
+	}
+
+	// Ensure the current block height is BEFORE the proof window close height.
+	if currentHeight > proofWindowCloseHeight {
+		return types.ErrProofProofOutsideOfWindow.Wrapf(
+			"current block height (%d) is greater than session proof window close height (%d)",
+			currentHeight,
+			proofWindowCloseHeight,
+		)
+	}
+
+	logger.
+		With(
+			"current_height", currentHeight,
+			"session_end_height", sessionEndHeight,
+			"proof_window_open_height", proofWindowOpenHeight,
+			"proof_window_close_height", proofWindowCloseHeight,
+			"supplier_addr", msg.GetSupplierAddress(),
+		).
+		Debug("validated proof window")
 
 	return nil
 }

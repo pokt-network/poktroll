@@ -227,7 +227,7 @@ func (rs *relayerSessionsManager) forEachBlockClaimSessionsFn(
 			// before emitting the on-time sessions.
 			var lateSessions []relayer.SessionTree
 
-			sessionGracePeriodEndHeight := shared.GetSessionGracePeriodEndHeight(sessionEndHeight)
+			sessionGracePeriodEndHeight := shared.GetSessionGracePeriodEndHeight(sharedParams, sessionEndHeight)
 
 			// Checking for sessions to claim with <= operator,
 			// which means that it would include sessions that were supposed to be

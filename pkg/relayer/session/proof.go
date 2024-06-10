@@ -79,34 +79,30 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 	// first one from the group to calculate the earliest height for proof submission.
 	sessionEndHeight := sessionTrees[0].GetSessionHeader().GetSessionEndBlockHeight()
 
-	// TODO_TECHDEBT(@bryanchriswhite, #516): Centralize the business logic that involves taking
-	// into account the heights, windows and grace periods into helper functions.
-	// TODO_BLOCKER(@bryanchriswhite, #516): The proof submission window SHOULD NOT overlap with the
-	// claim window. The proof submission window start SHOULD be relative to the
-	// claim window end.
-	sessionGracePeriodEndHeight := shared.GetSessionGracePeriodEndHeight(sessionEndHeight)
-	// An additional block is added to permit to relays arriving at the last block
-	// of the session to be included in the claim before the smt is closed.
-	createClaimsWindowStartHeight := sessionGracePeriodEndHeight + 1
-	submitProofsWindowStartHeight := createClaimsWindowStartHeight
-	// TODO_BLOCKER(@bryanchriswhite, #516): query the on-chain governance parameter once available.
-	// + claimproofparams.GovSubmitProofWindowStartHeightOffset
+	// TODO_TECHDEBT(#543): We don't really want to have to query the params for every method call.
+	// Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
+	// to get the most recently (asynchronously) observed (and cached) value.
+	// TODO_BLOCKER(@bryanchriswhite,#543): We also don't really want to use the current value of the params. Instead,
+	// we should be using the value that the params had for the session which includes queryHeight.
+	sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
+	if err != nil {
+		failSubmitProofsSessionsCh <- sessionTrees
+		return nil
+	}
 
-	// we wait for submitProofsWindowStartHeight to be received before proceeding since we need its hash
+	submitProofsWindowOpenHeight := shared.GetProofWindowOpenHeight(sharedParams, sessionEndHeight)
+
+	// we wait for submitProofsWindowOpenHeight to be received before proceeding since we need its hash
 	rs.logger.Info().
-		Int64("submitProofsWindowStartHeight", submitProofsWindowStartHeight).
+		Int64("submitProofsWindowOpenHeight", submitProofsWindowOpenHeight).
 		Msg("waiting & blocking for global earliest proof submission height")
 
-	// TODO_BLOCKER(@bryanchriswhite): The block that'll be used as a source of entropy for
-	// which branch(es) to prove should be deterministic and use on-chain governance params.
 	// sessionPathBlock is the block that will have its hash used as the
 	// source of entropy for all the session trees in that batch, waiting for it to
 	// be received before proceeding.
-	sessionPathBlock := rs.waitForBlock(ctx, sessionGracePeriodEndHeight)
-	// TODO_BLOCKER(@bryanchriswhite, #516): Wait one more block to ensure that a claim submitted at the earliest
-	// possible height is committed. This delay will also need to account for claim/proof
-	// window offsets which will be added in the future.
-	_ = rs.waitForBlock(ctx, submitProofsWindowStartHeight)
+	sessionPathBlockHeight := shared.GetSessionGracePeriodEndHeight(sharedParams, sessionEndHeight)
+	sessionPathBlock := rs.waitForBlock(ctx, sessionPathBlockHeight)
+	_ = rs.waitForBlock(ctx, submitProofsWindowOpenHeight)
 
 	// Generate proofs for all sessionTrees concurrently while waiting for the
 	// earliest submitProofsHeight (pseudorandom submission distribution) to be reached.

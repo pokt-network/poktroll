@@ -350,13 +350,23 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 			},
 		)
 	case prooftypes.ModuleName:
-		minRelayDifficultyBits := uint64(s.expectedModuleParams[moduleName][prooftypes.ParamMinRelayDifficultyBits].value.(int64))
+		params := prooftypes.DefaultParams()
+		paramsMap := s.expectedModuleParams[moduleName]
+
+		minRelayDifficultyBits, ok := paramsMap[prooftypes.ParamMinRelayDifficultyBits]
+		if ok {
+			params.MinRelayDifficultyBits = uint64(minRelayDifficultyBits.value.(int64))
+		}
+
+		proofRequestProbability, ok := paramsMap[prooftypes.ParamProofRequestProbability]
+		if ok {
+			params.ProofRequestProbability = proofRequestProbability.value.(float32)
+		}
+
 		assertUpdatedParams(s,
 			[]byte(res.Stdout),
 			&prooftypes.QueryParamsResponse{
-				Params: prooftypes.Params{
-					MinRelayDifficultyBits: minRelayDifficultyBits,
-				},
+				Params: params,
 			},
 		)
 	case sharedtypes.ModuleName:
