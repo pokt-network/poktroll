@@ -113,19 +113,6 @@ var AllModuleMsgUpdateParamTypes = []string{
 	tokenomics.Msg_UpdateParams_FullMethodName,
 }
 
-// AllModuleMsgUpdateParamTypes is a list of all MsgUpdateParams types for each module.
-// NB: If you are reading this and any module has a MsgUpdateParams message which is not
-// included in this list, please add it.
-var AllModuleMsgUpdateParamTypes = []string{
-	application.Msg_UpdateParams_FullMethodName,
-	gateway.Msg_UpdateParams_FullMethodName,
-	proof.Msg_UpdateParams_FullMethodName,
-	session.Msg_UpdateParams_FullMethodName,
-	shared.Msg_UpdateParams_FullMethodName,
-	supplier.Msg_UpdateParams_FullMethodName,
-	tokenomics.Msg_UpdateParams_FullMethodName,
-}
-
 // AnAuthzGrantFromTheAccountToTheAccountForEachModuleMsgupdateparamMessageExists queries the
 // authz module for grants with the expected granter & grantee (authz.QueryGrantsRequest) &
 // asserts that the expected grants (for each module) are found in the response.

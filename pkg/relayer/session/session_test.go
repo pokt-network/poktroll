@@ -119,6 +119,6 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 	triggerProofBlock := testblock.NewAnyTimesBlock(t, emptyBlockHash, sessionProofWindowOpenHeight)
 	blockPublishCh <- triggerProofBlock
 
-	// // Wait a tick to allow the relayer sessions manager to process asynchronously.
+	// Wait a tick to allow the relayer sessions manager to process asynchronously.
 	time.Sleep(250 * time.Millisecond)
 }

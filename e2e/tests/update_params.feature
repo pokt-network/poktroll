@@ -7,8 +7,6 @@ Feature: Params Namespace
   #   we add one to prepare for everything downstream.
   Scenario: All params are reset to their default values
     Given the user has the pocketd binary installed
-    # TODO_HACK: We only validate one module and assume that the other module
-    #            have the appropriate permissions as well, for simplicity.
     And an authz grant from the "gov" "module" account to the "pnf" "user" account for each module MsgUpdateParam message exists
     Then all module params are reset to their default values
 

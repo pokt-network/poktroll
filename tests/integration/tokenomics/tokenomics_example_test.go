@@ -19,7 +19,7 @@ func init() {
 }
 
 // This is an example integration test @Olshansk was developing while implementing
-// `testutil/integration/app.go` to test and verify different behaviours from
+// `testutil/integration/app.go` to test and verify different behaviors from
 // setup, querying, running messages, etc...
 // TODO_TECHDEBT: Once other integration tests exist or this test is refactored
 // to be something more concrete and useful, decide if this should be deleted.
