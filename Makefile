@@ -394,11 +394,11 @@ test_e2e_settlement: test_e2e_env ## Run only the E2E suite that exercises the s
 test_e2e_params: test_e2e_env ## Run only the E2E suite that exercises parameter updates for all modules
 	go test -v ./e2e/tests/... -tags=e2e,test --features-path=update_params.feature
 
-.PHONY: test_load_relays_stress_devnet
-test_load_relays_stress_devnet: ## Run the stress test for E2E relays on a persistent (non-ephemeral) remote (devnet) chain
+.PHONY: test_load_relays_stress_example
+test_load_relays_stress_example: ## Run the stress test for E2E relays on a persistent (non-ephemeral) remote (devnet) chain. Note that this is just an example.
 	go test -v -count=1 ./load-testing/tests/... \
 	-tags=load,test -run LoadRelays --log-level=debug --timeout=30m \
-	--manifest ./load-testing/loadtest_manifest_devnet.yaml
+	--manifest ./load-testing/loadtest_manifest_example.yaml
 
 .PHONY: test_load_relays_stress_localnet
 test_load_relays_stress_localnet: warn_message_local_stress_test test_e2e_env ## Run the stress test for E2E relays on LocalNet.
