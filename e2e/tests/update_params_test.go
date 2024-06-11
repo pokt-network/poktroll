@@ -10,13 +10,18 @@ import (
 	"time"
 
 	cometcli "github.com/cometbft/cometbft/libs/cli"
-	"github.com/cosmos/cosmos-sdk/codec/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	"github.com/cosmos/gogoproto/proto"
 	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/api/poktroll/application"
+	"github.com/pokt-network/poktroll/api/poktroll/gateway"
+	"github.com/pokt-network/poktroll/api/poktroll/proof"
+	"github.com/pokt-network/poktroll/api/poktroll/session"
+	"github.com/pokt-network/poktroll/api/poktroll/shared"
+	"github.com/pokt-network/poktroll/api/poktroll/supplier"
+	"github.com/pokt-network/poktroll/api/poktroll/tokenomics"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
@@ -92,6 +97,39 @@ func (s *suite) AllModuleParamsAreSetToTheirDefaultValues(moduleName string) {
 
 	default:
 		s.Fatalf("ERROR: unexpected module name: (%v)", moduleName)
+	}
+}
+
+// AllModuleMsgUpdateParamTypes is a list of all MsgUpdateParams types for each module.
+// NB: If you are reading this and any module has a MsgUpdateParams message which is not
+// included in this list, please add it.
+var AllModuleMsgUpdateParamTypes = []string{
+	application.Msg_UpdateParams_FullMethodName,
+	gateway.Msg_UpdateParams_FullMethodName,
+	proof.Msg_UpdateParams_FullMethodName,
+	session.Msg_UpdateParams_FullMethodName,
+	shared.Msg_UpdateParams_FullMethodName,
+	supplier.Msg_UpdateParams_FullMethodName,
+	tokenomics.Msg_UpdateParams_FullMethodName,
+}
+
+// AnAuthzGrantFromTheAccountToTheAccountForEachModuleMsgupdateparamMessageExists queries the
+// authz module for grants with the expected granter & grantee (authz.QueryGrantsRequest) &
+// asserts that the expected grants (for each module) are found in the response.
+func (s *suite) AnAuthzGrantFromTheAccountToTheAccountForEachModuleMsgupdateparamMessageExists(
+	granterName string,
+	granterAddrType string,
+	granteeName string,
+	granteeAddrType string,
+) {
+	for _, msgType := range AllModuleMsgUpdateParamTypes {
+		s.AnAuthzGrantFromTheAccountToTheAccountForTheMessageExists(
+			granterName,
+			granterAddrType,
+			granteeName,
+			granteeAddrType,
+			msgType,
+		)
 	}
 }
 
@@ -226,36 +264,7 @@ func (s *suite) TheModuleParamShouldBeUpdated(moduleName, paramName string) {
 
 // AllModuleParamsShouldBeSetToTheirDefaultValues ensures that all module params are set to their default values.
 func (s *suite) AllModuleParamsAreResetToTheirDefaultValues() {
-	var anyMsgs []*types.Any
-
-	// List of all module MsgUpdateParams types and their respective default param functions
-	modules := []struct {
-		msgUpdateParamsType reflect.Type
-		defaultParams       any
-	}{
-		{reflect.TypeOf(&apptypes.MsgUpdateParams{}), apptypes.DefaultParams()},
-		{reflect.TypeOf(&gatewaytypes.MsgUpdateParams{}), gatewaytypes.DefaultParams()},
-		{reflect.TypeOf(&prooftypes.MsgUpdateParams{}), prooftypes.DefaultParams()},
-		{reflect.TypeOf(&servicetypes.MsgUpdateParams{}), servicetypes.DefaultParams()},
-		{reflect.TypeOf(&sessiontypes.MsgUpdateParams{}), sessiontypes.DefaultParams()},
-		{reflect.TypeOf(&sharedtypes.MsgUpdateParams{}), sharedtypes.DefaultParams()},
-		{reflect.TypeOf(&suppliertypes.MsgUpdateParams{}), suppliertypes.DefaultParams()},
-		{reflect.TypeOf(&tokenomicstypes.MsgUpdateParams{}), tokenomicstypes.DefaultParams()},
-	}
-
-	for _, module := range modules {
-		msgUpdateParams := reflect.New(module.msgUpdateParamsType.Elem()).Interface().(proto.Message)
-		msgUpdateParamsValue := reflect.ValueOf(msgUpdateParams).Elem()
-		msgUpdateParamsValue.FieldByName("Authority").SetString(s.granteeName)
-		msgUpdateParamsValue.FieldByName("Params").Set(reflect.ValueOf(module.defaultParams))
-
-		anyMsg, err := types.NewAnyWithValue(msgUpdateParams)
-		require.NoError(s, err)
-		anyMsgs = append(anyMsgs, anyMsg)
-	}
-
-	file := s.newTempTxJSONFile(anyMsgs)
-	s.sendAuthzExecTx(s.granteeName, file.Name())
+	s.resetAllModuleParamsToDefaults()
 }
 
 // TheModuleParamShouldBeSetToItsDefaultValue asserts that the given param for the

@@ -395,7 +395,7 @@ test_e2e_params: test_e2e_env ## Run only the E2E suite that exercises parameter
 	go test -v ./e2e/tests/... -tags=e2e,test --features-path=update_params.feature
 
 .PHONY: test_load_relays_stress
-test_load_relays_stress: ## Run the stress test for E2E relays on a persistent (non-ephemeral) remote chains
+test_load_relays_stress: ## Run the stress test for E2E relays on a persistent (non-ephemeral) remote chain
 	go test -v -count=1 ./load-testing/tests/... \
 	-tags=load,test -run LoadRelays --log-level=debug --timeout=30m \
 	--manifest ./load-testing/loadtest_manifest.yaml
@@ -414,9 +414,13 @@ test_verbose: check_go_version ## Run all go tests verbosely
 test_all: check_go_version ## Run all go tests showing detailed output only on failures
 	go test -count=1 -race -tags test ./...
 
-.PHONY: test_integration
-test_integration: check_go_version ## Run all go tests, including integration
+.PHONY: test_all_with_integration
+test_all_with_integration: check_go_version ## Run all go tests, including those with the integration
 	go test -count=1 -v -race -tags test,integration ./...
+
+.PHONY: test_integration
+test_integration: check_go_version ## Run only the in-memory integration "unit" tests
+	go test -count=1 -v -race -tags test,integration ./tests/integration/...
 
 .PHONY: itest
 itest: check_go_version ## Run tests iteratively (see usage for more)
