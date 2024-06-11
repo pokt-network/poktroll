@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"math"
@@ -71,10 +72,19 @@ func (k Keeper) UpdateRelayMiningDifficulty(
 		}
 		k.SetRelayMiningDifficulty(ctx, newDifficulty)
 
-		// TODO_BLOCKER(@Olshansk, #542): Emit an event for the updated difficulty.
-		logger.Info(fmt.Sprintf("Updated relay mining difficulty for service %s at height %d from %v to %v", serviceId, sdkCtx.BlockHeight(), prevDifficulty.TargetHash, newDifficulty.TargetHash))
-
+		// Output the appropriate log message based on whether the difficulty was
+		// initialized, updated or unchanged.
+		if !found {
+			logger.Info(fmt.Sprintf("Initialized RelayMiningDifficulty for service %s at height %d with difficulty %x", serviceId, sdkCtx.BlockHeight(), newDifficulty.TargetHash))
+			continue
+		} else if !bytes.Equal(prevDifficulty.TargetHash, newDifficulty.TargetHash) {
+			// TODO_BLOCKER(@Olshansk, #542): Emit an event for the updated difficulty.
+			logger.Info(fmt.Sprintf("Updated RelayMiningDifficulty for service %s at height %d from %x to %x", serviceId, sdkCtx.BlockHeight(), prevDifficulty.TargetHash, newDifficulty.TargetHash))
+		} else {
+			logger.Info(fmt.Sprintf("No change in RelayMiningDifficulty for service %s at height %d. Current difficulty: %x", serviceId, sdkCtx.BlockHeight(), newDifficulty.TargetHash))
+		}
 	}
+
 	return nil
 }
 

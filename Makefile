@@ -414,9 +414,13 @@ test_verbose: check_go_version ## Run all go tests verbosely
 test_all: check_go_version ## Run all go tests showing detailed output only on failures
 	go test -count=1 -race -tags test ./...
 
-.PHONY: test_integration
-test_integration: check_go_version ## Run all go tests, including integration
+.PHONY: test_all_with_integration
+test_all_with_integration: check_go_version ## Run all go tests, including those with the integration
 	go test -count=1 -v -race -tags test,integration ./...
+
+.PHONY: test_integration
+test_integration: check_go_version ## Run only the in-memory integration "unit" tests
+	go test -count=1 -v -race -tags test,integration ./tests/integration/...
 
 .PHONY: itest
 itest: check_go_version ## Run tests iteratively (see usage for more)
