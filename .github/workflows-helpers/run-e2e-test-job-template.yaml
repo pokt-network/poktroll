@@ -13,6 +13,9 @@ spec:
       initContainers:
         - name: check-services
           image: curlimages/curl:8.8.0
+          env:
+            - name: NAMESPACE
+              value: "${NAMESPACE}"
           command: ["/bin/sh"]
           args:
             - "-c"
