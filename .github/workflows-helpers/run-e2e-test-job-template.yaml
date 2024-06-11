@@ -10,6 +10,40 @@ spec:
       labels:
         pokt.network/purpose: e2e-tests
     spec:
+      initContainers:
+        - name: check-services
+          image: curlimages/curl:8.8.0
+          command: ["/bin/sh"]
+          args:
+            - "-c"
+            - |
+              check_http_status() {
+                local endpoint=$1
+                local max_retries=30
+                local retries=0
+
+                while :; do
+                  echo "Checking HTTP status for the endpoint ${endpoint} (Attempt $((retries+1))/$max_retries)..."
+                  HTTP_STATUS=$(curl -s -o /dev/null -w '%{http_code}' http://${endpoint})
+                  if [[ "${HTTP_STATUS}" -eq 200 ]]; then
+                    echo "HTTP request to ${endpoint} returned 200 OK."
+                    break
+                  else
+                    echo "HTTP request to ${endpoint} did not return 200 OK. Status code: ${HTTP_STATUS}. Retrying in 10 seconds..."
+                    retries=$((retries + 1))
+                    if [[ ${retries} -ge ${max_retries} ]]; then
+                      echo "Max retries reached for ${endpoint}. Exiting."
+                      exit 1
+                    fi
+                    sleep 10
+                  fi
+                done
+              }
+
+              check_http_status "${NAMESPACE}-validator-poktrolld:36657"
+              check_http_status "${NAMESPACE}-appgate-server:80"
+              check_http_status "${NAMESPACE}-gateway:80"
+              check_http_status "${NAMESPACE}-relayminer:8545"
       containers:
         - name: e2e-tests
           image: ghcr.io/pokt-network/poktrolld:${IMAGE_TAG}

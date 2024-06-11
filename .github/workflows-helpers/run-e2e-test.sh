@@ -32,28 +32,6 @@ while :; do
     fi
 done
 
-# Function to check HTTP status of an endpoint with retry
-check_http_status() {
-    local endpoint=$1
-    while :; do
-        echo "Checking HTTP status for the endpoint ${endpoint}..."
-        HTTP_STATUS=$(curl -s -o /dev/null -w '%{http_code}' http://${endpoint})
-        if [[ "${HTTP_STATUS}" -eq 200 ]]; then
-            echo "HTTP request to ${endpoint} returned 200 OK."
-            break
-        else
-            echo "HTTP request to ${endpoint} did not return 200 OK. Status code: ${HTTP_STATUS}. Retrying in 10 seconds..."
-            sleep 10
-        fi
-    done
-}
-
-# Check HTTP status for multiple endpoints
-check_http_status "${NAMESPACE}-validator-poktrolld:36657"
-check_http_status "${NAMESPACE}-appgate-server:80"
-check_http_status "${NAMESPACE}-gateway:80"
-check_http_status "${NAMESPACE}-relayminer:8545"
-
 # Create a job to run the e2e tests
 echo "Creating a job to run the e2e tests..."
 envsubst <.github/workflows-helpers/run-e2e-test-job-template.yaml >job.yaml
