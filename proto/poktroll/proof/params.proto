@@ -20,7 +20,7 @@ message Params {
   float proof_request_probability = 2 [(gogoproto.jsontag) = "proof_request_probability"];
 
   // proof_requirement_threshold is the session cost (i.e. compute unit consumption)
-  // threshold which requires that a session have a corresponding proof when its cost
+  // threshold which asserts that a session MUST have a corresponding proof when its cost
   // is equal to or above the threshold. This is in contrast to the this requirement
   // being determined probabilistically via ProofRequestProbability.
   uint64 proof_requirement_threshold = 3 [(gogoproto.jsontag) = "proof_requirement_threshold"];
