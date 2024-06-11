@@ -1,37 +1,28 @@
 package keeper_test
 
 import (
-	"context"
-	"fmt"
-	"os"
-	"strings"
 	"testing"
 
 	"cosmossdk.io/depinject"
 	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
-	ringtypes "github.com/athanorlabs/go-dleq/types"
-	cosmoscrypto "github.com/cosmos/cosmos-sdk/crypto"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	signingtypes "github.com/cosmos/cosmos-sdk/types/tx/signing"
 	"github.com/pokt-network/ring-go"
 	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/pokt-network/poktroll/pkg/crypto"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/protocol"
-	"github.com/pokt-network/poktroll/pkg/relayer/session"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
+	"github.com/pokt-network/poktroll/testutil/keeper/common"
 	"github.com/pokt-network/poktroll/testutil/testkeyring"
 	"github.com/pokt-network/poktroll/x/proof/keeper"
 	"github.com/pokt-network/poktroll/x/proof/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -133,10 +124,10 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 			// to be claimed and for which a valid proof would be accepted.
 			// Given the setup above, it is guaranteed that the supplier created
 			// will be part of the session.
-			sessionHeader := keepers.GetSessionHeader(ctx, t, appAddr, service, 1)
+			sessionHeader := common.GetSessionHeader(ctx, t, keepers, appAddr, service, 1)
 
 			// Construct a proof message server from the proof keeper.
-			srv := keeper.NewMsgServerImpl(*keepers.Keeper)
+			proofMsgServer := keeper.NewMsgServerImpl(*keepers.Keeper)
 
 			// Prepare a ring client to sign & validate relays.
 			ringClient, err := rings.NewRingClient(depinject.Supply(
@@ -149,7 +140,7 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 
 			// Submit the corresponding proof.
 			numRelays := uint(5)
-			sessionTree := newFilledSessionTree(
+			sessionTree := common.NewFilledSessionTree(
 				ctx, t,
 				numRelays,
 				supplierUid, supplierAddr,
@@ -167,15 +158,13 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 			ctx = sdkCtx
 
 			// Create a valid claim.
-			createClaimAndStoreBlockHash(
+			keepers.CreateClaimAndStoreBlockHash(
 				ctx, t, 1,
 				supplierAddr,
 				appAddr,
 				service,
 				sessionTree,
 				sessionHeader,
-				srv,
-				keepers,
 			)
 
 			// Advance the block height to the test proof msg height.
@@ -183,13 +172,13 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 			sdkCtx = sdkCtx.WithBlockHeight(proofMsgHeight)
 			ctx = sdkCtx
 
-			proofMsg := newTestProofMsg(t,
+			proofMsg := common.NewTestProofMsg(t,
 				supplierAddr,
 				sessionHeader,
 				sessionTree,
 				expectedMerkleProofPath,
 			)
-			submitProofRes, err := srv.SubmitProof(ctx, proofMsg)
+			submitProofRes, err := proofMsgServer.SubmitProof(ctx, proofMsg)
 			require.NoError(t, err)
 			require.NotNil(t, submitProofRes)
 
@@ -255,10 +244,10 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 	// to be claimed and for which a valid proof would be accepted.
 	// Given the setup above, it is guaranteed that the supplier created
 	// will be part of the session.
-	sessionHeader := keepers.GetSessionHeader(ctx, t, appAddr, service, 1)
+	sessionHeader := common.GetSessionHeader(ctx, t, keepers, appAddr, service, 1)
 
 	// Construct a proof message server from the proof keeper.
-	srv := keeper.NewMsgServerImpl(*keepers.Keeper)
+	proofMsgServer := keeper.NewMsgServerImpl(*keepers.Keeper)
 
 	// Prepare a ring client to sign & validate relays.
 	ringClient, err := rings.NewRingClient(depinject.Supply(
@@ -271,7 +260,7 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 
 	// Submit the corresponding proof.
 	numRelays := uint(5)
-	sessionTree := newFilledSessionTree(
+	sessionTree := common.NewFilledSessionTree(
 		ctx, t,
 		numRelays,
 		supplierUid, supplierAddr,
@@ -291,15 +280,13 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 	ctx = sdkCtx
 
 	// Create a valid claim.
-	createClaimAndStoreBlockHash(
+	keepers.CreateClaimAndStoreBlockHash(
 		ctx, t, 1,
 		supplierAddr,
 		appAddr,
 		service,
 		sessionTree,
 		sessionHeader,
-		srv,
-		keepers,
 	)
 
 	proofWindowOpenHeight := shared.GetProofWindowOpenHeight(&sharedParams, sessionHeader.GetSessionEndBlockHeight())
@@ -343,13 +330,13 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 			sdkCtx = sdkCtx.WithBlockHeight(test.proofMsgHeight)
 			ctx = sdkCtx
 
-			proofMsg := newTestProofMsg(t,
+			proofMsg := common.NewTestProofMsg(t,
 				supplierAddr,
 				sessionHeader,
 				sessionTree,
 				expectedMerkleProofPath,
 			)
-			_, err := srv.SubmitProof(ctx, proofMsg)
+			_, err := proofMsgServer.SubmitProof(ctx, proofMsg)
 			require.ErrorContains(t, err, test.expectedErr.Error())
 
 			proofRes, err := keepers.AllProofs(ctx, &types.QueryAllProofsRequest{})
@@ -432,11 +419,11 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 
 	// Get the session for the application/supplier pair which is expected
 	// to be claimed and for which a valid proof would be accepted.
-	validSessionHeader := keepers.GetSessionHeader(ctx, t, appAddr, service, 1)
+	validSessionHeader := common.GetSessionHeader(ctx, t, keepers, appAddr, service, 1)
 
 	// Get the session for the application/supplier pair which is
 	// *not* expected to be claimed.
-	unclaimedSessionHeader := keepers.GetSessionHeader(ctx, t, wrongAppAddr, wrongService, 1)
+	unclaimedSessionHeader := common.GetSessionHeader(ctx, t, keepers, wrongAppAddr, wrongService, 1)
 
 	// Construct a session header with session ID that doesn't match the expected session ID.
 	wrongSessionIdHeader := *validSessionHeader
@@ -456,7 +443,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 	// & late session end block heights.
 
 	// Construct a proof message server from the proof keeper.
-	srv := keeper.NewMsgServerImpl(*keepers.Keeper)
+	proofMsgServer := keeper.NewMsgServerImpl(*keepers.Keeper)
 
 	// Construct a ringClient to get the application's ring & verify the relay
 	// request signature.
@@ -470,7 +457,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 
 	// Construct a valid session tree with 5 relays.
 	numRelays := uint(5)
-	validSessionTree := newFilledSessionTree(
+	validSessionTree := common.NewFilledSessionTree(
 		ctx, t,
 		numRelays,
 		supplierUid, supplierAddr,
@@ -491,15 +478,13 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 
 	// Create a valid claim for the expected session and update the block hash
 	// store for the corresponding session.
-	createClaimAndStoreBlockHash(
+	keepers.CreateClaimAndStoreBlockHash(
 		ctx, t, 1,
 		supplierAddr,
 		appAddr,
 		service,
 		validSessionTree,
 		validSessionHeader,
-		srv,
-		keepers,
 	)
 
 	// Compute the difficulty in bits of the closest relay from the valid session tree.
@@ -516,11 +501,11 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 
 	// Construct a relay to be mangled such that it fails to deserialize in order
 	// to set the error expectation for the relevant test case.
-	mangledRelay := newEmptyRelay(validSessionHeader, validSessionHeader)
+	mangledRelay := common.NewEmptyRelay(validSessionHeader, validSessionHeader)
 
 	// Ensure valid relay request and response signatures.
-	signRelayRequest(ctx, t, mangledRelay, appAddr, keyRing, ringClient)
-	signRelayResponse(ctx, t, mangledRelay, supplierUid, supplierAddr, keyRing)
+	common.SignRelayRequest(ctx, t, mangledRelay, appAddr, keyRing, ringClient)
+	common.SignRelayResponse(ctx, t, mangledRelay, supplierUid, supplierAddr, keyRing)
 
 	// Serialize the relay so that it can be mangled.
 	mangledRelayBz, err := mangledRelay.Marshal()
@@ -560,7 +545,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 				emptySessionIdHeader.SessionId = ""
 
 				// Construct new proof message.
-				return newTestProofMsg(t,
+				return common.NewTestProofMsg(t,
 					supplierAddr,
 					&emptySessionIdHeader,
 					validSessionTree,
@@ -580,7 +565,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			desc: "merkle proof cannot be empty",
 			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
 				// Construct new proof message.
-				proof := newTestProofMsg(t,
+				proof := common.NewTestProofMsg(t,
 					supplierAddr,
 					validSessionHeader,
 					validSessionTree,
@@ -602,7 +587,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			desc: "proof session ID must match on-chain session ID",
 			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
 				// Construct new proof message using the wrong session ID.
-				return newTestProofMsg(t,
+				return common.NewTestProofMsg(t,
 					supplierAddr,
 					&wrongSessionIdHeader,
 					validSessionTree,
@@ -622,7 +607,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			desc: "proof supplier must be in on-chain session",
 			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
 				// Construct a proof message with a  supplier that does not belong in the session.
-				return newTestProofMsg(t,
+				return common.NewTestProofMsg(t,
 					wrongSupplierAddr,
 					validSessionHeader,
 					validSessionTree,
@@ -642,7 +627,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			desc: "merkle proof must be deserializable",
 			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
 				// Construct new proof message.
-				proof := newTestProofMsg(t,
+				proof := common.NewTestProofMsg(t,
 					supplierAddr,
 					validSessionHeader,
 					validSessionTree,
@@ -666,7 +651,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			desc: "relay must be deserializable",
 			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
 				// Construct a session tree to which we'll add 1 unserializable relay.
-				mangledRelaySessionTree := newEmptySessionTree(t, validSessionHeader)
+				mangledRelaySessionTree := common.NewEmptySessionTree(t, validSessionHeader)
 
 				// Add the mangled relay to the session tree.
 				err = mangledRelaySessionTree.Update([]byte{1}, mangledRelayBz, 1)
@@ -678,7 +663,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 
 				// Create a claim with a merkle root derived from a session tree
 				// with an unserializable relay.
-				claimMsg := newTestClaimMsg(t,
+				claimMsg := common.NewTestClaimMsg(t,
 					sessionStartHeight,
 					validSessionHeader.GetSessionId(),
 					supplierAddr,
@@ -686,12 +671,12 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 					service,
 					mangledRelayMerkleRootBz,
 				)
-				_, err = srv.CreateClaim(ctx, claimMsg)
+				_, err = proofMsgServer.CreateClaim(ctx, claimMsg)
 				require.NoError(t, err)
 
 				// Construct new proof message derived from a session tree
 				// with an unserializable relay.
-				return newTestProofMsg(t,
+				return common.NewTestProofMsg(t,
 					supplierAddr,
 					validSessionHeader,
 					mangledRelaySessionTree,
@@ -713,7 +698,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 				// Construct a session tree with 1 relay with a session header containing
 				// a session ID that doesn't match the proof session ID.
 				numRelays := uint(1)
-				wrongRequestSessionIdSessionTree := newFilledSessionTree(
+				wrongRequestSessionIdSessionTree := common.NewFilledSessionTree(
 					ctx, t,
 					numRelays,
 					supplierUid, supplierAddr,
@@ -728,7 +713,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 
 				// Create a claim with a merkle root derived from a relay
 				// request containing the wrong session ID.
-				claimMsg := newTestClaimMsg(t,
+				claimMsg := common.NewTestClaimMsg(t,
 					sessionStartHeight,
 					validSessionHeader.GetSessionId(),
 					supplierAddr,
@@ -736,12 +721,12 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 					service,
 					wrongRequestSessionIdMerkleRootBz,
 				)
-				_, err = srv.CreateClaim(ctx, claimMsg)
+				_, err = proofMsgServer.CreateClaim(ctx, claimMsg)
 				require.NoError(t, err)
 
 				// Construct new proof message using the valid session header,
 				// *not* the one used in the session tree's relay request.
-				return newTestProofMsg(t,
+				return common.NewTestProofMsg(t,
 					supplierAddr,
 					validSessionHeader,
 					wrongRequestSessionIdSessionTree,
@@ -764,7 +749,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 				// Construct a session tree with 1 relay with a session header containing
 				// a session ID that doesn't match the expected session ID.
 				numRelays := uint(1)
-				wrongResponseSessionIdSessionTree := newFilledSessionTree(
+				wrongResponseSessionIdSessionTree := common.NewFilledSessionTree(
 					ctx, t,
 					numRelays,
 					supplierUid, supplierAddr,
@@ -779,7 +764,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 
 				// Create a claim with a merkle root derived from a relay
 				// response containing the wrong session ID.
-				claimMsg := newTestClaimMsg(t,
+				claimMsg := common.NewTestClaimMsg(t,
 					sessionStartHeight,
 					validSessionHeader.GetSessionId(),
 					supplierAddr,
@@ -787,12 +772,12 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 					service,
 					wrongResponseSessionIdMerkleRootBz,
 				)
-				_, err = srv.CreateClaim(ctx, claimMsg)
+				_, err = proofMsgServer.CreateClaim(ctx, claimMsg)
 				require.NoError(t, err)
 
 				// Construct new proof message using the valid session header,
 				// *not* the one used in the session tree's relay response.
-				return newTestProofMsg(t,
+				return common.NewTestProofMsg(t,
 					supplierAddr,
 					validSessionHeader,
 					wrongResponseSessionIdSessionTree,
@@ -812,18 +797,18 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			desc: "relay request signature must be valid",
 			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
 				// Set the relay request signature to an invalid byte slice.
-				invalidRequestSignatureRelay := newEmptyRelay(validSessionHeader, validSessionHeader)
+				invalidRequestSignatureRelay := common.NewEmptyRelay(validSessionHeader, validSessionHeader)
 				invalidRequestSignatureRelay.Req.Meta.Signature = invalidSignatureBz
 
 				// Ensure a valid relay response signature.
-				signRelayResponse(ctx, t, invalidRequestSignatureRelay, supplierUid, supplierAddr, keyRing)
+				common.SignRelayResponse(ctx, t, invalidRequestSignatureRelay, supplierUid, supplierAddr, keyRing)
 
 				invalidRequestSignatureRelayBz, err := invalidRequestSignatureRelay.Marshal()
 				require.NoError(t, err)
 
 				// Construct a session tree with 1 relay with a session header containing
 				// a session ID that doesn't match the expected session ID.
-				invalidRequestSignatureSessionTree := newEmptySessionTree(t, validSessionHeader)
+				invalidRequestSignatureSessionTree := common.NewEmptySessionTree(t, validSessionHeader)
 
 				// Add the relay to the session tree.
 				err = invalidRequestSignatureSessionTree.Update([]byte{1}, invalidRequestSignatureRelayBz, 1)
@@ -835,7 +820,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 
 				// Create a claim with a merkle root derived from a session tree
 				// with an invalid relay request signature.
-				claimMsg := newTestClaimMsg(t,
+				claimMsg := common.NewTestClaimMsg(t,
 					sessionStartHeight,
 					validSessionHeader.GetSessionId(),
 					supplierAddr,
@@ -843,12 +828,12 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 					service,
 					invalidRequestSignatureMerkleRootBz,
 				)
-				_, err = srv.CreateClaim(ctx, claimMsg)
+				_, err = proofMsgServer.CreateClaim(ctx, claimMsg)
 				require.NoError(t, err)
 
 				// Construct new proof message derived from a session tree
 				// with an invalid relay request signature.
-				return newTestProofMsg(t,
+				return common.NewTestProofMsg(t,
 					supplierAddr,
 					validSessionHeader,
 					invalidRequestSignatureSessionTree,
@@ -874,18 +859,18 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			desc: "relay response signature must be valid",
 			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
 				// Set the relay response signature to an invalid byte slice.
-				relay := newEmptyRelay(validSessionHeader, validSessionHeader)
+				relay := common.NewEmptyRelay(validSessionHeader, validSessionHeader)
 				relay.Res.Meta.SupplierSignature = invalidSignatureBz
 
 				// Ensure a valid relay request signature
-				signRelayRequest(ctx, t, relay, appAddr, keyRing, ringClient)
+				common.SignRelayRequest(ctx, t, relay, appAddr, keyRing, ringClient)
 
 				relayBz, err := relay.Marshal()
 				require.NoError(t, err)
 
 				// Construct a session tree with 1 relay with a session header containing
 				// a session ID that doesn't match the expected session ID.
-				invalidResponseSignatureSessionTree := newEmptySessionTree(t, validSessionHeader)
+				invalidResponseSignatureSessionTree := common.NewEmptySessionTree(t, validSessionHeader)
 
 				// Add the relay to the session tree.
 				err = invalidResponseSignatureSessionTree.Update([]byte{1}, relayBz, 1)
@@ -897,7 +882,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 
 				// Create a claim with a merkle root derived from a session tree
 				// with an invalid relay response signature.
-				claimMsg := newTestClaimMsg(t,
+				claimMsg := common.NewTestClaimMsg(t,
 					sessionStartHeight,
 					validSessionHeader.GetSessionId(),
 					supplierAddr,
@@ -905,12 +890,12 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 					service,
 					invalidResponseSignatureMerkleRootBz,
 				)
-				_, err = srv.CreateClaim(ctx, claimMsg)
+				_, err = proofMsgServer.CreateClaim(ctx, claimMsg)
 				require.NoError(t, err)
 
 				// Construct new proof message derived from a session tree
 				// with an invalid relay response signature.
-				return newTestProofMsg(t,
+				return common.NewTestProofMsg(t,
 					supplierAddr,
 					validSessionHeader,
 					invalidResponseSignatureSessionTree,
@@ -935,7 +920,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 				// Construct a new valid session tree for this test case because once the
 				// closest proof has already been generated, the path cannot be changed.
 				numRelays := uint(5)
-				wrongPathSessionTree := newFilledSessionTree(
+				wrongPathSessionTree := common.NewFilledSessionTree(
 					ctx, t,
 					numRelays,
 					supplierUid, supplierAddr,
@@ -948,7 +933,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 				require.NoError(t, err)
 
 				// Create a valid claim with the expected merkle root.
-				claimMsg := newTestClaimMsg(t,
+				claimMsg := common.NewTestClaimMsg(t,
 					sessionStartHeight,
 					validSessionHeader.GetSessionId(),
 					supplierAddr,
@@ -956,12 +941,12 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 					service,
 					wrongPathMerkleRootBz,
 				)
-				_, err = srv.CreateClaim(ctx, claimMsg)
+				_, err = proofMsgServer.CreateClaim(ctx, claimMsg)
 				require.NoError(t, err)
 
 				// Construct new proof message derived from a session tree
 				// with an invalid relay response signature.
-				return newTestProofMsg(t, supplierAddr, validSessionHeader, wrongPathSessionTree, wrongClosestProofPath)
+				return common.NewTestProofMsg(t, supplierAddr, validSessionHeader, wrongPathSessionTree, wrongClosestProofPath)
 			},
 			expectedErr: status.Error(
 				codes.FailedPrecondition,
@@ -990,7 +975,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 
 				// Construct a proof message with a session tree containing
 				// a relay of insufficient difficulty.
-				return newTestProofMsg(t,
+				return common.NewTestProofMsg(t,
 					supplierAddr,
 					validSessionHeader,
 					validSessionTree,
@@ -1018,7 +1003,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
 				// Construct a new session tree corresponding to the unclaimed session.
 				numRelays := uint(5)
-				unclaimedSessionTree := newFilledSessionTree(
+				unclaimedSessionTree := common.NewFilledSessionTree(
 					ctx, t,
 					numRelays,
 					"wrong_supplier", wrongSupplierAddr,
@@ -1034,7 +1019,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 
 				// Construct new proof message using the supplier & session header
 				// from the session which is *not* expected to be claimed.
-				return newTestProofMsg(t,
+				return common.NewTestProofMsg(t,
 					wrongSupplierAddr,
 					unclaimedSessionHeader,
 					unclaimedSessionTree,
@@ -1054,7 +1039,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			desc: "Valid proof cannot validate claim with an incorrect root",
 			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
 				numRelays := uint(10)
-				wrongMerkleRootSessionTree := newFilledSessionTree(
+				wrongMerkleRootSessionTree := common.NewFilledSessionTree(
 					ctx, t,
 					numRelays,
 					supplierUid, supplierAddr,
@@ -1077,7 +1062,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 				ctx = sdkCtx
 
 				// Create a claim with the incorrect Merkle root.
-				wrongMerkleRootClaimMsg := newTestClaimMsg(t,
+				wrongMerkleRootClaimMsg := common.NewTestClaimMsg(t,
 					sessionStartHeight,
 					validSessionHeader.GetSessionId(),
 					supplierAddr,
@@ -1085,13 +1070,13 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 					service,
 					wrongMerkleRootBz,
 				)
-				_, err = srv.CreateClaim(ctx, wrongMerkleRootClaimMsg)
+				_, err = proofMsgServer.CreateClaim(ctx, wrongMerkleRootClaimMsg)
 				require.NoError(t, err)
 
 				// Advance the block height to the test proof msg height.
 				ctx = cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(proofMsgHeight)
 
-				return newTestProofMsg(t,
+				return common.NewTestProofMsg(t,
 					supplierAddr,
 					validSessionHeader,
 					validSessionTree,
@@ -1130,7 +1115,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
 			proofMsg := test.newProofMsg(t)
-			submitProofRes, err := srv.SubmitProof(ctx, proofMsg)
+			submitProofRes, err := proofMsgServer.SubmitProof(ctx, proofMsg)
 
 			require.ErrorContains(t, err, test.expectedErr.Error())
 			require.Nil(t, submitProofRes)
@@ -1143,167 +1128,6 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			require.Lenf(t, proofs, 0, "expected 0 proofs, got %d", len(proofs))
 		})
 	}
-}
-
-// newFilledSessionTree creates a new session tree with numRelays of relays
-// filled out using the request and response headers provided where every
-// relay is signed by the supplier and application respectively.
-func newFilledSessionTree(
-	ctx context.Context, t *testing.T,
-	numRelays uint,
-	supplierKeyUid, supplierAddr string,
-	sessionTreeHeader, reqHeader, resHeader *sessiontypes.SessionHeader,
-	keyRing keyring.Keyring,
-	ringClient crypto.RingClient,
-) relayer.SessionTree {
-	t.Helper()
-
-	// Initialize an empty session tree with the given session header.
-	sessionTree := newEmptySessionTree(t, sessionTreeHeader)
-
-	// Add numRelays of relays to the session tree.
-	fillSessionTree(
-		ctx, t,
-		sessionTree, numRelays,
-		supplierKeyUid, supplierAddr,
-		reqHeader, resHeader,
-		keyRing,
-		ringClient,
-	)
-
-	return sessionTree
-}
-
-// newEmptySessionTree creates a new empty session tree with for given session.
-func newEmptySessionTree(
-	t *testing.T,
-	sessionTreeHeader *sessiontypes.SessionHeader,
-) relayer.SessionTree {
-	t.Helper()
-
-	// Create a temporary session tree store directory for persistence.
-	testSessionTreeStoreDir, err := os.MkdirTemp("", "session_tree_store_dir")
-	require.NoError(t, err)
-
-	// Delete the temporary session tree store directory after the test completes.
-	t.Cleanup(func() {
-		_ = os.RemoveAll(testSessionTreeStoreDir)
-	})
-
-	// Construct a session tree to add relays to and generate a proof from.
-	sessionTree, err := session.NewSessionTree(
-		sessionTreeHeader,
-		testSessionTreeStoreDir,
-		func(*sessiontypes.SessionHeader) {},
-	)
-	require.NoError(t, err)
-
-	return sessionTree
-}
-
-// fillSessionTree fills the session tree with valid signed relays.
-// A total of numRelays relays are added to the session tree with
-// increasing weights (relay 1 has weight 1, relay 2 has weight 2, etc.).
-func fillSessionTree(
-	ctx context.Context, t *testing.T,
-	sessionTree relayer.SessionTree,
-	numRelays uint,
-	supplierKeyUid, supplierAddr string,
-	reqHeader, resHeader *sessiontypes.SessionHeader,
-	keyRing keyring.Keyring,
-	ringClient crypto.RingClient,
-) {
-	t.Helper()
-
-	for i := 0; i < int(numRelays); i++ {
-		relay := newSignedEmptyRelay(
-			ctx, t,
-			supplierKeyUid, supplierAddr,
-			reqHeader, resHeader,
-			keyRing,
-			ringClient,
-		)
-		relayBz, err := relay.Marshal()
-		require.NoError(t, err)
-
-		relayKey, err := relay.GetHash()
-		require.NoError(t, err)
-
-		relayWeight := uint64(i)
-
-		err = sessionTree.Update(relayKey[:], relayBz, relayWeight)
-		require.NoError(t, err)
-	}
-}
-
-// newTestProofMsg creates a new submit proof message that can be submitted
-// to be validated and stored on-chain.
-func newTestProofMsg(
-	t *testing.T,
-	supplierAddr string,
-	sessionHeader *sessiontypes.SessionHeader,
-	sessionTree relayer.SessionTree,
-	closestProofPath []byte,
-) *types.MsgSubmitProof {
-	t.Helper()
-
-	// Generate a closest proof from the session tree using closestProofPath.
-	merkleProof, err := sessionTree.ProveClosest(closestProofPath)
-	require.NoError(t, err)
-	require.NotNil(t, merkleProof)
-
-	// Serialize the closest merkle proof.
-	merkleProofBz, err := merkleProof.Marshal()
-	require.NoError(t, err)
-
-	return &types.MsgSubmitProof{
-		SupplierAddress: supplierAddr,
-		SessionHeader:   sessionHeader,
-		Proof:           merkleProofBz,
-	}
-}
-
-// createClaimAndStoreBlockHash creates a valid claim, submits it on-chain,
-// and on success, stores the block hash for retrieval at future heights.
-// TODO_TECHDEBT(@bryanchriswhite): Consider if we could/should split
-// this into two functions.
-func createClaimAndStoreBlockHash(
-	ctx context.Context,
-	t *testing.T,
-	sessionStartHeight int64,
-	supplierAddr, appAddr string,
-	service *sharedtypes.Service,
-	sessionTree relayer.SessionTree,
-	sessionHeader *sessiontypes.SessionHeader,
-	msgServer types.MsgServer,
-	keepers *keepertest.ProofModuleKeepers,
-) {
-	merkleRootBz, err := sessionTree.Flush()
-	require.NoError(t, err)
-
-	// Create a create claim message.
-	claimMsg := newTestClaimMsg(t,
-		sessionStartHeight,
-		sessionHeader.GetSessionId(),
-		supplierAddr,
-		appAddr,
-		service,
-		merkleRootBz,
-	)
-	_, err = msgServer.CreateClaim(ctx, claimMsg)
-	require.NoError(t, err)
-
-	// TODO_TECHDEBT(@red-0ne): Centralize the business logic that involves taking
-	// into account the heights, windows and grace periods into helper functions.
-	proofSubmissionHeight :=
-		claimMsg.GetSessionHeader().GetSessionEndBlockHeight() +
-			shared.SessionGracePeriodBlocks
-
-	// Set block height to be after the session grace period.
-	blockHeightCtx := keepertest.SetBlockHeight(ctx, proofSubmissionHeight)
-
-	// Store the current context's block hash for future height, which is currently an EndBlocker operation.
-	keepers.StoreBlockHash(blockHeightCtx)
 }
 
 // getClosestRelayDifficultyBits returns the number of leading 0s (i.e. relay
@@ -1333,153 +1157,4 @@ func getClosestRelayDifficultyBits(
 	require.NoError(t, err)
 
 	return uint64(relayDifficultyBits)
-}
-
-// newSignedEmptyRelay creates a new relay structure for the given req & res headers.
-// It signs the relay request on behalf of application in the reqHeader.
-// It signs the relay response on behalf of supplier provided..
-func newSignedEmptyRelay(
-	ctx context.Context,
-	t *testing.T,
-	supplierKeyUid, supplierAddr string,
-	reqHeader, resHeader *sessiontypes.SessionHeader,
-	keyRing keyring.Keyring,
-	ringClient crypto.RingClient,
-) *servicetypes.Relay {
-	t.Helper()
-
-	relay := newEmptyRelay(reqHeader, resHeader)
-	signRelayRequest(ctx, t, relay, reqHeader.GetApplicationAddress(), keyRing, ringClient)
-	signRelayResponse(ctx, t, relay, supplierKeyUid, supplierAddr, keyRing)
-
-	return relay
-}
-
-// newEmptyRelay creates a new relay structure for the given req & res headers
-// WITHOUT any payload or signatures.
-func newEmptyRelay(reqHeader, resHeader *sessiontypes.SessionHeader) *servicetypes.Relay {
-	return &servicetypes.Relay{
-		Req: &servicetypes.RelayRequest{
-			Meta: servicetypes.RelayRequestMetadata{
-				SessionHeader: reqHeader,
-				Signature:     nil, // Signature added elsewhere.
-			},
-			Payload: nil,
-		},
-		Res: &servicetypes.RelayResponse{
-			Meta: servicetypes.RelayResponseMetadata{
-				SessionHeader:     resHeader,
-				SupplierSignature: nil, // Signature added elsewhere.
-			},
-			Payload: nil,
-		},
-	}
-}
-
-// TODO_TECHDEBT(@red-0ne): Centralize this logic in the relayer package.
-// signRelayRequest signs the relay request (updates relay.Req.Meta.Signature)
-// on behalf of appAddr using the clients provided.
-func signRelayRequest(
-	ctx context.Context,
-	t *testing.T,
-	relay *servicetypes.Relay,
-	appAddr string,
-	keyRing keyring.Keyring,
-	ringClient crypto.RingClient,
-) {
-	t.Helper()
-
-	relayReqMeta := relay.GetReq().GetMeta()
-	sessionEndHeight := relayReqMeta.GetSessionHeader().GetSessionEndBlockHeight()
-
-	// Retrieve the signing ring associated with the application address at the session end height.
-	appRing, err := ringClient.GetRingForAddressAtHeight(ctx, appAddr, sessionEndHeight)
-	require.NoError(t, err)
-
-	// Retrieve the signing key associated with the application address.
-	signingKey := getSigningKeyFromAddress(t,
-		appAddr,
-		keyRing,
-	)
-
-	// Retrieve the signable bytes for the relay request.
-	relayReqSignableBz, err := relay.GetReq().GetSignableBytesHash()
-	require.NoError(t, err)
-
-	// Sign the relay request.
-	signature, err := appRing.Sign(relayReqSignableBz, signingKey)
-	require.NoError(t, err)
-
-	// Serialize the signature.
-	signatureBz, err := signature.Serialize()
-	require.NoError(t, err)
-
-	// Update the relay request signature.
-	relay.Req.Meta.Signature = signatureBz
-}
-
-// TODO_TECHDEBT(@red-0ne): Centralize this logic in the relayer package.
-// in the relayer package?
-// signRelayResponse signs the relay response (updates relay.Res.Meta.SupplierSignature)
-// on behalf of supplierAddr using the clients provided.
-func signRelayResponse(
-	_ context.Context,
-	t *testing.T,
-	relay *servicetypes.Relay,
-	supplierKeyUid, supplierAddr string,
-	keyRing keyring.Keyring,
-) {
-	t.Helper()
-
-	// Retrieve ths signable bytes for the relay response.
-	relayResSignableBz, err := relay.GetRes().GetSignableBytesHash()
-	require.NoError(t, err)
-
-	// Sign the relay response.
-	signatureBz, signerPubKey, err := keyRing.Sign(supplierKeyUid, relayResSignableBz[:], signingtypes.SignMode_SIGN_MODE_DIRECT)
-	require.NoError(t, err)
-
-	// Verify the signer address matches the expected supplier address.
-	addr, err := cosmostypes.AccAddressFromBech32(supplierAddr)
-	require.NoError(t, err)
-	addrHexBz := strings.ToUpper(fmt.Sprintf("%x", addr.Bytes()))
-	require.Equal(t, addrHexBz, signerPubKey.Address().String())
-
-	// Update the relay response signature.
-	relay.Res.Meta.SupplierSignature = signatureBz
-}
-
-// getSigningKeyFromAddress retrieves the signing key associated with the given
-// bech32 address from the provided keyring.
-func getSigningKeyFromAddress(t *testing.T, bech32 string, keyRing keyring.Keyring) ringtypes.Scalar {
-	t.Helper()
-
-	addr, err := cosmostypes.AccAddressFromBech32(bech32)
-	require.NoError(t, err)
-
-	armorPrivKey, err := keyRing.ExportPrivKeyArmorByAddress(addr, "")
-	require.NoError(t, err)
-
-	privKey, _, err := cosmoscrypto.UnarmorDecryptPrivKey(armorPrivKey, "")
-	require.NoError(t, err)
-
-	curve := ring_secp256k1.NewCurve()
-	signingKey, err := curve.DecodeToScalar(privKey.Bytes())
-	require.NoError(t, err)
-
-	return signingKey
-}
-
-// resetBlockHeightFn returns a function that resets the block height of the
-// given context to one; the first valid session block height.
-func resetBlockHeightFn(ctx *context.Context) func() {
-	return func() {
-		setBlockHeight(ctx, 1)
-	}
-}
-
-// setBlockHeight sets the block height of the given context to the given height.
-func setBlockHeight(ctx *context.Context, height int64) {
-	sdkCtx := cosmostypes.UnwrapSDKContext(*ctx)
-	*ctx = sdkCtx.WithBlockHeight(height)
 }

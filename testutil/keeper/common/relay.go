@@ -1,0 +1,155 @@
+package common
+
+import (
+	"context"
+	"fmt"
+	"strings"
+	"testing"
+
+	"github.com/athanorlabs/go-dleq/secp256k1"
+	ringtypes "github.com/athanorlabs/go-dleq/types"
+	cosmoscrypto "github.com/cosmos/cosmos-sdk/crypto"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/tx/signing"
+	"github.com/stretchr/testify/require"
+
+	"github.com/pokt-network/poktroll/pkg/crypto"
+	servicetypes "github.com/pokt-network/poktroll/x/service/types"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+)
+
+// NewSignedEmptyRelay creates a new relay structure for the given req & res headers.
+// It signs the relay request on behalf of application in the reqHeader.
+// It signs the relay response on behalf of supplier provided..
+func NewSignedEmptyRelay(
+	ctx context.Context,
+	t *testing.T,
+	supplierKeyUid, supplierAddr string,
+	reqHeader, resHeader *sessiontypes.SessionHeader,
+	keyRing keyring.Keyring,
+	ringClient crypto.RingClient,
+) *servicetypes.Relay {
+	t.Helper()
+
+	relay := NewEmptyRelay(reqHeader, resHeader)
+	SignRelayRequest(ctx, t, relay, reqHeader.GetApplicationAddress(), keyRing, ringClient)
+	SignRelayResponse(ctx, t, relay, supplierKeyUid, supplierAddr, keyRing)
+
+	return relay
+}
+
+// NewEmptyRelay creates a new relay structure for the given req & res headers
+// WITHOUT any payload or signatures.
+func NewEmptyRelay(reqHeader, resHeader *sessiontypes.SessionHeader) *servicetypes.Relay {
+	return &servicetypes.Relay{
+		Req: &servicetypes.RelayRequest{
+			Meta: servicetypes.RelayRequestMetadata{
+				SessionHeader: reqHeader,
+				Signature:     nil, // Signature added elsewhere.
+			},
+			Payload: nil,
+		},
+		Res: &servicetypes.RelayResponse{
+			Meta: servicetypes.RelayResponseMetadata{
+				SessionHeader:     resHeader,
+				SupplierSignature: nil, // Signature added elsewhere.
+			},
+			Payload: nil,
+		},
+	}
+}
+
+// TODO_TECHDEBT(@red-0ne): Centralize this logic in the relayer package.
+// signRelayRequest signs the relay request (updates relay.Req.Meta.Signature)
+// on behalf of appAddr using the clients provided.
+func SignRelayRequest(
+	ctx context.Context,
+	t *testing.T,
+	relay *servicetypes.Relay,
+	appAddr string,
+	keyRing keyring.Keyring,
+	ringClient crypto.RingClient,
+) {
+	t.Helper()
+
+	relayReqMeta := relay.GetReq().GetMeta()
+	sessionEndHeight := relayReqMeta.GetSessionHeader().GetSessionEndBlockHeight()
+
+	// Retrieve the signing ring associated with the application address at the session end height.
+	appRing, err := ringClient.GetRingForAddressAtHeight(ctx, appAddr, sessionEndHeight)
+	require.NoError(t, err)
+
+	// Retrieve the signing key associated with the application address.
+	signingKey := getSigningKeyFromAddress(t,
+		appAddr,
+		keyRing,
+	)
+
+	// Retrieve the signable bytes for the relay request.
+	relayReqSignableBz, err := relay.GetReq().GetSignableBytesHash()
+	require.NoError(t, err)
+
+	// Sign the relay request.
+	signature, err := appRing.Sign(relayReqSignableBz, signingKey)
+	require.NoError(t, err)
+
+	// Serialize the signature.
+	signatureBz, err := signature.Serialize()
+	require.NoError(t, err)
+
+	// Update the relay request signature.
+	relay.Req.Meta.Signature = signatureBz
+}
+
+// TODO_TECHDEBT(@red-0ne): Centralize this logic in the relayer package.
+// in the relayer package?
+// signRelayResponse signs the relay response (updates relay.Res.Meta.SupplierSignature)
+// on behalf of supplierAddr using the clients provided.
+func SignRelayResponse(
+	_ context.Context,
+	t *testing.T,
+	relay *servicetypes.Relay,
+	supplierKeyUid, supplierAddr string,
+	keyRing keyring.Keyring,
+) {
+	t.Helper()
+
+	// Retrieve ths signable bytes for the relay response.
+	relayResSignableBz, err := relay.GetRes().GetSignableBytesHash()
+	require.NoError(t, err)
+
+	// Sign the relay response.
+	signatureBz, signerPubKey, err := keyRing.Sign(supplierKeyUid, relayResSignableBz[:], signing.SignMode_SIGN_MODE_DIRECT)
+	require.NoError(t, err)
+
+	// Verify the signer address matches the expected supplier address.
+	addr, err := cosmostypes.AccAddressFromBech32(supplierAddr)
+	require.NoError(t, err)
+	addrHexBz := strings.ToUpper(fmt.Sprintf("%x", addr.Bytes()))
+	require.Equal(t, addrHexBz, signerPubKey.Address().String())
+
+	// Update the relay response signature.
+	relay.Res.Meta.SupplierSignature = signatureBz
+}
+
+// getSigningKeyFromAddress retrieves the signing key associated with the given
+// bech32 address from the provided keyring.
+func getSigningKeyFromAddress(t *testing.T, bech32 string, keyRing keyring.Keyring) ringtypes.Scalar {
+	t.Helper()
+
+	addr, err := cosmostypes.AccAddressFromBech32(bech32)
+	require.NoError(t, err)
+
+	armorPrivKey, err := keyRing.ExportPrivKeyArmorByAddress(addr, "")
+	require.NoError(t, err)
+
+	privKey, _, err := cosmoscrypto.UnarmorDecryptPrivKey(armorPrivKey, "")
+	require.NoError(t, err)
+
+	curve := secp256k1.NewCurve()
+	signingKey, err := curve.DecodeToScalar(privKey.Bytes())
+	require.NoError(t, err)
+
+	return signingKey
+}

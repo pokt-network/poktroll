@@ -4,14 +4,13 @@ import (
 	"testing"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
+	"github.com/pokt-network/poktroll/testutil/keeper/common"
 	"github.com/pokt-network/poktroll/testutil/sample"
-	testsession "github.com/pokt-network/poktroll/testutil/session"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	"github.com/pokt-network/poktroll/x/proof/keeper"
 	"github.com/pokt-network/poktroll/x/proof/types"
@@ -44,13 +43,16 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			// Set block height to 1 so there is a valid session on-chain.
 			blockHeight := int64(1)
-			blockHeightOpt := keepertest.WithBlockHeight[keepertest.ProofKeepersOpt](blockHeight)
+			blockHeightOpt := common.WithBlockHeight[
+				keepertest.ProofKeepersOpt,
+				*keepertest.ProofModuleKeepers,
+			](blockHeight)
 
 			// Create a new set of proof module keepers. This isolates each test
 			// case from side effects of other test cases.
 			keepers, ctx := keepertest.NewProofModuleKeepers(t, blockHeightOpt)
 			sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
-			srv := keeper.NewMsgServerImpl(*keepers.Keeper)
+			proofMsgServer := keeper.NewMsgServerImpl(*keepers.Keeper)
 
 			// The base session start height used for testing
 			sessionStartHeight := blockHeight
@@ -92,7 +94,7 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 			ctx = sdkCtx
 
 			// Create a claim.
-			claimMsg := newTestClaimMsg(t,
+			claimMsg := common.NewTestClaimMsg(t,
 				sessionStartHeight,
 				sessionRes.GetSession().GetSessionId(),
 				supplierAddr,
@@ -100,7 +102,7 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 				service,
 				defaultMerkleRoot,
 			)
-			createClaimRes, err := srv.CreateClaim(ctx, claimMsg)
+			createClaimRes, err := proofMsgServer.CreateClaim(ctx, claimMsg)
 			require.NoError(t, err)
 			require.NotNil(t, createClaimRes)
 
@@ -125,10 +127,13 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 
 func TestMsgServer_CreateClaim_Error_OutsideOfWindow(t *testing.T) {
 	// Set block height to 1 so there is a valid session on-chain.
-	blockHeightOpt := keepertest.WithBlockHeight[keepertest.ProofKeepersOpt](1)
+	blockHeightOpt := common.WithBlockHeight[
+		keepertest.ProofKeepersOpt,
+		*keepertest.ProofModuleKeepers,
+	](1)
 	keepers, ctx := keepertest.NewProofModuleKeepers(t, blockHeightOpt)
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
-	srv := keeper.NewMsgServerImpl(*keepers.Keeper)
+	proofMsgServer := keeper.NewMsgServerImpl(*keepers.Keeper)
 	sharedParams := keepers.SharedKeeper.GetParams(ctx)
 
 	// The base session start height used for testing
@@ -212,7 +217,7 @@ func TestMsgServer_CreateClaim_Error_OutsideOfWindow(t *testing.T) {
 			ctx = sdkCtx
 
 			// Attempt to create a claim at the test claim height.
-			claimMsg := newTestClaimMsg(t,
+			claimMsg := common.NewTestClaimMsg(t,
 				sessionStartHeight,
 				sessionRes.GetSession().GetSessionId(),
 				supplierAddr,
@@ -220,7 +225,7 @@ func TestMsgServer_CreateClaim_Error_OutsideOfWindow(t *testing.T) {
 				service,
 				defaultMerkleRoot,
 			)
-			_, err = srv.CreateClaim(ctx, claimMsg)
+			_, err = proofMsgServer.CreateClaim(ctx, claimMsg)
 			require.ErrorContains(t, err, test.expectedErr.Error())
 
 			claimRes, err := keepers.AllClaims(ctx, &types.QueryAllClaimsRequest{})
@@ -239,7 +244,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 		*keepertest.ProofModuleKeepers,
 	](1)
 	keepers, ctx := keepertest.NewProofModuleKeepers(t, blockHeightOpt)
-	srv := keeper.NewMsgServerImpl(*keepers.Keeper)
+	proofMsgServer := keeper.NewMsgServerImpl(*keepers.Keeper)
 
 	// The base session start height used for testing
 	sessionStartHeight := int64(1)
@@ -319,7 +324,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 		{
 			desc: "on-chain session ID must match claim msg session ID",
 			claimMsgFn: func(t *testing.T) *types.MsgCreateClaim {
-				return newTestClaimMsg(t,
+				return common.NewTestClaimMsg(t,
 					sessionStartHeight,
 					// Use a session ID that doesn't match.
 					"invalid_session_id",
@@ -341,7 +346,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 		{
 			desc: "claim msg supplier address must be in the session",
 			claimMsgFn: func(t *testing.T) *types.MsgCreateClaim {
-				return newTestClaimMsg(t,
+				return common.NewTestClaimMsg(t,
 					sessionStartHeight,
 					sessionRes.GetSession().GetSessionId(),
 					// Use a supplier address not included in the session.
@@ -363,7 +368,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 		{
 			desc: "claim msg supplier address must exist on-chain",
 			claimMsgFn: func(t *testing.T) *types.MsgCreateClaim {
-				return newTestClaimMsg(t,
+				return common.NewTestClaimMsg(t,
 					sessionStartHeight,
 					sessionRes.GetSession().GetSessionId(),
 					// Use a supplier address that's nonexistent on-chain.
@@ -385,7 +390,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 		{
 			desc: "claim msg application address must be in the session",
 			claimMsgFn: func(t *testing.T) *types.MsgCreateClaim {
-				return newTestClaimMsg(t,
+				return common.NewTestClaimMsg(t,
 					sessionStartHeight,
 					sessionRes.GetSession().GetSessionId(),
 					supplierAddr,
@@ -407,7 +412,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 		{
 			desc: "claim msg application address must exist on-chain",
 			claimMsgFn: func(t *testing.T) *types.MsgCreateClaim {
-				return newTestClaimMsg(t,
+				return common.NewTestClaimMsg(t,
 					sessionStartHeight,
 					sessionRes.GetSession().GetSessionId(),
 					supplierAddr,
@@ -430,33 +435,9 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			createClaimRes, err := srv.CreateClaim(ctx, test.claimMsgFn(t))
+			createClaimRes, err := proofMsgServer.CreateClaim(ctx, test.claimMsgFn(t))
 			require.ErrorContains(t, err, test.expectedErr.Error())
 			require.Nil(t, createClaimRes)
 		})
 	}
-}
-
-func newTestClaimMsg(
-	t *testing.T,
-	sessionStartHeight int64,
-	sessionId string,
-	supplierAddr string,
-	appAddr string,
-	service *sharedtypes.Service,
-	merkleRoot smt.MerkleRoot,
-) *types.MsgCreateClaim {
-	t.Helper()
-
-	return types.NewMsgCreateClaim(
-		supplierAddr,
-		&sessiontypes.SessionHeader{
-			ApplicationAddress:      appAddr,
-			Service:                 service,
-			SessionId:               sessionId,
-			SessionStartBlockHeight: sessionStartHeight,
-			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(sessionStartHeight),
-		},
-		merkleRoot,
-	)
 }

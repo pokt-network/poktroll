@@ -28,6 +28,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app"
+	"github.com/pokt-network/poktroll/pkg/relayer"
+	"github.com/pokt-network/poktroll/testutil/keeper/common"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/testutil/tokenomics/mocks"
 	appkeeper "github.com/pokt-network/poktroll/x/application/keeper"
@@ -58,13 +60,15 @@ type TokenomicsModuleKeepers struct {
 	tokenomicstypes.BankKeeper
 	tokenomicstypes.ApplicationKeeper
 	tokenomicstypes.ProofKeeper
+	tokenomicstypes.SupplierKeeper
+	tokenomicstypes.SessionKeeper
 
 	Codec *codec.ProtoCodec
 }
 
 // TokenomicsKeepersOpt is a function which receives and potentially modifies the context
 // and tokenomics keepers during construction of the aggregation.
-type TokenomicsKeepersOpt = genericOptionFunc[*TokenomicsModuleKeepers]
+type TokenomicsKeepersOpt = common.GenericOptionFunc[*TokenomicsModuleKeepers]
 
 func TokenomicsKeeper(t testing.TB) (tokenomicsKeeper tokenomicskeeper.Keeper, ctx context.Context) {
 	t.Helper()
@@ -327,6 +331,8 @@ func NewTokenomicsModuleKeepers(
 		BankKeeper:        &bankKeeper,
 		ApplicationKeeper: &appKeeper,
 		ProofKeeper:       &proofKeeper,
+		SupplierKeeper:    &supplierKeeper,
+		SessionKeeper:     &sessionKeeper,
 
 		Codec: cdc,
 	}
@@ -337,4 +343,55 @@ func NewTokenomicsModuleKeepers(
 	}
 
 	return keepers, ctx
+}
+
+// AddServiceActors adds a supplier and an application for a specific
+// service so a successful session can be generated for testing purposes.
+func (keepers *TokenomicsModuleKeepers) AddServiceActors(
+	ctx context.Context,
+	t *testing.T,
+	service *sharedtypes.Service,
+	supplierAddr string,
+	appAddr string,
+) {
+	common.AddServiceActors(
+		ctx, t,
+		keepers,
+		keepers,
+		service,
+		supplierAddr,
+		appAddr,
+	)
+}
+
+// CreateClaimAndStoreBlockHash creates a valid claim, submits it on-chain,
+// and on success, stores the block hash for retrieval at future heights.
+func (keepers *TokenomicsModuleKeepers) CreateClaimAndStoreBlockHash(
+	ctx context.Context,
+	t *testing.T,
+	sessionStartHeight int64,
+	supplierAddr, appAddr string,
+	service *sharedtypes.Service,
+	sessionTree relayer.SessionTree,
+	sessionHeader *sessiontypes.SessionHeader,
+) {
+	t.Helper()
+
+	proofKeeper, ok := keepers.ProofKeeper.(*proofkeeper.Keeper)
+	require.True(t, ok)
+
+	// Construct a proof message server from the proof keeper.
+	proofMsgServer := proofkeeper.NewMsgServerImpl(*proofKeeper)
+
+	common.CreateClaimAndStoreBlockHash(
+		ctx, t,
+		keepers,
+		proofMsgServer,
+		sessionStartHeight,
+		supplierAddr,
+		appAddr,
+		service,
+		sessionTree,
+		sessionHeader,
+	)
 }

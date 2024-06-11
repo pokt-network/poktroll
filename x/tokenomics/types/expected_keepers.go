@@ -9,6 +9,8 @@ import (
 
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // AccountKeeper defines the expected interface for the Account module.
@@ -28,8 +30,9 @@ type BankKeeper interface {
 }
 
 type ApplicationKeeper interface {
-	GetApplication(ctx context.Context, appAddr string) (app apptypes.Application, found bool)
-	SetApplication(ctx context.Context, app apptypes.Application)
+	GetApplication(ctx context.Context, address string) (app apptypes.Application, found bool)
+	GetAllApplications(ctx context.Context) []apptypes.Application
+	SetApplication(context.Context, apptypes.Application)
 }
 
 type ProofKeeper interface {
@@ -41,4 +44,19 @@ type ProofKeeper interface {
 	// Only used for testing & simulation
 	UpsertClaim(ctx context.Context, claim prooftypes.Claim)
 	UpsertProof(ctx context.Context, claim prooftypes.Proof)
+
+	SetParams(ctx context.Context, params prooftypes.Params) error
+}
+
+type SharedKeeper interface {
+	GetParams(ctx context.Context) sharedtypes.Params
+}
+
+type SupplierKeeper interface {
+	SetSupplier(context.Context, sharedtypes.Supplier)
+}
+
+type SessionKeeper interface {
+	GetSession(context.Context, *sessiontypes.QueryGetSessionRequest) (*sessiontypes.QueryGetSessionResponse, error)
+	StoreBlockHash(ctx context.Context)
 }

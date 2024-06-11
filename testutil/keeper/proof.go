@@ -25,8 +25,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app"
+	"github.com/pokt-network/poktroll/pkg/relayer"
 	applicationmocks "github.com/pokt-network/poktroll/testutil/application/mocks"
 	gatewaymocks "github.com/pokt-network/poktroll/testutil/gateway/mocks"
+	"github.com/pokt-network/poktroll/testutil/keeper/common"
 	"github.com/pokt-network/poktroll/testutil/proof/mocks"
 	sessionmocks "github.com/pokt-network/poktroll/testutil/session/mocks"
 	suppliermocks "github.com/pokt-network/poktroll/testutil/supplier/mocks"
@@ -34,7 +36,7 @@ import (
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gatewaykeeper "github.com/pokt-network/poktroll/x/gateway/keeper"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
-	"github.com/pokt-network/poktroll/x/proof/keeper"
+	proofkeeper "github.com/pokt-network/poktroll/x/proof/keeper"
 	"github.com/pokt-network/poktroll/x/proof/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
@@ -52,7 +54,7 @@ import (
 // the field corresponding to the desired keeper on which to call the method
 // MUST be specified (e.g. `keepers.AccountKeeper#SetParams()`).
 type ProofModuleKeepers struct {
-	*keeper.Keeper
+	*proofkeeper.Keeper
 	prooftypes.SessionKeeper
 	prooftypes.SupplierKeeper
 	prooftypes.ApplicationKeeper
@@ -64,11 +66,11 @@ type ProofModuleKeepers struct {
 
 // ProofKeepersOpt is a function which receives and potentially modifies the context
 // and proof keepers during construction of the aggregation.
-type ProofKeepersOpt = genericOptionFunc[*ProofModuleKeepers]
+type ProofKeepersOpt = common.GenericOptionFunc[*ProofModuleKeepers]
 
 // ProofKeeper is a helper function to create a proof keeper and a context. It uses
 // mocked dependencies only.
-func ProofKeeper(t testing.TB) (keeper.Keeper, context.Context) {
+func ProofKeeper(t testing.TB) (proofkeeper.Keeper, context.Context) {
 	t.Helper()
 
 	storeKey := storetypes.NewKVStoreKey(types.StoreKey)
@@ -87,7 +89,7 @@ func ProofKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 	mockAccountKeeper := mocks.NewMockAccountKeeper(ctrl)
 	mockSharedKeeper := mocks.NewMockSharedKeeper(ctrl)
 
-	k := keeper.NewKeeper(
+	k := proofkeeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKey),
 		log.NewNopLogger(),
@@ -204,7 +206,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 	require.NoError(t, sessionKeeper.SetParams(ctx, sessiontypes.DefaultParams()))
 
 	// Construct a real proof keeper so that claims & proofs can be created.
-	proofKeeper := keeper.NewKeeper(
+	proofKeeper := proofkeeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(keys[types.StoreKey]),
 		log.NewNopLogger(),
@@ -246,41 +248,41 @@ func (keepers *ProofModuleKeepers) AddServiceActors(
 ) {
 	t.Helper()
 
-	keepers.SetSupplier(ctx, sharedtypes.Supplier{
-		Address: supplierAddr,
-		Services: []*sharedtypes.SupplierServiceConfig{
-			{Service: service},
-		},
-	})
-
-	keepers.SetApplication(ctx, apptypes.Application{
-		Address: appAddr,
-		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
-			{Service: service},
-		},
-	})
+	common.AddServiceActors(
+		ctx, t,
+		keepers,
+		keepers,
+		service,
+		supplierAddr,
+		appAddr,
+	)
 }
 
-// GetSessionHeader is a helper to retrieve the session header
-// for a specific (app, service, height).
-func (keepers *ProofModuleKeepers) GetSessionHeader(
+// CreateClaimAndStoreBlockHash creates a valid claim, submits it on-chain,
+// and on success, stores the block hash for retrieval at future heights.
+func (keepers *ProofModuleKeepers) CreateClaimAndStoreBlockHash(
 	ctx context.Context,
 	t *testing.T,
-	appAddr string,
+	sessionStartHeight int64,
+	supplierAddr, appAddr string,
 	service *sharedtypes.Service,
-	blockHeight int64,
-) *sessiontypes.SessionHeader {
+	sessionTree relayer.SessionTree,
+	sessionHeader *sessiontypes.SessionHeader,
+) {
 	t.Helper()
 
-	sessionRes, err := keepers.GetSession(
-		ctx,
-		&sessiontypes.QueryGetSessionRequest{
-			ApplicationAddress: appAddr,
-			Service:            service,
-			BlockHeight:        blockHeight,
-		},
-	)
-	require.NoError(t, err)
+	// Construct a proof message server from the proof keeper.
+	proofMsgServer := proofkeeper.NewMsgServerImpl(*keepers.Keeper)
 
-	return sessionRes.GetSession().GetHeader()
+	common.CreateClaimAndStoreBlockHash(
+		ctx, t,
+		keepers,
+		proofMsgServer,
+		sessionStartHeight,
+		supplierAddr,
+		appAddr,
+		service,
+		sessionTree,
+		sessionHeader,
+	)
 }
