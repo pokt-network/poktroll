@@ -20,8 +20,8 @@ import (
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	tokenomicskeeper "github.com/pokt-network/poktroll/x/tokenomics/keeper"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
@@ -43,6 +43,8 @@ type TestSuite struct {
 	keepers keepertest.TokenomicsModuleKeepers
 	claim   prooftypes.Claim
 	proof   prooftypes.Proof
+
+	numComputeUnits uint64
 }
 
 func (s *TestSuite) SetupTest() {
@@ -51,6 +53,9 @@ func (s *TestSuite) SetupTest() {
 
 	s.keepers, s.ctx = keepertest.NewTokenomicsModuleKeepers(s.T())
 	s.sdkCtx = sdk.UnwrapSDKContext(s.ctx)
+
+	// Set the suite numComputeUnits to be above the default threshold.
+	s.numComputeUnits = prooftypes.DefaultParams().ProofRequirementThreshold + 1
 
 	// Prepare a claim that can be inserted
 	s.claim = prooftypes.Claim{
@@ -62,7 +67,7 @@ func (s *TestSuite) SetupTest() {
 			SessionStartBlockHeight: 1,
 			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
 		},
-		RootHash: smstRootWithSum(69),
+		RootHash: smstRootWithSum(s.numComputeUnits),
 	}
 
 	// Prepare a claim that can be inserted
@@ -89,6 +94,7 @@ func (s *TestSuite) TestClaimSettlement_ClaimPendingBeforeSettlement() {
 	t := s.T()
 	ctx := s.ctx
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
 
 	// 0. Add the claim & verify it exists
 	claim := s.claim
@@ -111,9 +117,9 @@ func (s *TestSuite) TestClaimSettlement_ClaimPendingBeforeSettlement() {
 
 	// 2. Settle pending claims just after the session ended.
 	// Expectations: Claims should not be settled because the proof window hasn't closed yet.
-	// TODO_BLOCKER(@red-0ne): Use the governance parameters for more
-	// precise block heights once they are implemented.
-	blockHeight = claim.SessionHeader.SessionEndBlockHeight + 2 // session ended but proof window is still open
+	blockHeight = shared.GetProofWindowOpenHeight(
+		&sharedParams, claim.SessionHeader.SessionEndBlockHeight,
+	) + 2 // session ended but proof window is still open
 	sdkCtx = sdkCtx.WithBlockHeight(blockHeight)
 	numClaimsSettled, numClaimsExpired, err = s.keepers.SettlePendingClaims(sdkCtx)
 	// Check that no claims were settled
@@ -125,16 +131,15 @@ func (s *TestSuite) TestClaimSettlement_ClaimPendingBeforeSettlement() {
 	require.Len(t, claims, 1)
 }
 
-func (s *TestSuite) TestClaimSettlement_ClaimExpired_ProofRequiredAndNotProvided() {
+func (s *TestSuite) TestClaimSettlement_ClaimExpired_ProofRequiredViaThresholdAndNotProvided() {
 	// Retrieve default values
 	t := s.T()
 	ctx := s.ctx
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
 
 	// Create a claim that requires a proof
 	claim := s.claim
-	numComputeUnits := uint64(tokenomicskeeper.ProofRequiredComputeUnits + 1)
-	claim.RootHash = smstRootWithSum(numComputeUnits)
 
 	// 0. Add the claim & verify it exists
 	s.keepers.UpsertClaim(ctx, claim)
@@ -143,8 +148,8 @@ func (s *TestSuite) TestClaimSettlement_ClaimExpired_ProofRequiredAndNotProvided
 
 	// 1. Settle pending claims after proof window closes
 	// Expectation: All (1) claims should be expired.
-	// TODO_BLOCKER(@red-0ne): Use the governance parameters for more precise block heights once they are implemented.
-	blockHeight := claim.SessionHeader.SessionEndBlockHeight * 10 // proof window has definitely closed at this point
+	// NB: proof window has definitely closed at this point
+	blockHeight := shared.GetProofWindowCloseHeight(&sharedParams, claim.SessionHeader.SessionEndBlockHeight) + 10
 	sdkCtx = sdkCtx.WithBlockHeight(blockHeight)
 	numClaimsSettled, numClaimsExpired, err := s.keepers.SettlePendingClaims(sdkCtx)
 	// Check that no claims were settled
@@ -161,10 +166,10 @@ func (s *TestSuite) TestClaimSettlement_ClaimExpired_ProofRequiredAndNotProvided
 	// Validate the expiration event
 	expectedEvent, ok := s.getClaimEvent(events, "poktroll.tokenomics.EventClaimExpired").(*tokenomicstypes.EventClaimExpired)
 	require.True(t, ok)
-	require.Equal(t, numComputeUnits, expectedEvent.ComputeUnits)
+	require.Equal(t, s.numComputeUnits, expectedEvent.ComputeUnits)
 }
 
-func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided() {
+func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_ViaThreshold() {
 	// Retrieve default values
 	t := s.T()
 	ctx := s.ctx
@@ -172,8 +177,6 @@ func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided() 
 
 	// Create a claim that requires a proof
 	claim := s.claim
-	numComputeUnits := uint64(tokenomicskeeper.ProofRequiredComputeUnits + 1)
-	claim.RootHash = smstRootWithSum(numComputeUnits)
 
 	// 0. Add the claim & verify it exists
 	s.keepers.UpsertClaim(ctx, claim)
@@ -202,8 +205,7 @@ func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided() 
 	expectedEvent, ok := s.getClaimEvent(events, "poktroll.tokenomics.EventClaimSettled").(*tokenomicstypes.EventClaimSettled)
 	require.True(t, ok)
 	require.True(t, expectedEvent.ProofRequired)
-	require.Equal(t, numComputeUnits, expectedEvent.ComputeUnits)
-
+	require.Equal(t, s.numComputeUnits, expectedEvent.ComputeUnits)
 }
 
 func (s *TestSuite) TestClaimSettlement_Settles_WhenAProofIsNotRequired() {
@@ -214,8 +216,13 @@ func (s *TestSuite) TestClaimSettlement_Settles_WhenAProofIsNotRequired() {
 
 	// Create a claim that does not require a proof
 	claim := s.claim
-	numComputeUnits := uint64(tokenomicskeeper.ProofRequiredComputeUnits - 1)
-	claim.RootHash = smstRootWithSum(numComputeUnits)
+
+	// Set the proof parameters to NOT require via probability NOR threshold.
+	err := s.keepers.ProofKeeper.SetParams(ctx, prooftypes.Params{
+		ProofRequestProbability:   0,
+		ProofRequirementThreshold: s.numComputeUnits + 1,
+	})
+	require.NoError(t, err)
 
 	// 0. Add the claim & verify it exists
 	s.keepers.UpsertClaim(ctx, claim)
@@ -241,7 +248,7 @@ func (s *TestSuite) TestClaimSettlement_Settles_WhenAProofIsNotRequired() {
 	expectedEvent, ok := s.getClaimEvent(events, "poktroll.tokenomics.EventClaimSettled").(*tokenomicstypes.EventClaimSettled)
 	require.True(t, ok)
 	require.False(t, expectedEvent.ProofRequired)
-	require.Equal(t, numComputeUnits, expectedEvent.ComputeUnits)
+	require.Equal(t, s.numComputeUnits, expectedEvent.ComputeUnits)
 }
 
 func (s *TestSuite) TestClaimSettlement_DoesNotSettle_BeforeProofWindowCloses() {
