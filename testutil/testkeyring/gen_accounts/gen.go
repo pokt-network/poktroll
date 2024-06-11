@@ -18,6 +18,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/app"
+	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
 	"github.com/pokt-network/poktroll/testutil/testkeyring"
 )
 
@@ -30,6 +31,8 @@ var (
 func init() {
 	flag.StringVar(&flagOut, "out", defaultOutPath, "the path to the generated go source of pre-generated accounts.")
 	flag.IntVar(&flagAccountsLimit, "limit", 100, "the number of accounts to generate.")
+
+	cmd.InitSDKConfig()
 }
 
 func main() {
