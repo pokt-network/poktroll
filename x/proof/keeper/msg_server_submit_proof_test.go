@@ -83,9 +83,15 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			opts := []keepertest.ProofKeepersOpt{
 				// Set block hash so we can have a deterministic expected on-chain proof requested by the protocol.
-				keepertest.WithBlockHash(blockHeaderHash),
+				common.WithBlockHash[
+					keepertest.ProofKeepersOpt,
+					*keepertest.ProofModuleKeepers,
+				](blockHeaderHash),
 				// Set block height to 1 so there is a valid session on-chain.
-				keepertest.WithBlockHeight(1),
+				common.WithBlockHeight[
+					keepertest.ProofKeepersOpt,
+					*keepertest.ProofModuleKeepers,
+				](1),
 			}
 			keepers, ctx := keepertest.NewProofModuleKeepers(t, opts...)
 			sharedParams := keepers.SharedKeeper.GetParams(ctx)
@@ -202,9 +208,15 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 	opts := []keepertest.ProofKeepersOpt{
 		// Set block hash so we can have a deterministic expected on-chain proof requested by the protocol.
-		keepertest.WithBlockHash(blockHeaderHash),
+		common.WithBlockHash[
+			keepertest.ProofKeepersOpt,
+			*keepertest.ProofModuleKeepers,
+		](blockHeaderHash),
 		// Set block height to 1 so there is a valid session on-chain.
-		keepertest.WithBlockHeight(1),
+		common.WithBlockHeight[
+			keepertest.ProofKeepersOpt,
+			*keepertest.ProofModuleKeepers,
+		](1),
 	}
 	keepers, ctx := keepertest.NewProofModuleKeepers(t, opts...)
 
@@ -351,11 +363,16 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 
 func TestMsgServer_SubmitProof_Error(t *testing.T) {
 	opts := []keepertest.ProofKeepersOpt{
-		// Set block hash such that on-chain closest merkle proof validation
-		// uses the expected path.
-		keepertest.WithBlockHash(expectedMerkleProofPath),
+		// Set block hash so we can have a deterministic expected on-chain proof requested by the protocol.
+		common.WithBlockHash[
+			keepertest.ProofKeepersOpt,
+			*keepertest.ProofModuleKeepers,
+		](blockHeaderHash),
 		// Set block height to 1 so there is a valid session on-chain.
-		keepertest.WithBlockHeight(1),
+		common.WithBlockHeight[
+			keepertest.ProofKeepersOpt,
+			*keepertest.ProofModuleKeepers,
+		](1),
 	}
 	keepers, ctx := keepertest.NewProofModuleKeepers(t, opts...)
 

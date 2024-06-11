@@ -64,7 +64,7 @@ type ProofModuleKeepers struct {
 
 // ProofKeepersOpt is a function which receives and potentially modifies the context
 // and proof keepers during construction of the aggregation.
-type ProofKeepersOpt func(context.Context, *ProofModuleKeepers) context.Context
+type ProofKeepersOpt = genericOptionFunc[*ProofModuleKeepers]
 
 // ProofKeeper is a helper function to create a proof keeper and a context. It uses
 // mocked dependencies only.
@@ -283,28 +283,4 @@ func (keepers *ProofModuleKeepers) GetSessionHeader(
 	require.NoError(t, err)
 
 	return sessionRes.GetSession().GetHeader()
-}
-
-// WithBlockHash sets the initial block hash for the context and returns the updated context.
-func WithBlockHash(hash []byte) ProofKeepersOpt {
-	return func(ctx context.Context, _ *ProofModuleKeepers) context.Context {
-		return SetBlockHash(ctx, hash)
-	}
-}
-
-// SetBlockHash updates the block hash for the given context and returns the updated context.
-func SetBlockHash(ctx context.Context, hash []byte) context.Context {
-	return sdk.UnwrapSDKContext(ctx).WithHeaderHash(hash)
-}
-
-// WithBlockHeight sets the initial block height for the context and returns the updated context.
-func WithBlockHeight(height int64) ProofKeepersOpt {
-	return func(ctx context.Context, _ *ProofModuleKeepers) context.Context {
-		return SetBlockHeight(ctx, height)
-	}
-}
-
-// SetBlockHeight updates the block height for the given context and returns the updated context.
-func SetBlockHeight(ctx context.Context, height int64) context.Context {
-	return sdk.UnwrapSDKContext(ctx).WithBlockHeight(height)
 }

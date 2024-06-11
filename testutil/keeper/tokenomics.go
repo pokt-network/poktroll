@@ -64,7 +64,7 @@ type TokenomicsModuleKeepers struct {
 
 // TokenomicsKeepersOpt is a function which receives and potentially modifies the context
 // and tokenomics keepers during construction of the aggregation.
-type TokenomicsKeepersOpt func(context.Context, *TokenomicsModuleKeepers) context.Context
+type TokenomicsKeepersOpt = genericOptionFunc[*TokenomicsModuleKeepers]
 
 func TokenomicsKeeper(t testing.TB) (tokenomicsKeeper tokenomicskeeper.Keeper, ctx context.Context) {
 	t.Helper()

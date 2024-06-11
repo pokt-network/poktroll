@@ -44,7 +44,7 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			// Set block height to 1 so there is a valid session on-chain.
 			blockHeight := int64(1)
-			blockHeightOpt := keepertest.WithBlockHeight(blockHeight)
+			blockHeightOpt := keepertest.WithBlockHeight[keepertest.ProofKeepersOpt](blockHeight)
 
 			// Create a new set of proof module keepers. This isolates each test
 			// case from side effects of other test cases.
@@ -125,7 +125,7 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 
 func TestMsgServer_CreateClaim_Error_OutsideOfWindow(t *testing.T) {
 	// Set block height to 1 so there is a valid session on-chain.
-	blockHeightOpt := keepertest.WithBlockHeight(1)
+	blockHeightOpt := keepertest.WithBlockHeight[keepertest.ProofKeepersOpt](1)
 	keepers, ctx := keepertest.NewProofModuleKeepers(t, blockHeightOpt)
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	srv := keeper.NewMsgServerImpl(*keepers.Keeper)
@@ -234,7 +234,10 @@ func TestMsgServer_CreateClaim_Error_OutsideOfWindow(t *testing.T) {
 
 func TestMsgServer_CreateClaim_Error(t *testing.T) {
 	// Set block height to 1 so there is a valid session on-chain.
-	blockHeightOpt := keepertest.WithBlockHeight(1)
+	blockHeightOpt := common.WithBlockHeight[
+		keepertest.ProofKeepersOpt,
+		*keepertest.ProofModuleKeepers,
+	](1)
 	keepers, ctx := keepertest.NewProofModuleKeepers(t, blockHeightOpt)
 	srv := keeper.NewMsgServerImpl(*keepers.Keeper)
 
