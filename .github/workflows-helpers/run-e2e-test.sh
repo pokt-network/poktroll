@@ -32,17 +32,20 @@ while :; do
     fi
 done
 
-# Function to check HTTP status of an endpoint
+# Function to check HTTP status of an endpoint with retry
 check_http_status() {
     local endpoint=$1
-    echo "Checking HTTP status for the endpoint ${endpoint}..."
-    HTTP_STATUS=$(curl -s -o /dev/null -w '%{http_code}' http://${endpoint})
-    if [[ "${HTTP_STATUS}" -eq 200 ]]; then
-        echo "HTTP request to ${endpoint} returned 200 OK."
-    else
-        echo "HTTP request to ${endpoint} did not return 200 OK. Status code: ${HTTP_STATUS}. Retrying in 10 seconds..."
-        sleep 10
-    fi
+    while :; do
+        echo "Checking HTTP status for the endpoint ${endpoint}..."
+        HTTP_STATUS=$(curl -s -o /dev/null -w '%{http_code}' http://${endpoint})
+        if [[ "${HTTP_STATUS}" -eq 200 ]]; then
+            echo "HTTP request to ${endpoint} returned 200 OK."
+            break
+        else
+            echo "HTTP request to ${endpoint} did not return 200 OK. Status code: ${HTTP_STATUS}. Retrying in 10 seconds..."
+            sleep 10
+        fi
+    done
 }
 
 # Check HTTP status for multiple endpoints
