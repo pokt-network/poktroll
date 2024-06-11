@@ -11,12 +11,9 @@ import (
 	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
 	ringtypes "github.com/athanorlabs/go-dleq/types"
 	cosmoscrypto "github.com/cosmos/cosmos-sdk/crypto"
-	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
-	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	signingtypes "github.com/cosmos/cosmos-sdk/types/tx/signing"
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/pokt-network/ring-go"
 	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"
@@ -30,6 +27,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/relayer/protocol"
 	"github.com/pokt-network/poktroll/pkg/relayer/session"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
+	"github.com/pokt-network/poktroll/testutil/testkeyring"
 	"github.com/pokt-network/poktroll/x/proof/keeper"
 	"github.com/pokt-network/poktroll/x/proof/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
@@ -100,9 +98,25 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 			// Construct a keyring to hold the keypairs for the accounts used in the test.
 			keyRing := keyring.NewInMemory(keepers.Codec)
 
-			// Create accounts in the account keeper with corresponding keys in the keyring for the application and supplier.
-			supplierAddr := createAccount(ctx, t, supplierUid, keyRing, keepers).GetAddress().String()
-			appAddr := createAccount(ctx, t, "app", keyRing, keepers).GetAddress().String()
+			// Create a pre-generated account iterator to create accounts for the test.
+			preGeneratedAccts := testkeyring.PreGeneratedAccounts()
+
+			// Create accounts in the account keeper with corresponding keys in the
+			// keyring for the application and supplier.
+			supplierAddr := testkeyring.CreateOnChainAccount(
+				ctx, t,
+				supplierUid,
+				keyRing,
+				keepers,
+				preGeneratedAccts,
+			).String()
+			appAddr := testkeyring.CreateOnChainAccount(
+				ctx, t,
+				"app",
+				keyRing,
+				keepers,
+				preGeneratedAccts,
+			).String()
 
 			service := &sharedtypes.Service{Id: testServiceId}
 
@@ -201,9 +215,24 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 	// Construct a keyring to hold the keypairs for the accounts used in the test.
 	keyRing := keyring.NewInMemory(keepers.Codec)
 
+	// Create a pre-generated account iterator to create accounts for the test.
+	preGeneratedAccts := testkeyring.PreGeneratedAccounts()
+
 	// Create accounts in the account keeper with corresponding keys in the keyring for the application and supplier.
-	supplierAddr := createAccount(ctx, t, supplierUid, keyRing, keepers).GetAddress().String()
-	appAddr := createAccount(ctx, t, "app", keyRing, keepers).GetAddress().String()
+	supplierAddr := testkeyring.CreateOnChainAccount(
+		ctx, t,
+		supplierUid,
+		keyRing,
+		keepers,
+		preGeneratedAccts,
+	).String()
+	appAddr := testkeyring.CreateOnChainAccount(
+		ctx, t,
+		"app",
+		keyRing,
+		keepers,
+		preGeneratedAccts,
+	).String()
 
 	service := &sharedtypes.Service{Id: testServiceId}
 
@@ -341,12 +370,39 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 	// The base session start height used for testing
 	sessionStartHeight := int64(1)
 
+	// Create a pre-generated account iterator to create accounts for the test.
+	preGeneratedAccts := testkeyring.PreGeneratedAccounts()
+
 	// Create accounts in the account keeper with corresponding keys in the keyring
 	// for the applications and suppliers used in the tests.
-	supplierAddr := createAccount(ctx, t, supplierUid, keyRing, keepers).GetAddress().String()
-	wrongSupplierAddr := createAccount(ctx, t, "wrong_supplier", keyRing, keepers).GetAddress().String()
-	appAddr := createAccount(ctx, t, "app", keyRing, keepers).GetAddress().String()
-	wrongAppAddr := createAccount(ctx, t, "wrong_app", keyRing, keepers).GetAddress().String()
+	supplierAddr := testkeyring.CreateOnChainAccount(
+		ctx, t,
+		supplierUid,
+		keyRing,
+		keepers,
+		preGeneratedAccts,
+	).String()
+	wrongSupplierAddr := testkeyring.CreateOnChainAccount(
+		ctx, t,
+		"wrong_supplier",
+		keyRing,
+		keepers,
+		preGeneratedAccts,
+	).String()
+	appAddr := testkeyring.CreateOnChainAccount(
+		ctx, t,
+		"app",
+		keyRing,
+		keepers,
+		preGeneratedAccts,
+	).String()
+	wrongAppAddr := testkeyring.CreateOnChainAccount(
+		ctx, t,
+		"wrong_app",
+		keyRing,
+		keepers,
+		preGeneratedAccts,
+	).String()
 
 	service := &sharedtypes.Service{Id: testServiceId}
 	wrongService := &sharedtypes.Service{Id: "wrong_svc"}
@@ -1260,53 +1316,6 @@ func getClosestRelayDifficultyBits(
 	require.NoError(t, err)
 
 	return uint64(relayDifficultyBits)
-}
-
-// createAccount creates a new account with the given address keyring UID
-// and stores it in the account keeper.
-func createAccount(
-	ctx context.Context,
-	t *testing.T,
-	addrKeyringUid string,
-	keyRing keyring.Keyring,
-	accountKeeper types.AccountKeeper,
-) cosmostypes.AccountI {
-	t.Helper()
-
-	pubKey := createKeypair(t, addrKeyringUid, keyRing)
-	addr, err := cosmostypes.AccAddressFromHexUnsafe(pubKey.Address().String())
-	require.NoError(t, err)
-
-	accountNumber := accountKeeper.NextAccountNumber(ctx)
-	account := authtypes.NewBaseAccount(addr, pubKey, accountNumber, 0)
-	accountKeeper.SetAccount(ctx, account)
-
-	return account
-}
-
-// createKeypair creates a new public/private keypair that can be retrieved
-// from the keyRing using the addrUid provided. It returns the corresponding
-// public key.
-func createKeypair(
-	t *testing.T,
-	addrKeyringUid string,
-	keyRing keyring.Keyring,
-) cryptotypes.PubKey {
-	t.Helper()
-
-	record, _, err := keyRing.NewMnemonic(
-		addrKeyringUid,
-		keyring.English,
-		cosmostypes.FullFundraiserPath,
-		keyring.DefaultBIP39Passphrase,
-		hd.Secp256k1,
-	)
-	require.NoError(t, err)
-
-	pubKey, err := record.GetPubKey()
-	require.NoError(t, err)
-
-	return pubKey
 }
 
 // newSignedEmptyRelay creates a new relay structure for the given req & res headers.
