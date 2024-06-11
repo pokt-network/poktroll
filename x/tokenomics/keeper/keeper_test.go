@@ -131,7 +131,7 @@ func (s *TestSuite) TestClaimSettlement_ClaimPendingBeforeSettlement() {
 	require.Len(t, claims, 1)
 }
 
-func (s *TestSuite) TestClaimSettlement_ClaimExpired_ProofRequiredViaThresholdAndNotProvided() {
+func (s *TestSuite) TestClaimSettlement_ClaimExpired_ProofRequiredAndNotProvided_ViaThreshold() {
 	// Retrieve default values
 	t := s.T()
 	ctx := s.ctx
