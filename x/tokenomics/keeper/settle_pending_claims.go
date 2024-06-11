@@ -1,6 +1,8 @@
 package keeper
 
 import (
+	"crypto/rand"
+	"encoding/binary"
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -53,7 +55,10 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (numClaimsSettled, numClaim
 		_, isProofFound := k.proofKeeper.GetProof(ctx, sessionId, claim.SupplierAddress)
 		// Using the probabilistic proofs approach, determine if this expiring
 		// claim required an on-chain proof
-		isProofRequiredForClaim := k.isProofRequiredForClaim(ctx, &claim)
+		isProofRequiredForClaim, err := k.isProofRequiredForClaim(ctx, &claim)
+		if err != nil {
+			return 0, 0, err
+		}
 		if isProofRequiredForClaim {
 			// If a proof is not found, the claim will expire and never be settled.
 			if !isProofFound {
@@ -145,16 +150,46 @@ func (k Keeper) getExpiringClaims(ctx sdk.Context) (expiringClaims []prooftypes.
 // If it is not, the claim will be settled without a proof.
 // If it is, the claim will only be settled if a valid proof is available.
 // TODO_BLOCKER(@bryanchriswhite, #419): Document safety assumptions of the probabilistic proofs mechanism.
-func (k Keeper) isProofRequiredForClaim(ctx sdk.Context, claim *prooftypes.Claim) bool {
+func (k Keeper) isProofRequiredForClaim(ctx sdk.Context, claim *prooftypes.Claim) (bool, error) {
 	// NB: Assumption that claim is non-nil and has a valid root sum because it
 	// is retrieved from the store and validated, on-chain, at time of creation.
 	root := (smt.MerkleRoot)(claim.GetRootHash())
 	claimComputeUnits := root.Sum()
-	// TODO_BLOCKER(@Olshansk, #419): This is just VERY BASIC placeholder logic to have something
-	// in place while we implement proper probabilistic proofs. If you're reading it,
-	// do not overthink it and look at the documents linked in #419.
-	if claimComputeUnits < k.proofKeeper.GetParams(ctx).ProofRequirementThreshold {
-		return false
+	proofParams := k.proofKeeper.GetParams(ctx)
+
+	// Require a proof if the claim's compute units meets or exceeds the threshold.
+	if claimComputeUnits >= proofParams.GetProofRequirementThreshold() {
+		return true, nil
 	}
-	return true
+
+	// Sample a random value between 0 and 1 to determine if a proof is required probabilistically.
+	randFloat, err := secureRandProbability()
+	if err != nil {
+		return true, err
+	}
+
+	// Require a proof probabilistically based on the proof_request_probability param.
+	// NB: A random value between 0 and 1 will be less than or equal to proof_request_probability
+	// with probability equal to the proof_request_probability.
+	return randFloat <= proofParams.GetProofRequestProbability(), nil
+}
+
+// secureRandProbability generates a cryptographically secure random float32 between 0 and 1.
+func secureRandProbability() (float32, error) {
+	// Generate a random uint32.
+	var uint32Bz [4]byte
+	_, err := rand.Read(uint32Bz[:])
+	if err != nil {
+		return 0, err
+	}
+
+	randUint32 := binary.LittleEndian.Uint32(uint32Bz[:])
+
+	// Clamp the random float32 between [0,1]. This is achieved by dividing the random uint32
+	// by the most significant digit of a float32, which is 2^32, guaranteeing an output betwen
+	// 0 and 1, inclusive.
+	oneMostSignificantDigitFloat32 := float32(1 << 32)
+	randClampedFloat32 := float32(randUint32) / oneMostSignificantDigitFloat32
+
+	return randClampedFloat32, nil
 }
