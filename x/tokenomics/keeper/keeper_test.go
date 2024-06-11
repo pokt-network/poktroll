@@ -209,6 +209,52 @@ func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_Vi
 	require.Equal(t, s.numComputeUnits, expectedEvent.ComputeUnits)
 }
 
+func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_ViaProbability() {
+	// Retrieve default values
+	t := s.T()
+	ctx := s.ctx
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+
+	// Set the proof parameters to require a proof via probability AND NOT via threshold.
+	err := s.keepers.ProofKeeper.SetParams(ctx, prooftypes.Params{
+		ProofRequestProbability:   1,
+		ProofRequirementThreshold: 9001,
+	})
+	require.NoError(t, err)
+
+	// Create a claim that requires a proof
+	claim := s.claim
+
+	// 0. Add the claim & verify it exists
+	s.keepers.UpsertClaim(ctx, claim)
+	claims := s.keepers.GetAllClaims(ctx)
+	s.Require().Len(claims, 1)
+
+	// Upsert the proof
+	s.keepers.UpsertProof(ctx, s.proof)
+
+	// 1. Settle pending claims after proof window closes
+	// Expectation: All (1) claims should be claimed.
+	// TODO_BLOCKER(@red-0ne): Use the governance parameters for more precise block heights once they are implemented.
+	blockHeight := s.claim.SessionHeader.SessionEndBlockHeight * 10 // proof window has definitely closed at this point
+	sdkCtx = sdkCtx.WithBlockHeight(blockHeight)
+	numClaimsSettled, numClaimsExpired, err := s.keepers.SettlePendingClaims(sdkCtx)
+	// Check that no claims were settled
+	require.NoError(t, err)
+	require.Equal(t, uint64(1), numClaimsSettled)
+	require.Equal(t, uint64(0), numClaimsExpired)
+	// Validate that the claims expired
+	claims = s.keepers.GetAllClaims(ctx)
+	require.Len(t, claims, 0)
+
+	// Confirm an settlement event was emitted
+	events := sdkCtx.EventManager().Events()
+	expectedEvent, ok := s.getClaimEvent(events, "poktroll.tokenomics.EventClaimSettled").(*tokenomicstypes.EventClaimSettled)
+	require.True(t, ok)
+	require.True(t, expectedEvent.ProofRequired)
+	require.Equal(t, s.numComputeUnits, expectedEvent.ComputeUnits)
+}
+
 func (s *TestSuite) TestClaimSettlement_Settles_WhenAProofIsNotRequired() {
 	// Retrieve default values
 	t := s.T()
