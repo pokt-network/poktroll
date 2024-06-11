@@ -66,16 +66,16 @@ func CreateOnChainAccount(
 ) cosmostypes.AccAddress {
 	t.Helper()
 
-	// Create a supplier account.
-	supplierAcct, ok := preGeneratedAccts.Next()
+	// Create an account.
+	acct, ok := preGeneratedAccts.Next()
 	require.True(t, ok)
 
-	// Add the supplier account to the keyring.
-	err := supplierAcct.AddToKeyring(keyRing, keyringUID)
+	// Add the account to the keyring.
+	err := acct.AddToKeyring(keyRing, keyringUID)
 	require.NoError(t, err)
 
-	// Add the supplier account to the account keeper.
-	err = supplierAcct.AddToAccountKeeper(ctx, accountKeeper)
+	// Add the account to the account keeper.
+	err = acct.AddToAccountKeeper(ctx, accountKeeper)
 	require.NoError(t, err)
 
 	// TODO_HACK(@bryanchriswhite): investigate why the PreGeneratedAccount#Address
