@@ -214,6 +214,7 @@ func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_Vi
 	t := s.T()
 	ctx := s.ctx
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
 
 	// Set the proof parameters to require a proof via probability AND NOT via threshold.
 	err := s.keepers.ProofKeeper.SetParams(ctx, prooftypes.Params{
@@ -235,8 +236,8 @@ func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_Vi
 
 	// 1. Settle pending claims after proof window closes
 	// Expectation: All (1) claims should be claimed.
-	// TODO_BLOCKER(@red-0ne): Use the governance parameters for more precise block heights once they are implemented.
-	blockHeight := s.claim.SessionHeader.SessionEndBlockHeight * 10 // proof window has definitely closed at this point
+	// NB: proof window has definitely closed at this point
+	blockHeight := shared.GetProofWindowCloseHeight(&sharedParams, claim.SessionHeader.SessionEndBlockHeight)
 	sdkCtx = sdkCtx.WithBlockHeight(blockHeight)
 	numClaimsSettled, numClaimsExpired, err := s.keepers.SettlePendingClaims(sdkCtx)
 	// Check that no claims were settled
