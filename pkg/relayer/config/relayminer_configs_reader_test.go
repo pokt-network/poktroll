@@ -94,25 +94,25 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 			desc: "valid: relay miner config with signing key configured on supplier level",
 
 			inputConfigYAML: `
-				pocket_node:
-				  query_node_rpc_url: tcp://127.0.0.1:36657
-				  query_node_grpc_url: tcp://127.0.0.1:36658
-				  tx_node_rpc_url: tcp://127.0.0.1:36659
-				smt_store_path: smt_stores
-				suppliers:
-				  - service_id: ethereum
-				    listen_url: http://127.0.0.1:8080
-					signing_key_names: [ supplier1 ]
-				    service_config:
-				      backend_url: http://anvil.servicer:8545
-				      authentication:
-				        username: user
-				        password: pwd
-				      headers: {}
-							publicly_exposed_endpoints:
-								- ethereum.devnet1.poktroll.com
-								- ethereum
-				`,
+                pocket_node:
+                  query_node_rpc_url: tcp://127.0.0.1:36657
+                  query_node_grpc_url: tcp://127.0.0.1:36658
+                  tx_node_rpc_url: tcp://127.0.0.1:36659
+                smt_store_path: smt_stores
+                suppliers:
+                  - service_id: ethereum
+                    listen_url: http://127.0.0.1:8080
+                    signing_key_names: [ supplier1 ]
+                    service_config:
+                      backend_url: http://anvil.servicer:8545
+                      authentication:
+                        username: user
+                        password: pwd
+                      headers: {}
+                      publicly_exposed_endpoints:
+                        - ethereum.devnet1.poktroll.com
+                        - ethereum
+                `,
 
 			expectedErr: nil,
 			expectedConfig: &config.RelayMinerConfig{
