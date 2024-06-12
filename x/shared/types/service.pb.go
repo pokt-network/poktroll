@@ -93,7 +93,7 @@ type Service struct {
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// TODO_BETA: Name is currently unused but acts as a reminder that an optional onchain representation of the service is necessary
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	// Used with compute_units_to_tokens_multipler to calculate the cost of a relay
+	// Used alongside the global 'compute_units_to_tokens_multipler' to calculate the cost of a relay for this service
 	ComputeUnitsPerRelay uint64 `protobuf:"varint,3,opt,name=compute_units_per_relay,json=computeUnitsPerRelay,proto3" json:"compute_units_per_relay,omitempty"`
 }
 

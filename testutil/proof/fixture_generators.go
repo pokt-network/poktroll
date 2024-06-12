@@ -18,10 +18,11 @@ func BaseClaim(appAddr, supplierAddr string, sum uint64) prooftypes.Claim {
 		SupplierAddress: supplierAddr,
 		SessionHeader: &sessiontypes.SessionHeader{
 			ApplicationAddress: appAddr,
-			Service: &sharedtypes.Service{
-				Id:   "svc1",
-				Name: "svcName1",
-			},
+			Service: sharedtypes.NewService(
+				"svc1",
+				"svcName1",
+				1,
+			),
 			SessionId:               "session_id",
 			SessionStartBlockHeight: 1,
 			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),

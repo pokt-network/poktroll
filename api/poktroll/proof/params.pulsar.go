@@ -535,7 +535,7 @@ type Params struct {
 	// if it's cost (i.e. compute unit consumption) is below the ProofRequirementThreshold.
 	ProofRequestProbability float32 `protobuf:"fixed32,2,opt,name=proof_request_probability,json=proofRequestProbability,proto3" json:"proof_request_probability,omitempty"`
 	// proof_requirement_threshold is the session cost (i.e. compute unit consumption)
-	// threshold which requires that a session have a corresponding proof when its cost
+	// threshold which asserts that a session MUST have a corresponding proof when its cost
 	// is equal to or above the threshold. This is in contrast to the this requirement
 	// being determined probabilistically via ProofRequestProbability.
 	ProofRequirementThreshold uint64 `protobuf:"varint,3,opt,name=proof_requirement_threshold,json=proofRequirementThreshold,proto3" json:"proof_requirement_threshold,omitempty"`

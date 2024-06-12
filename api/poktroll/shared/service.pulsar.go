@@ -2756,8 +2756,8 @@ type Service struct {
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"` // Unique identifier for the service
 	// TODO_BETA: Name is currently unused but acts as a reminder that an optional onchain representation of the service is necessary
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"` // (Optional) Semantic human readable name for the service
-	// Used with compute_units_to_tokens_multipler to calculate the cost of a relay
-	ComputeUnitsPerRelay uint64 `protobuf:"varint,3,opt,name=compute_units_per_relay,json=computeUnitsPerRelay,proto3" json:"compute_units_per_relay,omitempty"` // Compute units required per relay
+	// Used alongside the global 'compute_units_to_tokens_multipler' to calculate the cost of a relay for this service
+	ComputeUnitsPerRelay uint64 `protobuf:"varint,3,opt,name=compute_units_per_relay,json=computeUnitsPerRelay,proto3" json:"compute_units_per_relay,omitempty"` // Compute units required per relay for this service
 }
 
 func (x *Service) Reset() {
