@@ -5,12 +5,21 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/telemetry"
 	"github.com/hashicorp/go-metrics"
+	"github.com/pokt-network/smt"
 
+	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 )
 
 const (
 	eventTypeMetricKey = "event_type"
 )
+
+type ClaimProofStage = string
+
+const (
+	ClaimProofStageClaiming = ClaimProofStage("claimed")
+	ClaimProofStageProving  = ClaimProofStage("proven")
+	ClaimProofStageSettling = ClaimProofStage("settled")
 )
 
 type ProofRequirementReason = string
@@ -54,6 +63,19 @@ func ProofRequirementCounter(
 		[]metrics.Label{
 			{Name: "proof_required_reason", Value: reason},
 			{Name: "is_required", Value: isRequired},
+		},
+	)
+}
+
+func ComputeUnitsCounter(lifecycleStage ClaimProofStage, claim *prooftypes.Claim) {
+	root := (smt.MerkleRoot)(claim.GetRootHash())
+	computeUnitsFloat := float32(root.Sum())
+
+	telemetry.IncrCounterWithLabels(
+		[]string{eventTypeMetricKey},
+		computeUnitsFloat,
+		[]metrics.Label{
+			{Name: "proof_claim_lifecycle_stage", Value: lifecycleStage},
 		},
 	)
 }

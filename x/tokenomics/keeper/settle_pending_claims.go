@@ -46,6 +46,9 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (numClaimsSettled, numClaim
 	logger.Info(fmt.Sprintf("found %d expiring claims at block height %d", len(expiringClaims), blockHeight))
 
 	for _, claim := range expiringClaims {
+		// TODO_DISCUSS_IN_THIS_PR: does the claim variable need to be copied here?
+		telemetry.ComputeUnitsCounter(telemetry.ClaimProofStageSettling, &claim)
+
 		// Retrieve the number of compute units in the claim for the events emitted
 		root := (smt.MerkleRoot)(claim.GetRootHash())
 		claimComputeUnits := root.Sum()

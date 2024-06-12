@@ -226,6 +226,9 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 	if err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
+
+	defer telemetry.ComputeUnitsCounter(telemetry.ClaimProofStageProving, claim)
+
 	logger.Info("successfully retrieved and validated claim")
 
 	// Verify the proof's closest merkle proof.
