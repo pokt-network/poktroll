@@ -22,12 +22,6 @@ import (
 // in tests. It is useful for scenarios where it is necessary to know the address
 // of a specific key in a separate context from that of keyring and/or module
 // genesis state construction.
-//
-// TODO_BUG(@bryanchriswhite): investigate why the PreGeneratedAccount#Address seems to
-// be incorrect when compared to the address returned from keyring.Record#GetAddress()
-// where the keyring.Record was created from the same PreGeneratedAccount##Mnemonic.
-// TODO_HACK: until the issue above is resolved, retrieve the record from the keyring
-// and call keyring.Record#GetAddress() instead.
 type PreGeneratedAccount struct {
 	Address  cosmostypes.AccAddress `json:"address"`
 	Mnemonic string                 `json:"mnemonic"`
@@ -78,15 +72,7 @@ func CreateOnChainAccount(
 	err = acct.AddToAccountKeeper(ctx, accountKeeper)
 	require.NoError(t, err)
 
-	// TODO_HACK(@bryanchriswhite): investigate why the PreGeneratedAccount#Address
-	// seems to be incorrect. Prefer using #Address over getting it from the keyring.
-	record, err := keyRing.Key(keyringUID)
-	require.NoError(t, err)
-
-	accAddr, err := record.GetAddress()
-	require.NoError(t, err)
-
-	return accAddr
+	return acct.Address
 }
 
 // PreGeneratedAccountAtIndex returns the pre-generated account at the given index.
@@ -174,8 +160,8 @@ func (pga *PreGeneratedAccount) AddToKeyring(keyRing keyring.Keyring, uid string
 	_, err := keyRing.NewAccount(
 		uid,
 		pga.Mnemonic,
-		cosmostypes.FullFundraiserPath,
 		keyring.DefaultBIP39Passphrase,
+		cosmostypes.FullFundraiserPath,
 		hd.Secp256k1,
 	)
 	return err
@@ -223,8 +209,8 @@ func mnemonicToPublicKey(mnemonic string) (cryptotypes.PubKey, error) {
 	record, err := ephemeralKeyring.NewAccount(
 		"",
 		mnemonic,
-		cosmostypes.FullFundraiserPath,
 		keyring.DefaultBIP39Passphrase,
+		cosmostypes.FullFundraiserPath,
 		hd.Secp256k1,
 	)
 	if err != nil {
