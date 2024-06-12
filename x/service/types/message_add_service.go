@@ -7,6 +7,7 @@ import (
 
 const (
 	DefaultComputeUnitsPerRelay uint64 = 1
+	ComputeUnitsPerRelayMax     uint64 = 2 ^ 16
 )
 
 var _ sdk.Msg = (*MsgAddService)(nil)
@@ -44,6 +45,8 @@ func (msg *MsgAddService) ValidateBasic() error {
 func ValidateComputeUnitsPerRelay(computeUnitsPerRelay uint64) error {
 	if computeUnitsPerRelay == 0 {
 		return ErrServiceInvalidComputUnitsPerRelay.Wrap("compute units per relay must be greater than 0")
+	} else if computeUnitsPerRelay > ComputeUnitsPerRelayMax {
+		return ErrServiceInvalidComputUnitsPerRelay.Wrapf("compute units per relay must be less than %d", ComputeUnitsPerRelayMax)
 	}
 	return nil
 }

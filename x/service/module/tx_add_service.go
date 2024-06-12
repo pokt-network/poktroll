@@ -16,7 +16,7 @@ var _ = strconv.Itoa(0)
 
 func CmdAddService() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   fmt.Sprintf("add-service <service_id> <service_name> <compute_units_per_relay: default={%d}>", types.DefaultComputeUnitsPerRelay),
+		Use:   fmt.Sprintf("add-service <service_id> <service_name> [compute_units_per_relay: default={%d}]", types.DefaultComputeUnitsPerRelay),
 		Short: "Add a new service to the network",
 		Long: `Add a new service to the network that will be available for applications,
 gateways and suppliers to use. The service id MUST be unique but the service name doesn't have to be.
@@ -28,6 +28,11 @@ $ poktrolld tx service add-service "svc1" "service_one" --keyring-backend test -
 			serviceIdStr := args[0]
 			serviceNameStr := args[1]
 
+			clientCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
 			computeUnitsPerRelay := types.DefaultComputeUnitsPerRelay
 			// if compute units per relay argument is provided
 			if len(args) > 2 {
@@ -35,11 +40,8 @@ $ poktrolld tx service add-service "svc1" "service_one" --keyring-backend test -
 				if err != nil {
 					return types.ErrServiceInvalidComputUnitsPerRelay.Wrapf("unable to parse as uint64: %s", args[2])
 				}
-			}
-
-			clientCtx, err := client.GetClientTxContext(cmd)
-			if err != nil {
-				return err
+			} else {
+				fmt.Printf("Using default compute_units_per_relay: %d\n", types.DefaultComputeUnitsPerRelay)
 			}
 
 			msg := types.NewMsgAddService(

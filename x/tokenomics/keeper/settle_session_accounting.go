@@ -187,6 +187,7 @@ func (k Keeper) getCoinFromComputeUnits(ctx context.Context, root smt.MerkleRoot
 	// Retrieve the existing tokenomics params
 	params := k.GetParams(ctx)
 
-	upokt := math.NewInt(int64(root.Sum() * computeUnitsPerRelay * params.ComputeUnitsToTokensMultiplier))
+	claimedComputeUnits := root.Sum()
+	upokt := math.NewInt(int64(claimedComputeUnits * computeUnitsPerRelay * params.ComputeUnitsToTokensMultiplier))
 	return sdk.NewCoin("upokt", upokt)
 }

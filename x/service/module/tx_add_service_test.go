@@ -125,24 +125,18 @@ func TestCLI_AddService(t *testing.T) {
 			// Wait for a new block to be committed
 			require.NoError(t, net.WaitForNextBlock())
 
-			var args []string
 			// Prepare the arguments for the CLI command
-			// Only include compute units per relay argument if provided
-			if test.service.ComputeUnitsPerRelay > 0 {
-				args = []string{
-					test.service.Id,
-					test.service.Name,
-					strconv.FormatUint(test.service.ComputeUnitsPerRelay, 10),
-					fmt.Sprintf("--%s=%s", flags.FlagFrom, test.supplierAddress),
-				}
-			} else {
-				args = []string{
-					test.service.Id,
-					test.service.Name,
-					fmt.Sprintf("--%s=%s", flags.FlagFrom, test.supplierAddress),
-				}
+			argsAndFlags := []string{
+				test.service.Id,
+				test.service.Name,
 			}
-			args = append(args, commonArgs...)
+			if test.service.ComputeUnitsPerRelay > 0 {
+				// Only include compute units per relay argument if provided
+				argsAndFlags = append(argsAndFlags, strconv.FormatUint(test.service.ComputeUnitsPerRelay, 10))
+			}
+			argsAndFlags = append(argsAndFlags, fmt.Sprintf("--%s=%s", flags.FlagFrom, test.supplierAddress))
+
+			args := append(argsAndFlags, commonArgs...)
 
 			// Execute the command
 			addServiceOutput, err := clitestutil.ExecTestCLICmd(ctx, service.CmdAddService(), args)
