@@ -37,16 +37,6 @@ type PreGeneratedAccountIterator struct {
 	nextIndex uint32
 }
 
-// AccountKeeper defines the expected interface for the Account module.
-type AccountKeeper interface {
-	GetAccount(context.Context, cosmostypes.AccAddress) cosmostypes.AccountI
-	SetAccount(context.Context, cosmostypes.AccountI)
-	// Return a new account with the next account number and the specified address. Does not save the new account to the store.
-	NewAccountWithAddress(context.Context, cosmostypes.AccAddress) cosmostypes.AccountI
-	// Fetch the next account number, and increment the internal counter.
-	NextAccountNumber(context.Context) uint64
-}
-
 // CreateOnChainAccount creates a new account with the given address keyring UID
 // and stores it in the given keyring and account keeper. It returns the
 // cosmostypes.AccAddress of the created account.
