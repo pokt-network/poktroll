@@ -8,7 +8,7 @@ import (
 	"cosmossdk.io/math"
 	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/cosmos/cosmos-sdk/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -38,24 +38,31 @@ func init() {
 type TestSuite struct {
 	suite.Suite
 
-	sdkCtx  sdk.Context
+	sdkCtx  cosmostypes.Context
 	ctx     context.Context
 	keepers keepertest.TokenomicsModuleKeepers
 	claim   prooftypes.Claim
 	proof   prooftypes.Proof
 
-	numComputeUnits uint64
+	expectedComputeUnits uint64
 }
 
+// SetupTest creates the following and stores them in the suite:
+// - An cosmostypes.Context.
+// - A keepertest.TokenomicsModuleKeepers to provide access to integrated keepers.
+// - An expectedComputeUnits which is the default proof_requirement_threshold.
+// - A claim that will require a proof via threshold, given the default proof params.
+// - A proof which contains only the session header supplier address.
 func (s *TestSuite) SetupTest() {
 	supplierAddr := sample.AccAddress()
 	appAddr := sample.AccAddress()
 
 	s.keepers, s.ctx = keepertest.NewTokenomicsModuleKeepers(s.T())
-	s.sdkCtx = sdk.UnwrapSDKContext(s.ctx)
+	s.sdkCtx = cosmostypes.UnwrapSDKContext(s.ctx)
 
-	// Set the suite numComputeUnits to be above the default threshold.
-	s.numComputeUnits = prooftypes.DefaultParams().ProofRequirementThreshold + 1
+	// Set the suite expectedComputeUnits to equal the default proof_requirement_threshold
+	// such that by default, s.claim will require a proof.
+	s.expectedComputeUnits = prooftypes.DefaultProofRequirementThreshold
 
 	// Prepare a claim that can be inserted
 	s.claim = prooftypes.Claim{
@@ -67,7 +74,10 @@ func (s *TestSuite) SetupTest() {
 			SessionStartBlockHeight: 1,
 			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
 		},
-		RootHash: smstRootWithSum(s.numComputeUnits),
+
+		// Set the suite expectedComputeUnits to be equal to the default threshold.
+		// This SHOULD make the claim require a proof given the default proof parameters.
+		RootHash: smstRootWithSum(s.expectedComputeUnits),
 	}
 
 	// Prepare a claim that can be inserted
@@ -85,6 +95,9 @@ func (s *TestSuite) SetupTest() {
 	s.keepers.SetApplication(s.ctx, app)
 }
 
+// TestSettleExpiringClaimsSuite tests the claim settlement process.
+// NB: Each test scenario (method) is run in isolation and #TestSetup() is called
+// for each prior to running.
 func TestSettleExpiringClaimsSuite(t *testing.T) {
 	suite.Run(t, new(TestSuite))
 }
@@ -93,7 +106,7 @@ func (s *TestSuite) TestClaimSettlement_ClaimPendingBeforeSettlement() {
 	// Retrieve default values
 	t := s.T()
 	ctx := s.ctx
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
 
 	// 0. Add the claim & verify it exists
@@ -139,7 +152,7 @@ func (s *TestSuite) TestClaimSettlement_ClaimExpired_ProofRequiredAndNotProvided
 	// Retrieve default values
 	t := s.T()
 	ctx := s.ctx
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
 
 	// Create a claim that requires a proof
@@ -174,14 +187,14 @@ func (s *TestSuite) TestClaimSettlement_ClaimExpired_ProofRequiredAndNotProvided
 	// Validate the expiration event
 	expectedEvent, ok := s.getClaimEvent(events, "poktroll.tokenomics.EventClaimExpired").(*tokenomicstypes.EventClaimExpired)
 	require.True(t, ok)
-	require.Equal(t, s.numComputeUnits, expectedEvent.ComputeUnits)
+	require.Equal(t, s.expectedComputeUnits, expectedEvent.ComputeUnits)
 }
 
 func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_ViaThreshold() {
 	// Retrieve default values
 	t := s.T()
 	ctx := s.ctx
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
 
 	// Create a claim that requires a proof
@@ -218,20 +231,24 @@ func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_Vi
 	expectedEvent, ok := s.getClaimEvent(events, "poktroll.tokenomics.EventClaimSettled").(*tokenomicstypes.EventClaimSettled)
 	require.True(t, ok)
 	require.True(t, expectedEvent.ProofRequired)
-	require.Equal(t, s.numComputeUnits, expectedEvent.ComputeUnits)
+	require.Equal(t, s.expectedComputeUnits, expectedEvent.ComputeUnits)
 }
 
 func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_ViaProbability() {
 	// Retrieve default values
 	t := s.T()
 	ctx := s.ctx
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
 
-	// Set the proof parameters to require a proof via probability AND NOT via threshold.
+	// Set the proof parameters such that s.claim requires a proof because the
+	// proof_request_probability is 100%. This is accomplished by setting the
+	// proof_requirement_threshold to exceed s.expectedComputeUnitss, which
+	// matches s.claim.
 	err := s.keepers.ProofKeeper.SetParams(ctx, prooftypes.Params{
-		ProofRequestProbability:   1,
-		ProofRequirementThreshold: 9001,
+		ProofRequestProbability: 1,
+		// +1 to push the threshold above s.claim's compute units
+		ProofRequirementThreshold: s.expectedComputeUnits + 1,
 	})
 	require.NoError(t, err)
 
@@ -269,23 +286,26 @@ func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_Vi
 	expectedEvent, ok := s.getClaimEvent(events, "poktroll.tokenomics.EventClaimSettled").(*tokenomicstypes.EventClaimSettled)
 	require.True(t, ok)
 	require.True(t, expectedEvent.ProofRequired)
-	require.Equal(t, s.numComputeUnits, expectedEvent.ComputeUnits)
+	require.Equal(t, s.expectedComputeUnits, expectedEvent.ComputeUnits)
 }
 
 func (s *TestSuite) TestClaimSettlement_Settles_WhenAProofIsNotRequired() {
 	// Retrieve default values
 	t := s.T()
 	ctx := s.ctx
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
 
 	// Create a claim that does not require a proof
 	claim := s.claim
 
-	// Set the proof parameters to NOT require via probability NOR threshold.
+	// Set the proof parameters such that s.claim DOES NOT require a proof because
+	// the proof_request_probability is 0% AND because the proof_requirement_threshold
+	// exceeds s.expectedComputeUnits, which matches s.claim.
 	err := s.keepers.ProofKeeper.SetParams(ctx, prooftypes.Params{
-		ProofRequestProbability:   0,
-		ProofRequirementThreshold: s.numComputeUnits + 1,
+		ProofRequestProbability: 0,
+		// +1 to push the threshold above s.claim's compute units
+		ProofRequirementThreshold: s.expectedComputeUnits + 1,
 	})
 	require.NoError(t, err)
 
@@ -317,7 +337,7 @@ func (s *TestSuite) TestClaimSettlement_Settles_WhenAProofIsNotRequired() {
 	expectedEvent, ok := s.getClaimEvent(events, "poktroll.tokenomics.EventClaimSettled").(*tokenomicstypes.EventClaimSettled)
 	require.True(t, ok)
 	require.False(t, expectedEvent.ProofRequired)
-	require.Equal(t, s.numComputeUnits, expectedEvent.ComputeUnits)
+	require.Equal(t, s.expectedComputeUnits, expectedEvent.ComputeUnits)
 }
 
 func (s *TestSuite) TestClaimSettlement_DoesNotSettle_BeforeProofWindowCloses() {
@@ -339,14 +359,14 @@ func (s *TestSuite) TestClaimSettlement_MultipleClaimsSettle_WithMultipleApplica
 // getClaimEvent verifies that there is exactly one event of type protoType in
 // the given events and returns it. If there are 0 or more than 1 events of the
 // given type, it fails the test.
-func (s *TestSuite) getClaimEvent(events sdk.Events, protoType string) proto.Message {
+func (s *TestSuite) getClaimEvent(events cosmostypes.Events, protoType string) proto.Message {
 	var parsedEvent proto.Message
 	numExpectedEvents := 0
 	for _, event := range events {
 		switch event.Type {
 		case protoType:
 			var err error
-			parsedEvent, err = sdk.ParseTypedEvent(abci.Event(event))
+			parsedEvent, err = cosmostypes.ParseTypedEvent(abci.Event(event))
 			s.Require().NoError(err)
 			numExpectedEvents++
 		default:
