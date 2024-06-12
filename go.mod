@@ -3,7 +3,7 @@ module github.com/pokt-network/poktroll
 go 1.22.2
 
 replace (
-	// Uncomment to use a local copy of shannon-sdk for development purposes.
+	// DEVELOPER_TIP: Uncomment to use a local copy of shannon-sdk for development purposes.
 	// github.com/pokt-network/shannon-sdk => ../shannon-sdk
 
 	// fix upstream GHSA-h395-qcrw-5vmq vulnerability.
