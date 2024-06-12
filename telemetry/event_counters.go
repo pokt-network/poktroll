@@ -5,9 +5,21 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/telemetry"
 	"github.com/hashicorp/go-metrics"
+
 )
 
-const eventSuccessKey = "event_type"
+const (
+	eventTypeMetricKey = "event_type"
+)
+)
+
+type ProofRequirementReason = string
+
+const (
+	ProofNotRequired                    = ProofRequirementReason("not_required")
+	ProofRequirementReasonProbabilistic = ProofRequirementReason("probabilistic")
+	ProofRequirementReasonThreshold     = ProofRequirementReason("threshold")
+)
 
 // EventSuccessCounter increments a counter with the given data type and success status.
 func EventSuccessCounter(
@@ -19,11 +31,29 @@ func EventSuccessCounter(
 	value := getValue()
 
 	telemetry.IncrCounterWithLabels(
-		[]string{eventSuccessKey},
+		[]string{eventTypeMetricKey},
 		value,
 		[]metrics.Label{
 			{Name: "type", Value: eventType},
 			{Name: "is_successful", Value: successResult},
+		},
+	)
+}
+
+func ProofRequirementCounter(
+	reason ProofRequirementReason,
+	getValue func() float32,
+) {
+	value := getValue()
+
+	isRequired := strconv.FormatBool(reason != ProofNotRequired)
+
+	telemetry.IncrCounterWithLabels(
+		[]string{eventTypeMetricKey},
+		value,
+		[]metrics.Label{
+			{Name: "proof_required_reason", Value: reason},
+			{Name: "is_required", Value: isRequired},
 		},
 	)
 }

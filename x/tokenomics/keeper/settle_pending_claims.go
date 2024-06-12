@@ -165,6 +165,11 @@ func (k Keeper) isProofRequiredForClaim(ctx sdk.Context, claim *prooftypes.Claim
 	// in place while we implement proper probabilistic proofs. If you're reading it,
 	// do not overthink it and look at the documents linked in #419.
 	if claimComputeUnits >= proofParams.GetProofRequirementThreshold() {
+		defer telemetry.ProofRequirementCounter(
+			telemetry.ProofRequirementReasonProbabilistic,
+			telemetry.DefaultCounterFn,
+		)
+
 		logger.Info(fmt.Sprintf(
 			"claim requires proof due to compute units (%d) exceeding threshold (%d)",
 			claimComputeUnits,
@@ -183,6 +188,11 @@ func (k Keeper) isProofRequiredForClaim(ctx sdk.Context, claim *prooftypes.Claim
 	// NB: A random value between 0 and 1 will be less than or equal to proof_request_probability
 	// with probability equal to the proof_request_probability.
 	if randFloat <= proofParams.GetProofRequestProbability() {
+		defer telemetry.ProofRequirementCounter(
+			telemetry.ProofRequirementReasonProbabilistic,
+			telemetry.DefaultCounterFn,
+		)
+
 		logger.Info(fmt.Sprintf(
 			"claim requires proof due to random sample (%.2f) being less than or equal to probability (%.2f)",
 			randFloat,
@@ -190,6 +200,11 @@ func (k Keeper) isProofRequiredForClaim(ctx sdk.Context, claim *prooftypes.Claim
 		))
 		return true, nil
 	}
+
+	defer telemetry.ProofRequirementCounter(
+		telemetry.ProofNotRequired,
+		telemetry.DefaultCounterFn,
+	)
 
 	logger.Info(fmt.Sprintf(
 		"claim does not require proof due to compute units (%d) being less than the threshold (%d) and random sample (%.2f) being greater than probability (%.2f)",
