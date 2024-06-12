@@ -370,7 +370,7 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 
 		proofMissingPenalty, ok := paramsMap[prooftypes.ParamProofMissingPenalty]
 		if ok {
-			params.ProofMissingPenalty = uint64(proofMissingPenalty.value.(int64))
+			params.ProofMissingPenalty = proofMissingPenalty.value.(*cosmostypes.Coin)
 		}
 
 		assertUpdatedParams(s,

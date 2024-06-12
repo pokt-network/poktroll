@@ -129,7 +129,7 @@ func TestParams_ValidateProofMissingPenalty(t *testing.T) {
 		},
 		{
 			desc:                "valid ProofMissingPenalty",
-			proofMissingPenalty: uint64(320),
+			proofMissingPenalty: &prooftypes.DefaultProofMissingPenalty,
 		},
 	}
 

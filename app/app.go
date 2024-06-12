@@ -55,7 +55,7 @@ import (
 	ibckeeper "github.com/cosmos/ibc-go/v8/modules/core/keeper"
 
 	"github.com/pokt-network/poktroll/docs"
-	telemetry "github.com/pokt-network/poktroll/telemetry"
+	"github.com/pokt-network/poktroll/telemetry"
 	applicationmodulekeeper "github.com/pokt-network/poktroll/x/application/keeper"
 	gatewaymodulekeeper "github.com/pokt-network/poktroll/x/gateway/keeper"
 	proofmodulekeeper "github.com/pokt-network/poktroll/x/proof/keeper"
@@ -69,8 +69,6 @@ import (
 const (
 	AccountAddressPrefix = "pokt"
 	Name                 = "poktroll"
-	// TODO_CLEANUP: Find a way to centralize the use of `upokt` throughout the codebase
-	DenomuPOKT = "upokt"
 )
 
 var (
