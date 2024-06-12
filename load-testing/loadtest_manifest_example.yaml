@@ -20,4 +20,5 @@ gateways:
   # address is the bech32 pokt address of the gateway.
   - address: pokt16sty9mjdh4u2fwgj8ptufg42cysvh6gsyx6wfp
     # The url used to send relays to the gateway on.
+    # TODO_INVESTIGATE(@okdas): Why is this port number so low? What should it be?
     exposed_url: http://localhost:84

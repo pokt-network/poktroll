@@ -1,7 +1,6 @@
 package keeper_test
 
 import (
-	"encoding/binary"
 	"fmt"
 	"testing"
 
@@ -11,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
+	testutilproof "github.com/pokt-network/poktroll/testutil/proof"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	testsession "github.com/pokt-network/poktroll/testutil/session"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -52,7 +52,7 @@ func TestSettleSessionAccounting_HandleAppGoingIntoDebt(t *testing.T) {
 			SessionStartBlockHeight: 1,
 			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
 		},
-		RootHash: smstRootWithSum(appStake.Amount.Uint64() + 1), // More than the app stake
+		RootHash: testutilproof.SmstRootWithSum(appStake.Amount.Uint64() + 1), // More than the app stake
 	}
 
 	err := keepers.SettleSessionAccounting(ctx, &claim)
@@ -94,7 +94,7 @@ func TestSettleSessionAccounting_AppNotFound(t *testing.T) {
 			SessionStartBlockHeight: 1,
 			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
 		},
-		RootHash: smstRootWithSum(42),
+		RootHash: testutilproof.SmstRootWithSum(42),
 	}
 
 	err := keeper.SettleSessionAccounting(ctx, &claim)
@@ -146,7 +146,7 @@ func TestSettleSessionAccounting_InvalidRoot(t *testing.T) {
 		{
 			desc: "40 bytes and has a valid value",
 			root: func() []byte {
-				root := smstRootWithSum(42)
+				root := testutilproof.SmstRootWithSum(42)
 				return root[:]
 			}(),
 			errExpected: false,
@@ -163,8 +163,8 @@ func TestSettleSessionAccounting_InvalidRoot(t *testing.T) {
 				}
 			}()
 
-			// Setup claim by copying the baseClaim and updating the root
-			claim := baseClaim(appAddr, supplierAddr, 0)
+			// Setup claim by copying the testproof.BaseClaim and updating the root
+			claim := testutilproof.BaseClaim(appAddr, supplierAddr, 0)
 			claim.RootHash = smt.MerkleRoot(test.root[:])
 
 			// Execute test function
@@ -201,7 +201,7 @@ func TestSettleSessionAccounting_InvalidClaim(t *testing.T) {
 		{
 			desc: "Valid Claim",
 			claim: func() *prooftypes.Claim {
-				claim := baseClaim(appAddr, supplierAddr, 42)
+				claim := testutilproof.BaseClaim(appAddr, supplierAddr, 42)
 				return &claim
 			}(),
 			errExpected: false,
@@ -215,7 +215,7 @@ func TestSettleSessionAccounting_InvalidClaim(t *testing.T) {
 		{
 			desc: "Claim with nil session header",
 			claim: func() *prooftypes.Claim {
-				claim := baseClaim(appAddr, supplierAddr, 42)
+				claim := testutilproof.BaseClaim(appAddr, supplierAddr, 42)
 				claim.SessionHeader = nil
 				return &claim
 			}(),
@@ -225,7 +225,7 @@ func TestSettleSessionAccounting_InvalidClaim(t *testing.T) {
 		{
 			desc: "Claim with invalid session id",
 			claim: func() *prooftypes.Claim {
-				claim := baseClaim(appAddr, supplierAddr, 42)
+				claim := testutilproof.BaseClaim(appAddr, supplierAddr, 42)
 				claim.SessionHeader.SessionId = ""
 				return &claim
 			}(),
@@ -235,7 +235,7 @@ func TestSettleSessionAccounting_InvalidClaim(t *testing.T) {
 		{
 			desc: "Claim with invalid application address",
 			claim: func() *prooftypes.Claim {
-				claim := baseClaim(appAddr, supplierAddr, 42)
+				claim := testutilproof.BaseClaim(appAddr, supplierAddr, 42)
 				claim.SessionHeader.ApplicationAddress = "invalid address"
 				return &claim
 			}(),
@@ -245,7 +245,7 @@ func TestSettleSessionAccounting_InvalidClaim(t *testing.T) {
 		{
 			desc: "Claim with invalid supplier address",
 			claim: func() *prooftypes.Claim {
-				claim := baseClaim(appAddr, supplierAddr, 42)
+				claim := testutilproof.BaseClaim(appAddr, supplierAddr, 42)
 				claim.SupplierAddress = "invalid address"
 				return &claim
 			}(),
@@ -283,29 +283,4 @@ func TestSettleSessionAccounting_InvalidClaim(t *testing.T) {
 			}
 		})
 	}
-}
-
-func baseClaim(appAddr, supplierAddr string, sum uint64) prooftypes.Claim {
-	return prooftypes.Claim{
-		SupplierAddress: supplierAddr,
-		SessionHeader: &sessiontypes.SessionHeader{
-			ApplicationAddress: appAddr,
-			Service: sharedtypes.NewService(
-				"svc1",
-				"svcName1",
-				1,
-			),
-			SessionId:               "session_id",
-			SessionStartBlockHeight: 1,
-			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
-		},
-		RootHash: smstRootWithSum(sum),
-	}
-}
-
-func smstRootWithSum(sum uint64) smt.MerkleRoot {
-	root := make([]byte, 40)
-	copy(root[:32], []byte("This is exactly 32 characters!!!"))
-	binary.BigEndian.PutUint64(root[32:], sum)
-	return smt.MerkleRoot(root)
 }
