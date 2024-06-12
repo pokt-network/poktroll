@@ -25,7 +25,7 @@ var _ relayer.RelayerProxy = (*relayerProxy)(nil)
 type relayerProxy struct {
 	logger polylog.Logger
 
-	// signingKeyNames are the supplier key name in the Cosmos's keybase.
+	// signingKeyNames are the supplier key names in the Cosmos's keybase.
 	// They are used along with the keyring to get the supplier address and
 	// sign the relay responses.
 	signingKeyNames []string
