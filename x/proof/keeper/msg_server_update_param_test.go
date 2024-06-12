@@ -120,3 +120,26 @@ func TestMsgUpdateParam_UpdateProofMissingPenaltyOnly(t *testing.T) {
 	require.Equal(t, defaultParams.ProofRequestProbability, res.Params.ProofRequestProbability)
 	require.Equal(t, defaultParams.MinRelayDifficultyBits, res.Params.MinRelayDifficultyBits)
 }
+
+func TestMsgUpdateParam_UpdateProofRequirementThresholdOnly(t *testing.T) {
+	var expectedProofRequirementThreshold uint64 = 100
+
+	// Set the parameters to their default values
+	k, msgSrv, ctx := setupMsgServer(t)
+	defaultParams := prooftypes.DefaultParams()
+	require.NoError(t, k.SetParams(ctx, defaultParams))
+
+	// Ensure the default values are different from the new values we want to set
+	require.NotEqual(t, expectedProofRequirementThreshold, defaultParams.ProofRequirementThreshold)
+
+	// Update the proof request probability
+	updateParamMsg := &prooftypes.MsgUpdateParam{
+		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+		Name:      prooftypes.ParamProofRequirementThreshold,
+		AsType:    &prooftypes.MsgUpdateParam_AsInt64{AsInt64: int64(expectedProofRequirementThreshold)},
+	}
+	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
+	require.NoError(t, err)
+
+	require.Equal(t, expectedProofRequirementThreshold, res.Params.ProofRequirementThreshold)
+}
