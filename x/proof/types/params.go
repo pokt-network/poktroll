@@ -5,12 +5,15 @@ import paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 var (
 	_ paramtypes.ParamSet = (*Params)(nil)
 
-	KeyMinRelayDifficultyBits              = []byte("MinRelayDifficultyBits")
-	ParamMinRelayDifficultyBits            = "min_relay_difficulty_bits"
-	DefaultMinRelayDifficultyBits  uint64  = 0 // TODO_MAINNET(#142, #401): Determine the default value.
-	KeyProofRequestProbability             = []byte("ProofRequestProbability")
-	ParamProofRequestProbability           = "proof_request_probability"
-	DefaultProofRequestProbability float32 = 0.25 // See: https://github.com/pokt-network/pocket-core/blob/staging/docs/proposals/probabilistic_proofs.md
+	KeyMinRelayDifficultyBits                = []byte("MinRelayDifficultyBits")
+	ParamMinRelayDifficultyBits              = "min_relay_difficulty_bits"
+	DefaultMinRelayDifficultyBits    uint64  = 0 // TODO_MAINNET(#142, #401): Determine the default value.
+	KeyProofRequestProbability               = []byte("ProofRequestProbability")
+	ParamProofRequestProbability             = "proof_request_probability"
+	DefaultProofRequestProbability   float32 = 0.25 // See: https://github.com/pokt-network/pocket-core/blob/staging/docs/proposals/probabilistic_proofs.md
+	KeyProofRequirementThreshold             = []byte("ProofRequirementThreshold")
+	ParamProofRequirementThreshold           = "proof_requirement_threshold"
+	DefaultProofRequirementThreshold uint64  = 20 // See: https://github.com/pokt-network/pocket-core/blob/staging/docs/proposals/probabilistic_proofs.md
 )
 
 // ParamKeyTable the param key table for launch module
@@ -22,10 +25,12 @@ func ParamKeyTable() paramtypes.KeyTable {
 func NewParams(
 	minRelayDifficultyBits uint64,
 	proofRequestProbability float32,
+	proofRequirementThreshold uint64,
 ) Params {
 	return Params{
-		MinRelayDifficultyBits:  minRelayDifficultyBits,
-		ProofRequestProbability: proofRequestProbability,
+		MinRelayDifficultyBits:    minRelayDifficultyBits,
+		ProofRequestProbability:   proofRequestProbability,
+		ProofRequirementThreshold: proofRequirementThreshold,
 	}
 }
 
@@ -34,6 +39,7 @@ func DefaultParams() Params {
 	return NewParams(
 		DefaultMinRelayDifficultyBits,
 		DefaultProofRequestProbability,
+		DefaultProofRequirementThreshold,
 	)
 }
 
@@ -50,6 +56,11 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 			&p.ProofRequestProbability,
 			ValidateProofRequestProbability,
 		),
+		paramtypes.NewParamSetPair(
+			KeyProofRequirementThreshold,
+			&p.ProofRequirementThreshold,
+			ValidateProofRequirementThreshold,
+		),
 	}
 }
 
@@ -61,6 +72,10 @@ func (params *Params) ValidateBasic() error {
 	}
 
 	if err := ValidateProofRequestProbability(params.ProofRequestProbability); err != nil {
+		return err
+	}
+
+	if err := ValidateProofRequirementThreshold(params.ProofRequirementThreshold); err != nil {
 		return err
 	}
 
@@ -92,6 +107,17 @@ func ValidateProofRequestProbability(v interface{}) error {
 
 	if proofRequestProbability < 0 || proofRequestProbability > 1 {
 		return ErrProofParamInvalid.Wrapf("invalid ProofRequestProbability: (%v)", proofRequestProbability)
+	}
+
+	return nil
+}
+
+// ValidateProofRequirementThreshold validates the ProofRequirementThreshold param.
+// NB: The argument is an interface type to satisfy the ParamSetPair function signature.
+func ValidateProofRequirementThreshold(v interface{}) error {
+	_, ok := v.(uint64)
+	if !ok {
+		return ErrProofParamInvalid.Wrapf("invalid parameter type: %T", v)
 	}
 
 	return nil
