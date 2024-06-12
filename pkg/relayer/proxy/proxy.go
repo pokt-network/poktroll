@@ -69,7 +69,7 @@ type relayerProxy struct {
 	// ringCache is used to obtain and store the ring for the application.
 	ringCache crypto.RingCache
 
-	// AddressToSigningKeyNameMap is a map with CosmoSDK address as a key, and their keyring signing key name as a value
+	// AddressToSigningKeyNameMap is a map with a CosmoSDK address as a key, and the keyring signing key name as a value.
 	// We use this map in:
 	// 1. Relay verification to check if the incoming relay matches the supplier hosted by the relay miner;
 	// 2. Relay signing to resolve which keyring key name to use for signing;
