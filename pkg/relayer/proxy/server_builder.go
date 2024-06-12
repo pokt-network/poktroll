@@ -48,7 +48,7 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 		}
 
 		// Check that the supplier's advertised services' endpoints are present in
-		// the server config and handled by a server
+		// the server config and handled by a server.
 		// Iterate over the supplier's advertised services then iterate over each
 		// service's endpoint
 		for _, service := range supplier.Services {

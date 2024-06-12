@@ -14,7 +14,7 @@ func (rp *relayerProxy) SignRelayResponse(relayResponse *types.RelayResponse, su
 	// create a simple signer for the request
 	_, ok := rp.AddressToSigningKeyNameMap[supplierAddr]
 	if !ok {
-		return ErrRelayerProxyUndefinedSigningKeyName.Wrapf("unable to resolve the signing key name for %s", supplierAddr)
+		return ErrRelayerProxyUndefinedSigningKeyNames.Wrapf("unable to resolve the signing key name for %s", supplierAddr)
 	}
 	signer := signer.NewSimpleSigner(rp.keyring, rp.AddressToSigningKeyNameMap[supplierAddr])
 

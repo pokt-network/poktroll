@@ -1,4 +1,4 @@
-package client
+package supplier
 
 // SupplierClientMap is a helper struct needed to depinject multiple supplier clients.
 // The inner structure maps a supplier address to a list of supplier clients for that address.

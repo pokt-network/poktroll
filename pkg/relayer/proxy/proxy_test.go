@@ -473,7 +473,6 @@ func TestRelayerProxy_Relays(t *testing.T) {
 		},
 		{
 			desc: "Successful late relay with session grace period",
-			// here
 			relayerProxyBehavior: []func(*testproxy.TestBehavior){
 				// blockHeight is past the first session but within its session grace period
 				testproxy.WithRelayerProxyDependenciesForBlockHeight(
@@ -738,8 +737,6 @@ func sendRequestWithSuccessfulReply(
 		testproxy.PrepareJSONRPCRequest(t),
 	)
 	req.Meta.Signature = testproxy.GetApplicationRingSignature(t, req, appPrivateKey)
-
-	fmt.Printf("DIMA req.Meta.SupplierAddress = testproxy.GetAddressFromKeyName(test, supplierKeyName): %s", req.Meta.SupplierAddress)
 
 	return testproxy.MarshalAndSend(test, servicesConfigMap, defaultRelayMinerServer, defaultService, req)
 }

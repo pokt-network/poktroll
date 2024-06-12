@@ -1118,12 +1118,12 @@ func newEmptySessionTree(
 		_ = os.RemoveAll(testSessionTreeStoreDir)
 	})
 
-	AccAddress := cosmostypes.MustAccAddressFromBech32(supplierAddr)
+	accAddress := cosmostypes.MustAccAddressFromBech32(supplierAddr)
 
 	// Construct a session tree to add relays to and generate a proof from.
 	sessionTree, err := session.NewSessionTree(
 		sessionTreeHeader,
-		&AccAddress,
+		&accAddress,
 		testSessionTreeStoreDir,
 		func(*sessiontypes.SessionHeader) {},
 	)

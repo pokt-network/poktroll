@@ -1,4 +1,4 @@
-# Allows to run and attach to the relayminer process from VSCode.
+# DEVELOPER_TIP: Allows to run and attach to the relayminer process from VSCode.
 # 1. Change `relayminers.count` to `0` in `localnet_config.yaml`
 # 2. Apply the following configuration in VSCode's `launch.json`:
 #

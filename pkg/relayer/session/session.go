@@ -8,6 +8,7 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client/supplier"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/observable/logging"
@@ -43,7 +44,7 @@ type relayerSessionsManager struct {
 	blockClient client.BlockClient
 
 	// supplierClients is used to create claims and submit proofs for sessions.
-	supplierClients *client.SupplierClientMap
+	supplierClients *supplier.SupplierClientMap
 
 	// pendingTxMu is used to prevent concurrent txs with the same sequence number.
 	pendingTxMu sync.Mutex

@@ -2,7 +2,6 @@ package proxy
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/pokt-network/poktroll/x/service/types"
 	"github.com/pokt-network/poktroll/x/shared"
@@ -90,9 +89,6 @@ func (rp *relayerProxy) VerifyRelayRequest(
 			return nil
 		}
 	}
-
-	fmt.Println(meta.SupplierAddress)
-	fmt.Println(session)
 
 	return ErrRelayerProxyInvalidSupplier
 }

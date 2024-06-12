@@ -46,7 +46,7 @@ func NewOneTimeClaimProofSupplierClientMap(
 	ctx context.Context,
 	t *testing.T,
 	supplierAddress string,
-) *client.SupplierClientMap {
+) *supplier.SupplierClientMap {
 	t.Helper()
 
 	ctrl := gomock.NewController(t)
@@ -74,7 +74,7 @@ func NewOneTimeClaimProofSupplierClientMap(
 		Return(nil).
 		Times(1)
 
-	supplierClientMap := client.NewSupplierClientMap()
+	supplierClientMap := supplier.NewSupplierClientMap()
 	supplierClientMap.SupplierClients[supplierAddress] = supplierClientMock
 
 	return supplierClientMap

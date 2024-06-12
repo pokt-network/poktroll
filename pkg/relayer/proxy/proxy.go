@@ -26,8 +26,9 @@ type relayerProxy struct {
 	logger polylog.Logger
 
 	// signingKeyNames are the supplier key names in the Cosmos's keybase.
-	// They are used along with the keyring to get the supplier address and
-	// sign the relay responses.
+	// They are used along with the keyring to get the supplier addresses and sign relay responses.
+	// A unique list of key names from all suppliers configured on RelayMiner is passed to relayerProxy,
+	// and the address for each signing key is looked up in `BuildProvidedServices`.
 	signingKeyNames []string
 	keyring         keyring.Keyring
 
@@ -174,7 +175,7 @@ func (rp *relayerProxy) ServedRelays() relayer.RelaysObservable {
 // TODO_TEST: Add tests for validating these configurations.
 func (rp *relayerProxy) validateConfig() error {
 	if rp.signingKeyNames == nil || len(rp.signingKeyNames) == 0 || rp.signingKeyNames[0] == "" {
-		return ErrRelayerProxyUndefinedSigningKeyName
+		return ErrRelayerProxyUndefinedSigningKeyNames
 	}
 
 	if rp.serverConfigs == nil || len(rp.serverConfigs) == 0 {
