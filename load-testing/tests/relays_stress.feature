@@ -14,4 +14,7 @@ Feature: Loading gateway server with relays
       | gateway     | 1                | 4              | 3          |
       | supplier    | 1                | 4              | 3          |
     When a load of concurrent relay requests are sent from the applications
+    # TODO_IMPROVE: Re-implement this so it's either "wait for N blocks" or "wait for N sessions"
+    # to make it more deterministic.
+    And the user should wait for "15" seconds
     Then the correct pairs count of claim and proof messages should be committed on-chain

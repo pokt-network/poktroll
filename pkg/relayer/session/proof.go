@@ -2,6 +2,7 @@ package session
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/either"
@@ -152,6 +153,7 @@ func (rs *relayerSessionsManager) newMapProveSessionsFn(
 			})
 		}
 
+		fmt.Println("OLSH")
 		// SubmitProof ensures on-chain proof inclusion so we can safely prune the tree.
 		if err := rs.supplierClient.SubmitProofs(ctx, sessionProofs); err != nil {
 			failedSubmitProofSessionsCh <- sessionTrees

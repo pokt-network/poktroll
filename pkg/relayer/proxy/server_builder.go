@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"time"
 
@@ -13,11 +14,17 @@ import (
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-// supplierStakeWaitTime is the time to wait for the supplier to be staked before
-// attempting to retrieve the supplier's on-chain record.
-// This is useful for testing and development purposes, where the supplier
-// may not be staked before the relay miner starts.
-const supplierStakeWaitTime = 1
+const (
+	// supplierStakeWaitTime is the time to wait for the supplier to be staked before
+	// attempting to (try again to) retrieve the supplier's on-chain record.
+	// This is useful for testing and development purposes, where the supplier
+	// may not be staked before the relay miner starts.
+	supplierStakeWaitTime = 1
+
+	// supplierMaxStakeWaitTime is the time to wait before a panic is thrown
+	// if the supplier is still not staked when the time elapses.
+	supplierMaxStakeWaitTime = 60
+)
 
 // BuildProvidedServices builds the advertised relay servers from the supplier's on-chain advertised services.
 // It populates the relayerProxy's `advertisedRelayServers` map of servers for each service, where each server
@@ -125,6 +132,7 @@ func (rp *relayerProxy) waitForSupplierToStake(
 	ctx context.Context,
 	supplierAddress string,
 ) (supplier sharedtypes.Supplier, err error) {
+	startTime := time.Now()
 	for {
 		// Get the supplier's on-chain record
 		supplier, err = rp.supplierQuerier.GetSupplier(ctx, supplierAddress)
@@ -137,6 +145,14 @@ func (rp *relayerProxy) waitForSupplierToStake(
 				supplierAddress,
 			)
 			time.Sleep(supplierStakeWaitTime * time.Second)
+
+			timeElapsed := time.Since(startTime)
+			fmt.Println(timeElapsed, supplierMaxStakeWaitTime*time.Second, timeElapsed > supplierMaxStakeWaitTime*time.Second)
+			if timeElapsed > supplierMaxStakeWaitTime*time.Second {
+				panic(fmt.Sprintf("Waited too long (%d seconds) for the supplier to stake. Exiting...", supplierMaxStakeWaitTime))
+
+			}
+
 			continue
 		}
 

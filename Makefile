@@ -370,16 +370,20 @@ test_e2e_env: warn_message_acc_initialize_pubkeys ## Setup the default env vars 
 test_e2e: test_e2e_env ## Run all E2E tests
 	go test -count=1 -v ./e2e/tests/... -tags=e2e,test
 
+.PHONY: test_e2e_relay
+test_e2e_relay: test_e2e_env ## Run only the E2E suite that exercises the relay life-cycle
+	go test -v ./e2e/tests/... -tags=e2e,test --features-path=relay.feature
+
 .PHONY: test_e2e_app
-test_e2e_app:
+test_e2e_app: test_e2e_env ## Run only the E2E suite that exercises the application life-cycle
 	go test -v ./e2e/tests/... -tags=e2e,test --features-path=stake_app.feature
 
 .PHONY: test_e2e_supplier
-test_e2e_supplier:
+test_e2e_supplier: test_e2e_env ## Run only the E2E suite that exercises the supplier life-cycle
 	go test -v ./e2e/tests/... -tags=e2e,test --features-path=stake_supplier.feature
 
 .PHONY: test_e2e_gateway
-test_e2e_gateway:
+test_e2e_gateway: test_e2e_env ## Run only the E2E suite that exercises the gateway life-cycle
 	go test -v ./e2e/tests/... -tags=e2e,test --features-path=stake_gateway.feature
 
 .PHONY: test_e2e_session
@@ -399,6 +403,9 @@ test_load_relays_stress_example: ## Run the stress test for E2E relays on a pers
 	go test -v -count=1 ./load-testing/tests/... \
 	-tags=load,test -run LoadRelays --log-level=debug --timeout=30m \
 	--manifest ./load-testing/loadtest_manifest_example.yaml
+
+.PHONY: test_load_relays_stress_localnet_stake
+test_load_relays_stress_localnet_stake:  gateway2_stake gateway3_stake supplier2_stake supplier3_stake ## Stakes all the actors necessary for a localnet relay stress test
 
 .PHONY: test_load_relays_stress_localnet
 test_load_relays_stress_localnet: warn_message_local_stress_test test_e2e_env ## Run the stress test for E2E relays on LocalNet.
@@ -795,10 +802,10 @@ warn_message_local_stress_test: ## Print a warning message when kicking off a lo
 	@echo "|                                                                                               |"
 	@echo "|     1. Review the # of suppliers & gateways in 'load-testing/localnet_loadtest_manifest.yaml' |"
 	@echo "|     2. Update 'localnet_config.yaml' to reflect what you found in (1)                         |"
+	@echo "|     	DEVELOPER_TIP: If you're operating off defaults, you'll likely need to update to 3     |"
+	@echo "|     3. Run `make test_load_relays_stress_localnet_stake`                                      |"
 	@echo "|                                                                                               |"
-	@echo "|     TIP: If you're operating off defaults, you will likely need to update both of them to 3   |"
-	@echo "|                                                                                               |"
-	@echo "|     TODO_DOCUMENT(@olshansk): Move this into proper documentation w/ clearer explanations     |"
+	@echo "|     TODO_DOCUMENT(@okdas): Move this into proper documentation w/ clearer explanations        |"
 	@echo "|                                                                                               |"
 	@echo "+-----------------------------------------------------------------------------------------------+"
 

@@ -18,12 +18,11 @@ import (
 	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/testutil/testclient"
-
 	"github.com/pokt-network/poktroll/cmd/signals"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/testutil/testclient"
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
 	"github.com/pokt-network/poktroll/testutil/testclient/testtx"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -511,20 +510,25 @@ func (s *relaysSuite) ALoadOfConcurrentRelayRequestsAreSentFromTheApplications()
 	<-s.ctx.Done()
 }
 
+func (s *relaysSuite) TheUserShouldWaitForSeconds(dur int64) {
+	time.Sleep(time.Duration(dur) * time.Second)
+}
+
 func (s *relaysSuite) TheCorrectPairsCountOfClaimAndProofMessagesShouldBeCommittedOnchain() {
+	logger.Info().
+		Int("claims", s.currentClaimCount).
+		Int("proofs", s.currentProofCount).
+		Msg("Claims and proofs count")
+
 	require.Equal(s,
 		s.currentClaimCount,
 		s.currentProofCount,
 		"claims and proofs count mismatch",
 	)
 
-	logger.Info().
-		Int("claims", s.currentClaimCount).
-		Int("proofs", s.currentProofCount).
-		Msg("Claims and proofs count")
 	// TODO_TECHDEBT: The current counting mechanism for the expected claims and proofs
 	// is not accurate. The expected claims and proofs count should be calculated based
-	// on the effectively sent relay requests.
+	// on a function of(time_per_block, num_blocks_per_session) -> num_claims_and_proofs.
 	//require.Equal(s,
 	//	s.expectedClaimsAndProofsCount,
 	//	s.currentProofCount,

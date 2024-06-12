@@ -212,15 +212,17 @@ func (s *relaysSuite) mapSessionInfoForLoadTestDurationFn(
 
 		// If the test duration is reached, stop sending requests
 		sendRelaysEndHeight := s.testStartHeight + s.relayLoadDurationBlocks
+		fmt.Println("OLSH1", blockHeight, sendRelaysEndHeight)
 		if blockHeight >= sendRelaysEndHeight {
+			testEndHeight := s.testStartHeight + s.testDurationBlocks*2
 
-			logger.Info().Msg("Stop sending relays, waiting for last claims and proofs to be submitted")
+			logger.Info().Msgf("Stop sending relays, waiting for last claims and proofs to be submitted: %d/%d", blockHeight-sendRelaysEndHeight, testEndHeight-sendRelaysEndHeight)
 			// Wait for one more session to let the last claims and proofs be submitted.
-			testEndHeight := s.testStartHeight + s.testDurationBlocks
+
+			fmt.Println("OLSH2", blockHeight, testEndHeight)
 			if blockHeight > testEndHeight {
 				s.cancelCtx()
 			}
-
 			return nil, true
 		}
 
