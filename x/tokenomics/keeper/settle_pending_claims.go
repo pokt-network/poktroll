@@ -151,6 +151,8 @@ func (k Keeper) getExpiringClaims(ctx sdk.Context) (expiringClaims []prooftypes.
 // If it is, the claim will only be settled if a valid proof is available.
 // TODO_BLOCKER(@bryanchriswhite, #419): Document safety assumptions of the probabilistic proofs mechanism.
 func (k Keeper) isProofRequiredForClaim(ctx sdk.Context, claim *prooftypes.Claim) (bool, error) {
+	logger := k.logger.With("method", "isProofRequiredForClaim")
+
 	// NB: Assumption that claim is non-nil and has a valid root sum because it
 	// is retrieved from the store and validated, on-chain, at time of creation.
 	root := (smt.MerkleRoot)(claim.GetRootHash())
@@ -159,6 +161,11 @@ func (k Keeper) isProofRequiredForClaim(ctx sdk.Context, claim *prooftypes.Claim
 
 	// Require a proof if the claim's compute units meets or exceeds the threshold.
 	if claimComputeUnits >= proofParams.GetProofRequirementThreshold() {
+		logger.Info(fmt.Sprintf(
+			"claim requires proof due to compute units (%d) exceeding threshold (%d)",
+			claimComputeUnits,
+			proofParams.GetProofRequirementThreshold(),
+		))
 		return true, nil
 	}
 
@@ -171,7 +178,23 @@ func (k Keeper) isProofRequiredForClaim(ctx sdk.Context, claim *prooftypes.Claim
 	// Require a proof probabilistically based on the proof_request_probability param.
 	// NB: A random value between 0 and 1 will be less than or equal to proof_request_probability
 	// with probability equal to the proof_request_probability.
-	return randFloat <= proofParams.GetProofRequestProbability(), nil
+	if randFloat <= proofParams.GetProofRequestProbability() {
+		logger.Info(fmt.Sprintf(
+			"claim requires proof due to random sample (%.2f) being less than or equal to probability (%.2f)",
+			randFloat,
+			proofParams.GetProofRequestProbability(),
+		))
+		return true, nil
+	}
+
+	logger.Info(fmt.Sprintf(
+		"claim does not require proof due to compute units (%d) being less than the threshold (%d) and random sample (%.2f) being greater than probability (%.2f)",
+		claimComputeUnits,
+		proofParams.GetProofRequirementThreshold(),
+		randFloat,
+		proofParams.GetProofRequestProbability(),
+	))
+	return false, nil
 }
 
 // secureRandProbability generates a cryptographically secure random float32 between 0 and 1.
