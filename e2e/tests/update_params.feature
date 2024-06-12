@@ -1,8 +1,13 @@
 Feature: Params Namespace
 
+  # Why do we have this scenario?
+  #   During development, if one of these tests fails along the way, we get into a
+  #   state where LocalNet is inconsistent w/ expectations and needs to be restarted.
+  #   Rather than using a `Background` set of commands that rerun on every scenario,
+  #   we add one to prepare for everything downstream.
   Scenario: All params are reset to their default values
     Given the user has the pocketd binary installed
-    And an authz grant from the "gov" "module" account to the "pnf" "user" account for the "/poktroll.tokenomics.MsgUpdateParams" message exists
+    And an authz grant from the "gov" "module" account to the "pnf" "user" account for each module MsgUpdateParam message exists
     Then all module params are reset to their default values
 
   Scenario: An unauthorized user cannot update a module params
