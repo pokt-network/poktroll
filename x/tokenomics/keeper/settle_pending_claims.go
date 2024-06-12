@@ -160,6 +160,10 @@ func (k Keeper) isProofRequiredForClaim(ctx sdk.Context, claim *prooftypes.Claim
 	proofParams := k.proofKeeper.GetParams(ctx)
 
 	// Require a proof if the claim's compute units meets or exceeds the threshold.
+	//
+	// TODO_BLOCKER(@bryanchriswhite, #419): This is just VERY BASIC placeholder logic to have something
+	// in place while we implement proper probabilistic proofs. If you're reading it,
+	// do not overthink it and look at the documents linked in #419.
 	if claimComputeUnits >= proofParams.GetProofRequirementThreshold() {
 		logger.Info(fmt.Sprintf(
 			"claim requires proof due to compute units (%d) exceeding threshold (%d)",
