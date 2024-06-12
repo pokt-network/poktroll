@@ -307,7 +307,8 @@ service.
 
 _`Required`_ if `default_signing_key_names` is empty.
 
-This option specifies the list of signing key names specific to a supplier. If a supplier does not provide its own `signing_key_names`, the `RelayMiner` will use the `default_signing_key_names`.
+This option specifies the list of signing key names specific to a supplier.
+If a supplier does not provide its own `signing_key_names`, the `RelayMiner` will use the `default_signing_key_names`.
 
 #### Example Configuration
 
