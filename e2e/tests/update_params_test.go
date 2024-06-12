@@ -380,6 +380,11 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 			params.ProofRequestProbability = proofRequestProbability.value.(float32)
 		}
 
+		proofRequirementThreshold, ok := paramsMap[prooftypes.ParamProofRequirementThreshold]
+		if ok {
+			params.ProofRequirementThreshold = uint64(proofRequirementThreshold.value.(int64))
+		}
+
 		assertUpdatedParams(s,
 			[]byte(res.Stdout),
 			&prooftypes.QueryParamsResponse{
