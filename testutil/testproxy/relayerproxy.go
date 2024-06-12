@@ -367,6 +367,8 @@ func GetAddressFromPrivateKey(test *TestBehavior, privKey *secp256k1.PrivKey) st
 
 // GetAddressFromKeyName returns the address of the provided keyring key name
 func GetAddressFromKeyName(test *TestBehavior, keyName string) string {
+	test.t.Helper()
+
 	var keyring keyringtypes.Keyring
 
 	err := depinject.Inject(test.Deps, &keyring)
