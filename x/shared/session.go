@@ -1,10 +1,10 @@
 package shared
 
 import (
-	"fmt"
-
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
+
+// TODO_DOCUMENT(@bryanchriswhite): Move this into the documentation: https://github.com/pokt-network/poktroll/pull/571#discussion_r1630923625
 
 // SessionGracePeriodBlocks is the number of blocks after the session ends before the
 // "session grace period" is considered to have elapsed.
@@ -40,8 +40,6 @@ func GetSessionEndHeight(sharedParams *sharedtypes.Params, queryHeight int64) in
 
 	numBlocksPerSession := int64(sharedParams.GetNumBlocksPerSession())
 	sessionStartHeight := GetSessionStartHeight(sharedParams, queryHeight)
-
-	fmt.Println("OLSH11 sessionStartHeight", sessionStartHeight, queryHeight)
 
 	return sessionStartHeight + numBlocksPerSession - 1
 }
@@ -90,11 +88,8 @@ func GetClaimWindowOpenHeight(sharedParams *sharedtypes.Params, queryHeight int6
 // GetClaimWindowCloseHeight returns the block height at which the claim window of
 // the session that includes queryHeight closes, for the provided sharedParams.
 func GetClaimWindowCloseHeight(sharedParams *sharedtypes.Params, queryHeight int64) int64 {
-	sessionEndHeight := GetSessionEndHeight(sharedParams, queryHeight)
-	sessionGracePeriodEndHeight := GetSessionGracePeriodEndHeight(sharedParams, sessionEndHeight)
 	claimWindowOpenHeight := GetClaimWindowOpenHeight(sharedParams, queryHeight)
 	claimWindowCloseOffsetBlocks := int64(sharedParams.GetClaimWindowCloseOffsetBlocks())
-	fmt.Println("OLSH00", claimWindowOpenHeight, sessionGracePeriodEndHeight, claimWindowCloseOffsetBlocks)
 	return claimWindowOpenHeight + claimWindowCloseOffsetBlocks
 }
 

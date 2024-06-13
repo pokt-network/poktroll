@@ -39,7 +39,6 @@ const (
 	// newBlockEventSubscriptionQuery is the query string which yields a
 	// subscription query to listen for on-chain new block events.
 	newBlockEventSubscriptionQuery = "tm.event='NewBlock'"
-	// claimSettledEventReplyClientQueryFmt = "tm.event='NewBlock' AND tokenomics.claim_settled.claim.supplier_address='%s'"
 	// eventsReplayClientBufferSize is the buffer size for the events replay client
 	// for the subscriptions above.
 	eventsReplayClientBufferSize = 100

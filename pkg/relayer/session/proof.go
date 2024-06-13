@@ -85,13 +85,10 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 	// TODO_BLOCKER(@bryanchriswhite,#543): We also don't really want to use the current value of the params. Instead,
 	// we should be using the value that the params had for the session which includes queryHeight.
 	sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
-	rs.logger.Info().Msgf("OLSH33 %v %v", sessionEndHeight, sharedParams)
 	if err != nil {
 		failSubmitProofsSessionsCh <- sessionTrees
 		return nil
 	}
-
-	rs.logger.Info().Msgf("OLSH222", sharedParams.GetProofWindowOpenOffsetBlocks())
 
 	submitProofsWindowOpenHeight := shared.GetProofWindowOpenHeight(sharedParams, sessionEndHeight)
 
