@@ -64,8 +64,8 @@ func (s *suite) TheUserShouldWaitForTheModuleMessageToBeSubmitted(module, messag
 
 func (s *suite) TheUserShouldWaitForTheModuleEventToBeBroadcast(module, message string) {
 	eventType := fmt.Sprintf("poktroll.%s.Event%s", module, message)
-	isEventMatch := func(event *abci.Event) bool { return true }
-	s.waitForNewBlockEvent(eventType, isEventMatch)
+	isExpectedEventFn := func(event *abci.Event) bool { return event.Type == eventType }
+	s.waitForNewBlockEvent(isExpectedEventFn)
 }
 
 func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBePersistedOnchain(supplierName, serviceId, appName string) {
@@ -158,7 +158,14 @@ func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBeSuccess
 	supplier, ok := accNameToSupplierMap[supplierName]
 	require.True(s, ok, "supplier %s not found", supplierName)
 
+<<<<<<< HEAD
 	doesClaimSettledEventMatch := func(event *abci.Event) bool {
+=======
+	isValidClaimSettledEvent := func(event *abci.Event) bool {
+		if event.Type != "poktroll.tokenomics.EventClaimSettled" {
+			return false
+		}
+>>>>>>> issues/542/fix_session_e2e_test
 		claimSettledEvent := s.abciToClaimSettledEvent(event)
 		claim := claimSettledEvent.Claim
 		require.Equal(s, app.Address, claim.SessionHeader.ApplicationAddress)
@@ -169,8 +176,12 @@ func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBeSuccess
 		return true
 	}
 
+<<<<<<< HEAD
 	eventType := fmt.Sprintf("poktroll.tokenomics.EventClaimSettled")
 	s.waitForNewBlockEvent(eventType, doesClaimSettledEventMatch)
+=======
+	s.waitForNewBlockEvent(isValidClaimSettledEvent)
+>>>>>>> issues/542/fix_session_e2e_test
 }
 
 func (s *suite) sendRelaysForSession(
@@ -235,11 +246,19 @@ func (s *suite) waitForTxResultEvent(targetAction string) {
 	}
 }
 
+// waitForNewBlockEvent waits for an event to be observed whose type and data
+// match the conditions specified by isEventMatchFn.
+// isEventMatchFn is a function that receives an abci.Event and returns a boolean
+// indicating whether the event matches the desired conditions.
 func (s *suite) waitForNewBlockEvent(
+<<<<<<< HEAD
 	targetEventType string,
 	// inspectEventFn is called with the matching target event for further validation,
 	// verification, deserialization and enforcement of more granular checks.
 	isEventMatch func(*abci.Event) bool,
+=======
+	isEventMatchFn func(*abci.Event) bool,
+>>>>>>> issues/542/fix_session_e2e_test
 ) {
 	ctx, done := context.WithCancel(context.Background())
 
@@ -261,10 +280,13 @@ func (s *suite) waitForNewBlockEvent(
 			// Range over each event's attributes to find the "action" attribute
 			// and compare its value to that of the action provided.
 			for _, event := range newBlockEvent.Data.Value.ResultFinalizeBlock.Events {
-				// TODO_IMPROVE: We can pass in a function to do even more granular
-				// checks on the event. For example, for a Claim Settlement event,
+				// Checks on the event. For example, for a Claim Settlement event,
 				// we can parse the claim and verify the compute units.
+<<<<<<< HEAD
 				if event.Type == targetEventType && isEventMatch(&event) {
+=======
+				if isEventMatchFn(&event) {
+>>>>>>> issues/542/fix_session_e2e_test
 					done()
 					return
 				}
@@ -274,7 +296,11 @@ func (s *suite) waitForNewBlockEvent(
 
 	select {
 	case <-time.After(eventTimeout):
+<<<<<<< HEAD
 		s.Fatalf("timed out waiting for NewBlock event %q", targetEventType)
+=======
+		s.Fatalf("timed out waiting for NewBlock event")
+>>>>>>> issues/542/fix_session_e2e_test
 	case <-ctx.Done():
 		s.Log("Success; message detected before timeout.")
 	}
