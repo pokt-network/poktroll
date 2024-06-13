@@ -657,7 +657,8 @@ func sendRequestWithDifferentSession(
 	test *testproxy.TestBehavior,
 ) (errCode int32, errorMessage string) {
 	// Use a block height that generates a different session ID
-	blockHeightAfterSessionGracePeriod := int64(blockHeight + shared.SessionGracePeriodBlocks)
+	sharedParams := sharedtypes.DefaultParams()
+	blockHeightAfterSessionGracePeriod := int64(blockHeight + sharedParams.NumBlocksPerSession + 1)
 	req := testproxy.GenerateRelayRequest(
 		test,
 		appPrivateKey,

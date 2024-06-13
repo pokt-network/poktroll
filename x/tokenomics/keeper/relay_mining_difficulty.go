@@ -25,7 +25,6 @@ func (k Keeper) SetRelayMiningDifficulty(ctx context.Context, relayMiningDifficu
 func (k Keeper) GetRelayMiningDifficulty(
 	ctx context.Context,
 	serviceId string,
-
 ) (difficulty types.RelayMiningDifficulty, found bool) {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.RelayMiningDifficultyKeyPrefix))

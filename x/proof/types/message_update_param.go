@@ -49,6 +49,10 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 	switch msg.Name {
 	case ParamMinRelayDifficultyBits:
 		return msg.paramTypeIsInt64()
+	case ParamProofRequestProbability:
+		return msg.paramTypeIsFloat()
+	case ParamProofRequirementThreshold:
+		return msg.paramTypeIsInt64()
 	default:
 		return ErrProofParamNameInvalid.Wrapf("unsupported param %q", msg.Name)
 	}
@@ -60,6 +64,18 @@ func (msg *MsgUpdateParam) paramTypeIsInt64() error {
 		return ErrProofParamInvalid.Wrapf(
 			"invalid type for param %q expected %T, got %T",
 			msg.Name, &MsgUpdateParam_AsInt64{},
+			msg.AsType,
+		)
+	}
+	return nil
+}
+
+// paramTypeIsFloat checks if the parameter type is Float, returning an error if not.
+func (msg *MsgUpdateParam) paramTypeIsFloat() error {
+	if _, ok := msg.AsType.(*MsgUpdateParam_AsFloat); !ok {
+		return ErrProofParamInvalid.Wrapf(
+			"invalid type for param %q expected %T, got %T",
+			msg.Name, &MsgUpdateParam_AsFloat{},
 			msg.AsType,
 		)
 	}

@@ -31,13 +31,23 @@ func (sharedQueryClient *SharedKeeperQueryClient) GetParams(
 	return &sharedParams, nil
 }
 
+// GetSessionGracePeriodEndHeight returns the block height at which the grace period
+// for the session which includes queryHeight elapses.
+//
+// TODO_BLOCKER(@bryanchriswhite, #543): We don't really want to use the current value of the params.
+// Instead, we should be using the value that the params had for the session given by blockHeight.
+func (sharedQueryClient *SharedKeeperQueryClient) GetSessionGracePeriodEndHeight(
+	ctx context.Context,
+	queryHeight int64,
+) (int64, error) {
+	sharedParams := sharedQueryClient.keeper.GetParams(ctx)
+	return shared.GetSessionGracePeriodEndHeight(&sharedParams, queryHeight), nil
+}
+
 // GetClaimWindowOpenHeight returns the block height at which the claim window of
 // the session that includes queryHeight opens.
 //
-// TODO_TECHDEBT(#543): We don't really want to have to query the params for every method call.
-// Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
-// to get the most recently (asynchronously) observed (and cached) value.
-// TODO_BLOCKER(@bryanchriswhite, #543): We also don't really want to use the current value of the params.
+// TODO_BLOCKER(@bryanchriswhite, #543): We don't really want to use the current value of the params.
 // Instead, we should be using the value that the params had for the session given by blockHeight.
 func (sharedQueryClient *SharedKeeperQueryClient) GetClaimWindowOpenHeight(
 	ctx context.Context,
@@ -45,4 +55,17 @@ func (sharedQueryClient *SharedKeeperQueryClient) GetClaimWindowOpenHeight(
 ) (int64, error) {
 	sharedParams := sharedQueryClient.keeper.GetParams(ctx)
 	return shared.GetClaimWindowOpenHeight(&sharedParams, queryHeight), nil
+}
+
+// GetProofWindowOpenHeight returns the block height at which the proof window of
+// the session that includes queryHeight opens.
+//
+// TODO_BLOCKER(@bryanchriswhite, #543): We don't really want to use the current value of the params.
+// Instead, we should be using the value that the params had for the session given by blockHeight.
+func (sharedQueryClient *SharedKeeperQueryClient) GetProofWindowOpenHeight(
+	ctx context.Context,
+	queryHeight int64,
+) (int64, error) {
+	sharedParams := sharedQueryClient.keeper.GetParams(ctx)
+	return shared.GetProofWindowOpenHeight(&sharedParams, queryHeight), nil
 }

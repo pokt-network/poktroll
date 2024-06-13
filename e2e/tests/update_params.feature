@@ -1,8 +1,13 @@
 Feature: Params Namespace
 
+  # Why do we have this scenario?
+  #   During development, if one of these tests fails along the way, we get into a
+  #   state where LocalNet is inconsistent w/ expectations and needs to be restarted.
+  #   Rather than using a `Background` set of commands that rerun on every scenario,
+  #   we add one to prepare for everything downstream.
   Scenario: All params are reset to their default values
     Given the user has the pocketd binary installed
-    And an authz grant from the "gov" "module" account to the "pnf" "user" account for the "/poktroll.tokenomics.MsgUpdateParams" message exists
+    And an authz grant from the "gov" "module" account to the "pnf" "user" account for each module MsgUpdateParam message exists
     Then all module params are reset to their default values
 
   Scenario: An unauthorized user cannot update a module params
@@ -32,8 +37,10 @@ Feature: Params Namespace
     And all "proof" module params are set to their default values
     And an authz grant from the "gov" "module" account to the "pnf" "user" account for the "/poktroll.proof.MsgUpdateParams" message exists
     When the "pnf" account sends an authz exec message to update all "proof" module params
-      | name                      | value | type  |
-      | min_relay_difficulty_bits | 8     | int64 |
+      | name                        | value | type  |
+      | min_relay_difficulty_bits   | 8     | int64 |
+      | proof_request_probability   | 0.1   | float |
+      | proof_requirement_threshold | 100   | int64 |
     Then all "proof" module params should be updated
 
   # NB: If you are reading this and the proof module has parameters
@@ -66,6 +73,8 @@ Feature: Params Namespace
       | module     | message_type                        | param_name                         | param_value | param_type |
       | tokenomics | /poktroll.tokenomics.MsgUpdateParam | compute_units_to_tokens_multiplier | 68          | int64      |
       | proof      | /poktroll.proof.MsgUpdateParam      | min_relay_difficulty_bits          | 12          | int64      |
+      | proof      | /poktroll.proof.MsgUpdateParam      | proof_request_probability          | 0.1         | float      |
+      | proof      | /poktroll.proof.MsgUpdateParam      | proof_requirement_threshold        | 100         | int64      |
       | shared     | /poktroll.shared.MsgUpdateParam     | num_blocks_per_session             | 8           | int64      |
       | shared     | /poktroll.shared.MsgUpdateParam     | claim_window_open_offset_blocks    | 8           | int64      |
       | shared     | /poktroll.shared.MsgUpdateParam     | claim_window_close_offset_blocks   | 8           | int64      |

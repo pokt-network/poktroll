@@ -20,7 +20,6 @@ import (
 	"github.com/pokt-network/poktroll/x/proof/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	"github.com/pokt-network/poktroll/x/shared"
 )
 
 // SMT specification used for the proof verification.
@@ -118,10 +117,22 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 	}
 
 	// Validate the session header.
-	if _, err := k.queryAndValidateSessionHeader(ctx, msg); err != nil {
+	onChainSession, err := k.queryAndValidateSessionHeader(ctx, msg)
+	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 	logger.Info("queried and validated the session header")
+
+	// Re-hydrate message session header with the on-chain session header.
+	// This corrects for discrepencies between unvalidated fields in the session header
+	// which can be derived from known values (e.g. session end height).
+	msg.SessionHeader = onChainSession.GetHeader()
+
+	// Validate proof message commit height is within the respective session's
+	// proof submission window using the on-chain session header.
+	if err := k.validateProofWindow(ctx, msg); err != nil {
+		return nil, status.Error(codes.FailedPrecondition, err.Error())
+	}
 
 	// Unmarshal the closest merkle proof from the message.
 	sparseMerkleClosestProof := &smt.SparseMerkleClosestProof{}
@@ -432,12 +443,10 @@ func (k msgServer) validateClosestPath(
 	//
 	// Since smt.ProveClosest is defined in terms of submitProofWindowStartHeight,
 	// this block's hash needs to be used for validation too.
-	//
-	// TODO_TECHDEBT(@red-0ne): Centralize the business logic that involves taking
-	// into account the heights, windows and grace periods into helper functions.
-	// TODO_BLOCKER(@bryanchriswhite, #516): Update `blockHeight` to be the value of when the `ProofWindow`
-	// opens once the variable is added.
-	sessionGracePeriodEndHeight := shared.GetSessionGracePeriodEndHeight(sessionHeader.GetSessionEndBlockHeight())
+	sessionGracePeriodEndHeight, err := k.sharedQuerier.GetSessionGracePeriodEndHeight(ctx, sessionHeader.GetSessionEndBlockHeight())
+	if err != nil {
+		return err
+	}
 	blockHash := k.sessionKeeper.GetBlockHash(ctx, sessionGracePeriodEndHeight)
 
 	// TODO_BETA: Investigate "proof for the path provided does not match one expected by the on-chain protocol"
