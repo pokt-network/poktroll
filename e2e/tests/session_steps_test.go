@@ -19,6 +19,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/testutil/testclient"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 const (
@@ -34,9 +35,12 @@ const (
 	// This is used by an events replay client to subscribe to tx events from the supplier.
 	// See: https://docs.cosmos.network/v0.47/learn/advanced/events#subscribing-to-events
 	txSenderEventSubscriptionQueryFmt = "tm.event='Tx' AND message.sender='%s'"
-	// newBlockEventSubscriptionQuery is the format string which yields a
+	// newBlockEventSubscriptionQuery is the query string which yields a
 	// subscription query to listen for on-chain new block events.
 	newBlockEventSubscriptionQuery = "tm.event='NewBlock'"
+	// claimSettledEventReplyClientQuery is the query string which yields a
+	// subscription query to listen for claim settled events.
+	claimSettledEventReplyClientQuery = "tm.event='ClaimSettled'"
 	// eventsReplayClientBufferSize is the buffer size for the events replay client
 	// for the subscriptions above.
 	eventsReplayClientBufferSize = 100
@@ -47,6 +51,9 @@ const (
 	// newBlockEventReplayClientKey is the suite#scenarioState key for the events replay client
 	// which is subscribed to claim settlement or expiration events on-chain.
 	newBlockEventReplayClientKey = "newBlockEventReplayClientKey"
+	// claimSettledEventReplyClientKey is the suite#scenarioState key for the events replay client
+	// which is subscribed to claim settled events.
+	claimSettledEventReplyClientKey = "claimSettledEventReplyClientKey"
 
 	// preExistingClaimsKey is the suite#scenarioState key for any pre-existing
 	// claims when querying for all claims prior to running the scenario.
@@ -138,6 +145,16 @@ func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication
 	require.NoError(s, err)
 	s.scenarioState[newBlockEventReplayClientKey] = onChainClaimEventsReplayClient
 
+	eventClaimSettledReplyClient, err := events.NewEventsReplayClient[*tokenomicstypes.EventClaimSettled](
+		ctx,
+		deps,
+		claimSettledEventReplyClientQuery,
+		block.UnmarshalNewBlockEvent,
+		eventsReplayClientBufferSize,
+	)
+	require.NoError(s, err)
+	s.scenarioState[claimSettledEventReplyClientKey] = eventClaimSettledReplyClient
+
 	// Send relays for the session.
 	s.sendRelaysForSession(
 		appName,
@@ -147,36 +164,26 @@ func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication
 	)
 }
 
-func (s *suite) TheProofSubmittedBySupplierForServiceForApplicationShouldBePersistedOnchain(supplierName, serviceId, appName string) {
-	ctx := context.Background()
+func (s *suite) TheClaimCreateBySupplierForServiceForApplicationShouldBeSuccessfullySettled(supplierName, serviceId, appName string) {
+	// ctx := context.Background()
 
-	// Retrieve all on-chain proofs for supplierName
-	allProofsRes, err := s.proofQueryClient.AllProofs(ctx, &prooftypes.QueryAllProofsRequest{
-		Filter: &prooftypes.QueryAllProofsRequest_SupplierAddress{
-			SupplierAddress: accNameToAddrMap[supplierName],
-		},
-	})
-	require.NoError(s, err)
-	require.NotNil(s, allProofsRes)
+	app, ok := accNameToAppMap[appName]
+	require.True(s, ok, "application %s not found", appName)
 
-	// Assert that the number of proofs has increased by one.
-	preExistingProofs, ok := s.scenarioState[preExistingProofsKey].([]prooftypes.Proof)
-	require.True(s, ok, "preExistingProofsKey not found in scenarioState")
-	// NB: We are avoiding the use of require.Len here because it provides unreadable output
-	// TODO_TECHDEBT: Due to the speed of the blocks of the LocalNet validator, along with the small number
-	// of blocks per session, multiple proofs may be created throughout the duration of the test. Until
-	// these values are appropriately adjusted, we assert on an increase in proofs rather than +1.
-	require.Greater(s, len(allProofsRes.Proofs), len(preExistingProofs), "number of proofs must have increased")
+	supplier, ok := accNameToSupplierMap[supplierName]
+	require.True(s, ok, "supplier %s not found", supplierName)
 
-	// TODO_UPNEXT(@bryanchriswhite): assert that the root hash of the proof contains the correct
-	// SMST sum. The sum can be retrieved via the `GetSum` function exposed
-	// by the SMT.
+	validateClaimSettledEvent := func(claimSettledEvent *tokenomicstypes.EventClaimSettled) {
+		claim := claimSettledEvent.Claim
+		require.Equal(s, supplier.Address, claim.SupplierAddress)
+		require.Equal(s, serviceId, claim.SessionHeader.Service.Id)
+		require.Equal(s, app.Address, claim.SessionHeader.ApplicationAddress)
+		require.True(s, claimSettledEvent.ProofRequired, "proof should be required")
+		require.Greater(s, claimSettledEvent.ComputeUnits, uint64(0), "compute units should be greater than 0")
+		s.Logf("Claim settled for %d compute units\n", claimSettledEvent.ComputeUnits)
+	}
 
-	// TODO_IMPROVE: add assertions about serviceId and appName and/or incorporate
-	// them into the scenarioState key(s).
-
-	proof := allProofsRes.Proofs[0]
-	require.Equal(s, accNameToAddrMap[supplierName], proof.SupplierAddress)
+	s.waitForClaimSettledEvent(supplier.Address, serviceId, app.Address, validateClaimSettledEvent)
 }
 
 func (s *suite) sendRelaysForSession(
@@ -276,6 +283,48 @@ func (s *suite) waitForNewBlockEvent(targetEvent string) {
 	select {
 	case <-time.After(eventTimeout):
 		s.Fatalf("timed out waiting for NewBlock event %q", targetEvent)
+	case <-ctx.Done():
+		s.Log("Success; message detected before timeout.")
+	}
+}
+
+func (s *suite) waitForClaimSettledEvent(
+	supplierAddr, serviceId, appAddr string,
+	validateClaimSettledEvent func(claimSettledEvent *tokenomicstypes.EventClaimSettled),
+
+) {
+	ctx, done := context.WithCancel(context.Background())
+
+	eventClaimSettledReplyClientState, ok := s.scenarioState[claimSettledEventReplyClientKey]
+	require.Truef(s, ok, "%s not found in scenarioState", claimSettledEventReplyClientKey)
+
+	eventClaimSettledReplyClient, ok := eventClaimSettledReplyClientState.(client.EventsReplayClient[*tokenomicstypes.EventClaimSettled])
+	require.True(s, ok, "%q not of the right type; expected client.EventsReplayClient[*tokenomicstypes.EventClaimSettled], got %T", claimSettledEventReplyClientKey, eventClaimSettledReplyClientState)
+	require.NotNil(s, eventClaimSettledReplyClient)
+
+	// For each observed event, **asynchronously** check if it contains the given action.
+	channel.ForEach[*tokenomicstypes.EventClaimSettled](
+		ctx, eventClaimSettledReplyClient.EventsSequence(ctx),
+		func(_ context.Context, claimSettledEvent *tokenomicstypes.EventClaimSettled) {
+			if claimSettledEvent == nil {
+				return
+			}
+
+			// Range over each event's attributes to find the Claim whose supplier
+			// is equal to the one provided.
+			if claimSettledEvent.Claim.SupplierAddress == supplierAddr &&
+				claimSettledEvent.Claim.SessionHeader.Service.Id == serviceId &&
+				claimSettledEvent.Claim.SessionHeader.ApplicationAddress == appAddr {
+				validateClaimSettledEvent(claimSettledEvent)
+				done()
+				return
+			}
+		},
+	)
+
+	select {
+	case <-time.After(eventTimeout):
+		s.Fatalf("timed out waiting for ClaimSettled event for supplier %q", supplierAddr)
 	case <-ctx.Done():
 		s.Log("Success; message detected before timeout.")
 	}
