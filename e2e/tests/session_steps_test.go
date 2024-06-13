@@ -58,14 +58,14 @@ const (
 )
 
 func (s *suite) TheUserShouldWaitForTheModuleMessageToBeSubmitted(module, message string) {
-	msg := fmt.Sprintf("/poktroll.%s.Msg%s", module, message)
-	s.waitForTxResultEvent(msg)
+	msgType := fmt.Sprintf("/poktroll.%s.Msg%s", module, message)
+	s.waitForTxResultEvent(msgType)
 }
 
 func (s *suite) TheUserShouldWaitForTheModuleEventToBeBroadcast(module, message string) {
-	event := fmt.Sprintf("poktroll.%s.Event%s", module, message)
-	inspectFn := func(event *abci.Event) bool { return true }
-	s.waitForNewBlockEvent(event, inspectFn)
+	eventType := fmt.Sprintf("poktroll.%s.Event%s", module, message)
+	isExpectedEventFn := func(event *abci.Event) bool { return event.Type == eventType }
+	s.waitForNewBlockEvent(isExpectedEventFn)
 }
 
 func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBePersistedOnchain(supplierName, serviceId, appName string) {
@@ -158,7 +158,10 @@ func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBeSuccess
 	supplier, ok := accNameToSupplierMap[supplierName]
 	require.True(s, ok, "supplier %s not found", supplierName)
 
-	validateClaimSettledEvent := func(event *abci.Event) bool {
+	isValidClaimSettledEvent := func(event *abci.Event) bool {
+		if event.Type != "poktroll.tokenomics.EventClaimSettled" {
+			return false
+		}
 		claimSettledEvent := s.abciToClaimSettledEvent(event)
 		claim := claimSettledEvent.Claim
 		require.Equal(s, app.Address, claim.SessionHeader.ApplicationAddress)
@@ -169,8 +172,7 @@ func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBeSuccess
 		return true
 	}
 
-	event := fmt.Sprintf("poktroll.tokenomics.EventClaimSettled")
-	s.waitForNewBlockEvent(event, validateClaimSettledEvent)
+	s.waitForNewBlockEvent(isValidClaimSettledEvent)
 }
 
 func (s *suite) sendRelaysForSession(
@@ -235,11 +237,12 @@ func (s *suite) waitForTxResultEvent(targetAction string) {
 	}
 }
 
+// waitForNewBlockEvent waits for an event to be observed whose type and data
+// match the conditions specified by isEventMatchFn.
+// isEventMatchFn is a function that receives an abci.Event and returns a boolean
+// indicating whether the event matches the desired conditions.
 func (s *suite) waitForNewBlockEvent(
-	targetEvent string,
-	// inspectEventFn passes the matching target event for further validation,
-	// verification, deserialization and enforcement of more granular checks.
-	inspectEventFn func(*abci.Event) bool,
+	isEventMatchFn func(*abci.Event) bool,
 ) {
 	ctx, done := context.WithCancel(context.Background())
 
@@ -261,10 +264,9 @@ func (s *suite) waitForNewBlockEvent(
 			// Range over each event's attributes to find the "action" attribute
 			// and compare its value to that of the action provided.
 			for _, event := range newBlockEvent.Data.Value.ResultFinalizeBlock.Events {
-				// TODO_IMPROVE: We can pass in a function to do even more granular
-				// checks on the event. For example, for a Claim Settlement event,
+				// Checks on the event. For example, for a Claim Settlement event,
 				// we can parse the claim and verify the compute units.
-				if event.Type == targetEvent && inspectEventFn(&event) {
+				if isEventMatchFn(&event) {
 					done()
 					return
 				}
@@ -274,7 +276,7 @@ func (s *suite) waitForNewBlockEvent(
 
 	select {
 	case <-time.After(eventTimeout):
-		s.Fatalf("timed out waiting for NewBlock event %q", targetEvent)
+		s.Fatalf("timed out waiting for NewBlock event")
 	case <-ctx.Done():
 		s.Log("Success; message detected before timeout.")
 	}
