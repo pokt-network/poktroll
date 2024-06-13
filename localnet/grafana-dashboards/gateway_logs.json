@@ -99,9 +99,7 @@
   ],
   "refresh": "5s",
   "schemaVersion": 39,
-  "tags": [
-    "gateway_logs"
-  ],
+  "tags": ["protocol", "gateway_logs"],
   "templating": {
     "list": []
   },

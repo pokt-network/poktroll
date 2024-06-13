@@ -54,7 +54,7 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 	case ParamProofRequirementThreshold:
 		return msg.paramTypeIsInt64()
 	case ParamProofMissingPenalty:
-		return msg.paramTypeIsInt64()
+		return msg.paramTypeIsCoin()
 	default:
 		return ErrProofParamNameInvalid.Wrapf("unsupported param %q", msg.Name)
 	}
@@ -78,6 +78,18 @@ func (msg *MsgUpdateParam) paramTypeIsFloat() error {
 		return ErrProofParamInvalid.Wrapf(
 			"invalid type for param %q expected %T, got %T",
 			msg.Name, &MsgUpdateParam_AsFloat{},
+			msg.AsType,
+		)
+	}
+	return nil
+}
+
+// paramTypeIsCoin checks if the parameter type is *cosmostypes.Coin, returning an error if not.
+func (msg *MsgUpdateParam) paramTypeIsCoin() error {
+	if _, ok := msg.AsType.(*MsgUpdateParam_AsCoin); !ok {
+		return ErrProofParamInvalid.Wrapf(
+			"invalid type for param %q expected %T, got %T",
+			msg.Name, &MsgUpdateParam_AsCoin{},
 			msg.AsType,
 		)
 	}

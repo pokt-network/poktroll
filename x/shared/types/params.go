@@ -80,6 +80,9 @@ func (params *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 
 // Validate validates the set of params
 func (params *Params) ValidateBasic() error {
+	// TODO_BLOCKER(@bryanchriswhite): Add `SessionGracePeriodBlocks` as a shared param,
+	// introduce validation, and ensure it is strictly less than num blocks per session.
+
 	if err := ValidateNumBlocksPerSession(params.NumBlocksPerSession); err != nil {
 		return err
 	}

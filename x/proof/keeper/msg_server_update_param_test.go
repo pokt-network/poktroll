@@ -3,10 +3,13 @@ package keeper_test
 import (
 	"testing"
 
+	"cosmossdk.io/math"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/app/volitile"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 )
 
@@ -30,7 +33,12 @@ func TestMsgUpdateParam_UpdateMinRelayDifficultyBitsOnly(t *testing.T) {
 	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.NoError(t, err)
 
+	require.NotEqual(t, defaultParams.MinRelayDifficultyBits, res.Params.MinRelayDifficultyBits)
 	require.Equal(t, expectedMinRelayDifficultyBits, res.Params.MinRelayDifficultyBits)
+
+	require.Equal(t, defaultParams.ProofRequirementThreshold, res.Params.ProofRequirementThreshold)
+	require.Equal(t, defaultParams.ProofRequestProbability, res.Params.ProofRequestProbability)
+	require.Equal(t, defaultParams.ProofMissingPenalty, res.Params.ProofMissingPenalty)
 }
 
 func TestMsgUpdateParam_UpdateProofRequestProbabilityOnly(t *testing.T) {
@@ -53,7 +61,12 @@ func TestMsgUpdateParam_UpdateProofRequestProbabilityOnly(t *testing.T) {
 	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.NoError(t, err)
 
+	require.NotEqual(t, defaultParams.ProofRequestProbability, res.Params.ProofRequestProbability)
 	require.Equal(t, expectedProofRequestProbability, res.Params.ProofRequestProbability)
+
+	require.Equal(t, defaultParams.ProofRequirementThreshold, res.Params.ProofRequirementThreshold)
+	require.Equal(t, defaultParams.MinRelayDifficultyBits, res.Params.MinRelayDifficultyBits)
+	require.Equal(t, defaultParams.ProofMissingPenalty, res.Params.ProofMissingPenalty)
 }
 
 func TestMsgUpdateParam_UpdateProofRequirementThresholdOnly(t *testing.T) {
@@ -76,11 +89,16 @@ func TestMsgUpdateParam_UpdateProofRequirementThresholdOnly(t *testing.T) {
 	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.NoError(t, err)
 
+	require.NotEqual(t, defaultParams.ProofRequirementThreshold, res.Params.ProofRequirementThreshold)
 	require.Equal(t, expectedProofRequirementThreshold, res.Params.ProofRequirementThreshold)
+
+	require.Equal(t, defaultParams.ProofMissingPenalty, res.Params.ProofMissingPenalty)
+	require.Equal(t, defaultParams.ProofRequestProbability, res.Params.ProofRequestProbability)
+	require.Equal(t, defaultParams.MinRelayDifficultyBits, res.Params.MinRelayDifficultyBits)
 }
 
 func TestMsgUpdateParam_UpdateProofMissingPenaltyOnly(t *testing.T) {
-	var expectedProofMissingPenalty uint64 = 500
+	expectedProofMissingPenalty := cosmostypes.NewCoin(volitile.DenomuPOKT, math.NewInt(500))
 
 	// Set the parameters to their default values
 	k, msgSrv, ctx := setupMsgServer(t)
@@ -94,10 +112,15 @@ func TestMsgUpdateParam_UpdateProofMissingPenaltyOnly(t *testing.T) {
 	updateParamMsg := &prooftypes.MsgUpdateParam{
 		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		Name:      prooftypes.ParamProofMissingPenalty,
-		AsType:    &prooftypes.MsgUpdateParam_AsInt64{AsInt64: int64(expectedProofMissingPenalty)},
+		AsType:    &prooftypes.MsgUpdateParam_AsCoin{AsCoin: &expectedProofMissingPenalty},
 	}
 	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.NoError(t, err)
 
-	require.Equal(t, expectedProofMissingPenalty, res.Params.ProofMissingPenalty)
+	require.NotEqual(t, defaultParams.ProofMissingPenalty, res.Params.ProofMissingPenalty)
+	require.Equal(t, &expectedProofMissingPenalty, res.Params.ProofMissingPenalty)
+
+	require.Equal(t, defaultParams.ProofRequirementThreshold, res.Params.ProofRequirementThreshold)
+	require.Equal(t, defaultParams.ProofRequestProbability, res.Params.ProofRequestProbability)
+	require.Equal(t, defaultParams.MinRelayDifficultyBits, res.Params.MinRelayDifficultyBits)
 }
