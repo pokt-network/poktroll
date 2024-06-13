@@ -227,7 +227,7 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 
-	defer telemetry.ComputeUnitsCounter(telemetry.ClaimProofStageProving, claim)
+	defer telemetry.ComputeUnitsCounter(telemetry.ClaimProofStageProven, claim)
 
 	logger.Info("successfully retrieved and validated claim")
 

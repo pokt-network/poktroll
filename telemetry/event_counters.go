@@ -17,17 +17,17 @@ const (
 type ClaimProofStage = string
 
 const (
-	ClaimProofStageClaiming = ClaimProofStage("claimed")
-	ClaimProofStageProving  = ClaimProofStage("proven")
-	ClaimProofStageSettling = ClaimProofStage("settled")
+	ClaimProofStageClaimed = ClaimProofStage("claimed")
+	ClaimProofStageProven  = ClaimProofStage("proven")
+	ClaimProofStageSettled = ClaimProofStage("settled")
 )
 
 type ProofRequirementReason = string
 
 const (
 	ProofNotRequired                    = ProofRequirementReason("not_required")
-	ProofRequirementReasonProbabilistic = ProofRequirementReason("probabilistic")
-	ProofRequirementReasonThreshold     = ProofRequirementReason("threshold")
+	ProofRequirementReasonProbabilistic = ProofRequirementReason("probabilistic_selection")
+	ProofRequirementReasonThreshold     = ProofRequirementReason("above_compute_unit_threshold")
 )
 
 // EventSuccessCounter increments a counter with the given data type and success status.
@@ -49,6 +49,9 @@ func EventSuccessCounter(
 	)
 }
 
+// ProofRequirementCounter increments a counter which tracks the number of claims
+// which require proof for the given proof requirement reason (i.e. not required,
+// probabilistic selection, above compute unit threshold).
 func ProofRequirementCounter(
 	reason ProofRequirementReason,
 	getValue func() float32,
@@ -67,6 +70,9 @@ func ProofRequirementCounter(
 	)
 }
 
+// ComputeUnitsCounter increments a counter which tracks the number of compute units
+// which are represented by on-chain claims at the given lifecycle state (i.e. claimed,
+// proven, settled).
 func ComputeUnitsCounter(lifecycleStage ClaimProofStage, claim *prooftypes.Claim) {
 	root := (smt.MerkleRoot)(claim.GetRootHash())
 	computeUnitsFloat := float32(root.Sum())
@@ -75,7 +81,7 @@ func ComputeUnitsCounter(lifecycleStage ClaimProofStage, claim *prooftypes.Claim
 		[]string{eventTypeMetricKey},
 		computeUnitsFloat,
 		[]metrics.Label{
-			{Name: "proof_claim_lifecycle_stage", Value: lifecycleStage},
+			{Name: "claim_proof_lifecycle_stage", Value: lifecycleStage},
 		},
 	)
 }

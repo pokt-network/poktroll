@@ -33,3 +33,10 @@ func (k Keeper) GetSessionNumber(ctx context.Context, queryHeight int64) int64 {
 	sharedParams := k.GetParams(ctx)
 	return shared.GetSessionNumber(&sharedParams, queryHeight)
 }
+
+// GetProofWindowCloseHeight returns the block height at which the proof window of
+// the session that includes queryHeight closes, given the passed sharedParams.
+func (k Keeper) GetProofWindowCloseHeight(ctx context.Context, queryHeight int64) int64 {
+	sharedParams := k.GetParams(ctx)
+	return shared.GetProofWindowCloseHeight(&sharedParams, queryHeight)
+}

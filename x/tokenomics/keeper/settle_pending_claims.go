@@ -11,7 +11,6 @@ import (
 
 	"github.com/pokt-network/poktroll/telemetry"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
-	"github.com/pokt-network/poktroll/x/shared"
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
@@ -53,8 +52,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 	relaysPerServiceMap = make(map[string]uint64)
 
 	for _, claim := range expiringClaims {
-		// TODO_DISCUSS_IN_THIS_PR: does the claim variable need to be copied here?
-		telemetry.ComputeUnitsCounter(telemetry.ClaimProofStageSettling, &claim)
+		telemetry.ComputeUnitsCounter(telemetry.ClaimProofStageSettled, &claim)
 
 		// Retrieve the number of compute units in the claim for the events emitted
 		root := (smt.MerkleRoot)(claim.GetRootHash())
@@ -67,7 +65,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 		// claim required an on-chain proof
 		isProofRequiredForClaim, err := k.isProofRequiredForClaim(ctx, &claim)
 		if err != nil {
-			return 0, 0, err
+			return 0, 0, relaysPerServiceMap, err
 		}
 		if isProofRequiredForClaim {
 			// If a proof is not found, the claim will expire and never be settled.
@@ -138,11 +136,6 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 func (k Keeper) getExpiringClaims(ctx sdk.Context) (expiringClaims []prooftypes.Claim) {
 	blockHeight := ctx.BlockHeight()
 
-	// TODO_BLOCKER(@bryanchriswhite): query the on-chain governance parameter once available.
-	// `* 3` is just a random factor Olshansky added for now to make sure expiration
-	// doesn't happen immediately after a session's grace period is complete.
-	submitProofWindowEndHeight := shared.SessionGracePeriodBlocks * int64(3)
-
 	// TODO_TECHDEBT: Optimize this by indexing claims appropriately
 	// and only retrieving the claims that need to be settled rather than all
 	// of them and iterating through them one by one.
@@ -150,7 +143,8 @@ func (k Keeper) getExpiringClaims(ctx sdk.Context) (expiringClaims []prooftypes.
 
 	// Loop over all claims we need to check for expiration
 	for _, claim := range claims {
-		expirationHeight := claim.SessionHeader.SessionEndBlockHeight + submitProofWindowEndHeight
+		claimSessionStartHeight := claim.GetSessionHeader().GetSessionStartBlockHeight()
+		expirationHeight := k.sharedKeeper.GetProofWindowCloseHeight(ctx, claimSessionStartHeight)
 		if blockHeight >= expirationHeight {
 			expiringClaims = append(expiringClaims, claim)
 		}
@@ -180,7 +174,7 @@ func (k Keeper) isProofRequiredForClaim(ctx sdk.Context, claim *prooftypes.Claim
 	// do not overthink it and look at the documents linked in #419.
 	if claimComputeUnits >= proofParams.GetProofRequirementThreshold() {
 		defer telemetry.ProofRequirementCounter(
-			telemetry.ProofRequirementReasonProbabilistic,
+			telemetry.ProofRequirementReasonThreshold,
 			telemetry.DefaultCounterFn,
 		)
 
