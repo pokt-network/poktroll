@@ -61,7 +61,7 @@ func (s *TestSuite) SetupTest() {
 	s.sdkCtx = cosmostypes.UnwrapSDKContext(s.ctx)
 
 	// Set the suite expectedComputeUnits to equal the default proof_requirement_threshold
-	// such that by default, s.claim will require a proof.
+	// such that by default, s.claim will require a proof 100% of the time.
 	s.expectedComputeUnits = prooftypes.DefaultProofRequirementThreshold
 
 	// Prepare a claim that can be inserted
@@ -132,11 +132,17 @@ func (s *TestSuite) TestClaimSettlement_ClaimPendingBeforeSettlement() {
 	claims = s.keepers.GetAllClaims(ctx)
 	require.Len(t, claims, 1)
 
+	// Calculate a block height which is within the proof window.
+	proofWindowOpenHeight := shared.GetProofWindowOpenHeight(
+		&sharedParams, claim.SessionHeader.SessionEndBlockHeight,
+	)
+	proofWindowCloseHeight := shared.GetProofWindowCloseHeight(
+		&sharedParams, claim.SessionHeader.SessionEndBlockHeight,
+	)
+	blockHeight = (proofWindowCloseHeight - proofWindowOpenHeight) / 2
+
 	// 2. Settle pending claims just after the session ended.
 	// Expectations: Claims should not be settled because the proof window hasn't closed yet.
-	blockHeight = shared.GetProofWindowOpenHeight(
-		&sharedParams, claim.SessionHeader.SessionEndBlockHeight,
-	) + 2 // session ended but proof window is still open
 	sdkCtx = sdkCtx.WithBlockHeight(blockHeight)
 	numClaimsSettled, numClaimsExpired, err = s.keepers.SettlePendingClaims(sdkCtx)
 	// Check that no claims were settled
