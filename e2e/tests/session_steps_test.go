@@ -238,8 +238,8 @@ func (s *suite) waitForTxResultEvent(targetAction string) {
 
 func (s *suite) waitForNewBlockEvent(
 	targetEvent string,
-	// inspectEventFn inspects the matching event for further validation, verification
-	// and enforcement of more granular checks.
+	// inspectEventFn passes the matching target event for further validation,
+	// verification, deserialization and enforcement of more granular checks.
 	inspectEventFn func(*abci.Event) bool,
 ) {
 	ctx, done := context.WithCancel(context.Background())
@@ -281,6 +281,7 @@ func (s *suite) waitForNewBlockEvent(
 	}
 }
 
+// abciToClaimSettledEvent converts an abci.Event to a tokenomics.EventClaimSettled
 func (s *suite) abciToClaimSettledEvent(event *abci.Event) *tokenomicstypes.EventClaimSettled {
 	var claimSettledEvent tokenomicstypes.EventClaimSettled
 	for _, attr := range event.Attributes {
