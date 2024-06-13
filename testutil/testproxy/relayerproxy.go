@@ -38,6 +38,12 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
+// JSONRPCInternalErrorCode is the default JSON-RPC error code to be used when
+// generating a JSON-RPC error reply.
+// JSON-RPC specification uses -32000 to -32099 as implementation-defined server-errors.
+// See: https://www.jsonrpc.org/specification#error_object
+const JSONRPCInternalErrorCode = -32000
+
 // TestBehavior is a struct that holds the test context and mocks
 // for the relayer proxy tests.
 // It is used to provide the context needed by the instrumentation functions
@@ -343,7 +349,7 @@ func GetRelayResponseError(t *testing.T, res *http.Response) (errCode int32, err
 
 	// If the relayResponse basic validation fails then consider the payload as an error.
 	if err := relayResponse.ValidateBasic(); err != nil {
-		return -32000, string(relayResponse.Payload)
+		return JSONRPCInternalErrorCode, string(relayResponse.Payload)
 	}
 
 	response, err := sdktypes.DeserializeHTTPResponse(relayResponse.Payload)

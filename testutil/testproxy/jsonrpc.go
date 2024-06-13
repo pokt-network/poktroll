@@ -40,8 +40,8 @@ func sendJSONRPCResponse(t *testing.T, w http.ResponseWriter) {
 	t.Helper()
 	bodyBz := []byte(`{"jsonrpc":"2.0","id":1,"result":"some result"}`)
 
-	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 	_, err := w.Write(bodyBz)
 	require.NoError(t, err)
 }

@@ -9,8 +9,8 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-// ruquestInfo is a struct that holds the information needed to handle a relay request.
-type ruquestInfo struct {
+// requestInfo is a struct that holds the information needed to handle a relay request.
+type requestInfo struct {
 	appAddress  string
 	serviceId   string
 	rpcType     sharedtypes.RPCType
@@ -24,7 +24,7 @@ type ruquestInfo struct {
 // It then blocks on the response to come back and forward it to the provided writer.
 func (app *appGateServer) handleSynchronousRelay(
 	ctx context.Context,
-	reqInfo *ruquestInfo,
+	reqInfo *requestInfo,
 	writer http.ResponseWriter,
 ) error {
 	serviceId := reqInfo.serviceId
@@ -50,11 +50,14 @@ func (app *appGateServer) handleSynchronousRelay(
 	}
 
 	relayResponse, err := app.sdk.SendRelay(ctx, supplierEndpoint, requestBz)
+	// If the relayResponse is nil, it means that err is not nil and the error
+	// should be handled by the appGateServer.
+	if relayResponse == nil {
+		return err
+	}
+	// Here, neither the relayResponse nor the error are nil, so the relayResponse's
+	// contains the upstream service's error response.
 	if err != nil {
-		if relayResponse == nil {
-			return err
-		}
-
 		return ErrAppGateUpstreamError.Wrap(string(relayResponse.Payload))
 	}
 
@@ -73,12 +76,8 @@ func (app *appGateServer) handleSynchronousRelay(
 	// At this point the AppGateServer has not generated any internal errors, so
 	// the whole response will be forwarded to the client as is, including the
 	// status code and headers, be it an error or not.
+	sdktypes.CopyToHTTPHeader(serviceResponse.Header, writer.Header())
 	writer.WriteHeader(int(serviceResponse.StatusCode))
-	for key, header := range serviceResponse.Header {
-		for _, value := range header.Values {
-			writer.Header().Add(key, value)
-		}
-	}
 
 	// Transmit the service's response body to the client.
 	if _, err := writer.Write(serviceResponse.BodyBz); err != nil {

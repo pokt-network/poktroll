@@ -5,8 +5,6 @@ import (
 	"net/http"
 
 	"github.com/pokt-network/poktroll/x/service/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // replyWithError builds the appropriate error format according to the RelayRequest
@@ -26,8 +24,13 @@ func (sync *synchronousRPCServer) replyWithError(
 	listenAddress := sync.serverConfig.ListenAddress
 
 	// Fill in the needed missing fields of the RelayRequest with empty values.
-	relayRequest = mergeWithEmptyRelayRequest(relayRequest)
+	relayRequest = relayRequest.NullifyForObservability()
 	serviceId := relayRequest.Meta.SessionHeader.Service.Id
+
+	errorLogger := sync.logger.With().
+		Error().
+		Str("service_id", serviceId).
+		Str("listen_address", listenAddress)
 
 	relaysErrorsTotal.With("service_id", serviceId).Add(1)
 
@@ -42,50 +45,12 @@ func (sync *synchronousRPCServer) replyWithError(
 
 	relayResponseBz, err := relayResponse.Marshal()
 	if err != nil {
-		sync.logger.Error().Err(err).
-			Str("service_id", serviceId).
-			Str("listen_address", listenAddress).
-			Msg("failed marshaling error relay response")
+		errorLogger.Err(err).Msg("failed marshaling error relay response")
 		return
 	}
 
 	if _, err = writer.Write(relayResponseBz); err != nil {
-		sync.logger.Error().Err(err).
-			Str("service_id", serviceId).
-			Str("listen_address", listenAddress).
-			Msg("failed writing error relay response")
+		errorLogger.Err(err).Msg("failed writing error relay response")
 		return
 	}
-}
-
-// mergeWithEmptyRelayRequest generates an empty RelayRequest that has the same
-// service and payload as the source RelayRequest if they are not nil.
-// It is meant to be used when replying with an error but no valid RelayRequest is available.
-func mergeWithEmptyRelayRequest(sourceRelayRequest *types.RelayRequest) *types.RelayRequest {
-	emptyRelayRequest := &types.RelayRequest{
-		Meta: types.RelayRequestMetadata{
-			SessionHeader: &sessiontypes.SessionHeader{
-				Service: &sharedtypes.Service{
-					Id: "",
-				},
-			},
-		},
-		Payload: []byte{},
-	}
-
-	if sourceRelayRequest == nil {
-		return emptyRelayRequest
-	}
-
-	if sourceRelayRequest.Payload != nil {
-		emptyRelayRequest.Payload = sourceRelayRequest.Payload
-	}
-
-	if sourceRelayRequest.Meta.SessionHeader != nil {
-		if sourceRelayRequest.Meta.SessionHeader.Service != nil {
-			emptyRelayRequest.Meta.SessionHeader.Service = sourceRelayRequest.Meta.SessionHeader.Service
-		}
-	}
-
-	return emptyRelayRequest
 }

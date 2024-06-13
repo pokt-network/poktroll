@@ -11,7 +11,6 @@ import (
 	"sync"
 
 	"cosmossdk.io/depinject"
-	"github.com/pokt-network/shannon-sdk/rpcdetect"
 	"github.com/pokt-network/shannon-sdk/sdk"
 	sdktypes "github.com/pokt-network/shannon-sdk/types"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -186,6 +185,8 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 			"content_length": request.ContentLength,
 		})
 
+	serviceLogger := app.logger.With().Debug().Str("service_id", serviceId)
+
 	poktHTTPRequest, requestBz, err := sdktypes.SerializeHTTPRequest(request)
 	if err != nil {
 		// If the request cannot not be parsed, pass an empty POKTHTTPRequest and
@@ -200,23 +201,18 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 		return
 	}
 
-	app.logger.Debug().
-		Str("service_id", serviceId).
-		Str("payload", string(poktHTTPRequest.BodyBz)).
-		Msg("handling relay")
+	serviceLogger.Msg("handling relay")
 
 	// Get the type of the request by inspecting the request properties.
-	rpcType := rpcdetect.GetRPCType(poktHTTPRequest)
+	rpcType := poktHTTPRequest.GetRPCType()
 
 	// Add newly available fields to the error logger.
 	errorLogger = errorLogger.
 		Str("rpc_type", rpcType.String()).
 		Str("payload", string(poktHTTPRequest.BodyBz))
 
-	app.logger.Debug().
-		Str("service_id", serviceId).
-		Str("rpc_type", rpcType.String()).
-		Msg("detected rpc type")
+	serviceLogger = serviceLogger.Str("rpc_type", rpcType.String())
+	serviceLogger.Msg("identified rpc type")
 
 	// Determine the application address.
 	appAddress := app.signingInformation.AppAddress
@@ -231,8 +227,11 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 		return
 	}
 
+	serviceLogger = serviceLogger.Str("application_addr", appAddress)
+	errorLogger = errorLogger.Str("application_addr", appAddress)
+
 	// Create a requestInfo struct to pass to the handleSynchronousRelay method.
-	reqInfo := &ruquestInfo{
+	reqInfo := &requestInfo{
 		appAddress:  appAddress,
 		serviceId:   serviceId,
 		rpcType:     rpcType,
@@ -245,18 +244,12 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 	if err := app.handleSynchronousRelay(ctx, reqInfo, writer); err != nil {
 		// Reply with an error response if there was an error handling the relay.
 		app.replyWithError(err, poktHTTPRequest, serviceId, rpcType, writer)
-		errorLogger.Err(err).
-			Str("application_addr", appAddress).
-			Msg("failed handling relay")
+		errorLogger.Err(err).Msg("failed handling relay")
 
 		return
 	}
 
-	app.logger.Info().
-		Str("service_id", serviceId).
-		Str("rpc_type", rpcType.String()).
-		Str("application_addr", appAddress).
-		Msg("request serviced successfully")
+	serviceLogger.Msg("request serviced successfully")
 }
 
 // validateConfig validates the appGateServer configuration.
