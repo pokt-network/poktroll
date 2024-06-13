@@ -47,6 +47,18 @@ func (k msgServer) UpdateParam(
 		}
 
 		params.ProofRequestProbability = proofRequestProbability
+	case types.ParamProofRequirementThreshold:
+		value, ok := msg.AsType.(*types.MsgUpdateParam_AsInt64)
+		if !ok {
+			return nil, types.ErrProofParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
+		}
+		proofRequirementThreshold := uint64(value.AsInt64)
+
+		if err := types.ValidateProofRequirementThreshold(proofRequirementThreshold); err != nil {
+			return nil, err
+		}
+
+		params.ProofRequirementThreshold = proofRequirementThreshold
 	default:
 		return nil, types.ErrProofParamInvalid.Wrapf("unsupported param %q", msg.Name)
 	}
