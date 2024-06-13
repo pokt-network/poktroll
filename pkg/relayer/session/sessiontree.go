@@ -8,7 +8,6 @@ import (
 	"sync"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-
 	"github.com/pokt-network/smt"
 	"github.com/pokt-network/smt/kvstore/badger"
 
@@ -30,6 +29,9 @@ type sessionTree struct {
 	// sessionSMT is the SMST (Sparse Merkle State Trie) corresponding the session.
 	sessionSMT smt.SparseMerkleSumTrie
 
+	// supplierAddress is the address of the supplier that owns this sessionTree.
+	// RelayMiner can run suppliers for many supplier addresses at the same time,
+	// and we need a way to group the session trees by the supplier address for that.
 	supplierAddress *cosmostypes.AccAddress
 
 	// claimedRoot is the root hash of the SMST needed for submitting the claim.

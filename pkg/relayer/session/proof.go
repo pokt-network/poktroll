@@ -20,7 +20,7 @@ import (
 // 1. Calculates the earliest block height at which to submit proofs
 // 2. Waits for said height and submits the proofs on-chain
 // 3. Maps errors to a new observable and logs them
-// It DOES NOT BLOCKas map operations run in their own goroutines.
+// It DOES NOT BLOCK as map operations run in their own goroutines.
 func (rs *relayerSessionsManager) submitProofs(
 	ctx context.Context,
 	claimedSessionsObs observable.Observable[[]relayer.SessionTree],
@@ -158,7 +158,11 @@ func (rs *relayerSessionsManager) newMapProveSessionsFn(
 		// Submit proofs for each supplier address in `sessionTrees`.
 		for supplierAddr := range sessionProofs {
 			// SubmitProof ensures on-chain proof inclusion so we can safely prune the tree.
-			if err := rs.supplierClients.SupplierClients[supplierAddr].SubmitProofs(ctx, sessionProofs[supplierAddr]); err != nil {
+			supplierClient, ok := rs.supplierClients.SupplierClients[supplierAddr]
+			if !ok {
+				return either.Error[[]relayer.SessionTree](ErrSupplierClientNotFound), false
+			}
+			if err := supplierClient.SubmitProofs(ctx, sessionProofs[supplierAddr]); err != nil {
 				failedSubmitProofSessionsCh <- sessionTrees
 				return either.Error[[]relayer.SessionTree](err), false
 			}

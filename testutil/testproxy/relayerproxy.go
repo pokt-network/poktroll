@@ -162,7 +162,7 @@ func WithDefaultSupplier(
 	supplierEndpoints map[string][]*sharedtypes.SupplierEndpoint,
 ) func(*TestBehavior) {
 	return func(test *TestBehavior) {
-		supplierAddress := GetAddressFromKeyName(test, supplierKeyName)
+		supplierAddress := getAddressFromKeyName(test, supplierKeyName)
 
 		for serviceId, endpoints := range supplierEndpoints {
 			testqueryclients.AddSuppliersWithServiceEndpoints(
@@ -179,7 +179,7 @@ func WithDefaultSupplier(
 func WithDefaultApplication(appPrivateKey *secp256k1.PrivKey) func(*TestBehavior) {
 	return func(test *TestBehavior) {
 		appPubKey := appPrivateKey.PubKey()
-		appAddress := GetAddressFromPrivateKey(test, appPrivateKey)
+		appAddress := getAddressFromPrivateKey(test, appPrivateKey)
 		delegateeAccounts := map[string]cryptotypes.PubKey{}
 
 		testqueryclients.AddAddressToApplicationMap(
@@ -205,10 +205,10 @@ func WithDefaultSessionSupplier(
 			return
 		}
 
-		appAddress := GetAddressFromPrivateKey(test, appPrivateKey)
+		appAddress := getAddressFromPrivateKey(test, appPrivateKey)
 
 		sessionSuppliers := []string{}
-		supplierAddress := GetAddressFromKeyName(test, supplierKeyName)
+		supplierAddress := getAddressFromKeyName(test, supplierKeyName)
 		sessionSuppliers = append(sessionSuppliers, supplierAddress)
 
 		testqueryclients.AddToExistingSessions(
@@ -231,10 +231,10 @@ func WithSuccessiveSessions(
 	sessionsCount int,
 ) func(*TestBehavior) {
 	return func(test *TestBehavior) {
-		appAddress := GetAddressFromPrivateKey(test, appPrivateKey)
+		appAddress := getAddressFromPrivateKey(test, appPrivateKey)
 
 		sessionSuppliers := []string{}
-		supplierAddress := GetAddressFromKeyName(test, supplierKeyName)
+		supplierAddress := getAddressFromKeyName(test, supplierKeyName)
 		sessionSuppliers = append(sessionSuppliers, supplierAddress)
 
 		// Adding `sessionCount` sessions to the sessionsMap to make them available
@@ -357,16 +357,16 @@ func GetApplicationRingSignature(
 	return signature
 }
 
-// GetAddressFromPrivateKey returns the address of the provided private key
-func GetAddressFromPrivateKey(test *TestBehavior, privKey *secp256k1.PrivKey) string {
+// getAddressFromPrivateKey returns the address of the provided private key
+func getAddressFromPrivateKey(test *TestBehavior, privKey *secp256k1.PrivKey) string {
 	addressBz := privKey.PubKey().Address()
 	address, err := bech32.ConvertAndEncode("pokt", addressBz)
 	require.NoError(test.t, err)
 	return address
 }
 
-// GetAddressFromKeyName returns the address of the provided keyring key name
-func GetAddressFromKeyName(test *TestBehavior, keyName string) string {
+// getAddressFromKeyName returns the address of the provided keyring key name
+func getAddressFromKeyName(test *TestBehavior, keyName string) string {
 	test.t.Helper()
 
 	var keyring keyringtypes.Keyring
@@ -392,9 +392,9 @@ func GenerateRelayRequest(
 	supplierKeyName string,
 	payload []byte,
 ) *servicetypes.RelayRequest {
-	appAddress := GetAddressFromPrivateKey(test, privKey)
+	appAddress := getAddressFromPrivateKey(test, privKey)
 	sessionId, _ := testsession.GetSessionIdWithDefaultParams(appAddress, serviceId, blockHashBz, blockHeight)
-	supplierAddress := GetAddressFromKeyName(test, supplierKeyName)
+	supplierAddress := getAddressFromKeyName(test, supplierKeyName)
 
 	return &servicetypes.RelayRequest{
 		Meta: servicetypes.RelayRequestMetadata{

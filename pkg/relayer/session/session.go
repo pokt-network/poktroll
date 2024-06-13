@@ -153,17 +153,17 @@ func (rs *relayerSessionsManager) ensureSessionTree(relayMetadata *types.RelayRe
 		rs.sessionsTrees[sessionHeader.SessionEndBlockHeight] = sessionsTrees
 	}
 
-	// Get the sessionTree for the given session.
-	sessionTree, ok := sessionsTrees[sessionHeader.SessionId]
-
-	address, err := cosmostypes.AccAddressFromBech32(relayMetadata.SupplierAddress)
+	supplierAccAddress, err := cosmostypes.AccAddressFromBech32(relayMetadata.SupplierAddress)
 	if err != nil {
 		return nil, err
 	}
 
+	// Get the sessionTree for the given session.
+	sessionTree, ok := sessionsTrees[sessionHeader.SessionId]
+
 	// If the sessionTree does not exist, create it.
 	if !ok {
-		sessionTree, err = NewSessionTree(sessionHeader, &address, rs.storesDirectory, rs.removeFromRelayerSessions)
+		sessionTree, err = NewSessionTree(sessionHeader, &supplierAccAddress, rs.storesDirectory, rs.removeFromRelayerSessions)
 		if err != nil {
 			return nil, err
 		}

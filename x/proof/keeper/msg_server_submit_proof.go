@@ -167,6 +167,12 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 	}
 	logger.Info("successfully validated relay request")
 
+	// Make sure tha the supplier address in the proof matches the one in the relay request.
+	if supplierAddr != relayReq.Meta.SupplierAddress {
+		return nil, status.Error(codes.FailedPrecondition, "supplier address mismatch")
+	}
+	logger.Debug("the proof supplier address matches the relay request supplier address")
+
 	// Basic validation of the relay response.
 	relayRes := relay.GetRes()
 	if err := relayRes.ValidateBasic(); err != nil {
