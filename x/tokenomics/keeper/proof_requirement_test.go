@@ -16,6 +16,10 @@ import (
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 )
 
+func init() {
+	rand.Seed(0)
+}
+
 func TestKeeper_IsProofRequired(t *testing.T) {
 	// Set expectedCompute units to be below the proof requirement threshold to only
 	// exercise the probabilistic branch of the #isProofRequired() logic.
