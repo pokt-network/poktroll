@@ -1,36 +1,44 @@
-// NB: Other tests in this package directory follow the convention of applying
-// the _test suffix to the end of the package name (i.e. a different package).
-// These tests exercise unexported code in this package and therefore MUST be in
-// the same package as the code under test.
-package keeper
+package keeper_test
 
 import (
+	"encoding/binary"
 	"fmt"
-	"math"
+	"math/rand"
 	"testing"
 
+	"cosmossdk.io/log"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/testutil/keeper"
+	"github.com/pokt-network/poktroll/testutil/sample"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 )
 
-func TestSecureRandProbability(t *testing.T) {
-	probability := prooftypes.DefaultProofRequestProbability
-	tolerance := 0.01
-	confidence := 0.99
+func TestKeeper_IsProofRequired(t *testing.T) {
+	// Set expectedCompute units to be below the proof requirement threshold to only
+	// exercise the probabilistic branch of the #isProofRequired() logic.
+	expectedComputeUnits := prooftypes.DefaultProofRequirementThreshold - 1
+	keepers, ctx := keeper.NewTokenomicsModuleKeepers(t, log.NewNopLogger())
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 
-	sampleSize := requiredSampleSize(float64(probability), tolerance, confidence)
+	var (
+		// Because this test is deterministic & this sample size is known to be
+		// sufficient, it doest not need to be calculated.
+		sampleSize  = 1500
+		samples     = make(map[bool]int64)
+		probability = prooftypes.DefaultProofRequestProbability
+		tolerance   = 0.01
+	)
 
-	samples := make(map[bool]int)
 	for i := 0; i < sampleSize; i++ {
-		rand, err := randProbability(int64(i))
+		claim := claimWithRandomHash(t, sample.AccAddress(), sample.AccAddress(), expectedComputeUnits)
+
+		isRequired, err := keepers.Keeper.IsProofRequiredForClaim(sdkCtx, &claim)
 		require.NoError(t, err)
 
-		if rand < 0 || rand > 1 {
-			t.Fatalf("secureRandFloat64() returned out of bounds value: %f", rand)
-		}
-
-		samples[rand <= probability]++
+		samples[isRequired]++
 	}
 
 	// Check that the number of samples for each outcome is within the expected range.
@@ -49,21 +57,20 @@ func TestSecureRandProbability(t *testing.T) {
 	}
 }
 
-// requiredSampleSize calculates the number of samples needed to achieve a desired confidence level
-// for a given probability and margin of error.
-// See: https://en.wikipedia.org/wiki/Sample_size_determination#Estimation_of_a_proportion
-func requiredSampleSize(probability, margin, confidenceLevel float64) int {
-	// Calculate the z-score for the desired confidence level
-	z := math.Abs(normInv(1 - (1-confidenceLevel)/2))
-
-	// Calculate the number of trials needed
-	n := (z * z * probability * (1 - probability)) / (margin * margin)
-
-	return int(math.Ceil(n))
+func claimWithRandomHash(t *testing.T, appAddr, supplierAddr string, sum uint64) prooftypes.Claim {
+	claim := baseClaim(appAddr, supplierAddr, sum)
+	claim.RootHash = randSmstRootWithSum(t, sum)
+	return claim
 }
 
-// normInv returns the inverse of the standard normal cumulative distribution function
-// This function approximates the inverse CDF (quantile function)
-func normInv(p float64) float64 {
-	return math.Sqrt2 * math.Erfinv(2*p-1)
+func randSmstRootWithSum(t *testing.T, sum uint64) smt.MerkleRoot {
+	t.Helper()
+
+	root := make([]byte, 40)
+	// Only populate the first 32 bytes with random data, leave the last 8 bytes for the sum.
+	_, err := rand.Read(root[:32])
+	require.NoError(t, err)
+
+	binary.BigEndian.PutUint64(root[32:], sum)
+	return smt.MerkleRoot(root)
 }

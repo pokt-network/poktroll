@@ -57,7 +57,7 @@ func (s *TestSuite) SetupTest() {
 	supplierAddr := sample.AccAddress()
 	appAddr := sample.AccAddress()
 
-	s.keepers, s.ctx = keepertest.NewTokenomicsModuleKeepers(s.T())
+	s.keepers, s.ctx = keepertest.NewTokenomicsModuleKeepers(s.T(), nil)
 	s.sdkCtx = cosmostypes.UnwrapSDKContext(s.ctx)
 
 	// Set the suite expectedComputeUnits to equal the default proof_requirement_threshold
