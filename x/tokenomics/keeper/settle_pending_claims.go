@@ -1,9 +1,10 @@
 package keeper
 
 import (
-	"crypto/rand"
+	"crypto/sha256"
 	"encoding/binary"
 	"fmt"
+	"math/rand"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/smt"
@@ -173,8 +174,13 @@ func (k Keeper) isProofRequiredForClaim(ctx sdk.Context, claim *prooftypes.Claim
 		return true, nil
 	}
 
-	// Sample a random value between 0 and 1 to determine if a proof is required probabilistically.
-	randFloat, err := secureRandProbability()
+	claimSeed, err := computeClaimSeed(claim)
+	if err != nil {
+		return true, err
+	}
+
+	// Sample a pseudo-random value between 0 and 1 to determine if a proof is required probabilistically.
+	randFloat, err := randProbability(claimSeed)
 	if err != nil {
 		return true, err
 	}
@@ -201,19 +207,49 @@ func (k Keeper) isProofRequiredForClaim(ctx sdk.Context, claim *prooftypes.Claim
 	return false, nil
 }
 
-// secureRandProbability generates a cryptographically secure random float32 between 0 and 1.
-func secureRandProbability() (float32, error) {
-	// Generate a random uint32.
-	var uint32Bz [4]byte
-	_, err := rand.Read(uint32Bz[:])
+// computeClaimSeed returns an int64 intended for seeding the math/rand pseudo-random
+// number generator. The seed is derived by truncating the serialized claim's hash to
+// the first 8 bytes and converting it to an int64.
+func computeClaimSeed(claim *prooftypes.Claim) (int64, error) {
+	var seedBz [8]byte
+
+	claimHash, err := computeClaimHash(claim)
 	if err != nil {
 		return 0, err
 	}
 
-	randUint32 := binary.LittleEndian.Uint32(uint32Bz[:])
+	copy(seedBz[:], claimHash[:])
+
+	// Convert the seed bytes to an int64.
+	seed := int64(binary.LittleEndian.Uint32(seedBz[:]))
+
+	return seed, nil
+}
+
+// computeClaimHash returns the SHA-256 hash of the serialized claim.
+func computeClaimHash(claim *prooftypes.Claim) ([32]byte, error) {
+	claimBz, err := claim.Marshal()
+	if err != nil {
+		return [32]byte{}, err
+	}
+
+	return sha256.Sum256(claimBz), nil
+}
+
+// randProbability generates a pseudo random float32 between 0 and 1 deterministically given a seed.
+//
+// TODO_MAINNET: To support other language implementations of the protocol, the
+// pseudo-random number generator used here should be language-agnostic (i.e. not
+// golang specific).
+func randProbability(seed int64) (float32, error) {
+	// Construct a pseudo-random number generator with the seed.
+	pseudoRand := rand.New(rand.NewSource(seed))
+
+	// Generate a random uint32.
+	randUint32 := pseudoRand.Uint32()
 
 	// Clamp the random float32 between [0,1]. This is achieved by dividing the random uint32
-	// by the most significant digit of a float32, which is 2^32, guaranteeing an output betwen
+	// by the most significant digit of a float32, which is 2^32, guaranteeing an output between
 	// 0 and 1, inclusive.
 	oneMostSignificantDigitFloat32 := float32(1 << 32)
 	randClampedFloat32 := float32(randUint32) / oneMostSignificantDigitFloat32

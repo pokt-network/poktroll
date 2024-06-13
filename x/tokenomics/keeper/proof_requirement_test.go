@@ -5,6 +5,7 @@
 package keeper
 
 import (
+	"fmt"
 	"math"
 	"testing"
 
@@ -22,7 +23,7 @@ func TestSecureRandProbability(t *testing.T) {
 
 	samples := make(map[bool]int)
 	for i := 0; i < sampleSize; i++ {
-		rand, err := secureRandProbability()
+		rand, err := randProbability(int64(i))
 		require.NoError(t, err)
 
 		if rand < 0 || rand > 1 {
@@ -34,15 +35,17 @@ func TestSecureRandProbability(t *testing.T) {
 
 	// Check that the number of samples for each outcome is within the expected range.
 	for outcome, count := range samples {
-		var expectedCount float32
-		switch outcome {
-		case true:
-			expectedCount = float32(sampleSize) * probability
-		case false:
-			expectedCount = float32(sampleSize) * (1 - probability)
-		}
+		t.Run(fmt.Sprintf("outcome_%t", outcome), func(t *testing.T) {
+			var expectedCount float32
+			switch outcome {
+			case true:
+				expectedCount = float32(sampleSize) * probability
+			case false:
+				expectedCount = float32(sampleSize) * (1 - probability)
+			}
 
-		require.InDeltaf(t, expectedCount, count, tolerance*float64(sampleSize), "outcome: %t", outcome)
+			require.InDeltaf(t, expectedCount, count, tolerance*float64(sampleSize), "outcome: %t", outcome)
+		})
 	}
 }
 
