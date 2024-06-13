@@ -15,7 +15,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
-	"github.com/cosmos/cosmos-sdk/types"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/app"
 	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
@@ -53,7 +53,7 @@ func main() {
 		record, mnemonic, err := kr.NewMnemonic(
 			fmt.Sprintf("key-%d", i),
 			keyring.English,
-			types.FullFundraiserPath,
+			cosmostypes.FullFundraiserPath,
 			keyring.DefaultBIP39Passphrase,
 			hd.Secp256k1,
 		)

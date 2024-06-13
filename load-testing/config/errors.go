@@ -1,5 +1,6 @@
 package config
 
+// TODO_TECHDEBT(@bryanchriswhite): Consider replacing all `sdkerrors` with `cosmoserrors` in the codebase.
 import sdkerrors "cosmossdk.io/errors"
 
 var (

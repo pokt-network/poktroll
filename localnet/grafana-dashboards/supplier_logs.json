@@ -97,9 +97,7 @@
     }
   ],
   "schemaVersion": 39,
-  "tags": [
-    "supplier_logs"
-  ],
+  "tags": ["protocol", "supplier_logs"],
   "templating": {
     "list": []
   },
