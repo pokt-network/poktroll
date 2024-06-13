@@ -281,8 +281,17 @@ func (s *suite) waitForNewBlockEvent(
 }
 
 // abciToClaimSettledEvent converts an abci.Event to a tokenomics.EventClaimSettled
+//
+
 func (s *suite) abciToClaimSettledEvent(event *abci.Event) *tokenomicstypes.EventClaimSettled {
 	var claimSettledEvent tokenomicstypes.EventClaimSettled
+
+	// TODO_TECHDEBT: Investigate why `cosmostypes.ParseTypedEvent(*event)` throws
+	// an error where cosmostypes is imported from "github.com/cosmos/cosmos-sdk/types"
+	// resulting in the following error:
+	// 'json: error calling MarshalJSON for type json.RawMessage: invalid character 'E' looking for beginning of value'
+	// typedEvent, err := cosmostypes.ParseTypedEvent(*event)
+
 	for _, attr := range event.Attributes {
 		switch string(attr.Key) {
 		case "claim":
