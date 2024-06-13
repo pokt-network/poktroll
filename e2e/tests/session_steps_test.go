@@ -5,7 +5,6 @@ package e2e
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
 	"time"
 
@@ -289,7 +288,7 @@ func (s *suite) abciToClaimSettledEvent(event *abci.Event) *tokenomicstypes.Even
 		case "claim":
 			var claim prooftypes.Claim
 			if err := s.cdc.UnmarshalJSON([]byte(attr.Value), &claim); err != nil {
-				log.Fatalf("Failed to unmarshal claim: %v", err)
+				s.Fatalf("Failed to unmarshal claim: %v", err)
 			}
 			claimSettledEvent.Claim = &claim
 		case "compute_units":
@@ -297,13 +296,13 @@ func (s *suite) abciToClaimSettledEvent(event *abci.Event) *tokenomicstypes.Even
 			value = value[1 : len(value)-1] // Remove surrounding quotes
 			computeUnits, err := strconv.ParseUint(value, 10, 64)
 			if err != nil {
-				log.Fatalf("Failed to parse compute_units: %v", err)
+				s.Fatalf("Failed to parse compute_units: %v", err)
 			}
 			claimSettledEvent.ComputeUnits = computeUnits
 		case "proof_required":
 			proofRequired, err := strconv.ParseBool(string(attr.Value))
 			if err != nil {
-				log.Fatalf("Failed to parse proof_required: %v", err)
+				s.Fatalf("Failed to parse proof_required: %v", err)
 			}
 			claimSettledEvent.ProofRequired = proofRequired
 		}
