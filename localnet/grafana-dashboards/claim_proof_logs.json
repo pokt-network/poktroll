@@ -135,9 +135,7 @@
   ],
   "refresh": "5s",
   "schemaVersion": 39,
-  "tags": [
-    "claim_proof_settlement_logs"
-  ],
+  "tags": ["protocol", "claim_proof_settlement_logs"],
   "templating": {
     "list": []
   },

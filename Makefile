@@ -394,17 +394,17 @@ test_e2e_settlement: test_e2e_env ## Run only the E2E suite that exercises the s
 test_e2e_params: test_e2e_env ## Run only the E2E suite that exercises parameter updates for all modules
 	go test -v ./e2e/tests/... -tags=e2e,test --features-path=update_params.feature
 
-.PHONY: test_load_relays_stress
-test_load_relays_stress: ## Run the stress test for E2E relays on a persistent (non-ephemeral) remote chains
+.PHONY: test_load_relays_stress_example
+test_load_relays_stress_example: ## Run the stress test for E2E relays on a persistent (non-ephemeral) remote (devnet) chain. Note that this is just an example.
 	go test -v -count=1 ./load-testing/tests/... \
 	-tags=load,test -run LoadRelays --log-level=debug --timeout=30m \
-	--manifest ./load-testing/loadtest_manifest.yaml
+	--manifest ./load-testing/loadtest_manifest_example.yaml
 
 .PHONY: test_load_relays_stress_localnet
 test_load_relays_stress_localnet: warn_message_local_stress_test test_e2e_env ## Run the stress test for E2E relays on LocalNet.
 	go test -v -count=1 ./load-testing/tests/... \
 	-tags=load,test -run LoadRelays --log-level=debug --timeout=30m \
-	--manifest ./load-testing/localnet_loadtest_manifest.yaml
+	--manifest ./load-testing/loadtest_manifest_localnet.yaml
 
 .PHONY: test_verbose
 test_verbose: check_go_version ## Run all go tests verbosely
@@ -414,9 +414,13 @@ test_verbose: check_go_version ## Run all go tests verbosely
 test_all: check_go_version ## Run all go tests showing detailed output only on failures
 	go test -count=1 -race -tags test ./...
 
-.PHONY: test_integration
-test_integration: check_go_version ## Run all go tests, including integration
+.PHONY: test_all_with_integration
+test_all_with_integration: check_go_version ## Run all go tests, including those with the integration
 	go test -count=1 -v -race -tags test,integration ./...
+
+.PHONY: test_integration
+test_integration: check_go_version ## Run only the in-memory integration "unit" tests
+	go test -count=1 -v -race -tags test,integration ./tests/integration/...
 
 .PHONY: itest
 itest: check_go_version ## Run tests iteratively (see usage for more)
@@ -791,6 +795,8 @@ warn_message_local_stress_test: ## Print a warning message when kicking off a lo
 	@echo "|                                                                                               |"
 	@echo "|     1. Review the # of suppliers & gateways in 'load-testing/localnet_loadtest_manifest.yaml' |"
 	@echo "|     2. Update 'localnet_config.yaml' to reflect what you found in (1)                         |"
+	@echo "|                                                                                               |"
+	@echo "|     TIP: If you're operating off defaults, you will likely need to update both of them to 3   |"
 	@echo "|                                                                                               |"
 	@echo "|     TODO_DOCUMENT(@olshansk): Move this into proper documentation w/ clearer explanations     |"
 	@echo "|                                                                                               |"

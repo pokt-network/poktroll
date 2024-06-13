@@ -22,12 +22,6 @@ import (
 // in tests. It is useful for scenarios where it is necessary to know the address
 // of a specific key in a separate context from that of keyring and/or module
 // genesis state construction.
-//
-// TODO_BUG(@bryanchriswhite): investigate why the PreGeneratedAccount#Address seems to
-// be incorrect when compared to the address returned from keyring.Record#GetAddress()
-// where the keyring.Record was created from the same PreGeneratedAccount##Mnemonic.
-// TODO_HACK: until the issue above is resolved, retrieve the record from the keyring
-// and call keyring.Record#GetAddress() instead.
 type PreGeneratedAccount struct {
 	Address  cosmostypes.AccAddress `json:"address"`
 	Mnemonic string                 `json:"mnemonic"`
@@ -43,16 +37,6 @@ type PreGeneratedAccountIterator struct {
 	nextIndex uint32
 }
 
-// AccountKeeper defines the expected interface for the Account module.
-type AccountKeeper interface {
-	GetAccount(context.Context, cosmostypes.AccAddress) cosmostypes.AccountI
-	SetAccount(context.Context, cosmostypes.AccountI)
-	// Return a new account with the next account number and the specified address. Does not save the new account to the store.
-	NewAccountWithAddress(context.Context, cosmostypes.AccAddress) cosmostypes.AccountI
-	// Fetch the next account number, and increment the internal counter.
-	NextAccountNumber(context.Context) uint64
-}
-
 // CreateOnChainAccount creates a new account with the given address keyring UID
 // and stores it in the given keyring and account keeper. It returns the
 // cosmostypes.AccAddress of the created account.
@@ -66,27 +50,19 @@ func CreateOnChainAccount(
 ) cosmostypes.AccAddress {
 	t.Helper()
 
-	// Create a supplier account.
-	supplierAcct, ok := preGeneratedAccts.Next()
+	// Create an account.
+	acct, ok := preGeneratedAccts.Next()
 	require.True(t, ok)
 
-	// Add the supplier account to the keyring.
-	err := supplierAcct.AddToKeyring(keyRing, keyringUID)
+	// Add the account to the keyring.
+	err := acct.AddToKeyring(keyRing, keyringUID)
 	require.NoError(t, err)
 
-	// Add the supplier account to the account keeper.
-	err = supplierAcct.AddToAccountKeeper(ctx, accountKeeper)
+	// Add the account to the account keeper.
+	err = acct.AddToAccountKeeper(ctx, accountKeeper)
 	require.NoError(t, err)
 
-	// TODO_HACK(@bryanchriswhite): investigate why the PreGeneratedAccount#Address
-	// seems to be incorrect. Prefer using #Address over getting it from the keyring.
-	record, err := keyRing.Key(keyringUID)
-	require.NoError(t, err)
-
-	accAddr, err := record.GetAddress()
-	require.NoError(t, err)
-
-	return accAddr
+	return acct.Address
 }
 
 // PreGeneratedAccountAtIndex returns the pre-generated account at the given index.
@@ -174,8 +150,8 @@ func (pga *PreGeneratedAccount) AddToKeyring(keyRing keyring.Keyring, uid string
 	_, err := keyRing.NewAccount(
 		uid,
 		pga.Mnemonic,
-		cosmostypes.FullFundraiserPath,
 		keyring.DefaultBIP39Passphrase,
+		cosmostypes.FullFundraiserPath,
 		hd.Secp256k1,
 	)
 	return err
@@ -223,8 +199,8 @@ func mnemonicToPublicKey(mnemonic string) (cryptotypes.PubKey, error) {
 	record, err := ephemeralKeyring.NewAccount(
 		"",
 		mnemonic,
-		cosmostypes.FullFundraiserPath,
 		keyring.DefaultBIP39Passphrase,
+		cosmostypes.FullFundraiserPath,
 		hd.Secp256k1,
 	)
 	if err != nil {

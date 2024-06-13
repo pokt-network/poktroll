@@ -1,6 +1,12 @@
 package types
 
-import paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
+import (
+	"cosmossdk.io/math"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
+
+	"github.com/pokt-network/poktroll/app/volitile"
+)
 
 var (
 	_ paramtypes.ParamSet = (*Params)(nil)
@@ -16,7 +22,7 @@ var (
 	DefaultProofRequirementThreshold uint64  = 20 // See: https://github.com/pokt-network/pocket-core/blob/staging/docs/proposals/probabilistic_proofs.md
 	KeyProofMissingPenalty                   = []byte("ProofMissingPenalty")
 	ParamProofMissingPenalty                 = "proof_missing_penalty"
-	DefaultProofMissingPenalty       uint64  = 320 // See: https://github.com/pokt-network/pocket-core/blob/staging/docs/proposals/probabilistic_proofs.md
+	DefaultProofMissingPenalty               = cosmostypes.NewCoin(volitile.DenomuPOKT, math.NewInt(320)) // See: https://github.com/pokt-network/pocket-core/blob/staging/docs/proposals/probabilistic_proofs.md
 )
 
 // ParamKeyTable the param key table for launch module
@@ -29,7 +35,7 @@ func NewParams(
 	minRelayDifficultyBits uint64,
 	proofRequestProbability float32,
 	proofRequirementThreshold uint64,
-	proofMissingPenalty uint64,
+	proofMissingPenalty *cosmostypes.Coin,
 ) Params {
 	return Params{
 		MinRelayDifficultyBits:    minRelayDifficultyBits,
@@ -45,7 +51,7 @@ func DefaultParams() Params {
 		DefaultMinRelayDifficultyBits,
 		DefaultProofRequestProbability,
 		DefaultProofRequirementThreshold,
-		DefaultProofMissingPenalty,
+		&DefaultProofMissingPenalty,
 	)
 }
 
@@ -141,9 +147,17 @@ func ValidateProofRequirementThreshold(v interface{}) error {
 // ValidateProofMissingPenalty validates the ProofMissingPenalty param.
 // NB: The argument is an interface type to satisfy the ParamSetPair function signature.
 func ValidateProofMissingPenalty(v interface{}) error {
-	_, ok := v.(uint64)
+	coin, ok := v.(*cosmostypes.Coin)
 	if !ok {
 		return ErrProofParamInvalid.Wrapf("invalid parameter type: %T", v)
+	}
+
+	if coin == nil {
+		return ErrProofParamInvalid.Wrap("missing proof_missing_penalty")
+	}
+
+	if coin.Denom != volitile.DenomuPOKT {
+		return ErrProofParamInvalid.Wrapf("invalid coin denom: %s", coin.Denom)
 	}
 
 	return nil

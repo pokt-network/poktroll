@@ -1,9 +1,10 @@
 package keeper
 
 import (
-	"crypto/rand"
+	"crypto/sha256"
 	"encoding/binary"
 	"fmt"
+	"math/rand"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/smt"
@@ -20,7 +21,11 @@ import (
 // If a claim is expired and does NOT require a proof -> it's settled.
 // Events are emitted for each claim that is settled or removed.
 // On-chain Claims & Proofs are deleted after they're settled or expired to free up space.
-func (k Keeper) SettlePendingClaims(ctx sdk.Context) (numClaimsSettled, numClaimsExpired uint64, err error) {
+func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
+	numClaimsSettled, numClaimsExpired uint64,
+	relaysPerServiceMap map[string]uint64,
+	err error,
+) {
 	logger := k.Logger().With("method", "SettlePendingClaims")
 
 	isSuccessful := false
@@ -44,6 +49,8 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (numClaimsSettled, numClaim
 	blockHeight := ctx.BlockHeight()
 
 	logger.Info(fmt.Sprintf("found %d expiring claims at block height %d", len(expiringClaims), blockHeight))
+
+	relaysPerServiceMap = make(map[string]uint64)
 
 	for _, claim := range expiringClaims {
 		// TODO_DISCUSS_IN_THIS_PR: does the claim variable need to be copied here?
@@ -71,7 +78,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (numClaimsSettled, numClaim
 					ComputeUnits: claimComputeUnits,
 				}
 				if err := ctx.EventManager().EmitTypedEvent(&claimExpiredEvent); err != nil {
-					return 0, 0, err
+					return 0, 0, relaysPerServiceMap, err
 				}
 				// The claim & proof are no longer necessary, so there's no need for them
 				// to take up on-chain space.
@@ -87,7 +94,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (numClaimsSettled, numClaim
 		// Manage the mint & burn accounting for the claim.
 		if err := k.SettleSessionAccounting(ctx, &claim); err != nil {
 			logger.Error(fmt.Sprintf("error settling session accounting for claim %q: %v", claim.SessionHeader.SessionId, err))
-			return 0, 0, err
+			return 0, 0, relaysPerServiceMap, err
 		}
 
 		claimSettledEvent := types.EventClaimSettled{
@@ -96,7 +103,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (numClaimsSettled, numClaim
 			ProofRequired: isProofRequiredForClaim,
 		}
 		if err := ctx.EventManager().EmitTypedEvent(&claimSettledEvent); err != nil {
-			return 0, 0, err
+			return 0, 0, relaysPerServiceMap, err
 		}
 
 		// The claim & proof are no longer necessary, so there's no need for them
@@ -110,6 +117,10 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (numClaimsSettled, numClaim
 			k.proofKeeper.RemoveProof(ctx, sessionId, claim.SupplierAddress)
 		}
 
+		// TODO_UPNEXT(@Olshansk, #542): We need the number of relays (leafs in the tree),
+		// not compute units. This would require updates to the SMT itself.
+		relaysPerServiceMap[claim.SessionHeader.Service.Id] += claimComputeUnits
+
 		numClaimsSettled++
 		logger.Info(fmt.Sprintf("Successfully settled claim for session ID %q at block height %d", claim.SessionHeader.SessionId, blockHeight))
 	}
@@ -117,7 +128,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (numClaimsSettled, numClaim
 	logger.Info(fmt.Sprintf("settled %d and expired %d claims at block height %d", numClaimsSettled, numClaimsExpired, blockHeight))
 
 	isSuccessful = true
-	return numClaimsSettled, numClaimsExpired, nil
+	return numClaimsSettled, numClaimsExpired, relaysPerServiceMap, nil
 }
 
 // getExpiringClaims returns all claims that are expiring at the current block height.
@@ -181,8 +192,13 @@ func (k Keeper) isProofRequiredForClaim(ctx sdk.Context, claim *prooftypes.Claim
 		return true, nil
 	}
 
-	// Sample a random value between 0 and 1 to determine if a proof is required probabilistically.
-	randFloat, err := secureRandProbability()
+	claimSeed, err := computeClaimSeed(claim)
+	if err != nil {
+		return true, err
+	}
+
+	// Sample a pseudo-random value between 0 and 1 to determine if a proof is required probabilistically.
+	randFloat, err := randProbability(claimSeed)
 	if err != nil {
 		return true, err
 	}
@@ -219,19 +235,49 @@ func (k Keeper) isProofRequiredForClaim(ctx sdk.Context, claim *prooftypes.Claim
 	return false, nil
 }
 
-// secureRandProbability generates a cryptographically secure random float32 between 0 and 1.
-func secureRandProbability() (float32, error) {
-	// Generate a random uint32.
-	var uint32Bz [4]byte
-	_, err := rand.Read(uint32Bz[:])
+// computeClaimSeed returns an int64 intended for seeding the math/rand pseudo-random
+// number generator. The seed is derived by truncating the serialized claim's hash to
+// the first 8 bytes and converting it to an int64.
+func computeClaimSeed(claim *prooftypes.Claim) (int64, error) {
+	var seedBz [8]byte
+
+	claimHash, err := computeClaimHash(claim)
 	if err != nil {
 		return 0, err
 	}
 
-	randUint32 := binary.LittleEndian.Uint32(uint32Bz[:])
+	copy(seedBz[:], claimHash[:])
+
+	// Convert the seed bytes to an int64.
+	seed := int64(binary.LittleEndian.Uint32(seedBz[:]))
+
+	return seed, nil
+}
+
+// computeClaimHash returns the SHA-256 hash of the serialized claim.
+func computeClaimHash(claim *prooftypes.Claim) ([32]byte, error) {
+	claimBz, err := claim.Marshal()
+	if err != nil {
+		return [32]byte{}, err
+	}
+
+	return sha256.Sum256(claimBz), nil
+}
+
+// randProbability generates a pseudo random float32 between 0 and 1 deterministically given a seed.
+//
+// TODO_MAINNET: To support other language implementations of the protocol, the
+// pseudo-random number generator used here should be language-agnostic (i.e. not
+// golang specific).
+func randProbability(seed int64) (float32, error) {
+	// Construct a pseudo-random number generator with the seed.
+	pseudoRand := rand.New(rand.NewSource(seed))
+
+	// Generate a random uint32.
+	randUint32 := pseudoRand.Uint32()
 
 	// Clamp the random float32 between [0,1]. This is achieved by dividing the random uint32
-	// by the most significant digit of a float32, which is 2^32, guaranteeing an output betwen
+	// by the most significant digit of a float32, which is 2^32, guaranteeing an output between
 	// 0 and 1, inclusive.
 	oneMostSignificantDigitFloat32 := float32(1 << 32)
 	randClampedFloat32 := float32(randUint32) / oneMostSignificantDigitFloat32

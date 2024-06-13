@@ -6,12 +6,14 @@ import (
 	"fmt"
 	"strconv"
 
+	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/gogoproto/proto"
 	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/app/volitile"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
@@ -60,6 +62,10 @@ func (s *suite) parseParam(table gocuke.DataTable, rowIdx int) paramAny {
 		require.NoError(s, err)
 
 		paramValue = float32(floatValue)
+	case "coin":
+		coinAmount := table.Cell(rowIdx, paramValueColIdx).Int64()
+		coinValue := cosmostypes.NewCoin(volitile.DenomuPOKT, math.NewInt(coinAmount))
+		paramValue = &coinValue
 	default:
 		s.Fatalf("unexpected param type %q", paramType)
 	}
@@ -133,7 +139,7 @@ func (s *suite) newProofMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 		case prooftypes.ParamProofRequirementThreshold:
 			msgUpdateParams.Params.ProofRequirementThreshold = uint64(paramValue.value.(int64))
 		case prooftypes.ParamProofMissingPenalty:
-			msgUpdateParams.Params.ProofMissingPenalty = uint64(paramValue.value.(int64))
+			msgUpdateParams.Params.ProofMissingPenalty = paramValue.value.(*cosmostypes.Coin)
 		default:
 			s.Fatalf("unexpected %q type param name %q", paramValue.typeStr, paramName)
 		}
@@ -150,7 +156,6 @@ func (s *suite) newSharedMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 	}
 
 	for paramName, paramValue := range params {
-		s.Logf("paramName: %s, value: %v", paramName, paramValue.value)
 		switch paramName {
 		case sharedtypes.ParamNumBlocksPerSession:
 			msgUpdateParams.Params.NumBlocksPerSession = uint64(paramValue.value.(int64))
@@ -306,6 +311,14 @@ func (s *suite) newProofMsgUpdateParam(authority string, param paramAny) (msg pr
 			Name:      param.name,
 			AsType: &prooftypes.MsgUpdateParam_AsFloat{
 				AsFloat: param.value.(float32),
+			},
+		})
+	case "coin":
+		msg = proto.Message(&prooftypes.MsgUpdateParam{
+			Authority: authority,
+			Name:      param.name,
+			AsType: &prooftypes.MsgUpdateParam_AsCoin{
+				AsCoin: param.value.(*cosmostypes.Coin),
 			},
 		})
 	default:

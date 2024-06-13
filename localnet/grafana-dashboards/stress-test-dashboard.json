@@ -1222,7 +1222,7 @@
   ],
   "refresh": "5s",
   "schemaVersion": 39,
-  "tags": [],
+  "tags": ["protocol"],
   "templating": {
     "list": []
   },
@@ -1233,7 +1233,7 @@
   "timeRangeUpdatedDuringEditOrView": false,
   "timepicker": {},
   "timezone": "browser",
-  "title": "Stress test",
+  "title": "Protocol / Stress test",
   "uid": "ddkakqetrti4gb",
   "version": 1,
   "weekStart": ""
