@@ -97,9 +97,9 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 	}
 
 	// we wait for createClaimsWindowOpenHeight to be received before proceeding since we need its hash
-	// to know where this servicer's claim submission window starts.
+	// to know where this servicer's claim submission window opens.
 	rs.logger.Info().
-		Int64("create_claim_window_start_height", createClaimsWindowOpenHeight).
+		Int64("create_claim_window_open_height", createClaimsWindowOpenHeight).
 		Msg("waiting & blocking for global earliest claim submission height")
 
 	// TODO_BLOCKER(@bryanchriswhite): The block that'll be used as a source of entropy for

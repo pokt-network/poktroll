@@ -5,6 +5,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/tokenomics/keeper"
 )
 
@@ -22,6 +23,17 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) error {
 		logger.Error(fmt.Sprintf("could not settle pending claims due to error %v", err))
 		return err
 	}
+
+	defer telemetry.ClaimCounter(
+		telemetry.ClaimProofStageSettled,
+		func() uint64 { return numClaimsSettled },
+	)
+
+	defer telemetry.ClaimCounter(
+		telemetry.ClaimProofStageExpired,
+		func() uint64 { return numClaimsExpired },
+	)
+
 	logger.Info(fmt.Sprintf("settled %d claims and expired %d claims", numClaimsSettled, numClaimsExpired))
 
 	// Update the relay mining difficulty for every service that settled pending

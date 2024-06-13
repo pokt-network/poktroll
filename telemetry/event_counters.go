@@ -20,6 +20,7 @@ const (
 	ClaimProofStageClaimed = ClaimProofStage("claimed")
 	ClaimProofStageProven  = ClaimProofStage("proven")
 	ClaimProofStageSettled = ClaimProofStage("settled")
+	ClaimProofStageExpired = ClaimProofStage("expired")
 )
 
 type ProofRequirementReason = string
@@ -81,6 +82,21 @@ func ComputeUnitsCounter(lifecycleStage ClaimProofStage, claim *prooftypes.Claim
 		[]string{eventTypeMetricKey},
 		computeUnitsFloat,
 		[]metrics.Label{
+			{Name: "unit", Value: "compute_units"},
+			{Name: "claim_proof_lifecycle_stage", Value: lifecycleStage},
+		},
+	)
+}
+
+func ClaimCounter(
+	lifecycleStage ClaimProofStage,
+	getValue func() uint64,
+) {
+	telemetry.IncrCounterWithLabels(
+		[]string{eventTypeMetricKey},
+		float32(getValue()),
+		[]metrics.Label{
+			{Name: "unit", Value: "claims"},
 			{Name: "claim_proof_lifecycle_stage", Value: lifecycleStage},
 		},
 	)
