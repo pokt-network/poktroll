@@ -1,17 +1,16 @@
 package keeper_test
 
 import (
-	"encoding/binary"
 	"fmt"
 	"math/rand"
 	"testing"
 
 	"cosmossdk.io/log"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/testutil/keeper"
+	tetsproof "github.com/pokt-network/poktroll/testutil/proof"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 )
@@ -37,7 +36,7 @@ func TestKeeper_IsProofRequired(t *testing.T) {
 	)
 
 	for i := 0; i < sampleSize; i++ {
-		claim := claimWithRandomHash(t, sample.AccAddress(), sample.AccAddress(), expectedComputeUnits)
+		claim := tetsproof.ClaimWithRandomHash(t, sample.AccAddress(), sample.AccAddress(), expectedComputeUnits)
 
 		isRequired, err := keepers.Keeper.IsProofRequiredForClaim(sdkCtx, &claim)
 		require.NoError(t, err)
@@ -59,22 +58,4 @@ func TestKeeper_IsProofRequired(t *testing.T) {
 			require.InDeltaf(t, expectedCount, count, tolerance*float64(sampleSize), "outcome: %t", outcome)
 		})
 	}
-}
-
-func claimWithRandomHash(t *testing.T, appAddr, supplierAddr string, sum uint64) prooftypes.Claim {
-	claim := baseClaim(appAddr, supplierAddr, sum)
-	claim.RootHash = randSmstRootWithSum(t, sum)
-	return claim
-}
-
-func randSmstRootWithSum(t *testing.T, sum uint64) smt.MerkleRoot {
-	t.Helper()
-
-	root := make([]byte, 40)
-	// Only populate the first 32 bytes with random data, leave the last 8 bytes for the sum.
-	_, err := rand.Read(root[:32])
-	require.NoError(t, err)
-
-	binary.BigEndian.PutUint64(root[32:], sum)
-	return smt.MerkleRoot(root)
 }
