@@ -3,6 +3,8 @@ package keeper_test
 import (
 	"testing"
 
+	"cosmossdk.io/math"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
@@ -117,6 +119,8 @@ func TestParams_ValidateProofRequirementThreshold(t *testing.T) {
 }
 
 func TestParams_ValidateProofMissingPenalty(t *testing.T) {
+	wrongCoin := cosmostypes.NewCoin("invalid_denom", math.NewInt(1))
+
 	tests := []struct {
 		desc                string
 		proofMissingPenalty any
@@ -125,10 +129,25 @@ func TestParams_ValidateProofMissingPenalty(t *testing.T) {
 		{
 			desc:                "invalid type",
 			proofMissingPenalty: int64(-1),
-			expectedErr:         prooftypes.ErrProofParamInvalid.Wrapf("invalid parameter type: int64"),
+			expectedErr:         prooftypes.ErrProofParamInvalid.Wrap("invalid parameter type: int64"),
 		},
 		{
-			desc:                "valid ProofMissingPenalty",
+			desc:                "invalid denomination",
+			proofMissingPenalty: &wrongCoin,
+			expectedErr:         prooftypes.ErrProofParamInvalid.Wrap("invalid coin denom: invalid_denom"),
+		},
+		{
+			desc:                "missing",
+			proofMissingPenalty: nil,
+			expectedErr:         prooftypes.ErrProofParamInvalid.Wrap("invalid parameter type: <nil>"),
+		},
+		{
+			desc:                "missing (typed)",
+			proofMissingPenalty: (*cosmostypes.Coin)(nil),
+			expectedErr:         prooftypes.ErrProofParamInvalid.Wrap("missing proof_missing_penalty"),
+		},
+		{
+			desc:                "valid",
 			proofMissingPenalty: &prooftypes.DefaultProofMissingPenalty,
 		},
 	}

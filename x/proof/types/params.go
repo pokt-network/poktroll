@@ -147,9 +147,17 @@ func ValidateProofRequirementThreshold(v interface{}) error {
 // ValidateProofMissingPenalty validates the ProofMissingPenalty param.
 // NB: The argument is an interface type to satisfy the ParamSetPair function signature.
 func ValidateProofMissingPenalty(v interface{}) error {
-	_, ok := v.(*cosmostypes.Coin)
+	coin, ok := v.(*cosmostypes.Coin)
 	if !ok {
 		return ErrProofParamInvalid.Wrapf("invalid parameter type: %T", v)
+	}
+
+	if coin == nil {
+		return ErrProofParamInvalid.Wrap("missing proof_missing_penalty")
+	}
+
+	if coin.Denom != volitile.DenomuPOKT {
+		return ErrProofParamInvalid.Wrapf("invalid coin denom: %s", coin.Denom)
 	}
 
 	return nil
