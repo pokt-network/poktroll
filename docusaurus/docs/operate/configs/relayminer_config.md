@@ -121,7 +121,7 @@ key and the corresponding address, which are essential for interacting with POKT
 Each key name listed here must be present in the keyring used to start the
 `RelayMiner` instance.
 
-For more details, see [Configuring Signing Keys](##configuring-signing-keys).
+For more details, see [Configuring Signing Keys](#configuring-signing-keys).
 
 
 ### `smt_store_path`
@@ -250,7 +250,7 @@ _`Required`_ if `default_signing_key_names` is empty.
 This option specifies the list of signing key names specific to a supplier.
 If a supplier does not provide its own `signing_key_names`, the `RelayMiner` will use the `default_signing_key_names`.
 
-For more details, see [Configuring Signing Keys](##configuring-signing-keys).
+For more details, see [Configuring Signing Keys](#configuring-signing-keys).
 
 ### `listen_url`
 
