@@ -110,7 +110,7 @@ list: ## List all make targets
 .PHONY: help
 .DEFAULT_GOAL := help
 help: ## Prints all the targets in all the Makefiles
-	@grep -h -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
+	@grep -h -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-60s\033[0m %s\n", $$1, $$2}'
 
 ##############
 ### Checks ###
@@ -404,11 +404,11 @@ test_load_relays_stress_example: ## Run the stress test for E2E relays on a pers
 	-tags=load,test -run LoadRelays --log-level=debug --timeout=30m \
 	--manifest ./load-testing/loadtest_manifest_example.yaml
 
-.PHONY: test_load_relays_stress_localnet_stake
-test_load_relays_stress_localnet_stake:  gateway2_stake gateway3_stake supplier2_stake supplier3_stake ## Stakes all the actors necessary for a localnet relay stress test
+.PHONY: test_load_relays_stress_stake_for_localnet
+test_load_relays_stress_stake_for_localnet:  gateway2_stake gateway3_stake supplier2_stake supplier3_stake ## Stakes all the actors necessary for a localnet relay stress test
 
 .PHONY: test_load_relays_stress_localnet
-test_load_relays_stress_localnet: warn_message_local_stress_test test_e2e_env ## Run the stress test for E2E relays on LocalNet.
+test_load_relays_stress_localnet: test_e2e_env warn_message_local_stress_test ## Run the stress test for E2E relays on LocalNet.
 	go test -v -count=1 ./load-testing/tests/... \
 	-tags=load,test -run LoadRelays --log-level=debug --timeout=30m \
 	--manifest ./load-testing/loadtest_manifest_localnet.yaml
@@ -803,7 +803,7 @@ warn_message_local_stress_test: ## Print a warning message when kicking off a lo
 	@echo "|     1. Review the # of suppliers & gateways in 'load-testing/localnet_loadtest_manifest.yaml' |"
 	@echo "|     2. Update 'localnet_config.yaml' to reflect what you found in (1)                         |"
 	@echo "|     	DEVELOPER_TIP: If you're operating off defaults, you'll likely need to update to 3     |"
-	@echo "|     3. Run `make test_load_relays_stress_localnet_stake`                                      |"
+	@echo "|     3. Run 'make test_load_relays_stress_stake_for_localnet'                                  |"
 	@echo "|                                                                                               |"
 	@echo "|     TODO_DOCUMENT(@okdas): Move this into proper documentation w/ clearer explanations        |"
 	@echo "|                                                                                               |"

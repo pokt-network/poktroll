@@ -2,7 +2,6 @@ package session
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/either"
@@ -26,7 +25,6 @@ func (rs *relayerSessionsManager) submitProofs(
 	ctx context.Context,
 	claimedSessionsObs observable.Observable[[]relayer.SessionTree],
 ) {
-	fmt.Println("OLSH TEST")
 	failedSubmitProofsSessionsObs, failedSubmitProofsSessionsPublishCh :=
 		channel.NewObservable[[]relayer.SessionTree]()
 
@@ -141,11 +139,11 @@ func (rs *relayerSessionsManager) newMapProveSessionsFn(
 	) (_ either.SessionTrees, skip bool) {
 		rs.pendingTxMu.Lock()
 		defer rs.pendingTxMu.Unlock()
-		fmt.Println("OLSH1")
+
 		if len(sessionTrees) == 0 {
 			return either.Success(sessionTrees), false
 		}
-		fmt.Println("OLSH2")
+
 		sessionProofs := []*relayer.SessionProof{}
 		for _, sessionTree := range sessionTrees {
 			sessionProofs = append(sessionProofs, &relayer.SessionProof{
@@ -153,7 +151,7 @@ func (rs *relayerSessionsManager) newMapProveSessionsFn(
 				SessionHeader: sessionTree.GetSessionHeader(),
 			})
 		}
-		fmt.Println("OLSH3")
+
 		// SubmitProof ensures on-chain proof inclusion so we can safely prune the tree.
 		if err := rs.supplierClient.SubmitProofs(ctx, sessionProofs); err != nil {
 			failedSubmitProofSessionsCh <- sessionTrees
