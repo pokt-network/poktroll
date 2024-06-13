@@ -10,6 +10,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
+	testproof "github.com/pokt-network/poktroll/testutil/proof"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	testsession "github.com/pokt-network/poktroll/testutil/session"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -20,7 +21,7 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-var defaultMerkleRoot = []byte{0, 1, 0, 1}
+var defaultMerkleRoot = testproof.SmstRootWithSum(10)
 
 func TestMsgServer_CreateClaim_Success(t *testing.T) {
 	tests := []struct {
