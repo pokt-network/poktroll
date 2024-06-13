@@ -5,6 +5,7 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 
@@ -38,9 +39,7 @@ const (
 	// newBlockEventSubscriptionQuery is the query string which yields a
 	// subscription query to listen for on-chain new block events.
 	newBlockEventSubscriptionQuery = "tm.event='NewBlock'"
-	// claimSettledEventReplyClientQuery is the query string which yields a
-	// subscription query to listen for claim settled events.
-	claimSettledEventReplyClientQuery = "tm.event='ClaimSettled'"
+	// claimSettledEventReplyClientQueryFmt = "tm.event='NewBlock' AND tokenomics.claim_settled.claim.supplier_address='%s'"
 	// eventsReplayClientBufferSize is the buffer size for the events replay client
 	// for the subscriptions above.
 	eventsReplayClientBufferSize = 100
@@ -51,9 +50,6 @@ const (
 	// newBlockEventReplayClientKey is the suite#scenarioState key for the events replay client
 	// which is subscribed to claim settlement or expiration events on-chain.
 	newBlockEventReplayClientKey = "newBlockEventReplayClientKey"
-	// claimSettledEventReplyClientKey is the suite#scenarioState key for the events replay client
-	// which is subscribed to claim settled events.
-	claimSettledEventReplyClientKey = "claimSettledEventReplyClientKey"
 
 	// preExistingClaimsKey is the suite#scenarioState key for any pre-existing
 	// claims when querying for all claims prior to running the scenario.
@@ -64,11 +60,14 @@ const (
 )
 
 func (s *suite) TheUserShouldWaitForTheModuleMessageToBeSubmitted(module, message string) {
-	s.waitForTxResultEvent(fmt.Sprintf("/poktroll.%s.Msg%s", module, message))
+	msg := fmt.Sprintf("/poktroll.%s.Msg%s", module, message)
+	s.waitForTxResultEvent(msg)
 }
 
 func (s *suite) TheUserShouldWaitForTheModuleEventToBeBroadcast(module, message string) {
-	s.waitForNewBlockEvent(fmt.Sprintf("poktroll.%s.Event%s", module, message))
+	event := fmt.Sprintf("poktroll.%s.Event%s", module, message)
+	inspectFn := func(event *abci.Event) bool { return true }
+	s.waitForNewBlockEvent(event, inspectFn)
 }
 
 func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBePersistedOnchain(supplierName, serviceId, appName string) {
@@ -145,16 +144,6 @@ func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication
 	require.NoError(s, err)
 	s.scenarioState[newBlockEventReplayClientKey] = onChainClaimEventsReplayClient
 
-	eventClaimSettledReplyClient, err := events.NewEventsReplayClient[*tokenomicstypes.EventClaimSettled](
-		ctx,
-		deps,
-		claimSettledEventReplyClientQuery,
-		block.UnmarshalNewBlockEvent,
-		eventsReplayClientBufferSize,
-	)
-	require.NoError(s, err)
-	s.scenarioState[claimSettledEventReplyClientKey] = eventClaimSettledReplyClient
-
 	// Send relays for the session.
 	s.sendRelaysForSession(
 		appName,
@@ -164,26 +153,26 @@ func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication
 	)
 }
 
-func (s *suite) TheClaimCreateBySupplierForServiceForApplicationShouldBeSuccessfullySettled(supplierName, serviceId, appName string) {
-	// ctx := context.Background()
-
+func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBeSuccessfullySettled(supplierName, serviceId, appName string) {
 	app, ok := accNameToAppMap[appName]
 	require.True(s, ok, "application %s not found", appName)
 
 	supplier, ok := accNameToSupplierMap[supplierName]
 	require.True(s, ok, "supplier %s not found", supplierName)
 
-	validateClaimSettledEvent := func(claimSettledEvent *tokenomicstypes.EventClaimSettled) {
+	validateClaimSettledEvent := func(event *abci.Event) bool {
+		claimSettledEvent := s.abciToClaimSettledEvent(event)
 		claim := claimSettledEvent.Claim
+		require.Equal(s, app.Address, claim.SessionHeader.ApplicationAddress)
 		require.Equal(s, supplier.Address, claim.SupplierAddress)
 		require.Equal(s, serviceId, claim.SessionHeader.Service.Id)
-		require.Equal(s, app.Address, claim.SessionHeader.ApplicationAddress)
-		require.True(s, claimSettledEvent.ProofRequired, "proof should be required")
 		require.Greater(s, claimSettledEvent.ComputeUnits, uint64(0), "compute units should be greater than 0")
-		s.Logf("Claim settled for %d compute units\n", claimSettledEvent.ComputeUnits)
+		s.Logf("Claim settled for %d compute units w/ proof requirement: %t\n", claimSettledEvent.ComputeUnits, claimSettledEvent.ProofRequired)
+		return true
 	}
 
-	s.waitForClaimSettledEvent(supplier.Address, serviceId, app.Address, validateClaimSettledEvent)
+	event := fmt.Sprintf("poktroll.tokenomics.EventClaimSettled")
+	s.waitForNewBlockEvent(event, validateClaimSettledEvent)
 }
 
 func (s *suite) sendRelaysForSession(
@@ -248,7 +237,12 @@ func (s *suite) waitForTxResultEvent(targetAction string) {
 	}
 }
 
-func (s *suite) waitForNewBlockEvent(targetEvent string) {
+func (s *suite) waitForNewBlockEvent(
+	targetEvent string,
+	// inspectEventFn inspects the matching event for further validation, verification
+	// and enforcement of more granular checks.
+	inspectEventFn func(*abci.Event) bool,
+) {
 	ctx, done := context.WithCancel(context.Background())
 
 	newBlockEventsReplayClientState, ok := s.scenarioState[newBlockEventReplayClientKey]
@@ -272,7 +266,7 @@ func (s *suite) waitForNewBlockEvent(targetEvent string) {
 				// TODO_IMPROVE: We can pass in a function to do even more granular
 				// checks on the event. For example, for a Claim Settlement event,
 				// we can parse the claim and verify the compute units.
-				if event.Type == targetEvent {
+				if event.Type == targetEvent && inspectEventFn(&event) {
 					done()
 					return
 				}
@@ -288,44 +282,31 @@ func (s *suite) waitForNewBlockEvent(targetEvent string) {
 	}
 }
 
-func (s *suite) waitForClaimSettledEvent(
-	supplierAddr, serviceId, appAddr string,
-	validateClaimSettledEvent func(claimSettledEvent *tokenomicstypes.EventClaimSettled),
-
-) {
-	ctx, done := context.WithCancel(context.Background())
-
-	eventClaimSettledReplyClientState, ok := s.scenarioState[claimSettledEventReplyClientKey]
-	require.Truef(s, ok, "%s not found in scenarioState", claimSettledEventReplyClientKey)
-
-	eventClaimSettledReplyClient, ok := eventClaimSettledReplyClientState.(client.EventsReplayClient[*tokenomicstypes.EventClaimSettled])
-	require.True(s, ok, "%q not of the right type; expected client.EventsReplayClient[*tokenomicstypes.EventClaimSettled], got %T", claimSettledEventReplyClientKey, eventClaimSettledReplyClientState)
-	require.NotNil(s, eventClaimSettledReplyClient)
-
-	// For each observed event, **asynchronously** check if it contains the given action.
-	channel.ForEach[*tokenomicstypes.EventClaimSettled](
-		ctx, eventClaimSettledReplyClient.EventsSequence(ctx),
-		func(_ context.Context, claimSettledEvent *tokenomicstypes.EventClaimSettled) {
-			if claimSettledEvent == nil {
-				return
+func (s *suite) abciToClaimSettledEvent(event *abci.Event) *tokenomicstypes.EventClaimSettled {
+	var claimSettledEvent tokenomicstypes.EventClaimSettled
+	for _, attr := range event.Attributes {
+		switch string(attr.Key) {
+		case "claim":
+			var claim prooftypes.Claim
+			if err := s.cdc.UnmarshalJSON([]byte(attr.Value), &claim); err != nil {
+				log.Fatalf("Failed to unmarshal claim: %v", err)
 			}
-
-			// Range over each event's attributes to find the Claim whose supplier
-			// is equal to the one provided.
-			if claimSettledEvent.Claim.SupplierAddress == supplierAddr &&
-				claimSettledEvent.Claim.SessionHeader.Service.Id == serviceId &&
-				claimSettledEvent.Claim.SessionHeader.ApplicationAddress == appAddr {
-				validateClaimSettledEvent(claimSettledEvent)
-				done()
-				return
+			claimSettledEvent.Claim = &claim
+		case "compute_units":
+			value := string(attr.Value)
+			value = value[1 : len(value)-1] // Remove surrounding quotes
+			computeUnits, err := strconv.ParseUint(value, 10, 64)
+			if err != nil {
+				log.Fatalf("Failed to parse compute_units: %v", err)
 			}
-		},
-	)
-
-	select {
-	case <-time.After(eventTimeout):
-		s.Fatalf("timed out waiting for ClaimSettled event for supplier %q", supplierAddr)
-	case <-ctx.Done():
-		s.Log("Success; message detected before timeout.")
+			claimSettledEvent.ComputeUnits = computeUnits
+		case "proof_required":
+			proofRequired, err := strconv.ParseBool(string(attr.Value))
+			if err != nil {
+				log.Fatalf("Failed to parse proof_required: %v", err)
+			}
+			claimSettledEvent.ProofRequired = proofRequired
+		}
 	}
+	return &claimSettledEvent
 }
