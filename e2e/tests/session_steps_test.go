@@ -19,6 +19,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/testutil/testclient"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 const (
@@ -34,7 +35,7 @@ const (
 	// This is used by an events replay client to subscribe to tx events from the supplier.
 	// See: https://docs.cosmos.network/v0.47/learn/advanced/events#subscribing-to-events
 	txSenderEventSubscriptionQueryFmt = "tm.event='Tx' AND message.sender='%s'"
-	// newBlockEventSubscriptionQuery is the format string which yields a
+	// newBlockEventSubscriptionQuery is the query string which yields a
 	// subscription query to listen for on-chain new block events.
 	newBlockEventSubscriptionQuery = "tm.event='NewBlock'"
 	// eventsReplayClientBufferSize is the buffer size for the events replay client
@@ -57,11 +58,14 @@ const (
 )
 
 func (s *suite) TheUserShouldWaitForTheModuleMessageToBeSubmitted(module, message string) {
-	s.waitForTxResultEvent(fmt.Sprintf("/poktroll.%s.Msg%s", module, message))
+	msg := fmt.Sprintf("/poktroll.%s.Msg%s", module, message)
+	s.waitForTxResultEvent(msg)
 }
 
 func (s *suite) TheUserShouldWaitForTheModuleEventToBeBroadcast(module, message string) {
-	s.waitForNewBlockEvent(fmt.Sprintf("poktroll.%s.Event%s", module, message))
+	event := fmt.Sprintf("poktroll.%s.Event%s", module, message)
+	inspectFn := func(event *abci.Event) bool { return true }
+	s.waitForNewBlockEvent(event, inspectFn)
 }
 
 func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBePersistedOnchain(supplierName, serviceId, appName string) {
@@ -147,36 +151,26 @@ func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication
 	)
 }
 
-func (s *suite) TheProofSubmittedBySupplierForServiceForApplicationShouldBePersistedOnchain(supplierName, serviceId, appName string) {
-	ctx := context.Background()
+func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBeSuccessfullySettled(supplierName, serviceId, appName string) {
+	app, ok := accNameToAppMap[appName]
+	require.True(s, ok, "application %s not found", appName)
 
-	// Retrieve all on-chain proofs for supplierName
-	allProofsRes, err := s.proofQueryClient.AllProofs(ctx, &prooftypes.QueryAllProofsRequest{
-		Filter: &prooftypes.QueryAllProofsRequest_SupplierAddress{
-			SupplierAddress: accNameToAddrMap[supplierName],
-		},
-	})
-	require.NoError(s, err)
-	require.NotNil(s, allProofsRes)
+	supplier, ok := accNameToSupplierMap[supplierName]
+	require.True(s, ok, "supplier %s not found", supplierName)
 
-	// Assert that the number of proofs has increased by one.
-	preExistingProofs, ok := s.scenarioState[preExistingProofsKey].([]prooftypes.Proof)
-	require.True(s, ok, "preExistingProofsKey not found in scenarioState")
-	// NB: We are avoiding the use of require.Len here because it provides unreadable output
-	// TODO_TECHDEBT: Due to the speed of the blocks of the LocalNet validator, along with the small number
-	// of blocks per session, multiple proofs may be created throughout the duration of the test. Until
-	// these values are appropriately adjusted, we assert on an increase in proofs rather than +1.
-	require.Greater(s, len(allProofsRes.Proofs), len(preExistingProofs), "number of proofs must have increased")
+	validateClaimSettledEvent := func(event *abci.Event) bool {
+		claimSettledEvent := s.abciToClaimSettledEvent(event)
+		claim := claimSettledEvent.Claim
+		require.Equal(s, app.Address, claim.SessionHeader.ApplicationAddress)
+		require.Equal(s, supplier.Address, claim.SupplierAddress)
+		require.Equal(s, serviceId, claim.SessionHeader.Service.Id)
+		require.Greater(s, claimSettledEvent.ComputeUnits, uint64(0), "compute units should be greater than 0")
+		s.Logf("Claim settled for %d compute units w/ proof requirement: %t\n", claimSettledEvent.ComputeUnits, claimSettledEvent.ProofRequired)
+		return true
+	}
 
-	// TODO_UPNEXT(@bryanchriswhite): assert that the root hash of the proof contains the correct
-	// SMST sum. The sum can be retrieved via the `GetSum` function exposed
-	// by the SMT.
-
-	// TODO_IMPROVE: add assertions about serviceId and appName and/or incorporate
-	// them into the scenarioState key(s).
-
-	proof := allProofsRes.Proofs[0]
-	require.Equal(s, accNameToAddrMap[supplierName], proof.SupplierAddress)
+	event := fmt.Sprintf("poktroll.tokenomics.EventClaimSettled")
+	s.waitForNewBlockEvent(event, validateClaimSettledEvent)
 }
 
 func (s *suite) sendRelaysForSession(
@@ -241,7 +235,12 @@ func (s *suite) waitForTxResultEvent(targetAction string) {
 	}
 }
 
-func (s *suite) waitForNewBlockEvent(targetEvent string) {
+func (s *suite) waitForNewBlockEvent(
+	targetEvent string,
+	// inspectEventFn passes the matching target event for further validation,
+	// verification, deserialization and enforcement of more granular checks.
+	inspectEventFn func(*abci.Event) bool,
+) {
 	ctx, done := context.WithCancel(context.Background())
 
 	newBlockEventsReplayClientState, ok := s.scenarioState[newBlockEventReplayClientKey]
@@ -265,7 +264,7 @@ func (s *suite) waitForNewBlockEvent(targetEvent string) {
 				// TODO_IMPROVE: We can pass in a function to do even more granular
 				// checks on the event. For example, for a Claim Settlement event,
 				// we can parse the claim and verify the compute units.
-				if event.Type == targetEvent {
+				if event.Type == targetEvent && inspectEventFn(&event) {
 					done()
 					return
 				}
@@ -279,4 +278,34 @@ func (s *suite) waitForNewBlockEvent(targetEvent string) {
 	case <-ctx.Done():
 		s.Log("Success; message detected before timeout.")
 	}
+}
+
+// abciToClaimSettledEvent converts an abci.Event to a tokenomics.EventClaimSettled
+func (s *suite) abciToClaimSettledEvent(event *abci.Event) *tokenomicstypes.EventClaimSettled {
+	var claimSettledEvent tokenomicstypes.EventClaimSettled
+	for _, attr := range event.Attributes {
+		switch string(attr.Key) {
+		case "claim":
+			var claim prooftypes.Claim
+			if err := s.cdc.UnmarshalJSON([]byte(attr.Value), &claim); err != nil {
+				s.Fatalf("Failed to unmarshal claim: %v", err)
+			}
+			claimSettledEvent.Claim = &claim
+		case "compute_units":
+			value := string(attr.Value)
+			value = value[1 : len(value)-1] // Remove surrounding quotes
+			computeUnits, err := strconv.ParseUint(value, 10, 64)
+			if err != nil {
+				s.Fatalf("Failed to parse compute_units: %v", err)
+			}
+			claimSettledEvent.ComputeUnits = computeUnits
+		case "proof_required":
+			proofRequired, err := strconv.ParseBool(string(attr.Value))
+			if err != nil {
+				s.Fatalf("Failed to parse proof_required: %v", err)
+			}
+			claimSettledEvent.ProofRequired = proofRequired
+		}
+	}
+	return &claimSettledEvent
 }
