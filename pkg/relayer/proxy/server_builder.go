@@ -36,9 +36,13 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 			return err
 		}
 
-		// TODO_IMPROVMENT: with some node runners running many suppliers on one relay-miner
-		// we should not block the whole process from running. However, we should show warnings/errors in logs
-		// that their stake is different from the supplier configuration
+		// TODO_MAINNET: We currently block RelayMiner from starting if at least one address
+		// is not staked or staked incorrectly. As node runners will maintain many different
+		// suppliers on one RelayMiner, and we expect them to stake and restake often - it might
+		// not be ideal to block the process from running. However, we should show warnings/errors
+		// in logs (and, potentially, metrics) that their stake is different
+		// from the supplier configuration. If we don't hear feedback on that prior to launching
+		// MainNet it might not be that big of a deal, though.
 
 		// Prevent the RelayMiner from stopping by waiting until its associated supplier
 		// is staked and its on-chain record retrieved.

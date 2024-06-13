@@ -11,6 +11,9 @@ spec:
         pokt.network/purpose: e2e-tests
     spec:
       initContainers:
+        # We need to make sure the services like validator, relayminer, appgate server, etc. work before we execute
+        # an e2e test.
+        # TODO_TECHDEBT(@okdas): move the code into a separate config map (protocol-infra) and mount it.
         - name: check-services
           image: ruby:3.0
           command: ["/bin/sh"]

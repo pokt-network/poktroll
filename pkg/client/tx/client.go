@@ -25,6 +25,7 @@ const (
 	// DefaultCommitTimeoutHeightOffset is the default number of blocks after the
 	// latest block (when broadcasting) that a transactions should be considered
 	// errored if it has not been committed.
+	// TODO_TECHDEBT: populate this from the config file.
 	DefaultCommitTimeoutHeightOffset = 5
 
 	// defaultTxReplayLimit is the number of comettypes.EventDataTx events that the replay

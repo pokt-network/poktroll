@@ -12,7 +12,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/pkg/appgateserver/sdkadapter"
-	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/block"
 	"github.com/pokt-network/poktroll/pkg/client/delegation"
 	"github.com/pokt-network/poktroll/pkg/client/events"
@@ -389,7 +388,7 @@ func NewSupplySupplierClientsFn(signingKeyNames []string) SupplierFn {
 		deps depinject.Config,
 		_ *cobra.Command,
 	) (depinject.Config, error) {
-		suppliers := client.NewSupplierClientMap()
+		suppliers := supplier.NewSupplierClientMap()
 		for _, signingKeyName := range signingKeyNames {
 			txClientDepinjectConfig, err := newSupplyTxClientsFn(ctx, deps, signingKeyName)
 			if err != nil {
@@ -454,7 +453,6 @@ func newSupplyTxClientsFn(ctx context.Context, deps depinject.Config, signingKey
 		ctx,
 		deps,
 		tx.WithSigningKeyName(signingKeyName),
-		// TODO_TECHDEBT: populate this from some config.
 		tx.WithCommitTimeoutBlocks(tx.DefaultCommitTimeoutHeightOffset),
 	)
 	if err != nil {
