@@ -443,7 +443,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 
 	// Construct a relay to be mangled such that it fails to deserialize in order
 	// to set the error expectation for the relevant test case.
-	mangledRelay := newEmptyRelay(validSessionHeader, validSessionHeader)
+	mangledRelay := newEmptyRelay(validSessionHeader, validSessionHeader, supplierAddr)
 
 	// Ensure valid relay request and response signatures.
 	signRelayRequest(ctx, t, mangledRelay, appAddr, keyRing, ringClient)
@@ -739,7 +739,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			desc: "relay request signature must be valid",
 			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
 				// Set the relay request signature to an invalid byte slice.
-				invalidRequestSignatureRelay := newEmptyRelay(validSessionHeader, validSessionHeader)
+				invalidRequestSignatureRelay := newEmptyRelay(validSessionHeader, validSessionHeader, supplierAddr)
 				invalidRequestSignatureRelay.Req.Meta.Signature = invalidSignatureBz
 
 				// Ensure a valid relay response signature.
@@ -801,7 +801,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			desc: "relay response signature must be valid",
 			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
 				// Set the relay response signature to an invalid byte slice.
-				relay := newEmptyRelay(validSessionHeader, validSessionHeader)
+				relay := newEmptyRelay(validSessionHeader, validSessionHeader, supplierAddr)
 				relay.Res.Meta.SupplierSignature = invalidSignatureBz
 
 				// Ensure a valid relay request signature
@@ -1326,7 +1326,7 @@ func newSignedEmptyRelay(
 ) *servicetypes.Relay {
 	t.Helper()
 
-	relay := newEmptyRelay(reqHeader, resHeader)
+	relay := newEmptyRelay(reqHeader, resHeader, supplierAddr)
 	signRelayRequest(ctx, t, relay, reqHeader.GetApplicationAddress(), keyRing, ringClient)
 	signRelayResponse(ctx, t, relay, supplierKeyUid, supplierAddr, keyRing)
 
@@ -1335,12 +1335,13 @@ func newSignedEmptyRelay(
 
 // newEmptyRelay creates a new relay structure for the given req & res headers
 // WITHOUT any payload or signatures.
-func newEmptyRelay(reqHeader, resHeader *sessiontypes.SessionHeader) *servicetypes.Relay {
+func newEmptyRelay(reqHeader, resHeader *sessiontypes.SessionHeader, supplierAddr string) *servicetypes.Relay {
 	return &servicetypes.Relay{
 		Req: &servicetypes.RelayRequest{
 			Meta: servicetypes.RelayRequestMetadata{
-				SessionHeader: reqHeader,
-				Signature:     nil, // Signature added elsewhere.
+				SessionHeader:   reqHeader,
+				Signature:       nil, // Signature added elsewhere.
+				SupplierAddress: supplierAddr,
 			},
 			Payload: nil,
 		},
