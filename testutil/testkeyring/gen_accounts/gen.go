@@ -15,9 +15,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
-	"github.com/cosmos/cosmos-sdk/types"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/app"
+	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
 	"github.com/pokt-network/poktroll/testutil/testkeyring"
 )
 
@@ -30,6 +31,8 @@ var (
 func init() {
 	flag.StringVar(&flagOut, "out", defaultOutPath, "the path to the generated go source of pre-generated accounts.")
 	flag.IntVar(&flagAccountsLimit, "limit", 100, "the number of accounts to generate.")
+
+	cmd.InitSDKConfig()
 }
 
 func main() {
@@ -50,7 +53,7 @@ func main() {
 		record, mnemonic, err := kr.NewMnemonic(
 			fmt.Sprintf("key-%d", i),
 			keyring.English,
-			types.FullFundraiserPath,
+			cosmostypes.FullFundraiserPath,
 			keyring.DefaultBIP39Passphrase,
 			hd.Secp256k1,
 		)
