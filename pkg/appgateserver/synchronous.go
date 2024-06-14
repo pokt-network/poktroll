@@ -76,7 +76,7 @@ func (app *appGateServer) handleSynchronousRelay(
 	// At this point the AppGateServer has not generated any internal errors, so
 	// the whole response will be forwarded to the client as is, including the
 	// status code and headers, be it an error or not.
-	sdktypes.CopyToHTTPHeader(serviceResponse.Header, writer.Header())
+	serviceResponse.CopyToHTTPHeader(writer.Header())
 	writer.WriteHeader(int(serviceResponse.StatusCode))
 
 	// Transmit the service's response body to the client.

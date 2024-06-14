@@ -312,7 +312,7 @@ func (sync *synchronousRPCServer) serveHTTP(
 	// Create the HTTP headers for the request by converting the RelayRequest's
 	// POKTHTTPRequest.Header to an http.Header.
 	headers := http.Header{}
-	sdktypes.CopyToHTTPHeader(poktHTTPRequest.Header, headers)
+	poktHTTPRequest.CopyToHTTPHeader(headers)
 
 	// Create the HTTP request out of the RelayRequest's payload.
 	httpRequest := &http.Request{

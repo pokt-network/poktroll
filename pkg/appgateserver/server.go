@@ -185,7 +185,7 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 			"content_length": request.ContentLength,
 		})
 
-	serviceLogger := app.logger.With().Debug().Str("service_id", serviceId)
+	logger := app.logger.With().Debug().Str("service_id", serviceId)
 
 	poktHTTPRequest, requestBz, err := sdktypes.SerializeHTTPRequest(request)
 	if err != nil {
@@ -201,7 +201,7 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 		return
 	}
 
-	serviceLogger.Msg("handling relay")
+	logger.Msg("handling relay")
 
 	// Get the type of the request by inspecting the request properties.
 	rpcType := poktHTTPRequest.GetRPCType()
@@ -211,8 +211,8 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 		Str("rpc_type", rpcType.String()).
 		Str("payload", string(poktHTTPRequest.BodyBz))
 
-	serviceLogger = serviceLogger.Str("rpc_type", rpcType.String())
-	serviceLogger.Msg("identified rpc type")
+	logger = logger.Str("rpc_type", rpcType.String())
+	logger.Msg("identified rpc type")
 
 	// Determine the application address.
 	appAddress := app.signingInformation.AppAddress
@@ -227,7 +227,7 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 		return
 	}
 
-	serviceLogger = serviceLogger.Str("application_addr", appAddress)
+	logger = logger.Str("application_addr", appAddress)
 	errorLogger = errorLogger.Str("application_addr", appAddress)
 
 	// Create a requestInfo struct to pass to the handleSynchronousRelay method.
@@ -249,7 +249,7 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 		return
 	}
 
-	serviceLogger.Msg("request serviced successfully")
+	logger.Msg("request serviced successfully")
 }
 
 // validateConfig validates the appGateServer configuration.

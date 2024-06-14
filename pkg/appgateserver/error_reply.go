@@ -27,7 +27,7 @@ func (app *appGateServer) replyWithError(
 	// While the only header that errorResponse.Header contains is "Content-Type",
 	// errorResponse.Header are iterated over to future-proof against any additional
 	// headers that may be added in the future (e.g. compression or caching headers).
-	sdktypes.CopyToHTTPHeader(errorResponse.Header, writer.Header())
+	errorResponse.CopyToHTTPHeader(writer.Header())
 	writer.WriteHeader(int(errorResponse.StatusCode))
 
 	if _, err := writer.Write(errorResponse.BodyBz); err != nil {
