@@ -527,8 +527,7 @@ func UnmarshalTxResult(txResultBz []byte) (*abci.TxResult, error) {
 	}
 
 	var cometTxEvent CometTxEvent
-
-	// Try to deserialize the provided bytes into a TxResult.
+	// Try to deserialize the provided bytes into a CometTxEvent.
 	if err := json.Unmarshal(rpcResponse.Result, &cometTxEvent); err != nil {
 		return nil, events.ErrEventsUnmarshalEvent.Wrap(err.Error())
 	}
