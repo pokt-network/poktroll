@@ -58,6 +58,7 @@ type TokenomicsModuleKeepers struct {
 	tokenomicstypes.BankKeeper
 	tokenomicstypes.ApplicationKeeper
 	tokenomicstypes.ProofKeeper
+	tokenomicstypes.SharedKeeper
 
 	Codec *codec.ProtoCodec
 }
@@ -187,6 +188,7 @@ func NewTokenomicsModuleKeepers(
 		apptypes.StoreKey,
 		suppliertypes.StoreKey,
 		prooftypes.StoreKey,
+		sharedtypes.StoreKey,
 	)
 
 	// Construct a multistore & mount store keys for each keeper that will interact with the state store.
@@ -247,6 +249,7 @@ func NewTokenomicsModuleKeepers(
 		logger,
 		authority.String(),
 	)
+	require.NoError(t, sharedKeeper.SetParams(ctx, sharedtypes.DefaultParams()))
 
 	// Construct gateway keeper with a mocked bank keeper.
 	gatewayKeeper := gatewaykeeper.NewKeeper(
@@ -306,6 +309,7 @@ func NewTokenomicsModuleKeepers(
 		accountKeeper,
 		sharedKeeper,
 	)
+	require.NoError(t, proofKeeper.SetParams(ctx, prooftypes.DefaultParams()))
 
 	// Construct a real tokenomics keeper so that claims & tokenomics can be created.
 	tokenomicsKeeper := tokenomicskeeper.NewKeeper(
@@ -327,6 +331,7 @@ func NewTokenomicsModuleKeepers(
 		BankKeeper:        &bankKeeper,
 		ApplicationKeeper: &appKeeper,
 		ProofKeeper:       &proofKeeper,
+		SharedKeeper:      &sharedKeeper,
 
 		Codec: cdc,
 	}

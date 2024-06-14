@@ -3,6 +3,8 @@ package keeper_test
 import (
 	"testing"
 
+	"cosmossdk.io/math"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
@@ -106,6 +108,53 @@ func TestParams_ValidateProofRequirementThreshold(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
 			err := prooftypes.ValidateProofRequirementThreshold(tt.proofRequirementThreshold)
+			if tt.expectedErr != nil {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), tt.expectedErr.Error())
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestParams_ValidateProofMissingPenalty(t *testing.T) {
+	invalidDenomCoin := cosmostypes.NewCoin("invalid_denom", math.NewInt(1))
+
+	tests := []struct {
+		desc                string
+		proofMissingPenalty any
+		expectedErr         error
+	}{
+		{
+			desc:                "invalid type",
+			proofMissingPenalty: int64(-1),
+			expectedErr:         prooftypes.ErrProofParamInvalid.Wrap("invalid parameter type: int64"),
+		},
+		{
+			desc:                "invalid denomination",
+			proofMissingPenalty: &invalidDenomCoin,
+			expectedErr:         prooftypes.ErrProofParamInvalid.Wrap("invalid coin denom: invalid_denom"),
+		},
+		{
+			desc:                "missing",
+			proofMissingPenalty: nil,
+			expectedErr:         prooftypes.ErrProofParamInvalid.Wrap("invalid parameter type: <nil>"),
+		},
+		{
+			desc:                "missing (typed)",
+			proofMissingPenalty: (*cosmostypes.Coin)(nil),
+			expectedErr:         prooftypes.ErrProofParamInvalid.Wrap("missing proof_missing_penalty"),
+		},
+		{
+			desc:                "valid",
+			proofMissingPenalty: &prooftypes.DefaultProofMissingPenalty,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			err := prooftypes.ValidateProofMissingPenalty(tt.proofMissingPenalty)
 			if tt.expectedErr != nil {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), tt.expectedErr.Error())
