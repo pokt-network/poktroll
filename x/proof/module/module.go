@@ -18,8 +18,6 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 
-	// this line is used by starport scaffolding # 1
-
 	modulev1 "github.com/pokt-network/poktroll/api/poktroll/proof/module"
 	"github.com/pokt-network/poktroll/x/proof/keeper"
 	"github.com/pokt-network/poktroll/x/proof/types"
@@ -177,6 +175,7 @@ type ModuleInputs struct {
 	SessionKeeper     types.SessionKeeper
 	ApplicationKeeper types.ApplicationKeeper
 	AccountKeeper     types.AccountKeeper
+	SharedKeeper      types.SharedKeeper
 }
 
 type ModuleOutputs struct {
@@ -200,6 +199,7 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 		in.SessionKeeper,
 		in.ApplicationKeeper,
 		in.AccountKeeper,
+		in.SharedKeeper,
 	)
 	m := NewAppModule(
 		in.Cdc,

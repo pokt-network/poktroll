@@ -31,7 +31,12 @@ localnet_config_defaults = {
         },
         "delve": {"enabled": False},
     },
-    "observability": {"enabled": True},
+    "observability": {
+        "enabled": True,
+        "grafana": {
+            "defaultDashboardsEnabled": False
+        },
+    },
     "relayminers": {"count": 1, "delve": {"enabled": False}},
     "gateways": {
         "count": 1,
@@ -41,7 +46,7 @@ localnet_config_defaults = {
         "count": 1,
         "delve": {"enabled": False},
     },
-    # TODO(#511): Add support for `REST` and enabled this.
+    # TODO_BLOCKER(@red-0ne, #511): Add support for `REST` and enabled this.
     "ollama": {
         "enabled": False,
         "model": "qwen:0.5b",
@@ -92,6 +97,7 @@ if localnet_config["observability"]["enabled"]:
         "prometheus-community/kube-prometheus-stack",
         flags=[
             "--values=./localnet/kubernetes/observability-prometheus-stack.yaml",
+            "--set=grafana.defaultDashboardsEnabled=" + str(localnet_config["observability"]["grafana"]["defaultDashboardsEnabled"]),
         ],
         resource_deps=["prometheus-community"],
     )
@@ -105,6 +111,9 @@ if localnet_config["observability"]["enabled"]:
         resource_deps=["grafana-helm-repo"],
     )
 
+    # TODO_BUG(@okdas): There is an occasional issue where grafana hits a "Database locked"
+    # error when updating grafana. There is likely a weird race condition happening
+    # that requires a restart of LocalNet. Look into it.
     k8s_resource(
         new_name="grafana",
         workload="observability",
@@ -143,7 +152,7 @@ secret_create_generic(
 configmap_create(
     "poktrolld-configs", from_file=listdir("localnet/poktrolld/config/"), watch=True
 )
-# TODO(@okdas): Import validator keys when we switch to `poktrolld` helm chart
+# TODO_BLOCKER(@okdas): Import validator keys when we switch to `poktrolld` helm chart
 # by uncommenting the following lines:
 # load("ext://secret", "secret_create_generic")
 # secret_create_generic(

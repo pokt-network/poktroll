@@ -8,15 +8,8 @@ import (
 
 	"github.com/pokt-network/poktroll/telemetry"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
-	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
+	"github.com/pokt-network/poktroll/x/shared"
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
-)
-
-const (
-	// TODO_BLOCKER/TODO_UPNEXT(@Olshansk): Implement this properly. Using a constant
-	// for "probabilistic proofs" is just a simple placeholder mechanism to get
-	// #359 over the finish line.
-	ProofRequiredComputeUnits = 100
 )
 
 // SettlePendingClaims settles all pending (i.e. expiring) claims.
@@ -25,7 +18,11 @@ const (
 // If a claim is expired and does NOT require a proof -> it's settled.
 // Events are emitted for each claim that is settled or removed.
 // On-chain Claims & Proofs are deleted after they're settled or expired to free up space.
-func (k Keeper) SettlePendingClaims(ctx sdk.Context) (numClaimsSettled, numClaimsExpired uint64, err error) {
+func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
+	numClaimsSettled, numClaimsExpired uint64,
+	relaysPerServiceMap map[string]uint64,
+	err error,
+) {
 	logger := k.Logger().With("method", "SettlePendingClaims")
 
 	isSuccessful := false
@@ -50,6 +47,8 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (numClaimsSettled, numClaim
 
 	logger.Info(fmt.Sprintf("found %d expiring claims at block height %d", len(expiringClaims), blockHeight))
 
+	relaysPerServiceMap = make(map[string]uint64)
+
 	for _, claim := range expiringClaims {
 		// Retrieve the number of compute units in the claim for the events emitted
 		root := (smt.MerkleRoot)(claim.GetRootHash())
@@ -70,7 +69,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (numClaimsSettled, numClaim
 					ComputeUnits: claimComputeUnits,
 				}
 				if err := ctx.EventManager().EmitTypedEvent(&claimExpiredEvent); err != nil {
-					return 0, 0, err
+					return 0, 0, relaysPerServiceMap, err
 				}
 				// The claim & proof are no longer necessary, so there's no need for them
 				// to take up on-chain space.
@@ -86,7 +85,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (numClaimsSettled, numClaim
 		// Manage the mint & burn accounting for the claim.
 		if err := k.SettleSessionAccounting(ctx, &claim); err != nil {
 			logger.Error(fmt.Sprintf("error settling session accounting for claim %q: %v", claim.SessionHeader.SessionId, err))
-			return 0, 0, err
+			return 0, 0, relaysPerServiceMap, err
 		}
 
 		claimSettledEvent := types.EventClaimSettled{
@@ -95,7 +94,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (numClaimsSettled, numClaim
 			ProofRequired: isProofRequiredForClaim,
 		}
 		if err := ctx.EventManager().EmitTypedEvent(&claimSettledEvent); err != nil {
-			return 0, 0, err
+			return 0, 0, relaysPerServiceMap, err
 		}
 
 		// The claim & proof are no longer necessary, so there's no need for them
@@ -109,6 +108,10 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (numClaimsSettled, numClaim
 			k.proofKeeper.RemoveProof(ctx, sessionId, claim.SupplierAddress)
 		}
 
+		// TODO_UPNEXT(@Olshansk, #542): We need the number of relays (leafs in the tree),
+		// not compute units. This would require updates to the SMT itself.
+		relaysPerServiceMap[claim.SessionHeader.Service.Id] += claimComputeUnits
+
 		numClaimsSettled++
 		logger.Info(fmt.Sprintf("Successfully settled claim for session ID %q at block height %d", claim.SessionHeader.SessionId, blockHeight))
 	}
@@ -116,7 +119,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (numClaimsSettled, numClaim
 	logger.Info(fmt.Sprintf("settled %d and expired %d claims at block height %d", numClaimsSettled, numClaimsExpired, blockHeight))
 
 	isSuccessful = true
-	return numClaimsSettled, numClaimsExpired, nil
+	return numClaimsSettled, numClaimsExpired, relaysPerServiceMap, nil
 }
 
 // getExpiringClaims returns all claims that are expiring at the current block height.
@@ -126,12 +129,12 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (numClaimsSettled, numClaim
 func (k Keeper) getExpiringClaims(ctx sdk.Context) (expiringClaims []prooftypes.Claim) {
 	blockHeight := ctx.BlockHeight()
 
-	// TODO_BLOCKER: query the on-chain governance parameter once available.
+	// TODO_BLOCKER(@bryanchriswhite): query the on-chain governance parameter once available.
 	// `* 3` is just a random factor Olshansky added for now to make sure expiration
 	// doesn't happen immediately after a session's grace period is complete.
-	submitProofWindowEndHeight := sessionkeeper.GetSessionGracePeriodBlockCount() * 3
+	submitProofWindowEndHeight := shared.SessionGracePeriodBlocks * int64(3)
 
-	// TODO_BLOCKER(@Olshansk): Optimize this by indexing claims appropriately
+	// TODO_TECHDEBT: Optimize this by indexing claims appropriately
 	// and only retrieving the claims that need to be settled rather than all
 	// of them and iterating through them one by one.
 	claims := k.proofKeeper.GetAllClaims(ctx)
@@ -151,16 +154,16 @@ func (k Keeper) getExpiringClaims(ctx sdk.Context) (expiringClaims []prooftypes.
 // isProofRequiredForClaim checks if a proof is required for a claim.
 // If it is not, the claim will be settled without a proof.
 // If it is, the claim will only be settled if a valid proof is available.
-// TODO_TECHDEBT(#419): Document safety assumptions of the probabilistic proofs mechanism.
-func (k Keeper) isProofRequiredForClaim(_ sdk.Context, claim *prooftypes.Claim) bool {
+// TODO_BLOCKER(@bryanchriswhite, #419): Document safety assumptions of the probabilistic proofs mechanism.
+func (k Keeper) isProofRequiredForClaim(ctx sdk.Context, claim *prooftypes.Claim) bool {
 	// NB: Assumption that claim is non-nil and has a valid root sum because it
 	// is retrieved from the store and validated, on-chain, at time of creation.
 	root := (smt.MerkleRoot)(claim.GetRootHash())
 	claimComputeUnits := root.Sum()
-	// TODO_BLOCKER(#419): This is just VERY BASIC placeholder logic to have something
+	// TODO_BLOCKER(@bryanchriswhite, #419): This is just VERY BASIC placeholder logic to have something
 	// in place while we implement proper probabilistic proofs. If you're reading it,
 	// do not overthink it and look at the documents linked in #419.
-	if claimComputeUnits < ProofRequiredComputeUnits {
+	if claimComputeUnits < k.proofKeeper.GetParams(ctx).ProofRequirementThreshold {
 		return false
 	}
 	return true

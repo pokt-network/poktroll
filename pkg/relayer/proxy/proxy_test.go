@@ -12,12 +12,13 @@ import (
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
+	sdktypes "github.com/pokt-network/shannon-sdk/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/relayer/config"
 	"github.com/pokt-network/poktroll/pkg/relayer/proxy"
 	"github.com/pokt-network/poktroll/testutil/testproxy"
-	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
+	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -346,14 +347,14 @@ func TestRelayerProxy_Relays(t *testing.T) {
 	// blockOutsideSessionGracePeriod is the block height that is after the first
 	// session's grace period and within the second session's grace period,
 	// meaning a relay should not be handled at this block height.
-	blockOutsideSessionGracePeriod := blockHeight +
-		sessionkeeper.NumBlocksPerSession +
-		sessionkeeper.GetSessionGracePeriodBlockCount()
+	blockOutsideSessionGracePeriod := int64(blockHeight +
+		sharedtypes.DefaultNumBlocksPerSession +
+		shared.SessionGracePeriodBlocks)
 
 	// blockWithinSessionGracePeriod is the block height that is after the first
 	// session but within its session's grace period, meaning a relay should be
 	// handled at this block height.
-	blockWithinSessionGracePeriod := blockHeight + sessionkeeper.GetSessionGracePeriodBlockCount()
+	blockWithinSessionGracePeriod := int64(blockHeight + shared.SessionGracePeriodBlocks)
 
 	tests := []struct {
 		desc string
@@ -568,7 +569,7 @@ func sendRequestWithMissingSignature(
 		appPrivateKey,
 		defaultService,
 		blockHeight,
-		testproxy.PrepareJsonRPCRequestPayload(),
+		testproxy.PrepareJSONRPCRequest(t),
 	)
 	req.Meta.Signature = nil
 	return testproxy.MarshalAndSend(test, servicesConfigMap, defaultRelayMinerServer, defaultService, req)
@@ -583,7 +584,7 @@ func sendRequestWithInvalidSignature(
 		appPrivateKey,
 		defaultService,
 		blockHeight,
-		testproxy.PrepareJsonRPCRequestPayload(),
+		testproxy.PrepareJSONRPCRequest(t),
 	)
 	req.Meta.Signature = []byte("invalid signature")
 
@@ -600,7 +601,7 @@ func sendRequestWithMissingSessionHeaderApplicationAddress(
 		randomPrivKey,
 		defaultService,
 		blockHeight,
-		testproxy.PrepareJsonRPCRequestPayload(),
+		testproxy.PrepareJSONRPCRequest(t),
 	)
 
 	// The application address is missing from the session header
@@ -623,7 +624,7 @@ func sendRequestWithNonStakedApplicationAddress(
 		randomPrivKey,
 		defaultService,
 		blockHeight,
-		testproxy.PrepareJsonRPCRequestPayload(),
+		testproxy.PrepareJSONRPCRequest(t),
 	)
 
 	// Have a valid signature from the non staked key
@@ -641,7 +642,7 @@ func sendRequestWithRingSignatureMismatch(
 		appPrivateKey,
 		defaultService,
 		blockHeight,
-		testproxy.PrepareJsonRPCRequestPayload(),
+		testproxy.PrepareJSONRPCRequest(t),
 	)
 
 	// The signature is valid but does not match the ring for the application address
@@ -656,13 +657,14 @@ func sendRequestWithDifferentSession(
 	test *testproxy.TestBehavior,
 ) (errCode int32, errorMessage string) {
 	// Use a block height that generates a different session ID
-	blockHeightAfterSessionGracePeriod := blockHeight + sessionkeeper.GetSessionGracePeriodBlockCount()
+	sharedParams := sharedtypes.DefaultParams()
+	blockHeightAfterSessionGracePeriod := int64(blockHeight + sharedParams.NumBlocksPerSession + 1)
 	req := testproxy.GenerateRelayRequest(
 		test,
 		appPrivateKey,
 		defaultService,
 		blockHeightAfterSessionGracePeriod,
-		testproxy.PrepareJsonRPCRequestPayload(),
+		testproxy.PrepareJSONRPCRequest(t),
 	)
 	req.Meta.Signature = testproxy.GetApplicationRingSignature(t, req, appPrivateKey)
 
@@ -678,7 +680,7 @@ func sendRequestWithInvalidRelaySupplier(
 		appPrivateKey,
 		defaultService,
 		blockHeight,
-		testproxy.PrepareJsonRPCRequestPayload(),
+		testproxy.PrepareJSONRPCRequest(t),
 	)
 	req.Meta.Signature = testproxy.GetApplicationRingSignature(t, req, appPrivateKey)
 
@@ -693,12 +695,23 @@ func sendRequestWithSignatureForDifferentPayload(
 		test, appPrivateKey,
 		defaultService,
 		blockHeight,
-		testproxy.PrepareJsonRPCRequestPayload(),
+		testproxy.PrepareJSONRPCRequest(t),
 	)
 	req.Meta.Signature = testproxy.GetApplicationRingSignature(t, req, appPrivateKey)
+	bodyBz := []byte(`{"method":"someMethod","id":1,"jsonrpc":"2.0","params":["alteredParam"]}`)
+	request := &http.Request{
+		Method: http.MethodPost,
+		URL:    &url.URL{},
+		Header: http.Header{},
+		Body:   io.NopCloser(bytes.NewReader(bodyBz)),
+	}
+	request.Header.Set("Content-Type", "application/json")
+
+	requestBz, err := sdktypes.SerializeHTTPRequest(request)
+	require.NoError(t, err)
 
 	// Alter the request payload so the hash doesn't match the one used by the signature
-	req.Payload = []byte(`{"method":"someMethod","id":1,"jsonrpc":"2.0","params":["alteredParam"]}`)
+	req.Payload = requestBz
 
 	return testproxy.MarshalAndSend(test, servicesConfigMap, defaultRelayMinerServer, defaultService, req)
 }
@@ -712,7 +725,7 @@ func sendRequestWithSuccessfulReply(
 		appPrivateKey,
 		defaultService,
 		blockHeight,
-		testproxy.PrepareJsonRPCRequestPayload(),
+		testproxy.PrepareJSONRPCRequest(t),
 	)
 	req.Meta.Signature = testproxy.GetApplicationRingSignature(t, req, appPrivateKey)
 
@@ -731,7 +744,7 @@ func sendRequestWithCustomSessionHeight(
 			appPrivateKey,
 			defaultService,
 			requestSessionBlockHeight,
-			testproxy.PrepareJsonRPCRequestPayload(),
+			testproxy.PrepareJSONRPCRequest(t),
 		)
 		req.Meta.Signature = testproxy.GetApplicationRingSignature(t, req, appPrivateKey)
 

@@ -6,11 +6,13 @@ import (
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 )
 
+const ParamMaxDelegatedGateways = "max_delegated_gateways"
+
 var (
 	_ paramtypes.ParamSet = (*Params)(nil)
 
 	KeyMaxDelegatedGateways = []byte("MaxDelegatedGateways")
-	// TODO: Determine the default value
+	// TODO_MAINNET: Determine the default value
 	DefaultMaxDelegatedGateways uint64 = 7
 )
 

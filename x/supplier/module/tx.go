@@ -10,7 +10,7 @@ import (
 )
 
 // GetTxCmd returns the transaction commands for this module
-// TODO_TECHDEBT(#370): remove if custom query commands are consolidated into AutoCLI.
+// TODO_TECHDEBT(@bryanchriswhite, #370): remove if custom query commands are consolidated into AutoCLI.
 func (am AppModule) GetTxCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:                        types.ModuleName,

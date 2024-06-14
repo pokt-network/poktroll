@@ -1,15 +1,19 @@
 syntax = "proto3";
+
 package poktroll.tokenomics;
 
 option go_package = "github.com/pokt-network/poktroll/x/tokenomics/types";
 
 import "amino/amino.proto";
 import "gogoproto/gogo.proto";
-
 import "poktroll/tokenomics/params.proto";
+import "poktroll/tokenomics/relay_mining_difficulty.proto";
 
 // GenesisState defines the tokenomics module's genesis state.
 message GenesisState {
+  
   // params defines all the parameters of the module.
-  Params params = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+           Params                params                    = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+  repeated RelayMiningDifficulty relayMiningDifficultyList = 2 [(gogoproto.nullable) = false] ;
 }
+

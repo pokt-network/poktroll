@@ -15,11 +15,17 @@ var (
 
 package testkeyring
 
-var (
+import "github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
+
+var preGeneratedAccounts *PreGeneratedAccountIterator
+
+func init() {
+	cmd.InitSDKConfig()
+
 	preGeneratedAccounts = NewPreGeneratedAccountIterator(
 {{.newPreGeneratedAccountIteratorArgLines}}
 	)
-)
+}
 `,
 		),
 	)

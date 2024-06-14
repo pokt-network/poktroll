@@ -1,16 +1,19 @@
 package keeper
 
 import (
+	"context"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
+	"github.com/pokt-network/poktroll/x/shared"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // NumSessionsAppToGatewayUndelegationRetention is the number of sessions for which
 // undelegation from applications to gateways are delayed before being pruned.
 // TODO_DOCUMENT(@red-0ne): Need to document the flow from this comment
 // so its clear to everyone why this is necessary; https://github.com/pokt-network/poktroll/issues/476#issuecomment-2052639906.
-// TODO_CONSIDERATION(#516): Should this be configurable? Note that it should
+// TODO_MAINNET(#516): Should this be configurable? Note that it should
 // likely be a function of SubmitProofCloseWindowNumBlocks once implemented.
 const NumSessionsAppToGatewayUndelegationRetention = 2
 
@@ -20,7 +23,7 @@ func (k Keeper) EndBlockerPruneAppToGatewayPendingUndelegation(ctx sdk.Context) 
 	currentHeight := ctx.BlockHeight()
 
 	// Calculate the block height at which undelegations should be pruned
-	numBlocksUndelegationRetention := GetNumBlocksUndelegationRetention()
+	numBlocksUndelegationRetention := k.GetNumBlocksUndelegationRetention(ctx)
 	if currentHeight <= numBlocksUndelegationRetention {
 		return nil
 	}
@@ -43,8 +46,19 @@ func (k Keeper) EndBlockerPruneAppToGatewayPendingUndelegation(ctx sdk.Context) 
 }
 
 // GetNumBlocksUndelegationRetention returns the number of blocks for which
-// undelegations should be kept before being pruned.
-func GetNumBlocksUndelegationRetention() int64 {
-	return sessionkeeper.GetSessionGracePeriodBlockCount() +
-		(sessionkeeper.NumBlocksPerSession * NumSessionsAppToGatewayUndelegationRetention)
+// undelegations should be kept before being pruned, given the current on-chain
+// shared module parameters.
+func (k Keeper) GetNumBlocksUndelegationRetention(ctx context.Context) int64 {
+	sharedParams := k.sharedKeeper.GetParams(ctx)
+	return GetNumBlocksUndelegationRetention(&sharedParams)
+}
+
+// GetNumBlocksUndelegationRetention returns the number of blocks for which
+// undelegations should be kept before being pruned, given the passed shared
+// module parameters.
+func GetNumBlocksUndelegationRetention(sharedParams *sharedtypes.Params) int64 {
+	numBlocksPerSession := int64(sharedParams.GetNumBlocksPerSession())
+
+	return shared.SessionGracePeriodBlocks +
+		(numBlocksPerSession * NumSessionsAppToGatewayUndelegationRetention)
 }

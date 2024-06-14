@@ -3,8 +3,8 @@ package proxy
 import (
 	"context"
 
-	sessiontypes "github.com/pokt-network/poktroll/pkg/relayer/session"
 	"github.com/pokt-network/poktroll/x/service/types"
+	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -64,7 +64,8 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	// - serviceId (which is not provided by the relayRequest)
 	// - applicationAddress (which is used to to verify the relayRequest signature)
 	//
-	// TODO_BLOCKER: Revisit the assumptions above but good enough for now.
+	// TODO_BLOCKER(@Olshansk): Revisit the assumptions above and updated this if
+	// structure if necessary.
 	if session.SessionId != sessionHeader.GetSessionId() {
 		return ErrRelayerProxyInvalidSession.Wrapf(
 			"session mismatch, expecting: %+v, got: %+v",
@@ -91,27 +92,37 @@ func (rp *relayerProxy) VerifyRelayRequest(
 func (rp *relayerProxy) getTargetSessionBlockHeight(
 	ctx context.Context,
 	relayRequest *types.RelayRequest,
-) (sessionBlockHeight int64, err error) {
-	currentBlockHeight := rp.blockClient.LastBlock(ctx).Height()
-	sessionEndblockHeight := relayRequest.Meta.SessionHeader.GetSessionEndBlockHeight()
+) (sessionHeight int64, err error) {
+	currentHeight := rp.blockClient.LastBlock(ctx).Height()
+	sessionEndHeight := relayRequest.Meta.SessionHeader.GetSessionEndBlockHeight()
+
+	// TODO_TECHDEBT(#543): We don't really want to have to query the params for every method call.
+	// Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
+	// to get the most recently (asynchronously) observed (and cached) value.
+	// TODO_BLOCKER(@bryanchriswhite, #543): We also don't really want to use the current value of the params.
+	// Instead, we should be using the value that the params had for the session given by sessionEndHeight.
+	sharedParams, err := rp.sharedQuerier.GetParams(ctx)
+	if err != nil {
+		return 0, err
+	}
 
 	// Check if the RelayRequest's session has expired.
-	if sessionEndblockHeight < currentBlockHeight {
+	if sessionEndHeight < currentHeight {
 		// Do not process the `RelayRequest` if the session has expired and the current
 		// block height is outside the session's grace period.
-		if sessiontypes.IsWithinGracePeriod(sessionEndblockHeight, currentBlockHeight) {
+		if !shared.IsGracePeriodElapsed(sharedParams, sessionEndHeight, currentHeight) {
 			// The RelayRequest's session has expired but is still within the
 			// grace period so process it as if the session is still active.
-			return sessionEndblockHeight, nil
+			return sessionEndHeight, nil
 		}
 
 		return 0, ErrRelayerProxyInvalidSession.Wrapf(
 			"session expired, expecting: %d, got: %d",
-			sessionEndblockHeight,
-			currentBlockHeight,
+			sessionEndHeight,
+			currentHeight,
 		)
 	}
 
 	// The RelayRequest's session is active so return the current block height.
-	return currentBlockHeight, nil
+	return currentHeight, nil
 }

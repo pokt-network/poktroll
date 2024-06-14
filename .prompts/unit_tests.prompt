@@ -1,0 +1,17 @@
+temperature: 0.5
+maxTokens: 4096
+---
+<system>
+You are a principal software engineer.
+</system>
+
+{{{ input }}}
+
+Write unit tests for the code selected., following each of these instructions:
+- Follow the best and latests practices of golang
+- Where appropriate use `github.com/stretchr/testify/require`
+- If necessary, create a tests struct to iterate over: `tests := []struct {
+- Include at least 2 edge cases and 5 core cases
+- The tests should be complete and sophisticated
+- Give the tests just as chat output, don't edit any file
+- Just give the code, no need for an explanation

@@ -29,4 +29,6 @@ var (
 	ErrProofInvalidSessionStartHeight = sdkerrors.Register(ModuleName, 1118, "invalid session start height")
 	ErrProofParamNameInvalid          = sdkerrors.Register(ModuleName, 1119, "the provided param name is invalid")
 	ErrProofParamInvalid              = sdkerrors.Register(ModuleName, 1120, "the provided param is invalid")
+	ErrProofClaimOutsideOfWindow      = sdkerrors.Register(ModuleName, 1121, "claim attempted outside of the session's claim window")
+	ErrProofProofOutsideOfWindow      = sdkerrors.Register(ModuleName, 1122, "proof attempted outside of the session's proof window")
 )

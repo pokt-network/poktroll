@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 )
 
 // TODO_TECHDEBT(https://github.com/ignite/cli/issues/3737): We're using a combination
@@ -75,6 +76,21 @@ func (p *pocketdBin) RunCommandOnHost(rpcUrl string, args ...string) (*commandRe
 		args = append(args, "--node", rpcUrl)
 	}
 	return p.runPocketCmd(args...)
+}
+
+// RunCommandOnHostWithRetry is the same as RunCommandOnHost but retries the
+// command given the number of retries provided.
+func (p *pocketdBin) RunCommandOnHostWithRetry(rpcUrl string, numRetries uint8, args ...string) (*commandResult, error) {
+	if numRetries <= 0 {
+		return p.RunCommandOnHost(rpcUrl, args...)
+	}
+	res, err := p.RunCommandOnHost(rpcUrl, args...)
+	if err == nil {
+		return res, nil
+	}
+	// TODO_HACK: Figure out a better solution for retries. A parameter? Exponential backoff? What else?
+	time.Sleep(5 * time.Second)
+	return p.RunCommandOnHostWithRetry(rpcUrl, numRetries-1, args...)
 }
 
 // RunCurl runs a curl command on the local machine

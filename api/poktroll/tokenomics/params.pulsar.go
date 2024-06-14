@@ -438,7 +438,6 @@ type Params struct {
 	unknownFields protoimpl.UnknownFields
 
 	// The amount of upokt that a compute unit should translate to when settling a session.
-	// TODO_DOCUMENT(@Olshansk): Make sure to document the units of this parameter (or the map) once finalized.
 	ComputeUnitsToTokensMultiplier uint64 `protobuf:"varint,1,opt,name=compute_units_to_tokens_multiplier,json=computeUnitsToTokensMultiplier,proto3" json:"compute_units_to_tokens_multiplier,omitempty"`
 }
 

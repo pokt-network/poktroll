@@ -29,7 +29,7 @@ func (msg *MsgStakeApplication) ValidateBasic() error {
 		return ErrAppInvalidAddress.Wrapf("invalid application address %s; (%v)", msg.Address, err)
 	}
 
-	// TODO_TECHDEBT: Centralize stake related verification and share across different parts of the source code
+	// TODO_TECHDEBT(@red-0ne): Centralize stake related verification and share across different parts of the source code
 	// Validate the stake amount
 	if msg.Stake == nil {
 		return ErrAppInvalidStake.Wrapf("nil application stake; (%v)", err)

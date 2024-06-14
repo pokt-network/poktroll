@@ -55,12 +55,13 @@ import (
 	ibckeeper "github.com/cosmos/ibc-go/v8/modules/core/keeper"
 
 	"github.com/pokt-network/poktroll/docs"
-	telemetry "github.com/pokt-network/poktroll/telemetry"
+	"github.com/pokt-network/poktroll/telemetry"
 	applicationmodulekeeper "github.com/pokt-network/poktroll/x/application/keeper"
 	gatewaymodulekeeper "github.com/pokt-network/poktroll/x/gateway/keeper"
 	proofmodulekeeper "github.com/pokt-network/poktroll/x/proof/keeper"
 	servicemodulekeeper "github.com/pokt-network/poktroll/x/service/keeper"
 	sessionmodulekeeper "github.com/pokt-network/poktroll/x/session/keeper"
+	sharedmodulekeeper "github.com/pokt-network/poktroll/x/shared/keeper"
 	suppliermodulekeeper "github.com/pokt-network/poktroll/x/supplier/keeper"
 	tokenomicsmodulekeeper "github.com/pokt-network/poktroll/x/tokenomics/keeper"
 )
@@ -68,8 +69,6 @@ import (
 const (
 	AccountAddressPrefix = "pokt"
 	Name                 = "poktroll"
-	// TODO_CLEANUP: Find a way to centralize the use of `upokt` throughout the codebase
-	DenomuPOKT = "upokt"
 )
 
 var (
@@ -131,6 +130,7 @@ type App struct {
 	SessionKeeper     sessionmodulekeeper.Keeper
 	ProofKeeper       proofmodulekeeper.Keeper
 	TokenomicsKeeper  tokenomicsmodulekeeper.Keeper
+	SharedKeeper      sharedmodulekeeper.Keeper
 	// this line is used by starport scaffolding # stargate/app/keeperDeclaration
 
 	// simulation manager
@@ -190,7 +190,6 @@ func New(
 		appBuilder *runtime.AppBuilder
 
 		// merge the AppConfig and other configuration in one config
-		// TODO_BLOCKER(@Olshansk): Revisit the advanced configuration and understand if/where it fits in Shannon
 		appConfig = depinject.Configs(
 			AppConfig(),
 			depinject.Supply(
@@ -276,6 +275,7 @@ func New(
 		&app.SessionKeeper,
 		&app.ProofKeeper,
 		&app.TokenomicsKeeper,
+		&app.SharedKeeper,
 		// this line is used by starport scaffolding # stargate/app/keeperDefinition
 	); err != nil {
 		panic(err)

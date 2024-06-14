@@ -1,28 +1,18 @@
 package proof_test
 
 import (
-	"context"
-	"encoding/base64"
-	"encoding/json"
-	"fmt"
 	"strconv"
 	"testing"
 
-	"cosmossdk.io/math"
-	"github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/codec"
-	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
-	testcli "github.com/cosmos/cosmos-sdk/testutil/cli"
-	sdktypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/testutil/network"
+	testsession "github.com/pokt-network/poktroll/testutil/session"
 	"github.com/pokt-network/poktroll/testutil/testkeyring"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	proof "github.com/pokt-network/poktroll/x/proof/module"
 	"github.com/pokt-network/poktroll/x/proof/types"
+	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -93,9 +83,32 @@ func networkWithClaimObjects(
 	appGenesisBuffer, err := cfg.Codec.MarshalJSON(appGenesisState)
 	require.NoError(t, err)
 
+	sharedParams := sharedtypes.DefaultParams()
+
+	// Create numSessions * numApps * numSuppliers claims.
+	for sessionIdx := 0; sessionIdx < numSessions; sessionIdx++ {
+		for _, appAcct := range appAccts {
+			for _, supplierAcct := range supplierAccts {
+				claim := newTestClaim(
+					t, &sharedParams,
+					supplierAcct.Address.String(),
+					testsession.GetSessionStartHeightWithDefaultParams(1),
+					appAcct.Address.String(),
+				)
+				claims = append(claims, *claim)
+			}
+		}
+	}
+
+	// Add the claims to the proof module genesis state.
+	proofGenesisState := network.ProofModuleGenesisStateWithClaims(t, claims)
+	proofGenesisBuffer, err := cfg.Codec.MarshalJSON(proofGenesisState)
+	require.NoError(t, err)
+
 	// Add supplier and application module genesis states to the network config.
 	cfg.GenesisState[suppliertypes.ModuleName] = supplierGenesisBuffer
 	cfg.GenesisState[apptypes.ModuleName] = appGenesisBuffer
+	cfg.GenesisState[prooftypes.ModuleName] = proofGenesisBuffer
 
 	// Construct the network with the configuration.
 	net = network.New(t, cfg)
@@ -119,88 +132,32 @@ func networkWithClaimObjects(
 	// need to wait for the account to be initialized in the next block
 	require.NoError(t, net.WaitForNextBlock())
 
-	// Create numSessions * numClaimsPerSession claims for the supplier
-	blockHeight := int64(1)
-	// TODO_HACK(@Olshansk): Revisit this forloop. Resolve the TECHDEBT
-	// issue that lies inside because it's creating an inconsistency between
-	// the number of sessions and the number of blocks.
-	for sessionIdx := 0; sessionIdx < numSessions; sessionIdx++ {
-		for _, appAcct := range appAccts {
-			for _, supplierAcct := range supplierAccts {
-				claim := createClaim(
-					t, net, ctx,
-					supplierAcct.Address.String(),
-					sessionkeeper.GetSessionStartBlockHeight(blockHeight),
-					appAcct.Address.String(),
-				)
-				claims = append(claims, *claim)
-				// TODO_HACK(#196, @Olshansk): Move this outside of the forloop
-				// so that the test iteration is faster. The current issue has
-				// to do with a "incorrect account sequence timestamp" error
-				require.NoError(t, net.WaitForNextBlock())
-				blockHeight += 1
-			}
-		}
-	}
 	return net, claims
 }
 
-// encodeSessionHeader returns a base64 encoded string of a json
-// serialized session header.
-func encodeSessionHeader(
+// newTestClaim returns a new claim with the given supplier address, session start height,
+// and application address. It uses mock byte slices for the root hash and block hash.
+func newTestClaim(
 	t *testing.T,
-	appAddr string,
-	sessionId string,
-	sessionStartHeight int64,
-) string {
-	t.Helper()
-
-	sessionHeader := &sessiontypes.SessionHeader{
-		ApplicationAddress:      appAddr,
-		Service:                 &sharedtypes.Service{Id: testServiceId},
-		SessionId:               sessionId,
-		SessionStartBlockHeight: sessionStartHeight,
-		SessionEndBlockHeight:   sessionkeeper.GetSessionEndBlockHeight(sessionStartHeight),
-	}
-	cdc := codec.NewProtoCodec(codectypes.NewInterfaceRegistry())
-	sessionHeaderBz := cdc.MustMarshalJSON(sessionHeader)
-	return base64.StdEncoding.EncodeToString(sessionHeaderBz)
-}
-
-// createClaim sends a tx using the test CLI to create an on-chain claim
-func createClaim(
-	t *testing.T,
-	net *network.Network,
-	ctx client.Context,
+	sharedParams *sharedtypes.Params,
 	supplierAddr string,
 	sessionStartHeight int64,
 	appAddr string,
 ) *types.Claim {
 	t.Helper()
 
-	rootHash := []byte("root_hash")
-	sessionId := getSessionId(t, net, appAddr, supplierAddr, sessionStartHeight)
-	sessionHeaderEncoded := encodeSessionHeader(t, appAddr, sessionId, sessionStartHeight)
-	rootHashEncoded := base64.StdEncoding.EncodeToString(rootHash)
+	// NB: These byte slices mock the root hash and block hash that would be
+	// calculated and stored in the claim in a real scenario.
+	rootHash := []byte("test_claim__mock_root_hash")
+	blockHashBz := []byte("genesis_session__mock_block_hash")
 
-	args := []string{
-		sessionHeaderEncoded,
-		rootHashEncoded,
-		fmt.Sprintf("--%s=%s", flags.FlagFrom, supplierAddr),
-		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
-		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
-		fmt.Sprintf("--%s=%s", flags.FlagFees, sdktypes.NewCoins(sdktypes.NewCoin(net.Config.BondDenom, math.NewInt(10))).String()),
-	}
-
-	responseRaw, err := testcli.ExecTestCLICmd(ctx, proof.CmdCreateClaim(), args)
-	require.NoError(t, err)
-
-	// Check the response, this test only asserts CLI command success and not
-	// the actual proof module state.
-	var responseJson map[string]interface{}
-	err = json.Unmarshal(responseRaw.Bytes(), &responseJson)
-	require.NoError(t, err)
-	require.Equal(t, float64(0), responseJson["code"], "code is not 0 in the response: %v", responseJson)
+	sessionId, _ := sessionkeeper.GetSessionId(
+		sharedParams,
+		appAddr,
+		testServiceId,
+		blockHashBz,
+		0,
+	)
 
 	// TODO_TECHDEBT: Forward the actual claim in the response once the response is updated to return it.
 	return &types.Claim{
@@ -210,41 +167,8 @@ func createClaim(
 			Service:                 &sharedtypes.Service{Id: testServiceId},
 			SessionId:               sessionId,
 			SessionStartBlockHeight: sessionStartHeight,
-			SessionEndBlockHeight:   sessionkeeper.GetSessionEndBlockHeight(sessionStartHeight),
+			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(sessionStartHeight),
 		},
 		RootHash: rootHash,
 	}
-}
-
-// getSessionId sends a query using the test CLI to get a session for the inputs provided.
-// It is assumed that the supplierAddr will be in that session based on the test design, but this
-// is insured in this function before it's successfully returned.
-func getSessionId(
-	t *testing.T,
-	net *network.Network,
-	appAddr string,
-	supplierAddr string,
-	sessionStartHeight int64,
-) string {
-	t.Helper()
-	ctx := context.Background()
-
-	sessionQueryClient := sessiontypes.NewQueryClient(net.Validators[0].ClientCtx)
-	res, err := sessionQueryClient.GetSession(ctx, &sessiontypes.QueryGetSessionRequest{
-		ApplicationAddress: appAddr,
-		Service:            &sharedtypes.Service{Id: testServiceId},
-		BlockHeight:        sessionStartHeight,
-	})
-	require.NoError(t, err)
-
-	var isSupplierFound bool
-	for _, supplier := range res.GetSession().GetSuppliers() {
-		if supplier.GetAddress() == supplierAddr {
-			isSupplierFound = true
-			break
-		}
-	}
-	require.Truef(t, isSupplierFound, "supplier address %s not found in session", supplierAddr)
-
-	return res.Session.SessionId
 }

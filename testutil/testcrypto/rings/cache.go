@@ -10,7 +10,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/crypto"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/pkg/polylog"
-	"github.com/pokt-network/poktroll/testutil/mockclient"
 )
 
 // NewRingCacheWithMockDependencies creates a new "real" RingCache with the given
@@ -31,15 +30,12 @@ import (
 func NewRingCacheWithMockDependencies(
 	ctx context.Context,
 	t *testing.T,
-	accQuerier *mockclient.MockAccountQueryClient,
-	appQuerier *mockclient.MockApplicationQueryClient,
-	delegationClient *mockclient.MockDelegationClient,
+	deps depinject.Config,
 ) crypto.RingCache {
 	t.Helper()
 
-	// Create the dependency injector with the mock queriers
 	logger := polylog.Ctx(ctx)
-	deps := depinject.Supply(logger, accQuerier, appQuerier, delegationClient)
+	deps = depinject.Configs(deps, depinject.Supply(logger))
 
 	ringCache, err := rings.NewRingCache(deps)
 	require.NoError(t, err)

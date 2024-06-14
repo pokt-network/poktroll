@@ -37,15 +37,15 @@ func TestMsgUpdateParam_ValidateBasic(t *testing.T) {
 			name: "invalid: incorrect param type",
 			msg: MsgUpdateParam{
 				Authority: sample.AccAddress(),
-				Name:      NameMinRelayDifficultyBits,
+				Name:      ParamMinRelayDifficultyBits,
 				AsType:    &MsgUpdateParam_AsString{AsString: "invalid"},
 			},
 			expectedErr: ErrProofParamInvalid,
 		}, {
-			name: "valid: correct authority and param name",
+			name: "valid: correct authority, param name, and type",
 			msg: MsgUpdateParam{
 				Authority: sample.AccAddress(),
-				Name:      NameMinRelayDifficultyBits,
+				Name:      ParamMinRelayDifficultyBits,
 				AsType:    &MsgUpdateParam_AsInt64{AsInt64: 1},
 			},
 

@@ -29,8 +29,12 @@ jobs:
       - name: Install CI dependencies
         run: make install_ci_deps
 
-      - name: Generate protobufs
-        run: make proto_regen
+      # This is commented out because proto generated code is now tracked in the
+      # repo so this step is skipped.
+      # TODO_IMPROVE(@okdas): Have a step that regenerates the proto files and ensures
+      # if they are up to date. See https://github.com/pokt-network/poktroll/pull/544#issuecomment-2123063491
+      # - name: Generate protobufs
+      #   run: make proto_regen
 
       - name: Build and extract binaries for container build
         run: |
@@ -75,7 +79,7 @@ jobs:
           cache-to: type=gha,mode=max
           context: .
 
-      # TODO(@okdas): use for releases (also change the "on" part at the top so it only tgirrered for tags/releases)
+      # TODO_TECHDEBT(@okdas): use for releases (also change the "on" part at the top so it only tgirrered for tags/releases)
       - name: Add release and publish binaries
         uses: softprops/action-gh-release@v1
         with:

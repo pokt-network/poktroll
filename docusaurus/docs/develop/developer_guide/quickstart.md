@@ -79,7 +79,7 @@ Install the following dependencies:
 6. [Tilt](https://docs.tilt.dev/install.html) - k8s local development tool & environment manager
 
 :::note
-If you've followed the [LocalNet instructions](../internal_infrastructure/localnet.md),
+If you've followed the [LocalNet instructions](../../operate/infrastructure/localnet.md),
 you may already have them installed.
 :::
 
@@ -90,7 +90,7 @@ and inspect it so you have an idea of what's going on!
 
 We'll be manually configuring a few actors to run in your shell for the sake of
 the tutorial so you have visibility into the types of on-chain and off-chain
-actors. In practice, you should be using [localnet](./../internal_infrastructure/localnet.md)
+actors. In practice, you should be using [localnet](../../operate/infrastructure/localnet.md)
 to dynamically scale your actors.
 
 To learn more about the different actors type, see the docs [here](../../protocol/actors/actors.md).
@@ -131,7 +131,7 @@ There are some flaky tests, so you can re-run with the following command without
 needing to regenerate the mocks and types:
 
 ```bash
-make go_test
+make test_all
 ```
 
 ### 1.4 Create a `k8s` cluster
@@ -655,7 +655,7 @@ We went through a low of steps above just so you can get a feel for how things w
 
 That said, you can dynamically scale the number of any actors in LocalNet by ony changing one line!
 
-Go to our [localnet tutorial](./../internal_infrastructure/localnet.md) to learn more.
+Go to our [localnet tutorial](../../operate/infrastructure/localnet.md) to learn more.
 
 ## 7. Explore the tools
 

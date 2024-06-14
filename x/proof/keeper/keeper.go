@@ -30,9 +30,11 @@ type (
 
 		sessionKeeper     types.SessionKeeper
 		applicationKeeper types.ApplicationKeeper
+		sharedKeeper      types.SharedKeeper
 
 		ringClient     crypto.RingClient
 		accountQuerier client.AccountQueryClient
+		sharedQuerier  client.SharedQueryClient
 	}
 )
 
@@ -45,6 +47,7 @@ func NewKeeper(
 	sessionKeeper types.SessionKeeper,
 	applicationKeeper types.ApplicationKeeper,
 	accountKeeper types.AccountKeeper,
+	sharedKeeper types.SharedKeeper,
 ) Keeper {
 	if _, err := sdk.AccAddressFromBech32(authority); err != nil {
 		panic(fmt.Sprintf("invalid authority address: %s", authority))
@@ -54,6 +57,7 @@ func NewKeeper(
 	polylogger := polylog.Ctx(context.Background())
 	applicationQuerier := types.NewAppKeeperQueryClient(applicationKeeper)
 	accountQuerier := types.NewAccountKeeperQueryClient(accountKeeper)
+	sharedQuerier := types.NewSharedKeeperQueryClient(sharedKeeper)
 
 	// RingKeeperClient holds the logic of verifying RelayRequests ring signatures
 	// for both on-chain and off-chain actors.
@@ -65,12 +69,12 @@ func NewKeeper(
 	// and AccountKeeperQueryClient that are thin wrappers around the Application and
 	// Account keepers respectively to satisfy the RingClient needs.
 	//
-	// TODO_IMPROVE_CONSIDERATION: Make ring signature verification a stateless
+	// TODO_MAINNET(@red-0ne): Make ring signature verification a stateless
 	// function and get rid of the RingClient and its dependencies by moving
 	// application ring retrieval to the application keeper, and making it
 	// retrievable using the application query client for off-chain actors. Signature
 	// verification code will still be shared across off/on chain environments.
-	ringKeeperClientDeps := depinject.Supply(polylogger, applicationQuerier, accountQuerier)
+	ringKeeperClientDeps := depinject.Supply(polylogger, applicationQuerier, accountQuerier, sharedQuerier)
 	ringKeeperClient, err := rings.NewRingClient(ringKeeperClientDeps)
 	if err != nil {
 		panic(err)
@@ -84,9 +88,11 @@ func NewKeeper(
 
 		sessionKeeper:     sessionKeeper,
 		applicationKeeper: applicationKeeper,
+		sharedKeeper:      sharedKeeper,
 
 		ringClient:     ringKeeperClient,
 		accountQuerier: accountQuerier,
+		sharedQuerier:  sharedQuerier,
 	}
 }
 

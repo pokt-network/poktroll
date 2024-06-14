@@ -24,7 +24,7 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 	return paramtypes.ParamSetPairs{}
 }
 
-// Validate validates the set of params
-func (p Params) Validate() error {
+// ValidateBasic does a sanity check on the provided params.
+func (p Params) ValidateBasic() error {
 	return nil
 }

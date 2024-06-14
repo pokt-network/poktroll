@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/testutil/sample"
-	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
+	testsession "github.com/pokt-network/poktroll/testutil/session"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -30,7 +30,7 @@ func TestMsgSubmitProof_ValidateBasic(t *testing.T) {
 					Service:                 testService,
 					SessionId:               "mock_session_id",
 					SessionStartBlockHeight: 1,
-					SessionEndBlockHeight:   sessionkeeper.GetSessionEndBlockHeight(1),
+					SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
 				},
 				Proof: testClosestMerkleProof,
 			},
@@ -49,7 +49,7 @@ func TestMsgSubmitProof_ValidateBasic(t *testing.T) {
 					Service:                 testService,
 					SessionId:               "mock_session_id",
 					SessionStartBlockHeight: 1,
-					SessionEndBlockHeight:   sessionkeeper.GetSessionEndBlockHeight(1),
+					SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
 				},
 				Proof: testClosestMerkleProof,
 			},
@@ -68,7 +68,7 @@ func TestMsgSubmitProof_ValidateBasic(t *testing.T) {
 					Service:                 &sharedtypes.Service{Id: ""},
 					SessionId:               "mock_session_id",
 					SessionStartBlockHeight: 1,
-					SessionEndBlockHeight:   sessionkeeper.GetSessionEndBlockHeight(1),
+					SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
 				},
 				Proof: testClosestMerkleProof,
 			},
@@ -83,7 +83,7 @@ func TestMsgSubmitProof_ValidateBasic(t *testing.T) {
 					Service:                 testService,
 					SessionId:               "mock_session_id",
 					SessionStartBlockHeight: 1,
-					SessionEndBlockHeight:   sessionkeeper.GetSessionEndBlockHeight(1),
+					SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
 				},
 				Proof: testClosestMerkleProof,
 			},

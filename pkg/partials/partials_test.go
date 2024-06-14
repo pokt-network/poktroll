@@ -1,12 +1,17 @@
 package partials
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
+	"net/http"
+	"net/url"
 	"testing"
 
 	sdkerror "cosmossdk.io/errors"
+	sdktypes "github.com/pokt-network/shannon-sdk/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
@@ -14,8 +19,8 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-// TODO(@h5law): Expand coverage with more test cases when more request types
-// are implemented in the partials package.
+// TODO_TEST(@red-0ne): Expand coverage with more test cases when more request
+// types are implemented in the partials package.
 func TestPartials_GetErrorReply(t *testing.T) {
 	_, logCtx := testpolylog.NewLoggerWithCtx(
 		context.Background(),
@@ -41,25 +46,35 @@ func TestPartials_GetErrorReply(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
-			name:          "invalid json - unrecognised payload",
+			name:          "invalid json - unrecognized payload",
 			err:           errors.New("test error"),
 			payload:       []byte(`{"invalid": "payload"}`),
 			expectedReply: nil,
-			expectedErr:   ErrPartialUnrecognisedRequestFormat,
+			expectedErr:   ErrPartialUnrecognizedRequestFormat,
 		},
 		{
-			name:          "invalid - unrecognised payload",
+			name:          "invalid - unrecognized payload",
 			err:           errors.New("test error"),
 			payload:       []byte("invalid payload"),
 			expectedReply: nil,
-			expectedErr:   ErrPartialUnrecognisedRequestFormat,
+			expectedErr:   ErrPartialUnrecognizedRequestFormat,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			// build a serialized http request to detect the RPC type from
+			httpReq := &http.Request{
+				Method: http.MethodPost,
+				Header: http.Header{},
+				URL:    &url.URL{},
+				Body:   io.NopCloser(bytes.NewReader(test.payload)),
+			}
+			httpReqBz, err := sdktypes.SerializeHTTPRequest(httpReq)
+			require.NoError(t, err)
+
 			// Generate the error reply
-			replyBz, err := GetErrorReply(logCtx, test.payload, test.err)
+			replyBz, err := GetErrorReply(logCtx, httpReqBz, test.err)
 			if test.expectedErr != nil {
 				require.ErrorIs(t, err, test.expectedErr)
 				return

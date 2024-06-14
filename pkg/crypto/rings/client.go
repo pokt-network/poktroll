@@ -9,14 +9,15 @@ import (
 	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
 	ringtypes "github.com/athanorlabs/go-dleq/types"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
-	ring "github.com/noot/ring-go"
+	ring "github.com/pokt-network/ring-go"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/crypto"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	"github.com/pokt-network/poktroll/x/service/types"
-	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
+	"github.com/pokt-network/poktroll/x/shared"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 var _ crypto.RingClient = (*ringClient)(nil)
@@ -33,6 +34,9 @@ type ringClient struct {
 
 	// accountQuerier is used to fetch accounts for a given an account address.
 	accountQuerier client.AccountQueryClient
+
+	// sharedQuerier is used to fetch the shared module's parameters.
+	sharedQuerier client.SharedQueryClient
 }
 
 // NewRingClient returns a new ring client constructed from the given dependencies.
@@ -50,6 +54,7 @@ func NewRingClient(deps depinject.Config) (_ crypto.RingClient, err error) {
 		&rc.logger,
 		&rc.accountQuerier,
 		&rc.applicationQuerier,
+		&rc.sharedQuerier,
 	); err != nil {
 		return nil, err
 	}
@@ -177,7 +182,10 @@ func (rc *ringClient) getRingPubKeysForAddress(
 
 	// Reconstruct the delegatee gateway addresses at the given block height and
 	// add them to the ring addresses.
-	delegateeGatewayAddresses := GetRingAddressesAtBlock(&app, blockHeight)
+	delegateeGatewayAddresses, err := rc.GetRingAddressesAtBlock(ctx, &app, blockHeight)
+	if err != nil {
+		return nil, err
+	}
 
 	// Create a slice of addresses for the ring.
 	ringAddresses := make([]string, 0)
@@ -263,9 +271,36 @@ func (rc *ringClient) getRingPointsForAddressAtHeight(
 // should still be part of the ring at the given block height.
 // The ring addresses slice is reconstructed by adding back the past delegated
 // gateways that have been undelegated after the target session end height.
-func GetRingAddressesAtBlock(app *apptypes.Application, blockHeight int64) []string {
+func (rc *ringClient) GetRingAddressesAtBlock(
+	ctx context.Context,
+	app *apptypes.Application,
+	blockHeight int64,
+) ([]string, error) {
+	// TODO_TECHDEBT(#543): We don't really want to have to query the params for every method call.
+	// Once `ModuleParamsClient` is implemented, use its replay observable's `#Last` method
+	// to get the most recently (asynchronously) observed (and cached) value.
+	// TODO_BLOCKER(@bryanchriswhite, #543): We also don't really want to use the current value of the params.
+	// Instead, we should be using the value that the params had for the session given by blockHeight.
+	sharedParams, err := rc.sharedQuerier.GetParams(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return GetRingAddressesAtBlock(sharedParams, app, blockHeight), nil
+}
+
+// GetRingAddressesAtBlock returns the active gateway addresses that need to be
+// used to construct the ring in order to validate that the given app should pay for.
+// It takes into account both active delegations and pending undelegations that
+// should still be part of the ring at the given block height.
+// The ring addresses slice is reconstructed by adding back the past delegated
+// gateways that have been undelegated after the target session end height.
+func GetRingAddressesAtBlock(
+	sharedParams *sharedtypes.Params,
+	app *apptypes.Application,
+	blockHeight int64,
+) []string {
 	// Get the target session end height at which we want to get the active delegations.
-	targetSessionEndHeight := uint64(sessionkeeper.GetSessionEndBlockHeight(blockHeight))
+	targetSessionEndHeight := uint64(shared.GetSessionEndHeight(sharedParams, blockHeight))
 	// Get the current active delegations for the application and use them as a base.
 	activeDelegationsAtHeight := app.DelegateeGatewayAddresses
 

@@ -7,6 +7,7 @@
 //go:generate mockgen -destination=../../testutil/mockclient/application_query_client_mock.go -package=mockclient . ApplicationQueryClient
 //go:generate mockgen -destination=../../testutil/mockclient/supplier_query_client_mock.go -package=mockclient . SupplierQueryClient
 //go:generate mockgen -destination=../../testutil/mockclient/session_query_client_mock.go -package=mockclient . SessionQueryClient
+//go:generate mockgen -destination=../../testutil/mockclient/shared_query_client_mock.go -package=mockclient . SharedQueryClient
 //go:generate mockgen -destination=../../testutil/mockclient/cosmos_tx_builder_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/client TxBuilder
 //go:generate mockgen -destination=../../testutil/mockclient/cosmos_keyring_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/crypto/keyring Keyring
 //go:generate mockgen -destination=../../testutil/mockclient/cosmos_client_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/client AccountRetriever
@@ -46,7 +47,7 @@ type SupplierClient interface {
 	// SubmitProof sends proof messages which contain the smt.SparseMerkleClosestProof,
 	// corresponding to some previously created claim for the same session.
 	// The proof is validated on-chain as part of the pocket protocol.
-	// TODO_IMPROVE(#427): Use SparseCompactClosestProof here to reduce
+	// TODO_MAINNET(#427): Use SparseCompactClosestProof here to reduce
 	// the amount of data stored on-chain.
 	SubmitProofs(
 		ctx context.Context,
@@ -101,6 +102,9 @@ type TxContext interface {
 		txHash []byte,
 		prove bool,
 	) (*cometrpctypes.ResultTx, error)
+
+	// GetClientCtx returns the cosmos-sdk client context associated with the transaction context.
+	GetClientCtx() cosmosclient.Context
 }
 
 // Block is an interface which abstracts the details of a block to its minimal
@@ -274,4 +278,20 @@ type SessionQueryClient interface {
 		serviceId string,
 		blockHeight int64,
 	) (*sessiontypes.Session, error)
+}
+
+// SharedQueryClient defines an interface that enables the querying of the
+// on-chain shared module information.
+type SharedQueryClient interface {
+	// GetParams queries the chain for the current shared module parameters.
+	GetParams(ctx context.Context) (*sharedtypes.Params, error)
+	// GetSessionGracePeriodEndHeight returns the block height at which the grace period
+	// for the session that includes queryHeight elapses.
+	GetSessionGracePeriodEndHeight(ctx context.Context, queryHeight int64) (int64, error)
+	// GetClaimWindowOpenHeight returns the block height at which the claim window of
+	// the session that includes queryHeight opens.
+	GetClaimWindowOpenHeight(ctx context.Context, queryHeight int64) (int64, error)
+	// GetProofWindowOpenHeight returns the block height at which the proof window of
+	// the session that includes queryHeight opens.
+	GetProofWindowOpenHeight(ctx context.Context, queryHeight int64) (int64, error)
 }

@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/pokt-network/poktroll/x/proof/types"
 )
@@ -24,10 +23,10 @@ func (k msgServer) UpdateParam(
 	params := k.GetParams(ctx)
 
 	switch msg.Name {
-	case types.NameMinRelayDifficultyBits:
+	case types.ParamMinRelayDifficultyBits:
 		value, ok := msg.AsType.(*types.MsgUpdateParam_AsInt64)
 		if !ok {
-			return nil, fmt.Errorf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
+			return nil, types.ErrProofParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
 		}
 		minRelayDifficultyBits := uint64(value.AsInt64)
 
@@ -36,8 +35,44 @@ func (k msgServer) UpdateParam(
 		}
 
 		params.MinRelayDifficultyBits = minRelayDifficultyBits
+	case types.ParamProofRequestProbability:
+		value, ok := msg.AsType.(*types.MsgUpdateParam_AsFloat)
+		if !ok {
+			return nil, types.ErrProofParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
+		}
+		proofRequestProbability := value.AsFloat
+
+		if err := types.ValidateProofRequestProbability(proofRequestProbability); err != nil {
+			return nil, err
+		}
+
+		params.ProofRequestProbability = proofRequestProbability
+	case types.ParamProofRequirementThreshold:
+		value, ok := msg.AsType.(*types.MsgUpdateParam_AsInt64)
+		if !ok {
+			return nil, types.ErrProofParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
+		}
+		proofRequirementThreshold := uint64(value.AsInt64)
+
+		if err := types.ValidateProofRequirementThreshold(proofRequirementThreshold); err != nil {
+			return nil, err
+		}
+
+		params.ProofRequirementThreshold = proofRequirementThreshold
+	case types.ParamProofMissingPenalty:
+		value, ok := msg.AsType.(*types.MsgUpdateParam_AsCoin)
+		if !ok {
+			return nil, types.ErrProofParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
+		}
+		proofMissingPenalty := value.AsCoin
+
+		if err := types.ValidateProofMissingPenalty(proofMissingPenalty); err != nil {
+			return nil, err
+		}
+
+		params.ProofMissingPenalty = proofMissingPenalty
 	default:
-		return nil, fmt.Errorf("unsupported param %q", msg.Name)
+		return nil, types.ErrProofParamInvalid.Wrapf("unsupported param %q", msg.Name)
 	}
 
 	if err := k.SetParams(ctx, params); err != nil {

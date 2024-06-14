@@ -4,26 +4,28 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/pokt-network/poktroll/pkg/sdk"
+	sdktypes "github.com/pokt-network/shannon-sdk/types"
+
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-// TODO_IMPROVE: Use a more sophisticated endpoint selection strategy.
-// Future optimizations (e.g. Quality-of-Service) can be introduced here.
-// TODO(@h5law): Look into different endpoint selection depending on their suitability.
-// getRelayerUrl gets the URL of the relayer for the given service.
+// getRelayerUrl returns the next relayer endpoint to use for the given serviceId and rpcType.
+// NB: This is a naive implementation of the endpoint selection strategy.
+// It is intentionally kept simple for the sake of a clear example, and future
+// optimizations (i.e. quality of service implementations) are left as an exercise
+// to gateways.
 func (app *appGateServer) getRelayerUrl(
 	serviceId string,
 	rpcType sharedtypes.RPCType,
-	supplierEndpoints []*sdk.SingleSupplierEndpoint,
+	supplierEndpoints []*sdktypes.SingleSupplierEndpoint,
 	request *http.Request,
-) (supplierEndpoint *sdk.SingleSupplierEndpoint, err error) {
+) (supplierEndpoint *sdktypes.SingleSupplierEndpoint, err error) {
 	// Filter out the supplier endpoints that match the requested serviceId.
-	validSupplierEndpoints := make([]*sdk.SingleSupplierEndpoint, 0, len(supplierEndpoints))
+	validSupplierEndpoints := make([]*sdktypes.SingleSupplierEndpoint, 0, len(supplierEndpoints))
 
 	for _, supplierEndpoint := range supplierEndpoints {
 		// Skip services that don't match the requested serviceId.
-		if supplierEndpoint.Header.Service.Id != serviceId {
+		if supplierEndpoint.SessionHeader.Service.Id != serviceId {
 			continue
 		}
 
