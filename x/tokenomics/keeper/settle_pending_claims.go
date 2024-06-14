@@ -64,7 +64,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 		// claim required an on-chain proof
 		isProofRequiredForClaim, err := k.isProofRequiredForClaim(ctx, &claim)
 		if err != nil {
-			return 0, 0, err
+			return 0, 0, nil, err
 		}
 		if isProofRequiredForClaim {
 			// If a proof is not found, the claim will expire and never be settled.
@@ -231,7 +231,8 @@ func computeClaimSeed(claim *prooftypes.Claim) (int64, error) {
 	copy(seedBz[:], claimHash[:])
 
 	// Convert the seed bytes to an int64.
-	seed := int64(binary.LittleEndian.Uint32(seedBz[:]))
+	// NB: little endian is more conventional in this context.
+	seed := int64(binary.LittleEndian.Uint64(seedBz[:]))
 
 	return seed, nil
 }

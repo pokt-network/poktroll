@@ -250,7 +250,7 @@ func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_Vi
 
 	// Set the proof parameters such that s.claim requires a proof because the
 	// proof_request_probability is 100%. This is accomplished by setting the
-	// proof_requirement_threshold to exceed s.expectedComputeUnitss, which
+	// proof_requirement_threshold to exceed s.expectedComputeUnits, which
 	// matches s.claim.
 	err := s.keepers.ProofKeeper.SetParams(ctx, prooftypes.Params{
 		ProofRequestProbability: 1,
@@ -275,7 +275,7 @@ func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_Vi
 	// NB: proof window has definitely closed at this point
 	blockHeight := shared.GetProofWindowCloseHeight(&sharedParams, claim.SessionHeader.SessionEndBlockHeight)
 	sdkCtx = sdkCtx.WithBlockHeight(blockHeight)
-	numClaimsSettled, numClaimsExpired, err := s.keepers.SettlePendingClaims(sdkCtx)
+	numClaimsSettled, numClaimsExpired, _, err := s.keepers.SettlePendingClaims(sdkCtx)
 	require.NoError(t, err)
 
 	// Check that one claim was settled.
