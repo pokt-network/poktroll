@@ -2,6 +2,7 @@ package proof
 
 import (
 	"encoding/binary"
+	"fmt"
 
 	"github.com/pokt-network/smt"
 
@@ -30,11 +31,21 @@ func BaseClaim(appAddr, supplierAddr string, sum uint64) prooftypes.Claim {
 	}
 }
 
-// SmstRootWithSum returns a SMST root with the given sum that can be used for
-// testing.
+// SmstRootWithSum returns a SMST root with the given sum and
+// a default hard-coded count of 1.
 func SmstRootWithSum(sum uint64) smt.MerkleRoot {
-	root := make([]byte, 40)
-	copy(root[:32], []byte("This is exactly 32 characters!!!"))
-	binary.BigEndian.PutUint64(root[32:], sum)
+	root := make([]byte, smt.SmstRootSizeBytes)
+
+	// Insert a string into the root hash
+	copy(root[:smt.SmtRootSizeBytes], []byte(fmt.Sprintf("This is exactly %d characters!!!", smt.SmtRootSizeBytes)))
+
+	// Insert the sum into the root hash
+	binary.BigEndian.PutUint64(root[smt.SmtRootSizeBytes:], sum)
+
+	// Insert the count into the root hash
+	// TODO_TECHDEBT: This is a hard-coded count of 1, but could be a parameter.
+	// TODO_TECHDEBT: We are assuming the sum takes up 8 bytes.
+	binary.BigEndian.PutUint64(root[smt.SmtRootSizeBytes+8:], 1)
+
 	return smt.MerkleRoot(root)
 }
