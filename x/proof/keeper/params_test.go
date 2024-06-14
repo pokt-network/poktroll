@@ -119,7 +119,7 @@ func TestParams_ValidateProofRequirementThreshold(t *testing.T) {
 }
 
 func TestParams_ValidateProofMissingPenalty(t *testing.T) {
-	wrongCoin := cosmostypes.NewCoin("invalid_denom", math.NewInt(1))
+	invalidDenomCoin := cosmostypes.NewCoin("invalid_denom", math.NewInt(1))
 
 	tests := []struct {
 		desc                string
@@ -133,7 +133,7 @@ func TestParams_ValidateProofMissingPenalty(t *testing.T) {
 		},
 		{
 			desc:                "invalid denomination",
-			proofMissingPenalty: &wrongCoin,
+			proofMissingPenalty: &invalidDenomCoin,
 			expectedErr:         prooftypes.ErrProofParamInvalid.Wrap("invalid coin denom: invalid_denom"),
 		},
 		{

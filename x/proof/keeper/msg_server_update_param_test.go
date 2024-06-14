@@ -9,7 +9,7 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/app/volitile"
+	"github.com/pokt-network/poktroll/app/volatile"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 )
 
@@ -98,7 +98,7 @@ func TestMsgUpdateParam_UpdateProofRequirementThresholdOnly(t *testing.T) {
 }
 
 func TestMsgUpdateParam_UpdateProofMissingPenaltyOnly(t *testing.T) {
-	expectedProofMissingPenalty := cosmostypes.NewCoin(volitile.DenomuPOKT, math.NewInt(500))
+	expectedProofMissingPenalty := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(500))
 
 	// Set the parameters to their default values
 	k, msgSrv, ctx := setupMsgServer(t)

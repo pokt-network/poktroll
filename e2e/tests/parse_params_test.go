@@ -13,7 +13,7 @@ import (
 	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/app/volitile"
+	"github.com/pokt-network/poktroll/app/volatile"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
@@ -64,7 +64,7 @@ func (s *suite) parseParam(table gocuke.DataTable, rowIdx int) paramAny {
 		paramValue = float32(floatValue)
 	case "coin":
 		coinAmount := table.Cell(rowIdx, paramValueColIdx).Int64()
-		coinValue := cosmostypes.NewCoin(volitile.DenomuPOKT, math.NewInt(coinAmount))
+		coinValue := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(coinAmount))
 		paramValue = &coinValue
 	default:
 		s.Fatalf("unexpected param type %q", paramType)
