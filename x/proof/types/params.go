@@ -5,7 +5,7 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
-	"github.com/pokt-network/poktroll/app/volitile"
+	"github.com/pokt-network/poktroll/app/volatile"
 )
 
 var (
@@ -22,7 +22,7 @@ var (
 	DefaultProofRequirementThreshold uint64  = 20 // See: https://github.com/pokt-network/pocket-core/blob/staging/docs/proposals/probabilistic_proofs.md
 	KeyProofMissingPenalty                   = []byte("ProofMissingPenalty")
 	ParamProofMissingPenalty                 = "proof_missing_penalty"
-	DefaultProofMissingPenalty               = cosmostypes.NewCoin(volitile.DenomuPOKT, math.NewInt(320)) // See: https://github.com/pokt-network/pocket-core/blob/staging/docs/proposals/probabilistic_proofs.md
+	DefaultProofMissingPenalty               = cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(320)) // See: https://github.com/pokt-network/pocket-core/blob/staging/docs/proposals/probabilistic_proofs.md
 )
 
 // ParamKeyTable the param key table for launch module
@@ -156,7 +156,7 @@ func ValidateProofMissingPenalty(v interface{}) error {
 		return ErrProofParamInvalid.Wrap("missing proof_missing_penalty")
 	}
 
-	if coin.Denom != volitile.DenomuPOKT {
+	if coin.Denom != volatile.DenomuPOKT {
 		return ErrProofParamInvalid.Wrapf("invalid coin denom: %s", coin.Denom)
 	}
 
