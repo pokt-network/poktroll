@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"fmt"
 	"math"
 	"testing"
 
@@ -17,7 +16,8 @@ func TestRandProbability(t *testing.T) {
 
 	sampleSize := requiredSampleSize(float64(probability), tolerance, confidence)
 
-	samples := make(map[bool]int)
+	var numTrueSamples, numFalseSamples int
+
 	for i := 0; i < sampleSize; i++ {
 		rand, err := randProbability(int64(i))
 		require.NoError(t, err)
@@ -26,23 +26,21 @@ func TestRandProbability(t *testing.T) {
 			t.Fatalf("secureRandFloat64() returned out of bounds value: %f", rand)
 		}
 
-		samples[rand <= probability]++
+		switch rand <= probability {
+		case true:
+			numTrueSamples++
+		case false:
+			numFalseSamples++
+		}
 	}
+
+	expectedNumTrueSamples := float32(sampleSize) * probability
+	expectedNumFalseSamples := float32(sampleSize) * (1 - probability)
+	toleranceSamples := tolerance * float64(sampleSize)
 
 	// Check that the number of samples for each outcome is within the expected range.
-	for outcome, count := range samples {
-		t.Run(fmt.Sprintf("outcome_%t", outcome), func(t *testing.T) {
-			var expectedCount float32
-			switch outcome {
-			case true:
-				expectedCount = float32(sampleSize) * probability
-			case false:
-				expectedCount = float32(sampleSize) * (1 - probability)
-			}
-
-			require.InDeltaf(t, expectedCount, count, tolerance*float64(sampleSize), "outcome: %t", outcome)
-		})
-	}
+	require.InDeltaf(t, expectedNumTrueSamples, numTrueSamples, toleranceSamples, "true samples")
+	require.InDeltaf(t, expectedNumFalseSamples, numFalseSamples, toleranceSamples, "false samples")
 }
 
 // requiredSampleSize calculates the number of samples needed to achieve a desired confidence level

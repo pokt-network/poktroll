@@ -243,7 +243,8 @@ func computeClaimSeed(claim *prooftypes.Claim) (int64, error) {
 	copy(seedBz[:], claimHash[:])
 
 	// Convert the seed bytes to an int64.
-	seed := int64(binary.LittleEndian.Uint32(seedBz[:]))
+	// NB: little endian is more conventional in this context.
+	seed := int64(binary.LittleEndian.Uint64(seedBz[:]))
 
 	return seed, nil
 }

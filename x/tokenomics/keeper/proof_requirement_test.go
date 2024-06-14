@@ -1,7 +1,6 @@
 package keeper_test
 
 import (
-	"fmt"
 	"math/rand"
 	"testing"
 
@@ -30,9 +29,10 @@ func TestKeeper_IsProofRequired(t *testing.T) {
 		// Because this test is deterministic & this sample size is known to be
 		// sufficient, it doest not need to be calculated.
 		sampleSize  = 1500
-		samples     = make(map[bool]int64)
 		probability = prooftypes.DefaultProofRequestProbability
 		tolerance   = 0.01
+
+		numTrueSamples, numFalseSamples int
 	)
 
 	for i := 0; i < sampleSize; i++ {
@@ -41,21 +41,19 @@ func TestKeeper_IsProofRequired(t *testing.T) {
 		isRequired, err := keepers.Keeper.IsProofRequiredForClaim(sdkCtx, &claim)
 		require.NoError(t, err)
 
-		samples[isRequired]++
+		switch isRequired {
+		case true:
+			numTrueSamples++
+		case false:
+			numFalseSamples++
+		}
 	}
+
+	expectedNumTrueSamples := float32(sampleSize) * probability
+	expectedNumFalseSamples := float32(sampleSize) * (1 - probability)
+	toleranceSamples := tolerance * float64(sampleSize)
 
 	// Check that the number of samples for each outcome is within the expected range.
-	for outcome, count := range samples {
-		t.Run(fmt.Sprintf("outcome_%t", outcome), func(t *testing.T) {
-			var expectedCount float32
-			switch outcome {
-			case true:
-				expectedCount = float32(sampleSize) * probability
-			case false:
-				expectedCount = float32(sampleSize) * (1 - probability)
-			}
-
-			require.InDeltaf(t, expectedCount, count, tolerance*float64(sampleSize), "outcome: %t", outcome)
-		})
-	}
+	require.InDeltaf(t, expectedNumTrueSamples, numTrueSamples, toleranceSamples, "true samples")
+	require.InDeltaf(t, expectedNumFalseSamples, numFalseSamples, toleranceSamples, "false samples")
 }
