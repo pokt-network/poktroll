@@ -396,7 +396,7 @@ flowchart TB
         direction TB
         K[llm-model] --> L[keyname3]
         K --> M[keyname4]
-        N[Supplier 2] --> O[keyname1]
+        N[etherium-mainnet] --> O[keyname1]
         N --> P[keyname2]
     end
 
