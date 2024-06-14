@@ -72,9 +72,8 @@ func ProofRequirementCounter(
 }
 
 // ComputeUnitsCounter increments a counter which tracks the number of compute units
-// which are represented by on-chain claims at the given lifecycle state (i.e. claimed,
-// proven, settled).
-func ComputeUnitsCounter(lifecycleStage ClaimProofStage, claim *prooftypes.Claim) {
+// which are represented by on-chain claims at the given ClaimProofStage.
+func ComputeUnitsCounter(claimProofStage ClaimProofStage, claim *prooftypes.Claim) {
 	root := (smt.MerkleRoot)(claim.GetRootHash())
 	computeUnitsFloat := float32(root.Sum())
 
@@ -83,13 +82,15 @@ func ComputeUnitsCounter(lifecycleStage ClaimProofStage, claim *prooftypes.Claim
 		computeUnitsFloat,
 		[]metrics.Label{
 			{Name: "unit", Value: "compute_units"},
-			{Name: "claim_proof_lifecycle_stage", Value: lifecycleStage},
+			{Name: "claim_proof_lifecycle_stage", Value: claimProofStage},
 		},
 	)
 }
 
+// ClaimCounter increments a counter which tracks the number of claims at the given
+// ClaimProofStage.
 func ClaimCounter(
-	lifecycleStage ClaimProofStage,
+	claimProofStage ClaimProofStage,
 	getValue func() uint64,
 ) {
 	telemetry.IncrCounterWithLabels(
@@ -97,7 +98,7 @@ func ClaimCounter(
 		float32(getValue()),
 		[]metrics.Label{
 			{Name: "unit", Value: "claims"},
-			{Name: "claim_proof_lifecycle_stage", Value: lifecycleStage},
+			{Name: "claim_proof_lifecycle_stage", Value: claimProofStage},
 		},
 	)
 }
