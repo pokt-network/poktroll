@@ -12,13 +12,6 @@ import (
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-const (
-	// TODO_BLOCKER(@bryanchriswhite): Implement this properly. Using a constant
-	// for "probabilistic proofs" is just a simple placeholder mechanism to get
-	// #359 over the finish line.
-	ProofRequiredComputeUnits = 100
-)
-
 // SettlePendingClaims settles all pending (i.e. expiring) claims.
 // If a claim is expired and requires a proof and a proof IS available -> it's settled.
 // If a claim is expired and requires a proof and a proof IS NOT available -> it's deleted.
@@ -162,15 +155,15 @@ func (k Keeper) getExpiringClaims(ctx sdk.Context) (expiringClaims []prooftypes.
 // If it is not, the claim will be settled without a proof.
 // If it is, the claim will only be settled if a valid proof is available.
 // TODO_BLOCKER(@bryanchriswhite, #419): Document safety assumptions of the probabilistic proofs mechanism.
-func (k Keeper) isProofRequiredForClaim(_ sdk.Context, claim *prooftypes.Claim) bool {
+func (k Keeper) isProofRequiredForClaim(ctx sdk.Context, claim *prooftypes.Claim) bool {
 	// NB: Assumption that claim is non-nil and has a valid root sum because it
 	// is retrieved from the store and validated, on-chain, at time of creation.
 	root := (smt.MerkleRoot)(claim.GetRootHash())
 	claimComputeUnits := root.Sum()
-	// TODO_BLOCKER(@Olshansk, #419): This is just VERY BASIC placeholder logic to have something
+	// TODO_BLOCKER(@bryanchriswhite, #419): This is just VERY BASIC placeholder logic to have something
 	// in place while we implement proper probabilistic proofs. If you're reading it,
 	// do not overthink it and look at the documents linked in #419.
-	if claimComputeUnits < ProofRequiredComputeUnits {
+	if claimComputeUnits < k.proofKeeper.GetParams(ctx).ProofRequirementThreshold {
 		return false
 	}
 	return true
