@@ -169,18 +169,7 @@ func WithDefaultSupplier(
 	supplierEndpoints map[string][]*sharedtypes.SupplierEndpoint,
 ) func(*TestBehavior) {
 	return func(test *TestBehavior) {
-		var keyring keyringtypes.Keyring
-
-		err := depinject.Inject(test.Deps, &keyring)
-		require.NoError(test.t, err)
-
-		supplierAccount, err := keyring.Key(supplierKeyName)
-		require.NoError(test.t, err)
-
-		supplierAccAddress, err := supplierAccount.GetAddress()
-		require.NoError(test.t, err)
-
-		supplierAddress := supplierAccAddress.String()
+		supplierAddress := getAddressFromKeyName(test, supplierKeyName)
 
 		for serviceId, endpoints := range supplierEndpoints {
 			testqueryclients.AddSuppliersWithServiceEndpoints(
@@ -197,7 +186,7 @@ func WithDefaultSupplier(
 func WithDefaultApplication(appPrivateKey *secp256k1.PrivKey) func(*TestBehavior) {
 	return func(test *TestBehavior) {
 		appPubKey := appPrivateKey.PubKey()
-		appAddress := GetAddressFromPrivateKey(test, appPrivateKey)
+		appAddress := getAddressFromPrivateKey(test, appPrivateKey)
 		delegateeAccounts := map[string]cryptotypes.PubKey{}
 
 		testqueryclients.AddAddressToApplicationMap(
@@ -223,20 +212,10 @@ func WithDefaultSessionSupplier(
 			return
 		}
 
-		appAddress := GetAddressFromPrivateKey(test, appPrivateKey)
+		appAddress := getAddressFromPrivateKey(test, appPrivateKey)
 
 		sessionSuppliers := []string{}
-		var keyring keyringtypes.Keyring
-		err := depinject.Inject(test.Deps, &keyring)
-		require.NoError(test.t, err)
-
-		supplierAccount, err := keyring.Key(supplierKeyName)
-		require.NoError(test.t, err)
-
-		supplierAccAddress, err := supplierAccount.GetAddress()
-		require.NoError(test.t, err)
-
-		supplierAddress := supplierAccAddress.String()
+		supplierAddress := getAddressFromKeyName(test, supplierKeyName)
 		sessionSuppliers = append(sessionSuppliers, supplierAddress)
 
 		testqueryclients.AddToExistingSessions(
@@ -259,20 +238,10 @@ func WithSuccessiveSessions(
 	sessionsCount int,
 ) func(*TestBehavior) {
 	return func(test *TestBehavior) {
-		appAddress := GetAddressFromPrivateKey(test, appPrivateKey)
+		appAddress := getAddressFromPrivateKey(test, appPrivateKey)
 
 		sessionSuppliers := []string{}
-		var keyring keyringtypes.Keyring
-		err := depinject.Inject(test.Deps, &keyring)
-		require.NoError(test.t, err)
-
-		supplierAccount, err := keyring.Key(supplierKeyName)
-		require.NoError(test.t, err)
-
-		supplierAccAddress, err := supplierAccount.GetAddress()
-		require.NoError(test.t, err)
-
-		supplierAddress := supplierAccAddress.String()
+		supplierAddress := getAddressFromKeyName(test, supplierKeyName)
 		sessionSuppliers = append(sessionSuppliers, supplierAddress)
 
 		// Adding `sessionCount` sessions to the sessionsMap to make them available
@@ -403,12 +372,30 @@ func GetApplicationRingSignature(
 	return signature
 }
 
-// GetAddressFromPrivateKey returns the address of the provided private key
-func GetAddressFromPrivateKey(test *TestBehavior, privKey *secp256k1.PrivKey) string {
+// getAddressFromPrivateKey returns the address of the provided private key
+func getAddressFromPrivateKey(test *TestBehavior, privKey *secp256k1.PrivKey) string {
 	addressBz := privKey.PubKey().Address()
 	address, err := bech32.ConvertAndEncode("pokt", addressBz)
 	require.NoError(test.t, err)
 	return address
+}
+
+// getAddressFromKeyName returns the address of the provided keyring key name
+func getAddressFromKeyName(test *TestBehavior, keyName string) string {
+	test.t.Helper()
+
+	var keyring keyringtypes.Keyring
+
+	err := depinject.Inject(test.Deps, &keyring)
+	require.NoError(test.t, err)
+
+	account, err := keyring.Key(keyName)
+	require.NoError(test.t, err)
+
+	accAddress, err := account.GetAddress()
+	require.NoError(test.t, err)
+
+	return accAddress.String()
 }
 
 // GenerateRelayRequest generates a relay request with the provided parameters
@@ -417,10 +404,12 @@ func GenerateRelayRequest(
 	privKey *secp256k1.PrivKey,
 	serviceId string,
 	blockHeight int64,
+	supplierKeyName string,
 	payload []byte,
 ) *servicetypes.RelayRequest {
-	appAddress := GetAddressFromPrivateKey(test, privKey)
+	appAddress := getAddressFromPrivateKey(test, privKey)
 	sessionId, _ := testsession.GetSessionIdWithDefaultParams(appAddress, serviceId, blockHashBz, blockHeight)
+	supplierAddress := getAddressFromKeyName(test, supplierKeyName)
 
 	return &servicetypes.RelayRequest{
 		Meta: servicetypes.RelayRequestMetadata{
@@ -431,6 +420,7 @@ func GenerateRelayRequest(
 				SessionStartBlockHeight: testsession.GetSessionStartHeightWithDefaultParams(blockHeight),
 				SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(blockHeight),
 			},
+			SupplierAddress: supplierAddress,
 			// The returned relay is unsigned and must be signed elsewhere for functionality
 			Signature: []byte(""),
 		},

@@ -3,6 +3,9 @@ module github.com/pokt-network/poktroll
 go 1.22.2
 
 replace (
+	// DEVELOPER_TIP: Uncomment to use a local copy of shannon-sdk for development purposes.
+	// github.com/pokt-network/shannon-sdk => ../shannon-sdk
+
 	// fix upstream GHSA-h395-qcrw-5vmq vulnerability.
 	github.com/gin-gonic/gin => github.com/gin-gonic/gin v1.7.0
 	// replace broken goleveldb
@@ -42,6 +45,13 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.18.1
 	github.com/hashicorp/go-metrics v0.5.2
 	github.com/pokt-network/ring-go v0.1.0
+	// TODO_IMPROVE: Whenever we update a protobuf in the `poktroll` repo, we need to:
+	// 1. Merge in the update PR (and it's generated outputs) into `poktroll` main.
+	// 2. Update the `poktroll` sha in the `shannon-sdk` to reflect the new dependency.
+	// 3. Update the `shannon-sdk` sha in the `poktroll` repo (here).
+	// This is creating a circular dependency whereby exporting the protobufs into a separate
+	// repo is the first obvious idea, but has to be carefully considered, automated, and is not
+	// a hard blocker.
 	github.com/pokt-network/shannon-sdk v0.0.0-20240614040438-5c334676f04a
 	github.com/pokt-network/smt v0.10.2
 	github.com/pokt-network/smt/kvstore/badger v0.0.0-20240109205447-868237978c0b

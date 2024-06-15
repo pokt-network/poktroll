@@ -94,6 +94,7 @@ func init() {
 					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						BackendUrl: &url.URL{Scheme: "http", Host: "127.0.0.1:8545", Path: "/"},
 					},
+					SigningKeyNames: []string{supplierKeyName},
 				},
 				secondaryService: {
 					ServiceId:                secondaryService,
@@ -102,6 +103,7 @@ func init() {
 					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						BackendUrl: &url.URL{Scheme: "http", Host: "127.0.0.1:8546", Path: "/"},
 					},
+					SigningKeyNames: []string{supplierKeyName},
 				},
 			},
 		},
@@ -139,7 +141,7 @@ func TestRelayerProxy_StartAndStop(t *testing.T) {
 	// Create a RelayerProxy
 	rp, err := proxy.NewRelayerProxy(
 		test.Deps,
-		proxy.WithSigningKeyName(supplierKeyName),
+		proxy.WithSigningKeyNames([]string{supplierKeyName}),
 		proxy.WithServicesConfigMap(servicesConfigMap),
 	)
 	require.NoError(t, err)
@@ -171,7 +173,7 @@ func TestRelayerProxy_InvalidSupplierKeyName(t *testing.T) {
 
 	rp, err := proxy.NewRelayerProxy(
 		test.Deps,
-		proxy.WithSigningKeyName("wrongKeyName"),
+		proxy.WithSigningKeyNames([]string{"wrongKeyName"}),
 		proxy.WithServicesConfigMap(servicesConfigMap),
 	)
 	require.NoError(t, err)
@@ -187,7 +189,7 @@ func TestRelayerProxy_MissingSupplierKeyName(t *testing.T) {
 
 	_, err := proxy.NewRelayerProxy(
 		test.Deps,
-		proxy.WithSigningKeyName(""),
+		proxy.WithSigningKeyNames([]string{""}),
 		proxy.WithServicesConfigMap(servicesConfigMap),
 	)
 	require.Error(t, err)
@@ -201,7 +203,7 @@ func TestRelayerProxy_EmptyServicesConfigMap(t *testing.T) {
 
 	_, err := proxy.NewRelayerProxy(
 		test.Deps,
-		proxy.WithSigningKeyName(supplierKeyName),
+		proxy.WithSigningKeyNames([]string{supplierKeyName}),
 		proxy.WithServicesConfigMap(make(map[string]*config.RelayMinerServerConfig)),
 	)
 	require.Error(t, err)
@@ -236,7 +238,7 @@ func TestRelayerProxy_UnsupportedRpcType(t *testing.T) {
 
 	rp, err := proxy.NewRelayerProxy(
 		test.Deps,
-		proxy.WithSigningKeyName(supplierKeyName),
+		proxy.WithSigningKeyNames([]string{supplierKeyName}),
 		proxy.WithServicesConfigMap(servicesConfigMap),
 	)
 	require.NoError(t, err)
@@ -290,7 +292,7 @@ func TestRelayerProxy_UnsupportedTransportType(t *testing.T) {
 
 	rp, err := proxy.NewRelayerProxy(
 		test.Deps,
-		proxy.WithSigningKeyName(supplierKeyName),
+		proxy.WithSigningKeyNames([]string{supplierKeyName}),
 		proxy.WithServicesConfigMap(unsupportedTransportProxy),
 	)
 	require.NoError(t, err)
@@ -333,7 +335,7 @@ func TestRelayerProxy_NonConfiguredSupplierServices(t *testing.T) {
 
 	rp, err := proxy.NewRelayerProxy(
 		test.Deps,
-		proxy.WithSigningKeyName(supplierKeyName),
+		proxy.WithSigningKeyNames([]string{supplierKeyName}),
 		proxy.WithServicesConfigMap(missingServicesProxy),
 	)
 	require.NoError(t, err)
@@ -462,8 +464,7 @@ func TestRelayerProxy_Relays(t *testing.T) {
 			expectedErrMsg:  "invalid relay request signature or bytes",
 		},
 		{
-			desc: "Successful relay",
-
+			desc:                 "Successful relay",
 			relayerProxyBehavior: defaultRelayerProxyBehavior,
 			inputScenario:        sendRequestWithSuccessfulReply,
 
@@ -472,7 +473,6 @@ func TestRelayerProxy_Relays(t *testing.T) {
 		},
 		{
 			desc: "Successful late relay with session grace period",
-
 			relayerProxyBehavior: []func(*testproxy.TestBehavior){
 				// blockHeight is past the first session but within its session grace period
 				testproxy.WithRelayerProxyDependenciesForBlockHeight(
@@ -524,7 +524,7 @@ func TestRelayerProxy_Relays(t *testing.T) {
 
 			rp, err := proxy.NewRelayerProxy(
 				testBehavior.Deps,
-				proxy.WithSigningKeyName(supplierKeyName),
+				proxy.WithSigningKeyNames([]string{supplierKeyName}),
 				proxy.WithServicesConfigMap(servicesConfigMap),
 			)
 			require.NoError(t, err)
@@ -569,6 +569,7 @@ func sendRequestWithMissingSignature(
 		appPrivateKey,
 		defaultService,
 		blockHeight,
+		supplierKeyName,
 		testproxy.PrepareJSONRPCRequest(t),
 	)
 	req.Meta.Signature = nil
@@ -584,6 +585,7 @@ func sendRequestWithInvalidSignature(
 		appPrivateKey,
 		defaultService,
 		blockHeight,
+		supplierKeyName,
 		testproxy.PrepareJSONRPCRequest(t),
 	)
 	req.Meta.Signature = []byte("invalid signature")
@@ -601,6 +603,7 @@ func sendRequestWithMissingSessionHeaderApplicationAddress(
 		randomPrivKey,
 		defaultService,
 		blockHeight,
+		supplierKeyName,
 		testproxy.PrepareJSONRPCRequest(t),
 	)
 
@@ -624,6 +627,7 @@ func sendRequestWithNonStakedApplicationAddress(
 		randomPrivKey,
 		defaultService,
 		blockHeight,
+		supplierKeyName,
 		testproxy.PrepareJSONRPCRequest(t),
 	)
 
@@ -642,6 +646,7 @@ func sendRequestWithRingSignatureMismatch(
 		appPrivateKey,
 		defaultService,
 		blockHeight,
+		supplierKeyName,
 		testproxy.PrepareJSONRPCRequest(t),
 	)
 
@@ -664,6 +669,7 @@ func sendRequestWithDifferentSession(
 		appPrivateKey,
 		defaultService,
 		blockHeightAfterSessionGracePeriod,
+		supplierKeyName,
 		testproxy.PrepareJSONRPCRequest(t),
 	)
 	req.Meta.Signature = testproxy.GetApplicationRingSignature(t, req, appPrivateKey)
@@ -680,6 +686,7 @@ func sendRequestWithInvalidRelaySupplier(
 		appPrivateKey,
 		defaultService,
 		blockHeight,
+		supplierKeyName,
 		testproxy.PrepareJSONRPCRequest(t),
 	)
 	req.Meta.Signature = testproxy.GetApplicationRingSignature(t, req, appPrivateKey)
@@ -695,6 +702,7 @@ func sendRequestWithSignatureForDifferentPayload(
 		test, appPrivateKey,
 		defaultService,
 		blockHeight,
+		supplierKeyName,
 		testproxy.PrepareJSONRPCRequest(t),
 	)
 	req.Meta.Signature = testproxy.GetApplicationRingSignature(t, req, appPrivateKey)
@@ -725,6 +733,7 @@ func sendRequestWithSuccessfulReply(
 		appPrivateKey,
 		defaultService,
 		blockHeight,
+		supplierKeyName,
 		testproxy.PrepareJSONRPCRequest(t),
 	)
 	req.Meta.Signature = testproxy.GetApplicationRingSignature(t, req, appPrivateKey)
@@ -744,6 +753,7 @@ func sendRequestWithCustomSessionHeight(
 			appPrivateKey,
 			defaultService,
 			requestSessionBlockHeight,
+			supplierKeyName,
 			testproxy.PrepareJSONRPCRequest(t),
 		)
 		req.Meta.Signature = testproxy.GetApplicationRingSignature(t, req, appPrivateKey)

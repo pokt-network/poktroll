@@ -92,3 +92,6 @@ shannon_relayminer_config.yaml
 shannon_supplier_config.yaml
 
 gentx-*.json
+
+# Binaries VSCode builds for debugging
+cmd/poktrolld/*debug_bin*
