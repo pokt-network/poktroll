@@ -31,8 +31,11 @@ func BaseClaim(appAddr, supplierAddr string, sum uint64) prooftypes.Claim {
 	}
 }
 
-// SmstRootWithSum returns a SMST root with the given sum and
-// a default hard-coded count of 1.
+// SmstRootWithSum returns a SMST root with the given sum and a default
+// hard-coded count of 1.
+// TODO_POTENTIAL_TECHDEBT: Note that the count is meant to represent the number
+// of non-empty leaves in the tree, and may need become a parameter depending on
+// how the tests evolve.
 func SmstRootWithSum(sum uint64) smt.MerkleRoot {
 	root := make([]byte, smt.SmstRootSizeBytes)
 

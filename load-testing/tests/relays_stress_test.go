@@ -529,6 +529,11 @@ func (s *relaysSuite) TheCorrectPairsCountOfClaimAndProofMessagesShouldBeCommitt
 	// TODO_TECHDEBT: The current counting mechanism for the expected claims and proofs
 	// is not accurate. The expected claims and proofs count should be calculated based
 	// on a function of(time_per_block, num_blocks_per_session) -> num_claims_and_proofs.
+	// The reason (time_per_block) is one of the parameters is because claims and proofs
+	// are removed from the on-chain state after sessions are settled, only leaving
+	// events behind. The final solution needs to either account for this timing
+	// carefully (based on sessions that have passed), or be event driven using
+	// a replay client of on-chain messages and/or events.
 	//require.Equal(s,
 	//	s.expectedClaimsAndProofsCount,
 	//	s.currentProofCount,
