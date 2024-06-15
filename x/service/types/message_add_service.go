@@ -7,7 +7,8 @@ import (
 
 const (
 	DefaultComputeUnitsPerRelay uint64 = 1
-	ComputeUnitsPerRelayMax     uint64 = 2 ^ 16
+	// ComputeUnitsPerRelayMax is the maximum allowed compute_units_per_relay value when adding or updating a service
+	ComputeUnitsPerRelayMax uint64 = 2 ^ 16
 )
 
 var _ sdk.Msg = (*MsgAddService)(nil)

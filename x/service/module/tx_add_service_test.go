@@ -51,7 +51,7 @@ func TestCLI_AddService(t *testing.T) {
 	// Wait for a new block to be committed
 	require.NoError(t, net.WaitForNextBlock())
 
-	// Prepare three valid services
+	// Prepare two valid services
 	svc1 := sharedtypes.Service{
 		Id:                   "svc1",
 		Name:                 "service name",
