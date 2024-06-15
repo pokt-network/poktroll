@@ -53,6 +53,8 @@ type SupplierClient interface {
 		ctx context.Context,
 		sessionProofs []*relayer.SessionProof,
 	) error
+	// Address returns the address of the SupplierClient that will be submitting proofs & claims.
+	Address() *cosmostypes.AccAddress
 }
 
 // TxClient provides a synchronous interface initiating and waiting for transactions

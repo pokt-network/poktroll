@@ -11,12 +11,9 @@ import (
 	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
 	ringtypes "github.com/athanorlabs/go-dleq/types"
 	cosmoscrypto "github.com/cosmos/cosmos-sdk/crypto"
-	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
-	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	signingtypes "github.com/cosmos/cosmos-sdk/types/tx/signing"
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/pokt-network/ring-go"
 	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"
@@ -30,6 +27,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/relayer/protocol"
 	"github.com/pokt-network/poktroll/pkg/relayer/session"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
+	"github.com/pokt-network/poktroll/testutil/testkeyring"
 	"github.com/pokt-network/poktroll/x/proof/keeper"
 	"github.com/pokt-network/poktroll/x/proof/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
@@ -100,9 +98,25 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 			// Construct a keyring to hold the keypairs for the accounts used in the test.
 			keyRing := keyring.NewInMemory(keepers.Codec)
 
-			// Create accounts in the account keeper with corresponding keys in the keyring for the application and supplier.
-			supplierAddr := createAccount(ctx, t, supplierUid, keyRing, keepers).GetAddress().String()
-			appAddr := createAccount(ctx, t, "app", keyRing, keepers).GetAddress().String()
+			// Create a pre-generated account iterator to create accounts for the test.
+			preGeneratedAccts := testkeyring.PreGeneratedAccounts()
+
+			// Create accounts in the account keeper with corresponding keys in the
+			// keyring for the application and supplier.
+			supplierAddr := testkeyring.CreateOnChainAccount(
+				ctx, t,
+				supplierUid,
+				keyRing,
+				keepers,
+				preGeneratedAccts,
+			).String()
+			appAddr := testkeyring.CreateOnChainAccount(
+				ctx, t,
+				"app",
+				keyRing,
+				keepers,
+				preGeneratedAccts,
+			).String()
 
 			service := &sharedtypes.Service{Id: testServiceId}
 
@@ -201,9 +215,24 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 	// Construct a keyring to hold the keypairs for the accounts used in the test.
 	keyRing := keyring.NewInMemory(keepers.Codec)
 
+	// Create a pre-generated account iterator to create accounts for the test.
+	preGeneratedAccts := testkeyring.PreGeneratedAccounts()
+
 	// Create accounts in the account keeper with corresponding keys in the keyring for the application and supplier.
-	supplierAddr := createAccount(ctx, t, supplierUid, keyRing, keepers).GetAddress().String()
-	appAddr := createAccount(ctx, t, "app", keyRing, keepers).GetAddress().String()
+	supplierAddr := testkeyring.CreateOnChainAccount(
+		ctx, t,
+		supplierUid,
+		keyRing,
+		keepers,
+		preGeneratedAccts,
+	).String()
+	appAddr := testkeyring.CreateOnChainAccount(
+		ctx, t,
+		"app",
+		keyRing,
+		keepers,
+		preGeneratedAccts,
+	).String()
 
 	service := &sharedtypes.Service{Id: testServiceId}
 
@@ -341,12 +370,39 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 	// The base session start height used for testing
 	sessionStartHeight := int64(1)
 
+	// Create a pre-generated account iterator to create accounts for the test.
+	preGeneratedAccts := testkeyring.PreGeneratedAccounts()
+
 	// Create accounts in the account keeper with corresponding keys in the keyring
 	// for the applications and suppliers used in the tests.
-	supplierAddr := createAccount(ctx, t, supplierUid, keyRing, keepers).GetAddress().String()
-	wrongSupplierAddr := createAccount(ctx, t, "wrong_supplier", keyRing, keepers).GetAddress().String()
-	appAddr := createAccount(ctx, t, "app", keyRing, keepers).GetAddress().String()
-	wrongAppAddr := createAccount(ctx, t, "wrong_app", keyRing, keepers).GetAddress().String()
+	supplierAddr := testkeyring.CreateOnChainAccount(
+		ctx, t,
+		supplierUid,
+		keyRing,
+		keepers,
+		preGeneratedAccts,
+	).String()
+	wrongSupplierAddr := testkeyring.CreateOnChainAccount(
+		ctx, t,
+		"wrong_supplier",
+		keyRing,
+		keepers,
+		preGeneratedAccts,
+	).String()
+	appAddr := testkeyring.CreateOnChainAccount(
+		ctx, t,
+		"app",
+		keyRing,
+		keepers,
+		preGeneratedAccts,
+	).String()
+	wrongAppAddr := testkeyring.CreateOnChainAccount(
+		ctx, t,
+		"wrong_app",
+		keyRing,
+		keepers,
+		preGeneratedAccts,
+	).String()
 
 	service := &sharedtypes.Service{Id: testServiceId}
 	wrongService := &sharedtypes.Service{Id: "wrong_svc"}
@@ -443,7 +499,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 
 	// Construct a relay to be mangled such that it fails to deserialize in order
 	// to set the error expectation for the relevant test case.
-	mangledRelay := newEmptyRelay(validSessionHeader, validSessionHeader)
+	mangledRelay := newEmptyRelay(validSessionHeader, validSessionHeader, supplierAddr)
 
 	// Ensure valid relay request and response signatures.
 	signRelayRequest(ctx, t, mangledRelay, appAddr, keyRing, ringClient)
@@ -593,7 +649,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			desc: "relay must be deserializable",
 			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
 				// Construct a session tree to which we'll add 1 unserializable relay.
-				mangledRelaySessionTree := newEmptySessionTree(t, validSessionHeader)
+				mangledRelaySessionTree := newEmptySessionTree(t, validSessionHeader, supplierAddr)
 
 				// Add the mangled relay to the session tree.
 				err = mangledRelaySessionTree.Update([]byte{1}, mangledRelayBz, 1)
@@ -739,7 +795,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			desc: "relay request signature must be valid",
 			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
 				// Set the relay request signature to an invalid byte slice.
-				invalidRequestSignatureRelay := newEmptyRelay(validSessionHeader, validSessionHeader)
+				invalidRequestSignatureRelay := newEmptyRelay(validSessionHeader, validSessionHeader, supplierAddr)
 				invalidRequestSignatureRelay.Req.Meta.Signature = invalidSignatureBz
 
 				// Ensure a valid relay response signature.
@@ -750,7 +806,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 
 				// Construct a session tree with 1 relay with a session header containing
 				// a session ID that doesn't match the expected session ID.
-				invalidRequestSignatureSessionTree := newEmptySessionTree(t, validSessionHeader)
+				invalidRequestSignatureSessionTree := newEmptySessionTree(t, validSessionHeader, supplierAddr)
 
 				// Add the relay to the session tree.
 				err = invalidRequestSignatureSessionTree.Update([]byte{1}, invalidRequestSignatureRelayBz, 1)
@@ -801,7 +857,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			desc: "relay response signature must be valid",
 			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
 				// Set the relay response signature to an invalid byte slice.
-				relay := newEmptyRelay(validSessionHeader, validSessionHeader)
+				relay := newEmptyRelay(validSessionHeader, validSessionHeader, supplierAddr)
 				relay.Res.Meta.SupplierSignature = invalidSignatureBz
 
 				// Ensure a valid relay request signature
@@ -812,7 +868,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 
 				// Construct a session tree with 1 relay with a session header containing
 				// a session ID that doesn't match the expected session ID.
-				invalidResponseSignatureSessionTree := newEmptySessionTree(t, validSessionHeader)
+				invalidResponseSignatureSessionTree := newEmptySessionTree(t, validSessionHeader, supplierAddr)
 
 				// Add the relay to the session tree.
 				err = invalidResponseSignatureSessionTree.Update([]byte{1}, relayBz, 1)
@@ -1086,7 +1142,7 @@ func newFilledSessionTree(
 	t.Helper()
 
 	// Initialize an empty session tree with the given session header.
-	sessionTree := newEmptySessionTree(t, sessionTreeHeader)
+	sessionTree := newEmptySessionTree(t, sessionTreeHeader, supplierAddr)
 
 	// Add numRelays of relays to the session tree.
 	fillSessionTree(
@@ -1105,6 +1161,7 @@ func newFilledSessionTree(
 func newEmptySessionTree(
 	t *testing.T,
 	sessionTreeHeader *sessiontypes.SessionHeader,
+	supplierAddr string,
 ) relayer.SessionTree {
 	t.Helper()
 
@@ -1117,9 +1174,12 @@ func newEmptySessionTree(
 		_ = os.RemoveAll(testSessionTreeStoreDir)
 	})
 
+	accAddress := cosmostypes.MustAccAddressFromBech32(supplierAddr)
+
 	// Construct a session tree to add relays to and generate a proof from.
 	sessionTree, err := session.NewSessionTree(
 		sessionTreeHeader,
+		&accAddress,
 		testSessionTreeStoreDir,
 		func(*sessiontypes.SessionHeader) {},
 	)
@@ -1262,53 +1322,6 @@ func getClosestRelayDifficultyBits(
 	return uint64(relayDifficultyBits)
 }
 
-// createAccount creates a new account with the given address keyring UID
-// and stores it in the account keeper.
-func createAccount(
-	ctx context.Context,
-	t *testing.T,
-	addrKeyringUid string,
-	keyRing keyring.Keyring,
-	accountKeeper types.AccountKeeper,
-) cosmostypes.AccountI {
-	t.Helper()
-
-	pubKey := createKeypair(t, addrKeyringUid, keyRing)
-	addr, err := cosmostypes.AccAddressFromHexUnsafe(pubKey.Address().String())
-	require.NoError(t, err)
-
-	accountNumber := accountKeeper.NextAccountNumber(ctx)
-	account := authtypes.NewBaseAccount(addr, pubKey, accountNumber, 0)
-	accountKeeper.SetAccount(ctx, account)
-
-	return account
-}
-
-// createKeypair creates a new public/private keypair that can be retrieved
-// from the keyRing using the addrUid provided. It returns the corresponding
-// public key.
-func createKeypair(
-	t *testing.T,
-	addrKeyringUid string,
-	keyRing keyring.Keyring,
-) cryptotypes.PubKey {
-	t.Helper()
-
-	record, _, err := keyRing.NewMnemonic(
-		addrKeyringUid,
-		keyring.English,
-		cosmostypes.FullFundraiserPath,
-		keyring.DefaultBIP39Passphrase,
-		hd.Secp256k1,
-	)
-	require.NoError(t, err)
-
-	pubKey, err := record.GetPubKey()
-	require.NoError(t, err)
-
-	return pubKey
-}
-
 // newSignedEmptyRelay creates a new relay structure for the given req & res headers.
 // It signs the relay request on behalf of application in the reqHeader.
 // It signs the relay response on behalf of supplier provided..
@@ -1322,7 +1335,7 @@ func newSignedEmptyRelay(
 ) *servicetypes.Relay {
 	t.Helper()
 
-	relay := newEmptyRelay(reqHeader, resHeader)
+	relay := newEmptyRelay(reqHeader, resHeader, supplierAddr)
 	signRelayRequest(ctx, t, relay, reqHeader.GetApplicationAddress(), keyRing, ringClient)
 	signRelayResponse(ctx, t, relay, supplierKeyUid, supplierAddr, keyRing)
 
@@ -1331,12 +1344,13 @@ func newSignedEmptyRelay(
 
 // newEmptyRelay creates a new relay structure for the given req & res headers
 // WITHOUT any payload or signatures.
-func newEmptyRelay(reqHeader, resHeader *sessiontypes.SessionHeader) *servicetypes.Relay {
+func newEmptyRelay(reqHeader, resHeader *sessiontypes.SessionHeader, supplierAddr string) *servicetypes.Relay {
 	return &servicetypes.Relay{
 		Req: &servicetypes.RelayRequest{
 			Meta: servicetypes.RelayRequestMetadata{
-				SessionHeader: reqHeader,
-				Signature:     nil, // Signature added elsewhere.
+				SessionHeader:   reqHeader,
+				Signature:       nil, // Signature added elsewhere.
+				SupplierAddress: supplierAddr,
 			},
 			Payload: nil,
 		},

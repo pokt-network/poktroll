@@ -9,6 +9,7 @@ import (
 
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // AccountKeeper defines the expected interface for the Account module.
@@ -41,4 +42,12 @@ type ProofKeeper interface {
 	// Only used for testing & simulation
 	UpsertClaim(ctx context.Context, claim prooftypes.Claim)
 	UpsertProof(ctx context.Context, claim prooftypes.Proof)
+
+	GetParams(ctx context.Context) prooftypes.Params
+	SetParams(ctx context.Context, params prooftypes.Params) error
+}
+
+type SharedKeeper interface {
+	GetParams(ctx context.Context) sharedtypes.Params
+	SetParams(ctx context.Context, params sharedtypes.Params) error
 }
