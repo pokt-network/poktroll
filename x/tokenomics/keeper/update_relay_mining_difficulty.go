@@ -79,6 +79,16 @@ func (k Keeper) UpdateRelayMiningDifficulty(
 			continue
 		} else if !bytes.Equal(prevDifficulty.TargetHash, newDifficulty.TargetHash) {
 			// TODO_BLOCKER(@Olshansk, #542): Emit an event for the updated difficulty.
+			relayMiningDifficultyUpdateEvent := types.EventRelayMiningDifficultyUpdated{
+				ServiceId:        serviceId,
+				PrevTargetHash:   prevDifficulty.TargetHash,
+				NewTargetHash:    newDifficulty.TargetHash,
+				PrevNumRelaysEma: prevDifficulty.NumRelaysEma,
+				NewNumRelaysEma:  newDifficulty.NumRelaysEma,
+			}
+			if err := sdkCtx.EventManager().EmitTypedEvent(&relayMiningDifficultyUpdateEvent); err != nil {
+				return err
+			}
 			logger.Info(fmt.Sprintf("Updated RelayMiningDifficulty for service %s at height %d from %x to %x", serviceId, sdkCtx.BlockHeight(), prevDifficulty.TargetHash, newDifficulty.TargetHash))
 		} else {
 			logger.Info(fmt.Sprintf("No change in RelayMiningDifficulty for service %s at height %d. Current difficulty: %x", serviceId, sdkCtx.BlockHeight(), newDifficulty.TargetHash))
