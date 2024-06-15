@@ -19,6 +19,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/session"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
+	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
 	"github.com/pokt-network/poktroll/testutil/testclient/testqueryclients"
 	"github.com/pokt-network/poktroll/testutil/testclient/testsupplier"
@@ -44,7 +45,8 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 	// Set up dependencies.
 	blocksObs, blockPublishCh := channel.NewReplayObservable[client.Block](ctx, 1)
 	blockClient := testblock.NewAnyTimesCommittedBlocksSequenceBlockClient(t, emptyBlockHash, blocksObs)
-	supplierClient := testsupplier.NewOneTimeClaimProofSupplierClient(ctx, t)
+	supplierAddress := sample.AccAddress()
+	supplierClientMap := testsupplier.NewOneTimeClaimProofSupplierClientMap(ctx, t, supplierAddress)
 
 	ctrl := gomock.NewController(t)
 	blockQueryClientMock := mockclient.NewMockCometRPC(ctrl)
@@ -75,7 +77,7 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 
 	sharedQueryClientMock := testqueryclients.NewTestSharedQueryClient(t)
 
-	deps := depinject.Supply(blockClient, blockQueryClientMock, supplierClient, sharedQueryClientMock)
+	deps := depinject.Supply(blockClient, blockQueryClientMock, supplierClientMap, sharedQueryClientMock)
 	storesDirectoryOpt := testrelayer.WithTempStoresDirectory(t)
 
 	// Create a new relayer sessions manager.
@@ -92,7 +94,7 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 	relayerSessionsManager.Start(ctx)
 
 	// Publish a mined relay to the minedRelaysPublishCh to insert into the session tree.
-	minedRelay := testrelayer.NewMinedRelay(t, sessionStartHeight, sessionEndHeight)
+	minedRelay := testrelayer.NewMinedRelay(t, sessionStartHeight, sessionEndHeight, supplierAddress)
 	minedRelaysPublishCh <- minedRelay
 
 	// Wait a tick to allow the relayer sessions manager to process asynchronously.

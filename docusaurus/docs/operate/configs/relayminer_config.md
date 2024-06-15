@@ -15,7 +15,7 @@ and which domains to accept queries from._
 - [Usage](#usage)
 - [Structure](#structure)
 - [Global options](#global-options)
-  - [`signing_key_name`](#signing_key_name)
+  - [`default_signing_key_names`](#default_signing_key_names)
   - [`smt_store_path`](#smt_store_path)
   - [`metrics`](#metrics)
   - [`pprof`](#pprof)
@@ -25,6 +25,7 @@ and which domains to accept queries from._
   - [`tx_node_rpc_url`](#tx_node_rpc_url)
 - [Suppliers](#suppliers)
   - [`service_id`](#service_id)
+  - [`signing_key_names`](#signing_key_names)
   - [`listen_url`](#listen_url)
   - [`service_config`](#service_config)
     - [`backend_url`](#backend_url)
@@ -32,6 +33,8 @@ and which domains to accept queries from._
     - [`headers`](#headers)
     - [`publicly_exposed_endpoints`](#publicly_exposed_endpoints)
       - [Why should one supplier have multiple `publicly_exposed_endpoints`?](#why-should-one-supplier-have-multiple-publicly_exposed_endpoints)
+- [Configuring Signing Keys](#configuring-signing-keys)
+  - [Example Configuration](#example-configuration)
 - [Supported server types](#supported-server-types)
 
 ## Full config reference example
@@ -104,65 +107,22 @@ and `supplier` specific sections and configurations.
 ## Global options
 
 ```yaml
-signing_key_name: <string>
+default_signing_key_names: [ <string>, <string> ]
 smt_store_path: <string>
 ```
 
-### `signing_key_name`
+### `default_signing_key_names`
 
-_`Required`_
+_`Required`_ if `suppliers.*.signing_key_names` is not specified. 
 
-The name of the key that will be used to sign transactions, derive the public key
-and the corresponding address. This key name MUST be present in the keyring that is used
-to start the `RelayMiner` instance.
+This configuration option specifies a list of key names from the keyring that the
+`RelayMiner` will use to sign transactions. These key names are used to derive the public
+key and the corresponding address, which are essential for interacting with POKT.
+Each key name listed here must be present in the keyring used to start the
+`RelayMiner` instance.
 
-:::note
+For more details, see [Configuring Signing Keys](#configuring-signing-keys).
 
-Multiple `RelayMiner`s can be configured with the same `signing_key_name` to
-sign `RelayResponse`s and submit `Claim`s and `Proof`s transactions to the Pocket
-network. (e.g. This is useful for a `Supplier` that is willing to provide redundant
-or geographically distributed services.)
-
-```mermaid
-flowchart
-
-    subgraph USW[US West]
-        RM1["Relay Miner 1 <br> (signing_key_name=Supplier1)"]
-    end
-
-    subgraph USE[US East]
-        RM2["Relay Miner 2 <br> (signing_key_name=Supplier1)"]
-    end
-
-    subgraph EUC[EU Central]
-        RM3["Relay Miner 3 <br> (signing_key_name=Supplier1)"]
-    end
-
-    subgraph CAC[CA Central]
-        RM4["Relay Miner 4 <br> (signing_key_name=Supplier2)"]
-    end
-
-    subgraph PB[POKT Blockchain]
-        direction TB
-        S1[Supplier1]
-        S2[Supplier2]
-    end
-
-    S1 -.- RM1
-    S1 -.- RM2
-    S1 -.- RM3
-    S2 -.- RM4
-```
-
-TODO(#528): It is not currently possible to have a single `RelayMiner` instance
-running with multiple `signing_key_name`s as this would involve more complex logic
-and/or configuration to determine which key to use, especially in the case of
-`Supplier`s that have overlapping services provided.
-
-TL;DR A 1:N Supplier:RelayMiner is possible, but a 1:N RelayMiner:Supplier relationship
-is not until #528 is complete.
-
-:::
 
 ### `smt_store_path`
 
@@ -240,7 +200,8 @@ the Pocket network (eg. Sessions, Accounts, etc...).
 
 _`Required`_
 
-The RPC URL of the Pocket node that allows the `RelayMiner` to broadcast transactions to the a Pocket network Tendermint node.
+The RPC URL of the Pocket node that allows the `RelayMiner` to broadcast transactions
+to the a Pocket network Tendermint node.
 It may have a different host than the `query_node_rpc_url` but the same value is
 acceptable too.
 
@@ -281,6 +242,15 @@ a service provided by the `Supplier` and served by the `RelayMiner` instance.
 
 It MUST match the `Service.Id` specified by the supplier when staking for the
 service.
+
+### `signing_key_names`
+
+_`Required`_ if `default_signing_key_names` is empty.
+
+This option specifies the list of signing key names specific to a supplier.
+If a supplier does not provide its own `signing_key_names`, the `RelayMiner` will use the `default_signing_key_names`.
+
+For more details, see [Configuring Signing Keys](#configuring-signing-keys).
 
 ### `listen_url`
 
@@ -339,6 +309,14 @@ It is used to determine if the incoming request is allowed to be processed by
 the server listening on `listen_url` host address as well as to check if the
 request's RPC-Type matches the on-chain endpoint's RPC-Type.
 
+:::note
+
+The `service_id` of the supplier is automatically added to the
+`publicly_exposed_endpoints` list as it may help troubleshooting the `RelayMiner`
+and/or send requests internally from a k8s cluster for example.
+
+:::
+
 ##### Why should one supplier have multiple `publicly_exposed_endpoints`?
 
 There are various reasons to having multiple `publicly_exposed_endpoints`
@@ -353,11 +331,119 @@ for the same supplier service.
 - The operator may want to have a different domain for internal requests.
 - The on-chain Service configuration accepts multiple endpoints.
 
+## Configuring Signing Keys
+
+`RelayMiner` expects the addresses with signing keys to be staked before running
+a `RelayMiner`.
+
+There are two ways to configure signing keys for `RelayMiner`: globally using `default_signing_key_names`
+or individually for each supplier using `signing_key_names`.
+
+1. **Global Configuration (`default_signing_key_names`)**
+- Provides a default list of key names used by all suppliers unless overridden.
+- Useful for ensuring a base level of configuration and simplicity.
+
+1. **Supplier-specific Configuration (`signing_key_names`)**
+- Allows each supplier to have its own set of signing key names.
+- Provides flexibility and granular control over key management.
+
+In summary, use `default_signing_key_names` for a robust fallback and simplified setup.
+Use `signing_key_names` for greater control and security tailored to individual suppliers.
+
+### Example Configuration
+
+```yaml
+default_signing_key_names:
+  - keyname1
+  - keyname2
+suppliers:
+  # RelayMiner will only provide service for `llm-model` using `keyname3` and `keyname4` keys.
+  - service_id: llm-model
+    signing_key_names:
+      - keyname3
+      - keyname4
+    # ... the rest of the config
+
+  # RelayMiner will only provide service for `etherium-mainnet` using `keyname1` and `keyname2` keys.
+  - service_id: etherium-mainnet
+    # ... the rest of the config
+```
+
+```mermaid
+flowchart TB
+    subgraph Global_Config
+        direction TB
+        A[default_signing_key_names] --> B[keyname1]
+        A --> C[keyname2]
+    end
+
+    subgraph llm-model-config
+        direction TB
+        D[service_id: llm-model]
+        D --> E[signing_key_names]
+        E --> F[keyname3]
+        E --> G[keyname4]
+    end
+
+    subgraph etherium-mainnet-config
+        direction TB
+        H[service_id: etherium-mainnet]
+        H --> I[signing_key_names]
+        I --> J[Not Specified]
+    end
+
+    subgraph Effective_Signing_Keys
+        direction TB
+        K[llm-model] --> L[keyname3]
+        K --> M[keyname4]
+        N[etherium-mainnet] --> O[keyname1]
+        N --> P[keyname2]
+    end
+
+    Global_Config --> Effective_Signing_Keys
+    llm-model-config --> Effective_Signing_Keys
+    etherium-mainnet-config --> Effective_Signing_Keys
+
+```
+
+
 :::note
 
-The `service_id` of the supplier is automatically added to the
-`publicly_exposed_endpoints` list as it may help troubleshooting the `RelayMiner`
-and/or send requests internally from a k8s cluster for example.
+Multiple `RelayMiner`s can be configured with the same signing keys to sign `RelayResponse`s
+and submit `Claim`s and `Proof`s transactions to the Pocket network. (e.g. This is
+useful for a `Supplier` that is willing to provide redundant or geographically
+distributed services.)
+
+```mermaid
+flowchart
+
+    subgraph USW[US West]
+        RM1["Relay Miner 1 <br> (signing_key_names=[keyname1])"]
+    end
+
+    subgraph USE[US East]
+        RM2["Relay Miner 2 <br> (signing_key_names=[keyname1])"]
+    end
+
+    subgraph EUC[EU Central]
+        RM3["Relay Miner 3 <br> (signing_key_names=[keyname1])"]
+    end
+
+    subgraph CAC[CA Central]
+        RM4["Relay Miner 4 <br> (signing_key_names=[keyname2])"]
+    end
+
+    subgraph PB[POKT Blockchain]
+        direction TB
+        S1[keyname1]
+        S2[keyname2]
+    end
+
+    S1 -.- RM1
+    S1 -.- RM2
+    S1 -.- RM3
+    S2 -.- RM4
+```
 
 :::
 
