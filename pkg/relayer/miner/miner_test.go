@@ -70,7 +70,7 @@ func TestMiner_MinedRelays(t *testing.T) {
 
 	// Assert that all minable relay fixtures were published to minedRelays.
 	actualMinedRelaysMu.Lock()
-	require.EqualValues(t, expectedMinedRelays, actualMinedRelays)
+	require.EqualValues(t, expectedMinedRelays, actualMinedRelays, "TODO_FLAKY: Try re-running with 'go test -v -count=1 -run TestMiner_MinedRelays ./pkg/relayer/miner/...'")
 	actualMinedRelaysMu.Unlock()
 }
 

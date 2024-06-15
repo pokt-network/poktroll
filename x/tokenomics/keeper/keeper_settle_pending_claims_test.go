@@ -2,14 +2,13 @@ package keeper_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
 	"cosmossdk.io/math"
-	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/cosmos/cosmos-sdk/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
@@ -156,6 +155,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimPendingBeforeSettlement() {
 }
 
 func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequiredAndNotProvided_ViaThreshold() {
+	fmt.Println("TestSettlePendingClaims_ClaimExpired_ProofRequiredAndNotProvided_ViaThreshold")
 	// Retrieve default values
 	t := s.T()
 	ctx := s.ctx
@@ -191,8 +191,10 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequiredAndNotProv
 	// Confirm an expiration event was emitted
 	events := sdkCtx.EventManager().Events()
 	require.Len(t, events, 5) // minting, burning, settling, etc..
-	// Validate the expiration event
-	expectedEvent := getEvent[*tokenomicstypes.EventClaimExpired](t, events, "poktroll.tokenomics.EventClaimExpired")
+
+	expectedEvents := filterEvents[*tokenomicstypes.EventClaimExpired](t, events, "poktroll.tokenomics.EventClaimExpired")
+	require.Len(t, expectedEvents, 1)
+	expectedEvent := expectedEvents[0]
 	require.Equal(t, s.expectedComputeUnits, expectedEvent.ComputeUnits)
 }
 
@@ -234,8 +236,10 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimSettled_ProofRequiredAndProvide
 
 	// Confirm an settlement event was emitted
 	events := sdkCtx.EventManager().Events()
-	expectedEvent, ok := getEvent(t, events, "poktroll.tokenomics.EventClaimSettled").(*tokenomicstypes.EventClaimSettled)
-	require.True(t, ok)
+	expectedEvents := filterEvents[*tokenomicstypes.EventClaimSettled](t, events, "poktroll.tokenomics.EventClaimSettled")
+	require.Len(t, expectedEvents, 1)
+
+	expectedEvent := expectedEvents[0]
 	require.True(t, expectedEvent.ProofRequired)
 	require.Equal(t, s.expectedComputeUnits, expectedEvent.ComputeUnits)
 }
@@ -285,8 +289,9 @@ func (s *TestSuite) TestSettlePendingClaims_Settles_WhenAProofIsNotRequired() {
 
 	// Confirm an expiration event was emitted
 	events := sdkCtx.EventManager().Events()
-	expectedEvent, ok := getEvent(t, events, "poktroll.tokenomics.EventClaimSettled").(*tokenomicstypes.EventClaimSettled)
-	require.True(t, ok)
+	expectedEvents := filterEvents[*tokenomicstypes.EventClaimSettled](t, events, "poktroll.tokenomics.EventClaimSettled")
+	require.Len(t, expectedEvents, 1)
+	expectedEvent := expectedEvents[0]
 	require.False(t, expectedEvent.ProofRequired)
 	require.Equal(t, s.expectedComputeUnits, expectedEvent.ComputeUnits)
 }
@@ -305,28 +310,4 @@ func (s *TestSuite) TestSettlePendingClaims_DoesNotSettle_IfProofIsRequiredButMi
 
 func (s *TestSuite) TestSettlePendingClaims_MultipleClaimsSettle_WithMultipleApplicationsAndSuppliers() {
 	s.T().Skip("TODO_TEST: Implement that multiple claims settle at once when different sessions have overlapping applications and suppliers")
-}
-
-// getClaimEvent verifies that there is exactly one event of type protoType in
-// the given events and returns it. If there are 0 or more than 1 events of the
-// given type, it fails the test.
-func (s *TestSuite) getClaimEvent(events cosmostypes.Events, protoType string) proto.Message {
-	var parsedEvent proto.Message
-	numExpectedEvents := 0
-	for _, event := range events {
-		switch event.Type {
-		case protoType:
-			var err error
-			parsedEvent, err = cosmostypes.ParseTypedEvent(abci.Event(event))
-			s.Require().NoError(err)
-			numExpectedEvents++
-		default:
-			continue
-		}
-	}
-	if numExpectedEvents == 1 {
-		return parsedEvent
-	}
-	require.NotEqual(s.T(), 1, numExpectedEvents, "Expected exactly one claim event")
-	return nil
 }

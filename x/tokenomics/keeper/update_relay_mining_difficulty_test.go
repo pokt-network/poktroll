@@ -2,7 +2,6 @@ package keeper_test
 
 import (
 	"bytes"
-	"fmt"
 	"testing"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
@@ -15,7 +14,10 @@ import (
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-func TestUpdateRelayMiningDifficulty_General(t *testing.T) {
+// This is a "base" test for updating relay mining difficulty to go through
+// a flow testing a few different scenarios, but does not covert a full range
+// of edge or use cases.
+func TestUpdateRelayMiningDifficulty_Base(t *testing.T) {
 	keeper, ctx := keepertest.TokenomicsKeeper(t)
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 
@@ -90,9 +92,8 @@ func TestUpdateRelayMiningDifficulty_General(t *testing.T) {
 	require.Len(t, events, 5) // minting, burning, settling, etc..
 
 	// Validate the relay mining update event
-	expectedEvent, ok := getEvent(t, events, "poktroll.tokenomics.EventRelayMiningDifficultyUpdated").(*tokenomicstypes.EventRelayMiningDifficultyUpdated)
-	require.True(t, ok)
-	fmt.Println(expectedEvent)
+	expectedEvents := filterEvents[*tokenomicstypes.EventRelayMiningDifficultyUpdated](t, events, "poktroll.tokenomics.EventRelayMiningDifficultyUpdated")
+	require.Len(t, expectedEvents, 3)
 	// require.Equal(t, s.expectedComputeUnits, expectedEvent.ComputeUnits)
 
 }

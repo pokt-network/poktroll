@@ -13,6 +13,10 @@ import (
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
+// TODO_UPNET(@Olshansk, #542): Add telemetry that will enable:
+// 1. Visualizing a multi-line chart of "Relays EMA per Service" (title) of "Relay EMA" (y-axis) vs block/time (x-axis) and being able to select each service.
+// 1. Visualizing a multi-line chart of "Relay Mining Difficulty per service" (title) of "Relay EMA" (y-axis) vs block/time (x-axis) and being able to select each service.
+
 const (
 	// Exponential moving average (ema) smoothing factor, commonly known as alpha.
 	// Usually, alpha = 2 / (N+1), where N is the number of periods.
