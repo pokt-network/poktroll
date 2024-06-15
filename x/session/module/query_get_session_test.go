@@ -179,7 +179,7 @@ func TestCLI_GetSession(t *testing.T) {
 				require.Contains(t, stat.Message(), test.expectedErr.Error())
 				return
 			}
-			require.NoError(t, err)
+			require.NoError(t, err, "TODO_FLAKY: Try re-running with 'go test -v -count=1 -run TestCLI_GetSession/valid_-_block_height_specified_and_is_greater_than_zero ./x/session/module/...'")
 
 			var getSessionRes sessiontypes.QueryGetSessionResponse
 			err = net.Config.Codec.UnmarshalJSON(getSessionOut.Bytes(), &getSessionRes)

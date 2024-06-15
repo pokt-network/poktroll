@@ -89,13 +89,8 @@ func TestUpdateRelayMiningDifficulty_Base(t *testing.T) {
 
 	// Confirm a relay mining difficulty update event was emitted
 	events := sdkCtx.EventManager().Events()
-	require.Len(t, events, 5) // minting, burning, settling, etc..
-
-	// Validate the relay mining update event
 	expectedEvents := filterEvents[*tokenomicstypes.EventRelayMiningDifficultyUpdated](t, events, "poktroll.tokenomics.EventRelayMiningDifficultyUpdated")
-	require.Len(t, expectedEvents, 3)
-	// require.Equal(t, s.expectedComputeUnits, expectedEvent.ComputeUnits)
-
+	require.Len(t, expectedEvents, 6) // 3 for svc1, 2 for svc2, 1 for svc3
 }
 
 func TestUpdateRelayMiningDifficulty_FirstDifficulty(t *testing.T) {

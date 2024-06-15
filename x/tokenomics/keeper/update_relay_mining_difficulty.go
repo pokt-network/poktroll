@@ -76,27 +76,29 @@ func (k Keeper) UpdateRelayMiningDifficulty(
 		}
 		k.SetRelayMiningDifficulty(ctx, newDifficulty)
 
-		// Output the appropriate log message based on whether the difficulty was
-		// initialized, updated or unchanged.
-		if !found {
-			logger.Info(fmt.Sprintf("Initialized RelayMiningDifficulty for service %s at height %d with difficulty %x", serviceId, sdkCtx.BlockHeight(), newDifficulty.TargetHash))
-			continue
-		} else if !bytes.Equal(prevDifficulty.TargetHash, newDifficulty.TargetHash) {
-			// TODO_BLOCKER(@Olshansk, #542): Emit an event for the updated difficulty.
-			relayMiningDifficultyUpdateEvent := types.EventRelayMiningDifficultyUpdated{
-				ServiceId:        serviceId,
-				PrevTargetHash:   prevDifficulty.TargetHash,
-				NewTargetHash:    newDifficulty.TargetHash,
-				PrevNumRelaysEma: prevDifficulty.NumRelaysEma,
-				NewNumRelaysEma:  newDifficulty.NumRelaysEma,
-			}
-			if err := sdkCtx.EventManager().EmitTypedEvent(&relayMiningDifficultyUpdateEvent); err != nil {
-				return err
-			}
-			logger.Info(fmt.Sprintf("Updated RelayMiningDifficulty for service %s at height %d from %x to %x", serviceId, sdkCtx.BlockHeight(), prevDifficulty.TargetHash, newDifficulty.TargetHash))
-		} else {
-			logger.Info(fmt.Sprintf("No change in RelayMiningDifficulty for service %s at height %d. Current difficulty: %x", serviceId, sdkCtx.BlockHeight(), newDifficulty.TargetHash))
+		// Emit an event for the updated relay mining difficulty regardless of
+		// whether the difficulty changed or not.
+		relayMiningDifficultyUpdateEvent := types.EventRelayMiningDifficultyUpdated{
+			ServiceId:        serviceId,
+			PrevTargetHash:   prevDifficulty.TargetHash,
+			NewTargetHash:    newDifficulty.TargetHash,
+			PrevNumRelaysEma: prevDifficulty.NumRelaysEma,
+			NewNumRelaysEma:  newDifficulty.NumRelaysEma,
 		}
+		if err := sdkCtx.EventManager().EmitTypedEvent(&relayMiningDifficultyUpdateEvent); err != nil {
+			return err
+		}
+
+		// Output the appropriate log message based on whether the difficulty was initialized, updated or unchanged.
+		var logMessage string
+		if !found {
+			logMessage = fmt.Sprintf("Initialized RelayMiningDifficulty for service %s at height %d with difficulty %x", serviceId, sdkCtx.BlockHeight(), newDifficulty.TargetHash)
+		} else if !bytes.Equal(prevDifficulty.TargetHash, newDifficulty.TargetHash) {
+			logMessage = fmt.Sprintf("Updated RelayMiningDifficulty for service %s at height %d from %x to %x", serviceId, sdkCtx.BlockHeight(), prevDifficulty.TargetHash, newDifficulty.TargetHash)
+		} else {
+			logMessage = fmt.Sprintf("No change in RelayMiningDifficulty for service %s at height %d. Current difficulty: %x", serviceId, sdkCtx.BlockHeight(), newDifficulty.TargetHash)
+		}
+		logger.Info(logMessage)
 	}
 
 	return nil
