@@ -96,7 +96,7 @@ func (s *suite) msgUpdateParamsToDefaultsAny(moduleName string) *codectypes.Any 
 			},
 		)
 	default:
-		s.Fatalf("unknown module name: %s", moduleName)
+		s.Fatalf("ERROR: unknown module name: %s", moduleName)
 	}
 	require.NoError(s, err)
 

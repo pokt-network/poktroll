@@ -287,7 +287,7 @@ func (s *suite) getConfigFileContent(amount int64, actorType, serviceId string) 
 			      rpc_type: json_rpc`,
 			amount, serviceId)
 	default:
-		s.Fatalf("unknown actor type %s", actorType)
+		s.Fatalf("ERROR: unknown actor type %s", actorType)
 	}
 	fmt.Println(yaml.NormalizeYAMLIndentation(configContent))
 	return yaml.NormalizeYAMLIndentation(configContent)
@@ -335,7 +335,7 @@ func (s *suite) TheApplicationIsStakedForService(appName string, serviceId strin
 			return
 		}
 	}
-	s.Fatalf("application %s is not staked for service %s", appName, serviceId)
+	s.Fatalf("ERROR: application %s is not staked for service %s", appName, serviceId)
 }
 
 func (s *suite) TheSupplierIsStakedForService(supplierName string, serviceId string) {
@@ -344,7 +344,7 @@ func (s *suite) TheSupplierIsStakedForService(supplierName string, serviceId str
 			return
 		}
 	}
-	s.Fatalf("supplier %s is not staked for service %s", supplierName, serviceId)
+	s.Fatalf("ERROR: supplier %s is not staked for service %s", supplierName, serviceId)
 }
 
 func (s *suite) TheSessionForApplicationAndServiceContainsTheSupplier(appName string, serviceId string, supplierName string) {
@@ -373,7 +373,7 @@ func (s *suite) TheSessionForApplicationAndServiceContainsTheSupplier(appName st
 			return
 		}
 	}
-	s.Fatalf("session for app %s and service %s does not contain supplier %s", appName, serviceId, supplierName)
+	s.Fatalf("ERROR:session for app %s and service %s does not contain supplier %s", appName, serviceId, supplierName)
 }
 
 func (s *suite) TheApplicationSendsTheSupplierARequestForServiceWithData(appName, supplierName, serviceId, requestData string) {
@@ -518,7 +518,7 @@ func (s *suite) validateAmountChange(prevAmount, currAmount int, expectedAmountC
 		require.LessOrEqual(s, currAmount, prevAmount, "%s %s expected to have less upokt but actually had more", accName, balanceType)
 		require.Equal(s, expectedAmountChange, deltaAmount, "%s %s expected) decrease in upokt was incorrect", accName, balanceType)
 	default:
-		s.Fatalf("unknown condition %s", condition)
+		s.Fatalf("ERROR: unknown condition %s", condition)
 	}
 
 }

@@ -233,7 +233,7 @@ func (s *suite) waitForTxResultEvent(targetAction string) {
 
 	select {
 	case <-time.After(eventTimeout):
-		s.Fatalf("timed out waiting for message with action %q", targetAction)
+		s.Fatalf("ERROR: timed out waiting for message with action %q", targetAction)
 	case <-ctx.Done():
 		s.Log("Success; message detected before timeout.")
 	}
@@ -278,7 +278,7 @@ func (s *suite) waitForNewBlockEvent(
 
 	select {
 	case <-time.After(eventTimeout):
-		s.Fatalf("timed out waiting for NewBlock event")
+		s.Fatalf("ERROR: timed out waiting for NewBlock event")
 	case <-ctx.Done():
 		s.Log("Success; message detected before timeout.")
 	}
@@ -301,7 +301,7 @@ func (s *suite) abciToClaimSettledEvent(event *abci.Event) *tokenomicstypes.Even
 		case "claim":
 			var claim prooftypes.Claim
 			if err := s.cdc.UnmarshalJSON([]byte(attr.Value), &claim); err != nil {
-				s.Fatalf("Failed to unmarshal claim: %v", err)
+				s.Fatalf("ERROR: failed to unmarshal claim: %v", err)
 			}
 			claimSettledEvent.Claim = &claim
 		case "compute_units":
@@ -309,13 +309,13 @@ func (s *suite) abciToClaimSettledEvent(event *abci.Event) *tokenomicstypes.Even
 			value = value[1 : len(value)-1] // Remove surrounding quotes
 			computeUnits, err := strconv.ParseUint(value, 10, 64)
 			if err != nil {
-				s.Fatalf("Failed to parse compute_units: %v", err)
+				s.Fatalf("ERROR: failed to parse compute_units: %v", err)
 			}
 			claimSettledEvent.ComputeUnits = computeUnits
 		case "proof_required":
 			proofRequired, err := strconv.ParseBool(string(attr.Value))
 			if err != nil {
-				s.Fatalf("Failed to parse proof_required: %v", err)
+				s.Fatalf("ERROR: failed to parse proof_required: %v", err)
 			}
 			claimSettledEvent.ProofRequired = proofRequired
 		}
