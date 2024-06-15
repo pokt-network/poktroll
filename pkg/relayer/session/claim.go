@@ -152,17 +152,25 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 			return either.Success(sessionTrees), false
 		}
 
-		sessionClaims := []*relayer.SessionClaim{}
+		// Map key is the supplier address.
+		sessionClaims := map[string][]*relayer.SessionClaim{}
 		for _, session := range sessionTrees {
-			sessionClaims = append(sessionClaims, &relayer.SessionClaim{
-				RootHash:      session.GetClaimRoot(),
-				SessionHeader: session.GetSessionHeader(),
+			supplierAddr := session.SupplierAddress().String()
+
+			sessionClaims[supplierAddr] = append(sessionClaims[supplierAddr], &relayer.SessionClaim{
+				RootHash:        session.GetClaimRoot(),
+				SessionHeader:   session.GetSessionHeader(),
+				SupplierAddress: *session.SupplierAddress(),
 			})
 		}
 
-		if err := rs.supplierClient.CreateClaims(ctx, sessionClaims); err != nil {
-			failedCreateClaimsSessionsPublishCh <- sessionTrees
-			return either.Error[[]relayer.SessionTree](err), false
+		// Create claims for each supplier address in `sessionTrees`.
+		for supplierAddr := range sessionClaims {
+			supplierClient := rs.supplierClients.SupplierClients[supplierAddr]
+			if err := supplierClient.CreateClaims(ctx, sessionClaims[supplierAddr]); err != nil {
+				failedCreateClaimsSessionsPublishCh <- sessionTrees
+				return either.Error[[]relayer.SessionTree](err), false
+			}
 		}
 
 		return either.Success(sessionTrees), false

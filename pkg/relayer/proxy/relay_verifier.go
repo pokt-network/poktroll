@@ -29,9 +29,11 @@ func (rp *relayerProxy) VerifyRelayRequest(
 		return err
 	}
 
+	meta := relayRequest.GetMeta()
+
 	// Extract the session header for usage below.
 	// ringCache.VerifyRelayRequestSignature already verified the header's validaity.
-	sessionHeader := relayRequest.GetMeta().SessionHeader
+	sessionHeader := meta.SessionHeader
 
 	// Application address is used to verify the relayRequest signature.
 	// It is guaranteed to be present in the relayRequest since the signature
@@ -43,6 +45,7 @@ func (rp *relayerProxy) VerifyRelayRequest(
 			"session_id":          sessionHeader.GetSessionId(),
 			"application_address": appAddress,
 			"service_id":          sessionHeader.GetService().GetId(),
+			"supplier_address":    meta.GetSupplierAddress(),
 		}).
 		Msg("verifying relay request session")
 
@@ -75,8 +78,14 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	}
 
 	// Check if the relayRequest is allowed to be served by the relayer proxy.
+	_, isSupplierAddressPresent := rp.AddressToSigningKeyNameMap[meta.GetSupplierAddress()]
+	if !isSupplierAddressPresent {
+		return ErrRelayerProxyMissingSupplierAddress
+	}
+
 	for _, supplier := range session.Suppliers {
-		if supplier.Address == rp.supplierAddress {
+		// Verify if the supplier address in the session matches the one in the relayRequest.
+		if isSupplierAddressPresent && supplier.Address == meta.GetSupplierAddress() {
 			return nil
 		}
 	}
