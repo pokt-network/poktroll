@@ -49,7 +49,7 @@ type commandResult struct {
 type PocketClient interface {
 	RunCommand(args ...string) (*commandResult, error)
 	RunCommandOnHost(rpcUrl string, args ...string) (*commandResult, error)
-	RunCurl(rpcUrl, service, data string, args ...string) (*commandResult, error)
+	RunCurl(rpcUrl, service, path, data string, args ...string) (*commandResult, error)
 }
 
 // Ensure that pocketdBin struct fulfills PocketClient
@@ -94,11 +94,11 @@ func (p *pocketdBin) RunCommandOnHostWithRetry(rpcUrl string, numRetries uint8, 
 }
 
 // RunCurl runs a curl command on the local machine
-func (p *pocketdBin) RunCurl(rpcUrl, service, data string, args ...string) (*commandResult, error) {
+func (p *pocketdBin) RunCurl(rpcUrl, service, path, data string, args ...string) (*commandResult, error) {
 	if rpcUrl == "" {
 		rpcUrl = defaultAppGateServerURL
 	}
-	return p.runCurlPostCmd(rpcUrl, service, data, args...)
+	return p.runCurlPostCmd(rpcUrl, service, path, data, args...)
 }
 
 // runPocketCmd is a helper to run a command using the local pocketd binary with the flags provided
@@ -134,9 +134,9 @@ func (p *pocketdBin) runPocketCmd(args ...string) (*commandResult, error) {
 }
 
 // runCurlPostCmd is a helper to run a command using the local pocketd binary with the flags provided
-func (p *pocketdBin) runCurlPostCmd(rpcUrl string, service string, data string, args ...string) (*commandResult, error) {
+func (p *pocketdBin) runCurlPostCmd(rpcUrl, service, path, data string, args ...string) (*commandResult, error) {
 	dataStr := fmt.Sprintf("%s", data)
-	urlStr := fmt.Sprintf("%s/%s", rpcUrl, service)
+	urlStr := fmt.Sprintf("%s/%s%s", rpcUrl, service, path)
 	base := []string{
 		"-v",         // verbose output
 		"-sS",        // silent with error
