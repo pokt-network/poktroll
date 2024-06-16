@@ -373,7 +373,7 @@ func (s *suite) TheSessionForApplicationAndServiceContainsTheSupplier(appName st
 			return
 		}
 	}
-	s.Fatalf("ERROR:session for app %s and service %s does not contain supplier %s", appName, serviceId, supplierName)
+	s.Fatalf("ERROR: session for app %s and service %s does not contain supplier %s", appName, serviceId, supplierName)
 }
 
 func (s *suite) TheApplicationSendsTheSupplierARequestForServiceWithData(appName, supplierName, serviceId, requestData string) {

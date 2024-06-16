@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -19,8 +20,11 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	addresscodec "github.com/cosmos/cosmos-sdk/codec/address"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/runtime"
 	"github.com/cosmos/cosmos-sdk/types"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/auth"
@@ -35,6 +39,7 @@ import (
 
 	"github.com/pokt-network/poktroll/app"
 	"github.com/pokt-network/poktroll/testutil/sample"
+	"github.com/pokt-network/poktroll/testutil/testkeyring"
 	appkeeper "github.com/pokt-network/poktroll/x/application/keeper"
 	application "github.com/pokt-network/poktroll/x/application/module"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -182,6 +187,8 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	prooftypes.RegisterInterfaces(registry)
 	servicetypes.RegisterInterfaces(registry)
 	authtypes.RegisterInterfaces(registry)
+	cosmostypes.RegisterInterfaces(registry)
+	cryptocodec.RegisterInterfaces(registry)
 
 	// Prepare the codec
 	cdc := codec.NewProtoCodec(registry)
@@ -452,7 +459,13 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	err = applicationKeeper.SetParams(integrationApp.SdkCtx(), apptypes.DefaultParams())
 	require.NoError(t, err)
 
-	// Prepare default testing fixtures
+	// Prepare default testing fixtures //
+
+	// Construct a keyring to hold the keypairs for the accounts used in the test.
+	keyRing := keyring.NewInMemory(integrationApp.cdc)
+
+	// Create a pre-generated account iterator to create accounts for the test.
+	preGeneratedAccts := testkeyring.PreGeneratedAccounts()
 
 	// Prepare a new default service
 	defaultService := sharedtypes.Service{
@@ -462,10 +475,19 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	serviceKeeper.SetService(integrationApp.sdkCtx, defaultService)
 	integrationApp.DefaultService = &defaultService
 
+	// Create a supplier account with the corresponding keys in the keyring for the supplier.
+	supplierAddr := testkeyring.CreateOnChainAccount(
+		integrationApp.sdkCtx, t,
+		"supplied",
+		keyRing,
+		accountKeeper,
+		preGeneratedAccts,
+	)
+	err = bankKeeper.SendCoinsFromModuleToAccount(integrationApp.sdkCtx, banktypes.ModuleName, supplierAddr, sdk.NewCoins(sdk.NewInt64Coin("upokt", 1000000)))
 	// Prepare a new default supplier
 	supplierStake := types.NewCoin("upokt", math.NewInt(1000000))
 	defaultSupplier := sharedtypes.Supplier{
-		Address: sample.AccAddress(),
+		Address: supplierAddr.String(),
 		Stake:   &supplierStake,
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
@@ -475,6 +497,10 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	}
 	supplierKeeper.SetSupplier(integrationApp.sdkCtx, defaultSupplier)
 	integrationApp.DefaultSupplier = &defaultSupplier
+
+	// bankKeeper.SendCoinsFromModuleToAccount()
+	a, _ := accountKeeper.GetPubKey(integrationApp.sdkCtx, supplierAddr)
+	fmt.Println(a)
 
 	// Prepare a new default application
 	appStake := types.NewCoin("upokt", math.NewInt(1000000))
