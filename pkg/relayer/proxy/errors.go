@@ -16,5 +16,5 @@ var (
 	ErrRelayerProxyServiceEndpointNotHandled = sdkerrors.Register(codespace, 8, "service endpoint not handled by relayer proxy")
 	ErrRelayerProxyUnsupportedTransportType  = sdkerrors.Register(codespace, 9, "unsupported proxy transport type")
 	ErrRelayerProxyInternalError             = sdkerrors.Register(codespace, 10, "internal error")
-	ErrRelayerProxyMissingSupplierAddress    = sdkerrors.Register(codespace, 10, "supplier address is missing")
+	ErrRelayerProxyMissingSupplierAddress    = sdkerrors.Register(codespace, 11, "supplier address is missing")
 )
