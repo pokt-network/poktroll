@@ -23,58 +23,70 @@ const supplierStakeWaitTime = 1
 // It populates the relayerProxy's `advertisedRelayServers` map of servers for each service, where each server
 // is responsible for listening for incoming relay requests and relaying them to the supported proxied service.
 func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
-	// Get the supplier address from the keyring
-	supplierKey, err := rp.keyring.Key(rp.signingKeyName)
-	if err != nil {
-		return err
-	}
+	rp.AddressToSigningKeyNameMap = make(map[string]string)
+	for _, signingKeyName := range rp.signingKeyNames {
+		// Get the supplier address from the keyring
+		supplierKey, err := rp.keyring.Key(signingKeyName)
+		if err != nil {
+			return err
+		}
 
-	supplierAddress, err := supplierKey.GetAddress()
-	if err != nil {
-		return err
-	}
+		supplierAddress, err := supplierKey.GetAddress()
+		if err != nil {
+			return err
+		}
 
-	// Prevent the RelayMiner from stopping by waiting until its associated supplier
-	// is staked and its on-chain record retrieved.
-	supplier, err := rp.waitForSupplierToStake(ctx, supplierAddress.String())
-	if err != nil {
-		return err
-	}
+		// TODO_MAINNET: We currently block RelayMiner from starting if at least one address
+		// is not staked or staked incorrectly. As node runners will maintain many different
+		// suppliers on one RelayMiner, and we expect them to stake and restake often - it might
+		// not be ideal to block the process from running. However, we should show warnings/errors
+		// in logs (and, potentially, metrics) that their stake is different
+		// from the supplier configuration. If we don't hear feedback on that prior to launching
+		// MainNet it might not be that big of a deal, though.
 
-	// Check that the supplier's advertised services' endpoints are present in
-	// the server config and handled by a server
-	// Iterate over the supplier's advertised services then iterate over each
-	// service's endpoint
-	for _, service := range supplier.Services {
-		for _, endpoint := range service.Endpoints {
-			endpointUrl, err := url.Parse(endpoint.Url)
-			if err != nil {
-				return err
-			}
-			found := false
-			// Iterate over the server configs and check if `endpointUrl` is present
-			// in any of the server config's suppliers' service's PubliclyExposedEndpoints
-			for _, serverConfig := range rp.serverConfigs {
-				supplierService, ok := serverConfig.SupplierConfigsMap[service.Service.Id]
-				if ok && slices.Contains(supplierService.PubliclyExposedEndpoints, endpointUrl.Hostname()) {
-					found = true
-					break
+		// Prevent the RelayMiner from stopping by waiting until its associated supplier
+		// is staked and its on-chain record retrieved.
+		supplier, err := rp.waitForSupplierToStake(ctx, supplierAddress.String())
+		if err != nil {
+			return err
+		}
+
+		// Check that the supplier's advertised services' endpoints are present in
+		// the server config and handled by a server.
+		// Iterate over the supplier's advertised services then iterate over each
+		// service's endpoint
+		for _, service := range supplier.Services {
+			for _, endpoint := range service.Endpoints {
+				endpointUrl, err := url.Parse(endpoint.Url)
+				if err != nil {
+					return err
+				}
+				found := false
+				// Iterate over the server configs and check if `endpointUrl` is present
+				// in any of the server config's suppliers' service's PubliclyExposedEndpoints
+				for _, serverConfig := range rp.serverConfigs {
+					supplierService, ok := serverConfig.SupplierConfigsMap[service.Service.Id]
+					hostname := endpointUrl.Hostname()
+					if ok && slices.Contains(supplierService.PubliclyExposedEndpoints, hostname) {
+						found = true
+						break
+					}
+				}
+
+				if !found {
+					return ErrRelayerProxyServiceEndpointNotHandled.Wrapf(
+						"service endpoint %s not handled by the relay miner",
+						endpoint.Url,
+					)
 				}
 			}
-
-			if !found {
-				return ErrRelayerProxyServiceEndpointNotHandled.Wrapf(
-					"service endpoint %s not handled by the relay miner",
-					endpoint.Url,
-				)
-			}
 		}
-	}
 
-	rp.supplierAddress = supplier.Address
+		rp.AddressToSigningKeyNameMap[supplier.Address] = signingKeyName
 
-	if rp.servers, err = rp.initializeProxyServers(supplier.Services); err != nil {
-		return err
+		if rp.servers, err = rp.initializeProxyServers(supplier.Services); err != nil {
+			return err
+		}
 	}
 
 	return nil
