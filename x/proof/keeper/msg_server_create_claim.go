@@ -67,18 +67,6 @@ func (k msgServer) CreateClaim(
 			"supplier", msg.GetSupplierAddress(),
 		)
 
-	/*
-		TODO_BLOCKER(@bryanchriswhite):
-
-		### Msg distribution validation (depends on sessionRes validation)
-		1. [ ] governance-based earliest block offset
-		2. [ ] pseudo-randomize earliest block offset
-
-		### Claim validation
-		1. [x] sessionRes validation
-		2. [ ] msg distribution validation
-	*/
-
 	logger.Info("validated claim")
 
 	// Assign and upsert claim after all validation.
