@@ -3,9 +3,12 @@ sidebar_position: 5
 title: Adding On-Chain Module Parameters
 ---
 
-# Adding On-Chain Module Parameters
+# Adding On-Chain Module Parameters <!-- omit in toc -->
 
-### Adding a New On-Chain Module Parameter
+- [Adding a New On-Chain Module Parameter](#adding-a-new-on-chain-module-parameter)
+  - [Step-by-Step Instructions](#step-by-step-instructions)
+
+## Adding a New On-Chain Module Parameter
 
 Adding a new on-chain module parameter involves multiple steps to ensure that the parameter is properly integrated into
 the system. This guide will walk you through the process using a generic approach, illustrated by adding a parameter to
@@ -13,13 +16,13 @@ the "proof" module.
 
 See [pokt-network/poktroll#595](https://github.com/pokt-network/poktroll/pull/595) for a real-world example.
 
-#### Step-by-Step Instructions
+### Step-by-Step Instructions
 
 1. **Define the Parameter in the Protocol Buffers File**
 
    Open the appropriate `.proto` file for your module (e.g., `params.proto`) and define the new parameter.
 
-   ```proto
+   ```protobuf
    message Params {
      // Other existing parameters...
 
@@ -34,16 +37,16 @@ See [pokt-network/poktroll#595](https://github.com/pokt-network/poktroll/pull/59
    the new parameter.
 
    ```gherkin
-       # NB: If you are reading this and the proof module has parameters
-       # that are not being updated in this test, please update the test.
-       Scenario: An authorized user updates all "proof" module params
-       Given the user has the pocketd binary installed
-       And all "proof" module params are set to their default values
-       And an authz grant from the "gov" "module" account to the "pnf" "user" account for the "/poktroll.proof.MsgUpdateParams" message exists
-       When the "pnf" account sends an authz exec message to update all "proof" module params
-       | name                | value | type  |
-       | new_parameter_name  | 100   | int64 |
-     Then all "proof" module params should be updated
+      # NB: If you are reading this and the proof module has parameters
+      # that are not being updated in this test, please update the test.
+      Scenario: An authorized user updates all "proof" module params
+      Given the user has the pocketd binary installed
+      And all "proof" module params are set to their default values
+      And an authz grant from the "gov" "module" account to the "pnf" "user" account for the "/poktroll.proof.MsgUpdateParams" message exists
+      When the "pnf" account sends an authz exec message to update all "proof" module params
+      | name                | value | type  |
+      | new_parameter_name  | 100   | int64 |
+    Then all "proof" module params should be updated
    ```
 
    ```gherkin
@@ -164,20 +167,20 @@ See [pokt-network/poktroll#595](https://github.com/pokt-network/poktroll/pull/59
 
    ```json
    {
-      "body": {
-         "messages": [
-            {
-               "@type": "/poktroll.proof.MsgUpdateParams",
-               "authority": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
-               "params": {
-                  "min_relay_difficulty_bits": "0",
-                  "proof_request_probability": "0.25",
-                  "proof_requirement_threshold": "20",
-                  "new_parameter_name": "100" // Add this line
-               }
-            }
-         ]
-      }
+     "body": {
+       "messages": [
+         {
+           "@type": "/poktroll.proof.MsgUpdateParams",
+           "authority": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
+           "params": {
+             "min_relay_difficulty_bits": "0",
+             "proof_request_probability": "0.25",
+             "proof_requirement_threshold": "20",
+             "new_parameter_name": "100" // Add this line
+           }
+         }
+       ]
+     }
    }
    ```
 
@@ -242,7 +245,6 @@ See [pokt-network/poktroll#595](https://github.com/pokt-network/poktroll/pull/59
      require.Equal(t, expectedNewParameterName, res.Params.NewParameterName)
    }
    ```
-
 
 1. **Add Parameter Validation**
 
