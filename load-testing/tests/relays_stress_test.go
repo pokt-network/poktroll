@@ -509,11 +509,6 @@ func (s *relaysSuite) ALoadOfConcurrentRelayRequestsAreSentFromTheApplications()
 	// Block the feature step until the test is done.
 	<-s.ctx.Done()
 }
-
-func (s *relaysSuite) TheUserShouldWaitForSeconds(dur int64) {
-	time.Sleep(time.Duration(dur) * time.Second)
-}
-
 func (s *relaysSuite) TheCorrectPairsCountOfClaimAndProofMessagesShouldBeCommittedOnchain() {
 	logger.Info().
 		Int("claims", s.currentClaimCount).
