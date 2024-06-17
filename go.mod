@@ -6,8 +6,12 @@ replace (
 	// DEVELOPER_TIP: Uncomment to use a local copy of shannon-sdk for development purposes.
 	// github.com/pokt-network/shannon-sdk => ../shannon-sdk
 
+	// DEVELOPER_TIP: Uncomment to use a local copy of smt for development purposes.
+	// github.com/pokt-network/smt => ../smt
+
 	// fix upstream GHSA-h395-qcrw-5vmq vulnerability.
 	github.com/gin-gonic/gin => github.com/gin-gonic/gin v1.7.0
+
 	// replace broken goleveldb
 	github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
 )
@@ -53,7 +57,7 @@ require (
 	// repo is the first obvious idea, but has to be carefully considered, automated, and is not
 	// a hard blocker.
 	github.com/pokt-network/shannon-sdk v0.0.0-20240617183753-c338413134a5
-	github.com/pokt-network/smt v0.10.2
+	github.com/pokt-network/smt v0.11.1
 	github.com/pokt-network/smt/kvstore/badger v0.0.0-20240109205447-868237978c0b
 	github.com/prometheus/client_golang v1.18.0
 	github.com/regen-network/gocuke v1.1.0

@@ -52,7 +52,13 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 	for _, claim := range expiringClaims {
 		// Retrieve the number of compute units in the claim for the events emitted
 		root := (smt.MerkleRoot)(claim.GetRootHash())
+
+		// NB: Note that not every (Req, Res) pair in the session is inserted in
+		// the tree for scalability reasons. This is the count of non-empty leaves
+		// that matched the necessary difficulty and is therefore an estimation
+		// of the total number of relays serviced and work done.
 		claimComputeUnits := root.Sum()
+		numRelaysInSessionTree := root.Count()
 
 		sessionId := claim.SessionHeader.SessionId
 
@@ -108,9 +114,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 			k.proofKeeper.RemoveProof(ctx, sessionId, claim.SupplierAddress)
 		}
 
-		// TODO_UPNEXT(@Olshansk, #542): We need the number of relays (leafs in the tree),
-		// not compute units. This would require updates to the SMT itself.
-		relaysPerServiceMap[claim.SessionHeader.Service.Id] += claimComputeUnits
+		relaysPerServiceMap[claim.SessionHeader.Service.Id] += numRelaysInSessionTree
 
 		numClaimsSettled++
 		logger.Info(fmt.Sprintf("Successfully settled claim for session ID %q at block height %d", claim.SessionHeader.SessionId, blockHeight))
