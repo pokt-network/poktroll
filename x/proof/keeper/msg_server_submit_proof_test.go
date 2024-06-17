@@ -499,7 +499,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 
 	// Construct a relay to be mangled such that it fails to deserialize in order
 	// to set the error expectation for the relevant test case.
-	mangledRelay := newEmptyRelay(validSessionHeader, validSessionHeader)
+	mangledRelay := newEmptyRelay(validSessionHeader, validSessionHeader, supplierAddr)
 
 	// Ensure valid relay request and response signatures.
 	signRelayRequest(ctx, t, mangledRelay, appAddr, keyRing, ringClient)
@@ -649,7 +649,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			desc: "relay must be deserializable",
 			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
 				// Construct a session tree to which we'll add 1 unserializable relay.
-				mangledRelaySessionTree := newEmptySessionTree(t, validSessionHeader)
+				mangledRelaySessionTree := newEmptySessionTree(t, validSessionHeader, supplierAddr)
 
 				// Add the mangled relay to the session tree.
 				err = mangledRelaySessionTree.Update([]byte{1}, mangledRelayBz, 1)
@@ -795,7 +795,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			desc: "relay request signature must be valid",
 			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
 				// Set the relay request signature to an invalid byte slice.
-				invalidRequestSignatureRelay := newEmptyRelay(validSessionHeader, validSessionHeader)
+				invalidRequestSignatureRelay := newEmptyRelay(validSessionHeader, validSessionHeader, supplierAddr)
 				invalidRequestSignatureRelay.Req.Meta.Signature = invalidSignatureBz
 
 				// Ensure a valid relay response signature.
@@ -806,7 +806,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 
 				// Construct a session tree with 1 relay with a session header containing
 				// a session ID that doesn't match the expected session ID.
-				invalidRequestSignatureSessionTree := newEmptySessionTree(t, validSessionHeader)
+				invalidRequestSignatureSessionTree := newEmptySessionTree(t, validSessionHeader, supplierAddr)
 
 				// Add the relay to the session tree.
 				err = invalidRequestSignatureSessionTree.Update([]byte{1}, invalidRequestSignatureRelayBz, 1)
@@ -857,7 +857,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			desc: "relay response signature must be valid",
 			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
 				// Set the relay response signature to an invalid byte slice.
-				relay := newEmptyRelay(validSessionHeader, validSessionHeader)
+				relay := newEmptyRelay(validSessionHeader, validSessionHeader, supplierAddr)
 				relay.Res.Meta.SupplierSignature = invalidSignatureBz
 
 				// Ensure a valid relay request signature
@@ -868,7 +868,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 
 				// Construct a session tree with 1 relay with a session header containing
 				// a session ID that doesn't match the expected session ID.
-				invalidResponseSignatureSessionTree := newEmptySessionTree(t, validSessionHeader)
+				invalidResponseSignatureSessionTree := newEmptySessionTree(t, validSessionHeader, supplierAddr)
 
 				// Add the relay to the session tree.
 				err = invalidResponseSignatureSessionTree.Update([]byte{1}, relayBz, 1)
@@ -1142,7 +1142,7 @@ func newFilledSessionTree(
 	t.Helper()
 
 	// Initialize an empty session tree with the given session header.
-	sessionTree := newEmptySessionTree(t, sessionTreeHeader)
+	sessionTree := newEmptySessionTree(t, sessionTreeHeader, supplierAddr)
 
 	// Add numRelays of relays to the session tree.
 	fillSessionTree(
@@ -1161,6 +1161,7 @@ func newFilledSessionTree(
 func newEmptySessionTree(
 	t *testing.T,
 	sessionTreeHeader *sessiontypes.SessionHeader,
+	supplierAddr string,
 ) relayer.SessionTree {
 	t.Helper()
 
@@ -1173,9 +1174,12 @@ func newEmptySessionTree(
 		_ = os.RemoveAll(testSessionTreeStoreDir)
 	})
 
+	accAddress := cosmostypes.MustAccAddressFromBech32(supplierAddr)
+
 	// Construct a session tree to add relays to and generate a proof from.
 	sessionTree, err := session.NewSessionTree(
 		sessionTreeHeader,
+		&accAddress,
 		testSessionTreeStoreDir,
 		func(*sessiontypes.SessionHeader) {},
 	)
@@ -1331,7 +1335,7 @@ func newSignedEmptyRelay(
 ) *servicetypes.Relay {
 	t.Helper()
 
-	relay := newEmptyRelay(reqHeader, resHeader)
+	relay := newEmptyRelay(reqHeader, resHeader, supplierAddr)
 	signRelayRequest(ctx, t, relay, reqHeader.GetApplicationAddress(), keyRing, ringClient)
 	signRelayResponse(ctx, t, relay, supplierKeyUid, supplierAddr, keyRing)
 
@@ -1340,12 +1344,13 @@ func newSignedEmptyRelay(
 
 // newEmptyRelay creates a new relay structure for the given req & res headers
 // WITHOUT any payload or signatures.
-func newEmptyRelay(reqHeader, resHeader *sessiontypes.SessionHeader) *servicetypes.Relay {
+func newEmptyRelay(reqHeader, resHeader *sessiontypes.SessionHeader, supplierAddr string) *servicetypes.Relay {
 	return &servicetypes.Relay{
 		Req: &servicetypes.RelayRequest{
 			Meta: servicetypes.RelayRequestMetadata{
-				SessionHeader: reqHeader,
-				Signature:     nil, // Signature added elsewhere.
+				SessionHeader:   reqHeader,
+				Signature:       nil, // Signature added elsewhere.
+				SupplierAddress: supplierAddr,
 			},
 			Payload: nil,
 		},

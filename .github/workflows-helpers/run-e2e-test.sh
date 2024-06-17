@@ -3,8 +3,6 @@ echo "Environment variables:"
 echo "NAMESPACE: ${NAMESPACE}"
 echo "IMAGE_TAG: ${IMAGE_TAG}"
 
-# TODO_TECHDEBT(@okdas): also check readiness of appgate and relayminer to avoid false negatives due to race-conditions
-
 # Check if the pod with the matching image SHA and purpose is ready or needs recreation
 echo "Checking for ready validator pod with image SHA ${IMAGE_TAG} or pods needing recreation..."
 while :; do
@@ -33,16 +31,6 @@ while :; do
         sleep 10
     fi
 done
-
-# Check we can reach the validator endpoint
-echo "Checking HTTP status for the validator endpoint..."
-HTTP_STATUS=$(curl -s -o /dev/null -w '%{http_code}' http://${NAMESPACE}-validator-poktrolld:36657)
-if [[ "${HTTP_STATUS}" -eq 200 ]]; then
-    echo "HTTP request to ${NAMESPACE}-validator-poktrolld:36657 returned 200 OK."
-else
-    echo "HTTP request to ${NAMESPACE}-validator-poktrolld:36657 did not return 200 OK. Status code: ${HTTP_STATUS}. Retrying in 10 seconds..."
-    sleep 10
-fi
 
 # Create a job to run the e2e tests
 echo "Creating a job to run the e2e tests..."

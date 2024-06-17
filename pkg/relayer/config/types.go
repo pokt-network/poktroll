@@ -18,12 +18,12 @@ const (
 
 // YAMLRelayMinerConfig is the structure used to unmarshal the RelayMiner config file
 type YAMLRelayMinerConfig struct {
-	PocketNode     YAMLRelayMinerPocketNodeConfig `yaml:"pocket_node"`
-	SigningKeyName string                         `yaml:"signing_key_name"`
-	SmtStorePath   string                         `yaml:"smt_store_path"`
-	Metrics        YAMLRelayMinerMetricsConfig    `yaml:"metrics"`
-	Suppliers      []YAMLRelayMinerSupplierConfig `yaml:"suppliers"`
-	Pprof          YAMLRelayMinerPprofConfig      `yaml:"pprof"`
+	DefaultSigningKeyNames []string                       `yaml:"default_signing_key_names"`
+	Metrics                YAMLRelayMinerMetricsConfig    `yaml:"metrics"`
+	PocketNode             YAMLRelayMinerPocketNodeConfig `yaml:"pocket_node"`
+	Pprof                  YAMLRelayMinerPprofConfig      `yaml:"pprof"`
+	SmtStorePath           string                         `yaml:"smt_store_path"`
+	Suppliers              []YAMLRelayMinerSupplierConfig `yaml:"suppliers"`
 }
 
 // YAMLRelayMinerPocketNodeConfig is the structure used to unmarshal the pocket
@@ -44,17 +44,18 @@ type YAMLRelayMinerMetricsConfig struct {
 // YAMLRelayMinerSupplierConfig is the structure used to unmarshal the supplier
 // section of the RelayMiner config file
 type YAMLRelayMinerSupplierConfig struct {
-	ServiceId            string                              `yaml:"service_id"`
 	ListenUrl            string                              `yaml:"listen_url"`
-	XForwardedHostLookup bool                                `yaml:"x_forwarded_host_lookup"`
 	ServiceConfig        YAMLRelayMinerSupplierServiceConfig `yaml:"service_config"`
+	ServiceId            string                              `yaml:"service_id"`
+	SigningKeyNames      []string                            `yaml:"signing_key_names"`
+	XForwardedHostLookup bool                                `yaml:"x_forwarded_host_lookup"`
 }
 
 // YAMLRelayMinerSupplierServiceConfig is the structure used to unmarshal the supplier
 // service sub-section of the RelayMiner config file.
 type YAMLRelayMinerSupplierServiceConfig struct {
-	BackendUrl               string                                      `yaml:"backend_url"`
 	Authentication           YAMLRelayMinerSupplierServiceAuthentication `yaml:"authentication,omitempty"`
+	BackendUrl               string                                      `yaml:"backend_url"`
 	Headers                  map[string]string                           `yaml:"headers,omitempty"`
 	PubliclyExposedEndpoints []string                                    `yaml:"publicly_exposed_endpoints"`
 }
@@ -76,12 +77,12 @@ type YAMLRelayMinerPprofConfig struct {
 
 // RelayMinerConfig is the structure describing the RelayMiner config
 type RelayMinerConfig struct {
-	PocketNode     *RelayMinerPocketNodeConfig
-	Servers        map[string]*RelayMinerServerConfig
-	Metrics        *RelayMinerMetricsConfig
-	SigningKeyName string
-	SmtStorePath   string
-	Pprof          *RelayMinerPprofConfig
+	DefaultSigningKeyNames []string
+	Metrics                *RelayMinerMetricsConfig
+	PocketNode             *RelayMinerPocketNodeConfig
+	Pprof                  *RelayMinerPprofConfig
+	Servers                map[string]*RelayMinerServerConfig
+	SmtStorePath           string
 }
 
 // RelayMinerPocketNodeConfig is the structure resulting from parsing the pocket
@@ -132,6 +133,10 @@ type RelayMinerSupplierConfig struct {
 	// Other supplier types may embed other fields in the future. eg. "https" may
 	// embed a TLS config.
 	ServiceConfig *RelayMinerSupplierServiceConfig
+
+	// SigningKeyNames: a list of key names that can accept relays for that supplier.
+	// If empty, we copy the values from `DefaultSigningKeyNames`.
+	SigningKeyNames []string
 }
 
 // RelayMinerSupplierServiceConfig is the structure resulting from parsing the supplier
