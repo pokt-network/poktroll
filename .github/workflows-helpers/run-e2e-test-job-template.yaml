@@ -13,11 +13,12 @@ spec:
       initContainers:
         # We need to make sure the services like validator, relayminer, appgate server, etc. work before we execute
         # an e2e test.
-        # TODO_TECHDEBT(@okdas): move the code into a separate config map (protocol-infra) and mount it.
         - name: check-services
           image: ruby:3.0
           command: ["ruby"]
           args:
+            # For reference, the script is located here:
+            # https://github.com/pokt-network/protocol-infra/blob/main/charts/full-network/templates/ConfigMap-e2e-tests-script.yaml#L4
             - /e2e-script/check_services.rb
             - ${NAMESPACE}
           volumeMounts:
