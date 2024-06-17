@@ -33,6 +33,7 @@ func (sync *synchronousRPCServer) newRelayRequest(request *http.Request) (*types
 func (sync *synchronousRPCServer) newRelayResponse(
 	responseBz []byte,
 	sessionHeader *sessiontypes.SessionHeader,
+	supplierAddr string,
 ) (*types.RelayResponse, error) {
 	relayResponse := &types.RelayResponse{
 		Meta:    types.RelayResponseMetadata{SessionHeader: sessionHeader},
@@ -40,7 +41,7 @@ func (sync *synchronousRPCServer) newRelayResponse(
 	}
 
 	// Sign the relay response and add the signature to the relay response metadata
-	if err := sync.relayerProxy.SignRelayResponse(relayResponse); err != nil {
+	if err := sync.relayerProxy.SignRelayResponse(relayResponse, supplierAddr); err != nil {
 		return nil, err
 	}
 

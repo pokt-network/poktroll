@@ -362,7 +362,7 @@ func (sync *synchronousRPCServer) serveHTTP(
 	// Build the relay response using the original service's response.
 	// Use relayRequest.Meta.SessionHeader on the relayResponse session header since it
 	// was verified to be valid and has to be the same as the relayResponse session header.
-	relayResponse, err := sync.newRelayResponse(responseBz, relayRequest.Meta.SessionHeader)
+	relayResponse, err := sync.newRelayResponse(responseBz, relayRequest.Meta.SessionHeader, relayRequest.Meta.SupplierAddress)
 	if err != nil {
 		return nil, err
 	}

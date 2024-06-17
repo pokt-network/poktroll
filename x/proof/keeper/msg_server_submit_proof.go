@@ -124,7 +124,7 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 	logger.Info("queried and validated the session header")
 
 	// Re-hydrate message session header with the on-chain session header.
-	// This corrects for discrepencies between unvalidated fields in the session header
+	// This corrects for discrepancies between unvalidated fields in the session header
 	// which can be derived from known values (e.g. session end height).
 	msg.SessionHeader = onChainSession.GetHeader()
 
@@ -165,39 +165,45 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 	if err := relayReq.ValidateBasic(); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
-	logger.Info("successfully validated relay request")
+	logger.Debug("successfully validated relay request")
+
+	// Make sure that the supplier address in the proof matches the one in the relay request.
+	if supplierAddr != relayReq.Meta.SupplierAddress {
+		return nil, status.Error(codes.FailedPrecondition, "supplier address mismatch")
+	}
+	logger.Debug("the proof supplier address matches the relay request supplier address")
 
 	// Basic validation of the relay response.
 	relayRes := relay.GetRes()
 	if err := relayRes.ValidateBasic(); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
-	logger.Info("successfully validated relay response")
+	logger.Debug("successfully validated relay response")
 
 	// Verify that the relay request session header matches the proof session header.
 	if err := compareSessionHeaders(msg.GetSessionHeader(), relayReq.Meta.GetSessionHeader()); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
-	logger.Info("successfully compared relay request session header")
+	logger.Debug("successfully compared relay request session header")
 
 	// Verify that the relay response session header matches the proof session header.
 	if err := compareSessionHeaders(msg.GetSessionHeader(), relayRes.Meta.GetSessionHeader()); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
-	logger.Info("successfully compared relay response session header")
+	logger.Debug("successfully compared relay response session header")
 
 	// Verify the relay request's signature.
 	// TODO_BLOCKER(@red-0ne): Fetch the correct ring for the session this relay is from.
 	if err := k.ringClient.VerifyRelayRequestSignature(ctx, relayReq); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
-	logger.Info("successfully verified relay request signature")
+	logger.Debug("successfully verified relay request signature")
 
 	// Verify the relay response's signature.
 	if err := relayRes.VerifySupplierSignature(supplierPubKey); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
-	logger.Info("successfully verified relay response signature")
+	logger.Debug("successfully verified relay response signature")
 
 	// Get the proof module's governance parameters.
 	params := k.GetParams(ctx)
@@ -206,14 +212,14 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 	if err := validateMiningDifficulty(relayBz, params.MinRelayDifficultyBits); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
-	logger.Info("successfully validated relay mining difficulty")
+	logger.Debug("successfully validated relay mining difficulty")
 
 	// Validate that path the proof is submitted for matches the expected one
 	// based on the pseudo-random on-chain data associated with the header.
 	if err := k.validateClosestPath(ctx, sparseMerkleClosestProof, msg.GetSessionHeader()); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
-	logger.Info("successfully validated proof path")
+	logger.Debug("successfully validated proof path")
 
 	// Verify the relay's difficulty.
 	if err := validateMiningDifficulty(relayBz, params.MinRelayDifficultyBits); err != nil {
@@ -229,13 +235,13 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 
 	defer telemetry.ComputeUnitsCounter(telemetry.ClaimProofStageProven, claim)
 
-	logger.Info("successfully retrieved and validated claim")
+	logger.Debug("successfully retrieved and validated claim")
 
 	// Verify the proof's closest merkle proof.
 	if err := verifyClosestProof(sparseMerkleClosestProof, claim.GetRootHash()); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
-	logger.Info("successfully verified closest merkle proof")
+	logger.Debug("successfully verified closest merkle proof")
 
 	// Construct and insert proof after all validation.
 	proof := types.Proof{
@@ -243,7 +249,7 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 		SessionHeader:      msg.GetSessionHeader(),
 		ClosestMerkleProof: msg.GetProof(),
 	}
-	logger.Info(fmt.Sprintf("queried and validated the claim for session ID %q", sessionHeader.SessionId))
+	logger.Debug(fmt.Sprintf("queried and validated the claim for session ID %q", sessionHeader.SessionId))
 
 	// TODO_BLOCKER(@Olshansk): check if this proof already exists and return an
 	// appropriate error in any case where the supplier should no longer be able
