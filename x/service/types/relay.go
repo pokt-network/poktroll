@@ -63,6 +63,10 @@ func (req *RelayRequest) ValidateBasic() error {
 		return ErrServiceInvalidRelayRequest.Wrap("missing application signature")
 	}
 
+	if meta.GetSupplierAddress() == "" {
+		return ErrServiceInvalidRelayRequest.Wrap("relay metadata missing supplier address")
+	}
+
 	return nil
 }
 

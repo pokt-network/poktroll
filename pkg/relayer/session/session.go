@@ -5,13 +5,16 @@ import (
 	"sync"
 
 	"cosmossdk.io/depinject"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client/supplier"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/observable/logging"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
+	"github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	"github.com/pokt-network/poktroll/x/shared"
 )
@@ -40,8 +43,8 @@ type relayerSessionsManager struct {
 	// blockClient is used to get the notifications of committed blocks.
 	blockClient client.BlockClient
 
-	// supplierClient is used to create claims and submit proofs for sessions.
-	supplierClient client.SupplierClient
+	// supplierClients is used to create claims and submit proofs for sessions.
+	supplierClients *supplier.SupplierClientMap
 
 	// pendingTxMu is used to prevent concurrent txs with the same sequence number.
 	pendingTxMu sync.Mutex
@@ -57,10 +60,11 @@ type relayerSessionsManager struct {
 //
 // Required dependencies:
 //   - client.BlockClient
-//   - client.SupplierClient
+//   - client.SupplierClientMap
 //
 // Available options:
 //   - WithStoresDirectory
+//   - WithSigningKeyNames
 func NewRelayerSessions(
 	ctx context.Context,
 	deps depinject.Config,
@@ -75,7 +79,7 @@ func NewRelayerSessions(
 	if err := depinject.Inject(
 		deps,
 		&rs.blockClient,
-		&rs.supplierClient,
+		&rs.supplierClients,
 		&rs.sharedQueryClient,
 	); err != nil {
 		return nil, err
@@ -139,7 +143,8 @@ func (rs *relayerSessionsManager) InsertRelays(relays relayer.MinedRelaysObserva
 
 // ensureSessionTree returns the SessionTree for a given session.
 // If no tree for the session exists, a new SessionTree is created before returning.
-func (rs *relayerSessionsManager) ensureSessionTree(sessionHeader *sessiontypes.SessionHeader) (relayer.SessionTree, error) {
+func (rs *relayerSessionsManager) ensureSessionTree(relayMetadata *types.RelayRequestMetadata) (relayer.SessionTree, error) {
+	sessionHeader := relayMetadata.SessionHeader
 	sessionsTrees, ok := rs.sessionsTrees[sessionHeader.SessionEndBlockHeight]
 
 	// If there is no map for sessions at the sessionEndHeight, create one.
@@ -148,13 +153,17 @@ func (rs *relayerSessionsManager) ensureSessionTree(sessionHeader *sessiontypes.
 		rs.sessionsTrees[sessionHeader.SessionEndBlockHeight] = sessionsTrees
 	}
 
+	supplierAccAddress, err := cosmostypes.AccAddressFromBech32(relayMetadata.SupplierAddress)
+	if err != nil {
+		return nil, err
+	}
+
 	// Get the sessionTree for the given session.
 	sessionTree, ok := sessionsTrees[sessionHeader.SessionId]
 
 	// If the sessionTree does not exist, create it.
-	var err error
 	if !ok {
-		sessionTree, err = NewSessionTree(sessionHeader, rs.storesDirectory, rs.removeFromRelayerSessions)
+		sessionTree, err = NewSessionTree(sessionHeader, &supplierAccAddress, rs.storesDirectory, rs.removeFromRelayerSessions)
 		if err != nil {
 			return nil, err
 		}
@@ -336,8 +345,8 @@ func (rs *relayerSessionsManager) mapAddMinedRelayToSessionTree(
 	// ensure the session tree exists for this relay
 	// TODO_CONSIDERATION: if we get the session header from the response, there
 	// is no possibility that we forgot to hydrate it (i.e. blindly trust the client).
-	sessionHeader := relay.GetReq().GetMeta().SessionHeader
-	smst, err := rs.ensureSessionTree(sessionHeader)
+	relayMetadata := relay.GetReq().GetMeta()
+	smst, err := rs.ensureSessionTree(&relayMetadata)
 	if err != nil {
 		// TODO_IMPROVE: log additional info?
 		rs.logger.Error().Err(err).Msg("failed to ensure session tree")

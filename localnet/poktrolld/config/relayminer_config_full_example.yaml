@@ -1,5 +1,5 @@
-# Name of the key (in the keyring) used to sign transactions.
-signing_key_name: supplier1
+# Names of the key (in the keyring) used to run the suppliers for.
+default_signing_key_names: [supplier1]
 
 # Relative path (on the relayminer's machine) to the SMT KV store data on disk.
 smt_store_path: ./path/to/smt_stores

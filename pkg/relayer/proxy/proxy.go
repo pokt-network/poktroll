@@ -25,10 +25,12 @@ var _ relayer.RelayerProxy = (*relayerProxy)(nil)
 type relayerProxy struct {
 	logger polylog.Logger
 
-	// signingKeyName is the supplier's key name in the Cosmos's keybase. It is used along with the keyring to
-	// get the supplier address and sign the relay responses.
-	signingKeyName string
-	keyring        keyring.Keyring
+	// signingKeyNames are the supplier key names in the Cosmos's keybase.
+	// They are used along with the keyring to get the supplier addresses and sign relay responses.
+	// A unique list of key names from all suppliers configured on RelayMiner is passed to relayerProxy,
+	// and the address for each signing key is looked up in `BuildProvidedServices`.
+	signingKeyNames []string
+	keyring         keyring.Keyring
 
 	// blockClient is the client used to get the block at the latest height from the blockchain
 	// and be notified of new incoming blocks. It is used to update the current session data.
@@ -68,8 +70,11 @@ type relayerProxy struct {
 	// ringCache is used to obtain and store the ring for the application.
 	ringCache crypto.RingCache
 
-	// supplierAddress is the address of the supplier that the relayer proxy is running for.
-	supplierAddress string
+	// AddressToSigningKeyNameMap is a map with a CosmoSDK address as a key, and the keyring signing key name as a value.
+	// We use this map in:
+	// 1. Relay verification to check if the incoming relay matches the supplier hosted by the relay miner;
+	// 2. Relay signing to resolve which keyring key name to use for signing;
+	AddressToSigningKeyNameMap map[string]string
 }
 
 // NewRelayerProxy creates a new relayer proxy with the given dependencies or returns
@@ -83,7 +88,7 @@ type relayerProxy struct {
 //   - client.SupplierQueryClient
 //
 // Available options:
-//   - WithSigningKeyName
+//   - WithSigningKeyNames
 //   - WithServicesConfigMap
 func NewRelayerProxy(
 	deps depinject.Config,
@@ -169,8 +174,8 @@ func (rp *relayerProxy) ServedRelays() relayer.RelaysObservable {
 // validateConfig validates the relayer proxy's configuration options and returns an error if it is invalid.
 // TODO_TEST: Add tests for validating these configurations.
 func (rp *relayerProxy) validateConfig() error {
-	if rp.signingKeyName == "" {
-		return ErrRelayerProxyUndefinedSigningKeyName
+	if rp.signingKeyNames == nil || len(rp.signingKeyNames) == 0 || rp.signingKeyNames[0] == "" {
+		return ErrRelayerProxyUndefinedSigningKeyNames
 	}
 
 	if rp.serverConfigs == nil || len(rp.serverConfigs) == 0 {
