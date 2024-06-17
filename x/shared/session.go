@@ -1,6 +1,7 @@
 package shared
 
 import (
+	poktrand "github.com/pokt-network/poktroll/pkg/crypto/rand"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -105,4 +106,48 @@ func GetProofWindowOpenHeight(sharedParams *sharedtypes.Params, queryHeight int6
 func GetProofWindowCloseHeight(sharedParams *sharedtypes.Params, queryHeight int64) int64 {
 	return GetProofWindowOpenHeight(sharedParams, queryHeight) +
 		int64(sharedParams.GetProofWindowCloseOffsetBlocks())
+}
+
+// GetEarliestClaimCommitHeight returns the earliest block height at which a claim
+// for the session that includes queryHeight can be committed for a given supplier
+// and the passed sharedParams.
+func GetEarliestClaimCommitHeight(
+	sharedParams *sharedtypes.Params,
+	queryHeight int64,
+	claimWindowOpenBlockHash []byte,
+	supplierAddr string,
+) int64 {
+	claimWindowOpenHeight := GetClaimWindowOpenHeight(sharedParams, queryHeight)
+
+	// Generate a deterministic random (non-negative) int64, seeded by the claim
+	// window open block hash and the supplier address.
+	randomNumber := poktrand.SeededInt63(claimWindowOpenBlockHash, []byte(supplierAddr))
+
+	// TODO_IN_THIS_PR: check for off-by-one errors!
+	distributionWindowSizeBlocks := sharedParams.ClaimWindowCloseOffsetBlocks - sharedParams.ClaimWindowOpenOffsetBlocks
+	randCreateClaimHeightOffset := randomNumber % int64(distributionWindowSizeBlocks)
+
+	return claimWindowOpenHeight + randCreateClaimHeightOffset
+}
+
+// GetEarliestProofCommitHeight returns the earliest block height at which a proof
+// for the session that includes queryHeight can be committed for a given supplier
+// and the passed sharedParams.
+func GetEarliestProofCommitHeight(
+	sharedParams *sharedtypes.Params,
+	queryHeight int64,
+	proofWindowOpenBlockHash []byte,
+	supplierAddr string,
+) int64 {
+	proofWindowOpenHeight := GetProofWindowOpenHeight(sharedParams, queryHeight)
+
+	// Generate a deterministic random (non-negative) int64, seeded by the proof
+	// window open block hash and the supplier address.
+	randomNumber := poktrand.SeededInt63(proofWindowOpenBlockHash, []byte(supplierAddr))
+
+	// TODO_IN_THIS_PR: check for off-by-one errors!
+	distributionWindowSizeBlocks := sharedParams.ProofWindowCloseOffsetBlocks - sharedParams.ProofWindowOpenOffsetBlocks
+	randCreateProofHeightOffset := randomNumber % int64(distributionWindowSizeBlocks)
+
+	return proofWindowOpenHeight + randCreateProofHeightOffset
 }
