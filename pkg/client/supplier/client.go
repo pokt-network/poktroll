@@ -73,7 +73,7 @@ func (sClient *supplierClient) SubmitProofs(
 		// TODO(@bryanchriswhite): reconcile splitting of supplier & proof modules
 		//  with off-chain pkgs/nomenclature.
 		msgs[i] = &prooftypes.MsgSubmitProof{
-			SupplierAddress: sClient.signingKeyAddr.String(),
+			SupplierAddress: sessionProof.SupplierAddress.String(),
 			SessionHeader:   sessionProof.SessionHeader,
 			Proof:           sessionProof.ProofBz,
 		}
@@ -90,12 +90,12 @@ func (sClient *supplierClient) SubmitProofs(
 		// TODO_IMPROVE: log details related to what & how much is being proven
 		logger.Info().
 			Fields(map[string]any{
-				"supplier_addr": sClient.signingKeyAddr.String(),
+				"supplier_addr": sessionProof.SupplierAddress.String(),
 				"app_addr":      sessionHeader.ApplicationAddress,
 				"session_id":    sessionHeader.SessionId,
 				"service":       sessionHeader.Service.Id,
 			}).
-			Msg("submitted new proof")
+			Msg("submitted a new proof")
 	}
 
 	return <-errCh
@@ -116,7 +116,7 @@ func (sClient *supplierClient) CreateClaims(
 	//  with off-chain pkgs/nomenclature.
 	for i, sessionClaim := range sessionClaims {
 		msgs[i] = &prooftypes.MsgCreateClaim{
-			SupplierAddress: sClient.signingKeyAddr.String(),
+			SupplierAddress: sessionClaim.SupplierAddress.String(),
 			SessionHeader:   sessionClaim.SessionHeader,
 			RootHash:        sessionClaim.RootHash,
 		}
@@ -127,12 +127,12 @@ func (sClient *supplierClient) CreateClaims(
 		return err
 	}
 
-	for _, rootHashWithSessionHeader := range sessionClaims {
-		sessionHeader := rootHashWithSessionHeader.SessionHeader
+	for _, claim := range sessionClaims {
+		sessionHeader := claim.SessionHeader
 		// TODO_IMPROVE: log details related to how much is claimed
 		logger.Info().
 			Fields(map[string]any{
-				"supplier_addr": sClient.signingKeyAddr.String(),
+				"supplier_addr": claim.SupplierAddress.String(),
 				"app_addr":      sessionHeader.ApplicationAddress,
 				"session_id":    sessionHeader.SessionId,
 				"service":       sessionHeader.Service.Id,
@@ -141,6 +141,11 @@ func (sClient *supplierClient) CreateClaims(
 	}
 
 	return <-errCh
+}
+
+// Address returns an address of the supplier client.
+func (sClient *supplierClient) Address() *cosmostypes.AccAddress {
+	return &sClient.signingKeyAddr
 }
 
 // validateConfigAndSetDefaults attempts to get the address from the keyring

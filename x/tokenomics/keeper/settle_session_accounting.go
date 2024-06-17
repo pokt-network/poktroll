@@ -15,13 +15,6 @@ import (
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-const (
-	// TODO_TECHDEBT(@Olshansk): Retrieve this from the SMT package
-	// The number of bytes expected to be contained in the root hash being
-	// claimed in order to represent both the digest and the sum.
-	smstRootSize = 40
-)
-
 // SettleSessionAccounting is responsible for all of the post-session accounting
 // necessary to burn, mint or transfer tokens depending on the amount of work
 // done. The amount of "work done" complete is dictated by `sum` of `root`.
@@ -77,7 +70,7 @@ func (k Keeper) SettleSessionAccounting(
 
 	// TODO_BLOCKER(@Olshansk): This check should be the responsibility of the SMST package
 	// since it's used to get compute units from the root hash.
-	if root == nil || len(root) != smstRootSize {
+	if root == nil || len(root) != smt.SmstRootSizeBytes {
 		logger.Error(fmt.Sprintf("received an invalid root hash of size: %d", len(root)))
 		return types.ErrTokenomicsRootHashInvalid
 	}

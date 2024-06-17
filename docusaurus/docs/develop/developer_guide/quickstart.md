@@ -403,7 +403,7 @@ The following is an example config to get you started:
 
 ```bash
 cat <<EOF >> shannon_relayminer_config.yaml
-signing_key_name: shannon_supplier
+default_signing_key_names: [ "keybase-key-name" ]
 smt_store_path: smt_stores
 metrics:
   enabled: true

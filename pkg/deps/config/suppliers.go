@@ -17,6 +17,8 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/client/query"
 	querytypes "github.com/pokt-network/poktroll/pkg/client/query/types"
+	"github.com/pokt-network/poktroll/pkg/client/supplier"
+	"github.com/pokt-network/poktroll/pkg/client/tx"
 	txtypes "github.com/pokt-network/poktroll/pkg/client/tx/types"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/pkg/polylog"
@@ -377,6 +379,37 @@ func NewSupplyShannonSDKFn(signingKeyName string) SupplierFn {
 	}
 }
 
+// NewSupplySupplierClientsFn returns a function which constructs a
+// SupplierClientMap and returns a new depinject.Config which is
+// supplied with the given deps and the new SupplierClientMap.
+func NewSupplySupplierClientsFn(signingKeyNames []string) SupplierFn {
+	return func(
+		ctx context.Context,
+		deps depinject.Config,
+		_ *cobra.Command,
+	) (depinject.Config, error) {
+		suppliers := supplier.NewSupplierClientMap()
+		for _, signingKeyName := range signingKeyNames {
+			txClientDepinjectConfig, err := newSupplyTxClientsFn(ctx, deps, signingKeyName)
+			if err != nil {
+				return nil, err
+			}
+
+			supplierClient, err := supplier.NewSupplierClient(
+				txClientDepinjectConfig,
+				supplier.WithSigningKeyName(signingKeyName),
+			)
+			if err != nil {
+				return nil, err
+			}
+
+			// Making sure we use addresses as keys.
+			suppliers.SupplierClients[supplierClient.Address().String()] = supplierClient
+		}
+		return depinject.Configs(deps, depinject.Supply(suppliers)), nil
+	}
+}
+
 // NewSupplyBlockQueryClientFn returns a function which constructs a
 // BlockQueryClient instance and returns a new depinject.Config which
 // is supplied with the given deps and the new BlockQueryClient.
@@ -411,4 +444,20 @@ func NewSupplySharedQueryClientFn() SupplierFn {
 
 		return depinject.Configs(deps, depinject.Supply(sharedQuerier)), nil
 	}
+}
+
+// newSupplyTxClientFn returns a new depinject.Config which is supplied with
+// the given deps and the new TxClient.
+func newSupplyTxClientsFn(ctx context.Context, deps depinject.Config, signingKeyName string) (depinject.Config, error) {
+	txClient, err := tx.NewTxClient(
+		ctx,
+		deps,
+		tx.WithSigningKeyName(signingKeyName),
+		tx.WithCommitTimeoutBlocks(tx.DefaultCommitTimeoutHeightOffset),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return depinject.Configs(deps, depinject.Supply(txClient)), nil
 }
