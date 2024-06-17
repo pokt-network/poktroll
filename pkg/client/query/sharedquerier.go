@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"cosmossdk.io/depinject"
-	cometclient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/gogoproto/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/client"
@@ -20,15 +19,15 @@ var _ client.SharedQueryClient = (*sharedQuerier)(nil)
 type sharedQuerier struct {
 	clientConn    grpc.ClientConn
 	sharedQuerier sharedtypes.QueryClient
-	blockQuerier  cometclient.CometRPC
+	blockQuerier  client.BlockQueryClient
 }
 
 // NewSharedQuerier returns a new instance of a client.SharedQueryClient by
 // injecting the dependecies provided by the depinject.Config.
 //
 // Required dependencies:
-// - clientCtx
-// - cometclient.CometRPC
+// - clientCtx (grpc.ClientConn)
+// - client.BlockQueryClient
 func NewSharedQuerier(deps depinject.Config) (client.SharedQueryClient, error) {
 	querier := &sharedQuerier{}
 
@@ -132,10 +131,13 @@ func (sq *sharedQuerier) GetEarliestClaimCommitHeight(ctx context.Context, query
 		return 0, err
 	}
 
+	// NB: Byte slice representation of block hashes don't need to be normalized.
+	claimWindowOpenBlockHash := claimWindowOpenBlock.BlockID.Hash.Bytes()
+
 	return shared.GetEarliestClaimCommitHeight(
 		sharedParams,
-		claimWindowOpenHeight,
-		claimWindowOpenBlock.BlockID.Hash,
+		queryHeight,
+		claimWindowOpenBlockHash,
 		supplierAddr,
 	), nil
 }
@@ -164,7 +166,7 @@ func (sq *sharedQuerier) GetEarliestProofCommitHeight(ctx context.Context, query
 
 	return shared.GetEarliestProofCommitHeight(
 		sharedParams,
-		proofWindowOpenHeight,
+		queryHeight,
 		proofWindowOpenBlock.BlockID.Hash,
 		supplierAddr,
 	), nil

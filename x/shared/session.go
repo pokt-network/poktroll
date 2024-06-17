@@ -123,7 +123,6 @@ func GetEarliestClaimCommitHeight(
 	// window open block hash and the supplier address.
 	randomNumber := poktrand.SeededInt63(claimWindowOpenBlockHash, []byte(supplierAddr))
 
-	// TODO_IN_THIS_PR: check for off-by-one errors!
 	distributionWindowSizeBlocks := sharedParams.ClaimWindowCloseOffsetBlocks - sharedParams.ClaimWindowOpenOffsetBlocks
 	randCreateClaimHeightOffset := randomNumber % int64(distributionWindowSizeBlocks)
 
@@ -145,7 +144,6 @@ func GetEarliestProofCommitHeight(
 	// window open block hash and the supplier address.
 	randomNumber := poktrand.SeededInt63(proofWindowOpenBlockHash, []byte(supplierAddr))
 
-	// TODO_IN_THIS_PR: check for off-by-one errors!
 	distributionWindowSizeBlocks := sharedParams.ProofWindowCloseOffsetBlocks - sharedParams.ProofWindowOpenOffsetBlocks
 	randCreateProofHeightOffset := randomNumber % int64(distributionWindowSizeBlocks)
 
