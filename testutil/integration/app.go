@@ -1,12 +1,12 @@
 package integration
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
 	"cosmossdk.io/core/appmodule"
 	coreheader "cosmossdk.io/core/header"
+	"cosmossdk.io/depinject"
 	"cosmossdk.io/log"
 	"cosmossdk.io/math"
 	"cosmossdk.io/store"
@@ -38,7 +38,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app"
-	"github.com/pokt-network/poktroll/testutil/sample"
+	"github.com/pokt-network/poktroll/pkg/crypto"
+	"github.com/pokt-network/poktroll/pkg/crypto/rings"
+	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/testutil/testkeyring"
 	appkeeper "github.com/pokt-network/poktroll/x/application/keeper"
 	application "github.com/pokt-network/poktroll/x/application/module"
@@ -81,13 +83,17 @@ type App struct {
 	authority     sdk.AccAddress
 	moduleManager module.Manager
 	queryHelper   *baseapp.QueryServiceTestHelper
+	keyRing       keyring.Keyring
+	ringClient    crypto.RingClient
 
 	// Some default helper fixtures for general testing.
 	// They're publically exposed and should/could be improve and expand on
 	// over time.
-	DefaultService     *sharedtypes.Service
-	DefaultApplication *apptypes.Application
-	DefaultSupplier    *sharedtypes.Supplier
+	DefaultService                   *sharedtypes.Service
+	DefaultApplication               *apptypes.Application
+	DefaultApplicationKeyringUid     string
+	DefaultSupplier                  *sharedtypes.Supplier
+	DefaultSupplierKeyringKeyringUid string
 }
 
 // NewIntegrationApp creates a new instance of the App with the provided details
@@ -463,6 +469,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 
 	// Construct a keyring to hold the keypairs for the accounts used in the test.
 	keyRing := keyring.NewInMemory(integrationApp.cdc)
+	integrationApp.keyRing = keyRing
 
 	// Create a pre-generated account iterator to create accounts for the test.
 	preGeneratedAccts := testkeyring.PreGeneratedAccounts()
@@ -476,15 +483,24 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	integrationApp.DefaultService = &defaultService
 
 	// Create a supplier account with the corresponding keys in the keyring for the supplier.
+	integrationApp.DefaultSupplierKeyringKeyringUid = "supplier"
 	supplierAddr := testkeyring.CreateOnChainAccount(
 		integrationApp.sdkCtx, t,
-		"supplied",
+		integrationApp.DefaultSupplierKeyringKeyringUid,
 		keyRing,
 		accountKeeper,
 		preGeneratedAccts,
 	)
-	err = bankKeeper.SendCoinsFromModuleToAccount(integrationApp.sdkCtx, banktypes.ModuleName, supplierAddr, sdk.NewCoins(sdk.NewInt64Coin("upokt", 1000000)))
-	// Prepare a new default supplier
+
+	// Send some coins to the supplier account
+	// err = bankKeeper.SendCoinsFromModuleToAccount(
+	// 	integrationApp.sdkCtx,
+	// 	banktypes.ModuleName,
+	// 	supplierAddr,
+	// 	sdk.NewCoins(sdk.NewInt64Coin("upokt", 1000000)))
+	// require.NoError(t, err)
+
+	// Prepare the on-chain supplier
 	supplierStake := types.NewCoin("upokt", math.NewInt(1000000))
 	defaultSupplier := sharedtypes.Supplier{
 		Address: supplierAddr.String(),
@@ -498,14 +514,28 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	supplierKeeper.SetSupplier(integrationApp.sdkCtx, defaultSupplier)
 	integrationApp.DefaultSupplier = &defaultSupplier
 
-	// bankKeeper.SendCoinsFromModuleToAccount()
-	a, _ := accountKeeper.GetPubKey(integrationApp.sdkCtx, supplierAddr)
-	fmt.Println(a)
+	// Create an application account with the corresponding keys in the keyring for the application.
+	integrationApp.DefaultApplicationKeyringUid = "application"
+	applicationAddr := testkeyring.CreateOnChainAccount(
+		integrationApp.sdkCtx, t,
+		integrationApp.DefaultApplicationKeyringUid,
+		keyRing,
+		accountKeeper,
+		preGeneratedAccts,
+	)
 
-	// Prepare a new default application
+	// Send some coins to the application account
+	// err = bankKeeper.SendCoinsFromModuleToAccount(
+	// 	integrationApp.sdkCtx,
+	// 	banktypes.ModuleName,
+	// 	applicationAddr,
+	// 	sdk.NewCoins(sdk.NewInt64Coin("upokt", 1000000)))
+	// require.NoError(t, err)
+
+	// Prepare the on-chain supplier
 	appStake := types.NewCoin("upokt", math.NewInt(1000000))
 	defaultApplication := apptypes.Application{
-		Address: sample.AccAddress(),
+		Address: applicationAddr.String(),
 		Stake:   &appStake,
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
 			{
@@ -516,11 +546,32 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	applicationKeeper.SetApplication(integrationApp.sdkCtx, defaultApplication)
 	integrationApp.DefaultApplication = &defaultApplication
 
+	// Construct a ringClient to get the application's ring & verify the relay
+	// request signature.
+	ringClient, err := rings.NewRingClient(depinject.Supply(
+		polyzero.NewLogger(),
+		prooftypes.NewAppKeeperQueryClient(applicationKeeper),
+		prooftypes.NewAccountKeeperQueryClient(accountKeeper),
+		prooftypes.NewSharedKeeperQueryClient(sharedKeeper),
+	))
+	require.NoError(t, err)
+	integrationApp.ringClient = ringClient
+
 	// Commit all the changes above by committing, finalizing and moving
 	// to the next block.
 	integrationApp.NextBlock(t)
 
 	return integrationApp
+}
+
+// RingClient returns the ring client used by the application.
+func (app *App) RingClient() crypto.RingClient {
+	return app.ringClient
+}
+
+// KeyRing returns the keyring used by the application.
+func (app *App) KeyRing() keyring.Keyring {
+	return app.keyRing
 }
 
 // Codec returns the codec used by the application.

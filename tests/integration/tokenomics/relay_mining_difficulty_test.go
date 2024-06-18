@@ -1,6 +1,7 @@
 package integration_test
 
 import (
+	"context"
 	"crypto/sha256"
 	"testing"
 
@@ -72,26 +73,11 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 		integrationApp.NextBlock(t)
 	}
 
-	// proof := &smt.SparseMerkleClosestProof{
-	// 	Path:             []byte("temp_path"),
-	// 	FlippedBits:      []int{1, 2, 3},
-	// 	Depth:            1,
-	// 	ClosestPath:      []byte("temp_closest_path"),
-	// 	ClosestValueHash: []byte("temp_closest_value_hash"),
-	// 	ClosestProof: &smt.SparseMerkleProof{
-	// 		SideNodes:             make([][]byte, 0),
-	// 		NonMembershipLeafData: []byte("temp_non_membership_leaf_data"),
-	// 		SiblingData:           []byte("temp_sibling_data"),
-	// 	},
-	// }
-	// proofBz, err := proof.Marshal()
-	// require.NoError(t, err)
-
 	// Create a new proof and submit it
 	createProofMsg := prooftypes.MsgSubmitProof{
 		SupplierAddress: integrationApp.DefaultSupplier.Address,
 		SessionHeader:   session.Header,
-		Proof:           getProof(t, session, integrationApp),
+		Proof:           getProof(t, integrationApp.SdkCtx(), session, integrationApp),
 	}
 
 	result = integrationApp.RunMsg(t,
@@ -137,7 +123,11 @@ func getSession(t *testing.T, integrationApp *testutil.App) *sessiontypes.Sessio
 	return getSessionRes.Session
 }
 
-func getProof(t *testing.T, session *sessiontypes.Session, integrationApp *testutil.App) []byte {
+func getProof(
+	t *testing.T, ctx context.Context,
+	session *sessiontypes.Session,
+	integrationApp *testutil.App,
+) []byte {
 	t.Helper()
 
 	// Generating an ephemeral tree & spec just so we can submit
@@ -146,9 +136,14 @@ func getProof(t *testing.T, session *sessiontypes.Session, integrationApp *testu
 	kvStore, err := badger.NewKVStore("")
 	require.NoError(t, err)
 
-	minedRelay := testrelayer.NewMinedRelay(t,
+	minedRelay := testrelayer.NewSignedMinedRelay(t, ctx,
 		session,
-		integrationApp.DefaultSupplier.Address)
+		integrationApp.DefaultApplication.Address,
+		integrationApp.DefaultSupplier.Address,
+		integrationApp.DefaultSupplierKeyringKeyringUid,
+		integrationApp.KeyRing(),
+		integrationApp.RingClient(),
+	)
 
 	tree := smt.NewSparseMerkleSumTrie(kvStore, sha256.New(), smt.WithValueHasher(nil))
 	err = tree.Update(minedRelay.Hash, minedRelay.Bytes, 1)
