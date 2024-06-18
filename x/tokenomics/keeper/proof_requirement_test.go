@@ -30,7 +30,8 @@ func TestKeeper_IsProofRequired(t *testing.T) {
 	var (
 		// Because this test is deterministic & this sample size is known to be
 		// sufficient, it doest not need to be calculated.
-		sampleSize  = 1500
+		// TODO_UPNEXT(#618): reuse sample size calculation from the other RNG tests.
+		sampleSize  = 5000
 		probability = prooftypes.DefaultProofRequestProbability
 		tolerance   = 0.01
 
