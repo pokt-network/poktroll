@@ -19,6 +19,7 @@ import (
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/types/bech32"
 	"github.com/pokt-network/ring-go"
+	sdktypes "github.com/pokt-network/shannon-sdk/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/client"
@@ -36,6 +37,12 @@ import (
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
+
+// JSONRPCInternalErrorCode is the default JSON-RPC error code to be used when
+// generating a JSON-RPC error reply.
+// JSON-RPC specification uses -32000 to -32099 as implementation-defined server-errors.
+// See: https://www.jsonrpc.org/specification#error_object
+const JSONRPCInternalErrorCode = -32000
 
 // TestBehavior is a struct that holds the test context and mocks
 // for the relayer proxy tests.
@@ -142,7 +149,7 @@ func WithServicesConfigMap(
 			for serviceId, supplierConfig := range serviceConfig.SupplierConfigsMap {
 				server := &http.Server{Addr: supplierConfig.ServiceConfig.BackendUrl.Host}
 				server.Handler = http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-					w.Write(prepareJSONRPCResponse(test.t))
+					sendJSONRPCResponse(test.t, w)
 				})
 				go func() { server.ListenAndServe() }()
 				go func() {
@@ -307,14 +314,22 @@ func GetRelayResponseError(t *testing.T, res *http.Response) (errCode int32, err
 
 	relayResponse := &servicetypes.RelayResponse{}
 	err = relayResponse.Unmarshal(responseBody)
+	require.NoError(t, err)
+
+	// If the relayResponse basic validation fails then consider the payload as an error.
+	if err := relayResponse.ValidateBasic(); err != nil {
+		return JSONRPCInternalErrorCode, string(relayResponse.Payload)
+	}
+
+	response, err := sdktypes.DeserializeHTTPResponse(relayResponse.Payload)
 	if err != nil {
-		return 0, "cannot unmarshal request body"
+		return 0, "cannot unmarshal response"
 	}
 
 	var payload JSONRPCErrorReply
-	err = json.Unmarshal(relayResponse.Payload, &payload)
+	err = json.Unmarshal(response.BodyBz, &payload)
 	if err != nil {
-		return 0, "cannot unmarshal request payload"
+		return 0, "cannot unmarshal response payload"
 	}
 
 	if payload.Error == nil {

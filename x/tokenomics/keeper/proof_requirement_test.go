@@ -14,6 +14,8 @@ import (
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 )
 
+// NB: This init function is used to seed the random number generator to ensure
+// that the test is deterministic.
 func init() {
 	rand.Seed(0)
 }

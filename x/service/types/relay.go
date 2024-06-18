@@ -4,6 +4,9 @@ import (
 	"crypto/sha256"
 
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
+
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // GetHashFromBytes returns the hash of the relay (full, request or response) bytes.
@@ -122,4 +125,36 @@ func (res *RelayResponse) VerifySupplierSignature(supplierPubKey cryptotypes.Pub
 	}
 
 	return nil
+}
+
+// nullifyForObservability generates an empty RelayRequest that has the same
+// service and payload as the source RelayRequest if they are not nil.
+// It is meant to be used when replying with an error but no valid RelayRequest is available.
+func (sourceRelayRequest *RelayRequest) NullifyForObservability() *RelayRequest {
+	emptyRelayRequest := &RelayRequest{
+		Meta: RelayRequestMetadata{
+			SessionHeader: &sessiontypes.SessionHeader{
+				Service: &sharedtypes.Service{
+					Id: "",
+				},
+			},
+		},
+		Payload: []byte{},
+	}
+
+	if sourceRelayRequest == nil {
+		return emptyRelayRequest
+	}
+
+	if sourceRelayRequest.Payload != nil {
+		emptyRelayRequest.Payload = sourceRelayRequest.Payload
+	}
+
+	if sourceRelayRequest.Meta.SessionHeader != nil {
+		if sourceRelayRequest.Meta.SessionHeader.Service != nil {
+			emptyRelayRequest.Meta.SessionHeader.Service = sourceRelayRequest.Meta.SessionHeader.Service
+		}
+	}
+
+	return emptyRelayRequest
 }
