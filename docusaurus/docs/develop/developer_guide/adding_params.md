@@ -3,12 +3,6 @@ sidebar_position: 5
 title: Adding On-Chain Module Parameters
 ---
 
-https://docusaurus.io/docs/next/markdown-features/code-blocks#supported-languages
-
-https://github.com/FormidableLabs/prism-react-renderer/blob/master/packages/generate-prism-languages/index.ts#L9-L23
-
-https://prismjs.com/#supported-languages
-
 # Adding On-Chain Module Parameters <!-- omit in toc -->
 
 - [Adding a New On-Chain Module Parameter](#adding-a-new-on-chain-module-parameter)
