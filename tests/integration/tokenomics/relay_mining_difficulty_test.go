@@ -29,27 +29,28 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	integrationApp := integration.NewCompleteIntegrationApp(t)
 
 	// Move forward a few blocks to move away from the genesis block
-	for i := 0; i < 3; i++ {
-		integrationApp.NextBlock(t)
-	}
+	integrationApp.NextBlocks(t, 3)
 
 	// Get the current session and shared params
 	session := getSession(t, integrationApp)
 	sharedParams := getSharedParams(t, integrationApp)
 
-	// Figure out how many blocks we need to wait until the claim window is open
+	// Prepare the trie with a single mined relay
+	trie := prepareSMST(t, integrationApp.SdkCtx(), integrationApp, session)
+
+	// Compute the number of blocks to wait between different events
 	currentBlockHeight := int(integrationApp.SdkCtx().BlockHeight())
 	sessionEndHeight := int(session.Header.SessionEndBlockHeight)
 	claimOpenWindowNumBlocks := int(sharedParams.ClaimWindowOpenOffsetBlocks)
+	claimCloseWindowNumBlocks := int(sharedParams.ClaimWindowCloseOffsetBlocks)
+	proofOpenWindowNumBlocks := int(sharedParams.ProofWindowOpenOffsetBlocks)
+	proofCloseWindowNumBlocks := int(sharedParams.ProofWindowCloseOffsetBlocks)
 	numBlocksUntilClaimWindowIsOpen := int(sessionEndHeight + claimOpenWindowNumBlocks - currentBlockHeight + 1)
+	numBlocksUntilProofWindowIsOpen := numBlocksUntilClaimWindowIsOpen + claimCloseWindowNumBlocks + proofOpenWindowNumBlocks
+	numBlocksUntilProofWindowIsClosed := numBlocksUntilProofWindowIsOpen + proofCloseWindowNumBlocks
 
 	// Wait until the claim window is open
-	for i := 0; i < numBlocksUntilClaimWindowIsOpen; i++ {
-		integrationApp.NextBlock(t)
-	}
-
-	// Prepare the trie with a single mined relay
-	trie := prepareSMST(t, integrationApp.SdkCtx(), integrationApp, session)
+	integrationApp.NextBlocks(t, numBlocksUntilClaimWindowIsOpen)
 
 	// Create a new claim and create it
 	createClaimMsg := prooftypes.MsgCreateClaim{
@@ -62,18 +63,10 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 		integration.WithAutomaticFinalizeBlock(),
 		integration.WithAutomaticCommit(),
 	)
-	require.NotNil(t, result, "unexpected nil result")
+	require.NotNil(t, result, "unexpected nil result when submitting a MsgCreateClaim tx")
 
-	// Figure out how many blocks we need to wait until the proof window is open
-	currentBlockHeight = int(integrationApp.SdkCtx().BlockHeight())
-	proofOpenWindowNumBlocks := int(sharedParams.ProofWindowOpenOffsetBlocks)
-	claimCloseWindowNumBlocks := int(sharedParams.ClaimWindowCloseOffsetBlocks)
-	numBlocksUntilProofWindowIsOpen := int(sessionEndHeight + claimOpenWindowNumBlocks + claimCloseWindowNumBlocks + proofOpenWindowNumBlocks - currentBlockHeight + 1)
-
-	// Wait until the claim window is open
-	for i := 0; i < numBlocksUntilProofWindowIsOpen; i++ {
-		integrationApp.NextBlock(t)
-	}
+	// Wait until the proof window is open
+	integrationApp.NextBlocks(t, numBlocksUntilProofWindowIsOpen)
 
 	// Create a new proof and submit it
 	createProofMsg := prooftypes.MsgSubmitProof{
@@ -81,12 +74,16 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 		SessionHeader:   session.Header,
 		Proof:           getProof(t, trie),
 	}
-
 	result = integrationApp.RunMsg(t,
 		&createProofMsg,
 		integration.WithAutomaticFinalizeBlock(),
 		integration.WithAutomaticCommit(),
 	)
+	require.NotNil(t, result, "unexpected nil result when submitting a MsgSubmitProof tx")
+
+	// Wait until the proof window is closed
+	integrationApp.NextBlocks(t, numBlocksUntilProofWindowIsClosed)
+
 }
 
 func UpdateRelayMiningDifficulty_UpdatingMultipleServicesAtOnce(t *testing.T) {}

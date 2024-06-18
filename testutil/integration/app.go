@@ -650,6 +650,15 @@ func (app *App) RunMsg(t *testing.T, msg sdk.Msg, option ...RunOption) *codectyp
 	return response
 }
 
+// NextBlocks calls NextBlock numBlocks times
+func (app *App) NextBlocks(t *testing.T, numBlocks int) {
+	t.Helper()
+
+	for i := 0; i < numBlocks; i++ {
+		app.NextBlock(t)
+	}
+}
+
 // NextBlock commits and finalizes all existing transactions. It then updates
 // and advances the context of the App.
 func (app *App) NextBlock(t *testing.T) {
