@@ -19,6 +19,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/client/keyring"
 	"github.com/pokt-network/poktroll/pkg/either"
+	"github.com/pokt-network/poktroll/pkg/encoding"
 )
 
 const (
@@ -274,7 +275,7 @@ func (txnClient *txClient) SignAndBroadcast(
 		return either.SyncErr(ErrCheckTx.Wrapf(txResponse.RawLog))
 	}
 
-	return txnClient.addPendingTransactions(normalizeTxHashHex(txResponse.TxHash), timeoutHeight)
+	return txnClient.addPendingTransactions(encoding.NormalizeTxHashHex(txResponse.TxHash), timeoutHeight)
 }
 
 // validateConfigAndSetDefaults ensures that the necessary configurations for the
@@ -393,7 +394,7 @@ func (txnClient *txClient) goSubscribeToOwnTxs(ctx context.Context) {
 	txResultsCh := txResultsObs.Subscribe(ctx).Ch()
 	for txResult := range txResultsCh {
 		// Convert transaction hash into its normalized hex form.
-		txHashHex := txHashBytesToNormalizedHex(comettypes.Tx(txResult.Tx).Hash())
+		txHashHex := encoding.TxHashBytesToNormalizedHex(comettypes.Tx(txResult.Tx).Hash())
 
 		txnClient.txsMutex.Lock()
 		// Remove from the txTimeoutPool.
