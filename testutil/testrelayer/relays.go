@@ -14,27 +14,34 @@ import (
 // heights on the session header, and the bytes and hash fields populated.
 func NewMinedRelay(
 	t *testing.T,
-	sessionStartHeight int64,
-	sessionEndHeight int64,
+	session *sessiontypes.Session,
 	supplierAddress string,
 ) *relayer.MinedRelay {
+	t.Helper()
+
 	relay := servicetypes.Relay{
 		Req: &servicetypes.RelayRequest{
 			Meta: servicetypes.RelayRequestMetadata{
-				SessionHeader: &sessiontypes.SessionHeader{
-					SessionStartBlockHeight: sessionStartHeight,
-					SessionEndBlockHeight:   sessionEndHeight,
-				},
+				SessionHeader:   session.Header,
+				Signature:       []byte("request_signature"),
 				SupplierAddress: supplierAddress,
 			},
+			Payload: []byte("request_payload"),
 		},
-		Res: &servicetypes.RelayResponse{},
+		Res: &servicetypes.RelayResponse{
+			Meta: servicetypes.RelayResponseMetadata{
+				SessionHeader:     session.Header,
+				SupplierSignature: []byte("supplier_signature"),
+			},
+			Payload: []byte("response_payload"),
+		},
 	}
 
 	// TODO_TECHDEBT(@red-0ne, #446): Centralize the configuration for the SMT spec.
 	// TODO_TECHDEBT(@red-0ne): marshal using canonical codec.
 	relayBz, err := relay.Marshal()
 	require.NoError(t, err)
+
 	relayHashArr := servicetypes.GetHashFromBytes(relayBz)
 	relayHash := relayHashArr[:]
 

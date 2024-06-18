@@ -1,14 +1,18 @@
 package integration_test
 
 import (
+	"crypto/sha256"
 	"testing"
 
+	"github.com/pokt-network/smt"
+	"github.com/pokt-network/smt/kvstore/badger"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
 	integration "github.com/pokt-network/poktroll/testutil/integration"
 	testutil "github.com/pokt-network/poktroll/testutil/integration"
 	testutilproof "github.com/pokt-network/poktroll/testutil/proof"
+	"github.com/pokt-network/poktroll/testutil/testrelayer"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -68,12 +72,28 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 		integrationApp.NextBlock(t)
 	}
 
+	// proof := &smt.SparseMerkleClosestProof{
+	// 	Path:             []byte("temp_path"),
+	// 	FlippedBits:      []int{1, 2, 3},
+	// 	Depth:            1,
+	// 	ClosestPath:      []byte("temp_closest_path"),
+	// 	ClosestValueHash: []byte("temp_closest_value_hash"),
+	// 	ClosestProof: &smt.SparseMerkleProof{
+	// 		SideNodes:             make([][]byte, 0),
+	// 		NonMembershipLeafData: []byte("temp_non_membership_leaf_data"),
+	// 		SiblingData:           []byte("temp_sibling_data"),
+	// 	},
+	// }
+	// proofBz, err := proof.Marshal()
+	// require.NoError(t, err)
+
 	// Create a new proof and submit it
 	createProofMsg := prooftypes.MsgSubmitProof{
 		SupplierAddress: integrationApp.DefaultSupplier.Address,
 		SessionHeader:   session.Header,
-		Proof:           []byte("abc"),
+		Proof:           getProof(t, session, integrationApp),
 	}
+
 	result = integrationApp.RunMsg(t,
 		&createProofMsg,
 		integration.WithAutomaticFinalizeBlock(),
@@ -115,4 +135,31 @@ func getSession(t *testing.T, integrationApp *testutil.App) *sessiontypes.Sessio
 	require.NoError(t, err)
 	require.NotNil(t, getSessionRes, "unexpected nil queryResponse")
 	return getSessionRes.Session
+}
+
+func getProof(t *testing.T, session *sessiontypes.Session, integrationApp *testutil.App) []byte {
+	t.Helper()
+
+	// Generating an ephemeral tree & spec just so we can submit
+	// a proof of the right size.
+	// TODO_TECHDEBT(#446): Centralize the configuration for the SMT spec.
+	kvStore, err := badger.NewKVStore("")
+	require.NoError(t, err)
+
+	minedRelay := testrelayer.NewMinedRelay(t,
+		session,
+		integrationApp.DefaultSupplier.Address)
+
+	tree := smt.NewSparseMerkleSumTrie(kvStore, sha256.New(), smt.WithValueHasher(nil))
+	err = tree.Update(minedRelay.Hash, minedRelay.Bytes, 1)
+	require.NoError(t, err)
+
+	emptyPath := make([]byte, tree.PathHasherSize())
+	proof, err := tree.ProveClosest(emptyPath)
+	require.NoError(t, err)
+
+	proofBz, err := proof.Marshal()
+	require.NoError(t, err)
+
+	return proofBz
 }
