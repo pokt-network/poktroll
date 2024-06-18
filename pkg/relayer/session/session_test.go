@@ -98,7 +98,7 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 	relayerSessionsManager.Start(ctx)
 
 	// Publish a mined relay to the minedRelaysPublishCh to insert into the session tree.
-	minedRelay := testrelayer.NewMinedRelay(t, activeSession, supplierAddress)
+	minedRelay := testrelayer.NewUnsignedMinedRelay(t, activeSession, supplierAddress)
 	minedRelaysPublishCh <- minedRelay
 
 	// Wait a tick to allow the relayer sessions manager to process asynchronously.

@@ -20,10 +20,12 @@ import (
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
-// NewMinedRelay returns a new mined relay with the given session data, as well
-// as the bytes and the hash fields populated.
-// It does not populate the signature fields.
-func NewMinedRelay(
+// NewUnsignedMinedRelay returns a new mined relay with the given session data,
+// as well as the bytes and the hash fields populated.
+//
+// It DOES NOT populate the signature fields and should only be used in contexts
+// where a partial mined relay is enough for testing purposes.
+func NewUnsignedMinedRelay(
 	t *testing.T,
 	session *sessiontypes.Session,
 	supplierAddress string,
@@ -46,7 +48,6 @@ func NewMinedRelay(
 		},
 	}
 
-	// TODO_TECHDEBT(@red-0ne, #446): Centralize the configuration for the SMT spec.
 	// TODO_TECHDEBT(@red-0ne): marshal using canonical codec.
 	relayBz, err := relay.Marshal()
 	require.NoError(t, err)
@@ -61,6 +62,11 @@ func NewMinedRelay(
 	}
 }
 
+// NewSignedMinedRelay returns a new mined relay with the given session data,
+// as well as the bytes and the hash fields populated.
+//
+// IT DOES populate the signature fields and should only be used in contexts
+// where a fully signed mined relay is needed for testing purposes.
 func NewSignedMinedRelay(
 	t *testing.T,
 	ctx context.Context,
@@ -90,7 +96,6 @@ func NewSignedMinedRelay(
 	SignRelayRequest(ctx, t, &relay, appAddr, keyRing, ringClient)
 	SignRelayResponse(ctx, t, &relay, supplierKeyUid, supplierAddr, keyRing)
 
-	// TODO_TECHDEBT(@red-0ne, #446): Centralize the configuration for the SMT spec.
 	// TODO_TECHDEBT(@red-0ne): marshal using canonical codec.
 	relayBz, err := relay.Marshal()
 	require.NoError(t, err)
