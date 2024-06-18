@@ -24,13 +24,11 @@ type JSONRPCErrorReply struct {
 	Error   *JSONRPCError
 }
 
-// prepareJSONRPCResponse constructs a hard-coded JSON-RPC http.Response and
-// returns the corresponding sdk serialized POKTHTTPResponse.
+// sendJSONRPCResponse constructs a hard-coded JSON-RPC response and writes
+// it to the provided http.ResponseWriter.
 //
 // It uses a default StatusOK and "application/json" content type, along with
 // the provided hard-coded body bytes.
-// The function then serializes the entire generated http.Response into an sdk
-// serialized POKTHTTPResponse to be embedded in a RelayResponse.Payload.
 //
 // Unlike PrepareJSONRPCRequest, this function is NOT EXPORTED as it is
 // exclusively used within the testutil/testproxy package for serving a
@@ -38,20 +36,14 @@ type JSONRPCErrorReply struct {
 //
 // IMPORTANT: This function is intended solely for testing purposes and
 // SHOULD NOT be used in production code.
-func prepareJSONRPCResponse(t *testing.T) []byte {
+func sendJSONRPCResponse(t *testing.T, w http.ResponseWriter) {
 	t.Helper()
 	bodyBz := []byte(`{"jsonrpc":"2.0","id":1,"result":"some result"}`)
 
-	response := &http.Response{
-		StatusCode: http.StatusOK,
-		Header:     http.Header{},
-		Body:       io.NopCloser(bytes.NewReader(bodyBz)),
-	}
-	response.Header.Set("Content-Type", "application/json")
-
-	responseBz, err := sdktypes.SerializeHTTPResponse(response)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_, err := w.Write(bodyBz)
 	require.NoError(t, err)
-	return responseBz
 }
 
 // PrepareJSONRPCRequest constructs a hard-coded JSON-RPC http.Request and
@@ -62,7 +54,7 @@ func prepareJSONRPCResponse(t *testing.T) []byte {
 // The function then serializes the entire generated http.Request into an sdk
 // serialized POKTHTTPRequest to be embedded in a RelayRequest.Payload.
 //
-// Unlike prepareJSONRPCResponse, this function IS EXPORTED to be used in
+// Unlike sendJSONRPCResponse, this function IS EXPORTED to be used in
 // the pkg/relayer/proxy/proxy_test testing code.
 //
 // IMPORTANT: This function is intended solely for testing purposes and
@@ -78,7 +70,7 @@ func PrepareJSONRPCRequest(t *testing.T) []byte {
 	}
 	request.Header.Set("Content-Type", "application/json")
 
-	requestBz, err := sdktypes.SerializeHTTPRequest(request)
+	_, requestBz, err := sdktypes.SerializeHTTPRequest(request)
 	require.NoError(t, err)
 	return requestBz
 }

@@ -1,7 +1,7 @@
 package appgateserver
 
 import (
-	"net/http"
+	"net/url"
 	"strconv"
 
 	sdktypes "github.com/pokt-network/shannon-sdk/types"
@@ -18,7 +18,7 @@ func (app *appGateServer) getRelayerUrl(
 	serviceId string,
 	rpcType sharedtypes.RPCType,
 	supplierEndpoints []*sdktypes.SingleSupplierEndpoint,
-	request *http.Request,
+	requestUrlStr string,
 ) (supplierEndpoint *sdktypes.SingleSupplierEndpoint, err error) {
 	// Filter out the supplier endpoints that match the requested serviceId.
 	validSupplierEndpoints := make([]*sdktypes.SingleSupplierEndpoint, 0, len(supplierEndpoints))
@@ -53,9 +53,14 @@ func (app *appGateServer) getRelayerUrl(
 	// for testing or development purposes but a more enhanced strategy is expected
 	// to be adopted by prod gateways.
 
+	requestUrl, err := url.Parse(requestUrlStr)
+	if err != nil {
+		return nil, err
+	}
+
 	// If a `relayCount` query parameter is provided, use it to determine the next endpoint;
 	// otherwise, continue the rotation based off the last selected endpoint index.
-	relayCount := request.URL.Query().Get("relayCount")
+	relayCount := requestUrl.Query().Get("relayCount")
 	nextEndpointIdx := 0
 	if relayCount != "" {
 		relayCountNum, err := strconv.Atoi(relayCount)
