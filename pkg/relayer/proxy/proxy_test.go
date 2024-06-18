@@ -381,8 +381,8 @@ func TestRelayerProxy_Relays(t *testing.T) {
 
 			// expectedErrCode is because the proxy won't be able to unmarshal the request
 			// so it does not know how to format the error response
-			expectedErrCode: 0,
-			expectedErrMsg:  "cannot unmarshal request payload",
+			expectedErrCode: testproxy.JSONRPCInternalErrorCode,
+			expectedErrMsg:  "proto: RelayRequest: wiretype end group for non-group",
 		},
 		{
 			desc: "Missing signature from relay request",
@@ -390,7 +390,7 @@ func TestRelayerProxy_Relays(t *testing.T) {
 			relayerProxyBehavior: defaultRelayerProxyBehavior,
 			inputScenario:        sendRequestWithMissingSignature,
 
-			expectedErrCode: -32000,
+			expectedErrCode: testproxy.JSONRPCInternalErrorCode,
 			expectedErrMsg:  "missing application signature",
 		},
 		{
@@ -399,7 +399,7 @@ func TestRelayerProxy_Relays(t *testing.T) {
 			relayerProxyBehavior: defaultRelayerProxyBehavior,
 			inputScenario:        sendRequestWithInvalidSignature,
 
-			expectedErrCode: -32000,
+			expectedErrCode: testproxy.JSONRPCInternalErrorCode,
 			expectedErrMsg:  "error deserializing ring signature",
 		},
 		{
@@ -408,7 +408,7 @@ func TestRelayerProxy_Relays(t *testing.T) {
 			relayerProxyBehavior: defaultRelayerProxyBehavior,
 			inputScenario:        sendRequestWithMissingSessionHeaderApplicationAddress,
 
-			expectedErrCode: -32000,
+			expectedErrCode: testproxy.JSONRPCInternalErrorCode,
 			expectedErrMsg:  "invalid session header: invalid application address",
 		},
 		{
@@ -417,7 +417,7 @@ func TestRelayerProxy_Relays(t *testing.T) {
 			relayerProxyBehavior: defaultRelayerProxyBehavior,
 			inputScenario:        sendRequestWithNonStakedApplicationAddress,
 
-			expectedErrCode: -32000,
+			expectedErrCode: testproxy.JSONRPCInternalErrorCode,
 			expectedErrMsg:  "error getting ring for application address",
 		},
 		{
@@ -426,7 +426,7 @@ func TestRelayerProxy_Relays(t *testing.T) {
 			relayerProxyBehavior: defaultRelayerProxyBehavior,
 			inputScenario:        sendRequestWithRingSignatureMismatch,
 
-			expectedErrCode: -32000,
+			expectedErrCode: testproxy.JSONRPCInternalErrorCode,
 			expectedErrMsg:  "ring signature in the relay request does not match the expected one for the app",
 		},
 		{
@@ -435,7 +435,7 @@ func TestRelayerProxy_Relays(t *testing.T) {
 			relayerProxyBehavior: defaultRelayerProxyBehavior,
 			inputScenario:        sendRequestWithDifferentSession,
 
-			expectedErrCode: -32000,
+			expectedErrCode: testproxy.JSONRPCInternalErrorCode,
 			expectedErrMsg:  "session mismatch",
 		},
 		{
@@ -451,7 +451,7 @@ func TestRelayerProxy_Relays(t *testing.T) {
 			},
 			inputScenario: sendRequestWithInvalidRelaySupplier,
 
-			expectedErrCode: -32000,
+			expectedErrCode: testproxy.JSONRPCInternalErrorCode,
 			expectedErrMsg:  "error while trying to retrieve a session",
 		},
 		{
@@ -460,7 +460,7 @@ func TestRelayerProxy_Relays(t *testing.T) {
 			relayerProxyBehavior: defaultRelayerProxyBehavior,
 			inputScenario:        sendRequestWithSignatureForDifferentPayload,
 
-			expectedErrCode: -32000,
+			expectedErrCode: testproxy.JSONRPCInternalErrorCode,
 			expectedErrMsg:  "invalid relay request signature or bytes",
 		},
 		{
@@ -511,7 +511,7 @@ func TestRelayerProxy_Relays(t *testing.T) {
 			// Send a request that has a late session past the grace period
 			inputScenario: sendRequestWithCustomSessionHeight(blockHeight),
 
-			expectedErrCode: -32000,
+			expectedErrCode: testproxy.JSONRPCInternalErrorCode,
 			expectedErrMsg:  "session expired", // Relay rejected by the supplier
 		},
 	}
@@ -715,7 +715,7 @@ func sendRequestWithSignatureForDifferentPayload(
 	}
 	request.Header.Set("Content-Type", "application/json")
 
-	requestBz, err := sdktypes.SerializeHTTPRequest(request)
+	_, requestBz, err := sdktypes.SerializeHTTPRequest(request)
 	require.NoError(t, err)
 
 	// Alter the request payload so the hash doesn't match the one used by the signature

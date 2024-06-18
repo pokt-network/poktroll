@@ -37,11 +37,11 @@ spec:
                   response = Net::HTTP.get_response(uri)
                   http_status = response.code.to_i
                   puts "HTTP_STATUS: #{http_status}"
-                  if http_status == 200
-                    puts "HTTP request to #{endpoint} returned 200 OK."
+                  if http_status >= 100
+                    puts "HTTP request to #{endpoint} returned #{http_status}, which means the service is up and running."
                     return true
                   else
-                    puts "HTTP request to #{endpoint} did not return 200 OK. Status code: #{http_status}. Retrying in 10 seconds..."
+                    puts "HTTP request to #{endpoint} did not return a healthy HTTP Status code: #{http_status}. Retrying in 10 seconds..."
                   end
 
                   retries += 1

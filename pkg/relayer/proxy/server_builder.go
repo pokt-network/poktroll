@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"time"
 
@@ -13,11 +14,22 @@ import (
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-// supplierStakeWaitTime is the time to wait for the supplier to be staked before
-// attempting to retrieve the supplier's on-chain record.
-// This is useful for testing and development purposes, where the supplier
-// may not be staked before the relay miner starts.
-const supplierStakeWaitTime = 1
+const (
+	// supplierStakeWaitTimeSeconds is the time to wait for the supplier to be staked before
+	// attempting to (try again to) retrieve the supplier's on-chain record.
+	// This is useful for testing and development purposes, where the supplier
+	// may not be staked before the relay miner starts.
+	supplierStakeWaitTimeSeconds = 1 * time.Second
+
+	// supplierMaxStakeWaitTimeMinutes is the time to wait before a panic is thrown
+	// if the supplier is still not staked when the time elapses.
+	//
+	// This is intentionally a larger number because if a RelayMiner is provisioned
+	// for this long (either in testing or in prod) without an associated on-chain
+	// supplier being stake, we need to communicate it either to the operator or
+	// to the developer.
+	supplierMaxStakeWaitTimeMinutes = 20 * time.Minute
+)
 
 // BuildProvidedServices builds the advertised relay servers from the supplier's on-chain advertised services.
 // It populates the relayerProxy's `advertisedRelayServers` map of servers for each service, where each server
@@ -137,18 +149,31 @@ func (rp *relayerProxy) waitForSupplierToStake(
 	ctx context.Context,
 	supplierAddress string,
 ) (supplier sharedtypes.Supplier, err error) {
+	startTime := time.Now()
 	for {
 		// Get the supplier's on-chain record
 		supplier, err = rp.supplierQuerier.GetSupplier(ctx, supplierAddress)
 
 		// If the supplier is not found, wait for the supplier to be staked.
+		// This enables provisioning and deploying a RelayMiner without staking a
+		// supplier on-chain. For testing purposes, this is particularly useful
+		// to eliminate the needed of additional communication & coordination
+		// between on-chain staking and off-chain provisioning.
 		if err != nil && suppliertypes.ErrSupplierNotFound.Is(err) {
 			rp.logger.Info().Msgf(
 				"Waiting %d seconds for the supplier with address %s to stake",
-				supplierStakeWaitTime,
+				supplierStakeWaitTimeSeconds,
 				supplierAddress,
 			)
-			time.Sleep(supplierStakeWaitTime * time.Second)
+			time.Sleep(supplierStakeWaitTimeSeconds)
+
+			// See the comment above `supplierMaxStakeWaitTimeMinutes` for why
+			// and how this is used.
+			timeElapsed := time.Since(startTime)
+			if timeElapsed > supplierMaxStakeWaitTimeMinutes {
+				panic(fmt.Sprintf("Waited too long (%d minutes) for the supplier to stake. Exiting...", supplierMaxStakeWaitTimeMinutes))
+			}
+
 			continue
 		}
 

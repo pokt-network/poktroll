@@ -110,7 +110,7 @@ list: ## List all make targets
 .PHONY: help
 .DEFAULT_GOAL := help
 help: ## Prints all the targets in all the Makefiles
-	@grep -h -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
+	@grep -h -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-60s\033[0m %s\n", $$1, $$2}'
 
 ##############
 ### Checks ###
@@ -331,14 +331,20 @@ localnet_regenesis: check_yq warn_message_acc_initialize_pubkeys ## Regenerate t
 send_relay_sovereign_app: # Send a relay through the AppGateServer as a sovereign application
 	curl -X POST -H "Content-Type: application/json" \
 	--data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' \
-	http://localhost:42069/anvil
+	$(APPGATE_SERVER)/anvil
 
-.PHONY: send_relay_delegating_app
-send_relay_delegating_app: # Send a relay through the gateway as an application that's delegating to this gateway
+.PHONY: send_relay_delegating_app_JSONRPC
+send_relay_delegating_app_JSONRPC: # Send a relay through the gateway as an application that's delegating to this gateway
 	@appAddr=$$(poktrolld keys show app1 -a) && \
 	curl -X POST -H "Content-Type: application/json" \
 	--data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' \
 	$(GATEWAY_URL)/anvil?applicationAddr=$$appAddr
+
+.PHONY: send_relay_sovereign_app_REST
+send_relay_sovereign_app_REST: # Send a REST relay through the AppGateServer as a sovereign application
+	curl -X POST -H "Content-Type: application/json" \
+	--data '{"model": "qwen:0.5b", "stream": false, "messages": [{"role": "user", "content":"count from 1 to 10"}]}' \
+	$(APPGATE_SERVER)/ollama/api/chat
 
 # TODO_TECHDEBT(@okdas): Figure out how to copy these over w/ a functional state.
 # cp ${HOME}/.poktroll/config/app.toml $(POKTROLLD_HOME)/config/app.toml
@@ -370,16 +376,20 @@ test_e2e_env: warn_message_acc_initialize_pubkeys ## Setup the default env vars 
 test_e2e: test_e2e_env ## Run all E2E tests
 	go test -count=1 -v ./e2e/tests/... -tags=e2e,test
 
+.PHONY: test_e2e_relay
+test_e2e_relay: test_e2e_env ## Run only the E2E suite that exercises the relay life-cycle
+	go test -v ./e2e/tests/... -tags=e2e,test --features-path=relay.feature
+
 .PHONY: test_e2e_app
-test_e2e_app:
+test_e2e_app: test_e2e_env ## Run only the E2E suite that exercises the application life-cycle
 	go test -v ./e2e/tests/... -tags=e2e,test --features-path=stake_app.feature
 
 .PHONY: test_e2e_supplier
-test_e2e_supplier:
+test_e2e_supplier: test_e2e_env ## Run only the E2E suite that exercises the supplier life-cycle
 	go test -v ./e2e/tests/... -tags=e2e,test --features-path=stake_supplier.feature
 
 .PHONY: test_e2e_gateway
-test_e2e_gateway:
+test_e2e_gateway: test_e2e_env ## Run only the E2E suite that exercises the gateway life-cycle
 	go test -v ./e2e/tests/... -tags=e2e,test --features-path=stake_gateway.feature
 
 .PHONY: test_e2e_session
@@ -401,7 +411,7 @@ test_load_relays_stress_example: ## Run the stress test for E2E relays on a pers
 	--manifest ./load-testing/loadtest_manifest_example.yaml
 
 .PHONY: test_load_relays_stress_localnet
-test_load_relays_stress_localnet: warn_message_local_stress_test test_e2e_env ## Run the stress test for E2E relays on LocalNet.
+test_load_relays_stress_localnet: test_e2e_env warn_message_local_stress_test ## Run the stress test for E2E relays on LocalNet.
 	go test -v -count=1 ./load-testing/tests/... \
 	-tags=load,test -run LoadRelays --log-level=debug --timeout=30m \
 	--manifest ./load-testing/loadtest_manifest_localnet.yaml
@@ -795,10 +805,9 @@ warn_message_local_stress_test: ## Print a warning message when kicking off a lo
 	@echo "|                                                                                               |"
 	@echo "|     1. Review the # of suppliers & gateways in 'load-testing/localnet_loadtest_manifest.yaml' |"
 	@echo "|     2. Update 'localnet_config.yaml' to reflect what you found in (1)                         |"
+	@echo "|     	DEVELOPER_TIP: If you're operating off defaults, you'll likely need to update to 3     |"
 	@echo "|                                                                                               |"
-	@echo "|     TIP: If you're operating off defaults, you will likely need to update both of them to 3   |"
-	@echo "|                                                                                               |"
-	@echo "|     TODO_DOCUMENT(@olshansk): Move this into proper documentation w/ clearer explanations     |"
+	@echo "|     TODO_DOCUMENT(@okdas): Move this into proper documentation w/ clearer explanations        |"
 	@echo "|                                                                                               |"
 	@echo "+-----------------------------------------------------------------------------------------------+"
 
