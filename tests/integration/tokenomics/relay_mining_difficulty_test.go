@@ -12,7 +12,6 @@ import (
 	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
 	integration "github.com/pokt-network/poktroll/testutil/integration"
 	testutil "github.com/pokt-network/poktroll/testutil/integration"
-	testutilproof "github.com/pokt-network/poktroll/testutil/proof"
 	"github.com/pokt-network/poktroll/testutil/testrelayer"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
@@ -49,11 +48,14 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 		integrationApp.NextBlock(t)
 	}
 
+	// Prepare the trie with a single mined relay
+	trie := prepareSMST(t, integrationApp.SdkCtx(), integrationApp, session)
+
 	// Create a new claim and create it
 	createClaimMsg := prooftypes.MsgCreateClaim{
 		SupplierAddress: integrationApp.DefaultSupplier.Address,
 		SessionHeader:   session.Header,
-		RootHash:        testutilproof.SmstRootWithSum(uint64(1)),
+		RootHash:        trie.Root(),
 	}
 	result := integrationApp.RunMsg(t,
 		&createClaimMsg,
@@ -77,7 +79,7 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	createProofMsg := prooftypes.MsgSubmitProof{
 		SupplierAddress: integrationApp.DefaultSupplier.Address,
 		SessionHeader:   session.Header,
-		Proof:           getProof(t, integrationApp.SdkCtx(), session, integrationApp),
+		Proof:           getProof(t, trie),
 	}
 
 	result = integrationApp.RunMsg(t,
@@ -123,11 +125,12 @@ func getSession(t *testing.T, integrationApp *testutil.App) *sessiontypes.Sessio
 	return getSessionRes.Session
 }
 
-func getProof(
+// prepareSMST prepares an SMST with a single mined relay for the given session.
+func prepareSMST(
 	t *testing.T, ctx context.Context,
-	session *sessiontypes.Session,
 	integrationApp *testutil.App,
-) []byte {
+	session *sessiontypes.Session,
+) *smt.SMST {
 	t.Helper()
 
 	// Generating an ephemeral tree & spec just so we can submit
@@ -145,12 +148,19 @@ func getProof(
 		integrationApp.RingClient(),
 	)
 
-	tree := smt.NewSparseMerkleSumTrie(kvStore, sha256.New(), smt.WithValueHasher(nil))
-	err = tree.Update(minedRelay.Hash, minedRelay.Bytes, 1)
+	trie := smt.NewSparseMerkleSumTrie(kvStore, sha256.New(), smt.WithValueHasher(nil))
+	err = trie.Update(minedRelay.Hash, minedRelay.Bytes, 1)
 	require.NoError(t, err)
 
-	emptyPath := make([]byte, tree.PathHasherSize())
-	proof, err := tree.ProveClosest(emptyPath)
+	return trie
+}
+
+// getProof returns a proof for the given session.
+func getProof(t *testing.T, trie *smt.SMST) []byte {
+	t.Helper()
+
+	emptyPath := make([]byte, trie.PathHasherSize())
+	proof, err := trie.ProveClosest(emptyPath)
 	require.NoError(t, err)
 
 	proofBz, err := proof.Marshal()
