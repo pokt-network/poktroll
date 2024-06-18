@@ -19,12 +19,16 @@ import (
 
 	"cosmossdk.io/depinject"
 	sdklog "cosmossdk.io/log"
+	abci "github.com/cometbft/cometbft/abci/types"
 	cometcli "github.com/cometbft/cometbft/libs/cli"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app"
+	"github.com/pokt-network/poktroll/pkg/client/events"
+	"github.com/pokt-network/poktroll/pkg/client/tx"
+	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/testutil/testclient"
 	"github.com/pokt-network/poktroll/testutil/yaml"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -397,6 +401,56 @@ func (s *suite) TheApplicationReceivesASuccessfulRelayResponseSignedBy(appName s
 	stdout, ok := s.scenarioState[relayKey]
 	require.Truef(s, ok, "no relay response found for %s", relayKey)
 	require.Contains(s, stdout, `"result":"0x`)
+}
+
+// TODO_TECHDEBT: Factor out the common logic between this step and waitForTxResultEvent,
+// it is actually not possible since the later is getting the query client from
+// s.scenarioState which seems to cause query client to fail with EOF error.
+func (s *suite) AModuleMessageIsSubmittedBy(module, message, supplierName string) {
+	ctx, cancel := context.WithCancel(context.Background())
+
+	// Construct an events query client to listen for tx events from the supplier.
+	msgSenderQuery := fmt.Sprintf(txSenderEventSubscriptionQueryFmt, accNameToAddrMap[supplierName])
+	msgType := fmt.Sprintf("/poktroll.%s.Msg%s", module, message)
+	deps := depinject.Supply(events.NewEventsQueryClient(testclient.CometLocalWebsocketURL))
+	txResultEventsReplayClient, err := events.NewEventsReplayClient[*abci.TxResult](
+		ctx,
+		deps,
+		msgSenderQuery,
+		tx.UnmarshalTxResult,
+		eventsReplayClientBufferSize,
+	)
+	require.NoError(s, err)
+
+	// For each observed event, **asynchronously** check if it contains the given action.
+	channel.ForEach[*abci.TxResult](
+		ctx, txResultEventsReplayClient.EventsSequence(ctx),
+		func(_ context.Context, txResult *abci.TxResult) {
+			if txResult == nil {
+				return
+			}
+
+			// Range over each event's attributes to find the "action" attribute
+			// and compare its value to that of the action provided.
+			for _, event := range txResult.Result.Events {
+				for _, attribute := range event.Attributes {
+					if attribute.Key == "action" {
+						if attribute.Value == msgType {
+							cancel()
+							return
+						}
+					}
+				}
+			}
+		},
+	)
+
+	select {
+	case <-time.After(eventTimeout):
+		s.Fatalf("timed out waiting for message with action %q", msgType)
+	case <-ctx.Done():
+		s.Log("Success; message detected before timeout.")
+	}
 }
 
 func (s *suite) getStakedAmount(actorType, accName string) (int, bool) {
