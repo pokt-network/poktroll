@@ -9,4 +9,5 @@ var (
 	ErrAppGateMissingSigningInformation = sdkerrors.Register(codespace, 3, "missing app client signing information")
 	ErrAppGateMissingListeningEndpoint  = sdkerrors.Register(codespace, 4, "missing app client listening endpoint")
 	ErrAppGateHandleRelay               = sdkerrors.Register(codespace, 5, "internal error handling relay request")
+	ErrAppGateUpstreamError             = sdkerrors.Register(codespace, 6, "upstream error")
 )

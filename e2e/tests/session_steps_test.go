@@ -68,6 +68,8 @@ func (s *suite) TheUserShouldWaitForTheModuleEventToBeBroadcast(module, message 
 	s.waitForNewBlockEvent(isExpectedEventFn)
 }
 
+// TODO_FLAKY: See how 'TheClaimCreatedBySupplierForServiceForApplicationShouldBeSuccessfullySettled'
+// was modified to using an event replay client, instead of a query, to eliminate the flakiness.
 func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBePersistedOnchain(supplierName, serviceId, appName string) {
 	ctx := context.Background()
 
