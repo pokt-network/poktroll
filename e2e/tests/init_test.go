@@ -19,15 +19,14 @@ import (
 
 	"cosmossdk.io/depinject"
 	sdklog "cosmossdk.io/log"
-	abci "github.com/cometbft/cometbft/abci/types"
 	cometcli "github.com/cometbft/cometbft/libs/cli"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app"
+	"github.com/pokt-network/poktroll/pkg/client/block"
 	"github.com/pokt-network/poktroll/pkg/client/events"
-	"github.com/pokt-network/poktroll/pkg/client/tx"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/testutil/testclient"
 	"github.com/pokt-network/poktroll/testutil/yaml"
@@ -406,40 +405,37 @@ func (s *suite) TheApplicationReceivesASuccessfulRelayResponseSignedBy(appName s
 // TODO_TECHDEBT: Factor out the common logic between this step and waitForTxResultEvent,
 // it is actually not possible since the later is getting the query client from
 // s.scenarioState which seems to cause query client to fail with EOF error.
-func (s *suite) AModuleMessageIsSubmittedBy(module, message, supplierName string) {
-	ctx, cancel := context.WithCancel(context.Background())
+func (s *suite) AModuleEventIsBroadcasted(module, event string) {
+	ctx, done := context.WithCancel(context.Background())
 
 	// Construct an events query client to listen for tx events from the supplier.
-	msgSenderQuery := fmt.Sprintf(txSenderEventSubscriptionQueryFmt, accNameToAddrMap[supplierName])
-	msgType := fmt.Sprintf("/poktroll.%s.Msg%s", module, message)
+	eventType := fmt.Sprintf("poktroll.%s.Event%s", module, event)
 	deps := depinject.Supply(events.NewEventsQueryClient(testclient.CometLocalWebsocketURL))
-	txResultEventsReplayClient, err := events.NewEventsReplayClient[*abci.TxResult](
+	onChainClaimEventsReplayClient, err := events.NewEventsReplayClient[*block.CometNewBlockEvent](
 		ctx,
 		deps,
-		msgSenderQuery,
-		tx.UnmarshalTxResult,
+		newBlockEventSubscriptionQuery,
+		block.UnmarshalNewBlockEvent,
 		eventsReplayClientBufferSize,
 	)
 	require.NoError(s, err)
 
 	// For each observed event, **asynchronously** check if it contains the given action.
-	channel.ForEach[*abci.TxResult](
-		ctx, txResultEventsReplayClient.EventsSequence(ctx),
-		func(_ context.Context, txResult *abci.TxResult) {
-			if txResult == nil {
+	channel.ForEach[*block.CometNewBlockEvent](
+		ctx, onChainClaimEventsReplayClient.EventsSequence(ctx),
+		func(_ context.Context, newBlockEvent *block.CometNewBlockEvent) {
+			if newBlockEvent == nil {
 				return
 			}
 
 			// Range over each event's attributes to find the "action" attribute
 			// and compare its value to that of the action provided.
-			for _, event := range txResult.Result.Events {
-				for _, attribute := range event.Attributes {
-					if attribute.Key == "action" {
-						if attribute.Value == msgType {
-							cancel()
-							return
-						}
-					}
+			for _, event := range newBlockEvent.Data.Value.ResultFinalizeBlock.Events {
+				// Checks on the event. For example, for a Claim Settlement event,
+				// we can parse the claim and verify the compute units.
+				if event.Type == eventType {
+					done()
+					return
 				}
 			}
 		},
@@ -447,7 +443,7 @@ func (s *suite) AModuleMessageIsSubmittedBy(module, message, supplierName string
 
 	select {
 	case <-time.After(eventTimeout):
-		s.Fatalf("timed out waiting for message with action %q", msgType)
+		s.Fatalf("timed out waiting for message with action %q", eventType)
 	case <-ctx.Done():
 		s.Log("Success; message detected before timeout.")
 	}
