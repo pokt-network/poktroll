@@ -299,23 +299,18 @@ func (s *suite) abciToClaimSettledEvent(event *abci.Event) *tokenomicstypes.Even
 		switch string(attr.Key) {
 		case "claim":
 			var claim prooftypes.Claim
-			if err := s.cdc.UnmarshalJSON([]byte(attr.Value), &claim); err != nil {
-				s.Fatalf("ERROR: failed to unmarshal claim: %v", err)
-			}
+			err := s.cdc.UnmarshalJSON([]byte(attr.Value), &claim)
+			require.NoError(s, err)
 			claimSettledEvent.Claim = &claim
 		case "compute_units":
-			value := string(attr.Value)
-			value = value[1 : len(value)-1] // Remove surrounding quotes
-			computeUnits, err := strconv.ParseUint(value, 10, 64)
-			if err != nil {
-				s.Fatalf("ERROR: failed to parse compute_units: %v", err)
-			}
+			unquotedValue, err := strconv.Unquote(string(attr.Value))
+			require.NoError(s, err)
+			computeUnits, err := strconv.ParseUint(unquotedValue, 10, 64)
+			require.NoError(s, err)
 			claimSettledEvent.ComputeUnits = computeUnits
 		case "proof_required":
 			proofRequired, err := strconv.ParseBool(string(attr.Value))
-			if err != nil {
-				s.Fatalf("ERROR: failed to parse proof_required: %v", err)
-			}
+			require.NoError(s, err)
 			claimSettledEvent.ProofRequired = proofRequired
 		}
 	}

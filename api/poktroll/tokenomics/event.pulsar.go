@@ -1793,6 +1793,8 @@ func (x *EventClaimSettled) GetProofRequired() bool {
 	return false
 }
 
+// EventRelayMiningDifficultyUpdated is an event emitted whenever the relay mining difficulty is updated
+// for a given service.
 type EventRelayMiningDifficultyUpdated struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

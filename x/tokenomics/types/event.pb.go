@@ -140,6 +140,8 @@ func (m *EventClaimSettled) GetProofRequired() bool {
 	return false
 }
 
+// EventRelayMiningDifficultyUpdated is an event emitted whenever the relay mining difficulty is updated
+// for a given service.
 type EventRelayMiningDifficultyUpdated struct {
 	ServiceId        string `protobuf:"bytes,1,opt,name=service_id,json=serviceId,proto3" json:"service_id,omitempty"`
 	PrevTargetHash   []byte `protobuf:"bytes,2,opt,name=prev_target_hash,json=prevTargetHash,proto3" json:"prev_target_hash,omitempty"`

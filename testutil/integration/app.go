@@ -660,6 +660,8 @@ func (app *App) NextBlocks(t *testing.T, numBlocks int) {
 	}
 }
 
+// emitEvents emits the events from the finalized block to the event manager
+// of the context in the active app.
 func (app *App) emitEvents(t *testing.T, res *abci.ResponseFinalizeBlock) {
 	t.Helper()
 

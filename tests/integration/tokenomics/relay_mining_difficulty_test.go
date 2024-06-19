@@ -86,6 +86,9 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	// Wait until the proof window is closed
 	integrationApp.NextBlocks(t, numBlocksUntilProofWindowIsClosed)
 
+	// Check the number of events is consistent. The number 14 was determined
+	// empirically by running the tests and will need to be updated if they
+	// are changed.
 	events := integrationApp.SdkCtx().EventManager().Events()
 	require.Len(t, events, 14, "unexpected number of total events")
 
@@ -93,8 +96,10 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	require.Len(t, relayMiningEvents, 1, "unexpected number of relay mining difficulty updated events")
 	relayMiningEvent := relayMiningEvents[0]
 	require.Equal(t, "svc1", relayMiningEvent.ServiceId)
+	// The default difficulty
 	require.Equal(t, []byte("//////////////////////////////////////////8="), relayMiningEvent.PrevTargetHash)
 	require.Equal(t, []byte("//////////////////////////////////////////8="), relayMiningEvent.NewTargetHash)
+	// The previous EMA is the same as the current one if the service is new
 	require.Equal(t, uint64(1), relayMiningEvent.PrevNumRelaysEma)
 	require.Equal(t, uint64(1), relayMiningEvent.NewNumRelaysEma)
 
@@ -108,6 +113,7 @@ func UpdateRelayMiningDifficulty_UpdateServiceIsIncreasing(t *testing.T) {}
 
 func UpdateRelayMiningDifficulty_UpdateServiceIsDecreasing(t *testing.T) {}
 
+// getSharedParams returns the shared parameters for the current block height.
 func getSharedParams(t *testing.T, integrationApp *testutil.App) sharedtypes.Params {
 	t.Helper()
 
@@ -120,6 +126,7 @@ func getSharedParams(t *testing.T, integrationApp *testutil.App) sharedtypes.Par
 	return sharedQueryRes.Params
 }
 
+// getSession returns the current session for the default application and service.
 func getSession(t *testing.T, integrationApp *testutil.App) *sessiontypes.Session {
 	t.Helper()
 
@@ -166,7 +173,9 @@ func prepareSMST(
 	return trie
 }
 
-// getProof returns a proof for the given session.
+// getProof returns a proof for the given session for the empty path.
+// If there is only one relay in the trie, the proof will be for that single
+// relay since it is "closest" to any path provided, empty or not.
 func getProof(t *testing.T, trie *smt.SMST) []byte {
 	t.Helper()
 

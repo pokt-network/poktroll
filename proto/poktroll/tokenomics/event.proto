@@ -21,6 +21,8 @@ message EventClaimSettled {
     bool proof_required = 3;
 }
 
+// EventRelayMiningDifficultyUpdated is an event emitted whenever the relay mining difficulty is updated
+// for a given service.
 message EventRelayMiningDifficultyUpdated {
     string service_id = 1;
     bytes prev_target_hash = 2;
