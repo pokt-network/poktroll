@@ -3,6 +3,7 @@ package integration_test
 import (
 	"context"
 	"crypto/sha256"
+	"fmt"
 	"testing"
 
 	"github.com/pokt-network/smt"
@@ -10,12 +11,14 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
+	testutilevents "github.com/pokt-network/poktroll/testutil/events"
 	integration "github.com/pokt-network/poktroll/testutil/integration"
 	testutil "github.com/pokt-network/poktroll/testutil/integration"
 	"github.com/pokt-network/poktroll/testutil/testrelayer"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 // TODO_UPNEXT(@Olshansk, #571): Implement these tests
@@ -84,6 +87,11 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	// Wait until the proof window is closed
 	integrationApp.NextBlocks(t, numBlocksUntilProofWindowIsClosed)
 
+	events := integrationApp.SdkCtx().EventManager().Events()
+	require.Len(t, events, 4, "unexpected number of total events")
+	fmt.Println(events)
+	relayMiningEvents := testutilevents.FilterEvents[*tokenomicstypes.EventRelayMiningDifficultyUpdated](t, events, "poktroll.tokenomics.EventRelayMiningDifficultyUpdated")
+	require.Len(t, relayMiningEvents, 1, "unexpected number of relay mining difficulty updated events")
 }
 
 func UpdateRelayMiningDifficulty_UpdatingMultipleServicesAtOnce(t *testing.T) {}

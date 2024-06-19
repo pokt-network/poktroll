@@ -1,4 +1,4 @@
-package keeper_test
+package events
 
 import (
 	"testing"
@@ -9,9 +9,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// filterEvents filters through all of the provided events and returns the ones of
+// FilterEvents filters through all of the provided events and returns the ones of
 // the matching type, after being casted to the right type.
-func filterEvents[T proto.Message](
+func FilterEvents[T proto.Message](
 	t *testing.T,
 	allEvents cosmostypes.Events,
 	protoType string,
