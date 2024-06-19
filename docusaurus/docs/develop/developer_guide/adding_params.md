@@ -239,7 +239,7 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 
 ### 10. Update Unit Tests
 
-Add tests to validate the new parameter in your test files (e.g., `params_test.go`
+Add tests which exercise validation of the new parameter in your test files (e.g., `params_test.go`
 and `msg_server_update_param_test.go`).
 
 #### 10.1 Parameter Validation Tests
