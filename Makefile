@@ -328,7 +328,7 @@ localnet_regenesis: check_yq warn_message_acc_initialize_pubkeys ## Regenerate t
 	@cp -r ${HOME}/.poktroll/config $(POKTROLLD_HOME)/
 
 .PHONY: send_relay_sovereign_app_JSONRPC
-send_relay_sovereign_app_JSONRPC: # Send a relay through the AppGateServer as a sovereign application
+send_relay_sovereign_app_JSONRPC: # Send a JSONRPC relay through the AppGateServer as a sovereign application
 	curl -X POST -H "Content-Type: application/json" \
 	--data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' \
 	$(APPGATE_SERVER)/anvil
