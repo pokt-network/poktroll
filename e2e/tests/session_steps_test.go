@@ -285,8 +285,7 @@ func (s *suite) waitForNewBlockEvent(
 }
 
 // abciToClaimSettledEvent converts an abci.Event to a tokenomics.EventClaimSettled
-//
-
+// NB: This was a ChatGPT generated function.
 func (s *suite) abciToClaimSettledEvent(event *abci.Event) *tokenomicstypes.EventClaimSettled {
 	var claimSettledEvent tokenomicstypes.EventClaimSettled
 

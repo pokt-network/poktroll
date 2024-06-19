@@ -1,7 +1,6 @@
 package integration
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -36,7 +35,6 @@ import (
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
-	"github.com/cosmos/gogoproto/proto"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app"
@@ -664,18 +662,23 @@ func (app *App) NextBlocks(t *testing.T, numBlocks int) {
 
 func (app *App) emitEvents(t *testing.T, res *abci.ResponseFinalizeBlock) {
 	t.Helper()
-	var events []proto.Message
+
 	for _, event := range res.Events {
-		parsedEvent, err := cosmostypes.ParseTypedEvent(event)
-		if err != nil {
-			t.Log("TODO_TECHDEBT: Skipped unparsable event", event.Type, err, event)
-			continue
-		} else {
-			fmt.Println("WORKS")
+		var attrs []cosmostypes.Attribute
+		for _, attr := range event.Attributes {
+			attrs = append(attrs, cosmostypes.Attribute{
+				Key:   attr.Key,
+				Value: attr.Value,
+			})
 		}
-		events = append(events, parsedEvent)
+		e := cosmostypes.NewEvent(event.Type, attrs...)
+		app.sdkCtx.EventManager().EmitEvent(e)
+
+		// TODO_TECHDEBT: Figure out why the following doesn't work
+		// parsedEvent, err := cosmostypes.ParseTypedEvent(abci.Event(event))
+		// require.NoError(t, err)
+		// app.sdkCtx.EventManager().EmitTypedEvent()
 	}
-	app.sdkCtx.EventManager().EmitTypedEvents(events...)
 }
 
 // NextBlock commits and finalizes all existing transactions. It then updates

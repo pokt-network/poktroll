@@ -3,7 +3,6 @@ package integration_test
 import (
 	"context"
 	"crypto/sha256"
-	"fmt"
 	"testing"
 
 	"github.com/pokt-network/smt"
@@ -88,10 +87,17 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	integrationApp.NextBlocks(t, numBlocksUntilProofWindowIsClosed)
 
 	events := integrationApp.SdkCtx().EventManager().Events()
-	require.Len(t, events, 4, "unexpected number of total events")
-	fmt.Println(events)
+	require.Len(t, events, 14, "unexpected number of total events")
+
 	relayMiningEvents := testutilevents.FilterEvents[*tokenomicstypes.EventRelayMiningDifficultyUpdated](t, events, "poktroll.tokenomics.EventRelayMiningDifficultyUpdated")
 	require.Len(t, relayMiningEvents, 1, "unexpected number of relay mining difficulty updated events")
+	relayMiningEvent := relayMiningEvents[0]
+	require.Equal(t, "svc1", relayMiningEvent.ServiceId)
+	require.Equal(t, []byte("//////////////////////////////////////////8="), relayMiningEvent.PrevTargetHash)
+	require.Equal(t, []byte("//////////////////////////////////////////8="), relayMiningEvent.NewTargetHash)
+	require.Equal(t, uint64(1), relayMiningEvent.PrevNumRelaysEma)
+	require.Equal(t, uint64(1), relayMiningEvent.NewNumRelaysEma)
+
 }
 
 func UpdateRelayMiningDifficulty_UpdatingMultipleServicesAtOnce(t *testing.T) {}
