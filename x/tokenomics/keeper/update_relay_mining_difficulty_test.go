@@ -16,7 +16,7 @@ import (
 )
 
 // This is a "base" test for updating relay mining difficulty to go through
-// a flow testing a few different scenarios, but does not covert a full range
+// a flow testing a few different scenarios, but does not cover the full range
 // of edge or use cases.
 func TestUpdateRelayMiningDifficulty_Base(t *testing.T) {
 	keeper, ctx := keepertest.TokenomicsKeeper(t)
