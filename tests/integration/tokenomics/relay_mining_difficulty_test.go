@@ -38,7 +38,7 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	sharedParams := getSharedParams(t, integrationApp)
 
 	// Prepare the trie with a single mined relay
-	trie := prepareSMST(t, integrationApp.SdkCtx(), integrationApp, session)
+	trie := prepareSMST(t, integrationApp.GetSdkCtx(), integrationApp, session)
 
 	// Compute the number of blocks to wait between different events
 	// TODO_BLOCKER(@bryanchriswhite): See this comment: https://github.com/pokt-network/poktroll/pull/610#discussion_r1645777322
@@ -49,7 +49,7 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	proofCloseWindowNumBlocks := int(sharedParams.ProofWindowCloseOffsetBlocks)
 
 	// Wait until the claim window is open
-	currentBlockHeight := int(integrationApp.SdkCtx().BlockHeight())
+	currentBlockHeight := int(integrationApp.GetSdkCtx().BlockHeight())
 	numBlocksUntilClaimWindowIsOpen := int(sessionEndHeight + claimOpenWindowNumBlocks - currentBlockHeight + 1)
 	integrationApp.NextBlocks(t, numBlocksUntilClaimWindowIsOpen)
 
@@ -67,7 +67,7 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	require.NotNil(t, result, "unexpected nil result when submitting a MsgCreateClaim tx")
 
 	// Wait until the proof window is open
-	currentBlockHeight = int(integrationApp.SdkCtx().BlockHeight())
+	currentBlockHeight = int(integrationApp.GetSdkCtx().BlockHeight())
 	numBlocksUntilProofWindowIsOpen := int(sessionEndHeight + claimOpenWindowNumBlocks + claimCloseWindowNumBlocks + proofOpenWindowNumBlocks - currentBlockHeight + 1)
 	numBlocksUntilProofWindowIsClosed := numBlocksUntilProofWindowIsOpen + proofCloseWindowNumBlocks
 	integrationApp.NextBlocks(t, numBlocksUntilProofWindowIsOpen)
@@ -91,7 +91,7 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	// Check the number of events is consistent. The number 14 was determined
 	// empirically by running the tests and will need to be updated if they
 	// are changed.
-	events := integrationApp.SdkCtx().EventManager().Events()
+	events := integrationApp.GetSdkCtx().EventManager().Events()
 	require.Len(t, events, 14, "unexpected number of total events")
 
 	relayMiningEvents := testutilevents.FilterEvents[*tokenomicstypes.EventRelayMiningDifficultyUpdated](t,
@@ -123,7 +123,7 @@ func getSharedParams(t *testing.T, integrationApp *testutil.App) sharedtypes.Par
 	sharedQueryClient := sharedtypes.NewQueryClient(integrationApp.QueryHelper())
 	sharedParamsReq := sharedtypes.QueryParamsRequest{}
 
-	sharedQueryRes, err := sharedQueryClient.Params(integrationApp.SdkCtx(), &sharedParamsReq)
+	sharedQueryRes, err := sharedQueryClient.Params(integrationApp.GetSdkCtx(), &sharedParamsReq)
 	require.NoError(t, err)
 
 	return sharedQueryRes.Params
@@ -137,10 +137,10 @@ func getSession(t *testing.T, integrationApp *testutil.App) *sessiontypes.Sessio
 	getSessionReq := sessiontypes.QueryGetSessionRequest{
 		ApplicationAddress: integrationApp.DefaultApplication.Address,
 		Service:            integrationApp.DefaultService,
-		BlockHeight:        integrationApp.SdkCtx().BlockHeight(),
+		BlockHeight:        integrationApp.GetSdkCtx().BlockHeight(),
 	}
 
-	getSessionRes, err := sessionQueryClient.GetSession(integrationApp.SdkCtx(), &getSessionReq)
+	getSessionRes, err := sessionQueryClient.GetSession(integrationApp.GetSdkCtx(), &getSessionReq)
 	require.NoError(t, err)
 	require.NotNil(t, getSessionRes, "unexpected nil queryResponse")
 	return getSessionRes.Session
@@ -165,8 +165,8 @@ func prepareSMST(
 		integrationApp.DefaultApplication.Address,
 		integrationApp.DefaultSupplier.Address,
 		integrationApp.DefaultSupplierKeyringKeyringUid,
-		integrationApp.KeyRing(),
-		integrationApp.RingClient(),
+		integrationApp.GetKeyRing(),
+		integrationApp.GetRingClient(),
 	)
 
 	trie := smt.NewSparseMerkleSumTrie(kvStore, sha256.New(), smt.WithValueHasher(nil))

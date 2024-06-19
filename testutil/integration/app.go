@@ -458,17 +458,17 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	integrationApp.NextBlock(t)
 
 	// Set the default params for all the modules
-	err := sharedKeeper.SetParams(integrationApp.SdkCtx(), sharedtypes.DefaultParams())
+	err := sharedKeeper.SetParams(integrationApp.GetSdkCtx(), sharedtypes.DefaultParams())
 	require.NoError(t, err)
-	err = tokenomicsKeeper.SetParams(integrationApp.SdkCtx(), tokenomicstypes.DefaultParams())
+	err = tokenomicsKeeper.SetParams(integrationApp.GetSdkCtx(), tokenomicstypes.DefaultParams())
 	require.NoError(t, err)
-	err = proofKeeper.SetParams(integrationApp.SdkCtx(), prooftypes.DefaultParams())
+	err = proofKeeper.SetParams(integrationApp.GetSdkCtx(), prooftypes.DefaultParams())
 	require.NoError(t, err)
-	err = sessionKeeper.SetParams(integrationApp.SdkCtx(), sessiontypes.DefaultParams())
+	err = sessionKeeper.SetParams(integrationApp.GetSdkCtx(), sessiontypes.DefaultParams())
 	require.NoError(t, err)
-	err = gatewayKeeper.SetParams(integrationApp.SdkCtx(), gatewaytypes.DefaultParams())
+	err = gatewayKeeper.SetParams(integrationApp.GetSdkCtx(), gatewaytypes.DefaultParams())
 	require.NoError(t, err)
-	err = applicationKeeper.SetParams(integrationApp.SdkCtx(), apptypes.DefaultParams())
+	err = applicationKeeper.SetParams(integrationApp.GetSdkCtx(), apptypes.DefaultParams())
 	require.NoError(t, err)
 
 	// Prepare default testing fixtures //
@@ -561,28 +561,28 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	return integrationApp
 }
 
-// RingClient returns the ring client used by the application.
-func (app *App) RingClient() crypto.RingClient {
+// GetRingClient returns the ring client used by the application.
+func (app *App) GetRingClient() crypto.RingClient {
 	return app.ringClient
 }
 
-// KeyRing returns the keyring used by the application.
-func (app *App) KeyRing() keyring.Keyring {
+// GetKeyRing returns the keyring used by the application.
+func (app *App) GetKeyRing() keyring.Keyring {
 	return app.keyRing
 }
 
-// Codec returns the codec used by the application.
-func (app *App) Codec() codec.Codec {
+// GetCodec returns the codec used by the application.
+func (app *App) GetCodec() codec.Codec {
 	return app.cdc
 }
 
-// SdkCtx returns the context used by the application.
-func (app *App) SdkCtx() *sdk.Context {
+// GetSdkCtx returns the context used by the application.
+func (app *App) GetSdkCtx() *sdk.Context {
 	return app.sdkCtx
 }
 
-// Authority returns the authority address used by the application.
-func (app *App) Authority() string {
+// GetAuthority returns the authority address used by the application.
+func (app *App) GetAuthority() string {
 	return app.authority.String()
 }
 
