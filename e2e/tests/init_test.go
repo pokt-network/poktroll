@@ -25,6 +25,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app"
+	"github.com/pokt-network/poktroll/pkg/client/block"
+	"github.com/pokt-network/poktroll/pkg/client/events"
+	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/testutil/testclient"
 	"github.com/pokt-network/poktroll/testutil/yaml"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -397,6 +400,53 @@ func (s *suite) TheApplicationReceivesASuccessfulRelayResponseSignedBy(appName s
 	stdout, ok := s.scenarioState[relayKey]
 	require.Truef(s, ok, "no relay response found for %s", relayKey)
 	require.Contains(s, stdout, `"result":"0x`)
+}
+
+// TODO_TECHDEBT: Factor out the common logic between this step and waitForTxResultEvent.
+// It is not currently (easily) possible since the latter is getting the query client from
+// s.scenarioState, which seems to be the source of the query client's failure.
+func (s *suite) AModuleEventIsBroadcasted(module, event string) {
+	ctx, done := context.WithCancel(context.Background())
+
+	// Construct an events query client to listen for tx events from the supplier.
+	eventType := fmt.Sprintf("poktroll.%s.Event%s", module, event)
+	deps := depinject.Supply(events.NewEventsQueryClient(testclient.CometLocalWebsocketURL))
+	onChainClaimEventsReplayClient, err := events.NewEventsReplayClient[*block.CometNewBlockEvent](
+		ctx,
+		deps,
+		newBlockEventSubscriptionQuery,
+		block.UnmarshalNewBlockEvent,
+		eventsReplayClientBufferSize,
+	)
+	require.NoError(s, err)
+
+	// For each observed event, **asynchronously** check if it contains the given action.
+	channel.ForEach[*block.CometNewBlockEvent](
+		ctx, onChainClaimEventsReplayClient.EventsSequence(ctx),
+		func(_ context.Context, newBlockEvent *block.CometNewBlockEvent) {
+			if newBlockEvent == nil {
+				return
+			}
+
+			// Range over each event's attributes to find the "action" attribute
+			// and compare its value to that of the action provided.
+			for _, event := range newBlockEvent.Data.Value.ResultFinalizeBlock.Events {
+				// Checks on the event. For example, for a Claim Settlement event,
+				// we can parse the claim and verify the compute units.
+				if event.Type == eventType {
+					done()
+					return
+				}
+			}
+		},
+	)
+
+	select {
+	case <-time.After(eventTimeout):
+		s.Fatalf("timed out waiting for event to be emitted by module %q", eventType)
+	case <-ctx.Done():
+		s.Log("Success; event from module emitted before timeout.")
+	}
 }
 
 func (s *suite) getStakedAmount(actorType, accName string) (int, bool) {

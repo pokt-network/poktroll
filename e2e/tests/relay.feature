@@ -8,6 +8,7 @@ Feature: Relay Namespace
         And the session for application "app1" and service "anvil" contains the supplier "supplier1"
         When the application "app1" sends the supplier "supplier1" a request for service "anvil" with data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}'
         Then the application "app1" receives a successful relay response signed by "supplier1"
+        And a "tokenomics" module "ClaimSettled" event is broadcasted
 
     # TODO_TEST(@Olshansk):
     # - Successful relay through applicat's sovereign appgate server
