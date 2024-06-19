@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"errors"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -22,10 +23,13 @@ func (k msgServer) CreateClaim(
 
 	// TODO_CONSIDER: We could track on-chain relays here with claim.GetNumRelays().
 	defer func() {
+		numComputeUnits, deferredErr := claim.GetNumComputeUnits()
+		err = errors.Join(err, deferredErr)
+
 		telemetry.ClaimCounter(telemetry.ClaimProofStageClaimed, 1, err)
 		telemetry.ClaimComputeUnitsCounter(
 			telemetry.ClaimProofStageClaimed,
-			claim.GetNumComputeUnits(),
+			numComputeUnits,
 			err,
 		)
 	}()

@@ -47,8 +47,15 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 		// the tree for scalability reasons. This is the count of non-empty leaves
 		// that matched the necessary difficulty and is therefore an estimation
 		// of the total number of relays serviced and work done.
-		numClaimComputeUnits := claim.GetNumComputeUnits()
-		numRelaysInSessionTree := claim.GetNumRelays()
+		numClaimComputeUnits, err := claim.GetNumComputeUnits()
+		if err != nil {
+			return 0, 0, relaysPerServiceMap, computeUnitsPerServiceMap, err
+		}
+
+		numRelaysInSessionTree, err := claim.GetNumRelays()
+		if err != nil {
+			return 0, 0, relaysPerServiceMap, computeUnitsPerServiceMap, err
+		}
 
 		sessionId := claim.SessionHeader.SessionId
 
@@ -159,7 +166,11 @@ func (k Keeper) isProofRequiredForClaim(ctx sdk.Context, claim *prooftypes.Claim
 
 	// NB: Assumption that claim is non-nil and has a valid root sum because it
 	// is retrieved from the store and validated, on-chain, at time of creation.
-	claimComputeUnits := claim.GetNumComputeUnits()
+	claimComputeUnits, err := claim.GetNumComputeUnits()
+	if err != nil {
+		return true, err
+	}
+
 	proofParams := k.proofKeeper.GetParams(ctx)
 
 	// Require a proof if the claim's compute units meets or exceeds the threshold.

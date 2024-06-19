@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"hash"
 
@@ -66,10 +67,13 @@ func (k msgServer) SubmitProof(
 
 	// TODO_CONSIDER: We could track on-chain relays here with claim.GetNumRelays().
 	defer func() {
+		numComputeUnits, deferredErr := claim.GetNumComputeUnits()
+		err = errors.Join(err, deferredErr)
+
 		telemetry.ClaimCounter(telemetry.ClaimProofStageProven, 1, err)
 		telemetry.ClaimComputeUnitsCounter(
 			telemetry.ClaimProofStageProven,
-			claim.GetNumComputeUnits(),
+			numComputeUnits,
 			err,
 		)
 	}()
