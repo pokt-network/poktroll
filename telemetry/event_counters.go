@@ -5,9 +5,6 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/telemetry"
 	"github.com/hashicorp/go-metrics"
-	"github.com/pokt-network/smt"
-
-	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 )
 
 const (
@@ -55,35 +52,50 @@ func EventSuccessCounter(
 // probabilistic selection, above compute unit threshold).
 func ProofRequirementCounter(
 	reason ProofRequirementReason,
-	getValue func() float32,
+	err error,
 ) {
-	value := getValue()
-
+	incrementAmount := 1
 	isRequired := strconv.FormatBool(reason != ProofNotRequired)
+	labels := []metrics.Label{
+		{Name: "proof_required_reason", Value: reason},
+		{Name: "is_required", Value: isRequired},
+	}
+
+	if err != nil {
+		incrementAmount = 0
+		labels = AppendErrLabels(err, labels...)
+	}
 
 	telemetry.IncrCounterWithLabels(
 		[]string{eventTypeMetricKey},
-		value,
-		[]metrics.Label{
-			{Name: "proof_required_reason", Value: reason},
-			{Name: "is_required", Value: isRequired},
-		},
+		float32(incrementAmount),
+		labels,
 	)
 }
 
-// ComputeUnitsCounter increments a counter which tracks the number of compute units
+// ClaimComputeUnitsCounter increments a counter which tracks the number of compute units
 // which are represented by on-chain claims at the given ClaimProofStage.
-func ComputeUnitsCounter(claimProofStage ClaimProofStage, claim *prooftypes.Claim) {
-	root := (smt.MerkleRoot)(claim.GetRootHash())
-	computeUnitsFloat := float32(root.Sum())
+func ClaimComputeUnitsCounter(
+	claimProofStage ClaimProofStage,
+	numComputeUnits uint64,
+	err error,
+) {
+	incrementAmount := numComputeUnits
+	labels := []metrics.Label{
+		{Name: "unit", Value: "compute_units"},
+		{Name: "claim_proof_stage", Value: claimProofStage},
+	}
+
+	// Set computeUnitsIncrementAmount to 0 if there is an error so that this counter is not incremented.
+	if err != nil {
+		incrementAmount = 0
+		labels = AppendErrLabels(err, labels...)
+	}
 
 	telemetry.IncrCounterWithLabels(
 		[]string{eventTypeMetricKey},
-		computeUnitsFloat,
-		[]metrics.Label{
-			{Name: "unit", Value: "compute_units"},
-			{Name: "claim_proof_lifecycle_stage", Value: claimProofStage},
-		},
+		float32(incrementAmount),
+		labels,
 	)
 }
 
@@ -91,14 +103,33 @@ func ComputeUnitsCounter(claimProofStage ClaimProofStage, claim *prooftypes.Clai
 // ClaimProofStage.
 func ClaimCounter(
 	claimProofStage ClaimProofStage,
-	getValue func() uint64,
+	numClaims uint64,
+	err error,
 ) {
+	incrementAmount := numClaims
+	labels := []metrics.Label{
+		{Name: "unit", Value: "claims"},
+		{Name: "claim_proof_stage", Value: claimProofStage},
+	}
+
+	// Set incrementAmount to 0 if there is an error so that this counter is not incremented.
+	if err != nil {
+		incrementAmount = 0
+		labels = AppendErrLabels(err, labels...)
+	}
+
 	telemetry.IncrCounterWithLabels(
 		[]string{eventTypeMetricKey},
-		float32(getValue()),
-		[]metrics.Label{
-			{Name: "unit", Value: "claims"},
-			{Name: "claim_proof_lifecycle_stage", Value: claimProofStage},
-		},
+		float32(incrementAmount),
+		labels,
 	)
+}
+
+// TODO_IN_THIS_PR: move to labels.go & godoc
+func AppendErrLabels(err error, labels ...metrics.Label) []metrics.Label {
+	if err != nil {
+		return append(labels, metrics.Label{Name: "error", Value: err.Error()})
+	}
+
+	return labels
 }

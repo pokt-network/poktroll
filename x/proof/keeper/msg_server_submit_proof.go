@@ -49,7 +49,10 @@ func init() {
 // to correspond to the supplier signing the proof. For example, a single entity
 // could (theoretically) batch multiple proofs (signed by the corresponding supplier)
 // into one transaction to save on transaction fees.
-func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (*types.MsgSubmitProofResponse, error) {
+func (k msgServer) SubmitProof(
+	ctx context.Context,
+	msg *types.MsgSubmitProof,
+) (_ *types.MsgSubmitProofResponse, err error) {
 	// TODO_MAINNET: A potential issue with doing proof validation inside
 	// `SubmitProof` is that we will not be storing false proofs on-chain (e.g. for slashing purposes).
 	// This could be considered a feature (e.g. less state bloat against sybil attacks)
@@ -58,12 +61,18 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 	logger := k.Logger().With("method", "SubmitProof")
 	logger.Info("About to start submitting proof")
 
-	isSuccessful := false
-	defer telemetry.EventSuccessCounter(
-		"submit_proof",
-		telemetry.DefaultCounterFn,
-		func() bool { return isSuccessful },
-	)
+	// Declare claim to reference in telemetry.
+	claim := new(types.Claim)
+
+	// TODO_CONSIDER: We could track on-chain relays here with claim.GetNumRelays().
+	defer func() {
+		telemetry.ClaimCounter(telemetry.ClaimProofStageProven, 1, err)
+		telemetry.ClaimComputeUnitsCounter(
+			telemetry.ClaimProofStageProven,
+			claim.GetNumComputeUnits(),
+			err,
+		)
+	}()
 
 	/*
 		TODO_BLOCKER(@bryanchriswhite): Document these steps in proof
@@ -228,12 +237,10 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 
 	// Retrieve the corresponding claim for the proof submitted so it can be
 	// used in the proof validation below.
-	claim, err := k.queryAndValidateClaimForProof(ctx, msg)
+	claim, err = k.queryAndValidateClaimForProof(ctx, msg)
 	if err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
-
-	defer telemetry.ComputeUnitsCounter(telemetry.ClaimProofStageProven, claim)
 
 	logger.Debug("successfully retrieved and validated claim")
 
@@ -257,7 +264,6 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 	k.UpsertProof(ctx, proof)
 	logger.Info("successfully upserted the proof")
 
-	isSuccessful = true
 	return &types.MsgSubmitProofResponse{}, nil
 }
 
