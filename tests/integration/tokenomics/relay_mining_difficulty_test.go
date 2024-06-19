@@ -41,6 +41,7 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	trie := prepareSMST(t, integrationApp.SdkCtx(), integrationApp, session)
 
 	// Compute the number of blocks to wait between different events
+	// TODO_BLOCKER(@bryanchriswhite): See this comment: https://github.com/pokt-network/poktroll/pull/610#discussion_r1645777322
 	sessionEndHeight := int(session.Header.SessionEndBlockHeight)
 	claimOpenWindowNumBlocks := int(sharedParams.ClaimWindowOpenOffsetBlocks)
 	claimCloseWindowNumBlocks := int(sharedParams.ClaimWindowCloseOffsetBlocks)
@@ -93,7 +94,8 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	events := integrationApp.SdkCtx().EventManager().Events()
 	require.Len(t, events, 14, "unexpected number of total events")
 
-	relayMiningEvents := testutilevents.FilterEvents[*tokenomicstypes.EventRelayMiningDifficultyUpdated](t, events, "poktroll.tokenomics.EventRelayMiningDifficultyUpdated")
+	relayMiningEvents := testutilevents.FilterEvents[*tokenomicstypes.EventRelayMiningDifficultyUpdated](t,
+		events, "poktroll.tokenomics.EventRelayMiningDifficultyUpdated")
 	require.Len(t, relayMiningEvents, 1, "unexpected number of relay mining difficulty updated events")
 	relayMiningEvent := relayMiningEvents[0]
 	require.Equal(t, "svc1", relayMiningEvent.ServiceId)

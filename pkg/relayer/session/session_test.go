@@ -45,6 +45,7 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 			SessionEndBlockHeight:   2,
 		},
 	}
+	sessionHeader := activeSession.GetHeader()
 
 	// Set up dependencies.
 	blocksObs, blockPublishCh := channel.NewReplayObservable[client.Block](ctx, 1)
@@ -106,13 +107,15 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 	time.Sleep(10 * time.Millisecond)
 
 	// Publish a block to the blockPublishCh to simulate non-actionable blocks.
-	noopBlock := testblock.NewAnyTimesBlock(t, emptyBlockHash, activeSession.Header.SessionStartBlockHeight)
+	sessionStartHeight := sessionHeader.GetSessionStartBlockHeight()
+	noopBlock := testblock.NewAnyTimesBlock(t, emptyBlockHash, sessionStartHeight)
 	blockPublishCh <- noopBlock
 
 	// Calculate the session grace period end block height to emit that block height
 	// to the blockPublishCh to trigger claim creation for the session.
 	sharedParams := sharedtypes.DefaultParams()
-	sessionClaimWindowOpenHeight := shared.GetClaimWindowOpenHeight(&sharedParams, activeSession.Header.SessionEndBlockHeight)
+	sessionEndHeight := sessionHeader.GetSessionEndBlockHeight()
+	sessionClaimWindowOpenHeight := shared.GetClaimWindowOpenHeight(&sharedParams, sessionEndHeight)
 
 	// Publish a block to the blockPublishCh to trigger claim creation for the session.
 	triggerClaimBlock := testblock.NewAnyTimesBlock(t, emptyBlockHash, sessionClaimWindowOpenHeight)
@@ -121,7 +124,7 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 	// TODO_IMPROVE: ensure correctness of persisted session trees here.
 
 	// Publish a block to the blockPublishCh to trigger proof submission for the session.
-	sessionProofWindowOpenHeight := shared.GetProofWindowOpenHeight(&sharedParams, activeSession.Header.SessionEndBlockHeight)
+	sessionProofWindowOpenHeight := shared.GetProofWindowOpenHeight(&sharedParams, sessionEndHeight)
 	triggerProofBlock := testblock.NewAnyTimesBlock(t, emptyBlockHash, sessionProofWindowOpenHeight)
 	blockPublishCh <- triggerProofBlock
 
