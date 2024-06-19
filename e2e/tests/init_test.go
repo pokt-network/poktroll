@@ -402,9 +402,9 @@ func (s *suite) TheApplicationReceivesASuccessfulRelayResponseSignedBy(appName s
 	require.Contains(s, stdout, `"result":"0x`)
 }
 
-// TODO_TECHDEBT: Factor out the common logic between this step and waitForTxResultEvent,
-// it is actually not possible since the later is getting the query client from
-// s.scenarioState which seems to cause query client to fail with EOF error.
+// TODO_TECHDEBT: Factor out the common logic between this step and waitForTxResultEvent.
+// It is not currently (easily) possible since the latter is getting the query client from
+// s.scenarioState, which seems to be the source of the query client's failure.
 func (s *suite) AModuleEventIsBroadcasted(module, event string) {
 	ctx, done := context.WithCancel(context.Background())
 
@@ -443,9 +443,9 @@ func (s *suite) AModuleEventIsBroadcasted(module, event string) {
 
 	select {
 	case <-time.After(eventTimeout):
-		s.Fatalf("timed out waiting for message with action %q", eventType)
+		s.Fatalf("timed out waiting for event to be emitted by module %q", eventType)
 	case <-ctx.Done():
-		s.Log("Success; message detected before timeout.")
+		s.Log("Success; event from module emitted before timeout.")
 	}
 }
 
