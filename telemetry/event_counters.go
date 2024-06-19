@@ -62,7 +62,7 @@ func ProofRequirementCounter(
 	// Ensure the counter is not incremented if there was an error.
 	if err != nil {
 		incrementAmount = 0
-		labels = AppendErrLabels(err, labels...)
+		labels = AppendErrLabel(err, labels...)
 	}
 
 	telemetry.IncrCounterWithLabels(
@@ -88,7 +88,7 @@ func ClaimComputeUnitsCounter(
 	// Ensure the counter is not incremented if there was an error.
 	if err != nil {
 		incrementAmount = 0
-		labels = AppendErrLabels(err, labels...)
+		labels = AppendErrLabel(err, labels...)
 	}
 
 	telemetry.IncrCounterWithLabels(
@@ -114,7 +114,7 @@ func ClaimCounter(
 	// Ensure the counter is not incremented if there was an error.
 	if err != nil {
 		incrementAmount = 0
-		labels = AppendErrLabels(err, labels...)
+		labels = AppendErrLabel(err, labels...)
 	}
 
 	telemetry.IncrCounterWithLabels(
@@ -124,11 +124,12 @@ func ClaimCounter(
 	)
 }
 
-// TODO_IN_THIS_PR: move to labels.go & godoc
-func AppendErrLabels(err error, labels ...metrics.Label) []metrics.Label {
-	if err != nil {
-		return append(labels, metrics.Label{Name: "error", Value: err.Error()})
+// AppendErrLabel appends a label with the name "error" and a value of the error's
+// message to the given labels slice if the error is not nil.
+func AppendErrLabel(err error, labels ...metrics.Label) []metrics.Label {
+	if err == nil {
+		return labels
 	}
 
-	return labels
+	return append(labels, metrics.Label{Name: "error", Value: err.Error()})
 }
