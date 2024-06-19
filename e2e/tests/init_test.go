@@ -4,6 +4,7 @@ package e2e
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -379,12 +380,12 @@ func (s *suite) TheSessionForApplicationAndServiceContainsTheSupplier(appName st
 	s.Fatalf("session for app %s and service %s does not contain supplier %s", appName, serviceId, supplierName)
 }
 
-func (s *suite) TheApplicationSendsTheSupplierARequestForServiceWithData(appName, supplierName, serviceId, requestData string) {
+func (s *suite) TheApplicationSendsTheSupplierARequestForServiceWithPathAndData(appName, supplierName, serviceId, path, requestData string) {
 	// TODO_HACK: We need to support a non self_signing LocalNet AppGateServer
 	// that allows any application to send a relay in LocalNet and our E2E Tests.
 	require.Equal(s, "app1", appName, "TODO_HACK: The LocalNet AppGateServer is self_signing and only supports app1.")
 
-	res, err := s.pocketd.RunCurl(appGateServerUrl, serviceId, requestData)
+	res, err := s.pocketd.RunCurl(appGateServerUrl, serviceId, path, requestData)
 	require.NoError(s, err, "error sending relay request from app %q to supplier %q for service %q", appName, supplierName, serviceId)
 
 	relayKey := relayReferenceKey(appName, supplierName)
@@ -399,7 +400,10 @@ func (s *suite) TheApplicationReceivesASuccessfulRelayResponseSignedBy(appName s
 	relayKey := relayReferenceKey(appName, supplierName)
 	stdout, ok := s.scenarioState[relayKey]
 	require.Truef(s, ok, "no relay response found for %s", relayKey)
-	require.Contains(s, stdout, `"result":"0x`)
+
+	var jsonContent json.RawMessage
+	err := json.Unmarshal([]byte(stdout.(string)), &jsonContent)
+	require.NoError(s, err, `Expected valid JSON, got: %s`, stdout)
 }
 
 // TODO_TECHDEBT: Factor out the common logic between this step and waitForTxResultEvent.
