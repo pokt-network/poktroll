@@ -22,7 +22,7 @@ import (
 )
 
 func TestSettleSessionAccounting_HandleAppGoingIntoDebt(t *testing.T) {
-	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t)
+	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil)
 
 	// Add a new application
 	appStake := types.NewCoin("upokt", math.NewInt(1000000))

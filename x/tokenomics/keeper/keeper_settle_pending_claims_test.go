@@ -58,7 +58,7 @@ func (s *TestSuite) SetupTest() {
 	supplierAddr := sample.AccAddress()
 	appAddr := sample.AccAddress()
 
-	s.keepers, s.ctx = keepertest.NewTokenomicsModuleKeepers(s.T())
+	s.keepers, s.ctx = keepertest.NewTokenomicsModuleKeepers(s.T(), nil)
 	s.sdkCtx = cosmostypes.UnwrapSDKContext(s.ctx)
 
 	// Set the suite expectedComputeUnits to equal the default proof_requirement_threshold
@@ -218,6 +218,61 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimSettled_ProofRequiredAndProvide
 	// 1. Settle pending claims after proof window closes
 	// Expectation: All (1) claims should be claimed.
 	// NB: proofs should be rejected when the current height equals the proof window close height.
+	blockHeight := shared.GetProofWindowCloseHeight(&sharedParams, claim.SessionHeader.SessionEndBlockHeight)
+	sdkCtx = sdkCtx.WithBlockHeight(blockHeight)
+	numClaimsSettled, numClaimsExpired, _, err := s.keepers.SettlePendingClaims(sdkCtx)
+	require.NoError(t, err)
+
+	// Check that one claim was settled.
+	require.Equal(t, uint64(1), numClaimsSettled)
+
+	// Validate that no claims expired.
+	require.Equal(t, uint64(0), numClaimsExpired)
+
+	// Validate that no claims remain.
+	claims = s.keepers.GetAllClaims(ctx)
+	require.Len(t, claims, 0)
+
+	// Confirm an settlement event was emitted
+	events := sdkCtx.EventManager().Events()
+	expectedEvent, ok := s.getClaimEvent(events, "poktroll.tokenomics.EventClaimSettled").(*tokenomicstypes.EventClaimSettled)
+	require.True(t, ok)
+	require.True(t, expectedEvent.ProofRequired)
+	require.Equal(t, s.expectedComputeUnits, expectedEvent.ComputeUnits)
+}
+
+func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_ViaProbability() {
+	// Retrieve default values
+	t := s.T()
+	ctx := s.ctx
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
+
+	// Set the proof parameters such that s.claim requires a proof because the
+	// proof_request_probability is 100%. This is accomplished by setting the
+	// proof_requirement_threshold to exceed s.expectedComputeUnits, which
+	// matches s.claim.
+	err := s.keepers.ProofKeeper.SetParams(ctx, prooftypes.Params{
+		ProofRequestProbability: 1,
+		// +1 to push the threshold above s.claim's compute units
+		ProofRequirementThreshold: s.expectedComputeUnits + 1,
+	})
+	require.NoError(t, err)
+
+	// Create a claim that requires a proof
+	claim := s.claim
+
+	// 0. Add the claim & verify it exists
+	s.keepers.UpsertClaim(ctx, claim)
+	claims := s.keepers.GetAllClaims(ctx)
+	s.Require().Len(claims, 1)
+
+	// Upsert the proof
+	s.keepers.UpsertProof(ctx, s.proof)
+
+	// 1. Settle pending claims after proof window closes
+	// Expectation: All (1) claims should be claimed.
+	// NB: proof window has definitely closed at this point
 	blockHeight := shared.GetProofWindowCloseHeight(&sharedParams, claim.SessionHeader.SessionEndBlockHeight)
 	sdkCtx = sdkCtx.WithBlockHeight(blockHeight)
 	numClaimsSettled, numClaimsExpired, _, err := s.keepers.SettlePendingClaims(sdkCtx)
