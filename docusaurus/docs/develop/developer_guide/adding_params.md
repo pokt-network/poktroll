@@ -11,13 +11,15 @@ title: Adding On-Chain Module Parameters
   - [2 Update the Parameter E2E Tests](#2-update-the-parameter-e2e-tests)
     - [2.1 Scenario Example](#21-scenario-example)
     - [2.2 Scenario Outline Example](#22-scenario-outline-example)
-    - [2.3 Unit Test Example](#23-unit-test-example)
+    - [2.3 Step Definition Helpers Example](#23-step-definition-helpers-example)
   - [3. Update the Default Parameter Values](#3-update-the-default-parameter-values)
   - [4. Add Parameter Default to Genesis Configuration](#4-add-parameter-default-to-genesis-configuration)
   - [5. Modify the Makefile](#5-modify-the-makefile)
   - [6. Create a new JSON File for the Individual Parameter Update](#6-create-a-new-json-file-for-the-individual-parameter-update)
   - [7. Update the JSON File for Updating All Parameters for the Module](#7-update-the-json-file-for-updating-all-parameters-for-the-module)
-  - [8. Add Parameter Validation](#8-add-parameter-validation)
+  - [8. Parameter Validation](#8-parameter-validation)
+    - [8.1 New Parameter Validation](#81-new-parameter-validation)
+    - [8.2 Parameter Validation in Workflow](#82-parameter-validation-in-workflow)
   - [9. Add the Parameter to `ParamSetPairs()`](#9-add-the-parameter-to-paramsetpairs)
   - [10. Update Unit Tests](#10-update-unit-tests)
     - [10.1 Parameter Validation Tests](#101-parameter-validation-tests)
@@ -85,7 +87,7 @@ Scenario Outline: An authorized user updates individual <module> module params
     | proof  | /poktroll.proof.MsgUpdateParam | new_parameter_name | 100         | int64      |
 ```
 
-#### 2.3 Unit Test Example
+#### 2.3 Step Definition Helpers Example
 
 ```go
 func (s *suite) newProofMsgUpdateParams(params paramsMap) cosmostypes.Msg {
@@ -205,9 +207,12 @@ with the default value for the new parameter.
 }
 ```
 
-### 8. Add Parameter Validation
+### 8. Parameter Validation
 
-Implement a validation function for the new parameter in the same Go file.
+#### 8.1 New Parameter Validation
+
+Implement a validation function for the new parameter in the corresponding `params.go`
+file you've been working on.
 
 ```go
 func ValidateNewParameterName(v interface{}) error {
@@ -216,6 +221,21 @@ func ValidateNewParameterName(v interface{}) error {
     return fmt.Errorf("invalid parameter type: %T", v)
   }
   return nil
+}
+```
+
+#### 8.2 Parameter Validation in Workflow
+
+Integrate the usage of the new `ValidateNewParameterName` function in the corresponding
+`Params#ValidateBasic()` function where this is used.
+
+```go
+func (params *Params) ValidateBasic() error {
+  // ...
+  if err := ValidateNewParameterName(params.NewParameterName); err != nil {
+    return err
+  }
+  // ...
 }
 ```
 
@@ -300,5 +320,7 @@ func TestMsgUpdateParam_UpdateNewParameterNameOnly(t *testing.T) {
   require.NoError(t, err)
 
   require.Equal(t, expectedNewParameterName, res.Params.NewParameterName)
+
+  // READ ME: THIS TEST SHOULD ALSO ASSERT THAT ALL OTHER PARAMS OF THE SAME MODULE REMAIN UNCHANGED
 }
 ```
