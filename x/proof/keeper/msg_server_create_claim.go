@@ -31,7 +31,6 @@ func (k msgServer) CreateClaim(
 	}()
 
 	logger := k.Logger().With("method", "CreateClaim")
-
 	logger.Info("creating claim")
 
 	if err := msg.ValidateBasic(); err != nil {

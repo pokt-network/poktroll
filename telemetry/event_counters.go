@@ -7,9 +7,7 @@ import (
 	"github.com/hashicorp/go-metrics"
 )
 
-const (
-	eventTypeMetricKey = "event_type"
-)
+const eventTypeMetricKey = "event_type"
 
 type ClaimProofStage = string
 
@@ -61,6 +59,7 @@ func ProofRequirementCounter(
 		{Name: "is_required", Value: isRequired},
 	}
 
+	// Ensure the counter is not incremented if there was an error.
 	if err != nil {
 		incrementAmount = 0
 		labels = AppendErrLabels(err, labels...)
@@ -86,7 +85,7 @@ func ClaimComputeUnitsCounter(
 		{Name: "claim_proof_stage", Value: claimProofStage},
 	}
 
-	// Set computeUnitsIncrementAmount to 0 if there is an error so that this counter is not incremented.
+	// Ensure the counter is not incremented if there was an error.
 	if err != nil {
 		incrementAmount = 0
 		labels = AppendErrLabels(err, labels...)
@@ -112,7 +111,7 @@ func ClaimCounter(
 		{Name: "claim_proof_stage", Value: claimProofStage},
 	}
 
-	// Set incrementAmount to 0 if there is an error so that this counter is not incremented.
+	// Ensure the counter is not incremented if there was an error.
 	if err != nil {
 		incrementAmount = 0
 		labels = AppendErrLabels(err, labels...)
