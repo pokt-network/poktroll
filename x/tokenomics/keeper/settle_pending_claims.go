@@ -1,7 +1,10 @@
 package keeper
 
 import (
+	"crypto/sha256"
+	"encoding/binary"
 	"fmt"
+	"math/rand"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/smt"
@@ -65,7 +68,10 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 		_, isProofFound := k.proofKeeper.GetProof(ctx, sessionId, claim.SupplierAddress)
 		// Using the probabilistic proofs approach, determine if this expiring
 		// claim required an on-chain proof
-		isProofRequiredForClaim := k.isProofRequiredForClaim(ctx, &claim)
+		isProofRequiredForClaim, err := k.isProofRequiredForClaim(ctx, &claim)
+		if err != nil {
+			return 0, 0, nil, err
+		}
 		if isProofRequiredForClaim {
 			// If a proof is not found, the claim will expire and never be settled.
 			if !isProofFound {
@@ -159,16 +165,109 @@ func (k Keeper) getExpiringClaims(ctx sdk.Context) (expiringClaims []prooftypes.
 // If it is not, the claim will be settled without a proof.
 // If it is, the claim will only be settled if a valid proof is available.
 // TODO_BLOCKER(@bryanchriswhite, #419): Document safety assumptions of the probabilistic proofs mechanism.
-func (k Keeper) isProofRequiredForClaim(ctx sdk.Context, claim *prooftypes.Claim) bool {
+func (k Keeper) isProofRequiredForClaim(ctx sdk.Context, claim *prooftypes.Claim) (bool, error) {
+	logger := k.logger.With("method", "isProofRequiredForClaim")
+
 	// NB: Assumption that claim is non-nil and has a valid root sum because it
 	// is retrieved from the store and validated, on-chain, at time of creation.
 	root := (smt.MerkleRoot)(claim.GetRootHash())
 	claimComputeUnits := root.Sum()
+	proofParams := k.proofKeeper.GetParams(ctx)
+
+	// Require a proof if the claim's compute units meets or exceeds the threshold.
+	//
 	// TODO_BLOCKER(@bryanchriswhite, #419): This is just VERY BASIC placeholder logic to have something
 	// in place while we implement proper probabilistic proofs. If you're reading it,
 	// do not overthink it and look at the documents linked in #419.
-	if claimComputeUnits < k.proofKeeper.GetParams(ctx).ProofRequirementThreshold {
-		return false
+	if claimComputeUnits >= proofParams.GetProofRequirementThreshold() {
+		logger.Info(fmt.Sprintf(
+			"claim requires proof due to compute units (%d) exceeding threshold (%d)",
+			claimComputeUnits,
+			proofParams.GetProofRequirementThreshold(),
+		))
+		return true, nil
 	}
-	return true
+
+	claimSeed, err := computeClaimSeed(claim)
+	if err != nil {
+		return true, err
+	}
+
+	// Sample a pseudo-random value between 0 and 1 to determine if a proof is required probabilistically.
+	randFloat, err := randProbability(claimSeed)
+	if err != nil {
+		return true, err
+	}
+
+	// Require a proof probabilistically based on the proof_request_probability param.
+	// NB: A random value between 0 and 1 will be less than or equal to proof_request_probability
+	// with probability equal to the proof_request_probability.
+	if randFloat <= proofParams.GetProofRequestProbability() {
+		logger.Info(fmt.Sprintf(
+			"claim requires proof due to random sample (%.2f) being less than or equal to probability (%.2f)",
+			randFloat,
+			proofParams.GetProofRequestProbability(),
+		))
+		return true, nil
+	}
+
+	logger.Info(fmt.Sprintf(
+		"claim does not require proof due to compute units (%d) being less than the threshold (%d) and random sample (%.2f) being greater than probability (%.2f)",
+		claimComputeUnits,
+		proofParams.GetProofRequirementThreshold(),
+		randFloat,
+		proofParams.GetProofRequestProbability(),
+	))
+	return false, nil
+}
+
+// computeClaimSeed returns an int64 intended for seeding the math/rand pseudo-random
+// number generator. The seed is derived by truncating the serialized claim's hash to
+// the first 8 bytes and converting it to an int64.
+func computeClaimSeed(claim *prooftypes.Claim) (int64, error) {
+	var seedBz [8]byte
+
+	claimHash, err := computeClaimHash(claim)
+	if err != nil {
+		return 0, err
+	}
+
+	copy(seedBz[:], claimHash[:])
+
+	// Convert the seed bytes to an int64.
+	// NB: little endian is more conventional in this context.
+	seed := int64(binary.LittleEndian.Uint64(seedBz[:]))
+
+	return seed, nil
+}
+
+// computeClaimHash returns the SHA-256 hash of the serialized claim.
+func computeClaimHash(claim *prooftypes.Claim) ([32]byte, error) {
+	claimBz, err := claim.Marshal()
+	if err != nil {
+		return [32]byte{}, err
+	}
+
+	return sha256.Sum256(claimBz), nil
+}
+
+// randProbability generates a pseudo random float32 between 0 and 1 deterministically given a seed.
+//
+// TODO_MAINNET: To support other language implementations of the protocol, the
+// pseudo-random number generator used here should be language-agnostic (i.e. not
+// golang specific).
+func randProbability(seed int64) (float32, error) {
+	// Construct a pseudo-random number generator with the seed.
+	pseudoRand := rand.New(rand.NewSource(seed))
+
+	// Generate a random uint32.
+	randUint32 := pseudoRand.Uint32()
+
+	// Clamp the random float32 between [0,1]. This is achieved by dividing the random uint32
+	// by the most significant digit of a float32, which is 2^32, guaranteeing an output between
+	// 0 and 1, inclusive.
+	oneMostSignificantDigitFloat32 := float32(1 << 32)
+	randClampedFloat32 := float32(randUint32) / oneMostSignificantDigitFloat32
+
+	return randClampedFloat32, nil
 }

@@ -174,6 +174,7 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 // and a context. It uses real dependencies for all upstream keepers.
 func NewTokenomicsModuleKeepers(
 	t testing.TB,
+	logger log.Logger,
 	opts ...TokenomicsKeepersOpt,
 ) (_ TokenomicsModuleKeepers, ctx context.Context) {
 	t.Helper()
@@ -194,8 +195,12 @@ func NewTokenomicsModuleKeepers(
 	// Construct a multistore & mount store keys for each keeper that will interact with the state store.
 	stateStore := integration.CreateMultiStore(keys, log.NewNopLogger())
 
+	// Use the test logger by default (i.e. if none is given).
+	if logger == nil {
+		logger = log.NewTestLogger(t)
+	}
+
 	// Prepare the context
-	logger := log.NewTestLogger(t)
 	ctx = sdk.NewContext(stateStore, cmtproto.Header{}, false, logger)
 
 	// ctx.SetAccount
