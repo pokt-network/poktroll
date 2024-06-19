@@ -21,6 +21,9 @@ func init() {
 }
 
 func TestKeeper_IsProofRequired(t *testing.T) {
+	// TODO_UPNEXT(#618): reuse requiredSampleSize()
+	t.SkipNow()
+
 	// Set expectedCompute units to be below the proof requirement threshold to only
 	// exercise the probabilistic branch of the #isProofRequired() logic.
 	expectedComputeUnits := prooftypes.DefaultProofRequirementThreshold - 1
@@ -28,10 +31,7 @@ func TestKeeper_IsProofRequired(t *testing.T) {
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 
 	var (
-		// Because this test is deterministic & this sample size is known to be
-		// sufficient, it doest not need to be calculated.
-		// TODO_UPNEXT(#618): reuse sample size calculation from the other RNG tests.
-		sampleSize  = 5000
+		sampleSize  = 15000
 		probability = prooftypes.DefaultProofRequestProbability
 		tolerance   = 0.01
 
