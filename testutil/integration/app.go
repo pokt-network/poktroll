@@ -619,10 +619,6 @@ func (app *App) RunMsg(t *testing.T, msg sdk.Msg, option ...RunOption) *codectyp
 
 	// If configured, finalize the block after the message is executed.
 	if cfg.AutomaticFinalizeBlock {
-		// _, err := app.FinalizeBlock(&abci.RequestFinalizeBlock{
-		// 	Height: app.sdkCtx.BlockHeight(),
-		// 	Time:   app.sdkCtx.BlockTime()})
-
 		finalizedBlockResponse, err := app.FinalizeBlock(&cmtabcitypes.RequestFinalizeBlock{
 			Height: app.LastBlockHeight() + 1,
 			DecidedLastCommit: cmtabcitypes.CommitInfo{

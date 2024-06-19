@@ -6,9 +6,6 @@ import (
 	"strings"
 	"testing"
 
-	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
-	ringtypes "github.com/athanorlabs/go-dleq/types"
-	cosmoscrypto "github.com/cosmos/cosmos-sdk/crypto"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	signingtypes "github.com/cosmos/cosmos-sdk/types/tx/signing"
@@ -16,6 +13,7 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/crypto"
 	"github.com/pokt-network/poktroll/pkg/relayer"
+	testutilkeyring "github.com/pokt-network/poktroll/testutil/testkeyring"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
@@ -131,7 +129,7 @@ func SignRelayRequest(
 	require.NoError(t, err)
 
 	// Retrieve the signing key associated with the application address.
-	signingKey := GetSigningKeyFromAddress(t,
+	signingKey := testutilkeyring.GetSigningKeyFromAddress(t,
 		appAddr,
 		keyRing,
 	)
@@ -181,27 +179,6 @@ func SignRelayResponse(
 
 	// Update the relay response signature.
 	relay.Res.Meta.SupplierSignature = signatureBz
-}
-
-// GetSigningKeyFromAddress retrieves the signing key associated with the given
-// bech32 address from the provided keyring.
-func GetSigningKeyFromAddress(t *testing.T, bech32 string, keyRing keyring.Keyring) ringtypes.Scalar {
-	t.Helper()
-
-	addr, err := cosmostypes.AccAddressFromBech32(bech32)
-	require.NoError(t, err)
-
-	armorPrivKey, err := keyRing.ExportPrivKeyArmorByAddress(addr, "")
-	require.NoError(t, err)
-
-	privKey, _, err := cosmoscrypto.UnarmorDecryptPrivKey(armorPrivKey, "")
-	require.NoError(t, err)
-
-	curve := ring_secp256k1.NewCurve()
-	signingKey, err := curve.DecodeToScalar(privKey.Bytes())
-	require.NoError(t, err)
-
-	return signingKey
 }
 
 // NewSignedEmptyRelay creates a new relay structure for the given req & res headers.

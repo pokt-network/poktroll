@@ -6,10 +6,14 @@ import (
 	"fmt"
 	"testing"
 
+	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
+	cosmoscrypto "github.com/cosmos/cosmos-sdk/crypto"
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/types"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // CreatePreGeneratedKeyringAccounts uses the mnemonic from limit number of
@@ -44,4 +48,25 @@ func CreatePreGeneratedKeyringAccounts(
 	}
 
 	return accounts[:limit]
+}
+
+// GetSigningKeyFromAddress retrieves the signing key associated with the given
+// bech32 address from the provided keyring.
+func GetSigningKeyFromAddress(t *testing.T, bech32 string, keyRing keyring.Keyring) ringtypes.Scalar {
+	t.Helper()
+
+	addr, err := cosmostypes.AccAddressFromBech32(bech32)
+	require.NoError(t, err)
+
+	armorPrivKey, err := keyRing.ExportPrivKeyArmorByAddress(addr, "")
+	require.NoError(t, err)
+
+	privKey, _, err := cosmoscrypto.UnarmorDecryptPrivKey(armorPrivKey, "")
+	require.NoError(t, err)
+
+	curve := ring_secp256k1.NewCurve()
+	signingKey, err := curve.DecodeToScalar(privKey.Bytes())
+	require.NoError(t, err)
+
+	return signingKey
 }
