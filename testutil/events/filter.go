@@ -12,8 +12,7 @@ import (
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-// FilterEvents filters through all of the provided events and returns the ones of
-// the matching type, after being casted to the right type.
+// FilterEvents filters allEvents, returning list of T type events whose protobuf  message type string matches protoType.
 func FilterEvents[T proto.Message](
 	t *testing.T,
 	allEvents cosmostypes.Events,
