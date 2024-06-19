@@ -102,7 +102,7 @@ func (k Keeper) SettleSessionAccounting(
 	logger.Info(fmt.Sprintf("About to start settling claim for %d compute units", claimComputeUnits))
 
 	// Calculate the amount of tokens to mint & burn
-	settlementAmt = k.getCoinFromComputeUnits(ctx, root, sessionHeader.Service.ComputeUnitsPerRelay)
+	settlementAmt = k.computeUnitsToCoins(ctx, root, sessionHeader.Service.ComputeUnitsPerRelay)
 	settlementAmtuPOKT := sdk.NewCoins(settlementAmt)
 
 	logger.Info(fmt.Sprintf(
@@ -183,7 +183,8 @@ func (k Keeper) SettleSessionAccounting(
 	return nil
 }
 
-func (k Keeper) getCoinFromComputeUnits(ctx context.Context, root smt.MerkleRoot, computeUnitsPerRelay uint64) sdk.Coin {
+// computeUnitsToCoins calculates the amount of uPOKT to mint based on the root sum (number of relays), the ComputeUnitsPerTokenMultiplier tokenomics param, and the service-specific ComputeUnitsPerRelay
+func (k Keeper) computeUnitsToCoins(ctx context.Context, root smt.MerkleRoot, computeUnitsPerRelay uint64) sdk.Coin {
 	// Retrieve the existing tokenomics params
 	params := k.GetParams(ctx)
 

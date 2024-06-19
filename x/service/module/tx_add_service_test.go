@@ -85,12 +85,12 @@ func TestCLI_AddService(t *testing.T) {
 			service:         svc1,
 		},
 		{
-			desc:            "valid - add new service without compute units per relay",
+			desc:            "valid - add new service without specifying compute units per relay so that it uses the default",
 			supplierAddress: account.Address.String(),
 			service: sharedtypes.Service{
 				Id:                   svc1.Id,
 				Name:                 svc1.Name,
-				ComputeUnitsPerRelay: 0,
+				ComputeUnitsPerRelay: 0, // this parameter is omitted when the test is run
 			},
 		},
 		{
