@@ -41,17 +41,15 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	trie := prepareSMST(t, integrationApp.SdkCtx(), integrationApp, session)
 
 	// Compute the number of blocks to wait between different events
-	currentBlockHeight := int(integrationApp.SdkCtx().BlockHeight())
 	sessionEndHeight := int(session.Header.SessionEndBlockHeight)
 	claimOpenWindowNumBlocks := int(sharedParams.ClaimWindowOpenOffsetBlocks)
 	claimCloseWindowNumBlocks := int(sharedParams.ClaimWindowCloseOffsetBlocks)
 	proofOpenWindowNumBlocks := int(sharedParams.ProofWindowOpenOffsetBlocks)
 	proofCloseWindowNumBlocks := int(sharedParams.ProofWindowCloseOffsetBlocks)
-	numBlocksUntilClaimWindowIsOpen := int(sessionEndHeight + claimOpenWindowNumBlocks - currentBlockHeight + 1)
-	numBlocksUntilProofWindowIsOpen := numBlocksUntilClaimWindowIsOpen + claimCloseWindowNumBlocks + proofOpenWindowNumBlocks
-	numBlocksUntilProofWindowIsClosed := numBlocksUntilProofWindowIsOpen + proofCloseWindowNumBlocks
 
 	// Wait until the claim window is open
+	currentBlockHeight := int(integrationApp.SdkCtx().BlockHeight())
+	numBlocksUntilClaimWindowIsOpen := int(sessionEndHeight + claimOpenWindowNumBlocks - currentBlockHeight + 1)
 	integrationApp.NextBlocks(t, numBlocksUntilClaimWindowIsOpen)
 
 	// Create a new claim and create it
@@ -68,6 +66,9 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	require.NotNil(t, result, "unexpected nil result when submitting a MsgCreateClaim tx")
 
 	// Wait until the proof window is open
+	currentBlockHeight = int(integrationApp.SdkCtx().BlockHeight())
+	numBlocksUntilProofWindowIsOpen := int(sessionEndHeight + claimOpenWindowNumBlocks + claimCloseWindowNumBlocks + proofOpenWindowNumBlocks - currentBlockHeight + 1)
+	numBlocksUntilProofWindowIsClosed := numBlocksUntilProofWindowIsOpen + proofCloseWindowNumBlocks
 	integrationApp.NextBlocks(t, numBlocksUntilProofWindowIsOpen)
 
 	// Create a new proof and submit it

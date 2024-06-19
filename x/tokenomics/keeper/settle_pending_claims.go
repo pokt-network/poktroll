@@ -136,7 +136,7 @@ func (k Keeper) getExpiringClaims(ctx sdk.Context) (expiringClaims []prooftypes.
 	// TODO_BLOCKER(@bryanchriswhite): query the on-chain governance parameter once available.
 	// `* 3` is just a random factor Olshansky added for now to make sure expiration
 	// doesn't happen immediately after a session's grace period is complete.
-	submitProofWindowEndHeight := shared.SessionGracePeriodBlocks * int64(5)
+	submitProofWindowEndHeight := shared.SessionGracePeriodBlocks * int64(3)
 
 	// TODO_TECHDEBT: Optimize this by indexing claims appropriately
 	// and only retrieving the claims that need to be settled rather than all
