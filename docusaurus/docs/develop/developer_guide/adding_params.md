@@ -108,8 +108,8 @@ func (s *suite) newProofMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 
 ### 3. Update the Default Parameter Values
 
-In the corresponding Go file (e.g., `params.go`), define the default value for the
-new parameter and include it in the `NewParams` and `DefaultParams` functions.
+In the corresponding Go file (e.g., `params.go`), define the default value, key, and parameter name for the
+new parameter and include the default in the `NewParams` and `DefaultParams` functions.
 
 ```go
 var (
