@@ -88,11 +88,12 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	// Wait until the proof window is closed
 	integrationApp.NextBlocks(t, numBlocksUntilProofWindowIsClosed)
 
-	// Check the number of events is consistent. The number 14 was determined
-	// empirically by running the tests and will need to be updated if they
-	// are changed.
+	// The number 14 was determined empirically by running the tests and will need
+	// to be updated if they are changed.
+	expectedNumEvents := 14
+	// Check the number of events is consistent.
 	events := integrationApp.GetSdkCtx().EventManager().Events()
-	require.Len(t, events, 14, "unexpected number of total events")
+	require.Len(t, events, expectedNumEvents, "unexpected number of total events")
 
 	relayMiningEvents := testutilevents.FilterEvents[*tokenomicstypes.EventRelayMiningDifficultyUpdated](t,
 		events, "poktroll.tokenomics.EventRelayMiningDifficultyUpdated")
@@ -160,6 +161,11 @@ func prepareSMST(
 	kvStore, err := badger.NewKVStore("")
 	require.NoError(t, err)
 
+	// NB: A signed mined relay is a MinedRelay type with the appropriate
+	// payload, signatures and metadata populated.
+	//
+	// It does not (as of writing) adhere to the actual on-chain difficulty (i.e.
+	// hash check) of the test service surrounding the scope of this test.
 	minedRelay := testrelayer.NewSignedMinedRelay(t, ctx,
 		session,
 		integrationApp.DefaultApplication.Address,

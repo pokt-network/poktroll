@@ -23,6 +23,9 @@ import (
 //
 // It DOES NOT populate the signature fields and should only be used in contexts
 // where a partial mined relay is enough for testing purposes.
+//
+// TODO_IMPROVE: It does not (yet) verify against and adhere to the actual
+// relay mining difficulty of the service at hand.
 func NewUnsignedMinedRelay(
 	t *testing.T,
 	session *sessiontypes.Session,
@@ -60,11 +63,14 @@ func NewUnsignedMinedRelay(
 	}
 }
 
-// NewSignedMinedRelay returns a new mined relay with the given session data,
+// NewSignedMinedRelay returns a new "mined relay" with the given session data,
 // as well as the bytes and the hash fields populated.
 //
 // IT DOES populate the signature fields and should only be used in contexts
 // where a fully signed mined relay is needed for testing purposes.
+//
+// TODO_IMPROVE: It does not (yet) verify against and adhere to the actual
+// relay mining difficulty of the service at hand.
 func NewSignedMinedRelay(
 	t *testing.T,
 	ctx context.Context,

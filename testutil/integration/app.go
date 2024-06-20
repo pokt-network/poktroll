@@ -672,7 +672,9 @@ func (app *App) emitEvents(t *testing.T, res *abci.ResponseFinalizeBlock) {
 		e := cosmostypes.NewEvent(event.Type, attrs...)
 		app.sdkCtx.EventManager().EmitEvent(e)
 
-		// TODO_TECHDEBT: Figure out why the following doesn't work
+		// TODO_TECHDEBT: Figure out why the following doesn't work.
+		// See the TODOs in 'testutil/events/filter.go'
+		//
 		// parsedEvent, err := cosmostypes.ParseTypedEvent(abci.Event(event))
 		// require.NoError(t, err)
 		// app.sdkCtx.EventManager().EmitTypedEvent()
