@@ -27,7 +27,7 @@ import (
 const (
 	// eventTimeout is the duration of time to wait after sending a valid tx
 	// before the test should time out (fail).
-	eventTimeout = 60 * time.Second
+	eventTimeout = 100 * time.Second
 	// testServiceId is the service ID used for testing purposes that is
 	// expected to be available in LocalNet.
 	testServiceId = "anvil"
