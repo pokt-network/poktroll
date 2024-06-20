@@ -23,17 +23,19 @@ func TestRandProbability(t *testing.T) {
 	wg := sync.WaitGroup{}
 	wg.Add(sampleSize)
 	for i := 0; i < sampleSize; i++ {
-		rand, err := randProbability(int64(i))
-		require.NoError(t, err)
+		go func() {
+			rand, err := randProbability(int64(i))
+			require.NoError(t, err)
 
-		if rand < 0 || rand > 1 {
-			t.Fatalf("secureRandFloat64() returned out of bounds value: %f", rand)
-		}
+			if rand < 0 || rand > 1 {
+				t.Fatalf("secureRandFloat64() returned out of bounds value: %f", rand)
+			}
 
-		if rand <= probability {
-			numTrueSamples++
-		}
-		wg.Done()
+			if rand <= probability {
+				numTrueSamples++
+			}
+			wg.Done()
+		}()
 	}
 	wg.Wait()
 
