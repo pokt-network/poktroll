@@ -16,6 +16,7 @@ import (
 	"github.com/pokt-network/poktroll/testutil/testrelayer"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
@@ -42,16 +43,16 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 
 	// Compute the number of blocks to wait between different events
 	// TODO_BLOCKER(@bryanchriswhite): See this comment: https://github.com/pokt-network/poktroll/pull/610#discussion_r1645777322
-	sessionEndHeight := int(session.Header.SessionEndBlockHeight)
-	claimOpenWindowNumBlocks := int(sharedParams.ClaimWindowOpenOffsetBlocks)
-	claimCloseWindowNumBlocks := int(sharedParams.ClaimWindowCloseOffsetBlocks)
-	proofOpenWindowNumBlocks := int(sharedParams.ProofWindowOpenOffsetBlocks)
-	proofCloseWindowNumBlocks := int(sharedParams.ProofWindowCloseOffsetBlocks)
+	sessionEndHeight := session.Header.SessionEndBlockHeight
+	claimWindowOpenHeight := shared.GetClaimWindowOpenHeight(&sharedParams, sessionEndHeight)
+	proofWindowOpenHeight := shared.GetProofWindowOpenHeight(&sharedParams, sessionEndHeight)
+	proofWindowCloseHeight := shared.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
 
-	// Wait until the claim window is open
-	currentBlockHeight := int(integrationApp.GetSdkCtx().BlockHeight())
-	numBlocksUntilClaimWindowIsOpen := int(sessionEndHeight + claimOpenWindowNumBlocks - currentBlockHeight + 1)
-	integrationApp.NextBlocks(t, numBlocksUntilClaimWindowIsOpen)
+	// Wait until the earliest claim commit height.
+	currentBlockHeight := integrationApp.GetSdkCtx().BlockHeight()
+	numBlocksUntilClaimWindowOpenHeight := claimWindowOpenHeight - currentBlockHeight
+	require.Greater(t, numBlocksUntilClaimWindowOpenHeight, int64(0), "unexpected non-positive number of blocks until the earliest claim commit height")
+	integrationApp.NextBlocks(t, int(numBlocksUntilClaimWindowOpenHeight))
 
 	// Create a new claim and create it
 	createClaimMsg := prooftypes.MsgCreateClaim{
@@ -67,10 +68,10 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	require.NotNil(t, result, "unexpected nil result when submitting a MsgCreateClaim tx")
 
 	// Wait until the proof window is open
-	currentBlockHeight = int(integrationApp.GetSdkCtx().BlockHeight())
-	numBlocksUntilProofWindowIsOpen := int(sessionEndHeight + claimOpenWindowNumBlocks + claimCloseWindowNumBlocks + proofOpenWindowNumBlocks - currentBlockHeight + 1)
-	numBlocksUntilProofWindowIsClosed := numBlocksUntilProofWindowIsOpen + proofCloseWindowNumBlocks
-	integrationApp.NextBlocks(t, numBlocksUntilProofWindowIsOpen)
+	currentBlockHeight = integrationApp.GetSdkCtx().BlockHeight()
+	numBlocksUntilProofWindowOpenHeight := proofWindowOpenHeight - currentBlockHeight
+	require.Greater(t, numBlocksUntilProofWindowOpenHeight, int64(0), "unexpected non-positive number of blocks until the earliest proof commit height")
+	integrationApp.NextBlocks(t, int(numBlocksUntilProofWindowOpenHeight))
 
 	// Create a new proof and submit it
 	createProofMsg := prooftypes.MsgSubmitProof{
@@ -86,7 +87,10 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	require.NotNil(t, result, "unexpected nil result when submitting a MsgSubmitProof tx")
 
 	// Wait until the proof window is closed
-	integrationApp.NextBlocks(t, numBlocksUntilProofWindowIsClosed)
+	currentBlockHeight = integrationApp.GetSdkCtx().BlockHeight()
+	numBlocksUntilProofWindowCloseHeight := proofWindowCloseHeight - currentBlockHeight
+	require.Greater(t, numBlocksUntilProofWindowOpenHeight, int64(0), "unexpected non-positive number of blocks until the earliest proof commit height")
+	integrationApp.NextBlocks(t, int(numBlocksUntilProofWindowCloseHeight))
 
 	// The number 14 was determined empirically by running the tests and will need
 	// to be updated if they are changed.

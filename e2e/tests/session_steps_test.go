@@ -21,7 +21,6 @@ import (
 	testutilevents "github.com/pokt-network/poktroll/testutil/events"
 	"github.com/pokt-network/poktroll/testutil/testclient"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
-	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 const (
@@ -166,20 +165,23 @@ func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBeSuccess
 		if event.Type != "poktroll.tokenomics.EventClaimSettled" {
 			return false
 		}
+
+		// Parse the event
 		testutilevents.QuoteEventMode(event)
-		cosmostypes.ParseTypedEvent(*event)
-		// TODO_TECHDEBT: Investigate why `cosmostypes.ParseTypedEvent(*event)` throws
-		// an error where cosmostypes is imported from "github.com/cosmos/cosmos-sdk/types"
-		// resulting in the following error:
-		// 'json: error calling MarshalJSON for type json.RawMessage: invalid character 'E' looking for beginning of value'
-		// typedEvent, err := cosmostypes.ParseTypedEvent(*event)
-		claimSettledEvent := s.abciToClaimSettledEvent(event)
+		typedEvent, err := cosmostypes.ParseTypedEvent(*event)
+		require.NoError(s, err)
+		require.NotNil(s, typedEvent)
+		claimSettledEvent, ok := typedEvent.(*tokenomicstypes.EventClaimSettled)
+		require.True(s, ok)
+
+		// Assert that the claim was settled for the correct application, supplier, and service.
 		claim := claimSettledEvent.Claim
 		require.Equal(s, app.Address, claim.SessionHeader.ApplicationAddress)
 		require.Equal(s, supplier.Address, claim.SupplierAddress)
 		require.Equal(s, serviceId, claim.SessionHeader.Service.Id)
 		require.Greater(s, claimSettledEvent.ComputeUnits, uint64(0), "compute units should be greater than 0")
 		s.Logf("Claim settled for %d compute units w/ proof requirement: %t\n", claimSettledEvent.ComputeUnits, claimSettledEvent.ProofRequired)
+
 		return true
 	}
 
@@ -291,37 +293,4 @@ func (s *suite) waitForNewBlockEvent(
 	case <-ctx.Done():
 		s.Log("Success; message detected before timeout.")
 	}
-}
-
-// abciToClaimSettledEvent converts an abci.Event to a tokenomics.EventClaimSettled
-// NB: This was a ChatGPT generated function.
-func (s *suite) abciToClaimSettledEvent(event *abci.Event) *tokenomicstypes.EventClaimSettled {
-	var claimSettledEvent tokenomicstypes.EventClaimSettled
-
-	// TODO_TECHDEBT: Investigate why `cosmostypes.ParseTypedEvent(*event)` throws
-	// an error where cosmostypes is imported from "github.com/cosmos/cosmos-sdk/types"
-	// resulting in the following error:
-	// 'json: error calling MarshalJSON for type json.RawMessage: invalid character 'E' looking for beginning of value'
-	// typedEvent, err := cosmostypes.ParseTypedEvent(*event)
-
-	for _, attr := range event.Attributes {
-		switch string(attr.Key) {
-		case "claim":
-			var claim prooftypes.Claim
-			err := s.cdc.UnmarshalJSON([]byte(attr.Value), &claim)
-			require.NoError(s, err)
-			claimSettledEvent.Claim = &claim
-		case "compute_units":
-			unquotedValue, err := strconv.Unquote(string(attr.Value))
-			require.NoError(s, err)
-			computeUnits, err := strconv.ParseUint(unquotedValue, 10, 64)
-			require.NoError(s, err)
-			claimSettledEvent.ComputeUnits = computeUnits
-		case "proof_required":
-			proofRequired, err := strconv.ParseBool(string(attr.Value))
-			require.NoError(s, err)
-			claimSettledEvent.ProofRequired = proofRequired
-		}
-	}
-	return &claimSettledEvent
 }
