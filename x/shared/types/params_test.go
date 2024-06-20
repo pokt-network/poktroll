@@ -104,23 +104,23 @@ func TestParams_ValidateClaimWindowCloseOffsetBlocks(t *testing.T) {
 func TestParams_ValidateProofWindowOpenOffsetBlocks(t *testing.T) {
 	tests := []struct {
 		desc                        string
-		claimWindowOpenOffsetBlocks any
+		proofWindowOpenOffsetBlocks any
 		err                         error
 	}{
 		{
 			desc:                        "invalid type",
-			claimWindowOpenOffsetBlocks: "invalid",
+			proofWindowOpenOffsetBlocks: "invalid",
 			err:                         ErrSharedParamInvalid.Wrapf("invalid parameter type: %T", "invalid"),
 		},
 		{
 			desc:                        "valid ProofWindowOpenOffsetBlocks",
-			claimWindowOpenOffsetBlocks: uint64(4),
+			proofWindowOpenOffsetBlocks: uint64(4),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			err := ValidateProofWindowOpenOffsetBlocks(tt.claimWindowOpenOffsetBlocks)
+			err := ValidateProofWindowOpenOffsetBlocks(tt.proofWindowOpenOffsetBlocks)
 			if tt.err != nil {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), tt.err.Error())
@@ -134,23 +134,53 @@ func TestParams_ValidateProofWindowOpenOffsetBlocks(t *testing.T) {
 func TestParams_ValidateProofWindowCloseOffsetBlocks(t *testing.T) {
 	tests := []struct {
 		desc                         string
-		claimWindowCloseOffsetBlocks any
+		proofWindowCloseOffsetBlocks any
 		err                          error
 	}{
 		{
 			desc:                         "invalid type",
-			claimWindowCloseOffsetBlocks: "invalid",
+			proofWindowCloseOffsetBlocks: "invalid",
 			err:                          ErrSharedParamInvalid.Wrapf("invalid parameter type: %T", "invalid"),
 		},
 		{
 			desc:                         "valid ProofWindowCloseOffsetBlocks",
-			claimWindowCloseOffsetBlocks: uint64(4),
+			proofWindowCloseOffsetBlocks: uint64(4),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			err := ValidateProofWindowCloseOffsetBlocks(tt.claimWindowCloseOffsetBlocks)
+			err := ValidateProofWindowCloseOffsetBlocks(tt.proofWindowCloseOffsetBlocks)
+			if tt.err != nil {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), tt.err.Error())
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestParams_ValidateGracePeriodEndOffsetBlocks(t *testing.T) {
+	tests := []struct {
+		desc                       string
+		gracePeriodEndOffsetBlocks any
+		err                        error
+	}{
+		{
+			desc:                       "invalid type",
+			gracePeriodEndOffsetBlocks: "invalid",
+			err:                        ErrSharedParamInvalid.Wrapf("invalid parameter type: %T", "invalid"),
+		},
+		{
+			desc:                       "valid ProofWindowCloseOffsetBlocks",
+			gracePeriodEndOffsetBlocks: uint64(2),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			err := ValidateProofWindowCloseOffsetBlocks(tt.gracePeriodEndOffsetBlocks)
 			if tt.err != nil {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), tt.err.Error())

@@ -7,6 +7,8 @@ import (
 const (
 	DefaultNumBlocksPerSession          = 4
 	ParamNumBlocksPerSession            = "num_blocks_per_session"
+	DefaultGracePeriodEndOffsetBlocks   = 2
+	ParamGracePeriodEndOffsetBlocks     = "grace_period_end_offset_blocks"
 	DefaultClaimWindowOpenOffsetBlocks  = 0
 	ParamClaimWindowOpenOffsetBlocks    = "claim_window_open_offset_blocks"
 	DefaultClaimWindowCloseOffsetBlocks = 4
@@ -20,6 +22,7 @@ const (
 var (
 	_                               paramtypes.ParamSet = (*Params)(nil)
 	KeyNumBlocksPerSession                              = []byte("NumBlocksPerSession")
+	KeyGracePeriodEndOffsetBlocks                       = []byte("GracePeriodEndOffsetBlocks")
 	KeyClaimWindowOpenOffsetBlocks                      = []byte("ClaimWindowOpenOffsetBlocks")
 	KeyClaimWindowCloseOffsetBlocks                     = []byte("ClaimWindowCloseOffsetBlocks")
 	KeyProofWindowOpenOffsetBlocks                      = []byte("ProofWindowOpenOffsetBlocks")
@@ -39,6 +42,7 @@ func NewParams() Params {
 		ClaimWindowCloseOffsetBlocks: DefaultClaimWindowCloseOffsetBlocks,
 		ProofWindowOpenOffsetBlocks:  DefaultProofWindowOpenOffsetBlocks,
 		ProofWindowCloseOffsetBlocks: DefaultProofWindowCloseOffsetBlocks,
+		GracePeriodEndOffsetBlocks:   DefaultGracePeriodEndOffsetBlocks,
 	}
 }
 
@@ -54,6 +58,11 @@ func (params *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 			KeyNumBlocksPerSession,
 			&params.NumBlocksPerSession,
 			ValidateNumBlocksPerSession,
+		),
+		paramtypes.NewParamSetPair(
+			KeyGracePeriodEndOffsetBlocks,
+			&params.GracePeriodEndOffsetBlocks,
+			ValidateGracePeriodEndOffsetBlocks,
 		),
 		paramtypes.NewParamSetPair(
 			KeyClaimWindowOpenOffsetBlocks,
@@ -103,6 +112,10 @@ func (params *Params) ValidateBasic() error {
 		return err
 	}
 
+	if err := ValidateGracePeriodEndOffsetBlocks(params.GracePeriodEndOffsetBlocks); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -124,42 +137,38 @@ func ValidateNumBlocksPerSession(v interface{}) error {
 // ValidateClaimWindowOpenOffsetBlocks validates the ClaimWindowOpenOffsetBlocks param
 // NB: The argument is an interface type to satisfy the ParamSetPair function signature.
 func ValidateClaimWindowOpenOffsetBlocks(v interface{}) error {
-	_, ok := v.(uint64)
-	if !ok {
-		return ErrSharedParamInvalid.Wrapf("invalid parameter type: %T", v)
-	}
-
-	return nil
+	return validateIsUint64(v)
 }
 
 // ValidateClaimWindowCloseOffsetBlocks validates the ClaimWindowCloseOffsetBlocks param
 // NB: The argument is an interface type to satisfy the ParamSetPair function signature.
 func ValidateClaimWindowCloseOffsetBlocks(v interface{}) error {
-	_, ok := v.(uint64)
-	if !ok {
-		return ErrSharedParamInvalid.Wrapf("invalid parameter type: %T", v)
-	}
-
-	return nil
+	return validateIsUint64(v)
 }
 
 // ValidateProofWindowOpenOffsetBlocks validates the ProofWindowOpenOffsetBlocks param
 // NB: The argument is an interface type to satisfy the ParamSetPair function signature.
 func ValidateProofWindowOpenOffsetBlocks(v interface{}) error {
-	_, ok := v.(uint64)
-	if !ok {
-		return ErrSharedParamInvalid.Wrapf("invalid parameter type: %T", v)
-	}
-
-	return nil
+	return validateIsUint64(v)
 }
 
 // ValidateProofWindowCloseOffsetBlocks validates the ProofWindowCloseOffsetBlocks param
 // NB: The argument is an interface type to satisfy the ParamSetPair function signature.
 func ValidateProofWindowCloseOffsetBlocks(v interface{}) error {
-	_, ok := v.(uint64)
+	return validateIsUint64(v)
+}
+
+// ValidateGracePeriodEndOffsetBlocks validates the GracePeriodEndOffsetBlocks param
+// NB: The argument is an interface type to satisfy the ParamSetPair function signature.
+func ValidateGracePeriodEndOffsetBlocks(v interface{}) error {
+	return validateIsUint64(v)
+}
+
+// validateIsUint64 returns an error if value is not type assertable to uint64.
+func validateIsUint64(value any) error {
+	_, ok := value.(uint64)
 	if !ok {
-		return ErrSharedParamInvalid.Wrapf("invalid parameter type: %T", v)
+		return ErrSharedParamInvalid.Wrapf("invalid parameter type: %T", value)
 	}
 
 	return nil

@@ -1280,11 +1280,9 @@ func createClaimAndStoreBlockHash(
 	_, err = msgServer.CreateClaim(ctx, claimMsg)
 	require.NoError(t, err)
 
-	// TODO_TECHDEBT(@red-0ne): Centralize the business logic that involves taking
-	// into account the heights, windows and grace periods into helper functions.
-	proofSubmissionHeight :=
-		claimMsg.GetSessionHeader().GetSessionEndBlockHeight() +
-			shared.SessionGracePeriodBlocks
+	gracePeriodEndOffsetBlocks := keepers.SharedKeeper.GetParams(ctx).GracePeriodEndOffsetBlocks
+	sessionEndHeight := claimMsg.GetSessionHeader().GetSessionEndBlockHeight()
+	proofSubmissionHeight := sessionEndHeight + int64(gracePeriodEndOffsetBlocks)
 
 	// Set block height to be after the session grace period.
 	blockHeightCtx := keepertest.SetBlockHeight(ctx, proofSubmissionHeight)

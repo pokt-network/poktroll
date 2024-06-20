@@ -896,6 +896,10 @@ params_update_shared_all: ## Update the session module params
 params_update_shared_num_blocks_per_session: ## Update the shared module num_blocks_per_session param
 	poktrolld tx authz exec ./tools/scripts/params/shared_num_blocks_per_session.json $(PARAM_FLAGS)
 
+.PHONY: params_update_shared_grace_period_end_offset_blocks
+params_update_shared_grace_period_end_offset_blocks: ## Update the shared module grace_period_end_offset_blocks param
+	poktrolld tx authz exec ./tools/scripts/params/shared_grace_period_end_offset_blocks.json $(PARAM_FLAGS)
+
 .PHONY: params_update_shared_claim_window_open_offset_blocks
 params_update_shared_claim_window_open_offset_blocks: ## Update the shared module claim_window_open_offset_blocks param
 	poktrolld tx authz exec ./tools/scripts/params/shared_claim_window_open_offset_blocks.json $(PARAM_FLAGS)
