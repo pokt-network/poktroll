@@ -8,10 +8,11 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
-	"errors"
 	"fmt"
 	"hash"
 
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/gogoproto/proto"
 	"github.com/pokt-network/smt"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -60,20 +61,25 @@ func (k msgServer) SubmitProof(
 	logger.Info("About to start submitting proof")
 
 	// Declare claim to reference in telemetry.
-	claim := new(types.Claim)
+	var (
+		claim           = new(types.Claim)
+		isExistingProof bool
+		numRelays       uint64
+		numComputeUnits uint64
+	)
 
 	// Defer telemetry calls so that they reference the final values the relevant variables.
 	defer func() {
-		// TODO_IMPROVE: We could track on-chain relays here with claim.GetNumRelays().
-		numComputeUnits, deferredErr := claim.GetNumComputeUnits()
-		err = errors.Join(err, deferredErr)
-
-		telemetry.ClaimCounter(types.ClaimProofStage_PROVEN, 1, err)
-		telemetry.ClaimComputeUnitsCounter(
-			types.ClaimProofStage_PROVEN,
-			numComputeUnits,
-			err,
-		)
+		// Only increment these metrics counters if handling a new claim.
+		if !isExistingProof {
+			// TODO_IMPROVE: We could track on-chain relays here with claim.GetNumRelays().
+			telemetry.ClaimCounter(types.ClaimProofStage_PROVEN, 1, err)
+			telemetry.ClaimComputeUnitsCounter(
+				types.ClaimProofStage_PROVEN,
+				numComputeUnits,
+				err,
+			)
+		}
 	}()
 
 	/*
@@ -260,11 +266,50 @@ func (k msgServer) SubmitProof(
 	}
 	logger.Debug(fmt.Sprintf("queried and validated the claim for session ID %q", sessionHeader.SessionId))
 
+	_, isExistingProof = k.GetProof(ctx, proof.GetSessionHeader().GetSessionId(), proof.GetSupplierAddress())
+
 	// TODO_BLOCKER(@Olshansk): check if this proof already exists and return an
 	// appropriate error in any case where the supplier should no longer be able
 	// to update the given proof.
 	k.UpsertProof(ctx, proof)
 	logger.Info("successfully upserted the proof")
+
+	// NB: Don't return these error, it should not prevent the MsgCreateClaimResopnse
+	// from being returned. Instead, it will be attached as an "error" label to any
+	// metrics tracked in this function.
+	// TODO_IMPROVE: While this will surface the error in metrics, it will also cause
+	// any counters not to be incremented even though a new claim might have been inserted.
+	numRelays, err = claim.GetNumRelays()
+	numComputeUnits, err = claim.GetNumComputeUnits()
+
+	// Emit the appropriate event based on whether the claim was created or updated.
+	var proofUpsertEvent proto.Message
+	switch isExistingProof {
+	case true:
+		proofUpsertEvent = proto.Message(
+			&types.EventProofUpdated{
+				Proof:           &proof,
+				NumRelays:       numRelays,
+				NumComputeUnits: numComputeUnits,
+			},
+		)
+	case false:
+		proofUpsertEvent = proto.Message(
+			&types.EventProofSubmitted{
+				Proof:           &proof,
+				NumRelays:       numRelays,
+				NumComputeUnits: numComputeUnits,
+			},
+		)
+	}
+
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	// NB: Don't return this error, it should not prevent the MsgCreateProofResopnse
+	// from being returned. Instead, it will be attached as an "error" label to any
+	// metrics tracked in this function.
+	// TODO_IMPROVE: While this will surface the error in metrics, it will also cause
+	// any counters not to be incremented even though a new proof might have been inserted.
+	err = sdkCtx.EventManager().EmitTypedEvent(proofUpsertEvent)
 
 	return &types.MsgSubmitProofResponse{}, nil
 }

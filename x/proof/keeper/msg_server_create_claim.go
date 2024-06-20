@@ -2,8 +2,9 @@ package keeper
 
 import (
 	"context"
-	"errors"
 
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/gogoproto/proto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -16,20 +17,25 @@ func (k msgServer) CreateClaim(
 	msg *types.MsgCreateClaim,
 ) (_ *types.MsgCreateClaimResponse, err error) {
 	// Declare claim to reference in telemetry.
-	var claim types.Claim
+	var (
+		claim           types.Claim
+		isExistingClaim bool
+		numRelays       uint64
+		numComputeUnits uint64
+	)
 
 	// Defer telemetry calls so that they reference the final values the relevant variables.
 	defer func() {
-		// TODO_IMPROVE: We could track on-chain relays here with claim.GetNumRelays().
-		numComputeUnits, deferredErr := claim.GetNumComputeUnits()
-		err = errors.Join(err, deferredErr)
-
-		telemetry.ClaimCounter(types.ClaimProofStage_CLAIMED, 1, err)
-		telemetry.ClaimComputeUnitsCounter(
-			types.ClaimProofStage_CLAIMED,
-			numComputeUnits,
-			err,
-		)
+		// Only increment these metrics counters if handling a new claim.
+		if !isExistingClaim {
+			// TODO_IMPROVE: We could track on-chain relays here with claim.GetNumRelays().
+			telemetry.ClaimCounter(types.ClaimProofStage_CLAIMED, 1, err)
+			telemetry.ClaimComputeUnitsCounter(
+				types.ClaimProofStage_CLAIMED,
+				numComputeUnits,
+				err,
+			)
+		}
 	}()
 
 	logger := k.Logger().With("method", "CreateClaim")
@@ -85,12 +91,48 @@ func (k msgServer) CreateClaim(
 		RootHash:        msg.GetRootHash(),
 	}
 
-	// TODO_BLOCKER(@Olshansk): check if this claim already exists and return an
-	// appropriate error in any case where the supplier should no longer be able
-	// to update the given proof.
+	_, isExistingClaim = k.Keeper.GetClaim(ctx, claim.GetSessionHeader().GetSessionId(), claim.GetSupplierAddress())
+
 	k.Keeper.UpsertClaim(ctx, claim)
 
 	logger.Info("created new claim")
+
+	// NB: Don't return these error, it should not prevent the MsgCreateClaimResopnse
+	// from being returned. Instead, it will be attached as an "error" label to any
+	// metrics tracked in this function.
+	// TODO_IMPROVE: While this will surface the error in metrics, it will also cause
+	// any counters not to be incremented even though a new claim might have been inserted.
+	numRelays, err = claim.GetNumRelays()
+	numComputeUnits, err = claim.GetNumComputeUnits()
+
+	// Emit the appropriate event based on whether the claim was created or updated.
+	var claimUpsertEvent proto.Message
+	switch isExistingClaim {
+	case true:
+		claimUpsertEvent = proto.Message(
+			&types.EventClaimUpdated{
+				Claim:           &claim,
+				NumRelays:       numRelays,
+				NumComputeUnits: numComputeUnits,
+			},
+		)
+	case false:
+		claimUpsertEvent = proto.Message(
+			&types.EventClaimCreated{
+				Claim:           &claim,
+				NumRelays:       numRelays,
+				NumComputeUnits: numComputeUnits,
+			},
+		)
+	}
+
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	// NB: Don't return this error, it should not prevent the MsgCreateClaimResopnse
+	// from being returned. Instead, it will be attached as an "error" label to any
+	// metrics tracked in this function.
+	// TODO_IMPROVE: While this will surface the error in metrics, it will also cause
+	// any counters not to be incremented even though a new claim might have been inserted.
+	err = sdkCtx.EventManager().EmitTypedEvent(claimUpsertEvent)
 
 	// TODO_BETA: return the claim in the response.
 	return &types.MsgCreateClaimResponse{}, nil
