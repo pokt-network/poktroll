@@ -26,6 +26,9 @@ import (
 //
 // TODO_IMPROVE: It does not (yet) verify against and adhere to the actual
 // relay mining difficulty of the service at hand.
+//
+// TODO_TECHDEBT(@bryanchriswhite): Move the pre-mind relays in 'pkg/relayer/miner/relay_fixtures_test.go'
+// to 'testutil', making any necessary adjustments the utils or docs as well.
 func NewUnsignedMinedRelay(
 	t *testing.T,
 	session *sessiontypes.Session,
@@ -71,6 +74,9 @@ func NewUnsignedMinedRelay(
 //
 // TODO_IMPROVE: It does not (yet) verify against and adhere to the actual
 // relay mining difficulty of the service at hand.
+//
+// TODO_TECHDEBT(@bryanchriswhite): Move the pre-mind relays in 'pkg/relayer/miner/relay_fixtures_test.go'
+// to 'testutil', making any necessary adjustments the utils or docs as well.
 func NewSignedMinedRelay(
 	t *testing.T,
 	ctx context.Context,

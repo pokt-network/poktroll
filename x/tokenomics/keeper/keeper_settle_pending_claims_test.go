@@ -122,10 +122,8 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimPendingBeforeSettlement() {
 	numClaimsSettled, numClaimsExpired, _, _, err := s.keepers.SettlePendingClaims(sdkCtx)
 	require.NoError(t, err)
 
-	// Check that no claims were settled.
+	// Check that no claims were settled or expired.
 	require.Equal(t, uint64(0), numClaimsSettled)
-
-	// Validate that no claims expired.
 	require.Equal(t, uint64(0), numClaimsExpired)
 
 	// Validate that one claim still remains.
@@ -145,10 +143,12 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimPendingBeforeSettlement() {
 	// Expectations: Claims should not be settled because the proof window hasn't closed yet.
 	sdkCtx = sdkCtx.WithBlockHeight(blockHeight)
 	numClaimsSettled, numClaimsExpired, _, _, err = s.keepers.SettlePendingClaims(sdkCtx)
-	// Check that no claims were settled
 	require.NoError(t, err)
+
+	// Check that no claims were settled or expired.
 	require.Equal(t, uint64(0), numClaimsSettled)
 	require.Equal(t, uint64(0), numClaimsExpired)
+
 	// Validate that the claim still exists
 	claims = s.keepers.GetAllClaims(ctx)
 	require.Len(t, claims, 1)
@@ -169,18 +169,18 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequiredAndNotProv
 	claims := s.keepers.GetAllClaims(ctx)
 	s.Require().Len(claims, 1)
 
-	// 1. Settle pending claims after proof window closes
+	// Settle pending claims after proof window closes
 	// Expectation: All (1) claims should be expired.
 	// NB: proofs should be rejected when the current height equals the proof window close height.
-	blockHeight := shared.GetProofWindowCloseHeight(&sharedParams, claim.SessionHeader.SessionEndBlockHeight)
+	sessionEndHeight := claim.SessionHeader.SessionEndBlockHeight
+	blockHeight := shared.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
 	sdkCtx = sdkCtx.WithBlockHeight(blockHeight)
 	numClaimsSettled, numClaimsExpired, _, _, err := s.keepers.SettlePendingClaims(sdkCtx)
 	require.NoError(t, err)
 
 	// Check that no claims were settled.
 	require.Equal(t, uint64(0), numClaimsSettled)
-
-	// Validate that one claims expired
+	// Validate that exactly one claims expired
 	require.Equal(t, uint64(1), numClaimsExpired)
 
 	// Validate that no claims remain.
@@ -190,10 +190,11 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequiredAndNotProv
 	// Confirm an expiration event was emitted
 	events := sdkCtx.EventManager().Events()
 	require.Len(t, events, 5) // minting, burning, settling, etc..
-
 	expectedEvents := testutilevents.FilterEvents[*tokenomicstypes.EventClaimExpired](t,
 		events, "poktroll.tokenomics.EventClaimExpired")
 	require.Len(t, expectedEvents, 1)
+
+	// Validate the event
 	expectedEvent := expectedEvents[0]
 	require.Equal(t, s.expectedComputeUnits, expectedEvent.ComputeUnits)
 }
@@ -208,7 +209,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimSettled_ProofRequiredAndProvide
 	// Create a claim that requires a proof
 	claim := s.claim
 
-	// 0. Add the claim & verify it exists
+	// Add the claim & verify it exists
 	s.keepers.UpsertClaim(ctx, claim)
 	claims := s.keepers.GetAllClaims(ctx)
 	s.Require().Len(claims, 1)
@@ -216,10 +217,11 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimSettled_ProofRequiredAndProvide
 	// Upsert the proof
 	s.keepers.UpsertProof(ctx, s.proof)
 
-	// 1. Settle pending claims after proof window closes
+	// Settle pending claims after proof window closes
 	// Expectation: All (1) claims should be claimed.
 	// NB: proofs should be rejected when the current height equals the proof window close height.
-	blockHeight := shared.GetProofWindowCloseHeight(&sharedParams, claim.SessionHeader.SessionEndBlockHeight)
+	sessionEndHeight := claim.SessionHeader.SessionEndBlockHeight
+	blockHeight := shared.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
 	sdkCtx = sdkCtx.WithBlockHeight(blockHeight)
 	numClaimsSettled, numClaimsExpired, _, _, err := s.keepers.SettlePendingClaims(sdkCtx)
 	require.NoError(t, err)
@@ -240,6 +242,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimSettled_ProofRequiredAndProvide
 		events, "poktroll.tokenomics.EventClaimSettled")
 	require.Len(t, expectedEvents, 1)
 
+	// Validate the event
 	expectedEvent := expectedEvents[0]
 	require.True(t, expectedEvent.ProofRequired)
 	require.Equal(t, s.expectedComputeUnits, expectedEvent.ComputeUnits)
@@ -274,17 +277,17 @@ func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_Vi
 	// Upsert the proof
 	s.keepers.UpsertProof(ctx, s.proof)
 
-	// 1. Settle pending claims after proof window closes
+	// Settle pending claims after proof window closes
 	// Expectation: All (1) claims should be claimed.
 	// NB: proof window has definitely closed at this point
-	blockHeight := shared.GetProofWindowCloseHeight(&sharedParams, claim.SessionHeader.SessionEndBlockHeight)
+	sessionEndHeight := claim.SessionHeader.SessionEndBlockHeight
+	blockHeight := shared.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
 	sdkCtx = sdkCtx.WithBlockHeight(blockHeight)
 	numClaimsSettled, numClaimsExpired, _, _, err := s.keepers.SettlePendingClaims(sdkCtx)
 	require.NoError(t, err)
 
 	// Check that one claim was settled.
 	require.Equal(t, uint64(1), numClaimsSettled)
-
 	// Validate that no claims expired.
 	require.Equal(t, uint64(0), numClaimsExpired)
 
@@ -322,22 +325,22 @@ func (s *TestSuite) TestSettlePendingClaims_Settles_WhenAProofIsNotRequired() {
 	})
 	require.NoError(t, err)
 
-	// 0. Add the claim & verify it exists
+	// Add the claim & verify it exists
 	s.keepers.UpsertClaim(ctx, claim)
 	claims := s.keepers.GetAllClaims(ctx)
 	s.Require().Len(claims, 1)
 
-	// 1. Settle pending claims after proof window closes
+	// Settle pending claims after proof window closes
 	// Expectation: All (1) claims should be claimed.
 	// NB: proofs should be rejected when the current height equals the proof window close height.
-	blockHeight := shared.GetProofWindowCloseHeight(&sharedParams, claim.SessionHeader.SessionEndBlockHeight)
+	sessionEndHeight := claim.SessionHeader.SessionEndBlockHeight
+	blockHeight := shared.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
 	sdkCtx = sdkCtx.WithBlockHeight(blockHeight)
 	numClaimsSettled, numClaimsExpired, _, _, err := s.keepers.SettlePendingClaims(sdkCtx)
 	require.NoError(t, err)
 
 	// Check that one claim was settled.
 	require.Equal(t, uint64(1), numClaimsSettled)
-
 	// Validate that no claims expired.
 	require.Equal(t, uint64(0), numClaimsExpired)
 
@@ -350,6 +353,8 @@ func (s *TestSuite) TestSettlePendingClaims_Settles_WhenAProofIsNotRequired() {
 	expectedEvents := testutilevents.FilterEvents[*tokenomicstypes.EventClaimSettled](t,
 		events, "poktroll.tokenomics.EventClaimSettled")
 	require.Len(t, expectedEvents, 1)
+
+	// Validate the event
 	expectedEvent := expectedEvents[0]
 	require.False(t, expectedEvent.ProofRequired)
 	require.Equal(t, s.expectedComputeUnits, expectedEvent.ComputeUnits)
@@ -392,7 +397,8 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimPendingAfterSettlement() {
 	sessionOneClaim := s.claim
 	s.keepers.UpsertClaim(ctx, sessionOneClaim)
 
-	sessionOneStartHeight := sessionOneClaim.GetSessionHeader().GetSessionEndBlockHeight()
+	sessionOneEndHeight := sessionOneClaim.GetSessionHeader().GetSessionEndBlockHeight()
+
 	// Add a second claim with a session header corresponding to the next session.
 	sessionTwoClaim := testutilproof.BaseClaim(
 		sessionOneClaim.GetSessionHeader().GetApplicationAddress(),
@@ -400,7 +406,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimPendingAfterSettlement() {
 		s.expectedComputeUnits,
 	)
 
-	sessionOneProofWindowCloseHeight := shared.GetProofWindowCloseHeight(&sharedParams, sessionOneStartHeight)
+	sessionOneProofWindowCloseHeight := shared.GetProofWindowCloseHeight(&sharedParams, sessionOneEndHeight)
 	sessionTwoStartHeight := shared.GetSessionStartHeight(&sharedParams, sessionOneProofWindowCloseHeight+1)
 	sessionTwoProofWindowCloseHeight := shared.GetProofWindowCloseHeight(&sharedParams, sessionTwoStartHeight)
 
@@ -418,7 +424,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimPendingAfterSettlement() {
 
 	// 1. Settle pending claims while the session is still active.
 	// Expectations: No claims should be settled because the session is still ongoing
-	blockHeight := shared.GetProofWindowCloseHeight(&sharedParams, sessionOneStartHeight)
+	blockHeight := shared.GetProofWindowCloseHeight(&sharedParams, sessionOneEndHeight)
 	sdkCtx = sdkCtx.WithBlockHeight(blockHeight)
 	numClaimsSettled, numClaimsExpired, _, _, err := s.keepers.SettlePendingClaims(sdkCtx)
 	require.NoError(t, err)
@@ -440,10 +446,12 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimPendingAfterSettlement() {
 	// Expectations: Claims should not be settled because the proof window hasn't closed yet.
 	sdkCtx = sdkCtx.WithBlockHeight(blockHeight)
 	numClaimsSettled, numClaimsExpired, _, _, err = s.keepers.SettlePendingClaims(sdkCtx)
-	// Check that no claims were settled
 	require.NoError(t, err)
+
+	// Check that no claims were settled or expired.
 	require.Equal(t, uint64(0), numClaimsSettled)
 	require.Equal(t, uint64(0), numClaimsExpired)
+
 	// Validate that the claim still exists
 	claims = s.keepers.GetAllClaims(ctx)
 	require.Len(t, claims, 1)
