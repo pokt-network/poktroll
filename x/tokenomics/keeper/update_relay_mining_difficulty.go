@@ -3,6 +3,7 @@ package keeper
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
 	"fmt"
 	"math"
 
@@ -78,12 +79,13 @@ func (k Keeper) UpdateRelayMiningDifficulty(
 
 		// Emit an event for the updated relay mining difficulty regardless of
 		// whether the difficulty changed or not.
+
 		relayMiningDifficultyUpdateEvent := types.EventRelayMiningDifficultyUpdated{
-			ServiceId:        serviceId,
-			PrevTargetHash:   prevDifficulty.TargetHash,
-			NewTargetHash:    newDifficulty.TargetHash,
-			PrevNumRelaysEma: prevDifficulty.NumRelaysEma,
-			NewNumRelaysEma:  newDifficulty.NumRelaysEma,
+			ServiceId:                serviceId,
+			PrevTargetHashHexEncoded: hex.EncodeToString(prevDifficulty.TargetHash),
+			NewTargetHashHexEncoded:  hex.EncodeToString(newDifficulty.TargetHash),
+			PrevNumRelaysEma:         prevDifficulty.NumRelaysEma,
+			NewNumRelaysEma:          newDifficulty.NumRelaysEma,
 		}
 		if err := sdkCtx.EventManager().EmitTypedEvent(&relayMiningDifficultyUpdateEvent); err != nil {
 			return err

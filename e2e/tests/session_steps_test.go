@@ -10,6 +10,7 @@ import (
 
 	"cosmossdk.io/depinject"
 	abci "github.com/cometbft/cometbft/abci/types"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/client"
@@ -17,6 +18,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
+	testutilevents "github.com/pokt-network/poktroll/testutil/events"
 	"github.com/pokt-network/poktroll/testutil/testclient"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
@@ -164,6 +166,13 @@ func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBeSuccess
 		if event.Type != "poktroll.tokenomics.EventClaimSettled" {
 			return false
 		}
+		testutilevents.QuoteEventMode(event)
+		cosmostypes.ParseTypedEvent(*event)
+		// TODO_TECHDEBT: Investigate why `cosmostypes.ParseTypedEvent(*event)` throws
+		// an error where cosmostypes is imported from "github.com/cosmos/cosmos-sdk/types"
+		// resulting in the following error:
+		// 'json: error calling MarshalJSON for type json.RawMessage: invalid character 'E' looking for beginning of value'
+		// typedEvent, err := cosmostypes.ParseTypedEvent(*event)
 		claimSettledEvent := s.abciToClaimSettledEvent(event)
 		claim := claimSettledEvent.Claim
 		require.Equal(s, app.Address, claim.SessionHeader.ApplicationAddress)

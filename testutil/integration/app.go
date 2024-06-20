@@ -125,11 +125,10 @@ func NewIntegrationApp(
 		ChainID: appName,
 		Height:  2,
 	}
-	newCtx := sdkCtx.
+	sdkCtx = sdkCtx.
 		WithBlockHeader(cometHeader).
 		WithIsCheckTx(true).
 		WithEventManager(cosmostypes.NewEventManager())
-	ctx := &newCtx
 
 	txConfig := authtx.NewTxConfig(cdc, authtx.DefaultSignModes)
 	bApp := baseapp.NewBaseApp(appName, logger, db, txConfig.TxDecoder(), baseapp.SetChainID(appName))
@@ -147,10 +146,10 @@ func NewIntegrationApp(
 		})
 
 	bApp.SetBeginBlocker(func(_ sdk.Context) (sdk.BeginBlock, error) {
-		return moduleManager.BeginBlock(*ctx)
+		return moduleManager.BeginBlock(sdkCtx)
 	})
 	bApp.SetEndBlocker(func(_ sdk.Context) (sdk.EndBlock, error) {
-		return moduleManager.EndBlock(*ctx)
+		return moduleManager.EndBlock(sdkCtx)
 	})
 
 	msgRouter.SetInterfaceRegistry(registry)
@@ -169,7 +168,7 @@ func NewIntegrationApp(
 		BaseApp:       bApp,
 		logger:        logger,
 		authority:     authority,
-		sdkCtx:        ctx,
+		sdkCtx:        &sdkCtx,
 		cdc:           cdc,
 		moduleManager: *moduleManager,
 		queryHelper:   queryHelper,

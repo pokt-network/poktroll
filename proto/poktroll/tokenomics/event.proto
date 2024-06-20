@@ -25,8 +25,8 @@ message EventClaimSettled {
 // for a given service.
 message EventRelayMiningDifficultyUpdated {
     string service_id = 1;
-    bytes prev_target_hash = 2;
-    bytes new_target_hash = 3;
+    string prev_target_hash_hex_encoded = 2;
+    string new_target_hash_hex_encoded = 3;
     uint64 prev_num_relays_ema = 4;
     uint64 new_num_relays_ema = 5;
 }

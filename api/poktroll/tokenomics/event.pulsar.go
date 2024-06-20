@@ -1034,20 +1034,20 @@ func (x *fastReflection_EventClaimSettled) ProtoMethods() *protoiface.Methods {
 }
 
 var (
-	md_EventRelayMiningDifficultyUpdated                     protoreflect.MessageDescriptor
-	fd_EventRelayMiningDifficultyUpdated_service_id          protoreflect.FieldDescriptor
-	fd_EventRelayMiningDifficultyUpdated_prev_target_hash    protoreflect.FieldDescriptor
-	fd_EventRelayMiningDifficultyUpdated_new_target_hash     protoreflect.FieldDescriptor
-	fd_EventRelayMiningDifficultyUpdated_prev_num_relays_ema protoreflect.FieldDescriptor
-	fd_EventRelayMiningDifficultyUpdated_new_num_relays_ema  protoreflect.FieldDescriptor
+	md_EventRelayMiningDifficultyUpdated                              protoreflect.MessageDescriptor
+	fd_EventRelayMiningDifficultyUpdated_service_id                   protoreflect.FieldDescriptor
+	fd_EventRelayMiningDifficultyUpdated_prev_target_hash_hex_encoded protoreflect.FieldDescriptor
+	fd_EventRelayMiningDifficultyUpdated_new_target_hash_hex_encoded  protoreflect.FieldDescriptor
+	fd_EventRelayMiningDifficultyUpdated_prev_num_relays_ema          protoreflect.FieldDescriptor
+	fd_EventRelayMiningDifficultyUpdated_new_num_relays_ema           protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_poktroll_tokenomics_event_proto_init()
 	md_EventRelayMiningDifficultyUpdated = File_poktroll_tokenomics_event_proto.Messages().ByName("EventRelayMiningDifficultyUpdated")
 	fd_EventRelayMiningDifficultyUpdated_service_id = md_EventRelayMiningDifficultyUpdated.Fields().ByName("service_id")
-	fd_EventRelayMiningDifficultyUpdated_prev_target_hash = md_EventRelayMiningDifficultyUpdated.Fields().ByName("prev_target_hash")
-	fd_EventRelayMiningDifficultyUpdated_new_target_hash = md_EventRelayMiningDifficultyUpdated.Fields().ByName("new_target_hash")
+	fd_EventRelayMiningDifficultyUpdated_prev_target_hash_hex_encoded = md_EventRelayMiningDifficultyUpdated.Fields().ByName("prev_target_hash_hex_encoded")
+	fd_EventRelayMiningDifficultyUpdated_new_target_hash_hex_encoded = md_EventRelayMiningDifficultyUpdated.Fields().ByName("new_target_hash_hex_encoded")
 	fd_EventRelayMiningDifficultyUpdated_prev_num_relays_ema = md_EventRelayMiningDifficultyUpdated.Fields().ByName("prev_num_relays_ema")
 	fd_EventRelayMiningDifficultyUpdated_new_num_relays_ema = md_EventRelayMiningDifficultyUpdated.Fields().ByName("new_num_relays_ema")
 }
@@ -1123,15 +1123,15 @@ func (x *fastReflection_EventRelayMiningDifficultyUpdated) Range(f func(protoref
 			return
 		}
 	}
-	if len(x.PrevTargetHash) != 0 {
-		value := protoreflect.ValueOfBytes(x.PrevTargetHash)
-		if !f(fd_EventRelayMiningDifficultyUpdated_prev_target_hash, value) {
+	if x.PrevTargetHashHexEncoded != "" {
+		value := protoreflect.ValueOfString(x.PrevTargetHashHexEncoded)
+		if !f(fd_EventRelayMiningDifficultyUpdated_prev_target_hash_hex_encoded, value) {
 			return
 		}
 	}
-	if len(x.NewTargetHash) != 0 {
-		value := protoreflect.ValueOfBytes(x.NewTargetHash)
-		if !f(fd_EventRelayMiningDifficultyUpdated_new_target_hash, value) {
+	if x.NewTargetHashHexEncoded != "" {
+		value := protoreflect.ValueOfString(x.NewTargetHashHexEncoded)
+		if !f(fd_EventRelayMiningDifficultyUpdated_new_target_hash_hex_encoded, value) {
 			return
 		}
 	}
@@ -1164,10 +1164,10 @@ func (x *fastReflection_EventRelayMiningDifficultyUpdated) Has(fd protoreflect.F
 	switch fd.FullName() {
 	case "poktroll.tokenomics.EventRelayMiningDifficultyUpdated.service_id":
 		return x.ServiceId != ""
-	case "poktroll.tokenomics.EventRelayMiningDifficultyUpdated.prev_target_hash":
-		return len(x.PrevTargetHash) != 0
-	case "poktroll.tokenomics.EventRelayMiningDifficultyUpdated.new_target_hash":
-		return len(x.NewTargetHash) != 0
+	case "poktroll.tokenomics.EventRelayMiningDifficultyUpdated.prev_target_hash_hex_encoded":
+		return x.PrevTargetHashHexEncoded != ""
+	case "poktroll.tokenomics.EventRelayMiningDifficultyUpdated.new_target_hash_hex_encoded":
+		return x.NewTargetHashHexEncoded != ""
 	case "poktroll.tokenomics.EventRelayMiningDifficultyUpdated.prev_num_relays_ema":
 		return x.PrevNumRelaysEma != uint64(0)
 	case "poktroll.tokenomics.EventRelayMiningDifficultyUpdated.new_num_relays_ema":
@@ -1190,10 +1190,10 @@ func (x *fastReflection_EventRelayMiningDifficultyUpdated) Clear(fd protoreflect
 	switch fd.FullName() {
 	case "poktroll.tokenomics.EventRelayMiningDifficultyUpdated.service_id":
 		x.ServiceId = ""
-	case "poktroll.tokenomics.EventRelayMiningDifficultyUpdated.prev_target_hash":
-		x.PrevTargetHash = nil
-	case "poktroll.tokenomics.EventRelayMiningDifficultyUpdated.new_target_hash":
-		x.NewTargetHash = nil
+	case "poktroll.tokenomics.EventRelayMiningDifficultyUpdated.prev_target_hash_hex_encoded":
+		x.PrevTargetHashHexEncoded = ""
+	case "poktroll.tokenomics.EventRelayMiningDifficultyUpdated.new_target_hash_hex_encoded":
+		x.NewTargetHashHexEncoded = ""
 	case "poktroll.tokenomics.EventRelayMiningDifficultyUpdated.prev_num_relays_ema":
 		x.PrevNumRelaysEma = uint64(0)
 	case "poktroll.tokenomics.EventRelayMiningDifficultyUpdated.new_num_relays_ema":
@@ -1217,12 +1217,12 @@ func (x *fastReflection_EventRelayMiningDifficultyUpdated) Get(descriptor protor
 	case "poktroll.tokenomics.EventRelayMiningDifficultyUpdated.service_id":
 		value := x.ServiceId
 		return protoreflect.ValueOfString(value)
-	case "poktroll.tokenomics.EventRelayMiningDifficultyUpdated.prev_target_hash":
-		value := x.PrevTargetHash
-		return protoreflect.ValueOfBytes(value)
-	case "poktroll.tokenomics.EventRelayMiningDifficultyUpdated.new_target_hash":
-		value := x.NewTargetHash
-		return protoreflect.ValueOfBytes(value)
+	case "poktroll.tokenomics.EventRelayMiningDifficultyUpdated.prev_target_hash_hex_encoded":
+		value := x.PrevTargetHashHexEncoded
+		return protoreflect.ValueOfString(value)
+	case "poktroll.tokenomics.EventRelayMiningDifficultyUpdated.new_target_hash_hex_encoded":
+		value := x.NewTargetHashHexEncoded
+		return protoreflect.ValueOfString(value)
 	case "poktroll.tokenomics.EventRelayMiningDifficultyUpdated.prev_num_relays_ema":
 		value := x.PrevNumRelaysEma
 		return protoreflect.ValueOfUint64(value)
@@ -1251,10 +1251,10 @@ func (x *fastReflection_EventRelayMiningDifficultyUpdated) Set(fd protoreflect.F
 	switch fd.FullName() {
 	case "poktroll.tokenomics.EventRelayMiningDifficultyUpdated.service_id":
 		x.ServiceId = value.Interface().(string)
-	case "poktroll.tokenomics.EventRelayMiningDifficultyUpdated.prev_target_hash":
-		x.PrevTargetHash = value.Bytes()
-	case "poktroll.tokenomics.EventRelayMiningDifficultyUpdated.new_target_hash":
-		x.NewTargetHash = value.Bytes()
+	case "poktroll.tokenomics.EventRelayMiningDifficultyUpdated.prev_target_hash_hex_encoded":
+		x.PrevTargetHashHexEncoded = value.Interface().(string)
+	case "poktroll.tokenomics.EventRelayMiningDifficultyUpdated.new_target_hash_hex_encoded":
+		x.NewTargetHashHexEncoded = value.Interface().(string)
 	case "poktroll.tokenomics.EventRelayMiningDifficultyUpdated.prev_num_relays_ema":
 		x.PrevNumRelaysEma = value.Uint()
 	case "poktroll.tokenomics.EventRelayMiningDifficultyUpdated.new_num_relays_ema":
@@ -1281,10 +1281,10 @@ func (x *fastReflection_EventRelayMiningDifficultyUpdated) Mutable(fd protorefle
 	switch fd.FullName() {
 	case "poktroll.tokenomics.EventRelayMiningDifficultyUpdated.service_id":
 		panic(fmt.Errorf("field service_id of message poktroll.tokenomics.EventRelayMiningDifficultyUpdated is not mutable"))
-	case "poktroll.tokenomics.EventRelayMiningDifficultyUpdated.prev_target_hash":
-		panic(fmt.Errorf("field prev_target_hash of message poktroll.tokenomics.EventRelayMiningDifficultyUpdated is not mutable"))
-	case "poktroll.tokenomics.EventRelayMiningDifficultyUpdated.new_target_hash":
-		panic(fmt.Errorf("field new_target_hash of message poktroll.tokenomics.EventRelayMiningDifficultyUpdated is not mutable"))
+	case "poktroll.tokenomics.EventRelayMiningDifficultyUpdated.prev_target_hash_hex_encoded":
+		panic(fmt.Errorf("field prev_target_hash_hex_encoded of message poktroll.tokenomics.EventRelayMiningDifficultyUpdated is not mutable"))
+	case "poktroll.tokenomics.EventRelayMiningDifficultyUpdated.new_target_hash_hex_encoded":
+		panic(fmt.Errorf("field new_target_hash_hex_encoded of message poktroll.tokenomics.EventRelayMiningDifficultyUpdated is not mutable"))
 	case "poktroll.tokenomics.EventRelayMiningDifficultyUpdated.prev_num_relays_ema":
 		panic(fmt.Errorf("field prev_num_relays_ema of message poktroll.tokenomics.EventRelayMiningDifficultyUpdated is not mutable"))
 	case "poktroll.tokenomics.EventRelayMiningDifficultyUpdated.new_num_relays_ema":
@@ -1304,10 +1304,10 @@ func (x *fastReflection_EventRelayMiningDifficultyUpdated) NewField(fd protorefl
 	switch fd.FullName() {
 	case "poktroll.tokenomics.EventRelayMiningDifficultyUpdated.service_id":
 		return protoreflect.ValueOfString("")
-	case "poktroll.tokenomics.EventRelayMiningDifficultyUpdated.prev_target_hash":
-		return protoreflect.ValueOfBytes(nil)
-	case "poktroll.tokenomics.EventRelayMiningDifficultyUpdated.new_target_hash":
-		return protoreflect.ValueOfBytes(nil)
+	case "poktroll.tokenomics.EventRelayMiningDifficultyUpdated.prev_target_hash_hex_encoded":
+		return protoreflect.ValueOfString("")
+	case "poktroll.tokenomics.EventRelayMiningDifficultyUpdated.new_target_hash_hex_encoded":
+		return protoreflect.ValueOfString("")
 	case "poktroll.tokenomics.EventRelayMiningDifficultyUpdated.prev_num_relays_ema":
 		return protoreflect.ValueOfUint64(uint64(0))
 	case "poktroll.tokenomics.EventRelayMiningDifficultyUpdated.new_num_relays_ema":
@@ -1385,11 +1385,11 @@ func (x *fastReflection_EventRelayMiningDifficultyUpdated) ProtoMethods() *proto
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		l = len(x.PrevTargetHash)
+		l = len(x.PrevTargetHashHexEncoded)
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		l = len(x.NewTargetHash)
+		l = len(x.NewTargetHashHexEncoded)
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
@@ -1438,17 +1438,17 @@ func (x *fastReflection_EventRelayMiningDifficultyUpdated) ProtoMethods() *proto
 			i--
 			dAtA[i] = 0x20
 		}
-		if len(x.NewTargetHash) > 0 {
-			i -= len(x.NewTargetHash)
-			copy(dAtA[i:], x.NewTargetHash)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.NewTargetHash)))
+		if len(x.NewTargetHashHexEncoded) > 0 {
+			i -= len(x.NewTargetHashHexEncoded)
+			copy(dAtA[i:], x.NewTargetHashHexEncoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.NewTargetHashHexEncoded)))
 			i--
 			dAtA[i] = 0x1a
 		}
-		if len(x.PrevTargetHash) > 0 {
-			i -= len(x.PrevTargetHash)
-			copy(dAtA[i:], x.PrevTargetHash)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.PrevTargetHash)))
+		if len(x.PrevTargetHashHexEncoded) > 0 {
+			i -= len(x.PrevTargetHashHexEncoded)
+			copy(dAtA[i:], x.PrevTargetHashHexEncoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.PrevTargetHashHexEncoded)))
 			i--
 			dAtA[i] = 0x12
 		}
@@ -1542,9 +1542,9 @@ func (x *fastReflection_EventRelayMiningDifficultyUpdated) ProtoMethods() *proto
 				iNdEx = postIndex
 			case 2:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field PrevTargetHash", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field PrevTargetHashHexEncoded", wireType)
 				}
-				var byteLen int
+				var stringLen uint64
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -1554,31 +1554,29 @@ func (x *fastReflection_EventRelayMiningDifficultyUpdated) ProtoMethods() *proto
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					byteLen |= int(b&0x7F) << shift
+					stringLen |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
-				if byteLen < 0 {
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
-				postIndex := iNdEx + byteLen
+				postIndex := iNdEx + intStringLen
 				if postIndex < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.PrevTargetHash = append(x.PrevTargetHash[:0], dAtA[iNdEx:postIndex]...)
-				if x.PrevTargetHash == nil {
-					x.PrevTargetHash = []byte{}
-				}
+				x.PrevTargetHashHexEncoded = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
 			case 3:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field NewTargetHash", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field NewTargetHashHexEncoded", wireType)
 				}
-				var byteLen int
+				var stringLen uint64
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -1588,25 +1586,23 @@ func (x *fastReflection_EventRelayMiningDifficultyUpdated) ProtoMethods() *proto
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					byteLen |= int(b&0x7F) << shift
+					stringLen |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
-				if byteLen < 0 {
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
-				postIndex := iNdEx + byteLen
+				postIndex := iNdEx + intStringLen
 				if postIndex < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.NewTargetHash = append(x.NewTargetHash[:0], dAtA[iNdEx:postIndex]...)
-				if x.NewTargetHash == nil {
-					x.NewTargetHash = []byte{}
-				}
+				x.NewTargetHashHexEncoded = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
 			case 4:
 				if wireType != 0 {
@@ -1800,11 +1796,11 @@ type EventRelayMiningDifficultyUpdated struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	ServiceId        string `protobuf:"bytes,1,opt,name=service_id,json=serviceId,proto3" json:"service_id,omitempty"`
-	PrevTargetHash   []byte `protobuf:"bytes,2,opt,name=prev_target_hash,json=prevTargetHash,proto3" json:"prev_target_hash,omitempty"`
-	NewTargetHash    []byte `protobuf:"bytes,3,opt,name=new_target_hash,json=newTargetHash,proto3" json:"new_target_hash,omitempty"`
-	PrevNumRelaysEma uint64 `protobuf:"varint,4,opt,name=prev_num_relays_ema,json=prevNumRelaysEma,proto3" json:"prev_num_relays_ema,omitempty"`
-	NewNumRelaysEma  uint64 `protobuf:"varint,5,opt,name=new_num_relays_ema,json=newNumRelaysEma,proto3" json:"new_num_relays_ema,omitempty"`
+	ServiceId                string `protobuf:"bytes,1,opt,name=service_id,json=serviceId,proto3" json:"service_id,omitempty"`
+	PrevTargetHashHexEncoded string `protobuf:"bytes,2,opt,name=prev_target_hash_hex_encoded,json=prevTargetHashHexEncoded,proto3" json:"prev_target_hash_hex_encoded,omitempty"`
+	NewTargetHashHexEncoded  string `protobuf:"bytes,3,opt,name=new_target_hash_hex_encoded,json=newTargetHashHexEncoded,proto3" json:"new_target_hash_hex_encoded,omitempty"`
+	PrevNumRelaysEma         uint64 `protobuf:"varint,4,opt,name=prev_num_relays_ema,json=prevNumRelaysEma,proto3" json:"prev_num_relays_ema,omitempty"`
+	NewNumRelaysEma          uint64 `protobuf:"varint,5,opt,name=new_num_relays_ema,json=newNumRelaysEma,proto3" json:"new_num_relays_ema,omitempty"`
 }
 
 func (x *EventRelayMiningDifficultyUpdated) Reset() {
@@ -1834,18 +1830,18 @@ func (x *EventRelayMiningDifficultyUpdated) GetServiceId() string {
 	return ""
 }
 
-func (x *EventRelayMiningDifficultyUpdated) GetPrevTargetHash() []byte {
+func (x *EventRelayMiningDifficultyUpdated) GetPrevTargetHashHexEncoded() string {
 	if x != nil {
-		return x.PrevTargetHash
+		return x.PrevTargetHashHexEncoded
 	}
-	return nil
+	return ""
 }
 
-func (x *EventRelayMiningDifficultyUpdated) GetNewTargetHash() []byte {
+func (x *EventRelayMiningDifficultyUpdated) GetNewTargetHashHexEncoded() string {
 	if x != nil {
-		return x.NewTargetHash
+		return x.NewTargetHashHexEncoded
 	}
-	return nil
+	return ""
 }
 
 func (x *EventRelayMiningDifficultyUpdated) GetPrevNumRelaysEma() uint64 {
@@ -1885,34 +1881,37 @@ var file_poktroll_tokenomics_event_proto_rawDesc = []byte{
 	0x01, 0x28, 0x04, 0x52, 0x0c, 0x63, 0x6f, 0x6d, 0x70, 0x75, 0x74, 0x65, 0x55, 0x6e, 0x69, 0x74,
 	0x73, 0x12, 0x25, 0x0a, 0x0e, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x5f, 0x72, 0x65, 0x71, 0x75, 0x69,
 	0x72, 0x65, 0x64, 0x18, 0x03, 0x20, 0x01, 0x28, 0x08, 0x52, 0x0d, 0x70, 0x72, 0x6f, 0x6f, 0x66,
-	0x52, 0x65, 0x71, 0x75, 0x69, 0x72, 0x65, 0x64, 0x22, 0xf0, 0x01, 0x0a, 0x21, 0x45, 0x76, 0x65,
+	0x52, 0x65, 0x71, 0x75, 0x69, 0x72, 0x65, 0x64, 0x22, 0x9c, 0x02, 0x0a, 0x21, 0x45, 0x76, 0x65,
 	0x6e, 0x74, 0x52, 0x65, 0x6c, 0x61, 0x79, 0x4d, 0x69, 0x6e, 0x69, 0x6e, 0x67, 0x44, 0x69, 0x66,
 	0x66, 0x69, 0x63, 0x75, 0x6c, 0x74, 0x79, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x64, 0x12, 0x1d,
 	0x0a, 0x0a, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01,
-	0x28, 0x09, 0x52, 0x09, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x49, 0x64, 0x12, 0x28, 0x0a,
-	0x10, 0x70, 0x72, 0x65, 0x76, 0x5f, 0x74, 0x61, 0x72, 0x67, 0x65, 0x74, 0x5f, 0x68, 0x61, 0x73,
-	0x68, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x0e, 0x70, 0x72, 0x65, 0x76, 0x54, 0x61, 0x72,
-	0x67, 0x65, 0x74, 0x48, 0x61, 0x73, 0x68, 0x12, 0x26, 0x0a, 0x0f, 0x6e, 0x65, 0x77, 0x5f, 0x74,
-	0x61, 0x72, 0x67, 0x65, 0x74, 0x5f, 0x68, 0x61, 0x73, 0x68, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0c,
-	0x52, 0x0d, 0x6e, 0x65, 0x77, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x48, 0x61, 0x73, 0x68, 0x12,
-	0x2d, 0x0a, 0x13, 0x70, 0x72, 0x65, 0x76, 0x5f, 0x6e, 0x75, 0x6d, 0x5f, 0x72, 0x65, 0x6c, 0x61,
-	0x79, 0x73, 0x5f, 0x65, 0x6d, 0x61, 0x18, 0x04, 0x20, 0x01, 0x28, 0x04, 0x52, 0x10, 0x70, 0x72,
-	0x65, 0x76, 0x4e, 0x75, 0x6d, 0x52, 0x65, 0x6c, 0x61, 0x79, 0x73, 0x45, 0x6d, 0x61, 0x12, 0x2b,
-	0x0a, 0x12, 0x6e, 0x65, 0x77, 0x5f, 0x6e, 0x75, 0x6d, 0x5f, 0x72, 0x65, 0x6c, 0x61, 0x79, 0x73,
-	0x5f, 0x65, 0x6d, 0x61, 0x18, 0x05, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0f, 0x6e, 0x65, 0x77, 0x4e,
-	0x75, 0x6d, 0x52, 0x65, 0x6c, 0x61, 0x79, 0x73, 0x45, 0x6d, 0x61, 0x42, 0xb8, 0x01, 0x0a, 0x17,
-	0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x74, 0x6f, 0x6b,
-	0x65, 0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x73, 0x42, 0x0a, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x50, 0x72,
-	0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x24, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b,
-	0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c,
-	0x2f, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x73, 0xa2, 0x02, 0x03, 0x50, 0x54,
-	0x58, 0xaa, 0x02, 0x13, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x54, 0x6f, 0x6b,
-	0x65, 0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x73, 0xca, 0x02, 0x13, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f,
-	0x6c, 0x6c, 0x5c, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x73, 0xe2, 0x02, 0x1f,
-	0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x6f, 0x6d,
-	0x69, 0x63, 0x73, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea,
-	0x02, 0x14, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x3a, 0x3a, 0x54, 0x6f, 0x6b, 0x65,
-	0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x73, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x28, 0x09, 0x52, 0x09, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x49, 0x64, 0x12, 0x3e, 0x0a,
+	0x1c, 0x70, 0x72, 0x65, 0x76, 0x5f, 0x74, 0x61, 0x72, 0x67, 0x65, 0x74, 0x5f, 0x68, 0x61, 0x73,
+	0x68, 0x5f, 0x68, 0x65, 0x78, 0x5f, 0x65, 0x6e, 0x63, 0x6f, 0x64, 0x65, 0x64, 0x18, 0x02, 0x20,
+	0x01, 0x28, 0x09, 0x52, 0x18, 0x70, 0x72, 0x65, 0x76, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x48,
+	0x61, 0x73, 0x68, 0x48, 0x65, 0x78, 0x45, 0x6e, 0x63, 0x6f, 0x64, 0x65, 0x64, 0x12, 0x3c, 0x0a,
+	0x1b, 0x6e, 0x65, 0x77, 0x5f, 0x74, 0x61, 0x72, 0x67, 0x65, 0x74, 0x5f, 0x68, 0x61, 0x73, 0x68,
+	0x5f, 0x68, 0x65, 0x78, 0x5f, 0x65, 0x6e, 0x63, 0x6f, 0x64, 0x65, 0x64, 0x18, 0x03, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x17, 0x6e, 0x65, 0x77, 0x54, 0x61, 0x72, 0x67, 0x65, 0x74, 0x48, 0x61, 0x73,
+	0x68, 0x48, 0x65, 0x78, 0x45, 0x6e, 0x63, 0x6f, 0x64, 0x65, 0x64, 0x12, 0x2d, 0x0a, 0x13, 0x70,
+	0x72, 0x65, 0x76, 0x5f, 0x6e, 0x75, 0x6d, 0x5f, 0x72, 0x65, 0x6c, 0x61, 0x79, 0x73, 0x5f, 0x65,
+	0x6d, 0x61, 0x18, 0x04, 0x20, 0x01, 0x28, 0x04, 0x52, 0x10, 0x70, 0x72, 0x65, 0x76, 0x4e, 0x75,
+	0x6d, 0x52, 0x65, 0x6c, 0x61, 0x79, 0x73, 0x45, 0x6d, 0x61, 0x12, 0x2b, 0x0a, 0x12, 0x6e, 0x65,
+	0x77, 0x5f, 0x6e, 0x75, 0x6d, 0x5f, 0x72, 0x65, 0x6c, 0x61, 0x79, 0x73, 0x5f, 0x65, 0x6d, 0x61,
+	0x18, 0x05, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0f, 0x6e, 0x65, 0x77, 0x4e, 0x75, 0x6d, 0x52, 0x65,
+	0x6c, 0x61, 0x79, 0x73, 0x45, 0x6d, 0x61, 0x42, 0xb8, 0x01, 0x0a, 0x17, 0x63, 0x6f, 0x6d, 0x2e,
+	0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x6f, 0x6d,
+	0x69, 0x63, 0x73, 0x42, 0x0a, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50,
+	0x01, 0x5a, 0x24, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f,
+	0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x74, 0x6f, 0x6b,
+	0x65, 0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x73, 0xa2, 0x02, 0x03, 0x50, 0x54, 0x58, 0xaa, 0x02, 0x13,
+	0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x6f, 0x6d,
+	0x69, 0x63, 0x73, 0xca, 0x02, 0x13, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x54,
+	0x6f, 0x6b, 0x65, 0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x73, 0xe2, 0x02, 0x1f, 0x50, 0x6f, 0x6b, 0x74,
+	0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x73, 0x5c,
+	0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x14, 0x50, 0x6f,
+	0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x3a, 0x3a, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x6f, 0x6d, 0x69,
+	0x63, 0x73, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (

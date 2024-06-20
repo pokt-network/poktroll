@@ -100,9 +100,9 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	require.Len(t, relayMiningEvents, 1, "unexpected number of relay mining difficulty updated events")
 	relayMiningEvent := relayMiningEvents[0]
 	require.Equal(t, "svc1", relayMiningEvent.ServiceId)
-	// The default difficulty
-	require.Equal(t, []byte("//////////////////////////////////////////8="), relayMiningEvent.PrevTargetHash)
-	require.Equal(t, []byte("//////////////////////////////////////////8="), relayMiningEvent.NewTargetHash)
+	// The default difficulty)
+	require.Equal(t, "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", relayMiningEvent.PrevTargetHashHexEncoded)
+	require.Equal(t, "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", relayMiningEvent.NewTargetHashHexEncoded)
 	// The previous EMA is the same as the current one if the service is new
 	require.Equal(t, uint64(1), relayMiningEvent.PrevNumRelaysEma)
 	require.Equal(t, uint64(1), relayMiningEvent.NewNumRelaysEma)
