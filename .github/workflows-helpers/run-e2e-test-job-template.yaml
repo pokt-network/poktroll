@@ -13,68 +13,17 @@ spec:
       initContainers:
         # We need to make sure the services like validator, relayminer, appgate server, etc. work before we execute
         # an e2e test.
-        # TODO_TECHDEBT(@okdas): move the code into a separate config map (protocol-infra) and mount it.
         - name: check-services
           image: ruby:3.0
-          command: ["/bin/sh"]
+          command: ["ruby"]
           args:
-            - "-c"
-            - |
-              set -x
-
-              # Inline Ruby script to check HTTP statuses
-              cat << 'EOF' > /tmp/check_services.rb
-              require 'net/http'
-              require 'uri'
-
-              def check_http_status(endpoint)
-                max_retries = 30
-                retries = 0
-
-                while retries < max_retries
-                  puts "Checking HTTP status for the endpoint #{endpoint} (Attempt #{retries + 1}/#{max_retries})..."
-                  uri = URI.parse("http://#{endpoint}")
-                  response = Net::HTTP.get_response(uri)
-                  http_status = response.code.to_i
-                  puts "HTTP_STATUS: #{http_status}"
-                  if http_status == 200
-                    puts "HTTP request to #{endpoint} returned 200 OK."
-                    return true
-                  else
-                    puts "HTTP request to #{endpoint} did not return 200 OK. Status code: #{http_status}. Retrying in 10 seconds..."
-                  end
-
-                  retries += 1
-                  sleep 10
-                end
-
-                puts "Max retries reached for #{endpoint}. Exiting."
-                exit 1
-              end
-
-              def main
-                namespace = ARGV[0]
-                validator_endpoint = "#{namespace}-validator-poktrolld:36657"
-                appgate_server_endpoint = "#{namespace}-appgate-server:80"
-                gateway_endpoint = "#{namespace}-gateway:80"
-                relayminer_endpoint = "#{namespace}-relayminer:8545"
-
-                puts "Validator Endpoint: #{validator_endpoint}"
-                puts "Appgate Server Endpoint: #{appgate_server_endpoint}"
-                puts "Gateway Endpoint: #{gateway_endpoint}"
-                puts "Relayminer Endpoint: #{relayminer_endpoint}"
-
-                check_http_status(validator_endpoint)
-                check_http_status(appgate_server_endpoint)
-                check_http_status(gateway_endpoint)
-                check_http_status(relayminer_endpoint)
-              end
-
-              main if __FILE__ == $0
-              EOF
-
-              # Execute the Ruby script
-              ruby /tmp/check_services.rb ${NAMESPACE}
+            # For reference, the script is located here:
+            # https://github.com/pokt-network/protocol-infra/blob/main/charts/full-network/templates/ConfigMap-e2e-tests-script.yaml#L4
+            - /e2e-script/check_services.rb
+            - ${NAMESPACE}
+          volumeMounts:
+            - mountPath: /e2e-script/
+              name: e2e-tests-check-services-script
       containers:
         - name: e2e-tests
           image: ghcr.io/pokt-network/poktrolld:${IMAGE_TAG}
@@ -122,5 +71,8 @@ spec:
         - name: configs-volume
           configMap:
             name: configs-${IMAGE_TAG}
+        - name: e2e-tests-check-services-script
+          configMap:
+            name: e2e-tests-check-services-script
       serviceAccountName: default
   backoffLimit: 0

@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"bytes"
 	"fmt"
 	"testing"
 
@@ -103,6 +104,7 @@ func TestSettleSessionAccounting_AppNotFound(t *testing.T) {
 func TestSettleSessionAccounting_InvalidRoot(t *testing.T) {
 	keeper, ctx, appAddr, supplierAddr := testkeeper.TokenomicsKeeperWithActorAddrs(t)
 
+	rootHashSizeBytes := smt.SmstRootSizeBytes
 	// Define test cases
 	tests := []struct {
 		desc        string
@@ -115,34 +117,32 @@ func TestSettleSessionAccounting_InvalidRoot(t *testing.T) {
 			errExpected: true,
 		},
 		{
-			desc:        "Less than 40 bytes",
-			root:        make([]byte, 39), // Less than 40 bytes
+			desc:        fmt.Sprintf("Less than %d bytes", rootHashSizeBytes),
+			root:        make([]byte, rootHashSizeBytes-1), // Less than expected number of bytes
 			errExpected: true,
 		},
 		{
-			desc:        "More than 40 bytes",
-			root:        make([]byte, 41), // More than 40 bytes
+			desc:        fmt.Sprintf("More than %d bytes", rootHashSizeBytes),
+			root:        make([]byte, rootHashSizeBytes+1), // More than expected number of bytes
 			errExpected: true,
 		},
 		{
-			desc: "40 bytes but empty",
+			desc: "correct size but empty",
 			root: func() []byte {
-				root := make([]byte, 40) // 40-byte slice of all 0s
+				root := make([]byte, rootHashSizeBytes) // All 0s
 				return root[:]
 			}(),
 			errExpected: false,
 		},
 		{
-			desc: "40 bytes but has an invalid value",
+			desc: "correct size but invalid value",
 			root: func() []byte {
-				var root [40]byte
-				copy(root[:], []byte("This text is exactly 40 characters!!!!!!"))
-				return root[:]
+				return bytes.Repeat([]byte("a"), rootHashSizeBytes)
 			}(),
 			errExpected: true,
 		},
 		{
-			desc: "40 bytes and has a valid value",
+			desc: "correct size and a valid value",
 			root: func() []byte {
 				root := testproof.SmstRootWithSum(42)
 				return root[:]

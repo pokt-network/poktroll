@@ -29,6 +29,8 @@ const (
 	// testServiceId is the service ID used for testing purposes that is
 	// expected to be available in LocalNet.
 	testServiceId = "anvil"
+	// defaultJSONPRCPath is the default path used for sending JSON-RPC relay requests.
+	defaultJSONPRCPath = ""
 
 	// txSenderEventSubscriptionQueryFmt is the format string which yields the
 	// cosmos-sdk event subscription "query" string for a given sender address.
@@ -68,6 +70,8 @@ func (s *suite) TheUserShouldWaitForTheModuleEventToBeBroadcast(module, message 
 	s.waitForNewBlockEvent(isExpectedEventFn)
 }
 
+// TODO_FLAKY: See how 'TheClaimCreatedBySupplierForServiceForApplicationShouldBeSuccessfullySettled'
+// was modified to using an event replay client, instead of a query, to eliminate the flakiness.
 func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBePersistedOnchain(supplierName, serviceId, appName string) {
 	ctx := context.Background()
 
@@ -190,7 +194,7 @@ func (s *suite) sendRelaysForSession(
 
 	for i := 0; i < relayLimit; i++ {
 		s.Logf("Sending relay %d \n", i)
-		s.TheApplicationSendsTheSupplierARequestForServiceWithData(appName, supplierName, serviceId, data)
+		s.TheApplicationSendsTheSupplierARequestForServiceWithPathAndData(appName, supplierName, serviceId, defaultJSONPRCPath, data)
 		s.TheApplicationReceivesASuccessfulRelayResponseSignedBy(appName, supplierName)
 	}
 }

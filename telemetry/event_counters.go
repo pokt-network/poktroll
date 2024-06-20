@@ -1,3 +1,8 @@
+// Package telemetry provides a set of functions for incrementing counters which track
+// various events across the codebase. Typically, calls to these counter functions SHOULD
+// be made inside deferred anonymous functions so that they will reference the final values
+// of their inputs. Any instrumented piece of code which contains branching logic with respect
+// its counter function inputs is subject to this constraint (i.e. MUST defer).
 package telemetry
 
 import (
@@ -5,14 +10,9 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/telemetry"
 	"github.com/hashicorp/go-metrics"
-	"github.com/pokt-network/smt"
-
-	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 )
 
-const (
-	eventTypeMetricKey = "event_type"
-)
+const eventTypeMetricKey = "event_type"
 
 type ClaimProofStage = string
 
@@ -53,52 +53,94 @@ func EventSuccessCounter(
 // ProofRequirementCounter increments a counter which tracks the number of claims
 // which require proof for the given proof requirement reason (i.e. not required,
 // probabilistic selection, above compute unit threshold).
+// If err is not nil, the counter is not incremented and an "error" label is added
+// with the error's message.
 func ProofRequirementCounter(
 	reason ProofRequirementReason,
-	getValue func() float32,
+	err error,
 ) {
-	value := getValue()
-
+	incrementAmount := 1
 	isRequired := strconv.FormatBool(reason != ProofNotRequired)
+	labels := []metrics.Label{
+		{Name: "proof_required_reason", Value: reason},
+		{Name: "is_required", Value: isRequired},
+	}
+
+	// Ensure the counter is not incremented if there was an error.
+	if err != nil {
+		incrementAmount = 0
+		labels = AppendErrLabel(err, labels...)
+	}
 
 	telemetry.IncrCounterWithLabels(
 		[]string{eventTypeMetricKey},
-		value,
-		[]metrics.Label{
-			{Name: "proof_required_reason", Value: reason},
-			{Name: "is_required", Value: isRequired},
-		},
+		float32(incrementAmount),
+		labels,
 	)
 }
 
-// ComputeUnitsCounter increments a counter which tracks the number of compute units
+// ClaimComputeUnitsCounter increments a counter which tracks the number of compute units
 // which are represented by on-chain claims at the given ClaimProofStage.
-func ComputeUnitsCounter(claimProofStage ClaimProofStage, claim *prooftypes.Claim) {
-	root := (smt.MerkleRoot)(claim.GetRootHash())
-	computeUnitsFloat := float32(root.Sum())
+// If err is not nil, the counter is not incremented and an "error" label is added
+// with the error's message. I.e., Prometheus will ingest this event.
+func ClaimComputeUnitsCounter(
+	claimProofStage ClaimProofStage,
+	numComputeUnits uint64,
+	err error,
+) {
+	incrementAmount := numComputeUnits
+	labels := []metrics.Label{
+		{Name: "unit", Value: "compute_units"},
+		{Name: "claim_proof_stage", Value: claimProofStage},
+	}
+
+	// Ensure the counter is not incremented if there was an error.
+	if err != nil {
+		incrementAmount = 0
+		labels = AppendErrLabel(err, labels...)
+	}
 
 	telemetry.IncrCounterWithLabels(
 		[]string{eventTypeMetricKey},
-		computeUnitsFloat,
-		[]metrics.Label{
-			{Name: "unit", Value: "compute_units"},
-			{Name: "claim_proof_lifecycle_stage", Value: claimProofStage},
-		},
+		float32(incrementAmount),
+		labels,
 	)
 }
 
 // ClaimCounter increments a counter which tracks the number of claims at the given
 // ClaimProofStage.
+// If err is not nil, the counter is not incremented and an "error" label is added
+// with the error's message. I.e., Prometheus will ingest this event.
 func ClaimCounter(
 	claimProofStage ClaimProofStage,
-	getValue func() uint64,
+	numClaims uint64,
+	err error,
 ) {
+	incrementAmount := numClaims
+	labels := []metrics.Label{
+		{Name: "unit", Value: "claims"},
+		{Name: "claim_proof_stage", Value: claimProofStage},
+	}
+
+	// Ensure the counter is not incremented if there was an error.
+	if err != nil {
+		incrementAmount = 0
+		labels = AppendErrLabel(err, labels...)
+	}
+
 	telemetry.IncrCounterWithLabels(
 		[]string{eventTypeMetricKey},
-		float32(getValue()),
-		[]metrics.Label{
-			{Name: "unit", Value: "claims"},
-			{Name: "claim_proof_lifecycle_stage", Value: claimProofStage},
-		},
+		float32(incrementAmount),
+		labels,
 	)
+}
+
+// AppendErrLabel appends a label with the name "error" and a value of the error's
+// message to the given labels slice if the error is not nil.
+func AppendErrLabel(err error, labels ...metrics.Label) []metrics.Label {
+	if err == nil {
+		return labels
+	}
+
+	return append(labels, metrics.Label{Name: "error", Value: err.Error()})
 }

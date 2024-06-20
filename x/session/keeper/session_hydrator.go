@@ -196,7 +196,7 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 
 	if len(candidateSuppliers) < NumSupplierPerSession {
 		logger.Info(fmt.Sprintf(
-			"[WARN] number of available suppliers (%d) is less than the number of suppliers per session (%d)",
+			"Number of available suppliers (%d) is less than the maximum number of possible suppliers per session (%d)",
 			len(candidateSuppliers),
 			NumSupplierPerSession,
 		))
