@@ -41,6 +41,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/crypto"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
+	testutilevents "github.com/pokt-network/poktroll/testutil/events"
 	"github.com/pokt-network/poktroll/testutil/testkeyring"
 	appkeeper "github.com/pokt-network/poktroll/x/application/keeper"
 	application "github.com/pokt-network/poktroll/x/application/module"
@@ -660,24 +661,10 @@ func (app *App) NextBlocks(t *testing.T, numBlocks int) {
 // of the context in the active app.
 func (app *App) emitEvents(t *testing.T, res *abci.ResponseFinalizeBlock) {
 	t.Helper()
-
 	for _, event := range res.Events {
-		var attrs []cosmostypes.Attribute
-		for _, attr := range event.Attributes {
-			attrs = append(attrs, cosmostypes.Attribute{
-				Key:   attr.Key,
-				Value: attr.Value,
-			})
-		}
-		e := cosmostypes.NewEvent(event.Type, attrs...)
-		app.sdkCtx.EventManager().EmitEvent(e)
-
-		// TODO_TECHDEBT: Figure out why the following doesn't work.
-		// See the TODOs in 'testutil/events/filter.go'
-		//
-		// parsedEvent, err := cosmostypes.ParseTypedEvent(abci.Event(event))
-		// require.NoError(t, err)
-		// app.sdkCtx.EventManager().EmitTypedEvent()
+		testutilevents.QuoteEventMode(&event)
+		abciEvent := cosmostypes.Event(event)
+		app.sdkCtx.EventManager().EmitEvent(abciEvent)
 	}
 }
 

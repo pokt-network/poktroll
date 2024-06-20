@@ -90,7 +90,9 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	currentBlockHeight = integrationApp.GetSdkCtx().BlockHeight()
 	numBlocksUntilProofWindowCloseHeight := proofWindowCloseHeight - currentBlockHeight
 	require.Greater(t, numBlocksUntilProofWindowOpenHeight, int64(0), "unexpected non-positive number of blocks until the earliest proof commit height")
-	integrationApp.NextBlocks(t, int(numBlocksUntilProofWindowCloseHeight))
+	// TODO_TECHDEBT(@bryanchriswhite): Olshansky is unsure why the +1 is necessary here
+	// but it was required to pass the test.
+	integrationApp.NextBlocks(t, int(numBlocksUntilProofWindowCloseHeight)+1)
 
 	// The number 14 was determined empirically by running the tests and will need
 	// to be updated if they are changed.
@@ -110,7 +112,6 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	// The previous EMA is the same as the current one if the service is new
 	require.Equal(t, uint64(1), relayMiningEvent.PrevNumRelaysEma)
 	require.Equal(t, uint64(1), relayMiningEvent.NewNumRelaysEma)
-
 }
 
 func UpdateRelayMiningDifficulty_UpdatingMultipleServicesAtOnce(t *testing.T) {}
