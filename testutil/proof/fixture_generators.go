@@ -68,11 +68,15 @@ func SmstRootWithSum(sum uint64) smt.MerkleRoot {
 func RandSmstRootWithSum(t *testing.T, sum uint64) smt.MerkleRoot {
 	t.Helper()
 
-	root := make([]byte, 40)
+	root := [smt.SmstRootSizeBytes]byte{}
 	// Only populate the first 32 bytes with random data, leave the last 8 bytes for the sum.
-	_, err := rand.Read(root[:32])
+	_, err := rand.Read(root[:smt.SmtRootSizeBytes])
 	require.NoError(t, err)
 
-	binary.BigEndian.PutUint64(root[32:], sum)
-	return smt.MerkleRoot(root)
+	binary.BigEndian.PutUint64(root[smt.SmtRootSizeBytes:], sum)
+	// Insert the count into the root hash
+	// TODO_TECHDEBT: This is a hard-coded count of 1, but could be a parameter.
+	// TODO_TECHDEBT: We are assuming the sum takes up 8 bytes.
+	binary.BigEndian.PutUint64(root[smt.SmtRootSizeBytes+8:], 1)
+	return smt.MerkleRoot(root[:])
 }
