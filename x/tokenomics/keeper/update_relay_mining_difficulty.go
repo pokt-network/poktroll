@@ -93,11 +93,12 @@ func (k Keeper) UpdateRelayMiningDifficulty(
 
 		// Output the appropriate log message based on whether the difficulty was initialized, updated or unchanged.
 		var logMessage string
-		if !found {
+		switch {
+		case !found:
 			logMessage = fmt.Sprintf("Initialized RelayMiningDifficulty for service %s at height %d with difficulty %x", serviceId, sdkCtx.BlockHeight(), newDifficulty.TargetHash)
-		} else if !bytes.Equal(prevDifficulty.TargetHash, newDifficulty.TargetHash) {
+		case !bytes.Equal(prevDifficulty.TargetHash, newDifficulty.TargetHash):
 			logMessage = fmt.Sprintf("Updated RelayMiningDifficulty for service %s at height %d from %x to %x", serviceId, sdkCtx.BlockHeight(), prevDifficulty.TargetHash, newDifficulty.TargetHash)
-		} else {
+		default:
 			logMessage = fmt.Sprintf("No change in RelayMiningDifficulty for service %s at height %d. Current difficulty: %x", serviceId, sdkCtx.BlockHeight(), newDifficulty.TargetHash)
 		}
 		logger.Info(logMessage)

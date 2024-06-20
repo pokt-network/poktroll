@@ -1,4 +1,4 @@
-//go:generate mockgen -destination ../../../testutil/tokenomics/mocks/expected_keepers_mock.go -package mocks . AccountKeeper,BankKeeper,ApplicationKeeper,ProofKeeper
+//go:generate mockgen -destination ../../../testutil/tokenomics/mocks/expected_keepers_mock.go -package mocks . AccountKeeper,BankKeeper,ApplicationKeeper,ProofKeeper,SharedKeeper
 
 package types
 
@@ -50,4 +50,6 @@ type ProofKeeper interface {
 type SharedKeeper interface {
 	GetParams(ctx context.Context) sharedtypes.Params
 	SetParams(ctx context.Context, params sharedtypes.Params) error
+
+	GetProofWindowCloseHeight(ctx context.Context, queryHeight int64) int64
 }
