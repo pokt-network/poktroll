@@ -97,9 +97,8 @@ func TestClaimQuerySingle(t *testing.T) {
 
 			expectedErr: status.Error(
 				codes.InvalidArgument,
-				types.ErrProofInvalidSessionId.Wrapf(
-					"invalid session ID for claim being retrieved %s",
-					"",
+				types.ErrProofInvalidSessionId.Wrap(
+					"invalid empty session ID for claim being retrieved",
 				).Error(),
 			),
 		},
