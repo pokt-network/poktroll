@@ -54,7 +54,7 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	require.Greater(t, numBlocksUntilClaimWindowOpenHeight, int64(0), "unexpected non-positive number of blocks until the earliest claim commit height")
 	integrationApp.NextBlocks(t, int(numBlocksUntilClaimWindowOpenHeight))
 
-	// Create a new claim and create it
+	// Construct a new create claim message and commit it.
 	createClaimMsg := prooftypes.MsgCreateClaim{
 		SupplierAddress: integrationApp.DefaultSupplier.Address,
 		SessionHeader:   session.Header,
