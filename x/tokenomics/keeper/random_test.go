@@ -3,6 +3,7 @@ package keeper
 import (
 	"math"
 	"sync"
+	"sync/atomic"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -17,12 +18,12 @@ func TestRandProbability(t *testing.T) {
 
 	sampleSize := requiredSampleSize(float64(probability), tolerance, confidence)
 
-	var numTrueSamples int
+	var numTrueSamples atomic.Int64
 
 	// Sample concurrently to save time.
 	wg := sync.WaitGroup{}
-	wg.Add(sampleSize)
 	for i := 0; i < sampleSize; i++ {
+		wg.Add(1)
 		go func() {
 			rand, err := randProbability(int64(i))
 			require.NoError(t, err)
@@ -32,7 +33,7 @@ func TestRandProbability(t *testing.T) {
 			}
 
 			if rand <= probability {
-				numTrueSamples++
+				numTrueSamples.Add(1)
 			}
 			wg.Done()
 		}()
@@ -44,8 +45,8 @@ func TestRandProbability(t *testing.T) {
 	toleranceSamples := tolerance * float64(sampleSize)
 
 	// Check that the number of samples for each outcome is within the expected range.
-	numFalseSamples := sampleSize - numTrueSamples
-	require.InDeltaf(t, expectedNumTrueSamples, numTrueSamples, toleranceSamples, "true samples")
+	numFalseSamples := int64(sampleSize) - numTrueSamples.Load()
+	require.InDeltaf(t, expectedNumTrueSamples, numTrueSamples.Load(), toleranceSamples, "true samples")
 	require.InDeltaf(t, expectedNumFalseSamples, numFalseSamples, toleranceSamples, "false samples")
 }
 
