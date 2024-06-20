@@ -11,6 +11,7 @@ title: Adding On-Chain Module Parameters
     - [2.1 Scenario Example](#21-scenario-example)
     - [2.2 Scenario Outline Example](#22-scenario-outline-example)
     - [2.3 Step Definition Helpers Example](#23-step-definition-helpers-example)
+    - [2.4 Update switch statement to support new param](#24-update-switch-statement-to-support-new-param)
   - [3. Update the Default Parameter Values](#3-update-the-default-parameter-values)
   - [4. Add Parameter Default to Genesis Configuration](#4-add-parameter-default-to-genesis-configuration)
   - [5. Modify the Makefile](#5-modify-the-makefile)
@@ -23,6 +24,9 @@ title: Adding On-Chain Module Parameters
   - [10. Update Unit Tests](#10-update-unit-tests)
     - [10.1 Parameter Validation Tests](#101-parameter-validation-tests)
     - [10.2 Parameter Update Tests](#102-parameter-update-tests)
+  - [11. Implement individual parameter updates](#11-implement-individual-parameter-updates)
+    - [11.1 Add `ParamNameNewParameterName` to `MsgUpdateParam#ValidateBasic()` in `x/types/message_update_param.go`](#111-add-paramnamenewparametername-to-msgupdateparamvalidatebasic-in-xtypesmessage_update_paramgo)
+    - [11.2 Add `ParamNameNewParameterName` to `msgServer#UpdateParam()` in `x/keeper/msg_server_update_param.go`](#112-add-paramnamenewparametername-to-msgserverupdateparam-in-xkeepermsg_server_update_paramgo)
 
 Adding a new on-chain module parameter involves multiple steps to ensure that the
 parameter is properly integrated into the system. This guide will walk you through
@@ -86,6 +90,9 @@ Scenario Outline: An authorized user updates individual <module> module params
 
 #### 2.3 Step Definition Helpers Example
 
+The related changes to the step definition, presented below via an example,
+should be made in `e2e/tests/parse_params_test.go`.
+
 ```go
 func (s *suite) newProofMsgUpdateParams(params paramsMap) cosmostypes.Msg {
   msgUpdateParams := &prooftypes.MsgUpdateParam{
@@ -103,6 +110,22 @@ func (s *suite) newProofMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 
   return msgUpdateParams
 }
+```
+
+#### 2.4 Update switch statement to support new param
+
+The related changes to the step definition, presented below via an example,
+should be made in `e2e/tests/parse_params_test.go`.
+
+```go
+case prooftypes.ModuleName:
+  params := prooftypes.DefaultParams()
+  paramsMap := s.expectedModuleParams[moduleName]
+
+  newParameter, ok := paramsMap[prooftypes.ParamNewParameterName]
+  if ok {
+    params.NewParameter = uint64(newParameter.value.(int64))
+  }
 ```
 
 ### 3. Update the Default Parameter Values
@@ -256,8 +279,8 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 
 ### 10. Update Unit Tests
 
-Add tests which exercise validation of the new parameter in your test files (e.g., `params_test.go`
-and `msg_server_update_param_test.go`).
+Add tests which exercise validation of the new parameter in your test files
+(e.g., `/types/params_test.go` and `msg_server_update_param_test.go`).
 
 #### 10.1 Parameter Validation Tests
 
@@ -295,6 +318,8 @@ func TestParams_ValidateNewParameterName(t *testing.T) {
 
 #### 10.2 Parameter Update Tests
 
+The example presented below corresponds to `/keeper/msg_server_update_param_test.go`.
+
 ```go
 func TestMsgUpdateParam_UpdateNewParameterNameOnly(t *testing.T) {
   var expectedNewParameterName uint64 = 100
@@ -320,4 +345,33 @@ func TestMsgUpdateParam_UpdateNewParameterNameOnly(t *testing.T) {
 
   // READ ME: THIS TEST SHOULD ALSO ASSERT THAT ALL OTHER PARAMS OF THE SAME MODULE REMAIN UNCHANGED
 }
+```
+
+### 11. Implement individual parameter updates
+
+#### 11.1 Add `ParamNameNewParameterName` to `MsgUpdateParam#ValidateBasic()` in `x/types/message_update_param.go`
+
+```go
+  // Parameter name must be supported by this module.
+  switch msg.Name {
+  case ParamNumBlocksPerSession,
+    ParamNewParameterName:
+    return msg.paramTypeIsInt64()
+```
+
+#### 11.2 Add `ParamNameNewParameterName` to `msgServer#UpdateParam()` in `x/keeper/msg_server_update_param.go`
+
+```go
+case types.ParamNewParameterName:
+  value, ok := msg.AsType.(*types.MsgUpdateParam_AsInt64)
+  if !ok {
+    return nil, types.ErrProofParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
+  }
+  newParameter := uint64(value.AsInt64)
+
+  if err := types.ValidateNewParameter(newParameter); err != nil {
+    return nil, err
+  }
+
+  params.NewParameter = newParameter
 ```
