@@ -2,7 +2,6 @@ package keeper_test
 
 import (
 	"math/rand"
-	"sync"
 	"sync/atomic"
 	"testing"
 
@@ -40,23 +39,17 @@ func TestKeeper_IsProofRequired(t *testing.T) {
 
 	sampleSize := poktrand.RequiredSampleSize(float64(probability), tolerance, confidence)
 
-	// Sample concurrently to save time.
-	wg := sync.WaitGroup{}
+	// NB: Not possible to sample concurrently, this causes a race condition due to the keeper's gas meter.
 	for i := int64(0); i < sampleSize; i++ {
-		wg.Add(1)
-		go func() {
-			claim := tetsproof.ClaimWithRandomHash(t, sample.AccAddress(), sample.AccAddress(), expectedComputeUnits)
+		claim := tetsproof.ClaimWithRandomHash(t, sample.AccAddress(), sample.AccAddress(), expectedComputeUnits)
 
-			isRequired, err := keepers.Keeper.IsProofRequiredForClaim(sdkCtx, &claim)
-			require.NoError(t, err)
+		isRequired, err := keepers.Keeper.IsProofRequiredForClaim(sdkCtx, &claim)
+		require.NoError(t, err)
 
-			if isRequired {
-				numTrueSamples.Add(1)
-			}
-			wg.Done()
-		}()
+		if isRequired {
+			numTrueSamples.Add(1)
+		}
 	}
-	wg.Wait()
 
 	expectedNumTrueSamples := float32(sampleSize) * probability
 	expectedNumFalseSamples := float32(sampleSize) * (1 - probability)
