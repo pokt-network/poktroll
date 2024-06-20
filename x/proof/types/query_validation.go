@@ -20,7 +20,7 @@ func (query *QueryGetClaimRequest) ValidateBasic() error {
 	}
 
 	if query.SessionId == "" {
-		return ErrProofInvalidSessionId.Wrapf("invalid session ID for claim being retrieved %s", query.SessionId)
+		return ErrProofInvalidSessionId.Wrap("invalid empty session ID for claim being retrieved")
 	}
 
 	return nil
@@ -35,7 +35,9 @@ func (query *QueryAllClaimsRequest) ValidateBasic() error {
 		}
 
 	case *QueryAllClaimsRequest_SessionId:
-		// no-op
+		if filter.SessionId == "" {
+			return ErrProofInvalidSessionId.Wrap("invalid empty session ID for claims being retrieved")
+		}
 
 	case *QueryAllClaimsRequest_SessionEndHeight:
 		if filter.SessionEndHeight < 0 {
@@ -53,7 +55,7 @@ func (query *QueryGetProofRequest) ValidateBasic() error {
 	}
 
 	if query.SessionId == "" {
-		return ErrProofInvalidSessionId.Wrapf("invalid session ID for proof being retrieved %s", query.SessionId)
+		return ErrProofInvalidSessionId.Wrap("invalid empty session ID for proof being retrieved")
 	}
 
 	return nil
@@ -70,7 +72,9 @@ func (query *QueryAllProofsRequest) ValidateBasic() error {
 		}
 
 	case *QueryAllProofsRequest_SessionId:
-		// no-op
+		if filter.SessionId == "" {
+			return ErrProofInvalidSessionId.Wrap("invalid empty session ID for proofs being retrieved")
+		}
 
 	case *QueryAllProofsRequest_SessionEndHeight:
 		if filter.SessionEndHeight < 0 {

@@ -92,7 +92,6 @@ func (k msgServer) CreateClaim(
 	// appropriate error in any case where the supplier should no longer be able
 	// to update the given proof.
 	k.Keeper.UpsertClaim(ctx, claim)
-	defer telemetry.ComputeUnitsCounter(telemetry.ClaimProofStageClaimed, &claim)
 
 	logger.Info("created new claim")
 
