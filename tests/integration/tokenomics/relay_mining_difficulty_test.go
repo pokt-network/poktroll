@@ -73,7 +73,7 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	require.Greater(t, numBlocksUntilProofWindowOpenHeight, int64(0), "unexpected non-positive number of blocks until the earliest proof commit height")
 	integrationApp.NextBlocks(t, int(numBlocksUntilProofWindowOpenHeight))
 
-	// Create a new proof and submit it
+	// Construct a new proof message and commit it
 	createProofMsg := prooftypes.MsgSubmitProof{
 		SupplierAddress: integrationApp.DefaultSupplier.Address,
 		SessionHeader:   session.Header,
