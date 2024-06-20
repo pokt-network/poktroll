@@ -5,7 +5,6 @@ title: Adding On-Chain Module Parameters
 
 # Adding On-Chain Module Parameters <!-- omit in toc -->
 
-- [Adding a New On-Chain Module Parameter](#adding-a-new-on-chain-module-parameter)
 - [Step-by-Step Instructions](#step-by-step-instructions)
   - [1. Define the Parameter in the Protocol Buffers File](#1-define-the-parameter-in-the-protocol-buffers-file)
   - [2 Update the Parameter E2E Tests](#2-update-the-parameter-e2e-tests)
@@ -24,8 +23,6 @@ title: Adding On-Chain Module Parameters
   - [10. Update Unit Tests](#10-update-unit-tests)
     - [10.1 Parameter Validation Tests](#101-parameter-validation-tests)
     - [10.2 Parameter Update Tests](#102-parameter-update-tests)
-
-## Adding a New On-Chain Module Parameter
 
 Adding a new on-chain module parameter involves multiple steps to ensure that the
 parameter is properly integrated into the system. This guide will walk you through
