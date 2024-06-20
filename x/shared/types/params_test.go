@@ -173,7 +173,7 @@ func TestParams_ValidateGracePeriodEndOffsetBlocks(t *testing.T) {
 			err:                        ErrSharedParamInvalid.Wrapf("invalid parameter type: %T", "invalid"),
 		},
 		{
-			desc:                       "valid ProofWindowCloseOffsetBlocks",
+			desc:                       "valid GracePeriodEndOffsetBlocks",
 			gracePeriodEndOffsetBlocks: uint64(2),
 		},
 	}
