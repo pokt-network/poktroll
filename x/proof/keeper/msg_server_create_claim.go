@@ -21,8 +21,9 @@ func (k msgServer) CreateClaim(
 	// Declare claim to reference in telemetry.
 	var claim types.Claim
 
-	// TODO_CONSIDER: We could track on-chain relays here with claim.GetNumRelays().
+	// Defer telemetry calls so that they reference the final values the relevant variables.
 	defer func() {
+		// TODO_IMPROVE: We could track on-chain relays here with claim.GetNumRelays().
 		numComputeUnits, deferredErr := claim.GetNumComputeUnits()
 		err = errors.Join(err, deferredErr)
 

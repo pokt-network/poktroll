@@ -2,6 +2,7 @@ package keeper_test
 
 import (
 	"math/rand"
+	"sync"
 	"testing"
 
 	"cosmossdk.io/log"
@@ -35,28 +36,33 @@ func TestKeeper_IsProofRequired(t *testing.T) {
 		probability = prooftypes.DefaultProofRequestProbability
 		tolerance   = 0.01
 
-		numTrueSamples, numFalseSamples int
+		numTrueSamples int
 	)
 
+	// Sample concurrently to save time.
+	wg := sync.WaitGroup{}
+	wg.Add(sampleSize)
 	for i := 0; i < sampleSize; i++ {
-		claim := tetsproof.ClaimWithRandomHash(t, sample.AccAddress(), sample.AccAddress(), expectedComputeUnits)
+		go func() {
+			claim := tetsproof.ClaimWithRandomHash(t, sample.AccAddress(), sample.AccAddress(), expectedComputeUnits)
 
-		isRequired, err := keepers.Keeper.IsProofRequiredForClaim(sdkCtx, &claim)
-		require.NoError(t, err)
+			isRequired, err := keepers.Keeper.IsProofRequiredForClaim(sdkCtx, &claim)
+			require.NoError(t, err)
 
-		switch isRequired {
-		case true:
-			numTrueSamples++
-		case false:
-			numFalseSamples++
-		}
+			if isRequired {
+				numTrueSamples++
+			}
+			wg.Done()
+		}()
 	}
+	wg.Wait()
 
 	expectedNumTrueSamples := float32(sampleSize) * probability
 	expectedNumFalseSamples := float32(sampleSize) * (1 - probability)
 	toleranceSamples := tolerance * float64(sampleSize)
 
 	// Check that the number of samples for each outcome is within the expected range.
+	numFalseSamples := sampleSize - numTrueSamples
 	require.InDeltaf(t, expectedNumTrueSamples, numTrueSamples, toleranceSamples, "true samples")
 	require.InDeltaf(t, expectedNumFalseSamples, numFalseSamples, toleranceSamples, "false samples")
 }

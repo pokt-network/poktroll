@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"math"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -16,8 +17,11 @@ func TestRandProbability(t *testing.T) {
 
 	sampleSize := requiredSampleSize(float64(probability), tolerance, confidence)
 
-	var numTrueSamples, numFalseSamples int
+	var numTrueSamples int
 
+	// Sample concurrently to save time.
+	wg := sync.WaitGroup{}
+	wg.Add(sampleSize)
 	for i := 0; i < sampleSize; i++ {
 		rand, err := randProbability(int64(i))
 		require.NoError(t, err)
@@ -26,19 +30,19 @@ func TestRandProbability(t *testing.T) {
 			t.Fatalf("secureRandFloat64() returned out of bounds value: %f", rand)
 		}
 
-		switch rand <= probability {
-		case true:
+		if rand <= probability {
 			numTrueSamples++
-		case false:
-			numFalseSamples++
 		}
+		wg.Done()
 	}
+	wg.Wait()
 
 	expectedNumTrueSamples := float32(sampleSize) * probability
 	expectedNumFalseSamples := float32(sampleSize) * (1 - probability)
 	toleranceSamples := tolerance * float64(sampleSize)
 
 	// Check that the number of samples for each outcome is within the expected range.
+	numFalseSamples := sampleSize - numTrueSamples
 	require.InDeltaf(t, expectedNumTrueSamples, numTrueSamples, toleranceSamples, "true samples")
 	require.InDeltaf(t, expectedNumFalseSamples, numFalseSamples, toleranceSamples, "false samples")
 }

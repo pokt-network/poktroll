@@ -160,6 +160,7 @@ func (k Keeper) isProofRequiredForClaim(ctx sdk.Context, claim *prooftypes.Claim
 
 	var requirementReason = telemetry.ProofNotRequired
 
+	// Defer telemetry calls so that they reference the final values the relevant variables.
 	defer func() {
 		telemetry.ProofRequirementCounter(requirementReason, err)
 	}()

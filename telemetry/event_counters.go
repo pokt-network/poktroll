@@ -1,3 +1,8 @@
+// Package telemetry provides a set of functions for incrementing counters which track
+// various events across the codebase. Typically, calls to these counter functions SHOULD
+// be made inside deferred anonymous functions so that they will reference the final values
+// of their inputs. Any instrumented piece of code which contains branching logic with respect
+// its counter function inputs is subject to this constraint (i.e. MUST defer).
 package telemetry
 
 import (
@@ -48,6 +53,8 @@ func EventSuccessCounter(
 // ProofRequirementCounter increments a counter which tracks the number of claims
 // which require proof for the given proof requirement reason (i.e. not required,
 // probabilistic selection, above compute unit threshold).
+// If err is not nil, the counter is not incremented and an "error" label is added
+// with the error's message.
 func ProofRequirementCounter(
 	reason ProofRequirementReason,
 	err error,
@@ -74,6 +81,8 @@ func ProofRequirementCounter(
 
 // ClaimComputeUnitsCounter increments a counter which tracks the number of compute units
 // which are represented by on-chain claims at the given ClaimProofStage.
+// If err is not nil, the counter is not incremented and an "error" label is added
+// with the error's message. I.e., Prometheus will ingest this event.
 func ClaimComputeUnitsCounter(
 	claimProofStage ClaimProofStage,
 	numComputeUnits uint64,
@@ -100,6 +109,8 @@ func ClaimComputeUnitsCounter(
 
 // ClaimCounter increments a counter which tracks the number of claims at the given
 // ClaimProofStage.
+// If err is not nil, the counter is not incremented and an "error" label is added
+// with the error's message. I.e., Prometheus will ingest this event.
 func ClaimCounter(
 	claimProofStage ClaimProofStage,
 	numClaims uint64,

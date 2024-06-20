@@ -36,6 +36,7 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) (err error) {
 		numComputeUnits += serviceComputeUnits
 	}
 
+	// Defer telemetry calls so that they reference the final values the relevant variables.
 	defer func() {
 		telemetry.ClaimComputeUnitsCounter(
 			telemetry.ClaimProofStageSettled,
