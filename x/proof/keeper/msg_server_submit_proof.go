@@ -469,12 +469,9 @@ func (k msgServer) validateClosestPath(
 	}
 	blockHash := k.sessionKeeper.GetBlockHash(ctx, sessionGracePeriodEndHeight)
 
-	// TODO_BETA: Investigate "proof for the path provided does not match one expected by the on-chain protocol"
-	// error that may occur due to block height differing from the off-chain part.
-	fmt.Println("E2E_DEBUG: height for block hash when verifying the proof", sessionGracePeriodEndHeight, sessionHeader.GetSessionId())
-
 	expectedProofPath := GetPathForProof(blockHash, sessionHeader.GetSessionId())
 	if !bytes.Equal(proof.Path, expectedProofPath) {
+		fmt.Println("TODO_BETA: Investigate 'ErrProofInvalidProof' may occur due to block height differing from the off-chain part when height for block hash.")
 		return types.ErrProofInvalidProof.Wrapf(
 			"the proof for the path provided (%x) does not match one expected by the on-chain protocol (%x)",
 			proof.Path,

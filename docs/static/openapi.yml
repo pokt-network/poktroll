@@ -16291,9 +16291,9 @@ paths:
                             (Optional) Semantic human readable name for the
                             service
                           title: >-
-                            TODO_TECHDEBT: Name is currently unused but acts as
-                            a reminder that an optional onchain representation
-                            of the service is necessary
+                            TODO_BETA: Name is currently unused but acts as a
+                            reminder that an optional onchain representation of
+                            the service is necessary
                   title: >-
                     ApplicationServiceConfig holds the service configuration the
                     application stakes for
@@ -16657,7 +16657,7 @@ paths:
                           (Optional) Semantic human readable name for the
                           service
                         title: >-
-                          TODO_TECHDEBT: Name is currently unused but acts as a
+                          TODO_BETA: Name is currently unused but acts as a
                           reminder that an optional onchain representation of
                           the service is necessary
                   session_id:
@@ -16762,7 +16762,7 @@ paths:
                           (Optional) Semantic human readable name for the
                           service
                         title: >-
-                          TODO_TECHDEBT: Name is currently unused but acts as a
+                          TODO_BETA: Name is currently unused but acts as a
                           reminder that an optional onchain representation of
                           the service is necessary
                   session_id:
@@ -16823,8 +16823,53 @@ paths:
                     type: string
                     format: uint64
                     description: >-
-                      The minimum difficulty in bits for a relay to be included
-                      in a Merkle proof.
+                      min_relay_difficulty_bits is the minimum difficulty in
+                      bits for a relay to
+
+                      be included in a Merkle proof.
+                  proof_request_probability:
+                    type: number
+                    format: float
+                    description: >-
+                      proof_request_probability is the probability of a session
+                      requiring a proof
+
+                      if it's cost (i.e. compute unit consumption) is below the
+                      ProofRequirementThreshold.
+                  proof_requirement_threshold:
+                    type: string
+                    format: uint64
+                    description: >-
+                      proof_requirement_threshold is the session cost (i.e.
+                      compute unit consumption)
+
+                      threshold which asserts that a session MUST have a
+                      corresponding proof when its cost
+
+                      is equal to or above the threshold. This is in contrast to
+                      the this requirement
+
+                      being determined probabilistically via
+                      ProofRequestProbability.
+
+
+                      TODO_MAINNET: Consider renaming this to
+                      `proof_requirement_threshold_compute_units`.
+                  proof_missing_penalty:
+                    description: >-
+                      proof_missing_penalty is the number of tokens (uPOKT)
+                      which should be slashed from a supplier
+
+                      when a proof is required (either via
+                      proof_requirement_threshold or proof_missing_penalty)
+
+                      but is not provided.
+                    type: object
+                    properties:
+                      denom:
+                        type: string
+                      amount:
+                        type: string
                 description: Params defines the parameters for the module.
             description: >-
               MsgUpdateParamResponse defines the response structure for
@@ -16879,6 +16924,24 @@ paths:
               as_bytes:
                 type: string
                 format: byte
+              as_float:
+                type: number
+                format: float
+              as_coin:
+                type: object
+                properties:
+                  denom:
+                    type: string
+                  amount:
+                    type: string
+                description: >-
+                  Coin defines a token with a denomination and an amount.
+
+
+                  NOTE: The amount field is an Int which implements the custom
+                  method
+
+                  signatures required by gogoproto.
             description: >-
               MsgUpdateParam is the Msg/UpdateParam request type to update a
               single param.
@@ -16940,250 +17003,59 @@ paths:
                     type: string
                     format: uint64
                     description: >-
-                      The minimum difficulty in bits for a relay to be included
-                      in a Merkle proof.
+                      min_relay_difficulty_bits is the minimum difficulty in
+                      bits for a relay to
+
+                      be included in a Merkle proof.
+                  proof_request_probability:
+                    type: number
+                    format: float
+                    description: >-
+                      proof_request_probability is the probability of a session
+                      requiring a proof
+
+                      if it's cost (i.e. compute unit consumption) is below the
+                      ProofRequirementThreshold.
+                  proof_requirement_threshold:
+                    type: string
+                    format: uint64
+                    description: >-
+                      proof_requirement_threshold is the session cost (i.e.
+                      compute unit consumption)
+
+                      threshold which asserts that a session MUST have a
+                      corresponding proof when its cost
+
+                      is equal to or above the threshold. This is in contrast to
+                      the this requirement
+
+                      being determined probabilistically via
+                      ProofRequestProbability.
+
+
+                      TODO_MAINNET: Consider renaming this to
+                      `proof_requirement_threshold_compute_units`.
+                  proof_missing_penalty:
+                    description: >-
+                      proof_missing_penalty is the number of tokens (uPOKT)
+                      which should be slashed from a supplier
+
+                      when a proof is required (either via
+                      proof_requirement_threshold or proof_missing_penalty)
+
+                      but is not provided.
+                    type: object
+                    properties:
+                      denom:
+                        type: string
+                      amount:
+                        type: string
                 description: Params defines the parameters for the module.
             description: >-
               MsgUpdateParams is the Msg/UpdateParams request type to update all
               params at once.
       tags:
         - Msg
-  /pokt-network/poktroll/service/params:
-    get:
-      summary: Parameters queries the parameters of the module.
-      operationId: PoktrollServiceQuery_Params
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-            properties:
-              params:
-                description: params holds all the parameters of this module.
-                type: object
-                properties:
-                  add_service_fee:
-                    type: string
-                    format: uint64
-                    description: |-
-                      The amount of uPOKT required to add a new service.
-                      This will be deducted from the signer's account balance,
-                      and transferred to the pocket network foundation.
-            description: >-
-              QueryParamsResponse is response type for the Query/Params RPC
-              method.
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    '@type':
-                      type: string
-                  additionalProperties: {}
-      tags:
-        - Query
-  /pokt-network/poktroll/service/service:
-    get:
-      operationId: PoktrollServiceQuery_AllServices
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-            properties:
-              service:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    id:
-                      type: string
-                      description: Unique identifier for the service
-                      title: >-
-                        For example, what if we want to request a session for a
-                        certain service but with some additional configs that
-                        identify it?
-                    name:
-                      type: string
-                      description: (Optional) Semantic human readable name for the service
-                      title: >-
-                        TODO_TECHDEBT: Name is currently unused but acts as a
-                        reminder that an optional onchain representation of the
-                        service is necessary
-                  title: >-
-                    Service message to encapsulate unique and semantic
-                    identifiers for a service on the network
-              pagination:
-                type: object
-                properties:
-                  next_key:
-                    type: string
-                    format: byte
-                    description: |-
-                      next_key is the key to be passed to PageRequest.key to
-                      query the next page most efficiently. It will be empty if
-                      there are no more results.
-                  total:
-                    type: string
-                    format: uint64
-                    title: >-
-                      total is total number of results available if
-                      PageRequest.count_total
-
-                      was set, its value is undefined otherwise
-                description: >-
-                  PageResponse is to be embedded in gRPC response messages where
-                  the
-
-                  corresponding request message has used PageRequest.
-
-                   message SomeResponse {
-                           repeated Bar results = 1;
-                           PageResponse page = 2;
-                   }
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    '@type':
-                      type: string
-                  additionalProperties: {}
-      parameters:
-        - name: pagination.key
-          description: |-
-            key is a value returned in PageResponse.next_key to begin
-            querying the next page most efficiently. Only one of offset or key
-            should be set.
-          in: query
-          required: false
-          type: string
-          format: byte
-        - name: pagination.offset
-          description: >-
-            offset is a numeric offset that can be used when key is unavailable.
-
-            It is less efficient than using key. Only one of offset or key
-            should
-
-            be set.
-          in: query
-          required: false
-          type: string
-          format: uint64
-        - name: pagination.limit
-          description: >-
-            limit is the total number of results to be returned in the result
-            page.
-
-            If left empty it will default to a value to be set by each app.
-          in: query
-          required: false
-          type: string
-          format: uint64
-        - name: pagination.count_total
-          description: >-
-            count_total is set to true  to indicate that the result set should
-            include
-
-            a count of the total number of items available for pagination in
-            UIs.
-
-            count_total is only respected when offset is used. It is ignored
-            when key
-
-            is set.
-          in: query
-          required: false
-          type: boolean
-        - name: pagination.reverse
-          description: >-
-            reverse is set to true if results are to be returned in the
-            descending order.
-
-
-            Since: cosmos-sdk 0.43
-          in: query
-          required: false
-          type: boolean
-      tags:
-        - Query
-  /pokt-network/poktroll/service/service/{id}:
-    get:
-      summary: Queries a list of Service items.
-      operationId: PoktrollServiceQuery_Service
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-            properties:
-              service:
-                type: object
-                properties:
-                  id:
-                    type: string
-                    description: Unique identifier for the service
-                    title: >-
-                      For example, what if we want to request a session for a
-                      certain service but with some additional configs that
-                      identify it?
-                  name:
-                    type: string
-                    description: (Optional) Semantic human readable name for the service
-                    title: >-
-                      TODO_TECHDEBT: Name is currently unused but acts as a
-                      reminder that an optional onchain representation of the
-                      service is necessary
-                title: >-
-                  Service message to encapsulate unique and semantic identifiers
-                  for a service on the network
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    '@type':
-                      type: string
-                  additionalProperties: {}
-      parameters:
-        - name: id
-          description: 'TODO: We could support getting services by name.'
-          in: path
-          required: true
-          type: string
-      tags:
-        - Query
   /poktroll.service.Msg/AddService:
     post:
       operationId: PoktrollServiceMsg_AddService
@@ -17220,7 +17092,7 @@ paths:
 
             permissionless.
 
-            TODO_IMPLEMENT: Add Champions / Sources once its fully defined.
+            TODO_BETA: Add Champions / Sources once its fully defined.
           in: body
           required: true
           schema:
@@ -17246,9 +17118,9 @@ paths:
                     type: string
                     description: (Optional) Semantic human readable name for the service
                     title: >-
-                      TODO_TECHDEBT: Name is currently unused but acts as a
-                      reminder that an optional onchain representation of the
-                      service is necessary
+                      TODO_BETA: Name is currently unused but acts as a reminder
+                      that an optional onchain representation of the service is
+                      necessary
             description: >-
               MsgAddService defines a message for adding a new message to the
               network.
@@ -17258,7 +17130,7 @@ paths:
 
               permissionless.
 
-              TODO_IMPLEMENT: Add Champions / Sources once its fully defined.
+              TODO_BETA: Add Champions / Sources once its fully defined.
       tags:
         - Msg
   /poktroll.service.Msg/UpdateParams:
@@ -17379,418 +17251,6 @@ paths:
             description: MsgUpdateParams is the Msg/UpdateParams request type.
       tags:
         - Msg
-  /pokt-network/poktroll/session/get_session:
-    get:
-      summary: Queries the session given app_address, service and block_height.
-      operationId: PoktrollSessionQuery_GetSession
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-            properties:
-              session:
-                type: object
-                properties:
-                  header:
-                    title: The header of the session containing lightweight data
-                    type: object
-                    properties:
-                      application_address:
-                        type: string
-                        title: >-
-                          The Bech32 address of the application using cosmos'
-                          ScalarDescriptor to ensure deterministic encoding
-                      service:
-                        title: The service this session is for
-                        type: object
-                        properties:
-                          id:
-                            type: string
-                            description: Unique identifier for the service
-                            title: >-
-                              For example, what if we want to request a session
-                              for a certain service but with some additional
-                              configs that identify it?
-                          name:
-                            type: string
-                            description: >-
-                              (Optional) Semantic human readable name for the
-                              service
-                            title: >-
-                              TODO_TECHDEBT: Name is currently unused but acts
-                              as a reminder that an optional onchain
-                              representation of the service is necessary
-                      session_id:
-                        type: string
-                        description: A unique pseudoranom ID for this session
-                        title: >-
-                          NOTE: session_id can be derived from the above values
-                          using on-chain but is included in the header for
-                          convenience
-                      session_start_block_height:
-                        type: string
-                        format: int64
-                        title: The height at which this session started
-                      session_end_block_height:
-                        type: string
-                        format: int64
-                        description: >-
-                          Note that`session_end_block_height` is a derivative of
-                          (`start` + `num_blocks_per_session`)
-
-                          as goverened by on-chain params at the time of the
-                          session start.
-
-                          It is stored as an additional field to simplofy
-                          business logic in case
-
-                          the number of blocks_per_session changes during the
-                          session.
-
-
-                          The height at which this session ended, this is the
-                          last block of the session
-                    description: >-
-                      SessionHeader is a lightweight header for a session that
-                      can be passed around.
-
-                      It is the minimal amount of data required to hydrate &
-                      retrieve all data relevant to the session.
-                  session_id:
-                    type: string
-                    title: A unique pseudoranom ID for this session
-                  session_number:
-                    type: string
-                    format: int64
-                    title: The session number since genesis
-                  num_blocks_per_session:
-                    type: string
-                    format: int64
-                    title: The number of blocks per session when this session started
-                  application:
-                    title: A fully hydrated application object this session is for
-                    type: object
-                    properties:
-                      address:
-                        type: string
-                        title: >-
-                          The Bech32 address of the application using cosmos'
-                          ScalarDescriptor to ensure deterministic encoding
-                      stake:
-                        title: The total amount of uPOKT the application has staked
-                        type: object
-                        properties:
-                          denom:
-                            type: string
-                          amount:
-                            type: string
-                        description: >-
-                          Coin defines a token with a denomination and an
-                          amount.
-
-
-                          NOTE: The amount field is an Int which implements the
-                          custom method
-
-                          signatures required by gogoproto.
-                      service_configs:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            service:
-                              title: >-
-                                The Service for which the application is
-                                configured
-                              type: object
-                              properties:
-                                id:
-                                  type: string
-                                  description: Unique identifier for the service
-                                  title: >-
-                                    For example, what if we want to request a
-                                    session for a certain service but with some
-                                    additional configs that identify it?
-                                name:
-                                  type: string
-                                  description: >-
-                                    (Optional) Semantic human readable name for
-                                    the service
-                                  title: >-
-                                    TODO_TECHDEBT: Name is currently unused but
-                                    acts as a reminder that an optional onchain
-                                    representation of the service is necessary
-                          title: >-
-                            ApplicationServiceConfig holds the service
-                            configuration the application stakes for
-                        title: >-
-                          The list of services this appliccation is configured
-                          to request service for
-                      delegatee_gateway_addresses:
-                        type: array
-                        items:
-                          type: string
-                        description: >-
-                          TODO_TECHDEBT: Rename `delegatee_gateway_addresses` to
-                          `gateway_addresses_delegated_to`.
-
-                          Ensure to rename all relevant configs, comments,
-                          variables, function names, etc as well.
-
-
-                          The Bech32 encoded addresses for all delegatee
-                          Gateways, in a non-nullable slice
-                      pending_undelegations:
-                        type: object
-                        additionalProperties:
-                          type: object
-                          properties:
-                            gateway_addresses:
-                              type: array
-                              items:
-                                type: string
-                          description: >-
-                            UndelegatingGatewayList is used as the Value of
-                            `pending_undelegations`.
-
-                            It is required to store a repeated list of strings
-                            as a map value.
-                        description: >-
-                          A map from sessionEndHeights to a list of Gateways.
-
-                          The key is the height of the last block of the session
-                          during which the
-
-                          respective undelegation was committed.
-
-                          The value is a list of gateways being undelegated
-                          from.
-
-                          TODO_DOCUMENT(@red-0ne): Need to document the flow
-                          from this comment
-
-                          so its clear to everyone why this is necessary;
-                          https://github.com/pokt-network/poktroll/issues/476#issuecomment-2052639906.
-                  suppliers:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        address:
-                          type: string
-                          title: >-
-                            The Bech32 address of the supplier using cosmos'
-                            ScalarDescriptor to ensure deterministic encoding
-                        stake:
-                          title: The total amount of uPOKT the supplier has staked
-                          type: object
-                          properties:
-                            denom:
-                              type: string
-                            amount:
-                              type: string
-                          description: >-
-                            Coin defines a token with a denomination and an
-                            amount.
-
-
-                            NOTE: The amount field is an Int which implements
-                            the custom method
-
-                            signatures required by gogoproto.
-                        services:
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              service:
-                                title: >-
-                                  The Service for which the supplier is
-                                  configured
-                                type: object
-                                properties:
-                                  id:
-                                    type: string
-                                    description: Unique identifier for the service
-                                    title: >-
-                                      For example, what if we want to request a
-                                      session for a certain service but with
-                                      some additional configs that identify it?
-                                  name:
-                                    type: string
-                                    description: >-
-                                      (Optional) Semantic human readable name
-                                      for the service
-                                    title: >-
-                                      TODO_TECHDEBT: Name is currently unused
-                                      but acts as a reminder that an optional
-                                      onchain representation of the service is
-                                      necessary
-                              endpoints:
-                                type: array
-                                items:
-                                  type: object
-                                  properties:
-                                    url:
-                                      type: string
-                                      title: URL of the endpoint
-                                    rpc_type:
-                                      title: Type of RPC exposed on the url above
-                                      type: string
-                                      enum:
-                                        - UNKNOWN_RPC
-                                        - GRPC
-                                        - WEBSOCKET
-                                        - JSON_RPC
-                                        - REST
-                                      default: UNKNOWN_RPC
-                                      description: |-
-                                        - UNKNOWN_RPC: Undefined RPC type
-                                         - GRPC: gRPC
-                                         - WEBSOCKET: WebSocket
-                                         - JSON_RPC: JSON-RPC
-                                         - REST: REST
-                                    configs:
-                                      type: array
-                                      items:
-                                        type: object
-                                        properties:
-                                          key:
-                                            title: Config option key
-                                            type: string
-                                            enum:
-                                              - UNKNOWN_CONFIG
-                                              - TIMEOUT
-                                            default: UNKNOWN_CONFIG
-                                            description: >-
-                                              Enum to define configuration options
-
-                                              TODO_RESEARCH: Should these be configs,
-                                              SLAs or something else? There will be
-                                              more discussion once we get closer to
-                                              implementing on-chain QoS.
-
-                                               - UNKNOWN_CONFIG: Undefined config option
-                                               - TIMEOUT: Timeout setting
-                                          value:
-                                            type: string
-                                            title: Config option value
-                                        title: >-
-                                          Key-value wrapper for config options, as
-                                          proto maps can't be keyed by enums
-                                      title: >-
-                                        Additional configuration options for the
-                                        endpoint
-                                  title: >-
-                                    SupplierEndpoint message to hold service
-                                    configuration details
-                                title: List of endpoints for the service
-                            title: >-
-                              SupplierServiceConfig holds the service
-                              configuration the supplier stakes for
-                          title: The service configs this supplier can support
-                      description: >-
-                        Supplier is the type defining the actor in Pocket
-                        Network that provides RPC services.
-                    title: >-
-                      A fully hydrated set of servicers that are serving the
-                      application
-                description: >-
-                  Session is a fully hydrated session object that contains all
-                  the information for the Session
-
-                  and its parcipants.
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    '@type':
-                      type: string
-                  additionalProperties: {}
-      parameters:
-        - name: application_address
-          description: >-
-            The Bech32 address of the application using cosmos' ScalarDescriptor
-            to ensure deterministic encoding
-          in: query
-          required: false
-          type: string
-        - name: service.id
-          description: >-
-            For example, what if we want to request a session for a certain
-            service but with some additional configs that identify it?
-
-
-            Unique identifier for the service
-          in: query
-          required: false
-          type: string
-        - name: service.name
-          description: >-
-            TODO_TECHDEBT: Name is currently unused but acts as a reminder that
-            an optional onchain representation of the service is necessary
-
-
-            (Optional) Semantic human readable name for the service
-          in: query
-          required: false
-          type: string
-        - name: block_height
-          description: The block height to query the session for
-          in: query
-          required: false
-          type: string
-          format: int64
-      tags:
-        - Query
-  /pokt-network/poktroll/session/params:
-    get:
-      summary: Parameters queries the parameters of the module.
-      operationId: PoktrollSessionQuery_Params
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-            properties:
-              params:
-                description: params holds all the parameters of this module.
-                type: object
-            description: >-
-              QueryParamsResponse is response type for the Query/Params RPC
-              method.
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    '@type':
-                      type: string
-                  additionalProperties: {}
-      tags:
-        - Query
   /poktroll.shared.Msg/UpdateParam:
     post:
       operationId: PoktrollSharedMsg_UpdateParam
@@ -17825,6 +17285,22 @@ paths:
                       after the claim window
 
                       open height, at which the claim window closes.
+                  proof_window_open_offset_blocks:
+                    type: string
+                    format: uint64
+                    description: >-
+                      proof_window_open_offset_blocks is the number of blocks
+                      after the claim window
+
+                      close height, at which the proof window opens.
+                  proof_window_close_offset_blocks:
+                    type: string
+                    format: uint64
+                    description: >-
+                      proof_window_close_offset_blocks is the number of blocks
+                      after the proof window
+
+                      open height, at which the proof window closes.
                 description: Params defines the parameters for the module.
             description: >-
               MsgUpdateParamResponse defines the response structure for
@@ -17951,69 +17427,26 @@ paths:
                       after the claim window
 
                       open height, at which the claim window closes.
+                  proof_window_open_offset_blocks:
+                    type: string
+                    format: uint64
+                    description: >-
+                      proof_window_open_offset_blocks is the number of blocks
+                      after the claim window
+
+                      close height, at which the proof window opens.
+                  proof_window_close_offset_blocks:
+                    type: string
+                    format: uint64
+                    description: >-
+                      proof_window_close_offset_blocks is the number of blocks
+                      after the proof window
+
+                      open height, at which the proof window closes.
                 description: Params defines the parameters for the module.
             description: MsgUpdateParams is the Msg/UpdateParams request type.
       tags:
         - Msg
-  /pokt-network/poktroll/shared/params:
-    get:
-      summary: Parameters queries the parameters of the module.
-      operationId: PoktrollSharedQuery_Params
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-            properties:
-              params:
-                description: params holds all the parameters of this module.
-                type: object
-                properties:
-                  num_blocks_per_session:
-                    type: string
-                    format: uint64
-                    description: >-
-                      num_blocks_per_session is the number of blocks between the
-                      session start & end heights.
-                  claim_window_open_offset_blocks:
-                    type: string
-                    format: uint64
-                    description: >-
-                      claim_window_open_offset_blocks is the number of blocks
-                      after the session grace
-
-                      period height, at which the claim window opens.
-                  claim_window_close_offset_blocks:
-                    type: string
-                    format: uint64
-                    description: >-
-                      claim_window_close_offset_blocks is the number of blocks
-                      after the claim window
-
-                      open height, at which the claim window closes.
-            description: >-
-              QueryParamsResponse is response type for the Query/Params RPC
-              method.
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    '@type':
-                      type: string
-                  additionalProperties: {}
-      tags:
-        - Query
   /poktroll.supplier.Msg/StakeSupplier:
     post:
       operationId: PoktrollSupplierMsg_StakeSupplier
@@ -18094,9 +17527,9 @@ paths:
                             (Optional) Semantic human readable name for the
                             service
                           title: >-
-                            TODO_TECHDEBT: Name is currently unused but acts as
-                            a reminder that an optional onchain representation
-                            of the service is necessary
+                            TODO_BETA: Name is currently unused but acts as a
+                            reminder that an optional onchain representation of
+                            the service is necessary
                     endpoints:
                       type: array
                       items:
@@ -25372,9 +24805,9 @@ definitions:
                   type: string
                   description: (Optional) Semantic human readable name for the service
                   title: >-
-                    TODO_TECHDEBT: Name is currently unused but acts as a
-                    reminder that an optional onchain representation of the
-                    service is necessary
+                    TODO_BETA: Name is currently unused but acts as a reminder
+                    that an optional onchain representation of the service is
+                    necessary
           title: >-
             ApplicationServiceConfig holds the service configuration the
             application stakes for
@@ -25453,9 +24886,8 @@ definitions:
             type: string
             description: (Optional) Semantic human readable name for the service
             title: >-
-              TODO_TECHDEBT: Name is currently unused but acts as a reminder
-              that an optional onchain representation of the service is
-              necessary
+              TODO_BETA: Name is currently unused but acts as a reminder that an
+              optional onchain representation of the service is necessary
     title: >-
       ApplicationServiceConfig holds the service configuration the application
       stakes for
@@ -25472,7 +24904,7 @@ definitions:
         type: string
         description: (Optional) Semantic human readable name for the service
         title: >-
-          TODO_TECHDEBT: Name is currently unused but acts as a reminder that an
+          TODO_BETA: Name is currently unused but acts as a reminder that an
           optional onchain representation of the service is necessary
     title: >-
       Service message to encapsulate unique and semantic identifiers for a
@@ -25558,7 +24990,7 @@ definitions:
                 type: string
                 description: (Optional) Semantic human readable name for the service
                 title: >-
-                  TODO_TECHDEBT: Name is currently unused but acts as a reminder
+                  TODO_BETA: Name is currently unused but acts as a reminder
                   that an optional onchain representation of the service is
                   necessary
           session_id:
@@ -25628,7 +25060,7 @@ definitions:
                 type: string
                 description: (Optional) Semantic human readable name for the service
                 title: >-
-                  TODO_TECHDEBT: Name is currently unused but acts as a reminder
+                  TODO_BETA: Name is currently unused but acts as a reminder
                   that an optional onchain representation of the service is
                   necessary
           session_id:
@@ -25693,6 +25125,21 @@ definitions:
       as_bytes:
         type: string
         format: byte
+      as_float:
+        type: number
+        format: float
+      as_coin:
+        type: object
+        properties:
+          denom:
+            type: string
+          amount:
+            type: string
+        description: |-
+          Coin defines a token with a denomination and an amount.
+
+          NOTE: The amount field is an Int which implements the custom method
+          signatures required by gogoproto.
     description: >-
       MsgUpdateParam is the Msg/UpdateParam request type to update a single
       param.
@@ -25706,8 +25153,52 @@ definitions:
             type: string
             format: uint64
             description: >-
-              The minimum difficulty in bits for a relay to be included in a
-              Merkle proof.
+              min_relay_difficulty_bits is the minimum difficulty in bits for a
+              relay to
+
+              be included in a Merkle proof.
+          proof_request_probability:
+            type: number
+            format: float
+            description: >-
+              proof_request_probability is the probability of a session
+              requiring a proof
+
+              if it's cost (i.e. compute unit consumption) is below the
+              ProofRequirementThreshold.
+          proof_requirement_threshold:
+            type: string
+            format: uint64
+            description: >-
+              proof_requirement_threshold is the session cost (i.e. compute unit
+              consumption)
+
+              threshold which asserts that a session MUST have a corresponding
+              proof when its cost
+
+              is equal to or above the threshold. This is in contrast to the
+              this requirement
+
+              being determined probabilistically via ProofRequestProbability.
+
+
+              TODO_MAINNET: Consider renaming this to
+              `proof_requirement_threshold_compute_units`.
+          proof_missing_penalty:
+            description: >-
+              proof_missing_penalty is the number of tokens (uPOKT) which should
+              be slashed from a supplier
+
+              when a proof is required (either via proof_requirement_threshold
+              or proof_missing_penalty)
+
+              but is not provided.
+            type: object
+            properties:
+              denom:
+                type: string
+              amount:
+                type: string
         description: Params defines the parameters for the module.
     description: |-
       MsgUpdateParamResponse defines the response structure for executing a
@@ -25727,8 +25218,52 @@ definitions:
             type: string
             format: uint64
             description: >-
-              The minimum difficulty in bits for a relay to be included in a
-              Merkle proof.
+              min_relay_difficulty_bits is the minimum difficulty in bits for a
+              relay to
+
+              be included in a Merkle proof.
+          proof_request_probability:
+            type: number
+            format: float
+            description: >-
+              proof_request_probability is the probability of a session
+              requiring a proof
+
+              if it's cost (i.e. compute unit consumption) is below the
+              ProofRequirementThreshold.
+          proof_requirement_threshold:
+            type: string
+            format: uint64
+            description: >-
+              proof_requirement_threshold is the session cost (i.e. compute unit
+              consumption)
+
+              threshold which asserts that a session MUST have a corresponding
+              proof when its cost
+
+              is equal to or above the threshold. This is in contrast to the
+              this requirement
+
+              being determined probabilistically via ProofRequestProbability.
+
+
+              TODO_MAINNET: Consider renaming this to
+              `proof_requirement_threshold_compute_units`.
+          proof_missing_penalty:
+            description: >-
+              proof_missing_penalty is the number of tokens (uPOKT) which should
+              be slashed from a supplier
+
+              when a proof is required (either via proof_requirement_threshold
+              or proof_missing_penalty)
+
+              but is not provided.
+            type: object
+            properties:
+              denom:
+                type: string
+              amount:
+                type: string
         description: Params defines the parameters for the module.
     description: >-
       MsgUpdateParams is the Msg/UpdateParams request type to update all params
@@ -25745,8 +25280,52 @@ definitions:
         type: string
         format: uint64
         description: >-
-          The minimum difficulty in bits for a relay to be included in a Merkle
-          proof.
+          min_relay_difficulty_bits is the minimum difficulty in bits for a
+          relay to
+
+          be included in a Merkle proof.
+      proof_request_probability:
+        type: number
+        format: float
+        description: >-
+          proof_request_probability is the probability of a session requiring a
+          proof
+
+          if it's cost (i.e. compute unit consumption) is below the
+          ProofRequirementThreshold.
+      proof_requirement_threshold:
+        type: string
+        format: uint64
+        description: >-
+          proof_requirement_threshold is the session cost (i.e. compute unit
+          consumption)
+
+          threshold which asserts that a session MUST have a corresponding proof
+          when its cost
+
+          is equal to or above the threshold. This is in contrast to the this
+          requirement
+
+          being determined probabilistically via ProofRequestProbability.
+
+
+          TODO_MAINNET: Consider renaming this to
+          `proof_requirement_threshold_compute_units`.
+      proof_missing_penalty:
+        description: >-
+          proof_missing_penalty is the number of tokens (uPOKT) which should be
+          slashed from a supplier
+
+          when a proof is required (either via proof_requirement_threshold or
+          proof_missing_penalty)
+
+          but is not provided.
+        type: object
+        properties:
+          denom:
+            type: string
+          amount:
+            type: string
     description: Params defines the parameters for the module.
   poktroll.session.SessionHeader:
     type: object
@@ -25770,9 +25349,8 @@ definitions:
             type: string
             description: (Optional) Semantic human readable name for the service
             title: >-
-              TODO_TECHDEBT: Name is currently unused but acts as a reminder
-              that an optional onchain representation of the service is
-              necessary
+              TODO_BETA: Name is currently unused but acts as a reminder that an
+              optional onchain representation of the service is necessary
       session_id:
         type: string
         description: A unique pseudoranom ID for this session
@@ -25805,181 +25383,6 @@ definitions:
 
       It is the minimal amount of data required to hydrate & retrieve all data
       relevant to the session.
-  cosmos.base.query.v1beta1.PageRequest:
-    type: object
-    properties:
-      key:
-        type: string
-        format: byte
-        description: |-
-          key is a value returned in PageResponse.next_key to begin
-          querying the next page most efficiently. Only one of offset or key
-          should be set.
-      offset:
-        type: string
-        format: uint64
-        description: |-
-          offset is a numeric offset that can be used when key is unavailable.
-          It is less efficient than using key. Only one of offset or key should
-          be set.
-      limit:
-        type: string
-        format: uint64
-        description: >-
-          limit is the total number of results to be returned in the result
-          page.
-
-          If left empty it will default to a value to be set by each app.
-      count_total:
-        type: boolean
-        description: >-
-          count_total is set to true  to indicate that the result set should
-          include
-
-          a count of the total number of items available for pagination in UIs.
-
-          count_total is only respected when offset is used. It is ignored when
-          key
-
-          is set.
-      reverse:
-        type: boolean
-        description: >-
-          reverse is set to true if results are to be returned in the descending
-          order.
-
-
-          Since: cosmos-sdk 0.43
-    description: |-
-      message SomeRequest {
-               Foo some_parameter = 1;
-               PageRequest pagination = 2;
-       }
-    title: |-
-      PageRequest is to be embedded in gRPC request messages for efficient
-      pagination. Ex:
-  cosmos.base.query.v1beta1.PageResponse:
-    type: object
-    properties:
-      next_key:
-        type: string
-        format: byte
-        description: |-
-          next_key is the key to be passed to PageRequest.key to
-          query the next page most efficiently. It will be empty if
-          there are no more results.
-      total:
-        type: string
-        format: uint64
-        title: |-
-          total is total number of results available if PageRequest.count_total
-          was set, its value is undefined otherwise
-    description: |-
-      PageResponse is to be embedded in gRPC response messages where the
-      corresponding request message has used PageRequest.
-
-       message SomeResponse {
-               repeated Bar results = 1;
-               PageResponse page = 2;
-       }
-  poktroll.service.Params:
-    type: object
-    properties:
-      add_service_fee:
-        type: string
-        format: uint64
-        description: |-
-          The amount of uPOKT required to add a new service.
-          This will be deducted from the signer's account balance,
-          and transferred to the pocket network foundation.
-    description: Params defines the parameters for the module.
-  poktroll.service.QueryAllServicesResponse:
-    type: object
-    properties:
-      service:
-        type: array
-        items:
-          type: object
-          properties:
-            id:
-              type: string
-              description: Unique identifier for the service
-              title: >-
-                For example, what if we want to request a session for a certain
-                service but with some additional configs that identify it?
-            name:
-              type: string
-              description: (Optional) Semantic human readable name for the service
-              title: >-
-                TODO_TECHDEBT: Name is currently unused but acts as a reminder
-                that an optional onchain representation of the service is
-                necessary
-          title: >-
-            Service message to encapsulate unique and semantic identifiers for a
-            service on the network
-      pagination:
-        type: object
-        properties:
-          next_key:
-            type: string
-            format: byte
-            description: |-
-              next_key is the key to be passed to PageRequest.key to
-              query the next page most efficiently. It will be empty if
-              there are no more results.
-          total:
-            type: string
-            format: uint64
-            title: >-
-              total is total number of results available if
-              PageRequest.count_total
-
-              was set, its value is undefined otherwise
-        description: |-
-          PageResponse is to be embedded in gRPC response messages where the
-          corresponding request message has used PageRequest.
-
-           message SomeResponse {
-                   repeated Bar results = 1;
-                   PageResponse page = 2;
-           }
-  poktroll.service.QueryGetServiceResponse:
-    type: object
-    properties:
-      service:
-        type: object
-        properties:
-          id:
-            type: string
-            description: Unique identifier for the service
-            title: >-
-              For example, what if we want to request a session for a certain
-              service but with some additional configs that identify it?
-          name:
-            type: string
-            description: (Optional) Semantic human readable name for the service
-            title: >-
-              TODO_TECHDEBT: Name is currently unused but acts as a reminder
-              that an optional onchain representation of the service is
-              necessary
-        title: >-
-          Service message to encapsulate unique and semantic identifiers for a
-          service on the network
-  poktroll.service.QueryParamsResponse:
-    type: object
-    properties:
-      params:
-        description: params holds all the parameters of this module.
-        type: object
-        properties:
-          add_service_fee:
-            type: string
-            format: uint64
-            description: |-
-              The amount of uPOKT required to add a new service.
-              This will be deducted from the signer's account balance,
-              and transferred to the pocket network foundation.
-    description: QueryParamsResponse is response type for the Query/Params RPC method.
   poktroll.service.MsgAddService:
     type: object
     properties:
@@ -26002,14 +25405,13 @@ definitions:
             type: string
             description: (Optional) Semantic human readable name for the service
             title: >-
-              TODO_TECHDEBT: Name is currently unused but acts as a reminder
-              that an optional onchain representation of the service is
-              necessary
+              TODO_BETA: Name is currently unused but acts as a reminder that an
+              optional onchain representation of the service is necessary
     description: |-
       MsgAddService defines a message for adding a new message to the network.
       Services can be added by any actor in the network making them truly
       permissionless.
-      TODO_IMPLEMENT: Add Champions / Sources once its fully defined.
+      TODO_BETA: Add Champions / Sources once its fully defined.
   poktroll.service.MsgAddServiceResponse:
     type: object
   poktroll.service.MsgUpdateParams:
@@ -26039,6 +25441,17 @@ definitions:
     description: |-
       MsgUpdateParamsResponse defines the response structure for executing a
       MsgUpdateParams message.
+  poktroll.service.Params:
+    type: object
+    properties:
+      add_service_fee:
+        type: string
+        format: uint64
+        description: |-
+          The amount of uPOKT required to add a new service.
+          This will be deducted from the signer's account balance,
+          and transferred to the pocket network foundation.
+    description: Params defines the parameters for the module.
   poktroll.session.MsgUpdateParams:
     type: object
     properties:
@@ -26061,712 +25474,173 @@ definitions:
   poktroll.session.Params:
     type: object
     description: Params defines the parameters for the module.
-  poktroll.application.Application:
+  poktroll.shared.MsgUpdateParam:
     type: object
     properties:
-      address:
+      authority:
         type: string
-        title: >-
-          The Bech32 address of the application using cosmos' ScalarDescriptor
-          to ensure deterministic encoding
-      stake:
-        title: The total amount of uPOKT the application has staked
-        type: object
-        properties:
-          denom:
-            type: string
-          amount:
-            type: string
-        description: |-
-          Coin defines a token with a denomination and an amount.
-
-          NOTE: The amount field is an Int which implements the custom method
-          signatures required by gogoproto.
-      service_configs:
-        type: array
-        items:
-          type: object
-          properties:
-            service:
-              title: The Service for which the application is configured
-              type: object
-              properties:
-                id:
-                  type: string
-                  description: Unique identifier for the service
-                  title: >-
-                    For example, what if we want to request a session for a
-                    certain service but with some additional configs that
-                    identify it?
-                name:
-                  type: string
-                  description: (Optional) Semantic human readable name for the service
-                  title: >-
-                    TODO_TECHDEBT: Name is currently unused but acts as a
-                    reminder that an optional onchain representation of the
-                    service is necessary
-          title: >-
-            ApplicationServiceConfig holds the service configuration the
-            application stakes for
-        title: >-
-          The list of services this appliccation is configured to request
-          service for
-      delegatee_gateway_addresses:
-        type: array
-        items:
-          type: string
         description: >-
-          TODO_TECHDEBT: Rename `delegatee_gateway_addresses` to
-          `gateway_addresses_delegated_to`.
-
-          Ensure to rename all relevant configs, comments, variables, function
-          names, etc as well.
-
-
-          The Bech32 encoded addresses for all delegatee Gateways, in a
-          non-nullable slice
-      pending_undelegations:
-        type: object
-        additionalProperties:
-          type: object
-          properties:
-            gateway_addresses:
-              type: array
-              items:
-                type: string
-          description: >-
-            UndelegatingGatewayList is used as the Value of
-            `pending_undelegations`.
-
-            It is required to store a repeated list of strings as a map value.
-        description: >-
-          A map from sessionEndHeights to a list of Gateways.
-
-          The key is the height of the last block of the session during which
-          the
-
-          respective undelegation was committed.
-
-          The value is a list of gateways being undelegated from.
-
-          TODO_DOCUMENT(@red-0ne): Need to document the flow from this comment
-
-          so its clear to everyone why this is necessary;
-          https://github.com/pokt-network/poktroll/issues/476#issuecomment-2052639906.
-    title: >-
-      Application defines the type used to store an on-chain definition and
-      state for an application
-  poktroll.application.UndelegatingGatewayList:
-    type: object
-    properties:
-      gateway_addresses:
-        type: array
-        items:
-          type: string
-    description: |-
-      UndelegatingGatewayList is used as the Value of `pending_undelegations`.
-      It is required to store a repeated list of strings as a map value.
-  poktroll.session.QueryGetSessionResponse:
-    type: object
-    properties:
-      session:
-        type: object
-        properties:
-          header:
-            title: The header of the session containing lightweight data
-            type: object
-            properties:
-              application_address:
-                type: string
-                title: >-
-                  The Bech32 address of the application using cosmos'
-                  ScalarDescriptor to ensure deterministic encoding
-              service:
-                title: The service this session is for
-                type: object
-                properties:
-                  id:
-                    type: string
-                    description: Unique identifier for the service
-                    title: >-
-                      For example, what if we want to request a session for a
-                      certain service but with some additional configs that
-                      identify it?
-                  name:
-                    type: string
-                    description: (Optional) Semantic human readable name for the service
-                    title: >-
-                      TODO_TECHDEBT: Name is currently unused but acts as a
-                      reminder that an optional onchain representation of the
-                      service is necessary
-              session_id:
-                type: string
-                description: A unique pseudoranom ID for this session
-                title: >-
-                  NOTE: session_id can be derived from the above values using
-                  on-chain but is included in the header for convenience
-              session_start_block_height:
-                type: string
-                format: int64
-                title: The height at which this session started
-              session_end_block_height:
-                type: string
-                format: int64
-                description: >-
-                  Note that`session_end_block_height` is a derivative of
-                  (`start` + `num_blocks_per_session`)
-
-                  as goverened by on-chain params at the time of the session
-                  start.
-
-                  It is stored as an additional field to simplofy business logic
-                  in case
-
-                  the number of blocks_per_session changes during the session.
-
-
-                  The height at which this session ended, this is the last block
-                  of the session
-            description: >-
-              SessionHeader is a lightweight header for a session that can be
-              passed around.
-
-              It is the minimal amount of data required to hydrate & retrieve
-              all data relevant to the session.
-          session_id:
-            type: string
-            title: A unique pseudoranom ID for this session
-          session_number:
-            type: string
-            format: int64
-            title: The session number since genesis
-          num_blocks_per_session:
-            type: string
-            format: int64
-            title: The number of blocks per session when this session started
-          application:
-            title: A fully hydrated application object this session is for
-            type: object
-            properties:
-              address:
-                type: string
-                title: >-
-                  The Bech32 address of the application using cosmos'
-                  ScalarDescriptor to ensure deterministic encoding
-              stake:
-                title: The total amount of uPOKT the application has staked
-                type: object
-                properties:
-                  denom:
-                    type: string
-                  amount:
-                    type: string
-                description: >-
-                  Coin defines a token with a denomination and an amount.
-
-
-                  NOTE: The amount field is an Int which implements the custom
-                  method
-
-                  signatures required by gogoproto.
-              service_configs:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    service:
-                      title: The Service for which the application is configured
-                      type: object
-                      properties:
-                        id:
-                          type: string
-                          description: Unique identifier for the service
-                          title: >-
-                            For example, what if we want to request a session
-                            for a certain service but with some additional
-                            configs that identify it?
-                        name:
-                          type: string
-                          description: >-
-                            (Optional) Semantic human readable name for the
-                            service
-                          title: >-
-                            TODO_TECHDEBT: Name is currently unused but acts as
-                            a reminder that an optional onchain representation
-                            of the service is necessary
-                  title: >-
-                    ApplicationServiceConfig holds the service configuration the
-                    application stakes for
-                title: >-
-                  The list of services this appliccation is configured to
-                  request service for
-              delegatee_gateway_addresses:
-                type: array
-                items:
-                  type: string
-                description: >-
-                  TODO_TECHDEBT: Rename `delegatee_gateway_addresses` to
-                  `gateway_addresses_delegated_to`.
-
-                  Ensure to rename all relevant configs, comments, variables,
-                  function names, etc as well.
-
-
-                  The Bech32 encoded addresses for all delegatee Gateways, in a
-                  non-nullable slice
-              pending_undelegations:
-                type: object
-                additionalProperties:
-                  type: object
-                  properties:
-                    gateway_addresses:
-                      type: array
-                      items:
-                        type: string
-                  description: >-
-                    UndelegatingGatewayList is used as the Value of
-                    `pending_undelegations`.
-
-                    It is required to store a repeated list of strings as a map
-                    value.
-                description: >-
-                  A map from sessionEndHeights to a list of Gateways.
-
-                  The key is the height of the last block of the session during
-                  which the
-
-                  respective undelegation was committed.
-
-                  The value is a list of gateways being undelegated from.
-
-                  TODO_DOCUMENT(@red-0ne): Need to document the flow from this
-                  comment
-
-                  so its clear to everyone why this is necessary;
-                  https://github.com/pokt-network/poktroll/issues/476#issuecomment-2052639906.
-          suppliers:
-            type: array
-            items:
-              type: object
-              properties:
-                address:
-                  type: string
-                  title: >-
-                    The Bech32 address of the supplier using cosmos'
-                    ScalarDescriptor to ensure deterministic encoding
-                stake:
-                  title: The total amount of uPOKT the supplier has staked
-                  type: object
-                  properties:
-                    denom:
-                      type: string
-                    amount:
-                      type: string
-                  description: >-
-                    Coin defines a token with a denomination and an amount.
-
-
-                    NOTE: The amount field is an Int which implements the custom
-                    method
-
-                    signatures required by gogoproto.
-                services:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      service:
-                        title: The Service for which the supplier is configured
-                        type: object
-                        properties:
-                          id:
-                            type: string
-                            description: Unique identifier for the service
-                            title: >-
-                              For example, what if we want to request a session
-                              for a certain service but with some additional
-                              configs that identify it?
-                          name:
-                            type: string
-                            description: >-
-                              (Optional) Semantic human readable name for the
-                              service
-                            title: >-
-                              TODO_TECHDEBT: Name is currently unused but acts
-                              as a reminder that an optional onchain
-                              representation of the service is necessary
-                      endpoints:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            url:
-                              type: string
-                              title: URL of the endpoint
-                            rpc_type:
-                              title: Type of RPC exposed on the url above
-                              type: string
-                              enum:
-                                - UNKNOWN_RPC
-                                - GRPC
-                                - WEBSOCKET
-                                - JSON_RPC
-                                - REST
-                              default: UNKNOWN_RPC
-                              description: |-
-                                - UNKNOWN_RPC: Undefined RPC type
-                                 - GRPC: gRPC
-                                 - WEBSOCKET: WebSocket
-                                 - JSON_RPC: JSON-RPC
-                                 - REST: REST
-                            configs:
-                              type: array
-                              items:
-                                type: object
-                                properties:
-                                  key:
-                                    title: Config option key
-                                    type: string
-                                    enum:
-                                      - UNKNOWN_CONFIG
-                                      - TIMEOUT
-                                    default: UNKNOWN_CONFIG
-                                    description: >-
-                                      Enum to define configuration options
-
-                                      TODO_RESEARCH: Should these be configs,
-                                      SLAs or something else? There will be more
-                                      discussion once we get closer to
-                                      implementing on-chain QoS.
-
-                                       - UNKNOWN_CONFIG: Undefined config option
-                                       - TIMEOUT: Timeout setting
-                                  value:
-                                    type: string
-                                    title: Config option value
-                                title: >-
-                                  Key-value wrapper for config options, as proto
-                                  maps can't be keyed by enums
-                              title: >-
-                                Additional configuration options for the
-                                endpoint
-                          title: >-
-                            SupplierEndpoint message to hold service
-                            configuration details
-                        title: List of endpoints for the service
-                    title: >-
-                      SupplierServiceConfig holds the service configuration the
-                      supplier stakes for
-                  title: The service configs this supplier can support
-              description: >-
-                Supplier is the type defining the actor in Pocket Network that
-                provides RPC services.
-            title: A fully hydrated set of servicers that are serving the application
-        description: >-
-          Session is a fully hydrated session object that contains all the
-          information for the Session
-
-          and its parcipants.
-  poktroll.session.QueryParamsResponse:
+          authority is the address that controls the module (defaults to x/gov
+          unless overwritten).
+      name:
+        type: string
+      as_string:
+        type: string
+      as_int64:
+        type: string
+        format: int64
+      as_bytes:
+        type: string
+        format: byte
+    description: >-
+      MsgUpdateParam is the Msg/UpdateParam request type to update a single
+      param.
+  poktroll.shared.MsgUpdateParamResponse:
     type: object
     properties:
       params:
-        description: params holds all the parameters of this module.
         type: object
-    description: QueryParamsResponse is response type for the Query/Params RPC method.
-  poktroll.session.Session:
+        properties:
+          num_blocks_per_session:
+            type: string
+            format: uint64
+            description: >-
+              num_blocks_per_session is the number of blocks between the session
+              start & end heights.
+          claim_window_open_offset_blocks:
+            type: string
+            format: uint64
+            description: >-
+              claim_window_open_offset_blocks is the number of blocks after the
+              session grace
+
+              period height, at which the claim window opens.
+          claim_window_close_offset_blocks:
+            type: string
+            format: uint64
+            description: >-
+              claim_window_close_offset_blocks is the number of blocks after the
+              claim window
+
+              open height, at which the claim window closes.
+          proof_window_open_offset_blocks:
+            type: string
+            format: uint64
+            description: >-
+              proof_window_open_offset_blocks is the number of blocks after the
+              claim window
+
+              close height, at which the proof window opens.
+          proof_window_close_offset_blocks:
+            type: string
+            format: uint64
+            description: >-
+              proof_window_close_offset_blocks is the number of blocks after the
+              proof window
+
+              open height, at which the proof window closes.
+        description: Params defines the parameters for the module.
+    description: |-
+      MsgUpdateParamResponse defines the response structure for executing a
+      MsgUpdateParam message after a single param update.
+  poktroll.shared.MsgUpdateParams:
     type: object
     properties:
-      header:
-        title: The header of the session containing lightweight data
+      authority:
+        type: string
+        description: >-
+          authority is the address that controls the module (defaults to x/gov
+          unless overwritten).
+      params:
         type: object
         properties:
-          application_address:
+          num_blocks_per_session:
             type: string
-            title: >-
-              The Bech32 address of the application using cosmos'
-              ScalarDescriptor to ensure deterministic encoding
-          service:
-            title: The service this session is for
-            type: object
-            properties:
-              id:
-                type: string
-                description: Unique identifier for the service
-                title: >-
-                  For example, what if we want to request a session for a
-                  certain service but with some additional configs that identify
-                  it?
-              name:
-                type: string
-                description: (Optional) Semantic human readable name for the service
-                title: >-
-                  TODO_TECHDEBT: Name is currently unused but acts as a reminder
-                  that an optional onchain representation of the service is
-                  necessary
-          session_id:
-            type: string
-            description: A unique pseudoranom ID for this session
-            title: >-
-              NOTE: session_id can be derived from the above values using
-              on-chain but is included in the header for convenience
-          session_start_block_height:
-            type: string
-            format: int64
-            title: The height at which this session started
-          session_end_block_height:
-            type: string
-            format: int64
+            format: uint64
             description: >-
-              Note that`session_end_block_height` is a derivative of (`start` +
-              `num_blocks_per_session`)
+              num_blocks_per_session is the number of blocks between the session
+              start & end heights.
+          claim_window_open_offset_blocks:
+            type: string
+            format: uint64
+            description: >-
+              claim_window_open_offset_blocks is the number of blocks after the
+              session grace
 
-              as goverened by on-chain params at the time of the session start.
+              period height, at which the claim window opens.
+          claim_window_close_offset_blocks:
+            type: string
+            format: uint64
+            description: >-
+              claim_window_close_offset_blocks is the number of blocks after the
+              claim window
 
-              It is stored as an additional field to simplofy business logic in
-              case
+              open height, at which the claim window closes.
+          proof_window_open_offset_blocks:
+            type: string
+            format: uint64
+            description: >-
+              proof_window_open_offset_blocks is the number of blocks after the
+              claim window
 
-              the number of blocks_per_session changes during the session.
+              close height, at which the proof window opens.
+          proof_window_close_offset_blocks:
+            type: string
+            format: uint64
+            description: >-
+              proof_window_close_offset_blocks is the number of blocks after the
+              proof window
 
-
-              The height at which this session ended, this is the last block of
-              the session
-        description: >-
-          SessionHeader is a lightweight header for a session that can be passed
-          around.
-
-          It is the minimal amount of data required to hydrate & retrieve all
-          data relevant to the session.
-      session_id:
-        type: string
-        title: A unique pseudoranom ID for this session
-      session_number:
-        type: string
-        format: int64
-        title: The session number since genesis
+              open height, at which the proof window closes.
+        description: Params defines the parameters for the module.
+    description: MsgUpdateParams is the Msg/UpdateParams request type.
+  poktroll.shared.MsgUpdateParamsResponse:
+    type: object
+    description: |-
+      MsgUpdateParamsResponse defines the response structure for executing a
+      MsgUpdateParams message.
+  poktroll.shared.Params:
+    type: object
+    properties:
       num_blocks_per_session:
         type: string
-        format: int64
-        title: The number of blocks per session when this session started
-      application:
-        title: A fully hydrated application object this session is for
-        type: object
-        properties:
-          address:
-            type: string
-            title: >-
-              The Bech32 address of the application using cosmos'
-              ScalarDescriptor to ensure deterministic encoding
-          stake:
-            title: The total amount of uPOKT the application has staked
-            type: object
-            properties:
-              denom:
-                type: string
-              amount:
-                type: string
-            description: >-
-              Coin defines a token with a denomination and an amount.
+        format: uint64
+        description: >-
+          num_blocks_per_session is the number of blocks between the session
+          start & end heights.
+      claim_window_open_offset_blocks:
+        type: string
+        format: uint64
+        description: >-
+          claim_window_open_offset_blocks is the number of blocks after the
+          session grace
 
+          period height, at which the claim window opens.
+      claim_window_close_offset_blocks:
+        type: string
+        format: uint64
+        description: >-
+          claim_window_close_offset_blocks is the number of blocks after the
+          claim window
 
-              NOTE: The amount field is an Int which implements the custom
-              method
+          open height, at which the claim window closes.
+      proof_window_open_offset_blocks:
+        type: string
+        format: uint64
+        description: >-
+          proof_window_open_offset_blocks is the number of blocks after the
+          claim window
 
-              signatures required by gogoproto.
-          service_configs:
-            type: array
-            items:
-              type: object
-              properties:
-                service:
-                  title: The Service for which the application is configured
-                  type: object
-                  properties:
-                    id:
-                      type: string
-                      description: Unique identifier for the service
-                      title: >-
-                        For example, what if we want to request a session for a
-                        certain service but with some additional configs that
-                        identify it?
-                    name:
-                      type: string
-                      description: (Optional) Semantic human readable name for the service
-                      title: >-
-                        TODO_TECHDEBT: Name is currently unused but acts as a
-                        reminder that an optional onchain representation of the
-                        service is necessary
-              title: >-
-                ApplicationServiceConfig holds the service configuration the
-                application stakes for
-            title: >-
-              The list of services this appliccation is configured to request
-              service for
-          delegatee_gateway_addresses:
-            type: array
-            items:
-              type: string
-            description: >-
-              TODO_TECHDEBT: Rename `delegatee_gateway_addresses` to
-              `gateway_addresses_delegated_to`.
+          close height, at which the proof window opens.
+      proof_window_close_offset_blocks:
+        type: string
+        format: uint64
+        description: >-
+          proof_window_close_offset_blocks is the number of blocks after the
+          proof window
 
-              Ensure to rename all relevant configs, comments, variables,
-              function names, etc as well.
-
-
-              The Bech32 encoded addresses for all delegatee Gateways, in a
-              non-nullable slice
-          pending_undelegations:
-            type: object
-            additionalProperties:
-              type: object
-              properties:
-                gateway_addresses:
-                  type: array
-                  items:
-                    type: string
-              description: >-
-                UndelegatingGatewayList is used as the Value of
-                `pending_undelegations`.
-
-                It is required to store a repeated list of strings as a map
-                value.
-            description: >-
-              A map from sessionEndHeights to a list of Gateways.
-
-              The key is the height of the last block of the session during
-              which the
-
-              respective undelegation was committed.
-
-              The value is a list of gateways being undelegated from.
-
-              TODO_DOCUMENT(@red-0ne): Need to document the flow from this
-              comment
-
-              so its clear to everyone why this is necessary;
-              https://github.com/pokt-network/poktroll/issues/476#issuecomment-2052639906.
-      suppliers:
-        type: array
-        items:
-          type: object
-          properties:
-            address:
-              type: string
-              title: >-
-                The Bech32 address of the supplier using cosmos'
-                ScalarDescriptor to ensure deterministic encoding
-            stake:
-              title: The total amount of uPOKT the supplier has staked
-              type: object
-              properties:
-                denom:
-                  type: string
-                amount:
-                  type: string
-              description: >-
-                Coin defines a token with a denomination and an amount.
-
-
-                NOTE: The amount field is an Int which implements the custom
-                method
-
-                signatures required by gogoproto.
-            services:
-              type: array
-              items:
-                type: object
-                properties:
-                  service:
-                    title: The Service for which the supplier is configured
-                    type: object
-                    properties:
-                      id:
-                        type: string
-                        description: Unique identifier for the service
-                        title: >-
-                          For example, what if we want to request a session for
-                          a certain service but with some additional configs
-                          that identify it?
-                      name:
-                        type: string
-                        description: >-
-                          (Optional) Semantic human readable name for the
-                          service
-                        title: >-
-                          TODO_TECHDEBT: Name is currently unused but acts as a
-                          reminder that an optional onchain representation of
-                          the service is necessary
-                  endpoints:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        url:
-                          type: string
-                          title: URL of the endpoint
-                        rpc_type:
-                          title: Type of RPC exposed on the url above
-                          type: string
-                          enum:
-                            - UNKNOWN_RPC
-                            - GRPC
-                            - WEBSOCKET
-                            - JSON_RPC
-                            - REST
-                          default: UNKNOWN_RPC
-                          description: |-
-                            - UNKNOWN_RPC: Undefined RPC type
-                             - GRPC: gRPC
-                             - WEBSOCKET: WebSocket
-                             - JSON_RPC: JSON-RPC
-                             - REST: REST
-                        configs:
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              key:
-                                title: Config option key
-                                type: string
-                                enum:
-                                  - UNKNOWN_CONFIG
-                                  - TIMEOUT
-                                default: UNKNOWN_CONFIG
-                                description: >-
-                                  Enum to define configuration options
-
-                                  TODO_RESEARCH: Should these be configs, SLAs
-                                  or something else? There will be more
-                                  discussion once we get closer to implementing
-                                  on-chain QoS.
-
-                                   - UNKNOWN_CONFIG: Undefined config option
-                                   - TIMEOUT: Timeout setting
-                              value:
-                                type: string
-                                title: Config option value
-                            title: >-
-                              Key-value wrapper for config options, as proto
-                              maps can't be keyed by enums
-                          title: Additional configuration options for the endpoint
-                      title: >-
-                        SupplierEndpoint message to hold service configuration
-                        details
-                    title: List of endpoints for the service
-                title: >-
-                  SupplierServiceConfig holds the service configuration the
-                  supplier stakes for
-              title: The service configs this supplier can support
-          description: >-
-            Supplier is the type defining the actor in Pocket Network that
-            provides RPC services.
-        title: A fully hydrated set of servicers that are serving the application
-    description: >-
-      Session is a fully hydrated session object that contains all the
-      information for the Session
-
-      and its parcipants.
+          open height, at which the proof window closes.
+    description: Params defines the parameters for the module.
   poktroll.shared.ConfigOption:
     type: object
     properties:
@@ -26822,111 +25696,6 @@ definitions:
        - JSON_RPC: JSON-RPC
        - REST: REST
     title: Enum to define RPC types
-  poktroll.shared.Supplier:
-    type: object
-    properties:
-      address:
-        type: string
-        title: >-
-          The Bech32 address of the supplier using cosmos' ScalarDescriptor to
-          ensure deterministic encoding
-      stake:
-        title: The total amount of uPOKT the supplier has staked
-        type: object
-        properties:
-          denom:
-            type: string
-          amount:
-            type: string
-        description: |-
-          Coin defines a token with a denomination and an amount.
-
-          NOTE: The amount field is an Int which implements the custom method
-          signatures required by gogoproto.
-      services:
-        type: array
-        items:
-          type: object
-          properties:
-            service:
-              title: The Service for which the supplier is configured
-              type: object
-              properties:
-                id:
-                  type: string
-                  description: Unique identifier for the service
-                  title: >-
-                    For example, what if we want to request a session for a
-                    certain service but with some additional configs that
-                    identify it?
-                name:
-                  type: string
-                  description: (Optional) Semantic human readable name for the service
-                  title: >-
-                    TODO_TECHDEBT: Name is currently unused but acts as a
-                    reminder that an optional onchain representation of the
-                    service is necessary
-            endpoints:
-              type: array
-              items:
-                type: object
-                properties:
-                  url:
-                    type: string
-                    title: URL of the endpoint
-                  rpc_type:
-                    title: Type of RPC exposed on the url above
-                    type: string
-                    enum:
-                      - UNKNOWN_RPC
-                      - GRPC
-                      - WEBSOCKET
-                      - JSON_RPC
-                      - REST
-                    default: UNKNOWN_RPC
-                    description: |-
-                      - UNKNOWN_RPC: Undefined RPC type
-                       - GRPC: gRPC
-                       - WEBSOCKET: WebSocket
-                       - JSON_RPC: JSON-RPC
-                       - REST: REST
-                  configs:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        key:
-                          title: Config option key
-                          type: string
-                          enum:
-                            - UNKNOWN_CONFIG
-                            - TIMEOUT
-                          default: UNKNOWN_CONFIG
-                          description: >-
-                            Enum to define configuration options
-
-                            TODO_RESEARCH: Should these be configs, SLAs or
-                            something else? There will be more discussion once
-                            we get closer to implementing on-chain QoS.
-
-                             - UNKNOWN_CONFIG: Undefined config option
-                             - TIMEOUT: Timeout setting
-                        value:
-                          type: string
-                          title: Config option value
-                      title: >-
-                        Key-value wrapper for config options, as proto maps
-                        can't be keyed by enums
-                    title: Additional configuration options for the endpoint
-                title: SupplierEndpoint message to hold service configuration details
-              title: List of endpoints for the service
-          title: >-
-            SupplierServiceConfig holds the service configuration the supplier
-            stakes for
-        title: The service configs this supplier can support
-    description: >-
-      Supplier is the type defining the actor in Pocket Network that provides
-      RPC services.
   poktroll.shared.SupplierEndpoint:
     type: object
     properties:
@@ -26995,9 +25764,8 @@ definitions:
             type: string
             description: (Optional) Semantic human readable name for the service
             title: >-
-              TODO_TECHDEBT: Name is currently unused but acts as a reminder
-              that an optional onchain representation of the service is
-              necessary
+              TODO_BETA: Name is currently unused but acts as a reminder that an
+              optional onchain representation of the service is necessary
       endpoints:
         type: array
         items:
@@ -27055,155 +25823,6 @@ definitions:
     title: >-
       SupplierServiceConfig holds the service configuration the supplier stakes
       for
-  poktroll.shared.MsgUpdateParam:
-    type: object
-    properties:
-      authority:
-        type: string
-        description: >-
-          authority is the address that controls the module (defaults to x/gov
-          unless overwritten).
-      name:
-        type: string
-      as_string:
-        type: string
-      as_int64:
-        type: string
-        format: int64
-      as_bytes:
-        type: string
-        format: byte
-    description: >-
-      MsgUpdateParam is the Msg/UpdateParam request type to update a single
-      param.
-  poktroll.shared.MsgUpdateParamResponse:
-    type: object
-    properties:
-      params:
-        type: object
-        properties:
-          num_blocks_per_session:
-            type: string
-            format: uint64
-            description: >-
-              num_blocks_per_session is the number of blocks between the session
-              start & end heights.
-          claim_window_open_offset_blocks:
-            type: string
-            format: uint64
-            description: >-
-              claim_window_open_offset_blocks is the number of blocks after the
-              session grace
-
-              period height, at which the claim window opens.
-          claim_window_close_offset_blocks:
-            type: string
-            format: uint64
-            description: >-
-              claim_window_close_offset_blocks is the number of blocks after the
-              claim window
-
-              open height, at which the claim window closes.
-        description: Params defines the parameters for the module.
-    description: |-
-      MsgUpdateParamResponse defines the response structure for executing a
-      MsgUpdateParam message after a single param update.
-  poktroll.shared.MsgUpdateParams:
-    type: object
-    properties:
-      authority:
-        type: string
-        description: >-
-          authority is the address that controls the module (defaults to x/gov
-          unless overwritten).
-      params:
-        type: object
-        properties:
-          num_blocks_per_session:
-            type: string
-            format: uint64
-            description: >-
-              num_blocks_per_session is the number of blocks between the session
-              start & end heights.
-          claim_window_open_offset_blocks:
-            type: string
-            format: uint64
-            description: >-
-              claim_window_open_offset_blocks is the number of blocks after the
-              session grace
-
-              period height, at which the claim window opens.
-          claim_window_close_offset_blocks:
-            type: string
-            format: uint64
-            description: >-
-              claim_window_close_offset_blocks is the number of blocks after the
-              claim window
-
-              open height, at which the claim window closes.
-        description: Params defines the parameters for the module.
-    description: MsgUpdateParams is the Msg/UpdateParams request type.
-  poktroll.shared.MsgUpdateParamsResponse:
-    type: object
-    description: |-
-      MsgUpdateParamsResponse defines the response structure for executing a
-      MsgUpdateParams message.
-  poktroll.shared.Params:
-    type: object
-    properties:
-      num_blocks_per_session:
-        type: string
-        format: uint64
-        description: >-
-          num_blocks_per_session is the number of blocks between the session
-          start & end heights.
-      claim_window_open_offset_blocks:
-        type: string
-        format: uint64
-        description: >-
-          claim_window_open_offset_blocks is the number of blocks after the
-          session grace
-
-          period height, at which the claim window opens.
-      claim_window_close_offset_blocks:
-        type: string
-        format: uint64
-        description: >-
-          claim_window_close_offset_blocks is the number of blocks after the
-          claim window
-
-          open height, at which the claim window closes.
-    description: Params defines the parameters for the module.
-  poktroll.shared.QueryParamsResponse:
-    type: object
-    properties:
-      params:
-        description: params holds all the parameters of this module.
-        type: object
-        properties:
-          num_blocks_per_session:
-            type: string
-            format: uint64
-            description: >-
-              num_blocks_per_session is the number of blocks between the session
-              start & end heights.
-          claim_window_open_offset_blocks:
-            type: string
-            format: uint64
-            description: >-
-              claim_window_open_offset_blocks is the number of blocks after the
-              session grace
-
-              period height, at which the claim window opens.
-          claim_window_close_offset_blocks:
-            type: string
-            format: uint64
-            description: >-
-              claim_window_close_offset_blocks is the number of blocks after the
-              claim window
-
-              open height, at which the claim window closes.
-    description: QueryParamsResponse is response type for the Query/Params RPC method.
   poktroll.supplier.MsgStakeSupplier:
     type: object
     properties:
@@ -27248,9 +25867,9 @@ definitions:
                   type: string
                   description: (Optional) Semantic human readable name for the service
                   title: >-
-                    TODO_TECHDEBT: Name is currently unused but acts as a
-                    reminder that an optional onchain representation of the
-                    service is necessary
+                    TODO_BETA: Name is currently unused but acts as a reminder
+                    that an optional onchain representation of the service is
+                    necessary
             endpoints:
               type: array
               items:
@@ -27422,6 +26041,83 @@ definitions:
           The amount of upokt that a compute unit should translate to when
           settling a session.
     description: Params defines the parameters for the tokenomics module.
+  cosmos.base.query.v1beta1.PageRequest:
+    type: object
+    properties:
+      key:
+        type: string
+        format: byte
+        description: |-
+          key is a value returned in PageResponse.next_key to begin
+          querying the next page most efficiently. Only one of offset or key
+          should be set.
+      offset:
+        type: string
+        format: uint64
+        description: |-
+          offset is a numeric offset that can be used when key is unavailable.
+          It is less efficient than using key. Only one of offset or key should
+          be set.
+      limit:
+        type: string
+        format: uint64
+        description: >-
+          limit is the total number of results to be returned in the result
+          page.
+
+          If left empty it will default to a value to be set by each app.
+      count_total:
+        type: boolean
+        description: >-
+          count_total is set to true  to indicate that the result set should
+          include
+
+          a count of the total number of items available for pagination in UIs.
+
+          count_total is only respected when offset is used. It is ignored when
+          key
+
+          is set.
+      reverse:
+        type: boolean
+        description: >-
+          reverse is set to true if results are to be returned in the descending
+          order.
+
+
+          Since: cosmos-sdk 0.43
+    description: |-
+      message SomeRequest {
+               Foo some_parameter = 1;
+               PageRequest pagination = 2;
+       }
+    title: |-
+      PageRequest is to be embedded in gRPC request messages for efficient
+      pagination. Ex:
+  cosmos.base.query.v1beta1.PageResponse:
+    type: object
+    properties:
+      next_key:
+        type: string
+        format: byte
+        description: |-
+          next_key is the key to be passed to PageRequest.key to
+          query the next page most efficiently. It will be empty if
+          there are no more results.
+      total:
+        type: string
+        format: uint64
+        title: |-
+          total is total number of results available if PageRequest.count_total
+          was set, its value is undefined otherwise
+    description: |-
+      PageResponse is to be embedded in gRPC response messages where the
+      corresponding request message has used PageRequest.
+
+       message SomeResponse {
+               repeated Bar results = 1;
+               PageResponse page = 2;
+       }
   poktroll.tokenomics.QueryAllRelayMiningDifficultyResponse:
     type: object
     properties:
