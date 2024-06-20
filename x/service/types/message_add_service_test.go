@@ -37,10 +37,17 @@ func TestMsgAddService_ValidateBasic(t *testing.T) {
 			},
 			expectedErr: ErrServiceMissingName,
 		}, {
+			desc: "valid service supplier address - zero compute units per relay",
+			msg: MsgAddService{
+				Address: sample.AccAddress(),
+				Service: sharedtypes.Service{Id: "svc1", Name: "service name", ComputeUnitsPerRelay: 0},
+			},
+			expectedErr: ErrServiceInvalidComputUnitsPerRelay,
+		}, {
 			desc: "valid service supplier address and service",
 			msg: MsgAddService{
 				Address: sample.AccAddress(),
-				Service: sharedtypes.Service{Id: "svc1", Name: "service name"},
+				Service: sharedtypes.Service{Id: "svc1", Name: "service name", ComputeUnitsPerRelay: 1},
 			},
 			expectedErr: nil,
 		},
@@ -48,6 +55,42 @@ func TestMsgAddService_ValidateBasic(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
 			err := test.msg.ValidateBasic()
+			if test.expectedErr != nil {
+				require.ErrorIs(t, err, test.expectedErr)
+				return
+			}
+			require.NoError(t, err)
+		})
+	}
+}
+
+func TestValidateComputeUnitsPerRelay(t *testing.T) {
+	tests := []struct {
+		desc                 string
+		computeUnitsPerRelay uint64
+		expectedErr          error
+	}{
+		{
+			desc:                 "zero compute units per relay",
+			computeUnitsPerRelay: 0,
+			expectedErr:          ErrServiceInvalidComputUnitsPerRelay,
+		}, {
+			desc:                 "valid compute units per relay",
+			computeUnitsPerRelay: 1,
+			expectedErr:          nil,
+		}, {
+			desc:                 "max compute units per relay",
+			computeUnitsPerRelay: ComputeUnitsPerRelayMax,
+			expectedErr:          nil,
+		}, {
+			desc:                 "compute units per relay greater than max",
+			computeUnitsPerRelay: ComputeUnitsPerRelayMax + 1,
+			expectedErr:          ErrServiceInvalidComputUnitsPerRelay,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			err := ValidateComputeUnitsPerRelay(test.computeUnitsPerRelay)
 			if test.expectedErr != nil {
 				require.ErrorIs(t, err, test.expectedErr)
 				return

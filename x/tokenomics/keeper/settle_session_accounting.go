@@ -2,9 +2,8 @@ package keeper
 
 import (
 	"context"
-	"fmt"
-
 	math "cosmossdk.io/math"
+	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/smt"
 
@@ -96,7 +95,7 @@ func (k Keeper) SettleSessionAccounting(
 	logger.Info(fmt.Sprintf("About to start settling claim for %d compute units", claimComputeUnits))
 
 	// Calculate the amount of tokens to mint & burn
-	settlementAmt = k.getCoinFromComputeUnits(ctx, root)
+	settlementAmt = k.computeUnitsToCoins(ctx, root, sessionHeader.Service.ComputeUnitsPerRelay)
 	settlementAmtuPOKT := sdk.NewCoins(settlementAmt)
 
 	logger.Info(fmt.Sprintf(
@@ -177,10 +176,12 @@ func (k Keeper) SettleSessionAccounting(
 	return nil
 }
 
-func (k Keeper) getCoinFromComputeUnits(ctx context.Context, root smt.MerkleRoot) sdk.Coin {
+// computeUnitsToCoins calculates the amount of uPOKT to mint based on the root sum (number of relays), the ComputeUnitsPerTokenMultiplier tokenomics param, and the service-specific ComputeUnitsPerRelay
+func (k Keeper) computeUnitsToCoins(ctx context.Context, root smt.MerkleRoot, computeUnitsPerRelay uint64) sdk.Coin {
 	// Retrieve the existing tokenomics params
 	params := k.GetParams(ctx)
 
-	upokt := math.NewInt(int64(root.Sum() * params.ComputeUnitsToTokensMultiplier))
+	claimedComputeUnits := root.Sum()
+	upokt := math.NewInt(int64(claimedComputeUnits * computeUnitsPerRelay * params.ComputeUnitsToTokensMultiplier))
 	return sdk.NewCoin("upokt", upokt)
 }
