@@ -162,7 +162,7 @@ params_update_proof_new_parameter_name: ## Update the proof module new_parameter
 
 ### 6. Create a new JSON File for the Individual Parameter Update
 
-Create a new JSON file (e.g., `proof_new_parameter_name.json`) in the appropriate
+Create a new JSON file (e.g., `proof_new_parameter_name.json`) in the tools/scripts/params
 directory to specify how to update the new parameter.
 
 ```json
