@@ -77,6 +77,8 @@ func (sqc *SharedKeeperQueryClient) GetProofWindowOpenHeight(
 	return shared.GetProofWindowOpenHeight(&sharedParams, queryHeight), nil
 }
 
+// GetEarliestClaimCommitHeight returns the earliest block height at which a claim
+// for the session that includes queryHeight can be committed for a given supplier.
 func (sqc *SharedKeeperQueryClient) GetEarliestClaimCommitHeight(
 	ctx context.Context,
 	queryHeight int64,
@@ -99,6 +101,8 @@ func (sqc *SharedKeeperQueryClient) GetEarliestClaimCommitHeight(
 	), nil
 }
 
+// GetEarliestProofCommitHeight returns the earliest block height at which a proof
+// for the session that includes queryHeight can be committed for a given supplier.
 func (sqc *SharedKeeperQueryClient) GetEarliestProofCommitHeight(
 	ctx context.Context,
 	queryHeight int64,
