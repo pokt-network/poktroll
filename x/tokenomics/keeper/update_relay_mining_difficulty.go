@@ -3,6 +3,7 @@ package keeper
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
 	"fmt"
 	"math"
 
@@ -12,6 +13,10 @@ import (
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
+
+// TODO_UPNET(@Olshansk, #542): Add telemetry that will enable:
+// 1. Visualizing a multi-line chart of "Relays EMA per Service" (title) of "Relay EMA" (y-axis) vs block/time (x-axis) and being able to select each service.
+// 1. Visualizing a multi-line chart of "Relay Mining Difficulty per service" (title) of "Relay EMA" (y-axis) vs block/time (x-axis) and being able to select each service.
 
 const (
 	// Exponential moving average (ema) smoothing factor, commonly known as alpha.
@@ -72,17 +77,31 @@ func (k Keeper) UpdateRelayMiningDifficulty(
 		}
 		k.SetRelayMiningDifficulty(ctx, newDifficulty)
 
-		// Output the appropriate log message based on whether the difficulty was
-		// initialized, updated or unchanged.
-		if !found {
-			logger.Info(fmt.Sprintf("Initialized RelayMiningDifficulty for service %s at height %d with difficulty %x", serviceId, sdkCtx.BlockHeight(), newDifficulty.TargetHash))
-			continue
-		} else if !bytes.Equal(prevDifficulty.TargetHash, newDifficulty.TargetHash) {
-			// TODO_BLOCKER(@Olshansk, #542): Emit an event for the updated difficulty.
-			logger.Info(fmt.Sprintf("Updated RelayMiningDifficulty for service %s at height %d from %x to %x", serviceId, sdkCtx.BlockHeight(), prevDifficulty.TargetHash, newDifficulty.TargetHash))
-		} else {
-			logger.Info(fmt.Sprintf("No change in RelayMiningDifficulty for service %s at height %d. Current difficulty: %x", serviceId, sdkCtx.BlockHeight(), newDifficulty.TargetHash))
+		// Emit an event for the updated relay mining difficulty regardless of
+		// whether the difficulty changed or not.
+
+		relayMiningDifficultyUpdateEvent := types.EventRelayMiningDifficultyUpdated{
+			ServiceId:                serviceId,
+			PrevTargetHashHexEncoded: hex.EncodeToString(prevDifficulty.TargetHash),
+			NewTargetHashHexEncoded:  hex.EncodeToString(newDifficulty.TargetHash),
+			PrevNumRelaysEma:         prevDifficulty.NumRelaysEma,
+			NewNumRelaysEma:          newDifficulty.NumRelaysEma,
 		}
+		if err := sdkCtx.EventManager().EmitTypedEvent(&relayMiningDifficultyUpdateEvent); err != nil {
+			return err
+		}
+
+		// Output the appropriate log message based on whether the difficulty was initialized, updated or unchanged.
+		var logMessage string
+		switch {
+		case !found:
+			logMessage = fmt.Sprintf("Initialized RelayMiningDifficulty for service %s at height %d with difficulty %x", serviceId, sdkCtx.BlockHeight(), newDifficulty.TargetHash)
+		case !bytes.Equal(prevDifficulty.TargetHash, newDifficulty.TargetHash):
+			logMessage = fmt.Sprintf("Updated RelayMiningDifficulty for service %s at height %d from %x to %x", serviceId, sdkCtx.BlockHeight(), prevDifficulty.TargetHash, newDifficulty.TargetHash)
+		default:
+			logMessage = fmt.Sprintf("No change in RelayMiningDifficulty for service %s at height %d. Current difficulty: %x", serviceId, sdkCtx.BlockHeight(), newDifficulty.TargetHash)
+		}
+		logger.Info(logMessage)
 	}
 
 	return nil

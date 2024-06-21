@@ -53,9 +53,13 @@ func (r sdkRelayClient) SendRequest(
 	bodyReader := io.NopCloser(bytes.NewReader(requestBz))
 	defer bodyReader.Close()
 
+	header := http.Header{}
+	header.Set("Content-Type", "application/json")
+
 	request := &http.Request{
 		Method: http.MethodPost,
 		Body:   bodyReader,
+		Header: header,
 		URL:    requestUrl,
 	}
 

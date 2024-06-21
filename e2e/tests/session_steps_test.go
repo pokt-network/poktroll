@@ -10,6 +10,7 @@ import (
 
 	"cosmossdk.io/depinject"
 	abci "github.com/cometbft/cometbft/abci/types"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/client"
@@ -17,6 +18,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
+	testutilevents "github.com/pokt-network/poktroll/testutil/events"
 	"github.com/pokt-network/poktroll/testutil/testclient"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
@@ -25,10 +27,12 @@ import (
 const (
 	// eventTimeout is the duration of time to wait after sending a valid tx
 	// before the test should time out (fail).
-	eventTimeout = 60 * time.Second
+	eventTimeout = 100 * time.Second
 	// testServiceId is the service ID used for testing purposes that is
 	// expected to be available in LocalNet.
 	testServiceId = "anvil"
+	// defaultJSONPRCPath is the default path used for sending JSON-RPC relay requests.
+	defaultJSONPRCPath = ""
 
 	// txSenderEventSubscriptionQueryFmt is the format string which yields the
 	// cosmos-sdk event subscription "query" string for a given sender address.
@@ -164,13 +168,23 @@ func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBeSuccess
 		if event.Type != "poktroll.tokenomics.EventClaimSettled" {
 			return false
 		}
-		claimSettledEvent := s.abciToClaimSettledEvent(event)
+
+		// Parse the event
+		testutilevents.QuoteEventMode(event)
+		typedEvent, err := cosmostypes.ParseTypedEvent(*event)
+		require.NoError(s, err)
+		require.NotNil(s, typedEvent)
+		claimSettledEvent, ok := typedEvent.(*tokenomicstypes.EventClaimSettled)
+		require.True(s, ok)
+
+		// Assert that the claim was settled for the correct application, supplier, and service.
 		claim := claimSettledEvent.Claim
 		require.Equal(s, app.Address, claim.SessionHeader.ApplicationAddress)
 		require.Equal(s, supplier.Address, claim.SupplierAddress)
 		require.Equal(s, serviceId, claim.SessionHeader.Service.Id)
 		require.Greater(s, claimSettledEvent.ComputeUnits, uint64(0), "compute units should be greater than 0")
 		s.Logf("Claim settled for %d compute units w/ proof requirement: %t\n", claimSettledEvent.ComputeUnits, claimSettledEvent.ProofRequired)
+
 		return true
 	}
 
@@ -192,7 +206,7 @@ func (s *suite) sendRelaysForSession(
 
 	for i := 0; i < relayLimit; i++ {
 		s.Logf("Sending relay %d \n", i)
-		s.TheApplicationSendsTheSupplierARequestForServiceWithData(appName, supplierName, serviceId, data)
+		s.TheApplicationSendsTheSupplierARequestForServiceWithPathAndData(appName, supplierName, serviceId, defaultJSONPRCPath, data)
 		s.TheApplicationReceivesASuccessfulRelayResponseSignedBy(appName, supplierName)
 	}
 }
@@ -233,7 +247,7 @@ func (s *suite) waitForTxResultEvent(targetAction string) {
 
 	select {
 	case <-time.After(eventTimeout):
-		s.Fatalf("timed out waiting for message with action %q", targetAction)
+		s.Fatalf("ERROR: timed out waiting for message with action %q", targetAction)
 	case <-ctx.Done():
 		s.Log("Success; message detected before timeout.")
 	}
@@ -278,47 +292,8 @@ func (s *suite) waitForNewBlockEvent(
 
 	select {
 	case <-time.After(eventTimeout):
-		s.Fatalf("timed out waiting for NewBlock event")
+		s.Fatalf("ERROR: timed out waiting for NewBlock event")
 	case <-ctx.Done():
 		s.Log("Success; message detected before timeout.")
 	}
-}
-
-// abciToClaimSettledEvent converts an abci.Event to a tokenomics.EventClaimSettled
-//
-
-func (s *suite) abciToClaimSettledEvent(event *abci.Event) *tokenomicstypes.EventClaimSettled {
-	var claimSettledEvent tokenomicstypes.EventClaimSettled
-
-	// TODO_TECHDEBT: Investigate why `cosmostypes.ParseTypedEvent(*event)` throws
-	// an error where cosmostypes is imported from "github.com/cosmos/cosmos-sdk/types"
-	// resulting in the following error:
-	// 'json: error calling MarshalJSON for type json.RawMessage: invalid character 'E' looking for beginning of value'
-	// typedEvent, err := cosmostypes.ParseTypedEvent(*event)
-
-	for _, attr := range event.Attributes {
-		switch string(attr.Key) {
-		case "claim":
-			var claim prooftypes.Claim
-			if err := s.cdc.UnmarshalJSON([]byte(attr.Value), &claim); err != nil {
-				s.Fatalf("Failed to unmarshal claim: %v", err)
-			}
-			claimSettledEvent.Claim = &claim
-		case "compute_units":
-			value := string(attr.Value)
-			value = value[1 : len(value)-1] // Remove surrounding quotes
-			computeUnits, err := strconv.ParseUint(value, 10, 64)
-			if err != nil {
-				s.Fatalf("Failed to parse compute_units: %v", err)
-			}
-			claimSettledEvent.ComputeUnits = computeUnits
-		case "proof_required":
-			proofRequired, err := strconv.ParseBool(string(attr.Value))
-			if err != nil {
-				s.Fatalf("Failed to parse proof_required: %v", err)
-			}
-			claimSettledEvent.ProofRequired = proofRequired
-		}
-	}
-	return &claimSettledEvent
 }

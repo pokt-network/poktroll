@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
-	testutilproof "github.com/pokt-network/poktroll/testutil/proof"
+	testproof "github.com/pokt-network/poktroll/testutil/proof"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	testsession "github.com/pokt-network/poktroll/testutil/session"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -22,7 +22,7 @@ import (
 )
 
 func TestSettleSessionAccounting_HandleAppGoingIntoDebt(t *testing.T) {
-	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t)
+	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil)
 
 	// Add a new application
 	appStake := types.NewCoin("upokt", math.NewInt(1000000))
@@ -52,7 +52,7 @@ func TestSettleSessionAccounting_HandleAppGoingIntoDebt(t *testing.T) {
 			SessionStartBlockHeight: 1,
 			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
 		},
-		RootHash: testutilproof.SmstRootWithSum(appStake.Amount.Uint64() + 1), // More than the app stake
+		RootHash: testproof.SmstRootWithSum(appStake.Amount.Uint64() + 1), // More than the app stake
 	}
 
 	err := keepers.SettleSessionAccounting(ctx, &claim)
@@ -93,7 +93,7 @@ func TestSettleSessionAccounting_AppNotFound(t *testing.T) {
 			SessionStartBlockHeight: 1,
 			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
 		},
-		RootHash: testutilproof.SmstRootWithSum(42),
+		RootHash: testproof.SmstRootWithSum(42),
 	}
 
 	err := keeper.SettleSessionAccounting(ctx, &claim)
@@ -144,7 +144,7 @@ func TestSettleSessionAccounting_InvalidRoot(t *testing.T) {
 		{
 			desc: "correct size and a valid value",
 			root: func() []byte {
-				root := testutilproof.SmstRootWithSum(42)
+				root := testproof.SmstRootWithSum(42)
 				return root[:]
 			}(),
 			errExpected: false,
@@ -162,7 +162,7 @@ func TestSettleSessionAccounting_InvalidRoot(t *testing.T) {
 			}()
 
 			// Setup claim by copying the testproof.BaseClaim and updating the root
-			claim := testutilproof.BaseClaim(appAddr, supplierAddr, 0)
+			claim := testproof.BaseClaim(appAddr, supplierAddr, 0)
 			claim.RootHash = smt.MerkleRoot(test.root[:])
 
 			// Execute test function
@@ -199,7 +199,7 @@ func TestSettleSessionAccounting_InvalidClaim(t *testing.T) {
 		{
 			desc: "Valid Claim",
 			claim: func() *prooftypes.Claim {
-				claim := testutilproof.BaseClaim(appAddr, supplierAddr, 42)
+				claim := testproof.BaseClaim(appAddr, supplierAddr, 42)
 				return &claim
 			}(),
 			errExpected: false,
@@ -213,7 +213,7 @@ func TestSettleSessionAccounting_InvalidClaim(t *testing.T) {
 		{
 			desc: "Claim with nil session header",
 			claim: func() *prooftypes.Claim {
-				claim := testutilproof.BaseClaim(appAddr, supplierAddr, 42)
+				claim := testproof.BaseClaim(appAddr, supplierAddr, 42)
 				claim.SessionHeader = nil
 				return &claim
 			}(),
@@ -223,7 +223,7 @@ func TestSettleSessionAccounting_InvalidClaim(t *testing.T) {
 		{
 			desc: "Claim with invalid session id",
 			claim: func() *prooftypes.Claim {
-				claim := testutilproof.BaseClaim(appAddr, supplierAddr, 42)
+				claim := testproof.BaseClaim(appAddr, supplierAddr, 42)
 				claim.SessionHeader.SessionId = ""
 				return &claim
 			}(),
@@ -233,7 +233,7 @@ func TestSettleSessionAccounting_InvalidClaim(t *testing.T) {
 		{
 			desc: "Claim with invalid application address",
 			claim: func() *prooftypes.Claim {
-				claim := testutilproof.BaseClaim(appAddr, supplierAddr, 42)
+				claim := testproof.BaseClaim(appAddr, supplierAddr, 42)
 				claim.SessionHeader.ApplicationAddress = "invalid address"
 				return &claim
 			}(),
@@ -243,7 +243,7 @@ func TestSettleSessionAccounting_InvalidClaim(t *testing.T) {
 		{
 			desc: "Claim with invalid supplier address",
 			claim: func() *prooftypes.Claim {
-				claim := testutilproof.BaseClaim(appAddr, supplierAddr, 42)
+				claim := testproof.BaseClaim(appAddr, supplierAddr, 42)
 				claim.SupplierAddress = "invalid address"
 				return &claim
 			}(),

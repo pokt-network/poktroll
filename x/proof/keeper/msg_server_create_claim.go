@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"errors"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -10,16 +11,29 @@ import (
 	"github.com/pokt-network/poktroll/x/proof/types"
 )
 
-func (k msgServer) CreateClaim(ctx context.Context, msg *types.MsgCreateClaim) (*types.MsgCreateClaimResponse, error) {
+func (k msgServer) CreateClaim(
+	ctx context.Context,
+	msg *types.MsgCreateClaim,
+) (_ *types.MsgCreateClaimResponse, err error) {
 	// TODO_BLOCKER(@bryanchriswhite): Prevent Claim upserts after the ClaimWindow is closed.
 	// TODO_BLOCKER(@bryanchriswhite): Validate the signature on the Claim message corresponds to the supplier before Upserting.
 
-	isSuccessful := false
-	defer telemetry.EventSuccessCounter(
-		"create_claim",
-		telemetry.DefaultCounterFn,
-		func() bool { return isSuccessful },
-	)
+	// Declare claim to reference in telemetry.
+	var claim types.Claim
+
+	// Defer telemetry calls so that they reference the final values the relevant variables.
+	defer func() {
+		// TODO_IMPROVE: We could track on-chain relays here with claim.GetNumRelays().
+		numComputeUnits, deferredErr := claim.GetNumComputeUnits()
+		err = errors.Join(err, deferredErr)
+
+		telemetry.ClaimCounter(telemetry.ClaimProofStageClaimed, 1, err)
+		telemetry.ClaimComputeUnitsCounter(
+			telemetry.ClaimProofStageClaimed,
+			numComputeUnits,
+			err,
+		)
+	}()
 
 	logger := k.Logger().With("method", "CreateClaim")
 	logger.Info("creating claim")
@@ -67,8 +81,8 @@ func (k msgServer) CreateClaim(ctx context.Context, msg *types.MsgCreateClaim) (
 
 	logger.Info("validated claim")
 
-	// Construct and upsert claim after all validation.
-	claim := types.Claim{
+	// Assign and upsert claim after all validation.
+	claim = types.Claim{
 		SupplierAddress: msg.GetSupplierAddress(),
 		SessionHeader:   sessionHeader,
 		RootHash:        msg.GetRootHash(),
@@ -81,7 +95,6 @@ func (k msgServer) CreateClaim(ctx context.Context, msg *types.MsgCreateClaim) (
 
 	logger.Info("created new claim")
 
-	isSuccessful = true
 	// TODO_BETA: return the claim in the response.
 	return &types.MsgCreateClaimResponse{}, nil
 }

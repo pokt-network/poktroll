@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"hash"
 
@@ -49,7 +50,10 @@ func init() {
 // to correspond to the supplier signing the proof. For example, a single entity
 // could (theoretically) batch multiple proofs (signed by the corresponding supplier)
 // into one transaction to save on transaction fees.
-func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (*types.MsgSubmitProofResponse, error) {
+func (k msgServer) SubmitProof(
+	ctx context.Context,
+	msg *types.MsgSubmitProof,
+) (_ *types.MsgSubmitProofResponse, err error) {
 	// TODO_MAINNET: A potential issue with doing proof validation inside
 	// `SubmitProof` is that we will not be storing false proofs on-chain (e.g. for slashing purposes).
 	// This could be considered a feature (e.g. less state bloat against sybil attacks)
@@ -58,12 +62,22 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 	logger := k.Logger().With("method", "SubmitProof")
 	logger.Info("About to start submitting proof")
 
-	isSuccessful := false
-	defer telemetry.EventSuccessCounter(
-		"submit_proof",
-		telemetry.DefaultCounterFn,
-		func() bool { return isSuccessful },
-	)
+	// Declare claim to reference in telemetry.
+	claim := new(types.Claim)
+
+	// Defer telemetry calls so that they reference the final values the relevant variables.
+	defer func() {
+		// TODO_IMPROVE: We could track on-chain relays here with claim.GetNumRelays().
+		numComputeUnits, deferredErr := claim.GetNumComputeUnits()
+		err = errors.Join(err, deferredErr)
+
+		telemetry.ClaimCounter(telemetry.ClaimProofStageProven, 1, err)
+		telemetry.ClaimComputeUnitsCounter(
+			telemetry.ClaimProofStageProven,
+			numComputeUnits,
+			err,
+		)
+	}()
 
 	/*
 		TODO_BLOCKER(@bryanchriswhite): Document these steps in proof
@@ -228,10 +242,11 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 
 	// Retrieve the corresponding claim for the proof submitted so it can be
 	// used in the proof validation below.
-	claim, err := k.queryAndValidateClaimForProof(ctx, msg)
+	claim, err = k.queryAndValidateClaimForProof(ctx, msg)
 	if err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
+
 	logger.Debug("successfully retrieved and validated claim")
 
 	// Verify the proof's closest merkle proof.
@@ -254,7 +269,6 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 	k.UpsertProof(ctx, proof)
 	logger.Info("successfully upserted the proof")
 
-	isSuccessful = true
 	return &types.MsgSubmitProofResponse{}, nil
 }
 
@@ -455,12 +469,9 @@ func (k msgServer) validateClosestPath(
 	}
 	blockHash := k.sessionKeeper.GetBlockHash(ctx, sessionGracePeriodEndHeight)
 
-	// TODO_BETA: Investigate "proof for the path provided does not match one expected by the on-chain protocol"
-	// error that may occur due to block height differing from the off-chain part.
-	fmt.Println("E2E_DEBUG: height for block hash when verifying the proof", sessionGracePeriodEndHeight, sessionHeader.GetSessionId())
-
 	expectedProofPath := GetPathForProof(blockHash, sessionHeader.GetSessionId())
 	if !bytes.Equal(proof.Path, expectedProofPath) {
+		fmt.Println("TODO_BETA: Investigate 'ErrProofInvalidProof' may occur due to block height differing from the off-chain part when height for block hash.")
 		return types.ErrProofInvalidProof.Wrapf(
 			"the proof for the path provided (%x) does not match one expected by the on-chain protocol (%x)",
 			proof.Path,

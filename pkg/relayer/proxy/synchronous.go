@@ -1,7 +1,7 @@
 package proxy
 
 import (
-	"compress/gzip"
+	"bytes"
 	"context"
 	"crypto/tls"
 	"fmt"
@@ -107,26 +107,24 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 	ctx := request.Context()
 
 	sync.logger.Debug().Msg("serving synchronous relay request")
-	listenAddress := sync.serverConfig.ListenAddress
 
 	// Extract the relay request from the request body.
 	sync.logger.Debug().Msg("extracting relay request from request body")
 	relayRequest, err := sync.newRelayRequest(request)
 	request.Body.Close()
 	if err != nil {
-		sync.replyWithError(ctx, []byte{}, writer, listenAddress, "", err)
+		sync.replyWithError(err, nil, writer)
 		sync.logger.Warn().Err(err).Msg("failed serving relay request")
 		return
 	}
 
 	if err := relayRequest.ValidateBasic(); err != nil {
-		sync.replyWithError(ctx, relayRequest.Payload, writer, listenAddress, "", err)
+		sync.replyWithError(err, relayRequest, writer)
 		sync.logger.Warn().Err(err).Msg("failed validating relay response")
 		return
 	}
 
 	supplierService := relayRequest.Meta.SessionHeader.Service
-	requestPayload := relayRequest.Payload
 
 	originHost := request.Host
 	// When the proxy is behind a reverse proxy, or is getting its requests from
@@ -149,7 +147,10 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 	// Add the http scheme to the originHost to parse it as a URL.
 	originHostUrl, err := url.Parse(fmt.Sprintf("http://%s", originHost))
 	if err != nil {
-		sync.replyWithError(ctx, requestPayload, writer, listenAddress, supplierService.Id, err)
+		// If the originHost cannot be parsed, reply with an internal error so that
+		// the original error is not exposed to the client.
+		clientError := ErrRelayerProxyInternalError.Wrap(err.Error())
+		sync.replyWithError(clientError, relayRequest, writer)
 		return
 	}
 
@@ -175,14 +176,7 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 	}
 
 	if serviceConfig == nil {
-		sync.replyWithError(
-			ctx,
-			requestPayload,
-			writer,
-			listenAddress,
-			supplierService.Id,
-			ErrRelayerProxyServiceEndpointNotHandled,
-		)
+		sync.replyWithError(ErrRelayerProxyServiceEndpointNotHandled, relayRequest, writer)
 		return
 	}
 
@@ -201,14 +195,17 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 	relay, err := sync.serveHTTP(ctx, serviceConfig, supplierService, relayRequest)
 	if err != nil {
 		// Reply with an error if the relay could not be served.
-		sync.replyWithError(ctx, requestPayload, writer, listenAddress, supplierService.Id, err)
+		sync.replyWithError(err, relayRequest, writer)
 		sync.logger.Warn().Err(err).Msg("failed serving relay request")
 		return
 	}
 
 	// Send the relay response to the client.
 	if err := sync.sendRelayResponse(relay.Res, writer); err != nil {
-		sync.replyWithError(ctx, requestPayload, writer, listenAddress, supplierService.Id, err)
+		// If the originHost cannot be parsed, reply with an internal error so that
+		// the original error is not exposed to the client.
+		clientError := ErrRelayerProxyInternalError.Wrap(err.Error())
+		sync.replyWithError(clientError, relayRequest, writer)
 		sync.logger.Warn().Err(err).Msg("failed sending relay response")
 		return
 	}
@@ -248,7 +245,7 @@ func (sync *synchronousRPCServer) serveHTTP(
 	}
 
 	// Deserialize the relay request payload to get the upstream HTTP request.
-	relayHTTPRequest, err := sdktypes.DeserializeHTTPRequest(relayRequest.Payload)
+	poktHTTPRequest, err := sdktypes.DeserializeHTTPRequest(relayRequest.Payload)
 	if err != nil {
 		return nil, err
 	}
@@ -271,7 +268,11 @@ func (sync *synchronousRPCServer) serveHTTP(
 	// backend's while preserving the other components.
 	// This is to ensure that the request complies with the requested service's API,
 	// while being served from another location.
-	requestUrl := relayHTTPRequest.URL
+	requestUrl, err := url.Parse(poktHTTPRequest.Url)
+	if err != nil {
+		return nil, err
+	}
+
 	requestUrl.Host = serviceConfig.BackendUrl.Host
 	requestUrl.Scheme = serviceConfig.BackendUrl.Scheme
 
@@ -306,10 +307,30 @@ func (sync *synchronousRPCServer) serveHTTP(
 	// request paths and query parameters.
 	// Use the same method, headers, and body as the original request to query the
 	// backend URL.
-	relayHTTPRequest.Host = serviceConfig.BackendUrl.Host
+	requestUrl.Host = serviceConfig.BackendUrl.Host
+
+	// Create the HTTP headers for the request by converting the RelayRequest's
+	// POKTHTTPRequest.Header to an http.Header.
+	headers := http.Header{}
+	poktHTTPRequest.CopyToHTTPHeader(headers)
+
+	// Create the HTTP request out of the RelayRequest's payload.
+	httpRequest := &http.Request{
+		Method: poktHTTPRequest.Method,
+		URL:    requestUrl,
+		Header: headers,
+		Body:   io.NopCloser(bytes.NewReader(poktHTTPRequest.BodyBz)),
+	}
+	requestUrl.RawQuery = query.Encode()
+
+	// TODO_TEST(red0ne): Test the request URL construction with different upstream
+	// request paths and query parameters.
+	// Use the same method, headers, and body as the original request to query the
+	// backend URL.
+	httpRequest.Host = serviceConfig.BackendUrl.Host
 
 	if serviceConfig.Authentication != nil {
-		relayHTTPRequest.SetBasicAuth(
+		httpRequest.SetBasicAuth(
 			serviceConfig.Authentication.Username,
 			serviceConfig.Authentication.Password,
 		)
@@ -319,7 +340,7 @@ func (sync *synchronousRPCServer) serveHTTP(
 	// authentication or authorization headers. These will override any upstream
 	// request headers with the same key.
 	for key, value := range serviceConfig.Headers {
-		relayHTTPRequest.Header.Set(key, value)
+		httpRequest.Header.Set(key, value)
 	}
 
 	// Configure the HTTP client to use the appropriate transport based on the
@@ -336,21 +357,16 @@ func (sync *synchronousRPCServer) serveHTTP(
 	}
 
 	// Send the relay request to the native service.
-	httpResponse, err := client.Do(relayHTTPRequest)
+	httpResponse, err := client.Do(httpRequest)
 	if err != nil {
-		return nil, err
+		// Do not expose connection errors with the backend service to the client.
+		return nil, ErrRelayerProxyInternalError.Wrap(err.Error())
 	}
 	defer httpResponse.Body.Close()
 
-	responseBody, err := decodeHTTPResponseBody(httpResponse)
-	if err != nil {
-		return nil, err
-	}
-	defer responseBody.Close()
-
 	// Serialize the service response to be sent back to the client.
 	// This will include the status code, headers, and body.
-	responseBz, err := sdktypes.SerializeHTTPResponse(httpResponse)
+	_, responseBz, err := sdktypes.SerializeHTTPResponse(httpResponse)
 	if err != nil {
 		return nil, err
 	}
@@ -364,7 +380,10 @@ func (sync *synchronousRPCServer) serveHTTP(
 	// was verified to be valid and has to be the same as the relayResponse session header.
 	relayResponse, err := sync.newRelayResponse(responseBz, relayRequest.Meta.SessionHeader, relayRequest.Meta.SupplierAddress)
 	if err != nil {
-		return nil, err
+		// The client should not have knowledge about the RelayMiner's issues with
+		// building the relay response. Reply with an internal error so that the
+		// original error is not exposed to the client.
+		return nil, ErrRelayerProxyInternalError.Wrap(err.Error())
 	}
 
 	return &types.Relay{Req: relayRequest, Res: relayResponse}, nil
@@ -382,25 +401,4 @@ func (sync *synchronousRPCServer) sendRelayResponse(
 
 	_, err = writer.Write(relayResponseBz)
 	return err
-}
-
-// decodeHTTPResponseBody takes an *http.Response and returns an io.ReadCloser
-// that provides access to the decoded response body. If the Content-Encoding
-// indicates a supported encoding, it applies the necessary decoding.
-// If the encoding is unsupported or an error occurs during decoding setup,
-// it returns an error.
-func decodeHTTPResponseBody(httpResponse *http.Response) (io.ReadCloser, error) {
-	switch httpResponse.Header.Get("Content-Encoding") {
-	case "gzip":
-		return gzip.NewReader(httpResponse.Body)
-	// TODO_IMPROVE(@okdas): Add other algorithms, or an alternative would be to switch to http
-	// client that manages all low-level HTTP decisions for us, something like
-	// https://github.com/imroc/req, https://github.com/valyala/fasthttp or
-	// https://github.com/go-resty/resty
-	// case "deflate":
-	//     return flate.NewReader(httpResponse.Body), nil
-	default:
-		// No encoding or unsupported encoding, return the original body.
-		return httpResponse.Body, nil
-	}
 }

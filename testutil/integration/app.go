@@ -6,6 +6,7 @@ import (
 
 	"cosmossdk.io/core/appmodule"
 	coreheader "cosmossdk.io/core/header"
+	"cosmossdk.io/depinject"
 	"cosmossdk.io/log"
 	"cosmossdk.io/math"
 	"cosmossdk.io/store"
@@ -19,8 +20,11 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	addresscodec "github.com/cosmos/cosmos-sdk/codec/address"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/runtime"
 	"github.com/cosmos/cosmos-sdk/types"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/auth"
@@ -34,7 +38,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app"
-	"github.com/pokt-network/poktroll/testutil/sample"
+	"github.com/pokt-network/poktroll/pkg/crypto"
+	"github.com/pokt-network/poktroll/pkg/crypto/rings"
+	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
+	testutilevents "github.com/pokt-network/poktroll/testutil/events"
+	"github.com/pokt-network/poktroll/testutil/testkeyring"
 	appkeeper "github.com/pokt-network/poktroll/x/application/keeper"
 	application "github.com/pokt-network/poktroll/x/application/module"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -70,19 +78,23 @@ type App struct {
 	*baseapp.BaseApp
 
 	// Internal state of the App needed for properly configuring the blockchain.
-	sdkCtx        sdk.Context
+	sdkCtx        *sdk.Context
 	cdc           codec.Codec
 	logger        log.Logger
 	authority     sdk.AccAddress
 	moduleManager module.Manager
 	queryHelper   *baseapp.QueryServiceTestHelper
+	keyRing       keyring.Keyring
+	ringClient    crypto.RingClient
 
 	// Some default helper fixtures for general testing.
 	// They're publically exposed and should/could be improve and expand on
 	// over time.
-	DefaultService     *sharedtypes.Service
-	DefaultApplication *apptypes.Application
-	DefaultSupplier    *sharedtypes.Supplier
+	DefaultService                   *sharedtypes.Service
+	DefaultApplication               *apptypes.Application
+	DefaultApplicationKeyringUid     string
+	DefaultSupplier                  *sharedtypes.Supplier
+	DefaultSupplierKeyringKeyringUid string
 }
 
 // NewIntegrationApp creates a new instance of the App with the provided details
@@ -91,6 +103,7 @@ func NewIntegrationApp(
 	t *testing.T,
 	sdkCtx sdk.Context,
 	cdc codec.Codec,
+	registry codectypes.InterfaceRegistry,
 	logger log.Logger,
 	authority sdk.AccAddress,
 	modules map[string]appmodule.AppModule,
@@ -102,12 +115,23 @@ func NewIntegrationApp(
 
 	db := dbm.NewMemDB()
 
-	interfaceRegistry := codectypes.NewInterfaceRegistry()
 	moduleManager := module.NewManagerFromMap(modules)
 	basicModuleManager := module.NewBasicManagerFromManager(moduleManager, nil)
-	basicModuleManager.RegisterInterfaces(interfaceRegistry)
+	basicModuleManager.RegisterInterfaces(registry)
 
-	txConfig := authtx.NewTxConfig(codec.NewProtoCodec(interfaceRegistry), authtx.DefaultSignModes)
+	// TODO_HACK(@Olshansk): I needed to set the height to 2 so downstream logic
+	// works. I'm not 100% sure why, but believe it's a result of genesis and the
+	// first block being special and iterated over during the setup process.
+	cometHeader := cmtproto.Header{
+		ChainID: appName,
+		Height:  2,
+	}
+	sdkCtx = sdkCtx.
+		WithBlockHeader(cometHeader).
+		WithIsCheckTx(true).
+		WithEventManager(cosmostypes.NewEventManager())
+
+	txConfig := authtx.NewTxConfig(cdc, authtx.DefaultSignModes)
 	bApp := baseapp.NewBaseApp(appName, logger, db, txConfig.TxDecoder(), baseapp.SetChainID(appName))
 	bApp.MountKVStores(keys)
 
@@ -129,7 +153,7 @@ func NewIntegrationApp(
 		return moduleManager.EndBlock(sdkCtx)
 	})
 
-	msgRouter.SetInterfaceRegistry(interfaceRegistry)
+	msgRouter.SetInterfaceRegistry(registry)
 	bApp.SetMsgServiceRouter(msgRouter)
 
 	err := bApp.LoadLatestVersion()
@@ -141,20 +165,11 @@ func NewIntegrationApp(
 	_, err = bApp.Commit()
 	require.NoError(t, err, "failed to commit")
 
-	// TODO_HACK(@Olshansk): I needed to set the height to 2 so downstream logic
-	// works. I'm not 100% sure why, but believe it's a result of genesis and the
-	// first block being special and iterated over during the setup process.
-	cometHeader := cmtproto.Header{
-		ChainID: appName,
-		Height:  2,
-	}
-	ctx := sdkCtx.WithBlockHeader(cometHeader).WithIsCheckTx(true)
-
 	return &App{
 		BaseApp:       bApp,
 		logger:        logger,
 		authority:     authority,
-		sdkCtx:        ctx,
+		sdkCtx:        &sdkCtx,
 		cdc:           cdc,
 		moduleManager: *moduleManager,
 		queryHelper:   queryHelper,
@@ -182,6 +197,9 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	prooftypes.RegisterInterfaces(registry)
 	servicetypes.RegisterInterfaces(registry)
 	authtypes.RegisterInterfaces(registry)
+	cosmostypes.RegisterInterfaces(registry)
+	cryptocodec.RegisterInterfaces(registry)
+	banktypes.RegisterInterfaces(registry)
 
 	// Prepare the codec
 	cdc := codec.NewProtoCodec(registry)
@@ -374,6 +392,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		accountKeeper,
 		applicationKeeper,
 		proofKeeper,
+		sharedKeeper,
 	)
 	tokenomicsModule := tokenomics.NewAppModule(
 		cdc,
@@ -404,6 +423,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		t,
 		sdkCtx,
 		cdc,
+		registry,
 		logger,
 		authority,
 		modules,
@@ -439,20 +459,27 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	integrationApp.NextBlock(t)
 
 	// Set the default params for all the modules
-	err := sharedKeeper.SetParams(integrationApp.SdkCtx(), sharedtypes.DefaultParams())
+	err := sharedKeeper.SetParams(integrationApp.GetSdkCtx(), sharedtypes.DefaultParams())
 	require.NoError(t, err)
-	err = tokenomicsKeeper.SetParams(integrationApp.SdkCtx(), tokenomicstypes.DefaultParams())
+	err = tokenomicsKeeper.SetParams(integrationApp.GetSdkCtx(), tokenomicstypes.DefaultParams())
 	require.NoError(t, err)
-	err = proofKeeper.SetParams(integrationApp.SdkCtx(), prooftypes.DefaultParams())
+	err = proofKeeper.SetParams(integrationApp.GetSdkCtx(), prooftypes.DefaultParams())
 	require.NoError(t, err)
-	err = sessionKeeper.SetParams(integrationApp.SdkCtx(), sessiontypes.DefaultParams())
+	err = sessionKeeper.SetParams(integrationApp.GetSdkCtx(), sessiontypes.DefaultParams())
 	require.NoError(t, err)
-	err = gatewayKeeper.SetParams(integrationApp.SdkCtx(), gatewaytypes.DefaultParams())
+	err = gatewayKeeper.SetParams(integrationApp.GetSdkCtx(), gatewaytypes.DefaultParams())
 	require.NoError(t, err)
-	err = applicationKeeper.SetParams(integrationApp.SdkCtx(), apptypes.DefaultParams())
+	err = applicationKeeper.SetParams(integrationApp.GetSdkCtx(), apptypes.DefaultParams())
 	require.NoError(t, err)
 
-	// Prepare default testing fixtures
+	// Prepare default testing fixtures //
+
+	// Construct a keyring to hold the keypairs for the accounts used in the test.
+	keyRing := keyring.NewInMemory(integrationApp.cdc)
+	integrationApp.keyRing = keyRing
+
+	// Create a pre-generated account iterator to create accounts for the test.
+	preGeneratedAccts := testkeyring.PreGeneratedAccounts()
 
 	// Prepare a new default service
 	defaultService := sharedtypes.Service{
@@ -462,10 +489,20 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	serviceKeeper.SetService(integrationApp.sdkCtx, defaultService)
 	integrationApp.DefaultService = &defaultService
 
-	// Prepare a new default supplier
+	// Create a supplier account with the corresponding keys in the keyring for the supplier.
+	integrationApp.DefaultSupplierKeyringKeyringUid = "supplier"
+	supplierAddr := testkeyring.CreateOnChainAccount(
+		integrationApp.sdkCtx, t,
+		integrationApp.DefaultSupplierKeyringKeyringUid,
+		keyRing,
+		accountKeeper,
+		preGeneratedAccts,
+	)
+
+	// Prepare the on-chain supplier
 	supplierStake := types.NewCoin("upokt", math.NewInt(1000000))
 	defaultSupplier := sharedtypes.Supplier{
-		Address: sample.AccAddress(),
+		Address: supplierAddr.String(),
 		Stake:   &supplierStake,
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
@@ -476,10 +513,20 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	supplierKeeper.SetSupplier(integrationApp.sdkCtx, defaultSupplier)
 	integrationApp.DefaultSupplier = &defaultSupplier
 
-	// Prepare a new default application
+	// Create an application account with the corresponding keys in the keyring for the application.
+	integrationApp.DefaultApplicationKeyringUid = "application"
+	applicationAddr := testkeyring.CreateOnChainAccount(
+		integrationApp.sdkCtx, t,
+		integrationApp.DefaultApplicationKeyringUid,
+		keyRing,
+		accountKeeper,
+		preGeneratedAccts,
+	)
+
+	// Prepare the on-chain supplier
 	appStake := types.NewCoin("upokt", math.NewInt(1000000))
 	defaultApplication := apptypes.Application{
-		Address: sample.AccAddress(),
+		Address: applicationAddr.String(),
 		Stake:   &appStake,
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
 			{
@@ -490,6 +537,24 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	applicationKeeper.SetApplication(integrationApp.sdkCtx, defaultApplication)
 	integrationApp.DefaultApplication = &defaultApplication
 
+	// Construct a ringClient to get the application's ring & verify the relay
+	// request signature.
+	ringClient, err := rings.NewRingClient(depinject.Supply(
+		polyzero.NewLogger(),
+		prooftypes.NewAppKeeperQueryClient(applicationKeeper),
+		prooftypes.NewAccountKeeperQueryClient(accountKeeper),
+		prooftypes.NewSharedKeeperQueryClient(sharedKeeper),
+	))
+	require.NoError(t, err)
+	integrationApp.ringClient = ringClient
+
+	// TODO_IMPROVE: The setup above does not to proper "staking" of the suppliers and applications.
+	// This can result in the module accounts balance going negative. Giving them a baseline balance
+	// to start with to avoid this issue. There is opportunity to improve this in the future.
+	moduleBaseMint := types.NewCoins(sdk.NewCoin("upokt", math.NewInt(690000000000000042)))
+	bankKeeper.MintCoins(integrationApp.sdkCtx, suppliertypes.ModuleName, moduleBaseMint)
+	bankKeeper.MintCoins(integrationApp.sdkCtx, apptypes.ModuleName, moduleBaseMint)
+
 	// Commit all the changes above by committing, finalizing and moving
 	// to the next block.
 	integrationApp.NextBlock(t)
@@ -497,25 +562,35 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	return integrationApp
 }
 
-// Codec returns the codec used by the application.
-func (app *App) Codec() codec.Codec {
+// GetRingClient returns the ring client used by the application.
+func (app *App) GetRingClient() crypto.RingClient {
+	return app.ringClient
+}
+
+// GetKeyRing returns the keyring used by the application.
+func (app *App) GetKeyRing() keyring.Keyring {
+	return app.keyRing
+}
+
+// GetCodec returns the codec used by the application.
+func (app *App) GetCodec() codec.Codec {
 	return app.cdc
 }
 
-// SdkCtx returns the context used by the application.
-func (app *App) SdkCtx() sdk.Context {
+// GetSdkCtx returns the context used by the application.
+func (app *App) GetSdkCtx() *sdk.Context {
 	return app.sdkCtx
 }
 
-// Authority returns the authority address used by the application.
-func (app *App) Authority() string {
+// GetAuthority returns the authority address used by the application.
+func (app *App) GetAuthority() string {
 	return app.authority.String()
 }
 
 // QueryHelper returns the query helper used by the application that can be
 // used to submit queries to the application.
 func (app *App) QueryHelper() *baseapp.QueryServiceTestHelper {
-	app.queryHelper.Ctx = app.sdkCtx
+	app.queryHelper.Ctx = *app.sdkCtx
 	return app.queryHelper
 }
 
@@ -545,14 +620,14 @@ func (app *App) RunMsg(t *testing.T, msg sdk.Msg, option ...RunOption) *codectyp
 
 	// If configured, finalize the block after the message is executed.
 	if cfg.AutomaticFinalizeBlock {
-		height := app.LastBlockHeight() + 1
-		_, err := app.FinalizeBlock(&cmtabcitypes.RequestFinalizeBlock{
-			Height: height,
+		finalizedBlockResponse, err := app.FinalizeBlock(&cmtabcitypes.RequestFinalizeBlock{
+			Height: app.LastBlockHeight() + 1,
 			DecidedLastCommit: cmtabcitypes.CommitInfo{
 				Votes: []cmtabcitypes.VoteInfo{{}},
 			},
 		})
 		require.NoError(t, err, "failed to finalize block")
+		app.emitEvents(t, finalizedBlockResponse)
 	}
 
 	app.logger.Info("Running msg", "msg", msg.String())
@@ -560,7 +635,7 @@ func (app *App) RunMsg(t *testing.T, msg sdk.Msg, option ...RunOption) *codectyp
 	handler := app.MsgServiceRouter().Handler(msg)
 	require.NotNil(t, handler, "handler not found for message %s", sdk.MsgTypeURL(msg))
 
-	msgResult, err := handler(app.sdkCtx, msg)
+	msgResult, err := handler(*app.sdkCtx, msg)
 	require.NoError(t, err, "failed to execute message %s", sdk.MsgTypeURL(msg))
 
 	var response *codectypes.Any
@@ -573,15 +648,36 @@ func (app *App) RunMsg(t *testing.T, msg sdk.Msg, option ...RunOption) *codectyp
 	return response
 }
 
+// NextBlocks calls NextBlock numBlocks times
+func (app *App) NextBlocks(t *testing.T, numBlocks int) {
+	t.Helper()
+
+	for i := 0; i < numBlocks; i++ {
+		app.NextBlock(t)
+	}
+}
+
+// emitEvents emits the events from the finalized block to the event manager
+// of the context in the active app.
+func (app *App) emitEvents(t *testing.T, res *abci.ResponseFinalizeBlock) {
+	t.Helper()
+	for _, event := range res.Events {
+		testutilevents.QuoteEventMode(&event)
+		abciEvent := cosmostypes.Event(event)
+		app.sdkCtx.EventManager().EmitEvent(abciEvent)
+	}
+}
+
 // NextBlock commits and finalizes all existing transactions. It then updates
 // and advances the context of the App.
 func (app *App) NextBlock(t *testing.T) {
 	t.Helper()
 
-	_, err := app.FinalizeBlock(&abci.RequestFinalizeBlock{
+	finalizedBlockResponse, err := app.FinalizeBlock(&abci.RequestFinalizeBlock{
 		Height: app.sdkCtx.BlockHeight(),
 		Time:   app.sdkCtx.BlockTime()})
 	require.NoError(t, err)
+	app.emitEvents(t, finalizedBlockResponse)
 
 	_, err = app.Commit()
 	require.NoError(t, err)
@@ -600,14 +696,17 @@ func (app *App) nextBlockUpdateCtx() {
 	header.Time = prevCtx.BlockTime().Add(time.Duration(1) * time.Second)
 	header.Height++
 
-	app.sdkCtx = app.BaseApp.NewUncachedContext(true, header).
-		WithHeaderInfo(coreheader.Info{
-			Height: header.Height,
-			// Hash: ?? // TODO_TECHDEBT: Do we have to set it here? If so, What should this be?
-			Time:    header.Time,
-			ChainID: appName,
-			// AppHash: ?? // TODO_TECHDEBT: Do we have to set it here? If so, What should this be?
-		})
+	headerInfo := coreheader.Info{
+		ChainID: appName,
+		Height:  header.Height,
+		Time:    header.Time,
+	}
+
+	newContext := app.BaseApp.NewUncachedContext(true, header).
+		WithBlockHeader(header).
+		WithHeaderInfo(headerInfo).
+		WithEventManager(prevCtx.EventManager())
+	*app.sdkCtx = newContext
 }
 
 // CreateMultiStore is a helper for setting up multiple stores for provided modules.

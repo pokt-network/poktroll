@@ -151,6 +151,10 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 	mockProofKeeper := mocks.NewMockProofKeeper(ctrl)
 	mockProofKeeper.EXPECT().GetAllClaims(gomock.Any()).AnyTimes()
 
+	// Mock the shared keeper
+	mockSharedKeeper := mocks.NewMockSharedKeeper(ctrl)
+	mockSharedKeeper.EXPECT().GetProofWindowCloseHeight(gomock.Any(), gomock.Any()).AnyTimes()
+
 	k := tokenomicskeeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKey),
@@ -160,6 +164,7 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		mockAccountKeeper,
 		mockApplicationKeeper,
 		mockProofKeeper,
+		mockSharedKeeper,
 	)
 
 	sdkCtx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
@@ -174,6 +179,7 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 // and a context. It uses real dependencies for all upstream keepers.
 func NewTokenomicsModuleKeepers(
 	t testing.TB,
+	logger log.Logger,
 	opts ...TokenomicsKeepersOpt,
 ) (_ TokenomicsModuleKeepers, ctx context.Context) {
 	t.Helper()
@@ -194,8 +200,12 @@ func NewTokenomicsModuleKeepers(
 	// Construct a multistore & mount store keys for each keeper that will interact with the state store.
 	stateStore := integration.CreateMultiStore(keys, log.NewNopLogger())
 
+	// Use the test logger by default (i.e. if none is given).
+	if logger == nil {
+		logger = log.NewTestLogger(t)
+	}
+
 	// Prepare the context
-	logger := log.NewTestLogger(t)
 	ctx = sdk.NewContext(stateStore, cmtproto.Header{}, false, logger)
 
 	// ctx.SetAccount
@@ -321,6 +331,7 @@ func NewTokenomicsModuleKeepers(
 		accountKeeper,
 		appKeeper,
 		proofKeeper,
+		sharedKeeper,
 	)
 
 	require.NoError(t, tokenomicsKeeper.SetParams(ctx, tokenomicstypes.DefaultParams()))

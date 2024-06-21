@@ -12,7 +12,7 @@ import (
 func (sync *synchronousRPCServer) newRelayRequest(request *http.Request) (*types.RelayRequest, error) {
 	requestBody, err := io.ReadAll(request.Body)
 	if err != nil {
-		return nil, err
+		return nil, ErrRelayerProxyInternalError.Wrap(err.Error())
 	}
 
 	sync.logger.Debug().Msg("unmarshaling relay request")
