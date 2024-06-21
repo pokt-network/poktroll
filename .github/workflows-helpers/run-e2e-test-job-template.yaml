@@ -42,9 +42,9 @@ spec:
               go test -v ./e2e/tests/... -tags=e2e
           env:
             - name: POCKET_NODE
-              value: tcp://${NAMESPACE}-validator-poktrolld:26657
+              value: tcp://${NAMESPACE}-validator-poktrolld:36657
             - name: VALIDATOR_RPC_ENDPOINT
-              value: ${NAMESPACE}-validator-poktrolld:26657
+              value: ${NAMESPACE}-validator-poktrolld:36657
             - name: E2E_DEBUG_OUTPUT
               value: "false" # Flip to true to see the command and result of the execution
             - name: POKTROLLD_HOME
