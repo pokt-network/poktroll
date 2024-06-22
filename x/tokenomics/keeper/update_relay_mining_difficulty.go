@@ -30,7 +30,7 @@ const (
 	// It indirectly drives the off-chain resource requirements of the network
 	// in additional to playing a critical role in Relay Mining.
 	// TODO_BLOCKER(@Olshansk, #542): Make this a governance parameter.
-	TargetNumRelays = uint64(2)
+	TargetNumRelays = uint64(10e4)
 )
 
 // UpdateRelayMiningDifficulty updates the on-chain relay mining difficulty
@@ -166,8 +166,7 @@ func computeEma(alpha float64, prevEma, currValue uint64) uint64 {
 	return uint64(alpha*float64(currValue) + (1-alpha)*float64(prevEma))
 }
 
-// getNumLeadingZeroBitsFromHash returns the number of leading zero bits for the
-// target hash.
+// getNumLeadingZeroBitsFromHash returns the number of leading zero bits for the target hash.
 func getNumLeadingZeroBitsFromHash(targetHash []byte) int {
 	numLeadingZeroBits := 0
 	for _, b := range targetHash {
