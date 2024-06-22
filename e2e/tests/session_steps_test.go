@@ -8,18 +8,13 @@ import (
 	"strconv"
 	"time"
 
-	"cosmossdk.io/depinject"
 	abci "github.com/cometbft/cometbft/abci/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/block"
-	"github.com/pokt-network/poktroll/pkg/client/events"
-	"github.com/pokt-network/poktroll/pkg/client/tx"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	testutilevents "github.com/pokt-network/poktroll/testutil/events"
-	"github.com/pokt-network/poktroll/testutil/testclient"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
@@ -39,9 +34,7 @@ const (
 	// This is used by an events replay client to subscribe to tx events from the supplier.
 	// See: https://docs.cosmos.network/v0.47/learn/advanced/events#subscribing-to-events
 	txSenderEventSubscriptionQueryFmt = "tm.event='Tx' AND message.sender='%s'"
-	// newBlockEventSubscriptionQuery is the query string which yields a
-	// subscription query to listen for on-chain new block events.
-	newBlockEventSubscriptionQuery = "tm.event='NewBlock'"
+
 	// eventsReplayClientBufferSize is the buffer size for the events replay client
 	// for the subscriptions above.
 	eventsReplayClientBufferSize = 100
@@ -61,15 +54,21 @@ const (
 	preExistingProofsKey = "preExistingProofsKey"
 )
 
-func (s *suite) TheUserShouldWaitForTheModuleMessageToBeSubmitted(module, message string) {
-	msgType := fmt.Sprintf("/poktroll.%s.Msg%s", module, message)
-	s.waitForTxResultEvent(msgType)
+func (s *suite) TheUserShouldWaitForTheModuleMessageToBeSubmitted(module, msgType string) {
+	s.waitForTxResultEvent(newEventMsgTypeMatchFn(module, msgType))
 }
 
-func (s *suite) TheUserShouldWaitForTheModuleEventToBeBroadcast(module, message string) {
-	eventType := fmt.Sprintf("poktroll.%s.Event%s", module, message)
-	isExpectedEventFn := func(event *abci.Event) bool { return event.Type == eventType }
-	s.waitForNewBlockEvent(isExpectedEventFn)
+func (s *suite) TheUserShouldWaitForTheModuleTxEventToBeBroadcast(module, eventType string) {
+	s.waitForTxResultEvent(newEventTypeMatchFn(module, eventType))
+}
+
+func (s *suite) TheUserShouldWaitForTheModuleEndBlockEventToBeBroadcast(module, eventType string) {
+	s.waitForNewBlockEvent(
+		combineEventMatchFns(
+			newEventTypeMatchFn(module, eventType),
+			newEventModeMatchFn("EndBlock"),
+		),
+	)
 }
 
 // TODO_FLAKY: See how 'TheClaimCreatedBySupplierForServiceForApplicationShouldBeSuccessfullySettled'
@@ -123,30 +122,6 @@ func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication
 	allProofsRes, err := s.proofQueryClient.AllProofs(ctx, &prooftypes.QueryAllProofsRequest{})
 	require.NoError(s, err)
 	s.scenarioState[preExistingProofsKey] = allProofsRes.Proofs
-
-	// Construct an events query client to listen for tx events from the supplier.
-	msgSenderQuery := fmt.Sprintf(txSenderEventSubscriptionQueryFmt, accNameToAddrMap[supplierName])
-	deps := depinject.Supply(events.NewEventsQueryClient(testclient.CometLocalWebsocketURL))
-	txSendEventsReplayClient, err := events.NewEventsReplayClient[*abci.TxResult](
-		ctx,
-		deps,
-		msgSenderQuery,
-		tx.UnmarshalTxResult,
-		eventsReplayClientBufferSize,
-	)
-	require.NoError(s, err)
-	s.scenarioState[txResultEventsReplayClientKey] = txSendEventsReplayClient
-
-	// Construct an events query client to listen for claim settlement or expiration events on-chain.
-	onChainClaimEventsReplayClient, err := events.NewEventsReplayClient[*block.CometNewBlockEvent](
-		ctx,
-		deps,
-		newBlockEventSubscriptionQuery,
-		block.UnmarshalNewBlockEvent,
-		eventsReplayClientBufferSize,
-	)
-	require.NoError(s, err)
-	s.scenarioState[newBlockEventReplayClientKey] = onChainClaimEventsReplayClient
 
 	// Send relays for the session.
 	s.sendRelaysForSession(
@@ -203,27 +178,21 @@ func (s *suite) sendRelaysForSession(
 	data := `{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}`
 
 	for i := 0; i < relayLimit; i++ {
-		s.Logf("Sending relay %d \n", i)
 		s.TheApplicationSendsTheSupplierARequestForServiceWithPathAndData(appName, supplierName, serviceId, defaultJSONPRCPath, data)
 		s.TheApplicationReceivesASuccessfulRelayResponseSignedBy(appName, supplierName)
 	}
 }
 
 // waitForTxResultEvent waits for an event to be observed which has the given message action.
-func (s *suite) waitForTxResultEvent(targetAction string) {
-	ctx, done := context.WithCancel(context.Background())
-
-	txResultEventsReplayClientState, ok := s.scenarioState[txResultEventsReplayClientKey]
-	require.Truef(s, ok, "%s not found in scenarioState", txResultEventsReplayClientKey)
-
-	txResultEventsReplayClient, ok := txResultEventsReplayClientState.(client.EventsReplayClient[*abci.TxResult])
-	require.True(s, ok, "%q not of the right type; expected client.EventsReplayClient[*abci.TxResult], got %T", txResultEventsReplayClientKey, txResultEventsReplayClientState)
-	require.NotNil(s, txResultEventsReplayClient)
+// func (s *suite) waitForTxResultEvent(targetAction string) {
+// func (s *suite) waitForTxResultEvent(waitForEvent waitForEachTxEventFn) {
+func (s *suite) waitForTxResultEvent(eventIsMatch func(*abci.Event) bool) {
+	ctx, cancel := context.WithCancel(context.Background())
 
 	// For each observed event, **asynchronously** check if it contains the given action.
 	channel.ForEach[*abci.TxResult](
-		ctx, txResultEventsReplayClient.EventsSequence(ctx),
-		func(_ context.Context, txResult *abci.TxResult) {
+		ctx, s.txResultReplayClient.EventsSequence(ctx),
+		func(ctx context.Context, txResult *abci.TxResult) {
 			if txResult == nil {
 				return
 			}
@@ -231,13 +200,8 @@ func (s *suite) waitForTxResultEvent(targetAction string) {
 			// Range over each event's attributes to find the "action" attribute
 			// and compare its value to that of the action provided.
 			for _, event := range txResult.Result.Events {
-				for _, attribute := range event.Attributes {
-					if attribute.Key == "action" {
-						if attribute.Value == targetAction {
-							done()
-							return
-						}
-					}
+				if eventIsMatch(&event) {
+					cancel()
 				}
 			}
 		},
@@ -245,7 +209,7 @@ func (s *suite) waitForTxResultEvent(targetAction string) {
 
 	select {
 	case <-time.After(eventTimeout):
-		s.Fatalf("ERROR: timed out waiting for message with action %q", targetAction)
+		s.Fatalf("ERROR: timed out waiting for tx result event")
 	case <-ctx.Done():
 		s.Log("Success; message detected before timeout.")
 	}
@@ -260,16 +224,9 @@ func (s *suite) waitForNewBlockEvent(
 ) {
 	ctx, done := context.WithCancel(context.Background())
 
-	newBlockEventsReplayClientState, ok := s.scenarioState[newBlockEventReplayClientKey]
-	require.Truef(s, ok, "%s not found in scenarioState", newBlockEventReplayClientKey)
-
-	newBlockEventsReplayClient, ok := newBlockEventsReplayClientState.(client.EventsReplayClient[*block.CometNewBlockEvent])
-	require.True(s, ok, "%q not of the right type; expected client.EventsReplayClient[*block.CometNewBlockEvent], got %T", newBlockEventReplayClientKey, newBlockEventsReplayClientState)
-	require.NotNil(s, newBlockEventsReplayClient)
-
 	// For each observed event, **asynchronously** check if it contains the given action.
 	channel.ForEach[*block.CometNewBlockEvent](
-		ctx, newBlockEventsReplayClient.EventsSequence(ctx),
+		ctx, s.newBlockEventsReplayClient.EventsSequence(ctx),
 		func(_ context.Context, newBlockEvent *block.CometNewBlockEvent) {
 			if newBlockEvent == nil {
 				return
@@ -293,5 +250,82 @@ func (s *suite) waitForNewBlockEvent(
 		s.Fatalf("ERROR: timed out waiting for NewBlock event")
 	case <-ctx.Done():
 		s.Log("Success; message detected before timeout.")
+	}
+}
+
+// newEventTypeMatchFn returns a function that matches an event based on its type
+// field. The type URL is constructed from the given module and eventType arguments
+// where module is the module name and eventType is the protobuf message type name
+// without the "Event" prefix; e.g., pass "tokenomics" and "ClaimSettled" to match
+// the poktroll.tokenomics.EventClaimSettled event.
+func newEventTypeMatchFn(module, eventType string) func(*abci.Event) bool {
+	targetEventType := fmt.Sprintf("poktroll.%s.Event%s", module, eventType)
+	return func(event *abci.Event) bool {
+		if event == nil {
+			return false
+		}
+
+		if event.Type == targetEventType {
+			return true
+		}
+		return false
+	}
+}
+
+// newEventMsgTypeMatchFn returns a function that matches an event based on the
+// "action" attribute in its attributes field, which is populated with the message
+// type URL of the message to which a given event corresponds. The target action
+// is constructed from the given module and msgType arguments where module is the
+// module name and msgType is the protobuf message type name without the "Msg" prefix;
+// e.g., pass "proof" and "CreateClaim" to match the poktroll.proof.MsgCreateClaim.
+func newEventMsgTypeMatchFn(module, msgType string) func(event *abci.Event) bool {
+	targetMsgType := fmt.Sprintf("/poktroll.%s.Msg%s", module, msgType)
+	return func(event *abci.Event) bool {
+		if event == nil {
+			return false
+		}
+
+		for _, attribute := range event.Attributes {
+			if attribute.Key == "action" {
+				if attribute.Value == targetMsgType {
+					return true
+				}
+			}
+		}
+		return false
+	}
+}
+
+// newEventModeMatchFn returns a function that matches an event based on the
+// "mode" attribute in its attributes field. The target mode value is the given
+// mode string.
+func newEventModeMatchFn(mode string) func(event *abci.Event) bool {
+	return func(event *abci.Event) bool {
+		if event == nil {
+			return false
+		}
+
+		for _, attribute := range event.Attributes {
+			if attribute.Key == "mode" {
+				if attribute.Value == mode {
+					return true
+				}
+			}
+		}
+		return false
+	}
+}
+
+// combineEventMatchFns returns a function that matches an event based on the
+// conjunction of multiple event match functions. The returned function will
+// return true only if all the given functions return true.
+func combineEventMatchFns(fns ...func(*abci.Event) bool) func(*abci.Event) bool {
+	return func(event *abci.Event) bool {
+		for _, fn := range fns {
+			if !fn(event) {
+				return false
+			}
+		}
+		return true
 	}
 }

@@ -16,7 +16,7 @@ Feature: Relay Namespace
         And the session for application "app1" and service "ollama" contains the supplier "supplier1"
         When the application "app1" sends the supplier "supplier1" a request for service "ollama" with path "/api/chat" and data '{"model": "qwen:0.5b", "stream": false, "messages": [{"role": "user", "content":"count from 1 to 10"}]}'
         Then the application "app1" receives a successful relay response signed by "supplier1"
-        And a "tokenomics" module "ClaimSettled" event is broadcasted
+        And a "tokenomics" module "ClaimSettled" end block event is broadcast
 
     # TODO_TEST(@Olshansk):
     # - Successful relay through applicat's sovereign appgate server
