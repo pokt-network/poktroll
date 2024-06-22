@@ -135,6 +135,36 @@ func ClaimCounter(
 	)
 }
 
+func RelayMiningDifficultyGauge(numbLeadingZeroBits int, serviceId string) {
+	labels := []metrics.Label{
+		{Name: "type", Value: "relay_mining_difficulty"},
+		{Name: "service_id", Value: serviceId},
+	}
+
+	telemetry.SetGaugeWithLabels(
+		// TODO_INVESTIGATE: Using the same metric key for counter and gauge doesn't
+		// seem to work. Prepend "gauge" to the gauge metric key to make it is displayed.
+		[]string{eventTypeMetricKey + "_gauge"},
+		float32(numbLeadingZeroBits),
+		labels,
+	)
+}
+
+func RelayEMAGauge(relayEMA uint64, serviceId string) {
+	labels := []metrics.Label{
+		{Name: "type", Value: "relay_ema"},
+		{Name: "service_id", Value: serviceId},
+	}
+
+	telemetry.SetGaugeWithLabels(
+		// TODO_INVESTIGATE: Using the same metric key for counter and gauge doesn't
+		// seem to work. Prepend "gauge" to the gauge metric key to make it is displayed.
+		[]string{eventTypeMetricKey + "_gauge"},
+		float32(relayEMA),
+		labels,
+	)
+}
+
 // AppendErrLabel appends a label with the name "error" and a value of the error's
 // message to the given labels slice if the error is not nil.
 func AppendErrLabel(err error, labels ...metrics.Label) []metrics.Label {

@@ -6,17 +6,15 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math"
+	"math/bits"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/pokt-network/poktroll/telemetry"
 	proofkeeper "github.com/pokt-network/poktroll/x/proof/keeper"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
-
-// TODO_UPNET(@Olshansk, #542): Add telemetry that will enable:
-// 1. Visualizing a multi-line chart of "Relays EMA per Service" (title) of "Relay EMA" (y-axis) vs block/time (x-axis) and being able to select each service.
-// 1. Visualizing a multi-line chart of "Relay Mining Difficulty per service" (title) of "Relay EMA" (y-axis) vs block/time (x-axis) and being able to select each service.
 
 const (
 	// Exponential moving average (ema) smoothing factor, commonly known as alpha.
@@ -32,7 +30,7 @@ const (
 	// It indirectly drives the off-chain resource requirements of the network
 	// in additional to playing a critical role in Relay Mining.
 	// TODO_BLOCKER(@Olshansk, #542): Make this a governance parameter.
-	TargetNumRelays = uint64(10e4)
+	TargetNumRelays = uint64(2)
 )
 
 // UpdateRelayMiningDifficulty updates the on-chain relay mining difficulty
@@ -44,6 +42,7 @@ func (k Keeper) UpdateRelayMiningDifficulty(
 	logger := k.Logger().With("method", "UpdateRelayMiningDifficulty")
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
+	difficultyPerServiceMap := make(map[string]types.RelayMiningDifficulty, len(relaysPerServiceMap))
 	for serviceId, numRelays := range relaysPerServiceMap {
 		prevDifficulty, found := k.GetRelayMiningDifficulty(ctx, serviceId)
 		if !found {
@@ -102,6 +101,17 @@ func (k Keeper) UpdateRelayMiningDifficulty(
 			logMessage = fmt.Sprintf("No change in RelayMiningDifficulty for service %s at height %d. Current difficulty: %x", serviceId, sdkCtx.BlockHeight(), newDifficulty.TargetHash)
 		}
 		logger.Info(logMessage)
+
+		// Store the updated difficulty in the map for telemetry.
+		// This is done to only emit the telemetry event if all the difficulties
+		// are updated successfully.
+		difficultyPerServiceMap[serviceId] = newDifficulty
+	}
+
+	for serviceId, newDifficulty := range difficultyPerServiceMap {
+		miningDifficultyBits := getNumLeadingZeroBitsFromHash(newDifficulty.TargetHash)
+		telemetry.RelayMiningDifficultyGauge(miningDifficultyBits, serviceId)
+		telemetry.RelayEMAGauge(newDifficulty.NumRelaysEma, serviceId)
 	}
 
 	return nil
@@ -154,6 +164,23 @@ func defaultDifficultyTargetHash() []byte {
 // Src: https://en.wikipedia.org/wiki/Exponential_smoothing
 func computeEma(alpha float64, prevEma, currValue uint64) uint64 {
 	return uint64(alpha*float64(currValue) + (1-alpha)*float64(prevEma))
+}
+
+// getNumLeadingZeroBitsFromHash returns the number of leading zero bits for the
+// target hash.
+func getNumLeadingZeroBitsFromHash(targetHash []byte) int {
+	numLeadingZeroBits := 0
+	for _, b := range targetHash {
+		if b == 0 {
+			numLeadingZeroBits += 8
+			continue
+		} else {
+			numLeadingZeroBits += bits.LeadingZeros8(b)
+			break // Stop counting after the first non-zero byte
+		}
+	}
+
+	return numLeadingZeroBits
 }
 
 // LeadingZeroBitsToTargetDifficultyHash generates a slice of bytes with the specified number of leading zero bits
