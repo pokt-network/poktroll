@@ -19,13 +19,18 @@ type sdkBlockClient struct {
 // NewBlockClient creates a new ShannonSDK compatible block client.
 // It is a wrapper around the client.BlockClient and implements the sdk.BlockClient
 // interface.
+//
+// Required dependencies:
+// - shannonsdk.BlockClient
 func NewBlockClient(
 	ctx context.Context,
 	deps depinject.Config,
 ) (sdk.BlockClient, error) {
 	blockClient := &sdkBlockClient{}
 
-	depinject.Inject(deps, &blockClient.client)
+	if err := depinject.Inject(deps, &blockClient.client); err != nil {
+		return nil, err
+	}
 
 	return blockClient, nil
 }
