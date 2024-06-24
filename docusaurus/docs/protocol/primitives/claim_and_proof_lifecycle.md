@@ -176,14 +176,16 @@ state Validate_Claim {
 
     Validate_Basic --> Validate_Session_Header
     Validate_Session_Header
-    Validate_Session_Header --> [*]
+    Validate_Session_Header --> Validate_Claim_Window
+    Validate_Claim_Window -->[*]
 }
 Validate_Claim --> [*]
 ```
 
 #### References:
-- Session header validation ([diagram](#TODO) / [code](#TODO))
-- On-chain claim validation ([diagram](#TODO) / [code](#TODO))
+- Create claim message basic validation ([`MsgCreateClaim#ValidateBasic()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/types/message_create_claim.go))
+- Session header validation ([diagram](#session-header-validation) / [`msgServer#queryAndValidateSessionHeader()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/keeper/session.go))
+- On-chain claim window validation ([diagram](#TODO) / [`msgServer#validateClaimWindow()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/keeper/session.go))
 
 ### Claim Window
 
@@ -232,7 +234,8 @@ stateDiagram-v2
 state Validate_Proof {
   [*] --> Proof_Validate_Basic
   Proof_Validate_Basic --> Validate_Session_Header
-  Validate_Session_Header --> Unpack_Proven_Relay
+  Validate_Session_Header --> Validate_Proof_Window
+  Validate_Proof_Window --> Unpack_Proven_Relay
   
   state Unpack_Proven_Relay {
     state if_closest_proof_malformed <<choice>>
@@ -271,11 +274,12 @@ Validate_Proof --> [*]
 ```
 
 #### References:
-- Proof basic validation ([diagram](#proof-basic-validation) / [code](#TODO))
-- Session header validation ([diagram](#session-header-validation) / [code](#TODO))
-- Proven relay request validation ([diagram](#proof-submission-relay-request-validation) / [code](#TODO))
-- Proven relay response validation ([diagram](#proof-submission-relay-response-validation) / [code](#TODO))
-- Proof claim validation ([diagram](#proof-submission-claim-validation) / [code](#TODO))
+- Proof basic validation ([diagram](#proof-basic-validation) / [`MsgSubmitProof#ValidateBasic()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/types/message_submit_proof.go))
+- Session header validation ([diagram](#session-header-validation) / [`msgServer#queryAndValidateSessionHeader()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/keeper/session.go))
+- Proof window validation ([diagram](#TODO) / [`msgServer#validateProofWindow()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/keeper/session.go))
+- Proven relay request validation ([diagram](#proof-submission-relay-request-validation) / [`RelayRequest#ValidateBasic()`](https://github.com/pokt-network/poktroll/blob/main/x/service/types/relay.go))
+- Proven relay response validation ([diagram](#proof-submission-relay-response-validation) / [`RelayResponse#ValidateBasic()`](https://github.com/pokt-network/poktroll/blob/main/x/service/types/relay.go))
+- Proof claim validation ([diagram](#proof-submission-claim-validation) / [`msgServer#queryandValidateClaimForProof()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/keeper/msg_server_submit_proof.go))
 
 ### Proof Window
 
