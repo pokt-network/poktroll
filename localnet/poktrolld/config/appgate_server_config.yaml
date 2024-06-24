@@ -1,5 +1,5 @@
-query_node_rpc_url: tcp://poktroll-validator:36657
-query_node_grpc_url: tcp://poktroll-validator:36658
+query_node_rpc_url: tcp://poktroll-validator:26657
+query_node_grpc_url: tcp://poktroll-validator:9090
 signing_key: app1
 self_signing: true
 listening_endpoint: http://localhost:42069

@@ -4,16 +4,23 @@ import (
 	"bytes"
 	"testing"
 
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
+	testutilevents "github.com/pokt-network/poktroll/testutil/events"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/x/tokenomics/keeper"
 	tokenomicskeeper "github.com/pokt-network/poktroll/x/tokenomics/keeper"
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
+	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-func TestUpdateRelayMiningDifficulty_General(t *testing.T) {
+// This is a "base" test for updating relay mining difficulty to go through
+// a flow testing a few different scenarios, but does not cover the full range
+// of edge or use cases.
+func TestUpdateRelayMiningDifficulty_Base(t *testing.T) {
 	keeper, ctx := keepertest.TokenomicsKeeper(t)
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 
 	// Introduce svc1 for the first time
 	relaysPerServiceMap := map[string]uint64{
@@ -80,6 +87,12 @@ func TestUpdateRelayMiningDifficulty_General(t *testing.T) {
 	difficultySvc31, found := keeper.GetRelayMiningDifficulty(ctx, "svc3")
 	require.True(t, found)
 	require.Equal(t, uint64(1e10), difficultySvc31.NumRelaysEma)
+
+	// Confirm a relay mining difficulty update event was emitted
+	events := sdkCtx.EventManager().Events()
+	expectedEvents := testutilevents.FilterEvents[*tokenomicstypes.EventRelayMiningDifficultyUpdated](t,
+		events, "poktroll.tokenomics.EventRelayMiningDifficultyUpdated")
+	require.Len(t, expectedEvents, 6) // 3 for svc1, 2 for svc2, 1 for svc3
 }
 
 func TestUpdateRelayMiningDifficulty_FirstDifficulty(t *testing.T) {

@@ -4,9 +4,9 @@ metrics:
   enabled: true
   addr: :9090
 pocket_node:
-  query_node_rpc_url: tcp://127.0.0.1:36657
-  query_node_grpc_url: tcp://127.0.0.1:36658
-  tx_node_rpc_url: tcp://127.0.0.1:36657
+  query_node_rpc_url: tcp://127.0.0.1:26657
+  query_node_grpc_url: tcp://127.0.0.1:9090
+  tx_node_rpc_url: tcp://127.0.0.1:26657
 suppliers:
   - service_id: anvil
     listen_url: http://localhost:6942
