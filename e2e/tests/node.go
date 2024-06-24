@@ -17,7 +17,7 @@ var (
 	// defaultRPCURL used by pocketdBin to run remote commands
 	defaultRPCURL = os.Getenv("POCKET_NODE")
 	// defaultRPCPort is the default RPC port that pocketd listens on
-	defaultRPCPort = 36657
+	defaultRPCPort = 26657
 	// defaultRPCHost is the default RPC host that pocketd listens on
 	defaultRPCHost = "127.0.0.1"
 	// defaultHome is the default home directory for pocketd

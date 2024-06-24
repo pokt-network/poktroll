@@ -11,12 +11,11 @@ SHELL = /bin/sh
 # endif
 
 POKTROLLD_HOME ?= ./localnet/poktrolld
-POCKET_NODE ?= tcp://127.0.0.1:36657 # The pocket node (validator in the localnet context)
+POCKET_NODE ?= tcp://127.0.0.1:26657 # The pocket node (validator in the localnet context)
 TESTNET_RPC ?= https://testnet-validated-validator-rpc.poktroll.com/ # TestNet RPC endpoint for validator maintained by Grove. Needs to be update if there's another "primary" testnet.
 APPGATE_SERVER ?= http://localhost:42069
 GATEWAY_URL ?= http://localhost:42079
 POCKET_ADDR_PREFIX = pokt
-CHAIN_ID = poktroll
 
 # The domain ending in ".town" is staging, ".city" is production
 GROVE_GATEWAY_STAGING_ETH_MAINNET = https://eth-mainnet.rpc.grove.town
@@ -526,7 +525,7 @@ gateway_list: ## List all the staked gateways
 
 .PHONY: gateway_stake
 gateway_stake: ## Stake tokens for the gateway specified (must specify the gateway env var)
-	poktrolld --home=$(POKTROLLD_HOME) tx gateway stake-gateway -y --config $(POKTROLLD_HOME)/config/$(STAKE) --keyring-backend test --from $(GATEWAY) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
+	poktrolld --home=$(POKTROLLD_HOME) tx gateway stake-gateway -y --config $(POKTROLLD_HOME)/config/$(STAKE) --keyring-backend test --from $(GATEWAY) --node $(POCKET_NODE)
 
 .PHONY: gateway1_stake
 gateway1_stake: ## Stake gateway1
@@ -542,7 +541,7 @@ gateway3_stake: ## Stake gateway3
 
 .PHONY: gateway_unstake
 gateway_unstake: ## Unstake an gateway (must specify the GATEWAY env var)
-	poktrolld --home=$(POKTROLLD_HOME) tx gateway unstake-gateway -y --keyring-backend test --from $(GATEWAY) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
+	poktrolld --home=$(POKTROLLD_HOME) tx gateway unstake-gateway -y --keyring-backend test --from $(GATEWAY) --node $(POCKET_NODE)
 
 .PHONY: gateway1_unstake
 gateway1_unstake: ## Unstake gateway1
@@ -566,7 +565,7 @@ app_list: ## List all the staked applications
 
 .PHONY: app_stake
 app_stake: ## Stake tokens for the application specified (must specify the APP and SERVICES env vars)
-	poktrolld --home=$(POKTROLLD_HOME) tx application stake-application -y --config $(POKTROLLD_HOME)/config/$(SERVICES) --keyring-backend test --from $(APP) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
+	poktrolld --home=$(POKTROLLD_HOME) tx application stake-application -y --config $(POKTROLLD_HOME)/config/$(SERVICES) --keyring-backend test --from $(APP) --node $(POCKET_NODE)
 
 .PHONY: app1_stake
 app1_stake: ## Stake app1 (also staked in genesis)
@@ -582,7 +581,7 @@ app3_stake: ## Stake app3
 
 .PHONY: app_unstake
 app_unstake: ## Unstake an application (must specify the APP env var)
-	poktrolld --home=$(POKTROLLD_HOME) tx application unstake-application -y --keyring-backend test --from $(APP) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
+	poktrolld --home=$(POKTROLLD_HOME) tx application unstake-application -y --keyring-backend test --from $(APP) --node $(POCKET_NODE)
 
 .PHONY: app1_unstake
 app1_unstake: ## Unstake app1
@@ -598,7 +597,7 @@ app3_unstake: ## Unstake app3
 
 .PHONY: app_delegate
 app_delegate: ## Delegate trust to a gateway (must specify the APP and GATEWAY_ADDR env vars). Requires the app to be staked
-	poktrolld --home=$(POKTROLLD_HOME) tx application delegate-to-gateway $(GATEWAY_ADDR) --keyring-backend test --from $(APP) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
+	poktrolld --home=$(POKTROLLD_HOME) tx application delegate-to-gateway $(GATEWAY_ADDR) --keyring-backend test --from $(APP) --node $(POCKET_NODE)
 
 .PHONY: app1_delegate_gateway1
 app1_delegate_gateway1: ## Delegate trust to gateway1
@@ -617,7 +616,7 @@ app3_delegate_gateway3: ## Delegate trust to gateway3
 
 .PHONY: app_undelegate
 app_undelegate: ## Undelegate trust to a gateway (must specify the APP and GATEWAY_ADDR env vars). Requires the app to be staked
-	poktrolld --home=$(POKTROLLD_HOME) tx application undelegate-from-gateway $(GATEWAY_ADDR) --keyring-backend test --from $(APP) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
+	poktrolld --home=$(POKTROLLD_HOME) tx application undelegate-from-gateway $(GATEWAY_ADDR) --keyring-backend test --from $(APP) --node $(POCKET_NODE)
 
 .PHONY: app1_undelegate_gateway1
 app1_undelegate_gateway1: ## Undelegate trust to gateway1
@@ -644,7 +643,7 @@ supplier_list: ## List all the staked supplier
 
 .PHONY: supplier_stake
 supplier_stake: ## Stake tokens for the supplier specified (must specify the SUPPLIER and SUPPLIER_CONFIG env vars)
-	poktrolld --home=$(POKTROLLD_HOME) tx supplier stake-supplier -y --config $(POKTROLLD_HOME)/config/$(SERVICES) --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
+	poktrolld --home=$(POKTROLLD_HOME) tx supplier stake-supplier -y --config $(POKTROLLD_HOME)/config/$(SERVICES) --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE)
 
 .PHONY: supplier1_stake
 supplier1_stake: ## Stake supplier1 (also staked in genesis)
@@ -660,7 +659,7 @@ supplier3_stake: ## Stake supplier3
 
 .PHONY: supplier_unstake
 supplier_unstake: ## Unstake an supplier (must specify the SUPPLIER env var)
-	poktrolld --home=$(POKTROLLD_HOME) tx supplier unstake-supplier --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
+	poktrolld --home=$(POKTROLLD_HOME) tx supplier unstake-supplier --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE)
 
 .PHONY: supplier1_unstake
 supplier1_unstake: ## Unstake supplier1
@@ -779,8 +778,7 @@ acc_initialize_pubkeys: ## Make sure the account keeper has public keys for all 
 			$(addr) $(PNF_ADDRESS) 1000upokt \
 			--yes \
 			--home=$(POKTROLLD_HOME) \
-			--node $(POCKET_NODE) \
-			--chain-id $(CHAIN_ID);)
+			--node $(POCKET_NODE);)
 
 ########################
 ### Warning Messages ###

@@ -915,7 +915,7 @@ func (s *relaysSuite) sendStakeGatewaysTxs(
 // signWithRetries signs the transaction with the keyName provided, retrying
 // up to maxRetries times if the signing fails.
 // TODO_MAINNET: SignTx randomly fails at retrieving the account info with
-// the error post failed: Post "http://localhost:36657": EOF. This might be due to
+// the error post failed: Post "http://localhost:26657": EOF. This might be due to
 // concurrent requests trying to access the same account info and needs to be investigated.
 func (s *relaysSuite) signWithRetries(
 	actorKeyName string,
@@ -955,7 +955,7 @@ func (s *relaysSuite) sendPendingMsgsTx(actor *accountInfo) {
 	require.NotNil(s, keyRecord)
 
 	// TODO_HACK: Sometimes SignTx fails at retrieving the account info with
-	// the error post failed: Post "http://localhost:36657": EOF.
+	// the error post failed: Post "http://localhost:26657": EOF.
 	// A retry mechanism is added to avoid this issue.
 	err = s.signWithRetries(keyRecord.Name, txBuilder, signTxMaxRetries)
 	require.NoError(s, err)
