@@ -83,6 +83,8 @@ sequenceDiagram
 
 ## Session Windows & On-Chain Parameters
 
+_TODO(@bryanchriswhite): Add message distribution offsets/windows to this picture._
+
 ```mermaid
 gantt
     title Session Relay / Claim / Proof Windows
