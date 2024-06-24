@@ -10,7 +10,6 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/pokt-network/poktroll/telemetry"
 	proofkeeper "github.com/pokt-network/poktroll/x/proof/keeper"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
@@ -38,11 +37,11 @@ const (
 func (k Keeper) UpdateRelayMiningDifficulty(
 	ctx context.Context,
 	relaysPerServiceMap map[string]uint64,
-) error {
+) (difficultyPerServiceMap map[string]types.RelayMiningDifficulty, err error) {
 	logger := k.Logger().With("method", "UpdateRelayMiningDifficulty")
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
-	difficultyPerServiceMap := make(map[string]types.RelayMiningDifficulty, len(relaysPerServiceMap))
+	difficultyPerServiceMap = make(map[string]types.RelayMiningDifficulty, len(relaysPerServiceMap))
 	for serviceId, numRelays := range relaysPerServiceMap {
 		prevDifficulty, found := k.GetRelayMiningDifficulty(ctx, serviceId)
 		if !found {
@@ -87,7 +86,7 @@ func (k Keeper) UpdateRelayMiningDifficulty(
 			NewNumRelaysEma:          newDifficulty.NumRelaysEma,
 		}
 		if err := sdkCtx.EventManager().EmitTypedEvent(&relayMiningDifficultyUpdateEvent); err != nil {
-			return err
+			return nil, err
 		}
 
 		// Output the appropriate log message based on whether the difficulty was initialized, updated or unchanged.
@@ -108,13 +107,7 @@ func (k Keeper) UpdateRelayMiningDifficulty(
 		difficultyPerServiceMap[serviceId] = newDifficulty
 	}
 
-	for serviceId, newDifficulty := range difficultyPerServiceMap {
-		miningDifficultyBits := getNumLeadingZeroBitsFromHash(newDifficulty.TargetHash)
-		telemetry.RelayMiningDifficultyGauge(miningDifficultyBits, serviceId)
-		telemetry.RelayEMAGauge(newDifficulty.NumRelaysEma, serviceId)
-	}
-
-	return nil
+	return difficultyPerServiceMap, nil
 }
 
 // ComputeNewDifficultyTargetHash computes the new difficulty target hash based
@@ -166,8 +159,11 @@ func computeEma(alpha float64, prevEma, currValue uint64) uint64 {
 	return uint64(alpha*float64(currValue) + (1-alpha)*float64(prevEma))
 }
 
-// getNumLeadingZeroBitsFromHash returns the number of leading zero bits for the target hash.
-func getNumLeadingZeroBitsFromHash(targetHash []byte) int {
+// RelayMiningTargetHashToDifficulty returns the relay mining difficulty based on the hash.
+// This currently implies the number of leading zero bits but may be changed in the future.
+// TODO_MAINNET: Determine if we should launch with a more adaptive difficulty or stick
+// to leading zeroes.
+func RelayMiningTargetHashToDifficulty(targetHash []byte) int {
 	numLeadingZeroBits := 0
 	for _, b := range targetHash {
 		if b == 0 {

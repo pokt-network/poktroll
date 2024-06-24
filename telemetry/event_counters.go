@@ -12,7 +12,12 @@ import (
 	"github.com/hashicorp/go-metrics"
 )
 
-const eventTypeMetricKey = "event_type"
+const (
+	eventTypeMetricKey = "event_type"
+	// TODO_INVESTIGATE(@okdas): Using eventTypeMetricKey for counter and gauge
+	// doesn't seem to work. Add "_gauge" postfix to display it in the meantime.
+	eventTypeMetricKeyGauge = "event_type_gauge"
+)
 
 type ClaimProofStage = string
 
@@ -135,6 +140,9 @@ func ClaimCounter(
 	)
 }
 
+// RelayMiningDifficultyCounter sets a gauge which tracks the relay mining difficulty,
+// which is represented by number of leading zero bits.
+// The serviceId is used as a label to be able to track the difficulty for each service.
 func RelayMiningDifficultyGauge(numbLeadingZeroBits int, serviceId string) {
 	labels := []metrics.Label{
 		{Name: "type", Value: "relay_mining_difficulty"},
@@ -142,14 +150,14 @@ func RelayMiningDifficultyGauge(numbLeadingZeroBits int, serviceId string) {
 	}
 
 	telemetry.SetGaugeWithLabels(
-		// TODO_INVESTIGATE: Using the same metric key for counter and gauge doesn't
-		// seem to work. Prepend "gauge" to the gauge metric key to make it is displayed.
-		[]string{eventTypeMetricKey + "_gauge"},
+		[]string{eventTypeMetricKeyGauge},
 		float32(numbLeadingZeroBits),
 		labels,
 	)
 }
 
+// RelayEMAGauge sets a gauge which tracks the relay EMA for a service.
+// The serviceId is used as a label to be able to track the EMA for each service.
 func RelayEMAGauge(relayEMA uint64, serviceId string) {
 	labels := []metrics.Label{
 		{Name: "type", Value: "relay_ema"},
@@ -157,9 +165,7 @@ func RelayEMAGauge(relayEMA uint64, serviceId string) {
 	}
 
 	telemetry.SetGaugeWithLabels(
-		// TODO_INVESTIGATE: Using the same metric key for counter and gauge doesn't
-		// seem to work. Prepend "gauge" to the gauge metric key to make it is displayed.
-		[]string{eventTypeMetricKey + "_gauge"},
+		[]string{eventTypeMetricKeyGauge},
 		float32(relayEMA),
 		labels,
 	)

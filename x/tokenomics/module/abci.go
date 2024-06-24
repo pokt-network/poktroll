@@ -59,12 +59,19 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) (err error) {
 
 	// Update the relay mining difficulty for every service that settled pending
 	// claims based on how many estimated relays were serviced for it.
-	err = k.UpdateRelayMiningDifficulty(ctx, relaysPerServiceMap)
+	difficultyPerServiceMap, err := k.UpdateRelayMiningDifficulty(ctx, relaysPerServiceMap)
 	if err != nil {
 		logger.Error(fmt.Sprintf("could not update relay mining difficulty due to error %v", err))
 		return err
 	}
 	logger.Info(fmt.Sprintf("successfully updated the relay mining difficulty for %d services", len(relaysPerServiceMap)))
+
+	// Emit telemetry for each service's relay mining difficulty.
+	for serviceId, newDifficulty := range difficultyPerServiceMap {
+		miningDifficultyNumBits := keeper.RelayMiningTargetHashToDifficulty(newDifficulty.TargetHash)
+		telemetry.RelayMiningDifficultyGauge(miningDifficultyNumBits, serviceId)
+		telemetry.RelayEMAGauge(newDifficulty.NumRelaysEma, serviceId)
+	}
 
 	return nil
 }
