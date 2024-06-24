@@ -16,25 +16,25 @@ to all readers.
 
 - [Introduction](#introduction)
 - [Session](#session)
-  - [Session Duration](#session-duration)
-  - [Session End](#session-end)
+    - [Session Duration](#session-duration)
+    - [Session End](#session-end)
 - [Claim](#claim)
-  - [Claim Protobuf](#claim-protobuf)
-  - [CreateClaim Transaction](#createclaim-transaction)
-  - [CreateClaim Validation](#createclaim-validation)
-  - [Claim Window](#claim-window)
+    - [Claim Protobuf](#claim-protobuf)
+    - [CreateClaim Transaction](#createclaim-transaction)
+    - [CreateClaim Validation](#createclaim-validation)
+    - [Claim Window](#claim-window)
 - [Proof](#proof)
-  - [Proof Protobuf](#proof-protobuf)
-  - [SubmitProof Transaction](#submitproof-transaction)
-  - [SubmitProof Validation](#submitproof-validation)
-  - [Proof Window](#proof-window)
+    - [Proof Protobuf](#proof-protobuf)
+    - [SubmitProof Transaction](#submitproof-transaction)
+    - [SubmitProof Validation](#submitproof-validation)
+    - [Proof Window](#proof-window)
 - [Proof Security](#proof-security)
-  - [Merkle Leaf Validation](#merkle-leaf-validation)
-  - [Merkle Proof Selection](#merkle-proof-selection)
-    - [Example: Example Sparse Merkle Sum Trie (SMST)](#example-example-sparse-merkle-sum-trie-smst)
-    - [Example 1: Path to leaf at full depth](#example-1-path-to-leaf-at-full-depth)
-    - [Example 2: Path to leaf at partial depth](#example-2-path-to-leaf-at-partial-depth)
-    - [Example 3: Path to empty node](#example-3-path-to-empty-node)
+    - [Merkle Leaf Validation](#merkle-leaf-validation)
+    - [Merkle Proof Selection](#merkle-proof-selection)
+        - [Example: Example Sparse Merkle Sum Trie (SMST)](#example-example-sparse-merkle-sum-trie-smst)
+        - [Example 1: Path to leaf at full depth](#example-1-path-to-leaf-at-full-depth)
+        - [Example 2: Path to leaf at partial depth](#example-2-path-to-leaf-at-partial-depth)
+        - [Example 3: Path to empty node](#example-3-path-to-empty-node)
 - [Full Lifecycle](#full-lifecycle)
 
 ## Introduction
@@ -42,7 +42,8 @@ to all readers.
 The `Claim & Proof` lifecycle is a fundamental part of the Pocket Network protocol.
 
 At a high-level, it is an adaptation of a well-known `commit & reveal` paradigm used
-in various blockchain application such as [ENS](https://docs.ens.domains/contract-api-reference/.eth-permanent-registrar/controller).
+in various blockchain application such
+as [ENS](https://docs.ens.domains/contract-api-reference/.eth-permanent-registrar/controller).
 
 :::note
 
@@ -62,10 +63,10 @@ sequenceDiagram
     participant PN as Pocket Network<br>(Distributed Ledger)
 
     loop Session Duration
-        note over A,S: off-chain
-        A ->> +S: Relay Request
+        note over A, S: off-chain
+        A ->> + S: Relay Request
         S ->> S: Insert Leaf into <br> Sparse Merkle Sum Trie
-        S ->> -A: Relay Response
+        S ->> - A: Relay Response
     end
 
     par For every (App, Supplier, Service)
@@ -79,6 +80,48 @@ sequenceDiagram
         PN -->> A: Deduct staked balance (burn)
     end
 ```
+
+## Session Windows & On-Chain Parameters
+
+```mermaid
+gantt
+    title Session Relay / Claim / Proof Windows
+    dateFormat ss
+    axisFormat %S
+    tickInterval 1second
+
+    section Relay Window
+        Session N Start: milestone, sns, 00, 0s
+        num_blocks_per_session: nbps, 00, 4s
+        Session N End: milestone, sne, after nbps, 0s
+        grace_period_end_offset_blocks: gpof, after sne, 2s
+        Grace Period End: milestone, gpe, after gpof, 0s
+    section Claim Window
+        claim_window_open_offset_blocks: cwob, after sne, 10ms
+        Session N Claim Window Open: milestone, cwo, after cwob, 0s
+        claim_window_close_offset_blocks: cwcb, after cwo, 4s
+        Session N Claim Window Close: milestone, cwc, after cwcb, 0s
+    section Proof Window
+        proof_window_open_offset_blocks: pwob, after cwc, 10ms
+        Session N Proof Window Open: milestone, pwo, after pwob, 0s
+        proof_window_close_offset_blocks: pwcb, after pwo, 4s
+        Session N PRoof Window Close: milestone, pwc, after pwcb, 0s
+```
+
+> NB: Depicted with the default values (see below); x-axis is units are blocks.
+
+| Parameter                          | Description                                                                                                                                               | Default |
+|------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|---------|
+| `num_blocks_per_session`           | The number of blocks between the session start & end heights. Relays handled in these blocks are included in session N.                                   | 4       |
+| `grace_period_end_offset_blocks`   | The number of blocks after the session end height, at which the grace period ends. Relays handled in these blocks are also included in session N.         | 2       |
+| `claim_window_open_offset_blocks`  | The number of blocks after the session grace period height, at which the claim window opens. Valid claims for session N will be rejected in these blocks. | 0       |
+| `claim_window_close_offset_blocks` | The number of blocks after the claim window open height, at which the claim window closes. Valid claims for session N will be accepted in these blocks.   | 4       |
+| `proof_window_open_offset_blocks`  | The number of blocks after the claim window close height, at which the proof window opens. Valid proofs for session N will be rejected in these blocks.   | 0       |
+| `proof_window_close_offset_blocks` | The number of blocks after the proof window open height, at which the proof window closes. Valid proofs for session N will be accepted in these blocks.   | 4       |
+
+#### References:
+
+- [`poktroll.shared.Params` / `sharedtypes.Params`](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/shared/params.proto)
 
 ## Session
 
@@ -99,26 +142,26 @@ into the following steps.
 timeline
     title Post Session Proof Validation
     Session Ends <br> (Protocol)
-        : Recompute SMST root & sum (compute units)
-        : Flush and store SMST to local disk
+            : Recompute SMST root & sum (compute units)
+            : Flush and store SMST to local disk
     CreateClaim <br> (Supplier)
-        : Wait for Claim Window to open
-        : Submit CreateClaim Transaction <br>(root, sum, session, app, supplier, service, etc...)
-        : Claim stored on-chain
+            : Wait for Claim Window to open
+            : Submit CreateClaim Transaction <br>(root, sum, session, app, supplier, service, etc...)
+            : Claim stored on-chain
     SubmitProof <br> (Supplier)
-        : Wait for Proof Window to open
-        : Retrieve seed (entropy) from on-chain data (block hash)
-        : Generate Merkle Proof for path in SMST based on seed
-        : Submit SubmitProof Transaction <br>(session, merkle proof, leaf, etc...)
-        : Proof stored on-chain
+            : Wait for Proof Window to open
+            : Retrieve seed (entropy) from on-chain data (block hash)
+            : Generate Merkle Proof for path in SMST based on seed
+            : Submit SubmitProof Transaction <br>(session, merkle proof, leaf, etc...)
+            : Proof stored on-chain
     Proof Validation <br> (Protocol)
-        : Retrieve on-chain Claims that need to be settled
-        : Retrieve corresponding on-chain Proof for every Claim
-        : Validate leaf difficulty
-        : Validate Merkle Proof
-        : Validate Leaf Signature
-        : Burn Application Stake proportional to sum
-        : Inflate Supplier Balance  proportional to sum
+            : Retrieve on-chain Claims that need to be settled
+            : Retrieve corresponding on-chain Proof for every Claim
+            : Validate leaf difficulty
+            : Validate Merkle Proof
+            : Validate Leaf Signature
+            : Burn Application Stake proportional to sum
+            : Inflate Supplier Balance proportional to sum
 ```
 
 ## Claim
@@ -137,13 +180,15 @@ that were necessary to service that request.
 
 A serialized version of the `Claim` is stored on-chain.
 
-You can find the definition for the [Claim structure here](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/proof/claim.proto).
+You can find the definition for
+the [Claim structure here](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/proof/claim.proto).
 
 ### CreateClaim Transaction
 
 A `CreateClaim` transaction can be submitted by a `Supplier` to store a claim `on-chain`.
 
-You can find the definition for the [CreateClaim Transaction here](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/proof/tx.proto).
+You can find the definition for
+the [CreateClaim Transaction here](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/proof/tx.proto).
 
 ### CreateClaim Validation
 
@@ -152,40 +197,42 @@ on-chain, it MUST be validated:
 
 ```mermaid
 stateDiagram-v2
+    [*] --> Validate_Claim
+    state Validate_Claim {
+        [*] --> Validate_Basic
 
-[*] --> Validate_Claim
-state Validate_Claim {
-    [*] --> Validate_Basic
-    
-    state Validate_Basic {
-        state if_session_start_gt_0 <<choice>>
-        state if_session_id_empty <<choice>>
-        state if_service_invalid <<choice>>
-        state if_supplier_addr_valid <<choice>>
-        
-        [*] --> if_supplier_addr_valid
-        if_supplier_addr_valid --> Basic_Validation_Error: invalid supplier address
-        if_supplier_addr_valid --> if_session_start_gt_0
-        if_session_start_gt_0 --> Basic_Validation_Error: session start height < 0
-        if_session_start_gt_0 --> if_session_id_empty
-        if_session_id_empty --> Basic_Validation_Error: empty session ID
-        if_session_id_empty --> if_service_invalid
-        if_service_invalid --> Basic_Validation_Error: invalid service
-        if_service_invalid --> [*]
+        state Validate_Basic {
+            state if_session_start_gt_0 <<choice>>
+            state if_session_id_empty <<choice>>
+            state if_service_invalid <<choice>>
+            state if_supplier_addr_valid <<choice>>
+            [*] --> if_supplier_addr_valid
+            if_supplier_addr_valid --> Basic_Validation_Error: invalid supplier address
+            if_supplier_addr_valid --> if_session_start_gt_0
+            if_session_start_gt_0 --> Basic_Validation_Error: session start height < 0
+            if_session_start_gt_0 --> if_session_id_empty
+            if_session_id_empty --> Basic_Validation_Error: empty session ID
+            if_session_id_empty --> if_service_invalid
+            if_service_invalid --> Basic_Validation_Error: invalid service
+            if_service_invalid --> [*]
+        }
+
+        Validate_Basic --> Validate_Session_Header
+        Validate_Session_Header
+        Validate_Session_Header --> Validate_Claim_Window
+        Validate_Claim_Window --> [*]
     }
-
-    Validate_Basic --> Validate_Session_Header
-    Validate_Session_Header
-    Validate_Session_Header --> Validate_Claim_Window
-    Validate_Claim_Window -->[*]
-}
-Validate_Claim --> [*]
+    Validate_Claim --> [*]
 ```
 
 #### References:
-- Create claim message basic validation ([`MsgCreateClaim#ValidateBasic()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/types/message_create_claim.go))
-- Session header validation ([diagram](#session-header-validation) / [`msgServer#queryAndValidateSessionHeader()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/keeper/session.go))
-- On-chain claim window validation ([diagram](#TODO) / [`msgServer#validateClaimWindow()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/keeper/session.go))
+
+- Create claim message basic
+  validation ([`MsgCreateClaim#ValidateBasic()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/types/message_create_claim.go))
+- Session header
+  validation ([diagram](#session-header-validation) / [`msgServer#queryAndValidateSessionHeader()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/keeper/session.go))
+- On-chain claim window
+  validation ([diagram](#TODO) / [`msgServer#validateClaimWindow()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/keeper/session.go))
 
 ### Claim Window
 
@@ -212,7 +259,8 @@ rewarded for the work done.
 
 A serialized version of the `Proof` is stored on-chain.
 
-You can find the definition for the [Proof structure here](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/proof/proof.proto)
+You can find the definition for
+the [Proof structure here](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/proof/proof.proto)
 
 ### SubmitProof Transaction
 
@@ -221,7 +269,8 @@ A `SubmitProof` transaction can be submitted by a `Supplier` to store a proof `o
 If the `Proof` is invalid, or if there is no corresponding `Claim` for the `Proof`, the
 transaction will be rejected.
 
-You can find the definition for the [SubmitProof Transaction here](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/proof/tx.proto).
+You can find the definition for
+the [SubmitProof Transaction here](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/proof/tx.proto).
 
 ### SubmitProof Validation
 
@@ -230,56 +279,60 @@ on-chain, it MUST be validated:
 
 ```mermaid
 stateDiagram-v2
-[*] --> Validate_Proof
-state Validate_Proof {
-  [*] --> Proof_Validate_Basic
-  Proof_Validate_Basic --> Validate_Session_Header
-  Validate_Session_Header --> Validate_Proof_Window
-  Validate_Proof_Window --> Unpack_Proven_Relay
-  
-  state Unpack_Proven_Relay {
-    state if_closest_proof_malformed <<choice>>
-    state if_relay_valid <<choice>>
-    
-    [*] --> if_closest_proof_malformed
-    if_closest_proof_malformed --> Closest_Proof_Unmarshal_Error: cannot unmarshal closest proof
-    if_closest_proof_malformed --> if_relay_valid
-    if_relay_valid --> Relay_Unmarshal_Error: cannot unmarshal relay
-    if_relay_valid --> [*]
-  }
+    [*] --> Validate_Proof
+    state Validate_Proof {
+        [*] --> Proof_Validate_Basic
+        Proof_Validate_Basic --> Validate_Session_Header
+        Validate_Session_Header --> Validate_Proof_Window
+        Validate_Proof_Window --> Unpack_Proven_Relay
 
-Unpack_Proven_Relay --> Validate_Proven_Relay
+        state Unpack_Proven_Relay {
+            state if_closest_proof_malformed <<choice>>
+            state if_relay_valid <<choice>>
+            [*] --> if_closest_proof_malformed
+            if_closest_proof_malformed --> Closest_Proof_Unmarshal_Error: cannot unmarshal closest proof
+            if_closest_proof_malformed --> if_relay_valid
+            if_relay_valid --> Relay_Unmarshal_Error: cannot unmarshal relay
+            if_relay_valid --> [*]
+        }
 
-state Validate_Proven_Relay {
-  [*] --> Validate_Relay_Request
-  Validate_Relay_Request --> Validate_Relay_Response
-  Validate_Relay_Response --> [*]
-}
+        Unpack_Proven_Relay --> Validate_Proven_Relay
 
-state if_closest_proof_path_valid <<choice>>
-state if_relay_difficulty_sufficient <<choice>>
+        state Validate_Proven_Relay {
+            [*] --> Validate_Relay_Request
+            Validate_Relay_Request --> Validate_Relay_Response
+            Validate_Relay_Response --> [*]
+        }
 
-Validate_Proven_Relay --> if_closest_proof_path_valid
-if_closest_proof_path_valid --> Closest_Proof_Path_Verification_Error: incorrect closest Merkle proof path
-if_closest_proof_path_valid --> if_relay_difficulty_sufficient
-if_relay_difficulty_sufficient --> Relay_Difficulty_Error: insufficient relay difficulty
-if_relay_difficulty_sufficient --> Validate_Claim_For_Proof
-
-state if_closest_proof_valid <<choice>>
-  Validate_Claim_For_Proof --> if_closest_proof_valid
-  if_closest_proof_valid --> Closest_Proof_Verification_Error: incorrect closest Merkle proof
-  if_closest_proof_valid --> [*]
-}
-Validate_Proof --> [*]
+        state if_closest_proof_path_valid <<choice>>
+        state if_relay_difficulty_sufficient <<choice>>
+        Validate_Proven_Relay --> if_closest_proof_path_valid
+        if_closest_proof_path_valid --> Closest_Proof_Path_Verification_Error: incorrect closest Merkle proof path
+        if_closest_proof_path_valid --> if_relay_difficulty_sufficient
+        if_relay_difficulty_sufficient --> Relay_Difficulty_Error: insufficient relay difficulty
+        if_relay_difficulty_sufficient --> Validate_Claim_For_Proof
+        state if_closest_proof_valid <<choice>>
+        Validate_Claim_For_Proof --> if_closest_proof_valid
+        if_closest_proof_valid --> Closest_Proof_Verification_Error: incorrect closest Merkle proof
+        if_closest_proof_valid --> [*]
+    }
+    Validate_Proof --> [*]
 ```
 
 #### References:
-- Proof basic validation ([diagram](#proof-basic-validation) / [`MsgSubmitProof#ValidateBasic()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/types/message_submit_proof.go))
-- Session header validation ([diagram](#session-header-validation) / [`msgServer#queryAndValidateSessionHeader()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/keeper/session.go))
-- Proof window validation ([diagram](#TODO) / [`msgServer#validateProofWindow()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/keeper/session.go))
-- Proven relay request validation ([diagram](#proof-submission-relay-request-validation) / [`RelayRequest#ValidateBasic()`](https://github.com/pokt-network/poktroll/blob/main/x/service/types/relay.go))
-- Proven relay response validation ([diagram](#proof-submission-relay-response-validation) / [`RelayResponse#ValidateBasic()`](https://github.com/pokt-network/poktroll/blob/main/x/service/types/relay.go))
-- Proof claim validation ([diagram](#proof-submission-claim-validation) / [`msgServer#queryandValidateClaimForProof()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/keeper/msg_server_submit_proof.go))
+
+- Proof basic
+  validation ([diagram](#proof-basic-validation) / [`MsgSubmitProof#ValidateBasic()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/types/message_submit_proof.go))
+- Session header
+  validation ([diagram](#session-header-validation) / [`msgServer#queryAndValidateSessionHeader()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/keeper/session.go))
+- Proof window
+  validation ([diagram](#TODO) / [`msgServer#validateProofWindow()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/keeper/session.go))
+- Proven relay request
+  validation ([diagram](#proof-submission-relay-request-validation) / [`RelayRequest#ValidateBasic()`](https://github.com/pokt-network/poktroll/blob/main/x/service/types/relay.go))
+- Proven relay response
+  validation ([diagram](#proof-submission-relay-response-validation) / [`RelayResponse#ValidateBasic()`](https://github.com/pokt-network/poktroll/blob/main/x/service/types/relay.go))
+- Proof claim
+  validation ([diagram](#proof-submission-claim-validation) / [`msgServer#queryandValidateClaimForProof()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/keeper/msg_server_submit_proof.go))
 
 ### Proof Window
 
@@ -298,7 +351,8 @@ In addition to basic validation as part of processing `SubmitProof` to determine
 whether or not the `Proof` should be stored on-chain, there are several additional
 deep cryptographic validations needed:
 
-1. `Merkle Leaf Validation`: Proof of the off-chain `Supplier`/`Application` interaction during the Relay request & response.
+1. `Merkle Leaf Validation`: Proof of the off-chain `Supplier`/`Application` interaction during the Relay request &
+   response.
 2. `Merkle Proof Selection`: Proof of the amount of work done by the `Supplier` during the `Session`.
 
 :::note
@@ -375,43 +429,37 @@ Legend:
 
 ```mermaid
 graph TB
-    classDef redNode fill:#ff0000, color:#ffffff;
-    classDef greenNode fill:#00b300, color:#ffffff;
-    classDef blueNode fill:#0000ff, color:#ffffff;
-    classDef yellowNode fill:#fff500, color:#ffa500
-    classDef brownNode fill:#964B00, color:#ffffff;
+    classDef redNode fill: #ff0000, color: #ffffff;
+    classDef greenNode fill: #00b300, color: #ffffff;
+    classDef blueNode fill: #0000ff, color: #ffffff;
+    classDef yellowNode fill: #fff500, color: #ffa500
+    classDef brownNode fill: #964B00, color: #ffffff;
 
-    %% Define root node
+%% Define root node
     R[sum=9<br>root]
-
-    %% Height = 1
+%% Height = 1
     R -- 0 --> N1[sum=5<br>0b0]
     R -- 1 --> N2[sum=4<br>0b1]
-
-    %% Height = 2
+%% Height = 2
     N1 -- 0 --> E1[sum=0<br>0b00xxx]
     N1 -- 1 --> N3[sum=5<br>0b01]
     N2 -- 0b10xxx --> L1[weight=1<br>0b10000]
     N2 -- 1 --> N4[sum=3<br>0b11]
-
-    %% Height = 3
+%% Height = 3
     N3 -- 0b010xx --> L2[weight=2<br>0b01000]
     N3 -- 0b011xx --> L3[weight=3<br>0b01100]
     N4 -- 0 --> E2[sum=0<br>0b100xx]
     N4 -- 1 --> N5[sum=3<br>0b111]
-
-    %% Height = 4
+%% Height = 4
     N5 -- 0b1110x --> L4[weight=1<br>0b11100]
     N5 -- 1 --> N6[sum=2<br>0b1111]
-
-    %% Height = 5
+%% Height = 5
     N6 -- 0 --> L5[weight=1<br>0b11110]
     N6 -- 1 --> L6[weight=1<br>0b11111]
-
     class R redNode;
-    class L1,L2,L3,L4,L5,L6 greenNode;
-    class N1,N2,N3,N4,N5,N6 blueNode;
-    class E1,E2 brownNode;
+    class L1, L2, L3, L4, L5, L6 greenNode;
+    class N1, N2, N3, N4, N5, N6 blueNode;
+    class E1, E2 brownNode;
 ```
 
 #### Example 1: Path to leaf at full depth
@@ -421,43 +469,36 @@ graph TB
 title: Path to leaf at full depth (path=0b11111)
 ---
 graph TB
-    %% Define a class for red nodes
-    classDef redNode fill:#ff0000, color:#ffffff;
-    classDef greenNode fill:#00ff00, color:#ffffff;
-    classDef blueNode fill:#0000ff, color:#ffffff;
-    classDef yellowNode fill:#fff500, color:#ffa500
-    classDef yellowBorderNode stroke:#fff500, stroke-width:4px, stroke-dasharray: 5 5
-
-    %% Define root node
+%% Define a class for red nodes
+    classDef redNode fill: #ff0000, color: #ffffff;
+    classDef greenNode fill: #00ff00, color: #ffffff;
+    classDef blueNode fill: #0000ff, color: #ffffff;
+    classDef yellowNode fill: #fff500, color: #ffa500
+    classDef yellowBorderNode stroke: #fff500, stroke-width: 4px, stroke-dasharray: 5 5
+%% Define root node
     R[sum=9<br>root]
-
-    %% Height = 1
+%% Height = 1
     R -- 0 --> N1[sum=5<br>0b0]
     R -- 1 --> N2[sum=4<br>0b1]
-
-    %% Height = 2
+%% Height = 2
     N1 -- 0 --> E1[sum=0<br>0b00xxx]
     N1 -- 1 --> N3[sum=5<br>0b01]
     N2 -- 0b10xxx --> L1[weight=1<br>0b10000]
     N2 -- 1 --> N4[sum=3<br>0b11]
-
-    %% Height = 3
+%% Height = 3
     N3 -- 0b010xx --> L2[weight=2<br>0b01000]
     N3 -- 0b011xx --> L3[weight=3<br>0b01100]
     N4 -- 0 --> E2[sum=0<br>0b100xx]
     N4 -- 1 --> N5[sum=3<br>0b111]
-
-    %% Height = 4
+%% Height = 4
     N5 -- 0b1110x --> L4[weight=1<br>0b11100]
     N5 -- 1 --> N6[sum=2<br>0b1111]
-
-    %% Height = 5
+%% Height = 5
     N6 -- 0 --> L5[weight=1<br>0b11110]
     N6 -- 1 --> L6[weight=1<br>0b11111]
-
     class R redNode;
-    class L1,L4,L5,E2,N1 yellowNode;
-    class N6,N5,N4,N2 yellowBorderNode;
+    class L1, L4, L5, E2, N1 yellowNode;
+    class N6, N5, N4, N2 yellowBorderNode;
     class L6 greenNode;
 ```
 
@@ -468,43 +509,36 @@ graph TB
 title: Path to leaf at partial depth (path=0b01100)
 ---
 graph TB
-    %% Define a class for red nodes
-    classDef redNode fill:#ff0000, color:#ffffff;
-    classDef greenNode fill:#00ff00, color:#ffffff;
-    classDef blueNode fill:#0000ff, color:#ffffff;
-    classDef yellowNode fill:#fff500, color:#ffa500
-    classDef yellowBorderNode stroke:#fff500, stroke-width:4px, stroke-dasharray: 5 5
-
-    %% Define root node
+%% Define a class for red nodes
+    classDef redNode fill: #ff0000, color: #ffffff;
+    classDef greenNode fill: #00ff00, color: #ffffff;
+    classDef blueNode fill: #0000ff, color: #ffffff;
+    classDef yellowNode fill: #fff500, color: #ffa500
+    classDef yellowBorderNode stroke: #fff500, stroke-width: 4px, stroke-dasharray: 5 5
+%% Define root node
     R[sum=9<br>root]
-
-    %% Height = 1
+%% Height = 1
     R -- 0 --> N1[sum=5<br>0b0]
     R -- 1 --> N2[sum=4<br>0b1]
-
-    %% Height = 2
+%% Height = 2
     N1 -- 0 --> E1[sum=0<br>0b00xxx]
     N1 -- 1 --> N3[sum=5<br>0b01]
     N2 -- 0b10xxx --> L1[weight=1<br>0b10000]
     N2 -- 1 --> N4[sum=3<br>0b11]
-
-    %% Height = 3
+%% Height = 3
     N3 -- 0b010xx --> L2[weight=2<br>0b01000]
     N3 -- 0b011xx --> L3[weight=3<br>0b01100]
     N4 -- 0 --> E2[sum=0<br>0b100xx]
     N4 -- 1 --> N5[sum=3<br>0b111]
-
-    %% Height = 4
+%% Height = 4
     N5 -- 0b1110x --> L4[weight=1<br>0b11100]
     N5 -- 1 --> N6[sum=2<br>0b1111]
-
-    %% Height = 5
+%% Height = 5
     N6 -- 0 --> L5[weight=1<br>0b11110]
     N6 -- 1 --> L6[weight=1<br>0b11111]
-
     class R redNode;
-    class E1,N2,L2 yellowNode;
-    class N1,N3 yellowBorderNode;
+    class E1, N2, L2 yellowNode;
+    class N1, N3 yellowBorderNode;
     class L3 greenNode;
 ```
 
@@ -515,44 +549,37 @@ graph TB
 title: Path to leaf at partial depth (path=0b100xx->0b10000)
 ---
 graph TB
-    classDef redNode fill:#ff0000, color:#ffffff;
-    classDef greenNode fill:#00ff00, color:#ffffff;
-    classDef greenNodeDark fill:#067620, color:#ffffff;
-    classDef blueNode fill:#0000ff, color:#ffffff;
-    classDef yellowNode fill:#fff500, color:#ffa500
-    classDef yellowBorderNode stroke:#fff500, stroke-width:4px, stroke-dasharray: 5 5
-
-    %% Define root node
+    classDef redNode fill: #ff0000, color: #ffffff;
+    classDef greenNode fill: #00ff00, color: #ffffff;
+    classDef greenNodeDark fill: #067620, color: #ffffff;
+    classDef blueNode fill: #0000ff, color: #ffffff;
+    classDef yellowNode fill: #fff500, color: #ffa500
+    classDef yellowBorderNode stroke: #fff500, stroke-width: 4px, stroke-dasharray: 5 5
+%% Define root node
     R[sum=9<br>root]
-
-    %% Height = 1
+%% Height = 1
     R -- 0 --> N1[sum=5<br>0b0]
     R -- 1 --> N2[sum=4<br>0b1]
-
-    %% Height = 2
+%% Height = 2
     N1 -- 0 --> E1[sum=0<br>0b00xxx]
     N1 -- 1 --> N3[sum=5<br>0b01]
     N2 -- 0b10xxx --> L1[weight=1<br>0b10000]
     N2 -- 1 --> N4[sum=3<br>0b11]
-
-    %% Height = 3
+%% Height = 3
     N3 -- 0b010xx --> L2[weight=2<br>0b01000]
     N3 -- 0b011xx --> L3[weight=3<br>0b01100]
     N4 -- 0 --> E2[sum=0<br>0b100xx]
     N4 -- 1 --> N5[sum=3<br>0b111]
-
-    %% Height = 4
+%% Height = 4
     N5 -- 0b1110x --> L4[weight=1<br>0b11100]
     N5 -- 1 --> N6[sum=2<br>0b1111]
-
-    %% Height = 5
+%% Height = 5
     N6 -- 0 --> L5[weight=1<br>0b11110]
     N6 -- 1 --> L6[weight=1<br>0b11111]
-
     class R redNode;
-    class N1,N5 yellowNode;
-    class N4,N2 yellowBorderNode;
-    class E2,L1 greenNode;
+    class N1, N5 yellowNode;
+    class N4, N2 yellowBorderNode;
+    class E2, L1 greenNode;
     class E2 greenNodeDark;
 ```
 
@@ -569,29 +596,29 @@ sequenceDiagram
     actor Svc as Service / Data Node
     participant W as World State
     alt Step 2. Start Session: Blocks [B, B+W)
-        A ->> +W: GetSessionData(AppPubKey, Svc, BlockHeight, ...)
+        A ->> + W: GetSessionData(AppPubKey, Svc, BlockHeight, ...)
         S ->> W: GetSessionData(AppPubKey, Svc, BlockHeight, ...)
         W ->> S: Session(Header, [Servicer])
-        W ->> -A: Session(Header, [Servicer])
+        W ->> - A: Session(Header, [Servicer])
     end
 
     loop Step 3. During Session: Blocks [B, B+W)
-        A ->> +S: Signed(Relay)
+        A ->> + S: Signed(Relay)
         S ->> S: Relay Validation
-        S ->> +Svc: Service(Request)
-        Svc ->> -S: Response
+        S ->> + Svc: Service(Request)
+        Svc ->> - S: Response
         S ->> S: 1. Compute hash<br>2. Insert in SMT<br>3. Decrement token count
-        S ->> -A: Signed(Response)
+        S ->> - A: Signed(Response)
     end
 
     alt Step 4. After Session: Blocks [B+W+1, B+W+1+L)
         S ->> W: Claim(SMT Root Commitment)
-        note over S,W: Wait L blocks
-        S ->> +W: GetProofRequest(SessionHeader, ServicerPubKey, AppPubKey, ...)
-        W ->> -S: ProofRequestDetails
-        S ->> +W: Proof(SMT Branch Reveal)
+        note over S, W: Wait L blocks
+        S ->> + W: GetProofRequest(SessionHeader, ServicerPubKey, AppPubKey, ...)
+        W ->> - S: ProofRequestDetails
+        S ->> + W: Proof(SMT Branch Reveal)
         W ->> S: Token Rewards (Increase Servicer Balance)
-        W ->> -A: Token Burn (Decrease Application Stake)
+        W ->> - A: Token Burn (Decrease Application Stake)
     end
 ```
 
@@ -601,177 +628,165 @@ sequenceDiagram
 
 ```mermaid
 stateDiagram-v2
+    [*] --> Validate_Session_Header
 
-[*] --> Validate_Session_Header
+    state Validate_Session_Header {
+        [*] --> Get_Session
+        state if_get_session_error <<choice>>
+        state if_session_id_mismatch <<choice>>
+        state if_supplier_found <<choice>>
+        Get_Session --> if_get_session_error
+        if_get_session_error --> Session_Header_Validation_Error: get session error
+        if_get_session_error --> if_session_id_mismatch
+        if_session_id_mismatch --> Session_Header_Validation_Error: claim & on-chain session ID mismatch
+        if_session_id_mismatch --> if_supplier_found
+        if_supplier_found --> Session_Header_Validation_Error: claim supplier not in session
+        if_supplier_found --> [*]
+    }
 
-
-state Validate_Session_Header {
-    [*] --> Get_Session
-    state if_get_session_error <<choice>>
-    state if_session_id_mismatch <<choice>>
-    state if_supplier_found <<choice>>
-    Get_Session --> if_get_session_error
-    if_get_session_error --> Session_Header_Validation_Error: get session error
-    if_get_session_error --> if_session_id_mismatch
-    if_session_id_mismatch --> Session_Header_Validation_Error: claim & on-chain session ID mismatch
-    if_session_id_mismatch --> if_supplier_found
-    if_supplier_found --> Session_Header_Validation_Error: claim supplier not in session
-    if_supplier_found --> [*]
-}
-
-Validate_Session_Header --> [*]
+    Validate_Session_Header --> [*]
 ```
 
 ### Proof Basic Validation
 
 ```mermaid
 stateDiagram-v2
+    [*] --> Proof_Validate_Basic
 
-  [*] --> Proof_Validate_Basic
+    state Proof_Validate_Basic {
+        state if_supplier_addr_valid <<choice>>
+        state if_app_addr_valid <<choice>>
+        state if_service_id_empty <<choice>>
+        state if_proof_empty <<choice>>
+        [*] --> if_supplier_addr_valid
+        if_supplier_addr_valid --> Basic_Validation_error: invalid supplier address
+        if_supplier_addr_valid --> if_app_addr_valid
+        if_app_addr_valid --> Basic_Validation_error: invalid app address
+        if_app_addr_valid --> if_service_id_empty
+        if_service_id_empty --> Basic_Validation_error: empty service ID
+        if_service_id_empty --> if_proof_empty
+        if_proof_empty --> Basic_Validation_error: empty merkle proof
+        if_proof_empty --> [*]
+    }
 
-  state Proof_Validate_Basic {
-    state if_supplier_addr_valid <<choice>>
-    state if_app_addr_valid <<choice>>
-    state if_service_id_empty <<choice>>
-    state if_proof_empty <<choice>>
-    [*] --> if_supplier_addr_valid
-    if_supplier_addr_valid --> Basic_Validation_error: invalid supplier address
-    if_supplier_addr_valid --> if_app_addr_valid
-    if_app_addr_valid --> Basic_Validation_error: invalid app address
-    if_app_addr_valid --> if_service_id_empty
-    if_service_id_empty --> Basic_Validation_error: empty service ID
-    if_service_id_empty --> if_proof_empty
-    if_proof_empty --> Basic_Validation_error: empty merkle proof
-    if_proof_empty --> [*]
-  }
-
-  Proof_Validate_Basic --> [*]
+    Proof_Validate_Basic --> [*]
 ```
 
 ### Proof Submission Relay Request Validation
 
 ```mermaid
 stateDiagram-v2
-
-[*] --> Validate_Relay_Request
-state Validate_Relay_Request {
-    
+    [*] --> Validate_Relay_Request
+    state Validate_Relay_Request {
         [*] --> Validate_Relay_Request_Basic
 
-    state Validate_Relay_Request_Basic {
-        state if_request_valid <<choice>>
-        state if_request_signature_empty <<choice>>
-        [*] --> Validate_Relay_Request_Session_Header*
-        Validate_Relay_Request_Session_Header* --> if_request_valid
-        if_request_valid --> Relay_Request_Validation_Error: invalid relay request session header
-        if_request_valid --> if_request_signature_empty
-        if_request_signature_empty --> Relay_Request_Validation_Error: invalid relay request ring signature
-        if_request_signature_empty --> [*]
+        state Validate_Relay_Request_Basic {
+            state if_request_valid <<choice>>
+            state if_request_signature_empty <<choice>>
+            [*] --> Validate_Relay_Request_Session_Header*
+            Validate_Relay_Request_Session_Header* --> if_request_valid
+            if_request_valid --> Relay_Request_Validation_Error: invalid relay request session header
+            if_request_valid --> if_request_signature_empty
+            if_request_signature_empty --> Relay_Request_Validation_Error: invalid relay request ring signature
+            if_request_signature_empty --> [*]
+        }
+
+        Validate_Relay_Request_Basic --> Compare_Relay_Request_Session_Header
+
+        state Compare_Relay_Request_Session_Header {
+            state if_req_session_header_mismatch <<choice>>
+            [*] --> Compare_Session_Header_To_Proof(Relay_Request)
+            Compare_Session_Header_To_Proof(Relay_Request) --> if_req_session_header_mismatch
+            if_req_session_header_mismatch --> Relay_Request_&_Proof_Session_Mismatch_Error
+            if_req_session_header_mismatch --> [*]
+        }
+
+        Compare_Relay_Request_Session_Header --> Validate_Relay_Request_Signature
+
+        state Validate_Relay_Request_Signature {
+            state if_request_meta_empty <<choice>>
+            state if_ring_sig_empty <<choice>>
+            state if_ring_sig_malformed <<choice>>
+            state if_app_addr_empty <<choice>>
+            state if_ring_valid <<choice>>
+            state if_ring_mismatch <<choice>>
+            state if_ring_sig_valid <<choice>>
+            [*] --> if_request_meta_empty
+            if_request_meta_empty --> Relay_Request_Signature_Error: empty relay request metadata
+            if_request_meta_empty --> if_ring_sig_empty
+            if_ring_sig_empty --> Relay_Request_Signature_Error: empty application ring (request) signature
+            if_ring_sig_empty --> if_ring_sig_malformed
+            if_ring_sig_malformed --> Relay_Request_Signature_Error: malformed application ring (request) signature
+            if_ring_sig_malformed --> if_app_addr_empty
+            if_app_addr_empty --> Relay_Request_Signature_Error: empty application address
+            if_app_addr_empty --> if_ring_valid
+            if_ring_valid --> Relay_Request_Signature_Error: cannot construct application ring
+            if_ring_valid --> if_ring_mismatch
+            if_ring_mismatch --> Relay_Request_Signature_Error: wrong application ring
+            if_ring_mismatch --> if_ring_sig_valid
+            if_ring_sig_valid --> Relay_Request_Signature_Error: invalid application ring (request) signature
+            if_ring_sig_valid --> [*]
+        }
+
+        Validate_Relay_Request_Signature --> [*]
     }
-
-    Validate_Relay_Request_Basic --> Compare_Relay_Request_Session_Header
-
-    state Compare_Relay_Request_Session_Header {
-        state if_req_session_header_mismatch <<choice>>
-        [*] --> Compare_Session_Header_To_Proof(Relay_Request)
-        Compare_Session_Header_To_Proof(Relay_Request) --> if_req_session_header_mismatch
-        if_req_session_header_mismatch --> Relay_Request_&_Proof_Session_Mismatch_Error
-        if_req_session_header_mismatch --> [*]
-    }
-
-    Compare_Relay_Request_Session_Header --> Validate_Relay_Request_Signature
-
-    state Validate_Relay_Request_Signature {
-        state if_request_meta_empty <<choice>>
-        state if_ring_sig_empty <<choice>>
-        state if_ring_sig_malformed <<choice>>
-        state if_app_addr_empty <<choice>>
-        state if_ring_valid <<choice>>
-        state if_ring_mismatch <<choice>>
-        state if_ring_sig_valid <<choice>>
-        
-        [*] --> if_request_meta_empty
-        if_request_meta_empty --> Relay_Request_Signature_Error: empty relay request metadata
-        if_request_meta_empty --> if_ring_sig_empty
-        if_ring_sig_empty --> Relay_Request_Signature_Error: empty application ring (request) signature
-        if_ring_sig_empty --> if_ring_sig_malformed
-        if_ring_sig_malformed --> Relay_Request_Signature_Error: malformed application ring (request) signature
-        if_ring_sig_malformed --> if_app_addr_empty
-        if_app_addr_empty --> Relay_Request_Signature_Error: empty application address
-        if_app_addr_empty --> if_ring_valid
-        if_ring_valid --> Relay_Request_Signature_Error: cannot construct application ring
-        if_ring_valid --> if_ring_mismatch
-        if_ring_mismatch --> Relay_Request_Signature_Error: wrong application ring
-        if_ring_mismatch --> if_ring_sig_valid
-        if_ring_sig_valid --> Relay_Request_Signature_Error: invalid application ring (request) signature
-        if_ring_sig_valid --> [*]
-    }
-
-    Validate_Relay_Request_Signature --> [*]
-
-}
-Validate_Relay_Request --> [*]
+    Validate_Relay_Request --> [*]
 ```
 
 ### Proof Submission Relay Response Validation
 
 ```mermaid
 stateDiagram-v2
-
-[*] --> Validate_Relay_Response
-state Validate_Relay_Response {
-    
+    [*] --> Validate_Relay_Response
+    state Validate_Relay_Response {
         [*] --> Validate_Relay_Response_Basic
 
-    state Validate_Relay_Response_Basic {
-        state if_response_valid <<choice>>
-        state if_supplier_signature_empty <<choice>>
-        state if_response_meta_empty <<choice>>
-        [*] --> if_response_meta_empty
-        if_response_meta_empty --> Relay_Response_Validation_Error: empty relay resopnse metadata
-        if_response_meta_empty --> Validate_Relay_Response_Session_Header*
-        Validate_Relay_Response_Session_Header* --> if_response_valid
-        if_response_valid --> Relay_Response_Validation_Error: invalid relay response session header
-        if_response_valid --> if_supplier_signature_empty
-        if_supplier_signature_empty --> Relay_Response_Validation_Error: empty supplier (response) signature
-        if_supplier_signature_empty --> [*]
+        state Validate_Relay_Response_Basic {
+            state if_response_valid <<choice>>
+            state if_supplier_signature_empty <<choice>>
+            state if_response_meta_empty <<choice>>
+            [*] --> if_response_meta_empty
+            if_response_meta_empty --> Relay_Response_Validation_Error: empty relay resopnse metadata
+            if_response_meta_empty --> Validate_Relay_Response_Session_Header*
+            Validate_Relay_Response_Session_Header* --> if_response_valid
+            if_response_valid --> Relay_Response_Validation_Error: invalid relay response session header
+            if_response_valid --> if_supplier_signature_empty
+            if_supplier_signature_empty --> Relay_Response_Validation_Error: empty supplier (response) signature
+            if_supplier_signature_empty --> [*]
+        }
+
+        Validate_Relay_Response_Basic --> Compare_Relay_Response_Session_Header
+
+        state Compare_Relay_Response_Session_Header {
+            state if_res_session_header_mismatch <<choice>>
+            [*] --> Compare_Session_Header_To_Proof(Relay_Response)
+            Compare_Session_Header_To_Proof(Relay_Response) --> if_res_session_header_mismatch
+            if_res_session_header_mismatch --> Relay_Response_&_Proof_Session_Mismatch_Error
+            if_res_session_header_mismatch --> [*]
+        }
+
+        Compare_Relay_Response_Session_Header --> Validate_Relay_Response_Signature
+
+        state Validate_Relay_Response_Signature {
+            state if_supplier_pubkey_exists <<choice>>
+            state if_supplier_sig_malformed <<choice>>
+            [*] --> if_supplier_pubkey_exists
+            if_supplier_pubkey_exists --> Relay_Response_Signature_Error: no supplier public key on-chain
+            if_supplier_pubkey_exists --> if_supplier_sig_malformed
+            if_supplier_sig_malformed --> Relay_Response_Signature_Error: cannot unmarshal supplier (response) signature
+        }
+
+        Validate_Relay_Response_Signature --> [*]
     }
-
-    Validate_Relay_Response_Basic --> Compare_Relay_Response_Session_Header
-
-     state Compare_Relay_Response_Session_Header {
-        state if_res_session_header_mismatch <<choice>>
-        [*] --> Compare_Session_Header_To_Proof(Relay_Response)
-        Compare_Session_Header_To_Proof(Relay_Response) --> if_res_session_header_mismatch
-        if_res_session_header_mismatch --> Relay_Response_&_Proof_Session_Mismatch_Error
-        if_res_session_header_mismatch --> [*]
-    }
-
-    Compare_Relay_Response_Session_Header --> Validate_Relay_Response_Signature
-
-    state Validate_Relay_Response_Signature {
-        state if_supplier_pubkey_exists <<choice>>
-        state if_supplier_sig_malformed <<choice>>
-
-        [*] --> if_supplier_pubkey_exists
-        if_supplier_pubkey_exists --> Relay_Response_Signature_Error: no supplier public key on-chain
-        if_supplier_pubkey_exists --> if_supplier_sig_malformed
-        if_supplier_sig_malformed --> Relay_Response_Signature_Error: cannot unmarshal supplier (response) signature
-    }
-
-    Validate_Relay_Response_Signature --> [*]
-
-}
-Validate_Relay_Response --> [*]
+    Validate_Relay_Response --> [*]
 ```
 
 ### Proof Session Header Comparison
 
 ```mermaid
 stateDiagram-v2
-
-[*] --> Compare_Session_Header_To_Proof
-state Compare_Session_Header_To_Proof {
+    [*] --> Compare_Session_Header_To_Proof
+    state Compare_Session_Header_To_Proof {
         state if_app_addr_mismatch <<choice>>
         state if_service_id_mismatch <<choice>>
         state if_session_start_mismatch <<choice>>
@@ -779,43 +794,41 @@ state Compare_Session_Header_To_Proof {
         state if_session_id_mismatch <<choice>>
         [*] --> if_app_addr_mismatch
         if_app_addr_mismatch --> Session_Header_Mismatch_Error: proof msg application address mismatch
-        if_app_addr_mismatch -->  if_service_id_mismatch
+        if_app_addr_mismatch --> if_service_id_mismatch
         if_service_id_mismatch --> Session_Header_Mismatch_Error: proof msg service ID mismatch
         if_service_id_mismatch --> if_session_start_mismatch
-        if_session_start_mismatch -->Session_Header_Mismatch_Error: proof msg session start mismatch
+        if_session_start_mismatch --> Session_Header_Mismatch_Error: proof msg session start mismatch
         if_session_start_mismatch --> if_session_end_mismatch
         if_session_end_mismatch --> Session_Header_Mismatch_Error: proof msg session end mismatch
         if_session_end_mismatch --> if_session_id_mismatch
         if_session_id_mismatch --> Session_Header_Mismatch_Error: proof msg session ID mismatch
         if_session_id_mismatch --> [*]
-}
-Compare_Session_Header_To_Proof --> [*]
+    }
+    Compare_Session_Header_To_Proof --> [*]
 ```
 
 ### Proof Submission Claim Validation
 
 ```mermaid
 stateDiagram-v2
-
-  [*] --> Validate_Claim_For_Proof
-  state Validate_Claim_For_Proof {
-    state if_claim_found <<choice>>
-    state if_proof_session_start_mismatch <<choice>>
-    state if_proof_session_end_mismatch <<choice>>
-    state if_proof_app_addr_mismatch <<choice>>
-    state if_proof_service_mismatch <<choice>>
-
-    [*] --> if_claim_found
-    if_claim_found --> Claim_Validation_Error: claim not found
-    if_claim_found --> if_proof_session_start_mismatch
-    if_proof_session_start_mismatch --> Claim_Validation_Error: proof session start mismatch
-    if_proof_session_start_mismatch --> if_proof_session_end_mismatch
-    if_proof_session_end_mismatch --> Claim_Validation_Error: proof session end mismatch
-    if_proof_session_end_mismatch --> if_proof_app_addr_mismatch
-    if_proof_app_addr_mismatch --> Claim_Validation_Error: proof application address mismatch
-    if_proof_app_addr_mismatch --> if_proof_service_mismatch
-    if_proof_service_mismatch --> Claim_Validation_Error: proof service ID mismatch
-    if_proof_service_mismatch --> [*]
-  }
-  Validate_Claim_For_Proof --> [*]
+    [*] --> Validate_Claim_For_Proof
+    state Validate_Claim_For_Proof {
+        state if_claim_found <<choice>>
+        state if_proof_session_start_mismatch <<choice>>
+        state if_proof_session_end_mismatch <<choice>>
+        state if_proof_app_addr_mismatch <<choice>>
+        state if_proof_service_mismatch <<choice>>
+        [*] --> if_claim_found
+        if_claim_found --> Claim_Validation_Error: claim not found
+        if_claim_found --> if_proof_session_start_mismatch
+        if_proof_session_start_mismatch --> Claim_Validation_Error: proof session start mismatch
+        if_proof_session_start_mismatch --> if_proof_session_end_mismatch
+        if_proof_session_end_mismatch --> Claim_Validation_Error: proof session end mismatch
+        if_proof_session_end_mismatch --> if_proof_app_addr_mismatch
+        if_proof_app_addr_mismatch --> Claim_Validation_Error: proof application address mismatch
+        if_proof_app_addr_mismatch --> if_proof_service_mismatch
+        if_proof_service_mismatch --> Claim_Validation_Error: proof service ID mismatch
+        if_proof_service_mismatch --> [*]
+    }
+    Validate_Claim_For_Proof --> [*]
 ```
