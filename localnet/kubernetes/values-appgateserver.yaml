@@ -1,6 +1,6 @@
 config:
-  query_node_rpc_url: tcp://validator-poktroll-validator:36657
-  query_node_grpc_url: tcp://validator-poktroll-validator:36658
+  query_node_rpc_url: tcp://validator-poktroll-validator:26657
+  query_node_grpc_url: tcp://validator-poktroll-validator:9090
   metrics:
     enabled: true
     addr: :9090

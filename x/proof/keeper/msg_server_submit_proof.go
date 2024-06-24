@@ -43,9 +43,6 @@ func init() {
 // A proof that's stored on-chain is what leads to rewards (i.e. inflation)
 // downstream, making the series of checks a critical part of the protocol.
 //
-// TODO_BLOCKER(@bryanchriswhite): Prevent proof upserts after the tokenomics
-// module has processed the respective session.
-//
 // Note: The entity sending the SubmitProof messages does not necessarily need
 // to correspond to the supplier signing the proof. For example, a single entity
 // could (theoretically) batch multiple proofs (signed by the corresponding supplier)
@@ -469,12 +466,9 @@ func (k msgServer) validateClosestPath(
 	}
 	blockHash := k.sessionKeeper.GetBlockHash(ctx, sessionGracePeriodEndHeight)
 
-	// TODO_BETA: Investigate "proof for the path provided does not match one expected by the on-chain protocol"
-	// error that may occur due to block height differing from the off-chain part.
-	fmt.Println("E2E_DEBUG: height for block hash when verifying the proof", sessionGracePeriodEndHeight, sessionHeader.GetSessionId())
-
 	expectedProofPath := GetPathForProof(blockHash, sessionHeader.GetSessionId())
 	if !bytes.Equal(proof.Path, expectedProofPath) {
+		fmt.Println("TODO_BETA: Investigate 'ErrProofInvalidProof' may occur due to block height differing from the off-chain part when height for block hash.")
 		return types.ErrProofInvalidProof.Wrapf(
 			"the proof for the path provided (%x) does not match one expected by the on-chain protocol (%x)",
 			proof.Path,
