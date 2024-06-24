@@ -43,9 +43,6 @@ func init() {
 // A proof that's stored on-chain is what leads to rewards (i.e. inflation)
 // downstream, making the series of checks a critical part of the protocol.
 //
-// TODO_BLOCKER(@bryanchriswhite): Prevent proof upserts after the tokenomics
-// module has processed the respective session.
-//
 // Note: The entity sending the SubmitProof messages does not necessarily need
 // to correspond to the supplier signing the proof. For example, a single entity
 // could (theoretically) batch multiple proofs (signed by the corresponding supplier)

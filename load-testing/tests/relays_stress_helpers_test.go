@@ -730,7 +730,6 @@ func (plan *actorLoadTestIncrementPlan) shouldIncrementActorCount(
 	}
 
 	initialSessionNumber := testsession.GetSessionNumberWithDefaultParams(startBlockHeight)
-	// TODO_BLOCKER(@bryanchriswhite): replace with gov param query when available.
 	actorSessionIncRate := plan.blocksPerIncrement / int64(sharedParams.GetNumBlocksPerSession())
 	nextSessionNumber := sessionInfo.sessionNumber + 1 - initialSessionNumber
 	isSessionStartHeight := sessionInfo.blockHeight == sessionInfo.sessionStartBlockHeight
@@ -757,7 +756,6 @@ func (plan *actorLoadTestIncrementPlan) shouldIncrementSupplierCount(
 	}
 
 	initialSessionNumber := testsession.GetSessionNumberWithDefaultParams(startBlockHeight)
-	// TODO_BLOCKER(@bryanchriswhite): replace with gov param query when available.
 	supplierSessionIncRate := plan.blocksPerIncrement / int64(sharedParams.GetNumBlocksPerSession())
 	nextSessionNumber := sessionInfo.sessionNumber + 1 - initialSessionNumber
 	isSessionEndHeight := sessionInfo.blockHeight == sessionInfo.sessionEndBlockHeight
