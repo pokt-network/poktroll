@@ -80,6 +80,50 @@ sequenceDiagram
     end
 ```
 
+## Session Windows & On-Chain Parameters
+
+_TODO(@bryanchriswhite): Add message distribution offsets/windows to this picture._
+
+```mermaid
+gantt
+    title Session Relay / Claim / Proof Windows
+    dateFormat ss
+    axisFormat %S
+    tickInterval 1second
+
+    section Relay Window
+        Session N Start: milestone, sns, 00, 0s
+        num_blocks_per_session: nbps, 00, 4s
+        Session N End: milestone, sne, after nbps, 0s
+        grace_period_end_offset_blocks: gpof, after sne, 2s
+        Grace Period End: milestone, gpe, after gpof, 0s
+    section Claim Window
+        claim_window_open_offset_blocks: cwob, after sne, 10ms
+        Session N Claim Window Open: milestone, cwo, after cwob, 0s
+        claim_window_close_offset_blocks: cwcb, after cwo, 4s
+        Session N Claim Window Close: milestone, cwc, after cwcb, 0s
+    section Proof Window
+        proof_window_open_offset_blocks: pwob, after cwc, 10ms
+        Session N Proof Window Open: milestone, pwo, after pwob, 0s
+        proof_window_close_offset_blocks: pwcb, after pwo, 4s
+        Session N PRoof Window Close: milestone, pwc, after pwcb, 0s
+```
+
+> NB: Depicted with the default values (see below); x-axis is units are blocks.
+
+| Parameter                          | Description                                                                                                                                               | Default |
+|------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|---------|
+| `num_blocks_per_session`           | The number of blocks between the session start & end heights. Relays handled in these blocks are included in session N.                                   | 4       |
+| `grace_period_end_offset_blocks`   | The number of blocks after the session end height, at which the grace period ends. Relays handled in these blocks are also included in session N.         | 2       |
+| `claim_window_open_offset_blocks`  | The number of blocks after the session grace period height, at which the claim window opens. Valid claims for session N will be rejected in these blocks. | 0       |
+| `claim_window_close_offset_blocks` | The number of blocks after the claim window open height, at which the claim window closes. Valid claims for session N will be accepted in these blocks.   | 4       |
+| `proof_window_open_offset_blocks`  | The number of blocks after the claim window close height, at which the proof window opens. Valid proofs for session N will be rejected in these blocks.   | 0       |
+| `proof_window_close_offset_blocks` | The number of blocks after the proof window open height, at which the proof window closes. Valid proofs for session N will be accepted in these blocks.   | 4       |
+
+#### References:
+
+- [`poktroll.shared.Params` / `sharedtypes.Params`](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/shared/params.proto)
+
 ## Session
 
 A session is a necessary pre-requisite for the `Claim & Proof` lifecycle to work.
@@ -133,17 +177,12 @@ a certain `Application`. The `sum` in the root of the SMST is the amount of work
 done. Each leaf has a different `weight` depending on the number of _"compute units"_
 that were necessary to service that request.
 
-### Claim Protobuf
+### Protobuf Types
 
-A serialized version of the `Claim` is stored on-chain.
-
-You can find the definition for the [Claim structure here](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/proof/claim.proto).
-
-### CreateClaim Transaction
-
-A `CreateClaim` transaction can be submitted by a `Supplier` to store a claim `on-chain`.
-
-You can find the definition for the [CreateClaim Transaction here](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/proof/tx.proto).
+| Type                                                                                                 | Description                                             |
+|------------------------------------------------------------------------------------------------------|---------------------------------------------------------|
+| [`Claim`](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/proof/claim.proto)       | A serialized version of the `Claim` is stored on-chain. |
+| [`MsgCreateClaim`](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/proof/tx.proto) | Submitted by a `Supplier` to store a claim `on-chain`.  |
 
 ### CreateClaim Validation
 
@@ -183,9 +222,13 @@ Validate_Claim --> [*]
 ```
 
 #### References:
-- Create claim message basic validation ([`MsgCreateClaim#ValidateBasic()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/types/message_create_claim.go))
-- Session header validation ([diagram](#session-header-validation) / [`msgServer#queryAndValidateSessionHeader()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/keeper/session.go))
-- On-chain claim window validation ([diagram](#TODO) / [`msgServer#validateClaimWindow()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/keeper/session.go))
+
+- Create claim message basic
+  validation ([`MsgCreateClaim#ValidateBasic()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/types/message_create_claim.go))
+- Session header
+  validation ([diagram](#session-header-validation) / [`msgServer#queryAndValidateSessionHeader()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/keeper/session.go))
+- On-chain claim window
+  validation ([diagram](#TODO) / [`msgServer#validateClaimWindow()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/keeper/session.go))
 
 ### Claim Window
 
@@ -196,7 +239,7 @@ or too late, it will be rejected by the protocol.
 If a `Supplier` fails to submit a `Claim` during the Claim Window, it will forfeit
 any potential rewards it could earn in exchange for the work done.
 
-_TODO_DOCUMENT(@Olshansk): Link to the governance params governing this once implemented._
+See [Session Windows & On-Chain Parameters](#session-windows--on-chain-parameters) for more details.
 
 ## Proof
 
@@ -208,20 +251,12 @@ At most one `Proof` exists for every `Claim`.
 A `Proof` is necessary for the `Claim` to be validated so the `Supplier` can be
 rewarded for the work done.
 
-### Proof Protobuf
+### Protobuf Types
 
-A serialized version of the `Proof` is stored on-chain.
-
-You can find the definition for the [Proof structure here](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/proof/proof.proto)
-
-### SubmitProof Transaction
-
-A `SubmitProof` transaction can be submitted by a `Supplier` to store a proof `on-chain`.
-
-If the `Proof` is invalid, or if there is no corresponding `Claim` for the `Proof`, the
-transaction will be rejected.
-
-You can find the definition for the [SubmitProof Transaction here](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/proof/tx.proto).
+| Type                                                                                                 | Description                                                                                                                                                                  |
+|------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`Proof`](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/proof/proof.proto)       | A serialized version of the `Proof` is stored on-chain.                                                                                                                      |
+| [`MsgSubmitProof`](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/proof/tx.proto) | Submitted by a `Supplier` to store a proof `on-chain`. If the `Proof` is invalid, or if there is no corresponding `Claim` for the `Proof`, the transaction will be rejected. |
 
 ### SubmitProof Validation
 
@@ -274,12 +309,19 @@ Validate_Proof --> [*]
 ```
 
 #### References:
-- Proof basic validation ([diagram](#proof-basic-validation) / [`MsgSubmitProof#ValidateBasic()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/types/message_submit_proof.go))
-- Session header validation ([diagram](#session-header-validation) / [`msgServer#queryAndValidateSessionHeader()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/keeper/session.go))
-- Proof window validation ([diagram](#TODO) / [`msgServer#validateProofWindow()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/keeper/session.go))
-- Proven relay request validation ([diagram](#proof-submission-relay-request-validation) / [`RelayRequest#ValidateBasic()`](https://github.com/pokt-network/poktroll/blob/main/x/service/types/relay.go))
-- Proven relay response validation ([diagram](#proof-submission-relay-response-validation) / [`RelayResponse#ValidateBasic()`](https://github.com/pokt-network/poktroll/blob/main/x/service/types/relay.go))
-- Proof claim validation ([diagram](#proof-submission-claim-validation) / [`msgServer#queryandValidateClaimForProof()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/keeper/msg_server_submit_proof.go))
+
+- Proof basic
+  validation ([diagram](#proof-basic-validation) / [`MsgSubmitProof#ValidateBasic()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/types/message_submit_proof.go))
+- Session header
+  validation ([diagram](#session-header-validation) / [`msgServer#queryAndValidateSessionHeader()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/keeper/session.go))
+- Proof window
+  validation ([diagram](#TODO) / [`msgServer#validateProofWindow()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/keeper/session.go))
+- Proven relay request
+  validation ([diagram](#proof-submission-relay-request-validation) / [`RelayRequest#ValidateBasic()`](https://github.com/pokt-network/poktroll/blob/main/x/service/types/relay.go))
+- Proven relay response
+  validation ([diagram](#proof-submission-relay-response-validation) / [`RelayResponse#ValidateBasic()`](https://github.com/pokt-network/poktroll/blob/main/x/service/types/relay.go))
+- Proof claim
+  validation ([diagram](#proof-submission-claim-validation) / [`msgServer#queryandValidateClaimForProof()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/keeper/msg_server_submit_proof.go))
 
 ### Proof Window
 
@@ -288,9 +330,9 @@ to submit a `SubmitProof` transaction containing a `Proof`. If it is submitted t
 early or too late, it will be rejected by the protocol.
 
 If a `Supplier` fails to submit a `Proof` during the Proof Window, the Claim will
-expire and it it will forfeit any previously claimed work done.
+expire and the supplier will forfeit rewards for the claimed work done.
 
-_TODO_DOCUMENT(@Olshansk): Link to the governance params governing this once implemented._
+See [Session Windows & On-Chain Parameters](#session-windows--on-chain-parameters) for more details.
 
 ## Proof Security
 
