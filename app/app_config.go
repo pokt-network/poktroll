@@ -77,6 +77,7 @@ import (
 	proofmodulev1 "github.com/pokt-network/poktroll/api/poktroll/proof/module"
 	servicemodulev1 "github.com/pokt-network/poktroll/api/poktroll/service/module"
 	sessionmodulev1 "github.com/pokt-network/poktroll/api/poktroll/session/module"
+	sharedmodulev1 "github.com/pokt-network/poktroll/api/poktroll/shared/module"
 	suppliermodulev1 "github.com/pokt-network/poktroll/api/poktroll/supplier/module"
 	tokenomicsmodulev1 "github.com/pokt-network/poktroll/api/poktroll/tokenomics/module"
 	_ "github.com/pokt-network/poktroll/x/application/module" // import for side-effects
@@ -89,6 +90,8 @@ import (
 	servicemoduletypes "github.com/pokt-network/poktroll/x/service/types"
 	_ "github.com/pokt-network/poktroll/x/session/module" // import for side-effects
 	sessionmoduletypes "github.com/pokt-network/poktroll/x/session/types"
+	_ "github.com/pokt-network/poktroll/x/shared/module" // import for side-effects
+	sharedmoduletypes "github.com/pokt-network/poktroll/x/shared/types"
 	_ "github.com/pokt-network/poktroll/x/supplier/module" // import for side-effects
 	suppliermoduletypes "github.com/pokt-network/poktroll/x/supplier/types"
 	_ "github.com/pokt-network/poktroll/x/tokenomics/module" // import for side-effects
@@ -136,6 +139,7 @@ var (
 		sessionmoduletypes.ModuleName,
 		proofmoduletypes.ModuleName,
 		tokenomicsmoduletypes.ModuleName,
+		sharedmoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/initGenesis
 	}
 
@@ -167,6 +171,7 @@ var (
 		sessionmoduletypes.ModuleName,
 		proofmoduletypes.ModuleName,
 		tokenomicsmoduletypes.ModuleName,
+		sharedmoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/beginBlockers
 	}
 
@@ -192,6 +197,7 @@ var (
 		sessionmoduletypes.ModuleName,
 		proofmoduletypes.ModuleName,
 		tokenomicsmoduletypes.ModuleName,
+		sharedmoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/endBlockers
 	}
 
@@ -374,6 +380,10 @@ var (
 			{
 				Name:   tokenomicsmoduletypes.ModuleName,
 				Config: appconfig.WrapAny(&tokenomicsmodulev1.Module{}),
+			},
+			{
+				Name:   sharedmoduletypes.ModuleName,
+				Config: appconfig.WrapAny(&sharedmodulev1.Module{}),
 			},
 			// this line is used by starport scaffolding # stargate/app/moduleConfig
 		},

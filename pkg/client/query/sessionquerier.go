@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"cosmossdk.io/depinject"
-	grpc "github.com/cosmos/gogoproto/grpc"
+	"github.com/cosmos/gogoproto/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
@@ -25,7 +25,7 @@ type sessionQuerier struct {
 // injecting the dependecies provided by the depinject.Config.
 //
 // Required dependencies:
-// - clientCtx
+// - clientCtx (grpc.ClientConn)
 func NewSessionQuerier(deps depinject.Config) (client.SessionQueryClient, error) {
 	sessq := &sessionQuerier{}
 

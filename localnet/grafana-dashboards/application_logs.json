@@ -173,9 +173,7 @@
   ],
   "refresh": "5s",
   "schemaVersion": 39,
-  "tags": [
-    "application_logs"
-  ],
+  "tags": ["protocol", "application_logs"],
   "templating": {
     "list": []
   },

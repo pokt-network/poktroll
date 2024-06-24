@@ -1,5 +1,9 @@
 config:
+  # TODO_TECHDEBT(@okdas): remove `signing_key_name` - which is currently present
+  # for backwards-compatibity with the current helm-chart.
   signing_key_name: supplier3
+
+  default_signing_key_names: [supplier3]
   suppliers:
     - service_id: anvil
       listen_url: http://0.0.0.0:8545

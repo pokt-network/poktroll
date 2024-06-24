@@ -42,10 +42,6 @@ localnet/*/config/*.json
 .idea/
 .mise.local.toml
 
-# Compiled protos
-**/*.pb.go
-**/*.pb.gw.go
-
 # Frontend utils
 ts-client/
 
@@ -76,7 +72,7 @@ go.work.sum
 **/gomock_reflect_*
 
 # SMT KVStore files
-# TODO_TECHDEBT(#126, @red-0ne):  Rename `smt` to `smt_stores` and make it configurable so it can be stored anywhere on this
+# TODO_TECHDEBT(@red-0ne, #126):  Rename `smt` to `smt_stores` and make it configurable so it can be stored anywhere on this
 smt
 smt_stores
 
@@ -96,3 +92,6 @@ shannon_relayminer_config.yaml
 shannon_supplier_config.yaml
 
 gentx-*.json
+
+# Binaries VSCode builds for debugging
+cmd/poktrolld/*debug_bin*

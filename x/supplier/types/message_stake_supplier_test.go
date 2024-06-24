@@ -11,7 +11,7 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-// TODO_CLEANUP: This test has a lot of copy-pasted code from test to test.
+// TODO_TECHDEBT: This test has a lot of copy-pasted code from test to test.
 // It can be simplified by splitting it into smaller tests where the common
 // fields don't need to be explicitly specified from test to test.
 func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {

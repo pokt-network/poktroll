@@ -1,4 +1,4 @@
-//go:generate mockgen -destination ../../../testutil/session/mocks/expected_keepers_mock.go -package mocks . AccountKeeper,BankKeeper,ApplicationKeeper,SupplierKeeper
+//go:generate mockgen -destination ../../../testutil/session/mocks/expected_keepers_mock.go -package mocks . AccountKeeper,BankKeeper,ApplicationKeeper,SupplierKeeper,SharedKeeper
 
 package types
 
@@ -26,6 +26,12 @@ type ApplicationKeeper interface {
 	GetApplication(ctx context.Context, address string) (app apptypes.Application, found bool)
 }
 
+// SupplierKeeper defines the expected interface needed to retrieve suppliers
 type SupplierKeeper interface {
 	GetAllSuppliers(ctx context.Context) (suppliers []sharedtypes.Supplier)
+}
+
+// SharedKeeper defines the expected interface needed to retrieve shared parameters
+type SharedKeeper interface {
+	GetParams(ctx context.Context) (params sharedtypes.Params)
 }

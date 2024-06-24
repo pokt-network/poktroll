@@ -3,14 +3,14 @@ package application
 import (
 	"fmt"
 
+	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/spf13/cobra"
 
-	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/pokt-network/poktroll/x/application/types"
 )
 
 // GetTxCmd returns the transaction commands for this module
-// TODO_TECHDEBT(#370): remove if custom query commands are consolidated into AutoCLI.
+// TODO_TECHDEBT(@bryanchriswhite, #370): remove if custom query commands are consolidated into AutoCLI.
 func (am AppModule) GetTxCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:                        types.ModuleName,

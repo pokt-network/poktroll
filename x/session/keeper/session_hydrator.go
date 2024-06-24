@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"bytes"
 	"context"
 	"crypto"
 	"encoding/binary"
@@ -12,19 +13,15 @@ import (
 	_ "golang.org/x/crypto/sha3"
 
 	"github.com/pokt-network/poktroll/x/session/types"
+	"github.com/pokt-network/poktroll/x/shared"
 	sharedhelpers "github.com/pokt-network/poktroll/x/shared/helpers"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 var SHA3HashLen = crypto.SHA3_256.Size()
 
-// TODO_BLOCKER(#21): Make these configurable governance param
+// TODO_BLOCKER(@bryanchriswhite, #21): Make these configurable governance param
 const (
-	// TODO_BLOCKER: Remove direct usage of these constants in helper functions
-	// when they will be replaced by governance params
-	NumBlocksPerSession = 4
-	// Duration of the grace period in number of sessions
-	SessionGracePeriod          = 1
 	NumSupplierPerSession       = 15
 	SessionIDComponentDelimiter = "."
 )
@@ -93,7 +90,7 @@ func (k Keeper) HydrateSession(ctx context.Context, sh *sessionHydrator) (*types
 
 // hydrateSessionMetadata hydrates metadata related to the session such as the height at which the session started, its number, the number of blocks per session, etc..
 func (k Keeper) hydrateSessionMetadata(ctx context.Context, sh *sessionHydrator) error {
-	// TODO_TECHDEBT: Add a test if `blockHeight` is ahead of the current chain or what this node is aware of
+	// TODO_TEST: Add a test if `blockHeight` is ahead of the current chain or what this node is aware of
 
 	lastCommittedBlockHeight := sdk.UnwrapSDKContext(ctx).BlockHeight()
 	if sh.blockHeight > lastCommittedBlockHeight {
@@ -103,11 +100,14 @@ func (k Keeper) hydrateSessionMetadata(ctx context.Context, sh *sessionHydrator)
 		)
 	}
 
-	sh.session.NumBlocksPerSession = NumBlocksPerSession
-	sh.session.SessionNumber = GetSessionNumber(sh.blockHeight)
+	// TODO_BLOCKER(@bryanchriswhite, #543): If the num_blocks_per_session param has ever been changed,
+	// this function may cause unexpected behavior for historical sessions.
+	sharedParams := k.sharedKeeper.GetParams(ctx)
+	sh.session.NumBlocksPerSession = int64(sharedParams.NumBlocksPerSession)
+	sh.session.SessionNumber = shared.GetSessionNumber(&sharedParams, sh.blockHeight)
 
-	sh.sessionHeader.SessionStartBlockHeight = GetSessionStartBlockHeight(sh.blockHeight)
-	sh.sessionHeader.SessionEndBlockHeight = GetSessionEndBlockHeight(sh.blockHeight)
+	sh.sessionHeader.SessionStartBlockHeight = shared.GetSessionStartHeight(&sharedParams, sh.blockHeight)
+	sh.sessionHeader.SessionEndBlockHeight = shared.GetSessionEndHeight(&sharedParams, sh.blockHeight)
 	return nil
 }
 
@@ -115,14 +115,15 @@ func (k Keeper) hydrateSessionMetadata(ctx context.Context, sh *sessionHydrator)
 func (k Keeper) hydrateSessionID(ctx context.Context, sh *sessionHydrator) error {
 	prevHashBz := k.GetBlockHash(ctx, sh.sessionHeader.SessionStartBlockHeight)
 
-	// TODO_TECHDEBT: In the future, we will need to validate that the Service is a valid service depending on whether
-	// or not its permissioned or permissionless
+	// TODO_MAINNET: In the future, we will need to validate that the Service is
+	// a valid service depending on whether or not its permissioned or permissionless
 
 	if !sharedhelpers.IsValidService(sh.sessionHeader.Service) {
 		return types.ErrSessionHydration.Wrapf("invalid service: %v", sh.sessionHeader.Service)
 	}
 
-	sh.sessionHeader.SessionId, sh.sessionIDBz = GetSessionId(
+	sh.sessionHeader.SessionId, sh.sessionIDBz = k.GetSessionId(
+		ctx,
 		sh.sessionHeader.ApplicationAddress,
 		sh.sessionHeader.Service.Id,
 		prevHashBz,
@@ -162,10 +163,10 @@ func (k Keeper) hydrateSessionApplication(ctx context.Context, sh *sessionHydrat
 func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator) error {
 	logger := k.Logger().With("method", "hydrateSessionSuppliers")
 
-	// TODO_TECHDEBT(@Olshansk, @bryanchriswhite): Need to retrieve the suppliers at SessionStartBlockHeight,
-	// NOT THE CURRENT ONE which is what's provided by the context. For now, for simplicity,
-	// only retrieving the suppliers at the current block height which could create a discrepancy
-	// if new suppliers were staked mid session.
+	// TODO_BLOCKER(@Olshansk): Retrieve the suppliers at SessionStartBlockHeight,
+	// NOT THE CURRENT ONE which is what's provided by the context. For now, for
+	// simplicity, only retrieving the suppliers at the current block height which
+	// could create a discrepancy if new suppliers were staked mid session.
 	// TODO(@bryanchriswhite): Investigate if `BlockClient` + `ReplayObservable` where `N = SessionLength` could be used here.`
 	suppliers := k.supplierKeeper.GetAllSuppliers(ctx)
 
@@ -195,7 +196,7 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 
 	if len(candidateSuppliers) < NumSupplierPerSession {
 		logger.Info(fmt.Sprintf(
-			"[WARN] number of available suppliers (%d) is less than the number of suppliers per session (%d)",
+			"Number of available suppliers (%d) is less than the maximum number of possible suppliers per session (%d)",
 			len(candidateSuppliers),
 			NumSupplierPerSession,
 		))
@@ -207,9 +208,10 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 	return nil
 }
 
-// TODO_INVESTIGATE: We are using a `Go` native implementation for a pseudo-random number generator. In order
-// for it to be language agnostic, a general purpose algorithm MUST be used.
-// pseudoRandomSelection returns a random subset of the candidates.
+// TODO_BETA: We are using a `Go` native implementation for a pseudo-random
+// number generator. In order for it to be language agnostic, a general purpose
+// algorithm MUST be used. pseudoRandomSelection returns a random subset of the
+// candidates.
 func pseudoRandomSelection(
 	candidates []*sharedtypes.Supplier,
 	numTarget int,
@@ -253,12 +255,8 @@ func uniqueRandomIndices(seed, maxIndex, numIndices int64) map[int64]struct{} {
 	return indicesMap
 }
 
-func concatWithDelimiter(delimiter string, bz ...[]byte) (result []byte) {
-	for _, b := range bz {
-		result = append(result, b...)
-		result = append(result, []byte(delimiter)...)
-	}
-	return result
+func concatWithDelimiter(delimiter string, bz ...[]byte) []byte {
+	return bytes.Join(bz, []byte(delimiter))
 }
 
 func sha3Hash(bz []byte) []byte {
@@ -267,74 +265,51 @@ func sha3Hash(bz []byte) []byte {
 	return hasher.Sum(nil)
 }
 
-// GetSessionStartBlockHeight returns the block height at which the session starts
-// Returns 0 if the block height is not a consensus produced block.
-// Example: If NumBlocksPerSession == 4, sessions start at blocks 1, 5, 9, etc.
-func GetSessionStartBlockHeight(blockHeight int64) int64 {
-	if blockHeight <= 0 {
-		return 0
-	}
-	return blockHeight - ((blockHeight - 1) % NumBlocksPerSession)
-}
-
-// GetSessionEndBlockHeight returns the block height at which the session ends
-// Returns 0 if the block height is not a consensus produced block.
-// Example: If NumBlocksPerSession == 4, sessions end at blocks 4, 8, 11, etc.
-func GetSessionEndBlockHeight(blockHeight int64) int64 {
-	if blockHeight <= 0 {
-		return 0
-	}
-
-	return GetSessionStartBlockHeight(blockHeight) + NumBlocksPerSession - 1
-}
-
-// GetSessionNumber returns the session number given the block height.
-// Returns session number 0 if the block height is not a consensus produced block.
-// Returns session number 1 for block 1 to block NumBlocksPerSession - 1 (inclusive).
-// i.e. If NubBlocksPerSession == 4, session == 1 for [1, 4], session == 2 for [5, 8], etc.
-func GetSessionNumber(blockHeight int64) int64 {
-	if blockHeight <= 0 {
-		return 0
-	}
-
-	return ((blockHeight - 1) / NumBlocksPerSession) + 1
-}
-
 // GetSessionId returns the string and bytes representation of the sessionId
-// given the application public key, service ID, block hash, and block height
+// given the application address, service ID, block hash, and block height
 // that is used to get the session start block height.
-func GetSessionId(
-	appPubKey,
+func (k Keeper) GetSessionId(
+	ctx context.Context,
+	appAddr,
 	serviceId string,
 	blockHashBz []byte,
 	blockHeight int64,
 ) (sessionId string, sessionIdBz []byte) {
-	appPubKeyBz := []byte(appPubKey)
+	sharedParams := k.sharedKeeper.GetParams(ctx)
+	return GetSessionId(&sharedParams, appAddr, serviceId, blockHashBz, blockHeight)
+}
+
+// GetSessionId returns the string and bytes representation of the sessionId for the
+// session containing blockHeight, given the shared on-chain parameters, application
+// address, service ID, and block hash.
+func GetSessionId(
+	sharedParams *sharedtypes.Params,
+	appAddr,
+	serviceId string,
+	blockHashBz []byte,
+	blockHeight int64,
+) (sessionId string, sessionIdBz []byte) {
+	appAddrBz := []byte(appAddr)
 	serviceIdBz := []byte(serviceId)
 
-	blockHeightBz := getSessionStartBlockHeightBz(blockHeight)
+	sessionStartHeightBz := getSessionStartBlockHeightBz(sharedParams, blockHeight)
 	sessionIdBz = concatWithDelimiter(
 		SessionIDComponentDelimiter,
 		blockHashBz,
 		serviceIdBz,
-		appPubKeyBz,
-		blockHeightBz,
+		appAddrBz,
+		sessionStartHeightBz,
 	)
 	sessionId = hex.EncodeToString(sha3Hash(sessionIdBz))
 
 	return sessionId, sessionIdBz
 }
 
-// GetSessionGracePeriodBlockCount returns the number of blocks in the session
-// grace period.
-func GetSessionGracePeriodBlockCount() int64 {
-	return SessionGracePeriod * NumBlocksPerSession
-}
-
 // getSessionStartBlockHeightBz returns the bytes representation of the session
-// start block height given the block height.
-func getSessionStartBlockHeightBz(blockHeight int64) []byte {
-	sessionStartBlockHeight := GetSessionStartBlockHeight(blockHeight)
+// start height for the session containing blockHeight, given the shared on-chain
+// parameters.
+func getSessionStartBlockHeightBz(sharedParams *sharedtypes.Params, blockHeight int64) []byte {
+	sessionStartBlockHeight := shared.GetSessionStartHeight(sharedParams, blockHeight)
 	sessionStartBlockHeightBz := make([]byte, 8)
 	binary.LittleEndian.PutUint64(sessionStartBlockHeightBz, uint64(sessionStartBlockHeight))
 	return sessionStartBlockHeightBz

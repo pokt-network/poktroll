@@ -8,7 +8,7 @@ import (
 var _ Signer = (*SimpleSigner)(nil)
 
 // SimpleSigner is a signer implementation that uses the local keyring to sign
-// messages, for verification using the signer's corresponding public key
+// messages, for verification using the signer's corresponding public key.
 type SimpleSigner struct {
 	keyring keyring.Keyring
 	keyName string

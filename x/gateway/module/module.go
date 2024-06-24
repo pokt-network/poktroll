@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	// this line is used by starport scaffolding # 1
+
 	"cosmossdk.io/core/appmodule"
 	"cosmossdk.io/core/store"
 	"cosmossdk.io/depinject"
@@ -17,8 +19,6 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-
-	// this line is used by starport scaffolding # 1
 
 	modulev1 "github.com/pokt-network/poktroll/api/poktroll/gateway/module"
 	"github.com/pokt-network/poktroll/x/gateway/keeper"
@@ -141,7 +141,7 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.Raw
 // ConsensusVersion is a sequence number for state-breaking change of the module.
 // It should be incremented on each consensus-breaking change introduced by the module.
 // To avoid wrong/empty versions, the initial version should be set to 1.
-// TODO_TECHDEBT(#395): Make consensus version configurable
+// TODO_MAINNET(#395): Make consensus version configurable
 func (AppModule) ConsensusVersion() uint64 { return 1 }
 
 // BeginBlock contains the logic that is automatically triggered at the beginning of each block.

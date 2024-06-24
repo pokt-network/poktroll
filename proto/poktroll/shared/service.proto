@@ -6,14 +6,12 @@ package poktroll.shared;
 
 option go_package = "github.com/pokt-network/poktroll/x/shared/types";
 
-// TODO_CLEANUP(@Olshansk): Add native optional identifiers once its supported; https://github.com/ignite/cli/issues/3698
-
 // Service message to encapsulate unique and semantic identifiers for a service on the network
 message Service {
   // For example, what if we want to request a session for a certain service but with some additional configs that identify it?
   string id = 1; // Unique identifier for the service
 
-  // TODO_TECHDEBT: Name is currently unused but acts as a reminder that an optional onchain representation of the service is necessary
+  // TODO_BETA: Name is currently unused but acts as a reminder that an optional onchain representation of the service is necessary
   string name = 2; // (Optional) Semantic human readable name for the service
 }
 
@@ -21,7 +19,7 @@ message Service {
 message ApplicationServiceConfig {
   Service service = 1; // The Service for which the application is configured
 
-  // TODO_RESEARCH: There is an opportunity for applications to advertise the max
+  // TODO_MAINNET: There is an opportunity for applications to advertise the max
   // they're willing to pay for a certain configuration/price, but this is outside of scope.
   // RPCConfig rpc_configs = 2; // List of endpoints for the service
 }
@@ -30,7 +28,7 @@ message ApplicationServiceConfig {
 message SupplierServiceConfig {
   Service service = 1; // The Service for which the supplier is configured
   repeated SupplierEndpoint endpoints = 2; // List of endpoints for the service
-  // TODO_RESEARCH: There is an opportunity for supplier to advertise the min
+  // TODO_MAINNET: There is an opportunity for supplier to advertise the min
   // they're willing to earn for a certain configuration/price, but this is outside of scope.
 }
 

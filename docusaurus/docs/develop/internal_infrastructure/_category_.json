@@ -1,8 +1,0 @@
-{
-  "label": "Internal infrastructure",
-  "position": 10,
-  "link": {
-    "type": "generated-index",
-    "description": "Internal infrastructure related to deploying, maintaining and testing various (Local, Dev, Test) environments."
-  }
-}

@@ -68,7 +68,7 @@ func ValidateSupplierServiceConfigs(services []*sharedtypes.SupplierServiceConfi
 				return fmt.Errorf("endpoint.RpcType is not a valid RPCType: %v", serviceConfig)
 			}
 
-			// TODO: Validate configs once they are being used
+			// TODO_BLOCKER(@okdas): Validate configs once they are being used
 			// if endpoint.Configs == nil {
 			// 	return fmt.Errorf("endpoint.Configs cannot be nil: %v", serviceConfig)
 			// }

@@ -31,7 +31,12 @@ localnet_config_defaults = {
         },
         "delve": {"enabled": False},
     },
-    "observability": {"enabled": True},
+    "observability": {
+        "enabled": True,
+        "grafana": {
+            "defaultDashboardsEnabled": False
+        },
+    },
     "relayminers": {"count": 1, "delve": {"enabled": False}},
     "gateways": {
         "count": 1,
@@ -41,7 +46,7 @@ localnet_config_defaults = {
         "count": 1,
         "delve": {"enabled": False},
     },
-    # TODO(#511): Add support for `REST` and enabled this.
+    # TODO_BLOCKER(@red-0ne, #511): Add support for `REST` and enabled this.
     "ollama": {
         "enabled": False,
         "model": "qwen:0.5b",
@@ -92,6 +97,7 @@ if localnet_config["observability"]["enabled"]:
         "prometheus-community/kube-prometheus-stack",
         flags=[
             "--values=./localnet/kubernetes/observability-prometheus-stack.yaml",
+            "--set=grafana.defaultDashboardsEnabled=" + str(localnet_config["observability"]["grafana"]["defaultDashboardsEnabled"]),
         ],
         resource_deps=["prometheus-community"],
     )
@@ -105,6 +111,9 @@ if localnet_config["observability"]["enabled"]:
         resource_deps=["grafana-helm-repo"],
     )
 
+    # TODO_BUG(@okdas): There is an occasional issue where grafana hits a "Database locked"
+    # error when updating grafana. There is likely a weird race condition happening
+    # that requires a restart of LocalNet. Look into it.
     k8s_resource(
         new_name="grafana",
         workload="observability",
@@ -143,7 +152,7 @@ secret_create_generic(
 configmap_create(
     "poktrolld-configs", from_file=listdir("localnet/poktrolld/config/"), watch=True
 )
-# TODO(@okdas): Import validator keys when we switch to `poktrolld` helm chart
+# TODO_BLOCKER(@okdas): Import validator keys when we switch to `poktrolld` helm chart
 # by uncommenting the following lines:
 # load("ext://secret", "secret_create_generic")
 # secret_create_generic(
@@ -346,11 +355,11 @@ for x in range(localnet_config["gateways"]["count"]):
             str(40064 + actor_number)
             + ":40004",  # DLV port. gateway1 - exposes 40065, gateway2 exposes 40066, etc.
             # Run `curl localhost:PORT` to see the current snapshot of gateway metrics.
-            str(9089 + actor_number)
-            + ":9090",  # gateway metrics port. gateway1 - exposes 9090, gateway2 exposes 9091, etc.
+            str(9059 + actor_number)
+            + ":9090",  # gateway metrics port. gateway1 - exposes 9060, gateway2 exposes 9061, etc.
             # Use with pprof like this: `go tool pprof -http=:3333 http://localhost:6090/debug/pprof/goroutine`
-            str(6089 + actor_number)
-            + ":6060",  # gateway metrics port. gateway1 - exposes 6090, gateway2 exposes 6091, etc.
+            str(6059 + actor_number)
+            + ":6060",  # gateway metrics port. gateway1 - exposes 6060, gateway2 exposes 6061, etc.
         ],
     )
 
@@ -358,9 +367,9 @@ k8s_resource(
     "validator",
     labels=["pocket_network"],
     port_forwards=[
-        "36657",
-        "36658",
-        "40004",
+        "26657", # RPC
+        "9090", # the gRPC server address
+        "40004", # use with `dlv` when it's turned on in `localnet_config.yaml`
         # Use with pprof like this: `go tool pprof -http=:3333 http://localhost:6061/debug/pprof/goroutine`
         "6061:6060",
     ],

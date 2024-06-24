@@ -10,8 +10,7 @@ import (
 	"github.com/pokt-network/poktroll/x/gateway/types"
 )
 
-// TODO_TECHDEBT(#49): Add un-delegation from delegated apps
-// TODO(#73): Determine if a gateway needs an unbonding period after unstaking.
+// TODO_BLOCKER(#489): Apps & gateways unbonding periods
 func (k msgServer) UnstakeGateway(
 	goCtx context.Context,
 	msg *types.MsgUnstakeGateway,

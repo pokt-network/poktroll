@@ -10,6 +10,7 @@ import (
 
 	"cosmossdk.io/depinject"
 	abci "github.com/cometbft/cometbft/abci/types"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/client"
@@ -17,24 +18,28 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
+	testutilevents "github.com/pokt-network/poktroll/testutil/events"
 	"github.com/pokt-network/poktroll/testutil/testclient"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 const (
 	// eventTimeout is the duration of time to wait after sending a valid tx
 	// before the test should time out (fail).
-	eventTimeout = 60 * time.Second
+	eventTimeout = 100 * time.Second
 	// testServiceId is the service ID used for testing purposes that is
 	// expected to be available in LocalNet.
 	testServiceId = "anvil"
+	// defaultJSONPRCPath is the default path used for sending JSON-RPC relay requests.
+	defaultJSONPRCPath = ""
 
 	// txSenderEventSubscriptionQueryFmt is the format string which yields the
 	// cosmos-sdk event subscription "query" string for a given sender address.
 	// This is used by an events replay client to subscribe to tx events from the supplier.
 	// See: https://docs.cosmos.network/v0.47/learn/advanced/events#subscribing-to-events
 	txSenderEventSubscriptionQueryFmt = "tm.event='Tx' AND message.sender='%s'"
-	// newBlockEventSubscriptionQuery is the format string which yields a
+	// newBlockEventSubscriptionQuery is the query string which yields a
 	// subscription query to listen for on-chain new block events.
 	newBlockEventSubscriptionQuery = "tm.event='NewBlock'"
 	// eventsReplayClientBufferSize is the buffer size for the events replay client
@@ -57,13 +62,18 @@ const (
 )
 
 func (s *suite) TheUserShouldWaitForTheModuleMessageToBeSubmitted(module, message string) {
-	s.waitForTxResultEvent(fmt.Sprintf("/poktroll.%s.Msg%s", module, message))
+	msgType := fmt.Sprintf("/poktroll.%s.Msg%s", module, message)
+	s.waitForTxResultEvent(msgType)
 }
 
 func (s *suite) TheUserShouldWaitForTheModuleEventToBeBroadcast(module, message string) {
-	s.waitForNewBlockEvent(fmt.Sprintf("poktroll.%s.Event%s", module, message))
+	eventType := fmt.Sprintf("poktroll.%s.Event%s", module, message)
+	isExpectedEventFn := func(event *abci.Event) bool { return event.Type == eventType }
+	s.waitForNewBlockEvent(isExpectedEventFn)
 }
 
+// TODO_FLAKY: See how 'TheClaimCreatedBySupplierForServiceForApplicationShouldBeSuccessfullySettled'
+// was modified to using an event replay client, instead of a query, to eliminate the flakiness.
 func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBePersistedOnchain(supplierName, serviceId, appName string) {
 	ctx := context.Background()
 
@@ -147,36 +157,38 @@ func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication
 	)
 }
 
-func (s *suite) TheProofSubmittedBySupplierForServiceForApplicationShouldBePersistedOnchain(supplierName, serviceId, appName string) {
-	ctx := context.Background()
+func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBeSuccessfullySettled(supplierName, serviceId, appName string) {
+	app, ok := accNameToAppMap[appName]
+	require.True(s, ok, "application %s not found", appName)
 
-	// Retrieve all on-chain proofs for supplierName
-	allProofsRes, err := s.proofQueryClient.AllProofs(ctx, &prooftypes.QueryAllProofsRequest{
-		Filter: &prooftypes.QueryAllProofsRequest_SupplierAddress{
-			SupplierAddress: accNameToAddrMap[supplierName],
-		},
-	})
-	require.NoError(s, err)
-	require.NotNil(s, allProofsRes)
+	supplier, ok := accNameToSupplierMap[supplierName]
+	require.True(s, ok, "supplier %s not found", supplierName)
 
-	// Assert that the number of proofs has increased by one.
-	preExistingProofs, ok := s.scenarioState[preExistingProofsKey].([]prooftypes.Proof)
-	require.True(s, ok, "preExistingProofsKey not found in scenarioState")
-	// NB: We are avoiding the use of require.Len here because it provides unreadable output
-	// TODO_TECHDEBT: Due to the speed of the blocks of the LocalNet validator, along with the small number
-	// of blocks per session, multiple proofs may be created throughout the duration of the test. Until
-	// these values are appropriately adjusted, we assert on an increase in proofs rather than +1.
-	require.Greater(s, len(allProofsRes.Proofs), len(preExistingProofs), "number of proofs must have increased")
+	isValidClaimSettledEvent := func(event *abci.Event) bool {
+		if event.Type != "poktroll.tokenomics.EventClaimSettled" {
+			return false
+		}
 
-	// TODO_UPNEXT(@bryanchriswhite): assert that the root hash of the proof contains the correct
-	// SMST sum. The sum can be retrieved via the `GetSum` function exposed
-	// by the SMT.
+		// Parse the event
+		testutilevents.QuoteEventMode(event)
+		typedEvent, err := cosmostypes.ParseTypedEvent(*event)
+		require.NoError(s, err)
+		require.NotNil(s, typedEvent)
+		claimSettledEvent, ok := typedEvent.(*tokenomicstypes.EventClaimSettled)
+		require.True(s, ok)
 
-	// TODO_IMPROVE: add assertions about serviceId and appName and/or incorporate
-	// them into the scenarioState key(s).
+		// Assert that the claim was settled for the correct application, supplier, and service.
+		claim := claimSettledEvent.Claim
+		require.Equal(s, app.Address, claim.SessionHeader.ApplicationAddress)
+		require.Equal(s, supplier.Address, claim.SupplierAddress)
+		require.Equal(s, serviceId, claim.SessionHeader.Service.Id)
+		require.Greater(s, claimSettledEvent.ComputeUnits, uint64(0), "compute units should be greater than 0")
+		s.Logf("Claim settled for %d compute units w/ proof requirement: %t\n", claimSettledEvent.ComputeUnits, claimSettledEvent.ProofRequired)
 
-	proof := allProofsRes.Proofs[0]
-	require.Equal(s, accNameToAddrMap[supplierName], proof.SupplierAddress)
+		return true
+	}
+
+	s.waitForNewBlockEvent(isValidClaimSettledEvent)
 }
 
 func (s *suite) sendRelaysForSession(
@@ -194,7 +206,7 @@ func (s *suite) sendRelaysForSession(
 
 	for i := 0; i < relayLimit; i++ {
 		s.Logf("Sending relay %d \n", i)
-		s.TheApplicationSendsTheSupplierARequestForServiceWithData(appName, supplierName, serviceId, data)
+		s.TheApplicationSendsTheSupplierARequestForServiceWithPathAndData(appName, supplierName, serviceId, defaultJSONPRCPath, data)
 		s.TheApplicationReceivesASuccessfulRelayResponseSignedBy(appName, supplierName)
 	}
 }
@@ -235,13 +247,19 @@ func (s *suite) waitForTxResultEvent(targetAction string) {
 
 	select {
 	case <-time.After(eventTimeout):
-		s.Fatalf("timed out waiting for message with action %q", targetAction)
+		s.Fatalf("ERROR: timed out waiting for message with action %q", targetAction)
 	case <-ctx.Done():
 		s.Log("Success; message detected before timeout.")
 	}
 }
 
-func (s *suite) waitForNewBlockEvent(targetEvent string) {
+// waitForNewBlockEvent waits for an event to be observed whose type and data
+// match the conditions specified by isEventMatchFn.
+// isEventMatchFn is a function that receives an abci.Event and returns a boolean
+// indicating whether the event matches the desired conditions.
+func (s *suite) waitForNewBlockEvent(
+	isEventMatchFn func(*abci.Event) bool,
+) {
 	ctx, done := context.WithCancel(context.Background())
 
 	newBlockEventsReplayClientState, ok := s.scenarioState[newBlockEventReplayClientKey]
@@ -262,10 +280,9 @@ func (s *suite) waitForNewBlockEvent(targetEvent string) {
 			// Range over each event's attributes to find the "action" attribute
 			// and compare its value to that of the action provided.
 			for _, event := range newBlockEvent.Data.Value.ResultFinalizeBlock.Events {
-				// TODO_IMPROVE: We can pass in a function to do even more granular
-				// checks on the event. For example, for a Claim Settlement event,
+				// Checks on the event. For example, for a Claim Settlement event,
 				// we can parse the claim and verify the compute units.
-				if event.Type == targetEvent {
+				if isEventMatchFn(&event) {
 					done()
 					return
 				}
@@ -275,7 +292,7 @@ func (s *suite) waitForNewBlockEvent(targetEvent string) {
 
 	select {
 	case <-time.After(eventTimeout):
-		s.Fatalf("timed out waiting for NewBlock event %q", targetEvent)
+		s.Fatalf("ERROR: timed out waiting for NewBlock event")
 	case <-ctx.Done():
 		s.Log("Success; message detected before timeout.")
 	}

@@ -152,7 +152,7 @@ func genRandomizedMinedRelayFixtures(
 				Res: nil,
 			}
 
-			// TODO_BLOCKER: use canonical codec.
+			// TODO_TECHDEBT(@red-0ne): use canonical codec.
 			relayBz, err := relay.Marshal()
 			if err != nil {
 				errCh <- err
@@ -293,7 +293,7 @@ func newMapRelayMarshalLineFmt[T marshalable](lineFmt string) channel.MapFn[T, s
 		_ context.Context,
 		marsh T,
 	) (_ string, skip bool) {
-		// TODO_BLOCKER: marshal using canonical codec.
+		// TODO_TECHDEBT(@red-0ne): marshal using canonical codec.
 		minedRelayBz, err := marsh.Marshal()
 		if err != nil {
 			log.Fatal(err)

@@ -194,13 +194,12 @@ func setupAppGateServerDependencies(
 		config.NewSupplyBlockQueryClientFn(queryNodeRPCURL),    // leaf
 		config.NewSupplyBlockClientFn(queryNodeRPCURL),         // leaf
 		config.NewSupplyQueryClientContextFn(queryNodeGRPCURL), // leaf
-		config.NewSupplyDelegationClientFn(),                   // leaf
 		config.NewSupplyAccountQuerierFn(),                     // leaf
 		config.NewSupplyApplicationQuerierFn(),                 // leaf
 		config.NewSupplySessionQuerierFn(),                     // leaf
-		config.NewSupplyRingCacheFn(),
+		config.NewSupplySharedQueryClientFn(),                  // leaf
 
-		config.NewSupplyPOKTRollSDKFn(appGateConfig.SigningKey),
+		config.NewSupplyShannonSDKFn(appGateConfig.SigningKey),
 	}
 
 	return config.SupplyConfig(ctx, cmd, supplierFuncs)

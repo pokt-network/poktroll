@@ -15,7 +15,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/cmd/signals"
-	"github.com/pokt-network/poktroll/pkg/client/supplier"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
 	txtypes "github.com/pokt-network/poktroll/pkg/client/tx/types"
 	"github.com/pokt-network/poktroll/pkg/deps/config"
@@ -182,7 +181,7 @@ func setupRelayerDependencies(
 		txNodeRPCUrl = parsedFlagNodeRPCUrl
 	}
 
-	signingKeyName := relayMinerConfig.SigningKeyName
+	signingKeyNames := uniqueSigningKeyNames(relayMinerConfig)
 	servicesConfigMap := relayMinerConfig.Servers
 	smtStorePath := relayMinerConfig.SmtStorePath
 
@@ -195,6 +194,7 @@ func setupRelayerDependencies(
 		supplyMiner, // leaf
 		config.NewSupplyTxClientContextFn(queryNodeGRPCUrl, txNodeRPCUrl), // leaf
 		config.NewSupplyDelegationClientFn(),                              // leaf
+		config.NewSupplySharedQueryClientFn(),                             // leaf
 		config.NewSupplyAccountQuerierFn(),
 		config.NewSupplyApplicationQuerierFn(),
 		config.NewSupplySupplierQuerierFn(),
@@ -202,9 +202,8 @@ func setupRelayerDependencies(
 		config.NewSupplyRingCacheFn(),
 		supplyTxFactory,
 		supplyTxContext,
-		newSupplyTxClientFn(signingKeyName),
-		newSupplySupplierClientFn(signingKeyName),
-		newSupplyRelayerProxyFn(signingKeyName, servicesConfigMap),
+		config.NewSupplySupplierClientsFn(signingKeyNames),
+		newSupplyRelayerProxyFn(signingKeyNames, servicesConfigMap),
 		newSupplyRelayerSessionsManagerFn(smtStorePath),
 	}
 
@@ -261,56 +260,11 @@ func supplyTxContext(
 	return depinject.Configs(deps, depinject.Supply(txContext)), nil
 }
 
-// newSupplyTxClientFn returns a function which constructs a TxClient
-// instance and returns a new depinject.Config which is supplied with
-// the given deps and the new TxClient.
-func newSupplyTxClientFn(signingKeyName string) config.SupplierFn {
-	return func(
-		ctx context.Context,
-		deps depinject.Config,
-		_ *cobra.Command,
-	) (depinject.Config, error) {
-		txClient, err := tx.NewTxClient(
-			ctx,
-			deps,
-			tx.WithSigningKeyName(signingKeyName),
-			// TODO_TECHDEBT: populate this from some config.
-			tx.WithCommitTimeoutBlocks(tx.DefaultCommitTimeoutHeightOffset),
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		return depinject.Configs(deps, depinject.Supply(txClient)), nil
-	}
-}
-
-// newSupplySupplierClientFn returns a function which constructs a
-// SupplierClient instance and returns a new depinject.Config which is
-// supplied with the given deps and the new SupplierClient.
-func newSupplySupplierClientFn(signingKeyName string) config.SupplierFn {
-	return func(
-		_ context.Context,
-		deps depinject.Config,
-		_ *cobra.Command,
-	) (depinject.Config, error) {
-		supplierClient, err := supplier.NewSupplierClient(
-			deps,
-			supplier.WithSigningKeyName(signingKeyName),
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		return depinject.Configs(deps, depinject.Supply(supplierClient)), nil
-	}
-}
-
 // newSupplyRelayerProxyFn returns a function which constructs a
 // RelayerProxy instance and returns a new depinject.Config which
 // is supplied with the given deps and the new RelayerProxy.
 func newSupplyRelayerProxyFn(
-	signingKeyName string,
+	signingKeyNames []string,
 	servicesConfigMap map[string]*relayerconfig.RelayMinerServerConfig,
 ) config.SupplierFn {
 	return func(
@@ -320,7 +274,7 @@ func newSupplyRelayerProxyFn(
 	) (depinject.Config, error) {
 		relayerProxy, err := proxy.NewRelayerProxy(
 			deps,
-			proxy.WithSigningKeyName(signingKeyName),
+			proxy.WithSigningKeyNames(signingKeyNames),
 			proxy.WithServicesConfigMap(servicesConfigMap),
 		)
 		if err != nil {
@@ -350,4 +304,24 @@ func newSupplyRelayerSessionsManagerFn(smtStorePath string) config.SupplierFn {
 
 		return depinject.Configs(deps, depinject.Supply(relayerSessionsManager)), nil
 	}
+}
+
+// uniqueSigningKeyNames goes through RelayMiner configuration and returns a list of unique
+// singning key names.
+func uniqueSigningKeyNames(relayMinerConfig *relayerconfig.RelayMinerConfig) []string {
+	uniqueKeyMap := make(map[string]bool)
+	for _, server := range relayMinerConfig.Servers {
+		for _, supplier := range server.SupplierConfigsMap {
+			for _, signingKeyName := range supplier.SigningKeyNames {
+				uniqueKeyMap[signingKeyName] = true
+			}
+		}
+	}
+
+	uniqueKeyNames := make([]string, 0, len(uniqueKeyMap))
+	for key := range uniqueKeyMap {
+		uniqueKeyNames = append(uniqueKeyNames, key)
+	}
+
+	return uniqueKeyNames
 }

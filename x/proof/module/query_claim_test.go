@@ -16,7 +16,7 @@ import (
 	_ "github.com/pokt-network/poktroll/testutil/testpolylog"
 	proof "github.com/pokt-network/poktroll/x/proof/module"
 	"github.com/pokt-network/poktroll/x/proof/types"
-	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func TestClaim_Show(t *testing.T) {
@@ -70,7 +70,7 @@ func TestClaim_Show(t *testing.T) {
 			// NB: this is *NOT* a gRPC status error because the bech32 parse
 			// error occurs during request validation (i.e. client-side).
 			expectedErr: types.ErrProofInvalidAddress.Wrapf(
-				// TODO_CONSIDERATION: prefer using "%q" in error format strings
+				// TODO_TECHDEBT: prefer using "%q" in error format strings
 				// to disambiguate empty string from space or no output.
 				"invalid supplier address for claim being retrieved %s; (decoding bech32 failed: invalid separator index -1)",
 				"invalid_bech32_supplier_address",
@@ -128,14 +128,18 @@ func TestClaim_List(t *testing.T) {
 	// independent constant, which requires us to temporarily align the
 	// with the num blocks per session. See the `forloop` in `networkWithClaimObjects`
 	// that has a TODO_HACK as well.
-	require.Equal(t, 0, numSuppliers*numApps%sessionkeeper.NumBlocksPerSession)
+	require.Equal(t, 0, numSuppliers*numApps%sharedtypes.DefaultNumBlocksPerSession)
 
-	numSessions := numSuppliers * numApps / sessionkeeper.NumBlocksPerSession
+	numSessions := numSuppliers * numApps / sharedtypes.DefaultNumBlocksPerSession
 
 	// Submitting one claim per block for simplicity
-	numClaimsPerSession := sessionkeeper.NumBlocksPerSession
+	numClaimsPerSession := sharedtypes.DefaultNumBlocksPerSession
 	totalClaims := numSessions * numClaimsPerSession
 
+	// TODO_FLAKY(@bryanchriswhite): Ths following line in this test is flaky because test configuration
+	// and management is hard (see details above). To verify if it's functioning
+	// independently, please run:
+	// $ make itest 2 5 ./x/proof/module -- -run TestClaim_List
 	net, claims := networkWithClaimObjects(t, numSessions, numSuppliers, numApps)
 
 	ctx := net.Validators[0].ClientCtx

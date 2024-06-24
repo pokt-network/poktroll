@@ -29,9 +29,6 @@ message MsgUpdateParams {
   // authority is the address that controls the module (defaults to x/gov unless overwritten).
   string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
 
-  // TODO_IMPROVE(#322): The requirement to provide all params is adopted from the
-  // latest Cosmos SDK version. We should look into either improving this ourselves
-  // or seeing if it is on their roadmap.
 
   // params defines the x/service parameters to update.
   // NOTE: All parameters must be supplied.
@@ -45,9 +42,7 @@ message MsgUpdateParamsResponse {}
 // MsgAddService defines a message for adding a new message to the network.
 // Services can be added by any actor in the network making them truly
 // permissionless.
-// TODO_DOCUMENT(@h5law): This is a key function in making services
-// permissionless, document it's usage and design - in docusaurus covering how
-// the entire process works.
+// TODO_BETA: Add Champions / Sources once its fully defined.
 message MsgAddService {
   option (cosmos.msg.v1.signer) = "address"; // https://docs.cosmos.network/main/build/building-modules/messages-and-queries
   string address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the service supplier using cosmos' ScalarDescriptor

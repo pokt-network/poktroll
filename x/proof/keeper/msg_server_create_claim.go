@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"errors"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -10,16 +11,26 @@ import (
 	"github.com/pokt-network/poktroll/x/proof/types"
 )
 
-func (k msgServer) CreateClaim(ctx context.Context, msg *types.MsgCreateClaim) (*types.MsgCreateClaimResponse, error) {
-	// TODO_BLOCKER: Prevent Claim upserts after the ClaimWindow is closed.
-	// TODO_BLOCKER: Validate the signature on the Claim message corresponds to the supplier before Upserting.
+func (k msgServer) CreateClaim(
+	ctx context.Context,
+	msg *types.MsgCreateClaim,
+) (_ *types.MsgCreateClaimResponse, err error) {
+	// Declare claim to reference in telemetry.
+	var claim types.Claim
 
-	isSuccessful := false
-	defer telemetry.EventSuccessCounter(
-		"create_claim",
-		telemetry.DefaultCounterFn,
-		func() bool { return isSuccessful },
-	)
+	// Defer telemetry calls so that they reference the final values the relevant variables.
+	defer func() {
+		// TODO_IMPROVE: We could track on-chain relays here with claim.GetNumRelays().
+		numComputeUnits, deferredErr := claim.GetNumComputeUnits()
+		err = errors.Join(err, deferredErr)
+
+		telemetry.ClaimCounter(telemetry.ClaimProofStageClaimed, 1, err)
+		telemetry.ClaimComputeUnitsCounter(
+			telemetry.ClaimProofStageClaimed,
+			numComputeUnits,
+			err,
+		)
+	}()
 
 	logger := k.Logger().With("method", "CreateClaim")
 	logger.Info("creating claim")
@@ -28,14 +39,22 @@ func (k msgServer) CreateClaim(ctx context.Context, msg *types.MsgCreateClaim) (
 		return nil, err
 	}
 
-	sessionHeader := msg.GetSessionHeader()
-	session, err := k.queryAndValidateSessionHeader(
-		ctx,
-		sessionHeader,
-		msg.GetSupplierAddress(),
-	)
+	// Compare msg session header w/ on-chain session header.
+	session, err := k.queryAndValidateSessionHeader(ctx, msg)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	// Use the session header from the on-chain hydrated session.
+	sessionHeader := session.GetHeader()
+
+	// Set the session header to the on-chain hydrated session header.
+	msg.SessionHeader = sessionHeader
+
+	// Validate claim message commit height is within the respective session's
+	// claim creation window using the on-chain session header.
+	if err := k.validateClaimWindow(ctx, msg); err != nil {
+		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 
 	logger = logger.
@@ -46,7 +65,7 @@ func (k msgServer) CreateClaim(ctx context.Context, msg *types.MsgCreateClaim) (
 		)
 
 	/*
-		TODO_INCOMPLETE:
+		TODO_BLOCKER(@bryanchriswhite):
 
 		### Msg distribution validation (depends on sessionRes validation)
 		1. [ ] governance-based earliest block offset
@@ -59,20 +78,20 @@ func (k msgServer) CreateClaim(ctx context.Context, msg *types.MsgCreateClaim) (
 
 	logger.Info("validated claim")
 
-	// Construct and upsert claim after all validation.
-	claim := types.Claim{
+	// Assign and upsert claim after all validation.
+	claim = types.Claim{
 		SupplierAddress: msg.GetSupplierAddress(),
 		SessionHeader:   sessionHeader,
 		RootHash:        msg.GetRootHash(),
 	}
 
-	// TODO_BLOCKER: check if this claim already exists and return an appropriate error
-	// in any case where the supplier should no longer be able to update the given proof.
+	// TODO_BLOCKER(@Olshansk): check if this claim already exists and return an
+	// appropriate error in any case where the supplier should no longer be able
+	// to update the given proof.
 	k.Keeper.UpsertClaim(ctx, claim)
 
 	logger.Info("created new claim")
 
-	isSuccessful = true
-	// TODO: return the claim in the response.
+	// TODO_BETA: return the claim in the response.
 	return &types.MsgCreateClaimResponse{}, nil
 }

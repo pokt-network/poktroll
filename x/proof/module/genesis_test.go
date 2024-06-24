@@ -29,7 +29,7 @@ func TestGenesis(t *testing.T) {
 				RootHash: []byte{1, 2, 3},
 			},
 		},
-		// TODO_BLOCKER: finish genesis proof list validation.
+		// TODO_TEST: finish genesis proof list validation.
 		//ProofList: []types.Proof{
 		//	{
 		//		Index: "0",

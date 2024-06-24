@@ -139,7 +139,7 @@ func (obsvr *channelObserver[V]) notify(value V) {
 		// release the read-lock to give write-lockers a turn. This case
 		// continues the loop, re-read-locking and trying again.
 		case <-sendRetryTicker.C:
-			// TODO_IMPROVE/TODO_CONSIDERATION: this is where we would implement
+			// TODO_IMPROVE: this is where we would implement
 			// some backpressure strategy. It would be good to have a simple fail-
 			// safe strategy that can be used by default; e.g. dropping the oldest
 			// value if its buffer is full.

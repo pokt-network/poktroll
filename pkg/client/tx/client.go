@@ -25,6 +25,7 @@ const (
 	// DefaultCommitTimeoutHeightOffset is the default number of blocks after the
 	// latest block (when broadcasting) that a transactions should be considered
 	// errored if it has not been committed.
+	// TODO_TECHDEBT: populate this from the config file.
 	DefaultCommitTimeoutHeightOffset = 5
 
 	// defaultTxReplayLimit is the number of comettypes.EventDataTx events that the replay
@@ -39,7 +40,7 @@ const (
 	txWithSenderAddrQueryFmt = "tm.event='Tx' AND message.sender='%s'"
 )
 
-// TODO_TECHDEBT(@bryanchriswhite/@h5law): Refactor this to use the EventsReplayClient
+// TODO_TECHDEBT(@bryanchriswhite): Refactor this to use the EventsReplayClient
 // In order to simplify the logic of the TxClient
 var _ client.TxClient = (*txClient)(nil)
 
@@ -526,8 +527,7 @@ func UnmarshalTxResult(txResultBz []byte) (*abci.TxResult, error) {
 	}
 
 	var cometTxEvent CometTxEvent
-
-	// Try to deserialize the provided bytes into a TxResult.
+	// Try to deserialize the provided bytes into a CometTxEvent.
 	if err := json.Unmarshal(rpcResponse.Result, &cometTxEvent); err != nil {
 		return nil, events.ErrEventsUnmarshalEvent.Wrap(err.Error())
 	}

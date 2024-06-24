@@ -22,11 +22,7 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 	}
 
 	// Global section
-	// SigningKeyName is required
-	if len(yamlRelayMinerConfig.SigningKeyName) == 0 {
-		return nil, ErrRelayMinerConfigInvalidSigningKeyName
-	}
-	relayMinerConfig.SigningKeyName = yamlRelayMinerConfig.SigningKeyName
+	relayMinerConfig.DefaultSigningKeyNames = yamlRelayMinerConfig.DefaultSigningKeyNames
 
 	// SmtStorePath is required
 	if len(yamlRelayMinerConfig.SmtStorePath) == 0 {

@@ -1,51 +1,56 @@
 package proxy
 
 import (
-	"context"
+	"errors"
 	"net/http"
 
-	"github.com/pokt-network/poktroll/pkg/partials"
 	"github.com/pokt-network/poktroll/x/service/types"
 )
 
-// replyWithError builds the appropriate error format according to the payload
+// replyWithError builds the appropriate error format according to the RelayRequest
 // using the passed in error and writes it to the writer.
 // NOTE: This method is used to reply with an "internal" error that is related
 // to the server itself and not to the relayed request.
 func (sync *synchronousRPCServer) replyWithError(
-	ctx context.Context,
-	payloadBz []byte,
+	replyError error,
+	relayRequest *types.RelayRequest,
 	writer http.ResponseWriter,
-	listenAddress string,
-	serviceId string,
-	err error,
 ) {
+	// Indicate whether the original error should be sent to the client or send
+	// a generic error reply.
+	if errors.Is(replyError, ErrRelayerProxyInternalError) {
+		replyError = ErrRelayerProxyInternalError
+	}
+	listenAddress := sync.serverConfig.ListenAddress
+
+	// Fill in the needed missing fields of the RelayRequest with empty values.
+	relayRequest = relayRequest.NullifyForObservability()
+	serviceId := relayRequest.Meta.SessionHeader.Service.Id
+
+	errorLogger := sync.logger.With().
+		Error().
+		Str("service_id", serviceId).
+		Str("listen_address", listenAddress)
+
 	relaysErrorsTotal.With("service_id", serviceId).Add(1)
 
-	responseBz, err := partials.GetErrorReply(ctx, payloadBz, err)
-	if err != nil {
-		sync.logger.Error().Err(err).
-			Str("service_id", serviceId).
-			Str("listen_address", listenAddress).Msg(
-			"failed getting error reply")
-		return
+	// Create an unsigned RelayResponse with the error reply as payload and the
+	// same session header as the source RelayRequest.
+	relayResponse := &types.RelayResponse{
+		Meta: types.RelayResponseMetadata{
+			SessionHeader: relayRequest.Meta.SessionHeader,
+		},
+		Payload: []byte(replyError.Error()),
 	}
 
-	relayResponse := &types.RelayResponse{Payload: responseBz}
 	relayResponseBz, err := relayResponse.Marshal()
 	if err != nil {
-		sync.logger.Error().Err(err).
-			Str("service_id", serviceId).
-			Str("listen_address", listenAddress).Msg(
-			"failed marshaling relay response")
+		errorLogger.Err(err).Msg("failed marshaling error relay response")
 		return
 	}
 
 	if _, err = writer.Write(relayResponseBz); err != nil {
-		sync.logger.Error().Err(err).
-			Str("service_id", serviceId).
-			Str("listen_address", listenAddress).Msg(
-			"failed writing relay response")
+		errorLogger.Err(err).Msg("failed writing error relay response")
 		return
 	}
 }

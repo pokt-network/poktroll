@@ -909,8 +909,6 @@ github.com/nats-io/nkeys v0.1.0/go.mod h1:xpnFELMwJABBLVhffcfd1MZx6VsNRFpEugbxzi
 github.com/nats-io/nkeys v0.1.3/go.mod h1:xpnFELMwJABBLVhffcfd1MZx6VsNRFpEugbxziKVo7w=
 github.com/nats-io/nuid v1.0.1/go.mod h1:19wcPz3Ph3q0Jbyiqsd0kePYG7A95tJPxeL+1OSON2c=
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
-github.com/noot/ring-go v0.0.0-20231019173746-6c4b33bcf03f h1:1+NP/H13eFAqBYrGpRkbJUWVWIO2Zr2eP7a/q0UtZVQ=
-github.com/noot/ring-go v0.0.0-20231019173746-6c4b33bcf03f/go.mod h1:0t3gzoSfW2bkTce1E/Jis3MQpjiKGhAgqieFK+nkQsI=
 github.com/nxadm/tail v1.4.4/go.mod h1:kenIhsEOeOJmVchQTgglprH7qJGnHDVpk1VPCcaMI8A=
 github.com/nxadm/tail v1.4.8 h1:nPr65rt6Y5JFSKQO7qToXr7pePgD6Gwiw05lkbyAQTE=
 github.com/nxadm/tail v1.4.8/go.mod h1:+ncqLTQzXmGhMZNUePPaPqPvBxHAIsmXswZKocGu+AU=
@@ -978,8 +976,12 @@ github.com/pkg/profile v1.7.0/go.mod h1:8Uer0jas47ZQMJ7VD+OHknK4YDY07LPUC6dEvqDj
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 h1:Jamvg5psRIccs7FGNTlIRMkT8wgtp5eCXdBlqhYGL6U=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
-github.com/pokt-network/smt v0.10.2 h1:7OCimi2qN9kPwv+UDbUqaFYLaVMed3DYO8AbY8R0rNo=
-github.com/pokt-network/smt v0.10.2/go.mod h1:S4Ho4OPkK2v2vUCHNtA49XDjqUC/OFYpBbynRVYmxvA=
+github.com/pokt-network/ring-go v0.1.0 h1:hF7mDR4VVCIqqDAsrloP8azM9y1mprc99YgnTjKSSwk=
+github.com/pokt-network/ring-go v0.1.0/go.mod h1:8NHPH7H3EwrPX3XHfpyRI6bz4gApkE3+fd0XZRbMWP0=
+github.com/pokt-network/shannon-sdk v0.0.0-20240617183753-c338413134a5 h1:sh0ZGUr/QeuPKSFZ4JRtw+8xRziGGd3ZH1BtErBW1/0=
+github.com/pokt-network/shannon-sdk v0.0.0-20240617183753-c338413134a5/go.mod h1:v66BYXJJzU2rnK3fM/B6ZKHKN5tx6YdueUsxdPgzNYQ=
+github.com/pokt-network/smt v0.11.1 h1:ySN8PjrPDKyvzLcX0qTHR2s5ReaZnjq25z0B7p6AWl0=
+github.com/pokt-network/smt v0.11.1/go.mod h1:S4Ho4OPkK2v2vUCHNtA49XDjqUC/OFYpBbynRVYmxvA=
 github.com/pokt-network/smt/kvstore/badger v0.0.0-20240109205447-868237978c0b h1:TjfgV3vgW0zW47Br/OgUXD4M8iyR74EYanbFfN4ed8o=
 github.com/pokt-network/smt/kvstore/badger v0.0.0-20240109205447-868237978c0b/go.mod h1:GbzcG5ebj8twKmBL1VzdPM4NS44okwYXBfQaVXT+6yU=
 github.com/posener/complete v1.1.1/go.mod h1:em0nMJCgc9GFtwrmVmEMR/ZL6WyhyjMBndrE9hABlRI=

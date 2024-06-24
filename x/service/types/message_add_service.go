@@ -23,7 +23,7 @@ func (msg *MsgAddService) ValidateBasic() error {
 	if _, err := sdk.AccAddressFromBech32(msg.Address); err != nil {
 		return ErrServiceInvalidAddress.Wrapf("invalid supplier address %s; (%v)", msg.Address, err)
 	}
-	// TODO_TECHDEBT: Add a validate basic function to the `Service` object
+	// TODO_BETA: Add a validate basic function to the `Service` object
 	if msg.Service.Id == "" {
 		return ErrServiceMissingID
 	}

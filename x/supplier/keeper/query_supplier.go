@@ -58,7 +58,7 @@ func (k Keeper) Supplier(
 
 	supplier, found := k.GetSupplier(ctx, req.Address)
 	if !found {
-		// TODO_TECHDEBT(#384): conform to logging conventions once established
+		// TODO_TECHDEBT(@bryanchriswhite, #384): conform to logging conventions once established
 		msg := fmt.Sprintf("supplier with address %q", req.GetAddress())
 		return nil, status.Error(codes.NotFound, msg)
 	}

@@ -77,7 +77,7 @@ type replayClient[T any] struct {
 	// events bytes observable returns an error and is updated with a new
 	// "active" observable after a new events query subscription is created.
 	//
-	// TODO_REFACTOR(@h5law): Look into making this a regular observable as
+	// TODO_TECHDEBT(@bryanchriswhite): Look into making this a regular observable as
 	// we may no longer depend on it being replayable.
 	replayObsCache observable.ReplayObservable[observable.ReplayObservable[T]]
 	// replayObsCachePublishCh is the publish channel for replayObsCache.
@@ -128,7 +128,7 @@ func NewEventsReplayClient[T any](
 		opt(rClient)
 	}
 
-	// TODO_REFACTOR(@h5law): Look into making this a regular observable as
+	// TODO_TECHDEBT(@bryanchriswhite): Look into making this a regular observable as
 	// we may no longer depend on it being replayable.
 	replayObsCache, replayObsCachePublishCh := channel.NewReplayObservable[observable.ReplayObservable[T]](
 		ctx,

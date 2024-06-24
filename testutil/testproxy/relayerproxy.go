@@ -15,10 +15,11 @@ import (
 	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
 	ringtypes "github.com/athanorlabs/go-dleq/types"
 	keyringtypes "github.com/cosmos/cosmos-sdk/crypto/keyring"
-	secp256k1 "github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/types/bech32"
-	"github.com/noot/ring-go"
+	"github.com/pokt-network/ring-go"
+	sdktypes "github.com/pokt-network/shannon-sdk/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/client"
@@ -26,16 +27,22 @@ import (
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer/config"
 	"github.com/pokt-network/poktroll/pkg/signer"
+	testsession "github.com/pokt-network/poktroll/testutil/session"
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
 	"github.com/pokt-network/poktroll/testutil/testclient/testdelegation"
-	testkeyring "github.com/pokt-network/poktroll/testutil/testclient/testkeyring"
+	"github.com/pokt-network/poktroll/testutil/testclient/testkeyring"
 	"github.com/pokt-network/poktroll/testutil/testclient/testqueryclients"
 	testrings "github.com/pokt-network/poktroll/testutil/testcrypto/rings"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
-	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
+
+// JSONRPCInternalErrorCode is the default JSON-RPC error code to be used when
+// generating a JSON-RPC error reply.
+// JSON-RPC specification uses -32000 to -32099 as implementation-defined server-errors.
+// See: https://www.jsonrpc.org/specification#error_object
+const JSONRPCInternalErrorCode = -32000
 
 // TestBehavior is a struct that holds the test context and mocks
 // for the relayer proxy tests.
@@ -103,25 +110,30 @@ func WithRelayerProxyDependenciesForBlockHeight(
 		applicationQueryClient := testqueryclients.NewTestApplicationQueryClient(test.t)
 		sessionQueryClient := testqueryclients.NewTestSessionQueryClient(test.t)
 		supplierQueryClient := testqueryclients.NewTestSupplierQueryClient(test.t)
+		sharedQueryClient := testqueryclients.NewTestSharedQueryClient(test.t)
 
 		blockClient := testblock.NewAnyTimeLastBlockBlockClient(test.t, []byte{}, blockHeight)
 		keyring, _ := testkeyring.NewTestKeyringWithKey(test.t, keyName)
 
 		redelegationObs, _ := channel.NewReplayObservable[client.Redelegation](test.ctx, 1)
 		delegationClient := testdelegation.NewAnyTimesRedelegationsSequence(test.ctx, test.t, "", redelegationObs)
-		ringCache := testrings.NewRingCacheWithMockDependencies(test.ctx, test.t, accountQueryClient, applicationQueryClient, delegationClient)
 
-		deps := depinject.Supply(
-			logger,
-			accountQueryClient,
-			ringCache,
-			blockClient,
-			sessionQueryClient,
-			supplierQueryClient,
-			keyring,
+		ringCacheDeps := depinject.Supply(accountQueryClient, applicationQueryClient, delegationClient, sharedQueryClient)
+		ringCache := testrings.NewRingCacheWithMockDependencies(test.ctx, test.t, ringCacheDeps)
+
+		testDeps := depinject.Configs(
+			ringCacheDeps,
+			depinject.Supply(
+				logger,
+				ringCache,
+				blockClient,
+				sessionQueryClient,
+				supplierQueryClient,
+				keyring,
+			),
 		)
 
-		test.Deps = deps
+		test.Deps = testDeps
 	}
 }
 
@@ -137,7 +149,7 @@ func WithServicesConfigMap(
 			for serviceId, supplierConfig := range serviceConfig.SupplierConfigsMap {
 				server := &http.Server{Addr: supplierConfig.ServiceConfig.BackendUrl.Host}
 				server.Handler = http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-					w.Write(prepareJsonRPCResponsePayload())
+					sendJSONRPCResponse(test.t, w)
 				})
 				go func() { server.ListenAndServe() }()
 				go func() {
@@ -157,18 +169,7 @@ func WithDefaultSupplier(
 	supplierEndpoints map[string][]*sharedtypes.SupplierEndpoint,
 ) func(*TestBehavior) {
 	return func(test *TestBehavior) {
-		var keyring keyringtypes.Keyring
-
-		err := depinject.Inject(test.Deps, &keyring)
-		require.NoError(test.t, err)
-
-		supplierAccount, err := keyring.Key(supplierKeyName)
-		require.NoError(test.t, err)
-
-		supplierAccAddress, err := supplierAccount.GetAddress()
-		require.NoError(test.t, err)
-
-		supplierAddress := supplierAccAddress.String()
+		supplierAddress := getAddressFromKeyName(test, supplierKeyName)
 
 		for serviceId, endpoints := range supplierEndpoints {
 			testqueryclients.AddSuppliersWithServiceEndpoints(
@@ -185,7 +186,7 @@ func WithDefaultSupplier(
 func WithDefaultApplication(appPrivateKey *secp256k1.PrivKey) func(*TestBehavior) {
 	return func(test *TestBehavior) {
 		appPubKey := appPrivateKey.PubKey()
-		appAddress := GetAddressFromPrivateKey(test, appPrivateKey)
+		appAddress := getAddressFromPrivateKey(test, appPrivateKey)
 		delegateeAccounts := map[string]cryptotypes.PubKey{}
 
 		testqueryclients.AddAddressToApplicationMap(
@@ -211,20 +212,10 @@ func WithDefaultSessionSupplier(
 			return
 		}
 
-		appAddress := GetAddressFromPrivateKey(test, appPrivateKey)
+		appAddress := getAddressFromPrivateKey(test, appPrivateKey)
 
 		sessionSuppliers := []string{}
-		var keyring keyringtypes.Keyring
-		err := depinject.Inject(test.Deps, &keyring)
-		require.NoError(test.t, err)
-
-		supplierAccount, err := keyring.Key(supplierKeyName)
-		require.NoError(test.t, err)
-
-		supplierAccAddress, err := supplierAccount.GetAddress()
-		require.NoError(test.t, err)
-
-		supplierAddress := supplierAccAddress.String()
+		supplierAddress := getAddressFromKeyName(test, supplierKeyName)
 		sessionSuppliers = append(sessionSuppliers, supplierAddress)
 
 		testqueryclients.AddToExistingSessions(
@@ -247,20 +238,10 @@ func WithSuccessiveSessions(
 	sessionsCount int,
 ) func(*TestBehavior) {
 	return func(test *TestBehavior) {
-		appAddress := GetAddressFromPrivateKey(test, appPrivateKey)
+		appAddress := getAddressFromPrivateKey(test, appPrivateKey)
 
 		sessionSuppliers := []string{}
-		var keyring keyringtypes.Keyring
-		err := depinject.Inject(test.Deps, &keyring)
-		require.NoError(test.t, err)
-
-		supplierAccount, err := keyring.Key(supplierKeyName)
-		require.NoError(test.t, err)
-
-		supplierAccAddress, err := supplierAccount.GetAddress()
-		require.NoError(test.t, err)
-
-		supplierAddress := supplierAccAddress.String()
+		supplierAddress := getAddressFromKeyName(test, supplierKeyName)
 		sessionSuppliers = append(sessionSuppliers, supplierAddress)
 
 		// Adding `sessionCount` sessions to the sessionsMap to make them available
@@ -270,14 +251,14 @@ func WithSuccessiveSessions(
 				test.t,
 				appAddress,
 				serviceId,
-				sessionkeeper.NumBlocksPerSession*int64(i),
+				sharedtypes.DefaultNumBlocksPerSession*int64(i),
 				sessionSuppliers,
 			)
 		}
 	}
 }
 
-// TODO_TECHDEBT(@red-0ne): This function only supports JSON-RPC requests and
+// TODO_BLOCKER(@red-0ne): This function only supports JSON-RPC requests and
 // needs to have its http.Request "Content-Type" header passed-in as a parameter
 // and take out the GetRelayResponseError function which parses JSON-RPC responses
 // to make it RPC-type agnostic.
@@ -333,14 +314,22 @@ func GetRelayResponseError(t *testing.T, res *http.Response) (errCode int32, err
 
 	relayResponse := &servicetypes.RelayResponse{}
 	err = relayResponse.Unmarshal(responseBody)
-	if err != nil {
-		return 0, "cannot unmarshal request body"
+	require.NoError(t, err)
+
+	// If the relayResponse basic validation fails then consider the payload as an error.
+	if err := relayResponse.ValidateBasic(); err != nil {
+		return JSONRPCInternalErrorCode, string(relayResponse.Payload)
 	}
 
-	var payload JSONRpcErrorReply
-	err = json.Unmarshal(relayResponse.Payload, &payload)
+	response, err := sdktypes.DeserializeHTTPResponse(relayResponse.Payload)
 	if err != nil {
-		return 0, "cannot unmarshal request payload"
+		return 0, "cannot unmarshal response"
+	}
+
+	var payload JSONRPCErrorReply
+	err = json.Unmarshal(response.BodyBz, &payload)
+	if err != nil {
+		return 0, "cannot unmarshal response payload"
 	}
 
 	if payload.Error == nil {
@@ -383,12 +372,30 @@ func GetApplicationRingSignature(
 	return signature
 }
 
-// GetAddressFromPrivateKey returns the address of the provided private key
-func GetAddressFromPrivateKey(test *TestBehavior, privKey *secp256k1.PrivKey) string {
+// getAddressFromPrivateKey returns the address of the provided private key
+func getAddressFromPrivateKey(test *TestBehavior, privKey *secp256k1.PrivKey) string {
 	addressBz := privKey.PubKey().Address()
 	address, err := bech32.ConvertAndEncode("pokt", addressBz)
 	require.NoError(test.t, err)
 	return address
+}
+
+// getAddressFromKeyName returns the address of the provided keyring key name
+func getAddressFromKeyName(test *TestBehavior, keyName string) string {
+	test.t.Helper()
+
+	var keyring keyringtypes.Keyring
+
+	err := depinject.Inject(test.Deps, &keyring)
+	require.NoError(test.t, err)
+
+	account, err := keyring.Key(keyName)
+	require.NoError(test.t, err)
+
+	accAddress, err := account.GetAddress()
+	require.NoError(test.t, err)
+
+	return accAddress.String()
 }
 
 // GenerateRelayRequest generates a relay request with the provided parameters
@@ -397,10 +404,12 @@ func GenerateRelayRequest(
 	privKey *secp256k1.PrivKey,
 	serviceId string,
 	blockHeight int64,
+	supplierKeyName string,
 	payload []byte,
 ) *servicetypes.RelayRequest {
-	appAddress := GetAddressFromPrivateKey(test, privKey)
-	sessionId, _ := sessionkeeper.GetSessionId(appAddress, serviceId, blockHashBz, blockHeight)
+	appAddress := getAddressFromPrivateKey(test, privKey)
+	sessionId, _ := testsession.GetSessionIdWithDefaultParams(appAddress, serviceId, blockHashBz, blockHeight)
+	supplierAddress := getAddressFromKeyName(test, supplierKeyName)
 
 	return &servicetypes.RelayRequest{
 		Meta: servicetypes.RelayRequestMetadata{
@@ -408,9 +417,10 @@ func GenerateRelayRequest(
 				ApplicationAddress:      appAddress,
 				SessionId:               string(sessionId[:]),
 				Service:                 &sharedtypes.Service{Id: serviceId},
-				SessionStartBlockHeight: sessionkeeper.GetSessionStartBlockHeight(blockHeight),
-				SessionEndBlockHeight:   sessionkeeper.GetSessionEndBlockHeight(blockHeight),
+				SessionStartBlockHeight: testsession.GetSessionStartHeightWithDefaultParams(blockHeight),
+				SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(blockHeight),
 			},
+			SupplierAddress: supplierAddress,
 			// The returned relay is unsigned and must be signed elsewhere for functionality
 			Signature: []byte(""),
 		},

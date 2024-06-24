@@ -1,18 +1,26 @@
 .SILENT:
 
 SHELL = /bin/sh
+
+# TODO_IMPROVE: Look into how we can we source `.env.dev` and have everything
+# here work.
+
+# ifneq (,$(wildcard .env))
+# include .env
+# export $(shell sed 's/=.*//' .env)
+# endif
+
 POKTROLLD_HOME ?= ./localnet/poktrolld
-POCKET_NODE ?= tcp://127.0.0.1:36657 # The pocket node (validator in the localnet context)
+POCKET_NODE ?= tcp://127.0.0.1:26657 # The pocket node (validator in the localnet context)
 TESTNET_RPC ?= https://testnet-validated-validator-rpc.poktroll.com/ # TestNet RPC endpoint for validator maintained by Grove. Needs to be update if there's another "primary" testnet.
 APPGATE_SERVER ?= http://localhost:42069
 GATEWAY_URL ?= http://localhost:42079
 POCKET_ADDR_PREFIX = pokt
-CHAIN_ID = poktroll
 
 # The domain ending in ".town" is staging, ".city" is production
 GROVE_GATEWAY_STAGING_ETH_MAINNET = https://eth-mainnet.rpc.grove.town
-# The "protocol" field here instructs the Grove gateway which network to use
-JSON_RPC_DATA_ETH_BLOCK_HEIGHT = '{"protocol": "shannon-testnet","jsonrpc":"2.0","id":"0","method":"eth_blockNumber", "params": []}'
+# JSON RPC data for a test relay request
+JSON_RPC_DATA_ETH_BLOCK_HEIGHT = '{"jsonrpc":"2.0","id":"0","method":"eth_blockNumber", "params": []}'
 
 # On-chain module account addresses. Search for `func TestModuleAddress` in the
 # codebase to get an understanding of how we got these values.
@@ -76,8 +84,8 @@ endif
 ### Dependencies ###
 ####################
 
-# TODO: Add other dependencies (ignite, docker, k8s, etc) here
-# TODO(@okdas): bump `golangci-lint` when we upgrade golang to 1.21+
+# TODO_IMPROVE(@okdas): Add other dependencies (ignite, docker, k8s, etc) here
+# TODO_BLOCKER(@okdas): bump `golangci-lint` when we upgrade golang to 1.21+
 .PHONY: install_ci_deps
 install_ci_deps: ## Installs `mockgen` and other go tools
 	go install "github.com/golang/mock/mockgen@v1.6.0" && mockgen --version
@@ -101,14 +109,15 @@ list: ## List all make targets
 .PHONY: help
 .DEFAULT_GOAL := help
 help: ## Prints all the targets in all the Makefiles
-	@grep -h -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
+	@grep -h -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-60s\033[0m %s\n", $$1, $$2}'
 
 ##############
 ### Checks ###
 ##############
 
 # TODO_DOCUMENT: All of the `check_` helpers can be installed differently depending
-# on the user's OS and enviornment.
+# on the user's OS and environment.
+# NB: For mac users, you may need to install with the proper linkers: https://github.com/golang/go/issues/65940
 
 .PHONY: check_go_version
 # Internal helper target - check go version
@@ -306,7 +315,7 @@ localnet_down: ## Delete resources created by localnet
 	tilt down
 
 .PHONY: localnet_regenesis
-localnet_regenesis: check_yq acc_initialize_pubkeys_warn_message ## Regenerate the localnet genesis file
+localnet_regenesis: check_yq warn_message_acc_initialize_pubkeys ## Regenerate the localnet genesis file
 # NOTE: intentionally not using --home <dir> flag to avoid overwriting the test keyring
 	@echo "Initializing chain..."
 	@set -e
@@ -317,20 +326,26 @@ localnet_regenesis: check_yq acc_initialize_pubkeys_warn_message ## Regenerate t
 	@cp -r ${HOME}/.poktroll/keyring-test $(POKTROLLD_HOME)
 	@cp -r ${HOME}/.poktroll/config $(POKTROLLD_HOME)/
 
-.PHONY: send_relay_sovereign_app
-send_relay_sovereign_app: # Send a relay through the AppGateServer as a sovereign application
+.PHONY: send_relay_sovereign_app_JSONRPC
+send_relay_sovereign_app_JSONRPC: # Send a JSONRPC relay through the AppGateServer as a sovereign application
 	curl -X POST -H "Content-Type: application/json" \
 	--data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' \
-	http://localhost:42069/anvil
+	$(APPGATE_SERVER)/anvil
 
-.PHONY: send_relay_delegating_app
-send_relay_delegating_app: # Send a relay through the gateway as an application that's delegating to this gateway
+.PHONY: send_relay_delegating_app_JSONRPC
+send_relay_delegating_app_JSONRPC: # Send a relay through the gateway as an application that's delegating to this gateway
 	@appAddr=$$(poktrolld keys show app1 -a) && \
 	curl -X POST -H "Content-Type: application/json" \
 	--data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' \
 	$(GATEWAY_URL)/anvil?applicationAddr=$$appAddr
 
-# TODO_BLOCKER(@okdas): Figure out how to copy these over w/ a functional state.
+.PHONY: send_relay_sovereign_app_REST
+send_relay_sovereign_app_REST: # Send a REST relay through the AppGateServer as a sovereign application
+	curl -X POST -H "Content-Type: application/json" \
+	--data '{"model": "qwen:0.5b", "stream": false, "messages": [{"role": "user", "content":"count from 1 to 10"}]}' \
+	$(APPGATE_SERVER)/ollama/api/chat
+
+# TODO_TECHDEBT(@okdas): Figure out how to copy these over w/ a functional state.
 # cp ${HOME}/.poktroll/config/app.toml $(POKTROLLD_HOME)/config/app.toml
 # cp ${HOME}/.poktroll/config/config.toml $(POKTROLLD_HOME)/config/config.toml
 # cp ${HOME}/.poktroll/config/client.toml $(POKTROLLD_HOME)/config/client.toml
@@ -351,7 +366,7 @@ go_imports: check_go_version ## Run goimports on all go files
 #############
 
 .PHONY: test_e2e_env
-test_e2e_env: acc_initialize_pubkeys_warn_message ## Setup the default env vars for E2E tests
+test_e2e_env: warn_message_acc_initialize_pubkeys ## Setup the default env vars for E2E tests
 	export POCKET_NODE=$(POCKET_NODE) && \
 	export APPGATE_SERVER=$(APPGATE_SERVER) && \
 	export POKTROLLD_HOME=../../$(POKTROLLD_HOME)
@@ -360,16 +375,20 @@ test_e2e_env: acc_initialize_pubkeys_warn_message ## Setup the default env vars 
 test_e2e: test_e2e_env ## Run all E2E tests
 	go test -count=1 -v ./e2e/tests/... -tags=e2e,test
 
+.PHONY: test_e2e_relay
+test_e2e_relay: test_e2e_env ## Run only the E2E suite that exercises the relay life-cycle
+	go test -v ./e2e/tests/... -tags=e2e,test --features-path=relay.feature
+
 .PHONY: test_e2e_app
-test_e2e_app:
+test_e2e_app: test_e2e_env ## Run only the E2E suite that exercises the application life-cycle
 	go test -v ./e2e/tests/... -tags=e2e,test --features-path=stake_app.feature
 
 .PHONY: test_e2e_supplier
-test_e2e_supplier:
+test_e2e_supplier: test_e2e_env ## Run only the E2E suite that exercises the supplier life-cycle
 	go test -v ./e2e/tests/... -tags=e2e,test --features-path=stake_supplier.feature
 
 .PHONY: test_e2e_gateway
-test_e2e_gateway:
+test_e2e_gateway: test_e2e_env ## Run only the E2E suite that exercises the gateway life-cycle
 	go test -v ./e2e/tests/... -tags=e2e,test --features-path=stake_gateway.feature
 
 .PHONY: test_e2e_session
@@ -380,29 +399,41 @@ test_e2e_session: test_e2e_env ## Run only the E2E suite that exercises the sess
 test_e2e_settlement: test_e2e_env ## Run only the E2E suite that exercises the session & tokenomics settlement
 	go test -v ./e2e/tests/... -tags=e2e,test --features-path=0_settlement.feature
 
-.PHONY: test_load_relays_stress
-test_load_relays_stress: test_e2e_env ## Run the stress test for E2E relays.
-	go test -v -count=1 ./load-testing/tests/... -tags=load,test -run LoadRelays --log-level=debug --timeout=30m
+.PHONY: test_e2e_params
+test_e2e_params: test_e2e_env ## Run only the E2E suite that exercises parameter updates for all modules
+	go test -v ./e2e/tests/... -tags=e2e,test --features-path=update_params.feature
 
-.PHONY: go_test_verbose
-go_test_verbose: check_go_version ## Run all go tests verbosely
+.PHONY: test_load_relays_stress_example
+test_load_relays_stress_example: ## Run the stress test for E2E relays on a persistent (non-ephemeral) remote (devnet) chain. Note that this is just an example.
+	go test -v -count=1 ./load-testing/tests/... \
+	-tags=load,test -run LoadRelays --log-level=debug --timeout=30m \
+	--manifest ./load-testing/loadtest_manifest_example.yaml
+
+.PHONY: test_load_relays_stress_localnet
+test_load_relays_stress_localnet: test_e2e_env warn_message_local_stress_test ## Run the stress test for E2E relays on LocalNet.
+	go test -v -count=1 ./load-testing/tests/... \
+	-tags=load,test -run LoadRelays --log-level=debug --timeout=30m \
+	--manifest ./load-testing/loadtest_manifest_localnet.yaml
+
+.PHONY: test_verbose
+test_verbose: check_go_version ## Run all go tests verbosely
 	go test -count=1 -v -race -tags test ./...
 
-.PHONY: go_test
-go_test: check_go_version ## Run all go tests showing detailed output only on failures
+.PHONY: test_all
+test_all: check_go_version ## Run all go tests showing detailed output only on failures
 	go test -count=1 -race -tags test ./...
 
-.PHONY: go_test_integration
-go_test_integration: check_go_version ## Run all go tests, including integration
+.PHONY: test_all_with_integration
+test_all_with_integration: check_go_version ## Run all go tests, including those with the integration
 	go test -count=1 -v -race -tags test,integration ./...
+
+.PHONY: test_integration
+test_integration: check_go_version ## Run only the in-memory integration "unit" tests
+	go test -count=1 -v -race -tags test,integration ./tests/integration/...
 
 .PHONY: itest
 itest: check_go_version ## Run tests iteratively (see usage for more)
 	./tools/scripts/itest.sh $(filter-out $@,$(MAKECMDGOALS))
-# catch-all target for itest
-%:
-	# no-op
-	@:
 
 .PHONY: go_mockgen
 go_mockgen: ## Use `mockgen` to generate mocks used for testing purposes of all the modules.
@@ -428,7 +459,7 @@ go_testgen_accounts: ## Generate test accounts for usage in test environments
 go_develop: check_ignite_version proto_regen go_mockgen ## Generate protos and mocks
 
 .PHONY: go_develop_and_test
-go_develop_and_test: go_develop go_test ## Generate protos, mocks and run all tests
+go_develop_and_test: go_develop test_all ## Generate protos, mocks and run all tests
 
 #############
 ### TODOS ###
@@ -494,7 +525,7 @@ gateway_list: ## List all the staked gateways
 
 .PHONY: gateway_stake
 gateway_stake: ## Stake tokens for the gateway specified (must specify the gateway env var)
-	poktrolld --home=$(POKTROLLD_HOME) tx gateway stake-gateway -y --config $(POKTROLLD_HOME)/config/$(STAKE) --keyring-backend test --from $(GATEWAY) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
+	poktrolld --home=$(POKTROLLD_HOME) tx gateway stake-gateway -y --config $(POKTROLLD_HOME)/config/$(STAKE) --keyring-backend test --from $(GATEWAY) --node $(POCKET_NODE)
 
 .PHONY: gateway1_stake
 gateway1_stake: ## Stake gateway1
@@ -510,7 +541,7 @@ gateway3_stake: ## Stake gateway3
 
 .PHONY: gateway_unstake
 gateway_unstake: ## Unstake an gateway (must specify the GATEWAY env var)
-	poktrolld --home=$(POKTROLLD_HOME) tx gateway unstake-gateway -y --keyring-backend test --from $(GATEWAY) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
+	poktrolld --home=$(POKTROLLD_HOME) tx gateway unstake-gateway -y --keyring-backend test --from $(GATEWAY) --node $(POCKET_NODE)
 
 .PHONY: gateway1_unstake
 gateway1_unstake: ## Unstake gateway1
@@ -534,7 +565,7 @@ app_list: ## List all the staked applications
 
 .PHONY: app_stake
 app_stake: ## Stake tokens for the application specified (must specify the APP and SERVICES env vars)
-	poktrolld --home=$(POKTROLLD_HOME) tx application stake-application -y --config $(POKTROLLD_HOME)/config/$(SERVICES) --keyring-backend test --from $(APP) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
+	poktrolld --home=$(POKTROLLD_HOME) tx application stake-application -y --config $(POKTROLLD_HOME)/config/$(SERVICES) --keyring-backend test --from $(APP) --node $(POCKET_NODE)
 
 .PHONY: app1_stake
 app1_stake: ## Stake app1 (also staked in genesis)
@@ -550,7 +581,7 @@ app3_stake: ## Stake app3
 
 .PHONY: app_unstake
 app_unstake: ## Unstake an application (must specify the APP env var)
-	poktrolld --home=$(POKTROLLD_HOME) tx application unstake-application -y --keyring-backend test --from $(APP) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
+	poktrolld --home=$(POKTROLLD_HOME) tx application unstake-application -y --keyring-backend test --from $(APP) --node $(POCKET_NODE)
 
 .PHONY: app1_unstake
 app1_unstake: ## Unstake app1
@@ -566,7 +597,7 @@ app3_unstake: ## Unstake app3
 
 .PHONY: app_delegate
 app_delegate: ## Delegate trust to a gateway (must specify the APP and GATEWAY_ADDR env vars). Requires the app to be staked
-	poktrolld --home=$(POKTROLLD_HOME) tx application delegate-to-gateway $(GATEWAY_ADDR) --keyring-backend test --from $(APP) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
+	poktrolld --home=$(POKTROLLD_HOME) tx application delegate-to-gateway $(GATEWAY_ADDR) --keyring-backend test --from $(APP) --node $(POCKET_NODE)
 
 .PHONY: app1_delegate_gateway1
 app1_delegate_gateway1: ## Delegate trust to gateway1
@@ -585,7 +616,7 @@ app3_delegate_gateway3: ## Delegate trust to gateway3
 
 .PHONY: app_undelegate
 app_undelegate: ## Undelegate trust to a gateway (must specify the APP and GATEWAY_ADDR env vars). Requires the app to be staked
-	poktrolld --home=$(POKTROLLD_HOME) tx application undelegate-from-gateway $(GATEWAY_ADDR) --keyring-backend test --from $(APP) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
+	poktrolld --home=$(POKTROLLD_HOME) tx application undelegate-from-gateway $(GATEWAY_ADDR) --keyring-backend test --from $(APP) --node $(POCKET_NODE)
 
 .PHONY: app1_undelegate_gateway1
 app1_undelegate_gateway1: ## Undelegate trust to gateway1
@@ -612,7 +643,7 @@ supplier_list: ## List all the staked supplier
 
 .PHONY: supplier_stake
 supplier_stake: ## Stake tokens for the supplier specified (must specify the SUPPLIER and SUPPLIER_CONFIG env vars)
-	poktrolld --home=$(POKTROLLD_HOME) tx supplier stake-supplier -y --config $(POKTROLLD_HOME)/config/$(SERVICES) --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
+	poktrolld --home=$(POKTROLLD_HOME) tx supplier stake-supplier -y --config $(POKTROLLD_HOME)/config/$(SERVICES) --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE)
 
 .PHONY: supplier1_stake
 supplier1_stake: ## Stake supplier1 (also staked in genesis)
@@ -628,7 +659,7 @@ supplier3_stake: ## Stake supplier3
 
 .PHONY: supplier_unstake
 supplier_unstake: ## Unstake an supplier (must specify the SUPPLIER env var)
-	poktrolld --home=$(POKTROLLD_HOME) tx supplier unstake-supplier --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
+	poktrolld --home=$(POKTROLLD_HOME) tx supplier unstake-supplier --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE)
 
 .PHONY: supplier1_unstake
 supplier1_unstake: ## Unstake supplier1
@@ -747,19 +778,36 @@ acc_initialize_pubkeys: ## Make sure the account keeper has public keys for all 
 			$(addr) $(PNF_ADDRESS) 1000upokt \
 			--yes \
 			--home=$(POKTROLLD_HOME) \
-			--node $(POCKET_NODE) \
-			--chain-id $(CHAIN_ID);)
+			--node $(POCKET_NODE);)
 
-.PHONY: acc_initialize_pubkeys_warn_message
-acc_initialize_pubkeys_warn_message: ## Print a warning message about the need to run `make acc_initialize_pubkeys`
+########################
+### Warning Messages ###
+########################
+
+.PHONY: warn_message_acc_initialize_pubkeys
+warn_message_acc_initialize_pubkeys: ## Print a warning message about the need to run `make acc_initialize_pubkeys`
 	@echo "+----------------------------------------------------------------------------------+"
 	@echo "|                                                                                  |"
-	@echo "|     IMPORTANT: Please run the following command once to initialize E2E tests     |"
-	@echo "|     after the network has started:                                               |"
-	@echo "|         make acc_initialize_pubkeys                                              |"
+	@echo "|     IMPORTANT: Please run the following command once to initialize               |"
+	@echo "|                E2E tests after the network has started:                          |"
+	@echo "|                                                                                  |"
+	@echo "|     make acc_initialize_pubkeys                                                  |"
 	@echo "|                                                                                  |"
 	@echo "+----------------------------------------------------------------------------------+"
 
+.PHONY: warn_message_local_stress_test
+warn_message_local_stress_test: ## Print a warning message when kicking off a local E2E relay stress test
+	@echo "+-----------------------------------------------------------------------------------------------+"
+	@echo "|                                                                                               |"
+	@echo "|     IMPORTANT: Please read the following before continuing with the stress test.              |"
+	@echo "|                                                                                               |"
+	@echo "|     1. Review the # of suppliers & gateways in 'load-testing/localnet_loadtest_manifest.yaml' |"
+	@echo "|     2. Update 'localnet_config.yaml' to reflect what you found in (1)                         |"
+	@echo "|     	DEVELOPER_TIP: If you're operating off defaults, you'll likely need to update to 3     |"
+	@echo "|                                                                                               |"
+	@echo "|     TODO_DOCUMENT(@okdas): Move this into proper documentation w/ clearer explanations        |"
+	@echo "|                                                                                               |"
+	@echo "+-----------------------------------------------------------------------------------------------+"
 
 ##############
 ### Claims ###
@@ -807,21 +855,60 @@ claim_list_session: ## List all the claims ending at a specific session (specifi
 # TODO_CONSIDERATION: additional factoring (e.g. POKTROLLD_FLAGS).
 PARAM_FLAGS = --home=$(POKTROLLD_HOME) --keyring-backend test --from $(PNF_ADDRESS) --node $(POCKET_NODE)
 
+### Tokenomics Module Params ###
 .PHONY: update_tokenomics_params_all
 params_update_tokenomics_all: ## Update the tokenomics module params
 	poktrolld tx authz exec ./tools/scripts/params/tokenomics_all.json $(PARAM_FLAGS)
 
 .PHONY: params_update_tokenomics_compute_units_to_tokens_multiplier
-params_update_tokenomics_compute_units_to_tokens_multiplier: ## Update the tokenomics module params
+params_update_tokenomics_compute_units_to_tokens_multiplier: ## Update the tokenomics module compute_units_to_tokens_multiplier param
 	poktrolld tx authz exec ./tools/scripts/params/tokenomics_compute_units_to_tokens_multiplier.json $(PARAM_FLAGS)
 
+### Proof Module Params ###
 .PHONY: params_update_proof_all
 params_update_proof_all: ## Update the proof module params
 	poktrolld tx authz exec ./tools/scripts/params/proof_all.json $(PARAM_FLAGS)
 
 .PHONY: params_update_proof_min_relay_difficulty_bits
-params_update_proof_min_relay_difficulty_bits: ## Update the proof module params
+params_update_proof_min_relay_difficulty_bits: ## Update the proof module min_relay_difficulty_bits param
 	poktrolld tx authz exec ./tools/scripts/params/proof_min_relay_difficulty_bits.json $(PARAM_FLAGS)
+
+.PHONY: params_update_proof_proof_request_probability
+params_update_proof_proof_request_probability: ## Update the proof module proof_request_probability param
+	poktrolld tx authz exec ./tools/scripts/params/proof_proof_request_probability.json $(PARAM_FLAGS)
+
+.PHONY: params_update_proof_proof_requirement_threshold
+params_update_proof_proof_requirement_threshold: ## Update the proof module proof_requirement_threshold param
+	poktrolld tx authz exec ./tools/scripts/params/proof_proof_requirement_threshold.json $(PARAM_FLAGS)
+
+.PHONY: params_update_proof_proof_missing_penalty
+params_update_proof_proof_missing_penalty: ## Update the proof module proof_missing_penalty param
+	poktrolld tx authz exec ./tools/scripts/params/proof_proof_missing_penalty.json $(PARAM_FLAGS)
+
+### Shared Module Params ###
+.PHONY: params_update_shared_all
+params_update_shared_all: ## Update the session module params
+	poktrolld tx authz exec ./tools/scripts/params/shared_all.json $(PARAM_FLAGS)
+
+.PHONY: params_update_shared_num_blocks_per_session
+params_update_shared_num_blocks_per_session: ## Update the shared module num_blocks_per_session param
+	poktrolld tx authz exec ./tools/scripts/params/shared_num_blocks_per_session.json $(PARAM_FLAGS)
+
+.PHONY: params_update_shared_claim_window_open_offset_blocks
+params_update_shared_claim_window_open_offset_blocks: ## Update the shared module claim_window_open_offset_blocks param
+	poktrolld tx authz exec ./tools/scripts/params/shared_claim_window_open_offset_blocks.json $(PARAM_FLAGS)
+
+.PHONY: params_update_shared_claim_window_close_offset_blocks
+params_update_shared_claim_window_close_offset_blocks: ## Update the shared module claim_window_close_offset_blocks param
+	poktrolld tx authz exec ./tools/scripts/params/shared_claim_window_close_offset_blocks.json $(PARAM_FLAGS)
+
+.PHONY: params_update_shared_proof_window_open_offset_blocks
+params_update_shared_proof_window_open_offset_blocks: ## Update the shared module proof_window_open_offset_blocks param
+	poktrolld tx authz exec ./tools/scripts/params/shared_proof_window_open_offset_blocks.json $(PARAM_FLAGS)
+
+.PHONY: params_update_shared_proof_window_close_offset_blocks
+params_update_shared_proof_window_close_offset_blocks: ## Update the shared module proof_window_close_offset_blocks param
+	poktrolld tx authz exec ./tools/scripts/params/shared_proof_window_close_offset_blocks.json $(PARAM_FLAGS)
 
 .PHONY: params_query_all
 params_query_all: check_jq ## Query the params from all available modules
@@ -842,6 +929,10 @@ ignite_acc_list: ## List all the accounts in LocalNet
 .PHONY: ignite_poktrolld_build
 ignite_poktrolld_build: check_go_version check_ignite_version ## Build the poktrolld binary using Ignite
 	ignite chain build --skip-proto --debug -v -o $(shell go env GOPATH)/bin
+
+.PHONY: ignite_openapi_gen
+ignite_openapi_gen: ## Generate the OpenAPI spec for the Ignite API
+	ignite generate openapi --yes
 
 ##################
 ### CI Helpers ###
@@ -897,10 +988,6 @@ go_docs: check_godoc ## Generate documentation for the project
 	echo "Visit http://localhost:6060/pkg/github.com/pokt-network/poktroll/"
 	godoc -http=:6060
 
-.PHONY: openapi_gen
-openapi_gen: ## Generate the OpenAPI spec for the Ignite API
-	ignite generate openapi --yes
-
 .PHONY: docusaurus_start
 docusaurus_start: check_npm check_node ## Start the Docusaurus server
 	(cd docusaurus && npm i && npm run start)
@@ -950,4 +1037,13 @@ act_reviewdog: check_act check_gh ## Run the reviewdog workflow locally like so:
 grove_staging_eth_block_height: ## Sends a relay through the staging grove gateway to the eth-mainnet chain. Must have GROVE_STAGING_PORTAL_APP_ID environment variable set.
 	curl $(GROVE_GATEWAY_STAGING_ETH_MAINNET)/v1/$(GROVE_STAGING_PORTAL_APP_ID) \
 		-H 'Content-Type: application/json' \
-		--data $(SHANNON_JSON_RPC_DATA_ETH_BLOCK_HEIGHT)
+		-H 'Protocol: shannon-testnet' \
+		--data $(JSON_RPC_DATA_ETH_BLOCK_HEIGHT)
+
+#################
+### Catch all ###
+#################
+
+%:
+	@echo "Error: target '$@' not found."
+	@exit 1

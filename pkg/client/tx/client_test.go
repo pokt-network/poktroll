@@ -42,7 +42,7 @@ const (
 // TODO_TECHDEBT: add coverage for the transactions client handling an events bytes error either.
 
 func TestTxClient_SignAndBroadcast_Succeeds(t *testing.T) {
-	t.Skip("TODO_BLOCKER(#425): Revisit Observable test tooling & fix flaky test")
+	t.Skip("TODO_TECHDEBT(@bryanchriswhite, #425): Revisit Observable test tooling & fix flaky test")
 	var (
 		// expectedTx is the expected transactions bytes that will be signed and broadcast
 		// by the transaction client. It is computed and assigned in the
@@ -289,7 +289,11 @@ func TestTxClient_SignAndBroadcast_CheckTxError(t *testing.T) {
 		ctx                  = context.Background()
 	)
 
-	t.Log("TODO_FLAKY: Known flaky test - TestTxClient_SignAndBroadcast_CheckTxError")
+	t.Log(`TODO_FLAKY: Known flaky test: 'TestTxClient_SignAndBroadcast_CheckTxError'
+
+Run the following command a few times to verify it passes at least once:
+
+$ go test -v -count=1 -run TestTxClient_SignAndBroadcast_CheckTxError ./pkg/client/tx/...`)
 
 	keyring, signingKey := testkeyring.NewTestKeyringWithKey(t, testSigningKeyName)
 

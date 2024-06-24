@@ -1,0 +1,52 @@
+# NB: The number of pre-provisioned **LocalNet** actors are managed in
+# 'localnet_config.yaml' by the respective actors `count` property.
+is_ephemeral_chain: true
+
+# The service ID to use for the load test.
+service_id: anvil
+
+# The address of the account that will be used to fund the the application,
+# gateway and supplier accounts so that they can stake on the network.
+funding_account_address: pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw # address for pnf account
+
+# List of pre-provisioned suppliers used for load testing.
+# These suppliers will be progressively staked during the load test, according
+# to the test plan that is being executed.
+suppliers:
+  # The supplier address that is available in the load test's environment keyring,
+  # used to identify the supplier and sign relays and transactions with.
+  # It must be the address corresponding to the provided signing_key_name in the
+  # `relay_miner_config.yaml` file.
+
+  # RelayMiner 1; http://localhost:10350/r/relayminer1/overview
+  - address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
+    # The advertised URL used by the supplier when it submits a stake message on-chain.
+    exposed_url: http://relayminer1:8545
+
+  # RelayMiner 2; http://localhost:10350/r/relayminer2/overview
+  - address: pokt1re27pw4llwnatx4sq7rlggqzcm6j3f39epq2wa
+    exposed_url: http://relayminer2:8545
+
+  # RelayMiner 3; http://localhost:10350/r/relayminer3/overview
+  - address: pokt1j6dun0x8eyq5mmsmq83zs3c2utt85q8478c89u
+    exposed_url: http://relayminer3:8545
+
+# List of pre-provisioned gateways used for load testing.
+# These gateways will be progressively staked and delegated to during the load test.
+gateways:
+  # The gateway address that is available in the load test's environment keyring,
+  # used to identify the gateway and sign relays and transactions with.
+  # It must be the address corresponding to the provided signing_key_name in the
+  # `appgate_server_config.yaml` file.
+
+  # Gateway 1; http://localhost:10350/r/gateway1/overview
+  - address: pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4
+    exposed_url: http://localhost:42079 # The url used to send relays to the gateway on.
+
+  # Gateway 2; http://localhost:10350/r/gateway2/overview
+  - address: pokt15w3fhfyc0lttv7r585e2ncpf6t2kl9uh8rsnyz
+    exposed_url: http://localhost:42080
+
+  # Gateway 3; http://localhost:10350/r/gateway3/overview
+  - address: pokt1zhmkkd0rh788mc9prfq0m2h88t9ge0j83gnxya
+    exposed_url: http://localhost:42081

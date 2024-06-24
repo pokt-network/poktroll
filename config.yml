@@ -51,6 +51,10 @@ accounts:
     mnemonic: "elder spatial erosion soap athlete tide subject recipe also awkward head pattern cart version beach usual oxygen confirm erupt diamond maze smooth census garment"
     coins:
       - 300000000upokt
+  - name: unauthorized
+    mnemonic: "abuse tumble whip pioneer immense pipe method note upon glory switch rail metal camp gasp top require rain party total struggle glance between fossil"
+    coins:
+      - 100000upokt
 faucet:
   name: faucet
   coins:
@@ -89,7 +93,7 @@ genesis:
     staking:
       params:
         bond_denom: upokt
-        # TODO_BLOCKER(@Olshansk): Figure out what this should be on Shannon
+        # TODO_MAINNET(@Olshansk): Figure out what this should be on Shannon
         # re-genesis. We're setting it to 1 for Alpha TestNet #1 so Grove
         # maintains the only validator until Alpha TestNet #2.
         max_validators: 1
@@ -179,3 +183,17 @@ genesis:
     service:
       params:
         add_service_fee: "1000000000"
+    proof:
+      params:
+        proof_request_probability: "0.25"
+        proof_requirement_threshold: 20
+        proof_missing_penalty:
+          amount: "320"
+          denom: upokt
+    shared:
+      params:
+        num_blocks_per_session: 4
+        claim_window_open_offset_blocks: 0
+        claim_window_close_offset_blocks: 4
+        proof_window_open_offset_blocks: 0
+        proof_window_close_offset_blocks: 4

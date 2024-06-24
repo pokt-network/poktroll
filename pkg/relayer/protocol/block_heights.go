@@ -31,7 +31,7 @@ func GetEarliestCreateClaimHeight(ctx context.Context, createClaimWindowStartBlo
 	rngSeed, _ := binary.Varint(createClaimWindowStartBlockHash)
 	randomNumber := rand.NewSource(rngSeed).Int63()
 
-	// TODO_BLOCKER: query the on-chain governance parameter once available.
+	// TODO_BLOCKER(@bryanchriswhite, #402): query the on-chain governance parameter once available.
 	// randCreateClaimHeightOffset := randomNumber % (claimproofparams.GovCreateClaimIntervalBlocks - claimproofparams.GovCreateClaimWindowBlocks - 1)
 	_ = randomNumber
 	randCreateClaimHeightOffset := int64(0)
@@ -59,7 +59,7 @@ func GetEarliestSubmitProofHeight(ctx context.Context, submitProofWindowStartBlo
 	rngSeed, _ := binary.Varint(earliestSubmitProofBlockHash)
 	randomNumber := rand.NewSource(rngSeed).Int63()
 
-	// TODO_BLOCKER: query the on-chain governance parameter once available.
+	// TODO_BLOCKER(@bryanchriswhite): query the on-chain governance parameter once available.
 	// randSubmitProofHeightOffset := randomNumber % (claimproofparams.GovSubmitProofIntervalBlocks - claimproofparams.GovSubmitProofWindowBlocks - 1)
 	_ = randomNumber
 	randSubmitProofHeightOffset := int64(0)

@@ -6,9 +6,10 @@ import (
 	"cosmossdk.io/store/prefix"
 	"github.com/cosmos/cosmos-sdk/runtime"
 	"github.com/cosmos/cosmos-sdk/types/query"
-	"github.com/pokt-network/poktroll/x/application/types"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"github.com/pokt-network/poktroll/x/application/types"
 )
 
 func (k Keeper) AllApplications(ctx context.Context, req *types.QueryAllApplicationsRequest) (*types.QueryAllApplicationsResponse, error) {

@@ -29,11 +29,11 @@ func TestSession_HydrateSession_Success_BaseCase(t *testing.T) {
 	require.Equal(t, "", sessionHeader.Service.Name)
 	require.Equal(t, int64(9), sessionHeader.SessionStartBlockHeight)
 	require.Equal(t, int64(12), sessionHeader.SessionEndBlockHeight)
-	require.Equal(t, "20650c94d0bcc4b855654b5533bf880345ae96933c5fa7424ce59c698d208e22", sessionHeader.SessionId)
+	require.Equal(t, "fea5d6f7544ff6d8af5c22529b2ccf01ed7930b3d454d42dda5ccc0b65b6ebfd", sessionHeader.SessionId)
 
 	// Check the session
 	require.Equal(t, int64(4), session.NumBlocksPerSession)
-	require.Equal(t, "20650c94d0bcc4b855654b5533bf880345ae96933c5fa7424ce59c698d208e22", session.SessionId)
+	require.Equal(t, "fea5d6f7544ff6d8af5c22529b2ccf01ed7930b3d454d42dda5ccc0b65b6ebfd", session.SessionId)
 	require.Equal(t, int64(3), session.SessionNumber)
 
 	// Check the application
@@ -51,7 +51,7 @@ func TestSession_HydrateSession_Success_BaseCase(t *testing.T) {
 }
 
 func TestSession_HydrateSession_Metadata(t *testing.T) {
-	// TODO_TECHDEBT: Extend these tests once `NumBlocksPerSession` is configurable.
+	// TODO_TEST: Extend these tests once `NumBlocksPerSession` is configurable.
 	// Currently assumes NumBlocksPerSession=4
 	tests := []struct {
 		desc        string
@@ -136,7 +136,7 @@ func TestSession_HydrateSession_Metadata(t *testing.T) {
 }
 
 func TestSession_HydrateSession_SessionId(t *testing.T) {
-	// TODO_TECHDEBT: Extend these tests once `NumBlocksPerSession` is configurable.
+	// TODO_TEST: Extend these tests once `NumBlocksPerSession` is configurable.
 	// Currently assumes NumBlocksPerSession=4
 	tests := []struct {
 		desc string
@@ -165,8 +165,8 @@ func TestSession_HydrateSession_SessionId(t *testing.T) {
 			serviceId1: keepertest.TestServiceId1, // svc1
 			serviceId2: keepertest.TestServiceId1, // svc1
 
-			expectedSessionId1: "c8a3d0135e2d0ed3a2d579adcd3b91708e59adf558b7c8bd474473de669cb18a",
-			expectedSessionId2: "20650c94d0bcc4b855654b5533bf880345ae96933c5fa7424ce59c698d208e22",
+			expectedSessionId1: "e161348f2153bb41092040c3c287596f8daf98e90986475be21412a1ded945ed",
+			expectedSessionId2: "fea5d6f7544ff6d8af5c22529b2ccf01ed7930b3d454d42dda5ccc0b65b6ebfd",
 		},
 		{
 			desc: "app1: sessionId for svc1 != sessionId for svc12",
@@ -180,8 +180,8 @@ func TestSession_HydrateSession_SessionId(t *testing.T) {
 			serviceId1: keepertest.TestServiceId1,  // svc1
 			serviceId2: keepertest.TestServiceId12, // svc12
 
-			expectedSessionId1: "c8a3d0135e2d0ed3a2d579adcd3b91708e59adf558b7c8bd474473de669cb18a",
-			expectedSessionId2: "bf37fcbc62fe728f356384e9a765584f1c9d761566b2d46c0f77297675d966c6",
+			expectedSessionId1: "e161348f2153bb41092040c3c287596f8daf98e90986475be21412a1ded945ed",
+			expectedSessionId2: "c01eb8924dbb9dae7cab8ed56016ce8fdd2d23542f9e0b7ca8d6972d3fb45ce5",
 		},
 		{
 			desc: "svc12: sessionId for app1 != sessionId for app2",
@@ -195,8 +195,8 @@ func TestSession_HydrateSession_SessionId(t *testing.T) {
 			serviceId1: keepertest.TestServiceId12, // svc12
 			serviceId2: keepertest.TestServiceId12, // svc12
 
-			expectedSessionId1: "bf37fcbc62fe728f356384e9a765584f1c9d761566b2d46c0f77297675d966c6",
-			expectedSessionId2: "8806550a46a16fcb6bc0a4bd0803081a2478d25868057bcf86204c8aaefb28ac",
+			expectedSessionId1: "c01eb8924dbb9dae7cab8ed56016ce8fdd2d23542f9e0b7ca8d6972d3fb45ce5",
+			expectedSessionId2: "f6dbe4961afd8ff0e444a1159d02bc645f9ded3daaa605c187e6bd7ee2232a68",
 		},
 	}
 
@@ -220,7 +220,7 @@ func TestSession_HydrateSession_SessionId(t *testing.T) {
 	}
 }
 
-// TODO_TECHDEBT: Expand these tests to account for application joining/leaving the network at different heights as well changing the services they support
+// TODO_TEST: Expand these tests to account for application joining/leaving the network at different heights as well changing the services they support
 func TestSession_HydrateSession_Application(t *testing.T) {
 	tests := []struct {
 		// Description
@@ -264,7 +264,7 @@ func TestSession_HydrateSession_Application(t *testing.T) {
 
 			expectedErr: types.ErrSessionHydration,
 		},
-		// TODO_TECHDEBT: Add tests for when:
+		// TODO_TEST: Add tests for when:
 		// - Application join/leaves (stakes/unstakes) altogether
 		// - Application adds/removes certain services mid-session
 		// - Application increases stakes mid-session
@@ -287,9 +287,9 @@ func TestSession_HydrateSession_Application(t *testing.T) {
 	}
 }
 
-// TODO_TECHDEBT: Expand these tests to account for supplier joining/leaving the network at different heights as well changing the services they support
+// TODO_TEST: Expand these tests to account for supplier joining/leaving the network at different heights as well changing the services they support
 func TestSession_HydrateSession_Suppliers(t *testing.T) {
-	// TODO_TECHDEBT: Extend these tests once `NumBlocksPerSession` is configurable.
+	// TODO_TEST: Extend these tests once `NumBlocksPerSession` is configurable.
 	// Currently assumes NumSupplierPerSession=15
 	tests := []struct {
 		// Description
@@ -321,11 +321,11 @@ func TestSession_HydrateSession_Suppliers(t *testing.T) {
 			numExpectedSuppliers: 1,
 			expectedErr:          nil,
 		},
-		// TODO_TECHDEBT: Add this test once we make the num suppliers per session configurable
+		// TODO_TEST: Add this test once we make the num suppliers per session configurable
 		// {
 		// 	name: "num_suppliers_available > num_suppliers_per_session_param",
 		// },
-		// TODO_TECHDEBT: Add tests for when:
+		// TODO_TEST: Add tests for when:
 		// - Supplier join/leaves (stakes/unstakes) altogether
 		// - Supplier adds/removes certain services mid-session
 		// - Supplier increases stakes mid-session

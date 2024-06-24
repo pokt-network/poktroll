@@ -1,6 +1,6 @@
 package proof_test
 
-// TODO_UPNEXT(@Olshansk): Add these tests back in after merging on-chain Proof persistence.
+// TODO_BLOCKER(@Olshansk): Add these tests back in after merging on-chain Proof persistence.
 // Prevent strconv unused error
 // var _ = strconv.IntSize
 //
@@ -132,7 +132,7 @@ package proof_test
 // 		}
 // 	})
 //
-//  TODO_BLOCKER: add "BySupplierAddress", "BySession", "ByHeight" tests.
+//  TODO_TEST: add "BySupplierAddress", "BySession", "ByHeight" tests.
 //
 // 	t.Run("Total", func(t *testing.T) {
 // 		args := request(nil, 0, uint64(len(proofs)), true)

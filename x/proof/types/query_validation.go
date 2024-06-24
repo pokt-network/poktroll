@@ -19,9 +19,8 @@ func (query *QueryGetClaimRequest) ValidateBasic() error {
 		return ErrProofInvalidAddress.Wrapf("invalid supplier address for claim being retrieved %s; (%v)", query.SupplierAddress, err)
 	}
 
-	// TODO_TECHDEBT: Validate the session ID once we have a deterministic way to generate it
 	if query.SessionId == "" {
-		return ErrProofInvalidSessionId.Wrapf("invalid session ID for claim being retrieved %s", query.SessionId)
+		return ErrProofInvalidSessionId.Wrap("invalid empty session ID for claim being retrieved")
 	}
 
 	return nil
@@ -29,8 +28,6 @@ func (query *QueryGetClaimRequest) ValidateBasic() error {
 
 // ValidateBasic performs basic (non-state-dependant) validation on a QueryAllClaimsRequest.
 func (query *QueryAllClaimsRequest) ValidateBasic() error {
-	logger := polylog.Ctx(context.Background())
-
 	switch filter := query.Filter.(type) {
 	case *QueryAllClaimsRequest_SupplierAddress:
 		if _, err := sdk.AccAddressFromBech32(filter.SupplierAddress); err != nil {
@@ -38,9 +35,9 @@ func (query *QueryAllClaimsRequest) ValidateBasic() error {
 		}
 
 	case *QueryAllClaimsRequest_SessionId:
-		logger.Warn().
-			Str("session_id", filter.SessionId).
-			Msg("TODO_TECHDEBT: Validate the session ID once we have a deterministic way to generate it")
+		if filter.SessionId == "" {
+			return ErrProofInvalidSessionId.Wrap("invalid empty session ID for claims being retrieved")
+		}
 
 	case *QueryAllClaimsRequest_SessionEndHeight:
 		if filter.SessionEndHeight < 0 {
@@ -57,9 +54,8 @@ func (query *QueryGetProofRequest) ValidateBasic() error {
 		return ErrProofInvalidAddress.Wrapf("invalid supplier address for proof being retrieved %s; (%v)", query.SupplierAddress, err)
 	}
 
-	// TODO_TECHDEBT: Validate the session ID once we have a deterministic way to generate it
 	if query.SessionId == "" {
-		return ErrProofInvalidSessionId.Wrapf("invalid session ID for proof being retrieved %s", query.SessionId)
+		return ErrProofInvalidSessionId.Wrap("invalid empty session ID for proof being retrieved")
 	}
 
 	return nil
@@ -76,9 +72,9 @@ func (query *QueryAllProofsRequest) ValidateBasic() error {
 		}
 
 	case *QueryAllProofsRequest_SessionId:
-		logger.Warn().
-			Str("session_id", filter.SessionId).
-			Msg("TODO_TECHDEBT: Validate the session ID once we have a deterministic way to generate it")
+		if filter.SessionId == "" {
+			return ErrProofInvalidSessionId.Wrap("invalid empty session ID for proofs being retrieved")
+		}
 
 	case *QueryAllProofsRequest_SessionEndHeight:
 		if filter.SessionEndHeight < 0 {

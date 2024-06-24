@@ -11,7 +11,6 @@ import (
 	"github.com/pokt-network/poktroll/x/application/types"
 )
 
-// TODO(@Olshansk): Implement simulation for application staking
 func SimulateMsgStakeApplication(
 	ak types.AccountKeeper,
 	bk types.BankKeeper,

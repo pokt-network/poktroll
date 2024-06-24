@@ -12,7 +12,7 @@ import (
 func (sync *synchronousRPCServer) newRelayRequest(request *http.Request) (*types.RelayRequest, error) {
 	requestBody, err := io.ReadAll(request.Body)
 	if err != nil {
-		return nil, err
+		return nil, ErrRelayerProxyInternalError.Wrap(err.Error())
 	}
 
 	sync.logger.Debug().Msg("unmarshaling relay request")
@@ -26,26 +26,22 @@ func (sync *synchronousRPCServer) newRelayRequest(request *http.Request) (*types
 	return &relayReq, nil
 }
 
-// newRelayResponse builds a RelayResponse from a response body reader and a SessionHeader.
+// newRelayResponse builds a RelayResponse from the serialized response and SessionHeader.
 // It also signs the RelayResponse and assigns it to RelayResponse.Meta.SupplierSignature.
-// The response body is passed directly into the RelayResponse.Payload field.
+// The whole serialized response (i.e. status code, headers and body) is embedded
+// into the RelayResponse.
 func (sync *synchronousRPCServer) newRelayResponse(
-	responseBody io.ReadCloser,
+	responseBz []byte,
 	sessionHeader *sessiontypes.SessionHeader,
+	supplierAddr string,
 ) (*types.RelayResponse, error) {
 	relayResponse := &types.RelayResponse{
-		Meta: types.RelayResponseMetadata{SessionHeader: sessionHeader},
+		Meta:    types.RelayResponseMetadata{SessionHeader: sessionHeader},
+		Payload: responseBz,
 	}
-
-	responsePayload, err := io.ReadAll(responseBody)
-	if err != nil {
-		return nil, err
-	}
-
-	relayResponse.Payload = responsePayload
 
 	// Sign the relay response and add the signature to the relay response metadata
-	if err := sync.relayerProxy.SignRelayResponse(relayResponse); err != nil {
+	if err := sync.relayerProxy.SignRelayResponse(relayResponse, supplierAddr); err != nil {
 		return nil, err
 	}
 

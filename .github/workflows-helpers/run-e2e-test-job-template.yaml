@@ -10,6 +10,20 @@ spec:
       labels:
         pokt.network/purpose: e2e-tests
     spec:
+      initContainers:
+        # We need to make sure the services like validator, relayminer, appgate server, etc. work before we execute
+        # an e2e test.
+        - name: check-services
+          image: ruby:3.0
+          command: ["ruby"]
+          args:
+            # For reference, the script is located here:
+            # https://github.com/pokt-network/protocol-infra/blob/main/charts/full-network/templates/ConfigMap-e2e-tests-script.yaml#L4
+            - /e2e-script/check_services.rb
+            - ${NAMESPACE}
+          volumeMounts:
+            - mountPath: /e2e-script/
+              name: e2e-tests-check-services-script
       containers:
         - name: e2e-tests
           image: ghcr.io/pokt-network/poktrolld:${IMAGE_TAG}
@@ -54,9 +68,11 @@ spec:
         - name: non-writable-keys-volume
           secret:
             secretName: keys-${IMAGE_TAG}
-        - configMap:
-            defaultMode: 420
+        - name: configs-volume
+          configMap:
             name: configs-${IMAGE_TAG}
-          name: configs-volume
+        - name: e2e-tests-check-services-script
+          configMap:
+            name: e2e-tests-check-services-script
       serviceAccountName: default
   backoffLimit: 0

@@ -5,7 +5,13 @@
         "@type": "/poktroll.proof.MsgUpdateParams",
         "authority": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
         "params": {
-          "min_relay_difficulty_bits": "0"
+          "min_relay_difficulty_bits": "0",
+          "proof_request_probability": "0.25",
+          "proof_requirement_threshold": "20",
+          "proof_missing_penalty": {
+            "amount": "320",
+            "denom": "upokt"
+          }
         }
       }
     ]

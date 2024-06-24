@@ -15,7 +15,7 @@ import (
 func (k Keeper) UpsertProof(ctx context.Context, proof types.Proof) {
 	logger := k.Logger().With("method", "UpsertProof")
 
-	// TODO_IMPROVE(#427): Use the marshal method on the SparseCompactClosestProof
+	// TODO_MAINNET(#427): Use the marshal method on the SparseCompactClosestProof
 	// type here instead in order to reduce space stored on chain.
 	proofBz := k.cdc.MustMarshal(&proof)
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))

@@ -12,10 +12,6 @@ understanding of the Pocket Network protocol. It is currently aiming to just
 be a reference and not provide a coherent narrative that is easily accessible
 to all readers.
 
-TODO(@Olshansk): Iterate on this doc & link to governance params.
-
-TODO(@red-0ne): Review this document and submit a PR with updates & edits.
-
 :::
 
 - [Introduction](#introduction)
@@ -137,8 +133,6 @@ a certain `Application`. The `sum` in the root of the SMST is the amount of work
 done. Each leaf has a different `weight` depending on the number of _"compute units"_
 that were necessary to service that request.
 
-_TODO_DOCUMENT(@Olshansk): Link to a document on compute units once it it written._
-
 ### Claim Protobuf
 
 A serialized version of the `Claim` is stored on-chain.
@@ -200,7 +194,7 @@ or too late, it will be rejected by the protocol.
 If a `Supplier` fails to submit a `Claim` during the Claim Window, it will forfeit
 any potential rewards it could earn in exchange for the work done.
 
-_TODO(@Olshansk): Link to the governance params governing this once implemented._
+_TODO_DOCUMENT(@Olshansk): Link to the governance params governing this once implemented._
 
 ## Proof
 
@@ -211,8 +205,6 @@ At most one `Proof` exists for every `Claim`.
 
 A `Proof` is necessary for the `Claim` to be validated so the `Supplier` can be
 rewarded for the work done.
-
-_TODO_DOCUMENT(@Olshansk): Link to a document on compute units once it it written._
 
 ### Proof Protobuf
 
@@ -285,7 +277,6 @@ Validate_Proof --> [*]
 - Proven relay response validation ([diagram](#proof-submission-relay-response-validation) / [code](#TODO))
 - Proof claim validation ([diagram](#proof-submission-claim-validation) / [code](#TODO))
 
-
 ### Proof Window
 
 After the `Proof Window` opens, a `Supplier` has several blocks, a `Proof Window`,
@@ -295,7 +286,7 @@ early or too late, it will be rejected by the protocol.
 If a `Supplier` fails to submit a `Proof` during the Proof Window, the Claim will
 expire and it it will forfeit any previously claimed work done.
 
-_TODO(@Olshansk): Link to the governance params governing this once implemented._
+_TODO_DOCUMENT(@Olshansk): Link to the governance params governing this once implemented._
 
 ## Proof Security
 

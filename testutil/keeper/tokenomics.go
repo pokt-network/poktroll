@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"cosmossdk.io/log"
-	math "cosmossdk.io/math"
+	"cosmossdk.io/math"
 	"cosmossdk.io/store"
 	"cosmossdk.io/store/metrics"
 	storetypes "cosmossdk.io/store/types"
@@ -38,6 +38,7 @@ import (
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	sharedkeeper "github.com/pokt-network/poktroll/x/shared/keeper"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	supplierkeeper "github.com/pokt-network/poktroll/x/supplier/keeper"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
@@ -57,6 +58,7 @@ type TokenomicsModuleKeepers struct {
 	tokenomicstypes.BankKeeper
 	tokenomicstypes.ApplicationKeeper
 	tokenomicstypes.ProofKeeper
+	tokenomicstypes.SharedKeeper
 
 	Codec *codec.ProtoCodec
 }
@@ -65,7 +67,15 @@ type TokenomicsModuleKeepers struct {
 // and tokenomics keepers during construction of the aggregation.
 type TokenomicsKeepersOpt func(context.Context, *TokenomicsModuleKeepers) context.Context
 
-func TokenomicsKeeper(t testing.TB) (
+func TokenomicsKeeper(t testing.TB) (tokenomicsKeeper tokenomicskeeper.Keeper, ctx context.Context) {
+	t.Helper()
+	k, ctx, _, _ := TokenomicsKeeperWithActorAddrs(t)
+	return k, ctx
+}
+
+// TODO_TECHDEBT: Have the callers use the keepers to find `appAddr` and `supplierAddr`
+// rather than returning them explicitly.
+func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 	tokenomicsKeeper tokenomicskeeper.Keeper,
 	ctx context.Context,
 	appAddr string,
@@ -141,6 +151,10 @@ func TokenomicsKeeper(t testing.TB) (
 	mockProofKeeper := mocks.NewMockProofKeeper(ctrl)
 	mockProofKeeper.EXPECT().GetAllClaims(gomock.Any()).AnyTimes()
 
+	// Mock the shared keeper
+	mockSharedKeeper := mocks.NewMockSharedKeeper(ctrl)
+	mockSharedKeeper.EXPECT().GetProofWindowCloseHeight(gomock.Any(), gomock.Any()).AnyTimes()
+
 	k := tokenomicskeeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKey),
@@ -150,6 +164,7 @@ func TokenomicsKeeper(t testing.TB) (
 		mockAccountKeeper,
 		mockApplicationKeeper,
 		mockProofKeeper,
+		mockSharedKeeper,
 	)
 
 	sdkCtx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
@@ -164,6 +179,7 @@ func TokenomicsKeeper(t testing.TB) (
 // and a context. It uses real dependencies for all upstream keepers.
 func NewTokenomicsModuleKeepers(
 	t testing.TB,
+	logger log.Logger,
 	opts ...TokenomicsKeepersOpt,
 ) (_ TokenomicsModuleKeepers, ctx context.Context) {
 	t.Helper()
@@ -178,13 +194,18 @@ func NewTokenomicsModuleKeepers(
 		apptypes.StoreKey,
 		suppliertypes.StoreKey,
 		prooftypes.StoreKey,
+		sharedtypes.StoreKey,
 	)
 
 	// Construct a multistore & mount store keys for each keeper that will interact with the state store.
 	stateStore := integration.CreateMultiStore(keys, log.NewNopLogger())
 
+	// Use the test logger by default (i.e. if none is given).
+	if logger == nil {
+		logger = log.NewTestLogger(t)
+	}
+
 	// Prepare the context
-	logger := log.NewTestLogger(t)
 	ctx = sdk.NewContext(stateStore, cmtproto.Header{}, false, logger)
 
 	// ctx.SetAccount
@@ -231,6 +252,15 @@ func NewTokenomicsModuleKeepers(
 	bankKeeper.MintCoins(ctx, suppliertypes.ModuleName, sdk.NewCoins(sdk.NewCoin("upokt", math.NewInt(1000000000000))))
 	bankKeeper.MintCoins(ctx, apptypes.ModuleName, sdk.NewCoins(sdk.NewCoin("upokt", math.NewInt(1000000000000))))
 
+	// Construct a real shared keeper.
+	sharedKeeper := sharedkeeper.NewKeeper(
+		cdc,
+		runtime.NewKVStoreService(keys[sharedtypes.StoreKey]),
+		logger,
+		authority.String(),
+	)
+	require.NoError(t, sharedKeeper.SetParams(ctx, sharedtypes.DefaultParams()))
+
 	// Construct gateway keeper with a mocked bank keeper.
 	gatewayKeeper := gatewaykeeper.NewKeeper(
 		cdc,
@@ -250,6 +280,7 @@ func NewTokenomicsModuleKeepers(
 		bankKeeper,
 		accountKeeper,
 		gatewayKeeper,
+		sharedKeeper,
 	)
 	require.NoError(t, appKeeper.SetParams(ctx, apptypes.DefaultParams()))
 
@@ -273,6 +304,7 @@ func NewTokenomicsModuleKeepers(
 		bankKeeper,
 		appKeeper,
 		supplierKeeper,
+		sharedKeeper,
 	)
 	require.NoError(t, sessionKeeper.SetParams(ctx, sessiontypes.DefaultParams()))
 
@@ -285,7 +317,9 @@ func NewTokenomicsModuleKeepers(
 		sessionKeeper,
 		appKeeper,
 		accountKeeper,
+		sharedKeeper,
 	)
+	require.NoError(t, proofKeeper.SetParams(ctx, prooftypes.DefaultParams()))
 
 	// Construct a real tokenomics keeper so that claims & tokenomics can be created.
 	tokenomicsKeeper := tokenomicskeeper.NewKeeper(
@@ -297,6 +331,7 @@ func NewTokenomicsModuleKeepers(
 		accountKeeper,
 		appKeeper,
 		proofKeeper,
+		sharedKeeper,
 	)
 
 	require.NoError(t, tokenomicsKeeper.SetParams(ctx, tokenomicstypes.DefaultParams()))
@@ -307,6 +342,7 @@ func NewTokenomicsModuleKeepers(
 		BankKeeper:        &bankKeeper,
 		ApplicationKeeper: &appKeeper,
 		ProofKeeper:       &proofKeeper,
+		SharedKeeper:      &sharedKeeper,
 
 		Codec: cdc,
 	}

@@ -3,19 +3,30 @@ package keeper
 import (
 	"context"
 
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+
 	"github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
+type msgWithSessionAndSupplier interface {
+	GetSessionHeader() *sessiontypes.SessionHeader
+	GetSupplierAddress() string
+}
+
 // queryAndValidateSessionHeader ensures that a session with the sessionID of the given session
 // header exists and that this session includes the supplier with the given address.
+// It returns a session which is hydrated with the on-chain session data.
 func (k msgServer) queryAndValidateSessionHeader(
 	ctx context.Context,
-	sessionHeader *sessiontypes.SessionHeader,
-	supplierAddr string,
+	msg msgWithSessionAndSupplier,
 ) (*sessiontypes.Session, error) {
-	logger := k.Logger().With("method", "SubmitProof")
+	logger := k.Logger().With("method", "queryAndValidateSessionHeader")
+
+	sessionHeader := msg.GetSessionHeader()
+	supplierAddr := msg.GetSupplierAddress()
 
 	sessionReq := &sessiontypes.QueryGetSessionRequest{
 		ApplicationAddress: sessionHeader.GetApplicationAddress(),
@@ -67,6 +78,112 @@ func (k msgServer) queryAndValidateSessionHeader(
 	}
 
 	return onChainSession, nil
+}
+
+// validateClaimWindow returns an error if the given session is not eligible for claiming.
+// It *assumes* that the msg's session header is a valid on-chain session with correct
+// height fields. First call #queryAndValidateSessionHeader to ensure any user-provided
+// session header is valid and correctly hydrated.
+func (k msgServer) validateClaimWindow(
+	ctx context.Context,
+	msg *types.MsgCreateClaim,
+) error {
+	logger := k.Logger().With("method", "validateClaimWindow")
+	sessionHeader := msg.GetSessionHeader()
+	sharedParams := k.sharedKeeper.GetParams(ctx)
+
+	sessionEndHeight := sessionHeader.GetSessionEndBlockHeight()
+
+	// Get the claim window open and close heights for the given session header.
+	claimWindowOpenHeight := shared.GetClaimWindowOpenHeight(&sharedParams, sessionEndHeight)
+	claimWindowCloseHeight := shared.GetClaimWindowCloseHeight(&sharedParams, sessionEndHeight)
+
+	// Get the current block height.
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	currentHeight := sdkCtx.BlockHeight()
+
+	// Ensure the current block height is AFTER the claim window open height.
+	if currentHeight < claimWindowOpenHeight {
+		return types.ErrProofClaimOutsideOfWindow.Wrapf(
+			"current block height (%d) is less than session claim window open height (%d)",
+			currentHeight,
+			claimWindowOpenHeight,
+		)
+	}
+
+	// Ensure the current block height is BEFORE the claim window close height.
+	if currentHeight > claimWindowCloseHeight {
+		return types.ErrProofClaimOutsideOfWindow.Wrapf(
+			"current block height (%d) is greater than session claim window close height (%d)",
+			currentHeight,
+			claimWindowCloseHeight,
+		)
+	}
+
+	logger.
+		With(
+			"current_height", currentHeight,
+			"session_end_height", sessionEndHeight,
+			"claim_window_open_height", claimWindowOpenHeight,
+			"claim_window_close_height", claimWindowCloseHeight,
+			"supplier_addr", msg.GetSupplierAddress(),
+		).
+		Debug("validated claim window")
+
+	return nil
+}
+
+// validateProofWindow returns an error if the given session is not eligible for proving.
+// It *assumes* that the msg's session header is a valid on-chain session with correct
+// height fields. First call #queryAndValidateSessionHeader to ensure any user-provided
+// session header is valid and correctly hydrated.
+func (k msgServer) validateProofWindow(
+	ctx context.Context,
+	msg *types.MsgSubmitProof,
+) error {
+	logger := k.Logger().With("method", "validateProofWindow")
+	sessionHeader := msg.GetSessionHeader()
+	sharedParams := k.sharedKeeper.GetParams(ctx)
+
+	sessionEndHeight := sessionHeader.GetSessionEndBlockHeight()
+
+	// Get the proof window open and close heights for the given session header.
+	proofWindowOpenHeight := shared.GetProofWindowOpenHeight(&sharedParams, sessionEndHeight)
+	proofWindowCloseHeight := shared.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
+
+	// Get the current block height.
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	currentHeight := sdkCtx.BlockHeight()
+
+	// Ensure the current block height is AFTER the proof window open height.
+	if currentHeight < proofWindowOpenHeight {
+		return types.ErrProofProofOutsideOfWindow.Wrapf(
+			"current block height (%d) is less than session proof window open height (%d)",
+			currentHeight,
+			proofWindowOpenHeight,
+		)
+	}
+
+	// Ensure the current block height is BEFORE the proof window close height.
+	if currentHeight > proofWindowCloseHeight {
+		return types.ErrProofProofOutsideOfWindow.Wrapf(
+			"current block height (%d) is greater than session proof window close height (%d)",
+			currentHeight,
+			proofWindowCloseHeight,
+		)
+	}
+
+	logger.
+		With(
+			"current_height", currentHeight,
+			"session_end_height", sessionEndHeight,
+			"proof_window_open_height", proofWindowOpenHeight,
+			"proof_window_close_height", proofWindowCloseHeight,
+			"supplier_addr", msg.GetSupplierAddress(),
+		).
+		Debug("validated proof window")
+
+	return nil
 }
 
 // foundSupplier ensures that the given supplier address is in the given list of suppliers.

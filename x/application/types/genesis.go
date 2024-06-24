@@ -33,7 +33,7 @@ func (gs GenesisState) Validate() error {
 
 	// Check that the stake value for the apps is valid and that the delegatee addresses are valid
 	for _, app := range gs.ApplicationList {
-		// TODO_TECHDEBT: Consider creating shared helpers across the board for stake validation,
+		// TODO_MAINNET: Consider creating shared helpers across the board for stake validation,
 		// similar to how we have `ValidateAppServiceConfigs` below
 		if app.Stake == nil {
 			return ErrAppInvalidStake.Wrapf("nil stake amount for application")

@@ -36,4 +36,4 @@ func ClaimSupplierEndSessionHeightKey(sessionEndHeight int64, primaryKey []byte)
 	return KeyComposite(heightBz, primaryKey)
 }
 
-// TODO_TECHDEBT(@olshanks): add helpers for composing query-side key prefixes & document key/value prefix design.
+// TODO_TECHDEBT(@Olshansk): add helpers for composing query-side key prefixes & document key/value prefix design.

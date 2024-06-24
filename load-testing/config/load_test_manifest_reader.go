@@ -9,8 +9,9 @@ import (
 // ProvisionedActorConfig is used to represent the signing key used & URL exposed
 // by the pre-provisioned gateway & supplier actors that the load test expects.
 type ProvisionedActorConfig struct {
-	// KeyName is the **name** of the key in the keyring to be used by the given actor.
-	KeyName string `yaml:"key_name"`
+	// The address used to identify the actor. In an ephemeral chain, the corresponding
+	// account must be present in the keyring to be able to stake.
+	Address string `yaml:"address"`
 	// ExposedUrl is the URL where the actor is expected to be reachable.
 	ExposedUrl string `yaml:"exposed_url"`
 }
@@ -18,8 +19,14 @@ type ProvisionedActorConfig struct {
 // LoadTestManifestYAML is the struct which the load test manifest is deserialized into.
 // It contains the list of suppliers and gateways that the load test expects to be pre-provisioned.
 type LoadTestManifestYAML struct {
-	Suppliers []ProvisionedActorConfig `yaml:"suppliers"`
-	Gateways  []ProvisionedActorConfig `yaml:"gateways"`
+	// IsEphemeralChain is a flag that indicates whether the test is expected to be
+	// run on LocalNet or long-living remote chain (i.e. TestNet/DevNet).
+	IsEphemeralChain      bool                     `yaml:"is_ephemeral_chain"`
+	TestNetNode           string                   `yaml:"testnet_node"`
+	ServiceId             string                   `yaml:"service_id"`
+	Suppliers             []ProvisionedActorConfig `yaml:"suppliers"`
+	Gateways              []ProvisionedActorConfig `yaml:"gateways"`
+	FundingAccountAddress string                   `yaml:"funding_account_address"`
 }
 
 // ParseLoadTestManifest reads the load test manifest from the given byte slice
@@ -36,41 +43,95 @@ func ParseLoadTestManifest(manifestContent []byte) (*LoadTestManifestYAML, error
 		return nil, ErrLoadTestManifestUnmarshalYAML.Wrapf("%s", err)
 	}
 
-	if len(parsedManifest.Gateways) == 0 {
-		return nil, ErrLoadTestInvalidManifest.Wrap("empty gateways entry")
+	if parsedManifest.IsEphemeralChain {
+		return validatedEphemeralChainManifest(&parsedManifest)
 	}
 
-	if len(parsedManifest.Suppliers) == 0 {
-		return nil, ErrLoadTestInvalidManifest.Wrap("empty suppliers entry")
+	return validatedNonEphemeralChainManifest(&parsedManifest)
+}
+
+func validatedEphemeralChainManifest(manifest *LoadTestManifestYAML) (*LoadTestManifestYAML, error) {
+	if len(manifest.Gateways) == 0 {
+		return nil, ErrEphemeralChainLoadTestInvalidManifest.Wrap("empty gateways entry")
 	}
 
-	for _, supplier := range parsedManifest.Suppliers {
-		if supplier.KeyName == "" {
-			return nil, ErrLoadTestInvalidManifest.Wrap("empty supplier key name")
-		}
-
-		if supplier.ExposedUrl == "" {
-			return nil, ErrLoadTestInvalidManifest.Wrap("empty supplier server url")
-		}
-
-		if _, err := url.Parse(supplier.ExposedUrl); err != nil {
-			return nil, ErrLoadTestInvalidManifest.Wrapf("invalid supplier server url: %s", err)
-		}
+	if len(manifest.Suppliers) == 0 {
+		return nil, ErrEphemeralChainLoadTestInvalidManifest.Wrap("empty suppliers entry")
 	}
 
-	for _, gateway := range parsedManifest.Gateways {
-		if gateway.KeyName == "" {
-			return nil, ErrLoadTestInvalidManifest.Wrap("empty gateway key name")
+	if len(manifest.ServiceId) == 0 {
+		return nil, ErrEphemeralChainLoadTestInvalidManifest.Wrap("empty service id")
+	}
+
+	if len(manifest.FundingAccountAddress) == 0 {
+		return nil, ErrEphemeralChainLoadTestInvalidManifest.Wrap("empty funding account address")
+	}
+
+	for _, gateway := range manifest.Gateways {
+		if len(gateway.Address) == 0 {
+			return nil, ErrEphemeralChainLoadTestInvalidManifest.Wrap("empty gateway address")
 		}
 
-		if gateway.ExposedUrl == "" {
-			return nil, ErrLoadTestInvalidManifest.Wrap("empty gateway server url")
+		if len(gateway.ExposedUrl) == 0 {
+			return nil, ErrEphemeralChainLoadTestInvalidManifest.Wrap("empty gateway server url")
 		}
 
 		if _, err := url.Parse(gateway.ExposedUrl); err != nil {
-			return nil, ErrLoadTestInvalidManifest.Wrapf("invalid supplier server url: %s", err)
+			return nil, ErrEphemeralChainLoadTestInvalidManifest.Wrapf("invalid supplier server url: %s", err)
 		}
 	}
 
-	return &parsedManifest, nil
+	for _, supplier := range manifest.Suppliers {
+		if len(supplier.Address) == 0 {
+			return nil, ErrEphemeralChainLoadTestInvalidManifest.Wrap("empty supplier address")
+		}
+
+		if len(supplier.ExposedUrl) == 0 {
+			return nil, ErrEphemeralChainLoadTestInvalidManifest.Wrap("empty supplier server url")
+		}
+
+		if _, err := url.Parse(supplier.ExposedUrl); err != nil {
+			return nil, ErrEphemeralChainLoadTestInvalidManifest.Wrapf("invalid supplier server url: %s", err)
+		}
+	}
+
+	return manifest, nil
+}
+
+func validatedNonEphemeralChainManifest(manifest *LoadTestManifestYAML) (*LoadTestManifestYAML, error) {
+	if len(manifest.Gateways) == 0 {
+		return nil, ErrNonEphemeralChainLoadTestInvalidManifest.Wrap("empty gateways entry")
+	}
+
+	if len(manifest.Suppliers) > 0 {
+		return nil, ErrNonEphemeralChainLoadTestInvalidManifest.Wrap("suppliers entry forbidden")
+	}
+
+	if len(manifest.TestNetNode) == 0 {
+		return nil, ErrNonEphemeralChainLoadTestInvalidManifest.Wrap("empty testnet node url")
+	}
+
+	if len(manifest.ServiceId) == 0 {
+		return nil, ErrNonEphemeralChainLoadTestInvalidManifest.Wrap("empty service id")
+	}
+
+	if len(manifest.FundingAccountAddress) == 0 {
+		return nil, ErrNonEphemeralChainLoadTestInvalidManifest.Wrap("empty funding account address")
+	}
+
+	for _, gateway := range manifest.Gateways {
+		if len(gateway.Address) == 0 {
+			return nil, ErrNonEphemeralChainLoadTestInvalidManifest.Wrap("empty gateway address")
+		}
+
+		if len(gateway.ExposedUrl) == 0 {
+			return nil, ErrNonEphemeralChainLoadTestInvalidManifest.Wrap("empty gateway server url")
+		}
+
+		if _, err := url.Parse(gateway.ExposedUrl); err != nil {
+			return nil, ErrNonEphemeralChainLoadTestInvalidManifest.Wrapf("invalid supplier server url: %s", err)
+		}
+	}
+
+	return manifest, nil
 }

@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"hash"
 
@@ -19,7 +20,6 @@ import (
 	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/proof/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
-	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
@@ -43,15 +43,15 @@ func init() {
 // A proof that's stored on-chain is what leads to rewards (i.e. inflation)
 // downstream, making the series of checks a critical part of the protocol.
 //
-// TODO_BLOCKER: Prevent proof upserts after the tokenomics module has processed
-// the respective session.
-//
 // Note: The entity sending the SubmitProof messages does not necessarily need
 // to correspond to the supplier signing the proof. For example, a single entity
 // could (theoretically) batch multiple proofs (signed by the corresponding supplier)
 // into one transaction to save on transaction fees.
-func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (*types.MsgSubmitProofResponse, error) {
-	// TODO_BLOCKER_DISCUSS: A potential issue with doing proof validation inside
+func (k msgServer) SubmitProof(
+	ctx context.Context,
+	msg *types.MsgSubmitProof,
+) (_ *types.MsgSubmitProofResponse, err error) {
+	// TODO_MAINNET: A potential issue with doing proof validation inside
 	// `SubmitProof` is that we will not be storing false proofs on-chain (e.g. for slashing purposes).
 	// This could be considered a feature (e.g. less state bloat against sybil attacks)
 	// or a bug (i.e. no mechanisms for slashing suppliers who submit false proofs).
@@ -59,15 +59,25 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 	logger := k.Logger().With("method", "SubmitProof")
 	logger.Info("About to start submitting proof")
 
-	isSuccessful := false
-	defer telemetry.EventSuccessCounter(
-		"submit_proof",
-		telemetry.DefaultCounterFn,
-		func() bool { return isSuccessful },
-	)
+	// Declare claim to reference in telemetry.
+	claim := new(types.Claim)
+
+	// Defer telemetry calls so that they reference the final values the relevant variables.
+	defer func() {
+		// TODO_IMPROVE: We could track on-chain relays here with claim.GetNumRelays().
+		numComputeUnits, deferredErr := claim.GetNumComputeUnits()
+		err = errors.Join(err, deferredErr)
+
+		telemetry.ClaimCounter(telemetry.ClaimProofStageProven, 1, err)
+		telemetry.ClaimComputeUnitsCounter(
+			telemetry.ClaimProofStageProven,
+			numComputeUnits,
+			err,
+		)
+	}()
 
 	/*
-		TODO_DOCUMENT(@bryanchriswhite): Document these steps in proof
+		TODO_BLOCKER(@bryanchriswhite): Document these steps in proof
 		verification, link to the doc for reference and delete the comments.
 
 		## Actions (error if anything fails)
@@ -118,14 +128,22 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 	}
 
 	// Validate the session header.
-	if _, err := k.queryAndValidateSessionHeader(
-		ctx,
-		sessionHeader,
-		supplierAddr,
-	); err != nil {
+	onChainSession, err := k.queryAndValidateSessionHeader(ctx, msg)
+	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 	logger.Info("queried and validated the session header")
+
+	// Re-hydrate message session header with the on-chain session header.
+	// This corrects for discrepancies between unvalidated fields in the session header
+	// which can be derived from known values (e.g. session end height).
+	msg.SessionHeader = onChainSession.GetHeader()
+
+	// Validate proof message commit height is within the respective session's
+	// proof submission window using the on-chain session header.
+	if err := k.validateProofWindow(ctx, msg); err != nil {
+		return nil, status.Error(codes.FailedPrecondition, err.Error())
+	}
 
 	// Unmarshal the closest merkle proof from the message.
 	sparseMerkleClosestProof := &smt.SparseMerkleClosestProof{}
@@ -138,7 +156,7 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 		)
 	}
 
-	// TODO_IMPROVE(#427): Utilize smt.VerifyCompactClosestProof here to
+	// TODO_MAINNET(#427): Utilize smt.VerifyCompactClosestProof here to
 	// reduce on-chain storage requirements for proofs.
 	// Get the relay request and response from the proof.GetClosestMerkleProof.
 	relayBz := sparseMerkleClosestProof.GetValueHash(&SmtSpec)
@@ -158,39 +176,45 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 	if err := relayReq.ValidateBasic(); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
-	logger.Info("successfully validated relay request")
+	logger.Debug("successfully validated relay request")
+
+	// Make sure that the supplier address in the proof matches the one in the relay request.
+	if supplierAddr != relayReq.Meta.SupplierAddress {
+		return nil, status.Error(codes.FailedPrecondition, "supplier address mismatch")
+	}
+	logger.Debug("the proof supplier address matches the relay request supplier address")
 
 	// Basic validation of the relay response.
 	relayRes := relay.GetRes()
 	if err := relayRes.ValidateBasic(); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
-	logger.Info("successfully validated relay response")
+	logger.Debug("successfully validated relay response")
 
 	// Verify that the relay request session header matches the proof session header.
 	if err := compareSessionHeaders(msg.GetSessionHeader(), relayReq.Meta.GetSessionHeader()); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
-	logger.Info("successfully compared relay request session header")
+	logger.Debug("successfully compared relay request session header")
 
 	// Verify that the relay response session header matches the proof session header.
 	if err := compareSessionHeaders(msg.GetSessionHeader(), relayRes.Meta.GetSessionHeader()); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
-	logger.Info("successfully compared relay response session header")
+	logger.Debug("successfully compared relay response session header")
 
 	// Verify the relay request's signature.
-	// TODO_TECHDEBT(@h5law): Fetch the correct ring for the session this relay is from.
+	// TODO_BLOCKER(@red-0ne): Fetch the correct ring for the session this relay is from.
 	if err := k.ringClient.VerifyRelayRequestSignature(ctx, relayReq); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
-	logger.Info("successfully verified relay request signature")
+	logger.Debug("successfully verified relay request signature")
 
 	// Verify the relay response's signature.
 	if err := relayRes.VerifySupplierSignature(supplierPubKey); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
-	logger.Info("successfully verified relay response signature")
+	logger.Debug("successfully verified relay response signature")
 
 	// Get the proof module's governance parameters.
 	params := k.GetParams(ctx)
@@ -199,14 +223,14 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 	if err := validateMiningDifficulty(relayBz, params.MinRelayDifficultyBits); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
-	logger.Info("successfully validated relay mining difficulty")
+	logger.Debug("successfully validated relay mining difficulty")
 
 	// Validate that path the proof is submitted for matches the expected one
 	// based on the pseudo-random on-chain data associated with the header.
 	if err := k.validateClosestPath(ctx, sparseMerkleClosestProof, msg.GetSessionHeader()); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
-	logger.Info("successfully validated proof path")
+	logger.Debug("successfully validated proof path")
 
 	// Verify the relay's difficulty.
 	if err := validateMiningDifficulty(relayBz, params.MinRelayDifficultyBits); err != nil {
@@ -215,17 +239,18 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 
 	// Retrieve the corresponding claim for the proof submitted so it can be
 	// used in the proof validation below.
-	claim, err := k.queryAndValidateClaimForProof(ctx, msg)
+	claim, err = k.queryAndValidateClaimForProof(ctx, msg)
 	if err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
-	logger.Info("successfully retrieved and validated claim")
+
+	logger.Debug("successfully retrieved and validated claim")
 
 	// Verify the proof's closest merkle proof.
 	if err := verifyClosestProof(sparseMerkleClosestProof, claim.GetRootHash()); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
-	logger.Info("successfully verified closest merkle proof")
+	logger.Debug("successfully verified closest merkle proof")
 
 	// Construct and insert proof after all validation.
 	proof := types.Proof{
@@ -233,14 +258,14 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 		SessionHeader:      msg.GetSessionHeader(),
 		ClosestMerkleProof: msg.GetProof(),
 	}
-	logger.Info(fmt.Sprintf("queried and validated the claim for session ID %q", sessionHeader.SessionId))
+	logger.Debug(fmt.Sprintf("queried and validated the claim for session ID %q", sessionHeader.SessionId))
 
-	// TODO_BLOCKER: check if this proof already exists and return an appropriate error
-	// in any case where the supplier should no longer be able to update the given proof.
+	// TODO_BLOCKER(@Olshansk): check if this proof already exists and return an
+	// appropriate error in any case where the supplier should no longer be able
+	// to update the given proof.
 	k.UpsertProof(ctx, proof)
 	logger.Info("successfully upserted the proof")
 
-	isSuccessful = true
 	return &types.MsgSubmitProofResponse{}, nil
 }
 
@@ -400,7 +425,7 @@ func validateMiningDifficulty(relayBz []byte, minRelayDifficultyBits uint64) err
 		)
 	}
 
-	// TODO: Devise a test that tries to attack the network and ensure that there
+	// TODO_MAINNET: Devise a test that tries to attack the network and ensure that there
 	// is sufficient telemetry.
 	if uint64(relayDifficultyBits) < minRelayDifficultyBits {
 		return types.ErrProofInvalidRelay.Wrapf(
@@ -435,21 +460,15 @@ func (k msgServer) validateClosestPath(
 	//
 	// Since smt.ProveClosest is defined in terms of submitProofWindowStartHeight,
 	// this block's hash needs to be used for validation too.
-	//
-	// TODO_TECHDEBT(@red-0ne): Centralize the business logic that involves taking
-	// into account the heights, windows and grace periods into helper functions.
-	// TODO_BLOCKER@(@Olshansk): Update `blockHeight` to be the value of when the `ProofWindow`
-	// opens once the variable is added.
-	sessionEndBlockHeightWithGracePeriod := sessionHeader.GetSessionEndBlockHeight() +
-		sessionkeeper.GetSessionGracePeriodBlockCount()
-	blockHash := k.sessionKeeper.GetBlockHash(ctx, sessionEndBlockHeightWithGracePeriod)
-
-	// TODO: Investigate "proof for the path provided does not match one expected by the on-chain protocol"
-	// error that may occur due to block height differing from the off-chain part.
-	fmt.Println("E2E_DEBUG: height for block hash when verifying the proof", sessionEndBlockHeightWithGracePeriod, sessionHeader.GetSessionId())
+	sessionGracePeriodEndHeight, err := k.sharedQuerier.GetSessionGracePeriodEndHeight(ctx, sessionHeader.GetSessionEndBlockHeight())
+	if err != nil {
+		return err
+	}
+	blockHash := k.sessionKeeper.GetBlockHash(ctx, sessionGracePeriodEndHeight)
 
 	expectedProofPath := GetPathForProof(blockHash, sessionHeader.GetSessionId())
 	if !bytes.Equal(proof.Path, expectedProofPath) {
+		fmt.Println("TODO_BETA: Investigate 'ErrProofInvalidProof' may occur due to block height differing from the off-chain part when height for block hash.")
 		return types.ErrProofInvalidProof.Wrapf(
 			"the proof for the path provided (%x) does not match one expected by the on-chain protocol (%x)",
 			proof.Path,
@@ -461,7 +480,7 @@ func (k msgServer) validateClosestPath(
 }
 
 func GetPathForProof(blockHash []byte, sessionId string) []byte {
-	// TODO_BLOCKER(@Olshansk, @red-0ne, @h5law): We need to replace the return
+	// TODO_BLOCKER(@Olshansk): We need to replace the return
 	// statement below and change all relevant parts in the codebase.
 	// See the conversation in the following thread for more details: https://github.com/pokt-network/poktroll/pull/406#discussion_r1520790083
 	path := make([]byte, SmtSpec.PathHasherSize())

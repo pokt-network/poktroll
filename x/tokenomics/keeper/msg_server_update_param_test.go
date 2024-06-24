@@ -24,7 +24,7 @@ func TestMsgUpdateParam_UpdateMinRelayDifficultyBitsOnly(t *testing.T) {
 	// Update the min relay difficulty bits
 	updateParamMsg := &tokenomicstypes.MsgUpdateParam{
 		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		Name:      tokenomicstypes.NameComputeUnitsToTokensMultiplier,
+		Name:      tokenomicstypes.ParamComputeUnitsToTokensMultiplier,
 		AsType:    &tokenomicstypes.MsgUpdateParam_AsInt64{AsInt64: expectedComputeUnitsToTokensMultiplier},
 	}
 	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
@@ -32,5 +32,4 @@ func TestMsgUpdateParam_UpdateMinRelayDifficultyBitsOnly(t *testing.T) {
 
 	// Ensure the new values are set correctly
 	require.Equal(t, uint64(expectedComputeUnitsToTokensMultiplier), res.Params.ComputeUnitsToTokensMultiplier)
-	// TODO_BLOCKER: once we have more than one param per module, add assertions here which ensure that other params were not changed!
 }

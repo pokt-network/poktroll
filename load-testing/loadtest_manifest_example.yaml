@@ -1,0 +1,24 @@
+# The load test uses the provided gateways and the staked suppliers to send relays.
+
+# This file is used to configure the load test for non-ephemeral chains.
+# It is intended to target a remote environment, such as a devnet or testnet.
+is_ephemeral_chain: false
+
+# testnet_node is the URL of the node that the load test will use to query the
+# chain and submit transactions.
+testnet_node: https://testnet-validated-validator-rpc.poktroll.com
+
+# The service ID to request relays from.
+service_id: "0021"
+
+# The address of the account that will be used to fund the the application accounts
+# so that they can stake on the network.
+funding_account_address: pokt14eh973xt99s7edugnyvd5d5u50d6j0hysw2vsm # address for pnf account
+
+# In non-ephemeral chains, the gateways are identified by their address.
+gateways:
+  # address is the bech32 pokt address of the gateway.
+  - address: pokt16sty9mjdh4u2fwgj8ptufg42cysvh6gsyx6wfp
+    # The url used to send relays to the gateway on.
+    # TODO_INVESTIGATE(@okdas): Why is this port number so low? What should it be?
+    exposed_url: http://localhost:84

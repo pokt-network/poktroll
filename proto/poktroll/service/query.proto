@@ -41,7 +41,7 @@ message QueryParamsResponse {
 }
 
 message QueryGetServiceRequest {
-  // TODO: We could support getting services by name.
+  // TODO_IMPROVE: We could support getting services by name.
   string id = 1;
 }
 

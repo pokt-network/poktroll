@@ -35,10 +35,10 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 
 			inputConfigYAML: `
 				pocket_node:
-				  query_node_rpc_url: tcp://127.0.0.1:36657
-				  query_node_grpc_url: tcp://127.0.0.1:36658
+				  query_node_rpc_url: tcp://127.0.0.1:26657
+				  query_node_grpc_url: tcp://127.0.0.1:9090
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
-				signing_key_name: supplier1
+				default_signing_key_names: [ supplier1 ]
 				smt_store_path: smt_stores
 				suppliers:
 				  - service_id: ethereum
@@ -57,12 +57,12 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 			expectedErr: nil,
 			expectedConfig: &config.RelayMinerConfig{
 				PocketNode: &config.RelayMinerPocketNodeConfig{
-					QueryNodeRPCUrl:  &url.URL{Scheme: "tcp", Host: "127.0.0.1:36657"},
-					QueryNodeGRPCUrl: &url.URL{Scheme: "tcp", Host: "127.0.0.1:36658"},
+					QueryNodeRPCUrl:  &url.URL{Scheme: "tcp", Host: "127.0.0.1:26657"},
+					QueryNodeGRPCUrl: &url.URL{Scheme: "tcp", Host: "127.0.0.1:9090"},
 					TxNodeRPCUrl:     &url.URL{Scheme: "tcp", Host: "127.0.0.1:36659"},
 				},
-				SigningKeyName: "supplier1",
-				SmtStorePath:   "smt_stores",
+				DefaultSigningKeyNames: []string{"supplier1"},
+				SmtStorePath:           "smt_stores",
 				Servers: map[string]*config.RelayMinerServerConfig{
 					"http://127.0.0.1:8080": {
 						ListenAddress:        "127.0.0.1:8080",
@@ -91,14 +91,167 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 			},
 		},
 		{
+			desc: "valid: relay miner config with signing key configured on supplier level",
+
+			inputConfigYAML: `
+                pocket_node:
+                  query_node_rpc_url: tcp://127.0.0.1:36657
+                  query_node_grpc_url: tcp://127.0.0.1:36658
+                  tx_node_rpc_url: tcp://127.0.0.1:36659
+                smt_store_path: smt_stores
+                suppliers:
+                  - service_id: ethereum
+                    listen_url: http://127.0.0.1:8080
+                    signing_key_names: [ supplier1 ]
+                    service_config:
+                      backend_url: http://anvil.servicer:8545
+                      authentication:
+                        username: user
+                        password: pwd
+                      headers: {}
+                      publicly_exposed_endpoints:
+                        - ethereum.devnet1.poktroll.com
+                        - ethereum
+                `,
+
+			expectedErr: nil,
+			expectedConfig: &config.RelayMinerConfig{
+				PocketNode: &config.RelayMinerPocketNodeConfig{
+					QueryNodeRPCUrl:  &url.URL{Scheme: "tcp", Host: "127.0.0.1:36657"},
+					QueryNodeGRPCUrl: &url.URL{Scheme: "tcp", Host: "127.0.0.1:36658"},
+					TxNodeRPCUrl:     &url.URL{Scheme: "tcp", Host: "127.0.0.1:36659"},
+				},
+				SmtStorePath: "smt_stores",
+				Servers: map[string]*config.RelayMinerServerConfig{
+					"http://127.0.0.1:8080": {
+						ListenAddress:        "127.0.0.1:8080",
+						ServerType:           config.RelayMinerServerTypeHTTP,
+						XForwardedHostLookup: false,
+						SupplierConfigsMap: map[string]*config.RelayMinerSupplierConfig{
+							"ethereum": {
+								ServiceId:  "ethereum",
+								ServerType: config.RelayMinerServerTypeHTTP,
+								ServiceConfig: &config.RelayMinerSupplierServiceConfig{
+									BackendUrl: &url.URL{Scheme: "http", Host: "anvil.servicer:8545"},
+									Authentication: &config.RelayMinerSupplierServiceAuthentication{
+										Username: "user",
+										Password: "pwd",
+									},
+									Headers: map[string]string{},
+								},
+								PubliclyExposedEndpoints: []string{
+									"ethereum.devnet1.poktroll.com",
+									"ethereum",
+								},
+								SigningKeyNames: []string{"supplier1"},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			desc: "valid: relay miner config with signing keys configured on both global and supplier level",
+
+			inputConfigYAML: `
+			pocket_node:
+				query_node_rpc_url: tcp://127.0.0.1:36657
+				query_node_grpc_url: tcp://127.0.0.1:36658
+				tx_node_rpc_url: tcp://127.0.0.1:36659
+			smt_store_path: smt_stores
+			default_signing_key_names: [supplier1]
+			suppliers:
+			- service_id: ethereum
+				listen_url: http://127.0.0.1:8080
+				signing_key_names: []
+				service_config:
+					backend_url: http://anvil.servicer:8545
+					authentication:
+						username: user
+						password: pwd
+					headers: {}
+					publicly_exposed_endpoints:
+						- ethereum.devnet1.poktroll.com
+						- ethereum
+			- service_id: ollama
+				listen_url: http://127.0.0.1:8080
+				signing_key_names: [supplier2]
+				service_config:
+					backend_url: http://ollama.servicer:8545
+					authentication:
+						username: user
+						password: pwd
+					headers: {}
+					publicly_exposed_endpoints:
+						- ollama.devnet1.poktroll.com
+						- ollama
+                `,
+
+			expectedErr: nil,
+			expectedConfig: &config.RelayMinerConfig{
+				PocketNode: &config.RelayMinerPocketNodeConfig{
+					QueryNodeRPCUrl:  &url.URL{Scheme: "tcp", Host: "127.0.0.1:36657"},
+					QueryNodeGRPCUrl: &url.URL{Scheme: "tcp", Host: "127.0.0.1:36658"},
+					TxNodeRPCUrl:     &url.URL{Scheme: "tcp", Host: "127.0.0.1:36659"},
+				},
+				SmtStorePath:           "smt_stores",
+				DefaultSigningKeyNames: []string{"supplier1"},
+				Servers: map[string]*config.RelayMinerServerConfig{
+					"http://127.0.0.1:8080": {
+						ListenAddress:        "127.0.0.1:8080",
+						ServerType:           config.RelayMinerServerTypeHTTP,
+						XForwardedHostLookup: false,
+						SupplierConfigsMap: map[string]*config.RelayMinerSupplierConfig{
+							"ethereum": {
+								ServiceId:  "ethereum",
+								ServerType: config.RelayMinerServerTypeHTTP,
+								ServiceConfig: &config.RelayMinerSupplierServiceConfig{
+									BackendUrl: &url.URL{Scheme: "http", Host: "anvil.servicer:8545"},
+									Authentication: &config.RelayMinerSupplierServiceAuthentication{
+										Username: "user",
+										Password: "pwd",
+									},
+									Headers: map[string]string{},
+								},
+								PubliclyExposedEndpoints: []string{
+									"ethereum.devnet1.poktroll.com",
+									"ethereum",
+								},
+								// Note the supplier is missing in the yaml, but it is populated from
+								// the global `default_signing_key_names`
+								SigningKeyNames: []string{"supplier1"},
+							},
+							"ollama": {
+								ServiceId:  "ollama",
+								ServerType: config.RelayMinerServerTypeHTTP,
+								ServiceConfig: &config.RelayMinerSupplierServiceConfig{
+									BackendUrl: &url.URL{Scheme: "http", Host: "ollama.servicer:8545"},
+									Authentication: &config.RelayMinerSupplierServiceAuthentication{
+										Username: "user",
+										Password: "pwd",
+									},
+									Headers: map[string]string{},
+								},
+								PubliclyExposedEndpoints: []string{
+									"ollama.devnet1.poktroll.com",
+									"ollama",
+								},
+								SigningKeyNames: []string{"supplier2"},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
 			desc: "valid: multiple suppliers, single server",
 
 			inputConfigYAML: `
 				pocket_node:
-				  query_node_rpc_url: tcp://127.0.0.1:36657
-				  query_node_grpc_url: tcp://127.0.0.1:36658
+				  query_node_rpc_url: tcp://127.0.0.1:26657
+				  query_node_grpc_url: tcp://127.0.0.1:9090
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
-				signing_key_name: supplier1
+				default_signing_key_names: [ supplier1 ]
 				smt_store_path: smt_stores
 				suppliers:
 				  - service_id: ethereum
@@ -124,12 +277,12 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 			expectedErr: nil,
 			expectedConfig: &config.RelayMinerConfig{
 				PocketNode: &config.RelayMinerPocketNodeConfig{
-					QueryNodeRPCUrl:  &url.URL{Scheme: "tcp", Host: "127.0.0.1:36657"},
-					QueryNodeGRPCUrl: &url.URL{Scheme: "tcp", Host: "127.0.0.1:36658"},
+					QueryNodeRPCUrl:  &url.URL{Scheme: "tcp", Host: "127.0.0.1:26657"},
+					QueryNodeGRPCUrl: &url.URL{Scheme: "tcp", Host: "127.0.0.1:9090"},
 					TxNodeRPCUrl:     &url.URL{Scheme: "tcp", Host: "127.0.0.1:36659"},
 				},
-				SigningKeyName: "supplier1",
-				SmtStorePath:   "smt_stores",
+				DefaultSigningKeyNames: []string{"supplier1"},
+				SmtStorePath:           "smt_stores",
 				Servers: map[string]*config.RelayMinerServerConfig{
 					"http://127.0.0.1:8080": {
 						ListenAddress:        "127.0.0.1:8080",
@@ -173,9 +326,9 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 
 			inputConfigYAML: `
 				pocket_node:
-				  query_node_grpc_url: tcp://127.0.0.1:36658
+				  query_node_grpc_url: tcp://127.0.0.1:9090
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
-				signing_key_name: supplier1
+				default_signing_key_names: [ supplier1 ]
 				smt_store_path: smt_stores
 				suppliers:
 				  - service_id: ethereum
@@ -192,11 +345,11 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 			expectedConfig: &config.RelayMinerConfig{
 				PocketNode: &config.RelayMinerPocketNodeConfig{
 					QueryNodeRPCUrl:  &url.URL{Scheme: "tcp", Host: "127.0.0.1:36659"},
-					QueryNodeGRPCUrl: &url.URL{Scheme: "tcp", Host: "127.0.0.1:36658"},
+					QueryNodeGRPCUrl: &url.URL{Scheme: "tcp", Host: "127.0.0.1:9090"},
 					TxNodeRPCUrl:     &url.URL{Scheme: "tcp", Host: "127.0.0.1:36659"},
 				},
-				SigningKeyName: "supplier1",
-				SmtStorePath:   "smt_stores",
+				DefaultSigningKeyNames: []string{"supplier1"},
+				SmtStorePath:           "smt_stores",
 				Servers: map[string]*config.RelayMinerServerConfig{
 					"http://127.0.0.1:8080": {
 						ListenAddress:        "127.0.0.1:8080",
@@ -224,10 +377,10 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 
 			inputConfigYAML: `
 				pocket_node:
-				  query_node_rpc_url: tcp://127.0.0.1:36657
-				  query_node_grpc_url: tcp://127.0.0.1:36658
+				  query_node_rpc_url: tcp://127.0.0.1:26657
+				  query_node_grpc_url: tcp://127.0.0.1:9090
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
-				signing_key_name: supplier1
+				default_signing_key_names: [ supplier1 ]
 				smt_store_path: smt_stores
 				suppliers:
 				  - service_id: ethereum
@@ -242,12 +395,12 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 			expectedErr: nil,
 			expectedConfig: &config.RelayMinerConfig{
 				PocketNode: &config.RelayMinerPocketNodeConfig{
-					QueryNodeRPCUrl:  &url.URL{Scheme: "tcp", Host: "127.0.0.1:36657"},
-					QueryNodeGRPCUrl: &url.URL{Scheme: "tcp", Host: "127.0.0.1:36658"},
+					QueryNodeRPCUrl:  &url.URL{Scheme: "tcp", Host: "127.0.0.1:26657"},
+					QueryNodeGRPCUrl: &url.URL{Scheme: "tcp", Host: "127.0.0.1:9090"},
 					TxNodeRPCUrl:     &url.URL{Scheme: "tcp", Host: "127.0.0.1:36659"},
 				},
-				SigningKeyName: "supplier1",
-				SmtStorePath:   "smt_stores",
+				DefaultSigningKeyNames: []string{"supplier1"},
+				SmtStorePath:           "smt_stores",
 				Servers: map[string]*config.RelayMinerServerConfig{
 					"http://127.0.0.1:8080": {
 						ListenAddress:        "127.0.0.1:8080",
@@ -276,10 +429,10 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 
 			inputConfigYAML: `
 				pocket_node:
-				  query_node_rpc_url: tcp://127.0.0.1:36657
-				  query_node_grpc_url: tcp://127.0.0.1:36658
+				  query_node_rpc_url: tcp://127.0.0.1:26657
+				  query_node_grpc_url: tcp://127.0.0.1:9090
 				  tx_node_rpc_url: &tcp://127.0.0.1:36659
-				signing_key_name: supplier1
+				default_signing_key_names: [ supplier1 ]
 				smt_store_path: smt_stores
 				suppliers:
 				  - service_id: ethereum
@@ -297,10 +450,10 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 
 			inputConfigYAML: `
 				pocket_node:
-				  query_node_rpc_url: tcp://127.0.0.1:36657
+				  query_node_rpc_url: tcp://127.0.0.1:26657
 				  # explicitly omitted tx node grpc url
-				  query_node_grpc_url: tcp://127.0.0.1:36658
-				signing_key_name: supplier1
+				  query_node_grpc_url: tcp://127.0.0.1:9090
+				default_signing_key_names: [ supplier1 ]
 				smt_store_path: smt_stores
 				suppliers:
 				  - service_id: ethereum
@@ -317,10 +470,10 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 
 			inputConfigYAML: `
 				pocket_node:
-				  query_node_rpc_url: tcp://127.0.0.1:36657
-				  query_node_grpc_url: &tcp://127.0.0.1:36658
+				  query_node_rpc_url: tcp://127.0.0.1:26657
+				  query_node_grpc_url: &tcp://127.0.0.1:9090
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
-				signing_key_name: supplier1
+				default_signing_key_names: [ supplier1 ]
 				smt_store_path: smt_stores
 				suppliers:
 				  - service_id: ethereum
@@ -339,10 +492,10 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 
 			inputConfigYAML: `
 				pocket_node:
-				  query_node_rpc_url: &tcp://127.0.0.1:36657
-				  query_node_grpc_url: tcp://127.0.0.1:36658
+				  query_node_rpc_url: &tcp://127.0.0.1:26657
+				  query_node_grpc_url: tcp://127.0.0.1:9090
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
-				signing_key_name: supplier1
+				default_signing_key_names: [ supplier1 ]
 				smt_store_path: smt_stores
 				suppliers:
 				  - service_id: ethereum
@@ -362,9 +515,9 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 			inputConfigYAML: `
 				pocket_node:
 				  # explicitly omitted query node rpc url
-				  query_node_rpc_url: tcp://127.0.0.1:36657
+				  query_node_rpc_url: tcp://127.0.0.1:26657
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
-				signing_key_name: supplier1
+				default_signing_key_names: [ supplier1 ]
 				smt_store_path: smt_stores
 				suppliers:
 				  - service_id: ethereum
@@ -379,12 +532,12 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 			expectedErr: config.ErrRelayMinerConfigInvalidNodeUrl,
 		},
 		{
-			desc: "invalid: missing signing key name",
+			desc: "invalid: missing both default and supplier signing key names",
 
 			inputConfigYAML: `
 				pocket_node:
-				  query_node_rpc_url: tcp://127.0.0.1:36657
-				  query_node_grpc_url: tcp://127.0.0.1:36658
+				  query_node_rpc_url: tcp://127.0.0.1:26657
+				  query_node_grpc_url: tcp://127.0.0.1:9090
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				# explicitly omitted signing key name
 				smt_store_path: smt_stores
@@ -405,10 +558,10 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 
 			inputConfigYAML: `
 				pocket_node:
-				  query_node_rpc_url: tcp://127.0.0.1:36657
-				  query_node_grpc_url: tcp://127.0.0.1:36658
+				  query_node_rpc_url: tcp://127.0.0.1:26657
+				  query_node_grpc_url: tcp://127.0.0.1:9090
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
-				signing_key_name: supplier1
+				default_signing_key_names: [ supplier1 ]
 				# explicitly omitted smt store path
 				suppliers:
 				  - service_id: ethereum
@@ -427,10 +580,10 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 
 			inputConfigYAML: `
 				pocket_node:
-				  query_node_rpc_url: tcp://127.0.0.1:36657
-				  query_node_grpc_url: tcp://127.0.0.1:36658
+				  query_node_rpc_url: tcp://127.0.0.1:26657
+				  query_node_grpc_url: tcp://127.0.0.1:9090
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
-				signing_key_name: supplier1
+				default_signing_key_names: [ supplier1 ]
 				smt_store_path: smt_stores
 				suppliers:
 				  - service_id: ethereum
@@ -449,10 +602,10 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 
 			inputConfigYAML: `
 				pocket_node:
-				  query_node_rpc_url: tcp://127.0.0.1:36657
-				  query_node_grpc_url: tcp://127.0.0.1:36658
+				  query_node_rpc_url: tcp://127.0.0.1:26657
+				  query_node_grpc_url: tcp://127.0.0.1:9090
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
-				signing_key_name: supplier1
+				default_signing_key_names: [ supplier1 ]
 				smt_store_path: smt_stores
 				suppliers:
 				  - service_id: ethereum
@@ -470,10 +623,10 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 
 			inputConfigYAML: `
 				pocket_node:
-				  query_node_rpc_url: tcp://127.0.0.1:36657
-				  query_node_grpc_url: tcp://127.0.0.1:36658
+				  query_node_rpc_url: tcp://127.0.0.1:26657
+				  query_node_grpc_url: tcp://127.0.0.1:9090
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
-				signing_key_name: supplier1
+				default_signing_key_names: [ supplier1 ]
 				smt_store_path: smt_stores
 				suppliers:
 				  - listen_url: http://127.0.0.1:8080
@@ -491,10 +644,10 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 
 			inputConfigYAML: `
 				pocket_node:
-				  query_node_rpc_url: tcp://127.0.0.1:36657
-				  query_node_grpc_url: tcp://127.0.0.1:36658
+				  query_node_rpc_url: tcp://127.0.0.1:26657
+				  query_node_grpc_url: tcp://127.0.0.1:9090
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
-				signing_key_name: supplier1
+				default_signing_key_names: [ supplier1 ]
 				smt_store_path: smt_stores
 				suppliers:
 				  - service_id: # explicitly empty supplier name
@@ -513,10 +666,10 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 
 			inputConfigYAML: `
 				pocket_node:
-				  query_node_rpc_url: tcp://127.0.0.1:36657
-				  query_node_grpc_url: tcp://127.0.0.1:36658
+				  query_node_rpc_url: tcp://127.0.0.1:26657
+				  query_node_grpc_url: tcp://127.0.0.1:9090
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
-				signing_key_name: supplier1
+				default_signing_key_names: [ supplier1 ]
 				smt_store_path: smt_stores
 				suppliers:
 				  - service_id: ethereum
@@ -535,10 +688,10 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 
 			inputConfigYAML: `
 				pocket_node:
-				  query_node_rpc_url: tcp://127.0.0.1:36657
-				  query_node_grpc_url: tcp://127.0.0.1:36658
+				  query_node_rpc_url: tcp://127.0.0.1:26657
+				  query_node_grpc_url: tcp://127.0.0.1:9090
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
-				signing_key_name: supplier1
+				default_signing_key_names: [ supplier1 ]
 				smt_store_path: smt_stores
 				suppliers:
 				  - service_id: ethereum
@@ -557,10 +710,10 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 
 			inputConfigYAML: `
 				pocket_node:
-				  query_node_rpc_url: tcp://127.0.0.1:36657
-				  query_node_grpc_url: tcp://127.0.0.1:36658
+				  query_node_rpc_url: tcp://127.0.0.1:26657
+				  query_node_grpc_url: tcp://127.0.0.1:9090
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
-				signing_key_name: supplier1
+				default_signing_key_names: [ supplier1 ]
 				smt_store_path: smt_stores
 				suppliers:
 				  - service_id: ethereum
@@ -578,10 +731,10 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 
 			inputConfigYAML: `
 				pocket_node:
-				  query_node_rpc_url: tcp://127.0.0.1:36657
-				  query_node_grpc_url: tcp://127.0.0.1:36658
+				  query_node_rpc_url: tcp://127.0.0.1:26657
+				  query_node_grpc_url: tcp://127.0.0.1:9090
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
-				signing_key_name: supplier1
+				default_signing_key_names: [ supplier1 ]
 				smt_store_path: smt_stores
 				suppliers:
 				  - service_id: ethereum
@@ -626,8 +779,8 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 
 			require.Equal(
 				t,
-				test.expectedConfig.SigningKeyName,
-				config.SigningKeyName,
+				test.expectedConfig.DefaultSigningKeyNames,
+				config.DefaultSigningKeyNames,
 			)
 
 			require.Equal(

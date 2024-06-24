@@ -7,7 +7,7 @@ sidebar_position: 3
 
 :::warning
 
-TODO(@Olshansk): This is just a placeholder. Use the [probabilistic proofs](https://github.com/pokt-network/pocket-core/blob/staging/docs/proposals/probabilistic_proofs.md) design
+TODO_DOCUMENT(@Olshansk): This is just a placeholder. Use the [probabilistic proofs](https://github.com/pokt-network/pocket-core/blob/staging/docs/proposals/probabilistic_proofs.md) design
 document as a reference for writing this.
 
 :::

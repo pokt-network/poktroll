@@ -14,7 +14,7 @@ message Application {
   string address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the application using cosmos' ScalarDescriptor to ensure deterministic encoding
   cosmos.base.v1beta1.Coin stake = 2; // The total amount of uPOKT the application has staked
   repeated poktroll.shared.ApplicationServiceConfig service_configs = 3; // The list of services this appliccation is configured to request service for
-  // TODO_TECHDEBT: Rename `delegatee_gateway_addresses` to `gateway_addresses_delegated_to`.
+  // TODO_BETA: Rename `delegatee_gateway_addresses` to `gateway_addresses_delegated_to`.
   // Ensure to rename all relevant configs, comments, variables, function names, etc as well.
   repeated string delegatee_gateway_addresses = 4 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.nullable) = false]; // The Bech32 encoded addresses for all delegatee Gateways, in a non-nullable slice
    // A map from sessionEndHeights to a list of Gateways.

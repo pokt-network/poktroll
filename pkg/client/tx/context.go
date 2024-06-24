@@ -98,3 +98,8 @@ func (txCtx cosmosTxContext) QueryTx(
 ) (*cometrpctypes.ResultTx, error) {
 	return txCtx.clientCtx.Client.Tx(ctx, txHash, prove)
 }
+
+// GetClientCtx returns the cosmos-sdk client context associated with the transaction context.
+func (txCtx cosmosTxContext) GetClientCtx() cosmosclient.Context {
+	return cosmosclient.Context(txCtx.clientCtx)
+}

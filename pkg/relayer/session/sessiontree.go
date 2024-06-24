@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"sync"
 
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/smt"
 	"github.com/pokt-network/smt/kvstore/badger"
 
@@ -27,6 +28,11 @@ type sessionTree struct {
 
 	// sessionSMT is the SMST (Sparse Merkle State Trie) corresponding the session.
 	sessionSMT smt.SparseMerkleSumTrie
+
+	// supplierAddress is the address of the supplier that owns this sessionTree.
+	// RelayMiner can run suppliers for many supplier addresses at the same time,
+	// and we need a way to group the session trees by the supplier address for that.
+	supplierAddress *cosmostypes.AccAddress
 
 	// claimedRoot is the root hash of the SMST needed for submitting the claim.
 	// If it holds a non-nil value, it means that the SMST has been flushed,
@@ -67,6 +73,7 @@ type sessionTree struct {
 // It returns an error if the KVStore fails to be created.
 func NewSessionTree(
 	sessionHeader *sessiontypes.SessionHeader,
+	supplierAddress *cosmostypes.AccAddress,
 	storesDirectory string,
 	removeFromRelayerSessions func(sessionHeader *sessiontypes.SessionHeader),
 ) (relayer.SessionTree, error) {
@@ -88,11 +95,12 @@ func NewSessionTree(
 	trie := smt.NewSparseMerkleSumTrie(treeStore, sha256.New(), smt.WithValueHasher(nil))
 
 	sessionTree := &sessionTree{
-		sessionHeader: sessionHeader,
-		storePath:     storePath,
-		treeStore:     treeStore,
-		sessionSMT:    trie,
-		sessionMu:     &sync.Mutex{},
+		sessionHeader:   sessionHeader,
+		storePath:       storePath,
+		treeStore:       treeStore,
+		sessionSMT:      trie,
+		sessionMu:       &sync.Mutex{},
+		supplierAddress: supplierAddress,
 
 		removeFromRelayerSessions: removeFromRelayerSessions,
 	}
@@ -255,4 +263,9 @@ func (st *sessionTree) StartClaiming() error {
 
 	st.isClaiming = true
 	return nil
+}
+
+// SupplierAddress returns a CosmosSDK address of the supplier this sessionTree belongs to.
+func (st *sessionTree) SupplierAddress() *cosmostypes.AccAddress {
+	return st.supplierAddress
 }

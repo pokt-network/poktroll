@@ -19,30 +19,39 @@ import (
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/session"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
+	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
+	"github.com/pokt-network/poktroll/testutil/testclient/testqueryclients"
 	"github.com/pokt-network/poktroll/testutil/testclient/testsupplier"
 	"github.com/pokt-network/poktroll/testutil/testpolylog"
 	"github.com/pokt-network/poktroll/testutil/testrelayer"
-	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	"github.com/pokt-network/poktroll/x/shared"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func TestRelayerSessionsManager_Start(t *testing.T) {
-	const (
-		sessionStartHeight = 1
-		sessionEndHeight   = 2
-	)
-
 	// TODO_TECHDEBT(#446): Centralize the configuration for the SMT spec.
 	var (
 		_, ctx         = testpolylog.NewLoggerWithCtx(context.Background(), polyzero.DebugLevel)
 		spec           = smt.NewTrieSpec(sha256.New(), true)
 		emptyBlockHash = make([]byte, spec.PathHasherSize())
+		activeSession  *sessiontypes.Session
 	)
+
+	activeSession = &sessiontypes.Session{
+		Header: &sessiontypes.SessionHeader{
+			SessionStartBlockHeight: 1,
+			SessionEndBlockHeight:   2,
+		},
+	}
+	sessionHeader := activeSession.GetHeader()
 
 	// Set up dependencies.
 	blocksObs, blockPublishCh := channel.NewReplayObservable[client.Block](ctx, 1)
 	blockClient := testblock.NewAnyTimesCommittedBlocksSequenceBlockClient(t, emptyBlockHash, blocksObs)
-	supplierClient := testsupplier.NewOneTimeClaimProofSupplierClient(ctx, t)
+	supplierAddress := sample.AccAddress()
+	supplierClientMap := testsupplier.NewOneTimeClaimProofSupplierClientMap(ctx, t, supplierAddress)
 
 	ctrl := gomock.NewController(t)
 	blockQueryClientMock := mockclient.NewMockCometRPC(ctrl)
@@ -71,7 +80,9 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 		).
 		AnyTimes()
 
-	deps := depinject.Supply(blockClient, blockQueryClientMock, supplierClient)
+	sharedQueryClientMock := testqueryclients.NewTestSharedQueryClient(t)
+
+	deps := depinject.Supply(blockClient, blockQueryClientMock, supplierClientMap, sharedQueryClientMock)
 	storesDirectoryOpt := testrelayer.WithTempStoresDirectory(t)
 
 	// Create a new relayer sessions manager.
@@ -88,7 +99,7 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 	relayerSessionsManager.Start(ctx)
 
 	// Publish a mined relay to the minedRelaysPublishCh to insert into the session tree.
-	minedRelay := testrelayer.NewMinedRelay(t, sessionStartHeight, sessionEndHeight)
+	minedRelay := testrelayer.NewUnsignedMinedRelay(t, activeSession, supplierAddress)
 	minedRelaysPublishCh <- minedRelay
 
 	// Wait a tick to allow the relayer sessions manager to process asynchronously.
@@ -96,25 +107,25 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 	time.Sleep(10 * time.Millisecond)
 
 	// Publish a block to the blockPublishCh to simulate non-actionable blocks.
+	sessionStartHeight := sessionHeader.GetSessionStartBlockHeight()
 	noopBlock := testblock.NewAnyTimesBlock(t, emptyBlockHash, sessionStartHeight)
 	blockPublishCh <- noopBlock
 
 	// Calculate the session grace period end block height to emit that block height
 	// to the blockPublishCh to trigger claim creation for the session.
-	sessionGracePeriodEndBlockHeight := int64(sessionEndHeight + sessionkeeper.GetSessionGracePeriodBlockCount())
+	sharedParams := sharedtypes.DefaultParams()
+	sessionEndHeight := sessionHeader.GetSessionEndBlockHeight()
+	sessionClaimWindowOpenHeight := shared.GetClaimWindowOpenHeight(&sharedParams, sessionEndHeight)
 
 	// Publish a block to the blockPublishCh to trigger claim creation for the session.
-	// TODO_TECHDEBT: assumes claiming at sessionGracePeriodEndBlockHeight is valid.
-	// This will likely change in future work.
-	triggerClaimBlock := testblock.NewAnyTimesBlock(t, emptyBlockHash, sessionGracePeriodEndBlockHeight)
+	triggerClaimBlock := testblock.NewAnyTimesBlock(t, emptyBlockHash, sessionClaimWindowOpenHeight)
 	blockPublishCh <- triggerClaimBlock
 
 	// TODO_IMPROVE: ensure correctness of persisted session trees here.
 
 	// Publish a block to the blockPublishCh to trigger proof submission for the session.
-	// TODO_TECHDEBT: assumes proving at sessionGracePeriodEndBlockHeight + 1 is valid.
-	// This will likely change in future work.
-	triggerProofBlock := testblock.NewAnyTimesBlock(t, emptyBlockHash, sessionGracePeriodEndBlockHeight+1)
+	sessionProofWindowOpenHeight := shared.GetProofWindowOpenHeight(&sharedParams, sessionEndHeight)
+	triggerProofBlock := testblock.NewAnyTimesBlock(t, emptyBlockHash, sessionProofWindowOpenHeight)
 	blockPublishCh <- triggerProofBlock
 
 	// Wait a tick to allow the relayer sessions manager to process asynchronously.

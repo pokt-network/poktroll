@@ -1,4 +1,5 @@
 syntax = "proto3";
+
 package poktroll.tokenomics;
 
 option go_package = "github.com/pokt-network/poktroll/x/tokenomics/types";
@@ -6,22 +7,56 @@ option go_package = "github.com/pokt-network/poktroll/x/tokenomics/types";
 import "amino/amino.proto";
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
+import "cosmos_proto/cosmos.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
+import "cosmos/base/v1beta1/coin.proto";
 
 import "poktroll/tokenomics/params.proto";
+import "poktroll/tokenomics/relay_mining_difficulty.proto";
 
 // Query defines the gRPC querier service.
 service Query {
+
   // Parameters queries the parameters of the module.
-  rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
+  rpc Params (QueryParamsRequest) returns (QueryParamsResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/tokenomics/params";
+
+  }
+
+  // Queries a list of RelayMiningDifficulty items.
+  rpc RelayMiningDifficulty    (QueryGetRelayMiningDifficultyRequest) returns (QueryGetRelayMiningDifficultyResponse) {
+    option (google.api.http).get = "/pokt-network/poktroll/tokenomics/relay_mining_difficulty/{serviceId}";
+
+  }
+  rpc RelayMiningDifficultyAll (QueryAllRelayMiningDifficultyRequest) returns (QueryAllRelayMiningDifficultyResponse) {
+    option (google.api.http).get = "/pokt-network/poktroll/tokenomics/relay_mining_difficulty";
+
   }
 }
-
 // QueryParamsRequest is request type for the Query/Params RPC method.
 message QueryParamsRequest {}
 
 // QueryParamsResponse is response type for the Query/Params RPC method.
 message QueryParamsResponse {
+
   // params holds all the parameters of this module.
   Params params = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
 }
+
+message QueryGetRelayMiningDifficultyRequest {
+  string serviceId = 1;
+}
+
+message QueryGetRelayMiningDifficultyResponse {
+  RelayMiningDifficulty relayMiningDifficulty = 1 [(gogoproto.nullable) = false];
+}
+
+message QueryAllRelayMiningDifficultyRequest {
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+}
+
+message QueryAllRelayMiningDifficultyResponse {
+  repeated RelayMiningDifficulty                  relayMiningDifficulty = 1 [(gogoproto.nullable) = false];
+           cosmos.base.query.v1beta1.PageResponse pagination            = 2;
+}
+

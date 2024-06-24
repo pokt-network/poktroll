@@ -7,7 +7,7 @@ sidebar_position: 3
 
 :::warning
 
-TODO(@Olshansk): This is just a placeholder. Use the [relay mining presentation](https://docs.google.com/presentation/d/1xlCGzS_oHXJOzvcu-jHZUfmhD3qeVCzc6SUSJijTuJ4/edit#slide=id.p) and
+TODO_DOCUMENT(@Olshansk): This is just a placeholder. Use the [relay mining presentation](https://docs.google.com/presentation/d/1xlCGzS_oHXJOzvcu-jHZUfmhD3qeVCzc6SUSJijTuJ4/edit#slide=id.p) and
 the [relay mining paper](https://arxiv.org/abs/2305.10672) as a reference for writing this.
 
 :::

@@ -1,4 +1,4 @@
-//go:generate mockgen -destination=../../../testutil/proof/mocks/expected_keepers_mock.go -package=mocks . BankKeeper,SessionKeeper,ApplicationKeeper,AccountKeeper
+//go:generate mockgen -destination=../../../testutil/proof/mocks/expected_keepers_mock.go -package=mocks . BankKeeper,SessionKeeper,ApplicationKeeper,AccountKeeper,SharedKeeper
 
 package types
 
@@ -47,4 +47,9 @@ type ApplicationKeeper interface {
 	GetApplication(ctx context.Context, address string) (app apptypes.Application, found bool)
 	GetAllApplications(ctx context.Context) []apptypes.Application
 	SetApplication(context.Context, apptypes.Application)
+}
+
+// SharedKeeper defines the expected interface needed to retrieve shared information.
+type SharedKeeper interface {
+	GetParams(ctx context.Context) sharedtypes.Params
 }

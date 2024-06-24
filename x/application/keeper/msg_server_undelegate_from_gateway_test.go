@@ -12,9 +12,11 @@ import (
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
+	testsession "github.com/pokt-network/poktroll/testutil/session"
 	"github.com/pokt-network/poktroll/x/application/keeper"
 	"github.com/pokt-network/poktroll/x/application/types"
-	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -316,7 +318,7 @@ func TestMsgServer_UndelegateFromGateway_DelegationIsActiveUntilNextSession(t *t
 
 	// Verify that the gateway is added to the pending undelegation list with the
 	// right sessionEndHeight as the map key.
-	sessionEndHeight := uint64(sessionkeeper.GetSessionEndBlockHeight(undelegationHeight))
+	sessionEndHeight := uint64(testsession.GetSessionEndHeightWithDefaultParams(undelegationHeight))
 	require.Contains(t,
 		app.PendingUndelegations[sessionEndHeight].GatewayAddresses,
 		pendingUndelegateFromAddr,
@@ -326,7 +328,7 @@ func TestMsgServer_UndelegateFromGateway_DelegationIsActiveUntilNextSession(t *t
 	require.Contains(t, app.DelegateeGatewayAddresses, delegateAddr)
 
 	// Verify that the reconstructed delegatee gateway list includes the undelegated gateway.
-	gatewayAddresses := rings.GetRingAddressesAtBlock(&app, sdkCtx.BlockHeight())
+	gatewayAddresses := getRingAddressesAtBlockWithDefaultParams(&app, sdkCtx.BlockHeight())
 	require.Contains(t, gatewayAddresses, pendingUndelegateFromAddr)
 
 	// Increment the block height to the next session and run the pruning
@@ -342,25 +344,24 @@ func TestMsgServer_UndelegateFromGateway_DelegationIsActiveUntilNextSession(t *t
 
 	// Verify that when queried for the next session the reconstructed delegatee
 	// gateway list does not include the undelegated gateway.
-	nextSessionGatewayAddresses := rings.GetRingAddressesAtBlock(&app, nextSessionStartHeight)
+	nextSessionGatewayAddresses := getRingAddressesAtBlockWithDefaultParams(&app, nextSessionStartHeight)
 	require.NotContains(t, nextSessionGatewayAddresses, pendingUndelegateFromAddr)
 
 	// Increment the block height past the tested session's grace period and run
 	// the pruning undelegations logic again.
-	sessionGracePeriodBlockCount := uint64(sessionkeeper.GetSessionGracePeriodBlockCount())
-	afterSessionGracePeriodHeight := int64(sessionEndHeight + sessionGracePeriodBlockCount + 1)
+	afterSessionGracePeriodHeight := int64(sessionEndHeight + shared.SessionGracePeriodBlocks + 1)
 	sdkCtx = sdkCtx.WithBlockHeight(afterSessionGracePeriodHeight)
 	k.EndBlockerPruneAppToGatewayPendingUndelegation(sdkCtx)
 
 	// Verify that when queried for a block height past the tested session's grace period,
 	// the reconstructed delegatee gateway list does not include the undelegated gateway.
-	pastGracePeriodGatewayAddresses := rings.GetRingAddressesAtBlock(&app, afterSessionGracePeriodHeight)
+	pastGracePeriodGatewayAddresses := getRingAddressesAtBlockWithDefaultParams(&app, afterSessionGracePeriodHeight)
 	require.NotContains(t, pastGracePeriodGatewayAddresses, pendingUndelegateFromAddr)
 
 	// Ensure that when queried for the block height corresponding to the session
 	// at which the undelegation occurred, the reconstructed delegatee gateway list
 	// includes the undelegated gateway.
-	gatewayAddressesBeforeUndelegation := rings.GetRingAddressesAtBlock(&app, int64(sessionEndHeight))
+	gatewayAddressesBeforeUndelegation := getRingAddressesAtBlockWithDefaultParams(&app, int64(sessionEndHeight))
 	require.Contains(t, gatewayAddressesBeforeUndelegation, pendingUndelegateFromAddr)
 }
 
@@ -385,12 +386,12 @@ func TestMsgServer_UndelegateFromGateway_DelegationIsPrunedAfterRetentionPeriod(
 
 	// Verify that the the pending undelegation map no longer contains the
 	// sessionEndHeight key.
-	sessionEndHeight := uint64(sessionkeeper.GetSessionEndBlockHeight(undelegationHeight))
+	sessionEndHeight := uint64(testsession.GetSessionEndHeightWithDefaultParams(undelegationHeight))
 	require.Empty(t, app.PendingUndelegations[sessionEndHeight])
 
 	// Verify that the reconstructed delegatee gateway list can no longer include
 	// the undelegated gateway since it has been pruned.
-	gatewayAddressesAfterPruning := rings.GetRingAddressesAtBlock(&app, undelegationHeight)
+	gatewayAddressesAfterPruning := getRingAddressesAtBlockWithDefaultParams(&app, undelegationHeight)
 	require.NotContains(t, gatewayAddressesAfterPruning, pendingUndelegateFromAddr)
 	require.Contains(t, gatewayAddressesAfterPruning, delegateAddr)
 }
@@ -424,14 +425,14 @@ func TestMsgServer_UndelegateFromGateway_RedelegationAfterUndelegationAtTheSameS
 
 	// Verify that the gateway is also present in the pending undelegation list with the
 	// right sessionEndHeight as the map key.
-	sessionEndHeight := uint64(sessionkeeper.GetSessionEndBlockHeight(undelegationHeight))
+	sessionEndHeight := uint64(testsession.GetSessionEndHeightWithDefaultParams(undelegationHeight))
 	require.Contains(t,
 		app.PendingUndelegations[sessionEndHeight].GatewayAddresses,
 		gatewayAddrToRedelegate,
 	)
 
 	// Verify that the reconstructed delegatee gateway list includes the redelegated gateway.
-	gatewayAddresses := rings.GetRingAddressesAtBlock(&app, sdkCtx.BlockHeight())
+	gatewayAddresses := getRingAddressesAtBlockWithDefaultParams(&app, sdkCtx.BlockHeight())
 	require.Contains(t, gatewayAddresses, gatewayAddrToRedelegate)
 
 	// Increment the block height past the undelegation retention period then run
@@ -453,7 +454,7 @@ func TestMsgServer_UndelegateFromGateway_RedelegationAfterUndelegationAtTheSameS
 	require.Empty(t, app.PendingUndelegations[sessionEndHeight])
 
 	// Verify that the reconstructed delegatee gateway list includes the redelegated gateway
-	gatewayAddressesAfterPruning := rings.GetRingAddressesAtBlock(&app, sdkCtx.BlockHeight())
+	gatewayAddressesAfterPruning := getRingAddressesAtBlockWithDefaultParams(&app, sdkCtx.BlockHeight())
 	require.Contains(t, gatewayAddressesAfterPruning, gatewayAddrToRedelegate)
 }
 
@@ -534,7 +535,27 @@ func createAppStakeDelegateAndUndelegate(
 // getUndelegationPruningBlockHeight returns the block height at which undelegations
 // should be pruned for a given undlegation block height.
 func getUndelegationPruningBlockHeight(blockHeight int64) (pruningHeihgt int64) {
-	nextSessionStartHeight := sessionkeeper.GetSessionEndBlockHeight(blockHeight) + 1
+	nextSessionStartHeight := testsession.GetSessionEndHeightWithDefaultParams(blockHeight) + 1
 
-	return nextSessionStartHeight + keeper.GetNumBlocksUndelegationRetention()
+	return nextSessionStartHeight + getNumBlocksUndelegationRetentionWithDefaultParams()
+}
+
+// getNumBlocksUndelegationRetentionWithDefaultParams returns the number of blocks for
+// which undelegations should be kept before being pruned, given the default shared
+// module parameters.
+func getNumBlocksUndelegationRetentionWithDefaultParams() int64 {
+	sharedParams := sharedtypes.DefaultParams()
+	return keeper.GetNumBlocksUndelegationRetention(&sharedParams)
+}
+
+// getRingAddressesAtBlockWithDefaultParams returns the active gateway addresses that
+// need to be used to construct the ring in order to validate that the given app should
+// pay for.
+// It takes into account both active delegations and pending undelegations that
+// should still be part of the ring at the given block height.
+// The ring addresses slice is reconstructed by adding back the past delegated
+// gateways that have been undelegated after the target session end height.
+func getRingAddressesAtBlockWithDefaultParams(app *apptypes.Application, blockHeight int64) []string {
+	sharedParams := sharedtypes.DefaultParams()
+	return rings.GetRingAddressesAtBlock(&sharedParams, app, blockHeight)
 }

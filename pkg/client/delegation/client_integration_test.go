@@ -1,13 +1,7 @@
 package delegation_test
 
-// TODO(@h5law): Figure out how to use real components of the localnet
-//  - Create app and gateway actors
-//  - Stake them
-//  - Delegate to the gateway
-//  - Undelegate from the gateway
-// Currently this test doesn't work, because (I think) it is using a mock
-// keeper etc and this isn't actually interacting with the localnet where
-// the DelegationClient is listening for events from.
+// TODO_TECHDEBT(@bryanchriswhite): Consider refactoring / deleting these tests
+// to
 
 import (
 	"context"
@@ -31,11 +25,11 @@ const (
 	delegationIntegrationSubTimeout = 180 * time.Second
 )
 
-// TODO_UPNEXT(@h5law): Figure out the correct way to subscribe to events on the
-// simulated localnet. Currently this test doesn't work. Although the delegation
+// TODO_TEST(@bryanchriswhite): Figure out the correct way to subscribe to events
+// on the simulated localnet. Currently this test doesn't work. Although the delegation
 // client subscribes it doesn't receive any events.
 func TestDelegationClient_RedelegationsObservables(t *testing.T) {
-	t.Skip("TODO(@h5law): Figure out how to subscribe to events on the simulated localnet")
+	t.Skip("TODO_TEST(@bryanchriswhite): Figure out how to subscribe to events on the simulated localnet")
 	// Create the network with 2 applications and 1 gateway
 	net, appAddresses, gatewayAddr := createNetworkWithApplicationsAndGateways(t)
 	ctx, cancel := context.WithCancel(context.Background())

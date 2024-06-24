@@ -79,7 +79,7 @@ Install the following dependencies:
 6. [Tilt](https://docs.tilt.dev/install.html) - k8s local development tool & environment manager
 
 :::note
-If you've followed the [LocalNet instructions](../internal_infrastructure/localnet.md),
+If you've followed the [LocalNet instructions](../../operate/infrastructure/localnet.md),
 you may already have them installed.
 :::
 
@@ -90,7 +90,7 @@ and inspect it so you have an idea of what's going on!
 
 We'll be manually configuring a few actors to run in your shell for the sake of
 the tutorial so you have visibility into the types of on-chain and off-chain
-actors. In practice, you should be using [localnet](./../internal_infrastructure/localnet.md)
+actors. In practice, you should be using [localnet](../../operate/infrastructure/localnet.md)
 to dynamically scale your actors.
 
 To learn more about the different actors type, see the docs [here](../../protocol/actors/actors.md).
@@ -131,7 +131,7 @@ There are some flaky tests, so you can re-run with the following command without
 needing to regenerate the mocks and types:
 
 ```bash
-make go_test
+make test_all
 ```
 
 ### 1.4 Create a `k8s` cluster
@@ -176,19 +176,19 @@ you can click in the top left corner to view its [grafana dashboard](http://loca
 You can query the status of the blockchain using `poktrolld` by running:
 
 ```bash
-poktrolld status --node=tcp://127.0.0.1:36657 | jq
+poktrolld status --node=tcp://127.0.0.1:26657 | jq
 ```
 
 Alternatively, you use the [CometBFT](https://github.com/cometbft/cometbft) status directly at:
 
 ```bash
-curl -s -X POST localhost:36657/status | jq
+curl -s -X POST localhost:26657/status | jq
 ```
 
 Or at latest block at:
 
 ```bash
-curl -s -X POST localhost:36657/block | jq
+curl -s -X POST localhost:26657/block | jq
 ```
 
 For example, you can get the height of the blockchain by visiting the
@@ -196,7 +196,7 @@ For example, you can get the height of the blockchain by visiting the
 or from the CLI like so:
 
 ```bash
-curl -s -X POST localhost:36657/block | jq '.result.block.last_commit.height'
+curl -s -X POST localhost:26657/block | jq '.result.block.last_commit.height'
 ```
 
 ## 2. Fund New Accounts
@@ -276,7 +276,7 @@ You can send some uPOKT to your `shannon_supplier` by running:
 poktrolld \
   tx bank send \
   faucet $SHANNON_SUPPLIER 420000000000069upokt \
-  --node tcp://127.0.0.1:36657 \
+  --node tcp://127.0.0.1:26657 \
   --home=./localnet/poktrolld
 ```
 
@@ -299,7 +299,7 @@ Let's do the same thing for the `shannon_application`:
 poktrolld \
   tx bank send \
   faucet $SHANNON_APPLICATION 420000000000069upokt \
-  --node tcp://127.0.0.1:36657 \
+  --node tcp://127.0.0.1:26657 \
   --home=./localnet/poktrolld
 ```
 
@@ -382,7 +382,7 @@ poktrolld \
   --config shannon_supplier_config.yaml \
   --keyring-backend test \
   --from shannon_supplier \
-  --node tcp://127.0.0.1:36657 \
+  --node tcp://127.0.0.1:26657 \
   --home=./localnet/poktrolld \
   --yes
 ```
@@ -390,7 +390,7 @@ poktrolld \
 And verify that the supplier is now staked with:
 
 ```bash
-poktrolld query supplier show-supplier $SHANNON_SUPPLIER --node tcp://127.0.0.1:36657
+poktrolld query supplier show-supplier $SHANNON_SUPPLIER --node tcp://127.0.0.1:26657
 ```
 
 ### 3.4 Prepare the RelayMiner configuration
@@ -403,15 +403,15 @@ The following is an example config to get you started:
 
 ```bash
 cat <<EOF >> shannon_relayminer_config.yaml
-signing_key_name: shannon_supplier
+default_signing_key_names: [ "keybase-key-name" ]
 smt_store_path: smt_stores
 metrics:
   enabled: true
   addr: :9090
 pocket_node:
-  query_node_rpc_url: tcp://127.0.0.1:36657
-  query_node_grpc_url: tcp://127.0.0.1:36658
-  tx_node_rpc_url: tcp://127.0.0.1:36657
+  query_node_rpc_url: tcp://127.0.0.1:26657
+  query_node_grpc_url: tcp://127.0.0.1:9090
+  tx_node_rpc_url: tcp://127.0.0.1:26657
 suppliers:
   - service_id: anvil
     listen_url: http://localhost:6942
@@ -488,14 +488,14 @@ poktrolld --home=./localnet/poktrolld \
   --config shannon_app_config.yaml \
   --keyring-backend test \
   --from shannon_application \
-  --node tcp://127.0.0.1:36657 \
+  --node tcp://127.0.0.1:26657 \
   --yes
 ```
 
 And verify that the application is now staked with:
 
 ```bash
-poktrolld query application show-application $SHANNON_APPLICATION --node tcp://127.0.0.1:36657
+poktrolld query application show-application $SHANNON_APPLICATION --node tcp://127.0.0.1:26657
 ```
 
 You can also you re-run, `make app_list` you should see that `SHANNON_APPLICATION` is now staked as an app:
@@ -510,8 +510,8 @@ The following example should get you started:
 
 ```yaml
 cat <<EOF >> shannon_appgate_config.yaml
-query_node_rpc_url: tcp://127.0.0.1:36657
-query_node_grpc_url: tcp://127.0.0.1:36658
+query_node_rpc_url: tcp://127.0.0.1:26657
+query_node_grpc_url: tcp://127.0.0.1:9090
 self_signing: true
 signing_key: shannon_application
 listening_endpoint: http://localhost:42042
@@ -535,7 +535,7 @@ And the start the appgate server locally:
 poktrolld appgate-server \
   --config shannon_appgate_config.yaml \
   --keyring-backend test \
-  --node tcp://127.0.0.1:36657 \
+  --node tcp://127.0.0.1:26657 \
   --home=./localnet/poktrolld
 ```
 
@@ -655,7 +655,7 @@ We went through a low of steps above just so you can get a feel for how things w
 
 That said, you can dynamically scale the number of any actors in LocalNet by ony changing one line!
 
-Go to our [localnet tutorial](./../internal_infrastructure/localnet.md) to learn more.
+Go to our [localnet tutorial](../../operate/infrastructure/localnet.md) to learn more.
 
 ## 7. Explore the tools
 

@@ -11,7 +11,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/logging"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/protocol"
-	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 )
 
 // createClaims maps over the sessionsToClaimObs observable. For each claim batch, it:
@@ -42,6 +41,10 @@ func (rs *relayerSessionsManager) createClaims(
 	)
 
 	// TODO_TECHDEBT: pass failed create claim sessions to some retry mechanism.
+	// TODO_IMPROVE: It may be useful for the retry mechanism which consumes the
+	// observable which corresponds to failSubmitProofsSessionsCh to have a
+	// reference to the error which caused the proof submission to fail.
+	// In this case, the error may not be persistent.
 	_ = failedCreateClaimSessionsObs
 	logging.LogErrors(ctx, filter.EitherError(ctx, eitherClaimedSessionsObs))
 
@@ -62,9 +65,14 @@ func (rs *relayerSessionsManager) mapWaitForEarliestCreateClaimsHeight(
 		ctx context.Context,
 		sessionTrees []relayer.SessionTree,
 	) (_ []relayer.SessionTree, skip bool) {
-		return rs.waitForEarliestCreateClaimsHeight(
+		sessionTreesToClaim := rs.waitForEarliestCreateClaimsHeight(
 			ctx, sessionTrees, failedCreateClaimsSessionsPublishCh,
-		), false
+		)
+		if sessionTreesToClaim == nil {
+			return nil, true
+		}
+
+		return sessionTreesToClaim, false
 	}
 }
 
@@ -82,24 +90,21 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 	// first one from the group to calculate the earliest height for claim creation.
 	sessionEndHeight := sessionTrees[0].GetSessionHeader().GetSessionEndBlockHeight()
 
-	// TODO_TECHDEBT(@red-0ne): Centralize the business logic that involves taking
-	// into account the heights, windows and grace periods into helper functions.
-	// An additional block is added to permit to relays arriving at the last block
-	// of the session to be included in the claim before the smt is closed.
-	createClaimsWindowStartHeight := sessionEndHeight + sessionkeeper.GetSessionGracePeriodBlockCount() + 1
+	createClaimsWindowOpenHeight, err := rs.sharedQueryClient.GetClaimWindowOpenHeight(ctx, sessionEndHeight)
+	if err != nil {
+		failSubmitProofsSessionsCh <- sessionTrees
+		return nil
+	}
 
-	// TODO_BLOCKER: query the on-chain governance parameter once available.
-	// + claimproofparams.GovCreateClaimWindowStartHeightOffset
-
-	// we wait for createClaimsWindowStartHeight to be received before proceeding since we need its hash
-	// to know where this servicer's claim submission window starts.
+	// we wait for createClaimsWindowOpenHeight to be received before proceeding since we need its hash
+	// to know where this servicer's claim submission window opens.
 	rs.logger.Info().
-		Int64("create_claim_window_start_height", createClaimsWindowStartHeight).
+		Int64("create_claim_window_open_height", createClaimsWindowOpenHeight).
 		Msg("waiting & blocking for global earliest claim submission height")
 
 	// TODO_BLOCKER(@bryanchriswhite): The block that'll be used as a source of entropy for
 	// which branch(es) to prove should be deterministic and use on-chain governance params.
-	createClaimsWindowStartBlock := rs.waitForBlock(ctx, createClaimsWindowStartHeight)
+	createClaimsWindowOpenBlock := rs.waitForBlock(ctx, createClaimsWindowOpenHeight)
 
 	claimsFlushedCh := make(chan []relayer.SessionTree)
 	defer close(claimsFlushedCh)
@@ -111,18 +116,18 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 	)
 
 	rs.logger.Info().
-		Int64("create_claim_window_start_height", createClaimsWindowStartBlock.Height()).
-		Str("hash", fmt.Sprintf("%x", createClaimsWindowStartBlock.Hash())).
+		Int64("create_claim_window_open_height", createClaimsWindowOpenBlock.Height()).
+		Str("hash", fmt.Sprintf("%x", createClaimsWindowOpenBlock.Hash())).
 		Msg("received global earliest claim submission height")
 
 	earliestCreateClaimHeight := protocol.GetEarliestCreateClaimHeight(
 		ctx,
-		createClaimsWindowStartBlock,
+		createClaimsWindowOpenBlock,
 	)
 
 	rs.logger.Info().
 		Int64("earliest_create_claim_height", earliestCreateClaimHeight).
-		Str("hash", fmt.Sprintf("%x", createClaimsWindowStartBlock.Hash())).
+		Str("hash", fmt.Sprintf("%x", createClaimsWindowOpenBlock.Hash())).
 		Msg("waiting & blocking for earliest claim creation height for this supplier")
 
 	_ = rs.waitForBlock(ctx, earliestCreateClaimHeight)
@@ -147,17 +152,25 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 			return either.Success(sessionTrees), false
 		}
 
-		sessionClaims := []*relayer.SessionClaim{}
+		// Map key is the supplier address.
+		sessionClaims := map[string][]*relayer.SessionClaim{}
 		for _, session := range sessionTrees {
-			sessionClaims = append(sessionClaims, &relayer.SessionClaim{
-				RootHash:      session.GetClaimRoot(),
-				SessionHeader: session.GetSessionHeader(),
+			supplierAddr := session.SupplierAddress().String()
+
+			sessionClaims[supplierAddr] = append(sessionClaims[supplierAddr], &relayer.SessionClaim{
+				RootHash:        session.GetClaimRoot(),
+				SessionHeader:   session.GetSessionHeader(),
+				SupplierAddress: *session.SupplierAddress(),
 			})
 		}
 
-		if err := rs.supplierClient.CreateClaims(ctx, sessionClaims); err != nil {
-			failedCreateClaimsSessionsPublishCh <- sessionTrees
-			return either.Error[[]relayer.SessionTree](err), false
+		// Create claims for each supplier address in `sessionTrees`.
+		for supplierAddr := range sessionClaims {
+			supplierClient := rs.supplierClients.SupplierClients[supplierAddr]
+			if err := supplierClient.CreateClaims(ctx, sessionClaims[supplierAddr]); err != nil {
+				failedCreateClaimsSessionsPublishCh <- sessionTrees
+				return either.Error[[]relayer.SessionTree](err), false
+			}
 		}
 
 		return either.Success(sessionTrees), false

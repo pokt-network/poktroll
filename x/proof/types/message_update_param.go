@@ -47,10 +47,16 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 
 	// Parameter name must be supported by this module.
 	switch msg.Name {
-	case NameMinRelayDifficultyBits:
+	case ParamMinRelayDifficultyBits:
 		return msg.paramTypeIsInt64()
+	case ParamProofRequestProbability:
+		return msg.paramTypeIsFloat()
+	case ParamProofRequirementThreshold:
+		return msg.paramTypeIsInt64()
+	case ParamProofMissingPenalty:
+		return msg.paramTypeIsCoin()
 	default:
-		return ErrProofParamNameInvalid.Wrapf("unsupported name param %q", msg.Name)
+		return ErrProofParamNameInvalid.Wrapf("unsupported param %q", msg.Name)
 	}
 }
 
@@ -60,6 +66,30 @@ func (msg *MsgUpdateParam) paramTypeIsInt64() error {
 		return ErrProofParamInvalid.Wrapf(
 			"invalid type for param %q expected %T, got %T",
 			msg.Name, &MsgUpdateParam_AsInt64{},
+			msg.AsType,
+		)
+	}
+	return nil
+}
+
+// paramTypeIsFloat checks if the parameter type is Float, returning an error if not.
+func (msg *MsgUpdateParam) paramTypeIsFloat() error {
+	if _, ok := msg.AsType.(*MsgUpdateParam_AsFloat); !ok {
+		return ErrProofParamInvalid.Wrapf(
+			"invalid type for param %q expected %T, got %T",
+			msg.Name, &MsgUpdateParam_AsFloat{},
+			msg.AsType,
+		)
+	}
+	return nil
+}
+
+// paramTypeIsCoin checks if the parameter type is *cosmostypes.Coin, returning an error if not.
+func (msg *MsgUpdateParam) paramTypeIsCoin() error {
+	if _, ok := msg.AsType.(*MsgUpdateParam_AsCoin); !ok {
+		return ErrProofParamInvalid.Wrapf(
+			"invalid type for param %q expected %T, got %T",
+			msg.Name, &MsgUpdateParam_AsCoin{},
 			msg.AsType,
 		)
 	}

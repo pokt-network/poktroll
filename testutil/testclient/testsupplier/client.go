@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"cosmossdk.io/depinject"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
@@ -40,14 +41,22 @@ func NewLocalnetClient(
 	return supplierClient
 }
 
-func NewOneTimeClaimProofSupplierClient(
+func NewOneTimeClaimProofSupplierClientMap(
 	ctx context.Context,
 	t *testing.T,
-) *mockclient.MockSupplierClient {
+	supplierAddress string,
+) *supplier.SupplierClientMap {
 	t.Helper()
 
 	ctrl := gomock.NewController(t)
 	supplierClientMock := mockclient.NewMockSupplierClient(ctrl)
+
+	supplierAccAddress := cosmostypes.MustAccAddressFromBech32(supplierAddress)
+	supplierClientMock.EXPECT().
+		Address().
+		Return(&supplierAccAddress).
+		AnyTimes()
+
 	supplierClientMock.EXPECT().
 		CreateClaims(
 			gomock.Eq(ctx),
@@ -64,5 +73,8 @@ func NewOneTimeClaimProofSupplierClient(
 		Return(nil).
 		Times(1)
 
-	return supplierClientMock
+	supplierClientMap := supplier.NewSupplierClientMap()
+	supplierClientMap.SupplierClients[supplierAddress] = supplierClientMock
+
+	return supplierClientMap
 }

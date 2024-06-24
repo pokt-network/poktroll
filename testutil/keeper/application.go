@@ -20,10 +20,12 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	mocks "github.com/pokt-network/poktroll/testutil/application/mocks"
+	"github.com/pokt-network/poktroll/testutil/application/mocks"
+	testsession "github.com/pokt-network/poktroll/testutil/session"
 	"github.com/pokt-network/poktroll/x/application/keeper"
 	"github.com/pokt-network/poktroll/x/application/types"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // stakedGatewayMap is used to mock whether a gateway is staked or not for use
@@ -67,6 +69,18 @@ func ApplicationKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 		},
 	).AnyTimes()
 
+	mockSharedKeeper := mocks.NewMockSharedKeeper(ctrl)
+	mockSharedKeeper.EXPECT().GetParams(gomock.Any()).
+		DoAndReturn(func(_ context.Context) sharedtypes.Params {
+			return sharedtypes.DefaultParams()
+		}).
+		AnyTimes()
+	mockSharedKeeper.EXPECT().GetSessionEndHeight(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, queryHeight int64) int64 {
+			return testsession.GetSessionEndHeightWithDefaultParams(queryHeight)
+		}).
+		AnyTimes()
+
 	k := keeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKey),
@@ -75,6 +89,7 @@ func ApplicationKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 		mockBankKeeper,
 		mockAccountKeeper,
 		mockGatewayKeeper,
+		mockSharedKeeper,
 	)
 
 	ctx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())

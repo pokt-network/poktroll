@@ -1,11 +1,20 @@
 package testkeyring
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"sync/atomic"
+	"testing"
 
-	sdktypes "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/codec"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	"github.com/cosmos/cosmos-sdk/crypto/hd"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/stretchr/testify/require"
 )
 
 // PreGeneratedAccount holds the address and mnemonic of an account which was
@@ -14,8 +23,8 @@ import (
 // of a specific key in a separate context from that of keyring and/or module
 // genesis state construction.
 type PreGeneratedAccount struct {
-	Address  sdktypes.AccAddress `json:"address"`
-	Mnemonic string              `json:"mnemonic"`
+	Address  cosmostypes.AccAddress `json:"address"`
+	Mnemonic string                 `json:"mnemonic"`
 }
 
 // PreGeneratedAccountIterator is an iterator over the pre-generated accounts.
@@ -26,6 +35,34 @@ type PreGeneratedAccount struct {
 type PreGeneratedAccountIterator struct {
 	accounts  []*PreGeneratedAccount
 	nextIndex uint32
+}
+
+// CreateOnChainAccount creates a new account with the given address keyring UID
+// and stores it in the given keyring and account keeper. It returns the
+// cosmostypes.AccAddress of the created account.
+func CreateOnChainAccount(
+	ctx context.Context,
+	t *testing.T,
+	keyringUID string,
+	keyRing keyring.Keyring,
+	accountKeeper AccountKeeper,
+	preGeneratedAccts *PreGeneratedAccountIterator,
+) cosmostypes.AccAddress {
+	t.Helper()
+
+	// Create an account.
+	acct, ok := preGeneratedAccts.Next()
+	require.True(t, ok)
+
+	// Add the account to the keyring.
+	err := acct.AddToKeyring(keyRing, keyringUID)
+	require.NoError(t, err)
+
+	// Add the account to the account keeper.
+	err = acct.AddToAccountKeeper(ctx, accountKeeper)
+	require.NoError(t, err)
+
+	return acct.Address
 }
 
 // PreGeneratedAccountAtIndex returns the pre-generated account at the given index.
@@ -107,6 +144,39 @@ func (pga *PreGeneratedAccount) UnmarshalString(encodedAccountStr string) error 
 	return json.Unmarshal(accountJson, pga)
 }
 
+// AddToKeyring creates a new account in the given keyring with the given UID
+// from this PreGeneratedAccount.
+func (pga *PreGeneratedAccount) AddToKeyring(keyRing keyring.Keyring, uid string) error {
+	_, err := keyRing.NewAccount(
+		uid,
+		pga.Mnemonic,
+		keyring.DefaultBIP39Passphrase,
+		cosmostypes.FullFundraiserPath,
+		hd.Secp256k1,
+	)
+	return err
+}
+
+// AddToAccountKeeper creates a new account in the given account module keeper
+// from this PreGeneratedAccount.
+func (pga *PreGeneratedAccount) AddToAccountKeeper(
+	ctx context.Context,
+	keeper AccountKeeper,
+) error {
+	pubKey, err := mnemonicToPublicKey(pga.Mnemonic)
+	if err != nil {
+		return err
+	}
+
+	addr := cosmostypes.AccAddress(pubKey.Address().Bytes())
+
+	accountNumber := keeper.NextAccountNumber(ctx)
+	account := authtypes.NewBaseAccount(addr, pubKey, accountNumber, 0)
+	keeper.SetAccount(ctx, account)
+
+	return nil
+}
+
 // mustParsePreGeneratedAccount parses the given base64 and JSON encoded account
 // string into a PreGeneratedAccount. It panics on error.
 func mustParsePreGeneratedAccount(accountStr string) *PreGeneratedAccount {
@@ -115,4 +185,27 @@ func mustParsePreGeneratedAccount(accountStr string) *PreGeneratedAccount {
 		panic(err)
 	}
 	return account
+}
+
+// mnemonicToPublicKey uses an ephemeral keyring to derive a keypair from mnemonic
+// and returns the public key portion.
+func mnemonicToPublicKey(mnemonic string) (cryptotypes.PubKey, error) {
+	// Construct an ephemeral keyring.
+	registry := codectypes.NewInterfaceRegistry()
+	cdc := codec.NewProtoCodec(registry)
+	ephemeralKeyring := keyring.NewInMemory(cdc)
+
+	// Derive a keypair from the mnemonic.
+	record, err := ephemeralKeyring.NewAccount(
+		"",
+		mnemonic,
+		keyring.DefaultBIP39Passphrase,
+		cosmostypes.FullFundraiserPath,
+		hd.Secp256k1,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return record.GetPubKey()
 }

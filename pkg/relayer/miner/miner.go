@@ -15,7 +15,7 @@ import (
 
 var (
 	_ relayer.Miner = (*miner)(nil)
-	// TODO_BLOCKER: query on-chain governance params once available.
+	// TODO_BLOCKER(@Olshansk): query on-chain governance params once available.
 	// Setting this to 0 to effectively disables mining for now.
 	// I.e., all relays are added to the tree.
 	defaultRelayDifficultyBits = 0
@@ -28,7 +28,7 @@ var (
 // Available options:
 //   - WithDifficulty
 //
-// TODO_BLOCKER: The relay hashing and relay difficulty mechanisms & values must come
+// TODO_BLOCKER(@Olshansk): The relay hashing and relay difficulty mechanisms & values must come
 // from on-chain.
 type miner struct {
 	// relayDifficultyBits is the minimum difficulty that a relay must have to be
@@ -92,8 +92,8 @@ func (mnr *miner) mapMineRelay(
 	_ context.Context,
 	relay *servicetypes.Relay,
 ) (_ either.Either[*relayer.MinedRelay], skip bool) {
-	// TODO_TECHDEBT(#446): Centralize the configuration for the SMT spec.
-	// TODO_BLOCKER: marshal using canonical codec.
+	// TODO_TECHDEBT(@red-0ne, #446): Centralize the configuration for the SMT spec.
+	// TODO_TECHDEBT(@red-0ne): marshal using canonical codec.
 	relayBz, err := relay.Marshal()
 	if err != nil {
 		return either.Error[*relayer.MinedRelay](err), false

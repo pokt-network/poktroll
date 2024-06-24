@@ -38,6 +38,11 @@ func (supplierConfig *RelayMinerSupplierConfig) HydrateSupplier(
 		)
 	}
 
+	// NB: Intentionally not verifying SigningKeyNames here.
+	// We'll copy the keys from the root config in `HydrateSuppliers` if this list is empty.
+	// `HydrateSuppliers` is a part of `pkg/relayer/config/suppliers_config_hydrator.go`.
+	supplierConfig.SigningKeyNames = yamlSupplierConfig.SigningKeyNames
+
 	// Add a default endpoint which corresponds to the supplier name if it is not
 	// already in the list
 	if _, ok := existingEndpoints[supplierConfig.ServiceId]; !ok {

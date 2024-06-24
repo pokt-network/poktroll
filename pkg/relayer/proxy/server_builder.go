@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"time"
 
@@ -13,68 +14,91 @@ import (
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-// supplierStakeWaitTime is the time to wait for the supplier to be staked before
-// attempting to retrieve the supplier's on-chain record.
-// This is useful for testing and development purposes, where the supplier
-// may not be staked before the relay miner starts.
-const supplierStakeWaitTime = 1
+const (
+	// supplierStakeWaitTimeSeconds is the time to wait for the supplier to be staked before
+	// attempting to (try again to) retrieve the supplier's on-chain record.
+	// This is useful for testing and development purposes, where the supplier
+	// may not be staked before the relay miner starts.
+	supplierStakeWaitTimeSeconds = 1 * time.Second
+
+	// supplierMaxStakeWaitTimeMinutes is the time to wait before a panic is thrown
+	// if the supplier is still not staked when the time elapses.
+	//
+	// This is intentionally a larger number because if a RelayMiner is provisioned
+	// for this long (either in testing or in prod) without an associated on-chain
+	// supplier being stake, we need to communicate it either to the operator or
+	// to the developer.
+	supplierMaxStakeWaitTimeMinutes = 20 * time.Minute
+)
 
 // BuildProvidedServices builds the advertised relay servers from the supplier's on-chain advertised services.
 // It populates the relayerProxy's `advertisedRelayServers` map of servers for each service, where each server
 // is responsible for listening for incoming relay requests and relaying them to the supported proxied service.
 func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
-	// Get the supplier address from the keyring
-	supplierKey, err := rp.keyring.Key(rp.signingKeyName)
-	if err != nil {
-		return err
-	}
+	rp.AddressToSigningKeyNameMap = make(map[string]string)
+	for _, signingKeyName := range rp.signingKeyNames {
+		// Get the supplier address from the keyring
+		supplierKey, err := rp.keyring.Key(signingKeyName)
+		if err != nil {
+			return err
+		}
 
-	supplierAddress, err := supplierKey.GetAddress()
-	if err != nil {
-		return err
-	}
+		supplierAddress, err := supplierKey.GetAddress()
+		if err != nil {
+			return err
+		}
 
-	// Prevent the RelayMiner from stopping by waiting until its associated supplier
-	// is staked and its on-chain record retrieved.
-	supplier, err := rp.waitForSupplierToStake(ctx, supplierAddress.String())
-	if err != nil {
-		return err
-	}
+		// TODO_MAINNET: We currently block RelayMiner from starting if at least one address
+		// is not staked or staked incorrectly. As node runners will maintain many different
+		// suppliers on one RelayMiner, and we expect them to stake and restake often - it might
+		// not be ideal to block the process from running. However, we should show warnings/errors
+		// in logs (and, potentially, metrics) that their stake is different
+		// from the supplier configuration. If we don't hear feedback on that prior to launching
+		// MainNet it might not be that big of a deal, though.
 
-	// Check that the supplier's advertised services' endpoints are present in
-	// the server config and handled by a server
-	// Iterate over the supplier's advertised services then iterate over each
-	// service's endpoint
-	for _, service := range supplier.Services {
-		for _, endpoint := range service.Endpoints {
-			endpointUrl, err := url.Parse(endpoint.Url)
-			if err != nil {
-				return err
-			}
-			found := false
-			// Iterate over the server configs and check if `endpointUrl` is present
-			// in any of the server config's suppliers' service's PubliclyExposedEndpoints
-			for _, serverConfig := range rp.serverConfigs {
-				supplierService, ok := serverConfig.SupplierConfigsMap[service.Service.Id]
-				if ok && slices.Contains(supplierService.PubliclyExposedEndpoints, endpointUrl.Hostname()) {
-					found = true
-					break
+		// Prevent the RelayMiner from stopping by waiting until its associated supplier
+		// is staked and its on-chain record retrieved.
+		supplier, err := rp.waitForSupplierToStake(ctx, supplierAddress.String())
+		if err != nil {
+			return err
+		}
+
+		// Check that the supplier's advertised services' endpoints are present in
+		// the server config and handled by a server.
+		// Iterate over the supplier's advertised services then iterate over each
+		// service's endpoint
+		for _, service := range supplier.Services {
+			for _, endpoint := range service.Endpoints {
+				endpointUrl, err := url.Parse(endpoint.Url)
+				if err != nil {
+					return err
+				}
+				found := false
+				// Iterate over the server configs and check if `endpointUrl` is present
+				// in any of the server config's suppliers' service's PubliclyExposedEndpoints
+				for _, serverConfig := range rp.serverConfigs {
+					supplierService, ok := serverConfig.SupplierConfigsMap[service.Service.Id]
+					hostname := endpointUrl.Hostname()
+					if ok && slices.Contains(supplierService.PubliclyExposedEndpoints, hostname) {
+						found = true
+						break
+					}
+				}
+
+				if !found {
+					return ErrRelayerProxyServiceEndpointNotHandled.Wrapf(
+						"service endpoint %s not handled by the relay miner",
+						endpoint.Url,
+					)
 				}
 			}
-
-			if !found {
-				return ErrRelayerProxyServiceEndpointNotHandled.Wrapf(
-					"service endpoint %s not handled by the relay miner",
-					endpoint.Url,
-				)
-			}
 		}
-	}
 
-	rp.supplierAddress = supplier.Address
+		rp.AddressToSigningKeyNameMap[supplier.Address] = signingKeyName
 
-	if rp.servers, err = rp.initializeProxyServers(supplier.Services); err != nil {
-		return err
+		if rp.servers, err = rp.initializeProxyServers(supplier.Services); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -96,7 +120,7 @@ func (rp *relayerProxy) initializeProxyServers(
 	for _, serverConfig := range rp.serverConfigs {
 		rp.logger.Info().Str("server host", serverConfig.ListenAddress).Msg("starting relay proxy server")
 
-		// TODO(@h5law): Implement a switch that handles all synchronous
+		// TODO_TECHDEBT(@red-0ne): Implement a switch that handles all synchronous
 		// RPC types in one server type and asynchronous RPC types in another
 		// to create the appropriate RelayServer.
 		// Initialize the server according to the server type defined in the config file
@@ -125,18 +149,31 @@ func (rp *relayerProxy) waitForSupplierToStake(
 	ctx context.Context,
 	supplierAddress string,
 ) (supplier sharedtypes.Supplier, err error) {
+	startTime := time.Now()
 	for {
 		// Get the supplier's on-chain record
 		supplier, err = rp.supplierQuerier.GetSupplier(ctx, supplierAddress)
 
 		// If the supplier is not found, wait for the supplier to be staked.
+		// This enables provisioning and deploying a RelayMiner without staking a
+		// supplier on-chain. For testing purposes, this is particularly useful
+		// to eliminate the needed of additional communication & coordination
+		// between on-chain staking and off-chain provisioning.
 		if err != nil && suppliertypes.ErrSupplierNotFound.Is(err) {
 			rp.logger.Info().Msgf(
 				"Waiting %d seconds for the supplier with address %s to stake",
-				supplierStakeWaitTime,
+				supplierStakeWaitTimeSeconds,
 				supplierAddress,
 			)
-			time.Sleep(supplierStakeWaitTime * time.Second)
+			time.Sleep(supplierStakeWaitTimeSeconds)
+
+			// See the comment above `supplierMaxStakeWaitTimeMinutes` for why
+			// and how this is used.
+			timeElapsed := time.Since(startTime)
+			if timeElapsed > supplierMaxStakeWaitTimeMinutes {
+				panic(fmt.Sprintf("Waited too long (%d minutes) for the supplier to stake. Exiting...", supplierMaxStakeWaitTimeMinutes))
+			}
+
 			continue
 		}
 

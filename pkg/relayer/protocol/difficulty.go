@@ -2,9 +2,6 @@ package protocol
 
 import "math/bits"
 
-// TODO_BLOCKER: Revisit this part of the algorithm after initial TestNet Launch.
-// TODO_TEST: Add extensive tests for the core relay mining business logic.
-
 // MustCountDifficultyBits returns the number of leading zero bits in the given
 // byte slice. It panics if an error is encountered.
 func MustCountDifficultyBits(bz []byte) int {
@@ -19,7 +16,7 @@ func MustCountDifficultyBits(bz []byte) int {
 // CountHashDifficultyBits returns the number of leading zero bits in the given byte
 // slice. It returns an error if the byte slice is all zero bits.
 //
-// TODO_IMPROVE(@h5law): Remove the forloop logic and replace with a simplified
+// TODO_BLOCKER(@Olshansk): Remove the forloop logic and replace with a simplified
 // single method that accounts for the fact that block hashes/paths are always
 // 32 bytes. We use Sha256 (32 bytes) and CosmosSDK defaults to 32 byte block
 // hashes so specifying makes sense here.

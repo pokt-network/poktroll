@@ -12,10 +12,6 @@ understanding of the Pocket Network protocol. It is currently aiming to just
 be a reference and not provide a coherent narrative that is easily accessible
 to all readers.
 
-TODO(@Olshansk): Iterate on this doc & link to governance params.
-
-TODO(@red-0ne): Review this document and submit a PR with updates & edits.
-
 :::
 
 - [Introduction](#introduction)
@@ -26,7 +22,7 @@ TODO(@red-0ne): Review this document and submit a PR with updates & edits.
 - [Application -\> Gateway Delegation](#application---gateway-delegation)
 - [Relay Signatures](#relay-signatures)
   - [Delegating Application Example](#delegating-application-example)
-- [Gateway Off-Chain Operations](#gateway-off-chain-operations)
+- [\[WIP\] Gateway Off-Chain Operations](#wip-gateway-off-chain-operations)
 
 ## Introduction
 
@@ -282,11 +278,6 @@ As an example, consider an `Application` that has delegated to two independent
   one of `Application`, `Gateway 1`, or `Gateway 2`.
 - The `Application` is always the one paying for the service.
 
-<!--
-TODO(@Olshansk): Figure out if there's a way to name the gateways big G (Google)
-and little g (grove) without distracting from the content.
--->
-
 ```mermaid
 flowchart
     S[Supplier]
@@ -338,9 +329,7 @@ stateDiagram-v2
     sigCheck --> Invalid: No
 ```
 
-## Gateway Off-Chain Operations
-
-TODO(@olshansk, @moatus): Expand on this section.
+## [WIP] Gateway Off-Chain Operations
 
 Gateways can design and manage off-chain operations to coordinate with the `Client`
 including by not limited to:
