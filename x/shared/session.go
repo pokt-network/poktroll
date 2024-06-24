@@ -123,10 +123,17 @@ func GetEarliestClaimCommitHeight(
 	// window open block hash and the supplier address.
 	randomNumber := poktrand.SeededInt63(claimWindowOpenBlockHash, []byte(supplierAddr))
 
-	distributionWindowSizeBlocks := sharedParams.ClaimWindowCloseOffsetBlocks - sharedParams.ClaimWindowOpenOffsetBlocks
+	distributionWindowSizeBlocks := GetClaimWindowSizeBlocks(sharedParams)
 	randCreateClaimHeightOffset := randomNumber % int64(distributionWindowSizeBlocks)
 
 	return claimWindowOpenHeight + randCreateClaimHeightOffset
+}
+
+// GetClaimWindowSizeBlocks returns the number of blocks between the opening and closing
+// of the claim window, given the passed sharedParams.
+func GetClaimWindowSizeBlocks(sharedParams *sharedtypes.Params) uint64 {
+	return sharedParams.ClaimWindowCloseOffsetBlocks -
+		sharedParams.ClaimWindowOpenOffsetBlocks
 }
 
 // GetEarliestProofCommitHeight returns the earliest block height at which a proof
