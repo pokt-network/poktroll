@@ -19,13 +19,11 @@ to all readers.
   - [Session Duration](#session-duration)
   - [Session End](#session-end)
 - [Claim](#claim)
-  - [Claim Protobuf](#claim-protobuf)
-  - [CreateClaim Transaction](#createclaim-transaction)
+  - [Protobuf Types](#protobuf-types)
   - [CreateClaim Validation](#createclaim-validation)
   - [Claim Window](#claim-window)
 - [Proof](#proof)
-  - [Proof Protobuf](#proof-protobuf)
-  - [SubmitProof Transaction](#submitproof-transaction)
+  - [Protobuf Types](#protobuf-types-1)
   - [SubmitProof Validation](#submitproof-validation)
   - [Proof Window](#proof-window)
 - [Proof Security](#proof-security)
@@ -36,6 +34,7 @@ to all readers.
     - [Example 2: Path to leaf at partial depth](#example-2-path-to-leaf-at-partial-depth)
     - [Example 3: Path to empty node](#example-3-path-to-empty-node)
 - [Full Lifecycle](#full-lifecycle)
+- [Reference Diagrams](#reference-diagrams)
 
 ## Introduction
 
