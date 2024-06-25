@@ -147,7 +147,45 @@ You can find the definition for the [CreateClaim Transaction here](https://githu
 
 ### CreateClaim Validation
 
-_TODO_DOCUMENT(@bryanchriswhite, @Olshansk): Update this section once [msg_server_create_claim.go](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/x/proof/keeper/msg_server_create_claim.go) is fully implemented._
+When the network receives a [`MsgCreateClaim`](#TODO_link_to_MsgCreateClaim) message, before the claim is persisted
+on-chain, it MUST be validated:
+
+```mermaid
+stateDiagram-v2
+
+[*] --> Validate_Claim
+state Validate_Claim {
+    [*] --> Validate_Basic
+    
+    state Validate_Basic {
+        state if_session_start_gt_0 <<choice>>
+        state if_session_id_empty <<choice>>
+        state if_service_invalid <<choice>>
+        state if_supplier_addr_valid <<choice>>
+        
+        [*] --> if_supplier_addr_valid
+        if_supplier_addr_valid --> Basic_Validation_Error: invalid supplier address
+        if_supplier_addr_valid --> if_session_start_gt_0
+        if_session_start_gt_0 --> Basic_Validation_Error: session start height < 0
+        if_session_start_gt_0 --> if_session_id_empty
+        if_session_id_empty --> Basic_Validation_Error: empty session ID
+        if_session_id_empty --> if_service_invalid
+        if_service_invalid --> Basic_Validation_Error: invalid service
+        if_service_invalid --> [*]
+    }
+
+    Validate_Basic --> Validate_Session_Header
+    Validate_Session_Header
+    Validate_Session_Header --> Validate_Claim_Window
+    Validate_Claim_Window -->[*]
+}
+Validate_Claim --> [*]
+```
+
+#### References:
+- Create claim message basic validation ([`MsgCreateClaim#ValidateBasic()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/types/message_create_claim.go))
+- Session header validation ([diagram](#session-header-validation) / [`msgServer#queryAndValidateSessionHeader()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/keeper/session.go))
+- On-chain claim window validation ([diagram](#TODO) / [`msgServer#validateClaimWindow()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/keeper/session.go))
 
 ### Claim Window
 
@@ -187,7 +225,61 @@ You can find the definition for the [SubmitProof Transaction here](https://githu
 
 ### SubmitProof Validation
 
-_TODO_DOCUMENT(@bryanchriswhite, @Olshansk): Update this section once [msg_server_submit_proof.go](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/x/proof/keeper/msg_server_submit_proof.go) is fully implemented._
+When the network receives a [`MsgSubmitProof`](#TODO_link_to_MsgSubmitProof) message, before the proof is accepted
+on-chain, it MUST be validated:
+
+```mermaid
+stateDiagram-v2
+[*] --> Validate_Proof
+state Validate_Proof {
+  [*] --> Proof_Validate_Basic
+  Proof_Validate_Basic --> Validate_Session_Header
+  Validate_Session_Header --> Validate_Proof_Window
+  Validate_Proof_Window --> Unpack_Proven_Relay
+  
+  state Unpack_Proven_Relay {
+    state if_closest_proof_malformed <<choice>>
+    state if_relay_valid <<choice>>
+    
+    [*] --> if_closest_proof_malformed
+    if_closest_proof_malformed --> Closest_Proof_Unmarshal_Error: cannot unmarshal closest proof
+    if_closest_proof_malformed --> if_relay_valid
+    if_relay_valid --> Relay_Unmarshal_Error: cannot unmarshal relay
+    if_relay_valid --> [*]
+  }
+
+Unpack_Proven_Relay --> Validate_Proven_Relay
+
+state Validate_Proven_Relay {
+  [*] --> Validate_Relay_Request
+  Validate_Relay_Request --> Validate_Relay_Response
+  Validate_Relay_Response --> [*]
+}
+
+state if_closest_proof_path_valid <<choice>>
+state if_relay_difficulty_sufficient <<choice>>
+
+Validate_Proven_Relay --> if_closest_proof_path_valid
+if_closest_proof_path_valid --> Closest_Proof_Path_Verification_Error: incorrect closest Merkle proof path
+if_closest_proof_path_valid --> if_relay_difficulty_sufficient
+if_relay_difficulty_sufficient --> Relay_Difficulty_Error: insufficient relay difficulty
+if_relay_difficulty_sufficient --> Validate_Claim_For_Proof
+
+state if_closest_proof_valid <<choice>>
+  Validate_Claim_For_Proof --> if_closest_proof_valid
+  if_closest_proof_valid --> Closest_Proof_Verification_Error: incorrect closest Merkle proof
+  if_closest_proof_valid --> [*]
+}
+Validate_Proof --> [*]
+```
+
+#### References:
+- Proof basic validation ([diagram](#proof-basic-validation) / [`MsgSubmitProof#ValidateBasic()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/types/message_submit_proof.go))
+- Session header validation ([diagram](#session-header-validation) / [`msgServer#queryAndValidateSessionHeader()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/keeper/session.go))
+- Proof window validation ([diagram](#TODO) / [`msgServer#validateProofWindow()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/keeper/session.go))
+- Proven relay request validation ([diagram](#proof-submission-relay-request-validation) / [`RelayRequest#ValidateBasic()`](https://github.com/pokt-network/poktroll/blob/main/x/service/types/relay.go))
+- Proven relay response validation ([diagram](#proof-submission-relay-response-validation) / [`RelayResponse#ValidateBasic()`](https://github.com/pokt-network/poktroll/blob/main/x/service/types/relay.go))
+- Proof claim validation ([diagram](#proof-submission-claim-validation) / [`msgServer#queryandValidateClaimForProof()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/keeper/msg_server_submit_proof.go))
 
 ### Proof Window
 
@@ -501,4 +593,229 @@ sequenceDiagram
         W ->> S: Token Rewards (Increase Servicer Balance)
         W ->> -A: Token Burn (Decrease Application Stake)
     end
+```
+
+## Reference Diagrams
+
+### Session Header Validation
+
+```mermaid
+stateDiagram-v2
+
+[*] --> Validate_Session_Header
+
+
+state Validate_Session_Header {
+    [*] --> Get_Session
+    state if_get_session_error <<choice>>
+    state if_session_id_mismatch <<choice>>
+    state if_supplier_found <<choice>>
+    Get_Session --> if_get_session_error
+    if_get_session_error --> Session_Header_Validation_Error: get session error
+    if_get_session_error --> if_session_id_mismatch
+    if_session_id_mismatch --> Session_Header_Validation_Error: claim & on-chain session ID mismatch
+    if_session_id_mismatch --> if_supplier_found
+    if_supplier_found --> Session_Header_Validation_Error: claim supplier not in session
+    if_supplier_found --> [*]
+}
+
+Validate_Session_Header --> [*]
+```
+
+### Proof Basic Validation
+
+```mermaid
+stateDiagram-v2
+
+  [*] --> Proof_Validate_Basic
+
+  state Proof_Validate_Basic {
+    state if_supplier_addr_valid <<choice>>
+    state if_app_addr_valid <<choice>>
+    state if_service_id_empty <<choice>>
+    state if_proof_empty <<choice>>
+    [*] --> if_supplier_addr_valid
+    if_supplier_addr_valid --> Basic_Validation_error: invalid supplier address
+    if_supplier_addr_valid --> if_app_addr_valid
+    if_app_addr_valid --> Basic_Validation_error: invalid app address
+    if_app_addr_valid --> if_service_id_empty
+    if_service_id_empty --> Basic_Validation_error: empty service ID
+    if_service_id_empty --> if_proof_empty
+    if_proof_empty --> Basic_Validation_error: empty merkle proof
+    if_proof_empty --> [*]
+  }
+
+  Proof_Validate_Basic --> [*]
+```
+
+### Proof Submission Relay Request Validation
+
+```mermaid
+stateDiagram-v2
+
+[*] --> Validate_Relay_Request
+state Validate_Relay_Request {
+    
+        [*] --> Validate_Relay_Request_Basic
+
+    state Validate_Relay_Request_Basic {
+        state if_request_valid <<choice>>
+        state if_request_signature_empty <<choice>>
+        [*] --> Validate_Relay_Request_Session_Header*
+        Validate_Relay_Request_Session_Header* --> if_request_valid
+        if_request_valid --> Relay_Request_Validation_Error: invalid relay request session header
+        if_request_valid --> if_request_signature_empty
+        if_request_signature_empty --> Relay_Request_Validation_Error: invalid relay request ring signature
+        if_request_signature_empty --> [*]
+    }
+
+    Validate_Relay_Request_Basic --> Compare_Relay_Request_Session_Header
+
+    state Compare_Relay_Request_Session_Header {
+        state if_req_session_header_mismatch <<choice>>
+        [*] --> Compare_Session_Header_To_Proof(Relay_Request)
+        Compare_Session_Header_To_Proof(Relay_Request) --> if_req_session_header_mismatch
+        if_req_session_header_mismatch --> Relay_Request_&_Proof_Session_Mismatch_Error
+        if_req_session_header_mismatch --> [*]
+    }
+
+    Compare_Relay_Request_Session_Header --> Validate_Relay_Request_Signature
+
+    state Validate_Relay_Request_Signature {
+        state if_request_meta_empty <<choice>>
+        state if_ring_sig_empty <<choice>>
+        state if_ring_sig_malformed <<choice>>
+        state if_app_addr_empty <<choice>>
+        state if_ring_valid <<choice>>
+        state if_ring_mismatch <<choice>>
+        state if_ring_sig_valid <<choice>>
+        
+        [*] --> if_request_meta_empty
+        if_request_meta_empty --> Relay_Request_Signature_Error: empty relay request metadata
+        if_request_meta_empty --> if_ring_sig_empty
+        if_ring_sig_empty --> Relay_Request_Signature_Error: empty application ring (request) signature
+        if_ring_sig_empty --> if_ring_sig_malformed
+        if_ring_sig_malformed --> Relay_Request_Signature_Error: malformed application ring (request) signature
+        if_ring_sig_malformed --> if_app_addr_empty
+        if_app_addr_empty --> Relay_Request_Signature_Error: empty application address
+        if_app_addr_empty --> if_ring_valid
+        if_ring_valid --> Relay_Request_Signature_Error: cannot construct application ring
+        if_ring_valid --> if_ring_mismatch
+        if_ring_mismatch --> Relay_Request_Signature_Error: wrong application ring
+        if_ring_mismatch --> if_ring_sig_valid
+        if_ring_sig_valid --> Relay_Request_Signature_Error: invalid application ring (request) signature
+        if_ring_sig_valid --> [*]
+    }
+
+    Validate_Relay_Request_Signature --> [*]
+
+}
+Validate_Relay_Request --> [*]
+```
+
+### Proof Submission Relay Response Validation
+
+```mermaid
+stateDiagram-v2
+
+[*] --> Validate_Relay_Response
+state Validate_Relay_Response {
+    
+        [*] --> Validate_Relay_Response_Basic
+
+    state Validate_Relay_Response_Basic {
+        state if_response_valid <<choice>>
+        state if_supplier_signature_empty <<choice>>
+        state if_response_meta_empty <<choice>>
+        [*] --> if_response_meta_empty
+        if_response_meta_empty --> Relay_Response_Validation_Error: empty relay resopnse metadata
+        if_response_meta_empty --> Validate_Relay_Response_Session_Header*
+        Validate_Relay_Response_Session_Header* --> if_response_valid
+        if_response_valid --> Relay_Response_Validation_Error: invalid relay response session header
+        if_response_valid --> if_supplier_signature_empty
+        if_supplier_signature_empty --> Relay_Response_Validation_Error: empty supplier (response) signature
+        if_supplier_signature_empty --> [*]
+    }
+
+    Validate_Relay_Response_Basic --> Compare_Relay_Response_Session_Header
+
+     state Compare_Relay_Response_Session_Header {
+        state if_res_session_header_mismatch <<choice>>
+        [*] --> Compare_Session_Header_To_Proof(Relay_Response)
+        Compare_Session_Header_To_Proof(Relay_Response) --> if_res_session_header_mismatch
+        if_res_session_header_mismatch --> Relay_Response_&_Proof_Session_Mismatch_Error
+        if_res_session_header_mismatch --> [*]
+    }
+
+    Compare_Relay_Response_Session_Header --> Validate_Relay_Response_Signature
+
+    state Validate_Relay_Response_Signature {
+        state if_supplier_pubkey_exists <<choice>>
+        state if_supplier_sig_malformed <<choice>>
+
+        [*] --> if_supplier_pubkey_exists
+        if_supplier_pubkey_exists --> Relay_Response_Signature_Error: no supplier public key on-chain
+        if_supplier_pubkey_exists --> if_supplier_sig_malformed
+        if_supplier_sig_malformed --> Relay_Response_Signature_Error: cannot unmarshal supplier (response) signature
+    }
+
+    Validate_Relay_Response_Signature --> [*]
+
+}
+Validate_Relay_Response --> [*]
+```
+
+### Proof Session Header Comparison
+
+```mermaid
+stateDiagram-v2
+
+[*] --> Compare_Session_Header_To_Proof
+state Compare_Session_Header_To_Proof {
+        state if_app_addr_mismatch <<choice>>
+        state if_service_id_mismatch <<choice>>
+        state if_session_start_mismatch <<choice>>
+        state if_session_end_mismatch <<choice>>
+        state if_session_id_mismatch <<choice>>
+        [*] --> if_app_addr_mismatch
+        if_app_addr_mismatch --> Session_Header_Mismatch_Error: proof msg application address mismatch
+        if_app_addr_mismatch -->  if_service_id_mismatch
+        if_service_id_mismatch --> Session_Header_Mismatch_Error: proof msg service ID mismatch
+        if_service_id_mismatch --> if_session_start_mismatch
+        if_session_start_mismatch -->Session_Header_Mismatch_Error: proof msg session start mismatch
+        if_session_start_mismatch --> if_session_end_mismatch
+        if_session_end_mismatch --> Session_Header_Mismatch_Error: proof msg session end mismatch
+        if_session_end_mismatch --> if_session_id_mismatch
+        if_session_id_mismatch --> Session_Header_Mismatch_Error: proof msg session ID mismatch
+        if_session_id_mismatch --> [*]
+}
+Compare_Session_Header_To_Proof --> [*]
+```
+
+### Proof Submission Claim Validation
+
+```mermaid
+stateDiagram-v2
+
+  [*] --> Validate_Claim_For_Proof
+  state Validate_Claim_For_Proof {
+    state if_claim_found <<choice>>
+    state if_proof_session_start_mismatch <<choice>>
+    state if_proof_session_end_mismatch <<choice>>
+    state if_proof_app_addr_mismatch <<choice>>
+    state if_proof_service_mismatch <<choice>>
+
+    [*] --> if_claim_found
+    if_claim_found --> Claim_Validation_Error: claim not found
+    if_claim_found --> if_proof_session_start_mismatch
+    if_proof_session_start_mismatch --> Claim_Validation_Error: proof session start mismatch
+    if_proof_session_start_mismatch --> if_proof_session_end_mismatch
+    if_proof_session_end_mismatch --> Claim_Validation_Error: proof session end mismatch
+    if_proof_session_end_mismatch --> if_proof_app_addr_mismatch
+    if_proof_app_addr_mismatch --> Claim_Validation_Error: proof application address mismatch
+    if_proof_app_addr_mismatch --> if_proof_service_mismatch
+    if_proof_service_mismatch --> Claim_Validation_Error: proof service ID mismatch
+    if_proof_service_mismatch --> [*]
+  }
+  Validate_Claim_For_Proof --> [*]
 ```
