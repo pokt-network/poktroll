@@ -543,7 +543,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		polyzero.NewLogger(),
 		prooftypes.NewAppKeeperQueryClient(applicationKeeper),
 		prooftypes.NewAccountKeeperQueryClient(accountKeeper),
-		prooftypes.NewSharedKeeperQueryClient(sharedKeeper),
+		prooftypes.NewSharedKeeperQueryClient(sharedKeeper, sessionKeeper),
 	))
 	require.NoError(t, err)
 	integrationApp.ringClient = ringClient
