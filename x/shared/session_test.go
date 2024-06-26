@@ -19,7 +19,7 @@ func TestGetEarliestClaimCommitHeight_IsDeterministic(t *testing.T) {
 	)
 
 	test := func() int64 {
-		return GetEarliestClaimCommitHeight(
+		return GetEarliestSupplierClaimCommitHeight(
 			&sharedParams,
 			queryHeight,
 			claimWindowOpenBlockHash[:],
@@ -54,7 +54,7 @@ func TestGetEarliestProofCommitHeight_IsDeterministic(t *testing.T) {
 	)
 
 	test := func() int64 {
-		return GetEarliestProofCommitHeight(
+		return GetEarliestSupplierProofCommitHeight(
 			&sharedParams,
 			queryHeight,
 			proofWindowOpenBlockHash[:],
@@ -127,7 +127,7 @@ func TestClaimProofWindows(t *testing.T) {
 				require.GreaterOrEqual(t, proofWindowOpenHeight, claimWindowCloseHeight)
 				require.Greater(t, proofWindowCloseHeight, proofWindowOpenHeight)
 
-				earliestClaimCommitHeight := GetEarliestClaimCommitHeight(
+				earliestClaimCommitHeight := GetEarliestSupplierClaimCommitHeight(
 					&test.sharedParams,
 					test.queryHeight,
 					blockHash,
@@ -136,7 +136,7 @@ func TestClaimProofWindows(t *testing.T) {
 
 				require.Greater(t, claimWindowCloseHeight, earliestClaimCommitHeight)
 
-				earliestProofCommitHeight := GetEarliestProofCommitHeight(
+				earliestProofCommitHeight := GetEarliestSupplierProofCommitHeight(
 					&test.sharedParams,
 					test.queryHeight,
 					blockHash,

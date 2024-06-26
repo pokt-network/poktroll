@@ -117,7 +117,7 @@ func (sq *sharedQuerier) GetSessionGracePeriodEndHeight(
 // to get the most recently (asynchronously) observed (and cached) value.
 // TODO_BLOCKER(@bryanchriswhite, #543): We also don't really want to use the current value of the params.
 // Instead, we should be using the value that the params had for the session which includes queryHeight.
-func (sq *sharedQuerier) GetEarliestClaimCommitHeight(ctx context.Context, queryHeight int64, supplierAddr string) (int64, error) {
+func (sq *sharedQuerier) GetEarliestSupplierClaimCommitHeight(ctx context.Context, queryHeight int64, supplierAddr string) (int64, error) {
 	sharedParams, err := sq.GetParams(ctx)
 	if err != nil {
 		return 0, err
@@ -134,7 +134,7 @@ func (sq *sharedQuerier) GetEarliestClaimCommitHeight(ctx context.Context, query
 	// NB: Byte slice representation of block hashes don't need to be normalized.
 	claimWindowOpenBlockHash := claimWindowOpenBlock.BlockID.Hash.Bytes()
 
-	return shared.GetEarliestClaimCommitHeight(
+	return shared.GetEarliestSupplierClaimCommitHeight(
 		sharedParams,
 		queryHeight,
 		claimWindowOpenBlockHash,
@@ -150,7 +150,7 @@ func (sq *sharedQuerier) GetEarliestClaimCommitHeight(ctx context.Context, query
 // to get the most recently (asynchronously) observed (and cached) value.
 // TODO_BLOCKER(@bryanchriswhite, #543): We also don't really want to use the current value of the params.
 // Instead, we should be using the value that the params had for the session which includes queryHeight.
-func (sq *sharedQuerier) GetEarliestProofCommitHeight(ctx context.Context, queryHeight int64, supplierAddr string) (int64, error) {
+func (sq *sharedQuerier) GetEarliestSupplierProofCommitHeight(ctx context.Context, queryHeight int64, supplierAddr string) (int64, error) {
 	sharedParams, err := sq.GetParams(ctx)
 	if err != nil {
 		return 0, err
@@ -164,7 +164,7 @@ func (sq *sharedQuerier) GetEarliestProofCommitHeight(ctx context.Context, query
 		return 0, err
 	}
 
-	return shared.GetEarliestProofCommitHeight(
+	return shared.GetEarliestSupplierProofCommitHeight(
 		sharedParams,
 		queryHeight,
 		proofWindowOpenBlock.BlockID.Hash,

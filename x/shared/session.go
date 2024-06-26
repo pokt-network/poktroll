@@ -113,10 +113,10 @@ func GetProofWindowCloseHeight(sharedParams *sharedtypes.Params, queryHeight int
 		int64(sharedParams.GetProofWindowCloseOffsetBlocks())
 }
 
-// GetEarliestClaimCommitHeight returns the earliest block height at which a claim
+// GetEarliestSupplierClaimCommitHeight returns the earliest block height at which a claim
 // for the session that includes queryHeight can be committed for a given supplier
 // and the passed sharedParams.
-func GetEarliestClaimCommitHeight(
+func GetEarliestSupplierClaimCommitHeight(
 	sharedParams *sharedtypes.Params,
 	queryHeight int64,
 	claimWindowOpenBlockHash []byte,
@@ -148,10 +148,10 @@ func GetClaimWindowSizeBlocks(sharedParams *sharedtypes.Params) uint64 {
 	return windowSizeBlocks
 }
 
-// GetEarliestProofCommitHeight returns the earliest block height at which a proof
+// GetEarliestSupplierProofCommitHeight returns the earliest block height at which a proof
 // for the session that includes queryHeight can be committed for a given supplier
 // and the passed sharedParams.
-func GetEarliestProofCommitHeight(
+func GetEarliestSupplierProofCommitHeight(
 	sharedParams *sharedtypes.Params,
 	queryHeight int64,
 	proofWindowOpenBlockHash []byte,
