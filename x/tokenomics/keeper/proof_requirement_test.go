@@ -2,7 +2,6 @@ package keeper_test
 
 import (
 	"math/rand"
-	"sync"
 	"sync/atomic"
 	"testing"
 
@@ -10,6 +9,7 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
+	poktrand "github.com/pokt-network/poktroll/pkg/crypto/rand"
 	"github.com/pokt-network/poktroll/testutil/keeper"
 	tetsproof "github.com/pokt-network/poktroll/testutil/proof"
 	"github.com/pokt-network/poktroll/testutil/sample"
@@ -23,9 +23,6 @@ func init() {
 }
 
 func TestKeeper_IsProofRequired(t *testing.T) {
-	// TODO_UPNEXT(#618): reuse requiredSampleSize()
-	t.SkipNow()
-
 	// Set expectedCompute units to be below the proof requirement threshold to only
 	// exercise the probabilistic branch of the #isProofRequired() logic.
 	expectedComputeUnits := prooftypes.DefaultProofRequirementThreshold - 1
@@ -33,37 +30,33 @@ func TestKeeper_IsProofRequired(t *testing.T) {
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 
 	var (
-		sampleSize  = 15000
 		probability = prooftypes.DefaultProofRequestProbability
 		tolerance   = 0.01
+		confidence  = 0.99
 
 		numTrueSamples atomic.Int64
 	)
 
-	// Sample concurrently to save time.
-	wg := sync.WaitGroup{}
-	for i := 0; i < sampleSize; i++ {
-		wg.Add(1)
-		go func() {
-			claim := tetsproof.ClaimWithRandomHash(t, sample.AccAddress(), sample.AccAddress(), expectedComputeUnits)
+	sampleSize := poktrand.RequiredSampleSize(float64(probability), tolerance, confidence)
 
-			isRequired, err := keepers.Keeper.IsProofRequiredForClaim(sdkCtx, &claim)
-			require.NoError(t, err)
+	// NB: Not possible to sample concurrently, this causes a race condition due to the keeper's gas meter.
+	for i := int64(0); i < sampleSize; i++ {
+		claim := tetsproof.ClaimWithRandomHash(t, sample.AccAddress(), sample.AccAddress(), expectedComputeUnits)
 
-			if isRequired {
-				numTrueSamples.Add(1)
-			}
-			wg.Done()
-		}()
+		isRequired, err := keepers.Keeper.IsProofRequiredForClaim(sdkCtx, &claim)
+		require.NoError(t, err)
+
+		if isRequired {
+			numTrueSamples.Add(1)
+		}
 	}
-	wg.Wait()
 
 	expectedNumTrueSamples := float32(sampleSize) * probability
 	expectedNumFalseSamples := float32(sampleSize) * (1 - probability)
 	toleranceSamples := tolerance * float64(sampleSize)
 
 	// Check that the number of samples for each outcome is within the expected range.
-	numFalseSamples := int64(sampleSize) - numTrueSamples.Load()
+	numFalseSamples := sampleSize - numTrueSamples.Load()
 	require.InDeltaf(t, expectedNumTrueSamples, numTrueSamples.Load(), toleranceSamples, "true samples")
 	require.InDeltaf(t, expectedNumFalseSamples, numFalseSamples, toleranceSamples, "false samples")
 }

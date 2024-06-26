@@ -1,56 +1,8 @@
-package keeper
+package rand
 
-import (
-	"math"
-	"sync"
-	"sync/atomic"
-	"testing"
+import "math"
 
-	"github.com/stretchr/testify/require"
-
-	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
-)
-
-func TestRandProbability(t *testing.T) {
-	probability := prooftypes.DefaultProofRequestProbability
-	tolerance := 0.01
-	confidence := 0.99
-
-	sampleSize := requiredSampleSize(float64(probability), tolerance, confidence)
-
-	var numTrueSamples atomic.Int64
-
-	// Sample concurrently to save time.
-	wg := sync.WaitGroup{}
-	for i := 0; i < sampleSize; i++ {
-		wg.Add(1)
-		go func() {
-			rand, err := randProbability(int64(i))
-			require.NoError(t, err)
-
-			if rand < 0 || rand > 1 {
-				t.Fatalf("secureRandFloat64() returned out of bounds value: %f", rand)
-			}
-
-			if rand <= probability {
-				numTrueSamples.Add(1)
-			}
-			wg.Done()
-		}()
-	}
-	wg.Wait()
-
-	expectedNumTrueSamples := float32(sampleSize) * probability
-	expectedNumFalseSamples := float32(sampleSize) * (1 - probability)
-	toleranceSamples := tolerance * float64(sampleSize)
-
-	// Check that the number of samples for each outcome is within the expected range.
-	numFalseSamples := int64(sampleSize) - numTrueSamples.Load()
-	require.InDeltaf(t, expectedNumTrueSamples, numTrueSamples.Load(), toleranceSamples, "true samples")
-	require.InDeltaf(t, expectedNumFalseSamples, numFalseSamples, toleranceSamples, "false samples")
-}
-
-// requiredSampleSize calculates the number of samples needed to achieve a desired confidence level
+// RequiredSampleSize calculates the number of samples needed to achieve a desired confidence level
 // for a given probability and error threshold.
 // Arguments:
 //   - probability: the estimated proportion of the population (e.g., 0.5 for 50%).
@@ -64,7 +16,7 @@ func TestRandProbability(t *testing.T) {
 //
 // The function uses the standard formula for sample size determination for estimating a proportion.
 // For more details, see: https://en.wikipedia.org/wiki/Sample_size_determination#Estimation_of_a_proportion
-func requiredSampleSize(probability, errThreshold, confidence float64) int {
+func RequiredSampleSize(probability, errThreshold, confidence float64) int64 {
 	// Calculate the z-score corresponding to the desired confidence level.
 	// The z-score represents the number of standard deviations a data point
 	// is from the mean in a standard normal distribution. For a given confidence
@@ -78,7 +30,7 @@ func requiredSampleSize(probability, errThreshold, confidence float64) int {
 	// Calculate the number of trials needed
 	n := (z * z * probability * (1 - probability)) / (errThreshold * errThreshold)
 
-	return int(math.Ceil(n))
+	return int64(math.Ceil(n))
 }
 
 // normInv returns the inverse of the standard normal cumulative distribution function (CDF),

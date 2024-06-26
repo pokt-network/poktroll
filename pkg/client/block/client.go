@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"cosmossdk.io/depinject"
-	cometclient "github.com/cosmos/cosmos-sdk/client"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/events"
@@ -34,7 +33,8 @@ const (
 // the interface.
 //
 // Required dependencies:
-//   - client.EventsQueryClient
+// - client.EventsQueryClient
+// - client.BlockQueryClient
 func NewBlockClient(
 	ctx context.Context,
 	deps depinject.Config,
@@ -81,14 +81,14 @@ func NewBlockClient(
 }
 
 // blockReplayClient is BlockClient implementation that combines a CometRPC client
-// to get the its first block at start up and an EventsReplayClient that subscribes
+// to get the initial block at start up and an EventsReplayClient that subscribes
 // to new committed block events.
 // It uses a ReplayObservable to retain and replay past observed blocks.
 type blockReplayClient struct {
 	// onStartQueryClient is the RPC client that is used to query for the initial block
 	// upon blockReplayClient construction. The result of this query is only used if it
 	// returns before the eventsReplayClient receives its first event.
-	onStartQueryClient cometclient.CometRPC
+	onStartQueryClient client.BlockQueryClient
 
 	// eventsReplayClient is the underlying EventsReplayClient that is used to
 	// subscribe to new committed block events. It uses both the Block type

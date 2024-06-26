@@ -19,6 +19,7 @@ import (
 	"context"
 
 	cometrpctypes "github.com/cometbft/cometbft/rpc/core/types"
+	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 	comettypes "github.com/cometbft/cometbft/types"
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
@@ -298,4 +299,11 @@ type SharedQueryClient interface {
 	// GetProofWindowOpenHeight returns the block height at which the proof window of
 	// the session that includes queryHeight opens.
 	GetProofWindowOpenHeight(ctx context.Context, queryHeight int64) (int64, error)
+}
+
+// BlockQueryClient defines an interface that enables the querying of
+// on-chain block information for a given height. If height is nil, the
+// latest block is returned.
+type BlockQueryClient interface {
+	Block(ctx context.Context, height *int64) (*coretypes.ResultBlock, error)
 }
