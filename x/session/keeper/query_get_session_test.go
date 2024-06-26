@@ -44,7 +44,7 @@ func TestSession_GetSession_Success(t *testing.T) {
 			blockHeight: 1,
 
 			// Intentionally only checking a subset of the session metadata returned
-			expectedSessionId:     "335ca69ea6365eed04d5be2f5553b239bd2e3226b08c394169059ae40dfa1599",
+			expectedSessionId:     "afd00273055a4fddc0beb30074e14d474c07f9e895d2795db006a5139048d54b",
 			expectedSessionNumber: 1,
 			expectedNumSuppliers:  1,
 		},

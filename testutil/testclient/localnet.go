@@ -21,10 +21,10 @@ import (
 
 var (
 	// CometLocalTCPURL provides a default URL pointing to the localnet TCP endpoint.
-	CometLocalTCPURL = "tcp://localhost:36657"
+	CometLocalTCPURL = "tcp://localhost:26657"
 
 	// CometLocalWebsocketURL provides a default URL pointing to the localnet websocket endpoint.
-	CometLocalWebsocketURL = "ws://localhost:36657/websocket"
+	CometLocalWebsocketURL = "ws://localhost:26657/websocket"
 
 	// TxConfig provided by app.AppConfig(), intended as a convenience for use in tests.
 	TxConfig client.TxConfig

@@ -2,18 +2,13 @@ package keeper_test
 
 import (
 	"context"
-	"fmt"
 	"os"
-	"strings"
 	"testing"
 
 	"cosmossdk.io/depinject"
 	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
-	ringtypes "github.com/athanorlabs/go-dleq/types"
-	cosmoscrypto "github.com/cosmos/cosmos-sdk/crypto"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	signingtypes "github.com/cosmos/cosmos-sdk/types/tx/signing"
 	"github.com/pokt-network/ring-go"
 	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"
@@ -28,6 +23,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/relayer/session"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/testkeyring"
+	"github.com/pokt-network/poktroll/testutil/testrelayer"
 	"github.com/pokt-network/poktroll/x/proof/keeper"
 	"github.com/pokt-network/poktroll/x/proof/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
@@ -499,11 +495,11 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 
 	// Construct a relay to be mangled such that it fails to deserialize in order
 	// to set the error expectation for the relevant test case.
-	mangledRelay := newEmptyRelay(validSessionHeader, validSessionHeader, supplierAddr)
+	mangledRelay := testrelayer.NewEmptyRelay(validSessionHeader, validSessionHeader, supplierAddr)
 
 	// Ensure valid relay request and response signatures.
-	signRelayRequest(ctx, t, mangledRelay, appAddr, keyRing, ringClient)
-	signRelayResponse(ctx, t, mangledRelay, supplierUid, supplierAddr, keyRing)
+	testrelayer.SignRelayRequest(ctx, t, mangledRelay, appAddr, keyRing, ringClient)
+	testrelayer.SignRelayResponse(ctx, t, mangledRelay, supplierUid, supplierAddr, keyRing)
 
 	// Serialize the relay so that it can be mangled.
 	mangledRelayBz, err := mangledRelay.Marshal()
@@ -795,11 +791,11 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			desc: "relay request signature must be valid",
 			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
 				// Set the relay request signature to an invalid byte slice.
-				invalidRequestSignatureRelay := newEmptyRelay(validSessionHeader, validSessionHeader, supplierAddr)
+				invalidRequestSignatureRelay := testrelayer.NewEmptyRelay(validSessionHeader, validSessionHeader, supplierAddr)
 				invalidRequestSignatureRelay.Req.Meta.Signature = invalidSignatureBz
 
 				// Ensure a valid relay response signature.
-				signRelayResponse(ctx, t, invalidRequestSignatureRelay, supplierUid, supplierAddr, keyRing)
+				testrelayer.SignRelayResponse(ctx, t, invalidRequestSignatureRelay, supplierUid, supplierAddr, keyRing)
 
 				invalidRequestSignatureRelayBz, err := invalidRequestSignatureRelay.Marshal()
 				require.NoError(t, err)
@@ -857,11 +853,11 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			desc: "relay response signature must be valid",
 			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
 				// Set the relay response signature to an invalid byte slice.
-				relay := newEmptyRelay(validSessionHeader, validSessionHeader, supplierAddr)
+				relay := testrelayer.NewEmptyRelay(validSessionHeader, validSessionHeader, supplierAddr)
 				relay.Res.Meta.SupplierSignature = invalidSignatureBz
 
 				// Ensure a valid relay request signature
-				signRelayRequest(ctx, t, relay, appAddr, keyRing, ringClient)
+				testrelayer.SignRelayRequest(ctx, t, relay, appAddr, keyRing, ringClient)
 
 				relayBz, err := relay.Marshal()
 				require.NoError(t, err)
@@ -1203,7 +1199,7 @@ func fillSessionTree(
 	t.Helper()
 
 	for i := 0; i < int(numRelays); i++ {
-		relay := newSignedEmptyRelay(
+		relay := testrelayer.NewSignedEmptyRelay(
 			ctx, t,
 			supplierKeyUid, supplierAddr,
 			reqHeader, resHeader,
@@ -1320,142 +1316,6 @@ func getClosestRelayDifficultyBits(
 	require.NoError(t, err)
 
 	return uint64(relayDifficultyBits)
-}
-
-// newSignedEmptyRelay creates a new relay structure for the given req & res headers.
-// It signs the relay request on behalf of application in the reqHeader.
-// It signs the relay response on behalf of supplier provided..
-func newSignedEmptyRelay(
-	ctx context.Context,
-	t *testing.T,
-	supplierKeyUid, supplierAddr string,
-	reqHeader, resHeader *sessiontypes.SessionHeader,
-	keyRing keyring.Keyring,
-	ringClient crypto.RingClient,
-) *servicetypes.Relay {
-	t.Helper()
-
-	relay := newEmptyRelay(reqHeader, resHeader, supplierAddr)
-	signRelayRequest(ctx, t, relay, reqHeader.GetApplicationAddress(), keyRing, ringClient)
-	signRelayResponse(ctx, t, relay, supplierKeyUid, supplierAddr, keyRing)
-
-	return relay
-}
-
-// newEmptyRelay creates a new relay structure for the given req & res headers
-// WITHOUT any payload or signatures.
-func newEmptyRelay(reqHeader, resHeader *sessiontypes.SessionHeader, supplierAddr string) *servicetypes.Relay {
-	return &servicetypes.Relay{
-		Req: &servicetypes.RelayRequest{
-			Meta: servicetypes.RelayRequestMetadata{
-				SessionHeader:   reqHeader,
-				Signature:       nil, // Signature added elsewhere.
-				SupplierAddress: supplierAddr,
-			},
-			Payload: nil,
-		},
-		Res: &servicetypes.RelayResponse{
-			Meta: servicetypes.RelayResponseMetadata{
-				SessionHeader:     resHeader,
-				SupplierSignature: nil, // Signature added elsewhere.
-			},
-			Payload: nil,
-		},
-	}
-}
-
-// TODO_TECHDEBT(@red-0ne): Centralize this logic in the relayer package.
-// signRelayRequest signs the relay request (updates relay.Req.Meta.Signature)
-// on behalf of appAddr using the clients provided.
-func signRelayRequest(
-	ctx context.Context,
-	t *testing.T,
-	relay *servicetypes.Relay,
-	appAddr string,
-	keyRing keyring.Keyring,
-	ringClient crypto.RingClient,
-) {
-	t.Helper()
-
-	relayReqMeta := relay.GetReq().GetMeta()
-	sessionEndHeight := relayReqMeta.GetSessionHeader().GetSessionEndBlockHeight()
-
-	// Retrieve the signing ring associated with the application address at the session end height.
-	appRing, err := ringClient.GetRingForAddressAtHeight(ctx, appAddr, sessionEndHeight)
-	require.NoError(t, err)
-
-	// Retrieve the signing key associated with the application address.
-	signingKey := getSigningKeyFromAddress(t,
-		appAddr,
-		keyRing,
-	)
-
-	// Retrieve the signable bytes for the relay request.
-	relayReqSignableBz, err := relay.GetReq().GetSignableBytesHash()
-	require.NoError(t, err)
-
-	// Sign the relay request.
-	signature, err := appRing.Sign(relayReqSignableBz, signingKey)
-	require.NoError(t, err)
-
-	// Serialize the signature.
-	signatureBz, err := signature.Serialize()
-	require.NoError(t, err)
-
-	// Update the relay request signature.
-	relay.Req.Meta.Signature = signatureBz
-}
-
-// TODO_TECHDEBT(@red-0ne): Centralize this logic in the relayer package.
-// in the relayer package?
-// signRelayResponse signs the relay response (updates relay.Res.Meta.SupplierSignature)
-// on behalf of supplierAddr using the clients provided.
-func signRelayResponse(
-	_ context.Context,
-	t *testing.T,
-	relay *servicetypes.Relay,
-	supplierKeyUid, supplierAddr string,
-	keyRing keyring.Keyring,
-) {
-	t.Helper()
-
-	// Retrieve ths signable bytes for the relay response.
-	relayResSignableBz, err := relay.GetRes().GetSignableBytesHash()
-	require.NoError(t, err)
-
-	// Sign the relay response.
-	signatureBz, signerPubKey, err := keyRing.Sign(supplierKeyUid, relayResSignableBz[:], signingtypes.SignMode_SIGN_MODE_DIRECT)
-	require.NoError(t, err)
-
-	// Verify the signer address matches the expected supplier address.
-	addr, err := cosmostypes.AccAddressFromBech32(supplierAddr)
-	require.NoError(t, err)
-	addrHexBz := strings.ToUpper(fmt.Sprintf("%x", addr.Bytes()))
-	require.Equal(t, addrHexBz, signerPubKey.Address().String())
-
-	// Update the relay response signature.
-	relay.Res.Meta.SupplierSignature = signatureBz
-}
-
-// getSigningKeyFromAddress retrieves the signing key associated with the given
-// bech32 address from the provided keyring.
-func getSigningKeyFromAddress(t *testing.T, bech32 string, keyRing keyring.Keyring) ringtypes.Scalar {
-	t.Helper()
-
-	addr, err := cosmostypes.AccAddressFromBech32(bech32)
-	require.NoError(t, err)
-
-	armorPrivKey, err := keyRing.ExportPrivKeyArmorByAddress(addr, "")
-	require.NoError(t, err)
-
-	privKey, _, err := cosmoscrypto.UnarmorDecryptPrivKey(armorPrivKey, "")
-	require.NoError(t, err)
-
-	curve := ring_secp256k1.NewCurve()
-	signingKey, err := curve.DecodeToScalar(privKey.Bytes())
-	require.NoError(t, err)
-
-	return signingKey
 }
 
 // resetBlockHeightFn returns a function that resets the block height of the
