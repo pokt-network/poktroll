@@ -196,7 +196,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequiredAndNotProv
 
 	// Validate the event
 	expectedEvent := expectedEvents[0]
-	require.Equal(t, s.expectedComputeUnits, expectedEvent.ComputeUnits)
+	require.Equal(t, s.expectedComputeUnits, expectedEvent.GetNumComputeUnits())
 }
 
 func (s *TestSuite) TestSettlePendingClaims_ClaimSettled_ProofRequiredAndProvided_ViaThreshold() {
@@ -244,8 +244,8 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimSettled_ProofRequiredAndProvide
 
 	// Validate the event
 	expectedEvent := expectedEvents[0]
-	require.True(t, expectedEvent.ProofRequired)
-	require.Equal(t, s.expectedComputeUnits, expectedEvent.ComputeUnits)
+	require.NotEqual(t, prooftypes.ProofNotRequired, expectedEvent.GetProofRequirement())
+	require.Equal(t, s.expectedComputeUnits, expectedEvent.GetNumComputeUnits())
 }
 
 func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_ViaProbability() {
@@ -301,8 +301,8 @@ func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_Vi
 		events, "poktroll.tokenomics.EventClaimSettled")
 	require.Len(t, expectedEvents, 1)
 	expectedEvent := expectedEvents[0]
-	require.True(t, expectedEvent.ProofRequired)
-	require.Equal(t, s.expectedComputeUnits, expectedEvent.ComputeUnits)
+	require.NotEqual(t, prooftypes.ProofNotRequired, expectedEvent.GetProofRequirement())
+	require.Equal(t, s.expectedComputeUnits, expectedEvent.GetNumComputeUnits())
 }
 
 func (s *TestSuite) TestSettlePendingClaims_Settles_WhenAProofIsNotRequired() {
@@ -356,8 +356,8 @@ func (s *TestSuite) TestSettlePendingClaims_Settles_WhenAProofIsNotRequired() {
 
 	// Validate the event
 	expectedEvent := expectedEvents[0]
-	require.False(t, expectedEvent.ProofRequired)
-	require.Equal(t, s.expectedComputeUnits, expectedEvent.ComputeUnits)
+	require.NotEqual(t, prooftypes.ProofNotRequired, expectedEvent.GetProofRequirement())
+	require.Equal(t, s.expectedComputeUnits, expectedEvent.GetNumComputeUnits())
 }
 
 func (s *TestSuite) TestSettlePendingClaims_DoesNotSettle_BeforeProofWindowCloses() {

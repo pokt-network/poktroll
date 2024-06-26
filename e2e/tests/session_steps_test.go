@@ -182,9 +182,7 @@ func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBeSuccess
 		require.Equal(s, app.Address, claim.SessionHeader.ApplicationAddress)
 		require.Equal(s, supplier.Address, claim.SupplierAddress)
 		require.Equal(s, serviceId, claim.SessionHeader.Service.Id)
-		require.Greater(s, claimSettledEvent.ComputeUnits, uint64(0), "compute units should be greater than 0")
-		s.Logf("Claim settled for %d compute units w/ proof requirement: %t\n", claimSettledEvent.ComputeUnits, claimSettledEvent.ProofRequired)
-
+		require.Greater(s, claimSettledEvent.NumComputeUnits, uint64(0), "compute units should be greater than 0")
 		return true
 	}
 

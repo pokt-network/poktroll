@@ -60,17 +60,18 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 		_, isProofFound := k.proofKeeper.GetProof(ctx, sessionId, claim.SupplierAddress)
 		// Using the probabilistic proofs approach, determine if this expiring
 		// claim required an on-chain proof
-		isProofRequiredForClaim, err := k.isProofRequiredForClaim(ctx, &claim)
+		proofRequirement, err := k.proofRequirementForClaim(ctx, &claim)
 		if err != nil {
 			return 0, 0, relaysPerServiceMap, computeUnitsPerServiceMap, err
 		}
-		if isProofRequiredForClaim {
+		if proofRequirement != prooftypes.ProofNotRequired {
 			// If a proof is not found, the claim will expire and never be settled.
 			if !isProofFound {
 				// Emit an event that a claim has expired and being removed without being settled.
 				claimExpiredEvent := types.EventClaimExpired{
-					Claim:        &claim,
-					ComputeUnits: numClaimComputeUnits,
+					Claim:           &claim,
+					NumComputeUnits: numClaimComputeUnits,
+					NumRelays:       numRelaysInSessionTree,
 				}
 				if err := ctx.EventManager().EmitTypedEvent(&claimExpiredEvent); err != nil {
 					return 0, 0, relaysPerServiceMap, computeUnitsPerServiceMap, err
@@ -93,11 +94,20 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 		}
 
 		claimSettledEvent := types.EventClaimSettled{
-			Claim:         &claim,
-			ComputeUnits:  numClaimComputeUnits,
-			ProofRequired: isProofRequiredForClaim,
+			Claim:            &claim,
+			NumComputeUnits:  numClaimComputeUnits,
+			ProofRequirement: proofRequirement,
 		}
 		if err := ctx.EventManager().EmitTypedEvent(&claimSettledEvent); err != nil {
+			return 0, 0, relaysPerServiceMap, computeUnitsPerServiceMap, err
+		}
+
+		if err := ctx.EventManager().EmitTypedEvent(&prooftypes.EventProofUpdated{
+			Claim:           &claim,
+			Proof:           nil,
+			NumRelays:       0,
+			NumComputeUnits: 0,
+		}); err != nil {
 			return 0, 0, relaysPerServiceMap, computeUnitsPerServiceMap, err
 		}
 
@@ -149,14 +159,14 @@ func (k Keeper) getExpiringClaims(ctx sdk.Context) (expiringClaims []prooftypes.
 	return expiringClaims
 }
 
-// isProofRequiredForClaim checks if a proof is required for a claim.
+// proofRequirementForClaim checks if a proof is required for a claim.
 // If it is not, the claim will be settled without a proof.
 // If it is, the claim will only be settled if a valid proof is available.
 // TODO_BLOCKER(@bryanchriswhite, #419): Document safety assumptions of the probabilistic proofs mechanism.
-func (k Keeper) isProofRequiredForClaim(ctx sdk.Context, claim *prooftypes.Claim) (_ bool, err error) {
-	logger := k.logger.With("method", "isProofRequiredForClaim")
+func (k Keeper) proofRequirementForClaim(ctx sdk.Context, claim *prooftypes.Claim) (_ prooftypes.ProofRequirementReason, err error) {
+	logger := k.logger.With("method", "proofRequirementForClaim")
 
-	var requirementReason = telemetry.ProofNotRequired
+	var requirementReason = prooftypes.ProofNotRequired
 
 	// Defer telemetry calls so that they reference the final values the relevant variables.
 	defer func() {
@@ -167,7 +177,7 @@ func (k Keeper) isProofRequiredForClaim(ctx sdk.Context, claim *prooftypes.Claim
 	// is retrieved from the store and validated, on-chain, at time of creation.
 	claimComputeUnits, err := claim.GetNumComputeUnits()
 	if err != nil {
-		return true, err
+		return requirementReason, err
 	}
 
 	proofParams := k.proofKeeper.GetParams(ctx)
@@ -182,40 +192,40 @@ func (k Keeper) isProofRequiredForClaim(ctx sdk.Context, claim *prooftypes.Claim
 	// whether there was a proof submission error downstream from here. This would
 	// require a more comprehensive metrics API.
 	if claimComputeUnits >= proofParams.GetProofRequirementThreshold() {
-		requirementReason = telemetry.ProofRequirementReasonThreshold
+		requirementReason = prooftypes.ProofRequirementReasonThreshold
 
 		logger.Info(fmt.Sprintf(
 			"claim requires proof due to compute units (%d) exceeding threshold (%d)",
 			claimComputeUnits,
 			proofParams.GetProofRequirementThreshold(),
 		))
-		return true, nil
+		return requirementReason, nil
 	}
 
 	// Get the hash of the claim to seed the random number generator.
 	claimHash, err := claim.GetHash()
 	if err != nil {
-		return true, err
+		return requirementReason, err
 	}
 
 	// Sample a pseudo-random value between 0 and 1 to determine if a proof is required probabilistically.
 	randFloat, err := poktrand.SeededFloat32(claimHash[:])
 	if err != nil {
-		return true, err
+		return requirementReason, err
 	}
 
 	// Require a proof probabilistically based on the proof_request_probability param.
 	// NB: A random value between 0 and 1 will be less than or equal to proof_request_probability
 	// with probability equal to the proof_request_probability.
 	if randFloat <= proofParams.GetProofRequestProbability() {
-		requirementReason = telemetry.ProofRequirementReasonProbabilistic
+		requirementReason = prooftypes.ProofRequirementReasonProbabilistic
 
 		logger.Info(fmt.Sprintf(
 			"claim requires proof due to random sample (%.2f) being less than or equal to probability (%.2f)",
 			randFloat,
 			proofParams.GetProofRequestProbability(),
 		))
-		return true, nil
+		return requirementReason, nil
 	}
 
 	logger.Info(fmt.Sprintf(
@@ -225,5 +235,5 @@ func (k Keeper) isProofRequiredForClaim(ctx sdk.Context, claim *prooftypes.Claim
 		randFloat,
 		proofParams.GetProofRequestProbability(),
 	))
-	return false, nil
+	return requirementReason, nil
 }
