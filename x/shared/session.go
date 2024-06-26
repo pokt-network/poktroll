@@ -5,6 +5,11 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
+const (
+	minimumClaimWindowSizeBlocks = 1
+	minimumProofWindowSizeBlocks = 1
+)
+
 // TODO_DOCUMENT(@bryanchriswhite): Move this into the documentation: https://github.com/pokt-network/poktroll/pull/571#discussion_r1630923625
 
 // SessionGracePeriodBlocks is the number of blocks after the session ends before the
@@ -132,8 +137,15 @@ func GetEarliestClaimCommitHeight(
 // GetClaimWindowSizeBlocks returns the number of blocks between the opening and closing
 // of the claim window, given the passed sharedParams.
 func GetClaimWindowSizeBlocks(sharedParams *sharedtypes.Params) uint64 {
-	return sharedParams.ClaimWindowCloseOffsetBlocks -
-		sharedParams.ClaimWindowOpenOffsetBlocks
+	windowSizeBlocks := sharedParams.ClaimWindowCloseOffsetBlocks -
+		sharedParams.ClaimWindowOpenOffsetBlocks -
+		minimumClaimWindowSizeBlocks
+
+	if windowSizeBlocks < 1 {
+		return 1
+	}
+
+	return windowSizeBlocks
 }
 
 // GetEarliestProofCommitHeight returns the earliest block height at which a proof
@@ -151,8 +163,22 @@ func GetEarliestProofCommitHeight(
 	// window open block hash and the supplier address.
 	randomNumber := poktrand.SeededInt63(proofWindowOpenBlockHash, []byte(supplierAddr))
 
-	distributionWindowSizeBlocks := sharedParams.ProofWindowCloseOffsetBlocks - sharedParams.ProofWindowOpenOffsetBlocks
+	distributionWindowSizeBlocks := GetProofWindowSizeBlocks(sharedParams)
 	randCreateProofHeightOffset := randomNumber % int64(distributionWindowSizeBlocks)
 
 	return proofWindowOpenHeight + randCreateProofHeightOffset
+}
+
+// GetProofWindowSizeBlocks returns the number of blocks between the opening and closing
+// of the proof window, given the passed sharedParams.
+func GetProofWindowSizeBlocks(sharedParams *sharedtypes.Params) uint64 {
+	windowSizeBlocks := sharedParams.ProofWindowCloseOffsetBlocks -
+		sharedParams.ProofWindowOpenOffsetBlocks -
+		minimumProofWindowSizeBlocks
+
+	if windowSizeBlocks < 1 {
+		return 1
+	}
+
+	return windowSizeBlocks
 }
