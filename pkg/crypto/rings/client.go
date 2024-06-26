@@ -83,14 +83,7 @@ func (rc *ringClient) GetRingForAddressAtHeight(
 		return nil, err
 	}
 
-	// Get the points on the secp256k1 curve for the public keys in the ring.
-	points, err := pointsFromPublicKeys(ringPubKeys...)
-	if err != nil {
-		return nil, err
-	}
-
-	// Return the ring the constructed from the points retrieved above.
-	return newRingFromPoints(points)
+	return GetRingFromPubKeys(ringPubKeys)
 }
 
 // VerifyRelayRequestSignature verifies the signature of the relay request
@@ -346,6 +339,18 @@ func GetRingAddressesAtSessionEndHeight(
 	}
 
 	return activeDelegationsAtHeight
+}
+
+// GetRingFromPubKeys returns a ring constructed from the public keys provided.
+func GetRingFromPubKeys(ringPubKeys []cryptotypes.PubKey) (*ring.Ring, error) {
+	// Get the points on the secp256k1 curve for the public keys in the ring.
+	points, err := pointsFromPublicKeys(ringPubKeys...)
+	if err != nil {
+		return nil, err
+	}
+
+	// Return the ring the constructed from the points retrieved above.
+	return newRingFromPoints(points)
 }
 
 // ringPointsContain checks if the given ring points map contains the public keys
