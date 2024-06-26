@@ -136,7 +136,7 @@ genesis:
         max_delegated_gateways: "7"
       applicationList:
         - address: pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4
-          delegatee_gateway_addresses: [ ]
+          delegatee_gateway_addresses: []
           service_configs:
             - service:
                 id: anvil
@@ -154,14 +154,14 @@ genesis:
         - address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
           services:
             - endpoints:
-                - configs: [ ]
+                - configs: []
                   rpc_type: JSON_RPC
                   url: http://relayminer1:8545
               service:
                 id: anvil
                 name: ""
             - endpoints:
-                - configs: [ ]
+                - configs: []
                   rpc_type: REST
                   url: http://relayminer1:8545
               service:
