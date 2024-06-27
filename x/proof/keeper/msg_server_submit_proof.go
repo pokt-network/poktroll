@@ -43,9 +43,6 @@ func init() {
 // A proof that's stored on-chain is what leads to rewards (i.e. inflation)
 // downstream, making the series of checks a critical part of the protocol.
 //
-// TODO_BLOCKER(@bryanchriswhite): Prevent proof upserts after the tokenomics
-// module has processed the respective session.
-//
 // Note: The entity sending the SubmitProof messages does not necessarily need
 // to correspond to the supplier signing the proof. For example, a single entity
 // could (theoretically) batch multiple proofs (signed by the corresponding supplier)
@@ -450,30 +447,34 @@ func (k msgServer) validateClosestPath(
 	proof *smt.SparseMerkleClosestProof,
 	sessionHeader *sessiontypes.SessionHeader,
 ) error {
-	// The RelayMiner has to wait until the createClaimWindowStartHeight and the
-	// submitProofWindowStartHeight windows are open to create the claim and
-	// submit the proof respectively.
-	// These windows are calculated as (SessionEndBlockHeight + GracePeriodBlockCount).
+	// The RelayMiner has to wait until the submit claim and proof windows is are open
+	// in order to to create the claim and submit claims and proofs, respectively.
+	// These windows are calculated as specified in the docs;
+	// see: https://dev.poktroll.com/protocol/primitives/claim_and_proof_lifecycle.
 	//
-	// For reference, see relayerSessionsManager.waitForEarliest{CreateClaim,SubmitProof}Height().
+	// For reference, see relayerSessionsManager#waitForEarliest{CreateClaim,SubmitProof}Height().
 	//
 	// The RelayMiner has to wait this long to ensure that late relays (i.e.
 	// submitted during SessionNumber=(N+1) but created during SessionNumber=N) are
 	// still included as part of SessionNumber=N.
 	//
-	// Since smt.ProveClosest is defined in terms of submitProofWindowOpenHeight,
+	// Since smt.ProveClosest is defined in terms of proof window open height,
 	// this block's hash needs to be used for validation too.
 	proofWindowOpenHeight, err := k.sharedQuerier.GetProofWindowOpenHeight(ctx, sessionHeader.GetSessionEndBlockHeight())
 	if err != nil {
 		return err
 	}
-	blockHash := k.sessionKeeper.GetBlockHash(ctx, proofWindowOpenHeight-1)
+
+	// proofWindowOpenHeight - 1 is the block that will have its hash used as the
+	// source of entropy for all the session trees in that batch, waiting for it to
+	// be received before proceeding.
+	proofPathSeedBlockHash := k.sessionKeeper.GetBlockHash(ctx, proofWindowOpenHeight-1)
 
 	// TODO_BETA: Investigate "proof for the path provided does not match one expected by the on-chain protocol"
 	// error that may occur due to block height differing from the off-chain part.
-	fmt.Println("E2E_DEBUG: height for block hash when verifying the proof", proofWindowOpenHeight, sessionHeader.GetSessionId())
+	k.logger.Info("E2E_DEBUG: height for block hash when verifying the proof", proofWindowOpenHeight, sessionHeader.GetSessionId())
 
-	expectedProofPath := GetPathForProof(blockHash, sessionHeader.GetSessionId())
+	expectedProofPath := GetPathForProof(proofPathSeedBlockHash, sessionHeader.GetSessionId())
 	if !bytes.Equal(proof.Path, expectedProofPath) {
 		return types.ErrProofInvalidProof.Wrapf(
 			"the proof for the path provided (%x) does not match one expected by the on-chain protocol (%x)",

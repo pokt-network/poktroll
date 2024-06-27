@@ -31,7 +31,7 @@ func TestTokenomicsIntegrationExample(t *testing.T) {
 	// Query and validate the default shared params
 	sharedQueryClient := sharedtypes.NewQueryClient(integrationApp.QueryHelper())
 	sharedParamsReq := sharedtypes.QueryParamsRequest{}
-	sharedQueryRes, err := sharedQueryClient.Params(integrationApp.SdkCtx(), &sharedParamsReq)
+	sharedQueryRes, err := sharedQueryClient.Params(integrationApp.GetSdkCtx(), &sharedParamsReq)
 	require.NoError(t, err)
 	require.NotNil(t, sharedQueryRes, "unexpected nil params query response")
 	require.EqualValues(t, sharedtypes.DefaultParams(), sharedQueryRes.GetParams())
@@ -40,7 +40,7 @@ func TestTokenomicsIntegrationExample(t *testing.T) {
 
 	// Prepare a request to update the compute_units_to_tokens_multiplier
 	updateTokenomicsParamMsg := &tokenomicstypes.MsgUpdateParam{
-		Authority: integrationApp.Authority(),
+		Authority: integrationApp.GetAuthority(),
 		Name:      tokenomicstypes.ParamComputeUnitsToTokensMultiplier,
 		AsType:    &tokenomicstypes.MsgUpdateParam_AsInt64{AsInt64: 11},
 	}
@@ -55,7 +55,7 @@ func TestTokenomicsIntegrationExample(t *testing.T) {
 
 	// Validate the response is correct and that the value was updated
 	updateTokenomicsParamRes := tokenomicstypes.MsgUpdateParamResponse{}
-	err = integrationApp.Codec().Unmarshal(result.Value, &updateTokenomicsParamRes)
+	err = integrationApp.GetCodec().Unmarshal(result.Value, &updateTokenomicsParamRes)
 	require.NoError(t, err)
 	require.EqualValues(t, uint64(11), uint64(updateTokenomicsParamRes.Params.ComputeUnitsToTokensMultiplier))
 
@@ -64,11 +64,11 @@ func TestTokenomicsIntegrationExample(t *testing.T) {
 	getSessionReq := sessiontypes.QueryGetSessionRequest{
 		ApplicationAddress: integrationApp.DefaultApplication.Address,
 		Service:            integrationApp.DefaultService,
-		BlockHeight:        integrationApp.SdkCtx().BlockHeight(),
+		BlockHeight:        integrationApp.GetSdkCtx().BlockHeight(),
 	}
 
 	// Query the session
-	getSessionRes, err := sessionQueryClient.GetSession(integrationApp.SdkCtx(), &getSessionReq)
+	getSessionRes, err := sessionQueryClient.GetSession(integrationApp.GetSdkCtx(), &getSessionReq)
 	require.NoError(t, err)
 
 	session := getSessionRes.GetSession()
@@ -85,7 +85,7 @@ func TestTokenomicsIntegrationExample(t *testing.T) {
 	)
 
 	// Need to wait until the earliest claim commit height
-	currentBlockHeight := integrationApp.SdkCtx().BlockHeight()
+	currentBlockHeight := integrationApp.GetSdkCtx().BlockHeight()
 	numBlocksUntilClaimWindowIsOpen := int(earliestClaimCommitHeight - currentBlockHeight) //+ 1)
 	for i := 0; i < numBlocksUntilClaimWindowIsOpen; i++ {
 		integrationApp.NextBlock(t)

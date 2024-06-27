@@ -15,9 +15,6 @@ func (k msgServer) CreateClaim(
 	ctx context.Context,
 	msg *types.MsgCreateClaim,
 ) (_ *types.MsgCreateClaimResponse, err error) {
-	// TODO_BLOCKER(@bryanchriswhite): Prevent Claim upserts after the ClaimWindow is closed.
-	// TODO_BLOCKER(@bryanchriswhite): Validate the signature on the Claim message corresponds to the supplier before Upserting.
-
 	// Declare claim to reference in telemetry.
 	var claim types.Claim
 

@@ -109,7 +109,7 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 		return nil
 	}
 
-	// proofPathSeedBlock is the block that will have its hash used as the
+	// proofWindowOpenHeight - 1 is the block that will have its hash used as the
 	// source of entropy for all the session trees in that batch, waiting for it to
 	// be received before proceeding.
 	proofPathSeedBlockHeight := earliestProofsCommitHeight - 1

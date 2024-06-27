@@ -120,7 +120,7 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 
 	// Get the earliestClaimsCommitHeight.
 	supplierAddr := sessionTrees[0].GetSupplierAddress().String()
-	earliestClaimsCommitHeight, err := rs.sharedQueryClient.GetEarliestClaimCommitHeight(ctx, sessionEndHeight, supplierAddr)
+	earliestClaimsCommitHeight, err := rs.sharedQueryClient.GetEarliestSupplierClaimCommitHeight(ctx, sessionEndHeight, supplierAddr)
 	if err != nil {
 		failedCreateClaimsSessionsCh <- sessionTrees
 		return nil
