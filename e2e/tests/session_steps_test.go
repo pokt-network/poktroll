@@ -184,15 +184,13 @@ func (s *suite) sendRelaysForSession(
 }
 
 // waitForTxResultEvent waits for an event to be observed which has the given message action.
-// func (s *suite) waitForTxResultEvent(targetAction string) {
-// func (s *suite) waitForTxResultEvent(waitForEvent waitForEachTxEventFn) {
 func (s *suite) waitForTxResultEvent(eventIsMatch func(*abci.Event) bool) {
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(s.ctx)
 
 	// For each observed event, **asynchronously** check if it contains the given action.
 	channel.ForEach[*abci.TxResult](
 		ctx, s.txResultReplayClient.EventsSequence(ctx),
-		func(ctx context.Context, txResult *abci.TxResult) {
+		func(_ context.Context, txResult *abci.TxResult) {
 			if txResult == nil {
 				return
 			}
@@ -222,7 +220,7 @@ func (s *suite) waitForTxResultEvent(eventIsMatch func(*abci.Event) bool) {
 func (s *suite) waitForNewBlockEvent(
 	isEventMatchFn func(*abci.Event) bool,
 ) {
-	ctx, done := context.WithCancel(context.Background())
+	ctx, done := context.WithCancel(s.ctx)
 
 	// For each observed event, **asynchronously** check if it contains the given action.
 	channel.ForEach[*block.CometNewBlockEvent](
@@ -257,7 +255,7 @@ func (s *suite) waitForNewBlockEvent(
 // field. The type URL is constructed from the given module and eventType arguments
 // where module is the module name and eventType is the protobuf message type name
 // without the "Event" prefix; e.g., pass "tokenomics" and "ClaimSettled" to match
-// the poktroll.tokenomics.EventClaimSettled event.
+// the "poktroll.tokenomics.EventClaimSettled" event.
 func newEventTypeMatchFn(module, eventType string) func(*abci.Event) bool {
 	targetEventType := fmt.Sprintf("poktroll.%s.Event%s", module, eventType)
 	return func(event *abci.Event) bool {
@@ -277,7 +275,7 @@ func newEventTypeMatchFn(module, eventType string) func(*abci.Event) bool {
 // type URL of the message to which a given event corresponds. The target action
 // is constructed from the given module and msgType arguments where module is the
 // module name and msgType is the protobuf message type name without the "Msg" prefix;
-// e.g., pass "proof" and "CreateClaim" to match the poktroll.proof.MsgCreateClaim.
+// e.g., pass "proof" and "CreateClaim" to match the "poktroll.proof.MsgCreateClaim" message.
 func newEventMsgTypeMatchFn(module, msgType string) func(event *abci.Event) bool {
 	targetMsgType := fmt.Sprintf("/poktroll.%s.Msg%s", module, msgType)
 	return func(event *abci.Event) bool {

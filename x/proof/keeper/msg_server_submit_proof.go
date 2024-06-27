@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"hash"
 
@@ -274,13 +275,20 @@ func (k msgServer) SubmitProof(
 	k.UpsertProof(ctx, proof)
 	logger.Info("successfully upserted the proof")
 
-	// NB: Don't return these error, it should not prevent the MsgCreateClaimResopnse
-	// from being returned. Instead, it will be attached as an "error" label to any
-	// metrics tracked in this function.
+	// NB: Don't return these errors, it should not prevent the MsgCreateProofResopnse
+	// from being returned. Instead, they will be joined and attached as an "error" label
+	// to any metrics tracked in this function.
 	// TODO_IMPROVE: While this will surface the error in metrics, it will also cause
-	// any counters not to be incremented even though a new claim might have been inserted.
-	numRelays, err = claim.GetNumRelays()
-	numComputeUnits, err = claim.GetNumComputeUnits()
+	// any counters not to be incremented even though a new proof might have been inserted.
+	var tempErr error
+	numRelays, tempErr = claim.GetNumRelays()
+	if tempErr != nil {
+		err = errors.Join(err, tempErr)
+	}
+	numComputeUnits, tempErr = claim.GetNumComputeUnits()
+	if tempErr != nil {
+		err = errors.Join(err, tempErr)
+	}
 
 	// Emit the appropriate event based on whether the claim was created or updated.
 	var proofUpsertEvent proto.Message
@@ -304,12 +312,14 @@ func (k msgServer) SubmitProof(
 	}
 
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	emitEventErr := sdkCtx.EventManager().EmitTypedEvent(proofUpsertEvent)
+
 	// NB: Don't return this error, it should not prevent the MsgCreateProofResopnse
 	// from being returned. Instead, it will be attached as an "error" label to any
 	// metrics tracked in this function.
 	// TODO_IMPROVE: While this will surface the error in metrics, it will also cause
 	// any counters not to be incremented even though a new proof might have been inserted.
-	err = sdkCtx.EventManager().EmitTypedEvent(proofUpsertEvent)
+	err = errors.Join(err, emitEventErr)
 
 	return &types.MsgSubmitProofResponse{}, nil
 }
