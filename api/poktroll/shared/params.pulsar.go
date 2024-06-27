@@ -681,6 +681,8 @@ type Params struct {
 	NumBlocksPerSession uint64 `protobuf:"varint,1,opt,name=num_blocks_per_session,json=numBlocksPerSession,proto3" json:"num_blocks_per_session,omitempty"`
 	// grace_period_end_offset_blocks is the number of blocks after the session end height,
 	// at which the grace period ends.
+	// Suppliers will get paid for relays serviced during the grace period but will need to recreate a claim if
+	// a previous one was already submitted.
 	GracePeriodEndOffsetBlocks uint64 `protobuf:"varint,2,opt,name=grace_period_end_offset_blocks,json=gracePeriodEndOffsetBlocks,proto3" json:"grace_period_end_offset_blocks,omitempty"`
 	// claim_window_open_offset_blocks is the number of blocks after the session grace
 	// period height, at which the claim window opens.
