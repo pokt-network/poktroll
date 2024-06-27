@@ -244,7 +244,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimSettled_ProofRequiredAndProvide
 
 	// Validate the event
 	expectedEvent := expectedEvents[0]
-	require.NotEqual(t, prooftypes.ProofNotRequired, expectedEvent.GetProofRequirement())
+	require.NotEqual(t, prooftypes.ProofRequirementReason_NOT_REQUIRED, expectedEvent.GetProofRequirement())
 	require.Equal(t, s.expectedComputeUnits, expectedEvent.GetNumComputeUnits())
 }
 
@@ -301,7 +301,7 @@ func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_Vi
 		events, "poktroll.tokenomics.EventClaimSettled")
 	require.Len(t, expectedEvents, 1)
 	expectedEvent := expectedEvents[0]
-	require.NotEqual(t, prooftypes.ProofNotRequired, expectedEvent.GetProofRequirement())
+	require.NotEqual(t, prooftypes.ProofRequirementReason_NOT_REQUIRED, expectedEvent.GetProofRequirement())
 	require.Equal(t, s.expectedComputeUnits, expectedEvent.GetNumComputeUnits())
 }
 
@@ -356,7 +356,7 @@ func (s *TestSuite) TestSettlePendingClaims_Settles_WhenAProofIsNotRequired() {
 
 	// Validate the event
 	expectedEvent := expectedEvents[0]
-	require.NotEqual(t, prooftypes.ProofNotRequired, expectedEvent.GetProofRequirement())
+	require.Equal(t, prooftypes.ProofRequirementReason_NOT_REQUIRED.String(), expectedEvent.GetProofRequirement().String())
 	require.Equal(t, s.expectedComputeUnits, expectedEvent.GetNumComputeUnits())
 }
 
