@@ -9,129 +9,114 @@ Poktroll load-testing suite.
 
 - [Overview](#overview)
 - [Dependencies](#dependencies)
+- [Load Test manifests](#load-test-manifests)
+- [Test Features](#test-features)
 - [How to run tests](#how-to-run-tests)
-  - [Common k6 CLI flags](#common-k6-cli-flags)
-- [Understanding Output](#understanding-output)
-  - [CLI Output](#cli-output)
-  - [HTML Report](#html-report)
-  - [Adding a new load test](#adding-a-new-load-test)
-  - [Sophisticated Reporting](#sophisticated-reporting)
-- [Troubleshooting](#troubleshooting)
-- [File structure](#file-structure)
+  - [LocalNet](#localnet)
+    - [Reading the results](#reading-the-results)
+  - [Non-ephemeral networks (TestNets, MainNet, etc)](#non-ephemeral-networks-testnets-mainnet-etc)
+    - [Prerequisites](#prerequisites)
+    - [Modify the load test manifest](#modify-the-load-test-manifest)
+    - [Run the test](#run-the-test)
+    - [Reading the results](#reading-the-results-1)
+- [How to write your own tests](#how-to-write-your-own-tests)
 
 ## Overview
 
-We use [k6](https://k6.io/) for load testing. For detailed information about k6 internals and best practices, please refer to the [k6 documentation](https://grafana.com/docs/k6/latest/).
+We built a load-testing suite on top of [Gherkin](https://cucumber.io/docs/gherkin/) which allows to write simple and human readable tests.
 
 ## Dependencies
 
-- [k6](https://grafana.com/docs/k6/latest/get-started/installation/)
 - (For local suite execution) [LocalNet](../infrastructure/localnet.md)
+- [Golang](https://go.dev/dl/)
+
+## Load Test manifests
+
+Load test manifests are YAML files that describe the environment of the network the test can be run against. Properties 
+such as what blockchain address to use to fund and stake applications, what suppliers and gateways to use are 
+all covered in the manifest YAML file. [The LocalNet's manifest](https://github.com/pokt-network/poktroll/blob/main/load-testing/loadtest_manifest_localnet.yaml)
+can be used as an example - it includes comments for each property in the manefest.
+
+## Test Features
+
+Test features are stored in the [load-testing/tests](https://github.com/pokt-network/poktroll/tree/main/load-testing/tests) directory,
+covering various use cases.
+
+As the load-testing suite is built on top of Gherkin, the features files contain human-readable load tests.
+For example, here is a simple feature that checks if the `anvil` node can handle the maximum number of concurrent users:
+
+```
+Feature: Loading anvil node only
+  Scenario Outline: Anvil can handle the maximum number of concurrent users
+    Given anvil is running
+    And load of <num_requests> concurrent requests for the "eth_blockNumber" JSON-RPC method
+    Then load is handled within <timeout> seconds
+
+    Examples:
+      | num_requests | timeout |
+      | 10           | 1       |
+      | 100          | 1       |
+      | 1000         | 5       |
+      | 10000        | 10      |
+```
+
+The natural human-readable text is parsed by [gocuke](https://github.com/regen-network/gocuke). 
 
 ## How to run tests
 
-Tests are stored in the [load-testing/tests](https://github.com/pokt-network/poktroll/tree/main/load-testing/tests) folder, covering various use cases.
+### LocalNet
 
-For instance, here's a basic load test sending requests through `AppGateServer`, which proxies them to `RelayMiner`:
+We have a handy make target to run the tests on the LocalNet.
 
-```bash
-k6 run load-testing/tests/appGateServerEtherium.js
-```
+1. Make sure [LocalNet](../infrastructure/localnet.md) is up and running;
+2. In your `localnet_config.yaml` file, make sure to set `gateways.count` and `relayminers.count` to `3`;
+3. Run `make acc_initialize_pubkeys` to initialize the public keys in the blockchain state;
+4. Run `make test_load_relays_stress_localnet` to run all tests on LocalNet.
 
-### Common k6 CLI flags
+#### Reading the results
 
-The `k6` load testing tool provides various command-line flags to customize and control your load tests. Below are some of the key flags that you can use:
+- The CLI output shows standard Go test output. If there are no issues during the test execution, you'll see `PASS`, otherwise the test will show `FAIL` and the error that caused the test to fail will be shown.
+- As the test progresses, the obserability stack continously gathers the metric data from off-chain actors. On LocalNet, [Grafana can be accessed on 3003 port](http://localhost:3003/?orgId=1). `Stress test` and `Load Testing` dashboards can be helpful to understand current state of the system.
 
-- `--vus`: Specifies the number of virtual users (VUs) to simulate. This flag allows you to set the concurrency level of your load test.
+### Non-ephemeral networks (TestNets, MainNet, etc)
 
-  - Example: `k6 run script.js --vus=50` runs the test with 50 virtual users.
+Such networks have been generated with random addresses, so we need to modify the load test manifest to reflect 
+the accounts from that network.
 
-- `--duration`: Defines the duration for which the test should run. You can specify the time in seconds (s), minutes (m), or hours (h).
+::: info
+Such networks usually have other participants and load testing can be performed against the off-chain actors deployed by
+other people. As a result of running the test against the software you don't control and can't observe - you won't
+get the metrics and logs. If you wish to gather metrics, logs and look at behavior of the off-chain actors, you can 
+create a new service and deploy your own gateways and suppliers, and run the test against that new service. As a result
+you'll get full observability information from the software you deployed.
+:::
 
-  - Example: `k6 run script.js --duration=1m` runs the test for 1 minute.
+#### Prerequisites
 
-- `--http-debug`: Enables HTTP debugging. This flag can be set to `full` for detailed logging of all HTTP requests and responses. Useful for troubleshooting and debugging your tests.
-  - Use `--http-debug` for a summary of HTTP requests.
-  - Use `--http-debug=full` for detailed request and response logging.
-  - Example: `k6 run script.js --http-debug=full` provides a detailed log of HTTP transactions.
+- An address with tokens that will be used to fund and stake applications. It must be available on the local keychain (e.g. `poktrolld keys list`)
+- A list of gateways to issue requests to. They could be gateways hosted by other people, or they can be your own gateways.
+- If you are running a test on a custom service, then make sure the suppliers are set up and ready to accept requests.
 
-The default configurations for VUs and duration are in the [config file](https://github.com/pokt-network/poktroll/tree/main/load-testing/config/index.js). Override these defaults by passing the appropriate flags to the `k6` command. For example:
+#### Modify the load test manifest
 
-```bash
-k6 run load-testing/tests/appGateServerEtherium.js --vus=300 --duration=30s
-```
+Using [loadtest_manifest_example.yaml](https://github.com/pokt-network/poktroll/blob/main/load-testing/loadtest_manifest_example.yaml)
+as a reference, modify it to reflect the values for your test.
 
-For a comprehensive list of available flags and their usage, refer to the [k6 documentation](https://grafana.com/docs/k6/latest/).
+#### Run the test
 
-## Understanding Output
-
-### CLI Output
-
-Post-test, basic performance metrics are available:
-
-```
-  scenarios: (100.00%) 1 scenario, 100 max VUs, 1m30s max duration (incl. graceful stop):
-           * default: 100 looping VUs for 1m0s (gracefulStop: 30s)
-
-INFO[0061] [k6-reporter v2.3.0] Generating HTML summary report  source=console
-     ✓ is status 200
-     ✓ is successful JSON-RPC response
-
-     checks.........................: 100.00% ✓ 12000     ✗ 0
-     data_received..................: 1.6 MB  27 kB/s
-     data_sent......................: 1.2 MB  19 kB/s
-     http_req_blocked...............: avg=52.52µs min=0s     med=2µs    max=7.08ms  p(90)=4µs     p(95)=6µs
-     http_req_connecting............: avg=37.73µs min=0s     med=0s     max=5.48ms  p(90)=0s      p(95)=0s
-     http_req_duration..............: avg=8.51ms  min=1.58ms med=5.98ms max=81.98ms p(90)=15.45ms p(95)=19.97ms
-       { expected_response:true }...: avg=8.51ms  min=1.58ms med=5.98ms max=81.98ms p(90)=15.45ms p(95)=19.97ms
-     http_req_failed................: 0.00%   ✓ 0         ✗ 6000
-     http_req_receiving.............: avg=42.18µs min=5µs    med=25µs   max=5.71ms  p(90)=65µs    p(95)=125µs
-     http_req_sending...............: avg=26.5µs  min=2µs    med=9µs    max=7.2ms   p(90)=21µs    p(95)=42µs
-     http_req_tls_handshaking.......: avg=0s      min=0s     med=0s     max=0s      p(90)=0s      p(95)=0s
-     http_req_waiting...............: avg=8.44ms  min=1.55ms med=5.93ms max=81.28ms p(90)=15.38ms p(95)=19.82ms
-     http_reqs......................: 6000    98.915624/s
-     iteration_duration.............: avg=1s      min=1s     med=1s     max=1.08s   p(90)=1.01s   p(95)=1.02s
-     iterations.....................: 6000    98.915624/s
-     vus............................: 100     min=100     max=100
-
-running (1m00.7s), 000/100 VUs, 6000 complete and 0 interrupted iterations
-default ✓ [======================================] 100 VUs  1m0s
-```
-
-### HTML Report
-
-An HTML report is generated in the execution directory. Open it in your default browser:
+We have a handy makefile target to run the `relays_stress.feature` with the modified manifest (`loadtest_manifest_example.yaml`):
 
 ```bash
-open summary.html
+make test_load_relays_stress_example
 ```
 
-### Adding a new load test
+#### Reading the results
 
-TODO_DOCUMENT(@okdas): Add link to PR next time a new type of load test is added.
+If the test was ran against the suppliers and gateways that are not hosted by you, but rather the community members, you can
+only look at the transactions on blockchain and the test output. If you deployed your own service, then you will have full observability 
+and you should be able to see all the metrics, logs and behavior of the system under load in Grafana or any other monitoring tool that is set up for your service.
 
-### Sophisticated Reporting
+## How to write your own tests
 
-We're developing advanced reporting that integrates additional tags set in the code. This will require time-series databases and is planned for DevNets.
-
-## Troubleshooting
-
-To debug, activate the logging feature:
-
-`--http-debug` or `--http-debug=full`
-
-## File structure
-
-```
-load-testing
-├── README.md
-├── config
-│   └── index.js
-├── modules                              # reusable code for scenarios and tests
-│   └── etheriumRequests.js
-├── scenarios                            # different scenarios for tests
-│   └── requestBlockNumberEtherium.js
-└── tests                                # test scripts
-    ├── anvilDirectEtherium.js
-    └── appGateServerEtherium.js
-```
+Please refer to the [gocuke documentation](https://github.com/regen-network/gocuke?tab=readme-ov-file#quick-start). You
+can also use a simple [anvil test](https://github.com/pokt-network/poktroll/blob/main/load-testing/tests/anvil_test.go) as a reference.
