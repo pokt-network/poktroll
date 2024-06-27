@@ -71,7 +71,7 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 		{
 			desc: "proof message height equals proof window open height",
 			getProofMsgHeight: func(sharedParams *sharedtypes.Params, queryHeight int64, supplierAddr string) int64 {
-				return shared.GetEarliestProofCommitHeight(
+				return shared.GetEarliestSupplierProofCommitHeight(
 					sharedParams,
 					queryHeight,
 					claimWindowOpenBlockHash,
@@ -161,7 +161,7 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 			)
 
 			// Advance the block height to the test claim msg height.
-			claimMsgHeight := shared.GetEarliestClaimCommitHeight(
+			claimMsgHeight := shared.GetEarliestSupplierClaimCommitHeight(
 				&sharedParams,
 				sessionHeader.GetSessionEndBlockHeight(),
 				claimWindowOpenBlockHash,
@@ -282,7 +282,7 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 
 	// Advance the block height to the claim window open height.
 	sharedParams := keepers.SharedKeeper.GetParams(ctx)
-	claimMsgHeight := shared.GetEarliestClaimCommitHeight(
+	claimMsgHeight := shared.GetEarliestSupplierClaimCommitHeight(
 		&sharedParams,
 		sessionHeader.GetSessionEndBlockHeight(),
 		claimWindowOpenHeightBlockHash,
@@ -304,7 +304,7 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 		keepers,
 	)
 
-	earliestProofCommitHeight := shared.GetEarliestProofCommitHeight(
+	earliestProofCommitHeight := shared.GetEarliestSupplierProofCommitHeight(
 		&sharedParams,
 		sessionHeader.GetSessionEndBlockHeight(),
 		proofWindowOpenHeightBlockHash,
@@ -485,7 +485,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 
 	// Advance the block height to the earliest claim commit height.
 	sharedParams := keepers.SharedKeeper.GetParams(ctx)
-	claimMsgHeight := shared.GetEarliestClaimCommitHeight(
+	claimMsgHeight := shared.GetEarliestSupplierClaimCommitHeight(
 		&sharedParams,
 		validSessionHeader.GetSessionEndBlockHeight(),
 		claimWindowOpenBlockHash,

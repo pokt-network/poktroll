@@ -77,7 +77,7 @@ func TestTokenomicsIntegrationExample(t *testing.T) {
 	// Figure out how many blocks we need to wait until the earliest claim commit height
 	// Query and validate the default shared params
 	var claimWindowOpenBlockHash []byte
-	earliestClaimCommitHeight := shared.GetEarliestClaimCommitHeight(
+	earliestClaimCommitHeight := shared.GetEarliestSupplierClaimCommitHeight(
 		&sharedParams,
 		session.GetHeader().GetSessionEndBlockHeight(),
 		claimWindowOpenBlockHash,

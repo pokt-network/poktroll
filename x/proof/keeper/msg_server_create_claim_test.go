@@ -37,7 +37,7 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 		{
 			desc: "claim message height equals earliest claim commit height",
 			getClaimMsgHeight: func(sharedParams *sharedtypes.Params, queryHeight int64) int64 {
-				return shared.GetEarliestClaimCommitHeight(
+				return shared.GetEarliestSupplierClaimCommitHeight(
 					sharedParams,
 					queryHeight,
 					claimWindowOpenBlockHash,
@@ -181,7 +181,7 @@ func TestMsgServer_CreateClaim_Error_OutsideOfWindow(t *testing.T) {
 		sessionHeader.GetSessionEndBlockHeight(),
 	)
 
-	earliestClaimCommitHeight := shared.GetEarliestClaimCommitHeight(
+	earliestClaimCommitHeight := shared.GetEarliestSupplierClaimCommitHeight(
 		&sharedParams,
 		sessionHeader.GetSessionEndBlockHeight(),
 		claimWindowOpenBlockHash,
@@ -201,7 +201,7 @@ func TestMsgServer_CreateClaim_Error_OutsideOfWindow(t *testing.T) {
 				types.ErrProofClaimOutsideOfWindow.Wrapf(
 					"current block height (%d) is less than the session's earliest claim commit height (%d)",
 					earliestClaimCommitHeight-1,
-					shared.GetEarliestClaimCommitHeight(
+					shared.GetEarliestSupplierClaimCommitHeight(
 						&sharedParams,
 						sessionHeader.GetSessionEndBlockHeight(),
 						claimWindowOpenBlockHash,

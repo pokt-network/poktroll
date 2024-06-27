@@ -103,7 +103,7 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 	// session trees by supplier to re-use as much code as possible and still
 	// support batching proofs.
 	supplierAddr := sessionTrees[0].GetSupplierAddress()
-	earliestProofsCommitHeight, err := rs.sharedQueryClient.GetEarliestProofCommitHeight(ctx, sessionEndHeight, supplierAddr.String())
+	earliestProofsCommitHeight, err := rs.sharedQueryClient.GetEarliestSupplierProofCommitHeight(ctx, sessionEndHeight, supplierAddr.String())
 	if err != nil {
 		failedSubmitProofsSessionsCh <- sessionTrees
 		return nil

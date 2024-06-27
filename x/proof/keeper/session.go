@@ -99,7 +99,7 @@ func (k msgServer) validateClaimWindow(
 	claimWindowCloseHeight := shared.GetClaimWindowCloseHeight(&sharedParams, sessionEndHeight)
 
 	// Get the earliest claim commit height for the given supplier.
-	earliestClaimCommitHeight, err := k.sharedQuerier.GetEarliestClaimCommitHeight(
+	earliestClaimCommitHeight, err := k.sharedQuerier.GetEarliestSupplierClaimCommitHeight(
 		ctx,
 		sessionEndHeight,
 		msg.GetSupplierAddress(),
@@ -163,7 +163,7 @@ func (k msgServer) validateProofWindow(
 	proofWindowCloseHeight := shared.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
 
 	// Get the earliest proof commit height for the given supplier.
-	earliestProofCommitHeight, err := k.sharedQuerier.GetEarliestProofCommitHeight(
+	earliestProofCommitHeight, err := k.sharedQuerier.GetEarliestSupplierProofCommitHeight(
 		ctx,
 		sessionEndHeight,
 		msg.GetSupplierAddress(),
