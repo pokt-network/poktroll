@@ -1,10 +1,12 @@
 package shared
 
 import (
+	"context"
 	"math/rand"
 	"sync"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/testutil/sample"
@@ -13,82 +15,137 @@ import (
 
 func TestGetEarliestClaimCommitHeight_IsDeterministic(t *testing.T) {
 	var (
-		claimWindowOpenBlockHash [32]byte
-		queryHeight              = int64(1)
-		supplierAddr             = sample.AccAddress()
-		sharedParams             = sharedtypes.DefaultParams()
+		sharedParams = sharedtypes.DefaultParams()
+		ctx, cancel  = context.WithCancel(context.Background())
+		wg           = sync.WaitGroup{}
 	)
 
-	test := func() int64 {
-		return GetEarliestSupplierClaimCommitHeight(
-			&sharedParams,
-			queryHeight,
-			claimWindowOpenBlockHash[:],
-			supplierAddr,
-		)
-	}
-
 	// Randomize queryHeight, claimWindowOpenBlockHash, and supplierAddr.
-	for randomizeIdx := 0; randomizeIdx < 20; randomizeIdx++ {
-		queryHeight = rand.Int63()
-
-		supplierAddr = sample.AccAddress()
-
-		_, err := rand.Read(claimWindowOpenBlockHash[:])
-		require.NoError(t, err)
-
-		expected := test()
-
-		// Ensure consecutive calls are deterministic.
-		for deterministicIdx := 0; deterministicIdx < 1000; deterministicIdx++ {
-			require.Equalf(t, expected, test(), "on call number %d", deterministicIdx)
+	for randomizeIdx := 0; randomizeIdx < 500; randomizeIdx++ {
+		select {
+		case <-ctx.Done():
+			cancel()
+			return
+		default:
 		}
+
+		wg.Add(1)
+
+		// NB: sample concurrently to save time.
+		go func() {
+			queryHeight := rand.Int63()
+			supplierAddr := sample.AccAddress()
+			var claimWindowOpenBlockHash [32]byte
+
+			_, err := rand.Read(claimWindowOpenBlockHash[:])
+			require.NoError(t, err)
+
+			expected := GetEarliestSupplierClaimCommitHeight(
+				&sharedParams,
+				queryHeight,
+				claimWindowOpenBlockHash[:],
+				supplierAddr,
+			)
+
+			// Ensure consecutive calls are deterministic.
+			for deterministicIdx := 0; deterministicIdx < 1000; deterministicIdx++ {
+				select {
+				case <-ctx.Done():
+					cancel()
+					return
+				default:
+				}
+
+				wg.Add(1)
+				go func() {
+					actual := GetEarliestSupplierClaimCommitHeight(
+						&sharedParams,
+						queryHeight,
+						claimWindowOpenBlockHash[:],
+						supplierAddr,
+					)
+					require.Equalf(t, expected, actual, "on call number %d", deterministicIdx)
+					wg.Done()
+				}()
+			}
+			wg.Done()
+		}()
 	}
+
+	wg.Wait()
+	cancel()
 }
 
 func TestGetEarliestProofCommitHeight_IsDeterministic(t *testing.T) {
 	var (
-		proofWindowOpenBlockHash [32]byte
-		sharedParams             = sharedtypes.DefaultParams()
+		sharedParams = sharedtypes.DefaultParams()
+		ctx, cancel  = context.WithCancel(context.Background())
+		wg           = sync.WaitGroup{}
 	)
 
-	test := func(queryHeight int64, supplierAddr string) int64 {
-		return GetEarliestSupplierProofCommitHeight(
-			&sharedParams,
-			queryHeight,
-			proofWindowOpenBlockHash[:],
-			supplierAddr,
-		)
-	}
+	for randomizeIdx := 0; randomizeIdx < 500; randomizeIdx++ {
+		select {
+		case <-ctx.Done():
+			cancel()
+			return
+		default:
+		}
 
-	wg := sync.WaitGroup{}
-	wg.Add(1000)
-	for randomizeIdx := 0; randomizeIdx < 1000; randomizeIdx++ {
+		wg.Add(1)
+
 		// NB: sample concurrently to save time.
 		go func() {
 			// Randomize queryHeight, proofWindowOpenBlockHash, and supplierAddr.
 			queryHeight := rand.Int63()
 			supplierAddr := sample.AccAddress()
+			var proofWindowOpenBlockHash [32]byte
 			_, err := rand.Read(proofWindowOpenBlockHash[:])
-			require.NoError(t, err)
 
-			// Gompute expected value.
-			expected := test(queryHeight, supplierAddr)
+			if !assert.NoError(t, err) {
+				t.Log("cancelling")
+				cancel()
+				return
+			}
+
+			// Compute expected value.
+			expected := GetEarliestSupplierProofCommitHeight(
+				&sharedParams,
+				queryHeight,
+				proofWindowOpenBlockHash[:],
+				supplierAddr,
+			)
 
 			// Ensure consecutive calls are deterministic.
-			wg.Add(1000)
 			for deterministicIdx := 0; deterministicIdx < 1000; deterministicIdx++ {
+				select {
+				case <-ctx.Done():
+					return
+				default:
+				}
+
+				wg.Add(1)
+
 				// NB: sample concurrently to save time.
 				go func() {
+					actual := GetEarliestSupplierProofCommitHeight(
+						&sharedParams,
+						queryHeight,
+						proofWindowOpenBlockHash[:],
+						supplierAddr,
+					)
 
-					require.Equalf(t, expected, test(queryHeight, supplierAddr), "on call number %d", deterministicIdx)
+					if !assert.Equalf(t, expected, actual, "on call number %d", deterministicIdx) {
+						cancel()
+					}
 					wg.Done()
 				}()
 			}
-			wg.Wait()
 			wg.Done()
 		}()
 	}
+
+	wg.Wait()
+	cancel()
 }
 
 func TestClaimProofWindows(t *testing.T) {
