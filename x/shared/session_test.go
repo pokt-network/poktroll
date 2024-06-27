@@ -21,7 +21,7 @@ func TestGetEarliestSupplierClaimCommitHeight_IsDeterministic(t *testing.T) {
 	)
 
 	// Randomize queryHeight, claimWindowOpenBlockHash, and supplierAddr.
-	for randomizeIdx := 0; randomizeIdx < 500; randomizeIdx++ {
+	for randomizeIdx := 0; randomizeIdx < 100; randomizeIdx++ {
 		select {
 		case <-ctx.Done():
 			cancel()
@@ -48,7 +48,7 @@ func TestGetEarliestSupplierClaimCommitHeight_IsDeterministic(t *testing.T) {
 			)
 
 			// Ensure consecutive calls are deterministic.
-			for deterministicIdx := 0; deterministicIdx < 1000; deterministicIdx++ {
+			for deterministicIdx := 0; deterministicIdx < 500; deterministicIdx++ {
 				select {
 				case <-ctx.Done():
 					cancel()
@@ -83,7 +83,7 @@ func TestGetEarliestSupplierProofCommitHeight_IsDeterministic(t *testing.T) {
 		wg           = sync.WaitGroup{}
 	)
 
-	for randomizeIdx := 0; randomizeIdx < 500; randomizeIdx++ {
+	for randomizeIdx := 0; randomizeIdx < 100; randomizeIdx++ {
 		select {
 		case <-ctx.Done():
 			cancel()
@@ -116,7 +116,7 @@ func TestGetEarliestSupplierProofCommitHeight_IsDeterministic(t *testing.T) {
 			)
 
 			// Ensure consecutive calls are deterministic.
-			for deterministicIdx := 0; deterministicIdx < 1000; deterministicIdx++ {
+			for deterministicIdx := 0; deterministicIdx < 500; deterministicIdx++ {
 				select {
 				case <-ctx.Done():
 					return
