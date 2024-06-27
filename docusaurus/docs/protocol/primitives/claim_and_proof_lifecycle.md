@@ -94,7 +94,7 @@ gantt
         Session N Start: milestone, sns, 00, 0s
         num_blocks_per_session: nbps, 00, 4s
         Session N End: milestone, sne, after nbps, 0s
-        grace_period_end_offset_blocks: gpof, after sne, 2s
+        grace_period_end_offset_blocks: gpof, after sne, 1s
         Grace Period End: milestone, gpe, after gpof, 0s
         Session N + 1 Start: milestone, sns1, after sne, 0s
         num_blocks_per_session: nbps2, after sns1, 4s
@@ -116,7 +116,7 @@ gantt
 | Parameter                          | Description                                                                                                                                               | Default |
 |------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|---------|
 | `num_blocks_per_session`           | The number of blocks between the session start & end heights. Relays handled in these blocks are included in session N.                                   | 4       |
-| `grace_period_end_offset_blocks`   | The number of blocks after the session end height, at which the grace period ends. Relays handled in these blocks are also included in session N.         | 2       |
+| `grace_period_end_offset_blocks`   | The number of blocks after the session end height, at which the grace period ends. Valid relays from both sessions N and N +1 are accepted in these blocks.         | 1       |
 | `claim_window_open_offset_blocks`  | The number of blocks after the session grace period height, at which the claim window opens. Valid claims for session N will be rejected in these blocks. | 0       |
 | `claim_window_close_offset_blocks` | The number of blocks after the claim window open height, at which the claim window closes. Valid claims for session N will be accepted in these blocks.   | 4       |
 | `proof_window_open_offset_blocks`  | The number of blocks after the claim window close height, at which the proof window opens. Valid proofs for session N will be rejected in these blocks.   | 0       |
