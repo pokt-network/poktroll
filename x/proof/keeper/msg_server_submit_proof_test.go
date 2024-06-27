@@ -21,6 +21,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/protocol"
 	"github.com/pokt-network/poktroll/pkg/relayer/session"
+	testutilevents "github.com/pokt-network/poktroll/testutil/events"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/testkeyring"
 	"github.com/pokt-network/poktroll/testutil/testrelayer"
@@ -138,10 +139,10 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 			require.NoError(t, err)
 
 			// Submit the corresponding proof.
-			numRelays := uint(5)
+			expectedNumRelays := uint(5)
 			sessionTree := newFilledSessionTree(
 				ctx, t,
-				numRelays,
+				expectedNumRelays,
 				supplierUid, supplierAddr,
 				sessionHeader, sessionHeader, sessionHeader,
 				keyRing,
@@ -157,7 +158,7 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 			ctx = sdkCtx
 
 			// Create a valid claim.
-			createClaimAndStoreBlockHash(
+			claim := createClaimAndStoreBlockHash(
 				ctx, t, 1,
 				supplierAddr,
 				appAddr,
@@ -191,6 +192,19 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 			require.Equal(t, proofMsg.SessionHeader.SessionId, proofs[0].GetSessionHeader().GetSessionId())
 			require.Equal(t, proofMsg.SupplierAddress, proofs[0].GetSupplierAddress())
 			require.Equal(t, proofMsg.SessionHeader.GetSessionEndBlockHeight(), proofs[0].GetSessionHeader().GetSessionEndBlockHeight())
+
+			events := sdkCtx.EventManager().Events()
+			require.Equal(t, 2, len(events))
+
+			proofSubmittedEvents := testutilevents.FilterEvents[*prooftypes.EventProofSubmitted](t, events, "poktroll.proof.EventProofSubmitted")
+			require.Equal(t, 1, len(proofSubmittedEvents))
+
+			proofSubmittedEvent := proofSubmittedEvents[0]
+
+			require.EqualValues(t, claim, proofSubmittedEvent.GetClaim())
+			require.EqualValues(t, &proofs[0], proofSubmittedEvent.GetProof())
+			require.Equal(t, uint64(expectedNumComputeUnits), proofSubmittedEvent.GetNumComputeUnits())
+			require.Equal(t, uint64(expectedNumRelays), proofSubmittedEvent.GetNumRelays())
 		})
 	}
 }
@@ -341,6 +355,11 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 
 			proofs := proofRes.GetProofs()
 			require.Lenf(t, proofs, 0, "expected 0 proof, got %d", len(proofs))
+
+			// Assert that only the create claim event was emitted.
+			events := sdkCtx.EventManager().Events()
+			require.Equal(t, 1, len(events))
+			require.Equal(t, events[0].Type, "poktroll.proof.EventClaimCreated")
 		})
 	}
 }
@@ -1120,6 +1139,11 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			// Expect zero proofs to have been persisted as all test cases are error cases.
 			proofs := proofRes.GetProofs()
 			require.Lenf(t, proofs, 0, "expected 0 proofs, got %d", len(proofs))
+
+			// Assert that no proof submitted events were emitted.
+			events := sdkCtx.EventManager().Events()
+			proofSubmittedEvents := testutilevents.FilterEvents[*prooftypes.EventProofSubmitted](t, events, "poktroll.proof.EventProofSubmitted")
+			require.Equal(t, 0, len(proofSubmittedEvents))
 		})
 	}
 }
@@ -1260,7 +1284,7 @@ func createClaimAndStoreBlockHash(
 	sessionHeader *sessiontypes.SessionHeader,
 	msgServer types.MsgServer,
 	keepers *keepertest.ProofModuleKeepers,
-) {
+) *prooftypes.Claim {
 	merkleRootBz, err := sessionTree.Flush()
 	require.NoError(t, err)
 
@@ -1273,7 +1297,7 @@ func createClaimAndStoreBlockHash(
 		service,
 		merkleRootBz,
 	)
-	_, err = msgServer.CreateClaim(ctx, claimMsg)
+	claimRes, err := msgServer.CreateClaim(ctx, claimMsg)
 	require.NoError(t, err)
 
 	// TODO_TECHDEBT(@red-0ne): Centralize the business logic that involves taking
@@ -1287,6 +1311,8 @@ func createClaimAndStoreBlockHash(
 
 	// Store the current context's block hash for future height, which is currently an EndBlocker operation.
 	keepers.StoreBlockHash(blockHeightCtx)
+
+	return claimRes.GetClaim()
 }
 
 // getClosestRelayDifficultyBits returns the number of leading 0s (i.e. relay

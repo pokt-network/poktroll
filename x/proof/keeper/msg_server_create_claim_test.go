@@ -3,6 +3,7 @@ package keeper_test
 import (
 	"testing"
 
+	abci "github.com/cometbft/cometbft/abci/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"
@@ -21,7 +22,12 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-var defaultMerkleRoot = testproof.SmstRootWithSum(10)
+const (
+	expectedNumComputeUnits = 10
+	expectedNumRelays       = 1
+)
+
+var defaultMerkleRoot = testproof.SmstRootWithSum(expectedNumComputeUnits)
 
 func TestMsgServer_CreateClaim_Success(t *testing.T) {
 	tests := []struct {
@@ -120,6 +126,21 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 			require.Equal(t, claimMsg.SupplierAddress, claim.GetSupplierAddress())
 			require.Equal(t, claimMsg.SessionHeader.GetSessionEndBlockHeight(), claimSessionHeader.GetSessionEndBlockHeight())
 			require.Equal(t, claimMsg.RootHash, claim.GetRootHash())
+
+			events := sdkCtx.EventManager().Events()
+			require.Equal(t, 1, len(events))
+
+			require.Equal(t, events[0].Type, "poktroll.proof.EventClaimCreated")
+
+			event, err := cosmostypes.ParseTypedEvent(abci.Event(events[0]))
+			require.NoError(t, err)
+
+			claimCreatedEvent, ok := event.(*types.EventClaimCreated)
+			require.Truef(t, ok, "unexpected event type %T", event)
+
+			require.EqualValues(t, &claim, claimCreatedEvent.GetClaim())
+			require.Equal(t, uint64(expectedNumComputeUnits), claimCreatedEvent.GetNumComputeUnits())
+			require.Equal(t, uint64(expectedNumRelays), claimCreatedEvent.GetNumRelays())
 		})
 	}
 }
@@ -229,6 +250,10 @@ func TestMsgServer_CreateClaim_Error_OutsideOfWindow(t *testing.T) {
 
 			claims := claimRes.GetClaims()
 			require.Lenf(t, claims, 0, "expected 0 claim, got %d", len(claims))
+
+			// Assert that no events were emitted.
+			events := sdkCtx.EventManager().Events()
+			require.Equal(t, 0, len(events))
 		})
 	}
 }
@@ -431,6 +456,11 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 			createClaimRes, err := srv.CreateClaim(ctx, test.claimMsgFn(t))
 			require.ErrorContains(t, err, test.expectedErr.Error())
 			require.Nil(t, createClaimRes)
+
+			// Assert that no events were emitted.
+			sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+			events := sdkCtx.EventManager().Events()
+			require.Equal(t, 0, len(events))
 		})
 	}
 }
