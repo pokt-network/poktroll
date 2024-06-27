@@ -447,18 +447,18 @@ func (k msgServer) validateClosestPath(
 	proof *smt.SparseMerkleClosestProof,
 	sessionHeader *sessiontypes.SessionHeader,
 ) error {
-	// The RelayMiner has to wait until the createClaimWindowStartHeight and the
-	// submitProofWindowStartHeight windows are open to create the claim and
-	// submit the proof respectively.
-	// These windows are calculated as (SessionEndBlockHeight + GracePeriodBlockCount).
+	// The RelayMiner has to wait until the submit claim and proof windows is are open
+	// in order to to create the claim and submit claims and proofs, respectively.
+	// These windows are calculated as specified in the docs;
+	// see: https://dev.poktroll.com/protocol/primitives/claim_and_proof_lifecycle.
 	//
-	// For reference, see relayerSessionsManager.waitForEarliest{CreateClaim,SubmitProof}Height().
+	// For reference, see relayerSessionsManager#waitForEarliest{CreateClaim,SubmitProof}Height().
 	//
 	// The RelayMiner has to wait this long to ensure that late relays (i.e.
 	// submitted during SessionNumber=(N+1) but created during SessionNumber=N) are
 	// still included as part of SessionNumber=N.
 	//
-	// Since smt.ProveClosest is defined in terms of submitProofWindowStartHeight,
+	// Since smt.ProveClosest is defined in terms of proof window open height,
 	// this block's hash needs to be used for validation too.
 	proofWindowOpenHeight, err := k.sharedQuerier.GetProofWindowOpenHeight(ctx, sessionHeader.GetSessionEndBlockHeight())
 	if err != nil {
