@@ -2,6 +2,7 @@ package shared
 
 import (
 	"math/rand"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -48,12 +49,10 @@ func TestGetEarliestClaimCommitHeight_IsDeterministic(t *testing.T) {
 func TestGetEarliestProofCommitHeight_IsDeterministic(t *testing.T) {
 	var (
 		proofWindowOpenBlockHash [32]byte
-		queryHeight              = int64(1)
-		supplierAddr             = sample.AccAddress()
 		sharedParams             = sharedtypes.DefaultParams()
 	)
 
-	test := func() int64 {
+	test := func(queryHeight int64, supplierAddr string) int64 {
 		return GetEarliestSupplierProofCommitHeight(
 			&sharedParams,
 			queryHeight,
@@ -62,21 +61,33 @@ func TestGetEarliestProofCommitHeight_IsDeterministic(t *testing.T) {
 		)
 	}
 
-	// Randomize queryHeight, proofWindowOpenBlockHash, and supplierAddr.
-	for randomizeIdx := 0; randomizeIdx < 20; randomizeIdx++ {
-		queryHeight = rand.Int63()
+	wg := sync.WaitGroup{}
+	wg.Add(1000)
+	for randomizeIdx := 0; randomizeIdx < 1000; randomizeIdx++ {
+		// NB: sample concurrently to save time.
+		go func() {
+			// Randomize queryHeight, proofWindowOpenBlockHash, and supplierAddr.
+			queryHeight := rand.Int63()
+			supplierAddr := sample.AccAddress()
+			_, err := rand.Read(proofWindowOpenBlockHash[:])
+			require.NoError(t, err)
 
-		supplierAddr = sample.AccAddress()
+			// Gompute expected value.
+			expected := test(queryHeight, supplierAddr)
 
-		_, err := rand.Read(proofWindowOpenBlockHash[:])
-		require.NoError(t, err)
+			// Ensure consecutive calls are deterministic.
+			wg.Add(1000)
+			for deterministicIdx := 0; deterministicIdx < 1000; deterministicIdx++ {
+				// NB: sample concurrently to save time.
+				go func() {
 
-		expected := test()
-
-		// Ensure consecutive calls are deterministic.
-		for deterministicIdx := 0; deterministicIdx < 1000; deterministicIdx++ {
-			require.Equalf(t, expected, test(), "on call number %d", deterministicIdx)
-		}
+					require.Equalf(t, expected, test(queryHeight, supplierAddr), "on call number %d", deterministicIdx)
+					wg.Done()
+				}()
+			}
+			wg.Wait()
+			wg.Done()
+		}()
 	}
 }
 
@@ -109,49 +120,57 @@ func TestClaimProofWindows(t *testing.T) {
 		},
 	}
 
+	wg := sync.WaitGroup{}
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
+			wg.Add(sampleSize)
 			for i := 0; i < sampleSize; i++ {
-				// Randomize the supplier address for each sample.
-				// This will produce different randomized earliest claim & proof offsets.
-				supplierAddr := sample.AccAddress()
+				// NB: sample concurrently to save time.
+				go func() {
+					// Randomize the supplier address for each sample.
+					// This will produce different randomized earliest claim & proof offsets.
+					supplierAddr := sample.AccAddress()
 
-				claimWindowOpenHeight := GetClaimWindowOpenHeight(&test.sharedParams, test.queryHeight)
-				claimWindowCloseHeight := GetClaimWindowCloseHeight(&test.sharedParams, test.queryHeight)
+					claimWindowOpenHeight := GetClaimWindowOpenHeight(&test.sharedParams, test.queryHeight)
+					claimWindowCloseHeight := GetClaimWindowCloseHeight(&test.sharedParams, test.queryHeight)
 
-				require.Greater(t, claimWindowCloseHeight, claimWindowOpenHeight)
+					require.Greater(t, claimWindowCloseHeight, claimWindowOpenHeight)
 
-				proofWindowOpenHeight := GetProofWindowOpenHeight(&test.sharedParams, test.queryHeight)
-				proofWindowCloseHeight := GetProofWindowCloseHeight(&test.sharedParams, test.queryHeight)
+					proofWindowOpenHeight := GetProofWindowOpenHeight(&test.sharedParams, test.queryHeight)
+					proofWindowCloseHeight := GetProofWindowCloseHeight(&test.sharedParams, test.queryHeight)
 
-				require.GreaterOrEqual(t, proofWindowOpenHeight, claimWindowCloseHeight)
-				require.Greater(t, proofWindowCloseHeight, proofWindowOpenHeight)
+					require.GreaterOrEqual(t, proofWindowOpenHeight, claimWindowCloseHeight)
+					require.Greater(t, proofWindowCloseHeight, proofWindowOpenHeight)
 
-				earliestClaimCommitHeight := GetEarliestSupplierClaimCommitHeight(
-					&test.sharedParams,
-					test.queryHeight,
-					blockHash,
-					supplierAddr,
-				)
+					earliestClaimCommitHeight := GetEarliestSupplierClaimCommitHeight(
+						&test.sharedParams,
+						test.queryHeight,
+						blockHash,
+						supplierAddr,
+					)
 
-				require.Greater(t, claimWindowCloseHeight, earliestClaimCommitHeight)
+					require.Greater(t, claimWindowCloseHeight, earliestClaimCommitHeight)
 
-				earliestProofCommitHeight := GetEarliestSupplierProofCommitHeight(
-					&test.sharedParams,
-					test.queryHeight,
-					blockHash,
-					supplierAddr,
-				)
+					earliestProofCommitHeight := GetEarliestSupplierProofCommitHeight(
+						&test.sharedParams,
+						test.queryHeight,
+						blockHash,
+						supplierAddr,
+					)
 
-				require.GreaterOrEqual(t, earliestProofCommitHeight, claimWindowCloseHeight)
-				require.Greater(t, proofWindowCloseHeight, earliestProofCommitHeight)
+					require.GreaterOrEqual(t, earliestProofCommitHeight, claimWindowCloseHeight)
+					require.Greater(t, proofWindowCloseHeight, earliestProofCommitHeight)
 
-				claimWindowSizeBlocks := GetClaimWindowSizeBlocks(&test.sharedParams)
-				require.Greater(t, claimWindowSizeBlocks, uint64(0))
+					claimWindowSizeBlocks := GetClaimWindowSizeBlocks(&test.sharedParams)
+					require.Greater(t, claimWindowSizeBlocks, uint64(0))
 
-				proofWindowSizeBlocks := GetProofWindowSizeBlocks(&test.sharedParams)
-				require.Greater(t, proofWindowSizeBlocks, uint64(0))
+					proofWindowSizeBlocks := GetProofWindowSizeBlocks(&test.sharedParams)
+					require.Greater(t, proofWindowSizeBlocks, uint64(0))
+
+					wg.Done()
+				}()
 			}
 		})
 	}
+	wg.Wait()
 }
