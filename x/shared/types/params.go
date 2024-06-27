@@ -116,6 +116,10 @@ func (params *Params) ValidateBasic() error {
 		return err
 	}
 
+	if err := validateClaimWindowOpenOffsetIsAtLeastGracePeriodEndOffset(params); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -169,6 +173,18 @@ func validateIsUint64(value any) error {
 	_, ok := value.(uint64)
 	if !ok {
 		return ErrSharedParamInvalid.Wrapf("invalid parameter type: %T", value)
+	}
+
+	return nil
+}
+
+func validateClaimWindowOpenOffsetIsAtLeastGracePeriodEndOffset(params *Params) error {
+	if params.ClaimWindowOpenOffsetBlocks < params.GracePeriodEndOffsetBlocks {
+		return ErrSharedParamInvalid.Wrapf(
+			"ClaimWindowOpenOffsetBlocks (%v) must be at least GracePeriodEndOffsetBlocks (%v)",
+			params.ClaimWindowOpenOffsetBlocks,
+			params.GracePeriodEndOffsetBlocks,
+		)
 	}
 
 	return nil

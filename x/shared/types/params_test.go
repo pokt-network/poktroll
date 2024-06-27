@@ -180,7 +180,7 @@ func TestParams_ValidateGracePeriodEndOffsetBlocks(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			err := ValidateProofWindowCloseOffsetBlocks(tt.gracePeriodEndOffsetBlocks)
+			err := ValidateGracePeriodEndOffsetBlocks(tt.gracePeriodEndOffsetBlocks)
 			if tt.err != nil {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), tt.err.Error())

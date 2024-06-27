@@ -21,6 +21,7 @@ func AssertDefaultParamsEqualExceptFields[P any](
 
 	for fieldIdx := 0; fieldIdx < expectedParamsValue.NumField(); fieldIdx++ {
 		fieldName := expectedParamsValue.Type().Field(fieldIdx).Name
+		// Skip all fields in the exceptFields list.
 		if isFieldException(fieldName, exceptFields) {
 			continue
 		}
