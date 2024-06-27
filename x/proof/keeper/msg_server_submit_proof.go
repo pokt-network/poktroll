@@ -461,17 +461,17 @@ func (k msgServer) validateClosestPath(
 	// submitted during SessionNumber=(N+1) but created during SessionNumber=N) are
 	// still included as part of SessionNumber=N.
 	//
-	// Since smt.ProveClosest is defined in terms of submitProofWindowStartHeight,
+	// Since smt.ProveClosest is defined in terms of submitProofWindowOpenHeight,
 	// this block's hash needs to be used for validation too.
-	sessionGracePeriodEndHeight, err := k.sharedQuerier.GetSessionGracePeriodEndHeight(ctx, sessionHeader.GetSessionEndBlockHeight())
+	proofWindowOpenHeight, err := k.sharedQuerier.GetProofWindowOpenHeight(ctx, sessionHeader.GetSessionEndBlockHeight())
 	if err != nil {
 		return err
 	}
-	blockHash := k.sessionKeeper.GetBlockHash(ctx, sessionGracePeriodEndHeight)
+	blockHash := k.sessionKeeper.GetBlockHash(ctx, proofWindowOpenHeight-1)
 
 	// TODO_BETA: Investigate "proof for the path provided does not match one expected by the on-chain protocol"
 	// error that may occur due to block height differing from the off-chain part.
-	fmt.Println("E2E_DEBUG: height for block hash when verifying the proof", sessionGracePeriodEndHeight, sessionHeader.GetSessionId())
+	fmt.Println("E2E_DEBUG: height for block hash when verifying the proof", proofWindowOpenHeight, sessionHeader.GetSessionId())
 
 	expectedProofPath := GetPathForProof(blockHash, sessionHeader.GetSessionId())
 	if !bytes.Equal(proof.Path, expectedProofPath) {

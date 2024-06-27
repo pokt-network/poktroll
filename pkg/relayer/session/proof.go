@@ -98,10 +98,21 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 	logger = logger.With("proof_window_open_height", proofWindowOpenHeight)
 	logger.Info().Msg("waiting & blocking for proof path seed block height")
 
+	// TODO_BLOCKER(@bryanchriswhite, @red0ne): After lean client, there's no
+	// guarantee that all session trees have the same supplier address. Group
+	// session trees by supplier to re-use as much code as possible and still
+	// support batching proofs.
+	supplierAddr := sessionTrees[0].GetSupplierAddress()
+	earliestProofsCommitHeight, err := rs.sharedQueryClient.GetEarliestProofCommitHeight(ctx, sessionEndHeight, supplierAddr.String())
+	if err != nil {
+		failedSubmitProofsSessionsCh <- sessionTrees
+		return nil
+	}
+
 	// proofPathSeedBlock is the block that will have its hash used as the
 	// source of entropy for all the session trees in that batch, waiting for it to
 	// be received before proceeding.
-	proofPathSeedBlockHeight := shared.GetSessionGracePeriodEndHeight(sharedParams, sessionEndHeight)
+	proofPathSeedBlockHeight := earliestProofsCommitHeight - 1
 	proofPathSeedBlock := rs.waitForBlock(ctx, proofPathSeedBlockHeight)
 	_ = rs.waitForBlock(ctx, proofWindowOpenHeight)
 
@@ -120,14 +131,6 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 		proofsGeneratedCh,
 		failedSubmitProofsSessionsCh,
 	)
-
-	// Get the earliestProofsCommitHeight.
-	supplierAddr := sessionTrees[0].GetSupplierAddress()
-	earliestProofsCommitHeight, err := rs.sharedQueryClient.GetEarliestProofCommitHeight(ctx, sessionEndHeight, supplierAddr.String())
-	if err != nil {
-		failedSubmitProofsSessionsCh <- sessionTrees
-		return nil
-	}
 
 	logger = logger.With("earliest_proof_commit_height", earliestProofsCommitHeight)
 	logger.Info().Msg("waiting & blocking for earliest proof commit height for this supplier")
