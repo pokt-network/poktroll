@@ -96,8 +96,10 @@ gantt
         Session N End: milestone, sne, after nbps, 0s
         grace_period_end_offset_blocks: gpof, after sne, 2s
         Grace Period End: milestone, gpe, after gpof, 0s
+        Session N + 1 Start: milestone, sns1, after sne, 0s
+        num_blocks_per_session: nbps2, after sns1, 4s
     section Claim Window
-        claim_window_open_offset_blocks: cwob, after sne, 10ms
+        claim_window_open_offset_blocks: cwob, after gpe, 10ms
         Session N Claim Window Open: milestone, cwo, after cwob, 0s
         claim_window_close_offset_blocks: cwcb, after cwo, 4s
         Session N Claim Window Close: milestone, cwc, after cwcb, 0s
@@ -106,6 +108,7 @@ gantt
         Session N Proof Window Open: milestone, pwo, after pwob, 0s
         proof_window_close_offset_blocks: pwcb, after pwo, 4s
         Session N PRoof Window Close: milestone, pwc, after pwcb, 0s
+
 ```
 
 > NB: Depicted with the default values (see below); x-axis is units are blocks.
