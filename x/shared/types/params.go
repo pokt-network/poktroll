@@ -7,9 +7,9 @@ import (
 const (
 	DefaultNumBlocksPerSession          = 4
 	ParamNumBlocksPerSession            = "num_blocks_per_session"
-	DefaultGracePeriodEndOffsetBlocks   = 2
+	DefaultGracePeriodEndOffsetBlocks   = 1
 	ParamGracePeriodEndOffsetBlocks     = "grace_period_end_offset_blocks"
-	DefaultClaimWindowOpenOffsetBlocks  = 0
+	DefaultClaimWindowOpenOffsetBlocks  = 1
 	ParamClaimWindowOpenOffsetBlocks    = "claim_window_open_offset_blocks"
 	DefaultClaimWindowCloseOffsetBlocks = 4
 	ParamClaimWindowCloseOffsetBlocks   = "claim_window_close_offset_blocks"

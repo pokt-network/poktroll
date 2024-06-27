@@ -100,7 +100,7 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 	// sessionPathBlock is the block that will have its hash used as the
 	// source of entropy for all the session trees in that batch, waiting for it to
 	// be received before proceeding.
-	sessionPathBlockHeight := shared.GetSessionGracePeriodEndHeight(sharedParams, sessionEndHeight)
+	sessionPathBlockHeight := shared.GetProofWindowOpenHeight(sharedParams, sessionEndHeight)
 	sessionPathBlock := rs.waitForBlock(ctx, sessionPathBlockHeight)
 	_ = rs.waitForBlock(ctx, submitProofsWindowOpenHeight)
 
