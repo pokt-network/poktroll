@@ -102,7 +102,6 @@ func TestGetEarliestProofCommitHeight_IsDeterministic(t *testing.T) {
 			_, err := rand.Read(proofWindowOpenBlockHash[:])
 
 			if !assert.NoError(t, err) {
-				t.Log("cancelling")
 				cancel()
 				return
 			}
