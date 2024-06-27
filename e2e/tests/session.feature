@@ -3,10 +3,10 @@ Feature: Session Namespace
   Scenario: Supplier completes claim/proof lifecycle for a valid session
     Given the user has the pocketd binary installed
     When the supplier "supplier1" has serviced a session with "5" relays for service "svc1" for application "app1"
-#    And the user should wait for the "proof" module "CreateClaim" Message to be submitted
+    And the user should wait for the "proof" module "CreateClaim" Message to be submitted
     And the user should wait for the "proof" module "ClaimCreated" tx event to be broadcast
     Then the claim created by supplier "supplier1" for service "svc1" for application "app1" should be persisted on-chain
-#    And the user should wait for the "proof" module "SubmitProof" Message to be submitted
+    And the user should wait for the "proof" module "SubmitProof" Message to be submitted
     And the user should wait for the "proof" module "ProofSubmitted" tx event to be broadcast
     Then the claim created by supplier "supplier1" for service "anvil" for application "app1" should be successfully settled
 
