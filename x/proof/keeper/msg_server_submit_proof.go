@@ -68,9 +68,9 @@ func (k msgServer) SubmitProof(
 		numComputeUnits, deferredErr := claim.GetNumComputeUnits()
 		err = errors.Join(err, deferredErr)
 
-		telemetry.ClaimCounter(telemetry.ClaimProofStageProven, 1, err)
+		telemetry.ClaimCounter(types.ClaimProofStage_PROVEN, 1, err)
 		telemetry.ClaimComputeUnitsCounter(
-			telemetry.ClaimProofStageProven,
+			types.ClaimProofStage_PROVEN,
 			numComputeUnits,
 			err,
 		)

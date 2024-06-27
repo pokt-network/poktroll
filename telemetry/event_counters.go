@@ -45,9 +45,9 @@ func ProofRequirementCounter(
 	err error,
 ) {
 	incrementAmount := 1
-	isRequired := strconv.FormatBool(reason != prooftypes.ProofNotRequired)
+	isRequired := strconv.FormatBool(reason != prooftypes.ProofRequirementReason_NOT_REQUIRED)
 	labels := []metrics.Label{
-		{Name: "proof_required_reason", Value: reason},
+		{Name: "proof_required_reason", Value: reason.String()},
 		{Name: "is_required", Value: isRequired},
 	}
 
@@ -76,7 +76,7 @@ func ClaimComputeUnitsCounter(
 	incrementAmount := numComputeUnits
 	labels := []metrics.Label{
 		{Name: "unit", Value: "compute_units"},
-		{Name: "claim_proof_stage", Value: claimProofStage},
+		{Name: "claim_proof_stage", Value: claimProofStage.String()},
 	}
 
 	// Ensure the counter is not incremented if there was an error.
@@ -104,7 +104,7 @@ func ClaimCounter(
 	incrementAmount := numClaims
 	labels := []metrics.Label{
 		{Name: "unit", Value: "claims"},
-		{Name: "claim_proof_stage", Value: claimProofStage},
+		{Name: "claim_proof_stage", Value: claimProofStage.String()},
 	}
 
 	// Ensure the counter is not incremented if there was an error.

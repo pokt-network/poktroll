@@ -5,6 +5,7 @@ option go_package = "github.com/pokt-network/poktroll/x/tokenomics/types";
 
 import "gogoproto/gogo.proto";
 import "poktroll/proof/claim.proto";
+import "poktroll/proof/requirement.proto";
 
 // EventClaimExpired is an event emitted during settlement whenever a claim requiring
 // an on-chain proof doesn't have one. The claim cannot be settled, leading to that work
@@ -21,8 +22,7 @@ message EventClaimSettled {
     poktroll.proof.Claim claim = 1 [(gogoproto.jsontag) = "claim"];
     uint64 num_relays = 2 [(gogoproto.jsontag) = "num_relays"];
     uint64 num_compute_units = 3 [(gogoproto.jsontag) = "num_compute_units"];
-    // TODO_IN_THIS_PR: make a protobuf enum
-    string proof_requirement = 4 [(gogoproto.jsontag) = "proof_requirement"];
+    poktroll.proof.ProofRequirementReason proof_requirement = 4 [(gogoproto.jsontag) = "proof_requirement"];
 }
 
 // EventRelayMiningDifficultyUpdated is an event emitted whenever the relay mining difficulty is updated

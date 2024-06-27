@@ -40,20 +40,21 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) (err error) {
 	// Defer telemetry calls so that they reference the final values the relevant variables.
 	defer func() {
 		telemetry.ClaimComputeUnitsCounter(
-			prooftypes.ClaimProofStageSettled,
+			prooftypes.ClaimProofStage_SETTLED,
 			numComputeUnits,
 			err,
 		)
 		telemetry.ClaimCounter(
-			prooftypes.ClaimProofStageSettled,
+			prooftypes.ClaimProofStage_SETTLED,
 			numClaimsSettled,
 			err,
 		)
 		telemetry.ClaimCounter(
-			prooftypes.ClaimProofStageExpired,
+			prooftypes.ClaimProofStage_EXPIRED,
 			numClaimsExpired,
 			err,
 		)
+		// TODO_IMPROVE(#observability): Add a counter for expired compute units.
 	}()
 
 	logger.Info(fmt.Sprintf("settled %d claims and expired %d claims", numClaimsSettled, numClaimsExpired))

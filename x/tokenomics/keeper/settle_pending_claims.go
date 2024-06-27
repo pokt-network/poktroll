@@ -64,7 +64,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 		if err != nil {
 			return 0, 0, relaysPerServiceMap, computeUnitsPerServiceMap, err
 		}
-		if proofRequirement != prooftypes.ProofNotRequired {
+		if proofRequirement != prooftypes.ProofRequirementReason_NOT_REQUIRED {
 			// If a proof is not found, the claim will expire and never be settled.
 			if !isProofFound {
 				// Emit an event that a claim has expired and being removed without being settled.
@@ -98,6 +98,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 			NumComputeUnits:  numClaimComputeUnits,
 			ProofRequirement: proofRequirement,
 		}
+
 		if err := ctx.EventManager().EmitTypedEvent(&claimSettledEvent); err != nil {
 			return 0, 0, relaysPerServiceMap, computeUnitsPerServiceMap, err
 		}
@@ -166,7 +167,7 @@ func (k Keeper) getExpiringClaims(ctx sdk.Context) (expiringClaims []prooftypes.
 func (k Keeper) proofRequirementForClaim(ctx sdk.Context, claim *prooftypes.Claim) (_ prooftypes.ProofRequirementReason, err error) {
 	logger := k.logger.With("method", "proofRequirementForClaim")
 
-	var requirementReason = prooftypes.ProofNotRequired
+	var requirementReason = prooftypes.ProofRequirementReason_NOT_REQUIRED
 
 	// Defer telemetry calls so that they reference the final values the relevant variables.
 	defer func() {
@@ -192,7 +193,7 @@ func (k Keeper) proofRequirementForClaim(ctx sdk.Context, claim *prooftypes.Clai
 	// whether there was a proof submission error downstream from here. This would
 	// require a more comprehensive metrics API.
 	if claimComputeUnits >= proofParams.GetProofRequirementThreshold() {
-		requirementReason = prooftypes.ProofRequirementReasonThreshold
+		requirementReason = prooftypes.ProofRequirementReason_THRESHOLD
 
 		logger.Info(fmt.Sprintf(
 			"claim requires proof due to compute units (%d) exceeding threshold (%d)",
@@ -218,7 +219,7 @@ func (k Keeper) proofRequirementForClaim(ctx sdk.Context, claim *prooftypes.Clai
 	// NB: A random value between 0 and 1 will be less than or equal to proof_request_probability
 	// with probability equal to the proof_request_probability.
 	if randFloat <= proofParams.GetProofRequestProbability() {
-		requirementReason = prooftypes.ProofRequirementReasonProbabilistic
+		requirementReason = prooftypes.ProofRequirementReason_PROBABILISTIC
 
 		logger.Info(fmt.Sprintf(
 			"claim requires proof due to random sample (%.2f) being less than or equal to probability (%.2f)",

@@ -24,9 +24,9 @@ func (k msgServer) CreateClaim(
 		numComputeUnits, deferredErr := claim.GetNumComputeUnits()
 		err = errors.Join(err, deferredErr)
 
-		telemetry.ClaimCounter(telemetry.ClaimProofStageClaimed, 1, err)
+		telemetry.ClaimCounter(types.ClaimProofStage_CLAIMED, 1, err)
 		telemetry.ClaimComputeUnitsCounter(
-			telemetry.ClaimProofStageClaimed,
+			types.ClaimProofStage_CLAIMED,
 			numComputeUnits,
 			err,
 		)
