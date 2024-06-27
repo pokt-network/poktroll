@@ -39,6 +39,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 	relaysPerServiceMap = make(map[string]uint64)
 	computeUnitsPerServiceMap = make(map[string]uint64)
 
+	logger.Debug("settling expiring claims")
 	for _, claim := range expiringClaims {
 
 		// NB: Note that not every (Req, Res) pair in the session is inserted in
@@ -64,6 +65,15 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 		if err != nil {
 			return 0, 0, relaysPerServiceMap, computeUnitsPerServiceMap, err
 		}
+
+		logger := k.logger.With(
+			"session_id", sessionId,
+			"supplier_address", claim.SupplierAddress,
+			"num_claim_compute_units", numClaimComputeUnits,
+			"num_relays_in_session_tree", numRelaysInSessionTree,
+			"proof_requirement", proofRequirement,
+		)
+
 		if proofRequirement != prooftypes.ProofRequirementReason_NOT_REQUIRED {
 			// If a proof is not found, the claim will expire and never be settled.
 			if !isProofFound {
@@ -76,6 +86,9 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 				if err := ctx.EventManager().EmitTypedEvent(&claimExpiredEvent); err != nil {
 					return 0, 0, relaysPerServiceMap, computeUnitsPerServiceMap, err
 				}
+
+				logger.Info("claim expired; required proof not found")
+
 				// The claim & proof are no longer necessary, so there's no need for them
 				// to take up on-chain space.
 				k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierAddress)
@@ -111,6 +124,8 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 		}); err != nil {
 			return 0, 0, relaysPerServiceMap, computeUnitsPerServiceMap, err
 		}
+
+		logger.Info("claim settled")
 
 		// The claim & proof are no longer necessary, so there's no need for them
 		// to take up on-chain space.
