@@ -115,17 +115,27 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 	// to the blockPublishCh to trigger claim creation for the session.
 	sharedParams := sharedtypes.DefaultParams()
 	sessionEndHeight := sessionHeader.GetSessionEndBlockHeight()
-	sessionClaimWindowOpenHeight := shared.GetClaimWindowOpenHeight(&sharedParams, sessionEndHeight)
+	earliestSupplierClaimCommitHeight := shared.GetEarliestSupplierClaimCommitHeight(
+		&sharedParams,
+		sessionEndHeight,
+		emptyBlockHash,
+		supplierAddress,
+	)
 
 	// Publish a block to the blockPublishCh to trigger claim creation for the session.
-	triggerClaimBlock := testblock.NewAnyTimesBlock(t, emptyBlockHash, sessionClaimWindowOpenHeight)
+	triggerClaimBlock := testblock.NewAnyTimesBlock(t, emptyBlockHash, earliestSupplierClaimCommitHeight)
 	blockPublishCh <- triggerClaimBlock
 
 	// TODO_IMPROVE: ensure correctness of persisted session trees here.
 
 	// Publish a block to the blockPublishCh to trigger proof submission for the session.
-	sessionProofWindowOpenHeight := shared.GetProofWindowOpenHeight(&sharedParams, sessionEndHeight)
-	triggerProofBlock := testblock.NewAnyTimesBlock(t, emptyBlockHash, sessionProofWindowOpenHeight)
+	earliestSupplierProofCommitHeight := shared.GetEarliestSupplierProofCommitHeight(
+		&sharedParams,
+		sessionEndHeight,
+		emptyBlockHash,
+		supplierAddress,
+	)
+	triggerProofBlock := testblock.NewAnyTimesBlock(t, emptyBlockHash, earliestSupplierProofCommitHeight)
 	blockPublishCh <- triggerProofBlock
 
 	// Wait a tick to allow the relayer sessions manager to process asynchronously.

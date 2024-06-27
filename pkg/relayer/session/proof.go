@@ -2,6 +2,7 @@ package session
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/either"
@@ -10,7 +11,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/filter"
 	"github.com/pokt-network/poktroll/pkg/observable/logging"
 	"github.com/pokt-network/poktroll/pkg/relayer"
-	"github.com/pokt-network/poktroll/pkg/relayer/protocol"
 	proofkeeper "github.com/pokt-network/poktroll/x/proof/keeper"
 	"github.com/pokt-network/poktroll/x/shared"
 )
@@ -73,11 +73,13 @@ func (rs *relayerSessionsManager) mapWaitForEarliestSubmitProofsHeight(
 func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGenerateProofs(
 	ctx context.Context,
 	sessionTrees []relayer.SessionTree,
-	failSubmitProofsSessionsCh chan<- []relayer.SessionTree,
+	failedSubmitProofsSessionsCh chan<- []relayer.SessionTree,
 ) []relayer.SessionTree {
 	// Given the sessionTrees are grouped by their sessionEndHeight, we can use the
 	// first one from the group to calculate the earliest height for proof submission.
 	sessionEndHeight := sessionTrees[0].GetSessionHeader().GetSessionEndBlockHeight()
+
+	logger := rs.logger.With("session_end_height", sessionEndHeight)
 
 	// TODO_TECHDEBT(#543): We don't really want to have to query the params for every method call.
 	// Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
@@ -86,23 +88,24 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 	// we should be using the value that the params had for the session which includes queryHeight.
 	sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
 	if err != nil {
-		failSubmitProofsSessionsCh <- sessionTrees
+		failedSubmitProofsSessionsCh <- sessionTrees
 		return nil
 	}
 
-	submitProofsWindowOpenHeight := shared.GetProofWindowOpenHeight(sharedParams, sessionEndHeight)
+	proofWindowOpenHeight := shared.GetProofWindowOpenHeight(sharedParams, sessionEndHeight)
 
-	// we wait for submitProofsWindowOpenHeight to be received before proceeding since we need its hash
-	rs.logger.Info().
-		Int64("submitProofsWindowOpenHeight", submitProofsWindowOpenHeight).
-		Msg("waiting & blocking for global earliest proof submission height")
+	// we wait for proofWindowOpenHeight to be received before proceeding since we need its hash
+	logger = logger.With("proof_window_open_height", proofWindowOpenHeight)
+	logger.Info().Msg("waiting & blocking for proof path seed block height")
 
-	// sessionPathBlock is the block that will have its hash used as the
+	// proofWindowOpenHeight - 1 is the block that will have its hash used as the
 	// source of entropy for all the session trees in that batch, waiting for it to
 	// be received before proceeding.
-	sessionPathBlockHeight := shared.GetSessionGracePeriodEndHeight(sharedParams, sessionEndHeight)
-	sessionPathBlock := rs.waitForBlock(ctx, sessionPathBlockHeight)
-	_ = rs.waitForBlock(ctx, submitProofsWindowOpenHeight)
+	proofPathSeedBlock := rs.waitForBlock(ctx, proofWindowOpenHeight-1)
+	_ = rs.waitForBlock(ctx, proofWindowOpenHeight)
+
+	logger = logger.With("proof_path_bock_hash", fmt.Sprintf("%x", proofPathSeedBlock.Hash()))
+	logger.Info().Msg("observed proof path seed block height")
 
 	// Generate proofs for all sessionTrees concurrently while waiting for the
 	// earliest submitProofsHeight (pseudorandom submission distribution) to be reached.
@@ -112,14 +115,27 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 	go rs.goProveClaims(
 		ctx,
 		sessionTrees,
-		sessionPathBlock,
+		proofPathSeedBlock,
 		proofsGeneratedCh,
-		failSubmitProofsSessionsCh,
+		failedSubmitProofsSessionsCh,
 	)
 
-	// Wait for the earliest submitProofsHeight to be reached before proceeding.
-	earliestSubmitProofsHeight := protocol.GetEarliestSubmitProofHeight(ctx, sessionPathBlock)
-	_ = rs.waitForBlock(ctx, earliestSubmitProofsHeight)
+	// Get the earliestProofsCommitHeight.
+	supplierAddr := sessionTrees[0].GetSupplierAddress()
+	earliestProofsCommitHeight := shared.GetEarliestSupplierProofCommitHeight(
+		sharedParams,
+		sessionEndHeight,
+		proofPathSeedBlock.Hash(),
+		supplierAddr.String(),
+	)
+
+	logger = logger.With("earliest_proof_commit_height", earliestProofsCommitHeight)
+	logger.Info().Msg("waiting & blocking for earliest proof commit height for this supplier")
+
+	// Wait for the earliestProofsCommitHeight to be reached before proceeding.
+	_ = rs.waitForBlock(ctx, earliestProofsCommitHeight)
+
+	logger.Info().Msg("observed earliest proof commit height")
 
 	// Once the earliest submitProofsHeight has been reached, and all proofs have
 	// been generated, return the sessionTrees that have been successfully proven

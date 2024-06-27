@@ -19,19 +19,22 @@ var _ client.SharedQueryClient = (*sharedQuerier)(nil)
 type sharedQuerier struct {
 	clientConn    grpc.ClientConn
 	sharedQuerier sharedtypes.QueryClient
+	blockQuerier  client.BlockQueryClient
 }
 
 // NewSharedQuerier returns a new instance of a client.SharedQueryClient by
 // injecting the dependecies provided by the depinject.Config.
 //
 // Required dependencies:
-// - clientCtx
+// - clientCtx (grpc.ClientConn)
+// - client.BlockQueryClient
 func NewSharedQuerier(deps depinject.Config) (client.SharedQueryClient, error) {
 	querier := &sharedQuerier{}
 
 	if err := depinject.Inject(
 		deps,
 		&querier.clientConn,
+		&querier.blockQuerier,
 	); err != nil {
 		return nil, err
 	}
@@ -104,4 +107,67 @@ func (sq *sharedQuerier) GetSessionGracePeriodEndHeight(
 		return 0, err
 	}
 	return shared.GetSessionGracePeriodEndHeight(sharedParams, queryHeight), nil
+}
+
+// GetEarliestClaimCommitHeight returns the earliest block height at which a claim
+// for the session that includes queryHeight can be committed for a given supplier.
+//
+// TODO_TECHDEBT(#543): We don't really want to have to query the params for every method call.
+// Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
+// to get the most recently (asynchronously) observed (and cached) value.
+// TODO_BLOCKER(@bryanchriswhite, #543): We also don't really want to use the current value of the params.
+// Instead, we should be using the value that the params had for the session which includes queryHeight.
+func (sq *sharedQuerier) GetEarliestSupplierClaimCommitHeight(ctx context.Context, queryHeight int64, supplierAddr string) (int64, error) {
+	sharedParams, err := sq.GetParams(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	// Fetch the block at the proof window open height. Its hash is used as part
+	// of the seed to the pseudo-random number generator.
+	claimWindowOpenHeight := shared.GetClaimWindowOpenHeight(sharedParams, queryHeight)
+	claimWindowOpenBlock, err := sq.blockQuerier.Block(ctx, &claimWindowOpenHeight)
+	if err != nil {
+		return 0, err
+	}
+
+	// NB: Byte slice representation of block hashes don't need to be normalized.
+	claimWindowOpenBlockHash := claimWindowOpenBlock.BlockID.Hash.Bytes()
+
+	return shared.GetEarliestSupplierClaimCommitHeight(
+		sharedParams,
+		queryHeight,
+		claimWindowOpenBlockHash,
+		supplierAddr,
+	), nil
+}
+
+// GetEarliestProofCommitHeight returns the earliest block height at which a proof
+// for the session that includes queryHeight can be committed for a given supplier.
+//
+// TODO_TECHDEBT(#543): We don't really want to have to query the params for every method call.
+// Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
+// to get the most recently (asynchronously) observed (and cached) value.
+// TODO_BLOCKER(@bryanchriswhite, #543): We also don't really want to use the current value of the params.
+// Instead, we should be using the value that the params had for the session which includes queryHeight.
+func (sq *sharedQuerier) GetEarliestSupplierProofCommitHeight(ctx context.Context, queryHeight int64, supplierAddr string) (int64, error) {
+	sharedParams, err := sq.GetParams(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	// Fetch the block at the proof window open height. Its hash is used as part
+	// of the seed to the pseudo-random number generator.
+	proofWindowOpenHeight := shared.GetProofWindowOpenHeight(sharedParams, queryHeight)
+	proofWindowOpenBlock, err := sq.blockQuerier.Block(ctx, &proofWindowOpenHeight)
+	if err != nil {
+		return 0, err
+	}
+
+	return shared.GetEarliestSupplierProofCommitHeight(
+		sharedParams,
+		queryHeight,
+		proofWindowOpenBlock.BlockID.Hash,
+		supplierAddr,
+	), nil
 }
