@@ -69,7 +69,7 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 		) int64
 	}{
 		{
-			desc: "proof message height equals proof window open height",
+			desc: "proof message height equals supplier's earliest proof commit height",
 			getProofMsgHeight: func(sharedParams *sharedtypes.Params, queryHeight int64, supplierAddr string) int64 {
 				return shared.GetEarliestSupplierProofCommitHeight(
 					sharedParams,

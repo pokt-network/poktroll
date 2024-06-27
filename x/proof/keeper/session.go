@@ -112,7 +112,11 @@ func (k msgServer) validateClaimWindow(
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	currentHeight := sdkCtx.BlockHeight()
 
-	// Ensure the current block height is ON or AFTER the earliest claim commit height.
+	// Ensure the current block height is ON or AFTER the supplier's earliest claim commit height.
+	// TODO_BLOCKER(@bryanchriswhite, @red-0ne): Enforce an additional "latest
+	// supplier claim/proof commit offset" such that all suppliers have the same
+	// "supplier claim/proof commit window" size.
+	// See: https://github.com/pokt-network/poktroll/pull/620/files#r1656548473.
 	if currentHeight < earliestClaimCommitHeight {
 		return types.ErrProofClaimOutsideOfWindow.Wrapf(
 			"current block height (%d) is less than the session's earliest claim commit height (%d)",
@@ -176,7 +180,7 @@ func (k msgServer) validateProofWindow(
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	currentHeight := sdkCtx.BlockHeight()
 
-	// Ensure the current block height is ON or AFTER the proof window open height.
+	// Ensure the current block height is ON or AFTER the earliest proof commit height.
 	if currentHeight < earliestProofCommitHeight {
 		return types.ErrProofProofOutsideOfWindow.Wrapf(
 			"current block height (%d) is less than session's earliest proof commit height (%d)",

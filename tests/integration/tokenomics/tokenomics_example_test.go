@@ -86,7 +86,7 @@ func TestTokenomicsIntegrationExample(t *testing.T) {
 
 	// Need to wait until the earliest claim commit height
 	currentBlockHeight := integrationApp.GetSdkCtx().BlockHeight()
-	numBlocksUntilClaimWindowIsOpen := int(earliestClaimCommitHeight - currentBlockHeight) //+ 1)
+	numBlocksUntilClaimWindowIsOpen := int(earliestClaimCommitHeight - currentBlockHeight) 
 	for i := 0; i < numBlocksUntilClaimWindowIsOpen; i++ {
 		integrationApp.NextBlock(t)
 	}

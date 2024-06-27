@@ -35,7 +35,7 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 		) int64
 	}{
 		{
-			desc: "claim message height equals earliest claim commit height",
+			desc: "claim message height equals supplier's earliest claim commit height",
 			getClaimMsgHeight: func(sharedParams *sharedtypes.Params, queryHeight int64) int64 {
 				return shared.GetEarliestSupplierClaimCommitHeight(
 					sharedParams,
