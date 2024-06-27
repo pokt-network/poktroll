@@ -4,7 +4,7 @@ import (
 	"net/url"
 	"strconv"
 
-	sdktypes "github.com/pokt-network/shannon-sdk/types"
+	sdk "github.com/pokt-network/shannon-sdk"
 
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -15,23 +15,24 @@ import (
 // optimizations (i.e. quality of service implementations) are left as an exercise
 // to gateways.
 func (app *appGateServer) getRelayerUrl(
-	serviceId string,
 	rpcType sharedtypes.RPCType,
-	supplierEndpoints []*sdktypes.SingleSupplierEndpoint,
+	filteredSession sdk.FilteredSession,
 	requestUrlStr string,
-) (supplierEndpoint *sdktypes.SingleSupplierEndpoint, err error) {
+) (supplierEndpoint sdk.Endpoint, err error) {
+	sessionEndpoints, err := filteredSession.AllEndpoints()
+	if err != nil {
+		return nil, err
+	}
+
 	// Filter out the supplier endpoints that match the requested serviceId.
-	validSupplierEndpoints := make([]*sdktypes.SingleSupplierEndpoint, 0, len(supplierEndpoints))
+	validSupplierEndpoints := []sdk.Endpoint{}
 
-	for _, supplierEndpoint := range supplierEndpoints {
-		// Skip services that don't match the requested serviceId.
-		if supplierEndpoint.SessionHeader.Service.Id != serviceId {
-			continue
-		}
-
-		// Collect the endpoints that match the request's RpcType.
-		if supplierEndpoint.RpcType == rpcType {
-			validSupplierEndpoints = append(validSupplierEndpoints, supplierEndpoint)
+	for _, supplierEndpoints := range sessionEndpoints {
+		for _, supplierEndpoint := range supplierEndpoints {
+			// Collect the endpoints that match the request's RpcType.
+			if supplierEndpoint.Endpoint().RpcType == rpcType {
+				validSupplierEndpoints = append(validSupplierEndpoints, supplierEndpoint)
+			}
 		}
 	}
 
