@@ -122,11 +122,12 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 
 	// Get the earliestProofsCommitHeight.
 	supplierAddr := sessionTrees[0].GetSupplierAddress()
-	earliestProofsCommitHeight, err := rs.sharedQueryClient.GetEarliestSupplierProofCommitHeight(ctx, sessionEndHeight, supplierAddr.String())
-	if err != nil {
-		failedSubmitProofsSessionsCh <- sessionTrees
-		return nil
-	}
+	earliestProofsCommitHeight := shared.GetEarliestSupplierProofCommitHeight(
+		sharedParams,
+		sessionEndHeight,
+		proofPathSeedBlock.Hash(),
+		supplierAddr.String(),
+	)
 
 	logger = logger.With("earliest_proof_commit_height", earliestProofsCommitHeight)
 	logger.Info().Msg("waiting & blocking for earliest proof commit height for this supplier")
