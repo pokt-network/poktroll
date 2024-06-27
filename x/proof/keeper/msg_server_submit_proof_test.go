@@ -546,15 +546,6 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 	copy(wrongClosestProofPath, expectedMerkleProofPath)
 	copy(wrongClosestProofPath, "wrong closest proof path")
 
-	// Increment the block height to the test proof height.
-	proofMsgHeight := shared.GetEarliestProofCommitHeight(
-		&sharedParams,
-		validSessionHeader.GetSessionEndBlockHeight(),
-		proofCommitBlockHash,
-		supplierAddr,
-	)
-	ctx = cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(proofMsgHeight)
-
 	tests := []struct {
 		desc        string
 		newProofMsg func(t *testing.T) *types.MsgSubmitProof
@@ -1152,7 +1143,17 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 	// Submit the corresponding proof.
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
+			// Increment the block height to the test proof height.
 			proofMsg := test.newProofMsg(t)
+			proofMsgHeight := shared.GetEarliestSupplierProofCommitHeight(
+				&sharedParams,
+				proofMsg.GetSessionHeader().GetSessionEndBlockHeight(),
+				proofCommitBlockHash,
+				proofMsg.GetSupplierAddress(),
+			)
+
+			ctx = cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(proofMsgHeight)
+
 			submitProofRes, err := srv.SubmitProof(ctx, proofMsg)
 
 			require.ErrorContains(t, err, test.expectedErr.Error())
