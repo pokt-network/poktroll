@@ -83,14 +83,7 @@ func (rc *ringClient) GetRingForAddressAtHeight(
 		return nil, err
 	}
 
-	// Get the points on the secp256k1 curve for the public keys in the ring.
-	points, err := pointsFromPublicKeys(ringPubKeys...)
-	if err != nil {
-		return nil, err
-	}
-
-	// Return the ring the constructed from the points retrieved above.
-	return newRingFromPoints(points)
+	return GetRingFromPubKeys(ringPubKeys)
 }
 
 // VerifyRelayRequestSignature verifies the signature of the relay request
@@ -301,6 +294,20 @@ func GetRingAddressesAtBlock(
 ) []string {
 	// Get the target session end height at which we want to get the active delegations.
 	targetSessionEndHeight := uint64(shared.GetSessionEndHeight(sharedParams, blockHeight))
+
+	return GetRingAddressesAtSessionEndHeight(app, targetSessionEndHeight)
+}
+
+// GetRingAddressesAtSessionEndHeight returns the active gateway addresses that need to be
+// used to construct the ring in order to validate that the given app should pay for.
+// It takes into account both active delegations and pending undelegations that
+// should still be part of the ring at the given session end height.
+// The ring addresses slice is reconstructed by adding back the past delegated
+// gateways that have been undelegated after the target session end height.
+func GetRingAddressesAtSessionEndHeight(
+	app *apptypes.Application,
+	targetSessionEndHeight uint64,
+) []string {
 	// Get the current active delegations for the application and use them as a base.
 	activeDelegationsAtHeight := app.DelegateeGatewayAddresses
 
@@ -332,6 +339,18 @@ func GetRingAddressesAtBlock(
 	}
 
 	return activeDelegationsAtHeight
+}
+
+// GetRingFromPubKeys returns a ring constructed from the public keys provided.
+func GetRingFromPubKeys(ringPubKeys []cryptotypes.PubKey) (*ring.Ring, error) {
+	// Get the points on the secp256k1 curve for the public keys in the ring.
+	points, err := pointsFromPublicKeys(ringPubKeys...)
+	if err != nil {
+		return nil, err
+	}
+
+	// Return the ring the constructed from the points retrieved above.
+	return newRingFromPoints(points)
 }
 
 // ringPointsContain checks if the given ring points map contains the public keys
