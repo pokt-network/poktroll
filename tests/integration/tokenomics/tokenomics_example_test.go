@@ -6,10 +6,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
-	integration "github.com/pokt-network/poktroll/testutil/integration"
+	"github.com/pokt-network/poktroll/testutil/integration"
 	testutilproof "github.com/pokt-network/poktroll/testutil/proof"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
@@ -34,6 +35,8 @@ func TestTokenomicsIntegrationExample(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, sharedQueryRes, "unexpected nil params query response")
 	require.EqualValues(t, sharedtypes.DefaultParams(), sharedQueryRes.GetParams())
+
+	sharedParams := sharedQueryRes.GetParams()
 
 	// Prepare a request to update the compute_units_to_tokens_multiplier
 	updateTokenomicsParamMsg := &tokenomicstypes.MsgUpdateParam{
@@ -67,28 +70,31 @@ func TestTokenomicsIntegrationExample(t *testing.T) {
 	// Query the session
 	getSessionRes, err := sessionQueryClient.GetSession(integrationApp.GetSdkCtx(), &getSessionReq)
 	require.NoError(t, err)
-	require.NotNil(t, getSessionRes, "unexpected nil queryResponse")
-	sessionEndHeight := int(getSessionRes.Session.Header.SessionEndBlockHeight)
 
-	// Figure out how many blocks we need to wait until the claim window is open
+	session := getSessionRes.GetSession()
+	require.NotNil(t, session, "unexpected nil queryResponse")
+
+	// Figure out how many blocks we need to wait until the earliest claim commit height
 	// Query and validate the default shared params
-	sharedQueryClient = sharedtypes.NewQueryClient(integrationApp.QueryHelper())
-	sharedParamsReq = sharedtypes.QueryParamsRequest{}
-	sharedQueryRes, err = sharedQueryClient.Params(integrationApp.GetSdkCtx(), &sharedParamsReq)
-	require.NoError(t, err)
-	claimOpenWindowNumBlocks := int(sharedQueryRes.Params.ClaimWindowOpenOffsetBlocks)
+	var claimWindowOpenBlockHash []byte
+	earliestClaimCommitHeight := shared.GetEarliestSupplierClaimCommitHeight(
+		&sharedParams,
+		session.GetHeader().GetSessionEndBlockHeight(),
+		claimWindowOpenBlockHash,
+		integrationApp.DefaultSupplier.GetAddress(),
+	)
 
-	// Need to wait until the claim window is open
-	currentBlockHeight := int(integrationApp.GetSdkCtx().BlockHeight())
-	numBlocksUntilClaimWindowIsOpen := int(sessionEndHeight + claimOpenWindowNumBlocks - currentBlockHeight + 1)
+	// Need to wait until the earliest claim commit height
+	currentBlockHeight := integrationApp.GetSdkCtx().BlockHeight()
+	numBlocksUntilClaimWindowIsOpen := int(earliestClaimCommitHeight - currentBlockHeight)
 	for i := 0; i < numBlocksUntilClaimWindowIsOpen; i++ {
 		integrationApp.NextBlock(t)
 	}
 
 	// Create a new claim
 	createClaimMsg := prooftypes.MsgCreateClaim{
-		SupplierAddress: integrationApp.DefaultSupplier.Address,
-		SessionHeader:   getSessionRes.Session.Header,
+		SupplierAddress: integrationApp.DefaultSupplier.GetAddress(),
+		SessionHeader:   session.GetHeader(),
 		RootHash:        testutilproof.SmstRootWithSum(uint64(1)),
 	}
 

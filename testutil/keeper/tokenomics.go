@@ -217,7 +217,6 @@ func NewTokenomicsModuleKeepers(
 	// Prepare the chain's authority
 	cdc := codec.NewProtoCodec(registry)
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName)
-	t.Logf("authority.String(): %s", authority.String())
 
 	// Construct a real account keeper so that public keys can be queried.
 	addrCodec := addresscodec.NewBech32Codec(app.AccountAddressPrefix)
