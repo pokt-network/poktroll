@@ -369,7 +369,7 @@ func NewSupplyShannonSDKFn(signingKeyName string) SupplierFn {
 			return nil, err
 		}
 
-		shannonSDK, err := sdkadapter.NewShannonSDKAdapter(ctx, privateKey, deps)
+		shannonSDK, err := sdkadapter.NewShannonSDK(ctx, privateKey, deps)
 		if err != nil {
 			return nil, err
 		}
