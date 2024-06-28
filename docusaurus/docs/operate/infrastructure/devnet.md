@@ -154,7 +154,7 @@ IMAGE_TAG=**IMAGE TAG NAME FROM DEVNET CONFIG** NAMESPACE=devnet-**NETWORK NAME*
 
 For example:
 ```bash
-IMAGE_TAG=sha-7042be3 NAMESPACE=devnet-dimatests JOB_NAME=e2e-test-7042be3 POCKET_NODE=tcp://devnet-dimatests-validator-poktrolld:26657 bash .github/workflows-helpers/run-e2e-test.sh
+IMAGE_TAG=sha-7042be3 NAMESPACE=devnet-sophon JOB_NAME=e2e-test-7042be3 POCKET_NODE=tcp://devnet-sophon-validator-poktrolld:26657 bash .github/workflows-helpers/run-e2e-test.sh
 ```
 
 ### Stake actors

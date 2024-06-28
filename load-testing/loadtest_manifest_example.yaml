@@ -4,7 +4,7 @@ is_ephemeral_chain: false
 
 # testnet_node is the URL of the node that the load test will use to query the
 # chain and submit transactions.
-testnet_node: https://devnet-dimatests-validator-rpc.poktroll.com
+testnet_node: https://devnet-sophon-validator-rpc.poktroll.com
 
 # The service ID to request relays from.
 service_id: "anvil"
@@ -16,8 +16,8 @@ funding_account_address: pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw # address f
 # In non-ephemeral chains, the gateways are identified by their address.
 gateways:
   - address: pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4
-    exposed_url: https://devnet-dimatests-gateway-1.poktroll.com
+    exposed_url: https://devnet-sophon-gateway-1.poktroll.com
   - address: pokt15w3fhfyc0lttv7r585e2ncpf6t2kl9uh8rsnyz
-    exposed_url: https://devnet-dimatests-gateway-2.poktroll.com
+    exposed_url: https://devnet-sophon-gateway-2.poktroll.com
   - address: pokt1zhmkkd0rh788mc9prfq0m2h88t9ge0j83gnxya
-    exposed_url: https://devnet-dimatests-gateway-3.poktroll.com
+    exposed_url: https://devnet-sophon-gateway-3.poktroll.com
