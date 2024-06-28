@@ -30,6 +30,9 @@ const (
 var defaultMerkleRoot = testproof.SmstRootWithSum(expectedNumComputeUnits)
 
 func TestMsgServer_CreateClaim_Success(t *testing.T) {
+	var claimWindowOpenBlockHash []byte
+	supplierAddr := sample.AccAddress()
+
 	tests := []struct {
 		desc              string
 		getClaimMsgHeight func(
@@ -38,8 +41,15 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 		) int64
 	}{
 		{
-			desc:              "claim message height equals claim window open height",
-			getClaimMsgHeight: shared.GetClaimWindowOpenHeight,
+			desc: "claim message height equals supplier's earliest claim commit height",
+			getClaimMsgHeight: func(sharedParams *sharedtypes.Params, queryHeight int64) int64 {
+				return shared.GetEarliestSupplierClaimCommitHeight(
+					sharedParams,
+					queryHeight,
+					claimWindowOpenBlockHash,
+					supplierAddr,
+				)
+			},
 		},
 		{
 			desc:              "claim message height equals claim window close height",
@@ -63,7 +73,6 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 			sessionStartHeight := blockHeight
 
 			service := &sharedtypes.Service{Id: testServiceId}
-			supplierAddr := sample.AccAddress()
 			appAddr := sample.AccAddress()
 
 			keepers.SetSupplier(ctx, sharedtypes.Supplier{
@@ -146,6 +155,8 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 }
 
 func TestMsgServer_CreateClaim_Error_OutsideOfWindow(t *testing.T) {
+	var claimWindowOpenBlockHash []byte
+
 	// Set block height to 1 so there is a valid session on-chain.
 	blockHeightOpt := keepertest.WithBlockHeight(1)
 	keepers, ctx := keepertest.NewProofModuleKeepers(t, blockHeightOpt)
@@ -191,9 +202,11 @@ func TestMsgServer_CreateClaim_Error_OutsideOfWindow(t *testing.T) {
 		sessionHeader.GetSessionEndBlockHeight(),
 	)
 
-	claimWindowOpenHeight := shared.GetClaimWindowOpenHeight(
+	earliestClaimCommitHeight := shared.GetEarliestSupplierClaimCommitHeight(
 		&sharedParams,
 		sessionHeader.GetSessionEndBlockHeight(),
+		claimWindowOpenBlockHash,
+		supplierAddr,
 	)
 
 	tests := []struct {
@@ -203,13 +216,18 @@ func TestMsgServer_CreateClaim_Error_OutsideOfWindow(t *testing.T) {
 	}{
 		{
 			desc:           "claim message height equals claim window open height minus one",
-			claimMsgHeight: claimWindowOpenHeight - 1,
+			claimMsgHeight: earliestClaimCommitHeight - 1,
 			expectedErr: status.Error(
 				codes.FailedPrecondition,
 				types.ErrProofClaimOutsideOfWindow.Wrapf(
-					"current block height (%d) is less than session claim window open height (%d)",
-					claimWindowOpenHeight-1,
-					shared.GetClaimWindowOpenHeight(&sharedParams, sessionHeader.GetSessionEndBlockHeight()),
+					"current block height (%d) is less than the session's earliest claim commit height (%d)",
+					earliestClaimCommitHeight-1,
+					shared.GetEarliestSupplierClaimCommitHeight(
+						&sharedParams,
+						sessionHeader.GetSessionEndBlockHeight(),
+						claimWindowOpenBlockHash,
+						supplierAddr,
+					),
 				).Error(),
 			),
 		},
