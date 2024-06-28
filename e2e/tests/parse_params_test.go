@@ -159,6 +159,8 @@ func (s *suite) newSharedMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 		switch paramName {
 		case sharedtypes.ParamNumBlocksPerSession:
 			msgUpdateParams.Params.NumBlocksPerSession = uint64(paramValue.value.(int64))
+		case sharedtypes.ParamGracePeriodEndOffsetBlocks:
+			msgUpdateParams.Params.GracePeriodEndOffsetBlocks = uint64(paramValue.value.(int64))
 		case sharedtypes.ParamClaimWindowOpenOffsetBlocks:
 			msgUpdateParams.Params.ClaimWindowOpenOffsetBlocks = uint64(paramValue.value.(int64))
 		case sharedtypes.ParamClaimWindowCloseOffsetBlocks:

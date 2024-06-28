@@ -346,17 +346,20 @@ func TestRelayerProxy_NonConfiguredSupplierServices(t *testing.T) {
 
 // Test different RelayRequest scenarios
 func TestRelayerProxy_Relays(t *testing.T) {
+
+	sharedParams := sharedtypes.DefaultParams()
+
+	sessionTwoStartHeight := shared.GetSessionEndHeight(&sharedParams, blockHeight) + 1
+
 	// blockOutsideSessionGracePeriod is the block height that is after the first
 	// session's grace period and within the second session's grace period,
-	// meaning a relay should not be handled at this block height.
-	blockOutsideSessionGracePeriod := int64(blockHeight +
-		sharedtypes.DefaultNumBlocksPerSession +
-		shared.SessionGracePeriodBlocks)
+	// meaning a relay should be handled as part of the session two AND NOT session one.
+	blockOutsideSessionGracePeriod := shared.GetSessionGracePeriodEndHeight(&sharedParams, sessionTwoStartHeight)
 
 	// blockWithinSessionGracePeriod is the block height that is after the first
 	// session but within its session's grace period, meaning a relay should be
 	// handled at this block height.
-	blockWithinSessionGracePeriod := int64(blockHeight + shared.SessionGracePeriodBlocks)
+	blockWithinSessionGracePeriod := shared.GetSessionGracePeriodEndHeight(&sharedParams, blockHeight) - 1
 
 	tests := []struct {
 		desc string

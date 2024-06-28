@@ -405,6 +405,11 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 			params.NumBlocksPerSession = uint64(numBlocksPerSessionParam.value.(int64))
 		}
 
+		gracePeriodEndOffsetBlocksParam, ok := paramsMap[sharedtypes.ParamGracePeriodEndOffsetBlocks]
+		if ok {
+			params.GracePeriodEndOffsetBlocks = uint64(gracePeriodEndOffsetBlocksParam.value.(int64))
+		}
+
 		claimWindowOpenOffsetBlocksParam, ok := paramsMap[sharedtypes.ParamClaimWindowOpenOffsetBlocks]
 		if ok {
 			params.ClaimWindowOpenOffsetBlocks = uint64(claimWindowOpenOffsetBlocksParam.value.(int64))

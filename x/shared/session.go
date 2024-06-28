@@ -12,13 +12,6 @@ const (
 
 // TODO_DOCUMENT(@bryanchriswhite): Move this into the documentation: https://github.com/pokt-network/poktroll/pull/571#discussion_r1630923625
 
-// SessionGracePeriodBlocks is the number of blocks after the session ends before the
-// "session grace period" is considered to have elapsed.
-//
-// TODO_BLOCKER(@bryanchriswhite): This is a place-holder that will be removed
-// once the respective governance parameter is implemented.
-const SessionGracePeriodBlocks = 2
-
 // GetSessionStartHeight returns the block height at which the session containing
 // queryHeight starts, given the passed shared on-chain parameters.
 // Returns 0 if the block height is not a consensus produced block.
@@ -70,9 +63,11 @@ func GetSessionNumber(sharedParams *sharedtypes.Params, queryHeight int64) int64
 
 // GetSessionGracePeriodEndHeight returns the block height at which the grace period
 // for the session that includes queryHeight elapses, given the passed sharedParams.
+// The grace period is the number of blocks after the session ends during which relays
+// SHOULD be included in the session which most recently ended.
 func GetSessionGracePeriodEndHeight(sharedParams *sharedtypes.Params, queryHeight int64) int64 {
 	sessionEndHeight := GetSessionEndHeight(sharedParams, queryHeight)
-	return sessionEndHeight + SessionGracePeriodBlocks
+	return sessionEndHeight + int64(sharedParams.GetGracePeriodEndOffsetBlocks())
 }
 
 // IsGracePeriodElapsed returns true if the grace period for the session ending with

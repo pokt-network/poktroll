@@ -92,6 +92,8 @@ func (sq *sharedQuerier) GetProofWindowOpenHeight(ctx context.Context, queryHeig
 
 // GetSessionGracePeriodEndHeight returns the block height at which the grace period
 // for the session which includes queryHeight elapses.
+// The grace period is the number of blocks after the session ends during which relays
+// SHOULD be included in the session which most recently ended.
 //
 // TODO_TECHDEBT(#543): We don't really want to have to query the params for every method call.
 // Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method

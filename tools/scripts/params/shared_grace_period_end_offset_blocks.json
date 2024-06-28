@@ -4,7 +4,7 @@
       {
         "@type": "/poktroll.shared.MsgUpdateParam",
         "authority": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
-        "name": "claim_window_open_offset_blocks",
+        "name": "grace_period_end_offset_blocks",
         "as_int64": "1"
       }
     ]
