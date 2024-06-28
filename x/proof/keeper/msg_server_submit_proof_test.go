@@ -134,7 +134,7 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 				polyzero.NewLogger(),
 				prooftypes.NewAppKeeperQueryClient(keepers.ApplicationKeeper),
 				prooftypes.NewAccountKeeperQueryClient(keepers.AccountKeeper),
-				prooftypes.NewSharedKeeperQueryClient(keepers.SharedKeeper),
+				prooftypes.NewSharedKeeperQueryClient(keepers.SharedKeeper, keepers.SessionKeeper),
 			))
 			require.NoError(t, err)
 
@@ -263,7 +263,7 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 		polyzero.NewLogger(),
 		prooftypes.NewAppKeeperQueryClient(keepers.ApplicationKeeper),
 		prooftypes.NewAccountKeeperQueryClient(keepers.AccountKeeper),
-		prooftypes.NewSharedKeeperQueryClient(keepers.SharedKeeper),
+		prooftypes.NewSharedKeeperQueryClient(keepers.SharedKeeper, keepers.SessionKeeper),
 	))
 	require.NoError(t, err)
 
@@ -462,7 +462,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 		polyzero.NewLogger(),
 		prooftypes.NewAppKeeperQueryClient(keepers.ApplicationKeeper),
 		prooftypes.NewAccountKeeperQueryClient(keepers.AccountKeeper),
-		prooftypes.NewSharedKeeperQueryClient(keepers.SharedKeeper),
+		prooftypes.NewSharedKeeperQueryClient(keepers.SharedKeeper, keepers.SessionKeeper),
 	))
 	require.NoError(t, err)
 
