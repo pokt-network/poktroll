@@ -3,17 +3,16 @@ sidebar_position: 2
 title: Load Testing - DevNet
 ---
 
-# Load Testing on DevNets
+# Load Testing on DevNets <!-- omit in toc -->
 
 A guide on how to perform load testing on DevNets.
 
-- [Load Testing on DevNets](#load-testing-on-devnets)
-  - [Overview](#overview)
-  - [Prerequisites](#prerequisites)
-    - [1. Create and configure the DevNet](#1-create-and-configure-the-devnet)
-    - [2. Stake the necessary actors](#2-stake-the-necessary-actors)
-    - [3. Configure the load testing manifest](#3-configure-the-load-testing-manifest)
-  - [Full example](#full-example)
+- [Overview](#overview)
+- [Prerequisites](#prerequisites)
+  - [1. Create and configure the DevNet](#1-create-and-configure-the-devnet)
+  - [2. Stake the necessary actors](#2-stake-the-necessary-actors)
+  - [3. Configure the load testing manifest](#3-configure-the-load-testing-manifest)
+- [Full example](#full-example)
 
 ## Overview
 

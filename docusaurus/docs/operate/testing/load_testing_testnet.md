@@ -3,14 +3,13 @@ sidebar_position: 2
 title: Load Testing - TestNet
 ---
 
-# Load Testing on TestNets
+# Load Testing on TestNets <!-- omit in toc -->
 
 A guide on how to perform load testing on TestNets.
 
-- [Load Testing on TestNets](#load-testing-on-testnets)
-  - [Overview](#overview)
-  - [Load Testing Steps](#load-testing-steps)
-  - [Examples](#examples)
+- [Overview](#overview)
+- [Load Testing Steps](#load-testing-steps)
+- [Examples](#examples)
 
 ## Overview
 

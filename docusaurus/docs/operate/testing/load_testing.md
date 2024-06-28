@@ -3,24 +3,23 @@ sidebar_position: 1
 title: Load Testing
 ---
 
-# Load Testing
+# Load Testing <!-- omit in toc -->
 
 Poktroll load-testing suite.
 
-- [Load Testing](#load-testing)
-  - [Overview](#overview)
-  - [Dependencies](#dependencies)
-  - [Load Test Manifests](#load-test-manifests)
-  - [Test Features](#test-features)
-  - [Executing Tests](#executing-tests)
-    - [LocalNet Environment](#localnet-environment)
-      - [Interpreting Results](#interpreting-results)
-    - [Non-Ephemeral Networks (TestNets, MainNet, etc)](#non-ephemeral-networks-testnets-mainnet-etc)
-      - [Prerequisites](#prerequisites)
-      - [Manifest Modification](#manifest-modification)
-      - [Test Execution](#test-execution)
-      - [Result Analysis](#result-analysis)
-  - [Developing Custom Tests](#developing-custom-tests)
+- [Overview](#overview)
+- [Dependencies](#dependencies)
+- [Load Test Manifests](#load-test-manifests)
+- [Test Features](#test-features)
+- [Executing Tests](#executing-tests)
+  - [LocalNet Environment](#localnet-environment)
+    - [Interpreting Results](#interpreting-results)
+  - [Non-Ephemeral Networks (TestNets, MainNet, etc)](#non-ephemeral-networks-testnets-mainnet-etc)
+    - [Prerequisites](#prerequisites)
+    - [Manifest Modification](#manifest-modification)
+    - [Test Execution](#test-execution)
+    - [Result Analysis](#result-analysis)
+- [Developing Custom Tests](#developing-custom-tests)
 
 ## Overview
 
