@@ -96,7 +96,7 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 
 	// we wait for proofWindowOpenHeight to be received before proceeding since we need
 	// its hash to seed the pseudo-random number generator for the proof submission
-	// distribution (i.e.earliestSupplierProofCommitHeight).
+	// distribution (i.e. earliestSupplierProofCommitHeight).
 	logger = logger.With("proof_window_open_height", proofWindowOpenHeight)
 	logger.Info().Msg("waiting & blocking until the proof window open height")
 

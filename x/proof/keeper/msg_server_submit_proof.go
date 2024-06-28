@@ -466,7 +466,7 @@ func (k msgServer) validateClosestPath(
 	//
 	// Since smt.ProveClosest is defined in terms of proof window open height,
 	// this block's hash needs to be used for validation too.
-	proofWindowOpenHeight, err := k.sharedQuerier.GetEarliestSupplierProofCommitHeight(
+	earliestSupplierProofCommitHeight, err := k.sharedQuerier.GetEarliestSupplierProofCommitHeight(
 		ctx,
 		sessionHeader.GetSessionEndBlockHeight(),
 		supplierAddr,
@@ -475,14 +475,14 @@ func (k msgServer) validateClosestPath(
 		return err
 	}
 
-	// proofWindowOpenHeight - 1 is the block that will have its hash used as the
+	// earliestSupplierProofCommitHeight - 1 is the block that will have its hash used as the
 	// source of entropy for all the session trees in that batch, waiting for it to
 	// be received before proceeding.
-	proofPathSeedBlockHash := k.sessionKeeper.GetBlockHash(ctx, proofWindowOpenHeight-1)
+	proofPathSeedBlockHash := k.sessionKeeper.GetBlockHash(ctx, earliestSupplierProofCommitHeight-1)
 
 	// TODO_BETA: Investigate "proof for the path provided does not match one expected by the on-chain protocol"
 	// error that may occur due to block height differing from the off-chain part.
-	k.logger.Info("E2E_DEBUG: height for block hash when verifying the proof", proofWindowOpenHeight, sessionHeader.GetSessionId())
+	k.logger.Info("E2E_DEBUG: height for block hash when verifying the proof", earliestSupplierProofCommitHeight, sessionHeader.GetSessionId())
 
 	expectedProofPath := GetPathForProof(proofPathSeedBlockHash, sessionHeader.GetSessionId())
 	if !bytes.Equal(proof.Path, expectedProofPath) {
