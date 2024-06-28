@@ -4,7 +4,7 @@ import (
 	"net/url"
 	"strconv"
 
-	sdk "github.com/pokt-network/shannon-sdk"
+	shannonsdk "github.com/pokt-network/shannon-sdk"
 
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -16,28 +16,28 @@ import (
 // to gateways.
 func (app *appGateServer) getRelayerUrl(
 	rpcType sharedtypes.RPCType,
-	filteredSession sdk.FilteredSession,
+	sessionEndpoints shannonsdk.FilteredSession,
 	requestUrlStr string,
-) (supplierEndpoint sdk.Endpoint, err error) {
-	sessionEndpoints, err := filteredSession.AllEndpoints()
+) (supplierEndpoint shannonsdk.Endpoint, err error) {
+	endpoints, err := sessionEndpoints.AllEndpoints()
 	if err != nil {
 		return nil, err
 	}
 
 	// Filter out the supplier endpoints that match the requested serviceId.
-	validSupplierEndpoints := []sdk.Endpoint{}
+	matchingRPCTypeEndpoints := []shannonsdk.Endpoint{}
 
-	for _, supplierEndpoints := range sessionEndpoints {
+	for _, supplierEndpoints := range endpoints {
 		for _, supplierEndpoint := range supplierEndpoints {
 			// Collect the endpoints that match the request's RpcType.
 			if supplierEndpoint.Endpoint().RpcType == rpcType {
-				validSupplierEndpoints = append(validSupplierEndpoints, supplierEndpoint)
+				matchingRPCTypeEndpoints = append(matchingRPCTypeEndpoints, supplierEndpoint)
 			}
 		}
 	}
 
 	// Return an error if no relayer endpoints were found.
-	if len(validSupplierEndpoints) == 0 {
+	if len(matchingRPCTypeEndpoints) == 0 {
 		return nil, ErrAppGateNoRelayEndpoints
 	}
 
@@ -68,11 +68,11 @@ func (app *appGateServer) getRelayerUrl(
 		if err != nil {
 			relayCountNum = 0
 		}
-		nextEndpointIdx = relayCountNum % len(validSupplierEndpoints)
+		nextEndpointIdx = relayCountNum % len(matchingRPCTypeEndpoints)
 	} else {
-		app.endpointSelectionIndex = (app.endpointSelectionIndex + 1) % len(validSupplierEndpoints)
+		app.endpointSelectionIndex = (app.endpointSelectionIndex + 1) % len(matchingRPCTypeEndpoints)
 		nextEndpointIdx = app.endpointSelectionIndex
 	}
 
-	return validSupplierEndpoints[nextEndpointIdx], nil
+	return matchingRPCTypeEndpoints[nextEndpointIdx], nil
 }

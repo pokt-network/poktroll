@@ -8,20 +8,22 @@ import (
 
 	"cosmossdk.io/depinject"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
-	sdk "github.com/pokt-network/shannon-sdk"
+	shannonsdk "github.com/pokt-network/shannon-sdk"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/query"
 	"github.com/pokt-network/poktroll/x/service/types"
 )
 
+// ShannonSDK is a wrapper around the Shannon SDK that is used by the AppGateServer
+// to encapsulate the SDK's functionality and dependencies.
 type ShannonSDK struct {
 	blockClient   client.BlockClient
 	sessionClient client.SessionQueryClient
 	appClient     client.ApplicationQueryClient
 	accountClient client.AccountQueryClient
 	relayClient   *http.Client
-	signer        *sdk.Signer
+	signer        *shannonsdk.Signer
 }
 
 // NewShannonSDK creates a new ShannonSDK instance with the given signing key and dependencies.
@@ -46,8 +48,8 @@ func NewShannonSDK(
 		return nil, err
 	}
 
-	blockClient, err := NewBlockClient(deps)
-	if err != nil {
+	blockClient := client.BlockClient(nil)
+	if err := depinject.Inject(deps, &blockClient); err != nil {
 		return nil, err
 	}
 
@@ -73,10 +75,10 @@ func NewShannonSDK(
 func (shannonSDK *ShannonSDK) SendRelay(
 	ctx context.Context,
 	appAddress string,
-	endpoint sdk.Endpoint,
+	endpoint shannonsdk.Endpoint,
 	requestBz []byte,
 ) (*types.RelayResponse, error) {
-	relayRequest, err := sdk.BuildRelayRequest(endpoint, requestBz)
+	relayRequest, err := shannonsdk.BuildRelayRequest(endpoint, requestBz)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +88,7 @@ func (shannonSDK *ShannonSDK) SendRelay(
 		return nil, err
 	}
 
-	appRing := sdk.ApplicationRing{
+	appRing := shannonsdk.ApplicationRing{
 		PublicKeyFetcher: shannonSDK.accountClient,
 		Application:      application,
 	}
@@ -113,7 +115,7 @@ func (shannonSDK *ShannonSDK) SendRelay(
 		return nil, err
 	}
 
-	return sdk.ValidateRelayResponse(
+	return shannonsdk.ValidateRelayResponse(
 		ctx,
 		endpoint.Supplier(),
 		responseBodyBz,
@@ -126,14 +128,14 @@ func (shannonSDK *ShannonSDK) SendRelay(
 func (shannonSDK *ShannonSDK) GetSessionSupplierEndpoints(
 	ctx context.Context,
 	appAddress, serviceId string,
-) (*sdk.FilteredSession, error) {
+) (*shannonsdk.FilteredSession, error) {
 	currentHeight := shannonSDK.blockClient.LastBlock(ctx).Height()
 	session, err := shannonSDK.sessionClient.GetSession(ctx, appAddress, serviceId, currentHeight)
 	if err != nil {
 		return nil, err
 	}
 
-	filteredSession := &sdk.FilteredSession{
+	filteredSession := &shannonsdk.FilteredSession{
 		Session: session,
 	}
 
