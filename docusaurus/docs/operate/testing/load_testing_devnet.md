@@ -10,15 +10,14 @@ A guide on how to perform load testing on DevNets.
 - [Load Testing on DevNets](#load-testing-on-devnets)
   - [Overview](#overview)
   - [Prerequisites](#prerequisites)
-    - [1. Create and configure the TestNet](#1-create-and-configure-the-testnet)
+    - [1. Create and configure the DevNet](#1-create-and-configure-the-devnet)
     - [2. Stake the necessary actors](#2-stake-the-necessary-actors)
     - [3. Configure the load testing manifest](#3-configure-the-load-testing-manifest)
   - [Full example](#full-example)
 
-
 ## Overview
 
-We can create DevNets that are suitable for running load-tests.
+We can create DevNets that are suitable for running load tests.
 
 :::warning
 DevNets created with GitHub PRs using `devnet-test-e2e` tags are not suitable for load testing, as they only provision a
@@ -27,21 +26,20 @@ single instance of each off-chain actor. We can create custom DevNets with multi
 
 ## Prerequisites
 
-### 1. Create and configure the TestNet
+### 1. Create and configure the DevNet
 
-Please refer to DevNet creation guide [here](../infrastructure/devnet.md#how-to-create)
+Please refer to the DevNet creation guide [here](../infrastructure/devnet.md#how-to-create).
 
 ### 2. Stake the necessary actors
 
-- Depending on your LoadTesting requirement, you may need to stake one or more `gateways` and `suppliers`;
-- [DevNet documentation](../infrastructure/devnet.md#stake-actors) provides more details about staking actors in DevNets;
-- Note to save the addresses of 
+- Depending on your load testing requirements, you may need to stake one or more `gateways` and `suppliers`.
+- [DevNet documentation](../infrastructure/devnet.md#stake-actors) provides more details about staking actors in DevNets.
 
 ### 3. Configure the load testing manifest
 
 [Load Testing documentation](./load_testing.md#manifest-modification) provides information on how the load test manifest
 can be modified to run against DevNets. DevNets are not much different from TestNets, but they do not have randomly
-generated addresses. Instead, the addresses are shared with LocalNet for convinience.
+generated addresses. Instead, the addresses are shared with LocalNet for convenience.
 
 ## Full example
 
@@ -64,7 +62,7 @@ relayminers:
 2. Gateways and suppliers can be staked using the following commands:
 
 :::info
-`supplier1` and `gateway1` are pre-staked as a part of genesis generation process.
+`supplier1` and `gateway1` are pre-staked as part of the genesis generation process.
 :::
 
 ```bash
@@ -74,7 +72,7 @@ POCKET_NODE=https://devnet-sophon-validator-rpc.poktroll.com make supplier2_stak
 POCKET_NODE=https://devnet-sophon-validator-rpc.poktroll.com make supplier3_stake
 ```
 
-3. Update manifest. The content of
+3. Update the manifest. The content of
 [loadtest_manifest_example.yaml](https://github.com/pokt-network/poktroll/blob/main/load-testing/loadtest_manifest_example.yaml)
 can be modified as follows:
 
@@ -90,7 +88,7 @@ testnet_node: https://devnet-sophon-validator-rpc.poktroll.com
 # The service ID to request relays from.
 service_id: "anvil"
 
-# The address of the account that will be used to fund the the application accounts
+# The address of the account that will be used to fund the application accounts
 # so that they can stake on the network.
 funding_account_address: pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw # address for pnf account
 
@@ -104,14 +102,14 @@ gateways:
     exposed_url: https://devnet-sophon-gateway-3.poktroll.com
 ```
 
-4. Run the test
+4. Run the test:
 
 ```bash
 make test_load_relays_stress_example
 ```
 
-5. Observe the results
+5. Observe the results:
 
 You can see the performance of the requests on [Grafana dashboards](https://grafana.poktroll.com/d/nginx/nginx-ingress-controller).
-The DevNets have LoadBalancers which allows to get more metrics about network load and latency. When looking
+The DevNets have LoadBalancers which allow for more metrics about network load and latency. When looking
 at the `NGINX Ingress controller` Dashboard, make sure to change the namespace to match the DevNet name.
