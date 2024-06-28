@@ -10,7 +10,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/filter"
 	"github.com/pokt-network/poktroll/pkg/observable/logging"
 	"github.com/pokt-network/poktroll/pkg/relayer"
-	"github.com/pokt-network/poktroll/pkg/relayer/protocol"
 )
 
 // createClaims maps over the sessionsToClaimObs observable. For each claim batch, it:
@@ -84,53 +83,56 @@ func (rs *relayerSessionsManager) mapWaitForEarliestCreateClaimsHeight(
 func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 	ctx context.Context,
 	sessionTrees []relayer.SessionTree,
-	failSubmitProofsSessionsCh chan<- []relayer.SessionTree,
+	failedCreateClaimsSessionsCh chan<- []relayer.SessionTree,
 ) []relayer.SessionTree {
 	// Given the sessionTrees are grouped by their sessionEndHeight, we can use the
 	// first one from the group to calculate the earliest height for claim creation.
 	sessionEndHeight := sessionTrees[0].GetSessionHeader().GetSessionEndBlockHeight()
 
-	createClaimsWindowOpenHeight, err := rs.sharedQueryClient.GetClaimWindowOpenHeight(ctx, sessionEndHeight)
+	logger := rs.logger.With("session_end_height", sessionEndHeight)
+
+	claimWindowOpenHeight, err := rs.sharedQueryClient.GetClaimWindowOpenHeight(ctx, sessionEndHeight)
 	if err != nil {
-		failSubmitProofsSessionsCh <- sessionTrees
+		failedCreateClaimsSessionsCh <- sessionTrees
 		return nil
 	}
 
-	// we wait for createClaimsWindowOpenHeight to be received before proceeding since we need its hash
+	// we wait for claimWindowOpenHeight to be received before proceeding since we need its hash
 	// to know where this servicer's claim submission window opens.
-	rs.logger.Info().
-		Int64("create_claim_window_open_height", createClaimsWindowOpenHeight).
-		Msg("waiting & blocking for global earliest claim submission height")
+	logger = logger.With("claim_window_open_height", claimWindowOpenHeight)
+	logger.Info().Msg("waiting & blocking until the earliest claim commit height offset seed block height")
 
-	// TODO_BLOCKER(@bryanchriswhite): The block that'll be used as a source of entropy for
-	// which branch(es) to prove should be deterministic and use on-chain governance params.
-	createClaimsWindowOpenBlock := rs.waitForBlock(ctx, createClaimsWindowOpenHeight)
+	// The block that'll be used as a source of entropy for which branch(es) to
+	// prove should be deterministic and use on-chain governance params.
+	claimsWindowOpenBlock := rs.waitForBlock(ctx, claimWindowOpenHeight)
 
 	claimsFlushedCh := make(chan []relayer.SessionTree)
 	defer close(claimsFlushedCh)
 	go rs.goCreateClaimRoots(
 		ctx,
 		sessionTrees,
-		failSubmitProofsSessionsCh,
+		failedCreateClaimsSessionsCh,
 		claimsFlushedCh,
 	)
 
-	rs.logger.Info().
-		Int64("create_claim_window_open_height", createClaimsWindowOpenBlock.Height()).
-		Str("hash", fmt.Sprintf("%x", createClaimsWindowOpenBlock.Hash())).
-		Msg("received global earliest claim submission height")
+	logger = logger.With("claim_window_open_block_hash", fmt.Sprintf("%x", claimsWindowOpenBlock.Hash()))
+	logger.Info().Msg("observed earliest claim commit height offset seed block height")
 
-	earliestCreateClaimHeight := protocol.GetEarliestCreateClaimHeight(
-		ctx,
-		createClaimsWindowOpenBlock,
-	)
+	// Get the earliestClaimsCommitHeight.
+	supplierAddr := sessionTrees[0].GetSupplierAddress().String()
+	earliestClaimsCommitHeight, err := rs.sharedQueryClient.GetEarliestSupplierClaimCommitHeight(ctx, sessionEndHeight, supplierAddr)
+	if err != nil {
+		failedCreateClaimsSessionsCh <- sessionTrees
+		return nil
+	}
 
-	rs.logger.Info().
-		Int64("earliest_create_claim_height", earliestCreateClaimHeight).
-		Str("hash", fmt.Sprintf("%x", createClaimsWindowOpenBlock.Hash())).
-		Msg("waiting & blocking for earliest claim creation height for this supplier")
+	logger = logger.With("earliest_claim_commit_height", earliestClaimsCommitHeight)
+	logger.Info().Msg("waiting & blocking until the earliest claim commit height for this supplier")
 
-	_ = rs.waitForBlock(ctx, earliestCreateClaimHeight)
+	// Wait for the earliestClaimsCommitHeight to be reached before proceeding.
+	_ = rs.waitForBlock(ctx, earliestClaimsCommitHeight)
+
+	logger.Info().Msg("observed earliest claim commit height")
 
 	return <-claimsFlushedCh
 }
