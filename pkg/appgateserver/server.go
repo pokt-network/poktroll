@@ -11,13 +11,13 @@ import (
 	"sync"
 
 	"cosmossdk.io/depinject"
-	"github.com/pokt-network/shannon-sdk/sdk"
 	sdktypes "github.com/pokt-network/shannon-sdk/types"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	metrics "github.com/slok/go-http-metrics/metrics/prometheus"
 	metricsmiddleware "github.com/slok/go-http-metrics/middleware"
 	middlewarestd "github.com/slok/go-http-metrics/middleware/std"
 
+	"github.com/pokt-network/poktroll/pkg/appgateserver/sdkadapter"
 	querytypes "github.com/pokt-network/poktroll/pkg/client/query/types"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -58,7 +58,7 @@ type appGateServer struct {
 
 	// sdk is the ShannonSDK that the appGateServer uses to query for the current session
 	// and send relay requests to the supplier.
-	sdk *sdk.ShannonSDK
+	sdk *sdkadapter.ShannonSDK
 
 	// listeningEndpoint is the endpoint that the appGateServer will listen on.
 	listeningEndpoint *url.URL
