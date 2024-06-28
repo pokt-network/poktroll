@@ -63,7 +63,7 @@ relayminers:
 
 2. Gateways and suppliers can be staked using the following commands:
 
-::info
+:::info
 `supplier1` and `gateway1` are pre-staked as a part of genesis generation process.
 :::
 
