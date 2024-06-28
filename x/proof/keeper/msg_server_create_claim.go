@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"context"
-	"errors"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/gogoproto/proto"
@@ -11,6 +10,8 @@ import (
 
 	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/proof/types"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func (k msgServer) CreateClaim(
@@ -42,12 +43,13 @@ func (k msgServer) CreateClaim(
 	logger := k.Logger().With("method", "CreateClaim")
 	logger.Info("creating claim")
 
-	if err := msg.ValidateBasic(); err != nil {
+	if err = msg.ValidateBasic(); err != nil {
 		return nil, err
 	}
 
 	// Compare msg session header w/ on-chain session header.
-	session, err := k.queryAndValidateSessionHeader(ctx, msg)
+	var session *sessiontypes.Session
+	session, err = k.queryAndValidateSessionHeader(ctx, msg)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -60,7 +62,7 @@ func (k msgServer) CreateClaim(
 
 	// Validate claim message commit height is within the respective session's
 	// claim creation window using the on-chain session header.
-	if err := k.validateClaimWindow(ctx, msg); err != nil {
+	if err = k.validateClaimWindow(ctx, msg); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 
@@ -86,19 +88,13 @@ func (k msgServer) CreateClaim(
 
 	logger.Info("created new claim")
 
-	// NB: Don't return these errors, it should not prevent the MsgCreateProofResopnse
-	// from being returned. Instead, they will be joined and attached as an "error" label
-	// to any metrics tracked in this function.
-	// TODO_IMPROVE: While this will surface the error in metrics, it will also cause
-	// any counters not to be incremented even though a new proof might have been inserted.
-	var tempError error
-	numRelays, tempError = claim.GetNumRelays()
-	if tempError != nil {
-		err = errors.Join(err, tempError)
+	numRelays, err = claim.GetNumRelays()
+	if err != nil {
+		return nil, status.Error(codes.Internal, types.ErrProofInvalidClaimRootHash.Wrap(err.Error()).Error())
 	}
-	numComputeUnits, tempError = claim.GetNumComputeUnits()
-	if tempError != nil {
-		err = errors.Join(err, tempError)
+	numComputeUnits, err = claim.GetNumComputeUnits()
+	if err != nil {
+		return nil, status.Error(codes.Internal, types.ErrProofInvalidClaimRootHash.Wrap(err.Error()).Error())
 	}
 
 	// Emit the appropriate event based on whether the claim was created or updated.
@@ -123,15 +119,19 @@ func (k msgServer) CreateClaim(
 	}
 
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
-	emitEventErr := sdkCtx.EventManager().EmitTypedEvent(claimUpsertEvent)
-
-	// NB: Don't return this error, it should not prevent the MsgCreateClaimResopnse
-	// from being returned. Instead, it will be attached as an "error" label to any
-	// metrics tracked in this function.
-	// TODO_IMPROVE: While this will surface the error in metrics, it will also cause
-	// any counters not to be incremented even though a new claim might have been inserted.
-	err = errors.Join(err, emitEventErr)
+	if err = sdkCtx.EventManager().EmitTypedEvent(claimUpsertEvent); err != nil {
+		return nil, status.Error(
+			codes.Internal,
+			sharedtypes.ErrSharedEmitEvent.Wrapf(
+				"failed to emit event type %T: %v",
+				claimUpsertEvent,
+				err,
+			).Error(),
+		)
+	}
 
 	// TODO_BETA: return the claim in the response.
-	return &types.MsgCreateClaimResponse{}, nil
+	return &types.MsgCreateClaimResponse{
+		Claim: &claim,
+	}, nil
 }

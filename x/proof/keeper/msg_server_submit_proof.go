@@ -23,6 +23,7 @@ import (
 	"github.com/pokt-network/poktroll/x/proof/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // SMT specification used for the proof verification.
@@ -281,11 +282,11 @@ func (k msgServer) SubmitProof(
 
 	numRelays, err = claim.GetNumRelays()
 	if err != nil {
-		return nil, err
+		return nil, status.Error(codes.Internal, types.ErrProofInvalidClaimRootHash.Wrap(err.Error()).Error())
 	}
 	numComputeUnits, err = claim.GetNumComputeUnits()
 	if err != nil {
-		return nil, err
+		return nil, status.Error(codes.Internal, types.ErrProofInvalidClaimRootHash.Wrap(err.Error()).Error())
 	}
 
 	// Emit the appropriate event based on whether the claim was created or updated.
@@ -294,6 +295,7 @@ func (k msgServer) SubmitProof(
 	case true:
 		proofUpsertEvent = proto.Message(
 			&types.EventProofUpdated{
+				Claim:           claim,
 				Proof:           &proof,
 				NumRelays:       numRelays,
 				NumComputeUnits: numComputeUnits,
@@ -302,6 +304,7 @@ func (k msgServer) SubmitProof(
 	case false:
 		proofUpsertEvent = proto.Message(
 			&types.EventProofSubmitted{
+				Claim:           claim,
 				Proof:           &proof,
 				NumRelays:       numRelays,
 				NumComputeUnits: numComputeUnits,
@@ -311,10 +314,19 @@ func (k msgServer) SubmitProof(
 
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	if err = sdkCtx.EventManager().EmitTypedEvent(proofUpsertEvent); err != nil {
-		return nil, err
+		return nil, status.Error(
+			codes.Internal,
+			sharedtypes.ErrSharedEmitEvent.Wrapf(
+				"failed to emit event type %T: %v",
+				proofUpsertEvent,
+				err,
+			).Error(),
+		)
 	}
 
-	return &types.MsgSubmitProofResponse{}, nil
+	return &types.MsgSubmitProofResponse{
+		Proof: &proof,
+	}, nil
 }
 
 // queryAndValidateClaimForProof ensures that a claim corresponding to the given

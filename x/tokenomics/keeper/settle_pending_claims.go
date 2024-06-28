@@ -41,17 +41,22 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 
 	logger.Debug("settling expiring claims")
 	for _, claim := range expiringClaims {
+		var (
+			numClaimComputeUnits   uint64
+			numRelaysInSessionTree uint64
+			proofRequirement       prooftypes.ProofRequirementReason
+		)
 
 		// NB: Note that not every (Req, Res) pair in the session is inserted in
 		// the tree for scalability reasons. This is the count of non-empty leaves
 		// that matched the necessary difficulty and is therefore an estimation
 		// of the total number of relays serviced and work done.
-		numClaimComputeUnits, err := claim.GetNumComputeUnits()
+		numClaimComputeUnits, err = claim.GetNumComputeUnits()
 		if err != nil {
 			return 0, 0, relaysPerServiceMap, computeUnitsPerServiceMap, err
 		}
 
-		numRelaysInSessionTree, err := claim.GetNumRelays()
+		numRelaysInSessionTree, err = claim.GetNumRelays()
 		if err != nil {
 			return 0, 0, relaysPerServiceMap, computeUnitsPerServiceMap, err
 		}
@@ -61,7 +66,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 		_, isProofFound := k.proofKeeper.GetProof(ctx, sessionId, claim.SupplierAddress)
 		// Using the probabilistic proofs approach, determine if this expiring
 		// claim required an on-chain proof
-		proofRequirement, err := k.proofRequirementForClaim(ctx, &claim)
+		proofRequirement, err = k.proofRequirementForClaim(ctx, &claim)
 		if err != nil {
 			return 0, 0, relaysPerServiceMap, computeUnitsPerServiceMap, err
 		}
@@ -83,7 +88,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 					NumComputeUnits: numClaimComputeUnits,
 					NumRelays:       numRelaysInSessionTree,
 				}
-				if err := ctx.EventManager().EmitTypedEvent(&claimExpiredEvent); err != nil {
+				if err = ctx.EventManager().EmitTypedEvent(&claimExpiredEvent); err != nil {
 					return 0, 0, relaysPerServiceMap, computeUnitsPerServiceMap, err
 				}
 
@@ -101,7 +106,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 		}
 
 		// Manage the mint & burn accounting for the claim.
-		if err := k.SettleSessionAccounting(ctx, &claim); err != nil {
+		if err = k.SettleSessionAccounting(ctx, &claim); err != nil {
 			logger.Error(fmt.Sprintf("error settling session accounting for claim %q: %v", claim.SessionHeader.SessionId, err))
 			return 0, 0, relaysPerServiceMap, computeUnitsPerServiceMap, err
 		}
@@ -113,11 +118,11 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 			ProofRequirement: proofRequirement,
 		}
 
-		if err := ctx.EventManager().EmitTypedEvent(&claimSettledEvent); err != nil {
+		if err = ctx.EventManager().EmitTypedEvent(&claimSettledEvent); err != nil {
 			return 0, 0, relaysPerServiceMap, computeUnitsPerServiceMap, err
 		}
 
-		if err := ctx.EventManager().EmitTypedEvent(&prooftypes.EventProofUpdated{
+		if err = ctx.EventManager().EmitTypedEvent(&prooftypes.EventProofUpdated{
 			Claim:           &claim,
 			Proof:           nil,
 			NumRelays:       0,
@@ -192,7 +197,8 @@ func (k Keeper) proofRequirementForClaim(ctx sdk.Context, claim *prooftypes.Clai
 
 	// NB: Assumption that claim is non-nil and has a valid root sum because it
 	// is retrieved from the store and validated, on-chain, at time of creation.
-	claimComputeUnits, err := claim.GetNumComputeUnits()
+	var numClaimComputeUnits uint64
+	numClaimComputeUnits, err = claim.GetNumComputeUnits()
 	if err != nil {
 		return requirementReason, err
 	}
@@ -208,25 +214,27 @@ func (k Keeper) proofRequirementForClaim(ctx sdk.Context, claim *prooftypes.Clai
 	// TODO_IMPROVE(@bryanchriswhite, @red-0ne): It might make sense to include
 	// whether there was a proof submission error downstream from here. This would
 	// require a more comprehensive metrics API.
-	if claimComputeUnits >= proofParams.GetProofRequirementThreshold() {
+	if numClaimComputeUnits >= proofParams.GetProofRequirementThreshold() {
 		requirementReason = prooftypes.ProofRequirementReason_THRESHOLD
 
 		logger.Info(fmt.Sprintf(
 			"claim requires proof due to compute units (%d) exceeding threshold (%d)",
-			claimComputeUnits,
+			numClaimComputeUnits,
 			proofParams.GetProofRequirementThreshold(),
 		))
 		return requirementReason, nil
 	}
 
 	// Get the hash of the claim to seed the random number generator.
-	claimHash, err := claim.GetHash()
+	var claimHash []byte
+	claimHash, err = claim.GetHash()
 	if err != nil {
 		return requirementReason, err
 	}
 
 	// Sample a pseudo-random value between 0 and 1 to determine if a proof is required probabilistically.
-	randFloat, err := poktrand.SeededFloat32(claimHash[:])
+	var randFloat float32
+	randFloat, err = poktrand.SeededFloat32(claimHash[:])
 	if err != nil {
 		return requirementReason, err
 	}
@@ -247,7 +255,7 @@ func (k Keeper) proofRequirementForClaim(ctx sdk.Context, claim *prooftypes.Clai
 
 	logger.Info(fmt.Sprintf(
 		"claim does not require proof due to compute units (%d) being less than the threshold (%d) and random sample (%.2f) being greater than probability (%.2f)",
-		claimComputeUnits,
+		numClaimComputeUnits,
 		proofParams.GetProofRequirementThreshold(),
 		randFloat,
 		proofParams.GetProofRequestProbability(),
