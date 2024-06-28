@@ -3,6 +3,8 @@ package types
 import (
 	"fmt"
 
+	"github.com/cometbft/cometbft/crypto"
+
 	"github.com/pokt-network/smt"
 )
 
@@ -39,4 +41,14 @@ func (claim *Claim) GetNumRelays() (numRelays uint64, err error) {
 	}()
 
 	return smt.MerkleRoot(claim.GetRootHash()).Count(), nil
+}
+
+// GetHash returns the SHA-256 hash of the serialized claim.
+func (claim *Claim) GetHash() ([]byte, error) {
+	claimBz, err := claim.Marshal()
+	if err != nil {
+		return nil, err
+	}
+
+	return crypto.Sha256(claimBz), nil
 }
