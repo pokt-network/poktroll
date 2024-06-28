@@ -11,7 +11,7 @@ import (
 
 	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
 	testutilevents "github.com/pokt-network/poktroll/testutil/events"
-	integration "github.com/pokt-network/poktroll/testutil/integration"
+	"github.com/pokt-network/poktroll/testutil/integration"
 	testutil "github.com/pokt-network/poktroll/testutil/integration"
 	"github.com/pokt-network/poktroll/testutil/testrelayer"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
@@ -28,6 +28,8 @@ func init() {
 }
 
 func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T) {
+	var claimWindowOpenBlockHash, proofWindowOpenBlockHash []byte
+
 	// Create a new integration app
 	integrationApp := integration.NewCompleteIntegrationApp(t)
 
@@ -44,13 +46,23 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	// Compute the number of blocks to wait between different events
 	// TODO_BLOCKER(@bryanchriswhite): See this comment: https://github.com/pokt-network/poktroll/pull/610#discussion_r1645777322
 	sessionEndHeight := session.Header.SessionEndBlockHeight
-	claimWindowOpenHeight := shared.GetClaimWindowOpenHeight(&sharedParams, sessionEndHeight)
-	proofWindowOpenHeight := shared.GetProofWindowOpenHeight(&sharedParams, sessionEndHeight)
+	earliestSupplierClaimCommitHeight := shared.GetEarliestSupplierClaimCommitHeight(
+		&sharedParams,
+		sessionEndHeight,
+		claimWindowOpenBlockHash,
+		integrationApp.DefaultSupplier.GetAddress(),
+	)
+	earliestSupplierProofCommitHeight := shared.GetEarliestSupplierProofCommitHeight(
+		&sharedParams,
+		sessionEndHeight,
+		proofWindowOpenBlockHash,
+		integrationApp.DefaultSupplier.GetAddress(),
+	)
 	proofWindowCloseHeight := shared.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
 
 	// Wait until the earliest claim commit height.
 	currentBlockHeight := integrationApp.GetSdkCtx().BlockHeight()
-	numBlocksUntilClaimWindowOpenHeight := claimWindowOpenHeight - currentBlockHeight
+	numBlocksUntilClaimWindowOpenHeight := earliestSupplierClaimCommitHeight - currentBlockHeight
 	require.Greater(t, numBlocksUntilClaimWindowOpenHeight, int64(0), "unexpected non-positive number of blocks until the earliest claim commit height")
 	integrationApp.NextBlocks(t, int(numBlocksUntilClaimWindowOpenHeight))
 
@@ -69,7 +81,7 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 
 	// Wait until the proof window is open
 	currentBlockHeight = integrationApp.GetSdkCtx().BlockHeight()
-	numBlocksUntilProofWindowOpenHeight := proofWindowOpenHeight - currentBlockHeight
+	numBlocksUntilProofWindowOpenHeight := earliestSupplierProofCommitHeight - currentBlockHeight
 	require.Greater(t, numBlocksUntilProofWindowOpenHeight, int64(0), "unexpected non-positive number of blocks until the earliest proof commit height")
 	integrationApp.NextBlocks(t, int(numBlocksUntilProofWindowOpenHeight))
 
