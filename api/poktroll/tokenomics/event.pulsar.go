@@ -2,10 +2,10 @@
 package tokenomics
 
 import (
+	proof "github.com/pokt-network/poktroll/api/poktroll/proof"
 	fmt "fmt"
 	runtime "github.com/cosmos/cosmos-proto/runtime"
 	_ "github.com/cosmos/gogoproto/gogoproto"
-	proof "github.com/pokt-network/poktroll/api/poktroll/proof"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoiface "google.golang.org/protobuf/runtime/protoiface"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
