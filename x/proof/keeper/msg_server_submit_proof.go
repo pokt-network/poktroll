@@ -227,7 +227,12 @@ func (k msgServer) SubmitProof(
 
 	// Validate that path the proof is submitted for matches the expected one
 	// based on the pseudo-random on-chain data associated with the header.
-	if err := k.validateClosestPath(ctx, sparseMerkleClosestProof, msg.GetSessionHeader()); err != nil {
+	if err := k.validateClosestPath(
+		ctx,
+		sparseMerkleClosestProof,
+		msg.GetSessionHeader(),
+		msg.GetSupplierAddress(),
+	); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 	logger.Debug("successfully validated proof path")
@@ -446,6 +451,7 @@ func (k msgServer) validateClosestPath(
 	ctx context.Context,
 	proof *smt.SparseMerkleClosestProof,
 	sessionHeader *sessiontypes.SessionHeader,
+	supplierAddr string,
 ) error {
 	// The RelayMiner has to wait until the submit claim and proof windows is are open
 	// in order to to create the claim and submit claims and proofs, respectively.
@@ -460,7 +466,11 @@ func (k msgServer) validateClosestPath(
 	//
 	// Since smt.ProveClosest is defined in terms of proof window open height,
 	// this block's hash needs to be used for validation too.
-	proofWindowOpenHeight, err := k.sharedQuerier.GetProofWindowOpenHeight(ctx, sessionHeader.GetSessionEndBlockHeight())
+	proofWindowOpenHeight, err := k.sharedQuerier.GetEarliestSupplierProofCommitHeight(
+		ctx,
+		sessionHeader.GetSessionEndBlockHeight(),
+		supplierAddr,
+	)
 	if err != nil {
 		return err
 	}
