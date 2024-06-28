@@ -296,9 +296,15 @@ type SharedQueryClient interface {
 	// GetClaimWindowOpenHeight returns the block height at which the claim window of
 	// the session that includes queryHeight opens.
 	GetClaimWindowOpenHeight(ctx context.Context, queryHeight int64) (int64, error)
+	// GetEarliestSupplierClaimCommitHeight returns the earliest block height at which a claim
+	// for the session that includes queryHeight can be committed for a given supplier.
+	GetEarliestSupplierClaimCommitHeight(ctx context.Context, queryHeight int64, supplierAddr string) (int64, error)
 	// GetProofWindowOpenHeight returns the block height at which the proof window of
 	// the session that includes queryHeight opens.
 	GetProofWindowOpenHeight(ctx context.Context, queryHeight int64) (int64, error)
+	// GetEarliestSupplierProofCommitHeight returns the earliest block height at which a proof
+	// for the session that includes queryHeight can be committed for a given supplier.
+	GetEarliestSupplierProofCommitHeight(ctx context.Context, queryHeight int64, supplierAddr string) (int64, error)
 }
 
 // BlockQueryClient defines an interface that enables the querying of
