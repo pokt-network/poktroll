@@ -16,10 +16,10 @@ import (
 // to gateways.
 func (app *appGateServer) getRelayerUrl(
 	rpcType sharedtypes.RPCType,
-	sessionEndpoints shannonsdk.FilteredSession,
+	sessionFilter shannonsdk.FilteredSession,
 	requestUrlStr string,
 ) (supplierEndpoint shannonsdk.Endpoint, err error) {
-	endpoints, err := sessionEndpoints.AllEndpoints()
+	endpoints, err := sessionFilter.AllEndpoints()
 	if err != nil {
 		return nil, err
 	}
