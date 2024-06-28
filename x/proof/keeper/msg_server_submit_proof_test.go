@@ -1276,15 +1276,28 @@ func createClaimAndStoreBlockHash(
 	_, err = msgServer.CreateClaim(ctx, claimMsg)
 	require.NoError(t, err)
 
-	gracePeriodEndOffsetBlocks := keepers.SharedKeeper.GetParams(ctx).GracePeriodEndOffsetBlocks
-	sessionEndHeight := claimMsg.GetSessionHeader().GetSessionEndBlockHeight()
-	proofSubmissionHeight := sessionEndHeight + int64(gracePeriodEndOffsetBlocks)
+	sharedParams := keepers.SharedKeeper.GetParams(ctx)
+
+	claimWindowOpenHeight := shared.GetClaimWindowOpenHeight(
+		&sharedParams,
+		sessionStartHeight,
+	)
+
+	ctx = keepertest.SetBlockHeight(ctx, claimWindowOpenHeight)
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+
+	earliestSupplierClaimCommitHeight := shared.GetEarliestSupplierClaimCommitHeight(
+		&sharedParams,
+		sessionStartHeight,
+		sdkCtx.HeaderHash(),
+		supplierAddr,
+	)
 
 	// Set block height to be after the session grace period.
-	blockHeightCtx := keepertest.SetBlockHeight(ctx, proofSubmissionHeight)
+	earliestSupplierClaimCommitCtx := keepertest.SetBlockHeight(ctx, earliestSupplierClaimCommitHeight)
 
 	// Store the current context's block hash for future height, which is currently an EndBlocker operation.
-	keepers.StoreBlockHash(blockHeightCtx)
+	keepers.StoreBlockHash(earliestSupplierClaimCommitCtx)
 }
 
 // getClosestRelayDifficultyBits returns the number of leading 0s (i.e. relay
