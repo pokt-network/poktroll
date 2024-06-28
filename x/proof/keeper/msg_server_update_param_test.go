@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app/volatile"
+	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 )
 
@@ -36,9 +37,8 @@ func TestMsgUpdateParam_UpdateMinRelayDifficultyBitsOnly(t *testing.T) {
 	require.NotEqual(t, defaultParams.MinRelayDifficultyBits, res.Params.MinRelayDifficultyBits)
 	require.Equal(t, expectedMinRelayDifficultyBits, res.Params.MinRelayDifficultyBits)
 
-	require.Equal(t, defaultParams.ProofRequirementThreshold, res.Params.ProofRequirementThreshold)
-	require.Equal(t, defaultParams.ProofRequestProbability, res.Params.ProofRequestProbability)
-	require.Equal(t, defaultParams.ProofMissingPenalty, res.Params.ProofMissingPenalty)
+	// Ensure the other parameters are unchanged
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, "MinRelayDifficultyBits")
 }
 
 func TestMsgUpdateParam_UpdateProofRequestProbabilityOnly(t *testing.T) {
@@ -64,9 +64,8 @@ func TestMsgUpdateParam_UpdateProofRequestProbabilityOnly(t *testing.T) {
 	require.NotEqual(t, defaultParams.ProofRequestProbability, res.Params.ProofRequestProbability)
 	require.Equal(t, expectedProofRequestProbability, res.Params.ProofRequestProbability)
 
-	require.Equal(t, defaultParams.ProofRequirementThreshold, res.Params.ProofRequirementThreshold)
-	require.Equal(t, defaultParams.MinRelayDifficultyBits, res.Params.MinRelayDifficultyBits)
-	require.Equal(t, defaultParams.ProofMissingPenalty, res.Params.ProofMissingPenalty)
+	// Ensure the other parameters are unchanged
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, "ProofRequestProbability")
 }
 
 func TestMsgUpdateParam_UpdateProofRequirementThresholdOnly(t *testing.T) {
@@ -92,9 +91,8 @@ func TestMsgUpdateParam_UpdateProofRequirementThresholdOnly(t *testing.T) {
 	require.NotEqual(t, defaultParams.ProofRequirementThreshold, res.Params.ProofRequirementThreshold)
 	require.Equal(t, expectedProofRequirementThreshold, res.Params.ProofRequirementThreshold)
 
-	require.Equal(t, defaultParams.ProofMissingPenalty, res.Params.ProofMissingPenalty)
-	require.Equal(t, defaultParams.ProofRequestProbability, res.Params.ProofRequestProbability)
-	require.Equal(t, defaultParams.MinRelayDifficultyBits, res.Params.MinRelayDifficultyBits)
+	// Ensure the other parameters are unchanged
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, "ProofRequirementThreshold")
 }
 
 func TestMsgUpdateParam_UpdateProofMissingPenaltyOnly(t *testing.T) {
@@ -120,7 +118,6 @@ func TestMsgUpdateParam_UpdateProofMissingPenaltyOnly(t *testing.T) {
 	require.NotEqual(t, defaultParams.ProofMissingPenalty, res.Params.ProofMissingPenalty)
 	require.Equal(t, &expectedProofMissingPenalty, res.Params.ProofMissingPenalty)
 
-	require.Equal(t, defaultParams.ProofRequirementThreshold, res.Params.ProofRequirementThreshold)
-	require.Equal(t, defaultParams.ProofRequestProbability, res.Params.ProofRequestProbability)
-	require.Equal(t, defaultParams.MinRelayDifficultyBits, res.Params.MinRelayDifficultyBits)
+	// Ensure the other parameters are unchanged
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, "ProofMissingPenalty")
 }

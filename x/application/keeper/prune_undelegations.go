@@ -5,7 +5,6 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -59,6 +58,6 @@ func (k Keeper) GetNumBlocksUndelegationRetention(ctx context.Context) int64 {
 func GetNumBlocksUndelegationRetention(sharedParams *sharedtypes.Params) int64 {
 	numBlocksPerSession := int64(sharedParams.GetNumBlocksPerSession())
 
-	return shared.SessionGracePeriodBlocks +
+	return int64(sharedParams.GetGracePeriodEndOffsetBlocks()) +
 		(numBlocksPerSession * NumSessionsAppToGatewayUndelegationRetention)
 }

@@ -290,6 +290,8 @@ type SharedQueryClient interface {
 	GetParams(ctx context.Context) (*sharedtypes.Params, error)
 	// GetSessionGracePeriodEndHeight returns the block height at which the grace period
 	// for the session that includes queryHeight elapses.
+	// The grace period is the number of blocks after the session ends during which relays
+	// SHOULD be included in the session which most recently ended.
 	GetSessionGracePeriodEndHeight(ctx context.Context, queryHeight int64) (int64, error)
 	// GetClaimWindowOpenHeight returns the block height at which the claim window of
 	// the session that includes queryHeight opens.
