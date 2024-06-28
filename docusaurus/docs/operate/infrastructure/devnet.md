@@ -1,9 +1,9 @@
 ---
 sidebar_position: 3
-title: DevNet
+title: DevNets
 ---
 
-# DevNet <!-- omit in toc -->
+# DevNets <!-- omit in toc -->
 
 :::note
 
@@ -20,6 +20,15 @@ to set up your access to GCP.
 - [Grafana logs](#grafana-logs)
 - [Infrastructure Provisioning](#infrastructure-provisioning)
 - [Configuration](#configuration)
+- [Interaction with DevNet](#interaction-with-devnet)
+- [DevNet types](#devnet-types)
+- [Manually provisioned DevNets](#manually-provisioned-devnets)
+  - [How to create](#how-to-create)
+  - [How to delete](#how-to-delete)
+  - [Configure and update the version of the software](#configure-and-update-the-version-of-the-software)
+  - [Scale actors up and down](#scale-actors-up-and-down)
+  - [Run e2e tests on a manually provisioned DevNet](#run-e2e-tests-on-a-manually-provisioned-devnet)
+  - [Stake actors](#stake-actors)
 
 ## GCP Console
 
@@ -54,3 +63,110 @@ Each DevNet ArgoCD App (following the App of Apps pattern) provisions a Helm cha
 Each `full-network` includes other ArgoCD applications that deploy Validators and off-chain actors.
 
 Each Helm chart receives a list of configuration files. For example, see the [relayminer configuration](https://github.com/pokt-network/protocol-infra/blob/main/charts/full-network/templates/Application-Relayminer.yaml#L37). All possible values can be found in the `values.yaml` of the Helm chart, such as the [relayminer Helm chart](https://github.com/pokt-network/helm-charts/blob/main/charts/relayminer/values.yaml).
+
+## Interaction with DevNet
+
+:::note
+Devnets are provisioned with the same mnemonc phrases as LocalNet, so it is possible to reuse the same keys
+from the keybase - the user just need to change the `--node=` argument to point to the DevNet RPC endpoint.
+:::
+
+The DevNet RPC endpoint is exposed on `https://devnet-**NETWORK_NAME**-validator-rpc.poktroll.com`.
+
+It is possible to reuse the LocalNet make targets with DevNet endpoints. For example
+
+```bash
+POCKET_NODE=https://devnet-issue-420-validator-rpc.poktroll.com make supplier_list
+```
+
+## DevNet types
+
+We have two types of DevNets:
+1. Automatically provisioned by `devnet-test-e2e` GitHub label.
+  - Their main purpose is to automatically run e2e tests for each PR this label has been assigned to.
+  - They are not easily modified and configured. E.g. we automatically provision single instance of each actor only.
+2. Manually provisioned by creating a file in [protocol-infra repo under `devnet-configs` directory](https://github.com/pokt-network/protocol-infra/tree/main/devnets-configs).
+  - Their main purpose is for testing new features or configurations that require more complex setups than the first type can provide.
+  - They are easily modified and configured, allowing you to add multiple instances of each actor.
+
+## Manually provisioned DevNets
+
+### How to create
+
+Create a new YAML file in [devnets-configs](https://github.com/pokt-network/protocol-infra/tree/main/devnets-configs).
+Use [template](https://github.com/pokt-network/protocol-infra/blob/main/devnets-configs/_TEMPLATE_YAML_) as a reference.
+
+### How to delete
+
+Remove the devnet config file.
+
+### Configure and update the version of the software
+
+We create a new image on all commits created in `main` branch and non-main branches if the PR has a `push-image` label.
+Images named in the following format:
+
+```
+ghcr.io/pokt-network/poktrolld:sha-7042be3
+ghcr.io/pokt-network/poktrolld:sha-7042be3922245fb4313ee90e1f28d0f402b700a0
+```
+
+You can update the version of DevNet by changing this parameter in the devnet config file:
+
+```yaml
+image:
+  tag: sha-7042be3
+```
+
+As all parameters in this config actually passed to the [downstream helm chart](https://github.com/pokt-network/protocol-infra/tree/main/charts/full-network) via an [ArgoCD Application](https://github.com/pokt-network/protocol-infra/blob/main/clusters/protocol-us-central1/devnets-persistent.yaml),
+it is possible to modify some other parameters besides the image tag. Here is a [list of all options](https://github.com/pokt-network/protocol-infra/blob/main/charts/full-network/values.yaml).
+
+### Scale actors up and down
+
+You can modify the number of each actor by changing the devnet config file:
+
+:::info
+We use the same ignite `config.yaml` to provision a genesis as we use on devnets. That means we should not provision more
+actors than we configure in ignite's `config.yaml`. Good rule of thumb: don't go over `3`.
+:::
+
+
+```yaml
+appgateservers:
+  count: 1
+gateways:
+  count: 1
+relayminers:
+  count: 1
+```
+
+
+### Run e2e tests on a manually provisioned DevNet
+
+1. The image tag must match the tag of the image from the devnet config YAML file.
+2. The name of the devnet in the environment variables must be specified.
+3. The kubernetes context must be changed to the protocol cluster (`kubectl config set-context gke_protocol-us-central1-d505_us-central1_protocol-us-central1`)
+4. Command should be executed from the root of the poktroll repo.
+
+The command:
+```bash
+IMAGE_TAG=**IMAGE TAG NAME FROM DEVNET CONFIG** NAMESPACE=devnet-**NETWORK NAME** JOB_NAME=e2e-test-**GITSHA FROM IMAGE TAG** POCKET_NODE=tcp://devnet-**NETWORK NAME**-validator-poktrolld:26657 bash .github/workflows-helpers/run-e2e-test.sh
+```
+
+For example:
+```bash
+IMAGE_TAG=sha-7042be3 NAMESPACE=devnet-dimatests JOB_NAME=e2e-test-7042be3 POCKET_NODE=tcp://devnet-dimatests-validator-poktrolld:26657 bash .github/workflows-helpers/run-e2e-test.sh
+```
+
+### Stake actors
+
+Since the keys are the same as LocalNet, we can use the same commands for DevNet to stake the actors. Also, DevNets
+match the hostnames with LocalNet, which makes it possible for the same stake configs to work on different networks.
+For example, this command stakes supplier2 on DevNet `devnet-sophon`:
+
+```bash
+POCKET_NODE=https://devnet-sophon-validator-rpc.poktroll.com make supplier2_stake
+```
+
+:::note
+Only manually provisioned DevNets have more than one actor to stake. 
+:::

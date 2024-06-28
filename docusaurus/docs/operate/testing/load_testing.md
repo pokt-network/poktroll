@@ -3,49 +3,45 @@ sidebar_position: 1
 title: Load Testing
 ---
 
-# Load Testing <!-- omit in toc -->
+# Load Testing
 
 Poktroll load-testing suite.
 
-- [Overview](#overview)
-- [Dependencies](#dependencies)
-- [Load Test manifests](#load-test-manifests)
-- [Test Features](#test-features)
-- [How to run tests](#how-to-run-tests)
-  - [LocalNet](#localnet)
-    - [Reading the results](#reading-the-results)
-  - [Non-ephemeral networks (TestNets, MainNet, etc)](#non-ephemeral-networks-testnets-mainnet-etc)
-    - [Prerequisites](#prerequisites)
-    - [Modify the load test manifest](#modify-the-load-test-manifest)
-    - [Run the test](#run-the-test)
-    - [Reading the results](#reading-the-results-1)
-- [How to write your own tests](#how-to-write-your-own-tests)
+- [Load Testing](#load-testing)
+  - [Overview](#overview)
+  - [Dependencies](#dependencies)
+  - [Load Test Manifests](#load-test-manifests)
+  - [Test Features](#test-features)
+  - [Executing Tests](#executing-tests)
+    - [LocalNet Environment](#localnet-environment)
+      - [Interpreting Results](#interpreting-results)
+    - [Non-Ephemeral Networks (TestNets, MainNet, etc)](#non-ephemeral-networks-testnets-mainnet-etc)
+      - [Prerequisites](#prerequisites)
+      - [Manifest Modification](#manifest-modification)
+      - [Test Execution](#test-execution)
+      - [Result Analysis](#result-analysis)
+  - [Developing Custom Tests](#developing-custom-tests)
 
 ## Overview
 
-We built a load-testing suite on top of [Gherkin](https://cucumber.io/docs/gherkin/) which allows to write simple and human readable tests.
+The load-testing suite is built on [Gherkin](https://cucumber.io/docs/gherkin/), enabling the creation of simple and human-readable tests.
 
 ## Dependencies
 
-- (For local suite execution) [LocalNet](../infrastructure/localnet.md)
+- [LocalNet](../infrastructure/localnet.md) (for local suite execution)
 - [Golang](https://go.dev/dl/)
 
-## Load Test manifests
+## Load Test Manifests
 
-Load test manifests are YAML files that describe the environment of the network the test can be run against. Properties 
-such as what blockchain address to use to fund and stake applications, what suppliers and gateways to use are 
-all covered in the manifest YAML file. [The LocalNet's manifest](https://github.com/pokt-network/poktroll/blob/main/load-testing/loadtest_manifest_localnet.yaml)
-can be used as an example - it includes comments for each property in the manefest.
+Load test manifests are YAML files that define the network environment for test execution. These files specify properties such as blockchain addresses for funding and staking applications, and the suppliers and gateways to utilize. The [LocalNet manifest](https://github.com/pokt-network/poktroll/blob/main/load-testing/loadtest_manifest_localnet.yaml) serves as a comprehensive example, including detailed comments for each manifest property.
 
 ## Test Features
 
-Test features are stored in the [load-testing/tests](https://github.com/pokt-network/poktroll/tree/main/load-testing/tests) directory,
-covering various use cases.
+Test features are located in the [load-testing/tests](https://github.com/pokt-network/poktroll/tree/main/load-testing/tests) directory, encompassing various use cases.
 
-As the load-testing suite is built on top of Gherkin, the features files contain human-readable load tests.
-For example, here is a simple feature that checks if the `anvil` node can handle the maximum number of concurrent users:
+Leveraging Gherkin, the feature files contain human-readable load tests. For instance:
 
-```
+```gherkin
 Feature: Loading anvil node only
   Scenario Outline: Anvil can handle the maximum number of concurrent users
     Given anvil is running
@@ -60,63 +56,54 @@ Feature: Loading anvil node only
       | 10000        | 10      |
 ```
 
-The natural human-readable text is parsed by [gocuke](https://github.com/regen-network/gocuke). 
+This natural language syntax is parsed by [gocuke](https://github.com/regen-network/gocuke).
 
-## How to run tests
+## Executing Tests
 
-### LocalNet
+### LocalNet Environment
 
-We have a handy make target to run the tests on the LocalNet.
+To execute tests on LocalNet:
 
-1. Make sure [LocalNet](../infrastructure/localnet.md) is up and running;
-2. In your `localnet_config.yaml` file, make sure to set `gateways.count` and `relayminers.count` to `3`;
-3. Run `make acc_initialize_pubkeys` to initialize the public keys in the blockchain state;
-4. Run `make test_load_relays_stress_localnet` to run all tests on LocalNet.
+1. Ensure [LocalNet](../infrastructure/localnet.md) is operational.
+2. In the `localnet_config.yaml` file, set `gateways.count` and `relayminers.count` to `3`.
+3. Execute `make acc_initialize_pubkeys` to initialize blockchain state public keys.
+4. Run `make test_load_relays_stress_localnet` to run the LocalNet stress-test.
 
-#### Reading the results
+#### Interpreting Results
 
-- The CLI output shows standard Go test output. If there are no issues during the test execution, you'll see `PASS`, otherwise the test will show `FAIL` and the error that caused the test to fail will be shown.
-- As the test progresses, the obserability stack continously gathers the metric data from off-chain actors. On LocalNet, [Grafana can be accessed on 3003 port](http://localhost:3003/?orgId=1). `Stress test` and `Load Testing` dashboards can be helpful to understand current state of the system.
+- The CLI output displays standard Go test results. Successful tests are indicated by `PASS`, while failures are denoted by `FAIL` with accompanying error messages.
+- During test execution, the observability stack continuously collects metric data from off-chain actors. On LocalNet, [Grafana is accessible on port 3003](http://localhost:3003/?orgId=1). The "Stress test" and "Load Testing" dashboards provide valuable insights into system status.
 
-### Non-ephemeral networks (TestNets, MainNet, etc)
+### Non-Ephemeral Networks (TestNets, MainNet, etc)
 
-Such networks have been generated with random addresses, so we need to modify the load test manifest to reflect 
-the accounts from that network.
+These networks are generated with random addresses, necessitating modifications to the load test manifest to reflect network-specific accounts.
 
-::: info
-Such networks usually have other participants and load testing can be performed against the off-chain actors deployed by
-other people. As a result of running the test against the software you don't control and can't observe - you won't
-get the metrics and logs. If you wish to gather metrics, logs and look at behavior of the off-chain actors, you can 
-create a new service and deploy your own gateways and suppliers, and run the test against that new service. As a result
-you'll get full observability information from the software you deployed.
+:::info
+Note: Such networks typically involve other participants, allowing load testing against off-chain actors deployed by third parties. Consequently, metrics and logs may not be available when testing against uncontrolled software. For comprehensive observability, consider creating a new service with custom gateways and suppliers, and conduct tests against this controlled environment.
 :::
 
 #### Prerequisites
 
-- An address with tokens that will be used to fund and stake applications. It must be available on the local keychain (e.g. `poktrolld keys list`)
-- A list of gateways to issue requests to. They could be gateways hosted by other people, or they can be your own gateways.
-- If you are running a test on a custom service, then make sure the suppliers are set up and ready to accept requests.
+- An address with sufficient tokens for application funding and staking, accessible on the local keychain (e.g., `poktrolld keys list`)
+- A list of target gateways for request issuance
+- For custom service testing, ensure suppliers are configured and ready to process requests
 
-#### Modify the load test manifest
+#### Manifest Modification
 
-Using [loadtest_manifest_example.yaml](https://github.com/pokt-network/poktroll/blob/main/load-testing/loadtest_manifest_example.yaml)
-as a reference, modify it to reflect the values for your test.
+Using [loadtest_manifest_example.yaml](https://github.com/pokt-network/poktroll/blob/main/load-testing/loadtest_manifest_example.yaml) as a template, modify the values to align with the test requirements.
 
-#### Run the test
+#### Test Execution
 
-We have a handy makefile target to run the `relays_stress.feature` with the modified manifest (`loadtest_manifest_example.yaml`):
+Utilize the provided makefile target to run the `relays_stress.feature` with the modified manifest:
 
 ```bash
 make test_load_relays_stress_example
 ```
 
-#### Reading the results
+#### Result Analysis
 
-If the test was ran against the suppliers and gateways that are not hosted by you, but rather the community members, you can
-only look at the transactions on blockchain and the test output. If you deployed your own service, then you will have full observability 
-and you should be able to see all the metrics, logs and behavior of the system under load in Grafana or any other monitoring tool that is set up for your service.
+For tests conducted against community-hosted suppliers and gateways, analysis is limited to blockchain transactions and test output. When testing against a custom-deployed service, comprehensive observability is available, including metrics, logs, and system behavior under load, accessible through Grafana or other configured monitoring tools.
 
-## How to write your own tests
+## Developing Custom Tests
 
-Please refer to the [gocuke documentation](https://github.com/regen-network/gocuke?tab=readme-ov-file#quick-start). You
-can also use a simple [anvil test](https://github.com/pokt-network/poktroll/blob/main/load-testing/tests/anvil_test.go) as a reference.
+For custom test development, refer to the [gocuke documentation](https://github.com/regen-network/gocuke?tab=readme-ov-file#quick-start). The [anvil test](https://github.com/pokt-network/poktroll/blob/main/load-testing/tests/anvil_test.go) provides a practical reference implementation.
