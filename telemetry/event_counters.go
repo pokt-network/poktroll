@@ -13,9 +13,10 @@ import (
 )
 
 const (
-	eventTypeMetricKey = "event_type"
-	// TODO_INVESTIGATE(@okdas): Using eventTypeMetricKey for counter and gauge
-	// doesn't seem to work. Add "_gauge" postfix to display it in the meantime.
+	// TODO_DECIDE: Decide if we want to continue using these generic metrics keys
+	// or opt for specific keys for each event_type.
+	// See: https://github.com/pokt-network/poktroll/pull/631#discussion_r1653760820
+	eventTypeMetricKey      = "event_type"
 	eventTypeMetricKeyGauge = "event_type_gauge"
 )
 
@@ -143,7 +144,11 @@ func ClaimCounter(
 // RelayMiningDifficultyCounter sets a gauge which tracks the relay mining difficulty,
 // which is represented by number of leading zero bits.
 // The serviceId is used as a label to be able to track the difficulty for each service.
-func RelayMiningDifficultyGauge(numbLeadingZeroBits int, serviceId string) {
+func RelayMiningDifficultyGauge(numbLeadingZeroBits int, serviceId string, err error) {
+	if err != nil {
+		return
+	}
+
 	labels := []metrics.Label{
 		{Name: "type", Value: "relay_mining_difficulty"},
 		{Name: "service_id", Value: serviceId},
@@ -158,7 +163,11 @@ func RelayMiningDifficultyGauge(numbLeadingZeroBits int, serviceId string) {
 
 // RelayEMAGauge sets a gauge which tracks the relay EMA for a service.
 // The serviceId is used as a label to be able to track the EMA for each service.
-func RelayEMAGauge(relayEMA uint64, serviceId string) {
+func RelayEMAGauge(relayEMA uint64, serviceId string, err error) {
+	if err != nil {
+		return
+	}
+
 	labels := []metrics.Label{
 		{Name: "type", Value: "relay_ema"},
 		{Name: "service_id", Value: serviceId},

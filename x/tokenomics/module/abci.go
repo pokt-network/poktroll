@@ -68,9 +68,11 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) (err error) {
 
 	// Emit telemetry for each service's relay mining difficulty.
 	for serviceId, newDifficulty := range difficultyPerServiceMap {
-		miningDifficultyNumBits := keeper.RelayMiningTargetHashToDifficulty(newDifficulty.TargetHash)
-		telemetry.RelayMiningDifficultyGauge(miningDifficultyNumBits, serviceId)
-		telemetry.RelayEMAGauge(newDifficulty.NumRelaysEma, serviceId)
+		defer func() {
+			miningDifficultyNumBits := keeper.RelayMiningTargetHashToDifficulty(newDifficulty.TargetHash)
+			telemetry.RelayMiningDifficultyGauge(miningDifficultyNumBits, serviceId, err)
+			telemetry.RelayEMAGauge(newDifficulty.NumRelaysEma, serviceId, err)
+		}()
 	}
 
 	return nil
