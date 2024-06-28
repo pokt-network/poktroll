@@ -8,10 +8,10 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
-	"errors"
 	"fmt"
 	"hash"
 
+	cosmoscryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/gogoproto/proto"
 	"github.com/pokt-network/smt"
@@ -123,19 +123,21 @@ func (k msgServer) SubmitProof(
 		"supplier", supplierAddr)
 
 	// Basic validation of the SubmitProof message.
-	if err := msg.ValidateBasic(); err != nil {
+	if err = msg.ValidateBasic(); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 	logger.Info("validated the submitProof message ")
 
 	// Retrieve the supplier's public key.
-	supplierPubKey, err := k.accountQuerier.GetPubKeyFromAddress(ctx, supplierAddr)
+	var supplierPubKey cosmoscryptotypes.PubKey
+	supplierPubKey, err = k.accountQuerier.GetPubKeyFromAddress(ctx, supplierAddr)
 	if err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 
 	// Validate the session header.
-	onChainSession, err := k.queryAndValidateSessionHeader(ctx, msg)
+	var onChainSession *sessiontypes.Session
+	onChainSession, err = k.queryAndValidateSessionHeader(ctx, msg)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -148,13 +150,13 @@ func (k msgServer) SubmitProof(
 
 	// Validate proof message commit height is within the respective session's
 	// proof submission window using the on-chain session header.
-	if err := k.validateProofWindow(ctx, msg); err != nil {
+	if err = k.validateProofWindow(ctx, msg); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 
 	// Unmarshal the closest merkle proof from the message.
 	sparseMerkleClosestProof := &smt.SparseMerkleClosestProof{}
-	if err := sparseMerkleClosestProof.Unmarshal(msg.GetProof()); err != nil {
+	if err = sparseMerkleClosestProof.Unmarshal(msg.GetProof()); err != nil {
 		return nil, status.Error(codes.InvalidArgument,
 			types.ErrProofInvalidProof.Wrapf(
 				"failed to unmarshal closest merkle proof: %s",
@@ -168,7 +170,7 @@ func (k msgServer) SubmitProof(
 	// Get the relay request and response from the proof.GetClosestMerkleProof.
 	relayBz := sparseMerkleClosestProof.GetValueHash(&SmtSpec)
 	relay := &servicetypes.Relay{}
-	if err := k.cdc.Unmarshal(relayBz, relay); err != nil {
+	if err = k.cdc.Unmarshal(relayBz, relay); err != nil {
 		return nil, status.Error(
 			codes.InvalidArgument,
 			types.ErrProofInvalidRelay.Wrapf(
@@ -180,7 +182,7 @@ func (k msgServer) SubmitProof(
 
 	// Basic validation of the relay request.
 	relayReq := relay.GetReq()
-	if err := relayReq.ValidateBasic(); err != nil {
+	if err = relayReq.ValidateBasic(); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 	logger.Debug("successfully validated relay request")
@@ -193,32 +195,32 @@ func (k msgServer) SubmitProof(
 
 	// Basic validation of the relay response.
 	relayRes := relay.GetRes()
-	if err := relayRes.ValidateBasic(); err != nil {
+	if err = relayRes.ValidateBasic(); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 	logger.Debug("successfully validated relay response")
 
 	// Verify that the relay request session header matches the proof session header.
-	if err := compareSessionHeaders(msg.GetSessionHeader(), relayReq.Meta.GetSessionHeader()); err != nil {
+	if err = compareSessionHeaders(msg.GetSessionHeader(), relayReq.Meta.GetSessionHeader()); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 	logger.Debug("successfully compared relay request session header")
 
 	// Verify that the relay response session header matches the proof session header.
-	if err := compareSessionHeaders(msg.GetSessionHeader(), relayRes.Meta.GetSessionHeader()); err != nil {
+	if err = compareSessionHeaders(msg.GetSessionHeader(), relayRes.Meta.GetSessionHeader()); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 	logger.Debug("successfully compared relay response session header")
 
 	// Verify the relay request's signature.
 	// TODO_BLOCKER(@red-0ne): Fetch the correct ring for the session this relay is from.
-	if err := k.ringClient.VerifyRelayRequestSignature(ctx, relayReq); err != nil {
+	if err = k.ringClient.VerifyRelayRequestSignature(ctx, relayReq); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 	logger.Debug("successfully verified relay request signature")
 
 	// Verify the relay response's signature.
-	if err := relayRes.VerifySupplierSignature(supplierPubKey); err != nil {
+	if err = relayRes.VerifySupplierSignature(supplierPubKey); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 	logger.Debug("successfully verified relay response signature")
@@ -227,14 +229,14 @@ func (k msgServer) SubmitProof(
 	params := k.GetParams(ctx)
 
 	// Verify the relay difficulty is above the minimum required to earn rewards.
-	if err := validateMiningDifficulty(relayBz, params.MinRelayDifficultyBits); err != nil {
+	if err = validateMiningDifficulty(relayBz, params.MinRelayDifficultyBits); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 	logger.Debug("successfully validated relay mining difficulty")
 
 	// Validate that path the proof is submitted for matches the expected one
 	// based on the pseudo-random on-chain data associated with the header.
-	if err := k.validateClosestPath(
+	if err = k.validateClosestPath(
 		ctx,
 		sparseMerkleClosestProof,
 		msg.GetSessionHeader(),
@@ -245,7 +247,7 @@ func (k msgServer) SubmitProof(
 	logger.Debug("successfully validated proof path")
 
 	// Verify the relay's difficulty.
-	if err := validateMiningDifficulty(relayBz, params.MinRelayDifficultyBits); err != nil {
+	if err = validateMiningDifficulty(relayBz, params.MinRelayDifficultyBits); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 
@@ -259,7 +261,7 @@ func (k msgServer) SubmitProof(
 	logger.Debug("successfully retrieved and validated claim")
 
 	// Verify the proof's closest merkle proof.
-	if err := verifyClosestProof(sparseMerkleClosestProof, claim.GetRootHash()); err != nil {
+	if err = verifyClosestProof(sparseMerkleClosestProof, claim.GetRootHash()); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 	logger.Debug("successfully verified closest merkle proof")
@@ -274,25 +276,16 @@ func (k msgServer) SubmitProof(
 
 	_, isExistingProof = k.GetProof(ctx, proof.GetSessionHeader().GetSessionId(), proof.GetSupplierAddress())
 
-	// TODO_BLOCKER(@Olshansk): check if this proof already exists and return an
-	// appropriate error in any case where the supplier should no longer be able
-	// to update the given proof.
 	k.UpsertProof(ctx, proof)
 	logger.Info("successfully upserted the proof")
 
-	// NB: Don't return these errors, it should not prevent the MsgCreateProofResopnse
-	// from being returned. Instead, they will be joined and attached as an "error" label
-	// to any metrics tracked in this function.
-	// TODO_IMPROVE: While this will surface the error in metrics, it will also cause
-	// any counters not to be incremented even though a new proof might have been inserted.
-	var tempErr error
-	numRelays, tempErr = claim.GetNumRelays()
-	if tempErr != nil {
-		err = errors.Join(err, tempErr)
+	numRelays, err = claim.GetNumRelays()
+	if err != nil {
+		return nil, err
 	}
-	numComputeUnits, tempErr = claim.GetNumComputeUnits()
-	if tempErr != nil {
-		err = errors.Join(err, tempErr)
+	numComputeUnits, err = claim.GetNumComputeUnits()
+	if err != nil {
+		return nil, err
 	}
 
 	// Emit the appropriate event based on whether the claim was created or updated.
@@ -317,14 +310,9 @@ func (k msgServer) SubmitProof(
 	}
 
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
-	emitEventErr := sdkCtx.EventManager().EmitTypedEvent(proofUpsertEvent)
-
-	// NB: Don't return this error, it should not prevent the MsgCreateProofResopnse
-	// from being returned. Instead, it will be attached as an "error" label to any
-	// metrics tracked in this function.
-	// TODO_IMPROVE: While this will surface the error in metrics, it will also cause
-	// any counters not to be incremented even though a new proof might have been inserted.
-	err = errors.Join(err, emitEventErr)
+	if err = sdkCtx.EventManager().EmitTypedEvent(proofUpsertEvent); err != nil {
+		return nil, err
+	}
 
 	return &types.MsgSubmitProofResponse{}, nil
 }

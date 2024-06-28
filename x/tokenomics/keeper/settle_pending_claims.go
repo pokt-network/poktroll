@@ -108,6 +108,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 
 		claimSettledEvent := types.EventClaimSettled{
 			Claim:            &claim,
+			NumRelays:        numRelaysInSessionTree,
 			NumComputeUnits:  numClaimComputeUnits,
 			ProofRequirement: proofRequirement,
 		}
