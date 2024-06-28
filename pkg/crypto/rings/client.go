@@ -299,7 +299,7 @@ func GetRingAddressesAtBlock(
 }
 
 // GetRingAddressesAtSessionEndHeight returns the active gateway addresses that need to be
-// used to construct the ring in order to validate that the given app should pay for.
+// used to construct the ring in order to validate that the given app should pay for relays.
 // It takes into account both active delegations and pending undelegations that
 // should still be part of the ring at the given session end height.
 // The ring addresses slice is reconstructed by adding back the past delegated
@@ -339,18 +339,6 @@ func GetRingAddressesAtSessionEndHeight(
 	}
 
 	return activeDelegationsAtHeight
-}
-
-// GetRingFromPubKeys returns a ring constructed from the public keys provided.
-func GetRingFromPubKeys(ringPubKeys []cryptotypes.PubKey) (*ring.Ring, error) {
-	// Get the points on the secp256k1 curve for the public keys in the ring.
-	points, err := pointsFromPublicKeys(ringPubKeys...)
-	if err != nil {
-		return nil, err
-	}
-
-	// Return the ring the constructed from the points retrieved above.
-	return newRingFromPoints(points)
 }
 
 // ringPointsContain checks if the given ring points map contains the public keys
