@@ -98,16 +98,30 @@ func (k msgServer) validateClaimWindow(
 	claimWindowOpenHeight := shared.GetClaimWindowOpenHeight(&sharedParams, sessionEndHeight)
 	claimWindowCloseHeight := shared.GetClaimWindowCloseHeight(&sharedParams, sessionEndHeight)
 
+	// Get the earliest claim commit height for the given supplier.
+	earliestClaimCommitHeight, err := k.sharedQuerier.GetEarliestSupplierClaimCommitHeight(
+		ctx,
+		sessionEndHeight,
+		msg.GetSupplierAddress(),
+	)
+	if err != nil {
+		return err
+	}
+
 	// Get the current block height.
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	currentHeight := sdkCtx.BlockHeight()
 
-	// Ensure the current block height is AFTER the claim window open height.
-	if currentHeight < claimWindowOpenHeight {
+	// Ensure the current block height is ON or AFTER the supplier's earliest claim commit height.
+	// TODO_BLOCKER(@bryanchriswhite, @red-0ne): Enforce an additional "latest
+	// supplier claim/proof commit offset" such that all suppliers have the same
+	// "supplier claim/proof commit window" size.
+	// See: https://github.com/pokt-network/poktroll/pull/620/files#r1656548473.
+	if currentHeight < earliestClaimCommitHeight {
 		return types.ErrProofClaimOutsideOfWindow.Wrapf(
-			"current block height (%d) is less than session claim window open height (%d)",
+			"current block height (%d) is less than the session's earliest claim commit height (%d)",
 			currentHeight,
-			claimWindowOpenHeight,
+			earliestClaimCommitHeight,
 		)
 	}
 
@@ -125,6 +139,7 @@ func (k msgServer) validateClaimWindow(
 			"current_height", currentHeight,
 			"session_end_height", sessionEndHeight,
 			"claim_window_open_height", claimWindowOpenHeight,
+			"earliest_claim_commit_height", earliestClaimCommitHeight,
 			"claim_window_close_height", claimWindowCloseHeight,
 			"supplier_addr", msg.GetSupplierAddress(),
 		).
@@ -151,16 +166,26 @@ func (k msgServer) validateProofWindow(
 	proofWindowOpenHeight := shared.GetProofWindowOpenHeight(&sharedParams, sessionEndHeight)
 	proofWindowCloseHeight := shared.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
 
+	// Get the earliest proof commit height for the given supplier.
+	earliestProofCommitHeight, err := k.sharedQuerier.GetEarliestSupplierProofCommitHeight(
+		ctx,
+		sessionEndHeight,
+		msg.GetSupplierAddress(),
+	)
+	if err != nil {
+		return err
+	}
+
 	// Get the current block height.
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	currentHeight := sdkCtx.BlockHeight()
 
-	// Ensure the current block height is AFTER the proof window open height.
-	if currentHeight < proofWindowOpenHeight {
+	// Ensure the current block height is ON or AFTER the earliest proof commit height.
+	if currentHeight < earliestProofCommitHeight {
 		return types.ErrProofProofOutsideOfWindow.Wrapf(
-			"current block height (%d) is less than session proof window open height (%d)",
+			"current block height (%d) is less than session's earliest proof commit height (%d)",
 			currentHeight,
-			proofWindowOpenHeight,
+			earliestProofCommitHeight,
 		)
 	}
 
@@ -178,6 +203,7 @@ func (k msgServer) validateProofWindow(
 			"current_height", currentHeight,
 			"session_end_height", sessionEndHeight,
 			"proof_window_open_height", proofWindowOpenHeight,
+			"earliest_proof_commit_height", earliestProofCommitHeight,
 			"proof_window_close_height", proofWindowCloseHeight,
 			"supplier_addr", msg.GetSupplierAddress(),
 		).

@@ -227,7 +227,12 @@ func (k msgServer) SubmitProof(
 
 	// Validate that path the proof is submitted for matches the expected one
 	// based on the pseudo-random on-chain data associated with the header.
-	if err := k.validateClosestPath(ctx, sparseMerkleClosestProof, msg.GetSessionHeader()); err != nil {
+	if err := k.validateClosestPath(
+		ctx,
+		sparseMerkleClosestProof,
+		msg.GetSessionHeader(),
+		msg.GetSupplierAddress(),
+	); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 	logger.Debug("successfully validated proof path")
@@ -446,6 +451,7 @@ func (k msgServer) validateClosestPath(
 	ctx context.Context,
 	proof *smt.SparseMerkleClosestProof,
 	sessionHeader *sessiontypes.SessionHeader,
+	supplierAddr string,
 ) error {
 	// The RelayMiner has to wait until the submit claim and proof windows is are open
 	// in order to to create the claim and submit claims and proofs, respectively.
@@ -460,19 +466,23 @@ func (k msgServer) validateClosestPath(
 	//
 	// Since smt.ProveClosest is defined in terms of proof window open height,
 	// this block's hash needs to be used for validation too.
-	proofWindowOpenHeight, err := k.sharedQuerier.GetProofWindowOpenHeight(ctx, sessionHeader.GetSessionEndBlockHeight())
+	earliestSupplierProofCommitHeight, err := k.sharedQuerier.GetEarliestSupplierProofCommitHeight(
+		ctx,
+		sessionHeader.GetSessionEndBlockHeight(),
+		supplierAddr,
+	)
 	if err != nil {
 		return err
 	}
 
-	// proofWindowOpenHeight - 1 is the block that will have its hash used as the
+	// earliestSupplierProofCommitHeight - 1 is the block that will have its hash used as the
 	// source of entropy for all the session trees in that batch, waiting for it to
 	// be received before proceeding.
-	proofPathSeedBlockHash := k.sessionKeeper.GetBlockHash(ctx, proofWindowOpenHeight-1)
+	proofPathSeedBlockHash := k.sessionKeeper.GetBlockHash(ctx, earliestSupplierProofCommitHeight-1)
 
 	// TODO_BETA: Investigate "proof for the path provided does not match one expected by the on-chain protocol"
 	// error that may occur due to block height differing from the off-chain part.
-	k.logger.Info("E2E_DEBUG: height for block hash when verifying the proof", proofWindowOpenHeight, sessionHeader.GetSessionId())
+	k.logger.Info("E2E_DEBUG: height for block hash when verifying the proof", earliestSupplierProofCommitHeight, sessionHeader.GetSessionId())
 
 	expectedProofPath := GetPathForProof(proofPathSeedBlockHash, sessionHeader.GetSessionId())
 	if !bytes.Equal(proof.Path, expectedProofPath) {
