@@ -19,6 +19,12 @@ func (app *appGateServer) getRelayerUrl(
 	sessionFilter shannonsdk.FilteredSession,
 	requestUrlStr string,
 ) (supplierEndpoint shannonsdk.Endpoint, err error) {
+	// AppGateServer uses the custom getRelayerUrl instead of leveraging the SDK's
+	// filter to select the next endpoint to use.
+	// This is because it needs to maintain the state of the last selected endpoint
+	// and have a view on the original request URL to determine the next endpoint.
+	// This behavior is specific to the AppGateServer and needed by clients that
+	// need to instrument the endpoint selection strategy, such as the Load testing tool.
 	endpoints, err := sessionFilter.AllEndpoints()
 	if err != nil {
 		return nil, err
