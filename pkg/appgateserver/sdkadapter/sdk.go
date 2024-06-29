@@ -128,14 +128,14 @@ func (shannonSDK *ShannonSDK) SendRelay(
 func (shannonSDK *ShannonSDK) GetSessionSupplierEndpoints(
 	ctx context.Context,
 	appAddress, serviceId string,
-) (*shannonsdk.FilteredSession, error) {
+) (*shannonsdk.SessionFilter, error) {
 	currentHeight := shannonSDK.blockClient.LastBlock(ctx).Height()
 	session, err := shannonSDK.sessionClient.GetSession(ctx, appAddress, serviceId, currentHeight)
 	if err != nil {
 		return nil, err
 	}
 
-	filteredSession := &shannonsdk.FilteredSession{
+	filteredSession := &shannonsdk.SessionFilter{
 		Session: session,
 	}
 

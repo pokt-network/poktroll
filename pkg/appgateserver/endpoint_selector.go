@@ -16,7 +16,7 @@ import (
 // to gateways.
 func (app *appGateServer) getRelayerUrl(
 	rpcType sharedtypes.RPCType,
-	sessionFilter shannonsdk.FilteredSession,
+	sessionFilter shannonsdk.SessionFilter,
 	requestUrlStr string,
 ) (supplierEndpoint shannonsdk.Endpoint, err error) {
 	// AppGateServer uses the custom getRelayerUrl instead of leveraging the SDK's
