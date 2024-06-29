@@ -278,36 +278,27 @@ func newEventTypeMatchFn(module, eventType string) func(*abci.Event) bool {
 // e.g., pass "proof" and "CreateClaim" to match the "poktroll.proof.MsgCreateClaim" message.
 func newEventMsgTypeMatchFn(module, msgType string) func(event *abci.Event) bool {
 	targetMsgType := fmt.Sprintf("/poktroll.%s.Msg%s", module, msgType)
-	return func(event *abci.Event) bool {
-		if event == nil {
-			return false
-		}
-
-		for _, attribute := range event.Attributes {
-			if attribute.Key == "action" {
-				if attribute.Value == targetMsgType {
-					return true
-				}
-			}
-		}
-		return false
-	}
+	return newEventAttributeMatchFn("action", targetMsgType)
 }
 
 // newEventModeMatchFn returns a function that matches an event based on the
 // "mode" attribute in its attributes field. The target mode value is the given
 // mode string.
 func newEventModeMatchFn(mode string) func(event *abci.Event) bool {
+	return newEventAttributeMatchFn("mode", mode)
+}
+
+// newEventAttributeMatchFn returns a function that matches an event based on the
+// presence of an attribute with the given key and value.
+func newEventAttributeMatchFn(key, value string) func(event *abci.Event) bool {
 	return func(event *abci.Event) bool {
 		if event == nil {
 			return false
 		}
 
 		for _, attribute := range event.Attributes {
-			if attribute.Key == "mode" {
-				if attribute.Value == mode {
-					return true
-				}
+			if attribute.Key == key && attribute.Value == value {
+				return true
 			}
 		}
 		return false
