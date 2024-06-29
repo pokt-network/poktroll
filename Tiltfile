@@ -370,8 +370,8 @@ k8s_resource(
         "26657", # RPC
         "9090", # the gRPC server address
         "40004", # use with `dlv` when it's turned on in `localnet_config.yaml`
-        # Use with pprof like this: `go tool pprof -http=:3333 http://localhost:6061/debug/pprof/goroutine`
-        "6061:6060",
+        # Use with pprof like this: `go tool pprof -http=:3333 http://localhost:6050/debug/pprof/goroutine`
+        "6050:6060",
     ],
     links=[
         link(
