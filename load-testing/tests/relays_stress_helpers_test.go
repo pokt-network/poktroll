@@ -1365,6 +1365,12 @@ func (s *relaysSuite) querySharedParams() {
 	s.Helper()
 
 	deps := depinject.Supply(s.txContext.GetClientCtx())
+
+	queryNodeRPCURL := testclient.CometLocalWebsocketURL
+	blockQueryClient, err := sdkclient.NewClientFromNode(queryNodeRPCURL)
+	require.NoError(s, err)
+	deps = depinject.Configs(deps, depinject.Supply(blockQueryClient))
+
 	sharedQueryClient, err := query.NewSharedQuerier(deps)
 	require.NoError(s, err)
 
