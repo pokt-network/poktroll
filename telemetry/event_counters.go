@@ -10,26 +10,11 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/telemetry"
 	"github.com/hashicorp/go-metrics"
+
+	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 )
 
 const eventTypeMetricKey = "event_type"
-
-type ClaimProofStage = string
-
-const (
-	ClaimProofStageClaimed = ClaimProofStage("claimed")
-	ClaimProofStageProven  = ClaimProofStage("proven")
-	ClaimProofStageSettled = ClaimProofStage("settled")
-	ClaimProofStageExpired = ClaimProofStage("expired")
-)
-
-type ProofRequirementReason = string
-
-const (
-	ProofNotRequired                    = ProofRequirementReason("not_required")
-	ProofRequirementReasonProbabilistic = ProofRequirementReason("probabilistic_selection")
-	ProofRequirementReasonThreshold     = ProofRequirementReason("above_compute_unit_threshold")
-)
 
 // EventSuccessCounter increments a counter with the given data type and success status.
 func EventSuccessCounter(
@@ -56,13 +41,13 @@ func EventSuccessCounter(
 // If err is not nil, the counter is not incremented and an "error" label is added
 // with the error's message.
 func ProofRequirementCounter(
-	reason ProofRequirementReason,
+	reason prooftypes.ProofRequirementReason,
 	err error,
 ) {
 	incrementAmount := 1
-	isRequired := strconv.FormatBool(reason != ProofNotRequired)
+	isRequired := strconv.FormatBool(reason != prooftypes.ProofRequirementReason_NOT_REQUIRED)
 	labels := []metrics.Label{
-		{Name: "proof_required_reason", Value: reason},
+		{Name: "proof_required_reason", Value: reason.String()},
 		{Name: "is_required", Value: isRequired},
 	}
 
@@ -84,14 +69,14 @@ func ProofRequirementCounter(
 // If err is not nil, the counter is not incremented and an "error" label is added
 // with the error's message. I.e., Prometheus will ingest this event.
 func ClaimComputeUnitsCounter(
-	claimProofStage ClaimProofStage,
+	claimProofStage prooftypes.ClaimProofStage,
 	numComputeUnits uint64,
 	err error,
 ) {
 	incrementAmount := numComputeUnits
 	labels := []metrics.Label{
 		{Name: "unit", Value: "compute_units"},
-		{Name: "claim_proof_stage", Value: claimProofStage},
+		{Name: "claim_proof_stage", Value: claimProofStage.String()},
 	}
 
 	// Ensure the counter is not incremented if there was an error.
@@ -112,14 +97,14 @@ func ClaimComputeUnitsCounter(
 // If err is not nil, the counter is not incremented and an "error" label is added
 // with the error's message. I.e., Prometheus will ingest this event.
 func ClaimCounter(
-	claimProofStage ClaimProofStage,
+	claimProofStage prooftypes.ClaimProofStage,
 	numClaims uint64,
 	err error,
 ) {
 	incrementAmount := numClaims
 	labels := []metrics.Label{
 		{Name: "unit", Value: "claims"},
-		{Name: "claim_proof_stage", Value: claimProofStage},
+		{Name: "claim_proof_stage", Value: claimProofStage.String()},
 	}
 
 	// Ensure the counter is not incremented if there was an error.

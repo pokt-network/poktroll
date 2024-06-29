@@ -43,10 +43,10 @@ func TestKeeper_IsProofRequired(t *testing.T) {
 	for i := int64(0); i < sampleSize; i++ {
 		claim := tetsproof.ClaimWithRandomHash(t, sample.AccAddress(), sample.AccAddress(), expectedComputeUnits)
 
-		isRequired, err := keepers.Keeper.IsProofRequiredForClaim(sdkCtx, &claim)
+		proofRequirementReason, err := keepers.Keeper.ProofRequirementForClaim(sdkCtx, &claim)
 		require.NoError(t, err)
 
-		if isRequired {
+		if proofRequirementReason != prooftypes.ProofRequirementReason_NOT_REQUIRED {
 			numTrueSamples.Add(1)
 		}
 	}

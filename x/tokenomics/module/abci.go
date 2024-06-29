@@ -6,6 +6,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/telemetry"
+	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	"github.com/pokt-network/poktroll/x/tokenomics/keeper"
 )
 
@@ -39,20 +40,21 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) (err error) {
 	// Defer telemetry calls so that they reference the final values the relevant variables.
 	defer func() {
 		telemetry.ClaimComputeUnitsCounter(
-			telemetry.ClaimProofStageSettled,
+			prooftypes.ClaimProofStage_SETTLED,
 			numComputeUnits,
 			err,
 		)
 		telemetry.ClaimCounter(
-			telemetry.ClaimProofStageSettled,
+			prooftypes.ClaimProofStage_SETTLED,
 			numClaimsSettled,
 			err,
 		)
 		telemetry.ClaimCounter(
-			telemetry.ClaimProofStageExpired,
+			prooftypes.ClaimProofStage_EXPIRED,
 			numClaimsExpired,
 			err,
 		)
+		// TODO_IMPROVE(#observability): Add a counter for expired compute units.
 	}()
 
 	logger.Info(fmt.Sprintf("settled %d claims and expired %d claims", numClaimsSettled, numClaimsExpired))

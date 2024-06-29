@@ -1,0 +1,36 @@
+syntax = "proto3";
+package poktroll.proof;
+
+option go_package = "github.com/pokt-network/poktroll/x/proof/types";
+
+import "gogoproto/gogo.proto";
+import "poktroll/proof/claim.proto";
+import "poktroll/proof/proof.proto";
+
+message EventClaimCreated {
+  poktroll.proof.Claim claim = 1 [(gogoproto.jsontag) = "claim"];
+  uint64 num_relays = 2 [(gogoproto.jsontag) = "num_relays"];
+  uint64 num_compute_units = 3 [(gogoproto.jsontag) = "num_compute_units"];
+}
+
+// TODO_TEST: Add coverage for claim updates.
+message EventClaimUpdated {
+  poktroll.proof.Claim claim = 1 [(gogoproto.jsontag) = "claim"];
+  uint64 num_relays = 2 [(gogoproto.jsontag) = "num_relays"];
+  uint64 num_compute_units = 3 [(gogoproto.jsontag) = "num_compute_units"];
+}
+
+message EventProofSubmitted {
+  poktroll.proof.Claim claim = 1 [(gogoproto.jsontag) = "claim"];
+  poktroll.proof.Proof proof = 2 [(gogoproto.jsontag) = "proof"];
+  uint64 num_relays = 3 [(gogoproto.jsontag) = "num_relays"];
+  uint64 num_compute_units = 4 [(gogoproto.jsontag) = "num_compute_units"];
+}
+
+// TODO_TEST: Add coverage for proof updates.
+message EventProofUpdated {
+  poktroll.proof.Claim claim = 1 [(gogoproto.jsontag) = "claim"];
+  poktroll.proof.Proof proof = 2 [(gogoproto.jsontag) = "proof"];
+  uint64 num_relays = 3 [(gogoproto.jsontag) = "num_relays"];
+  uint64 num_compute_units = 4 [(gogoproto.jsontag) = "num_compute_units"];
+}
