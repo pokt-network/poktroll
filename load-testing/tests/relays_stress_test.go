@@ -358,7 +358,7 @@ func (s *relaysSuite) LocalnetIsRunning() {
 	s.countClaimAndProofs()
 
 	// Query for the current shared on-chain params.
-	s.querySharedParams()
+	s.querySharedParams(loadTestParams.TestNetNode)
 
 	// Some suppliers may already be staked at genesis, ensure that staking during
 	// this test succeeds by increasing the sake amount.
