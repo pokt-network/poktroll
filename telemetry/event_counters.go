@@ -14,7 +14,13 @@ import (
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 )
 
-const eventTypeMetricKey = "event_type"
+const (
+	// TODO_DECIDE: Decide if we want to continue using these generic metrics keys
+	// or opt for specific keys for each event_type.
+	// See: https://github.com/pokt-network/poktroll/pull/631#discussion_r1653760820
+	eventTypeMetricKey      = "event_type"
+	eventTypeMetricKeyGauge = "event_type_gauge"
+)
 
 // EventSuccessCounter increments a counter with the given data type and success status.
 func EventSuccessCounter(
@@ -116,6 +122,37 @@ func ClaimCounter(
 	telemetry.IncrCounterWithLabels(
 		[]string{eventTypeMetricKey},
 		float32(incrementAmount),
+		labels,
+	)
+}
+
+// RelayMiningDifficultyCounter sets a gauge which tracks the relay mining difficulty,
+// which is represented by number of leading zero bits.
+// The serviceId is used as a label to be able to track the difficulty for each service.
+func RelayMiningDifficultyGauge(numbLeadingZeroBits int, serviceId string) {
+	labels := []metrics.Label{
+		{Name: "type", Value: "relay_mining_difficulty"},
+		{Name: "service_id", Value: serviceId},
+	}
+
+	telemetry.SetGaugeWithLabels(
+		[]string{eventTypeMetricKeyGauge},
+		float32(numbLeadingZeroBits),
+		labels,
+	)
+}
+
+// RelayEMAGauge sets a gauge which tracks the relay EMA for a service.
+// The serviceId is used as a label to be able to track the EMA for each service.
+func RelayEMAGauge(relayEMA uint64, serviceId string) {
+	labels := []metrics.Label{
+		{Name: "type", Value: "relay_ema"},
+		{Name: "service_id", Value: serviceId},
+	}
+
+	telemetry.SetGaugeWithLabels(
+		[]string{eventTypeMetricKeyGauge},
+		float32(relayEMA),
 		labels,
 	)
 }
