@@ -101,6 +101,15 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 	logger.Info().Msg("waiting & blocking until the proof window open height")
 
 	proofsWindowOpenBlock := rs.waitForBlock(ctx, proofWindowOpenHeight)
+	// TODO_MAINNET: If a relayminer is cold-started with persisted but unproven ("late")
+	// sessions, the proofsWindowOpenBlock will never be observed. In this case, we should
+	// use a block query client to populate the block client replay observable at the time
+	// of block client construction. This check and failure branch can be removed once this
+	// is implemented.
+	if proofsWindowOpenBlock == nil {
+		failedSubmitProofsSessionsCh <- sessionTrees
+		return nil
+	}
 
 	// TODO_BLOCKER(@bryanchriswhite, @red0ne): After lean client, there's no
 	// guarantee that all session trees have the same supplier address. Group

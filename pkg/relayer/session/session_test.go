@@ -30,6 +30,8 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
+// TODO_TEST: Add a test case which simulates a cold-started relayminer with unclaimed relays.
+
 func TestRelayerSessionsManager_Start(t *testing.T) {
 	// TODO_TECHDEBT(#446): Centralize the configuration for the SMT spec.
 	var (
@@ -48,7 +50,7 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 	sessionHeader := activeSession.GetHeader()
 
 	// Set up dependencies.
-	blocksObs, blockPublishCh := channel.NewReplayObservable[client.Block](ctx, 1)
+	blocksObs, blockPublishCh := channel.NewReplayObservable[client.Block](ctx, 20)
 	blockClient := testblock.NewAnyTimesCommittedBlocksSequenceBlockClient(t, emptyBlockHash, blocksObs)
 	supplierAddress := sample.AccAddress()
 	supplierClientMap := testsupplier.NewOneTimeClaimProofSupplierClientMap(ctx, t, supplierAddress)
@@ -98,18 +100,24 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 	// Start the relayer sessions manager.
 	relayerSessionsManager.Start(ctx)
 
+	// Wait a tick to allow the relayer sessions manager to start.
+	time.Sleep(50 * time.Millisecond)
+
 	// Publish a mined relay to the minedRelaysPublishCh to insert into the session tree.
 	minedRelay := testrelayer.NewUnsignedMinedRelay(t, activeSession, supplierAddress)
 	minedRelaysPublishCh <- minedRelay
 
 	// Wait a tick to allow the relayer sessions manager to process asynchronously.
 	// It should have created a session tree for the relay.
-	time.Sleep(10 * time.Millisecond)
+	time.Sleep(50 * time.Millisecond)
 
 	// Publish a block to the blockPublishCh to simulate non-actionable blocks.
 	sessionStartHeight := sessionHeader.GetSessionStartBlockHeight()
 	noopBlock := testblock.NewAnyTimesBlock(t, emptyBlockHash, sessionStartHeight)
 	blockPublishCh <- noopBlock
+
+	// Wait a tick to allow the relayer sessions manager to process asynchronously.
+	time.Sleep(50 * time.Millisecond)
 
 	// Calculate the session grace period end block height to emit that block height
 	// to the blockPublishCh to trigger claim creation for the session.
@@ -126,6 +134,9 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 	triggerClaimBlock := testblock.NewAnyTimesBlock(t, emptyBlockHash, earliestSupplierClaimCommitHeight)
 	blockPublishCh <- triggerClaimBlock
 
+	// Wait a tick to allow the relayer sessions manager to process asynchronously.
+	time.Sleep(50 * time.Millisecond)
+
 	// TODO_IMPROVE: ensure correctness of persisted session trees here.
 
 	// Publish a block to the blockPublishCh to trigger proof submission for the session.
@@ -139,5 +150,5 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 	blockPublishCh <- triggerProofBlock
 
 	// Wait a tick to allow the relayer sessions manager to process asynchronously.
-	time.Sleep(250 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 }
