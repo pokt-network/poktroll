@@ -122,13 +122,35 @@ func (ro *replayObservable[V]) Last(ctx context.Context, n int) []V {
 // It replays the values stored in the replay buffer in the order of their arrival
 // before emitting new values.
 func (ro *replayObservable[V]) Subscribe(ctx context.Context) observable.Observer[V] {
+	observer, _ := ro.SubscribeFromLatestBufferedOffset(ctx, ro.replayBufferSize)
+	return observer
+}
+
+// SubscribeFromLatestBufferedOffset returns an observer which is initially notified of
+// values in the replay buffer, starting from the latest buffered value index - offset.
+// After this range of the replay buffer is notified, the observer continues to be notified,
+// in real-time, when the publishCh channel receives a value. It also returns the current
+// replayBufferSize. If offset is greater than replayBufferSize or the number of elements it
+// currently contains, the observer is notified of all elements in the replayBuffer,
+// starting from the beginning. Passing 0 for offset is equivalent to calling
+// Subscribe() on a non-replay observable.
+func (ro *replayObservable[V]) SubscribeFromLatestBufferedOffset(
+	ctx context.Context,
+	endOffset int,
+) (_ observable.Observer[V], replayBufferSize int) {
 	obs, ch := NewObservable[V]()
 	ctx, cancel := context.WithCancel(ctx)
 
 	go func() {
-		// Replay the values stored in the buffer form the oldest to the newest.
 		ro.replayBufferMu.RLock()
-		for i := len(ro.replayBuffer) - 1; i >= 0; i-- {
+
+		// Ensure that the offset is within the bounds of the replay buffer.
+		if endOffset > len(ro.replayBuffer) {
+			endOffset = len(ro.replayBuffer)
+		}
+
+		// Replay the values stored in the buffer form the oldest to the newest.
+		for i := endOffset - 1; i >= 0; i-- {
 			ch <- ro.replayBuffer[i]
 		}
 
@@ -144,7 +166,7 @@ func (ro *replayObservable[V]) Subscribe(ctx context.Context) observable.Observe
 		cancel()
 	}()
 
-	return obs.Subscribe(ctx)
+	return obs.Subscribe(ctx), ro.replayBufferSize
 }
 
 // UnsubscribeAll unsubscribes all observers from the replay observable.
