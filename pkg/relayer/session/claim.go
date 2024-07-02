@@ -113,7 +113,15 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 	// The block that'll be used as a source of entropy for which branch(es) to
 	// prove should be deterministic and use on-chain governance params.
 	claimsWindowOpenBlock := rs.waitForBlock(ctx, claimWindowOpenHeight)
-
+	// TODO_MAINNET: If a relayminer is cold-started with persisted but unclaimed ("late")
+	// sessions, the claimsWindowOpenBlock will never be observed. In this case, we should
+	// use a block query client to populate the block client replay observable at the time
+	// of block client construction. This check and failure branch can be removed once this
+	// is implemented.
+	if claimsWindowOpenBlock == nil {
+		failedCreateClaimsSessionsCh <- sessionTrees
+		return nil
+	}
 	claimsFlushedCh := make(chan []relayer.SessionTree)
 	defer close(claimsFlushedCh)
 	go rs.goCreateClaimRoots(
