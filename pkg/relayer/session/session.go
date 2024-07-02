@@ -201,10 +201,12 @@ func (rs *relayerSessionsManager) forEachBlockClaimSessionsFn(
 		rs.sessionsTreesMu.Lock()
 		defer rs.sessionsTreesMu.Unlock()
 
-		// onTimeSessions are the sessions that are still within their grace period.
+		// TODO_TEST: Add unit tests to validate the LeanClient behavior
+		// onTimeSessions are the sessions, grouped by supplierAddress, that are
+		// still within their grace period.
 		// They are on time and will wait for their create claim window to open.
 		// They will be emitted last, after all the late sessions have been emitted.
-		var onTimeSessions []relayer.SessionTree
+		onTimeSessions := make(map[*cosmostypes.AccAddress][]relayer.SessionTree)
 
 		// TODO_TECHDEBT(#543): We don't really want to have to query the params for every method call.
 		// Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
@@ -222,11 +224,11 @@ func (rs *relayerSessionsManager) forEachBlockClaimSessionsFn(
 		// Iterate over the sessionsTrees map to get the ones that end at a block height
 		// lower than the current block height.
 		for sessionEndHeight, sessionsTreesEndingAtBlockHeight := range rs.sessionsTrees {
-			// Late sessions are the ones that have their session grace period elapsed
-			// and should already have been claimed.
+			// Late sessions are the sessions, grouped by their supplier address, that
+			// have their session grace period elapsed and should already have been claimed.
 			// Group them by their end block height and emit each group separately
 			// before emitting the on-time sessions.
-			var lateSessions []relayer.SessionTree
+			lateSessions := make(map[*cosmostypes.AccAddress][]relayer.SessionTree)
 
 			sessionGracePeriodEndHeight := shared.GetSessionGracePeriodEndHeight(sharedParams, sessionEndHeight)
 
@@ -251,28 +253,46 @@ func (rs *relayerSessionsManager) forEachBlockClaimSessionsFn(
 						continue
 					}
 
+					sessionSupplier := sessionTree.GetSupplierAddress()
+
 					// Separate the sessions that are on-time from the ones that are late.
 					// If the session is past its grace period, it is considered late,
 					// otherwise it is on time and will be emitted last.
+					// Grouping the sessions by their supplier address, allows to batch
+					// each group at its specific earliest commit height.
 					if sessionGracePeriodEndHeight+int64(numBlocksPerSession) < block.Height() {
-						lateSessions = append(lateSessions, sessionTree)
+						if _, ok := lateSessions[sessionSupplier]; !ok {
+							lateSessions[sessionSupplier] = make([]relayer.SessionTree, 0)
+						}
+						lateSessions[sessionSupplier] = append(lateSessions[sessionSupplier], sessionTree)
 					} else {
-						onTimeSessions = append(onTimeSessions, sessionTree)
+						if _, ok := onTimeSessions[sessionSupplier]; !ok {
+							onTimeSessions[sessionSupplier] = make([]relayer.SessionTree, 0)
+						}
+						onTimeSessions[sessionSupplier] = append(onTimeSessions[sessionSupplier], sessionTree)
 					}
 				}
 
 				// If there are any late sessions to be claimed, emit them first.
 				// The wait for claim submission window pipeline step will return immediately
 				// without blocking them.
-				if len(lateSessions) > 0 {
-					sessionsToClaimsPublishCh <- lateSessions
+				// Since each supplier will have a different earliest commit height,
+				// the late sessions are emitted grouped by supplier address.
+				for _, supplierLateSessions := range lateSessions {
+					if len(supplierLateSessions) > 0 {
+						sessionsToClaimsPublishCh <- supplierLateSessions
+					}
 				}
 			}
 		}
 
 		// Emit the on-time sessions last, after all the late sessions have been emitted.
-		if len(onTimeSessions) > 0 {
-			sessionsToClaimsPublishCh <- onTimeSessions
+		// Since each supplier will have a different earliest commit height,
+		// the late sessions are emitted grouped by supplier address.
+		for _, supplierOnTimeSessions := range onTimeSessions {
+			if len(supplierOnTimeSessions) > 0 {
+				sessionsToClaimsPublishCh <- supplierOnTimeSessions
+			}
 		}
 	}
 }

@@ -102,11 +102,6 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 
 	proofsWindowOpenBlock := rs.waitForBlock(ctx, proofWindowOpenHeight)
 
-	// TODO_BLOCKER(@bryanchriswhite, @red0ne): After lean client, there's no
-	// guarantee that all session trees have the same supplier address. Group
-	// session trees by supplier to re-use as much code as possible and still
-	// support batching proofs.
-	//
 	// Get the earliest proof commit height for this supplier.
 	supplierAddr := sessionTrees[0].GetSupplierAddress().String()
 	earliestSupplierProofsCommitHeight := shared.GetEarliestSupplierProofCommitHeight(
