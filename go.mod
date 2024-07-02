@@ -6,8 +6,12 @@ replace (
 	// DEVELOPER_TIP: Uncomment to use a local copy of shannon-sdk for development purposes.
 	// github.com/pokt-network/shannon-sdk => ../shannon-sdk
 
+	// DEVELOPER_TIP: Uncomment to use a local copy of smt for development purposes.
+	// github.com/pokt-network/smt => ../smt
+
 	// fix upstream GHSA-h395-qcrw-5vmq vulnerability.
 	github.com/gin-gonic/gin => github.com/gin-gonic/gin v1.7.0
+
 	// replace broken goleveldb
 	github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
 )
@@ -52,8 +56,8 @@ require (
 	// This is creating a circular dependency whereby exporting the protobufs into a separate
 	// repo is the first obvious idea, but has to be carefully considered, automated, and is not
 	// a hard blocker.
-	github.com/pokt-network/shannon-sdk v0.0.0-20240606213254-42787a73b552
-	github.com/pokt-network/smt v0.10.2
+	github.com/pokt-network/shannon-sdk v0.0.0-20240628223057-7d2928722749
+	github.com/pokt-network/smt v0.11.1
 	github.com/pokt-network/smt/kvstore/badger v0.0.0-20240109205447-868237978c0b
 	github.com/prometheus/client_golang v1.18.0
 	github.com/regen-network/gocuke v1.1.0
@@ -218,7 +222,6 @@ require (
 	github.com/moby/term v0.5.0 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/mtibben/percent v0.2.1 // indirect
-	github.com/noot/ring-go v0.0.0-20231019173746-6c4b33bcf03f // indirect
 	github.com/oasisprotocol/curve25519-voi v0.0.0-20230904125328-1f23a7beb09a // indirect
 	github.com/oklog/run v1.1.0 // indirect
 	github.com/onsi/ginkgo v1.16.5 // indirect

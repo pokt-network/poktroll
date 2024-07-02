@@ -355,11 +355,11 @@ for x in range(localnet_config["gateways"]["count"]):
             str(40064 + actor_number)
             + ":40004",  # DLV port. gateway1 - exposes 40065, gateway2 exposes 40066, etc.
             # Run `curl localhost:PORT` to see the current snapshot of gateway metrics.
-            str(9089 + actor_number)
-            + ":9090",  # gateway metrics port. gateway1 - exposes 9090, gateway2 exposes 9091, etc.
+            str(9059 + actor_number)
+            + ":9090",  # gateway metrics port. gateway1 - exposes 9060, gateway2 exposes 9061, etc.
             # Use with pprof like this: `go tool pprof -http=:3333 http://localhost:6090/debug/pprof/goroutine`
-            str(6089 + actor_number)
-            + ":6060",  # gateway metrics port. gateway1 - exposes 6090, gateway2 exposes 6091, etc.
+            str(6059 + actor_number)
+            + ":6060",  # gateway metrics port. gateway1 - exposes 6060, gateway2 exposes 6061, etc.
         ],
     )
 
@@ -367,9 +367,9 @@ k8s_resource(
     "validator",
     labels=["pocket_network"],
     port_forwards=[
-        "36657",
-        "36658",
-        "40004",
+        "26657", # RPC
+        "9090", # the gRPC server address
+        "40004", # use with `dlv` when it's turned on in `localnet_config.yaml`
         # Use with pprof like this: `go tool pprof -http=:3333 http://localhost:6061/debug/pprof/goroutine`
         "6061:6060",
     ],

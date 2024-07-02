@@ -67,7 +67,7 @@ func (s *suite) parseParam(table gocuke.DataTable, rowIdx int) paramAny {
 		coinValue := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(coinAmount))
 		paramValue = &coinValue
 	default:
-		s.Fatalf("unexpected param type %q", paramType)
+		s.Fatalf("ERROR: unexpected param type %q", paramType)
 	}
 
 	return paramAny{
@@ -116,7 +116,7 @@ func (s *suite) newTokenomicsMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 		case tokenomicstypes.ParamComputeUnitsToTokensMultiplier:
 			msgUpdateParams.Params.ComputeUnitsToTokensMultiplier = uint64(paramValue.value.(int64))
 		default:
-			s.Fatalf("unexpected %q type param name %q", paramValue.typeStr, paramName)
+			s.Fatalf("ERROR: unexpected %q type param name %q", paramValue.typeStr, paramName)
 		}
 	}
 	return proto.Message(msgUpdateParams)
@@ -141,7 +141,7 @@ func (s *suite) newProofMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 		case prooftypes.ParamProofMissingPenalty:
 			msgUpdateParams.Params.ProofMissingPenalty = paramValue.value.(*cosmostypes.Coin)
 		default:
-			s.Fatalf("unexpected %q type param name %q", paramValue.typeStr, paramName)
+			s.Fatalf("ERROR: unexpected %q type param name %q", paramValue.typeStr, paramName)
 		}
 	}
 	return proto.Message(msgUpdateParams)
@@ -159,6 +159,8 @@ func (s *suite) newSharedMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 		switch paramName {
 		case sharedtypes.ParamNumBlocksPerSession:
 			msgUpdateParams.Params.NumBlocksPerSession = uint64(paramValue.value.(int64))
+		case sharedtypes.ParamGracePeriodEndOffsetBlocks:
+			msgUpdateParams.Params.GracePeriodEndOffsetBlocks = uint64(paramValue.value.(int64))
 		case sharedtypes.ParamClaimWindowOpenOffsetBlocks:
 			msgUpdateParams.Params.ClaimWindowOpenOffsetBlocks = uint64(paramValue.value.(int64))
 		case sharedtypes.ParamClaimWindowCloseOffsetBlocks:
@@ -168,7 +170,7 @@ func (s *suite) newSharedMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 		case sharedtypes.ParamProofWindowCloseOffsetBlocks:
 			msgUpdateParams.Params.ProofWindowCloseOffsetBlocks = uint64(paramValue.value.(int64))
 		default:
-			s.Fatalf("unexpected %q type param name %q", paramValue.typeStr, paramName)
+			s.Fatalf("ERROR: unexpected %q type param name %q", paramValue.typeStr, paramName)
 		}
 	}
 	return proto.Message(msgUpdateParams)
@@ -188,7 +190,7 @@ func (s *suite) newAppMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 		case apptypes.ParamMaxDelegatedGateways:
 			msgUpdateParams.Params.MaxDelegatedGateways = uint64(paramValue.value.(int64))
 		default:
-			s.Fatalf("unexpected %q type param name %q", paramValue.typeStr, paramName)
+			s.Fatalf("ERROR: unexpected %q type param name %q", paramValue.typeStr, paramName)
 		}
 	}
 	return proto.Message(msgUpdateParams)
@@ -208,7 +210,7 @@ func (s *suite) newServiceMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 		case servicetypes.ParamAddServiceFee:
 			msgUpdateParams.Params.AddServiceFee = uint64(paramValue.value.(int64))
 		default:
-			s.Fatalf("unexpected %q type param name %q", paramValue.typeStr, paramName)
+			s.Fatalf("ERROR: unexpected %q type param name %q", paramValue.typeStr, paramName)
 		}
 	}
 	return proto.Message(msgUpdateParams)

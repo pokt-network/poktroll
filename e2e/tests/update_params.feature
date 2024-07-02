@@ -53,6 +53,7 @@ Feature: Params Namespace
     When the "pnf" account sends an authz exec message to update all "shared" module params
       | name                             | value | type  |
       | num_blocks_per_session           | 8     | int64 |
+      | grace_period_end_offset_blocks   | 3     | int64 |
       | claim_window_open_offset_blocks  | 8     | int64 |
       | claim_window_close_offset_blocks | 8     | int64 |
       | proof_window_open_offset_blocks  | 8     | int64 |
@@ -78,6 +79,7 @@ Feature: Params Namespace
       | proof      | /poktroll.proof.MsgUpdateParam      | proof_requirement_threshold        | 100         | int64      |
       | proof      | /poktroll.proof.MsgUpdateParam      | proof_missing_penalty              | 500         | coin       |
       | shared     | /poktroll.shared.MsgUpdateParam     | num_blocks_per_session             | 8           | int64      |
+      | shared     | /poktroll.shared.MsgUpdateParam     | grace_period_end_offset_blocks     | 3           | int64      |
       | shared     | /poktroll.shared.MsgUpdateParam     | claim_window_open_offset_blocks    | 8           | int64      |
       | shared     | /poktroll.shared.MsgUpdateParam     | claim_window_close_offset_blocks   | 8           | int64      |
       | shared     | /poktroll.shared.MsgUpdateParam     | proof_window_open_offset_blocks    | 8           | int64      |

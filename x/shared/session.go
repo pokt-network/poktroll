@@ -1,17 +1,16 @@
 package shared
 
 import (
+	poktrand "github.com/pokt-network/poktroll/pkg/crypto/rand"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-// TODO_DOCUMENT(@bryanchriswhite): Move this into the documentation: https://github.com/pokt-network/poktroll/pull/571#discussion_r1630923625
+const (
+	minimumClaimWindowSizeBlocks = 1
+	minimumProofWindowSizeBlocks = 1
+)
 
-// SessionGracePeriodBlocks is the number of blocks after the session ends before the
-// "session grace period" is considered to have elapsed.
-//
-// TODO_BLOCKER(@bryanchriswhite): This is a place-holder that will be removed
-// once the respective governance parameter is implemented.
-const SessionGracePeriodBlocks = 2
+// TODO_DOCUMENT(@bryanchriswhite): Move this into the documentation: https://github.com/pokt-network/poktroll/pull/571#discussion_r1630923625
 
 // GetSessionStartHeight returns the block height at which the session containing
 // queryHeight starts, given the passed shared on-chain parameters.
@@ -64,9 +63,11 @@ func GetSessionNumber(sharedParams *sharedtypes.Params, queryHeight int64) int64
 
 // GetSessionGracePeriodEndHeight returns the block height at which the grace period
 // for the session that includes queryHeight elapses, given the passed sharedParams.
+// The grace period is the number of blocks after the session ends during which relays
+// SHOULD be included in the session which most recently ended.
 func GetSessionGracePeriodEndHeight(sharedParams *sharedtypes.Params, queryHeight int64) int64 {
 	sessionEndHeight := GetSessionEndHeight(sharedParams, queryHeight)
-	return sessionEndHeight + SessionGracePeriodBlocks
+	return sessionEndHeight + int64(sharedParams.GetGracePeriodEndOffsetBlocks())
 }
 
 // IsGracePeriodElapsed returns true if the grace period for the session ending with
@@ -105,4 +106,74 @@ func GetProofWindowOpenHeight(sharedParams *sharedtypes.Params, queryHeight int6
 func GetProofWindowCloseHeight(sharedParams *sharedtypes.Params, queryHeight int64) int64 {
 	return GetProofWindowOpenHeight(sharedParams, queryHeight) +
 		int64(sharedParams.GetProofWindowCloseOffsetBlocks())
+}
+
+// GetEarliestSupplierClaimCommitHeight returns the earliest block height at which a claim
+// for the session that includes queryHeight can be committed for a given supplier
+// and the passed sharedParams.
+func GetEarliestSupplierClaimCommitHeight(
+	sharedParams *sharedtypes.Params,
+	queryHeight int64,
+	claimWindowOpenBlockHash []byte,
+	supplierAddr string,
+) int64 {
+	claimWindowOpenHeight := GetClaimWindowOpenHeight(sharedParams, queryHeight)
+
+	// Generate a deterministic random (non-negative) int64, seeded by the claim
+	// window open block hash and the supplier address.
+	randomNumber := poktrand.SeededInt63(claimWindowOpenBlockHash, []byte(supplierAddr))
+
+	distributionWindowSizeBlocks := GetClaimWindowSizeBlocks(sharedParams)
+	randCreateClaimHeightOffset := randomNumber % int64(distributionWindowSizeBlocks)
+
+	return claimWindowOpenHeight + randCreateClaimHeightOffset
+}
+
+// GetClaimWindowSizeBlocks returns the number of blocks between the opening and closing
+// of the claim window, given the passed sharedParams.
+func GetClaimWindowSizeBlocks(sharedParams *sharedtypes.Params) uint64 {
+	windowSizeBlocks := sharedParams.ClaimWindowCloseOffsetBlocks -
+		sharedParams.ClaimWindowOpenOffsetBlocks -
+		minimumClaimWindowSizeBlocks
+
+	if windowSizeBlocks < 1 {
+		return 1
+	}
+
+	return windowSizeBlocks
+}
+
+// GetEarliestSupplierProofCommitHeight returns the earliest block height at which a proof
+// for the session that includes queryHeight can be committed for a given supplier
+// and the passed sharedParams.
+func GetEarliestSupplierProofCommitHeight(
+	sharedParams *sharedtypes.Params,
+	queryHeight int64,
+	proofWindowOpenBlockHash []byte,
+	supplierAddr string,
+) int64 {
+	proofWindowOpenHeight := GetProofWindowOpenHeight(sharedParams, queryHeight)
+
+	// Generate a deterministic random (non-negative) int64, seeded by the proof
+	// window open block hash and the supplier address.
+	randomNumber := poktrand.SeededInt63(proofWindowOpenBlockHash, []byte(supplierAddr))
+
+	distributionWindowSizeBlocks := GetProofWindowSizeBlocks(sharedParams)
+	randCreateProofHeightOffset := randomNumber % int64(distributionWindowSizeBlocks)
+
+	return proofWindowOpenHeight + randCreateProofHeightOffset
+}
+
+// GetProofWindowSizeBlocks returns the number of blocks between the opening and closing
+// of the proof window, given the passed sharedParams.
+func GetProofWindowSizeBlocks(sharedParams *sharedtypes.Params) uint64 {
+	windowSizeBlocks := sharedParams.ProofWindowCloseOffsetBlocks -
+		sharedParams.ProofWindowOpenOffsetBlocks -
+		minimumProofWindowSizeBlocks
+
+	if windowSizeBlocks < 1 {
+		return 1
+	}
+
+	return windowSizeBlocks
 }

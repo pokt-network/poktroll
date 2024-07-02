@@ -1,10 +1,8 @@
 package appgateserver
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"io"
 	"net"
 	"net/http"
 	"net/http/pprof"
@@ -13,15 +11,16 @@ import (
 	"sync"
 
 	"cosmossdk.io/depinject"
+	sdktypes "github.com/pokt-network/shannon-sdk/types"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	metrics "github.com/slok/go-http-metrics/metrics/prometheus"
 	metricsmiddleware "github.com/slok/go-http-metrics/middleware"
 	middlewarestd "github.com/slok/go-http-metrics/middleware/std"
 
+	"github.com/pokt-network/poktroll/pkg/appgateserver/sdkadapter"
 	querytypes "github.com/pokt-network/poktroll/pkg/client/query/types"
-	"github.com/pokt-network/poktroll/pkg/partials"
 	"github.com/pokt-network/poktroll/pkg/polylog"
-	"github.com/pokt-network/shannon-sdk/sdk"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // SigningInformation is a struct that holds information related to the signing
@@ -59,7 +58,7 @@ type appGateServer struct {
 
 	// sdk is the ShannonSDK that the appGateServer uses to query for the current session
 	// and send relay requests to the supplier.
-	sdk *sdk.ShannonSDK
+	sdk *sdkadapter.ShannonSDK
 
 	// listeningEndpoint is the endpoint that the appGateServer will listen on.
 	listeningEndpoint *url.URL
@@ -175,41 +174,45 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 	newUrlPath, serviceId := extractServiceId(request.URL.Path)
 	request.URL.Path = newUrlPath
 
-	// Read the request body bytes.
-	requestPayloadBz, err := io.ReadAll(request.Body)
-	request.Body.Close()
-	if err != nil {
-		app.replyWithError(
-			ctx,
-			requestPayloadBz,
-			writer,
-			serviceId,
-			"unknown",
-			ErrAppGateHandleRelay.Wrapf("reading relay request body: %s", err),
-		)
-		// TODO_IMPROVE: log additional info?
-		app.logger.Error().Err(err).Msg("failed reading relay request body")
-
-		return
-	}
-	app.logger.Debug().
+	// Create an error logger with the common fields for error logging.
+	errorLogger := app.logger.With().
+		Error().
 		Str("service_id", serviceId).
-		Str("payload", string(requestPayloadBz)).
-		Msg("handling relay")
+		Fields(map[string]interface{}{
+			"method":         request.Method,
+			"url":            request.URL.String(),
+			"content_type":   request.Header.Get("Content-Type"),
+			"content_length": request.ContentLength,
+		})
 
-	// TODO_IMPROVE: log additional info?
-	app.logger.Debug().Msg("determining request type")
+	logger := app.logger.With().Debug().Str("service_id", serviceId)
 
-	// Get the type of the request by doing a partial unmarshal of the payload
-	// TODO_BLOCKER(#511): Move request RPCType detection to shannon-sdk
-	requestType, err := partials.GetRequestType(ctx, requestPayloadBz)
+	poktHTTPRequest, requestBz, err := sdktypes.SerializeHTTPRequest(request)
 	if err != nil {
-		app.replyWithError(ctx, requestPayloadBz, writer, serviceId, "unknown", ErrAppGateHandleRelay)
-		// TODO_IMPROVE: log additional info?
-		app.logger.Error().Err(err).Msg("failed getting request type")
+		// If the request cannot not be parsed, pass an empty POKTHTTPRequest and
+		// an UNKNOWN_RPC type to the replyWithError method.
+		emptyPOKTHTTPRequest := &sdktypes.POKTHTTPRequest{}
+		rpcType := sharedtypes.RPCType_UNKNOWN_RPC
+		errorReply := ErrAppGateHandleRelay.Wrapf("parsing request: %s", err)
+
+		app.replyWithError(errorReply, emptyPOKTHTTPRequest, serviceId, rpcType, writer)
+		errorLogger.Err(err).Msg("failed parsing request")
 
 		return
 	}
+
+	logger.Msg("handling relay")
+
+	// Get the type of the request by inspecting the request properties.
+	rpcType := poktHTTPRequest.GetRPCType()
+
+	// Add newly available fields to the error logger.
+	errorLogger = errorLogger.
+		Str("rpc_type", rpcType.String()).
+		Str("payload", string(poktHTTPRequest.BodyBz))
+
+	logger = logger.Str("rpc_type", rpcType.String())
+	logger.Msg("identified rpc type")
 
 	// Determine the application address.
 	appAddress := app.signingInformation.AppAddress
@@ -217,33 +220,36 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 		appAddress = request.URL.Query().Get("applicationAddr")
 	}
 	if appAddress == "" {
-		app.replyWithError(ctx, requestPayloadBz, writer, serviceId, requestType.String(), ErrAppGateMissingAppAddress)
-		// TODO_IMPROVE: log additional info?
-		app.logger.Error().Msg("no application address provided")
+		// If no application address is provided, reply with an error response.
+		app.replyWithError(ErrAppGateMissingAppAddress, poktHTTPRequest, serviceId, rpcType, writer)
+		errorLogger.Err(ErrAppGateMissingAppAddress).Msg("no application address provided")
 
 		return
 	}
 
-	// Put the request body bytes back into the request body.
-	request.Body = io.NopCloser(bytes.NewBuffer(requestPayloadBz))
+	logger = logger.Str("application_addr", appAddress)
+	errorLogger = errorLogger.Str("application_addr", appAddress)
 
-	// TODO_IMPROVE(@red-0ne): Add support for asynchronous relays, and switch on
+	// Create a requestInfo struct to pass to the handleSynchronousRelay method.
+	reqInfo := &requestInfo{
+		appAddress:  appAddress,
+		serviceId:   serviceId,
+		rpcType:     rpcType,
+		poktRequest: poktHTTPRequest,
+		requestBz:   requestBz,
+	}
+
+	// TODO_IMPROVE(@red-0ne, #40): Add support for asynchronous relays, and switch on
 	// the request type here.
-	// TODO_RESEARCH: Should this be started in a goroutine, to allow for
-	// concurrent requests from numerous applications?
-	if err := app.handleSynchronousRelay(
-		ctx, appAddress, serviceId, requestType, request, writer); err != nil {
-
+	if err := app.handleSynchronousRelay(ctx, reqInfo, writer); err != nil {
 		// Reply with an error response if there was an error handling the relay.
-		app.replyWithError(ctx, requestPayloadBz, writer, serviceId, requestType.String(), err)
-		// TODO_IMPROVE: log additional info?
-		app.logger.Error().Err(err).Msg("failed handling relay")
+		app.replyWithError(err, poktHTTPRequest, serviceId, rpcType, writer)
+		errorLogger.Err(err).Msg("failed handling relay")
 
 		return
 	}
 
-	// TODO_IMPROVE: log additional info?
-	app.logger.Info().Msg("request serviced successfully")
+	logger.Msg("request serviced successfully")
 }
 
 // validateConfig validates the appGateServer configuration.
@@ -325,7 +331,11 @@ func extractServiceId(urlPath string) (newUrlPath string, serviceId string) {
 	// This is specific logic to how the AppGateServer functions. Other gateways
 	// may have different means or approaches of identifying the service that the
 	// request is for (e.g. POST data).
-	newUrlPath = strings.Replace(urlPath, serviceId, "", 1)
+	newUrlPath = strings.TrimPrefix(urlPath, fmt.Sprintf("/%s", serviceId))
+	if newUrlPath == "" {
+		newUrlPath = "/"
+	}
+
 	return newUrlPath, serviceId
 }
 

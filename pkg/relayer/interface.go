@@ -158,5 +158,5 @@ type SessionTree interface {
 	// It returns an error if it has already been marked as such.
 	StartClaiming() error
 
-	SupplierAddress() *cosmostypes.AccAddress
+	GetSupplierAddress() *cosmostypes.AccAddress
 }

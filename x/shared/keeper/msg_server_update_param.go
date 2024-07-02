@@ -30,6 +30,18 @@ func (k msgServer) UpdateParam(ctx context.Context, msg *types.MsgUpdateParam) (
 		}
 
 		params.NumBlocksPerSession = numBlocksPerSession
+	case types.ParamGracePeriodEndOffsetBlocks:
+		value, ok := msg.AsType.(*types.MsgUpdateParam_AsInt64)
+		if !ok {
+			return nil, types.ErrSharedParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
+		}
+		gracePeriodEndOffsetBlocks := uint64(value.AsInt64)
+
+		if err := types.ValidateGracePeriodEndOffsetBlocks(gracePeriodEndOffsetBlocks); err != nil {
+			return nil, err
+		}
+
+		params.GracePeriodEndOffsetBlocks = gracePeriodEndOffsetBlocks
 	case types.ParamClaimWindowOpenOffsetBlocks:
 		value, ok := msg.AsType.(*types.MsgUpdateParam_AsInt64)
 		if !ok {

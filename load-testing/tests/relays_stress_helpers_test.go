@@ -41,7 +41,6 @@ import (
 	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
-	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
@@ -213,14 +212,15 @@ func (s *relaysSuite) mapSessionInfoForLoadTestDurationFn(
 		// If the test duration is reached, stop sending requests
 		sendRelaysEndHeight := s.testStartHeight + s.relayLoadDurationBlocks
 		if blockHeight >= sendRelaysEndHeight {
-
-			logger.Info().Msg("Stop sending relays, waiting for last claims and proofs to be submitted")
-			// Wait for one more session to let the last claims and proofs be submitted.
 			testEndHeight := s.testStartHeight + s.testDurationBlocks
+
+			remainingRelayLoadBlocks := blockHeight - sendRelaysEndHeight
+			waitForSettlementBlocks := testEndHeight - sendRelaysEndHeight
+			logger.Info().Msgf("Stop sending relays, waiting for last claims and proofs to be submitted; block until validation: %d/%d", remainingRelayLoadBlocks, waitForSettlementBlocks)
+			// Wait for one more session to let the last claims and proofs be submitted.
 			if blockHeight > testEndHeight {
 				s.cancelCtx()
 			}
-
 			return nil, true
 		}
 
@@ -376,7 +376,7 @@ func (plans *actorLoadTestIncrementPlans) totalDurationBlocks(sharedParams *shar
 	// last increment duration (i.e. **after** maxActorCount actors are activated).
 	blocksToLastSessionEnd := plans.maxActorBlocksToFinalIncrementEnd()
 
-	blocksToLastProofWindowEnd := blocksToLastSessionEnd + shared.SessionGracePeriodBlocks
+	blocksToLastProofWindowEnd := blocksToLastSessionEnd + int64(sharedParams.GetGracePeriodEndOffsetBlocks())
 
 	// Add one session length so that the duration is inclusive of the block which
 	// commits the last session's proof.
@@ -729,7 +729,6 @@ func (plan *actorLoadTestIncrementPlan) shouldIncrementActorCount(
 	}
 
 	initialSessionNumber := testsession.GetSessionNumberWithDefaultParams(startBlockHeight)
-	// TODO_BLOCKER(@bryanchriswhite): replace with gov param query when available.
 	actorSessionIncRate := plan.blocksPerIncrement / int64(sharedParams.GetNumBlocksPerSession())
 	nextSessionNumber := sessionInfo.sessionNumber + 1 - initialSessionNumber
 	isSessionStartHeight := sessionInfo.blockHeight == sessionInfo.sessionStartBlockHeight
@@ -756,7 +755,6 @@ func (plan *actorLoadTestIncrementPlan) shouldIncrementSupplierCount(
 	}
 
 	initialSessionNumber := testsession.GetSessionNumberWithDefaultParams(startBlockHeight)
-	// TODO_BLOCKER(@bryanchriswhite): replace with gov param query when available.
 	supplierSessionIncRate := plan.blocksPerIncrement / int64(sharedParams.GetNumBlocksPerSession())
 	nextSessionNumber := sessionInfo.sessionNumber + 1 - initialSessionNumber
 	isSessionEndHeight := sessionInfo.blockHeight == sessionInfo.sessionEndBlockHeight
@@ -914,7 +912,7 @@ func (s *relaysSuite) sendStakeGatewaysTxs(
 // signWithRetries signs the transaction with the keyName provided, retrying
 // up to maxRetries times if the signing fails.
 // TODO_MAINNET: SignTx randomly fails at retrieving the account info with
-// the error post failed: Post "http://localhost:36657": EOF. This might be due to
+// the error post failed: Post "http://localhost:26657": EOF. This might be due to
 // concurrent requests trying to access the same account info and needs to be investigated.
 func (s *relaysSuite) signWithRetries(
 	actorKeyName string,
@@ -954,7 +952,7 @@ func (s *relaysSuite) sendPendingMsgsTx(actor *accountInfo) {
 	require.NotNil(s, keyRecord)
 
 	// TODO_HACK: Sometimes SignTx fails at retrieving the account info with
-	// the error post failed: Post "http://localhost:36657": EOF.
+	// the error post failed: Post "http://localhost:26657": EOF.
 	// A retry mechanism is added to avoid this issue.
 	err = s.signWithRetries(keyRecord.Name, txBuilder, signTxMaxRetries)
 	require.NoError(s, err)
@@ -1363,10 +1361,15 @@ func (s *relaysSuite) countClaimAndProofs() {
 
 // querySharedParams queries the current on-chain shared module parameters for use
 // over the duration of the test.
-func (s *relaysSuite) querySharedParams() {
+func (s *relaysSuite) querySharedParams(queryNodeRPCURL string) {
 	s.Helper()
 
 	deps := depinject.Supply(s.txContext.GetClientCtx())
+
+	blockQueryClient, err := sdkclient.NewClientFromNode(queryNodeRPCURL)
+	require.NoError(s, err)
+	deps = depinject.Configs(deps, depinject.Supply(blockQueryClient))
+
 	sharedQueryClient, err := query.NewSharedQuerier(deps)
 	require.NoError(s, err)
 

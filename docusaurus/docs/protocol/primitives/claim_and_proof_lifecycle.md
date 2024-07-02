@@ -19,13 +19,11 @@ to all readers.
   - [Session Duration](#session-duration)
   - [Session End](#session-end)
 - [Claim](#claim)
-  - [Claim Protobuf](#claim-protobuf)
-  - [CreateClaim Transaction](#createclaim-transaction)
+  - [Protobuf Types](#protobuf-types)
   - [CreateClaim Validation](#createclaim-validation)
   - [Claim Window](#claim-window)
 - [Proof](#proof)
-  - [Proof Protobuf](#proof-protobuf)
-  - [SubmitProof Transaction](#submitproof-transaction)
+  - [Protobuf Types](#protobuf-types-1)
   - [SubmitProof Validation](#submitproof-validation)
   - [Proof Window](#proof-window)
 - [Proof Security](#proof-security)
@@ -36,6 +34,7 @@ to all readers.
     - [Example 2: Path to leaf at partial depth](#example-2-path-to-leaf-at-partial-depth)
     - [Example 3: Path to empty node](#example-3-path-to-empty-node)
 - [Full Lifecycle](#full-lifecycle)
+- [Reference Diagrams](#reference-diagrams)
 
 ## Introduction
 
@@ -79,6 +78,53 @@ sequenceDiagram
         PN -->> A: Deduct staked balance (burn)
     end
 ```
+
+## Session Windows & On-Chain Parameters
+
+_TODO(@bryanchriswhite): Add message distribution offsets/windows to this picture._
+
+```mermaid
+gantt
+    title Session Relay / Claim / Proof Windows
+    dateFormat ss
+    axisFormat %S
+    tickInterval 1second
+
+    section Relay Window
+        Session N Start: milestone, sns, 00, 0s
+        num_blocks_per_session: nbps, 00, 4s
+        Session N End: milestone, sne, after nbps, 0s
+        grace_period_end_offset_blocks: gpof, after sne, 1s
+        Grace Period End: milestone, gpe, after gpof, 0s
+        Session N + 1 Start: milestone, sns1, after sne, 0s
+        num_blocks_per_session: nbps2, after sns1, 4s
+    section Claim Window
+        claim_window_open_offset_blocks: cwob, after sne, 1s
+        Session N Claim Window Open: milestone, cwo, after cwob, 0s
+        claim_window_close_offset_blocks: cwcb, after cwo, 4s
+        Session N Claim Window Close: milestone, cwc, after cwcb, 0s
+    section Proof Window
+        proof_window_open_offset_blocks: pwob, after cwc, 10ms
+        Session N Proof Window Open: milestone, pwo, after pwob, 0s
+        proof_window_close_offset_blocks: pwcb, after pwo, 4s
+        Session N PRoof Window Close: milestone, pwc, after pwcb, 0s
+
+```
+
+> NB: Depicted with the default values (see below); x-axis is units are blocks.
+
+| Parameter                          | Description                                                                                                                                                                                                                                                                                                                                                                                      | Default |
+|------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------|
+| `num_blocks_per_session`           | The number of blocks between the session start & end heights. Relays handled in these blocks are included in session N. It is positively correlated with the number of relays in (i.e. size of) each session tree for each session number (less other scaling factors; e.g. relaymining).                                                                                                        | 4       |
+| `grace_period_end_offset_blocks`   | The number of blocks after the session end height, at which the grace period ends. Valid relays from both sessions N and N +1 are accepted in these blocks. It is positively correlated to the amount of time gateways have to transition sending relays to suppliers in the next session.                                                                                                       | 1       |
+| `claim_window_open_offset_blocks`  | The number of blocks after the session end height, at which the claim window opens. Valid relays from both sessions N and N +1 are accepted in these blocks. Valid claims for session N will be rejected in these blocks. This parameter MUST NOT be less than grace_period_end_offset_blocks. It is positively correlated with the number of relays in (i.e. size of) each session tree for each session number (less other scaling factors; e.g. relaymining). | 1       |
+| `claim_window_close_offset_blocks` | The number of blocks after the claim window open height, at which the claim window closes. Valid claims for session N will be accepted in these blocks. It is negatively correlated with density of claim creation (and update) messages over blocks in a given session number.                                                                                                                  | 4       |
+| `proof_window_open_offset_blocks`  | The number of blocks after the claim window close height, at which the proof window opens. Valid proofs for session N will be rejected in these block. It is positively correlated with the amount of time suppliers MUST persist the complete merkle trees for unproven sessions (proof path is revealed at earliest_supplier_proof_commit_height - 1).                                                      | 0       |
+| `proof_window_close_offset_blocks` | The number of blocks after the proof window open height, at which the proof window closes. Valid proofs for session N will be accepted in these blocks. It is negatively correlated with the density of proof submission messages over blocks in a given session number.                                                                                                                         | 4       |
+
+#### References:
+
+- [`poktroll.shared.Params` / `sharedtypes.Params`](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/shared/params.proto)
 
 ## Session
 
@@ -133,21 +179,58 @@ a certain `Application`. The `sum` in the root of the SMST is the amount of work
 done. Each leaf has a different `weight` depending on the number of _"compute units"_
 that were necessary to service that request.
 
-### Claim Protobuf
+### Protobuf Types
 
-A serialized version of the `Claim` is stored on-chain.
-
-You can find the definition for the [Claim structure here](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/proof/claim.proto).
-
-### CreateClaim Transaction
-
-A `CreateClaim` transaction can be submitted by a `Supplier` to store a claim `on-chain`.
-
-You can find the definition for the [CreateClaim Transaction here](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/proof/tx.proto).
+| Type                                                                                                 | Description                                             |
+|------------------------------------------------------------------------------------------------------|---------------------------------------------------------|
+| [`Claim`](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/proof/claim.proto)       | A serialized version of the `Claim` is stored on-chain. |
+| [`MsgCreateClaim`](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/proof/tx.proto) | Submitted by a `Supplier` to store a claim `on-chain`.  |
 
 ### CreateClaim Validation
 
-_TODO_DOCUMENT(@bryanchriswhite, @Olshansk): Update this section once [msg_server_create_claim.go](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/x/proof/keeper/msg_server_create_claim.go) is fully implemented._
+When the network receives a [`MsgCreateClaim`](#TODO_link_to_MsgCreateClaim) message, before the claim is persisted
+on-chain, it MUST be validated:
+
+```mermaid
+stateDiagram-v2
+
+[*] --> Validate_Claim
+state Validate_Claim {
+    [*] --> Validate_Basic
+    
+    state Validate_Basic {
+        state if_session_start_gt_0 <<choice>>
+        state if_session_id_empty <<choice>>
+        state if_service_invalid <<choice>>
+        state if_supplier_addr_valid <<choice>>
+        
+        [*] --> if_supplier_addr_valid
+        if_supplier_addr_valid --> Basic_Validation_Error: invalid supplier address
+        if_supplier_addr_valid --> if_session_start_gt_0
+        if_session_start_gt_0 --> Basic_Validation_Error: session start height < 0
+        if_session_start_gt_0 --> if_session_id_empty
+        if_session_id_empty --> Basic_Validation_Error: empty session ID
+        if_session_id_empty --> if_service_invalid
+        if_service_invalid --> Basic_Validation_Error: invalid service
+        if_service_invalid --> [*]
+    }
+
+    Validate_Basic --> Validate_Session_Header
+    Validate_Session_Header
+    Validate_Session_Header --> Validate_Claim_Window
+    Validate_Claim_Window -->[*]
+}
+Validate_Claim --> [*]
+```
+
+#### References:
+
+- Create claim message basic
+  validation ([`MsgCreateClaim#ValidateBasic()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/types/message_create_claim.go))
+- Session header
+  validation ([diagram](#session-header-validation) / [`msgServer#queryAndValidateSessionHeader()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/keeper/session.go))
+- On-chain claim window
+  validation ([diagram](#TODO) / [`msgServer#validateClaimWindow()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/keeper/session.go))
 
 ### Claim Window
 
@@ -158,7 +241,7 @@ or too late, it will be rejected by the protocol.
 If a `Supplier` fails to submit a `Claim` during the Claim Window, it will forfeit
 any potential rewards it could earn in exchange for the work done.
 
-_TODO_DOCUMENT(@Olshansk): Link to the governance params governing this once implemented._
+See [Session Windows & On-Chain Parameters](#session-windows--on-chain-parameters) for more details.
 
 ## Proof
 
@@ -170,24 +253,77 @@ At most one `Proof` exists for every `Claim`.
 A `Proof` is necessary for the `Claim` to be validated so the `Supplier` can be
 rewarded for the work done.
 
-### Proof Protobuf
+### Protobuf Types
 
-A serialized version of the `Proof` is stored on-chain.
-
-You can find the definition for the [Proof structure here](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/proof/proof.proto)
-
-### SubmitProof Transaction
-
-A `SubmitProof` transaction can be submitted by a `Supplier` to store a proof `on-chain`.
-
-If the `Proof` is invalid, or if there is no corresponding `Claim` for the `Proof`, the
-transaction will be rejected.
-
-You can find the definition for the [SubmitProof Transaction here](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/proof/tx.proto).
+| Type                                                                                                 | Description                                                                                                                                                                  |
+|------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`Proof`](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/proof/proof.proto)       | A serialized version of the `Proof` is stored on-chain.                                                                                                                      |
+| [`MsgSubmitProof`](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/proof/tx.proto) | Submitted by a `Supplier` to store a proof `on-chain`. If the `Proof` is invalid, or if there is no corresponding `Claim` for the `Proof`, the transaction will be rejected. |
 
 ### SubmitProof Validation
 
-_TODO_DOCUMENT(@bryanchriswhite, @Olshansk): Update this section once [msg_server_submit_proof.go](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/x/proof/keeper/msg_server_submit_proof.go) is fully implemented._
+When the network receives a [`MsgSubmitProof`](#TODO_link_to_MsgSubmitProof) message, before the proof is accepted
+on-chain, it MUST be validated:
+
+```mermaid
+stateDiagram-v2
+[*] --> Validate_Proof
+state Validate_Proof {
+  [*] --> Proof_Validate_Basic
+  Proof_Validate_Basic --> Validate_Session_Header
+  Validate_Session_Header --> Validate_Proof_Window
+  Validate_Proof_Window --> Unpack_Proven_Relay
+  
+  state Unpack_Proven_Relay {
+    state if_closest_proof_malformed <<choice>>
+    state if_relay_valid <<choice>>
+    
+    [*] --> if_closest_proof_malformed
+    if_closest_proof_malformed --> Closest_Proof_Unmarshal_Error: cannot unmarshal closest proof
+    if_closest_proof_malformed --> if_relay_valid
+    if_relay_valid --> Relay_Unmarshal_Error: cannot unmarshal relay
+    if_relay_valid --> [*]
+  }
+
+Unpack_Proven_Relay --> Validate_Proven_Relay
+
+state Validate_Proven_Relay {
+  [*] --> Validate_Relay_Request
+  Validate_Relay_Request --> Validate_Relay_Response
+  Validate_Relay_Response --> [*]
+}
+
+state if_closest_proof_path_valid <<choice>>
+state if_relay_difficulty_sufficient <<choice>>
+
+Validate_Proven_Relay --> if_closest_proof_path_valid
+if_closest_proof_path_valid --> Closest_Proof_Path_Verification_Error: incorrect closest Merkle proof path
+if_closest_proof_path_valid --> if_relay_difficulty_sufficient
+if_relay_difficulty_sufficient --> Relay_Difficulty_Error: insufficient relay difficulty
+if_relay_difficulty_sufficient --> Validate_Claim_For_Proof
+
+state if_closest_proof_valid <<choice>>
+  Validate_Claim_For_Proof --> if_closest_proof_valid
+  if_closest_proof_valid --> Closest_Proof_Verification_Error: incorrect closest Merkle proof
+  if_closest_proof_valid --> [*]
+}
+Validate_Proof --> [*]
+```
+
+#### References:
+
+- Proof basic
+  validation ([diagram](#proof-basic-validation) / [`MsgSubmitProof#ValidateBasic()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/types/message_submit_proof.go))
+- Session header
+  validation ([diagram](#session-header-validation) / [`msgServer#queryAndValidateSessionHeader()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/keeper/session.go))
+- Proof window
+  validation ([diagram](#TODO) / [`msgServer#validateProofWindow()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/keeper/session.go))
+- Proven relay request
+  validation ([diagram](#proof-submission-relay-request-validation) / [`RelayRequest#ValidateBasic()`](https://github.com/pokt-network/poktroll/blob/main/x/service/types/relay.go))
+- Proven relay response
+  validation ([diagram](#proof-submission-relay-response-validation) / [`RelayResponse#ValidateBasic()`](https://github.com/pokt-network/poktroll/blob/main/x/service/types/relay.go))
+- Proof claim
+  validation ([diagram](#proof-submission-claim-validation) / [`msgServer#queryandValidateClaimForProof()`](https://github.com/pokt-network/poktroll/blob/main/x/proof/keeper/msg_server_submit_proof.go))
 
 ### Proof Window
 
@@ -196,9 +332,9 @@ to submit a `SubmitProof` transaction containing a `Proof`. If it is submitted t
 early or too late, it will be rejected by the protocol.
 
 If a `Supplier` fails to submit a `Proof` during the Proof Window, the Claim will
-expire and it it will forfeit any previously claimed work done.
+expire and the supplier will forfeit rewards for the claimed work done.
 
-_TODO_DOCUMENT(@Olshansk): Link to the governance params governing this once implemented._
+See [Session Windows & On-Chain Parameters](#session-windows--on-chain-parameters) for more details.
 
 ## Proof Security
 
@@ -501,4 +637,229 @@ sequenceDiagram
         W ->> S: Token Rewards (Increase Servicer Balance)
         W ->> -A: Token Burn (Decrease Application Stake)
     end
+```
+
+## Reference Diagrams
+
+### Session Header Validation
+
+```mermaid
+stateDiagram-v2
+
+[*] --> Validate_Session_Header
+
+
+state Validate_Session_Header {
+    [*] --> Get_Session
+    state if_get_session_error <<choice>>
+    state if_session_id_mismatch <<choice>>
+    state if_supplier_found <<choice>>
+    Get_Session --> if_get_session_error
+    if_get_session_error --> Session_Header_Validation_Error: get session error
+    if_get_session_error --> if_session_id_mismatch
+    if_session_id_mismatch --> Session_Header_Validation_Error: claim & on-chain session ID mismatch
+    if_session_id_mismatch --> if_supplier_found
+    if_supplier_found --> Session_Header_Validation_Error: claim supplier not in session
+    if_supplier_found --> [*]
+}
+
+Validate_Session_Header --> [*]
+```
+
+### Proof Basic Validation
+
+```mermaid
+stateDiagram-v2
+
+  [*] --> Proof_Validate_Basic
+
+  state Proof_Validate_Basic {
+    state if_supplier_addr_valid <<choice>>
+    state if_app_addr_valid <<choice>>
+    state if_service_id_empty <<choice>>
+    state if_proof_empty <<choice>>
+    [*] --> if_supplier_addr_valid
+    if_supplier_addr_valid --> Basic_Validation_error: invalid supplier address
+    if_supplier_addr_valid --> if_app_addr_valid
+    if_app_addr_valid --> Basic_Validation_error: invalid app address
+    if_app_addr_valid --> if_service_id_empty
+    if_service_id_empty --> Basic_Validation_error: empty service ID
+    if_service_id_empty --> if_proof_empty
+    if_proof_empty --> Basic_Validation_error: empty merkle proof
+    if_proof_empty --> [*]
+  }
+
+  Proof_Validate_Basic --> [*]
+```
+
+### Proof Submission Relay Request Validation
+
+```mermaid
+stateDiagram-v2
+
+[*] --> Validate_Relay_Request
+state Validate_Relay_Request {
+    
+        [*] --> Validate_Relay_Request_Basic
+
+    state Validate_Relay_Request_Basic {
+        state if_request_valid <<choice>>
+        state if_request_signature_empty <<choice>>
+        [*] --> Validate_Relay_Request_Session_Header*
+        Validate_Relay_Request_Session_Header* --> if_request_valid
+        if_request_valid --> Relay_Request_Validation_Error: invalid relay request session header
+        if_request_valid --> if_request_signature_empty
+        if_request_signature_empty --> Relay_Request_Validation_Error: invalid relay request ring signature
+        if_request_signature_empty --> [*]
+    }
+
+    Validate_Relay_Request_Basic --> Compare_Relay_Request_Session_Header
+
+    state Compare_Relay_Request_Session_Header {
+        state if_req_session_header_mismatch <<choice>>
+        [*] --> Compare_Session_Header_To_Proof(Relay_Request)
+        Compare_Session_Header_To_Proof(Relay_Request) --> if_req_session_header_mismatch
+        if_req_session_header_mismatch --> Relay_Request_&_Proof_Session_Mismatch_Error
+        if_req_session_header_mismatch --> [*]
+    }
+
+    Compare_Relay_Request_Session_Header --> Validate_Relay_Request_Signature
+
+    state Validate_Relay_Request_Signature {
+        state if_request_meta_empty <<choice>>
+        state if_ring_sig_empty <<choice>>
+        state if_ring_sig_malformed <<choice>>
+        state if_app_addr_empty <<choice>>
+        state if_ring_valid <<choice>>
+        state if_ring_mismatch <<choice>>
+        state if_ring_sig_valid <<choice>>
+        
+        [*] --> if_request_meta_empty
+        if_request_meta_empty --> Relay_Request_Signature_Error: empty relay request metadata
+        if_request_meta_empty --> if_ring_sig_empty
+        if_ring_sig_empty --> Relay_Request_Signature_Error: empty application ring (request) signature
+        if_ring_sig_empty --> if_ring_sig_malformed
+        if_ring_sig_malformed --> Relay_Request_Signature_Error: malformed application ring (request) signature
+        if_ring_sig_malformed --> if_app_addr_empty
+        if_app_addr_empty --> Relay_Request_Signature_Error: empty application address
+        if_app_addr_empty --> if_ring_valid
+        if_ring_valid --> Relay_Request_Signature_Error: cannot construct application ring
+        if_ring_valid --> if_ring_mismatch
+        if_ring_mismatch --> Relay_Request_Signature_Error: wrong application ring
+        if_ring_mismatch --> if_ring_sig_valid
+        if_ring_sig_valid --> Relay_Request_Signature_Error: invalid application ring (request) signature
+        if_ring_sig_valid --> [*]
+    }
+
+    Validate_Relay_Request_Signature --> [*]
+
+}
+Validate_Relay_Request --> [*]
+```
+
+### Proof Submission Relay Response Validation
+
+```mermaid
+stateDiagram-v2
+
+[*] --> Validate_Relay_Response
+state Validate_Relay_Response {
+    
+        [*] --> Validate_Relay_Response_Basic
+
+    state Validate_Relay_Response_Basic {
+        state if_response_valid <<choice>>
+        state if_supplier_signature_empty <<choice>>
+        state if_response_meta_empty <<choice>>
+        [*] --> if_response_meta_empty
+        if_response_meta_empty --> Relay_Response_Validation_Error: empty relay resopnse metadata
+        if_response_meta_empty --> Validate_Relay_Response_Session_Header*
+        Validate_Relay_Response_Session_Header* --> if_response_valid
+        if_response_valid --> Relay_Response_Validation_Error: invalid relay response session header
+        if_response_valid --> if_supplier_signature_empty
+        if_supplier_signature_empty --> Relay_Response_Validation_Error: empty supplier (response) signature
+        if_supplier_signature_empty --> [*]
+    }
+
+    Validate_Relay_Response_Basic --> Compare_Relay_Response_Session_Header
+
+     state Compare_Relay_Response_Session_Header {
+        state if_res_session_header_mismatch <<choice>>
+        [*] --> Compare_Session_Header_To_Proof(Relay_Response)
+        Compare_Session_Header_To_Proof(Relay_Response) --> if_res_session_header_mismatch
+        if_res_session_header_mismatch --> Relay_Response_&_Proof_Session_Mismatch_Error
+        if_res_session_header_mismatch --> [*]
+    }
+
+    Compare_Relay_Response_Session_Header --> Validate_Relay_Response_Signature
+
+    state Validate_Relay_Response_Signature {
+        state if_supplier_pubkey_exists <<choice>>
+        state if_supplier_sig_malformed <<choice>>
+
+        [*] --> if_supplier_pubkey_exists
+        if_supplier_pubkey_exists --> Relay_Response_Signature_Error: no supplier public key on-chain
+        if_supplier_pubkey_exists --> if_supplier_sig_malformed
+        if_supplier_sig_malformed --> Relay_Response_Signature_Error: cannot unmarshal supplier (response) signature
+    }
+
+    Validate_Relay_Response_Signature --> [*]
+
+}
+Validate_Relay_Response --> [*]
+```
+
+### Proof Session Header Comparison
+
+```mermaid
+stateDiagram-v2
+
+[*] --> Compare_Session_Header_To_Proof
+state Compare_Session_Header_To_Proof {
+        state if_app_addr_mismatch <<choice>>
+        state if_service_id_mismatch <<choice>>
+        state if_session_start_mismatch <<choice>>
+        state if_session_end_mismatch <<choice>>
+        state if_session_id_mismatch <<choice>>
+        [*] --> if_app_addr_mismatch
+        if_app_addr_mismatch --> Session_Header_Mismatch_Error: proof msg application address mismatch
+        if_app_addr_mismatch -->  if_service_id_mismatch
+        if_service_id_mismatch --> Session_Header_Mismatch_Error: proof msg service ID mismatch
+        if_service_id_mismatch --> if_session_start_mismatch
+        if_session_start_mismatch -->Session_Header_Mismatch_Error: proof msg session start mismatch
+        if_session_start_mismatch --> if_session_end_mismatch
+        if_session_end_mismatch --> Session_Header_Mismatch_Error: proof msg session end mismatch
+        if_session_end_mismatch --> if_session_id_mismatch
+        if_session_id_mismatch --> Session_Header_Mismatch_Error: proof msg session ID mismatch
+        if_session_id_mismatch --> [*]
+}
+Compare_Session_Header_To_Proof --> [*]
+```
+
+### Proof Submission Claim Validation
+
+```mermaid
+stateDiagram-v2
+
+  [*] --> Validate_Claim_For_Proof
+  state Validate_Claim_For_Proof {
+    state if_claim_found <<choice>>
+    state if_proof_session_start_mismatch <<choice>>
+    state if_proof_session_end_mismatch <<choice>>
+    state if_proof_app_addr_mismatch <<choice>>
+    state if_proof_service_mismatch <<choice>>
+
+    [*] --> if_claim_found
+    if_claim_found --> Claim_Validation_Error: claim not found
+    if_claim_found --> if_proof_session_start_mismatch
+    if_proof_session_start_mismatch --> Claim_Validation_Error: proof session start mismatch
+    if_proof_session_start_mismatch --> if_proof_session_end_mismatch
+    if_proof_session_end_mismatch --> Claim_Validation_Error: proof session end mismatch
+    if_proof_session_end_mismatch --> if_proof_app_addr_mismatch
+    if_proof_app_addr_mismatch --> Claim_Validation_Error: proof application address mismatch
+    if_proof_app_addr_mismatch --> if_proof_service_mismatch
+    if_proof_service_mismatch --> Claim_Validation_Error: proof service ID mismatch
+    if_proof_service_mismatch --> [*]
+  }
+  Validate_Claim_For_Proof --> [*]
 ```

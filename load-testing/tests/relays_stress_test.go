@@ -18,12 +18,11 @@ import (
 	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/testutil/testclient"
-
 	"github.com/pokt-network/poktroll/cmd/signals"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/testutil/testclient"
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
 	"github.com/pokt-network/poktroll/testutil/testclient/testtx"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -359,7 +358,7 @@ func (s *relaysSuite) LocalnetIsRunning() {
 	s.countClaimAndProofs()
 
 	// Query for the current shared on-chain params.
-	s.querySharedParams()
+	s.querySharedParams(loadTestParams.TestNetNode)
 
 	// Some suppliers may already be staked at genesis, ensure that staking during
 	// this test succeeds by increasing the sake amount.
@@ -510,21 +509,26 @@ func (s *relaysSuite) ALoadOfConcurrentRelayRequestsAreSentFromTheApplications()
 	// Block the feature step until the test is done.
 	<-s.ctx.Done()
 }
-
 func (s *relaysSuite) TheCorrectPairsCountOfClaimAndProofMessagesShouldBeCommittedOnchain() {
+	logger.Info().
+		Int("claims", s.currentClaimCount).
+		Int("proofs", s.currentProofCount).
+		Msg("Claims and proofs count")
+
 	require.Equal(s,
 		s.currentClaimCount,
 		s.currentProofCount,
 		"claims and proofs count mismatch",
 	)
 
-	logger.Info().
-		Int("claims", s.currentClaimCount).
-		Int("proofs", s.currentProofCount).
-		Msg("Claims and proofs count")
 	// TODO_TECHDEBT: The current counting mechanism for the expected claims and proofs
 	// is not accurate. The expected claims and proofs count should be calculated based
-	// on the effectively sent relay requests.
+	// on a function of(time_per_block, num_blocks_per_session) -> num_claims_and_proofs.
+	// The reason (time_per_block) is one of the parameters is because claims and proofs
+	// are removed from the on-chain state after sessions are settled, only leaving
+	// events behind. The final solution needs to either account for this timing
+	// carefully (based on sessions that have passed), or be event driven using
+	// a replay client of on-chain messages and/or events.
 	//require.Equal(s,
 	//	s.expectedClaimsAndProofsCount,
 	//	s.currentProofCount,

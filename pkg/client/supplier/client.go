@@ -95,7 +95,7 @@ func (sClient *supplierClient) SubmitProofs(
 				"session_id":    sessionHeader.SessionId,
 				"service":       sessionHeader.Service.Id,
 			}).
-			Msg("submitted new proof")
+			Msg("submitted a new proof")
 	}
 
 	return <-errCh

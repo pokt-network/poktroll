@@ -19,6 +19,7 @@ import (
 	"context"
 
 	cometrpctypes "github.com/cometbft/cometbft/rpc/core/types"
+	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 	comettypes "github.com/cometbft/cometbft/types"
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
@@ -289,11 +290,26 @@ type SharedQueryClient interface {
 	GetParams(ctx context.Context) (*sharedtypes.Params, error)
 	// GetSessionGracePeriodEndHeight returns the block height at which the grace period
 	// for the session that includes queryHeight elapses.
+	// The grace period is the number of blocks after the session ends during which relays
+	// SHOULD be included in the session which most recently ended.
 	GetSessionGracePeriodEndHeight(ctx context.Context, queryHeight int64) (int64, error)
 	// GetClaimWindowOpenHeight returns the block height at which the claim window of
 	// the session that includes queryHeight opens.
 	GetClaimWindowOpenHeight(ctx context.Context, queryHeight int64) (int64, error)
+	// GetEarliestSupplierClaimCommitHeight returns the earliest block height at which a claim
+	// for the session that includes queryHeight can be committed for a given supplier.
+	GetEarliestSupplierClaimCommitHeight(ctx context.Context, queryHeight int64, supplierAddr string) (int64, error)
 	// GetProofWindowOpenHeight returns the block height at which the proof window of
 	// the session that includes queryHeight opens.
 	GetProofWindowOpenHeight(ctx context.Context, queryHeight int64) (int64, error)
+	// GetEarliestSupplierProofCommitHeight returns the earliest block height at which a proof
+	// for the session that includes queryHeight can be committed for a given supplier.
+	GetEarliestSupplierProofCommitHeight(ctx context.Context, queryHeight int64, supplierAddr string) (int64, error)
+}
+
+// BlockQueryClient defines an interface that enables the querying of
+// on-chain block information for a given height. If height is nil, the
+// latest block is returned.
+type BlockQueryClient interface {
+	Block(ctx context.Context, height *int64) (*coretypes.ResultBlock, error)
 }
