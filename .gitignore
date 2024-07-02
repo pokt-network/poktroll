@@ -95,3 +95,6 @@ gentx-*.json
 
 # Binaries VSCode builds for debugging
 cmd/poktrolld/*debug_bin*
+
+# The temporary file created by e2e scripts
+job.yaml
