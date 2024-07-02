@@ -41,6 +41,7 @@ import (
 	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
+	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
@@ -376,11 +377,9 @@ func (plans *actorLoadTestIncrementPlans) totalDurationBlocks(sharedParams *shar
 	// last increment duration (i.e. **after** maxActorCount actors are activated).
 	blocksToLastSessionEnd := plans.maxActorBlocksToFinalIncrementEnd()
 
-	blocksToLastProofWindowEnd := blocksToLastSessionEnd + int64(sharedParams.GetGracePeriodEndOffsetBlocks())
-
-	// Add one session length so that the duration is inclusive of the block which
-	// commits the last session's proof.
-	return blocksToLastProofWindowEnd + int64(sharedParams.GetNumBlocksPerSession())
+	// Wait until the proof window of the last session number closes in order to
+	// ensure that all suppliers have submitted all proofs.
+	return shared.GetProofWindowCloseHeight(sharedParams, blocksToLastSessionEnd)
 }
 
 // blocksToFinalIncrementStart returns the number of blocks that will have
