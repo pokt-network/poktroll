@@ -162,6 +162,8 @@ type relaysSuite struct {
 	// It is calculated as the longest duration of the three actor increments.
 	relayLoadDurationBlocks int64
 
+	// plans is the actor load test increment plans used to increment the actors during the test
+	// and calculate the test duration.
 	plans *actorLoadTestIncrementPlans
 
 	// gatewayUrls is a map of gatewayAddress->URL representing the provisioned gateways.
@@ -386,23 +388,22 @@ func (s *relaysSuite) TheFollowingInitialActorsAreStaked(table gocuke.DataTable)
 
 func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 	// Parse and validate the actor increment plans from the given step table.
-	plans := s.parseActorLoadTestIncrementPlans(table)
-	s.validateActorLoadTestIncrementPlans(plans)
-	s.plans = plans
+	s.plans = s.parseActorLoadTestIncrementPlans(table)
+	s.validateActorLoadTestIncrementPlans(s.plans)
 
 	// The relay load duration is the longest duration of the three actor increments.
 	// The duration of each actor is calculated as how many blocks it takes to
 	// increment the actor count to the maximum.
-	s.relayLoadDurationBlocks = plans.maxActorBlocksToFinalIncrementEnd()
+	s.relayLoadDurationBlocks = s.plans.maxActorBlocksToFinalIncrementEnd()
 
 	if s.isEphemeralChain {
 		// Adjust the max delegations parameter to the max gateways to permit all
 		// applications to delegate to all gateways.
 		// This is to ensure that requests are distributed evenly across all gateways
 		// at any given time.
-		s.sendAdjustMaxDelegationsParamTx(plans.gateways.maxActorCount)
+		s.sendAdjustMaxDelegationsParamTx(s.plans.gateways.maxActorCount)
 		s.waitForTxsToBeCommitted()
-		s.ensureUpdatedMaxDelegations(plans.gateways.maxActorCount)
+		s.ensureUpdatedMaxDelegations(s.plans.gateways.maxActorCount)
 	}
 
 	// Fund all the provisioned suppliers and gateways since their addresses are

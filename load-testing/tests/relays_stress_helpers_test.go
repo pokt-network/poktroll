@@ -378,10 +378,10 @@ func (plans *actorLoadTestIncrementPlans) totalDurationBlocks(
 ) int64 {
 	// The last block of the last session SHOULD align with the last block of the
 	// last increment duration (i.e. **after** maxActorCount actors are activated).
-	blocksToLastSessionEnd := plans.maxActorBlocksToFinalIncrementEnd()
-	lastSessionEndHeight := +shared.GetSessionEndHeight(sharedParams, currentHeight+blocksToLastSessionEnd)
+	blocksToFinalSessionEnd := plans.maxActorBlocksToFinalIncrementEnd()
+	finalSessionEndHeight := shared.GetSessionEndHeight(sharedParams, currentHeight+blocksToFinalSessionEnd)
 
-	return shared.GetProofWindowCloseHeight(sharedParams, lastSessionEndHeight) - currentHeight
+	return shared.GetProofWindowCloseHeight(sharedParams, finalSessionEndHeight) - currentHeight
 }
 
 // blocksToFinalIncrementStart returns the number of blocks that will have
