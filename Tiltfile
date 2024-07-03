@@ -33,9 +33,7 @@ localnet_config_defaults = {
     },
     "observability": {
         "enabled": True,
-        "grafana": {
-            "defaultDashboardsEnabled": False
-        },
+        "grafana": {"defaultDashboardsEnabled": False},
     },
     "relayminers": {"count": 1, "delve": {"enabled": False}},
     "gateways": {
@@ -97,7 +95,10 @@ if localnet_config["observability"]["enabled"]:
         "prometheus-community/kube-prometheus-stack",
         flags=[
             "--values=./localnet/kubernetes/observability-prometheus-stack.yaml",
-            "--set=grafana.defaultDashboardsEnabled=" + str(localnet_config["observability"]["grafana"]["defaultDashboardsEnabled"]),
+            "--set=grafana.defaultDashboardsEnabled="
+            + str(
+                localnet_config["observability"]["grafana"]["defaultDashboardsEnabled"]
+            ),
         ],
         resource_deps=["prometheus-community"],
     )
@@ -108,6 +109,7 @@ if localnet_config["observability"]["enabled"]:
         flags=[
             "--values=./localnet/kubernetes/observability-loki-stack.yaml",
         ],
+        labels=["monitoring"],
         resource_deps=["grafana-helm-repo"],
     )
 
@@ -367,9 +369,9 @@ k8s_resource(
     "validator",
     labels=["pocket_network"],
     port_forwards=[
-        "26657", # RPC
-        "9090", # the gRPC server address
-        "40004", # use with `dlv` when it's turned on in `localnet_config.yaml`
+        "26657",  # RPC
+        "9090",  # the gRPC server address
+        "40004",  # use with `dlv` when it's turned on in `localnet_config.yaml`
         # Use with pprof like this: `go tool pprof -http=:3333 http://localhost:6050/debug/pprof/goroutine`
         "6050:6060",
     ],
@@ -392,6 +394,8 @@ if localnet_config["ollama"]["enabled"]:
         command=["ollama", "serve"],
         ports="11434",
     )
+
+    k8s_resource("ollama", labels=["data_nodes"], port_forwards=["11434"])
 
     local_resource(
         name="ollama-pull-model",
