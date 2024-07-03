@@ -10,6 +10,8 @@ import "cosmos/msg/v1/msg.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 import "poktroll/proof/params.proto";
+import "poktroll/proof/claim.proto";
+import "poktroll/proof/proof.proto";
 import "poktroll/session/session.proto";
 import "poktroll/shared/service.proto";
 
@@ -80,7 +82,9 @@ message MsgCreateClaim {
   bytes root_hash = 3;
 }
 
-message MsgCreateClaimResponse {}
+message MsgCreateClaimResponse {
+  poktroll.proof.Claim claim = 1;
+}
 
 message MsgSubmitProof {
   option (cosmos.msg.v1.signer) = "supplier_address";
@@ -91,4 +95,6 @@ message MsgSubmitProof {
   bytes proof = 3;
 }
 
-message MsgSubmitProofResponse {}
+message MsgSubmitProofResponse {
+  poktroll.proof.Proof proof = 1;
+}

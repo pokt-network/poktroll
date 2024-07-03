@@ -108,10 +108,10 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 
 	// The number 14 was determined empirically by running the tests and will need
 	// to be updated if they are changed.
-	expectedNumEvents := 14
+	expectedNumEvents := 15
 	// Check the number of events is consistent.
 	events := integrationApp.GetSdkCtx().EventManager().Events()
-	require.Len(t, events, expectedNumEvents, "unexpected number of total events")
+	require.Equalf(t, expectedNumEvents, len(events), "unexpected number of total events")
 
 	relayMiningEvents := testutilevents.FilterEvents[*tokenomicstypes.EventRelayMiningDifficultyUpdated](t,
 		events, "poktroll.tokenomics.EventRelayMiningDifficultyUpdated")

@@ -26,7 +26,7 @@ func TestUpdateRelayMiningDifficulty_Base(t *testing.T) {
 	relaysPerServiceMap := map[string]uint64{
 		"svc1": 1e3, // new service
 	}
-	err := keeper.UpdateRelayMiningDifficulty(ctx, relaysPerServiceMap)
+	_, err := keeper.UpdateRelayMiningDifficulty(ctx, relaysPerServiceMap)
 	require.NoError(t, err)
 
 	// The first time svc1 difficulty is updated, the relay EMA will be equal
@@ -40,7 +40,7 @@ func TestUpdateRelayMiningDifficulty_Base(t *testing.T) {
 		"svc1": 1e10, // higher than the first value above
 		"svc2": 1e5,  // new service
 	}
-	err = keeper.UpdateRelayMiningDifficulty(ctx, relaysPerServiceMap)
+	_, err = keeper.UpdateRelayMiningDifficulty(ctx, relaysPerServiceMap)
 	require.NoError(t, err)
 
 	difficultySvc12, found := keeper.GetRelayMiningDifficulty(ctx, "svc1")
@@ -65,7 +65,7 @@ func TestUpdateRelayMiningDifficulty_Base(t *testing.T) {
 		"svc2": 1e2,  // lower than the first value above
 		"svc3": 1e10, // new service
 	}
-	err = keeper.UpdateRelayMiningDifficulty(ctx, relaysPerServiceMap)
+	_, err = keeper.UpdateRelayMiningDifficulty(ctx, relaysPerServiceMap)
 	require.NoError(t, err)
 
 	// svc1 relays went up so the target hash is now a smaller number (more leading zeroes)
@@ -139,7 +139,7 @@ func TestUpdateRelayMiningDifficulty_FirstDifficulty(t *testing.T) {
 			relaysPerServiceMap := map[string]uint64{
 				"svc1": tt.numRelays,
 			}
-			err := keeper.UpdateRelayMiningDifficulty(ctx, relaysPerServiceMap)
+			_, err := keeper.UpdateRelayMiningDifficulty(ctx, relaysPerServiceMap)
 			require.NoError(t, err)
 
 			difficulty, found := keeper.GetRelayMiningDifficulty(ctx, "svc1")

@@ -1361,10 +1361,15 @@ func (s *relaysSuite) countClaimAndProofs() {
 
 // querySharedParams queries the current on-chain shared module parameters for use
 // over the duration of the test.
-func (s *relaysSuite) querySharedParams() {
+func (s *relaysSuite) querySharedParams(queryNodeRPCURL string) {
 	s.Helper()
 
 	deps := depinject.Supply(s.txContext.GetClientCtx())
+
+	blockQueryClient, err := sdkclient.NewClientFromNode(queryNodeRPCURL)
+	require.NoError(s, err)
+	deps = depinject.Configs(deps, depinject.Supply(blockQueryClient))
+
 	sharedQueryClient, err := query.NewSharedQuerier(deps)
 	require.NoError(s, err)
 

@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package poktroll.proof;
+
+option go_package = "github.com/pokt-network/poktroll/x/proof/types";
+
+enum ProofRequirementReason {
+  NOT_REQUIRED = 0;
+  PROBABILISTIC = 1;
+  THRESHOLD = 2;
+}
