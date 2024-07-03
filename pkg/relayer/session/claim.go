@@ -168,7 +168,7 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 		}
 
 		// Map key is the supplier address.
-		claimMsgs := []*prooftypes.MsgCreateClaim{}
+		var claimMsgs []client.MsgCreateClaim
 		for _, session := range sessionTrees {
 			rs.logger.With("curernt_height", rs.blockClient.LastBlock(ctx).Height()).With("supplier_address", session.GetSupplierAddress().String()).Info().Msg("======session supplier address")
 			claimMsgs = append(claimMsgs, &prooftypes.MsgCreateClaim{
