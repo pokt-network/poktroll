@@ -66,6 +66,7 @@ Ensure that these variables **are not shadowed** by usage of a subsequent walrus
 #### [x/proof/keeper/msg_server_create_claim.go](https://github.com/pokt-network/poktroll/blob/main/x/proof/keeper/msg_server_create_claim.go):
 
 ```go
+func (k msgServer) CreateClaim(...) (_ *types.MsgCreateClaimResponse, err error) {
 	// Declare claim to reference in telemetry.
 	var (
 		claim           types.Claim
@@ -78,9 +79,13 @@ Ensure that these variables **are not shadowed** by usage of a subsequent walrus
 	defer func() {
 		// Only increment these metrics counters if handling a new claim.
 		if !isExistingClaim {
-			telemetry.ClaimCounter(types.ClaimProofStage_CLAIMED, 1, err)
-			telemetry.ClaimRelaysCounter(types.ClaimProofStage_CLAIMED, numRelays, err)
-			telemetry.ClaimComputeUnitsCounter(types.ClaimProofStage_CLAIMED, numComputeUnits, err)
+			numClaims := 1
+			if err != nil {
+				numClaims = 0
+			}
+			telemetry.ClaimCounter(types.ClaimProofStage_CLAIMED, numClaims)
+			telemetry.ClaimRelaysCounter(types.ClaimProofStage_CLAIMED, numRelays)
+			telemetry.ClaimComputeUnitsCounter(types.ClaimProofStage_CLAIMED, numComputeUnits)
 		}
 	}()
 ```
