@@ -1,0 +1,13 @@
+diff --git a/x/tokenomics/keeper/settle_pending_claims.go b/x/tokenomics/keeper/settle_pending_claims.go
+index 74f0103d..40e7c03b 100644
+--- a/x/tokenomics/keeper/settle_pending_claims.go
++++ b/x/tokenomics/keeper/settle_pending_claims.go
+@@ -151,7 +151,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
+ 		logger.Info(fmt.Sprintf("Successfully settled claim for session ID %q at block height %d", claim.SessionHeader.SessionId, blockHeight))
+ 	}
+ 
+-	logger.Info(fmt.Sprintf("settled %d and expired %d claims at block height %d", numClaimsSettled, numClaimsExpired, blockHeight))
++	logger.Info(fmt.Sprintf("settled %d and expired %d claims at block height %d live at modular summit!", numClaimsSettled, numClaimsExpired, blockHeight))
+ 
+ 	return numClaimsSettled, numClaimsExpired, relaysPerServiceMap, computeUnitsPerServiceMap, nil
+ }

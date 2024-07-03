@@ -151,7 +151,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 		logger.Info(fmt.Sprintf("Successfully settled claim for session ID %q at block height %d", claim.SessionHeader.SessionId, blockHeight))
 	}
 
-	logger.Info(fmt.Sprintf("settled %d and expired %d claims at block height %d live at modular summit!", numClaimsSettled, numClaimsExpired, blockHeight))
+	logger.Info(fmt.Sprintf("settled %d and expired %d claims at block height %d", numClaimsSettled, numClaimsExpired, blockHeight))
 
 	return numClaimsSettled, numClaimsExpired, relaysPerServiceMap, computeUnitsPerServiceMap, nil
 }
