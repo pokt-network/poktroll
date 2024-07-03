@@ -41,6 +41,7 @@ import (
 	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
+	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
@@ -212,7 +213,7 @@ func (s *relaysSuite) mapSessionInfoForLoadTestDurationFn(
 		// If the test duration is reached, stop sending requests
 		sendRelaysEndHeight := s.testStartHeight + s.relayLoadDurationBlocks
 		if blockHeight >= sendRelaysEndHeight {
-			testEndHeight := s.testStartHeight + s.testDurationBlocks
+			testEndHeight := s.testStartHeight + s.plans.totalDurationBlocks(s.sharedParams, blockHeight)
 
 			remainingRelayLoadBlocks := blockHeight - sendRelaysEndHeight
 			waitForSettlementBlocks := testEndHeight - sendRelaysEndHeight
@@ -371,16 +372,16 @@ func (plans *actorLoadTestIncrementPlans) validateMaxAmounts(t gocuke.TestingT) 
 // totalDurationBlocks returns the number of blocks which will have elapsed when the
 // proof corresponding to the session in which the maxActorCount for the given actor
 // has been committed.
-func (plans *actorLoadTestIncrementPlans) totalDurationBlocks(sharedParams *sharedtypes.Params) int64 {
+func (plans *actorLoadTestIncrementPlans) totalDurationBlocks(
+	sharedParams *sharedtypes.Params,
+	currentHeight int64,
+) int64 {
 	// The last block of the last session SHOULD align with the last block of the
 	// last increment duration (i.e. **after** maxActorCount actors are activated).
 	blocksToLastSessionEnd := plans.maxActorBlocksToFinalIncrementEnd()
+	lastSessionEndHeight := +shared.GetSessionEndHeight(sharedParams, currentHeight+blocksToLastSessionEnd)
 
-	blocksToLastProofWindowEnd := blocksToLastSessionEnd + int64(sharedParams.GetGracePeriodEndOffsetBlocks())
-
-	// Add one session length so that the duration is inclusive of the block which
-	// commits the last session's proof.
-	return blocksToLastProofWindowEnd + int64(sharedParams.GetNumBlocksPerSession())
+	return shared.GetProofWindowCloseHeight(sharedParams, lastSessionEndHeight) - currentHeight
 }
 
 // blocksToFinalIncrementStart returns the number of blocks that will have
