@@ -106,39 +106,32 @@ func (sClient *supplierClient) SubmitProofs(
 // the transaction is included in a block or times out.
 func (sClient *supplierClient) CreateClaims(
 	ctx context.Context,
-	sessionClaims []*relayer.SessionClaim,
+	claimMsgs ...client.MsgCreateClaim,
 ) error {
-	logger := polylog.Ctx(ctx)
+	//logger := polylog.Ctx(ctx)
 
-	msgs := make([]cosmostypes.Msg, len(sessionClaims))
+	msgs := make([]cosmostypes.Msg, len(claimMsgs))
 
 	// TODO(@bryanchriswhite): reconcile splitting of supplier & proof modules
 	//  with off-chain pkgs/nomenclature.
-	for i, sessionClaim := range sessionClaims {
-		msgs[i] = &prooftypes.MsgCreateClaim{
-			SupplierAddress: sessionClaim.SupplierAddress.String(),
-			SessionHeader:   sessionClaim.SessionHeader,
-			RootHash:        sessionClaim.RootHash,
-		}
-	}
 	eitherErr := sClient.txClient.SignAndBroadcast(ctx, msgs...)
 	err, errCh := eitherErr.SyncOrAsyncError()
 	if err != nil {
 		return err
 	}
 
-	for _, claim := range sessionClaims {
-		sessionHeader := claim.SessionHeader
-		// TODO_IMPROVE: log details related to how much is claimed
-		logger.Info().
-			Fields(map[string]any{
-				"supplier_addr": claim.SupplierAddress.String(),
-				"app_addr":      sessionHeader.ApplicationAddress,
-				"session_id":    sessionHeader.SessionId,
-				"service":       sessionHeader.Service.Id,
-			}).
-			Msg("created a new claim")
-	}
+	//for _, claim := range claimMsgs {
+	//	sessionHeader := claim.SessionHeader
+	//	// TODO_IMPROVE: log details related to how much is claimed
+	//	logger.Info().
+	//		Fields(map[string]any{
+	//			"supplier_addr": claim.SupplierAddress,
+	//			"app_addr":      sessionHeader.ApplicationAddress,
+	//			"session_id":    sessionHeader.SessionId,
+	//			"service":       sessionHeader.Service.Id,
+	//		}).
+	//		Msg("created a new claim")
+	//}
 
 	return <-errCh
 }

@@ -25,6 +25,7 @@ import (
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/gogoproto/proto"
 
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
@@ -33,6 +34,11 @@ import (
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
+
+type MsgCreateClaim interface {
+	proto.Message
+	IsMsgCreateClaim()
+}
 
 // SupplierClient is an interface for sufficient for a supplier operator to be
 // able to construct blockchain transactions from pocket protocol-specific messages
@@ -43,7 +49,7 @@ type SupplierClient interface {
 	// session's mined relays.
 	CreateClaims(
 		ctx context.Context,
-		sessionClaims []*relayer.SessionClaim,
+		claimMsgs ...MsgCreateClaim,
 	) error
 	// SubmitProof sends proof messages which contain the smt.SparseMerkleClosestProof,
 	// corresponding to some previously created claim for the same session.

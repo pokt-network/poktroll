@@ -93,14 +93,6 @@ func NewRelayerSessions(
 		return nil, err
 	}
 
-	sessionsToClaimObs, sessionsToClaimPublishCh := channel.NewObservable[[]relayer.SessionTree]()
-	rs.sessionsToClaimObs = sessionsToClaimObs
-	channel.ForEach(
-		ctx,
-		rs.blockClient.CommittedBlocksSequence(ctx),
-		rs.forEachBlockClaimSessionsFn(sessionsToClaimPublishCh),
-	)
-
 	return rs, nil
 }
 
@@ -122,8 +114,18 @@ func (rs *relayerSessionsManager) Start(ctx context.Context) {
 	logging.LogErrors(ctx, miningErrorsObs)
 
 	// Start claim/proof pipeline.
-	claimedSessionsObs := rs.createClaims(ctx)
-	rs.submitProofs(ctx, claimedSessionsObs)
+	for supplierAddress, supplierClient := range rs.supplierClients.SupplierClients {
+		sessionsToClaimObs, sessionsToClaimPublishCh := channel.NewObservable[[]relayer.SessionTree]()
+		rs.sessionsToClaimObs = sessionsToClaimObs
+		channel.ForEach(
+			ctx,
+			rs.blockClient.CommittedBlocksSequence(ctx),
+			rs.forEachBlockClaimSessionsFn(supplierAddress, sessionsToClaimPublishCh),
+		)
+
+		claimedSessionsObs := rs.createClaims(ctx, supplierClient)
+		rs.submitProofs(ctx, supplierClient, claimedSessionsObs)
+	}
 }
 
 // Stop unsubscribes all observables from the InsertRelays observable which
@@ -195,6 +197,7 @@ func (rs *relayerSessionsManager) ensureSessionTree(relayMetadata *types.RelayRe
 // TODO_IMPROVE: Add the ability for the process to resume where it left off in
 // case the process is restarted or the connection is dropped and reconnected.
 func (rs *relayerSessionsManager) forEachBlockClaimSessionsFn(
+	sessionsSupplier string,
 	sessionsToClaimsPublishCh chan<- []relayer.SessionTree,
 ) channel.ForEachFn[client.Block] {
 	return func(ctx context.Context, block client.Block) {
@@ -248,6 +251,11 @@ func (rs *relayerSessionsManager) forEachBlockClaimSessionsFn(
 					// call that marks the session as claimed will be the only one to add the
 					// sessionTree to the list.
 					if err := sessionTree.StartClaiming(); err != nil {
+						continue
+					}
+
+					supplierAddress := sessionTree.GetSupplierAddress().String()
+					if supplierAddress != sessionsSupplier {
 						continue
 					}
 

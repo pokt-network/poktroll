@@ -5,6 +5,7 @@ import (
 
 	"github.com/cometbft/cometbft/crypto"
 
+	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/smt"
 )
 
@@ -52,3 +53,7 @@ func (claim *Claim) GetHash() ([]byte, error) {
 
 	return crypto.Sha256(claimBz), nil
 }
+
+var _ client.MsgCreateClaim = (*MsgCreateClaim)(nil)
+
+func (claim *MsgCreateClaim) IsMsgCreateClaim() {}

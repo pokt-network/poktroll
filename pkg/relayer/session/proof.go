@@ -23,6 +23,7 @@ import (
 // It DOES NOT BLOCK as map operations run in their own goroutines.
 func (rs *relayerSessionsManager) submitProofs(
 	ctx context.Context,
+	supplierClient client.SupplierClient,
 	claimedSessionsObs observable.Observable[[]relayer.SessionTree],
 ) {
 	failedSubmitProofsSessionsObs, failedSubmitProofsSessionsPublishCh :=
@@ -40,7 +41,7 @@ func (rs *relayerSessionsManager) submitProofs(
 	// proof has been submitted or an error has been encountered, respectively.
 	eitherProvenSessionsObs := channel.Map(
 		ctx, sessionsWithOpenProofWindowObs,
-		rs.newMapProveSessionsFn(failedSubmitProofsSessionsPublishCh),
+		rs.newMapProveSessionsFn(supplierClient, failedSubmitProofsSessionsPublishCh),
 	)
 
 	// TODO_TECHDEBT: pass failed submit proof sessions to some retry mechanism.
@@ -158,6 +159,7 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 // session number. Any session which encounters errors while submitting a proof
 // is sent on the failedSubmitProofSessions channel.
 func (rs *relayerSessionsManager) newMapProveSessionsFn(
+	supplierClient client.SupplierClient,
 	failedSubmitProofSessionsCh chan<- []relayer.SessionTree,
 ) channel.MapFn[[]relayer.SessionTree, either.SessionTrees] {
 	return func(
@@ -172,10 +174,9 @@ func (rs *relayerSessionsManager) newMapProveSessionsFn(
 		}
 
 		// Map key is the supplier address.
-		sessionProofs := map[string][]*relayer.SessionProof{}
+		sessionProofs := []*relayer.SessionProof{}
 		for _, session := range sessionTrees {
-			supplierAddr := session.GetSupplierAddress().String()
-			sessionProofs[supplierAddr] = append(sessionProofs[supplierAddr], &relayer.SessionProof{
+			sessionProofs = append(sessionProofs, &relayer.SessionProof{
 				ProofBz:         session.GetProofBz(),
 				SessionHeader:   session.GetSessionHeader(),
 				SupplierAddress: *session.GetSupplierAddress(),
@@ -183,16 +184,9 @@ func (rs *relayerSessionsManager) newMapProveSessionsFn(
 		}
 
 		// Submit proofs for each supplier address in `sessionTrees`.
-		for supplierAddr := range sessionProofs {
-			// SubmitProof ensures on-chain proof inclusion so we can safely prune the tree.
-			supplierClient, ok := rs.supplierClients.SupplierClients[supplierAddr]
-			if !ok {
-				return either.Error[[]relayer.SessionTree](ErrSupplierClientNotFound), false
-			}
-			if err := supplierClient.SubmitProofs(ctx, sessionProofs[supplierAddr]); err != nil {
-				failedSubmitProofSessionsCh <- sessionTrees
-				return either.Error[[]relayer.SessionTree](err), false
-			}
+		if err := supplierClient.SubmitProofs(ctx, sessionProofs); err != nil {
+			failedSubmitProofSessionsCh <- sessionTrees
+			return either.Error[[]relayer.SessionTree](err), false
 		}
 
 		for _, sessionTree := range sessionTrees {

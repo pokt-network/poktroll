@@ -162,11 +162,7 @@ type relaysSuite struct {
 	// It is calculated as the longest duration of the three actor increments.
 	relayLoadDurationBlocks int64
 
-	// testDurationBlocks is the duration of the test in blocks and is used to determine
-	// when the test is done.
-	// It is calculated as the time it takes to send all relay requests plus the time
-	// it takes so submit all claims and proofs.
-	testDurationBlocks int64
+	plans *actorLoadTestIncrementPlans
 
 	// gatewayUrls is a map of gatewayAddress->URL representing the provisioned gateways.
 	// These gateways are not staked yet but have their off-chain instance running
@@ -392,16 +388,12 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 	// Parse and validate the actor increment plans from the given step table.
 	plans := s.parseActorLoadTestIncrementPlans(table)
 	s.validateActorLoadTestIncrementPlans(plans)
+	s.plans = plans
 
 	// The relay load duration is the longest duration of the three actor increments.
 	// The duration of each actor is calculated as how many blocks it takes to
 	// increment the actor count to the maximum.
 	s.relayLoadDurationBlocks = plans.maxActorBlocksToFinalIncrementEnd()
-
-	// The test duration indicates when the test is complete.
-	// It is calculated as the relay load duration plus the time it takes to
-	// submit all claims and proofs.
-	s.testDurationBlocks = plans.totalDurationBlocks(s.sharedParams)
 
 	if s.isEphemeralChain {
 		// Adjust the max delegations parameter to the max gateways to permit all

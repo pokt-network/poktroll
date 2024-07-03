@@ -120,7 +120,7 @@ func TestSupplierClient_CreateClaim(t *testing.T) {
 	}
 
 	go func() {
-		err = supplierClient.CreateClaims(ctx, sessionClaims)
+		err = supplierClient.CreateClaims(ctx, sessionClaims...)
 		require.NoError(t, err)
 		close(doneCh)
 	}()
