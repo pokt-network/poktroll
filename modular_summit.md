@@ -1,29 +1,31 @@
 # Modular Summit Demo <!-- omit in toc -->
 
-- [Clone the repos](#clone-the-repos)
-- [Build dependencies \& run tests](#build-dependencies--run-tests)
-- [Run a LocalNet](#run-a-localnet)
+- [Clone the poktroll repos](#clone-the-poktroll-repos)
+- [Build deps \& run tests](#build-deps--run-tests)
+- [LocalNet](#localnet)
   - [Explore \& scale the cluster](#explore--scale-the-cluster)
-- [Use the network](#use-the-network)
-  - [Send some relays](#send-some-relays)
-  - [Run E2E Tests](#run-e2e-tests)
-  - [Verify a claim was created](#verify-a-claim-was-created)
-- [E2E](#e2e)
-  - [E2E Relay Test](#e2e-relay-test)
+- [Real world E2E usage](#real-world-e2e-usage)
+  - [Send a JSON RPC relay to an anvil node](#send-a-json-rpc-relay-to-an-anvil-node)
+  - [Send a REST relay to an LLM](#send-a-rest-relay-to-an-llm)
+  - [Verify claim creation \& settlement](#verify-claim-creation--settlement)
+- [E2E Tests](#e2e-tests)
+  - [E2E relay test](#e2e-relay-test)
   - [Side Quest - Makefile](#side-quest---makefile)
-  - [E2E - Stress Test](#e2e---stress-test)
-- [DevNet](#devnet)
-  - [Make a change](#make-a-change)
+  - [E2E - stress test](#e2e---stress-test)
+- [DevNet + GitHub PR](#devnet--github-pr)
+  - [Make a code change](#make-a-code-change)
   - [Trigger a DevNet](#trigger-a-devnet)
   - [Inspect](#inspect)
 
-## Clone the repos
+## Clone the poktroll repos
 
 ```bash
 git clone https://github.com/pokt-network/poktroll.git
 ```
 
-## Build dependencies & run tests
+## Build deps & run tests
+
+Change directory:
 
 ```bash
 cd ~/workspace/pocket/poktroll2
@@ -41,9 +43,11 @@ Build tests and run unit tests:
 make go_develop_and_test
 ```
 
-## Run a LocalNet
+This builds everything and runs all our unit & integration (not E2E) tets.
 
-Start up a new LocalNet:
+## LocalNet
+
+Start up a new LocalNet in a different directory:
 
 ```bash
 cd ~/workspace/pocket/poktroll
@@ -63,11 +67,15 @@ Open `localnet_config.yaml` and:
 - Go back to [localhost:10350](http://localhost:10350/r/validator/overview) and
   see the number of actors scale.
 
-## Use the network
+## Real world E2E usage
 
-This verifies complete usage
+At this point we have a complete network running using all of the actors we need.
 
-### Send some relays
+See the related slides about the actor overview.
+
+Let's interact with the network in an end-to-end fashion.
+
+### Send a JSON RPC relay to an anvil node
 
 Send a `JSON RPC` request to an `anvil` node:
 
@@ -75,7 +83,7 @@ Send a `JSON RPC` request to an `anvil` node:
 make send_relay_sovereign_app_JSONRPC
 ```
 
-### Run E2E Tests
+### Send a REST relay to an LLM
 
 Send a `REST` request to an `LLM` node:
 
@@ -83,15 +91,19 @@ Send a `REST` request to an `LLM` node:
 make send_relay_sovereign_app_REST
 ```
 
-### Verify a claim was created
+Look in the `Makefile` to see what this command does.
+
+### Verify claim creation & settlement
 
 Go to [relayminer1?term=claim](http://localhost:10350/r/relayminer1/overview?term=claim) and verify that claims were created.
 
-## E2E
+Go to [validator/overview?term=settled](http://localhost:10350/r/validator/overview?term=settled) and verify that the claims were settled.
 
-### E2E Relay Test
+## E2E Tests
 
-Run the following:
+### E2E relay test
+
+Run the following command to validate the E2E relay test.
 
 ```bash
 make test_e2e_relay
@@ -103,13 +115,13 @@ And note that you were prompted to run this command before re-running.
 make acc_initialize_pubkeys
 ```
 
-You can find the test in `relay.feature`
+The full test can be found in `relay.feature`
 
 ### Side Quest - Makefile
 
 Run `make` to see all our helpers.
 
-### E2E - Stress Test
+### E2E - stress test
 
 Run the stress test:
 
@@ -117,13 +129,13 @@ Run the stress test:
 make test_load_relays_stress_localnet
 ```
 
-Update `localnet_config.yaml`
+Note the warning message, so make sure to update the `localnet_config.yaml` file.
 
 See the results in [protocol-stress-test](http://localhost:3003/d/ddkakqetrti4gb/protocol-stress-test?orgId=1&refresh=5s).
 
-## DevNet
+## DevNet + GitHub PR
 
-### Make a change
+### Make a code change
 
 Going to add `modular summit` to a log line in the validator.
 
@@ -138,11 +150,12 @@ Going to add `modular summit` to a log line in the validator.
 1. Go to the PR
 2. Add the `devnet-test-e2e` label
 3. Show the other labels automatically added
-4. Show the GitHub message pop up
+4. Run `make trigger_ci`
+5. Show the GitHub message pop up
 
 Example: https://github.com/pokt-network/poktroll/pull/650
 
 ### Inspect
 
-1. GCP
-2. Grafana
+1. GCP link
+2. Grafana link
