@@ -285,7 +285,7 @@ type SessionQueryClient interface {
 }
 
 // SharedQueryClient defines an interface that enables the querying of the
-// on-chain shared module information.
+// on-chain shared module params.
 type SharedQueryClient interface {
 	// GetParams queries the chain for the current shared module parameters.
 	GetParams(ctx context.Context) (*sharedtypes.Params, error)
@@ -325,6 +325,8 @@ type ProofParams interface {
 	GetProofMissingPenalty() *cosmostypes.Coin
 }
 
+// ProofQueryClient defines an interface that enables the querying of the
+// on-chain proof module params.
 type ProofQueryClient interface {
 	// GetParams queries the chain for the current shared module parameters.
 	GetParams(ctx context.Context) (ProofParams, error)
