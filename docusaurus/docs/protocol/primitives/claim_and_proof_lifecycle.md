@@ -130,16 +130,15 @@ gantt
 
 ### Claim Expiration
 
-If a claim requires a proof (as determined by [Probabilistic Proofs](probabilistic_proofs.md)) and a `Supplier` fails 
-to submit a `Proof` prior to the `Proof Window` closing, the claim will expire and the `Supplier` will forfeit any
+If a claim requires a proof (as determined by [Probabilistic Proofs](probabilistic_proofs.md)) and a `Supplier` fails
+to submit a `Proof` before the `Proof Window` closes, the claim will expire and the `Supplier` will forfeit any
 rewards for the work done.
 
 Claims MUST expire (and therefore the proof window MUST close) for the following reasons:
 
 1. The mint & burn associated with a given claim's settlement MUST occur while the application stake is still locked and applications must be allowed complete unstaking in finite time.
-1. Claim settlement SHOULD be limited to considering a claims created within a rolling window of blocks to decouple settlement from a long-tail accumulation of unsettled claims.
+1. Claim settlement SHOULD be limited to considering claims created within a rolling window of blocks to decouple settlement from a long-tail accumulation of unsettled claims.
 1. Proofs MUST be pruned to prevent network state bloat over time. Pruning proofs makes the number of proofs in network state at any given time a function of recent relay demand.
-
 ## Session
 
 A session is a necessary pre-requisite for the `Claim & Proof` lifecycle to work.
@@ -346,8 +345,8 @@ to submit a `SubmitProof` transaction containing a `Proof`. If it is submitted t
 early or too late, it will be rejected by the protocol.
 
 If a proof is required (as determined by [Probabilistic Proofs](probabilistic_proofs.md)) and a `Supplier` fails to
-submit a `Proof` during the Proof Window, the Claim will expire and the supplier will forfeit rewards for the claimed
-work done. See [Claim Expiration](#claim-expiration) for more. 
+submit a `Proof` during the Proof Window, the Claim will expire, and the supplier will forfeit rewards for the claimed
+work done. See [Claim Expiration](#claim-expiration) for more.
 
 See [Session Windows & On-Chain Parameters](#session-windows--on-chain-parameters) for more details.
 
