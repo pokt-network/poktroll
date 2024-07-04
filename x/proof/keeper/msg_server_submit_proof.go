@@ -7,9 +7,7 @@ package keeper
 import (
 	"bytes"
 	"context"
-	"crypto/sha256"
 	"fmt"
-	"hash"
 
 	cosmoscryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
@@ -25,22 +23,6 @@ import (
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
-
-// SMT specification used for the proof verification.
-var (
-	hasher  hash.Hash
-	SmtSpec smt.TrieSpec
-)
-
-func init() {
-	// Use a spec that does not prehash values in the smst. This returns a nil value
-	// hasher for the proof verification in order to to avoid hashing the value twice.
-	hasher = sha256.New()
-	SmtSpec = smt.NewTrieSpec(
-		hasher, true,
-		smt.WithValueHasher(nil),
-	)
-}
 
 // SubmitProof is the server handler to submit and store a proof on-chain.
 // A proof that's stored on-chain is what leads to rewards (i.e. inflation)
@@ -169,7 +151,7 @@ func (k msgServer) SubmitProof(
 	// TODO_MAINNET(#427): Utilize smt.VerifyCompactClosestProof here to
 	// reduce on-chain storage requirements for proofs.
 	// Get the relay request and response from the proof.GetClosestMerkleProof.
-	relayBz := sparseMerkleClosestProof.GetValueHash(&SmtSpec)
+	relayBz := sparseMerkleClosestProof.GetValueHash(&protocol.SmtSpec)
 	relay := &servicetypes.Relay{}
 	if err = k.cdc.Unmarshal(relayBz, relay); err != nil {
 		return nil, status.Error(
@@ -458,7 +440,7 @@ func verifyClosestProof(
 	proof *smt.SparseMerkleClosestProof,
 	claimRootHash []byte,
 ) error {
-	valid, err := smt.VerifyClosestProof(proof, claimRootHash, &SmtSpec)
+	valid, err := smt.VerifyClosestProof(proof, claimRootHash, &protocol.SmtSpec)
 	if err != nil {
 		return err
 	}
@@ -532,7 +514,7 @@ func (k msgServer) validateClosestPath(
 	// error that may occur due to block height differing from the off-chain part.
 	k.logger.Info("E2E_DEBUG: height for block hash when verifying the proof", earliestSupplierProofCommitHeight, sessionHeader.GetSessionId())
 
-	expectedProofPath := GetPathForProof(proofPathSeedBlockHash, sessionHeader.GetSessionId())
+	expectedProofPath := protocol.GetPathForProof(proofPathSeedBlockHash, sessionHeader.GetSessionId())
 	if !bytes.Equal(proof.Path, expectedProofPath) {
 		return types.ErrProofInvalidProof.Wrapf(
 			"the proof for the path provided (%x) does not match one expected by the on-chain protocol (%x)",
@@ -542,14 +524,4 @@ func (k msgServer) validateClosestPath(
 	}
 
 	return nil
-}
-
-func GetPathForProof(blockHash []byte, sessionId string) []byte {
-	// TODO_BLOCKER(@Olshansk): We need to replace the return
-	// statement below and change all relevant parts in the codebase.
-	// See the conversation in the following thread for more details: https://github.com/pokt-network/poktroll/pull/406#discussion_r1520790083
-	path := make([]byte, SmtSpec.PathHasherSize())
-	copy(path, blockHash)
-	return path
-	// return pathHasher.Sum(append(blockHash, []byte(sessionId)...))
 }
