@@ -19,25 +19,35 @@ import (
 	"context"
 
 	cometrpctypes "github.com/cometbft/cometbft/rpc/core/types"
-	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 	comettypes "github.com/cometbft/cometbft/types"
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/gogoproto/proto"
 
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
-	"github.com/pokt-network/poktroll/pkg/relayer"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
+// MsgCreateClaim is an interface satisfying proof.MsgCreateClaim concrete type
+// used by the SupplierClient interface to avoid cyclic dependencies.
 type MsgCreateClaim interface {
-	proto.Message
-	IsMsgCreateClaim()
+	cosmostypes.Msg
+	GetRootHash() []byte
+	GetSessionHeader() *sessiontypes.SessionHeader
+	GetSupplierAddress() string
+}
+
+// MsgSubmitProof is an interface satisfying proof.MsgSubmitProof concrete type
+// used by the SupplierClient interface to avoid cyclic dependencies.
+type MsgSubmitProof interface {
+	cosmostypes.Msg
+	GetProof() []byte
+	GetSessionHeader() *sessiontypes.SessionHeader
+	GetSupplierAddress() string
 }
 
 // SupplierClient is an interface for sufficient for a supplier operator to be
@@ -58,7 +68,7 @@ type SupplierClient interface {
 	// the amount of data stored on-chain.
 	SubmitProofs(
 		ctx context.Context,
-		sessionProofs []*relayer.SessionProof,
+		sessionProofs ...MsgSubmitProof,
 	) error
 	// Address returns the address of the SupplierClient that will be submitting proofs & claims.
 	Address() *cosmostypes.AccAddress
@@ -317,5 +327,5 @@ type SharedQueryClient interface {
 // on-chain block information for a given height. If height is nil, the
 // latest block is returned.
 type BlockQueryClient interface {
-	Block(ctx context.Context, height *int64) (*coretypes.ResultBlock, error)
+	Block(ctx context.Context, height *int64) (*cometrpctypes.ResultBlock, error)
 }

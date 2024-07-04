@@ -15,13 +15,17 @@ import (
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/x/service/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	"github.com/pokt-network/poktroll/x/shared"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 var _ relayer.RelayerSessionsManager = (*relayerSessionsManager)(nil)
 
-type sessionsTreesMap = map[int64]map[string]relayer.SessionTree
+// sessionTreesMap is an alias type for a map of
+// sessionEndHeight->sessionId->supplierAddress->SessionTree.
+// It is used to keep track of the sessions that are created in the RelayMiner
+// by grouping them by their end block height, session id and supplier address.
+type sessionsTreesMap = map[int64]map[string]map[string]relayer.SessionTree
 
 // relayerSessionsManager is an implementation of the RelayerSessions interface.
 // TODO_TEST: Add tests to the relayerSessionsManager.
@@ -30,13 +34,12 @@ type relayerSessionsManager struct {
 
 	relayObs relayer.MinedRelaysObservable
 
-	// sessionsToClaimObs notifies about sessions that are ready to be claimed.
-	sessionsToClaimObs observable.Observable[[]relayer.SessionTree]
-
-	// sessionTrees is a map of block heights pointing to a map of SessionTrees
-	// indexed by their sessionId.
-	// The block height index is used to know when the sessions contained in the entry should be closed,
-	// this helps to avoid iterating over all sessionsTrees to check if they are ready to be closed.
+	// sessionTrees is a map of blockHeight->sessionId->supplierAddress->sessionTree.
+	// The block height index is used to know when the sessions contained in the
+	// entry should be closed, this helps to avoid iterating over all sessionsTrees
+	// to check if they are ready to be closed.
+	// The sessionTrees are grouped by supplierAddress since each supplier has to
+	// claim the work it has been assigned.
 	sessionsTrees   sessionsTreesMap
 	sessionsTreesMu *sync.Mutex
 
@@ -45,9 +48,6 @@ type relayerSessionsManager struct {
 
 	// supplierClients is used to create claims and submit proofs for sessions.
 	supplierClients *supplier.SupplierClientMap
-
-	// pendingTxMu is used to prevent concurrent txs with the same sequence number.
-	pendingTxMu sync.Mutex
 
 	// storesDirectory points to a path on disk where KVStore data files are created.
 	storesDirectory string
@@ -113,17 +113,16 @@ func (rs *relayerSessionsManager) Start(ctx context.Context) {
 	miningErrorsObs := channel.Map(ctx, relayObs, rs.mapAddMinedRelayToSessionTree)
 	logging.LogErrors(ctx, miningErrorsObs)
 
-	// Start claim/proof pipeline.
+	// Start claim/proof pipeline for each supplier that is present in the RelayMiner.
 	for supplierAddress, supplierClient := range rs.supplierClients.SupplierClients {
 		sessionsToClaimObs, sessionsToClaimPublishCh := channel.NewObservable[[]relayer.SessionTree]()
-		rs.sessionsToClaimObs = sessionsToClaimObs
 		channel.ForEach(
 			ctx,
 			rs.blockClient.CommittedBlocksSequence(ctx),
 			rs.forEachBlockClaimSessionsFn(supplierAddress, sessionsToClaimPublishCh),
 		)
 
-		claimedSessionsObs := rs.createClaims(ctx, supplierClient)
+		claimedSessionsObs := rs.createClaims(ctx, supplierClient, sessionsToClaimObs)
 		rs.submitProofs(ctx, supplierClient, claimedSessionsObs)
 	}
 }
@@ -143,34 +142,52 @@ func (rs *relayerSessionsManager) InsertRelays(relays relayer.MinedRelaysObserva
 	rs.relayObs = relays
 }
 
-// ensureSessionTree returns the SessionTree for a given session.
+// ensureSessionTree returns the SessionTree for the session and supplier
+// corresponding to the relay request metadata.
 // If no tree for the session exists, a new SessionTree is created before returning.
-func (rs *relayerSessionsManager) ensureSessionTree(relayMetadata *types.RelayRequestMetadata) (relayer.SessionTree, error) {
-	sessionHeader := relayMetadata.SessionHeader
-	sessionsTrees, ok := rs.sessionsTrees[sessionHeader.SessionEndBlockHeight]
+func (rs *relayerSessionsManager) ensureSessionTree(
+	relayRequestMetadata *types.RelayRequestMetadata,
+) (relayer.SessionTree, error) {
+	rs.sessionsTreesMu.Lock()
+	defer rs.sessionsTreesMu.Unlock()
+
+	// Get the sessions that end at the relay request's sessionEndHeight.
+	sessionHeader := relayRequestMetadata.SessionHeader
+	sessionTreesWithEndHeight, ok := rs.sessionsTrees[sessionHeader.SessionEndBlockHeight]
 
 	// If there is no map for sessions at the sessionEndHeight, create one.
 	if !ok {
-		sessionsTrees = make(map[string]relayer.SessionTree)
-		rs.sessionsTrees[sessionHeader.SessionEndBlockHeight] = sessionsTrees
+		sessionTreesWithEndHeight = make(map[string]map[string]relayer.SessionTree)
+		rs.sessionsTrees[sessionHeader.SessionEndBlockHeight] = sessionTreesWithEndHeight
 	}
 
-	supplierAccAddress, err := cosmostypes.AccAddressFromBech32(relayMetadata.SupplierAddress)
+	// Get the sessionTreeWithSessionId for the given session.
+	sessionTreeWithSessionId, ok := sessionTreesWithEndHeight[sessionHeader.SessionId]
+
+	// If there is no map for session trees with the session id, create one.
+	if !ok {
+		sessionTreeWithSessionId = make(map[string]relayer.SessionTree)
+		sessionTreesWithEndHeight[sessionHeader.SessionId] = sessionTreeWithSessionId
+	}
+
+	supplierAccAddress, err := cosmostypes.AccAddressFromBech32(relayRequestMetadata.SupplierAddress)
 	if err != nil {
 		return nil, err
 	}
+	supplierAddress := supplierAccAddress.String()
 
-	// Get the sessionTree for the given session.
-	sessionTree, ok := sessionsTrees[sessionHeader.SessionId]
+	// Get the sessionTree for the supplier corresponding to the relay request.
+	sessionTree, ok := sessionTreeWithSessionId[supplierAddress]
 
-	// If the sessionTree does not exist, create it.
+	// If the sessionTree does not exist, create and assign it to the
+	// sessionTreeWithSessionId map for the given supplier address.
 	if !ok {
-		sessionTree, err = NewSessionTree(sessionHeader, &supplierAccAddress, rs.storesDirectory, rs.removeFromRelayerSessions)
+		sessionTree, err = NewSessionTree(sessionHeader, &supplierAccAddress, rs.storesDirectory)
 		if err != nil {
 			return nil, err
 		}
 
-		sessionsTrees[sessionHeader.SessionId] = sessionTree
+		sessionTreeWithSessionId[supplierAddress] = sessionTree
 	}
 
 	return sessionTree, nil
@@ -231,7 +248,7 @@ func (rs *relayerSessionsManager) forEachBlockClaimSessionsFn(
 			// before emitting the on-time sessions.
 			var lateSessions []relayer.SessionTree
 
-			sessionGracePeriodEndHeight := shared.GetSessionGracePeriodEndHeight(sharedParams, sessionEndHeight)
+			claimWindowOpenHeight := shared.GetClaimWindowOpenHeight(sharedParams, sessionEndHeight)
 
 			// Checking for sessions to claim with <= operator,
 			// which means that it would include sessions that were supposed to be
@@ -240,10 +257,16 @@ func (rs *relayerSessionsManager) forEachBlockClaimSessionsFn(
 			// no longer eligible to be claimed, but that's not always the case.
 			// Once claim window closing is implemented, they will be filtered out
 			// downstream at the waitForEarliestCreateClaimsHeight step.
-			if sessionGracePeriodEndHeight <= block.Height() {
-				// Iterate over the sessionsTrees that have grace period ending at this
-				// block height and add them to the list of sessionTrees to be published.
-				for _, sessionTree := range sessionsTreesEndingAtBlockHeight {
+			if claimWindowOpenHeight <= block.Height() {
+				// Iterate over the suppliers' sessionsTrees that have grace period ending at
+				// this block height and add them to the list of sessionTrees to be published.
+				for _, supplierSessionTrees := range sessionsTreesEndingAtBlockHeight {
+					// Skip the supplier if it has no sessions to claim.
+					sessionTree, ok := supplierSessionTrees[sessionsSupplier]
+					if !ok {
+						continue
+					}
+
 					// Mark the session as claimed and add it to the list of sessionTrees to be published.
 					// If the session has already been claimed, it will be skipped.
 					// Appending the sessionTree to the list of sessionTrees is protected
@@ -254,15 +277,10 @@ func (rs *relayerSessionsManager) forEachBlockClaimSessionsFn(
 						continue
 					}
 
-					supplierAddress := sessionTree.GetSupplierAddress().String()
-					if supplierAddress != sessionsSupplier {
-						continue
-					}
-
 					// Separate the sessions that are on-time from the ones that are late.
 					// If the session is past its grace period, it is considered late,
 					// otherwise it is on time and will be emitted last.
-					if sessionGracePeriodEndHeight+int64(numBlocksPerSession) < block.Height() {
+					if claimWindowOpenHeight+int64(numBlocksPerSession) < block.Height() {
 						lateSessions = append(lateSessions, sessionTree)
 					} else {
 						onTimeSessions = append(onTimeSessions, sessionTree)
@@ -286,21 +304,45 @@ func (rs *relayerSessionsManager) forEachBlockClaimSessionsFn(
 }
 
 // removeFromRelayerSessions removes the SessionTree from the relayerSessions.
-func (rs *relayerSessionsManager) removeFromRelayerSessions(sessionHeader *sessiontypes.SessionHeader) {
+func (rs *relayerSessionsManager) removeFromRelayerSessions(sessionTree relayer.SessionTree) {
 	rs.sessionsTreesMu.Lock()
 	defer rs.sessionsTreesMu.Unlock()
 
+	sessionHeader := sessionTree.GetSessionHeader()
+	supplierAddress := sessionTree.GetSupplierAddress().String()
+
+	logger := rs.logger.With("session_end_block_height", sessionHeader.SessionEndBlockHeight)
+
 	sessionsTreesEndingAtBlockHeight, ok := rs.sessionsTrees[sessionHeader.SessionEndBlockHeight]
 	if !ok {
-		rs.logger.Debug().
-			Int64("session_end_block_height", sessionHeader.SessionEndBlockHeight).
-			Msg("no session tree found for ending sessions")
+		logger.Debug().Msg("no session trees found for the session end height")
 		return
 	}
 
-	delete(sessionsTreesEndingAtBlockHeight, sessionHeader.SessionId)
+	logger = logger.With("session_id", sessionHeader.SessionId)
 
-	// Check if the sessionsTrees map is empty and delete it if so.
+	suppliersSessionTrees, ok := sessionsTreesEndingAtBlockHeight[sessionHeader.SessionId]
+	if !ok {
+		logger.Debug().Msg("no session trees found for the session id")
+		return
+	}
+
+	logger = logger.With("supplier_address", supplierAddress)
+
+	_, ok = suppliersSessionTrees[supplierAddress]
+	if !ok {
+		logger.Debug().Msg("no session tree found for the supplier address")
+		return
+	}
+
+	delete(suppliersSessionTrees, supplierAddress)
+
+	// Check if the suppliersSessionTrees map is empty and delete it if so.
+	if len(suppliersSessionTrees) == 0 {
+		delete(sessionsTreesEndingAtBlockHeight, sessionHeader.SessionId)
+	}
+
+	// Check if the sessionsTreesEndingAtBlockHeight map is empty and delete it if so.
 	// This is an optimization done to save memory by avoiding an endlessly growing sessionsTrees map.
 	if len(sessionsTreesEndingAtBlockHeight) == 0 {
 		delete(rs.sessionsTrees, sessionHeader.SessionEndBlockHeight)
@@ -346,8 +388,6 @@ func (rs *relayerSessionsManager) mapAddMinedRelayToSessionTree(
 	_ context.Context,
 	relay *relayer.MinedRelay,
 ) (_ error, skip bool) {
-	rs.sessionsTreesMu.Lock()
-	defer rs.sessionsTreesMu.Unlock()
 	// ensure the session tree exists for this relay
 	// TODO_CONSIDERATION: if we get the session header from the response, there
 	// is no possibility that we forgot to hydrate it (i.e. blindly trust the client).
@@ -367,4 +407,38 @@ func (rs *relayerSessionsManager) mapAddMinedRelayToSessionTree(
 
 	// Skip because this map function only outputs errors.
 	return nil, true
+}
+
+// retryFailedSessionAndDeleteExpiredFn returns a function that retries failed sessions
+// and deletes them if the expiration height is reached.
+// expirationHeightFn could be either GetProofWindowCloseHeight or GetClaimWindowCloseHeight.
+func (rs *relayerSessionsManager) deleteExpiredSessionTreesFn(
+	expirationHeightFn func(*sharedtypes.Params, int64) int64,
+) func(ctx context.Context, failedSessionTrees []relayer.SessionTree) {
+	return func(ctx context.Context, failedSessionTrees []relayer.SessionTree) {
+		currentHeight := rs.blockClient.LastBlock(ctx).Height()
+		sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
+		if err != nil {
+			rs.logger.Error().Err(err).Msg("unable to query shared module params")
+			return
+		}
+
+		for _, sessionTree := range failedSessionTrees {
+			sessionEndHeight := sessionTree.GetSessionHeader().GetSessionEndBlockHeight()
+			proofWindowCloseHeight := expirationHeightFn(sharedParams, sessionEndHeight)
+
+			if currentHeight > proofWindowCloseHeight {
+				rs.logger.Debug().Msg("deleting expired session")
+				rs.removeFromRelayerSessions(sessionTree)
+				if err := sessionTree.Delete(); err != nil {
+					rs.logger.Error().
+						Err(err).
+						Str("session_id", sessionTree.GetSessionHeader().GetSessionId()).
+						Str("supplier_address", sessionTree.GetSupplierAddress().String()).
+						Msg("failed to delete session tree")
+				}
+				continue
+			}
+		}
+	}
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/logging"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	proofkeeper "github.com/pokt-network/poktroll/x/proof/keeper"
+	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	"github.com/pokt-network/poktroll/x/shared"
 )
 
@@ -47,6 +48,12 @@ func (rs *relayerSessionsManager) submitProofs(
 	// TODO_TECHDEBT: pass failed submit proof sessions to some retry mechanism.
 	_ = failedSubmitProofsSessionsObs
 	logging.LogErrors(ctx, filter.EitherError(ctx, eitherProvenSessionsObs))
+
+	// Delete expired session trees so they don't get proven again.
+	channel.ForEach(
+		ctx, failedSubmitProofsSessionsObs,
+		rs.deleteExpiredSessionTreesFn(shared.GetProofWindowCloseHeight),
+	)
 }
 
 // mapWaitForEarliestSubmitProofsHeight is intended to be used as a MapFn. It
@@ -89,6 +96,7 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 	// we should be using the value that the params had for the session which includes queryHeight.
 	sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
 	if err != nil {
+		logger.Error().Err(err).Msg("failed to get shared params")
 		failedSubmitProofsSessionsCh <- sessionTrees
 		return nil
 	}
@@ -103,11 +111,6 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 
 	proofsWindowOpenBlock := rs.waitForBlock(ctx, proofWindowOpenHeight)
 
-	// TODO_BLOCKER(@bryanchriswhite, @red0ne): After lean client, there's no
-	// guarantee that all session trees have the same supplier address. Group
-	// session trees by supplier to re-use as much code as possible and still
-	// support batching proofs.
-	//
 	// Get the earliest proof commit height for this supplier.
 	supplierAddr := sessionTrees[0].GetSupplierAddress().String()
 	earliestSupplierProofsCommitHeight := shared.GetEarliestSupplierProofCommitHeight(
@@ -166,33 +169,33 @@ func (rs *relayerSessionsManager) newMapProveSessionsFn(
 		ctx context.Context,
 		sessionTrees []relayer.SessionTree,
 	) (_ either.SessionTrees, skip bool) {
-		rs.pendingTxMu.Lock()
-		defer rs.pendingTxMu.Unlock()
-
 		if len(sessionTrees) == 0 {
 			return either.Success(sessionTrees), false
 		}
 
 		// Map key is the supplier address.
-		sessionProofs := []*relayer.SessionProof{}
+		proofMsgs := make([]client.MsgSubmitProof, 0)
 		for _, session := range sessionTrees {
-			sessionProofs = append(sessionProofs, &relayer.SessionProof{
-				ProofBz:         session.GetProofBz(),
+			proofMsgs = append(proofMsgs, &prooftypes.MsgSubmitProof{
+				Proof:           session.GetProofBz(),
 				SessionHeader:   session.GetSessionHeader(),
-				SupplierAddress: *session.GetSupplierAddress(),
+				SupplierAddress: session.GetSupplierAddress().String(),
 			})
 		}
 
 		// Submit proofs for each supplier address in `sessionTrees`.
-		if err := supplierClient.SubmitProofs(ctx, sessionProofs); err != nil {
+		if err := supplierClient.SubmitProofs(ctx, proofMsgs...); err != nil {
 			failedSubmitProofSessionsCh <- sessionTrees
+			rs.logger.Error().Err(err).Msg("failed to submit proofs")
 			return either.Error[[]relayer.SessionTree](err), false
 		}
 
 		for _, sessionTree := range sessionTrees {
-			// Prune the session tree since the proofs have already been submitted.
+			rs.removeFromRelayerSessions(sessionTree)
 			if err := sessionTree.Delete(); err != nil {
-				return either.Error[[]relayer.SessionTree](err), false
+				// Do not fail the entire operation if a session tree cannot be deleted
+				// as this does not affect the C&P lifecycle.
+				rs.logger.Error().Err(err).Msg("failed to delete session tree")
 			}
 		}
 
@@ -229,6 +232,7 @@ func (rs *relayerSessionsManager) goProveClaims(
 
 		// If the proof cannot be generated, add the sessionTree to the failedProofs.
 		if _, err := sessionTree.ProveClosest(path); err != nil {
+			rs.logger.Error().Err(err).Msg("failed to generate proof")
 			failedProofs = append(failedProofs, sessionTree)
 			continue
 		}

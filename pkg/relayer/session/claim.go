@@ -24,6 +24,7 @@ import (
 func (rs *relayerSessionsManager) createClaims(
 	ctx context.Context,
 	supplierClient client.SupplierClient,
+	sessionsToClaimObs observable.Observable[[]relayer.SessionTree],
 ) observable.Observable[[]relayer.SessionTree] {
 	failedCreateClaimSessionsObs, failedCreateClaimSessionsPublishCh :=
 		channel.NewObservable[[]relayer.SessionTree]()
@@ -31,7 +32,7 @@ func (rs *relayerSessionsManager) createClaims(
 	// Map sessionsToClaimObs to a new observable of the same type which is notified
 	// when the session is eligible to be claimed.
 	sessionsWithOpenClaimWindowObs := channel.Map(
-		ctx, rs.sessionsToClaimObs,
+		ctx, sessionsToClaimObs,
 		rs.mapWaitForEarliestCreateClaimsHeight(failedCreateClaimSessionsPublishCh),
 	)
 
@@ -48,8 +49,13 @@ func (rs *relayerSessionsManager) createClaims(
 	// observable which corresponds to failSubmitProofsSessionsCh to have a
 	// reference to the error which caused the proof submission to fail.
 	// In this case, the error may not be persistent.
-	_ = failedCreateClaimSessionsObs
 	logging.LogErrors(ctx, filter.EitherError(ctx, eitherClaimedSessionsObs))
+
+	// Delete expired session trees so they don't get claimed again.
+	channel.ForEach(
+		ctx, failedCreateClaimSessionsObs,
+		rs.deleteExpiredSessionTreesFn(shared.GetClaimWindowCloseHeight),
+	)
 
 	// Map eitherClaimedSessions to a new observable of []relayer.SessionTree
 	// which is notified when the corresponding claims creation succeeded.
@@ -102,6 +108,7 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 	// we should be using the value that the params had for the session which includes queryHeight.
 	sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
 	if err != nil {
+		logger.Error().Err(err).Msg("failed to get shared params")
 		failedCreateClaimsSessionsCh <- sessionTrees
 		return nil
 	}
@@ -111,7 +118,7 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 	// we wait for claimWindowOpenHeight to be received before proceeding since we need its hash
 	// to know where this servicer's claim submission window opens.
 	logger = logger.With("claim_window_open_height", claimWindowOpenHeight)
-	logger.With("current_height", rs.blockClient.LastBlock(ctx).Height()).Info().Msg("================waiting & blocking until the earliest claim commit height offset seed block height")
+	logger.Info().Msg("waiting & blocking until the earliest claim commit height offset seed block height")
 
 	// The block that'll be used as a source of entropy for which branch(es) to
 	// prove should be deterministic and use on-chain governance params.
@@ -127,7 +134,7 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 	)
 
 	logger = logger.With("claim_window_open_block_hash", fmt.Sprintf("%x", claimsWindowOpenBlock.Hash()))
-	logger.With("current_height", rs.blockClient.LastBlock(ctx).Height()).Info().Msg("======observed earliest claim commit height offset seed block height")
+	logger.Info().Msg("observed earliest claim commit height offset seed block height")
 
 	// Get the earliest claim commit height for this supplier.
 	supplierAddr := sessionTrees[0].GetSupplierAddress().String()
@@ -139,12 +146,12 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 	)
 
 	logger = logger.With("earliest_claim_commit_height", earliestSupplierClaimsCommitHeight)
-	logger.With("current_height", rs.blockClient.LastBlock(ctx).Height()).Info().Msg("================waiting & blocking until the earliest claim commit height for this supplier")
+	logger.Info().Msg("waiting & blocking until the earliest claim commit height for this supplier")
 
 	// Wait for the earliestSupplierClaimsCommitHeight to be reached before proceeding.
 	_ = rs.waitForBlock(ctx, earliestSupplierClaimsCommitHeight)
 
-	logger.With("current_height", rs.blockClient.LastBlock(ctx).Height()).Info().Msg("==========observed earliest claim commit height")
+	logger.Info().Msg("observed earliest claim commit height")
 
 	return <-claimsFlushedCh
 }
@@ -160,27 +167,24 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 		ctx context.Context,
 		sessionTrees []relayer.SessionTree,
 	) (_ either.SessionTrees, skip bool) {
-		rs.pendingTxMu.Lock()
-		defer rs.pendingTxMu.Unlock()
-
 		if len(sessionTrees) == 0 {
 			return either.Success(sessionTrees), false
 		}
 
 		// Map key is the supplier address.
-		var claimMsgs []client.MsgCreateClaim
-		for _, session := range sessionTrees {
-			rs.logger.With("curernt_height", rs.blockClient.LastBlock(ctx).Height()).With("supplier_address", session.GetSupplierAddress().String()).Info().Msg("======session supplier address")
+		claimMsgs := make([]client.MsgCreateClaim, 0)
+		for _, sessionTree := range sessionTrees {
 			claimMsgs = append(claimMsgs, &prooftypes.MsgCreateClaim{
-				RootHash:        session.GetClaimRoot(),
-				SessionHeader:   session.GetSessionHeader(),
-				SupplierAddress: session.GetSupplierAddress().String(),
+				RootHash:        sessionTree.GetClaimRoot(),
+				SessionHeader:   sessionTree.GetSessionHeader(),
+				SupplierAddress: sessionTree.GetSupplierAddress().String(),
 			})
 		}
 
 		// Create claims for each supplier address in `sessionTrees`.
 		if err := supplierClient.CreateClaims(ctx, claimMsgs...); err != nil {
 			failedCreateClaimsSessionsPublishCh <- sessionTrees
+			rs.logger.Error().Err(err).Msg("failed to create claims")
 			return either.Error[[]relayer.SessionTree](err), false
 		}
 
@@ -207,6 +211,7 @@ func (rs *relayerSessionsManager) goCreateClaimRoots(
 		}
 		// This session should no longer be updated
 		if _, err := sessionTree.Flush(); err != nil {
+			rs.logger.Error().Err(err).Msg("failed to flush session")
 			failedClaims = append(failedClaims, sessionTree)
 			continue
 		}

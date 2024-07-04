@@ -6,8 +6,6 @@ import (
 	"github.com/cometbft/cometbft/crypto"
 
 	"github.com/pokt-network/smt"
-
-	"github.com/pokt-network/poktroll/pkg/client"
 )
 
 // GetNumComputeUnits returns the number of compute units for a given claim
@@ -54,7 +52,3 @@ func (claim *Claim) GetHash() ([]byte, error) {
 
 	return crypto.Sha256(claimBz), nil
 }
-
-var _ client.MsgCreateClaim = (*MsgCreateClaim)(nil)
-
-func (msg *MsgCreateClaim) IsMsgCreateClaim() {}

@@ -3,7 +3,7 @@ config:
   # for backwards-compatibity with the current helm-chart.
   signing_key_name: supplier1
 
-  default_signing_key_names: [supplier1, supplier2]
+  default_signing_key_names: [supplier1]
   suppliers:
     - service_id: anvil
       listen_url: http://0.0.0.0:8545

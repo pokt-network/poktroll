@@ -14,10 +14,10 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/client/keyring"
 	"github.com/pokt-network/poktroll/pkg/client/supplier"
-	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/testclient/testkeyring"
 	"github.com/pokt-network/poktroll/testutil/testclient/testtx"
+	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -112,15 +112,13 @@ func TestSupplierClient_CreateClaim(t *testing.T) {
 		},
 	}
 
-	sessionClaims := []*relayer.SessionClaim{
-		{
-			RootHash:      rootHash,
-			SessionHeader: &sessionHeader,
-		},
+	msgClaim := &prooftypes.MsgCreateClaim{
+		RootHash:      rootHash,
+		SessionHeader: &sessionHeader,
 	}
 
 	go func() {
-		err = supplierClient.CreateClaims(ctx, sessionClaims...)
+		err = supplierClient.CreateClaims(ctx, msgClaim)
 		require.NoError(t, err)
 		close(doneCh)
 	}()
@@ -191,15 +189,13 @@ func TestSupplierClient_SubmitProof(t *testing.T) {
 	proofBz, err := proof.Marshal()
 	require.NoError(t, err)
 
-	sessionProofs := []*relayer.SessionProof{
-		{
-			ProofBz:       proofBz,
-			SessionHeader: &sessionHeader,
-		},
+	msgProof := &prooftypes.MsgSubmitProof{
+		Proof:         proofBz,
+		SessionHeader: &sessionHeader,
 	}
 
 	go func() {
-		err = supplierClient.SubmitProofs(ctx, sessionProofs)
+		err = supplierClient.SubmitProofs(ctx, msgProof)
 		require.NoError(t, err)
 		close(doneCh)
 	}()
