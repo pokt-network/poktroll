@@ -17,11 +17,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/miner"
-	"github.com/pokt-network/poktroll/pkg/relayer/protocol"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 )
 

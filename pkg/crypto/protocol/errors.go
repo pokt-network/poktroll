@@ -1,5 +1,5 @@
 package protocol
 
 var (
-	codespace = "relayer/protocol"
+	codespace = "crypto/protocol"
 )
