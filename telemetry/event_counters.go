@@ -60,7 +60,6 @@ func ProofRequirementCounter(
 	// Ensure the counter is not incremented if there was an error.
 	if err != nil {
 		incrementAmount = 0
-		labels = AppendErrLabel(err, labels...)
 	}
 
 	telemetry.IncrCounterWithLabels(
@@ -88,7 +87,6 @@ func ClaimComputeUnitsCounter(
 	// Ensure the counter is not incremented if there was an error.
 	if err != nil {
 		incrementAmount = 0
-		labels = AppendErrLabel(err, labels...)
 	}
 
 	telemetry.IncrCounterWithLabels(
@@ -116,7 +114,6 @@ func ClaimCounter(
 	// Ensure the counter is not incremented if there was an error.
 	if err != nil {
 		incrementAmount = 0
-		labels = AppendErrLabel(err, labels...)
 	}
 
 	telemetry.IncrCounterWithLabels(
@@ -155,14 +152,4 @@ func RelayEMAGauge(relayEMA uint64, serviceId string) {
 		float32(relayEMA),
 		labels,
 	)
-}
-
-// AppendErrLabel appends a label with the name "error" and a value of the error's
-// message to the given labels slice if the error is not nil.
-func AppendErrLabel(err error, labels ...metrics.Label) []metrics.Label {
-	if err == nil {
-		return labels
-	}
-
-	return append(labels, metrics.Label{Name: "error", Value: err.Error()})
 }
