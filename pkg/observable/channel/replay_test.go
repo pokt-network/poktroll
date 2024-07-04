@@ -350,11 +350,10 @@ func TestReplayObservable_SubscribeFromLatestBufferedOffset(t *testing.T) {
 				time.Sleep(time.Millisecond)
 			}
 
-			observer, replayBufferSize := replayObsvbl.SubscribeFromLatestBufferedOffset(ctx, test.endOffset)
+			observer := replayObsvbl.SubscribeFromLatestBufferedOffset(ctx, test.endOffset)
 			// Assumes all values will be received within receiveTimeout.
 			actualValues := accumulateValues(observer, receiveTimeout)
 			require.EqualValues(t, test.expectedValues, actualValues)
-			require.Equal(t, test.replayBufferSize, replayBufferSize)
 		})
 	}
 }

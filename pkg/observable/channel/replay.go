@@ -122,8 +122,7 @@ func (ro *replayObservable[V]) Last(ctx context.Context, n int) []V {
 // It replays the values stored in the replay buffer in the order of their arrival
 // before emitting new values.
 func (ro *replayObservable[V]) Subscribe(ctx context.Context) observable.Observer[V] {
-	observer, _ := ro.SubscribeFromLatestBufferedOffset(ctx, ro.replayBufferCap)
-	return observer
+	return ro.SubscribeFromLatestBufferedOffset(ctx, ro.replayBufferCap)
 }
 
 // SubscribeFromLatestBufferedOffset returns an observer which is initially notified of
@@ -137,12 +136,13 @@ func (ro *replayObservable[V]) Subscribe(ctx context.Context) observable.Observe
 func (ro *replayObservable[V]) SubscribeFromLatestBufferedOffset(
 	ctx context.Context,
 	endOffset int,
-) (_ observable.Observer[V], replayBufferSize int) {
+) observable.Observer[V] {
 	obs, ch := NewObservable[V]()
 	ctx, cancel := context.WithCancel(ctx)
 
 	go func() {
 		ro.replayBufferMu.RLock()
+		defer ro.replayBufferMu.RUnlock()
 
 		// Ensure that the offset is within the bounds of the replay buffer.
 		if endOffset > len(ro.replayBuffer) {
@@ -155,7 +155,7 @@ func (ro *replayObservable[V]) SubscribeFromLatestBufferedOffset(
 		}
 
 		bufferedValuesCh := ro.bufferingObsvbl.Subscribe(ctx).Ch()
-		ro.replayBufferMu.RUnlock()
+
 		// Since bufferingObsvbl emits all buffered values in one notification
 		// and the replay buffer has already been replayed, only the most recent
 		// value needs to be published
@@ -166,7 +166,7 @@ func (ro *replayObservable[V]) SubscribeFromLatestBufferedOffset(
 		cancel()
 	}()
 
-	return obs.Subscribe(ctx), ro.replayBufferCap
+	return obs.Subscribe(ctx)
 }
 
 // UnsubscribeAll unsubscribes all observers from the replay observable.

@@ -14,12 +14,11 @@ type ReplayObservable[V any] interface {
 	// SubscribeFromLatestBufferedOffset returns an observer which is initially notified of
 	// values in the replay buffer, starting from the latest buffered value index - offset.
 	// After this range of the replay buffer is notified, the observer continues to be notified,
-	// in real-time, when the publishCh channel receives a value. It also returns the current
-	// replayBufferSize. If offset is greater than replayBufferSize or the number of elements it
-	// currently contains, the observer is notified of all elements in the replayBuffer,
-	// starting from the beginning. Passing 0 for offset is equivalent to calling
-	// Subscribe() on a non-replay observable.
-	SubscribeFromLatestBufferedOffset(ctx context.Context, offset int) (_ Observer[V], relayBufferSize int)
+	// in real-time, when the publishCh channel receives a value. If offset is greater than
+	// replayBufferSize or the number of elements it currently contains, the observer is notified
+	// of all elements in the replayBuffer, starting from the beginning. Passing 0 for offset
+	// is equivalent to calling Subscribe() on a non-replay observable.
+	SubscribeFromLatestBufferedOffset(ctx context.Context, offset int) Observer[V]
 	// Last synchronously returns the last n values from the replay buffer with
 	// LIFO ordering
 	Last(ctx context.Context, n int) []V
