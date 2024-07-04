@@ -107,6 +107,7 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 	// of block client construction. This check and failure branch can be removed once this
 	// is implemented.
 	if proofsWindowOpenBlock == nil {
+		logger.Warn().Msg("failed to observe earliest proof commit height offset seed block height")
 		failedSubmitProofsSessionsCh <- sessionTrees
 		return nil
 	}

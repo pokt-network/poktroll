@@ -119,6 +119,7 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 	// of block client construction. This check and failure branch can be removed once this
 	// is implemented.
 	if claimsWindowOpenBlock == nil {
+		logger.Warn().Msg("failed to observe earliest claim commit height offset seed block height")
 		failedCreateClaimsSessionsCh <- sessionTrees
 		return nil
 	}
