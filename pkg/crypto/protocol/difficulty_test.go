@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/pkg/relayer/protocol"
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 )
 
 func TestCountDifficultyBits(t *testing.T) {
