@@ -142,7 +142,6 @@ func (ro *replayObservable[V]) SubscribeFromLatestBufferedOffset(
 
 	go func() {
 		ro.replayBufferMu.RLock()
-		defer ro.replayBufferMu.RUnlock()
 
 		// Ensure that the offset is within the bounds of the replay buffer.
 		if endOffset > len(ro.replayBuffer) {
@@ -155,6 +154,7 @@ func (ro *replayObservable[V]) SubscribeFromLatestBufferedOffset(
 		}
 
 		bufferedValuesCh := ro.bufferingObsvbl.Subscribe(ctx).Ch()
+		ro.replayBufferMu.RUnlock()
 
 		// Since bufferingObsvbl emits all buffered values in one notification
 		// and the replay buffer has already been replayed, only the most recent
