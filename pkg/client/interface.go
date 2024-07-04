@@ -30,6 +30,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -312,4 +313,9 @@ type SharedQueryClient interface {
 // latest block is returned.
 type BlockQueryClient interface {
 	Block(ctx context.Context, height *int64) (*coretypes.ResultBlock, error)
+}
+
+type ProofQueryClient interface {
+	// GetParams queries the chain for the current shared module parameters.
+	GetParams(ctx context.Context) (*prooftypes.Params, error)
 }
