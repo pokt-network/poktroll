@@ -30,7 +30,6 @@ func (k msgServer) CreateClaim(
 	defer func() {
 		// Only increment these metrics counters if handling a new claim.
 		if !isExistingClaim {
-			// TODO_IMPROVE: We could track on-chain relays here with claim.GetNumRelays().
 			telemetry.ClaimCounter(types.ClaimProofStage_CLAIMED, 1, err)
 			telemetry.ClaimRelaysCounter(types.ClaimProofStage_CLAIMED, numRelays, err)
 			telemetry.ClaimComputeUnitsCounter(types.ClaimProofStage_CLAIMED, numComputeUnits, err)
