@@ -23,6 +23,8 @@ type ReplayObservable[V any] interface {
 	// Last synchronously returns the last n values from the replay buffer with
 	// LIFO ordering
 	Last(ctx context.Context, n int) []V
+	// GetReplayBufferSize returns the number of elements currently in the replay buffer.
+	GetReplayBufferSize() int
 }
 
 // Observable is a generic interface that allows multiple subscribers to be
