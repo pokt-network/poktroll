@@ -14,9 +14,9 @@ var (
 )
 
 type replayObservable[V any] struct {
-	// replayBufferSize is the number of notifications to buffer so that they
+	// replayBufferCap is the number of notifications to buffer so that they
 	// can be replayed to new observers.
-	replayBufferSize int
+	replayBufferCap int
 	// replayBufferMu protects replayBuffer from concurrent access/updates.
 	replayBufferMu sync.RWMutex
 	// replayBuffer holds the last relayBufferSize number of notifications received
@@ -29,7 +29,7 @@ type replayObservable[V any] struct {
 }
 
 // NewReplayObservable returns a new ReplayObservable with the given replay buffer
-// replayBufferSize and the corresponding publish channel to notify it of new values.
+// replayBufferCap and the corresponding publish channel to notify it of new values.
 func NewReplayObservable[V any](
 	ctx context.Context,
 	replayBufferSize int,
@@ -40,19 +40,19 @@ func NewReplayObservable[V any](
 	return ToReplayObservable(ctx, replayBufferSize, obsvbl), publishCh
 }
 
-// ToReplayObservable returns an observable which replays the last replayBufferSize
+// ToReplayObservable returns an observable which replays the last replayBufferCap
 // number of values published to the source observable to new observers, before
 // publishing new values.
 // It should only be used with a srcObservable which contains channelObservers
 // (i.e. channelObservable or similar).
 func ToReplayObservable[V any](
 	ctx context.Context,
-	replayBufferSize int,
+	replayBufferCap int,
 	srcObsvbl observable.Observable[V],
 ) observable.ReplayObservable[V] {
 	replayObsvbl := &replayObservable[V]{
-		replayBufferSize: replayBufferSize,
-		replayBuffer:     []V{},
+		replayBufferCap: replayBufferCap,
+		replayBuffer:    []V{},
 	}
 
 	replayObsvbl.bufferingObsvbl = replayObsvbl.initBufferingObservable(ctx, srcObsvbl)
@@ -70,11 +70,11 @@ func (ro *replayObservable[V]) Last(ctx context.Context, n int) []V {
 	defer cancel()
 
 	// If n is greater than the replay buffer size, return the entire replay buffer.
-	if n > ro.replayBufferSize {
-		n = ro.replayBufferSize
+	if n > ro.replayBufferCap {
+		n = ro.replayBufferCap
 		logger.Warn().
 			Int("requested_replay_buffer_size", n).
-			Int("replay_buffer_capacity", ro.replayBufferSize).
+			Int("replay_buffer_capacity", ro.replayBufferCap).
 			Msg("requested replay buffer size is greater than replay buffer capacity; returning entire replay buffer")
 	}
 
@@ -122,7 +122,7 @@ func (ro *replayObservable[V]) Last(ctx context.Context, n int) []V {
 // It replays the values stored in the replay buffer in the order of their arrival
 // before emitting new values.
 func (ro *replayObservable[V]) Subscribe(ctx context.Context) observable.Observer[V] {
-	observer, _ := ro.SubscribeFromLatestBufferedOffset(ctx, ro.replayBufferSize)
+	observer, _ := ro.SubscribeFromLatestBufferedOffset(ctx, ro.replayBufferCap)
 	return observer
 }
 
@@ -130,7 +130,7 @@ func (ro *replayObservable[V]) Subscribe(ctx context.Context) observable.Observe
 // values in the replay buffer, starting from the latest buffered value index - offset.
 // After this range of the replay buffer is notified, the observer continues to be notified,
 // in real-time, when the publishCh channel receives a value. It also returns the current
-// replayBufferSize. If offset is greater than replayBufferSize or the number of elements it
+// replayBufferCap. If offset is greater than replayBufferCap or the number of elements it
 // currently contains, the observer is notified of all elements in the replayBuffer,
 // starting from the beginning. Passing 0 for offset is equivalent to calling
 // Subscribe() on a non-replay observable.
@@ -166,12 +166,18 @@ func (ro *replayObservable[V]) SubscribeFromLatestBufferedOffset(
 		cancel()
 	}()
 
-	return obs.Subscribe(ctx), ro.replayBufferSize
+	return obs.Subscribe(ctx), ro.replayBufferCap
 }
 
 // UnsubscribeAll unsubscribes all observers from the replay observable.
 func (ro *replayObservable[V]) UnsubscribeAll() {
 	ro.bufferingObsvbl.UnsubscribeAll()
+}
+
+func (ro *replayObservable[V]) GetReplayBufferSize() int {
+	ro.replayBufferMu.RLock()
+	defer ro.replayBufferMu.RUnlock()
+	return len(ro.replayBuffer)
 }
 
 // initBufferingObservable receives and buffers the last n notifications from
@@ -189,10 +195,10 @@ func (ro *replayObservable[V]) initBufferingObservable(
 		for value := range ch {
 			ro.replayBufferMu.Lock()
 			// The newest value is always at the beginning of the replay buffer.
-			if len(ro.replayBuffer) < ro.replayBufferSize {
+			if len(ro.replayBuffer) < ro.replayBufferCap {
 				ro.replayBuffer = append([]V{value}, ro.replayBuffer...)
 			} else {
-				ro.replayBuffer = append([]V{value}, ro.replayBuffer[:ro.replayBufferSize-1]...)
+				ro.replayBuffer = append([]V{value}, ro.replayBuffer[:ro.replayBufferCap-1]...)
 			}
 			// Emit all buffered values at once.
 			bufferedObsvblCh <- ro.replayBuffer

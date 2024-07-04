@@ -66,7 +66,7 @@ func TestReplayObservable(t *testing.T) {
 		replayBufferSize = 3
 		values           = []int{1, 2, 3, 4, 5}
 		// the replay buffer is full and has shifted out values with index <
-		// len(values)-replayBufferSize so Last should return values starting
+		// len(values)-replayBufferCap so Last should return values starting
 		// from there.
 		expectedValues = values[len(values)-replayBufferSize:]
 		errCh          = make(chan error, 1)
@@ -157,7 +157,7 @@ func TestReplayObservable_Last_Full_ReplayBuffer(t *testing.T) {
 		expectedValues []int
 	}{
 		{
-			name:             "n < replayBufferSize",
+			name:             "n < replayBufferCap",
 			replayBufferSize: 5,
 			lastN:            3,
 			// the replay buffer has enough values to return to Last, it should return
@@ -165,17 +165,17 @@ func TestReplayObservable_Last_Full_ReplayBuffer(t *testing.T) {
 			expectedValues: values[2:], // []int{5, 4, 3},
 		},
 		{
-			name:             "n = replayBufferSize",
+			name:             "n = replayBufferCap",
 			replayBufferSize: 5,
 			lastN:            5,
 			expectedValues:   values,
 		},
 		{
-			name:             "n > replayBufferSize",
+			name:             "n > replayBufferCap",
 			replayBufferSize: 3,
 			lastN:            5,
 			// the replay buffer is full so Last should return values starting
-			// from lastN - replayBufferSize.
+			// from lastN - replayBufferCap.
 			expectedValues: values[2:], // []int{5, 4, 3},
 		},
 	}
@@ -313,25 +313,25 @@ func TestReplayObservable_SubscribeFromLatestBufferedOffset(t *testing.T) {
 		expectedValues   []int
 	}{
 		{
-			name:             "endOffset = replayBufferSize",
+			name:             "endOffset = replayBufferCap",
 			replayBufferSize: 8,
 			endOffset:        8,
 			expectedValues:   values[2:], // []int{2, 3, 4, 5, ...},
 		},
 		{
-			name:             "endOffset < replayBufferSize",
+			name:             "endOffset < replayBufferCap",
 			replayBufferSize: 10,
 			endOffset:        2,
 			expectedValues:   values[8:], // []int{8, 9},
 		},
 		{
-			name:             "endOffset > replayBufferSize",
+			name:             "endOffset > replayBufferCap",
 			replayBufferSize: 8,
 			endOffset:        10,
 			expectedValues:   values[2:],
 		},
 		{
-			name:             "replayBufferSize < eldOffset < numBufferedValues ",
+			name:             "replayBufferCap < eldOffset < numBufferedValues ",
 			replayBufferSize: 20,
 			endOffset:        15,
 			expectedValues:   values,

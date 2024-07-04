@@ -64,7 +64,7 @@ func MapExpand[S, D any](
 // each notification received from the observable. If the transformFn returns a
 // skip bool of true, the notification is skipped and not emitted to the resulting
 // observable.
-// The resulting observable will receive the last replayBufferSize
+// The resulting observable will receive the last replayBufferCap
 // number of values published to the source observable before receiving new values.
 func MapReplay[S, D any](
 	ctx context.Context,
