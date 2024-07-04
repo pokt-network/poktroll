@@ -41,7 +41,7 @@ func NewProofQuerier(deps depinject.Config) (client.ProofQueryClient, error) {
 // GetParams queries the chain for the current proof module parameters.
 func (pq *proofQuerier) GetParams(
 	ctx context.Context,
-) (*prooftypes.Params, error) {
+) (client.ProofParams, error) {
 	req := &prooftypes.QueryParamsRequest{}
 	res, err := pq.proofQuerier.Params(ctx, req)
 	if err != nil {

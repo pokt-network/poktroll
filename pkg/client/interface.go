@@ -8,6 +8,7 @@
 //go:generate mockgen -destination=../../testutil/mockclient/supplier_query_client_mock.go -package=mockclient . SupplierQueryClient
 //go:generate mockgen -destination=../../testutil/mockclient/session_query_client_mock.go -package=mockclient . SessionQueryClient
 //go:generate mockgen -destination=../../testutil/mockclient/shared_query_client_mock.go -package=mockclient . SharedQueryClient
+//go:generate mockgen -destination=../../testutil/mockclient/proof_query_client_mock.go -package=mockclient . ProofQueryClient
 //go:generate mockgen -destination=../../testutil/mockclient/cosmos_tx_builder_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/client TxBuilder
 //go:generate mockgen -destination=../../testutil/mockclient/cosmos_keyring_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/crypto/keyring Keyring
 //go:generate mockgen -destination=../../testutil/mockclient/cosmos_client_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/client AccountRetriever
@@ -30,7 +31,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -315,7 +315,17 @@ type BlockQueryClient interface {
 	Block(ctx context.Context, height *int64) (*coretypes.ResultBlock, error)
 }
 
+// ProofParams is a go interface type which corresponds to the poktroll.proof.Params
+// protobuf message. Since the generated go types don't include interface types, this
+// is necessary to prevent dependency cycles.
+type ProofParams interface {
+	GetMinRelayDifficultyBits() uint64
+	GetProofRequestProbability() float32
+	GetProofRequirementThreshold() uint64
+	GetProofMissingPenalty() *cosmostypes.Coin
+}
+
 type ProofQueryClient interface {
 	// GetParams queries the chain for the current shared module parameters.
-	GetParams(ctx context.Context) (*prooftypes.Params, error)
+	GetParams(ctx context.Context) (ProofParams, error)
 }
