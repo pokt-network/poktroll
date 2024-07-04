@@ -15,11 +15,11 @@ import (
 )
 
 const (
-	// supplierStakeWaitTimeSeconds is the time to wait for the supplier to be staked before
+	// supplierStakeWaitTime is the time to wait for the supplier to be staked before
 	// attempting to (try again to) retrieve the supplier's on-chain record.
 	// This is useful for testing and development purposes, where the supplier
 	// may not be staked before the relay miner starts.
-	supplierStakeWaitTimeSeconds = 1 * time.Second
+	supplierStakeWaitTime = 1 * time.Second
 
 	// supplierMaxStakeWaitTimeMinutes is the time to wait before a panic is thrown
 	// if the supplier is still not staked when the time elapses.
@@ -158,10 +158,10 @@ func (rp *relayerProxy) waitForSupplierToStake(
 		if err != nil && suppliertypes.ErrSupplierNotFound.Is(err) {
 			rp.logger.Info().Msgf(
 				"Waiting %d seconds for the supplier with address %s to stake",
-				supplierStakeWaitTimeSeconds,
+				supplierStakeWaitTime/time.Second,
 				supplierAddress,
 			)
-			time.Sleep(supplierStakeWaitTimeSeconds)
+			time.Sleep(supplierStakeWaitTime)
 
 			// See the comment above `supplierMaxStakeWaitTimeMinutes` for why
 			// and how this is used.
