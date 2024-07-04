@@ -218,7 +218,7 @@ func supplyMiner(
 	deps depinject.Config,
 	_ *cobra.Command,
 ) (depinject.Config, error) {
-	mnr, err := miner.NewMiner()
+	mnr, err := miner.NewMiner(deps)
 	if err != nil {
 		return nil, err
 	}
