@@ -66,6 +66,7 @@ Ensure that these variables **are not shadowed** by usage of a subsequent walrus
 #### [x/proof/keeper/msg_server_create_claim.go](https://github.com/pokt-network/poktroll/blob/main/x/proof/keeper/msg_server_create_claim.go):
 
 ```go
+// Declare a named `error` return argument.
 func (k msgServer) CreateClaim(...) (_ *types.MsgCreateClaimResponse, err error) {
 	// Declare claim to reference in telemetry.
 	var (
@@ -84,6 +85,14 @@ func (k msgServer) CreateClaim(...) (_ *types.MsgCreateClaimResponse, err error)
 			telemetry.ClaimComputeUnitsCounter(types.ClaimProofStage_CLAIMED, numComputeUnits, err)
 		}
 	}()
+
+
+    // Ensure `err` is not shadowed by avoiding `:=` operator.
+    var result any
+    result, err = doSomething()
+    if err != nil {
+        return nil, err
+    }
 ```
 
 ### Gauage
