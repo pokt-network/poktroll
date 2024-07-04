@@ -21,10 +21,11 @@ func init() {
 	)
 }
 
+// GetPathForProof computes the path to be used for proof validation by hashing
+// the block hash and session id.
 func GetPathForProof(blockHash []byte, sessionId string) []byte {
 	hasher := newHasher()
-	_, err := hasher.Write(append(blockHash, []byte(sessionId)...))
-	if err != nil {
+	if _, err := hasher.Write(append(blockHash, []byte(sessionId)...)); err != nil {
 		panic(err)
 	}
 
