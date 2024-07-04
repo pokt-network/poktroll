@@ -16,20 +16,11 @@ import (
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 )
 
-var (
-	_ relayer.Miner = (*miner)(nil)
-	// TODO_BLOCKER(@Olshansk): query on-chain governance params once available.
-	// Setting this to 0 to effectively disables mining for now.
-	// I.e., all relays are added to the tree.
-	defaultRelayDifficultyBits = 0
-)
+var _ relayer.Miner = (*miner)(nil)
 
 // Miner is responsible for observing servedRelayObs, hashing and checking the
 // difficulty of each, finally publishing those with sufficient difficulty to
 // minedRelayObs as they are applicable for relay volume.
-//
-// TODO_BLOCKER(@Olshansk): The relay hashing and relay difficulty mechanisms & values must come
-// from on-chain.
 type miner struct {
 	// proofQueryClient is ...
 	proofQueryClient client.ProofQueryClient
