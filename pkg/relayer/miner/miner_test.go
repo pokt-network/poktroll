@@ -13,14 +13,12 @@ import (
 	"time"
 
 	"cosmossdk.io/depinject"
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/miner"
-	"github.com/pokt-network/poktroll/testutil/mockclient"
-	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	"github.com/pokt-network/poktroll/testutil/testclient/testqueryclients"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 )
 
@@ -42,14 +40,7 @@ func TestMiner_MinedRelays(t *testing.T) {
 		expectedMinedRelays                   = unmarshalHexMinedRelays(t, marshaledMinableRelaysHex)
 	)
 
-	// TODO_IN_THIS_COMMIT: move to shared testutil.
-	ctrl := gomock.NewController(t)
-	defaultProofParams := prooftypes.DefaultParams()
-	proofQueryClientMock := mockclient.NewMockProofQueryClient(ctrl)
-	proofQueryClientMock.EXPECT().
-		GetParams(gomock.Any()).
-		Return(&defaultProofParams, nil).
-		AnyTimes()
+	proofQueryClientMock := testqueryclients.NewTestProofQueryClient(t)
 	deps := depinject.Supply(proofQueryClientMock)
 	mnr, err := miner.NewMiner(deps, miner.WithDifficulty(testDifficulty))
 	require.NoError(t, err)
