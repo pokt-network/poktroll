@@ -22,7 +22,7 @@ var _ relayer.Miner = (*miner)(nil)
 // difficulty of each, finally publishing those with sufficient difficulty to
 // minedRelayObs as they are applicable for relay volume.
 type miner struct {
-	// proofQueryClient is ...
+	// proofQueryClient is used to query for the minimum relay difficulty.
 	proofQueryClient client.ProofQueryClient
 
 	// relayDifficultyBits is the minimum difficulty that a relay must have to be
