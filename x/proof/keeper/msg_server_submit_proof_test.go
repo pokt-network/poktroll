@@ -138,6 +138,8 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 			// will be part of the session.
 			sessionHeader := keepers.GetSessionHeader(ctx, t, appAddr, service, 1)
 
+			expectedMerkleProofPath := protocol.GetPathForProof(blockHeaderHash, sessionHeader.GetSessionId())
+
 			// Construct a proof message server from the proof keeper.
 			srv := keeper.NewMsgServerImpl(*keepers.Keeper)
 
