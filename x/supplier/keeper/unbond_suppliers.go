@@ -8,8 +8,7 @@ import (
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-// EndBlockerPruneAppToGatewayPendingUndelegation runs at the end of each block
-// and prunes app to gateway undelegations that have exceeded the retention delay.
+// EndBlockerUnbondSupplier unbonds suppliers that have finished the unbonding period.
 func (k Keeper) EndBlockerUnbondSupplier(ctx sdk.Context) error {
 	currentHeight := ctx.BlockHeight()
 	sharedParams := k.sharedKeeper.GetParams(ctx)
@@ -23,6 +22,8 @@ func (k Keeper) EndBlockerUnbondSupplier(ctx sdk.Context) error {
 	logger := k.Logger().With("method", "UnbondSupplier")
 
 	// Iterate over all suppliers and unbond suppliers that have finished the unbonding period.
+	// TODO_IMPROVE: Use an index to iterate over suppliers that have initiated the
+	// unbonding action instead of iterating over all suppliers.
 	for _, supplier := range k.GetAllSuppliers(ctx) {
 		// Ignore suppliers that have not initiated the unbonding action.
 		if supplier.UnbondingHeight == 0 {
