@@ -26,7 +26,7 @@ func (k msgServer) CreateClaim(
 		numComputeUnits uint64
 	)
 
-	// Defer telemetry calls so that they reference the final values the relevant variables.
+	// Defer telemetry calls so that they reference the 	final values the relevant variables.
 	defer func() {
 		// Only increment these metrics counters if handling a new claim.
 		if !isExistingClaim {
