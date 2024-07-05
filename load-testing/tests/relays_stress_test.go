@@ -409,11 +409,7 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 	// Fund all the provisioned suppliers and gateways since their addresses are
 	// known and they are not created on the fly, while funding only the initially
 	// created applications.
-<<<<<<< HEAD
-	fundedSuppliers, fundedGateways, fundedApplications := s.sendFundAvailableActorsTx(s.plans)
-=======
 	fundedSuppliers, fundedGateways, fundedApplications := s.sendFundAvailableActorsTx()
->>>>>>> main
 	// Funding messages are sent in a single transaction by the funding account,
 	// only one transaction is expected to be committed.
 	txResults := s.waitForTxsToBeCommitted()
