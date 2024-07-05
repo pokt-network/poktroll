@@ -5,8 +5,7 @@ import (
 	"math/bits"
 )
 
-// CountHashDifficultyBits returns the number of leading zero bits in the given byte
-// slice. It returns an error if the byte slice is all zero bits.
+// CountHashDifficultyBits returns the number of leading zero bits in the given byte slice.
 func CountHashDifficultyBits(bz [32]byte) int {
 	// Using BigEndian for contiguous bit/byte ordering such leading zeros
 	// accumulate across adjacent bytes.
