@@ -48,6 +48,9 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 			return nil, err
 		}
 		logger.Info(fmt.Sprintf("Supplier is going to escrow an additional %+v coins", coinsToEscrow))
+
+		// If the supplier has initiated the unstake action, reset the unbonding height
+		supplier.UnbondingHeight = 0
 	}
 
 	// Must always stake or upstake (> 0 delta)

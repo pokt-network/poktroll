@@ -338,6 +338,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		logger,
 		authority.String(),
 		bankKeeper,
+		sharedKeeper,
 	)
 	supplierModule := supplier.NewAppModule(
 		cdc,

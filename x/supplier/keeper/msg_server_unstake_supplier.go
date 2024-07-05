@@ -7,6 +7,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/telemetry"
+	"github.com/pokt-network/poktroll/x/shared"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
@@ -37,24 +39,36 @@ func (k msgServer) UnstakeSupplier(
 	}
 	logger.Info(fmt.Sprintf("Supplier found. Unstaking supplier for address %s", msg.Address))
 
-	// Retrieve the address of the supplier
-	supplierAddress, err := sdk.AccAddressFromBech32(msg.Address)
-	if err != nil {
-		logger.Error(fmt.Sprintf("could not parse address %s", msg.Address))
-		return nil, err
+	// Check if the supplier has already initiated the unstake action and is in the unbonding period
+	if supplier.UnbondingHeight > 0 {
+		logger.Warn(fmt.Sprintf("Supplier %s has not finished the unbonding period", msg.Address))
+		return nil, types.ErrSupplierUnbonding
 	}
 
-	// Send the coins from the supplier pool back to the supplier
-	err = k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, supplierAddress, []sdk.Coin{*supplier.Stake})
-	if err != nil {
-		logger.Error(fmt.Sprintf("could not send %v coins from %s module to %s account due to %v", supplier.Stake, supplierAddress, types.ModuleName, err))
-		return nil, err
-	}
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	currentHeight := sdkCtx.BlockHeight()
+	sharedParams := k.sharedKeeper.GetParams(ctx)
 
-	// Update the Supplier in the store
-	k.RemoveSupplier(ctx, supplierAddress.String())
-	logger.Info(fmt.Sprintf("Successfully removed the supplier: %+v", supplier))
+	supplier.UnbondingHeight = GetSupplierUnbondingHeight(&sharedParams, currentHeight)
+	k.SetSupplier(ctx, supplier)
 
 	isSuccessful = true
 	return &types.MsgUnstakeSupplierResponse{}, nil
+}
+
+// GetSupplierUnbondingHeight returns the height at which the supplier will be able to withdraw
+// the staked coins after the unbonding period.
+func GetSupplierUnbondingHeight(sharedParams *sharedtypes.Params, currentHeight int64) int64 {
+	sessionEndHeight := shared.GetSessionEndHeight(sharedParams, currentHeight)
+
+	// TODO_IN_THIS_PR: Make the unbonding period a governance parameter.
+	unbondingPeriodInBlocks := int64(sharedParams.GetNumBlocksPerSession())
+
+	// Unbonding period has a minimum duration of 1 session, which means that if
+	// the current height is prior to the end of the session, the unbonding height
+	// will be set to the end of the session that is after the current session.
+	// This is to avoid the case where a supplier is able to withdraw after 1 block,
+	// if it unstakes right before the end of the current session.
+	return sessionEndHeight + unbondingPeriodInBlocks
+
 }

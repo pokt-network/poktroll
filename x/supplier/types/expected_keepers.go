@@ -6,6 +6,8 @@ import (
 	"context"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // AccountKeeper defines the expected interface for the Account module.
@@ -18,4 +20,10 @@ type AccountKeeper interface {
 type BankKeeper interface {
 	SendCoinsFromAccountToModule(ctx context.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error
 	SendCoinsFromModuleToAccount(ctx context.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error
+}
+
+// SharedKeeper defines the expected interface needed to retrieve shared information.
+type SharedKeeper interface {
+	GetParams(ctx context.Context) sharedtypes.Params
+	GetSessionEndHeight(ctx context.Context, queryHeight int64) int64
 }
