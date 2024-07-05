@@ -407,12 +407,10 @@ func (plan *actorLoadTestIncrementPlan) blocksToFinalIncrementEnd() int64 {
 // & gateways but only funds new applications as they can't be delegated to until after the respective
 // gateway stake tx has been committed. It receives at the same frequency as committed blocks (i.e. 1:1)
 // but only sends conditionally as described here.
-func (s *relaysSuite) mapSessionInfoWhenStakingNewSuppliersAndGatewaysFn(
-	plans *actorLoadTestIncrementPlans,
-) channel.MapFn[*sessionInfoNotif, *stakingInfoNotif] {
-	appsPlan := plans.apps
-	gatewaysPlan := plans.gateways
-	suppliersPlan := plans.suppliers
+func (s *relaysSuite) mapSessionInfoWhenStakingNewSuppliersAndGatewaysFn() channel.MapFn[*sessionInfoNotif, *stakingInfoNotif] {
+	appsPlan := s.plans.apps
+	gatewaysPlan := s.plans.gateways
+	suppliersPlan := s.plans.suppliers
 
 	// Check if any new actors need to be staked **for use in the next session**
 	// and send the appropriate stake transactions if so.
@@ -490,9 +488,7 @@ func (s *relaysSuite) mapStakingInfoWhenStakingAndDelegatingNewApps(
 
 // sendFundAvailableActorsTx uses the funding account to generate bank.SendMsg
 // messages and sends a unique transaction to fund the initial actors.
-func (s *relaysSuite) sendFundAvailableActorsTx(
-	plans *actorLoadTestIncrementPlans,
-) (suppliers, gateways, applications []*accountInfo) {
+func (s *relaysSuite) sendFundAvailableActorsTx() (suppliers, gateways, applications []*accountInfo) {
 	// Send all the funding account's pending messages in a single transaction.
 	// This is done to avoid sending multiple transactions to fund the initial actors.
 	// pendingMsgs is reset after the transaction is sent.
@@ -521,7 +517,7 @@ func (s *relaysSuite) sendFundAvailableActorsTx(
 	// Fund accounts for **all** suppliers that will be used over the duration of the test.
 	suppliersAdded := int64(0)
 	for _, supplierAddress := range s.availableSupplierAddresses {
-		if suppliersAdded >= plans.suppliers.maxActorCount {
+		if suppliersAdded >= s.plans.suppliers.maxActorCount {
 			break
 		}
 
@@ -537,7 +533,7 @@ func (s *relaysSuite) sendFundAvailableActorsTx(
 	// Fund accounts for **all** gateways that will be used over the duration of the test.
 	gatewaysAdded := int64(0)
 	for _, gatewayAddress := range s.availableGatewayAddresses {
-		if gatewaysAdded >= plans.gateways.maxActorCount {
+		if gatewaysAdded >= s.plans.gateways.maxActorCount {
 			break
 		}
 		gateway := s.addActor(gatewayAddress, gatewayStakeAmount)
@@ -1467,12 +1463,10 @@ func (s *relaysSuite) logAndAbortTest(txResults []*types.TxResult, errorMsg stri
 // populateWithKnownApplications creates a list of gateways based on the gatewayUrls
 // provided in the test manifest. It is used in non-ephemeral chain tests where the
 // gateways are not under the test's control and are expected to be already staked.
-func (s *relaysSuite) populateWithKnownGateways(
-	plans *actorLoadTestIncrementPlans,
-) (gateways []*accountInfo) {
+func (s *relaysSuite) populateWithKnownGateways() (gateways []*accountInfo) {
 	s.gatewayInitialCount = int64(len(s.gatewayUrls))
-	plans.gateways.maxActorCount = s.gatewayInitialCount
-	plans.gateways.initialActorCount = s.gatewayInitialCount
+	s.plans.gateways.maxActorCount = s.gatewayInitialCount
+	s.plans.gateways.initialActorCount = s.gatewayInitialCount
 	for gwAddress := range s.gatewayUrls {
 		gateway := &accountInfo{
 			address: gwAddress,
