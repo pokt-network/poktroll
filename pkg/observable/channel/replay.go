@@ -130,7 +130,7 @@ func (ro *replayObservable[V]) Subscribe(ctx context.Context) observable.Observe
 //
 // After this range of the replay buffer is notified, the observer continues to be notified,
 // in real-time, when the publishCh channel receives a new value.
-// 
+//
 // If offset is greater than replayBufferSize or the number of elements it currently contains,
 // the observer is notified of all elements in the replayBuffer, starting from the beginning.
 //
