@@ -324,14 +324,19 @@ func (rs *relayerSessionsManager) waitForBlock(ctx context.Context, targetHeight
 	committedBlocksObserver := committedBlocksObs.Subscribe(ctx)
 
 	// minNumReplayBlocks is the number of blocks that MUST be in the block client's
-	// replay buffer such that the target block can be observed. Plus one is necessary
-	// for the "oldest" boundary to include targetHeight. If minNumReplayBlocks is negative,
-	// no replay is necessary and the replay buffer will be ignored.
+	// replay buffer such that the target block can be observed.
+	//
+	// Plus one is necessary for the "oldest" boundary to include targetHeight.
+	//
+	// If minNumReplayBlocks is negative, no replay is necessary and the replay buffer will be ignored.
 	minNumReplayBlocks := rs.blockClient.LastBlock(ctx).Height() - targetHeight + 1
 
 	// TODO_MAINNET: If the replay buffer size is less than minNumReplayBlocks, the target
 	// block targetHeight will never be observed. This can happen if a relayminer is cold-started
-	// with persisted but unclaimed/unproven ("late") sessions. In this case, we should use
+	// with persisted but unclaimed/unproven ("late") sessions, where a "late" session is one
+	// which is unclaimed and whose earliest claim commit height has already elapsed.
+	//
+	// In this case, we should use
 	// a block query client to populate the block client replay observable at the time of
 	// block client construction. The latestBufferedOffset would be the difference between
 	// the current height and earliest unclaimed/unproven session's earliest supplier claim/proof
@@ -341,7 +346,6 @@ func (rs *relayerSessionsManager) waitForBlock(ctx context.Context, targetHeight
 	}
 
 	for block := range committedBlocksObserver.Ch() {
-		//fmt.Printf(">>> block: %d\n", block.Height())
 		if block.Height() >= targetHeight {
 			return block
 		}

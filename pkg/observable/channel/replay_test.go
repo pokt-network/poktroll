@@ -316,7 +316,7 @@ func TestReplayObservable_SubscribeFromLatestBufferedOffset(t *testing.T) {
 			name:            "endOffset = replayBufferCap",
 			replayBufferCap: 8,
 			endOffset:       8,
-			expectedValues:  values[2:], // []int{2, 3, 4, 5, ...},
+			expectedValues:  values[2:], // []int{2, 3, 4, 5, ..., 9},
 		},
 		{
 			name:            "endOffset < replayBufferCap",
@@ -331,7 +331,7 @@ func TestReplayObservable_SubscribeFromLatestBufferedOffset(t *testing.T) {
 			expectedValues:  values[2:],
 		},
 		{
-			name:            "replayBufferCap < eldOffset < numBufferedValues ",
+			name:            "replayBufferCap > endOffset > numBufferedValues ",
 			replayBufferCap: 20,
 			endOffset:       15,
 			expectedValues:  values,

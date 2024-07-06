@@ -101,23 +101,21 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 	relayerSessionsManager.Start(ctx)
 
 	// Wait a tick to allow the relayer sessions manager to start.
-	time.Sleep(50 * time.Millisecond)
+	waitSimulateIO()
 
 	// Publish a mined relay to the minedRelaysPublishCh to insert into the session tree.
 	minedRelay := testrelayer.NewUnsignedMinedRelay(t, activeSession, supplierAddress)
 	minedRelaysPublishCh <- minedRelay
 
-	// Wait a tick to allow the relayer sessions manager to process asynchronously.
-	// It should have created a session tree for the relay.
-	time.Sleep(50 * time.Millisecond)
+	// The relayerSessionsManager should have created a session tree for the relay.
+	waitSimulateIO()
 
 	// Publish a block to the blockPublishCh to simulate non-actionable blocks.
 	sessionStartHeight := sessionHeader.GetSessionStartBlockHeight()
 	noopBlock := testblock.NewAnyTimesBlock(t, emptyBlockHash, sessionStartHeight)
 	blockPublishCh <- noopBlock
 
-	// Wait a tick to allow the relayer sessions manager to process asynchronously.
-	time.Sleep(50 * time.Millisecond)
+	waitSimulateIO()
 
 	// Calculate the session grace period end block height to emit that block height
 	// to the blockPublishCh to trigger claim creation for the session.
@@ -134,15 +132,13 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 	claimOpenHeightBlock := testblock.NewAnyTimesBlock(t, emptyBlockHash, claimWindowOpenHeight)
 	blockPublishCh <- claimOpenHeightBlock
 
-	// Wait a tick to allow the relayer sessions manager to process asynchronously.
-	time.Sleep(50 * time.Millisecond)
+	waitSimulateIO()
 
 	// Publish a block to the blockPublishCh to trigger claim creation for the session.
 	triggerClaimBlock := testblock.NewAnyTimesBlock(t, emptyBlockHash, earliestSupplierClaimCommitHeight)
 	blockPublishCh <- triggerClaimBlock
 
-	// Wait a tick to allow the relayer sessions manager to process asynchronously.
-	time.Sleep(50 * time.Millisecond)
+	waitSimulateIO()
 
 	// TODO_IMPROVE: ensure correctness of persisted session trees here.
 
@@ -150,8 +146,7 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 	proofPathSeedBlock := testblock.NewAnyTimesBlock(t, emptyBlockHash, proofWindowOpenHeight)
 	blockPublishCh <- proofPathSeedBlock
 
-	// Wait a tick to allow the relayer sessions manager to process asynchronously.
-	time.Sleep(50 * time.Millisecond)
+	waitSimulateIO()
 
 	// Publish a block to the blockPublishCh to trigger proof submission for the session.
 	earliestSupplierProofCommitHeight := shared.GetEarliestSupplierProofCommitHeight(
@@ -163,6 +158,12 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 	triggerProofBlock := testblock.NewAnyTimesBlock(t, emptyBlockHash, earliestSupplierProofCommitHeight)
 	blockPublishCh <- triggerProofBlock
 
-	// Wait a tick to allow the relayer sessions manager to process asynchronously.
-	time.Sleep(100 * time.Millisecond)
+	waitSimulateIO()
+}
+
+// waitSimulateIO sleeps for a bit to allow the relayer sessions manager to
+// process asynchronously. This effectively simulates I/O delays which would
+// normally be present.
+func waitSimulateIO() {
+	time.Sleep(50 * time.Millisecond)
 }
