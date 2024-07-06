@@ -187,14 +187,15 @@ func setupRelayerDependencies(
 
 	supplierFuncs := []config.SupplierFn{
 		config.NewSupplyLoggerFromCtx(ctx),
-		config.NewSupplyEventsQueryClientFn(queryNodeRPCUrl),   // leaf
-		config.NewSupplyBlockQueryClientFn(queryNodeRPCUrl),    // leaf
-		config.NewSupplyBlockClientFn(queryNodeRPCUrl),         // leaf
-		config.NewSupplyQueryClientContextFn(queryNodeGRPCUrl), // leaf
-		supplyMiner, // leaf
+		config.NewSupplyEventsQueryClientFn(queryNodeRPCUrl),              // leaf
+		config.NewSupplyBlockQueryClientFn(queryNodeRPCUrl),               // leaf
+		config.NewSupplyBlockClientFn(queryNodeRPCUrl),                    // leaf
+		config.NewSupplyQueryClientContextFn(queryNodeGRPCUrl),            // leaf
 		config.NewSupplyTxClientContextFn(queryNodeGRPCUrl, txNodeRPCUrl), // leaf
 		config.NewSupplyDelegationClientFn(),                              // leaf
 		config.NewSupplySharedQueryClientFn(),                             // leaf
+		config.NewSupplyProofQueryClientFn(),
+		supplyMiner,
 		config.NewSupplyAccountQuerierFn(),
 		config.NewSupplyApplicationQuerierFn(),
 		config.NewSupplySupplierQuerierFn(),
@@ -217,7 +218,7 @@ func supplyMiner(
 	deps depinject.Config,
 	_ *cobra.Command,
 ) (depinject.Config, error) {
-	mnr, err := miner.NewMiner()
+	mnr, err := miner.NewMiner(deps)
 	if err != nil {
 		return nil, err
 	}
