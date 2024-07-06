@@ -126,13 +126,15 @@ func (ro *replayObservable[V]) Subscribe(ctx context.Context) observable.Observe
 }
 
 // SubscribeFromLatestBufferedOffset returns an observer which is initially notified of
-// values in the replay buffer, starting from the latest buffered value index - offset.
+// values in the replay buffer, starting from the latest buffered value at index 'offset'.
+//
 // After this range of the replay buffer is notified, the observer continues to be notified,
-// in real-time, when the publishCh channel receives a value. It also returns the current
-// replayBufferCap. If offset is greater than replayBufferCap or the number of elements it
-// currently contains, the observer is notified of all elements in the replayBuffer,
-// starting from the beginning. Passing 0 for offset is equivalent to calling
-// Subscribe() on a non-replay observable.
+// in real-time, when the publishCh channel receives a new value.
+//
+// If offset is greater than replayBufferCap or the number of elements it currently contains,
+// the observer is notified of all elements in the replayBuffer, starting from the beginning.
+//
+// Passing 0 for offset is equivalent to calling Subscribe() on a non-replay observable.
 func (ro *replayObservable[V]) SubscribeFromLatestBufferedOffset(
 	ctx context.Context,
 	endOffset int,
