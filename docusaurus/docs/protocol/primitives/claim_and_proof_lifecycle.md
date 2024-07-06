@@ -136,9 +136,10 @@ rewards for the work done.
 
 Claims MUST expire (and therefore the proof window MUST close) for the following reasons:
 
-1. The mint & burn associated with a given claim's settlement MUST occur while the application stake is still locked and applications must be allowed complete unstaking in finite time.
+1. The mint & burn associated with a given claim's settlement MUST occur while the application stake is still locked and applications must be allowed to complete unstaking in finite time.
 1. Claim settlement SHOULD be limited to considering claims created within a rolling window of blocks to decouple settlement from a long-tail accumulation of unsettled claims.
 1. Proofs MUST be pruned to prevent network state bloat over time. Pruning proofs makes the number of proofs in network state at any given time a function of recent relay demand.
+
 ## Session
 
 A session is a necessary pre-requisite for the `Claim & Proof` lifecycle to work.
