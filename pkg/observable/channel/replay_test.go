@@ -63,12 +63,12 @@ func TestReplayObservable_Overflow(t *testing.T) {
 
 func TestReplayObservable(t *testing.T) {
 	var (
-		replayBufferSize = 3
-		values           = []int{1, 2, 3, 4, 5}
+		replayBufferCap = 3
+		values          = []int{1, 2, 3, 4, 5}
 		// the replay buffer is full and has shifted out values with index <
 		// len(values)-replayBufferCap so Last should return values starting
 		// from there.
-		expectedValues = values[len(values)-replayBufferSize:]
+		expectedValues = values[len(values)-replayBufferCap:]
 		errCh          = make(chan error, 1)
 		ctx, cancel    = context.WithCancel(context.Background())
 	)
@@ -77,7 +77,7 @@ func TestReplayObservable(t *testing.T) {
 	// NB: intentionally not using NewReplayObservable() to test ToReplayObservable() directly
 	// and to retain a reference to the wrapped observable for testing.
 	obsvbl, publishCh := channel.NewObservable[int]()
-	replayObsvbl := channel.ToReplayObservable[int](ctx, replayBufferSize, obsvbl)
+	replayObsvbl := channel.ToReplayObservable[int](ctx, replayBufferCap, obsvbl)
 
 	// vanilla observer, should be able to receive all values published after subscribing
 	observer := obsvbl.Subscribe(ctx)
@@ -150,30 +150,30 @@ func TestReplayObservable_Last_Full_ReplayBuffer(t *testing.T) {
 	slices.Reverse(expectedValues)
 
 	tests := []struct {
-		name             string
-		replayBufferSize int
+		name            string
+		replayBufferCap int
 		// lastN is the number of values to return from the replay buffer
 		lastN          int
 		expectedValues []int
 	}{
 		{
-			name:             "n < replayBufferCap",
-			replayBufferSize: 5,
-			lastN:            3,
+			name:            "n < replayBufferCap",
+			replayBufferCap: 5,
+			lastN:           3,
 			// the replay buffer has enough values to return to Last, it should return
 			// the last n values in the replay buffer.
 			expectedValues: values[2:], // []int{5, 4, 3},
 		},
 		{
-			name:             "n = replayBufferCap",
-			replayBufferSize: 5,
-			lastN:            5,
-			expectedValues:   values,
+			name:            "n = replayBufferCap",
+			replayBufferCap: 5,
+			lastN:           5,
+			expectedValues:  values,
 		},
 		{
-			name:             "n > replayBufferCap",
-			replayBufferSize: 3,
-			lastN:            5,
+			name:            "n > replayBufferCap",
+			replayBufferCap: 3,
+			lastN:           5,
 			// the replay buffer is full so Last should return values starting
 			// from lastN - replayBufferCap.
 			expectedValues: values[2:], // []int{5, 4, 3},
@@ -185,7 +185,7 @@ func TestReplayObservable_Last_Full_ReplayBuffer(t *testing.T) {
 			var ctx = context.Background()
 
 			replayObsvbl, publishCh :=
-				channel.NewReplayObservable[int](ctx, test.replayBufferSize)
+				channel.NewReplayObservable[int](ctx, test.replayBufferCap)
 
 			for _, value := range values {
 				publishCh <- value
@@ -200,8 +200,8 @@ func TestReplayObservable_Last_Full_ReplayBuffer(t *testing.T) {
 
 func TestReplayObservable_Last_Blocks_And_Times_Out(t *testing.T) {
 	var (
-		replayBufferSize = 5
-		lastN            = 5
+		replayBufferCap = 5
+		lastN           = 5
 		// splitIdx is the index at which this test splits the set of values.
 		// The two groups of values are published at different points in the
 		// test to test the behavior of Last under different conditions.
@@ -210,7 +210,7 @@ func TestReplayObservable_Last_Blocks_And_Times_Out(t *testing.T) {
 		ctx      = context.Background()
 	)
 
-	replayObsvbl, publishCh := channel.NewReplayObservable[int](ctx, replayBufferSize)
+	replayObsvbl, publishCh := channel.NewReplayObservable[int](ctx, replayBufferCap)
 
 	// getLastValues is a helper function which returns a channel that will
 	// receive the result of a call to Last, the method under test.
@@ -307,34 +307,34 @@ func TestReplayObservable_SubscribeFromLatestBufferedOffset(t *testing.T) {
 	values := []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 
 	tests := []struct {
-		name             string
-		replayBufferSize int
-		endOffset        int
-		expectedValues   []int
+		name            string
+		replayBufferCap int
+		endOffset       int
+		expectedValues  []int
 	}{
 		{
-			name:             "endOffset = replayBufferCap",
-			replayBufferSize: 8,
-			endOffset:        8,
-			expectedValues:   values[2:], // []int{2, 3, 4, 5, ...},
+			name:            "endOffset = replayBufferCap",
+			replayBufferCap: 8,
+			endOffset:       8,
+			expectedValues:  values[2:], // []int{2, 3, 4, 5, ...},
 		},
 		{
-			name:             "endOffset < replayBufferCap",
-			replayBufferSize: 10,
-			endOffset:        2,
-			expectedValues:   values[8:], // []int{8, 9},
+			name:            "endOffset < replayBufferCap",
+			replayBufferCap: 10,
+			endOffset:       2,
+			expectedValues:  values[8:], // []int{8, 9},
 		},
 		{
-			name:             "endOffset > replayBufferCap",
-			replayBufferSize: 8,
-			endOffset:        10,
-			expectedValues:   values[2:],
+			name:            "endOffset > replayBufferCap",
+			replayBufferCap: 8,
+			endOffset:       10,
+			expectedValues:  values[2:],
 		},
 		{
-			name:             "replayBufferCap < eldOffset < numBufferedValues ",
-			replayBufferSize: 20,
-			endOffset:        15,
-			expectedValues:   values,
+			name:            "replayBufferCap < eldOffset < numBufferedValues ",
+			replayBufferCap: 20,
+			endOffset:       15,
+			expectedValues:  values,
 		},
 	}
 
@@ -343,7 +343,7 @@ func TestReplayObservable_SubscribeFromLatestBufferedOffset(t *testing.T) {
 			var ctx = context.Background()
 
 			replayObsvbl, publishCh :=
-				channel.NewReplayObservable[int](ctx, test.replayBufferSize)
+				channel.NewReplayObservable[int](ctx, test.replayBufferCap)
 
 			for _, value := range values {
 				publishCh <- value

@@ -32,12 +32,12 @@ type replayObservable[V any] struct {
 // replayBufferCap and the corresponding publish channel to notify it of new values.
 func NewReplayObservable[V any](
 	ctx context.Context,
-	replayBufferSize int,
+	replayBufferCap int,
 	opts ...option[V],
 ) (observable.ReplayObservable[V], chan<- V) {
 	obsvbl, publishCh := NewObservable[V](opts...)
 
-	return ToReplayObservable(ctx, replayBufferSize, obsvbl), publishCh
+	return ToReplayObservable(ctx, replayBufferCap, obsvbl), publishCh
 }
 
 // ToReplayObservable returns an observable which replays the last replayBufferCap

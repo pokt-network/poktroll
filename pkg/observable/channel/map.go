@@ -68,11 +68,11 @@ func MapExpand[S, D any](
 // number of values published to the source observable before receiving new values.
 func MapReplay[S, D any](
 	ctx context.Context,
-	replayBufferSize int,
+	replayBufferCap int,
 	srcObservable observable.Observable[S],
 	transformFn MapFn[S, D],
 ) observable.ReplayObservable[D] {
-	dstObservable, dstProducer := NewReplayObservable[D](ctx, replayBufferSize)
+	dstObservable, dstProducer := NewReplayObservable[D](ctx, replayBufferCap)
 	srcObserver := srcObservable.Subscribe(ctx)
 
 	go goMapTransformNotification(
