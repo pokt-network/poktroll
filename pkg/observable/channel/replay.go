@@ -174,6 +174,7 @@ func (ro *replayObservable[V]) UnsubscribeAll() {
 	ro.bufferingObsvbl.UnsubscribeAll()
 }
 
+// GetReplayBufferSize returns the number of elements currently in the replay buffer.
 func (ro *replayObservable[V]) GetReplayBufferSize() int {
 	ro.replayBufferMu.RLock()
 	defer ro.replayBufferMu.RUnlock()
