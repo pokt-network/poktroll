@@ -69,13 +69,13 @@ type TokenomicsKeepersOpt func(context.Context, *TokenomicsModuleKeepers) contex
 
 func TokenomicsKeeper(t testing.TB) (tokenomicsKeeper tokenomicskeeper.Keeper, ctx context.Context) {
 	t.Helper()
-	k, ctx, _, _ := TokenomicsKeeperWithActorAddrs(t)
+	k, ctx, _, _ := TokenomicsKeeperWithActorAddrs(t, nil)
 	return k, ctx
 }
 
 // TODO_TECHDEBT: Have the callers use the keepers to find `appAddr` and `supplierAddr`
 // rather than returning them explicitly.
-func TokenomicsKeeperWithActorAddrs(t testing.TB) (
+func TokenomicsKeeperWithActorAddrs(t testing.TB, service *sharedtypes.Service) (
 	tokenomicsKeeper tokenomicskeeper.Keeper,
 	ctx context.Context,
 	appAddr string,
@@ -101,6 +101,14 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 	application := apptypes.Application{
 		Address: sample.AccAddress(),
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100000)},
+	}
+
+	if service != nil {
+		application.ServiceConfigs = []*sharedtypes.ApplicationServiceConfig{
+			{
+				Service: service,
+			},
+		}
 	}
 
 	// Prepare the test supplier.

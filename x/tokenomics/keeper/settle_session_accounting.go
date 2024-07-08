@@ -92,10 +92,31 @@ func (k Keeper) SettleSessionAccounting(
 		return types.ErrTokenomicsApplicationNotFound
 	}
 
-	logger.Info(fmt.Sprintf("About to start settling claim for %d compute units", claimComputeUnits))
+	serviceConfigs := application.ServiceConfigs
+	if len(serviceConfigs) == 0 {
+		logger.Warn(fmt.Sprintf("application with address %q has no service configs", applicationAddress))
+		return types.ErrTokenomicsApplicationNoServiceConfigs
+	}
+
+	var computeUnitsPerRelay uint64
+	for i, sc := range serviceConfigs {
+		service := sc.GetService()
+		if service.Id == sessionHeader.Service.Id {
+			computeUnitsPerRelay = service.ComputeUnitsPerRelay
+			break
+		}
+		if i == len(serviceConfigs)-1 {
+			logger.Warn(fmt.Sprintf("service with ID %q not found in application with address %q", sessionHeader.Service.Id, applicationAddress))
+			return types.ErrTokenomicsApplicationNoServiceConfigs
+		}
+	}
+
+	computeUnitsToTokensMultiplier := k.GetParams(ctx).ComputeUnitsToTokensMultiplier
+
+	logger.Info(fmt.Sprintf("About to start settling claim for %d compute units with CUPR %d and CUTTM %d", claimComputeUnits, computeUnitsPerRelay, computeUnitsToTokensMultiplier))
 
 	// Calculate the amount of tokens to mint & burn
-	settlementAmt = k.computeUnitsToCoins(ctx, root, sessionHeader.Service.ComputeUnitsPerRelay)
+	settlementAmt = k.relayCountToCoin(claimComputeUnits, computeUnitsPerRelay, computeUnitsToTokensMultiplier)
 	settlementAmtuPOKT := sdk.NewCoins(settlementAmt)
 
 	logger.Info(fmt.Sprintf(
@@ -176,12 +197,8 @@ func (k Keeper) SettleSessionAccounting(
 	return nil
 }
 
-// computeUnitsToCoins calculates the amount of uPOKT to mint based on the root sum (number of relays), the ComputeUnitsPerTokenMultiplier tokenomics param, and the service-specific ComputeUnitsPerRelay
-func (k Keeper) computeUnitsToCoins(ctx context.Context, root smt.MerkleRoot, computeUnitsPerRelay uint64) sdk.Coin {
-	// Retrieve the existing tokenomics params
-	params := k.GetParams(ctx)
-
-	claimedComputeUnits := root.Sum()
-	upokt := math.NewInt(int64(claimedComputeUnits * computeUnitsPerRelay * params.ComputeUnitsToTokensMultiplier))
+// relayCountToCoin calculates the amount of uPOKT to mint based on the number of relays, the service-specific ComputeUnitsPerRelay, and the ComputeUnitsPerTokenMultiplier tokenomics param
+func (k Keeper) relayCountToCoin(relays uint64, computeUnitsPerRelay uint64, computeUnitsToTokensMultiplier uint64) sdk.Coin {
+	upokt := math.NewInt(int64(relays * computeUnitsPerRelay * computeUnitsToTokensMultiplier))
 	return sdk.NewCoin("upokt", upokt)
 }

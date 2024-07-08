@@ -16,16 +16,18 @@ import (
 
 // BaseClaim returns a base (default, example, etc..) claim with the given app
 // address, supplier address, and sum that can be used for testing.
-func BaseClaim(appAddr, supplierAddr string, sum uint64) prooftypes.Claim {
+// The service ID is optional and defaults to "svc1" if not provided.
+func BaseClaim(appAddr, supplierAddr string, sum uint64, serviceId string) prooftypes.Claim {
+	if serviceId == "" {
+		serviceId = "svc11"
+	}
 	return prooftypes.Claim{
 		SupplierAddress: supplierAddr,
 		SessionHeader: &sessiontypes.SessionHeader{
 			ApplicationAddress: appAddr,
-			Service: sharedtypes.NewService(
-				"svc1",
-				"svcName1",
-				1,
-			),
+			Service: &sharedtypes.Service{
+				Id: serviceId,
+			},
 			SessionId:               "session_id",
 			SessionStartBlockHeight: 1,
 			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
@@ -39,7 +41,7 @@ func BaseClaim(appAddr, supplierAddr string, sum uint64) prooftypes.Claim {
 // generated this way will have a random chance to require a proof via probabilistic
 // selection.
 func ClaimWithRandomHash(t *testing.T, appAddr, supplierAddr string, sum uint64) prooftypes.Claim {
-	claim := BaseClaim(appAddr, supplierAddr, sum)
+	claim := BaseClaim(appAddr, supplierAddr, sum, "")
 	claim.RootHash = RandSmstRootWithSum(t, sum)
 	return claim
 }
