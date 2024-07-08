@@ -6,13 +6,13 @@ import (
 	"cosmossdk.io/depinject"
 
 	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/observable/filter"
 	"github.com/pokt-network/poktroll/pkg/observable/logging"
 	"github.com/pokt-network/poktroll/pkg/relayer"
-	"github.com/pokt-network/poktroll/pkg/relayer/protocol"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 )
 
@@ -112,11 +112,10 @@ func (mnr *miner) mapMineRelay(
 	if err != nil {
 		return either.Error[*relayer.MinedRelay](err), false
 	}
-	relayHashArr := servicetypes.GetHashFromBytes(relayBz)
-	relayHash := relayHashArr[:]
+	relayHash := servicetypes.GetHashFromBytes(relayBz)
 
 	// The relay IS NOT volume / reward applicable
-	if uint64(protocol.MustCountDifficultyBits(relayHash)) < mnr.relayDifficultyBits {
+	if uint64(protocol.CountHashDifficultyBits(relayHash)) < mnr.relayDifficultyBits {
 		return either.Success[*relayer.MinedRelay](nil), true
 	}
 
@@ -124,6 +123,6 @@ func (mnr *miner) mapMineRelay(
 	return either.Success(&relayer.MinedRelay{
 		Relay: *relay,
 		Bytes: relayBz,
-		Hash:  relayHash,
+		Hash:  relayHash[:],
 	}), false
 }
