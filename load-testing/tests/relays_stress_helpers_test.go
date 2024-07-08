@@ -213,7 +213,7 @@ func (s *relaysSuite) mapSessionInfoForLoadTestDurationFn(
 		// If the test duration is reached, stop sending requests
 		sendRelaysEndHeight := s.testStartHeight + s.relayLoadDurationBlocks
 		if blockHeight >= sendRelaysEndHeight {
-			testEndHeight := s.testStartHeight + s.testDurationBlocks
+			testEndHeight := s.testStartHeight + s.plans.totalDurationBlocks(s.sharedParams, blockHeight)
 
 			remainingRelayLoadBlocks := blockHeight - sendRelaysEndHeight
 			waitForSettlementBlocks := testEndHeight - sendRelaysEndHeight
@@ -372,16 +372,16 @@ func (plans *actorLoadTestIncrementPlans) validateMaxAmounts(t gocuke.TestingT) 
 // totalDurationBlocks returns the number of blocks which will have elapsed when the
 // proof corresponding to the session in which the maxActorCount for the given actor
 // has been committed.
-func (plans *actorLoadTestIncrementPlans) totalDurationBlocks(sharedParams *sharedtypes.Params) int64 {
+func (plans *actorLoadTestIncrementPlans) totalDurationBlocks(
+	sharedParams *sharedtypes.Params,
+	currentHeight int64,
+) int64 {
 	// The last block of the last session SHOULD align with the last block of the
 	// last increment duration (i.e. **after** maxActorCount actors are activated).
-	blocksToLastSessionEnd := plans.maxActorBlocksToFinalIncrementEnd()
+	blocksToFinalSessionEnd := plans.maxActorBlocksToFinalIncrementEnd()
+	finalSessionEndHeight := shared.GetSessionEndHeight(sharedParams, currentHeight+blocksToFinalSessionEnd)
 
-	blocksToLastProofWindowEnd := blocksToLastSessionEnd + shared.SessionGracePeriodBlocks
-
-	// Add one session length so that the duration is inclusive of the block which
-	// commits the last session's proof.
-	return blocksToLastProofWindowEnd + int64(sharedParams.GetNumBlocksPerSession())
+	return shared.GetProofWindowCloseHeight(sharedParams, finalSessionEndHeight) - currentHeight
 }
 
 // blocksToFinalIncrementStart returns the number of blocks that will have
@@ -407,12 +407,10 @@ func (plan *actorLoadTestIncrementPlan) blocksToFinalIncrementEnd() int64 {
 // & gateways but only funds new applications as they can't be delegated to until after the respective
 // gateway stake tx has been committed. It receives at the same frequency as committed blocks (i.e. 1:1)
 // but only sends conditionally as described here.
-func (s *relaysSuite) mapSessionInfoWhenStakingNewSuppliersAndGatewaysFn(
-	plans *actorLoadTestIncrementPlans,
-) channel.MapFn[*sessionInfoNotif, *stakingInfoNotif] {
-	appsPlan := plans.apps
-	gatewaysPlan := plans.gateways
-	suppliersPlan := plans.suppliers
+func (s *relaysSuite) mapSessionInfoWhenStakingNewSuppliersAndGatewaysFn() channel.MapFn[*sessionInfoNotif, *stakingInfoNotif] {
+	appsPlan := s.plans.apps
+	gatewaysPlan := s.plans.gateways
+	suppliersPlan := s.plans.suppliers
 
 	// Check if any new actors need to be staked **for use in the next session**
 	// and send the appropriate stake transactions if so.
@@ -490,9 +488,7 @@ func (s *relaysSuite) mapStakingInfoWhenStakingAndDelegatingNewApps(
 
 // sendFundAvailableActorsTx uses the funding account to generate bank.SendMsg
 // messages and sends a unique transaction to fund the initial actors.
-func (s *relaysSuite) sendFundAvailableActorsTx(
-	plans *actorLoadTestIncrementPlans,
-) (suppliers, gateways, applications []*accountInfo) {
+func (s *relaysSuite) sendFundAvailableActorsTx() (suppliers, gateways, applications []*accountInfo) {
 	// Send all the funding account's pending messages in a single transaction.
 	// This is done to avoid sending multiple transactions to fund the initial actors.
 	// pendingMsgs is reset after the transaction is sent.
@@ -521,7 +517,7 @@ func (s *relaysSuite) sendFundAvailableActorsTx(
 	// Fund accounts for **all** suppliers that will be used over the duration of the test.
 	suppliersAdded := int64(0)
 	for _, supplierAddress := range s.availableSupplierAddresses {
-		if suppliersAdded >= plans.suppliers.maxActorCount {
+		if suppliersAdded >= s.plans.suppliers.maxActorCount {
 			break
 		}
 
@@ -537,7 +533,7 @@ func (s *relaysSuite) sendFundAvailableActorsTx(
 	// Fund accounts for **all** gateways that will be used over the duration of the test.
 	gatewaysAdded := int64(0)
 	for _, gatewayAddress := range s.availableGatewayAddresses {
-		if gatewaysAdded >= plans.gateways.maxActorCount {
+		if gatewaysAdded >= s.plans.gateways.maxActorCount {
 			break
 		}
 		gateway := s.addActor(gatewayAddress, gatewayStakeAmount)
@@ -1362,10 +1358,15 @@ func (s *relaysSuite) countClaimAndProofs() {
 
 // querySharedParams queries the current on-chain shared module parameters for use
 // over the duration of the test.
-func (s *relaysSuite) querySharedParams() {
+func (s *relaysSuite) querySharedParams(queryNodeRPCURL string) {
 	s.Helper()
 
 	deps := depinject.Supply(s.txContext.GetClientCtx())
+
+	blockQueryClient, err := sdkclient.NewClientFromNode(queryNodeRPCURL)
+	require.NoError(s, err)
+	deps = depinject.Configs(deps, depinject.Supply(blockQueryClient))
+
 	sharedQueryClient, err := query.NewSharedQuerier(deps)
 	require.NoError(s, err)
 
@@ -1462,12 +1463,10 @@ func (s *relaysSuite) logAndAbortTest(txResults []*types.TxResult, errorMsg stri
 // populateWithKnownApplications creates a list of gateways based on the gatewayUrls
 // provided in the test manifest. It is used in non-ephemeral chain tests where the
 // gateways are not under the test's control and are expected to be already staked.
-func (s *relaysSuite) populateWithKnownGateways(
-	plans *actorLoadTestIncrementPlans,
-) (gateways []*accountInfo) {
+func (s *relaysSuite) populateWithKnownGateways() (gateways []*accountInfo) {
 	s.gatewayInitialCount = int64(len(s.gatewayUrls))
-	plans.gateways.maxActorCount = s.gatewayInitialCount
-	plans.gateways.initialActorCount = s.gatewayInitialCount
+	s.plans.gateways.maxActorCount = s.gatewayInitialCount
+	s.plans.gateways.initialActorCount = s.gatewayInitialCount
 	for gwAddress := range s.gatewayUrls {
 		gateway := &accountInfo{
 			address: gwAddress,

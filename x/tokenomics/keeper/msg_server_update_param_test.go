@@ -7,6 +7,7 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/stretchr/testify/require"
 
+	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
@@ -32,4 +33,7 @@ func TestMsgUpdateParam_UpdateMinRelayDifficultyBitsOnly(t *testing.T) {
 
 	// Ensure the new values are set correctly
 	require.Equal(t, uint64(expectedComputeUnitsToTokensMultiplier), res.Params.ComputeUnitsToTokensMultiplier)
+
+	// Ensure the other parameters are unchanged
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, "ComputeUnitsToTokensMultiplier")
 }

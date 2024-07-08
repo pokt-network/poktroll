@@ -8,19 +8,22 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
-	"errors"
 	"fmt"
 	"hash"
 
+	cosmoscryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/gogoproto/proto"
 	"github.com/pokt-network/smt"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/pokt-network/poktroll/pkg/relayer/protocol"
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/proof/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // SMT specification used for the proof verification.
@@ -60,20 +63,25 @@ func (k msgServer) SubmitProof(
 	logger.Info("About to start submitting proof")
 
 	// Declare claim to reference in telemetry.
-	claim := new(types.Claim)
+	var (
+		claim           = new(types.Claim)
+		isExistingProof bool
+		numRelays       uint64
+		numComputeUnits uint64
+	)
 
 	// Defer telemetry calls so that they reference the final values the relevant variables.
 	defer func() {
-		// TODO_IMPROVE: We could track on-chain relays here with claim.GetNumRelays().
-		numComputeUnits, deferredErr := claim.GetNumComputeUnits()
-		err = errors.Join(err, deferredErr)
-
-		telemetry.ClaimCounter(telemetry.ClaimProofStageProven, 1, err)
-		telemetry.ClaimComputeUnitsCounter(
-			telemetry.ClaimProofStageProven,
-			numComputeUnits,
-			err,
-		)
+		// Only increment these metrics counters if handling a new claim.
+		if !isExistingProof {
+			// TODO_IMPROVE: We could track on-chain relays here with claim.GetNumRelays().
+			telemetry.ClaimCounter(types.ClaimProofStage_PROVEN, 1, err)
+			telemetry.ClaimComputeUnitsCounter(
+				types.ClaimProofStage_PROVEN,
+				numComputeUnits,
+				err,
+			)
+		}
 	}()
 
 	/*
@@ -116,19 +124,21 @@ func (k msgServer) SubmitProof(
 		"supplier", supplierAddr)
 
 	// Basic validation of the SubmitProof message.
-	if err := msg.ValidateBasic(); err != nil {
+	if err = msg.ValidateBasic(); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 	logger.Info("validated the submitProof message ")
 
 	// Retrieve the supplier's public key.
-	supplierPubKey, err := k.accountQuerier.GetPubKeyFromAddress(ctx, supplierAddr)
+	var supplierPubKey cosmoscryptotypes.PubKey
+	supplierPubKey, err = k.accountQuerier.GetPubKeyFromAddress(ctx, supplierAddr)
 	if err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 
 	// Validate the session header.
-	onChainSession, err := k.queryAndValidateSessionHeader(ctx, msg)
+	var onChainSession *sessiontypes.Session
+	onChainSession, err = k.queryAndValidateSessionHeader(ctx, msg)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -141,13 +151,13 @@ func (k msgServer) SubmitProof(
 
 	// Validate proof message commit height is within the respective session's
 	// proof submission window using the on-chain session header.
-	if err := k.validateProofWindow(ctx, msg); err != nil {
+	if err = k.validateProofWindow(ctx, msg); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 
 	// Unmarshal the closest merkle proof from the message.
 	sparseMerkleClosestProof := &smt.SparseMerkleClosestProof{}
-	if err := sparseMerkleClosestProof.Unmarshal(msg.GetProof()); err != nil {
+	if err = sparseMerkleClosestProof.Unmarshal(msg.GetProof()); err != nil {
 		return nil, status.Error(codes.InvalidArgument,
 			types.ErrProofInvalidProof.Wrapf(
 				"failed to unmarshal closest merkle proof: %s",
@@ -161,7 +171,7 @@ func (k msgServer) SubmitProof(
 	// Get the relay request and response from the proof.GetClosestMerkleProof.
 	relayBz := sparseMerkleClosestProof.GetValueHash(&SmtSpec)
 	relay := &servicetypes.Relay{}
-	if err := k.cdc.Unmarshal(relayBz, relay); err != nil {
+	if err = k.cdc.Unmarshal(relayBz, relay); err != nil {
 		return nil, status.Error(
 			codes.InvalidArgument,
 			types.ErrProofInvalidRelay.Wrapf(
@@ -173,7 +183,7 @@ func (k msgServer) SubmitProof(
 
 	// Basic validation of the relay request.
 	relayReq := relay.GetReq()
-	if err := relayReq.ValidateBasic(); err != nil {
+	if err = relayReq.ValidateBasic(); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 	logger.Debug("successfully validated relay request")
@@ -186,32 +196,32 @@ func (k msgServer) SubmitProof(
 
 	// Basic validation of the relay response.
 	relayRes := relay.GetRes()
-	if err := relayRes.ValidateBasic(); err != nil {
+	if err = relayRes.ValidateBasic(); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 	logger.Debug("successfully validated relay response")
 
 	// Verify that the relay request session header matches the proof session header.
-	if err := compareSessionHeaders(msg.GetSessionHeader(), relayReq.Meta.GetSessionHeader()); err != nil {
+	if err = compareSessionHeaders(msg.GetSessionHeader(), relayReq.Meta.GetSessionHeader()); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 	logger.Debug("successfully compared relay request session header")
 
 	// Verify that the relay response session header matches the proof session header.
-	if err := compareSessionHeaders(msg.GetSessionHeader(), relayRes.Meta.GetSessionHeader()); err != nil {
+	if err = compareSessionHeaders(msg.GetSessionHeader(), relayRes.Meta.GetSessionHeader()); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 	logger.Debug("successfully compared relay response session header")
 
 	// Verify the relay request's signature.
 	// TODO_BLOCKER(@red-0ne): Fetch the correct ring for the session this relay is from.
-	if err := k.ringClient.VerifyRelayRequestSignature(ctx, relayReq); err != nil {
+	if err = k.ringClient.VerifyRelayRequestSignature(ctx, relayReq); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 	logger.Debug("successfully verified relay request signature")
 
 	// Verify the relay response's signature.
-	if err := relayRes.VerifySupplierSignature(supplierPubKey); err != nil {
+	if err = relayRes.VerifySupplierSignature(supplierPubKey); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 	logger.Debug("successfully verified relay response signature")
@@ -220,20 +230,25 @@ func (k msgServer) SubmitProof(
 	params := k.GetParams(ctx)
 
 	// Verify the relay difficulty is above the minimum required to earn rewards.
-	if err := validateMiningDifficulty(relayBz, params.MinRelayDifficultyBits); err != nil {
+	if err = validateMiningDifficulty(relayBz, params.MinRelayDifficultyBits); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 	logger.Debug("successfully validated relay mining difficulty")
 
 	// Validate that path the proof is submitted for matches the expected one
 	// based on the pseudo-random on-chain data associated with the header.
-	if err := k.validateClosestPath(ctx, sparseMerkleClosestProof, msg.GetSessionHeader()); err != nil {
+	if err = k.validateClosestPath(
+		ctx,
+		sparseMerkleClosestProof,
+		msg.GetSessionHeader(),
+		msg.GetSupplierAddress(),
+	); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 	logger.Debug("successfully validated proof path")
 
 	// Verify the relay's difficulty.
-	if err := validateMiningDifficulty(relayBz, params.MinRelayDifficultyBits); err != nil {
+	if err = validateMiningDifficulty(relayBz, params.MinRelayDifficultyBits); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 
@@ -247,7 +262,7 @@ func (k msgServer) SubmitProof(
 	logger.Debug("successfully retrieved and validated claim")
 
 	// Verify the proof's closest merkle proof.
-	if err := verifyClosestProof(sparseMerkleClosestProof, claim.GetRootHash()); err != nil {
+	if err = verifyClosestProof(sparseMerkleClosestProof, claim.GetRootHash()); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 	logger.Debug("successfully verified closest merkle proof")
@@ -260,13 +275,58 @@ func (k msgServer) SubmitProof(
 	}
 	logger.Debug(fmt.Sprintf("queried and validated the claim for session ID %q", sessionHeader.SessionId))
 
-	// TODO_BLOCKER(@Olshansk): check if this proof already exists and return an
-	// appropriate error in any case where the supplier should no longer be able
-	// to update the given proof.
+	_, isExistingProof = k.GetProof(ctx, proof.GetSessionHeader().GetSessionId(), proof.GetSupplierAddress())
+
 	k.UpsertProof(ctx, proof)
 	logger.Info("successfully upserted the proof")
 
-	return &types.MsgSubmitProofResponse{}, nil
+	numRelays, err = claim.GetNumRelays()
+	if err != nil {
+		return nil, status.Error(codes.Internal, types.ErrProofInvalidClaimRootHash.Wrap(err.Error()).Error())
+	}
+	numComputeUnits, err = claim.GetNumComputeUnits()
+	if err != nil {
+		return nil, status.Error(codes.Internal, types.ErrProofInvalidClaimRootHash.Wrap(err.Error()).Error())
+	}
+
+	// Emit the appropriate event based on whether the claim was created or updated.
+	var proofUpsertEvent proto.Message
+	switch isExistingProof {
+	case true:
+		proofUpsertEvent = proto.Message(
+			&types.EventProofUpdated{
+				Claim:           claim,
+				Proof:           &proof,
+				NumRelays:       numRelays,
+				NumComputeUnits: numComputeUnits,
+			},
+		)
+	case false:
+		proofUpsertEvent = proto.Message(
+			&types.EventProofSubmitted{
+				Claim:           claim,
+				Proof:           &proof,
+				NumRelays:       numRelays,
+				NumComputeUnits: numComputeUnits,
+			},
+		)
+	}
+
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	if err = sdkCtx.EventManager().EmitTypedEvent(proofUpsertEvent); err != nil {
+		return nil, status.Error(
+			codes.Internal,
+			sharedtypes.ErrSharedEmitEvent.Wrapf(
+				"failed to emit event type %T: %v",
+				proofUpsertEvent,
+				err,
+			).Error(),
+		)
+	}
+
+	return &types.MsgSubmitProofResponse{
+		Proof: &proof,
+	}, nil
 }
 
 // queryAndValidateClaimForProof ensures that a claim corresponding to the given
@@ -416,14 +476,7 @@ func verifyClosestProof(
 // function that can be used by both the proof and the miner packages.
 func validateMiningDifficulty(relayBz []byte, minRelayDifficultyBits uint64) error {
 	relayHash := servicetypes.GetHashFromBytes(relayBz)
-
-	relayDifficultyBits, err := protocol.CountHashDifficultyBits(relayHash[:])
-	if err != nil {
-		return types.ErrProofInvalidRelay.Wrapf(
-			"error counting difficulty bits: %s",
-			err,
-		)
-	}
+	relayDifficultyBits := protocol.CountHashDifficultyBits(relayHash)
 
 	// TODO_MAINNET: Devise a test that tries to attack the network and ensure that there
 	// is sufficient telemetry.
@@ -446,6 +499,7 @@ func (k msgServer) validateClosestPath(
 	ctx context.Context,
 	proof *smt.SparseMerkleClosestProof,
 	sessionHeader *sessiontypes.SessionHeader,
+	supplierAddr string,
 ) error {
 	// The RelayMiner has to wait until the submit claim and proof windows is are open
 	// in order to to create the claim and submit claims and proofs, respectively.
@@ -460,19 +514,23 @@ func (k msgServer) validateClosestPath(
 	//
 	// Since smt.ProveClosest is defined in terms of proof window open height,
 	// this block's hash needs to be used for validation too.
-	proofWindowOpenHeight, err := k.sharedQuerier.GetProofWindowOpenHeight(ctx, sessionHeader.GetSessionEndBlockHeight())
+	earliestSupplierProofCommitHeight, err := k.sharedQuerier.GetEarliestSupplierProofCommitHeight(
+		ctx,
+		sessionHeader.GetSessionEndBlockHeight(),
+		supplierAddr,
+	)
 	if err != nil {
 		return err
 	}
 
-	// proofWindowOpenHeight - 1 is the block that will have its hash used as the
+	// earliestSupplierProofCommitHeight - 1 is the block that will have its hash used as the
 	// source of entropy for all the session trees in that batch, waiting for it to
 	// be received before proceeding.
-	proofPathSeedBlockHash := k.sessionKeeper.GetBlockHash(ctx, proofWindowOpenHeight-1)
+	proofPathSeedBlockHash := k.sessionKeeper.GetBlockHash(ctx, earliestSupplierProofCommitHeight-1)
 
 	// TODO_BETA: Investigate "proof for the path provided does not match one expected by the on-chain protocol"
 	// error that may occur due to block height differing from the off-chain part.
-	k.logger.Info("E2E_DEBUG: height for block hash when verifying the proof", proofWindowOpenHeight, sessionHeader.GetSessionId())
+	k.logger.Info("E2E_DEBUG: height for block hash when verifying the proof", earliestSupplierProofCommitHeight, sessionHeader.GetSessionId())
 
 	expectedProofPath := GetPathForProof(proofPathSeedBlockHash, sessionHeader.GetSessionId())
 	if !bytes.Equal(proof.Path, expectedProofPath) {

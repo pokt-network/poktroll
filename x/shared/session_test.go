@@ -13,7 +13,7 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-func TestGetEarliestClaimCommitHeight_IsDeterministic(t *testing.T) {
+func TestGetEarliestSupplierClaimCommitHeight_IsDeterministic(t *testing.T) {
 	var (
 		sharedParams = sharedtypes.DefaultParams()
 		ctx, cancel  = context.WithCancel(context.Background())
@@ -76,7 +76,7 @@ func TestGetEarliestClaimCommitHeight_IsDeterministic(t *testing.T) {
 	cancel()
 }
 
-func TestGetEarliestProofCommitHeight_IsDeterministic(t *testing.T) {
+func TestGetEarliestSupplierProofCommitHeight_IsDeterministic(t *testing.T) {
 	var (
 		sharedParams = sharedtypes.DefaultParams()
 		ctx, cancel  = context.WithCancel(context.Background())

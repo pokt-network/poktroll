@@ -10,6 +10,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/filter"
 	"github.com/pokt-network/poktroll/pkg/observable/logging"
 	"github.com/pokt-network/poktroll/pkg/relayer"
+	"github.com/pokt-network/poktroll/x/shared"
 )
 
 // createClaims maps over the sessionsToClaimObs observable. For each claim batch, it:
@@ -91,11 +92,18 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 
 	logger := rs.logger.With("session_end_height", sessionEndHeight)
 
-	claimWindowOpenHeight, err := rs.sharedQueryClient.GetClaimWindowOpenHeight(ctx, sessionEndHeight)
+	// TODO_TECHDEBT(#543): We don't really want to have to query the params for every method call.
+	// Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
+	// to get the most recently (asynchronously) observed (and cached) value.
+	// TODO_BLOCKER(@bryanchriswhite,#543): We also don't really want to use the current value of the params. Instead,
+	// we should be using the value that the params had for the session which includes queryHeight.
+	sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
 	if err != nil {
 		failedCreateClaimsSessionsCh <- sessionTrees
 		return nil
 	}
+
+	claimWindowOpenHeight := shared.GetClaimWindowOpenHeight(sharedParams, sessionEndHeight)
 
 	// we wait for claimWindowOpenHeight to be received before proceeding since we need its hash
 	// to know where this servicer's claim submission window opens.
@@ -118,19 +126,20 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 	logger = logger.With("claim_window_open_block_hash", fmt.Sprintf("%x", claimsWindowOpenBlock.Hash()))
 	logger.Info().Msg("observed earliest claim commit height offset seed block height")
 
-	// Get the earliestClaimsCommitHeight.
+	// Get the earliest claim commit height for this supplier.
 	supplierAddr := sessionTrees[0].GetSupplierAddress().String()
-	earliestClaimsCommitHeight, err := rs.sharedQueryClient.GetEarliestSupplierClaimCommitHeight(ctx, sessionEndHeight, supplierAddr)
-	if err != nil {
-		failedCreateClaimsSessionsCh <- sessionTrees
-		return nil
-	}
+	earliestSupplierClaimsCommitHeight := shared.GetEarliestSupplierClaimCommitHeight(
+		sharedParams,
+		sessionEndHeight,
+		claimsWindowOpenBlock.Hash(),
+		supplierAddr,
+	)
 
-	logger = logger.With("earliest_claim_commit_height", earliestClaimsCommitHeight)
+	logger = logger.With("earliest_claim_commit_height", earliestSupplierClaimsCommitHeight)
 	logger.Info().Msg("waiting & blocking until the earliest claim commit height for this supplier")
 
-	// Wait for the earliestClaimsCommitHeight to be reached before proceeding.
-	_ = rs.waitForBlock(ctx, earliestClaimsCommitHeight)
+	// Wait for the earliestSupplierClaimsCommitHeight to be reached before proceeding.
+	_ = rs.waitForBlock(ctx, earliestSupplierClaimsCommitHeight)
 
 	logger.Info().Msg("observed earliest claim commit height")
 

@@ -7,7 +7,7 @@ import (
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 )
 
-// IsProofRequiredForClaim wraps the unexported isProofRequiredForClaim function for testing purposes.
-func (k Keeper) IsProofRequiredForClaim(ctx cosmostypes.Context, claim *prooftypes.Claim) (bool, error) {
-	return k.isProofRequiredForClaim(ctx, claim)
+// ProofRequirementForClaim wraps the unexported proofRequirementForClaim function for testing purposes.
+func (k Keeper) ProofRequirementForClaim(ctx cosmostypes.Context, claim *prooftypes.Claim) (prooftypes.ProofRequirementReason, error) {
+	return k.proofRequirementForClaim(ctx, claim)
 }

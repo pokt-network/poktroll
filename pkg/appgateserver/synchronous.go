@@ -43,13 +43,12 @@ func (app *appGateServer) handleSynchronousRelay(
 	}
 
 	// Get a supplier URL and address for the given service and session.
-	endpoints := sessionSuppliers.SuppliersEndpoints
-	supplierEndpoint, err := app.getRelayerUrl(serviceId, rpcType, endpoints, poktRequest.Url)
+	supplierEndpoint, err := app.getRelayerUrl(rpcType, *sessionSuppliers, poktRequest.Url)
 	if err != nil {
 		return ErrAppGateHandleRelay.Wrapf("getting supplier URL: %s", err)
 	}
 
-	relayResponse, err := app.sdk.SendRelay(ctx, supplierEndpoint, requestBz)
+	relayResponse, err := app.sdk.SendRelay(ctx, appAddress, supplierEndpoint, requestBz)
 	// If the relayResponse is nil, it means that err is not nil and the error
 	// should be handled by the appGateServer.
 	if relayResponse == nil {

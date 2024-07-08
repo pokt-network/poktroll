@@ -4,7 +4,7 @@ import (
 	"net/url"
 	"strconv"
 
-	sdktypes "github.com/pokt-network/shannon-sdk/types"
+	shannonsdk "github.com/pokt-network/shannon-sdk"
 
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -15,28 +15,35 @@ import (
 // optimizations (i.e. quality of service implementations) are left as an exercise
 // to gateways.
 func (app *appGateServer) getRelayerUrl(
-	serviceId string,
 	rpcType sharedtypes.RPCType,
-	supplierEndpoints []*sdktypes.SingleSupplierEndpoint,
+	sessionFilter shannonsdk.SessionFilter,
 	requestUrlStr string,
-) (supplierEndpoint *sdktypes.SingleSupplierEndpoint, err error) {
+) (supplierEndpoint shannonsdk.Endpoint, err error) {
+	// AppGateServer uses the custom getRelayerUrl instead of leveraging the SDK's
+	// filter to select the next endpoint to use.
+	// This is because it needs to maintain the state of the last selected endpoint
+	// and have a view on the original request URL to determine the next endpoint.
+	// This behavior is specific to the AppGateServer and needed by clients that
+	// need to instrument the endpoint selection strategy, such as the Load testing tool.
+	endpoints, err := sessionFilter.AllEndpoints()
+	if err != nil {
+		return nil, err
+	}
+
 	// Filter out the supplier endpoints that match the requested serviceId.
-	validSupplierEndpoints := make([]*sdktypes.SingleSupplierEndpoint, 0, len(supplierEndpoints))
+	matchingRPCTypeEndpoints := []shannonsdk.Endpoint{}
 
-	for _, supplierEndpoint := range supplierEndpoints {
-		// Skip services that don't match the requested serviceId.
-		if supplierEndpoint.SessionHeader.Service.Id != serviceId {
-			continue
-		}
-
-		// Collect the endpoints that match the request's RpcType.
-		if supplierEndpoint.RpcType == rpcType {
-			validSupplierEndpoints = append(validSupplierEndpoints, supplierEndpoint)
+	for _, supplierEndpoints := range endpoints {
+		for _, supplierEndpoint := range supplierEndpoints {
+			// Collect the endpoints that match the request's RpcType.
+			if supplierEndpoint.Endpoint().RpcType == rpcType {
+				matchingRPCTypeEndpoints = append(matchingRPCTypeEndpoints, supplierEndpoint)
+			}
 		}
 	}
 
 	// Return an error if no relayer endpoints were found.
-	if len(validSupplierEndpoints) == 0 {
+	if len(matchingRPCTypeEndpoints) == 0 {
 		return nil, ErrAppGateNoRelayEndpoints
 	}
 
@@ -67,11 +74,11 @@ func (app *appGateServer) getRelayerUrl(
 		if err != nil {
 			relayCountNum = 0
 		}
-		nextEndpointIdx = relayCountNum % len(validSupplierEndpoints)
+		nextEndpointIdx = relayCountNum % len(matchingRPCTypeEndpoints)
 	} else {
-		app.endpointSelectionIndex = (app.endpointSelectionIndex + 1) % len(validSupplierEndpoints)
+		app.endpointSelectionIndex = (app.endpointSelectionIndex + 1) % len(matchingRPCTypeEndpoints)
 		nextEndpointIdx = app.endpointSelectionIndex
 	}
 
-	return validSupplierEndpoints[nextEndpointIdx], nil
+	return matchingRPCTypeEndpoints[nextEndpointIdx], nil
 }

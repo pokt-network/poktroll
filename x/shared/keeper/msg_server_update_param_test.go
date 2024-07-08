@@ -9,14 +9,14 @@ import (
 
 	"github.com/pokt-network/poktroll/x/shared/keeper"
 
-	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
+	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func TestMsgUpdateParam_UpdateNumBlocksPerSession(t *testing.T) {
 	var expectedNumBlocksPerSession int64 = 8
 
-	k, ctx := keepertest.SharedKeeper(t)
+	k, ctx := testkeeper.SharedKeeper(t)
 	msgSrv := keeper.NewMsgServerImpl(k)
 
 	// Set the parameters to their default values
@@ -38,13 +38,13 @@ func TestMsgUpdateParam_UpdateNumBlocksPerSession(t *testing.T) {
 	require.Equal(t, uint64(expectedNumBlocksPerSession), res.Params.NumBlocksPerSession)
 
 	// Ensure the other parameters are unchanged
-	require.Equal(t, defaultParams.ClaimWindowOpenOffsetBlocks, res.Params.ClaimWindowOpenOffsetBlocks)
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, "NumBlocksPerSession")
 }
 
 func TestMsgUpdateParam_UpdateClaimWindowOpenOffsetBlocks(t *testing.T) {
 	var expectedClaimWindowOpenOffestBlocks int64 = 4
 
-	k, ctx := keepertest.SharedKeeper(t)
+	k, ctx := testkeeper.SharedKeeper(t)
 	msgSrv := keeper.NewMsgServerImpl(k)
 
 	// Set the parameters to their default values
@@ -66,13 +66,13 @@ func TestMsgUpdateParam_UpdateClaimWindowOpenOffsetBlocks(t *testing.T) {
 	require.Equal(t, uint64(expectedClaimWindowOpenOffestBlocks), res.Params.ClaimWindowOpenOffsetBlocks)
 
 	// Ensure the other parameters are unchanged
-	require.Equal(t, defaultParams.NumBlocksPerSession, res.Params.NumBlocksPerSession)
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, "ClaimWindowOpenOffsetBlocks")
 }
 
 func TestMsgUpdateParam_UpdateClaimWindowCloseOffsetBlocks(t *testing.T) {
 	var expectedClaimWindowCloseOffestBlocks int64 = 8
 
-	k, ctx := keepertest.SharedKeeper(t)
+	k, ctx := testkeeper.SharedKeeper(t)
 	msgSrv := keeper.NewMsgServerImpl(k)
 
 	// Set the parameters to their default values
@@ -94,13 +94,13 @@ func TestMsgUpdateParam_UpdateClaimWindowCloseOffsetBlocks(t *testing.T) {
 	require.Equal(t, uint64(expectedClaimWindowCloseOffestBlocks), res.Params.ClaimWindowCloseOffsetBlocks)
 
 	// Ensure the other parameters are unchanged
-	require.Equal(t, defaultParams.NumBlocksPerSession, res.Params.NumBlocksPerSession)
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, "ClaimWindowCloseOffsetBlocks")
 }
 
 func TestMsgUpdateParam_UpdateProofWindowOpenOffsetBlocks(t *testing.T) {
 	var expectedProofWindowOpenOffestBlocks int64 = 8
 
-	k, ctx := keepertest.SharedKeeper(t)
+	k, ctx := testkeeper.SharedKeeper(t)
 	msgSrv := keeper.NewMsgServerImpl(k)
 
 	// Set the parameters to their default values
@@ -122,13 +122,13 @@ func TestMsgUpdateParam_UpdateProofWindowOpenOffsetBlocks(t *testing.T) {
 	require.Equal(t, uint64(expectedProofWindowOpenOffestBlocks), res.Params.ProofWindowOpenOffsetBlocks)
 
 	// Ensure the other parameters are unchanged
-	require.Equal(t, defaultParams.NumBlocksPerSession, res.Params.NumBlocksPerSession)
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, "ProofWindowOpenOffsetBlocks")
 }
 
 func TestMsgUpdateParam_UpdateProofWindowCloseOffsetBlocks(t *testing.T) {
 	var expectedProofWindowCloseOffestBlocks int64 = 8
 
-	k, ctx := keepertest.SharedKeeper(t)
+	k, ctx := testkeeper.SharedKeeper(t)
 	msgSrv := keeper.NewMsgServerImpl(k)
 
 	// Set the parameters to their default values
@@ -150,5 +150,33 @@ func TestMsgUpdateParam_UpdateProofWindowCloseOffsetBlocks(t *testing.T) {
 	require.Equal(t, uint64(expectedProofWindowCloseOffestBlocks), res.Params.ProofWindowCloseOffsetBlocks)
 
 	// Ensure the other parameters are unchanged
-	require.Equal(t, defaultParams.NumBlocksPerSession, res.Params.NumBlocksPerSession)
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, "ProofWindowCloseOffsetBlocks")
+}
+
+func TestMsgUpdateParam_UpdateGracePeriodEndOffsetBlocks(t *testing.T) {
+	var expectedGracePeriodEndOffestBlocks int64 = 8
+
+	k, ctx := testkeeper.SharedKeeper(t)
+	msgSrv := keeper.NewMsgServerImpl(k)
+
+	// Set the parameters to their default values
+	defaultParams := sharedtypes.DefaultParams()
+	require.NoError(t, k.SetParams(ctx, defaultParams))
+
+	// Ensure the default values are different from the new values we want to set
+	require.NotEqual(t, uint64(expectedGracePeriodEndOffestBlocks), defaultParams.GetGracePeriodEndOffsetBlocks())
+
+	// Update the proof window close offset blocks param
+	updateParamMsg := &sharedtypes.MsgUpdateParam{
+		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+		Name:      sharedtypes.ParamGracePeriodEndOffsetBlocks,
+		AsType:    &sharedtypes.MsgUpdateParam_AsInt64{AsInt64: expectedGracePeriodEndOffestBlocks},
+	}
+	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
+	require.NoError(t, err)
+
+	require.Equal(t, uint64(expectedGracePeriodEndOffestBlocks), res.Params.GetGracePeriodEndOffsetBlocks())
+
+	// Ensure the other parameters are unchanged
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, "GracePeriodEndOffsetBlocks")
 }

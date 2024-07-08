@@ -92,6 +92,8 @@ func (sq *sharedQuerier) GetProofWindowOpenHeight(ctx context.Context, queryHeig
 
 // GetSessionGracePeriodEndHeight returns the block height at which the grace period
 // for the session which includes queryHeight elapses.
+// The grace period is the number of blocks after the session ends during which relays
+// SHOULD be included in the session which most recently ended.
 //
 // TODO_TECHDEBT(#543): We don't really want to have to query the params for every method call.
 // Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
@@ -109,7 +111,7 @@ func (sq *sharedQuerier) GetSessionGracePeriodEndHeight(
 	return shared.GetSessionGracePeriodEndHeight(sharedParams, queryHeight), nil
 }
 
-// GetEarliestClaimCommitHeight returns the earliest block height at which a claim
+// GetEarliestSupplierClaimCommitHeight returns the earliest block height at which a claim
 // for the session that includes queryHeight can be committed for a given supplier.
 //
 // TODO_TECHDEBT(#543): We don't really want to have to query the params for every method call.
@@ -142,7 +144,7 @@ func (sq *sharedQuerier) GetEarliestSupplierClaimCommitHeight(ctx context.Contex
 	), nil
 }
 
-// GetEarliestProofCommitHeight returns the earliest block height at which a proof
+// GetEarliestSupplierProofCommitHeight returns the earliest block height at which a proof
 // for the session that includes queryHeight can be committed for a given supplier.
 //
 // TODO_TECHDEBT(#543): We don't really want to have to query the params for every method call.

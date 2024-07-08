@@ -318,9 +318,9 @@ func TestMsgServer_UndelegateFromGateway_DelegationIsActiveUntilNextSession(t *t
 
 	// Verify that the gateway is added to the pending undelegation list with the
 	// right sessionEndHeight as the map key.
-	sessionEndHeight := uint64(testsession.GetSessionEndHeightWithDefaultParams(undelegationHeight))
+	sessionEndHeight := testsession.GetSessionEndHeightWithDefaultParams(undelegationHeight)
 	require.Contains(t,
-		app.PendingUndelegations[sessionEndHeight].GatewayAddresses,
+		app.PendingUndelegations[uint64(sessionEndHeight)].GatewayAddresses,
 		pendingUndelegateFromAddr,
 	)
 
@@ -333,7 +333,7 @@ func TestMsgServer_UndelegateFromGateway_DelegationIsActiveUntilNextSession(t *t
 
 	// Increment the block height to the next session and run the pruning
 	// undelegations logic again.
-	nextSessionStartHeight := int64(sessionEndHeight + 1)
+	nextSessionStartHeight := sessionEndHeight + 1
 	sdkCtx = sdkCtx.WithBlockHeight(nextSessionStartHeight)
 	k.EndBlockerPruneAppToGatewayPendingUndelegation(sdkCtx)
 
@@ -349,13 +349,14 @@ func TestMsgServer_UndelegateFromGateway_DelegationIsActiveUntilNextSession(t *t
 
 	// Increment the block height past the tested session's grace period and run
 	// the pruning undelegations logic again.
-	afterSessionGracePeriodHeight := int64(sessionEndHeight + shared.SessionGracePeriodBlocks + 1)
-	sdkCtx = sdkCtx.WithBlockHeight(afterSessionGracePeriodHeight)
+	sharedParams := sharedtypes.DefaultParams()
+	afterSessionGracePeriodEndHeight := shared.GetSessionGracePeriodEndHeight(&sharedParams, sessionEndHeight) + 1
+	sdkCtx = sdkCtx.WithBlockHeight(afterSessionGracePeriodEndHeight)
 	k.EndBlockerPruneAppToGatewayPendingUndelegation(sdkCtx)
 
 	// Verify that when queried for a block height past the tested session's grace period,
 	// the reconstructed delegatee gateway list does not include the undelegated gateway.
-	pastGracePeriodGatewayAddresses := getRingAddressesAtBlockWithDefaultParams(&app, afterSessionGracePeriodHeight)
+	pastGracePeriodGatewayAddresses := getRingAddressesAtBlockWithDefaultParams(&app, afterSessionGracePeriodEndHeight)
 	require.NotContains(t, pastGracePeriodGatewayAddresses, pendingUndelegateFromAddr)
 
 	// Ensure that when queried for the block height corresponding to the session
