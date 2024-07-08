@@ -42,7 +42,8 @@ func TestMsgUpdateParams(t *testing.T) {
 			params: &types.MsgUpdateParams{
 				Authority: k.GetAuthority(),
 				Params: types.Params{
-					ProofMissingPenalty: &types.DefaultProofMissingPenalty,
+					ProofMissingPenalty:       &types.DefaultProofMissingPenalty,
+					RelayDifficultyTargetHash: types.DefaultRelayDifficultyTargetHash,
 				},
 			},
 			shouldError: false,

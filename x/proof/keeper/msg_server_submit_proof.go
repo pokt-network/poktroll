@@ -7,6 +7,7 @@ package keeper
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"fmt"
 
 	cosmoscryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
@@ -207,7 +208,7 @@ func (k msgServer) SubmitProof(
 	params := k.GetParams(ctx)
 
 	// Verify the relay difficulty is above the minimum required to earn rewards.
-	if err = validateMiningDifficulty(relayBz, params.MinRelayDifficultyBits); err != nil {
+	if err = validateRelayDifficulty(relayBz, params.RelayDifficultyTargetHash); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 	logger.Debug("successfully validated relay mining difficulty")
@@ -223,11 +224,6 @@ func (k msgServer) SubmitProof(
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 	logger.Debug("successfully validated proof path")
-
-	// Verify the relay's difficulty.
-	if err = validateMiningDifficulty(relayBz, params.MinRelayDifficultyBits); err != nil {
-		return nil, status.Error(codes.FailedPrecondition, err.Error())
-	}
 
 	// Retrieve the corresponding claim for the proof submitted so it can be
 	// used in the proof validation below.
@@ -447,21 +443,35 @@ func verifyClosestProof(
 	return nil
 }
 
-// validateMiningDifficulty ensures that the relay's mining difficulty meets the
+// validateRelayDifficulty ensures that the relay's mining difficulty meets the
 // required minimum threshold.
 // TODO_TECHDEBT: Factor out the relay mining difficulty validation into a shared
 // function that can be used by both the proof and the miner packages.
-func validateMiningDifficulty(relayBz []byte, minRelayDifficultyBits uint64) error {
-	relayHash := servicetypes.GetHashFromBytes(relayBz)
-	relayDifficultyBits := protocol.CountHashDifficultyBits(relayHash)
+func validateRelayDifficulty(relayBz []byte, targetHash []byte) error {
+	relayHash := protocol.GetHashFromBytes(relayBz)
+
+	if len(targetHash) != sha256.Size {
+		return types.ErrProofInvalidRelay.Wrapf(
+			"invalid RelayDifficultyTargetHash: (%x); length wanted: %d; got: %d",
+			targetHash,
+			32,
+			len(targetHash),
+		)
+	}
+
+	var targetHashArr [sha256.Size]byte
+	copy(targetHashArr[:], targetHash)
 
 	// TODO_MAINNET: Devise a test that tries to attack the network and ensure that there
 	// is sufficient telemetry.
-	if uint64(relayDifficultyBits) < minRelayDifficultyBits {
+	// NB: If relayHash > targetHash, then the difficulty is less than the target difficulty.
+	if bytes.Compare(relayHash[:], targetHash[:]) == 1 {
+		relayDifficulty := protocol.GetDifficultyFromHash(relayHash)
+		targetDifficulty := protocol.GetDifficultyFromHash(targetHashArr)
 		return types.ErrProofInvalidRelay.Wrapf(
-			"relay difficulty %d is less than the minimum difficulty %d",
-			relayDifficultyBits,
-			minRelayDifficultyBits,
+			"relay difficulty %d is less than the target difficulty %d",
+			relayDifficulty,
+			targetDifficulty,
 		)
 	}
 

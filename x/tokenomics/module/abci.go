@@ -1,10 +1,12 @@
 package tokenomics
 
 import (
+	"crypto/sha256"
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/telemetry"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	"github.com/pokt-network/poktroll/x/tokenomics/keeper"
@@ -81,8 +83,11 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) (err error) {
 
 	// Emit telemetry for each service's relay mining difficulty.
 	for serviceId, newDifficulty := range difficultyPerServiceMap {
-		miningDifficultyNumBits := keeper.RelayMiningTargetHashToDifficulty(newDifficulty.TargetHash)
-		telemetry.RelayMiningDifficultyGauge(miningDifficultyNumBits, serviceId)
+		var newTargetHash [sha256.Size]byte
+		copy(newTargetHash[:], newDifficulty.TargetHash)
+
+		difficulty := protocol.GetDifficultyFromHash(newTargetHash)
+		telemetry.RelayMiningDifficultyGauge(difficulty, serviceId)
 		telemetry.RelayEMAGauge(newDifficulty.NumRelaysEma, serviceId)
 	}
 

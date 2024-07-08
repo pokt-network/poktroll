@@ -2,6 +2,8 @@ package keeper_test
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"os"
 	"testing"
 
@@ -44,11 +46,11 @@ var (
 	expectedMerkleProofPath []byte
 
 	// testProofParams sets:
-	//  - the minimum relay difficulty bits to zero so that these tests don't need to mine for valid relays.
+	//  - the relay difficulty target hash to the easiest difficulty so that these tests don't need to mine for valid relays.
 	//  - the proof request probability to 1 so that all test sessions require a proof.
 	testProofParams = prooftypes.Params{
-		MinRelayDifficultyBits:  0,
-		ProofRequestProbability: 1,
+		RelayDifficultyTargetHash: protocol.Difficulty1HashBz,
+		ProofRequestProbability:   1,
 	}
 )
 
@@ -528,7 +530,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 	)
 
 	// Compute the difficulty in bits of the closest relay from the valid session tree.
-	validClosestRelayDifficultyBits := getClosestRelayDifficultyBits(t, validSessionTree, expectedMerkleProofPath)
+	validClosestRelayDifficultyBits := getClosestRelayDifficulty(t, validSessionTree, expectedMerkleProofPath)
 
 	// Copy `emptyBlockHash` to `wrongClosestProofPath` to with a missing byte
 	// so the closest proof is invalid (i.e. unmarshalable).
@@ -564,6 +566,11 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 	wrongClosestProofPath := make([]byte, len(expectedMerkleProofPath))
 	copy(wrongClosestProofPath, expectedMerkleProofPath)
 	copy(wrongClosestProofPath, "wrong closest proof path")
+
+	lowTargetHash, _ := hex.DecodeString("00000000000000000000000000000000000000000000000000000000000000ff")
+	var lowTargetHashArr [sha256.Size]byte
+	copy(lowTargetHashArr[:], lowTargetHash)
+	highExpectedTargetDifficulty := protocol.GetDifficultyFromHash(lowTargetHashArr)
 
 	tests := []struct {
 		desc        string
@@ -1019,7 +1026,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 				// Set the minimum relay difficulty to a non-zero value such that the relays
 				// constructed by the test helpers have a negligable chance of being valid.
 				err = keepers.Keeper.SetParams(ctx, prooftypes.Params{
-					MinRelayDifficultyBits: 10,
+					RelayDifficultyTargetHash: lowTargetHash,
 				})
 				require.NoError(t, err)
 
@@ -1041,9 +1048,9 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			expectedErr: status.Error(
 				codes.FailedPrecondition,
 				prooftypes.ErrProofInvalidRelay.Wrapf(
-					"relay difficulty %d is less than the minimum difficulty %d",
+					"relay difficulty %d is less than the target difficulty %d",
 					validClosestRelayDifficultyBits,
-					10,
+					highExpectedTargetDifficulty,
 				).Error(),
 			),
 		},
@@ -1400,14 +1407,14 @@ func createClaimAndStoreBlockHash(
 	return claimRes.GetClaim()
 }
 
-// getClosestRelayDifficultyBits returns the number of leading 0s (i.e. relay
-// mining difficulty bits) in the relayHash stored in the sessionTree that is
-// is closest to the merkle proof path provided.
-func getClosestRelayDifficultyBits(
+// getClosestRelayDifficulty returns the mining difficulty number which corresponds
+// to the relayHash stored in the sessionTree that is closest to the merkle proof
+// path provided.
+func getClosestRelayDifficulty(
 	t *testing.T,
 	sessionTree relayer.SessionTree,
 	closestMerkleProofPath []byte,
-) uint64 {
+) int64 {
 	// Retrieve a merkle proof that is closest to the path provided
 	closestMerkleProof, err := sessionTree.ProveClosest(closestMerkleProofPath)
 	require.NoError(t, err)
@@ -1422,6 +1429,5 @@ func getClosestRelayDifficultyBits(
 	relayHash, err := relay.GetHash()
 	require.NoError(t, err)
 
-	// Count the number of leading 0s in the relay hash to determine its difficulty.
-	return uint64(protocol.CountHashDifficultyBits(relayHash))
+	return protocol.GetDifficultyFromHash(relayHash)
 }

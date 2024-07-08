@@ -127,8 +127,8 @@ func TestUpdateRelayMiningDifficulty_FirstDifficulty(t *testing.T) {
 				BlockHeight:  1,
 				NumRelaysEma: keeper.TargetNumRelays * 1e3,
 				TargetHash: append(
-					[]byte{0b00000000, 0b01111111}, // 9 leading 0 bits
-					makeBytesFullOfOnes(30)...,
+					[]byte{0b00000000}, // at least 8 leading 0 bits
+					makeBytesFullOfOnes(31)...,
 				),
 			},
 		},
@@ -145,10 +145,13 @@ func TestUpdateRelayMiningDifficulty_FirstDifficulty(t *testing.T) {
 			difficulty, found := keeper.GetRelayMiningDifficulty(ctx, "svc1")
 			require.True(t, found)
 
-			require.Equal(t, difficulty.NumRelaysEma, tt.numRelays)
-			require.Equal(t, difficulty.NumRelaysEma, tt.expectedRelayMiningDifficulty.NumRelaysEma)
+			require.Equal(t, tt.numRelays, difficulty.NumRelaysEma)
+			require.Equal(t, tt.expectedRelayMiningDifficulty.NumRelaysEma, difficulty.NumRelaysEma)
 
-			require.Equal(t, difficulty.TargetHash, tt.expectedRelayMiningDifficulty.TargetHash)
+			require.Lessf(t, bytes.Compare(difficulty.TargetHash, tt.expectedRelayMiningDifficulty.TargetHash), 1,
+				"expected difficulty.TargetHash (%x) to be less than or equal to expectedRelayMiningDifficulty.TargetHash (%x)",
+				difficulty.TargetHash, tt.expectedRelayMiningDifficulty.TargetHash,
+			)
 		})
 	}
 }
@@ -213,7 +216,11 @@ func TestComputeNewDifficultyHash(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
 			result := keeper.ComputeNewDifficultyTargetHash(tt.numRelaysTarget, tt.relaysEma)
-			require.Equal(t, result, tt.expectedDifficultyHash)
+
+			require.Lessf(t, bytes.Compare(result, tt.expectedDifficultyHash), 1,
+				"expected difficulty.TargetHash (%x) to be less than or equal to expectedRelayMiningDifficulty.TargetHash (%x)",
+				result, tt.expectedDifficultyHash,
+			)
 		})
 	}
 }

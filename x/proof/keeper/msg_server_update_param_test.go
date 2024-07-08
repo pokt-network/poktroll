@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"encoding/hex"
 	"testing"
 
 	"cosmossdk.io/math"
@@ -15,7 +16,7 @@ import (
 )
 
 func TestMsgUpdateParam_UpdateMinRelayDifficultyBitsOnly(t *testing.T) {
-	var expectedMinRelayDifficultyBits uint64 = 8
+	expectedRelayDifficultyTargetHash, _ := hex.DecodeString("0000000000000000ffffffffffffffffffffffffffffffffffffffffffffffff")
 
 	// Set the parameters to their default values
 	k, msgSrv, ctx := setupMsgServer(t)
@@ -23,22 +24,22 @@ func TestMsgUpdateParam_UpdateMinRelayDifficultyBitsOnly(t *testing.T) {
 	require.NoError(t, k.SetParams(ctx, defaultParams))
 
 	// Ensure the default values are different from the new values we want to set
-	require.NotEqual(t, expectedMinRelayDifficultyBits, defaultParams.MinRelayDifficultyBits)
+	require.NotEqual(t, expectedRelayDifficultyTargetHash, defaultParams.RelayDifficultyTargetHash)
 
 	// Update the min relay difficulty bits
 	updateParamMsg := &prooftypes.MsgUpdateParam{
 		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		Name:      prooftypes.ParamMinRelayDifficultyBits,
-		AsType:    &prooftypes.MsgUpdateParam_AsInt64{AsInt64: int64(expectedMinRelayDifficultyBits)},
+		Name:      prooftypes.ParamRelayDifficultyTargetHash,
+		AsType:    &prooftypes.MsgUpdateParam_AsBytes{AsBytes: expectedRelayDifficultyTargetHash},
 	}
 	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.NoError(t, err)
 
-	require.NotEqual(t, defaultParams.MinRelayDifficultyBits, res.Params.MinRelayDifficultyBits)
-	require.Equal(t, expectedMinRelayDifficultyBits, res.Params.MinRelayDifficultyBits)
+	require.NotEqual(t, defaultParams.RelayDifficultyTargetHash, res.Params.RelayDifficultyTargetHash)
+	require.Equal(t, expectedRelayDifficultyTargetHash, res.Params.RelayDifficultyTargetHash)
 
 	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, "MinRelayDifficultyBits")
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, "RelayDifficultyTargetHash")
 }
 
 func TestMsgUpdateParam_UpdateProofRequestProbabilityOnly(t *testing.T) {

@@ -5,12 +5,10 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"math"
-	"math/bits"
+	"math/big"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
@@ -56,7 +54,7 @@ func (k Keeper) UpdateRelayMiningDifficulty(
 				ServiceId:    serviceId,
 				BlockHeight:  sdkCtx.BlockHeight(),
 				NumRelaysEma: numRelays,
-				TargetHash:   defaultDifficultyTargetHash(),
+				TargetHash:   prooftypes.DefaultRelayDifficultyTargetHash,
 			}
 		}
 
@@ -123,37 +121,37 @@ func ComputeNewDifficultyTargetHash(targetNumRelays, newRelaysEma uint64) []byte
 	// the actual on-chain relays, so we don't need to scale to anything above
 	// the default.
 	if targetNumRelays > newRelaysEma {
-		return defaultDifficultyTargetHash()
+		return prooftypes.DefaultRelayDifficultyTargetHash
 	}
 
-	log2 := func(x float64) float64 {
-		return math.Log(x) / math.Ln2
-	}
+	// Calculate the proportion of target relays to the new EMA
+	ratio := float64(targetNumRelays) / float64(newRelaysEma)
 
-	// We are dealing with a bitwise binary distribution, and are trying to convert
-	// the proportion of an off-chain relay (i.e. relayEMA) to an
-	// on-chain relay (i.e. target) based on the probability of x leading zeros
-	// in the target hash.
-	//
-	// In other words, the probability of an off-chain relay moving into the tree
-	// should equal (approximately) the probability of having x leading zeroes
-	// in the target hash.
-	//
-	// The construction is as follows:
-	// (0.5)^num_leading_zeroes = (num_target_relay / num_total_relays)
-	// (0.5)^x = (T/R)
-	// 	x = -ln2(T/R)
-	numLeadingZeroBits := int(-log2(float64(targetNumRelays) / float64(newRelaysEma)))
-	numBytes := protocol.SmtSpec.PathHasherSize()
-	return LeadingZeroBitsToTargetDifficultyHash(numLeadingZeroBits, numBytes)
+	// Compute the new target hash by scaling the default target hash based on the ratio
+	newTargetHash := scaleDifficultyTargetHash(prooftypes.DefaultRelayDifficultyTargetHash, ratio)
+
+	return newTargetHash
 }
 
-// defaultDifficultyTargetHash returns the default difficulty target hash with
-// the default number of leading zero bits.
-func defaultDifficultyTargetHash() []byte {
-	numBytes := protocol.SmtSpec.PathHasherSize()
-	numDefaultLeadingZeroBits := int(prooftypes.DefaultMinRelayDifficultyBits)
-	return LeadingZeroBitsToTargetDifficultyHash(numDefaultLeadingZeroBits, numBytes)
+// scaleDifficultyTargetHash scales the default target hash based on the given ratio
+func scaleDifficultyTargetHash(targetHash []byte, ratio float64) []byte {
+	// Convert targetHash to a big.Float to miminize precision loss.
+	targetInt := new(big.Int).SetBytes(targetHash)
+	targetFloat := new(big.Float).SetInt(targetInt)
+
+	// Scale the target by multiplying it by the ratio.
+	scaledTargetFloat := new(big.Float).Mul(targetFloat, big.NewFloat(ratio))
+	scaledTargetInt, _ := scaledTargetFloat.Int(nil)
+	scaledTargetHash := scaledTargetInt.Bytes()
+
+	// Ensure the scaled target hash has the same length as the default target hash.
+	if len(scaledTargetHash) < len(targetHash) {
+		paddedTargetHash := make([]byte, len(targetHash))
+		copy(paddedTargetHash[len(paddedTargetHash)-len(scaledTargetHash):], scaledTargetHash)
+		return paddedTargetHash
+	}
+
+	return scaledTargetHash
 }
 
 // computeEma computes the EMA at time t, given the EMA at time t-1, the raw
@@ -161,25 +159,6 @@ func defaultDifficultyTargetHash() []byte {
 // Src: https://en.wikipedia.org/wiki/Exponential_smoothing
 func computeEma(alpha float64, prevEma, currValue uint64) uint64 {
 	return uint64(alpha*float64(currValue) + (1-alpha)*float64(prevEma))
-}
-
-// RelayMiningTargetHashToDifficulty returns the relay mining difficulty based on the hash.
-// This currently implies the number of leading zero bits but may be changed in the future.
-// TODO_MAINNET: Determine if we should launch with a more adaptive difficulty or stick
-// to leading zeroes.
-func RelayMiningTargetHashToDifficulty(targetHash []byte) int {
-	numLeadingZeroBits := 0
-	for _, b := range targetHash {
-		if b == 0 {
-			numLeadingZeroBits += 8
-			continue
-		} else {
-			numLeadingZeroBits += bits.LeadingZeros8(b)
-			break // Stop counting after the first non-zero byte
-		}
-	}
-
-	return numLeadingZeroBits
 }
 
 // LeadingZeroBitsToTargetDifficultyHash generates a slice of bytes with the specified number of leading zero bits

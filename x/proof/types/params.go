@@ -1,6 +1,8 @@
 package types
 
 import (
+	"encoding/hex"
+
 	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
@@ -13,18 +15,19 @@ var (
 	_ client.ProofParams  = (*Params)(nil)
 	_ paramtypes.ParamSet = (*Params)(nil)
 
-	KeyMinRelayDifficultyBits                = []byte("MinRelayDifficultyBits")
-	ParamMinRelayDifficultyBits              = "min_relay_difficulty_bits"
-	DefaultMinRelayDifficultyBits    uint64  = 0 // TODO_MAINNET(#142, #401): Determine the default value.
-	KeyProofRequestProbability               = []byte("ProofRequestProbability")
-	ParamProofRequestProbability             = "proof_request_probability"
-	DefaultProofRequestProbability   float32 = 0.25 // See: https://github.com/pokt-network/pocket-core/blob/staging/docs/proposals/probabilistic_proofs.md
-	KeyProofRequirementThreshold             = []byte("ProofRequirementThreshold")
-	ParamProofRequirementThreshold           = "proof_requirement_threshold"
-	DefaultProofRequirementThreshold uint64  = 20 // See: https://github.com/pokt-network/pocket-core/blob/staging/docs/proposals/probabilistic_proofs.md
-	KeyProofMissingPenalty                   = []byte("ProofMissingPenalty")
-	ParamProofMissingPenalty                 = "proof_missing_penalty"
-	DefaultProofMissingPenalty               = cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(320)) // See: https://github.com/pokt-network/pocket-core/blob/staging/docs/proposals/probabilistic_proofs.md
+	KeyMinRelayDifficultyBits                   = []byte("MinRelayDifficultyBits")
+	ParamRelayDifficultyTargetHash              = "relay_difficulty_target_hash"
+	DefaultRelayDifficultyTargetHashHex         = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+	DefaultRelayDifficultyTargetHash, _         = hex.DecodeString(DefaultRelayDifficultyTargetHashHex) // TODO_MAINNET(#142, #401): Determine the default value.
+	KeyProofRequestProbability                  = []byte("ProofRequestProbability")
+	ParamProofRequestProbability                = "proof_request_probability"
+	DefaultProofRequestProbability      float32 = 0.25 // See: https://github.com/pokt-network/pocket-core/blob/staging/docs/proposals/probabilistic_proofs.md
+	KeyProofRequirementThreshold                = []byte("ProofRequirementThreshold")
+	ParamProofRequirementThreshold              = "proof_requirement_threshold"
+	DefaultProofRequirementThreshold    uint64  = 20 // See: https://github.com/pokt-network/pocket-core/blob/staging/docs/proposals/probabilistic_proofs.md
+	KeyProofMissingPenalty                      = []byte("ProofMissingPenalty")
+	ParamProofMissingPenalty                    = "proof_missing_penalty"
+	DefaultProofMissingPenalty                  = cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(320)) // See: https://github.com/pokt-network/pocket-core/blob/staging/docs/proposals/probabilistic_proofs.md
 )
 
 // ParamKeyTable the param key table for launch module
@@ -34,13 +37,13 @@ func ParamKeyTable() paramtypes.KeyTable {
 
 // NewParams creates a new Params instance
 func NewParams(
-	minRelayDifficultyBits uint64,
+	relayDifficultyTargetHash []byte,
 	proofRequestProbability float32,
 	proofRequirementThreshold uint64,
 	proofMissingPenalty *cosmostypes.Coin,
 ) Params {
 	return Params{
-		MinRelayDifficultyBits:    minRelayDifficultyBits,
+		RelayDifficultyTargetHash: relayDifficultyTargetHash,
 		ProofRequestProbability:   proofRequestProbability,
 		ProofRequirementThreshold: proofRequirementThreshold,
 		ProofMissingPenalty:       proofMissingPenalty,
@@ -50,7 +53,7 @@ func NewParams(
 // DefaultParams returns a default set of parameters
 func DefaultParams() Params {
 	return NewParams(
-		DefaultMinRelayDifficultyBits,
+		DefaultRelayDifficultyTargetHash,
 		DefaultProofRequestProbability,
 		DefaultProofRequirementThreshold,
 		&DefaultProofMissingPenalty,
@@ -62,8 +65,8 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 	return paramtypes.ParamSetPairs{
 		paramtypes.NewParamSetPair(
 			KeyMinRelayDifficultyBits,
-			&p.MinRelayDifficultyBits,
-			ValidateMinRelayDifficultyBits,
+			&p.RelayDifficultyTargetHash,
+			ValidateRelayDifficultyTargetHash,
 		),
 		paramtypes.NewParamSetPair(
 			KeyProofRequestProbability,
@@ -86,7 +89,7 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 // ValidateBasic does a sanity check on the provided params.
 func (params *Params) ValidateBasic() error {
 	// Validate the ComputeUnitsToTokensMultiplier
-	if err := ValidateMinRelayDifficultyBits(params.MinRelayDifficultyBits); err != nil {
+	if err := ValidateRelayDifficultyTargetHash(params.RelayDifficultyTargetHash); err != nil {
 		return err
 	}
 
@@ -105,11 +108,22 @@ func (params *Params) ValidateBasic() error {
 	return nil
 }
 
-// ValidateMinRelayDifficultyBits validates the MinRelayDifficultyBits param.
+// ValidateRelayDifficultyTargetHash validates the MinRelayDifficultyBits param.
 // NB: The argument is an interface type to satisfy the ParamSetPair function signature.
-func ValidateMinRelayDifficultyBits(v interface{}) error {
-	if _, ok := v.(uint64); !ok {
+func ValidateRelayDifficultyTargetHash(v interface{}) error {
+	targetHash, ok := v.([]byte)
+	if !ok {
 		return ErrProofParamInvalid.Wrapf("invalid parameter type: %T", v)
+	}
+
+	// TODO_TECHDEBT: reference some hasher output size.
+	if len(targetHash) != 32 {
+		return ErrProofParamInvalid.Wrapf(
+			"invalid RelayDifficultyTargetHash: (%x); length wanted: %d; got: %d",
+			targetHash,
+			32,
+			len(targetHash),
+		)
 	}
 
 	return nil

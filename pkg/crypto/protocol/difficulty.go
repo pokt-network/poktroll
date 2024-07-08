@@ -1,20 +1,25 @@
 package protocol
 
 import (
-	"encoding/binary"
-	"math/bits"
+	"crypto/sha256"
+	"encoding/hex"
+	"math/big"
 )
 
-// CountHashDifficultyBits returns the number of leading zero bits in the given byte slice.
-// TODO_MAINNET: Consider generalizing difficulty to a target hash. See:
+// Difficulty1Hash represents the "easiest" difficulty.
+var (
+	Difficulty1HashHex   = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+	Difficulty1HashBz, _ = hex.DecodeString(Difficulty1HashHex)
+	Difficulty1HashInt   = new(big.Int).SetBytes(Difficulty1HashBz)
+)
+
+// GetDifficultyFromHash returns the "difficulty" of the given hash, with respect
+// to the "highest" target hash, Difficulty1Hash.
 // - https://bitcoin.stackexchange.com/questions/107976/bitcoin-difficulty-why-leading-0s
 // - https://bitcoin.stackexchange.com/questions/121920/is-it-always-possible-to-find-a-number-whose-hash-starts-with-a-certain-number-o
-// - https://github.com/pokt-network/poktroll/pull/656/files#r1666712528
-func CountHashDifficultyBits(bz [32]byte) int {
-	// Using BigEndian for contiguous bit/byte ordering such leading zeros
-	// accumulate across adjacent bytes.
-	// E.g.: []byte{0, 0b00111111, 0x00, 0x00} has 10 leading zero bits. If
-	// LittleEndian were applied instead, it would have 18 leading zeros because it would
-	// look like []byte{0, 0, 0b00111111, 0}.
-	return bits.LeadingZeros64(binary.BigEndian.Uint64(bz[:]))
+func GetDifficultyFromHash(hashBz [sha256.Size]byte) int64 {
+	hashInt := new(big.Int).SetBytes(hashBz[:])
+
+	// difficulty is the ratio of the highest target hash to the given hash.
+	return new(big.Int).Div(Difficulty1HashInt, hashInt).Int64()
 }

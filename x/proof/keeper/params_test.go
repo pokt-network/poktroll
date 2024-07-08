@@ -20,24 +20,24 @@ func TestGetParams(t *testing.T) {
 }
 func TestParams_ValidateMinRelayDifficulty(t *testing.T) {
 	tests := []struct {
-		desc                   string
-		minRelayDifficultyBits any
-		expectedErr            error
+		desc                      string
+		relayDifficultyTargetHash any
+		expectedErr               error
 	}{
 		{
-			desc:                   "invalid type",
-			minRelayDifficultyBits: int64(-1),
-			expectedErr:            prooftypes.ErrProofParamInvalid.Wrapf("invalid parameter type: int64"),
+			desc:                      "invalid type",
+			relayDifficultyTargetHash: int64(-1),
+			expectedErr:               prooftypes.ErrProofParamInvalid.Wrapf("invalid parameter type: int64"),
 		},
 		{
-			desc:                   "valid MinRelayDifficultyBits",
-			minRelayDifficultyBits: uint64(4),
+			desc:                      "valid RelayDifficultyTargetHash",
+			relayDifficultyTargetHash: prooftypes.DefaultRelayDifficultyTargetHash,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			err := prooftypes.ValidateMinRelayDifficultyBits(tt.minRelayDifficultyBits)
+			err := prooftypes.ValidateRelayDifficultyTargetHash(tt.relayDifficultyTargetHash)
 			if tt.expectedErr != nil {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), tt.expectedErr.Error())
