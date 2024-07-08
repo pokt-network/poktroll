@@ -25,9 +25,144 @@ func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
 	_, isSupplierFound := k.GetSupplier(ctx, supplierAddr)
 	require.False(t, isSupplierFound)
 
-	// Prepare the supplier
-	initialStake := sdk.NewCoin("upokt", math.NewInt(100))
-	stakeMsg := &types.MsgStakeSupplier{
+	initialStake := int64(100)
+	stakeMsg := createStakeMsg(supplierAddr, initialStake)
+
+	// Stake the supplier
+	_, err := srv.StakeSupplier(ctx, stakeMsg)
+	require.NoError(t, err)
+
+	// Verify that the supplier exists
+	foundSupplier, isSupplierFound := k.GetSupplier(ctx, supplierAddr)
+	require.True(t, isSupplierFound)
+	require.Equal(t, supplierAddr, foundSupplier.Address)
+	require.Equal(t, math.NewInt(initialStake), foundSupplier.Stake.Amount)
+	require.Len(t, foundSupplier.Services, 1)
+
+	// Initiate the supplier unstaking
+	unstakeMsg := &types.MsgUnstakeSupplier{Address: supplierAddr}
+	_, err = srv.UnstakeSupplier(ctx, unstakeMsg)
+	require.NoError(t, err)
+
+	// Make sure the supplier entered the unbonding period
+	foundSupplier, isSupplierFound = k.GetSupplier(ctx, supplierAddr)
+	require.True(t, isSupplierFound)
+	require.Greater(t, foundSupplier.UnbondingHeight, int64(0))
+
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	sdkCtx = sdkCtx.WithBlockHeight(foundSupplier.UnbondingHeight)
+
+	// Run the endblocker to unbond the supplier
+	err = k.EndBlockerUnbondSupplier(sdkCtx)
+	require.NoError(t, err)
+
+	// Make sure the supplier is removed from the suppliers list when the
+	// unbonding period is over
+	_, isSupplierFound = k.GetSupplier(sdkCtx, supplierAddr)
+	require.False(t, isSupplierFound)
+}
+
+func TestMsgServer_UnstakeSupplier_CancelUnbondingIfRestaked(t *testing.T) {
+	k, ctx := keepertest.SupplierKeeper(t)
+	srv := keeper.NewMsgServerImpl(k)
+
+	// Generate an address for the supplier
+	supplierAddr := sample.AccAddress()
+
+	// Stake the supplier
+	initialStake := int64(100)
+	stakeMsg := createStakeMsg(supplierAddr, initialStake)
+	_, err := srv.StakeSupplier(ctx, stakeMsg)
+	require.NoError(t, err)
+
+	// Verify that the supplier exists with no unbonding height
+	foundSupplier, isSupplierFound := k.GetSupplier(ctx, supplierAddr)
+	require.True(t, isSupplierFound)
+	require.Equal(t, int64(0), foundSupplier.UnbondingHeight)
+
+	// Initiate the supplier unstaking
+	unstakeMsg := &types.MsgUnstakeSupplier{Address: supplierAddr}
+	_, err = srv.UnstakeSupplier(ctx, unstakeMsg)
+	require.NoError(t, err)
+
+	// Make sure the supplier entered the unbonding period
+	foundSupplier, isSupplierFound = k.GetSupplier(ctx, supplierAddr)
+	require.True(t, isSupplierFound)
+	require.Greater(t, foundSupplier.UnbondingHeight, int64(0))
+	unbondingHeight := foundSupplier.UnbondingHeight
+
+	// Stake the supplier again
+	stakeMsg = createStakeMsg(supplierAddr, initialStake+1)
+	_, err = srv.StakeSupplier(ctx, stakeMsg)
+	require.NoError(t, err)
+
+	// Make sure the supplier is no longer in the unbonding period
+	foundSupplier, isSupplierFound = k.GetSupplier(ctx, supplierAddr)
+	require.True(t, isSupplierFound)
+	require.Equal(t, foundSupplier.UnbondingHeight, int64(0))
+
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	sdkCtx = sdkCtx.WithBlockHeight(unbondingHeight)
+
+	// Run the endblocker to unbond the supplier
+	err = k.EndBlockerUnbondSupplier(sdkCtx)
+	require.NoError(t, err)
+
+	// Make sure the supplier is still in the suppliers list with an unbonding height of 0
+	foundSupplier, isSupplierFound = k.GetSupplier(sdkCtx, supplierAddr)
+	require.True(t, isSupplierFound)
+	require.Equal(t, foundSupplier.UnbondingHeight, int64(0))
+}
+
+func TestMsgServer_UnstakeSupplier_FailIfNotStaked(t *testing.T) {
+	k, ctx := keepertest.SupplierKeeper(t)
+	srv := keeper.NewMsgServerImpl(k)
+
+	// Generate an address for the supplier
+	supplierAddr := sample.AccAddress()
+
+	// Verify that the supplier does not exist yet
+	_, isSupplierFound := k.GetSupplier(ctx, supplierAddr)
+	require.False(t, isSupplierFound)
+
+	// Initiate the supplier unstaking
+	unstakeMsg := &types.MsgUnstakeSupplier{Address: supplierAddr}
+	_, err := srv.UnstakeSupplier(ctx, unstakeMsg)
+	require.Error(t, err)
+	require.ErrorIs(t, err, types.ErrSupplierNotFound)
+
+	_, isSupplierFound = k.GetSupplier(ctx, supplierAddr)
+	require.False(t, isSupplierFound)
+}
+
+func TestMsgServer_UnstakeSupplier_FailIfNotInUnbondingPeriod(t *testing.T) {
+	k, ctx := keepertest.SupplierKeeper(t)
+	srv := keeper.NewMsgServerImpl(k)
+
+	// Generate an address for the supplier
+	supplierAddr := sample.AccAddress()
+
+	// Stake the supplier
+	initialStake := int64(100)
+	stakeMsg := createStakeMsg(supplierAddr, initialStake)
+	_, err := srv.StakeSupplier(ctx, stakeMsg)
+	require.NoError(t, err)
+
+	// Initiate the supplier unstaking
+	unstakeMsg := &types.MsgUnstakeSupplier{Address: supplierAddr}
+	_, err = srv.UnstakeSupplier(ctx, unstakeMsg)
+	require.NoError(t, err)
+
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	sdkCtx = sdkCtx.WithBlockHeight(sdkCtx.BlockHeight() + 1)
+
+	_, err = srv.UnstakeSupplier(sdkCtx, unstakeMsg)
+	require.ErrorIs(t, err, types.ErrSupplierUnbonding)
+}
+
+func createStakeMsg(supplierAddr string, stakeAmount int64) *types.MsgStakeSupplier {
+	initialStake := sdk.NewCoin("upokt", math.NewInt(stakeAmount))
+	return &types.MsgStakeSupplier{
 		Address: supplierAddr,
 		Stake:   &initialStake,
 		Services: []*sharedtypes.SupplierServiceConfig{
@@ -46,44 +181,4 @@ func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
 		},
 	}
 
-	// Stake the supplier
-	_, err := srv.StakeSupplier(ctx, stakeMsg)
-	require.NoError(t, err)
-
-	// Verify that the supplier exists
-	foundSupplier, isSupplierFound := k.GetSupplier(ctx, supplierAddr)
-	require.True(t, isSupplierFound)
-	require.Equal(t, supplierAddr, foundSupplier.Address)
-	require.Equal(t, initialStake.Amount, foundSupplier.Stake.Amount)
-	require.Len(t, foundSupplier.Services, 1)
-
-	// Unstake the supplier
-	unstakeMsg := &types.MsgUnstakeSupplier{Address: supplierAddr}
-	_, err = srv.UnstakeSupplier(ctx, unstakeMsg)
-	require.NoError(t, err)
-
-	// Make sure the supplier can no longer be found after unstaking
-	_, isSupplierFound = k.GetSupplier(ctx, supplierAddr)
-	require.False(t, isSupplierFound)
-}
-
-func TestMsgServer_UnstakeSupplier_FailIfNotStaked(t *testing.T) {
-	k, ctx := keepertest.SupplierKeeper(t)
-	srv := keeper.NewMsgServerImpl(k)
-
-	// Generate an address for the supplier
-	supplierAddr := sample.AccAddress()
-
-	// Verify that the supplier does not exist yet
-	_, isSupplierFound := k.GetSupplier(ctx, supplierAddr)
-	require.False(t, isSupplierFound)
-
-	// Unstake the supplier
-	unstakeMsg := &types.MsgUnstakeSupplier{Address: supplierAddr}
-	_, err := srv.UnstakeSupplier(ctx, unstakeMsg)
-	require.Error(t, err)
-	require.ErrorIs(t, err, types.ErrSupplierNotFound)
-
-	_, isSupplierFound = k.GetSupplier(ctx, supplierAddr)
-	require.False(t, isSupplierFound)
 }

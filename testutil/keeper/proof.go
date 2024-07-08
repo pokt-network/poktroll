@@ -186,6 +186,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 		log.NewNopLogger(),
 		authority.String(),
 		suppliermocks.NewMockBankKeeper(ctrl),
+		sharedKeeper,
 	)
 	require.NoError(t, supplierKeeper.SetParams(ctx, suppliertypes.DefaultParams()))
 

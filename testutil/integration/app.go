@@ -456,9 +456,6 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	// authtypes.RegisterQueryServer(queryHelper, accountKeeper)
 	sessiontypes.RegisterQueryServer(queryHelper, sessionKeeper)
 
-	// Need to go to the next block to finalize the genesis and setup
-	integrationApp.NextBlock(t)
-
 	// Set the default params for all the modules
 	err := sharedKeeper.SetParams(integrationApp.GetSdkCtx(), sharedtypes.DefaultParams())
 	require.NoError(t, err)
@@ -472,6 +469,11 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	require.NoError(t, err)
 	err = applicationKeeper.SetParams(integrationApp.GetSdkCtx(), apptypes.DefaultParams())
 	require.NoError(t, err)
+
+	// Need to go to the next block to finalize the genesis and setup.
+	// This has to be after the params are set, as the params are stored in the
+	// store and need to be committed.
+	integrationApp.NextBlock(t)
 
 	// Prepare default testing fixtures //
 
@@ -706,7 +708,10 @@ func (app *App) nextBlockUpdateCtx() {
 	newContext := app.BaseApp.NewUncachedContext(true, header).
 		WithBlockHeader(header).
 		WithHeaderInfo(headerInfo).
-		WithEventManager(prevCtx.EventManager())
+		WithEventManager(prevCtx.EventManager()).
+		// Pass the multi-store to the new context, otherwise the new context will
+		// create a new multi-store.
+		WithMultiStore(prevCtx.MultiStore())
 	*app.sdkCtx = newContext
 }
 

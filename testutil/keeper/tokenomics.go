@@ -290,6 +290,7 @@ func NewTokenomicsModuleKeepers(
 		log.NewNopLogger(),
 		authority.String(),
 		bankKeeper,
+		sharedKeeper,
 	)
 	require.NoError(t, supplierKeeper.SetParams(ctx, suppliertypes.DefaultParams()))
 

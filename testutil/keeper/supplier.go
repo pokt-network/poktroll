@@ -20,6 +20,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/testutil/supplier/mocks"
+	sharedkeeper "github.com/pokt-network/poktroll/x/shared/keeper"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/keeper"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
@@ -34,6 +36,9 @@ func SupplierKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 	stateStore.MountStoreWithDB(storeKey, storetypes.StoreTypeIAVL, db)
 	require.NoError(t, stateStore.LoadLatestVersion())
 
+	logger := log.NewTestLogger(t)
+	ctx := sdk.NewContext(stateStore, cmtproto.Header{}, false, logger)
+
 	registry := codectypes.NewInterfaceRegistry()
 	cdc := codec.NewProtoCodec(registry)
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName)
@@ -43,15 +48,23 @@ func SupplierKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 	mockBankKeeper.EXPECT().SendCoinsFromAccountToModule(gomock.Any(), gomock.Any(), types.ModuleName, gomock.Any()).AnyTimes()
 	mockBankKeeper.EXPECT().SendCoinsFromModuleToAccount(gomock.Any(), types.ModuleName, gomock.Any(), gomock.Any()).AnyTimes()
 
+	// Construct a real shared keeper.
+	sharedKeeper := sharedkeeper.NewKeeper(
+		cdc,
+		runtime.NewKVStoreService(storeKey),
+		logger,
+		authority.String(),
+	)
+	require.NoError(t, sharedKeeper.SetParams(ctx, sharedtypes.DefaultParams()))
+
 	k := keeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKey),
 		log.NewNopLogger(),
 		authority.String(),
 		mockBankKeeper,
+		sharedKeeper,
 	)
-
-	ctx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
 
 	// Initialize params
 	require.NoError(t, k.SetParams(ctx, types.DefaultParams()))
