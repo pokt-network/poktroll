@@ -68,7 +68,7 @@ Each Helm chart receives a list of configuration files. For example, see the [re
 
 :::note
 Devnets are provisioned with the same mnemonc phrases as LocalNet, so it is possible to reuse the same keys
-from the keybase - the user just need to change the `--node=` argument to point to the DevNet RPC endpoint.
+from the keybase - the user just needs to change the `--node=` flag to point to the DevNet RPC endpoint when using the `poktrolld` CLI.
 :::
 
 The DevNet RPC endpoint is exposed on `https://devnet-**NETWORK_NAME**-validator-rpc.poktroll.com`.
@@ -94,16 +94,16 @@ We have two types of DevNets:
 ### How to create
 
 Create a new YAML file in [devnets-configs](https://github.com/pokt-network/protocol-infra/tree/main/devnets-configs).
-Use [template](https://github.com/pokt-network/protocol-infra/blob/main/devnets-configs/_TEMPLATE_YAML_) as a reference.
+Use [this template](https://github.com/pokt-network/protocol-infra/blob/main/devnets-configs/_TEMPLATE_YAML_) as a reference.
 
 ### How to delete
 
 Remove the devnet config file.
 
-### Configure and update the version of the software
+### Configuring and updating DevNets
 
-We create a new image on all commits created in `main` branch and non-main branches if the PR has a `push-image` label.
-Images named in the following format:
+New container images are automatically built on each merge to the `main` branch and each push to non-main branches for which there exists a PR with the `push-image` label.
+Images named according to the following format:
 
 ```
 ghcr.io/pokt-network/poktrolld:sha-7042be3
@@ -117,16 +117,15 @@ image:
   tag: sha-7042be3
 ```
 
-As all parameters in this config actually passed to the [downstream helm chart](https://github.com/pokt-network/protocol-infra/tree/main/charts/full-network) via an [ArgoCD Application](https://github.com/pokt-network/protocol-infra/blob/main/clusters/protocol-us-central1/devnets-persistent.yaml),
-it is possible to modify some other parameters besides the image tag. Here is a [list of all options](https://github.com/pokt-network/protocol-infra/blob/main/charts/full-network/values.yaml).
+As all parameters in this config are passed to the [downstream helm chart](https://github.com/pokt-network/protocol-infra/tree/main/charts/full-network) via an [ArgoCD Application](https://github.com/pokt-network/protocol-infra/blob/main/clusters/protocol-us-central1/devnets-persistent.yaml).
+Here is a [list of all options](https://github.com/pokt-network/protocol-infra/blob/main/charts/full-network/values.yaml) which can be modified, in addition to the image tag.
 
-### Scale actors up and down
+### Scaling actors up and down
 
 You can modify the number of each actor by changing the devnet config file:
 
 :::info
-We use the same ignite `config.yaml` to provision a genesis as we use on devnets. That means we should not provision more
-actors than we configure in ignite's `config.yaml`. Good rule of thumb: don't go over `3`.
+We use the same ignite `config.yaml` to provision genesis in devnet as is used in localnet. Because localnet supports a max of 3 of each actor type, any devnet deployment with more actors would also require additional corresponding genesis state to be included in `config.yaml`, or on-demand account funding and staking. General rule of thumb: don't go over `3`.
 :::
 
 
@@ -145,9 +144,8 @@ relayminers:
 1. The image tag must match the tag of the image from the devnet config YAML file.
 2. The name of the devnet in the environment variables must be specified.
 3. The kubernetes context must be changed to the protocol cluster (`kubectl config set-context gke_protocol-us-central1-d505_us-central1_protocol-us-central1`)
-4. Command should be executed from the root of the poktroll repo.
+4. Run the following command from the root of the poktroll repo:
 
-The command:
 ```bash
 IMAGE_TAG=**IMAGE TAG NAME FROM DEVNET CONFIG** NAMESPACE=devnet-**NETWORK NAME** JOB_NAME=e2e-test-**GITSHA FROM IMAGE TAG** POCKET_NODE=tcp://devnet-**NETWORK NAME**-validator-poktrolld:26657 bash .github/workflows-helpers/run-e2e-test.sh
 ```
@@ -157,9 +155,9 @@ For example:
 IMAGE_TAG=sha-7042be3 NAMESPACE=devnet-sophon JOB_NAME=e2e-test-7042be3 POCKET_NODE=tcp://devnet-sophon-validator-poktrolld:26657 bash .github/workflows-helpers/run-e2e-test.sh
 ```
 
-### Stake actors
+### Staking actors
 
-Since the keys are the same as LocalNet, we can use the same commands for DevNet to stake the actors. Also, DevNets
+Since the genesis actor keys are the same as LocalNet, we can use the same commands (and keyring) to stake actors on DevNet. Additionally, DevNets
 match the hostnames with LocalNet, which makes it possible for the same stake configs to work on different networks.
 For example, this command stakes supplier2 on DevNet `devnet-sophon`:
 

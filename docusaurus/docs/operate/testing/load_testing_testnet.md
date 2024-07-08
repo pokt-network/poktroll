@@ -22,7 +22,7 @@ Please refer to the generic [load testing documentation](./load_testing.md#non-e
 Key points to consider:
 1. Identify the TestNet endpoints and actors (gateways, suppliers) you'll be testing against.
 2. Ensure you have the necessary permissions and have communicated your intent to run load tests.
-3. Configure your load testing manifest to target the TestNet resources.
+3. Configure your load test manifest to target the TestNet resources.
 4. Start with lower load and gradually increase to avoid overwhelming the network.
 5. Monitor the TestNet's performance metrics during the test.
 

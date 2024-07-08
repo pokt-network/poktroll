@@ -34,11 +34,11 @@ Please refer to the DevNet creation guide [here](../infrastructure/devnet.md#how
 - Depending on your load testing requirements, you may need to stake one or more `gateways` and `suppliers`.
 - [DevNet documentation](../infrastructure/devnet.md#stake-actors) provides more details about staking actors in DevNets.
 
-### 3. Configure the load testing manifest
+### 3. Configure the load test manifest
 
 [Load Testing documentation](./load_testing.md#manifest-modification) provides information on how the load test manifest
-can be modified to run against DevNets. DevNets are not much different from TestNets, but they do not have randomly
-generated addresses. Instead, the addresses are shared with LocalNet for convenience.
+can be modified to run against DevNets. DevNets are not much different from TestNets, but they **do not** have randomly
+generated accounts. Instead, the accounts are derived from the ignite `config.yaml` (as in LocalNet) for convenience.
 
 ## Full example
 
@@ -89,9 +89,10 @@ service_id: "anvil"
 
 # The address of the account that will be used to fund the application accounts
 # so that they can stake on the network.
+# TODO_TECHDEBT(@bryanchriswhite, #512): Replace with faucet address.
 funding_account_address: pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw # address for pnf account
 
-# In non-ephemeral chains, the gateways are identified by their address.
+# In non-ephemeral chains, the gateways are identified by their addresses.
 gateways:
   - address: pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4
     exposed_url: https://devnet-sophon-gateway-1.poktroll.com

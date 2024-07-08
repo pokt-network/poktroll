@@ -32,13 +32,13 @@ The load-testing suite is built on [Gherkin](https://cucumber.io/docs/gherkin/),
 
 ## Load Test Manifests
 
-Load test manifests are YAML files that define the network environment for test execution. These files specify properties such as blockchain addresses for funding and staking applications, and the suppliers and gateways to utilize. The [LocalNet manifest](https://github.com/pokt-network/poktroll/blob/main/load-testing/loadtest_manifest_localnet.yaml) serves as a comprehensive example, including detailed comments for each manifest property.
+Load test manifests are YAML files that define the network environment for test execution. These files specify properties such as blockchain account addresses for funding and staking applications, and for utilization by suppliers and gateways. The [LocalNet manifest](https://github.com/pokt-network/poktroll/blob/main/load-testing/loadtest_manifest_localnet.yaml) serves as a comprehensive example, including detailed comments for each manifest property.
 
 ## Test Features
 
-Test features are located in the [load-testing/tests](https://github.com/pokt-network/poktroll/tree/main/load-testing/tests) directory, encompassing various use cases.
+Test features are located in the [load-testing/tests](https://github.com/pokt-network/poktroll/tree/main/load-testing/tests) directory, encompassing various scenarios.
 
-Leveraging Gherkin, the feature files contain human-readable load tests. For instance:
+Feature files are composed of one or more [`Scenario`](https://cucumber.io/docs/gherkin/reference/?sbsearch=Scenarios)s (or [`Scenario Outline`](https://cucumber.io/docs/gherkin/reference/?sbsearch=Scenarios#scenario-outline)s), each of which is composed of one or more [steps](https://cucumber.io/docs/gherkin/reference/#steps). For example:
 
 ```gherkin
 Feature: Loading anvil node only
@@ -55,7 +55,7 @@ Feature: Loading anvil node only
       | 10000        | 10      |
 ```
 
-This natural language syntax is parsed by [gocuke](https://github.com/regen-network/gocuke).
+This natural language syntax is parsed and used to match and execute the corresponding [step definitions](https://cucumber.io/docs/cucumber/step-definitions/?lang=javascript) using [gocuke](https://github.com/regen-network/gocuke).
 
 ## Executing Tests
 
@@ -65,7 +65,7 @@ To execute tests on LocalNet:
 
 1. Ensure [LocalNet](../infrastructure/localnet.md) is operational.
 2. In the `localnet_config.yaml` file, set `gateways.count` and `relayminers.count` to `3`.
-3. Execute `make acc_initialize_pubkeys` to initialize blockchain state public keys.
+3. Run `make acc_initialize_pubkeys` to initialize blockchain state public keys.
 4. Run `make test_load_relays_stress_localnet` to run the LocalNet stress-test.
 
 #### Interpreting Results
@@ -83,9 +83,9 @@ Note: Such networks typically involve other participants, allowing load testing 
 
 #### Prerequisites
 
-- An address with sufficient tokens for application funding and staking, accessible on the local keychain (e.g., `poktrolld keys list`)
-- A list of target gateways for request issuance
-- For custom service testing, ensure suppliers are configured and ready to process requests
+- A account with sufficient tokens for application funding and staking, accessible on the local keychain (e.g., `poktrolld keys list`).
+- A list of target gateways to which relay requests will be sent throughout the course of the test.
+- For custom service testing, ensure supplier(s') corresponding relayminer(s) and custom service process are properly configured, running, and ready to process requests.
 
 #### Manifest Modification
 
@@ -105,4 +105,4 @@ For tests conducted against community-hosted suppliers and gateways, analysis is
 
 ## Developing Custom Tests
 
-For custom test development, refer to the [gocuke documentation](https://github.com/regen-network/gocuke?tab=readme-ov-file#quick-start). The [anvil test](https://github.com/pokt-network/poktroll/blob/main/load-testing/tests/anvil_test.go) provides a practical reference implementation.
+For custom test development, refer to the [gocuke documentation](https://github.com/regen-network/gocuke?tab=readme-ov-file#quick-start). The [anvil test](https://github.com/pokt-network/poktroll/blob/main/load-testing/tests/anvil_test.go) provides a small but practical reference implementation.
