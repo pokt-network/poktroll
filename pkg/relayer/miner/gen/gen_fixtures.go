@@ -17,11 +17,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/miner"
-	"github.com/pokt-network/poktroll/pkg/relayer/protocol"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 )
 
@@ -200,13 +200,13 @@ func exitOnError(errCh <-chan error) {
 // difficultyGTE returns true if the given hash has a difficulty greater than or
 // equal to flagDifficultyBitsThreshold.
 func difficultyGTE(hash []byte) bool {
-	return protocol.MustCountDifficultyBits(hash) >= flagDifficultyBitsThreshold
+	return protocol.CountDifficultyBits(hash) >= flagDifficultyBitsThreshold
 }
 
 // difficultyLT returns true if the given hash has a difficulty less than
 // flagDifficultyBitsThreshold.
 func difficultyLT(hash []byte) bool {
-	return protocol.MustCountDifficultyBits(hash) < flagDifficultyBitsThreshold
+	return protocol.CountDifficultyBits(hash) < flagDifficultyBitsThreshold
 }
 
 // getMarshaledRelayFmtLines performs two map operations followed by a collect.
