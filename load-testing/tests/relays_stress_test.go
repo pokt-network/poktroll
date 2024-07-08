@@ -409,7 +409,7 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 	// Fund all the provisioned suppliers and gateways since their addresses are
 	// known and they are not created on the fly, while funding only the initially
 	// created applications.
-	fundedSuppliers, fundedGateways, fundedApplications := s.sendFundAvailableActorsTx(plans)
+	fundedSuppliers, fundedGateways, fundedApplications := s.sendFundAvailableActorsTx()
 	// Funding messages are sent in a single transaction by the funding account,
 	// only one transaction is expected to be committed.
 	txResults := s.waitForTxsToBeCommitted()
@@ -439,7 +439,7 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 	// not incrementally staked, but are already staked and delegated to, add all
 	// of them to the list of active gateways at the beginning of the test.
 	if !s.isEphemeralChain {
-		gateways = s.populateWithKnownGateways(plans)
+		gateways = s.populateWithKnownGateways()
 	}
 
 	// Delegate the initial applications to the initial gateways
@@ -471,7 +471,7 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 	stakingSuppliersAndGatewaysObs := channel.Map(
 		s.ctx,
 		s.sessionInfoObs,
-		s.mapSessionInfoWhenStakingNewSuppliersAndGatewaysFn(plans),
+		s.mapSessionInfoWhenStakingNewSuppliersAndGatewaysFn(),
 	)
 
 	// stakedAndDelegatingObs notifies when staking and delegation transactions are sent.

@@ -3,8 +3,6 @@ sidebar_position: 2
 title: Observability guidelines
 ---
 
-# Work in progress <!-- omit in toc -->
-
 :::warning
 We are still refining our observability guidelines. If in doubt - please reach out on `#protocol-public` channel on
 [Grove Discord](https://discord.gg/build-with-grove).
@@ -17,7 +15,9 @@ We are still refining our observability guidelines. If in doubt - please reach o
   - [Best Practices](#best-practices)
   - [Examples](#examples)
   - [Counter](#counter)
+      - [x/proof/keeper/msg_server_create_claim.go](#xproofkeepermsg_server_create_claimgo)
   - [Gauage](#gauage)
+      - [x/tokenomics/module/abci.go](#xtokenomicsmoduleabcigo)
   - [Histogram](#histogram)
 - [Logs](#logs)
 
@@ -55,20 +55,58 @@ the memory usage and reduce the performance of the Prometheus server. To mitigat
 - **Clarity and Relevance:** Ensure that each metric provides clear and relevant information for observability.
 - **Documentation:** Document each custom metric, including its purpose and any labels used.
 - **Consistency:** Follow the Prometheus Metric and Label Naming Guide for consistent naming and labeling. See more at [Prometheus Naming Guide](https://prometheus.io/docs/practices/naming/).
+- **Defer:** When the code being metered includes conditional branches, defer calls to metrics methods to ensure that any referenced variables are in their final state prior to reporting.
+- **Sufficient Variable Scope:** Ensure any variables which are passed to metrics methods are declared in a scope which is sufficient for reference by such calls.
+    - Ensure that these variables **are not shadowed** by usage of a subsequent walrus operator `:=` (redeclaration) within the same scope.
+    - The above might requrie declaring previously undeclared variables which are part of a multiple return.
 
 ### Examples
 
-:::warning
-TODO_DOCUMENT(@okdas): This is a placeholder section so our team remembers to add it in the future.
-:::
-
 ### Counter
 
-TODO: Add a code example, link to usage, and screenshot of the output.
+#### [x/proof/keeper/msg_server_create_claim.go](https://github.com/pokt-network/poktroll/blob/main/x/proof/keeper/msg_server_create_claim.go):
+
+```go
+// Declare a named `error` return argument.
+func (k msgServer) CreateClaim(...) (_ *types.MsgCreateClaimResponse, err error) {
+	// Declare claim to reference in telemetry.
+	var (
+		claim           types.Claim
+		isExistingClaim bool
+		numRelays       uint64
+		numComputeUnits uint64
+	)
+
+	// Defer telemetry calls so that they reference the final values the relevant variables.
+	defer func() {
+		// Only increment these metrics counters if handling a new claim.
+		if !isExistingClaim {
+			telemetry.ClaimCounter(types.ClaimProofStage_CLAIMED, 1, err)
+			telemetry.ClaimRelaysCounter(types.ClaimProofStage_CLAIMED, numRelays, err)
+			telemetry.ClaimComputeUnitsCounter(types.ClaimProofStage_CLAIMED, numComputeUnits, err)
+		}
+	}()
+
+
+    // Ensure `err` is not shadowed by avoiding `:=` operator.
+    var result any
+    result, err = doSomething()
+    if err != nil {
+        return nil, err
+    }
+```
 
 ### Gauage
 
-TODO: Add a code example, link to usage, and screenshot of the output.
+#### [x/tokenomics/module/abci.go](https://github.com/pokt-network/poktroll/blob/main/x/tokenomics/module/abci.go):
+```go
+	// Emit telemetry for each service's relay mining difficulty.
+	for serviceId, newDifficulty := range difficultyPerServiceMap {
+		miningDifficultyNumBits := keeper.RelayMiningTargetHashToDifficulty(newDifficulty.TargetHash)
+		telemetry.RelayMiningDifficultyGauge(miningDifficultyNumBits, serviceId)
+		telemetry.RelayEMAGauge(newDifficulty.NumRelaysEma, serviceId)
+	}
+```
 
 ### Histogram
 

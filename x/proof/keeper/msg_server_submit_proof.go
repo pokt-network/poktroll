@@ -18,7 +18,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/pokt-network/poktroll/pkg/relayer/protocol"
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/proof/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
@@ -476,14 +476,7 @@ func verifyClosestProof(
 // function that can be used by both the proof and the miner packages.
 func validateMiningDifficulty(relayBz []byte, minRelayDifficultyBits uint64) error {
 	relayHash := servicetypes.GetHashFromBytes(relayBz)
-
-	relayDifficultyBits, err := protocol.CountHashDifficultyBits(relayHash[:])
-	if err != nil {
-		return types.ErrProofInvalidRelay.Wrapf(
-			"error counting difficulty bits: %s",
-			err,
-		)
-	}
+	relayDifficultyBits := protocol.CountHashDifficultyBits(relayHash)
 
 	// TODO_MAINNET: Devise a test that tries to attack the network and ensure that there
 	// is sufficient telemetry.
