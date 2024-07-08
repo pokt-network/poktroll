@@ -10,8 +10,7 @@ Feature: Stake Supplier Namespace
         Then the user should be able to see standard output containing "txhash:"
         And the user should be able to see standard output containing "code: 0"
         And the pocketd binary should exit without error
-        # TODO_TECHDEBT(@red-0ne): Replace these time-based waits with event listening waits
-        And the user should wait for "5" seconds
+        And the user should wait for the "supplier" module "StakeSupplier" message to be submitted
         And the "supplier" for account "supplier2" is staked with "1000070" uPOKT
         And the account balance of "supplier2" should be "1000070" uPOKT "less" than before
 
@@ -23,6 +22,7 @@ Feature: Stake Supplier Namespace
         Then the user should be able to see standard output containing "txhash:"
         And the user should be able to see standard output containing "code: 0"
         And the pocketd binary should exit without error
-        And the user should wait for "5" seconds
-        And the "supplier" for account "supplier2" is not staked
+        And the supplier for account "supplier2" is unbonding
+        When the user waits for "supplier2" unbonding period to pass
+        Then the "supplier" for account "supplier2" is not staked
         And the account balance of "supplier2" should be "1000070" uPOKT "more" than before

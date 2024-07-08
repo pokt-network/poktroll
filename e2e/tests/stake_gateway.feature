@@ -8,8 +8,7 @@ Feature: Stake Gateway Namespaces
         Then the user should be able to see standard output containing "txhash:"
         And the user should be able to see standard output containing "code: 0"
         And the pocketd binary should exit without error
-        # TODO_TECHDEBT(@red-0ne): Replace these time-based waits with event listening waits
-        And the user should wait for "5" seconds
+        And the user should wait for the "gateway" module "StakeGateway" message to be submitted
         And the "gateway" for account "gateway2" is staked with "1000070" uPOKT
         And the account balance of "gateway2" should be "1000070" uPOKT "less" than before
 
@@ -21,6 +20,6 @@ Feature: Stake Gateway Namespaces
         Then the user should be able to see standard output containing "txhash:"
         And the user should be able to see standard output containing "code: 0"
         And the pocketd binary should exit without error
-        And the user should wait for "5" seconds
+        And the user should wait for the "gateway" module "UnstakeGateway" message to be submitted
         And the "gateway" for account "gateway2" is not staked
         And the account balance of "gateway2" should be "1000070" uPOKT "more" than before

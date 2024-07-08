@@ -442,6 +442,24 @@ func (s *suite) AModuleEndBlockEventIsBroadcast(module, eventType string) {
 	s.waitForNewBlockEvent(newEventTypeMatchFn(module, eventType))
 }
 
+func (s *suite) TheSupplierForAccountIsUnbonding(accName string) {
+	_, ok := accNameToSupplierMap[accName]
+	require.True(s, ok, "supplier %s not found", accName)
+
+	s.waitForTxResultEvent(newEventMsgTypeMatchFn("supplier", "UnstakeSupplier"))
+
+	supplier := s.getSupplierInfo(accName)
+	require.Greater(s, supplier.UnbondingHeight, int64(0), "supplier %s is not unbonding", accName)
+}
+
+func (s *suite) TheUserWaitsForUnbondingPeriodToPass(accName string) {
+	_, ok := accNameToSupplierMap[accName]
+	require.True(s, ok, "supplier %s not found", accName)
+
+	supplier := s.getSupplierInfo(accName)
+	s.waitForBlockHeight(supplier.UnbondingHeight)
+}
+
 func (s *suite) getStakedAmount(actorType, accName string) (int, bool) {
 	s.Helper()
 	args := []string{
@@ -564,6 +582,26 @@ func (s *suite) validateAmountChange(prevAmount, currAmount int, expectedAmountC
 		s.Fatalf("ERROR: unknown condition %s", condition)
 	}
 
+}
+
+// getSupplierInfo returns the supplier information for a given supplier address
+func (s *suite) getSupplierInfo(supplierAddr string) *sharedtypes.Supplier {
+	args := []string{
+		"query",
+		"supplier",
+		"show-supplier",
+		accNameToAddrMap[supplierAddr],
+		"--output=json",
+	}
+
+	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, args...)
+	require.NoError(s, err, "error getting supplier %s", supplierAddr)
+	s.pocketd.result = res
+
+	var resp suppliertypes.QueryGetSupplierResponse
+	responseBz := []byte(strings.TrimSpace(res.Stdout))
+	s.cdc.MustUnmarshalJSON(responseBz, &resp)
+	return &resp.Supplier
 }
 
 // TODO_IMPROVE: use `sessionId` and `supplierName` since those are the two values
