@@ -6,9 +6,11 @@ import (
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
 	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/pkg/client"
 )
 
 var (
+	_ client.ProofParams  = (*Params)(nil)
 	_ paramtypes.ParamSet = (*Params)(nil)
 
 	KeyMinRelayDifficultyBits                = []byte("MinRelayDifficultyBits")
