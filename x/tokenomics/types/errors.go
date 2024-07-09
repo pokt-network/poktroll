@@ -25,4 +25,5 @@ var (
 	ErrTokenomicsUnmarshalInvalid             = sdkerrors.Register(ModuleName, 1118, "failed to unmarshal the provided bytes")
 	ErrTokenomicsDuplicateIndex               = sdkerrors.Register(ModuleName, 1119, "cannot have a duplicate index")
 	ErrTokenomicsMissingRelayMiningDifficulty = sdkerrors.Register(ModuleName, 1120, "missing relay mining difficulty")
+	ErrTokenomicsApplicationOverserviced      = sdkerrors.Register(ModuleName, 1121, "application was overserviced")
 )
