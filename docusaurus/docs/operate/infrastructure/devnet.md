@@ -25,10 +25,10 @@ to set up your access to GCP.
 - [Manually provisioned DevNets](#manually-provisioned-devnets)
   - [How to create](#how-to-create)
   - [How to delete](#how-to-delete)
-  - [Configure and update the version of the software](#configure-and-update-the-version-of-the-software)
-  - [Scale actors up and down](#scale-actors-up-and-down)
+  - [Configuring and updating DevNets](#configuring-and-updating-devnets)
+  - [Scaling actors up and down](#scaling-actors-up-and-down)
   - [Run e2e tests on a manually provisioned DevNet](#run-e2e-tests-on-a-manually-provisioned-devnet)
-  - [Stake actors](#stake-actors)
+  - [Staking actors](#staking-actors)
 
 ## GCP Console
 
@@ -93,12 +93,17 @@ We have two types of DevNets:
 
 ### How to create
 
-Create a new YAML file in [devnets-configs](https://github.com/pokt-network/protocol-infra/tree/main/devnets-configs).
-Use [this template](https://github.com/pokt-network/protocol-infra/blob/main/devnets-configs/_TEMPLATE_YAML_) as a reference.
+Commit a new YAML file in the [devnets-configs](https://github.com/pokt-network/protocol-infra/tree/main/devnets-configs)
+directory on the `main` branch. Use [this template](https://github.com/pokt-network/protocol-infra/blob/main/devnets-configs/_TEMPLATE_YAML_)
+as a reference. If you are not a member of the protocol team, open a pull request (PR) to add the new YAML file to the
+`main` branch. Protocol team members can bypass the `main` branch protection to commit directly without going through
+the PR flow.
 
 ### How to delete
 
-Remove the devnet config file.
+Remove the devnet config file by committing the deletion to the `main` branch. If you are not a member of the protocol
+team, open a pull request (PR) to delete the YAML file from the `main` branch. Protocol team members can bypass the
+`main` branch protection to commit the deletion directly without going through the PR flow.
 
 ### Configuring and updating DevNets
 
@@ -138,22 +143,36 @@ relayminers:
   count: 1
 ```
 
-
 ### Run e2e tests on a manually provisioned DevNet
 
-1. The image tag must match the tag of the image from the devnet config YAML file.
-2. The name of the devnet in the environment variables must be specified.
-3. The kubernetes context must be changed to the protocol cluster (`kubectl config set-context gke_protocol-us-central1-d505_us-central1_protocol-us-central1`)
-4. Run the following command from the root of the poktroll repo:
+To run e2e tests on a manually provisioned DevNet, use the following command from the root of the poktroll repo:
 
 ```bash
 IMAGE_TAG=**IMAGE TAG NAME FROM DEVNET CONFIG** NAMESPACE=devnet-**NETWORK NAME** JOB_NAME=e2e-test-**GITSHA FROM IMAGE TAG** POCKET_NODE=tcp://devnet-**NETWORK NAME**-validator-poktrolld:26657 bash .github/workflows-helpers/run-e2e-test.sh
 ```
 
-For example:
+**Environment Variables**:
+
+- **IMAGE_TAG**: The tag of the image from the devnet config YAML file. This tag must match the tag of the image used in the DevNet configuration.
+- **NAMESPACE**: The name of the devnet. This should be specified in the environment variables and follow the format devnet-**NETWORK NAME**.
+- **JOB_NAME**: A unique identifier for the e2e test job. It follows the format e2e-test-**GITSHA FROM IMAGE TAG**.
+- **POCKET_NODE**: The address of the pocket node, following the format tcp://devnet-**NETWORK NAME**-validator-poktrolld:26657.
+
+
+**Example**
+
 ```bash
 IMAGE_TAG=sha-7042be3 NAMESPACE=devnet-sophon JOB_NAME=e2e-test-7042be3 POCKET_NODE=tcp://devnet-sophon-validator-poktrolld:26657 bash .github/workflows-helpers/run-e2e-test.sh
 ```
+
+:::info
+- The `IMAGE_TAG` must match the tag of the image from the devnet config YAML file.
+- The name of the devnet in the environment variables must be specified.
+- The Kubernetes context must be pointed to the protocol cluster. This command can be used to change context:
+  ```bash
+  kubectl config set-context gke_protocol-us-central1-d505_us-central1_protocol-us-central1
+  ```
+:::
 
 ### Staking actors
 
