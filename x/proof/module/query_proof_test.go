@@ -155,7 +155,7 @@ func TestListProof(t *testing.T) {
 		}
 	})
 
-	//TODO_TEST: add "BySupplierAddress", "BySession", "ByHeight" tests.
+	//TODO_TEST: add "ByHeight" test.
 
 	t.Run("Total", func(t *testing.T) {
 		args := request(nil, 0, uint64(len(proofs)), true)
