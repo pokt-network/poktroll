@@ -517,7 +517,7 @@ func (k msgServer) validateClosestPath(
 	expectedProofPath := protocol.GetPathForProof(proofPathSeedBlockHash, sessionHeader.GetSessionId())
 	if !bytes.Equal(proof.Path, expectedProofPath) {
 		return types.ErrProofInvalidProof.Wrapf(
-			"the proof for the path provided (%x) does not match one expected by the on-chain protocol (%x)",
+			"the path of the proof provided (%x) does not match one expected by the on-chain protocol (%x)",
 			proof.Path,
 			expectedProofPath,
 		)

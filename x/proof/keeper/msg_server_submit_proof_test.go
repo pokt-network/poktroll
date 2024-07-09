@@ -59,8 +59,6 @@ func init() {
 }
 
 func TestMsgServer_SubmitProof_Success(t *testing.T) {
-	var claimWindowOpenBlockHash []byte
-
 	tests := []struct {
 		desc              string
 		getProofMsgHeight func(
@@ -75,7 +73,7 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 				return shared.GetEarliestSupplierProofCommitHeight(
 					sharedParams,
 					queryHeight,
-					claimWindowOpenBlockHash,
+					blockHeaderHash,
 					supplierAddr,
 				)
 			},
@@ -138,8 +136,6 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 			// will be part of the session.
 			sessionHeader := keepers.GetSessionHeader(ctx, t, appAddr, service, 1)
 
-			expectedMerkleProofPath := protocol.GetPathForProof(blockHeaderHash, sessionHeader.GetSessionId())
-
 			// Construct a proof message server from the proof keeper.
 			srv := keeper.NewMsgServerImpl(*keepers.Keeper)
 
@@ -167,11 +163,10 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 			claimMsgHeight := shared.GetEarliestSupplierClaimCommitHeight(
 				&sharedParams,
 				sessionHeader.GetSessionEndBlockHeight(),
-				claimWindowOpenBlockHash,
+				blockHeaderHash,
 				supplierAddr,
 			)
-			sdkCtx = sdkCtx.WithBlockHeight(claimMsgHeight)
-			ctx = sdkCtx
+			ctx = keepertest.SetBlockHeight(ctx, claimMsgHeight)
 
 			// Create a valid claim.
 			claim := createClaimAndStoreBlockHash(
@@ -185,10 +180,25 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 				keepers,
 			)
 
+			// Advance the block height to the proof path seed height.
+			earliestSupplierProofCommitHeight := shared.GetEarliestSupplierProofCommitHeight(
+				&sharedParams,
+				sessionHeader.GetSessionEndBlockHeight(),
+				blockHeaderHash,
+				supplierAddr,
+			)
+			ctx = keepertest.SetBlockHeight(ctx, earliestSupplierProofCommitHeight-1)
+
+			// Store proof path seed block hash in the session keeper so that it can
+			// look it up during proof validation.
+			keepers.StoreBlockHash(ctx)
+
+			// Compute expected proof path.
+			expectedMerkleProofPath := protocol.GetPathForProof(blockHeaderHash, sessionHeader.GetSessionId())
+
 			// Advance the block height to the test proof msg height.
 			proofMsgHeight := test.getProofMsgHeight(&sharedParams, sessionHeader.GetSessionEndBlockHeight(), supplierAddr)
-			sdkCtx = sdkCtx.WithBlockHeight(proofMsgHeight)
-			ctx = sdkCtx
+			ctx = keepertest.SetBlockHeight(ctx, proofMsgHeight)
 
 			proofMsg := newTestProofMsg(t,
 				supplierAddr,
@@ -390,12 +400,10 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 }
 
 func TestMsgServer_SubmitProof_Error(t *testing.T) {
-	var claimWindowOpenBlockHash, proofCommitBlockHash []byte
-
 	opts := []keepertest.ProofKeepersOpt{
 		// Set block hash such that on-chain closest merkle proof validation
 		// uses the expected path.
-		keepertest.WithBlockHash(expectedMerkleProofPath),
+		keepertest.WithBlockHash(blockHeaderHash),
 		// Set block height to 1 so there is a valid session on-chain.
 		keepertest.WithBlockHeight(1),
 	}
@@ -509,7 +517,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 	claimMsgHeight := shared.GetEarliestSupplierClaimCommitHeight(
 		&sharedParams,
 		validSessionHeader.GetSessionEndBlockHeight(),
-		claimWindowOpenBlockHash,
+		blockHeaderHash,
 		supplierAddr,
 	)
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
@@ -988,8 +996,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 				require.NoError(t, err)
 
 				// Re-set the block height to the earliest claim commit height to create a new claim.
-				claimCtx := cosmostypes.UnwrapSDKContext(ctx)
-				claimCtx = claimCtx.WithBlockHeight(claimMsgHeight)
+				claimCtx := keepertest.SetBlockHeight(ctx, claimMsgHeight)
 
 				// Create a valid claim with the expected merkle root.
 				claimMsg := newTestClaimMsg(t,
@@ -1010,9 +1017,9 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			expectedErr: status.Error(
 				codes.FailedPrecondition,
 				prooftypes.ErrProofInvalidProof.Wrapf(
-					"the proof for the path provided (%x) does not match one expected by the on-chain protocol (%x)",
+					"the path of the proof provided (%x) does not match one expected by the on-chain protocol (%x)",
 					wrongClosestProofPath,
-					blockHeaderHash,
+					protocol.GetPathForProof(sdkCtx.HeaderHash(), validSessionHeader.GetSessionId()),
 				).Error(),
 			),
 		},
@@ -1076,6 +1083,12 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 				_, err = unclaimedSessionTree.Flush()
 				require.NoError(t, err)
 
+				// Compute expected proof path for the unclaimed session.
+				expectedMerkleProofPath := protocol.GetPathForProof(
+					blockHeaderHash,
+					unclaimedSessionHeader.GetSessionId(),
+				)
+
 				// Construct new proof message using the supplier & session header
 				// from the session which is *not* expected to be claimed.
 				return newTestProofMsg(t,
@@ -1111,8 +1124,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 				require.NoError(t, err)
 
 				// Re-set the block height to the earliest claim commit height to create a new claim.
-				claimCtx := cosmostypes.UnwrapSDKContext(ctx)
-				claimCtx = claimCtx.WithBlockHeight(claimMsgHeight)
+				claimCtx := keepertest.SetBlockHeight(ctx, claimMsgHeight)
 
 				// Create a claim with the incorrect Merkle root.
 				wrongMerkleRootClaimMsg := newTestClaimMsg(t,
@@ -1125,6 +1137,25 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 				)
 				_, err = srv.CreateClaim(claimCtx, wrongMerkleRootClaimMsg)
 				require.NoError(t, err)
+
+				// Construct a valid session tree with 5 relays.
+				validSessionTree := newFilledSessionTree(
+					ctx, t,
+					uint(5),
+					supplierUid, supplierAddr,
+					validSessionHeader, validSessionHeader, validSessionHeader,
+					keyRing,
+					ringClient,
+				)
+
+				_, err = validSessionTree.Flush()
+				require.NoError(t, err)
+
+				// Compute expected proof path for the session.
+				expectedMerkleProofPath := protocol.GetPathForProof(
+					blockHeaderHash,
+					validSessionHeader.GetSessionId(),
+				)
 
 				return newTestProofMsg(t,
 					supplierAddr,
@@ -1164,16 +1195,23 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 	// Submit the corresponding proof.
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			// Increment the block height to the test proof height.
 			proofMsg := test.newProofMsg(t)
-			proofMsgHeight := shared.GetEarliestSupplierProofCommitHeight(
+
+			// Advance the block height to the proof path seed height.
+			earliestSupplierProofCommitHeight := shared.GetEarliestSupplierProofCommitHeight(
 				&sharedParams,
 				proofMsg.GetSessionHeader().GetSessionEndBlockHeight(),
-				proofCommitBlockHash,
+				blockHeaderHash,
 				proofMsg.GetSupplierAddress(),
 			)
+			ctx = keepertest.SetBlockHeight(ctx, earliestSupplierProofCommitHeight-1)
 
-			ctx = cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(proofMsgHeight)
+			// Store proof path seed block hash in the session keeper so that it can
+			// look it up during proof validation.
+			keepers.StoreBlockHash(ctx)
+
+			// Advance the block height to the earliest proof commit height.
+			ctx = keepertest.SetBlockHeight(ctx, earliestSupplierProofCommitHeight)
 
 			submitProofRes, err := srv.SubmitProof(ctx, proofMsg)
 
