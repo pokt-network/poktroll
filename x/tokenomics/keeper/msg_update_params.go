@@ -14,10 +14,6 @@ func (k msgServer) UpdateParams(ctx context.Context, msg *types.MsgUpdateParams)
 		return nil, err
 	}
 
-	// TODO_BLOCKER(@Olshansk): How do we validate this is the same address that signed the request?
-	// Do we have to use `msg.GetSigners()` explicitly during the check/validation or
-	// does the `cosmos.msg.v1.signer` tag in the protobuf definition enforce
-	// this somewhere in the Cosmos SDK?
 	if msg.Authority != k.GetAuthority() {
 		return nil, types.ErrTokenomicsInvalidSigner.Wrapf(
 			"invalid authority; expected %s, got %s",
