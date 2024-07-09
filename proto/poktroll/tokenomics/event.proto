@@ -36,6 +36,8 @@ message EventRelayMiningDifficultyUpdated {
     uint64 new_num_relays_ema = 5;
 }
 
+// EventApplicationOverserviced is emitted when an application has less stake
+// than the expected burn.
 message EventApplicationOverserviced {
     string application_addr = 1;
     cosmos.base.v1beta1.Coin expected_burn  = 2;
