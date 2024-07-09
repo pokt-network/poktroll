@@ -2,10 +2,11 @@
 package tokenomics
 
 import (
-	proof "github.com/pokt-network/poktroll/api/poktroll/proof"
+	v1beta1 "cosmossdk.io/api/cosmos/base/v1beta1"
 	fmt "fmt"
 	runtime "github.com/cosmos/cosmos-proto/runtime"
 	_ "github.com/cosmos/gogoproto/gogoproto"
+	proof "github.com/pokt-network/poktroll/api/poktroll/proof"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoiface "google.golang.org/protobuf/runtime/protoiface"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -1768,6 +1769,584 @@ func (x *fastReflection_EventRelayMiningDifficultyUpdated) ProtoMethods() *proto
 	}
 }
 
+var (
+	md_EventApplicationOverserviced                  protoreflect.MessageDescriptor
+	fd_EventApplicationOverserviced_application_addr protoreflect.FieldDescriptor
+	fd_EventApplicationOverserviced_expected_burn    protoreflect.FieldDescriptor
+	fd_EventApplicationOverserviced_effective_burn   protoreflect.FieldDescriptor
+)
+
+func init() {
+	file_poktroll_tokenomics_event_proto_init()
+	md_EventApplicationOverserviced = File_poktroll_tokenomics_event_proto.Messages().ByName("EventApplicationOverserviced")
+	fd_EventApplicationOverserviced_application_addr = md_EventApplicationOverserviced.Fields().ByName("application_addr")
+	fd_EventApplicationOverserviced_expected_burn = md_EventApplicationOverserviced.Fields().ByName("expected_burn")
+	fd_EventApplicationOverserviced_effective_burn = md_EventApplicationOverserviced.Fields().ByName("effective_burn")
+}
+
+var _ protoreflect.Message = (*fastReflection_EventApplicationOverserviced)(nil)
+
+type fastReflection_EventApplicationOverserviced EventApplicationOverserviced
+
+func (x *EventApplicationOverserviced) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_EventApplicationOverserviced)(x)
+}
+
+func (x *EventApplicationOverserviced) slowProtoReflect() protoreflect.Message {
+	mi := &file_poktroll_tokenomics_event_proto_msgTypes[3]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_EventApplicationOverserviced_messageType fastReflection_EventApplicationOverserviced_messageType
+var _ protoreflect.MessageType = fastReflection_EventApplicationOverserviced_messageType{}
+
+type fastReflection_EventApplicationOverserviced_messageType struct{}
+
+func (x fastReflection_EventApplicationOverserviced_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_EventApplicationOverserviced)(nil)
+}
+func (x fastReflection_EventApplicationOverserviced_messageType) New() protoreflect.Message {
+	return new(fastReflection_EventApplicationOverserviced)
+}
+func (x fastReflection_EventApplicationOverserviced_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_EventApplicationOverserviced
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_EventApplicationOverserviced) Descriptor() protoreflect.MessageDescriptor {
+	return md_EventApplicationOverserviced
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_EventApplicationOverserviced) Type() protoreflect.MessageType {
+	return _fastReflection_EventApplicationOverserviced_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_EventApplicationOverserviced) New() protoreflect.Message {
+	return new(fastReflection_EventApplicationOverserviced)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_EventApplicationOverserviced) Interface() protoreflect.ProtoMessage {
+	return (*EventApplicationOverserviced)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_EventApplicationOverserviced) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.ApplicationAddr != "" {
+		value := protoreflect.ValueOfString(x.ApplicationAddr)
+		if !f(fd_EventApplicationOverserviced_application_addr, value) {
+			return
+		}
+	}
+	if x.ExpectedBurn != nil {
+		value := protoreflect.ValueOfMessage(x.ExpectedBurn.ProtoReflect())
+		if !f(fd_EventApplicationOverserviced_expected_burn, value) {
+			return
+		}
+	}
+	if x.EffectiveBurn != nil {
+		value := protoreflect.ValueOfMessage(x.EffectiveBurn.ProtoReflect())
+		if !f(fd_EventApplicationOverserviced_effective_burn, value) {
+			return
+		}
+	}
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_EventApplicationOverserviced) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	case "poktroll.tokenomics.EventApplicationOverserviced.application_addr":
+		return x.ApplicationAddr != ""
+	case "poktroll.tokenomics.EventApplicationOverserviced.expected_burn":
+		return x.ExpectedBurn != nil
+	case "poktroll.tokenomics.EventApplicationOverserviced.effective_burn":
+		return x.EffectiveBurn != nil
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.tokenomics.EventApplicationOverserviced"))
+		}
+		panic(fmt.Errorf("message poktroll.tokenomics.EventApplicationOverserviced does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_EventApplicationOverserviced) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	case "poktroll.tokenomics.EventApplicationOverserviced.application_addr":
+		x.ApplicationAddr = ""
+	case "poktroll.tokenomics.EventApplicationOverserviced.expected_burn":
+		x.ExpectedBurn = nil
+	case "poktroll.tokenomics.EventApplicationOverserviced.effective_burn":
+		x.EffectiveBurn = nil
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.tokenomics.EventApplicationOverserviced"))
+		}
+		panic(fmt.Errorf("message poktroll.tokenomics.EventApplicationOverserviced does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_EventApplicationOverserviced) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	case "poktroll.tokenomics.EventApplicationOverserviced.application_addr":
+		value := x.ApplicationAddr
+		return protoreflect.ValueOfString(value)
+	case "poktroll.tokenomics.EventApplicationOverserviced.expected_burn":
+		value := x.ExpectedBurn
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	case "poktroll.tokenomics.EventApplicationOverserviced.effective_burn":
+		value := x.EffectiveBurn
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.tokenomics.EventApplicationOverserviced"))
+		}
+		panic(fmt.Errorf("message poktroll.tokenomics.EventApplicationOverserviced does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_EventApplicationOverserviced) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	case "poktroll.tokenomics.EventApplicationOverserviced.application_addr":
+		x.ApplicationAddr = value.Interface().(string)
+	case "poktroll.tokenomics.EventApplicationOverserviced.expected_burn":
+		x.ExpectedBurn = value.Message().Interface().(*v1beta1.Coin)
+	case "poktroll.tokenomics.EventApplicationOverserviced.effective_burn":
+		x.EffectiveBurn = value.Message().Interface().(*v1beta1.Coin)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.tokenomics.EventApplicationOverserviced"))
+		}
+		panic(fmt.Errorf("message poktroll.tokenomics.EventApplicationOverserviced does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_EventApplicationOverserviced) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "poktroll.tokenomics.EventApplicationOverserviced.expected_burn":
+		if x.ExpectedBurn == nil {
+			x.ExpectedBurn = new(v1beta1.Coin)
+		}
+		return protoreflect.ValueOfMessage(x.ExpectedBurn.ProtoReflect())
+	case "poktroll.tokenomics.EventApplicationOverserviced.effective_burn":
+		if x.EffectiveBurn == nil {
+			x.EffectiveBurn = new(v1beta1.Coin)
+		}
+		return protoreflect.ValueOfMessage(x.EffectiveBurn.ProtoReflect())
+	case "poktroll.tokenomics.EventApplicationOverserviced.application_addr":
+		panic(fmt.Errorf("field application_addr of message poktroll.tokenomics.EventApplicationOverserviced is not mutable"))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.tokenomics.EventApplicationOverserviced"))
+		}
+		panic(fmt.Errorf("message poktroll.tokenomics.EventApplicationOverserviced does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_EventApplicationOverserviced) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "poktroll.tokenomics.EventApplicationOverserviced.application_addr":
+		return protoreflect.ValueOfString("")
+	case "poktroll.tokenomics.EventApplicationOverserviced.expected_burn":
+		m := new(v1beta1.Coin)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
+	case "poktroll.tokenomics.EventApplicationOverserviced.effective_burn":
+		m := new(v1beta1.Coin)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.tokenomics.EventApplicationOverserviced"))
+		}
+		panic(fmt.Errorf("message poktroll.tokenomics.EventApplicationOverserviced does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_EventApplicationOverserviced) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in poktroll.tokenomics.EventApplicationOverserviced", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_EventApplicationOverserviced) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_EventApplicationOverserviced) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_EventApplicationOverserviced) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_EventApplicationOverserviced) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*EventApplicationOverserviced)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		l = len(x.ApplicationAddr)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.ExpectedBurn != nil {
+			l = options.Size(x.ExpectedBurn)
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.EffectiveBurn != nil {
+			l = options.Size(x.EffectiveBurn)
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*EventApplicationOverserviced)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if x.EffectiveBurn != nil {
+			encoded, err := options.Marshal(x.EffectiveBurn)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			i--
+			dAtA[i] = 0x1a
+		}
+		if x.ExpectedBurn != nil {
+			encoded, err := options.Marshal(x.ExpectedBurn)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			i--
+			dAtA[i] = 0x12
+		}
+		if len(x.ApplicationAddr) > 0 {
+			i -= len(x.ApplicationAddr)
+			copy(dAtA[i:], x.ApplicationAddr)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.ApplicationAddr)))
+			i--
+			dAtA[i] = 0xa
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*EventApplicationOverserviced)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventApplicationOverserviced: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventApplicationOverserviced: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			case 1:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ApplicationAddr", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.ApplicationAddr = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 2:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ExpectedBurn", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if x.ExpectedBurn == nil {
+					x.ExpectedBurn = &v1beta1.Coin{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.ExpectedBurn); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
+			case 3:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field EffectiveBurn", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if x.EffectiveBurn == nil {
+					x.EffectiveBurn = &v1beta1.Coin{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.EffectiveBurn); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
 // Code generated by protoc-gen-go. DO NOT EDIT.
 // versions:
 // 	protoc-gen-go v1.27.0
@@ -1965,6 +2544,57 @@ func (x *EventRelayMiningDifficultyUpdated) GetNewNumRelaysEma() uint64 {
 	return 0
 }
 
+type EventApplicationOverserviced struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	ApplicationAddr string        `protobuf:"bytes,1,opt,name=application_addr,json=applicationAddr,proto3" json:"application_addr,omitempty"`
+	ExpectedBurn    *v1beta1.Coin `protobuf:"bytes,2,opt,name=expected_burn,json=expectedBurn,proto3" json:"expected_burn,omitempty"`
+	EffectiveBurn   *v1beta1.Coin `protobuf:"bytes,3,opt,name=effective_burn,json=effectiveBurn,proto3" json:"effective_burn,omitempty"`
+}
+
+func (x *EventApplicationOverserviced) Reset() {
+	*x = EventApplicationOverserviced{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_poktroll_tokenomics_event_proto_msgTypes[3]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *EventApplicationOverserviced) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EventApplicationOverserviced) ProtoMessage() {}
+
+// Deprecated: Use EventApplicationOverserviced.ProtoReflect.Descriptor instead.
+func (*EventApplicationOverserviced) Descriptor() ([]byte, []int) {
+	return file_poktroll_tokenomics_event_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *EventApplicationOverserviced) GetApplicationAddr() string {
+	if x != nil {
+		return x.ApplicationAddr
+	}
+	return ""
+}
+
+func (x *EventApplicationOverserviced) GetExpectedBurn() *v1beta1.Coin {
+	if x != nil {
+		return x.ExpectedBurn
+	}
+	return nil
+}
+
+func (x *EventApplicationOverserviced) GetEffectiveBurn() *v1beta1.Coin {
+	if x != nil {
+		return x.EffectiveBurn
+	}
+	return nil
+}
+
 var File_poktroll_tokenomics_event_proto protoreflect.FileDescriptor
 
 var file_poktroll_tokenomics_event_proto_rawDesc = []byte{
@@ -1972,7 +2602,9 @@ var file_poktroll_tokenomics_event_proto_rawDesc = []byte{
 	0x6f, 0x6d, 0x69, 0x63, 0x73, 0x2f, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x2e, 0x70, 0x72, 0x6f, 0x74,
 	0x6f, 0x12, 0x13, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x74, 0x6f, 0x6b, 0x65,
 	0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x73, 0x1a, 0x14, 0x67, 0x6f, 0x67, 0x6f, 0x70, 0x72, 0x6f, 0x74,
-	0x6f, 0x2f, 0x67, 0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x1a, 0x70, 0x6f,
+	0x6f, 0x2f, 0x67, 0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x1e, 0x63, 0x6f,
+	0x73, 0x6d, 0x6f, 0x73, 0x2f, 0x62, 0x61, 0x73, 0x65, 0x2f, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61,
+	0x31, 0x2f, 0x63, 0x6f, 0x69, 0x6e, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x1a, 0x70, 0x6f,
 	0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2f, 0x63, 0x6c, 0x61,
 	0x69, 0x6d, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x20, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f,
 	0x6c, 0x6c, 0x2f, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2f, 0x72, 0x65, 0x71, 0x75, 0x69, 0x72, 0x65,
@@ -2025,19 +2657,32 @@ var file_poktroll_tokenomics_event_proto_rawDesc = []byte{
 	0x65, 0x6c, 0x61, 0x79, 0x73, 0x45, 0x6d, 0x61, 0x12, 0x2b, 0x0a, 0x12, 0x6e, 0x65, 0x77, 0x5f,
 	0x6e, 0x75, 0x6d, 0x5f, 0x72, 0x65, 0x6c, 0x61, 0x79, 0x73, 0x5f, 0x65, 0x6d, 0x61, 0x18, 0x05,
 	0x20, 0x01, 0x28, 0x04, 0x52, 0x0f, 0x6e, 0x65, 0x77, 0x4e, 0x75, 0x6d, 0x52, 0x65, 0x6c, 0x61,
-	0x79, 0x73, 0x45, 0x6d, 0x61, 0x42, 0xb8, 0x01, 0x0a, 0x17, 0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f,
-	0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x6f, 0x6d, 0x69, 0x63,
-	0x73, 0x42, 0x0a, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a,
-	0x24, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70,
-	0x69, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x74, 0x6f, 0x6b, 0x65, 0x6e,
-	0x6f, 0x6d, 0x69, 0x63, 0x73, 0xa2, 0x02, 0x03, 0x50, 0x54, 0x58, 0xaa, 0x02, 0x13, 0x50, 0x6f,
-	0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x6f, 0x6d, 0x69, 0x63,
-	0x73, 0xca, 0x02, 0x13, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x54, 0x6f, 0x6b,
-	0x65, 0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x73, 0xe2, 0x02, 0x1f, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f,
-	0x6c, 0x6c, 0x5c, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x73, 0x5c, 0x47, 0x50,
-	0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x14, 0x50, 0x6f, 0x6b, 0x74,
-	0x72, 0x6f, 0x6c, 0x6c, 0x3a, 0x3a, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x73,
-	0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x79, 0x73, 0x45, 0x6d, 0x61, 0x22, 0xcb, 0x01, 0x0a, 0x1c, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x41,
+	0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x4f, 0x76, 0x65, 0x72, 0x73, 0x65,
+	0x72, 0x76, 0x69, 0x63, 0x65, 0x64, 0x12, 0x29, 0x0a, 0x10, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x0f, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x41, 0x64, 0x64,
+	0x72, 0x12, 0x3e, 0x0a, 0x0d, 0x65, 0x78, 0x70, 0x65, 0x63, 0x74, 0x65, 0x64, 0x5f, 0x62, 0x75,
+	0x72, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
+	0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43,
+	0x6f, 0x69, 0x6e, 0x52, 0x0c, 0x65, 0x78, 0x70, 0x65, 0x63, 0x74, 0x65, 0x64, 0x42, 0x75, 0x72,
+	0x6e, 0x12, 0x40, 0x0a, 0x0e, 0x65, 0x66, 0x66, 0x65, 0x63, 0x74, 0x69, 0x76, 0x65, 0x5f, 0x62,
+	0x75, 0x72, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d,
+	0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e,
+	0x43, 0x6f, 0x69, 0x6e, 0x52, 0x0d, 0x65, 0x66, 0x66, 0x65, 0x63, 0x74, 0x69, 0x76, 0x65, 0x42,
+	0x75, 0x72, 0x6e, 0x42, 0xb8, 0x01, 0x0a, 0x17, 0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x6b, 0x74,
+	0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x73, 0x42,
+	0x0a, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x24, 0x63,
+	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f,
+	0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x6f, 0x6d,
+	0x69, 0x63, 0x73, 0xa2, 0x02, 0x03, 0x50, 0x54, 0x58, 0xaa, 0x02, 0x13, 0x50, 0x6f, 0x6b, 0x74,
+	0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x73, 0xca,
+	0x02, 0x13, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x54, 0x6f, 0x6b, 0x65, 0x6e,
+	0x6f, 0x6d, 0x69, 0x63, 0x73, 0xe2, 0x02, 0x1f, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c,
+	0x5c, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x73, 0x5c, 0x47, 0x50, 0x42, 0x4d,
+	0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x14, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f,
+	0x6c, 0x6c, 0x3a, 0x3a, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x73, 0x62, 0x06,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -2052,23 +2697,27 @@ func file_poktroll_tokenomics_event_proto_rawDescGZIP() []byte {
 	return file_poktroll_tokenomics_event_proto_rawDescData
 }
 
-var file_poktroll_tokenomics_event_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_poktroll_tokenomics_event_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_poktroll_tokenomics_event_proto_goTypes = []interface{}{
 	(*EventClaimExpired)(nil),                 // 0: poktroll.tokenomics.EventClaimExpired
 	(*EventClaimSettled)(nil),                 // 1: poktroll.tokenomics.EventClaimSettled
 	(*EventRelayMiningDifficultyUpdated)(nil), // 2: poktroll.tokenomics.EventRelayMiningDifficultyUpdated
-	(*proof.Claim)(nil),                       // 3: poktroll.proof.Claim
-	(proof.ProofRequirementReason)(0),         // 4: poktroll.proof.ProofRequirementReason
+	(*EventApplicationOverserviced)(nil),      // 3: poktroll.tokenomics.EventApplicationOverserviced
+	(*proof.Claim)(nil),                       // 4: poktroll.proof.Claim
+	(proof.ProofRequirementReason)(0),         // 5: poktroll.proof.ProofRequirementReason
+	(*v1beta1.Coin)(nil),                      // 6: cosmos.base.v1beta1.Coin
 }
 var file_poktroll_tokenomics_event_proto_depIdxs = []int32{
-	3, // 0: poktroll.tokenomics.EventClaimExpired.claim:type_name -> poktroll.proof.Claim
-	3, // 1: poktroll.tokenomics.EventClaimSettled.claim:type_name -> poktroll.proof.Claim
-	4, // 2: poktroll.tokenomics.EventClaimSettled.proof_requirement:type_name -> poktroll.proof.ProofRequirementReason
-	3, // [3:3] is the sub-list for method output_type
-	3, // [3:3] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	4, // 0: poktroll.tokenomics.EventClaimExpired.claim:type_name -> poktroll.proof.Claim
+	4, // 1: poktroll.tokenomics.EventClaimSettled.claim:type_name -> poktroll.proof.Claim
+	5, // 2: poktroll.tokenomics.EventClaimSettled.proof_requirement:type_name -> poktroll.proof.ProofRequirementReason
+	6, // 3: poktroll.tokenomics.EventApplicationOverserviced.expected_burn:type_name -> cosmos.base.v1beta1.Coin
+	6, // 4: poktroll.tokenomics.EventApplicationOverserviced.effective_burn:type_name -> cosmos.base.v1beta1.Coin
+	5, // [5:5] is the sub-list for method output_type
+	5, // [5:5] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_poktroll_tokenomics_event_proto_init() }
@@ -2113,6 +2762,18 @@ func file_poktroll_tokenomics_event_proto_init() {
 				return nil
 			}
 		}
+		file_poktroll_tokenomics_event_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*EventApplicationOverserviced); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -2120,7 +2781,7 @@ func file_poktroll_tokenomics_event_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_poktroll_tokenomics_event_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   3,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
