@@ -48,6 +48,7 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 	// Parameter name must be supported by this module.
 	switch msg.Name {
 	case ParamNumBlocksPerSession,
+		ParamGracePeriodEndOffsetBlocks,
 		ParamClaimWindowOpenOffsetBlocks,
 		ParamClaimWindowCloseOffsetBlocks,
 		ParamProofWindowOpenOffsetBlocks,

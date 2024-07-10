@@ -2,18 +2,13 @@ package keeper_test
 
 import (
 	"context"
-	"fmt"
 	"os"
-	"strings"
 	"testing"
 
 	"cosmossdk.io/depinject"
 	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
-	ringtypes "github.com/athanorlabs/go-dleq/types"
-	cosmoscrypto "github.com/cosmos/cosmos-sdk/crypto"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	signingtypes "github.com/cosmos/cosmos-sdk/types/tx/signing"
 	"github.com/pokt-network/ring-go"
 	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"
@@ -21,15 +16,17 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/pokt-network/poktroll/pkg/crypto"
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/pkg/relayer"
-	"github.com/pokt-network/poktroll/pkg/relayer/protocol"
 	"github.com/pokt-network/poktroll/pkg/relayer/session"
+	testutilevents "github.com/pokt-network/poktroll/testutil/events"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/testkeyring"
+	"github.com/pokt-network/poktroll/testutil/testrelayer"
 	"github.com/pokt-network/poktroll/x/proof/keeper"
-	"github.com/pokt-network/poktroll/x/proof/types"
+	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	"github.com/pokt-network/poktroll/x/shared"
@@ -49,7 +46,7 @@ var (
 	// testProofParams sets:
 	//  - the minimum relay difficulty bits to zero so that these tests don't need to mine for valid relays.
 	//  - the proof request probability to 1 so that all test sessions require a proof.
-	testProofParams = types.Params{
+	testProofParams = prooftypes.Params{
 		MinRelayDifficultyBits:  0,
 		ProofRequestProbability: 1,
 	}
@@ -62,20 +59,32 @@ func init() {
 }
 
 func TestMsgServer_SubmitProof_Success(t *testing.T) {
+	var claimWindowOpenBlockHash []byte
+
 	tests := []struct {
 		desc              string
 		getProofMsgHeight func(
 			sharedParams *sharedtypes.Params,
 			queryHeight int64,
+			supplierAddr string,
 		) int64
 	}{
 		{
-			desc:              "proof message height equals proof window open height",
-			getProofMsgHeight: shared.GetProofWindowOpenHeight,
+			desc: "proof message height equals supplier's earliest proof commit height",
+			getProofMsgHeight: func(sharedParams *sharedtypes.Params, queryHeight int64, supplierAddr string) int64 {
+				return shared.GetEarliestSupplierProofCommitHeight(
+					sharedParams,
+					queryHeight,
+					claimWindowOpenBlockHash,
+					supplierAddr,
+				)
+			},
 		},
 		{
-			desc:              "proof message height equals proof window close height",
-			getProofMsgHeight: shared.GetProofWindowCloseHeight,
+			desc: "proof message height equals proof window close height",
+			getProofMsgHeight: func(sharedParams *sharedtypes.Params, queryHeight int64, _ string) int64 {
+				return shared.GetProofWindowCloseHeight(sharedParams, queryHeight)
+			},
 		},
 	}
 
@@ -135,17 +144,17 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 			// Prepare a ring client to sign & validate relays.
 			ringClient, err := rings.NewRingClient(depinject.Supply(
 				polyzero.NewLogger(),
-				types.NewAppKeeperQueryClient(keepers.ApplicationKeeper),
-				types.NewAccountKeeperQueryClient(keepers.AccountKeeper),
-				types.NewSharedKeeperQueryClient(keepers.SharedKeeper),
+				prooftypes.NewAppKeeperQueryClient(keepers.ApplicationKeeper),
+				prooftypes.NewAccountKeeperQueryClient(keepers.AccountKeeper),
+				prooftypes.NewSharedKeeperQueryClient(keepers.SharedKeeper, keepers.SessionKeeper),
 			))
 			require.NoError(t, err)
 
 			// Submit the corresponding proof.
-			numRelays := uint(5)
+			expectedNumRelays := uint(5)
 			sessionTree := newFilledSessionTree(
 				ctx, t,
-				numRelays,
+				expectedNumRelays,
 				supplierUid, supplierAddr,
 				sessionHeader, sessionHeader, sessionHeader,
 				keyRing,
@@ -153,15 +162,17 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 			)
 
 			// Advance the block height to the test claim msg height.
-			claimMsgHeight := shared.GetClaimWindowOpenHeight(
+			claimMsgHeight := shared.GetEarliestSupplierClaimCommitHeight(
 				&sharedParams,
 				sessionHeader.GetSessionEndBlockHeight(),
+				claimWindowOpenBlockHash,
+				supplierAddr,
 			)
 			sdkCtx = sdkCtx.WithBlockHeight(claimMsgHeight)
 			ctx = sdkCtx
 
 			// Create a valid claim.
-			createClaimAndStoreBlockHash(
+			claim := createClaimAndStoreBlockHash(
 				ctx, t, 1,
 				supplierAddr,
 				appAddr,
@@ -173,7 +184,7 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 			)
 
 			// Advance the block height to the test proof msg height.
-			proofMsgHeight := test.getProofMsgHeight(&sharedParams, sessionHeader.GetSessionEndBlockHeight())
+			proofMsgHeight := test.getProofMsgHeight(&sharedParams, sessionHeader.GetSessionEndBlockHeight(), supplierAddr)
 			sdkCtx = sdkCtx.WithBlockHeight(proofMsgHeight)
 			ctx = sdkCtx
 
@@ -187,7 +198,7 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 			require.NoError(t, err)
 			require.NotNil(t, submitProofRes)
 
-			proofRes, err := keepers.AllProofs(ctx, &types.QueryAllProofsRequest{})
+			proofRes, err := keepers.AllProofs(ctx, &prooftypes.QueryAllProofsRequest{})
 			require.NoError(t, err)
 
 			proofs := proofRes.GetProofs()
@@ -195,11 +206,26 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 			require.Equal(t, proofMsg.SessionHeader.SessionId, proofs[0].GetSessionHeader().GetSessionId())
 			require.Equal(t, proofMsg.SupplierAddress, proofs[0].GetSupplierAddress())
 			require.Equal(t, proofMsg.SessionHeader.GetSessionEndBlockHeight(), proofs[0].GetSessionHeader().GetSessionEndBlockHeight())
+
+			events := sdkCtx.EventManager().Events()
+			require.Equal(t, 2, len(events))
+
+			proofSubmittedEvents := testutilevents.FilterEvents[*prooftypes.EventProofSubmitted](t, events, "poktroll.proof.EventProofSubmitted")
+			require.Equal(t, 1, len(proofSubmittedEvents))
+
+			proofSubmittedEvent := proofSubmittedEvents[0]
+
+			require.EqualValues(t, claim, proofSubmittedEvent.GetClaim())
+			require.EqualValues(t, &proofs[0], proofSubmittedEvent.GetProof())
+			require.Equal(t, uint64(expectedNumComputeUnits), proofSubmittedEvent.GetNumComputeUnits())
+			require.Equal(t, uint64(expectedNumRelays), proofSubmittedEvent.GetNumRelays())
 		})
 	}
 }
 
 func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
+	var claimWindowOpenHeightBlockHash, proofWindowOpenHeightBlockHash []byte
+
 	opts := []keepertest.ProofKeepersOpt{
 		// Set block hash so we can have a deterministic expected on-chain proof requested by the protocol.
 		keepertest.WithBlockHash(blockHeaderHash),
@@ -251,9 +277,9 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 	// Prepare a ring client to sign & validate relays.
 	ringClient, err := rings.NewRingClient(depinject.Supply(
 		polyzero.NewLogger(),
-		types.NewAppKeeperQueryClient(keepers.ApplicationKeeper),
-		types.NewAccountKeeperQueryClient(keepers.AccountKeeper),
-		types.NewSharedKeeperQueryClient(keepers.SharedKeeper),
+		prooftypes.NewAppKeeperQueryClient(keepers.ApplicationKeeper),
+		prooftypes.NewAccountKeeperQueryClient(keepers.AccountKeeper),
+		prooftypes.NewSharedKeeperQueryClient(keepers.SharedKeeper, keepers.SessionKeeper),
 	))
 	require.NoError(t, err)
 
@@ -270,9 +296,11 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 
 	// Advance the block height to the claim window open height.
 	sharedParams := keepers.SharedKeeper.GetParams(ctx)
-	claimMsgHeight := shared.GetClaimWindowOpenHeight(
+	claimMsgHeight := shared.GetEarliestSupplierClaimCommitHeight(
 		&sharedParams,
 		sessionHeader.GetSessionEndBlockHeight(),
+		claimWindowOpenHeightBlockHash,
+		supplierAddr,
 	)
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	sdkCtx = sdkCtx.WithBlockHeight(claimMsgHeight)
@@ -290,7 +318,12 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 		keepers,
 	)
 
-	proofWindowOpenHeight := shared.GetProofWindowOpenHeight(&sharedParams, sessionHeader.GetSessionEndBlockHeight())
+	earliestProofCommitHeight := shared.GetEarliestSupplierProofCommitHeight(
+		&sharedParams,
+		sessionHeader.GetSessionEndBlockHeight(),
+		proofWindowOpenHeightBlockHash,
+		supplierAddr,
+	)
 	proofWindowCloseHeight := shared.GetProofWindowCloseHeight(&sharedParams, sessionHeader.GetSessionEndBlockHeight())
 
 	tests := []struct {
@@ -300,13 +333,13 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 	}{
 		{
 			desc:           "proof message height equals proof window open height minus one",
-			proofMsgHeight: int64(proofWindowOpenHeight) - 1,
+			proofMsgHeight: int64(earliestProofCommitHeight) - 1,
 			expectedErr: status.Error(
 				codes.FailedPrecondition,
-				types.ErrProofProofOutsideOfWindow.Wrapf(
-					"current block height (%d) is less than session proof window open height (%d)",
-					int64(proofWindowOpenHeight)-1,
-					proofWindowOpenHeight,
+				prooftypes.ErrProofProofOutsideOfWindow.Wrapf(
+					"current block height (%d) is less than session's earliest proof commit height (%d)",
+					int64(earliestProofCommitHeight)-1,
+					earliestProofCommitHeight,
 				).Error(),
 			),
 		},
@@ -315,7 +348,7 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 			proofMsgHeight: int64(proofWindowCloseHeight) + 1,
 			expectedErr: status.Error(
 				codes.FailedPrecondition,
-				types.ErrProofProofOutsideOfWindow.Wrapf(
+				prooftypes.ErrProofProofOutsideOfWindow.Wrapf(
 					"current block height (%d) is greater than session proof window close height (%d)",
 					int64(proofWindowCloseHeight)+1,
 					proofWindowCloseHeight,
@@ -340,16 +373,23 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 			_, err := srv.SubmitProof(ctx, proofMsg)
 			require.ErrorContains(t, err, test.expectedErr.Error())
 
-			proofRes, err := keepers.AllProofs(ctx, &types.QueryAllProofsRequest{})
+			proofRes, err := keepers.AllProofs(ctx, &prooftypes.QueryAllProofsRequest{})
 			require.NoError(t, err)
 
 			proofs := proofRes.GetProofs()
 			require.Lenf(t, proofs, 0, "expected 0 proof, got %d", len(proofs))
+
+			// Assert that only the create claim event was emitted.
+			events := sdkCtx.EventManager().Events()
+			require.Equal(t, 1, len(events))
+			require.Equal(t, events[0].Type, "poktroll.proof.EventClaimCreated")
 		})
 	}
 }
 
 func TestMsgServer_SubmitProof_Error(t *testing.T) {
+	var claimWindowOpenBlockHash, proofCommitBlockHash []byte
+
 	opts := []keepertest.ProofKeepersOpt{
 		// Set block hash such that on-chain closest merkle proof validation
 		// uses the expected path.
@@ -445,9 +485,9 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 	// request signature.
 	ringClient, err := rings.NewRingClient(depinject.Supply(
 		polyzero.NewLogger(),
-		types.NewAppKeeperQueryClient(keepers.ApplicationKeeper),
-		types.NewAccountKeeperQueryClient(keepers.AccountKeeper),
-		types.NewSharedKeeperQueryClient(keepers.SharedKeeper),
+		prooftypes.NewAppKeeperQueryClient(keepers.ApplicationKeeper),
+		prooftypes.NewAccountKeeperQueryClient(keepers.AccountKeeper),
+		prooftypes.NewSharedKeeperQueryClient(keepers.SharedKeeper, keepers.SessionKeeper),
 	))
 	require.NoError(t, err)
 
@@ -462,11 +502,13 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 		ringClient,
 	)
 
-	// Advance the block height to the claim window open height.
+	// Advance the block height to the earliest claim commit height.
 	sharedParams := keepers.SharedKeeper.GetParams(ctx)
-	claimMsgHeight := shared.GetClaimWindowOpenHeight(
+	claimMsgHeight := shared.GetEarliestSupplierClaimCommitHeight(
 		&sharedParams,
 		validSessionHeader.GetSessionEndBlockHeight(),
+		claimWindowOpenBlockHash,
+		supplierAddr,
 	)
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	sdkCtx = sdkCtx.WithBlockHeight(claimMsgHeight)
@@ -499,11 +541,11 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 
 	// Construct a relay to be mangled such that it fails to deserialize in order
 	// to set the error expectation for the relevant test case.
-	mangledRelay := newEmptyRelay(validSessionHeader, validSessionHeader, supplierAddr)
+	mangledRelay := testrelayer.NewEmptyRelay(validSessionHeader, validSessionHeader, supplierAddr)
 
 	// Ensure valid relay request and response signatures.
-	signRelayRequest(ctx, t, mangledRelay, appAddr, keyRing, ringClient)
-	signRelayResponse(ctx, t, mangledRelay, supplierUid, supplierAddr, keyRing)
+	testrelayer.SignRelayRequest(ctx, t, mangledRelay, appAddr, keyRing, ringClient)
+	testrelayer.SignRelayResponse(ctx, t, mangledRelay, supplierUid, supplierAddr, keyRing)
 
 	// Serialize the relay so that it can be mangled.
 	mangledRelayBz, err := mangledRelay.Marshal()
@@ -523,21 +565,14 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 	copy(wrongClosestProofPath, expectedMerkleProofPath)
 	copy(wrongClosestProofPath, "wrong closest proof path")
 
-	// Increment the block height to the test proof height.
-	proofMsgHeight := shared.GetProofWindowOpenHeight(
-		&sharedParams,
-		validSessionHeader.GetSessionEndBlockHeight(),
-	)
-	ctx = cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(proofMsgHeight)
-
 	tests := []struct {
 		desc        string
-		newProofMsg func(t *testing.T) *types.MsgSubmitProof
+		newProofMsg func(t *testing.T) *prooftypes.MsgSubmitProof
 		expectedErr error
 	}{
 		{
 			desc: "proof service ID cannot be empty",
-			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
+			newProofMsg: func(t *testing.T) *prooftypes.MsgSubmitProof {
 				// Set proof session ID to empty string.
 				emptySessionIdHeader := *validSessionHeader
 				emptySessionIdHeader.SessionId = ""
@@ -552,7 +587,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			},
 			expectedErr: status.Error(
 				codes.InvalidArgument,
-				types.ErrProofInvalidSessionId.Wrapf(
+				prooftypes.ErrProofInvalidSessionId.Wrapf(
 					"session ID does not match on-chain session ID; expected %q, got %q",
 					validSessionHeader.GetSessionId(),
 					"",
@@ -561,7 +596,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 		},
 		{
 			desc: "merkle proof cannot be empty",
-			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
+			newProofMsg: func(t *testing.T) *prooftypes.MsgSubmitProof {
 				// Construct new proof message.
 				proof := newTestProofMsg(t,
 					supplierAddr,
@@ -576,14 +611,14 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			},
 			expectedErr: status.Error(
 				codes.InvalidArgument,
-				types.ErrProofInvalidProof.Wrap(
+				prooftypes.ErrProofInvalidProof.Wrap(
 					"proof cannot be empty",
 				).Error(),
 			),
 		},
 		{
 			desc: "proof session ID must match on-chain session ID",
-			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
+			newProofMsg: func(t *testing.T) *prooftypes.MsgSubmitProof {
 				// Construct new proof message using the wrong session ID.
 				return newTestProofMsg(t,
 					supplierAddr,
@@ -594,7 +629,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			},
 			expectedErr: status.Error(
 				codes.InvalidArgument,
-				types.ErrProofInvalidSessionId.Wrapf(
+				prooftypes.ErrProofInvalidSessionId.Wrapf(
 					"session ID does not match on-chain session ID; expected %q, got %q",
 					validSessionHeader.GetSessionId(),
 					wrongSessionIdHeader.GetSessionId(),
@@ -603,7 +638,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 		},
 		{
 			desc: "proof supplier must be in on-chain session",
-			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
+			newProofMsg: func(t *testing.T) *prooftypes.MsgSubmitProof {
 				// Construct a proof message with a  supplier that does not belong in the session.
 				return newTestProofMsg(t,
 					wrongSupplierAddr,
@@ -614,7 +649,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			},
 			expectedErr: status.Error(
 				codes.InvalidArgument,
-				types.ErrProofNotFound.Wrapf(
+				prooftypes.ErrProofNotFound.Wrapf(
 					"supplier address %q not found in session ID %q",
 					wrongSupplierAddr,
 					validSessionHeader.GetSessionId(),
@@ -623,7 +658,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 		},
 		{
 			desc: "merkle proof must be deserializable",
-			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
+			newProofMsg: func(t *testing.T) *prooftypes.MsgSubmitProof {
 				// Construct new proof message.
 				proof := newTestProofMsg(t,
 					supplierAddr,
@@ -639,7 +674,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			},
 			expectedErr: status.Error(
 				codes.InvalidArgument,
-				types.ErrProofInvalidProof.Wrapf(
+				prooftypes.ErrProofInvalidProof.Wrapf(
 					"failed to unmarshal closest merkle proof: %s",
 					expectedInvalidProofUnmarshalErr,
 				).Error(),
@@ -647,7 +682,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 		},
 		{
 			desc: "relay must be deserializable",
-			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
+			newProofMsg: func(t *testing.T) *prooftypes.MsgSubmitProof {
 				// Construct a session tree to which we'll add 1 unserializable relay.
 				mangledRelaySessionTree := newEmptySessionTree(t, validSessionHeader, supplierAddr)
 
@@ -659,6 +694,10 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 				mangledRelayMerkleRootBz, err := mangledRelaySessionTree.Flush()
 				require.NoError(t, err)
 
+				// Re-set the block height to the earliest claim commit height to create a new claim.
+				claimCtx := cosmostypes.UnwrapSDKContext(ctx)
+				claimCtx = claimCtx.WithBlockHeight(claimMsgHeight)
+
 				// Create a claim with a merkle root derived from a session tree
 				// with an unserializable relay.
 				claimMsg := newTestClaimMsg(t,
@@ -669,7 +708,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 					service,
 					mangledRelayMerkleRootBz,
 				)
-				_, err = srv.CreateClaim(ctx, claimMsg)
+				_, err = srv.CreateClaim(claimCtx, claimMsg)
 				require.NoError(t, err)
 
 				// Construct new proof message derived from a session tree
@@ -683,7 +722,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			},
 			expectedErr: status.Error(
 				codes.InvalidArgument,
-				types.ErrProofInvalidRelay.Wrapf(
+				prooftypes.ErrProofInvalidRelay.Wrapf(
 					"failed to unmarshal relay: %s",
 					keepers.Codec.Unmarshal(mangledRelayBz, &servicetypes.Relay{}),
 				).Error(),
@@ -692,7 +731,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 		{
 			// TODO_TEST(community): expand: test case to cover each session header field.
 			desc: "relay request session header must match proof session header",
-			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
+			newProofMsg: func(t *testing.T) *prooftypes.MsgSubmitProof {
 				// Construct a session tree with 1 relay with a session header containing
 				// a session ID that doesn't match the proof session ID.
 				numRelays := uint(1)
@@ -709,6 +748,10 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 				wrongRequestSessionIdMerkleRootBz, err := wrongRequestSessionIdSessionTree.Flush()
 				require.NoError(t, err)
 
+				// Re-set the block height to the earliest claim commit height to create a new claim.
+				claimCtx := cosmostypes.UnwrapSDKContext(ctx)
+				claimCtx = claimCtx.WithBlockHeight(claimMsgHeight)
+
 				// Create a claim with a merkle root derived from a relay
 				// request containing the wrong session ID.
 				claimMsg := newTestClaimMsg(t,
@@ -719,7 +762,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 					service,
 					wrongRequestSessionIdMerkleRootBz,
 				)
-				_, err = srv.CreateClaim(ctx, claimMsg)
+				_, err = srv.CreateClaim(claimCtx, claimMsg)
 				require.NoError(t, err)
 
 				// Construct new proof message using the valid session header,
@@ -733,7 +776,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			},
 			expectedErr: status.Error(
 				codes.FailedPrecondition,
-				types.ErrProofInvalidRelay.Wrapf(
+				prooftypes.ErrProofInvalidRelay.Wrapf(
 					"session headers session IDs mismatch; expected: %q, got: %q",
 					validSessionHeader.GetSessionId(),
 					wrongSessionIdHeader.GetSessionId(),
@@ -743,7 +786,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 		{
 			// TODO_TEST: expand: test case to cover each session header field.
 			desc: "relay response session header must match proof session header",
-			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
+			newProofMsg: func(t *testing.T) *prooftypes.MsgSubmitProof {
 				// Construct a session tree with 1 relay with a session header containing
 				// a session ID that doesn't match the expected session ID.
 				numRelays := uint(1)
@@ -760,6 +803,10 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 				wrongResponseSessionIdMerkleRootBz, err := wrongResponseSessionIdSessionTree.Flush()
 				require.NoError(t, err)
 
+				// Re-set the block height to the earliest claim commit height to create a new claim.
+				claimCtx := cosmostypes.UnwrapSDKContext(ctx)
+				claimCtx = claimCtx.WithBlockHeight(claimMsgHeight)
+
 				// Create a claim with a merkle root derived from a relay
 				// response containing the wrong session ID.
 				claimMsg := newTestClaimMsg(t,
@@ -770,7 +817,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 					service,
 					wrongResponseSessionIdMerkleRootBz,
 				)
-				_, err = srv.CreateClaim(ctx, claimMsg)
+				_, err = srv.CreateClaim(claimCtx, claimMsg)
 				require.NoError(t, err)
 
 				// Construct new proof message using the valid session header,
@@ -784,7 +831,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			},
 			expectedErr: status.Error(
 				codes.FailedPrecondition,
-				types.ErrProofInvalidRelay.Wrapf(
+				prooftypes.ErrProofInvalidRelay.Wrapf(
 					"session headers session IDs mismatch; expected: %q, got: %q",
 					validSessionHeader.GetSessionId(),
 					wrongSessionIdHeader.GetSessionId(),
@@ -793,13 +840,13 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 		},
 		{
 			desc: "relay request signature must be valid",
-			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
+			newProofMsg: func(t *testing.T) *prooftypes.MsgSubmitProof {
 				// Set the relay request signature to an invalid byte slice.
-				invalidRequestSignatureRelay := newEmptyRelay(validSessionHeader, validSessionHeader, supplierAddr)
+				invalidRequestSignatureRelay := testrelayer.NewEmptyRelay(validSessionHeader, validSessionHeader, supplierAddr)
 				invalidRequestSignatureRelay.Req.Meta.Signature = invalidSignatureBz
 
 				// Ensure a valid relay response signature.
-				signRelayResponse(ctx, t, invalidRequestSignatureRelay, supplierUid, supplierAddr, keyRing)
+				testrelayer.SignRelayResponse(ctx, t, invalidRequestSignatureRelay, supplierUid, supplierAddr, keyRing)
 
 				invalidRequestSignatureRelayBz, err := invalidRequestSignatureRelay.Marshal()
 				require.NoError(t, err)
@@ -816,6 +863,10 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 				invalidRequestSignatureMerkleRootBz, err := invalidRequestSignatureSessionTree.Flush()
 				require.NoError(t, err)
 
+				// Re-set the block height to the earliest claim commit height to create a new claim.
+				claimCtx := cosmostypes.UnwrapSDKContext(ctx)
+				claimCtx = claimCtx.WithBlockHeight(claimMsgHeight)
+
 				// Create a claim with a merkle root derived from a session tree
 				// with an invalid relay request signature.
 				claimMsg := newTestClaimMsg(t,
@@ -826,7 +877,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 					service,
 					invalidRequestSignatureMerkleRootBz,
 				)
-				_, err = srv.CreateClaim(ctx, claimMsg)
+				_, err = srv.CreateClaim(claimCtx, claimMsg)
 				require.NoError(t, err)
 
 				// Construct new proof message derived from a session tree
@@ -840,7 +891,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			},
 			expectedErr: status.Error(
 				codes.FailedPrecondition,
-				types.ErrProofInvalidRelayRequest.Wrapf(
+				prooftypes.ErrProofInvalidRelayRequest.Wrapf(
 					"error deserializing ring signature: %s",
 					new(ring.RingSig).Deserialize(ring_secp256k1.NewCurve(), invalidSignatureBz),
 				).Error(),
@@ -848,20 +899,20 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 		},
 		{
 			desc: "relay request signature is valid but signed by an incorrect application",
-			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
+			newProofMsg: func(t *testing.T) *prooftypes.MsgSubmitProof {
 				t.Skip("TODO_TECHDEBT(@bryanchriswhite): Implement this")
 				return nil
 			},
 		},
 		{
 			desc: "relay response signature must be valid",
-			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
+			newProofMsg: func(t *testing.T) *prooftypes.MsgSubmitProof {
 				// Set the relay response signature to an invalid byte slice.
-				relay := newEmptyRelay(validSessionHeader, validSessionHeader, supplierAddr)
+				relay := testrelayer.NewEmptyRelay(validSessionHeader, validSessionHeader, supplierAddr)
 				relay.Res.Meta.SupplierSignature = invalidSignatureBz
 
 				// Ensure a valid relay request signature
-				signRelayRequest(ctx, t, relay, appAddr, keyRing, ringClient)
+				testrelayer.SignRelayRequest(ctx, t, relay, appAddr, keyRing, ringClient)
 
 				relayBz, err := relay.Marshal()
 				require.NoError(t, err)
@@ -878,6 +929,10 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 				invalidResponseSignatureMerkleRootBz, err := invalidResponseSignatureSessionTree.Flush()
 				require.NoError(t, err)
 
+				// Re-set the block height to the earliest claim commit height to create a new claim.
+				claimCtx := cosmostypes.UnwrapSDKContext(ctx)
+				claimCtx = claimCtx.WithBlockHeight(claimMsgHeight)
+
 				// Create a claim with a merkle root derived from a session tree
 				// with an invalid relay response signature.
 				claimMsg := newTestClaimMsg(t,
@@ -888,7 +943,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 					service,
 					invalidResponseSignatureMerkleRootBz,
 				)
-				_, err = srv.CreateClaim(ctx, claimMsg)
+				_, err = srv.CreateClaim(claimCtx, claimMsg)
 				require.NoError(t, err)
 
 				// Construct new proof message derived from a session tree
@@ -907,14 +962,14 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 		},
 		{
 			desc: "relay response signature is valid but signed by an incorrect supplier",
-			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
+			newProofMsg: func(t *testing.T) *prooftypes.MsgSubmitProof {
 				t.Skip("TODO_TECHDEBT(@bryanchriswhite): Implement this")
 				return nil
 			},
 		},
 		{
 			desc: "the merkle proof path provided does not match the one expected/enforced by the protocol",
-			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
+			newProofMsg: func(t *testing.T) *prooftypes.MsgSubmitProof {
 				// Construct a new valid session tree for this test case because once the
 				// closest proof has already been generated, the path cannot be changed.
 				numRelays := uint(5)
@@ -930,6 +985,10 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 				wrongPathMerkleRootBz, err := wrongPathSessionTree.Flush()
 				require.NoError(t, err)
 
+				// Re-set the block height to the earliest claim commit height to create a new claim.
+				claimCtx := cosmostypes.UnwrapSDKContext(ctx)
+				claimCtx = claimCtx.WithBlockHeight(claimMsgHeight)
+
 				// Create a valid claim with the expected merkle root.
 				claimMsg := newTestClaimMsg(t,
 					sessionStartHeight,
@@ -939,7 +998,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 					service,
 					wrongPathMerkleRootBz,
 				)
-				_, err = srv.CreateClaim(ctx, claimMsg)
+				_, err = srv.CreateClaim(claimCtx, claimMsg)
 				require.NoError(t, err)
 
 				// Construct new proof message derived from a session tree
@@ -948,7 +1007,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			},
 			expectedErr: status.Error(
 				codes.FailedPrecondition,
-				types.ErrProofInvalidProof.Wrapf(
+				prooftypes.ErrProofInvalidProof.Wrapf(
 					"the proof for the path provided (%x) does not match one expected by the on-chain protocol (%x)",
 					wrongClosestProofPath,
 					blockHeaderHash,
@@ -957,17 +1016,17 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 		},
 		{
 			desc: "relay difficulty must be greater than or equal to minimum (zero difficulty)",
-			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
+			newProofMsg: func(t *testing.T) *prooftypes.MsgSubmitProof {
 				// Set the minimum relay difficulty to a non-zero value such that the relays
 				// constructed by the test helpers have a negligable chance of being valid.
-				err := keepers.Keeper.SetParams(ctx, types.Params{
+				err := keepers.Keeper.SetParams(ctx, prooftypes.Params{
 					MinRelayDifficultyBits: 10,
 				})
 				require.NoError(t, err)
 
 				// Reset the minimum relay difficulty to zero after this test case.
 				t.Cleanup(func() {
-					err := keepers.Keeper.SetParams(ctx, types.DefaultParams())
+					err := keepers.Keeper.SetParams(ctx, prooftypes.DefaultParams())
 					require.NoError(t, err)
 				})
 
@@ -982,7 +1041,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			},
 			expectedErr: status.Error(
 				codes.FailedPrecondition,
-				types.ErrProofInvalidRelay.Wrapf(
+				prooftypes.ErrProofInvalidRelay.Wrapf(
 					"relay difficulty %d is less than the minimum difficulty %d",
 					validClosestRelayDifficultyBits,
 					10,
@@ -991,14 +1050,14 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 		},
 		{
 			desc: "relay difficulty must be greater than or equal to minimum (non-zero difficulty)",
-			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
+			newProofMsg: func(t *testing.T) *prooftypes.MsgSubmitProof {
 				t.Skip("TODO_TECHDEBT(@bryanchriswhite): Implement this")
 				return nil
 			},
 		},
 		{ // group: claim must exist for proof message
 			desc: "claim must exist for proof message",
-			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
+			newProofMsg: func(t *testing.T) *prooftypes.MsgSubmitProof {
 				// Construct a new session tree corresponding to the unclaimed session.
 				numRelays := uint(5)
 				unclaimedSessionTree := newFilledSessionTree(
@@ -1026,7 +1085,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			},
 			expectedErr: status.Error(
 				codes.FailedPrecondition,
-				types.ErrProofClaimNotFound.Wrapf(
+				prooftypes.ErrProofClaimNotFound.Wrapf(
 					"no claim found for session ID %q and supplier %q",
 					unclaimedSessionHeader.GetSessionId(),
 					wrongSupplierAddr,
@@ -1035,7 +1094,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 		},
 		{
 			desc: "Valid proof cannot validate claim with an incorrect root",
-			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
+			newProofMsg: func(t *testing.T) *prooftypes.MsgSubmitProof {
 				numRelays := uint(10)
 				wrongMerkleRootSessionTree := newFilledSessionTree(
 					ctx, t,
@@ -1049,15 +1108,9 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 				wrongMerkleRootBz, err := wrongMerkleRootSessionTree.Flush()
 				require.NoError(t, err)
 
-				// Reset the block height to the test claim msg height.
-				sharedParams := keepers.SharedKeeper.GetParams(ctx)
-				claimMsgHeight := shared.GetClaimWindowOpenHeight(
-					&sharedParams,
-					validSessionHeader.GetSessionEndBlockHeight(),
-				)
-				sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
-				sdkCtx = sdkCtx.WithBlockHeight(claimMsgHeight)
-				ctx = sdkCtx
+				// Re-set the block height to the earliest claim commit height to create a new claim.
+				claimCtx := cosmostypes.UnwrapSDKContext(ctx)
+				claimCtx = claimCtx.WithBlockHeight(claimMsgHeight)
 
 				// Create a claim with the incorrect Merkle root.
 				wrongMerkleRootClaimMsg := newTestClaimMsg(t,
@@ -1068,11 +1121,8 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 					service,
 					wrongMerkleRootBz,
 				)
-				_, err = srv.CreateClaim(ctx, wrongMerkleRootClaimMsg)
+				_, err = srv.CreateClaim(claimCtx, wrongMerkleRootClaimMsg)
 				require.NoError(t, err)
-
-				// Advance the block height to the test proof msg height.
-				ctx = cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(proofMsgHeight)
 
 				return newTestProofMsg(t,
 					supplierAddr,
@@ -1083,26 +1133,26 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			},
 			expectedErr: status.Error(
 				codes.FailedPrecondition,
-				types.ErrProofInvalidProof.Wrap("invalid closest merkle proof").Error(),
+				prooftypes.ErrProofInvalidProof.Wrap("invalid closest merkle proof").Error(),
 			),
 		},
 		{
 			desc: "claim and proof application addresses must match",
-			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
+			newProofMsg: func(t *testing.T) *prooftypes.MsgSubmitProof {
 				t.Skip("this test case reduces to either the 'claim must exist for proof message' or 'proof session ID must match on-chain session ID cases")
 				return nil
 			},
 		},
 		{
 			desc: "claim and proof service IDs must match",
-			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
+			newProofMsg: func(t *testing.T) *prooftypes.MsgSubmitProof {
 				t.Skip("this test case reduces to either the 'claim must exist for proof message' or 'proof session ID must match on-chain session ID cases")
 				return nil
 			},
 		},
 		{
 			desc: "claim and proof supplier addresses must match",
-			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
+			newProofMsg: func(t *testing.T) *prooftypes.MsgSubmitProof {
 				t.Skip("this test case reduces to either the 'claim must exist for proof message' or 'proof session ID must match on-chain session ID cases")
 				return nil
 			},
@@ -1112,18 +1162,33 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 	// Submit the corresponding proof.
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
+			// Increment the block height to the test proof height.
 			proofMsg := test.newProofMsg(t)
+			proofMsgHeight := shared.GetEarliestSupplierProofCommitHeight(
+				&sharedParams,
+				proofMsg.GetSessionHeader().GetSessionEndBlockHeight(),
+				proofCommitBlockHash,
+				proofMsg.GetSupplierAddress(),
+			)
+
+			ctx = cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(proofMsgHeight)
+
 			submitProofRes, err := srv.SubmitProof(ctx, proofMsg)
 
 			require.ErrorContains(t, err, test.expectedErr.Error())
 			require.Nil(t, submitProofRes)
 
-			proofRes, err := keepers.AllProofs(ctx, &types.QueryAllProofsRequest{})
+			proofRes, err := keepers.AllProofs(ctx, &prooftypes.QueryAllProofsRequest{})
 			require.NoError(t, err)
 
 			// Expect zero proofs to have been persisted as all test cases are error cases.
 			proofs := proofRes.GetProofs()
 			require.Lenf(t, proofs, 0, "expected 0 proofs, got %d", len(proofs))
+
+			// Assert that no proof submitted events were emitted.
+			events := sdkCtx.EventManager().Events()
+			proofSubmittedEvents := testutilevents.FilterEvents[*prooftypes.EventProofSubmitted](t, events, "poktroll.proof.EventProofSubmitted")
+			require.Equal(t, 0, len(proofSubmittedEvents))
 		})
 	}
 }
@@ -1203,7 +1268,7 @@ func fillSessionTree(
 	t.Helper()
 
 	for i := 0; i < int(numRelays); i++ {
-		relay := newSignedEmptyRelay(
+		relay := testrelayer.NewSignedEmptyRelay(
 			ctx, t,
 			supplierKeyUid, supplierAddr,
 			reqHeader, resHeader,
@@ -1231,7 +1296,7 @@ func newTestProofMsg(
 	sessionHeader *sessiontypes.SessionHeader,
 	sessionTree relayer.SessionTree,
 	closestProofPath []byte,
-) *types.MsgSubmitProof {
+) *prooftypes.MsgSubmitProof {
 	t.Helper()
 
 	// Generate a closest proof from the session tree using closestProofPath.
@@ -1243,7 +1308,7 @@ func newTestProofMsg(
 	merkleProofBz, err := merkleProof.Marshal()
 	require.NoError(t, err)
 
-	return &types.MsgSubmitProof{
+	return &prooftypes.MsgSubmitProof{
 		SupplierAddress: supplierAddr,
 		SessionHeader:   sessionHeader,
 		Proof:           merkleProofBz,
@@ -1262,9 +1327,9 @@ func createClaimAndStoreBlockHash(
 	service *sharedtypes.Service,
 	sessionTree relayer.SessionTree,
 	sessionHeader *sessiontypes.SessionHeader,
-	msgServer types.MsgServer,
+	msgServer prooftypes.MsgServer,
 	keepers *keepertest.ProofModuleKeepers,
-) {
+) *prooftypes.Claim {
 	merkleRootBz, err := sessionTree.Flush()
 	require.NoError(t, err)
 
@@ -1277,20 +1342,33 @@ func createClaimAndStoreBlockHash(
 		service,
 		merkleRootBz,
 	)
-	_, err = msgServer.CreateClaim(ctx, claimMsg)
+	claimRes, err := msgServer.CreateClaim(ctx, claimMsg)
 	require.NoError(t, err)
 
-	// TODO_TECHDEBT(@red-0ne): Centralize the business logic that involves taking
-	// into account the heights, windows and grace periods into helper functions.
-	proofSubmissionHeight :=
-		claimMsg.GetSessionHeader().GetSessionEndBlockHeight() +
-			shared.SessionGracePeriodBlocks
+	sharedParams := keepers.SharedKeeper.GetParams(ctx)
+
+	claimWindowOpenHeight := shared.GetClaimWindowOpenHeight(
+		&sharedParams,
+		sessionStartHeight,
+	)
+
+	ctx = keepertest.SetBlockHeight(ctx, claimWindowOpenHeight)
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+
+	earliestSupplierClaimCommitHeight := shared.GetEarliestSupplierClaimCommitHeight(
+		&sharedParams,
+		sessionStartHeight,
+		sdkCtx.HeaderHash(),
+		supplierAddr,
+	)
 
 	// Set block height to be after the session grace period.
-	blockHeightCtx := keepertest.SetBlockHeight(ctx, proofSubmissionHeight)
+	earliestSupplierClaimCommitCtx := keepertest.SetBlockHeight(ctx, earliestSupplierClaimCommitHeight)
 
 	// Store the current context's block hash for future height, which is currently an EndBlocker operation.
-	keepers.StoreBlockHash(blockHeightCtx)
+	keepers.StoreBlockHash(earliestSupplierClaimCommitCtx)
+
+	return claimRes.GetClaim()
 }
 
 // getClosestRelayDifficultyBits returns the number of leading 0s (i.e. relay
@@ -1316,146 +1394,7 @@ func getClosestRelayDifficultyBits(
 	require.NoError(t, err)
 
 	// Count the number of leading 0s in the relay hash to determine its difficulty.
-	relayDifficultyBits, err := protocol.CountHashDifficultyBits(relayHash[:])
-	require.NoError(t, err)
-
-	return uint64(relayDifficultyBits)
-}
-
-// newSignedEmptyRelay creates a new relay structure for the given req & res headers.
-// It signs the relay request on behalf of application in the reqHeader.
-// It signs the relay response on behalf of supplier provided..
-func newSignedEmptyRelay(
-	ctx context.Context,
-	t *testing.T,
-	supplierKeyUid, supplierAddr string,
-	reqHeader, resHeader *sessiontypes.SessionHeader,
-	keyRing keyring.Keyring,
-	ringClient crypto.RingClient,
-) *servicetypes.Relay {
-	t.Helper()
-
-	relay := newEmptyRelay(reqHeader, resHeader, supplierAddr)
-	signRelayRequest(ctx, t, relay, reqHeader.GetApplicationAddress(), keyRing, ringClient)
-	signRelayResponse(ctx, t, relay, supplierKeyUid, supplierAddr, keyRing)
-
-	return relay
-}
-
-// newEmptyRelay creates a new relay structure for the given req & res headers
-// WITHOUT any payload or signatures.
-func newEmptyRelay(reqHeader, resHeader *sessiontypes.SessionHeader, supplierAddr string) *servicetypes.Relay {
-	return &servicetypes.Relay{
-		Req: &servicetypes.RelayRequest{
-			Meta: servicetypes.RelayRequestMetadata{
-				SessionHeader:   reqHeader,
-				Signature:       nil, // Signature added elsewhere.
-				SupplierAddress: supplierAddr,
-			},
-			Payload: nil,
-		},
-		Res: &servicetypes.RelayResponse{
-			Meta: servicetypes.RelayResponseMetadata{
-				SessionHeader:     resHeader,
-				SupplierSignature: nil, // Signature added elsewhere.
-			},
-			Payload: nil,
-		},
-	}
-}
-
-// TODO_TECHDEBT(@red-0ne): Centralize this logic in the relayer package.
-// signRelayRequest signs the relay request (updates relay.Req.Meta.Signature)
-// on behalf of appAddr using the clients provided.
-func signRelayRequest(
-	ctx context.Context,
-	t *testing.T,
-	relay *servicetypes.Relay,
-	appAddr string,
-	keyRing keyring.Keyring,
-	ringClient crypto.RingClient,
-) {
-	t.Helper()
-
-	relayReqMeta := relay.GetReq().GetMeta()
-	sessionEndHeight := relayReqMeta.GetSessionHeader().GetSessionEndBlockHeight()
-
-	// Retrieve the signing ring associated with the application address at the session end height.
-	appRing, err := ringClient.GetRingForAddressAtHeight(ctx, appAddr, sessionEndHeight)
-	require.NoError(t, err)
-
-	// Retrieve the signing key associated with the application address.
-	signingKey := getSigningKeyFromAddress(t,
-		appAddr,
-		keyRing,
-	)
-
-	// Retrieve the signable bytes for the relay request.
-	relayReqSignableBz, err := relay.GetReq().GetSignableBytesHash()
-	require.NoError(t, err)
-
-	// Sign the relay request.
-	signature, err := appRing.Sign(relayReqSignableBz, signingKey)
-	require.NoError(t, err)
-
-	// Serialize the signature.
-	signatureBz, err := signature.Serialize()
-	require.NoError(t, err)
-
-	// Update the relay request signature.
-	relay.Req.Meta.Signature = signatureBz
-}
-
-// TODO_TECHDEBT(@red-0ne): Centralize this logic in the relayer package.
-// in the relayer package?
-// signRelayResponse signs the relay response (updates relay.Res.Meta.SupplierSignature)
-// on behalf of supplierAddr using the clients provided.
-func signRelayResponse(
-	_ context.Context,
-	t *testing.T,
-	relay *servicetypes.Relay,
-	supplierKeyUid, supplierAddr string,
-	keyRing keyring.Keyring,
-) {
-	t.Helper()
-
-	// Retrieve ths signable bytes for the relay response.
-	relayResSignableBz, err := relay.GetRes().GetSignableBytesHash()
-	require.NoError(t, err)
-
-	// Sign the relay response.
-	signatureBz, signerPubKey, err := keyRing.Sign(supplierKeyUid, relayResSignableBz[:], signingtypes.SignMode_SIGN_MODE_DIRECT)
-	require.NoError(t, err)
-
-	// Verify the signer address matches the expected supplier address.
-	addr, err := cosmostypes.AccAddressFromBech32(supplierAddr)
-	require.NoError(t, err)
-	addrHexBz := strings.ToUpper(fmt.Sprintf("%x", addr.Bytes()))
-	require.Equal(t, addrHexBz, signerPubKey.Address().String())
-
-	// Update the relay response signature.
-	relay.Res.Meta.SupplierSignature = signatureBz
-}
-
-// getSigningKeyFromAddress retrieves the signing key associated with the given
-// bech32 address from the provided keyring.
-func getSigningKeyFromAddress(t *testing.T, bech32 string, keyRing keyring.Keyring) ringtypes.Scalar {
-	t.Helper()
-
-	addr, err := cosmostypes.AccAddressFromBech32(bech32)
-	require.NoError(t, err)
-
-	armorPrivKey, err := keyRing.ExportPrivKeyArmorByAddress(addr, "")
-	require.NoError(t, err)
-
-	privKey, _, err := cosmoscrypto.UnarmorDecryptPrivKey(armorPrivKey, "")
-	require.NoError(t, err)
-
-	curve := ring_secp256k1.NewCurve()
-	signingKey, err := curve.DecodeToScalar(privKey.Bytes())
-	require.NoError(t, err)
-
-	return signingKey
+	return uint64(protocol.CountHashDifficultyBits(relayHash))
 }
 
 // resetBlockHeightFn returns a function that resets the block height of the

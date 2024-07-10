@@ -56,5 +56,43 @@ func NewTestSharedQueryClient(
 		).
 		AnyTimes()
 
+	sharedQuerier.EXPECT().
+		GetEarliestSupplierClaimCommitHeight(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(
+			func(
+				ctx context.Context,
+				sessionEndHeight int64,
+				supplierAddr string,
+			) (int64, error) {
+				sharedParams := sharedtypes.DefaultParams()
+				return shared.GetEarliestSupplierClaimCommitHeight(
+					&sharedParams,
+					sessionEndHeight,
+					[]byte{},
+					supplierAddr,
+				), nil
+			},
+		).
+		AnyTimes()
+
+	sharedQuerier.EXPECT().
+		GetEarliestSupplierProofCommitHeight(gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(
+			func(
+				ctx context.Context,
+				sessionEndHeight int64,
+				supplierAddr string,
+			) (int64, error) {
+				sharedParams := sharedtypes.DefaultParams()
+				return shared.GetEarliestSupplierProofCommitHeight(
+					&sharedParams,
+					sessionEndHeight,
+					[]byte{},
+					supplierAddr,
+				), nil
+			},
+		).
+		AnyTimes()
+
 	return sharedQuerier
 }

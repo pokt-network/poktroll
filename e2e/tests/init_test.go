@@ -4,6 +4,7 @@ package e2e
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -19,12 +20,17 @@ import (
 
 	"cosmossdk.io/depinject"
 	sdklog "cosmossdk.io/log"
+	abci "github.com/cometbft/cometbft/abci/types"
 	cometcli "github.com/cometbft/cometbft/libs/cli"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app"
+	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client/block"
+	"github.com/pokt-network/poktroll/pkg/client/events"
+	"github.com/pokt-network/poktroll/pkg/client/tx"
 	"github.com/pokt-network/poktroll/testutil/testclient"
 	"github.com/pokt-network/poktroll/testutil/yaml"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -78,7 +84,9 @@ type suite struct {
 	ctx  context.Context
 	once sync.Once
 	// TODO_TECHDEBT: rename to `poktrolld`.
-	pocketd          *pocketdBin
+	pocketd *pocketdBin
+
+	// TODO_IMPROVE: refactor all usages of scenarioState to be fields on the suite struct.
 	scenarioState    map[string]any // temporary state for each scenario
 	cdc              codec.Codec
 	proofQueryClient prooftypes.QueryClient
@@ -90,6 +98,11 @@ type suite struct {
 
 	// moduleParamsMap is a map of module names to a map of parameter names to parameter values & types.
 	expectedModuleParams moduleParamsMap
+
+	deps                            depinject.Config
+	newBlockEventsReplayClient      client.EventsReplayClient[*block.CometNewBlockEvent]
+	txResultReplayClient            client.EventsReplayClient[*abci.TxResult]
+	finalizeBlockEventsReplayClient client.EventsReplayClient[*abci.Event]
 }
 
 func (s *suite) Before() {
@@ -111,6 +124,29 @@ func (s *suite) Before() {
 	flagSet := testclient.NewLocalnetFlagSet(s)
 	clientCtx := testclient.NewLocalnetClientCtx(s, flagSet)
 	s.proofQueryClient = prooftypes.NewQueryClient(clientCtx)
+
+	s.deps = depinject.Supply(
+		events.NewEventsQueryClient(testclient.CometLocalWebsocketURL),
+	)
+
+	// Start the NewBlockEventsReplayClient before the test so that it can't miss any block events.
+	s.newBlockEventsReplayClient, err = events.NewEventsReplayClient[*block.CometNewBlockEvent](
+		s.ctx,
+		s.deps,
+		"tm.event='NewBlock'",
+		block.UnmarshalNewBlockEvent,
+		eventsReplayClientBufferSize,
+	)
+	require.NoError(s, err)
+
+	s.txResultReplayClient, err = events.NewEventsReplayClient[*abci.TxResult](
+		s.ctx,
+		s.deps,
+		"tm.event='Tx'",
+		tx.UnmarshalTxResult,
+		eventsReplayClientBufferSize,
+	)
+	require.NoError(s, err)
 }
 
 // TestFeatures runs the e2e tests specified in any .features files in this directory
@@ -287,7 +323,7 @@ func (s *suite) getConfigFileContent(amount int64, actorType, serviceId string) 
 			      rpc_type: json_rpc`,
 			amount, serviceId)
 	default:
-		s.Fatalf("unknown actor type %s", actorType)
+		s.Fatalf("ERROR: unknown actor type %s", actorType)
 	}
 	fmt.Println(yaml.NormalizeYAMLIndentation(configContent))
 	return yaml.NormalizeYAMLIndentation(configContent)
@@ -335,7 +371,7 @@ func (s *suite) TheApplicationIsStakedForService(appName string, serviceId strin
 			return
 		}
 	}
-	s.Fatalf("application %s is not staked for service %s", appName, serviceId)
+	s.Fatalf("ERROR: application %s is not staked for service %s", appName, serviceId)
 }
 
 func (s *suite) TheSupplierIsStakedForService(supplierName string, serviceId string) {
@@ -344,7 +380,7 @@ func (s *suite) TheSupplierIsStakedForService(supplierName string, serviceId str
 			return
 		}
 	}
-	s.Fatalf("supplier %s is not staked for service %s", supplierName, serviceId)
+	s.Fatalf("ERROR: supplier %s is not staked for service %s", supplierName, serviceId)
 }
 
 func (s *suite) TheSessionForApplicationAndServiceContainsTheSupplier(appName string, serviceId string, supplierName string) {
@@ -373,15 +409,15 @@ func (s *suite) TheSessionForApplicationAndServiceContainsTheSupplier(appName st
 			return
 		}
 	}
-	s.Fatalf("session for app %s and service %s does not contain supplier %s", appName, serviceId, supplierName)
+	s.Fatalf("ERROR: session for app %s and service %s does not contain supplier %s", appName, serviceId, supplierName)
 }
 
-func (s *suite) TheApplicationSendsTheSupplierARequestForServiceWithData(appName, supplierName, serviceId, requestData string) {
+func (s *suite) TheApplicationSendsTheSupplierARequestForServiceWithPathAndData(appName, supplierName, serviceId, path, requestData string) {
 	// TODO_HACK: We need to support a non self_signing LocalNet AppGateServer
 	// that allows any application to send a relay in LocalNet and our E2E Tests.
 	require.Equal(s, "app1", appName, "TODO_HACK: The LocalNet AppGateServer is self_signing and only supports app1.")
 
-	res, err := s.pocketd.RunCurl(appGateServerUrl, serviceId, requestData)
+	res, err := s.pocketd.RunCurl(appGateServerUrl, serviceId, path, requestData)
 	require.NoError(s, err, "error sending relay request from app %q to supplier %q for service %q", appName, supplierName, serviceId)
 
 	relayKey := relayReferenceKey(appName, supplierName)
@@ -396,7 +432,14 @@ func (s *suite) TheApplicationReceivesASuccessfulRelayResponseSignedBy(appName s
 	relayKey := relayReferenceKey(appName, supplierName)
 	stdout, ok := s.scenarioState[relayKey]
 	require.Truef(s, ok, "no relay response found for %s", relayKey)
-	require.Contains(s, stdout, `"result":"0x`)
+
+	var jsonContent json.RawMessage
+	err := json.Unmarshal([]byte(stdout.(string)), &jsonContent)
+	require.NoError(s, err, `Expected valid JSON, got: %s`, stdout)
+}
+
+func (s *suite) AModuleEndBlockEventIsBroadcast(module, eventType string) {
+	s.waitForNewBlockEvent(newEventTypeMatchFn(module, eventType))
 }
 
 func (s *suite) getStakedAmount(actorType, accName string) (int, bool) {
@@ -518,7 +561,7 @@ func (s *suite) validateAmountChange(prevAmount, currAmount int, expectedAmountC
 		require.LessOrEqual(s, currAmount, prevAmount, "%s %s expected to have less upokt but actually had more", accName, balanceType)
 		require.Equal(s, expectedAmountChange, deltaAmount, "%s %s expected) decrease in upokt was incorrect", accName, balanceType)
 	default:
-		s.Fatalf("unknown condition %s", condition)
+		s.Fatalf("ERROR: unknown condition %s", condition)
 	}
 
 }

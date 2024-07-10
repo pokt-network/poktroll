@@ -6,8 +6,11 @@
         "authority": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
         "params": {
           "num_blocks_per_session": "4",
-          "claim_window_open_offset_blocks": "0",
-          "claim_window_close_offset_blocks": "4"
+          "grace_period_end_offset_blocks": "1",
+          "claim_window_open_offset_blocks": "1",
+          "claim_window_close_offset_blocks": "4",
+          "proof_window_open_offset_blocks": "0",
+          "proof_window_close_offset_blocks": "4"
         }
       }
     ]

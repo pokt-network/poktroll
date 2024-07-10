@@ -237,8 +237,6 @@ func (rs *relayerSessionsManager) forEachBlockClaimSessionsFn(
 			// no longer eligible to be claimed, but that's not always the case.
 			// Once claim window closing is implemented, they will be filtered out
 			// downstream at the waitForEarliestCreateClaimsHeight step.
-			// TODO_BLOCKER(@bryanchriswhite): Introduce governance claim and
-			// proof window durations, implement off-chain window closing and on-chain window checks.
 			if sessionGracePeriodEndHeight <= block.Height() {
 				// Iterate over the sessionsTrees that have grace period ending at this
 				// block height and add them to the list of sessionTrees to be published.

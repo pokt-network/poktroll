@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"bytes"
 	"context"
 	"crypto"
 	"encoding/binary"
@@ -74,12 +75,12 @@ func (k Keeper) HydrateSession(ctx context.Context, sh *sessionHydrator) (*types
 	if err := k.hydrateSessionApplication(ctx, sh); err != nil {
 		return nil, err
 	}
-	logger.Info("Finished hydrating session application: %+v", sh.session.Application)
+	logger.Info(fmt.Sprintf("Finished hydrating session application: %+v", sh.session.Application))
 
 	if err := k.hydrateSessionSuppliers(ctx, sh); err != nil {
 		return nil, err
 	}
-	logger.Info("Finished hydrating session suppliers: %+v")
+	logger.Info("Finished hydrating session suppliers")
 
 	sh.session.Header = sh.sessionHeader
 	sh.session.SessionId = sh.sessionHeader.SessionId
@@ -254,12 +255,8 @@ func uniqueRandomIndices(seed, maxIndex, numIndices int64) map[int64]struct{} {
 	return indicesMap
 }
 
-func concatWithDelimiter(delimiter string, bz ...[]byte) (result []byte) {
-	for _, b := range bz {
-		result = append(result, b...)
-		result = append(result, []byte(delimiter)...)
-	}
-	return result
+func concatWithDelimiter(delimiter string, bz ...[]byte) []byte {
+	return bytes.Join(bz, []byte(delimiter))
 }
 
 func sha3Hash(bz []byte) []byte {
@@ -292,16 +289,16 @@ func GetSessionId(
 	blockHashBz []byte,
 	blockHeight int64,
 ) (sessionId string, sessionIdBz []byte) {
-	appPubKeyBz := []byte(appAddr)
+	appAddrBz := []byte(appAddr)
 	serviceIdBz := []byte(serviceId)
 
-	blockHeightBz := getSessionStartBlockHeightBz(sharedParams, blockHeight)
+	sessionStartHeightBz := getSessionStartBlockHeightBz(sharedParams, blockHeight)
 	sessionIdBz = concatWithDelimiter(
 		SessionIDComponentDelimiter,
 		blockHashBz,
 		serviceIdBz,
-		appPubKeyBz,
-		blockHeightBz,
+		appAddrBz,
+		sessionStartHeightBz,
 	)
 	sessionId = hex.EncodeToString(sha3Hash(sessionIdBz))
 

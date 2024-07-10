@@ -25,7 +25,7 @@ type sessionQuerier struct {
 // injecting the dependecies provided by the depinject.Config.
 //
 // Required dependencies:
-// - clientCtx
+// - clientCtx (grpc.ClientConn)
 func NewSessionQuerier(deps depinject.Config) (client.SessionQueryClient, error) {
 	sessq := &sessionQuerier{}
 

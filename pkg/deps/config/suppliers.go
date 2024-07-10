@@ -369,7 +369,7 @@ func NewSupplyShannonSDKFn(signingKeyName string) SupplierFn {
 			return nil, err
 		}
 
-		shannonSDK, err := sdkadapter.NewShannonSDKAdapter(ctx, privateKey, deps)
+		shannonSDK, err := sdkadapter.NewShannonSDK(ctx, privateKey, deps)
 		if err != nil {
 			return nil, err
 		}
@@ -443,6 +443,24 @@ func NewSupplySharedQueryClientFn() SupplierFn {
 		}
 
 		return depinject.Configs(deps, depinject.Supply(sharedQuerier)), nil
+	}
+}
+
+// NewSupplyProofQueryClientFn returns a function which constructs a
+// ProofQueryClient instance and returns a new depinject.Config which
+// is supplied with the given deps and the new ProofQueryClient.
+func NewSupplyProofQueryClientFn() SupplierFn {
+	return func(
+		_ context.Context,
+		deps depinject.Config,
+		_ *cobra.Command,
+	) (depinject.Config, error) {
+		proofQuerier, err := query.NewProofQuerier(deps)
+		if err != nil {
+			return nil, err
+		}
+
+		return depinject.Configs(deps, depinject.Supply(proofQuerier)), nil
 	}
 }
 

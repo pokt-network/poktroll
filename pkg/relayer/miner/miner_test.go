@@ -12,15 +12,17 @@ import (
 	"testing"
 	"time"
 
+	"cosmossdk.io/depinject"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/miner"
+	"github.com/pokt-network/poktroll/testutil/testclient/testqueryclients"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 )
 
-const testDifficulty = 16
+const testDifficulty = uint64(16)
 
 // TestMiner_MinedRelays constructs an observable of mined relays, through which
 // it pipes pre-mined relay fixtures. It asserts that the observable only emits
@@ -38,7 +40,9 @@ func TestMiner_MinedRelays(t *testing.T) {
 		expectedMinedRelays                   = unmarshalHexMinedRelays(t, marshaledMinableRelaysHex)
 	)
 
-	mnr, err := miner.NewMiner(miner.WithDifficulty(testDifficulty))
+	proofQueryClientMock := testqueryclients.NewTestProofQueryClient(t)
+	deps := depinject.Supply(proofQueryClientMock)
+	mnr, err := miner.NewMiner(deps, miner.WithDifficulty(testDifficulty))
 	require.NoError(t, err)
 
 	minedRelays := mnr.MinedRelays(ctx, mockRelaysObs)
@@ -70,7 +74,7 @@ func TestMiner_MinedRelays(t *testing.T) {
 
 	// Assert that all minable relay fixtures were published to minedRelays.
 	actualMinedRelaysMu.Lock()
-	require.EqualValues(t, expectedMinedRelays, actualMinedRelays)
+	require.EqualValues(t, expectedMinedRelays, actualMinedRelays, "TODO_FLAKY: Try re-running with 'go test -v -count=1 -run TestMiner_MinedRelays ./pkg/relayer/miner/...'")
 	actualMinedRelaysMu.Unlock()
 }
 
