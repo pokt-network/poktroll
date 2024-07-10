@@ -23,6 +23,6 @@ Feature: Stake Supplier Namespace
         And the user should be able to see standard output containing "code: 0"
         And the pocketd binary should exit without error
         And the supplier for account "supplier2" is unbonding
-        When the user waits for "supplier2" unbonding period to pass
+        When the user waits for "supplier2" unbonding period to finish
         Then the "supplier" for account "supplier2" is not staked
         And the account balance of "supplier2" should be "1000070" uPOKT "more" than before

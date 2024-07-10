@@ -456,7 +456,7 @@ func (s *suite) TheSupplierForAccountIsUnbonding(accName string) {
 	)
 }
 
-func (s *suite) TheUserWaitsForUnbondingPeriodToPass(accName string) {
+func (s *suite) TheUserWaitsForUnbondingPeriodToFinish(accName string) {
 	_, ok := accNameToSupplierMap[accName]
 	require.True(s, ok, "supplier %s not found", accName)
 
