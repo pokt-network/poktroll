@@ -154,16 +154,6 @@ secret_create_generic(
 configmap_create(
     "poktrolld-configs", from_file=listdir("localnet/poktrolld/config/"), watch=True
 )
-# TODO_BLOCKER(@okdas): Import validator keys when we switch to `poktrolld` helm chart
-# by uncommenting the following lines:
-# load("ext://secret", "secret_create_generic")
-# secret_create_generic(
-#     "poktrolld-validator-keys",
-#     from_file=[
-#         "localnet/poktrolld/config/node_key.json",
-#         "localnet/poktrolld/config/priv_validator_key.json",
-#     ],
-# )
 
 # Hot reload protobuf changes
 local_resource(
