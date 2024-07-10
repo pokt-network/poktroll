@@ -163,11 +163,6 @@ func (k Keeper) hydrateSessionApplication(ctx context.Context, sh *sessionHydrat
 func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator) error {
 	logger := k.Logger().With("method", "hydrateSessionSuppliers")
 
-	// TODO_BLOCKER(@Olshansk): Retrieve the suppliers at SessionStartBlockHeight,
-	// NOT THE CURRENT ONE which is what's provided by the context. For now, for
-	// simplicity, only retrieving the suppliers at the current block height which
-	// could create a discrepancy if new suppliers were staked mid session.
-	// TODO(@bryanchriswhite): Investigate if `BlockClient` + `ReplayObservable` where `N = SessionLength` could be used here.`
 	suppliers := k.supplierKeeper.GetAllSuppliers(ctx)
 
 	candidateSuppliers := make([]*sharedtypes.Supplier, 0)
