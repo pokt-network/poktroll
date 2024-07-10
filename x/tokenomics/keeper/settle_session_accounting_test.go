@@ -2,11 +2,14 @@ package keeper_test
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"testing"
 
 	"cosmossdk.io/math"
-	"github.com/cosmos/cosmos-sdk/types"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"
 
@@ -18,14 +21,17 @@ import (
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 func TestSettleSessionAccounting_HandleAppGoingIntoDebt(t *testing.T) {
+	t.Skip("TODO_MAINNET: Add coverage of the design choice made for how to handle this scenario.")
+
 	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil)
 
 	// Add a new application
-	appStake := types.NewCoin("upokt", math.NewInt(1000000))
+	appStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
 	app := apptypes.Application{
 		Address: sample.AccAddress(),
 		Stake:   &appStake,
@@ -33,11 +39,12 @@ func TestSettleSessionAccounting_HandleAppGoingIntoDebt(t *testing.T) {
 	keepers.SetApplication(ctx, app)
 
 	// Add a new supplier
-	supplierStake := types.NewCoin("upokt", math.NewInt(1000000))
+	supplierStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
 	supplier := sharedtypes.Supplier{
 		Address: sample.AccAddress(),
 		Stake:   &supplierStake,
 	}
+	keepers.SetSupplier(ctx, supplier)
 
 	// The base claim whose root will be customized for testing purposes
 	claim := prooftypes.Claim{
@@ -57,24 +64,188 @@ func TestSettleSessionAccounting_HandleAppGoingIntoDebt(t *testing.T) {
 
 	err := keepers.SettleSessionAccounting(ctx, &claim)
 	require.NoError(t, err)
-	// TODO_TEST: Need to make sure the application is unstaked at this point in time.
 }
 
 func TestSettleSessionAccounting_ValidAccounting(t *testing.T) {
-	t.Skip("TODO_BLOCKER(@Olshansk): Add E2E and integration tests so we validate the actual state changes of the bank & account keepers.")
-	// Assert that `suppliertypes.ModuleName` account module balance is *unchanged*
-	// Assert that `supplierAddress` account balance has *increased* by the appropriate amount
-	// Assert that `supplierAddress` staked balance is *unchanged*
-	// Assert that `apptypes.ModuleName` account module balance is *unchanged*
+	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil)
+	appModuleAddress := authtypes.NewModuleAddress(apptypes.ModuleName).String()
+	supplierModuleAddress := authtypes.NewModuleAddress(suppliertypes.ModuleName).String()
+
+	// Set compute_units_to_tokens_multiplier to 1 to simplify expectation calculations.
+	err := keepers.Keeper.SetParams(ctx, tokenomicstypes.Params{
+		ComputeUnitsToTokensMultiplier: 1,
+	})
+	require.NoError(t, err)
+
+	// Add a new application
+	appStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
+	expectedAppEndStakeAmount := cosmostypes.NewCoin("upokt", math.NewInt(420))
+	expectedAppBurn := appStake.Sub(expectedAppEndStakeAmount)
+	app := apptypes.Application{
+		Address: sample.AccAddress(),
+		Stake:   &appStake,
+	}
+	keepers.SetApplication(ctx, app)
+
+	// Query application balance prior to the accounting.
+	appStartBalance := getBalance(t, ctx, keepers, app.GetAddress())
+
+	// Query application module balance prior to the accounting.
+	appModuleStartBalance := getBalance(t, ctx, keepers, appModuleAddress)
+
+	// Add a new supplier.
+	supplierStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
+	supplier := sharedtypes.Supplier{
+		Address: sample.AccAddress(),
+		Stake:   &supplierStake,
+	}
+	keepers.SetSupplier(ctx, supplier)
+
+	// Query supplier balance prior to the accounting.
+	supplierStartBalance := getBalance(t, ctx, keepers, supplier.GetAddress())
+
+	// Query supplier module balance prior to the accounting.
+	supplierModuleStartBalance := getBalance(t, ctx, keepers, supplierModuleAddress)
+
+	// The base claim whose root will be customized for testing purposes
+	claim := prooftypes.Claim{
+		SupplierAddress: supplier.Address,
+		SessionHeader: &sessiontypes.SessionHeader{
+			ApplicationAddress: app.Address,
+			Service: &sharedtypes.Service{
+				Id:   "svc1",
+				Name: "svcName1",
+			},
+			SessionId:               "session_id",
+			SessionStartBlockHeight: 1,
+			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
+		},
+		RootHash: testproof.SmstRootWithSum(expectedAppBurn.Amount.Uint64()),
+	}
+
+	err = keepers.SettleSessionAccounting(ctx, &claim)
+	require.NoError(t, err)
+
 	// Assert that `applicationAddress` account balance is *unchanged*
+	appEndBalance := getBalance(t, ctx, keepers, app.GetAddress())
+	require.EqualValues(t, appStartBalance, appEndBalance)
+
 	// Assert that `applicationAddress` staked balance has decreased by the appropriate amount
+	app, appIsFound := keepers.GetApplication(ctx, app.GetAddress())
+	require.True(t, appIsFound)
+	require.Equal(t, &expectedAppEndStakeAmount, app.GetStake())
+
+	// Assert that `apptypes.ModuleName` account module balance is *decreased* by the appropriate amount
+	appModuleEndBalance := getBalance(t, ctx, keepers, appModuleAddress)
+	expectedAppModuleEndBalance := appModuleStartBalance.Sub(expectedAppBurn)
+	require.NotNil(t, appModuleEndBalance)
+	require.EqualValues(t, &expectedAppModuleEndBalance, appModuleEndBalance)
+
+	// Assert that `supplierAddress` account balance has *increased* by the appropriate amount
+	supplierEndBalance := getBalance(t, ctx, keepers, supplier.GetAddress())
+	expectedSupplierBalance := supplierStartBalance.Add(expectedAppBurn)
+	require.EqualValues(t, &expectedSupplierBalance, supplierEndBalance)
+
+	// Assert that `supplierAddress` staked balance is *unchanged*
+	supplier, supplierIsFound := keepers.GetSupplier(ctx, supplier.GetAddress())
+	require.True(t, supplierIsFound)
+	require.Equal(t, &supplierStake, supplier.GetStake())
+
+	// Assert that `suppliertypes.ModuleName` account module balance is *unchanged*
+	supplierModuleEndBalance := getBalance(t, ctx, keepers, supplierModuleAddress)
+	require.EqualValues(t, supplierModuleStartBalance, supplierModuleEndBalance)
 }
 
 func TestSettleSessionAccounting_AppStakeTooLow(t *testing.T) {
-	t.Skip("TODO_BLOCKER(@Olshansk): Add E2E and integration tests so we validate the actual state changes of the bank & account keepers.")
-	// Assert that `suppliertypes.Address` account balance has *increased* by the appropriate amount
-	// Assert that `applicationAddress` account staked balance has gone to zero
-	// Assert on whatever logic we have for slashing the application or other
+	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil)
+	appModuleAddress := authtypes.NewModuleAddress(apptypes.ModuleName).String()
+	supplierModuleAddress := authtypes.NewModuleAddress(suppliertypes.ModuleName).String()
+
+	// Set compute_units_to_tokens_multiplier to 1 to simplify expectation calculations.
+	err := keepers.Keeper.SetParams(ctx, tokenomicstypes.Params{
+		ComputeUnitsToTokensMultiplier: 1,
+	})
+	require.NoError(t, err)
+
+	// Add a new application
+	appStake := cosmostypes.NewCoin("upokt", math.NewInt(40000))
+	expectedAppEndStakeAmount := cosmostypes.NewCoin("upokt", math.NewInt(0))
+	expectedAppBurn := appStake.AddAmount(math.NewInt(2000))
+	app := apptypes.Application{
+		Address: sample.AccAddress(),
+		Stake:   &appStake,
+	}
+	keepers.SetApplication(ctx, app)
+
+	// Query application balance prior to the accounting.
+	appStartBalance := getBalance(t, ctx, keepers, app.GetAddress())
+
+	// Query application module balance prior to the accounting.
+	appModuleStartBalance := getBalance(t, ctx, keepers, appModuleAddress)
+
+	// Add a new supplier.
+	supplierStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
+	supplier := sharedtypes.Supplier{
+		Address: sample.AccAddress(),
+		Stake:   &supplierStake,
+	}
+	keepers.SetSupplier(ctx, supplier)
+
+	// Query supplier balance prior to the accounting.
+	supplierStartBalance := getBalance(t, ctx, keepers, supplier.GetAddress())
+
+	// Query supplier module balance prior to the accounting.
+	supplierModuleStartBalance := getBalance(t, ctx, keepers, supplierModuleAddress)
+
+	// The base claim whose root will be customized for testing purposes
+	claim := prooftypes.Claim{
+		SupplierAddress: supplier.Address,
+		SessionHeader: &sessiontypes.SessionHeader{
+			ApplicationAddress: app.Address,
+			Service: &sharedtypes.Service{
+				Id:   "svc1",
+				Name: "svcName1",
+			},
+			SessionId:               "session_id",
+			SessionStartBlockHeight: 1,
+			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
+		},
+		RootHash: testproof.SmstRootWithSum(expectedAppBurn.Amount.Uint64()),
+	}
+
+	err = keepers.SettleSessionAccounting(ctx, &claim)
+	require.NoError(t, err)
+
+	// Assert that `applicationAddress` account balance is *unchanged*
+	appEndBalance := getBalance(t, ctx, keepers, app.GetAddress())
+	require.EqualValues(t, appStartBalance, appEndBalance)
+
+	// Assert that `applicationAddress` staked balance has gone to zero
+	app, appIsFound := keepers.GetApplication(ctx, app.GetAddress())
+	require.True(t, appIsFound)
+	require.Equal(t, &expectedAppEndStakeAmount, app.GetStake())
+
+	// Assert that `apptypes.ModuleName` account module balance is *decreased* by the appropriate amount
+	appModuleEndBalance := getBalance(t, ctx, keepers, appModuleAddress)
+	expectedAppModuleEndBalance := appModuleStartBalance.Sub(appStake)
+	require.NotNil(t, appModuleEndBalance)
+	require.EqualValues(t, &expectedAppModuleEndBalance, appModuleEndBalance)
+
+	// Assert that `supplierAddress` account balance has *increased* by the appropriate amount
+	supplierEndBalance := getBalance(t, ctx, keepers, supplier.GetAddress())
+	require.NotNil(t, supplierEndBalance)
+
+	expectedSupplierBalance := supplierStartBalance.Add(expectedAppBurn)
+	require.EqualValues(t, &expectedSupplierBalance, supplierEndBalance)
+
+	// Assert that `supplierAddress` staked balance is *unchanged*
+	supplier, supplierIsFound := keepers.GetSupplier(ctx, supplier.GetAddress())
+	require.True(t, supplierIsFound)
+	require.Equal(t, &supplierStake, supplier.GetStake())
+
+	// Assert that `suppliertypes.ModuleName` account module balance is *unchanged*
+	supplierModuleEndBalance := getBalance(t, ctx, keepers, supplierModuleAddress)
+	require.EqualValues(t, supplierModuleStartBalance, supplierModuleEndBalance)
 }
 
 func TestSettleSessionAccounting_AppNotFound(t *testing.T) {
@@ -281,4 +452,23 @@ func TestSettleSessionAccounting_InvalidClaim(t *testing.T) {
 			}
 		})
 	}
+}
+
+func getBalance(
+	t *testing.T,
+	ctx context.Context,
+	bankKeeper tokenomicstypes.BankKeeper,
+	accountAddr string,
+) *cosmostypes.Coin {
+
+	appBalanceRes, err := bankKeeper.Balance(ctx, &banktypes.QueryBalanceRequest{
+		Address: accountAddr,
+		Denom:   "upokt",
+	})
+	require.NoError(t, err)
+
+	balance := appBalanceRes.GetBalance()
+	require.NotNil(t, balance)
+
+	return balance
 }

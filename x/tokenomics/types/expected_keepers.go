@@ -6,6 +6,7 @@ import (
 	"context"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
@@ -26,6 +27,7 @@ type BankKeeper interface {
 	// than "delegate" funds from one account to another which is more closely
 	// linked to staking.
 	SendCoinsFromModuleToAccount(ctx context.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error
+	Balance(context.Context, *banktypes.QueryBalanceRequest) (*banktypes.QueryBalanceResponse, error)
 }
 
 type ApplicationKeeper interface {
@@ -52,4 +54,9 @@ type SharedKeeper interface {
 	SetParams(ctx context.Context, params sharedtypes.Params) error
 
 	GetProofWindowCloseHeight(ctx context.Context, queryHeight int64) int64
+}
+
+type SupplierKeeper interface {
+	GetSupplier(ctx context.Context, supplierAddr string) (supplier sharedtypes.Supplier, found bool)
+	SetSupplier(ctx context.Context, supplier sharedtypes.Supplier)
 }
