@@ -28,9 +28,6 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 ) {
 	logger := k.Logger().With("method", "SettlePendingClaims")
 
-	// TODO_BLOCKER(@Olshansk): Optimize this by indexing expiringClaims appropriately
-	// and only retrieving the expiringClaims that need to be settled rather than all
-	// of them and iterating through them one by one.
 	expiringClaims, err := k.getExpiringClaims(ctx)
 	if err != nil {
 		return 0, 0, relaysPerServiceMap, computeUnitsPerServiceMap, err
@@ -169,8 +166,6 @@ func (k Keeper) getExpiringClaims(ctx sdk.Context) (expiringClaims []prooftypes.
 
 	// NB: This error can be safely ignored as on-chain SharedQueryClient implementation cannot return an error.
 	sharedParams, _ := k.sharedQuerier.GetParams(ctx)
-	//currentSessionEndHeight := shared.GetSessionStartHeight(sharedParams, blockHeight)
-	//previousSessionEndHeight := shared.GetSessionEndHeight(sharedParams, currentSessionEndHeight-1)
 	claimWindowSizeBlocks := sharedParams.GetClaimWindowCloseOffsetBlocks()
 	proofWindowSizeBlocks := sharedParams.GetProofWindowCloseOffsetBlocks()
 
@@ -186,8 +181,6 @@ func (k Keeper) getExpiringClaims(ctx sdk.Context) (expiringClaims []prooftypes.
 		claimsRes, err := k.proofKeeper.AllClaims(ctx, &prooftypes.QueryAllClaimsRequest{
 			Pagination: &query.PageRequest{
 				Offset: uint64(len(expiringClaims)),
-				//Limit:      0,
-				//CountTotal: false,
 			},
 			Filter: &prooftypes.QueryAllClaimsRequest_SessionEndHeight{
 				SessionEndHeight: uint64(previousSessionEndHeight),
