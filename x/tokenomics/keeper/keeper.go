@@ -8,6 +8,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/pokt-network/poktroll/pkg/client"
+	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
@@ -27,6 +29,8 @@ type Keeper struct {
 	proofKeeper       types.ProofKeeper
 	sharedKeeper      types.SharedKeeper
 	sessionKeeper     types.SessionKeeper
+
+	sharedQuerier client.SharedQueryClient
 }
 
 func NewKeeper(
@@ -46,6 +50,8 @@ func NewKeeper(
 		panic(fmt.Sprintf("invalid authority address: %s", authority))
 	}
 
+	sharedQuerier := prooftypes.NewSharedKeeperQueryClient(sharedKeeper, sessionKeeper)
+
 	return Keeper{
 		cdc:          cdc,
 		storeService: storeService,
@@ -58,6 +64,8 @@ func NewKeeper(
 		proofKeeper:       proofKeeper,
 		sharedKeeper:      sharedKeeper,
 		sessionKeeper:     sessionKeeper,
+
+		sharedQuerier: sharedQuerier,
 	}
 }
 
