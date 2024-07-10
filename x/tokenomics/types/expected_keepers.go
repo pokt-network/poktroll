@@ -9,6 +9,7 @@ import (
 
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -52,4 +53,10 @@ type SharedKeeper interface {
 	SetParams(ctx context.Context, params sharedtypes.Params) error
 
 	GetProofWindowCloseHeight(ctx context.Context, queryHeight int64) int64
+}
+
+type SessionKeeper interface {
+	GetSession(context.Context, *sessiontypes.QueryGetSessionRequest) (*sessiontypes.QueryGetSessionResponse, error)
+	GetBlockHash(ctx context.Context, height int64) []byte
+	StoreBlockHash(ctx context.Context)
 }
