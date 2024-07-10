@@ -160,7 +160,7 @@ func (k Keeper) SettleSessionAccounting(
 		}
 		if err = cosmostypes.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(applicationOverservicedEvent); err != nil {
 			return tokenomicstypes.ErrTokenomicsApplicationOverserviced.Wrapf(
-				"application address: %; expected burn %s; effective burn: %s",
+				"application address: %s; expected burn %s; effective burn: %s",
 				application.GetAddress(),
 				settlementAmt.String(),
 				application.GetStake().String(),
