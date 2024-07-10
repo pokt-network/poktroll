@@ -5,11 +5,6 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-const (
-	minimumClaimWindowSizeBlocks = 1
-	minimumProofWindowSizeBlocks = 1
-)
-
 // TODO_DOCUMENT(@bryanchriswhite): Move this into the documentation: https://github.com/pokt-network/poktroll/pull/571#discussion_r1630923625
 
 // GetSessionStartHeight returns the block height at which the session containing
@@ -123,24 +118,10 @@ func GetEarliestSupplierClaimCommitHeight(
 	// window open block hash and the supplier address.
 	randomNumber := poktrand.SeededInt63(claimWindowOpenBlockHash, []byte(supplierAddr))
 
-	distributionWindowSizeBlocks := GetClaimWindowSizeBlocks(sharedParams)
+	distributionWindowSizeBlocks := sharedParams.GetClaimWindowCloseOffsetBlocks()
 	randCreateClaimHeightOffset := randomNumber % int64(distributionWindowSizeBlocks)
 
 	return claimWindowOpenHeight + randCreateClaimHeightOffset
-}
-
-// GetClaimWindowSizeBlocks returns the number of blocks between the opening and closing
-// of the claim window, given the passed sharedParams.
-func GetClaimWindowSizeBlocks(sharedParams *sharedtypes.Params) uint64 {
-	windowSizeBlocks := sharedParams.ClaimWindowCloseOffsetBlocks -
-		sharedParams.ClaimWindowOpenOffsetBlocks -
-		minimumClaimWindowSizeBlocks
-
-	if windowSizeBlocks < 1 {
-		return 1
-	}
-
-	return windowSizeBlocks
 }
 
 // GetEarliestSupplierProofCommitHeight returns the earliest block height at which a proof
@@ -158,22 +139,8 @@ func GetEarliestSupplierProofCommitHeight(
 	// window open block hash and the supplier address.
 	randomNumber := poktrand.SeededInt63(proofWindowOpenBlockHash, []byte(supplierAddr))
 
-	distributionWindowSizeBlocks := GetProofWindowSizeBlocks(sharedParams)
+	distributionWindowSizeBlocks := sharedParams.GetProofWindowCloseOffsetBlocks()
 	randCreateProofHeightOffset := randomNumber % int64(distributionWindowSizeBlocks)
 
 	return proofWindowOpenHeight + randCreateProofHeightOffset
-}
-
-// GetProofWindowSizeBlocks returns the number of blocks between the opening and closing
-// of the proof window, given the passed sharedParams.
-func GetProofWindowSizeBlocks(sharedParams *sharedtypes.Params) uint64 {
-	windowSizeBlocks := sharedParams.ProofWindowCloseOffsetBlocks -
-		sharedParams.ProofWindowOpenOffsetBlocks -
-		minimumProofWindowSizeBlocks
-
-	if windowSizeBlocks < 1 {
-		return 1
-	}
-
-	return windowSizeBlocks
 }
