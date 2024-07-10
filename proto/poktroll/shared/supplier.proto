@@ -13,6 +13,6 @@ message Supplier {
   string address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the supplier using cosmos' ScalarDescriptor to ensure deterministic encoding
   cosmos.base.v1beta1.Coin stake = 2; // The total amount of uPOKT the supplier has staked
   repeated SupplierServiceConfig services = 3; // The service configs this supplier can support
-  int64 unbondingHeight = 4; // The height at which the supplier will be unbonded
+  int64 unstake_commit_session_end_height = 4; // The session end height corresponding the the unstake tx commit height
 }
 

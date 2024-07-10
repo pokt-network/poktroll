@@ -66,11 +66,11 @@ func (x *_Supplier_3_list) IsValid() bool {
 }
 
 var (
-	md_Supplier                 protoreflect.MessageDescriptor
-	fd_Supplier_address         protoreflect.FieldDescriptor
-	fd_Supplier_stake           protoreflect.FieldDescriptor
-	fd_Supplier_services        protoreflect.FieldDescriptor
-	fd_Supplier_unbondingHeight protoreflect.FieldDescriptor
+	md_Supplier                                   protoreflect.MessageDescriptor
+	fd_Supplier_address                           protoreflect.FieldDescriptor
+	fd_Supplier_stake                             protoreflect.FieldDescriptor
+	fd_Supplier_services                          protoreflect.FieldDescriptor
+	fd_Supplier_unstake_commit_session_end_height protoreflect.FieldDescriptor
 )
 
 func init() {
@@ -79,7 +79,7 @@ func init() {
 	fd_Supplier_address = md_Supplier.Fields().ByName("address")
 	fd_Supplier_stake = md_Supplier.Fields().ByName("stake")
 	fd_Supplier_services = md_Supplier.Fields().ByName("services")
-	fd_Supplier_unbondingHeight = md_Supplier.Fields().ByName("unbondingHeight")
+	fd_Supplier_unstake_commit_session_end_height = md_Supplier.Fields().ByName("unstake_commit_session_end_height")
 }
 
 var _ protoreflect.Message = (*fastReflection_Supplier)(nil)
@@ -165,9 +165,9 @@ func (x *fastReflection_Supplier) Range(f func(protoreflect.FieldDescriptor, pro
 			return
 		}
 	}
-	if x.UnbondingHeight != int64(0) {
-		value := protoreflect.ValueOfInt64(x.UnbondingHeight)
-		if !f(fd_Supplier_unbondingHeight, value) {
+	if x.UnstakeCommitSessionEndHeight != int64(0) {
+		value := protoreflect.ValueOfInt64(x.UnstakeCommitSessionEndHeight)
+		if !f(fd_Supplier_unstake_commit_session_end_height, value) {
 			return
 		}
 	}
@@ -192,8 +192,8 @@ func (x *fastReflection_Supplier) Has(fd protoreflect.FieldDescriptor) bool {
 		return x.Stake != nil
 	case "poktroll.shared.Supplier.services":
 		return len(x.Services) != 0
-	case "poktroll.shared.Supplier.unbondingHeight":
-		return x.UnbondingHeight != int64(0)
+	case "poktroll.shared.Supplier.unstake_commit_session_end_height":
+		return x.UnstakeCommitSessionEndHeight != int64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.Supplier"))
@@ -216,8 +216,8 @@ func (x *fastReflection_Supplier) Clear(fd protoreflect.FieldDescriptor) {
 		x.Stake = nil
 	case "poktroll.shared.Supplier.services":
 		x.Services = nil
-	case "poktroll.shared.Supplier.unbondingHeight":
-		x.UnbondingHeight = int64(0)
+	case "poktroll.shared.Supplier.unstake_commit_session_end_height":
+		x.UnstakeCommitSessionEndHeight = int64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.Supplier"))
@@ -246,8 +246,8 @@ func (x *fastReflection_Supplier) Get(descriptor protoreflect.FieldDescriptor) p
 		}
 		listValue := &_Supplier_3_list{list: &x.Services}
 		return protoreflect.ValueOfList(listValue)
-	case "poktroll.shared.Supplier.unbondingHeight":
-		value := x.UnbondingHeight
+	case "poktroll.shared.Supplier.unstake_commit_session_end_height":
+		value := x.UnstakeCommitSessionEndHeight
 		return protoreflect.ValueOfInt64(value)
 	default:
 		if descriptor.IsExtension() {
@@ -277,8 +277,8 @@ func (x *fastReflection_Supplier) Set(fd protoreflect.FieldDescriptor, value pro
 		lv := value.List()
 		clv := lv.(*_Supplier_3_list)
 		x.Services = *clv.list
-	case "poktroll.shared.Supplier.unbondingHeight":
-		x.UnbondingHeight = value.Int()
+	case "poktroll.shared.Supplier.unstake_commit_session_end_height":
+		x.UnstakeCommitSessionEndHeight = value.Int()
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.Supplier"))
@@ -312,8 +312,8 @@ func (x *fastReflection_Supplier) Mutable(fd protoreflect.FieldDescriptor) proto
 		return protoreflect.ValueOfList(value)
 	case "poktroll.shared.Supplier.address":
 		panic(fmt.Errorf("field address of message poktroll.shared.Supplier is not mutable"))
-	case "poktroll.shared.Supplier.unbondingHeight":
-		panic(fmt.Errorf("field unbondingHeight of message poktroll.shared.Supplier is not mutable"))
+	case "poktroll.shared.Supplier.unstake_commit_session_end_height":
+		panic(fmt.Errorf("field unstake_commit_session_end_height of message poktroll.shared.Supplier is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.Supplier"))
@@ -335,7 +335,7 @@ func (x *fastReflection_Supplier) NewField(fd protoreflect.FieldDescriptor) prot
 	case "poktroll.shared.Supplier.services":
 		list := []*SupplierServiceConfig{}
 		return protoreflect.ValueOfList(&_Supplier_3_list{list: &list})
-	case "poktroll.shared.Supplier.unbondingHeight":
+	case "poktroll.shared.Supplier.unstake_commit_session_end_height":
 		return protoreflect.ValueOfInt64(int64(0))
 	default:
 		if fd.IsExtension() {
@@ -420,8 +420,8 @@ func (x *fastReflection_Supplier) ProtoMethods() *protoiface.Methods {
 				n += 1 + l + runtime.Sov(uint64(l))
 			}
 		}
-		if x.UnbondingHeight != 0 {
-			n += 1 + runtime.Sov(uint64(x.UnbondingHeight))
+		if x.UnstakeCommitSessionEndHeight != 0 {
+			n += 1 + runtime.Sov(uint64(x.UnstakeCommitSessionEndHeight))
 		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
@@ -452,8 +452,8 @@ func (x *fastReflection_Supplier) ProtoMethods() *protoiface.Methods {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if x.UnbondingHeight != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.UnbondingHeight))
+		if x.UnstakeCommitSessionEndHeight != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.UnstakeCommitSessionEndHeight))
 			i--
 			dAtA[i] = 0x20
 		}
@@ -647,9 +647,9 @@ func (x *fastReflection_Supplier) ProtoMethods() *protoiface.Methods {
 				iNdEx = postIndex
 			case 4:
 				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field UnbondingHeight", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field UnstakeCommitSessionEndHeight", wireType)
 				}
-				x.UnbondingHeight = 0
+				x.UnstakeCommitSessionEndHeight = 0
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -659,7 +659,7 @@ func (x *fastReflection_Supplier) ProtoMethods() *protoiface.Methods {
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					x.UnbondingHeight |= int64(b&0x7F) << shift
+					x.UnstakeCommitSessionEndHeight |= int64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
@@ -718,10 +718,10 @@ type Supplier struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Address         string                   `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`                  // The Bech32 address of the supplier using cosmos' ScalarDescriptor to ensure deterministic encoding
-	Stake           *v1beta1.Coin            `protobuf:"bytes,2,opt,name=stake,proto3" json:"stake,omitempty"`                      // The total amount of uPOKT the supplier has staked
-	Services        []*SupplierServiceConfig `protobuf:"bytes,3,rep,name=services,proto3" json:"services,omitempty"`                // The service configs this supplier can support
-	UnbondingHeight int64                    `protobuf:"varint,4,opt,name=unbondingHeight,proto3" json:"unbondingHeight,omitempty"` // The height at which the supplier will be unbonded
+	Address                       string                   `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`                                                                                         // The Bech32 address of the supplier using cosmos' ScalarDescriptor to ensure deterministic encoding
+	Stake                         *v1beta1.Coin            `protobuf:"bytes,2,opt,name=stake,proto3" json:"stake,omitempty"`                                                                                             // The total amount of uPOKT the supplier has staked
+	Services                      []*SupplierServiceConfig `protobuf:"bytes,3,rep,name=services,proto3" json:"services,omitempty"`                                                                                       // The service configs this supplier can support
+	UnstakeCommitSessionEndHeight int64                    `protobuf:"varint,4,opt,name=unstake_commit_session_end_height,json=unstakeCommitSessionEndHeight,proto3" json:"unstake_commit_session_end_height,omitempty"` // The session end height corresponding the the unstake tx commit height
 }
 
 func (x *Supplier) Reset() {
@@ -765,9 +765,9 @@ func (x *Supplier) GetServices() []*SupplierServiceConfig {
 	return nil
 }
 
-func (x *Supplier) GetUnbondingHeight() int64 {
+func (x *Supplier) GetUnstakeCommitSessionEndHeight() int64 {
 	if x != nil {
-		return x.UnbondingHeight
+		return x.UnstakeCommitSessionEndHeight
 	}
 	return 0
 }
@@ -783,7 +783,7 @@ var file_poktroll_shared_supplier_proto_rawDesc = []byte{
 	0x73, 0x6d, 0x6f, 0x73, 0x2f, 0x62, 0x61, 0x73, 0x65, 0x2f, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61,
 	0x31, 0x2f, 0x63, 0x6f, 0x69, 0x6e, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x1d, 0x70, 0x6f,
 	0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2f, 0x73, 0x65,
-	0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xdd, 0x01, 0x0a, 0x08,
+	0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xfd, 0x01, 0x0a, 0x08,
 	0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x12, 0x32, 0x0a, 0x07, 0x61, 0x64, 0x64, 0x72,
 	0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63,
 	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72,
@@ -795,9 +795,11 @@ var file_poktroll_shared_supplier_proto_rawDesc = []byte{
 	0x26, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65,
 	0x64, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63,
 	0x65, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x52, 0x08, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65,
-	0x73, 0x12, 0x28, 0x0a, 0x0f, 0x75, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x48, 0x65,
-	0x69, 0x67, 0x68, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x03, 0x52, 0x0f, 0x75, 0x6e, 0x62, 0x6f,
-	0x6e, 0x64, 0x69, 0x6e, 0x67, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x42, 0xa3, 0x01, 0x0a, 0x13,
+	0x73, 0x12, 0x48, 0x0a, 0x21, 0x75, 0x6e, 0x73, 0x74, 0x61, 0x6b, 0x65, 0x5f, 0x63, 0x6f, 0x6d,
+	0x6d, 0x69, 0x74, 0x5f, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x5f,
+	0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x03, 0x52, 0x1d, 0x75, 0x6e,
+	0x73, 0x74, 0x61, 0x6b, 0x65, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x53, 0x65, 0x73, 0x73, 0x69,
+	0x6f, 0x6e, 0x45, 0x6e, 0x64, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x42, 0xa3, 0x01, 0x0a, 0x13,
 	0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x68, 0x61,
 	0x72, 0x65, 0x64, 0x42, 0x0d, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x50, 0x72, 0x6f,
 	0x74, 0x6f, 0x50, 0x01, 0x5a, 0x20, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e,

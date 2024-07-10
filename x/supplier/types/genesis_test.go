@@ -13,6 +13,7 @@ import (
 )
 
 func TestGenesisState_Validate(t *testing.T) {
+	defaultParams := types.DefaultParams()
 	addr1 := sample.AccAddress()
 	stake1 := sdk.NewCoin("upokt", math.NewInt(100))
 	serviceConfig1 := &sharedtypes.SupplierServiceConfig{
@@ -58,7 +59,7 @@ func TestGenesisState_Validate(t *testing.T) {
 		{
 			desc: "valid genesis state",
 			genState: &types.GenesisState{
-
+				Params: defaultParams,
 				SupplierList: []sharedtypes.Supplier{
 					{
 						Address:  addr1,
@@ -78,6 +79,7 @@ func TestGenesisState_Validate(t *testing.T) {
 		{
 			desc: "invalid - zero supplier stake",
 			genState: &types.GenesisState{
+				Params: defaultParams,
 				SupplierList: []sharedtypes.Supplier{
 					{
 						Address:  addr1,
@@ -96,6 +98,7 @@ func TestGenesisState_Validate(t *testing.T) {
 		{
 			desc: "invalid - negative supplier stake",
 			genState: &types.GenesisState{
+				Params: defaultParams,
 				SupplierList: []sharedtypes.Supplier{
 					{
 						Address:  addr1,
@@ -114,6 +117,7 @@ func TestGenesisState_Validate(t *testing.T) {
 		{
 			desc: "invalid - wrong stake denom",
 			genState: &types.GenesisState{
+				Params: defaultParams,
 				SupplierList: []sharedtypes.Supplier{
 					{
 						Address:  addr1,
@@ -132,6 +136,7 @@ func TestGenesisState_Validate(t *testing.T) {
 		{
 			desc: "invalid - missing denom",
 			genState: &types.GenesisState{
+				Params: defaultParams,
 				SupplierList: []sharedtypes.Supplier{
 					{
 						Address:  addr1,
@@ -150,6 +155,7 @@ func TestGenesisState_Validate(t *testing.T) {
 		{
 			desc: "invalid - due to duplicated supplier address",
 			genState: &types.GenesisState{
+				Params: defaultParams,
 				SupplierList: []sharedtypes.Supplier{
 					{
 						Address:  addr1,
@@ -168,6 +174,7 @@ func TestGenesisState_Validate(t *testing.T) {
 		{
 			desc: "invalid - due to nil supplier stake",
 			genState: &types.GenesisState{
+				Params: defaultParams,
 				SupplierList: []sharedtypes.Supplier{
 					{
 						Address:  addr1,
@@ -186,6 +193,7 @@ func TestGenesisState_Validate(t *testing.T) {
 		{
 			desc: "invalid - due to missing supplier stake",
 			genState: &types.GenesisState{
+				Params: defaultParams,
 				SupplierList: []sharedtypes.Supplier{
 					{
 						Address:  addr1,
@@ -204,6 +212,7 @@ func TestGenesisState_Validate(t *testing.T) {
 		{
 			desc: "invalid - missing services list",
 			genState: &types.GenesisState{
+				Params: defaultParams,
 				SupplierList: []sharedtypes.Supplier{
 					{
 						Address:  addr1,
@@ -222,6 +231,7 @@ func TestGenesisState_Validate(t *testing.T) {
 		{
 			desc: "invalid - empty services list",
 			genState: &types.GenesisState{
+				Params: defaultParams,
 				SupplierList: []sharedtypes.Supplier{
 					{
 						Address:  addr1,
@@ -240,6 +250,7 @@ func TestGenesisState_Validate(t *testing.T) {
 		{
 			desc: "invalid - invalid URL",
 			genState: &types.GenesisState{
+				Params: defaultParams,
 				SupplierList: []sharedtypes.Supplier{
 					{
 						Address:  addr1,
@@ -271,6 +282,7 @@ func TestGenesisState_Validate(t *testing.T) {
 		{
 			desc: "invalid - invalid RPC Type",
 			genState: &types.GenesisState{
+				Params: defaultParams,
 				SupplierList: []sharedtypes.Supplier{
 					{
 						Address:  addr1,
@@ -294,6 +306,45 @@ func TestGenesisState_Validate(t *testing.T) {
 								},
 							},
 						},
+					},
+				},
+			},
+			isValid: false,
+		},
+		{
+			desc: "invalid - missing params",
+			genState: &types.GenesisState{
+				SupplierList: []sharedtypes.Supplier{
+					{
+						Address:  addr1,
+						Stake:    &stake1,
+						Services: serviceList1,
+					},
+					{
+						Address:  addr2,
+						Stake:    &stake2,
+						Services: serviceList2,
+					},
+				},
+			},
+			isValid: false,
+		},
+		{
+			desc: "invalid - zero supplier unbonding period blocks",
+			genState: &types.GenesisState{
+				Params: types.Params{
+					SupplierUnbondingPeriodBlocks: 0,
+				},
+				SupplierList: []sharedtypes.Supplier{
+					{
+						Address:  addr1,
+						Stake:    &stake1,
+						Services: serviceList1,
+					},
+					{
+						Address:  addr2,
+						Stake:    &stake2,
+						Services: serviceList2,
 					},
 				},
 			},

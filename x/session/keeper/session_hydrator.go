@@ -172,6 +172,12 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 
 	candidateSuppliers := make([]*sharedtypes.Supplier, 0)
 	for _, s := range suppliers {
+		// Exclude suppliers that are in an unbonding period.
+		if s.UnstakeCommitSessionEndHeight != 0 &&
+			sh.sessionHeader.SessionEndBlockHeight > s.UnstakeCommitSessionEndHeight {
+			continue
+		}
+
 		// NB: Allocate a new heap variable as s is a value and we're appending
 		// to a slice of  pointers; otherwise, we'd be appending new pointers to
 		// the same memory address containing the last supplier in the loop.

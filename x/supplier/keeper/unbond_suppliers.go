@@ -26,11 +26,14 @@ func (k Keeper) EndBlockerUnbondSupplier(ctx sdk.Context) error {
 	// unbonding action instead of iterating over all suppliers.
 	for _, supplier := range k.GetAllSuppliers(ctx) {
 		// Ignore suppliers that have not initiated the unbonding action.
-		if supplier.UnbondingHeight == 0 {
+		if supplier.UnstakeCommitSessionEndHeight == 0 {
 			continue
 		}
 
-		if supplier.UnbondingHeight <= currentHeight {
+		unbondingPeriodBlocks := int64(k.GetParams(ctx).SupplierUnbondingPeriodBlocks)
+		unbondingHeight := supplier.UnstakeCommitSessionEndHeight + unbondingPeriodBlocks
+
+		if unbondingHeight <= currentHeight {
 
 			// Retrieve the address of the supplier
 			supplierAddress, err := sdk.AccAddressFromBech32(supplier.Address)

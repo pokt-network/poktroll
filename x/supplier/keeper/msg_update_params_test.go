@@ -30,12 +30,22 @@ func TestMsgUpdateParams(t *testing.T) {
 			expectedErrMsg: "invalid authority",
 		},
 		{
-			desc: "send empty params",
+			desc: "invalid: send empty params",
 			params: &types.MsgUpdateParams{
 				Authority: k.GetAuthority(),
 				Params:    types.Params{},
 			},
-			shouldError: false,
+			shouldError: true,
+		},
+		{
+			desc: "invalid: Zero SupplierUnbondingPeriodBlocks",
+			params: &types.MsgUpdateParams{
+				Authority: k.GetAuthority(),
+				Params: types.Params{
+					SupplierUnbondingPeriodBlocks: 0,
+				},
+			},
+			shouldError: true,
 		},
 		{
 			desc: "valid: send default params",

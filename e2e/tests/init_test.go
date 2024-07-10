@@ -449,15 +449,19 @@ func (s *suite) TheSupplierForAccountIsUnbonding(accName string) {
 	s.waitForTxResultEvent(newEventMsgTypeMatchFn("supplier", "UnstakeSupplier"))
 
 	supplier := s.getSupplierInfo(accName)
-	require.Greater(s, supplier.UnbondingHeight, int64(0), "supplier %s is not unbonding", accName)
+	require.Greater(s,
+		supplier.UnstakeCommitSessionEndHeight,
+		int64(0),
+		"supplier %s is not unbonding", accName,
+	)
 }
 
 func (s *suite) TheUserWaitsForUnbondingPeriodToPass(accName string) {
 	_, ok := accNameToSupplierMap[accName]
 	require.True(s, ok, "supplier %s not found", accName)
 
-	supplier := s.getSupplierInfo(accName)
-	s.waitForBlockHeight(supplier.UnbondingHeight)
+	unbondingHeight := s.getSupplierUnbondingHeight(accName)
+	s.waitForBlockHeight(unbondingHeight)
 }
 
 func (s *suite) getStakedAmount(actorType, accName string) (int, bool) {
@@ -602,6 +606,26 @@ func (s *suite) getSupplierInfo(supplierAddr string) *sharedtypes.Supplier {
 	responseBz := []byte(strings.TrimSpace(res.Stdout))
 	s.cdc.MustUnmarshalJSON(responseBz, &resp)
 	return &resp.Supplier
+}
+
+// getSupplierUnbondingHeight returns the height at which the supplier will be unbonded.
+func (s *suite) getSupplierUnbondingHeight(accName string) int64 {
+	supplier := s.getSupplierInfo(accName)
+
+	args := []string{
+		"query",
+		"supplier",
+		"params",
+		"--output=json",
+	}
+
+	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, args...)
+	require.NoError(s, err, "error getting supplier module params")
+
+	var resp suppliertypes.QueryParamsResponse
+	responseBz := []byte(strings.TrimSpace(res.Stdout))
+	s.cdc.MustUnmarshalJSON(responseBz, &resp)
+	return supplier.UnstakeCommitSessionEndHeight + int64(resp.Params.SupplierUnbondingPeriodBlocks)
 }
 
 // TODO_IMPROVE: use `sessionId` and `supplierName` since those are the two values

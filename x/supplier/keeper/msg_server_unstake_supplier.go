@@ -8,7 +8,6 @@ import (
 
 	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/shared"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
@@ -39,9 +38,9 @@ func (k msgServer) UnstakeSupplier(
 	}
 	logger.Info(fmt.Sprintf("Supplier found. Unstaking supplier for address %s", msg.Address))
 
-	// Check if the supplier has already initiated the unstake action and is in the unbonding period
-	if supplier.UnbondingHeight > 0 {
-		logger.Warn(fmt.Sprintf("Supplier %s has not finished the unbonding period", msg.Address))
+	// Check if the supplier has already initiated the unstake action.
+	if supplier.UnstakeCommitSessionEndHeight > 0 {
+		logger.Warn(fmt.Sprintf("Supplier %s still unbonding from previous unstaking", msg.Address))
 		return nil, types.ErrSupplierUnbonding
 	}
 
@@ -49,26 +48,16 @@ func (k msgServer) UnstakeSupplier(
 	currentHeight := sdkCtx.BlockHeight()
 	sharedParams := k.sharedKeeper.GetParams(ctx)
 
-	supplier.UnbondingHeight = GetSupplierUnbondingHeight(&sharedParams, currentHeight)
+	// Mark the supplier as unstaking by recording the height at which it should stop
+	// providing service.
+	// The supplier MUST continue to provide service until the end of the current
+	// session, which which should not change its suppliers list mid-session.
+	// Removing it right away could have undesired effects on the network
+	// (e.g. a session with less than the minimum or 0 number of suppliers,
+	// off-chain actors that need to listen to session supplier's change mid-session, etc).
+	supplier.UnstakeCommitSessionEndHeight = shared.GetSessionEndHeight(&sharedParams, currentHeight)
 	k.SetSupplier(ctx, supplier)
 
 	isSuccessful = true
 	return &types.MsgUnstakeSupplierResponse{}, nil
-}
-
-// GetSupplierUnbondingHeight returns the height at which the supplier will be able to withdraw
-// the staked coins after the unbonding period.
-func GetSupplierUnbondingHeight(sharedParams *sharedtypes.Params, currentHeight int64) int64 {
-	sessionEndHeight := shared.GetSessionEndHeight(sharedParams, currentHeight)
-
-	// TODO_IN_THIS_PR: Make the unbonding period a governance parameter.
-	unbondingPeriodInBlocks := int64(sharedParams.GetNumBlocksPerSession())
-
-	// Unbonding period has a minimum duration of 1 session, which means that if
-	// the current height is prior to the end of the session, the unbonding height
-	// will be set to the end of the session that is after the current session.
-	// This is to avoid the case where a supplier is able to withdraw after 1 block,
-	// if it unstakes right before the end of the current session.
-	return sessionEndHeight + unbondingPeriodInBlocks
-
 }

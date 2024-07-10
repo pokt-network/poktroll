@@ -69,7 +69,11 @@ func SupplierKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 	// Initialize params
 	require.NoError(t, k.SetParams(ctx, types.DefaultParams()))
 
-	return k, ctx
+	// Move block height to 1 to get a non zero session end height
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	sdkCtx = sdkCtx.WithBlockHeight(sdkCtx.BlockHeight() + 1)
+
+	return k, sdkCtx
 }
 
 // TODO_OPTIMIZE: Index suppliers by service so we can easily query k.GetAllSuppliers(ctx, Service)

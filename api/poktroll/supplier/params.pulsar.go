@@ -15,12 +15,14 @@ import (
 )
 
 var (
-	md_Params protoreflect.MessageDescriptor
+	md_Params                                  protoreflect.MessageDescriptor
+	fd_Params_supplier_unbonding_period_blocks protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_poktroll_supplier_params_proto_init()
 	md_Params = File_poktroll_supplier_params_proto.Messages().ByName("Params")
+	fd_Params_supplier_unbonding_period_blocks = md_Params.Fields().ByName("supplier_unbonding_period_blocks")
 }
 
 var _ protoreflect.Message = (*fastReflection_Params)(nil)
@@ -88,6 +90,12 @@ func (x *fastReflection_Params) Interface() protoreflect.ProtoMessage {
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
 func (x *fastReflection_Params) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.SupplierUnbondingPeriodBlocks != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.SupplierUnbondingPeriodBlocks)
+		if !f(fd_Params_supplier_unbonding_period_blocks, value) {
+			return
+		}
+	}
 }
 
 // Has reports whether a field is populated.
@@ -103,6 +111,8 @@ func (x *fastReflection_Params) Range(f func(protoreflect.FieldDescriptor, proto
 // a repeated field is populated if it is non-empty.
 func (x *fastReflection_Params) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
+	case "poktroll.supplier.Params.supplier_unbonding_period_blocks":
+		return x.SupplierUnbondingPeriodBlocks != uint64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.supplier.Params"))
@@ -119,6 +129,8 @@ func (x *fastReflection_Params) Has(fd protoreflect.FieldDescriptor) bool {
 // Clear is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_Params) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
+	case "poktroll.supplier.Params.supplier_unbonding_period_blocks":
+		x.SupplierUnbondingPeriodBlocks = uint64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.supplier.Params"))
@@ -135,6 +147,9 @@ func (x *fastReflection_Params) Clear(fd protoreflect.FieldDescriptor) {
 // of the value; to obtain a mutable reference, use Mutable.
 func (x *fastReflection_Params) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
+	case "poktroll.supplier.Params.supplier_unbonding_period_blocks":
+		value := x.SupplierUnbondingPeriodBlocks
+		return protoreflect.ValueOfUint64(value)
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.supplier.Params"))
@@ -155,6 +170,8 @@ func (x *fastReflection_Params) Get(descriptor protoreflect.FieldDescriptor) pro
 // Set is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_Params) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
+	case "poktroll.supplier.Params.supplier_unbonding_period_blocks":
+		x.SupplierUnbondingPeriodBlocks = value.Uint()
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.supplier.Params"))
@@ -175,6 +192,8 @@ func (x *fastReflection_Params) Set(fd protoreflect.FieldDescriptor, value proto
 // Mutable is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_Params) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
+	case "poktroll.supplier.Params.supplier_unbonding_period_blocks":
+		panic(fmt.Errorf("field supplier_unbonding_period_blocks of message poktroll.supplier.Params is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.supplier.Params"))
@@ -188,6 +207,8 @@ func (x *fastReflection_Params) Mutable(fd protoreflect.FieldDescriptor) protore
 // For lists, maps, and messages, this returns a new, empty, mutable value.
 func (x *fastReflection_Params) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
+	case "poktroll.supplier.Params.supplier_unbonding_period_blocks":
+		return protoreflect.ValueOfUint64(uint64(0))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.supplier.Params"))
@@ -257,6 +278,9 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 		var n int
 		var l int
 		_ = l
+		if x.SupplierUnbondingPeriodBlocks != 0 {
+			n += 1 + runtime.Sov(uint64(x.SupplierUnbondingPeriodBlocks))
+		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
 		}
@@ -285,6 +309,11 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 		if x.unknownFields != nil {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
+		}
+		if x.SupplierUnbondingPeriodBlocks != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.SupplierUnbondingPeriodBlocks))
+			i--
+			dAtA[i] = 0x38
 		}
 		if input.Buf != nil {
 			input.Buf = append(input.Buf, dAtA...)
@@ -335,6 +364,25 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: Params: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
+			case 7:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field SupplierUnbondingPeriodBlocks", wireType)
+				}
+				x.SupplierUnbondingPeriodBlocks = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.SupplierUnbondingPeriodBlocks |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
 			default:
 				iNdEx = preIndex
 				skippy, err := runtime.Skip(dAtA[iNdEx:])
@@ -388,6 +436,10 @@ type Params struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
+
+	// supplier_unbonding_period_blocks is the number of blocks that a supplier must wait
+	// after unstaking before they can withdraw their staked tokens.
+	SupplierUnbondingPeriodBlocks uint64 `protobuf:"varint,7,opt,name=supplier_unbonding_period_blocks,json=supplierUnbondingPeriodBlocks,proto3" json:"supplier_unbonding_period_blocks,omitempty"`
 }
 
 func (x *Params) Reset() {
@@ -410,6 +462,13 @@ func (*Params) Descriptor() ([]byte, []int) {
 	return file_poktroll_supplier_params_proto_rawDescGZIP(), []int{0}
 }
 
+func (x *Params) GetSupplierUnbondingPeriodBlocks() uint64 {
+	if x != nil {
+		return x.SupplierUnbondingPeriodBlocks
+	}
+	return 0
+}
+
 var File_poktroll_supplier_params_proto protoreflect.FileDescriptor
 
 var file_poktroll_supplier_params_proto_rawDesc = []byte{
@@ -418,8 +477,15 @@ var file_poktroll_supplier_params_proto_rawDesc = []byte{
 	0x12, 0x11, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x75, 0x70, 0x70, 0x6c,
 	0x69, 0x65, 0x72, 0x1a, 0x11, 0x61, 0x6d, 0x69, 0x6e, 0x6f, 0x2f, 0x61, 0x6d, 0x69, 0x6e, 0x6f,
 	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x14, 0x67, 0x6f, 0x67, 0x6f, 0x70, 0x72, 0x6f, 0x74,
-	0x6f, 0x2f, 0x67, 0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x2d, 0x0a, 0x06,
-	0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x3a, 0x23, 0xe8, 0xa0, 0x1f, 0x01, 0x8a, 0xe7, 0xb0, 0x2a,
+	0x6f, 0x2f, 0x67, 0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x9c, 0x01, 0x0a,
+	0x06, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x6d, 0x0a, 0x20, 0x73, 0x75, 0x70, 0x70, 0x6c,
+	0x69, 0x65, 0x72, 0x5f, 0x75, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x5f, 0x70, 0x65,
+	0x72, 0x69, 0x6f, 0x64, 0x5f, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x73, 0x18, 0x07, 0x20, 0x01, 0x28,
+	0x04, 0x42, 0x24, 0xea, 0xde, 0x1f, 0x20, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x5f,
+	0x75, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x5f, 0x70, 0x65, 0x72, 0x69, 0x6f, 0x64,
+	0x5f, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x73, 0x52, 0x1d, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65,
+	0x72, 0x55, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x50, 0x65, 0x72, 0x69, 0x6f, 0x64,
+	0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x73, 0x3a, 0x23, 0xe8, 0xa0, 0x1f, 0x01, 0x8a, 0xe7, 0xb0, 0x2a,
 	0x1a, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x78, 0x2f, 0x73, 0x75, 0x70, 0x70,
 	0x6c, 0x69, 0x65, 0x72, 0x2f, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x42, 0xad, 0x01, 0x0a, 0x15,
 	0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x75, 0x70,
