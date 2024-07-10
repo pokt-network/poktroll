@@ -1,4 +1,4 @@
-//go:generate mockgen -destination ../../../testutil/tokenomics/mocks/expected_keepers_mock.go -package mocks . AccountKeeper,BankKeeper,ApplicationKeeper,ProofKeeper,SharedKeeper
+//go:generate mockgen -destination ../../../testutil/tokenomics/mocks/expected_keepers_mock.go -package mocks . AccountKeeper,BankKeeper,ApplicationKeeper,ProofKeeper,SharedKeeper,SessionKeeper
 
 package types
 
@@ -39,6 +39,8 @@ type ProofKeeper interface {
 	RemoveClaim(ctx context.Context, sessionId, supplierAddr string)
 	GetProof(ctx context.Context, sessionId, supplierAddr string) (proof prooftypes.Proof, isProofFound bool)
 	RemoveProof(ctx context.Context, sessionId, supplierAddr string)
+
+	AllClaims(ctx context.Context, req *prooftypes.QueryAllClaimsRequest) (*prooftypes.QueryAllClaimsResponse, error)
 
 	// Only used for testing & simulation
 	UpsertClaim(ctx context.Context, claim prooftypes.Claim)
