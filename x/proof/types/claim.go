@@ -23,7 +23,7 @@ func (claim *Claim) GetNumComputeUnits() (numComputeUnits uint64, err error) {
 		}
 	}()
 
-	return smt.MerkleRoot(claim.GetRootHash()).Sum(), nil
+	return smt.MerkleRoot(claim.GetRootHash()).Sum()
 }
 
 // GetNumRelays returns the number of relays for a given claim

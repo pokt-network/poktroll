@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	math "cosmossdk.io/math"
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"github.com/pokt-network/smt"
 
 	"github.com/pokt-network/poktroll/telemetry"
@@ -26,7 +27,7 @@ import (
 func (k Keeper) SettleSessionAccounting(
 	ctx context.Context,
 	claim *prooftypes.Claim,
-) error {
+) (err error) {
 	logger := k.Logger().With("method", "SettleSessionAccounting")
 
 	settlementAmt := sdk.NewCoin("upokt", math.NewInt(0))
@@ -68,13 +69,10 @@ func (k Keeper) SettleSessionAccounting(
 	// Retrieve the sum of the root as a proxy into the amount of work done
 	root := (smt.MerkleRoot)(claim.GetRootHash())
 
-	// TODO_BLOCKER(@Olshansk): This check should be the responsibility of the SMST package
-	// since it's used to get compute units from the root hash.
-	if root == nil || len(root) != smt.SmstRootSizeBytes {
-		logger.Error(fmt.Sprintf("received an invalid root hash of size: %d", len(root)))
-		return types.ErrTokenomicsRootHashInvalid
+	claimComputeUnits, err := root.Sum()
+	if err != nil {
+		return types.ErrTokenomicsRootHashInvalid.Wrapf("%v", err)
 	}
-	claimComputeUnits := root.Sum()
 
 	// Helpers for logging the same metadata throughout this function calls
 	logger = logger.With(
@@ -96,7 +94,11 @@ func (k Keeper) SettleSessionAccounting(
 	logger.Info(fmt.Sprintf("About to start settling claim for %d compute units", claimComputeUnits))
 
 	// Calculate the amount of tokens to mint & burn
-	settlementAmt = k.getCoinFromComputeUnits(ctx, root)
+	settlementAmt, err = k.getCoinFromComputeUnits(ctx, root)
+	if err != nil {
+		return err
+	}
+
 	settlementAmtuPOKT := sdk.NewCoins(settlementAmt)
 
 	logger.Info(fmt.Sprintf(
@@ -177,10 +179,15 @@ func (k Keeper) SettleSessionAccounting(
 	return nil
 }
 
-func (k Keeper) getCoinFromComputeUnits(ctx context.Context, root smt.MerkleRoot) sdk.Coin {
+func (k Keeper) getCoinFromComputeUnits(ctx context.Context, root smt.MerkleRoot) (sdk.Coin, error) {
 	// Retrieve the existing tokenomics params
 	params := k.GetParams(ctx)
 
-	upokt := math.NewInt(int64(root.Sum() * params.ComputeUnitsToTokensMultiplier))
-	return sdk.NewCoin("upokt", upokt)
+	sum, err := root.Sum()
+	if err != nil {
+		return sdk.Coin{}, err
+	}
+
+	upokt := math.NewInt(int64(sum * params.ComputeUnitsToTokensMultiplier))
+	return sdk.NewCoin("upokt", upokt), nil
 }
