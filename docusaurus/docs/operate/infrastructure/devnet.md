@@ -122,7 +122,7 @@ image:
   tag: sha-7042be3
 ```
 
-As all parameters in this config are passed to the [downstream helm chart](https://github.com/pokt-network/protocol-infra/tree/main/charts/full-network) via an [ArgoCD Application](https://github.com/pokt-network/protocol-infra/blob/main/clusters/protocol-us-central1/devnets-persistent.yaml).
+All parameters in this config are passed to the [downstream helm chart](https://github.com/pokt-network/protocol-infra/tree/main/charts/full-network) via an [ArgoCD Application](https://github.com/pokt-network/protocol-infra/blob/main/clusters/protocol-us-central1/devnets-persistent.yaml).
 Here is a [list of all options](https://github.com/pokt-network/protocol-infra/blob/main/charts/full-network/values.yaml) which can be modified, in addition to the image tag.
 
 ### Scaling actors up and down
@@ -176,8 +176,8 @@ IMAGE_TAG=sha-7042be3 NAMESPACE=devnet-sophon JOB_NAME=e2e-test-7042be3 POCKET_N
 
 ### Staking actors
 
-Since the genesis actor keys are the same as LocalNet, we can use the same commands (and keyring) to stake actors on DevNet. Additionally, DevNets
-match the hostnames with LocalNet, which makes it possible for the same stake configs to work on different networks.
+Since the genesis actor keys are the same as LocalNet, we can use the same commands (and keyring) to stake actors on
+DevNet. Additionally, DevNets match the hostnames with LocalNet, making it possible for the same stake configs to work on different networks.
 For example, this command stakes supplier2 on DevNet `devnet-sophon`:
 
 ```bash

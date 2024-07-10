@@ -71,7 +71,10 @@ To execute tests on LocalNet:
 #### Interpreting Results
 
 - The CLI output displays standard Go test results. Successful tests are indicated by `PASS`, while failures are denoted by `FAIL` with accompanying error messages.
-- During test execution, the observability stack continuously collects metric data from off-chain actors. On LocalNet, [Grafana is accessible on port 3003](http://localhost:3003/?orgId=1). The "Stress test" and "Load Testing" dashboards provide valuable insights into system status.
+- During test execution, the observability stack continuously collects metric data from off-chain actors. On LocalNet, [Grafana is accessible on port 3003](http://localhost:3003/?orgId=1). The
+  [Stress test](http://localhost:3003/d/ddkakqetrti4gb/protocol-stress-test?orgId=1&refresh=5s)
+  and [Load Testing](http://localhost:3003/d/fdjwb9u9t9ts0e/protocol-load-testing?orgId=1) dashboards provide valuable
+  insights into system status.
 
 ### Non-Ephemeral Networks (TestNets, MainNet, etc)
 
@@ -93,10 +96,18 @@ Using [loadtest_manifest_example.yaml](https://github.com/pokt-network/poktroll/
 
 #### Test Execution
 
-Utilize the provided makefile target to run the `relays_stress.feature` with the modified manifest:
+Utilize the provided makefile target to run the `relays_stress.feature` with the modified manifest. By default, the example manifest file is used. You can specify a different manifest file by setting the `LOAD_TEST_CUSTOM_MANIFEST` environment variable.
+
+To run the stress test using the default manifest:
 
 ```bash
-make test_load_relays_stress_example
+make test_load_relays_stress_custom
+```
+
+To run the stress test with a custom manifest:
+
+```bash
+LOAD_TEST_CUSTOM_MANIFEST=your_new_manifest.yaml make test_load_relays_stress_custom
 ```
 
 #### Result Analysis
