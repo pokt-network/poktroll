@@ -28,11 +28,11 @@ func (relayMinerConfig *RelayMinerConfig) HydratePocketNodeUrls(
 		relayMinerConfig.PocketNode.QueryNodeRPCUrl = relayMinerConfig.PocketNode.TxNodeRPCUrl
 	} else {
 		// If the query node rpc url is not empty, make sure it is a valid URL
-		queryNodeRPCUrl, err := url.Parse(yamlPocketNodeConfig.QueryNodeRPCUrl)
-		if err != nil {
+		queryNodeRPCUrl, parseErr := url.Parse(yamlPocketNodeConfig.QueryNodeRPCUrl)
+		if parseErr != nil {
 			return ErrRelayMinerConfigInvalidNodeUrl.Wrapf(
 				"invalid query node rpc url %s",
-				err.Error(),
+				parseErr.Error(),
 			)
 		}
 		relayMinerConfig.PocketNode.QueryNodeRPCUrl = queryNodeRPCUrl

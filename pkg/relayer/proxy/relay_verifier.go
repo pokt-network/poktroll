@@ -25,7 +25,7 @@ func (rp *relayerProxy) VerifyRelayRequest(
 
 	// Verify the relayRequest metadata, signature, session header and other
 	// basic validation.
-	if err := rp.ringCache.VerifyRelayRequestSignature(ctx, relayRequest); err != nil {
+	if err = rp.ringCache.VerifyRelayRequestSignature(ctx, relayRequest); err != nil {
 		return err
 	}
 

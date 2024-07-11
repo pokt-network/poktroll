@@ -522,8 +522,8 @@ func TestRelayerProxy_Relays(t *testing.T) {
 	ctx := context.TODO()
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			ctx, cancel := context.WithCancel(ctx)
-			testBehavior := testproxy.NewRelayerProxyTestBehavior(ctx, t, test.relayerProxyBehavior...)
+			ctxWithCancel, cancel := context.WithCancel(ctx)
+			testBehavior := testproxy.NewRelayerProxyTestBehavior(ctxWithCancel, t, test.relayerProxyBehavior...)
 
 			rp, err := proxy.NewRelayerProxy(
 				testBehavior.Deps,
@@ -532,7 +532,7 @@ func TestRelayerProxy_Relays(t *testing.T) {
 			)
 			require.NoError(t, err)
 
-			go rp.Start(ctx)
+			go rp.Start(ctxWithCancel)
 			// Block so relayerProxy has sufficient time to start
 			time.Sleep(100 * time.Millisecond)
 

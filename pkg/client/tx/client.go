@@ -160,7 +160,7 @@ func NewTxClient(
 		opt(txnClient)
 	}
 
-	if err := txnClient.validateConfigAndSetDefaults(); err != nil {
+	if err = txnClient.validateConfigAndSetDefaults(); err != nil {
 		return nil, err
 	}
 
@@ -256,7 +256,7 @@ func (txnClient *txClient) SignAndBroadcast(
 
 	// ensure transactions is valid
 	// NOTE: this makes the transactions valid; i.e. it is *REQUIRED*
-	if err := txBuilder.GetTx().ValidateBasic(); err != nil {
+	if err = txBuilder.GetTx().ValidateBasic(); err != nil {
 		return either.SyncErr(err)
 	}
 

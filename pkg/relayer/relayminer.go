@@ -121,13 +121,13 @@ func (rel *relayMiner) ServePprof(ctx context.Context, addr string) error {
 	// If no error, start the server in a new goroutine
 	go func() {
 		rel.logger.Info().Str("endpoint", addr).Msg("starting a pprof endpoint")
-		server.ListenAndServe()
+		_ = server.ListenAndServe()
 	}()
 
 	go func() {
 		<-ctx.Done()
 		rel.logger.Info().Str("endpoint", addr).Msg("stopping a pprof endpoint")
-		server.Shutdown(ctx)
+		_ = server.Shutdown(ctx)
 	}()
 
 	return nil

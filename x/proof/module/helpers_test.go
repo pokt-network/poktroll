@@ -117,7 +117,7 @@ func networkWithClaimObjects(
 	ctx := net.Validators[0].ClientCtx
 	// Overwrite the client context's keyring with the in-memory one that contains
 	// our pre-generated accounts.
-	ctx = ctx.WithKeyring(kr)
+	net.Validators[0].ClientCtx = ctx.WithKeyring(kr)
 
 	// Initialize all the accounts
 	sequenceIndex := 1

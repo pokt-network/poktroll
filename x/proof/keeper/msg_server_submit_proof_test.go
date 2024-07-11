@@ -691,8 +691,8 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 				require.NoError(t, err)
 
 				// Get the Merkle root for the session tree in order to construct a claim.
-				mangledRelayMerkleRootBz, err := mangledRelaySessionTree.Flush()
-				require.NoError(t, err)
+				mangledRelayMerkleRootBz, flushErr := mangledRelaySessionTree.Flush()
+				require.NoError(t, flushErr)
 
 				// Re-set the block height to the earliest claim commit height to create a new claim.
 				claimCtx := cosmostypes.UnwrapSDKContext(ctx)
@@ -745,8 +745,8 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 				)
 
 				// Get the Merkle root for the session tree in order to construct a claim.
-				wrongRequestSessionIdMerkleRootBz, err := wrongRequestSessionIdSessionTree.Flush()
-				require.NoError(t, err)
+				wrongRequestSessionIdMerkleRootBz, flushErr := wrongRequestSessionIdSessionTree.Flush()
+				require.NoError(t, flushErr)
 
 				// Re-set the block height to the earliest claim commit height to create a new claim.
 				claimCtx := cosmostypes.UnwrapSDKContext(ctx)
@@ -800,8 +800,8 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 				)
 
 				// Get the Merkle root for the session tree in order to construct a claim.
-				wrongResponseSessionIdMerkleRootBz, err := wrongResponseSessionIdSessionTree.Flush()
-				require.NoError(t, err)
+				wrongResponseSessionIdMerkleRootBz, flushErr := wrongResponseSessionIdSessionTree.Flush()
+				require.NoError(t, flushErr)
 
 				// Re-set the block height to the earliest claim commit height to create a new claim.
 				claimCtx := cosmostypes.UnwrapSDKContext(ctx)
@@ -848,8 +848,8 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 				// Ensure a valid relay response signature.
 				testrelayer.SignRelayResponse(ctx, t, invalidRequestSignatureRelay, supplierUid, supplierAddr, keyRing)
 
-				invalidRequestSignatureRelayBz, err := invalidRequestSignatureRelay.Marshal()
-				require.NoError(t, err)
+				invalidRequestSignatureRelayBz, marshalErr := invalidRequestSignatureRelay.Marshal()
+				require.NoError(t, marshalErr)
 
 				// Construct a session tree with 1 relay with a session header containing
 				// a session ID that doesn't match the expected session ID.
@@ -860,8 +860,8 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 				require.NoError(t, err)
 
 				// Get the Merkle root for the session tree in order to construct a claim.
-				invalidRequestSignatureMerkleRootBz, err := invalidRequestSignatureSessionTree.Flush()
-				require.NoError(t, err)
+				invalidRequestSignatureMerkleRootBz, flushErr := invalidRequestSignatureSessionTree.Flush()
+				require.NoError(t, flushErr)
 
 				// Re-set the block height to the earliest claim commit height to create a new claim.
 				claimCtx := cosmostypes.UnwrapSDKContext(ctx)
@@ -914,8 +914,8 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 				// Ensure a valid relay request signature
 				testrelayer.SignRelayRequest(ctx, t, relay, appAddr, keyRing, ringClient)
 
-				relayBz, err := relay.Marshal()
-				require.NoError(t, err)
+				relayBz, marshalErr := relay.Marshal()
+				require.NoError(t, marshalErr)
 
 				// Construct a session tree with 1 relay with a session header containing
 				// a session ID that doesn't match the expected session ID.
@@ -926,8 +926,8 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 				require.NoError(t, err)
 
 				// Get the Merkle root for the session tree in order to construct a claim.
-				invalidResponseSignatureMerkleRootBz, err := invalidResponseSignatureSessionTree.Flush()
-				require.NoError(t, err)
+				invalidResponseSignatureMerkleRootBz, flushErr := invalidResponseSignatureSessionTree.Flush()
+				require.NoError(t, flushErr)
 
 				// Re-set the block height to the earliest claim commit height to create a new claim.
 				claimCtx := cosmostypes.UnwrapSDKContext(ctx)
@@ -982,8 +982,8 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 					ringClient,
 				)
 
-				wrongPathMerkleRootBz, err := wrongPathSessionTree.Flush()
-				require.NoError(t, err)
+				wrongPathMerkleRootBz, flushErr := wrongPathSessionTree.Flush()
+				require.NoError(t, flushErr)
 
 				// Re-set the block height to the earliest claim commit height to create a new claim.
 				claimCtx := cosmostypes.UnwrapSDKContext(ctx)
@@ -1019,14 +1019,14 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			newProofMsg: func(t *testing.T) *prooftypes.MsgSubmitProof {
 				// Set the minimum relay difficulty to a non-zero value such that the relays
 				// constructed by the test helpers have a negligable chance of being valid.
-				err := keepers.Keeper.SetParams(ctx, prooftypes.Params{
+				err = keepers.Keeper.SetParams(ctx, prooftypes.Params{
 					MinRelayDifficultyBits: 10,
 				})
 				require.NoError(t, err)
 
 				// Reset the minimum relay difficulty to zero after this test case.
 				t.Cleanup(func() {
-					err := keepers.Keeper.SetParams(ctx, prooftypes.DefaultParams())
+					err = keepers.Keeper.SetParams(ctx, prooftypes.DefaultParams())
 					require.NoError(t, err)
 				})
 
@@ -1395,18 +1395,4 @@ func getClosestRelayDifficultyBits(
 
 	// Count the number of leading 0s in the relay hash to determine its difficulty.
 	return uint64(protocol.CountHashDifficultyBits(relayHash))
-}
-
-// resetBlockHeightFn returns a function that resets the block height of the
-// given context to one; the first valid session block height.
-func resetBlockHeightFn(ctx *context.Context) func() {
-	return func() {
-		setBlockHeight(ctx, 1)
-	}
-}
-
-// setBlockHeight sets the block height of the given context to the given height.
-func setBlockHeight(ctx *context.Context, height int64) {
-	sdkCtx := cosmostypes.UnwrapSDKContext(*ctx)
-	*ctx = sdkCtx.WithBlockHeight(height)
 }

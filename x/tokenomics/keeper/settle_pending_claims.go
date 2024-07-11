@@ -71,7 +71,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 			return 0, 0, relaysPerServiceMap, computeUnitsPerServiceMap, err
 		}
 
-		logger := k.logger.With(
+		logger = k.logger.With(
 			"session_id", sessionId,
 			"supplier_address", claim.SupplierAddress,
 			"num_claim_compute_units", numClaimComputeUnits,

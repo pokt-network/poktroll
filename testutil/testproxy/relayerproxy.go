@@ -151,10 +151,14 @@ func WithServicesConfigMap(
 				server.Handler = http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 					sendJSONRPCResponse(test.t, w)
 				})
-				go func() { server.ListenAndServe() }()
+				go func() {
+					err := server.ListenAndServe()
+					require.NoError(test.t, err)
+				}()
 				go func() {
 					<-test.ctx.Done()
-					server.Shutdown(test.ctx)
+					err := server.Shutdown(test.ctx)
+					require.NoError(test.t, err)
 				}()
 
 				test.proxyServersMap[serviceId] = server
@@ -317,7 +321,7 @@ func GetRelayResponseError(t *testing.T, res *http.Response) (errCode int32, err
 	require.NoError(t, err)
 
 	// If the relayResponse basic validation fails then consider the payload as an error.
-	if err := relayResponse.ValidateBasic(); err != nil {
+	if err = relayResponse.ValidateBasic(); err != nil {
 		return JSONRPCInternalErrorCode, string(relayResponse.Payload)
 	}
 

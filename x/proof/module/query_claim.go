@@ -31,31 +31,31 @@ $ poktrolld q claim list-claims --session-id <session_id> --node $(POCKET_NODE) 
 $ poktrolld q claim list-claims --session-end-height <session_end_height> --node $(POCKET_NODE) --home $(POKTROLLD_HOME)
 $ poktrolld q claim list-claims --supplier-address <supplier_address> --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
 		Args: cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			pageReq, err := client.ReadPageRequest(cmd.Flags())
-			if err != nil {
-				return err
+		RunE: func(cmd *cobra.Command, args []string) (err error) {
+			pageReq, pageErr := client.ReadPageRequest(cmd.Flags())
+			if pageErr != nil {
+				return pageErr
 			}
 
 			req := &types.QueryAllClaimsRequest{
 				Pagination: pageReq,
 			}
-			if err := updateClaimsFilter(cmd, req); err != nil {
+			if err = updateClaimsFilter(cmd, req); err != nil {
 				return err
 			}
-			if err := req.ValidateBasic(); err != nil {
+			if err = req.ValidateBasic(); err != nil {
 				return err
 			}
 
-			clientCtx, err := client.GetClientQueryContext(cmd)
-			if err != nil {
-				return err
+			clientCtx, ctxErr := client.GetClientQueryContext(cmd)
+			if ctxErr != nil {
+				return ctxErr
 			}
 			queryClient := types.NewQueryClient(clientCtx)
 
-			res, err := queryClient.AllClaims(cmd.Context(), req)
-			if err != nil {
-				return err
+			res, claimsErr := queryClient.AllClaims(cmd.Context(), req)
+			if claimsErr != nil {
+				return claimsErr
 			}
 			return clientCtx.PrintProto(res)
 		},

@@ -40,22 +40,22 @@ $ poktrolld q proof list-proofs --supplier-address <supplier_address> --node $(P
 			req := &types.QueryAllProofsRequest{
 				Pagination: pageReq,
 			}
-			if err := updateProofsFilter(cmd, req); err != nil {
+			if err = updateProofsFilter(cmd, req); err != nil {
 				return err
 			}
-			if err := req.ValidateBasic(); err != nil {
+			if err = req.ValidateBasic(); err != nil {
 				return err
 			}
 
-			clientCtx, err := client.GetClientQueryContext(cmd)
-			if err != nil {
-				return err
+			clientCtx, ctxErr := client.GetClientQueryContext(cmd)
+			if ctxErr != nil {
+				return ctxErr
 			}
 			queryClient := types.NewQueryClient(clientCtx)
 
-			res, err := queryClient.AllProofs(cmd.Context(), req)
-			if err != nil {
-				return err
+			res, proofsErr := queryClient.AllProofs(cmd.Context(), req)
+			if proofsErr != nil {
+				return proofsErr
 			}
 
 			return clientCtx.PrintProto(res)
@@ -88,7 +88,7 @@ $ poktrolld --home=$(POKTROLLD_HOME) q proof show-proofs <session_id> <supplier_
 				SessionId:       sessionId,
 				SupplierAddress: supplierAddr,
 			}
-			if err := getProofRequest.ValidateBasic(); err != nil {
+			if err = getProofRequest.ValidateBasic(); err != nil {
 				return err
 			}
 
