@@ -32,7 +32,7 @@ query-gas-limit = "0"
   enable = true
 
 [mempool]
-  max-txs = 5000
+  max-txs = -1
 
 [rpc]
   cors_allowed_origins = ["*"]
