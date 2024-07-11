@@ -24,9 +24,8 @@ func TestClaim_Show(t *testing.T) {
 	numSuppliers := 3
 	numApps := 3
 
-	net, claims := networkWithClaimObjects(t, numSessions, numApps, numSuppliers)
+	net, claims, ctx := networkWithClaimObjects(t, numSessions, numApps, numSuppliers)
 
-	ctx := net.Validators[0].ClientCtx
 	commonArgs := []string{
 		fmt.Sprintf("--%s=json", cometcli.OutputFlag),
 	}
@@ -140,9 +139,8 @@ func TestClaim_List(t *testing.T) {
 	// and management is hard (see details above). To verify if it's functioning
 	// independently, please run:
 	// $ make itest 2 5 ./x/proof/module -- -run TestClaim_List
-	net, claims := networkWithClaimObjects(t, numSessions, numSuppliers, numApps)
+	net, claims, ctx := networkWithClaimObjects(t, numSessions, numSuppliers, numApps)
 
-	ctx := net.Validators[0].ClientCtx
 	prepareArgs := func(next []byte, offset, limit uint64, total bool) []string {
 		args := []string{
 			fmt.Sprintf("--%s=json", cometcli.OutputFlag),
