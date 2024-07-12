@@ -24,22 +24,22 @@ var _ = math.Inf
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 // GatewayStaked defines the event emitted when a gateway has been unstaked.
-type GatewayUnstaked struct {
+type EventGatewayUnstaked struct {
 	Address string `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
 }
 
-func (m *GatewayUnstaked) Reset()         { *m = GatewayUnstaked{} }
-func (m *GatewayUnstaked) String() string { return proto.CompactTextString(m) }
-func (*GatewayUnstaked) ProtoMessage()    {}
-func (*GatewayUnstaked) Descriptor() ([]byte, []int) {
+func (m *EventGatewayUnstaked) Reset()         { *m = EventGatewayUnstaked{} }
+func (m *EventGatewayUnstaked) String() string { return proto.CompactTextString(m) }
+func (*EventGatewayUnstaked) ProtoMessage()    {}
+func (*EventGatewayUnstaked) Descriptor() ([]byte, []int) {
 	return fileDescriptor_34212b93ec812e7c, []int{0}
 }
-func (m *GatewayUnstaked) XXX_Unmarshal(b []byte) error {
+func (m *EventGatewayUnstaked) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GatewayUnstaked) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *EventGatewayUnstaked) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_GatewayUnstaked.Marshal(b, m, deterministic)
+		return xxx_messageInfo_EventGatewayUnstaked.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -49,19 +49,19 @@ func (m *GatewayUnstaked) XXX_Marshal(b []byte, deterministic bool) ([]byte, err
 		return b[:n], nil
 	}
 }
-func (m *GatewayUnstaked) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GatewayUnstaked.Merge(m, src)
+func (m *EventGatewayUnstaked) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EventGatewayUnstaked.Merge(m, src)
 }
-func (m *GatewayUnstaked) XXX_Size() int {
+func (m *EventGatewayUnstaked) XXX_Size() int {
 	return m.Size()
 }
-func (m *GatewayUnstaked) XXX_DiscardUnknown() {
-	xxx_messageInfo_GatewayUnstaked.DiscardUnknown(m)
+func (m *EventGatewayUnstaked) XXX_DiscardUnknown() {
+	xxx_messageInfo_EventGatewayUnstaked.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_GatewayUnstaked proto.InternalMessageInfo
+var xxx_messageInfo_EventGatewayUnstaked proto.InternalMessageInfo
 
-func (m *GatewayUnstaked) GetAddress() string {
+func (m *EventGatewayUnstaked) GetAddress() string {
 	if m != nil {
 		return m.Address
 	}
@@ -69,29 +69,29 @@ func (m *GatewayUnstaked) GetAddress() string {
 }
 
 func init() {
-	proto.RegisterType((*GatewayUnstaked)(nil), "poktroll.gateway.GatewayUnstaked")
+	proto.RegisterType((*EventGatewayUnstaked)(nil), "poktroll.gateway.EventGatewayUnstaked")
 }
 
 func init() { proto.RegisterFile("poktroll/gateway/event.proto", fileDescriptor_34212b93ec812e7c) }
 
 var fileDescriptor_34212b93ec812e7c = []byte{
-	// 196 bytes of a gzipped FileDescriptorProto
+	// 199 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x92, 0x29, 0xc8, 0xcf, 0x2e,
 	0x29, 0xca, 0xcf, 0xc9, 0xd1, 0x4f, 0x4f, 0x2c, 0x49, 0x2d, 0x4f, 0xac, 0xd4, 0x4f, 0x2d, 0x4b,
 	0xcd, 0x2b, 0xd1, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x12, 0x80, 0xc9, 0xea, 0x41, 0x65, 0xa5,
 	0x24, 0x93, 0xf3, 0x8b, 0x73, 0xf3, 0x8b, 0xe3, 0xc1, 0xf2, 0xfa, 0x10, 0x0e, 0x44, 0xb1, 0x92,
-	0x2b, 0x17, 0xbf, 0x3b, 0x44, 0x55, 0x68, 0x5e, 0x71, 0x49, 0x62, 0x76, 0x6a, 0x8a, 0x90, 0x11,
-	0x17, 0x7b, 0x62, 0x4a, 0x4a, 0x51, 0x6a, 0x71, 0xb1, 0x04, 0xa3, 0x02, 0xa3, 0x06, 0xa7, 0x93,
-	0xc4, 0xa5, 0x2d, 0xba, 0x22, 0x50, 0x5d, 0x8e, 0x10, 0x99, 0xe0, 0x92, 0xa2, 0xcc, 0xbc, 0xf4,
-	0x20, 0x98, 0x42, 0x27, 0xaf, 0x13, 0x8f, 0xe4, 0x18, 0x2f, 0x3c, 0x92, 0x63, 0x7c, 0xf0, 0x48,
-	0x8e, 0x71, 0xc2, 0x63, 0x39, 0x86, 0x0b, 0x8f, 0xe5, 0x18, 0x6e, 0x3c, 0x96, 0x63, 0x88, 0x32,
-	0x48, 0xcf, 0x2c, 0xc9, 0x28, 0x4d, 0xd2, 0x4b, 0xce, 0xcf, 0xd5, 0x07, 0x39, 0x4c, 0x37, 0x2f,
-	0xb5, 0xa4, 0x3c, 0xbf, 0x28, 0x5b, 0x1f, 0xee, 0x87, 0x0a, 0xb8, 0x2f, 0x4a, 0x2a, 0x0b, 0x52,
-	0x8b, 0x93, 0xd8, 0xc0, 0x2e, 0x33, 0x06, 0x04, 0x00, 0x00, 0xff, 0xff, 0xa5, 0xc1, 0x44, 0x8b,
-	0xe6, 0x00, 0x00, 0x00,
+	0x17, 0x97, 0x88, 0x2b, 0x48, 0xaf, 0x3b, 0x44, 0x69, 0x68, 0x5e, 0x71, 0x49, 0x62, 0x76, 0x6a,
+	0x8a, 0x90, 0x11, 0x17, 0x7b, 0x62, 0x4a, 0x4a, 0x51, 0x6a, 0x71, 0xb1, 0x04, 0xa3, 0x02, 0xa3,
+	0x06, 0xa7, 0x93, 0xc4, 0xa5, 0x2d, 0xba, 0x22, 0x50, 0xad, 0x8e, 0x10, 0x99, 0xe0, 0x92, 0xa2,
+	0xcc, 0xbc, 0xf4, 0x20, 0x98, 0x42, 0x27, 0xaf, 0x13, 0x8f, 0xe4, 0x18, 0x2f, 0x3c, 0x92, 0x63,
+	0x7c, 0xf0, 0x48, 0x8e, 0x71, 0xc2, 0x63, 0x39, 0x86, 0x0b, 0x8f, 0xe5, 0x18, 0x6e, 0x3c, 0x96,
+	0x63, 0x88, 0x32, 0x48, 0xcf, 0x2c, 0xc9, 0x28, 0x4d, 0xd2, 0x4b, 0xce, 0xcf, 0xd5, 0x07, 0xb9,
+	0x4e, 0x37, 0x2f, 0xb5, 0xa4, 0x3c, 0xbf, 0x28, 0x5b, 0x1f, 0xee, 0x91, 0x0a, 0xb8, 0x57, 0x4a,
+	0x2a, 0x0b, 0x52, 0x8b, 0x93, 0xd8, 0xc0, 0xce, 0x33, 0x06, 0x04, 0x00, 0x00, 0xff, 0xff, 0x9c,
+	0x2e, 0x1d, 0x32, 0xeb, 0x00, 0x00, 0x00,
 }
 
-func (m *GatewayUnstaked) Marshal() (dAtA []byte, err error) {
+func (m *EventGatewayUnstaked) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -101,12 +101,12 @@ func (m *GatewayUnstaked) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *GatewayUnstaked) MarshalTo(dAtA []byte) (int, error) {
+func (m *EventGatewayUnstaked) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *GatewayUnstaked) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *EventGatewayUnstaked) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -132,7 +132,7 @@ func encodeVarintEvent(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-func (m *GatewayUnstaked) Size() (n int) {
+func (m *EventGatewayUnstaked) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -151,7 +151,7 @@ func sovEvent(x uint64) (n int) {
 func sozEvent(x uint64) (n int) {
 	return sovEvent(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *GatewayUnstaked) Unmarshal(dAtA []byte) error {
+func (m *EventGatewayUnstaked) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -174,10 +174,10 @@ func (m *GatewayUnstaked) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: GatewayUnstaked: wiretype end group for non-group")
+			return fmt.Errorf("proto: EventGatewayUnstaked: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: GatewayUnstaked: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: EventGatewayUnstaked: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:

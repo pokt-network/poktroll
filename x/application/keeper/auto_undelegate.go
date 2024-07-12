@@ -6,9 +6,11 @@ import (
 	"strconv"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	proto "github.com/cosmos/gogoproto/proto"
+	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 )
 
-const eventGatewayUnstaked = "poktroll.gateway.GatewayUnstaked"
+var eventGatewayUnstaked = proto.MessageName(new(gatewaytypes.EventGatewayUnstaked))
 
 // EndBlockerAutoUndelegateFromUnstakedGateways is called every block and handles
 // Application auto-undelegating from unstaked gateways.
@@ -20,13 +22,13 @@ func (k Keeper) EndBlockerAutoUndelegateFromUnstakedGateways(ctx sdk.Context) er
 
 	// Get all the GatewayUnstaked events emitted in the block to avoid checking
 	// each application's delegated gateways for unstaked gateways.
-	unstakedGateways := k.getUnstakeGatewayEvents(sdkCtx.EventManager().Events())
+	unstakedGatewayEvents := k.getUnstakeGatewayEvents(sdkCtx.EventManager().Events())
 
 	// TODO_IMPROVE: Once delegating applications are indexed by gateway address,
 	// this can be optimized to only check applications that have delegated to
 	// unstaked gateways.
 	for _, application := range k.GetAllApplications(ctx) {
-		for _, unstakedGateway := range unstakedGateways {
+		for _, unstakedGateway := range unstakedGatewayEvents {
 			gwIdx := slices.Index(application.DelegateeGatewayAddresses, unstakedGateway)
 			if gwIdx >= 0 {
 				application.DelegateeGatewayAddresses = append(

@@ -480,9 +480,11 @@ func TestMsgServer_UndelegateFromGateway_UndelegateFromUnstakedGateway(t *testin
 	// Increment the block height without moving to the next session.
 	sdkCtx = sdkCtx.WithBlockHeight(undelegationHeight + 1)
 
+	// Auto-undelegation reacts to the unstaked gateway event but since the test
+	// does not exercise the gateway unstaking logic, the event is emitted manually.
 	sdkCtx.EventManager().EmitTypedEvents(
-		&gwtypes.GatewayUnstaked{Address: delegateAddr},
-		&gwtypes.GatewayUnstaked{Address: pendingUndelegateFromAddr},
+		&gwtypes.EventGatewayUnstaked{Address: delegateAddr},
+		&gwtypes.EventGatewayUnstaked{Address: pendingUndelegateFromAddr},
 	)
 
 	k.EndBlockerAutoUndelegateFromUnstakedGateways(sdkCtx)
