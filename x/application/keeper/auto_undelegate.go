@@ -12,10 +12,11 @@ const eventGatewayUnstaked = "poktroll.gateway.GatewayUnstaked"
 
 // EndBlockerAutoUndelegateFromUnstakedGateways is called every block and handles
 // Application auto-undelegating from unstaked gateways.
-// TODO_BLOCKER: Gateway unstaking should be subject to an unbonding period that
-// finishes at a session end height to align with application pending undelegations.
+// TODO_BLOCKER: Gateway unstaking should be delayed until the current block's
+// session end height to align with the application's pending undelegations.
 func (k Keeper) EndBlockerAutoUndelegateFromUnstakedGateways(ctx sdk.Context) error {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	currentHeight := sdkCtx.BlockHeight()
 
 	// Get all the GatewayUnstaked events emitted in the block to avoid checking
 	// each application's delegated gateways for unstaked gateways.
@@ -25,32 +26,14 @@ func (k Keeper) EndBlockerAutoUndelegateFromUnstakedGateways(ctx sdk.Context) er
 	// this can be optimized to only check applications that have delegated to
 	// unstaked gateways.
 	for _, application := range k.GetAllApplications(ctx) {
-		// Collect the gateway addresses that are still staked to avoid updating
-		// the DelegatedGatewayAddresses's loop index while iterating.
-		newDelegatedGatewayAddresses := make([]string, 0)
-		for _, gatewayAddress := range application.DelegateeGatewayAddresses {
-			if !slices.Contains(unstakedGateways, gatewayAddress) {
-				newDelegatedGatewayAddresses = append(newDelegatedGatewayAddresses, gatewayAddress)
-			}
-		}
-		application.DelegateeGatewayAddresses = newDelegatedGatewayAddresses
-
-		for undelegationSessionEndHeight, pendingUndelegation := range application.PendingUndelegations {
-			// Collect the gateway addresses that are still staked to avoid updating
-			// the GatewayAddresses's loop index while iterating.
-			newPendingUndelegations := make([]string, 0)
-			for _, gatewayAddress := range pendingUndelegation.GatewayAddresses {
-				if !slices.Contains(unstakedGateways, gatewayAddress) {
-					newPendingUndelegations = append(newPendingUndelegations, gatewayAddress)
-				}
-
-			}
-			pendingUndelegation.GatewayAddresses = newPendingUndelegations
-
-			// Remove the pending undelegation entry if there are no more gateways
-			// to undelegate.
-			if len(pendingUndelegation.GatewayAddresses) == 0 {
-				delete(application.PendingUndelegations, undelegationSessionEndHeight)
+		for _, unstakedGateway := range unstakedGateways {
+			gwIdx := slices.Index(application.DelegateeGatewayAddresses, unstakedGateway)
+			if gwIdx >= 0 {
+				application.DelegateeGatewayAddresses = append(
+					application.DelegateeGatewayAddresses[:gwIdx],
+					application.DelegateeGatewayAddresses[gwIdx+1:]...,
+				)
+				k.recordPendingUndelegation(ctx, &application, unstakedGateway, currentHeight)
 			}
 		}
 

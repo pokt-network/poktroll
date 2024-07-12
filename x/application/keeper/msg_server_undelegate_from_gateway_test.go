@@ -490,7 +490,10 @@ func TestMsgServer_UndelegateFromGateway_UndelegateFromUnstakedGateway(t *testin
 	app, _ = k.GetApplication(sdkCtx, app.Address)
 
 	require.Len(t, app.DelegateeGatewayAddresses, 0)
-	require.Len(t, app.PendingUndelegations, 0)
+
+	currentHeight := sdkCtx.BlockHeight()
+	sessionEndHeight := uint64(testsession.GetSessionEndHeightWithDefaultParams(currentHeight))
+	require.Len(t, app.PendingUndelegations[uint64(sessionEndHeight)].GatewayAddresses, 2)
 }
 
 // createAppStakeDelegateAndUndelegate is a helper function that is used in the tests
