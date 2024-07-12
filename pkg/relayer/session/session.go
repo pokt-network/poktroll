@@ -336,7 +336,7 @@ func (rs *relayerSessionsManager) waitForBlock(ctx context.Context, targetHeight
 	// with persisted but unclaimed/unproven ("late") sessions, where a "late" session is one
 	// which is unclaimed and whose earliest claim commit height has already elapsed.
 	//
-	// In this case, we should use a block query client to populate the block client replay 
+	// In this case, we should use a block query client to populate the block client replay
 	// observable at the time of block client construction.
 	// The latestBufferedOffset would be the difference between the current height and
 	// earliest unclaimed/unproven session's earliest supplier claim/proof commit height.
