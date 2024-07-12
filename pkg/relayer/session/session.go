@@ -361,19 +361,42 @@ func (rs *relayerSessionsManager) validateConfig() error {
 
 // waitForBlock blocks until the block at the given height (or greater) is
 // observed as having been committed.
-func (rs *relayerSessionsManager) waitForBlock(ctx context.Context, height int64) client.Block {
+func (rs *relayerSessionsManager) waitForBlock(ctx context.Context, targetHeight int64) client.Block {
 	// Create a cancellable child context for managing the CommittedBlocksSequence lifecycle.
-	// Since the subscription is no longer needed after the block it is looking for
+	// Since the committedBlocksObserver is no longer needed after the block it is looking for
 	// is reached, cancelling the child context at the end of the function will stop
 	// the subscriptions and close the publish channel associated with the
 	// CommittedBlocksSequence observable which is not exposing it.
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	subscription := rs.blockClient.CommittedBlocksSequence(ctx).Subscribe(ctx)
+	committedBlocksObs := rs.blockClient.CommittedBlocksSequence(ctx)
+	committedBlocksObserver := committedBlocksObs.Subscribe(ctx)
 
-	for block := range subscription.Ch() {
-		if block.Height() >= height {
+	// minNumReplayBlocks is the number of blocks that MUST be in the block client's
+	// replay buffer such that the target block can be observed.
+	//
+	// Plus one is necessary for the "oldest" boundary to include targetHeight.
+	//
+	// If minNumReplayBlocks is negative, no replay is necessary and the replay buffer will be ignored.
+	minNumReplayBlocks := rs.blockClient.LastBlock(ctx).Height() - targetHeight + 1
+
+	// TODO_MAINNET: If the replay buffer size is less than minNumReplayBlocks, the target
+	// block targetHeight will never be observed. This can happen if a relayminer is cold-started
+	// with persisted but unclaimed/unproven ("late") sessions, where a "late" session is one
+	// which is unclaimed and whose earliest claim commit height has already elapsed.
+	//
+	// In this case, we should use a block query client to populate the block client replay
+	// observable at the time of block client construction.
+	// The latestBufferedOffset would be the difference between the current height and
+	// earliest unclaimed/unproven session's earliest supplier claim/proof commit height.
+	// This check and return branch can be removed once this is implemented.
+	if committedBlocksObs.GetReplayBufferSize() < int(minNumReplayBlocks) {
+		return nil
+	}
+
+	for block := range committedBlocksObserver.Ch() {
+		if block.Height() >= targetHeight {
 			return block
 		}
 	}

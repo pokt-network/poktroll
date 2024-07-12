@@ -16,10 +16,10 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/pokt-network/poktroll/pkg/crypto"
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/pkg/relayer"
-	"github.com/pokt-network/poktroll/pkg/relayer/protocol"
 	"github.com/pokt-network/poktroll/pkg/relayer/session"
 	testutilevents "github.com/pokt-network/poktroll/testutil/events"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
@@ -1393,10 +1393,7 @@ func getClosestRelayDifficultyBits(
 	require.NoError(t, err)
 
 	// Count the number of leading 0s in the relay hash to determine its difficulty.
-	relayDifficultyBits, err := protocol.CountHashDifficultyBits(relayHash[:])
-	require.NoError(t, err)
-
-	return uint64(relayDifficultyBits)
+	return uint64(protocol.CountHashDifficultyBits(relayHash))
 }
 
 // resetBlockHeightFn returns a function that resets the block height of the
