@@ -94,6 +94,33 @@ func ClaimComputeUnitsCounter(
 	)
 }
 
+// ClaimRelaysCounter increments a counter which tracks the number of relays
+// represented by on-chain claims at the given ClaimProofStage.
+// If err is not nil, the counter is not incremented and an "error" label is added
+// with the error's message. I.e., Prometheus will ingest this event.
+func ClaimRelaysCounter(
+	claimProofStage prooftypes.ClaimProofStage,
+	numRelays uint64,
+	err error,
+) {
+	incrementAmount := numRelays
+	labels := []metrics.Label{
+		{Name: "unit", Value: "relays"},
+		{Name: "claim_proof_stage", Value: claimProofStage.String()},
+	}
+
+	// Ensure the counter is not incremented if there was an error.
+	if err != nil {
+		incrementAmount = 0
+	}
+
+	telemetry.IncrCounterWithLabels(
+		[]string{eventTypeMetricKey},
+		float32(incrementAmount),
+		labels,
+	)
+}
+
 // ClaimCounter increments a counter which tracks the number of claims at the given
 // ClaimProofStage.
 // If err is not nil, the counter is not incremented but Prometheus will ingest this event.
