@@ -7,6 +7,7 @@ import (
 	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/smt"
 
 	"github.com/pokt-network/poktroll/telemetry"
@@ -35,7 +36,12 @@ func (k Keeper) SettleSessionAccounting(
 	// This is emitted only when the function returns.
 	defer telemetry.EventSuccessCounter(
 		"settle_session_accounting",
-		func() float32 { return float32(settlementAmt.Amount.Int64()) },
+		func() float32 {
+			if settlementAmt.Amount.BigInt() == nil {
+				return 0
+			}
+			return float32(settlementAmt.Amount.Int64())
+		},
 		func() bool { return isSuccessful },
 	)
 
@@ -67,7 +73,7 @@ func (k Keeper) SettleSessionAccounting(
 	}
 
 	// Retrieve the sum of the root as a proxy into the amount of work done
-	root := (smt.MerkleRoot)(claim.GetRootHash())
+	root := (smt.MerkleSumRoot)(claim.GetRootHash())
 
 	claimComputeUnits, err := root.Sum()
 	if err != nil {
@@ -96,6 +102,7 @@ func (k Keeper) SettleSessionAccounting(
 	// Calculate the amount of tokens to mint & burn
 	settlementAmt, err = k.getCoinFromComputeUnits(ctx, root)
 	if err != nil {
+		fmt.Println(">>> returning...")
 		return err
 	}
 
@@ -179,7 +186,7 @@ func (k Keeper) SettleSessionAccounting(
 	return nil
 }
 
-func (k Keeper) getCoinFromComputeUnits(ctx context.Context, root smt.MerkleRoot) (sdk.Coin, error) {
+func (k Keeper) getCoinFromComputeUnits(ctx context.Context, root smt.MerkleSumRoot) (sdk.Coin, error) {
 	// Retrieve the existing tokenomics params
 	params := k.GetParams(ctx)
 
@@ -189,5 +196,10 @@ func (k Keeper) getCoinFromComputeUnits(ctx context.Context, root smt.MerkleRoot
 	}
 
 	upokt := math.NewInt(int64(sum * params.ComputeUnitsToTokensMultiplier))
-	return sdk.NewCoin("upokt", upokt), nil
+
+	if upokt.IsNegative() {
+		return sdk.Coin{}, types.ErrTokenomicsRootHashInvalid.Wrap("sum * compute_units_to_tokens_multiplier is negative")
+	}
+
+	return sdk.NewCoin(volatile.DenomuPOKT, upokt), nil
 }

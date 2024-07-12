@@ -7,8 +7,9 @@ import (
 
 	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/types"
-	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"
+
+	"github.com/pokt-network/smt"
 
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
 	testproof "github.com/pokt-network/poktroll/testutil/proof"
@@ -108,7 +109,7 @@ func TestSettleSessionAccounting_InvalidRoot(t *testing.T) {
 	// Define test cases
 	tests := []struct {
 		desc        string
-		root        []byte // smst.MerkleRoot
+		root        []byte // smst.MerkleSumRoot
 		errExpected bool
 	}{
 		{
@@ -154,26 +155,12 @@ func TestSettleSessionAccounting_InvalidRoot(t *testing.T) {
 	// Iterate over each test case
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			// Use defer-recover to catch any panic
-			defer func() {
-				if r := recover(); r != nil {
-					t.Errorf("Test panicked: %s", r)
-				}
-			}()
-
 			// Setup claim by copying the testproof.BaseClaim and updating the root
 			claim := testproof.BaseClaim(appAddr, supplierAddr, 0)
-			claim.RootHash = smt.MerkleRoot(test.root[:])
+			claim.RootHash = smt.MerkleSumRoot(test.root[:])
 
 			// Execute test function
-			err := func() (err error) {
-				defer func() {
-					if r := recover(); r != nil {
-						err = fmt.Errorf("panic occurred: %v", r)
-					}
-				}()
-				return keeper.SettleSessionAccounting(ctx, &claim)
-			}()
+			err := keeper.SettleSessionAccounting(ctx, &claim)
 
 			// Assert the error
 			if test.errExpected {
