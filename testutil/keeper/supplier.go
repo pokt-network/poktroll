@@ -20,6 +20,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/testutil/supplier/mocks"
+	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/keeper"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
@@ -42,8 +44,9 @@ func SupplierKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 	mockBankKeeper := mocks.NewMockBankKeeper(ctrl)
 	mockBankKeeper.EXPECT().SendCoinsFromAccountToModule(gomock.Any(), gomock.Any(), types.ModuleName, gomock.Any()).AnyTimes()
 	mockBankKeeper.EXPECT().SendCoinsFromModuleToAccount(gomock.Any(), types.ModuleName, gomock.Any(), gomock.Any()).AnyTimes()
+	mockBankKeeper.EXPECT().SpendableCoins(gomock.Any(), gomock.Any()).AnyTimes()
 
-	k := keeper.NewKeeper(
+	serviceKeeper := servicekeeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKey),
 		log.NewNopLogger(),
@@ -51,10 +54,23 @@ func SupplierKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 		mockBankKeeper,
 	)
 
+	k := keeper.NewKeeper(
+		cdc,
+		runtime.NewKVStoreService(storeKey),
+		log.NewNopLogger(),
+		authority.String(),
+		mockBankKeeper,
+		serviceKeeper,
+	)
+
 	ctx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
 
 	// Initialize params
 	require.NoError(t, k.SetParams(ctx, types.DefaultParams()))
+
+	// Add existing services used in the test.
+	serviceKeeper.SetService(ctx, sharedtypes.Service{Id: "svcId"})
+	serviceKeeper.SetService(ctx, sharedtypes.Service{Id: "svcId2"})
 
 	return k, ctx
 }
