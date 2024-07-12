@@ -39,9 +39,9 @@ func (k msgServer) UnstakeSupplier(
 	logger.Info(fmt.Sprintf("Supplier found. Unstaking supplier for address %s", msg.Address))
 
 	// Check if the supplier has already initiated the unstake action.
-	if supplier.UnstakeCommitSessionEndHeight > 0 {
+	if supplier.UnstakeCommitSessionEndHeight != types.SupplierNotUnstaking {
 		logger.Warn(fmt.Sprintf("Supplier %s still unbonding from previous unstaking", msg.Address))
-		return nil, types.ErrSupplierUnbonding
+		return nil, types.ErrSupplierIsUnstaking
 	}
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
@@ -51,11 +51,11 @@ func (k msgServer) UnstakeSupplier(
 	// Mark the supplier as unstaking by recording the height at which it should stop
 	// providing service.
 	// The supplier MUST continue to provide service until the end of the current
-	// session, which which should not change its suppliers list mid-session.
+	// session. I.e., on-chain sessions' suppliers list MUST NOT change mid-session.
 	// Removing it right away could have undesired effects on the network
 	// (e.g. a session with less than the minimum or 0 number of suppliers,
 	// off-chain actors that need to listen to session supplier's change mid-session, etc).
-	supplier.UnstakeCommitSessionEndHeight = shared.GetSessionEndHeight(&sharedParams, currentHeight)
+	supplier.UnstakeCommitSessionEndHeight = uint64(shared.GetSessionEndHeight(&sharedParams, currentHeight))
 	k.SetSupplier(ctx, supplier)
 
 	isSuccessful = true

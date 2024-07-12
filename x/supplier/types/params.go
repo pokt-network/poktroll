@@ -10,6 +10,7 @@ var (
 	KeySupplierUnbondingPeriodBlocks            = []byte("SupplierUnbondingPeriodBlocks")
 	ParamSupplierUnbondingPeriodBlocks          = "supplier_unbonding_period_blocks"
 	DefaultSupplierUnbondingPeriodBlocks uint64 = 4 // TODO_MAINNET: Determine the default value.
+	SupplierNotUnstaking                 uint64 = 0
 )
 
 // ParamKeyTable the param key table for launch module
@@ -59,7 +60,7 @@ func ValidateSupplierUnbondingPeriodBlocks(v interface{}) error {
 		return ErrSupplierParamsInvalid.Wrapf("invalid parameter type: %T", v)
 	}
 
-	if supplierUnbondingPeriodBlocks <= 0 {
+	if supplierUnbondingPeriodBlocks == SupplierNotUnstaking {
 		return ErrSupplierParamsInvalid.Wrapf("invalid SupplierUnbondingPeriodBlocks: (%v)", supplierUnbondingPeriodBlocks)
 	}
 

@@ -173,8 +173,10 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 	candidateSuppliers := make([]*sharedtypes.Supplier, 0)
 	for _, s := range suppliers {
 		// Exclude suppliers that are in an unbonding period.
+		// TODO_TECHDEBT: Suppliers that stake mid-session SHOULD NOT be included
+		// in the current session's suppliers list and must wait until the next one.
 		if s.UnstakeCommitSessionEndHeight != 0 &&
-			sh.sessionHeader.SessionEndBlockHeight > s.UnstakeCommitSessionEndHeight {
+			uint64(sh.sessionHeader.SessionEndBlockHeight) > s.UnstakeCommitSessionEndHeight {
 			continue
 		}
 

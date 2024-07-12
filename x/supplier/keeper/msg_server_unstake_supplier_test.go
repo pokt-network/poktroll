@@ -47,20 +47,19 @@ func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
 	// Make sure the supplier entered the unbonding period
 	foundSupplier, isSupplierFound = k.GetSupplier(ctx, supplierAddr)
 	require.True(t, isSupplierFound)
-	require.Greater(t, foundSupplier.UnstakeCommitSessionEndHeight, int64(0))
+	require.NotEqual(t, foundSupplier.UnstakeCommitSessionEndHeight, types.SupplierNotUnstaking)
 
 	// Move block height to the end of the unbonding period
-	unbondingHeight := foundSupplier.UnstakeCommitSessionEndHeight + int64(k.GetParams(ctx).SupplierUnbondingPeriodBlocks)
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	sdkCtx = sdkCtx.WithBlockHeight(unbondingHeight)
+	unbondingHeight := foundSupplier.UnstakeCommitSessionEndHeight + k.GetParams(ctx).SupplierUnbondingPeriodBlocks
+	ctx = keepertest.SetBlockHeight(ctx, int64(unbondingHeight))
 
 	// Run the endblocker to unbond the supplier
-	err = k.EndBlockerUnbondSupplier(sdkCtx)
+	err = k.EndBlockerUnbondSupplier(ctx)
 	require.NoError(t, err)
 
 	// Make sure the supplier is removed from the suppliers list when the
 	// unbonding period is over
-	_, isSupplierFound = k.GetSupplier(sdkCtx, supplierAddr)
+	_, isSupplierFound = k.GetSupplier(ctx, supplierAddr)
 	require.False(t, isSupplierFound)
 }
 
@@ -80,7 +79,7 @@ func TestMsgServer_UnstakeSupplier_CancelUnbondingIfRestaked(t *testing.T) {
 	// Verify that the supplier exists with no unbonding height
 	foundSupplier, isSupplierFound := k.GetSupplier(ctx, supplierAddr)
 	require.True(t, isSupplierFound)
-	require.Equal(t, int64(0), foundSupplier.UnstakeCommitSessionEndHeight)
+	require.Equal(t, types.SupplierNotUnstaking, foundSupplier.UnstakeCommitSessionEndHeight)
 
 	// Initiate the supplier unstaking
 	unstakeMsg := &types.MsgUnstakeSupplier{Address: supplierAddr}
@@ -90,9 +89,9 @@ func TestMsgServer_UnstakeSupplier_CancelUnbondingIfRestaked(t *testing.T) {
 	// Make sure the supplier entered the unbonding period
 	foundSupplier, isSupplierFound = k.GetSupplier(ctx, supplierAddr)
 	require.True(t, isSupplierFound)
-	require.Greater(t, foundSupplier.UnstakeCommitSessionEndHeight, int64(0))
+	require.NotEqual(t, foundSupplier.UnstakeCommitSessionEndHeight, types.SupplierNotUnstaking)
 
-	unbondingHeight := foundSupplier.UnstakeCommitSessionEndHeight + int64(k.GetParams(ctx).SupplierUnbondingPeriodBlocks)
+	unbondingHeight := foundSupplier.UnstakeCommitSessionEndHeight + k.GetParams(ctx).SupplierUnbondingPeriodBlocks
 
 	// Stake the supplier again
 	stakeMsg = createStakeMsg(supplierAddr, initialStake+1)
@@ -102,19 +101,18 @@ func TestMsgServer_UnstakeSupplier_CancelUnbondingIfRestaked(t *testing.T) {
 	// Make sure the supplier is no longer in the unbonding period
 	foundSupplier, isSupplierFound = k.GetSupplier(ctx, supplierAddr)
 	require.True(t, isSupplierFound)
-	require.Equal(t, foundSupplier.UnstakeCommitSessionEndHeight, int64(0))
+	require.Equal(t, foundSupplier.UnstakeCommitSessionEndHeight, types.SupplierNotUnstaking)
 
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	sdkCtx = sdkCtx.WithBlockHeight(unbondingHeight)
+	ctx = keepertest.SetBlockHeight(ctx, int64(unbondingHeight))
 
 	// Run the endblocker to unbond the supplier
-	err = k.EndBlockerUnbondSupplier(sdkCtx)
+	err = k.EndBlockerUnbondSupplier(ctx)
 	require.NoError(t, err)
 
 	// Make sure the supplier is still in the suppliers list with an unbonding height of 0
-	foundSupplier, isSupplierFound = k.GetSupplier(sdkCtx, supplierAddr)
+	foundSupplier, isSupplierFound = k.GetSupplier(ctx, supplierAddr)
 	require.True(t, isSupplierFound)
-	require.Equal(t, foundSupplier.UnstakeCommitSessionEndHeight, int64(0))
+	require.Equal(t, foundSupplier.UnstakeCommitSessionEndHeight, types.SupplierNotUnstaking)
 }
 
 func TestMsgServer_UnstakeSupplier_FailIfNotStaked(t *testing.T) {
@@ -138,7 +136,7 @@ func TestMsgServer_UnstakeSupplier_FailIfNotStaked(t *testing.T) {
 	require.False(t, isSupplierFound)
 }
 
-func TestMsgServer_UnstakeSupplier_FailIfNotInUnbondingPeriod(t *testing.T) {
+func TestMsgServer_UnstakeSupplier_FailIfCurrentlyUnstaking(t *testing.T) {
 	k, ctx := keepertest.SupplierKeeper(t)
 	srv := keeper.NewMsgServerImpl(k)
 
@@ -157,10 +155,10 @@ func TestMsgServer_UnstakeSupplier_FailIfNotInUnbondingPeriod(t *testing.T) {
 	require.NoError(t, err)
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	sdkCtx = sdkCtx.WithBlockHeight(sdkCtx.BlockHeight() + 1)
+	ctx = keepertest.SetBlockHeight(ctx, int64(sdkCtx.BlockHeight()+1))
 
-	_, err = srv.UnstakeSupplier(sdkCtx, unstakeMsg)
-	require.ErrorIs(t, err, types.ErrSupplierUnbonding)
+	_, err = srv.UnstakeSupplier(ctx, unstakeMsg)
+	require.ErrorIs(t, err, types.ErrSupplierIsUnstaking)
 }
 
 func createStakeMsg(supplierAddr string, stakeAmount int64) *types.MsgStakeSupplier {

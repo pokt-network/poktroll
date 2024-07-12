@@ -70,8 +70,7 @@ func SupplierKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 	require.NoError(t, k.SetParams(ctx, types.DefaultParams()))
 
 	// Move block height to 1 to get a non zero session end height
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	sdkCtx = sdkCtx.WithBlockHeight(sdkCtx.BlockHeight() + 1)
+	sdkCtx := SetBlockHeight(ctx, 1)
 
 	return k, sdkCtx
 }

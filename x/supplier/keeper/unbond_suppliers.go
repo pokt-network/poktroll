@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"context"
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -9,8 +10,9 @@ import (
 )
 
 // EndBlockerUnbondSupplier unbonds suppliers that have finished the unbonding period.
-func (k Keeper) EndBlockerUnbondSupplier(ctx sdk.Context) error {
-	currentHeight := ctx.BlockHeight()
+func (k Keeper) EndBlockerUnbondSupplier(ctx context.Context) error {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	currentHeight := sdkCtx.BlockHeight()
 	sharedParams := k.sharedKeeper.GetParams(ctx)
 	sessionEndHeight := shared.GetSessionEndHeight(&sharedParams, currentHeight)
 
@@ -30,19 +32,19 @@ func (k Keeper) EndBlockerUnbondSupplier(ctx sdk.Context) error {
 			continue
 		}
 
-		unbondingPeriodBlocks := int64(k.GetParams(ctx).SupplierUnbondingPeriodBlocks)
+		unbondingPeriodBlocks := k.GetParams(ctx).SupplierUnbondingPeriodBlocks
 		unbondingHeight := supplier.UnstakeCommitSessionEndHeight + unbondingPeriodBlocks
 
-		if unbondingHeight <= currentHeight {
+		if unbondingHeight <= uint64(currentHeight) {
 
-			// Retrieve the address of the supplier
+			// Retrieve the address of the supplier.
 			supplierAddress, err := sdk.AccAddressFromBech32(supplier.Address)
 			if err != nil {
 				logger.Error(fmt.Sprintf("could not parse address %s", supplier.Address))
 				return err
 			}
 
-			// Send the coins from the supplier pool back to the supplier
+			// Send the coins from the supplier pool back to the supplier.
 			if err = k.bankKeeper.SendCoinsFromModuleToAccount(
 				ctx, types.ModuleName, supplierAddress, []sdk.Coin{*supplier.Stake},
 			); err != nil {
@@ -53,7 +55,7 @@ func (k Keeper) EndBlockerUnbondSupplier(ctx sdk.Context) error {
 				return err
 			}
 
-			// Update the Supplier in the store
+			// Remove the supplier from the store.
 			k.RemoveSupplier(ctx, supplierAddress.String())
 			logger.Info(fmt.Sprintf("Successfully removed the supplier: %+v", supplier))
 		}
