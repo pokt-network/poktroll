@@ -33,6 +33,8 @@ func (k Keeper) EndBlockerAutoUndelegateFromUnstakedGateways(ctx sdk.Context) er
 					application.DelegateeGatewayAddresses[:gwIdx],
 					application.DelegateeGatewayAddresses[gwIdx+1:]...,
 				)
+				// Record the pending undelegation for the application to allow any upcoming
+				// proofs to get the application's ring signatures.
 				k.recordPendingUndelegation(ctx, &application, unstakedGateway, currentHeight)
 			}
 		}
