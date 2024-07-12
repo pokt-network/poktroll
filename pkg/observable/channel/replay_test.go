@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/testutil/testerrors"
 )
@@ -299,4 +300,79 @@ func TestReplayObservable_Last_Blocks_And_Times_Out(t *testing.T) {
 	require.ElementsMatch(t, []int{5, 4, 3}, replayObsvbl.Last(ctx, 3))
 	require.ElementsMatch(t, []int{5, 4, 3, 2}, replayObsvbl.Last(ctx, 4))
 	require.ElementsMatch(t, []int{5, 4, 3, 2, 1}, replayObsvbl.Last(ctx, 5))
+}
+
+func TestReplayObservable_SubscribeFromLatestBufferedOffset(t *testing.T) {
+	receiveTimeout := 100 * time.Millisecond
+	values := []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
+
+	tests := []struct {
+		name             string
+		replayBufferSize int
+		endOffset        int
+		expectedValues   []int
+	}{
+		{
+			name:             "endOffset = replayBufferSize",
+			replayBufferSize: 8,
+			endOffset:        8,
+			expectedValues:   values[2:], // []int{2, 3, 4, 5, ..., 9},
+		},
+		{
+			name:             "endOffset < replayBufferSize",
+			replayBufferSize: 10,
+			endOffset:        2,
+			expectedValues:   values[8:], // []int{8, 9},
+		},
+		{
+			name:             "endOffset > replayBufferSize",
+			replayBufferSize: 8,
+			endOffset:        10,
+			expectedValues:   values[2:],
+		},
+		{
+			name:             "replayBufferSize > endOffset > numBufferedValues ",
+			replayBufferSize: 20,
+			endOffset:        15,
+			expectedValues:   values,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var ctx = context.Background()
+
+			replayObsvbl, publishCh :=
+				channel.NewReplayObservable[int](ctx, test.replayBufferSize)
+
+			for _, value := range values {
+				publishCh <- value
+				time.Sleep(time.Millisecond)
+			}
+
+			observer := replayObsvbl.SubscribeFromLatestBufferedOffset(ctx, test.endOffset)
+			// Assumes all values will be received within receiveTimeout.
+			actualValues := accumulateValues(observer, receiveTimeout)
+			require.EqualValues(t, test.expectedValues, actualValues)
+		})
+	}
+}
+
+func accumulateValues[V any](
+	observer observable.Observer[V],
+	timeout time.Duration,
+) (values []V) {
+	for {
+		select {
+		case value, ok := <-observer.Ch():
+			if !ok {
+				return
+			}
+
+			values = append(values, value)
+			continue
+		case <-time.After(timeout):
+			return
+		}
+	}
 }
