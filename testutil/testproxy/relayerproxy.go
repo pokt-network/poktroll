@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -151,10 +152,14 @@ func WithServicesConfigMap(
 				server.Handler = http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 					sendJSONRPCResponse(test.t, w)
 				})
+
 				go func() {
 					err := server.ListenAndServe()
-					require.NoError(test.t, err)
+					if err != nil && !errors.Is(err, http.ErrServerClosed) {
+						require.NoError(test.t, err)
+					}
 				}()
+
 				go func() {
 					<-test.ctx.Done()
 					err := server.Shutdown(test.ctx)

@@ -121,7 +121,9 @@ func (rel *relayMiner) ServePprof(ctx context.Context, addr string) error {
 	// If no error, start the server in a new goroutine
 	go func() {
 		rel.logger.Info().Str("endpoint", addr).Msg("starting a pprof endpoint")
-		_ = server.ListenAndServe()
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			rel.logger.Error().Str("endpoint", addr).Msg("unable to start a pprof endpoint")
+		}
 	}()
 
 	go func() {
