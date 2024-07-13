@@ -115,14 +115,8 @@ func (rs *relayerSessionsManager) Start(ctx context.Context) {
 
 	// Start claim/proof pipeline for each supplier that is present in the RelayMiner.
 	for supplierAddress, supplierClient := range rs.supplierClients.SupplierClients {
-		sessionsToClaimObs, sessionsToClaimPublishCh := channel.NewObservable[[]relayer.SessionTree]()
-		channel.ForEach(
-			ctx,
-			rs.blockClient.CommittedBlocksSequence(ctx),
-			rs.forEachBlockClaimSessionsFn(supplierAddress, sessionsToClaimPublishCh),
-		)
-
-		claimedSessionsObs := rs.createClaims(ctx, supplierClient, sessionsToClaimObs)
+		supplierSessionsToClaimObs := rs.supplierSessionsToClaim(ctx, supplierAddress)
+		claimedSessionsObs := rs.createClaims(ctx, supplierClient, supplierSessionsToClaimObs)
 		rs.submitProofs(ctx, supplierClient, claimedSessionsObs)
 	}
 }
@@ -235,8 +229,6 @@ func (rs *relayerSessionsManager) forEachBlockClaimSessionsFn(
 			return
 		}
 
-		numBlocksPerSession := sharedParams.NumBlocksPerSession
-
 		// Check if there are sessions that need to enter the claim/proof phase as their
 		// end block height was the one before the last committed block or earlier.
 		// Iterate over the sessionsTrees map to get the ones that end at a block height
@@ -278,9 +270,9 @@ func (rs *relayerSessionsManager) forEachBlockClaimSessionsFn(
 					}
 
 					// Separate the sessions that are on-time from the ones that are late.
-					// If the session is past its grace period, it is considered late,
-					// otherwise it is on time and will be emitted last.
-					if claimWindowOpenHeight+int64(numBlocksPerSession) < block.Height() {
+					// If the session is past its claim window open height, it is considered
+					// late, otherwise it is on time and will be emitted last.
+					if claimWindowOpenHeight < block.Height() {
 						lateSessions = append(lateSessions, sessionTree)
 					} else {
 						onTimeSessions = append(onTimeSessions, sessionTree)
@@ -432,9 +424,8 @@ func (rs *relayerSessionsManager) mapAddMinedRelayToSessionTree(
 	return nil, true
 }
 
-// retryFailedSessionAndDeleteExpiredFn returns a function that retries failed sessions
-// and deletes them if the expiration height is reached.
-// expirationHeightFn could be either GetProofWindowCloseHeight or GetClaimWindowCloseHeight.
+// deleteExpiredSessionTreesFn returns a function that deletes non-claimed sessions
+// that have expired.
 func (rs *relayerSessionsManager) deleteExpiredSessionTreesFn(
 	expirationHeightFn func(*sharedtypes.Params, int64) int64,
 ) func(ctx context.Context, failedSessionTrees []relayer.SessionTree) {
@@ -464,4 +455,18 @@ func (rs *relayerSessionsManager) deleteExpiredSessionTreesFn(
 			}
 		}
 	}
+}
+
+func (rs *relayerSessionsManager) supplierSessionsToClaim(
+	ctx context.Context,
+	supplierAddress string,
+) observable.Observable[[]relayer.SessionTree] {
+	sessionsToClaimObs, sessionsToClaimPublishCh := channel.NewObservable[[]relayer.SessionTree]()
+	channel.ForEach(
+		ctx,
+		rs.blockClient.CommittedBlocksSequence(ctx),
+		rs.forEachBlockClaimSessionsFn(supplierAddress, sessionsToClaimPublishCh),
+	)
+
+	return sessionsToClaimObs
 }
