@@ -29,7 +29,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 
 	expiringClaims, err := k.getExpiringClaims(ctx)
 	if err != nil {
-		return 0, 0, relaysPerServiceMap, computeUnitsPerServiceMap, err
+		return settledResult, expiredResult, err
 	}
 
 	blockHeight := ctx.BlockHeight()
