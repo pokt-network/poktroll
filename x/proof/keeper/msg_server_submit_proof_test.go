@@ -194,7 +194,7 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 			keepers.StoreBlockHash(ctx)
 
 			// Compute expected proof path.
-			expectedMerkleProofPath := protocol.GetPathForProof(blockHeaderHash, sessionHeader.GetSessionId())
+			expectedMerkleProofPath = protocol.GetPathForProof(blockHeaderHash, sessionHeader.GetSessionId())
 
 			// Advance the block height to the test proof msg height.
 			proofMsgHeight := test.getProofMsgHeight(&sharedParams, sessionHeader.GetSessionEndBlockHeight(), supplierAddr)
@@ -474,16 +474,6 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 	// Construct a session header with session ID that doesn't match the expected session ID.
 	wrongSessionIdHeader := *validSessionHeader
 	wrongSessionIdHeader.SessionId = "wrong session ID"
-
-	// Construct a session header with a session start height that doesn't match
-	// the expected session start height.
-	wrongSessionStartHeightHeader := *validSessionHeader
-	wrongSessionStartHeightHeader.SessionStartBlockHeight = 2
-
-	// Construct a session header with a session end height that doesn't match
-	// the expected session end height.
-	wrongSessionEndHeightHeader := *validSessionHeader
-	wrongSessionEndHeightHeader.SessionEndBlockHeight = 3
 
 	// TODO_TECHDEBT: add a test case such that we can distinguish between early
 	// & late session end block heights.

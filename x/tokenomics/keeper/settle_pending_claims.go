@@ -200,9 +200,7 @@ func (k Keeper) getExpiringClaims(ctx sdk.Context) (expiringClaims []prooftypes.
 			return nil, err
 		}
 
-		for _, claim := range claimsRes.GetClaims() {
-			expiringClaims = append(expiringClaims, claim)
-		}
+		expiringClaims = append(expiringClaims, claimsRes.GetClaims()...)
 
 		// Continue if there are more claims to fetch.
 		nextKey = claimsRes.Pagination.GetNextKey()
