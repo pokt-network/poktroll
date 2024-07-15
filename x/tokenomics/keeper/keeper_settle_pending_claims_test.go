@@ -114,12 +114,12 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimPendingBeforeSettlement() {
 	// Expectations: No claims should be settled because the session is still ongoing
 	blockHeight := claim.SessionHeader.SessionEndBlockHeight - 2 // session is still active
 	sdkCtx = sdkCtx.WithBlockHeight(blockHeight)
-	numClaimsSettled, numClaimsExpired, _, _, err := s.keepers.SettlePendingClaims(sdkCtx)
+	settledResult, expiredResult, err := s.keepers.SettlePendingClaims(sdkCtx)
 	require.NoError(t, err)
 
 	// Check that no claims were settled or expired.
-	require.Equal(t, uint64(0), numClaimsSettled)
-	require.Equal(t, uint64(0), numClaimsExpired)
+	require.Equal(t, uint64(0), settledResult.NumClaims)
+	require.Equal(t, uint64(0), expiredResult.NumClaims)
 
 	// Validate that one claim still remains.
 	claims = s.keepers.GetAllClaims(ctx)
@@ -137,12 +137,12 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimPendingBeforeSettlement() {
 	// 2. Settle pending claims just after the session ended.
 	// Expectations: Claims should not be settled because the proof window hasn't closed yet.
 	sdkCtx = sdkCtx.WithBlockHeight(blockHeight)
-	numClaimsSettled, numClaimsExpired, _, _, err = s.keepers.SettlePendingClaims(sdkCtx)
+	settledResult, expiredResult, err = s.keepers.SettlePendingClaims(sdkCtx)
 	require.NoError(t, err)
 
 	// Check that no claims were settled or expired.
-	require.Equal(t, uint64(0), numClaimsSettled)
-	require.Equal(t, uint64(0), numClaimsExpired)
+	require.Equal(t, uint64(0), settledResult.NumClaims)
+	require.Equal(t, uint64(0), expiredResult.NumClaims)
 
 	// Validate that the claim still exists
 	claims = s.keepers.GetAllClaims(ctx)
@@ -170,13 +170,13 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequiredAndNotProv
 	sessionEndHeight := claim.SessionHeader.SessionEndBlockHeight
 	blockHeight := shared.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
 	sdkCtx = sdkCtx.WithBlockHeight(blockHeight)
-	numClaimsSettled, numClaimsExpired, _, _, err := s.keepers.SettlePendingClaims(sdkCtx)
+	settledResult, expiredResult, err := s.keepers.SettlePendingClaims(sdkCtx)
 	require.NoError(t, err)
 
 	// Check that no claims were settled.
-	require.Equal(t, uint64(0), numClaimsSettled)
+	require.Equal(t, uint64(0), settledResult.NumClaims)
 	// Validate that exactly one claims expired
-	require.Equal(t, uint64(1), numClaimsExpired)
+	require.Equal(t, uint64(1), expiredResult.NumClaims)
 
 	// Validate that no claims remain.
 	claims = s.keepers.GetAllClaims(ctx)
@@ -218,14 +218,14 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimSettled_ProofRequiredAndProvide
 	sessionEndHeight := claim.SessionHeader.SessionEndBlockHeight
 	blockHeight := shared.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
 	sdkCtx = sdkCtx.WithBlockHeight(blockHeight)
-	numClaimsSettled, numClaimsExpired, _, _, err := s.keepers.SettlePendingClaims(sdkCtx)
+	settledResult, expiredResult, err := s.keepers.SettlePendingClaims(sdkCtx)
 	require.NoError(t, err)
 
 	// Check that one claim was settled.
-	require.Equal(t, uint64(1), numClaimsSettled)
+	require.Equal(t, uint64(1), settledResult.NumClaims)
 
 	// Validate that no claims expired.
-	require.Equal(t, uint64(0), numClaimsExpired)
+	require.Equal(t, uint64(0), expiredResult.NumClaims)
 
 	// Validate that no claims remain.
 	claims = s.keepers.GetAllClaims(ctx)
@@ -278,13 +278,13 @@ func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_Vi
 	sessionEndHeight := claim.SessionHeader.SessionEndBlockHeight
 	blockHeight := shared.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
 	sdkCtx = sdkCtx.WithBlockHeight(blockHeight)
-	numClaimsSettled, numClaimsExpired, _, _, err := s.keepers.SettlePendingClaims(sdkCtx)
+	settledResult, expiredResult, err := s.keepers.SettlePendingClaims(sdkCtx)
 	require.NoError(t, err)
 
 	// Check that one claim was settled.
-	require.Equal(t, uint64(1), numClaimsSettled)
+	require.Equal(t, uint64(1), settledResult.NumClaims)
 	// Validate that no claims expired.
-	require.Equal(t, uint64(0), numClaimsExpired)
+	require.Equal(t, uint64(0), expiredResult.NumClaims)
 
 	// Validate that no claims remain.
 	claims = s.keepers.GetAllClaims(ctx)
@@ -331,13 +331,13 @@ func (s *TestSuite) TestSettlePendingClaims_Settles_WhenAProofIsNotRequired() {
 	sessionEndHeight := claim.SessionHeader.SessionEndBlockHeight
 	blockHeight := shared.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
 	sdkCtx = sdkCtx.WithBlockHeight(blockHeight)
-	numClaimsSettled, numClaimsExpired, _, _, err := s.keepers.SettlePendingClaims(sdkCtx)
+	settledResult, expiredResult, err := s.keepers.SettlePendingClaims(sdkCtx)
 	require.NoError(t, err)
 
 	// Check that one claim was settled.
-	require.Equal(t, uint64(1), numClaimsSettled)
+	require.Equal(t, uint64(1), settledResult.NumClaims)
 	// Validate that no claims expired.
-	require.Equal(t, uint64(0), numClaimsExpired)
+	require.Equal(t, uint64(0), expiredResult.NumClaims)
 
 	// Validate that no claims remain.
 	claims = s.keepers.GetAllClaims(ctx)
@@ -421,14 +421,14 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimPendingAfterSettlement() {
 	// Expectations: No claims should be settled because the session is still ongoing
 	blockHeight := shared.GetProofWindowCloseHeight(&sharedParams, sessionOneEndHeight)
 	sdkCtx = sdkCtx.WithBlockHeight(blockHeight)
-	numClaimsSettled, numClaimsExpired, _, _, err := s.keepers.SettlePendingClaims(sdkCtx)
+	settledResult, expiredResult, err := s.keepers.SettlePendingClaims(sdkCtx)
 	require.NoError(t, err)
 
 	// Check that one claim was settled.
-	require.Equal(t, uint64(1), numClaimsSettled)
+	require.Equal(t, uint64(1), settledResult.NumClaims)
 
 	// Validate that no claims expired.
-	require.Equal(t, uint64(0), numClaimsExpired)
+	require.Equal(t, uint64(0), expiredResult.NumClaims)
 
 	// Validate that one claim still remains.
 	claims = s.keepers.GetAllClaims(ctx)
@@ -440,12 +440,12 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimPendingAfterSettlement() {
 	// 2. Settle pending claims just after the session ended.
 	// Expectations: Claims should not be settled because the proof window hasn't closed yet.
 	sdkCtx = sdkCtx.WithBlockHeight(blockHeight)
-	numClaimsSettled, numClaimsExpired, _, _, err = s.keepers.SettlePendingClaims(sdkCtx)
+	settledResult, expiredResult, err = s.keepers.SettlePendingClaims(sdkCtx)
 	require.NoError(t, err)
 
 	// Check that no claims were settled or expired.
-	require.Equal(t, uint64(0), numClaimsSettled)
-	require.Equal(t, uint64(0), numClaimsExpired)
+	require.Equal(t, uint64(0), settledResult.NumClaims)
+	require.Equal(t, uint64(0), expiredResult.NumClaims)
 
 	// Validate that the claim still exists
 	claims = s.keepers.GetAllClaims(ctx)

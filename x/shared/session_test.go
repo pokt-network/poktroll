@@ -217,10 +217,10 @@ func TestClaimProofWindows(t *testing.T) {
 					require.GreaterOrEqual(t, earliestProofCommitHeight, claimWindowCloseHeight)
 					require.Greater(t, proofWindowCloseHeight, earliestProofCommitHeight)
 
-					claimWindowSizeBlocks := GetClaimWindowSizeBlocks(&test.sharedParams)
+					claimWindowSizeBlocks := test.sharedParams.GetClaimWindowCloseOffsetBlocks()
 					require.Greater(t, claimWindowSizeBlocks, uint64(0))
 
-					proofWindowSizeBlocks := GetProofWindowSizeBlocks(&test.sharedParams)
+					proofWindowSizeBlocks := test.sharedParams.GetProofWindowCloseOffsetBlocks()
 					require.Greater(t, proofWindowSizeBlocks, uint64(0))
 
 					wg.Done()

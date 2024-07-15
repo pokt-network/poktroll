@@ -57,6 +57,7 @@ type TokenomicsModuleKeepers struct {
 	tokenomicstypes.AccountKeeper
 	tokenomicstypes.BankKeeper
 	tokenomicstypes.ApplicationKeeper
+	tokenomicstypes.SupplierKeeper
 	tokenomicstypes.ProofKeeper
 	tokenomicstypes.SharedKeeper
 
@@ -155,6 +156,9 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 	mockSharedKeeper := mocks.NewMockSharedKeeper(ctrl)
 	mockSharedKeeper.EXPECT().GetProofWindowCloseHeight(gomock.Any(), gomock.Any()).AnyTimes()
 
+	// Mock the session keeper
+	mockSessionKeeper := mocks.NewMockSessionKeeper(ctrl)
+
 	k := tokenomicskeeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKey),
@@ -165,6 +169,7 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		mockApplicationKeeper,
 		mockProofKeeper,
 		mockSharedKeeper,
+		mockSessionKeeper,
 	)
 
 	sdkCtx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
@@ -333,6 +338,7 @@ func NewTokenomicsModuleKeepers(
 		appKeeper,
 		proofKeeper,
 		sharedKeeper,
+		sessionKeeper,
 	)
 
 	require.NoError(t, tokenomicsKeeper.SetParams(ctx, tokenomicstypes.DefaultParams()))
@@ -342,6 +348,7 @@ func NewTokenomicsModuleKeepers(
 		AccountKeeper:     &accountKeeper,
 		BankKeeper:        &bankKeeper,
 		ApplicationKeeper: &appKeeper,
+		SupplierKeeper:    &supplierKeeper,
 		ProofKeeper:       &proofKeeper,
 		SharedKeeper:      &sharedKeeper,
 

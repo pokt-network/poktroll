@@ -58,13 +58,6 @@ type sessionTree struct {
 	// to delete the KVStore when it is no longer needed.
 	storePath string
 
-	// removeFromRelayerSessions is a function that removes the sessionTree from
-	// the RelayerSessionsManager.
-	// Since the sessionTree has no knowledge of the RelayerSessionsManager,
-	// we pass this callback from the session manager to the sessionTree so
-	// it can remove itself from the RelayerSessionsManager when it is no longer needed.
-	removeFromRelayerSessions func(sessionHeader *sessiontypes.SessionHeader)
-
 	isClaiming bool
 }
 
@@ -75,10 +68,10 @@ func NewSessionTree(
 	sessionHeader *sessiontypes.SessionHeader,
 	supplierAddress *cosmostypes.AccAddress,
 	storesDirectory string,
-	removeFromRelayerSessions func(sessionHeader *sessiontypes.SessionHeader),
 ) (relayer.SessionTree, error) {
-	// Join the storePrefix and the session.sessionId to create a unique storePath
-	storePath := filepath.Join(storesDirectory, sessionHeader.SessionId)
+	// Join the storePrefix and the session.sessionId and supplier address to
+	// create a unique storePath.
+	storePath := filepath.Join(storesDirectory, sessionHeader.SessionId, "_", supplierAddress.String())
 
 	// Make sure storePath does not exist when creating a new SessionTree
 	if _, err := os.Stat(storePath); err != nil && !os.IsNotExist(err) {
@@ -101,8 +94,6 @@ func NewSessionTree(
 		sessionSMT:      trie,
 		sessionMu:       &sync.Mutex{},
 		supplierAddress: supplierAddress,
-
-		removeFromRelayerSessions: removeFromRelayerSessions,
 	}
 
 	return sessionTree, nil
@@ -236,7 +227,7 @@ func (st *sessionTree) Delete() error {
 	st.sessionMu.Lock()
 	defer st.sessionMu.Unlock()
 
-	st.removeFromRelayerSessions(st.sessionHeader)
+	st.isClaiming = false
 
 	if err := st.treeStore.ClearAll(); err != nil {
 		return err

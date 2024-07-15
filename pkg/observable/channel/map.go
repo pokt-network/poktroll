@@ -64,15 +64,15 @@ func MapExpand[S, D any](
 // each notification received from the observable. If the transformFn returns a
 // skip bool of true, the notification is skipped and not emitted to the resulting
 // observable.
-// The resulting observable will receive the last replayBufferSize
+// The resulting observable will receive the last replayBufferCap
 // number of values published to the source observable before receiving new values.
 func MapReplay[S, D any](
 	ctx context.Context,
-	replayBufferSize int,
+	replayBufferCap int,
 	srcObservable observable.Observable[S],
 	transformFn MapFn[S, D],
 ) observable.ReplayObservable[D] {
-	dstObservable, dstProducer := NewReplayObservable[D](ctx, replayBufferSize)
+	dstObservable, dstProducer := NewReplayObservable[D](ctx, replayBufferCap)
 	srcObserver := srcObservable.Subscribe(ctx)
 
 	go goMapTransformNotification(
