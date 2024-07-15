@@ -1,4 +1,4 @@
-//go:generate mockgen -destination ../../../testutil/tokenomics/mocks/expected_keepers_mock.go -package mocks . AccountKeeper,BankKeeper,ApplicationKeeper,ProofKeeper,SharedKeeper
+//go:generate mockgen -destination ../../../testutil/tokenomics/mocks/expected_keepers_mock.go -package mocks . AccountKeeper,BankKeeper,ApplicationKeeper,ProofKeeper,SharedKeeper,SessionKeeper
 
 package types
 
@@ -10,6 +10,7 @@ import (
 
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -41,6 +42,8 @@ type ProofKeeper interface {
 	GetProof(ctx context.Context, sessionId, supplierAddr string) (proof prooftypes.Proof, isProofFound bool)
 	RemoveProof(ctx context.Context, sessionId, supplierAddr string)
 
+	AllClaims(ctx context.Context, req *prooftypes.QueryAllClaimsRequest) (*prooftypes.QueryAllClaimsResponse, error)
+
 	// Only used for testing & simulation
 	UpsertClaim(ctx context.Context, claim prooftypes.Claim)
 	UpsertProof(ctx context.Context, claim prooftypes.Proof)
@@ -54,6 +57,12 @@ type SharedKeeper interface {
 	SetParams(ctx context.Context, params sharedtypes.Params) error
 
 	GetProofWindowCloseHeight(ctx context.Context, queryHeight int64) int64
+}
+
+type SessionKeeper interface {
+	GetSession(context.Context, *sessiontypes.QueryGetSessionRequest) (*sessiontypes.QueryGetSessionResponse, error)
+	GetBlockHash(ctx context.Context, height int64) []byte
+	StoreBlockHash(ctx context.Context)
 }
 
 type SupplierKeeper interface {
