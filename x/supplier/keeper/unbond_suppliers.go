@@ -4,14 +4,14 @@ import (
 	"context"
 	"fmt"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/poktroll/x/shared"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 // EndBlockerUnbondSupplier unbonds suppliers that have finished the unbonding period.
 func (k Keeper) EndBlockerUnbondSupplier(ctx context.Context) error {
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	currentHeight := sdkCtx.BlockHeight()
 	sharedParams := k.sharedKeeper.GetParams(ctx)
 	sessionEndHeight := shared.GetSessionEndHeight(&sharedParams, currentHeight)
@@ -38,7 +38,7 @@ func (k Keeper) EndBlockerUnbondSupplier(ctx context.Context) error {
 		if unbondingHeight <= uint64(currentHeight) {
 
 			// Retrieve the address of the supplier.
-			supplierAddress, err := sdk.AccAddressFromBech32(supplier.Address)
+			supplierAddress, err := cosmostypes.AccAddressFromBech32(supplier.Address)
 			if err != nil {
 				logger.Error(fmt.Sprintf("could not parse address %s", supplier.Address))
 				return err
@@ -46,7 +46,7 @@ func (k Keeper) EndBlockerUnbondSupplier(ctx context.Context) error {
 
 			// Send the coins from the supplier pool back to the supplier.
 			if err = k.bankKeeper.SendCoinsFromModuleToAccount(
-				ctx, types.ModuleName, supplierAddress, []sdk.Coin{*supplier.Stake},
+				ctx, types.ModuleName, supplierAddress, []cosmostypes.Coin{*supplier.Stake},
 			); err != nil {
 				logger.Error(fmt.Sprintf(
 					"could not send %v coins from %s module to %s account due to %v",
