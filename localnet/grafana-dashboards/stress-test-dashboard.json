@@ -306,7 +306,7 @@
           "unit": "s"
         }
       },
-      "pluginVersion": "11.0.0",
+      "pluginVersion": "11.1.0",
       "targets": [
         {
           "datasource": {
@@ -390,7 +390,7 @@
           "unit": "s"
         }
       },
-      "pluginVersion": "11.0.0",
+      "pluginVersion": "11.1.0",
       "targets": [
         {
           "datasource": {
@@ -510,7 +510,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "avg by(job) (event_type{container=\"poktrolld-validator\", claim_proof_stage=\"proven\", unit=\"claims\"})",
+          "expr": "avg by(job) (event_type{container=\"poktrolld-validator\", claim_proof_stage=\"PROVEN\", unit=\"claims\"})",
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": false,
@@ -528,7 +528,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "avg by(job) (event_type{container=\"poktrolld-validator\", claim_proof_stage=\"claimed\", unit=\"claims\"})",
+          "expr": "avg by(job) (event_type{container=\"poktrolld-validator\", claim_proof_stage=\"CLAIMED\", unit=\"claims\"})",
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": false,
@@ -607,7 +607,7 @@
         "x": 12,
         "y": 12
       },
-      "id": 12,
+      "id": 13,
       "options": {
         "legend": {
           "calcs": [],
@@ -629,13 +629,13 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "avg by(job) (event_type{container=\"poktrolld-validator\", proof_required_reason=\"not_required\"})",
+          "expr": "avg by(job) (event_type{container=\"poktrolld-validator\", claim_proof_stage=\"SETTLED\", unit=\"claims\"})",
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": false,
           "instant": false,
           "interval": "",
-          "legendFormat": "not required",
+          "legendFormat": "settled",
           "range": true,
           "refId": "A",
           "useBackend": false
@@ -647,35 +647,18 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "avg by(job) (event_type{container=\"poktrolld-validator\", proof_required_reason=\"probabilistic_selection\"})",
+          "expr": "avg by(job) (event_type{container=\"poktrolld-validator\", claim_proof_stage=\"EXPIRED\", unit=\"claims\"})",
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": false,
           "instant": false,
-          "legendFormat": "probabilistic",
+          "legendFormat": "expired",
           "range": true,
           "refId": "B",
           "useBackend": false
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "disableTextWrap": false,
-          "editorMode": "builder",
-          "expr": "avg by(job) (event_type{container=\"poktrolld-validator\", proof_required_reason=\"threshold_selection\"})",
-          "fullMetaSearch": false,
-          "hide": false,
-          "includeNullMetadata": false,
-          "instant": false,
-          "legendFormat": "threshold",
-          "range": true,
-          "refId": "C",
-          "useBackend": false
         }
       ],
-      "title": "Proof Requirement",
+      "title": "Claim Settlement & Expiration",
       "type": "timeseries"
     },
     {
@@ -743,7 +726,7 @@
         "x": 0,
         "y": 18
       },
-      "id": 13,
+      "id": 21,
       "options": {
         "legend": {
           "calcs": [],
@@ -765,13 +748,13 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "avg by(job) (event_type{container=\"poktrolld-validator\", claim_proof_stage=\"settled\", unit=\"claims\"})",
+          "expr": "avg by(job) (event_type{container=\"poktrolld-validator\", claim_proof_stage=\"CLAIMED\", unit=\"relays\"})",
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": false,
           "instant": false,
           "interval": "",
-          "legendFormat": "settled",
+          "legendFormat": "claimed",
           "range": true,
           "refId": "A",
           "useBackend": false
@@ -783,18 +766,52 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "avg by(job) (event_type{container=\"poktrolld-validator\", claim_proof_stage=\"expired\", unit=\"claims\"})",
+          "expr": "avg by(job) (event_type{container=\"poktrolld-validator\", claim_proof_stage=\"PROVEN\", unit=\"relays\"})",
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": false,
           "instant": false,
-          "legendFormat": "expired",
+          "legendFormat": "proven",
           "range": true,
           "refId": "B",
           "useBackend": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "disableTextWrap": false,
+          "editorMode": "builder",
+          "expr": "avg by(job) (event_type{container=\"poktrolld-validator\", claim_proof_stage=\"SETTLED\", unit=\"relays\"})",
+          "fullMetaSearch": false,
+          "hide": false,
+          "includeNullMetadata": false,
+          "instant": false,
+          "legendFormat": "settled",
+          "range": true,
+          "refId": "C",
+          "useBackend": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "disableTextWrap": false,
+          "editorMode": "builder",
+          "expr": "avg by(job) (event_type{container=\"poktrolld-validator\", claim_proof_stage=\"EXPIRED\", unit=\"relays\"})",
+          "fullMetaSearch": false,
+          "hide": false,
+          "includeNullMetadata": true,
+          "instant": false,
+          "legendFormat": "expired",
+          "range": true,
+          "refId": "D",
+          "useBackend": false
         }
       ],
-      "title": "Claim Settlement & Expiration",
+      "title": "Relays Lifecycle",
       "type": "timeseries"
     },
     {
@@ -884,7 +901,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "avg by(job) (event_type{container=\"poktrolld-validator\", claim_proof_stage=\"claimed\", unit=\"compute_units\"})",
+          "expr": "avg by(job) (event_type{container=\"poktrolld-validator\", claim_proof_stage=\"CLAIMED\", unit=\"compute_units\"})",
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": false,
@@ -902,7 +919,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "avg by(job) (event_type{container=\"poktrolld-validator\", claim_proof_stage=\"proven\", unit=\"compute_units\"})",
+          "expr": "avg by(job) (event_type{container=\"poktrolld-validator\", claim_proof_stage=\"PROVEN\", unit=\"compute_units\"})",
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": false,
@@ -919,7 +936,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "avg by(job) (event_type{container=\"poktrolld-validator\", claim_proof_stage=\"settled\", unit=\"compute_units\"})",
+          "expr": "avg by(job) (event_type{container=\"poktrolld-validator\", claim_proof_stage=\"SETTLED\", unit=\"compute_units\"})",
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": false,
@@ -928,9 +945,162 @@
           "range": true,
           "refId": "C",
           "useBackend": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "disableTextWrap": false,
+          "editorMode": "builder",
+          "expr": "avg by(job) (event_type{container=\"poktrolld-validator\", claim_proof_stage=\"EXPIRED\", unit=\"compute_units\"})",
+          "fullMetaSearch": false,
+          "hide": false,
+          "includeNullMetadata": true,
+          "instant": false,
+          "legendFormat": "expired",
+          "range": true,
+          "refId": "D",
+          "useBackend": false
         }
       ],
       "title": "Compute Units Lifecycle",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 0,
+        "y": 24
+      },
+      "id": 12,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "maxHeight": 600,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "disableTextWrap": false,
+          "editorMode": "builder",
+          "expr": "avg by(job) (event_type{container=\"poktrolld-validator\", proof_required_reason=\"NOT_REQUIRED\"})",
+          "fullMetaSearch": false,
+          "hide": false,
+          "includeNullMetadata": false,
+          "instant": false,
+          "interval": "",
+          "legendFormat": "not required",
+          "range": true,
+          "refId": "A",
+          "useBackend": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "disableTextWrap": false,
+          "editorMode": "builder",
+          "expr": "avg by(job) (event_type{container=\"poktrolld-validator\", proof_required_reason=\"PROBABILISTIC\"})",
+          "fullMetaSearch": false,
+          "hide": false,
+          "includeNullMetadata": false,
+          "instant": false,
+          "legendFormat": "probabilistic",
+          "range": true,
+          "refId": "B",
+          "useBackend": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "disableTextWrap": false,
+          "editorMode": "builder",
+          "expr": "avg by(job) (event_type{container=\"poktrolld-validator\", proof_required_reason=\"THRESHOLD\"})",
+          "fullMetaSearch": false,
+          "hide": false,
+          "includeNullMetadata": false,
+          "instant": false,
+          "legendFormat": "threshold",
+          "range": true,
+          "refId": "C",
+          "useBackend": false
+        }
+      ],
+      "title": "Proof Requirement",
       "type": "timeseries"
     },
     {
@@ -939,7 +1109,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 24
+        "y": 30
       },
       "id": 16,
       "panels": [],
@@ -1009,7 +1179,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 25
+        "y": 31
       },
       "id": 2,
       "options": {
@@ -1112,7 +1282,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 25
+        "y": 31
       },
       "id": 9,
       "options": {
@@ -1215,7 +1385,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 25
+        "y": 31
       },
       "id": 1,
       "options": {
@@ -1313,9 +1483,209 @@
       },
       "gridPos": {
         "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 39
+      },
+      "id": 19,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "maxHeight": 600,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "disableTextWrap": false,
+          "editorMode": "builder",
+          "expr": "avg by(service_id) (event_type_gauge{container=\"poktrolld-validator\", type=\"relay_ema\"})",
+          "fullMetaSearch": false,
+          "includeNullMetadata": false,
+          "instant": false,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A",
+          "useBackend": false
+        }
+      ],
+      "title": "Relays EMA per Service",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 39
+      },
+      "id": 20,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "maxHeight": 600,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "disableTextWrap": false,
+          "editorMode": "builder",
+          "expr": "avg by(service_id) (event_type_gauge{container=\"poktrolld-validator\", type=\"relay_mining_difficulty\"})",
+          "fullMetaSearch": false,
+          "includeNullMetadata": false,
+          "instant": false,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A",
+          "useBackend": false
+        }
+      ],
+      "title": "Relay Mining Difficulty per Service",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
         "w": 8,
         "x": 0,
-        "y": 33
+        "y": 47
       },
       "id": 5,
       "options": {
@@ -1415,7 +1785,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 33
+        "y": 47
       },
       "id": 10,
       "options": {
@@ -1515,7 +1885,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 33
+        "y": 47
       },
       "id": 6,
       "options": {
@@ -1551,206 +1921,6 @@
       ],
       "title": "AppGateServer go routines",
       "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 32
-      },
-      "id": 14,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "maxHeight": 600,
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "disableTextWrap": false,
-          "editorMode": "builder",
-          "expr": "avg by(service_id) (event_type_gauge{container=\"poktrolld-validator\", type=\"relay_ema\"})",
-          "fullMetaSearch": false,
-          "includeNullMetadata": false,
-          "instant": false,
-          "legendFormat": "__auto",
-          "range": true,
-          "refId": "A",
-          "useBackend": false
-        }
-      ],
-      "title": "Relays EMA per Service",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 32
-      },
-      "id": 15,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "maxHeight": 600,
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "disableTextWrap": false,
-          "editorMode": "builder",
-          "expr": "avg by(service_id) (event_type_gauge{container=\"poktrolld-validator\", type=\"relay_mining_difficulty\"})",
-          "fullMetaSearch": false,
-          "includeNullMetadata": false,
-          "instant": false,
-          "legendFormat": "__auto",
-          "range": true,
-          "refId": "A",
-          "useBackend": false
-        }
-      ],
-      "title": "Relay Mining Difficulty per Service",
-      "type": "timeseries"
     }
   ],
   "refresh": "5s",
@@ -1765,11 +1935,10 @@
     "from": "now-15m",
     "to": "now"
   },
-  "timeRangeUpdatedDuringEditOrView": false,
   "timepicker": {},
   "timezone": "browser",
   "title": "Protocol / Stress test",
   "uid": "ddkakqetrti4gb",
-  "version": 2,
+  "version": 7,
   "weekStart": ""
 }

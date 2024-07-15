@@ -21,9 +21,8 @@ import (
 //
 // TODO_TECHDEBT: Refactor this function to return a struct instead of multiple return values.
 func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
-	numClaimsSettled, numClaimsExpired uint64,
-	relaysPerServiceMap map[string]uint64,
-	computeUnitsPerServiceMap map[string]uint64,
+	settledResult types.PendingClaimsResult,
+	expiredResult types.PendingClaimsResult,
 	err error,
 ) {
 	logger := k.Logger().With("method", "SettlePendingClaims")
@@ -37,8 +36,9 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 
 	logger.Info(fmt.Sprintf("found %d expiring claims at block height %d", len(expiringClaims), blockHeight))
 
-	relaysPerServiceMap = make(map[string]uint64)
-	computeUnitsPerServiceMap = make(map[string]uint64)
+	// Initialize results structs.
+	settledResult = types.NewClaimSettlementResult()
+	expiredResult = types.NewClaimSettlementResult()
 
 	logger.Debug("settling expiring claims")
 	for _, claim := range expiringClaims {
@@ -54,12 +54,12 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 		// of the total number of relays serviced and work done.
 		numClaimComputeUnits, err = claim.GetNumComputeUnits()
 		if err != nil {
-			return 0, 0, relaysPerServiceMap, computeUnitsPerServiceMap, err
+			return settledResult, expiredResult, err
 		}
 
 		numRelaysInSessionTree, err = claim.GetNumRelays()
 		if err != nil {
-			return 0, 0, relaysPerServiceMap, computeUnitsPerServiceMap, err
+			return settledResult, expiredResult, err
 		}
 
 		sessionId := claim.SessionHeader.SessionId
@@ -69,7 +69,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 		// claim required an on-chain proof
 		proofRequirement, err = k.proofRequirementForClaim(ctx, &claim)
 		if err != nil {
-			return 0, 0, relaysPerServiceMap, computeUnitsPerServiceMap, err
+			return settledResult, expiredResult, err
 		}
 
 		logger := k.logger.With(
@@ -90,7 +90,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 					NumRelays:       numRelaysInSessionTree,
 				}
 				if err = ctx.EventManager().EmitTypedEvent(&claimExpiredEvent); err != nil {
-					return 0, 0, relaysPerServiceMap, computeUnitsPerServiceMap, err
+					return settledResult, expiredResult, err
 				}
 
 				logger.Info("claim expired; required proof not found")
@@ -99,7 +99,9 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 				// to take up on-chain space.
 				k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierAddress)
 
-				numClaimsExpired++
+				expiredResult.NumClaims++
+				expiredResult.NumRelays += numRelaysInSessionTree
+				expiredResult.NumComputeUnits += numClaimComputeUnits
 				continue
 			}
 			// NB: If a proof is found, it is valid because verification is done
@@ -109,7 +111,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 		// Manage the mint & burn accounting for the claim.
 		if err = k.SettleSessionAccounting(ctx, &claim); err != nil {
 			logger.Error(fmt.Sprintf("error settling session accounting for claim %q: %v", claim.SessionHeader.SessionId, err))
-			return 0, 0, relaysPerServiceMap, computeUnitsPerServiceMap, err
+			return settledResult, expiredResult, err
 		}
 
 		claimSettledEvent := types.EventClaimSettled{
@@ -120,7 +122,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 		}
 
 		if err = ctx.EventManager().EmitTypedEvent(&claimSettledEvent); err != nil {
-			return 0, 0, relaysPerServiceMap, computeUnitsPerServiceMap, err
+			return settledResult, expiredResult, err
 		}
 
 		if err = ctx.EventManager().EmitTypedEvent(&prooftypes.EventProofUpdated{
@@ -129,7 +131,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 			NumRelays:       0,
 			NumComputeUnits: 0,
 		}); err != nil {
-			return 0, 0, relaysPerServiceMap, computeUnitsPerServiceMap, err
+			return settledResult, expiredResult, err
 		}
 
 		logger.Info("claim settled")
@@ -145,16 +147,22 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 			k.proofKeeper.RemoveProof(ctx, sessionId, claim.SupplierAddress)
 		}
 
-		relaysPerServiceMap[claim.SessionHeader.Service.Id] += numRelaysInSessionTree
-		computeUnitsPerServiceMap[claim.SessionHeader.Service.Id] += numClaimComputeUnits
+		settledResult.NumClaims++
+		settledResult.NumRelays += numRelaysInSessionTree
+		settledResult.NumComputeUnits += numClaimComputeUnits
+		settledResult.RelaysPerServiceMap[claim.SessionHeader.Service.Id] += numRelaysInSessionTree
 
-		numClaimsSettled++
 		logger.Info(fmt.Sprintf("Successfully settled claim for session ID %q at block height %d", claim.SessionHeader.SessionId, blockHeight))
 	}
 
-	logger.Info(fmt.Sprintf("settled %d and expired %d claims at block height %d", numClaimsSettled, numClaimsExpired, blockHeight))
+	logger.Info(fmt.Sprintf(
+		"settled %d and expired %d claims at block height %d",
+		settledResult.NumClaims,
+		expiredResult.NumClaims,
+		blockHeight,
+	))
 
-	return numClaimsSettled, numClaimsExpired, relaysPerServiceMap, computeUnitsPerServiceMap, nil
+	return settledResult, expiredResult, nil
 }
 
 // getExpiringClaims returns all claims that are expiring at the current block height.

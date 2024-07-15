@@ -5,13 +5,13 @@ import (
 	"fmt"
 
 	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/observable/filter"
 	"github.com/pokt-network/poktroll/pkg/observable/logging"
 	"github.com/pokt-network/poktroll/pkg/relayer"
-	proofkeeper "github.com/pokt-network/poktroll/x/proof/keeper"
 	"github.com/pokt-network/poktroll/x/shared"
 )
 
@@ -101,6 +101,19 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 	logger.Info().Msg("waiting & blocking until the proof window open height")
 
 	proofsWindowOpenBlock := rs.waitForBlock(ctx, proofWindowOpenHeight)
+	// TODO_MAINNET: If a relayminer is cold-started with persisted but unproven ("late")
+	// sessions, the proofsWindowOpenBlock will never be observed. Where a "late" session
+	// is one whic is unclaimed and whose earliest claim commit height has already elapsed.
+	//
+	// In this case, we should
+	// use a block query client to populate the block client replay observable at the time
+	// of block client construction. This check and failure branch can be removed once this
+	// is implemented.
+	if proofsWindowOpenBlock == nil {
+		logger.Warn().Msg("failed to observe earliest proof commit height offset seed block height")
+		failedSubmitProofsSessionsCh <- sessionTrees
+		return nil
+	}
 
 	// TODO_BLOCKER(@bryanchriswhite, @red0ne): After lean client, there's no
 	// guarantee that all session trees have the same supplier address. Group
@@ -216,6 +229,8 @@ func (rs *relayerSessionsManager) goProveClaims(
 	proofsGeneratedCh chan<- []relayer.SessionTree,
 	failSubmitProofsSessionsCh chan<- []relayer.SessionTree,
 ) {
+	logger := rs.logger.With("method", "goProveClaims")
+
 	// Separate the sessionTrees into those that failed to generate a proof
 	// and those that succeeded, then send them on their respective channels.
 	failedProofs := []relayer.SessionTree{}
@@ -228,13 +243,15 @@ func (rs *relayerSessionsManager) goProveClaims(
 		}
 		// Generate the proof path for the sessionTree using the previously committed
 		// sessionPathBlock hash.
-		path := proofkeeper.GetPathForProof(
+		path := protocol.GetPathForProof(
 			sessionPathBlock.Hash(),
 			sessionTree.GetSessionHeader().GetSessionId(),
 		)
 
 		// If the proof cannot be generated, add the sessionTree to the failedProofs.
 		if _, err := sessionTree.ProveClosest(path); err != nil {
+			logger.Error().Err(err).Msg("failed to generate proof")
+
 			failedProofs = append(failedProofs, sessionTree)
 			continue
 		}
