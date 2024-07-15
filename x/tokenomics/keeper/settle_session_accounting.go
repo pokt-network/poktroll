@@ -158,7 +158,9 @@ func (k Keeper) SettleSessionAccounting(
 			ExpectedBurn:    &settlementAmt,
 			EffectiveBurn:   application.GetStake(),
 		}
-		if err = cosmostypes.UnwrapSDKContext(ctx).EventManager().EmitTypedEvent(applicationOverservicedEvent); err != nil {
+
+		eventManager := cosmostypes.UnwrapSDKContext(ctx).EventManager()
+		if err = eventManager.EmitTypedEvent(applicationOverservicedEvent); err != nil {
 			return tokenomicstypes.ErrTokenomicsApplicationOverserviced.Wrapf(
 				"application address: %s; expected burn %s; effective burn: %s",
 				application.GetAddress(),
