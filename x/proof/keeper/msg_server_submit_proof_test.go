@@ -1286,7 +1286,6 @@ func newEmptySessionTree(
 		sessionTreeHeader,
 		&accAddress,
 		testSessionTreeStoreDir,
-		func(*sessiontypes.SessionHeader) {},
 	)
 	require.NoError(t, err)
 

@@ -34,10 +34,6 @@ func init() {
 type synchronousRPCServer struct {
 	logger polylog.Logger
 
-	// supplierServiceMap is a map of serviceId -> SupplierServiceConfig
-	// representing the supplier's advertised services.
-	supplierServiceMap map[string]*sharedtypes.Service
-
 	// serverConfig is the configuration of the proxy server. It contains the
 	// host address of the server, the service endpoint, and the advertised service.
 	// endpoints it gets relay requests from.
@@ -64,13 +60,11 @@ type synchronousRPCServer struct {
 func NewSynchronousServer(
 	logger polylog.Logger,
 	serverConfig *config.RelayMinerServerConfig,
-	supplierServiceMap map[string]*sharedtypes.Service,
 	servedRelaysProducer chan<- *types.Relay,
 	proxy relayer.RelayerProxy,
 ) relayer.RelayServer {
 	return &synchronousRPCServer{
 		logger:               logger,
-		supplierServiceMap:   supplierServiceMap,
 		server:               &http.Server{Addr: serverConfig.ListenAddress},
 		relayerProxy:         proxy,
 		servedRelaysProducer: servedRelaysProducer,
