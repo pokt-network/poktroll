@@ -56,13 +56,9 @@ func (k msgServer) SubmitProof(
 	defer func() {
 		// Only increment these metrics counters if handling a new claim.
 		if !isExistingProof {
-			// TODO_IMPROVE: We could track on-chain relays here with claim.GetNumRelays().
 			telemetry.ClaimCounter(types.ClaimProofStage_PROVEN, 1, err)
-			telemetry.ClaimComputeUnitsCounter(
-				types.ClaimProofStage_PROVEN,
-				numComputeUnits,
-				err,
-			)
+			telemetry.ClaimRelaysCounter(types.ClaimProofStage_PROVEN, numRelays, err)
+			telemetry.ClaimComputeUnitsCounter(types.ClaimProofStage_PROVEN, numComputeUnits, err)
 		}
 	}()
 
