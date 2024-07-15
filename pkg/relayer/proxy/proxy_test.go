@@ -439,7 +439,7 @@ func TestRelayerProxy_Relays(t *testing.T) {
 			inputScenario:        sendRequestWithDifferentSession,
 
 			expectedErrCode: testproxy.JSONRPCInternalErrorCode,
-			expectedErrMsg:  "session mismatch",
+			expectedErrMsg:  "session ID mismatch",
 		},
 		{
 			desc: "Invalid relay supplier",
