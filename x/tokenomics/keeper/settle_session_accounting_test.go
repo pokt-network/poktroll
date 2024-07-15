@@ -79,6 +79,7 @@ func TestSettleSessionAccounting_ValidAccounting(t *testing.T) {
 
 	// Add a new application
 	appStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
+	// NB: Ensure a non-zero app stake end balance to assert against.
 	expectedAppEndStakeAmount := cosmostypes.NewCoin("upokt", math.NewInt(420))
 	expectedAppBurn := appStake.Sub(expectedAppEndStakeAmount)
 	app := apptypes.Application{
@@ -136,6 +137,8 @@ func TestSettleSessionAccounting_ValidAccounting(t *testing.T) {
 	require.Equal(t, &expectedAppEndStakeAmount, app.GetStake())
 
 	// Assert that `apptypes.ModuleName` account module balance is *decreased* by the appropriate amount
+	// NB: The application module account burns the amount of uPOKT that was held in escrow
+	// on behalf of the applications which were serviced in a given session.
 	appModuleEndBalance := getBalance(t, ctx, keepers, appModuleAddress)
 	expectedAppModuleEndBalance := appModuleStartBalance.Sub(expectedAppBurn)
 	require.NotNil(t, appModuleEndBalance)
@@ -152,6 +155,8 @@ func TestSettleSessionAccounting_ValidAccounting(t *testing.T) {
 	require.Equal(t, &supplierStake, supplier.GetStake())
 
 	// Assert that `suppliertypes.ModuleName` account module balance is *unchanged*
+	// NB: Supplier rewards are minted to the supplier module account but then immediately
+	// distributed to the supplier accounts which provided service in a given session.
 	supplierModuleEndBalance := getBalance(t, ctx, keepers, supplierModuleAddress)
 	require.EqualValues(t, supplierModuleStartBalance, supplierModuleEndBalance)
 }
@@ -169,7 +174,7 @@ func TestSettleSessionAccounting_AppStakeTooLow(t *testing.T) {
 
 	// Add a new application
 	appStake := cosmostypes.NewCoin("upokt", math.NewInt(40000))
-	expectedAppEndStakeAmount := cosmostypes.NewCoin("upokt", math.NewInt(0))
+	expectedAppEndStakeZeroAmount := cosmostypes.NewCoin("upokt", math.NewInt(0))
 	expectedAppBurn := appStake.AddAmount(math.NewInt(2000))
 	app := apptypes.Application{
 		Address: sample.AccAddress(),
@@ -223,7 +228,7 @@ func TestSettleSessionAccounting_AppStakeTooLow(t *testing.T) {
 	// Assert that `applicationAddress` staked balance has gone to zero
 	app, appIsFound := keepers.GetApplication(ctx, app.GetAddress())
 	require.True(t, appIsFound)
-	require.Equal(t, &expectedAppEndStakeAmount, app.GetStake())
+	require.Equal(t, &expectedAppEndStakeZeroAmount, app.GetStake())
 
 	// Assert that `apptypes.ModuleName` account module balance is *decreased* by the appropriate amount
 	appModuleEndBalance := getBalance(t, ctx, keepers, appModuleAddress)
