@@ -84,7 +84,7 @@ func NewSynchronousServer(
 func (sync *synchronousRPCServer) Start(ctx context.Context) error {
 	go func() {
 		<-ctx.Done()
-		sync.server.Shutdown(ctx)
+		_ = sync.server.Shutdown(ctx)
 	}()
 
 	// Set the HTTP handler.
@@ -118,7 +118,7 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 		return
 	}
 
-	if err := relayRequest.ValidateBasic(); err != nil {
+	if err = relayRequest.ValidateBasic(); err != nil {
 		sync.replyWithError(err, relayRequest, writer)
 		sync.logger.Warn().Err(err).Msg("failed validating relay response")
 		return

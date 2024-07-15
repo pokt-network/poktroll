@@ -3,7 +3,6 @@ package keeper_test
 import (
 	"context"
 	"testing"
-	"time"
 
 	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/types"
@@ -25,11 +24,7 @@ import (
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-const (
-	testServiceId = "svc1"
-	testSessionId = "mock_session_id"
-)
-const minExecutionPeriod = 5 * time.Second
+const testServiceId = "svc1"
 
 func init() {
 	cmd.InitSDKConfig()

@@ -2,6 +2,7 @@ package rand_test
 
 import (
 	"encoding/binary"
+	"fmt"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -23,25 +24,35 @@ func TestSeededFloat32(t *testing.T) {
 
 	// Sample concurrently to save time.
 	wg := sync.WaitGroup{}
+	errCh := make(chan error, 1)
 	for idx := int64(0); idx < sampleSize; idx++ {
 		wg.Add(1)
-		go func() {
+		go func(idx int64) {
 			idxBz := make([]byte, binary.MaxVarintLen64)
 			binary.PutVarint(idxBz, idx)
 			randFloat, err := poktrand.SeededFloat32(idxBz)
 			require.NoError(t, err)
 
 			if randFloat < 0 || randFloat > 1 {
-				t.Fatalf("secureRandFloat64() returned out of bounds value: %f", randFloat)
+				errCh <- fmt.Errorf("secureRandFloat64() returned out of bounds value: %f", randFloat)
+				wg.Done()
+				return
 			}
 
 			if randFloat <= probability {
 				numTrueSamples.Add(1)
 			}
 			wg.Done()
-		}()
+		}(idx)
 	}
-	wg.Wait()
+
+	go func() {
+		wg.Wait()
+		close(errCh)
+	}()
+
+	err := <-errCh
+	require.NoError(t, err)
 
 	expectedNumTrueSamples := float32(sampleSize) * probability
 	expectedNumFalseSamples := float32(sampleSize) * (1 - probability)

@@ -134,7 +134,8 @@ func init() {
 
 // RelayerProxy should start and stop without errors
 func TestRelayerProxy_StartAndStop(t *testing.T) {
-	ctx := context.TODO()
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
 	// Setup the RelayerProxy instrumented behavior
 	test := testproxy.NewRelayerProxyTestBehavior(ctx, t, defaultRelayerProxyBehavior...)
 
@@ -168,7 +169,8 @@ func TestRelayerProxy_StartAndStop(t *testing.T) {
 
 // RelayerProxy should fail to start if the signing key is not found in the keyring
 func TestRelayerProxy_InvalidSupplierKeyName(t *testing.T) {
-	ctx := context.TODO()
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
 	test := testproxy.NewRelayerProxyTestBehavior(ctx, t, defaultRelayerProxyBehavior...)
 
 	rp, err := proxy.NewRelayerProxy(
@@ -184,7 +186,8 @@ func TestRelayerProxy_InvalidSupplierKeyName(t *testing.T) {
 
 // RelayerProxy should fail to build if the signing key name is not provided
 func TestRelayerProxy_MissingSupplierKeyName(t *testing.T) {
-	ctx := context.TODO()
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
 	test := testproxy.NewRelayerProxyTestBehavior(ctx, t, defaultRelayerProxyBehavior...)
 
 	_, err := proxy.NewRelayerProxy(
@@ -197,7 +200,8 @@ func TestRelayerProxy_MissingSupplierKeyName(t *testing.T) {
 
 // RelayerProxy should fail to build if the service configs are not provided
 func TestRelayerProxy_EmptyServicesConfigMap(t *testing.T) {
-	ctx := context.TODO()
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
 
 	test := testproxy.NewRelayerProxyTestBehavior(ctx, t, defaultRelayerProxyBehavior...)
 
@@ -212,7 +216,8 @@ func TestRelayerProxy_EmptyServicesConfigMap(t *testing.T) {
 // RelayerProxy should fail to start if it cannot spawn a server for the
 // services it advertized on-chain.
 func TestRelayerProxy_UnsupportedRpcType(t *testing.T) {
-	ctx := context.TODO()
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
 
 	unsupportedSupplierEndpoint := map[string][]*sharedtypes.SupplierEndpoint{
 		defaultService: {
@@ -248,7 +253,8 @@ func TestRelayerProxy_UnsupportedRpcType(t *testing.T) {
 }
 
 func TestRelayerProxy_UnsupportedTransportType(t *testing.T) {
-	ctx := context.TODO()
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
 
 	badTransportSupplierEndpoints := map[string][]*sharedtypes.SupplierEndpoint{
 		defaultService: {
@@ -302,7 +308,8 @@ func TestRelayerProxy_UnsupportedTransportType(t *testing.T) {
 }
 
 func TestRelayerProxy_NonConfiguredSupplierServices(t *testing.T) {
-	ctx := context.TODO()
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
 
 	missingServicesProxy := map[string]*config.RelayMinerServerConfig{
 		defaultRelayMinerServer: {
@@ -519,10 +526,10 @@ func TestRelayerProxy_Relays(t *testing.T) {
 		},
 	}
 
-	ctx := context.TODO()
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			ctx, cancel := context.WithCancel(ctx)
+			ctx, cancel := context.WithCancel(context.TODO())
+			defer cancel()
 			testBehavior := testproxy.NewRelayerProxyTestBehavior(ctx, t, test.relayerProxyBehavior...)
 
 			rp, err := proxy.NewRelayerProxy(

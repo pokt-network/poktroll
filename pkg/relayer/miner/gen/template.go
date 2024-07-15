@@ -1,3 +1,6 @@
+// NB: ensure this code is never included in any normal builds.
+//go:build ignore
+
 package main
 
 import "text/template"
