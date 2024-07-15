@@ -72,7 +72,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 			return settledResult, expiredResult, err
 		}
 
-		logger := k.logger.With(
+		logger = k.logger.With(
 			"session_id", sessionId,
 			"supplier_address", claim.SupplierAddress,
 			"num_claim_compute_units", numClaimComputeUnits,
@@ -200,9 +200,7 @@ func (k Keeper) getExpiringClaims(ctx sdk.Context) (expiringClaims []prooftypes.
 			return nil, err
 		}
 
-		for _, claim := range claimsRes.GetClaims() {
-			expiringClaims = append(expiringClaims, claim)
-		}
+		expiringClaims = append(expiringClaims, claimsRes.GetClaims()...)
 
 		// Continue if there are more claims to fetch.
 		nextKey = claimsRes.Pagination.GetNextKey()

@@ -253,7 +253,6 @@ func InitAccount(t *testing.T, net *Network, addr sdk.AccAddress) {
 		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, math.NewInt(10))).String()),
 	}
 	amount := sdk.NewCoins(sdk.NewCoin("stake", math.NewInt(200)))
-	addrCodec := addresscodec.NewBech32Codec(app.AccountAddressPrefix)
 	responseRaw, err := clitestutil.MsgSendExec(ctx, val.Address, addr, amount, addrCodec, args...)
 	require.NoError(t, err)
 	var responseJSON map[string]interface{}

@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"testing"
 
+	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/stretchr/testify/require"
 
@@ -36,7 +37,7 @@ func networkWithClaimObjects(
 	numSessions int,
 	numSuppliers int,
 	numApps int,
-) (net *network.Network, claims []types.Claim) {
+) (net *network.Network, claims []types.Claim, clientCtx cosmosclient.Context) {
 	t.Helper()
 
 	// Initialize a network config.
@@ -114,10 +115,8 @@ func networkWithClaimObjects(
 	net = network.New(t, cfg)
 	// Only the first validator's client context is populated.
 	// (see: https://pkg.go.dev/github.com/cosmos/cosmos-sdk/testutil/network#pkg-overview)
-	ctx := net.Validators[0].ClientCtx
-	// Overwrite the client context's keyring with the in-memory one that contains
-	// our pre-generated accounts.
-	ctx = ctx.WithKeyring(kr)
+	clientCtx = net.Validators[0].ClientCtx
+	clientCtx = clientCtx.WithKeyring(kr)
 
 	// Initialize all the accounts
 	sequenceIndex := 1
@@ -132,7 +131,7 @@ func networkWithClaimObjects(
 	// need to wait for the account to be initialized in the next block
 	require.NoError(t, net.WaitForNextBlock())
 
-	return net, claims
+	return net, claims, clientCtx
 }
 
 // newTestClaim returns a new claim with the given supplier address, session start height,

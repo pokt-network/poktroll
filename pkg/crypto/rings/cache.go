@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"cosmossdk.io/depinject"
-	ring "github.com/pokt-network/ring-go"
+	"github.com/pokt-network/ring-go"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/crypto"
@@ -48,7 +48,7 @@ func NewRingCache(deps depinject.Config) (_ crypto.RingCache, err error) {
 	}
 
 	// Supply the account and application queriers to the RingCache.
-	if err := depinject.Inject(
+	if err = depinject.Inject(
 		deps,
 		&rc.logger,
 		&rc.delegationClient,

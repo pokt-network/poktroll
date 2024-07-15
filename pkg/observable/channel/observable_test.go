@@ -113,7 +113,7 @@ func TestChannelObservable_NotifyObservers(t *testing.T) {
 				observers[i] = obsvbl.Subscribe(ctx)
 			}
 
-			group, ctx := errgroup.WithContext(ctx)
+			group := errgroup.Group{}
 
 			// ensure all observer channels are notified
 			for obsvrIdx, obsvr := range observers {
@@ -187,7 +187,7 @@ func TestChannelObservable_UnsubscribeObservers(t *testing.T) {
 		{
 			name: "nil context",
 			lifecycleFn: func() observable.Observer[int] {
-				observer := obsvbl.Subscribe(nil)
+				observer := obsvbl.Subscribe(nil) //nolint:staticcheck // nil context is intentional
 				observer.Unsubscribe()
 				return observer
 			},

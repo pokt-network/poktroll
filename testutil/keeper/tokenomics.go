@@ -253,8 +253,10 @@ func NewTokenomicsModuleKeepers(
 	require.NoError(t, bankKeeper.SetParams(ctx, banktypes.DefaultParams()))
 
 	// Provide some initial funds to the suppliers & applications module accounts.
-	bankKeeper.MintCoins(ctx, suppliertypes.ModuleName, sdk.NewCoins(sdk.NewCoin("upokt", math.NewInt(1000000000000))))
-	bankKeeper.MintCoins(ctx, apptypes.ModuleName, sdk.NewCoins(sdk.NewCoin("upokt", math.NewInt(1000000000000))))
+	err := bankKeeper.MintCoins(ctx, suppliertypes.ModuleName, sdk.NewCoins(sdk.NewCoin("upokt", math.NewInt(1000000000000))))
+	require.NoError(t, err)
+	err = bankKeeper.MintCoins(ctx, apptypes.ModuleName, sdk.NewCoins(sdk.NewCoin("upokt", math.NewInt(1000000000000))))
+	require.NoError(t, err)
 
 	// Construct a real shared keeper.
 	sharedKeeper := sharedkeeper.NewKeeper(

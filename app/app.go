@@ -190,7 +190,7 @@ func New(
 		appBuilder *runtime.AppBuilder
 
 		// merge the AppConfig and other configuration in one config
-		appConfig = depinject.Configs(
+		deps = depinject.Configs(
 			AppConfig(),
 			depinject.Supply(
 				// Supply the application options
@@ -246,7 +246,7 @@ func New(
 		)
 	)
 
-	if err := depinject.Inject(appConfig,
+	if err := depinject.Inject(deps,
 		&appBuilder,
 		&app.appCodec,
 		&app.legacyAmino,
