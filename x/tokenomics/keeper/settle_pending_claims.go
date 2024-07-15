@@ -166,24 +166,24 @@ func (k Keeper) getExpiringClaims(ctx sdk.Context) (expiringClaims []prooftypes.
 
 	// NB: This error can be safely ignored as on-chain SharedQueryClient implementation cannot return an error.
 	sharedParams, _ := k.sharedQuerier.GetParams(ctx)
-	claimWindowSizeBlocks := sharedParams.GetClaimWindowCloseOffsetBlocks()
-	proofWindowSizeBlocks := sharedParams.GetProofWindowCloseOffsetBlocks()
+	claimWindowSizeBlocks := sharedParams.GetClaimWindowOpenOffsetBlocks() + sharedParams.GetClaimWindowCloseOffsetBlocks()
+	proofWindowSizeBlocks := sharedParams.GetProofWindowOpenOffsetBlocks() + sharedParams.GetProofWindowCloseOffsetBlocks()
 
-	previousSessionEndHeight := blockHeight -
-		int64(sharedParams.GetGracePeriodEndOffsetBlocks()+
-			claimWindowSizeBlocks+
+	expiringSessionEndHeight := blockHeight -
+		int64(claimWindowSizeBlocks+
 			proofWindowSizeBlocks+1)
 
 	allClaims := k.proofKeeper.GetAllClaims(ctx)
 	_ = allClaims
 
+	var nextKey []byte
 	for {
 		claimsRes, err := k.proofKeeper.AllClaims(ctx, &prooftypes.QueryAllClaimsRequest{
 			Pagination: &query.PageRequest{
-				Offset: uint64(len(expiringClaims)),
+				Key: nextKey,
 			},
 			Filter: &prooftypes.QueryAllClaimsRequest_SessionEndHeight{
-				SessionEndHeight: uint64(previousSessionEndHeight),
+				SessionEndHeight: uint64(expiringSessionEndHeight),
 			},
 		})
 		if err != nil {
@@ -195,7 +195,8 @@ func (k Keeper) getExpiringClaims(ctx sdk.Context) (expiringClaims []prooftypes.
 		}
 
 		// Continue if there are more claims to fetch.
-		if claimsRes.Pagination.GetNextKey() != nil {
+		nextKey = claimsRes.Pagination.GetNextKey()
+		if nextKey != nil {
 			continue
 		}
 
