@@ -155,6 +155,7 @@ type relaysSuite struct {
 	// testStartHeight is the block height at which the test started.
 	// It is used to calculate the progress of the test.
 	testStartHeight int64
+	testEndHeight   int64
 
 	// relayLoadDurationBlocks is the duration in blocks it takes to send all relay requests.
 	// After this duration, the test suite will stop sending relay requests, but will continue
