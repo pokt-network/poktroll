@@ -10,7 +10,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	proofkeeper "github.com/pokt-network/poktroll/x/proof/keeper"
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
@@ -144,14 +144,14 @@ func ComputeNewDifficultyTargetHash(targetNumRelays, newRelaysEma uint64) []byte
 	// (0.5)^x = (T/R)
 	// 	x = -ln2(T/R)
 	numLeadingZeroBits := int(-log2(float64(targetNumRelays) / float64(newRelaysEma)))
-	numBytes := proofkeeper.SmtSpec.PathHasherSize()
+	numBytes := protocol.SmtSpec.PathHasherSize()
 	return LeadingZeroBitsToTargetDifficultyHash(numLeadingZeroBits, numBytes)
 }
 
 // defaultDifficultyTargetHash returns the default difficulty target hash with
 // the default number of leading zero bits.
 func defaultDifficultyTargetHash() []byte {
-	numBytes := proofkeeper.SmtSpec.PathHasherSize()
+	numBytes := protocol.SmtSpec.PathHasherSize()
 	numDefaultLeadingZeroBits := int(prooftypes.DefaultMinRelayDifficultyBits)
 	return LeadingZeroBitsToTargetDifficultyHash(numDefaultLeadingZeroBits, numBytes)
 }

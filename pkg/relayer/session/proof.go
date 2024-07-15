@@ -5,14 +5,14 @@ import (
 	"fmt"
 
 	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/observable/filter"
 	"github.com/pokt-network/poktroll/pkg/observable/logging"
 	"github.com/pokt-network/poktroll/pkg/relayer"
-	proofkeeper "github.com/pokt-network/poktroll/x/proof/keeper"
-	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	"github.com/pokt-network/poktroll/x/proof/types"
 	"github.com/pokt-network/poktroll/x/shared"
 )
 
@@ -189,7 +189,7 @@ func (rs *relayerSessionsManager) newMapProveSessionsFn(
 		// Map key is the supplier address.
 		proofMsgs := make([]client.MsgSubmitProof, 0)
 		for _, session := range sessionTrees {
-			proofMsgs = append(proofMsgs, &prooftypes.MsgSubmitProof{
+			proofMsgs = append(proofMsgs, &types.MsgSubmitProof{
 				Proof:           session.GetProofBz(),
 				SessionHeader:   session.GetSessionHeader(),
 				SupplierAddress: session.GetSupplierAddress().String(),
@@ -226,6 +226,8 @@ func (rs *relayerSessionsManager) goProveClaims(
 	proofsGeneratedCh chan<- []relayer.SessionTree,
 	failSubmitProofsSessionsCh chan<- []relayer.SessionTree,
 ) {
+	logger := rs.logger.With("method", "goProveClaims")
+
 	// Separate the sessionTrees into those that failed to generate a proof
 	// and those that succeeded, then send them on their respective channels.
 	failedProofs := []relayer.SessionTree{}
@@ -238,14 +240,15 @@ func (rs *relayerSessionsManager) goProveClaims(
 		}
 		// Generate the proof path for the sessionTree using the previously committed
 		// sessionPathBlock hash.
-		path := proofkeeper.GetPathForProof(
+		path := protocol.GetPathForProof(
 			sessionPathBlock.Hash(),
 			sessionTree.GetSessionHeader().GetSessionId(),
 		)
 
 		// If the proof cannot be generated, add the sessionTree to the failedProofs.
 		if _, err := sessionTree.ProveClosest(path); err != nil {
-			rs.logger.Error().Err(err).Msg("failed to generate proof")
+			logger.Error().Err(err).Msg("failed to generate proof")
+
 			failedProofs = append(failedProofs, sessionTree)
 			continue
 		}
