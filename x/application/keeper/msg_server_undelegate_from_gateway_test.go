@@ -16,6 +16,7 @@ import (
 	"github.com/pokt-network/poktroll/x/application/keeper"
 	"github.com/pokt-network/poktroll/x/application/types"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	gwtypes "github.com/pokt-network/poktroll/x/gateway/types"
 	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -457,6 +458,44 @@ func TestMsgServer_UndelegateFromGateway_RedelegationAfterUndelegationAtTheSameS
 	// Verify that the reconstructed delegatee gateway list includes the redelegated gateway
 	gatewayAddressesAfterPruning := getRingAddressesAtBlockWithDefaultParams(&app, sdkCtx.BlockHeight())
 	require.Contains(t, gatewayAddressesAfterPruning, gatewayAddrToRedelegate)
+}
+
+func TestMsgServer_UndelegateFromGateway_UndelegateFromUnstakedGateway(t *testing.T) {
+	k, ctx := keepertest.ApplicationKeeper(t)
+	srv := keeper.NewMsgServerImpl(k)
+
+	undelegationHeight := int64(1)
+	sdkCtx, app, delegateAddr, pendingUndelegateFromAddr :=
+		createAppStakeDelegateAndUndelegate(ctx, t, srv, k, undelegationHeight)
+
+	require.Contains(t, app.DelegateeGatewayAddresses, delegateAddr)
+
+	// Assert that PendingUndelegations contains the pendingUndelegateFromAddr.
+	pendingUndelegateFromAddrs := make([]string, 0)
+	for _, pendingUndelegation := range app.PendingUndelegations {
+		pendingUndelegateFromAddrs = append(pendingUndelegateFromAddrs, pendingUndelegation.GatewayAddresses...)
+	}
+	require.Contains(t, pendingUndelegateFromAddrs, pendingUndelegateFromAddr)
+
+	// Increment the block height without moving to the next session.
+	sdkCtx = sdkCtx.WithBlockHeight(undelegationHeight + 1)
+
+	// Auto-undelegation reacts to the unstaked gateway event but since the test
+	// does not exercise the gateway unstaking logic, the event is emitted manually.
+	sdkCtx.EventManager().EmitTypedEvents(
+		&gwtypes.EventGatewayUnstaked{Address: delegateAddr},
+		&gwtypes.EventGatewayUnstaked{Address: pendingUndelegateFromAddr},
+	)
+
+	k.EndBlockerAutoUndelegateFromUnstakedGateways(sdkCtx)
+
+	app, _ = k.GetApplication(sdkCtx, app.Address)
+
+	require.Len(t, app.DelegateeGatewayAddresses, 0)
+
+	currentHeight := sdkCtx.BlockHeight()
+	sessionEndHeight := uint64(testsession.GetSessionEndHeightWithDefaultParams(currentHeight))
+	require.Len(t, app.PendingUndelegations[uint64(sessionEndHeight)].GatewayAddresses, 2)
 }
 
 // createAppStakeDelegateAndUndelegate is a helper function that is used in the tests
