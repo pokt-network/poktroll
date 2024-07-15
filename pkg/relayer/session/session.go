@@ -457,6 +457,8 @@ func (rs *relayerSessionsManager) deleteExpiredSessionTreesFn(
 	}
 }
 
+// supplierSessionsToClaim returns an observable that notifies when sessions that
+// are handled by the given supplier are ready to be claimed.
 func (rs *relayerSessionsManager) supplierSessionsToClaim(
 	ctx context.Context,
 	supplierAddress string,
