@@ -177,6 +177,8 @@ func (k Keeper) getExpiringClaims(ctx sdk.Context) (expiringClaims []prooftypes.
 	claimWindowSizeBlocks := sharedParams.GetClaimWindowOpenOffsetBlocks() + sharedParams.GetClaimWindowCloseOffsetBlocks()
 	proofWindowSizeBlocks := sharedParams.GetProofWindowOpenOffsetBlocks() + sharedParams.GetProofWindowCloseOffsetBlocks()
 
+	// expiringSessionEndHeight is the session end height of the session whose proof
+	// window has most recently closed.
 	expiringSessionEndHeight := blockHeight -
 		int64(claimWindowSizeBlocks+
 			proofWindowSizeBlocks+1)
