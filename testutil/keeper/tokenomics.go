@@ -57,6 +57,7 @@ type TokenomicsModuleKeepers struct {
 	tokenomicstypes.AccountKeeper
 	tokenomicstypes.BankKeeper
 	tokenomicstypes.ApplicationKeeper
+	tokenomicstypes.SupplierKeeper
 	tokenomicstypes.ProofKeeper
 	tokenomicstypes.SharedKeeper
 
@@ -340,6 +341,7 @@ func NewTokenomicsModuleKeepers(
 		AccountKeeper:     &accountKeeper,
 		BankKeeper:        &bankKeeper,
 		ApplicationKeeper: &appKeeper,
+		SupplierKeeper:    &supplierKeeper,
 		ProofKeeper:       &proofKeeper,
 		SharedKeeper:      &sharedKeeper,
 
