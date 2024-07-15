@@ -189,7 +189,7 @@ func (s *relaysSuite) mapSessionInfoForLoadTestDurationFn(
 		if waitingForFirstSession && blockHeight != sessionInfo.sessionStartBlockHeight {
 			countDownToTestStart := sessionInfo.sessionEndBlockHeight - blockHeight + 1
 			infoLogger.Msgf(
-				"waiting for next testsession to start: in %d blocks",
+				"waiting for next test session to start: in %d blocks",
 				countDownToTestStart,
 			)
 
@@ -206,6 +206,8 @@ func (s *relaysSuite) mapSessionInfoForLoadTestDurationFn(
 			s.testStartHeight = blockHeight
 			// Mark the test as started.
 			waitingForFirstSession = false
+			// Calculate the end block height of the test.
+			s.testEndHeight = s.testStartHeight + s.plans.totalDurationBlocks(s.sharedParams, blockHeight)
 
 			logger.Info().Msgf("Test starting at block height: %d", s.testStartHeight)
 		}
@@ -213,13 +215,12 @@ func (s *relaysSuite) mapSessionInfoForLoadTestDurationFn(
 		// If the test duration is reached, stop sending requests
 		sendRelaysEndHeight := s.testStartHeight + s.relayLoadDurationBlocks
 		if blockHeight >= sendRelaysEndHeight {
-			testEndHeight := s.testStartHeight + s.plans.totalDurationBlocks(s.sharedParams, blockHeight)
 
 			remainingRelayLoadBlocks := blockHeight - sendRelaysEndHeight
-			waitForSettlementBlocks := testEndHeight - sendRelaysEndHeight
+			waitForSettlementBlocks := s.testEndHeight - sendRelaysEndHeight
 			logger.Info().Msgf("Stop sending relays, waiting for last claims and proofs to be submitted; block until validation: %d/%d", remainingRelayLoadBlocks, waitForSettlementBlocks)
 			// Wait for one more session to let the last claims and proofs be submitted.
-			if blockHeight > testEndHeight {
+			if blockHeight > s.testEndHeight {
 				s.cancelCtx()
 			}
 			return nil, true
