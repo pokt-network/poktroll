@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"crypto/sha256"
 	"fmt"
 
 	"cosmossdk.io/math"
@@ -74,6 +75,13 @@ func (k Keeper) SettleSessionAccounting(
 
 	// Retrieve the sum of the root as a proxy into the amount of work done
 	root := (smt.MerkleSumRoot)(claim.GetRootHash())
+
+	if !root.HasDigestSize(sha256.Size) {
+		return types.ErrTokenomicsRootHashInvalid.Wrapf(
+			"root hash has invalid digest size (%d), expected (%d)",
+			len(root), sha256.Size,
+		)
+	}
 
 	claimComputeUnits, err := root.Sum()
 	if err != nil {
