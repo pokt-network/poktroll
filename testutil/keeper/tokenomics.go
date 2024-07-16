@@ -285,7 +285,7 @@ func NewTokenomicsModuleKeepers(
 	)
 	require.NoError(t, appKeeper.SetParams(ctx, apptypes.DefaultParams()))
 
-	// Construct a service keeper need by the supplier keeper.
+	// Construct a service keeper needed by the supplier keeper.
 	serviceKeeper := servicekeeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(keys[servicetypes.StoreKey]),
