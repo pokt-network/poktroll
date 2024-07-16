@@ -79,7 +79,7 @@ func (k Keeper) SettleSessionAccounting(
 	if !root.HasDigestSize(sha256.Size) {
 		return types.ErrTokenomicsRootHashInvalid.Wrapf(
 			"root hash has invalid digest size (%d), expected (%d)",
-			len(root), sha256.Size,
+			root.DigestSize(), sha256.Size,
 		)
 	}
 
