@@ -1,5 +1,5 @@
 ---
-sidebar_position: 2
+sidebar_position: 5
 title: Load Testing - Plan #1
 ---
 
@@ -126,10 +126,10 @@ pie showData
 
 |                         | RAM | CPU | Network | Disk | Time |
 | ----------------------- | --- | --- | ------- | ---- | ---- |
-| Proof Validation        | ❓  | ❓  |         |      | ❓   |
-| Block Generation        | ❓  |     |         |      |      |
-| Block Publishing        |     |     | ❓      |      |      |
-| Data Availability State |     |     |         | ❓   |      |
+| Proof Validation        | ❓   | ❓   |         |      | ❓    |
+| Block Generation        | ❓   |     |         |      |      |
+| Block Publishing        |     |     | ❓       |      |      |
+| Data Availability State |     |     |         | ❓    |      |
 
 #### 3. AppGate Server (Application, Gateway, etc…)
 
@@ -144,10 +144,10 @@ pie showData
 
 |                    | RAM | CPU | Network | Disk | Time |
 | ------------------ | --- | --- | ------- | ---- | ---- |
-| Relay Proxies      |     |     | ❓      |      | ❓   |
-| Caches & State     | ❓  | ❓  |         |      |      |
-| Request Processing |     |     |         |      | ❓   |
-| ???                |     |     |         | ❓   |      |
+| Relay Proxies      |     |     | ❓       |      | ❓    |
+| Caches & State     | ❓   | ❓   |         |      |      |
+| Request Processing |     |     |         |      | ❓    |
+| ???                |     |     |         | ❓    |      |
 
 #### 4. RelayMiner (Supplier, SMT, etc..)
 
@@ -162,10 +162,10 @@ pie showData
 
 |                     | RAM | CPU | Network | Disk | Time |
 | ------------------- | --- | --- | ------- | ---- | ---- |
-| SMT                 | ❓  | ❓  |         | ❓   | ❓   |
-| Caches & State      | ❓  |     |         |      |      |
-| Request Processing  |     |     |         |      | ❓   |
-| Response Generation |     | ❓  | ❓      |      | ❓   |
+| SMT                 | ❓   | ❓   |         | ❓    | ❓    |
+| Caches & State      | ❓   |     |         |      |      |
+| Request Processing  |     |     |         |      | ❓    |
+| Response Generation |     | ❓   | ❓       |      | ❓    |
 
 ### Out-of-scope
 
