@@ -133,7 +133,7 @@ func (s *suite) newProofMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 	for paramName, paramValue := range params {
 		switch paramName {
 		case prooftypes.ParamRelayDifficultyTargetHash:
-			msgUpdateParams.Params.MinRelayDifficultyBits = uint64(paramValue.value.(int64))
+			msgUpdateParams.Params.RelayDifficultyTargetHash = paramValue.value.([]byte)
 		case prooftypes.ParamProofRequestProbability:
 			msgUpdateParams.Params.ProofRequestProbability = paramValue.value.(float32)
 		case prooftypes.ParamProofRequirementThreshold:

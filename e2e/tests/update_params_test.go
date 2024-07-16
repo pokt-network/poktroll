@@ -372,7 +372,7 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 
 		minRelayDifficultyBits, ok := paramsMap[prooftypes.ParamRelayDifficultyTargetHash]
 		if ok {
-			params.MinRelayDifficultyBits = uint64(minRelayDifficultyBits.value.(int64))
+			params.RelayDifficultyTargetHash = minRelayDifficultyBits.value.([]byte)
 		}
 
 		proofRequestProbability, ok := paramsMap[prooftypes.ParamProofRequestProbability]
