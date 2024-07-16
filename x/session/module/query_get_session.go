@@ -24,7 +24,7 @@ This is a query operation that will not result in a state transition but simply 
 Example:
 $ poktrolld q session get-session pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4 svc1 42 --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
 		Args: cobra.RangeArgs(2, 3),
-		RunE: func(cmd *cobra.Command, args []string) (err error) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			appAddressString := args[0]
 			serviceIdString := args[1]
 			blockHeightString := "0" // 0 will default to latest height
@@ -32,9 +32,9 @@ $ poktrolld q session get-session pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4 sv
 				blockHeightString = args[2]
 			}
 
-			blockHeight, err := strconv.ParseInt(blockHeightString, 10, 64)
-			if err != nil {
-				return fmt.Errorf("couldn't convert block height to int: %s; (%v)", blockHeightString, err)
+			blockHeight, parseErr := strconv.ParseInt(blockHeightString, 10, 64)
+			if parseErr != nil {
+				return fmt.Errorf("couldn't convert block height to int: %s; (%v)", blockHeightString, parseErr)
 			}
 
 			getSessionReq := types.NewQueryGetSessionRequest(appAddressString, serviceIdString, blockHeight)
@@ -42,15 +42,15 @@ $ poktrolld q session get-session pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4 sv
 				return err
 			}
 
-			clientCtx, err := client.GetClientQueryContext(cmd)
-			if err != nil {
-				return err
+			clientCtx, ctxErr := client.GetClientQueryContext(cmd)
+			if ctxErr != nil {
+				return ctxErr
 			}
 			queryClient := types.NewQueryClient(clientCtx)
 
-			getSessionRes, err := queryClient.GetSession(cmd.Context(), getSessionReq)
-			if err != nil {
-				return err
+			getSessionRes, sessionErr := queryClient.GetSession(cmd.Context(), getSessionReq)
+			if sessionErr != nil {
+				return sessionErr
 			}
 
 			return clientCtx.PrintProto(getSessionRes)

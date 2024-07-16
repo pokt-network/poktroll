@@ -40,9 +40,7 @@ func (query *QueryAllClaimsRequest) ValidateBasic() error {
 		}
 
 	case *QueryAllClaimsRequest_SessionEndHeight:
-		if filter.SessionEndHeight < 0 {
-			return ErrProofInvalidSessionEndHeight.Wrapf("invalid session end height for claims being retrieved %d", filter.SessionEndHeight)
-		}
+		// No validation needed for session end height.
 	}
 
 	return nil
@@ -77,9 +75,7 @@ func (query *QueryAllProofsRequest) ValidateBasic() error {
 		}
 
 	case *QueryAllProofsRequest_SessionEndHeight:
-		if filter.SessionEndHeight < 0 {
-			return ErrProofInvalidSessionEndHeight.Wrapf("invalid session end height for proofs being retrieved %d", filter.SessionEndHeight)
-		}
+		// No validation needed for session end height.
 
 	default:
 		// No filter is set

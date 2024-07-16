@@ -1,27 +1,23 @@
 linters-settings:
   govet:
-    check-shadowing: true
+    enable:
+      - shadow
 
-# TODO_TECHDEBT: Enable each linter listed, 1 by 1, fixing issues as they appear.
-# Don't forget to delete the `disable-all: true` line as well.
 linters:
   disable-all: true
   enable:
-#    - govet
-#    - revive
-#    - errcheck
-#    - unused
+    - errcheck
+    - gosimple
     - goimports
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
 
 issues:
   exclude-use-default: true
   max-issues-per-linter: 0
   max-same-issues: 0
-  # TODO_CONSIDERATION/TODO_TECHDEBT: Perhaps we should prefer enforcing the best
-  # practices suggested by the linters over convention or the default in generated
-  # code (where possible). The more exceptions we have, the bigger the gaps will be
-  # in our linting coverage. We could eliminate or reduce these exceptions step-
-  # by-step.
   exclude-rules:
     # Exclude cosmos-sdk module genesis.go files as they are generated with an
     # empty import block containing a comment used by ignite CLI.
@@ -48,6 +44,7 @@ issues:
     - path: ^x/.+/codec.go$
       linters:
         - revive
+    # Exclude test files from errcheck linter
     - path: _test\.go$
       linters:
         - errcheck

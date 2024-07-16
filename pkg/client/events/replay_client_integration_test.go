@@ -29,8 +29,6 @@ type tEvent struct {
 	Message string `json:"message"`
 }
 
-type messageEventReplayObs observable.ReplayObservable[messageEvent]
-
 func (t *tEvent) EventMessage() string {
 	return t.Message
 }

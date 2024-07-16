@@ -52,9 +52,9 @@ func (k msgServer) UndelegateFromGateway(ctx context.Context, msg *types.MsgUnde
 	foundApp.DelegateeGatewayAddresses = append(foundApp.DelegateeGatewayAddresses[:foundIdx], foundApp.DelegateeGatewayAddresses[foundIdx+1:]...)
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	currentBlock := sdkCtx.BlockHeight()
+	currentHeight := sdkCtx.BlockHeight()
 
-	k.recordPendingUndelegation(ctx, &foundApp, msg.GatewayAddress, currentBlock)
+	k.recordPendingUndelegation(ctx, &foundApp, msg.GatewayAddress, currentHeight)
 
 	// Update the application store with the new delegation
 	k.SetApplication(ctx, foundApp)

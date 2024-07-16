@@ -89,9 +89,6 @@ func (params *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 
 // Validate validates the set of params
 func (params *Params) ValidateBasic() error {
-	// TODO_BLOCKER(@bryanchriswhite): Add `SessionGracePeriodBlocks` as a shared param,
-	// introduce validation, and ensure it is strictly less than num blocks per session.
-
 	if err := ValidateNumBlocksPerSession(params.NumBlocksPerSession); err != nil {
 		return err
 	}
@@ -113,6 +110,10 @@ func (params *Params) ValidateBasic() error {
 	}
 
 	if err := ValidateGracePeriodEndOffsetBlocks(params.GracePeriodEndOffsetBlocks); err != nil {
+		return err
+	}
+
+	if err := validateGracePeriodOffsetBlocksIsLessThanNumBlocksPerSession(params); err != nil {
 		return err
 	}
 
@@ -178,6 +179,10 @@ func validateIsUint64(value any) error {
 	return nil
 }
 
+// validateClaimWindowOpenOffsetIsAtLeastGracePeriodEndOffset validates that the ClaimWindowOpenOffsetBlocks
+// is at least as big as GracePeriodEndOffsetBlocks. The claim window cannot open until the grace period ends
+// to ensure that the seed for the earliest supplier claim commit height is only observed after the last relay
+// for a given session could be serviced.
 func validateClaimWindowOpenOffsetIsAtLeastGracePeriodEndOffset(params *Params) error {
 	if params.ClaimWindowOpenOffsetBlocks < params.GracePeriodEndOffsetBlocks {
 		return ErrSharedParamInvalid.Wrapf(
@@ -186,6 +191,18 @@ func validateClaimWindowOpenOffsetIsAtLeastGracePeriodEndOffset(params *Params) 
 			params.GracePeriodEndOffsetBlocks,
 		)
 	}
+	return nil
+}
 
+// validateGracePeriodOffsetBlocksIsLessThanNumBlocksPerSession validates that the
+// GracePeriodEndOffsetBlocks is less than NumBlocksPerSession; i.e., one session.
+func validateGracePeriodOffsetBlocksIsLessThanNumBlocksPerSession(params *Params) error {
+	if params.GracePeriodEndOffsetBlocks >= params.NumBlocksPerSession {
+		return ErrSharedParamInvalid.Wrapf(
+			"GracePeriodEndOffsetBlocks (%v) must be less than NumBlocksPerSession (%v)",
+			params.GracePeriodEndOffsetBlocks,
+			params.NumBlocksPerSession,
+		)
+	}
 	return nil
 }

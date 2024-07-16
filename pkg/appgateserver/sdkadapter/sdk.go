@@ -33,29 +33,29 @@ func NewShannonSDK(
 	signingKey cryptotypes.PrivKey,
 	deps depinject.Config,
 ) (*ShannonSDK, error) {
-	sessionClient, err := query.NewSessionQuerier(deps)
-	if err != nil {
-		return nil, err
+	sessionClient, sessionClientErr := query.NewSessionQuerier(deps)
+	if sessionClientErr != nil {
+		return nil, sessionClientErr
 	}
 
-	accountClient, err := query.NewAccountQuerier(deps)
-	if err != nil {
-		return nil, err
+	accountClient, accountClientErr := query.NewAccountQuerier(deps)
+	if accountClientErr != nil {
+		return nil, accountClientErr
 	}
 
-	appClient, err := query.NewApplicationQuerier(deps)
-	if err != nil {
-		return nil, err
+	appClient, appClientErr := query.NewApplicationQuerier(deps)
+	if appClientErr != nil {
+		return nil, appClientErr
 	}
 
 	blockClient := client.BlockClient(nil)
-	if err := depinject.Inject(deps, &blockClient); err != nil {
-		return nil, err
+	if depsErr := depinject.Inject(deps, &blockClient); depsErr != nil {
+		return nil, depsErr
 	}
 
-	signer, err := NewSigner(signingKey)
-	if err != nil {
-		return nil, err
+	signer, signerErr := NewSigner(signingKey)
+	if signerErr != nil {
+		return nil, signerErr
 	}
 
 	shannonSDK := &ShannonSDK{
@@ -93,7 +93,9 @@ func (shannonSDK *ShannonSDK) SendRelay(
 		Application:      application,
 	}
 
-	shannonSDK.signer.Sign(ctx, relayRequest, appRing)
+	if _, err = shannonSDK.signer.Sign(ctx, relayRequest, appRing); err != nil {
+		return nil, err
+	}
 
 	relayRequestBz, err := relayRequest.Marshal()
 	if err != nil {

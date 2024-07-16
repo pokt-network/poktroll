@@ -108,13 +108,8 @@ func (params *Params) ValidateBasic() error {
 // ValidateMinRelayDifficultyBits validates the MinRelayDifficultyBits param.
 // NB: The argument is an interface type to satisfy the ParamSetPair function signature.
 func ValidateMinRelayDifficultyBits(v interface{}) error {
-	difficulty, ok := v.(uint64)
-	if !ok {
+	if _, ok := v.(uint64); !ok {
 		return ErrProofParamInvalid.Wrapf("invalid parameter type: %T", v)
-	}
-
-	if difficulty < 0 {
-		return ErrProofParamInvalid.Wrapf("invalid MinRelayDifficultyBits: (%v)", difficulty)
 	}
 
 	return nil
