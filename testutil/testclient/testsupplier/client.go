@@ -12,7 +12,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/supplier"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
-	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/testclient/testtx"
 )
@@ -60,7 +59,7 @@ func NewOneTimeClaimProofSupplierClientMap(
 	supplierClientMock.EXPECT().
 		CreateClaims(
 			gomock.Eq(ctx),
-			gomock.AssignableToTypeOf([]*relayer.SessionClaim{}),
+			gomock.AssignableToTypeOf(([]client.MsgCreateClaim)(nil)),
 		).
 		Return(nil).
 		Times(1)
@@ -68,7 +67,7 @@ func NewOneTimeClaimProofSupplierClientMap(
 	supplierClientMock.EXPECT().
 		SubmitProofs(
 			gomock.Eq(ctx),
-			gomock.AssignableToTypeOf([]*relayer.SessionProof{}),
+			gomock.AssignableToTypeOf(([]client.MsgSubmitProof)(nil)),
 		).
 		Return(nil).
 		Times(1)

@@ -228,8 +228,8 @@ func TestMsgServer_DelegateToGateway_FailMaxReached(t *testing.T) {
 	// Stake the application & verify that the application exists
 	_, err := srv.StakeApplication(ctx, stakeMsg)
 	require.NoError(t, err)
-	_, isAppFound := k.GetApplication(ctx, appAddr)
-	require.True(t, isAppFound)
+	_, isStakedAppFound := k.GetApplication(ctx, appAddr)
+	require.True(t, isStakedAppFound)
 
 	// Delegate the application to the max number of gateways
 	maxDelegatedParam := k.GetParams(ctx).MaxDelegatedGateways
@@ -248,8 +248,8 @@ func TestMsgServer_DelegateToGateway_FailMaxReached(t *testing.T) {
 		_, err = srv.DelegateToGateway(ctx, delegateMsg)
 		require.NoError(t, err)
 		// Check number of gateways delegated to is correct
-		foundApp, isAppFound := k.GetApplication(ctx, appAddr)
-		require.True(t, isAppFound)
+		foundApp, isDelegatedAppFound := k.GetApplication(ctx, appAddr)
+		require.True(t, isDelegatedAppFound)
 		require.Equal(t, int(i+1), len(foundApp.DelegateeGatewayAddresses))
 	}
 
@@ -280,7 +280,7 @@ func TestMsgServer_DelegateToGateway_FailMaxReached(t *testing.T) {
 	require.ErrorIs(t, err, types.ErrAppMaxDelegatedGateways)
 	events = sdkCtx.EventManager().Events()
 	require.Equal(t, int(maxDelegatedParam), len(events))
-	foundApp, isAppFound := k.GetApplication(ctx, appAddr)
-	require.True(t, isAppFound)
+	foundApp, isStakedAppFound := k.GetApplication(ctx, appAddr)
+	require.True(t, isStakedAppFound)
 	require.Equal(t, maxDelegatedParam, uint64(len(foundApp.DelegateeGatewayAddresses)))
 }

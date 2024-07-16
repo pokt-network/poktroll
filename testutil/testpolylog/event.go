@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"fmt"
 	"reflect"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 
 	"github.com/pokt-network/poktroll/pkg/polylog"
 )
@@ -96,10 +97,7 @@ func RunEventMethodTests(
 	// Title-case level string so that it can be used as the name of the
 	// method to call on the logger using reflect and for the sub-test
 	// descriptions.
-	//
-	// TODO_TECHDEBT: `strings.Title()` is deprecated. Follow
-	// migration guidance in godocs: https://pkg.go.dev/strings@go1.21.4#Title.
-	levelMethodName := strings.Title(level.String())
+	levelMethodName := cases.Title(language.Und).String(level.String())
 
 	for _, tt := range tests {
 		var (

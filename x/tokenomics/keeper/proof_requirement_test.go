@@ -1,7 +1,6 @@
 package keeper_test
 
 import (
-	"math/rand"
 	"sync/atomic"
 	"testing"
 
@@ -15,12 +14,6 @@ import (
 	"github.com/pokt-network/poktroll/testutil/sample"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 )
-
-// NB: This init function is used to seed the random number generator to ensure
-// that the test is deterministic.
-func init() {
-	rand.Seed(0)
-}
 
 func TestKeeper_IsProofRequired(t *testing.T) {
 	// Set expectedCompute units to be below the proof requirement threshold to only

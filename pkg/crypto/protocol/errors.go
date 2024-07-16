@@ -1,5 +1,5 @@
 package protocol
 
 var (
-	codespace = "crypto/protocol"
+// codespace = "crypto/protocol"
 )

@@ -18,7 +18,7 @@ func TestWithContext_Ctx(t *testing.T) {
 	)
 
 	// Ensure that no logger is associated with the context.
-	existingLogger, ok := ctx.Value(polylog.CtxKey).(polylog.Logger)
+	existingLogger, ok := ctx.Value(polylog.PolylogCtxKey).(polylog.Logger)
 	require.False(t, ok)
 	require.Nil(t, existingLogger)
 

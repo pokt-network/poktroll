@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/query"
 
 	poktrand "github.com/pokt-network/poktroll/pkg/crypto/rand"
 	"github.com/pokt-network/poktroll/telemetry"
@@ -20,24 +21,24 @@ import (
 //
 // TODO_TECHDEBT: Refactor this function to return a struct instead of multiple return values.
 func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
-	numClaimsSettled, numClaimsExpired uint64,
-	relaysPerServiceMap map[string]uint64,
-	computeUnitsPerServiceMap map[string]uint64,
+	settledResult types.PendingClaimsResult,
+	expiredResult types.PendingClaimsResult,
 	err error,
 ) {
 	logger := k.Logger().With("method", "SettlePendingClaims")
 
-	// TODO_BLOCKER(@Olshansk): Optimize this by indexing expiringClaims appropriately
-	// and only retrieving the expiringClaims that need to be settled rather than all
-	// of them and iterating through them one by one.
-	expiringClaims := k.getExpiringClaims(ctx)
+	expiringClaims, err := k.getExpiringClaims(ctx)
+	if err != nil {
+		return settledResult, expiredResult, err
+	}
 
 	blockHeight := ctx.BlockHeight()
 
 	logger.Info(fmt.Sprintf("found %d expiring claims at block height %d", len(expiringClaims), blockHeight))
 
-	relaysPerServiceMap = make(map[string]uint64)
-	computeUnitsPerServiceMap = make(map[string]uint64)
+	// Initialize results structs.
+	settledResult = types.NewClaimSettlementResult()
+	expiredResult = types.NewClaimSettlementResult()
 
 	logger.Debug("settling expiring claims")
 	for _, claim := range expiringClaims {
@@ -53,12 +54,12 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 		// of the total number of relays serviced and work done.
 		numClaimComputeUnits, err = claim.GetNumComputeUnits()
 		if err != nil {
-			return 0, 0, relaysPerServiceMap, computeUnitsPerServiceMap, err
+			return settledResult, expiredResult, err
 		}
 
 		numRelaysInSessionTree, err = claim.GetNumRelays()
 		if err != nil {
-			return 0, 0, relaysPerServiceMap, computeUnitsPerServiceMap, err
+			return settledResult, expiredResult, err
 		}
 
 		sessionId := claim.SessionHeader.SessionId
@@ -68,10 +69,10 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 		// claim required an on-chain proof
 		proofRequirement, err = k.proofRequirementForClaim(ctx, &claim)
 		if err != nil {
-			return 0, 0, relaysPerServiceMap, computeUnitsPerServiceMap, err
+			return settledResult, expiredResult, err
 		}
 
-		logger := k.logger.With(
+		logger = k.logger.With(
 			"session_id", sessionId,
 			"supplier_address", claim.SupplierAddress,
 			"num_claim_compute_units", numClaimComputeUnits,
@@ -89,7 +90,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 					NumRelays:       numRelaysInSessionTree,
 				}
 				if err = ctx.EventManager().EmitTypedEvent(&claimExpiredEvent); err != nil {
-					return 0, 0, relaysPerServiceMap, computeUnitsPerServiceMap, err
+					return settledResult, expiredResult, err
 				}
 
 				logger.Info("claim expired; required proof not found")
@@ -98,7 +99,9 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 				// to take up on-chain space.
 				k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierAddress)
 
-				numClaimsExpired++
+				expiredResult.NumClaims++
+				expiredResult.NumRelays += numRelaysInSessionTree
+				expiredResult.NumComputeUnits += numClaimComputeUnits
 				continue
 			}
 			// NB: If a proof is found, it is valid because verification is done
@@ -108,7 +111,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 		// Manage the mint & burn accounting for the claim.
 		if err = k.SettleSessionAccounting(ctx, &claim); err != nil {
 			logger.Error(fmt.Sprintf("error settling session accounting for claim %q: %v", claim.SessionHeader.SessionId, err))
-			return 0, 0, relaysPerServiceMap, computeUnitsPerServiceMap, err
+			return settledResult, expiredResult, err
 		}
 
 		claimSettledEvent := types.EventClaimSettled{
@@ -119,7 +122,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 		}
 
 		if err = ctx.EventManager().EmitTypedEvent(&claimSettledEvent); err != nil {
-			return 0, 0, relaysPerServiceMap, computeUnitsPerServiceMap, err
+			return settledResult, expiredResult, err
 		}
 
 		if err = ctx.EventManager().EmitTypedEvent(&prooftypes.EventProofUpdated{
@@ -128,7 +131,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 			NumRelays:       0,
 			NumComputeUnits: 0,
 		}); err != nil {
-			return 0, 0, relaysPerServiceMap, computeUnitsPerServiceMap, err
+			return settledResult, expiredResult, err
 		}
 
 		logger.Info("claim settled")
@@ -144,41 +147,72 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 			k.proofKeeper.RemoveProof(ctx, sessionId, claim.SupplierAddress)
 		}
 
-		relaysPerServiceMap[claim.SessionHeader.Service.Id] += numRelaysInSessionTree
-		computeUnitsPerServiceMap[claim.SessionHeader.Service.Id] += numClaimComputeUnits
+		settledResult.NumClaims++
+		settledResult.NumRelays += numRelaysInSessionTree
+		settledResult.NumComputeUnits += numClaimComputeUnits
+		settledResult.RelaysPerServiceMap[claim.SessionHeader.Service.Id] += numRelaysInSessionTree
 
-		numClaimsSettled++
 		logger.Info(fmt.Sprintf("Successfully settled claim for session ID %q at block height %d", claim.SessionHeader.SessionId, blockHeight))
 	}
 
-	logger.Info(fmt.Sprintf("settled %d and expired %d claims at block height %d", numClaimsSettled, numClaimsExpired, blockHeight))
+	logger.Info(fmt.Sprintf(
+		"settled %d and expired %d claims at block height %d",
+		settledResult.NumClaims,
+		expiredResult.NumClaims,
+		blockHeight,
+	))
 
-	return numClaimsSettled, numClaimsExpired, relaysPerServiceMap, computeUnitsPerServiceMap, nil
+	return settledResult, expiredResult, nil
 }
 
 // getExpiringClaims returns all claims that are expiring at the current block height.
 // This is the height at which the proof window closes.
 // If the proof window closes and a proof IS NOT required -> settle the claim.
 // If the proof window closes and a proof IS required -> only settle it if a proof is available.
-func (k Keeper) getExpiringClaims(ctx sdk.Context) (expiringClaims []prooftypes.Claim) {
+func (k Keeper) getExpiringClaims(ctx sdk.Context) (expiringClaims []prooftypes.Claim, err error) {
 	blockHeight := ctx.BlockHeight()
 
-	// TODO_TECHDEBT: Optimize this by indexing claims appropriately
-	// and only retrieving the claims that need to be settled rather than all
-	// of them and iterating through them one by one.
-	claims := k.proofKeeper.GetAllClaims(ctx)
+	// NB: This error can be safely ignored as on-chain SharedQueryClient implementation cannot return an error.
+	sharedParams, _ := k.sharedQuerier.GetParams(ctx)
+	claimWindowSizeBlocks := sharedParams.GetClaimWindowOpenOffsetBlocks() + sharedParams.GetClaimWindowCloseOffsetBlocks()
+	proofWindowSizeBlocks := sharedParams.GetProofWindowOpenOffsetBlocks() + sharedParams.GetProofWindowCloseOffsetBlocks()
 
-	// Loop over all claims we need to check for expiration
-	for _, claim := range claims {
-		claimSessionStartHeight := claim.GetSessionHeader().GetSessionStartBlockHeight()
-		expirationHeight := k.sharedKeeper.GetProofWindowCloseHeight(ctx, claimSessionStartHeight)
-		if blockHeight >= expirationHeight {
-			expiringClaims = append(expiringClaims, claim)
+	// expiringSessionEndHeight is the session end height of the session whose proof
+	// window has most recently closed.
+	expiringSessionEndHeight := blockHeight -
+		int64(claimWindowSizeBlocks+
+			proofWindowSizeBlocks+1)
+
+	allClaims := k.proofKeeper.GetAllClaims(ctx)
+	_ = allClaims
+
+	var nextKey []byte
+	for {
+		claimsRes, err := k.proofKeeper.AllClaims(ctx, &prooftypes.QueryAllClaimsRequest{
+			Pagination: &query.PageRequest{
+				Key: nextKey,
+			},
+			Filter: &prooftypes.QueryAllClaimsRequest_SessionEndHeight{
+				SessionEndHeight: uint64(expiringSessionEndHeight),
+			},
+		})
+		if err != nil {
+			return nil, err
 		}
+
+		expiringClaims = append(expiringClaims, claimsRes.GetClaims()...)
+
+		// Continue if there are more claims to fetch.
+		nextKey = claimsRes.Pagination.GetNextKey()
+		if nextKey != nil {
+			continue
+		}
+
+		break
 	}
 
 	// Return the actually expiring claims
-	return expiringClaims
+	return expiringClaims, nil
 }
 
 // proofRequirementForClaim checks if a proof is required for a claim.

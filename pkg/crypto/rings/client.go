@@ -9,7 +9,7 @@ import (
 	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
 	ringtypes "github.com/athanorlabs/go-dleq/types"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
-	ring "github.com/pokt-network/ring-go"
+	"github.com/pokt-network/ring-go"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/crypto"
@@ -352,8 +352,7 @@ func ringPointsContain(
 		// avoid nested loops when checking for its existence.
 		// Since it's not possible to use bytes slices as keys in a map, we convert
 		// the point to a string before using it as a key.
-		keyFromPoint := string(publicKey.Encode())
-		if _, ok := ringPoints[keyFromPoint]; !ok {
+		if _, ok := ringPoints[string(publicKey.Encode())]; !ok {
 			return false
 		}
 	}

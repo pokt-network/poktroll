@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	testutilevents "github.com/pokt-network/poktroll/testutil/events"
 	"github.com/pokt-network/poktroll/testutil/integration"
 	testutil "github.com/pokt-network/poktroll/testutil/integration"
@@ -28,7 +29,7 @@ func init() {
 }
 
 func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T) {
-	var claimWindowOpenBlockHash, proofWindowOpenBlockHash []byte
+	var claimWindowOpenBlockHash, proofWindowOpenBlockHash, proofPathSeedBlockHash []byte
 
 	// Create a new integration app
 	integrationApp := integration.NewCompleteIntegrationApp(t)
@@ -89,7 +90,7 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	createProofMsg := prooftypes.MsgSubmitProof{
 		SupplierAddress: integrationApp.DefaultSupplier.Address,
 		SessionHeader:   session.Header,
-		Proof:           getProof(t, trie),
+		Proof:           getProof(t, trie, proofPathSeedBlockHash, session.GetHeader().GetSessionId()),
 	}
 	result = integrationApp.RunMsg(t,
 		&createProofMsg,
@@ -202,11 +203,16 @@ func prepareSMST(
 // getProof returns a proof for the given session for the empty path.
 // If there is only one relay in the trie, the proof will be for that single
 // relay since it is "closest" to any path provided, empty or not.
-func getProof(t *testing.T, trie *smt.SMST) []byte {
+func getProof(
+	t *testing.T,
+	trie *smt.SMST,
+	pathSeedBlockHash []byte,
+	sessionId string,
+) []byte {
 	t.Helper()
 
-	emptyPath := make([]byte, trie.PathHasherSize())
-	proof, err := trie.ProveClosest(emptyPath)
+	path := protocol.GetPathForProof(pathSeedBlockHash, sessionId)
+	proof, err := trie.ProveClosest(path)
 	require.NoError(t, err)
 
 	proofBz, err := proof.Marshal()

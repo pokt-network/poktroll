@@ -20,7 +20,6 @@ import (
 	"context"
 
 	cometrpctypes "github.com/cometbft/cometbft/rpc/core/types"
-	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 	comettypes "github.com/cometbft/cometbft/types"
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
@@ -29,11 +28,28 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
-	"github.com/pokt-network/poktroll/pkg/relayer"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
+
+// MsgCreateClaim is an interface satisfying proof.MsgCreateClaim concrete type
+// used by the SupplierClient interface to avoid cyclic dependencies.
+type MsgCreateClaim interface {
+	cosmostypes.Msg
+	GetRootHash() []byte
+	GetSessionHeader() *sessiontypes.SessionHeader
+	GetSupplierAddress() string
+}
+
+// MsgSubmitProof is an interface satisfying proof.MsgSubmitProof concrete type
+// used by the SupplierClient interface to avoid cyclic dependencies.
+type MsgSubmitProof interface {
+	cosmostypes.Msg
+	GetProof() []byte
+	GetSessionHeader() *sessiontypes.SessionHeader
+	GetSupplierAddress() string
+}
 
 // SupplierClient is an interface for sufficient for a supplier operator to be
 // able to construct blockchain transactions from pocket protocol-specific messages
@@ -44,7 +60,7 @@ type SupplierClient interface {
 	// session's mined relays.
 	CreateClaims(
 		ctx context.Context,
-		sessionClaims []*relayer.SessionClaim,
+		claimMsgs ...MsgCreateClaim,
 	) error
 	// SubmitProof sends proof messages which contain the smt.SparseMerkleClosestProof,
 	// corresponding to some previously created claim for the same session.
@@ -53,7 +69,7 @@ type SupplierClient interface {
 	// the amount of data stored on-chain.
 	SubmitProofs(
 		ctx context.Context,
-		sessionProofs []*relayer.SessionProof,
+		sessionProofs ...MsgSubmitProof,
 	) error
 	// Address returns the address of the SupplierClient that will be submitting proofs & claims.
 	Address() *cosmostypes.AccAddress
@@ -312,7 +328,7 @@ type SharedQueryClient interface {
 // on-chain block information for a given height. If height is nil, the
 // latest block is returned.
 type BlockQueryClient interface {
-	Block(ctx context.Context, height *int64) (*coretypes.ResultBlock, error)
+	Block(ctx context.Context, height *int64) (*cometrpctypes.ResultBlock, error)
 }
 
 // ProofParams is a go interface type which corresponds to the poktroll.proof.Params
