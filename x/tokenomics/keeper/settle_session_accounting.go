@@ -150,13 +150,13 @@ func (k Keeper) SettleSessionAccounting(
 		// goes "into debt". Need to design a way to handle this when we implement
 		// probabilistic proofs and add all the parameter logic. Do we touch the application balance?
 		// Do we just let it go into debt? Do we penalize the application? Do we unstake it? Etc...
-		expectedBurn := application.Stake
-		settlementCoin = *application.Stake
+		expectedBurn := settlementCoin
+		settlementCoin = *application.GetStake()
 		settlementCoins = cosmostypes.NewCoins(settlementCoin)
 
 		applicationOverservicedEvent := &tokenomicstypes.EventApplicationOverserviced{
 			ApplicationAddr: applicationAddress.String(),
-			ExpectedBurn:    expectedBurn,
+			ExpectedBurn:    &expectedBurn,
 			EffectiveBurn:   application.GetStake(),
 		}
 
