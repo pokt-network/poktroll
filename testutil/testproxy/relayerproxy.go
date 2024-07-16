@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -151,10 +152,18 @@ func WithServicesConfigMap(
 				server.Handler = http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 					sendJSONRPCResponse(test.t, w)
 				})
-				go func() { server.ListenAndServe() }()
+
+				go func() {
+					err := server.ListenAndServe()
+					if err != nil && !errors.Is(err, http.ErrServerClosed) {
+						require.NoError(test.t, err)
+					}
+				}()
+
 				go func() {
 					<-test.ctx.Done()
-					server.Shutdown(test.ctx)
+					err := server.Shutdown(test.ctx)
+					require.NoError(test.t, err)
 				}()
 
 				test.proxyServersMap[serviceId] = server
@@ -258,11 +267,6 @@ func WithSuccessiveSessions(
 	}
 }
 
-// TODO_BLOCKER(@red-0ne): This function only supports JSON-RPC requests and
-// needs to have its http.Request "Content-Type" header passed-in as a parameter
-// and take out the GetRelayResponseError function which parses JSON-RPC responses
-// to make it RPC-type agnostic.
-
 // MarshalAndSend marshals the request and sends it to the provided service.
 func MarshalAndSend(
 	test *TestBehavior,
@@ -317,7 +321,7 @@ func GetRelayResponseError(t *testing.T, res *http.Response) (errCode int32, err
 	require.NoError(t, err)
 
 	// If the relayResponse basic validation fails then consider the payload as an error.
-	if err := relayResponse.ValidateBasic(); err != nil {
+	if err = relayResponse.ValidateBasic(); err != nil {
 		return JSONRPCInternalErrorCode, string(relayResponse.Payload)
 	}
 

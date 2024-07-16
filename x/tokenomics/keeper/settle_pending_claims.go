@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/query"
 
 	poktrand "github.com/pokt-network/poktroll/pkg/crypto/rand"
 	"github.com/pokt-network/poktroll/telemetry"
@@ -26,10 +27,10 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 ) {
 	logger := k.Logger().With("method", "SettlePendingClaims")
 
-	// TODO_BLOCKER(@Olshansk): Optimize this by indexing expiringClaims appropriately
-	// and only retrieving the expiringClaims that need to be settled rather than all
-	// of them and iterating through them one by one.
-	expiringClaims := k.getExpiringClaims(ctx)
+	expiringClaims, err := k.getExpiringClaims(ctx)
+	if err != nil {
+		return settledResult, expiredResult, err
+	}
 
 	blockHeight := ctx.BlockHeight()
 
@@ -71,7 +72,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 			return settledResult, expiredResult, err
 		}
 
-		logger := k.logger.With(
+		logger = k.logger.With(
 			"session_id", sessionId,
 			"supplier_address", claim.SupplierAddress,
 			"num_claim_compute_units", numClaimComputeUnits,
@@ -168,25 +169,50 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 // This is the height at which the proof window closes.
 // If the proof window closes and a proof IS NOT required -> settle the claim.
 // If the proof window closes and a proof IS required -> only settle it if a proof is available.
-func (k Keeper) getExpiringClaims(ctx sdk.Context) (expiringClaims []prooftypes.Claim) {
+func (k Keeper) getExpiringClaims(ctx sdk.Context) (expiringClaims []prooftypes.Claim, err error) {
 	blockHeight := ctx.BlockHeight()
 
-	// TODO_TECHDEBT: Optimize this by indexing claims appropriately
-	// and only retrieving the claims that need to be settled rather than all
-	// of them and iterating through them one by one.
-	claims := k.proofKeeper.GetAllClaims(ctx)
+	// NB: This error can be safely ignored as on-chain SharedQueryClient implementation cannot return an error.
+	sharedParams, _ := k.sharedQuerier.GetParams(ctx)
+	claimWindowSizeBlocks := sharedParams.GetClaimWindowOpenOffsetBlocks() + sharedParams.GetClaimWindowCloseOffsetBlocks()
+	proofWindowSizeBlocks := sharedParams.GetProofWindowOpenOffsetBlocks() + sharedParams.GetProofWindowCloseOffsetBlocks()
 
-	// Loop over all claims we need to check for expiration
-	for _, claim := range claims {
-		claimSessionStartHeight := claim.GetSessionHeader().GetSessionStartBlockHeight()
-		expirationHeight := k.sharedKeeper.GetProofWindowCloseHeight(ctx, claimSessionStartHeight)
-		if blockHeight >= expirationHeight {
-			expiringClaims = append(expiringClaims, claim)
+	// expiringSessionEndHeight is the session end height of the session whose proof
+	// window has most recently closed.
+	expiringSessionEndHeight := blockHeight -
+		int64(claimWindowSizeBlocks+
+			proofWindowSizeBlocks+1)
+
+	allClaims := k.proofKeeper.GetAllClaims(ctx)
+	_ = allClaims
+
+	var nextKey []byte
+	for {
+		claimsRes, err := k.proofKeeper.AllClaims(ctx, &prooftypes.QueryAllClaimsRequest{
+			Pagination: &query.PageRequest{
+				Key: nextKey,
+			},
+			Filter: &prooftypes.QueryAllClaimsRequest_SessionEndHeight{
+				SessionEndHeight: uint64(expiringSessionEndHeight),
+			},
+		})
+		if err != nil {
+			return nil, err
 		}
+
+		expiringClaims = append(expiringClaims, claimsRes.GetClaims()...)
+
+		// Continue if there are more claims to fetch.
+		nextKey = claimsRes.Pagination.GetNextKey()
+		if nextKey != nil {
+			continue
+		}
+
+		break
 	}
 
 	// Return the actually expiring claims
-	return expiringClaims
+	return expiringClaims, nil
 }
 
 // proofRequirementForClaim checks if a proof is required for a claim.

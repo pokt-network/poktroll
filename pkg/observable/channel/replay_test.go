@@ -140,7 +140,7 @@ func TestReplayObservable(t *testing.T) {
 		}
 	}
 
-	require.EqualValues(t, expectedValues, actualValues)
+	require.EqualValues(t, expectedValues, actualValues2)
 }
 
 func TestReplayObservable_Last_Full_ReplayBuffer(t *testing.T) {
@@ -221,13 +221,13 @@ func TestReplayObservable_Last_Blocks_And_Times_Out(t *testing.T) {
 			// than lastN values in the replay buffer.
 			// Add a timeout to ensure that Last doesn't block indefinitely and return
 			// whatever values are available in the replay buffer.
-			ctx, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
+			ctxWithTimeout, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
 			// Last should block until lastN values have been published or the timeout
 			// specified above is reached.
 			// NOTE: this will produce a warning log which can safely be ignored:
 			// > WARN: requested replay buffer size 3 is greater than replay buffer
 			// > 	   capacity 3; returning entire replay buffer
-			lastValuesCh <- replayObsvbl.Last(ctx, lastN)
+			lastValuesCh <- replayObsvbl.Last(ctxWithTimeout, lastN)
 			cancel()
 		}()
 		return lastValuesCh

@@ -24,9 +24,8 @@ func TestClaim_Show(t *testing.T) {
 	numSuppliers := 3
 	numApps := 3
 
-	net, claims := networkWithClaimObjects(t, numSessions, numApps, numSuppliers)
+	net, claims, clientCtx := networkWithClaimObjects(t, numSessions, numApps, numSuppliers)
 
-	ctx := net.Validators[0].ClientCtx
 	commonArgs := []string{
 		fmt.Sprintf("--%s=json", cometcli.OutputFlag),
 	}
@@ -98,7 +97,7 @@ func TestClaim_Show(t *testing.T) {
 				test.supplierAddr,
 			}
 			args = append(args, commonArgs...)
-			out, err := clitestutil.ExecTestCLICmd(ctx, proof.CmdShowClaim(), args)
+			out, err := clitestutil.ExecTestCLICmd(clientCtx, proof.CmdShowClaim(), args)
 			if test.expectedErr != nil {
 				require.ErrorContains(t, err, test.expectedErr.Error())
 			} else {
@@ -140,9 +139,8 @@ func TestClaim_List(t *testing.T) {
 	// and management is hard (see details above). To verify if it's functioning
 	// independently, please run:
 	// $ make itest 2 5 ./x/proof/module -- -run TestClaim_List
-	net, claims := networkWithClaimObjects(t, numSessions, numSuppliers, numApps)
+	net, claims, clientCtx := networkWithClaimObjects(t, numSessions, numSuppliers, numApps)
 
-	ctx := net.Validators[0].ClientCtx
 	prepareArgs := func(next []byte, offset, limit uint64, total bool) []string {
 		args := []string{
 			fmt.Sprintf("--%s=json", cometcli.OutputFlag),
@@ -163,7 +161,7 @@ func TestClaim_List(t *testing.T) {
 		step := 2
 		for i := 0; i < totalClaims; i += step {
 			args := prepareArgs(nil, uint64(i), uint64(step), false)
-			out, err := clitestutil.ExecTestCLICmd(ctx, proof.CmdListClaims(), args)
+			out, err := clitestutil.ExecTestCLICmd(clientCtx, proof.CmdListClaims(), args)
 			require.NoError(t, err)
 
 			var resp types.QueryAllClaimsResponse
@@ -182,7 +180,7 @@ func TestClaim_List(t *testing.T) {
 		var next []byte
 		for i := 0; i < totalClaims; i += step {
 			args := prepareArgs(next, 0, uint64(step), false)
-			out, err := clitestutil.ExecTestCLICmd(ctx, proof.CmdListClaims(), args)
+			out, err := clitestutil.ExecTestCLICmd(clientCtx, proof.CmdListClaims(), args)
 			require.NoError(t, err)
 
 			var resp types.QueryAllClaimsResponse
@@ -209,7 +207,7 @@ func TestClaim_List(t *testing.T) {
 			}
 		}
 
-		out, err := clitestutil.ExecTestCLICmd(ctx, proof.CmdListClaims(), args)
+		out, err := clitestutil.ExecTestCLICmd(clientCtx, proof.CmdListClaims(), args)
 		require.NoError(t, err)
 
 		var resp types.QueryAllClaimsResponse
@@ -234,7 +232,7 @@ func TestClaim_List(t *testing.T) {
 			}
 		}
 
-		out, err := clitestutil.ExecTestCLICmd(ctx, proof.CmdListClaims(), args)
+		out, err := clitestutil.ExecTestCLICmd(clientCtx, proof.CmdListClaims(), args)
 		require.NoError(t, err)
 
 		var resp types.QueryAllClaimsResponse
@@ -259,7 +257,7 @@ func TestClaim_List(t *testing.T) {
 			}
 		}
 
-		out, err := clitestutil.ExecTestCLICmd(ctx, proof.CmdListClaims(), args)
+		out, err := clitestutil.ExecTestCLICmd(clientCtx, proof.CmdListClaims(), args)
 		require.NoError(t, err)
 
 		var resp types.QueryAllClaimsResponse
@@ -274,7 +272,7 @@ func TestClaim_List(t *testing.T) {
 
 	t.Run("Total", func(t *testing.T) {
 		args := prepareArgs(nil, 0, uint64(totalClaims), true)
-		out, err := clitestutil.ExecTestCLICmd(ctx, proof.CmdListClaims(), args)
+		out, err := clitestutil.ExecTestCLICmd(clientCtx, proof.CmdListClaims(), args)
 		require.NoError(t, err)
 
 		var resp types.QueryAllClaimsResponse

@@ -69,9 +69,9 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 		// service's endpoint
 		for _, service := range supplier.Services {
 			for _, endpoint := range service.Endpoints {
-				endpointUrl, err := url.Parse(endpoint.Url)
-				if err != nil {
-					return err
+				endpointUrl, urlErr := url.Parse(endpoint.Url)
+				if urlErr != nil {
+					return urlErr
 				}
 				found := false
 				// Iterate over the server configs and check if `endpointUrl` is present
@@ -95,28 +95,25 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 		}
 
 		rp.AddressToSigningKeyNameMap[supplier.Address] = signingKeyName
+	}
 
-		if rp.servers, err = rp.initializeProxyServers(supplier.Services); err != nil {
-			return err
-		}
+	var err error
+	if rp.servers, err = rp.initializeProxyServers(); err != nil {
+		return err
 	}
 
 	return nil
 }
 
 // initializeProxyServers initializes the proxy servers for each server config.
-func (rp *relayerProxy) initializeProxyServers(
-	supplierServices []*sharedtypes.SupplierServiceConfig,
-) (proxyServerMap map[string]relayer.RelayServer, err error) {
+func (rp *relayerProxy) initializeProxyServers() (proxyServerMap map[string]relayer.RelayServer, err error) {
 	// Build a map of serviceId -> service for the supplier's advertised services
-	supplierServiceMap := make(map[string]*sharedtypes.Service)
-	for _, service := range supplierServices {
-		supplierServiceMap[service.Service.Id] = service.Service
-	}
 
 	// Build a map of listenAddress -> RelayServer for each server defined in the config file
 	servers := make(map[string]relayer.RelayServer)
 
+	// serverConfigs is a map with ListenAddress as the key which guarantees that
+	// there are no duplicate servers with the same ListenAddress.
 	for _, serverConfig := range rp.serverConfigs {
 		rp.logger.Info().Str("server host", serverConfig.ListenAddress).Msg("starting relay proxy server")
 
@@ -129,7 +126,6 @@ func (rp *relayerProxy) initializeProxyServers(
 			servers[serverConfig.ListenAddress] = NewSynchronousServer(
 				rp.logger,
 				serverConfig,
-				supplierServiceMap,
 				rp.servedRelaysPublishCh,
 				rp,
 			)

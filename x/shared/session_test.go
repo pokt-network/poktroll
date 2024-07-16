@@ -37,7 +37,7 @@ func TestGetEarliestSupplierClaimCommitHeight_IsDeterministic(t *testing.T) {
 			supplierAddr := sample.AccAddress()
 			var claimWindowOpenBlockHash [32]byte
 
-			_, err := rand.Read(claimWindowOpenBlockHash[:])
+			_, err := rand.Read(claimWindowOpenBlockHash[:]) //nolint:staticcheck // We need a deterministic pseudo-random source.
 			require.NoError(t, err)
 
 			expected := GetEarliestSupplierClaimCommitHeight(
@@ -57,7 +57,7 @@ func TestGetEarliestSupplierClaimCommitHeight_IsDeterministic(t *testing.T) {
 				}
 
 				wg.Add(1)
-				go func() {
+				go func(deterministicIdx int) {
 					actual := GetEarliestSupplierClaimCommitHeight(
 						&sharedParams,
 						queryHeight,
@@ -66,7 +66,7 @@ func TestGetEarliestSupplierClaimCommitHeight_IsDeterministic(t *testing.T) {
 					)
 					require.Equalf(t, expected, actual, "on call number %d", deterministicIdx)
 					wg.Done()
-				}()
+				}(deterministicIdx)
 			}
 			wg.Done()
 		}()
@@ -99,7 +99,7 @@ func TestGetEarliestSupplierProofCommitHeight_IsDeterministic(t *testing.T) {
 			queryHeight := rand.Int63()
 			supplierAddr := sample.AccAddress()
 			var proofWindowOpenBlockHash [32]byte
-			_, err := rand.Read(proofWindowOpenBlockHash[:])
+			_, err := rand.Read(proofWindowOpenBlockHash[:]) //nolint:staticcheck // We need a deterministic pseudo-random source.
 
 			if !assert.NoError(t, err) {
 				cancel()
@@ -125,7 +125,7 @@ func TestGetEarliestSupplierProofCommitHeight_IsDeterministic(t *testing.T) {
 				wg.Add(1)
 
 				// NB: sample concurrently to save time.
-				go func() {
+				go func(deterministicIdx int) {
 					actual := GetEarliestSupplierProofCommitHeight(
 						&sharedParams,
 						queryHeight,
@@ -137,7 +137,7 @@ func TestGetEarliestSupplierProofCommitHeight_IsDeterministic(t *testing.T) {
 						cancel()
 					}
 					wg.Done()
-				}()
+				}(deterministicIdx)
 			}
 			wg.Done()
 		}()
@@ -217,10 +217,10 @@ func TestClaimProofWindows(t *testing.T) {
 					require.GreaterOrEqual(t, earliestProofCommitHeight, claimWindowCloseHeight)
 					require.Greater(t, proofWindowCloseHeight, earliestProofCommitHeight)
 
-					claimWindowSizeBlocks := GetClaimWindowSizeBlocks(&test.sharedParams)
+					claimWindowSizeBlocks := test.sharedParams.GetClaimWindowCloseOffsetBlocks()
 					require.Greater(t, claimWindowSizeBlocks, uint64(0))
 
-					proofWindowSizeBlocks := GetProofWindowSizeBlocks(&test.sharedParams)
+					proofWindowSizeBlocks := test.sharedParams.GetProofWindowCloseOffsetBlocks()
 					require.Greater(t, proofWindowSizeBlocks, uint64(0))
 
 					wg.Done()

@@ -113,7 +113,7 @@ func (k Keeper) SettleSessionAccounting(
 
 	// Mint new uPOKT to the supplier module account.
 	// These funds will be transferred to the supplier below.
-	if err := k.bankKeeper.MintCoins(
+	if err = k.bankKeeper.MintCoins(
 		ctx, suppliertypes.ModuleName, settlementCoins,
 	); err != nil {
 		return tokenomicstypes.ErrTokenomicsSupplierModuleMintFailed.Wrapf(
@@ -126,7 +126,7 @@ func (k Keeper) SettleSessionAccounting(
 
 	// Send the newley minted uPOKT from the supplier module account
 	// to the supplier's account.
-	if err := k.bankKeeper.SendCoinsFromModuleToAccount(
+	if err = k.bankKeeper.SendCoinsFromModuleToAccount(
 		ctx, suppliertypes.ModuleName, supplierAddr, settlementCoins,
 	); err != nil {
 		return tokenomicstypes.ErrTokenomicsSupplierModuleMintFailed.Wrapf(
@@ -173,7 +173,7 @@ func (k Keeper) SettleSessionAccounting(
 
 	// Burn uPOKT from the application module account which was held in escrow
 	// on behalf of the application account.
-	if err := k.bankKeeper.BurnCoins(
+	if err = k.bankKeeper.BurnCoins(
 		ctx, apptypes.ModuleName, settlementCoins,
 	); err != nil {
 		return tokenomicstypes.ErrTokenomicsApplicationModuleBurn.Wrapf("burning %s from the application module account: %v", settlementCoin, err)
