@@ -105,7 +105,7 @@ func TestSettleSessionAccounting_AppNotFound(t *testing.T) {
 func TestSettleSessionAccounting_InvalidRoot(t *testing.T) {
 	keeper, ctx, appAddr, supplierAddr := testkeeper.TokenomicsKeeperWithActorAddrs(t)
 
-	rootHashSizeBytes := smt.SmstRootSizeBytes
+	rootHashSizeBytes := testproof.Sha256SmstRootSize
 	// Define test cases
 	tests := []struct {
 		desc        string
