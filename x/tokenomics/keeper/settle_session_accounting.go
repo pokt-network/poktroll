@@ -29,12 +29,12 @@ func (k Keeper) SettleSessionAccounting(
 ) error {
 	logger := k.Logger().With("method", "SettleSessionAccounting")
 
-	settlementAmt := cosmostypes.NewCoin("upokt", math.NewInt(0))
+	settlementCoin := cosmostypes.NewCoin("upokt", math.NewInt(0))
 	isSuccessful := false
 	// This is emitted only when the function returns.
 	defer telemetry.EventSuccessCounter(
 		"settle_session_accounting",
-		func() float32 { return float32(settlementAmt.Amount.Int64()) },
+		func() float32 { return float32(settlementCoin.Amount.Int64()) },
 		func() bool { return isSuccessful },
 	)
 
@@ -96,13 +96,13 @@ func (k Keeper) SettleSessionAccounting(
 	logger.Info(fmt.Sprintf("About to start settling claim for %d compute units", claimComputeUnits))
 
 	// Calculate the amount of tokens to mint & burn
-	settlementAmt = k.getCoinFromComputeUnits(ctx, root)
-	settlementAmtuPOKT := cosmostypes.NewCoins(settlementAmt)
+	settlementCoin = k.getCoinFromComputeUnits(ctx, root)
+	settlementCoins := cosmostypes.NewCoins(settlementCoin)
 
 	logger.Info(fmt.Sprintf(
 		"%d compute units equate to %s for session %s",
 		claimComputeUnits,
-		settlementAmt,
+		settlementCoin,
 		sessionHeader.SessionId,
 	))
 
@@ -114,48 +114,49 @@ func (k Keeper) SettleSessionAccounting(
 	// Mint new uPOKT to the supplier module account.
 	// These funds will be transferred to the supplier below.
 	if err := k.bankKeeper.MintCoins(
-		ctx, suppliertypes.ModuleName, settlementAmtuPOKT,
+		ctx, suppliertypes.ModuleName, settlementCoins,
 	); err != nil {
 		return tokenomicstypes.ErrTokenomicsSupplierModuleMintFailed.Wrapf(
 			"minting %s to the supplier module account: %v",
-			settlementAmt,
+			settlementCoin,
 			err,
 		)
 	}
-	logger.Info(fmt.Sprintf("minted %s in the supplier module", settlementAmt))
+	logger.Info(fmt.Sprintf("minted %s in the supplier module", settlementCoin))
 
 	// Send the newley minted uPOKT from the supplier module account
 	// to the supplier's account.
 	if err := k.bankKeeper.SendCoinsFromModuleToAccount(
-		ctx, suppliertypes.ModuleName, supplierAddr, settlementAmtuPOKT,
+		ctx, suppliertypes.ModuleName, supplierAddr, settlementCoins,
 	); err != nil {
 		return tokenomicstypes.ErrTokenomicsSupplierModuleMintFailed.Wrapf(
 			"sending %s to supplier with address %s: %v",
-			settlementAmt,
+			settlementCoin,
 			supplierAddr,
 			err,
 		)
 	}
-	logger.Info(fmt.Sprintf("sent %s from the supplier module to the supplier account with address %q", settlementAmt, supplierAddr))
+	logger.Info(fmt.Sprintf("sent %s from the supplier module to the supplier account with address %q", settlementCoin, supplierAddr))
 
 	// Verify that the application has enough uPOKT to pay for the services it consumed
-	if application.GetStake().IsLT(settlementAmt) {
+	if application.GetStake().IsLT(settlementCoin) {
 		logger.Warn(fmt.Sprintf(
 			"THIS SHOULD NEVER HAPPEN. Application with address %s needs to be charged more than it has staked: %v > %v",
 			applicationAddress,
-			settlementAmtuPOKT,
+			settlementCoins,
 			application.Stake,
 		))
 		// TODO_MAINNET(@Olshansk, @RawthiL): The application was over-serviced in the last session so it basically
 		// goes "into debt". Need to design a way to handle this when we implement
 		// probabilistic proofs and add all the parameter logic. Do we touch the application balance?
 		// Do we just let it go into debt? Do we penalize the application? Do we unstake it? Etc...
-		settlementAmt = cosmostypes.NewCoin("upokt", math.Int(application.Stake.Amount))
-		settlementAmtuPOKT = cosmostypes.NewCoins(settlementAmt)
+		expectedBurn := application.Stake
+		settlementCoin = *application.Stake
+		settlementCoins = cosmostypes.NewCoins(settlementCoin)
 
 		applicationOverservicedEvent := &tokenomicstypes.EventApplicationOverserviced{
 			ApplicationAddr: applicationAddress.String(),
-			ExpectedBurn:    &settlementAmt,
+			ExpectedBurn:    expectedBurn,
 			EffectiveBurn:   application.GetStake(),
 		}
 
@@ -164,7 +165,7 @@ func (k Keeper) SettleSessionAccounting(
 			return tokenomicstypes.ErrTokenomicsApplicationOverserviced.Wrapf(
 				"application address: %s; expected burn %s; effective burn: %s",
 				application.GetAddress(),
-				settlementAmt.String(),
+				expectedBurn.String(),
 				application.GetStake().String(),
 			)
 		}
@@ -173,14 +174,14 @@ func (k Keeper) SettleSessionAccounting(
 	// Burn uPOKT from the application module account which was held in escrow
 	// on behalf of the application account.
 	if err := k.bankKeeper.BurnCoins(
-		ctx, apptypes.ModuleName, settlementAmtuPOKT,
+		ctx, apptypes.ModuleName, settlementCoins,
 	); err != nil {
-		return tokenomicstypes.ErrTokenomicsApplicationModuleBurn.Wrapf("burning %s from the application module account: %v", settlementAmt, err)
+		return tokenomicstypes.ErrTokenomicsApplicationModuleBurn.Wrapf("burning %s from the application module account: %v", settlementCoin, err)
 	}
-	logger.Info(fmt.Sprintf("burned %s from the application module account", settlementAmt))
+	logger.Info(fmt.Sprintf("burned %s from the application module account", settlementCoin))
 
 	// Update the application's on-chain stake
-	newAppStake, err := (*application.Stake).SafeSub(settlementAmt)
+	newAppStake, err := application.Stake.SafeSub(settlementCoin)
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsApplicationNewStakeInvalid.Wrapf("application %q stake cannot be reduced to a negative amount %v", applicationAddress, newAppStake)
 	}
