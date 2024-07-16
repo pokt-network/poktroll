@@ -88,6 +88,12 @@ func TestSettleSessionAccounting_ValidAccounting(t *testing.T) {
 	})
 	require.NoError(t, err)
 
+	// Create a service that can be registered in the application and used in the claims
+	service := sharedtypes.NewService(
+		"svc1",
+		"svcName1",
+		1,
+	)
 	// Add a new application
 	appStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
 	// NB: Ensure a non-zero app stake end balance to assert against.
@@ -96,6 +102,11 @@ func TestSettleSessionAccounting_ValidAccounting(t *testing.T) {
 	app := apptypes.Application{
 		Address: sample.AccAddress(),
 		Stake:   &appStake,
+		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
+			&sharedtypes.ApplicationServiceConfig{
+				Service: service,
+			},
+		},
 	}
 	keepers.SetApplication(ctx, app)
 
@@ -125,8 +136,7 @@ func TestSettleSessionAccounting_ValidAccounting(t *testing.T) {
 		SessionHeader: &sessiontypes.SessionHeader{
 			ApplicationAddress: app.Address,
 			Service: &sharedtypes.Service{
-				Id:   "svc1",
-				Name: "svcName1",
+				Id: service.Id,
 			},
 			SessionId:               "session_id",
 			SessionStartBlockHeight: 1,
@@ -183,6 +193,12 @@ func TestSettleSessionAccounting_AppStakeTooLow(t *testing.T) {
 	})
 	require.NoError(t, err)
 
+	// Create a service that can be registered in the application and used in the claims
+	service := sharedtypes.NewService(
+		"svc1",
+		"svcName1",
+		1,
+	)
 	// Add a new application
 	appStake := cosmostypes.NewCoin("upokt", math.NewInt(40000))
 	expectedAppEndStakeZeroAmount := cosmostypes.NewCoin("upokt", math.NewInt(0))
@@ -190,6 +206,11 @@ func TestSettleSessionAccounting_AppStakeTooLow(t *testing.T) {
 	app := apptypes.Application{
 		Address: sample.AccAddress(),
 		Stake:   &appStake,
+		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
+			&sharedtypes.ApplicationServiceConfig{
+				Service: service,
+			},
+		},
 	}
 	keepers.SetApplication(ctx, app)
 
@@ -219,8 +240,7 @@ func TestSettleSessionAccounting_AppStakeTooLow(t *testing.T) {
 		SessionHeader: &sessiontypes.SessionHeader{
 			ApplicationAddress: app.Address,
 			Service: &sharedtypes.Service{
-				Id:   "svc1",
-				Name: "svcName1",
+				Id: service.Id,
 			},
 			SessionId:               "session_id",
 			SessionStartBlockHeight: 1,
