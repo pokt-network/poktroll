@@ -3,6 +3,7 @@
 package e2e
 
 import (
+	"encoding/hex"
 	"fmt"
 	"strconv"
 
@@ -133,7 +134,7 @@ func (s *suite) newProofMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 	for paramName, paramValue := range params {
 		switch paramName {
 		case prooftypes.ParamRelayDifficultyTargetHash:
-			msgUpdateParams.Params.RelayDifficultyTargetHash = paramValue.value.([]byte)
+			msgUpdateParams.Params.RelayDifficultyTargetHash, _ = hex.DecodeString(string(paramValue.value.([]byte)))
 		case prooftypes.ParamProofRequestProbability:
 			msgUpdateParams.Params.ProofRequestProbability = paramValue.value.(float32)
 		case prooftypes.ParamProofRequirementThreshold:
