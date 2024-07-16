@@ -16,6 +16,7 @@ TESTNET_RPC ?= https://testnet-validated-validator-rpc.poktroll.com/ # TestNet R
 APPGATE_SERVER ?= http://localhost:42069
 GATEWAY_URL ?= http://localhost:42079
 POCKET_ADDR_PREFIX = pokt
+LOAD_TEST_CUSTOM_MANIFEST ?= loadtest_manifest_example.yaml
 
 # The domain ending in ".town" is staging, ".city" is production
 GROVE_GATEWAY_STAGING_ETH_MAINNET = https://eth-mainnet.rpc.grove.town
@@ -402,11 +403,11 @@ test_e2e_settlement: test_e2e_env ## Run only the E2E suite that exercises the s
 test_e2e_params: test_e2e_env ## Run only the E2E suite that exercises parameter updates for all modules
 	go test -v ./e2e/tests/... -tags=e2e,test --features-path=update_params.feature
 
-.PHONY: test_load_relays_stress_example
-test_load_relays_stress_example: ## Run the stress test for E2E relays on a persistent (non-ephemeral) remote (devnet) chain. Note that this is just an example.
+.PHONY: test_load_relays_stress_custom
+test_load_relays_stress_custom: ## Run the stress test for E2E relays using custom manifest. "loadtest_manifest_example.yaml" manifest is used by default. Set `LOAD_TEST_CUSTOM_MANIFEST` environment variable to use the different manifest.
 	go test -v -count=1 ./load-testing/tests/... \
 	-tags=load,test -run LoadRelays --log-level=debug --timeout=30m \
-	--manifest ./load-testing/loadtest_manifest_example.yaml
+	--manifest ./load-testing/$(LOAD_TEST_CUSTOM_MANIFEST)
 
 .PHONY: test_load_relays_stress_localnet
 test_load_relays_stress_localnet: test_e2e_env warn_message_local_stress_test ## Run the stress test for E2E relays on LocalNet.
