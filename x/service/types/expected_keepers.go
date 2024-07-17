@@ -22,4 +22,5 @@ type BankKeeper interface {
 	// than "delegate" funds from one account to another which is more closely
 	// linked to staking.
 	SendCoinsFromAccountToModule(ctx context.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error
+	SendCoinsFromModuleToAccount(ctx context.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error
 }
