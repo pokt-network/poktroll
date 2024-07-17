@@ -4,6 +4,7 @@ package poktroll.tokenomics;
 option go_package = "github.com/pokt-network/poktroll/x/tokenomics/types";
 
 import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
 import "poktroll/proof/claim.proto";
 import "poktroll/proof/requirement.proto";
 
@@ -33,4 +34,12 @@ message EventRelayMiningDifficultyUpdated {
     string new_target_hash_hex_encoded = 3;
     uint64 prev_num_relays_ema = 4;
     uint64 new_num_relays_ema = 5;
+}
+
+// EventApplicationOverserviced is emitted when an application has less stake
+// than the expected burn.
+message EventApplicationOverserviced {
+    string application_addr = 1;
+    cosmos.base.v1beta1.Coin expected_burn  = 2;
+    cosmos.base.v1beta1.Coin effective_burn  = 3;
 }
