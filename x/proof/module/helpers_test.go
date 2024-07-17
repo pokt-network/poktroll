@@ -8,16 +8,16 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/proto/types/proof"
+	sessiontypes "github.com/pokt-network/poktroll/proto/types/session"
+	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
 	"github.com/pokt-network/poktroll/testutil/network"
 	testsession "github.com/pokt-network/poktroll/testutil/session"
 	"github.com/pokt-network/poktroll/testutil/testkeyring"
-	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	"github.com/pokt-network/poktroll/x/proof/types"
-	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	appmodule "github.com/pokt-network/poktroll/x/application/types"
+	proofmodule "github.com/pokt-network/poktroll/x/proof/types"
 	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
+	suppliermodule "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 const (
@@ -37,7 +37,7 @@ func networkWithClaimObjects(
 	numSessions int,
 	numSuppliers int,
 	numApps int,
-) (net *network.Network, claims []types.Claim, clientCtx cosmosclient.Context) {
+) (net *network.Network, claims []proof.Claim, clientCtx cosmosclient.Context) {
 	t.Helper()
 
 	// Initialize a network config.
@@ -107,9 +107,9 @@ func networkWithClaimObjects(
 	require.NoError(t, err)
 
 	// Add supplier and application module genesis states to the network config.
-	cfg.GenesisState[suppliertypes.ModuleName] = supplierGenesisBuffer
-	cfg.GenesisState[apptypes.ModuleName] = appGenesisBuffer
-	cfg.GenesisState[prooftypes.ModuleName] = proofGenesisBuffer
+	cfg.GenesisState[suppliermodule.ModuleName] = supplierGenesisBuffer
+	cfg.GenesisState[appmodule.ModuleName] = appGenesisBuffer
+	cfg.GenesisState[proofmodule.ModuleName] = proofGenesisBuffer
 
 	// Construct the network with the configuration.
 	net = network.New(t, cfg)
@@ -142,7 +142,7 @@ func newTestClaim(
 	supplierAddr string,
 	sessionStartHeight int64,
 	appAddr string,
-) *types.Claim {
+) *proof.Claim {
 	t.Helper()
 
 	// NB: These byte slices mock the root hash and block hash that would be
@@ -159,7 +159,7 @@ func newTestClaim(
 	)
 
 	// TODO_TECHDEBT: Forward the actual claim in the response once the response is updated to return it.
-	return &types.Claim{
+	return &proof.Claim{
 		SupplierAddress: supplierAddr,
 		SessionHeader: &sessiontypes.SessionHeader{
 			ApplicationAddress:      appAddr,

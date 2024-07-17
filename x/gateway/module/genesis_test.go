@@ -6,16 +6,17 @@ import (
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
 	"github.com/pokt-network/poktroll/testutil/sample"
-	gateway "github.com/pokt-network/poktroll/x/gateway/module"
-	"github.com/pokt-network/poktroll/x/gateway/types"
 	"github.com/stretchr/testify/require"
+
+	"github.com/pokt-network/poktroll/proto/types/gateway"
+	gatewaymodule "github.com/pokt-network/poktroll/x/gateway/module"
 )
 
 func TestGenesis(t *testing.T) {
-	genesisState := types.GenesisState{
-		Params: types.DefaultParams(),
+	genesisState := gateway.GenesisState{
+		Params: gateway.DefaultParams(),
 
-		GatewayList: []types.Gateway{
+		GatewayList: []gateway.Gateway{
 			{
 				Address: sample.AccAddress(),
 			},
@@ -27,8 +28,8 @@ func TestGenesis(t *testing.T) {
 	}
 
 	k, ctx := keepertest.GatewayKeeper(t)
-	gateway.InitGenesis(ctx, k, genesisState)
-	got := gateway.ExportGenesis(ctx, k)
+	gatewaymodule.InitGenesis(ctx, k, genesisState)
+	got := gatewaymodule.ExportGenesis(ctx, k)
 	require.NotNil(t, got)
 
 	nullify.Fill(&genesisState)

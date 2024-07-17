@@ -7,8 +7,8 @@ import (
 	"github.com/cosmos/gogoproto/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/client"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
+	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
+	suppliertypes "github.com/pokt-network/poktroll/proto/types/supplier"
 )
 
 // supplierQuerier is a wrapper around the suppliertypes.QueryClient that enables the

@@ -8,10 +8,10 @@ import (
 
 	"github.com/golang/mock/gomock"
 
+	sessiontypes "github.com/pokt-network/poktroll/proto/types/session"
+	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 	testsession "github.com/pokt-network/poktroll/testutil/session"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // blockHashBz is the []byte representation of the block hash used in the tests.

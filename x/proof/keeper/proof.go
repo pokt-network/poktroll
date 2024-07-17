@@ -8,11 +8,12 @@ import (
 	storetypes "cosmossdk.io/store/types"
 	"github.com/cosmos/cosmos-sdk/runtime"
 
+	"github.com/pokt-network/poktroll/proto/types/proof"
 	"github.com/pokt-network/poktroll/x/proof/types"
 )
 
 // UpsertProof set a specific proof in the store from its index
-func (k Keeper) UpsertProof(ctx context.Context, proof types.Proof) {
+func (k Keeper) UpsertProof(ctx context.Context, proof proof.Proof) {
 	logger := k.Logger().With("method", "UpsertProof")
 
 	// TODO_MAINNET(#427): Use the marshal method on the SparseCompactClosestProof
@@ -44,7 +45,7 @@ func (k Keeper) UpsertProof(ctx context.Context, proof types.Proof) {
 }
 
 // GetProof returns a proof from its index
-func (k Keeper) GetProof(ctx context.Context, sessionId, supplierAddr string) (_ types.Proof, isProofFound bool) {
+func (k Keeper) GetProof(ctx context.Context, sessionId, supplierAddr string) (_ proof.Proof, isProofFound bool) {
 	return k.getProofByPrimaryKey(ctx, types.ProofPrimaryKey(sessionId, supplierAddr))
 }
 
@@ -94,7 +95,7 @@ func (k Keeper) RemoveProof(ctx context.Context, sessionId, supplierAddr string)
 }
 
 // GetAllProofs returns all proof
-func (k Keeper) GetAllProofs(ctx context.Context) (proofs []types.Proof) {
+func (k Keeper) GetAllProofs(ctx context.Context) (proofs []proof.Proof) {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	primaryStore := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ProofPrimaryKeyPrefix))
 	iterator := storetypes.KVStorePrefixIterator(primaryStore, []byte{})
@@ -102,7 +103,7 @@ func (k Keeper) GetAllProofs(ctx context.Context) (proofs []types.Proof) {
 	defer iterator.Close()
 
 	for ; iterator.Valid(); iterator.Next() {
-		var proof types.Proof
+		var proof proof.Proof
 		k.cdc.MustUnmarshal(iterator.Value(), &proof)
 		proofs = append(proofs, proof)
 	}
@@ -111,16 +112,16 @@ func (k Keeper) GetAllProofs(ctx context.Context) (proofs []types.Proof) {
 }
 
 // getProofByPrimaryKey is a helper that retrieves, if exists, the Proof associated with the key provided
-func (k Keeper) getProofByPrimaryKey(ctx context.Context, primaryKey []byte) (proof types.Proof, isProofFound bool) {
+func (k Keeper) getProofByPrimaryKey(ctx context.Context, primaryKey []byte) (foundProof proof.Proof, isProofFound bool) {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	primaryStore := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ProofPrimaryKeyPrefix))
 
 	proofBz := primaryStore.Get(primaryKey)
 	if proofBz == nil {
-		return types.Proof{}, false
+		return proof.Proof{}, false
 	}
 
-	k.cdc.MustUnmarshal(proofBz, &proof)
+	k.cdc.MustUnmarshal(proofBz, &foundProof)
 
-	return proof, true
+	return foundProof, true
 }

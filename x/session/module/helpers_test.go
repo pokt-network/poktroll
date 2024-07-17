@@ -7,9 +7,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/proto/types/application"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 	"github.com/pokt-network/poktroll/testutil/network"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
@@ -20,8 +21,8 @@ var _ = strconv.IntSize
 // It returns the network and a slice of the created supplier & application objects.
 func networkWithApplicationsAndSupplier(t *testing.T, n int) (
 	*network.Network,
-	[]sharedtypes.Supplier,
-	[]apptypes.Application,
+	[]shared.Supplier,
+	[]application.Application,
 ) {
 	t.Helper()
 	cfg := network.DefaultConfig()

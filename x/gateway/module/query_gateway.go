@@ -5,7 +5,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/spf13/cobra"
 
-	"github.com/pokt-network/poktroll/x/gateway/types"
+	"github.com/pokt-network/poktroll/proto/types/gateway"
 )
 
 func CmdListGateway() *cobra.Command {
@@ -27,9 +27,9 @@ $ poktrolld q gateway list-gateway --node $(POCKET_NODE) --home $(POKTROLLD_HOME
 				return err
 			}
 
-			queryClient := types.NewQueryClient(clientCtx)
+			queryClient := gateway.NewQueryClient(clientCtx)
 
-			params := &types.QueryAllGatewaysRequest{
+			params := &gateway.QueryAllGatewaysRequest{
 				Pagination: pageReq,
 			}
 
@@ -59,11 +59,11 @@ func CmdShowGateway() *cobra.Command {
 				return err
 			}
 
-			queryClient := types.NewQueryClient(clientCtx)
+			queryClient := gateway.NewQueryClient(clientCtx)
 
 			argAddress := args[0]
 
-			params := &types.QueryGetGatewayRequest{
+			params := &gateway.QueryGetGatewayRequest{
 				Address: argAddress,
 			}
 

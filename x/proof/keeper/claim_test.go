@@ -8,19 +8,19 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/proto/types/proof"
+	sessiontypes "github.com/pokt-network/poktroll/proto/types/session"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/x/proof/keeper"
-	"github.com/pokt-network/poktroll/x/proof/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
 // Prevent strconv unused error
 var _ = strconv.IntSize
 
-func createNClaims(keeper keeper.Keeper, ctx context.Context, n int) []types.Claim {
-	claims := make([]types.Claim, n)
+func createNClaims(keeper keeper.Keeper, ctx context.Context, n int) []proof.Claim {
+	claims := make([]proof.Claim, n)
 
 	for i := range claims {
 		claims[i].SupplierAddress = sample.AccAddress()

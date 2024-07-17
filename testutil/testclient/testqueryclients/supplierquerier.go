@@ -8,8 +8,8 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
+	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // suppliersProvidedServicesMap is a map of maps:

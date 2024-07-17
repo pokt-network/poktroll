@@ -19,11 +19,12 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/supplier"
 	"github.com/pokt-network/poktroll/testutil/supplier/mocks"
+	"github.com/pokt-network/poktroll/x/application/types"
 	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/keeper"
-	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 func SupplierKeeper(t testing.TB) (keeper.Keeper, context.Context) {
@@ -66,11 +67,11 @@ func SupplierKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 	ctx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
 
 	// Initialize params
-	require.NoError(t, k.SetParams(ctx, types.DefaultParams()))
+	require.NoError(t, k.SetParams(ctx, supplier.DefaultParams()))
 
 	// Add existing services used in the test.
-	serviceKeeper.SetService(ctx, sharedtypes.Service{Id: "svcId"})
-	serviceKeeper.SetService(ctx, sharedtypes.Service{Id: "svcId2"})
+	serviceKeeper.SetService(ctx, shared.Service{Id: "svcId"})
+	serviceKeeper.SetService(ctx, shared.Service{Id: "svcId2"})
 
 	return k, ctx
 }

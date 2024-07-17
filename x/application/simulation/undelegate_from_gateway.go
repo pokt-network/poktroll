@@ -7,6 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 
+	"github.com/pokt-network/poktroll/proto/types/application"
 	"github.com/pokt-network/poktroll/x/application/keeper"
 	"github.com/pokt-network/poktroll/x/application/types"
 )
@@ -20,7 +21,7 @@ func SimulateMsgUndelegateFromGateway(
 	) (simtypes.OperationMsg, []simtypes.FutureOperation, error) {
 		simAppAccount, _ := simtypes.RandomAcc(r, accs)
 		simGatewayAccount, _ := simtypes.RandomAcc(r, accs)
-		msg := &types.MsgUndelegateFromGateway{
+		msg := &application.MsgUndelegateFromGateway{
 			AppAddress:     simAppAccount.Address.String(),
 			GatewayAddress: simGatewayAccount.Address.String(),
 		}

@@ -7,6 +7,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/proto/types/proof"
 )
 
 var _ client.AccountQueryClient = (*AccountKeeperQueryClient)(nil)
@@ -41,7 +42,7 @@ func (accountQueryClient *AccountKeeperQueryClient) GetAccount(
 	// Capture the panic and return an error if one occurs.
 	defer func() {
 		if r := recover(); r != nil {
-			err = ErrProofPubKeyNotFound
+			err = proof.ErrProofPubKeyNotFound
 			account = nil
 		}
 	}()
@@ -66,7 +67,7 @@ func (accountQueryClient *AccountKeeperQueryClient) GetPubKeyFromAddress(
 	// If the account's public key is nil, then return an error.
 	pubKey := acc.GetPubKey()
 	if pubKey == nil {
-		return nil, ErrProofPubKeyNotFound
+		return nil, proof.ErrProofPubKeyNotFound
 	}
 
 	return pubKey, nil

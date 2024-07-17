@@ -12,9 +12,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/pokt-network/poktroll/proto/types/gateway"
 	"github.com/pokt-network/poktroll/testutil/nullify"
-	gateway "github.com/pokt-network/poktroll/x/gateway/module"
-	"github.com/pokt-network/poktroll/x/gateway/types"
+	gatewaymodule "github.com/pokt-network/poktroll/x/gateway/module"
 )
 
 // Prevent strconv unused error
@@ -33,7 +33,7 @@ func TestShowGateway(t *testing.T) {
 
 		args        []string
 		expectedErr error
-		gateway     types.Gateway
+		gateway     gateway.Gateway
 	}{
 		{
 			desc:      "found",
@@ -56,14 +56,14 @@ func TestShowGateway(t *testing.T) {
 				test.idAddress,
 			}
 			args = append(args, test.args...)
-			out, err := clitestutil.ExecTestCLICmd(ctx, gateway.CmdShowGateway(), args)
+			out, err := clitestutil.ExecTestCLICmd(ctx, gatewaymodule.CmdShowGateway(), args)
 			if test.expectedErr != nil {
 				stat, ok := status.FromError(test.expectedErr)
 				require.True(t, ok)
 				require.ErrorIs(t, stat.Err(), test.expectedErr)
 			} else {
 				require.NoError(t, err)
-				var resp types.QueryGetGatewayResponse
+				var resp gateway.QueryGetGatewayResponse
 				require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 				require.NotNil(t, resp.Gateway)
 				require.Equal(t,
@@ -98,9 +98,9 @@ func TestListGateway(t *testing.T) {
 		step := 2
 		for i := 0; i < len(gateways); i += step {
 			args := request(nil, uint64(i), uint64(step), false)
-			out, err := clitestutil.ExecTestCLICmd(ctx, gateway.CmdListGateway(), args)
+			out, err := clitestutil.ExecTestCLICmd(ctx, gatewaymodule.CmdListGateway(), args)
 			require.NoError(t, err)
-			var resp types.QueryAllGatewaysResponse
+			var resp gateway.QueryAllGatewaysResponse
 			require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 			require.LessOrEqual(t, len(resp.Gateways), step)
 			require.Subset(t,
@@ -114,9 +114,9 @@ func TestListGateway(t *testing.T) {
 		var next []byte
 		for i := 0; i < len(gateways); i += step {
 			args := request(next, 0, uint64(step), false)
-			out, err := clitestutil.ExecTestCLICmd(ctx, gateway.CmdListGateway(), args)
+			out, err := clitestutil.ExecTestCLICmd(ctx, gatewaymodule.CmdListGateway(), args)
 			require.NoError(t, err)
-			var resp types.QueryAllGatewaysResponse
+			var resp gateway.QueryAllGatewaysResponse
 			require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 			require.LessOrEqual(t, len(resp.Gateways), step)
 			require.Subset(t,
@@ -128,9 +128,9 @@ func TestListGateway(t *testing.T) {
 	})
 	t.Run("Total", func(t *testing.T) {
 		args := request(nil, 0, uint64(len(gateways)), true)
-		out, err := clitestutil.ExecTestCLICmd(ctx, gateway.CmdListGateway(), args)
+		out, err := clitestutil.ExecTestCLICmd(ctx, gatewaymodule.CmdListGateway(), args)
 		require.NoError(t, err)
-		var resp types.QueryAllGatewaysResponse
+		var resp gateway.QueryAllGatewaysResponse
 		require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 		require.NoError(t, err)
 		require.Equal(t, len(gateways), int(resp.Pagination.Total))

@@ -5,14 +5,14 @@ import (
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/pokt-network/poktroll/x/proof/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	"github.com/pokt-network/poktroll/proto/types/proof"
+	"github.com/pokt-network/poktroll/proto/types/session"
+	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
 	"github.com/pokt-network/poktroll/x/shared"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 type msgWithSessionAndSupplier interface {
-	GetSessionHeader() *sessiontypes.SessionHeader
+	GetSessionHeader() *session.SessionHeader
 	GetSupplierAddress() string
 }
 
@@ -22,13 +22,13 @@ type msgWithSessionAndSupplier interface {
 func (k msgServer) queryAndValidateSessionHeader(
 	ctx context.Context,
 	msg msgWithSessionAndSupplier,
-) (*sessiontypes.Session, error) {
+) (*session.Session, error) {
 	logger := k.Logger().With("method", "queryAndValidateSessionHeader")
 
 	sessionHeader := msg.GetSessionHeader()
 	supplierAddr := msg.GetSupplierAddress()
 
-	sessionReq := &sessiontypes.QueryGetSessionRequest{
+	sessionReq := &session.QueryGetSessionRequest{
 		ApplicationAddress: sessionHeader.GetApplicationAddress(),
 		Service:            sessionHeader.GetService(),
 		BlockHeight:        sessionHeader.GetSessionStartBlockHeight(),
@@ -52,7 +52,7 @@ func (k msgServer) queryAndValidateSessionHeader(
 
 	// Ensure that the given session header's session ID matches the on-chain onChainSession ID.
 	if sessionHeader.GetSessionId() != onChainSession.GetSessionId() {
-		return nil, types.ErrProofInvalidSessionId.Wrapf(
+		return nil, proof.ErrProofInvalidSessionId.Wrapf(
 			"session ID does not match on-chain session ID; expected %q, got %q",
 			onChainSession.GetSessionId(),
 			sessionHeader.GetSessionId(),
@@ -70,7 +70,7 @@ func (k msgServer) queryAndValidateSessionHeader(
 		sessionRes.GetSession().GetSuppliers(),
 		supplierAddr,
 	); !isSupplerFound {
-		return nil, types.ErrProofNotFound.Wrapf(
+		return nil, proof.ErrProofNotFound.Wrapf(
 			"supplier address %q not found in session ID %q",
 			supplierAddr,
 			sessionHeader.GetSessionId(),
@@ -86,7 +86,7 @@ func (k msgServer) queryAndValidateSessionHeader(
 // session header is valid and correctly hydrated.
 func (k msgServer) validateClaimWindow(
 	ctx context.Context,
-	msg *types.MsgCreateClaim,
+	msg *proof.MsgCreateClaim,
 ) error {
 	logger := k.Logger().With("method", "validateClaimWindow")
 	sessionHeader := msg.GetSessionHeader()
@@ -118,7 +118,7 @@ func (k msgServer) validateClaimWindow(
 	// "supplier claim/proof commit window" size.
 	// See: https://github.com/pokt-network/poktroll/pull/620/files#r1656548473.
 	if currentHeight < earliestClaimCommitHeight {
-		return types.ErrProofClaimOutsideOfWindow.Wrapf(
+		return proof.ErrProofClaimOutsideOfWindow.Wrapf(
 			"current block height (%d) is less than the session's earliest claim commit height (%d)",
 			currentHeight,
 			earliestClaimCommitHeight,
@@ -127,7 +127,7 @@ func (k msgServer) validateClaimWindow(
 
 	// Ensure the current block height is BEFORE the claim window close height.
 	if currentHeight > claimWindowCloseHeight {
-		return types.ErrProofClaimOutsideOfWindow.Wrapf(
+		return proof.ErrProofClaimOutsideOfWindow.Wrapf(
 			"current block height (%d) is greater than session claim window close height (%d)",
 			currentHeight,
 			claimWindowCloseHeight,
@@ -154,7 +154,7 @@ func (k msgServer) validateClaimWindow(
 // session header is valid and correctly hydrated.
 func (k msgServer) validateProofWindow(
 	ctx context.Context,
-	msg *types.MsgSubmitProof,
+	msg *proof.MsgSubmitProof,
 ) error {
 	logger := k.Logger().With("method", "validateProofWindow")
 	sessionHeader := msg.GetSessionHeader()
@@ -182,7 +182,7 @@ func (k msgServer) validateProofWindow(
 
 	// Ensure the current block height is ON or AFTER the earliest proof commit height.
 	if currentHeight < earliestProofCommitHeight {
-		return types.ErrProofProofOutsideOfWindow.Wrapf(
+		return proof.ErrProofProofOutsideOfWindow.Wrapf(
 			"current block height (%d) is less than session's earliest proof commit height (%d)",
 			currentHeight,
 			earliestProofCommitHeight,
@@ -191,7 +191,7 @@ func (k msgServer) validateProofWindow(
 
 	// Ensure the current block height is BEFORE the proof window close height.
 	if currentHeight > proofWindowCloseHeight {
-		return types.ErrProofProofOutsideOfWindow.Wrapf(
+		return proof.ErrProofProofOutsideOfWindow.Wrapf(
 			"current block height (%d) is greater than session proof window close height (%d)",
 			currentHeight,
 			proofWindowCloseHeight,

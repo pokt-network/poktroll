@@ -4,7 +4,7 @@ package keeper
 import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
-	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	prooftypes "github.com/pokt-network/poktroll/proto/types/proof"
 )
 
 // ProofRequirementForClaim wraps the unexported proofRequirementForClaim function for testing purposes.

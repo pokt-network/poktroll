@@ -8,9 +8,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/proto/types/shared"
 	"github.com/pokt-network/poktroll/testutil/yaml"
 	"github.com/pokt-network/poktroll/x/application/module/config"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func Test_ParseApplicationConfigs(t *testing.T) {
@@ -36,12 +36,12 @@ func Test_ParseApplicationConfigs(t *testing.T) {
 			expectedErr: nil,
 			expectedConfig: &config.ApplicationStakeConfig{
 				StakeAmount: sdk.NewCoin("upokt", math.NewInt(1000)),
-				Services: []*sharedtypes.ApplicationServiceConfig{
+				Services: []*shared.ApplicationServiceConfig{
 					{
-						Service: &sharedtypes.Service{Id: "svc1"},
+						Service: &shared.Service{Id: "svc1"},
 					},
 					{
-						Service: &sharedtypes.Service{Id: "svc2"},
+						Service: &shared.Service{Id: "svc2"},
 					},
 				},
 			},

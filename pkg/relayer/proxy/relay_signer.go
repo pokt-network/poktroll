@@ -2,7 +2,7 @@ package proxy
 
 import (
 	"github.com/pokt-network/poktroll/pkg/signer"
-	"github.com/pokt-network/poktroll/x/service/types"
+	"github.com/pokt-network/poktroll/proto/types/service"
 )
 
 // SignRelayResponse is a shared method used by the RelayServers to sign the hash of the RelayResponse.
@@ -10,7 +10,7 @@ import (
 // TODO_TECHDEBT(@red-0ne): This method should be moved out of the RelayerProxy interface
 // that should not be responsible for signing relay responses.
 // See https://github.com/pokt-network/poktroll/issues/160 for a better design.
-func (rp *relayerProxy) SignRelayResponse(relayResponse *types.RelayResponse, supplierAddr string) error {
+func (rp *relayerProxy) SignRelayResponse(relayResponse *service.RelayResponse, supplierAddr string) error {
 	// create a simple signer for the request
 	_, ok := rp.AddressToSigningKeyNameMap[supplierAddr]
 	if !ok {

@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/proto/types/gateway"
 	"github.com/pokt-network/poktroll/testutil/network"
 	"github.com/pokt-network/poktroll/x/gateway/types"
 )
@@ -14,7 +15,7 @@ import (
 var _ = strconv.IntSize
 
 // networkWithGatewayObjects creates a network with a populated gateway state of n gateway objects
-func networkWithGatewayObjects(t *testing.T, n int) (*network.Network, []types.Gateway) {
+func networkWithGatewayObjects(t *testing.T, n int) (*network.Network, []gateway.Gateway) {
 	t.Helper()
 	cfg := network.DefaultConfig()
 	gatewayGenesisState := network.DefaultGatewayModuleGenesisState(t, n)

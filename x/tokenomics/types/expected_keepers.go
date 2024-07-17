@@ -8,10 +8,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
-	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	apptypes "github.com/pokt-network/poktroll/proto/types/application"
+	prooftypes "github.com/pokt-network/poktroll/proto/types/proof"
+	sessiontypes "github.com/pokt-network/poktroll/proto/types/session"
+	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
 )
 
 // AccountKeeper defines the expected interface for the Account module.

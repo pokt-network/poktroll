@@ -4,7 +4,7 @@ import (
 	"net/url"
 	"regexp"
 
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
 )
 
 const (

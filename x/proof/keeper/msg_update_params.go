@@ -3,20 +3,20 @@ package keeper
 import (
 	"context"
 
-	"github.com/pokt-network/poktroll/x/proof/types"
+	"github.com/pokt-network/poktroll/proto/types/proof"
 )
 
-func (k msgServer) UpdateParams(ctx context.Context, req *types.MsgUpdateParams) (*types.MsgUpdateParamsResponse, error) {
+func (k msgServer) UpdateParams(ctx context.Context, req *proof.MsgUpdateParams) (*proof.MsgUpdateParamsResponse, error) {
 	if err := req.ValidateBasic(); err != nil {
 		return nil, err
 	}
 	if k.GetAuthority() != req.Authority {
-		return nil, types.ErrProofInvalidSigner.Wrapf("invalid authority; expected %s, got %s", k.GetAuthority(), req.Authority)
+		return nil, proof.ErrProofInvalidSigner.Wrapf("invalid authority; expected %s, got %s", k.GetAuthority(), req.Authority)
 	}
 
 	if err := k.SetParams(ctx, req.Params); err != nil {
 		return nil, err
 	}
 
-	return &types.MsgUpdateParamsResponse{}, nil
+	return &proof.MsgUpdateParamsResponse{}, nil
 }

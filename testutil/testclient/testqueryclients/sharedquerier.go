@@ -6,9 +6,9 @@ import (
 
 	"github.com/golang/mock/gomock"
 
+	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/x/shared"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // NewTestSharedQueryClient creates a mock of the SharedQueryClient which uses the

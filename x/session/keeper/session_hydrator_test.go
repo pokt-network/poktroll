@@ -6,10 +6,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/proto/types/session"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/x/session/keeper"
-	"github.com/pokt-network/poktroll/x/session/types"
 )
 
 func TestSession_HydrateSession_Success_BaseCase(t *testing.T) {
@@ -107,7 +107,7 @@ func TestSession_HydrateSession_Metadata(t *testing.T) {
 			desc:        "blockHeight > contextHeight",
 			blockHeight: 9001, // block height over 9000 is too high given that the context height is 100
 
-			expectedErr: types.ErrSessionHydration,
+			expectedErr: session.ErrSessionHydration,
 		},
 	}
 
@@ -246,7 +246,7 @@ func TestSession_HydrateSession_Application(t *testing.T) {
 			appAddr:   sample.AccAddress(), // Generating a random address on the fly
 			serviceId: keepertest.TestServiceId1,
 
-			expectedErr: types.ErrSessionHydration,
+			expectedErr: session.ErrSessionHydration,
 		},
 		{
 			desc: "invalid app address",
@@ -254,7 +254,7 @@ func TestSession_HydrateSession_Application(t *testing.T) {
 			appAddr:   "invalid",
 			serviceId: keepertest.TestServiceId1,
 
-			expectedErr: types.ErrSessionHydration,
+			expectedErr: session.ErrSessionHydration,
 		},
 		{
 			desc: "invalid - app not staked for service",
@@ -262,7 +262,7 @@ func TestSession_HydrateSession_Application(t *testing.T) {
 			appAddr:   keepertest.TestApp1Address, // app1
 			serviceId: "svc9001",                  // app1 is only stake for svc1 and svc11
 
-			expectedErr: types.ErrSessionHydration,
+			expectedErr: session.ErrSessionHydration,
 		},
 		// TODO_TEST: Add tests for when:
 		// - Application join/leaves (stakes/unstakes) altogether
@@ -310,7 +310,7 @@ func TestSession_HydrateSession_Suppliers(t *testing.T) {
 			serviceId: keepertest.TestServiceId11,
 
 			numExpectedSuppliers: 0,
-			expectedErr:          types.ErrSessionSuppliersNotFound,
+			expectedErr:          session.ErrSessionSuppliersNotFound,
 		},
 		{
 			desc: "num_suppliers_available < num_suppliers_per_session_param",

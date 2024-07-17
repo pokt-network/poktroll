@@ -7,7 +7,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/spf13/cobra"
 
-	"github.com/pokt-network/poktroll/x/proof/types"
+	"github.com/pokt-network/poktroll/proto/types/proof"
 )
 
 // AddProofFilterFlagsToCmd adds common pagination flags to cmd
@@ -37,7 +37,7 @@ $ poktrolld q proof list-proofs --supplier-address <supplier_address> --node $(P
 				return err
 			}
 
-			req := &types.QueryAllProofsRequest{
+			req := &proof.QueryAllProofsRequest{
 				Pagination: pageReq,
 			}
 			if err = updateProofsFilter(cmd, req); err != nil {
@@ -51,7 +51,7 @@ $ poktrolld q proof list-proofs --supplier-address <supplier_address> --node $(P
 			if ctxErr != nil {
 				return ctxErr
 			}
-			queryClient := types.NewQueryClient(clientCtx)
+			queryClient := proof.NewQueryClient(clientCtx)
 
 			res, proofsErr := queryClient.AllProofs(cmd.Context(), req)
 			if proofsErr != nil {
@@ -84,7 +84,7 @@ $ poktrolld --home=$(POKTROLLD_HOME) q proof show-proofs <session_id> <supplier_
 			sessionId := args[0]
 			supplierAddr := args[1]
 
-			getProofRequest := &types.QueryGetProofRequest{
+			getProofRequest := &proof.QueryGetProofRequest{
 				SessionId:       sessionId,
 				SupplierAddress: supplierAddr,
 			}
@@ -97,7 +97,7 @@ $ poktrolld --home=$(POKTROLLD_HOME) q proof show-proofs <session_id> <supplier_
 				return err
 			}
 
-			queryClient := types.NewQueryClient(clientCtx)
+			queryClient := proof.NewQueryClient(clientCtx)
 
 			res, err := queryClient.Proof(cmd.Context(), getProofRequest)
 			if err != nil {
@@ -114,7 +114,7 @@ $ poktrolld --home=$(POKTROLLD_HOME) q proof show-proofs <session_id> <supplier_
 }
 
 // updateProofsFilter updates the proofs filter request based on the flags set provided
-func updateProofsFilter(cmd *cobra.Command, req *types.QueryAllProofsRequest) error {
+func updateProofsFilter(cmd *cobra.Command, req *proof.QueryAllProofsRequest) error {
 	sessionId, _ := cmd.Flags().GetString(FlagSessionId)
 	supplierAddr, _ := cmd.Flags().GetString(FlagSupplierAddress)
 	sessionEndHeight, _ := cmd.Flags().GetUint64(FlagSessionEndHeight)
@@ -129,7 +129,7 @@ func updateProofsFilter(cmd *cobra.Command, req *types.QueryAllProofsRequest) er
 			return err
 		}
 		// Set the session id filter
-		req.Filter = &types.QueryAllProofsRequest_SessionId{
+		req.Filter = &proof.QueryAllProofsRequest_SessionId{
 			SessionId: sessionId,
 		}
 		return nil
@@ -142,7 +142,7 @@ func updateProofsFilter(cmd *cobra.Command, req *types.QueryAllProofsRequest) er
 			return err
 		}
 		// Set the supplier address filter
-		req.Filter = &types.QueryAllProofsRequest_SupplierAddress{
+		req.Filter = &proof.QueryAllProofsRequest_SupplierAddress{
 			SupplierAddress: supplierAddr,
 		}
 		return nil
@@ -155,7 +155,7 @@ func updateProofsFilter(cmd *cobra.Command, req *types.QueryAllProofsRequest) er
 			return err
 		}
 		// Set the session end height filter
-		req.Filter = &types.QueryAllProofsRequest_SessionEndHeight{
+		req.Filter = &proof.QueryAllProofsRequest_SessionEndHeight{
 			SessionEndHeight: sessionEndHeight,
 		}
 		return nil

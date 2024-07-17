@@ -8,7 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/spf13/cobra"
 
-	"github.com/pokt-network/poktroll/x/application/types"
+	"github.com/pokt-network/poktroll/proto/types/application"
 )
 
 var _ = strconv.Itoa(0)
@@ -31,7 +31,7 @@ $ poktrolld tx application delegate-to-gateway $(GATEWAY_ADDR) --keyring-backend
 				return err
 			}
 
-			msg := types.NewMsgDelegateToGateway(
+			msg := application.NewMsgDelegateToGateway(
 				clientCtx.GetFromAddress().String(),
 				gatewayAddress,
 			)

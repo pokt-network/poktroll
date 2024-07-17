@@ -11,12 +11,12 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/pokt-network/poktroll/proto/types/proof"
+	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
 	"github.com/pokt-network/poktroll/testutil/nullify"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	_ "github.com/pokt-network/poktroll/testutil/testpolylog"
-	proof "github.com/pokt-network/poktroll/x/proof/module"
-	"github.com/pokt-network/poktroll/x/proof/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	proofmodule "github.com/pokt-network/poktroll/x/proof/module"
 )
 
 func TestClaim_Show(t *testing.T) {
@@ -36,7 +36,7 @@ func TestClaim_Show(t *testing.T) {
 		sessionId    string
 		supplierAddr string
 
-		claim       types.Claim
+		claim       proof.Claim
 		expectedErr error
 	}{
 		{
@@ -54,7 +54,7 @@ func TestClaim_Show(t *testing.T) {
 
 			expectedErr: status.Error(
 				codes.NotFound,
-				types.ErrProofClaimNotFound.Wrapf(
+				proof.ErrProofClaimNotFound.Wrapf(
 					"session ID %q and supplier %q",
 					"wrong_session_id",
 					claims[0].GetSupplierAddress(),
@@ -68,7 +68,7 @@ func TestClaim_Show(t *testing.T) {
 
 			// NB: this is *NOT* a gRPC status error because the bech32 parse
 			// error occurs during request validation (i.e. client-side).
-			expectedErr: types.ErrProofInvalidAddress.Wrapf(
+			expectedErr: proof.ErrProofInvalidAddress.Wrapf(
 				// TODO_TECHDEBT: prefer using "%q" in error format strings
 				// to disambiguate empty string from space or no output.
 				"invalid supplier address for claim being retrieved %s; (decoding bech32 failed: invalid separator index -1)",
@@ -82,7 +82,7 @@ func TestClaim_Show(t *testing.T) {
 
 			expectedErr: status.Error(
 				codes.NotFound,
-				types.ErrProofClaimNotFound.Wrapf(
+				proof.ErrProofClaimNotFound.Wrapf(
 					"session ID %q and supplier %q",
 					claims[0].GetSessionHeader().GetSessionId(),
 					wrongSupplierAddr,
@@ -97,13 +97,13 @@ func TestClaim_Show(t *testing.T) {
 				test.supplierAddr,
 			}
 			args = append(args, commonArgs...)
-			out, err := clitestutil.ExecTestCLICmd(clientCtx, proof.CmdShowClaim(), args)
+			out, err := clitestutil.ExecTestCLICmd(clientCtx, proofmodule.CmdShowClaim(), args)
 			if test.expectedErr != nil {
 				require.ErrorContains(t, err, test.expectedErr.Error())
 			} else {
 				require.NoError(t, err)
 
-				var resp types.QueryGetClaimResponse
+				var resp proof.QueryGetClaimResponse
 				require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 				require.NotNil(t, resp.Claim)
 
@@ -161,10 +161,10 @@ func TestClaim_List(t *testing.T) {
 		step := 2
 		for i := 0; i < totalClaims; i += step {
 			args := prepareArgs(nil, uint64(i), uint64(step), false)
-			out, err := clitestutil.ExecTestCLICmd(clientCtx, proof.CmdListClaims(), args)
+			out, err := clitestutil.ExecTestCLICmd(clientCtx, proofmodule.CmdListClaims(), args)
 			require.NoError(t, err)
 
-			var resp types.QueryAllClaimsResponse
+			var resp proof.QueryAllClaimsResponse
 			require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 
 			require.LessOrEqual(t, len(resp.Claims), step)
@@ -180,10 +180,10 @@ func TestClaim_List(t *testing.T) {
 		var next []byte
 		for i := 0; i < totalClaims; i += step {
 			args := prepareArgs(next, 0, uint64(step), false)
-			out, err := clitestutil.ExecTestCLICmd(clientCtx, proof.CmdListClaims(), args)
+			out, err := clitestutil.ExecTestCLICmd(clientCtx, proofmodule.CmdListClaims(), args)
 			require.NoError(t, err)
 
-			var resp types.QueryAllClaimsResponse
+			var resp proof.QueryAllClaimsResponse
 			require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 
 			require.LessOrEqual(t, len(resp.Claims), step)
@@ -198,19 +198,19 @@ func TestClaim_List(t *testing.T) {
 	t.Run("BySupplierAddress", func(t *testing.T) {
 		supplierAddr := claims[0].SupplierAddress
 		args := prepareArgs(nil, 0, uint64(totalClaims), true)
-		args = append(args, fmt.Sprintf("--%s=%s", proof.FlagSupplierAddress, supplierAddr))
+		args = append(args, fmt.Sprintf("--%s=%s", proofmodule.FlagSupplierAddress, supplierAddr))
 
-		expectedClaims := make([]types.Claim, 0)
+		expectedClaims := make([]proof.Claim, 0)
 		for _, claim := range claims {
 			if claim.SupplierAddress == supplierAddr {
 				expectedClaims = append(expectedClaims, claim)
 			}
 		}
 
-		out, err := clitestutil.ExecTestCLICmd(clientCtx, proof.CmdListClaims(), args)
+		out, err := clitestutil.ExecTestCLICmd(clientCtx, proofmodule.CmdListClaims(), args)
 		require.NoError(t, err)
 
-		var resp types.QueryAllClaimsResponse
+		var resp proof.QueryAllClaimsResponse
 		require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 
 		require.Equal(t, numSessions*numApps, int(resp.Pagination.Total))
@@ -223,19 +223,19 @@ func TestClaim_List(t *testing.T) {
 	t.Run("BySession", func(t *testing.T) {
 		sessionId := claims[0].GetSessionHeader().SessionId
 		args := prepareArgs(nil, 0, uint64(totalClaims), true)
-		args = append(args, fmt.Sprintf("--%s=%s", proof.FlagSessionId, sessionId))
+		args = append(args, fmt.Sprintf("--%s=%s", proofmodule.FlagSessionId, sessionId))
 
-		expectedClaims := make([]types.Claim, 0)
+		expectedClaims := make([]proof.Claim, 0)
 		for _, claim := range claims {
 			if claim.GetSessionHeader().SessionId == sessionId {
 				expectedClaims = append(expectedClaims, claim)
 			}
 		}
 
-		out, err := clitestutil.ExecTestCLICmd(clientCtx, proof.CmdListClaims(), args)
+		out, err := clitestutil.ExecTestCLICmd(clientCtx, proofmodule.CmdListClaims(), args)
 		require.NoError(t, err)
 
-		var resp types.QueryAllClaimsResponse
+		var resp proof.QueryAllClaimsResponse
 		require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 
 		require.Equal(t, numSuppliers, int(resp.Pagination.Total))
@@ -248,19 +248,19 @@ func TestClaim_List(t *testing.T) {
 	t.Run("ByHeight", func(t *testing.T) {
 		sessionEndHeight := claims[0].GetSessionHeader().GetSessionEndBlockHeight()
 		args := prepareArgs(nil, 0, uint64(totalClaims), true)
-		args = append(args, fmt.Sprintf("--%s=%d", proof.FlagSessionEndHeight, sessionEndHeight))
+		args = append(args, fmt.Sprintf("--%s=%d", proofmodule.FlagSessionEndHeight, sessionEndHeight))
 
-		expectedClaims := make([]types.Claim, 0)
+		expectedClaims := make([]proof.Claim, 0)
 		for _, claim := range claims {
 			if claim.GetSessionHeader().GetSessionEndBlockHeight() == sessionEndHeight {
 				expectedClaims = append(expectedClaims, claim)
 			}
 		}
 
-		out, err := clitestutil.ExecTestCLICmd(clientCtx, proof.CmdListClaims(), args)
+		out, err := clitestutil.ExecTestCLICmd(clientCtx, proofmodule.CmdListClaims(), args)
 		require.NoError(t, err)
 
-		var resp types.QueryAllClaimsResponse
+		var resp proof.QueryAllClaimsResponse
 		require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 
 		require.Equal(t, numClaimsPerSession, int(resp.Pagination.Total))
@@ -272,10 +272,10 @@ func TestClaim_List(t *testing.T) {
 
 	t.Run("Total", func(t *testing.T) {
 		args := prepareArgs(nil, 0, uint64(totalClaims), true)
-		out, err := clitestutil.ExecTestCLICmd(clientCtx, proof.CmdListClaims(), args)
+		out, err := clitestutil.ExecTestCLICmd(clientCtx, proofmodule.CmdListClaims(), args)
 		require.NoError(t, err)
 
-		var resp types.QueryAllClaimsResponse
+		var resp proof.QueryAllClaimsResponse
 		require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 
 		require.Equal(t, totalClaims, int(resp.Pagination.Total))

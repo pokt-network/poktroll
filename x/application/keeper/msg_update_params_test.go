@@ -5,25 +5,25 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/x/application/types"
+	"github.com/pokt-network/poktroll/proto/types/application"
 )
 
 func TestMsgUpdateParams(t *testing.T) {
 	k, ms, ctx := setupMsgServer(t)
-	params := types.DefaultParams()
+	params := application.DefaultParams()
 	require.NoError(t, k.SetParams(ctx, params))
 
 	// default params
 	tests := []struct {
 		desc  string
-		input *types.MsgUpdateParams
+		input *application.MsgUpdateParams
 
 		shouldError    bool
 		expectedErrMsg string
 	}{
 		{
 			desc: "invalid: authority address invalid",
-			input: &types.MsgUpdateParams{
+			input: &application.MsgUpdateParams{
 				Authority: "invalid",
 				Params:    params,
 			},
@@ -32,9 +32,9 @@ func TestMsgUpdateParams(t *testing.T) {
 		},
 		{
 			desc: "send empty params",
-			input: &types.MsgUpdateParams{
+			input: &application.MsgUpdateParams{
 				Authority: k.GetAuthority(),
-				Params:    types.Params{},
+				Params:    application.Params{},
 			},
 
 			shouldError:    true,
@@ -42,7 +42,7 @@ func TestMsgUpdateParams(t *testing.T) {
 		},
 		{
 			desc: "valid: send default params",
-			input: &types.MsgUpdateParams{
+			input: &application.MsgUpdateParams{
 				Authority: k.GetAuthority(),
 				Params:    params,
 			},

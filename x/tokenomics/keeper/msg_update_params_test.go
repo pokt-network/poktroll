@@ -5,20 +5,20 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/proto/types/tokenomics"
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/x/tokenomics/keeper"
-	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 func TestMsgUpdateParams(t *testing.T) {
 	tokenomicsKeeper, srv, ctx := setupMsgServer(t)
-	require.NoError(t, tokenomicsKeeper.SetParams(ctx, types.DefaultParams()))
+	require.NoError(t, tokenomicsKeeper.SetParams(ctx, tokenomics.DefaultParams()))
 
 	tests := []struct {
 		desc string
 
-		req *types.MsgUpdateParams
+		req *tokenomics.MsgUpdateParams
 
 		shouldError    bool
 		expectedErrMsg string
@@ -26,9 +26,9 @@ func TestMsgUpdateParams(t *testing.T) {
 		{
 			desc: "invalid authority address",
 
-			req: &types.MsgUpdateParams{
+			req: &tokenomics.MsgUpdateParams{
 				Authority: "invalid",
-				Params: types.Params{
+				Params: tokenomics.Params{
 					ComputeUnitsToTokensMultiplier: 1,
 				},
 			},
@@ -39,9 +39,9 @@ func TestMsgUpdateParams(t *testing.T) {
 		{
 			desc: "incorrect authority address",
 
-			req: &types.MsgUpdateParams{
+			req: &tokenomics.MsgUpdateParams{
 				Authority: sample.AccAddress(),
-				Params: types.Params{
+				Params: tokenomics.Params{
 					ComputeUnitsToTokensMultiplier: 1,
 				},
 			},
@@ -52,10 +52,10 @@ func TestMsgUpdateParams(t *testing.T) {
 		{
 			desc: "invalid ComputeUnitsToTokensMultiplier",
 
-			req: &types.MsgUpdateParams{
+			req: &tokenomics.MsgUpdateParams{
 				Authority: tokenomicsKeeper.GetAuthority(),
 
-				Params: types.Params{
+				Params: tokenomics.Params{
 					ComputeUnitsToTokensMultiplier: 0,
 				},
 			},
@@ -66,10 +66,10 @@ func TestMsgUpdateParams(t *testing.T) {
 		{
 			desc: "successful param update",
 
-			req: &types.MsgUpdateParams{
+			req: &tokenomics.MsgUpdateParams{
 				Authority: tokenomicsKeeper.GetAuthority(),
 
-				Params: types.Params{
+				Params: tokenomics.Params{
 					ComputeUnitsToTokensMultiplier: 1000000,
 				},
 			},
@@ -96,22 +96,22 @@ func TestUpdateParams_ComputeUnitsToTokensMultiplier(t *testing.T) {
 	srv := keeper.NewMsgServerImpl(tokenomicsKeeper)
 
 	// Set the default params
-	tokenomicsKeeper.SetParams(ctx, types.DefaultParams())
+	tokenomicsKeeper.SetParams(ctx, tokenomics.DefaultParams())
 
-	getParamsReq := &types.QueryParamsRequest{}
+	getParamsReq := &tokenomics.QueryParamsRequest{}
 
 	// Verify the default value for ComputeUnitsToTokensMultiplier
 	getParamsRes, err := tokenomicsKeeper.Params(ctx, getParamsReq)
 	require.NoError(t, err)
 	require.Equal(t,
-		types.DefaultComputeUnitsToTokensMultiplier,
+		tokenomics.DefaultComputeUnitsToTokensMultiplier,
 		getParamsRes.Params.GetComputeUnitsToTokensMultiplier(),
 	)
 
 	// Update the value for ComputeUnitsToTokensMultiplier
-	updateParamsReq := &types.MsgUpdateParams{
+	updateParamsReq := &tokenomics.MsgUpdateParams{
 		Authority: tokenomicsKeeper.GetAuthority(),
-		Params: types.Params{
+		Params: tokenomics.Params{
 			ComputeUnitsToTokensMultiplier: 69,
 		},
 	}

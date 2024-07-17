@@ -21,6 +21,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/proto/types/service"
 	"github.com/pokt-network/poktroll/testutil/service/mocks"
 	"github.com/pokt-network/poktroll/x/service/keeper"
 	"github.com/pokt-network/poktroll/x/service/types"
@@ -71,7 +72,7 @@ func ServiceKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 					mapAccAddrCoins[senderAddr.String()] = coins.Sub(amt...)
 					return nil
 				}
-				return types.ErrServiceNotEnoughFunds
+				return service.ErrServiceNotEnoughFunds
 			},
 		).AnyTimes()
 
@@ -86,7 +87,7 @@ func ServiceKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 	ctx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
 
 	// Initialize params
-	require.NoError(t, k.SetParams(ctx, types.DefaultParams()))
+	require.NoError(t, k.SetParams(ctx, service.DefaultParams()))
 
 	return k, ctx
 }

@@ -1,6 +1,6 @@
 package keeper
 
-import "github.com/pokt-network/poktroll/x/tokenomics/types"
+import "github.com/pokt-network/poktroll/proto/types/tokenomics"
 
 type msgServer struct {
 	Keeper
@@ -8,8 +8,8 @@ type msgServer struct {
 
 // NewMsgServerImpl returns an implementation of the MsgServer interface
 // for the provided Keeper.
-func NewMsgServerImpl(keeper Keeper) types.MsgServer {
+func NewMsgServerImpl(keeper Keeper) tokenomics.MsgServer {
 	return &msgServer{Keeper: keeper}
 }
 
-var _ types.MsgServer = msgServer{}
+var _ tokenomics.MsgServer = msgServer{}

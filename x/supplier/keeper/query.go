@@ -1,5 +1,5 @@
 package keeper
 
-import "github.com/pokt-network/poktroll/x/supplier/types"
+import "github.com/pokt-network/poktroll/proto/types/supplier"
 
-var _ types.QueryServer = Keeper{}
+var _ supplier.QueryServer = Keeper{}

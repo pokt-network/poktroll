@@ -15,14 +15,14 @@ import (
 
 	"github.com/pokt-network/poktroll/app"
 	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
+	apptypes "github.com/pokt-network/poktroll/proto/types/application"
+	gatewaytypes "github.com/pokt-network/poktroll/proto/types/gateway"
+	prooftypes "github.com/pokt-network/poktroll/proto/types/proof"
+	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
+	suppliertypes "github.com/pokt-network/poktroll/proto/types/supplier"
+	tokenomicstypes "github.com/pokt-network/poktroll/proto/types/tokenomics"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	appmodule "github.com/pokt-network/poktroll/x/application/module"
-	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
-	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
-	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 type (

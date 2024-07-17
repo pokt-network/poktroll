@@ -1,9 +1,9 @@
 package session
 
 import (
+	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
 	"github.com/pokt-network/poktroll/x/session/keeper"
 	"github.com/pokt-network/poktroll/x/shared"
-	"github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // GetSessionIdWithDefaultParams returns the string and bytes representation of the
@@ -15,7 +15,7 @@ func GetSessionIdWithDefaultParams(
 	blockHashBz []byte,
 	blockHeight int64,
 ) (sessionId string, sessionIdBz []byte) {
-	sharedParams := types.DefaultParams()
+	sharedParams := sharedtypes.DefaultParams()
 	return keeper.GetSessionId(&sharedParams, appPubKey, serviceId, blockHashBz, blockHeight)
 }
 
@@ -24,7 +24,7 @@ func GetSessionIdWithDefaultParams(
 // parameters.
 // See shared.GetSessionStartHeight for more details.
 func GetSessionStartHeightWithDefaultParams(queryHeight int64) int64 {
-	sharedParams := types.DefaultParams()
+	sharedParams := sharedtypes.DefaultParams()
 	return shared.GetSessionStartHeight(&sharedParams, queryHeight)
 }
 
@@ -32,7 +32,7 @@ func GetSessionStartHeightWithDefaultParams(queryHeight int64) int64 {
 // containing queryHeight ends, given the default shared on-chain parameters.
 // See shared.GetSessionEndHeight for more details.
 func GetSessionEndHeightWithDefaultParams(queryHeight int64) int64 {
-	sharedParams := types.DefaultParams()
+	sharedParams := sharedtypes.DefaultParams()
 	return shared.GetSessionEndHeight(&sharedParams, queryHeight)
 }
 
@@ -40,6 +40,6 @@ func GetSessionEndHeightWithDefaultParams(queryHeight int64) int64 {
 // containing queryHeight, given the default on-chain shared parameters.
 // See shared.GetSessionNumber for more details.
 func GetSessionNumberWithDefaultParams(queryHeight int64) int64 {
-	sharedParams := types.DefaultParams()
+	sharedParams := sharedtypes.DefaultParams()
 	return shared.GetSessionNumber(&sharedParams, queryHeight)
 }

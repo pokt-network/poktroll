@@ -5,21 +5,21 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/proto/types/proof"
+	sessiontypes "github.com/pokt-network/poktroll/proto/types/session"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
 	"github.com/pokt-network/poktroll/testutil/sample"
-	proof "github.com/pokt-network/poktroll/x/proof/module"
-	"github.com/pokt-network/poktroll/x/proof/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	proofmodule "github.com/pokt-network/poktroll/x/proof/module"
 )
 
 func TestGenesis(t *testing.T) {
 	mockSessionId := "mock_session_id"
 
-	genesisState := types.GenesisState{
-		Params: types.DefaultParams(),
+	genesisState := proof.GenesisState{
+		Params: proof.DefaultParams(),
 
-		ClaimList: []types.Claim{
+		ClaimList: []proof.Claim{
 			{
 				SupplierAddress: sample.AccAddress(),
 				SessionHeader: &sessiontypes.SessionHeader{
@@ -42,8 +42,8 @@ func TestGenesis(t *testing.T) {
 	}
 
 	k, ctx := keepertest.ProofKeeper(t)
-	proof.InitGenesis(ctx, k, genesisState)
-	got := proof.ExportGenesis(ctx, k)
+	proofmodule.InitGenesis(ctx, k, genesisState)
+	got := proofmodule.ExportGenesis(ctx, k)
 	require.NotNil(t, got)
 
 	nullify.Fill(&genesisState)

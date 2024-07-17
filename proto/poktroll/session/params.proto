@@ -1,7 +1,7 @@
 syntax = "proto3";
 package poktroll.session;
 
-option go_package = "github.com/pokt-network/poktroll/x/session/types";
+option go_package = "github.com/pokt-network/poktroll/proto/types/session";
 
 import "amino/amino.proto";
 import "gogoproto/gogo.proto";

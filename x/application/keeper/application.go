@@ -7,11 +7,12 @@ import (
 	storetypes "cosmossdk.io/store/types"
 	"github.com/cosmos/cosmos-sdk/runtime"
 
+	"github.com/pokt-network/poktroll/proto/types/application"
 	"github.com/pokt-network/poktroll/x/application/types"
 )
 
 // SetApplication set a specific application in the store from its index
-func (k Keeper) SetApplication(ctx context.Context, application types.Application) {
+func (k Keeper) SetApplication(ctx context.Context, application application.Application) {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ApplicationKeyPrefix))
 	appBz := k.cdc.MustMarshal(&application)
@@ -22,7 +23,7 @@ func (k Keeper) SetApplication(ctx context.Context, application types.Applicatio
 func (k Keeper) GetApplication(
 	ctx context.Context,
 	appAddr string,
-) (app types.Application, found bool) {
+) (app application.Application, found bool) {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ApplicationKeyPrefix))
 
@@ -36,7 +37,7 @@ func (k Keeper) GetApplication(
 	// Ensure that the PendingUndelegations is an empty map and not nil when
 	// unmarshalling an app that has no pending undelegations.
 	if app.PendingUndelegations == nil {
-		app.PendingUndelegations = make(map[uint64]types.UndelegatingGatewayList)
+		app.PendingUndelegations = make(map[uint64]application.UndelegatingGatewayList)
 	}
 
 	return app, true
@@ -50,7 +51,7 @@ func (k Keeper) RemoveApplication(ctx context.Context, appAddr string) {
 }
 
 // GetAllApplications returns all application
-func (k Keeper) GetAllApplications(ctx context.Context) (apps []types.Application) {
+func (k Keeper) GetAllApplications(ctx context.Context) (apps []application.Application) {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ApplicationKeyPrefix))
 	iterator := storetypes.KVStorePrefixIterator(store, []byte{})
@@ -58,13 +59,13 @@ func (k Keeper) GetAllApplications(ctx context.Context) (apps []types.Applicatio
 	defer iterator.Close()
 
 	for ; iterator.Valid(); iterator.Next() {
-		var app types.Application
+		var app application.Application
 		k.cdc.MustUnmarshal(iterator.Value(), &app)
 
 		// Ensure that the PendingUndelegations is an empty map and not nil when
 		// unmarshalling an app that has no pending undelegations.
 		if app.PendingUndelegations == nil {
-			app.PendingUndelegations = make(map[uint64]types.UndelegatingGatewayList)
+			app.PendingUndelegations = make(map[uint64]application.UndelegatingGatewayList)
 		}
 
 		apps = append(apps, app)

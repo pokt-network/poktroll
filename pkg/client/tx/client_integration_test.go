@@ -13,11 +13,11 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
+	apptypes "github.com/pokt-network/poktroll/proto/types/application"
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
 	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
 	"github.com/pokt-network/poktroll/testutil/testclient/testkeyring"
 	"github.com/pokt-network/poktroll/testutil/testclient/testtx"
-	apptypes "github.com/pokt-network/poktroll/x/application/types"
 )
 
 func TestTxClient_SignAndBroadcast_Integration(t *testing.T) {

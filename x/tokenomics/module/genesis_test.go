@@ -5,17 +5,17 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/proto/types/tokenomics"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
-	tokenomics "github.com/pokt-network/poktroll/x/tokenomics/module"
-	"github.com/pokt-network/poktroll/x/tokenomics/types"
+	tokenomicsmodule "github.com/pokt-network/poktroll/x/tokenomics/module"
 )
 
 func TestGenesis(t *testing.T) {
-	genesisState := types.GenesisState{
-		Params: types.DefaultParams(),
+	genesisState := tokenomics.GenesisState{
+		Params: tokenomics.DefaultParams(),
 
-		RelayMiningDifficultyList: []types.RelayMiningDifficulty{
+		RelayMiningDifficultyList: []tokenomics.RelayMiningDifficulty{
 			{
 				ServiceId: "0",
 			},
@@ -27,8 +27,8 @@ func TestGenesis(t *testing.T) {
 	}
 
 	k, ctx, _, _ := keepertest.TokenomicsKeeperWithActorAddrs(t)
-	tokenomics.InitGenesis(ctx, k, genesisState)
-	got := tokenomics.ExportGenesis(ctx, k)
+	tokenomicsmodule.InitGenesis(ctx, k, genesisState)
+	got := tokenomicsmodule.ExportGenesis(ctx, k)
 	require.NotNil(t, got)
 
 	nullify.Fill(&genesisState)

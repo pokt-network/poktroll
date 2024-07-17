@@ -3,7 +3,7 @@ package client
 import (
 	"fmt"
 
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
 )
 
 // NewTestApplicationServiceConfig returns a slice of application service configs for testing.

@@ -11,8 +11,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
-	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
-	"github.com/pokt-network/poktroll/x/tokenomics/types"
+	prooftypes "github.com/pokt-network/poktroll/proto/types/proof"
+	"github.com/pokt-network/poktroll/proto/types/tokenomics"
 )
 
 const (
@@ -37,22 +37,22 @@ const (
 func (k Keeper) UpdateRelayMiningDifficulty(
 	ctx context.Context,
 	relaysPerServiceMap map[string]uint64,
-) (difficultyPerServiceMap map[string]types.RelayMiningDifficulty, err error) {
+) (difficultyPerServiceMap map[string]tokenomics.RelayMiningDifficulty, err error) {
 	logger := k.Logger().With("method", "UpdateRelayMiningDifficulty")
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
-	difficultyPerServiceMap = make(map[string]types.RelayMiningDifficulty, len(relaysPerServiceMap))
+	difficultyPerServiceMap = make(map[string]tokenomics.RelayMiningDifficulty, len(relaysPerServiceMap))
 	for serviceId, numRelays := range relaysPerServiceMap {
 		prevDifficulty, found := k.GetRelayMiningDifficulty(ctx, serviceId)
 		if !found {
-			logger.Warn(types.ErrTokenomicsMissingRelayMiningDifficulty.Wrapf(
+			logger.Warn(tokenomics.ErrTokenomicsMissingRelayMiningDifficulty.Wrapf(
 				"No previous relay mining difficulty found for service %s. Initializing with default difficulty %v",
 				serviceId, prevDifficulty.TargetHash,
 			).Error())
 
 			// If a previous difficulty for the service is not found, we initialize
 			// it with a default.
-			prevDifficulty = types.RelayMiningDifficulty{
+			prevDifficulty = tokenomics.RelayMiningDifficulty{
 				ServiceId:    serviceId,
 				BlockHeight:  sdkCtx.BlockHeight(),
 				NumRelaysEma: numRelays,
@@ -71,7 +71,7 @@ func (k Keeper) UpdateRelayMiningDifficulty(
 		prevRelaysEma := prevDifficulty.NumRelaysEma
 		newRelaysEma := computeEma(alpha, prevRelaysEma, numRelays)
 		difficultyHash := ComputeNewDifficultyTargetHash(TargetNumRelays, newRelaysEma)
-		newDifficulty := types.RelayMiningDifficulty{
+		newDifficulty := tokenomics.RelayMiningDifficulty{
 			ServiceId:    serviceId,
 			BlockHeight:  sdkCtx.BlockHeight(),
 			NumRelaysEma: newRelaysEma,
@@ -82,7 +82,7 @@ func (k Keeper) UpdateRelayMiningDifficulty(
 		// Emit an event for the updated relay mining difficulty regardless of
 		// whether the difficulty changed or not.
 
-		relayMiningDifficultyUpdateEvent := types.EventRelayMiningDifficultyUpdated{
+		relayMiningDifficultyUpdateEvent := tokenomics.EventRelayMiningDifficultyUpdated{
 			ServiceId:                serviceId,
 			PrevTargetHashHexEncoded: hex.EncodeToString(prevDifficulty.TargetHash),
 			NewTargetHashHexEncoded:  hex.EncodeToString(newDifficulty.TargetHash),

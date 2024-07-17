@@ -20,17 +20,18 @@ import (
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/pkg/relayer"
-	"github.com/pokt-network/poktroll/pkg/relayer/session"
+	relayersession "github.com/pokt-network/poktroll/pkg/relayer/session"
+	"github.com/pokt-network/poktroll/proto/types/proof"
+	"github.com/pokt-network/poktroll/proto/types/service"
+	"github.com/pokt-network/poktroll/proto/types/session"
+	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
 	testutilevents "github.com/pokt-network/poktroll/testutil/events"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/testkeyring"
 	"github.com/pokt-network/poktroll/testutil/testrelayer"
 	"github.com/pokt-network/poktroll/x/proof/keeper"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
-	servicetypes "github.com/pokt-network/poktroll/x/service/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	"github.com/pokt-network/poktroll/x/shared"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // TODO_TECHDEBT(@bryanchriswhite): Simplify this file; https://github.com/pokt-network/poktroll/pull/417#pullrequestreview-1958582600
@@ -46,7 +47,7 @@ var (
 	// testProofParams sets:
 	//  - the minimum relay difficulty bits to zero so that these tests don't need to mine for valid relays.
 	//  - the proof request probability to 1 so that all test sessions require a proof.
-	testProofParams = prooftypes.Params{
+	testProofParams = proof.Params{
 		MinRelayDifficultyBits:  0,
 		ProofRequestProbability: 1,
 	}
@@ -210,7 +211,7 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 			require.NoError(t, err)
 			require.NotNil(t, submitProofRes)
 
-			proofRes, err := keepers.AllProofs(ctx, &prooftypes.QueryAllProofsRequest{})
+			proofRes, err := keepers.AllProofs(ctx, &proof.QueryAllProofsRequest{})
 			require.NoError(t, err)
 
 			proofs := proofRes.GetProofs()
@@ -222,7 +223,7 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 			events := sdkCtx.EventManager().Events()
 			require.Equal(t, 2, len(events))
 
-			proofSubmittedEvents := testutilevents.FilterEvents[*prooftypes.EventProofSubmitted](t, events, "poktroll.proof.EventProofSubmitted")
+			proofSubmittedEvents := testutilevents.FilterEvents[*proof.EventProofSubmitted](t, events, "poktroll.proof.EventProofSubmitted")
 			require.Equal(t, 1, len(proofSubmittedEvents))
 
 			proofSubmittedEvent := proofSubmittedEvents[0]
@@ -348,7 +349,7 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 			proofMsgHeight: int64(earliestProofCommitHeight) - 1,
 			expectedErr: status.Error(
 				codes.FailedPrecondition,
-				prooftypes.ErrProofProofOutsideOfWindow.Wrapf(
+				proof.ErrProofProofOutsideOfWindow.Wrapf(
 					"current block height (%d) is less than session's earliest proof commit height (%d)",
 					int64(earliestProofCommitHeight)-1,
 					earliestProofCommitHeight,
@@ -360,7 +361,7 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 			proofMsgHeight: int64(proofWindowCloseHeight) + 1,
 			expectedErr: status.Error(
 				codes.FailedPrecondition,
-				prooftypes.ErrProofProofOutsideOfWindow.Wrapf(
+				proof.ErrProofProofOutsideOfWindow.Wrapf(
 					"current block height (%d) is greater than session proof window close height (%d)",
 					int64(proofWindowCloseHeight)+1,
 					proofWindowCloseHeight,
@@ -385,7 +386,7 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 			_, err := srv.SubmitProof(ctx, proofMsg)
 			require.ErrorContains(t, err, test.expectedErr.Error())
 
-			proofRes, err := keepers.AllProofs(ctx, &prooftypes.QueryAllProofsRequest{})
+			proofRes, err := keepers.AllProofs(ctx, &proof.QueryAllProofsRequest{})
 			require.NoError(t, err)
 
 			proofs := proofRes.GetProofs()
@@ -454,18 +455,18 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 		preGeneratedAccts,
 	).String()
 
-	service := &sharedtypes.Service{Id: testServiceId}
+	testService := &sharedtypes.Service{Id: testServiceId}
 	wrongService := &sharedtypes.Service{Id: "wrong_svc"}
 
 	// Add a supplier and application pair that are expected to be in the session.
-	keepers.AddServiceActors(ctx, t, service, supplierAddr, appAddr)
+	keepers.AddServiceActors(ctx, t, testService, supplierAddr, appAddr)
 
 	// Add a supplier and application pair that are *not* expected to be in the session.
 	keepers.AddServiceActors(ctx, t, wrongService, wrongSupplierAddr, wrongAppAddr)
 
 	// Get the session for the application/supplier pair which is expected
 	// to be claimed and for which a valid proof would be accepted.
-	validSessionHeader := keepers.GetSessionHeader(ctx, t, appAddr, service, 1)
+	validSessionHeader := keepers.GetSessionHeader(ctx, t, appAddr, testService, 1)
 
 	// Get the session for the application/supplier pair which is
 	// *not* expected to be claimed.
@@ -520,7 +521,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 		ctx, t, 1,
 		supplierAddr,
 		appAddr,
-		service,
+		testService,
 		validSessionTree,
 		validSessionHeader,
 		srv,
@@ -567,12 +568,12 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 
 	tests := []struct {
 		desc        string
-		newProofMsg func(t *testing.T) *prooftypes.MsgSubmitProof
+		newProofMsg func(t *testing.T) *proof.MsgSubmitProof
 		expectedErr error
 	}{
 		{
 			desc: "proof service ID cannot be empty",
-			newProofMsg: func(t *testing.T) *prooftypes.MsgSubmitProof {
+			newProofMsg: func(t *testing.T) *proof.MsgSubmitProof {
 				// Set proof session ID to empty string.
 				emptySessionIdHeader := *validSessionHeader
 				emptySessionIdHeader.SessionId = ""
@@ -587,7 +588,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			},
 			expectedErr: status.Error(
 				codes.InvalidArgument,
-				prooftypes.ErrProofInvalidSessionId.Wrapf(
+				proof.ErrProofInvalidSessionId.Wrapf(
 					"session ID does not match on-chain session ID; expected %q, got %q",
 					validSessionHeader.GetSessionId(),
 					"",
@@ -596,7 +597,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 		},
 		{
 			desc: "merkle proof cannot be empty",
-			newProofMsg: func(t *testing.T) *prooftypes.MsgSubmitProof {
+			newProofMsg: func(t *testing.T) *proof.MsgSubmitProof {
 				// Construct new proof message.
 				proof := newTestProofMsg(t,
 					supplierAddr,
@@ -611,14 +612,14 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			},
 			expectedErr: status.Error(
 				codes.InvalidArgument,
-				prooftypes.ErrProofInvalidProof.Wrap(
+				proof.ErrProofInvalidProof.Wrap(
 					"proof cannot be empty",
 				).Error(),
 			),
 		},
 		{
 			desc: "proof session ID must match on-chain session ID",
-			newProofMsg: func(t *testing.T) *prooftypes.MsgSubmitProof {
+			newProofMsg: func(t *testing.T) *proof.MsgSubmitProof {
 				// Construct new proof message using the wrong session ID.
 				return newTestProofMsg(t,
 					supplierAddr,
@@ -629,7 +630,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			},
 			expectedErr: status.Error(
 				codes.InvalidArgument,
-				prooftypes.ErrProofInvalidSessionId.Wrapf(
+				proof.ErrProofInvalidSessionId.Wrapf(
 					"session ID does not match on-chain session ID; expected %q, got %q",
 					validSessionHeader.GetSessionId(),
 					wrongSessionIdHeader.GetSessionId(),
@@ -638,7 +639,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 		},
 		{
 			desc: "proof supplier must be in on-chain session",
-			newProofMsg: func(t *testing.T) *prooftypes.MsgSubmitProof {
+			newProofMsg: func(t *testing.T) *proof.MsgSubmitProof {
 				// Construct a proof message with a  supplier that does not belong in the session.
 				return newTestProofMsg(t,
 					wrongSupplierAddr,
@@ -649,7 +650,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			},
 			expectedErr: status.Error(
 				codes.InvalidArgument,
-				prooftypes.ErrProofNotFound.Wrapf(
+				proof.ErrProofNotFound.Wrapf(
 					"supplier address %q not found in session ID %q",
 					wrongSupplierAddr,
 					validSessionHeader.GetSessionId(),
@@ -658,7 +659,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 		},
 		{
 			desc: "merkle proof must be deserializable",
-			newProofMsg: func(t *testing.T) *prooftypes.MsgSubmitProof {
+			newProofMsg: func(t *testing.T) *proof.MsgSubmitProof {
 				// Construct new proof message.
 				proof := newTestProofMsg(t,
 					supplierAddr,
@@ -674,7 +675,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			},
 			expectedErr: status.Error(
 				codes.InvalidArgument,
-				prooftypes.ErrProofInvalidProof.Wrapf(
+				proof.ErrProofInvalidProof.Wrapf(
 					"failed to unmarshal closest merkle proof: %s",
 					expectedInvalidProofUnmarshalErr,
 				).Error(),
@@ -682,7 +683,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 		},
 		{
 			desc: "relay must be deserializable",
-			newProofMsg: func(t *testing.T) *prooftypes.MsgSubmitProof {
+			newProofMsg: func(t *testing.T) *proof.MsgSubmitProof {
 				// Construct a session tree to which we'll add 1 unserializable relay.
 				mangledRelaySessionTree := newEmptySessionTree(t, validSessionHeader, supplierAddr)
 
@@ -705,7 +706,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 					validSessionHeader.GetSessionId(),
 					supplierAddr,
 					appAddr,
-					service,
+					testService,
 					mangledRelayMerkleRootBz,
 				)
 				_, err = srv.CreateClaim(claimCtx, claimMsg)
@@ -722,16 +723,16 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			},
 			expectedErr: status.Error(
 				codes.InvalidArgument,
-				prooftypes.ErrProofInvalidRelay.Wrapf(
+				proof.ErrProofInvalidRelay.Wrapf(
 					"failed to unmarshal relay: %s",
-					keepers.Codec.Unmarshal(mangledRelayBz, &servicetypes.Relay{}),
+					keepers.Codec.Unmarshal(mangledRelayBz, &service.Relay{}),
 				).Error(),
 			),
 		},
 		{
 			// TODO_TEST(community): expand: test case to cover each session header field.
 			desc: "relay request session header must match proof session header",
-			newProofMsg: func(t *testing.T) *prooftypes.MsgSubmitProof {
+			newProofMsg: func(t *testing.T) *proof.MsgSubmitProof {
 				// Construct a session tree with 1 relay with a session header containing
 				// a session ID that doesn't match the proof session ID.
 				numRelays := uint(1)
@@ -759,7 +760,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 					validSessionHeader.GetSessionId(),
 					supplierAddr,
 					appAddr,
-					service,
+					testService,
 					wrongRequestSessionIdMerkleRootBz,
 				)
 				_, err = srv.CreateClaim(claimCtx, claimMsg)
@@ -776,7 +777,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			},
 			expectedErr: status.Error(
 				codes.FailedPrecondition,
-				prooftypes.ErrProofInvalidRelay.Wrapf(
+				proof.ErrProofInvalidRelay.Wrapf(
 					"session headers session IDs mismatch; expected: %q, got: %q",
 					validSessionHeader.GetSessionId(),
 					wrongSessionIdHeader.GetSessionId(),
@@ -786,7 +787,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 		{
 			// TODO_TEST: expand: test case to cover each session header field.
 			desc: "relay response session header must match proof session header",
-			newProofMsg: func(t *testing.T) *prooftypes.MsgSubmitProof {
+			newProofMsg: func(t *testing.T) *proof.MsgSubmitProof {
 				// Construct a session tree with 1 relay with a session header containing
 				// a session ID that doesn't match the expected session ID.
 				numRelays := uint(1)
@@ -814,7 +815,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 					validSessionHeader.GetSessionId(),
 					supplierAddr,
 					appAddr,
-					service,
+					testService,
 					wrongResponseSessionIdMerkleRootBz,
 				)
 				_, err = srv.CreateClaim(claimCtx, claimMsg)
@@ -831,7 +832,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			},
 			expectedErr: status.Error(
 				codes.FailedPrecondition,
-				prooftypes.ErrProofInvalidRelay.Wrapf(
+				proof.ErrProofInvalidRelay.Wrapf(
 					"session headers session IDs mismatch; expected: %q, got: %q",
 					validSessionHeader.GetSessionId(),
 					wrongSessionIdHeader.GetSessionId(),
@@ -840,7 +841,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 		},
 		{
 			desc: "relay request signature must be valid",
-			newProofMsg: func(t *testing.T) *prooftypes.MsgSubmitProof {
+			newProofMsg: func(t *testing.T) *proof.MsgSubmitProof {
 				// Set the relay request signature to an invalid byte slice.
 				invalidRequestSignatureRelay := testrelayer.NewEmptyRelay(validSessionHeader, validSessionHeader, supplierAddr)
 				invalidRequestSignatureRelay.Req.Meta.Signature = invalidSignatureBz
@@ -874,7 +875,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 					validSessionHeader.GetSessionId(),
 					supplierAddr,
 					appAddr,
-					service,
+					testService,
 					invalidRequestSignatureMerkleRootBz,
 				)
 				_, err = srv.CreateClaim(claimCtx, claimMsg)
@@ -891,7 +892,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			},
 			expectedErr: status.Error(
 				codes.FailedPrecondition,
-				prooftypes.ErrProofInvalidRelayRequest.Wrapf(
+				proof.ErrProofInvalidRelayRequest.Wrapf(
 					"error deserializing ring signature: %s",
 					new(ring.RingSig).Deserialize(ring_secp256k1.NewCurve(), invalidSignatureBz),
 				).Error(),
@@ -899,14 +900,14 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 		},
 		{
 			desc: "relay request signature is valid but signed by an incorrect application",
-			newProofMsg: func(t *testing.T) *prooftypes.MsgSubmitProof {
+			newProofMsg: func(t *testing.T) *proof.MsgSubmitProof {
 				t.Skip("TODO_TECHDEBT(@bryanchriswhite): Implement this")
 				return nil
 			},
 		},
 		{
 			desc: "relay response signature must be valid",
-			newProofMsg: func(t *testing.T) *prooftypes.MsgSubmitProof {
+			newProofMsg: func(t *testing.T) *proof.MsgSubmitProof {
 				// Set the relay response signature to an invalid byte slice.
 				relay := testrelayer.NewEmptyRelay(validSessionHeader, validSessionHeader, supplierAddr)
 				relay.Res.Meta.SupplierSignature = invalidSignatureBz
@@ -940,7 +941,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 					validSessionHeader.GetSessionId(),
 					supplierAddr,
 					appAddr,
-					service,
+					testService,
 					invalidResponseSignatureMerkleRootBz,
 				)
 				_, err = srv.CreateClaim(claimCtx, claimMsg)
@@ -957,19 +958,19 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			},
 			expectedErr: status.Error(
 				codes.FailedPrecondition,
-				servicetypes.ErrServiceInvalidRelayResponse.Wrap("invalid signature").Error(),
+				service.ErrServiceInvalidRelayResponse.Wrap("invalid signature").Error(),
 			),
 		},
 		{
 			desc: "relay response signature is valid but signed by an incorrect supplier",
-			newProofMsg: func(t *testing.T) *prooftypes.MsgSubmitProof {
+			newProofMsg: func(t *testing.T) *proof.MsgSubmitProof {
 				t.Skip("TODO_TECHDEBT(@bryanchriswhite): Implement this")
 				return nil
 			},
 		},
 		{
 			desc: "the merkle proof path provided does not match the one expected/enforced by the protocol",
-			newProofMsg: func(t *testing.T) *prooftypes.MsgSubmitProof {
+			newProofMsg: func(t *testing.T) *proof.MsgSubmitProof {
 				// Construct a new valid session tree for this test case because once the
 				// closest proof has already been generated, the path cannot be changed.
 				numRelays := uint(5)
@@ -994,7 +995,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 					validSessionHeader.GetSessionId(),
 					supplierAddr,
 					appAddr,
-					service,
+					testService,
 					wrongPathMerkleRootBz,
 				)
 				_, err = srv.CreateClaim(claimCtx, claimMsg)
@@ -1006,7 +1007,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			},
 			expectedErr: status.Error(
 				codes.FailedPrecondition,
-				prooftypes.ErrProofInvalidProof.Wrapf(
+				proof.ErrProofInvalidProof.Wrapf(
 					"the path of the proof provided (%x) does not match one expected by the on-chain protocol (%x)",
 					wrongClosestProofPath,
 					protocol.GetPathForProof(sdkCtx.HeaderHash(), validSessionHeader.GetSessionId()),
@@ -1015,17 +1016,17 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 		},
 		{
 			desc: "relay difficulty must be greater than or equal to minimum (zero difficulty)",
-			newProofMsg: func(t *testing.T) *prooftypes.MsgSubmitProof {
+			newProofMsg: func(t *testing.T) *proof.MsgSubmitProof {
 				// Set the minimum relay difficulty to a non-zero value such that the relays
 				// constructed by the test helpers have a negligable chance of being valid.
-				err = keepers.Keeper.SetParams(ctx, prooftypes.Params{
+				err = keepers.Keeper.SetParams(ctx, proof.Params{
 					MinRelayDifficultyBits: 10,
 				})
 				require.NoError(t, err)
 
 				// Reset the minimum relay difficulty to zero after this test case.
 				t.Cleanup(func() {
-					err = keepers.Keeper.SetParams(ctx, prooftypes.DefaultParams())
+					err = keepers.Keeper.SetParams(ctx, proof.DefaultParams())
 					require.NoError(t, err)
 				})
 
@@ -1040,7 +1041,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			},
 			expectedErr: status.Error(
 				codes.FailedPrecondition,
-				prooftypes.ErrProofInvalidRelay.Wrapf(
+				proof.ErrProofInvalidRelay.Wrapf(
 					"relay difficulty %d is less than the minimum difficulty %d",
 					validClosestRelayDifficultyBits,
 					10,
@@ -1049,14 +1050,14 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 		},
 		{
 			desc: "relay difficulty must be greater than or equal to minimum (non-zero difficulty)",
-			newProofMsg: func(t *testing.T) *prooftypes.MsgSubmitProof {
+			newProofMsg: func(t *testing.T) *proof.MsgSubmitProof {
 				t.Skip("TODO_TECHDEBT(@bryanchriswhite): Implement this")
 				return nil
 			},
 		},
 		{ // group: claim must exist for proof message
 			desc: "claim must exist for proof message",
-			newProofMsg: func(t *testing.T) *prooftypes.MsgSubmitProof {
+			newProofMsg: func(t *testing.T) *proof.MsgSubmitProof {
 				// Construct a new session tree corresponding to the unclaimed session.
 				numRelays := uint(5)
 				unclaimedSessionTree := newFilledSessionTree(
@@ -1090,7 +1091,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			},
 			expectedErr: status.Error(
 				codes.FailedPrecondition,
-				prooftypes.ErrProofClaimNotFound.Wrapf(
+				proof.ErrProofClaimNotFound.Wrapf(
 					"no claim found for session ID %q and supplier %q",
 					unclaimedSessionHeader.GetSessionId(),
 					wrongSupplierAddr,
@@ -1099,7 +1100,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 		},
 		{
 			desc: "Valid proof cannot validate claim with an incorrect root",
-			newProofMsg: func(t *testing.T) *prooftypes.MsgSubmitProof {
+			newProofMsg: func(t *testing.T) *proof.MsgSubmitProof {
 				numRelays := uint(10)
 				wrongMerkleRootSessionTree := newFilledSessionTree(
 					ctx, t,
@@ -1122,7 +1123,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 					validSessionHeader.GetSessionId(),
 					supplierAddr,
 					appAddr,
-					service,
+					testService,
 					wrongMerkleRootBz,
 				)
 				_, err = srv.CreateClaim(claimCtx, wrongMerkleRootClaimMsg)
@@ -1156,26 +1157,26 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			},
 			expectedErr: status.Error(
 				codes.FailedPrecondition,
-				prooftypes.ErrProofInvalidProof.Wrap("invalid closest merkle proof").Error(),
+				proof.ErrProofInvalidProof.Wrap("invalid closest merkle proof").Error(),
 			),
 		},
 		{
 			desc: "claim and proof application addresses must match",
-			newProofMsg: func(t *testing.T) *prooftypes.MsgSubmitProof {
+			newProofMsg: func(t *testing.T) *proof.MsgSubmitProof {
 				t.Skip("this test case reduces to either the 'claim must exist for proof message' or 'proof session ID must match on-chain session ID cases")
 				return nil
 			},
 		},
 		{
 			desc: "claim and proof service IDs must match",
-			newProofMsg: func(t *testing.T) *prooftypes.MsgSubmitProof {
+			newProofMsg: func(t *testing.T) *proof.MsgSubmitProof {
 				t.Skip("this test case reduces to either the 'claim must exist for proof message' or 'proof session ID must match on-chain session ID cases")
 				return nil
 			},
 		},
 		{
 			desc: "claim and proof supplier addresses must match",
-			newProofMsg: func(t *testing.T) *prooftypes.MsgSubmitProof {
+			newProofMsg: func(t *testing.T) *proof.MsgSubmitProof {
 				t.Skip("this test case reduces to either the 'claim must exist for proof message' or 'proof session ID must match on-chain session ID cases")
 				return nil
 			},
@@ -1208,7 +1209,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			require.ErrorContains(t, err, test.expectedErr.Error())
 			require.Nil(t, submitProofRes)
 
-			proofRes, err := keepers.AllProofs(ctx, &prooftypes.QueryAllProofsRequest{})
+			proofRes, err := keepers.AllProofs(ctx, &proof.QueryAllProofsRequest{})
 			require.NoError(t, err)
 
 			// Expect zero proofs to have been persisted as all test cases are error cases.
@@ -1217,7 +1218,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 
 			// Assert that no proof submitted events were emitted.
 			events := sdkCtx.EventManager().Events()
-			proofSubmittedEvents := testutilevents.FilterEvents[*prooftypes.EventProofSubmitted](t, events, "poktroll.proof.EventProofSubmitted")
+			proofSubmittedEvents := testutilevents.FilterEvents[*proof.EventProofSubmitted](t, events, "poktroll.proof.EventProofSubmitted")
 			require.Equal(t, 0, len(proofSubmittedEvents))
 		})
 	}
@@ -1230,7 +1231,7 @@ func newFilledSessionTree(
 	ctx context.Context, t *testing.T,
 	numRelays uint,
 	supplierKeyUid, supplierAddr string,
-	sessionTreeHeader, reqHeader, resHeader *sessiontypes.SessionHeader,
+	sessionTreeHeader, reqHeader, resHeader *session.SessionHeader,
 	keyRing keyring.Keyring,
 	ringClient crypto.RingClient,
 ) relayer.SessionTree {
@@ -1255,7 +1256,7 @@ func newFilledSessionTree(
 // newEmptySessionTree creates a new empty session tree with for given session.
 func newEmptySessionTree(
 	t *testing.T,
-	sessionTreeHeader *sessiontypes.SessionHeader,
+	sessionTreeHeader *session.SessionHeader,
 	supplierAddr string,
 ) relayer.SessionTree {
 	t.Helper()
@@ -1272,7 +1273,7 @@ func newEmptySessionTree(
 	accAddress := cosmostypes.MustAccAddressFromBech32(supplierAddr)
 
 	// Construct a session tree to add relays to and generate a proof from.
-	sessionTree, err := session.NewSessionTree(
+	sessionTree, err := relayersession.NewSessionTree(
 		sessionTreeHeader,
 		&accAddress,
 		testSessionTreeStoreDir,
@@ -1290,7 +1291,7 @@ func fillSessionTree(
 	sessionTree relayer.SessionTree,
 	numRelays uint,
 	supplierKeyUid, supplierAddr string,
-	reqHeader, resHeader *sessiontypes.SessionHeader,
+	reqHeader, resHeader *session.SessionHeader,
 	keyRing keyring.Keyring,
 	ringClient crypto.RingClient,
 ) {
@@ -1322,10 +1323,10 @@ func fillSessionTree(
 func newTestProofMsg(
 	t *testing.T,
 	supplierAddr string,
-	sessionHeader *sessiontypes.SessionHeader,
+	sessionHeader *session.SessionHeader,
 	sessionTree relayer.SessionTree,
 	closestProofPath []byte,
-) *prooftypes.MsgSubmitProof {
+) *proof.MsgSubmitProof {
 	t.Helper()
 
 	// Generate a closest proof from the session tree using closestProofPath.
@@ -1337,7 +1338,7 @@ func newTestProofMsg(
 	merkleProofBz, err := merkleProof.Marshal()
 	require.NoError(t, err)
 
-	return &prooftypes.MsgSubmitProof{
+	return &proof.MsgSubmitProof{
 		SupplierAddress: supplierAddr,
 		SessionHeader:   sessionHeader,
 		Proof:           merkleProofBz,
@@ -1355,10 +1356,10 @@ func createClaimAndStoreBlockHash(
 	supplierAddr, appAddr string,
 	service *sharedtypes.Service,
 	sessionTree relayer.SessionTree,
-	sessionHeader *sessiontypes.SessionHeader,
-	msgServer prooftypes.MsgServer,
+	sessionHeader *session.SessionHeader,
+	msgServer proof.MsgServer,
 	keepers *keepertest.ProofModuleKeepers,
-) *prooftypes.Claim {
+) *proof.Claim {
 	merkleRootBz, err := sessionTree.Flush()
 	require.NoError(t, err)
 
@@ -1413,7 +1414,7 @@ func getClosestRelayDifficultyBits(
 	require.NoError(t, err)
 
 	// Extract the Relay (containing the RelayResponse & RelayRequest) from the merkle proof.
-	relay := new(servicetypes.Relay)
+	relay := new(service.Relay)
 	relayBz := closestMerkleProof.GetValueHash(&protocol.SmtSpec)
 	err = relay.Unmarshal(relayBz)
 	require.NoError(t, err)

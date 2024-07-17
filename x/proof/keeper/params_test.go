@@ -7,8 +7,8 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
+	prooftypes "github.com/pokt-network/poktroll/proto/types/proof"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
-	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 )
 
 func TestGetParams(t *testing.T) {

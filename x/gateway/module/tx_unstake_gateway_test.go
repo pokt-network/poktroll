@@ -13,9 +13,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/status"
 
+	"github.com/pokt-network/poktroll/proto/types/gateway"
 	"github.com/pokt-network/poktroll/testutil/network"
-	gateway "github.com/pokt-network/poktroll/x/gateway/module"
-	"github.com/pokt-network/poktroll/x/gateway/types"
+	gatewaymodule "github.com/pokt-network/poktroll/x/gateway/module"
 )
 
 func TestCLI_UnstakeGateway(t *testing.T) {
@@ -53,12 +53,12 @@ func TestCLI_UnstakeGateway(t *testing.T) {
 		{
 			desc: "unstake gateway: missing address",
 			// address explicitly omitted
-			expectedErr: types.ErrGatewayInvalidAddress,
+			expectedErr: gateway.ErrGatewayInvalidAddress,
 		},
 		{
 			desc:        "unstake gateway: invalid address",
 			address:     "invalid",
-			expectedErr: types.ErrGatewayInvalidAddress,
+			expectedErr: gateway.ErrGatewayInvalidAddress,
 		},
 	}
 
@@ -75,7 +75,7 @@ func TestCLI_UnstakeGateway(t *testing.T) {
 			args = append(args, commonArgs...)
 
 			// Execute the command
-			outUnstake, err := clitestutil.ExecTestCLICmd(ctx, gateway.CmdUnstakeGateway(), args)
+			outUnstake, err := clitestutil.ExecTestCLICmd(ctx, gatewaymodule.CmdUnstakeGateway(), args)
 
 			// Validate the error if one is expected
 			if test.expectedErr != nil {

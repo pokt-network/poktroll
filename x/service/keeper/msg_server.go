@@ -1,6 +1,6 @@
 package keeper
 
-import "github.com/pokt-network/poktroll/x/service/types"
+import "github.com/pokt-network/poktroll/proto/types/service"
 
 type msgServer struct {
 	Keeper
@@ -8,8 +8,8 @@ type msgServer struct {
 
 // NewMsgServerImpl returns an implementation of the MsgServer interface
 // for the provided Keeper.
-func NewMsgServerImpl(keeper Keeper) types.MsgServer {
+func NewMsgServerImpl(keeper Keeper) service.MsgServer {
 	return &msgServer{Keeper: keeper}
 }
 
-var _ types.MsgServer = msgServer{}
+var _ service.MsgServer = msgServer{}

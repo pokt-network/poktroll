@@ -6,6 +6,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/pokt-network/poktroll/proto/types/gateway"
 	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/gateway/types"
 )
@@ -13,8 +14,8 @@ import (
 // TODO_BLOCKER(#489): Apps & gateways unbonding periods
 func (k msgServer) UnstakeGateway(
 	goCtx context.Context,
-	msg *types.MsgUnstakeGateway,
-) (*types.MsgUnstakeGatewayResponse, error) {
+	msg *gateway.MsgUnstakeGateway,
+) (*gateway.MsgUnstakeGatewayResponse, error) {
 	isSuccessful := false
 	defer telemetry.EventSuccessCounter(
 		"unstake_gateway",
@@ -33,10 +34,10 @@ func (k msgServer) UnstakeGateway(
 
 	// Check if the gateway already exists or not
 	var err error
-	gateway, isGatewayFound := k.GetGateway(ctx, msg.Address)
+	foundGateway, isGatewayFound := k.GetGateway(ctx, msg.Address)
 	if !isGatewayFound {
 		logger.Info(fmt.Sprintf("Gateway not found. Cannot unstake address %s", msg.Address))
-		return nil, types.ErrGatewayNotFound
+		return nil, gateway.ErrGatewayNotFound
 	}
 	logger.Info(fmt.Sprintf("Gateway found. Unstaking gateway for address %s", msg.Address))
 
@@ -48,22 +49,22 @@ func (k msgServer) UnstakeGateway(
 	}
 
 	// Send the coins from the gateway pool back to the gateway
-	err = k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, gatewayAddress, []sdk.Coin{*gateway.Stake})
+	err = k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, gatewayAddress, []sdk.Coin{*foundGateway.Stake})
 	if err != nil {
-		logger.Error(fmt.Sprintf("could not send %v coins from %s module to %s account due to %v", gateway.Stake, gatewayAddress, types.ModuleName, err))
+		logger.Error(fmt.Sprintf("could not send %v coins from %s module to %s account due to %v", foundGateway.Stake, gatewayAddress, types.ModuleName, err))
 		return nil, err
 	}
 
 	// Update the Gateway in the store
 	k.RemoveGateway(ctx, gatewayAddress.String())
-	logger.Info(fmt.Sprintf("Successfully removed the gateway: %+v", gateway))
+	logger.Info(fmt.Sprintf("Successfully removed the gateway: %+v", foundGateway))
 
-	err = ctx.EventManager().EmitTypedEvent(&types.EventGatewayUnstaked{Address: msg.Address})
+	err = ctx.EventManager().EmitTypedEvent(&gateway.EventGatewayUnstaked{Address: msg.Address})
 	if err != nil {
 		logger.Error(fmt.Sprintf("failed to emit event for unstaking gateway: %v", err))
 		return nil, err
 	}
 
 	isSuccessful = true
-	return &types.MsgUnstakeGatewayResponse{}, nil
+	return &gateway.MsgUnstakeGatewayResponse{}, nil
 }

@@ -14,6 +14,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/proto/types/application"
+	"github.com/pokt-network/poktroll/proto/types/proof"
+	"github.com/pokt-network/poktroll/proto/types/service"
+	"github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/tokenomics"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
@@ -106,14 +111,14 @@ func (s *suite) paramsMapToMsgUpdateParams(moduleName string, paramsMap paramsMa
 func (s *suite) newTokenomicsMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 	authority := authtypes.NewModuleAddress(s.granterName).String()
 
-	msgUpdateParams := &tokenomicstypes.MsgUpdateParams{
+	msgUpdateParams := &tokenomics.MsgUpdateParams{
 		Authority: authority,
-		Params:    tokenomicstypes.Params{},
+		Params:    tokenomics.Params{},
 	}
 
 	for paramName, paramValue := range params {
 		switch paramName {
-		case tokenomicstypes.ParamComputeUnitsToTokensMultiplier:
+		case tokenomics.ParamComputeUnitsToTokensMultiplier:
 			msgUpdateParams.Params.ComputeUnitsToTokensMultiplier = uint64(paramValue.value.(int64))
 		default:
 			s.Fatalf("ERROR: unexpected %q type param name %q", paramValue.typeStr, paramName)
@@ -125,20 +130,20 @@ func (s *suite) newTokenomicsMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 func (s *suite) newProofMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 	authority := authtypes.NewModuleAddress(s.granterName).String()
 
-	msgUpdateParams := &prooftypes.MsgUpdateParams{
+	msgUpdateParams := &proof.MsgUpdateParams{
 		Authority: authority,
-		Params:    prooftypes.Params{},
+		Params:    proof.Params{},
 	}
 
 	for paramName, paramValue := range params {
 		switch paramName {
-		case prooftypes.ParamMinRelayDifficultyBits:
+		case proof.ParamMinRelayDifficultyBits:
 			msgUpdateParams.Params.MinRelayDifficultyBits = uint64(paramValue.value.(int64))
-		case prooftypes.ParamProofRequestProbability:
+		case proof.ParamProofRequestProbability:
 			msgUpdateParams.Params.ProofRequestProbability = paramValue.value.(float32)
-		case prooftypes.ParamProofRequirementThreshold:
+		case proof.ParamProofRequirementThreshold:
 			msgUpdateParams.Params.ProofRequirementThreshold = uint64(paramValue.value.(int64))
-		case prooftypes.ParamProofMissingPenalty:
+		case proof.ParamProofMissingPenalty:
 			msgUpdateParams.Params.ProofMissingPenalty = paramValue.value.(*cosmostypes.Coin)
 		default:
 			s.Fatalf("ERROR: unexpected %q type param name %q", paramValue.typeStr, paramName)
@@ -150,24 +155,24 @@ func (s *suite) newProofMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 func (s *suite) newSharedMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 	authority := authtypes.NewModuleAddress(s.granterName).String()
 
-	msgUpdateParams := &sharedtypes.MsgUpdateParams{
+	msgUpdateParams := &shared.MsgUpdateParams{
 		Authority: authority,
-		Params:    sharedtypes.Params{},
+		Params:    shared.Params{},
 	}
 
 	for paramName, paramValue := range params {
 		switch paramName {
-		case sharedtypes.ParamNumBlocksPerSession:
+		case shared.ParamNumBlocksPerSession:
 			msgUpdateParams.Params.NumBlocksPerSession = uint64(paramValue.value.(int64))
-		case sharedtypes.ParamGracePeriodEndOffsetBlocks:
+		case shared.ParamGracePeriodEndOffsetBlocks:
 			msgUpdateParams.Params.GracePeriodEndOffsetBlocks = uint64(paramValue.value.(int64))
-		case sharedtypes.ParamClaimWindowOpenOffsetBlocks:
+		case shared.ParamClaimWindowOpenOffsetBlocks:
 			msgUpdateParams.Params.ClaimWindowOpenOffsetBlocks = uint64(paramValue.value.(int64))
-		case sharedtypes.ParamClaimWindowCloseOffsetBlocks:
+		case shared.ParamClaimWindowCloseOffsetBlocks:
 			msgUpdateParams.Params.ClaimWindowCloseOffsetBlocks = uint64(paramValue.value.(int64))
-		case sharedtypes.ParamProofWindowOpenOffsetBlocks:
+		case shared.ParamProofWindowOpenOffsetBlocks:
 			msgUpdateParams.Params.ProofWindowOpenOffsetBlocks = uint64(paramValue.value.(int64))
-		case sharedtypes.ParamProofWindowCloseOffsetBlocks:
+		case shared.ParamProofWindowCloseOffsetBlocks:
 			msgUpdateParams.Params.ProofWindowCloseOffsetBlocks = uint64(paramValue.value.(int64))
 		default:
 			s.Fatalf("ERROR: unexpected %q type param name %q", paramValue.typeStr, paramName)
@@ -179,15 +184,15 @@ func (s *suite) newSharedMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 func (s *suite) newAppMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 	authority := authtypes.NewModuleAddress(s.granterName).String()
 
-	msgUpdateParams := &apptypes.MsgUpdateParams{
+	msgUpdateParams := &application.MsgUpdateParams{
 		Authority: authority,
-		Params:    apptypes.Params{},
+		Params:    application.Params{},
 	}
 
 	for paramName, paramValue := range params {
 		s.Logf("paramName: %s, value: %v", paramName, paramValue.value)
 		switch paramName {
-		case apptypes.ParamMaxDelegatedGateways:
+		case application.ParamMaxDelegatedGateways:
 			msgUpdateParams.Params.MaxDelegatedGateways = uint64(paramValue.value.(int64))
 		default:
 			s.Fatalf("ERROR: unexpected %q type param name %q", paramValue.typeStr, paramName)
@@ -199,15 +204,15 @@ func (s *suite) newAppMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 func (s *suite) newServiceMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 	authority := authtypes.NewModuleAddress(s.granterName).String()
 
-	msgUpdateParams := &servicetypes.MsgUpdateParams{
+	msgUpdateParams := &service.MsgUpdateParams{
 		Authority: authority,
-		Params:    servicetypes.Params{},
+		Params:    service.Params{},
 	}
 
 	for paramName, paramValue := range params {
 		s.Logf("paramName: %s, value: %v", paramName, paramValue.value)
 		switch paramName {
-		case servicetypes.ParamAddServiceFee:
+		case service.ParamAddServiceFee:
 			msgUpdateParams.Params.AddServiceFee = uint64(paramValue.value.(int64))
 		default:
 			s.Fatalf("ERROR: unexpected %q type param name %q", paramValue.typeStr, paramName)
@@ -251,26 +256,26 @@ func (s *suite) newMsgUpdateParam(
 func (s *suite) newTokenomicsMsgUpdateParam(authority string, param paramAny) (msg proto.Message) {
 	switch param.typeStr {
 	case "string":
-		msg = proto.Message(&tokenomicstypes.MsgUpdateParam{
+		msg = proto.Message(&tokenomics.MsgUpdateParam{
 			Authority: authority,
 			Name:      param.name,
-			AsType: &tokenomicstypes.MsgUpdateParam_AsString{
+			AsType: &tokenomics.MsgUpdateParam_AsString{
 				AsString: param.value.(string),
 			},
 		})
 	case "int64":
-		msg = proto.Message(&tokenomicstypes.MsgUpdateParam{
+		msg = proto.Message(&tokenomics.MsgUpdateParam{
 			Authority: authority,
 			Name:      param.name,
-			AsType: &tokenomicstypes.MsgUpdateParam_AsInt64{
+			AsType: &tokenomics.MsgUpdateParam_AsInt64{
 				AsInt64: param.value.(int64),
 			},
 		})
 	case "bytes":
-		msg = proto.Message(&tokenomicstypes.MsgUpdateParam{
+		msg = proto.Message(&tokenomics.MsgUpdateParam{
 			Authority: authority,
 			Name:      param.name,
-			AsType: &tokenomicstypes.MsgUpdateParam_AsBytes{
+			AsType: &tokenomics.MsgUpdateParam_AsBytes{
 				AsBytes: param.value.([]byte),
 			},
 		})
@@ -284,42 +289,42 @@ func (s *suite) newTokenomicsMsgUpdateParam(authority string, param paramAny) (m
 func (s *suite) newProofMsgUpdateParam(authority string, param paramAny) (msg proto.Message) {
 	switch param.typeStr {
 	case "string":
-		msg = proto.Message(&prooftypes.MsgUpdateParam{
+		msg = proto.Message(&proof.MsgUpdateParam{
 			Authority: authority,
 			Name:      param.name,
-			AsType: &prooftypes.MsgUpdateParam_AsString{
+			AsType: &proof.MsgUpdateParam_AsString{
 				AsString: param.value.(string),
 			},
 		})
 	case "int64":
-		msg = proto.Message(&prooftypes.MsgUpdateParam{
+		msg = proto.Message(&proof.MsgUpdateParam{
 			Authority: authority,
 			Name:      param.name,
-			AsType: &prooftypes.MsgUpdateParam_AsInt64{
+			AsType: &proof.MsgUpdateParam_AsInt64{
 				AsInt64: param.value.(int64),
 			},
 		})
 	case "bytes":
-		msg = proto.Message(&prooftypes.MsgUpdateParam{
+		msg = proto.Message(&proof.MsgUpdateParam{
 			Authority: authority,
 			Name:      param.name,
-			AsType: &prooftypes.MsgUpdateParam_AsBytes{
+			AsType: &proof.MsgUpdateParam_AsBytes{
 				AsBytes: param.value.([]byte),
 			},
 		})
 	case "float":
-		msg = proto.Message(&prooftypes.MsgUpdateParam{
+		msg = proto.Message(&proof.MsgUpdateParam{
 			Authority: authority,
 			Name:      param.name,
-			AsType: &prooftypes.MsgUpdateParam_AsFloat{
+			AsType: &proof.MsgUpdateParam_AsFloat{
 				AsFloat: param.value.(float32),
 			},
 		})
 	case "coin":
-		msg = proto.Message(&prooftypes.MsgUpdateParam{
+		msg = proto.Message(&proof.MsgUpdateParam{
 			Authority: authority,
 			Name:      param.name,
-			AsType: &prooftypes.MsgUpdateParam_AsCoin{
+			AsType: &proof.MsgUpdateParam_AsCoin{
 				AsCoin: param.value.(*cosmostypes.Coin),
 			},
 		})
@@ -333,26 +338,26 @@ func (s *suite) newProofMsgUpdateParam(authority string, param paramAny) (msg pr
 func (s *suite) newSharedMsgUpdateParam(authority string, param paramAny) (msg proto.Message) {
 	switch param.typeStr {
 	case "string":
-		msg = proto.Message(&sharedtypes.MsgUpdateParam{
+		msg = proto.Message(&shared.MsgUpdateParam{
 			Authority: authority,
 			Name:      param.name,
-			AsType: &sharedtypes.MsgUpdateParam_AsString{
+			AsType: &shared.MsgUpdateParam_AsString{
 				AsString: param.value.(string),
 			},
 		})
 	case "int64":
-		msg = proto.Message(&sharedtypes.MsgUpdateParam{
+		msg = proto.Message(&shared.MsgUpdateParam{
 			Authority: authority,
 			Name:      param.name,
-			AsType: &sharedtypes.MsgUpdateParam_AsInt64{
+			AsType: &shared.MsgUpdateParam_AsInt64{
 				AsInt64: param.value.(int64),
 			},
 		})
 	case "bytes":
-		msg = proto.Message(&sharedtypes.MsgUpdateParam{
+		msg = proto.Message(&shared.MsgUpdateParam{
 			Authority: authority,
 			Name:      param.name,
-			AsType: &sharedtypes.MsgUpdateParam_AsBytes{
+			AsType: &shared.MsgUpdateParam_AsBytes{
 				AsBytes: param.value.([]byte),
 			},
 		})

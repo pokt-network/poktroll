@@ -5,8 +5,8 @@ import (
 
 	"github.com/golang/mock/gomock"
 
+	prooftypes "github.com/pokt-network/poktroll/proto/types/proof"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
-	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 )
 
 // NewTestProofQueryClient creates a mock of the ProofQueryClient which uses the

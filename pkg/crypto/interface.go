@@ -5,9 +5,9 @@ import (
 	"context"
 
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
-	ring "github.com/pokt-network/ring-go"
 
-	"github.com/pokt-network/poktroll/x/service/types"
+	"github.com/pokt-network/poktroll/proto/types/service"
+	ring "github.com/pokt-network/ring-go"
 )
 
 // RingCache is used to store rings used for signing and verifying relay requests.
@@ -43,7 +43,7 @@ type RingClient interface {
 
 	// VerifyRelayRequestSignature verifies the relay request signature against
 	// the ring for the application address in the relay request.
-	VerifyRelayRequestSignature(ctx context.Context, relayRequest *types.RelayRequest) error
+	VerifyRelayRequestSignature(ctx context.Context, relayRequest *service.RelayRequest) error
 }
 
 // PubKeyClient is used to get the public key given an address.

@@ -4,7 +4,8 @@ import (
 	"context"
 
 	"github.com/pokt-network/poktroll/pkg/client"
-	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	"github.com/pokt-network/poktroll/proto/types/application"
+	"github.com/pokt-network/poktroll/proto/types/proof"
 )
 
 var _ client.ApplicationQueryClient = (*AppKeeperQueryClient)(nil)
@@ -29,16 +30,16 @@ func NewAppKeeperQueryClient(appKeeper ApplicationKeeper) client.ApplicationQuer
 func (appQueryClient *AppKeeperQueryClient) GetApplication(
 	ctx context.Context,
 	appAddr string,
-) (apptypes.Application, error) {
+) (application.Application, error) {
 	foundApp, appFound := appQueryClient.keeper.GetApplication(ctx, appAddr)
 	if !appFound {
-		return apptypes.Application{}, ErrProofApplicationNotFound
+		return application.Application{}, proof.ErrProofApplicationNotFound
 	}
 
 	return foundApp, nil
 }
 
 // GetAllApplications returns all the applications in the application store.
-func (appQueryClient *AppKeeperQueryClient) GetAllApplications(ctx context.Context) ([]apptypes.Application, error) {
+func (appQueryClient *AppKeeperQueryClient) GetAllApplications(ctx context.Context) ([]application.Application, error) {
 	return appQueryClient.keeper.GetAllApplications(ctx), nil
 }

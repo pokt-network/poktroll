@@ -7,10 +7,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
+	"github.com/pokt-network/poktroll/proto/types/session"
+	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
-	"github.com/pokt-network/poktroll/x/session/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func init() {
@@ -52,7 +52,7 @@ func TestSession_GetSession_Success(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			req := &types.QueryGetSessionRequest{
+			req := &session.QueryGetSessionRequest{
 				ApplicationAddress: test.appAddr,
 				Service: &sharedtypes.Service{
 					Id: test.serviceId,
@@ -91,7 +91,7 @@ func TestSession_GetSession_Failure(t *testing.T) {
 			serviceId:   keepertest.TestServiceId1,
 			blockHeight: 1,
 
-			expectedErrMsg: types.ErrSessionAppNotFound.Error(),
+			expectedErrMsg: session.ErrSessionAppNotFound.Error(),
 		},
 		{
 			desc: "application staked for service that has no available suppliers",
@@ -100,7 +100,7 @@ func TestSession_GetSession_Failure(t *testing.T) {
 			serviceId:   keepertest.TestServiceId11,
 			blockHeight: 1,
 
-			expectedErrMsg: types.ErrSessionSuppliersNotFound.Error(),
+			expectedErrMsg: session.ErrSessionSuppliersNotFound.Error(),
 		},
 		{
 			desc: "application is valid but not staked for the specified service",
@@ -109,7 +109,7 @@ func TestSession_GetSession_Failure(t *testing.T) {
 			serviceId:   "svc9001", // App1 is not staked for service over 9000
 			blockHeight: 1,
 
-			expectedErrMsg: types.ErrSessionAppNotStakedForService.Error(),
+			expectedErrMsg: session.ErrSessionAppNotStakedForService.Error(),
 		},
 		{
 			desc: "application address is invalid format",
@@ -118,7 +118,7 @@ func TestSession_GetSession_Failure(t *testing.T) {
 			serviceId:   keepertest.TestServiceId1,
 			blockHeight: 1,
 
-			expectedErrMsg: types.ErrSessionInvalidAppAddress.Error(),
+			expectedErrMsg: session.ErrSessionInvalidAppAddress.Error(),
 		},
 		{
 			desc: "service ID is invalid",
@@ -140,11 +140,11 @@ func TestSession_GetSession_Failure(t *testing.T) {
 		},
 	}
 
-	expectedRes := (*types.QueryGetSessionResponse)(nil)
+	expectedRes := (*session.QueryGetSessionResponse)(nil)
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			req := &types.QueryGetSessionRequest{
+			req := &session.QueryGetSessionRequest{
 				ApplicationAddress: test.appAddr,
 				Service: &sharedtypes.Service{
 					Id: test.serviceId,

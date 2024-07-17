@@ -6,12 +6,12 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/proto/types/service"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/x/service/keeper"
-	"github.com/pokt-network/poktroll/x/service/types"
 )
 
-func setupMsgServer(t testing.TB) (keeper.Keeper, types.MsgServer, context.Context) {
+func setupMsgServer(t testing.TB) (keeper.Keeper, service.MsgServer, context.Context) {
 	t.Helper()
 
 	k, ctx := keepertest.ServiceKeeper(t)

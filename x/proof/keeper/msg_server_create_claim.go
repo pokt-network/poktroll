@@ -8,19 +8,19 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/pokt-network/poktroll/proto/types/proof"
+	"github.com/pokt-network/poktroll/proto/types/session"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 	"github.com/pokt-network/poktroll/telemetry"
-	"github.com/pokt-network/poktroll/x/proof/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func (k msgServer) CreateClaim(
 	ctx context.Context,
-	msg *types.MsgCreateClaim,
-) (_ *types.MsgCreateClaimResponse, err error) {
+	msg *proof.MsgCreateClaim,
+) (_ *proof.MsgCreateClaimResponse, err error) {
 	// Declare claim to reference in telemetry.
 	var (
-		claim           types.Claim
+		claim           proof.Claim
 		isExistingClaim bool
 		numRelays       uint64
 		numComputeUnits uint64
@@ -30,9 +30,9 @@ func (k msgServer) CreateClaim(
 	defer func() {
 		// Only increment these metrics counters if handling a new claim.
 		if !isExistingClaim {
-			telemetry.ClaimCounter(types.ClaimProofStage_CLAIMED, 1, err)
-			telemetry.ClaimRelaysCounter(types.ClaimProofStage_CLAIMED, numRelays, err)
-			telemetry.ClaimComputeUnitsCounter(types.ClaimProofStage_CLAIMED, numComputeUnits, err)
+			telemetry.ClaimCounter(proof.ClaimProofStage_CLAIMED, 1, err)
+			telemetry.ClaimRelaysCounter(proof.ClaimProofStage_CLAIMED, numRelays, err)
+			telemetry.ClaimComputeUnitsCounter(proof.ClaimProofStage_CLAIMED, numComputeUnits, err)
 		}
 	}()
 
@@ -44,7 +44,7 @@ func (k msgServer) CreateClaim(
 	}
 
 	// Compare msg session header w/ on-chain session header.
-	var session *sessiontypes.Session
+	var session *session.Session
 	session, err = k.queryAndValidateSessionHeader(ctx, msg)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -72,7 +72,7 @@ func (k msgServer) CreateClaim(
 	logger.Info("validated claim")
 
 	// Assign and upsert claim after all validation.
-	claim = types.Claim{
+	claim = proof.Claim{
 		SupplierAddress: msg.GetSupplierAddress(),
 		SessionHeader:   sessionHeader,
 		RootHash:        msg.GetRootHash(),
@@ -86,11 +86,11 @@ func (k msgServer) CreateClaim(
 
 	numRelays, err = claim.GetNumRelays()
 	if err != nil {
-		return nil, status.Error(codes.Internal, types.ErrProofInvalidClaimRootHash.Wrap(err.Error()).Error())
+		return nil, status.Error(codes.Internal, proof.ErrProofInvalidClaimRootHash.Wrap(err.Error()).Error())
 	}
 	numComputeUnits, err = claim.GetNumComputeUnits()
 	if err != nil {
-		return nil, status.Error(codes.Internal, types.ErrProofInvalidClaimRootHash.Wrap(err.Error()).Error())
+		return nil, status.Error(codes.Internal, proof.ErrProofInvalidClaimRootHash.Wrap(err.Error()).Error())
 	}
 
 	// Emit the appropriate event based on whether the claim was created or updated.
@@ -98,7 +98,7 @@ func (k msgServer) CreateClaim(
 	switch isExistingClaim {
 	case true:
 		claimUpsertEvent = proto.Message(
-			&types.EventClaimUpdated{
+			&proof.EventClaimUpdated{
 				Claim:           &claim,
 				NumRelays:       numRelays,
 				NumComputeUnits: numComputeUnits,
@@ -106,7 +106,7 @@ func (k msgServer) CreateClaim(
 		)
 	case false:
 		claimUpsertEvent = proto.Message(
-			&types.EventClaimCreated{
+			&proof.EventClaimCreated{
 				Claim:           &claim,
 				NumRelays:       numRelays,
 				NumComputeUnits: numComputeUnits,
@@ -118,7 +118,7 @@ func (k msgServer) CreateClaim(
 	if err = sdkCtx.EventManager().EmitTypedEvent(claimUpsertEvent); err != nil {
 		return nil, status.Error(
 			codes.Internal,
-			sharedtypes.ErrSharedEmitEvent.Wrapf(
+			shared.ErrSharedEmitEvent.Wrapf(
 				"failed to emit event type %T: %v",
 				claimUpsertEvent,
 				err,
@@ -127,7 +127,7 @@ func (k msgServer) CreateClaim(
 	}
 
 	// TODO_BETA: return the claim in the response.
-	return &types.MsgCreateClaimResponse{
+	return &proof.MsgCreateClaimResponse{
 		Claim: &claim,
 	}, nil
 }

@@ -10,15 +10,14 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
+	"github.com/pokt-network/poktroll/proto/types/application"
+	"github.com/pokt-network/poktroll/proto/types/gateway"
+	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	testsession "github.com/pokt-network/poktroll/testutil/session"
 	"github.com/pokt-network/poktroll/x/application/keeper"
-	"github.com/pokt-network/poktroll/x/application/types"
-	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	gwtypes "github.com/pokt-network/poktroll/x/gateway/types"
 	"github.com/pokt-network/poktroll/x/shared"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
@@ -37,7 +36,7 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 	}
 
 	// Prepare the application
-	stakeMsg := &types.MsgStakeApplication{
+	stakeMsg := &application.MsgStakeApplication{
 		Address: appAddr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 		Services: []*sharedtypes.ApplicationServiceConfig{
@@ -56,7 +55,7 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 
 	// Prepare the delegation messages and delegate the application to the gateways
 	for _, gatewayAddr := range gatewayAddresses {
-		delegateMsg := &types.MsgDelegateToGateway{
+		delegateMsg := &application.MsgDelegateToGateway{
 			AppAddress:     appAddr,
 			GatewayAddress: gatewayAddr,
 		}
@@ -89,7 +88,7 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 	}
 
 	// Prepare an undelegation message
-	undelegateMsg := &types.MsgUndelegateFromGateway{
+	undelegateMsg := &application.MsgUndelegateFromGateway{
 		AppAddress:     appAddr,
 		GatewayAddress: gatewayAddresses[3],
 	}
@@ -131,7 +130,7 @@ func TestMsgServer_UndelegateFromGateway_FailNotDelegated(t *testing.T) {
 	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr2)
 
 	// Prepare the application
-	stakeMsg := &types.MsgStakeApplication{
+	stakeMsg := &application.MsgStakeApplication{
 		Address: appAddr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 		Services: []*sharedtypes.ApplicationServiceConfig{
@@ -148,14 +147,14 @@ func TestMsgServer_UndelegateFromGateway_FailNotDelegated(t *testing.T) {
 	require.True(t, isAppFound)
 
 	// Prepare the undelegation message
-	undelegateMsg := &types.MsgUndelegateFromGateway{
+	undelegateMsg := &application.MsgUndelegateFromGateway{
 		AppAddress:     appAddr,
 		GatewayAddress: gatewayAddr1,
 	}
 
 	// Attempt to undelgate the application from the gateway
 	_, err = srv.UndelegateFromGateway(ctx, undelegateMsg)
-	require.ErrorIs(t, err, types.ErrAppNotDelegated)
+	require.ErrorIs(t, err, application.ErrAppNotDelegated)
 	foundApp, isAppFound := k.GetApplication(ctx, appAddr)
 	require.True(t, isAppFound)
 	require.Equal(t, appAddr, foundApp.Address)
@@ -167,7 +166,7 @@ func TestMsgServer_UndelegateFromGateway_FailNotDelegated(t *testing.T) {
 	require.Equal(t, 0, len(events))
 
 	// Prepare a delegation message
-	delegateMsg := &types.MsgDelegateToGateway{
+	delegateMsg := &application.MsgDelegateToGateway{
 		AppAddress:     appAddr,
 		GatewayAddress: gatewayAddr2,
 	}
@@ -186,7 +185,7 @@ func TestMsgServer_UndelegateFromGateway_FailNotDelegated(t *testing.T) {
 
 	// Ensure the failed undelegation did not affect the application
 	_, err = srv.UndelegateFromGateway(ctx, undelegateMsg)
-	require.ErrorIs(t, err, types.ErrAppNotDelegated)
+	require.ErrorIs(t, err, application.ErrAppNotDelegated)
 
 	events = sdkCtx.EventManager().Events()
 	require.Equal(t, 1, len(events))
@@ -208,7 +207,7 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegateFromUnstakedGatew
 	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr)
 
 	// Prepare the application
-	stakeMsg := &types.MsgStakeApplication{
+	stakeMsg := &application.MsgStakeApplication{
 		Address: appAddr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 		Services: []*sharedtypes.ApplicationServiceConfig{
@@ -226,7 +225,7 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegateFromUnstakedGatew
 	require.True(t, isAppFound)
 
 	// Prepare the delegation message and delegate the application to the gateway
-	delegateMsg := &types.MsgDelegateToGateway{
+	delegateMsg := &application.MsgDelegateToGateway{
 		AppAddress:     appAddr,
 		GatewayAddress: gatewayAddr,
 	}
@@ -255,7 +254,7 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegateFromUnstakedGatew
 	keepertest.RemoveGatewayFromStakedGatewayMap(t, gatewayAddr)
 
 	// Prepare an undelegation message
-	undelegateMsg := &types.MsgUndelegateFromGateway{
+	undelegateMsg := &application.MsgUndelegateFromGateway{
 		AppAddress:     appAddr,
 		GatewayAddress: gatewayAddr,
 	}
@@ -410,7 +409,7 @@ func TestMsgServer_UndelegateFromGateway_RedelegationAfterUndelegationAtTheSameS
 	sdkCtx = sdkCtx.WithBlockHeight(undelegationHeight + 1)
 
 	// Delegate back the application to the gateway that was undelegated from.
-	delegateMsg := &types.MsgDelegateToGateway{
+	delegateMsg := &application.MsgDelegateToGateway{
 		AppAddress:     app.Address,
 		GatewayAddress: gatewayAddrToRedelegate,
 	}
@@ -483,8 +482,8 @@ func TestMsgServer_UndelegateFromGateway_UndelegateFromUnstakedGateway(t *testin
 	// Auto-undelegation reacts to the unstaked gateway event but since the test
 	// does not exercise the gateway unstaking logic, the event is emitted manually.
 	sdkCtx.EventManager().EmitTypedEvents(
-		&gwtypes.EventGatewayUnstaked{Address: delegateAddr},
-		&gwtypes.EventGatewayUnstaked{Address: pendingUndelegateFromAddr},
+		&gateway.EventGatewayUnstaked{Address: delegateAddr},
+		&gateway.EventGatewayUnstaked{Address: pendingUndelegateFromAddr},
 	)
 
 	k.EndBlockerAutoUndelegateFromUnstakedGateways(sdkCtx)
@@ -507,18 +506,18 @@ func TestMsgServer_UndelegateFromGateway_UndelegateFromUnstakedGateway(t *testin
 func createAppStakeDelegateAndUndelegate(
 	ctx context.Context,
 	t *testing.T,
-	srv types.MsgServer,
+	srv application.MsgServer,
 	k keeper.Keeper,
 	undelegationHeight int64,
 ) (
 	sdkCtx sdk.Context,
-	app types.Application,
+	app application.Application,
 	delegateAddr,
 	pendingUndelegateFromAddr string,
 ) {
 	// Generate an application address and stake the application.
 	appAddr := sample.AccAddress()
-	stakeMsg := &types.MsgStakeApplication{
+	stakeMsg := &application.MsgStakeApplication{
 		Address: appAddr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 		Services: []*sharedtypes.ApplicationServiceConfig{
@@ -535,7 +534,7 @@ func createAppStakeDelegateAndUndelegate(
 	delegateAddr = sample.AccAddress()
 	keepertest.AddGatewayToStakedGatewayMap(t, delegateAddr)
 
-	delegateMsg := &types.MsgDelegateToGateway{
+	delegateMsg := &application.MsgDelegateToGateway{
 		AppAddress:     appAddr,
 		GatewayAddress: delegateAddr,
 	}
@@ -545,7 +544,7 @@ func createAppStakeDelegateAndUndelegate(
 	pendingUndelegateFromAddr = sample.AccAddress()
 	keepertest.AddGatewayToStakedGatewayMap(t, pendingUndelegateFromAddr)
 
-	delegateMsg = &types.MsgDelegateToGateway{
+	delegateMsg = &application.MsgDelegateToGateway{
 		AppAddress:     appAddr,
 		GatewayAddress: pendingUndelegateFromAddr,
 	}
@@ -556,7 +555,7 @@ func createAppStakeDelegateAndUndelegate(
 	sdkCtx = sdk.UnwrapSDKContext(ctx).WithBlockHeight(undelegationHeight)
 
 	// Undelegate from the first gateway.
-	undelegateMsg := &types.MsgUndelegateFromGateway{
+	undelegateMsg := &application.MsgUndelegateFromGateway{
 		AppAddress:     appAddr,
 		GatewayAddress: pendingUndelegateFromAddr,
 	}
@@ -595,7 +594,7 @@ func getNumBlocksUndelegationRetentionWithDefaultParams() int64 {
 // should still be part of the ring at the given block height.
 // The ring addresses slice is reconstructed by adding back the past delegated
 // gateways that have been undelegated after the target session end height.
-func getRingAddressesAtBlockWithDefaultParams(app *apptypes.Application, blockHeight int64) []string {
+func getRingAddressesAtBlockWithDefaultParams(app *application.Application, blockHeight int64) []string {
 	sharedParams := sharedtypes.DefaultParams()
 	return rings.GetRingAddressesAtBlock(&sharedParams, app, blockHeight)
 }

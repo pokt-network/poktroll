@@ -5,22 +5,22 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/proto/types/shared"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
-	shared "github.com/pokt-network/poktroll/x/shared/module"
-	"github.com/pokt-network/poktroll/x/shared/types"
+	sharedmodule "github.com/pokt-network/poktroll/x/shared/module"
 )
 
 func TestGenesis(t *testing.T) {
-	genesisState := types.GenesisState{
-		Params: types.DefaultParams(),
+	genesisState := shared.GenesisState{
+		Params: shared.DefaultParams(),
 
 		// this line is used by starport scaffolding # genesis/test/state
 	}
 
 	k, ctx := keepertest.SharedKeeper(t)
-	shared.InitGenesis(ctx, k, genesisState)
-	got := shared.ExportGenesis(ctx, k)
+	sharedmodule.InitGenesis(ctx, k, genesisState)
+	got := sharedmodule.ExportGenesis(ctx, k)
 	require.NotNil(t, got)
 
 	nullify.Fill(&genesisState)

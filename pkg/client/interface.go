@@ -28,9 +28,9 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
-	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	apptypes "github.com/pokt-network/poktroll/proto/types/application"
+	sessiontypes "github.com/pokt-network/poktroll/proto/types/session"
+	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
 )
 
 // MsgCreateClaim is an interface satisfying proof.MsgCreateClaim concrete type

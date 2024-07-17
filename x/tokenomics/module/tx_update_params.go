@@ -8,7 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/spf13/cobra"
 
-	"github.com/pokt-network/poktroll/x/tokenomics/types"
+	"github.com/pokt-network/poktroll/proto/types/tokenomics"
 )
 
 var _ = strconv.Itoa(0)
@@ -39,7 +39,7 @@ $ poktrolld tx tokenomics update-params <compute_units_to_tokens_multiplier> --f
 			}
 
 			// Create update params message
-			msg := types.NewMsgUpdateParams(
+			msg := tokenomics.NewMsgUpdateParams(
 				clientCtx.GetFromAddress().String(),
 				computeUnitsToTokensMultiplier,
 			)

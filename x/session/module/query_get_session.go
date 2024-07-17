@@ -8,7 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/spf13/cobra"
 
-	"github.com/pokt-network/poktroll/x/session/types"
+	"github.com/pokt-network/poktroll/proto/types/session"
 )
 
 var _ = strconv.Itoa(0)
@@ -37,7 +37,7 @@ $ poktrolld q session get-session pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4 sv
 				return fmt.Errorf("couldn't convert block height to int: %s; (%v)", blockHeightString, parseErr)
 			}
 
-			getSessionReq := types.NewQueryGetSessionRequest(appAddressString, serviceIdString, blockHeight)
+			getSessionReq := session.NewQueryGetSessionRequest(appAddressString, serviceIdString, blockHeight)
 			if err := getSessionReq.ValidateBasic(); err != nil {
 				return err
 			}
@@ -46,7 +46,7 @@ $ poktrolld q session get-session pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4 sv
 			if ctxErr != nil {
 				return ctxErr
 			}
-			queryClient := types.NewQueryClient(clientCtx)
+			queryClient := session.NewQueryClient(clientCtx)
 
 			getSessionRes, sessionErr := queryClient.GetSession(cmd.Context(), getSessionReq)
 			if sessionErr != nil {

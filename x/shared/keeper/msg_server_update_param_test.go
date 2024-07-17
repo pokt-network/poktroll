@@ -9,8 +9,8 @@ import (
 
 	"github.com/pokt-network/poktroll/x/shared/keeper"
 
+	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func TestMsgUpdateParam_UpdateNumBlocksPerSession(t *testing.T) {

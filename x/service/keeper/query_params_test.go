@@ -5,16 +5,16 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/proto/types/service"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
-	"github.com/pokt-network/poktroll/x/service/types"
 )
 
 func TestParamsQuery(t *testing.T) {
 	keeper, ctx := keepertest.ServiceKeeper(t)
-	params := types.DefaultParams()
+	params := service.DefaultParams()
 	require.NoError(t, keeper.SetParams(ctx, params))
 
-	response, err := keeper.Params(ctx, &types.QueryParamsRequest{})
+	response, err := keeper.Params(ctx, &service.QueryParamsRequest{})
 	require.NoError(t, err)
-	require.Equal(t, &types.QueryParamsResponse{Params: params}, response)
+	require.Equal(t, &service.QueryParamsResponse{Params: params}, response)
 }

@@ -8,10 +8,10 @@ import (
 	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"
 
+	prooftypes "github.com/pokt-network/poktroll/proto/types/proof"
+	sessiontypes "github.com/pokt-network/poktroll/proto/types/session"
+	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
 	testsession "github.com/pokt-network/poktroll/testutil/session"
-	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // BaseClaim returns a base (default, example, etc..) claim with the given app

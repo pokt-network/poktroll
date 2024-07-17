@@ -5,18 +5,18 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/proto/types/service"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
-	service "github.com/pokt-network/poktroll/x/service/module"
-	"github.com/pokt-network/poktroll/x/service/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	servicemodule "github.com/pokt-network/poktroll/x/service/module"
 )
 
 func TestGenesis(t *testing.T) {
-	genesisState := types.GenesisState{
-		Params: types.DefaultParams(),
+	genesisState := service.GenesisState{
+		Params: service.DefaultParams(),
 
-		ServiceList: []sharedtypes.Service{
+		ServiceList: []shared.Service{
 			{
 				Id:   "svc1",
 				Name: "service one",
@@ -30,8 +30,8 @@ func TestGenesis(t *testing.T) {
 	}
 
 	k, ctx := keepertest.ServiceKeeper(t)
-	service.InitGenesis(ctx, k, genesisState)
-	got := service.ExportGenesis(ctx, k)
+	servicemodule.InitGenesis(ctx, k, genesisState)
+	got := servicemodule.ExportGenesis(ctx, k)
 	require.NotNil(t, got)
 
 	nullify.Fill(&genesisState)

@@ -6,12 +6,13 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/supplier"
 	"github.com/pokt-network/poktroll/telemetry"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplier) (*types.MsgStakeSupplierResponse, error) {
+func (k msgServer) StakeSupplier(ctx context.Context, msg *supplier.MsgStakeSupplier) (*supplier.MsgStakeSupplierResponse, error) {
 	isSuccessful := false
 	defer telemetry.EventSuccessCounter(
 		"stake_supplier",
@@ -31,23 +32,23 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 	for _, serviceConfig := range msg.Services {
 		if _, serviceFound := k.serviceKeeper.GetService(ctx, serviceConfig.Service.Id); !serviceFound {
 			logger.Error(fmt.Sprintf("service %q does not exist", serviceConfig.Service.Id))
-			return nil, types.ErrSupplierServiceNotFound.Wrapf("service %q does not exist", serviceConfig.Service.Id)
+			return nil, supplier.ErrSupplierServiceNotFound.Wrapf("service %q does not exist", serviceConfig.Service.Id)
 		}
 	}
 
 	// Check if the supplier already exists or not
 	var err error
 	var coinsToEscrow sdk.Coin
-	supplier, isSupplierFound := k.GetSupplier(ctx, msg.Address)
+	supplierToStake, isSupplierFound := k.GetSupplier(ctx, msg.Address)
 
 	if !isSupplierFound {
 		logger.Info(fmt.Sprintf("Supplier not found. Creating new supplier for address %q", msg.Address))
-		supplier = k.createSupplier(ctx, msg)
+		supplierToStake = k.createSupplier(ctx, msg)
 		coinsToEscrow = *msg.Stake
 	} else {
 		logger.Info(fmt.Sprintf("Supplier found. About to try updating supplier with address %q", msg.Address))
-		currSupplierStake := *supplier.Stake
-		if err = k.updateSupplier(ctx, &supplier, msg); err != nil {
+		currSupplierStake := *supplierToStake.Stake
+		if err = k.updateSupplier(ctx, &supplierToStake, msg); err != nil {
 			logger.Error(fmt.Sprintf("could not update supplier for address %q due to error %v", msg.Address, err))
 			return nil, err
 		}
@@ -61,7 +62,7 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 	// Must always stake or upstake (> 0 delta)
 	if coinsToEscrow.IsZero() {
 		logger.Warn(fmt.Sprintf("Supplier %q must escrow more than 0 additional coins", msg.Address))
-		return nil, types.ErrSupplierInvalidStake.Wrapf("supplier %q must escrow more than 0 additional coins", msg.Address)
+		return nil, supplier.ErrSupplierInvalidStake.Wrapf("supplier %q must escrow more than 0 additional coins", msg.Address)
 	}
 
 	// Retrieve the address of the supplier
@@ -80,16 +81,16 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 	logger.Info(fmt.Sprintf("Successfully escrowed %v coins from %q to %q module account", coinsToEscrow, supplierAddress, types.ModuleName))
 
 	// Update the Supplier in the store
-	k.SetSupplier(ctx, supplier)
-	logger.Info(fmt.Sprintf("Successfully updated supplier stake for supplier: %+v", supplier))
+	k.SetSupplier(ctx, supplierToStake)
+	logger.Info(fmt.Sprintf("Successfully updated supplier stake for supplier: %+v", supplierToStake))
 
 	isSuccessful = true
-	return &types.MsgStakeSupplierResponse{}, nil
+	return &supplier.MsgStakeSupplierResponse{}, nil
 }
 
 func (k msgServer) createSupplier(
 	_ context.Context,
-	msg *types.MsgStakeSupplier,
+	msg *supplier.MsgStakeSupplier,
 ) sharedtypes.Supplier {
 	return sharedtypes.Supplier{
 		Address:  msg.Address,
@@ -100,30 +101,30 @@ func (k msgServer) createSupplier(
 
 func (k msgServer) updateSupplier(
 	_ context.Context,
-	supplier *sharedtypes.Supplier,
-	msg *types.MsgStakeSupplier,
+	supplierToUpdate *sharedtypes.Supplier,
+	msg *supplier.MsgStakeSupplier,
 ) error {
 	// Checks if the the msg address is the same as the current owner
-	if msg.Address != supplier.Address {
-		return types.ErrSupplierUnauthorized.Wrapf("msg Address %q != supplier address %q", msg.Address, supplier.Address)
+	if msg.Address != supplierToUpdate.Address {
+		return supplier.ErrSupplierUnauthorized.Wrapf("msg Address %q != supplier address %q", msg.Address, supplierToUpdate.Address)
 	}
 
 	// Validate that the stake is not being lowered
 	if msg.Stake == nil {
-		return types.ErrSupplierInvalidStake.Wrapf("stake amount cannot be nil")
+		return supplier.ErrSupplierInvalidStake.Wrapf("stake amount cannot be nil")
 	}
-	if msg.Stake.IsLTE(*supplier.Stake) {
+	if msg.Stake.IsLTE(*supplierToUpdate.Stake) {
 
-		return types.ErrSupplierInvalidStake.Wrapf("stake amount %v must be higher than previous stake amount %v", msg.Stake, supplier.Stake)
+		return supplier.ErrSupplierInvalidStake.Wrapf("stake amount %v must be higher than previous stake amount %v", msg.Stake, supplierToUpdate.Stake)
 	}
-	supplier.Stake = msg.Stake
+	supplierToUpdate.Stake = msg.Stake
 
 	// Validate that the service configs maintain at least one service.
 	// Additional validation is done in `msg.ValidateBasic` above.
 	if len(msg.Services) == 0 {
-		return types.ErrSupplierInvalidServiceConfig.Wrapf("must have at least one service")
+		return supplier.ErrSupplierInvalidServiceConfig.Wrapf("must have at least one service")
 	}
-	supplier.Services = msg.Services
+	supplierToUpdate.Services = msg.Services
 
 	return nil
 }

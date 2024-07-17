@@ -41,31 +41,39 @@ import (
 	"github.com/pokt-network/poktroll/pkg/crypto"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
+	"github.com/pokt-network/poktroll/proto/types/application"
+	"github.com/pokt-network/poktroll/proto/types/gateway"
+	"github.com/pokt-network/poktroll/proto/types/proof"
+	"github.com/pokt-network/poktroll/proto/types/service"
+	"github.com/pokt-network/poktroll/proto/types/session"
+	"github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/supplier"
+	"github.com/pokt-network/poktroll/proto/types/tokenomics"
 	testutilevents "github.com/pokt-network/poktroll/testutil/events"
 	"github.com/pokt-network/poktroll/testutil/testkeyring"
 	appkeeper "github.com/pokt-network/poktroll/x/application/keeper"
-	application "github.com/pokt-network/poktroll/x/application/module"
+	applicationmodule "github.com/pokt-network/poktroll/x/application/module"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gatewaykeeper "github.com/pokt-network/poktroll/x/gateway/keeper"
-	gateway "github.com/pokt-network/poktroll/x/gateway/module"
+	gatewaymodule "github.com/pokt-network/poktroll/x/gateway/module"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 	proofkeeper "github.com/pokt-network/poktroll/x/proof/keeper"
-	proof "github.com/pokt-network/poktroll/x/proof/module"
+	proofmodule "github.com/pokt-network/poktroll/x/proof/module"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
-	service "github.com/pokt-network/poktroll/x/service/module"
+	servicemodule "github.com/pokt-network/poktroll/x/service/module"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
-	session "github.com/pokt-network/poktroll/x/session/module"
+	sessionmodule "github.com/pokt-network/poktroll/x/session/module"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedkeeper "github.com/pokt-network/poktroll/x/shared/keeper"
-	shared "github.com/pokt-network/poktroll/x/shared/module"
+	sharedmodule "github.com/pokt-network/poktroll/x/shared/module"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	supplierkeeper "github.com/pokt-network/poktroll/x/supplier/keeper"
-	supplier "github.com/pokt-network/poktroll/x/supplier/module"
+	suppliermodule "github.com/pokt-network/poktroll/x/supplier/module"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tokenomicskeeper "github.com/pokt-network/poktroll/x/tokenomics/keeper"
-	tokenomics "github.com/pokt-network/poktroll/x/tokenomics/module"
+	tokenomicsmodule "github.com/pokt-network/poktroll/x/tokenomics/module"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
@@ -90,10 +98,10 @@ type App struct {
 	// Some default helper fixtures for general testing.
 	// They're publically exposed and should/could be improve and expand on
 	// over time.
-	DefaultService                   *sharedtypes.Service
-	DefaultApplication               *apptypes.Application
+	DefaultService                   *shared.Service
+	DefaultApplication               *application.Application
 	DefaultApplicationKeyringUid     string
-	DefaultSupplier                  *sharedtypes.Supplier
+	DefaultSupplier                  *shared.Supplier
 	DefaultSupplierKeyringKeyringUid string
 }
 
@@ -186,16 +194,16 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 
 	// Prepare & register the codec for all the interfaces
 	registry := codectypes.NewInterfaceRegistry()
-	tokenomicstypes.RegisterInterfaces(registry)
-	sharedtypes.RegisterInterfaces(registry)
+	tokenomics.RegisterInterfaces(registry)
+	shared.RegisterInterfaces(registry)
 	banktypes.RegisterInterfaces(registry)
-	gatewaytypes.RegisterInterfaces(registry)
+	gateway.RegisterInterfaces(registry)
 	authtypes.RegisterInterfaces(registry)
-	sessiontypes.RegisterInterfaces(registry)
-	apptypes.RegisterInterfaces(registry)
-	suppliertypes.RegisterInterfaces(registry)
-	prooftypes.RegisterInterfaces(registry)
-	servicetypes.RegisterInterfaces(registry)
+	session.RegisterInterfaces(registry)
+	application.RegisterInterfaces(registry)
+	supplier.RegisterInterfaces(registry)
+	proof.RegisterInterfaces(registry)
+	service.RegisterInterfaces(registry)
 	authtypes.RegisterInterfaces(registry)
 	cosmostypes.RegisterInterfaces(registry)
 	cryptocodec.RegisterInterfaces(registry)
@@ -276,7 +284,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		logger,
 		authority.String(),
 	)
-	sharedModule := shared.NewAppModule(
+	sharedModule := sharedmodule.NewAppModule(
 		cdc,
 		sharedKeeper,
 		accountKeeper,
@@ -291,7 +299,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		authority.String(),
 		bankKeeper,
 	)
-	serviceModule := service.NewAppModule(
+	serviceModule := servicemodule.NewAppModule(
 		cdc,
 		serviceKeeper,
 		accountKeeper,
@@ -306,7 +314,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		authority.String(),
 		bankKeeper,
 	)
-	gatewayModule := gateway.NewAppModule(
+	gatewayModule := gatewaymodule.NewAppModule(
 		cdc,
 		gatewayKeeper,
 		accountKeeper,
@@ -324,7 +332,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		gatewayKeeper,
 		sharedKeeper,
 	)
-	applicationModule := application.NewAppModule(
+	applicationModule := applicationmodule.NewAppModule(
 		cdc,
 		applicationKeeper,
 		accountKeeper,
@@ -340,7 +348,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		bankKeeper,
 		serviceKeeper,
 	)
-	supplierModule := supplier.NewAppModule(
+	supplierModule := suppliermodule.NewAppModule(
 		cdc,
 		supplierKeeper,
 		accountKeeper,
@@ -360,7 +368,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		supplierKeeper,
 		sharedKeeper,
 	)
-	sessionModule := session.NewAppModule(
+	sessionModule := sessionmodule.NewAppModule(
 		cdc,
 		sessionKeeper,
 		accountKeeper,
@@ -378,7 +386,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		accountKeeper,
 		sharedKeeper,
 	)
-	proofModule := proof.NewAppModule(
+	proofModule := proofmodule.NewAppModule(
 		cdc,
 		proofKeeper,
 		accountKeeper,
@@ -397,7 +405,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		sharedKeeper,
 		sessionKeeper,
 	)
-	tokenomicsModule := tokenomics.NewAppModule(
+	tokenomicsModule := tokenomicsmodule.NewAppModule(
 		cdc,
 		tokenomicsKeeper,
 		accountKeeper,
@@ -436,43 +444,43 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	)
 
 	// Register the message servers
-	tokenomicstypes.RegisterMsgServer(msgRouter, tokenomicskeeper.NewMsgServerImpl(tokenomicsKeeper))
-	servicetypes.RegisterMsgServer(msgRouter, servicekeeper.NewMsgServerImpl(serviceKeeper))
-	sharedtypes.RegisterMsgServer(msgRouter, sharedkeeper.NewMsgServerImpl(sharedKeeper))
-	gatewaytypes.RegisterMsgServer(msgRouter, gatewaykeeper.NewMsgServerImpl(gatewayKeeper))
-	apptypes.RegisterMsgServer(msgRouter, appkeeper.NewMsgServerImpl(applicationKeeper))
-	suppliertypes.RegisterMsgServer(msgRouter, supplierkeeper.NewMsgServerImpl(supplierKeeper))
-	prooftypes.RegisterMsgServer(msgRouter, proofkeeper.NewMsgServerImpl(proofKeeper))
+	tokenomics.RegisterMsgServer(msgRouter, tokenomicskeeper.NewMsgServerImpl(tokenomicsKeeper))
+	service.RegisterMsgServer(msgRouter, servicekeeper.NewMsgServerImpl(serviceKeeper))
+	shared.RegisterMsgServer(msgRouter, sharedkeeper.NewMsgServerImpl(sharedKeeper))
+	gateway.RegisterMsgServer(msgRouter, gatewaykeeper.NewMsgServerImpl(gatewayKeeper))
+	application.RegisterMsgServer(msgRouter, appkeeper.NewMsgServerImpl(applicationKeeper))
+	supplier.RegisterMsgServer(msgRouter, supplierkeeper.NewMsgServerImpl(supplierKeeper))
+	proof.RegisterMsgServer(msgRouter, proofkeeper.NewMsgServerImpl(proofKeeper))
 	authtypes.RegisterMsgServer(msgRouter, authkeeper.NewMsgServerImpl(accountKeeper))
-	sessiontypes.RegisterMsgServer(msgRouter, sessionkeeper.NewMsgServerImpl(sessionKeeper))
+	session.RegisterMsgServer(msgRouter, sessionkeeper.NewMsgServerImpl(sessionKeeper))
 
 	// Register query servers
-	tokenomicstypes.RegisterQueryServer(queryHelper, tokenomicsKeeper)
-	servicetypes.RegisterQueryServer(queryHelper, serviceKeeper)
-	sharedtypes.RegisterQueryServer(queryHelper, sharedKeeper)
-	gatewaytypes.RegisterQueryServer(queryHelper, gatewayKeeper)
-	apptypes.RegisterQueryServer(queryHelper, applicationKeeper)
-	suppliertypes.RegisterQueryServer(queryHelper, supplierKeeper)
-	prooftypes.RegisterQueryServer(queryHelper, proofKeeper)
+	tokenomics.RegisterQueryServer(queryHelper, tokenomicsKeeper)
+	service.RegisterQueryServer(queryHelper, serviceKeeper)
+	shared.RegisterQueryServer(queryHelper, sharedKeeper)
+	gateway.RegisterQueryServer(queryHelper, gatewayKeeper)
+	application.RegisterQueryServer(queryHelper, applicationKeeper)
+	supplier.RegisterQueryServer(queryHelper, supplierKeeper)
+	proof.RegisterQueryServer(queryHelper, proofKeeper)
 	// TODO_TECHDEBT: What is the query server for authtypes?
 	// authtypes.RegisterQueryServer(queryHelper, accountKeeper)
-	sessiontypes.RegisterQueryServer(queryHelper, sessionKeeper)
+	session.RegisterQueryServer(queryHelper, sessionKeeper)
 
 	// Need to go to the next block to finalize the genesis and setup
 	integrationApp.NextBlock(t)
 
 	// Set the default params for all the modules
-	err := sharedKeeper.SetParams(integrationApp.GetSdkCtx(), sharedtypes.DefaultParams())
+	err := sharedKeeper.SetParams(integrationApp.GetSdkCtx(), shared.DefaultParams())
 	require.NoError(t, err)
-	err = tokenomicsKeeper.SetParams(integrationApp.GetSdkCtx(), tokenomicstypes.DefaultParams())
+	err = tokenomicsKeeper.SetParams(integrationApp.GetSdkCtx(), tokenomics.DefaultParams())
 	require.NoError(t, err)
-	err = proofKeeper.SetParams(integrationApp.GetSdkCtx(), prooftypes.DefaultParams())
+	err = proofKeeper.SetParams(integrationApp.GetSdkCtx(), proof.DefaultParams())
 	require.NoError(t, err)
-	err = sessionKeeper.SetParams(integrationApp.GetSdkCtx(), sessiontypes.DefaultParams())
+	err = sessionKeeper.SetParams(integrationApp.GetSdkCtx(), session.DefaultParams())
 	require.NoError(t, err)
-	err = gatewayKeeper.SetParams(integrationApp.GetSdkCtx(), gatewaytypes.DefaultParams())
+	err = gatewayKeeper.SetParams(integrationApp.GetSdkCtx(), gateway.DefaultParams())
 	require.NoError(t, err)
-	err = applicationKeeper.SetParams(integrationApp.GetSdkCtx(), apptypes.DefaultParams())
+	err = applicationKeeper.SetParams(integrationApp.GetSdkCtx(), application.DefaultParams())
 	require.NoError(t, err)
 
 	// Prepare default testing fixtures //
@@ -485,7 +493,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	preGeneratedAccts := testkeyring.PreGeneratedAccounts()
 
 	// Prepare a new default service
-	defaultService := sharedtypes.Service{
+	defaultService := shared.Service{
 		Id:   "svc1",
 		Name: "svcName1",
 	}
@@ -504,10 +512,10 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 
 	// Prepare the on-chain supplier
 	supplierStake := types.NewCoin("upokt", math.NewInt(1000000))
-	defaultSupplier := sharedtypes.Supplier{
+	defaultSupplier := shared.Supplier{
 		Address: supplierAddr.String(),
 		Stake:   &supplierStake,
-		Services: []*sharedtypes.SupplierServiceConfig{
+		Services: []*shared.SupplierServiceConfig{
 			{
 				Service: &defaultService,
 			},
@@ -528,10 +536,10 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 
 	// Prepare the on-chain supplier
 	appStake := types.NewCoin("upokt", math.NewInt(1000000))
-	defaultApplication := apptypes.Application{
+	defaultApplication := application.Application{
 		Address: applicationAddr.String(),
 		Stake:   &appStake,
-		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
+		ServiceConfigs: []*shared.ApplicationServiceConfig{
 			{
 				Service: &defaultService,
 			},

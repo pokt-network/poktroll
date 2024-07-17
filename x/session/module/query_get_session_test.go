@@ -11,8 +11,8 @@ import (
 	"github.com/gogo/status"
 	"github.com/stretchr/testify/require"
 
-	session "github.com/pokt-network/poktroll/x/session/module"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	"github.com/pokt-network/poktroll/proto/types/session"
+	sessionmodule "github.com/pokt-network/poktroll/x/session/module"
 )
 
 func TestCLI_GetSession(t *testing.T) {
@@ -96,7 +96,7 @@ func TestCLI_GetSession(t *testing.T) {
 			serviceId:   "svc9001", // appSvc0 is only staked for svc0 (has supplier) and svc00 (doesn't have supplier) and is not staked for service over 9000
 			blockHeight: 0,
 
-			expectedErr: sessiontypes.ErrSessionAppNotStakedForService,
+			expectedErr: session.ErrSessionAppNotStakedForService,
 		},
 		{
 			desc: "invalid - no suppliers staked for service",
@@ -105,7 +105,7 @@ func TestCLI_GetSession(t *testing.T) {
 			serviceId:   "svc00",         // appSvc0 is only staked for svc0 (has supplier) and svc00 (doesn't have supplier)
 			blockHeight: 0,
 
-			expectedErr: sessiontypes.ErrSessionSuppliersNotFound,
+			expectedErr: session.ErrSessionSuppliersNotFound,
 		},
 		{
 			desc: "invalid - block height is in the future",
@@ -114,7 +114,7 @@ func TestCLI_GetSession(t *testing.T) {
 			serviceId:   "svc0",
 			blockHeight: 9001, // block height over 9000 is greater than the context height of 10
 
-			expectedErr: sessiontypes.ErrSessionInvalidBlockHeight,
+			expectedErr: session.ErrSessionInvalidBlockHeight,
 		},
 
 		// Invalid requests - bad app address input
@@ -125,7 +125,7 @@ func TestCLI_GetSession(t *testing.T) {
 			serviceId:   "svc0",
 			blockHeight: 0,
 
-			expectedErr: sessiontypes.ErrSessionInvalidAppAddress,
+			expectedErr: session.ErrSessionInvalidAppAddress,
 		},
 		{
 			desc: "invalid - missing appAddress",
@@ -133,7 +133,7 @@ func TestCLI_GetSession(t *testing.T) {
 			serviceId:   "svc0",
 			blockHeight: 0,
 
-			expectedErr: sessiontypes.ErrSessionInvalidAppAddress,
+			expectedErr: session.ErrSessionInvalidAppAddress,
 		},
 
 		// Invalid requests - bad serviceID input
@@ -143,7 +143,7 @@ func TestCLI_GetSession(t *testing.T) {
 			serviceId:   "invalidServiceId",
 			blockHeight: 0,
 
-			expectedErr: sessiontypes.ErrSessionInvalidService,
+			expectedErr: session.ErrSessionInvalidService,
 		},
 		{
 			desc:       "invalid - missing service ID",
@@ -151,7 +151,7 @@ func TestCLI_GetSession(t *testing.T) {
 			// serviceId explicitly omitted
 			blockHeight: 0,
 
-			expectedErr: sessiontypes.ErrSessionInvalidService,
+			expectedErr: session.ErrSessionInvalidService,
 		},
 	}
 
@@ -172,7 +172,7 @@ func TestCLI_GetSession(t *testing.T) {
 			args = append(args, common...)
 
 			// Execute the command
-			getSessionOut, err := clitestutil.ExecTestCLICmd(ctx, session.CmdGetSession(), args)
+			getSessionOut, err := clitestutil.ExecTestCLICmd(ctx, sessionmodule.CmdGetSession(), args)
 			if test.expectedErr != nil {
 				stat, ok := status.FromError(test.expectedErr)
 				require.True(t, ok)
@@ -181,7 +181,7 @@ func TestCLI_GetSession(t *testing.T) {
 			}
 			require.NoError(t, err, "TODO_FLAKY: Try re-running with 'go test -v -count=1 -run TestCLI_GetSession/valid_-_block_height_specified_and_is_greater_than_zero ./x/session/module/...'")
 
-			var getSessionRes sessiontypes.QueryGetSessionResponse
+			var getSessionRes session.QueryGetSessionResponse
 			err = net.Config.Codec.UnmarshalJSON(getSessionOut.Bytes(), &getSessionRes)
 			require.NoError(t, err)
 			require.NotNil(t, getSessionRes)

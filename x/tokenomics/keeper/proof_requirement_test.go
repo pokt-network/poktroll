@@ -9,10 +9,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	poktrand "github.com/pokt-network/poktroll/pkg/crypto/rand"
+	prooftypes "github.com/pokt-network/poktroll/proto/types/proof"
 	"github.com/pokt-network/poktroll/testutil/keeper"
 	tetsproof "github.com/pokt-network/poktroll/testutil/proof"
 	"github.com/pokt-network/poktroll/testutil/sample"
-	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 )
 
 func TestKeeper_IsProofRequired(t *testing.T) {

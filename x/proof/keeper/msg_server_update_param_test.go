@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app/volatile"
+	prooftypes "github.com/pokt-network/poktroll/proto/types/proof"
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
-	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 )
 
 func TestMsgUpdateParam_UpdateMinRelayDifficultyBitsOnly(t *testing.T) {

@@ -1,7 +1,7 @@
 package keeper
 
 import (
-	"github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 )
 
-var _ types.QueryServer = Keeper{}
+var _ shared.QueryServer = Keeper{}

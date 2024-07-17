@@ -7,11 +7,11 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/proto/types/application"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/x/application/keeper"
-	"github.com/pokt-network/poktroll/x/application/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
@@ -26,12 +26,12 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.False(t, isAppFound)
 
 	// Prepare the application
-	stakeMsg := &types.MsgStakeApplication{
+	stakeMsg := &application.MsgStakeApplication{
 		Address: appAddr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
-		Services: []*sharedtypes.ApplicationServiceConfig{
+		Services: []*shared.ApplicationServiceConfig{
 			{
-				Service: &sharedtypes.Service{Id: "svc1"},
+				Service: &shared.Service{Id: "svc1"},
 			},
 		},
 	}
@@ -49,15 +49,15 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.Equal(t, "svc1", foundApp.ServiceConfigs[0].Service.Id)
 
 	// Prepare an updated application with a higher stake and another service
-	updateStakeMsg := &types.MsgStakeApplication{
+	updateStakeMsg := &application.MsgStakeApplication{
 		Address: appAddr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(200)},
-		Services: []*sharedtypes.ApplicationServiceConfig{
+		Services: []*shared.ApplicationServiceConfig{
 			{
-				Service: &sharedtypes.Service{Id: "svc1"},
+				Service: &shared.Service{Id: "svc1"},
 			},
 			{
-				Service: &sharedtypes.Service{Id: "svc2"},
+				Service: &shared.Service{Id: "svc2"},
 			},
 		},
 	}
@@ -80,12 +80,12 @@ func TestMsgServer_StakeApplication_FailRestakingDueToInvalidServices(t *testing
 	appAddr := sample.AccAddress()
 
 	// Prepare the application stake message
-	stakeMsg := &types.MsgStakeApplication{
+	stakeMsg := &application.MsgStakeApplication{
 		Address: appAddr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
-		Services: []*sharedtypes.ApplicationServiceConfig{
+		Services: []*shared.ApplicationServiceConfig{
 			{
-				Service: &sharedtypes.Service{Id: "svc1"},
+				Service: &shared.Service{Id: "svc1"},
 			},
 		},
 	}
@@ -95,10 +95,10 @@ func TestMsgServer_StakeApplication_FailRestakingDueToInvalidServices(t *testing
 	require.NoError(t, err)
 
 	// Prepare the application stake message without any services
-	updateStakeMsg := &types.MsgStakeApplication{
+	updateStakeMsg := &application.MsgStakeApplication{
 		Address:  appAddr,
 		Stake:    &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
-		Services: []*sharedtypes.ApplicationServiceConfig{},
+		Services: []*shared.ApplicationServiceConfig{},
 	}
 
 	// Fail updating the application when the list of services is empty
@@ -113,12 +113,12 @@ func TestMsgServer_StakeApplication_FailRestakingDueToInvalidServices(t *testing
 	require.Equal(t, "svc1", foundApp.ServiceConfigs[0].Service.Id)
 
 	// Prepare the application stake message with an invalid service ID
-	updateStakeMsg = &types.MsgStakeApplication{
+	updateStakeMsg = &application.MsgStakeApplication{
 		Address: appAddr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
-		Services: []*sharedtypes.ApplicationServiceConfig{
+		Services: []*shared.ApplicationServiceConfig{
 			{
-				Service: &sharedtypes.Service{Id: "svc1 INVALID ! & *"},
+				Service: &shared.Service{Id: "svc1 INVALID ! & *"},
 			},
 		},
 	}
@@ -141,12 +141,12 @@ func TestMsgServer_StakeApplication_FailLoweringStake(t *testing.T) {
 
 	// Prepare the application
 	appAddr := sample.AccAddress()
-	stakeMsg := &types.MsgStakeApplication{
+	stakeMsg := &application.MsgStakeApplication{
 		Address: appAddr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
-		Services: []*sharedtypes.ApplicationServiceConfig{
+		Services: []*shared.ApplicationServiceConfig{
 			{
-				Service: &sharedtypes.Service{Id: "svc1"},
+				Service: &shared.Service{Id: "svc1"},
 			},
 		},
 	}
@@ -158,12 +158,12 @@ func TestMsgServer_StakeApplication_FailLoweringStake(t *testing.T) {
 	require.True(t, isAppFound)
 
 	// Prepare an updated application with a lower stake
-	updateMsg := &types.MsgStakeApplication{
+	updateMsg := &application.MsgStakeApplication{
 		Address: appAddr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(50)},
-		Services: []*sharedtypes.ApplicationServiceConfig{
+		Services: []*shared.ApplicationServiceConfig{
 			{
-				Service: &sharedtypes.Service{Id: "svc1"},
+				Service: &shared.Service{Id: "svc1"},
 			},
 		},
 	}

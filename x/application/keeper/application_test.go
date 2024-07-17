@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
+	"github.com/pokt-network/poktroll/proto/types/application"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
 	"github.com/pokt-network/poktroll/x/application/keeper"
@@ -18,12 +19,12 @@ import (
 // Prevent strconv unused error
 var _ = strconv.IntSize
 
-func createNApplications(keeper keeper.Keeper, ctx context.Context, n int) []types.Application {
-	apps := make([]types.Application, n)
+func createNApplications(keeper keeper.Keeper, ctx context.Context, n int) []application.Application {
+	apps := make([]application.Application, n)
 	for i := range apps {
 		apps[i].Address = strconv.Itoa(i)
 		// Setting pending undelegations since nullify.Fill() does not seem to do it.
-		apps[i].PendingUndelegations = make(map[uint64]types.UndelegatingGatewayList)
+		apps[i].PendingUndelegations = make(map[uint64]application.UndelegatingGatewayList)
 
 		keeper.SetApplication(ctx, apps[i])
 	}

@@ -8,6 +8,7 @@ import (
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 	"github.com/cosmos/cosmos-sdk/x/simulation"
 
+	"github.com/pokt-network/poktroll/proto/types/gateway"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	gatewaysimulation "github.com/pokt-network/poktroll/x/gateway/simulation"
 	"github.com/pokt-network/poktroll/x/gateway/types"
@@ -40,8 +41,8 @@ func (AppModule) GenerateGenesisState(simState *module.SimulationState) {
 	for i, acc := range simState.Accounts {
 		accs[i] = acc.Address.String()
 	}
-	gatewayGenesis := types.GenesisState{
-		Params: types.DefaultParams(),
+	gatewayGenesis := gateway.GenesisState{
+		Params: gateway.DefaultParams(),
 		// this line is used by starport scaffolding # simapp/module/genesisState
 	}
 	simState.GenState[types.ModuleName] = simState.Cdc.MustMarshalJSON(&gatewayGenesis)

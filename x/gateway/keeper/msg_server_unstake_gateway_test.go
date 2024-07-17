@@ -7,10 +7,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/proto/types/gateway"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/x/gateway/keeper"
-	"github.com/pokt-network/poktroll/x/gateway/types"
 )
 
 func TestMsgServer_UnstakeGateway_Success(t *testing.T) {
@@ -26,7 +26,7 @@ func TestMsgServer_UnstakeGateway_Success(t *testing.T) {
 
 	// Prepare the gateway
 	initialStake := sdk.NewCoin("upokt", math.NewInt(100))
-	stakeMsg := &types.MsgStakeGateway{
+	stakeMsg := &gateway.MsgStakeGateway{
 		Address: addr,
 		Stake:   &initialStake,
 	}
@@ -42,7 +42,7 @@ func TestMsgServer_UnstakeGateway_Success(t *testing.T) {
 	require.Equal(t, initialStake.Amount, foundGateway.Stake.Amount)
 
 	// Unstake the gateway
-	unstakeMsg := &types.MsgUnstakeGateway{Address: addr}
+	unstakeMsg := &gateway.MsgUnstakeGateway{Address: addr}
 	_, err = srv.UnstakeGateway(ctx, unstakeMsg)
 	require.NoError(t, err)
 
@@ -63,10 +63,10 @@ func TestMsgServer_UnstakeGateway_FailIfNotStaked(t *testing.T) {
 	require.False(t, isGatewayFound)
 
 	// Unstake the gateway
-	unstakeMsg := &types.MsgUnstakeGateway{Address: addr}
+	unstakeMsg := &gateway.MsgUnstakeGateway{Address: addr}
 	_, err := srv.UnstakeGateway(ctx, unstakeMsg)
 	require.Error(t, err)
-	require.ErrorIs(t, err, types.ErrGatewayNotFound)
+	require.ErrorIs(t, err, gateway.ErrGatewayNotFound)
 
 	_, isGatewayFound = k.GetGateway(ctx, addr)
 	require.False(t, isGatewayFound)

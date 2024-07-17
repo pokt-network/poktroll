@@ -7,17 +7,17 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/proto/types/tokenomics"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
 	"github.com/pokt-network/poktroll/x/tokenomics/keeper"
-	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 // Prevent strconv unused error
 var _ = strconv.IntSize
 
-func createNRelayMiningDifficulty(keeper keeper.Keeper, ctx context.Context, n int) []types.RelayMiningDifficulty {
-	difficulties := make([]types.RelayMiningDifficulty, n)
+func createNRelayMiningDifficulty(keeper keeper.Keeper, ctx context.Context, n int) []tokenomics.RelayMiningDifficulty {
+	difficulties := make([]tokenomics.RelayMiningDifficulty, n)
 	for idx := range difficulties {
 		difficulties[idx].ServiceId = strconv.Itoa(idx)
 

@@ -13,9 +13,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/status"
 
+	"github.com/pokt-network/poktroll/proto/types/application"
 	"github.com/pokt-network/poktroll/testutil/network"
-	application "github.com/pokt-network/poktroll/x/application/module"
-	"github.com/pokt-network/poktroll/x/application/types"
+	appmodule "github.com/pokt-network/poktroll/x/application/module"
 )
 
 func TestCLI_UnstakeApplication(t *testing.T) {
@@ -53,12 +53,12 @@ func TestCLI_UnstakeApplication(t *testing.T) {
 		{
 			desc: "unstake application: missing address",
 			// address explicitly omitted
-			expectedErr: types.ErrAppInvalidAddress,
+			expectedErr: application.ErrAppInvalidAddress,
 		},
 		{
 			desc:        "unstake application: invalid address",
 			appAddr:     "invalid",
-			expectedErr: types.ErrAppInvalidAddress,
+			expectedErr: application.ErrAppInvalidAddress,
 		},
 	}
 
@@ -75,7 +75,7 @@ func TestCLI_UnstakeApplication(t *testing.T) {
 			args = append(args, commonArgs...)
 
 			// Execute the command
-			outUnstake, err := clitestutil.ExecTestCLICmd(ctx, application.CmdUnstakeApplication(), args)
+			outUnstake, err := clitestutil.ExecTestCLICmd(ctx, appmodule.CmdUnstakeApplication(), args)
 
 			// Validate the error if one is expected
 			if test.expectedErr != nil {

@@ -7,34 +7,34 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/proto/types/application"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
 	"github.com/pokt-network/poktroll/testutil/sample"
-	application "github.com/pokt-network/poktroll/x/application/module"
-	"github.com/pokt-network/poktroll/x/application/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	appmodule "github.com/pokt-network/poktroll/x/application/module"
 )
 
 func TestGenesis(t *testing.T) {
-	genesisState := types.GenesisState{
-		Params: types.DefaultParams(),
+	genesisState := application.GenesisState{
+		Params: application.DefaultParams(),
 
-		ApplicationList: []types.Application{
+		ApplicationList: []application.Application{
 			{
 				Address: sample.AccAddress(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
-				ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
+				ServiceConfigs: []*shared.ApplicationServiceConfig{
 					{
-						Service: &sharedtypes.Service{Id: "svc1"},
+						Service: &shared.Service{Id: "svc1"},
 					},
 				},
 			},
 			{
 				Address: sample.AccAddress(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
-				ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
+				ServiceConfigs: []*shared.ApplicationServiceConfig{
 					{
-						Service: &sharedtypes.Service{Id: "svc2"},
+						Service: &shared.Service{Id: "svc2"},
 					},
 				},
 			},
@@ -43,8 +43,8 @@ func TestGenesis(t *testing.T) {
 	}
 
 	k, ctx := keepertest.ApplicationKeeper(t)
-	application.InitGenesis(ctx, k, genesisState)
-	got := application.ExportGenesis(ctx, k)
+	appmodule.InitGenesis(ctx, k, genesisState)
+	got := appmodule.ExportGenesis(ctx, k)
 	require.NotNil(t, got)
 
 	nullify.Fill(&genesisState)

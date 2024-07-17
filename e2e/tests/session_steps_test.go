@@ -14,9 +14,9 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/client/block"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
+	prooftypes "github.com/pokt-network/poktroll/proto/types/proof"
+	tokenomicstypes "github.com/pokt-network/poktroll/proto/types/tokenomics"
 	testutilevents "github.com/pokt-network/poktroll/testutil/events"
-	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
-	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 const (

@@ -8,14 +8,14 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/proto/types/proof"
+	"github.com/pokt-network/poktroll/proto/types/session"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	testsession "github.com/pokt-network/poktroll/testutil/session"
 	"github.com/pokt-network/poktroll/x/proof/keeper"
-	"github.com/pokt-network/poktroll/x/proof/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 const (
@@ -26,15 +26,15 @@ const (
 // Prevent strconv unused error
 var _ = strconv.IntSize
 
-func createNProofs(keeper keeper.Keeper, ctx context.Context, n int) []types.Proof {
-	proofs := make([]types.Proof, n)
+func createNProofs(keeper keeper.Keeper, ctx context.Context, n int) []proof.Proof {
+	proofs := make([]proof.Proof, n)
 
 	for i := range proofs {
-		proofs[i] = types.Proof{
+		proofs[i] = proof.Proof{
 			SupplierAddress: sample.AccAddress(),
-			SessionHeader: &sessiontypes.SessionHeader{
+			SessionHeader: &session.SessionHeader{
 				ApplicationAddress:      sample.AccAddress(),
-				Service:                 &sharedtypes.Service{Id: testServiceId},
+				Service:                 &shared.Service{Id: testServiceId},
 				SessionId:               fmt.Sprintf("session-%d", i),
 				SessionStartBlockHeight: 1,
 				SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),

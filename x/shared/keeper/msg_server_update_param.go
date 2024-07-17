@@ -3,95 +3,95 @@ package keeper
 import (
 	"context"
 
-	"github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 )
 
-func (k msgServer) UpdateParam(ctx context.Context, msg *types.MsgUpdateParam) (*types.MsgUpdateParamResponse, error) {
+func (k msgServer) UpdateParam(ctx context.Context, msg *shared.MsgUpdateParam) (*shared.MsgUpdateParamResponse, error) {
 	if err := msg.ValidateBasic(); err != nil {
 		return nil, err
 	}
 
 	if k.GetAuthority() != msg.Authority {
-		return nil, types.ErrSharedInvalidSigner.Wrapf("invalid authority; expected %s, got %s", k.GetAuthority(), msg.Authority)
+		return nil, shared.ErrSharedInvalidSigner.Wrapf("invalid authority; expected %s, got %s", k.GetAuthority(), msg.Authority)
 	}
 
 	params := k.GetParams(ctx)
 
 	switch msg.Name {
-	case types.ParamNumBlocksPerSession:
-		value, ok := msg.AsType.(*types.MsgUpdateParam_AsInt64)
+	case shared.ParamNumBlocksPerSession:
+		value, ok := msg.AsType.(*shared.MsgUpdateParam_AsInt64)
 		if !ok {
-			return nil, types.ErrSharedParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
+			return nil, shared.ErrSharedParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
 		}
 		numBlocksPerSession := uint64(value.AsInt64)
 
-		if err := types.ValidateNumBlocksPerSession(numBlocksPerSession); err != nil {
+		if err := shared.ValidateNumBlocksPerSession(numBlocksPerSession); err != nil {
 			return nil, err
 		}
 
 		params.NumBlocksPerSession = numBlocksPerSession
-	case types.ParamGracePeriodEndOffsetBlocks:
-		value, ok := msg.AsType.(*types.MsgUpdateParam_AsInt64)
+	case shared.ParamGracePeriodEndOffsetBlocks:
+		value, ok := msg.AsType.(*shared.MsgUpdateParam_AsInt64)
 		if !ok {
-			return nil, types.ErrSharedParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
+			return nil, shared.ErrSharedParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
 		}
 		gracePeriodEndOffsetBlocks := uint64(value.AsInt64)
 
-		if err := types.ValidateGracePeriodEndOffsetBlocks(gracePeriodEndOffsetBlocks); err != nil {
+		if err := shared.ValidateGracePeriodEndOffsetBlocks(gracePeriodEndOffsetBlocks); err != nil {
 			return nil, err
 		}
 
 		params.GracePeriodEndOffsetBlocks = gracePeriodEndOffsetBlocks
-	case types.ParamClaimWindowOpenOffsetBlocks:
-		value, ok := msg.AsType.(*types.MsgUpdateParam_AsInt64)
+	case shared.ParamClaimWindowOpenOffsetBlocks:
+		value, ok := msg.AsType.(*shared.MsgUpdateParam_AsInt64)
 		if !ok {
-			return nil, types.ErrSharedParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
+			return nil, shared.ErrSharedParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
 		}
 		claimWindowOpenOffsetBlocks := uint64(value.AsInt64)
 
-		if err := types.ValidateClaimWindowOpenOffsetBlocks(claimWindowOpenOffsetBlocks); err != nil {
+		if err := shared.ValidateClaimWindowOpenOffsetBlocks(claimWindowOpenOffsetBlocks); err != nil {
 			return nil, err
 		}
 
 		params.ClaimWindowOpenOffsetBlocks = claimWindowOpenOffsetBlocks
-	case types.ParamClaimWindowCloseOffsetBlocks:
-		value, ok := msg.AsType.(*types.MsgUpdateParam_AsInt64)
+	case shared.ParamClaimWindowCloseOffsetBlocks:
+		value, ok := msg.AsType.(*shared.MsgUpdateParam_AsInt64)
 		if !ok {
-			return nil, types.ErrSharedParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
+			return nil, shared.ErrSharedParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
 		}
 		claimWindowCloseOffsetBlocks := uint64(value.AsInt64)
 
-		if err := types.ValidateClaimWindowCloseOffsetBlocks(claimWindowCloseOffsetBlocks); err != nil {
+		if err := shared.ValidateClaimWindowCloseOffsetBlocks(claimWindowCloseOffsetBlocks); err != nil {
 			return nil, err
 		}
 
 		params.ClaimWindowCloseOffsetBlocks = claimWindowCloseOffsetBlocks
-	case types.ParamProofWindowOpenOffsetBlocks:
-		value, ok := msg.AsType.(*types.MsgUpdateParam_AsInt64)
+	case shared.ParamProofWindowOpenOffsetBlocks:
+		value, ok := msg.AsType.(*shared.MsgUpdateParam_AsInt64)
 		if !ok {
-			return nil, types.ErrSharedParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
+			return nil, shared.ErrSharedParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
 		}
 		claimWindowOpenOffsetBlocks := uint64(value.AsInt64)
 
-		if err := types.ValidateProofWindowOpenOffsetBlocks(claimWindowOpenOffsetBlocks); err != nil {
+		if err := shared.ValidateProofWindowOpenOffsetBlocks(claimWindowOpenOffsetBlocks); err != nil {
 			return nil, err
 		}
 
 		params.ProofWindowOpenOffsetBlocks = claimWindowOpenOffsetBlocks
-	case types.ParamProofWindowCloseOffsetBlocks:
-		value, ok := msg.AsType.(*types.MsgUpdateParam_AsInt64)
+	case shared.ParamProofWindowCloseOffsetBlocks:
+		value, ok := msg.AsType.(*shared.MsgUpdateParam_AsInt64)
 		if !ok {
-			return nil, types.ErrSharedParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
+			return nil, shared.ErrSharedParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
 		}
 		claimWindowCloseOffsetBlocks := uint64(value.AsInt64)
 
-		if err := types.ValidateProofWindowCloseOffsetBlocks(claimWindowCloseOffsetBlocks); err != nil {
+		if err := shared.ValidateProofWindowCloseOffsetBlocks(claimWindowCloseOffsetBlocks); err != nil {
 			return nil, err
 		}
 
 		params.ProofWindowCloseOffsetBlocks = claimWindowCloseOffsetBlocks
 	default:
-		return nil, types.ErrSharedParamInvalid.Wrapf("unsupported param %q", msg.Name)
+		return nil, shared.ErrSharedParamInvalid.Wrapf("unsupported param %q", msg.Name)
 	}
 
 	if err := k.SetParams(ctx, params); err != nil {
@@ -99,7 +99,7 @@ func (k msgServer) UpdateParam(ctx context.Context, msg *types.MsgUpdateParam) (
 	}
 
 	updatedParams := k.GetParams(ctx)
-	return &types.MsgUpdateParamResponse{
+	return &shared.MsgUpdateParamResponse{
 		Params: &updatedParams,
 	}, nil
 }

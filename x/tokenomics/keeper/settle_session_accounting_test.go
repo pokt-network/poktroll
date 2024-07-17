@@ -13,14 +13,16 @@ import (
 	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/proto/types/application"
+	"github.com/pokt-network/poktroll/proto/types/proof"
+	"github.com/pokt-network/poktroll/proto/types/session"
+	"github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/tokenomics"
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
 	testproof "github.com/pokt-network/poktroll/testutil/proof"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	testsession "github.com/pokt-network/poktroll/testutil/session"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
@@ -32,7 +34,7 @@ func TestSettleSessionAccounting_HandleAppGoingIntoDebt(t *testing.T) {
 
 	// Add a new application
 	appStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
-	app := apptypes.Application{
+	app := application.Application{
 		Address: sample.AccAddress(),
 		Stake:   &appStake,
 	}
@@ -40,18 +42,18 @@ func TestSettleSessionAccounting_HandleAppGoingIntoDebt(t *testing.T) {
 
 	// Add a new supplier
 	supplierStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
-	supplier := sharedtypes.Supplier{
+	supplier := shared.Supplier{
 		Address: sample.AccAddress(),
 		Stake:   &supplierStake,
 	}
 	keepers.SetSupplier(ctx, supplier)
 
 	// The base claim whose root will be customized for testing purposes
-	claim := prooftypes.Claim{
+	claim := proof.Claim{
 		SupplierAddress: supplier.Address,
-		SessionHeader: &sessiontypes.SessionHeader{
+		SessionHeader: &session.SessionHeader{
 			ApplicationAddress: app.Address,
-			Service: &sharedtypes.Service{
+			Service: &shared.Service{
 				Id:   "svc1",
 				Name: "svcName1",
 			},
@@ -72,7 +74,7 @@ func TestSettleSessionAccounting_ValidAccounting(t *testing.T) {
 	supplierModuleAddress := authtypes.NewModuleAddress(suppliertypes.ModuleName).String()
 
 	// Set compute_units_to_tokens_multiplier to 1 to simplify expectation calculations.
-	err := keepers.Keeper.SetParams(ctx, tokenomicstypes.Params{
+	err := keepers.Keeper.SetParams(ctx, tokenomics.Params{
 		ComputeUnitsToTokensMultiplier: 1,
 	})
 	require.NoError(t, err)
@@ -82,7 +84,7 @@ func TestSettleSessionAccounting_ValidAccounting(t *testing.T) {
 	// NB: Ensure a non-zero app stake end balance to assert against.
 	expectedAppEndStakeAmount := cosmostypes.NewCoin("upokt", math.NewInt(420))
 	expectedAppBurn := appStake.Sub(expectedAppEndStakeAmount)
-	app := apptypes.Application{
+	app := application.Application{
 		Address: sample.AccAddress(),
 		Stake:   &appStake,
 	}
@@ -96,7 +98,7 @@ func TestSettleSessionAccounting_ValidAccounting(t *testing.T) {
 
 	// Add a new supplier.
 	supplierStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
-	supplier := sharedtypes.Supplier{
+	supplier := shared.Supplier{
 		Address: sample.AccAddress(),
 		Stake:   &supplierStake,
 	}
@@ -109,11 +111,11 @@ func TestSettleSessionAccounting_ValidAccounting(t *testing.T) {
 	supplierModuleStartBalance := getBalance(t, ctx, keepers, supplierModuleAddress)
 
 	// The base claim whose root will be customized for testing purposes
-	claim := prooftypes.Claim{
+	claim := proof.Claim{
 		SupplierAddress: supplier.Address,
-		SessionHeader: &sessiontypes.SessionHeader{
+		SessionHeader: &session.SessionHeader{
 			ApplicationAddress: app.Address,
-			Service: &sharedtypes.Service{
+			Service: &shared.Service{
 				Id:   "svc1",
 				Name: "svcName1",
 			},
@@ -167,7 +169,7 @@ func TestSettleSessionAccounting_AppStakeTooLow(t *testing.T) {
 	supplierModuleAddress := authtypes.NewModuleAddress(suppliertypes.ModuleName).String()
 
 	// Set compute_units_to_tokens_multiplier to 1 to simplify expectation calculations.
-	err := keepers.Keeper.SetParams(ctx, tokenomicstypes.Params{
+	err := keepers.Keeper.SetParams(ctx, tokenomics.Params{
 		ComputeUnitsToTokensMultiplier: 1,
 	})
 	require.NoError(t, err)
@@ -176,7 +178,7 @@ func TestSettleSessionAccounting_AppStakeTooLow(t *testing.T) {
 	appStake := cosmostypes.NewCoin("upokt", math.NewInt(40000))
 	expectedAppEndStakeZeroAmount := cosmostypes.NewCoin("upokt", math.NewInt(0))
 	expectedAppBurn := appStake.AddAmount(math.NewInt(2000))
-	app := apptypes.Application{
+	app := application.Application{
 		Address: sample.AccAddress(),
 		Stake:   &appStake,
 	}
@@ -190,7 +192,7 @@ func TestSettleSessionAccounting_AppStakeTooLow(t *testing.T) {
 
 	// Add a new supplier.
 	supplierStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
-	supplier := sharedtypes.Supplier{
+	supplier := shared.Supplier{
 		Address: sample.AccAddress(),
 		Stake:   &supplierStake,
 	}
@@ -203,11 +205,11 @@ func TestSettleSessionAccounting_AppStakeTooLow(t *testing.T) {
 	supplierModuleStartBalance := getBalance(t, ctx, keepers, supplierModuleAddress)
 
 	// The base claim whose root will be customized for testing purposes
-	claim := prooftypes.Claim{
+	claim := proof.Claim{
 		SupplierAddress: supplier.Address,
-		SessionHeader: &sessiontypes.SessionHeader{
+		SessionHeader: &session.SessionHeader{
 			ApplicationAddress: app.Address,
-			Service: &sharedtypes.Service{
+			Service: &shared.Service{
 				Id:   "svc1",
 				Name: "svcName1",
 			},
@@ -257,11 +259,11 @@ func TestSettleSessionAccounting_AppNotFound(t *testing.T) {
 	keeper, ctx, _, supplierAddr := testkeeper.TokenomicsKeeperWithActorAddrs(t)
 
 	// The base claim whose root will be customized for testing purposes
-	claim := prooftypes.Claim{
+	claim := proof.Claim{
 		SupplierAddress: supplierAddr,
-		SessionHeader: &sessiontypes.SessionHeader{
+		SessionHeader: &session.SessionHeader{
 			ApplicationAddress: sample.AccAddress(), // Random address
-			Service: &sharedtypes.Service{
+			Service: &shared.Service{
 				Id:   "svc1",
 				Name: "svcName1",
 			},
@@ -274,7 +276,7 @@ func TestSettleSessionAccounting_AppNotFound(t *testing.T) {
 
 	err := keeper.SettleSessionAccounting(ctx, &claim)
 	require.Error(t, err)
-	require.ErrorIs(t, err, tokenomicstypes.ErrTokenomicsApplicationNotFound)
+	require.ErrorIs(t, err, tokenomics.ErrTokenomicsApplicationNotFound)
 }
 
 func TestSettleSessionAccounting_InvalidRoot(t *testing.T) {
@@ -367,14 +369,14 @@ func TestSettleSessionAccounting_InvalidClaim(t *testing.T) {
 	// Define test cases
 	tests := []struct {
 		desc        string
-		claim       *prooftypes.Claim
+		claim       *proof.Claim
 		errExpected bool
 		expectErr   error
 	}{
 
 		{
 			desc: "Valid Claim",
-			claim: func() *prooftypes.Claim {
+			claim: func() *proof.Claim {
 				claim := testproof.BaseClaim(appAddr, supplierAddr, 42)
 				return &claim
 			}(),
@@ -384,47 +386,47 @@ func TestSettleSessionAccounting_InvalidClaim(t *testing.T) {
 			desc:        "Nil Claim",
 			claim:       nil,
 			errExpected: true,
-			expectErr:   tokenomicstypes.ErrTokenomicsClaimNil,
+			expectErr:   tokenomics.ErrTokenomicsClaimNil,
 		},
 		{
 			desc: "Claim with nil session header",
-			claim: func() *prooftypes.Claim {
+			claim: func() *proof.Claim {
 				claim := testproof.BaseClaim(appAddr, supplierAddr, 42)
 				claim.SessionHeader = nil
 				return &claim
 			}(),
 			errExpected: true,
-			expectErr:   tokenomicstypes.ErrTokenomicsSessionHeaderNil,
+			expectErr:   tokenomics.ErrTokenomicsSessionHeaderNil,
 		},
 		{
 			desc: "Claim with invalid session id",
-			claim: func() *prooftypes.Claim {
+			claim: func() *proof.Claim {
 				claim := testproof.BaseClaim(appAddr, supplierAddr, 42)
 				claim.SessionHeader.SessionId = ""
 				return &claim
 			}(),
 			errExpected: true,
-			expectErr:   tokenomicstypes.ErrTokenomicsSessionHeaderInvalid,
+			expectErr:   tokenomics.ErrTokenomicsSessionHeaderInvalid,
 		},
 		{
 			desc: "Claim with invalid application address",
-			claim: func() *prooftypes.Claim {
+			claim: func() *proof.Claim {
 				claim := testproof.BaseClaim(appAddr, supplierAddr, 42)
 				claim.SessionHeader.ApplicationAddress = "invalid address"
 				return &claim
 			}(),
 			errExpected: true,
-			expectErr:   tokenomicstypes.ErrTokenomicsSessionHeaderInvalid,
+			expectErr:   tokenomics.ErrTokenomicsSessionHeaderInvalid,
 		},
 		{
 			desc: "Claim with invalid supplier address",
-			claim: func() *prooftypes.Claim {
+			claim: func() *proof.Claim {
 				claim := testproof.BaseClaim(appAddr, supplierAddr, 42)
 				claim.SupplierAddress = "invalid address"
 				return &claim
 			}(),
 			errExpected: true,
-			expectErr:   tokenomicstypes.ErrTokenomicsSupplierAddressInvalid,
+			expectErr:   tokenomics.ErrTokenomicsSupplierAddressInvalid,
 		},
 	}
 

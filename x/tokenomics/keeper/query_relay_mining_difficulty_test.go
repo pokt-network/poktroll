@@ -9,9 +9,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/pokt-network/poktroll/proto/types/tokenomics"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
-	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 // Prevent strconv unused error
@@ -22,27 +22,27 @@ func TestRelayMiningDifficultyQuerySingle(t *testing.T) {
 	msgs := createNRelayMiningDifficulty(keeper, ctx, 2)
 	tests := []struct {
 		desc        string
-		request     *types.QueryGetRelayMiningDifficultyRequest
-		response    *types.QueryGetRelayMiningDifficultyResponse
+		request     *tokenomics.QueryGetRelayMiningDifficultyRequest
+		response    *tokenomics.QueryGetRelayMiningDifficultyResponse
 		expectedErr error
 	}{
 		{
 			desc: "First",
-			request: &types.QueryGetRelayMiningDifficultyRequest{
+			request: &tokenomics.QueryGetRelayMiningDifficultyRequest{
 				ServiceId: msgs[0].ServiceId,
 			},
-			response: &types.QueryGetRelayMiningDifficultyResponse{RelayMiningDifficulty: msgs[0]},
+			response: &tokenomics.QueryGetRelayMiningDifficultyResponse{RelayMiningDifficulty: msgs[0]},
 		},
 		{
 			desc: "Second",
-			request: &types.QueryGetRelayMiningDifficultyRequest{
+			request: &tokenomics.QueryGetRelayMiningDifficultyRequest{
 				ServiceId: msgs[1].ServiceId,
 			},
-			response: &types.QueryGetRelayMiningDifficultyResponse{RelayMiningDifficulty: msgs[1]},
+			response: &tokenomics.QueryGetRelayMiningDifficultyResponse{RelayMiningDifficulty: msgs[1]},
 		},
 		{
 			desc: "KeyNotFound",
-			request: &types.QueryGetRelayMiningDifficultyRequest{
+			request: &tokenomics.QueryGetRelayMiningDifficultyRequest{
 				ServiceId: strconv.Itoa(100000),
 			},
 			expectedErr: status.Error(codes.NotFound, "not found"),
@@ -72,8 +72,8 @@ func TestRelayMiningDifficultyQueryPaginated(t *testing.T) {
 	keeper, ctx := keepertest.TokenomicsKeeper(t)
 	msgs := createNRelayMiningDifficulty(keeper, ctx, 5)
 
-	request := func(next []byte, offset, limit uint64, total bool) *types.QueryAllRelayMiningDifficultyRequest {
-		return &types.QueryAllRelayMiningDifficultyRequest{
+	request := func(next []byte, offset, limit uint64, total bool) *tokenomics.QueryAllRelayMiningDifficultyRequest {
+		return &tokenomics.QueryAllRelayMiningDifficultyRequest{
 			Pagination: &query.PageRequest{
 				Key:        next,
 				Offset:     offset,

@@ -28,6 +28,13 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app"
+	"github.com/pokt-network/poktroll/proto/types/application"
+	"github.com/pokt-network/poktroll/proto/types/gateway"
+	"github.com/pokt-network/poktroll/proto/types/proof"
+	"github.com/pokt-network/poktroll/proto/types/session"
+	"github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/supplier"
+	"github.com/pokt-network/poktroll/proto/types/tokenomics"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/testutil/tokenomics/mocks"
 	appkeeper "github.com/pokt-network/poktroll/x/application/keeper"
@@ -100,14 +107,14 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 	// The on-chain governance address.
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName)
 
-	// Prepare the test application.
-	application := apptypes.Application{
+	// Prepare the test testApp.
+	testApp := application.Application{
 		Address: sample.AccAddress(),
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100000)},
 	}
 
-	// Prepare the test supplier.
-	supplier := sharedtypes.Supplier{
+	// Prepare the test testSupplier.
+	testSupplier := shared.Supplier{
 		Address: sample.AccAddress(),
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100000)},
 	}
@@ -119,14 +126,14 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 
 	// Get test application if the address matches.
 	mockApplicationKeeper.EXPECT().
-		GetApplication(gomock.Any(), gomock.Eq(application.Address)).
-		Return(application, true).
+		GetApplication(gomock.Any(), gomock.Eq(testApp.Address)).
+		Return(testApp, true).
 		AnyTimes()
 
 	// Get zero-value application if the address does not match.
 	mockApplicationKeeper.EXPECT().
-		GetApplication(gomock.Any(), gomock.Not(application.Address)).
-		Return(apptypes.Application{}, false).
+		GetApplication(gomock.Any(), gomock.Not(testApp.Address)).
+		Return(application.Application{}, false).
 		AnyTimes()
 
 	// Mock SetApplication.
@@ -177,9 +184,9 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 	sdkCtx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
 
 	// Initialize params
-	require.NoError(t, k.SetParams(sdkCtx, tokenomicstypes.DefaultParams()))
+	require.NoError(t, k.SetParams(sdkCtx, tokenomics.DefaultParams()))
 
-	return k, sdkCtx, application.Address, supplier.Address
+	return k, sdkCtx, testApp.Address, testSupplier.Address
 }
 
 // NewTokenomicsModuleKeepers is a helper function to create a tokenomics keeper
@@ -267,7 +274,7 @@ func NewTokenomicsModuleKeepers(
 		logger,
 		authority.String(),
 	)
-	require.NoError(t, sharedKeeper.SetParams(ctx, sharedtypes.DefaultParams()))
+	require.NoError(t, sharedKeeper.SetParams(ctx, shared.DefaultParams()))
 
 	// Construct gateway keeper with a mocked bank keeper.
 	gatewayKeeper := gatewaykeeper.NewKeeper(
@@ -277,7 +284,7 @@ func NewTokenomicsModuleKeepers(
 		authority.String(),
 		bankKeeper,
 	)
-	require.NoError(t, gatewayKeeper.SetParams(ctx, gatewaytypes.DefaultParams()))
+	require.NoError(t, gatewayKeeper.SetParams(ctx, gateway.DefaultParams()))
 
 	// Construct an application keeper to add apps to sessions.
 	appKeeper := appkeeper.NewKeeper(
@@ -290,7 +297,7 @@ func NewTokenomicsModuleKeepers(
 		gatewayKeeper,
 		sharedKeeper,
 	)
-	require.NoError(t, appKeeper.SetParams(ctx, apptypes.DefaultParams()))
+	require.NoError(t, appKeeper.SetParams(ctx, application.DefaultParams()))
 
 	// Construct a service keeper needed by the supplier keeper.
 	serviceKeeper := servicekeeper.NewKeeper(
@@ -310,7 +317,7 @@ func NewTokenomicsModuleKeepers(
 		bankKeeper,
 		serviceKeeper,
 	)
-	require.NoError(t, supplierKeeper.SetParams(ctx, suppliertypes.DefaultParams()))
+	require.NoError(t, supplierKeeper.SetParams(ctx, supplier.DefaultParams()))
 
 	// Construct a real session keeper so that sessions can be queried.
 	sessionKeeper := sessionkeeper.NewKeeper(
@@ -324,7 +331,7 @@ func NewTokenomicsModuleKeepers(
 		supplierKeeper,
 		sharedKeeper,
 	)
-	require.NoError(t, sessionKeeper.SetParams(ctx, sessiontypes.DefaultParams()))
+	require.NoError(t, sessionKeeper.SetParams(ctx, session.DefaultParams()))
 
 	// Construct a real proof keeper so that claims & proofs can be created.
 	proofKeeper := proofkeeper.NewKeeper(
@@ -337,7 +344,7 @@ func NewTokenomicsModuleKeepers(
 		accountKeeper,
 		sharedKeeper,
 	)
-	require.NoError(t, proofKeeper.SetParams(ctx, prooftypes.DefaultParams()))
+	require.NoError(t, proofKeeper.SetParams(ctx, proof.DefaultParams()))
 
 	// Construct a real tokenomics keeper so that claims & tokenomics can be created.
 	tokenomicsKeeper := tokenomicskeeper.NewKeeper(
@@ -353,7 +360,7 @@ func NewTokenomicsModuleKeepers(
 		sessionKeeper,
 	)
 
-	require.NoError(t, tokenomicsKeeper.SetParams(ctx, tokenomicstypes.DefaultParams()))
+	require.NoError(t, tokenomicsKeeper.SetParams(ctx, tokenomics.DefaultParams()))
 
 	keepers := TokenomicsModuleKeepers{
 		Keeper:            &tokenomicsKeeper,

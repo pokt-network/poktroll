@@ -13,7 +13,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/filter"
 	"github.com/pokt-network/poktroll/pkg/observable/logging"
 	"github.com/pokt-network/poktroll/pkg/relayer"
-	servicetypes "github.com/pokt-network/poktroll/x/service/types"
+	servicetypes "github.com/pokt-network/poktroll/proto/types/service"
 )
 
 var _ relayer.Miner = (*miner)(nil)

@@ -10,7 +10,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/keyring"
 	"github.com/pokt-network/poktroll/pkg/polylog"
-	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	prooftypes "github.com/pokt-network/poktroll/proto/types/proof"
 )
 
 var _ client.SupplierClient = (*supplierClient)(nil)

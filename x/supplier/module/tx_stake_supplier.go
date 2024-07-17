@@ -9,8 +9,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/spf13/cobra"
 
+	"github.com/pokt-network/poktroll/proto/types/supplier"
 	"github.com/pokt-network/poktroll/x/supplier/config"
-	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 var (
@@ -46,7 +46,7 @@ $ poktrolld tx supplier stake-supplier --config stake_config.yaml --keyring-back
 				return err
 			}
 
-			msg := types.NewMsgStakeSupplier(
+			msg := supplier.NewMsgStakeSupplier(
 				clientCtx.GetFromAddress().String(),
 				supplierStakeConfigs.StakeAmount,
 				supplierStakeConfigs.Services,

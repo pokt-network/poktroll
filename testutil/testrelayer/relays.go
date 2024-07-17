@@ -13,9 +13,9 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/crypto"
 	"github.com/pokt-network/poktroll/pkg/relayer"
+	servicetypes "github.com/pokt-network/poktroll/proto/types/service"
+	sessiontypes "github.com/pokt-network/poktroll/proto/types/session"
 	testutilkeyring "github.com/pokt-network/poktroll/testutil/testkeyring"
-	servicetypes "github.com/pokt-network/poktroll/x/service/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
 // NewUnsignedMinedRelay returns a new mined relay with the given session data,

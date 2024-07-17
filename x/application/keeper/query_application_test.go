@@ -9,9 +9,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/pokt-network/poktroll/proto/types/application"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
-	"github.com/pokt-network/poktroll/x/application/types"
 )
 
 // Prevent strconv unused error
@@ -22,27 +22,27 @@ func TestApplicationQuerySingle(t *testing.T) {
 	msgs := createNApplications(keeper, ctx, 2)
 	tests := []struct {
 		desc        string
-		request     *types.QueryGetApplicationRequest
-		response    *types.QueryGetApplicationResponse
+		request     *application.QueryGetApplicationRequest
+		response    *application.QueryGetApplicationResponse
 		expectedErr error
 	}{
 		{
 			desc: "First",
-			request: &types.QueryGetApplicationRequest{
+			request: &application.QueryGetApplicationRequest{
 				Address: msgs[0].Address,
 			},
-			response: &types.QueryGetApplicationResponse{Application: msgs[0]},
+			response: &application.QueryGetApplicationResponse{Application: msgs[0]},
 		},
 		{
 			desc: "Second",
-			request: &types.QueryGetApplicationRequest{
+			request: &application.QueryGetApplicationRequest{
 				Address: msgs[1].Address,
 			},
-			response: &types.QueryGetApplicationResponse{Application: msgs[1]},
+			response: &application.QueryGetApplicationResponse{Application: msgs[1]},
 		},
 		{
 			desc: "KeyNotFound",
-			request: &types.QueryGetApplicationRequest{
+			request: &application.QueryGetApplicationRequest{
 				Address: strconv.Itoa(100000),
 			},
 			expectedErr: status.Error(codes.NotFound, "application not found"),
@@ -72,8 +72,8 @@ func TestApplicationQueryPaginated(t *testing.T) {
 	keeper, ctx := keepertest.ApplicationKeeper(t)
 	apps := createNApplications(keeper, ctx, 5)
 
-	request := func(next []byte, offset, limit uint64, total bool) *types.QueryAllApplicationsRequest {
-		return &types.QueryAllApplicationsRequest{
+	request := func(next []byte, offset, limit uint64, total bool) *application.QueryAllApplicationsRequest {
+		return &application.QueryAllApplicationsRequest{
 			Pagination: &query.PageRequest{
 				Key:        next,
 				Offset:     offset,

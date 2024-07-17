@@ -12,9 +12,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/pokt-network/poktroll/proto/types/application"
 	"github.com/pokt-network/poktroll/testutil/nullify"
-	application "github.com/pokt-network/poktroll/x/application/module"
-	"github.com/pokt-network/poktroll/x/application/types"
+	appmodule "github.com/pokt-network/poktroll/x/application/module"
 )
 
 func TestShowApplication(t *testing.T) {
@@ -30,7 +30,7 @@ func TestShowApplication(t *testing.T) {
 
 		args        []string
 		expectedErr error
-		app         types.Application
+		app         application.Application
 	}{
 		{
 			desc:      "found",
@@ -53,14 +53,14 @@ func TestShowApplication(t *testing.T) {
 				test.idAddress,
 			}
 			args = append(args, test.args...)
-			out, err := clitestutil.ExecTestCLICmd(ctx, application.CmdShowApplication(), args)
+			out, err := clitestutil.ExecTestCLICmd(ctx, appmodule.CmdShowApplication(), args)
 			if test.expectedErr != nil {
 				stat, ok := status.FromError(test.expectedErr)
 				require.True(t, ok)
 				require.ErrorIs(t, stat.Err(), test.expectedErr)
 			} else {
 				require.NoError(t, err)
-				var resp types.QueryGetApplicationResponse
+				var resp application.QueryGetApplicationResponse
 				require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 				require.NotNil(t, resp.Application)
 				require.Equal(t,
@@ -95,9 +95,9 @@ func TestListApplication(t *testing.T) {
 		step := 2
 		for i := 0; i < len(apps); i += step {
 			args := request(nil, uint64(i), uint64(step), false)
-			out, err := clitestutil.ExecTestCLICmd(ctx, application.CmdListApplication(), args)
+			out, err := clitestutil.ExecTestCLICmd(ctx, appmodule.CmdListApplication(), args)
 			require.NoError(t, err)
-			var resp types.QueryAllApplicationsResponse
+			var resp application.QueryAllApplicationsResponse
 			require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 			require.LessOrEqual(t, len(resp.Applications), step)
 			require.Subset(t,
@@ -111,9 +111,9 @@ func TestListApplication(t *testing.T) {
 		var next []byte
 		for i := 0; i < len(apps); i += step {
 			args := request(next, 0, uint64(step), false)
-			out, err := clitestutil.ExecTestCLICmd(ctx, application.CmdListApplication(), args)
+			out, err := clitestutil.ExecTestCLICmd(ctx, appmodule.CmdListApplication(), args)
 			require.NoError(t, err)
-			var resp types.QueryAllApplicationsResponse
+			var resp application.QueryAllApplicationsResponse
 			require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 			require.LessOrEqual(t, len(resp.Applications), step)
 			require.Subset(t,
@@ -125,9 +125,9 @@ func TestListApplication(t *testing.T) {
 	})
 	t.Run("Total", func(t *testing.T) {
 		args := request(nil, 0, uint64(len(apps)), true)
-		out, err := clitestutil.ExecTestCLICmd(ctx, application.CmdListApplication(), args)
+		out, err := clitestutil.ExecTestCLICmd(ctx, appmodule.CmdListApplication(), args)
 		require.NoError(t, err)
-		var resp types.QueryAllApplicationsResponse
+		var resp application.QueryAllApplicationsResponse
 		require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 		require.NoError(t, err)
 		require.Equal(t, len(apps), int(resp.Pagination.Total))

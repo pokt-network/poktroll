@@ -1,5 +1,5 @@
 package keeper
 
-import "github.com/pokt-network/poktroll/x/tokenomics/types"
+import "github.com/pokt-network/poktroll/proto/types/tokenomics"
 
-var _ types.QueryServer = Keeper{}
+var _ tokenomics.QueryServer = Keeper{}

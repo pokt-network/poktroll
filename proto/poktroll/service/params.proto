@@ -1,7 +1,7 @@
 syntax = "proto3";
 package poktroll.service;
 
-option go_package = "github.com/pokt-network/poktroll/x/service/types";
+option go_package = "github.com/pokt-network/poktroll/proto/types/service";
 
 import "amino/amino.proto";
 import "gogoproto/gogo.proto";

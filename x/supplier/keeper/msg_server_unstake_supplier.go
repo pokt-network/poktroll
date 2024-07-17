@@ -6,6 +6,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/pokt-network/poktroll/proto/types/supplier"
 	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
@@ -13,8 +14,8 @@ import (
 // TODO_BETA(#489): Determine if an application needs an unbonding period after unstaking.
 func (k msgServer) UnstakeSupplier(
 	ctx context.Context,
-	msg *types.MsgUnstakeSupplier,
-) (*types.MsgUnstakeSupplierResponse, error) {
+	msg *supplier.MsgUnstakeSupplier,
+) (*supplier.MsgUnstakeSupplierResponse, error) {
 	isSuccessful := false
 	defer telemetry.EventSuccessCounter(
 		"unstake_supplier",
@@ -29,11 +30,11 @@ func (k msgServer) UnstakeSupplier(
 		return nil, err
 	}
 
-	// Check if the supplier already exists or not
-	supplier, isSupplierFound := k.GetSupplier(ctx, msg.Address)
+	// Check if the foundSupplier already exists or not
+	foundSupplier, isSupplierFound := k.GetSupplier(ctx, msg.Address)
 	if !isSupplierFound {
 		logger.Info(fmt.Sprintf("Supplier not found. Cannot unstake address %s", msg.Address))
-		return nil, types.ErrSupplierNotFound
+		return nil, supplier.ErrSupplierNotFound
 	}
 	logger.Info(fmt.Sprintf("Supplier found. Unstaking supplier for address %s", msg.Address))
 
@@ -45,16 +46,16 @@ func (k msgServer) UnstakeSupplier(
 	}
 
 	// Send the coins from the supplier pool back to the supplier
-	err = k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, supplierAddress, []sdk.Coin{*supplier.Stake})
+	err = k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, supplierAddress, []sdk.Coin{*foundSupplier.Stake})
 	if err != nil {
-		logger.Error(fmt.Sprintf("could not send %v coins from %s module to %s account due to %v", supplier.Stake, supplierAddress, types.ModuleName, err))
+		logger.Error(fmt.Sprintf("could not send %v coins from %s module to %s account due to %v", foundSupplier.Stake, supplierAddress, types.ModuleName, err))
 		return nil, err
 	}
 
 	// Update the Supplier in the store
 	k.RemoveSupplier(ctx, supplierAddress.String())
-	logger.Info(fmt.Sprintf("Successfully removed the supplier: %+v", supplier))
+	logger.Info(fmt.Sprintf("Successfully removed the supplier: %+v", foundSupplier))
 
 	isSuccessful = true
-	return &types.MsgUnstakeSupplierResponse{}, nil
+	return &supplier.MsgUnstakeSupplierResponse{}, nil
 }

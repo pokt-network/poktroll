@@ -6,7 +6,7 @@ import (
 
 	shannonsdk "github.com/pokt-network/shannon-sdk"
 
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
 )
 
 // getRelayerUrl returns the next relayer endpoint to use for the given serviceId and rpcType.

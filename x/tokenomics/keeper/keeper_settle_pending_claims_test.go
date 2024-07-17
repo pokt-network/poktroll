@@ -11,17 +11,17 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
+	"github.com/pokt-network/poktroll/proto/types/application"
+	"github.com/pokt-network/poktroll/proto/types/proof"
+	"github.com/pokt-network/poktroll/proto/types/session"
+	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/tokenomics"
 	testutilevents "github.com/pokt-network/poktroll/testutil/events"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	testutilproof "github.com/pokt-network/poktroll/testutil/proof"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	testsession "github.com/pokt-network/poktroll/testutil/session"
-	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	"github.com/pokt-network/poktroll/x/shared"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 const testServiceId = "svc1"
@@ -36,8 +36,8 @@ type TestSuite struct {
 	sdkCtx  cosmostypes.Context
 	ctx     context.Context
 	keepers keepertest.TokenomicsModuleKeepers
-	claim   prooftypes.Claim
-	proof   prooftypes.Proof
+	claim   proof.Claim
+	proof   proof.Proof
 
 	expectedComputeUnits uint64
 }
@@ -57,12 +57,12 @@ func (s *TestSuite) SetupTest() {
 
 	// Set the suite expectedComputeUnits to equal the default proof_requirement_threshold
 	// such that by default, s.claim will require a proof 100% of the time.
-	s.expectedComputeUnits = prooftypes.DefaultProofRequirementThreshold
+	s.expectedComputeUnits = proof.DefaultProofRequirementThreshold
 
 	// Prepare a claim that can be inserted
-	s.claim = prooftypes.Claim{
+	s.claim = proof.Claim{
 		SupplierAddress: supplierAddr,
-		SessionHeader: &sessiontypes.SessionHeader{
+		SessionHeader: &session.SessionHeader{
 			ApplicationAddress:      appAddr,
 			Service:                 &sharedtypes.Service{Id: testServiceId},
 			SessionId:               "session_id",
@@ -76,14 +76,14 @@ func (s *TestSuite) SetupTest() {
 	}
 
 	// Prepare a claim that can be inserted
-	s.proof = prooftypes.Proof{
+	s.proof = proof.Proof{
 		SupplierAddress: s.claim.SupplierAddress,
 		SessionHeader:   s.claim.SessionHeader,
 		// ClosestMerkleProof
 	}
 
 	appStake := types.NewCoin("upokt", math.NewInt(1000000))
-	app := apptypes.Application{
+	app := application.Application{
 		Address: appAddr,
 		Stake:   &appStake,
 	}
@@ -185,7 +185,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequiredAndNotProv
 	// Confirm an expiration event was emitted
 	events := sdkCtx.EventManager().Events()
 	require.Len(t, events, 5) // minting, burning, settling, etc..
-	expectedEvents := testutilevents.FilterEvents[*tokenomicstypes.EventClaimExpired](t,
+	expectedEvents := testutilevents.FilterEvents[*tokenomics.EventClaimExpired](t,
 		events, "poktroll.tokenomics.EventClaimExpired")
 	require.Len(t, expectedEvents, 1)
 
@@ -233,13 +233,13 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimSettled_ProofRequiredAndProvide
 
 	// Confirm an settlement event was emitted
 	events := sdkCtx.EventManager().Events()
-	expectedEvents := testutilevents.FilterEvents[*tokenomicstypes.EventClaimSettled](t,
+	expectedEvents := testutilevents.FilterEvents[*tokenomics.EventClaimSettled](t,
 		events, "poktroll.tokenomics.EventClaimSettled")
 	require.Len(t, expectedEvents, 1)
 
 	// Validate the event
 	expectedEvent := expectedEvents[0]
-	require.NotEqual(t, prooftypes.ProofRequirementReason_NOT_REQUIRED, expectedEvent.GetProofRequirement())
+	require.NotEqual(t, proof.ProofRequirementReason_NOT_REQUIRED, expectedEvent.GetProofRequirement())
 	require.Equal(t, s.expectedComputeUnits, expectedEvent.GetNumComputeUnits())
 }
 
@@ -254,7 +254,7 @@ func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_Vi
 	// proof_request_probability is 100%. This is accomplished by setting the
 	// proof_requirement_threshold to exceed s.expectedComputeUnits, which
 	// matches s.claim.
-	err := s.keepers.ProofKeeper.SetParams(ctx, prooftypes.Params{
+	err := s.keepers.ProofKeeper.SetParams(ctx, proof.Params{
 		ProofRequestProbability: 1,
 		// +1 to push the threshold above s.claim's compute units
 		ProofRequirementThreshold: s.expectedComputeUnits + 1,
@@ -292,11 +292,11 @@ func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_Vi
 
 	// Confirm an settlement event was emitted
 	events := sdkCtx.EventManager().Events()
-	expectedEvents := testutilevents.FilterEvents[*tokenomicstypes.EventClaimSettled](t,
+	expectedEvents := testutilevents.FilterEvents[*tokenomics.EventClaimSettled](t,
 		events, "poktroll.tokenomics.EventClaimSettled")
 	require.Len(t, expectedEvents, 1)
 	expectedEvent := expectedEvents[0]
-	require.NotEqual(t, prooftypes.ProofRequirementReason_NOT_REQUIRED, expectedEvent.GetProofRequirement())
+	require.NotEqual(t, proof.ProofRequirementReason_NOT_REQUIRED, expectedEvent.GetProofRequirement())
 	require.Equal(t, s.expectedComputeUnits, expectedEvent.GetNumComputeUnits())
 }
 
@@ -313,7 +313,7 @@ func (s *TestSuite) TestSettlePendingClaims_Settles_WhenAProofIsNotRequired() {
 	// Set the proof parameters such that s.claim DOES NOT require a proof because
 	// the proof_request_probability is 0% AND because the proof_requirement_threshold
 	// exceeds s.expectedComputeUnits, which matches s.claim.
-	err := s.keepers.ProofKeeper.SetParams(ctx, prooftypes.Params{
+	err := s.keepers.ProofKeeper.SetParams(ctx, proof.Params{
 		ProofRequestProbability: 0,
 		// +1 to push the threshold above s.claim's compute units
 		ProofRequirementThreshold: s.expectedComputeUnits + 1,
@@ -345,13 +345,13 @@ func (s *TestSuite) TestSettlePendingClaims_Settles_WhenAProofIsNotRequired() {
 
 	// Confirm an expiration event was emitted
 	events := sdkCtx.EventManager().Events()
-	expectedEvents := testutilevents.FilterEvents[*tokenomicstypes.EventClaimSettled](t,
+	expectedEvents := testutilevents.FilterEvents[*tokenomics.EventClaimSettled](t,
 		events, "poktroll.tokenomics.EventClaimSettled")
 	require.Len(t, expectedEvents, 1)
 
 	// Validate the event
 	expectedEvent := expectedEvents[0]
-	require.Equal(t, prooftypes.ProofRequirementReason_NOT_REQUIRED.String(), expectedEvent.GetProofRequirement().String())
+	require.Equal(t, proof.ProofRequirementReason_NOT_REQUIRED.String(), expectedEvent.GetProofRequirement().String())
 	require.Equal(t, s.expectedComputeUnits, expectedEvent.GetNumComputeUnits())
 }
 
@@ -381,7 +381,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimPendingAfterSettlement() {
 	// Set the proof parameters such that s.claim DOES NOT require a proof
 	// because the proof_request_probability is 0% and the proof_request_threshold
 	// is greater than the claims' compute units.
-	err := s.keepers.ProofKeeper.SetParams(ctx, prooftypes.Params{
+	err := s.keepers.ProofKeeper.SetParams(ctx, proof.Params{
 		ProofRequestProbability: 0,
 		// +1 to push the threshold above s.claim's compute units
 		ProofRequirementThreshold: s.expectedComputeUnits + 1,
@@ -405,7 +405,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimPendingAfterSettlement() {
 	sessionTwoStartHeight := shared.GetSessionStartHeight(&sharedParams, sessionOneProofWindowCloseHeight+1)
 	sessionTwoProofWindowCloseHeight := shared.GetProofWindowCloseHeight(&sharedParams, sessionTwoStartHeight)
 
-	sessionTwoClaim.SessionHeader = &sessiontypes.SessionHeader{
+	sessionTwoClaim.SessionHeader = &session.SessionHeader{
 		ApplicationAddress:      sessionOneClaim.GetSessionHeader().GetApplicationAddress(),
 		Service:                 s.claim.GetSessionHeader().GetService(),
 		SessionId:               "session_two_id",

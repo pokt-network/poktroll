@@ -7,31 +7,31 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/supplier"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
 	"github.com/pokt-network/poktroll/testutil/sample"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	supplier "github.com/pokt-network/poktroll/x/supplier/module"
-	"github.com/pokt-network/poktroll/x/supplier/types"
+	suppliermodule "github.com/pokt-network/poktroll/x/supplier/module"
 )
 
 func TestGenesis(t *testing.T) {
-	genesisState := types.GenesisState{
-		Params: types.DefaultParams(),
-		SupplierList: []sharedtypes.Supplier{
+	genesisState := supplier.GenesisState{
+		Params: supplier.DefaultParams(),
+		SupplierList: []shared.Supplier{
 			{
 				Address: sample.AccAddress(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
-				Services: []*sharedtypes.SupplierServiceConfig{
+				Services: []*shared.SupplierServiceConfig{
 					{
-						Service: &sharedtypes.Service{
+						Service: &shared.Service{
 							Id: "svcId1",
 						},
-						Endpoints: []*sharedtypes.SupplierEndpoint{
+						Endpoints: []*shared.SupplierEndpoint{
 							{
 								Url:     "http://localhost:8081",
-								RpcType: sharedtypes.RPCType_JSON_RPC,
-								Configs: make([]*sharedtypes.ConfigOption, 0),
+								RpcType: shared.RPCType_JSON_RPC,
+								Configs: make([]*shared.ConfigOption, 0),
 							},
 						},
 					},
@@ -40,16 +40,16 @@ func TestGenesis(t *testing.T) {
 			{
 				Address: sample.AccAddress(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
-				Services: []*sharedtypes.SupplierServiceConfig{
+				Services: []*shared.SupplierServiceConfig{
 					{
-						Service: &sharedtypes.Service{
+						Service: &shared.Service{
 							Id: "svcId2",
 						},
-						Endpoints: []*sharedtypes.SupplierEndpoint{
+						Endpoints: []*shared.SupplierEndpoint{
 							{
 								Url:     "http://localhost:8082",
-								RpcType: sharedtypes.RPCType_GRPC,
-								Configs: make([]*sharedtypes.ConfigOption, 0),
+								RpcType: shared.RPCType_GRPC,
+								Configs: make([]*shared.ConfigOption, 0),
 							},
 						},
 					},
@@ -60,8 +60,8 @@ func TestGenesis(t *testing.T) {
 	}
 
 	k, ctx := keepertest.SupplierKeeper(t)
-	supplier.InitGenesis(ctx, k, genesisState)
-	got := supplier.ExportGenesis(ctx, k)
+	suppliermodule.InitGenesis(ctx, k, genesisState)
+	got := suppliermodule.ExportGenesis(ctx, k)
 	require.NotNil(t, got)
 
 	nullify.Fill(&genesisState)

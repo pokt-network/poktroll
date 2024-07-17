@@ -7,6 +7,12 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/proto/types/application"
+	"github.com/pokt-network/poktroll/proto/types/gateway"
+	"github.com/pokt-network/poktroll/proto/types/proof"
+	"github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/supplier"
+	"github.com/pokt-network/poktroll/proto/types/tokenomics"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
@@ -55,44 +61,44 @@ func (s *suite) msgUpdateParamsToDefaultsAny(moduleName string) *codectypes.Any 
 	switch moduleName {
 	case gatewaytypes.ModuleName:
 		anyMsg, err = codectypes.NewAnyWithValue(
-			&gatewaytypes.MsgUpdateParams{
+			&gateway.MsgUpdateParams{
 				Authority: authtypes.NewModuleAddress(s.granterName).String(),
-				Params:    gatewaytypes.DefaultParams(),
+				Params:    gateway.DefaultParams(),
 			},
 		)
 	case apptypes.ModuleName:
 		anyMsg, err = codectypes.NewAnyWithValue(
-			&apptypes.MsgUpdateParams{
+			&application.MsgUpdateParams{
 				Authority: authtypes.NewModuleAddress(s.granterName).String(),
-				Params:    apptypes.DefaultParams(),
+				Params:    application.DefaultParams(),
 			},
 		)
 	case suppliertypes.ModuleName:
 		anyMsg, err = codectypes.NewAnyWithValue(
-			&suppliertypes.MsgUpdateParams{
+			&supplier.MsgUpdateParams{
 				Authority: authtypes.NewModuleAddress(s.granterName).String(),
-				Params:    suppliertypes.DefaultParams(),
+				Params:    supplier.DefaultParams(),
 			},
 		)
 	case prooftypes.ModuleName:
 		anyMsg, err = codectypes.NewAnyWithValue(
-			&prooftypes.MsgUpdateParams{
+			&proof.MsgUpdateParams{
 				Authority: authtypes.NewModuleAddress(s.granterName).String(),
-				Params:    prooftypes.DefaultParams(),
+				Params:    proof.DefaultParams(),
 			},
 		)
 	case tokenomicstypes.ModuleName:
 		anyMsg, err = codectypes.NewAnyWithValue(
-			&tokenomicstypes.MsgUpdateParams{
+			&tokenomics.MsgUpdateParams{
 				Authority: authtypes.NewModuleAddress(s.granterName).String(),
-				Params:    tokenomicstypes.DefaultParams(),
+				Params:    tokenomics.DefaultParams(),
 			},
 		)
 	case sharedtypes.ModuleName:
 		anyMsg, err = codectypes.NewAnyWithValue(
-			&sharedtypes.MsgUpdateParams{
+			&shared.MsgUpdateParams{
 				Authority: authtypes.NewModuleAddress(s.granterName).String(),
-				Params:    sharedtypes.DefaultParams(),
+				Params:    shared.DefaultParams(),
 			},
 		)
 	default:

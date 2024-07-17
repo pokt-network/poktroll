@@ -1,12 +1,10 @@
 package relayer
 
-import (
-	"github.com/pokt-network/poktroll/x/service/types"
-)
+import "github.com/pokt-network/poktroll/proto/types/service"
 
 // MinedRelay is a wrapper around a relay that has been serialized and hashed.
 type MinedRelay struct {
-	types.Relay
+	service.Relay
 	Bytes []byte
 	Hash  []byte
 }

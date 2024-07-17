@@ -5,7 +5,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/spf13/cobra"
 
-	"github.com/pokt-network/poktroll/x/gateway/types"
+	"github.com/pokt-network/poktroll/proto/types/gateway"
 )
 
 func CmdQueryParams() *cobra.Command {
@@ -23,9 +23,9 @@ $ poktrolld q gateway params --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
 				return err
 			}
 
-			queryClient := types.NewQueryClient(clientCtx)
+			queryClient := gateway.NewQueryClient(clientCtx)
 
-			res, err := queryClient.Params(cmd.Context(), &types.QueryParamsRequest{})
+			res, err := queryClient.Params(cmd.Context(), &gateway.QueryParamsRequest{})
 			if err != nil {
 				return err
 			}

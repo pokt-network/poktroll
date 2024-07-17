@@ -4,12 +4,12 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/pokt-network/poktroll/x/service/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	"github.com/pokt-network/poktroll/proto/types/service"
+	"github.com/pokt-network/poktroll/proto/types/session"
 )
 
 // newRelayRequest builds a RelayRequest from an http.Request.
-func (sync *synchronousRPCServer) newRelayRequest(request *http.Request) (*types.RelayRequest, error) {
+func (sync *synchronousRPCServer) newRelayRequest(request *http.Request) (*service.RelayRequest, error) {
 	requestBody, err := io.ReadAll(request.Body)
 	if err != nil {
 		return nil, ErrRelayerProxyInternalError.Wrap(err.Error())
@@ -17,7 +17,7 @@ func (sync *synchronousRPCServer) newRelayRequest(request *http.Request) (*types
 
 	sync.logger.Debug().Msg("unmarshaling relay request")
 
-	var relayReq types.RelayRequest
+	var relayReq service.RelayRequest
 	if err := relayReq.Unmarshal(requestBody); err != nil {
 		sync.logger.Debug().Msg("unmarshaling relay request failed")
 		return nil, err
@@ -32,11 +32,11 @@ func (sync *synchronousRPCServer) newRelayRequest(request *http.Request) (*types
 // into the RelayResponse.
 func (sync *synchronousRPCServer) newRelayResponse(
 	responseBz []byte,
-	sessionHeader *sessiontypes.SessionHeader,
+	sessionHeader *session.SessionHeader,
 	supplierAddr string,
-) (*types.RelayResponse, error) {
-	relayResponse := &types.RelayResponse{
-		Meta:    types.RelayResponseMetadata{SessionHeader: sessionHeader},
+) (*service.RelayResponse, error) {
+	relayResponse := &service.RelayResponse{
+		Meta:    service.RelayResponseMetadata{SessionHeader: sessionHeader},
 		Payload: responseBz,
 	}
 

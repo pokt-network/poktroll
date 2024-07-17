@@ -12,10 +12,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	_ "golang.org/x/crypto/sha3"
 
-	"github.com/pokt-network/poktroll/x/session/types"
+	"github.com/pokt-network/poktroll/proto/types/session"
+	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
 	"github.com/pokt-network/poktroll/x/shared"
 	sharedhelpers "github.com/pokt-network/poktroll/x/shared/helpers"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 var SHA3HashLen = crypto.SHA3_256.Size()
@@ -28,10 +28,10 @@ const (
 
 type sessionHydrator struct {
 	// The session header that is used to hydrate the rest of the session data
-	sessionHeader *types.SessionHeader
+	sessionHeader *session.SessionHeader
 
 	// The fully hydrated session object
-	session *types.Session
+	session *session.Session
 
 	// The height at which the session being request
 	blockHeight int64
@@ -45,13 +45,13 @@ func NewSessionHydrator(
 	serviceId string,
 	blockHeight int64,
 ) *sessionHydrator {
-	sessionHeader := &types.SessionHeader{
+	sessionHeader := &session.SessionHeader{
 		ApplicationAddress: appAddress,
 		Service:            &sharedtypes.Service{Id: serviceId},
 	}
 	return &sessionHydrator{
 		sessionHeader: sessionHeader,
-		session:       &types.Session{},
+		session:       &session.Session{},
 		blockHeight:   blockHeight,
 		sessionIDBz:   make([]byte, 0),
 	}
@@ -59,7 +59,7 @@ func NewSessionHydrator(
 
 // GetSession implements of the exposed `UtilityModule.GetSession` function
 // TECHDEBT(#519,#348): Add custom error types depending on the type of issue that occurred and assert on them in the unit tests.
-func (k Keeper) HydrateSession(ctx context.Context, sh *sessionHydrator) (*types.Session, error) {
+func (k Keeper) HydrateSession(ctx context.Context, sh *sessionHydrator) (*session.Session, error) {
 	logger := k.Logger().With("method", "hydrateSession")
 
 	if err := k.hydrateSessionMetadata(ctx, sh); err != nil {
@@ -94,7 +94,7 @@ func (k Keeper) hydrateSessionMetadata(ctx context.Context, sh *sessionHydrator)
 
 	lastCommittedBlockHeight := sdk.UnwrapSDKContext(ctx).BlockHeight()
 	if sh.blockHeight > lastCommittedBlockHeight {
-		return types.ErrSessionHydration.Wrapf(
+		return session.ErrSessionHydration.Wrapf(
 			"block height %d is ahead of the last committed block height %d",
 			sh.blockHeight, lastCommittedBlockHeight,
 		)
@@ -119,7 +119,7 @@ func (k Keeper) hydrateSessionID(ctx context.Context, sh *sessionHydrator) error
 	// a valid service depending on whether or not its permissioned or permissionless
 
 	if !sharedhelpers.IsValidService(sh.sessionHeader.Service) {
-		return types.ErrSessionHydration.Wrapf("invalid service: %v", sh.sessionHeader.Service)
+		return session.ErrSessionHydration.Wrapf("invalid service: %v", sh.sessionHeader.Service)
 	}
 
 	sh.sessionHeader.SessionId, sh.sessionIDBz = k.GetSessionId(
@@ -137,7 +137,7 @@ func (k Keeper) hydrateSessionID(ctx context.Context, sh *sessionHydrator) error
 func (k Keeper) hydrateSessionApplication(ctx context.Context, sh *sessionHydrator) error {
 	foundApp, appIsFound := k.applicationKeeper.GetApplication(ctx, sh.sessionHeader.ApplicationAddress)
 	if !appIsFound {
-		return types.ErrSessionAppNotFound.Wrapf(
+		return session.ErrSessionAppNotFound.Wrapf(
 			"could not find app with address %q at height %d",
 			sh.sessionHeader.ApplicationAddress,
 			sh.sessionHeader.SessionStartBlockHeight,
@@ -151,7 +151,7 @@ func (k Keeper) hydrateSessionApplication(ctx context.Context, sh *sessionHydrat
 		}
 	}
 
-	return types.ErrSessionAppNotStakedForService.Wrapf(
+	return session.ErrSessionAppNotStakedForService.Wrapf(
 		"application %q not staked for service ID %q",
 		sh.sessionHeader.ApplicationAddress,
 		sh.sessionHeader.Service.Id,
@@ -182,7 +182,7 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 
 	if len(candidateSuppliers) == 0 {
 		logger.Error("[ERROR] no suppliers found for session")
-		return types.ErrSessionSuppliersNotFound.Wrapf(
+		return session.ErrSessionSuppliersNotFound.Wrapf(
 			"could not find suppliers for service %s at height %d",
 			sh.sessionHeader.Service,
 			sh.sessionHeader.SessionStartBlockHeight,

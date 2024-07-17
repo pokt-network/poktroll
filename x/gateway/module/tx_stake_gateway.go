@@ -9,8 +9,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/spf13/cobra"
 
+	"github.com/pokt-network/poktroll/proto/types/gateway"
 	"github.com/pokt-network/poktroll/x/gateway/module/config"
-	"github.com/pokt-network/poktroll/x/gateway/types"
 )
 
 var (
@@ -43,7 +43,7 @@ $ poktrolld tx gateway stake-gateway --config stake_config.yaml --keyring-backen
 				return err
 			}
 
-			msg := types.NewMsgStakeGateway(
+			msg := gateway.NewMsgStakeGateway(
 				clientCtx.GetFromAddress().String(),
 				gatewayStakeConfig.StakeAmount,
 			)

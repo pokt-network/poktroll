@@ -5,7 +5,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 )
 
 // NumSessionsAppToGatewayUndelegationRetention is the number of sessions for which
@@ -55,7 +55,7 @@ func (k Keeper) GetNumBlocksUndelegationRetention(ctx context.Context) int64 {
 // GetNumBlocksUndelegationRetention returns the number of blocks for which
 // undelegations should be kept before being pruned, given the passed shared
 // module parameters.
-func GetNumBlocksUndelegationRetention(sharedParams *sharedtypes.Params) int64 {
+func GetNumBlocksUndelegationRetention(sharedParams *shared.Params) int64 {
 	numBlocksPerSession := int64(sharedParams.GetNumBlocksPerSession())
 
 	return int64(sharedParams.GetGracePeriodEndOffsetBlocks()) +

@@ -7,7 +7,7 @@ import (
 	"github.com/cosmos/gogoproto/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/client"
-	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	prooftypes "github.com/pokt-network/poktroll/proto/types/proof"
 )
 
 // proofQuerier is a wrapper around the prooftypes.QueryClient that enables the

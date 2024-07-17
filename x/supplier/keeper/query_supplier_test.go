@@ -9,9 +9,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/pokt-network/poktroll/proto/types/supplier"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
-	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 // Prevent strconv unused error
@@ -22,27 +22,27 @@ func TestSupplierQuerySingle(t *testing.T) {
 	suppliers := createNSuppliers(keeper, ctx, 2)
 	tests := []struct {
 		desc        string
-		request     *types.QueryGetSupplierRequest
-		response    *types.QueryGetSupplierResponse
+		request     *supplier.QueryGetSupplierRequest
+		response    *supplier.QueryGetSupplierResponse
 		expectedErr error
 	}{
 		{
 			desc: "First",
-			request: &types.QueryGetSupplierRequest{
+			request: &supplier.QueryGetSupplierRequest{
 				Address: suppliers[0].Address,
 			},
-			response: &types.QueryGetSupplierResponse{Supplier: suppliers[0]},
+			response: &supplier.QueryGetSupplierResponse{Supplier: suppliers[0]},
 		},
 		{
 			desc: "Second",
-			request: &types.QueryGetSupplierRequest{
+			request: &supplier.QueryGetSupplierRequest{
 				Address: suppliers[1].Address,
 			},
-			response: &types.QueryGetSupplierResponse{Supplier: suppliers[1]},
+			response: &supplier.QueryGetSupplierResponse{Supplier: suppliers[1]},
 		},
 		{
 			desc: "KeyNotFound",
-			request: &types.QueryGetSupplierRequest{
+			request: &supplier.QueryGetSupplierRequest{
 				Address: strconv.Itoa(100000),
 			},
 			expectedErr: status.Error(codes.NotFound, "supplier with address \"100000\""),
@@ -72,8 +72,8 @@ func TestSupplierQueryPaginated(t *testing.T) {
 	keeper, ctx := keepertest.SupplierKeeper(t)
 	msgs := createNSuppliers(keeper, ctx, 5)
 
-	request := func(next []byte, offset, limit uint64, total bool) *types.QueryAllSuppliersRequest {
-		return &types.QueryAllSuppliersRequest{
+	request := func(next []byte, offset, limit uint64, total bool) *supplier.QueryAllSuppliersRequest {
+		return &supplier.QueryAllSuppliersRequest{
 			Pagination: &query.PageRequest{
 				Key:        next,
 				Offset:     offset,

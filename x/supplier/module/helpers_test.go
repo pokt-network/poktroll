@@ -6,8 +6,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/proto/types/shared"
 	"github.com/pokt-network/poktroll/testutil/network"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
@@ -16,7 +16,7 @@ var _ = strconv.IntSize
 
 // networkWithSupplierObjects creates a new network with a given number of supplier objects.
 // It returns the network and a slice of the created supplier objects.
-func networkWithSupplierObjects(t *testing.T, n int) (*network.Network, []sharedtypes.Supplier) {
+func networkWithSupplierObjects(t *testing.T, n int) (*network.Network, []shared.Supplier) {
 	t.Helper()
 	cfg := network.DefaultConfig()
 	supplierGenesisState := network.DefaultSupplierModuleGenesisState(t, n)

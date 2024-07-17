@@ -10,16 +10,16 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/pokt-network/poktroll/proto/types/application"
+	"github.com/pokt-network/poktroll/proto/types/proof"
+	"github.com/pokt-network/poktroll/proto/types/session"
+	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	testproof "github.com/pokt-network/poktroll/testutil/proof"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	testsession "github.com/pokt-network/poktroll/testutil/session"
-	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	"github.com/pokt-network/poktroll/x/proof/keeper"
-	"github.com/pokt-network/poktroll/x/proof/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	"github.com/pokt-network/poktroll/x/shared"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 const (
@@ -82,7 +82,7 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 				},
 			})
 
-			keepers.SetApplication(ctx, apptypes.Application{
+			keepers.SetApplication(ctx, application.Application{
 				Address: appAddr,
 				ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
 					{Service: service},
@@ -91,7 +91,7 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 
 			sessionRes, err := keepers.GetSession(
 				ctx,
-				&sessiontypes.QueryGetSessionRequest{
+				&session.QueryGetSessionRequest{
 					ApplicationAddress: appAddr,
 					Service:            service,
 					BlockHeight:        blockHeight,
@@ -121,7 +121,7 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 			require.NotNil(t, createClaimRes)
 
 			// Query for all claims.
-			claimRes, err := keepers.AllClaims(ctx, &types.QueryAllClaimsRequest{})
+			claimRes, err := keepers.AllClaims(ctx, &proof.QueryAllClaimsRequest{})
 			require.NoError(t, err)
 
 			claims := claimRes.GetClaims()
@@ -144,7 +144,7 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 			event, err := cosmostypes.ParseTypedEvent(abci.Event(events[0]))
 			require.NoError(t, err)
 
-			claimCreatedEvent, ok := event.(*types.EventClaimCreated)
+			claimCreatedEvent, ok := event.(*proof.EventClaimCreated)
 			require.Truef(t, ok, "unexpected event type %T", event)
 
 			require.EqualValues(t, &claim, claimCreatedEvent.GetClaim())
@@ -178,7 +178,7 @@ func TestMsgServer_CreateClaim_Error_OutsideOfWindow(t *testing.T) {
 		},
 	})
 
-	keepers.SetApplication(ctx, apptypes.Application{
+	keepers.SetApplication(ctx, application.Application{
 		Address: appAddr,
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
 			{Service: service},
@@ -187,7 +187,7 @@ func TestMsgServer_CreateClaim_Error_OutsideOfWindow(t *testing.T) {
 
 	sessionRes, err := keepers.GetSession(
 		ctx,
-		&sessiontypes.QueryGetSessionRequest{
+		&session.QueryGetSessionRequest{
 			ApplicationAddress: appAddr,
 			Service:            service,
 			BlockHeight:        1,
@@ -219,7 +219,7 @@ func TestMsgServer_CreateClaim_Error_OutsideOfWindow(t *testing.T) {
 			claimMsgHeight: earliestClaimCommitHeight - 1,
 			expectedErr: status.Error(
 				codes.FailedPrecondition,
-				types.ErrProofClaimOutsideOfWindow.Wrapf(
+				proof.ErrProofClaimOutsideOfWindow.Wrapf(
 					"current block height (%d) is less than the session's earliest claim commit height (%d)",
 					earliestClaimCommitHeight-1,
 					shared.GetEarliestSupplierClaimCommitHeight(
@@ -236,7 +236,7 @@ func TestMsgServer_CreateClaim_Error_OutsideOfWindow(t *testing.T) {
 			claimMsgHeight: claimWindowCloseHeight + 1,
 			expectedErr: status.Error(
 				codes.FailedPrecondition,
-				types.ErrProofClaimOutsideOfWindow.Wrapf(
+				proof.ErrProofClaimOutsideOfWindow.Wrapf(
 					"current block height (%d) is greater than session claim window close height (%d)",
 					claimWindowCloseHeight+1,
 					claimWindowCloseHeight,
@@ -263,7 +263,7 @@ func TestMsgServer_CreateClaim_Error_OutsideOfWindow(t *testing.T) {
 			_, err = srv.CreateClaim(ctx, claimMsg)
 			require.ErrorContains(t, err, test.expectedErr.Error())
 
-			claimRes, err := keepers.AllClaims(ctx, &types.QueryAllClaimsRequest{})
+			claimRes, err := keepers.AllClaims(ctx, &proof.QueryAllClaimsRequest{})
 			require.NoError(t, err)
 
 			claims := claimRes.GetClaims()
@@ -320,7 +320,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 	})
 
 	// Add an application that is expected to be in the session.
-	appKeeper.SetApplication(ctx, apptypes.Application{
+	appKeeper.SetApplication(ctx, application.Application{
 		Address: appAddr,
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
 			{Service: service},
@@ -328,7 +328,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 	})
 
 	// Add an application that is *not* expected to be in the session.
-	appKeeper.SetApplication(ctx, apptypes.Application{
+	appKeeper.SetApplication(ctx, application.Application{
 		Address: wrongAppAddr,
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
 			{Service: &sharedtypes.Service{Id: "nosvc1"}},
@@ -338,7 +338,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 	// Query for the session which contains the expected app and supplier pair.
 	sessionRes, err := keepers.SessionKeeper.GetSession(
 		ctx,
-		&sessiontypes.QueryGetSessionRequest{
+		&session.QueryGetSessionRequest{
 			ApplicationAddress: appAddr,
 			Service:            service,
 			BlockHeight:        1,
@@ -354,12 +354,12 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 
 	tests := []struct {
 		desc        string
-		claimMsgFn  func(t *testing.T) *types.MsgCreateClaim
+		claimMsgFn  func(t *testing.T) *proof.MsgCreateClaim
 		expectedErr error
 	}{
 		{
 			desc: "on-chain session ID must match claim msg session ID",
-			claimMsgFn: func(t *testing.T) *types.MsgCreateClaim {
+			claimMsgFn: func(t *testing.T) *proof.MsgCreateClaim {
 				return newTestClaimMsg(t,
 					sessionStartHeight,
 					// Use a session ID that doesn't match.
@@ -372,7 +372,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 			},
 			expectedErr: status.Error(
 				codes.InvalidArgument,
-				types.ErrProofInvalidSessionId.Wrapf(
+				proof.ErrProofInvalidSessionId.Wrapf(
 					"session ID does not match on-chain session ID; expected %q, got %q",
 					sessionRes.GetSession().GetSessionId(),
 					"invalid_session_id",
@@ -381,7 +381,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 		},
 		{
 			desc: "claim msg supplier address must be in the session",
-			claimMsgFn: func(t *testing.T) *types.MsgCreateClaim {
+			claimMsgFn: func(t *testing.T) *proof.MsgCreateClaim {
 				return newTestClaimMsg(t,
 					sessionStartHeight,
 					sessionRes.GetSession().GetSessionId(),
@@ -394,7 +394,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 			},
 			expectedErr: status.Error(
 				codes.InvalidArgument,
-				types.ErrProofNotFound.Wrapf(
+				proof.ErrProofNotFound.Wrapf(
 					"supplier address %q not found in session ID %q",
 					wrongSupplierAddr,
 					sessionRes.GetSession().GetSessionId(),
@@ -403,7 +403,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 		},
 		{
 			desc: "claim msg supplier address must exist on-chain",
-			claimMsgFn: func(t *testing.T) *types.MsgCreateClaim {
+			claimMsgFn: func(t *testing.T) *proof.MsgCreateClaim {
 				return newTestClaimMsg(t,
 					sessionStartHeight,
 					sessionRes.GetSession().GetSessionId(),
@@ -416,7 +416,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 			},
 			expectedErr: status.Error(
 				codes.InvalidArgument,
-				types.ErrProofNotFound.Wrapf(
+				proof.ErrProofNotFound.Wrapf(
 					"supplier address %q not found in session ID %q",
 					randSupplierAddr,
 					sessionRes.GetSession().GetSessionId(),
@@ -425,7 +425,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 		},
 		{
 			desc: "claim msg application address must be in the session",
-			claimMsgFn: func(t *testing.T) *types.MsgCreateClaim {
+			claimMsgFn: func(t *testing.T) *proof.MsgCreateClaim {
 				return newTestClaimMsg(t,
 					sessionStartHeight,
 					sessionRes.GetSession().GetSessionId(),
@@ -438,7 +438,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 			},
 			expectedErr: status.Error(
 				codes.InvalidArgument,
-				sessiontypes.ErrSessionAppNotStakedForService.Wrapf(
+				session.ErrSessionAppNotStakedForService.Wrapf(
 					"application %q not staked for service ID %q",
 					wrongAppAddr,
 					service.GetId(),
@@ -447,7 +447,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 		},
 		{
 			desc: "claim msg application address must exist on-chain",
-			claimMsgFn: func(t *testing.T) *types.MsgCreateClaim {
+			claimMsgFn: func(t *testing.T) *proof.MsgCreateClaim {
 				return newTestClaimMsg(t,
 					sessionStartHeight,
 					sessionRes.GetSession().GetSessionId(),
@@ -460,7 +460,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 			},
 			expectedErr: status.Error(
 				codes.InvalidArgument,
-				sessiontypes.ErrSessionAppNotFound.Wrapf(
+				session.ErrSessionAppNotFound.Wrapf(
 					"could not find app with address %q at height %d",
 					randAppAddr,
 					sessionRes.GetSession().GetHeader().GetSessionStartBlockHeight(),
@@ -491,12 +491,12 @@ func newTestClaimMsg(
 	appAddr string,
 	service *sharedtypes.Service,
 	merkleRoot smt.MerkleRoot,
-) *types.MsgCreateClaim {
+) *proof.MsgCreateClaim {
 	t.Helper()
 
-	return types.NewMsgCreateClaim(
+	return proof.NewMsgCreateClaim(
 		supplierAddr,
-		&sessiontypes.SessionHeader{
+		&session.SessionHeader{
 			ApplicationAddress:      appAddr,
 			Service:                 service,
 			SessionId:               sessionId,

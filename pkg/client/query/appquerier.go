@@ -7,7 +7,7 @@ import (
 	grpc "github.com/cosmos/gogoproto/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/client"
-	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	apptypes "github.com/pokt-network/poktroll/proto/types/application"
 )
 
 var _ client.ApplicationQueryClient = (*appQuerier)(nil)

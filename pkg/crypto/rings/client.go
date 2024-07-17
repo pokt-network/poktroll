@@ -14,10 +14,10 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/crypto"
 	"github.com/pokt-network/poktroll/pkg/polylog"
-	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	"github.com/pokt-network/poktroll/x/service/types"
+	"github.com/pokt-network/poktroll/proto/types/application"
+	"github.com/pokt-network/poktroll/proto/types/service"
+	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
 	"github.com/pokt-network/poktroll/x/shared"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 var _ crypto.RingClient = (*ringClient)(nil)
@@ -91,7 +91,7 @@ func (rc *ringClient) GetRingForAddressAtHeight(
 // the same request.
 func (rc *ringClient) VerifyRelayRequestSignature(
 	ctx context.Context,
-	relayRequest *types.RelayRequest,
+	relayRequest *service.RelayRequest,
 ) error {
 	relayRequestMeta := relayRequest.GetMeta()
 
@@ -266,7 +266,7 @@ func (rc *ringClient) getRingPointsForAddressAtHeight(
 // gateways that have been undelegated after the target session end height.
 func (rc *ringClient) GetRingAddressesAtBlock(
 	ctx context.Context,
-	app *apptypes.Application,
+	app *application.Application,
 	blockHeight int64,
 ) ([]string, error) {
 	// TODO_TECHDEBT(#543): We don't really want to have to query the params for every method call.
@@ -289,7 +289,7 @@ func (rc *ringClient) GetRingAddressesAtBlock(
 // gateways that have been undelegated after the target session end height.
 func GetRingAddressesAtBlock(
 	sharedParams *sharedtypes.Params,
-	app *apptypes.Application,
+	app *application.Application,
 	blockHeight int64,
 ) []string {
 	// Get the target session end height at which we want to get the active delegations.
@@ -305,7 +305,7 @@ func GetRingAddressesAtBlock(
 // The ring addresses slice is reconstructed by adding back the past delegated
 // gateways that have been undelegated after the target session end height.
 func GetRingAddressesAtSessionEndHeight(
-	app *apptypes.Application,
+	app *application.Application,
 	targetSessionEndHeight uint64,
 ) []string {
 	// Get the current active delegations for the application and use them as a base.

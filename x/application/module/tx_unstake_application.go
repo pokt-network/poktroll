@@ -8,7 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/spf13/cobra"
 
-	"github.com/pokt-network/poktroll/x/application/types"
+	"github.com/pokt-network/poktroll/proto/types/application"
 )
 
 var _ = strconv.Itoa(0)
@@ -31,7 +31,7 @@ $ poktrolld tx application unstake-application --keyring-backend test --from $(A
 				return err
 			}
 
-			msg := types.NewMsgUnstakeApplication(
+			msg := application.NewMsgUnstakeApplication(
 				clientCtx.GetFromAddress().String(),
 			)
 			if err := msg.ValidateBasic(); err != nil {

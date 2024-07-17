@@ -7,11 +7,11 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/supplier"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/keeper"
-	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
@@ -27,19 +27,19 @@ func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
 
 	// Prepare the supplier
 	initialStake := sdk.NewCoin("upokt", math.NewInt(100))
-	stakeMsg := &types.MsgStakeSupplier{
+	stakeMsg := &supplier.MsgStakeSupplier{
 		Address: supplierAddr,
 		Stake:   &initialStake,
-		Services: []*sharedtypes.SupplierServiceConfig{
+		Services: []*shared.SupplierServiceConfig{
 			{
-				Service: &sharedtypes.Service{
+				Service: &shared.Service{
 					Id: "svcId",
 				},
-				Endpoints: []*sharedtypes.SupplierEndpoint{
+				Endpoints: []*shared.SupplierEndpoint{
 					{
 						Url:     "http://localhost:8080",
-						RpcType: sharedtypes.RPCType_JSON_RPC,
-						Configs: make([]*sharedtypes.ConfigOption, 0),
+						RpcType: shared.RPCType_JSON_RPC,
+						Configs: make([]*shared.ConfigOption, 0),
 					},
 				},
 			},
@@ -58,7 +58,7 @@ func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
 	require.Len(t, foundSupplier.Services, 1)
 
 	// Unstake the supplier
-	unstakeMsg := &types.MsgUnstakeSupplier{Address: supplierAddr}
+	unstakeMsg := &supplier.MsgUnstakeSupplier{Address: supplierAddr}
 	_, err = srv.UnstakeSupplier(ctx, unstakeMsg)
 	require.NoError(t, err)
 
@@ -79,10 +79,10 @@ func TestMsgServer_UnstakeSupplier_FailIfNotStaked(t *testing.T) {
 	require.False(t, isSupplierFound)
 
 	// Unstake the supplier
-	unstakeMsg := &types.MsgUnstakeSupplier{Address: supplierAddr}
+	unstakeMsg := &supplier.MsgUnstakeSupplier{Address: supplierAddr}
 	_, err := srv.UnstakeSupplier(ctx, unstakeMsg)
 	require.Error(t, err)
-	require.ErrorIs(t, err, types.ErrSupplierNotFound)
+	require.ErrorIs(t, err, supplier.ErrSupplierNotFound)
 
 	_, isSupplierFound = k.GetSupplier(ctx, supplierAddr)
 	require.False(t, isSupplierFound)

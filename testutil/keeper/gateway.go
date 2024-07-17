@@ -19,9 +19,10 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/proto/types/gateway"
 	mocks "github.com/pokt-network/poktroll/testutil/gateway/mocks"
+	"github.com/pokt-network/poktroll/x/application/types"
 	"github.com/pokt-network/poktroll/x/gateway/keeper"
-	"github.com/pokt-network/poktroll/x/gateway/types"
 )
 
 func GatewayKeeper(t testing.TB) (keeper.Keeper, context.Context) {
@@ -53,7 +54,7 @@ func GatewayKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 	ctx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
 
 	// Initialize params
-	require.NoError(t, k.SetParams(ctx, types.DefaultParams()))
+	require.NoError(t, k.SetParams(ctx, gateway.DefaultParams()))
 
 	return k, ctx
 }

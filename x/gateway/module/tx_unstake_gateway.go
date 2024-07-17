@@ -8,7 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/spf13/cobra"
 
-	"github.com/pokt-network/poktroll/x/gateway/types"
+	"github.com/pokt-network/poktroll/proto/types/gateway"
 )
 
 var _ = strconv.Itoa(0)
@@ -28,7 +28,7 @@ $ poktrolld tx gateway unstake-gateway --keyring-backend test --from $(GATEWAY) 
 			if err != nil {
 				return err
 			}
-			msg := types.NewMsgUnstakeGateway(
+			msg := gateway.NewMsgUnstakeGateway(
 				clientCtx.GetFromAddress().String(),
 			)
 			if err := msg.ValidateBasic(); err != nil {

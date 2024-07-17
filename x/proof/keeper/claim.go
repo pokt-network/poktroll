@@ -8,11 +8,12 @@ import (
 	storetypes "cosmossdk.io/store/types"
 	"github.com/cosmos/cosmos-sdk/runtime"
 
+	"github.com/pokt-network/poktroll/proto/types/proof"
 	"github.com/pokt-network/poktroll/x/proof/types"
 )
 
 // UpsertClaim set a specific claim in the store from its index
-func (k Keeper) UpsertClaim(ctx context.Context, claim types.Claim) {
+func (k Keeper) UpsertClaim(ctx context.Context, claim proof.Claim) {
 	logger := k.Logger().With("method", "UpsertClaim")
 
 	claimBz := k.cdc.MustMarshal(&claim)
@@ -39,7 +40,7 @@ func (k Keeper) UpsertClaim(ctx context.Context, claim types.Claim) {
 }
 
 // GetClaim returns a claim from its index
-func (k Keeper) GetClaim(ctx context.Context, sessionId, supplierAddr string) (_ types.Claim, isClaimFound bool) {
+func (k Keeper) GetClaim(ctx context.Context, sessionId, supplierAddr string) (_ proof.Claim, isClaimFound bool) {
 	return k.getClaimByPrimaryKey(ctx, types.ClaimPrimaryKey(sessionId, supplierAddr))
 }
 
@@ -75,7 +76,7 @@ func (k Keeper) RemoveClaim(ctx context.Context, sessionId, supplierAddr string)
 }
 
 // GetAllClaims returns all claim
-func (k Keeper) GetAllClaims(ctx context.Context) (claims []types.Claim) {
+func (k Keeper) GetAllClaims(ctx context.Context) (claims []proof.Claim) {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	primaryStore := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ClaimPrimaryKeyPrefix))
 	iterator := storetypes.KVStorePrefixIterator(primaryStore, []byte{})
@@ -83,7 +84,7 @@ func (k Keeper) GetAllClaims(ctx context.Context) (claims []types.Claim) {
 	defer iterator.Close()
 
 	for ; iterator.Valid(); iterator.Next() {
-		var claim types.Claim
+		var claim proof.Claim
 		k.cdc.MustUnmarshal(iterator.Value(), &claim)
 		claims = append(claims, claim)
 	}
@@ -92,13 +93,13 @@ func (k Keeper) GetAllClaims(ctx context.Context) (claims []types.Claim) {
 }
 
 // getClaimByPrimaryKey is a helper that retrieves, if exists, the Claim associated with the key provided
-func (k Keeper) getClaimByPrimaryKey(ctx context.Context, primaryKey []byte) (claim types.Claim, isClaimFound bool) {
+func (k Keeper) getClaimByPrimaryKey(ctx context.Context, primaryKey []byte) (claim proof.Claim, isClaimFound bool) {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	primaryStore := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ClaimPrimaryKeyPrefix))
 	claimBz := primaryStore.Get(primaryKey)
 
 	if claimBz == nil {
-		return types.Claim{}, false
+		return proof.Claim{}, false
 	}
 
 	k.cdc.MustUnmarshal(claimBz, &claim)

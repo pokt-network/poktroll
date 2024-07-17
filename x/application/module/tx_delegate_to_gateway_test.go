@@ -13,9 +13,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/status"
 
+	"github.com/pokt-network/poktroll/proto/types/application"
 	"github.com/pokt-network/poktroll/testutil/network"
-	application "github.com/pokt-network/poktroll/x/application/module"
-	"github.com/pokt-network/poktroll/x/application/types"
+	appmodule "github.com/pokt-network/poktroll/x/application/module"
 )
 
 func TestCLI_DelegateToGateway(t *testing.T) {
@@ -55,25 +55,25 @@ func TestCLI_DelegateToGateway(t *testing.T) {
 			desc: "invalid - missing app address",
 			// appAddress explicitly omitted
 			gatewayAddress: gatewayAccount.Address.String(),
-			expectedErr:    types.ErrAppInvalidAddress,
+			expectedErr:    application.ErrAppInvalidAddress,
 		},
 		{
 			desc:           "invalid - invalid app address",
 			appAddress:     "invalid address",
 			gatewayAddress: gatewayAccount.Address.String(),
-			expectedErr:    types.ErrAppInvalidAddress,
+			expectedErr:    application.ErrAppInvalidAddress,
 		},
 		{
 			desc:       "invalid - missing gateway address",
 			appAddress: appAccount.Address.String(),
 			// gatewayAddress explicitly omitted
-			expectedErr: types.ErrAppInvalidGatewayAddress,
+			expectedErr: application.ErrAppInvalidGatewayAddress,
 		},
 		{
 			desc:           "invalid - invalid gateway address",
 			appAddress:     appAccount.Address.String(),
 			gatewayAddress: "invalid address",
-			expectedErr:    types.ErrAppInvalidGatewayAddress,
+			expectedErr:    application.ErrAppInvalidGatewayAddress,
 		},
 	}
 
@@ -95,7 +95,7 @@ func TestCLI_DelegateToGateway(t *testing.T) {
 			args = append(args, commonArgs...)
 
 			// Execute the command
-			delegateOutput, err := clitestutil.ExecTestCLICmd(ctx, application.CmdDelegateToGateway(), args)
+			delegateOutput, err := clitestutil.ExecTestCLICmd(ctx, appmodule.CmdDelegateToGateway(), args)
 
 			// Validate the error if one is expected
 			if test.expectedErr != nil {

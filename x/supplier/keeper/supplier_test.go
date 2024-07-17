@@ -12,10 +12,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
 	"github.com/pokt-network/poktroll/testutil/sample"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/keeper"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
@@ -34,20 +34,20 @@ func TestModuleAddressSupplier(t *testing.T) {
 	require.Equal(t, "pokt1j40dzzmn6cn9kxku7a5tjnud6hv37vesr5ccaa", moduleAddress.String())
 }
 
-func createNSuppliers(keeper keeper.Keeper, ctx context.Context, n int) []sharedtypes.Supplier {
-	suppliers := make([]sharedtypes.Supplier, n)
+func createNSuppliers(keeper keeper.Keeper, ctx context.Context, n int) []shared.Supplier {
+	suppliers := make([]shared.Supplier, n)
 	for i := range suppliers {
 		supplier := &suppliers[i]
 		supplier.Address = sample.AccAddress()
 		supplier.Stake = &sdk.Coin{Denom: "upokt", Amount: math.NewInt(int64(i))}
-		supplier.Services = []*sharedtypes.SupplierServiceConfig{
+		supplier.Services = []*shared.SupplierServiceConfig{
 			{
-				Service: &sharedtypes.Service{Id: fmt.Sprintf("svc%d", i)},
-				Endpoints: []*sharedtypes.SupplierEndpoint{
+				Service: &shared.Service{Id: fmt.Sprintf("svc%d", i)},
+				Endpoints: []*shared.SupplierEndpoint{
 					{
 						Url:     fmt.Sprintf("http://localhost:%d", i),
-						RpcType: sharedtypes.RPCType_JSON_RPC,
-						Configs: make([]*sharedtypes.ConfigOption, 0),
+						RpcType: shared.RPCType_JSON_RPC,
+						Configs: make([]*shared.ConfigOption, 0),
 					},
 				},
 			},

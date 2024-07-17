@@ -1,7 +1,7 @@
 syntax = "proto3";
 package poktroll.application;
 
-option go_package = "github.com/pokt-network/poktroll/x/application/types";
+option go_package = "github.com/pokt-network/poktroll/proto/types/application";
 
 import "gogoproto/gogo.proto";
 import "cosmos/base/v1beta1/coin.proto";

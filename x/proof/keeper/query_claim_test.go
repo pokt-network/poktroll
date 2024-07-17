@@ -9,10 +9,10 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/pokt-network/poktroll/proto/types/proof"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
 	"github.com/pokt-network/poktroll/testutil/sample"
-	"github.com/pokt-network/poktroll/x/proof/types"
 )
 
 // Prevent strconv unused error
@@ -26,44 +26,44 @@ func TestClaimQuerySingle(t *testing.T) {
 	tests := []struct {
 		desc string
 
-		request *types.QueryGetClaimRequest
+		request *proof.QueryGetClaimRequest
 
-		response    *types.QueryGetClaimResponse
+		response    *proof.QueryGetClaimResponse
 		expectedErr error
 	}{
 		{
 			desc: "First Claim",
 
-			request: &types.QueryGetClaimRequest{
+			request: &proof.QueryGetClaimRequest{
 				SessionId:       claims[0].GetSessionHeader().GetSessionId(),
 				SupplierAddress: claims[0].SupplierAddress,
 			},
 
-			response:    &types.QueryGetClaimResponse{Claim: claims[0]},
+			response:    &proof.QueryGetClaimResponse{Claim: claims[0]},
 			expectedErr: nil,
 		},
 		{
 			desc: "Second Claim",
 
-			request: &types.QueryGetClaimRequest{
+			request: &proof.QueryGetClaimRequest{
 				SessionId:       claims[1].GetSessionHeader().GetSessionId(),
 				SupplierAddress: claims[1].SupplierAddress,
 			},
 
-			response:    &types.QueryGetClaimResponse{Claim: claims[1]},
+			response:    &proof.QueryGetClaimResponse{Claim: claims[1]},
 			expectedErr: nil,
 		},
 		{
 			desc: "Claim Not Found - Random SessionId",
 
-			request: &types.QueryGetClaimRequest{
+			request: &proof.QueryGetClaimRequest{
 				SessionId:       "not a real session id",
 				SupplierAddress: claims[0].GetSupplierAddress(),
 			},
 
 			expectedErr: status.Error(
 				codes.NotFound,
-				types.ErrProofClaimNotFound.Wrapf(
+				proof.ErrProofClaimNotFound.Wrapf(
 					// TODO_CONSIDERATION: factor out error message format strings to constants.
 					"session ID %q and supplier %q",
 					"not a real session id",
@@ -74,14 +74,14 @@ func TestClaimQuerySingle(t *testing.T) {
 		{
 			desc: "Claim Not Found - Wrong Supplier Address",
 
-			request: &types.QueryGetClaimRequest{
+			request: &proof.QueryGetClaimRequest{
 				SessionId:       claims[0].GetSessionHeader().GetSessionId(),
 				SupplierAddress: wrongSupplierAddr,
 			},
 
 			expectedErr: status.Error(
 				codes.NotFound,
-				types.ErrProofClaimNotFound.Wrapf(
+				proof.ErrProofClaimNotFound.Wrapf(
 					"session ID %q and supplier %q",
 					claims[0].GetSessionHeader().GetSessionId(),
 					wrongSupplierAddr,
@@ -90,28 +90,28 @@ func TestClaimQuerySingle(t *testing.T) {
 		},
 		{
 			desc: "InvalidRequest - Missing SessionId",
-			request: &types.QueryGetClaimRequest{
+			request: &proof.QueryGetClaimRequest{
 				// SessionId explicitly omitted
 				SupplierAddress: claims[0].GetSupplierAddress(),
 			},
 
 			expectedErr: status.Error(
 				codes.InvalidArgument,
-				types.ErrProofInvalidSessionId.Wrap(
+				proof.ErrProofInvalidSessionId.Wrap(
 					"invalid empty session ID for claim being retrieved",
 				).Error(),
 			),
 		},
 		{
 			desc: "InvalidRequest - Missing SupplierAddress",
-			request: &types.QueryGetClaimRequest{
+			request: &proof.QueryGetClaimRequest{
 				SessionId: claims[0].GetSessionHeader().GetSessionId(),
 				// SupplierAddress explicitly omitted
 			},
 
 			expectedErr: status.Error(
 				codes.InvalidArgument,
-				types.ErrProofInvalidAddress.Wrap(
+				proof.ErrProofInvalidAddress.Wrap(
 					"invalid supplier address for claim being retrieved ; (empty address string is not allowed)",
 				).Error(),
 			),
@@ -122,7 +122,7 @@ func TestClaimQuerySingle(t *testing.T) {
 
 			expectedErr: status.Error(
 				codes.InvalidArgument,
-				types.ErrProofInvalidQueryRequest.Wrap(
+				proof.ErrProofInvalidQueryRequest.Wrap(
 					"request cannot be nil",
 				).Error(),
 			),
@@ -152,8 +152,8 @@ func TestClaimQueryPaginated(t *testing.T) {
 	keeper, ctx := keepertest.ProofKeeper(t)
 	claims := createNClaims(keeper, ctx, 10)
 
-	request := func(next []byte, offset, limit uint64, total bool) *types.QueryAllClaimsRequest {
-		return &types.QueryAllClaimsRequest{
+	request := func(next []byte, offset, limit uint64, total bool) *proof.QueryAllClaimsRequest {
+		return &proof.QueryAllClaimsRequest{
 			Pagination: &query.PageRequest{
 				Key:        next,
 				Offset:     offset,
@@ -204,7 +204,7 @@ func TestClaimQueryPaginated(t *testing.T) {
 
 	t.Run("BySupplierAddress", func(t *testing.T) {
 		req := request(nil, 0, 0, true)
-		req.Filter = &types.QueryAllClaimsRequest_SupplierAddress{
+		req.Filter = &proof.QueryAllClaimsRequest_SupplierAddress{
 			SupplierAddress: claims[0].SupplierAddress,
 		}
 		resp, err := keeper.AllClaims(ctx, req)
@@ -214,7 +214,7 @@ func TestClaimQueryPaginated(t *testing.T) {
 
 	t.Run("BySessionId", func(t *testing.T) {
 		req := request(nil, 0, 0, true)
-		req.Filter = &types.QueryAllClaimsRequest_SessionId{
+		req.Filter = &proof.QueryAllClaimsRequest_SessionId{
 			SessionId: claims[0].GetSessionHeader().GetSessionId(),
 		}
 		resp, err := keeper.AllClaims(ctx, req)
@@ -224,7 +224,7 @@ func TestClaimQueryPaginated(t *testing.T) {
 
 	t.Run("BySessionEndHeight", func(t *testing.T) {
 		req := request(nil, 0, 0, true)
-		req.Filter = &types.QueryAllClaimsRequest_SessionEndHeight{
+		req.Filter = &proof.QueryAllClaimsRequest_SessionEndHeight{
 			SessionEndHeight: uint64(claims[0].GetSessionHeader().GetSessionEndBlockHeight()),
 		}
 		resp, err := keeper.AllClaims(ctx, req)

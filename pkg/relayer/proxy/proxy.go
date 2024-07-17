@@ -13,7 +13,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/config"
-	"github.com/pokt-network/poktroll/x/service/types"
+	"github.com/pokt-network/poktroll/proto/types/service"
 )
 
 var _ relayer.RelayerProxy = (*relayerProxy)(nil)
@@ -65,7 +65,7 @@ type relayerProxy struct {
 
 	// servedRelaysPublishCh is a channel that emits the relays that have been served so that the
 	// servedRelays observable can fan out the notifications to its subscribers.
-	servedRelaysPublishCh chan<- *types.Relay
+	servedRelaysPublishCh chan<- *service.Relay
 
 	// ringCache is used to obtain and store the ring for the application.
 	ringCache crypto.RingCache
@@ -109,7 +109,7 @@ func NewRelayerProxy(
 		return nil, err
 	}
 
-	servedRelays, servedRelaysProducer := channel.NewObservable[*types.Relay]()
+	servedRelays, servedRelaysProducer := channel.NewObservable[*service.Relay]()
 
 	rp.servedRelays = servedRelays
 	rp.servedRelaysPublishCh = servedRelaysProducer

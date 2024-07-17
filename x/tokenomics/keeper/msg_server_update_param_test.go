@@ -7,8 +7,8 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/stretchr/testify/require"
 
+	tokenomicstypes "github.com/pokt-network/poktroll/proto/types/tokenomics"
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
-	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 func TestMsgUpdateParam_UpdateMinRelayDifficultyBitsOnly(t *testing.T) {

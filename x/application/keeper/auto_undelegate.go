@@ -7,10 +7,10 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	proto "github.com/cosmos/gogoproto/proto"
-	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
+	"github.com/pokt-network/poktroll/proto/types/gateway"
 )
 
-var eventGatewayUnstaked = proto.MessageName(new(gatewaytypes.EventGatewayUnstaked))
+var eventGatewayUnstaked = proto.MessageName(new(gateway.EventGatewayUnstaked))
 
 // EndBlockerAutoUndelegateFromUnstakedGateways is called every block and handles
 // Application auto-undelegating from unstaked gateways.

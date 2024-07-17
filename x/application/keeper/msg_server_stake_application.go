@@ -6,11 +6,15 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/pokt-network/poktroll/proto/types/application"
 	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/application/types"
 )
 
-func (k msgServer) StakeApplication(ctx context.Context, msg *types.MsgStakeApplication) (*types.MsgStakeApplicationResponse, error) {
+func (k msgServer) StakeApplication(
+	ctx context.Context,
+	msg *application.MsgStakeApplication,
+) (*application.MsgStakeApplicationResponse, error) {
 	isSuccessful := false
 	defer telemetry.EventSuccessCounter(
 		"stake_application",
@@ -52,7 +56,7 @@ func (k msgServer) StakeApplication(ctx context.Context, msg *types.MsgStakeAppl
 	// Must always stake or upstake (> 0 delta)
 	if coinsToEscrow.IsZero() {
 		logger.Warn(fmt.Sprintf("Application %q must escrow more than 0 additional coins", msg.Address))
-		return nil, types.ErrAppInvalidStake.Wrapf("application %q must escrow more than 0 additional coins", msg.Address)
+		return nil, application.ErrAppInvalidStake.Wrapf("application %q must escrow more than 0 additional coins", msg.Address)
 	}
 
 	// Retrieve the address of the application
@@ -75,45 +79,45 @@ func (k msgServer) StakeApplication(ctx context.Context, msg *types.MsgStakeAppl
 	logger.Info(fmt.Sprintf("Successfully updated application stake for app: %+v", foundApp))
 
 	isSuccessful = true
-	return &types.MsgStakeApplicationResponse{}, nil
+	return &application.MsgStakeApplicationResponse{}, nil
 }
 
 func (k msgServer) createApplication(
 	_ context.Context,
-	msg *types.MsgStakeApplication,
-) types.Application {
-	return types.Application{
+	msg *application.MsgStakeApplication,
+) application.Application {
+	return application.Application{
 		Address:                   msg.Address,
 		Stake:                     msg.Stake,
 		ServiceConfigs:            msg.Services,
 		DelegateeGatewayAddresses: make([]string, 0),
-		PendingUndelegations:      make(map[uint64]types.UndelegatingGatewayList),
+		PendingUndelegations:      make(map[uint64]application.UndelegatingGatewayList),
 	}
 }
 
 func (k msgServer) updateApplication(
 	_ context.Context,
-	app *types.Application,
-	msg *types.MsgStakeApplication,
+	app *application.Application,
+	msg *application.MsgStakeApplication,
 ) error {
 	// Checks if the the msg address is the same as the current owner
 	if msg.Address != app.Address {
-		return types.ErrAppUnauthorized.Wrapf("msg Address %q != application address %q", msg.Address, app.Address)
+		return application.ErrAppUnauthorized.Wrapf("msg Address %q != application address %q", msg.Address, app.Address)
 	}
 
 	// Validate that the stake is not being lowered
 	if msg.Stake == nil {
-		return types.ErrAppInvalidStake.Wrapf("stake amount cannot be nil")
+		return application.ErrAppInvalidStake.Wrapf("stake amount cannot be nil")
 	}
 	if msg.Stake.IsLTE(*app.Stake) {
-		return types.ErrAppInvalidStake.Wrapf("stake amount %v must be higher than previous stake amount %v", msg.Stake, app.Stake)
+		return application.ErrAppInvalidStake.Wrapf("stake amount %v must be higher than previous stake amount %v", msg.Stake, app.Stake)
 	}
 	app.Stake = msg.Stake
 
 	// Validate that the service configs maintain at least one service.
 	// Additional validation is done in `msg.ValidateBasic` above.
 	if len(msg.Services) == 0 {
-		return types.ErrAppInvalidServiceConfigs.Wrapf("must have at least one service")
+		return application.ErrAppInvalidServiceConfigs.Wrapf("must have at least one service")
 	}
 	app.ServiceConfigs = msg.Services
 

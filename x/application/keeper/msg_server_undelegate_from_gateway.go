@@ -7,11 +7,14 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/pokt-network/poktroll/proto/types/application"
 	"github.com/pokt-network/poktroll/telemetry"
-	"github.com/pokt-network/poktroll/x/application/types"
 )
 
-func (k msgServer) UndelegateFromGateway(ctx context.Context, msg *types.MsgUndelegateFromGateway) (*types.MsgUndelegateFromGatewayResponse, error) {
+func (k msgServer) UndelegateFromGateway(
+	ctx context.Context,
+	msg *application.MsgUndelegateFromGateway,
+) (*application.MsgUndelegateFromGatewayResponse, error) {
 	isSuccessful := false
 	defer telemetry.EventSuccessCounter(
 		"undelegate_from_gateway",
@@ -32,7 +35,7 @@ func (k msgServer) UndelegateFromGateway(ctx context.Context, msg *types.MsgUnde
 	foundApp, isAppFound := k.GetApplication(ctx, msg.AppAddress)
 	if !isAppFound {
 		logger.Info(fmt.Sprintf("Application not found with address [%s]", msg.AppAddress))
-		return nil, types.ErrAppNotFound.Wrapf("application not found with address: %s", msg.AppAddress)
+		return nil, application.ErrAppNotFound.Wrapf("application not found with address: %s", msg.AppAddress)
 	}
 	logger.Info(fmt.Sprintf("Application found with address [%s]", msg.AppAddress))
 
@@ -45,7 +48,7 @@ func (k msgServer) UndelegateFromGateway(ctx context.Context, msg *types.MsgUnde
 	}
 	if foundIdx == -1 {
 		logger.Info(fmt.Sprintf("Application not delegated to gateway with address [%s]", msg.GatewayAddress))
-		return nil, types.ErrAppNotDelegated.Wrapf("application not delegated to gateway with address: %s", msg.GatewayAddress)
+		return nil, application.ErrAppNotDelegated.Wrapf("application not delegated to gateway with address: %s", msg.GatewayAddress)
 	}
 
 	// Remove the gateway from the application's delegatee gateway public keys
@@ -69,14 +72,14 @@ func (k msgServer) UndelegateFromGateway(ctx context.Context, msg *types.MsgUnde
 	logger.Info(fmt.Sprintf("Emitted application redelegation event %v", event))
 
 	isSuccessful = true
-	return &types.MsgUndelegateFromGatewayResponse{}, nil
+	return &application.MsgUndelegateFromGatewayResponse{}, nil
 }
 
 // recordPendingUndelegation adds the given gateway address to the application's
 // pending undelegations list.
 func (k Keeper) recordPendingUndelegation(
 	ctx context.Context,
-	app *types.Application,
+	app *application.Application,
 	gatewayAddress string,
 	currentBlockHeight int64,
 ) {

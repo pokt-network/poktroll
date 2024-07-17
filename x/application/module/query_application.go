@@ -5,7 +5,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/spf13/cobra"
 
-	"github.com/pokt-network/poktroll/x/application/types"
+	"github.com/pokt-network/poktroll/proto/types/application"
 )
 
 func CmdListApplication() *cobra.Command {
@@ -27,9 +27,9 @@ $ poktrolld q application list-application --node $(POCKET_NODE) --home $(POKTRO
 				return err
 			}
 
-			queryClient := types.NewQueryClient(clientCtx)
+			queryClient := application.NewQueryClient(clientCtx)
 
-			params := &types.QueryAllApplicationsRequest{
+			params := &application.QueryAllApplicationsRequest{
 				Pagination: pageReq,
 			}
 
@@ -63,11 +63,11 @@ $ poktrolld q application show-application $(APP_ADDRESS) --node $(POCKET_NODE) 
 				return err
 			}
 
-			queryClient := types.NewQueryClient(clientCtx)
+			queryClient := application.NewQueryClient(clientCtx)
 
 			argAddress := args[0]
 
-			params := &types.QueryGetApplicationRequest{
+			params := &application.QueryGetApplicationRequest{
 				Address: argAddress,
 			}
 

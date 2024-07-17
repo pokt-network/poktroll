@@ -3,40 +3,40 @@ package keeper
 import (
 	"context"
 
-	"github.com/pokt-network/poktroll/x/tokenomics/types"
+	"github.com/pokt-network/poktroll/proto/types/tokenomics"
 )
 
 // UpdateParam updates a single parameter in the tokenomics module and returns
 // all active parameters.
 func (k msgServer) UpdateParam(
 	ctx context.Context,
-	msg *types.MsgUpdateParam,
-) (*types.MsgUpdateParamResponse, error) {
+	msg *tokenomics.MsgUpdateParam,
+) (*tokenomics.MsgUpdateParamResponse, error) {
 	if err := msg.ValidateBasic(); err != nil {
 		return nil, err
 	}
 
 	if k.GetAuthority() != msg.Authority {
-		return nil, types.ErrTokenomicsInvalidSigner.Wrapf("invalid authority; expected %s, got %s", k.GetAuthority(), msg.Authority)
+		return nil, tokenomics.ErrTokenomicsInvalidSigner.Wrapf("invalid authority; expected %s, got %s", k.GetAuthority(), msg.Authority)
 	}
 
 	params := k.GetParams(ctx)
 
 	switch msg.Name {
-	case types.ParamComputeUnitsToTokensMultiplier:
-		value, ok := msg.AsType.(*types.MsgUpdateParam_AsInt64)
+	case tokenomics.ParamComputeUnitsToTokensMultiplier:
+		value, ok := msg.AsType.(*tokenomics.MsgUpdateParam_AsInt64)
 		if !ok {
-			return nil, types.ErrTokenomicsParamsInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
+			return nil, tokenomics.ErrTokenomicsParamsInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
 		}
 		computeUnitsToTokensMultiplier := uint64(value.AsInt64)
 
-		if err := types.ValidateComputeUnitsToTokensMultiplier(computeUnitsToTokensMultiplier); err != nil {
+		if err := tokenomics.ValidateComputeUnitsToTokensMultiplier(computeUnitsToTokensMultiplier); err != nil {
 			return nil, err
 		}
 
 		params.ComputeUnitsToTokensMultiplier = computeUnitsToTokensMultiplier
 	default:
-		return nil, types.ErrTokenomicsParamsInvalid.Wrapf("unsupported param %q", msg.Name)
+		return nil, tokenomics.ErrTokenomicsParamsInvalid.Wrapf("unsupported param %q", msg.Name)
 	}
 
 	if err := k.SetParams(ctx, params); err != nil {
@@ -44,7 +44,7 @@ func (k msgServer) UpdateParam(
 	}
 
 	updatedParams := k.GetParams(ctx)
-	return &types.MsgUpdateParamResponse{
+	return &tokenomics.MsgUpdateParamResponse{
 		Params: &updatedParams,
 	}, nil
 }

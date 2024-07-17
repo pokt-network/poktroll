@@ -10,8 +10,8 @@ import (
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/spf13/cobra"
 
-	"github.com/pokt-network/poktroll/x/proof/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	"github.com/pokt-network/poktroll/proto/types/proof"
+	sessiontypes "github.com/pokt-network/poktroll/proto/types/session"
 )
 
 // TODO(@bryanchriswhite): Add unit tests for the CLI command when implementing the business logic.
@@ -45,7 +45,7 @@ func CmdCreateClaim() *cobra.Command {
 				return err
 			}
 
-			msg := types.NewMsgCreateClaim(
+			msg := proof.NewMsgCreateClaim(
 				clientCtx.GetFromAddress().String(),
 				&sessionHeader,
 				rootHash,

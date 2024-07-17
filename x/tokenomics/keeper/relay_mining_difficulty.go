@@ -8,11 +8,12 @@ import (
 	storetypes "cosmossdk.io/store/types"
 	"github.com/cosmos/cosmos-sdk/runtime"
 
+	"github.com/pokt-network/poktroll/proto/types/tokenomics"
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 // SetRelayMiningDifficulty set a specific relayMiningDifficulty in the store from its index
-func (k Keeper) SetRelayMiningDifficulty(ctx context.Context, relayMiningDifficulty types.RelayMiningDifficulty) {
+func (k Keeper) SetRelayMiningDifficulty(ctx context.Context, relayMiningDifficulty tokenomics.RelayMiningDifficulty) {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.RelayMiningDifficultyKeyPrefix))
 	difficultyBz := k.cdc.MustMarshal(&relayMiningDifficulty)
@@ -25,7 +26,7 @@ func (k Keeper) SetRelayMiningDifficulty(ctx context.Context, relayMiningDifficu
 func (k Keeper) GetRelayMiningDifficulty(
 	ctx context.Context,
 	serviceId string,
-) (difficulty types.RelayMiningDifficulty, found bool) {
+) (difficulty tokenomics.RelayMiningDifficulty, found bool) {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.RelayMiningDifficultyKeyPrefix))
 
@@ -65,7 +66,7 @@ func (k Keeper) RemoveRelayMiningDifficulty(
 }
 
 // GetAllRelayMiningDifficulty returns all relayMiningDifficulty
-func (k Keeper) GetAllRelayMiningDifficulty(ctx context.Context) (list []types.RelayMiningDifficulty) {
+func (k Keeper) GetAllRelayMiningDifficulty(ctx context.Context) (list []tokenomics.RelayMiningDifficulty) {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.RelayMiningDifficultyKeyPrefix))
 	iterator := storetypes.KVStorePrefixIterator(store, []byte{})
@@ -73,7 +74,7 @@ func (k Keeper) GetAllRelayMiningDifficulty(ctx context.Context) (list []types.R
 	defer iterator.Close()
 
 	for ; iterator.Valid(); iterator.Next() {
-		var val types.RelayMiningDifficulty
+		var val tokenomics.RelayMiningDifficulty
 		k.cdc.MustUnmarshal(iterator.Value(), &val)
 		list = append(list, val)
 	}

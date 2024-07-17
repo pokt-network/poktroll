@@ -5,13 +5,13 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/proto/types/supplier"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
-	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 func TestGetParams(t *testing.T) {
 	k, ctx := keepertest.SupplierKeeper(t)
-	params := types.DefaultParams()
+	params := supplier.DefaultParams()
 
 	require.NoError(t, k.SetParams(ctx, params))
 	require.EqualValues(t, params, k.GetParams(ctx))

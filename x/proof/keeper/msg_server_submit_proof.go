@@ -17,11 +17,11 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
+	"github.com/pokt-network/poktroll/proto/types/proof"
+	"github.com/pokt-network/poktroll/proto/types/service"
+	"github.com/pokt-network/poktroll/proto/types/session"
+	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
 	"github.com/pokt-network/poktroll/telemetry"
-	"github.com/pokt-network/poktroll/x/proof/types"
-	servicetypes "github.com/pokt-network/poktroll/x/service/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // SubmitProof is the server handler to submit and store a proof on-chain.
@@ -34,8 +34,8 @@ import (
 // into one transaction to save on transaction fees.
 func (k msgServer) SubmitProof(
 	ctx context.Context,
-	msg *types.MsgSubmitProof,
-) (_ *types.MsgSubmitProofResponse, err error) {
+	msg *proof.MsgSubmitProof,
+) (_ *proof.MsgSubmitProofResponse, err error) {
 	// TODO_MAINNET: A potential issue with doing proof validation inside
 	// `SubmitProof` is that we will not be storing false proofs on-chain (e.g. for slashing purposes).
 	// This could be considered a feature (e.g. less state bloat against sybil attacks)
@@ -46,7 +46,7 @@ func (k msgServer) SubmitProof(
 
 	// Declare claim to reference in telemetry.
 	var (
-		claim           = new(types.Claim)
+		claim           = new(proof.Claim)
 		isExistingProof bool
 		numRelays       uint64
 		numComputeUnits uint64
@@ -56,9 +56,9 @@ func (k msgServer) SubmitProof(
 	defer func() {
 		// Only increment these metrics counters if handling a new claim.
 		if !isExistingProof {
-			telemetry.ClaimCounter(types.ClaimProofStage_PROVEN, 1, err)
-			telemetry.ClaimRelaysCounter(types.ClaimProofStage_PROVEN, numRelays, err)
-			telemetry.ClaimComputeUnitsCounter(types.ClaimProofStage_PROVEN, numComputeUnits, err)
+			telemetry.ClaimCounter(proof.ClaimProofStage_PROVEN, 1, err)
+			telemetry.ClaimRelaysCounter(proof.ClaimProofStage_PROVEN, numRelays, err)
+			telemetry.ClaimComputeUnitsCounter(proof.ClaimProofStage_PROVEN, numComputeUnits, err)
 		}
 	}()
 
@@ -115,7 +115,7 @@ func (k msgServer) SubmitProof(
 	}
 
 	// Validate the session header.
-	var onChainSession *sessiontypes.Session
+	var onChainSession *session.Session
 	onChainSession, err = k.queryAndValidateSessionHeader(ctx, msg)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -137,7 +137,7 @@ func (k msgServer) SubmitProof(
 	sparseMerkleClosestProof := &smt.SparseMerkleClosestProof{}
 	if err = sparseMerkleClosestProof.Unmarshal(msg.GetProof()); err != nil {
 		return nil, status.Error(codes.InvalidArgument,
-			types.ErrProofInvalidProof.Wrapf(
+			proof.ErrProofInvalidProof.Wrapf(
 				"failed to unmarshal closest merkle proof: %s",
 				err,
 			).Error(),
@@ -148,11 +148,11 @@ func (k msgServer) SubmitProof(
 	// reduce on-chain storage requirements for proofs.
 	// Get the relay request and response from the proof.GetClosestMerkleProof.
 	relayBz := sparseMerkleClosestProof.GetValueHash(&protocol.SmtSpec)
-	relay := &servicetypes.Relay{}
+	relay := &service.Relay{}
 	if err = k.cdc.Unmarshal(relayBz, relay); err != nil {
 		return nil, status.Error(
 			codes.InvalidArgument,
-			types.ErrProofInvalidRelay.Wrapf(
+			proof.ErrProofInvalidRelay.Wrapf(
 				"failed to unmarshal relay: %s",
 				err,
 			).Error(),
@@ -244,26 +244,26 @@ func (k msgServer) SubmitProof(
 	}
 	logger.Debug("successfully verified closest merkle proof")
 
-	// Construct and insert proof after all validation.
-	proof := types.Proof{
+	// Construct and insert newProof after all validation.
+	newProof := proof.Proof{
 		SupplierAddress:    supplierAddr,
 		SessionHeader:      msg.GetSessionHeader(),
 		ClosestMerkleProof: msg.GetProof(),
 	}
 	logger.Debug(fmt.Sprintf("queried and validated the claim for session ID %q", sessionHeader.SessionId))
 
-	_, isExistingProof = k.GetProof(ctx, proof.GetSessionHeader().GetSessionId(), proof.GetSupplierAddress())
+	_, isExistingProof = k.GetProof(ctx, newProof.GetSessionHeader().GetSessionId(), newProof.GetSupplierAddress())
 
-	k.UpsertProof(ctx, proof)
+	k.UpsertProof(ctx, newProof)
 	logger.Info("successfully upserted the proof")
 
 	numRelays, err = claim.GetNumRelays()
 	if err != nil {
-		return nil, status.Error(codes.Internal, types.ErrProofInvalidClaimRootHash.Wrap(err.Error()).Error())
+		return nil, status.Error(codes.Internal, proof.ErrProofInvalidClaimRootHash.Wrap(err.Error()).Error())
 	}
 	numComputeUnits, err = claim.GetNumComputeUnits()
 	if err != nil {
-		return nil, status.Error(codes.Internal, types.ErrProofInvalidClaimRootHash.Wrap(err.Error()).Error())
+		return nil, status.Error(codes.Internal, proof.ErrProofInvalidClaimRootHash.Wrap(err.Error()).Error())
 	}
 
 	// Emit the appropriate event based on whether the claim was created or updated.
@@ -271,18 +271,18 @@ func (k msgServer) SubmitProof(
 	switch isExistingProof {
 	case true:
 		proofUpsertEvent = proto.Message(
-			&types.EventProofUpdated{
+			&proof.EventProofUpdated{
 				Claim:           claim,
-				Proof:           &proof,
+				Proof:           &newProof,
 				NumRelays:       numRelays,
 				NumComputeUnits: numComputeUnits,
 			},
 		)
 	case false:
 		proofUpsertEvent = proto.Message(
-			&types.EventProofSubmitted{
+			&proof.EventProofSubmitted{
 				Claim:           claim,
-				Proof:           &proof,
+				Proof:           &newProof,
 				NumRelays:       numRelays,
 				NumComputeUnits: numComputeUnits,
 			},
@@ -301,8 +301,8 @@ func (k msgServer) SubmitProof(
 		)
 	}
 
-	return &types.MsgSubmitProofResponse{
-		Proof: &proof,
+	return &proof.MsgSubmitProofResponse{
+		Proof: &newProof,
 	}, nil
 }
 
@@ -311,15 +311,15 @@ func (k msgServer) SubmitProof(
 // it then returns the corresponding claim if the validation is successful.
 func (k msgServer) queryAndValidateClaimForProof(
 	ctx context.Context,
-	msg *types.MsgSubmitProof,
-) (*types.Claim, error) {
+	msg *proof.MsgSubmitProof,
+) (*proof.Claim, error) {
 	sessionId := msg.GetSessionHeader().GetSessionId()
 	// NB: no need to assert the testSessionId or supplier address as it is retrieved
 	// by respective values of the given proof. I.e., if the claim exists, then these
 	// values are guaranteed to match.
 	foundClaim, found := k.GetClaim(ctx, sessionId, msg.GetSupplierAddress())
 	if !found {
-		return nil, types.ErrProofClaimNotFound.Wrapf(
+		return nil, proof.ErrProofClaimNotFound.Wrapf(
 			"no claim found for session ID %q and supplier %q",
 			sessionId,
 			msg.GetSupplierAddress(),
@@ -331,7 +331,7 @@ func (k msgServer) queryAndValidateClaimForProof(
 
 	// Ensure session start heights match.
 	if claimSessionHeader.GetSessionStartBlockHeight() != proofSessionHeader.GetSessionStartBlockHeight() {
-		return nil, types.ErrProofInvalidSessionStartHeight.Wrapf(
+		return nil, proof.ErrProofInvalidSessionStartHeight.Wrapf(
 			"claim session start height %d does not match proof session start height %d",
 			claimSessionHeader.GetSessionStartBlockHeight(),
 			proofSessionHeader.GetSessionStartBlockHeight(),
@@ -340,7 +340,7 @@ func (k msgServer) queryAndValidateClaimForProof(
 
 	// Ensure session end heights match.
 	if claimSessionHeader.GetSessionEndBlockHeight() != proofSessionHeader.GetSessionEndBlockHeight() {
-		return nil, types.ErrProofInvalidSessionEndHeight.Wrapf(
+		return nil, proof.ErrProofInvalidSessionEndHeight.Wrapf(
 			"claim session end height %d does not match proof session end height %d",
 			claimSessionHeader.GetSessionEndBlockHeight(),
 			proofSessionHeader.GetSessionEndBlockHeight(),
@@ -349,7 +349,7 @@ func (k msgServer) queryAndValidateClaimForProof(
 
 	// Ensure application addresses match.
 	if claimSessionHeader.GetApplicationAddress() != proofSessionHeader.GetApplicationAddress() {
-		return nil, types.ErrProofInvalidAddress.Wrapf(
+		return nil, proof.ErrProofInvalidAddress.Wrapf(
 			"claim application address %q does not match proof application address %q",
 			claimSessionHeader.GetApplicationAddress(),
 			proofSessionHeader.GetApplicationAddress(),
@@ -358,7 +358,7 @@ func (k msgServer) queryAndValidateClaimForProof(
 
 	// Ensure service IDs match.
 	if claimSessionHeader.GetService().GetId() != proofSessionHeader.GetService().GetId() {
-		return nil, types.ErrProofInvalidService.Wrapf(
+		return nil, proof.ErrProofInvalidService.Wrapf(
 			"claim service ID %q does not match proof service ID %q",
 			claimSessionHeader.GetService().GetId(),
 			proofSessionHeader.GetService().GetId(),
@@ -371,10 +371,10 @@ func (k msgServer) queryAndValidateClaimForProof(
 // compareSessionHeaders compares a session header against an expected session header.
 // This is necessary to validate the proof's session header against both the relay
 // request and response's session headers.
-func compareSessionHeaders(expectedSessionHeader, sessionHeader *sessiontypes.SessionHeader) error {
+func compareSessionHeaders(expectedSessionHeader, sessionHeader *session.SessionHeader) error {
 	// Compare the Application address.
 	if sessionHeader.GetApplicationAddress() != expectedSessionHeader.GetApplicationAddress() {
-		return types.ErrProofInvalidRelay.Wrapf(
+		return proof.ErrProofInvalidRelay.Wrapf(
 			"session headers application addresses mismatch; expect: %q, got: %q",
 			expectedSessionHeader.GetApplicationAddress(),
 			sessionHeader.GetApplicationAddress(),
@@ -383,7 +383,7 @@ func compareSessionHeaders(expectedSessionHeader, sessionHeader *sessiontypes.Se
 
 	// Compare the Service IDs.
 	if sessionHeader.GetService().GetId() != expectedSessionHeader.GetService().GetId() {
-		return types.ErrProofInvalidRelay.Wrapf(
+		return proof.ErrProofInvalidRelay.Wrapf(
 			"session headers service IDs mismatch; expected: %q, got: %q",
 			expectedSessionHeader.GetService().GetId(),
 			sessionHeader.GetService().GetId(),
@@ -392,7 +392,7 @@ func compareSessionHeaders(expectedSessionHeader, sessionHeader *sessiontypes.Se
 
 	// Compare the Service names.
 	if sessionHeader.GetService().GetName() != expectedSessionHeader.GetService().GetName() {
-		return types.ErrProofInvalidRelay.Wrapf(
+		return proof.ErrProofInvalidRelay.Wrapf(
 			"sessionHeaders service names mismatch expect: %q, got: %q",
 			expectedSessionHeader.GetService().GetName(),
 			sessionHeader.GetService().GetName(),
@@ -401,7 +401,7 @@ func compareSessionHeaders(expectedSessionHeader, sessionHeader *sessiontypes.Se
 
 	// Compare the Session start block heights.
 	if sessionHeader.GetSessionStartBlockHeight() != expectedSessionHeader.GetSessionStartBlockHeight() {
-		return types.ErrProofInvalidRelay.Wrapf(
+		return proof.ErrProofInvalidRelay.Wrapf(
 			"session headers session start heights mismatch; expected: %d, got: %d",
 			expectedSessionHeader.GetSessionStartBlockHeight(),
 			sessionHeader.GetSessionStartBlockHeight(),
@@ -410,7 +410,7 @@ func compareSessionHeaders(expectedSessionHeader, sessionHeader *sessiontypes.Se
 
 	// Compare the Session end block heights.
 	if sessionHeader.GetSessionEndBlockHeight() != expectedSessionHeader.GetSessionEndBlockHeight() {
-		return types.ErrProofInvalidRelay.Wrapf(
+		return proof.ErrProofInvalidRelay.Wrapf(
 			"session headers session end heights mismatch; expected: %d, got: %d",
 			expectedSessionHeader.GetSessionEndBlockHeight(),
 			sessionHeader.GetSessionEndBlockHeight(),
@@ -419,7 +419,7 @@ func compareSessionHeaders(expectedSessionHeader, sessionHeader *sessiontypes.Se
 
 	// Compare the Session IDs.
 	if sessionHeader.GetSessionId() != expectedSessionHeader.GetSessionId() {
-		return types.ErrProofInvalidRelay.Wrapf(
+		return proof.ErrProofInvalidRelay.Wrapf(
 			"session headers session IDs mismatch; expected: %q, got: %q",
 			expectedSessionHeader.GetSessionId(),
 			sessionHeader.GetSessionId(),
@@ -432,16 +432,16 @@ func compareSessionHeaders(expectedSessionHeader, sessionHeader *sessiontypes.Se
 // verifyClosestProof verifies the the correctness of the ClosestMerkleProof
 // against the root hash committed to when creating the claim.
 func verifyClosestProof(
-	proof *smt.SparseMerkleClosestProof,
+	smtproof *smt.SparseMerkleClosestProof,
 	claimRootHash []byte,
 ) error {
-	valid, err := smt.VerifyClosestProof(proof, claimRootHash, &protocol.SmtSpec)
+	valid, err := smt.VerifyClosestProof(smtproof, claimRootHash, &protocol.SmtSpec)
 	if err != nil {
 		return err
 	}
 
 	if !valid {
-		return types.ErrProofInvalidProof.Wrap("invalid closest merkle proof")
+		return proof.ErrProofInvalidProof.Wrap("invalid closest merkle proof")
 	}
 
 	return nil
@@ -452,13 +452,13 @@ func verifyClosestProof(
 // TODO_TECHDEBT: Factor out the relay mining difficulty validation into a shared
 // function that can be used by both the proof and the miner packages.
 func validateMiningDifficulty(relayBz []byte, minRelayDifficultyBits uint64) error {
-	relayHash := servicetypes.GetHashFromBytes(relayBz)
+	relayHash := service.GetHashFromBytes(relayBz)
 	relayDifficultyBits := protocol.CountHashDifficultyBits(relayHash)
 
 	// TODO_MAINNET: Devise a test that tries to attack the network and ensure that there
 	// is sufficient telemetry.
 	if uint64(relayDifficultyBits) < minRelayDifficultyBits {
-		return types.ErrProofInvalidRelay.Wrapf(
+		return proof.ErrProofInvalidRelay.Wrapf(
 			"relay difficulty %d is less than the minimum difficulty %d",
 			relayDifficultyBits,
 			minRelayDifficultyBits,
@@ -474,8 +474,8 @@ func validateMiningDifficulty(relayBz []byte, minRelayDifficultyBits uint64) err
 // opens.
 func (k msgServer) validateClosestPath(
 	ctx context.Context,
-	proof *smt.SparseMerkleClosestProof,
-	sessionHeader *sessiontypes.SessionHeader,
+	smtProof *smt.SparseMerkleClosestProof,
+	sessionHeader *session.SessionHeader,
 	supplierAddr string,
 ) error {
 	// The RelayMiner has to wait until the submit claim and proof windows is are open
@@ -510,10 +510,10 @@ func (k msgServer) validateClosestPath(
 	k.logger.Info("E2E_DEBUG: height for block hash when verifying the proof", earliestSupplierProofCommitHeight, sessionHeader.GetSessionId())
 
 	expectedProofPath := protocol.GetPathForProof(proofPathSeedBlockHash, sessionHeader.GetSessionId())
-	if !bytes.Equal(proof.Path, expectedProofPath) {
-		return types.ErrProofInvalidProof.Wrapf(
+	if !bytes.Equal(smtProof.Path, expectedProofPath) {
+		return proof.ErrProofInvalidProof.Wrapf(
 			"the path of the proof provided (%x) does not match one expected by the on-chain protocol (%x)",
-			proof.Path,
+			smtProof.Path,
 			expectedProofPath,
 		)
 	}

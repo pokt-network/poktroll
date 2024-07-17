@@ -9,8 +9,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/spf13/cobra"
 
+	"github.com/pokt-network/poktroll/proto/types/application"
 	"github.com/pokt-network/poktroll/x/application/module/config"
-	"github.com/pokt-network/poktroll/x/application/types"
 )
 
 var (
@@ -45,7 +45,7 @@ $ poktrolld tx application stake-application --config stake_config.yaml --keyrin
 				return err
 			}
 
-			msg := types.NewMsgStakeApplication(
+			msg := application.NewMsgStakeApplication(
 				clientCtx.GetFromAddress().String(),
 				appStakeConfigs.StakeAmount,
 				appStakeConfigs.Services,

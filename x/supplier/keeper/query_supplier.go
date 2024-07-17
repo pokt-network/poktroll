@@ -10,19 +10,20 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/supplier"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 func (k Keeper) AllSuppliers(
 	ctx context.Context,
-	req *types.QueryAllSuppliersRequest,
-) (*types.QueryAllSuppliersResponse, error) {
+	req *supplier.QueryAllSuppliersRequest,
+) (*supplier.QueryAllSuppliersResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
 
-	var suppliers []sharedtypes.Supplier
+	var suppliers []shared.Supplier
 
 	store := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	supplierStore := prefix.NewStore(store, types.KeyPrefix(types.SupplierKeyPrefix))
@@ -31,7 +32,7 @@ func (k Keeper) AllSuppliers(
 		supplierStore,
 		req.Pagination,
 		func(key []byte, value []byte) error {
-			var supplier sharedtypes.Supplier
+			var supplier shared.Supplier
 			if err := k.cdc.Unmarshal(value, &supplier); err != nil {
 				return err
 			}
@@ -45,23 +46,23 @@ func (k Keeper) AllSuppliers(
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	return &types.QueryAllSuppliersResponse{Supplier: suppliers, Pagination: pageRes}, nil
+	return &supplier.QueryAllSuppliersResponse{Supplier: suppliers, Pagination: pageRes}, nil
 }
 
 func (k Keeper) Supplier(
 	ctx context.Context,
-	req *types.QueryGetSupplierRequest,
-) (*types.QueryGetSupplierResponse, error) {
+	req *supplier.QueryGetSupplierRequest,
+) (*supplier.QueryGetSupplierResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
 
-	supplier, found := k.GetSupplier(ctx, req.Address)
+	foundSupplier, found := k.GetSupplier(ctx, req.Address)
 	if !found {
 		// TODO_TECHDEBT(@bryanchriswhite, #384): conform to logging conventions once established
 		msg := fmt.Sprintf("supplier with address %q", req.GetAddress())
 		return nil, status.Error(codes.NotFound, msg)
 	}
 
-	return &types.QueryGetSupplierResponse{Supplier: supplier}, nil
+	return &supplier.QueryGetSupplierResponse{Supplier: foundSupplier}, nil
 }

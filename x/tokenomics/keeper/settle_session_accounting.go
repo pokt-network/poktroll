@@ -8,11 +8,11 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/smt"
 
+	"github.com/pokt-network/poktroll/proto/types/proof"
+	"github.com/pokt-network/poktroll/proto/types/tokenomics"
 	"github.com/pokt-network/poktroll/telemetry"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
-	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 // SettleSessionAccounting is responsible for all of the post-session accounting
@@ -25,7 +25,7 @@ import (
 // TODO_MAINNET(@Olshansk): Research if there's a way to limit who can call this function?
 func (k Keeper) SettleSessionAccounting(
 	ctx context.Context,
-	claim *prooftypes.Claim,
+	claim *proof.Claim,
 ) error {
 	logger := k.Logger().With("method", "SettleSessionAccounting")
 
@@ -41,28 +41,28 @@ func (k Keeper) SettleSessionAccounting(
 	// Make sure the claim is not nil
 	if claim == nil {
 		logger.Error("received a nil claim")
-		return types.ErrTokenomicsClaimNil
+		return tokenomics.ErrTokenomicsClaimNil
 	}
 
 	// Retrieve & validate the session header
 	sessionHeader := claim.GetSessionHeader()
 	if sessionHeader == nil {
 		logger.Error("received a nil session header")
-		return types.ErrTokenomicsSessionHeaderNil
+		return tokenomics.ErrTokenomicsSessionHeaderNil
 	}
 	if err := sessionHeader.ValidateBasic(); err != nil {
 		logger.Error("received an invalid session header", "error", err)
-		return types.ErrTokenomicsSessionHeaderInvalid
+		return tokenomics.ErrTokenomicsSessionHeaderInvalid
 	}
 
 	supplierAddr, err := sdk.AccAddressFromBech32(claim.GetSupplierAddress())
 	if err != nil || supplierAddr == nil {
-		return types.ErrTokenomicsSupplierAddressInvalid
+		return tokenomics.ErrTokenomicsSupplierAddressInvalid
 	}
 
 	applicationAddress, err := sdk.AccAddressFromBech32(sessionHeader.GetApplicationAddress())
 	if err != nil || applicationAddress == nil {
-		return types.ErrTokenomicsApplicationAddressInvalid
+		return tokenomics.ErrTokenomicsApplicationAddressInvalid
 	}
 
 	// Retrieve the sum of the root as a proxy into the amount of work done
@@ -72,7 +72,7 @@ func (k Keeper) SettleSessionAccounting(
 	// since it's used to get compute units from the root hash.
 	if root == nil || len(root) != smt.SmstRootSizeBytes {
 		logger.Error(fmt.Sprintf("received an invalid root hash of size: %d", len(root)))
-		return types.ErrTokenomicsRootHashInvalid
+		return tokenomics.ErrTokenomicsRootHashInvalid
 	}
 	claimComputeUnits := root.Sum()
 
@@ -90,7 +90,7 @@ func (k Keeper) SettleSessionAccounting(
 	application, foundApplication := k.applicationKeeper.GetApplication(ctx, applicationAddress.String())
 	if !foundApplication {
 		logger.Warn(fmt.Sprintf("application for claim with address %q not found", applicationAddress))
-		return types.ErrTokenomicsApplicationNotFound
+		return tokenomics.ErrTokenomicsApplicationNotFound
 	}
 
 	logger.Info(fmt.Sprintf("About to start settling claim for %d compute units", claimComputeUnits))
@@ -116,7 +116,7 @@ func (k Keeper) SettleSessionAccounting(
 	if err = k.bankKeeper.MintCoins(
 		ctx, suppliertypes.ModuleName, settlementAmtuPOKT,
 	); err != nil {
-		return types.ErrTokenomicsSupplierModuleMintFailed.Wrapf(
+		return tokenomics.ErrTokenomicsSupplierModuleMintFailed.Wrapf(
 			"minting %s to the supplier module account: %v",
 			settlementAmt,
 			err,
@@ -129,7 +129,7 @@ func (k Keeper) SettleSessionAccounting(
 	if err = k.bankKeeper.SendCoinsFromModuleToAccount(
 		ctx, suppliertypes.ModuleName, supplierAddr, settlementAmtuPOKT,
 	); err != nil {
-		return types.ErrTokenomicsSupplierModuleMintFailed.Wrapf(
+		return tokenomics.ErrTokenomicsSupplierModuleMintFailed.Wrapf(
 			"sending %s to supplier with address %s: %v",
 			settlementAmt,
 			supplierAddr,
@@ -160,14 +160,14 @@ func (k Keeper) SettleSessionAccounting(
 	if err = k.bankKeeper.BurnCoins(
 		ctx, apptypes.ModuleName, settlementAmtuPOKT,
 	); err != nil {
-		return types.ErrTokenomicsApplicationModuleBurn.Wrapf("burning %s from the application module account: %v", settlementAmt, err)
+		return tokenomics.ErrTokenomicsApplicationModuleBurn.Wrapf("burning %s from the application module account: %v", settlementAmt, err)
 	}
 	logger.Info(fmt.Sprintf("burned %s from the application module account", settlementAmt))
 
 	// Update the application's on-chain stake
 	newAppStake, err := (*application.Stake).SafeSub(settlementAmt)
 	if err != nil {
-		return types.ErrTokenomicsApplicationNewStakeInvalid.Wrapf("application %q stake cannot be reduced to a negative amount %v", applicationAddress, newAppStake)
+		return tokenomics.ErrTokenomicsApplicationNewStakeInvalid.Wrapf("application %q stake cannot be reduced to a negative amount %v", applicationAddress, newAppStake)
 	}
 	application.Stake = &newAppStake
 	k.applicationKeeper.SetApplication(ctx, application)

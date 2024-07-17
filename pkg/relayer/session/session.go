@@ -14,9 +14,9 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/logging"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
-	"github.com/pokt-network/poktroll/x/service/types"
+	"github.com/pokt-network/poktroll/proto/types/service"
+	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
 	"github.com/pokt-network/poktroll/x/shared"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 var _ relayer.RelayerSessionsManager = (*relayerSessionsManager)(nil)
@@ -140,7 +140,7 @@ func (rs *relayerSessionsManager) InsertRelays(relays relayer.MinedRelaysObserva
 // corresponding to the relay request metadata.
 // If no tree for the session exists, a new SessionTree is created before returning.
 func (rs *relayerSessionsManager) ensureSessionTree(
-	relayRequestMetadata *types.RelayRequestMetadata,
+	relayRequestMetadata *service.RelayRequestMetadata,
 ) (relayer.SessionTree, error) {
 	rs.sessionsTreesMu.Lock()
 	defer rs.sessionsTreesMu.Unlock()

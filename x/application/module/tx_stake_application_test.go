@@ -14,10 +14,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/status"
 
+	"github.com/pokt-network/poktroll/proto/types/application"
 	"github.com/pokt-network/poktroll/testutil/network"
 	"github.com/pokt-network/poktroll/testutil/yaml"
-	application "github.com/pokt-network/poktroll/x/application/module"
-	"github.com/pokt-network/poktroll/x/application/types"
+	appmodule "github.com/pokt-network/poktroll/x/application/module"
 )
 
 func TestCLI_StakeApplication(t *testing.T) {
@@ -72,7 +72,7 @@ func TestCLI_StakeApplication(t *testing.T) {
 			// inputAddress explicitly omitted
 			appConfig: defaultConfig,
 
-			expectedErr: types.ErrAppInvalidAddress,
+			expectedErr: application.ErrAppInvalidAddress,
 		},
 		{
 			desc: "invalid: invalid address",
@@ -80,7 +80,7 @@ func TestCLI_StakeApplication(t *testing.T) {
 			appAddr:   "invalid",
 			appConfig: defaultConfig,
 
-			expectedErr: types.ErrAppInvalidAddress,
+			expectedErr: application.ErrAppInvalidAddress,
 		},
 
 		// Error Paths - Stake Related
@@ -96,7 +96,7 @@ func TestCLI_StakeApplication(t *testing.T) {
 				  - svc3
 				`,
 
-			expectedErr: types.ErrAppInvalidStake,
+			expectedErr: application.ErrAppInvalidStake,
 		},
 		{
 			desc: "invalid: invalid stake denom",
@@ -110,7 +110,7 @@ func TestCLI_StakeApplication(t *testing.T) {
 				  - svc3
 				`,
 
-			expectedErr: types.ErrAppInvalidStake,
+			expectedErr: application.ErrAppInvalidStake,
 		},
 		{
 			desc: "invalid: stake amount (zero)",
@@ -124,7 +124,7 @@ func TestCLI_StakeApplication(t *testing.T) {
 				  - svc3
 				`,
 
-			expectedErr: types.ErrAppInvalidStake,
+			expectedErr: application.ErrAppInvalidStake,
 		},
 		{
 			desc: "invalid: stake amount (negative)",
@@ -138,7 +138,7 @@ func TestCLI_StakeApplication(t *testing.T) {
 				  - svc3
 				`,
 
-			expectedErr: types.ErrAppInvalidStake,
+			expectedErr: application.ErrAppInvalidStake,
 		},
 
 		// Error Paths - Service Related
@@ -150,7 +150,7 @@ func TestCLI_StakeApplication(t *testing.T) {
 				stake_amount: 1000upokt
 				`,
 
-			expectedErr: types.ErrAppInvalidServiceConfigs,
+			expectedErr: application.ErrAppInvalidServiceConfigs,
 		},
 		{
 			desc: "invalid: single invalid service contains spaces",
@@ -162,7 +162,7 @@ func TestCLI_StakeApplication(t *testing.T) {
 				  - svc1 svc1_part2 svc1_part3
 				`,
 
-			expectedErr: types.ErrAppInvalidServiceConfigs,
+			expectedErr: application.ErrAppInvalidServiceConfigs,
 		},
 		{
 			desc: "invalid: one of two services is invalid because it contains spaces",
@@ -175,7 +175,7 @@ func TestCLI_StakeApplication(t *testing.T) {
 				  - svc2
 				`,
 
-			expectedErr: types.ErrAppInvalidServiceConfigs,
+			expectedErr: application.ErrAppInvalidServiceConfigs,
 		},
 		{
 			desc: "invalid: service ID is too long (8 chars is the max)",
@@ -188,7 +188,7 @@ func TestCLI_StakeApplication(t *testing.T) {
 				  - abcdefghi
 				`,
 
-			expectedErr: types.ErrAppInvalidServiceConfigs,
+			expectedErr: application.ErrAppInvalidServiceConfigs,
 		},
 	}
 
@@ -213,7 +213,7 @@ func TestCLI_StakeApplication(t *testing.T) {
 			args = append(args, commonArgs...)
 
 			// Execute the command
-			outStake, err := clitestutil.ExecTestCLICmd(ctx, application.CmdStakeApplication(), args)
+			outStake, err := clitestutil.ExecTestCLICmd(ctx, appmodule.CmdStakeApplication(), args)
 
 			// Validate the error if one is expected
 			if test.expectedErr != nil {

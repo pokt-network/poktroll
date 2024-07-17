@@ -5,8 +5,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	prooftypes "github.com/pokt-network/poktroll/proto/types/proof"
 	"github.com/pokt-network/poktroll/telemetry"
-	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	"github.com/pokt-network/poktroll/x/tokenomics/keeper"
 )
 

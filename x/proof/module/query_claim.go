@@ -7,7 +7,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/spf13/cobra"
 
-	"github.com/pokt-network/poktroll/x/proof/types"
+	"github.com/pokt-network/poktroll/proto/types/proof"
 )
 
 // AddPaginationFlagsToCmd adds common pagination flags to cmd
@@ -37,7 +37,7 @@ $ poktrolld q claim list-claims --supplier-address <supplier_address> --node $(P
 				return pageErr
 			}
 
-			req := &types.QueryAllClaimsRequest{
+			req := &proof.QueryAllClaimsRequest{
 				Pagination: pageReq,
 			}
 			if err = updateClaimsFilter(cmd, req); err != nil {
@@ -51,7 +51,7 @@ $ poktrolld q claim list-claims --supplier-address <supplier_address> --node $(P
 			if ctxErr != nil {
 				return ctxErr
 			}
-			queryClient := types.NewQueryClient(clientCtx)
+			queryClient := proof.NewQueryClient(clientCtx)
 
 			res, claimsErr := queryClient.AllClaims(cmd.Context(), req)
 			if claimsErr != nil {
@@ -87,7 +87,7 @@ $ poktrolld --home=$(POKTROLLD_HOME) q claim show-claims <session_id> <supplier_
 			sessionId := args[0]
 			supplierAddr := args[1]
 
-			getClaimRequest := &types.QueryGetClaimRequest{
+			getClaimRequest := &proof.QueryGetClaimRequest{
 				SessionId:       sessionId,
 				SupplierAddress: supplierAddr,
 			}
@@ -100,7 +100,7 @@ $ poktrolld --home=$(POKTROLLD_HOME) q claim show-claims <session_id> <supplier_
 				return err
 			}
 
-			queryClient := types.NewQueryClient(clientCtx)
+			queryClient := proof.NewQueryClient(clientCtx)
 
 			res, err := queryClient.Claim(cmd.Context(), getClaimRequest)
 			if err != nil {
@@ -117,7 +117,7 @@ $ poktrolld --home=$(POKTROLLD_HOME) q claim show-claims <session_id> <supplier_
 }
 
 // updateClaimsFilter updates the claims filter request based on the flags set provided
-func updateClaimsFilter(cmd *cobra.Command, req *types.QueryAllClaimsRequest) error {
+func updateClaimsFilter(cmd *cobra.Command, req *proof.QueryAllClaimsRequest) error {
 	sessionId, _ := cmd.Flags().GetString(FlagSessionId)
 	supplierAddr, _ := cmd.Flags().GetString(FlagSupplierAddress)
 	sessionEndHeight, _ := cmd.Flags().GetUint64(FlagSessionEndHeight)
@@ -132,7 +132,7 @@ func updateClaimsFilter(cmd *cobra.Command, req *types.QueryAllClaimsRequest) er
 			return err
 		}
 		// Set the session id filter
-		req.Filter = &types.QueryAllClaimsRequest_SessionId{
+		req.Filter = &proof.QueryAllClaimsRequest_SessionId{
 			SessionId: sessionId,
 		}
 		return nil
@@ -145,7 +145,7 @@ func updateClaimsFilter(cmd *cobra.Command, req *types.QueryAllClaimsRequest) er
 			return err
 		}
 		// Set the supplier address filter
-		req.Filter = &types.QueryAllClaimsRequest_SupplierAddress{
+		req.Filter = &proof.QueryAllClaimsRequest_SupplierAddress{
 			SupplierAddress: supplierAddr,
 		}
 		return nil
@@ -158,7 +158,7 @@ func updateClaimsFilter(cmd *cobra.Command, req *types.QueryAllClaimsRequest) er
 			return err
 		}
 		// Set the session end height filter
-		req.Filter = &types.QueryAllClaimsRequest_SessionEndHeight{
+		req.Filter = &proof.QueryAllClaimsRequest_SessionEndHeight{
 			SessionEndHeight: sessionEndHeight,
 		}
 		return nil

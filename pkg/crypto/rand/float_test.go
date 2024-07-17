@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	poktrand "github.com/pokt-network/poktroll/pkg/crypto/rand"
-	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	prooftypes "github.com/pokt-network/poktroll/proto/types/proof"
 )
 
 func TestSeededFloat32(t *testing.T) {

@@ -1,7 +1,7 @@
 syntax = "proto3";
 package poktroll.application;
 
-option go_package = "github.com/pokt-network/poktroll/x/application/types";
+option go_package = "github.com/pokt-network/poktroll/proto/types/application";
 
 import "cosmos_proto/cosmos.proto";
 

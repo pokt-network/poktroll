@@ -5,11 +5,12 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/runtime"
 
+	"github.com/pokt-network/poktroll/proto/types/session"
 	"github.com/pokt-network/poktroll/x/session/types"
 )
 
 // GetParams get all parameters as types.Params
-func (k Keeper) GetParams(ctx context.Context) (params types.Params) {
+func (k Keeper) GetParams(ctx context.Context) (params session.Params) {
 	store := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	paramsBz := store.Get(types.ParamsKey)
 	if paramsBz == nil {
@@ -21,7 +22,7 @@ func (k Keeper) GetParams(ctx context.Context) (params types.Params) {
 }
 
 // SetParams set the params
-func (k Keeper) SetParams(ctx context.Context, params types.Params) error {
+func (k Keeper) SetParams(ctx context.Context, params session.Params) error {
 	store := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	paramsBz, err := k.cdc.Marshal(&params)
 	if err != nil {

@@ -7,11 +7,11 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/supplier"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/keeper"
-	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
@@ -26,19 +26,19 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.False(t, isSupplierFound)
 
 	// Prepare the stakeMsg
-	stakeMsg := &types.MsgStakeSupplier{
+	stakeMsg := &supplier.MsgStakeSupplier{
 		Address: supplierAddr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
-		Services: []*sharedtypes.SupplierServiceConfig{
+		Services: []*shared.SupplierServiceConfig{
 			{
-				Service: &sharedtypes.Service{
+				Service: &shared.Service{
 					Id: "svcId",
 				},
-				Endpoints: []*sharedtypes.SupplierEndpoint{
+				Endpoints: []*shared.SupplierEndpoint{
 					{
 						Url:     "http://localhost:8080",
-						RpcType: sharedtypes.RPCType_JSON_RPC,
-						Configs: make([]*sharedtypes.ConfigOption, 0),
+						RpcType: shared.RPCType_JSON_RPC,
+						Configs: make([]*shared.ConfigOption, 0),
 					},
 				},
 			},
@@ -60,19 +60,19 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.Equal(t, "http://localhost:8080", foundSupplier.Services[0].Endpoints[0].Url)
 
 	// Prepare an updated supplier with a higher stake and a different URL for the service
-	updateMsg := &types.MsgStakeSupplier{
+	updateMsg := &supplier.MsgStakeSupplier{
 		Address: supplierAddr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(200)},
-		Services: []*sharedtypes.SupplierServiceConfig{
+		Services: []*shared.SupplierServiceConfig{
 			{
-				Service: &sharedtypes.Service{
+				Service: &shared.Service{
 					Id: "svcId2",
 				},
-				Endpoints: []*sharedtypes.SupplierEndpoint{
+				Endpoints: []*shared.SupplierEndpoint{
 					{
 						Url:     "http://localhost:8082",
-						RpcType: sharedtypes.RPCType_JSON_RPC,
-						Configs: make([]*sharedtypes.ConfigOption, 0),
+						RpcType: shared.RPCType_JSON_RPC,
+						Configs: make([]*shared.ConfigOption, 0),
 					},
 				},
 			},
@@ -99,19 +99,19 @@ func TestMsgServer_StakeSupplier_FailRestakingDueToInvalidServices(t *testing.T)
 	supplierAddr := sample.AccAddress()
 
 	// Prepare the supplier stake message
-	stakeMsg := &types.MsgStakeSupplier{
+	stakeMsg := &supplier.MsgStakeSupplier{
 		Address: supplierAddr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
-		Services: []*sharedtypes.SupplierServiceConfig{
+		Services: []*shared.SupplierServiceConfig{
 			{
-				Service: &sharedtypes.Service{
+				Service: &shared.Service{
 					Id: "svcId",
 				},
-				Endpoints: []*sharedtypes.SupplierEndpoint{
+				Endpoints: []*shared.SupplierEndpoint{
 					{
 						Url:     "http://localhost:8080",
-						RpcType: sharedtypes.RPCType_JSON_RPC,
-						Configs: make([]*sharedtypes.ConfigOption, 0),
+						RpcType: shared.RPCType_JSON_RPC,
+						Configs: make([]*shared.ConfigOption, 0),
 					},
 				},
 			},
@@ -123,13 +123,13 @@ func TestMsgServer_StakeSupplier_FailRestakingDueToInvalidServices(t *testing.T)
 	require.NoError(t, err)
 
 	// Prepare the supplier stake message without any service endpoints
-	updateStakeMsg := &types.MsgStakeSupplier{
+	updateStakeMsg := &supplier.MsgStakeSupplier{
 		Address: supplierAddr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
-		Services: []*sharedtypes.SupplierServiceConfig{
+		Services: []*shared.SupplierServiceConfig{
 			{
-				Service:   &sharedtypes.Service{Id: "svcId"},
-				Endpoints: []*sharedtypes.SupplierEndpoint{},
+				Service:   &shared.Service{Id: "svcId"},
+				Endpoints: []*shared.SupplierEndpoint{},
 			},
 		},
 	}
@@ -148,12 +148,12 @@ func TestMsgServer_StakeSupplier_FailRestakingDueToInvalidServices(t *testing.T)
 	require.Equal(t, "http://localhost:8080", supplierFound.Services[0].Endpoints[0].Url)
 
 	// Prepare the supplier stake message with an invalid service ID
-	updateStakeMsg = &types.MsgStakeSupplier{
+	updateStakeMsg = &supplier.MsgStakeSupplier{
 		Address: supplierAddr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
-		Services: []*sharedtypes.SupplierServiceConfig{
+		Services: []*shared.SupplierServiceConfig{
 			{
-				Service: &sharedtypes.Service{Id: "svc1 INVALID ! & *"},
+				Service: &shared.Service{Id: "svc1 INVALID ! & *"},
 			},
 		},
 	}
@@ -178,19 +178,19 @@ func TestMsgServer_StakeSupplier_FailLoweringStake(t *testing.T) {
 
 	// Prepare the supplier
 	supplierAddr := sample.AccAddress()
-	stakeMsg := &types.MsgStakeSupplier{
+	stakeMsg := &supplier.MsgStakeSupplier{
 		Address: supplierAddr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
-		Services: []*sharedtypes.SupplierServiceConfig{
+		Services: []*shared.SupplierServiceConfig{
 			{
-				Service: &sharedtypes.Service{
+				Service: &shared.Service{
 					Id: "svcId",
 				},
-				Endpoints: []*sharedtypes.SupplierEndpoint{
+				Endpoints: []*shared.SupplierEndpoint{
 					{
 						Url:     "http://localhost:8080",
-						RpcType: sharedtypes.RPCType_JSON_RPC,
-						Configs: make([]*sharedtypes.ConfigOption, 0),
+						RpcType: shared.RPCType_JSON_RPC,
+						Configs: make([]*shared.ConfigOption, 0),
 					},
 				},
 			},
@@ -205,19 +205,19 @@ func TestMsgServer_StakeSupplier_FailLoweringStake(t *testing.T) {
 	require.True(t, isSupplierFound)
 
 	// Prepare an updated supplier with a lower stake
-	updateMsg := &types.MsgStakeSupplier{
+	updateMsg := &supplier.MsgStakeSupplier{
 		Address: supplierAddr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(50)},
-		Services: []*sharedtypes.SupplierServiceConfig{
+		Services: []*shared.SupplierServiceConfig{
 			{
-				Service: &sharedtypes.Service{
+				Service: &shared.Service{
 					Id: "svcId",
 				},
-				Endpoints: []*sharedtypes.SupplierEndpoint{
+				Endpoints: []*shared.SupplierEndpoint{
 					{
 						Url:     "http://localhost:8080",
-						RpcType: sharedtypes.RPCType_JSON_RPC,
-						Configs: make([]*sharedtypes.ConfigOption, 0),
+						RpcType: shared.RPCType_JSON_RPC,
+						Configs: make([]*shared.ConfigOption, 0),
 					},
 				},
 			},
@@ -241,19 +241,19 @@ func TestMsgServer_StakeSupplier_FailWithNonExistingService(t *testing.T) {
 
 	// Prepare the supplier
 	supplierAddr := sample.AccAddress()
-	stakeMsg := &types.MsgStakeSupplier{
+	stakeMsg := &supplier.MsgStakeSupplier{
 		Address: supplierAddr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
-		Services: []*sharedtypes.SupplierServiceConfig{
+		Services: []*shared.SupplierServiceConfig{
 			{
-				Service: &sharedtypes.Service{
+				Service: &shared.Service{
 					Id: "newService",
 				},
-				Endpoints: []*sharedtypes.SupplierEndpoint{
+				Endpoints: []*shared.SupplierEndpoint{
 					{
 						Url:     "http://localhost:8080",
-						RpcType: sharedtypes.RPCType_JSON_RPC,
-						Configs: make([]*sharedtypes.ConfigOption, 0),
+						RpcType: shared.RPCType_JSON_RPC,
+						Configs: make([]*shared.ConfigOption, 0),
 					},
 				},
 			},
@@ -262,5 +262,5 @@ func TestMsgServer_StakeSupplier_FailWithNonExistingService(t *testing.T) {
 
 	// Stake the supplier & verify that it fails because the service does not exist.
 	_, err := srv.StakeSupplier(ctx, stakeMsg)
-	require.ErrorIs(t, err, types.ErrSupplierServiceNotFound)
+	require.ErrorIs(t, err, supplier.ErrSupplierServiceNotFound)
 }

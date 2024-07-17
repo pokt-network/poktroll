@@ -9,11 +9,11 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/pokt-network/poktroll/proto/types/proof"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	_ "github.com/pokt-network/poktroll/testutil/testpolylog"
-	"github.com/pokt-network/poktroll/x/proof/types"
 )
 
 // Prevent strconv unused error
@@ -26,35 +26,35 @@ func TestProofQuerySingle(t *testing.T) {
 	var randSupplierAddr = sample.AccAddress()
 	tests := []struct {
 		desc        string
-		request     *types.QueryGetProofRequest
-		response    *types.QueryGetProofResponse
+		request     *proof.QueryGetProofRequest
+		response    *proof.QueryGetProofResponse
 		expectedErr error
 	}{
 		{
 			desc: "First",
-			request: &types.QueryGetProofRequest{
+			request: &proof.QueryGetProofRequest{
 				SessionId:       proofs[0].GetSessionHeader().GetSessionId(),
 				SupplierAddress: proofs[0].SupplierAddress,
 			},
-			response: &types.QueryGetProofResponse{Proof: proofs[0]},
+			response: &proof.QueryGetProofResponse{Proof: proofs[0]},
 		},
 		{
 			desc: "Second",
-			request: &types.QueryGetProofRequest{
+			request: &proof.QueryGetProofRequest{
 				SessionId:       proofs[1].GetSessionHeader().GetSessionId(),
 				SupplierAddress: proofs[1].SupplierAddress,
 			},
-			response: &types.QueryGetProofResponse{Proof: proofs[1]},
+			response: &proof.QueryGetProofResponse{Proof: proofs[1]},
 		},
 		{
 			desc: "Proof Not Found - Random SessionId",
-			request: &types.QueryGetProofRequest{
+			request: &proof.QueryGetProofRequest{
 				SessionId:       "not a real session id",
 				SupplierAddress: proofs[0].GetSupplierAddress(),
 			},
 			expectedErr: status.Error(
 				codes.NotFound,
-				types.ErrProofProofNotFound.Wrapf(
+				proof.ErrProofProofNotFound.Wrapf(
 					"session ID %q and supplier %q",
 					"not a real session id",
 					proofs[0].GetSupplierAddress(),
@@ -63,13 +63,13 @@ func TestProofQuerySingle(t *testing.T) {
 		},
 		{
 			desc: "Proof Not Found - Random Supplier Address",
-			request: &types.QueryGetProofRequest{
+			request: &proof.QueryGetProofRequest{
 				SessionId:       proofs[0].GetSessionHeader().GetSessionId(),
 				SupplierAddress: randSupplierAddr,
 			},
 			expectedErr: status.Error(
 				codes.NotFound,
-				types.ErrProofProofNotFound.Wrapf(
+				proof.ErrProofProofNotFound.Wrapf(
 					"session ID %q and supplier %q",
 					proofs[0].GetSessionHeader().GetSessionId(),
 					randSupplierAddr,
@@ -78,26 +78,26 @@ func TestProofQuerySingle(t *testing.T) {
 		},
 		{
 			desc: "InvalidRequest - Missing SessionId",
-			request: &types.QueryGetProofRequest{
+			request: &proof.QueryGetProofRequest{
 				// SessionId explicitly omitted
 				SupplierAddress: proofs[0].GetSupplierAddress(),
 			},
 			expectedErr: status.Error(
 				codes.InvalidArgument,
-				types.ErrProofInvalidSessionId.Wrap(
+				proof.ErrProofInvalidSessionId.Wrap(
 					"invalid empty session ID for proof being retrieved",
 				).Error(),
 			),
 		},
 		{
 			desc: "InvalidRequest - Missing SupplierAddress",
-			request: &types.QueryGetProofRequest{
+			request: &proof.QueryGetProofRequest{
 				SessionId: proofs[0].GetSessionHeader().GetSessionId(),
 				// SupplierAddress explicitly omitted
 			},
 			expectedErr: status.Error(
 				codes.InvalidArgument,
-				types.ErrProofInvalidAddress.Wrap(
+				proof.ErrProofInvalidAddress.Wrap(
 					"invalid supplier address for proof being retrieved ; (empty address string is not allowed)",
 				).Error(),
 			),
@@ -107,7 +107,7 @@ func TestProofQuerySingle(t *testing.T) {
 			request: nil,
 			expectedErr: status.Error(
 				codes.InvalidArgument,
-				types.ErrProofInvalidQueryRequest.Wrap("request cannot be nil").Error(),
+				proof.ErrProofInvalidQueryRequest.Wrap("request cannot be nil").Error(),
 			),
 		},
 	}
@@ -135,8 +135,8 @@ func TestProofQueryPaginated(t *testing.T) {
 	keeper, ctx := keepertest.ProofKeeper(t)
 	proofs := createNProofs(keeper, ctx, 5)
 
-	request := func(next []byte, offset, limit uint64, total bool) *types.QueryAllProofsRequest {
-		return &types.QueryAllProofsRequest{
+	request := func(next []byte, offset, limit uint64, total bool) *proof.QueryAllProofsRequest {
+		return &proof.QueryAllProofsRequest{
 			Pagination: &query.PageRequest{
 				Key:        next,
 				Offset:     offset,

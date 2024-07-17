@@ -5,7 +5,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/spf13/cobra"
 
-	"github.com/pokt-network/poktroll/x/supplier/types"
+	"github.com/pokt-network/poktroll/proto/types/supplier"
 )
 
 func CmdQueryParams() *cobra.Command {
@@ -19,9 +19,9 @@ func CmdQueryParams() *cobra.Command {
 				return err
 			}
 
-			queryClient := types.NewQueryClient(clientCtx)
+			queryClient := supplier.NewQueryClient(clientCtx)
 
-			res, err := queryClient.Params(cmd.Context(), &types.QueryParamsRequest{})
+			res, err := queryClient.Params(cmd.Context(), &supplier.QueryParamsRequest{})
 			if err != nil {
 				return err
 			}

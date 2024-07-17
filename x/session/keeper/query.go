@@ -1,5 +1,5 @@
 package keeper
 
-import "github.com/pokt-network/poktroll/x/session/types"
+import "github.com/pokt-network/poktroll/proto/types/session"
 
-var _ types.QueryServer = Keeper{}
+var _ session.QueryServer = Keeper{}

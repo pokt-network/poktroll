@@ -7,12 +7,11 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/proto/types/tokenomics"
 	testutilevents "github.com/pokt-network/poktroll/testutil/events"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/x/tokenomics/keeper"
 	tokenomicskeeper "github.com/pokt-network/poktroll/x/tokenomics/keeper"
-	"github.com/pokt-network/poktroll/x/tokenomics/types"
-	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 // This is a "base" test for updating relay mining difficulty to go through
@@ -90,7 +89,7 @@ func TestUpdateRelayMiningDifficulty_Base(t *testing.T) {
 
 	// Confirm a relay mining difficulty update event was emitted
 	events := sdkCtx.EventManager().Events()
-	expectedEvents := testutilevents.FilterEvents[*tokenomicstypes.EventRelayMiningDifficultyUpdated](t,
+	expectedEvents := testutilevents.FilterEvents[*tokenomics.EventRelayMiningDifficultyUpdated](t,
 		events, "poktroll.tokenomics.EventRelayMiningDifficultyUpdated")
 	require.Len(t, expectedEvents, 6) // 3 for svc1, 2 for svc2, 1 for svc3
 }
@@ -99,12 +98,12 @@ func TestUpdateRelayMiningDifficulty_FirstDifficulty(t *testing.T) {
 	tests := []struct {
 		desc                          string
 		numRelays                     uint64
-		expectedRelayMiningDifficulty types.RelayMiningDifficulty
+		expectedRelayMiningDifficulty tokenomics.RelayMiningDifficulty
 	}{
 		{
 			desc:      "First Difficulty way below target",
 			numRelays: keeper.TargetNumRelays / 1e3,
-			expectedRelayMiningDifficulty: types.RelayMiningDifficulty{
+			expectedRelayMiningDifficulty: tokenomics.RelayMiningDifficulty{
 				ServiceId:    "svc1",
 				BlockHeight:  1,
 				NumRelaysEma: keeper.TargetNumRelays / 1e3,
@@ -113,7 +112,7 @@ func TestUpdateRelayMiningDifficulty_FirstDifficulty(t *testing.T) {
 		}, {
 			desc:      "First Difficulty equal to target",
 			numRelays: keeper.TargetNumRelays,
-			expectedRelayMiningDifficulty: types.RelayMiningDifficulty{
+			expectedRelayMiningDifficulty: tokenomics.RelayMiningDifficulty{
 				ServiceId:    "svc1",
 				BlockHeight:  1,
 				NumRelaysEma: keeper.TargetNumRelays,
@@ -122,7 +121,7 @@ func TestUpdateRelayMiningDifficulty_FirstDifficulty(t *testing.T) {
 		}, {
 			desc:      "First Difficulty way above target",
 			numRelays: keeper.TargetNumRelays * 1e3,
-			expectedRelayMiningDifficulty: types.RelayMiningDifficulty{
+			expectedRelayMiningDifficulty: tokenomics.RelayMiningDifficulty{
 				ServiceId:    "svc1",
 				BlockHeight:  1,
 				NumRelaysEma: keeper.TargetNumRelays * 1e3,

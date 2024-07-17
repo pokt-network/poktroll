@@ -9,9 +9,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/pokt-network/poktroll/proto/types/service"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
-	"github.com/pokt-network/poktroll/x/service/types"
 )
 
 // Prevent strconv unused error
@@ -22,27 +22,27 @@ func TestServiceQuerySingle(t *testing.T) {
 	msgs := createNServices(keeper, ctx, 2)
 	tests := []struct {
 		desc        string
-		request     *types.QueryGetServiceRequest
-		response    *types.QueryGetServiceResponse
+		request     *service.QueryGetServiceRequest
+		response    *service.QueryGetServiceResponse
 		expectedErr error
 	}{
 		{
 			desc: "First",
-			request: &types.QueryGetServiceRequest{
+			request: &service.QueryGetServiceRequest{
 				Id: msgs[0].Id,
 			},
-			response: &types.QueryGetServiceResponse{Service: msgs[0]},
+			response: &service.QueryGetServiceResponse{Service: msgs[0]},
 		},
 		{
 			desc: "Second",
-			request: &types.QueryGetServiceRequest{
+			request: &service.QueryGetServiceRequest{
 				Id: msgs[1].Id,
 			},
-			response: &types.QueryGetServiceResponse{Service: msgs[1]},
+			response: &service.QueryGetServiceResponse{Service: msgs[1]},
 		},
 		{
 			desc: "KeyNotFound",
-			request: &types.QueryGetServiceRequest{
+			request: &service.QueryGetServiceRequest{
 				Id: strconv.Itoa(100000),
 			},
 			expectedErr: status.Error(codes.NotFound, "not found"),
@@ -72,8 +72,8 @@ func TestServiceQueryPaginated(t *testing.T) {
 	keeper, ctx := keepertest.ServiceKeeper(t)
 	msgs := createNServices(keeper, ctx, 5)
 
-	request := func(next []byte, offset, limit uint64, total bool) *types.QueryAllServicesRequest {
-		return &types.QueryAllServicesRequest{
+	request := func(next []byte, offset, limit uint64, total bool) *service.QueryAllServicesRequest {
+		return &service.QueryAllServicesRequest{
 			Pagination: &query.PageRequest{
 				Key:        next,
 				Offset:     offset,

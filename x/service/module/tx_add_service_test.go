@@ -13,10 +13,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/status"
 
+	"github.com/pokt-network/poktroll/proto/types/service"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 	"github.com/pokt-network/poktroll/testutil/network"
-	service "github.com/pokt-network/poktroll/x/service/module"
-	"github.com/pokt-network/poktroll/x/service/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	servicemodule "github.com/pokt-network/poktroll/x/service/module"
 )
 
 func TestCLI_AddService(t *testing.T) {
@@ -51,11 +51,11 @@ func TestCLI_AddService(t *testing.T) {
 	require.NoError(t, net.WaitForNextBlock())
 
 	// Prepare two valid services
-	svc1 := sharedtypes.Service{
+	svc1 := shared.Service{
 		Id:   "svc1",
 		Name: "service name",
 	}
-	svc2 := sharedtypes.Service{
+	svc2 := shared.Service{
 		Id:   "svc2",
 		Name: "service name 2",
 	}
@@ -67,13 +67,13 @@ func TestCLI_AddService(t *testing.T) {
 	}
 	args = append(args, commonArgs...)
 
-	_, err := clitestutil.ExecTestCLICmd(ctx, service.CmdAddService(), args)
+	_, err := clitestutil.ExecTestCLICmd(ctx, servicemodule.CmdAddService(), args)
 	require.NoError(t, err)
 
 	tests := []struct {
 		desc            string
 		supplierAddress string
-		service         sharedtypes.Service
+		service         shared.Service
 		expectedErr     *sdkerrors.Error
 	}{
 		{
@@ -84,26 +84,26 @@ func TestCLI_AddService(t *testing.T) {
 		{
 			desc:            "invalid - missing service id",
 			supplierAddress: account.Address.String(),
-			service:         sharedtypes.Service{Name: "service name"}, // ID intentionally omitted
-			expectedErr:     types.ErrServiceMissingID,
+			service:         shared.Service{Name: "service name"}, // ID intentionally omitted
+			expectedErr:     service.ErrServiceMissingID,
 		},
 		{
 			desc:            "invalid - missing service name",
 			supplierAddress: account.Address.String(),
-			service:         sharedtypes.Service{Id: "svc1"}, // Name intentionally omitted
-			expectedErr:     types.ErrServiceMissingName,
+			service:         shared.Service{Id: "svc1"}, // Name intentionally omitted
+			expectedErr:     service.ErrServiceMissingName,
 		},
 		{
 			desc:            "invalid - invalid supplier address",
 			supplierAddress: "invalid address",
 			service:         svc1,
-			expectedErr:     types.ErrServiceInvalidAddress,
+			expectedErr:     service.ErrServiceInvalidAddress,
 		},
 		{
 			desc:            "invalid - service already staked",
 			supplierAddress: account.Address.String(),
 			service:         svc2,
-			expectedErr:     types.ErrServiceAlreadyExists,
+			expectedErr:     service.ErrServiceAlreadyExists,
 		},
 	}
 
@@ -122,7 +122,7 @@ func TestCLI_AddService(t *testing.T) {
 			args = append(args, commonArgs...)
 
 			// Execute the command
-			addServiceOutput, err := clitestutil.ExecTestCLICmd(ctx, service.CmdAddService(), args)
+			addServiceOutput, err := clitestutil.ExecTestCLICmd(ctx, servicemodule.CmdAddService(), args)
 
 			// Validate the error if one is expected
 			if test.expectedErr != nil {

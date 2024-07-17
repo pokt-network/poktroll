@@ -12,9 +12,9 @@ import (
 	"github.com/pokt-network/smt"
 
 	"github.com/pokt-network/poktroll/pkg/observable"
-	servicetypes "github.com/pokt-network/poktroll/x/service/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	servicetypes "github.com/pokt-network/poktroll/proto/types/service"
+	sessiontypes "github.com/pokt-network/poktroll/proto/types/session"
+	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
 )
 
 // RelaysObservable is an observable which is notified with Relay values.

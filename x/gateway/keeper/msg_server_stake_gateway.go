@@ -6,14 +6,15 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/pokt-network/poktroll/proto/types/gateway"
 	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/gateway/types"
 )
 
 func (k msgServer) StakeGateway(
 	goCtx context.Context,
-	msg *types.MsgStakeGateway,
-) (*types.MsgStakeGatewayResponse, error) {
+	msg *gateway.MsgStakeGateway,
+) (*gateway.MsgStakeGatewayResponse, error) {
 	isSuccessful := false
 	defer telemetry.EventSuccessCounter(
 		"stake_gateway",
@@ -33,15 +34,15 @@ func (k msgServer) StakeGateway(
 	// Check if the gateway already exists or not
 	var err error
 	var coinsToEscrow sdk.Coin
-	gateway, isGatewayFound := k.GetGateway(ctx, msg.Address)
+	foundGateway, isGatewayFound := k.GetGateway(ctx, msg.Address)
 	if !isGatewayFound {
 		logger.Info(fmt.Sprintf("Gateway not found. Creating new gateway for address %q", msg.Address))
-		gateway = k.createGateway(ctx, msg)
+		foundGateway = k.createGateway(ctx, msg)
 		coinsToEscrow = *msg.Stake
 	} else {
 		logger.Info(fmt.Sprintf("Gateway found. About to try and update gateway for address %q", msg.Address))
-		currGatewayStake := *gateway.Stake
-		if err = k.updateGateway(ctx, &gateway, msg); err != nil {
+		currGatewayStake := *foundGateway.Stake
+		if err = k.updateGateway(ctx, &foundGateway, msg); err != nil {
 			logger.Error(fmt.Sprintf("could not update gateway for address %q due to error %v", msg.Address, err))
 			return nil, err
 		}
@@ -55,7 +56,7 @@ func (k msgServer) StakeGateway(
 	// Must always stake or upstake (> 0 delta)
 	if coinsToEscrow.IsZero() {
 		logger.Warn(fmt.Sprintf("Gateway %q must escrow more than 0 additional coins", msg.Address))
-		return nil, types.ErrGatewayInvalidStake.Wrapf("gateway %q must escrow more than 0 additional coins", msg.Address)
+		return nil, gateway.ErrGatewayInvalidStake.Wrapf("gateway %q must escrow more than 0 additional coins", msg.Address)
 	}
 
 	// Retrieve the address of the gateway
@@ -75,18 +76,18 @@ func (k msgServer) StakeGateway(
 	}
 
 	// Update the Gateway in the store
-	k.SetGateway(ctx, gateway)
-	logger.Info(fmt.Sprintf("Successfully updated stake for gateway: %+v", gateway))
+	k.SetGateway(ctx, foundGateway)
+	logger.Info(fmt.Sprintf("Successfully updated stake for gateway: %+v", foundGateway))
 
 	isSuccessful = true
-	return &types.MsgStakeGatewayResponse{}, nil
+	return &gateway.MsgStakeGatewayResponse{}, nil
 }
 
 func (k msgServer) createGateway(
 	_ sdk.Context,
-	msg *types.MsgStakeGateway,
-) types.Gateway {
-	return types.Gateway{
+	msg *gateway.MsgStakeGateway,
+) gateway.Gateway {
+	return gateway.Gateway{
 		Address: msg.Address,
 		Stake:   msg.Stake,
 	}
@@ -94,19 +95,19 @@ func (k msgServer) createGateway(
 
 func (k msgServer) updateGateway(
 	_ sdk.Context,
-	gateway *types.Gateway,
-	msg *types.MsgStakeGateway,
+	gatewayToUpdate *gateway.Gateway,
+	msg *gateway.MsgStakeGateway,
 ) error {
 	// Checks if the the msg address is the same as the current owner
-	if msg.Address != gateway.Address {
-		return types.ErrGatewayUnauthorized.Wrapf("msg Address %q != gateway address %q", msg.Address, gateway.Address)
+	if msg.Address != gatewayToUpdate.Address {
+		return gateway.ErrGatewayUnauthorized.Wrapf("msg Address %q != gateway address %q", msg.Address, gatewayToUpdate.Address)
 	}
 	if msg.Stake == nil {
-		return types.ErrGatewayInvalidStake.Wrapf("stake amount cannot be nil")
+		return gateway.ErrGatewayInvalidStake.Wrapf("stake amount cannot be nil")
 	}
-	if msg.Stake.IsLTE(*gateway.Stake) {
-		return types.ErrGatewayInvalidStake.Wrapf("stake amount %v must be higher than previous stake amount %v", msg.Stake, gateway.Stake)
+	if msg.Stake.IsLTE(*gatewayToUpdate.Stake) {
+		return gateway.ErrGatewayInvalidStake.Wrapf("stake amount %v must be higher than previous stake amount %v", msg.Stake, gatewayToUpdate.Stake)
 	}
-	gateway.Stake = msg.Stake
+	gatewayToUpdate.Stake = msg.Stake
 	return nil
 }

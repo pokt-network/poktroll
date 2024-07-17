@@ -22,7 +22,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/miner"
-	servicetypes "github.com/pokt-network/poktroll/x/service/types"
+	servicetypes "github.com/pokt-network/poktroll/proto/types/service"
 )
 
 const (

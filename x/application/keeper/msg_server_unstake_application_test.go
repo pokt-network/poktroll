@@ -7,11 +7,11 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/proto/types/application"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/x/application/keeper"
-	"github.com/pokt-network/poktroll/x/application/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
@@ -27,12 +27,12 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 
 	// Prepare the application
 	initialStake := sdk.NewCoin("upokt", math.NewInt(100))
-	stakeMsg := &types.MsgStakeApplication{
+	stakeMsg := &application.MsgStakeApplication{
 		Address: appAddr,
 		Stake:   &initialStake,
-		Services: []*sharedtypes.ApplicationServiceConfig{
+		Services: []*shared.ApplicationServiceConfig{
 			{
-				Service: &sharedtypes.Service{Id: "svc1"},
+				Service: &shared.Service{Id: "svc1"},
 			},
 		},
 	}
@@ -49,7 +49,7 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 	require.Len(t, appFound.ServiceConfigs, 1)
 
 	// Unstake the application
-	unstakeMsg := &types.MsgUnstakeApplication{Address: appAddr}
+	unstakeMsg := &application.MsgUnstakeApplication{Address: appAddr}
 	_, err = srv.UnstakeApplication(ctx, unstakeMsg)
 	require.NoError(t, err)
 
@@ -70,10 +70,10 @@ func TestMsgServer_UnstakeApplication_FailIfNotStaked(t *testing.T) {
 	require.False(t, isAppFound)
 
 	// Unstake the application
-	unstakeMsg := &types.MsgUnstakeApplication{Address: appAddr}
+	unstakeMsg := &application.MsgUnstakeApplication{Address: appAddr}
 	_, err := srv.UnstakeApplication(ctx, unstakeMsg)
 	require.Error(t, err)
-	require.ErrorIs(t, err, types.ErrAppNotFound)
+	require.ErrorIs(t, err, application.ErrAppNotFound)
 
 	_, isAppFound = k.GetApplication(ctx, appAddr)
 	require.False(t, isAppFound)

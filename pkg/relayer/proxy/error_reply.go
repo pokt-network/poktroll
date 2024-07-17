@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/pokt-network/poktroll/x/service/types"
+	"github.com/pokt-network/poktroll/proto/types/service"
 )
 
 // replyWithError builds the appropriate error format according to the RelayRequest
@@ -13,7 +13,7 @@ import (
 // to the server itself and not to the relayed request.
 func (sync *synchronousRPCServer) replyWithError(
 	replyError error,
-	relayRequest *types.RelayRequest,
+	relayRequest *service.RelayRequest,
 	writer http.ResponseWriter,
 ) {
 	// Indicate whether the original error should be sent to the client or send
@@ -36,8 +36,8 @@ func (sync *synchronousRPCServer) replyWithError(
 
 	// Create an unsigned RelayResponse with the error reply as payload and the
 	// same session header as the source RelayRequest.
-	relayResponse := &types.RelayResponse{
-		Meta: types.RelayResponseMetadata{
+	relayResponse := &service.RelayResponse{
+		Meta: service.RelayResponseMetadata{
 			SessionHeader: relayRequest.Meta.SessionHeader,
 		},
 		Payload: []byte(replyError.Error()),

@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
+	"github.com/pokt-network/poktroll/proto/types/gateway"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
 	"github.com/pokt-network/poktroll/x/gateway/keeper"
@@ -22,8 +23,8 @@ func init() {
 	cmd.InitSDKConfig()
 }
 
-func createNGateways(keeper keeper.Keeper, ctx context.Context, n int) []types.Gateway {
-	gateway := make([]types.Gateway, n)
+func createNGateways(keeper keeper.Keeper, ctx context.Context, n int) []gateway.Gateway {
+	gateway := make([]gateway.Gateway, n)
 	for i := range gateway {
 		gateway[i].Address = strconv.Itoa(i)
 

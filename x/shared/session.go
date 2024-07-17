@@ -2,7 +2,7 @@ package shared
 
 import (
 	poktrand "github.com/pokt-network/poktroll/pkg/crypto/rand"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
 )
 
 // TODO_DOCUMENT(@bryanchriswhite): Move this into the documentation: https://github.com/pokt-network/poktroll/pull/571#discussion_r1630923625

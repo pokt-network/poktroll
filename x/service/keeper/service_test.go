@@ -10,11 +10,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
 	"github.com/pokt-network/poktroll/x/service/keeper"
 	"github.com/pokt-network/poktroll/x/service/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // Prevent strconv unused error
@@ -24,8 +24,8 @@ func init() {
 	cmd.InitSDKConfig()
 }
 
-func createNServices(keeper keeper.Keeper, ctx context.Context, n int) []sharedtypes.Service {
-	services := make([]sharedtypes.Service, n)
+func createNServices(keeper keeper.Keeper, ctx context.Context, n int) []shared.Service {
+	services := make([]shared.Service, n)
 	for i := range services {
 		services[i].Id = strconv.Itoa(i)
 		services[i].Name = fmt.Sprintf("svcName%d", i)

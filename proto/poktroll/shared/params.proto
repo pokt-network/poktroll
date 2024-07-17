@@ -4,7 +4,7 @@ package poktroll.shared;
 import "amino/amino.proto";
 import "gogoproto/gogo.proto";
 
-option go_package = "github.com/pokt-network/poktroll/x/shared/types";
+option go_package = "github.com/pokt-network/poktroll/proto/types/shared";
 
 // Params defines the parameters for the module.
 message Params {

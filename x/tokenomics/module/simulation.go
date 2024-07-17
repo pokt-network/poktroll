@@ -8,6 +8,7 @@ import (
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 	"github.com/cosmos/cosmos-sdk/x/simulation"
 
+	"github.com/pokt-network/poktroll/proto/types/tokenomics"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	tokenomicssimulation "github.com/pokt-network/poktroll/x/tokenomics/simulation"
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
@@ -36,8 +37,8 @@ func (AppModule) GenerateGenesisState(simState *module.SimulationState) {
 	for i, acc := range simState.Accounts {
 		accs[i] = acc.Address.String()
 	}
-	tokenomicsGenesis := types.GenesisState{
-		Params: types.DefaultParams(),
+	tokenomicsGenesis := tokenomics.GenesisState{
+		Params: tokenomics.DefaultParams(),
 		// this line is used by starport scaffolding # simapp/module/genesisState
 	}
 	simState.GenState[types.ModuleName] = simState.Cdc.MustMarshalJSON(&tokenomicsGenesis)

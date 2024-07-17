@@ -6,25 +6,25 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 )
 
 func TestMsgUpdateParams(t *testing.T) {
 	k, ms, ctx := setupMsgServer(t)
-	params := types.DefaultParams()
+	params := shared.DefaultParams()
 	require.NoError(t, k.SetParams(ctx, params))
 	wctx := sdk.UnwrapSDKContext(ctx)
 
 	// default params
 	testCases := []struct {
 		name      string
-		input     *types.MsgUpdateParams
+		input     *shared.MsgUpdateParams
 		expErr    bool
 		expErrMsg string
 	}{
 		{
 			name: "invalid: authority address invalid",
-			input: &types.MsgUpdateParams{
+			input: &shared.MsgUpdateParams{
 				Authority: "invalid",
 				Params:    params,
 			},
@@ -33,16 +33,16 @@ func TestMsgUpdateParams(t *testing.T) {
 		},
 		{
 			name: "invalid: send empty params",
-			input: &types.MsgUpdateParams{
+			input: &shared.MsgUpdateParams{
 				Authority: k.GetAuthority(),
-				Params:    types.Params{},
+				Params:    shared.Params{},
 			},
 			expErr:    true,
 			expErrMsg: "invalid NumBlocksPerSession: (0): the provided param is invalid",
 		},
 		{
 			name: "valid: send default params",
-			input: &types.MsgUpdateParams{
+			input: &shared.MsgUpdateParams{
 				Authority: k.GetAuthority(),
 				Params:    params,
 			},

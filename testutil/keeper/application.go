@@ -20,12 +20,13 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/proto/types/application"
+	"github.com/pokt-network/poktroll/proto/types/gateway"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 	"github.com/pokt-network/poktroll/testutil/application/mocks"
 	testsession "github.com/pokt-network/poktroll/testutil/session"
 	"github.com/pokt-network/poktroll/x/application/keeper"
-	"github.com/pokt-network/poktroll/x/application/types"
-	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/poktroll/x/gateway/types"
 )
 
 // stakedGatewayMap is used to mock whether a gateway is staked or not for use
@@ -57,12 +58,12 @@ func ApplicationKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 
 	mockGatewayKeeper := mocks.NewMockGatewayKeeper(ctrl)
 	mockGatewayKeeper.EXPECT().GetGateway(gomock.Any(), gomock.Any()).DoAndReturn(
-		func(_ context.Context, addr string) (gatewaytypes.Gateway, bool) {
+		func(_ context.Context, addr string) (gateway.Gateway, bool) {
 			if _, ok := stakedGatewayMap[addr]; !ok {
-				return gatewaytypes.Gateway{}, false
+				return gateway.Gateway{}, false
 			}
 			stake := sdk.NewCoin("upokt", math.NewInt(10000))
-			return gatewaytypes.Gateway{
+			return gateway.Gateway{
 				Address: addr,
 				Stake:   &stake,
 			}, true
@@ -71,8 +72,8 @@ func ApplicationKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 
 	mockSharedKeeper := mocks.NewMockSharedKeeper(ctrl)
 	mockSharedKeeper.EXPECT().GetParams(gomock.Any()).
-		DoAndReturn(func(_ context.Context) sharedtypes.Params {
-			return sharedtypes.DefaultParams()
+		DoAndReturn(func(_ context.Context) shared.Params {
+			return shared.DefaultParams()
 		}).
 		AnyTimes()
 	mockSharedKeeper.EXPECT().GetSessionEndHeight(gomock.Any(), gomock.Any()).
@@ -95,7 +96,7 @@ func ApplicationKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 	ctx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
 
 	// Initialize params
-	require.NoError(t, k.SetParams(ctx, types.DefaultParams()))
+	require.NoError(t, k.SetParams(ctx, application.DefaultParams()))
 
 	return k, ctx
 }

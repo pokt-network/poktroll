@@ -10,9 +10,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/pokt-network/poktroll/proto/types/gateway"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
-	"github.com/pokt-network/poktroll/x/gateway/types"
 )
 
 // Prevent strconv unused error
@@ -23,27 +23,27 @@ func TestGatewayQuerySingle(t *testing.T) {
 	gateways := createNGateways(keeper, ctx, 2)
 	tests := []struct {
 		desc        string
-		request     *types.QueryGetGatewayRequest
-		response    *types.QueryGetGatewayResponse
+		request     *gateway.QueryGetGatewayRequest
+		response    *gateway.QueryGetGatewayResponse
 		expectedErr error
 	}{
 		{
 			desc: "First",
-			request: &types.QueryGetGatewayRequest{
+			request: &gateway.QueryGetGatewayRequest{
 				Address: gateways[0].Address,
 			},
-			response: &types.QueryGetGatewayResponse{Gateway: gateways[0]},
+			response: &gateway.QueryGetGatewayResponse{Gateway: gateways[0]},
 		},
 		{
 			desc: "Second",
-			request: &types.QueryGetGatewayRequest{
+			request: &gateway.QueryGetGatewayRequest{
 				Address: gateways[1].Address,
 			},
-			response: &types.QueryGetGatewayResponse{Gateway: gateways[1]},
+			response: &gateway.QueryGetGatewayResponse{Gateway: gateways[1]},
 		},
 		{
 			desc: "KeyNotFound",
-			request: &types.QueryGetGatewayRequest{
+			request: &gateway.QueryGetGatewayRequest{
 				Address: strconv.Itoa(100000),
 			},
 			expectedErr: status.Error(codes.NotFound, fmt.Sprintf("gateway not found: address %s", strconv.Itoa(100000))),
@@ -73,8 +73,8 @@ func TestGatewayQueryPaginated(t *testing.T) {
 	keeper, ctx := keepertest.GatewayKeeper(t)
 	gateways := createNGateways(keeper, ctx, 5)
 
-	request := func(next []byte, offset, limit uint64, total bool) *types.QueryAllGatewaysRequest {
-		return &types.QueryAllGatewaysRequest{
+	request := func(next []byte, offset, limit uint64, total bool) *gateway.QueryAllGatewaysRequest {
+		return &gateway.QueryAllGatewaysRequest{
 			Pagination: &query.PageRequest{
 				Key:        next,
 				Offset:     offset,

@@ -1,7 +1,7 @@
 syntax = "proto3";
 package poktroll.proof;
 
-option go_package = "github.com/pokt-network/poktroll/x/proof/types";
+option go_package = "github.com/pokt-network/poktroll/proto/types/proof";
 
 import "gogoproto/gogo.proto";
 import "poktroll/proof/claim.proto";

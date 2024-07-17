@@ -7,8 +7,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gopkg.in/yaml.v2"
 
+	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
 	sharedhelpers "github.com/pokt-network/poktroll/x/shared/helpers"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // YAMLStakeConfig is the structure describing the supplier stake config file.

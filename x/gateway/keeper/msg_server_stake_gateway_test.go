@@ -7,10 +7,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/proto/types/gateway"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/x/gateway/keeper"
-	"github.com/pokt-network/poktroll/x/gateway/types"
 )
 
 func TestMsgServer_StakeGateway_SuccessfulCreateAndUpdate(t *testing.T) {
@@ -26,7 +26,7 @@ func TestMsgServer_StakeGateway_SuccessfulCreateAndUpdate(t *testing.T) {
 
 	// Prepare the gateway
 	initialStake := sdk.NewCoin("upokt", math.NewInt(100))
-	stakeMsg := &types.MsgStakeGateway{
+	stakeMsg := &gateway.MsgStakeGateway{
 		Address: addr,
 		Stake:   &initialStake,
 	}
@@ -43,7 +43,7 @@ func TestMsgServer_StakeGateway_SuccessfulCreateAndUpdate(t *testing.T) {
 
 	// Prepare an updated gateway with a higher stake
 	updatedStake := sdk.NewCoin("upokt", math.NewInt(200))
-	updateMsg := &types.MsgStakeGateway{
+	updateMsg := &gateway.MsgStakeGateway{
 		Address: addr,
 		Stake:   &updatedStake,
 	}
@@ -63,7 +63,7 @@ func TestMsgServer_StakeGateway_FailLoweringStake(t *testing.T) {
 	// Prepare the gateway
 	addr := sample.AccAddress()
 	initialStake := sdk.NewCoin("upokt", math.NewInt(100))
-	stakeMsg := &types.MsgStakeGateway{
+	stakeMsg := &gateway.MsgStakeGateway{
 		Address: addr,
 		Stake:   &initialStake,
 	}
@@ -76,7 +76,7 @@ func TestMsgServer_StakeGateway_FailLoweringStake(t *testing.T) {
 
 	// Prepare an updated gateway with a lower stake
 	updatedStake := sdk.NewCoin("upokt", math.NewInt(50))
-	updateMsg := &types.MsgStakeGateway{
+	updateMsg := &gateway.MsgStakeGateway{
 		Address: addr,
 		Stake:   &updatedStake,
 	}

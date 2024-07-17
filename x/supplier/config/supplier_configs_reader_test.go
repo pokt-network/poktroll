@@ -9,8 +9,8 @@ import (
 	"github.com/gogo/status"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/proto/types/shared"
 	"github.com/pokt-network/poktroll/testutil/yaml"
-	"github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/config"
 )
 
@@ -38,16 +38,16 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 			expectedError: nil,
 			expectedConfig: &config.SupplierStakeConfig{
 				StakeAmount: sdk.NewCoin("upokt", math.NewInt(1000)),
-				Services: []*types.SupplierServiceConfig{
+				Services: []*shared.SupplierServiceConfig{
 					{
-						Service: &types.Service{Id: "svc"},
-						Endpoints: []*types.SupplierEndpoint{
+						Service: &shared.Service{Id: "svc"},
+						Endpoints: []*shared.SupplierEndpoint{
 							{
 								Url:     "http://pokt.network:8081",
-								RpcType: types.RPCType_JSON_RPC,
-								Configs: []*types.ConfigOption{
+								RpcType: shared.RPCType_JSON_RPC,
+								Configs: []*shared.ConfigOption{
 									{
-										Key:   types.ConfigOptions_TIMEOUT,
+										Key:   shared.ConfigOptions_TIMEOUT,
 										Value: "10",
 									},
 								},
@@ -70,13 +70,13 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 			expectedError: nil,
 			expectedConfig: &config.SupplierStakeConfig{
 				StakeAmount: sdk.NewCoin("upokt", math.NewInt(1000)),
-				Services: []*types.SupplierServiceConfig{
+				Services: []*shared.SupplierServiceConfig{
 					{
-						Service: &types.Service{Id: "svc"},
-						Endpoints: []*types.SupplierEndpoint{
+						Service: &shared.Service{Id: "svc"},
+						Endpoints: []*shared.SupplierEndpoint{
 							{
 								Url:     "http://pokt.network:8081",
-								RpcType: types.RPCType_JSON_RPC,
+								RpcType: shared.RPCType_JSON_RPC,
 							},
 						},
 					},
@@ -97,14 +97,14 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 			expectedError: nil,
 			expectedConfig: &config.SupplierStakeConfig{
 				StakeAmount: sdk.NewCoin("upokt", math.NewInt(1000)),
-				Services: []*types.SupplierServiceConfig{
+				Services: []*shared.SupplierServiceConfig{
 					{
-						Service: &types.Service{Id: "svc"},
-						Endpoints: []*types.SupplierEndpoint{
+						Service: &shared.Service{Id: "svc"},
+						Endpoints: []*shared.SupplierEndpoint{
 							{
 								Url:     "http://pokt.network:8081",
-								RpcType: types.RPCType_JSON_RPC,
-								Configs: []*types.ConfigOption{},
+								RpcType: shared.RPCType_JSON_RPC,
+								Configs: []*shared.ConfigOption{},
 							},
 						},
 					},
@@ -130,26 +130,26 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 			expectedError: nil,
 			expectedConfig: &config.SupplierStakeConfig{
 				StakeAmount: sdk.NewCoin("upokt", math.NewInt(1000)),
-				Services: []*types.SupplierServiceConfig{
+				Services: []*shared.SupplierServiceConfig{
 					{
-						Service: &types.Service{Id: "svc"},
-						Endpoints: []*types.SupplierEndpoint{
+						Service: &shared.Service{Id: "svc"},
+						Endpoints: []*shared.SupplierEndpoint{
 							{
 								Url:     "http://pokt.network:8081",
-								RpcType: types.RPCType_JSON_RPC,
-								Configs: []*types.ConfigOption{
+								RpcType: shared.RPCType_JSON_RPC,
+								Configs: []*shared.ConfigOption{
 									{
-										Key:   types.ConfigOptions_TIMEOUT,
+										Key:   shared.ConfigOptions_TIMEOUT,
 										Value: "10",
 									},
 								},
 							},
 							{
 								Url:     "http://pokt.network:8082",
-								RpcType: types.RPCType_JSON_RPC,
-								Configs: []*types.ConfigOption{
+								RpcType: shared.RPCType_JSON_RPC,
+								Configs: []*shared.ConfigOption{
 									{
-										Key:   types.ConfigOptions_TIMEOUT,
+										Key:   shared.ConfigOptions_TIMEOUT,
 										Value: "11",
 									},
 								},
@@ -180,16 +180,16 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 				`,
 			expectedConfig: &config.SupplierStakeConfig{
 				StakeAmount: sdk.NewCoin("upokt", math.NewInt(1000)),
-				Services: []*types.SupplierServiceConfig{
+				Services: []*shared.SupplierServiceConfig{
 					{
-						Service: &types.Service{Id: "svc1"},
-						Endpoints: []*types.SupplierEndpoint{
+						Service: &shared.Service{Id: "svc1"},
+						Endpoints: []*shared.SupplierEndpoint{
 							{
 								Url:     "http://pokt.network:8081",
-								RpcType: types.RPCType_JSON_RPC,
-								Configs: []*types.ConfigOption{
+								RpcType: shared.RPCType_JSON_RPC,
+								Configs: []*shared.ConfigOption{
 									{
-										Key:   types.ConfigOptions_TIMEOUT,
+										Key:   shared.ConfigOptions_TIMEOUT,
 										Value: "10",
 									},
 								},
@@ -197,14 +197,14 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 						},
 					},
 					{
-						Service: &types.Service{Id: "svc2"},
-						Endpoints: []*types.SupplierEndpoint{
+						Service: &shared.Service{Id: "svc2"},
+						Endpoints: []*shared.SupplierEndpoint{
 							{
 								Url:     "http://pokt.network:8081",
-								RpcType: types.RPCType_JSON_RPC,
-								Configs: []*types.ConfigOption{
+								RpcType: shared.RPCType_JSON_RPC,
+								Configs: []*shared.ConfigOption{
 									{
-										Key:   types.ConfigOptions_TIMEOUT,
+										Key:   shared.ConfigOptions_TIMEOUT,
 										Value: "10",
 									},
 								},

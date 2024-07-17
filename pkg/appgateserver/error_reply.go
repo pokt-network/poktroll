@@ -5,7 +5,7 @@ import (
 
 	sdktypes "github.com/pokt-network/shannon-sdk/types"
 
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
 )
 
 // replyWithError replies to the application with an error response and writes

@@ -17,15 +17,15 @@ import (
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/config"
-	"github.com/pokt-network/poktroll/x/service/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/poktroll/proto/types/service"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 )
 
 var _ relayer.RelayServer = (*synchronousRPCServer)(nil)
 
 func init() {
 	reg := codectypes.NewInterfaceRegistry()
-	types.RegisterInterfaces(reg)
+	service.RegisterInterfaces(reg)
 }
 
 // synchronousRPCServer is the struct that holds the state of the synchronous
@@ -47,7 +47,7 @@ type synchronousRPCServer struct {
 
 	// servedRelaysProducer is a channel that emits the relays that have been served, allowing
 	// the servedRelays observable to fan-out notifications to its subscribers.
-	servedRelaysProducer chan<- *types.Relay
+	servedRelaysProducer chan<- *service.Relay
 }
 
 // NewSynchronousServer creates a new HTTP server that listens for incoming
@@ -60,7 +60,7 @@ type synchronousRPCServer struct {
 func NewSynchronousServer(
 	logger polylog.Logger,
 	serverConfig *config.RelayMinerServerConfig,
-	servedRelaysProducer chan<- *types.Relay,
+	servedRelaysProducer chan<- *service.Relay,
 	proxy relayer.RelayerProxy,
 ) relayer.RelayServer {
 	return &synchronousRPCServer{
@@ -224,9 +224,9 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 func (sync *synchronousRPCServer) serveHTTP(
 	ctx context.Context,
 	serviceConfig *config.RelayMinerSupplierServiceConfig,
-	supplierService *sharedtypes.Service,
-	relayRequest *types.RelayRequest,
-) (*types.Relay, error) {
+	supplierService *shared.Service,
+	relayRequest *service.RelayRequest,
+) (*service.Relay, error) {
 	// Verify the relay request signature and session.
 	// TODO_TECHDEBT(red-0ne): Currently, the relayer proxy is responsible for verifying
 	// the relay request signature. This responsibility should be shifted to the relayer itself.
@@ -380,12 +380,12 @@ func (sync *synchronousRPCServer) serveHTTP(
 		return nil, ErrRelayerProxyInternalError.Wrap(err.Error())
 	}
 
-	return &types.Relay{Req: relayRequest, Res: relayResponse}, nil
+	return &service.Relay{Req: relayRequest, Res: relayResponse}, nil
 }
 
 // sendRelayResponse marshals the relay response and sends it to the client.
 func (sync *synchronousRPCServer) sendRelayResponse(
-	relayResponse *types.RelayResponse,
+	relayResponse *service.RelayResponse,
 	writer http.ResponseWriter,
 ) error {
 	relayResponseBz, err := relayResponse.Marshal()

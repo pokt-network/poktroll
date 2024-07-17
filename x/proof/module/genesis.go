@@ -3,12 +3,12 @@ package proof
 import (
 	"context"
 
+	"github.com/pokt-network/poktroll/proto/types/proof"
 	"github.com/pokt-network/poktroll/x/proof/keeper"
-	"github.com/pokt-network/poktroll/x/proof/types"
 )
 
 // InitGenesis initializes the module's state from a provided genesis state.
-func InitGenesis(ctx context.Context, k keeper.Keeper, genState types.GenesisState) {
+func InitGenesis(ctx context.Context, k keeper.Keeper, genState proof.GenesisState) {
 	// Set all the claim
 	for _, claim := range genState.ClaimList {
 		k.UpsertClaim(ctx, claim)
@@ -24,8 +24,8 @@ func InitGenesis(ctx context.Context, k keeper.Keeper, genState types.GenesisSta
 }
 
 // ExportGenesis returns the module's exported genesis.
-func ExportGenesis(ctx context.Context, k keeper.Keeper) *types.GenesisState {
-	genesis := types.DefaultGenesis()
+func ExportGenesis(ctx context.Context, k keeper.Keeper) *proof.GenesisState {
+	genesis := proof.DefaultGenesis()
 	genesis.Params = k.GetParams(ctx)
 
 	genesis.ClaimList = k.GetAllClaims(ctx)

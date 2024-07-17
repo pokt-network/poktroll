@@ -11,9 +11,9 @@ import (
 	"github.com/gogo/status"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/proto/types/tokenomics"
 	"github.com/pokt-network/poktroll/testutil/network"
-	tokenomics "github.com/pokt-network/poktroll/x/tokenomics/module"
-	"github.com/pokt-network/poktroll/x/tokenomics/types"
+	tokenomicsmodule "github.com/pokt-network/poktroll/x/tokenomics/module"
 )
 
 func TestCLI_UpdateParams(t *testing.T) {
@@ -42,7 +42,7 @@ func TestCLI_UpdateParams(t *testing.T) {
 		{
 			desc:                "invalid compute_units_to_tokens_multiplier update",
 			args:                []string{"0"},
-			expectedErr:         types.ErrTokenomicsParamsInvalid,
+			expectedErr:         tokenomics.ErrTokenomicsParamsInvalid,
 			expectedExtraErrMsg: "invalid ComputeUnitsToTokensMultiplier",
 		},
 	}
@@ -50,7 +50,7 @@ func TestCLI_UpdateParams(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
 			args := append(common, test.args...)
-			out, err := clitestutil.ExecTestCLICmd(ctx, tokenomics.CmdUpdateParams(), args)
+			out, err := clitestutil.ExecTestCLICmd(ctx, tokenomicsmodule.CmdUpdateParams(), args)
 			if test.expectedErr != nil {
 				_, ok := status.FromError(test.expectedErr)
 				require.True(t, ok)

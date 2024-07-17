@@ -5,8 +5,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/pokt-network/poktroll/proto/types/shared"
 	sharedhelpers "github.com/pokt-network/poktroll/x/shared/helpers"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // YAMLApplicationConfig is the structure describing a single service stake entry in the stake config file
@@ -20,7 +20,7 @@ type ApplicationStakeConfig struct {
 	// StakeAmount is the amount of upokt tokens that the application is willing to stake
 	StakeAmount sdk.Coin
 	// Services is the list of services that the application is willing to stake for
-	Services []*sharedtypes.ApplicationServiceConfig
+	Services []*shared.ApplicationServiceConfig
 }
 
 // ParseApplicationConfig parses the stake config file and returns a slice of ApplicationServiceConfig
@@ -66,7 +66,7 @@ func ParseApplicationConfigs(configContent []byte) (*ApplicationStakeConfig, err
 
 	// Prepare the applicationServiceConfig
 	applicationServiceConfig := make(
-		[]*sharedtypes.ApplicationServiceConfig,
+		[]*shared.ApplicationServiceConfig,
 		0,
 		len(parsedAppConfig.ServiceIds),
 	)
@@ -77,8 +77,8 @@ func ParseApplicationConfigs(configContent []byte) (*ApplicationStakeConfig, err
 			return nil, ErrApplicationConfigInvalidServiceId.Wrapf("%s", serviceId)
 		}
 
-		appServiceConfig := &sharedtypes.ApplicationServiceConfig{
-			Service: &sharedtypes.Service{Id: serviceId},
+		appServiceConfig := &shared.ApplicationServiceConfig{
+			Service: &shared.Service{Id: serviceId},
 		}
 
 		applicationServiceConfig = append(applicationServiceConfig, appServiceConfig)

@@ -25,6 +25,12 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app"
+	"github.com/pokt-network/poktroll/proto/types/application"
+	"github.com/pokt-network/poktroll/proto/types/gateway"
+	"github.com/pokt-network/poktroll/proto/types/proof"
+	"github.com/pokt-network/poktroll/proto/types/session"
+	"github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/supplier"
 	applicationmocks "github.com/pokt-network/poktroll/testutil/application/mocks"
 	gatewaymocks "github.com/pokt-network/poktroll/testutil/gateway/mocks"
 	"github.com/pokt-network/poktroll/testutil/proof/mocks"
@@ -32,11 +38,11 @@ import (
 	sessionmocks "github.com/pokt-network/poktroll/testutil/session/mocks"
 	suppliermocks "github.com/pokt-network/poktroll/testutil/supplier/mocks"
 	appkeeper "github.com/pokt-network/poktroll/x/application/keeper"
+	"github.com/pokt-network/poktroll/x/application/types"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gatewaykeeper "github.com/pokt-network/poktroll/x/gateway/keeper"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 	"github.com/pokt-network/poktroll/x/proof/keeper"
-	"github.com/pokt-network/poktroll/x/proof/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
@@ -158,7 +164,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 		logger,
 		authority.String(),
 	)
-	require.NoError(t, sharedKeeper.SetParams(ctx, sharedtypes.DefaultParams()))
+	require.NoError(t, sharedKeeper.SetParams(ctx, shared.DefaultParams()))
 
 	// Construct gateway keeper with a mocked bank keeper.
 	gatewayKeeper := gatewaykeeper.NewKeeper(
@@ -168,7 +174,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 		authority.String(),
 		gatewaymocks.NewMockBankKeeper(ctrl),
 	)
-	require.NoError(t, gatewayKeeper.SetParams(ctx, gatewaytypes.DefaultParams()))
+	require.NoError(t, gatewayKeeper.SetParams(ctx, gateway.DefaultParams()))
 
 	// Construct an application keeper to add apps to sessions.
 	appKeeper := appkeeper.NewKeeper(
@@ -181,7 +187,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 		gatewayKeeper,
 		sharedKeeper,
 	)
-	require.NoError(t, appKeeper.SetParams(ctx, apptypes.DefaultParams()))
+	require.NoError(t, appKeeper.SetParams(ctx, application.DefaultParams()))
 
 	// Construct a service keeper need by the supplier keeper.
 	serviceKeeper := servicekeeper.NewKeeper(
@@ -201,7 +207,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 		suppliermocks.NewMockBankKeeper(ctrl),
 		serviceKeeper,
 	)
-	require.NoError(t, supplierKeeper.SetParams(ctx, suppliertypes.DefaultParams()))
+	require.NoError(t, supplierKeeper.SetParams(ctx, supplier.DefaultParams()))
 
 	// Construct a real session keeper so that sessions can be queried.
 	sessionKeeper := sessionkeeper.NewKeeper(
@@ -215,7 +221,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 		supplierKeeper,
 		sharedKeeper,
 	)
-	require.NoError(t, sessionKeeper.SetParams(ctx, sessiontypes.DefaultParams()))
+	require.NoError(t, sessionKeeper.SetParams(ctx, session.DefaultParams()))
 
 	// Construct a real proof keeper so that claims & proofs can be created.
 	proofKeeper := keeper.NewKeeper(
@@ -228,7 +234,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 		accountKeeper,
 		sharedKeeper,
 	)
-	require.NoError(t, proofKeeper.SetParams(ctx, types.DefaultParams()))
+	require.NoError(t, proofKeeper.SetParams(ctx, proof.DefaultParams()))
 
 	keepers := &ProofModuleKeepers{
 		Keeper:            &proofKeeper,
@@ -254,22 +260,22 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 func (keepers *ProofModuleKeepers) AddServiceActors(
 	ctx context.Context,
 	t *testing.T,
-	service *sharedtypes.Service,
+	service *shared.Service,
 	supplierAddr string,
 	appAddr string,
 ) {
 	t.Helper()
 
-	keepers.SetSupplier(ctx, sharedtypes.Supplier{
+	keepers.SetSupplier(ctx, shared.Supplier{
 		Address: supplierAddr,
-		Services: []*sharedtypes.SupplierServiceConfig{
+		Services: []*shared.SupplierServiceConfig{
 			{Service: service},
 		},
 	})
 
-	keepers.SetApplication(ctx, apptypes.Application{
+	keepers.SetApplication(ctx, application.Application{
 		Address: appAddr,
-		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
+		ServiceConfigs: []*shared.ApplicationServiceConfig{
 			{Service: service},
 		},
 	})
@@ -281,14 +287,14 @@ func (keepers *ProofModuleKeepers) GetSessionHeader(
 	ctx context.Context,
 	t *testing.T,
 	appAddr string,
-	service *sharedtypes.Service,
+	service *shared.Service,
 	blockHeight int64,
-) *sessiontypes.SessionHeader {
+) *session.SessionHeader {
 	t.Helper()
 
 	sessionRes, err := keepers.GetSession(
 		ctx,
-		&sessiontypes.QueryGetSessionRequest{
+		&session.QueryGetSessionRequest{
 			ApplicationAddress: appAddr,
 			Service:            service,
 			BlockHeight:        blockHeight,

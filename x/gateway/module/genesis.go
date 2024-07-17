@@ -3,12 +3,12 @@ package gateway
 import (
 	"context"
 
+	"github.com/pokt-network/poktroll/proto/types/gateway"
 	"github.com/pokt-network/poktroll/x/gateway/keeper"
-	"github.com/pokt-network/poktroll/x/gateway/types"
 )
 
 // InitGenesis initializes the module's state from a provided genesis state.
-func InitGenesis(ctx context.Context, k keeper.Keeper, genState types.GenesisState) {
+func InitGenesis(ctx context.Context, k keeper.Keeper, genState gateway.GenesisState) {
 	// Set all the gateway
 	for _, gateway := range genState.GatewayList {
 		k.SetGateway(ctx, gateway)
@@ -20,8 +20,8 @@ func InitGenesis(ctx context.Context, k keeper.Keeper, genState types.GenesisSta
 }
 
 // ExportGenesis returns the module's exported genesis.
-func ExportGenesis(ctx context.Context, k keeper.Keeper) *types.GenesisState {
-	genesis := types.DefaultGenesis()
+func ExportGenesis(ctx context.Context, k keeper.Keeper) *gateway.GenesisState {
+	genesis := gateway.DefaultGenesis()
 	genesis.Params = k.GetParams(ctx)
 
 	genesis.GatewayList = k.GetAllGateways(ctx)

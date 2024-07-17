@@ -12,7 +12,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/filter"
 	"github.com/pokt-network/poktroll/pkg/observable/logging"
 	"github.com/pokt-network/poktroll/pkg/relayer"
-	"github.com/pokt-network/poktroll/x/proof/types"
+	"github.com/pokt-network/poktroll/proto/types/proof"
 	"github.com/pokt-network/poktroll/x/shared"
 )
 
@@ -189,7 +189,7 @@ func (rs *relayerSessionsManager) newMapProveSessionsFn(
 		// Map key is the supplier address.
 		proofMsgs := make([]client.MsgSubmitProof, 0)
 		for _, session := range sessionTrees {
-			proofMsgs = append(proofMsgs, &types.MsgSubmitProof{
+			proofMsgs = append(proofMsgs, &proof.MsgSubmitProof{
 				Proof:           session.GetProofBz(),
 				SessionHeader:   session.GetSessionHeader(),
 				SupplierAddress: session.GetSupplierAddress().String(),

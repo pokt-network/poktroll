@@ -6,13 +6,16 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/pokt-network/poktroll/x/application/types"
+	"github.com/pokt-network/poktroll/proto/types/application"
 )
 
-func (k Keeper) Params(ctx context.Context, req *types.QueryParamsRequest) (*types.QueryParamsResponse, error) {
+func (k Keeper) Params(
+	ctx context.Context,
+	req *application.QueryParamsRequest,
+) (*application.QueryParamsResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
 
-	return &types.QueryParamsResponse{Params: k.GetParams(ctx)}, nil
+	return &application.QueryParamsResponse{Params: k.GetParams(ctx)}, nil
 }

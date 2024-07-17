@@ -11,8 +11,8 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/pkg/relayer"
+	servicetypes "github.com/pokt-network/poktroll/proto/types/service"
 	"github.com/pokt-network/poktroll/testutil/testrelayer"
-	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 )
 
 func TestRelayMiner_StartAndStop(t *testing.T) {

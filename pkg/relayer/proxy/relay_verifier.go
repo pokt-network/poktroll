@@ -3,16 +3,16 @@ package proxy
 import (
 	"context"
 
-	"github.com/pokt-network/poktroll/x/service/types"
+	"github.com/pokt-network/poktroll/proto/types/service"
+	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
 	"github.com/pokt-network/poktroll/x/shared"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // VerifyRelayRequest is a shared method used by RelayServers to check the relay
 // request signature and session validity.
 func (rp *relayerProxy) VerifyRelayRequest(
 	ctx context.Context,
-	relayRequest *types.RelayRequest,
+	relayRequest *service.RelayRequest,
 	supplierService *sharedtypes.Service,
 ) error {
 	// Get the block height at which the relayRequest should be processed.
@@ -97,7 +97,7 @@ func (rp *relayerProxy) VerifyRelayRequest(
 // If the session has expired, then return an error.
 func (rp *relayerProxy) getTargetSessionBlockHeight(
 	ctx context.Context,
-	relayRequest *types.RelayRequest,
+	relayRequest *service.RelayRequest,
 ) (sessionHeight int64, err error) {
 	currentHeight := rp.blockClient.LastBlock(ctx).Height()
 	sessionEndHeight := relayRequest.Meta.SessionHeader.GetSessionEndBlockHeight()

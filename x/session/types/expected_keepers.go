@@ -7,8 +7,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	apptypes "github.com/pokt-network/poktroll/proto/types/application"
+	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
 )
 
 // AccountKeeper defines the expected account keeper used for simulations (noalias)

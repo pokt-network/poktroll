@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/pokt-network/poktroll/x/tokenomics/types"
+	"github.com/pokt-network/poktroll/proto/types/tokenomics"
 )
 
-func (k msgServer) UpdateParams(ctx context.Context, msg *types.MsgUpdateParams) (*types.MsgUpdateParamsResponse, error) {
+func (k msgServer) UpdateParams(ctx context.Context, msg *tokenomics.MsgUpdateParams) (*tokenomics.MsgUpdateParamsResponse, error) {
 	logger := k.Logger()
 
 	if err := msg.ValidateBasic(); err != nil {
@@ -15,7 +15,7 @@ func (k msgServer) UpdateParams(ctx context.Context, msg *types.MsgUpdateParams)
 	}
 
 	if msg.Authority != k.GetAuthority() {
-		return nil, types.ErrTokenomicsInvalidSigner.Wrapf(
+		return nil, tokenomics.ErrTokenomicsInvalidSigner.Wrapf(
 			"invalid authority; expected %s, got %s",
 			k.GetAuthority(),
 			msg.Authority,
@@ -30,7 +30,7 @@ func (k msgServer) UpdateParams(ctx context.Context, msg *types.MsgUpdateParams)
 
 	logger.Info("Done updating params")
 
-	return &types.MsgUpdateParamsResponse{}, nil
+	return &tokenomics.MsgUpdateParamsResponse{}, nil
 }
 
 // ComputeUnitsToTokensMultiplier returns the ComputeUnitsToTokensMultiplier param

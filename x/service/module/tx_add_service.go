@@ -8,7 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/spf13/cobra"
 
-	"github.com/pokt-network/poktroll/x/service/types"
+	"github.com/pokt-network/poktroll/proto/types/service"
 )
 
 var _ = strconv.Itoa(0)
@@ -32,7 +32,7 @@ $ poktrolld tx service add-service "svc1" "service_one" --keyring-backend test -
 				return err
 			}
 
-			msg := types.NewMsgAddService(
+			msg := service.NewMsgAddService(
 				clientCtx.GetFromAddress().String(),
 				serviceIdStr,
 				serviceNameStr,

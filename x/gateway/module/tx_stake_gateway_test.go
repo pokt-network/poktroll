@@ -14,10 +14,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/status"
 
+	"github.com/pokt-network/poktroll/proto/types/gateway"
 	"github.com/pokt-network/poktroll/testutil/network"
 	"github.com/pokt-network/poktroll/testutil/yaml"
-	gateway "github.com/pokt-network/poktroll/x/gateway/module"
-	"github.com/pokt-network/poktroll/x/gateway/types"
+	gatewaymodule "github.com/pokt-network/poktroll/x/gateway/module"
 )
 
 func TestCLI_StakeGateway(t *testing.T) {
@@ -55,7 +55,7 @@ func TestCLI_StakeGateway(t *testing.T) {
 			inputConfig: `
 			  stake_amount: 1000upokt
 				`,
-			expectedErr: types.ErrGatewayInvalidAddress,
+			expectedErr: gateway.ErrGatewayInvalidAddress,
 		},
 		{
 			desc: "stake gateway: missing address",
@@ -63,7 +63,7 @@ func TestCLI_StakeGateway(t *testing.T) {
 			inputConfig: `
 			  stake_amount: 1000upokt
 				`,
-			expectedErr: types.ErrGatewayInvalidAddress,
+			expectedErr: gateway.ErrGatewayInvalidAddress,
 		},
 		{
 			desc:    "stake gateway: invalid stake amount (zero)",
@@ -71,7 +71,7 @@ func TestCLI_StakeGateway(t *testing.T) {
 			inputConfig: `
 			  stake_amount: 0upokt
 				`,
-			expectedErr: types.ErrGatewayInvalidStake,
+			expectedErr: gateway.ErrGatewayInvalidStake,
 		},
 		{
 			desc:    "stake gateway: invalid stake amount (negative)",
@@ -79,7 +79,7 @@ func TestCLI_StakeGateway(t *testing.T) {
 			inputConfig: `
 			  stake_amount: -1000upokt
 				`,
-			expectedErr: types.ErrGatewayInvalidStake,
+			expectedErr: gateway.ErrGatewayInvalidStake,
 		},
 		{
 			desc:    "stake gateway: invalid stake denom",
@@ -87,7 +87,7 @@ func TestCLI_StakeGateway(t *testing.T) {
 			inputConfig: `
 			  stake_amount: 1000invalid
 				`,
-			expectedErr: types.ErrGatewayInvalidStake,
+			expectedErr: gateway.ErrGatewayInvalidStake,
 		},
 		{
 			desc:    "stake gateway: invalid stake missing denom",
@@ -95,13 +95,13 @@ func TestCLI_StakeGateway(t *testing.T) {
 			inputConfig: `
 			  stake_amount: 1000
 				`,
-			expectedErr: types.ErrGatewayInvalidStake,
+			expectedErr: gateway.ErrGatewayInvalidStake,
 		},
 		{
 			desc:        "stake gateway: invalid stake missing stake",
 			address:     gatewayAccount.Address.String(),
 			inputConfig: ``,
-			expectedErr: types.ErrGatewayInvalidStake,
+			expectedErr: gateway.ErrGatewayInvalidStake,
 		},
 		{
 			desc:    "stake gateway: valid",
@@ -130,7 +130,7 @@ func TestCLI_StakeGateway(t *testing.T) {
 			args = append(args, commonArgs...)
 
 			// Execute the command
-			outStake, err := clitestutil.ExecTestCLICmd(ctx, gateway.CmdStakeGateway(), args)
+			outStake, err := clitestutil.ExecTestCLICmd(ctx, gatewaymodule.CmdStakeGateway(), args)
 			if test.expectedErr != nil {
 				stat, ok := status.FromError(test.expectedErr)
 				require.True(t, ok)

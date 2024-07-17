@@ -12,7 +12,7 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/query"
-	"github.com/pokt-network/poktroll/x/service/types"
+	"github.com/pokt-network/poktroll/proto/types/service"
 )
 
 // ShannonSDK is a wrapper around the Shannon SDK that is used by the AppGateServer
@@ -77,7 +77,7 @@ func (shannonSDK *ShannonSDK) SendRelay(
 	appAddress string,
 	endpoint shannonsdk.Endpoint,
 	requestBz []byte,
-) (*types.RelayResponse, error) {
+) (*service.RelayResponse, error) {
 	relayRequest, err := shannonsdk.BuildRelayRequest(endpoint, requestBz)
 	if err != nil {
 		return nil, err

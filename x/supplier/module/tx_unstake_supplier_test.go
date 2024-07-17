@@ -13,9 +13,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/status"
 
+	"github.com/pokt-network/poktroll/proto/types/supplier"
 	"github.com/pokt-network/poktroll/testutil/network"
-	supplier "github.com/pokt-network/poktroll/x/supplier/module"
-	"github.com/pokt-network/poktroll/x/supplier/types"
+	suppliermodule "github.com/pokt-network/poktroll/x/supplier/module"
 )
 
 func TestCLI_UnstakeSupplier(t *testing.T) {
@@ -53,12 +53,12 @@ func TestCLI_UnstakeSupplier(t *testing.T) {
 		{
 			desc: "unstake supplier: missing address",
 			// address: supplierAccount.Address.String(),
-			expectedErr: types.ErrSupplierInvalidAddress,
+			expectedErr: supplier.ErrSupplierInvalidAddress,
 		},
 		{
 			desc:        "unstake supplier: invalid address",
 			address:     "invalid",
-			expectedErr: types.ErrSupplierInvalidAddress,
+			expectedErr: supplier.ErrSupplierInvalidAddress,
 		},
 	}
 
@@ -75,7 +75,7 @@ func TestCLI_UnstakeSupplier(t *testing.T) {
 			args = append(args, commonArgs...)
 
 			// Execute the command
-			outUnstake, err := clitestutil.ExecTestCLICmd(ctx, supplier.CmdUnstakeSupplier(), args)
+			outUnstake, err := clitestutil.ExecTestCLICmd(ctx, suppliermodule.CmdUnstakeSupplier(), args)
 
 			// Validate the error if one is expected
 			if test.expectedErr != nil {

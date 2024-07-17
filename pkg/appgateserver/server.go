@@ -20,7 +20,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/appgateserver/sdkadapter"
 	querytypes "github.com/pokt-network/poktroll/pkg/client/query/types"
 	"github.com/pokt-network/poktroll/pkg/polylog"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
 )
 
 // SigningInformation is a struct that holds information related to the signing

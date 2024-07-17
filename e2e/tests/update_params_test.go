@@ -15,13 +15,21 @@ import (
 	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/api/poktroll/application"
-	"github.com/pokt-network/poktroll/api/poktroll/gateway"
-	"github.com/pokt-network/poktroll/api/poktroll/proof"
-	"github.com/pokt-network/poktroll/api/poktroll/session"
-	"github.com/pokt-network/poktroll/api/poktroll/shared"
-	"github.com/pokt-network/poktroll/api/poktroll/supplier"
-	"github.com/pokt-network/poktroll/api/poktroll/tokenomics"
+	applicationapi "github.com/pokt-network/poktroll/api/poktroll/application"
+	gatewayapi "github.com/pokt-network/poktroll/api/poktroll/gateway"
+	proofapi "github.com/pokt-network/poktroll/api/poktroll/proof"
+	sessionapi "github.com/pokt-network/poktroll/api/poktroll/session"
+	sharedapi "github.com/pokt-network/poktroll/api/poktroll/shared"
+	supplierapi "github.com/pokt-network/poktroll/api/poktroll/supplier"
+	tokenomicsapi "github.com/pokt-network/poktroll/api/poktroll/tokenomics"
+	"github.com/pokt-network/poktroll/proto/types/application"
+	"github.com/pokt-network/poktroll/proto/types/gateway"
+	"github.com/pokt-network/poktroll/proto/types/proof"
+	"github.com/pokt-network/poktroll/proto/types/service"
+	"github.com/pokt-network/poktroll/proto/types/session"
+	"github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/supplier"
+	"github.com/pokt-network/poktroll/proto/types/tokenomics"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
@@ -47,13 +55,13 @@ const (
 // NB: If you are reading this and any module has a MsgUpdateParams message which is not
 // included in this list, please add it.
 var allModuleMsgUpdateParamTypes = []string{
-	application.Msg_UpdateParams_FullMethodName,
-	gateway.Msg_UpdateParams_FullMethodName,
-	proof.Msg_UpdateParams_FullMethodName,
-	session.Msg_UpdateParams_FullMethodName,
-	shared.Msg_UpdateParams_FullMethodName,
-	supplier.Msg_UpdateParams_FullMethodName,
-	tokenomics.Msg_UpdateParams_FullMethodName,
+	applicationapi.Msg_UpdateParams_FullMethodName,
+	gatewayapi.Msg_UpdateParams_FullMethodName,
+	proofapi.Msg_UpdateParams_FullMethodName,
+	sessionapi.Msg_UpdateParams_FullMethodName,
+	sharedapi.Msg_UpdateParams_FullMethodName,
+	supplierapi.Msg_UpdateParams_FullMethodName,
+	tokenomicsapi.Msg_UpdateParams_FullMethodName,
 }
 
 func init() {
@@ -77,44 +85,44 @@ func (s *suite) AllModuleParamsAreSetToTheirDefaultValues(moduleName string) {
 
 	switch moduleName {
 	case tokenomicstypes.ModuleName:
-		var tokenomicsParamsRes tokenomicstypes.QueryParamsResponse
+		var tokenomicsParamsRes tokenomics.QueryParamsResponse
 		s.cdc.MustUnmarshalJSON([]byte(res.Stdout), &tokenomicsParamsRes)
-		require.Equal(s, tokenomicstypes.DefaultParams(), tokenomicsParamsRes.GetParams())
+		require.Equal(s, tokenomics.DefaultParams(), tokenomicsParamsRes.GetParams())
 
 	case prooftypes.ModuleName:
-		var proofParamsRes prooftypes.QueryParamsResponse
+		var proofParamsRes proof.QueryParamsResponse
 		s.cdc.MustUnmarshalJSON([]byte(res.Stdout), &proofParamsRes)
-		require.Equal(s, prooftypes.DefaultParams(), proofParamsRes.GetParams())
+		require.Equal(s, proof.DefaultParams(), proofParamsRes.GetParams())
 
 	case sessiontypes.ModuleName:
-		var sessionParamsRes sessiontypes.QueryParamsResponse
+		var sessionParamsRes session.QueryParamsResponse
 		s.cdc.MustUnmarshalJSON([]byte(res.Stdout), &sessionParamsRes)
-		require.Equal(s, sessiontypes.DefaultParams(), sessionParamsRes.GetParams())
+		require.Equal(s, session.DefaultParams(), sessionParamsRes.GetParams())
 
 	case apptypes.ModuleName:
-		var appParamsRes apptypes.QueryParamsResponse
+		var appParamsRes application.QueryParamsResponse
 		s.cdc.MustUnmarshalJSON([]byte(res.Stdout), &appParamsRes)
-		require.Equal(s, apptypes.DefaultParams(), appParamsRes.GetParams())
+		require.Equal(s, application.DefaultParams(), appParamsRes.GetParams())
 
 	case gatewaytypes.ModuleName:
-		var gatewayParamsRes gatewaytypes.QueryParamsResponse
+		var gatewayParamsRes gateway.QueryParamsResponse
 		s.cdc.MustUnmarshalJSON([]byte(res.Stdout), &gatewayParamsRes)
-		require.Equal(s, gatewaytypes.DefaultParams(), gatewayParamsRes.GetParams())
+		require.Equal(s, gateway.DefaultParams(), gatewayParamsRes.GetParams())
 
 	case suppliertypes.ModuleName:
-		var supplierParamsRes suppliertypes.QueryParamsResponse
+		var supplierParamsRes supplier.QueryParamsResponse
 		s.cdc.MustUnmarshalJSON([]byte(res.Stdout), &supplierParamsRes)
-		require.Equal(s, suppliertypes.DefaultParams(), supplierParamsRes.GetParams())
+		require.Equal(s, supplier.DefaultParams(), supplierParamsRes.GetParams())
 
 	case servicetypes.ModuleName:
-		var serviceParamsRes servicetypes.QueryParamsResponse
+		var serviceParamsRes service.QueryParamsResponse
 		s.cdc.MustUnmarshalJSON([]byte(res.Stdout), &serviceParamsRes)
-		require.Equal(s, servicetypes.DefaultParams(), serviceParamsRes.GetParams())
+		require.Equal(s, service.DefaultParams(), serviceParamsRes.GetParams())
 
 	case sharedtypes.ModuleName:
-		var sharedParamsRes sharedtypes.QueryParamsResponse
+		var sharedParamsRes shared.QueryParamsResponse
 		s.cdc.MustUnmarshalJSON([]byte(res.Stdout), &sharedParamsRes)
-		require.Equal(s, sharedtypes.DefaultParams(), sharedParamsRes.GetParams())
+		require.Equal(s, shared.DefaultParams(), sharedParamsRes.GetParams())
 
 	default:
 		s.Fatalf("ERROR: unexpected module name: (%v)", moduleName)
@@ -357,101 +365,101 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 
 	switch moduleName {
 	case tokenomicstypes.ModuleName:
-		computeUnitsToTokensMultiplier := uint64(s.expectedModuleParams[moduleName][tokenomicstypes.ParamComputeUnitsToTokensMultiplier].value.(int64))
+		computeUnitsToTokensMultiplier := uint64(s.expectedModuleParams[moduleName][tokenomics.ParamComputeUnitsToTokensMultiplier].value.(int64))
 		assertUpdatedParams(s,
 			[]byte(res.Stdout),
-			&tokenomicstypes.QueryParamsResponse{
-				Params: tokenomicstypes.Params{
+			&tokenomics.QueryParamsResponse{
+				Params: tokenomics.Params{
 					ComputeUnitsToTokensMultiplier: computeUnitsToTokensMultiplier,
 				},
 			},
 		)
 	case prooftypes.ModuleName:
-		params := prooftypes.DefaultParams()
+		params := proof.DefaultParams()
 		paramsMap := s.expectedModuleParams[moduleName]
 
-		minRelayDifficultyBits, ok := paramsMap[prooftypes.ParamMinRelayDifficultyBits]
+		minRelayDifficultyBits, ok := paramsMap[proof.ParamMinRelayDifficultyBits]
 		if ok {
 			params.MinRelayDifficultyBits = uint64(minRelayDifficultyBits.value.(int64))
 		}
 
-		proofRequestProbability, ok := paramsMap[prooftypes.ParamProofRequestProbability]
+		proofRequestProbability, ok := paramsMap[proof.ParamProofRequestProbability]
 		if ok {
 			params.ProofRequestProbability = proofRequestProbability.value.(float32)
 		}
 
-		proofRequirementThreshold, ok := paramsMap[prooftypes.ParamProofRequirementThreshold]
+		proofRequirementThreshold, ok := paramsMap[proof.ParamProofRequirementThreshold]
 		if ok {
 			params.ProofRequirementThreshold = uint64(proofRequirementThreshold.value.(int64))
 		}
 
-		proofMissingPenalty, ok := paramsMap[prooftypes.ParamProofMissingPenalty]
+		proofMissingPenalty, ok := paramsMap[proof.ParamProofMissingPenalty]
 		if ok {
 			params.ProofMissingPenalty = proofMissingPenalty.value.(*cosmostypes.Coin)
 		}
 
 		assertUpdatedParams(s,
 			[]byte(res.Stdout),
-			&prooftypes.QueryParamsResponse{
+			&proof.QueryParamsResponse{
 				Params: params,
 			},
 		)
 	case sharedtypes.ModuleName:
-		params := sharedtypes.DefaultParams()
+		params := shared.DefaultParams()
 		paramsMap := s.expectedModuleParams[moduleName]
 
-		numBlocksPerSessionParam, ok := paramsMap[sharedtypes.ParamNumBlocksPerSession]
+		numBlocksPerSessionParam, ok := paramsMap[shared.ParamNumBlocksPerSession]
 		if ok {
 			params.NumBlocksPerSession = uint64(numBlocksPerSessionParam.value.(int64))
 		}
 
-		gracePeriodEndOffsetBlocksParam, ok := paramsMap[sharedtypes.ParamGracePeriodEndOffsetBlocks]
+		gracePeriodEndOffsetBlocksParam, ok := paramsMap[shared.ParamGracePeriodEndOffsetBlocks]
 		if ok {
 			params.GracePeriodEndOffsetBlocks = uint64(gracePeriodEndOffsetBlocksParam.value.(int64))
 		}
 
-		claimWindowOpenOffsetBlocksParam, ok := paramsMap[sharedtypes.ParamClaimWindowOpenOffsetBlocks]
+		claimWindowOpenOffsetBlocksParam, ok := paramsMap[shared.ParamClaimWindowOpenOffsetBlocks]
 		if ok {
 			params.ClaimWindowOpenOffsetBlocks = uint64(claimWindowOpenOffsetBlocksParam.value.(int64))
 		}
 
-		claimWindowCloseOffsetBlocksParam, ok := paramsMap[sharedtypes.ParamClaimWindowCloseOffsetBlocks]
+		claimWindowCloseOffsetBlocksParam, ok := paramsMap[shared.ParamClaimWindowCloseOffsetBlocks]
 		if ok {
 			params.ClaimWindowCloseOffsetBlocks = uint64(claimWindowCloseOffsetBlocksParam.value.(int64))
 		}
 
-		proofWindowOpenOffsetBlocksParam, ok := paramsMap[sharedtypes.ParamProofWindowOpenOffsetBlocks]
+		proofWindowOpenOffsetBlocksParam, ok := paramsMap[shared.ParamProofWindowOpenOffsetBlocks]
 		if ok {
 			params.ProofWindowOpenOffsetBlocks = uint64(proofWindowOpenOffsetBlocksParam.value.(int64))
 		}
 
-		proofWindowCloseOffsetBlocksParam, ok := paramsMap[sharedtypes.ParamProofWindowCloseOffsetBlocks]
+		proofWindowCloseOffsetBlocksParam, ok := paramsMap[shared.ParamProofWindowCloseOffsetBlocks]
 		if ok {
 			params.ProofWindowCloseOffsetBlocks = uint64(proofWindowCloseOffsetBlocksParam.value.(int64))
 		}
 
 		assertUpdatedParams(s,
 			[]byte(res.Stdout),
-			&sharedtypes.QueryParamsResponse{
+			&shared.QueryParamsResponse{
 				Params: params,
 			},
 		)
 	case apptypes.ModuleName:
-		maxDelegatedGateways := uint64(s.expectedModuleParams[moduleName][apptypes.ParamMaxDelegatedGateways].value.(int64))
+		maxDelegatedGateways := uint64(s.expectedModuleParams[moduleName][application.ParamMaxDelegatedGateways].value.(int64))
 		assertUpdatedParams(s,
 			[]byte(res.Stdout),
-			&apptypes.QueryParamsResponse{
-				Params: apptypes.Params{
+			&application.QueryParamsResponse{
+				Params: application.Params{
 					MaxDelegatedGateways: maxDelegatedGateways,
 				},
 			},
 		)
 	case servicetypes.ModuleName:
-		addServiceFee := uint64(s.expectedModuleParams[moduleName][servicetypes.ParamAddServiceFee].value.(int64))
+		addServiceFee := uint64(s.expectedModuleParams[moduleName][service.ParamAddServiceFee].value.(int64))
 		assertUpdatedParams(s,
 			[]byte(res.Stdout),
-			&servicetypes.QueryParamsResponse{
-				Params: servicetypes.Params{
+			&service.QueryParamsResponse{
+				Params: service.Params{
 					AddServiceFee: addServiceFee,
 				},
 			},

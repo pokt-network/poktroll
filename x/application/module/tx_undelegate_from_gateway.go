@@ -3,12 +3,12 @@ package application
 import (
 	"strconv"
 
-	"github.com/pokt-network/poktroll/x/application/types"
-
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/spf13/cobra"
+
+	"github.com/pokt-network/poktroll/proto/types/application"
 )
 
 var _ = strconv.Itoa(0)
@@ -31,7 +31,7 @@ $ poktrolld tx application undelegate-from-gateway $(GATEWAY_ADDR) --keyring-bac
 				return err
 			}
 
-			msg := types.NewMsgUndelegateFromGateway(
+			msg := application.NewMsgUndelegateFromGateway(
 				clientCtx.GetFromAddress().String(),
 				gatewayAddress,
 			)

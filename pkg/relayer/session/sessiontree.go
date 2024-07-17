@@ -12,7 +12,7 @@ import (
 	"github.com/pokt-network/smt/kvstore/badger"
 
 	"github.com/pokt-network/poktroll/pkg/relayer"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	sessiontypes "github.com/pokt-network/poktroll/proto/types/session"
 )
 
 var _ relayer.SessionTree = (*sessionTree)(nil)

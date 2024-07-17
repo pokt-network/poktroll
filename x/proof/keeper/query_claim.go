@@ -10,10 +10,11 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/pokt-network/poktroll/proto/types/proof"
 	"github.com/pokt-network/poktroll/x/proof/types"
 )
 
-func (k Keeper) AllClaims(ctx context.Context, req *types.QueryAllClaimsRequest) (*types.QueryAllClaimsResponse, error) {
+func (k Keeper) AllClaims(ctx context.Context, req *proof.QueryAllClaimsRequest) (*proof.QueryAllClaimsResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
@@ -28,19 +29,19 @@ func (k Keeper) AllClaims(ctx context.Context, req *types.QueryAllClaimsRequest)
 	)
 
 	switch filter := req.Filter.(type) {
-	case *types.QueryAllClaimsRequest_SupplierAddress:
+	case *proof.QueryAllClaimsRequest_SupplierAddress:
 		isCustomIndex = true
 		keyPrefix = types.KeyPrefix(types.ClaimSupplierAddressPrefix)
 		keyPrefix = append(keyPrefix, []byte(filter.SupplierAddress)...)
 
-	case *types.QueryAllClaimsRequest_SessionEndHeight:
+	case *proof.QueryAllClaimsRequest_SessionEndHeight:
 		isCustomIndex = true
 		heightBz := make([]byte, 8)
 		binary.BigEndian.PutUint64(heightBz, filter.SessionEndHeight)
 		keyPrefix = types.KeyPrefix(types.ClaimSessionEndHeightPrefix)
 		keyPrefix = append(keyPrefix, heightBz...)
 
-	case *types.QueryAllClaimsRequest_SessionId:
+	case *proof.QueryAllClaimsRequest_SessionId:
 		isCustomIndex = false
 		keyPrefix = types.KeyPrefix(types.ClaimPrimaryKeyPrefix)
 		keyPrefix = append(keyPrefix, []byte(filter.SessionId)...)
@@ -52,7 +53,7 @@ func (k Keeper) AllClaims(ctx context.Context, req *types.QueryAllClaimsRequest)
 
 	claimStore := prefix.NewStore(storeAdapter, keyPrefix)
 
-	var claims []types.Claim
+	var claims []proof.Claim
 	pageRes, err := query.Paginate(claimStore, req.Pagination, func(key []byte, value []byte) error {
 		if isCustomIndex {
 			// If a custom index is used, the value is a primaryKey.
@@ -63,7 +64,7 @@ func (k Keeper) AllClaims(ctx context.Context, req *types.QueryAllClaimsRequest)
 			}
 		} else {
 			// The value is the encoded claim.
-			var claim types.Claim
+			var claim proof.Claim
 			if err := k.cdc.Unmarshal(value, &claim); err != nil {
 				return err
 			}
@@ -77,12 +78,12 @@ func (k Keeper) AllClaims(ctx context.Context, req *types.QueryAllClaimsRequest)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	return &types.QueryAllClaimsResponse{Claims: claims, Pagination: pageRes}, nil
+	return &proof.QueryAllClaimsResponse{Claims: claims, Pagination: pageRes}, nil
 }
 
-func (k Keeper) Claim(ctx context.Context, req *types.QueryGetClaimRequest) (*types.QueryGetClaimResponse, error) {
+func (k Keeper) Claim(ctx context.Context, req *proof.QueryGetClaimRequest) (*proof.QueryGetClaimResponse, error) {
 	if req == nil {
-		err := types.ErrProofInvalidQueryRequest.Wrapf("request cannot be nil")
+		err := proof.ErrProofInvalidQueryRequest.Wrapf("request cannot be nil")
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -96,9 +97,9 @@ func (k Keeper) Claim(ctx context.Context, req *types.QueryGetClaimRequest) (*ty
 		req.SupplierAddress,
 	)
 	if !isClaimFound {
-		err := types.ErrProofClaimNotFound.Wrapf("session ID %q and supplier %q", req.SessionId, req.SupplierAddress)
+		err := proof.ErrProofClaimNotFound.Wrapf("session ID %q and supplier %q", req.SessionId, req.SupplierAddress)
 		return nil, status.Error(codes.NotFound, err.Error())
 	}
 
-	return &types.QueryGetClaimResponse{Claim: foundClaim}, nil
+	return &proof.QueryGetClaimResponse{Claim: foundClaim}, nil
 }

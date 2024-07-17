@@ -5,23 +5,23 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/x/session/types"
+	"github.com/pokt-network/poktroll/proto/types/session"
 )
 
 func TestGenesisState_Validate(t *testing.T) {
 	tests := []struct {
 		desc     string
-		genState *types.GenesisState
+		genState *session.GenesisState
 		isValid  bool
 	}{
 		{
 			desc:     "default is valid",
-			genState: types.DefaultGenesis(),
+			genState: session.DefaultGenesis(),
 			isValid:  true,
 		},
 		{
 			desc:     "valid genesis state",
-			genState: &types.GenesisState{
+			genState: &session.GenesisState{
 
 				// this line is used by starport scaffolding # types/genesis/validField
 			},
