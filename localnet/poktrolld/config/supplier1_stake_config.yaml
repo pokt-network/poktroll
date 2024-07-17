@@ -2,10 +2,6 @@
 # so that the stake command causes a state change.
 stake_amount: 1000069upokt
 services:
-  - service_id: svc1
-    endpoints:
-      - publicly_exposed_url: http://localhost:8081
-        rpc_type: JSON_RPC
   # The endpoint URL for the Anvil service is provided via the RelayMiner.
   # The RelayMiner acts as a proxy, forwarding requests to the actual Anvil data node behind it.
   # This setup allows for flexible and dynamic service provisioning within the network.
