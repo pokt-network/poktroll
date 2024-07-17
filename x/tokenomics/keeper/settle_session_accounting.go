@@ -151,6 +151,7 @@ func (k Keeper) SettleSessionAccounting(
 		// probabilistic proofs and add all the parameter logic. Do we touch the application balance?
 		// Do we just let it go into debt? Do we penalize the application? Do we unstake it? Etc...
 		expectedBurn := settlementCoin
+		// Make the settlement amount the maximum stake that the application has remaining.
 		settlementCoin = *application.GetStake()
 		settlementCoins = cosmostypes.NewCoins(settlementCoin)
 
