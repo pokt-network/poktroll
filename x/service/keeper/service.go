@@ -46,8 +46,8 @@ func (k Keeper) RemoveService(
 	store.Delete(types.ServiceKey(serviceId))
 }
 
-// GetAllService returns all service
-func (k Keeper) GetAllService(ctx context.Context) (services []sharedtypes.Service) {
+// GetAllServices returns all services
+func (k Keeper) GetAllServices(ctx context.Context) (services []sharedtypes.Service) {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ServiceKeyPrefix))
 	iterator := storetypes.KVStorePrefixIterator(store, []byte{})

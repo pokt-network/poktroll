@@ -338,12 +338,14 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		logger,
 		authority.String(),
 		bankKeeper,
+		serviceKeeper,
 	)
 	supplierModule := supplier.NewAppModule(
 		cdc,
 		supplierKeeper,
 		accountKeeper,
 		bankKeeper,
+		serviceKeeper,
 	)
 
 	// Prepare the session keeper and module
