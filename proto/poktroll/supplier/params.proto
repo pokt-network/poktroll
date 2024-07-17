@@ -10,8 +10,4 @@ import "gogoproto/gogo.proto";
 message Params {
   option (amino.name) = "poktroll/x/supplier/Params";
   option (gogoproto.equal) = true;
-
-  // supplier_unbonding_period_blocks is the number of blocks that a supplier must wait
-  // after unstaking before they can withdraw their staked tokens.
-  uint64 supplier_unbonding_period_blocks = 7 [(gogoproto.jsontag) = "supplier_unbonding_period_blocks"];
 }

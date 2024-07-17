@@ -6,6 +6,7 @@ import (
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/poktroll/x/shared"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
@@ -13,13 +14,6 @@ import (
 func (k Keeper) EndBlockerUnbondSupplier(ctx context.Context) error {
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	currentHeight := sdkCtx.BlockHeight()
-	sharedParams := k.sharedKeeper.GetParams(ctx)
-	sessionEndHeight := shared.GetSessionEndHeight(&sharedParams, currentHeight)
-
-	// Only process unbonding at the end of the session.
-	if currentHeight != sessionEndHeight {
-		return nil
-	}
 
 	logger := k.Logger().With("method", "UnbondSupplier")
 
@@ -28,14 +22,13 @@ func (k Keeper) EndBlockerUnbondSupplier(ctx context.Context) error {
 	// unbonding action instead of iterating over all suppliers.
 	for _, supplier := range k.GetAllSuppliers(ctx) {
 		// Ignore suppliers that have not initiated the unbonding action.
-		if supplier.UnstakeCommitSessionEndHeight == 0 {
+		if supplier.UnstakeCommitSessionEndHeight == types.SupplierNotUnstaking {
 			continue
 		}
 
-		unbondingPeriodBlocks := k.GetParams(ctx).SupplierUnbondingPeriodBlocks
-		unbondingHeight := supplier.UnstakeCommitSessionEndHeight + unbondingPeriodBlocks
+		unbondingHeight := k.GetSupplierUnbondingHeight(ctx, &supplier)
 
-		if unbondingHeight <= uint64(currentHeight) {
+		if unbondingHeight <= currentHeight {
 
 			// Retrieve the address of the supplier.
 			supplierAddress, err := cosmostypes.AccAddressFromBech32(supplier.Address)
@@ -62,4 +55,17 @@ func (k Keeper) EndBlockerUnbondSupplier(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// GetSupplierUnbondingHeight returns the height at which the supplier can be unbonded.
+func (k Keeper) GetSupplierUnbondingHeight(
+	ctx context.Context,
+	supplier *sharedtypes.Supplier,
+) int64 {
+	sharedParams := k.sharedKeeper.GetParams(ctx)
+
+	return shared.GetProofWindowCloseHeight(
+		&sharedParams,
+		int64(supplier.UnstakeCommitSessionEndHeight),
+	)
 }
