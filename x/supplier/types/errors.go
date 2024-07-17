@@ -16,4 +16,5 @@ var (
 	ErrSupplierInvalidSessionId          = sdkerrors.Register(ModuleName, 1107, "invalid session ID")
 	ErrSupplierInvalidService            = sdkerrors.Register(ModuleName, 1108, "invalid service in supplier")
 	ErrSupplierInvalidSessionEndHeight   = sdkerrors.Register(ModuleName, 1109, "invalid session ending height")
+	ErrSupplierServiceNotFound           = sdkerrors.Register(ModuleName, 1110, "service not found")
 )

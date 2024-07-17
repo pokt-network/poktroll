@@ -234,3 +234,33 @@ func TestMsgServer_StakeSupplier_FailLoweringStake(t *testing.T) {
 	require.Equal(t, int64(100), supplierFound.Stake.Amount.Int64())
 	require.Len(t, supplierFound.Services, 1)
 }
+
+func TestMsgServer_StakeSupplier_FailWithNonExistingService(t *testing.T) {
+	k, ctx := keepertest.SupplierKeeper(t)
+	srv := keeper.NewMsgServerImpl(k)
+
+	// Prepare the supplier
+	supplierAddr := sample.AccAddress()
+	stakeMsg := &types.MsgStakeSupplier{
+		Address: supplierAddr,
+		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
+		Services: []*sharedtypes.SupplierServiceConfig{
+			{
+				Service: &sharedtypes.Service{
+					Id: "newService",
+				},
+				Endpoints: []*sharedtypes.SupplierEndpoint{
+					{
+						Url:     "http://localhost:8080",
+						RpcType: sharedtypes.RPCType_JSON_RPC,
+						Configs: make([]*sharedtypes.ConfigOption, 0),
+					},
+				},
+			},
+		},
+	}
+
+	// Stake the supplier & verify that it fails because the service does not exist.
+	_, err := srv.StakeSupplier(ctx, stakeMsg)
+	require.ErrorIs(t, err, types.ErrSupplierServiceNotFound)
+}
