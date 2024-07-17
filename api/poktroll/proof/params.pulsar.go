@@ -626,7 +626,7 @@ type Params struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// relay_difficulty is the target hash which a relay hash must be less than to be volume/reward applicable.
+	// relay_difficulty_target_hash is the maximum value a relay hash must be less than to be volume/reward applicable.
 	RelayDifficultyTargetHash []byte `protobuf:"bytes,1,opt,name=relay_difficulty_target_hash,json=relayDifficultyTargetHash,proto3" json:"relay_difficulty_target_hash,omitempty"`
 	// proof_request_probability is the probability of a session requiring a proof
 	// if it's cost (i.e. compute unit consumption) is below the ProofRequirementThreshold.

@@ -1,6 +1,7 @@
 package types
 
 import (
+	"crypto/sha256"
 	"encoding/hex"
 
 	"cosmossdk.io/math"
@@ -116,8 +117,7 @@ func ValidateRelayDifficultyTargetHash(v interface{}) error {
 		return ErrProofParamInvalid.Wrapf("invalid parameter type: %T", v)
 	}
 
-	// TODO_TECHDEBT: reference some hasher output size.
-	if len(targetHash) != 32 {
+	if len(targetHash) != sha256.Size {
 		return ErrProofParamInvalid.Wrapf(
 			"invalid RelayDifficultyTargetHash: (%x); length wanted: %d; got: %d",
 			targetHash,

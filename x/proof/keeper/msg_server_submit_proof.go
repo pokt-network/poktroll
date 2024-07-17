@@ -454,7 +454,7 @@ func validateRelayDifficulty(relayBz []byte, targetHash []byte) error {
 		return types.ErrProofInvalidRelay.Wrapf(
 			"invalid RelayDifficultyTargetHash: (%x); length wanted: %d; got: %d",
 			targetHash,
-			32,
+			sha256.Size,
 			len(targetHash),
 		)
 	}

@@ -9,6 +9,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
@@ -141,8 +142,14 @@ func scaleDifficultyTargetHash(targetHash []byte, ratio float64) []byte {
 
 	// Scale the target by multiplying it by the ratio.
 	scaledTargetFloat := new(big.Float).Mul(targetFloat, big.NewFloat(ratio))
+	// NB: Some precision is lost when converting back to an integer.
 	scaledTargetInt, _ := scaledTargetFloat.Int(nil)
 	scaledTargetHash := scaledTargetInt.Bytes()
+
+	// Ensure the scaled target hash maxes out at Difficulty1.
+	if len(scaledTargetHash) > len(targetHash) {
+		return protocol.Difficulty1HashBz
+	}
 
 	// Ensure the scaled target hash has the same length as the default target hash.
 	if len(scaledTargetHash) < len(targetHash) {
