@@ -135,7 +135,7 @@ func NewSupplyQueryClientContextFn(queryNodeGRPCURL *url.URL) SupplierFn {
 		// This flag is read by sdkclient.GetClientQueryContext.
 		// Cosmos-SDK is expecting a GRPC address formatted as <hostname>[:<port>],
 		// so we only need to set the Host parameter of the URL to cosmosflags.FlagGRPC value.
-		if err := cmd.Flags().Set(cosmosflags.FlagGRPC, queryNodeGRPCURL.Host); err != nil {
+		if err = cmd.Flags().Set(cosmosflags.FlagGRPC, queryNodeGRPCURL.Host); err != nil {
 			return nil, err
 		}
 
@@ -196,7 +196,7 @@ func NewSupplyTxClientContextFn(
 
 		// Set --node flag to the txNodeRPCURL for the client context
 		// This flag is read by sdkclient.GetClientTxContext.
-		if err := cmd.Flags().Set(cosmosflags.FlagNode, txNodeRPCURL.String()); err != nil {
+		if err = cmd.Flags().Set(cosmosflags.FlagNode, txNodeRPCURL.String()); err != nil {
 			return nil, err
 		}
 
@@ -205,7 +205,7 @@ func NewSupplyTxClientContextFn(
 		// for transaction signing.
 		// Cosmos-SDK is expecting a GRPC address formatted as <hostname>[:<port>],
 		// so we only need to set the Host parameter of the URL to cosmosflags.FlagGRPC value.
-		if err := cmd.Flags().Set(cosmosflags.FlagGRPC, queryNodeGRPCURL.Host); err != nil {
+		if err = cmd.Flags().Set(cosmosflags.FlagGRPC, queryNodeGRPCURL.Host); err != nil {
 			return nil, err
 		}
 
@@ -214,7 +214,7 @@ func NewSupplyTxClientContextFn(
 			return nil, err
 		}
 
-		if err := cmd.Flags().Set(cosmosflags.FlagChainID, tmpChainID); err != nil {
+		if err = cmd.Flags().Set(cosmosflags.FlagChainID, tmpChainID); err != nil {
 			return nil, err
 		}
 

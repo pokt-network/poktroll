@@ -69,9 +69,9 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 		// service's endpoint
 		for _, service := range supplier.Services {
 			for _, endpoint := range service.Endpoints {
-				endpointUrl, err := url.Parse(endpoint.Url)
-				if err != nil {
-					return err
+				endpointUrl, urlErr := url.Parse(endpoint.Url)
+				if urlErr != nil {
+					return urlErr
 				}
 				found := false
 				// Iterate over the server configs and check if `endpointUrl` is present

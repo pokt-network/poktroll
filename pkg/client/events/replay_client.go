@@ -227,8 +227,6 @@ func (rClient *replayClient[T]) goPublishEvents(ctx context.Context) {
 	if publishErr != nil {
 		panic(fmt.Errorf("EventsReplayClient[%T].goPublishEvents should never reach this spot: %w", *new(T), publishErr))
 	}
-
-	return
 }
 
 // retryPublishEventsFactory returns a function which is intended to be passed
@@ -242,7 +240,7 @@ func (rClient *replayClient[T]) retryPublishEventsFactory(ctx context.Context) f
 
 		eventsBytesObs, err := rClient.eventsClient.EventsBytes(eventsBzCtx, rClient.queryString)
 		if err != nil {
-			// No need to cancel eventsBytesObs in the case of a synchronous error.
+			cancelEventsBzObs()
 			errCh <- err
 			return errCh
 		}

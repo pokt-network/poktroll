@@ -1,6 +1,7 @@
 # NB: The number of pre-provisioned **LocalNet** actors are managed in
 # 'localnet_config.yaml' by the respective actors `count` property.
-is_ephemeral_chain: true
+
+is_ephemeral_chain: true # This should be `true` for LocalNet as it is an ephemeral network
 
 # The service ID to use for the load test.
 service_id: anvil
@@ -12,6 +13,9 @@ funding_account_address: pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw # address f
 # List of pre-provisioned suppliers used for load testing.
 # These suppliers will be progressively staked during the load test, according
 # to the test plan that is being executed.
+#
+# When running on **LocalNet**, the number of the suppliers defined below should match
+# the `relayminers.count` in your `localnet_config.yaml`.
 suppliers:
   # The supplier address that is available in the load test's environment keyring,
   # used to identify the supplier and sign relays and transactions with.
@@ -33,6 +37,9 @@ suppliers:
 
 # List of pre-provisioned gateways used for load testing.
 # These gateways will be progressively staked and delegated to during the load test.
+#
+# When running on LocalNet, the number of the gateways defined below should match
+# the `gateways.count` in your `localnet_config.yaml`.
 gateways:
   # The gateway address that is available in the load test's environment keyring,
   # used to identify the gateway and sign relays and transactions with.

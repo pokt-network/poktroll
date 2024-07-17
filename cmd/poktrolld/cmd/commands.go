@@ -177,7 +177,7 @@ func appExport(
 			return servertypes.ExportedApp{}, err
 		}
 
-		if err := bApp.LoadHeight(height); err != nil {
+		if err = bApp.LoadHeight(height); err != nil {
 			return servertypes.ExportedApp{}, err
 		}
 	} else {

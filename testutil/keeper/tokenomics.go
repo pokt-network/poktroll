@@ -36,6 +36,8 @@ import (
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 	proofkeeper "github.com/pokt-network/poktroll/x/proof/keeper"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
+	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedkeeper "github.com/pokt-network/poktroll/x/shared/keeper"
@@ -57,6 +59,7 @@ type TokenomicsModuleKeepers struct {
 	tokenomicstypes.AccountKeeper
 	tokenomicstypes.BankKeeper
 	tokenomicstypes.ApplicationKeeper
+	tokenomicstypes.SupplierKeeper
 	tokenomicstypes.ProofKeeper
 	tokenomicstypes.SharedKeeper
 
@@ -155,6 +158,9 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 	mockSharedKeeper := mocks.NewMockSharedKeeper(ctrl)
 	mockSharedKeeper.EXPECT().GetProofWindowCloseHeight(gomock.Any(), gomock.Any()).AnyTimes()
 
+	// Mock the session keeper
+	mockSessionKeeper := mocks.NewMockSessionKeeper(ctrl)
+
 	k := tokenomicskeeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKey),
@@ -165,6 +171,7 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		mockApplicationKeeper,
 		mockProofKeeper,
 		mockSharedKeeper,
+		mockSessionKeeper,
 	)
 
 	sdkCtx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
@@ -248,8 +255,10 @@ func NewTokenomicsModuleKeepers(
 	require.NoError(t, bankKeeper.SetParams(ctx, banktypes.DefaultParams()))
 
 	// Provide some initial funds to the suppliers & applications module accounts.
-	bankKeeper.MintCoins(ctx, suppliertypes.ModuleName, sdk.NewCoins(sdk.NewCoin("upokt", math.NewInt(1000000000000))))
-	bankKeeper.MintCoins(ctx, apptypes.ModuleName, sdk.NewCoins(sdk.NewCoin("upokt", math.NewInt(1000000000000))))
+	err := bankKeeper.MintCoins(ctx, suppliertypes.ModuleName, sdk.NewCoins(sdk.NewCoin("upokt", math.NewInt(1000000000000))))
+	require.NoError(t, err)
+	err = bankKeeper.MintCoins(ctx, apptypes.ModuleName, sdk.NewCoins(sdk.NewCoin("upokt", math.NewInt(1000000000000))))
+	require.NoError(t, err)
 
 	// Construct a real shared keeper.
 	sharedKeeper := sharedkeeper.NewKeeper(
@@ -283,6 +292,15 @@ func NewTokenomicsModuleKeepers(
 	)
 	require.NoError(t, appKeeper.SetParams(ctx, apptypes.DefaultParams()))
 
+	// Construct a service keeper needed by the supplier keeper.
+	serviceKeeper := servicekeeper.NewKeeper(
+		cdc,
+		runtime.NewKVStoreService(keys[servicetypes.StoreKey]),
+		log.NewNopLogger(),
+		authority.String(),
+		bankKeeper,
+	)
+
 	// Construct a real supplier keeper to add suppliers to sessions.
 	supplierKeeper := supplierkeeper.NewKeeper(
 		cdc,
@@ -291,6 +309,7 @@ func NewTokenomicsModuleKeepers(
 		authority.String(),
 		bankKeeper,
 		sharedKeeper,
+		serviceKeeper,
 	)
 	require.NoError(t, supplierKeeper.SetParams(ctx, suppliertypes.DefaultParams()))
 
@@ -332,6 +351,7 @@ func NewTokenomicsModuleKeepers(
 		appKeeper,
 		proofKeeper,
 		sharedKeeper,
+		sessionKeeper,
 	)
 
 	require.NoError(t, tokenomicsKeeper.SetParams(ctx, tokenomicstypes.DefaultParams()))
@@ -341,6 +361,7 @@ func NewTokenomicsModuleKeepers(
 		AccountKeeper:     &accountKeeper,
 		BankKeeper:        &bankKeeper,
 		ApplicationKeeper: &appKeeper,
+		SupplierKeeper:    &supplierKeeper,
 		ProofKeeper:       &proofKeeper,
 		SharedKeeper:      &sharedKeeper,
 

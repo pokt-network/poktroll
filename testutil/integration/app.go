@@ -339,12 +339,14 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		authority.String(),
 		bankKeeper,
 		sharedKeeper,
+		serviceKeeper,
 	)
 	supplierModule := supplier.NewAppModule(
 		cdc,
 		supplierKeeper,
 		accountKeeper,
 		bankKeeper,
+		serviceKeeper,
 	)
 
 	// Prepare the session keeper and module
@@ -394,6 +396,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		applicationKeeper,
 		proofKeeper,
 		sharedKeeper,
+		sessionKeeper,
 	)
 	tokenomicsModule := tokenomics.NewAppModule(
 		cdc,
@@ -555,8 +558,10 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	// This can result in the module accounts balance going negative. Giving them a baseline balance
 	// to start with to avoid this issue. There is opportunity to improve this in the future.
 	moduleBaseMint := types.NewCoins(sdk.NewCoin("upokt", math.NewInt(690000000000000042)))
-	bankKeeper.MintCoins(integrationApp.sdkCtx, suppliertypes.ModuleName, moduleBaseMint)
-	bankKeeper.MintCoins(integrationApp.sdkCtx, apptypes.ModuleName, moduleBaseMint)
+	err = bankKeeper.MintCoins(integrationApp.sdkCtx, suppliertypes.ModuleName, moduleBaseMint)
+	require.NoError(t, err)
+	err = bankKeeper.MintCoins(integrationApp.sdkCtx, apptypes.ModuleName, moduleBaseMint)
+	require.NoError(t, err)
 
 	// Commit all the changes above by committing, finalizing and moving
 	// to the next block.

@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"errors"
+	"log"
 	"os"
 	"strings"
 
@@ -8,7 +10,7 @@ import (
 	clientv2keyring "cosmossdk.io/client/v2/autocli/keyring"
 	"cosmossdk.io/core/address"
 	"cosmossdk.io/depinject"
-	"cosmossdk.io/log"
+	cosmoslog "cosmossdk.io/log"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/config"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -43,7 +45,7 @@ func NewRootCmd() *cobra.Command {
 	if err := depinject.Inject(
 		depinject.Configs(app.AppConfig(),
 			depinject.Supply(
-				log.NewNopLogger(),
+				cosmoslog.NewNopLogger(),
 			),
 			depinject.Provide(
 				ProvideClientContext,
@@ -62,13 +64,13 @@ func NewRootCmd() *cobra.Command {
 		Use:           app.Name + "d",
 		Short:         "Start poktroll node",
 		SilenceErrors: true,
-		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
+		PersistentPreRunE: func(cmd *cobra.Command, _ []string) (err error) {
 			// set the default command outputs
 			cmd.SetOut(cmd.OutOrStdout())
 			cmd.SetErr(cmd.ErrOrStderr())
 
 			clientCtx = clientCtx.WithCmdContext(cmd.Context())
-			clientCtx, err := client.ReadPersistentCommandFlags(clientCtx, cmd.Flags())
+			clientCtx, err = client.ReadPersistentCommandFlags(clientCtx, cmd.Flags())
 			if err != nil {
 				return err
 			}
@@ -91,11 +93,11 @@ func NewRootCmd() *cobra.Command {
 			}
 
 			clientCtx = clientCtx.WithTxConfig(txConfigWithTextual)
-			if err := client.SetCmdClientContextHandler(clientCtx, cmd); err != nil {
+			if err = client.SetCmdClientContextHandler(clientCtx, cmd); err != nil {
 				return err
 			}
 
-			if err := client.SetCmdClientContextHandler(clientCtx, cmd); err != nil {
+			if err = client.SetCmdClientContextHandler(clientCtx, cmd); err != nil {
 				return err
 			}
 
@@ -115,10 +117,12 @@ func NewRootCmd() *cobra.Command {
 	}
 	initRootCmd(rootCmd, clientCtx.TxConfig, clientCtx.InterfaceRegistry, clientCtx.Codec, moduleBasicManager)
 
-	overwriteFlagDefaults(rootCmd, map[string]string{
+	if err := overwriteFlagDefaults(rootCmd, map[string]string{
 		flags.FlagChainID:        strings.ReplaceAll(app.Name, "-", ""),
 		flags.FlagKeyringBackend: "test",
-	})
+	}); err != nil {
+		log.Fatal(err)
+	}
 
 	if err := autoCliOpts.EnhanceRootCommand(rootCmd); err != nil {
 		panic(err)
@@ -137,20 +141,24 @@ func NewRootCmd() *cobra.Command {
 	return rootCmd
 }
 
-func overwriteFlagDefaults(c *cobra.Command, defaults map[string]string) {
-	set := func(s *pflag.FlagSet, key, val string) {
+func overwriteFlagDefaults(c *cobra.Command, defaults map[string]string) (err error) {
+	set := func(s *pflag.FlagSet, key, val string) error {
 		if f := s.Lookup(key); f != nil {
 			f.DefValue = val
-			f.Value.Set(val)
+			if err = f.Value.Set(val); err != nil {
+				return err
+			}
 		}
+		return nil
 	}
 	for key, val := range defaults {
-		set(c.Flags(), key, val)
-		set(c.PersistentFlags(), key, val)
+		err = errors.Join(err, set(c.Flags(), key, val))
+		err = errors.Join(err, set(c.PersistentFlags(), key, val))
 	}
 	for _, c := range c.Commands() {
-		overwriteFlagDefaults(c, defaults)
+		err = errors.Join(err, overwriteFlagDefaults(c, defaults))
 	}
+	return err
 }
 
 func ProvideClientContext(

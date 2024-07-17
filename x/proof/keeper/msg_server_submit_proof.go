@@ -192,7 +192,6 @@ func (k msgServer) SubmitProof(
 	logger.Debug("successfully compared relay response session header")
 
 	// Verify the relay request's signature.
-	// TODO_BLOCKER(@red-0ne): Fetch the correct ring for the session this relay is from.
 	if err = k.ringClient.VerifyRelayRequestSignature(ctx, relayReq); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}

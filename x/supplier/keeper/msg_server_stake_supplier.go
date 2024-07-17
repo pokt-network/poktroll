@@ -27,6 +27,14 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 		return nil, err
 	}
 
+	// Check if the services the supplier is staking for exist
+	for _, serviceConfig := range msg.Services {
+		if _, serviceFound := k.serviceKeeper.GetService(ctx, serviceConfig.Service.Id); !serviceFound {
+			logger.Error(fmt.Sprintf("service %q does not exist", serviceConfig.Service.Id))
+			return nil, types.ErrSupplierServiceNotFound.Wrapf("service %q does not exist", serviceConfig.Service.Id)
+		}
+	}
+
 	// Check if the supplier already exists or not
 	var err error
 	var coinsToEscrow sdk.Coin

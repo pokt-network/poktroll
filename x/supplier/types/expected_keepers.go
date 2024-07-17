@@ -18,6 +18,7 @@ type AccountKeeper interface {
 
 // BankKeeper defines the expected interface for the Bank module.
 type BankKeeper interface {
+	SpendableCoins(context.Context, sdk.AccAddress) sdk.Coins
 	SendCoinsFromAccountToModule(ctx context.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error
 	SendCoinsFromModuleToAccount(ctx context.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error
 }
@@ -26,4 +27,9 @@ type BankKeeper interface {
 type SharedKeeper interface {
 	GetParams(ctx context.Context) sharedtypes.Params
 	GetSessionEndHeight(ctx context.Context, queryHeight int64) int64
+}
+
+// ServiceKeeper defines the expected interface for the Service module.
+type ServiceKeeper interface {
+	GetService(ctx context.Context, serviceId string) (sharedtypes.Service, bool)
 }

@@ -53,7 +53,6 @@ type eventsBytesAndConn struct {
 	// either an error or the event message bytes.
 	eventsBytes observable.Observable[either.Bytes]
 	conn        client.Connection
-	isClosed    bool
 }
 
 // Close unsubscribes all observers of eventsBytesAndConn's observable and also
