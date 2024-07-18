@@ -1,6 +1,9 @@
 package app
 
 import (
+	paramgovmodulev1 "github.com/pokt-network/poktroll/api/poktroll/paramgov/module"
+	_ "github.com/pokt-network/poktroll/x/paramgov/module" // import for side-effects
+	paramgovmoduletypes "github.com/pokt-network/poktroll/x/paramgov/types"
 	// this line is used by starport scaffolding # stargate/app/moduleImport
 	"time"
 
@@ -140,6 +143,7 @@ var (
 		proofmoduletypes.ModuleName,
 		tokenomicsmoduletypes.ModuleName,
 		sharedmoduletypes.ModuleName,
+		paramgovmoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/initGenesis
 	}
 
@@ -172,6 +176,7 @@ var (
 		proofmoduletypes.ModuleName,
 		tokenomicsmoduletypes.ModuleName,
 		sharedmoduletypes.ModuleName,
+		paramgovmoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/beginBlockers
 	}
 
@@ -198,6 +203,7 @@ var (
 		proofmoduletypes.ModuleName,
 		tokenomicsmoduletypes.ModuleName,
 		sharedmoduletypes.ModuleName,
+		paramgovmoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/endBlockers
 	}
 
@@ -384,6 +390,10 @@ var (
 			{
 				Name:   sharedmoduletypes.ModuleName,
 				Config: appconfig.WrapAny(&sharedmodulev1.Module{}),
+			},
+			{
+				Name:   paramgovmoduletypes.ModuleName,
+				Config: appconfig.WrapAny(&paramgovmodulev1.Module{}),
 			},
 			// this line is used by starport scaffolding # stargate/app/moduleConfig
 		},

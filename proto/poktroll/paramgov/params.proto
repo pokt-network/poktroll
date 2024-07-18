@@ -1,0 +1,15 @@
+syntax = "proto3";
+package poktroll.paramgov;
+
+import "amino/amino.proto";
+import "gogoproto/gogo.proto";
+
+option go_package = "github.com/pokt-network/poktroll/x/paramgov/types";
+
+// Params defines the parameters for the module.
+message Params {
+  option (amino.name) = "poktroll/x/paramgov/Params";
+  option (gogoproto.equal) = true;
+
+  
+}
