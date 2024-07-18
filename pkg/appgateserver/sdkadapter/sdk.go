@@ -11,8 +11,8 @@ import (
 	shannonsdk "github.com/pokt-network/shannon-sdk"
 
 	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client/application"
 	"github.com/pokt-network/poktroll/pkg/client/auth"
-	"github.com/pokt-network/poktroll/pkg/client/query"
 	"github.com/pokt-network/poktroll/pkg/client/session"
 	"github.com/pokt-network/poktroll/proto/types/service"
 )
@@ -45,7 +45,7 @@ func NewShannonSDK(
 		return nil, accountClientErr
 	}
 
-	appClient, appClientErr := query.NewApplicationQuerier(deps)
+	appClient, appClientErr := application.NewApplicationQueryClient(deps)
 	if appClientErr != nil {
 		return nil, appClientErr
 	}

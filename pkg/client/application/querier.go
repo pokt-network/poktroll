@@ -1,32 +1,32 @@
-package query
+package application
 
 import (
 	"context"
 
 	"cosmossdk.io/depinject"
-	grpc "github.com/cosmos/gogoproto/grpc"
+	"github.com/cosmos/gogoproto/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	apptypes "github.com/pokt-network/poktroll/proto/types/application"
 )
 
-var _ client.ApplicationQueryClient = (*appQuerier)(nil)
+var _ client.ApplicationQueryClient = (*appQueryClient)(nil)
 
-// appQuerier is a wrapper around the apptypes.QueryClient that enables the
+// appQueryClient is a wrapper around the apptypes.QueryClient that enables the
 // querying of on-chain application information through a single exposed method
 // which returns an apptypes.Application interface
-type appQuerier struct {
+type appQueryClient struct {
 	clientConn         grpc.ClientConn
 	applicationQuerier apptypes.QueryClient
 }
 
-// NewApplicationQuerier returns a new instance of a client.ApplicationQueryClient
+// NewApplicationQueryClient returns a new instance of a client.ApplicationQueryClient
 // by injecting the dependecies provided by the depinject.Config
 //
 // Required dependencies:
 // - clientCtx
-func NewApplicationQuerier(deps depinject.Config) (client.ApplicationQueryClient, error) {
-	aq := &appQuerier{}
+func NewApplicationQueryClient(deps depinject.Config) (client.ApplicationQueryClient, error) {
+	aq := &appQueryClient{}
 
 	if err := depinject.Inject(
 		deps,
@@ -41,7 +41,7 @@ func NewApplicationQuerier(deps depinject.Config) (client.ApplicationQueryClient
 }
 
 // GetApplication returns an apptypes.Application interface for a given address
-func (aq *appQuerier) GetApplication(
+func (aq *appQueryClient) GetApplication(
 	ctx context.Context,
 	appAddress string,
 ) (apptypes.Application, error) {
@@ -54,7 +54,7 @@ func (aq *appQuerier) GetApplication(
 }
 
 // GetAllApplications returns all staked applications
-func (aq *appQuerier) GetAllApplications(ctx context.Context) ([]apptypes.Application, error) {
+func (aq *appQueryClient) GetAllApplications(ctx context.Context) ([]apptypes.Application, error) {
 	req := apptypes.QueryAllApplicationsRequest{}
 	res, err := aq.applicationQuerier.AllApplications(ctx, &req)
 	if err != nil {

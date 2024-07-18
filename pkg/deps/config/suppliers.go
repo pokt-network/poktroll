@@ -12,12 +12,12 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/pkg/appgateserver/sdkadapter"
+	"github.com/pokt-network/poktroll/pkg/client/application"
 	"github.com/pokt-network/poktroll/pkg/client/auth"
 	"github.com/pokt-network/poktroll/pkg/client/block"
 	"github.com/pokt-network/poktroll/pkg/client/delegation"
 	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/client/proof"
-	"github.com/pokt-network/poktroll/pkg/client/query"
 	querytypes "github.com/pokt-network/poktroll/pkg/client/query/types"
 	"github.com/pokt-network/poktroll/pkg/client/session"
 	"github.com/pokt-network/poktroll/pkg/client/shared"
@@ -283,7 +283,7 @@ func NewSupplyApplicationQuerierFn() SupplierFn {
 		_ *cobra.Command,
 	) (depinject.Config, error) {
 		// Create the application querier.
-		applicationQuerier, err := query.NewApplicationQuerier(deps)
+		applicationQuerier, err := application.NewApplicationQueryClient(deps)
 		if err != nil {
 			return nil, err
 		}
