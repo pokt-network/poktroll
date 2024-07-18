@@ -18,12 +18,12 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/delegation"
 	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/client/proof"
-	querytypes "github.com/pokt-network/poktroll/pkg/client/query/types"
 	"github.com/pokt-network/poktroll/pkg/client/session"
 	"github.com/pokt-network/poktroll/pkg/client/shared"
 	"github.com/pokt-network/poktroll/pkg/client/supplier"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
 	txtypes "github.com/pokt-network/poktroll/pkg/client/tx/types"
+	clienttypes "github.com/pokt-network/poktroll/pkg/client/types"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 )
@@ -155,7 +155,7 @@ func NewSupplyQueryClientContextFn(queryNodeGRPCURL *url.URL) SupplierFn {
 			return nil, err
 		}
 		deps = depinject.Configs(deps, depinject.Supply(
-			querytypes.Context(queryClientCtx),
+			clienttypes.QueryContext(queryClientCtx),
 			grpc.ClientConn(queryClientCtx),
 			queryClientCtx.Keyring,
 		))

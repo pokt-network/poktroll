@@ -18,7 +18,7 @@ import (
 	middlewarestd "github.com/slok/go-http-metrics/middleware/std"
 
 	"github.com/pokt-network/poktroll/pkg/appgateserver/sdkadapter"
-	querytypes "github.com/pokt-network/poktroll/pkg/client/query/types"
+	clienttypes "github.com/pokt-network/poktroll/pkg/client/types"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
 )
@@ -54,7 +54,7 @@ type appGateServer struct {
 	// clientCtx is the client context for the application.
 	// It is used to query for the application's account to unmarshal the supplier's account
 	// and get the public key to verify the relay response signature.
-	clientCtx querytypes.Context
+	clientCtx clienttypes.QueryContext
 
 	// sdk is the ShannonSDK that the appGateServer uses to query for the current session
 	// and send relay requests to the supplier.
