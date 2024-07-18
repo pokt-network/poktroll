@@ -392,7 +392,7 @@ func NewSupplySupplierClientsFn(signingKeyNames []string) SupplierFn {
 		deps depinject.Config,
 		_ *cobra.Command,
 	) (depinject.Config, error) {
-		suppliers := proof.NewSupplierClientMap()
+		suppliers := clienttypes.NewSupplierClientMap()
 		for _, signingKeyName := range signingKeyNames {
 			txClientDepinjectConfig, err := newSupplyTxClientsFn(ctx, deps, signingKeyName)
 			if err != nil {

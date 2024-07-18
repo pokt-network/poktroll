@@ -1,4 +1,4 @@
-package proof
+package types
 
 import "github.com/pokt-network/poktroll/pkg/client"
 
