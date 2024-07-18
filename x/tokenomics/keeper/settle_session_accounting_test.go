@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"cosmossdk.io/math"
+	"github.com/cometbft/cometbft/libs/json"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
@@ -251,6 +252,25 @@ func TestSettleSessionAccounting_AppStakeTooLow(t *testing.T) {
 	// Assert that `suppliertypes.ModuleName` account module balance is *unchanged*
 	supplierModuleEndBalance := getBalance(t, ctx, keepers, supplierModuleAddress)
 	require.EqualValues(t, supplierModuleStartBalance, supplierModuleEndBalance)
+
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	events := sdkCtx.EventManager().Events()
+
+	appAddrAttribute, _ := events.GetAttributes("application_addr")
+	expectedBurnAttribute, _ := events.GetAttributes("expected_burn")
+	effectiveBurnAttribute, _ := events.GetAttributes("effective_burn")
+
+	require.Equal(t, 1, len(appAddrAttribute))
+	require.Equal(t, fmt.Sprintf("\"%s\"", app.GetAddress()), appAddrAttribute[0].Value)
+
+	var expectedBurnEventCoin, effectiveBurnEventCoin cosmostypes.Coin
+	err = json.Unmarshal([]byte(expectedBurnAttribute[0].Value), &expectedBurnEventCoin)
+	require.NoError(t, err)
+	err = json.Unmarshal([]byte(effectiveBurnAttribute[0].Value), &effectiveBurnEventCoin)
+	require.NoError(t, err)
+
+	require.EqualValues(t, expectedAppBurn, expectedBurnEventCoin)
+	require.Greater(t, expectedBurnEventCoin.Amount.Uint64(), effectiveBurnEventCoin.Amount.Uint64())
 }
 
 func TestSettleSessionAccounting_AppNotFound(t *testing.T) {
