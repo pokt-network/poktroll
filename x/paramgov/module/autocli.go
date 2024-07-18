@@ -28,7 +28,13 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					RpcMethod: "UpdateParams",
 					Skip:      true, // skipped because authority gated
 				},
-				// this line is used by ignite scaffolding # autocli/tx
+				{
+			RpcMethod: "ParamChange",
+			Use: "param-change [module-name] [param-name] [value] [target-height]",
+			Short: "Send a param-change tx",
+			PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "moduleName"}, {ProtoField: "paramName"}, {ProtoField: "value"}, {ProtoField: "targetHeight"},},
+		},
+		// this line is used by ignite scaffolding # autocli/tx
 			},
 		},
 	}
