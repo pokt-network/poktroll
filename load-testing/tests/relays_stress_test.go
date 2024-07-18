@@ -22,7 +22,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
-	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 	"github.com/pokt-network/poktroll/testutil/testclient"
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
 	"github.com/pokt-network/poktroll/testutil/testclient/testtx"
@@ -85,7 +85,7 @@ var (
 	gatewayStakeAmount sdk.Coin
 	// testedService is the service ID for that all applications and suppliers will
 	// be using in this test.
-	testedService *sharedtypes.Service
+	testedService *shared.Service
 	// blockDuration is the duration of a block in seconds.
 	// NB: This value SHOULD be equal to `timeout_propose` in `config.yml`.
 	blockDuration = int64(2)
@@ -135,7 +135,7 @@ type relaysSuite struct {
 	txContext client.TxContext
 	// sharedParams is the shared on-chain parameters used in the test.
 	// It is queried at the beginning of the test.
-	sharedParams *sharedtypes.Params
+	sharedParams *shared.Params
 
 	// numRelaysSent is the number of relay requests sent during the test.
 	numRelaysSent atomic.Uint64
@@ -307,7 +307,7 @@ func (s *relaysSuite) LocalnetIsRunning() {
 	loadTestParams := s.initializeLoadTestParams()
 
 	// Set the tested service ID from the load test manifest.
-	testedService = &sharedtypes.Service{Id: loadTestParams.ServiceId}
+	testedService = &shared.Service{Id: loadTestParams.ServiceId}
 
 	// If the test is run on a non-ephemeral chain, set the CometLocalTCPURL and
 	// CometLocalWebsocketURL to the TestNetNode URL. These variables are used

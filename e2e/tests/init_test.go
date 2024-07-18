@@ -31,11 +31,11 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/block"
 	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
-	apptypes "github.com/pokt-network/poktroll/proto/types/application"
-	prooftypes "github.com/pokt-network/poktroll/proto/types/proof"
-	sessiontypes "github.com/pokt-network/poktroll/proto/types/session"
-	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
-	suppliertypes "github.com/pokt-network/poktroll/proto/types/supplier"
+	"github.com/pokt-network/poktroll/proto/types/application"
+	"github.com/pokt-network/poktroll/proto/types/proof"
+	"github.com/pokt-network/poktroll/proto/types/session"
+	"github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/supplier"
 	"github.com/pokt-network/poktroll/testutil/testclient"
 	"github.com/pokt-network/poktroll/testutil/yaml"
 )
@@ -51,8 +51,8 @@ var (
 
 	accNameToAddrMap     = make(map[string]string)
 	accAddrToNameMap     = make(map[string]string)
-	accNameToAppMap      = make(map[string]apptypes.Application)
-	accNameToSupplierMap = make(map[string]sharedtypes.Supplier)
+	accNameToAppMap      = make(map[string]application.Application)
+	accNameToSupplierMap = make(map[string]shared.Supplier)
 
 	flagFeaturesPath string
 	keyRingFlag      = "--keyring-backend=test"
@@ -89,7 +89,7 @@ type suite struct {
 	// TODO_IMPROVE: refactor all usages of scenarioState to be fields on the suite struct.
 	scenarioState    map[string]any // temporary state for each scenario
 	cdc              codec.Codec
-	proofQueryClient prooftypes.QueryClient
+	proofQueryClient proof.QueryClient
 
 	// See the Cosmo SDK authz module for references related to `granter` and `grantee`
 	// https://docs.cosmos.network/main/build/modules/authz
@@ -123,7 +123,7 @@ func (s *suite) Before() {
 
 	flagSet := testclient.NewLocalnetFlagSet(s)
 	clientCtx := testclient.NewLocalnetClientCtx(s, flagSet)
-	s.proofQueryClient = prooftypes.NewQueryClient(clientCtx)
+	s.proofQueryClient = proof.NewQueryClient(clientCtx)
 
 	s.deps = depinject.Supply(
 		events.NewEventsQueryClient(testclient.CometLocalWebsocketURL),
@@ -401,7 +401,7 @@ func (s *suite) TheSessionForApplicationAndServiceContainsTheSupplier(appName st
 	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, argsAndFlags...)
 	require.NoError(s, err, "error getting session for app %s and service %q", appName, serviceId)
 
-	var resp sessiontypes.QueryGetSessionResponse
+	var resp session.QueryGetSessionResponse
 	responseBz := []byte(strings.TrimSpace(res.Stdout))
 	s.cdc.MustUnmarshalJSON(responseBz, &resp)
 	for _, supplier := range resp.Session.Suppliers {
@@ -498,7 +498,7 @@ func (s *suite) buildAppMap() {
 	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, argsAndFlags...)
 	require.NoError(s, err, "error getting application list")
 	s.pocketd.result = res
-	var resp apptypes.QueryAllApplicationsResponse
+	var resp application.QueryAllApplicationsResponse
 	responseBz := []byte(strings.TrimSpace(res.Stdout))
 	s.cdc.MustUnmarshalJSON(responseBz, &resp)
 	for _, app := range resp.Applications {
@@ -517,7 +517,7 @@ func (s *suite) buildSupplierMap() {
 	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, argsAndFlags...)
 	require.NoError(s, err, "error getting supplier list")
 	s.pocketd.result = res
-	var resp suppliertypes.QueryAllSuppliersResponse
+	var resp supplier.QueryAllSuppliersResponse
 	responseBz := []byte(strings.TrimSpace(res.Stdout))
 	s.cdc.MustUnmarshalJSON(responseBz, &resp)
 	for _, supplier := range resp.Supplier {

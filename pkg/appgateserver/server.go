@@ -20,7 +20,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/appgateserver/sdkadapter"
 	querytypes "github.com/pokt-network/poktroll/pkg/client/query/types"
 	"github.com/pokt-network/poktroll/pkg/polylog"
-	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 )
 
 // SigningInformation is a struct that holds information related to the signing
@@ -192,7 +192,7 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 		// If the request cannot not be parsed, pass an empty POKTHTTPRequest and
 		// an UNKNOWN_RPC type to the replyWithError method.
 		emptyPOKTHTTPRequest := &sdktypes.POKTHTTPRequest{}
-		rpcType := sharedtypes.RPCType_UNKNOWN_RPC
+		rpcType := shared.RPCType_UNKNOWN_RPC
 		errorReply := ErrAppGateHandleRelay.Wrapf("parsing request: %s", err)
 
 		app.replyWithError(errorReply, emptyPOKTHTTPRequest, serviceId, rpcType, writer)

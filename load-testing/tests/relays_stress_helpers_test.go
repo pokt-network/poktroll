@@ -35,10 +35,10 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/tx"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/sync2"
-	apptypes "github.com/pokt-network/poktroll/proto/types/application"
-	gatewaytypes "github.com/pokt-network/poktroll/proto/types/gateway"
+	"github.com/pokt-network/poktroll/proto/types/application"
+	"github.com/pokt-network/poktroll/proto/types/gateway"
 	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
-	suppliertypes "github.com/pokt-network/poktroll/proto/types/supplier"
+	"github.com/pokt-network/poktroll/proto/types/supplier"
 	"github.com/pokt-network/poktroll/proto/types/tokenomics"
 	testsession "github.com/pokt-network/poktroll/testutil/session"
 	"github.com/pokt-network/poktroll/testutil/testclient"
@@ -642,10 +642,10 @@ func (s *relaysSuite) getAppFundingAmount(currentBlockHeight int64) sdk.Coin {
 // No transaction is sent to give flexibility to the caller to group multiple
 // application messages into a single transaction which is useful for staking
 // then delegating to multiple gateways in the same transaction.
-func (s *relaysSuite) addPendingStakeApplicationMsg(application *accountInfo) {
-	application.addPendingMsg(apptypes.NewMsgStakeApplication(
-		application.address,
-		application.amountToStake,
+func (s *relaysSuite) addPendingStakeApplicationMsg(appAccount *accountInfo) {
+	appAccount.addPendingMsg(application.NewMsgStakeApplication(
+		appAccount.address,
+		appAccount.amountToStake,
 		[]*sharedtypes.ApplicationServiceConfig{{Service: testedService}},
 	))
 }
@@ -653,9 +653,9 @@ func (s *relaysSuite) addPendingStakeApplicationMsg(application *accountInfo) {
 // addPendingDelegateToGatewayMsg generates a MsgDelegateToGateway message to delegate
 // a given application to a given gateway then appends it to the application account's
 // pending messages.
-func (s *relaysSuite) addPendingDelegateToGatewayMsg(application, gateway *accountInfo) {
-	application.addPendingMsg(apptypes.NewMsgDelegateToGateway(
-		application.address,
+func (s *relaysSuite) addPendingDelegateToGatewayMsg(appInfo, gateway *accountInfo) {
+	appInfo.addPendingMsg(application.NewMsgDelegateToGateway(
+		appInfo.address,
 		gateway.address,
 	))
 }
@@ -783,16 +783,16 @@ func (s *relaysSuite) addActor(actorAddress string, actorStakeAmount sdk.Coin) *
 // supplier then appends it to the suppliers account's pending messages.
 // No transaction is sent to give flexibility to the caller to group multiple
 // messages in a single supplier transaction.
-func (s *relaysSuite) addPendingStakeSupplierMsg(supplier *accountInfo) {
-	supplier.addPendingMsg(suppliertypes.NewMsgStakeSupplier(
-		supplier.address,
-		supplier.amountToStake,
+func (s *relaysSuite) addPendingStakeSupplierMsg(supplierInfo *accountInfo) {
+	supplierInfo.addPendingMsg(supplier.NewMsgStakeSupplier(
+		supplierInfo.address,
+		supplierInfo.amountToStake,
 		[]*sharedtypes.SupplierServiceConfig{
 			{
 				Service: testedService,
 				Endpoints: []*sharedtypes.SupplierEndpoint{
 					{
-						Url:     s.suppliersUrls[supplier.address],
+						Url:     s.suppliersUrls[supplierInfo.address],
 						RpcType: sharedtypes.RPCType_JSON_RPC,
 					},
 				},
@@ -840,10 +840,10 @@ func (s *relaysSuite) sendStakeSuppliersTxs(
 
 // addPendingStakeGatewayMsg generates a MsgStakeGateway message to stake a given
 // gateway then appends it to the gateway account's pending messages.
-func (s *relaysSuite) addPendingStakeGatewayMsg(gateway *accountInfo) {
-	gateway.addPendingMsg(gatewaytypes.NewMsgStakeGateway(
-		gateway.address,
-		gateway.amountToStake,
+func (s *relaysSuite) addPendingStakeGatewayMsg(gatewayInfo *accountInfo) {
+	gatewayInfo.addPendingMsg(gateway.NewMsgStakeGateway(
+		gatewayInfo.address,
+		gatewayInfo.amountToStake,
 	))
 }
 
@@ -1194,10 +1194,10 @@ func (s *relaysSuite) getRelayCost() int64 {
 func (s *relaysSuite) getProvisionedActorsCurrentStakedAmount() int64 {
 	flagSet := testclient.NewLocalnetFlagSet(s)
 	clientCtx := testclient.NewLocalnetClientCtx(s, flagSet)
-	supplierClient := suppliertypes.NewQueryClient(clientCtx)
-	gatewayClient := gatewaytypes.NewQueryClient(clientCtx)
+	supplierClient := supplier.NewQueryClient(clientCtx)
+	gatewayClient := gateway.NewQueryClient(clientCtx)
 
-	suppRes, err := supplierClient.AllSuppliers(s.ctx, &suppliertypes.QueryAllSuppliersRequest{})
+	suppRes, err := supplierClient.AllSuppliers(s.ctx, &supplier.QueryAllSuppliersRequest{})
 	require.NoError(s, err)
 
 	var maxStakedAmount int64
@@ -1207,7 +1207,7 @@ func (s *relaysSuite) getProvisionedActorsCurrentStakedAmount() int64 {
 		}
 	}
 
-	gwRes, err := gatewayClient.AllGateways(s.ctx, &gatewaytypes.QueryAllGatewaysRequest{})
+	gwRes, err := gatewayClient.AllGateways(s.ctx, &gateway.QueryAllGatewaysRequest{})
 	require.NoError(s, err)
 
 	for _, gateway := range gwRes.Gateways {
@@ -1256,9 +1256,9 @@ func hasEventAttr(attributes []types.EventAttribute, key, value string) bool {
 func (s *relaysSuite) sendAdjustMaxDelegationsParamTx(maxGateways int64) {
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 
-	appMsgUpdateParams := &apptypes.MsgUpdateParams{
+	appMsgUpdateParams := &application.MsgUpdateParams{
 		Authority: authority,
-		Params: apptypes.Params{
+		Params: application.Params{
 			// Set the max_delegated_gateways parameter to the number of gateways
 			// that are currently used in the test.
 			MaxDelegatedGateways: uint64(maxGateways),
@@ -1282,10 +1282,10 @@ func (s *relaysSuite) sendAdjustMaxDelegationsParamTx(maxGateways int64) {
 func (s *relaysSuite) ensureUpdatedMaxDelegations(maxGateways int64) {
 	flagSet := testclient.NewLocalnetFlagSet(s)
 	clientCtx := testclient.NewLocalnetClientCtx(s, flagSet)
-	appClient := apptypes.NewQueryClient(clientCtx)
+	appClient := application.NewQueryClient(clientCtx)
 
 	// Get the updated max delegations param from the application module.
-	res, err := appClient.Params(s.ctx, &apptypes.QueryParamsRequest{})
+	res, err := appClient.Params(s.ctx, &application.QueryParamsRequest{})
 	require.NoError(s, err)
 
 	if res.Params.MaxDelegatedGateways != uint64(maxGateways) {

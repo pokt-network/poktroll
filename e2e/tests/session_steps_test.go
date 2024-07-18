@@ -14,8 +14,8 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/client/block"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
-	prooftypes "github.com/pokt-network/poktroll/proto/types/proof"
-	tokenomicstypes "github.com/pokt-network/poktroll/proto/types/tokenomics"
+	"github.com/pokt-network/poktroll/proto/types/proof"
+	"github.com/pokt-network/poktroll/proto/types/tokenomics"
 	testutilevents "github.com/pokt-network/poktroll/testutil/events"
 )
 
@@ -76,8 +76,8 @@ func (s *suite) TheUserShouldWaitForTheModuleEndBlockEventToBeBroadcast(module, 
 func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBePersistedOnchain(supplierName, serviceId, appName string) {
 	ctx := context.Background()
 
-	allClaimsRes, err := s.proofQueryClient.AllClaims(ctx, &prooftypes.QueryAllClaimsRequest{
-		Filter: &prooftypes.QueryAllClaimsRequest_SupplierAddress{
+	allClaimsRes, err := s.proofQueryClient.AllClaims(ctx, &proof.QueryAllClaimsRequest{
+		Filter: &proof.QueryAllClaimsRequest_SupplierAddress{
 			SupplierAddress: accNameToAddrMap[supplierName],
 		},
 	})
@@ -85,7 +85,7 @@ func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBePersist
 	require.NotNil(s, allClaimsRes)
 
 	// Assert that the number of claims has increased by one.
-	preExistingClaims, ok := s.scenarioState[preExistingClaimsKey].([]prooftypes.Claim)
+	preExistingClaims, ok := s.scenarioState[preExistingClaimsKey].([]proof.Claim)
 	require.Truef(s, ok, "%s not found in scenarioState", preExistingClaimsKey)
 	// NB: We are avoiding the use of require.Len here because it provides unreadable output
 	// TODO_TECHDEBT: Due to the speed of the blocks of the LocalNet validator, along with the small number
@@ -113,13 +113,13 @@ func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication
 
 	// Query for any existing claims so that we can compare against them in
 	// future assertions about changes in on-chain claims.
-	allClaimsRes, err := s.proofQueryClient.AllClaims(ctx, &prooftypes.QueryAllClaimsRequest{})
+	allClaimsRes, err := s.proofQueryClient.AllClaims(ctx, &proof.QueryAllClaimsRequest{})
 	require.NoError(s, err)
 	s.scenarioState[preExistingClaimsKey] = allClaimsRes.Claims
 
 	// Query for any existing proofs so that we can compare against them in
 	// future assertions about changes in on-chain proofs.
-	allProofsRes, err := s.proofQueryClient.AllProofs(ctx, &prooftypes.QueryAllProofsRequest{})
+	allProofsRes, err := s.proofQueryClient.AllProofs(ctx, &proof.QueryAllProofsRequest{})
 	require.NoError(s, err)
 	s.scenarioState[preExistingProofsKey] = allProofsRes.Proofs
 
@@ -149,7 +149,7 @@ func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBeSuccess
 		typedEvent, err := cosmostypes.ParseTypedEvent(*event)
 		require.NoError(s, err)
 		require.NotNil(s, typedEvent)
-		claimSettledEvent, ok := typedEvent.(*tokenomicstypes.EventClaimSettled)
+		claimSettledEvent, ok := typedEvent.(*tokenomics.EventClaimSettled)
 		require.True(s, ok)
 
 		// Assert that the claim was settled for the correct application, supplier, and service.

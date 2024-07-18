@@ -5,7 +5,7 @@ import (
 
 	sdktypes "github.com/pokt-network/shannon-sdk/types"
 
-	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 )
 
 // replyWithError replies to the application with an error response and writes
@@ -16,7 +16,7 @@ func (app *appGateServer) replyWithError(
 	replyError error,
 	poktHTTPRequest *sdktypes.POKTHTTPRequest,
 	serviceId string,
-	rpcType sharedtypes.RPCType,
+	rpcType shared.RPCType,
 	writer http.ResponseWriter,
 ) {
 	relaysErrorsTotal.With("service_id", serviceId, "rpc_type", rpcType.String()).Add(1)

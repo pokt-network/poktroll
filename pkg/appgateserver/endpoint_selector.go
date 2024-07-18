@@ -6,7 +6,7 @@ import (
 
 	shannonsdk "github.com/pokt-network/shannon-sdk"
 
-	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 )
 
 // getRelayerUrl returns the next relayer endpoint to use for the given serviceId and rpcType.
@@ -15,7 +15,7 @@ import (
 // optimizations (i.e. quality of service implementations) are left as an exercise
 // to gateways.
 func (app *appGateServer) getRelayerUrl(
-	rpcType sharedtypes.RPCType,
+	rpcType shared.RPCType,
 	sessionFilter shannonsdk.SessionFilter,
 	requestUrlStr string,
 ) (supplierEndpoint shannonsdk.Endpoint, err error) {
