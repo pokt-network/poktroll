@@ -15,6 +15,7 @@ import (
 
 	"github.com/pokt-network/smt"
 
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
 	testproof "github.com/pokt-network/poktroll/testutil/proof"
 	"github.com/pokt-network/poktroll/testutil/sample"
@@ -301,7 +302,6 @@ func TestSettleSessionAccounting_AppNotFound(t *testing.T) {
 func TestSettleSessionAccounting_InvalidRoot(t *testing.T) {
 	keeper, ctx, appAddr, supplierAddr := testkeeper.TokenomicsKeeperWithActorAddrs(t)
 
-	rootHashSizeBytes := testproof.Sha256SmstRootSize
 	// Define test cases
 	tests := []struct {
 		desc        string
@@ -314,19 +314,19 @@ func TestSettleSessionAccounting_InvalidRoot(t *testing.T) {
 			errExpected: true,
 		},
 		{
-			desc:        fmt.Sprintf("Less than %d bytes", rootHashSizeBytes),
-			root:        make([]byte, rootHashSizeBytes-1), // Less than expected number of bytes
+			desc:        fmt.Sprintf("Less than %d bytes", protocol.TrieRootSize),
+			root:        make([]byte, protocol.TrieRootSize-1), // Less than expected number of bytes
 			errExpected: true,
 		},
 		{
-			desc:        fmt.Sprintf("More than %d bytes", rootHashSizeBytes),
-			root:        make([]byte, rootHashSizeBytes+1), // More than expected number of bytes
+			desc:        fmt.Sprintf("More than %d bytes", protocol.TrieRootSize),
+			root:        make([]byte, protocol.TrieRootSize+1), // More than expected number of bytes
 			errExpected: true,
 		},
 		{
 			desc: "correct size but empty",
 			root: func() []byte {
-				root := make([]byte, rootHashSizeBytes) // All 0s
+				root := make([]byte, protocol.TrieRootSize) // All 0s
 				return root[:]
 			}(),
 			errExpected: false,
@@ -334,7 +334,7 @@ func TestSettleSessionAccounting_InvalidRoot(t *testing.T) {
 		{
 			desc: "correct size but invalid value",
 			root: func() []byte {
-				return bytes.Repeat([]byte("a"), rootHashSizeBytes)
+				return bytes.Repeat([]byte("a"), protocol.TrieRootSize)
 			}(),
 			errExpected: true,
 		},

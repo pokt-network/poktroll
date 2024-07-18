@@ -2,13 +2,14 @@ package keeper
 
 import (
 	"context"
-	"crypto/sha256"
 	"fmt"
 
 	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
+
 	"github.com/pokt-network/smt"
 
 	"github.com/pokt-network/poktroll/telemetry"
@@ -76,10 +77,10 @@ func (k Keeper) SettleSessionAccounting(
 	// Retrieve the sum of the root as a proxy into the amount of work done
 	root := (smt.MerkleSumRoot)(claim.GetRootHash())
 
-	if !root.HasDigestSize(sha256.Size) {
-		return types.ErrTokenomicsRootHashInvalid.Wrapf(
+	if !root.HasDigestSize(protocol.TrieHasherSize) {
+		return tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrapf(
 			"root hash has invalid digest size (%d), expected (%d)",
-			root.DigestSize(), sha256.Size,
+			root.DigestSize(), protocol.TrieHasherSize,
 		)
 	}
 
