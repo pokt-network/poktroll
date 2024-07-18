@@ -998,8 +998,6 @@ github.com/pokt-network/shannon-sdk v0.0.0-20240628223057-7d2928722749 h1:V/3xzm
 github.com/pokt-network/shannon-sdk v0.0.0-20240628223057-7d2928722749/go.mod h1:MfoRhzPRlxiaY3xQyZo28B7ibDuhricA//TGGy48TwM=
 github.com/pokt-network/smt v0.12.0 h1:uqru/0ykC4LnBoMacakobNOd1iRK69PlohqjMtLmYNA=
 github.com/pokt-network/smt v0.12.0/go.mod h1:S4Ho4OPkK2v2vUCHNtA49XDjqUC/OFYpBbynRVYmxvA=
-github.com/pokt-network/smt v1.0.0 h1:rEvpQjpN7N8yNSX84l5DclEWFphJPizuzTfkfE1jfQI=
-github.com/pokt-network/smt v1.0.0/go.mod h1:S4Ho4OPkK2v2vUCHNtA49XDjqUC/OFYpBbynRVYmxvA=
 github.com/pokt-network/smt/kvstore/badger v0.0.0-20240109205447-868237978c0b h1:TjfgV3vgW0zW47Br/OgUXD4M8iyR74EYanbFfN4ed8o=
 github.com/pokt-network/smt/kvstore/badger v0.0.0-20240109205447-868237978c0b/go.mod h1:GbzcG5ebj8twKmBL1VzdPM4NS44okwYXBfQaVXT+6yU=
 github.com/posener/complete v1.1.1/go.mod h1:em0nMJCgc9GFtwrmVmEMR/ZL6WyhyjMBndrE9hABlRI=
