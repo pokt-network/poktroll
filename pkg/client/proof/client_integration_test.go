@@ -1,6 +1,6 @@
 //go:build integration
 
-package supplier_test
+package proof_test
 
 import (
 	"testing"
@@ -28,7 +28,7 @@ func TestNewSupplierClient_Localnet(t *testing.T) {
 	// 	SessionStartBlockHeight: 1,
 	// 	SessionId:               "",
 	// }
-	// err := supplierClient.CreateClaims(ctx, sessionHeader, rootHash)
+	// err := proofClient.CreateClaims(ctx, sessionHeader, rootHash)
 	// require.NoError(t, err)
 
 	require.True(t, false)

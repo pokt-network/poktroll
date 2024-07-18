@@ -1,4 +1,4 @@
-package supplier_test
+package proof_test
 
 import (
 	"context"
@@ -13,7 +13,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/client/keyring"
-	"github.com/pokt-network/poktroll/pkg/client/supplier"
 	prooftypes "github.com/pokt-network/poktroll/proto/types/proof"
 	sessiontypes "github.com/pokt-network/poktroll/proto/types/session"
 	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
@@ -63,9 +62,9 @@ func TestNewSupplierClient(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			signingKeyOpt := supplier.WithSigningKeyName(test.signingKeyName)
+			signingKeyOpt := proof.WithSigningKeyName(test.signingKeyName)
 
-			supplierClient, err := supplier.NewSupplierClient(deps, signingKeyOpt)
+			supplierClient, err := proof.NewSupplierClient(deps, signingKeyOpt)
 			if test.expectedErr != nil {
 				require.ErrorIs(t, err, test.expectedErr)
 				require.Nil(t, supplierClient)
@@ -92,13 +91,13 @@ func TestSupplierClient_CreateClaim(t *testing.T) {
 	txCtxMock, _ := testtx.NewAnyTimesTxTxContext(t, keyring)
 	txClientMock := testtx.NewOneTimeDelayedSignAndBroadcastTxClient(t, ctx, signAndBroadcastDelay)
 
-	signingKeyOpt := supplier.WithSigningKeyName(testAppKey.Name)
+	signingKeyOpt := proof.WithSigningKeyName(testAppKey.Name)
 	deps := depinject.Supply(
 		txCtxMock,
 		txClientMock,
 	)
 
-	supplierClient, err := supplier.NewSupplierClient(deps, signingKeyOpt)
+	supplierClient, err := proof.NewSupplierClient(deps, signingKeyOpt)
 	require.NoError(t, err)
 	require.NotNil(t, supplierClient)
 
@@ -156,13 +155,13 @@ func TestSupplierClient_SubmitProof(t *testing.T) {
 	txCtxMock, _ := testtx.NewAnyTimesTxTxContext(t, keyring)
 	txClientMock := testtx.NewOneTimeDelayedSignAndBroadcastTxClient(t, ctx, signAndBroadcastDelay)
 
-	signingKeyOpt := supplier.WithSigningKeyName(testAppKey.Name)
+	signingKeyOpt := proof.WithSigningKeyName(testAppKey.Name)
 	deps := depinject.Supply(
 		txCtxMock,
 		txClientMock,
 	)
 
-	supplierClient, err := supplier.NewSupplierClient(deps, signingKeyOpt)
+	supplierClient, err := proof.NewSupplierClient(deps, signingKeyOpt)
 	require.NoError(t, err)
 	require.NotNil(t, supplierClient)
 

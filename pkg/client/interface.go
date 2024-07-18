@@ -34,7 +34,7 @@ import (
 )
 
 // MsgCreateClaim is an interface satisfying proof.MsgCreateClaim concrete type
-// used by the SupplierClient interface to avoid cyclic dependencies.
+// used by the ProofClient interface to avoid cyclic dependencies.
 type MsgCreateClaim interface {
 	cosmostypes.Msg
 	GetRootHash() []byte
@@ -43,7 +43,7 @@ type MsgCreateClaim interface {
 }
 
 // MsgSubmitProof is an interface satisfying proof.MsgSubmitProof concrete type
-// used by the SupplierClient interface to avoid cyclic dependencies.
+// used by the ProofClient interface to avoid cyclic dependencies.
 type MsgSubmitProof interface {
 	cosmostypes.Msg
 	GetProof() []byte
@@ -51,10 +51,10 @@ type MsgSubmitProof interface {
 	GetSupplierAddress() string
 }
 
-// SupplierClient is an interface for sufficient for a supplier operator to be
+// ProofClient is an interface for sufficient for a supplier operator to be
 // able to construct blockchain transactions from pocket protocol-specific messages
 // related to its role.
-type SupplierClient interface {
+type ProofClient interface {
 	// CreateClaims sends claim messages which creates an on-chain commitment by
 	// calling supplier to the given smt.SparseMerkleSumTree root hash of the given
 	// session's mined relays.
@@ -62,7 +62,7 @@ type SupplierClient interface {
 		ctx context.Context,
 		claimMsgs ...MsgCreateClaim,
 	) error
-	// SubmitProof sends proof messages which contain the smt.SparseMerkleClosestProof,
+	// SubmitProofs sends proof messages which contain the smt.SparseMerkleClosestProof,
 	// corresponding to some previously created claim for the same session.
 	// The proof is validated on-chain as part of the pocket protocol.
 	// TODO_MAINNET(#427): Use SparseCompactClosestProof here to reduce
@@ -71,7 +71,7 @@ type SupplierClient interface {
 		ctx context.Context,
 		sessionProofs ...MsgSubmitProof,
 	) error
-	// Address returns the address of the SupplierClient that will be submitting proofs & claims.
+	// Address returns the address of the ProofClient that will be submitting proofs & claims.
 	Address() *cosmostypes.AccAddress
 }
 
@@ -249,8 +249,8 @@ type EventsQueryClientOption func(EventsQueryClient)
 // TxClientOption defines a function type that modifies the TxClient.
 type TxClientOption func(TxClient)
 
-// SupplierClientOption defines a function type that modifies the SupplierClient.
-type SupplierClientOption func(SupplierClient)
+// SupplierClientOption defines a function type that modifies the ProofClient.
+type SupplierClientOption func(ProofClient)
 
 // DelegationClientOption defines a function type that modifies the DelegationClient.
 type DelegationClientOption func(DelegationClient)

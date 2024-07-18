@@ -8,7 +8,6 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/pkg/client"
-	"github.com/pokt-network/poktroll/pkg/client/supplier"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/observable/logging"
@@ -47,7 +46,7 @@ type relayerSessionsManager struct {
 	blockClient client.BlockClient
 
 	// supplierClients is used to create claims and submit proofs for sessions.
-	supplierClients *supplier.SupplierClientMap
+	supplierClients *proof.SupplierClientMap
 
 	// storesDirectory points to a path on disk where KVStore data files are created.
 	storesDirectory string

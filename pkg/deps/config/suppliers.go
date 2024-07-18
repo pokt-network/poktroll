@@ -15,11 +15,11 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/block"
 	"github.com/pokt-network/poktroll/pkg/client/delegation"
 	"github.com/pokt-network/poktroll/pkg/client/events"
+	"github.com/pokt-network/poktroll/pkg/client/proof"
 	"github.com/pokt-network/poktroll/pkg/client/query"
 	querytypes "github.com/pokt-network/poktroll/pkg/client/query/types"
 	"github.com/pokt-network/poktroll/pkg/client/session"
 	"github.com/pokt-network/poktroll/pkg/client/shared"
-	"github.com/pokt-network/poktroll/pkg/client/supplier"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
 	txtypes "github.com/pokt-network/poktroll/pkg/client/tx/types"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
@@ -390,16 +390,16 @@ func NewSupplySupplierClientsFn(signingKeyNames []string) SupplierFn {
 		deps depinject.Config,
 		_ *cobra.Command,
 	) (depinject.Config, error) {
-		suppliers := supplier.NewSupplierClientMap()
+		suppliers := proof.NewSupplierClientMap()
 		for _, signingKeyName := range signingKeyNames {
 			txClientDepinjectConfig, err := newSupplyTxClientsFn(ctx, deps, signingKeyName)
 			if err != nil {
 				return nil, err
 			}
 
-			supplierClient, err := supplier.NewSupplierClient(
+			supplierClient, err := proof.NewProofClient(
 				txClientDepinjectConfig,
-				supplier.WithSigningKeyName(signingKeyName),
+				proof.WithSigningKeyName(signingKeyName),
 			)
 			if err != nil {
 				return nil, err
@@ -457,7 +457,7 @@ func NewSupplyProofQueryClientFn() SupplierFn {
 		deps depinject.Config,
 		_ *cobra.Command,
 	) (depinject.Config, error) {
-		proofQuerier, err := query.NewProofQuerier(deps)
+		proofQuerier, err := proof.NewProofQuerier(deps)
 		if err != nil {
 			return nil, err
 		}

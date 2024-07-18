@@ -1,4 +1,4 @@
-package supplier
+package proof
 
 import "github.com/pokt-network/poktroll/pkg/client"
 
@@ -6,11 +6,11 @@ import "github.com/pokt-network/poktroll/pkg/client"
 // The inner structure maps a supplier address to a list of supplier clients for that address.
 // Must be a type to successfully work with depinject.
 type SupplierClientMap struct {
-	SupplierClients map[string]client.SupplierClient
+	SupplierClients map[string]client.ProofClient
 }
 
 func NewSupplierClientMap() *SupplierClientMap {
-	m := make(map[string]client.SupplierClient)
+	m := make(map[string]client.ProofClient)
 	return &SupplierClientMap{
 		SupplierClients: m,
 	}

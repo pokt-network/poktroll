@@ -1,4 +1,4 @@
-package supplier
+package proof
 
 import "github.com/pokt-network/poktroll/pkg/client"
 
@@ -6,7 +6,7 @@ import "github.com/pokt-network/poktroll/pkg/client"
 // retrieve from the keyring to use for authoring and signing CreateClaim and
 // SubmitProof messages.
 func WithSigningKeyName(keyName string) client.SupplierClientOption {
-	return func(sClient client.SupplierClient) {
-		sClient.(*supplierClient).signingKeyName = keyName
+	return func(sClient client.ProofClient) {
+		sClient.(*proofClient).signingKeyName = keyName
 	}
 }

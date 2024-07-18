@@ -23,7 +23,7 @@ import (
 // It DOES NOT BLOCK as map operations run in their own goroutines.
 func (rs *relayerSessionsManager) createClaims(
 	ctx context.Context,
-	supplierClient client.SupplierClient,
+	supplierClient client.ProofClient,
 	sessionsToClaimObs observable.Observable[[]relayer.SessionTree],
 ) observable.Observable[[]relayer.SessionTree] {
 	failedCreateClaimSessionsObs, failedCreateClaimSessionsPublishCh :=
@@ -169,7 +169,7 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 // session number. Any session which encounters an error while creating a claim
 // is sent on the failedCreateClaimSessions channel.
 func (rs *relayerSessionsManager) newMapClaimSessionsFn(
-	supplierClient client.SupplierClient,
+	supplierClient client.ProofClient,
 	failedCreateClaimsSessionsPublishCh chan<- []relayer.SessionTree,
 ) channel.MapFn[[]relayer.SessionTree, either.SessionTrees] {
 	return func(

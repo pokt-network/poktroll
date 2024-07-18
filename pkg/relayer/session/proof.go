@@ -24,7 +24,7 @@ import (
 // It DOES NOT BLOCK as map operations run in their own goroutines.
 func (rs *relayerSessionsManager) submitProofs(
 	ctx context.Context,
-	supplierClient client.SupplierClient,
+	supplierClient client.ProofClient,
 	claimedSessionsObs observable.Observable[[]relayer.SessionTree],
 ) {
 	failedSubmitProofsSessionsObs, failedSubmitProofsSessionsPublishCh :=
@@ -175,7 +175,7 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 // session number. Any session which encounters errors while submitting a proof
 // is sent on the failedSubmitProofSessions channel.
 func (rs *relayerSessionsManager) newMapProveSessionsFn(
-	supplierClient client.SupplierClient,
+	supplierClient client.ProofClient,
 	failedSubmitProofSessionsCh chan<- []relayer.SessionTree,
 ) channel.MapFn[[]relayer.SessionTree, either.SessionTrees] {
 	return func(

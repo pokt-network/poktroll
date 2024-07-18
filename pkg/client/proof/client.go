@@ -1,4 +1,4 @@
-package supplier
+package proof
 
 import (
 	"context"
@@ -13,10 +13,10 @@ import (
 	prooftypes "github.com/pokt-network/poktroll/proto/types/proof"
 )
 
-var _ client.SupplierClient = (*supplierClient)(nil)
+var _ client.ProofClient = (*proofClient)(nil)
 
-// supplierClient
-type supplierClient struct {
+// proofClient
+type proofClient struct {
 	signingKeyName string
 	signingKeyAddr cosmostypes.AccAddress
 
@@ -27,7 +27,7 @@ type supplierClient struct {
 	txCtx    client.TxContext
 }
 
-// NewSupplierClient constructs a new SupplierClient with the given dependencies
+// NewProofClient constructs a new ProofClient with the given dependencies
 // and options. If a signingKeyName is not configured, an error will be returned.
 //
 // Required dependencies:
@@ -36,35 +36,35 @@ type supplierClient struct {
 //
 // Available options:
 //   - WithSigningKeyName
-func NewSupplierClient(
+func NewProofClient(
 	deps depinject.Config,
 	opts ...client.SupplierClientOption,
-) (*supplierClient, error) {
-	sClient := &supplierClient{}
+) (client.ProofClient, error) {
+	pClient := &proofClient{}
 
 	if err := depinject.Inject(
 		deps,
-		&sClient.txClient,
-		&sClient.txCtx,
+		&pClient.txClient,
+		&pClient.txCtx,
 	); err != nil {
 		return nil, err
 	}
 
 	for _, opt := range opts {
-		opt(sClient)
+		opt(pClient)
 	}
 
-	if err := sClient.validateConfigAndSetDefaults(); err != nil {
+	if err := pClient.validateConfigAndSetDefaults(); err != nil {
 		return nil, err
 	}
 
-	return sClient, nil
+	return pClient, nil
 }
 
 // SubmitProofs constructs submit proof messages into a single transaction
 // then signs and broadcasts it to the network via #txClient. It blocks until
 // the transaction is included in a block or times out.
-func (sClient *supplierClient) SubmitProofs(
+func (sClient *proofClient) SubmitProofs(
 	ctx context.Context,
 	proofMsgs ...client.MsgSubmitProof,
 ) error {
@@ -105,10 +105,10 @@ func (sClient *supplierClient) SubmitProofs(
 	return <-errCh
 }
 
-// CreateClaim constructs create claim messages into a single transaction
+// CreateClaims constructs create claim messages into a single transaction
 // then signs and broadcasts it to the network via #txClient. It blocks until
 // the transaction is included in a block or times out.
-func (sClient *supplierClient) CreateClaims(
+func (sClient *proofClient) CreateClaims(
 	ctx context.Context,
 	claimMsgs ...client.MsgCreateClaim,
 ) error {
@@ -152,7 +152,7 @@ func (sClient *supplierClient) CreateClaims(
 }
 
 // Address returns an address of the supplier client.
-func (sClient *supplierClient) Address() *cosmostypes.AccAddress {
+func (sClient *proofClient) Address() *cosmostypes.AccAddress {
 	return &sClient.signingKeyAddr
 }
 
@@ -160,7 +160,7 @@ func (sClient *supplierClient) Address() *cosmostypes.AccAddress {
 // corresponding to the key whose name matches the configured signingKeyName.
 // If signingKeyName is empty or the keyring does not contain the corresponding
 // key, an error is returned.
-func (sClient *supplierClient) validateConfigAndSetDefaults() error {
+func (sClient *proofClient) validateConfigAndSetDefaults() error {
 	signingAddr, err := keyring.KeyNameToAddr(
 		sClient.signingKeyName,
 		sClient.txCtx.GetKeyring(),

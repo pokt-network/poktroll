@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/client"
-	"github.com/pokt-network/poktroll/pkg/client/supplier"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/testclient/testtx"
@@ -21,11 +20,11 @@ import (
 func NewLocalnetClient(
 	t *testing.T,
 	signingKeyName string,
-) client.SupplierClient {
+) client.ProofClient {
 	t.Helper()
 
 	txClientOpt := tx.WithSigningKeyName(signingKeyName)
-	supplierClientOpt := supplier.WithSigningKeyName(signingKeyName)
+	supplierClientOpt := proof.WithSigningKeyName(signingKeyName)
 
 	txCtx := testtx.NewLocalnetContext(t)
 	txClient := testtx.NewLocalnetClient(t, txClientOpt)
@@ -35,7 +34,7 @@ func NewLocalnetClient(
 		txClient,
 	)
 
-	supplierClient, err := supplier.NewSupplierClient(deps, supplierClientOpt)
+	supplierClient, err := proof.NewSupplierClient(deps, supplierClientOpt)
 	require.NoError(t, err)
 	return supplierClient
 }
@@ -44,7 +43,7 @@ func NewOneTimeClaimProofSupplierClientMap(
 	ctx context.Context,
 	t *testing.T,
 	supplierAddress string,
-) *supplier.SupplierClientMap {
+) *proof.SupplierClientMap {
 	t.Helper()
 
 	ctrl := gomock.NewController(t)
@@ -72,7 +71,7 @@ func NewOneTimeClaimProofSupplierClientMap(
 		Return(nil).
 		Times(1)
 
-	supplierClientMap := supplier.NewSupplierClientMap()
+	supplierClientMap := proof.NewSupplierClientMap()
 	supplierClientMap.SupplierClients[supplierAddress] = supplierClientMock
 
 	return supplierClientMap
