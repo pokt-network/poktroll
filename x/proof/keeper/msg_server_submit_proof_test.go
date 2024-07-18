@@ -2,7 +2,6 @@ package keeper_test
 
 import (
 	"context"
-	"crypto/sha256"
 	"encoding/hex"
 	"os"
 	"testing"
@@ -568,7 +567,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 	copy(wrongClosestProofPath, "wrong closest proof path")
 
 	lowTargetHash, _ := hex.DecodeString("00000000000000000000000000000000000000000000000000000000000000ff")
-	var lowTargetHashArr [sha256.Size]byte
+	var lowTargetHashArr [protocol.RelayHasherSize]byte
 	copy(lowTargetHashArr[:], lowTargetHash)
 	highExpectedTargetDifficulty := protocol.GetDifficultyFromHash(lowTargetHashArr)
 

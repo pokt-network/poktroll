@@ -7,7 +7,6 @@ package keeper
 import (
 	"bytes"
 	"context"
-	"crypto/sha256"
 	"fmt"
 
 	cosmoscryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
@@ -450,16 +449,16 @@ func verifyClosestProof(
 func validateRelayDifficulty(relayBz []byte, targetHash []byte) error {
 	relayHash := protocol.GetHashFromBytes(relayBz)
 
-	if len(targetHash) != sha256.Size {
+	if len(targetHash) != protocol.RelayHasherSize {
 		return types.ErrProofInvalidRelay.Wrapf(
 			"invalid RelayDifficultyTargetHash: (%x); length wanted: %d; got: %d",
 			targetHash,
-			sha256.Size,
+			protocol.RelayHasherSize,
 			len(targetHash),
 		)
 	}
 
-	var targetHashArr [sha256.Size]byte
+	var targetHashArr [protocol.RelayHasherSize]byte
 	copy(targetHashArr[:], targetHash)
 
 	// TODO_MAINNET: Devise a test that tries to attack the network and ensure that there

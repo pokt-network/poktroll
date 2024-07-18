@@ -1,7 +1,6 @@
 package protocol
 
 import (
-	"crypto/sha256"
 	"encoding/hex"
 	"math/big"
 )
@@ -18,7 +17,7 @@ var (
 
 // GetDifficultyFromHash returns the "difficulty" of the given hash, with respect
 // to the "highest" (easiest) target hash, Difficulty1Hash.
-func GetDifficultyFromHash(hashBz [sha256.Size]byte) int64 {
+func GetDifficultyFromHash(hashBz [RelayHasherSize]byte) int64 {
 	difficulty1HashInt := new(big.Int).SetBytes(Difficulty1HashBz)
 	hashInt := new(big.Int).SetBytes(hashBz[:])
 

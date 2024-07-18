@@ -1,7 +1,6 @@
 package tokenomics
 
 import (
-	"crypto/sha256"
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -83,7 +82,7 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) (err error) {
 
 	// Emit telemetry for each service's relay mining difficulty.
 	for serviceId, newDifficulty := range difficultyPerServiceMap {
-		var newTargetHash [sha256.Size]byte
+		var newTargetHash [protocol.RelayHasherSize]byte
 		copy(newTargetHash[:], newDifficulty.TargetHash)
 
 		difficulty := protocol.GetDifficultyFromHash(newTargetHash)

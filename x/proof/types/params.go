@@ -1,7 +1,6 @@
 package types
 
 import (
-	"crypto/sha256"
 	"encoding/hex"
 
 	"cosmossdk.io/math"
@@ -10,6 +9,7 @@ import (
 
 	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 )
 
 var (
@@ -117,7 +117,7 @@ func ValidateRelayDifficultyTargetHash(v interface{}) error {
 		return ErrProofParamInvalid.Wrapf("invalid parameter type: %T", v)
 	}
 
-	if len(targetHash) != sha256.Size {
+	if len(targetHash) != protocol.RelayHasherSize {
 		return ErrProofParamInvalid.Wrapf(
 			"invalid RelayDifficultyTargetHash: (%x); length wanted: %d; got: %d",
 			targetHash,

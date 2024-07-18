@@ -1,7 +1,6 @@
 package protocol
 
 import (
-	"crypto/sha256"
 	"encoding/hex"
 	"math/big"
 	"testing"
@@ -44,7 +43,7 @@ func TestGetDifficultyFromHash(t *testing.T) {
 				t.Fatalf("failed to decode hash: %v", err)
 			}
 
-			var hashBz [sha256.Size]byte
+			var hashBz [RelayHasherSize]byte
 			copy(hashBz[:], hashBytes)
 
 			difficulty := GetDifficultyFromHash(hashBz)
