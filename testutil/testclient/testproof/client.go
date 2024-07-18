@@ -1,4 +1,4 @@
-package testsupplier
+package testproof
 
 import (
 	"context"
@@ -10,7 +10,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client/proof"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
+	clienttypes "github.com/pokt-network/poktroll/pkg/client/types"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/testclient/testtx"
 )
@@ -34,7 +36,7 @@ func NewLocalnetClient(
 		txClient,
 	)
 
-	supplierClient, err := proof.NewSupplierClient(deps, supplierClientOpt)
+	supplierClient, err := proof.NewProofClient(deps, supplierClientOpt)
 	require.NoError(t, err)
 	return supplierClient
 }
@@ -43,11 +45,11 @@ func NewOneTimeClaimProofSupplierClientMap(
 	ctx context.Context,
 	t *testing.T,
 	supplierAddress string,
-) *proof.SupplierClientMap {
+) *clienttypes.SupplierClientMap {
 	t.Helper()
 
 	ctrl := gomock.NewController(t)
-	supplierClientMock := mockclient.NewMockSupplierClient(ctrl)
+	supplierClientMock := mockclient.NewMockProofClient(ctrl)
 
 	supplierAccAddress := cosmostypes.MustAccAddressFromBech32(supplierAddress)
 	supplierClientMock.EXPECT().
@@ -71,7 +73,7 @@ func NewOneTimeClaimProofSupplierClientMap(
 		Return(nil).
 		Times(1)
 
-	supplierClientMap := proof.NewSupplierClientMap()
+	supplierClientMap := clienttypes.NewSupplierClientMap()
 	supplierClientMap.SupplierClients[supplierAddress] = supplierClientMock
 
 	return supplierClientMap

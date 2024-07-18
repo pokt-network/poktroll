@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/client/keyring"
+	"github.com/pokt-network/poktroll/pkg/client/proof"
 	prooftypes "github.com/pokt-network/poktroll/proto/types/proof"
 	sessiontypes "github.com/pokt-network/poktroll/proto/types/session"
 	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
@@ -64,13 +65,13 @@ func TestNewSupplierClient(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			signingKeyOpt := proof.WithSigningKeyName(test.signingKeyName)
 
-			supplierClient, err := proof.NewSupplierClient(deps, signingKeyOpt)
+			proofClient, err := proof.NewProofClient(deps, signingKeyOpt)
 			if test.expectedErr != nil {
 				require.ErrorIs(t, err, test.expectedErr)
-				require.Nil(t, supplierClient)
+				require.Nil(t, proofClient)
 			} else {
 				require.NoError(t, err)
-				require.NotNil(t, supplierClient)
+				require.NotNil(t, proofClient)
 			}
 		})
 	}
@@ -97,7 +98,7 @@ func TestSupplierClient_CreateClaim(t *testing.T) {
 		txClientMock,
 	)
 
-	supplierClient, err := proof.NewSupplierClient(deps, signingKeyOpt)
+	supplierClient, err := proof.NewProofClient(deps, signingKeyOpt)
 	require.NoError(t, err)
 	require.NotNil(t, supplierClient)
 
@@ -161,7 +162,7 @@ func TestSupplierClient_SubmitProof(t *testing.T) {
 		txClientMock,
 	)
 
-	supplierClient, err := proof.NewSupplierClient(deps, signingKeyOpt)
+	supplierClient, err := proof.NewProofClient(deps, signingKeyOpt)
 	require.NoError(t, err)
 	require.NotNil(t, supplierClient)
 
@@ -182,10 +183,10 @@ func TestSupplierClient_SubmitProof(t *testing.T) {
 	// TODO_TECHDEBT(#446): Centralize the configuration for the SMT spec.
 	tree := smt.NewSparseMerkleSumTrie(kvStore, sha256.New())
 	emptyPath := make([]byte, tree.PathHasherSize())
-	proof, err := tree.ProveClosest(emptyPath)
+	merkleProof, err := tree.ProveClosest(emptyPath)
 	require.NoError(t, err)
 
-	proofBz, err := proof.Marshal()
+	proofBz, err := merkleProof.Marshal()
 	require.NoError(t, err)
 
 	msgProof := &prooftypes.MsgSubmitProof{

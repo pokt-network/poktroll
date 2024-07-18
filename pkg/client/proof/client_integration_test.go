@@ -6,8 +6,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/pokt-network/poktroll/testutil/testclient/testsupplier"
 )
 
 func TestNewSupplierClient_Localnet(t *testing.T) {
@@ -15,7 +13,7 @@ func TestNewSupplierClient_Localnet(t *testing.T) {
 
 	signingKeyName := "app1"
 
-	supplierClient := testsupplier.NewLocalnetClient(t, signingKeyName)
+	supplierClient := testproof.NewLocalnetClient(t, signingKeyName)
 	require.NotNil(t, supplierClient)
 
 	// TODO_TECHDEBT: The method signature of `CreateClaims` has changed since this test

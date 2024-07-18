@@ -23,8 +23,8 @@ import (
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
+	"github.com/pokt-network/poktroll/testutil/testclient/testproof"
 	"github.com/pokt-network/poktroll/testutil/testclient/testqueryclients"
-	"github.com/pokt-network/poktroll/testutil/testclient/testsupplier"
 	"github.com/pokt-network/poktroll/testutil/testpolylog"
 	"github.com/pokt-network/poktroll/testutil/testrelayer"
 	"github.com/pokt-network/poktroll/x/shared"
@@ -53,7 +53,7 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 	blocksObs, blockPublishCh := channel.NewReplayObservable[client.Block](ctx, 20)
 	blockClient := testblock.NewAnyTimesCommittedBlocksSequenceBlockClient(t, emptyBlockHash, blocksObs)
 	supplierAddress := sample.AccAddress()
-	supplierClientMap := testsupplier.NewOneTimeClaimProofSupplierClientMap(ctx, t, supplierAddress)
+	supplierClientMap := testproof.NewOneTimeClaimProofSupplierClientMap(ctx, t, supplierAddress)
 
 	ctrl := gomock.NewController(t)
 	blockQueryClientMock := mockclient.NewMockCometRPC(ctrl)
