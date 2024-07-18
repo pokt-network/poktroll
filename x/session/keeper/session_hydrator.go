@@ -16,7 +16,6 @@ import (
 	"github.com/pokt-network/poktroll/x/shared"
 	sharedhelpers "github.com/pokt-network/poktroll/x/shared/helpers"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 var SHA3HashLen = crypto.SHA3_256.Size()
@@ -168,11 +167,10 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 
 	candidateSuppliers := make([]*sharedtypes.Supplier, 0)
 	for _, s := range suppliers {
-		// Exclude suppliers that are in an unbonding period.
-		// TODO_TECHDEBT: Suppliers that stake mid-session SHOULD NOT be included
+		// Exclude suppliers that are inactive (i.e. currently unbonding).
+		// TODO_TECHDEBT(#695): Suppliers that stake mid-session SHOULD NOT be included
 		// in the current session's suppliers list and must wait until the next one.
-		if s.UnstakeCommitSessionEndHeight != suppliertypes.SupplierNotUnstaking &&
-			uint64(sh.sessionHeader.SessionEndBlockHeight) > s.UnstakeCommitSessionEndHeight {
+		if !s.IsActive(sh.sessionHeader.SessionEndBlockHeight) {
 			continue
 		}
 

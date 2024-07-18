@@ -450,11 +450,7 @@ func (s *suite) TheSupplierForAccountIsUnbonding(accName string) {
 	s.waitForTxResultEvent(newEventMsgTypeMatchFn("supplier", "UnstakeSupplier"))
 
 	supplier := s.getSupplierInfo(accName)
-	require.NotEqual(s,
-		supplier.UnstakeCommitSessionEndHeight,
-		suppliertypes.SupplierNotUnstaking,
-		"supplier %s is not unbonding", accName,
-	)
+	require.True(s, supplier.IsUnbonding())
 }
 
 func (s *suite) TheUserWaitsForUnbondingPeriodToFinish(accName string) {
@@ -621,16 +617,13 @@ func (s *suite) getSupplierUnbondingHeight(accName string) int64 {
 	}
 
 	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, args...)
-	require.NoError(s, err, "error getting supplier module params")
+	require.NoError(s, err, "error getting shared module params")
 
 	var resp sharedtypes.QueryParamsResponse
 	responseBz := []byte(strings.TrimSpace(res.Stdout))
 	s.cdc.MustUnmarshalJSON(responseBz, &resp)
-	windowCloseHeight := shared.GetProofWindowCloseHeight(
-		&resp.Params,
-		int64(supplier.UnstakeCommitSessionEndHeight),
-	)
-	return windowCloseHeight
+	unbondingHeight := shared.GetSupplierUnbondingHeight(&resp.Params, supplier)
+	return unbondingHeight
 }
 
 // TODO_IMPROVE: use `sessionId` and `supplierName` since those are the two values

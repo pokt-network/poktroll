@@ -10,8 +10,8 @@ import (
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-// EndBlockerUnbondSupplier unbonds suppliers that have finished the unbonding period.
-func (k Keeper) EndBlockerUnbondSupplier(ctx context.Context) error {
+// EndBlockerUnbondSuppliers unbonds suppliers whose unbonding period has elapsed.
+func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) error {
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	currentHeight := sdkCtx.BlockHeight()
 
@@ -22,14 +22,14 @@ func (k Keeper) EndBlockerUnbondSupplier(ctx context.Context) error {
 	// unbonding action instead of iterating over all suppliers.
 	for _, supplier := range k.GetAllSuppliers(ctx) {
 		// Ignore suppliers that have not initiated the unbonding action.
-		if supplier.UnstakeCommitSessionEndHeight == types.SupplierNotUnstaking {
+		if !supplier.IsUnbonding() {
 			continue
 		}
 
 		unbondingHeight := k.GetSupplierUnbondingHeight(ctx, &supplier)
 
+		// If the unbonding height is older (less) than the current height, unbond the supplier.
 		if unbondingHeight <= currentHeight {
-
 			// Retrieve the address of the supplier.
 			supplierAddress, err := cosmostypes.AccAddressFromBech32(supplier.Address)
 			if err != nil {
@@ -42,8 +42,8 @@ func (k Keeper) EndBlockerUnbondSupplier(ctx context.Context) error {
 				ctx, types.ModuleName, supplierAddress, []cosmostypes.Coin{*supplier.Stake},
 			); err != nil {
 				logger.Error(fmt.Sprintf(
-					"could not send %v coins from %s module to %s account due to %v",
-					supplier.Stake, supplierAddress, types.ModuleName, err,
+					"could not send %s coins from %s module to %s account due to %s",
+					supplier.Stake.String(), supplierAddress, types.ModuleName, err,
 				))
 				return err
 			}
@@ -64,8 +64,5 @@ func (k Keeper) GetSupplierUnbondingHeight(
 ) int64 {
 	sharedParams := k.sharedKeeper.GetParams(ctx)
 
-	return shared.GetProofWindowCloseHeight(
-		&sharedParams,
-		int64(supplier.UnstakeCommitSessionEndHeight),
-	)
+	return shared.GetSupplierUnbondingHeight(&sharedParams, supplier)
 }

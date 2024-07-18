@@ -38,7 +38,7 @@ func SupplierKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 	require.NoError(t, stateStore.LoadLatestVersion())
 
 	logger := log.NewTestLogger(t)
-	ctx := sdk.NewContext(stateStore, cmtproto.Header{}, false, logger)
+	sdkCtx := sdk.NewContext(stateStore, cmtproto.Header{}, false, logger)
 
 	registry := codectypes.NewInterfaceRegistry()
 	cdc := codec.NewProtoCodec(registry)
@@ -57,7 +57,7 @@ func SupplierKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 		logger,
 		authority.String(),
 	)
-	require.NoError(t, sharedKeeper.SetParams(ctx, sharedtypes.DefaultParams()))
+	require.NoError(t, sharedKeeper.SetParams(sdkCtx, sharedtypes.DefaultParams()))
 
 	serviceKeeper := servicekeeper.NewKeeper(
 		cdc,
@@ -78,16 +78,16 @@ func SupplierKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 	)
 
 	// Initialize params
-	require.NoError(t, k.SetParams(ctx, types.DefaultParams()))
+	require.NoError(t, k.SetParams(sdkCtx, types.DefaultParams()))
 
 	// Move block height to 1 to get a non zero session end height
-	sdkCtx := SetBlockHeight(ctx, 1)
+	ctx := SetBlockHeight(sdkCtx, 1)
 
 	// Add existing services used in the test.
 	serviceKeeper.SetService(ctx, sharedtypes.Service{Id: "svcId"})
 	serviceKeeper.SetService(ctx, sharedtypes.Service{Id: "svcId2"})
 
-	return k, sdkCtx
+	return k, ctx
 }
 
 // TODO_OPTIMIZE: Index suppliers by service so we can easily query k.GetAllSuppliers(ctx, Service)
