@@ -31,7 +31,7 @@ import (
 	"github.com/pokt-network/poktroll/load-testing/config"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/events"
-	"github.com/pokt-network/poktroll/pkg/client/query"
+	sharedclient "github.com/pokt-network/poktroll/pkg/client/shared"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/sync2"
@@ -1368,7 +1368,7 @@ func (s *relaysSuite) querySharedParams(queryNodeRPCURL string) {
 	require.NoError(s, err)
 	deps = depinject.Configs(deps, depinject.Supply(blockQueryClient))
 
-	sharedQueryClient, err := query.NewSharedQuerier(deps)
+	sharedQueryClient, err := sharedclient.NewSharedQueryClient(deps)
 	require.NoError(s, err)
 
 	sharedParams, err := sharedQueryClient.GetParams(s.ctx)

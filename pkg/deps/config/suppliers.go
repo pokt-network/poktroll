@@ -18,6 +18,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/query"
 	querytypes "github.com/pokt-network/poktroll/pkg/client/query/types"
 	"github.com/pokt-network/poktroll/pkg/client/session"
+	"github.com/pokt-network/poktroll/pkg/client/shared"
 	"github.com/pokt-network/poktroll/pkg/client/supplier"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
 	txtypes "github.com/pokt-network/poktroll/pkg/client/tx/types"
@@ -438,7 +439,7 @@ func NewSupplySharedQueryClientFn() SupplierFn {
 		deps depinject.Config,
 		_ *cobra.Command,
 	) (depinject.Config, error) {
-		sharedQuerier, err := query.NewSharedQuerier(deps)
+		sharedQuerier, err := shared.NewSharedQueryClient(deps)
 		if err != nil {
 			return nil, err
 		}
