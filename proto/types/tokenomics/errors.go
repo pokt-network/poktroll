@@ -27,4 +27,5 @@ var (
 	ErrTokenomicsUnmarshalInvalid             = sdkerrors.Register(codespace, 1118, "failed to unmarshal the provided bytes")
 	ErrTokenomicsDuplicateIndex               = sdkerrors.Register(codespace, 1119, "cannot have a duplicate index")
 	ErrTokenomicsMissingRelayMiningDifficulty = sdkerrors.Register(codespace, 1120, "missing relay mining difficulty")
+	ErrTokenomicsApplicationOverserviced      = sdkerrors.Register(codespace, 1121, "application was overserviced")
 )
