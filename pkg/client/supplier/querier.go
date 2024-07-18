@@ -1,4 +1,4 @@
-package query
+package supplier
 
 import (
 	"context"
@@ -11,21 +11,23 @@ import (
 	suppliertypes "github.com/pokt-network/poktroll/proto/types/supplier"
 )
 
-// supplierQuerier is a wrapper around the suppliertypes.QueryClient that enables the
+var _ client.SupplierQueryClient = (*supplierQueryClient)(nil)
+
+// supplierQueryClient is a wrapper around the suppliertypes.QueryClient that enables the
 // querying of on-chain supplier information through a single exposed method
 // which returns an sharedtypes.Supplier struct
-type supplierQuerier struct {
+type supplierQueryClient struct {
 	clientConn      grpc.ClientConn
 	supplierQuerier suppliertypes.QueryClient
 }
 
-// NewSupplierQuerier returns a new instance of a client.SupplierQueryClient by
+// NewSupplierQueryClient returns a new instance of a client.SupplierQueryClient by
 // injecting the dependecies provided by the depinject.Config.
 //
 // Required dependencies:
 // - grpc.ClientConn
-func NewSupplierQuerier(deps depinject.Config) (client.SupplierQueryClient, error) {
-	supq := &supplierQuerier{}
+func NewSupplierQueryClient(deps depinject.Config) (client.SupplierQueryClient, error) {
+	supq := &supplierQueryClient{}
 
 	if err := depinject.Inject(
 		deps,
@@ -39,8 +41,8 @@ func NewSupplierQuerier(deps depinject.Config) (client.SupplierQueryClient, erro
 	return supq, nil
 }
 
-// GetSupplier returns an suppliertypes.Supplier struct for a given address
-func (supq *supplierQuerier) GetSupplier(
+// GetSupplier returns the supplier for a given address
+func (supq *supplierQueryClient) GetSupplier(
 	ctx context.Context,
 	address string,
 ) (sharedtypes.Supplier, error) {

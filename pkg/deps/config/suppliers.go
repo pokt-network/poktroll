@@ -21,6 +21,7 @@ import (
 	querytypes "github.com/pokt-network/poktroll/pkg/client/query/types"
 	"github.com/pokt-network/poktroll/pkg/client/session"
 	"github.com/pokt-network/poktroll/pkg/client/shared"
+	"github.com/pokt-network/poktroll/pkg/client/supplier"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
 	txtypes "github.com/pokt-network/poktroll/pkg/client/tx/types"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
@@ -318,7 +319,7 @@ func NewSupplySupplierQuerierFn() SupplierFn {
 		_ *cobra.Command,
 	) (depinject.Config, error) {
 		// Create the supplier querier.
-		supplierQuerier, err := query.NewSupplierQuerier(deps)
+		supplierQuerier, err := supplier.NewSupplierQueryClient(deps)
 		if err != nil {
 			return nil, err
 		}
