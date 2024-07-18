@@ -1,4 +1,4 @@
-package query
+package client
 
 import (
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -7,14 +7,14 @@ import (
 	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 )
 
-// queryCodec is a codec used to unmarshal the account interface returned by the
+// QueryCodec is a codec used to unmarshal the account interface returned by the
 // account querier into the concrete account interface implementation registered
 // in the interface registry of the auth module
-var queryCodec *codec.ProtoCodec
+var QueryCodec *codec.ProtoCodec
 
 func init() {
 	reg := codectypes.NewInterfaceRegistry()
 	accounttypes.RegisterInterfaces(reg)
 	cryptocodec.RegisterInterfaces(reg)
-	queryCodec = codec.NewProtoCodec(reg)
+	QueryCodec = codec.NewProtoCodec(reg)
 }

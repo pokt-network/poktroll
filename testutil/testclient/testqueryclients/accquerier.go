@@ -10,7 +10,7 @@ import (
 	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/golang/mock/gomock"
 
-	"github.com/pokt-network/poktroll/pkg/client/query"
+	"github.com/pokt-network/poktroll/pkg/client/auth"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 )
 
@@ -61,7 +61,7 @@ func NewTestAccountQueryClient(
 		) (pk cryptotypes.PubKey, err error) {
 			pk, ok := addressAccountMap[address]
 			if !ok {
-				return nil, query.ErrQueryAccountNotFound
+				return nil, auth.ErrQueryAccountNotFound
 			}
 			return pk, nil
 		}).

@@ -1,4 +1,4 @@
-package query
+package auth
 
 import (
 	"context"
@@ -8,17 +8,17 @@ import (
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/types"
 	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	grpc "github.com/cosmos/gogoproto/grpc"
+	"github.com/cosmos/gogoproto/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 )
 
-var _ client.AccountQueryClient = (*accQuerier)(nil)
+var _ client.AccountQueryClient = (*accQueryClient)(nil)
 
-// accQuerier is a wrapper around the accounttypes.QueryClient that enables the
+// accQueryClient is a wrapper around the accounttypes.QueryClient that enables the
 // querying of on-chain account information through a single exposed method
 // which returns an accounttypes.AccountI interface
-type accQuerier struct {
+type accQueryClient struct {
 	clientConn     grpc.ClientConn
 	accountQuerier accounttypes.QueryClient
 
@@ -34,7 +34,7 @@ type accQuerier struct {
 // Required dependencies:
 // - clientCtx
 func NewAccountQuerier(deps depinject.Config) (client.AccountQueryClient, error) {
-	aq := &accQuerier{accountCache: make(map[string]types.AccountI)}
+	aq := &accQueryClient{accountCache: make(map[string]types.AccountI)}
 
 	if err := depinject.Inject(
 		deps,
@@ -49,7 +49,7 @@ func NewAccountQuerier(deps depinject.Config) (client.AccountQueryClient, error)
 }
 
 // GetAccount returns an accounttypes.AccountI interface for a given address
-func (aq *accQuerier) GetAccount(
+func (aq *accQueryClient) GetAccount(
 	ctx context.Context,
 	address string,
 ) (types.AccountI, error) {
@@ -69,7 +69,7 @@ func (aq *accQuerier) GetAccount(
 
 	// Unpack and cache the account object
 	var fetchedAccount types.AccountI
-	if err = queryCodec.UnpackAny(res.Account, &fetchedAccount); err != nil {
+	if err = client.QueryCodec.UnpackAny(res.Account, &fetchedAccount); err != nil {
 		return nil, ErrQueryUnableToDeserializeAccount.Wrapf("address: %s [%v]", address, err)
 	}
 
@@ -88,7 +88,7 @@ func (aq *accQuerier) GetAccount(
 
 // GetPubKeyFromAddress returns the public key of the given address.
 // It uses the accountQuerier to get the account and then returns its public key.
-func (aq *accQuerier) GetPubKeyFromAddress(ctx context.Context, address string) (cryptotypes.PubKey, error) {
+func (aq *accQueryClient) GetPubKeyFromAddress(ctx context.Context, address string) (cryptotypes.PubKey, error) {
 	acc, err := aq.GetAccount(ctx, address)
 	if err != nil {
 		return nil, err

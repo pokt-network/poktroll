@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/pkg/appgateserver/sdkadapter"
+	"github.com/pokt-network/poktroll/pkg/client/auth"
 	"github.com/pokt-network/poktroll/pkg/client/block"
 	"github.com/pokt-network/poktroll/pkg/client/delegation"
 	"github.com/pokt-network/poktroll/pkg/client/events"
@@ -263,7 +264,7 @@ func NewSupplyAccountQuerierFn() SupplierFn {
 		_ *cobra.Command,
 	) (depinject.Config, error) {
 		// Create the account querier.
-		accountQuerier, err := query.NewAccountQuerier(deps)
+		accountQuerier, err := auth.NewAccountQuerier(deps)
 		if err != nil {
 			return nil, err
 		}
