@@ -1,4 +1,4 @@
-package query
+package proof
 
 import (
 	"context"
@@ -10,20 +10,22 @@ import (
 	prooftypes "github.com/pokt-network/poktroll/proto/types/proof"
 )
 
-// proofQuerier is a wrapper around the prooftypes.QueryClient that enables the
+var _ client.ProofQueryClient = (*proofQueryClient)(nil)
+
+// proofQueryClient is a wrapper around the prooftypes.QueryClient that enables the
 // querying of on-chain proof module params.
-type proofQuerier struct {
+type proofQueryClient struct {
 	clientConn   grpc.ClientConn
 	proofQuerier prooftypes.QueryClient
 }
 
-// NewProofQuerier returns a new instance of a client.ProofQueryClient by
+// NewProofQueryClient returns a new instance of a client.ProofQueryClient by
 // injecting the dependecies provided by the depinject.Config.
 //
 // Required dependencies:
 // - grpc.ClientConn
-func NewProofQuerier(deps depinject.Config) (client.ProofQueryClient, error) {
-	querier := &proofQuerier{}
+func NewProofQueryClient(deps depinject.Config) (client.ProofQueryClient, error) {
+	querier := &proofQueryClient{}
 
 	if err := depinject.Inject(
 		deps,
@@ -38,7 +40,7 @@ func NewProofQuerier(deps depinject.Config) (client.ProofQueryClient, error) {
 }
 
 // GetParams queries the chain for the current proof module parameters.
-func (pq *proofQuerier) GetParams(
+func (pq *proofQueryClient) GetParams(
 	ctx context.Context,
 ) (client.ProofParams, error) {
 	req := &prooftypes.QueryParamsRequest{}

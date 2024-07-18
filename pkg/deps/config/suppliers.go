@@ -457,7 +457,7 @@ func NewSupplyProofQueryClientFn() SupplierFn {
 		deps depinject.Config,
 		_ *cobra.Command,
 	) (depinject.Config, error) {
-		proofQuerier, err := proof.NewProofQuerier(deps)
+		proofQuerier, err := proof.NewProofQueryClient(deps)
 		if err != nil {
 			return nil, err
 		}
