@@ -17,6 +17,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/client/query"
 	querytypes "github.com/pokt-network/poktroll/pkg/client/query/types"
+	"github.com/pokt-network/poktroll/pkg/client/session"
 	"github.com/pokt-network/poktroll/pkg/client/supplier"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
 	txtypes "github.com/pokt-network/poktroll/pkg/client/tx/types"
@@ -297,7 +298,7 @@ func NewSupplySessionQuerierFn() SupplierFn {
 		_ *cobra.Command,
 	) (depinject.Config, error) {
 		// Create the session querier.
-		sessionQuerier, err := query.NewSessionQuerier(deps)
+		sessionQuerier, err := session.NewSessionQueryClient(deps)
 		if err != nil {
 			return nil, err
 		}

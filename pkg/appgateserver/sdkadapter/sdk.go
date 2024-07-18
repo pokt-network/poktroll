@@ -12,6 +12,7 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/query"
+	"github.com/pokt-network/poktroll/pkg/client/session"
 	"github.com/pokt-network/poktroll/proto/types/service"
 )
 
@@ -33,7 +34,7 @@ func NewShannonSDK(
 	signingKey cryptotypes.PrivKey,
 	deps depinject.Config,
 ) (*ShannonSDK, error) {
-	sessionClient, sessionClientErr := query.NewSessionQuerier(deps)
+	sessionClient, sessionClientErr := session.NewSessionQueryClient(deps)
 	if sessionClientErr != nil {
 		return nil, sessionClientErr
 	}

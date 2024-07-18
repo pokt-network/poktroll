@@ -1,4 +1,4 @@
-package query
+package session
 
 import (
 	"context"
@@ -11,23 +11,23 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
 )
 
-var _ client.SessionQueryClient = (*sessionQuerier)(nil)
+var _ client.SessionQueryClient = (*sessionQueryClient)(nil)
 
-// sessionQuerier is a wrapper around the sessiontypes.QueryClient that enables the
+// sessionQueryClient is a wrapper around the sessiontypes.QueryClient that enables the
 // querying of on-chain session information through a single exposed method
 // which returns an sessiontypes.Session struct
-type sessionQuerier struct {
+type sessionQueryClient struct {
 	clientConn     grpc.ClientConn
 	sessionQuerier sessiontypes.QueryClient
 }
 
-// NewSessionQuerier returns a new instance of a client.SessionQueryClient by
+// NewSessionQueryClient returns a new instance of a client.SessionQueryClient by
 // injecting the dependecies provided by the depinject.Config.
 //
 // Required dependencies:
 // - clientCtx (grpc.ClientConn)
-func NewSessionQuerier(deps depinject.Config) (client.SessionQueryClient, error) {
-	sessq := &sessionQuerier{}
+func NewSessionQueryClient(deps depinject.Config) (client.SessionQueryClient, error) {
+	sessq := &sessionQueryClient{}
 
 	if err := depinject.Inject(
 		deps,
@@ -43,7 +43,7 @@ func NewSessionQuerier(deps depinject.Config) (client.SessionQueryClient, error)
 
 // GetSession returns an sessiontypes.Session struct for a given appAddress,
 // serviceId and blockHeight. It implements the SessionQueryClient#GetSession function.
-func (sessq *sessionQuerier) GetSession(
+func (sessq *sessionQueryClient) GetSession(
 	ctx context.Context,
 	appAddress string,
 	serviceId string,
