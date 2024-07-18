@@ -1,6 +1,10 @@
 package types
 
-import "encoding/binary"
+import (
+	"encoding/binary"
+
+	"github.com/pokt-network/poktroll/proto/types/tokenomics"
+)
 
 var _ binary.ByteOrder
 
@@ -13,11 +17,5 @@ const (
 func RelayMiningDifficultyKey(
 	serviceId string,
 ) []byte {
-	var key []byte
-
-	serviceIdBz := []byte(serviceId)
-	key = append(key, serviceIdBz...)
-	key = append(key, []byte("/")...)
-
-	return key
+	return tokenomics.RelayMiningDifficultyKey(serviceId)
 }

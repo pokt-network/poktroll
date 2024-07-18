@@ -1,6 +1,10 @@
 package types
 
-import "encoding/binary"
+import (
+	"encoding/binary"
+
+	"github.com/pokt-network/poktroll/proto/types/proof"
+)
 
 var _ binary.ByteOrder
 
@@ -20,12 +24,12 @@ const (
 func ClaimPrimaryKey(sessionId, supplierAddr string) []byte {
 	// We are guaranteed uniqueness of the primary key if it's a composite of the (sessionId, supplierAddr)
 	// because every supplier can only have one claim per session.
-	return KeyComposite([]byte(sessionId), []byte(supplierAddr))
+	return proof.ClaimPrimaryKey(sessionId, supplierAddr)
 }
 
 // ClaimSupplierAddressKey returns the key used to iterate through claims given a supplier Address.
 func ClaimSupplierAddressKey(supplierAddr string, primaryKey []byte) []byte {
-	return KeyComposite([]byte(supplierAddr), primaryKey)
+	return proof.KeyComposite([]byte(supplierAddr), primaryKey)
 }
 
 // ClaimSupplierEndSessionHeightKey returns the key used to iterate through claims given a session end height.
@@ -33,7 +37,7 @@ func ClaimSupplierEndSessionHeightKey(sessionEndHeight int64, primaryKey []byte)
 	heightBz := make([]byte, 8)
 	binary.BigEndian.PutUint64(heightBz, uint64(sessionEndHeight))
 
-	return KeyComposite(heightBz, primaryKey)
+	return proof.KeyComposite(heightBz, primaryKey)
 }
 
 // TODO_TECHDEBT(@Olshansk): add helpers for composing query-side key prefixes & document key/value prefix design.

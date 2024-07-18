@@ -16,7 +16,7 @@ func (gs GenesisState) Validate() error {
 	relayMiningDifficultyIndexMap := make(map[string]struct{})
 
 	for _, elem := range gs.RelayMiningDifficultyList {
-		index := elem.ServiceId //string(RelayMiningDifficultyKey(elem.ServiceId))
+		index := string(RelayMiningDifficultyKey(elem.ServiceId))
 		if _, ok := relayMiningDifficultyIndexMap[index]; ok {
 			return ErrTokenomicsDuplicateIndex.Wrapf("duplicated index for relayMiningDifficulty: %s", index)
 		}

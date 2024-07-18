@@ -26,7 +26,7 @@ import (
 	"github.com/pokt-network/poktroll/testutil/application/mocks"
 	testsession "github.com/pokt-network/poktroll/testutil/session"
 	"github.com/pokt-network/poktroll/x/application/keeper"
-	"github.com/pokt-network/poktroll/x/gateway/types"
+	"github.com/pokt-network/poktroll/x/application/types"
 )
 
 // stakedGatewayMap is used to mock whether a gateway is staked or not for use

@@ -18,7 +18,7 @@ func (gs GenesisState) Validate() error {
 
 	for _, gateway := range gs.GatewayList {
 		// Check for duplicated address in gateway
-		address := gateway.Address //string(GatewayKey(gateway.Address))
+		address := string(GatewayKey(gateway.Address))
 		if _, ok := gatewayAddrMap[address]; ok {
 			return ErrGatewayInvalidAddress.Wrap("duplicated index for gateway")
 		}

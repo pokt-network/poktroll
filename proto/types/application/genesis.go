@@ -24,7 +24,7 @@ func (gs GenesisState) Validate() error {
 	applicationAddrMap := make(map[string]struct{})
 
 	for _, app := range gs.ApplicationList {
-		appAddr := app.Address //string(ApplicationKey(app.Address))
+		appAddr := string(ApplicationKey(app.Address))
 		if _, ok := applicationAddrMap[appAddr]; ok {
 			return fmt.Errorf("duplicated index for application")
 		}

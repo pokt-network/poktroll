@@ -1,6 +1,10 @@
 package types
 
-import "encoding/binary"
+import (
+	"encoding/binary"
+
+	"github.com/pokt-network/poktroll/proto/types/application"
+)
 
 var _ binary.ByteOrder
 
@@ -11,11 +15,5 @@ const (
 
 // ApplicationKey returns the store key to retrieve a Application from the index fields
 func ApplicationKey(appAddr string) []byte {
-	var key []byte
-
-	appAddrBz := []byte(appAddr)
-	key = append(key, appAddrBz...)
-	key = append(key, []byte("/")...)
-
-	return key
+	return application.ApplicationKey(appAddr)
 }

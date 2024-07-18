@@ -21,8 +21,8 @@ import (
 
 	"github.com/pokt-network/poktroll/proto/types/gateway"
 	mocks "github.com/pokt-network/poktroll/testutil/gateway/mocks"
-	"github.com/pokt-network/poktroll/x/application/types"
 	"github.com/pokt-network/poktroll/x/gateway/keeper"
+	"github.com/pokt-network/poktroll/x/gateway/types"
 )
 
 func GatewayKeeper(t testing.TB) (keeper.Keeper, context.Context) {

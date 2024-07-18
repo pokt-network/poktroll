@@ -31,7 +31,7 @@ func (gs GenesisState) Validate() error {
 		}
 
 		sessionId := claim.GetSessionHeader().GetSessionId()
-		primaryKey := sessionId + claim.SupplierAddress //string(ClaimPrimaryKey(sessionId, claim.SupplierAddress))
+		primaryKey := string(ClaimPrimaryKey(sessionId, claim.SupplierAddress))
 		if _, ok := claimPrimaryKeyMap[primaryKey]; ok {
 			return fmt.Errorf("duplicated supplierAddr for claim")
 		}
@@ -41,11 +41,10 @@ func (gs GenesisState) Validate() error {
 	proofPrimaryKeyMap := make(map[string]struct{})
 
 	for _, proof := range gs.ProofList {
-		//proofPrimaryKey := string(ProofPrimaryKey(
-		//	proof.GetSessionHeader().GetSessionId(),
-		//	proof.GetSupplierAddress(),
-		//))
-		proofPrimaryKey := proof.GetSessionHeader().GetSessionId() + proof.GetSupplierAddress()
+		proofPrimaryKey := string(ProofPrimaryKey(
+			proof.GetSessionHeader().GetSessionId(),
+			proof.GetSupplierAddress(),
+		))
 		if _, ok := proofPrimaryKeyMap[proofPrimaryKey]; ok {
 			return fmt.Errorf("duplicated primaryKey for proof")
 		}

@@ -22,9 +22,9 @@ import (
 	"github.com/pokt-network/poktroll/proto/types/shared"
 	"github.com/pokt-network/poktroll/proto/types/supplier"
 	"github.com/pokt-network/poktroll/testutil/supplier/mocks"
-	"github.com/pokt-network/poktroll/x/application/types"
 	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
 	"github.com/pokt-network/poktroll/x/supplier/keeper"
+	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 func SupplierKeeper(t testing.TB) (keeper.Keeper, context.Context) {
