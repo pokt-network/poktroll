@@ -27,8 +27,8 @@ It includes lower-level interfaces for working with transactions and subscribing
 ## Features
 
 | Interface               | Description                                                                                        |
-| ----------------------- | -------------------------------------------------------------------------------------------------- |
-| **`SupplierClient`**    | A high-level client for use by the "supplier" actor.                                               |
+|-------------------------|----------------------------------------------------------------------------------------------------|
+| **`ProofClient`**       | A high-level client used to create claims and submit proofs for relay sessions.                    |
 | **`TxClient`**          | A high-level client used to build, sign, and broadcast transaction from cosmos-sdk messages.       |
 | **`TxContext`**         | Abstracts and encapsulates the transaction building, signing, encoding, and broadcasting concerns. |
 | **`BlockClient`**       | Exposes methods for receiving notifications about newly committed blocks.                          |
@@ -62,7 +62,7 @@ c --> s
 title: Clients Dependency Tree
 ---
 flowchart
-sup[SupplierClient]
+proof[ProofClient]
 tx[TxClient]
 txctx[[TxContext]]
 subgraph bl[BlockClient]
@@ -74,7 +74,7 @@ end
 evt[EventsQueryClient]
 conn[[Connection]]
 dial[[Dialer]]
-sup --"#SignAndBroadcast()"--> tx
+proof --"#SignAndBroadcast()"--> tx
 tx --"#CommittedBlocksSequence()"--> bl
 tx --"#BroadcastTx"--> txctx
 tx --"#EventsBytes()"--> evt
