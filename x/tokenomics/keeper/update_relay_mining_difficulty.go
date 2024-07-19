@@ -134,7 +134,7 @@ func ComputeNewDifficultyTargetHash(prevTargetHash []byte, targetNumRelays, newR
 	return newTargetHash
 }
 
-// scaleDifficultyTargetHash scales the default target hash based on the given ratio
+// scaleDifficultyTargetHash scales the target hash based on the given ratio
 func scaleDifficultyTargetHash(targetHash []byte, ratio float64) []byte {
 	// Convert targetHash to a big.Float to miminize precision loss.
 	targetInt := new(big.Int).SetBytes(targetHash)

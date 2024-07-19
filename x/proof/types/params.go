@@ -18,7 +18,7 @@ var (
 
 	KeyMinRelayDifficultyBits                   = []byte("MinRelayDifficultyBits")
 	ParamRelayDifficultyTargetHash              = "relay_difficulty_target_hash"
-	DefaultRelayDifficultyTargetHashHex         = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+	DefaultRelayDifficultyTargetHashHex         = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" // all relays are payable
 	DefaultRelayDifficultyTargetHash, _         = hex.DecodeString(DefaultRelayDifficultyTargetHashHex) // TODO_MAINNET(#142, #401): Determine the default value.
 	KeyProofRequestProbability                  = []byte("ProofRequestProbability")
 	ParamProofRequestProbability                = "proof_request_probability"

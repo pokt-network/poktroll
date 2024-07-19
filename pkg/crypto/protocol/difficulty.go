@@ -7,7 +7,7 @@ import (
 
 var (
 	// Difficulty1HashBz is the chosen "highest" (easiest) target hash, which
-	// corresponds to the lowest possible difficulty. It effectively calibrates
+	// corresponds to the lowest possible difficulty. It effectively normalizes
 	// the difficulty number (which is returned by GetDifficultyFromHash) by defining
 	// the hash which corresponds to difficulty 1.
 	// - https://bitcoin.stackexchange.com/questions/107976/bitcoin-difficulty-why-leading-0s
@@ -17,6 +17,7 @@ var (
 
 // GetDifficultyFromHash returns the "difficulty" of the given hash, with respect
 // to the "highest" (easiest) target hash, Difficulty1Hash.
+// The resultant value is not used for any business logic but is simplify there to have a human-readable version of the hash.
 func GetDifficultyFromHash(hashBz [RelayHasherSize]byte) int64 {
 	difficulty1HashInt := new(big.Int).SetBytes(Difficulty1HashBz)
 	hashInt := new(big.Int).SetBytes(hashBz[:])
