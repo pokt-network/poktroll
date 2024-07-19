@@ -14,22 +14,24 @@ import (
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-const (
-	// Exponential moving average (ema) smoothing factor, commonly known as alpha.
-	// Usually, alpha = 2 / (N+1), where N is the number of periods.
-	// Large alpha -> more weight on recent data; less smoothing and fast response.
-	// Small alpha -> more weight on past data; more smoothing and slow response.
-	emaSmoothingFactor = float64(0.1)
+// TargetNumRelays is the target number of relays we want the network to mine for
+// a specific service across all applications & suppliers per session.
+// This number determines the total number of leafs to be created across in
+// the off-chain SMTs, across all suppliers, for each service.
+// It indirectly drives the off-chain resource requirements of the network
+// in additional to playing a critical role in Relay Mining.
+// TODO_BLOCKER(@Olshansk, #542): Make this a governance parameter.
+const TargetNumRelays = uint64(10e4)
 
-	// The target number of relays we want the network to mine for a specific
-	// service across all applications & suppliers per session.
-	// This number determines the total number of leafs to be created across in
-	// the off-chain SMTs, across all suppliers, for each service.
-	// It indirectly drives the off-chain resource requirements of the network
-	// in additional to playing a critical role in Relay Mining.
-	// TODO_BLOCKER(@Olshansk, #542): Make this a governance parameter.
-	TargetNumRelays = uint64(10e4)
-)
+// Exponential moving average (ema) smoothing factor, commonly known as alpha.
+// Usually, alpha = 2 / (N+1), where N is the number of periods.
+// Large alpha -> more weight on recent data; less smoothing and fast response.
+// Small alpha -> more weight on past data; more smoothing and slow response.
+//
+// TODO_MAINNET: Use a language agnostic float implementation or arithmetic library
+// to ensure deterministic results across different language implementations of the
+// protocol.
+var emaSmoothingFactor = new(big.Float).SetFloat64(0.1)
 
 // UpdateRelayMiningDifficulty updates the on-chain relay mining difficulty
 // based on the amount of on-chain relays for each service, given a map of serviceId->numRelays.
@@ -126,7 +128,13 @@ func ComputeNewDifficultyTargetHash(prevTargetHash []byte, targetNumRelays, newR
 	}
 
 	// Calculate the proportion of target relays to the new EMA
-	ratio := float64(targetNumRelays) / float64(newRelaysEma)
+	// TODO_MAINNET: Use a language agnostic float implementation or arithmetic library
+	// to ensure deterministic results across different language implementations of the
+	// protocol.
+	ratio := new(big.Float).Quo(
+		new(big.Float).SetUint64(targetNumRelays),
+		new(big.Float).SetUint64(newRelaysEma),
+	)
 
 	// Compute the new target hash by scaling the default target hash based on the ratio
 	newTargetHash := scaleDifficultyTargetHash(prevTargetHash, ratio)
@@ -135,13 +143,17 @@ func ComputeNewDifficultyTargetHash(prevTargetHash []byte, targetNumRelays, newR
 }
 
 // scaleDifficultyTargetHash scales the target hash based on the given ratio
-func scaleDifficultyTargetHash(targetHash []byte, ratio float64) []byte {
+//
+// TODO_MAINNET: Use a language agnostic float implementation or arithmetic library
+// to ensure deterministic results across different language implementations of the
+// protocol.
+func scaleDifficultyTargetHash(targetHash []byte, ratio *big.Float) []byte {
 	// Convert targetHash to a big.Float to miminize precision loss.
 	targetInt := new(big.Int).SetBytes(targetHash)
 	targetFloat := new(big.Float).SetInt(targetInt)
 
 	// Scale the target by multiplying it by the ratio.
-	scaledTargetFloat := new(big.Float).Mul(targetFloat, big.NewFloat(ratio))
+	scaledTargetFloat := new(big.Float).Mul(targetFloat, ratio)
 	// NB: Some precision is lost when converting back to an integer.
 	scaledTargetInt, _ := scaledTargetFloat.Int(nil)
 	scaledTargetHash := scaledTargetInt.Bytes()
@@ -164,31 +176,16 @@ func scaleDifficultyTargetHash(targetHash []byte, ratio float64) []byte {
 // computeEma computes the EMA at time t, given the EMA at time t-1, the raw
 // data revealed at time t, and the smoothing factor α.
 // Src: https://en.wikipedia.org/wiki/Exponential_smoothing
-func computeEma(alpha float64, prevEma, currValue uint64) uint64 {
-	return uint64(alpha*float64(currValue) + (1-alpha)*float64(prevEma))
-}
+//
+// TODO_MAINNET: Use a language agnostic float implementation or arithmetic library
+// to ensure deterministic results across different language implementations of the
+// protocol.
+func computeEma(alpha *big.Float, prevEma, currValue uint64) uint64 {
+	oneMinusAlpha := new(big.Float).Sub(new(big.Float).SetInt64(1), alpha)
+	prevEmaFloat := new(big.Float).SetUint64(prevEma)
 
-// LeadingZeroBitsToTargetDifficultyHash generates a slice of bytes with the specified number of leading zero bits
-// NB: Exported for testing purposes only.
-func LeadingZeroBitsToTargetDifficultyHash(numLeadingZeroBits int, numBytes int) []byte {
-	targetDifficultyHah := make([]byte, numBytes)
-
-	// Set everything to 1s initially
-	for i := range targetDifficultyHah {
-		targetDifficultyHah[i] = 0xff
-	}
-
-	// Set full zero bytes
-	fullZeroBytes := numLeadingZeroBits / 8
-	for i := 0; i < fullZeroBytes; i++ {
-		targetDifficultyHah[i] = 0
-	}
-
-	// Set remaining bits in the next byte
-	remainingZeroBits := numLeadingZeroBits % 8
-	if remainingZeroBits > 0 {
-		targetDifficultyHah[fullZeroBytes] = byte(0xff >> remainingZeroBits)
-	}
-
-	return targetDifficultyHah
+	weightedCurrentContribution := new(big.Float).Mul(alpha, new(big.Float).SetUint64(currValue))
+	weightedPreviousContribution := new(big.Float).Mul(oneMinusAlpha, prevEmaFloat)
+	newEma, _ := new(big.Float).Add(weightedCurrentContribution, weightedPreviousContribution).Uint64()
+	return newEma
 }

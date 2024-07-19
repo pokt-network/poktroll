@@ -3,6 +3,7 @@ package keeper
 import (
 	"bytes"
 	"encoding/hex"
+	"math/big"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -89,7 +90,7 @@ func TestScaleDifficultyTargetHash(t *testing.T) {
 			expectedBytes, expectedErr := hex.DecodeString(test.expectedHashHex)
 			require.NoError(t, expectedErr)
 
-			scaledHash := scaleDifficultyTargetHash(targetHashBz, test.ratio)
+			scaledHash := scaleDifficultyTargetHash(targetHashBz, new(big.Float).SetFloat64(test.ratio))
 			assert.Equal(t, len(scaledHash), len(targetHashBz))
 			require.Equalf(t, 0, bytes.Compare(scaledHash, expectedBytes), "expected hash %x, got %x", expectedBytes, scaledHash)
 		})
