@@ -136,7 +136,7 @@ func ComputeNewDifficultyTargetHash(prevTargetHash []byte, targetNumRelays, newR
 		new(big.Float).SetUint64(newRelaysEma),
 	)
 
-	// Compute the new target hash by scaling the default target hash based on the ratio
+	// Compute the new target hash by scaling the previous target hash based on the ratio
 	newTargetHash := scaleDifficultyTargetHash(prevTargetHash, ratio)
 
 	return newTargetHash
