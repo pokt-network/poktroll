@@ -2,7 +2,6 @@ package integration_test
 
 import (
 	"context"
-	"crypto/sha256"
 	"testing"
 
 	"github.com/pokt-network/smt"
@@ -193,7 +192,7 @@ func prepareSMST(
 		integrationApp.GetRingClient(),
 	)
 
-	trie := smt.NewSparseMerkleSumTrie(kvStore, sha256.New(), smt.WithValueHasher(nil))
+	trie := smt.NewSparseMerkleSumTrie(kvStore, protocol.NewTrieHasher(), smt.WithValueHasher(nil))
 	err = trie.Update(minedRelay.Hash, minedRelay.Bytes, 1)
 	require.NoError(t, err)
 
