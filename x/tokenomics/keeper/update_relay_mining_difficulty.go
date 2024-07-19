@@ -69,7 +69,7 @@ func (k Keeper) UpdateRelayMiningDifficulty(
 		// Compute the updated EMA of the number of relays.
 		prevRelaysEma := prevDifficulty.NumRelaysEma
 		newRelaysEma := computeEma(alpha, prevRelaysEma, numRelays)
-		difficultyHash := ComputeNewDifficultyTargetHash(TargetNumRelays, newRelaysEma)
+		difficultyHash := ComputeNewDifficultyTargetHash(prevDifficulty.TargetHash, TargetNumRelays, newRelaysEma)
 		newDifficulty := types.RelayMiningDifficulty{
 			ServiceId:    serviceId,
 			BlockHeight:  sdkCtx.BlockHeight(),
@@ -117,7 +117,7 @@ func (k Keeper) UpdateRelayMiningDifficulty(
 // on the target number of relays we want the network to mine and the new EMA of
 // the number of relays.
 // NB: Exported for testing purposes only.
-func ComputeNewDifficultyTargetHash(targetNumRelays, newRelaysEma uint64) []byte {
+func ComputeNewDifficultyTargetHash(prevTargetHash []byte, targetNumRelays, newRelaysEma uint64) []byte {
 	// The target number of relays we want the network to mine is greater than
 	// the actual on-chain relays, so we don't need to scale to anything above
 	// the default.
@@ -129,7 +129,7 @@ func ComputeNewDifficultyTargetHash(targetNumRelays, newRelaysEma uint64) []byte
 	ratio := float64(targetNumRelays) / float64(newRelaysEma)
 
 	// Compute the new target hash by scaling the default target hash based on the ratio
-	newTargetHash := scaleDifficultyTargetHash(prooftypes.DefaultRelayDifficultyTargetHash, ratio)
+	newTargetHash := scaleDifficultyTargetHash(prevTargetHash, ratio)
 
 	return newTargetHash
 }

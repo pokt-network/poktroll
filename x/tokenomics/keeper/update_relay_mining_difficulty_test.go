@@ -9,6 +9,7 @@ import (
 
 	testutilevents "github.com/pokt-network/poktroll/testutil/events"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
+	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	"github.com/pokt-network/poktroll/x/tokenomics/keeper"
 	tokenomicskeeper "github.com/pokt-network/poktroll/x/tokenomics/keeper"
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
@@ -215,7 +216,7 @@ func TestComputeNewDifficultyHash(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			result := keeper.ComputeNewDifficultyTargetHash(tt.numRelaysTarget, tt.relaysEma)
+			result := keeper.ComputeNewDifficultyTargetHash(prooftypes.DefaultRelayDifficultyTargetHash, tt.numRelaysTarget, tt.relaysEma)
 
 			require.Lessf(t, bytes.Compare(result, tt.expectedDifficultyHash), 1,
 				"expected difficulty.TargetHash (%x) to be less than or equal to expectedRelayMiningDifficulty.TargetHash (%x)",
