@@ -2,7 +2,6 @@ package supplier_test
 
 import (
 	"context"
-	"crypto/sha256"
 	"testing"
 	"time"
 
@@ -14,6 +13,7 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/client/keyring"
 	"github.com/pokt-network/poktroll/pkg/client/supplier"
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/proto/types/proof"
 	"github.com/pokt-network/poktroll/proto/types/session"
 	"github.com/pokt-network/poktroll/proto/types/shared"
@@ -181,7 +181,7 @@ func TestSupplierClient_SubmitProof(t *testing.T) {
 	// Generating an ephemeral tree & spec just so we can submit
 	// a proof of the right size.
 	// TODO_TECHDEBT(#446): Centralize the configuration for the SMT spec.
-	tree := smt.NewSparseMerkleSumTrie(kvStore, sha256.New())
+	tree := smt.NewSparseMerkleSumTrie(kvStore, protocol.NewTrieHasher())
 	emptyPath := make([]byte, tree.PathHasherSize())
 	closestProof, err := tree.ProveClosest(emptyPath)
 	require.NoError(t, err)

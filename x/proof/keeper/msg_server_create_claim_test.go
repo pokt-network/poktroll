@@ -5,7 +5,6 @@ import (
 
 	abci "github.com/cometbft/cometbft/abci/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -20,6 +19,7 @@ import (
 	testsession "github.com/pokt-network/poktroll/testutil/session"
 	"github.com/pokt-network/poktroll/x/proof/keeper"
 	"github.com/pokt-network/poktroll/x/shared"
+	"github.com/pokt-network/smt"
 )
 
 const (
@@ -490,7 +490,7 @@ func newTestClaimMsg(
 	supplierAddr string,
 	appAddr string,
 	service *sharedtypes.Service,
-	merkleRoot smt.MerkleRoot,
+	merkleRoot smt.MerkleSumRoot,
 ) *proof.MsgCreateClaim {
 	t.Helper()
 

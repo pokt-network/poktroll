@@ -11,6 +11,7 @@ import (
 	"github.com/pokt-network/smt"
 	"github.com/pokt-network/smt/kvstore/badger"
 
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	sessiontypes "github.com/pokt-network/poktroll/proto/types/session"
 )
@@ -85,7 +86,7 @@ func NewSessionTree(
 
 	// Create the SMST from the KVStore and a nil value hasher so the proof would
 	// contain a non-hashed Relay that could be used to validate the proof on-chain.
-	trie := smt.NewSparseMerkleSumTrie(treeStore, sha256.New(), smt.WithValueHasher(nil))
+	trie := smt.NewSparseMerkleSumTrie(treeStore, protocol.NewTrieHasher(), smt.WithValueHasher(nil))
 
 	sessionTree := &sessionTree{
 		sessionHeader:   sessionHeader,

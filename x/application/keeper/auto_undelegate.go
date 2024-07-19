@@ -7,6 +7,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	proto "github.com/cosmos/gogoproto/proto"
+
 	"github.com/pokt-network/poktroll/proto/types/gateway"
 )
 

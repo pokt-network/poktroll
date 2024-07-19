@@ -11,9 +11,9 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/proto/types/application"
 	"github.com/pokt-network/poktroll/proto/types/proof"
 	"github.com/pokt-network/poktroll/proto/types/session"
@@ -26,6 +26,7 @@ import (
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
+	"github.com/pokt-network/smt"
 )
 
 func TestSettleSessionAccounting_HandleAppGoingIntoDebt(t *testing.T) {
@@ -302,11 +303,10 @@ func TestSettleSessionAccounting_AppNotFound(t *testing.T) {
 func TestSettleSessionAccounting_InvalidRoot(t *testing.T) {
 	keeper, ctx, appAddr, supplierAddr := testkeeper.TokenomicsKeeperWithActorAddrs(t)
 
-	rootHashSizeBytes := smt.SmstRootSizeBytes
 	// Define test cases
 	tests := []struct {
 		desc        string
-		root        []byte // smst.MerkleRoot
+		root        []byte // smst.MerkleSumRoot
 		errExpected bool
 	}{
 		{
@@ -315,19 +315,19 @@ func TestSettleSessionAccounting_InvalidRoot(t *testing.T) {
 			errExpected: true,
 		},
 		{
-			desc:        fmt.Sprintf("Less than %d bytes", rootHashSizeBytes),
-			root:        make([]byte, rootHashSizeBytes-1), // Less than expected number of bytes
+			desc:        fmt.Sprintf("Less than %d bytes", protocol.TrieRootSize),
+			root:        make([]byte, protocol.TrieRootSize-1), // Less than expected number of bytes
 			errExpected: true,
 		},
 		{
-			desc:        fmt.Sprintf("More than %d bytes", rootHashSizeBytes),
-			root:        make([]byte, rootHashSizeBytes+1), // More than expected number of bytes
+			desc:        fmt.Sprintf("More than %d bytes", protocol.TrieRootSize),
+			root:        make([]byte, protocol.TrieRootSize+1), // More than expected number of bytes
 			errExpected: true,
 		},
 		{
 			desc: "correct size but empty",
 			root: func() []byte {
-				root := make([]byte, rootHashSizeBytes) // All 0s
+				root := make([]byte, protocol.TrieRootSize) // All 0s
 				return root[:]
 			}(),
 			errExpected: false,
@@ -335,7 +335,7 @@ func TestSettleSessionAccounting_InvalidRoot(t *testing.T) {
 		{
 			desc: "correct size but invalid value",
 			root: func() []byte {
-				return bytes.Repeat([]byte("a"), rootHashSizeBytes)
+				return bytes.Repeat([]byte("a"), protocol.TrieRootSize)
 			}(),
 			errExpected: true,
 		},
@@ -352,26 +352,12 @@ func TestSettleSessionAccounting_InvalidRoot(t *testing.T) {
 	// Iterate over each test case
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			// Use defer-recover to catch any panic
-			defer func() {
-				if r := recover(); r != nil {
-					t.Errorf("Test panicked: %s", r)
-				}
-			}()
-
 			// Setup claim by copying the testproof.BaseClaim and updating the root
 			claim := testproof.BaseClaim(appAddr, supplierAddr, 0)
-			claim.RootHash = smt.MerkleRoot(test.root[:])
+			claim.RootHash = smt.MerkleSumRoot(test.root[:])
 
 			// Execute test function
-			err := func() (err error) {
-				defer func() {
-					if r := recover(); r != nil {
-						err = fmt.Errorf("panic occurred: %v", r)
-					}
-				}()
-				return keeper.SettleSessionAccounting(ctx, &claim)
-			}()
+			err := keeper.SettleSessionAccounting(ctx, &claim)
 
 			// Assert the error
 			if test.errExpected {
