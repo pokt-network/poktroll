@@ -72,7 +72,7 @@ func RandSmstRootWithSum(t *testing.T, sum uint64) smt.MerkleSumRoot {
 	return encodeSum(root, sum)
 }
 
-// encodeSum returns a copy of the given root, binary encodes the give sum,
+// encodeSum returns a copy of the given root, binary encodes the given sum,
 // and stores the encoded sum in the root copy.
 func encodeSum(r [protocol.TrieRootSize]byte, sum uint64) smt.MerkleSumRoot {
 	root := make([]byte, protocol.TrieRootSize)
