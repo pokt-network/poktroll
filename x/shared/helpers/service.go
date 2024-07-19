@@ -4,7 +4,7 @@ import (
 	"net/url"
 	"regexp"
 
-	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 )
 
 const (
@@ -29,7 +29,7 @@ func init() {
 
 // IsValidService checks if the provided ServiceId struct has valid fields
 // TODO_TECHDEBT(BETA): Refactor to a `Service#ValidateBasic` method.
-func IsValidService(service *sharedtypes.Service) bool {
+func IsValidService(service *shared.Service) bool {
 	// Check if service Id and Name are valid using the provided helper functions
 	return service != nil &&
 		IsValidServiceId(service.Id) &&

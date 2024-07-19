@@ -11,12 +11,12 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/pkg/relayer"
-	servicetypes "github.com/pokt-network/poktroll/proto/types/service"
+	"github.com/pokt-network/poktroll/proto/types/service"
 	"github.com/pokt-network/poktroll/testutil/testrelayer"
 )
 
 func TestRelayMiner_StartAndStop(t *testing.T) {
-	srObs, _ := channel.NewObservable[*servicetypes.Relay]()
+	srObs, _ := channel.NewObservable[*service.Relay]()
 	servedRelaysObs := relayer.RelaysObservable(srObs)
 
 	mrObs, _ := channel.NewObservable[*relayer.MinedRelay]()

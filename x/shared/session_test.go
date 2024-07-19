@@ -9,13 +9,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 	"github.com/pokt-network/poktroll/testutil/sample"
 )
 
 func TestGetEarliestSupplierClaimCommitHeight_IsDeterministic(t *testing.T) {
 	var (
-		sharedParams = sharedtypes.DefaultParams()
+		sharedParams = shared.DefaultParams()
 		ctx, cancel  = context.WithCancel(context.Background())
 		wg           = sync.WaitGroup{}
 	)
@@ -78,7 +78,7 @@ func TestGetEarliestSupplierClaimCommitHeight_IsDeterministic(t *testing.T) {
 
 func TestGetEarliestSupplierProofCommitHeight_IsDeterministic(t *testing.T) {
 	var (
-		sharedParams = sharedtypes.DefaultParams()
+		sharedParams = shared.DefaultParams()
 		ctx, cancel  = context.WithCancel(context.Background())
 		wg           = sync.WaitGroup{}
 	)
@@ -155,17 +155,17 @@ func TestClaimProofWindows(t *testing.T) {
 
 	tests := []struct {
 		desc         string
-		sharedParams sharedtypes.Params
+		sharedParams shared.Params
 		queryHeight  int64
 	}{
 		{
 			desc:         "default params",
-			sharedParams: sharedtypes.DefaultParams(),
+			sharedParams: shared.DefaultParams(),
 			queryHeight:  int64(1),
 		},
 		{
 			desc: "minimal windows",
-			sharedParams: sharedtypes.Params{
+			sharedParams: shared.Params{
 				NumBlocksPerSession:          1,
 				ClaimWindowOpenOffsetBlocks:  0,
 				ClaimWindowCloseOffsetBlocks: 1,

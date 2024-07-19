@@ -12,7 +12,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/pokt-network/poktroll/proto/types/proof"
-	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 	"github.com/pokt-network/poktroll/testutil/nullify"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	_ "github.com/pokt-network/poktroll/testutil/testpolylog"
@@ -127,12 +127,12 @@ func TestClaim_List(t *testing.T) {
 	// independent constant, which requires us to temporarily align the
 	// with the num blocks per session. See the `forloop` in `networkWithClaimObjects`
 	// that has a TODO_HACK as well.
-	require.Equal(t, 0, numSuppliers*numApps%sharedtypes.DefaultNumBlocksPerSession)
+	require.Equal(t, 0, numSuppliers*numApps%shared.DefaultNumBlocksPerSession)
 
-	numSessions := numSuppliers * numApps / sharedtypes.DefaultNumBlocksPerSession
+	numSessions := numSuppliers * numApps / shared.DefaultNumBlocksPerSession
 
 	// Submitting one claim per block for simplicity
-	numClaimsPerSession := sharedtypes.DefaultNumBlocksPerSession
+	numClaimsPerSession := shared.DefaultNumBlocksPerSession
 	totalClaims := numSessions * numClaimsPerSession
 
 	// TODO_FLAKY(@bryanchriswhite): Ths following line in this test is flaky because test configuration

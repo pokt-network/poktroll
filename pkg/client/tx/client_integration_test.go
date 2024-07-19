@@ -13,7 +13,7 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
-	apptypes "github.com/pokt-network/poktroll/proto/types/application"
+	"github.com/pokt-network/poktroll/proto/types/application"
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
 	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
 	"github.com/pokt-network/poktroll/testutil/testclient/testkeyring"
@@ -55,7 +55,7 @@ func TestTxClient_SignAndBroadcast_Integration(t *testing.T) {
 
 	// Construct a valid (arbitrary) message to sign, encode, and broadcast.
 	appStake := types.NewCoin("upokt", math.NewInt(1000000))
-	appStakeMsg := &apptypes.MsgStakeApplication{
+	appStakeMsg := &application.MsgStakeApplication{
 		Address:  signingKeyAddr.String(),
 		Stake:    &appStake,
 		Services: client.NewTestApplicationServiceConfig(testServiceIdPrefix, 2),

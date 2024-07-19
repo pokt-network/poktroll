@@ -7,8 +7,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	gatewaytypes "github.com/pokt-network/poktroll/proto/types/gateway"
-	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/gateway"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 )
 
 // AccountKeeper defines the expected interface for the Account module.
@@ -29,11 +29,11 @@ type BankKeeper interface {
 
 // GatewayKeeper defines the expected interface needed to retrieve gateway information.
 type GatewayKeeper interface {
-	GetGateway(ctx context.Context, addr string) (gatewaytypes.Gateway, bool)
+	GetGateway(ctx context.Context, addr string) (gateway.Gateway, bool)
 }
 
 // SharedKeeper defines the expected interface needed to retrieve shared information.
 type SharedKeeper interface {
-	GetParams(ctx context.Context) sharedtypes.Params
+	GetParams(ctx context.Context) shared.Params
 	GetSessionEndHeight(ctx context.Context, queryHeight int64) int64
 }

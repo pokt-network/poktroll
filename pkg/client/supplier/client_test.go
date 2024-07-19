@@ -14,9 +14,9 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/client/keyring"
 	"github.com/pokt-network/poktroll/pkg/client/supplier"
-	prooftypes "github.com/pokt-network/poktroll/proto/types/proof"
-	sessiontypes "github.com/pokt-network/poktroll/proto/types/session"
-	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/proof"
+	"github.com/pokt-network/poktroll/proto/types/session"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/testclient/testkeyring"
 	"github.com/pokt-network/poktroll/testutil/testclient/testtx"
@@ -103,16 +103,16 @@ func TestSupplierClient_CreateClaim(t *testing.T) {
 	require.NotNil(t, supplierClient)
 
 	var rootHash []byte
-	sessionHeader := sessiontypes.SessionHeader{
+	sessionHeader := session.SessionHeader{
 		ApplicationAddress:      testAppAddr.String(),
 		SessionStartBlockHeight: 1,
 		SessionId:               "",
-		Service: &sharedtypes.Service{
+		Service: &shared.Service{
 			Id: testService,
 		},
 	}
 
-	msgClaim := &prooftypes.MsgCreateClaim{
+	msgClaim := &proof.MsgCreateClaim{
 		RootHash:      rootHash,
 		SessionHeader: &sessionHeader,
 	}
@@ -166,11 +166,11 @@ func TestSupplierClient_SubmitProof(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, supplierClient)
 
-	sessionHeader := sessiontypes.SessionHeader{
+	sessionHeader := session.SessionHeader{
 		ApplicationAddress:      testAppAddr.String(),
 		SessionStartBlockHeight: 1,
 		SessionId:               "",
-		Service: &sharedtypes.Service{
+		Service: &shared.Service{
 			Id: testService,
 		},
 	}
@@ -183,13 +183,13 @@ func TestSupplierClient_SubmitProof(t *testing.T) {
 	// TODO_TECHDEBT(#446): Centralize the configuration for the SMT spec.
 	tree := smt.NewSparseMerkleSumTrie(kvStore, sha256.New())
 	emptyPath := make([]byte, tree.PathHasherSize())
-	proof, err := tree.ProveClosest(emptyPath)
+	closestProof, err := tree.ProveClosest(emptyPath)
 	require.NoError(t, err)
 
-	proofBz, err := proof.Marshal()
+	proofBz, err := closestProof.Marshal()
 	require.NoError(t, err)
 
-	msgProof := &prooftypes.MsgSubmitProof{
+	msgProof := &proof.MsgSubmitProof{
 		Proof:         proofBz,
 		SessionHeader: &sessionHeader,
 	}

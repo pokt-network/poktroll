@@ -6,10 +6,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
-	prooftypes "github.com/pokt-network/poktroll/proto/types/proof"
-	sessiontypes "github.com/pokt-network/poktroll/proto/types/session"
+	"github.com/pokt-network/poktroll/proto/types/proof"
+	"github.com/pokt-network/poktroll/proto/types/session"
 	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
-	tokenomicstypes "github.com/pokt-network/poktroll/proto/types/tokenomics"
+	"github.com/pokt-network/poktroll/proto/types/tokenomics"
 	"github.com/pokt-network/poktroll/testutil/integration"
 	testutilproof "github.com/pokt-network/poktroll/testutil/proof"
 	"github.com/pokt-network/poktroll/x/shared"
@@ -39,10 +39,10 @@ func TestTokenomicsIntegrationExample(t *testing.T) {
 	sharedParams := sharedQueryRes.GetParams()
 
 	// Prepare a request to update the compute_units_to_tokens_multiplier
-	updateTokenomicsParamMsg := &tokenomicstypes.MsgUpdateParam{
+	updateTokenomicsParamMsg := &tokenomics.MsgUpdateParam{
 		Authority: integrationApp.GetAuthority(),
-		Name:      tokenomicstypes.ParamComputeUnitsToTokensMultiplier,
-		AsType:    &tokenomicstypes.MsgUpdateParam_AsInt64{AsInt64: 11},
+		Name:      tokenomics.ParamComputeUnitsToTokensMultiplier,
+		AsType:    &tokenomics.MsgUpdateParam_AsInt64{AsInt64: 11},
 	}
 
 	// Run the request
@@ -54,14 +54,14 @@ func TestTokenomicsIntegrationExample(t *testing.T) {
 	require.NotNil(t, result, "unexpected nil result")
 
 	// Validate the response is correct and that the value was updated
-	updateTokenomicsParamRes := tokenomicstypes.MsgUpdateParamResponse{}
+	updateTokenomicsParamRes := tokenomics.MsgUpdateParamResponse{}
 	err = integrationApp.GetCodec().Unmarshal(result.Value, &updateTokenomicsParamRes)
 	require.NoError(t, err)
 	require.EqualValues(t, uint64(11), uint64(updateTokenomicsParamRes.Params.ComputeUnitsToTokensMultiplier))
 
 	// Prepare a request to query a session so it can be used to create a claim.
-	sessionQueryClient := sessiontypes.NewQueryClient(integrationApp.QueryHelper())
-	getSessionReq := sessiontypes.QueryGetSessionRequest{
+	sessionQueryClient := session.NewQueryClient(integrationApp.QueryHelper())
+	getSessionReq := session.QueryGetSessionRequest{
 		ApplicationAddress: integrationApp.DefaultApplication.Address,
 		Service:            integrationApp.DefaultService,
 		BlockHeight:        integrationApp.GetSdkCtx().BlockHeight(),
@@ -92,7 +92,7 @@ func TestTokenomicsIntegrationExample(t *testing.T) {
 	}
 
 	// Create a new claim
-	createClaimMsg := prooftypes.MsgCreateClaim{
+	createClaimMsg := proof.MsgCreateClaim{
 		SupplierAddress: integrationApp.DefaultSupplier.GetAddress(),
 		SessionHeader:   session.GetHeader(),
 		RootHash:        testutilproof.SmstRootWithSum(uint64(1)),

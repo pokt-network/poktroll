@@ -5,14 +5,14 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 	servicehelpers "github.com/pokt-network/poktroll/x/shared/helpers"
 )
 
 // DefaultGenesis returns the default genesis state
 func DefaultGenesis() *GenesisState {
 	return &GenesisState{
-		SupplierList: []sharedtypes.Supplier{},
+		SupplierList: []shared.Supplier{},
 		// this line is used by starport scaffolding # genesis/types/default
 		Params: DefaultParams(),
 	}

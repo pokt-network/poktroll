@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	poktrand "github.com/pokt-network/poktroll/pkg/crypto/rand"
-	prooftypes "github.com/pokt-network/poktroll/proto/types/proof"
+	"github.com/pokt-network/poktroll/proto/types/proof"
 	"github.com/pokt-network/poktroll/testutil/keeper"
 	tetsproof "github.com/pokt-network/poktroll/testutil/proof"
 	"github.com/pokt-network/poktroll/testutil/sample"
@@ -18,12 +18,12 @@ import (
 func TestKeeper_IsProofRequired(t *testing.T) {
 	// Set expectedCompute units to be below the proof requirement threshold to only
 	// exercise the probabilistic branch of the #isProofRequired() logic.
-	expectedComputeUnits := prooftypes.DefaultProofRequirementThreshold - 1
+	expectedComputeUnits := proof.DefaultProofRequirementThreshold - 1
 	keepers, ctx := keeper.NewTokenomicsModuleKeepers(t, log.NewNopLogger())
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 
 	var (
-		probability = prooftypes.DefaultProofRequestProbability
+		probability = proof.DefaultProofRequestProbability
 		tolerance   = 0.01
 		confidence  = 0.99
 
@@ -39,7 +39,7 @@ func TestKeeper_IsProofRequired(t *testing.T) {
 		proofRequirementReason, err := keepers.Keeper.ProofRequirementForClaim(sdkCtx, &claim)
 		require.NoError(t, err)
 
-		if proofRequirementReason != prooftypes.ProofRequirementReason_NOT_REQUIRED {
+		if proofRequirementReason != proof.ProofRequirementReason_NOT_REQUIRED {
 			numTrueSamples.Add(1)
 		}
 	}

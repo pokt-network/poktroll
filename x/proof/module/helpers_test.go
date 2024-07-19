@@ -9,8 +9,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/proto/types/proof"
-	sessiontypes "github.com/pokt-network/poktroll/proto/types/session"
-	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/session"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 	"github.com/pokt-network/poktroll/testutil/network"
 	testsession "github.com/pokt-network/poktroll/testutil/session"
 	"github.com/pokt-network/poktroll/testutil/testkeyring"
@@ -84,7 +84,7 @@ func networkWithClaimObjects(
 	appGenesisBuffer, err := cfg.Codec.MarshalJSON(appGenesisState)
 	require.NoError(t, err)
 
-	sharedParams := sharedtypes.DefaultParams()
+	sharedParams := shared.DefaultParams()
 
 	// Create numSessions * numApps * numSuppliers claims.
 	for sessionIdx := 0; sessionIdx < numSessions; sessionIdx++ {
@@ -138,7 +138,7 @@ func networkWithClaimObjects(
 // and application address. It uses mock byte slices for the root hash and block hash.
 func newTestClaim(
 	t *testing.T,
-	sharedParams *sharedtypes.Params,
+	sharedParams *shared.Params,
 	supplierAddr string,
 	sessionStartHeight int64,
 	appAddr string,
@@ -161,9 +161,9 @@ func newTestClaim(
 	// TODO_TECHDEBT: Forward the actual claim in the response once the response is updated to return it.
 	return &proof.Claim{
 		SupplierAddress: supplierAddr,
-		SessionHeader: &sessiontypes.SessionHeader{
+		SessionHeader: &session.SessionHeader{
 			ApplicationAddress:      appAddr,
-			Service:                 &sharedtypes.Service{Id: testServiceId},
+			Service:                 &shared.Service{Id: testServiceId},
 			SessionId:               sessionId,
 			SessionStartBlockHeight: sessionStartHeight,
 			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(sessionStartHeight),

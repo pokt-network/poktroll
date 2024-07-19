@@ -6,7 +6,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 	"github.com/pokt-network/poktroll/proto/types/supplier"
 	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/supplier/types"
@@ -91,8 +91,8 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *supplier.MsgStakeSupp
 func (k msgServer) createSupplier(
 	_ context.Context,
 	msg *supplier.MsgStakeSupplier,
-) sharedtypes.Supplier {
-	return sharedtypes.Supplier{
+) shared.Supplier {
+	return shared.Supplier{
 		Address:  msg.Address,
 		Stake:    msg.Stake,
 		Services: msg.Services,
@@ -101,7 +101,7 @@ func (k msgServer) createSupplier(
 
 func (k msgServer) updateSupplier(
 	_ context.Context,
-	supplierToUpdate *sharedtypes.Supplier,
+	supplierToUpdate *shared.Supplier,
 	msg *supplier.MsgStakeSupplier,
 ) error {
 	// Checks if the the msg address is the same as the current owner

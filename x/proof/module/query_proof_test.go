@@ -12,7 +12,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/pokt-network/poktroll/proto/types/proof"
-	sessiontypes "github.com/pokt-network/poktroll/proto/types/session"
+	"github.com/pokt-network/poktroll/proto/types/session"
 	"github.com/pokt-network/poktroll/testutil/network"
 	"github.com/pokt-network/poktroll/testutil/nullify"
 	"github.com/pokt-network/poktroll/testutil/sample"
@@ -27,7 +27,7 @@ func networkWithProofObjects(t *testing.T, n int) (*network.Network, []proof.Pro
 	for i := 0; i < n; i++ {
 		proof := proof.Proof{
 			SupplierAddress: sample.AccAddress(),
-			SessionHeader: &sessiontypes.SessionHeader{
+			SessionHeader: &session.SessionHeader{
 				SessionId: "mock_session_id",
 				// Other fields omitted and unused for these tests.
 			},

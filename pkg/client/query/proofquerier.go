@@ -7,14 +7,14 @@ import (
 	"github.com/cosmos/gogoproto/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/client"
-	prooftypes "github.com/pokt-network/poktroll/proto/types/proof"
+	"github.com/pokt-network/poktroll/proto/types/proof"
 )
 
 // proofQuerier is a wrapper around the prooftypes.QueryClient that enables the
 // querying of on-chain proof module params.
 type proofQuerier struct {
 	clientConn   grpc.ClientConn
-	proofQuerier prooftypes.QueryClient
+	proofQuerier proof.QueryClient
 }
 
 // NewProofQuerier returns a new instance of a client.ProofQueryClient by
@@ -32,7 +32,7 @@ func NewProofQuerier(deps depinject.Config) (client.ProofQueryClient, error) {
 		return nil, err
 	}
 
-	querier.proofQuerier = prooftypes.NewQueryClient(querier.clientConn)
+	querier.proofQuerier = proof.NewQueryClient(querier.clientConn)
 
 	return querier, nil
 }
@@ -41,7 +41,7 @@ func NewProofQuerier(deps depinject.Config) (client.ProofQueryClient, error) {
 func (pq *proofQuerier) GetParams(
 	ctx context.Context,
 ) (client.ProofParams, error) {
-	req := &prooftypes.QueryParamsRequest{}
+	req := &proof.QueryParamsRequest{}
 	res, err := pq.proofQuerier.Params(ctx, req)
 	if err != nil {
 		return nil, err

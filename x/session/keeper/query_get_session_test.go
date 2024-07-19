@@ -8,7 +8,7 @@ import (
 
 	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
 	"github.com/pokt-network/poktroll/proto/types/session"
-	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
 )
@@ -54,7 +54,7 @@ func TestSession_GetSession_Success(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			req := &session.QueryGetSessionRequest{
 				ApplicationAddress: test.appAddr,
-				Service: &sharedtypes.Service{
+				Service: &shared.Service{
 					Id: test.serviceId,
 				},
 				BlockHeight: 1,
@@ -146,7 +146,7 @@ func TestSession_GetSession_Failure(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			req := &session.QueryGetSessionRequest{
 				ApplicationAddress: test.appAddr,
-				Service: &sharedtypes.Service{
+				Service: &shared.Service{
 					Id: test.serviceId,
 				},
 				BlockHeight: test.blockHeight,

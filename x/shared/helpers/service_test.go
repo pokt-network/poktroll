@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 )
 
 func TestIsValidService(t *testing.T) {
@@ -69,7 +69,7 @@ func TestIsValidService(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			service := &sharedtypes.Service{
+			service := &shared.Service{
 				Id:   test.serviceId,
 				Name: test.serviceName,
 			}

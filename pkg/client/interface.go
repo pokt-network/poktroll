@@ -28,9 +28,9 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
-	apptypes "github.com/pokt-network/poktroll/proto/types/application"
-	sessiontypes "github.com/pokt-network/poktroll/proto/types/session"
-	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/application"
+	"github.com/pokt-network/poktroll/proto/types/session"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 )
 
 // MsgCreateClaim is an interface satisfying proof.MsgCreateClaim concrete type
@@ -38,7 +38,7 @@ import (
 type MsgCreateClaim interface {
 	cosmostypes.Msg
 	GetRootHash() []byte
-	GetSessionHeader() *sessiontypes.SessionHeader
+	GetSessionHeader() *session.SessionHeader
 	GetSupplierAddress() string
 }
 
@@ -47,7 +47,7 @@ type MsgCreateClaim interface {
 type MsgSubmitProof interface {
 	cosmostypes.Msg
 	GetProof() []byte
-	GetSessionHeader() *sessiontypes.SessionHeader
+	GetSessionHeader() *session.SessionHeader
 	GetSupplierAddress() string
 }
 
@@ -275,17 +275,17 @@ type AccountQueryClient interface {
 // on-chain application information
 type ApplicationQueryClient interface {
 	// GetApplication queries the chain for the details of the application provided
-	GetApplication(ctx context.Context, appAddress string) (apptypes.Application, error)
+	GetApplication(ctx context.Context, appAddress string) (application.Application, error)
 
 	// GetAllApplications queries all on-chain applications
-	GetAllApplications(ctx context.Context) ([]apptypes.Application, error)
+	GetAllApplications(ctx context.Context) ([]application.Application, error)
 }
 
 // SupplierQueryClient defines an interface that enables the querying of the
 // on-chain supplier information
 type SupplierQueryClient interface {
 	// GetSupplier queries the chain for the details of the supplier provided
-	GetSupplier(ctx context.Context, supplierAddress string) (sharedtypes.Supplier, error)
+	GetSupplier(ctx context.Context, supplierAddress string) (shared.Supplier, error)
 }
 
 // SessionQueryClient defines an interface that enables the querying of the
@@ -297,14 +297,14 @@ type SessionQueryClient interface {
 		appAddress string,
 		serviceId string,
 		blockHeight int64,
-	) (*sessiontypes.Session, error)
+	) (*session.Session, error)
 }
 
 // SharedQueryClient defines an interface that enables the querying of the
 // on-chain shared module params.
 type SharedQueryClient interface {
 	// GetParams queries the chain for the current shared module parameters.
-	GetParams(ctx context.Context) (*sharedtypes.Params, error)
+	GetParams(ctx context.Context) (*shared.Params, error)
 	// GetSessionGracePeriodEndHeight returns the block height at which the grace period
 	// for the session that includes queryHeight elapses.
 	// The grace period is the number of blocks after the session ends during which relays

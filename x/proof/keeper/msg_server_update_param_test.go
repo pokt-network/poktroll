@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app/volatile"
-	prooftypes "github.com/pokt-network/poktroll/proto/types/proof"
+	"github.com/pokt-network/poktroll/proto/types/proof"
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
 )
 
@@ -19,17 +19,17 @@ func TestMsgUpdateParam_UpdateMinRelayDifficultyBitsOnly(t *testing.T) {
 
 	// Set the parameters to their default values
 	k, msgSrv, ctx := setupMsgServer(t)
-	defaultParams := prooftypes.DefaultParams()
+	defaultParams := proof.DefaultParams()
 	require.NoError(t, k.SetParams(ctx, defaultParams))
 
 	// Ensure the default values are different from the new values we want to set
 	require.NotEqual(t, expectedMinRelayDifficultyBits, defaultParams.MinRelayDifficultyBits)
 
 	// Update the min relay difficulty bits
-	updateParamMsg := &prooftypes.MsgUpdateParam{
+	updateParamMsg := &proof.MsgUpdateParam{
 		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		Name:      prooftypes.ParamMinRelayDifficultyBits,
-		AsType:    &prooftypes.MsgUpdateParam_AsInt64{AsInt64: int64(expectedMinRelayDifficultyBits)},
+		Name:      proof.ParamMinRelayDifficultyBits,
+		AsType:    &proof.MsgUpdateParam_AsInt64{AsInt64: int64(expectedMinRelayDifficultyBits)},
 	}
 	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.NoError(t, err)
@@ -46,17 +46,17 @@ func TestMsgUpdateParam_UpdateProofRequestProbabilityOnly(t *testing.T) {
 
 	// Set the parameters to their default values
 	k, msgSrv, ctx := setupMsgServer(t)
-	defaultParams := prooftypes.DefaultParams()
+	defaultParams := proof.DefaultParams()
 	require.NoError(t, k.SetParams(ctx, defaultParams))
 
 	// Ensure the default values are different from the new values we want to set
 	require.NotEqual(t, expectedProofRequestProbability, defaultParams.ProofRequestProbability)
 
 	// Update the proof request probability
-	updateParamMsg := &prooftypes.MsgUpdateParam{
+	updateParamMsg := &proof.MsgUpdateParam{
 		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		Name:      prooftypes.ParamProofRequestProbability,
-		AsType:    &prooftypes.MsgUpdateParam_AsFloat{AsFloat: expectedProofRequestProbability},
+		Name:      proof.ParamProofRequestProbability,
+		AsType:    &proof.MsgUpdateParam_AsFloat{AsFloat: expectedProofRequestProbability},
 	}
 	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.NoError(t, err)
@@ -73,17 +73,17 @@ func TestMsgUpdateParam_UpdateProofRequirementThresholdOnly(t *testing.T) {
 
 	// Set the parameters to their default values
 	k, msgSrv, ctx := setupMsgServer(t)
-	defaultParams := prooftypes.DefaultParams()
+	defaultParams := proof.DefaultParams()
 	require.NoError(t, k.SetParams(ctx, defaultParams))
 
 	// Ensure the default values are different from the new values we want to set
 	require.NotEqual(t, expectedProofRequirementThreshold, defaultParams.ProofRequirementThreshold)
 
 	// Update the proof request probability
-	updateParamMsg := &prooftypes.MsgUpdateParam{
+	updateParamMsg := &proof.MsgUpdateParam{
 		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		Name:      prooftypes.ParamProofRequirementThreshold,
-		AsType:    &prooftypes.MsgUpdateParam_AsInt64{AsInt64: int64(expectedProofRequirementThreshold)},
+		Name:      proof.ParamProofRequirementThreshold,
+		AsType:    &proof.MsgUpdateParam_AsInt64{AsInt64: int64(expectedProofRequirementThreshold)},
 	}
 	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.NoError(t, err)
@@ -100,17 +100,17 @@ func TestMsgUpdateParam_UpdateProofMissingPenaltyOnly(t *testing.T) {
 
 	// Set the parameters to their default values
 	k, msgSrv, ctx := setupMsgServer(t)
-	defaultParams := prooftypes.DefaultParams()
+	defaultParams := proof.DefaultParams()
 	require.NoError(t, k.SetParams(ctx, defaultParams))
 
 	// Ensure the default values are different from the new values we want to set
 	require.NotEqual(t, expectedProofMissingPenalty, defaultParams.ProofMissingPenalty)
 
 	// Update the proof request probability
-	updateParamMsg := &prooftypes.MsgUpdateParam{
+	updateParamMsg := &proof.MsgUpdateParam{
 		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		Name:      prooftypes.ParamProofMissingPenalty,
-		AsType:    &prooftypes.MsgUpdateParam_AsCoin{AsCoin: &expectedProofMissingPenalty},
+		Name:      proof.ParamProofMissingPenalty,
+		AsType:    &proof.MsgUpdateParam_AsCoin{AsCoin: &expectedProofMissingPenalty},
 	}
 	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.NoError(t, err)

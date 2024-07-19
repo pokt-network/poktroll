@@ -5,8 +5,8 @@ import (
 
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 
-	sessiontypes "github.com/pokt-network/poktroll/proto/types/session"
-	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/session"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 )
 
 // GetHashFromBytes returns the hash of the relay (full, request or response) bytes.
@@ -133,8 +133,8 @@ func (res *RelayResponse) VerifySupplierSignature(supplierPubKey cryptotypes.Pub
 func (sourceRelayRequest *RelayRequest) NullifyForObservability() *RelayRequest {
 	emptyRelayRequest := &RelayRequest{
 		Meta: RelayRequestMetadata{
-			SessionHeader: &sessiontypes.SessionHeader{
-				Service: &sharedtypes.Service{
+			SessionHeader: &session.SessionHeader{
+				Service: &shared.Service{
 					Id: "",
 				},
 			},

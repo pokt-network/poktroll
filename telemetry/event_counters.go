@@ -11,7 +11,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/telemetry"
 	"github.com/hashicorp/go-metrics"
 
-	prooftypes "github.com/pokt-network/poktroll/proto/types/proof"
+	"github.com/pokt-network/poktroll/proto/types/proof"
 )
 
 const (
@@ -46,11 +46,11 @@ func EventSuccessCounter(
 // probabilistic selection, above compute unit threshold).
 // If err is not nil, the counter is not incremented but Prometheus will ingest this event.
 func ProofRequirementCounter(
-	reason prooftypes.ProofRequirementReason,
+	reason proof.ProofRequirementReason,
 	err error,
 ) {
 	incrementAmount := 1
-	isRequired := strconv.FormatBool(reason != prooftypes.ProofRequirementReason_NOT_REQUIRED)
+	isRequired := strconv.FormatBool(reason != proof.ProofRequirementReason_NOT_REQUIRED)
 	labels := []metrics.Label{
 		{Name: "proof_required_reason", Value: reason.String()},
 		{Name: "is_required", Value: isRequired},
@@ -72,7 +72,7 @@ func ProofRequirementCounter(
 // which are represented by on-chain claims at the given ClaimProofStage.
 // If err is not nil, the counter is not incremented but Prometheus will ingest this event.
 func ClaimComputeUnitsCounter(
-	claimProofStage prooftypes.ClaimProofStage,
+	claimProofStage proof.ClaimProofStage,
 	numComputeUnits uint64,
 	err error,
 ) {
@@ -99,7 +99,7 @@ func ClaimComputeUnitsCounter(
 // If err is not nil, the counter is not incremented and an "error" label is added
 // with the error's message. I.e., Prometheus will ingest this event.
 func ClaimRelaysCounter(
-	claimProofStage prooftypes.ClaimProofStage,
+	claimProofStage proof.ClaimProofStage,
 	numRelays uint64,
 	err error,
 ) {
@@ -125,7 +125,7 @@ func ClaimRelaysCounter(
 // ClaimProofStage.
 // If err is not nil, the counter is not incremented but Prometheus will ingest this event.
 func ClaimCounter(
-	claimProofStage prooftypes.ClaimProofStage,
+	claimProofStage proof.ClaimProofStage,
 	numClaims uint64,
 	err error,
 ) {

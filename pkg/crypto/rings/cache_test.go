@@ -14,7 +14,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/crypto"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
-	apptypes "github.com/pokt-network/poktroll/proto/types/application"
+	"github.com/pokt-network/poktroll/proto/types/application"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/testutil/testclient/testdelegation"
 	"github.com/pokt-network/poktroll/testutil/testclient/testqueryclients"
@@ -99,7 +99,7 @@ func TestRingCache_BuildRing_Uncached(t *testing.T) {
 			appAccount:        newAccount("secp256k1"),
 			delegateeAccounts: []account{newAccount("secp256k1")},
 			expectedRingSize:  0,
-			expectedErr:       apptypes.ErrAppNotFound,
+			expectedErr:       application.ErrAppNotFound,
 		},
 	}
 	for _, test := range tests {
@@ -107,7 +107,7 @@ func TestRingCache_BuildRing_Uncached(t *testing.T) {
 			// If we expect the application to exist then add it to the test
 			// application map with the number of delegated gateways it is
 			// supposed to have so it can be retrieved from the mock
-			if !errors.As(test.expectedErr, &apptypes.ErrAppNotFound) {
+			if !errors.As(test.expectedErr, &application.ErrAppNotFound) {
 				accMap := make(map[string]cryptotypes.PubKey)
 				for _, delegateeAcc := range test.delegateeAccounts {
 					accMap[delegateeAcc.address] = delegateeAcc.pubKey

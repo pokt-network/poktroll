@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/proto/types/proof"
-	sessiontypes "github.com/pokt-network/poktroll/proto/types/session"
+	"github.com/pokt-network/poktroll/proto/types/session"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
 	"github.com/pokt-network/poktroll/testutil/sample"
@@ -22,7 +22,7 @@ func TestGenesis(t *testing.T) {
 		ClaimList: []proof.Claim{
 			{
 				SupplierAddress: sample.AccAddress(),
-				SessionHeader: &sessiontypes.SessionHeader{
+				SessionHeader: &session.SessionHeader{
 					SessionId:          mockSessionId,
 					ApplicationAddress: sample.AccAddress(),
 				},

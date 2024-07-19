@@ -12,7 +12,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/proto/types/proof"
-	sessiontypes "github.com/pokt-network/poktroll/proto/types/session"
+	"github.com/pokt-network/poktroll/proto/types/session"
 )
 
 // TODO(@bryanchriswhite): Add unit tests for the CLI command when implementing the business logic.
@@ -33,7 +33,7 @@ func CmdSubmitProof() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			sessionHeader := &sessiontypes.SessionHeader{}
+			sessionHeader := &session.SessionHeader{}
 			cdc := codec.NewProtoCodec(cdctypes.NewInterfaceRegistry())
 			cdc.MustUnmarshalJSON(sessionHeaderBz, sessionHeader)
 

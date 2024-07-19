@@ -10,11 +10,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	poktrand "github.com/pokt-network/poktroll/pkg/crypto/rand"
-	prooftypes "github.com/pokt-network/poktroll/proto/types/proof"
+	"github.com/pokt-network/poktroll/proto/types/proof"
 )
 
 func TestSeededFloat32(t *testing.T) {
-	probability := prooftypes.DefaultProofRequestProbability
+	probability := proof.DefaultProofRequestProbability
 	tolerance := 0.01
 	confidence := 0.99
 

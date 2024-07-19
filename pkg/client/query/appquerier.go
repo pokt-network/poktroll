@@ -7,7 +7,7 @@ import (
 	grpc "github.com/cosmos/gogoproto/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/client"
-	apptypes "github.com/pokt-network/poktroll/proto/types/application"
+	"github.com/pokt-network/poktroll/proto/types/application"
 )
 
 var _ client.ApplicationQueryClient = (*appQuerier)(nil)
@@ -17,7 +17,7 @@ var _ client.ApplicationQueryClient = (*appQuerier)(nil)
 // which returns an apptypes.Application interface
 type appQuerier struct {
 	clientConn         grpc.ClientConn
-	applicationQuerier apptypes.QueryClient
+	applicationQuerier application.QueryClient
 }
 
 // NewApplicationQuerier returns a new instance of a client.ApplicationQueryClient
@@ -35,7 +35,7 @@ func NewApplicationQuerier(deps depinject.Config) (client.ApplicationQueryClient
 		return nil, err
 	}
 
-	aq.applicationQuerier = apptypes.NewQueryClient(aq.clientConn)
+	aq.applicationQuerier = application.NewQueryClient(aq.clientConn)
 
 	return aq, nil
 }
@@ -44,21 +44,21 @@ func NewApplicationQuerier(deps depinject.Config) (client.ApplicationQueryClient
 func (aq *appQuerier) GetApplication(
 	ctx context.Context,
 	appAddress string,
-) (apptypes.Application, error) {
-	req := apptypes.QueryGetApplicationRequest{Address: appAddress}
+) (application.Application, error) {
+	req := application.QueryGetApplicationRequest{Address: appAddress}
 	res, err := aq.applicationQuerier.Application(ctx, &req)
 	if err != nil {
-		return apptypes.Application{}, apptypes.ErrAppNotFound.Wrapf("app address: %s [%v]", appAddress, err)
+		return application.Application{}, application.ErrAppNotFound.Wrapf("app address: %s [%v]", appAddress, err)
 	}
 	return res.Application, nil
 }
 
 // GetAllApplications returns all staked applications
-func (aq *appQuerier) GetAllApplications(ctx context.Context) ([]apptypes.Application, error) {
-	req := apptypes.QueryAllApplicationsRequest{}
+func (aq *appQuerier) GetAllApplications(ctx context.Context) ([]application.Application, error) {
+	req := application.QueryAllApplicationsRequest{}
 	res, err := aq.applicationQuerier.AllApplications(ctx, &req)
 	if err != nil {
-		return []apptypes.Application{}, err
+		return []application.Application{}, err
 	}
 	return res.Applications, nil
 }

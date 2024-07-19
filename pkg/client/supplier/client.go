@@ -10,7 +10,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/keyring"
 	"github.com/pokt-network/poktroll/pkg/polylog"
-	prooftypes "github.com/pokt-network/poktroll/proto/types/proof"
+	"github.com/pokt-network/poktroll/proto/types/proof"
 )
 
 var _ client.SupplierClient = (*supplierClient)(nil)
@@ -89,7 +89,7 @@ func (sClient *supplierClient) SubmitProofs(
 		// Type casting does not need to be checked here since the concrete type is
 		// guaranteed to implement the interface which is just an identity for the
 		// concrete type.
-		proofMsg, _ := p.(*prooftypes.MsgSubmitProof)
+		proofMsg, _ := p.(*proof.MsgSubmitProof)
 		sessionHeader := proofMsg.SessionHeader
 		// TODO_IMPROVE: log details related to what & how much is being proven
 		logger.Info().
@@ -135,7 +135,7 @@ func (sClient *supplierClient) CreateClaims(
 		// Type casting does not need to be checked here since the concrete type is
 		// guaranteed to implement the interface which is just an identity for the
 		// concrete type.
-		claimMsg, _ := c.(*prooftypes.MsgCreateClaim)
+		claimMsg, _ := c.(*proof.MsgCreateClaim)
 		sessionHeader := claimMsg.SessionHeader
 		// TODO_IMPROVE: log details related to how much is claimed
 		logger.Info().

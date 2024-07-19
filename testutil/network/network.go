@@ -15,12 +15,12 @@ import (
 
 	"github.com/pokt-network/poktroll/app"
 	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
-	apptypes "github.com/pokt-network/poktroll/proto/types/application"
-	gatewaytypes "github.com/pokt-network/poktroll/proto/types/gateway"
-	prooftypes "github.com/pokt-network/poktroll/proto/types/proof"
-	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
-	suppliertypes "github.com/pokt-network/poktroll/proto/types/supplier"
-	tokenomicstypes "github.com/pokt-network/poktroll/proto/types/tokenomics"
+	"github.com/pokt-network/poktroll/proto/types/application"
+	"github.com/pokt-network/poktroll/proto/types/gateway"
+	"github.com/pokt-network/poktroll/proto/types/proof"
+	"github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/supplier"
+	"github.com/pokt-network/poktroll/proto/types/tokenomics"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	appmodule "github.com/pokt-network/poktroll/x/application/module"
 )
@@ -85,16 +85,16 @@ func DefaultConfig() network.Config {
 
 // ApplicationModuleGenesisStateWithAccount generates a GenesisState object with
 // a single application for each of the given addresses.
-func ApplicationModuleGenesisStateWithAddresses(t *testing.T, addresses []string) *apptypes.GenesisState {
+func ApplicationModuleGenesisStateWithAddresses(t *testing.T, addresses []string) *application.GenesisState {
 	t.Helper()
-	state := apptypes.DefaultGenesis()
+	state := application.DefaultGenesis()
 	for _, addr := range addresses {
-		application := apptypes.Application{
+		application := application.Application{
 			Address: addr,
 			Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(10000)},
-			ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
+			ServiceConfigs: []*shared.ApplicationServiceConfig{
 				{
-					Service: &sharedtypes.Service{Id: "svc1"},
+					Service: &shared.Service{Id: "svc1"},
 				},
 			},
 		}
@@ -106,23 +106,23 @@ func ApplicationModuleGenesisStateWithAddresses(t *testing.T, addresses []string
 
 // DefaultApplicationModuleGenesisState generates a GenesisState object with a given number of applications.
 // It returns the populated GenesisState object.
-func DefaultApplicationModuleGenesisState(t *testing.T, n int) *apptypes.GenesisState {
+func DefaultApplicationModuleGenesisState(t *testing.T, n int) *application.GenesisState {
 	t.Helper()
-	state := apptypes.DefaultGenesis()
+	state := application.DefaultGenesis()
 	for i := 0; i < n; i++ {
 		stake := sdk.NewCoin("upokt", math.NewInt(int64(i+1)))
-		application := apptypes.Application{
+		application := application.Application{
 			Address: sample.AccAddress(),
 			Stake:   &stake,
-			ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
+			ServiceConfigs: []*shared.ApplicationServiceConfig{
 				{
-					Service: &sharedtypes.Service{Id: fmt.Sprintf("svc%d", i)},
+					Service: &shared.Service{Id: fmt.Sprintf("svc%d", i)},
 				},
 				{
-					Service: &sharedtypes.Service{Id: fmt.Sprintf("svc%d%d", i, i)},
+					Service: &shared.Service{Id: fmt.Sprintf("svc%d%d", i, i)},
 				},
 			},
-			PendingUndelegations: map[uint64]apptypes.UndelegatingGatewayList{},
+			PendingUndelegations: map[uint64]application.UndelegatingGatewayList{},
 		}
 		// TODO_CONSIDERATION: Evaluate whether we need `nullify.Fill` or if we should enforce `(gogoproto.nullable) = false` everywhere
 		// nullify.Fill(&application)
@@ -133,21 +133,21 @@ func DefaultApplicationModuleGenesisState(t *testing.T, n int) *apptypes.Genesis
 
 // DefaultSupplierModuleGenesisState generates a GenesisState object with a given number of suppliers.
 // It returns the populated GenesisState object.
-func DefaultSupplierModuleGenesisState(t *testing.T, n int) *suppliertypes.GenesisState {
+func DefaultSupplierModuleGenesisState(t *testing.T, n int) *supplier.GenesisState {
 	t.Helper()
-	state := suppliertypes.DefaultGenesis()
+	state := supplier.DefaultGenesis()
 	for i := 0; i < n; i++ {
 		stake := sdk.NewCoin("upokt", math.NewInt(int64(i)))
-		supplier := sharedtypes.Supplier{
+		supplier := shared.Supplier{
 			Address: sample.AccAddress(),
 			Stake:   &stake,
-			Services: []*sharedtypes.SupplierServiceConfig{
+			Services: []*shared.SupplierServiceConfig{
 				{
-					Service: &sharedtypes.Service{Id: fmt.Sprintf("svc%d", i)},
-					Endpoints: []*sharedtypes.SupplierEndpoint{
+					Service: &shared.Service{Id: fmt.Sprintf("svc%d", i)},
+					Endpoints: []*shared.SupplierEndpoint{
 						{
 							Url:     fmt.Sprintf("http://localhost:%d", i),
-							RpcType: sharedtypes.RPCType_JSON_RPC,
+							RpcType: shared.RPCType_JSON_RPC,
 						},
 					},
 				},
@@ -162,20 +162,20 @@ func DefaultSupplierModuleGenesisState(t *testing.T, n int) *suppliertypes.Genes
 
 // SupplierModuleGenesisStateWithAddresses generates a GenesisState object with
 // a single supplier for each of the given addresses.
-func SupplierModuleGenesisStateWithAddresses(t *testing.T, addresses []string) *suppliertypes.GenesisState {
+func SupplierModuleGenesisStateWithAddresses(t *testing.T, addresses []string) *supplier.GenesisState {
 	t.Helper()
-	state := suppliertypes.DefaultGenesis()
+	state := supplier.DefaultGenesis()
 	for _, addr := range addresses {
-		supplier := sharedtypes.Supplier{
+		supplier := shared.Supplier{
 			Address: addr,
 			Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(10000)},
-			Services: []*sharedtypes.SupplierServiceConfig{
+			Services: []*shared.SupplierServiceConfig{
 				{
-					Service: &sharedtypes.Service{Id: "svc1"},
-					Endpoints: []*sharedtypes.SupplierEndpoint{
+					Service: &shared.Service{Id: "svc1"},
+					Endpoints: []*shared.SupplierEndpoint{
 						{
 							Url:     "http://localhost:1",
-							RpcType: sharedtypes.RPCType_JSON_RPC,
+							RpcType: shared.RPCType_JSON_RPC,
 						},
 					},
 				},
@@ -186,20 +186,20 @@ func SupplierModuleGenesisStateWithAddresses(t *testing.T, addresses []string) *
 	return state
 }
 
-func DefaultTokenomicsModuleGenesisState(t *testing.T) *tokenomicstypes.GenesisState {
+func DefaultTokenomicsModuleGenesisState(t *testing.T) *tokenomics.GenesisState {
 	t.Helper()
-	state := tokenomicstypes.DefaultGenesis()
+	state := tokenomics.DefaultGenesis()
 	return state
 }
 
 // DefaultGatewayModuleGenesisState generates a GenesisState object with a given
 // number of gateways. It returns the populated GenesisState object.
-func DefaultGatewayModuleGenesisState(t *testing.T, n int) *gatewaytypes.GenesisState {
+func DefaultGatewayModuleGenesisState(t *testing.T, n int) *gateway.GenesisState {
 	t.Helper()
-	state := gatewaytypes.DefaultGenesis()
+	state := gateway.DefaultGenesis()
 	for i := 0; i < n; i++ {
 		stake := sdk.NewCoin("upokt", math.NewInt(int64(i)))
-		gateway := gatewaytypes.Gateway{
+		gateway := gateway.Gateway{
 			Address: sample.AccAddress(),
 			Stake:   &stake,
 		}
@@ -213,11 +213,11 @@ func DefaultGatewayModuleGenesisState(t *testing.T, n int) *gatewaytypes.Genesis
 // GatewayModuleGenesisStateWithAddresses generates a GenesisState object with
 // a gateway list full of gateways with the given addresses.
 // It returns the populated GenesisState object.
-func GatewayModuleGenesisStateWithAddresses(t *testing.T, addresses []string) *gatewaytypes.GenesisState {
+func GatewayModuleGenesisStateWithAddresses(t *testing.T, addresses []string) *gateway.GenesisState {
 	t.Helper()
-	state := gatewaytypes.DefaultGenesis()
+	state := gateway.DefaultGenesis()
 	for _, addr := range addresses {
-		gateway := gatewaytypes.Gateway{
+		gateway := gateway.Gateway{
 			Address: addr,
 			Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(10000)},
 		}
@@ -228,10 +228,10 @@ func GatewayModuleGenesisStateWithAddresses(t *testing.T, addresses []string) *g
 
 // ProofModuleGenesisStateWithClaims generates a GenesisState object with the
 // given claims. It returns the populated GenesisState object.
-func ProofModuleGenesisStateWithClaims(t *testing.T, claims []prooftypes.Claim) *prooftypes.GenesisState {
+func ProofModuleGenesisStateWithClaims(t *testing.T, claims []proof.Claim) *proof.GenesisState {
 	t.Helper()
 
-	state := prooftypes.DefaultGenesis()
+	state := proof.DefaultGenesis()
 	state.ClaimList = claims
 
 	return state

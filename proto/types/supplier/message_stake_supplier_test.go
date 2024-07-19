@@ -7,7 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 	"github.com/pokt-network/poktroll/testutil/sample"
 )
 
@@ -15,16 +15,16 @@ import (
 // It can be simplified by splitting it into smaller tests where the common
 // fields don't need to be explicitly specified from test to test.
 func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
-	defaultServicesList := []*sharedtypes.SupplierServiceConfig{
+	defaultServicesList := []*shared.SupplierServiceConfig{
 		{
-			Service: &sharedtypes.Service{
+			Service: &shared.Service{
 				Id: "svcId1",
 			},
-			Endpoints: []*sharedtypes.SupplierEndpoint{
+			Endpoints: []*shared.SupplierEndpoint{
 				{
 					Url:     "http://localhost:8081",
-					RpcType: sharedtypes.RPCType_JSON_RPC,
-					Configs: make([]*sharedtypes.ConfigOption, 0),
+					RpcType: shared.RPCType_JSON_RPC,
+					Configs: make([]*shared.ConfigOption, 0),
 				},
 			},
 		}}
@@ -101,28 +101,28 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 			msg: MsgStakeSupplier{
 				Address: sample.AccAddress(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
-				Services: []*sharedtypes.SupplierServiceConfig{
+				Services: []*shared.SupplierServiceConfig{
 					{
-						Service: &sharedtypes.Service{
+						Service: &shared.Service{
 							Id: "svcId1",
 						},
-						Endpoints: []*sharedtypes.SupplierEndpoint{
+						Endpoints: []*shared.SupplierEndpoint{
 							{
 								Url:     "http://localhost:8081",
-								RpcType: sharedtypes.RPCType_JSON_RPC,
-								Configs: make([]*sharedtypes.ConfigOption, 0),
+								RpcType: shared.RPCType_JSON_RPC,
+								Configs: make([]*shared.ConfigOption, 0),
 							},
 						},
 					},
 					{
-						Service: &sharedtypes.Service{
+						Service: &shared.Service{
 							Id: "svcId2",
 						},
-						Endpoints: []*sharedtypes.SupplierEndpoint{
+						Endpoints: []*shared.SupplierEndpoint{
 							{
 								Url:     "http://localhost:8082",
-								RpcType: sharedtypes.RPCType_GRPC,
-								Configs: make([]*sharedtypes.ConfigOption, 0),
+								RpcType: shared.RPCType_GRPC,
+								Configs: make([]*shared.ConfigOption, 0),
 							},
 						},
 					},
@@ -143,7 +143,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 			msg: MsgStakeSupplier{
 				Address:  sample.AccAddress(),
 				Stake:    &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
-				Services: []*sharedtypes.SupplierServiceConfig{},
+				Services: []*shared.SupplierServiceConfig{},
 			},
 			expectedErr: ErrSupplierInvalidServiceConfig,
 		},
@@ -152,16 +152,16 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 			msg: MsgStakeSupplier{
 				Address: sample.AccAddress(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
-				Services: []*sharedtypes.SupplierServiceConfig{
+				Services: []*shared.SupplierServiceConfig{
 					{
-						Service: &sharedtypes.Service{
+						Service: &shared.Service{
 							Id: "TooLongId1234567890",
 						},
-						Endpoints: []*sharedtypes.SupplierEndpoint{
+						Endpoints: []*shared.SupplierEndpoint{
 							{
 								Url:     "http://localhost:8080",
-								RpcType: sharedtypes.RPCType_JSON_RPC,
-								Configs: make([]*sharedtypes.ConfigOption, 0),
+								RpcType: shared.RPCType_JSON_RPC,
+								Configs: make([]*shared.ConfigOption, 0),
 							},
 						},
 					},
@@ -174,17 +174,17 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 			msg: MsgStakeSupplier{
 				Address: sample.AccAddress(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
-				Services: []*sharedtypes.SupplierServiceConfig{
+				Services: []*shared.SupplierServiceConfig{
 					{
-						Service: &sharedtypes.Service{
+						Service: &shared.Service{
 							Id:   "123",
 							Name: "abcdefghijklmnopqrstuvwxyzab-abcdefghijklmnopqrstuvwxyzab",
 						},
-						Endpoints: []*sharedtypes.SupplierEndpoint{
+						Endpoints: []*shared.SupplierEndpoint{
 							{
 								Url:     "http://localhost:8080",
-								RpcType: sharedtypes.RPCType_JSON_RPC,
-								Configs: make([]*sharedtypes.ConfigOption, 0),
+								RpcType: shared.RPCType_JSON_RPC,
+								Configs: make([]*shared.ConfigOption, 0),
 							},
 						},
 					},
@@ -197,16 +197,16 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 			msg: MsgStakeSupplier{
 				Address: sample.AccAddress(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
-				Services: []*sharedtypes.SupplierServiceConfig{
+				Services: []*shared.SupplierServiceConfig{
 					{
-						Service: &sharedtypes.Service{
+						Service: &shared.Service{
 							Id: "12 45 !",
 						},
-						Endpoints: []*sharedtypes.SupplierEndpoint{
+						Endpoints: []*shared.SupplierEndpoint{
 							{
 								Url:     "http://localhost:8080",
-								RpcType: sharedtypes.RPCType_JSON_RPC,
-								Configs: make([]*sharedtypes.ConfigOption, 0),
+								RpcType: shared.RPCType_JSON_RPC,
+								Configs: make([]*shared.ConfigOption, 0),
 							},
 						},
 					},
@@ -219,17 +219,17 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 			msg: MsgStakeSupplier{
 				Address: sample.AccAddress(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
-				Services: []*sharedtypes.SupplierServiceConfig{
+				Services: []*shared.SupplierServiceConfig{
 					{
-						Service: &sharedtypes.Service{
+						Service: &shared.Service{
 							Id:   "svcId",
 							Name: "name",
 						},
-						Endpoints: []*sharedtypes.SupplierEndpoint{
+						Endpoints: []*shared.SupplierEndpoint{
 							{
 								// Url explicitly omitted
-								RpcType: sharedtypes.RPCType_JSON_RPC,
-								Configs: make([]*sharedtypes.ConfigOption, 0),
+								RpcType: shared.RPCType_JSON_RPC,
+								Configs: make([]*shared.ConfigOption, 0),
 							},
 						},
 					},
@@ -242,17 +242,17 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 			msg: MsgStakeSupplier{
 				Address: sample.AccAddress(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
-				Services: []*sharedtypes.SupplierServiceConfig{
+				Services: []*shared.SupplierServiceConfig{
 					{
-						Service: &sharedtypes.Service{
+						Service: &shared.Service{
 							Id:   "svcId",
 							Name: "name",
 						},
-						Endpoints: []*sharedtypes.SupplierEndpoint{
+						Endpoints: []*shared.SupplierEndpoint{
 							{
 								Url:     "I am not a valid URL",
-								RpcType: sharedtypes.RPCType_JSON_RPC,
-								Configs: make([]*sharedtypes.ConfigOption, 0),
+								RpcType: shared.RPCType_JSON_RPC,
+								Configs: make([]*shared.ConfigOption, 0),
 							},
 						},
 					},
@@ -265,17 +265,17 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 			msg: MsgStakeSupplier{
 				Address: sample.AccAddress(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
-				Services: []*sharedtypes.SupplierServiceConfig{
+				Services: []*shared.SupplierServiceConfig{
 					{
-						Service: &sharedtypes.Service{
+						Service: &shared.Service{
 							Id:   "svcId",
 							Name: "name",
 						},
-						Endpoints: []*sharedtypes.SupplierEndpoint{
+						Endpoints: []*shared.SupplierEndpoint{
 							{
 								Url: "http://localhost:8080",
 								// RpcType explicitly omitted,
-								Configs: make([]*sharedtypes.ConfigOption, 0),
+								Configs: make([]*shared.ConfigOption, 0),
 							},
 						},
 					},

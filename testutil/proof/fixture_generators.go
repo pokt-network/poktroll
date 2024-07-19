@@ -9,8 +9,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	prooftypes "github.com/pokt-network/poktroll/proto/types/proof"
-	sessiontypes "github.com/pokt-network/poktroll/proto/types/session"
-	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/session"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 	testsession "github.com/pokt-network/poktroll/testutil/session"
 )
 
@@ -19,9 +19,9 @@ import (
 func BaseClaim(appAddr, supplierAddr string, sum uint64) prooftypes.Claim {
 	return prooftypes.Claim{
 		SupplierAddress: supplierAddr,
-		SessionHeader: &sessiontypes.SessionHeader{
+		SessionHeader: &session.SessionHeader{
 			ApplicationAddress: appAddr,
-			Service: &sharedtypes.Service{
+			Service: &shared.Service{
 				Id:   "svc1",
 				Name: "svcName1",
 			},

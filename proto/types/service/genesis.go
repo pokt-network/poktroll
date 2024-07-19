@@ -1,11 +1,11 @@
 package service
 
-import sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
+import "github.com/pokt-network/poktroll/proto/types/shared"
 
 // DefaultGenesis returns the default genesis state
 func DefaultGenesis() *GenesisState {
 	return &GenesisState{
-		ServiceList: []sharedtypes.Service{},
+		ServiceList: []shared.Service{},
 		// this line is used by starport scaffolding # genesis/types/default
 		Params: DefaultParams(),
 	}

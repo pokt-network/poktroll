@@ -8,8 +8,8 @@ import (
 
 	"github.com/golang/mock/gomock"
 
-	sessiontypes "github.com/pokt-network/poktroll/proto/types/session"
-	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/session"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 	testsession "github.com/pokt-network/poktroll/testutil/session"
 )
@@ -20,10 +20,10 @@ var blockHashBz []byte
 // sessionsMap is a map of: sessionId -> Session.
 // If a sessionId is not present in the map, it implies we have not encountered
 // that session yet.
-var sessionsMap map[string]*sessiontypes.Session
+var sessionsMap map[string]*session.Session
 
 func init() {
-	sessionsMap = make(map[string]*sessiontypes.Session)
+	sessionsMap = make(map[string]*session.Session)
 
 	var err error
 	if blockHashBz, err = hex.DecodeString("1B1051B7BF236FEA13EFA65B6BE678514FA5B6EA0AE9A7A4B68D45F95E4F18E0"); err != nil {
@@ -46,7 +46,7 @@ func NewTestSessionQueryClient(
 			address string,
 			serviceId string,
 			blockHeight int64,
-		) (session *sessiontypes.Session, err error) {
+		) (session *session.Session, err error) {
 			sessionId, _ := testsession.GetSessionIdWithDefaultParams(address, serviceId, blockHashBz, blockHeight)
 
 			session, ok := sessionsMap[sessionId]
@@ -74,22 +74,22 @@ func AddToExistingSessions(
 
 	sessionId, _ := testsession.GetSessionIdWithDefaultParams(appAddress, serviceId, blockHashBz, blockHeight)
 
-	session := sessiontypes.Session{
-		Header: &sessiontypes.SessionHeader{
-			Service:                 &sharedtypes.Service{Id: serviceId},
+	session := session.Session{
+		Header: &session.SessionHeader{
+			Service:                 &shared.Service{Id: serviceId},
 			ApplicationAddress:      appAddress,
 			SessionId:               sessionId,
 			SessionStartBlockHeight: testsession.GetSessionStartHeightWithDefaultParams(blockHeight),
 			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(blockHeight),
 		},
-		NumBlocksPerSession: sharedtypes.DefaultNumBlocksPerSession,
+		NumBlocksPerSession: shared.DefaultNumBlocksPerSession,
 		SessionNumber:       testsession.GetSessionNumberWithDefaultParams(blockHeight),
 		SessionId:           sessionId,
-		Suppliers:           []*sharedtypes.Supplier{},
+		Suppliers:           []*shared.Supplier{},
 	}
 
 	for _, supplierAddress := range suppliersAddress {
-		supplier := &sharedtypes.Supplier{Address: supplierAddress}
+		supplier := &shared.Supplier{Address: supplierAddress}
 		session.Suppliers = append(session.Suppliers, supplier)
 	}
 

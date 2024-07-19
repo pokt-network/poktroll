@@ -22,7 +22,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/keyring"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
 	"github.com/pokt-network/poktroll/pkg/either"
-	apptypes "github.com/pokt-network/poktroll/proto/types/application"
+	"github.com/pokt-network/poktroll/proto/types/application"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/testclient"
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
@@ -98,7 +98,7 @@ func TestTxClient_SignAndBroadcast_Succeeds(t *testing.T) {
 
 	// Construct a valid (arbitrary) message to sign, encode, and broadcast.
 	appStake := types.NewCoin("upokt", math.NewInt(1000000))
-	appStakeMsg := &apptypes.MsgStakeApplication{
+	appStakeMsg := &application.MsgStakeApplication{
 		Address:  signingKeyAddr.String(),
 		Stake:    &appStake,
 		Services: client.NewTestApplicationServiceConfig(testServiceIdPrefix, 2),
@@ -257,7 +257,7 @@ func TestTxClient_SignAndBroadcast_SyncError(t *testing.T) {
 	// Construct an invalid (arbitrary) message to sign, encode, and broadcast.
 	signingAddr, err := signingKey.GetAddress()
 	require.NoError(t, err)
-	appStakeMsg := &apptypes.MsgStakeApplication{
+	appStakeMsg := &application.MsgStakeApplication{
 		// Providing address to avoid panic from #GetSigners().
 		Address: signingAddr.String(),
 		Stake:   nil,
@@ -331,7 +331,7 @@ $ go test -v -count=1 -run TestTxClient_SignAndBroadcast_CheckTxError ./pkg/clie
 
 	// Construct a valid (arbitrary) message to sign, encode, and broadcast.
 	appStake := types.NewCoin("upokt", math.NewInt(1000000))
-	appStakeMsg := &apptypes.MsgStakeApplication{
+	appStakeMsg := &application.MsgStakeApplication{
 		Address:  signingKeyAddr.String(),
 		Stake:    &appStake,
 		Services: client.NewTestApplicationServiceConfig(testServiceIdPrefix, 2),
@@ -399,7 +399,7 @@ func TestTxClient_SignAndBroadcast_Timeout(t *testing.T) {
 
 	// Construct a valid (arbitrary) message to sign, encode, and broadcast.
 	appStake := types.NewCoin("upokt", math.NewInt(1000000))
-	appStakeMsg := &apptypes.MsgStakeApplication{
+	appStakeMsg := &application.MsgStakeApplication{
 		Address:  signingKeyAddr.String(),
 		Stake:    &appStake,
 		Services: client.NewTestApplicationServiceConfig(testServiceIdPrefix, 2),

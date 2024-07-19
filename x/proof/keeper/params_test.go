@@ -7,13 +7,13 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	prooftypes "github.com/pokt-network/poktroll/proto/types/proof"
+	"github.com/pokt-network/poktroll/proto/types/proof"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 )
 
 func TestGetParams(t *testing.T) {
 	k, ctx := keepertest.ProofKeeper(t)
-	params := prooftypes.DefaultParams()
+	params := proof.DefaultParams()
 
 	require.NoError(t, k.SetParams(ctx, params))
 	require.EqualValues(t, params, k.GetParams(ctx))
@@ -27,7 +27,7 @@ func TestParams_ValidateMinRelayDifficulty(t *testing.T) {
 		{
 			desc:                   "invalid type",
 			minRelayDifficultyBits: int64(-1),
-			expectedErr:            prooftypes.ErrProofParamInvalid.Wrapf("invalid parameter type: int64"),
+			expectedErr:            proof.ErrProofParamInvalid.Wrapf("invalid parameter type: int64"),
 		},
 		{
 			desc:                   "valid MinRelayDifficultyBits",
@@ -37,7 +37,7 @@ func TestParams_ValidateMinRelayDifficulty(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			err := prooftypes.ValidateMinRelayDifficultyBits(tt.minRelayDifficultyBits)
+			err := proof.ValidateMinRelayDifficultyBits(tt.minRelayDifficultyBits)
 			if tt.expectedErr != nil {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), tt.expectedErr.Error())
@@ -57,17 +57,17 @@ func TestParams_ValidateProofRequestProbability(t *testing.T) {
 		{
 			desc:                    "invalid type",
 			proofRequestProbability: "invalid",
-			expectedErr:             prooftypes.ErrProofParamInvalid.Wrapf("invalid parameter type: %T", "invalid"),
+			expectedErr:             proof.ErrProofParamInvalid.Wrapf("invalid parameter type: %T", "invalid"),
 		},
 		{
 			desc:                    "ProofRequestProbability less than zero",
 			proofRequestProbability: float32(-0.25),
-			expectedErr:             prooftypes.ErrProofParamInvalid.Wrapf("invalid ProofRequestProbability: (%v)", float32(-0.25)),
+			expectedErr:             proof.ErrProofParamInvalid.Wrapf("invalid ProofRequestProbability: (%v)", float32(-0.25)),
 		},
 		{
 			desc:                    "ProofRequestProbability greater than one",
 			proofRequestProbability: float32(1.1),
-			expectedErr:             prooftypes.ErrProofParamInvalid.Wrapf("invalid ProofRequestProbability: (%v)", float32(1.1)),
+			expectedErr:             proof.ErrProofParamInvalid.Wrapf("invalid ProofRequestProbability: (%v)", float32(1.1)),
 		},
 		{
 			desc:                    "valid ProofRequestProbability",
@@ -77,7 +77,7 @@ func TestParams_ValidateProofRequestProbability(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			err := prooftypes.ValidateProofRequestProbability(tt.proofRequestProbability)
+			err := proof.ValidateProofRequestProbability(tt.proofRequestProbability)
 			if tt.expectedErr != nil {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), tt.expectedErr.Error())
@@ -97,7 +97,7 @@ func TestParams_ValidateProofRequirementThreshold(t *testing.T) {
 		{
 			desc:                      "invalid type",
 			proofRequirementThreshold: int64(-1),
-			expectedErr:               prooftypes.ErrProofParamInvalid.Wrapf("invalid parameter type: int64"),
+			expectedErr:               proof.ErrProofParamInvalid.Wrapf("invalid parameter type: int64"),
 		},
 		{
 			desc:                      "valid ProofRequirementThreshold",
@@ -107,7 +107,7 @@ func TestParams_ValidateProofRequirementThreshold(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			err := prooftypes.ValidateProofRequirementThreshold(tt.proofRequirementThreshold)
+			err := proof.ValidateProofRequirementThreshold(tt.proofRequirementThreshold)
 			if tt.expectedErr != nil {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), tt.expectedErr.Error())
@@ -129,32 +129,32 @@ func TestParams_ValidateProofMissingPenalty(t *testing.T) {
 		{
 			desc:                "invalid type",
 			proofMissingPenalty: int64(-1),
-			expectedErr:         prooftypes.ErrProofParamInvalid.Wrap("invalid parameter type: int64"),
+			expectedErr:         proof.ErrProofParamInvalid.Wrap("invalid parameter type: int64"),
 		},
 		{
 			desc:                "invalid denomination",
 			proofMissingPenalty: &invalidDenomCoin,
-			expectedErr:         prooftypes.ErrProofParamInvalid.Wrap("invalid coin denom: invalid_denom"),
+			expectedErr:         proof.ErrProofParamInvalid.Wrap("invalid coin denom: invalid_denom"),
 		},
 		{
 			desc:                "missing",
 			proofMissingPenalty: nil,
-			expectedErr:         prooftypes.ErrProofParamInvalid.Wrap("invalid parameter type: <nil>"),
+			expectedErr:         proof.ErrProofParamInvalid.Wrap("invalid parameter type: <nil>"),
 		},
 		{
 			desc:                "missing (typed)",
 			proofMissingPenalty: (*cosmostypes.Coin)(nil),
-			expectedErr:         prooftypes.ErrProofParamInvalid.Wrap("missing proof_missing_penalty"),
+			expectedErr:         proof.ErrProofParamInvalid.Wrap("missing proof_missing_penalty"),
 		},
 		{
 			desc:                "valid",
-			proofMissingPenalty: &prooftypes.DefaultProofMissingPenalty,
+			proofMissingPenalty: &proof.DefaultProofMissingPenalty,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			err := prooftypes.ValidateProofMissingPenalty(tt.proofMissingPenalty)
+			err := proof.ValidateProofMissingPenalty(tt.proofMissingPenalty)
 			if tt.expectedErr != nil {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), tt.expectedErr.Error())

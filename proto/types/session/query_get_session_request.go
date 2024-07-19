@@ -3,7 +3,7 @@ package session
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 	sharedhelpers "github.com/pokt-network/poktroll/x/shared/helpers"
 )
 
@@ -13,7 +13,7 @@ import (
 func NewQueryGetSessionRequest(appAddress, serviceId string, blockHeight int64) *QueryGetSessionRequest {
 	return &QueryGetSessionRequest{
 		ApplicationAddress: appAddress,
-		Service: &sharedtypes.Service{
+		Service: &shared.Service{
 			Id: serviceId,
 		},
 		BlockHeight: blockHeight,

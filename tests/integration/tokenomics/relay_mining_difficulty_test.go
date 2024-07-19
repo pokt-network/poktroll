@@ -11,10 +11,10 @@ import (
 
 	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
-	prooftypes "github.com/pokt-network/poktroll/proto/types/proof"
-	sessiontypes "github.com/pokt-network/poktroll/proto/types/session"
+	"github.com/pokt-network/poktroll/proto/types/proof"
+	"github.com/pokt-network/poktroll/proto/types/session"
 	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
-	tokenomicstypes "github.com/pokt-network/poktroll/proto/types/tokenomics"
+	"github.com/pokt-network/poktroll/proto/types/tokenomics"
 	testutilevents "github.com/pokt-network/poktroll/testutil/events"
 	"github.com/pokt-network/poktroll/testutil/integration"
 	testutil "github.com/pokt-network/poktroll/testutil/integration"
@@ -68,7 +68,7 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	integrationApp.NextBlocks(t, int(numBlocksUntilClaimWindowOpenHeight))
 
 	// Construct a new create claim message and commit it.
-	createClaimMsg := prooftypes.MsgCreateClaim{
+	createClaimMsg := proof.MsgCreateClaim{
 		SupplierAddress: integrationApp.DefaultSupplier.Address,
 		SessionHeader:   session.Header,
 		RootHash:        trie.Root(),
@@ -87,7 +87,7 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	integrationApp.NextBlocks(t, int(numBlocksUntilProofWindowOpenHeight))
 
 	// Construct a new proof message and commit it
-	createProofMsg := prooftypes.MsgSubmitProof{
+	createProofMsg := proof.MsgSubmitProof{
 		SupplierAddress: integrationApp.DefaultSupplier.Address,
 		SessionHeader:   session.Header,
 		Proof:           getProof(t, trie, proofPathSeedBlockHash, session.GetHeader().GetSessionId()),
@@ -114,7 +114,7 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	events := integrationApp.GetSdkCtx().EventManager().Events()
 	require.Equalf(t, expectedNumEvents, len(events), "unexpected number of total events")
 
-	relayMiningEvents := testutilevents.FilterEvents[*tokenomicstypes.EventRelayMiningDifficultyUpdated](t,
+	relayMiningEvents := testutilevents.FilterEvents[*tokenomics.EventRelayMiningDifficultyUpdated](t,
 		events, "poktroll.tokenomics.EventRelayMiningDifficultyUpdated")
 	require.Len(t, relayMiningEvents, 1, "unexpected number of relay mining difficulty updated events")
 	relayMiningEvent := relayMiningEvents[0]
@@ -149,11 +149,11 @@ func getSharedParams(t *testing.T, integrationApp *testutil.App) sharedtypes.Par
 }
 
 // getSession returns the current session for the default application and service.
-func getSession(t *testing.T, integrationApp *testutil.App) *sessiontypes.Session {
+func getSession(t *testing.T, integrationApp *testutil.App) *session.Session {
 	t.Helper()
 
-	sessionQueryClient := sessiontypes.NewQueryClient(integrationApp.QueryHelper())
-	getSessionReq := sessiontypes.QueryGetSessionRequest{
+	sessionQueryClient := session.NewQueryClient(integrationApp.QueryHelper())
+	getSessionReq := session.QueryGetSessionRequest{
 		ApplicationAddress: integrationApp.DefaultApplication.Address,
 		Service:            integrationApp.DefaultService,
 		BlockHeight:        integrationApp.GetSdkCtx().BlockHeight(),
@@ -169,7 +169,7 @@ func getSession(t *testing.T, integrationApp *testutil.App) *sessiontypes.Sessio
 func prepareSMST(
 	t *testing.T, ctx context.Context,
 	integrationApp *testutil.App,
-	session *sessiontypes.Session,
+	session *session.Session,
 ) *smt.SMST {
 	t.Helper()
 

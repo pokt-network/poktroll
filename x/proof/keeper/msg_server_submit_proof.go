@@ -20,7 +20,7 @@ import (
 	"github.com/pokt-network/poktroll/proto/types/proof"
 	"github.com/pokt-network/poktroll/proto/types/service"
 	"github.com/pokt-network/poktroll/proto/types/session"
-	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 	"github.com/pokt-network/poktroll/telemetry"
 )
 
@@ -293,7 +293,7 @@ func (k msgServer) SubmitProof(
 	if err = sdkCtx.EventManager().EmitTypedEvent(proofUpsertEvent); err != nil {
 		return nil, status.Error(
 			codes.Internal,
-			sharedtypes.ErrSharedEmitEvent.Wrapf(
+			shared.ErrSharedEmitEvent.Wrapf(
 				"failed to emit event type %T: %v",
 				proofUpsertEvent,
 				err,

@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/proto/types/proof"
-	sessiontypes "github.com/pokt-network/poktroll/proto/types/session"
+	"github.com/pokt-network/poktroll/proto/types/session"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
 	"github.com/pokt-network/poktroll/testutil/sample"
@@ -24,7 +24,7 @@ func createNClaims(keeper keeper.Keeper, ctx context.Context, n int) []proof.Cla
 
 	for i := range claims {
 		claims[i].SupplierAddress = sample.AccAddress()
-		claims[i].SessionHeader = &sessiontypes.SessionHeader{
+		claims[i].SessionHeader = &session.SessionHeader{
 			SessionId:             fmt.Sprintf("session-%d", i),
 			SessionEndBlockHeight: int64(i),
 		}

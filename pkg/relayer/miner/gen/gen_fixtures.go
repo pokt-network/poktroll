@@ -22,7 +22,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/miner"
-	servicetypes "github.com/pokt-network/poktroll/proto/types/service"
+	"github.com/pokt-network/poktroll/proto/types/service"
 )
 
 const (
@@ -142,9 +142,9 @@ func genRandomizedMinedRelayFixtures(
 			}
 
 			// Populate a relay with the minimally sufficient randomized data.
-			relay := servicetypes.Relay{
-				Req: &servicetypes.RelayRequest{
-					Meta: &servicetypes.RelayRequestMetadata{
+			relay := service.Relay{
+				Req: &service.RelayRequest{
+					Meta: &service.RelayRequestMetadata{
 						Signature: randBz,
 					},
 					Payload: nil,

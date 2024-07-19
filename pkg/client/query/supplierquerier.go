@@ -7,8 +7,8 @@ import (
 	"github.com/cosmos/gogoproto/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/client"
-	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
-	suppliertypes "github.com/pokt-network/poktroll/proto/types/supplier"
+	"github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/supplier"
 )
 
 // supplierQuerier is a wrapper around the suppliertypes.QueryClient that enables the
@@ -16,7 +16,7 @@ import (
 // which returns an sharedtypes.Supplier struct
 type supplierQuerier struct {
 	clientConn      grpc.ClientConn
-	supplierQuerier suppliertypes.QueryClient
+	supplierQuerier supplier.QueryClient
 }
 
 // NewSupplierQuerier returns a new instance of a client.SupplierQueryClient by
@@ -34,7 +34,7 @@ func NewSupplierQuerier(deps depinject.Config) (client.SupplierQueryClient, erro
 		return nil, err
 	}
 
-	supq.supplierQuerier = suppliertypes.NewQueryClient(supq.clientConn)
+	supq.supplierQuerier = supplier.NewQueryClient(supq.clientConn)
 
 	return supq, nil
 }
@@ -43,11 +43,11 @@ func NewSupplierQuerier(deps depinject.Config) (client.SupplierQueryClient, erro
 func (supq *supplierQuerier) GetSupplier(
 	ctx context.Context,
 	address string,
-) (sharedtypes.Supplier, error) {
-	req := &suppliertypes.QueryGetSupplierRequest{Address: address}
+) (shared.Supplier, error) {
+	req := &supplier.QueryGetSupplierRequest{Address: address}
 	res, err := supq.supplierQuerier.Supplier(ctx, req)
 	if err != nil {
-		return sharedtypes.Supplier{}, suppliertypes.ErrSupplierNotFound.Wrapf(
+		return shared.Supplier{}, supplier.ErrSupplierNotFound.Wrapf(
 			"address: %s [%v]",
 			address, err,
 		)

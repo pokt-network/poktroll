@@ -4,12 +4,12 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	sessiontypes "github.com/pokt-network/poktroll/proto/types/session"
+	"github.com/pokt-network/poktroll/proto/types/session"
 )
 
 var _ sdk.Msg = (*MsgSubmitProof)(nil)
 
-func NewMsgSubmitProof(supplierAddress string, sessionHeader *sessiontypes.SessionHeader, proof []byte) *MsgSubmitProof {
+func NewMsgSubmitProof(supplierAddress string, sessionHeader *session.SessionHeader, proof []byte) *MsgSubmitProof {
 	return &MsgSubmitProof{
 		SupplierAddress: supplierAddress,
 		SessionHeader:   sessionHeader,

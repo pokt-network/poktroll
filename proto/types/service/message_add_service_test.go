@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 	"github.com/pokt-network/poktroll/testutil/sample"
 )
 
@@ -26,21 +26,21 @@ func TestMsgAddService_ValidateBasic(t *testing.T) {
 			desc: "valid service supplier address - no service ID",
 			msg: MsgAddService{
 				Address: sample.AccAddress(),
-				Service: sharedtypes.Service{Name: "service name"}, // ID intentionally omitted
+				Service: shared.Service{Name: "service name"}, // ID intentionally omitted
 			},
 			expectedErr: ErrServiceMissingID,
 		}, {
 			desc: "valid service supplier address - no service name",
 			msg: MsgAddService{
 				Address: sample.AccAddress(),
-				Service: sharedtypes.Service{Id: "svc1"}, // Name intentionally omitted
+				Service: shared.Service{Id: "svc1"}, // Name intentionally omitted
 			},
 			expectedErr: ErrServiceMissingName,
 		}, {
 			desc: "valid service supplier address and service",
 			msg: MsgAddService{
 				Address: sample.AccAddress(),
-				Service: sharedtypes.Service{Id: "svc1", Name: "service name"},
+				Service: shared.Service{Id: "svc1", Name: "service name"},
 			},
 			expectedErr: nil,
 		},

@@ -5,41 +5,41 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	types "github.com/pokt-network/poktroll/proto/types/service"
-	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/service"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 )
 
 func TestGenesisState_Validate(t *testing.T) {
-	svc1 := &sharedtypes.Service{
+	svc1 := &shared.Service{
 		Id:   "svcId1",
 		Name: "svcName1",
 	}
 
-	svc2 := &sharedtypes.Service{
+	svc2 := &shared.Service{
 		Id:   "svcId2",
 		Name: "svcName2",
 	}
 
-	svc3 := &sharedtypes.Service{
+	svc3 := &shared.Service{
 		Id:   "svcId3",
 		Name: svc1.Name,
 	}
 
 	tests := []struct {
 		desc        string
-		genState    *types.GenesisState
+		genState    *service.GenesisState
 		expectedErr error
 	}{
 		{
 			desc:        "default is valid",
-			genState:    types.DefaultGenesis(),
+			genState:    service.DefaultGenesis(),
 			expectedErr: nil,
 		},
 		{
 			desc: "valid genesis state",
-			genState: &types.GenesisState{
-				Params: types.DefaultParams(),
-				ServiceList: []sharedtypes.Service{
+			genState: &service.GenesisState{
+				Params: service.DefaultParams(),
+				ServiceList: []shared.Service{
 					*svc1, *svc2,
 				},
 				// this line is used by starport scaffolding # types/genesis/validField
@@ -48,35 +48,35 @@ func TestGenesisState_Validate(t *testing.T) {
 		},
 		{
 			desc: "invalid - duplicate service ID",
-			genState: &types.GenesisState{
-				Params: types.DefaultParams(),
-				ServiceList: []sharedtypes.Service{
+			genState: &service.GenesisState{
+				Params: service.DefaultParams(),
+				ServiceList: []shared.Service{
 					*svc1, *svc1,
 				},
 			},
-			expectedErr: types.ErrServiceDuplicateIndex,
+			expectedErr: service.ErrServiceDuplicateIndex,
 		},
 		{
 			desc: "invalid - duplicate service name",
-			genState: &types.GenesisState{
-				Params: types.DefaultParams(),
-				ServiceList: []sharedtypes.Service{
+			genState: &service.GenesisState{
+				Params: service.DefaultParams(),
+				ServiceList: []shared.Service{
 					*svc1, *svc3,
 				},
 			},
-			expectedErr: types.ErrServiceDuplicateIndex,
+			expectedErr: service.ErrServiceDuplicateIndex,
 		},
 		{
 			desc: "invalid - invalid add service fee parameter (below minimum)",
-			genState: &types.GenesisState{
-				Params: types.Params{
+			genState: &service.GenesisState{
+				Params: service.Params{
 					AddServiceFee: 999999, // 0.999999 POKT
 				},
-				ServiceList: []sharedtypes.Service{
+				ServiceList: []shared.Service{
 					*svc1, *svc2,
 				},
 			},
-			expectedErr: types.ErrServiceInvalidServiceFee,
+			expectedErr: service.ErrServiceInvalidServiceFee,
 		},
 		// this line is used by starport scaffolding # types/genesis/testcase
 	}

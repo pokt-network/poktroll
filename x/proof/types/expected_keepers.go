@@ -7,19 +7,19 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	apptypes "github.com/pokt-network/poktroll/proto/types/application"
-	sessiontypes "github.com/pokt-network/poktroll/proto/types/session"
-	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/application"
+	"github.com/pokt-network/poktroll/proto/types/session"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 )
 
 type SessionKeeper interface {
-	GetSession(context.Context, *sessiontypes.QueryGetSessionRequest) (*sessiontypes.QueryGetSessionResponse, error)
+	GetSession(context.Context, *session.QueryGetSessionRequest) (*session.QueryGetSessionResponse, error)
 	GetBlockHash(ctx context.Context, height int64) []byte
 	StoreBlockHash(ctx context.Context)
 }
 
 type SupplierKeeper interface {
-	SetSupplier(context.Context, sharedtypes.Supplier)
+	SetSupplier(context.Context, shared.Supplier)
 }
 
 // AccountKeeper defines the expected interface for the Account module.
@@ -44,12 +44,12 @@ type BankKeeper interface {
 
 // ApplicationKeeper defines the expected application keeper to retrieve applications
 type ApplicationKeeper interface {
-	GetApplication(ctx context.Context, address string) (app apptypes.Application, found bool)
-	GetAllApplications(ctx context.Context) []apptypes.Application
-	SetApplication(context.Context, apptypes.Application)
+	GetApplication(ctx context.Context, address string) (app application.Application, found bool)
+	GetAllApplications(ctx context.Context) []application.Application
+	SetApplication(context.Context, application.Application)
 }
 
 // SharedKeeper defines the expected interface needed to retrieve shared information.
 type SharedKeeper interface {
-	GetParams(ctx context.Context) sharedtypes.Params
+	GetParams(ctx context.Context) shared.Params
 }

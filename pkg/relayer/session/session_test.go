@@ -17,8 +17,8 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/pkg/relayer"
-	"github.com/pokt-network/poktroll/pkg/relayer/session"
-	sessiontypes "github.com/pokt-network/poktroll/proto/types/session"
+	relayersessions "github.com/pokt-network/poktroll/pkg/relayer/session"
+	"github.com/pokt-network/poktroll/proto/types/session"
 	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/sample"
@@ -38,11 +38,11 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 		_, ctx         = testpolylog.NewLoggerWithCtx(context.Background(), polyzero.DebugLevel)
 		spec           = smt.NewTrieSpec(sha256.New(), true)
 		emptyBlockHash = make([]byte, spec.PathHasherSize())
-		activeSession  *sessiontypes.Session
+		activeSession  *session.Session
 	)
 
-	activeSession = &sessiontypes.Session{
-		Header: &sessiontypes.SessionHeader{
+	activeSession = &session.Session{
+		Header: &session.SessionHeader{
 			SessionStartBlockHeight: 1,
 			SessionEndBlockHeight:   2,
 		},
@@ -88,7 +88,7 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 	storesDirectoryOpt := testrelayer.WithTempStoresDirectory(t)
 
 	// Create a new relayer sessions manager.
-	relayerSessionsManager, err := session.NewRelayerSessions(ctx, deps, storesDirectoryOpt)
+	relayerSessionsManager, err := relayersessions.NewRelayerSessions(ctx, deps, storesDirectoryOpt)
 	require.NoError(t, err)
 	require.NotNil(t, relayerSessionsManager)
 

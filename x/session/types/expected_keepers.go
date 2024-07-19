@@ -7,8 +7,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	apptypes "github.com/pokt-network/poktroll/proto/types/application"
-	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/application"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 )
 
 // AccountKeeper defines the expected account keeper used for simulations (noalias)
@@ -23,15 +23,15 @@ type BankKeeper interface {
 
 // ApplicationKeeper defines the expected application keeper to retrieve applications
 type ApplicationKeeper interface {
-	GetApplication(ctx context.Context, address string) (app apptypes.Application, found bool)
+	GetApplication(ctx context.Context, address string) (app application.Application, found bool)
 }
 
 // SupplierKeeper defines the expected interface needed to retrieve suppliers
 type SupplierKeeper interface {
-	GetAllSuppliers(ctx context.Context) (suppliers []sharedtypes.Supplier)
+	GetAllSuppliers(ctx context.Context) (suppliers []shared.Supplier)
 }
 
 // SharedKeeper defines the expected interface needed to retrieve shared parameters
 type SharedKeeper interface {
-	GetParams(ctx context.Context) (params sharedtypes.Params)
+	GetParams(ctx context.Context) (params shared.Params)
 }

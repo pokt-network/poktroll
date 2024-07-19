@@ -11,7 +11,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/filter"
 	"github.com/pokt-network/poktroll/pkg/observable/logging"
 	"github.com/pokt-network/poktroll/pkg/relayer"
-	prooftypes "github.com/pokt-network/poktroll/proto/types/proof"
+	"github.com/pokt-network/poktroll/proto/types/proof"
 	"github.com/pokt-network/poktroll/x/shared"
 )
 
@@ -183,7 +183,7 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 		// Map key is the supplier address.
 		claimMsgs := make([]client.MsgCreateClaim, 0)
 		for _, sessionTree := range sessionTrees {
-			claimMsgs = append(claimMsgs, &prooftypes.MsgCreateClaim{
+			claimMsgs = append(claimMsgs, &proof.MsgCreateClaim{
 				RootHash:        sessionTree.GetClaimRoot(),
 				SessionHeader:   sessionTree.GetSessionHeader(),
 				SupplierAddress: sessionTree.GetSupplierAddress().String(),

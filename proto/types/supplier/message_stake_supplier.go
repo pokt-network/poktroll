@@ -3,7 +3,7 @@ package supplier
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 	servicehelpers "github.com/pokt-network/poktroll/x/shared/helpers"
 )
 
@@ -14,7 +14,7 @@ var _ sdk.Msg = (*MsgStakeSupplier)(nil)
 func NewMsgStakeSupplier(
 	address string,
 	stake sdk.Coin,
-	services []*sharedtypes.SupplierServiceConfig,
+	services []*shared.SupplierServiceConfig,
 ) *MsgStakeSupplier {
 	return &MsgStakeSupplier{
 		Address:  address,

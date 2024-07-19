@@ -28,9 +28,9 @@ import (
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer/config"
 	"github.com/pokt-network/poktroll/pkg/signer"
-	servicetypes "github.com/pokt-network/poktroll/proto/types/service"
-	sessiontypes "github.com/pokt-network/poktroll/proto/types/session"
-	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/service"
+	"github.com/pokt-network/poktroll/proto/types/session"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 	testsession "github.com/pokt-network/poktroll/testutil/session"
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
 	"github.com/pokt-network/poktroll/testutil/testclient/testdelegation"
@@ -175,7 +175,7 @@ func WithServicesConfigMap(
 // WithDefaultSupplier creates the default staked supplier for the test
 func WithDefaultSupplier(
 	supplierKeyName string,
-	supplierEndpoints map[string][]*sharedtypes.SupplierEndpoint,
+	supplierEndpoints map[string][]*shared.SupplierEndpoint,
 ) func(*TestBehavior) {
 	return func(test *TestBehavior) {
 		supplierAddress := getAddressFromKeyName(test, supplierKeyName)
@@ -260,7 +260,7 @@ func WithSuccessiveSessions(
 				test.t,
 				appAddress,
 				serviceId,
-				sharedtypes.DefaultNumBlocksPerSession*int64(i),
+				shared.DefaultNumBlocksPerSession*int64(i),
 				sessionSuppliers,
 			)
 		}
@@ -273,7 +273,7 @@ func MarshalAndSend(
 	servicesConfigMap map[string]*config.RelayMinerServerConfig,
 	serviceEndpoint string,
 	serviceId string,
-	request *servicetypes.RelayRequest,
+	request *service.RelayRequest,
 ) (errCode int32, errorMessage string) {
 	var scheme string
 	switch servicesConfigMap[serviceEndpoint].ServerType {
@@ -316,7 +316,7 @@ func GetRelayResponseError(t *testing.T, res *http.Response) (errCode int32, err
 	responseBody, err := io.ReadAll(res.Body)
 	require.NoError(t, err)
 
-	relayResponse := &servicetypes.RelayResponse{}
+	relayResponse := &service.RelayResponse{}
 	err = relayResponse.Unmarshal(responseBody)
 	require.NoError(t, err)
 
@@ -347,7 +347,7 @@ func GetRelayResponseError(t *testing.T, res *http.Response) (errCode int32, err
 // it to sign the relay request
 func GetApplicationRingSignature(
 	t *testing.T,
-	req *servicetypes.RelayRequest,
+	req *service.RelayRequest,
 	appPrivateKey *secp256k1.PrivKey,
 ) []byte {
 	publicKey := appPrivateKey.PubKey()
@@ -410,17 +410,17 @@ func GenerateRelayRequest(
 	blockHeight int64,
 	supplierKeyName string,
 	payload []byte,
-) *servicetypes.RelayRequest {
+) *service.RelayRequest {
 	appAddress := getAddressFromPrivateKey(test, privKey)
 	sessionId, _ := testsession.GetSessionIdWithDefaultParams(appAddress, serviceId, blockHashBz, blockHeight)
 	supplierAddress := getAddressFromKeyName(test, supplierKeyName)
 
-	return &servicetypes.RelayRequest{
-		Meta: servicetypes.RelayRequestMetadata{
-			SessionHeader: &sessiontypes.SessionHeader{
+	return &service.RelayRequest{
+		Meta: service.RelayRequestMetadata{
+			SessionHeader: &session.SessionHeader{
 				ApplicationAddress:      appAddress,
 				SessionId:               string(sessionId[:]),
-				Service:                 &sharedtypes.Service{Id: serviceId},
+				Service:                 &shared.Service{Id: serviceId},
 				SessionStartBlockHeight: testsession.GetSessionStartHeightWithDefaultParams(blockHeight),
 				SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(blockHeight),
 			},

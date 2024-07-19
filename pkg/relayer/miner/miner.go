@@ -13,7 +13,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/filter"
 	"github.com/pokt-network/poktroll/pkg/observable/logging"
 	"github.com/pokt-network/poktroll/pkg/relayer"
-	servicetypes "github.com/pokt-network/poktroll/proto/types/service"
+	"github.com/pokt-network/poktroll/proto/types/service"
 )
 
 var _ relayer.Miner = (*miner)(nil)
@@ -71,7 +71,7 @@ func (mnr *miner) MinedRelays(
 	// NB: must cast back to generic observable type to use with Map.
 	// relayer.RelaysObervable cannot be an alias due to gomock's lack of
 	// support for generic types.
-	relaysObs := observable.Observable[*servicetypes.Relay](servedRelaysObs)
+	relaysObs := observable.Observable[*service.Relay](servedRelaysObs)
 
 	// Map servedRelaysObs to a new observable of an either type, populated with
 	// the minedRelay or an error. It is notified after the relay has been mined
@@ -104,7 +104,7 @@ func (mnr *miner) setDefaults() error {
 // 4. Otherwise, skip the relay.
 func (mnr *miner) mapMineRelay(
 	_ context.Context,
-	relay *servicetypes.Relay,
+	relay *service.Relay,
 ) (_ either.Either[*relayer.MinedRelay], skip bool) {
 	// TODO_TECHDEBT(@red-0ne, #446): Centralize the configuration for the SMT spec.
 	// TODO_TECHDEBT(@red-0ne): marshal using canonical codec.
@@ -112,7 +112,7 @@ func (mnr *miner) mapMineRelay(
 	if err != nil {
 		return either.Error[*relayer.MinedRelay](err), false
 	}
-	relayHash := servicetypes.GetHashFromBytes(relayBz)
+	relayHash := service.GetHashFromBytes(relayBz)
 
 	// The relay IS NOT volume / reward applicable
 	if uint64(protocol.CountHashDifficultyBits(relayHash)) < mnr.relayDifficultyBits {

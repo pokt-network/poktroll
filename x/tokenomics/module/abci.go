@@ -5,7 +5,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	prooftypes "github.com/pokt-network/poktroll/proto/types/proof"
+	"github.com/pokt-network/poktroll/proto/types/proof"
 	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/tokenomics/keeper"
 )
@@ -28,33 +28,33 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) (err error) {
 	// Defer telemetry calls so that they reference the final values the relevant variables.
 	defer func() {
 		telemetry.ClaimCounter(
-			prooftypes.ClaimProofStage_SETTLED,
+			proof.ClaimProofStage_SETTLED,
 			settledResult.NumClaims,
 			err,
 		)
 		telemetry.ClaimRelaysCounter(
-			prooftypes.ClaimProofStage_SETTLED,
+			proof.ClaimProofStage_SETTLED,
 			settledResult.NumRelays,
 			err,
 		)
 		telemetry.ClaimComputeUnitsCounter(
-			prooftypes.ClaimProofStage_SETTLED,
+			proof.ClaimProofStage_SETTLED,
 			settledResult.NumComputeUnits,
 			err,
 		)
 
 		telemetry.ClaimCounter(
-			prooftypes.ClaimProofStage_EXPIRED,
+			proof.ClaimProofStage_EXPIRED,
 			expiredResult.NumClaims,
 			err,
 		)
 		telemetry.ClaimRelaysCounter(
-			prooftypes.ClaimProofStage_EXPIRED,
+			proof.ClaimProofStage_EXPIRED,
 			expiredResult.NumRelays,
 			err,
 		)
 		telemetry.ClaimComputeUnitsCounter(
-			prooftypes.ClaimProofStage_EXPIRED,
+			proof.ClaimProofStage_EXPIRED,
 			expiredResult.NumComputeUnits,
 			err,
 		)

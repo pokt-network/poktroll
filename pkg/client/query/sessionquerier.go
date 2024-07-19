@@ -7,8 +7,8 @@ import (
 	"github.com/cosmos/gogoproto/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/client"
-	sessiontypes "github.com/pokt-network/poktroll/proto/types/session"
-	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/session"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 )
 
 var _ client.SessionQueryClient = (*sessionQuerier)(nil)
@@ -18,7 +18,7 @@ var _ client.SessionQueryClient = (*sessionQuerier)(nil)
 // which returns an sessiontypes.Session struct
 type sessionQuerier struct {
 	clientConn     grpc.ClientConn
-	sessionQuerier sessiontypes.QueryClient
+	sessionQuerier session.QueryClient
 }
 
 // NewSessionQuerier returns a new instance of a client.SessionQueryClient by
@@ -36,7 +36,7 @@ func NewSessionQuerier(deps depinject.Config) (client.SessionQueryClient, error)
 		return nil, err
 	}
 
-	sessq.sessionQuerier = sessiontypes.NewQueryClient(sessq.clientConn)
+	sessq.sessionQuerier = session.NewQueryClient(sessq.clientConn)
 
 	return sessq, nil
 }
@@ -48,9 +48,9 @@ func (sessq *sessionQuerier) GetSession(
 	appAddress string,
 	serviceId string,
 	blockHeight int64,
-) (*sessiontypes.Session, error) {
-	service := &sharedtypes.Service{Id: serviceId}
-	req := &sessiontypes.QueryGetSessionRequest{
+) (*session.Session, error) {
+	service := &shared.Service{Id: serviceId}
+	req := &session.QueryGetSessionRequest{
 		ApplicationAddress: appAddress,
 		Service:            service,
 		BlockHeight:        blockHeight,

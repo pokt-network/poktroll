@@ -8,7 +8,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 )
 
@@ -18,10 +18,10 @@ import (
 //
 // If an address is not present in the map it is then assumed that the supplier does
 // not exist (has not staked)
-var suppliersProvidedServicesMap map[string]map[string][]*sharedtypes.SupplierEndpoint
+var suppliersProvidedServicesMap map[string]map[string][]*shared.SupplierEndpoint
 
 func init() {
-	suppliersProvidedServicesMap = make(map[string]map[string][]*sharedtypes.SupplierEndpoint)
+	suppliersProvidedServicesMap = make(map[string]map[string][]*shared.SupplierEndpoint)
 }
 
 // NewTestSupplierQueryClient creates a mock of the SupplierQueryClient
@@ -37,24 +37,24 @@ func NewTestSupplierQueryClient(
 		DoAndReturn(func(
 			_ context.Context,
 			address string,
-		) (supplier sharedtypes.Supplier, err error) {
+		) (supplier shared.Supplier, err error) {
 			supplierProvidedServices, ok := suppliersProvidedServicesMap[address]
 			if !ok {
-				return sharedtypes.Supplier{}, errors.New("address not found")
+				return shared.Supplier{}, errors.New("address not found")
 			}
 
-			services := []*sharedtypes.SupplierServiceConfig{}
+			services := []*shared.SupplierServiceConfig{}
 
 			for serviceId, providedService := range supplierProvidedServices {
-				serviceConfig := &sharedtypes.SupplierServiceConfig{
-					Service: &sharedtypes.Service{
+				serviceConfig := &shared.SupplierServiceConfig{
+					Service: &shared.Service{
 						Id: serviceId,
 					},
-					Endpoints: []*sharedtypes.SupplierEndpoint{},
+					Endpoints: []*shared.SupplierEndpoint{},
 				}
 
 				for _, endpointConfig := range providedService {
-					endpoint := &sharedtypes.SupplierEndpoint{
+					endpoint := &shared.SupplierEndpoint{
 						Url:     endpointConfig.Url,
 						RpcType: endpointConfig.RpcType,
 					}
@@ -64,7 +64,7 @@ func NewTestSupplierQueryClient(
 				services = append(services, serviceConfig)
 			}
 
-			return sharedtypes.Supplier{
+			return shared.Supplier{
 				Address:  address,
 				Services: services,
 			}, nil
@@ -80,19 +80,19 @@ func NewTestSupplierQueryClient(
 func AddSuppliersWithServiceEndpoints(
 	t *testing.T,
 	address, service string,
-	endpoints []*sharedtypes.SupplierEndpoint,
+	endpoints []*shared.SupplierEndpoint,
 ) {
 	t.Helper()
 	require.NotEmpty(t, endpoints)
 
 	supplier, ok := suppliersProvidedServicesMap[address]
 	if !ok {
-		supplier = make(map[string][]*sharedtypes.SupplierEndpoint)
+		supplier = make(map[string][]*shared.SupplierEndpoint)
 	}
 
 	serviceEndpoints, ok := supplier[service]
 	if !ok {
-		serviceEndpoints = []*sharedtypes.SupplierEndpoint{}
+		serviceEndpoints = []*shared.SupplierEndpoint{}
 	}
 
 	serviceEndpoints = append(serviceEndpoints, endpoints...)

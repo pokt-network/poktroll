@@ -6,14 +6,14 @@ import (
 
 	sdktypes "github.com/pokt-network/shannon-sdk/types"
 
-	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 )
 
 // requestInfo is a struct that holds the information needed to handle a relay request.
 type requestInfo struct {
 	appAddress  string
 	serviceId   string
-	rpcType     sharedtypes.RPCType
+	rpcType     shared.RPCType
 	poktRequest *sdktypes.POKTHTTPRequest
 	requestBz   []byte
 }

@@ -9,7 +9,7 @@ import (
 
 	"github.com/pokt-network/poktroll/x/shared/keeper"
 
-	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
 )
 
@@ -20,17 +20,17 @@ func TestMsgUpdateParam_UpdateNumBlocksPerSession(t *testing.T) {
 	msgSrv := keeper.NewMsgServerImpl(k)
 
 	// Set the parameters to their default values
-	defaultParams := sharedtypes.DefaultParams()
+	defaultParams := shared.DefaultParams()
 	require.NoError(t, k.SetParams(ctx, defaultParams))
 
 	// Ensure the default values are different from the new values we want to set
 	require.NotEqual(t, uint64(expectedNumBlocksPerSession), defaultParams.NumBlocksPerSession)
 
 	// Update the number of blocks per session
-	updateParamMsg := &sharedtypes.MsgUpdateParam{
+	updateParamMsg := &shared.MsgUpdateParam{
 		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		Name:      sharedtypes.ParamNumBlocksPerSession,
-		AsType:    &sharedtypes.MsgUpdateParam_AsInt64{AsInt64: expectedNumBlocksPerSession},
+		Name:      shared.ParamNumBlocksPerSession,
+		AsType:    &shared.MsgUpdateParam_AsInt64{AsInt64: expectedNumBlocksPerSession},
 	}
 	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.NoError(t, err)
@@ -48,17 +48,17 @@ func TestMsgUpdateParam_UpdateClaimWindowOpenOffsetBlocks(t *testing.T) {
 	msgSrv := keeper.NewMsgServerImpl(k)
 
 	// Set the parameters to their default values
-	defaultParams := sharedtypes.DefaultParams()
+	defaultParams := shared.DefaultParams()
 	require.NoError(t, k.SetParams(ctx, defaultParams))
 
 	// Ensure the default values are different from the new values we want to set
 	require.NotEqual(t, uint64(expectedClaimWindowOpenOffestBlocks), defaultParams.ClaimWindowOpenOffsetBlocks)
 
 	// Update the claim window open offset blocks param
-	updateParamMsg := &sharedtypes.MsgUpdateParam{
+	updateParamMsg := &shared.MsgUpdateParam{
 		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		Name:      sharedtypes.ParamClaimWindowOpenOffsetBlocks,
-		AsType:    &sharedtypes.MsgUpdateParam_AsInt64{AsInt64: expectedClaimWindowOpenOffestBlocks},
+		Name:      shared.ParamClaimWindowOpenOffsetBlocks,
+		AsType:    &shared.MsgUpdateParam_AsInt64{AsInt64: expectedClaimWindowOpenOffestBlocks},
 	}
 	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.NoError(t, err)
@@ -76,17 +76,17 @@ func TestMsgUpdateParam_UpdateClaimWindowCloseOffsetBlocks(t *testing.T) {
 	msgSrv := keeper.NewMsgServerImpl(k)
 
 	// Set the parameters to their default values
-	defaultParams := sharedtypes.DefaultParams()
+	defaultParams := shared.DefaultParams()
 	require.NoError(t, k.SetParams(ctx, defaultParams))
 
 	// Ensure the default values are different from the new values we want to set
 	require.NotEqual(t, uint64(expectedClaimWindowCloseOffestBlocks), defaultParams.ClaimWindowCloseOffsetBlocks)
 
 	// Update the claim window close offset blocks param
-	updateParamMsg := &sharedtypes.MsgUpdateParam{
+	updateParamMsg := &shared.MsgUpdateParam{
 		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		Name:      sharedtypes.ParamClaimWindowCloseOffsetBlocks,
-		AsType:    &sharedtypes.MsgUpdateParam_AsInt64{AsInt64: expectedClaimWindowCloseOffestBlocks},
+		Name:      shared.ParamClaimWindowCloseOffsetBlocks,
+		AsType:    &shared.MsgUpdateParam_AsInt64{AsInt64: expectedClaimWindowCloseOffestBlocks},
 	}
 	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.NoError(t, err)
@@ -104,17 +104,17 @@ func TestMsgUpdateParam_UpdateProofWindowOpenOffsetBlocks(t *testing.T) {
 	msgSrv := keeper.NewMsgServerImpl(k)
 
 	// Set the parameters to their default values
-	defaultParams := sharedtypes.DefaultParams()
+	defaultParams := shared.DefaultParams()
 	require.NoError(t, k.SetParams(ctx, defaultParams))
 
 	// Ensure the default values are different from the new values we want to set
 	require.NotEqual(t, uint64(expectedProofWindowOpenOffestBlocks), defaultParams.ProofWindowOpenOffsetBlocks)
 
 	// Update the proof window open offset blocks param
-	updateParamMsg := &sharedtypes.MsgUpdateParam{
+	updateParamMsg := &shared.MsgUpdateParam{
 		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		Name:      sharedtypes.ParamProofWindowOpenOffsetBlocks,
-		AsType:    &sharedtypes.MsgUpdateParam_AsInt64{AsInt64: expectedProofWindowOpenOffestBlocks},
+		Name:      shared.ParamProofWindowOpenOffsetBlocks,
+		AsType:    &shared.MsgUpdateParam_AsInt64{AsInt64: expectedProofWindowOpenOffestBlocks},
 	}
 	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.NoError(t, err)
@@ -132,17 +132,17 @@ func TestMsgUpdateParam_UpdateProofWindowCloseOffsetBlocks(t *testing.T) {
 	msgSrv := keeper.NewMsgServerImpl(k)
 
 	// Set the parameters to their default values
-	defaultParams := sharedtypes.DefaultParams()
+	defaultParams := shared.DefaultParams()
 	require.NoError(t, k.SetParams(ctx, defaultParams))
 
 	// Ensure the default values are different from the new values we want to set
 	require.NotEqual(t, uint64(expectedProofWindowCloseOffestBlocks), defaultParams.ProofWindowCloseOffsetBlocks)
 
 	// Update the proof window close offset blocks param
-	updateParamMsg := &sharedtypes.MsgUpdateParam{
+	updateParamMsg := &shared.MsgUpdateParam{
 		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		Name:      sharedtypes.ParamProofWindowCloseOffsetBlocks,
-		AsType:    &sharedtypes.MsgUpdateParam_AsInt64{AsInt64: expectedProofWindowCloseOffestBlocks},
+		Name:      shared.ParamProofWindowCloseOffsetBlocks,
+		AsType:    &shared.MsgUpdateParam_AsInt64{AsInt64: expectedProofWindowCloseOffestBlocks},
 	}
 	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.NoError(t, err)
@@ -160,17 +160,17 @@ func TestMsgUpdateParam_UpdateGracePeriodEndOffsetBlocks(t *testing.T) {
 	msgSrv := keeper.NewMsgServerImpl(k)
 
 	// Set the parameters to their default values
-	defaultParams := sharedtypes.DefaultParams()
+	defaultParams := shared.DefaultParams()
 	require.NoError(t, k.SetParams(ctx, defaultParams))
 
 	// Ensure the default values are different from the new values we want to set
 	require.NotEqual(t, uint64(expectedGracePeriodEndOffestBlocks), defaultParams.GetGracePeriodEndOffsetBlocks())
 
 	// Update the proof window close offset blocks param
-	updateParamMsg := &sharedtypes.MsgUpdateParam{
+	updateParamMsg := &shared.MsgUpdateParam{
 		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		Name:      sharedtypes.ParamGracePeriodEndOffsetBlocks,
-		AsType:    &sharedtypes.MsgUpdateParam_AsInt64{AsInt64: expectedGracePeriodEndOffestBlocks},
+		Name:      shared.ParamGracePeriodEndOffsetBlocks,
+		AsType:    &shared.MsgUpdateParam_AsInt64{AsInt64: expectedGracePeriodEndOffestBlocks},
 	}
 	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.NoError(t, err)

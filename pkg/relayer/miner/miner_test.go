@@ -18,7 +18,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/miner"
-	servicetypes "github.com/pokt-network/poktroll/proto/types/service"
+	"github.com/pokt-network/poktroll/proto/types/service"
 	"github.com/pokt-network/poktroll/testutil/testclient/testqueryclients"
 )
 
@@ -36,7 +36,7 @@ func TestMiner_MinedRelays(t *testing.T) {
 		ctx                                   = context.Background()
 		actualMinedRelaysMu                   sync.Mutex
 		actualMinedRelays                     []*relayer.MinedRelay
-		mockRelaysObs, relaysFixturePublishCh = channel.NewObservable[*servicetypes.Relay]()
+		mockRelaysObs, relaysFixturePublishCh = channel.NewObservable[*service.Relay]()
 		expectedMinedRelays                   = unmarshalHexMinedRelays(t, marshaledMinableRelaysHex)
 	)
 
@@ -81,7 +81,7 @@ func TestMiner_MinedRelays(t *testing.T) {
 func publishRelayFixtures(
 	t *testing.T,
 	marshalledRelaysHex []string,
-	mockRelaysPublishCh chan<- *servicetypes.Relay,
+	mockRelaysPublishCh chan<- *service.Relay,
 ) {
 	t.Helper()
 
@@ -95,13 +95,13 @@ func publishRelayFixtures(
 func unmarshalHexRelay(
 	t *testing.T,
 	marshalledHexRelay string,
-) *servicetypes.Relay {
+) *service.Relay {
 	t.Helper()
 
 	relayBz, err := hex.DecodeString(marshalledHexRelay)
 	require.NoError(t, err)
 
-	var relay servicetypes.Relay
+	var relay service.Relay
 	err = relay.Unmarshal(relayBz)
 	require.NoError(t, err)
 
@@ -129,12 +129,12 @@ func unmarshalHexMinedRelay(
 	relayBz, err := hex.DecodeString(marshalledHexMinedRelay)
 	require.NoError(t, err)
 
-	var relay servicetypes.Relay
+	var relay service.Relay
 	err = relay.Unmarshal(relayBz)
 	require.NoError(t, err)
 
 	// TODO_TECHDEBT(@red-0ne, #446): Centralize the configuration for the SMT spec.
-	relayHashArr := servicetypes.GetHashFromBytes(relayBz)
+	relayHashArr := service.GetHashFromBytes(relayBz)
 	relayHash := relayHashArr[:]
 
 	return &relayer.MinedRelay{

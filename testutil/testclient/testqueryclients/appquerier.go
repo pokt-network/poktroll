@@ -9,8 +9,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/golang/mock/gomock"
 
-	apptypes "github.com/pokt-network/poktroll/proto/types/application"
-	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/application"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 )
 
@@ -38,17 +38,17 @@ func NewTestApplicationQueryClient(
 		DoAndReturn(func(
 			_ context.Context,
 			appAddress string,
-		) (application apptypes.Application, err error) {
+		) (app application.Application, err error) {
 			delegateeAddresses, ok := appToGatewayMap[appAddress]
 			if !ok {
-				return apptypes.Application{}, apptypes.ErrAppNotFound
+				return application.Application{}, application.ErrAppNotFound
 			}
-			return apptypes.Application{
+			return application.Application{
 				Address: appAddress,
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
-				ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
+				ServiceConfigs: []*shared.ApplicationServiceConfig{
 					{
-						Service: &sharedtypes.Service{
+						Service: &shared.Service{
 							Id:   "svc1",
 							Name: "service one",
 						},

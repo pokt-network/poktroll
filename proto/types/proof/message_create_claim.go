@@ -3,7 +3,7 @@ package proof
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	sessiontypes "github.com/pokt-network/poktroll/proto/types/session"
+	"github.com/pokt-network/poktroll/proto/types/session"
 )
 
 const TypeMsgCreateClaim = "create_claim"
@@ -12,7 +12,7 @@ var _ sdk.Msg = (*MsgCreateClaim)(nil)
 
 func NewMsgCreateClaim(
 	supplierAddr string,
-	sessionHeader *sessiontypes.SessionHeader,
+	sessionHeader *session.SessionHeader,
 	rootHash []byte,
 ) *MsgCreateClaim {
 	return &MsgCreateClaim{

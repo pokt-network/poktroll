@@ -12,17 +12,17 @@ import (
 	"github.com/pokt-network/smt"
 
 	"github.com/pokt-network/poktroll/pkg/observable"
-	servicetypes "github.com/pokt-network/poktroll/proto/types/service"
-	sessiontypes "github.com/pokt-network/poktroll/proto/types/session"
-	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/service"
+	"github.com/pokt-network/poktroll/proto/types/session"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 )
 
 // RelaysObservable is an observable which is notified with Relay values.
 //
 // TODO_HACK: The purpose of this type is to work around gomock's lack of
 // support for generic types. For the same reason, this type cannot be an
-// alias (i.e. RelaysObservable = observable.Observable[*servicetypes.Relay]).
-type RelaysObservable observable.Observable[*servicetypes.Relay]
+// alias (i.e. RelaysObservable = observable.Observable[*service.Relay]).
+type RelaysObservable observable.Observable[*service.Relay]
 
 // MinedRelaysObservable is an observable which is notified with MinedRelay values.
 //
@@ -65,15 +65,15 @@ type RelayerProxy interface {
 	// that should not be responsible for verifying relay requests.
 	VerifyRelayRequest(
 		ctx context.Context,
-		relayRequest *servicetypes.RelayRequest,
-		service *sharedtypes.Service,
+		relayRequest *service.RelayRequest,
+		service *shared.Service,
 	) error
 
 	// SignRelayResponse is a shared method used by RelayServers to sign
 	// and append the signature to the RelayResponse.
 	// TODO_TECHDEBT(@red-0ne): This method should be moved out of the RelayerProxy interface
 	// that should not be responsible for signing relay responses.
-	SignRelayResponse(relayResponse *servicetypes.RelayResponse, supplierAddr string) error
+	SignRelayResponse(relayResponse *service.RelayResponse, supplierAddr string) error
 }
 
 type RelayerProxyOption func(RelayerProxy)
@@ -120,7 +120,7 @@ type RelayerSessionsManagerOption func(RelayerSessionsManager)
 // SessionTree is an interface that wraps an SMST (Sparse Merkle State Trie) and its corresponding session.
 type SessionTree interface {
 	// GetSessionHeader returns the header of the session corresponding to the SMST.
-	GetSessionHeader() *sessiontypes.SessionHeader
+	GetSessionHeader() *session.SessionHeader
 
 	// Update is a wrapper for the SMST's Update function. It updates the SMST with
 	// the given key, value, and weight.

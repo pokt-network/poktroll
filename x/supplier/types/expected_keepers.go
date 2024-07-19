@@ -7,7 +7,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 )
 
 // AccountKeeper defines the expected interface for the Account module.
@@ -25,5 +25,5 @@ type BankKeeper interface {
 
 // ServiceKeeper defines the expected interface for the Service module.
 type ServiceKeeper interface {
-	GetService(ctx context.Context, serviceId string) (sharedtypes.Service, bool)
+	GetService(ctx context.Context, serviceId string) (shared.Service, bool)
 }

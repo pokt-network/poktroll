@@ -10,8 +10,8 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/config"
-	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
-	suppliertypes "github.com/pokt-network/poktroll/proto/types/supplier"
+	"github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/supplier"
 )
 
 const (
@@ -56,9 +56,9 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 		// from the supplier configuration. If we don't hear feedback on that prior to launching
 		// MainNet it might not be that big of a deal, though.
 
-		// Prevent the RelayMiner from stopping by waiting until its associated supplier
+		// Prevent the RelayMiner from stopping by waiting until its associated stakedSupplier
 		// is staked and its on-chain record retrieved.
-		supplier, err := rp.waitForSupplierToStake(ctx, supplierAddress.String())
+		stakedSupplier, err := rp.waitForSupplierToStake(ctx, supplierAddress.String())
 		if err != nil {
 			return err
 		}
@@ -67,7 +67,7 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 		// the server config and handled by a server.
 		// Iterate over the supplier's advertised services then iterate over each
 		// service's endpoint
-		for _, service := range supplier.Services {
+		for _, service := range stakedSupplier.Services {
 			for _, endpoint := range service.Endpoints {
 				endpointUrl, urlErr := url.Parse(endpoint.Url)
 				if urlErr != nil {
@@ -94,7 +94,7 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 			}
 		}
 
-		rp.AddressToSigningKeyNameMap[supplier.Address] = signingKeyName
+		rp.AddressToSigningKeyNameMap[stakedSupplier.Address] = signingKeyName
 	}
 
 	var err error
@@ -144,18 +144,18 @@ func (rp *relayerProxy) initializeProxyServers() (proxyServerMap map[string]rela
 func (rp *relayerProxy) waitForSupplierToStake(
 	ctx context.Context,
 	supplierAddress string,
-) (supplier sharedtypes.Supplier, err error) {
+) (stakedSupplier shared.Supplier, err error) {
 	startTime := time.Now()
 	for {
 		// Get the supplier's on-chain record
-		supplier, err = rp.supplierQuerier.GetSupplier(ctx, supplierAddress)
+		stakedSupplier, err = rp.supplierQuerier.GetSupplier(ctx, supplierAddress)
 
 		// If the supplier is not found, wait for the supplier to be staked.
 		// This enables provisioning and deploying a RelayMiner without staking a
 		// supplier on-chain. For testing purposes, this is particularly useful
 		// to eliminate the needed of additional communication & coordination
 		// between on-chain staking and off-chain provisioning.
-		if err != nil && suppliertypes.ErrSupplierNotFound.Is(err) {
+		if err != nil && supplier.ErrSupplierNotFound.Is(err) {
 			rp.logger.Info().Msgf(
 				"Waiting %d seconds for the supplier with address %s to stake",
 				supplierStakeWaitTime/time.Second,
@@ -175,12 +175,12 @@ func (rp *relayerProxy) waitForSupplierToStake(
 
 		// If there is an error other than the supplier not being found, return the error
 		if err != nil {
-			return sharedtypes.Supplier{}, err
+			return shared.Supplier{}, err
 		}
 
 		// If the supplier is found, break out of the wait loop.
 		break
 	}
 
-	return supplier, nil
+	return stakedSupplier, nil
 }

@@ -7,12 +7,12 @@ import (
 	storetypes "cosmossdk.io/store/types"
 	"github.com/cosmos/cosmos-sdk/runtime"
 
-	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 	"github.com/pokt-network/poktroll/x/service/types"
 )
 
 // SetService set a specific service in the store from its index
-func (k Keeper) SetService(ctx context.Context, service sharedtypes.Service) {
+func (k Keeper) SetService(ctx context.Context, service shared.Service) {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ServiceKeyPrefix))
 	serviceBz := k.cdc.MustMarshal(&service)
@@ -23,7 +23,7 @@ func (k Keeper) SetService(ctx context.Context, service sharedtypes.Service) {
 func (k Keeper) GetService(
 	ctx context.Context,
 	serviceId string,
-) (service sharedtypes.Service, found bool) {
+) (service shared.Service, found bool) {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ServiceKeyPrefix))
 
@@ -47,7 +47,7 @@ func (k Keeper) RemoveService(
 }
 
 // GetAllServices returns all services
-func (k Keeper) GetAllServices(ctx context.Context) (services []sharedtypes.Service) {
+func (k Keeper) GetAllServices(ctx context.Context) (services []shared.Service) {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ServiceKeyPrefix))
 	iterator := storetypes.KVStorePrefixIterator(store, []byte{})
@@ -55,7 +55,7 @@ func (k Keeper) GetAllServices(ctx context.Context) (services []sharedtypes.Serv
 	defer iterator.Close()
 
 	for ; iterator.Valid(); iterator.Next() {
-		var service sharedtypes.Service
+		var service shared.Service
 		k.cdc.MustUnmarshal(iterator.Value(), &service)
 		services = append(services, service)
 	}

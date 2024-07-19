@@ -7,7 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gopkg.in/yaml.v2"
 
-	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 	sharedhelpers "github.com/pokt-network/poktroll/x/shared/helpers"
 )
 
@@ -35,7 +35,7 @@ type YAMLServiceEndpoint struct {
 // SupplierStakeConfig is the structure describing the parsed supplier stake config.
 type SupplierStakeConfig struct {
 	StakeAmount sdk.Coin
-	Services    []*sharedtypes.SupplierServiceConfig
+	Services    []*shared.SupplierServiceConfig
 }
 
 // ParseSupplierServiceConfig parses the stake config file into a SupplierServiceConfig.
@@ -82,7 +82,7 @@ func ParseSupplierConfigs(configContent []byte) (*SupplierStakeConfig, error) {
 	}
 
 	// Prepare the supplierServiceConfig
-	supplierServiceConfig := make([]*sharedtypes.SupplierServiceConfig, 0, len(stakeConfig.Services))
+	supplierServiceConfig := make([]*shared.SupplierServiceConfig, 0, len(stakeConfig.Services))
 
 	// Populate the services slice
 	for _, svc := range stakeConfig.Services {
@@ -96,9 +96,9 @@ func ParseSupplierConfigs(configContent []byte) (*SupplierStakeConfig, error) {
 		}
 
 		// Create a supplied service config with the serviceId
-		service := &sharedtypes.SupplierServiceConfig{
-			Service:   &sharedtypes.Service{Id: svc.ServiceId},
-			Endpoints: []*sharedtypes.SupplierEndpoint{},
+		service := &shared.SupplierServiceConfig{
+			Service:   &shared.Service{Id: svc.ServiceId},
+			Endpoints: []*shared.SupplierEndpoint{},
 		}
 
 		// Iterate over the service endpoints and add their parsed representation to the supplied service config
@@ -118,8 +118,8 @@ func ParseSupplierConfigs(configContent []byte) (*SupplierStakeConfig, error) {
 	}, nil
 }
 
-func parseEndpointEntry(endpoint YAMLServiceEndpoint) (*sharedtypes.SupplierEndpoint, error) {
-	endpointEntry := &sharedtypes.SupplierEndpoint{}
+func parseEndpointEntry(endpoint YAMLServiceEndpoint) (*shared.SupplierEndpoint, error) {
+	endpointEntry := &shared.SupplierEndpoint{}
 	var err error
 
 	// Endpoint URL
@@ -143,9 +143,9 @@ func parseEndpointEntry(endpoint YAMLServiceEndpoint) (*sharedtypes.SupplierEndp
 // parseEndpointConfigs parses the endpoint config entries into a slice of
 // ConfigOption compatible with the SupplierEndpointConfig.
 // It accepts a nil config entry or a map of valid config keys.
-func parseEndpointConfigs(endpoint YAMLServiceEndpoint) ([]*sharedtypes.ConfigOption, error) {
+func parseEndpointConfigs(endpoint YAMLServiceEndpoint) ([]*shared.ConfigOption, error) {
 	// Prepare the endpoint configs slice
-	endpointConfigs := []*sharedtypes.ConfigOption{}
+	endpointConfigs := []*shared.ConfigOption{}
 
 	// If we have an endpoint config entry, parse it into a slice of ConfigOption
 	if endpoint.Config == nil {
@@ -154,17 +154,17 @@ func parseEndpointConfigs(endpoint YAMLServiceEndpoint) ([]*sharedtypes.ConfigOp
 
 	// Iterate over the endpoint config entries and add them to the slice of ConfigOption
 	for key, value := range endpoint.Config {
-		var configKey sharedtypes.ConfigOptions
+		var configKey shared.ConfigOptions
 
 		// Make sure the config key is valid
 		switch key {
 		case "timeout":
-			configKey = sharedtypes.ConfigOptions_TIMEOUT
+			configKey = shared.ConfigOptions_TIMEOUT
 		default:
 			return nil, ErrSupplierConfigInvalidEndpointConfig.Wrapf("%s", key)
 		}
 
-		config := &sharedtypes.ConfigOption{
+		config := &shared.ConfigOption{
 			Key:   configKey,
 			Value: value,
 		}
@@ -175,14 +175,14 @@ func parseEndpointConfigs(endpoint YAMLServiceEndpoint) ([]*sharedtypes.ConfigOp
 }
 
 // parseEndpointRPCType parses the endpoint RPC type into a sharedtypes.RPCType
-func parseEndpointRPCType(endpoint YAMLServiceEndpoint) (sharedtypes.RPCType, error) {
+func parseEndpointRPCType(endpoint YAMLServiceEndpoint) (shared.RPCType, error) {
 	switch strings.ToLower(endpoint.RPCType) {
 	case "json_rpc":
-		return sharedtypes.RPCType_JSON_RPC, nil
+		return shared.RPCType_JSON_RPC, nil
 	case "rest":
-		return sharedtypes.RPCType_REST, nil
+		return shared.RPCType_REST, nil
 	default:
-		return sharedtypes.RPCType_UNKNOWN_RPC, ErrSupplierConfigInvalidRPCType.Wrapf("%s", endpoint.RPCType)
+		return shared.RPCType_UNKNOWN_RPC, ErrSupplierConfigInvalidRPCType.Wrapf("%s", endpoint.RPCType)
 	}
 }
 

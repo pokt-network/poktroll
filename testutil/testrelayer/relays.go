@@ -13,8 +13,8 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/crypto"
 	"github.com/pokt-network/poktroll/pkg/relayer"
-	servicetypes "github.com/pokt-network/poktroll/proto/types/service"
-	sessiontypes "github.com/pokt-network/poktroll/proto/types/session"
+	"github.com/pokt-network/poktroll/proto/types/service"
+	"github.com/pokt-network/poktroll/proto/types/session"
 	testutilkeyring "github.com/pokt-network/poktroll/testutil/testkeyring"
 )
 
@@ -31,21 +31,21 @@ import (
 // to 'testutil', making any necessary adjustments the utils or docs as well.
 func NewUnsignedMinedRelay(
 	t *testing.T,
-	session *sessiontypes.Session,
+	session *session.Session,
 	supplierAddress string,
 ) *relayer.MinedRelay {
 	t.Helper()
 
-	relay := servicetypes.Relay{
-		Req: &servicetypes.RelayRequest{
-			Meta: servicetypes.RelayRequestMetadata{
+	relay := service.Relay{
+		Req: &service.RelayRequest{
+			Meta: service.RelayRequestMetadata{
 				SessionHeader:   session.Header,
 				SupplierAddress: supplierAddress,
 			},
 			Payload: []byte("request_payload"),
 		},
-		Res: &servicetypes.RelayResponse{
-			Meta: servicetypes.RelayResponseMetadata{
+		Res: &service.RelayResponse{
+			Meta: service.RelayResponseMetadata{
 				SessionHeader: session.Header,
 			},
 			Payload: []byte("response_payload"),
@@ -56,7 +56,7 @@ func NewUnsignedMinedRelay(
 	relayBz, err := relay.Marshal()
 	require.NoError(t, err)
 
-	relayHashArr := servicetypes.GetHashFromBytes(relayBz)
+	relayHashArr := service.GetHashFromBytes(relayBz)
 	relayHash := relayHashArr[:]
 
 	return &relayer.MinedRelay{
@@ -80,23 +80,23 @@ func NewUnsignedMinedRelay(
 func NewSignedMinedRelay(
 	t *testing.T,
 	ctx context.Context,
-	session *sessiontypes.Session,
+	session *session.Session,
 	appAddr, supplierAddr, supplierKeyUid string,
 	keyRing keyring.Keyring,
 	ringClient crypto.RingClient,
 ) *relayer.MinedRelay {
 	t.Helper()
 
-	relay := servicetypes.Relay{
-		Req: &servicetypes.RelayRequest{
-			Meta: servicetypes.RelayRequestMetadata{
+	relay := service.Relay{
+		Req: &service.RelayRequest{
+			Meta: service.RelayRequestMetadata{
 				SessionHeader:   session.Header,
 				SupplierAddress: supplierAddr,
 			},
 			Payload: []byte("request_payload"),
 		},
-		Res: &servicetypes.RelayResponse{
-			Meta: servicetypes.RelayResponseMetadata{
+		Res: &service.RelayResponse{
+			Meta: service.RelayResponseMetadata{
 				SessionHeader: session.Header,
 			},
 			Payload: []byte("response_payload"),
@@ -110,7 +110,7 @@ func NewSignedMinedRelay(
 	relayBz, err := relay.Marshal()
 	require.NoError(t, err)
 
-	relayHashArr := servicetypes.GetHashFromBytes(relayBz)
+	relayHashArr := service.GetHashFromBytes(relayBz)
 	relayHash := relayHashArr[:]
 
 	return &relayer.MinedRelay{
@@ -126,7 +126,7 @@ func NewSignedMinedRelay(
 func SignRelayRequest(
 	ctx context.Context,
 	t *testing.T,
-	relay *servicetypes.Relay,
+	relay *service.Relay,
 	appAddr string,
 	keyRing keyring.Keyring,
 	ringClient crypto.RingClient,
@@ -169,7 +169,7 @@ func SignRelayRequest(
 func SignRelayResponse(
 	_ context.Context,
 	t *testing.T,
-	relay *servicetypes.Relay,
+	relay *service.Relay,
 	supplierKeyUid, supplierAddr string,
 	keyRing keyring.Keyring,
 ) {
@@ -200,10 +200,10 @@ func NewSignedEmptyRelay(
 	ctx context.Context,
 	t *testing.T,
 	supplierKeyUid, supplierAddr string,
-	reqHeader, resHeader *sessiontypes.SessionHeader,
+	reqHeader, resHeader *session.SessionHeader,
 	keyRing keyring.Keyring,
 	ringClient crypto.RingClient,
-) *servicetypes.Relay {
+) *service.Relay {
 	t.Helper()
 
 	relay := NewEmptyRelay(reqHeader, resHeader, supplierAddr)
@@ -215,18 +215,18 @@ func NewSignedEmptyRelay(
 
 // NewEmptyRelay creates a new relay structure for the given req & res headers
 // WITHOUT any payload or signatures.
-func NewEmptyRelay(reqHeader, resHeader *sessiontypes.SessionHeader, supplierAddr string) *servicetypes.Relay {
-	return &servicetypes.Relay{
-		Req: &servicetypes.RelayRequest{
-			Meta: servicetypes.RelayRequestMetadata{
+func NewEmptyRelay(reqHeader, resHeader *session.SessionHeader, supplierAddr string) *service.Relay {
+	return &service.Relay{
+		Req: &service.RelayRequest{
+			Meta: service.RelayRequestMetadata{
 				SessionHeader:   reqHeader,
 				Signature:       nil, // Signature added elsewhere.
 				SupplierAddress: supplierAddr,
 			},
 			Payload: nil,
 		},
-		Res: &servicetypes.RelayResponse{
-			Meta: servicetypes.RelayResponseMetadata{
+		Res: &service.RelayResponse{
+			Meta: service.RelayResponseMetadata{
 				SessionHeader:     resHeader,
 				SupplierSignature: nil, // Signature added elsewhere.
 			},

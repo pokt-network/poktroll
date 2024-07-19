@@ -8,10 +8,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
-	apptypes "github.com/pokt-network/poktroll/proto/types/application"
-	prooftypes "github.com/pokt-network/poktroll/proto/types/proof"
-	sessiontypes "github.com/pokt-network/poktroll/proto/types/session"
-	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/application"
+	"github.com/pokt-network/poktroll/proto/types/proof"
+	"github.com/pokt-network/poktroll/proto/types/session"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 )
 
 // AccountKeeper defines the expected interface for the Account module.
@@ -32,40 +32,40 @@ type BankKeeper interface {
 }
 
 type ApplicationKeeper interface {
-	GetApplication(ctx context.Context, appAddr string) (app apptypes.Application, found bool)
-	SetApplication(ctx context.Context, app apptypes.Application)
+	GetApplication(ctx context.Context, appAddr string) (app application.Application, found bool)
+	SetApplication(ctx context.Context, app application.Application)
 }
 
 type ProofKeeper interface {
-	GetAllClaims(ctx context.Context) []prooftypes.Claim
+	GetAllClaims(ctx context.Context) []proof.Claim
 	RemoveClaim(ctx context.Context, sessionId, supplierAddr string)
-	GetProof(ctx context.Context, sessionId, supplierAddr string) (proof prooftypes.Proof, isProofFound bool)
+	GetProof(ctx context.Context, sessionId, supplierAddr string) (proof proof.Proof, isProofFound bool)
 	RemoveProof(ctx context.Context, sessionId, supplierAddr string)
 
-	AllClaims(ctx context.Context, req *prooftypes.QueryAllClaimsRequest) (*prooftypes.QueryAllClaimsResponse, error)
+	AllClaims(ctx context.Context, req *proof.QueryAllClaimsRequest) (*proof.QueryAllClaimsResponse, error)
 
 	// Only used for testing & simulation
-	UpsertClaim(ctx context.Context, claim prooftypes.Claim)
-	UpsertProof(ctx context.Context, claim prooftypes.Proof)
+	UpsertClaim(ctx context.Context, claim proof.Claim)
+	UpsertProof(ctx context.Context, claim proof.Proof)
 
-	GetParams(ctx context.Context) prooftypes.Params
-	SetParams(ctx context.Context, params prooftypes.Params) error
+	GetParams(ctx context.Context) proof.Params
+	SetParams(ctx context.Context, params proof.Params) error
 }
 
 type SharedKeeper interface {
-	GetParams(ctx context.Context) sharedtypes.Params
-	SetParams(ctx context.Context, params sharedtypes.Params) error
+	GetParams(ctx context.Context) shared.Params
+	SetParams(ctx context.Context, params shared.Params) error
 
 	GetProofWindowCloseHeight(ctx context.Context, queryHeight int64) int64
 }
 
 type SessionKeeper interface {
-	GetSession(context.Context, *sessiontypes.QueryGetSessionRequest) (*sessiontypes.QueryGetSessionResponse, error)
+	GetSession(context.Context, *session.QueryGetSessionRequest) (*session.QueryGetSessionResponse, error)
 	GetBlockHash(ctx context.Context, height int64) []byte
 	StoreBlockHash(ctx context.Context)
 }
 
 type SupplierKeeper interface {
-	GetSupplier(ctx context.Context, supplierAddr string) (supplier sharedtypes.Supplier, found bool)
-	SetSupplier(ctx context.Context, supplier sharedtypes.Supplier)
+	GetSupplier(ctx context.Context, supplierAddr string) (supplier shared.Supplier, found bool)
+	SetSupplier(ctx context.Context, supplier shared.Supplier)
 }

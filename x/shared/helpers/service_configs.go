@@ -3,11 +3,11 @@ package helpers
 import (
 	"fmt"
 
-	sharedtypes "github.com/pokt-network/poktroll/proto/types/shared"
+	"github.com/pokt-network/poktroll/proto/types/shared"
 )
 
 // ValidateAppServiceConfigs returns an error if any of the application service configs are invalid
-func ValidateAppServiceConfigs(services []*sharedtypes.ApplicationServiceConfig) error {
+func ValidateAppServiceConfigs(services []*shared.ApplicationServiceConfig) error {
 	if len(services) == 0 {
 		return fmt.Errorf("no services configs provided for application: %v", services)
 	}
@@ -24,7 +24,7 @@ func ValidateAppServiceConfigs(services []*sharedtypes.ApplicationServiceConfig)
 }
 
 // ValidateSupplierServiceConfigs returns an error if any of the supplier service configs are invalid
-func ValidateSupplierServiceConfigs(services []*sharedtypes.SupplierServiceConfig) error {
+func ValidateSupplierServiceConfigs(services []*shared.SupplierServiceConfig) error {
 	if len(services) == 0 {
 		return fmt.Errorf("no services provided for supplier: %v", services)
 	}
@@ -61,10 +61,10 @@ func ValidateSupplierServiceConfigs(services []*sharedtypes.SupplierServiceConfi
 			}
 
 			// Validate the RPC type
-			if endpoint.RpcType == sharedtypes.RPCType_UNKNOWN_RPC {
+			if endpoint.RpcType == shared.RPCType_UNKNOWN_RPC {
 				return fmt.Errorf("endpoint.RpcType cannot be UNKNOWN_RPC: %v", serviceConfig)
 			}
-			if _, ok := sharedtypes.RPCType_name[int32(endpoint.RpcType)]; !ok {
+			if _, ok := shared.RPCType_name[int32(endpoint.RpcType)]; !ok {
 				return fmt.Errorf("endpoint.RpcType is not a valid RPCType: %v", serviceConfig)
 			}
 
