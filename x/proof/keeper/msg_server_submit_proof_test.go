@@ -48,7 +48,7 @@ var (
 	//  - the relay difficulty target hash to the easiest difficulty so that these tests don't need to mine for valid relays.
 	//  - the proof request probability to 1 so that all test sessions require a proof.
 	testProofParams = prooftypes.Params{
-		RelayDifficultyTargetHash: protocol.Difficulty1HashBz,
+		RelayDifficultyTargetHash: protocol.BaseRelayDifficultyHashBz,
 		ProofRequestProbability:   1,
 	}
 )

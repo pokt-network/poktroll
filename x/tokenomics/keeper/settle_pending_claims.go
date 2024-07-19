@@ -104,6 +104,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 				expiredResult.NumComputeUnits += numClaimComputeUnits
 				continue
 			}
+			// TODO_FOLLOWUP(@olshansk, #690): Document the potential changes needed here.
 			// NB: If a proof is found, it is valid because verification is done
 			// at the time of submission.
 		}

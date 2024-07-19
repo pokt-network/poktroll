@@ -127,7 +127,7 @@ func ComputeNewDifficultyTargetHash(prevTargetHash []byte, targetNumRelays, newR
 		return prooftypes.DefaultRelayDifficultyTargetHash
 	}
 
-	// Calculate the proportion of target relays to the new EMA
+	// Calculate the proportion of target relays relative to the EMA of actual volume applicable relays
 	// TODO_MAINNET: Use a language agnostic float implementation or arithmetic library
 	// to ensure deterministic results across different language implementations of the
 	// protocol.
@@ -158,9 +158,9 @@ func scaleDifficultyTargetHash(targetHash []byte, ratio *big.Float) []byte {
 	scaledTargetInt, _ := scaledTargetFloat.Int(nil)
 	scaledTargetHash := scaledTargetInt.Bytes()
 
-	// Ensure the scaled target hash maxes out at Difficulty1.
+	// Ensure the scaled target hash maxes out at BaseRelayDifficulty
 	if len(scaledTargetHash) > len(targetHash) {
-		return protocol.Difficulty1HashBz
+		return protocol.BaseRelayDifficultyHashBz
 	}
 
 	// Ensure the scaled target hash has the same length as the default target hash.

@@ -204,6 +204,7 @@ func (k msgServer) SubmitProof(
 	logger.Debug("successfully verified relay response signature")
 
 	// Get the proof module's governance parameters.
+	// TODO_FOLLOWUP(@olshansk, #690): Get the difficulty associated with the service
 	params := k.GetParams(ctx)
 
 	// Verify the relay difficulty is above the minimum required to earn rewards.
@@ -447,7 +448,8 @@ func verifyClosestProof(
 // TODO_TECHDEBT: Factor out the relay mining difficulty validation into a shared
 // function that can be used by both the proof and the miner packages.
 func validateRelayDifficulty(relayBz []byte, targetHash []byte) error {
-	relayHash := protocol.GetHashFromBytes(relayBz)
+	relayHashArr := protocol.GetRelayHashFromBytes(relayBz)
+	relayHash := relayHashArr[:]
 
 	if len(targetHash) != protocol.RelayHasherSize {
 		return types.ErrProofInvalidRelay.Wrapf(
@@ -458,17 +460,15 @@ func validateRelayDifficulty(relayBz []byte, targetHash []byte) error {
 		)
 	}
 
-	var targetHashArr [protocol.RelayHasherSize]byte
-	copy(targetHashArr[:], targetHash)
+	if !protocol.IsRelayVolumeApplicable(relayHash, targetHash) {
+		var targetHashArr [protocol.RelayHasherSize]byte
+		copy(targetHashArr[:], targetHash)
 
-	// TODO_MAINNET: Devise a test that tries to attack the network and ensure that there
-	// is sufficient telemetry.
-	// NB: If relayHash > targetHash, then the difficulty is less than the target difficulty.
-	if bytes.Compare(relayHash[:], targetHash[:]) == 1 {
-		relayDifficulty := protocol.GetDifficultyFromHash(relayHash)
+		relayDifficulty := protocol.GetDifficultyFromHash(relayHashArr)
 		targetDifficulty := protocol.GetDifficultyFromHash(targetHashArr)
+
 		return types.ErrProofInvalidRelay.Wrapf(
-			"relay difficulty %d is less than the target difficulty %d",
+			"the difficulty relay being proven is (%d), and is smaller than the target difficulty (%d) for service %s",
 			relayDifficulty,
 			targetDifficulty,
 		)

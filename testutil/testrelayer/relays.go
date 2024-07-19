@@ -57,7 +57,7 @@ func NewUnsignedMinedRelay(
 	relayBz, err := relay.Marshal()
 	require.NoError(t, err)
 
-	relayHashArr := protocol.GetHashFromBytes(relayBz)
+	relayHashArr := protocol.GetRelayHashFromBytes(relayBz)
 	relayHash := relayHashArr[:]
 
 	return &relayer.MinedRelay{
@@ -111,7 +111,7 @@ func NewSignedMinedRelay(
 	relayBz, err := relay.Marshal()
 	require.NoError(t, err)
 
-	relayHashArr := protocol.GetHashFromBytes(relayBz)
+	relayHashArr := protocol.GetRelayHashFromBytes(relayBz)
 	relayHash := relayHashArr[:]
 
 	return &relayer.MinedRelay{

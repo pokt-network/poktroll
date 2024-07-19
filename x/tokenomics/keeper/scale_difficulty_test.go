@@ -13,6 +13,7 @@ import (
 // TestScaleDifficultyTargetHash tests the scaling of a target hash by a given ratio.
 // Some expectations are manually adjusted to account for some precision loss in the
 // implementation.
+// TODO_FOLLOWUP(@olshansk, #690): Ensure that the ratio corresponds to the probability of of a relay being accepted. If not, explain why.
 func TestScaleDifficultyTargetHash(t *testing.T) {
 	tests := []struct {
 		desc            string
@@ -75,7 +76,7 @@ func TestScaleDifficultyTargetHash(t *testing.T) {
 			expectedHashHex: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
 		},
 		{
-			desc:            "Maxes out at Difficulty1",
+			desc:            "Maxes out at BaseRelayDifficulty",
 			targetHashHex:   "3fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
 			ratio:           10,
 			expectedHashHex: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
@@ -87,12 +88,15 @@ func TestScaleDifficultyTargetHash(t *testing.T) {
 			targetHashBz, targetErr := hex.DecodeString(test.targetHashHex)
 			require.NoError(t, targetErr)
 
-			expectedBytes, expectedErr := hex.DecodeString(test.expectedHashHex)
+			expectedHashBz, expectedErr := hex.DecodeString(test.expectedHashHex)
 			require.NoError(t, expectedErr)
 
-			scaledHash := scaleDifficultyTargetHash(targetHashBz, new(big.Float).SetFloat64(test.ratio))
-			assert.Equal(t, len(scaledHash), len(targetHashBz))
-			require.Equalf(t, 0, bytes.Compare(scaledHash, expectedBytes), "expected hash %x, got %x", expectedBytes, scaledHash)
+			scaledDifficultyHash := scaleDifficultyTargetHash(targetHashBz, new(big.Float).SetFloat64(test.ratio))
+			assert.Equal(t, len(scaledDifficultyHash), len(targetHashBz))
+
+			// Ensure the scaled difficulty hash equals the one provided
+			require.Zero(t, bytes.Compare(expectedHashBz, scaledDifficultyHash),
+				"expected difficulty hash %x, but got %x", expectedHashBz, scaledDifficultyHash)
 		})
 	}
 }
