@@ -53,7 +53,6 @@ func NewUnsignedMinedRelay(
 		},
 	}
 
-	// TODO_TECHDEBT(@red-0ne): marshal using canonical codec.
 	relayBz, err := relay.Marshal()
 	require.NoError(t, err)
 

@@ -11,7 +11,7 @@ import (
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-// TODO_UPNEX
+// TODO_FOLLOWUP(@olshansk
 func TestMsgUpdateParam_UpdateMinRelayDifficultyBitsOnly(t *testing.T) {
 	var expectedComputeUnitsToTokensMultiplier int64 = 8
 

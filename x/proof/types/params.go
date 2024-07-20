@@ -19,7 +19,8 @@ var (
 	// TODO_FOLLOWUP(@olshansk, #690): Delete this parameter.
 	KeyRelayDifficultyTargetHash        = []byte("RelayDifficultyTargetHash")
 	ParamRelayDifficultyTargetHash      = "relay_difficulty_target_hash"
-	DefaultRelayDifficultyTargetHash, _ = hex.DecodeString("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff") // all relays are payable
+	DefaultRelayDifficultyTargetHashHex = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" // all relays are payable
+	DefaultRelayDifficultyTargetHash, _ = hex.DecodeString(DefaultRelayDifficultyTargetHashHex)
 
 	KeyProofRequestProbability             = []byte("ProofRequestProbability")
 	ParamProofRequestProbability           = "proof_request_probability"

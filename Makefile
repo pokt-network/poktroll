@@ -503,17 +503,22 @@ go_develop_and_test: go_develop test_all ## Generate protos, mocks and run all t
 # TODO_DISCUSS_IN_THIS_COMMIT - SHOULD NEVER BE COMMITTED TO MASTER. It is a way for the reviewer of a PR to start / reply to a discussion.
 # TODO_IN_THIS_COMMIT         - SHOULD NEVER BE COMMITTED TO MASTER. It is a way to start the review process while non-critical changes are still in progress
 
+
+# Define shared variable for the exclude parameters
+EXCLUDE_GREP = --exclude-dir={.git,vendor,./docusaurus,.vscode,.idea} --exclude={Makefile,reviewdog.yml,*.pb.go,*.pulsar.go}
+
 .PHONY: todo_list
 todo_list: ## List all the TODOs in the project (excludes vendor and prototype directories)
-	grep --exclude-dir={.git,vendor,./docusaurus} -r TODO  .
+	grep -r $(EXCLUDE_GREP) TODO . | grep -v 'TODO()'
 
 .PHONY: todo_count
 todo_count: ## Print a count of all the TODOs in the project
-	grep --exclude-dir={.git,vendor,./docusaurus} -r TODO  . | wc -l
+	grep -r $(EXCLUDE_GREP) TODO . | grep -v 'TODO()' | wc -l
 
 .PHONY: todo_this_commit
 todo_this_commit: ## List all the TODOs needed to be done in this commit
-	grep -n --exclude-dir={.git,vendor,.vscode,.idea} --exclude={Makefile,reviewdog.yml} -r -e "TODO_IN_THIS_"
+	grep -r $(EXCLUDE_GREP) TODO_IN_THIS .| grep -v 'TODO()'
+
 
 ####################
 ###   Gateways   ###

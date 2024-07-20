@@ -153,7 +153,6 @@ func genRandomizedMinedRelayFixtures(
 				Res: nil,
 			}
 
-			// TODO_TECHDEBT(@red-0ne): use canonical codec.
 			relayBz, err := relay.Marshal()
 			if err != nil {
 				errCh <- err
