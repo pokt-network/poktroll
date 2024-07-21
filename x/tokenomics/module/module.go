@@ -3,7 +3,6 @@ package tokenomics
 import (
 	"context"
 	"encoding/json"
-
 	// this line is used by starport scaffolding # 1
 
 	"cosmossdk.io/core/appmodule"
@@ -206,6 +205,7 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 		in.BankKeeper,
 		in.AccountKeeper,
 		in.ApplicationKeeper,
+		in.SupplierKeeper,
 		in.ProofKeeper,
 		in.SharedKeeper,
 		in.SessionKeeper,
