@@ -420,7 +420,7 @@ test_verbose: check_go_version ## Run all go tests verbosely
 	go test -count=1 -v -race -tags test ./...
 
 .PHONY: test_all
-test_all: check_go_version ## Run all go tests showing detailed output only on failures
+test_all: warn_flaky_tests check_go_version ## Run all go tests showing detailed output only on failures
 	go test -count=1 -race -tags test ./...
 
 .PHONY: test_all_with_integration
