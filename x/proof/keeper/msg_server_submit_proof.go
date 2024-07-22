@@ -208,7 +208,11 @@ func (k msgServer) SubmitProof(
 	params := k.GetParams(ctx)
 
 	// Verify the relay difficulty is above the minimum required to earn rewards.
-	if err = validateRelayDifficulty(relayBz, params.RelayDifficultyTargetHash); err != nil {
+	if err = validateRelayDifficulty(
+		relayBz,
+		params.RelayDifficultyTargetHash,
+		sessionHeader.Service.Id,
+	); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 	logger.Debug("successfully validated relay mining difficulty")
@@ -447,7 +451,7 @@ func verifyClosestProof(
 // required minimum threshold.
 // TODO_TECHDEBT: Factor out the relay mining difficulty validation into a shared
 // function that can be used by both the proof and the miner packages.
-func validateRelayDifficulty(relayBz []byte, targetHash []byte) error {
+func validateRelayDifficulty(relayBz, targetHash []byte, serviceId string) error {
 	relayHashArr := protocol.GetRelayHashFromBytes(relayBz)
 	relayHash := relayHashArr[:]
 
@@ -471,6 +475,7 @@ func validateRelayDifficulty(relayBz []byte, targetHash []byte) error {
 			"the difficulty relay being proven is (%d), and is smaller than the target difficulty (%d) for service %s",
 			relayDifficulty,
 			targetDifficulty,
+			serviceId,
 		)
 	}
 

@@ -11,7 +11,7 @@ import (
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-// TODO_FOLLOWUP(@olshansk
+// TODO_FOLLOWUP(@olshansk, #690): Rename this test.
 func TestMsgUpdateParam_UpdateMinRelayDifficultyBitsOnly(t *testing.T) {
 	var expectedComputeUnitsToTokensMultiplier int64 = 8
 
