@@ -69,51 +69,6 @@ type App struct {
 	sm *module.SimulationManager
 }
 
-// type Keepers struct {
-
-// 	// keepers
-// 	AccountKeeper         authkeeper.AccountKeeper
-// 	BankKeeper            bankkeeper.Keeper
-// 	StakingKeeper         *stakingkeeper.Keeper
-// 	SlashingKeeper        slashingkeeper.Keeper
-// 	MintKeeper            mintkeeper.Keeper
-// 	DistrKeeper           distrkeeper.Keeper
-// 	GovKeeper             *govkeeper.Keeper
-// 	CrisisKeeper          *crisiskeeper.Keeper
-// 	UpgradeKeeper         *upgradekeeper.Keeper
-// 	ParamsKeeper          paramskeeper.Keeper
-// 	AuthzKeeper           authzkeeper.Keeper
-// 	EvidenceKeeper        evidencekeeper.Keeper
-// 	FeeGrantKeeper        feegrantkeeper.Keeper
-// 	GroupKeeper           groupkeeper.Keeper
-// 	ConsensusParamsKeeper consensuskeeper.Keeper
-// 	CircuitBreakerKeeper  circuitkeeper.Keeper
-
-// 	// IBC
-// 	IBCKeeper           *ibckeeper.Keeper // IBC Keeper must be a pointer in the app, so we can SetRouter on it correctly
-// 	CapabilityKeeper    *capabilitykeeper.Keeper
-// 	IBCFeeKeeper        ibcfeekeeper.Keeper
-// 	ICAControllerKeeper icacontrollerkeeper.Keeper
-// 	ICAHostKeeper       icahostkeeper.Keeper
-// 	TransferKeeper      ibctransferkeeper.Keeper
-
-// 	// Scoped IBC
-// 	ScopedIBCKeeper           capabilitykeeper.ScopedKeeper
-// 	ScopedIBCTransferKeeper   capabilitykeeper.ScopedKeeper
-// 	ScopedICAControllerKeeper capabilitykeeper.ScopedKeeper
-// 	ScopedICAHostKeeper       capabilitykeeper.ScopedKeeper
-
-// 	ServiceKeeper     servicemodulekeeper.Keeper
-// 	GatewayKeeper     gatewaymodulekeeper.Keeper
-// 	ApplicationKeeper applicationmodulekeeper.Keeper
-// 	SupplierKeeper    suppliermodulekeeper.Keeper
-// 	SessionKeeper     sessionmodulekeeper.Keeper
-// 	ProofKeeper       proofmodulekeeper.Keeper
-// 	TokenomicsKeeper  tokenomicsmodulekeeper.Keeper
-// 	SharedKeeper      sharedmodulekeeper.Keeper
-// 	// this line is used by starport scaffolding # stargate/app/keeperDeclaration
-// }
-
 func init() {
 	userHomeDir, err := os.UserHomeDir()
 	if err != nil {
