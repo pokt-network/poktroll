@@ -356,6 +356,10 @@ func New(
 	// 	return app.App.InitChainer(ctx, req)
 	// })
 
+	if err := app.setUpgrades(); err != nil {
+		return nil, err
+	}
+
 	if err := app.Load(loadLatest); err != nil {
 		return nil, err
 	}
