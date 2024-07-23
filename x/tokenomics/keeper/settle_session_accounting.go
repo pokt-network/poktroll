@@ -116,8 +116,12 @@ func (k Keeper) SettleSessionAccounting(
 	logger.Info(fmt.Sprintf("About to start settling claim for %d compute units with CUPR %d and CUTTM %d", claimComputeUnits, computeUnitsPerRelay, computeUnitsToTokensMultiplier))
 
 	// Calculate the amount of tokens to mint & burn
-	settlementCoin = relayCountToCoin(claimComputeUnits, computeUnitsPerRelay, computeUnitsToTokensMultiplier)
-	settlementCoins := sdk.NewCoins(settlementAmt)
+	settlementCoin, err = relayCountToCoin(claimComputeUnits, computeUnitsPerRelay, computeUnitsToTokensMultiplier)
+	if err != nil {
+		return err
+	}
+
+	settlementCoins := cosmostypes.NewCoins(settlementCoin)
 
 	logger.Info(fmt.Sprintf(
 		"%d compute units equate to %s for session %s",
@@ -225,9 +229,6 @@ func relayCountToCoin(numRelays, computeUnitsPerRelay uint64, computeUnitsToToke
 	return cosmostypes.NewCoin(volatile.DenomuPOKT, upokt), nil
 }
 
-
-
-
 // getComputUnitsPerRelayFromApplication retrieves the ComputeUnitsPerRelay for a given service from the application's service configs
 func (k Keeper) getComputUnitsPerRelayFromApplication(application apptypes.Application, serviceID string) (cupr uint64, err error) {
 	logger := k.Logger().With("method", "getComputeUnitsPerRelayFromApplication")
@@ -235,7 +236,7 @@ func (k Keeper) getComputUnitsPerRelayFromApplication(application apptypes.Appli
 	serviceConfigs := application.ServiceConfigs
 	if len(serviceConfigs) == 0 {
 		logger.Warn(fmt.Sprintf("application with address %q has no service configs", application.Address))
-		return 0, types.ErrTokenomicsApplicationNoServiceConfigs
+		return 0, tokenomicstypes.ErrTokenomicsApplicationNoServiceConfigs
 	}
 
 	for _, sc := range serviceConfigs {
@@ -246,5 +247,5 @@ func (k Keeper) getComputUnitsPerRelayFromApplication(application apptypes.Appli
 	}
 
 	logger.Warn(fmt.Sprintf("service with ID %q not found in application with address %q", serviceID, application.Address))
-	return 0, types.ErrTokenomicsApplicationNoServiceConfigs
+	return 0, tokenomicstypes.ErrTokenomicsApplicationNoServiceConfigs
 }
