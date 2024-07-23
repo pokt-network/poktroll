@@ -11,8 +11,8 @@ import (
 
 // defaultMigrationsOnlyUpgradeHandler creates an update handler that only performs module's `ConsensusVersion`
 // change in blockchain state. Useful for performing upgrades that do no require additional state modifications, such as
-// parameter changes, data migrations, authz authorizations, etc. If **any** of these are needed, a new upgrade handler
-// should be created.
+// parameter changes, data migrations, authz authorizations, etc. If **any** of these are needed, a new, version-specific,
+// upgrade handler should be created.
 func defaultMigrationsOnlyUpgradeHandler(
 	mm *module.Manager,
 	_ appKeeper.Keeper,
