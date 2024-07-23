@@ -170,7 +170,7 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 		// Exclude suppliers that are inactive (i.e. currently unbonding).
 		// TODO_TECHDEBT(#695): Suppliers that stake mid-session SHOULD NOT be included
 		// in the current session's suppliers list and must wait until the next one.
-		if !s.IsActive(sh.sessionHeader.SessionEndBlockHeight) {
+		if !s.IsActive(uint64(sh.sessionHeader.SessionEndBlockHeight), sh.sessionHeader.Service.Id) {
 			continue
 		}
 

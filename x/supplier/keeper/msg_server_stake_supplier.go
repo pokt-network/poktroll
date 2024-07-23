@@ -91,18 +91,30 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 }
 
 func (k msgServer) createSupplier(
-	_ context.Context,
+	ctx context.Context,
 	msg *types.MsgStakeSupplier,
 ) sharedtypes.Supplier {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	currentHeight := sdkCtx.BlockHeight()
+	sessionEndHeight := k.sharedKeeper.GetSessionEndHeight(ctx, currentHeight)
+
+	// Register activation height for each service. Since the supplier is new,
+	// all services are activated at the end of the current session.
+	servicesActivationHeight := make(map[string]uint64)
+	for _, serviceConfig := range msg.Services {
+		servicesActivationHeight[serviceConfig.Service.Id] = uint64(sessionEndHeight)
+	}
+
 	return sharedtypes.Supplier{
-		Address:  msg.Address,
-		Stake:    msg.Stake,
-		Services: msg.Services,
+		Address:                  msg.Address,
+		Stake:                    msg.Stake,
+		Services:                 msg.Services,
+		ServicesActivationHeight: servicesActivationHeight,
 	}
 }
 
 func (k msgServer) updateSupplier(
-	_ context.Context,
+	ctx context.Context,
 	supplier *sharedtypes.Supplier,
 	msg *types.MsgStakeSupplier,
 ) error {
@@ -126,7 +138,33 @@ func (k msgServer) updateSupplier(
 	if len(msg.Services) == 0 {
 		return types.ErrSupplierInvalidServiceConfig.Wrapf("must have at least one service")
 	}
+
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	currentHeight := sdkCtx.BlockHeight()
+	sessionEndHeight := k.sharedKeeper.GetSessionEndHeight(ctx, currentHeight) + 1
+
+	// Update activation height for each service. New services are activated at the
+	// end of the current session, while existing ones keep their activation height.
+	// TODO_CONSIDERAION: Service removal should take effect at the beginning of the
+	// next session, otherwise sessions that are fetched at their start height may
+	// still include Suppliers that no longer provide the services they removed.
+	// For the same reason, any SupplierEndpoint change should take effect at the
+	// beginning of the next session.
+	servicesActivationHeight := make(map[string]uint64)
+	for _, serviceConfig := range msg.Services {
+		servicesActivationHeight[serviceConfig.Service.Id] = uint64(sessionEndHeight)
+		// If the service has already been staked for, keep its activation height.
+		for _, existingServiceConfig := range supplier.Services {
+			if existingServiceConfig.Service.Id == serviceConfig.Service.Id {
+				existingServiceActivationHeight := supplier.ServicesActivationHeight[serviceConfig.Service.Id]
+				servicesActivationHeight[serviceConfig.Service.Id] = existingServiceActivationHeight
+				break
+			}
+		}
+	}
+
 	supplier.Services = msg.Services
+	supplier.ServicesActivationHeight = servicesActivationHeight
 
 	return nil
 }
