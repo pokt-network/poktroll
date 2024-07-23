@@ -1,17 +1,5 @@
 package keeper
 
-import (
-	"bytes"
-	"context"
-
-	"github.com/pokt-network/smt"
-
-	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
-	"github.com/pokt-network/poktroll/x/proof/types"
-	servicetypes "github.com/pokt-network/poktroll/x/service/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-)
-
 /*
 	TODO_MAINNET: Document these steps in the docs and link here.
 
@@ -40,8 +28,27 @@ import (
 	3. verify(claim.Root, proof.ClosestProof); verify the closest proof is correct
 */
 
+import (
+	"bytes"
+	"context"
+
+	"github.com/pokt-network/smt"
+
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
+	"github.com/pokt-network/poktroll/x/proof/types"
+	servicetypes "github.com/pokt-network/poktroll/x/service/types"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+)
+
 // IsProofValid validates the proof submitted by the supplier is correct with
 // respect to an on-chain claim.
+//
+// This function should be called during session settlement (i.e. EndBlocker)
+// rather than during proof submission (i.e. SubmitProof) because:
+//  1. RPC requests should be quick, lightweight and only do basic validation
+//  2. Validators are the ones responsible for the heavy processing & validation during state transitions
+//  3. This creates an opportunity to slash suppliers who submit false proofs, whereas
+//     they can keep retrying if it takes place in the SubmitProof handler.
 func (k Keeper) IsProofValid(
 	ctx context.Context,
 	proof *types.Proof,
@@ -185,7 +192,6 @@ func (k Keeper) IsProofValid(
 	logger.Debug("successfully verified closest merkle proof")
 
 	return true, nil
-
 }
 
 // validateClosestPath ensures that the proof's path matches the expected path.

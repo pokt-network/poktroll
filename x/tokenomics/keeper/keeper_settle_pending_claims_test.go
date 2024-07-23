@@ -2,11 +2,13 @@ package keeper_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
@@ -21,6 +23,7 @@ import (
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
@@ -75,12 +78,19 @@ func (s *TestSuite) SetupTest() {
 		RootHash: testutilproof.SmstRootWithSum(s.expectedComputeUnits),
 	}
 
-	// Prepare a claim that can be inserted
+	// Prepare a proof that can be inserted
 	s.proof = prooftypes.Proof{
 		SupplierAddress: s.claim.SupplierAddress,
 		SessionHeader:   s.claim.SessionHeader,
-		// ClosestMerkleProof
+		// ClosestMerkleProof:
 	}
+
+	supplierStake := types.NewCoin("upokt", math.NewInt(1000000))
+	supplier := sharedtypes.Supplier{
+		Address: supplierAddr,
+		Stake:   &supplierStake,
+	}
+	s.keepers.SetSupplier(s.ctx, supplier)
 
 	appStake := types.NewCoin("upokt", math.NewInt(1000000))
 	app := apptypes.Application{
@@ -88,6 +98,15 @@ func (s *TestSuite) SetupTest() {
 		Stake:   &appStake,
 	}
 	s.keepers.SetApplication(s.ctx, app)
+
+	// TODO_IN_THIS_PR: Finish this part
+	moduleBaseMint := types.NewCoins(sdk.NewCoin("upokt", math.NewInt(690000000000000042)))
+	err := s.keepers.MintCoins(s.sdkCtx, suppliertypes.ModuleName, moduleBaseMint)
+	require.NoError(s.T(), err)
+	s.keepers.SendCoinsFromModuleToAccount(s.sdkCtx, suppliertypes.ModuleName, sdk.AccAddress(supplier.Address), moduleBaseMint)
+	err = s.keepers.MintCoins(s.sdkCtx, apptypes.ModuleName, moduleBaseMint)
+	require.NoError(s.T(), err)
+	s.keepers.SendCoinsFromModuleToAccount(s.sdkCtx, suppliertypes.ModuleName, sdk.AccAddress(app.Address), moduleBaseMint)
 }
 
 // TestSettleExpiringClaimsSuite tests the claim settlement process.
@@ -189,9 +208,63 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequiredAndNotProv
 		events, "poktroll.tokenomics.EventClaimExpired")
 	require.Len(t, expectedEvents, 1)
 
+	fmt.Println("expectedEvents", expectedEvents)
 	// Validate the event
 	expectedEvent := expectedEvents[0]
 	require.Equal(t, s.expectedComputeUnits, expectedEvent.GetNumComputeUnits())
+	require.Equal(t, tokenomicstypes.ClaimExpirationReason_PROOF_MISSING, expectedEvent.GetExpirationReason())
+}
+
+func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOneProvided() {
+	// Retrieve default values
+	t := s.T()
+	ctx := s.ctx
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
+
+	// Create a claim that requires a proof and an invalid proof
+	claim := s.claim
+	proof := s.proof
+	proof.ClosestMerkleProof = []byte("invalid_proof")
+
+	// Upsert the proof & claim
+	s.keepers.UpsertClaim(ctx, claim)
+	s.keepers.UpsertProof(ctx, proof)
+
+	// Settle pending claims after proof window closes
+	// Expectation: All (1) claims should be expired.
+	// NB: proofs should be rejected when the current height equals the proof window close height.
+	sessionEndHeight := claim.SessionHeader.SessionEndBlockHeight
+	blockHeight := shared.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
+	sdkCtx = sdkCtx.WithBlockHeight(blockHeight)
+	settledResult, expiredResult, err := s.keepers.SettlePendingClaims(sdkCtx)
+	require.NoError(t, err)
+
+	// Check that no claims were settled.
+	require.Equal(t, uint64(0), settledResult.NumClaims)
+	// Validate that exactly one claims expired
+	require.Equal(t, uint64(1), expiredResult.NumClaims)
+
+	// Validate that no claims remain.
+	claims := s.keepers.GetAllClaims(ctx)
+	require.Len(t, claims, 0)
+
+	// Validate that no proofs remain.
+	proofs := s.keepers.GetAllProofs(ctx)
+	require.Len(t, proofs, 0)
+
+	// Confirm an expiration event was emitted
+	events := sdkCtx.EventManager().Events()
+	require.Len(t, events, 5) // minting, burning, settling, etc..
+	expectedEvents := testutilevents.FilterEvents[*tokenomicstypes.EventClaimExpired](t,
+		events, "poktroll.tokenomics.EventClaimExpired")
+	require.Len(t, expectedEvents, 1)
+
+	fmt.Println("expectedEvents", expectedEvents)
+	// Validate the event
+	expectedEvent := expectedEvents[0]
+	require.Equal(t, s.expectedComputeUnits, expectedEvent.GetNumComputeUnits())
+	require.Equal(t, tokenomicstypes.ClaimExpirationReason_PROOF_INVALID, expectedEvent.GetExpirationReason())
 }
 
 func (s *TestSuite) TestSettlePendingClaims_ClaimSettled_ProofRequiredAndProvided_ViaThreshold() {

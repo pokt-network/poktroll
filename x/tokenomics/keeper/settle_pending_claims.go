@@ -82,12 +82,11 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 
 		proofIsRequired := (proofRequirement != prooftypes.ProofRequirementReason_NOT_REQUIRED)
 		if proofIsRequired {
-
 			// EXPIRATION_REASON_UNSPECIFIED is the default
 			var expirationReason types.ClaimExpirationReason = types.ClaimExpirationReason_EXPIRATION_REASON_UNSPECIFIED
 			if isProofFound {
-				// Should claim expire because proof is invalid?
-				isProofValid, err := k.proofKeeper.IsProofValid(ctx, &proof)
+				var isProofValid bool
+				isProofValid, err = k.proofKeeper.IsProofValid(ctx, &proof)
 				if !isProofValid || err != nil {
 					expirationReason = types.ClaimExpirationReason_PROOF_INVALID
 				}
@@ -104,7 +103,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 					Claim:            &claim,
 					NumComputeUnits:  numClaimComputeUnits,
 					NumRelays:        numRelaysInSessionTree,
-					ExpirationReason: types.ClaimExpirationReason_PROOF_INVALID,
+					ExpirationReason: expirationReason,
 				}
 				if err = ctx.EventManager().EmitTypedEvent(&claimExpiredEvent); err != nil {
 					return settledResult, expiredResult, err
@@ -115,6 +114,9 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 				// The claim & proof are no longer necessary, so there's no need for them
 				// to take up on-chain space.
 				k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierAddress)
+				if isProofFound {
+					k.proofKeeper.RemoveProof(ctx, sessionId, claim.SupplierAddress)
+				}
 
 				expiredResult.NumClaims++
 				expiredResult.NumRelays += numRelaysInSessionTree
@@ -124,11 +126,9 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 
 		}
 
-		// TODO_MAINNET: A potential issue with doing proof validation inside
-		// `SubmitProof` is that we will not be storing false proofs on-chain (e.g. for slashing purposes).
-		// This could be considered a feature (e.g. less state bloat against sybil attacks)
-		// or a bug (i.e. no mechanisms for slashing suppliers who submit false proofs).
-		// Revisit this prior to mainnet launch as to whether the business logic for settling sessions should be in EndBlocker or here.
+		// If this code path is reached, then either:
+		// 1. The claim does not require a proof.
+		// 2. The claim requires a proof and a valid proof was found.
 
 		// Manage the mint & burn accounting for the claim.
 		if err = k.SettleSessionAccounting(ctx, &claim); err != nil {

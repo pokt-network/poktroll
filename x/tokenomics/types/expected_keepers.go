@@ -38,6 +38,7 @@ type ApplicationKeeper interface {
 
 type ProofKeeper interface {
 	GetAllClaims(ctx context.Context) []prooftypes.Claim
+	GetAllProofs(ctx context.Context) []prooftypes.Proof
 	RemoveClaim(ctx context.Context, sessionId, supplierAddr string)
 	GetProof(ctx context.Context, sessionId, supplierAddr string) (proof prooftypes.Proof, isProofFound bool)
 	RemoveProof(ctx context.Context, sessionId, supplierAddr string)
