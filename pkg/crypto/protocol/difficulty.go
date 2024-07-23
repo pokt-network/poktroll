@@ -24,12 +24,12 @@ var (
 // GetDifficultyFromHash returns the "difficulty" of the given hash, with respect
 // to the "highest" (easiest) target hash, BaseRelayDifficultyHash.
 // The resultant value is not used for any business logic but is simplify there to have a human-readable version of the hash.
-// TODO_MAINNET: Can this cause an integer overflow?
 func GetDifficultyFromHash(hashBz [RelayHasherSize]byte) int64 {
 	baseRelayDifficultyHashInt := new(big.Int).SetBytes(BaseRelayDifficultyHashBz)
 	hashInt := new(big.Int).SetBytes(hashBz[:])
 
 	// difficulty is the ratio of the highest target hash to the given hash.
+	// TODO_MAINNET: Can this cause an integer overflow?
 	return new(big.Int).Div(baseRelayDifficultyHashInt, hashInt).Int64()
 }
 
