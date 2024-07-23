@@ -14,13 +14,14 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
+const (
+	// DefaultTestServiceID is the default test service ID
+	DefaultTestServiceID = "svc1"
+)
+
 // BaseClaim returns a base (default, example, etc..) claim with the given app
-// address, supplier address, and sum that can be used for testing.
-// The service ID is optional and defaults to "svc1" if not provided.
+// address, supplier address, sum, and serviceID that can be used for testing.
 func BaseClaim(appAddr, supplierAddr string, sum uint64, serviceId string) prooftypes.Claim {
-	if serviceId == "" {
-		serviceId = "svc11"
-	}
 	return prooftypes.Claim{
 		SupplierAddress: supplierAddr,
 		SessionHeader: &sessiontypes.SessionHeader{
@@ -41,7 +42,7 @@ func BaseClaim(appAddr, supplierAddr string, sum uint64, serviceId string) proof
 // generated this way will have a random chance to require a proof via probabilistic
 // selection.
 func ClaimWithRandomHash(t *testing.T, appAddr, supplierAddr string, sum uint64) prooftypes.Claim {
-	claim := BaseClaim(appAddr, supplierAddr, sum, "")
+	claim := BaseClaim(appAddr, supplierAddr, sum, DefaultTestServiceID)
 	claim.RootHash = RandSmstRootWithSum(t, sum)
 	return claim
 }

@@ -14,6 +14,7 @@ import (
 
 var _ = strconv.Itoa(0)
 
+// TODO_MAINNET: Make it possible to update a service (e.g. update # of compute units per relay
 func CmdAddService() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   fmt.Sprintf("add-service <service_id> <service_name> [compute_units_per_relay: default={%d}]", types.DefaultComputeUnitsPerRelay),
@@ -22,7 +23,7 @@ func CmdAddService() *cobra.Command {
 gateways and suppliers to use. The service id MUST be unique but the service name doesn't have to be.
 
 Example:
-$ poktrolld tx service add-service "svc1" "service_one" --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
+$ poktrolld tx service add-service "svc1" "service_one" 1 --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
 		Args: cobra.MinimumNArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			serviceIdStr := args[0]

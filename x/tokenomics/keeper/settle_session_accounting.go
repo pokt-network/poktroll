@@ -93,23 +93,9 @@ func (k Keeper) SettleSessionAccounting(
 		return types.ErrTokenomicsApplicationNotFound
 	}
 
-	serviceConfigs := application.ServiceConfigs
-	if len(serviceConfigs) == 0 {
-		logger.Warn(fmt.Sprintf("application with address %q has no service configs", applicationAddress))
-		return types.ErrTokenomicsApplicationNoServiceConfigs
-	}
-
-	var computeUnitsPerRelay uint64
-	for i, sc := range serviceConfigs {
-		service := sc.GetService()
-		if service.Id == sessionHeader.Service.Id {
-			computeUnitsPerRelay = service.ComputeUnitsPerRelay
-			break
-		}
-		if i == len(serviceConfigs)-1 {
-			logger.Warn(fmt.Sprintf("service with ID %q not found in application with address %q", sessionHeader.Service.Id, applicationAddress))
-			return types.ErrTokenomicsApplicationNoServiceConfigs
-		}
+	computeUnitsPerRelay, err := k.getComputUnitsPerRelayFromApplication(application, sessionHeader.Service.Id)
+	if err != nil {
+		return err
 	}
 
 	computeUnitsToTokensMultiplier := k.GetParams(ctx).ComputeUnitsToTokensMultiplier
@@ -117,7 +103,7 @@ func (k Keeper) SettleSessionAccounting(
 	logger.Info(fmt.Sprintf("About to start settling claim for %d compute units with CUPR %d and CUTTM %d", claimComputeUnits, computeUnitsPerRelay, computeUnitsToTokensMultiplier))
 
 	// Calculate the amount of tokens to mint & burn
-	settlementAmt = k.relayCountToCoin(claimComputeUnits, computeUnitsPerRelay, computeUnitsToTokensMultiplier)
+	settlementAmt = relayCountToCoin(claimComputeUnits, computeUnitsPerRelay, computeUnitsToTokensMultiplier)
 	settlementAmtuPOKT := sdk.NewCoins(settlementAmt)
 
 	logger.Info(fmt.Sprintf(
@@ -199,7 +185,28 @@ func (k Keeper) SettleSessionAccounting(
 }
 
 // relayCountToCoin calculates the amount of uPOKT to mint based on the number of relays, the service-specific ComputeUnitsPerRelay, and the ComputeUnitsPerTokenMultiplier tokenomics param
-func (k Keeper) relayCountToCoin(relays uint64, computeUnitsPerRelay uint64, computeUnitsToTokensMultiplier uint64) sdk.Coin {
-	upokt := math.NewInt(int64(relays * computeUnitsPerRelay * computeUnitsToTokensMultiplier))
+func relayCountToCoin(numRelays, computeUnitsPerRelay uint64, computeUnitsToTokensMultiplier uint64) sdk.Coin {
+	upokt := math.NewInt(int64(numRelays * computeUnitsPerRelay * computeUnitsToTokensMultiplier))
 	return sdk.NewCoin("upokt", upokt)
+}
+
+// getComputUnitsPerRelayFromApplication retrieves the ComputeUnitsPerRelay for a given service from the application's service configs
+func (k Keeper) getComputUnitsPerRelayFromApplication(application apptypes.Application, serviceID string) (cupr uint64, err error) {
+	logger := k.Logger().With("method", "getComputeUnitsPerRelayFromApplication")
+
+	serviceConfigs := application.ServiceConfigs
+	if len(serviceConfigs) == 0 {
+		logger.Warn(fmt.Sprintf("application with address %q has no service configs", application.Address))
+		return 0, types.ErrTokenomicsApplicationNoServiceConfigs
+	}
+
+	for _, sc := range serviceConfigs {
+		service := sc.GetService()
+		if service.Id == serviceID {
+			return service.ComputeUnitsPerRelay, nil
+		}
+	}
+
+	logger.Warn(fmt.Sprintf("service with ID %q not found in application with address %q", serviceID, application.Address))
+	return 0, types.ErrTokenomicsApplicationNoServiceConfigs
 }

@@ -76,6 +76,7 @@ func TokenomicsKeeper(t testing.TB) (tokenomicsKeeper tokenomicskeeper.Keeper, c
 
 // TODO_TECHDEBT: Have the callers use the keepers to find `appAddr` and `supplierAddr`
 // rather than returning them explicitly.
+// TODO_TECHDEBT(@Olshansk): Remove `service` parameter and convert proper options.
 func TokenomicsKeeperWithActorAddrs(t testing.TB, service *sharedtypes.Service) (
 	tokenomicsKeeper tokenomicskeeper.Keeper,
 	ctx context.Context,
