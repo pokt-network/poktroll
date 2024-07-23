@@ -185,6 +185,9 @@ genesis:
     service:
       params:
         add_service_fee: "1000000000"
+      serviceList:
+        - id: anvil
+          name: ""
     proof:
       params:
         proof_request_probability: "0.25"
