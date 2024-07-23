@@ -6,7 +6,7 @@ import (
 	storetypes "cosmossdk.io/store/types"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
-	appKeeper "github.com/pokt-network/poktroll/x/application/keeper"
+	"github.com/pokt-network/poktroll/app/keepers"
 )
 
 // defaultMigrationsOnlyUpgradeHandler creates an update handler that only performs module's `ConsensusVersion`
@@ -15,7 +15,7 @@ import (
 // upgrade handler should be created.
 func defaultMigrationsOnlyUpgradeHandler(
 	mm *module.Manager,
-	_ appKeeper.Keeper,
+	keepers *keepers.Keepers,
 	configurator module.Configurator) upgradetypes.UpgradeHandler {
 	return func(ctx context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
 		return mm.RunMigrations(ctx, configurator, vm)

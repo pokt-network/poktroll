@@ -5,7 +5,7 @@ import (
 	"github.com/pokt-network/poktroll/app/upgrades"
 )
 
-// allUpgrades includes all upgrades that have been created (in the code)
+// allUpgrades includes all upgrades that have been created, but not necessarily submitted on-chain
 var allUpgrades = []upgrades.Upgrade{
 	upgrades.Upgrade_0_4_0,
 }
@@ -13,27 +13,27 @@ var allUpgrades = []upgrades.Upgrade{
 func (app *App) setUpgrades() error {
 	// Set upgrade handlers for all upgrades
 	for _, u := range allUpgrades {
-		app.UpgradeKeeper.SetUpgradeHandler(
+		app.Keepers.UpgradeKeeper.SetUpgradeHandler(
 			u.VersionName,
-			u.CreateUpgradeHandler(app.ModuleManager, app.ApplicationKeeper, app.Configurator()),
+			u.CreateUpgradeHandler(app.ModuleManager, &app.Keepers, app.Configurator()),
 		)
 	}
 
 	// Reads the upgrade info from disk (was put there by the old binary using on-chain upgrade `Plan`).
-	upgradePlan, err := app.UpgradeKeeper.ReadUpgradeInfoFromDisk()
+	upgradePlan, err := app.Keepers.UpgradeKeeper.ReadUpgradeInfoFromDisk()
 	if err != nil {
 		return err
 	}
 
-	// Find the planned upgrade by name. Assume there's nothing to upgrade, as `ReadUpgradeInfoFromDisk()` would have
-	// returned an error if the file was missing/corrupted.
+	// Find the planned upgrade by name. If not found, assume there's nothing to upgrade, as `ReadUpgradeInfoFromDisk()`
+	// would have returned an error if the file was corrupted ot there's OS permissions issue.
 	planedUpgrade, found := findPlannedUpgrade(upgradePlan.Name)
 	if !found {
 		return nil
 	}
 
 	// Allows to skip the store upgrade if `--unsafe-skip-upgrades` is provided and the height matches.
-	shouldSkipStoreUpgrade := app.UpgradeKeeper.IsSkipHeight(upgradePlan.Height)
+	shouldSkipStoreUpgrade := app.Keepers.UpgradeKeeper.IsSkipHeight(upgradePlan.Height)
 
 	if !shouldSkipStoreUpgrade {
 		app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradePlan.Height, &planedUpgrade.StoreUpgrades))
