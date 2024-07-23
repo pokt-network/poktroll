@@ -28,36 +28,41 @@ func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) error {
 
 		unbondingHeight := k.GetSupplierUnbondingHeight(ctx, &supplier)
 
-		// If the unbonding height is older (less) than the current height, unbond the supplier.
-		if unbondingHeight <= currentHeight {
-			// Retrieve the address of the supplier.
-			supplierAddress, err := cosmostypes.AccAddressFromBech32(supplier.Address)
-			if err != nil {
-				logger.Error(fmt.Sprintf("could not parse address %s", supplier.Address))
-				return err
-			}
-
-			// Send the coins from the supplier pool back to the supplier.
-			if err = k.bankKeeper.SendCoinsFromModuleToAccount(
-				ctx, types.ModuleName, supplierAddress, []cosmostypes.Coin{*supplier.Stake},
-			); err != nil {
-				logger.Error(fmt.Sprintf(
-					"could not send %s coins from %s module to %s account due to %s",
-					supplier.Stake.String(), supplierAddress, types.ModuleName, err,
-				))
-				return err
-			}
-
-			// Remove the supplier from the store.
-			k.RemoveSupplier(ctx, supplierAddress.String())
-			logger.Info(fmt.Sprintf("Successfully removed the supplier: %+v", supplier))
+		// If the unbonding height is ahead of the current height, the supplier
+		// stays in the unbonding state.
+		if unbondingHeight > currentHeight {
+			continue
 		}
+
+		// Retrieve the address of the supplier.
+		supplierAddress, err := cosmostypes.AccAddressFromBech32(supplier.Address)
+		if err != nil {
+			logger.Error(fmt.Sprintf("could not parse address %s", supplier.Address))
+			return err
+		}
+
+		// Send the coins from the supplier pool back to the supplier.
+		if err = k.bankKeeper.SendCoinsFromModuleToAccount(
+			ctx, types.ModuleName, supplierAddress, []cosmostypes.Coin{*supplier.Stake},
+		); err != nil {
+			logger.Error(fmt.Sprintf(
+				"could not send %s coins from %s module to %s account due to %s",
+				supplier.Stake.String(), supplierAddress, types.ModuleName, err,
+			))
+			return err
+		}
+
+		// Remove the supplier from the store.
+		k.RemoveSupplier(ctx, supplierAddress.String())
+		logger.Info(fmt.Sprintf("Successfully removed the supplier: %+v", supplier))
 	}
 
 	return nil
 }
 
 // GetSupplierUnbondingHeight returns the height at which the supplier can be unbonded.
+// TODO_REFACTOR(@red-0ne): Make this a static function in the shared pkg alongside
+// the window height helpers.
 func (k Keeper) GetSupplierUnbondingHeight(
 	ctx context.Context,
 	supplier *sharedtypes.Supplier,
