@@ -1,5 +1,8 @@
 package service
 
+// TODO_BETA: Add `UpdateService` or modify `AddService` to `UpsertService` to allow service owners
+// to update parameters of existing services. This will requiring updating `proto/poktroll/service/tx.proto` and
+// all downstream code paths.
 import (
 	"fmt"
 	"strconv"
