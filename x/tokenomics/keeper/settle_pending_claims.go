@@ -88,6 +88,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 				var isProofValid bool
 				isProofValid, err = k.proofKeeper.IsProofValid(ctx, &proof)
 				if !isProofValid || err != nil {
+					logger.Warn(fmt.Sprintf("Proof was found but is invalid due to %v", err))
 					expirationReason = types.ClaimExpirationReason_PROOF_INVALID
 				}
 			} else {

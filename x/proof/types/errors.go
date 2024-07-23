@@ -32,4 +32,5 @@ var (
 	ErrProofClaimOutsideOfWindow      = sdkerrors.Register(ModuleName, 1121, "claim attempted outside of the session's claim window")
 	ErrProofProofOutsideOfWindow      = sdkerrors.Register(ModuleName, 1122, "proof attempted outside of the session's proof window")
 	ErrProofSupplierMismatch          = sdkerrors.Register(ModuleName, 1123, "supplier address does not match the claim or proof")
+	ErrProofAccNotFound               = sdkerrors.Register(ModuleName, 1124, "account not found")
 )

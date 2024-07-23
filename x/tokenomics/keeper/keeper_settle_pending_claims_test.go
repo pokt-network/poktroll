@@ -52,6 +52,8 @@ type TestSuite struct {
 // - A claim that will require a proof via threshold, given the default proof params.
 // - A proof which contains only the session header supplier address.
 func (s *TestSuite) SetupTest() {
+	t := s.T()
+
 	supplierAddr := sample.AccAddress()
 	appAddr := sample.AccAddress()
 
@@ -99,14 +101,27 @@ func (s *TestSuite) SetupTest() {
 	}
 	s.keepers.SetApplication(s.ctx, app)
 
-	// TODO_IN_THIS_PR: Finish this part
+	// Mint some coins to the supplier and application modules
 	moduleBaseMint := types.NewCoins(sdk.NewCoin("upokt", math.NewInt(690000000000000042)))
+
 	err := s.keepers.MintCoins(s.sdkCtx, suppliertypes.ModuleName, moduleBaseMint)
-	require.NoError(s.T(), err)
-	s.keepers.SendCoinsFromModuleToAccount(s.sdkCtx, suppliertypes.ModuleName, sdk.AccAddress(supplier.Address), moduleBaseMint)
+	require.NoError(t, err)
+
 	err = s.keepers.MintCoins(s.sdkCtx, apptypes.ModuleName, moduleBaseMint)
-	require.NoError(s.T(), err)
-	s.keepers.SendCoinsFromModuleToAccount(s.sdkCtx, suppliertypes.ModuleName, sdk.AccAddress(app.Address), moduleBaseMint)
+	require.NoError(t, err)
+
+	// Send some coins to the supplier and application accounts
+	sendAmount := types.NewCoins(sdk.NewCoin("upokt", math.NewInt(1000000)))
+
+	err = s.keepers.SendCoinsFromModuleToAccount(s.sdkCtx, suppliertypes.ModuleName, sdk.AccAddress(supplier.Address), sendAmount)
+	require.NoError(t, err)
+	acc := s.keepers.GetAccount(s.ctx, sdk.AccAddress(supplierAddr))
+	require.NotNil(t, acc)
+
+	err = s.keepers.SendCoinsFromModuleToAccount(s.sdkCtx, apptypes.ModuleName, sdk.AccAddress(app.Address), sendAmount)
+	require.NoError(t, err)
+	acc = s.keepers.GetAccount(s.ctx, sdk.AccAddress(appAddr))
+	require.NotNil(t, acc)
 }
 
 // TestSettleExpiringClaimsSuite tests the claim settlement process.
@@ -255,7 +270,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOn
 
 	// Confirm an expiration event was emitted
 	events := sdkCtx.EventManager().Events()
-	require.Len(t, events, 5) // minting, burning, settling, etc..
+	require.Len(t, events, 17) // minting, burning, settling, etc..
 	expectedEvents := testutilevents.FilterEvents[*tokenomicstypes.EventClaimExpired](t,
 		events, "poktroll.tokenomics.EventClaimExpired")
 	require.Len(t, expectedEvents, 1)

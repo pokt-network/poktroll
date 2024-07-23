@@ -32,6 +32,7 @@ import (
 	"bytes"
 	"context"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/smt"
 
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
@@ -57,9 +58,9 @@ func (k Keeper) IsProofValid(
 
 	// Retrieve the supplier's public key.
 	supplierAddr := proof.SupplierAddress
-	supplierPubKey, err := k.accountQuerier.GetPubKeyFromAddress(ctx, supplierAddr)
-	if err != nil {
-		return false, err
+	supplierAccount := k.accountKeeper.GetAccount(ctx, sdk.AccAddress(supplierAddr))
+	if supplierAccount == nil || supplierAccount.GetPubKey() == nil {
+		return false, types.ErrProofAccNotFound.Wrapf("account for supplier %q not found", supplierAddr)
 	}
 
 	// Validate the session header.
@@ -145,7 +146,7 @@ func (k Keeper) IsProofValid(
 	logger.Debug("successfully verified relay request signature")
 
 	// Verify the relay response's signature.
-	if err = relayRes.VerifySupplierSignature(supplierPubKey); err != nil {
+	if err = relayRes.VerifySupplierSignature(supplierAccount.GetPubKey()); err != nil {
 		return false, err
 	}
 	logger.Debug("successfully verified relay response signature")
