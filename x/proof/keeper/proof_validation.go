@@ -31,6 +31,7 @@ package keeper
 import (
 	"bytes"
 	"context"
+	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/smt"
@@ -58,10 +59,19 @@ func (k Keeper) IsProofValid(
 
 	// Retrieve the supplier's public key.
 	supplierAddr := proof.SupplierAddress
-	supplierAccount := k.accountKeeper.GetAccount(ctx, sdk.AccAddress(supplierAddr))
-	if supplierAccount == nil || supplierAccount.GetPubKey() == nil {
-		return false, types.ErrProofAccNotFound.Wrapf("account for supplier %q not found", supplierAddr)
+	supplierAccAddr, err := sdk.AccAddressFromBech32(supplierAddr)
+	if err != nil {
+		return false, err
 	}
+	supplierAccount := k.accountKeeper.GetAccount(ctx, supplierAccAddr)
+	fmt.Println("OLSH", supplierAccAddr, supplierAccount.GetPubKey())
+	// require.NotNil(t, acc)
+
+	supplierPubKey, err := k.accountQuerier.GetPubKeyFromAddress(ctx, supplierAddr)
+	if err != nil {
+		return false, err
+	}
+	fmt.Println("OLSH3", supplierPubKey)
 
 	// Validate the session header.
 	var onChainSession *sessiontypes.Session
@@ -146,7 +156,7 @@ func (k Keeper) IsProofValid(
 	logger.Debug("successfully verified relay request signature")
 
 	// Verify the relay response's signature.
-	if err = relayRes.VerifySupplierSignature(supplierAccount.GetPubKey()); err != nil {
+	if err = relayRes.VerifySupplierSignature(supplierPubKey); err != nil {
 		return false, err
 	}
 	logger.Debug("successfully verified relay response signature")

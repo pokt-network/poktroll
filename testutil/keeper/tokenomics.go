@@ -62,6 +62,7 @@ type TokenomicsModuleKeepers struct {
 	tokenomicstypes.SupplierKeeper
 	tokenomicstypes.ProofKeeper
 	tokenomicstypes.SharedKeeper
+	tokenomicstypes.SessionKeeper
 
 	Codec *codec.ProtoCodec
 }
@@ -363,6 +364,7 @@ func NewTokenomicsModuleKeepers(
 		SupplierKeeper:    &supplierKeeper,
 		ProofKeeper:       &proofKeeper,
 		SharedKeeper:      &sharedKeeper,
+		SessionKeeper:     &sessionKeeper,
 
 		Codec: cdc,
 	}

@@ -82,8 +82,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 
 		proofIsRequired := (proofRequirement != prooftypes.ProofRequirementReason_NOT_REQUIRED)
 		if proofIsRequired {
-			// EXPIRATION_REASON_UNSPECIFIED is the default
-			var expirationReason types.ClaimExpirationReason = types.ClaimExpirationReason_EXPIRATION_REASON_UNSPECIFIED
+			var expirationReason types.ClaimExpirationReason = types.ClaimExpirationReason_EXPIRATION_REASON_UNSPECIFIED // EXPIRATION_REASON_UNSPECIFIED is the default
 			if isProofFound {
 				var isProofValid bool
 				isProofValid, err = k.proofKeeper.IsProofValid(ctx, &proof)

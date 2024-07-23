@@ -18,6 +18,7 @@ import (
 	testutilevents "github.com/pokt-network/poktroll/testutil/events"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/testkeyring"
+	"github.com/pokt-network/poktroll/testutil/testtree"
 	"github.com/pokt-network/poktroll/x/proof/keeper"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
@@ -142,7 +143,7 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 
 			// Submit the corresponding proof.
 			expectedNumRelays := uint(5)
-			sessionTree := newFilledSessionTree(
+			sessionTree := testtree.NewFilledSessionTree(
 				ctx, t,
 				expectedNumRelays,
 				supplierUid, supplierAddr,
@@ -289,7 +290,7 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 
 	// Submit the corresponding proof.
 	numRelays := uint(5)
-	sessionTree := newFilledSessionTree(
+	sessionTree := NewFilledSessionTree(
 		ctx, t,
 		numRelays,
 		supplierUid, supplierAddr,
@@ -475,7 +476,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 
 	// Construct a valid session tree with 5 relays.
 	numRelays := uint(5)
-	validSessionTree := newFilledSessionTree(
+	validSessionTree := testtree.NewFilledSessionTree(
 		ctx, t,
 		numRelays,
 		supplierUid, supplierAddr,

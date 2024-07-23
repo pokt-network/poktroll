@@ -1,9 +1,7 @@
 package keeper_test
 
 import (
-	"context"
 	"encoding/hex"
-	"os"
 	"testing"
 
 	"cosmossdk.io/depinject"
@@ -14,18 +12,16 @@ import (
 	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/pkg/crypto"
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/pkg/relayer"
-	"github.com/pokt-network/poktroll/pkg/relayer/session"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/testkeyring"
 	"github.com/pokt-network/poktroll/testutil/testrelayer"
+	"github.com/pokt-network/poktroll/testutil/testtree"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -118,7 +114,7 @@ func TestIsProofValid_Error(t *testing.T) {
 
 	// Construct a valid session tree with 5 relays.
 	numRelays := uint(5)
-	validSessionTree := newFilledSessionTree(
+	validSessionTree := testtree.NewFilledSessionTree(
 		ctx, t,
 		numRelays,
 		supplierUid, supplierAddr,
@@ -205,7 +201,7 @@ func TestIsProofValid_Error(t *testing.T) {
 				emptySessionIdHeader.SessionId = ""
 
 				// Construct new proof message.
-				return newProof(t,
+				return testtree.NewProof(t,
 					supplierAddr,
 					&emptySessionIdHeader,
 					validSessionTree,
@@ -221,7 +217,7 @@ func TestIsProofValid_Error(t *testing.T) {
 			desc: "merkle proof cannot be empty",
 			newProof: func(t *testing.T) *prooftypes.Proof {
 				// Construct new proof message.
-				proof := newProof(t,
+				proof := testtree.NewProof(t,
 					supplierAddr,
 					validSessionHeader,
 					validSessionTree,
@@ -240,7 +236,7 @@ func TestIsProofValid_Error(t *testing.T) {
 			desc: "proof session ID must match on-chain session ID",
 			newProof: func(t *testing.T) *prooftypes.Proof {
 				// Construct new proof message using the wrong session ID.
-				return newProof(t,
+				return testtree.NewProof(t,
 					supplierAddr,
 					&wrongSessionIdHeader,
 					validSessionTree,
@@ -257,7 +253,7 @@ func TestIsProofValid_Error(t *testing.T) {
 			desc: "proof supplier must be in on-chain session",
 			newProof: func(t *testing.T) *prooftypes.Proof {
 				// Construct a proof message with a  supplier that does not belong in the session.
-				return newProof(t,
+				return testtree.NewProof(t,
 					wrongSupplierAddr,
 					validSessionHeader,
 					validSessionTree,
@@ -274,7 +270,7 @@ func TestIsProofValid_Error(t *testing.T) {
 			desc: "merkle proof must be deserializabled",
 			newProof: func(t *testing.T) *prooftypes.Proof {
 				// Construct new proof message.
-				proof := newProof(t,
+				proof := testtree.NewProof(t,
 					supplierAddr,
 					validSessionHeader,
 					validSessionTree,
@@ -295,7 +291,7 @@ func TestIsProofValid_Error(t *testing.T) {
 			desc: "relay must be deserializable",
 			newProof: func(t *testing.T) *prooftypes.Proof {
 				// Construct a session tree to which we'll add 1 unserializable relay.
-				mangledRelaySessionTree := newEmptySessionTree(t, validSessionHeader, supplierAddr)
+				mangledRelaySessionTree := testtree.NewEmptySessionTree(t, validSessionHeader, supplierAddr)
 
 				// Add the mangled relay to the session tree.
 				err = mangledRelaySessionTree.Update([]byte{1}, mangledRelayBz, 1)
@@ -311,7 +307,7 @@ func TestIsProofValid_Error(t *testing.T) {
 
 				// Create a claim with a merkle root derived from a session tree
 				// with an unserializable relay.
-				claim := newClaim(t,
+				claim := testtree.NewClaim(t,
 					supplierAddr,
 					validSessionHeader,
 					mangledRelayMerkleRootBz,
@@ -321,7 +317,7 @@ func TestIsProofValid_Error(t *testing.T) {
 
 				// Construct new proof message derived from a session tree
 				// with an unserializable relay.
-				return newProof(t,
+				return testtree.NewProof(t,
 					supplierAddr,
 					validSessionHeader,
 					mangledRelaySessionTree,
@@ -340,7 +336,7 @@ func TestIsProofValid_Error(t *testing.T) {
 				// Construct a session tree with 1 relay with a session header containing
 				// a session ID that doesn't match the proof session ID.
 				numRelays := uint(1)
-				wrongRequestSessionIdSessionTree := newFilledSessionTree(
+				wrongRequestSessionIdSessionTree := testtree.NewFilledSessionTree(
 					ctx, t,
 					numRelays,
 					supplierUid, supplierAddr,
@@ -359,7 +355,7 @@ func TestIsProofValid_Error(t *testing.T) {
 
 				// Create a claim with a merkle root derived from a relay
 				// request containing the wrong session ID.
-				claim := newClaim(t,
+				claim := NewClaim(t,
 					supplierAddr,
 					validSessionHeader,
 					wrongRequestSessionIdMerkleRootBz,
@@ -369,7 +365,7 @@ func TestIsProofValid_Error(t *testing.T) {
 
 				// Construct new proof message using the valid session header,
 				// *not* the one used in the session tree's relay request.
-				return newProof(t,
+				return NewProof(t,
 					supplierAddr,
 					validSessionHeader,
 					wrongRequestSessionIdSessionTree,
@@ -389,7 +385,7 @@ func TestIsProofValid_Error(t *testing.T) {
 				// Construct a session tree with 1 relay with a session header containing
 				// a session ID that doesn't match the expected session ID.
 				numRelays := uint(1)
-				wrongResponseSessionIdSessionTree := newFilledSessionTree(
+				wrongResponseSessionIdSessionTree := testtree.NewFilledSessionTree(
 					ctx, t,
 					numRelays,
 					supplierUid, supplierAddr,
@@ -408,7 +404,7 @@ func TestIsProofValid_Error(t *testing.T) {
 
 				// Create a claim with a merkle root derived from a relay
 				// response containing the wrong session ID.
-				claim := newClaim(t,
+				claim := testtree.NewClaim(t,
 					supplierAddr,
 					validSessionHeader,
 					wrongResponseSessionIdMerkleRootBz,
@@ -418,7 +414,7 @@ func TestIsProofValid_Error(t *testing.T) {
 
 				// Construct new proof message using the valid session header,
 				// *not* the one used in the session tree's relay response.
-				return newProof(t,
+				return testtree.NewProof(t,
 					supplierAddr,
 					validSessionHeader,
 					wrongResponseSessionIdSessionTree,
@@ -446,7 +442,7 @@ func TestIsProofValid_Error(t *testing.T) {
 
 				// Construct a session tree with 1 relay with a session header containing
 				// a session ID that doesn't match the expected session ID.
-				invalidRequestSignatureSessionTree := newEmptySessionTree(t, validSessionHeader, supplierAddr)
+				invalidRequestSignatureSessionTree := NewEmptySessionTree(t, validSessionHeader, supplierAddr)
 
 				// Add the relay to the session tree.
 				err = invalidRequestSignatureSessionTree.Update([]byte{1}, invalidRequestSignatureRelayBz, 1)
@@ -463,7 +459,7 @@ func TestIsProofValid_Error(t *testing.T) {
 				// Create a claim with a merkle root derived from a session tree
 				// with an invalid relay request signature.
 
-				claim := newClaim(t,
+				claim := testtree.NewClaim(t,
 					supplierAddr,
 					validSessionHeader,
 					invalidRequestSignatureMerkleRootBz,
@@ -473,7 +469,7 @@ func TestIsProofValid_Error(t *testing.T) {
 
 				// Construct new proof message derived from a session tree
 				// with an invalid relay request signature.
-				return newProof(t,
+				return testtree.NewProof(t,
 					supplierAddr,
 					validSessionHeader,
 					invalidRequestSignatureSessionTree,
@@ -507,7 +503,7 @@ func TestIsProofValid_Error(t *testing.T) {
 
 				// Construct a session tree with 1 relay with a session header containing
 				// a session ID that doesn't match the expected session ID.
-				invalidResponseSignatureSessionTree := newEmptySessionTree(t, validSessionHeader, supplierAddr)
+				invalidResponseSignatureSessionTree := NewEmptySessionTree(t, validSessionHeader, supplierAddr)
 
 				// Add the relay to the session tree.
 				err = invalidResponseSignatureSessionTree.Update([]byte{1}, relayBz, 1)
@@ -523,7 +519,7 @@ func TestIsProofValid_Error(t *testing.T) {
 
 				// Create a claim with a merkle root derived from a session tree
 				// with an invalid relay response signature.
-				claim := newClaim(t,
+				claim := NewClaim(t,
 					supplierAddr,
 					validSessionHeader,
 					invalidResponseSignatureMerkleRootBz,
@@ -533,7 +529,7 @@ func TestIsProofValid_Error(t *testing.T) {
 
 				// Construct new proof message derived from a session tree
 				// with an invalid relay response signature.
-				return newProof(t,
+				return NewProof(t,
 					supplierAddr,
 					validSessionHeader,
 					invalidResponseSignatureSessionTree,
@@ -555,7 +551,7 @@ func TestIsProofValid_Error(t *testing.T) {
 				// Construct a new valid session tree for this test case because once the
 				// closest proof has already been generated, the path cannot be changed.
 				numRelays := uint(5)
-				wrongPathSessionTree := newFilledSessionTree(
+				wrongPathSessionTree := testtree.SessionTree(
 					ctx, t,
 					numRelays,
 					supplierUid, supplierAddr,
@@ -571,7 +567,7 @@ func TestIsProofValid_Error(t *testing.T) {
 				claimCtx := keepertest.SetBlockHeight(ctx, claimMsgHeight)
 
 				// Create an upsert the claim
-				claim := newClaim(t,
+				claim := testtree.NewClaim(t,
 					supplierAddr,
 					validSessionHeader,
 					wrongPathMerkleRootBz,
@@ -581,7 +577,7 @@ func TestIsProofValid_Error(t *testing.T) {
 
 				// Construct new proof message derived from a session tree
 				// with an invalid relay response signature.
-				return newProof(t, supplierAddr, validSessionHeader, wrongPathSessionTree, wrongClosestProofPath)
+				return testtree.NewProof(t, supplierAddr, validSessionHeader, wrongPathSessionTree, wrongClosestProofPath)
 			},
 			expectedErr: prooftypes.ErrProofInvalidProof.Wrapf(
 				"the path of the proof provided (%x) does not match one expected by the on-chain protocol (%x)",
@@ -607,7 +603,7 @@ func TestIsProofValid_Error(t *testing.T) {
 
 				// Construct a proof message with a session tree containing
 				// a relay of insufficient difficulty.
-				return newProof(t,
+				return NewProof(t,
 					supplierAddr,
 					validSessionHeader,
 					validSessionTree,
@@ -633,7 +629,7 @@ func TestIsProofValid_Error(t *testing.T) {
 			newProof: func(t *testing.T) *prooftypes.Proof {
 				// Construct a new session tree corresponding to the unclaimed session.
 				numRelays := uint(5)
-				unclaimedSessionTree := newFilledSessionTree(
+				unclaimedSessionTree := testtree.NewFilledSessionTree(
 					ctx, t,
 					numRelays,
 					"wrong_supplier", wrongSupplierAddr,
@@ -655,7 +651,7 @@ func TestIsProofValid_Error(t *testing.T) {
 
 				// Construct new proof message using the supplier & session header
 				// from the session which is *not* expected to be claimed.
-				return newProof(t,
+				return NewProof(t,
 					wrongSupplierAddr,
 					unclaimedSessionHeader,
 					unclaimedSessionTree,
@@ -672,7 +668,7 @@ func TestIsProofValid_Error(t *testing.T) {
 			desc: "Valid proof cannot validate claim with an incorrect root",
 			newProof: func(t *testing.T) *prooftypes.Proof {
 				numRelays := uint(10)
-				wrongMerkleRootSessionTree := newFilledSessionTree(
+				wrongMerkleRootSessionTree := NewFilledSessionTree(
 					ctx, t,
 					numRelays,
 					supplierUid, supplierAddr,
@@ -688,7 +684,7 @@ func TestIsProofValid_Error(t *testing.T) {
 				claimCtx := keepertest.SetBlockHeight(ctx, claimMsgHeight)
 
 				// Create a claim with the incorrect Merkle root.
-				claim := newClaim(t,
+				claim := testtree.NewClaim(t,
 					supplierAddr,
 					validSessionHeader,
 					wrongMerkleRootBz,
@@ -697,7 +693,7 @@ func TestIsProofValid_Error(t *testing.T) {
 				require.NoError(t, err)
 
 				// Construct a valid session tree with 5 relays.
-				validSessionTree := newFilledSessionTree(
+				validSessionTree := testtree.NewFilledSessionTree(
 					ctx, t,
 					uint(5),
 					supplierUid, supplierAddr,
@@ -715,7 +711,7 @@ func TestIsProofValid_Error(t *testing.T) {
 					validSessionHeader.GetSessionId(),
 				)
 
-				return newProof(t,
+				return testtree.NewProof(t,
 					supplierAddr,
 					validSessionHeader,
 					validSessionTree,
@@ -774,100 +770,6 @@ func TestIsProofValid_Error(t *testing.T) {
 	}
 }
 
-// newFilledSessionTree creates a new session tree with numRelays of relays
-// filled out using the request and response headers provided where every
-// relay is signed by the supplier and application respectively.
-func newFilledSessionTree(
-	ctx context.Context, t *testing.T,
-	numRelays uint,
-	supplierKeyUid, supplierAddr string,
-	sessionTreeHeader, reqHeader, resHeader *sessiontypes.SessionHeader,
-	keyRing keyring.Keyring,
-	ringClient crypto.RingClient,
-) relayer.SessionTree {
-	t.Helper()
-
-	// Initialize an empty session tree with the given session header.
-	sessionTree := newEmptySessionTree(t, sessionTreeHeader, supplierAddr)
-
-	// Add numRelays of relays to the session tree.
-	fillSessionTree(
-		ctx, t,
-		sessionTree, numRelays,
-		supplierKeyUid, supplierAddr,
-		reqHeader, resHeader,
-		keyRing,
-		ringClient,
-	)
-
-	return sessionTree
-}
-
-// newEmptySessionTree creates a new empty session tree with for given session.
-func newEmptySessionTree(
-	t *testing.T,
-	sessionTreeHeader *sessiontypes.SessionHeader,
-	supplierAddr string,
-) relayer.SessionTree {
-	t.Helper()
-
-	// Create a temporary session tree store directory for persistence.
-	testSessionTreeStoreDir, err := os.MkdirTemp("", "session_tree_store_dir")
-	require.NoError(t, err)
-
-	// Delete the temporary session tree store directory after the test completes.
-	t.Cleanup(func() {
-		_ = os.RemoveAll(testSessionTreeStoreDir)
-	})
-
-	accAddress := cosmostypes.MustAccAddressFromBech32(supplierAddr)
-
-	// Construct a session tree to add relays to and generate a proof from.
-	sessionTree, err := session.NewSessionTree(
-		sessionTreeHeader,
-		&accAddress,
-		testSessionTreeStoreDir,
-	)
-	require.NoError(t, err)
-
-	return sessionTree
-}
-
-// fillSessionTree fills the session tree with valid signed relays.
-// A total of numRelays relays are added to the session tree with
-// increasing weights (relay 1 has weight 1, relay 2 has weight 2, etc.).
-func fillSessionTree(
-	ctx context.Context, t *testing.T,
-	sessionTree relayer.SessionTree,
-	numRelays uint,
-	supplierKeyUid, supplierAddr string,
-	reqHeader, resHeader *sessiontypes.SessionHeader,
-	keyRing keyring.Keyring,
-	ringClient crypto.RingClient,
-) {
-	t.Helper()
-
-	for i := 0; i < int(numRelays); i++ {
-		relay := testrelayer.NewSignedEmptyRelay(
-			ctx, t,
-			supplierKeyUid, supplierAddr,
-			reqHeader, resHeader,
-			keyRing,
-			ringClient,
-		)
-		relayBz, err := relay.Marshal()
-		require.NoError(t, err)
-
-		relayKey, err := relay.GetHash()
-		require.NoError(t, err)
-
-		relayWeight := uint64(i)
-
-		err = sessionTree.Update(relayKey[:], relayBz, relayWeight)
-		require.NoError(t, err)
-	}
-}
-
 // getClosestRelayDifficulty returns the mining difficulty number which corresponds
 // to the relayHash stored in the sessionTree that is closest to the merkle proof
 // path provided.
@@ -891,44 +793,4 @@ func getClosestRelayDifficulty(
 	require.NoError(t, err)
 
 	return protocol.GetDifficultyFromHash(relayHash)
-}
-
-// newProof creates a new proof structure.
-func newProof(
-	t *testing.T,
-	supplierAddr string,
-	sessionHeader *sessiontypes.SessionHeader,
-	sessionTree relayer.SessionTree,
-	closestProofPath []byte,
-) *prooftypes.Proof {
-	t.Helper()
-
-	// Generate a closest proof from the session tree using closestProofPath.
-	merkleProof, err := sessionTree.ProveClosest(closestProofPath)
-	require.NoError(t, err)
-	require.NotNil(t, merkleProof)
-
-	// Serialize the closest merkle proof.
-	merkleProofBz, err := merkleProof.Marshal()
-	require.NoError(t, err)
-
-	return &prooftypes.Proof{
-		SupplierAddress:    supplierAddr,
-		SessionHeader:      sessionHeader,
-		ClosestMerkleProof: merkleProofBz,
-	}
-}
-
-func newClaim(
-	t *testing.T,
-	supplierAddr string,
-	sessionHeader *sessiontypes.SessionHeader,
-	rootHash []byte,
-) *prooftypes.Claim {
-	// Create a new claim.
-	return &prooftypes.Claim{
-		SupplierAddress: supplierAddr,
-		SessionHeader:   sessionHeader,
-		RootHash:        rootHash,
-	}
 }

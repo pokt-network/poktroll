@@ -5,25 +5,27 @@ import (
 	"fmt"
 	"testing"
 
+	"cosmossdk.io/depinject"
 	"cosmossdk.io/math"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
+	"github.com/pokt-network/poktroll/pkg/crypto/rings"
+	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	testutilevents "github.com/pokt-network/poktroll/testutil/events"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	testutilproof "github.com/pokt-network/poktroll/testutil/proof"
-	"github.com/pokt-network/poktroll/testutil/sample"
-	testsession "github.com/pokt-network/poktroll/testutil/session"
+	"github.com/pokt-network/poktroll/testutil/testkeyring"
+	"github.com/pokt-network/poktroll/testutil/testtree"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
@@ -54,11 +56,100 @@ type TestSuite struct {
 func (s *TestSuite) SetupTest() {
 	t := s.T()
 
-	supplierAddr := sample.AccAddress()
-	appAddr := sample.AccAddress()
-
 	s.keepers, s.ctx = keepertest.NewTokenomicsModuleKeepers(s.T(), nil)
 	s.sdkCtx = cosmostypes.UnwrapSDKContext(s.ctx)
+
+	// Construct a keyring to hold the keypairs for the accounts used in the test.
+	keyRing := keyring.NewInMemory(s.keepers.Codec)
+
+	// Create a pre-generated account iterator to create accounts for the test.
+	preGeneratedAccts := testkeyring.PreGeneratedAccounts()
+
+	// Create accounts in the account keeper with corresponding keys in the keyring
+	// // for the applications and suppliers used in the tests.
+	supplierAddr := testkeyring.CreateOnChainAccount(
+		s.ctx, t,
+		"supplier",
+		keyRing,
+		s.keepers.AccountKeeper,
+		preGeneratedAccts,
+	).String()
+	appAddr := testkeyring.CreateOnChainAccount(
+		s.ctx, t,
+		"app",
+		keyRing,
+		s.keepers.AccountKeeper,
+		preGeneratedAccts,
+	).String()
+
+	service := &sharedtypes.Service{Id: testServiceId}
+
+	// Get the session for the application/supplier pair which is expected
+	// to be claimed and for which a valid proof would be accepted.
+	sessionReq := &sessiontypes.QueryGetSessionRequest{
+		ApplicationAddress: appAddr,
+		Service:            service,
+		BlockHeight:        1,
+	}
+	sessionRes, err := s.keepers.GetSession(s.ctx, sessionReq)
+	require.NoError(t, err)
+	validSessionHeader := sessionRes.Session.Header
+
+	// Construct a ringClient to get the application's ring & verify the relay
+	// request signature.
+	ringClient, err := rings.NewRingClient(depinject.Supply(
+		polyzero.NewLogger(),
+		prooftypes.NewAppKeeperQueryClient(s.keepers.ApplicationKeeper),
+		prooftypes.NewAccountKeeperQueryClient(s.keepers.AccountKeeper),
+		prooftypes.NewSharedKeeperQueryClient(s.keepers.SharedKeeper, s.keepers.SessionKeeper),
+	))
+	require.NoError(t, err)
+
+	// Construct a valid session tree with 5 relays.
+	numRelays := uint(5)
+	validSessionTree := testtree.NewFilledSessionTree(
+		s.ctx, t,
+		numRelays,
+		"supplier", supplierAddr,
+		validSessionHeader, validSessionHeader, validSessionHeader,
+		keyRing,
+		ringClient,
+	)
+
+	// Advance the block height to the earliest claim commit height.
+	sharedParams := s.keepers.SharedKeeper.GetParams(s.ctx)
+	claimMsgHeight := shared.GetEarliestSupplierClaimCommitHeight(
+		&sharedParams,
+		validSessionHeader.GetSessionEndBlockHeight(),
+		blockHeaderHash,
+		supplierAddr,
+	)
+	sdkCtx := cosmostypes.UnwrapSDKContext(s.ctx)
+	sdkCtx = sdkCtx.WithBlockHeight(claimMsgHeight)
+
+	merkleRootBz, err := validSessionTree.Flush()
+	require.NoError(t, err)
+
+	// Compute the difficulty in bits of the closest relay from the valid session tree.
+	// validClosestRelayDifficultyBits := getClosestRelayDifficulty(t, validSessionTree, expectedMerkleProofPath)
+
+	/*
+		// Prepare supplier account
+		supplierAddr, supplierPubKey := sample.AccAddressAndPubKey()
+		supplierAccAddr, err := sdk.AccAddressFromBech32(supplierAddr)
+		require.NoError(t, err)
+		supplierAcc := s.keepers.NewAccountWithAddress(s.ctx, supplierAccAddr)
+		supplierAcc.SetPubKey(supplierPubKey)
+		s.keepers.SetAccount(s.ctx, supplierAcc)
+
+		// Prepare application account
+		appAddr, appPubKey := sample.AccAddressAndPubKey()
+		appAccAddr, err := sdk.AccAddressFromBech32(appAddr)
+		require.NoError(t, err)
+		appAcc := s.keepers.NewAccountWithAddress(s.ctx, appAccAddr)
+		appAcc.SetPubKey(appPubKey)
+		s.keepers.SetAccount(s.ctx, appAcc)
+	*/
 
 	// Set the suite expectedComputeUnits to equal the default proof_requirement_threshold
 	// such that by default, s.claim will require a proof 100% of the time.
@@ -67,17 +158,8 @@ func (s *TestSuite) SetupTest() {
 	// Prepare a claim that can be inserted
 	s.claim = prooftypes.Claim{
 		SupplierAddress: supplierAddr,
-		SessionHeader: &sessiontypes.SessionHeader{
-			ApplicationAddress:      appAddr,
-			Service:                 &sharedtypes.Service{Id: testServiceId},
-			SessionId:               "session_id",
-			SessionStartBlockHeight: 1,
-			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
-		},
-
-		// Set the suite expectedComputeUnits to be equal to the default threshold.
-		// This SHOULD make the claim require a proof given the default proof parameters.
-		RootHash: testutilproof.SmstRootWithSum(s.expectedComputeUnits),
+		SessionHeader:   validSessionHeader,
+		RootHash:        merkleRootBz,
 	}
 
 	// Prepare a proof that can be inserted
@@ -89,39 +171,19 @@ func (s *TestSuite) SetupTest() {
 
 	supplierStake := types.NewCoin("upokt", math.NewInt(1000000))
 	supplier := sharedtypes.Supplier{
-		Address: supplierAddr,
-		Stake:   &supplierStake,
+		Address:  supplierAddr,
+		Stake:    &supplierStake,
+		Services: []*sharedtypes.SupplierServiceConfig{{Service: service}},
 	}
 	s.keepers.SetSupplier(s.ctx, supplier)
 
 	appStake := types.NewCoin("upokt", math.NewInt(1000000))
 	app := apptypes.Application{
-		Address: appAddr,
-		Stake:   &appStake,
+		Address:        appAddr,
+		Stake:          &appStake,
+		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{Service: service}},
 	}
 	s.keepers.SetApplication(s.ctx, app)
-
-	// Mint some coins to the supplier and application modules
-	moduleBaseMint := types.NewCoins(sdk.NewCoin("upokt", math.NewInt(690000000000000042)))
-
-	err := s.keepers.MintCoins(s.sdkCtx, suppliertypes.ModuleName, moduleBaseMint)
-	require.NoError(t, err)
-
-	err = s.keepers.MintCoins(s.sdkCtx, apptypes.ModuleName, moduleBaseMint)
-	require.NoError(t, err)
-
-	// Send some coins to the supplier and application accounts
-	sendAmount := types.NewCoins(sdk.NewCoin("upokt", math.NewInt(1000000)))
-
-	err = s.keepers.SendCoinsFromModuleToAccount(s.sdkCtx, suppliertypes.ModuleName, sdk.AccAddress(supplier.Address), sendAmount)
-	require.NoError(t, err)
-	acc := s.keepers.GetAccount(s.ctx, sdk.AccAddress(supplierAddr))
-	require.NotNil(t, acc)
-
-	err = s.keepers.SendCoinsFromModuleToAccount(s.sdkCtx, apptypes.ModuleName, sdk.AccAddress(app.Address), sendAmount)
-	require.NoError(t, err)
-	acc = s.keepers.GetAccount(s.ctx, sdk.AccAddress(appAddr))
-	require.NotNil(t, acc)
 }
 
 // TestSettleExpiringClaimsSuite tests the claim settlement process.
