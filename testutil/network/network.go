@@ -50,7 +50,7 @@ func New(t *testing.T, configs ...Config) *Network {
 		cfg = configs[0]
 	}
 	net, err := network.New(t, t.TempDir(), cfg)
-	require.NoError(t, err, "TODO_FLAKY: This config setup is periodically flakyis a flaky is ")
+	require.NoError(t, err, "TODO_FLAKY: This config setup is periodically flaky")
 	_, err = net.WaitForHeight(1)
 	require.NoError(t, err)
 	t.Cleanup(net.Cleanup)
