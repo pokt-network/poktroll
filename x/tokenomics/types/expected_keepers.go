@@ -43,11 +43,11 @@ type ProofKeeper interface {
 	RemoveProof(ctx context.Context, sessionId, supplierAddr string)
 
 	AllClaims(ctx context.Context, req *prooftypes.QueryAllClaimsRequest) (*prooftypes.QueryAllClaimsResponse, error)
+	IsProofValid(ctx context.Context, proof *prooftypes.Proof) (valid bool, err error)
 
 	// Only used for testing & simulation
 	UpsertClaim(ctx context.Context, claim prooftypes.Claim)
 	UpsertProof(ctx context.Context, claim prooftypes.Proof)
-
 	GetParams(ctx context.Context) prooftypes.Params
 	SetParams(ctx context.Context, params prooftypes.Params) error
 }

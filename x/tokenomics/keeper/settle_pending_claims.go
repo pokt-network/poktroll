@@ -64,7 +64,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 
 		sessionId := claim.SessionHeader.SessionId
 
-		_, isProofFound := k.proofKeeper.GetProof(ctx, sessionId, claim.SupplierAddress)
+		proof, isProofFound := k.proofKeeper.GetProof(ctx, sessionId, claim.SupplierAddress)
 		// Using the probabilistic proofs approach, determine if this expiring
 		// claim required an on-chain proof
 		proofRequirement, err = k.proofRequirementForClaim(ctx, &claim)
@@ -80,14 +80,31 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 			"proof_requirement", proofRequirement,
 		)
 
-		if proofRequirement != prooftypes.ProofRequirementReason_NOT_REQUIRED {
-			// If a proof is not found, the claim will expire and never be settled.
-			if !isProofFound {
+		proofIsRequired := (proofRequirement != prooftypes.ProofRequirementReason_NOT_REQUIRED)
+		if proofIsRequired {
+
+			// EXPIRATION_REASON_UNSPECIFIED is the default
+			var expirationReason types.ClaimExpirationReason = types.ClaimExpirationReason_EXPIRATION_REASON_UNSPECIFIED
+			if isProofFound {
+				// Should claim expire because proof is invalid?
+				isProofValid, err := k.proofKeeper.IsProofValid(ctx, &proof)
+				if !isProofValid || err != nil {
+					expirationReason = types.ClaimExpirationReason_PROOF_INVALID
+				}
+			} else {
+				// Should claim expire because proof is required but unavailable?
+				expirationReason = types.ClaimExpirationReason_PROOF_MISSING
+			}
+
+			// If the proof is missing or invalid -> expire it
+			if expirationReason != types.ClaimExpirationReason_EXPIRATION_REASON_UNSPECIFIED {
+				// Proof was required but not found.
 				// Emit an event that a claim has expired and being removed without being settled.
 				claimExpiredEvent := types.EventClaimExpired{
-					Claim:           &claim,
-					NumComputeUnits: numClaimComputeUnits,
-					NumRelays:       numRelaysInSessionTree,
+					Claim:            &claim,
+					NumComputeUnits:  numClaimComputeUnits,
+					NumRelays:        numRelaysInSessionTree,
+					ExpirationReason: types.ClaimExpirationReason_PROOF_INVALID,
 				}
 				if err = ctx.EventManager().EmitTypedEvent(&claimExpiredEvent); err != nil {
 					return settledResult, expiredResult, err
@@ -104,10 +121,14 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 				expiredResult.NumComputeUnits += numClaimComputeUnits
 				continue
 			}
-			// TODO_FOLLOWUP(@olshansk, #690): Document the potential changes needed here.
-			// NB: If a proof is found, it is valid because verification is done
-			// at the time of submission.
+
 		}
+
+		// TODO_MAINNET: A potential issue with doing proof validation inside
+		// `SubmitProof` is that we will not be storing false proofs on-chain (e.g. for slashing purposes).
+		// This could be considered a feature (e.g. less state bloat against sybil attacks)
+		// or a bug (i.e. no mechanisms for slashing suppliers who submit false proofs).
+		// Revisit this prior to mainnet launch as to whether the business logic for settling sessions should be in EndBlocker or here.
 
 		// Manage the mint & burn accounting for the claim.
 		if err = k.SettleSessionAccounting(ctx, &claim); err != nil {
