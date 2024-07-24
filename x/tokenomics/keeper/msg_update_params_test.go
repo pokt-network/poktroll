@@ -92,7 +92,7 @@ func TestMsgUpdateParams(t *testing.T) {
 }
 
 func TestUpdateParams_ComputeUnitsToTokensMultiplier(t *testing.T) {
-	tokenomicsKeeper, ctx, _, _ := testkeeper.TokenomicsKeeperWithActorAddrs(t)
+	tokenomicsKeeper, ctx, _, _ := testkeeper.TokenomicsKeeperWithActorAddrs(t, nil)
 	srv := keeper.NewMsgServerImpl(tokenomicsKeeper)
 
 	// Set the default params

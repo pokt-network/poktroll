@@ -353,6 +353,21 @@ func (s *suite) TheAccountForIsStaked(actorType, accName string) {
 	s.scenarioState[accStakeKey(actorType, accName)] = stakeAmount // save the stakeAmount for later
 }
 
+func (s *suite) TheServiceRegisteredForApplicationHasAComputeUnitsPerRelayOf(serviceId string, appName string, cuprStr string) {
+	app, ok := accNameToAppMap[appName]
+	require.True(s, ok, "application %s not found", appName)
+
+	for _, serviceConfig := range app.ServiceConfigs {
+		if serviceConfig.Service.Id == serviceId {
+			cupr, err := strconv.ParseUint(cuprStr, 10, 64)
+			require.NoError(s, err)
+			require.Equal(s, cupr, serviceConfig.Service.ComputeUnitsPerRelay)
+			return
+		}
+	}
+	s.Fatalf("ERROR: service %s is not registered for application %s", serviceId, appName)
+}
+
 func (s *suite) TheForAccountIsNotStaked(actorType, accName string) {
 	_, ok := s.getStakedAmount(actorType, accName)
 	require.Falsef(s, ok, "account %s of type %s SHOULD NOT be staked", accName, actorType)

@@ -517,6 +517,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimPendingAfterSettlement() {
 		sessionOneClaim.GetSessionHeader().GetApplicationAddress(),
 		sessionOneClaim.GetSupplierAddress(),
 		s.expectedComputeUnits,
+		sessionOneClaim.GetSessionHeader().GetService().Id,
 	)
 
 	sessionOneProofWindowCloseHeight := shared.GetProofWindowCloseHeight(&sharedParams, sessionOneEndHeight)
