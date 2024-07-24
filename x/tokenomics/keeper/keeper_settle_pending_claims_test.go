@@ -145,9 +145,8 @@ func (s *TestSuite) SetupTest() {
 		blockHeaderHash,
 		supplierAddr,
 	)
-	s.sdkCtx = cosmostypes.UnwrapSDKContext(s.ctx).WithBlockHeight(claimMsgHeight).WithHeaderHash(blockHeaderHash
+	s.sdkCtx = cosmostypes.UnwrapSDKContext(s.ctx).WithBlockHeight(claimMsgHeight).WithHeaderHash(blockHeaderHash)
 	s.ctx = s.sdkCtx
-
 
 	merkleRootBz, err := sessionTree.Flush()
 	require.NoError(t, err)
