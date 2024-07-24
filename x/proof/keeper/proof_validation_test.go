@@ -355,7 +355,7 @@ func TestIsProofValid_Error(t *testing.T) {
 
 				// Create a claim with a merkle root derived from a relay
 				// request containing the wrong session ID.
-				claim := NewClaim(t,
+				claim := testtree.NewClaim(t,
 					supplierAddr,
 					validSessionHeader,
 					wrongRequestSessionIdMerkleRootBz,
@@ -365,7 +365,7 @@ func TestIsProofValid_Error(t *testing.T) {
 
 				// Construct new proof message using the valid session header,
 				// *not* the one used in the session tree's relay request.
-				return NewProof(t,
+				return testtree.NewProof(t,
 					supplierAddr,
 					validSessionHeader,
 					wrongRequestSessionIdSessionTree,
@@ -442,7 +442,7 @@ func TestIsProofValid_Error(t *testing.T) {
 
 				// Construct a session tree with 1 relay with a session header containing
 				// a session ID that doesn't match the expected session ID.
-				invalidRequestSignatureSessionTree := NewEmptySessionTree(t, validSessionHeader, supplierAddr)
+				invalidRequestSignatureSessionTree := testtree.NewEmptySessionTree(t, validSessionHeader, supplierAddr)
 
 				// Add the relay to the session tree.
 				err = invalidRequestSignatureSessionTree.Update([]byte{1}, invalidRequestSignatureRelayBz, 1)
@@ -503,7 +503,7 @@ func TestIsProofValid_Error(t *testing.T) {
 
 				// Construct a session tree with 1 relay with a session header containing
 				// a session ID that doesn't match the expected session ID.
-				invalidResponseSignatureSessionTree := NewEmptySessionTree(t, validSessionHeader, supplierAddr)
+				invalidResponseSignatureSessionTree := testtree.NewEmptySessionTree(t, validSessionHeader, supplierAddr)
 
 				// Add the relay to the session tree.
 				err = invalidResponseSignatureSessionTree.Update([]byte{1}, relayBz, 1)
@@ -519,7 +519,7 @@ func TestIsProofValid_Error(t *testing.T) {
 
 				// Create a claim with a merkle root derived from a session tree
 				// with an invalid relay response signature.
-				claim := NewClaim(t,
+				claim := testtree.NewClaim(t,
 					supplierAddr,
 					validSessionHeader,
 					invalidResponseSignatureMerkleRootBz,
@@ -529,7 +529,7 @@ func TestIsProofValid_Error(t *testing.T) {
 
 				// Construct new proof message derived from a session tree
 				// with an invalid relay response signature.
-				return NewProof(t,
+				return testtree.NewProof(t,
 					supplierAddr,
 					validSessionHeader,
 					invalidResponseSignatureSessionTree,
@@ -551,7 +551,7 @@ func TestIsProofValid_Error(t *testing.T) {
 				// Construct a new valid session tree for this test case because once the
 				// closest proof has already been generated, the path cannot be changed.
 				numRelays := uint(5)
-				wrongPathSessionTree := testtree.SessionTree(
+				wrongPathSessionTree := testtree.NewFilledSessionTree(
 					ctx, t,
 					numRelays,
 					supplierUid, supplierAddr,
@@ -603,7 +603,7 @@ func TestIsProofValid_Error(t *testing.T) {
 
 				// Construct a proof message with a session tree containing
 				// a relay of insufficient difficulty.
-				return NewProof(t,
+				return testtree.NewProof(t,
 					supplierAddr,
 					validSessionHeader,
 					validSessionTree,
@@ -651,7 +651,7 @@ func TestIsProofValid_Error(t *testing.T) {
 
 				// Construct new proof message using the supplier & session header
 				// from the session which is *not* expected to be claimed.
-				return NewProof(t,
+				return testtree.NewProof(t,
 					wrongSupplierAddr,
 					unclaimedSessionHeader,
 					unclaimedSessionTree,
@@ -668,7 +668,7 @@ func TestIsProofValid_Error(t *testing.T) {
 			desc: "Valid proof cannot validate claim with an incorrect root",
 			newProof: func(t *testing.T) *prooftypes.Proof {
 				numRelays := uint(10)
-				wrongMerkleRootSessionTree := NewFilledSessionTree(
+				wrongMerkleRootSessionTree := testtree.NewFilledSessionTree(
 					ctx, t,
 					numRelays,
 					supplierUid, supplierAddr,

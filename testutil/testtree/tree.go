@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/99designs/keyring"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
@@ -104,11 +104,21 @@ func FillSessionTree(
 		relayKey, err := relay.GetHash()
 		require.NoError(t, err)
 
+		// See FillSessionTreeExpectedComputeUnits below for explanation.
 		relayWeight := uint64(i)
 
 		err = sessionTree.Update(relayKey[:], relayBz, relayWeight)
 		require.NoError(t, err)
 	}
+}
+
+// FillSessionTreeExpectedComputeUnits returns the number of expected compute units
+// to covert numRelays (in a test scenario) whereby every subsequent relay costs
+// an addition compute unit.
+// This is basic random approach selected for testing purposes. Don't think too
+// deeply about it.
+func FillSessionTreeExpectedComputeUnits(numRelays uint) uint64 {
+	return uint64(numRelays * (numRelays - 1) / 2)
 }
 
 // NewProof creates a new proof structure.

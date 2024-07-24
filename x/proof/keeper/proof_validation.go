@@ -164,11 +164,15 @@ func (k Keeper) IsProofValid(
 	// Get the proof module's governance parameters.
 	// TODO_FOLLOWUP(@olshansk, #690): Get the difficulty associated with the service
 	params := k.GetParams(ctx)
+	relayDifficultyTargetHash := params.RelayDifficultyTargetHash
+	if relayDifficultyTargetHash == nil || len(relayDifficultyTargetHash) == 0 {
+		relayDifficultyTargetHash = types.DefaultRelayDifficultyTargetHash
+	}
 
 	// Verify the relay difficulty is above the minimum required to earn rewards.
 	if err = validateRelayDifficulty(
 		relayBz,
-		params.RelayDifficultyTargetHash,
+		relayDifficultyTargetHash,
 		sessionHeader.Service.Id,
 	); err != nil {
 		return false, err
@@ -247,6 +251,7 @@ func (k Keeper) validateClosestPath(
 	k.logger.Info("E2E_DEBUG: height for block hash when verifying the proof", earliestSupplierProofCommitHeight, sessionHeader.GetSessionId())
 
 	expectedProofPath := protocol.GetPathForProof(proofPathSeedBlockHash, sessionHeader.GetSessionId())
+	fmt.Println("OLSH OMG", proofPathSeedBlockHash, expectedProofPath)
 	if !bytes.Equal(proof.Path, expectedProofPath) {
 		return types.ErrProofInvalidProof.Wrapf(
 			"the path of the proof provided (%x) does not match one expected by the on-chain protocol (%x)",

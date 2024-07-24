@@ -48,7 +48,7 @@ var (
 func init() {
 	// The CometBFT header hash is 32 bytes: https://docs.cometbft.com/main/spec/core/data_structures
 	blockHeaderHash = make([]byte, 32)
-	expectedMerkleProofPath = protocol.GetPathForProof(blockHeaderHash, "TODO_BLOCKER_session_id_currently_unused")
+	// expectedMerkleProofPath = protocol.GetPathForProof(blockHeaderHash, "TODO_BLOCKER_session_id_currently_unused")
 }
 
 func TestMsgServer_SubmitProof_Success(t *testing.T) {
