@@ -42,7 +42,7 @@ var Upgrade_0_0_4 = Upgrade{
 		keepers *keepers.Keepers,
 		configurator module.Configurator) upgradetypes.UpgradeHandler {
 		return func(ctx context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
-			// Get current consensus parameters
+			// Get current consensus module parameters
 			currentParams, err := keepers.ConsensusParamsKeeper.ParamsStore.Get(ctx)
 			if err != nil {
 				return vm, err
@@ -54,13 +54,15 @@ var Upgrade_0_0_4 = Upgrade{
 				Block:     currentParams.Block,
 				Evidence:  currentParams.Evidence,
 				Validator: currentParams.Validator,
-				Abci:      currentParams.Abci,
+
+				// This seems to be deprecated/not needed, but it's fine as we're copying the existing data.
+				Abci: currentParams.Abci,
 			}
 
 			// Increase block size two-fold
 			newParams.Block.MaxBytes = 22020096 * 2
 
-			// Update chain state
+			// Update the chain state
 			_, err = keepers.ConsensusParamsKeeper.UpdateParams(ctx, &newParams)
 			if err != nil {
 				return vm, err
