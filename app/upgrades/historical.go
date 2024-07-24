@@ -27,11 +27,13 @@ func defaultMigrationsOnlyUpgradeHandler(
 // Even when not changing `ConsensusVersion` of any modules, it still might be beneficial to create an upgrade
 // to signal to node runners utilizing `Cosmovisor` to automatically download and install the new binary.
 // TODO_IN_THIS_PR: link to the document that explains Cosmovisor usage and its benefits for node runners.
-// var Upgrade_0_4_0 = Upgrade{
-// 	VersionName:          "v0.4.0",
-// 	CreateUpgradeHandler: defaultMigrationsOnlyUpgradeHandler,
-// 	StoreUpgrades:        storetypes.StoreUpgrades{},
-// }
+var Upgrade_Example = Upgrade{
+	VersionName:          "v0.4.0-Example",
+	CreateUpgradeHandler: defaultMigrationsOnlyUpgradeHandler,
+
+	// We can also add, rename and delete KVStores.
+	StoreUpgrades: storetypes.StoreUpgrades{},
+}
 
 // Upgrade_0_4_0 is an example of an upgrade that increases the block size.
 var Upgrade_0_4_0 = Upgrade{
