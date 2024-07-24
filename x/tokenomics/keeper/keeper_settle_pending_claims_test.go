@@ -2,7 +2,6 @@ package keeper_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"cosmossdk.io/depinject"
@@ -58,10 +57,8 @@ func (s *TestSuite) SetupTest() {
 	t := s.T()
 
 	s.keepers, s.ctx = keepertest.NewTokenomicsModuleKeepers(s.T(), nil)
-	sdkCtx := cosmostypes.UnwrapSDKContext(s.ctx)
-	sdkCtx = sdkCtx.WithBlockHeight(1)
-	s.sdkCtx = sdkCtx
-	s.ctx = sdkCtx
+	s.sdkCtx = cosmostypes.UnwrapSDKContext(s.ctx).WithBlockHeight(1)
+	s.ctx = s.sdkCtx
 
 	// Construct a keyring to hold the keypairs for the accounts used in the test.
 	keyRing := keyring.NewInMemory(s.keepers.Codec)
@@ -85,24 +82,6 @@ func (s *TestSuite) SetupTest() {
 		s.keepers.AccountKeeper,
 		preGeneratedAccts,
 	).String()
-
-	/*
-		// Prepare supplier account
-		supplierAddr, supplierPubKey := sample.AccAddressAndPubKey()
-		supplierAccAddr, err := sdk.AccAddressFromBech32(supplierAddr)
-		require.NoError(t, err)
-		supplierAcc := s.keepers.NewAccountWithAddress(s.ctx, supplierAccAddr)
-		supplierAcc.SetPubKey(supplierPubKey)
-		s.keepers.SetAccount(s.ctx, supplierAcc)
-
-		// Prepare application account
-		appAddr, appPubKey := sample.AccAddressAndPubKey()
-		appAccAddr, err := sdk.AccAddressFromBech32(appAddr)
-		require.NoError(t, err)
-		appAcc := s.keepers.NewAccountWithAddress(s.ctx, appAccAddr)
-		appAcc.SetPubKey(appPubKey)
-		s.keepers.SetAccount(s.ctx, appAcc)
-	*/
 
 	service := &sharedtypes.Service{Id: testServiceId}
 
@@ -143,7 +122,7 @@ func (s *TestSuite) SetupTest() {
 	))
 	require.NoError(t, err)
 
-	// Construct a valid session tree with 5 relays.
+	// Construct a valid session tree with 10 relays.
 	numRelays := uint(10)
 	sessionTree := testtree.NewFilledSessionTree(
 		s.ctx, t,
@@ -166,10 +145,9 @@ func (s *TestSuite) SetupTest() {
 		blockHeaderHash,
 		supplierAddr,
 	)
-	sdkCtx = cosmostypes.UnwrapSDKContext(s.ctx)
-	sdkCtx = sdkCtx.WithBlockHeight(claimMsgHeight).WithHeaderHash(blockHeaderHash)
-	s.ctx = sdkCtx
-	s.sdkCtx = sdkCtx
+	s.sdkCtx = cosmostypes.UnwrapSDKContext(s.ctx).WithBlockHeight(claimMsgHeight).WithHeaderHash(blockHeaderHash
+	s.ctx = s.sdkCtx
+
 
 	merkleRootBz, err := sessionTree.Flush()
 	require.NoError(t, err)
@@ -278,7 +256,6 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequiredAndNotProv
 		events, "poktroll.tokenomics.EventClaimExpired")
 	require.Len(t, expectedEvents, 1)
 
-	fmt.Println("expectedEvents", expectedEvents)
 	// Validate the event
 	expectedEvent := expectedEvents[0]
 	require.Equal(t, tokenomicstypes.ClaimExpirationReason_PROOF_MISSING, expectedEvent.GetExpirationReason())
@@ -330,7 +307,6 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOn
 		events, "poktroll.tokenomics.EventClaimExpired")
 	require.Len(t, expectedEvents, 1)
 
-	fmt.Println("expectedEvents", expectedEvents)
 	// Validate the event
 	expectedEvent := expectedEvents[0]
 	require.Equal(t, tokenomicstypes.ClaimExpirationReason_PROOF_INVALID, expectedEvent.GetExpirationReason())

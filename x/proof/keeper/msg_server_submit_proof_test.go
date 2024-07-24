@@ -48,7 +48,6 @@ var (
 func init() {
 	// The CometBFT header hash is 32 bytes: https://docs.cometbft.com/main/spec/core/data_structures
 	blockHeaderHash = make([]byte, 32)
-	// expectedMerkleProofPath = protocol.GetPathForProof(blockHeaderHash, "TODO_BLOCKER_session_id_currently_unused")
 }
 
 func TestMsgServer_SubmitProof_Success(t *testing.T) {
@@ -290,7 +289,7 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 
 	// Submit the corresponding proof.
 	numRelays := uint(5)
-	sessionTree := NewFilledSessionTree(
+	sessionTree := testtree.NewFilledSessionTree(
 		ctx, t,
 		numRelays,
 		supplierUid, supplierAddr,
