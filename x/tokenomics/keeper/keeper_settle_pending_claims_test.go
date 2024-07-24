@@ -59,12 +59,19 @@ func (s *TestSuite) SetupTest() {
 	// such that by default, s.claim will require a proof 100% of the time.
 	s.expectedComputeUnits = prooftypes.DefaultProofRequirementThreshold
 
+	// Create a service that can be registered in the application and used in the claim
+	service := sharedtypes.NewService(
+		testServiceId,
+		"",
+		1,
+	)
+
 	// Prepare a claim that can be inserted
 	s.claim = prooftypes.Claim{
 		SupplierAddress: supplierAddr,
 		SessionHeader: &sessiontypes.SessionHeader{
 			ApplicationAddress:      appAddr,
-			Service:                 &sharedtypes.Service{Id: testServiceId},
+			Service:                 &sharedtypes.Service{Id: service.Id},
 			SessionId:               "session_id",
 			SessionStartBlockHeight: 1,
 			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
@@ -86,6 +93,11 @@ func (s *TestSuite) SetupTest() {
 	app := apptypes.Application{
 		Address: appAddr,
 		Stake:   &appStake,
+		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
+			{
+				Service: service,
+			},
+		},
 	}
 	s.keepers.SetApplication(s.ctx, app)
 }
@@ -399,6 +411,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimPendingAfterSettlement() {
 		sessionOneClaim.GetSessionHeader().GetApplicationAddress(),
 		sessionOneClaim.GetSupplierAddress(),
 		s.expectedComputeUnits,
+		sessionOneClaim.GetSessionHeader().GetService().Id,
 	)
 
 	sessionOneProofWindowCloseHeight := shared.GetProofWindowCloseHeight(&sharedParams, sessionOneEndHeight)
