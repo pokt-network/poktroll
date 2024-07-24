@@ -48,7 +48,7 @@ var (
 	//  - the relay difficulty target hash to the easiest difficulty so that these tests don't need to mine for valid relays.
 	//  - the proof request probability to 1 so that all test sessions require a proof.
 	testProofParams = prooftypes.Params{
-		RelayDifficultyTargetHash: protocol.Difficulty1HashBz,
+		RelayDifficultyTargetHash: protocol.BaseRelayDifficultyHashBz,
 		ProofRequestProbability:   1,
 	}
 )
@@ -1023,7 +1023,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			desc: "relay difficulty must be greater than or equal to minimum (zero difficulty)",
 			newProofMsg: func(t *testing.T) *prooftypes.MsgSubmitProof {
 				// Set the minimum relay difficulty to a non-zero value such that the relays
-				// constructed by the test helpers have a negligable chance of being valid.
+				// constructed by the test helpers have a negligible chance of being valid.
 				err = keepers.Keeper.SetParams(ctx, prooftypes.Params{
 					RelayDifficultyTargetHash: lowTargetHash,
 				})
@@ -1047,9 +1047,10 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			expectedErr: status.Error(
 				codes.FailedPrecondition,
 				prooftypes.ErrProofInvalidRelay.Wrapf(
-					"relay difficulty %d is less than the target difficulty %d",
+					"the difficulty relay being proven is (%d), and is smaller than the target difficulty (%d) for service %s",
 					validClosestRelayDifficultyBits,
 					highExpectedTargetDifficulty,
+					validSessionHeader.Service.Id,
 				).Error(),
 			),
 		},

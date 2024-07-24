@@ -11,30 +11,30 @@ import (
 // GetHash returns the hash of the relay, which contains both the signed
 // relay request and the relay response. It is used as the key for insertion
 // into the SMT.
-func (relay *Relay) GetHash() ([32]byte, error) {
+func (relay *Relay) GetHash() ([protocol.RelayHasherSize]byte, error) {
 	relayBz, err := relay.Marshal()
 	if err != nil {
-		return [32]byte{}, err
+		return [protocol.RelayHasherSize]byte{}, err
 	}
 
-	return protocol.GetHashFromBytes(relayBz), nil
+	return protocol.GetRelayHashFromBytes(relayBz), nil
 }
 
 // GetSignableBytesHash returns the hash of the signable bytes of the relay request
 // Hashing the marshaled request message guarantees that the signable bytes are
 // always of a constant and expected length.
-func (req RelayRequest) GetSignableBytesHash() ([32]byte, error) {
+func (req RelayRequest) GetSignableBytesHash() ([protocol.RelayHasherSize]byte, error) {
 	// req and req.Meta are not pointers, so we can set the signature to nil
 	// in order to generate the signable bytes hash without the need restore it.
 	req.Meta.Signature = nil
 	requestBz, err := req.Marshal()
 	if err != nil {
-		return [32]byte{}, err
+		return [protocol.RelayHasherSize]byte{}, err
 	}
 
 	// return the marshaled request hash to guarantee that the signable bytes
 	// are always of a constant and expected length
-	return protocol.GetHashFromBytes(requestBz), nil
+	return protocol.GetRelayHashFromBytes(requestBz), nil
 }
 
 // ValidateBasic performs basic validation of the RelayResponse Meta, SessionHeader
@@ -65,18 +65,18 @@ func (req *RelayRequest) ValidateBasic() error {
 // GetSignableBytesHash returns the hash of the signable bytes of the relay response
 // Hashing the marshaled response message guarantees that the signable bytes are
 // always of a constant and expected length.
-func (res RelayResponse) GetSignableBytesHash() ([32]byte, error) {
+func (res RelayResponse) GetSignableBytesHash() ([protocol.RelayHasherSize]byte, error) {
 	// res and res.Meta are not pointers, so we can set the signature to nil
 	// in order to generate the signable bytes hash without the need restore it.
 	res.Meta.SupplierSignature = nil
 	responseBz, err := res.Marshal()
 	if err != nil {
-		return [32]byte{}, err
+		return [protocol.RelayHasherSize]byte{}, err
 	}
 
 	// return the marshaled response hash to guarantee that the signable bytes
 	// are always of a constant and expected length
-	return protocol.GetHashFromBytes(responseBz), nil
+	return protocol.GetRelayHashFromBytes(responseBz), nil
 }
 
 // ValidateBasic performs basic validation of the RelayResponse Meta, SessionHeader

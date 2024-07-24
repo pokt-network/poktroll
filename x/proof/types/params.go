@@ -16,19 +16,23 @@ var (
 	_ client.ProofParams  = (*Params)(nil)
 	_ paramtypes.ParamSet = (*Params)(nil)
 
-	KeyMinRelayDifficultyBits                   = []byte("MinRelayDifficultyBits")
-	ParamRelayDifficultyTargetHash              = "relay_difficulty_target_hash"
-	DefaultRelayDifficultyTargetHashHex         = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" // all relays are payable
-	DefaultRelayDifficultyTargetHash, _         = hex.DecodeString(DefaultRelayDifficultyTargetHashHex) // TODO_MAINNET(#142, #401): Determine the default value.
-	KeyProofRequestProbability                  = []byte("ProofRequestProbability")
-	ParamProofRequestProbability                = "proof_request_probability"
-	DefaultProofRequestProbability      float32 = 0.25 // See: https://github.com/pokt-network/pocket-core/blob/staging/docs/proposals/probabilistic_proofs.md
-	KeyProofRequirementThreshold                = []byte("ProofRequirementThreshold")
-	ParamProofRequirementThreshold              = "proof_requirement_threshold"
-	DefaultProofRequirementThreshold    uint64  = 20 // See: https://github.com/pokt-network/pocket-core/blob/staging/docs/proposals/probabilistic_proofs.md
-	KeyProofMissingPenalty                      = []byte("ProofMissingPenalty")
-	ParamProofMissingPenalty                    = "proof_missing_penalty"
-	DefaultProofMissingPenalty                  = cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(320)) // See: https://github.com/pokt-network/pocket-core/blob/staging/docs/proposals/probabilistic_proofs.md
+	// TODO_FOLLOWUP(@olshansk, #690): Delete this parameter.
+	KeyRelayDifficultyTargetHash        = []byte("RelayDifficultyTargetHash")
+	ParamRelayDifficultyTargetHash      = "relay_difficulty_target_hash"
+	DefaultRelayDifficultyTargetHashHex = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" // all relays are payable
+	DefaultRelayDifficultyTargetHash, _ = hex.DecodeString(DefaultRelayDifficultyTargetHashHex)
+
+	KeyProofRequestProbability             = []byte("ProofRequestProbability")
+	ParamProofRequestProbability           = "proof_request_probability"
+	DefaultProofRequestProbability float32 = 0.25 // See: https://github.com/pokt-network/pocket-core/blob/staging/docs/proposals/probabilistic_proofs.md
+
+	KeyProofRequirementThreshold            = []byte("ProofRequirementThreshold")
+	ParamProofRequirementThreshold          = "proof_requirement_threshold"
+	DefaultProofRequirementThreshold uint64 = 20 // See: https://github.com/pokt-network/pocket-core/blob/staging/docs/proposals/probabilistic_proofs.md
+
+	KeyProofMissingPenalty     = []byte("ProofMissingPenalty")
+	ParamProofMissingPenalty   = "proof_missing_penalty"
+	DefaultProofMissingPenalty = cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(320)) // See: https://github.com/pokt-network/pocket-core/blob/staging/docs/proposals/probabilistic_proofs.md
 )
 
 // ParamKeyTable the param key table for launch module
@@ -65,7 +69,7 @@ func DefaultParams() Params {
 func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 	return paramtypes.ParamSetPairs{
 		paramtypes.NewParamSetPair(
-			KeyMinRelayDifficultyBits,
+			KeyRelayDifficultyTargetHash,
 			&p.RelayDifficultyTargetHash,
 			ValidateRelayDifficultyTargetHash,
 		),

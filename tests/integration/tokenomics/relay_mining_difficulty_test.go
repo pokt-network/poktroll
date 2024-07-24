@@ -21,8 +21,6 @@ import (
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-// TODO_UPNEXT(@Olshansk, #571): Implement these tests
-
 func init() {
 	cmd.InitSDKConfig()
 }

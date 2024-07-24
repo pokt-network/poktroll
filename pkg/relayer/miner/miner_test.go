@@ -23,7 +23,7 @@ import (
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 )
 
-var testTargetHash, _ = hex.DecodeString("0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")
+var testRelayMiningTargetHash, _ = hex.DecodeString("0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")
 
 // TestMiner_MinedRelays constructs an observable of mined relays, through which
 // it pipes pre-mined relay fixtures. It asserts that the observable only emits
@@ -43,7 +43,7 @@ func TestMiner_MinedRelays(t *testing.T) {
 
 	proofQueryClientMock := testqueryclients.NewTestProofQueryClient(t)
 	deps := depinject.Supply(proofQueryClientMock)
-	mnr, err := miner.NewMiner(deps, miner.WithRelayDifficultyTargetHash(testTargetHash))
+	mnr, err := miner.NewMiner(deps, miner.WithRelayDifficultyTargetHash(testRelayMiningTargetHash))
 	require.NoError(t, err)
 
 	minedRelays := mnr.MinedRelays(ctx, mockRelaysObs)
@@ -134,8 +134,7 @@ func unmarshalHexMinedRelay(
 	err = relay.Unmarshal(relayBz)
 	require.NoError(t, err)
 
-	// TODO_TECHDEBT(@red-0ne, #446): Centralize the configuration for the SMT spec.
-	relayHashArr := protocol.GetHashFromBytes(relayBz)
+	relayHashArr := protocol.GetRelayHashFromBytes(relayBz)
 	relayHash := relayHashArr[:]
 
 	return &relayer.MinedRelay{

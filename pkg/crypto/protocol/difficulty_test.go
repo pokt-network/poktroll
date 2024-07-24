@@ -32,7 +32,7 @@ func TestGetDifficultyFromHash(t *testing.T) {
 		{
 			desc:               "Highest difficulty",
 			hashHex:            "0000000000000000000000000000000000000000000000000000000000000001",
-			expectedDifficulty: new(big.Int).SetBytes(Difficulty1HashBz).Int64(),
+			expectedDifficulty: new(big.Int).SetBytes(BaseRelayDifficultyHashBz).Int64(),
 		},
 	}
 
@@ -49,6 +49,58 @@ func TestGetDifficultyFromHash(t *testing.T) {
 			difficulty := GetDifficultyFromHash(hashBz)
 			t.Logf("test: %s, difficulty: %d", test.desc, difficulty)
 			require.Equal(t, test.expectedDifficulty, difficulty)
+		})
+	}
+}
+
+func TestIsRelayVolumeApplicable(t *testing.T) {
+	tests := []struct {
+		desc                     string
+		relayHashHex             string
+		targetHashHex            string
+		expectedVolumeApplicable bool
+	}{
+		{
+			desc:                     "Applicable: relayHash << targetHash",
+			relayHashHex:             "000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			targetHashHex:            "00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			expectedVolumeApplicable: true,
+		},
+		{
+			desc:                     "Applicable: relayHash < targetHash",
+			relayHashHex:             "00efffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			targetHashHex:            "00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			expectedVolumeApplicable: true,
+		},
+		{
+			desc:                     "Not Applicable: relayHash = targetHash",
+			relayHashHex:             "00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			targetHashHex:            "00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			expectedVolumeApplicable: false,
+		},
+		{
+			desc:                     "Not applicable: relayHash > targetHash",
+			relayHashHex:             "0effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			targetHashHex:            "00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			expectedVolumeApplicable: false,
+		},
+		{
+			desc:                     "Not applicable: relayHash >> targetHash",
+			relayHashHex:             "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			targetHashHex:            "00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			expectedVolumeApplicable: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			relayHash, err := hex.DecodeString(test.relayHashHex)
+			require.NoError(t, err)
+
+			targetHash, err := hex.DecodeString(test.targetHashHex)
+			require.NoError(t, err)
+
+			require.Equal(t, test.expectedVolumeApplicable, IsRelayVolumeApplicable(relayHash, targetHash))
 		})
 	}
 }

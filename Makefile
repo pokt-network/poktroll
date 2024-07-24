@@ -420,7 +420,7 @@ test_verbose: check_go_version ## Run all go tests verbosely
 	go test -count=1 -v -race -tags test ./...
 
 .PHONY: test_all
-test_all: check_go_version ## Run all go tests showing detailed output only on failures
+test_all: warn_flaky_tests check_go_version ## Run all go tests showing detailed output only on failures
 	go test -count=1 -race -tags test ./...
 
 .PHONY: test_all_with_integration
@@ -503,17 +503,22 @@ go_develop_and_test: go_develop test_all ## Generate protos, mocks and run all t
 # TODO_DISCUSS_IN_THIS_COMMIT - SHOULD NEVER BE COMMITTED TO MASTER. It is a way for the reviewer of a PR to start / reply to a discussion.
 # TODO_IN_THIS_COMMIT         - SHOULD NEVER BE COMMITTED TO MASTER. It is a way to start the review process while non-critical changes are still in progress
 
+
+# Define shared variable for the exclude parameters
+EXCLUDE_GREP = --exclude-dir={.git,vendor,./docusaurus,.vscode,.idea} --exclude={Makefile,reviewdog.yml,*.pb.go,*.pulsar.go}
+
 .PHONY: todo_list
 todo_list: ## List all the TODOs in the project (excludes vendor and prototype directories)
-	grep --exclude-dir={.git,vendor,./docusaurus} -r TODO  .
+	grep -r $(EXCLUDE_GREP) TODO . | grep -v 'TODO()'
 
 .PHONY: todo_count
 todo_count: ## Print a count of all the TODOs in the project
-	grep --exclude-dir={.git,vendor,./docusaurus} -r TODO  . | wc -l
+	grep -r $(EXCLUDE_GREP) TODO . | grep -v 'TODO()' | wc -l
 
 .PHONY: todo_this_commit
 todo_this_commit: ## List all the TODOs needed to be done in this commit
-	grep -n --exclude-dir={.git,vendor,.vscode,.idea} --exclude={Makefile,reviewdog.yml} -r -e "TODO_IN_THIS_"
+	grep -r $(EXCLUDE_GREP) TODO_IN_THIS .| grep -v 'TODO()'
+
 
 ####################
 ###   Gateways   ###
@@ -806,6 +811,19 @@ warn_message_local_stress_test: ## Print a warning message when kicking off a lo
 	@echo "|     	DEVELOPER_TIP: If you're operating off defaults, you'll likely need to update to 3     |"
 	@echo "|                                                                                               |"
 	@echo "|     TODO_DOCUMENT(@okdas): Move this into proper documentation w/ clearer explanations        |"
+	@echo "|                                                                                               |"
+	@echo "+-----------------------------------------------------------------------------------------------+"
+
+PHONY: warn_flaky_tests
+warn_flaky_tests: ## Print a warning message that some unit tests may be flaky
+	@echo "+-----------------------------------------------------------------------------------------------+"
+	@echo "|                                                                                               |"
+	@echo "|     IMPORTANT: READ ME IF YOUR TESTS FAIL!!!                                                  |"
+	@echo "|                                                                                               |"
+	@echo "|     1. Our unit / integration tests are far from perfect & some are flaky                     |"
+	@echo "|     2. If you ran 'make go_develop_and_test' and a failure occured, try to run:               |"
+	@echo "|     	'make test_all' once or twice more                                                     |"
+	@echo "|     3. If the same error persistes, isolate it with 'go test -v ./path/to/failing/module      |"
 	@echo "|                                                                                               |"
 	@echo "+-----------------------------------------------------------------------------------------------+"
 

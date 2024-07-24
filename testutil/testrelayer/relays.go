@@ -53,11 +53,10 @@ func NewUnsignedMinedRelay(
 		},
 	}
 
-	// TODO_TECHDEBT(@red-0ne): marshal using canonical codec.
 	relayBz, err := relay.Marshal()
 	require.NoError(t, err)
 
-	relayHashArr := protocol.GetHashFromBytes(relayBz)
+	relayHashArr := protocol.GetRelayHashFromBytes(relayBz)
 	relayHash := relayHashArr[:]
 
 	return &relayer.MinedRelay{
@@ -111,7 +110,7 @@ func NewSignedMinedRelay(
 	relayBz, err := relay.Marshal()
 	require.NoError(t, err)
 
-	relayHashArr := protocol.GetHashFromBytes(relayBz)
+	relayHashArr := protocol.GetRelayHashFromBytes(relayBz)
 	relayHash := relayHashArr[:]
 
 	return &relayer.MinedRelay{
