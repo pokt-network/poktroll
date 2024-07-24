@@ -335,7 +335,7 @@ type BlockQueryClient interface {
 // protobuf message. Since the generated go types don't include interface types, this
 // is necessary to prevent dependency cycles.
 type ProofParams interface {
-	GetMinRelayDifficultyBits() uint64
+	GetRelayDifficultyTargetHash() []byte
 	GetProofRequestProbability() float32
 	GetProofRequirementThreshold() uint64
 	GetProofMissingPenalty() *cosmostypes.Coin
