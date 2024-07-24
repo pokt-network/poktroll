@@ -144,7 +144,7 @@ func (s *TestSuite) SetupTest() {
 	require.NoError(t, err)
 
 	// Construct a valid session tree with 5 relays.
-	numRelays := uint(5)
+	numRelays := uint(10)
 	sessionTree := testtree.NewFilledSessionTree(
 		s.ctx, t,
 		numRelays,
@@ -157,7 +157,6 @@ func (s *TestSuite) SetupTest() {
 
 	blockHeaderHash := make([]byte, 0)
 	expectedMerkleProofPath := protocol.GetPathForProof(blockHeaderHash, sessionHeader.SessionId)
-	fmt.Println("OLSH OMG", blockHeaderHash, expectedMerkleProofPath)
 
 	// Advance the block height to the earliest claim commit height.
 	sharedParams := s.keepers.SharedKeeper.GetParams(s.ctx)
@@ -282,8 +281,8 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequiredAndNotProv
 	fmt.Println("expectedEvents", expectedEvents)
 	// Validate the event
 	expectedEvent := expectedEvents[0]
-	require.Equal(t, s.expectedComputeUnits, expectedEvent.GetNumComputeUnits())
 	require.Equal(t, tokenomicstypes.ClaimExpirationReason_PROOF_MISSING, expectedEvent.GetExpirationReason())
+	require.Equal(t, s.expectedComputeUnits, expectedEvent.GetNumComputeUnits())
 }
 
 func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOneProvided() {
@@ -326,7 +325,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOn
 
 	// Confirm an expiration event was emitted
 	events := sdkCtx.EventManager().Events()
-	require.Len(t, events, 17) // minting, burning, settling, etc..
+	require.Len(t, events, 5) // minting, burning, settling, etc..
 	expectedEvents := testutilevents.FilterEvents[*tokenomicstypes.EventClaimExpired](t,
 		events, "poktroll.tokenomics.EventClaimExpired")
 	require.Len(t, expectedEvents, 1)
@@ -383,7 +382,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimSettled_ProofRequiredAndProvide
 
 	// Validate the event
 	expectedEvent := expectedEvents[0]
-	require.NotEqual(t, prooftypes.ProofRequirementReason_NOT_REQUIRED, expectedEvent.GetProofRequirement())
+	require.Equal(t, prooftypes.ProofRequirementReason_THRESHOLD, expectedEvent.GetProofRequirement())
 	require.Equal(t, s.expectedComputeUnits, expectedEvent.GetNumComputeUnits())
 }
 
@@ -400,7 +399,7 @@ func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_Vi
 	// matches s.claim.
 	err := s.keepers.ProofKeeper.SetParams(ctx, prooftypes.Params{
 		ProofRequestProbability: 1,
-		// +1 to push the threshold above s.claim's compute units
+		// +1 to push the requirement threshold ABOVE s.claim's compute units
 		ProofRequirementThreshold: s.expectedComputeUnits + 1,
 	})
 	require.NoError(t, err)
@@ -440,7 +439,7 @@ func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_Vi
 		events, "poktroll.tokenomics.EventClaimSettled")
 	require.Len(t, expectedEvents, 1)
 	expectedEvent := expectedEvents[0]
-	require.NotEqual(t, prooftypes.ProofRequirementReason_NOT_REQUIRED, expectedEvent.GetProofRequirement())
+	require.Equal(t, prooftypes.ProofRequirementReason_PROBABILISTIC, expectedEvent.GetProofRequirement())
 	require.Equal(t, s.expectedComputeUnits, expectedEvent.GetNumComputeUnits())
 }
 

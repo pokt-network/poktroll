@@ -31,9 +31,7 @@ package keeper
 import (
 	"bytes"
 	"context"
-	"fmt"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/smt"
 
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
@@ -59,19 +57,10 @@ func (k Keeper) IsProofValid(
 
 	// Retrieve the supplier's public key.
 	supplierAddr := proof.SupplierAddress
-	supplierAccAddr, err := sdk.AccAddressFromBech32(supplierAddr)
-	if err != nil {
-		return false, err
-	}
-	supplierAccount := k.accountKeeper.GetAccount(ctx, supplierAccAddr)
-	fmt.Println("OLSH", supplierAccAddr, supplierAccount.GetPubKey())
-	// require.NotNil(t, acc)
-
 	supplierPubKey, err := k.accountQuerier.GetPubKeyFromAddress(ctx, supplierAddr)
 	if err != nil {
 		return false, err
 	}
-	fmt.Println("OLSH3", supplierPubKey)
 
 	// Validate the session header.
 	var onChainSession *sessiontypes.Session
@@ -251,7 +240,6 @@ func (k Keeper) validateClosestPath(
 	k.logger.Info("E2E_DEBUG: height for block hash when verifying the proof", earliestSupplierProofCommitHeight, sessionHeader.GetSessionId())
 
 	expectedProofPath := protocol.GetPathForProof(proofPathSeedBlockHash, sessionHeader.GetSessionId())
-	fmt.Println("OLSH OMG", proofPathSeedBlockHash, expectedProofPath)
 	if !bytes.Equal(proof.Path, expectedProofPath) {
 		return types.ErrProofInvalidProof.Wrapf(
 			"the path of the proof provided (%x) does not match one expected by the on-chain protocol (%x)",
