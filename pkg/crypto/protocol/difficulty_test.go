@@ -1,51 +1,106 @@
-package protocol_test
+package protocol
 
 import (
-	"fmt"
+	"encoding/hex"
+	"math/big"
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 )
 
-func TestCountDifficultyBits(t *testing.T) {
+func TestGetDifficultyFromHash(t *testing.T) {
 	tests := []struct {
-		bz         []byte
-		difficulty int
+		desc               string
+		hashHex            string
+		expectedDifficulty int64
 	}{
 		{
-			bz:         []byte{0b11111111},
-			difficulty: 0,
+			desc:               "Difficulty 1",
+			hashHex:            "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			expectedDifficulty: 1,
 		},
 		{
-			bz:         []byte{0b01111111},
-			difficulty: 1,
+			desc:               "Difficulty 2",
+			hashHex:            "7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			expectedDifficulty: 2,
 		},
 		{
-			bz:         []byte{0, 255},
-			difficulty: 8,
+			desc:               "Difficulty 4",
+			hashHex:            "3fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			expectedDifficulty: 4,
 		},
 		{
-			bz:         []byte{0, 0b01111111},
-			difficulty: 9,
-		},
-		{
-			bz:         []byte{0, 0b00111111},
-			difficulty: 10,
-		},
-		{
-			bz:         []byte{0, 0, 255},
-			difficulty: 16,
+			desc:               "Highest difficulty",
+			hashHex:            "0000000000000000000000000000000000000000000000000000000000000001",
+			expectedDifficulty: new(big.Int).SetBytes(BaseRelayDifficultyHashBz).Int64(),
 		},
 	}
 
 	for _, test := range tests {
-		t.Run(fmt.Sprintf("difficulty_%d_zero_bits", test.difficulty), func(t *testing.T) {
-			var bz [32]byte
-			copy(bz[:], test.bz)
-			actualDifficulty := protocol.CountHashDifficultyBits(bz)
-			require.Equal(t, test.difficulty, actualDifficulty)
+		t.Run(test.desc, func(t *testing.T) {
+			hashBytes, err := hex.DecodeString(test.hashHex)
+			if err != nil {
+				t.Fatalf("failed to decode hash: %v", err)
+			}
+
+			var hashBz [RelayHasherSize]byte
+			copy(hashBz[:], hashBytes)
+
+			difficulty := GetDifficultyFromHash(hashBz)
+			t.Logf("test: %s, difficulty: %d", test.desc, difficulty)
+			require.Equal(t, test.expectedDifficulty, difficulty)
+		})
+	}
+}
+
+func TestIsRelayVolumeApplicable(t *testing.T) {
+	tests := []struct {
+		desc                     string
+		relayHashHex             string
+		targetHashHex            string
+		expectedVolumeApplicable bool
+	}{
+		{
+			desc:                     "Applicable: relayHash << targetHash",
+			relayHashHex:             "000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			targetHashHex:            "00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			expectedVolumeApplicable: true,
+		},
+		{
+			desc:                     "Applicable: relayHash < targetHash",
+			relayHashHex:             "00efffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			targetHashHex:            "00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			expectedVolumeApplicable: true,
+		},
+		{
+			desc:                     "Not Applicable: relayHash = targetHash",
+			relayHashHex:             "00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			targetHashHex:            "00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			expectedVolumeApplicable: false,
+		},
+		{
+			desc:                     "Not applicable: relayHash > targetHash",
+			relayHashHex:             "0effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			targetHashHex:            "00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			expectedVolumeApplicable: false,
+		},
+		{
+			desc:                     "Not applicable: relayHash >> targetHash",
+			relayHashHex:             "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			targetHashHex:            "00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			expectedVolumeApplicable: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			relayHash, err := hex.DecodeString(test.relayHashHex)
+			require.NoError(t, err)
+
+			targetHash, err := hex.DecodeString(test.targetHashHex)
+			require.NoError(t, err)
+
+			require.Equal(t, test.expectedVolumeApplicable, IsRelayVolumeApplicable(relayHash, targetHash))
 		})
 	}
 }

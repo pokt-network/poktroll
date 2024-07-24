@@ -23,18 +23,18 @@ func (k msgServer) UpdateParam(
 	params := k.GetParams(ctx)
 
 	switch msg.Name {
-	case types.ParamMinRelayDifficultyBits:
-		value, ok := msg.AsType.(*types.MsgUpdateParam_AsInt64)
+	case types.ParamRelayDifficultyTargetHash:
+		value, ok := msg.AsType.(*types.MsgUpdateParam_AsBytes)
 		if !ok {
 			return nil, types.ErrProofParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
 		}
-		minRelayDifficultyBits := uint64(value.AsInt64)
+		relayDifficultyTargetHash := value.AsBytes
 
-		if err := types.ValidateMinRelayDifficultyBits(minRelayDifficultyBits); err != nil {
+		if err := types.ValidateRelayDifficultyTargetHash(relayDifficultyTargetHash); err != nil {
 			return nil, err
 		}
 
-		params.MinRelayDifficultyBits = minRelayDifficultyBits
+		params.RelayDifficultyTargetHash = relayDifficultyTargetHash
 	case types.ParamProofRequestProbability:
 		value, ok := msg.AsType.(*types.MsgUpdateParam_AsFloat)
 		if !ok {
