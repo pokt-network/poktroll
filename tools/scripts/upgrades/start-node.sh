@@ -5,21 +5,27 @@
 # Install with `go install cosmossdk.io/tools/cosmovisor/cmd/cosmovisor@v1.5.0`
 
 export DAEMON_NAME=poktrolld 
-# Pre-build binaries
-# export POKTROLLD_OLD_BINARY_PATH=$HOME/pocket/poktroll/bin/poktrolld-v1
-# export POKTROLLD_V2_PATH=$HOME/pocket/poktroll/bin/poktrolld-v2
-export POKTROLLD_HOME=$HOME/.poktroll
+# Pre-build binaries. Built with `ignite chain build --skip-proto --output .`
+export POKTROLLD_OLD_BINARY_PATH=/Users/dk/pocket/pokrtoll-for-releases/poktrolld
+export POKTROLLD_NEW_BINARY_PATH=/Users/dk/pocket/poktroll/poktrolld
+export DAEMON_HOME=$HOME/.poktroll
 
 # Cosmovisor directory.
-export TMP_COSMOVISOR_DIR=/Users/dk/pocket/poktroll/bin/cosmovisor
+# export TMP_COSMOVISOR_DIR=/Users/dk/pocket/poktroll/bin/cosmovisor
 
 # update if needed 
 export DAEMON_ALLOW_DOWNLOAD_BINARIES=false 
 export DAEMON_RESTART_AFTER_UPGRADE=true
 
-# setup cored binaries 
-# cp -r $POKTROLLD_OLD_BINARY_PATH $TMP_COSMOVISOR_DIR/genesis/bin/poktrolld
-# cp -r $POKTROLLD_V2_PATH $TMP_COSMOVISOR_DIR/upgrades/v2/bin/poktrolld
+# Cleans up old upgrade binary and home dir
+rm -rf $DAEMON_HOME
 
-# cp -R $TMP_COSMOVISOR_DIR $POKTROLLD_HOME/
-cosmovisor run start --home $POKTROLLD_HOME # --minimum-gas-prices=0.00001upokt
+make localnet_regenesis
+
+# Setup cosmovisor directories and provide an upgrade binary, as we test locally and don't want to pull the binary
+# from the internet.
+mkdir -p $DAEMON_HOME/cosmovisor/genesis/bin/ $DAEMON_HOME/cosmovisor/upgrades/v0.0.4/bin/
+cp -r $POKTROLLD_OLD_BINARY_PATH $DAEMON_HOME/cosmovisor/genesis/bin/poktrolld
+cp -r $POKTROLLD_NEW_BINARY_PATH $DAEMON_HOME/cosmovisor/upgrades/v0.0.4/bin/poktrolld
+
+cosmovisor run start --home $DAEMON_HOME
