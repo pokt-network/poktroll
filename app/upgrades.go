@@ -7,9 +7,10 @@ import (
 
 // allUpgrades includes all upgrades that have been created, but not necessarily submitted on-chain
 var allUpgrades = []upgrades.Upgrade{
-	upgrades.Upgrade_0_4_0,
+	upgrades.Upgrade_0_0_4,
 }
 
+// setUpgrades sets upgrade handlers for all upgrades and executes KVStore migration if upgrade plan file exists
 func (app *App) setUpgrades() error {
 	// Set upgrade handlers for all upgrades
 	for _, u := range allUpgrades {

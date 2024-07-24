@@ -28,16 +28,16 @@ func defaultMigrationsOnlyUpgradeHandler(
 // to signal to node runners utilizing `Cosmovisor` to automatically download and install the new binary.
 // TODO_IN_THIS_PR: link to the document that explains Cosmovisor usage and its benefits for node runners.
 var Upgrade_Example = Upgrade{
-	VersionName:          "v0.4.0-Example",
+	VersionName:          "v0.0.0-Example",
 	CreateUpgradeHandler: defaultMigrationsOnlyUpgradeHandler,
 
 	// We can also add, rename and delete KVStores.
 	StoreUpgrades: storetypes.StoreUpgrades{},
 }
 
-// Upgrade_0_4_0 is an example of an upgrade that increases the block size.
-var Upgrade_0_4_0 = Upgrade{
-	VersionName: "v0.4.0",
+// Upgrade_0_0_4 is an example of an upgrade that increases the block size.
+var Upgrade_0_0_4 = Upgrade{
+	VersionName: "v0.0.4",
 	CreateUpgradeHandler: func(mm *module.Manager,
 		keepers *keepers.Keepers,
 		configurator module.Configurator) upgradetypes.UpgradeHandler {

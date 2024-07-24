@@ -14,7 +14,7 @@ export POKTROLLD_HOME=$HOME/.poktroll
 export TMP_COSMOVISOR_DIR=/Users/dk/pocket/poktroll/bin/cosmovisor
 
 # update if needed 
-export DAEMON_ALLOW_DOWNLOAD_BINARIES=true 
+export DAEMON_ALLOW_DOWNLOAD_BINARIES=false 
 export DAEMON_RESTART_AFTER_UPGRADE=true
 
 # setup cored binaries 

@@ -4,3 +4,8 @@ poktrolld tx authz exec tools/scripts/upgrades/authz_upgrade_tx.json --from pnf 
 sleep 3
 
 poktrolld query upgrade plan
+
+# If changing consensus module parameters (such as block size), execute after an upgrade to verify the block size
+# has been changed.
+
+poktrolld query consensus params
