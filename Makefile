@@ -823,7 +823,7 @@ warn_flaky_tests: ## Print a warning message that some unit tests may be flaky
 	@echo "|     1. Our unit / integration tests are far from perfect & some are flaky                     |"
 	@echo "|     2. If you ran 'make go_develop_and_test' and a failure occurred, try to run:              |"
 	@echo "|     	'make test_all' once or twice more                                                     |"
-	@echo "|     3. If the same error persistes, isolate it with 'go test -v ./path/to/failing/module      |"
+	@echo "|     3. If the same error persists, isolate it with 'go test -v ./path/to/failing/module       |"
 	@echo "|                                                                                               |"
 	@echo "+-----------------------------------------------------------------------------------------------+"
 
