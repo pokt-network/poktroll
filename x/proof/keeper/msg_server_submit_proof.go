@@ -14,15 +14,22 @@ import (
 
 	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/proof/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // SubmitProof is the server handler to submit and store a proof on-chain.
 // A proof that's stored on-chain is what leads to rewards (i.e. inflation)
-// downstream, making the series of checks a critical part of the protocol.
+// downstream, making this a critical part of the protocol.
 //
-// Note: The entity sending the SubmitProof messages does not necessarily need
+// Note that the validation of the proof is done in `EnsureValidProof`. However,
+// preliminary checks are done in the handler to prevent sybil or DoS attacks on
+// full nodes because storing and validating proofs is expensive.
+//
+// We are playing a balance of security and efficiency here, where enough validation
+// is done on proof submission, and exhaustive validation is done during session
+// settlement.
+//
+// The entity sending the SubmitProof messages does not necessarily need
 // to correspond to the supplier signing the proof. For example, a single entity
 // could (theoretically) batch multiple proofs (signed by the corresponding supplier)
 // into one transaction to save on transaction fees.
@@ -59,8 +66,7 @@ func (k msgServer) SubmitProof(
 	logger.Info("validated the submitProof message")
 
 	// Compare msg session header w/ on-chain session header.
-	var session *sessiontypes.Session
-	session, err = k.queryAndValidateSessionHeader(ctx, msg.GetSessionHeader(), msg.GetSupplierAddress())
+	session, err := k.queryAndValidateSessionHeader(ctx, msg.GetSessionHeader(), msg.GetSupplierAddress())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}

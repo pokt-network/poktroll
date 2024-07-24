@@ -586,7 +586,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 			),
 		},
 		{
-			desc: "relay difficulty must be greater than or equal to minimum (zero difficulty)",
+			desc: "relay difficulty must be greater than or equal to a high difficulty (low target hash)",
 			newProof: func(t *testing.T) *prooftypes.Proof {
 				// Set the minimum relay difficulty to a non-zero value such that the relays
 				// constructed by the test helpers have a negligible chance of being valid.
@@ -616,13 +616,6 @@ func TestEnsureValidProof_Error(t *testing.T) {
 				highExpectedTargetDifficulty,
 				validSessionHeader.Service.Id,
 			),
-		},
-		{
-			desc: "relay difficulty must be greater than or equal to minimum (non-zero difficulty)",
-			newProof: func(t *testing.T) *prooftypes.Proof {
-				t.Skip("TODO_TECHDEBT(@bryanchriswhite): Implement this")
-				return nil
-			},
 		},
 		{
 			desc: "claim must exist for proof message",

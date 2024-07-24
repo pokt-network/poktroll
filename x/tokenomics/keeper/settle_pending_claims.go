@@ -102,6 +102,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 					NumComputeUnits:  numClaimComputeUnits,
 					NumRelays:        numRelaysInSessionTree,
 					ExpirationReason: expirationReason,
+					// TODO_CONSIDERATION: Add the error to the event if the proof was invalid.
 				}
 				if err = ctx.EventManager().EmitTypedEvent(&claimExpiredEvent); err != nil {
 					return settledResult, expiredResult, err

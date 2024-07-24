@@ -10,7 +10,6 @@ import (
 
 	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/proof/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -47,8 +46,7 @@ func (k msgServer) CreateClaim(
 	logger.Info("validated the createClaim message")
 
 	// Compare msg session header w/ on-chain session header.
-	var session *sessiontypes.Session
-	session, err = k.queryAndValidateSessionHeader(ctx, msg.GetSessionHeader(), msg.GetSupplierAddress())
+	session, err := k.queryAndValidateSessionHeader(ctx, msg.GetSessionHeader(), msg.GetSupplierAddress())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}

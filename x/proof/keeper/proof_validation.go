@@ -49,6 +49,11 @@ import (
 //  2. Validators are the ones responsible for the heavy processing & validation during state transitions
 //  3. This creates an opportunity to slash suppliers who submit false proofs, whereas
 //     they can keep retrying if it takes place in the SubmitProof handler.
+//
+// Note that some of the validation here is redundant with the validation done in
+// SubmitProof (in the handler). The reason for this is because were are trying
+// to find a balance between preventing sybil or DoS attacks on full nodes
+// during proof submission, but being completely exhaustive in all the checks done here.
 func (k Keeper) EnsureValidProof(
 	ctx context.Context,
 	proof *types.Proof,
