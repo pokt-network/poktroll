@@ -379,21 +379,14 @@ func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_Vi
 	})
 	require.NoError(t, err)
 
-	// Create a claim that requires a proof
-	claim := s.claim
-
-	// 0. Add the claim & verify it exists
-	s.keepers.UpsertClaim(ctx, claim)
-	claims := s.keepers.GetAllClaims(ctx)
-	s.Require().Len(claims, 1)
-
-	// Upsert the proof
+	// Upsert the claim & proof
+	s.keepers.UpsertClaim(ctx, s.claim)
 	s.keepers.UpsertProof(ctx, s.proof)
 
 	// Settle pending claims after proof window closes
 	// Expectation: All (1) claims should be claimed.
 	// NB: proof window has definitely closed at this point
-	sessionEndHeight := claim.SessionHeader.SessionEndBlockHeight
+	sessionEndHeight := s.claim.SessionHeader.SessionEndBlockHeight
 	blockHeight := shared.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
 	sdkCtx = sdkCtx.WithBlockHeight(blockHeight)
 	settledResult, expiredResult, err := s.keepers.SettlePendingClaims(sdkCtx)
@@ -405,7 +398,7 @@ func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_Vi
 	require.Equal(t, uint64(0), expiredResult.NumClaims)
 
 	// Validate that no claims remain.
-	claims = s.keepers.GetAllClaims(ctx)
+	claims := s.keepers.GetAllClaims(ctx)
 	require.Len(t, claims, 0)
 
 	// Confirm an settlement event was emitted
