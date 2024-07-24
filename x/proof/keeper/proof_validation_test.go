@@ -26,7 +26,7 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-func TestIsProofValid_Error(t *testing.T) {
+func TestEnsureValidProof_Error(t *testing.T) {
 	opts := []keepertest.ProofKeepersOpt{
 		// Set block hash such that on-chain closest merkle proof validation
 		// uses the expected path.
@@ -267,7 +267,7 @@ func TestIsProofValid_Error(t *testing.T) {
 			),
 		},
 		{
-			desc: "merkle proof must be deserializabled",
+			desc: "merkle proof must be deserializable",
 			newProof: func(t *testing.T) *prooftypes.Proof {
 				// Construct new proof message.
 				proof := testtree.NewProof(t,
@@ -763,9 +763,8 @@ func TestIsProofValid_Error(t *testing.T) {
 
 			// Advance the block height to the earliest proof commit height.
 			ctx = keepertest.SetBlockHeight(ctx, earliestSupplierProofCommitHeight)
-			isProofValid, err := keepers.IsProofValid(ctx, proof)
+			err := keepers.EnsureValidProof(ctx, proof)
 			require.ErrorContains(t, err, test.expectedErr.Error())
-			require.False(t, isProofValid)
 		})
 	}
 }

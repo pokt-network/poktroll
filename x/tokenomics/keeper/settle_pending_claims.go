@@ -82,16 +82,14 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 
 		proofIsRequired := (proofRequirement != prooftypes.ProofRequirementReason_NOT_REQUIRED)
 		if proofIsRequired {
-			var expirationReason types.ClaimExpirationReason = types.ClaimExpirationReason_EXPIRATION_REASON_UNSPECIFIED // EXPIRATION_REASON_UNSPECIFIED is the default
+			expirationReason := types.ClaimExpirationReason_EXPIRATION_REASON_UNSPECIFIED // EXPIRATION_REASON_UNSPECIFIED is the default
+
 			if isProofFound {
-				var isProofValid bool
-				isProofValid, err = k.proofKeeper.IsProofValid(ctx, &proof)
-				if !isProofValid || err != nil {
+				if err = k.proofKeeper.EnsureValidProof(ctx, &proof); err == nil {
 					logger.Warn(fmt.Sprintf("Proof was found but is invalid due to %v", err))
 					expirationReason = types.ClaimExpirationReason_PROOF_INVALID
 				}
 			} else {
-				// Should claim expire because proof is required but unavailable?
 				expirationReason = types.ClaimExpirationReason_PROOF_MISSING
 			}
 

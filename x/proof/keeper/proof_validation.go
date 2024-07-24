@@ -40,7 +40,7 @@ import (
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
-// IsProofValid validates the proof submitted by the supplier is correct with
+// EnsureValidProof validates the proof submitted by the supplier is correct with
 // respect to an on-chain claim.
 //
 // This function should be called during session settlement (i.e. EndBlocker)
@@ -49,24 +49,24 @@ import (
 //  2. Validators are the ones responsible for the heavy processing & validation during state transitions
 //  3. This creates an opportunity to slash suppliers who submit false proofs, whereas
 //     they can keep retrying if it takes place in the SubmitProof handler.
-func (k Keeper) IsProofValid(
+func (k Keeper) EnsureValidProof(
 	ctx context.Context,
 	proof *types.Proof,
-) (valid bool, err error) {
+) error {
 	logger := k.Logger().With("method", "ValidateProof")
 
 	// Retrieve the supplier's public key.
 	supplierAddr := proof.SupplierAddress
 	supplierPubKey, err := k.accountQuerier.GetPubKeyFromAddress(ctx, supplierAddr)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	// Validate the session header.
 	var onChainSession *sessiontypes.Session
 	onChainSession, err = k.queryAndValidateSessionHeader(ctx, proof.SessionHeader, supplierAddr)
 	if err != nil {
-		return false, err
+		return err
 	}
 	logger.Info("queried and validated the session header")
 
@@ -78,17 +78,17 @@ func (k Keeper) IsProofValid(
 	// Validate proof message commit height is within the respective session's
 	// proof submission window using the on-chain session header.
 	if err = k.validateProofWindow(ctx, sessionHeader, supplierAddr); err != nil {
-		return false, err
+		return err
 	}
 
 	if proof.ClosestMerkleProof == nil || len(proof.ClosestMerkleProof) == 0 {
-		return false, types.ErrProofInvalidProof.Wrap("proof cannot be empty")
+		return types.ErrProofInvalidProof.Wrap("proof cannot be empty")
 	}
 
 	// Unmarshal the closest merkle proof from the message.
 	sparseMerkleClosestProof := &smt.SparseMerkleClosestProof{}
 	if err = sparseMerkleClosestProof.Unmarshal(proof.ClosestMerkleProof); err != nil {
-		return false, types.ErrProofInvalidProof.Wrapf(
+		return types.ErrProofInvalidProof.Wrapf(
 			"failed to unmarshal closest merkle proof: %s",
 			err,
 		)
@@ -100,7 +100,7 @@ func (k Keeper) IsProofValid(
 	relayBz := sparseMerkleClosestProof.GetValueHash(&protocol.SmtSpec)
 	relay := &servicetypes.Relay{}
 	if err = k.cdc.Unmarshal(relayBz, relay); err != nil {
-		return false, types.ErrProofInvalidRelay.Wrapf(
+		return types.ErrProofInvalidRelay.Wrapf(
 			"failed to unmarshal relay: %s",
 			err,
 		)
@@ -109,44 +109,44 @@ func (k Keeper) IsProofValid(
 	// Basic validation of the relay request.
 	relayReq := relay.GetReq()
 	if err = relayReq.ValidateBasic(); err != nil {
-		return false, err
+		return err
 	}
 	logger.Debug("successfully validated relay request")
 
 	// Make sure that the supplier address in the proof matches the one in the relay request.
 	if supplierAddr != relayReq.Meta.SupplierAddress {
-		return false, types.ErrProofSupplierMismatch.Wrapf("supplier type mismatch")
+		return types.ErrProofSupplierMismatch.Wrapf("supplier type mismatch")
 	}
 	logger.Debug("the proof supplier address matches the relay request supplier address")
 
 	// Basic validation of the relay response.
 	relayRes := relay.GetRes()
 	if err = relayRes.ValidateBasic(); err != nil {
-		return false, err
+		return err
 	}
 	logger.Debug("successfully validated relay response")
 
 	// Verify that the relay request session header matches the proof session header.
 	if err = compareSessionHeaders(sessionHeader, relayReq.Meta.GetSessionHeader()); err != nil {
-		return false, err
+		return err
 	}
 	logger.Debug("successfully compared relay request session header")
 
 	// Verify that the relay response session header matches the proof session header.
 	if err = compareSessionHeaders(sessionHeader, relayRes.Meta.GetSessionHeader()); err != nil {
-		return false, err
+		return err
 	}
 	logger.Debug("successfully compared relay response session header")
 
 	// Verify the relay request's signature.
 	if err = k.ringClient.VerifyRelayRequestSignature(ctx, relayReq); err != nil {
-		return false, err
+		return err
 	}
 	logger.Debug("successfully verified relay request signature")
 
 	// Verify the relay response's signature.
 	if err = relayRes.VerifySupplierSignature(supplierPubKey); err != nil {
-		return false, err
+		return err
 	}
 	logger.Debug("successfully verified relay response signature")
 
@@ -164,7 +164,7 @@ func (k Keeper) IsProofValid(
 		relayDifficultyTargetHash,
 		sessionHeader.Service.Id,
 	); err != nil {
-		return false, err
+		return err
 	}
 	logger.Debug("successfully validated relay mining difficulty")
 
@@ -176,7 +176,7 @@ func (k Keeper) IsProofValid(
 		sessionHeader,
 		supplierAddr,
 	); err != nil {
-		return false, err
+		return err
 	}
 	logger.Debug("successfully validated proof path")
 
@@ -184,18 +184,18 @@ func (k Keeper) IsProofValid(
 	// used in the proof validation below.
 	claim, err := k.queryAndValidateClaimForProof(ctx, sessionHeader, supplierAddr)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	logger.Debug("successfully retrieved and validated claim")
 
 	// Verify the proof's closest merkle proof.
 	if err = verifyClosestProof(sparseMerkleClosestProof, claim.GetRootHash()); err != nil {
-		return false, err
+		return err
 	}
 	logger.Debug("successfully verified closest merkle proof")
 
-	return true, nil
+	return nil
 }
 
 // validateClosestPath ensures that the proof's path matches the expected path.

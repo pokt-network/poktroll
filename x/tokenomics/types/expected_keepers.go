@@ -51,7 +51,7 @@ type ProofKeeper interface {
 	RemoveProof(ctx context.Context, sessionId, supplierAddr string)
 
 	AllClaims(ctx context.Context, req *prooftypes.QueryAllClaimsRequest) (*prooftypes.QueryAllClaimsResponse, error)
-	IsProofValid(ctx context.Context, proof *prooftypes.Proof) (valid bool, err error)
+	EnsureValidProof(ctx context.Context, proof *prooftypes.Proof) error
 
 	// Only used for testing & simulation
 	GetAllProofs(ctx context.Context) []prooftypes.Proof
