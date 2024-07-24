@@ -30,6 +30,7 @@ func GetDifficultyFromHash(hashBz [RelayHasherSize]byte) int64 {
 	hashInt := new(big.Int).SetBytes(hashBz[:])
 
 	// difficulty is the ratio of the highest target hash to the given hash.
+	// TODO_MAINNET: Can this cause an integer overflow?
 	return new(big.Int).Div(baseRelayDifficultyHashInt, hashInt).Int64()
 }
 

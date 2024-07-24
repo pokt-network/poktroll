@@ -601,7 +601,6 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 				).Error(),
 			),
 		},
-		// TODO_TECHDEBT: add a test case such that we can distinguish between early & late session end block heights.
 	}
 
 	// Submit the corresponding proof.

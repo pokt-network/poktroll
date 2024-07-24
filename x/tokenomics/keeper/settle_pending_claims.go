@@ -123,7 +123,6 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 				expiredResult.NumComputeUnits += numClaimComputeUnits
 				continue
 			}
-
 		}
 
 		// If this code path is reached, then either:
