@@ -8,6 +8,8 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/smt"
 
+	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/telemetry"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
@@ -24,7 +26,7 @@ import (
 func (k Keeper) SettleSessionAccounting(
 	ctx context.Context,
 	claim *prooftypes.Claim,
-) error {
+) (err error) {
 	logger := k.Logger().With("method", "SettleSessionAccounting")
 
 	settlementCoin := cosmostypes.NewCoin("upokt", math.NewInt(0))
@@ -32,7 +34,12 @@ func (k Keeper) SettleSessionAccounting(
 	// This is emitted only when the function returns.
 	defer telemetry.EventSuccessCounter(
 		"settle_session_accounting",
-		func() float32 { return float32(settlementCoin.Amount.Int64()) },
+		func() float32 {
+			if settlementCoin.Amount.BigInt() == nil {
+				return 0
+			}
+			return float32(settlementCoin.Amount.Int64())
+		},
 		func() bool { return isSuccessful },
 	)
 
@@ -48,7 +55,7 @@ func (k Keeper) SettleSessionAccounting(
 		logger.Error("received a nil session header")
 		return tokenomicstypes.ErrTokenomicsSessionHeaderNil
 	}
-	if err := sessionHeader.ValidateBasic(); err != nil {
+	if err = sessionHeader.ValidateBasic(); err != nil {
 		logger.Error("received an invalid session header", "error", err)
 		return tokenomicstypes.ErrTokenomicsSessionHeaderInvalid
 	}
@@ -64,15 +71,19 @@ func (k Keeper) SettleSessionAccounting(
 	}
 
 	// Retrieve the sum of the root as a proxy into the amount of work done
-	root := (smt.MerkleRoot)(claim.GetRootHash())
+	root := (smt.MerkleSumRoot)(claim.GetRootHash())
 
-	// TODO_BLOCKER(@Olshansk): This check should be the responsibility of the SMST package
-	// since it's used to get compute units from the root hash.
-	if root == nil || len(root) != smt.SmstRootSizeBytes {
-		logger.Error(fmt.Sprintf("received an invalid root hash of size: %d", len(root)))
-		return tokenomicstypes.ErrTokenomicsRootHashInvalid
+	if !root.HasDigestSize(protocol.TrieHasherSize) {
+		return tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrapf(
+			"root hash has invalid digest size (%d), expected (%d)",
+			root.DigestSize(), protocol.TrieHasherSize,
+		)
 	}
-	claimComputeUnits := root.Sum()
+
+	claimComputeUnits, err := root.Sum()
+	if err != nil {
+		return tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrapf("%v", err)
+	}
 
 	// Helpers for logging the same metadata throughout this function calls
 	logger = logger.With(
@@ -98,10 +109,21 @@ func (k Keeper) SettleSessionAccounting(
 		return tokenomicstypes.ErrTokenomicsSupplierNotFound
 	}
 
-	logger.Info(fmt.Sprintf("About to start settling claim for %d compute units", claimComputeUnits))
+	computeUnitsPerRelay, err := k.getComputUnitsPerRelayFromApplication(application, sessionHeader.Service.Id)
+	if err != nil {
+		return err
+	}
+
+	computeUnitsToTokensMultiplier := k.GetParams(ctx).ComputeUnitsToTokensMultiplier
+
+	logger.Info(fmt.Sprintf("About to start settling claim for %d compute units with CUPR %d and CUTTM %d", claimComputeUnits, computeUnitsPerRelay, computeUnitsToTokensMultiplier))
 
 	// Calculate the amount of tokens to mint & burn
-	settlementCoin = k.getCoinFromComputeUnits(ctx, root)
+	settlementCoin, err = relayCountToCoin(claimComputeUnits, computeUnitsPerRelay, computeUnitsToTokensMultiplier)
+	if err != nil {
+		return err
+	}
+
 	settlementCoins := cosmostypes.NewCoins(settlementCoin)
 
 	logger.Info(fmt.Sprintf(
@@ -123,13 +145,35 @@ func (k Keeper) SettleSessionAccounting(
 	return nil
 }
 
-// getCoinFromComputeUnits calculates the amount of tokens to mint based on the
-// sum of the merkle tree.
-func (k Keeper) getCoinFromComputeUnits(ctx context.Context, root smt.MerkleRoot) cosmostypes.Coin {
-	// Retrieve the existing tokenomics params
-	params := k.GetParams(ctx)
-	merkleRootSum := root.Sum()
-	cuttm := params.ComputeUnitsToTokensMultiplier
-	upokt := math.NewInt(int64(merkleRootSum * cuttm))
-	return cosmostypes.NewCoin("upokt", upokt)
+// relayCountToCoin calculates the amount of uPOKT to mint based on the number of relays, the service-specific ComputeUnitsPerRelay, and the ComputeUnitsPerTokenMultiplier tokenomics param
+// TODO_IN_THIS_PR: What if we use root smt.MerkleRoot instead?
+func relayCountToCoin(numRelays, computeUnitsPerRelay uint64, computeUnitsToTokensMultiplier uint64) (cosmostypes.Coin, error) {
+	upokt := math.NewInt(int64(numRelays * computeUnitsPerRelay * computeUnitsToTokensMultiplier))
+
+	if upokt.IsNegative() {
+		return cosmostypes.Coin{}, tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrap("sum * compute_units_to_tokens_multiplier is negative")
+	}
+
+	return cosmostypes.NewCoin(volatile.DenomuPOKT, upokt), nil
+}
+
+// getComputUnitsPerRelayFromApplication retrieves the ComputeUnitsPerRelay for a given service from the application's service configs
+func (k Keeper) getComputUnitsPerRelayFromApplication(application apptypes.Application, serviceID string) (cupr uint64, err error) {
+	logger := k.Logger().With("method", "getComputeUnitsPerRelayFromApplication")
+
+	serviceConfigs := application.ServiceConfigs
+	if len(serviceConfigs) == 0 {
+		logger.Warn(fmt.Sprintf("application with address %q has no service configs", application.Address))
+		return 0, tokenomicstypes.ErrTokenomicsApplicationNoServiceConfigs
+	}
+
+	for _, sc := range serviceConfigs {
+		service := sc.GetService()
+		if service.Id == serviceID {
+			return service.ComputeUnitsPerRelay, nil
+		}
+	}
+
+	logger.Warn(fmt.Sprintf("service with ID %q not found in application with address %q", serviceID, application.Address))
+	return 0, tokenomicstypes.ErrTokenomicsApplicationNoServiceConfigs
 }

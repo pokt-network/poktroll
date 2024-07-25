@@ -147,10 +147,10 @@ func ClaimCounter(
 	)
 }
 
-// RelayMiningDifficultyGauge sets a gauge which tracks the relay mining difficulty,
-// which is represented by number of leading zero bits.
-// The serviceId is used as a label to be able to track the difficulty for each service.
-func RelayMiningDifficultyGauge(numbLeadingZeroBits int, serviceId string) {
+// RelayMiningDifficultyGauge sets a gauge which tracks the integer representation
+// of the relay mining difficulty. The serviceId is used as a label to be able to
+// track the difficulty for each service.
+func RelayMiningDifficultyGauge(difficulty int64, serviceId string) {
 	labels := []metrics.Label{
 		{Name: "type", Value: "relay_mining_difficulty"},
 		{Name: "service_id", Value: serviceId},
@@ -158,7 +158,7 @@ func RelayMiningDifficultyGauge(numbLeadingZeroBits int, serviceId string) {
 
 	telemetry.SetGaugeWithLabels(
 		[]string{eventTypeMetricKeyGauge},
-		float32(numbLeadingZeroBits),
+		float32(difficulty),
 		labels,
 	)
 }

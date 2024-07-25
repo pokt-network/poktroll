@@ -2,7 +2,6 @@ package integration_test
 
 import (
 	"context"
-	"crypto/sha256"
 	"testing"
 
 	"github.com/pokt-network/smt"
@@ -21,8 +20,6 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
-
-// TODO_UPNEXT(@Olshansk, #571): Implement these tests
 
 func init() {
 	cmd.InitSDKConfig()
@@ -120,8 +117,8 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	relayMiningEvent := relayMiningEvents[0]
 	require.Equal(t, "svc1", relayMiningEvent.ServiceId)
 	// The default difficulty)
-	require.Equal(t, "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", relayMiningEvent.PrevTargetHashHexEncoded)
-	require.Equal(t, "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", relayMiningEvent.NewTargetHashHexEncoded)
+	require.Equal(t, prooftypes.DefaultRelayDifficultyTargetHashHex, relayMiningEvent.PrevTargetHashHexEncoded)
+	require.Equal(t, prooftypes.DefaultRelayDifficultyTargetHashHex, relayMiningEvent.NewTargetHashHexEncoded)
 	// The previous EMA is the same as the current one if the service is new
 	require.Equal(t, uint64(1), relayMiningEvent.PrevNumRelaysEma)
 	require.Equal(t, uint64(1), relayMiningEvent.NewNumRelaysEma)
@@ -193,7 +190,7 @@ func prepareSMST(
 		integrationApp.GetRingClient(),
 	)
 
-	trie := smt.NewSparseMerkleSumTrie(kvStore, sha256.New(), smt.WithValueHasher(nil))
+	trie := smt.NewSparseMerkleSumTrie(kvStore, protocol.NewTrieHasher(), smt.WithValueHasher(nil))
 	err = trie.Update(minedRelay.Hash, minedRelay.Bytes, 1)
 	require.NoError(t, err)
 

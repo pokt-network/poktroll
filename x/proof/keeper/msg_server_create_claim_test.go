@@ -139,7 +139,7 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 			events := sdkCtx.EventManager().Events()
 			require.Equal(t, 1, len(events))
 
-			require.Equal(t, events[0].Type, "poktroll.proof.EventClaimCreated")
+			require.Equal(t, "poktroll.proof.EventClaimCreated", events[0].Type)
 
 			event, err := cosmostypes.ParseTypedEvent(abci.Event(events[0]))
 			require.NoError(t, err)
@@ -490,7 +490,7 @@ func newTestClaimMsg(
 	supplierAddr string,
 	appAddr string,
 	service *sharedtypes.Service,
-	merkleRoot smt.MerkleRoot,
+	merkleRoot smt.MerkleSumRoot,
 ) *types.MsgCreateClaim {
 	t.Helper()
 

@@ -2,6 +2,7 @@ package service_test
 
 import (
 	"fmt"
+	"strconv"
 	"testing"
 
 	sdkerrors "cosmossdk.io/errors"
@@ -52,12 +53,14 @@ func TestCLI_AddService(t *testing.T) {
 
 	// Prepare two valid services
 	svc1 := sharedtypes.Service{
-		Id:   "svc1",
-		Name: "service name",
+		Id:                   "svc1",
+		Name:                 "service name",
+		ComputeUnitsPerRelay: 1,
 	}
 	svc2 := sharedtypes.Service{
-		Id:   "svc2",
-		Name: "service name 2",
+		Id:                   "svc2",
+		Name:                 "service name 2",
+		ComputeUnitsPerRelay: 1,
 	}
 	// Add svc2 to the network
 	args := []string{
@@ -80,6 +83,15 @@ func TestCLI_AddService(t *testing.T) {
 			desc:            "valid - add new service",
 			supplierAddress: account.Address.String(),
 			service:         svc1,
+		},
+		{
+			desc:            "valid - add new service without specifying compute units per relay so that it uses the default",
+			supplierAddress: account.Address.String(),
+			service: sharedtypes.Service{
+				Id:                   svc1.Id,
+				Name:                 svc1.Name,
+				ComputeUnitsPerRelay: 0, // this parameter is omitted when the test is run
+			},
 		},
 		{
 			desc:            "invalid - missing service id",
@@ -114,12 +126,17 @@ func TestCLI_AddService(t *testing.T) {
 			require.NoError(t, net.WaitForNextBlock())
 
 			// Prepare the arguments for the CLI command
-			args := []string{
+			argsAndFlags := []string{
 				test.service.Id,
 				test.service.Name,
-				fmt.Sprintf("--%s=%s", flags.FlagFrom, test.supplierAddress),
 			}
-			args = append(args, commonArgs...)
+			if test.service.ComputeUnitsPerRelay > 0 {
+				// Only include compute units per relay argument if provided
+				argsAndFlags = append(argsAndFlags, strconv.FormatUint(test.service.ComputeUnitsPerRelay, 10))
+			}
+			argsAndFlags = append(argsAndFlags, fmt.Sprintf("--%s=%s", flags.FlagFrom, test.supplierAddress))
+
+			args := append(argsAndFlags, commonArgs...)
 
 			// Execute the command
 			addServiceOutput, err := clitestutil.ExecTestCLICmd(ctx, service.CmdAddService(), args)

@@ -36,6 +36,7 @@ import (
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	shared "github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
@@ -353,6 +354,21 @@ func (s *suite) TheAccountForIsStaked(actorType, accName string) {
 	s.scenarioState[accStakeKey(actorType, accName)] = stakeAmount // save the stakeAmount for later
 }
 
+func (s *suite) TheServiceRegisteredForApplicationHasAComputeUnitsPerRelayOf(serviceId string, appName string, cuprStr string) {
+	app, ok := accNameToAppMap[appName]
+	require.True(s, ok, "application %s not found", appName)
+
+	for _, serviceConfig := range app.ServiceConfigs {
+		if serviceConfig.Service.Id == serviceId {
+			cupr, err := strconv.ParseUint(cuprStr, 10, 64)
+			require.NoError(s, err)
+			require.Equal(s, cupr, serviceConfig.Service.ComputeUnitsPerRelay)
+			return
+		}
+	}
+	s.Fatalf("ERROR: service %s is not registered for application %s", serviceId, appName)
+}
+
 func (s *suite) TheForAccountIsNotStaked(actorType, accName string) {
 	_, ok := s.getStakedAmount(actorType, accName)
 	require.Falsef(s, ok, "account %s of type %s SHOULD NOT be staked", accName, actorType)
@@ -440,6 +456,24 @@ func (s *suite) TheApplicationReceivesASuccessfulRelayResponseSignedBy(appName s
 
 func (s *suite) AModuleEndBlockEventIsBroadcast(module, eventType string) {
 	s.waitForNewBlockEvent(newEventTypeMatchFn(module, eventType))
+}
+
+func (s *suite) TheSupplierForAccountIsUnbonding(accName string) {
+	_, ok := accNameToSupplierMap[accName]
+	require.True(s, ok, "supplier %s not found", accName)
+
+	s.waitForTxResultEvent(newEventMsgTypeMatchFn("supplier", "UnstakeSupplier"))
+
+	supplier := s.getSupplierInfo(accName)
+	require.True(s, supplier.IsUnbonding())
+}
+
+func (s *suite) TheUserWaitsForUnbondingPeriodToFinish(accName string) {
+	_, ok := accNameToSupplierMap[accName]
+	require.True(s, ok, "supplier %s not found", accName)
+
+	unbondingHeight := s.getSupplierUnbondingHeight(accName)
+	s.waitForBlockHeight(unbondingHeight)
 }
 
 func (s *suite) getStakedAmount(actorType, accName string) (int, bool) {
@@ -564,6 +598,47 @@ func (s *suite) validateAmountChange(prevAmount, currAmount int, expectedAmountC
 		s.Fatalf("ERROR: unknown condition %s", condition)
 	}
 
+}
+
+// getSupplierInfo returns the supplier information for a given supplier address
+func (s *suite) getSupplierInfo(supplierAddr string) *sharedtypes.Supplier {
+	args := []string{
+		"query",
+		"supplier",
+		"show-supplier",
+		accNameToAddrMap[supplierAddr],
+		"--output=json",
+	}
+
+	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, args...)
+	require.NoError(s, err, "error getting supplier %s", supplierAddr)
+	s.pocketd.result = res
+
+	var resp suppliertypes.QueryGetSupplierResponse
+	responseBz := []byte(strings.TrimSpace(res.Stdout))
+	s.cdc.MustUnmarshalJSON(responseBz, &resp)
+	return &resp.Supplier
+}
+
+// getSupplierUnbondingHeight returns the height at which the supplier will be unbonded.
+func (s *suite) getSupplierUnbondingHeight(accName string) int64 {
+	supplier := s.getSupplierInfo(accName)
+
+	args := []string{
+		"query",
+		"shared",
+		"params",
+		"--output=json",
+	}
+
+	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, args...)
+	require.NoError(s, err, "error getting shared module params")
+
+	var resp sharedtypes.QueryParamsResponse
+	responseBz := []byte(strings.TrimSpace(res.Stdout))
+	s.cdc.MustUnmarshalJSON(responseBz, &resp)
+	unbondingHeight := shared.GetSupplierUnbondingHeight(&resp.Params, supplier)
+	return unbondingHeight
 }
 
 // TODO_IMPROVE: use `sessionId` and `supplierName` since those are the two values
