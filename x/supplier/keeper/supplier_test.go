@@ -59,10 +59,10 @@ func createNSuppliers(keeper keeper.Keeper, ctx context.Context, n int) []shared
 }
 
 func TestSupplierGet(t *testing.T) {
-	keeper, ctx := keepertest.SupplierKeeper(t)
-	suppliers := createNSuppliers(keeper, ctx, 10)
+	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
+	suppliers := createNSuppliers(*supplierModuleKeepers.Keeper, ctx, 10)
 	for _, supplier := range suppliers {
-		supplierFound, isSupplierFound := keeper.GetSupplier(ctx,
+		supplierFound, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx,
 			supplier.Address,
 		)
 		require.True(t, isSupplierFound)
@@ -74,11 +74,11 @@ func TestSupplierGet(t *testing.T) {
 }
 
 func TestSupplierRemove(t *testing.T) {
-	keeper, ctx := keepertest.SupplierKeeper(t)
-	suppliers := createNSuppliers(keeper, ctx, 10)
+	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
+	suppliers := createNSuppliers(*supplierModuleKeepers.Keeper, ctx, 10)
 	for _, supplier := range suppliers {
-		keeper.RemoveSupplier(ctx, supplier.Address)
-		_, isSupplierFound := keeper.GetSupplier(ctx,
+		supplierModuleKeepers.RemoveSupplier(ctx, supplier.Address)
+		_, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx,
 			supplier.Address,
 		)
 		require.False(t, isSupplierFound)
@@ -86,10 +86,10 @@ func TestSupplierRemove(t *testing.T) {
 }
 
 func TestSupplierGetAll(t *testing.T) {
-	keeper, ctx := keepertest.SupplierKeeper(t)
-	suppliers := createNSuppliers(keeper, ctx, 10)
+	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
+	suppliers := createNSuppliers(*supplierModuleKeepers.Keeper, ctx, 10)
 	require.ElementsMatch(t,
 		nullify.Fill(suppliers),
-		nullify.Fill(keeper.GetAllSuppliers(ctx)),
+		nullify.Fill(supplierModuleKeepers.GetAllSuppliers(ctx)),
 	)
 }

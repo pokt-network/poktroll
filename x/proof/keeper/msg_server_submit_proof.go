@@ -204,10 +204,15 @@ func (k msgServer) SubmitProof(
 	logger.Debug("successfully verified relay response signature")
 
 	// Get the proof module's governance parameters.
+	// TODO_FOLLOWUP(@olshansk, #690): Get the difficulty associated with the service
 	params := k.GetParams(ctx)
 
 	// Verify the relay difficulty is above the minimum required to earn rewards.
-	if err = validateMiningDifficulty(relayBz, params.MinRelayDifficultyBits); err != nil {
+	if err = validateRelayDifficulty(
+		relayBz,
+		params.RelayDifficultyTargetHash,
+		sessionHeader.Service.Id,
+	); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 	logger.Debug("successfully validated relay mining difficulty")
@@ -223,11 +228,6 @@ func (k msgServer) SubmitProof(
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 	logger.Debug("successfully validated proof path")
-
-	// Verify the relay's difficulty.
-	if err = validateMiningDifficulty(relayBz, params.MinRelayDifficultyBits); err != nil {
-		return nil, status.Error(codes.FailedPrecondition, err.Error())
-	}
 
 	// Retrieve the corresponding claim for the proof submitted so it can be
 	// used in the proof validation below.
@@ -447,21 +447,35 @@ func verifyClosestProof(
 	return nil
 }
 
-// validateMiningDifficulty ensures that the relay's mining difficulty meets the
+// validateRelayDifficulty ensures that the relay's mining difficulty meets the
 // required minimum threshold.
 // TODO_TECHDEBT: Factor out the relay mining difficulty validation into a shared
 // function that can be used by both the proof and the miner packages.
-func validateMiningDifficulty(relayBz []byte, minRelayDifficultyBits uint64) error {
-	relayHash := servicetypes.GetHashFromBytes(relayBz)
-	relayDifficultyBits := protocol.CountHashDifficultyBits(relayHash)
+func validateRelayDifficulty(relayBz, targetHash []byte, serviceId string) error {
+	relayHashArr := protocol.GetRelayHashFromBytes(relayBz)
+	relayHash := relayHashArr[:]
 
-	// TODO_MAINNET: Devise a test that tries to attack the network and ensure that there
-	// is sufficient telemetry.
-	if uint64(relayDifficultyBits) < minRelayDifficultyBits {
+	if len(targetHash) != protocol.RelayHasherSize {
 		return types.ErrProofInvalidRelay.Wrapf(
-			"relay difficulty %d is less than the minimum difficulty %d",
-			relayDifficultyBits,
-			minRelayDifficultyBits,
+			"invalid RelayDifficultyTargetHash: (%x); length wanted: %d; got: %d",
+			targetHash,
+			protocol.RelayHasherSize,
+			len(targetHash),
+		)
+	}
+
+	if !protocol.IsRelayVolumeApplicable(relayHash, targetHash) {
+		var targetHashArr [protocol.RelayHasherSize]byte
+		copy(targetHashArr[:], targetHash)
+
+		relayDifficulty := protocol.GetDifficultyFromHash(relayHashArr)
+		targetDifficulty := protocol.GetDifficultyFromHash(targetHashArr)
+
+		return types.ErrProofInvalidRelay.Wrapf(
+			"the difficulty relay being proven is (%d), and is smaller than the target difficulty (%d) for service %s",
+			relayDifficulty,
+			targetDifficulty,
+			serviceId,
 		)
 	}
 

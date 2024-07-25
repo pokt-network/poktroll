@@ -6,7 +6,6 @@ import (
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/poktroll/x/shared"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
@@ -14,6 +13,11 @@ import (
 func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) error {
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	currentHeight := sdkCtx.BlockHeight()
+
+	// Only process unbonding suppliers at the end of the session.
+	if currentHeight != k.sharedKeeper.GetSessionEndHeight(ctx, currentHeight) {
+		return nil
+	}
 
 	logger := k.Logger().With("method", "UnbondSupplier")
 
@@ -26,43 +30,37 @@ func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) error {
 			continue
 		}
 
-		unbondingHeight := k.GetSupplierUnbondingHeight(ctx, &supplier)
+		sharedParams := k.sharedKeeper.GetParams(ctx)
+		unbondingHeight := shared.GetSupplierUnbondingHeight(&sharedParams, &supplier)
 
-		// If the unbonding height is older (less) than the current height, unbond the supplier.
-		if unbondingHeight <= currentHeight {
-			// Retrieve the address of the supplier.
-			supplierAddress, err := cosmostypes.AccAddressFromBech32(supplier.Address)
-			if err != nil {
-				logger.Error(fmt.Sprintf("could not parse address %s", supplier.Address))
-				return err
-			}
-
-			// Send the coins from the supplier pool back to the supplier.
-			if err = k.bankKeeper.SendCoinsFromModuleToAccount(
-				ctx, types.ModuleName, supplierAddress, []cosmostypes.Coin{*supplier.Stake},
-			); err != nil {
-				logger.Error(fmt.Sprintf(
-					"could not send %s coins from %s module to %s account due to %s",
-					supplier.Stake.String(), supplierAddress, types.ModuleName, err,
-				))
-				return err
-			}
-
-			// Remove the supplier from the store.
-			k.RemoveSupplier(ctx, supplierAddress.String())
-			logger.Info(fmt.Sprintf("Successfully removed the supplier: %+v", supplier))
+		// If the unbonding height is ahead of the current height, the supplier
+		// stays in the unbonding state.
+		if unbondingHeight > currentHeight {
+			continue
 		}
+
+		// Retrieve the address of the supplier.
+		supplierAddress, err := cosmostypes.AccAddressFromBech32(supplier.Address)
+		if err != nil {
+			logger.Error(fmt.Sprintf("could not parse address %s", supplier.Address))
+			return err
+		}
+
+		// Send the coins from the supplier pool back to the supplier.
+		if err = k.bankKeeper.SendCoinsFromModuleToAccount(
+			ctx, types.ModuleName, supplierAddress, []cosmostypes.Coin{*supplier.Stake},
+		); err != nil {
+			logger.Error(fmt.Sprintf(
+				"could not send %s coins from %s module to %s account due to %s",
+				supplier.Stake.String(), supplierAddress, types.ModuleName, err,
+			))
+			return err
+		}
+
+		// Remove the supplier from the store.
+		k.RemoveSupplier(ctx, supplierAddress.String())
+		logger.Info(fmt.Sprintf("Successfully removed the supplier: %+v", supplier))
 	}
 
 	return nil
-}
-
-// GetSupplierUnbondingHeight returns the height at which the supplier can be unbonded.
-func (k Keeper) GetSupplierUnbondingHeight(
-	ctx context.Context,
-	supplier *sharedtypes.Supplier,
-) int64 {
-	sharedParams := k.sharedKeeper.GetParams(ctx)
-
-	return shared.GetSupplierUnbondingHeight(&sharedParams, supplier)
 }

@@ -15,14 +15,14 @@ import (
 )
 
 func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
-	k, ctx := keepertest.SupplierKeeper(t)
-	srv := keeper.NewMsgServerImpl(k)
+	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
+	srv := keeper.NewMsgServerImpl(*supplierModuleKeepers.Keeper)
 
 	// Generate an address for the supplier
 	supplierAddr := sample.AccAddress()
 
 	// Verify that the supplier does not exist yet
-	_, isSupplierFound := k.GetSupplier(ctx, supplierAddr)
+	_, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, supplierAddr)
 	require.False(t, isSupplierFound)
 
 	// Prepare the stakeMsg
@@ -50,7 +50,7 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.NoError(t, err)
 
 	// Verify that the supplier exists
-	foundSupplier, isSupplierFound := k.GetSupplier(ctx, supplierAddr)
+	foundSupplier, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, supplierAddr)
 	require.True(t, isSupplierFound)
 	require.Equal(t, supplierAddr, foundSupplier.Address)
 	require.Equal(t, int64(100), foundSupplier.Stake.Amount.Int64())
@@ -83,7 +83,7 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 	_, err = srv.StakeSupplier(ctx, updateMsg)
 	require.NoError(t, err)
 
-	foundSupplier, isSupplierFound = k.GetSupplier(ctx, supplierAddr)
+	foundSupplier, isSupplierFound = supplierModuleKeepers.GetSupplier(ctx, supplierAddr)
 	require.True(t, isSupplierFound)
 	require.Equal(t, int64(200), foundSupplier.Stake.Amount.Int64())
 	require.Len(t, foundSupplier.Services, 1)
@@ -93,8 +93,8 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 }
 
 func TestMsgServer_StakeSupplier_FailRestakingDueToInvalidServices(t *testing.T) {
-	k, ctx := keepertest.SupplierKeeper(t)
-	srv := keeper.NewMsgServerImpl(k)
+	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
+	srv := keeper.NewMsgServerImpl(*supplierModuleKeepers.Keeper)
 
 	supplierAddr := sample.AccAddress()
 
@@ -139,7 +139,7 @@ func TestMsgServer_StakeSupplier_FailRestakingDueToInvalidServices(t *testing.T)
 	require.Error(t, err)
 
 	// Verify the supplierFound still exists and is staked for svc1
-	supplierFound, isSupplierFound := k.GetSupplier(ctx, supplierAddr)
+	supplierFound, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, supplierAddr)
 	require.True(t, isSupplierFound)
 	require.Equal(t, supplierAddr, supplierFound.Address)
 	require.Len(t, supplierFound.Services, 1)
@@ -163,7 +163,7 @@ func TestMsgServer_StakeSupplier_FailRestakingDueToInvalidServices(t *testing.T)
 	require.Error(t, err)
 
 	// Verify the supplier still exists and is staked for svc1
-	supplierFound, isSupplierFound = k.GetSupplier(ctx, supplierAddr)
+	supplierFound, isSupplierFound = supplierModuleKeepers.GetSupplier(ctx, supplierAddr)
 	require.True(t, isSupplierFound)
 	require.Equal(t, supplierAddr, supplierFound.Address)
 	require.Len(t, supplierFound.Services, 1)
@@ -173,8 +173,8 @@ func TestMsgServer_StakeSupplier_FailRestakingDueToInvalidServices(t *testing.T)
 }
 
 func TestMsgServer_StakeSupplier_FailLoweringStake(t *testing.T) {
-	k, ctx := keepertest.SupplierKeeper(t)
-	srv := keeper.NewMsgServerImpl(k)
+	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
+	srv := keeper.NewMsgServerImpl(*supplierModuleKeepers.Keeper)
 
 	// Prepare the supplier
 	supplierAddr := sample.AccAddress()
@@ -201,7 +201,7 @@ func TestMsgServer_StakeSupplier_FailLoweringStake(t *testing.T) {
 	_, err := srv.StakeSupplier(ctx, stakeMsg)
 	require.NoError(t, err)
 
-	_, isSupplierFound := k.GetSupplier(ctx, supplierAddr)
+	_, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, supplierAddr)
 	require.True(t, isSupplierFound)
 
 	// Prepare an updated supplier with a lower stake
@@ -229,15 +229,15 @@ func TestMsgServer_StakeSupplier_FailLoweringStake(t *testing.T) {
 	require.Error(t, err)
 
 	// Verify that the supplier stake is unchanged
-	supplierFound, isSupplierFound := k.GetSupplier(ctx, supplierAddr)
+	supplierFound, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, supplierAddr)
 	require.True(t, isSupplierFound)
 	require.Equal(t, int64(100), supplierFound.Stake.Amount.Int64())
 	require.Len(t, supplierFound.Services, 1)
 }
 
 func TestMsgServer_StakeSupplier_FailWithNonExistingService(t *testing.T) {
-	k, ctx := keepertest.SupplierKeeper(t)
-	srv := keeper.NewMsgServerImpl(k)
+	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
+	srv := keeper.NewMsgServerImpl(*supplierModuleKeepers.Keeper)
 
 	// Prepare the supplier
 	supplierAddr := sample.AccAddress()

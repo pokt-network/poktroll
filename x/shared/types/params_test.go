@@ -190,3 +190,33 @@ func TestParams_ValidateGracePeriodEndOffsetBlocks(t *testing.T) {
 		})
 	}
 }
+
+func TestParams_ValidateSupplierUnbondingPeriod(t *testing.T) {
+	tests := []struct {
+		desc                    string
+		supplierUnbondingPeriod any
+		err                     error
+	}{
+		{
+			desc:                    "invalid type",
+			supplierUnbondingPeriod: "invalid",
+			err:                     ErrSharedParamInvalid.Wrapf("invalid parameter type: %T", "invalid"),
+		},
+		{
+			desc:                    "valid SupplierUnbondingPeriod",
+			supplierUnbondingPeriod: uint64(2),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			err := ValidateSupplierUnbondingPeriod(tt.supplierUnbondingPeriod)
+			if tt.err != nil {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), tt.err.Error())
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}

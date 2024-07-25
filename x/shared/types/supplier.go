@@ -4,8 +4,9 @@ package types
 // supplier is not actively in the unbonding period.
 const SupplierNotUnstaking uint64 = 0
 
-// IsUnbonding returns whether the supplier has submitted an unstake message,
-// in which case the supplier has an UnstakeSessionEndHeight set.
+// IsUnbonding returns true if the supplier is actively unbonding.
+// It determines if the supplier has submitted an unstake message, in which case
+// the supplier has its UnstakeSessionEndHeight set.
 func (s *Supplier) IsUnbonding() bool {
 	return s.UnstakeSessionEndHeight != SupplierNotUnstaking
 }

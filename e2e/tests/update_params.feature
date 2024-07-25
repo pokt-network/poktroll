@@ -37,11 +37,11 @@ Feature: Params Namespace
     And all "proof" module params are set to their default values
     And an authz grant from the "gov" "module" account to the "pnf" "user" account for the "/poktroll.proof.MsgUpdateParams" message exists
     When the "pnf" account sends an authz exec message to update all "proof" module params
-      | name                        | value | type  |
-      | min_relay_difficulty_bits   | 8     | int64 |
-      | proof_request_probability   | 0.1   | float |
-      | proof_requirement_threshold | 100   | int64 |
-      | proof_missing_penalty       | 500   | coin  |
+      | name                         | value                                                            | type  |
+      | relay_difficulty_target_hash | 00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff | bytes |
+      | proof_request_probability    | 0.1                                                              | float |
+      | proof_requirement_threshold  | 100                                                              | int64 |
+      | proof_missing_penalty        | 500                                                              | coin  |
     Then all "proof" module params should be updated
 
   # NB: If you are reading this and the proof module has parameters
@@ -52,12 +52,13 @@ Feature: Params Namespace
     And an authz grant from the "gov" "module" account to the "pnf" "user" account for the "/poktroll.shared.MsgUpdateParams" message exists
     When the "pnf" account sends an authz exec message to update all "shared" module params
       | name                             | value | type  |
-      | num_blocks_per_session           | 8     | int64 |
-      | grace_period_end_offset_blocks   | 3     | int64 |
-      | claim_window_open_offset_blocks  | 8     | int64 |
-      | claim_window_close_offset_blocks | 8     | int64 |
-      | proof_window_open_offset_blocks  | 8     | int64 |
-      | proof_window_close_offset_blocks | 8     | int64 |
+      | num_blocks_per_session           | 5     | int64 |
+      | grace_period_end_offset_blocks   | 2     | int64 |
+      | claim_window_open_offset_blocks  | 2     | int64 |
+      | claim_window_close_offset_blocks | 3     | int64 |
+      | proof_window_open_offset_blocks  | 1     | int64 |
+      | proof_window_close_offset_blocks | 5     | int64 |
+      | supplier_unbonding_period        | 5     | int64 |
     Then all "shared" module params should be updated
 
   # NB: If you are reading this and any module has parameters that
@@ -78,17 +79,19 @@ Feature: Params Namespace
       | proof      | /poktroll.proof.MsgUpdateParam      | proof_request_probability          | 0.1         | float      |
       | proof      | /poktroll.proof.MsgUpdateParam      | proof_requirement_threshold        | 100         | int64      |
       | proof      | /poktroll.proof.MsgUpdateParam      | proof_missing_penalty              | 500         | coin       |
-      | shared     | /poktroll.shared.MsgUpdateParam     | num_blocks_per_session             | 8           | int64      |
-      | shared     | /poktroll.shared.MsgUpdateParam     | grace_period_end_offset_blocks     | 3           | int64      |
-      | shared     | /poktroll.shared.MsgUpdateParam     | claim_window_open_offset_blocks    | 8           | int64      |
-      | shared     | /poktroll.shared.MsgUpdateParam     | claim_window_close_offset_blocks   | 8           | int64      |
-      | shared     | /poktroll.shared.MsgUpdateParam     | proof_window_open_offset_blocks    | 8           | int64      |
+      | shared     | /poktroll.shared.MsgUpdateParam     | num_blocks_per_session             | 5           | int64      |
+      | shared     | /poktroll.shared.MsgUpdateParam     | grace_period_end_offset_blocks     | 2           | int64      |
+      | shared     | /poktroll.shared.MsgUpdateParam     | claim_window_open_offset_blocks    | 2           | int64      |
+      | shared     | /poktroll.shared.MsgUpdateParam     | claim_window_close_offset_blocks   | 3           | int64      |
+      | shared     | /poktroll.shared.MsgUpdateParam     | proof_window_open_offset_blocks    | 1           | int64      |
+      | shared     | /poktroll.shared.MsgUpdateParam     | proof_window_close_offset_blocks   | 5           | int64      |
+      | shared     | /poktroll.shared.MsgUpdateParam     | supplier_unbonding_period          | 5           | int64      |
 
   Scenario: An unauthorized user cannot update individual module params
     Given the user has the pocketd binary installed
     And all "proof" module params are set to their default values
     And an authz grant from the "gov" "module" account to the "pnf" "user" account for the "/poktroll.proof.MsgUpdateParams" message exists
     When the "unauthorized" account sends an authz exec message to update "proof" the module param
-      | name                       | value | type  |
-      | "min_relay_difficulty_bits | 666   | int64 |
+      | name                      | value | type  |
+      | proof_request_probability | 0.1   | float |
     Then the "proof" module param "min_relay_difficulty_bits" should be set to its default value
