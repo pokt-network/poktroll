@@ -2,34 +2,44 @@
 sidebar_position: 1
 ---
 
-# Protocol upgrades
+# Protocol Upgrades <!-- omit in toc -->
+
+- [Overview](#overview)
+- [What is a Protocol Upgrade?](#what-is-a-protocol-upgrade)
+- [List of Upgrades](#list-of-upgrades)
+- [Upgrade Types](#upgrade-types)
+  - [Planned vs. Unplanned Upgrades](#planned-vs-unplanned-upgrades)
+  - [Breaking vs. Non-breaking Upgrades](#breaking-vs-non-breaking-upgrades)
+  - [Manual Interventions](#manual-interventions)
+
 
 ## Overview
 
-The Pocket Network is constantly evolving with regular protocol upgrades. We have a process of submitting software upgrades
-via a DAO process where validator nodes can have consensus-breaking changes and be automatically restarted when using [cosmovisor](../../operate/run_a_node/full_node_cosmovisor.md) (or manually if not using `cosmovisor`).
+The Pocket Network is continuously evolving through regular protocol upgrades. We implement software upgrades via a DAO process, allowing validator nodes to incorporate consensus-breaking changes. These upgrades can be automatically applied when using [Cosmovisor](../../operate/run_a_node/full_node_cosmovisor.md), or manually if not using `cosmovisor`.
 
-## What is a protocol upgrade?
+## What is a Protocol Upgrade?
 
-## List of upgrades
+A protocol upgrade is a process of updating the Pocket Network software to introduce new features, improve existing functionalities, or address critical issues. These upgrades ensure the network remains secure, efficient, and up-to-date with the latest technological advancements. Not every GitHub release will become a protocol upgrade.
 
-While you can find a list of [poktroll releases](https://github.com/pokt-network/poktroll/releases) on our GitHub, we also maintain a [list of upgrades](./upgrade_list.md) in documentation. This list includes information whether there is a breaking change or not, and if the manual intervention is required from the operator.
+## List of Upgrades
 
-## Upgrade types
+While you can find a comprehensive list of [poktroll releases](https://github.com/pokt-network/poktroll/releases) on our GitHub, we also maintain a [list of upgrades](./upgrade_list.md) in our documentation. This list provides valuable information, including whether an upgrade involves breaking changes and if manual intervention is required from operators.
 
-### Planned/Unplanned upgrades
+## Upgrade Types
 
-**Planned** upgrades are the ones the team has been working on for a while and that have been announced in advance. They usually include new features, improvements to existing functionalities or optimizations.
+### Planned vs. Unplanned Upgrades
 
-**Unplanned** upgrades can happen at any time without prior notice. These may be due to bugs, security issues, network congestion, etc. if there's no other way to mitigate the issue. Such upgrades **might** require manual intervention from users and/or validators due to a potential hard fork.
+**Planned upgrades** are those that our team has been developing for some time and have been announced in advance. These typically include new features, improvements to existing functionalities, or optimizations.
 
-### Breaking/Non-breaking upgrades
+**Unplanned upgrades** may occur at any time without prior notice. These are often necessary due to unforeseen circumstances such as bugs, security issues, or network congestion when no other mitigation is possible. Such upgrades may require manual intervention from users and/or validators, potentially resulting in a hard fork.
 
-**Breaking** changes are those that might affect existing APIs, State Machine logic, etc. They usually imply some form of migration process for the network participants. The protocol team strives to reduce the need in manual interventions.
+### Breaking vs. Non-breaking Upgrades
 
-**Non-breaking** changes do not have such implications and can be applied without much trouble to the current state of the system.
+**Breaking changes** are those that may affect existing APIs, State Machine logic, or other critical components. They usually require some form of migration process for network participants. Our protocol team strives to minimize the need for manual interventions in these cases.
 
-### Manual interventions
+**Non-breaking changes** do not have such implications and can be applied without significant disruption to the current state of the system.
 
-While the risk is low, it is always possible the blockchain might suffer some unplanned issues. When such situations arise,
-and there is a need for forking the network (such as un-determenistinc chain state), we will issue an upgrade notice that requires manual intervention from users and/or validators to ensure the health of the network.
+### Manual Interventions
+
+While the risk is low, it's possible that the blockchain may encounter unexpected issues. In situations where forking the network becomes necessary (such as in cases of non-deterministic chain state), we will issue an upgrade notice requiring manual intervention from users and/or validators to ensure the network's health and integrity.
+

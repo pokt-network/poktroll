@@ -5,22 +5,20 @@ sidebar_position: 3
 
 # Params adjustments <!-- omit in toc -->
 
-
 ## Parameters and the DAO
 
-Pocket Network has an off-chain governance mechanism that allows the community to vote on proposals. After the proposal
-is passed, DAO can adjust the parameters necessary for the protocol's operation.
+Pocket Network utilizes an off-chain governance mechanism that enables the community to vote on proposals. Once a proposal passes, the DAO can adjust the parameters necessary for the protocol's operation.
 
 - [Parameters and the DAO](#parameters-and-the-dao)
 - [Examples](#examples)
-  - [Block size change](#block-size-change)
+  - [Block Size Change](#block-size-change)
 
 ## Examples
 
-### Block size change
+### Block Size Change
 
-Similar to how the internal parameters can be adjusted using [Adding params](../../develop/developer_guide/adding_params.md), DAO can submit changes to other modules. For example, here is a transaction that will increase the block size (which is
-a parameter in the `consensus` module):
+Similar to how internal parameters can be adjusted using [Adding params](../../develop/developer_guide/adding_params.md), the DAO can submit changes to other modules. For example, here's a transaction that will increase the block size (a parameter in the `consensus` module):
+
 
 ```json
 {
@@ -50,15 +48,17 @@ a parameter in the `consensus` module):
 }
 ```
 
-Note that is is important to pass all the parameters, even if you are only changing one.
+:::warning
+Important: When submitting changes, you must include all parameters, even if you're only modifying one.
+:::
 
-You can check the current consensus parameters (before and after) using this command:
+To check the current consensus parameters (before and after the change), use this command:
 
 ```bash
 poktrolld query consensus params
 ```
 
-Before upgrade:
+Before the upgrade:
 ```yaml
 params:
   block:
@@ -66,12 +66,12 @@ params:
   # ... the rest of the response  
 ```
 
-Submitting the transaction to increase the block size:
+To submit the transaction that increases the block size:
 ```bash
 poktrolld tx authz exec tools/scripts/params/consensus_increase_block_size.json --from pnf --yes
 ```
 
-After upgrade:
+After the upgrade:
 ```yaml
 params:
   block:

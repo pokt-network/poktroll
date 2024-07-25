@@ -1,28 +1,36 @@
 ---
-title: List of protocol upgrades
+title: List of Protocol Upgrades
 sidebar_position: 1
 ---
 
-<!--
-✅ - Positive
-❌ - Negative
-❓ - Questionable/Unknown
-⚠️ - Warning
--->
+# Protocol Upgrades <!-- omit in toc -->
 
-# Protocol upgrades <!-- omit in toc -->
+The tables below provide a list of past and upcoming protocol upgrades. For more detailed information about what upgrades are, how they work, and what changes they bring to the protocol, please refer to our [upgrade overview page](./index.md).
 
-The table below includes a list of past and upcoming protocol upgrades. Please see an [upgrade](./index.md) page for mreo information about what upgrades are, how they work, what changes they bring to the protocol, and more.
 
-:::warning
+- [Legend](#legend)
+- [TestNet](#testnet)
+- [MainNet](#mainnet)
 
-This table does not currently include all protocol upgrades. Our current TestNet upgrades were done via a regenesis and
-are not listed here.
 
-:::
+## Legend
+
+✅ - Yes
+❌ - No
+❓ - Unknown/To Be Determined
+⚠️ - Warning/Caution Required
 
 ## TestNet
 
-| Version                                                                  | Planned | Breaking | Requires manual intervention | Upgrade Height |
+
+:::warning
+This table is currently incomplete and does not include all protocol upgrades. Our recent TestNet upgrades, which were performed via a regenesis, are not listed here.
+:::
+
+| Version                                                                  | Planned | Breaking | Requires Manual Intervention | Upgrade Height |
 | ------------------------------------------------------------------------ | :-----: | :------: | :--------------------------: | -------------- |
 | [`v0.0.4`](https://github.com/pokt-network/poktroll/releases/tag/v0.0.4) |    ❓    |    ❓     |              ❌               | ❓              |
+
+## MainNet
+
+Coming...
