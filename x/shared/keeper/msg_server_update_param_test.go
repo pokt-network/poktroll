@@ -249,7 +249,7 @@ func TestMsgUpdateParam_UpdateSupplierUnbondingPeriod(t *testing.T) {
 		Name:      sharedtypes.ParamSupplierUnbondingPeriod,
 		AsType:    &sharedtypes.MsgUpdateParam_AsInt64{AsInt64: 1},
 	}
-	res, err = msgSrv.UpdateParam(ctx, updateParamMsg)
+	_, err = msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.ErrorIs(t, err, sharedtypes.ErrSharedParamInvalid)
 }
 
