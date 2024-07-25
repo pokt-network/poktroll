@@ -159,7 +159,7 @@ func (k Keeper) EnsureValidProof(
 	// TODO_FOLLOWUP(@olshansk, #690): Get the difficulty associated with the service
 	params := k.GetParams(ctx)
 	relayDifficultyTargetHash := params.RelayDifficultyTargetHash
-	if relayDifficultyTargetHash == nil || len(relayDifficultyTargetHash) == 0 {
+	if len(relayDifficultyTargetHash) == 0 {
 		relayDifficultyTargetHash = types.DefaultRelayDifficultyTargetHash
 	}
 
