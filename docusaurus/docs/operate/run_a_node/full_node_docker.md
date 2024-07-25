@@ -1,9 +1,9 @@
 ---
-title: Full Node
+title: Full Node - Docker
 sidebar_position: 1
 ---
 
-# Full Node <!-- omit in toc -->
+# Full Node - Docker <!-- omit in toc -->
 
 - [What is a Full Node](#what-is-a-full-node)
 - [Roles \& Responsibilities](#roles--responsibilities)

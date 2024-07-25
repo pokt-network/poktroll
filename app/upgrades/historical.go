@@ -1,5 +1,13 @@
 package upgrades
 
+// This file is intended to keep old, historical upgrades in one place. It is advised to keep the future upgrades in the
+// separate file, and then move them to `historical.go` after a successful upgrade so the new nodes can still sync from
+// the genesis.
+
+// TODO_CONSIDERATION: after we verify `State Sync` is fully functional, we can hypothetically remove old upgrades from
+// the codebase, as the nodes won't have to execute upgrades and will download the "snapshot" instead. Some other
+// blockchain networks (such as `evmos`), remove the old upgrades from the codebase.
+
 import (
 	"context"
 
