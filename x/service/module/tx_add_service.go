@@ -17,7 +17,11 @@ import (
 
 var _ = strconv.Itoa(0)
 
-// TODO_MAINNET: Make it possible to update a service (e.g. update # of compute units per relay
+// TODO_UPNEXT: Change `add-service` to `update-service` so the source owner can
+// update the compute units per relay for an existing service. Make it possible
+// to update a service (e.g. update # of compute units per relay). This will require
+// search for all variations of `AddService` in the codebase (filenames, helpers, etc...),
+// ensuring that only the owner can update it on chain, and tackling some of the tests in `service.feature`.
 func CmdAddService() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   fmt.Sprintf("add-service <service_id> <service_name> [compute_units_per_relay: default={%d}]", types.DefaultComputeUnitsPerRelay),

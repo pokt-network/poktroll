@@ -2,14 +2,15 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"github.com/pokt-network/poktroll/x/shared/types"
 )
 
 const (
 	DefaultComputeUnitsPerRelay uint64 = 1
 	// ComputeUnitsPerRelayMax is the maximum allowed compute_units_per_relay value when adding or updating a service.
-	// TODO_MAINNET: The reason we have a maximum is to account for potential integer overflows. This is
-	// something that needs to be revisited or reconsidered prior to mainnet.
+	// TODO_MAINNET: The reason we have a maximum is to account for potential integer overflows.
+	// Should we revisit all uint64 and convert them to BigInts?
 	ComputeUnitsPerRelayMax uint64 = 2 ^ 16
 )
 

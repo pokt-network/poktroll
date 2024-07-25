@@ -64,11 +64,6 @@ type TokenomicsModuleKeepers struct {
 	tokenomicstypes.SharedKeeper
 
 	Codec *codec.ProtoCodec
-
-	// Test fixtures
-	appAddr      string
-	supplierAddr string
-	service      *sharedtypes.Service
 }
 
 // TokenomicsKeepersOpt is a function which receives and potentially modifies the context
@@ -81,9 +76,10 @@ func TokenomicsKeeper(t testing.TB) (tokenomicsKeeper tokenomicskeeper.Keeper, c
 	return k, ctx
 }
 
-// TODO_TECHDEBT: Have the callers use the keepers to find `appAddr` and `supplierAddr`
-// rather than returning them explicitly.
-// TODO_TECHDEBT(@Olshansk): Remove `service` parameter and convert proper options.
+// TODO_CONSIDERATION: Remove this and force everyone to use NewTokenomicsModuleKeepers
+// below.
+// TODO_REFACTOR(@Olshansk): Rather than making `service`, `appAddr` and `supplierAddr`
+// explicit params, make them passable by the caller as options.
 func TokenomicsKeeperWithActorAddrs(
 	t testing.TB,
 	service *sharedtypes.Service,
@@ -191,6 +187,11 @@ func TokenomicsKeeperWithActorAddrs(
 		mockSharedKeeper,
 		mockSessionKeeper,
 	)
+
+	// Apply any options to update the keepers or context prior to returning them.
+	for _, opt := range opts {
+		ctx = opt(ctx, &keepers)
+	}
 
 	sdkCtx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
 
@@ -392,24 +393,3 @@ func NewTokenomicsModuleKeepers(
 
 	return keepers, ctx
 }
-
-// func WithService(service *sharedtypes.Service) TokenomicsModuleKeepers {
-// 	return func(ctx context.Context, keeper *TokenomicsModuleKeepers) context.Context {
-// 		// keeper.ServiceKeeper = service
-// 		return ctx
-// 	}
-// }
-
-// func WithSupplierAddress(supplierAddr string) TokenomicsModuleKeepers {
-// 	return func(ctx context.Context, keeper *TokenomicsModuleKeepers) TokenomicsModuleKeepers {
-// 		// keeper.ServiceKeeper = service
-// 		return nil
-// 	}
-// }
-
-// func WithApplicationAddress(context.Context, *TokenomicsModuleKeepers) TokenomicsModuleKeepers {
-// 	return func(ctx context.Context, keeper *TokenomicsModuleKeepers) TokenomicsModuleKeepers {
-// 		// keeper.ServiceKeeper = service
-// 		// return ctx
-// 	}
-// }
