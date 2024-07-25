@@ -6,7 +6,6 @@ import (
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/poktroll/x/shared"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
@@ -14,6 +13,11 @@ import (
 func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) error {
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	currentHeight := sdkCtx.BlockHeight()
+
+	// Only process unbonding suppliers at the end of the session.
+	if currentHeight != k.sharedKeeper.GetSessionEndHeight(ctx, currentHeight) {
+		return nil
+	}
 
 	logger := k.Logger().With("method", "UnbondSupplier")
 
@@ -26,7 +30,8 @@ func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) error {
 			continue
 		}
 
-		unbondingHeight := k.GetSupplierUnbondingHeight(ctx, &supplier)
+		sharedParams := k.sharedKeeper.GetParams(ctx)
+		unbondingHeight := shared.GetSupplierUnbondingHeight(&sharedParams, &supplier)
 
 		// If the unbonding height is ahead of the current height, the supplier
 		// stays in the unbonding state.
@@ -58,16 +63,4 @@ func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) error {
 	}
 
 	return nil
-}
-
-// GetSupplierUnbondingHeight returns the height at which the supplier can be unbonded.
-// TODO_REFACTOR(@red-0ne): Make this a static function in the shared pkg alongside
-// the window height helpers.
-func (k Keeper) GetSupplierUnbondingHeight(
-	ctx context.Context,
-	supplier *sharedtypes.Supplier,
-) int64 {
-	sharedParams := k.sharedKeeper.GetParams(ctx)
-
-	return shared.GetSupplierUnbondingHeight(&sharedParams, supplier)
 }
