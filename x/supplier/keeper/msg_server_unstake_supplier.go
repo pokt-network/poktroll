@@ -7,6 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/telemetry"
+	"github.com/pokt-network/poktroll/x/shared"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
@@ -37,23 +38,25 @@ func (k msgServer) UnstakeSupplier(
 	}
 	logger.Info(fmt.Sprintf("Supplier found. Unstaking supplier for address %s", msg.Address))
 
-	// Retrieve the address of the supplier
-	supplierAddress, err := sdk.AccAddressFromBech32(msg.Address)
-	if err != nil {
-		logger.Error(fmt.Sprintf("could not parse address %s", msg.Address))
-		return nil, err
+	// Check if the supplier has already initiated the unstake action.
+	if supplier.IsUnbonding() {
+		logger.Warn(fmt.Sprintf("Supplier %s still unbonding from previous unstaking", msg.Address))
+		return nil, types.ErrSupplierIsUnstaking
 	}
 
-	// Send the coins from the supplier pool back to the supplier
-	err = k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, supplierAddress, []sdk.Coin{*supplier.Stake})
-	if err != nil {
-		logger.Error(fmt.Sprintf("could not send %v coins from %s module to %s account due to %v", supplier.Stake, supplierAddress, types.ModuleName, err))
-		return nil, err
-	}
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	currentHeight := sdkCtx.BlockHeight()
+	sharedParams := k.sharedKeeper.GetParams(ctx)
 
-	// Update the Supplier in the store
-	k.RemoveSupplier(ctx, supplierAddress.String())
-	logger.Info(fmt.Sprintf("Successfully removed the supplier: %+v", supplier))
+	// Mark the supplier as unstaking by recording the height at which it should stop
+	// providing service.
+	// The supplier MUST continue to provide service until the end of the current
+	// session. I.e., on-chain sessions' suppliers list MUST NOT change mid-session.
+	// Removing it right away could have undesired effects on the network
+	// (e.g. a session with less than the minimum or 0 number of suppliers,
+	// off-chain actors that need to listen to session supplier's change mid-session, etc).
+	supplier.UnstakeSessionEndHeight = uint64(shared.GetSessionEndHeight(&sharedParams, currentHeight))
+	k.SetSupplier(ctx, supplier)
 
 	isSuccessful = true
 	return &types.MsgUnstakeSupplierResponse{}, nil

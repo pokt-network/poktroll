@@ -16,5 +16,7 @@ var (
 	ErrSupplierInvalidSessionId          = sdkerrors.Register(ModuleName, 1107, "invalid session ID")
 	ErrSupplierInvalidService            = sdkerrors.Register(ModuleName, 1108, "invalid service in supplier")
 	ErrSupplierInvalidSessionEndHeight   = sdkerrors.Register(ModuleName, 1109, "invalid session ending height")
-	ErrSupplierServiceNotFound           = sdkerrors.Register(ModuleName, 1110, "service not found")
+	ErrSupplierIsUnstaking               = sdkerrors.Register(ModuleName, 1110, "supplier is in unbonding period")
+	ErrSupplierParamsInvalid             = sdkerrors.Register(ModuleName, 1111, "invalid supplier params")
+	ErrSupplierServiceNotFound           = sdkerrors.Register(ModuleName, 1112, "service not found")
 )
