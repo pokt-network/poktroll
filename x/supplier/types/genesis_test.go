@@ -58,7 +58,6 @@ func TestGenesisState_Validate(t *testing.T) {
 		{
 			desc: "valid genesis state",
 			genState: &types.GenesisState{
-
 				SupplierList: []sharedtypes.Supplier{
 					{
 						Address:  addr1,

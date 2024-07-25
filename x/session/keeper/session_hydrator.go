@@ -167,6 +167,13 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 
 	candidateSuppliers := make([]*sharedtypes.Supplier, 0)
 	for _, s := range suppliers {
+		// Exclude suppliers that are inactive (i.e. currently unbonding).
+		// TODO_TECHDEBT(#695): Suppliers that stake mid-session SHOULD NOT be included
+		// in the current session's suppliers list and must wait until the next one.
+		if !s.IsActive(sh.sessionHeader.SessionEndBlockHeight) {
+			continue
+		}
+
 		// NB: Allocate a new heap variable as s is a value and we're appending
 		// to a slice of  pointers; otherwise, we'd be appending new pointers to
 		// the same memory address containing the last supplier in the loop.

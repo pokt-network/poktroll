@@ -11,22 +11,15 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-type msgWithSessionAndSupplier interface {
-	GetSessionHeader() *sessiontypes.SessionHeader
-	GetSupplierAddress() string
-}
-
 // queryAndValidateSessionHeader ensures that a session with the sessionID of the given session
 // header exists and that this session includes the supplier with the given address.
 // It returns a session which is hydrated with the on-chain session data.
-func (k msgServer) queryAndValidateSessionHeader(
+func (k Keeper) queryAndValidateSessionHeader(
 	ctx context.Context,
-	msg msgWithSessionAndSupplier,
+	sessionHeader *sessiontypes.SessionHeader,
+	supplierAddr string,
 ) (*sessiontypes.Session, error) {
 	logger := k.Logger().With("method", "queryAndValidateSessionHeader")
-
-	sessionHeader := msg.GetSessionHeader()
-	supplierAddr := msg.GetSupplierAddress()
 
 	sessionReq := &sessiontypes.QueryGetSessionRequest{
 		ApplicationAddress: sessionHeader.GetApplicationAddress(),
@@ -36,7 +29,7 @@ func (k msgServer) queryAndValidateSessionHeader(
 
 	// Get the on-chain session for the ground-truth against which the given
 	// session header is to be validated.
-	sessionRes, err := k.Keeper.sessionKeeper.GetSession(ctx, sessionReq)
+	sessionRes, err := k.sessionKeeper.GetSession(ctx, sessionReq)
 	if err != nil {
 		return nil, err
 	}
@@ -84,12 +77,12 @@ func (k msgServer) queryAndValidateSessionHeader(
 // It *assumes* that the msg's session header is a valid on-chain session with correct
 // height fields. First call #queryAndValidateSessionHeader to ensure any user-provided
 // session header is valid and correctly hydrated.
-func (k msgServer) validateClaimWindow(
+func (k Keeper) validateClaimWindow(
 	ctx context.Context,
-	msg *types.MsgCreateClaim,
+	sessionHeader *sessiontypes.SessionHeader,
+	supplierAddr string,
 ) error {
 	logger := k.Logger().With("method", "validateClaimWindow")
-	sessionHeader := msg.GetSessionHeader()
 	sharedParams := k.sharedKeeper.GetParams(ctx)
 
 	sessionEndHeight := sessionHeader.GetSessionEndBlockHeight()
@@ -102,7 +95,7 @@ func (k msgServer) validateClaimWindow(
 	earliestClaimCommitHeight, err := k.sharedQuerier.GetEarliestSupplierClaimCommitHeight(
 		ctx,
 		sessionEndHeight,
-		msg.GetSupplierAddress(),
+		supplierAddr,
 	)
 	if err != nil {
 		return err
@@ -141,7 +134,7 @@ func (k msgServer) validateClaimWindow(
 			"claim_window_open_height", claimWindowOpenHeight,
 			"earliest_claim_commit_height", earliestClaimCommitHeight,
 			"claim_window_close_height", claimWindowCloseHeight,
-			"supplier_addr", msg.GetSupplierAddress(),
+			"supplier_addr", supplierAddr,
 		).
 		Debug("validated claim window")
 
@@ -152,14 +145,14 @@ func (k msgServer) validateClaimWindow(
 // It *assumes* that the msg's session header is a valid on-chain session with correct
 // height fields. First call #queryAndValidateSessionHeader to ensure any user-provided
 // session header is valid and correctly hydrated.
-func (k msgServer) validateProofWindow(
+func (k Keeper) validateProofWindow(
 	ctx context.Context,
-	msg *types.MsgSubmitProof,
+	sessionHeader *sessiontypes.SessionHeader,
+	supplierAddr string,
 ) error {
 	logger := k.Logger().With("method", "validateProofWindow")
-	sessionHeader := msg.GetSessionHeader()
-	sharedParams := k.sharedKeeper.GetParams(ctx)
 
+	sharedParams := k.sharedKeeper.GetParams(ctx)
 	sessionEndHeight := sessionHeader.GetSessionEndBlockHeight()
 
 	// Get the proof window open and close heights for the given session header.
@@ -170,7 +163,7 @@ func (k msgServer) validateProofWindow(
 	earliestProofCommitHeight, err := k.sharedQuerier.GetEarliestSupplierProofCommitHeight(
 		ctx,
 		sessionEndHeight,
-		msg.GetSupplierAddress(),
+		supplierAddr,
 	)
 	if err != nil {
 		return err
@@ -205,7 +198,7 @@ func (k msgServer) validateProofWindow(
 			"proof_window_open_height", proofWindowOpenHeight,
 			"earliest_proof_commit_height", earliestProofCommitHeight,
 			"proof_window_close_height", proofWindowCloseHeight,
-			"supplier_addr", msg.GetSupplierAddress(),
+			"supplier_addr", supplierAddr,
 		).
 		Debug("validated proof window")
 

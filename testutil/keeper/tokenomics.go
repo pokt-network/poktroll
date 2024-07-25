@@ -62,6 +62,7 @@ type TokenomicsModuleKeepers struct {
 	tokenomicstypes.SupplierKeeper
 	tokenomicstypes.ProofKeeper
 	tokenomicstypes.SharedKeeper
+	tokenomicstypes.SessionKeeper
 
 	Codec *codec.ProtoCodec
 }
@@ -327,6 +328,7 @@ func NewTokenomicsModuleKeepers(
 		log.NewNopLogger(),
 		authority.String(),
 		bankKeeper,
+		sharedKeeper,
 		serviceKeeper,
 	)
 	require.NoError(t, supplierKeeper.SetParams(ctx, suppliertypes.DefaultParams()))
@@ -382,6 +384,7 @@ func NewTokenomicsModuleKeepers(
 		SupplierKeeper:    &supplierKeeper,
 		ProofKeeper:       &proofKeeper,
 		SharedKeeper:      &sharedKeeper,
+		SessionKeeper:     &sessionKeeper,
 
 		Codec: cdc,
 	}

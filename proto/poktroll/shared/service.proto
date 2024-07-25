@@ -51,7 +51,7 @@ enum RPCType {
   WEBSOCKET = 2; // WebSocket
   JSON_RPC = 3; // JSON-RPC
   REST = 4; // REST
-  // Add new RPC types here as needed
+// Add new RPC types here as needed
 }
 
 // Enum to define configuration options

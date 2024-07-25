@@ -8,13 +8,21 @@ import "cosmos/base/v1beta1/coin.proto";
 import "poktroll/proof/claim.proto";
 import "poktroll/proof/requirement.proto";
 
+enum ClaimExpirationReason {
+  EXPIRATION_REASON_UNSPECIFIED = 0; // Default value, means may be valid
+  PROOF_MISSING = 1;
+  PROOF_INVALID = 2;
+}
+
 // EventClaimExpired is an event emitted during settlement whenever a claim requiring
 // an on-chain proof doesn't have one. The claim cannot be settled, leading to that work
 // never being rewarded.
 message EventClaimExpired {
     poktroll.proof.Claim claim = 1 [(gogoproto.jsontag) = "claim"];
+    // TODO_MAINNET: Shold we include the proof here too?
     uint64 num_relays = 2 [(gogoproto.jsontag) = "num_relays"];
     uint64 num_compute_units = 3 [(gogoproto.jsontag) = "num_compute_units"];
+    ClaimExpirationReason expiration_reason = 4 [(gogoproto.jsontag) = "expiration_reason"];
 }
 
 // EventClaimSettled is an event emitted whenever a claim is settled.

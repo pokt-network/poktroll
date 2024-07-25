@@ -11,9 +11,8 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	"github.com/stretchr/testify/require"
-
 	"github.com/pokt-network/smt"
+	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
