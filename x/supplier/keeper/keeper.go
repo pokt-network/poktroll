@@ -22,6 +22,7 @@ type (
 		authority string
 
 		bankKeeper    types.BankKeeper
+		sharedKeeper  types.SharedKeeper
 		serviceKeeper types.ServiceKeeper
 	}
 )
@@ -33,6 +34,7 @@ func NewKeeper(
 	authority string,
 
 	bankKeeper types.BankKeeper,
+	sharedKeeper types.SharedKeeper,
 	serviceKeeper types.ServiceKeeper,
 ) Keeper {
 	if _, err := sdk.AccAddressFromBech32(authority); err != nil {
@@ -46,6 +48,7 @@ func NewKeeper(
 		logger:       logger,
 
 		bankKeeper:    bankKeeper,
+		sharedKeeper:  sharedKeeper,
 		serviceKeeper: serviceKeeper,
 	}
 }
