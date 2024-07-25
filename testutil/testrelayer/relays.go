@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/crypto"
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	testutilkeyring "github.com/pokt-network/poktroll/testutil/testkeyring"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
@@ -52,11 +53,10 @@ func NewUnsignedMinedRelay(
 		},
 	}
 
-	// TODO_TECHDEBT(@red-0ne): marshal using canonical codec.
 	relayBz, err := relay.Marshal()
 	require.NoError(t, err)
 
-	relayHashArr := servicetypes.GetHashFromBytes(relayBz)
+	relayHashArr := protocol.GetRelayHashFromBytes(relayBz)
 	relayHash := relayHashArr[:]
 
 	return &relayer.MinedRelay{
@@ -110,7 +110,7 @@ func NewSignedMinedRelay(
 	relayBz, err := relay.Marshal()
 	require.NoError(t, err)
 
-	relayHashArr := servicetypes.GetHashFromBytes(relayBz)
+	relayHashArr := protocol.GetRelayHashFromBytes(relayBz)
 	relayHash := relayHashArr[:]
 
 	return &relayer.MinedRelay{

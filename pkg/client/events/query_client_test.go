@@ -366,7 +366,6 @@ func behavesLikeEitherObserver[V any](
 		require.NoError(t, err)
 		require.Equal(t, notificationsLimit, int(atomic.LoadInt32(&eventsCounter)))
 
-		// TODO_THIS_COMMIT: is this necessary?
 		time.Sleep(10 * time.Millisecond)
 
 		if onLimit != nil {

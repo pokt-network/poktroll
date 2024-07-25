@@ -32,6 +32,7 @@ const (
 	defaultOutPath              = "relay_fixtures_test.go"
 )
 
+// TODO_FOLLOWUP(@olshansk, #690): Do a global anycase grep for "DifficultyBits" and update/remove things appropriately.
 var (
 	// flagDifficultyBitsThreshold is the number of leading zero bits that a
 	// randomized, serialized relay must have to be included in the
@@ -152,7 +153,6 @@ func genRandomizedMinedRelayFixtures(
 				Res: nil,
 			}
 
-			// TODO_TECHDEBT(@red-0ne): use canonical codec.
 			relayBz, err := relay.Marshal()
 			if err != nil {
 				errCh <- err

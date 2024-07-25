@@ -21,8 +21,6 @@ import (
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-// TODO_UPNEXT(@Olshansk, #571): Implement these tests
-
 func init() {
 	cmd.InitSDKConfig()
 }
@@ -119,8 +117,8 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	relayMiningEvent := relayMiningEvents[0]
 	require.Equal(t, "svc1", relayMiningEvent.ServiceId)
 	// The default difficulty)
-	require.Equal(t, "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", relayMiningEvent.PrevTargetHashHexEncoded)
-	require.Equal(t, "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", relayMiningEvent.NewTargetHashHexEncoded)
+	require.Equal(t, prooftypes.DefaultRelayDifficultyTargetHashHex, relayMiningEvent.PrevTargetHashHexEncoded)
+	require.Equal(t, prooftypes.DefaultRelayDifficultyTargetHashHex, relayMiningEvent.NewTargetHashHexEncoded)
 	// The previous EMA is the same as the current one if the service is new
 	require.Equal(t, uint64(1), relayMiningEvent.PrevNumRelaysEma)
 	require.Equal(t, uint64(1), relayMiningEvent.NewNumRelaysEma)
