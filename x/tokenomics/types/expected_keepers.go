@@ -5,6 +5,7 @@ package types
 import (
 	"context"
 
+	"github.com/cosmos/cosmos-sdk/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
@@ -16,7 +17,13 @@ import (
 
 // AccountKeeper defines the expected interface for the Account module.
 type AccountKeeper interface {
-	GetAccount(ctx context.Context, addr sdk.AccAddress) sdk.AccountI // only used for simulation
+	// Only used for testing & simulation
+	GetAccount(ctx context.Context, addr sdk.AccAddress) sdk.AccountI
+	SetAccount(context.Context, types.AccountI)
+	// Return a new account with the next account number and the specified address. Does not save the new account to the store.
+	NewAccountWithAddress(context.Context, sdk.AccAddress) sdk.AccountI
+	// Fetch the next account number, and increment the internal counter.
+	NextAccountNumber(context.Context) uint64
 }
 
 // BankKeeper defines the expected interface for the Bank module.
@@ -34,6 +41,7 @@ type BankKeeper interface {
 type ApplicationKeeper interface {
 	GetApplication(ctx context.Context, appAddr string) (app apptypes.Application, found bool)
 	SetApplication(ctx context.Context, app apptypes.Application)
+	GetAllApplications(ctx context.Context) []apptypes.Application
 }
 
 type ProofKeeper interface {
@@ -43,11 +51,12 @@ type ProofKeeper interface {
 	RemoveProof(ctx context.Context, sessionId, supplierAddr string)
 
 	AllClaims(ctx context.Context, req *prooftypes.QueryAllClaimsRequest) (*prooftypes.QueryAllClaimsResponse, error)
+	EnsureValidProof(ctx context.Context, proof *prooftypes.Proof) error
 
 	// Only used for testing & simulation
+	GetAllProofs(ctx context.Context) []prooftypes.Proof
 	UpsertClaim(ctx context.Context, claim prooftypes.Claim)
 	UpsertProof(ctx context.Context, claim prooftypes.Proof)
-
 	GetParams(ctx context.Context) prooftypes.Params
 	SetParams(ctx context.Context, params prooftypes.Params) error
 }
