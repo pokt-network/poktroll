@@ -42,7 +42,7 @@ func TestMsgAddService_ValidateBasic(t *testing.T) {
 				Address: sample.AccAddress(),
 				Service: sharedtypes.Service{Id: "svc1", Name: "service name", ComputeUnitsPerRelay: 0},
 			},
-			expectedErr: ErrServiceInvalidComputUnitsPerRelay,
+			expectedErr: ErrServiceInvalidComputeUnitsPerRelay,
 		}, {
 			desc: "valid service supplier address and service",
 			msg: MsgAddService{
@@ -73,7 +73,7 @@ func TestValidateComputeUnitsPerRelay(t *testing.T) {
 		{
 			desc:                 "zero compute units per relay",
 			computeUnitsPerRelay: 0,
-			expectedErr:          ErrServiceInvalidComputUnitsPerRelay,
+			expectedErr:          ErrServiceInvalidComputeUnitsPerRelay,
 		}, {
 			desc:                 "valid compute units per relay",
 			computeUnitsPerRelay: 1,
@@ -85,7 +85,7 @@ func TestValidateComputeUnitsPerRelay(t *testing.T) {
 		}, {
 			desc:                 "compute units per relay greater than max",
 			computeUnitsPerRelay: ComputeUnitsPerRelayMax + 1,
-			expectedErr:          ErrServiceInvalidComputUnitsPerRelay,
+			expectedErr:          ErrServiceInvalidComputeUnitsPerRelay,
 		},
 	}
 	for _, test := range tests {

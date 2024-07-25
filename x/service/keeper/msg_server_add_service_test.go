@@ -136,7 +136,7 @@ func TestMsgServer_AddService(t *testing.T) {
 				Name:                 "service 1",
 				ComputeUnitsPerRelay: 0,
 			},
-			expectedErr: types.ErrServiceInvalidComputUnitsPerRelay,
+			expectedErr: types.ErrServiceInvalidComputeUnitsPerRelay,
 		},
 		{
 			desc:        "invalid - service already exists (same service supplier)",

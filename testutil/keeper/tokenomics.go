@@ -64,11 +64,16 @@ type TokenomicsModuleKeepers struct {
 	tokenomicstypes.SharedKeeper
 
 	Codec *codec.ProtoCodec
+
+	// Test fixtures
+	appAddr      string
+	supplierAddr string
+	service      *sharedtypes.Service
 }
 
 // TokenomicsKeepersOpt is a function which receives and potentially modifies the context
 // and tokenomics keepers during construction of the aggregation.
-type TokenomicsKeepersOpt func(context.Context, *TokenomicsModuleKeepers) context.Context
+type TokenomicsModuleKeepersOpt func(context.Context, *TokenomicsModuleKeepers) context.Context
 
 func TokenomicsKeeper(t testing.TB) (tokenomicsKeeper tokenomicskeeper.Keeper, ctx context.Context) {
 	t.Helper()
@@ -79,7 +84,11 @@ func TokenomicsKeeper(t testing.TB) (tokenomicsKeeper tokenomicskeeper.Keeper, c
 // TODO_TECHDEBT: Have the callers use the keepers to find `appAddr` and `supplierAddr`
 // rather than returning them explicitly.
 // TODO_TECHDEBT(@Olshansk): Remove `service` parameter and convert proper options.
-func TokenomicsKeeperWithActorAddrs(t testing.TB, service *sharedtypes.Service) (
+func TokenomicsKeeperWithActorAddrs(
+	t testing.TB,
+	service *sharedtypes.Service,
+	opts ...TokenomicsModuleKeepers,
+) (
 	tokenomicsKeeper tokenomicskeeper.Keeper,
 	ctx context.Context,
 	appAddr string,
@@ -196,7 +205,7 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB, service *sharedtypes.Service) 
 func NewTokenomicsModuleKeepers(
 	t testing.TB,
 	logger log.Logger,
-	opts ...TokenomicsKeepersOpt,
+	opts ...TokenomicsModuleKeepersOpt,
 ) (_ TokenomicsModuleKeepers, ctx context.Context) {
 	t.Helper()
 
@@ -383,3 +392,24 @@ func NewTokenomicsModuleKeepers(
 
 	return keepers, ctx
 }
+
+// func WithService(service *sharedtypes.Service) TokenomicsModuleKeepers {
+// 	return func(ctx context.Context, keeper *TokenomicsModuleKeepers) context.Context {
+// 		// keeper.ServiceKeeper = service
+// 		return ctx
+// 	}
+// }
+
+// func WithSupplierAddress(supplierAddr string) TokenomicsModuleKeepers {
+// 	return func(ctx context.Context, keeper *TokenomicsModuleKeepers) TokenomicsModuleKeepers {
+// 		// keeper.ServiceKeeper = service
+// 		return nil
+// 	}
+// }
+
+// func WithApplicationAddress(context.Context, *TokenomicsModuleKeepers) TokenomicsModuleKeepers {
+// 	return func(ctx context.Context, keeper *TokenomicsModuleKeepers) TokenomicsModuleKeepers {
+// 		// keeper.ServiceKeeper = service
+// 		// return ctx
+// 	}
+// }

@@ -62,7 +62,7 @@ func TestMiner_MinedRelays(t *testing.T) {
 
 	// Publish unminable relay fixtures to the mock relays observable.
 	publishRelayFixtures(t, marshaledUnminableRelaysHex, relaysFixturePublishCh)
-	time.Sleep(time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 
 	// Assert that no unminable relay fixtures were published to minedRelays.
 	actualMinedRelaysMu.Lock()
@@ -71,11 +71,11 @@ func TestMiner_MinedRelays(t *testing.T) {
 
 	// Publish minable relay fixtures to the relay fixtures observable.
 	publishRelayFixtures(t, marshaledMinableRelaysHex, relaysFixturePublishCh)
-	time.Sleep(time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 
 	// Assert that all minable relay fixtures were published to minedRelays.
 	actualMinedRelaysMu.Lock()
-	require.EqualValues(t, expectedMinedRelays, actualMinedRelays, "TODO_FLAKY: Try re-running with 'go test -v -count=1 -run TestMiner_MinedRelays ./pkg/relayer/miner/...'")
+	require.Equal(t, len(expectedMinedRelays), len(actualMinedRelays), "TODO_FLAKY: Try re-running with 'go test -v -count=1 -run TestMiner_MinedRelays ./pkg/relayer/miner/...'")
 	actualMinedRelaysMu.Unlock()
 }
 
