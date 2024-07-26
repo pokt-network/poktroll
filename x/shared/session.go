@@ -5,6 +5,10 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
+// closeBlockOffset is the offset to subtract from the earliest supplier commit
+// height to ensure that the supplier has enough time to commit the claim/proof.
+const closeBlockOffset = 1
+
 // TODO_DOCUMENT(@bryanchriswhite): Move this into the documentation: https://github.com/pokt-network/poktroll/pull/571#discussion_r1630923625
 
 // GetSessionStartHeight returns the block height at which the session containing
@@ -118,7 +122,7 @@ func GetEarliestSupplierClaimCommitHeight(
 	// window open block hash and the supplier address.
 	randomNumber := poktrand.SeededInt63(claimWindowOpenBlockHash, []byte(supplierAddr))
 
-	distributionWindowSizeBlocks := sharedParams.GetClaimWindowCloseOffsetBlocks()
+	distributionWindowSizeBlocks := sharedParams.GetClaimWindowCloseOffsetBlocks() - closeBlockOffset
 	randCreateClaimHeightOffset := randomNumber % int64(distributionWindowSizeBlocks)
 
 	return claimWindowOpenHeight + randCreateClaimHeightOffset
@@ -139,7 +143,7 @@ func GetEarliestSupplierProofCommitHeight(
 	// window open block hash and the supplier address.
 	randomNumber := poktrand.SeededInt63(proofWindowOpenBlockHash, []byte(supplierAddr))
 
-	distributionWindowSizeBlocks := sharedParams.GetProofWindowCloseOffsetBlocks()
+	distributionWindowSizeBlocks := sharedParams.GetProofWindowCloseOffsetBlocks() - closeBlockOffset
 	randCreateProofHeightOffset := randomNumber % int64(distributionWindowSizeBlocks)
 
 	return proofWindowOpenHeight + randCreateProofHeightOffset

@@ -109,6 +109,8 @@ func (k Keeper) validateClaimWindow(
 	// TODO_BLOCKER(@bryanchriswhite, @red-0ne): Enforce an additional "latest
 	// supplier claim/proof commit offset" such that all suppliers have the same
 	// "supplier claim/proof commit window" size.
+	// This also prevent suppliers to end-up with only 1 block window to submit claims
+	// when EarliestSupplierClaimCommitHeight is too close to ClaimWindowCloseHeight.
 	// See: https://github.com/pokt-network/poktroll/pull/620/files#r1656548473.
 	if currentHeight < earliestClaimCommitHeight {
 		return types.ErrProofClaimOutsideOfWindow.Wrapf(
