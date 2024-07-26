@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
@@ -58,13 +59,40 @@ func (k Keeper) GetTLMsEnabledForService(serviceId string) bool {
 	return true
 }
 
+// Inputs:
+// - Global view of the network
+//	- total_supply (all available POKT)
+//  - total_relays (all relays)
+//  - Per service: ServiceComputeUnits = relayMiningDifficulty.EMA * service.ComputeUnits
+//      -
+//  - All services: sum(ServiceComputeUnits) over all services
+// 		- Not needed on MainNet launch if no normalization
+
+// Tradeoffs of Global Normalization vs Responsiveness of rewards on new services; on Launch
+// -> If there's no normalization -> takes more time to incentivize new services
+
+// "daily relays":512183851.0
+// "supplier nodes":198390.0
+
+// Service is. Relays are real. Compute units are controlled by service owner.
+
 // TLMRelayBurnEqualsMint processes the business logic for the RelayBurnEqualsMint TLM.
+//
+// ProcessTokenLogicModules is called for each claim.
 func (k Keeper) ProcessTokenLogicModules(
 	ctx context.Context,
+	claim *prooftypes.Claim,
+	computeUnits_ThisClaim uint64,
+	computeUnits_LastSessionAllNetworkClaims uint64,
 	sessionHeader *sessiontypes.SessionHeader,
 	application *apptypes.Application,
 	supplier *sharedtypes.Supplier,
-	settlementCoins cosmostypes.Coin,
+	// TODO_IN_THIS_PR: Consider refactoring
+	// - session.NumComputeUnits (usage) * service.ComputeUnitsPerRelay (source owner) * global.ComputeUnitsToTokensMultiplier (DAO)
+	settlementCoins cosmostypes.Coin, // Core TLM -> ideal number of tokens to settle
+	// computeUnits needed for boost calculations
+	// settlementCoins
+	// Need # of compute units
 ) error {
 	logger := k.Logger().With("method", "ProcessTokenLogicModules")
 
@@ -76,9 +104,34 @@ func (k Keeper) ProcessTokenLogicModules(
 	}
 	logger.Debug(fmt.Sprintf("TODO: Use relayMiningDifficulty to calculate the number of relays: %v", relayMiningDifficulty))
 
+	// Core TLM: Execute the Burn=Mint TLM
 	if err := k.TLMRelayBurnEqualsMint(ctx, sessionHeader, application, supplier, settlementCoins); err != nil {
 		return err
 	}
+
+	// 1. ComputeUnits = 100; 0.01% of the network
+	// 2. ComputeUnits = 100; 20% of the network
+	// 3. ComputeUnits = 100; 0.00000000000001% of the network
+	// We over-mint for every service, for as long as we need to.
+
+	// if computeUnits_ThisClaim / computeUnits_LastSessionAllNetworkClaims < ???
+	//
+
+	k.DAOBoost(ctx, computeUnits_LastSessionAllNetworkClaims)
+
+	// Work being done by network; TotalComputeUnitsOnNetwork
+	// Cost of work being done by network; POKT_TO_USD and ComputeUnitsPerPOKT
+	// Cost of all suppliers on network; CostOfNetwork -> 20K USD per day
+	// Equilibrium(TotalComputeUnitsOnNetwork, POKT_TO_USD, ComputeUnitsPerPOKT, CostOfNetwork)
+
+	// 1 boost -> 1 actor
+
+	// Boost TLMs
+	//
+	// Suppliers Boost
+	// Validator Boost
+	// DAO Boost
+	// Sources Boost
 
 	return nil
 }
@@ -246,3 +299,51 @@ func (k Keeper) distributeMintedRewards(
 
 	return nil
 }
+
+// Trying to achieve a boost value for the CUTTM
+func (k Keeper) DAOBoost() {
+	/*
+	   ### DAO Boost
+	   aux_boost = dict()
+	   aux_boost["name"] = "DAO Boost - CU Based"
+	   aux_boost["recipient"] = "DAO"  # Who receives the minting
+	   aux_boost["conditions"] = list()  # List of conditions to meet for TLM execution
+	   aux_boost["conditions"].append(
+	       {
+	           "metric": "total_cus",  # Total CUs in the network
+	           "low_thrs": 0,
+	           "high_thrs": 2500 * 1e9,  # CU/day
+	       }
+	   )
+	   aux_boost["minting_func"] = (
+	       boost_cuttm_f_CUs_nonlinear  # A function that accepts as input the services state, the network macro state and the parameters below and return the amount to mint per service
+	   )
+	   aux_boost["parameters"] = (
+	       {  # A structure containing all parameters needed by this module
+	           "start": {
+	               "x": 250 * 1e9,  # ComputeUnits/day
+	               "y": 5e-9,  # USD/ComputeUnits
+	           },
+	           "end": {
+	               "x": 2500 * 1e9,  # ComputeUnits/day
+	               "y": 0,  # USD/ComputeUnits
+	           },
+	           "variables": {
+	               "x": "total_cus",  # Control metric for this TLM
+	               "y": "CUTTM",  # Target parameter for this TLM
+	           },
+	           "budget": {  # Can be a fixed number of tokens [POKT] or a percentage of total supply (annualized) [annual_supply_growth]
+	               "type": "annual_supply_growth",
+	               "value": 0.5,
+	           },
+	       }
+	   )
+	*/
+
+}
+
+// 1. Declare non-linear function: y = a * x + b / x
+// 2. Calculate a  & b based on hard-coded / DAO-controlled / off-chain values
+// 3. For each claim being settled:
+// 	-> Find boost (y) based on CUTTM (x) for that claim
+//  -> Apply boost N times in total where N is # of claims being settled

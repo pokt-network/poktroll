@@ -16,6 +16,9 @@ message Service {
 
   // Used alongside the global 'compute_units_to_tokens_multipler' to calculate the cost of a relay for this service
   uint64 compute_units_per_relay = 3; // Compute units required per relay for this service
+
+  //
+  string source_owner = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the application using cosmos' ScalarDescriptor to ensure deterministic encoding
 }
 
 // ApplicationServiceConfig holds the service configuration the application stakes for
