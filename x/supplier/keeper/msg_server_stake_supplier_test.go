@@ -26,24 +26,7 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.False(t, isSupplierFound)
 
 	// Prepare the stakeMsg
-	stakeMsg := &types.MsgStakeSupplier{
-		Address: supplierAddr,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
-		Services: []*sharedtypes.SupplierServiceConfig{
-			{
-				Service: &sharedtypes.Service{
-					Id: "svcId",
-				},
-				Endpoints: []*sharedtypes.SupplierEndpoint{
-					{
-						Url:     "http://localhost:8080",
-						RpcType: sharedtypes.RPCType_JSON_RPC,
-						Configs: make([]*sharedtypes.ConfigOption, 0),
-					},
-				},
-			},
-		},
-	}
+	stakeMsg := stakeForServices(supplierAddr, 100, "svcId")
 
 	// Stake the supplier
 	_, err := srv.StakeSupplier(ctx, stakeMsg)
@@ -60,24 +43,7 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.Equal(t, "http://localhost:8080", foundSupplier.Services[0].Endpoints[0].Url)
 
 	// Prepare an updated supplier with a higher stake and a different URL for the service
-	updateMsg := &types.MsgStakeSupplier{
-		Address: supplierAddr,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(200)},
-		Services: []*sharedtypes.SupplierServiceConfig{
-			{
-				Service: &sharedtypes.Service{
-					Id: "svcId2",
-				},
-				Endpoints: []*sharedtypes.SupplierEndpoint{
-					{
-						Url:     "http://localhost:8082",
-						RpcType: sharedtypes.RPCType_JSON_RPC,
-						Configs: make([]*sharedtypes.ConfigOption, 0),
-					},
-				},
-			},
-		},
-	}
+	updateMsg := stakeForServices(supplierAddr, 200, "svcId2")
 
 	// Update the staked supplier
 	_, err = srv.StakeSupplier(ctx, updateMsg)
@@ -89,7 +55,7 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.Len(t, foundSupplier.Services, 1)
 	require.Equal(t, "svcId2", foundSupplier.Services[0].Service.Id)
 	require.Len(t, foundSupplier.Services[0].Endpoints, 1)
-	require.Equal(t, "http://localhost:8082", foundSupplier.Services[0].Endpoints[0].Url)
+	require.Equal(t, "http://localhost:8080", foundSupplier.Services[0].Endpoints[0].Url)
 }
 
 func TestMsgServer_StakeSupplier_FailRestakingDueToInvalidServices(t *testing.T) {
@@ -99,24 +65,7 @@ func TestMsgServer_StakeSupplier_FailRestakingDueToInvalidServices(t *testing.T)
 	supplierAddr := sample.AccAddress()
 
 	// Prepare the supplier stake message
-	stakeMsg := &types.MsgStakeSupplier{
-		Address: supplierAddr,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
-		Services: []*sharedtypes.SupplierServiceConfig{
-			{
-				Service: &sharedtypes.Service{
-					Id: "svcId",
-				},
-				Endpoints: []*sharedtypes.SupplierEndpoint{
-					{
-						Url:     "http://localhost:8080",
-						RpcType: sharedtypes.RPCType_JSON_RPC,
-						Configs: make([]*sharedtypes.ConfigOption, 0),
-					},
-				},
-			},
-		},
-	}
+	stakeMsg := stakeForServices(supplierAddr, 100, "svcId")
 
 	// Stake the supplier
 	_, err := srv.StakeSupplier(ctx, stakeMsg)
@@ -178,24 +127,7 @@ func TestMsgServer_StakeSupplier_FailLoweringStake(t *testing.T) {
 
 	// Prepare the supplier
 	supplierAddr := sample.AccAddress()
-	stakeMsg := &types.MsgStakeSupplier{
-		Address: supplierAddr,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
-		Services: []*sharedtypes.SupplierServiceConfig{
-			{
-				Service: &sharedtypes.Service{
-					Id: "svcId",
-				},
-				Endpoints: []*sharedtypes.SupplierEndpoint{
-					{
-						Url:     "http://localhost:8080",
-						RpcType: sharedtypes.RPCType_JSON_RPC,
-						Configs: make([]*sharedtypes.ConfigOption, 0),
-					},
-				},
-			},
-		},
-	}
+	stakeMsg := stakeForServices(supplierAddr, 100, "svcId")
 
 	// Stake the supplier & verify that the supplier exists
 	_, err := srv.StakeSupplier(ctx, stakeMsg)
@@ -205,24 +137,7 @@ func TestMsgServer_StakeSupplier_FailLoweringStake(t *testing.T) {
 	require.True(t, isSupplierFound)
 
 	// Prepare an updated supplier with a lower stake
-	updateMsg := &types.MsgStakeSupplier{
-		Address: supplierAddr,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(50)},
-		Services: []*sharedtypes.SupplierServiceConfig{
-			{
-				Service: &sharedtypes.Service{
-					Id: "svcId",
-				},
-				Endpoints: []*sharedtypes.SupplierEndpoint{
-					{
-						Url:     "http://localhost:8080",
-						RpcType: sharedtypes.RPCType_JSON_RPC,
-						Configs: make([]*sharedtypes.ConfigOption, 0),
-					},
-				},
-			},
-		},
-	}
+	updateMsg := stakeForServices(supplierAddr, 50, "svcId")
 
 	// Verify that it fails
 	_, err = srv.StakeSupplier(ctx, updateMsg)
@@ -241,26 +156,100 @@ func TestMsgServer_StakeSupplier_FailWithNonExistingService(t *testing.T) {
 
 	// Prepare the supplier
 	supplierAddr := sample.AccAddress()
-	stakeMsg := &types.MsgStakeSupplier{
-		Address: supplierAddr,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
-		Services: []*sharedtypes.SupplierServiceConfig{
-			{
-				Service: &sharedtypes.Service{
-					Id: "newService",
-				},
-				Endpoints: []*sharedtypes.SupplierEndpoint{
-					{
-						Url:     "http://localhost:8080",
-						RpcType: sharedtypes.RPCType_JSON_RPC,
-						Configs: make([]*sharedtypes.ConfigOption, 0),
-					},
-				},
-			},
-		},
-	}
+	stakeMsg := stakeForServices(supplierAddr, 100, "newService")
 
 	// Stake the supplier & verify that it fails because the service does not exist.
 	_, err := srv.StakeSupplier(ctx, stakeMsg)
 	require.ErrorIs(t, err, types.ErrSupplierServiceNotFound)
+}
+
+func TestMsgServer_StakeSupplier_ActiveSupplier(t *testing.T) {
+	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
+	srv := keeper.NewMsgServerImpl(*supplierModuleKeepers.Keeper)
+
+	// Prepare the supplier
+	supplierAddr := sample.AccAddress()
+	stakeMsg := stakeForServices(supplierAddr, 100, "svcId")
+
+	// Stake the supplier & verify that the supplier exists.
+	_, err := srv.StakeSupplier(ctx, stakeMsg)
+	require.NoError(t, err)
+
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	currentHeight := sdkCtx.BlockHeight()
+	sessionEndHeight := supplierModuleKeepers.SharedKeeper.GetSessionEndHeight(ctx, currentHeight)
+
+	foundSupplier, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, supplierAddr)
+	require.True(t, isSupplierFound)
+	require.Equal(t, 1, len(foundSupplier.ServicesActivationHeight))
+
+	// The supplier should have the service svcId activation height set to the
+	// beginning of the next session.
+	require.Equal(t, uint64(sessionEndHeight+1), foundSupplier.ServicesActivationHeight["svcId"])
+
+	// The supplier should be inactive for the service until the next session.
+	require.False(t, foundSupplier.IsActive(uint64(currentHeight), "svcId"))
+	require.False(t, foundSupplier.IsActive(uint64(sessionEndHeight), "svcId"))
+
+	// The supplier should be active for the service in the next session.
+	require.True(t, foundSupplier.IsActive(uint64(sessionEndHeight+1), "svcId"))
+
+	// Set the chain height to the beginning of the next session.
+	ctx = keepertest.SetBlockHeight(ctx, sessionEndHeight+1)
+
+	// Prepare the supplier stake message with a different service
+	updateMsg := stakeForServices(supplierAddr, 200, "svcId", "svcId2")
+
+	// Update the staked supplier
+	_, err = srv.StakeSupplier(ctx, updateMsg)
+	require.NoError(t, err)
+
+	foundSupplier, isSupplierFound = supplierModuleKeepers.GetSupplier(ctx, supplierAddr)
+	require.True(t, isSupplierFound)
+
+	// The supplier should reference both services.
+	require.Equal(t, 2, len(foundSupplier.ServicesActivationHeight))
+
+	// svcId activation height should remain the same.
+	require.Equal(t, uint64(sessionEndHeight+1), foundSupplier.ServicesActivationHeight["svcId"])
+
+	// svcId2 activation height should be the beginning of the next session.
+	nextSessionEndHeight := supplierModuleKeepers.SharedKeeper.GetSessionEndHeight(ctx, sessionEndHeight+1)
+	require.Equal(t, uint64(nextSessionEndHeight+1), foundSupplier.ServicesActivationHeight["svcId2"])
+
+	// The supplier should be active only for svcId until the end of the current session.
+	require.True(t, foundSupplier.IsActive(uint64(nextSessionEndHeight), "svcId"))
+	require.False(t, foundSupplier.IsActive(uint64(nextSessionEndHeight), "svcId2"))
+
+	// The supplier should be active for both services in the next session.
+	require.True(t, foundSupplier.IsActive(uint64(nextSessionEndHeight+1), "svcId"))
+	require.True(t, foundSupplier.IsActive(uint64(nextSessionEndHeight+1), "svcId2"))
+}
+
+// stakeForServices creates a MsgStakeSupplier with the given supplier address,
+// stake amount, and service ID.
+func stakeForServices(
+	supplierAddr string,
+	amount int64,
+	serviceIds ...string,
+) *types.MsgStakeSupplier {
+	services := make([]*sharedtypes.SupplierServiceConfig, 0, len(serviceIds))
+	for _, serviceId := range serviceIds {
+		services = append(services, &sharedtypes.SupplierServiceConfig{
+			Service: &sharedtypes.Service{Id: serviceId},
+			Endpoints: []*sharedtypes.SupplierEndpoint{
+				{
+					Url:     "http://localhost:8080",
+					RpcType: sharedtypes.RPCType_JSON_RPC,
+					Configs: make([]*sharedtypes.ConfigOption, 0),
+				},
+			},
+		})
+	}
+
+	return &types.MsgStakeSupplier{
+		Address:  supplierAddr,
+		Stake:    &sdk.Coin{Denom: "upokt", Amount: math.NewInt(amount)},
+		Services: services,
+	}
 }

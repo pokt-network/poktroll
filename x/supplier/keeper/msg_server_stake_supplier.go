@@ -96,7 +96,7 @@ func (k msgServer) createSupplier(
 ) sharedtypes.Supplier {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	currentHeight := sdkCtx.BlockHeight()
-	sessionEndHeight := k.sharedKeeper.GetSessionEndHeight(ctx, currentHeight)
+	sessionEndHeight := k.sharedKeeper.GetSessionEndHeight(ctx, currentHeight) + 1
 
 	// Register activation height for each service. Since the supplier is new,
 	// all services are activated at the end of the current session.
@@ -143,7 +143,7 @@ func (k msgServer) updateSupplier(
 	currentHeight := sdkCtx.BlockHeight()
 	sessionEndHeight := k.sharedKeeper.GetSessionEndHeight(ctx, currentHeight) + 1
 
-	// Update activation height for each service. New services are activated at the
+	// Update activation height for services update. New services are activated at the
 	// end of the current session, while existing ones keep their activation height.
 	// TODO_CONSIDERAION: Service removal should take effect at the beginning of the
 	// next session, otherwise sessions that are fetched at their start height may

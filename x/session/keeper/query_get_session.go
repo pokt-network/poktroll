@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -25,7 +26,16 @@ func (k Keeper) GetSession(ctx context.Context, req *types.QueryGetSessionReques
 	// The former is stateful but does not lead to state transitions, while the latter one
 	// does. The request height depends on how much the node has synched and only acts as a read,
 	// while the `Msg` server handles the code flow of the validator when a new block is being proposed.
-	blockHeight := req.BlockHeight
+	var blockHeight int64
+	// If the request specifies a block height, use it. Otherwise, use the current
+	// block height.
+	// Requesting a session with a block height of 0 allows to get the current session,
+	// which is useful for querying from CLI.
+	if req.BlockHeight > 0 {
+		blockHeight = req.BlockHeight
+	} else {
+		blockHeight = sdk.UnwrapSDKContext(ctx).BlockHeight()
+	}
 
 	k.Logger().Info(fmt.Sprintf("Getting session for height: %d", blockHeight))
 
