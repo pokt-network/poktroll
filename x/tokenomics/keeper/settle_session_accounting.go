@@ -11,6 +11,7 @@ import (
 	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/telemetry"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
@@ -29,9 +30,11 @@ func (k Keeper) SettleSessionAccounting(
 ) (err error) {
 	logger := k.Logger().With("method", "SettleSessionAccounting")
 
+	// Declaring variables that will be emitted by telemetry
 	settlementCoin := cosmostypes.NewCoin("upokt", math.NewInt(0))
 	isSuccessful := false
-	// This is emitted only when the function returns.
+
+	// This is emitted only when the function returns (successful or not)
 	defer telemetry.EventSuccessCounter(
 		"settle_session_accounting",
 		func() float32 {
@@ -43,7 +46,7 @@ func (k Keeper) SettleSessionAccounting(
 		func() bool { return isSuccessful },
 	)
 
-	// Make sure the claim is not nil
+	// Ensure the claim is not nil
 	if claim == nil {
 		logger.Error("received a nil claim")
 		return tokenomicstypes.ErrTokenomicsClaimNil
@@ -60,19 +63,22 @@ func (k Keeper) SettleSessionAccounting(
 		return tokenomicstypes.ErrTokenomicsSessionHeaderInvalid
 	}
 
+	// Retrieve the supplier address that will be getting rewarded; providing services
 	supplierAddr, err := cosmostypes.AccAddressFromBech32(claim.GetSupplierAddress())
 	if err != nil || supplierAddr == nil {
 		return tokenomicstypes.ErrTokenomicsSupplierAddressInvalid
 	}
 
+	// Retrieve the application address that is being charged; getting services
 	applicationAddress, err := cosmostypes.AccAddressFromBech32(sessionHeader.GetApplicationAddress())
 	if err != nil || applicationAddress == nil {
 		return tokenomicstypes.ErrTokenomicsApplicationAddressInvalid
 	}
 
-	// Retrieve the sum of the root as a proxy into the amount of work done
+	// Retrieve the root of the claim to determine the amount of work done
 	root := (smt.MerkleSumRoot)(claim.GetRootHash())
 
+	// Ensure the root hash is valid
 	if !root.HasDigestSize(protocol.TrieHasherSize) {
 		return tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrapf(
 			"root hash has invalid digest size (%d), expected (%d)",
@@ -80,6 +86,7 @@ func (k Keeper) SettleSessionAccounting(
 		)
 	}
 
+	// Retrieve the sum of the root hash to determine the amount of work (compute units) done
 	claimComputeUnits, err := root.Sum()
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrapf("%v", err)
@@ -92,55 +99,66 @@ func (k Keeper) SettleSessionAccounting(
 		"supplier", supplierAddr,
 		"application", applicationAddress,
 	)
-
 	logger.Info("About to start session settlement accounting")
 
-	// Retrieve the staked application record
+	// Retrieve the on-chain staked application record
 	application, foundApplication := k.applicationKeeper.GetApplication(ctx, applicationAddress.String())
 	if !foundApplication {
 		logger.Warn(fmt.Sprintf("application for claim with address %q not found", applicationAddress))
 		return tokenomicstypes.ErrTokenomicsApplicationNotFound
 	}
 
-	// Retrieve the staked application record
+	// Retrieve the on-chain staked application record
 	supplier, foundSupplier := k.supplierKeeper.GetSupplier(ctx, supplierAddr.String())
 	if !foundSupplier {
 		logger.Warn(fmt.Sprintf("supplier for claim with address %q not found", supplierAddr))
 		return tokenomicstypes.ErrTokenomicsSupplierNotFound
 	}
 
+	// Determine the total number of tokens that'll be used for settling the session.
+	// When the network achieves equilibrium, this will be the mint & burn.
+	// TODO_IN_THIS_PR: Simplify: this function should just take in a ServiceId and the one below should take in the root
 	computeUnitsPerRelay, err := k.getComputUnitsPerRelayFromApplication(application, sessionHeader.Service.Id)
 	if err != nil {
 		return err
 	}
-
 	computeUnitsToTokensMultiplier := k.GetParams(ctx).ComputeUnitsToTokensMultiplier
-
-	logger.Info(fmt.Sprintf("About to start settling claim for %d compute units with CUPR %d and CUTTM %d", claimComputeUnits, computeUnitsPerRelay, computeUnitsToTokensMultiplier))
-
-	// Calculate the amount of tokens to mint & burn
 	settlementCoin, err = relayCountToCoin(claimComputeUnits, computeUnitsPerRelay, computeUnitsToTokensMultiplier)
 	if err != nil {
 		return err
 	}
 
-	settlementCoins := cosmostypes.NewCoins(settlementCoin)
-
+	// Start claiming log line!
 	logger.Info(fmt.Sprintf(
-		"%d compute units equate to %s for session %s",
+		"About to start claiming (%d) compute units equate to (%s) coins for session (%s) with ComputeUnitsPerRelay (%d) and ComputeUnitsToTokenMultiplier (%d)",
 		claimComputeUnits,
 		settlementCoin,
 		sessionHeader.SessionId,
+		computeUnitsPerRelay,
+		computeUnitsToTokensMultiplier,
 	))
 
-	if err := k.TLMRelayBurnEqualsMint(ctx, &application, &supplier, settlementCoins); err != nil {
-		logger.Warn(fmt.Sprintf("failed to trigger the token-logic-module settle session accounting", supplierAddr))
+	//
+	if err := k.ProcessTokenLogicModules(
+		ctx,
+		claim.SessionHeader,
+		&application,
+		&supplier,
+		settlementCoin,
+	); err != nil {
+		logger.Warn(fmt.Sprintf("failed to trigger the token-logic-module settle session accounting for supplier %s", supplierAddr))
 		return err
 	}
 
+	// Update the application's on-chain record
 	k.applicationKeeper.SetApplication(ctx, application)
-	logger.Info(fmt.Sprintf("updated stake for application with address %q to %s", applicationAddress, application.Stake))
+	logger.Info(fmt.Sprintf("updated on-chain application record with address %q", applicationAddress))
 
+	// Update the application's on-chain record
+	k.supplierKeeper.SetSupplier(ctx, supplier)
+	logger.Info(fmt.Sprintf("updated on-chain supplier record with address %q", supplierAddr))
+
+	// Update isSuccessful to true for telemetry
 	isSuccessful = true
 	return nil
 }

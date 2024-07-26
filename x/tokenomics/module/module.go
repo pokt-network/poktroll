@@ -179,6 +179,7 @@ type ModuleInputs struct {
 	AccountKeeper     types.AccountKeeper
 	BankKeeper        types.BankKeeper
 	ApplicationKeeper types.ApplicationKeeper
+	SupplierKeeper    types.SupplierKeeper
 	ProofKeeper       types.ProofKeeper
 	SharedKeeper      types.SharedKeeper
 	SessionKeeper     types.SessionKeeper
@@ -202,6 +203,7 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 		in.StoreService,
 		in.Logger,
 		authority.String(),
+
 		in.BankKeeper,
 		in.AccountKeeper,
 		in.ApplicationKeeper,

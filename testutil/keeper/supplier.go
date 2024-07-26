@@ -89,6 +89,3 @@ func SupplierKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 
 	return k, ctx
 }
-
-// TODO_OPTIMIZE: Index suppliers by service so we can easily query k.GetAllSuppliers(ctx, Service)
-// func (k Keeper) GetAllSuppliers(ctx, sdkContext, serviceId string) (suppliers []sharedtypes.Supplier) {}

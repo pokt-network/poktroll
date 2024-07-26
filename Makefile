@@ -747,13 +747,13 @@ acc_balance_query: ## Query the balance of the account specified (make acc_balan
 
 .PHONY: acc_balance_query_modules
 acc_balance_query_modules: ## Query the balance of the network level module accounts
-	@echo "### Application ###"
+	@echo "### Application Module ###\n"
 	make acc_balance_query ACC=$(APPLICATION_MODULE_ADDRESS)
-	@echo "### Supplier ###"
+	@echo "### Supplier Module ###\n"
 	make acc_balance_query ACC=$(SUPPLIER_MODULE_ADDRESS)
-	@echo "### Gateway ###"
+	@echo "### Gateway Module ###\n"
 	make acc_balance_query ACC=$(GATEWAY_MODULE_ADDRESS)
-	@echo "### Service ###"
+	@echo "### Service Module ###\n"
 	make acc_balance_query ACC=$(SERVICE_MODULE_ADDRESS)
 
 .PHONY: acc_balance_query_app1

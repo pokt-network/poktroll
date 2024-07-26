@@ -144,6 +144,15 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB, service *sharedtypes.Service) 
 		SetApplication(gomock.Any(), gomock.Any()).
 		AnyTimes()
 
+	// Mock the supplier keeper.
+	mockSupplierKeeper := mocks.NewMockSupplierKeeper(ctrl)
+
+	// Get test supplier if the address matches.
+	mockSupplierKeeper.EXPECT().
+		GetSupplier(gomock.Any(), gomock.Eq(supplier.Address)).
+		Return(supplier, true).
+		AnyTimes()
+
 	// Mock the bank keeper.
 	mockBankKeeper := mocks.NewMockBankKeeper(ctrl)
 	mockBankKeeper.EXPECT().
@@ -179,6 +188,7 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB, service *sharedtypes.Service) 
 		mockBankKeeper,
 		mockAccountKeeper,
 		mockApplicationKeeper,
+		mockSupplierKeeper,
 		mockProofKeeper,
 		mockSharedKeeper,
 		mockSessionKeeper,
@@ -359,6 +369,7 @@ func NewTokenomicsModuleKeepers(
 		bankKeeper,
 		accountKeeper,
 		appKeeper,
+		supplierKeeper,
 		proofKeeper,
 		sharedKeeper,
 		sessionKeeper,
