@@ -168,9 +168,9 @@ func TestClaimProofWindows(t *testing.T) {
 			sharedParams: sharedtypes.Params{
 				NumBlocksPerSession:          1,
 				ClaimWindowOpenOffsetBlocks:  0,
-				ClaimWindowCloseOffsetBlocks: 1,
+				ClaimWindowCloseOffsetBlocks: 2,
 				ProofWindowOpenOffsetBlocks:  0,
-				ProofWindowCloseOffsetBlocks: 1,
+				ProofWindowCloseOffsetBlocks: 2,
 			},
 			queryHeight: int64(1),
 		},
