@@ -62,6 +62,7 @@ type TokenomicsModuleKeepers struct {
 	tokenomicstypes.SupplierKeeper
 	tokenomicstypes.ProofKeeper
 	tokenomicstypes.SharedKeeper
+	tokenomicstypes.SessionKeeper
 
 	Codec *codec.ProtoCodec
 }
@@ -72,13 +73,14 @@ type TokenomicsKeepersOpt func(context.Context, *TokenomicsModuleKeepers) contex
 
 func TokenomicsKeeper(t testing.TB) (tokenomicsKeeper tokenomicskeeper.Keeper, ctx context.Context) {
 	t.Helper()
-	k, ctx, _, _ := TokenomicsKeeperWithActorAddrs(t)
+	k, ctx, _, _ := TokenomicsKeeperWithActorAddrs(t, nil)
 	return k, ctx
 }
 
 // TODO_TECHDEBT: Have the callers use the keepers to find `appAddr` and `supplierAddr`
 // rather than returning them explicitly.
-func TokenomicsKeeperWithActorAddrs(t testing.TB) (
+// TODO_TECHDEBT(@Olshansk): Remove `service` parameter and convert proper options.
+func TokenomicsKeeperWithActorAddrs(t testing.TB, service *sharedtypes.Service) (
 	tokenomicsKeeper tokenomicskeeper.Keeper,
 	ctx context.Context,
 	appAddr string,
@@ -104,6 +106,14 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 	application := apptypes.Application{
 		Address: sample.AccAddress(),
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100000)},
+	}
+
+	if service != nil {
+		application.ServiceConfigs = []*sharedtypes.ApplicationServiceConfig{
+			{
+				Service: service,
+			},
+		}
 	}
 
 	// Prepare the test supplier.
@@ -364,6 +374,7 @@ func NewTokenomicsModuleKeepers(
 		SupplierKeeper:    &supplierKeeper,
 		ProofKeeper:       &proofKeeper,
 		SharedKeeper:      &sharedKeeper,
+		SessionKeeper:     &sessionKeeper,
 
 		Codec: cdc,
 	}

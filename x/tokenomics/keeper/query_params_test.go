@@ -10,7 +10,7 @@ import (
 )
 
 func TestGetParams(t *testing.T) {
-	k, ctx, _, _ := testkeeper.TokenomicsKeeperWithActorAddrs(t)
+	k, ctx, _, _ := testkeeper.TokenomicsKeeperWithActorAddrs(t, nil)
 	// TODO_TECHDEBT(@bryanchriswhite, #394): Params tests don't assert initial state.
 	params := types.DefaultParams()
 
@@ -20,7 +20,7 @@ func TestGetParams(t *testing.T) {
 }
 
 func TestParamsQuery(t *testing.T) {
-	keeper, ctx, _, _ := testkeeper.TokenomicsKeeperWithActorAddrs(t)
+	keeper, ctx, _, _ := testkeeper.TokenomicsKeeperWithActorAddrs(t, nil)
 	params := types.DefaultParams()
 	require.NoError(t, keeper.SetParams(ctx, params))
 

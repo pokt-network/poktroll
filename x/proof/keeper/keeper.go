@@ -30,6 +30,7 @@ type (
 
 		sessionKeeper     types.SessionKeeper
 		applicationKeeper types.ApplicationKeeper
+		accountKeeper     types.AccountKeeper
 		sharedKeeper      types.SharedKeeper
 
 		ringClient     crypto.RingClient
@@ -88,6 +89,7 @@ func NewKeeper(
 
 		sessionKeeper:     sessionKeeper,
 		applicationKeeper: applicationKeeper,
+		accountKeeper:     accountKeeper,
 		sharedKeeper:      sharedKeeper,
 
 		ringClient:     ringKeeperClient,

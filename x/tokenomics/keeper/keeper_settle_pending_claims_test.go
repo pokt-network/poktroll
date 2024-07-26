@@ -4,18 +4,23 @@ import (
 	"context"
 	"testing"
 
+	"cosmossdk.io/depinject"
 	"cosmossdk.io/math"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
+	"github.com/pokt-network/poktroll/pkg/crypto/rings"
+	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	testutilevents "github.com/pokt-network/poktroll/testutil/events"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	testutilproof "github.com/pokt-network/poktroll/testutil/proof"
-	"github.com/pokt-network/poktroll/testutil/sample"
-	testsession "github.com/pokt-network/poktroll/testutil/session"
+	"github.com/pokt-network/poktroll/testutil/testkeyring"
+	"github.com/pokt-network/poktroll/testutil/testtree"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
@@ -49,45 +54,106 @@ type TestSuite struct {
 // - A claim that will require a proof via threshold, given the default proof params.
 // - A proof which contains only the session header supplier address.
 func (s *TestSuite) SetupTest() {
-	supplierAddr := sample.AccAddress()
-	appAddr := sample.AccAddress()
+	t := s.T()
 
 	s.keepers, s.ctx = keepertest.NewTokenomicsModuleKeepers(s.T(), nil)
-	s.sdkCtx = cosmostypes.UnwrapSDKContext(s.ctx)
+	s.sdkCtx = cosmostypes.UnwrapSDKContext(s.ctx).WithBlockHeight(1)
+	s.ctx = s.sdkCtx
 
-	// Set the suite expectedComputeUnits to equal the default proof_requirement_threshold
-	// such that by default, s.claim will require a proof 100% of the time.
-	s.expectedComputeUnits = prooftypes.DefaultProofRequirementThreshold
+	// Construct a keyring to hold the keypairs for the accounts used in the test.
+	keyRing := keyring.NewInMemory(s.keepers.Codec)
 
-	// Prepare a claim that can be inserted
-	s.claim = prooftypes.Claim{
-		SupplierAddress: supplierAddr,
-		SessionHeader: &sessiontypes.SessionHeader{
-			ApplicationAddress:      appAddr,
-			Service:                 &sharedtypes.Service{Id: testServiceId},
-			SessionId:               "session_id",
-			SessionStartBlockHeight: 1,
-			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
-		},
+	// Create a pre-generated account iterator to create accounts for the test.
+	preGeneratedAccts := testkeyring.PreGeneratedAccounts()
 
-		// Set the suite expectedComputeUnits to be equal to the default threshold.
-		// This SHOULD make the claim require a proof given the default proof parameters.
-		RootHash: testutilproof.SmstRootWithSum(s.expectedComputeUnits),
+	// Create accounts in the account keeper with corresponding keys in the keyring
+	// // for the applications and suppliers used in the tests.
+	supplierAddr := testkeyring.CreateOnChainAccount(
+		s.ctx, t,
+		"supplier",
+		keyRing,
+		s.keepers.AccountKeeper,
+		preGeneratedAccts,
+	).String()
+	appAddr := testkeyring.CreateOnChainAccount(
+		s.ctx, t,
+		"app",
+		keyRing,
+		s.keepers.AccountKeeper,
+		preGeneratedAccts,
+	).String()
+
+	service := &sharedtypes.Service{Id: testServiceId}
+
+	supplierStake := types.NewCoin("upokt", math.NewInt(1000000))
+	supplier := sharedtypes.Supplier{
+		Address:  supplierAddr,
+		Stake:    &supplierStake,
+		Services: []*sharedtypes.SupplierServiceConfig{{Service: service}},
 	}
-
-	// Prepare a claim that can be inserted
-	s.proof = prooftypes.Proof{
-		SupplierAddress: s.claim.SupplierAddress,
-		SessionHeader:   s.claim.SessionHeader,
-		// ClosestMerkleProof
-	}
+	s.keepers.SetSupplier(s.ctx, supplier)
 
 	appStake := types.NewCoin("upokt", math.NewInt(1000000))
 	app := apptypes.Application{
-		Address: appAddr,
-		Stake:   &appStake,
+		Address:        appAddr,
+		Stake:          &appStake,
+		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{Service: service}},
 	}
 	s.keepers.SetApplication(s.ctx, app)
+
+	// Get the session for the application/supplier pair which is expected
+	// to be claimed and for which a valid proof would be accepted.
+	sessionReq := &sessiontypes.QueryGetSessionRequest{
+		ApplicationAddress: appAddr,
+		Service:            service,
+		BlockHeight:        1,
+	}
+	sessionRes, err := s.keepers.GetSession(s.sdkCtx, sessionReq)
+	require.NoError(t, err)
+	sessionHeader := sessionRes.Session.Header
+
+	// Construct a ringClient to get the application's ring & verify the relay
+	// request signature.
+	ringClient, err := rings.NewRingClient(depinject.Supply(
+		polyzero.NewLogger(),
+		prooftypes.NewAppKeeperQueryClient(s.keepers.ApplicationKeeper),
+		prooftypes.NewAccountKeeperQueryClient(s.keepers.AccountKeeper),
+		prooftypes.NewSharedKeeperQueryClient(s.keepers.SharedKeeper, s.keepers.SessionKeeper),
+	))
+	require.NoError(t, err)
+
+	// Construct a valid session tree with 10 relays.
+	numRelays := uint(10)
+	sessionTree := testtree.NewFilledSessionTree(
+		s.ctx, t,
+		numRelays,
+		"supplier", supplierAddr,
+		sessionHeader, sessionHeader, sessionHeader,
+		keyRing,
+		ringClient,
+	)
+	s.expectedComputeUnits = testtree.FillSessionTreeExpectedComputeUnits(numRelays)
+
+	blockHeaderHash := make([]byte, 0)
+	expectedMerkleProofPath := protocol.GetPathForProof(blockHeaderHash, sessionHeader.SessionId)
+
+	// Advance the block height to the earliest claim commit height.
+	sharedParams := s.keepers.SharedKeeper.GetParams(s.ctx)
+	claimMsgHeight := shared.GetEarliestSupplierClaimCommitHeight(
+		&sharedParams,
+		sessionHeader.GetSessionEndBlockHeight(),
+		blockHeaderHash,
+		supplierAddr,
+	)
+	s.sdkCtx = cosmostypes.UnwrapSDKContext(s.ctx).WithBlockHeight(claimMsgHeight).WithHeaderHash(blockHeaderHash)
+	s.ctx = s.sdkCtx
+
+	merkleRootBz, err := sessionTree.Flush()
+	require.NoError(t, err)
+
+	// Prepare a claim that can be inserted
+	s.claim = *testtree.NewClaim(t, supplierAddr, sessionHeader, merkleRootBz)
+	s.proof = *testtree.NewProof(t, supplierAddr, sessionHeader, sessionTree, expectedMerkleProofPath)
 }
 
 // TestSettleExpiringClaimsSuite tests the claim settlement process.
@@ -191,6 +257,58 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequiredAndNotProv
 
 	// Validate the event
 	expectedEvent := expectedEvents[0]
+	require.Equal(t, tokenomicstypes.ClaimExpirationReason_PROOF_MISSING, expectedEvent.GetExpirationReason())
+	require.Equal(t, s.expectedComputeUnits, expectedEvent.GetNumComputeUnits())
+}
+
+func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOneProvided() {
+	// Retrieve default values
+	t := s.T()
+	ctx := s.ctx
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
+
+	// Create a claim that requires a proof and an invalid proof
+	claim := s.claim
+	proof := s.proof
+	proof.ClosestMerkleProof = []byte("invalid_proof")
+
+	// Upsert the proof & claim
+	s.keepers.UpsertClaim(ctx, claim)
+	s.keepers.UpsertProof(ctx, proof)
+
+	// Settle pending claims after proof window closes
+	// Expectation: All (1) claims should be expired.
+	// NB: proofs should be rejected when the current height equals the proof window close height.
+	sessionEndHeight := claim.SessionHeader.SessionEndBlockHeight
+	blockHeight := shared.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
+	sdkCtx = sdkCtx.WithBlockHeight(blockHeight)
+	settledResult, expiredResult, err := s.keepers.SettlePendingClaims(sdkCtx)
+	require.NoError(t, err)
+
+	// Check that no claims were settled.
+	require.Equal(t, uint64(0), settledResult.NumClaims)
+	// Validate that exactly one claims expired
+	require.Equal(t, uint64(1), expiredResult.NumClaims)
+
+	// Validate that no claims remain.
+	claims := s.keepers.GetAllClaims(ctx)
+	require.Len(t, claims, 0)
+
+	// Validate that no proofs remain.
+	proofs := s.keepers.GetAllProofs(ctx)
+	require.Len(t, proofs, 0)
+
+	// Confirm an expiration event was emitted
+	events := sdkCtx.EventManager().Events()
+	require.Len(t, events, 5) // minting, burning, settling, etc..
+	expectedEvents := testutilevents.FilterEvents[*tokenomicstypes.EventClaimExpired](t,
+		events, "poktroll.tokenomics.EventClaimExpired")
+	require.Len(t, expectedEvents, 1)
+
+	// Validate the event
+	expectedEvent := expectedEvents[0]
+	require.Equal(t, tokenomicstypes.ClaimExpirationReason_PROOF_INVALID, expectedEvent.GetExpirationReason())
 	require.Equal(t, s.expectedComputeUnits, expectedEvent.GetNumComputeUnits())
 }
 
@@ -239,7 +357,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimSettled_ProofRequiredAndProvide
 
 	// Validate the event
 	expectedEvent := expectedEvents[0]
-	require.NotEqual(t, prooftypes.ProofRequirementReason_NOT_REQUIRED, expectedEvent.GetProofRequirement())
+	require.Equal(t, prooftypes.ProofRequirementReason_THRESHOLD, expectedEvent.GetProofRequirement())
 	require.Equal(t, s.expectedComputeUnits, expectedEvent.GetNumComputeUnits())
 }
 
@@ -256,26 +374,19 @@ func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_Vi
 	// matches s.claim.
 	err := s.keepers.ProofKeeper.SetParams(ctx, prooftypes.Params{
 		ProofRequestProbability: 1,
-		// +1 to push the threshold above s.claim's compute units
+		// +1 to push the requirement threshold ABOVE s.claim's compute units
 		ProofRequirementThreshold: s.expectedComputeUnits + 1,
 	})
 	require.NoError(t, err)
 
-	// Create a claim that requires a proof
-	claim := s.claim
-
-	// 0. Add the claim & verify it exists
-	s.keepers.UpsertClaim(ctx, claim)
-	claims := s.keepers.GetAllClaims(ctx)
-	s.Require().Len(claims, 1)
-
-	// Upsert the proof
+	// Upsert the claim & proof
+	s.keepers.UpsertClaim(ctx, s.claim)
 	s.keepers.UpsertProof(ctx, s.proof)
 
 	// Settle pending claims after proof window closes
 	// Expectation: All (1) claims should be claimed.
 	// NB: proof window has definitely closed at this point
-	sessionEndHeight := claim.SessionHeader.SessionEndBlockHeight
+	sessionEndHeight := s.claim.SessionHeader.SessionEndBlockHeight
 	blockHeight := shared.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
 	sdkCtx = sdkCtx.WithBlockHeight(blockHeight)
 	settledResult, expiredResult, err := s.keepers.SettlePendingClaims(sdkCtx)
@@ -287,7 +398,7 @@ func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_Vi
 	require.Equal(t, uint64(0), expiredResult.NumClaims)
 
 	// Validate that no claims remain.
-	claims = s.keepers.GetAllClaims(ctx)
+	claims := s.keepers.GetAllClaims(ctx)
 	require.Len(t, claims, 0)
 
 	// Confirm an settlement event was emitted
@@ -296,7 +407,7 @@ func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_Vi
 		events, "poktroll.tokenomics.EventClaimSettled")
 	require.Len(t, expectedEvents, 1)
 	expectedEvent := expectedEvents[0]
-	require.NotEqual(t, prooftypes.ProofRequirementReason_NOT_REQUIRED, expectedEvent.GetProofRequirement())
+	require.Equal(t, prooftypes.ProofRequirementReason_PROBABILISTIC, expectedEvent.GetProofRequirement())
 	require.Equal(t, s.expectedComputeUnits, expectedEvent.GetNumComputeUnits())
 }
 
@@ -399,6 +510,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimPendingAfterSettlement() {
 		sessionOneClaim.GetSessionHeader().GetApplicationAddress(),
 		sessionOneClaim.GetSupplierAddress(),
 		s.expectedComputeUnits,
+		sessionOneClaim.GetSessionHeader().GetService().Id,
 	)
 
 	sessionOneProofWindowCloseHeight := shared.GetProofWindowCloseHeight(&sharedParams, sessionOneEndHeight)
