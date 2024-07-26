@@ -1,7 +1,6 @@
 package shared
 
 import (
-	poktrand "github.com/pokt-network/poktroll/pkg/crypto/rand"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -106,6 +105,10 @@ func GetProofWindowCloseHeight(sharedParams *sharedtypes.Params, queryHeight int
 // GetEarliestSupplierClaimCommitHeight returns the earliest block height at which a claim
 // for the session that includes queryHeight can be committed for a given supplier
 // and the passed sharedParams.
+// TODO_CLEANUP_DELETE(@red-0ne, @olshansk): Having claim distribution windows was
+// a requirement that was never determined to be necessary, but implemented regardless.
+// Once we deem that it is not necessary, delete this function and all references (in code,
+// comments, and documentation) to claim distribution windows.
 func GetEarliestSupplierClaimCommitHeight(
 	sharedParams *sharedtypes.Params,
 	queryHeight int64,
@@ -116,17 +119,22 @@ func GetEarliestSupplierClaimCommitHeight(
 
 	// Generate a deterministic random (non-negative) int64, seeded by the claim
 	// window open block hash and the supplier address.
-	randomNumber := poktrand.SeededInt63(claimWindowOpenBlockHash, []byte(supplierAddr))
+	//randomNumber := poktrand.SeededInt63(claimWindowOpenBlockHash, []byte(supplierAddr))
 
-	distributionWindowSizeBlocks := sharedParams.GetClaimWindowCloseOffsetBlocks()
-	randCreateClaimHeightOffset := randomNumber % int64(distributionWindowSizeBlocks)
+	//distributionWindowSizeBlocks := sharedParams.GetClaimWindowCloseOffsetBlocks()
+	//randCreateClaimHeightOffset := randomNumber % int64(distributionWindowSizeBlocks)
 
-	return claimWindowOpenHeight + randCreateClaimHeightOffset
+	//return claimWindowOpenHeight + randCreateClaimHeightOffset
+	return claimWindowOpenHeight
 }
 
 // GetEarliestSupplierProofCommitHeight returns the earliest block height at which a proof
 // for the session that includes queryHeight can be committed for a given supplier
 // and the passed sharedParams.
+// TODO_CLEANUP_DELETE(@red-0ne, @olshansk): Having claim distribution windows was
+// a requirement that was never determined to be necessary, but implemented regardless.
+// Once we deem that it is not necessary, delete this function and all references (in code,
+// comments, and documentation) to claim distribution windows.
 func GetEarliestSupplierProofCommitHeight(
 	sharedParams *sharedtypes.Params,
 	queryHeight int64,
@@ -137,10 +145,11 @@ func GetEarliestSupplierProofCommitHeight(
 
 	// Generate a deterministic random (non-negative) int64, seeded by the proof
 	// window open block hash and the supplier address.
-	randomNumber := poktrand.SeededInt63(proofWindowOpenBlockHash, []byte(supplierAddr))
+	//randomNumber := poktrand.SeededInt63(proofWindowOpenBlockHash, []byte(supplierAddr))
 
-	distributionWindowSizeBlocks := sharedParams.GetProofWindowCloseOffsetBlocks()
-	randCreateProofHeightOffset := randomNumber % int64(distributionWindowSizeBlocks)
+	//distributionWindowSizeBlocks := sharedParams.GetProofWindowCloseOffsetBlocks()
+	//randCreateProofHeightOffset := randomNumber % int64(distributionWindowSizeBlocks)
 
-	return proofWindowOpenHeight + randCreateProofHeightOffset
+	//return proofWindowOpenHeight + randCreateProofHeightOffset
+	return proofWindowOpenHeight
 }
