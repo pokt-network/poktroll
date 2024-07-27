@@ -16,9 +16,9 @@ message Supplier {
   // The session end height at which an actively unbonding supplier unbonds its stake.
   // If the supplier did not unstake, this value will be 0.
   uint64 unstake_session_end_height = 4;
-  // ServiceActivationHeights is a map of serviceIds to the height at which the
-  // staked supplier will become active for that service.
-  // Activation heights are session end heights.
-  map<string, uint64> services_activation_height = 5;
+  // services_activation_heights_map is a map of serviceIds to the height at
+  // which the staked supplier will become active for that service.
+  // Activation heights are session start heights.
+  map<string, uint64> services_activation_heights_map = 5;
 }
 

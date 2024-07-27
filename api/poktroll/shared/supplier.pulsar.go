@@ -149,12 +149,12 @@ func (x *_Supplier_5_map) IsValid() bool {
 }
 
 var (
-	md_Supplier                            protoreflect.MessageDescriptor
-	fd_Supplier_address                    protoreflect.FieldDescriptor
-	fd_Supplier_stake                      protoreflect.FieldDescriptor
-	fd_Supplier_services                   protoreflect.FieldDescriptor
-	fd_Supplier_unstake_session_end_height protoreflect.FieldDescriptor
-	fd_Supplier_services_activation_height protoreflect.FieldDescriptor
+	md_Supplier                                 protoreflect.MessageDescriptor
+	fd_Supplier_address                         protoreflect.FieldDescriptor
+	fd_Supplier_stake                           protoreflect.FieldDescriptor
+	fd_Supplier_services                        protoreflect.FieldDescriptor
+	fd_Supplier_unstake_session_end_height      protoreflect.FieldDescriptor
+	fd_Supplier_services_activation_heights_map protoreflect.FieldDescriptor
 )
 
 func init() {
@@ -164,7 +164,7 @@ func init() {
 	fd_Supplier_stake = md_Supplier.Fields().ByName("stake")
 	fd_Supplier_services = md_Supplier.Fields().ByName("services")
 	fd_Supplier_unstake_session_end_height = md_Supplier.Fields().ByName("unstake_session_end_height")
-	fd_Supplier_services_activation_height = md_Supplier.Fields().ByName("services_activation_height")
+	fd_Supplier_services_activation_heights_map = md_Supplier.Fields().ByName("services_activation_heights_map")
 }
 
 var _ protoreflect.Message = (*fastReflection_Supplier)(nil)
@@ -256,9 +256,9 @@ func (x *fastReflection_Supplier) Range(f func(protoreflect.FieldDescriptor, pro
 			return
 		}
 	}
-	if len(x.ServicesActivationHeight) != 0 {
-		value := protoreflect.ValueOfMap(&_Supplier_5_map{m: &x.ServicesActivationHeight})
-		if !f(fd_Supplier_services_activation_height, value) {
+	if len(x.ServicesActivationHeightsMap) != 0 {
+		value := protoreflect.ValueOfMap(&_Supplier_5_map{m: &x.ServicesActivationHeightsMap})
+		if !f(fd_Supplier_services_activation_heights_map, value) {
 			return
 		}
 	}
@@ -285,8 +285,8 @@ func (x *fastReflection_Supplier) Has(fd protoreflect.FieldDescriptor) bool {
 		return len(x.Services) != 0
 	case "poktroll.shared.Supplier.unstake_session_end_height":
 		return x.UnstakeSessionEndHeight != uint64(0)
-	case "poktroll.shared.Supplier.services_activation_height":
-		return len(x.ServicesActivationHeight) != 0
+	case "poktroll.shared.Supplier.services_activation_heights_map":
+		return len(x.ServicesActivationHeightsMap) != 0
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.Supplier"))
@@ -311,8 +311,8 @@ func (x *fastReflection_Supplier) Clear(fd protoreflect.FieldDescriptor) {
 		x.Services = nil
 	case "poktroll.shared.Supplier.unstake_session_end_height":
 		x.UnstakeSessionEndHeight = uint64(0)
-	case "poktroll.shared.Supplier.services_activation_height":
-		x.ServicesActivationHeight = nil
+	case "poktroll.shared.Supplier.services_activation_heights_map":
+		x.ServicesActivationHeightsMap = nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.Supplier"))
@@ -344,11 +344,11 @@ func (x *fastReflection_Supplier) Get(descriptor protoreflect.FieldDescriptor) p
 	case "poktroll.shared.Supplier.unstake_session_end_height":
 		value := x.UnstakeSessionEndHeight
 		return protoreflect.ValueOfUint64(value)
-	case "poktroll.shared.Supplier.services_activation_height":
-		if len(x.ServicesActivationHeight) == 0 {
+	case "poktroll.shared.Supplier.services_activation_heights_map":
+		if len(x.ServicesActivationHeightsMap) == 0 {
 			return protoreflect.ValueOfMap(&_Supplier_5_map{})
 		}
-		mapValue := &_Supplier_5_map{m: &x.ServicesActivationHeight}
+		mapValue := &_Supplier_5_map{m: &x.ServicesActivationHeightsMap}
 		return protoreflect.ValueOfMap(mapValue)
 	default:
 		if descriptor.IsExtension() {
@@ -380,10 +380,10 @@ func (x *fastReflection_Supplier) Set(fd protoreflect.FieldDescriptor, value pro
 		x.Services = *clv.list
 	case "poktroll.shared.Supplier.unstake_session_end_height":
 		x.UnstakeSessionEndHeight = value.Uint()
-	case "poktroll.shared.Supplier.services_activation_height":
+	case "poktroll.shared.Supplier.services_activation_heights_map":
 		mv := value.Map()
 		cmv := mv.(*_Supplier_5_map)
-		x.ServicesActivationHeight = *cmv.m
+		x.ServicesActivationHeightsMap = *cmv.m
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.Supplier"))
@@ -415,11 +415,11 @@ func (x *fastReflection_Supplier) Mutable(fd protoreflect.FieldDescriptor) proto
 		}
 		value := &_Supplier_3_list{list: &x.Services}
 		return protoreflect.ValueOfList(value)
-	case "poktroll.shared.Supplier.services_activation_height":
-		if x.ServicesActivationHeight == nil {
-			x.ServicesActivationHeight = make(map[string]uint64)
+	case "poktroll.shared.Supplier.services_activation_heights_map":
+		if x.ServicesActivationHeightsMap == nil {
+			x.ServicesActivationHeightsMap = make(map[string]uint64)
 		}
-		value := &_Supplier_5_map{m: &x.ServicesActivationHeight}
+		value := &_Supplier_5_map{m: &x.ServicesActivationHeightsMap}
 		return protoreflect.ValueOfMap(value)
 	case "poktroll.shared.Supplier.address":
 		panic(fmt.Errorf("field address of message poktroll.shared.Supplier is not mutable"))
@@ -448,7 +448,7 @@ func (x *fastReflection_Supplier) NewField(fd protoreflect.FieldDescriptor) prot
 		return protoreflect.ValueOfList(&_Supplier_3_list{list: &list})
 	case "poktroll.shared.Supplier.unstake_session_end_height":
 		return protoreflect.ValueOfUint64(uint64(0))
-	case "poktroll.shared.Supplier.services_activation_height":
+	case "poktroll.shared.Supplier.services_activation_heights_map":
 		m := make(map[string]uint64)
 		return protoreflect.ValueOfMap(&_Supplier_5_map{m: &m})
 	default:
@@ -537,23 +537,23 @@ func (x *fastReflection_Supplier) ProtoMethods() *protoiface.Methods {
 		if x.UnstakeSessionEndHeight != 0 {
 			n += 1 + runtime.Sov(uint64(x.UnstakeSessionEndHeight))
 		}
-		if len(x.ServicesActivationHeight) > 0 {
+		if len(x.ServicesActivationHeightsMap) > 0 {
 			SiZeMaP := func(k string, v uint64) {
 				mapEntrySize := 1 + len(k) + runtime.Sov(uint64(len(k))) + 1 + runtime.Sov(uint64(v))
 				n += mapEntrySize + 1 + runtime.Sov(uint64(mapEntrySize))
 			}
 			if options.Deterministic {
-				sortme := make([]string, 0, len(x.ServicesActivationHeight))
-				for k := range x.ServicesActivationHeight {
+				sortme := make([]string, 0, len(x.ServicesActivationHeightsMap))
+				for k := range x.ServicesActivationHeightsMap {
 					sortme = append(sortme, k)
 				}
 				sort.Strings(sortme)
 				for _, k := range sortme {
-					v := x.ServicesActivationHeight[k]
+					v := x.ServicesActivationHeightsMap[k]
 					SiZeMaP(k, v)
 				}
 			} else {
-				for k, v := range x.ServicesActivationHeight {
+				for k, v := range x.ServicesActivationHeightsMap {
 					SiZeMaP(k, v)
 				}
 			}
@@ -587,7 +587,7 @@ func (x *fastReflection_Supplier) ProtoMethods() *protoiface.Methods {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if len(x.ServicesActivationHeight) > 0 {
+		if len(x.ServicesActivationHeightsMap) > 0 {
 			MaRsHaLmAp := func(k string, v uint64) (protoiface.MarshalOutput, error) {
 				baseI := i
 				i = runtime.EncodeVarint(dAtA, i, uint64(v))
@@ -604,23 +604,23 @@ func (x *fastReflection_Supplier) ProtoMethods() *protoiface.Methods {
 				return protoiface.MarshalOutput{}, nil
 			}
 			if options.Deterministic {
-				keysForServicesActivationHeight := make([]string, 0, len(x.ServicesActivationHeight))
-				for k := range x.ServicesActivationHeight {
-					keysForServicesActivationHeight = append(keysForServicesActivationHeight, string(k))
+				keysForServicesActivationHeightsMap := make([]string, 0, len(x.ServicesActivationHeightsMap))
+				for k := range x.ServicesActivationHeightsMap {
+					keysForServicesActivationHeightsMap = append(keysForServicesActivationHeightsMap, string(k))
 				}
-				sort.Slice(keysForServicesActivationHeight, func(i, j int) bool {
-					return keysForServicesActivationHeight[i] < keysForServicesActivationHeight[j]
+				sort.Slice(keysForServicesActivationHeightsMap, func(i, j int) bool {
+					return keysForServicesActivationHeightsMap[i] < keysForServicesActivationHeightsMap[j]
 				})
-				for iNdEx := len(keysForServicesActivationHeight) - 1; iNdEx >= 0; iNdEx-- {
-					v := x.ServicesActivationHeight[string(keysForServicesActivationHeight[iNdEx])]
-					out, err := MaRsHaLmAp(keysForServicesActivationHeight[iNdEx], v)
+				for iNdEx := len(keysForServicesActivationHeightsMap) - 1; iNdEx >= 0; iNdEx-- {
+					v := x.ServicesActivationHeightsMap[string(keysForServicesActivationHeightsMap[iNdEx])]
+					out, err := MaRsHaLmAp(keysForServicesActivationHeightsMap[iNdEx], v)
 					if err != nil {
 						return out, err
 					}
 				}
 			} else {
-				for k := range x.ServicesActivationHeight {
-					v := x.ServicesActivationHeight[k]
+				for k := range x.ServicesActivationHeightsMap {
+					v := x.ServicesActivationHeightsMap[k]
 					out, err := MaRsHaLmAp(k, v)
 					if err != nil {
 						return out, err
@@ -842,7 +842,7 @@ func (x *fastReflection_Supplier) ProtoMethods() *protoiface.Methods {
 				}
 			case 5:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ServicesActivationHeight", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ServicesActivationHeightsMap", wireType)
 				}
 				var msglen int
 				for shift := uint(0); ; shift += 7 {
@@ -869,8 +869,8 @@ func (x *fastReflection_Supplier) ProtoMethods() *protoiface.Methods {
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				if x.ServicesActivationHeight == nil {
-					x.ServicesActivationHeight = make(map[string]uint64)
+				if x.ServicesActivationHeightsMap == nil {
+					x.ServicesActivationHeightsMap = make(map[string]uint64)
 				}
 				var mapkey string
 				var mapvalue uint64
@@ -951,7 +951,7 @@ func (x *fastReflection_Supplier) ProtoMethods() *protoiface.Methods {
 						iNdEx += skippy
 					}
 				}
-				x.ServicesActivationHeight[mapkey] = mapvalue
+				x.ServicesActivationHeightsMap[mapkey] = mapvalue
 				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
@@ -1013,10 +1013,10 @@ type Supplier struct {
 	// The session end height at which an actively unbonding supplier unbonds its stake.
 	// If the supplier did not unstake, this value will be 0.
 	UnstakeSessionEndHeight uint64 `protobuf:"varint,4,opt,name=unstake_session_end_height,json=unstakeSessionEndHeight,proto3" json:"unstake_session_end_height,omitempty"`
-	// ServiceActivationHeights is a map of serviceIds to the height at which the
-	// staked supplier will become active for that service.
-	// Activation heights are session end heights.
-	ServicesActivationHeight map[string]uint64 `protobuf:"bytes,5,rep,name=services_activation_height,json=servicesActivationHeight,proto3" json:"services_activation_height,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"varint,2,opt,name=value,proto3"`
+	// services_activation_heights_map is a map of serviceIds to the height at
+	// which the staked supplier will become active for that service.
+	// Activation heights are session start heights.
+	ServicesActivationHeightsMap map[string]uint64 `protobuf:"bytes,5,rep,name=services_activation_heights_map,json=servicesActivationHeightsMap,proto3" json:"services_activation_heights_map,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"varint,2,opt,name=value,proto3"`
 }
 
 func (x *Supplier) Reset() {
@@ -1067,9 +1067,9 @@ func (x *Supplier) GetUnstakeSessionEndHeight() uint64 {
 	return 0
 }
 
-func (x *Supplier) GetServicesActivationHeight() map[string]uint64 {
+func (x *Supplier) GetServicesActivationHeightsMap() map[string]uint64 {
 	if x != nil {
-		return x.ServicesActivationHeight
+		return x.ServicesActivationHeightsMap
 	}
 	return nil
 }
@@ -1085,7 +1085,7 @@ var file_poktroll_shared_supplier_proto_rawDesc = []byte{
 	0x73, 0x6d, 0x6f, 0x73, 0x2f, 0x62, 0x61, 0x73, 0x65, 0x2f, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61,
 	0x31, 0x2f, 0x63, 0x6f, 0x69, 0x6e, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x1d, 0x70, 0x6f,
 	0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2f, 0x73, 0x65,
-	0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xb4, 0x03, 0x0a, 0x08,
+	0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xc6, 0x03, 0x0a, 0x08,
 	0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x12, 0x32, 0x0a, 0x07, 0x61, 0x64, 0x64, 0x72,
 	0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63,
 	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72,
@@ -1100,30 +1100,32 @@ var file_poktroll_shared_supplier_proto_rawDesc = []byte{
 	0x73, 0x12, 0x3b, 0x0a, 0x1a, 0x75, 0x6e, 0x73, 0x74, 0x61, 0x6b, 0x65, 0x5f, 0x73, 0x65, 0x73,
 	0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18,
 	0x04, 0x20, 0x01, 0x28, 0x04, 0x52, 0x17, 0x75, 0x6e, 0x73, 0x74, 0x61, 0x6b, 0x65, 0x53, 0x65,
-	0x73, 0x73, 0x69, 0x6f, 0x6e, 0x45, 0x6e, 0x64, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x75,
-	0x0a, 0x1a, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x73, 0x5f, 0x61, 0x63, 0x74, 0x69, 0x76,
-	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x05, 0x20, 0x03,
-	0x28, 0x0b, 0x32, 0x37, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x68,
-	0x61, 0x72, 0x65, 0x64, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x2e, 0x53, 0x65,
-	0x72, 0x76, 0x69, 0x63, 0x65, 0x73, 0x41, 0x63, 0x74, 0x69, 0x76, 0x61, 0x74, 0x69, 0x6f, 0x6e,
-	0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x52, 0x18, 0x73, 0x65, 0x72,
-	0x76, 0x69, 0x63, 0x65, 0x73, 0x41, 0x63, 0x74, 0x69, 0x76, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x48,
-	0x65, 0x69, 0x67, 0x68, 0x74, 0x1a, 0x4b, 0x0a, 0x1d, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65,
-	0x73, 0x41, 0x63, 0x74, 0x69, 0x76, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x48, 0x65, 0x69, 0x67, 0x68,
-	0x74, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x12, 0x10, 0x0a, 0x03, 0x6b, 0x65, 0x79, 0x18, 0x01, 0x20,
-	0x01, 0x28, 0x09, 0x52, 0x03, 0x6b, 0x65, 0x79, 0x12, 0x14, 0x0a, 0x05, 0x76, 0x61, 0x6c, 0x75,
-	0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x3a, 0x02,
-	0x38, 0x01, 0x42, 0xa3, 0x01, 0x0a, 0x13, 0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72,
-	0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x42, 0x0d, 0x53, 0x75, 0x70, 0x70,
-	0x6c, 0x69, 0x65, 0x72, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x20, 0x63, 0x6f, 0x73,
-	0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f,
-	0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0xa2, 0x02, 0x03,
-	0x50, 0x53, 0x58, 0xaa, 0x02, 0x0f, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x53,
-	0x68, 0x61, 0x72, 0x65, 0x64, 0xca, 0x02, 0x0f, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c,
-	0x5c, 0x53, 0x68, 0x61, 0x72, 0x65, 0x64, 0xe2, 0x02, 0x1b, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f,
-	0x6c, 0x6c, 0x5c, 0x53, 0x68, 0x61, 0x72, 0x65, 0x64, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74,
-	0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x10, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c,
-	0x3a, 0x3a, 0x53, 0x68, 0x61, 0x72, 0x65, 0x64, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x73, 0x73, 0x69, 0x6f, 0x6e, 0x45, 0x6e, 0x64, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x82,
+	0x01, 0x0a, 0x1f, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x73, 0x5f, 0x61, 0x63, 0x74, 0x69,
+	0x76, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x73, 0x5f, 0x6d,
+	0x61, 0x70, 0x18, 0x05, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x3b, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72,
+	0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6c,
+	0x69, 0x65, 0x72, 0x2e, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x73, 0x41, 0x63, 0x74, 0x69,
+	0x76, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x73, 0x4d, 0x61, 0x70,
+	0x45, 0x6e, 0x74, 0x72, 0x79, 0x52, 0x1c, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x73, 0x41,
+	0x63, 0x74, 0x69, 0x76, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x73,
+	0x4d, 0x61, 0x70, 0x1a, 0x4f, 0x0a, 0x21, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x73, 0x41,
+	0x63, 0x74, 0x69, 0x76, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x73,
+	0x4d, 0x61, 0x70, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x12, 0x10, 0x0a, 0x03, 0x6b, 0x65, 0x79, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x6b, 0x65, 0x79, 0x12, 0x14, 0x0a, 0x05, 0x76, 0x61,
+	0x6c, 0x75, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65,
+	0x3a, 0x02, 0x38, 0x01, 0x42, 0xa3, 0x01, 0x0a, 0x13, 0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x6b,
+	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x42, 0x0d, 0x53, 0x75,
+	0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x20, 0x63,
+	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f,
+	0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0xa2,
+	0x02, 0x03, 0x50, 0x53, 0x58, 0xaa, 0x02, 0x0f, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c,
+	0x2e, 0x53, 0x68, 0x61, 0x72, 0x65, 0x64, 0xca, 0x02, 0x0f, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f,
+	0x6c, 0x6c, 0x5c, 0x53, 0x68, 0x61, 0x72, 0x65, 0x64, 0xe2, 0x02, 0x1b, 0x50, 0x6f, 0x6b, 0x74,
+	0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x53, 0x68, 0x61, 0x72, 0x65, 0x64, 0x5c, 0x47, 0x50, 0x42, 0x4d,
+	0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x10, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f,
+	0x6c, 0x6c, 0x3a, 0x3a, 0x53, 0x68, 0x61, 0x72, 0x65, 0x64, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x33,
 }
 
 var (
@@ -1141,14 +1143,14 @@ func file_poktroll_shared_supplier_proto_rawDescGZIP() []byte {
 var file_poktroll_shared_supplier_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_poktroll_shared_supplier_proto_goTypes = []interface{}{
 	(*Supplier)(nil),              // 0: poktroll.shared.Supplier
-	nil,                           // 1: poktroll.shared.Supplier.ServicesActivationHeightEntry
+	nil,                           // 1: poktroll.shared.Supplier.ServicesActivationHeightsMapEntry
 	(*v1beta1.Coin)(nil),          // 2: cosmos.base.v1beta1.Coin
 	(*SupplierServiceConfig)(nil), // 3: poktroll.shared.SupplierServiceConfig
 }
 var file_poktroll_shared_supplier_proto_depIdxs = []int32{
 	2, // 0: poktroll.shared.Supplier.stake:type_name -> cosmos.base.v1beta1.Coin
 	3, // 1: poktroll.shared.Supplier.services:type_name -> poktroll.shared.SupplierServiceConfig
-	1, // 2: poktroll.shared.Supplier.services_activation_height:type_name -> poktroll.shared.Supplier.ServicesActivationHeightEntry
+	1, // 2: poktroll.shared.Supplier.services_activation_heights_map:type_name -> poktroll.shared.Supplier.ServicesActivationHeightsMapEntry
 	3, // [3:3] is the sub-list for method output_type
 	3, // [3:3] is the sub-list for method input_type
 	3, // [3:3] is the sub-list for extension type_name

@@ -7,6 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/telemetry"
+	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
@@ -94,22 +95,21 @@ func (k msgServer) createSupplier(
 	ctx context.Context,
 	msg *types.MsgStakeSupplier,
 ) sharedtypes.Supplier {
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	currentHeight := sdkCtx.BlockHeight()
-	sessionEndHeight := k.sharedKeeper.GetSessionEndHeight(ctx, currentHeight) + 1
+	sharedParams := k.sharedKeeper.GetParams(ctx)
+	nextSessionStartHeight := getNextSessionStartHeight(ctx, &sharedParams)
 
 	// Register activation height for each service. Since the supplier is new,
 	// all services are activated at the end of the current session.
-	servicesActivationHeight := make(map[string]uint64)
+	servicesActivationHeightsMap := make(map[string]uint64)
 	for _, serviceConfig := range msg.Services {
-		servicesActivationHeight[serviceConfig.Service.Id] = uint64(sessionEndHeight)
+		servicesActivationHeightsMap[serviceConfig.Service.Id] = uint64(nextSessionStartHeight)
 	}
 
 	return sharedtypes.Supplier{
-		Address:                  msg.Address,
-		Stake:                    msg.Stake,
-		Services:                 msg.Services,
-		ServicesActivationHeight: servicesActivationHeight,
+		Address:                      msg.Address,
+		Stake:                        msg.Stake,
+		Services:                     msg.Services,
+		ServicesActivationHeightsMap: servicesActivationHeightsMap,
 	}
 }
 
@@ -139,9 +139,8 @@ func (k msgServer) updateSupplier(
 		return types.ErrSupplierInvalidServiceConfig.Wrapf("must have at least one service")
 	}
 
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	currentHeight := sdkCtx.BlockHeight()
-	sessionEndHeight := k.sharedKeeper.GetSessionEndHeight(ctx, currentHeight) + 1
+	sharedParams := k.sharedKeeper.GetParams(ctx)
+	nextSessionStartHeight := getNextSessionStartHeight(ctx, &sharedParams)
 
 	// Update activation height for services update. New services are activated at the
 	// end of the current session, while existing ones keep their activation height.
@@ -150,21 +149,29 @@ func (k msgServer) updateSupplier(
 	// still include Suppliers that no longer provide the services they removed.
 	// For the same reason, any SupplierEndpoint change should take effect at the
 	// beginning of the next session.
-	servicesActivationHeight := make(map[string]uint64)
+	ServicesActivationHeightMap := make(map[string]uint64)
 	for _, serviceConfig := range msg.Services {
-		servicesActivationHeight[serviceConfig.Service.Id] = uint64(sessionEndHeight)
+		ServicesActivationHeightMap[serviceConfig.Service.Id] = uint64(nextSessionStartHeight)
 		// If the service has already been staked for, keep its activation height.
 		for _, existingServiceConfig := range supplier.Services {
 			if existingServiceConfig.Service.Id == serviceConfig.Service.Id {
-				existingServiceActivationHeight := supplier.ServicesActivationHeight[serviceConfig.Service.Id]
-				servicesActivationHeight[serviceConfig.Service.Id] = existingServiceActivationHeight
+				existingServiceActivationHeight := supplier.ServicesActivationHeightsMap[serviceConfig.Service.Id]
+				ServicesActivationHeightMap[serviceConfig.Service.Id] = existingServiceActivationHeight
 				break
 			}
 		}
 	}
 
 	supplier.Services = msg.Services
-	supplier.ServicesActivationHeight = servicesActivationHeight
+	supplier.ServicesActivationHeightsMap = ServicesActivationHeightMap
 
 	return nil
+}
+
+// getNextSessionStartHeight returns the current height's next session start height.
+func getNextSessionStartHeight(ctx context.Context, sharedParams *sharedtypes.Params) int64 {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	currentHeight := sdkCtx.BlockHeight()
+
+	return shared.GetSessionEndHeight(sharedParams, currentHeight) + 1
 }

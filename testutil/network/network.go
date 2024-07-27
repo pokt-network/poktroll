@@ -153,7 +153,7 @@ func DefaultSupplierModuleGenesisState(t *testing.T, n int) *suppliertypes.Genes
 					},
 				},
 			},
-			ServicesActivationHeight: map[string]uint64{svcId: 0},
+			ServicesActivationHeightsMap: map[string]uint64{svcId: 0},
 		}
 		// TODO_CONSIDERATION: Evaluate whether we need `nullify.Fill` or if we should enforce `(gogoproto.nullable) = false` everywhere
 		// nullify.Fill(&supplier)
@@ -182,7 +182,7 @@ func SupplierModuleGenesisStateWithAddresses(t *testing.T, addresses []string) *
 					},
 				},
 			},
-			ServicesActivationHeight: map[string]uint64{"svc1": 0},
+			ServicesActivationHeightsMap: map[string]uint64{"svc1": 0},
 		}
 		state.SupplierList = append(state.SupplierList, supplier)
 	}

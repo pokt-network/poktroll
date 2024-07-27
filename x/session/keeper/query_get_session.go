@@ -31,10 +31,9 @@ func (k Keeper) GetSession(ctx context.Context, req *types.QueryGetSessionReques
 	// block height.
 	// Requesting a session with a block height of 0 allows to get the current session,
 	// which is useful for querying from CLI.
+	blockHeight = sdk.UnwrapSDKContext(ctx).BlockHeight()
 	if req.BlockHeight > 0 {
 		blockHeight = req.BlockHeight
-	} else {
-		blockHeight = sdk.UnwrapSDKContext(ctx).BlockHeight()
 	}
 
 	k.Logger().Info(fmt.Sprintf("Getting session for height: %d", blockHeight))

@@ -1,6 +1,6 @@
 Feature: Stake Supplier Namespace
 
-    Scenario: User can stake a Supplier
+    Scenario: User can stake and unstake a Supplier waiting for it to unbound
         Given the user has the pocketd binary installed
         And the "supplier" for account "supplier2" is not staked
         And the account "supplier2" has a balance greater than "1000070" uPOKT
@@ -25,13 +25,13 @@ Feature: Stake Supplier Namespace
         Then the "supplier" for account "supplier2" is not staked
         And the account balance of "supplier2" should be "1000070" uPOKT "more" than before
 
-    Scenario: User can stake a Supplier
+    Scenario: User can restake a Supplier waiting for it to become active again
         Given the user has the pocketd binary installed
         And the "supplier" for account "supplier2" is staked with "1000070" uPOKT
         And an account exists for "supplier2"
         When the user unstakes a "supplier" from the account "supplier2"
-        And the "supplier" for account "supplier2" is not staked
-        When the user stakes a "supplier" with "1000070" uPOKT for "anvil" service from the account "supplier2"
+        And the user verifies the "supplier" for account "supplier2" is not staked
+        Then the user stakes a "supplier" with "1000070" uPOKT for "anvil" service from the account "supplier2"
         And the user should wait for the "supplier" module "StakeSupplier" message to be submitted
         Then the user should see that the supplier for account "supplier2" is staked
         But the session for application "app1" and service "anvil" does not contain "supplier2"

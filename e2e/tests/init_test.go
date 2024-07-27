@@ -354,7 +354,7 @@ func (s *suite) TheAccountForIsStaked(actorType, accName string) {
 	s.scenarioState[accStakeKey(actorType, accName)] = stakeAmount // save the stakeAmount for later
 }
 
-func (s *suite) TheForAccountIsNotStaked(actorType, accName string) {
+func (s *suite) TheUserVerifiesTheForAccountIsNotStaked(actorType, accName string) {
 	_, ok := s.getStakedAmount(actorType, accName)
 	require.Falsef(s, ok, "account %s of type %s SHOULD NOT be staked", accName, actorType)
 }
@@ -497,7 +497,7 @@ func (s *suite) TheSessionForApplicationAndServiceDoesNotContain(appName, servic
 
 func (s *suite) TheUserWaitsForSupplierToBecomeActiveForService(supplierName, serviceId string) {
 	supplier := s.getSupplierInfo(supplierName)
-	s.waitForBlockHeight(int64(supplier.ServicesActivationHeight[serviceId]))
+	s.waitForBlockHeight(int64(supplier.ServicesActivationHeightsMap[serviceId]))
 }
 
 func (s *suite) buildAddrMap() {

@@ -7,6 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/app/volatile"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -26,7 +27,7 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.False(t, isSupplierFound)
 
 	// Prepare the stakeMsg
-	stakeMsg := stakeForServices(supplierAddr, 100, "svcId")
+	stakeMsg := stakeSupplierForServicesMsg(supplierAddr, 100, "svcId")
 
 	// Stake the supplier
 	_, err := srv.StakeSupplier(ctx, stakeMsg)
@@ -43,7 +44,7 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.Equal(t, "http://localhost:8080", foundSupplier.Services[0].Endpoints[0].Url)
 
 	// Prepare an updated supplier with a higher stake and a different URL for the service
-	updateMsg := stakeForServices(supplierAddr, 200, "svcId2")
+	updateMsg := stakeSupplierForServicesMsg(supplierAddr, 200, "svcId2")
 
 	// Update the staked supplier
 	_, err = srv.StakeSupplier(ctx, updateMsg)
@@ -65,7 +66,7 @@ func TestMsgServer_StakeSupplier_FailRestakingDueToInvalidServices(t *testing.T)
 	supplierAddr := sample.AccAddress()
 
 	// Prepare the supplier stake message
-	stakeMsg := stakeForServices(supplierAddr, 100, "svcId")
+	stakeMsg := stakeSupplierForServicesMsg(supplierAddr, 100, "svcId")
 
 	// Stake the supplier
 	_, err := srv.StakeSupplier(ctx, stakeMsg)
@@ -127,7 +128,7 @@ func TestMsgServer_StakeSupplier_FailLoweringStake(t *testing.T) {
 
 	// Prepare the supplier
 	supplierAddr := sample.AccAddress()
-	stakeMsg := stakeForServices(supplierAddr, 100, "svcId")
+	stakeMsg := stakeSupplierForServicesMsg(supplierAddr, 100, "svcId")
 
 	// Stake the supplier & verify that the supplier exists
 	_, err := srv.StakeSupplier(ctx, stakeMsg)
@@ -137,7 +138,7 @@ func TestMsgServer_StakeSupplier_FailLoweringStake(t *testing.T) {
 	require.True(t, isSupplierFound)
 
 	// Prepare an updated supplier with a lower stake
-	updateMsg := stakeForServices(supplierAddr, 50, "svcId")
+	updateMsg := stakeSupplierForServicesMsg(supplierAddr, 50, "svcId")
 
 	// Verify that it fails
 	_, err = srv.StakeSupplier(ctx, updateMsg)
@@ -156,7 +157,7 @@ func TestMsgServer_StakeSupplier_FailWithNonExistingService(t *testing.T) {
 
 	// Prepare the supplier
 	supplierAddr := sample.AccAddress()
-	stakeMsg := stakeForServices(supplierAddr, 100, "newService")
+	stakeMsg := stakeSupplierForServicesMsg(supplierAddr, 100, "newService")
 
 	// Stake the supplier & verify that it fails because the service does not exist.
 	_, err := srv.StakeSupplier(ctx, stakeMsg)
@@ -169,7 +170,7 @@ func TestMsgServer_StakeSupplier_ActiveSupplier(t *testing.T) {
 
 	// Prepare the supplier
 	supplierAddr := sample.AccAddress()
-	stakeMsg := stakeForServices(supplierAddr, 100, "svcId")
+	stakeMsg := stakeSupplierForServicesMsg(supplierAddr, 100, "svcId")
 
 	// Stake the supplier & verify that the supplier exists.
 	_, err := srv.StakeSupplier(ctx, stakeMsg)
@@ -181,11 +182,11 @@ func TestMsgServer_StakeSupplier_ActiveSupplier(t *testing.T) {
 
 	foundSupplier, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, supplierAddr)
 	require.True(t, isSupplierFound)
-	require.Equal(t, 1, len(foundSupplier.ServicesActivationHeight))
+	require.Equal(t, 1, len(foundSupplier.ServicesActivationHeightsMap))
 
 	// The supplier should have the service svcId activation height set to the
 	// beginning of the next session.
-	require.Equal(t, uint64(sessionEndHeight+1), foundSupplier.ServicesActivationHeight["svcId"])
+	require.Equal(t, uint64(sessionEndHeight+1), foundSupplier.ServicesActivationHeightsMap["svcId"])
 
 	// The supplier should be inactive for the service until the next session.
 	require.False(t, foundSupplier.IsActive(uint64(currentHeight), "svcId"))
@@ -198,7 +199,7 @@ func TestMsgServer_StakeSupplier_ActiveSupplier(t *testing.T) {
 	ctx = keepertest.SetBlockHeight(ctx, sessionEndHeight+1)
 
 	// Prepare the supplier stake message with a different service
-	updateMsg := stakeForServices(supplierAddr, 200, "svcId", "svcId2")
+	updateMsg := stakeSupplierForServicesMsg(supplierAddr, 200, "svcId", "svcId2")
 
 	// Update the staked supplier
 	_, err = srv.StakeSupplier(ctx, updateMsg)
@@ -208,14 +209,14 @@ func TestMsgServer_StakeSupplier_ActiveSupplier(t *testing.T) {
 	require.True(t, isSupplierFound)
 
 	// The supplier should reference both services.
-	require.Equal(t, 2, len(foundSupplier.ServicesActivationHeight))
+	require.Equal(t, 2, len(foundSupplier.ServicesActivationHeightsMap))
 
 	// svcId activation height should remain the same.
-	require.Equal(t, uint64(sessionEndHeight+1), foundSupplier.ServicesActivationHeight["svcId"])
+	require.Equal(t, uint64(sessionEndHeight+1), foundSupplier.ServicesActivationHeightsMap["svcId"])
 
 	// svcId2 activation height should be the beginning of the next session.
 	nextSessionEndHeight := supplierModuleKeepers.SharedKeeper.GetSessionEndHeight(ctx, sessionEndHeight+1)
-	require.Equal(t, uint64(nextSessionEndHeight+1), foundSupplier.ServicesActivationHeight["svcId2"])
+	require.Equal(t, uint64(nextSessionEndHeight+1), foundSupplier.ServicesActivationHeightsMap["svcId2"])
 
 	// The supplier should be active only for svcId until the end of the current session.
 	require.True(t, foundSupplier.IsActive(uint64(nextSessionEndHeight), "svcId"))
@@ -226,9 +227,9 @@ func TestMsgServer_StakeSupplier_ActiveSupplier(t *testing.T) {
 	require.True(t, foundSupplier.IsActive(uint64(nextSessionEndHeight+1), "svcId2"))
 }
 
-// stakeForServices creates a MsgStakeSupplier with the given supplier address,
-// stake amount, and service ID.
-func stakeForServices(
+// stakeSupplierForServicesMsg prepares and returns a MsgStakeSupplier that stakes
+// the given supplier address, stake amount, and service IDs.
+func stakeSupplierForServicesMsg(
 	supplierAddr string,
 	amount int64,
 	serviceIds ...string,
@@ -249,7 +250,7 @@ func stakeForServices(
 
 	return &types.MsgStakeSupplier{
 		Address:  supplierAddr,
-		Stake:    &sdk.Coin{Denom: "upokt", Amount: math.NewInt(amount)},
+		Stake:    &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(amount)},
 		Services: services,
 	}
 }
