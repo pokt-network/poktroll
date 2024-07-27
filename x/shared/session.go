@@ -107,8 +107,9 @@ func GetProofWindowCloseHeight(sharedParams *sharedtypes.Params, queryHeight int
 // and the passed sharedParams.
 // TODO_CLEANUP_DELETE(@red-0ne, @olshansk): Having claim distribution windows was
 // a requirement that was never determined to be necessary, but implemented regardless.
-// Once we deem that it is not necessary, delete this function and all references (in code,
-// comments, and documentation) to claim distribution windows.
+// We are keeping around the functions but TBD whether it is deemed necessary. The results
+// of #711 are tengentially related to this requirement, after which the functions,
+// helpers, comments and docs for claim distribution can either be repurposed or deleted.
 func GetEarliestSupplierClaimCommitHeight(
 	sharedParams *sharedtypes.Params,
 	queryHeight int64,
@@ -131,10 +132,11 @@ func GetEarliestSupplierClaimCommitHeight(
 // GetEarliestSupplierProofCommitHeight returns the earliest block height at which a proof
 // for the session that includes queryHeight can be committed for a given supplier
 // and the passed sharedParams.
-// TODO_CLEANUP_DELETE(@red-0ne, @olshansk): Having claim distribution windows was
+// TODO_CLEANUP_DELETE(@red-0ne, @olshansk): Having proof distribution windows was
 // a requirement that was never determined to be necessary, but implemented regardless.
-// Once we deem that it is not necessary, delete this function and all references (in code,
-// comments, and documentation) to claim distribution windows.
+// We are keeping around the functions but TBD whether it is deemed necessary. The results
+// of #711 are tengentially related to this requirement, after which the functions,
+// helpers, comments and docs for claim distribution can either be repurposed or deleted.
 func GetEarliestSupplierProofCommitHeight(
 	sharedParams *sharedtypes.Params,
 	queryHeight int64,
