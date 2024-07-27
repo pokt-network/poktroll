@@ -12,6 +12,7 @@ import (
 // EndBlockerUnbondSuppliers unbonds suppliers whose unbonding period has elapsed.
 func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) error {
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	sharedParams := k.sharedKeeper.GetParams(ctx)
 	currentHeight := sdkCtx.BlockHeight()
 
 	// Only process unbonding suppliers at the end of the session.
@@ -30,7 +31,6 @@ func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) error {
 			continue
 		}
 
-		sharedParams := k.sharedKeeper.GetParams(ctx)
 		unbondingHeight := shared.GetSupplierUnbondingHeight(&sharedParams, &supplier)
 
 		// If the unbonding height is ahead of the current height, the supplier

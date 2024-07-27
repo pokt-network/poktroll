@@ -369,7 +369,7 @@ func (s *suite) TheServiceRegisteredForApplicationHasAComputeUnitsPerRelayOf(ser
 	s.Fatalf("ERROR: service %s is not registered for application %s", serviceId, appName)
 }
 
-func (s *suite) TheForAccountIsNotStaked(actorType, accName string) {
+func (s *suite) TheUserVerifiesTheForAccountIsNotStaked(actorType, accName string) {
 	_, ok := s.getStakedAmount(actorType, accName)
 	require.Falsef(s, ok, "account %s of type %s SHOULD NOT be staked", accName, actorType)
 }
