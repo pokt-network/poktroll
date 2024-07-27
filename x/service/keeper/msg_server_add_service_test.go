@@ -21,13 +21,15 @@ func TestMsgServer_AddService(t *testing.T) {
 
 	// Declare test services
 	svc1 := sharedtypes.Service{
-		Id:   "svc1",
-		Name: "service 1",
+		Id:                   "svc1",
+		Name:                 "service 1",
+		ComputeUnitsPerRelay: 1,
 	}
 
 	preExistingService := sharedtypes.Service{
-		Id:   "svc2",
-		Name: "service 2",
+		Id:                   "svc2",
+		Name:                 "service 2",
+		ComputeUnitsPerRelay: 1,
 	}
 
 	// Generate a valid address
@@ -124,6 +126,17 @@ func TestMsgServer_AddService(t *testing.T) {
 				Name: "", // explicitly set to empty string
 			},
 			expectedErr: types.ErrServiceMissingName,
+		},
+		{
+			desc:    "invalid - zero compute units per relay",
+			setup:   func(t *testing.T) {},
+			address: sample.AccAddress(),
+			service: sharedtypes.Service{
+				Id:                   "svc1",
+				Name:                 "service 1",
+				ComputeUnitsPerRelay: 0,
+			},
+			expectedErr: types.ErrServiceInvalidComputUnitsPerRelay,
 		},
 		{
 			desc:        "invalid - service already exists (same service supplier)",
