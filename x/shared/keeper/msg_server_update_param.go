@@ -60,13 +60,13 @@ func (k msgServer) UpdateParam(ctx context.Context, msg *types.MsgUpdateParam) (
 		}
 
 		params.ProofWindowCloseOffsetBlocks = uint64(value.AsInt64)
-	case types.ParamSupplierUnbondingPeriod:
+	case types.ParamSupplierUnbondingPeriodSessions:
 		value, ok := msg.AsType.(*types.MsgUpdateParam_AsInt64)
 		if !ok {
 			return nil, types.ErrSharedParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
 		}
 
-		params.SupplierUnbondingPeriod = uint64(value.AsInt64)
+		params.SupplierUnbondingPeriodSessions = uint64(value.AsInt64)
 	default:
 		return nil, types.ErrSharedParamInvalid.Wrapf("unsupported param %q", msg.Name)
 	}
