@@ -75,6 +75,10 @@ func TestMiner_MinedRelays(t *testing.T) {
 
 	// Assert that all minable relay fixtures were published to minedRelays.
 	actualMinedRelaysMu.Lock()
+	// NB: We are comparing the lengths of the expected and actual relays instead of
+	// the actual structures to simplify debugging. When there is an error, the output
+	// is incomprehensible. The developer is expected to debug if this fails due to
+	// a non-flaky reason.
 	require.Equal(t, len(expectedMinedRelays), len(actualMinedRelays), "TODO_FLAKY: Try re-running with 'go test -v -count=1 -run TestMiner_MinedRelays ./pkg/relayer/miner/...'")
 	actualMinedRelaysMu.Unlock()
 }

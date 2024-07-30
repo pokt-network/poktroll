@@ -77,14 +77,14 @@ func TokenomicsKeeper(t testing.TB) (tokenomicsKeeper tokenomicskeeper.Keeper, c
 	return k, ctx
 }
 
-// TODO_CONSIDERATION: Remove this and force everyone to use NewTokenomicsModuleKeepers
-// below.
+// TODO_TECHDEBT: Remove this and force everyone to use NewTokenomicsModuleKeepers.
+// There is a difference in the method signatures and mocking, which was simply
+// a result of the evolution of the testutil package.
 // TODO_REFACTOR(@Olshansk): Rather than making `service`, `appAddr` and `supplierAddr`
 // explicit params, make them passable by the caller as options.
 func TokenomicsKeeperWithActorAddrs(
 	t testing.TB,
 	service *sharedtypes.Service,
-	opts ...TokenomicsModuleKeepers,
 ) (
 	tokenomicsKeeper tokenomicskeeper.Keeper,
 	ctx context.Context,
@@ -188,11 +188,6 @@ func TokenomicsKeeperWithActorAddrs(
 		mockSharedKeeper,
 		mockSessionKeeper,
 	)
-
-	// Apply any options to update the keepers or context prior to returning them.
-	for _, opt := range opts {
-		ctx = opt(ctx, &keepers)
-	}
 
 	sdkCtx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
 
