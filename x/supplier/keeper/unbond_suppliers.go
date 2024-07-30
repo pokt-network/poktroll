@@ -34,20 +34,27 @@ func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) error {
 			continue
 		}
 
+		// Retrieve the owner address of the supplier.
+		ownerAddress, err := cosmostypes.AccAddressFromBech32(supplier.OwnerAddress)
+		if err != nil {
+			logger.Error(fmt.Sprintf("could not parse the owner address %s", supplier.OwnerAddress))
+			return err
+		}
+
 		// Retrieve the address of the supplier.
 		supplierAddress, err := cosmostypes.AccAddressFromBech32(supplier.Address)
 		if err != nil {
-			logger.Error(fmt.Sprintf("could not parse address %s", supplier.Address))
+			logger.Error(fmt.Sprintf("could not parse the operator address %s", supplier.Address))
 			return err
 		}
 
 		// Send the coins from the supplier pool back to the supplier.
 		if err = k.bankKeeper.SendCoinsFromModuleToAccount(
-			ctx, types.ModuleName, supplierAddress, []cosmostypes.Coin{*supplier.Stake},
+			ctx, types.ModuleName, ownerAddress, []cosmostypes.Coin{*supplier.Stake},
 		); err != nil {
 			logger.Error(fmt.Sprintf(
 				"could not send %s coins from %s module to %s account due to %s",
-				supplier.Stake.String(), supplierAddress, types.ModuleName, err,
+				supplier.Stake.String(), ownerAddress, types.ModuleName, err,
 			))
 			return err
 		}

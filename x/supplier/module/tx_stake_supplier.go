@@ -27,7 +27,7 @@ func CmdStakeSupplier() *cobra.Command {
 will stake the tokens and associate them with the supplier specified by the 'from' address.
 
 Example:
-$ poktrolld tx supplier stake-supplier --config stake_config.yaml --keyring-backend test --from $(APP) --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
+$ poktrolld tx supplier stake-supplier --config stake_config.yaml --keyring-backend test --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
 
 		Args: cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, _ []string) (err error) {
@@ -41,13 +41,28 @@ $ poktrolld tx supplier stake-supplier --config stake_config.yaml --keyring-back
 				return err
 			}
 
+			// Ensure the --from flag is set before getting the client context.
+			if cmd.Flag(flags.FlagFrom) == nil {
+				cmd.Flags().Set(flags.FlagFrom, supplierStakeConfigs.OwnerAddress)
+			}
+
 			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
 				return err
 			}
 
+			// Ensure the from address is the same as the owner address in the stake config file.
+			if clientCtx.GetFromAddress().String() != supplierStakeConfigs.OwnerAddress {
+				return types.ErrSupplierInvalidAddress.Wrapf(
+					"operator address %q in the stake config file does not match the operator address %q in the message",
+					supplierStakeConfigs.OperatorAddress,
+					clientCtx.GetFromAddress().String(),
+				)
+			}
+
 			msg := types.NewMsgStakeSupplier(
-				clientCtx.GetFromAddress().String(),
+				supplierStakeConfigs.OwnerAddress,
+				supplierStakeConfigs.OperatorAddress,
 				supplierStakeConfigs.StakeAmount,
 				supplierStakeConfigs.Services,
 			)

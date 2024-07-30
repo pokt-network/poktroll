@@ -69,6 +69,16 @@ func (k Keeper) SettleSessionAccounting(
 		return tokenomicstypes.ErrTokenomicsSupplierAddressInvalid
 	}
 
+	supplier, supplierFound := k.supplierKeeper.GetSupplier(ctx, supplierAddr.String())
+	if !supplierFound {
+		return tokenomicstypes.ErrTokenomicsSupplierNotFound
+	}
+
+	supplierOwnerAddr, err := cosmostypes.AccAddressFromBech32(supplier.OwnerAddress)
+	if err != nil || supplierOwnerAddr == nil {
+		return tokenomicstypes.ErrTokenomicsSupplierOwnerAddressInvalid
+	}
+
 	applicationAddress, err := cosmostypes.AccAddressFromBech32(sessionHeader.GetApplicationAddress())
 	if err != nil || applicationAddress == nil {
 		return tokenomicstypes.ErrTokenomicsApplicationAddressInvalid
@@ -151,16 +161,16 @@ func (k Keeper) SettleSessionAccounting(
 	// Send the newley minted uPOKT from the supplier module account
 	// to the supplier's account.
 	if err = k.bankKeeper.SendCoinsFromModuleToAccount(
-		ctx, suppliertypes.ModuleName, supplierAddr, settlementCoins,
+		ctx, suppliertypes.ModuleName, supplierOwnerAddr, settlementCoins,
 	); err != nil {
 		return tokenomicstypes.ErrTokenomicsSupplierModuleMintFailed.Wrapf(
 			"sending %s to supplier with address %s: %v",
 			settlementCoin,
-			supplierAddr,
+			supplierOwnerAddr,
 			err,
 		)
 	}
-	logger.Info(fmt.Sprintf("sent %s from the supplier module to the supplier account with address %q", settlementCoin, supplierAddr))
+	logger.Info(fmt.Sprintf("sent %s from the supplier module to the supplier owner account with address %q", settlementCoin, supplierOwnerAddr))
 
 	// Verify that the application has enough uPOKT to pay for the services it consumed
 	if application.GetStake().IsLT(settlementCoin) {

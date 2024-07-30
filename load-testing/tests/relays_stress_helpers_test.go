@@ -786,6 +786,7 @@ func (s *relaysSuite) addActor(actorAddress string, actorStakeAmount sdk.Coin) *
 func (s *relaysSuite) addPendingStakeSupplierMsg(supplier *accountInfo) {
 	supplier.addPendingMsg(suppliertypes.NewMsgStakeSupplier(
 		supplier.address,
+		supplier.address,
 		supplier.amountToStake,
 		[]*sharedtypes.SupplierServiceConfig{
 			{

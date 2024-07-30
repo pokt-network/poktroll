@@ -36,6 +36,16 @@ func (k msgServer) UnstakeSupplier(
 		logger.Info(fmt.Sprintf("Supplier not found. Cannot unstake address %s", msg.Address))
 		return nil, types.ErrSupplierNotFound
 	}
+
+	// Ensure that the message sender is the supplier owner.
+	if supplier.OwnerAddress != msg.OwnerAddress {
+		logger.Error(fmt.Sprintf(
+			"owner address %q in the message does not match the supplier's owner address %q",
+			msg.OwnerAddress,
+			supplier.OwnerAddress,
+		))
+	}
+
 	logger.Info(fmt.Sprintf("Supplier found. Unstaking supplier for address %s", msg.Address))
 
 	// Check if the supplier has already initiated the unstake action.

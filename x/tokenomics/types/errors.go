@@ -27,4 +27,6 @@ var (
 	ErrTokenomicsDuplicateIndex               = sdkerrors.Register(ModuleName, 1119, "cannot have a duplicate index")
 	ErrTokenomicsMissingRelayMiningDifficulty = sdkerrors.Register(ModuleName, 1120, "missing relay mining difficulty")
 	ErrTokenomicsApplicationOverserviced      = sdkerrors.Register(ModuleName, 1121, "application was overserviced")
+	ErrTokenomicsSupplierNotFound             = sdkerrors.Register(ModuleName, 1122, "supplier not found")
+	ErrTokenomicsSupplierOwnerAddressInvalid  = sdkerrors.Register(ModuleName, 1123, "the supplier owner address is not a valid bech32 address")
 )

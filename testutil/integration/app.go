@@ -397,12 +397,14 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		proofKeeper,
 		sharedKeeper,
 		sessionKeeper,
+		supplierKeeper,
 	)
 	tokenomicsModule := tokenomics.NewAppModule(
 		cdc,
 		tokenomicsKeeper,
 		accountKeeper,
 		bankKeeper,
+		supplierKeeper,
 	)
 
 	// Prepare the message & query routers

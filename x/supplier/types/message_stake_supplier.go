@@ -12,18 +12,25 @@ const TypeMsgStakeSupplier = "stake_supplier"
 var _ sdk.Msg = (*MsgStakeSupplier)(nil)
 
 func NewMsgStakeSupplier(
-	address string,
+	ownerAddress string,
+	supplierAddress string,
 	stake sdk.Coin,
 	services []*sharedtypes.SupplierServiceConfig,
 ) *MsgStakeSupplier {
 	return &MsgStakeSupplier{
-		Address:  address,
-		Stake:    &stake,
-		Services: services,
+		OwnerAddress: ownerAddress,
+		Address:      supplierAddress,
+		Stake:        &stake,
+		Services:     services,
 	}
 }
 
 func (msg *MsgStakeSupplier) ValidateBasic() error {
+	// Validate the owner address
+	if _, err := sdk.AccAddressFromBech32(msg.OwnerAddress); err != nil {
+		return ErrSupplierInvalidAddress.Wrapf("invalid owner address %s; (%v)", msg.OwnerAddress, err)
+	}
+
 	// Validate the address
 	if _, err := sdk.AccAddressFromBech32(msg.Address); err != nil {
 		return ErrSupplierInvalidAddress.Wrapf("invalid supplier address %s; (%v)", msg.Address, err)
