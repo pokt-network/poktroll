@@ -20,7 +20,7 @@ func SimulateMsgAddService(
 	) (simtypes.OperationMsg, []simtypes.FutureOperation, error) {
 		simAccount, _ := simtypes.RandomAcc(r, accs)
 		msg := &types.MsgAddService{
-			Address: simAccount.Address.String(),
+			OwnerAddress: simAccount.Address.String(),
 		}
 
 		// TODO: Handling the AddService simulation

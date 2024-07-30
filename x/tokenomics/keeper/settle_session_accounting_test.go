@@ -33,11 +33,12 @@ func TestSettleSessionAccounting_HandleAppGoingIntoDebt(t *testing.T) {
 	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil)
 
 	// Create a service that can be registered in the application and used in the claims
-	service := sharedtypes.NewService(
-		"svc1",
-		"svcName1",
-		1,
-	)
+	service := &sharedtypes.Service{
+		Id:                   "svc1",
+		Name:                 "svcName1",
+		ComputeUnitsPerRelay: 1,
+		OwnerAddress:         sample.AccAddress(),
+	}
 
 	// Add a new application
 	appStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
@@ -91,11 +92,12 @@ func TestSettleSessionAccounting_ValidAccounting(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create a service that can be registered in the application and used in the claims
-	service := sharedtypes.NewService(
-		"svc1",
-		"svcName1",
-		1,
-	)
+	service := &sharedtypes.Service{
+		Id:                   "svc1",
+		Name:                 "svcName1",
+		ComputeUnitsPerRelay: 1,
+		OwnerAddress:         sample.AccAddress(),
+	}
 	// Add a new application
 	appStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
 	// NB: Ensure a non-zero app stake end balance to assert against.
@@ -196,11 +198,12 @@ func TestSettleSessionAccounting_AppStakeTooLow(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create a service that can be registered in the application and used in the claims
-	service := sharedtypes.NewService(
-		"svc1",
-		"svcName1",
-		1,
-	)
+	service := &sharedtypes.Service{
+		Id:                   "svc1",
+		Name:                 "svcName1",
+		ComputeUnitsPerRelay: 1,
+		OwnerAddress:         sample.AccAddress(),
+	}
 	// Add a new application
 	appStake := cosmostypes.NewCoin("upokt", math.NewInt(40000))
 	expectedAppEndStakeZeroAmount := cosmostypes.NewCoin("upokt", math.NewInt(0))
@@ -307,11 +310,12 @@ func TestSettleSessionAccounting_AppStakeTooLow(t *testing.T) {
 
 func TestSettleSessionAccounting_AppNotFound(t *testing.T) {
 
-	service := sharedtypes.NewService(
-		"svc1",
-		"svcName1",
-		1,
-	)
+	service := &sharedtypes.Service{
+		Id:                   "svc1",
+		Name:                 "svcName1",
+		ComputeUnitsPerRelay: 1,
+		OwnerAddress:         sample.AccAddress(),
+	}
 
 	keeper, ctx, _, supplierAddr := testkeeper.TokenomicsKeeperWithActorAddrs(t, service)
 
@@ -338,11 +342,12 @@ func TestSettleSessionAccounting_AppNotFound(t *testing.T) {
 func TestSettleSessionAccounting_InvalidRoot(t *testing.T) {
 
 	// Create a service that can be registered in the application and used in the claims
-	service := sharedtypes.NewService(
-		"svc1",
-		"svcName1",
-		1,
-	)
+	service := &sharedtypes.Service{
+		Id:                   "svc1",
+		Name:                 "svcName1",
+		ComputeUnitsPerRelay: 1,
+		OwnerAddress:         sample.AccAddress(),
+	}
 
 	keeper, ctx, appAddr, supplierAddr := testkeeper.TokenomicsKeeperWithActorAddrs(t, service)
 
@@ -413,13 +418,13 @@ func TestSettleSessionAccounting_InvalidRoot(t *testing.T) {
 }
 
 func TestSettleSessionAccounting_InvalidClaim(t *testing.T) {
-
 	// Create a service that can be registered in the application and used in the claims
-	service := sharedtypes.NewService(
-		"svc1",
-		"svcName1",
-		1,
-	)
+	service := &sharedtypes.Service{
+		Id:                   "svc1",
+		Name:                 "svcName1",
+		ComputeUnitsPerRelay: 1,
+		OwnerAddress:         sample.AccAddress(),
+	}
 
 	keeper, ctx, appAddr, supplierAddr := testkeeper.TokenomicsKeeperWithActorAddrs(t, service)
 

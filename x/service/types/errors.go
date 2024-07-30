@@ -19,4 +19,5 @@ var (
 	ErrServiceInvalidRelayResponse        = sdkerrors.Register(ModuleName, 1110, "invalid relay response")
 	ErrServiceInvalidRelayRequest         = sdkerrors.Register(ModuleName, 1111, "invalid relay request")
 	ErrServiceInvalidComputeUnitsPerRelay = sdkerrors.Register(ModuleName, 1112, "invalid compute units per relay")
+	ErrServiceInvalidOwnerAddress         = sdkerrors.Register(ModuleName, 1113, "invalid owner address")
 )
