@@ -74,19 +74,19 @@ func TestCLI_AddService(t *testing.T) {
 	require.NoError(t, err)
 
 	tests := []struct {
-		desc            string
-		supplierAddress string
-		service         sharedtypes.Service
-		expectedErr     *sdkerrors.Error
+		desc         string
+		ownerAddress string
+		service      sharedtypes.Service
+		expectedErr  *sdkerrors.Error
 	}{
 		{
-			desc:            "valid - add new service",
-			supplierAddress: account.Address.String(),
-			service:         svc1,
+			desc:         "valid - add new service",
+			ownerAddress: account.Address.String(),
+			service:      svc1,
 		},
 		{
-			desc:            "valid - add new service without specifying compute units per relay so that it uses the default",
-			supplierAddress: account.Address.String(),
+			desc:         "valid - add new service without specifying compute units per relay so that it uses the default",
+			ownerAddress: account.Address.String(),
 			service: sharedtypes.Service{
 				Id:                   svc1.Id,
 				Name:                 svc1.Name,
@@ -94,28 +94,28 @@ func TestCLI_AddService(t *testing.T) {
 			},
 		},
 		{
-			desc:            "invalid - missing service id",
-			supplierAddress: account.Address.String(),
-			service:         sharedtypes.Service{Name: "service name"}, // ID intentionally omitted
-			expectedErr:     types.ErrServiceMissingID,
+			desc:         "invalid - missing service id",
+			ownerAddress: account.Address.String(),
+			service:      sharedtypes.Service{Name: "service name"}, // ID intentionally omitted
+			expectedErr:  types.ErrServiceMissingID,
 		},
 		{
-			desc:            "invalid - missing service name",
-			supplierAddress: account.Address.String(),
-			service:         sharedtypes.Service{Id: "svc1"}, // Name intentionally omitted
-			expectedErr:     types.ErrServiceMissingName,
+			desc:         "invalid - missing service name",
+			ownerAddress: account.Address.String(),
+			service:      sharedtypes.Service{Id: "svc1"}, // Name intentionally omitted
+			expectedErr:  types.ErrServiceMissingName,
 		},
 		{
-			desc:            "invalid - invalid supplier address",
-			supplierAddress: "invalid address",
-			service:         svc1,
-			expectedErr:     types.ErrServiceInvalidAddress,
+			desc:         "invalid - invalid owner address",
+			ownerAddress: "invalid address",
+			service:      svc1,
+			expectedErr:  types.ErrServiceInvalidAddress,
 		},
 		{
-			desc:            "invalid - service already staked",
-			supplierAddress: account.Address.String(),
-			service:         svc2,
-			expectedErr:     types.ErrServiceAlreadyExists,
+			desc:         "invalid - service already staked",
+			ownerAddress: account.Address.String(),
+			service:      svc2,
+			expectedErr:  types.ErrServiceAlreadyExists,
 		},
 	}
 
@@ -134,7 +134,7 @@ func TestCLI_AddService(t *testing.T) {
 				// Only include compute units per relay argument if provided
 				argsAndFlags = append(argsAndFlags, strconv.FormatUint(test.service.ComputeUnitsPerRelay, 10))
 			}
-			argsAndFlags = append(argsAndFlags, fmt.Sprintf("--%s=%s", flags.FlagFrom, test.supplierAddress))
+			argsAndFlags = append(argsAndFlags, fmt.Sprintf("--%s=%s", flags.FlagFrom, test.ownerAddress))
 
 			args := append(argsAndFlags, commonArgs...)
 
