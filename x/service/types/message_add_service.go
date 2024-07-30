@@ -16,26 +16,26 @@ const (
 
 var _ sdk.Msg = (*MsgAddService)(nil)
 
-func NewMsgAddService(addr, serviceId, serviceName string, computeUnitsPerRelay uint64) *MsgAddService {
+func NewMsgAddService(serviceOwnerAddr, serviceId, serviceName string, computeUnitsPerRelay uint64) *MsgAddService {
 	return &MsgAddService{
-		Address: addr,
+		OwnerAddress: serviceOwnerAddr,
 		Service: sharedtypes.Service{
 			Id:                   serviceId,
 			Name:                 serviceName,
 			ComputeUnitsPerRelay: computeUnitsPerRelay,
-			OwnerAddress:         addr,
+			OwnerAddress:         serviceOwnerAddr,
 		},
 	}
 }
 
 // ValidateBasic performs basic validation of the message and its fields
 func (msg *MsgAddService) ValidateBasic() error {
-	if _, err := sdk.AccAddressFromBech32(msg.Address); err != nil {
-		return ErrServiceInvalidAddress.Wrapf("invalid signer address %s; (%v)", msg.Address, err)
+	if _, err := sdk.AccAddressFromBech32(msg.OwnerAddress); err != nil {
+		return ErrServiceInvalidAddress.Wrapf("invalid signer address %s; (%v)", msg.OwnerAddress, err)
 	}
 	// Ensure that the signer of the add_service message is the owner of the service.
-	if msg.Service.OwnerAddress != msg.Address {
-		return ErrServiceInvalidOwnerAddress.Wrapf("service owner address %q does not match the signer address %q", msg.Service.OwnerAddress, msg.Address)
+	if msg.Service.OwnerAddress != msg.OwnerAddress {
+		return ErrServiceInvalidOwnerAddress.Wrapf("service owner address %q does not match the signer address %q", msg.Service.OwnerAddress, msg.OwnerAddress)
 	}
 	// TODO_BETA: Add a validate basic function to the `Service` object
 	if msg.Service.Id == "" {

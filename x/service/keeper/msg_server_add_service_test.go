@@ -43,8 +43,8 @@ func TestMsgServer_AddService(t *testing.T) {
 
 	// Add the service to the store
 	_, err := srv.AddService(ctx, &types.MsgAddService{
-		Address: oldServiceOwnerAddr,
-		Service: oldService,
+		OwnerAddress: oldServiceOwnerAddr,
+		Service:      oldService,
 	})
 	require.NoError(t, err)
 
@@ -153,9 +153,9 @@ func TestMsgServer_AddService(t *testing.T) {
 			desc: "invalid - insufficient upokt balance",
 			setup: func(t *testing.T) {
 				// Add 999999999 upokt to the account (one less than AddServiceFee)
-				keepertest.AddAccToAccMapCoins(t, oldServiceOwnerAddr, "upokt", oneUPOKTGreaterThanFee-2)
+				keepertest.AddAccToAccMapCoins(t, newServiceOwnerAddr, "upokt", oneUPOKTGreaterThanFee-2)
 			},
-			address:     oldServiceOwnerAddr,
+			address:     newServiceOwnerAddr,
 			service:     newService,
 			expectedErr: types.ErrServiceNotEnoughFunds,
 		},
@@ -163,9 +163,9 @@ func TestMsgServer_AddService(t *testing.T) {
 			desc: "invalid - account has exactly AddServiceFee",
 			setup: func(t *testing.T) {
 				// Add the exact fee in upokt to the account
-				keepertest.AddAccToAccMapCoins(t, oldServiceOwnerAddr, "upokt", types.DefaultAddServiceFee)
+				keepertest.AddAccToAccMapCoins(t, newServiceOwnerAddr, "upokt", types.DefaultAddServiceFee)
 			},
-			address:     oldServiceOwnerAddr,
+			address:     newServiceOwnerAddr,
 			service:     newService,
 			expectedErr: types.ErrServiceNotEnoughFunds,
 		},
@@ -173,9 +173,9 @@ func TestMsgServer_AddService(t *testing.T) {
 			desc: "invalid - sufficient balance of different denom",
 			setup: func(t *testing.T) {
 				// Adds 10000000001 wrong coins to the account
-				keepertest.AddAccToAccMapCoins(t, oldServiceOwnerAddr, "wrong", oneUPOKTGreaterThanFee)
+				keepertest.AddAccToAccMapCoins(t, newServiceOwnerAddr, "not_upokt", oneUPOKTGreaterThanFee)
 			},
-			address:     oldServiceOwnerAddr,
+			address:     newServiceOwnerAddr,
 			service:     newService,
 			expectedErr: types.ErrServiceNotEnoughFunds,
 		},
@@ -186,21 +186,17 @@ func TestMsgServer_AddService(t *testing.T) {
 			service:     oldService,
 			expectedErr: types.ErrServiceInvalidOwnerAddress,
 		},
-		{
-			desc:        "invalid - service already exists (same service owner)",
-			setup:       func(t *testing.T) {},
-			address:     oldServiceOwnerAddr,
-			service:     oldService,
-			expectedErr: types.ErrServiceAlreadyExists,
-		},
+		// {
+		// 	desc: "TODO(@adshmh): valid - update compute_units_pre_relay if the owner is correct",
+		// },
 	}
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
 			test.setup(t)
 			_, err := srv.AddService(ctx, &types.MsgAddService{
-				Address: test.address,
-				Service: test.service,
+				OwnerAddress: test.address,
+				Service:      test.service,
 			})
 			if test.expectedErr != nil {
 				// Using ErrorAs as wrapping the error sometimes gives errors with ErrorIs

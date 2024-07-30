@@ -41,23 +41,23 @@ func (k msgServer) AddService(
 	foundService, found := k.GetService(ctx, msg.Service.Id)
 	if found {
 		if foundService.OwnerAddress != msg.Service.OwnerAddress {
-			logger.Error(fmt.Sprintf("Owner address of existing service (%q) does not match the owner address %q", foundService.OwnerAddress, msg.Address))
+			logger.Error(fmt.Sprintf("Owner address of existing service (%q) does not match the owner address %q", foundService.OwnerAddress, msg.OwnerAddress))
 			return nil, types.ErrServiceInvalidOwnerAddress.Wrapf(
 				"existing owner address %q does not match the new owner address %q",
 				foundService.OwnerAddress, msg.Service.OwnerAddress,
 			)
 		}
 		return nil, types.ErrServiceAlreadyExists.Wrapf(
-			"TODO: Don't have for updating existing service ID: %s", msg.Service.Id,
+			"TODO(@adshmh): This is an ephemeral state of the code. Once we s/AddService/UpdateService/g, add the business logic here for updates here.",
 		)
 	}
 
 	// Retrieve the address of the actor adding the service; the owner of the service.
-	serviceOwnerAddr, err := sdk.AccAddressFromBech32(msg.Address)
+	serviceOwnerAddr, err := sdk.AccAddressFromBech32(msg.OwnerAddress)
 	if err != nil {
-		logger.Error(fmt.Sprintf("could not parse address %s", msg.Address))
+		logger.Error(fmt.Sprintf("could not parse address %s", msg.OwnerAddress))
 		return nil, types.ErrServiceInvalidAddress.Wrapf(
-			"%s is not in Bech32 format", msg.Address,
+			"%s is not in Bech32 format", msg.OwnerAddress,
 		)
 	}
 

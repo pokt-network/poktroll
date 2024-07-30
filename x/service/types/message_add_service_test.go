@@ -19,28 +19,28 @@ func TestMsgAddService_ValidateBasic(t *testing.T) {
 		{
 			desc: "invalid service owner address - no service",
 			msg: MsgAddService{
-				Address: "invalid_address",
+				OwnerAddress: "invalid_address",
 				// Service: intentionally omitted,
 			},
 			expectedErr: ErrServiceInvalidAddress,
 		}, {
 			desc: "valid service owner address - no service ID",
 			msg: MsgAddService{
-				Address: serviceOwnerAddress,
-				Service: sharedtypes.Service{Name: "service name", OwnerAddress: serviceOwnerAddress}, // ID intentionally omitted
+				OwnerAddress: serviceOwnerAddress,
+				Service:      sharedtypes.Service{Name: "service name", OwnerAddress: serviceOwnerAddress}, // ID intentionally omitted
 			},
 			expectedErr: ErrServiceMissingID,
 		}, {
 			desc: "valid service owner address - no service name",
 			msg: MsgAddService{
-				Address: serviceOwnerAddress,
-				Service: sharedtypes.Service{Id: "svc1", OwnerAddress: serviceOwnerAddress}, // Name intentionally omitted
+				OwnerAddress: serviceOwnerAddress,
+				Service:      sharedtypes.Service{Id: "svc1", OwnerAddress: serviceOwnerAddress}, // Name intentionally omitted
 			},
 			expectedErr: ErrServiceMissingName,
 		}, {
 			desc: "valid service owner address - zero compute units per relay",
 			msg: MsgAddService{
-				Address: serviceOwnerAddress,
+				OwnerAddress: serviceOwnerAddress,
 				Service: sharedtypes.Service{
 					Id:                   "svc1",
 					Name:                 "service name",
@@ -52,7 +52,7 @@ func TestMsgAddService_ValidateBasic(t *testing.T) {
 		}, {
 			desc: "signer address does not equal service owner address",
 			msg: MsgAddService{
-				Address: serviceOwnerAddress,
+				OwnerAddress: serviceOwnerAddress,
 				Service: sharedtypes.Service{
 					Id:                   "svc1",
 					Name:                 "service name",
@@ -65,7 +65,7 @@ func TestMsgAddService_ValidateBasic(t *testing.T) {
 		{
 			desc: "valid msg add service",
 			msg: MsgAddService{
-				Address: serviceOwnerAddress,
+				OwnerAddress: serviceOwnerAddress,
 				Service: sharedtypes.Service{
 					Id:                   "svc1",
 					Name:                 "service name",
