@@ -251,6 +251,35 @@ func (s *suite) waitForNewBlockEvent(
 	}
 }
 
+// waitForBlockHeight waits for a NewBlock event to be observed whose height is
+// greater than or equal to the target height.
+func (s *suite) waitForBlockHeight(targetHeight int64) {
+	ctx, done := context.WithCancel(s.ctx)
+
+	// For each observed event, **asynchronously** check if it is greater than
+	// or equal to the target height
+	channel.ForEach[*block.CometNewBlockEvent](
+		ctx, s.newBlockEventsReplayClient.EventsSequence(ctx),
+		func(_ context.Context, newBlockEvent *block.CometNewBlockEvent) {
+			if newBlockEvent == nil {
+				return
+			}
+
+			if newBlockEvent.Data.Value.Block.Header.Height >= targetHeight {
+				done()
+				return
+			}
+		},
+	)
+
+	select {
+	case <-time.After(eventTimeout):
+		s.Fatalf("ERROR: timed out waiting for block height", targetHeight)
+	case <-ctx.Done():
+		s.Log("Success; height detected before timeout.")
+	}
+}
+
 // newEventTypeMatchFn returns a function that matches an event based on its type
 // field. The type URL is constructed from the given module and eventType arguments
 // where module is the module name and eventType is the protobuf message type name

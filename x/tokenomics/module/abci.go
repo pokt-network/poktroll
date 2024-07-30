@@ -5,6 +5,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/telemetry"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	"github.com/pokt-network/poktroll/x/tokenomics/keeper"
@@ -13,6 +14,7 @@ import (
 // EndBlocker called at every block and settles all pending claims.
 func EndBlocker(ctx sdk.Context, k keeper.Keeper) (err error) {
 	logger := k.Logger().With("method", "EndBlocker")
+
 	// NB: There are two main reasons why we settle expiring claims in the end
 	// instead of when a proof is submitted:
 	// 1. Logic - Probabilistic proof allows claims to be settled (i.e. rewarded)
@@ -25,7 +27,13 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) (err error) {
 		return err
 	}
 
-	// Defer telemetry calls so that they reference the final values the relevant variables.
+	logger.Info(fmt.Sprintf(
+		"settled %d claims and expired %d claims",
+		settledResult.NumClaims,
+		expiredResult.NumClaims,
+	))
+
+	// Telemetry - defer telemetry calls so that they reference the final values the relevant variables.
 	defer func() {
 		telemetry.ClaimCounter(
 			prooftypes.ClaimProofStage_SETTLED,
@@ -61,12 +69,6 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) (err error) {
 		// TODO_IMPROVE(#observability): Add a counter for expired compute units.
 	}()
 
-	logger.Info(fmt.Sprintf(
-		"settled %d claims and expired %d claims",
-		settledResult.NumClaims,
-		expiredResult.NumClaims,
-	))
-
 	// Update the relay mining difficulty for every service that settled pending
 	// claims based on how many estimated relays were serviced for it.
 	difficultyPerServiceMap, err := k.UpdateRelayMiningDifficulty(ctx, settledResult.RelaysPerServiceMap)
@@ -79,11 +81,16 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) (err error) {
 		len(settledResult.RelaysPerServiceMap),
 	))
 
-	// Emit telemetry for each service's relay mining difficulty.
-	for serviceId, newDifficulty := range difficultyPerServiceMap {
-		miningDifficultyNumBits := keeper.RelayMiningTargetHashToDifficulty(newDifficulty.TargetHash)
-		telemetry.RelayMiningDifficultyGauge(miningDifficultyNumBits, serviceId)
-		telemetry.RelayEMAGauge(newDifficulty.NumRelaysEma, serviceId)
+	// Telemetry - emit telemetry for each service's relay mining difficulty.
+	for serviceId, newRelayMiningDifficulty := range difficultyPerServiceMap {
+		var newRelayMiningTargetHash [protocol.RelayHasherSize]byte
+		copy(newRelayMiningTargetHash[:], newRelayMiningDifficulty.TargetHash)
+
+		// NB: The difficulty integer is just a human readable interpretation of
+		// the target hash and is not actually used for business logic.
+		difficulty := protocol.GetDifficultyFromHash(newRelayMiningTargetHash)
+		telemetry.RelayMiningDifficultyGauge(difficulty, serviceId)
+		telemetry.RelayEMAGauge(newRelayMiningDifficulty.NumRelaysEma, serviceId)
 	}
 
 	return nil

@@ -93,6 +93,9 @@ func (aq *accQuerier) GetPubKeyFromAddress(ctx context.Context, address string) 
 	if err != nil {
 		return nil, err
 	}
+	if acc == nil {
+		return nil, ErrQueryAccountNotFound.Wrapf("address: %s", address)
+	}
 
 	// If the account's public key is nil, then return an error.
 	pubKey := acc.GetPubKey()

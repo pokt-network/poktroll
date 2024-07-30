@@ -62,6 +62,9 @@ func (accountQueryClient *AccountKeeperQueryClient) GetPubKeyFromAddress(
 	if err != nil {
 		return nil, err
 	}
+	if acc == nil {
+		return nil, ErrProofAccNotFound.Wrapf("account not found for address %s", address)
+	}
 
 	// If the account's public key is nil, then return an error.
 	pubKey := acc.GetPubKey()

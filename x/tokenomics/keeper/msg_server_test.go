@@ -14,7 +14,7 @@ import (
 func setupMsgServer(t testing.TB) (keeper.Keeper, types.MsgServer, context.Context) {
 	t.Helper()
 
-	k, ctx, _, _ := testkeeper.TokenomicsKeeperWithActorAddrs(t)
+	k, ctx, _, _ := testkeeper.TokenomicsKeeperWithActorAddrs(t, nil)
 	return k, keeper.NewMsgServerImpl(k), ctx
 }
 

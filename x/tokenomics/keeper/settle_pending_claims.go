@@ -64,7 +64,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 
 		sessionId := claim.SessionHeader.SessionId
 
-		_, isProofFound := k.proofKeeper.GetProof(ctx, sessionId, claim.SupplierAddress)
+		proof, isProofFound := k.proofKeeper.GetProof(ctx, sessionId, claim.SupplierAddress)
 		// Using the probabilistic proofs approach, determine if this expiring
 		// claim required an on-chain proof
 		proofRequirement, err = k.proofRequirementForClaim(ctx, &claim)
@@ -80,14 +80,29 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 			"proof_requirement", proofRequirement,
 		)
 
-		if proofRequirement != prooftypes.ProofRequirementReason_NOT_REQUIRED {
-			// If a proof is not found, the claim will expire and never be settled.
-			if !isProofFound {
+		proofIsRequired := (proofRequirement != prooftypes.ProofRequirementReason_NOT_REQUIRED)
+		if proofIsRequired {
+			expirationReason := types.ClaimExpirationReason_EXPIRATION_REASON_UNSPECIFIED // EXPIRATION_REASON_UNSPECIFIED is the default
+
+			if isProofFound {
+				if err = k.proofKeeper.EnsureValidProof(ctx, &proof); err != nil {
+					logger.Warn(fmt.Sprintf("Proof was found but is invalid due to %v", err))
+					expirationReason = types.ClaimExpirationReason_PROOF_INVALID
+				}
+			} else {
+				expirationReason = types.ClaimExpirationReason_PROOF_MISSING
+			}
+
+			// If the proof is missing or invalid -> expire it
+			if expirationReason != types.ClaimExpirationReason_EXPIRATION_REASON_UNSPECIFIED {
+				// Proof was required but not found.
 				// Emit an event that a claim has expired and being removed without being settled.
 				claimExpiredEvent := types.EventClaimExpired{
-					Claim:           &claim,
-					NumComputeUnits: numClaimComputeUnits,
-					NumRelays:       numRelaysInSessionTree,
+					Claim:            &claim,
+					NumComputeUnits:  numClaimComputeUnits,
+					NumRelays:        numRelaysInSessionTree,
+					ExpirationReason: expirationReason,
+					// TODO_CONSIDERATION: Add the error to the event if the proof was invalid.
 				}
 				if err = ctx.EventManager().EmitTypedEvent(&claimExpiredEvent); err != nil {
 					return settledResult, expiredResult, err
@@ -98,15 +113,20 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 				// The claim & proof are no longer necessary, so there's no need for them
 				// to take up on-chain space.
 				k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierAddress)
+				if isProofFound {
+					k.proofKeeper.RemoveProof(ctx, sessionId, claim.SupplierAddress)
+				}
 
 				expiredResult.NumClaims++
 				expiredResult.NumRelays += numRelaysInSessionTree
 				expiredResult.NumComputeUnits += numClaimComputeUnits
 				continue
 			}
-			// NB: If a proof is found, it is valid because verification is done
-			// at the time of submission.
 		}
+
+		// If this code path is reached, then either:
+		// 1. The claim does not require a proof.
+		// 2. The claim requires a proof and a valid proof was found.
 
 		// Manage the mint & burn accounting for the claim.
 		if err = k.SettleSessionAccounting(ctx, &claim); err != nil {
