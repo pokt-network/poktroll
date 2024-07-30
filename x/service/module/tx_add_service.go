@@ -42,14 +42,15 @@ $ poktrolld tx service add-service "svc1" "service_one" 1 --keyring-backend test
 			if len(args) > 2 {
 				computeUnitsPerRelay, err = strconv.ParseUint(args[2], 10, 64)
 				if err != nil {
-					return types.ErrServiceInvalidComputUnitsPerRelay.Wrapf("unable to parse as uint64: %s", args[2])
+					return types.ErrServiceInvalidComputeUnitsPerRelay.Wrapf("unable to parse as uint64: %s", args[2])
 				}
 			} else {
 				fmt.Printf("Using default compute_units_per_relay: %d\n", types.DefaultComputeUnitsPerRelay)
 			}
 
+			serviceOwnerAddress := clientCtx.GetFromAddress().String()
 			msg := types.NewMsgAddService(
-				clientCtx.GetFromAddress().String(),
+				serviceOwnerAddress,
 				serviceIdStr,
 				serviceNameStr,
 				computeUnitsPerRelay,

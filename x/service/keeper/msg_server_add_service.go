@@ -45,8 +45,8 @@ func (k msgServer) AddService(
 		)
 	}
 
-	// Retrieve the address of the actor adding the service.
-	accAddr, err := sdk.AccAddressFromBech32(msg.Address)
+	// Retrieve the address of the actor adding the service; the owner of the service.
+	serviceOwnerAddr, err := sdk.AccAddressFromBech32(msg.Address)
 	if err != nil {
 		logger.Error(fmt.Sprintf("could not parse address %s", msg.Address))
 		return nil, types.ErrServiceInvalidAddress.Wrapf(
@@ -55,9 +55,9 @@ func (k msgServer) AddService(
 	}
 
 	// Check the actor has sufficient funds to pay for the add service fee.
-	accCoins := k.bankKeeper.SpendableCoins(ctx, accAddr)
+	accCoins := k.bankKeeper.SpendableCoins(ctx, serviceOwnerAddr)
 	if accCoins.Len() == 0 {
-		logger.Error(fmt.Sprintf("%s doesn't have any funds to add service: %v", msg.Address, err))
+		logger.Error(fmt.Sprintf("%s doesn't have any funds to add service: %v", serviceOwnerAddr, err))
 		return nil, types.ErrServiceNotEnoughFunds.Wrapf(
 			"account has no spendable coins",
 		)
@@ -67,7 +67,7 @@ func (k msgServer) AddService(
 	accBalance := accCoins.AmountOf("upokt")
 	addServiceFee := math.NewIntFromUint64(k.GetParams(ctx).AddServiceFee)
 	if accBalance.LTE(addServiceFee) {
-		logger.Error(fmt.Sprintf("%s doesn't have enough funds to add service: %v", msg.Address, err))
+		logger.Error(fmt.Sprintf("%s doesn't have enough funds to add service: %v", serviceOwnerAddr, err))
 		return nil, types.ErrServiceNotEnoughFunds.Wrapf(
 			"account has %d uPOKT, but the service fee is %d uPOKT",
 			accBalance.Uint64(), k.GetParams(ctx).AddServiceFee,
@@ -76,7 +76,7 @@ func (k msgServer) AddService(
 
 	// Deduct the service fee from the actor's balance.
 	serviceFee := sdk.Coins{sdk.NewCoin("upokt", addServiceFee)}
-	err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, accAddr, types.ModuleName, serviceFee)
+	err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, serviceOwnerAddr, types.ModuleName, serviceFee)
 	if err != nil {
 		logger.Error(fmt.Sprintf("Failed to deduct service fee from actor's balance: %v", err))
 		return nil, types.ErrServiceFailedToDeductFee.Wrapf(
