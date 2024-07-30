@@ -1,4 +1,5 @@
 ---
+title: Protocol Upgrades
 sidebar_position: 1
 ---
 

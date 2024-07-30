@@ -34,9 +34,8 @@ func defaultMigrationsOnlyUpgradeHandler(
 // An example of an upgrade that performs additional state changes.
 // Even when not changing `ConsensusVersion` of any modules, it still might be beneficial to create an upgrade
 // to signal to node runners utilizing `Cosmovisor` to automatically download and install the new binary.
-// TODO_IN_THIS_PR: link to the document that explains Cosmovisor usage and its benefits for node runners.
 var Upgrade_Example = Upgrade{
-	VersionName:          "v0.0.0-Example",
+	PlanName:             "v0.0.0-Example",
 	CreateUpgradeHandler: defaultMigrationsOnlyUpgradeHandler,
 
 	// We can also add, rename and delete KVStores.
@@ -44,8 +43,9 @@ var Upgrade_Example = Upgrade{
 }
 
 // Upgrade_0_0_4 is an example of an upgrade that increases the block size.
+// This example demonstrates how to change the block size using an upgrade.
 var Upgrade_0_0_4 = Upgrade{
-	VersionName: "v0.0.4",
+	PlanName: "v0.0.4",
 	CreateUpgradeHandler: func(mm *module.Manager,
 		keepers *keepers.Keepers,
 		configurator module.Configurator) upgradetypes.UpgradeHandler {
@@ -67,7 +67,7 @@ var Upgrade_0_0_4 = Upgrade{
 				Abci: currentParams.Abci,
 			}
 
-			// Increase block size two-fold
+			// Increase block size two-fold, 22020096 is the default value.
 			newParams.Block.MaxBytes = 22020096 * 2
 
 			// Update the chain state
@@ -79,5 +79,6 @@ var Upgrade_0_0_4 = Upgrade{
 			return mm.RunMigrations(ctx, configurator, vm)
 		}
 	},
+	// No changes to the KVStore in this upgrade.
 	StoreUpgrades: storetypes.StoreUpgrades{},
 }

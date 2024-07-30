@@ -8,9 +8,15 @@ import (
 )
 
 // Upgrade represents a protocol upgrade in code. Once a `MsgSoftwareUpgrade` is submitted to the chain, and
-// `VersionName` matches the `Name` of the `Plan` inside the upgrade message, the upgrade will be scheduled for execution.
+// `PlanName` matches the `Name` of the `Plan` inside the upgrade message, the upgrade will be scheduled for execution.
 type Upgrade struct {
-	VersionName          string
+	// PlanName is a name an upgrade is matched to from the on-chain `upgradetypes.Plan`.
+	PlanName string
+
+	// CreateUpgradeHandler returns an upgrade handler that will be executed at the time of the upgrade.
+	// State changes and protocol version upgrades should be performed here.
 	CreateUpgradeHandler func(*module.Manager, *keepers.Keepers, module.Configurator) upgradetypes.UpgradeHandler
-	StoreUpgrades        storetypes.StoreUpgrades
+
+	// StoreUpgrades adds, renames and deletes KVStores in the state to prepare for a protocol upgrade.
+	StoreUpgrades storetypes.StoreUpgrades
 }

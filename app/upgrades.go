@@ -15,7 +15,7 @@ func (app *App) setUpgrades() error {
 	// Set upgrade handlers for all upgrades
 	for _, u := range allUpgrades {
 		app.Keepers.UpgradeKeeper.SetUpgradeHandler(
-			u.VersionName,
+			u.PlanName,
 			u.CreateUpgradeHandler(app.ModuleManager, &app.Keepers, app.Configurator()),
 		)
 	}
@@ -27,8 +27,8 @@ func (app *App) setUpgrades() error {
 	}
 
 	// Find the planned upgrade by name. If not found, assume there's nothing to upgrade, as `ReadUpgradeInfoFromDisk()`
-	// would have returned an error if the file was corrupted ot there's OS permissions issue.
-	planedUpgrade, found := findPlannedUpgrade(upgradePlan.Name)
+	// would have returned an error if the file was corrupted or there's OS permissions issue.
+	plannedUpgrade, found := findPlannedUpgrade(upgradePlan.Name)
 	if !found {
 		return nil
 	}
@@ -37,7 +37,7 @@ func (app *App) setUpgrades() error {
 	shouldSkipStoreUpgrade := app.Keepers.UpgradeKeeper.IsSkipHeight(upgradePlan.Height)
 
 	if !shouldSkipStoreUpgrade {
-		app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradePlan.Height, &planedUpgrade.StoreUpgrades))
+		app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradePlan.Height, &plannedUpgrade.StoreUpgrades))
 	}
 
 	return nil
@@ -46,7 +46,7 @@ func (app *App) setUpgrades() error {
 // findPlannedUpgrade returns the planned upgrade by name.
 func findPlannedUpgrade(upgradePlanName string) (upgrades.Upgrade, bool) {
 	for _, u := range allUpgrades {
-		if u.VersionName == upgradePlanName {
+		if u.PlanName == upgradePlanName {
 			return u, true
 		}
 	}

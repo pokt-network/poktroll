@@ -1,3 +1,5 @@
+#!/bin/bash
+
 echo "Current params:"
 poktrolld query consensus params
 

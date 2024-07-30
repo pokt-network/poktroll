@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Submit upgrade
 echo "Submitting an upgrade transaction via authz..."
 poktrolld tx authz exec tools/scripts/upgrades/authz_upgrade_tx.json --from pnf --yes
