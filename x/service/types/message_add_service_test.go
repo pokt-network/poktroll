@@ -17,28 +17,28 @@ func TestMsgAddService_ValidateBasic(t *testing.T) {
 		expectedErr error
 	}{
 		{
-			desc: "invalid service supplier address - no service",
+			desc: "invalid service owner address - no service",
 			msg: MsgAddService{
 				Address: "invalid_address",
 				// Service: intentionally omitted,
 			},
 			expectedErr: ErrServiceInvalidAddress,
 		}, {
-			desc: "valid service supplier address - no service ID",
+			desc: "valid service owner address - no service ID",
 			msg: MsgAddService{
 				Address: serviceOwnerAddress,
-				Service: sharedtypes.Service{Name: "service name"}, // ID intentionally omitted
+				Service: sharedtypes.Service{Name: "service name", OwnerAddress: serviceOwnerAddress}, // ID intentionally omitted
 			},
 			expectedErr: ErrServiceMissingID,
 		}, {
-			desc: "valid service supplier address - no service name",
+			desc: "valid service owner address - no service name",
 			msg: MsgAddService{
 				Address: serviceOwnerAddress,
-				Service: sharedtypes.Service{Id: "svc1"}, // Name intentionally omitted
+				Service: sharedtypes.Service{Id: "svc1", OwnerAddress: serviceOwnerAddress}, // Name intentionally omitted
 			},
 			expectedErr: ErrServiceMissingName,
 		}, {
-			desc: "valid service supplier address - zero compute units per relay",
+			desc: "valid service owner address - zero compute units per relay",
 			msg: MsgAddService{
 				Address: serviceOwnerAddress,
 				Service: sharedtypes.Service{
@@ -50,7 +50,7 @@ func TestMsgAddService_ValidateBasic(t *testing.T) {
 			},
 			expectedErr: ErrServiceInvalidComputeUnitsPerRelay,
 		}, {
-			desc: "owner address does not equal supplier address",
+			desc: "signer address does not equal service owner address",
 			msg: MsgAddService{
 				Address: serviceOwnerAddress,
 				Service: sharedtypes.Service{
@@ -63,7 +63,7 @@ func TestMsgAddService_ValidateBasic(t *testing.T) {
 			expectedErr: ErrServiceInvalidOwnerAddress,
 		},
 		{
-			desc: "valid service supplier address and service",
+			desc: "valid msg add service",
 			msg: MsgAddService{
 				Address: serviceOwnerAddress,
 				Service: sharedtypes.Service{

@@ -38,10 +38,17 @@ func (k msgServer) AddService(
 	}
 
 	// Check if the service already exists or not.
-	if _, found := k.GetService(ctx, msg.Service.Id); found {
-		logger.Error(fmt.Sprintf("Service already exists: %v", msg.Service))
+	foundService, found := k.GetService(ctx, msg.Service.Id)
+	if found {
+		if foundService.OwnerAddress != msg.Service.OwnerAddress {
+			logger.Error(fmt.Sprintf("Owner address of existing service (%q) does not match the owner address %q", foundService.OwnerAddress, msg.Address))
+			return nil, types.ErrServiceInvalidOwnerAddress.Wrapf(
+				"existing owner address %q does not match the new owner address %q",
+				foundService.OwnerAddress, msg.Service.OwnerAddress,
+			)
+		}
 		return nil, types.ErrServiceAlreadyExists.Wrapf(
-			"duplicate service ID: %s", msg.Service.Id,
+			"TODO: Don't have for updating existing service ID: %s", msg.Service.Id,
 		)
 	}
 

@@ -71,7 +71,7 @@ func TestMsgServer_AddService(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
-			desc:    "invalid - service supplier address is empty",
+			desc:    "invalid - service owner address is empty",
 			setup:   func(t *testing.T) {},
 			address: "", // explicitly set to empty string
 			service: sharedtypes.Service{
@@ -81,7 +81,7 @@ func TestMsgServer_AddService(t *testing.T) {
 			expectedErr: types.ErrServiceInvalidAddress,
 		},
 		{
-			desc:        "invalid - invalid service supplier address",
+			desc:        "invalid - invalid service owner address",
 			setup:       func(t *testing.T) {},
 			address:     "invalid address",
 			service:     newService,
@@ -143,20 +143,6 @@ func TestMsgServer_AddService(t *testing.T) {
 			expectedErr: types.ErrServiceInvalidComputeUnitsPerRelay,
 		},
 		{
-			desc:        "invalid - service already exists (same service supplier)",
-			setup:       func(t *testing.T) {},
-			address:     newServiceOwnerAddr,
-			service:     oldService,
-			expectedErr: types.ErrServiceAlreadyExists,
-		},
-		{
-			desc:        "invalid - service already exists (different service supplier)",
-			setup:       func(t *testing.T) {},
-			address:     newServiceOwnerAddr,
-			service:     oldService,
-			expectedErr: types.ErrServiceAlreadyExists,
-		},
-		{
 			desc:        "invalid - no spendable coins",
 			setup:       func(t *testing.T) {},
 			address:     newServiceOwnerAddr,
@@ -192,6 +178,20 @@ func TestMsgServer_AddService(t *testing.T) {
 			address:     oldServiceOwnerAddr,
 			service:     newService,
 			expectedErr: types.ErrServiceNotEnoughFunds,
+		},
+		{
+			desc:        "invalid - existing service owner address does match new service address",
+			setup:       func(t *testing.T) {},
+			address:     newServiceOwnerAddr,
+			service:     oldService,
+			expectedErr: types.ErrServiceInvalidOwnerAddress,
+		},
+		{
+			desc:        "invalid - service already exists (same service owner)",
+			setup:       func(t *testing.T) {},
+			address:     oldServiceOwnerAddr,
+			service:     oldService,
+			expectedErr: types.ErrServiceAlreadyExists,
 		},
 	}
 
