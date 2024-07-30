@@ -156,7 +156,12 @@ func WithServicesConfigMap(
 				go func() {
 					err := server.ListenAndServe()
 					if err != nil && !errors.Is(err, http.ErrServerClosed) {
-						require.NoError(test.t, err)
+						require.NoError(test.t, err, `
+TODO_FLAKY: Known flaky test: 'TestRelayerProxy'
+
+Run the following command a few times to verify it passes at least once:
+
+$ go test -v -count=1 -run TestRelayerProxy ./pkg/relayer/proxy/...`)
 					}
 				}()
 

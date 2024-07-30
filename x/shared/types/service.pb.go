@@ -94,10 +94,12 @@ type Service struct {
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// TODO_BETA: Name is currently unused but acts as a reminder that an optional onchain representation of the service is necessary
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	// Used alongside the global 'compute_units_to_tokens_multipler' to calculate the cost of a relay for this service
+	// The cost of a single relay for this service in terms of compute units.
+	// Must be used alongside the global 'compute_units_to_tokens_multipler' to calculate the cost of a relay for this service.
+	// cost_per_relay_for_specific_service = compute_units_per_relay_for_specific_service * compute_units_to_tokens_multipler_global_value
 	ComputeUnitsPerRelay uint64 `protobuf:"varint,3,opt,name=compute_units_per_relay,json=computeUnitsPerRelay,proto3" json:"compute_units_per_relay,omitempty"`
 	// The owner address that created the service.
-	// It is the address that receives  rewards based on the Service's on-chain usage
+	// It is the address that receives rewards based on the Service's on-chain usage
 	// It is the only address that can update the service configuration (e.g. compute_units_per_relay),
 	// or make other updates to it.
 	OwnerAddress string `protobuf:"bytes,4,opt,name=owner_address,json=ownerAddress,proto3" json:"owner_address,omitempty"`
