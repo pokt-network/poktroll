@@ -323,8 +323,8 @@ localnet_regenesis: check_yq warn_message_acc_initialize_pubkeys ## Regenerate t
 	AUTH_CONTENT=$$(cat ./tools/scripts/authz/dao_genesis_authorizations.json | jq -r tostring); \
 	$(SED) -i -E 's!^(\s*)"authorization": (\[\]|null)!\1"authorization": '$$AUTH_CONTENT'!' ${HOME}/.poktroll/config/genesis.json;
 
-	@cp -r ${HOME}/.poktroll/keyring-test $(POKTROLLD_HOME) || true
-	@cp -r ${HOME}/.poktroll/config $(POKTROLLD_HOME)/ || true
+	@cp -r ${HOME}/.poktroll/keyring-test $(POKTROLLD_HOME)
+	@cp -r ${HOME}/.poktroll/config $(POKTROLLD_HOME)/
 
 .PHONY: send_relay_sovereign_app_JSONRPC
 send_relay_sovereign_app_JSONRPC: # Send a JSONRPC relay through the AppGateServer as a sovereign application
