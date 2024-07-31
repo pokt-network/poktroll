@@ -265,14 +265,6 @@ func (k Keeper) TokenLogicModuleRelayBurnEqualsMint(
 		}
 	}
 
-	// Burn uPOKT from the application module account which was held in escrow
-	// on behalf of the application account.
-	if err = k.bankKeeper.BurnCoins(
-		ctx, apptypes.ModuleName, sdk.NewCoins(settlementCoins),
-	); err != nil {
-		return tokenomicstypes.ErrTokenomicsApplicationModuleBurn.Wrapf("burning %s from the application module account: %v", settlementCoins, err)
-	}
-	logger.Info(fmt.Sprintf("burned (%q) from the application module account", settlementCoins))
 	// Verify that the application has enough uPOKT to pay for the services it consumed
 	if application.GetStake().IsLT(settlementCoins) {
 		settlementCoins, err = k.handleOverservicedApplication(ctx, application, settlementCoins)
