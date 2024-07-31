@@ -727,10 +727,10 @@ type Params struct {
 
 	// num_blocks_per_session is the number of blocks between the session start & end heights.
 	NumBlocksPerSession uint64 `protobuf:"varint,1,opt,name=num_blocks_per_session,json=numBlocksPerSession,proto3" json:"num_blocks_per_session,omitempty"`
-	// grace_period_end_offset_blocks is the number of blocks after the session end height,
-	// at which the grace period ends.
-	// Suppliers will get paid for relays serviced during the grace period but will need to recreate a claim if
-	// a previous one was already submitted.
+	// grace_period_end_offset_blocks is the number of blocks, after the session end height,
+	// during which the supplier can still service payable relays.
+	// Suppliers will need to recreate a claim for the previous session (if already created) to
+	// get paid for the additional relays.
 	GracePeriodEndOffsetBlocks uint64 `protobuf:"varint,2,opt,name=grace_period_end_offset_blocks,json=gracePeriodEndOffsetBlocks,proto3" json:"grace_period_end_offset_blocks,omitempty"`
 	// claim_window_open_offset_blocks is the number of blocks after the session grace
 	// period height, at which the claim window opens.
@@ -745,8 +745,9 @@ type Params struct {
 	// open height, at which the proof window closes.
 	ProofWindowCloseOffsetBlocks uint64 `protobuf:"varint,6,opt,name=proof_window_close_offset_blocks,json=proofWindowCloseOffsetBlocks,proto3" json:"proof_window_close_offset_blocks,omitempty"`
 	// supplier_unbonding_period_sessions is the number of sessions that a supplier must wait after
-	// unstaking before they can withdraw their staked tokens.
-	// Its corresponding block count must be greater than the proof window close cumulated blocks.
+	// unstaking before their staked assets are moved to their account balance.
+	// On-chain business logic requires, and ensures, that the corresponding block count of the unbonding
+	// period will exceed the end of any active claim & proof lifecycles.
 	SupplierUnbondingPeriodSessions uint64 `protobuf:"varint,7,opt,name=supplier_unbonding_period_sessions,json=supplierUnbondingPeriodSessions,proto3" json:"supplier_unbonding_period_sessions,omitempty"`
 }
 
