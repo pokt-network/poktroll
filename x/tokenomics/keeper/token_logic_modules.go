@@ -206,7 +206,17 @@ func (k Keeper) ProcessTokenLogicModules(
 	// Retrieving the relay mining difficulty for the service at hand
 	relayMiningDifficulty, found := k.GetRelayMiningDifficulty(ctx, service.Id)
 	if !found {
-		return tokenomicstypes.ErrTokenomicsMissingRelayMiningDifficulty.Wrapf("relay mining difficulty not found for service %s", service.Id)
+		numRelays, err := claim.GetNumRelays()
+		if err != nil {
+			return err
+		}
+		logger.Warn(fmt.Sprintf("relay mining difficulty for service %q not found. Using default difficulty", service.Id))
+		relayMiningDifficulty = tokenomicstypes.RelayMiningDifficulty{
+			ServiceId:    service.Id,
+			BlockHeight:  sdk.UnwrapSDKContext(ctx).BlockHeight(),
+			NumRelaysEma: numRelays,
+			TargetHash:   prooftypes.DefaultRelayDifficultyTargetHash,
+		}
 	}
 
 	// Helpers for logging the same metadata throughout this function calls

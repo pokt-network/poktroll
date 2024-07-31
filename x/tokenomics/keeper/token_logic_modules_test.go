@@ -28,8 +28,6 @@ import (
 )
 
 func TestProcessTokenLogicModules_HandleAppGoingIntoDebt(t *testing.T) {
-	t.Skip("TODO_MAINNET: Add coverage of the design choice made for how to handle this scenario.")
-
 	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil)
 
 	// Create a service that can be registered in the application and used in the claims
@@ -39,17 +37,14 @@ func TestProcessTokenLogicModules_HandleAppGoingIntoDebt(t *testing.T) {
 		ComputeUnitsPerRelay: 1,
 		OwnerAddress:         sample.AccAddress(),
 	}
+	keepers.SetService(ctx, *service)
 
 	// Add a new application
 	appStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
 	app := apptypes.Application{
-		Address: sample.AccAddress(),
-		Stake:   &appStake,
-		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
-			&sharedtypes.ApplicationServiceConfig{
-				Service: service,
-			},
-		},
+		Address:        sample.AccAddress(),
+		Stake:          &appStake,
+		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{Service: service}},
 	}
 	keepers.SetApplication(ctx, app)
 
@@ -65,10 +60,8 @@ func TestProcessTokenLogicModules_HandleAppGoingIntoDebt(t *testing.T) {
 	claim := prooftypes.Claim{
 		SupplierAddress: supplier.Address,
 		SessionHeader: &sessiontypes.SessionHeader{
-			ApplicationAddress: app.Address,
-			Service: &sharedtypes.Service{
-				Id: service.Id,
-			},
+			ApplicationAddress:      app.Address,
+			Service:                 service,
 			SessionId:               "session_id",
 			SessionStartBlockHeight: 1,
 			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
@@ -98,27 +91,18 @@ func TestProcessTokenLogicModules_ValidAccounting(t *testing.T) {
 		ComputeUnitsPerRelay: 1,
 		OwnerAddress:         sample.AccAddress(),
 	}
-	// Add a new application
+	keepers.SetService(ctx, *service)
+
+	// Add a new application with non-zero app stake end balance to assert against.
 	appStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
-	// NB: Ensure a non-zero app stake end balance to assert against.
 	expectedAppEndStakeAmount := cosmostypes.NewCoin("upokt", math.NewInt(420))
 	expectedAppBurn := appStake.Sub(expectedAppEndStakeAmount)
 	app := apptypes.Application{
-		Address: sample.AccAddress(),
-		Stake:   &appStake,
-		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
-			&sharedtypes.ApplicationServiceConfig{
-				Service: service,
-			},
-		},
+		Address:        sample.AccAddress(),
+		Stake:          &appStake,
+		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{Service: service}},
 	}
 	keepers.SetApplication(ctx, app)
-
-	// Query application balance prior to the accounting.
-	appStartBalance := getBalance(t, ctx, keepers, app.GetAddress())
-
-	// Query application module balance prior to the accounting.
-	appModuleStartBalance := getBalance(t, ctx, keepers, appModuleAddress)
 
 	// Add a new supplier.
 	supplierStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
@@ -128,9 +112,13 @@ func TestProcessTokenLogicModules_ValidAccounting(t *testing.T) {
 	}
 	keepers.SetSupplier(ctx, supplier)
 
+	// Query application balance prior to the accounting.
+	appStartBalance := getBalance(t, ctx, keepers, app.GetAddress())
+	// Query application module balance prior to the accounting.
+	appModuleStartBalance := getBalance(t, ctx, keepers, appModuleAddress)
+
 	// Query supplier balance prior to the accounting.
 	supplierStartBalance := getBalance(t, ctx, keepers, supplier.GetAddress())
-
 	// Query supplier module balance prior to the accounting.
 	supplierModuleStartBalance := getBalance(t, ctx, keepers, supplierModuleAddress)
 
@@ -138,10 +126,8 @@ func TestProcessTokenLogicModules_ValidAccounting(t *testing.T) {
 	claim := prooftypes.Claim{
 		SupplierAddress: supplier.Address,
 		SessionHeader: &sessiontypes.SessionHeader{
-			ApplicationAddress: app.Address,
-			Service: &sharedtypes.Service{
-				Id: service.Id,
-			},
+			ApplicationAddress:      app.Address,
+			Service:                 service,
 			SessionId:               "session_id",
 			SessionStartBlockHeight: 1,
 			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
@@ -204,24 +190,21 @@ func TestProcessTokenLogicModules_AppStakeTooLow(t *testing.T) {
 		ComputeUnitsPerRelay: 1,
 		OwnerAddress:         sample.AccAddress(),
 	}
+	keepers.SetService(ctx, *service)
+
 	// Add a new application
 	appStake := cosmostypes.NewCoin("upokt", math.NewInt(40000))
 	expectedAppEndStakeZeroAmount := cosmostypes.NewCoin("upokt", math.NewInt(0))
 	expectedAppBurn := appStake.AddAmount(math.NewInt(2000))
 	app := apptypes.Application{
-		Address: sample.AccAddress(),
-		Stake:   &appStake,
-		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
-			&sharedtypes.ApplicationServiceConfig{
-				Service: service,
-			},
-		},
+		Address:        sample.AccAddress(),
+		Stake:          &appStake,
+		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{Service: service}},
 	}
 	keepers.SetApplication(ctx, app)
 
 	// Query application balance prior to the accounting.
 	appStartBalance := getBalance(t, ctx, keepers, app.GetAddress())
-
 	// Query application module balance prior to the accounting.
 	appModuleStartBalance := getBalance(t, ctx, keepers, appModuleAddress)
 
@@ -235,7 +218,6 @@ func TestProcessTokenLogicModules_AppStakeTooLow(t *testing.T) {
 
 	// Query supplier balance prior to the accounting.
 	supplierStartBalance := getBalance(t, ctx, keepers, supplier.GetAddress())
-
 	// Query supplier module balance prior to the accounting.
 	supplierModuleStartBalance := getBalance(t, ctx, keepers, supplierModuleAddress)
 
@@ -243,10 +225,8 @@ func TestProcessTokenLogicModules_AppStakeTooLow(t *testing.T) {
 	claim := prooftypes.Claim{
 		SupplierAddress: supplier.Address,
 		SessionHeader: &sessiontypes.SessionHeader{
-			ApplicationAddress: app.Address,
-			Service: &sharedtypes.Service{
-				Id: service.Id,
-			},
+			ApplicationAddress:      app.Address,
+			Service:                 service,
 			SessionId:               "session_id",
 			SessionStartBlockHeight: 1,
 			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
@@ -309,7 +289,6 @@ func TestProcessTokenLogicModules_AppStakeTooLow(t *testing.T) {
 }
 
 func TestProcessTokenLogicModules_AppNotFound(t *testing.T) {
-
 	service := &sharedtypes.Service{
 		Id:                   "svc1",
 		Name:                 "svcName1",
@@ -323,10 +302,8 @@ func TestProcessTokenLogicModules_AppNotFound(t *testing.T) {
 	claim := prooftypes.Claim{
 		SupplierAddress: supplierAddr,
 		SessionHeader: &sessiontypes.SessionHeader{
-			ApplicationAddress: sample.AccAddress(), // Random address
-			Service: &sharedtypes.Service{
-				Id: service.Id,
-			},
+			ApplicationAddress:      sample.AccAddress(), // Random address
+			Service:                 service,
 			SessionId:               "session_id",
 			SessionStartBlockHeight: 1,
 			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
@@ -529,7 +506,6 @@ func getBalance(
 	bankKeeper tokenomicstypes.BankKeeper,
 	accountAddr string,
 ) *cosmostypes.Coin {
-
 	appBalanceRes, err := bankKeeper.Balance(ctx, &banktypes.QueryBalanceRequest{
 		Address: accountAddr,
 		Denom:   "upokt",

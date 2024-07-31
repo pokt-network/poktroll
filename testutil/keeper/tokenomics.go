@@ -63,6 +63,7 @@ type TokenomicsModuleKeepers struct {
 	tokenomicstypes.ProofKeeper
 	tokenomicstypes.SharedKeeper
 	tokenomicstypes.SessionKeeper
+	tokenomicstypes.ServiceKeeper
 
 	Codec *codec.ProtoCodec
 }
@@ -232,6 +233,7 @@ func NewTokenomicsModuleKeepers(
 		suppliertypes.StoreKey,
 		prooftypes.StoreKey,
 		sharedtypes.StoreKey,
+		servicetypes.StoreKey,
 	)
 
 	// Construct a multistore & mount store keys for each keeper that will interact with the state store.
@@ -397,6 +399,7 @@ func NewTokenomicsModuleKeepers(
 		ProofKeeper:       &proofKeeper,
 		SharedKeeper:      &sharedKeeper,
 		SessionKeeper:     &sessionKeeper,
+		ServiceKeeper:     &serviceKeeper,
 
 		Codec: cdc,
 	}
