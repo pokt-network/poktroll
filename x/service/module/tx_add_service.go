@@ -17,7 +17,11 @@ import (
 
 var _ = strconv.Itoa(0)
 
-// TODO_MAINNET: Make it possible to update a service (e.g. update # of compute units per relay
+// TODO_UPNEXT: Change `add-service` to `update-service` so the source owner can
+// update the compute units per relay for an existing service. Make it possible
+// to update a service (e.g. update # of compute units per relay). This will require
+// search for all variations of `AddService` in the codebase (filenames, helpers, etc...),
+// ensuring that only the owner can update it on chain, and tackling some of the tests in `service.feature`.
 func CmdAddService() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   fmt.Sprintf("add-service <service_id> <service_name> [compute_units_per_relay: default={%d}]", types.DefaultComputeUnitsPerRelay),
@@ -42,14 +46,15 @@ $ poktrolld tx service add-service "svc1" "service_one" 1 --keyring-backend test
 			if len(args) > 2 {
 				computeUnitsPerRelay, err = strconv.ParseUint(args[2], 10, 64)
 				if err != nil {
-					return types.ErrServiceInvalidComputUnitsPerRelay.Wrapf("unable to parse as uint64: %s", args[2])
+					return types.ErrServiceInvalidComputeUnitsPerRelay.Wrapf("unable to parse as uint64: %s", args[2])
 				}
 			} else {
 				fmt.Printf("Using default compute_units_per_relay: %d\n", types.DefaultComputeUnitsPerRelay)
 			}
 
+			serviceOwnerAddress := clientCtx.GetFromAddress().String()
 			msg := types.NewMsgAddService(
-				clientCtx.GetFromAddress().String(),
+				serviceOwnerAddress,
 				serviceIdStr,
 				serviceNameStr,
 				computeUnitsPerRelay,
