@@ -49,7 +49,10 @@ type TokenLogicModuleProcessor func(
 type TokenLogicModule int
 
 func (tlm TokenLogicModule) String() string {
-	return [...]string{"RelayBurnEqualsMint"}[tlm]
+	return [...]string{
+		"TLMRelayBurnEqualsMint",
+		"TLMGlobalMint",
+	}[tlm]
 }
 
 func (tlm TokenLogicModule) EnumIndex() int {

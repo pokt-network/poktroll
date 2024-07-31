@@ -24,6 +24,8 @@ func AccAddress() string {
 	return sdk.AccAddress(addr).String()
 }
 
+// ConsAddress returns a sample consensus address, which has the prefix
+// of validators (i.e. consensus nodes) when converted to bech32.
 func ConsAddress() string {
 	pk := ed25519.GenPrivKey().PubKey()
 	consensusAddress := tmhash.SumTruncated(pk.Address())
