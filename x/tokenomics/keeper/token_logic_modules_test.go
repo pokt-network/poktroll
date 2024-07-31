@@ -246,6 +246,13 @@ func TestProcessTokenLogicModules_AppStakeTooLow(t *testing.T) {
 		RootHash: testproof.SmstRootWithSum(expectedAppBurn.Amount.Uint64()),
 	}
 
+	// Add a block proposer address to the context
+	valAddr, err := cosmostypes.ValAddressFromBech32(sample.ConsAddress())
+	require.NoError(t, err)
+	consensusAddr := cosmostypes.ConsAddress(valAddr)
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx).WithProposer(consensusAddr)
+
+	// Process the token logic modules
 	err = keepers.ProcessTokenLogicModules(ctx, &claim)
 	require.NoError(t, err)
 
@@ -323,6 +330,7 @@ func TestProcessTokenLogicModules_AppNotFound(t *testing.T) {
 		RootHash: testproof.SmstRootWithSum(42),
 	}
 
+	// Process the token logic modules
 	err := keeper.ProcessTokenLogicModules(ctx, &claim)
 	require.Error(t, err)
 	require.ErrorIs(t, err, tokenomicstypes.ErrTokenomicsApplicationNotFound)
