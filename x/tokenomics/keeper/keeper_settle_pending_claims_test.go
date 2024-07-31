@@ -19,6 +19,7 @@ import (
 	testutilevents "github.com/pokt-network/poktroll/testutil/events"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	testutilproof "github.com/pokt-network/poktroll/testutil/proof"
+	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/testutil/testkeyring"
 	"github.com/pokt-network/poktroll/testutil/testtree"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -59,6 +60,12 @@ func (s *TestSuite) SetupTest() {
 
 	s.keepers, s.ctx = keepertest.NewTokenomicsModuleKeepers(s.T(), nil)
 	s.sdkCtx = cosmostypes.UnwrapSDKContext(s.ctx).WithBlockHeight(1)
+
+	// Add a block proposer address to the context
+	valAddr, err := cosmostypes.ValAddressFromBech32(sample.ConsAddress())
+	require.NoError(t, err)
+	consensusAddr := cosmostypes.ConsAddress(valAddr)
+	s.sdkCtx = s.sdkCtx.WithProposer(consensusAddr)
 	s.ctx = s.sdkCtx
 
 	// Construct a keyring to hold the keypairs for the accounts used in the test.
@@ -84,7 +91,10 @@ func (s *TestSuite) SetupTest() {
 		preGeneratedAccts,
 	).String()
 
-	service := &sharedtypes.Service{Id: testServiceId}
+	service := &sharedtypes.Service{
+		Id:           testServiceId,
+		OwnerAddress: sample.AccAddress(),
+	}
 	s.keepers.SetService(s.ctx, *service)
 
 	supplierStake := types.NewCoin("upokt", math.NewInt(1000000))

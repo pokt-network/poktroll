@@ -71,7 +71,7 @@ type TokenLogicModuleProcessor func(
 // tokenLogicModuleProcessorMap is a map of token logic modules to their respective processors.
 var tokenLogicModuleProcessorMap = map[TokenLogicModule]TokenLogicModuleProcessor{
 	TLMRelayBurnEqualsMint: Keeper.TokenLogicModuleRelayBurnEqualsMint,
-	// TLMGlobalMint:          Keeper.TokenLogicModuleGlobalMint,
+	TLMGlobalMint:          Keeper.TokenLogicModuleGlobalMint,
 }
 
 func init() {
