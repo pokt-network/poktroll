@@ -170,6 +170,9 @@ func TokenomicsKeeperWithActorAddrs(
 	mockBankKeeper.EXPECT().
 		SendCoinsFromModuleToAccount(gomock.Any(), suppliertypes.ModuleName, gomock.Any(), gomock.Any()).
 		AnyTimes()
+	mockBankKeeper.EXPECT().
+		SendCoinsFromModuleToAccount(gomock.Any(), tokenomicstypes.ModuleName, gomock.Any(), gomock.Any()).
+		AnyTimes()
 
 	// Mock the account keeper
 	mockAccountKeeper := mocks.NewMockAccountKeeper(ctrl)
@@ -266,9 +269,10 @@ func NewTokenomicsModuleKeepers(
 		// These module accounts are necessary in order to settle balances
 		// during claim expiration.
 		map[string][]string{
-			minttypes.ModuleName:     {authtypes.Minter},
-			suppliertypes.ModuleName: {authtypes.Minter, authtypes.Burner},
-			apptypes.ModuleName:      {authtypes.Minter, authtypes.Burner},
+			minttypes.ModuleName:       {authtypes.Minter},
+			suppliertypes.ModuleName:   {authtypes.Minter, authtypes.Burner},
+			apptypes.ModuleName:        {authtypes.Minter, authtypes.Burner},
+			tokenomicstypes.ModuleName: {authtypes.Minter, authtypes.Burner},
 		},
 		addrCodec,
 		app.AccountAddressPrefix,

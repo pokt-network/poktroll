@@ -35,6 +35,7 @@ func init() {
 	cmd.InitSDKConfig()
 }
 
+// TODO_TECHDEBT(@olshansk): Consolidate the setup for all tests that use TokenomicsModuleKeepers
 type TestSuite struct {
 	suite.Suite
 
@@ -84,6 +85,7 @@ func (s *TestSuite) SetupTest() {
 	).String()
 
 	service := &sharedtypes.Service{Id: testServiceId}
+	s.keepers.SetService(s.ctx, *service)
 
 	supplierStake := types.NewCoin("upokt", math.NewInt(1000000))
 	supplier := sharedtypes.Supplier{
@@ -251,8 +253,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequiredAndNotProv
 	// Confirm an expiration event was emitted
 	events := sdkCtx.EventManager().Events()
 	require.Len(t, events, 5) // minting, burning, settling, etc..
-	expectedEvents := testutilevents.FilterEvents[*tokenomicstypes.EventClaimExpired](t,
-		events, "poktroll.tokenomics.EventClaimExpired")
+	expectedEvents := testutilevents.FilterEvents[*tokenomicstypes.EventClaimExpired](t, events, "poktroll.tokenomics.EventClaimExpired")
 	require.Len(t, expectedEvents, 1)
 
 	// Validate the event
@@ -302,8 +303,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOn
 	// Confirm an expiration event was emitted
 	events := sdkCtx.EventManager().Events()
 	require.Len(t, events, 5) // minting, burning, settling, etc..
-	expectedEvents := testutilevents.FilterEvents[*tokenomicstypes.EventClaimExpired](t,
-		events, "poktroll.tokenomics.EventClaimExpired")
+	expectedEvents := testutilevents.FilterEvents[*tokenomicstypes.EventClaimExpired](t, events, "poktroll.tokenomics.EventClaimExpired")
 	require.Len(t, expectedEvents, 1)
 
 	// Validate the event
@@ -351,8 +351,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimSettled_ProofRequiredAndProvide
 
 	// Confirm an settlement event was emitted
 	events := sdkCtx.EventManager().Events()
-	expectedEvents := testutilevents.FilterEvents[*tokenomicstypes.EventClaimSettled](t,
-		events, "poktroll.tokenomics.EventClaimSettled")
+	expectedEvents := testutilevents.FilterEvents[*tokenomicstypes.EventClaimSettled](t, events, "poktroll.tokenomics.EventClaimSettled")
 	require.Len(t, expectedEvents, 1)
 
 	// Validate the event
@@ -403,8 +402,7 @@ func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_Vi
 
 	// Confirm an settlement event was emitted
 	events := sdkCtx.EventManager().Events()
-	expectedEvents := testutilevents.FilterEvents[*tokenomicstypes.EventClaimSettled](t,
-		events, "poktroll.tokenomics.EventClaimSettled")
+	expectedEvents := testutilevents.FilterEvents[*tokenomicstypes.EventClaimSettled](t, events, "poktroll.tokenomics.EventClaimSettled")
 	require.Len(t, expectedEvents, 1)
 	expectedEvent := expectedEvents[0]
 	require.Equal(t, prooftypes.ProofRequirementReason_PROBABILISTIC, expectedEvent.GetProofRequirement())
@@ -456,8 +454,7 @@ func (s *TestSuite) TestSettlePendingClaims_Settles_WhenAProofIsNotRequired() {
 
 	// Confirm an expiration event was emitted
 	events := sdkCtx.EventManager().Events()
-	expectedEvents := testutilevents.FilterEvents[*tokenomicstypes.EventClaimSettled](t,
-		events, "poktroll.tokenomics.EventClaimSettled")
+	expectedEvents := testutilevents.FilterEvents[*tokenomicstypes.EventClaimSettled](t, events, "poktroll.tokenomics.EventClaimSettled")
 	require.Len(t, expectedEvents, 1)
 
 	// Validate the event

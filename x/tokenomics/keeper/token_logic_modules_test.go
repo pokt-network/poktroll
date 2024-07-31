@@ -14,6 +14,7 @@ import (
 	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
 	testproof "github.com/pokt-network/poktroll/testutil/proof"
@@ -26,6 +27,10 @@ import (
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
+
+func init() {
+	cmd.InitSDKConfig()
+}
 
 func TestProcessTokenLogicModules_HandleAppGoingIntoDebt(t *testing.T) {
 	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil)
@@ -135,7 +140,14 @@ func TestProcessTokenLogicModules_ValidAccounting(t *testing.T) {
 		RootHash: testproof.SmstRootWithSum(expectedAppBurn.Amount.Uint64()),
 	}
 
-	err = keepers.ProcessTokenLogicModules(ctx, &claim)
+	// Add a block proposer address to the context
+	valAddr, err := cosmostypes.ValAddressFromBech32(sample.ConsAddress())
+	require.NoError(t, err)
+	consensusAddr := cosmostypes.ConsAddress(valAddr)
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx).WithProposer(consensusAddr)
+
+	// Process the token logic modules
+	err = keepers.ProcessTokenLogicModules(sdkCtx, &claim)
 	require.NoError(t, err)
 
 	// Assert that `applicationAddress` account balance is *unchanged*
