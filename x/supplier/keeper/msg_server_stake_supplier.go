@@ -96,7 +96,9 @@ func (k msgServer) createSupplier(
 	msg *types.MsgStakeSupplier,
 ) sharedtypes.Supplier {
 	sharedParams := k.sharedKeeper.GetParams(ctx)
-	nextSessionStartHeight := getNextSessionStartHeight(ctx, &sharedParams)
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	currentHeight := sdkCtx.BlockHeight()
+	nextSessionStartHeight := shared.GetNextSessionStartHeight(&sharedParams, currentHeight)
 
 	// Register activation height for each service. Since the supplier is new,
 	// all services are activated at the end of the current session.
@@ -140,7 +142,9 @@ func (k msgServer) updateSupplier(
 	}
 
 	sharedParams := k.sharedKeeper.GetParams(ctx)
-	nextSessionStartHeight := getNextSessionStartHeight(ctx, &sharedParams)
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	currentHeight := sdkCtx.BlockHeight()
+	nextSessionStartHeight := shared.GetNextSessionStartHeight(&sharedParams, currentHeight)
 
 	// Update activation height for services update. New services are activated at the
 	// end of the current session, while existing ones keep their activation height.
@@ -166,12 +170,4 @@ func (k msgServer) updateSupplier(
 	supplier.ServicesActivationHeightsMap = ServicesActivationHeightMap
 
 	return nil
-}
-
-// getNextSessionStartHeight returns the current height's next session start height.
-func getNextSessionStartHeight(ctx context.Context, sharedParams *sharedtypes.Params) int64 {
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	currentHeight := sdkCtx.BlockHeight()
-
-	return shared.GetSessionEndHeight(sharedParams, currentHeight) + 1
 }
