@@ -31,6 +31,9 @@ const TargetNumRelays = uint64(10e4)
 // TODO_MAINNET: Use a language agnostic float implementation or arithmetic library
 // to ensure deterministic results across different language implementations of the
 // protocol.
+//
+// TODO_MAINNET(@olshansk, @ramiro): Play around with the value N for EMA to
+// capture what the memory should be.
 var emaSmoothingFactor = new(big.Float).SetFloat64(0.1)
 
 // UpdateRelayMiningDifficulty updates the on-chain relay mining difficulty

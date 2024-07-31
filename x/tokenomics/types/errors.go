@@ -27,5 +27,5 @@ var (
 	ErrTokenomicsDuplicateIndex               = sdkerrors.Register(ModuleName, 1120, "cannot have a duplicate index")
 	ErrTokenomicsMissingRelayMiningDifficulty = sdkerrors.Register(ModuleName, 1121, "missing relay mining difficulty")
 	ErrTokenomicsApplicationOverserviced      = sdkerrors.Register(ModuleName, 1122, "application was overserviced")
-	ErrTokenomicsApplicationNoServiceConfigs  = sdkerrors.Register(ModuleName, 1123, "application has no service configs")
+	ErrTokenomicsServiceNotFound              = sdkerrors.Register(ModuleName, 1123, "service not found")
 )

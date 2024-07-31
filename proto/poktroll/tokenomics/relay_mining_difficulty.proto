@@ -15,8 +15,6 @@ message RelayMiningDifficulty {
     int64 block_height = 2;
 
     // The exponential moving average of the number of relays for this service.
-    // TODO_MAINNET(@olshansk, @ramiro): Play around with the value N for EMA to
-    // capture what the memory shold be.
     uint64 num_relays_ema = 3;
 
     // The target hash determining the difficulty to mine relays for this service.

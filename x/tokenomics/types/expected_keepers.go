@@ -1,4 +1,4 @@
-//go:generate mockgen -destination ../../../testutil/tokenomics/mocks/expected_keepers_mock.go -package mocks . AccountKeeper,BankKeeper,ApplicationKeeper,SupplierKeeper,ProofKeeper,SharedKeeper,SessionKeeper
+//go:generate mockgen -destination ../../../testutil/tokenomics/mocks/expected_keepers_mock.go -package mocks . AccountKeeper,BankKeeper,ApplicationKeeper,SupplierKeeper,ProofKeeper,SharedKeeper,SessionKeeper,ServiceKeeper
 
 package types
 
@@ -78,4 +78,8 @@ type SupplierKeeper interface {
 	GetSupplier(ctx context.Context, supplierAddr string) (supplier sharedtypes.Supplier, found bool)
 	GetAllSuppliers(ctx context.Context) (suppliers []sharedtypes.Supplier)
 	SetSupplier(ctx context.Context, supplier sharedtypes.Supplier)
+}
+
+type ServiceKeeper interface {
+	GetService(ctx context.Context, serviceId string) (service sharedtypes.Service, found bool)
 }

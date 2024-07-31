@@ -129,7 +129,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 		// 2. The claim requires a proof and a valid proof was found.
 
 		// Manage the mint & burn accounting for the claim.
-		if err = k.SettleSessionAccounting(ctx, &claim); err != nil {
+		if err = k.ProcessTokenLogicModules(ctx, &claim); err != nil {
 			logger.Error(fmt.Sprintf("error settling session accounting for claim %q: %v", claim.SessionHeader.SessionId, err))
 			return settledResult, expiredResult, err
 		}
