@@ -50,11 +50,13 @@ func TestMsgUpdateParam_UpdateClaimWindowOpenOffsetBlocks(t *testing.T) {
 
 	defaultParams := sharedtypes.DefaultParams()
 
-	// Get the difference between the previous claim window open offset blocks and its
-	// new value to update the supplier unbonding period such as it is greater than
-	// the cumulative proof window close blocks to pass UpdateParam validation.
-	paramDelta := uint64(expectedClaimWindowOpenOffestBlocks) - defaultParams.ClaimWindowOpenOffsetBlocks
-	defaultParams.SupplierUnbondingPeriodSessions = getMinSupplierUnbondingPeriodSessions(&defaultParams, paramDelta)
+	// Update the SupplierUnbondigPeriodSessions such that it is greater than the
+	// cumulative proof window close blocks to pass UpdateParam validation.
+	defaultParams.SupplierUnbondingPeriodSessions = getMinSupplierUnbondingPeriodSessions(
+		&defaultParams,
+		defaultParams.ClaimWindowOpenOffsetBlocks,
+		uint64(expectedClaimWindowOpenOffestBlocks),
+	)
 
 	// Set the parameters to their default values
 	require.NoError(t, k.SetParams(ctx, defaultParams))
@@ -85,11 +87,13 @@ func TestMsgUpdateParam_UpdateClaimWindowCloseOffsetBlocks(t *testing.T) {
 
 	defaultParams := sharedtypes.DefaultParams()
 
-	// Get the difference between the previous claim window close offset blocks and its
-	// new value to update the supplier unbonding period such as it is greater than
-	// the cumulative proof window close blocks to pass UpdateParam validation.
-	paramDelta := uint64(expectedClaimWindowCloseOffestBlocks) - defaultParams.ClaimWindowCloseOffsetBlocks
-	defaultParams.SupplierUnbondingPeriodSessions = getMinSupplierUnbondingPeriodSessions(&defaultParams, paramDelta)
+	// Update the SupplierUnbondigPeriodSessions such that it is greater than the
+	// cumulative proof window close blocks to pass UpdateParam validation.
+	defaultParams.SupplierUnbondingPeriodSessions = getMinSupplierUnbondingPeriodSessions(
+		&defaultParams,
+		defaultParams.ClaimWindowCloseOffsetBlocks,
+		uint64(expectedClaimWindowCloseOffestBlocks),
+	)
 
 	// Set the parameters to their default values
 	require.NoError(t, k.SetParams(ctx, defaultParams))
@@ -120,11 +124,13 @@ func TestMsgUpdateParam_UpdateProofWindowOpenOffsetBlocks(t *testing.T) {
 
 	defaultParams := sharedtypes.DefaultParams()
 
-	// Get the difference between the previous proof window open offset blocks and its
-	// new value to update the supplier unbonding period blocks such as it is greater
-	// than the cumulative proof window close blocks to pass UpdateParam validation.
-	paramDelta := uint64(expectedProofWindowOpenOffestBlocks) - defaultParams.ProofWindowOpenOffsetBlocks
-	defaultParams.SupplierUnbondingPeriodSessions = getMinSupplierUnbondingPeriodSessions(&defaultParams, paramDelta)
+	// Update the SupplierUnbondigPeriodSessions such that it is greater than the
+	// cumulative proof window close blocks to pass UpdateParam validation.
+	defaultParams.SupplierUnbondingPeriodSessions = getMinSupplierUnbondingPeriodSessions(
+		&defaultParams,
+		defaultParams.ProofWindowOpenOffsetBlocks,
+		uint64(expectedProofWindowOpenOffestBlocks),
+	)
 
 	// Set the parameters to their default values
 	require.NoError(t, k.SetParams(ctx, defaultParams))
@@ -155,11 +161,13 @@ func TestMsgUpdateParam_UpdateProofWindowCloseOffsetBlocks(t *testing.T) {
 
 	defaultParams := sharedtypes.DefaultParams()
 
-	// Get the difference between the previous proof window close offset blocks and its
-	// new value to update the supplier unbonding period blocks such as it is greater
-	// than the cumulative proof window close blocks to pass UpdateParam validation.
-	paramDelta := uint64(expectedProofWindowCloseOffestBlocks) - defaultParams.ProofWindowCloseOffsetBlocks
-	defaultParams.SupplierUnbondingPeriodSessions = getMinSupplierUnbondingPeriodSessions(&defaultParams, paramDelta)
+	// Update the SupplierUnbondigPeriodSessions such that it is greater than the
+	// cumulative proof window close blocks to pass UpdateParam validation.
+	defaultParams.SupplierUnbondingPeriodSessions = getMinSupplierUnbondingPeriodSessions(
+		&defaultParams,
+		defaultParams.ProofWindowCloseOffsetBlocks,
+		uint64(expectedProofWindowCloseOffestBlocks),
+	)
 
 	// Set the parameters to their default values
 	require.NoError(t, k.SetParams(ctx, defaultParams))
@@ -255,7 +263,12 @@ func TestMsgUpdateParam_UpdateSupplierUnbondingPeriodSessions(t *testing.T) {
 
 // getMinSupplierUnbondingPeriodSessions returns the minimum supplier unbonding period
 // in session number that is greater than the cumulative proof window close blocks.
-func getMinSupplierUnbondingPeriodSessions(params *sharedtypes.Params, deltaBlocks uint64) uint64 {
+func getMinSupplierUnbondingPeriodSessions(
+	params *sharedtypes.Params,
+	oldParamBlocksValue uint64,
+	newParamBlocksValue uint64,
+) uint64 {
+	deltaBlocks := newParamBlocksValue - oldParamBlocksValue
 	newProofWindowCloseBlobcks := types.GetSessionEndToProofWindowCloseBlocks(params) + deltaBlocks
 
 	return (newProofWindowCloseBlobcks / params.NumBlocksPerSession) + 1
