@@ -403,11 +403,11 @@ The following is an example config to get you started:
 
 ```bash
 cat <<EOF >> shannon_relayminer_config.yaml
-default_signing_key_names: [ "keybase-key-name" ]
+default_signing_key_names: [ "shannon_supplier" ]
 smt_store_path: smt_stores
 metrics:
   enabled: true
-  addr: :9090
+  addr: :9999 # you may need to change the metrics server port due to port conflicts.
 pocket_node:
   query_node_rpc_url: tcp://127.0.0.1:26657
   query_node_grpc_url: tcp://127.0.0.1:9090
@@ -651,7 +651,7 @@ Given that we just staked a few suppliers, you customize the query to look for
 
 ## 6. Dynamically Scaling LocalNet
 
-We went through a low of steps above just so you can get a feel for how things work.
+We went through a flow of steps above just so you can get a feel for how things work.
 
 That said, you can dynamically scale the number of any actors in LocalNet by ony changing one line!
 

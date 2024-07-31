@@ -44,9 +44,9 @@ message MsgUpdateParamsResponse {}
 // permissionless.
 // TODO_BETA: Add Champions / Sources once its fully defined.
 message MsgAddService {
-  option (cosmos.msg.v1.signer) = "address"; // https://docs.cosmos.network/main/build/building-modules/messages-and-queries
-  string address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the service supplier using cosmos' ScalarDescriptor
-  poktroll.shared.Service service = 2 [(gogoproto.nullable) = false]; // The Service for which the supplier is adding to the network
+  option (cosmos.msg.v1.signer) = "owner_address"; // https://docs.cosmos.network/main/build/building-modules/messages-and-queries
+  string owner_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the service owner using cosmos' ScalarDescriptor
+  poktroll.shared.Service service = 2 [(gogoproto.nullable) = false]; // The Service being added to the network
 }
 
 message MsgAddServiceResponse {}
