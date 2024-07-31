@@ -32,19 +32,10 @@ const (
 	MintAllocationSupplier    = 0.7
 	MintAllocationSourceOwner = 0.15
 	MintAllocationApplication = 0.0
-	// TODO_UPNEXT(@olshansk): Remove this. An ephemeral value for testing & design purposes.
+	// TODO_UPNEXT(@olshansk): Remove this. An ephemeral placeholder before
+	// real values are introduced.
 	MintGlobalAllocation = 0.0000000
 )
-
-type TokenLogicModuleProcessor func(
-	Keeper,
-	context.Context,
-	*sharedtypes.Service,
-	*apptypes.Application,
-	*sharedtypes.Supplier,
-	cosmostypes.Coin,
-	*tokenomictypes.RelayMiningDifficulty,
-) error
 
 type TokenLogicModule int
 
@@ -65,10 +56,22 @@ const (
 	// TODO_UPNEXT(@olshansk): Add more TLMs
 )
 
+// TokenLogicModuleProcessor is the method signature that all token logic modules
+// are expected to implement.
+type TokenLogicModuleProcessor func(
+	Keeper,
+	context.Context,
+	*sharedtypes.Service,
+	*apptypes.Application,
+	*sharedtypes.Supplier,
+	cosmostypes.Coin,
+	*tokenomictypes.RelayMiningDifficulty,
+) error
+
 // tokenLogicModuleProcessorMap is a map of token logic modules to their respective processors.
 var tokenLogicModuleProcessorMap = map[TokenLogicModule]TokenLogicModuleProcessor{
 	TLMRelayBurnEqualsMint: Keeper.TokenLogicModuleRelayBurnEqualsMint,
-	TLMGlobalMint:          Keeper.TokenLogicModuleGlobalMint,
+	// TLMGlobalMint:          Keeper.TokenLogicModuleGlobalMint,
 }
 
 func init() {
@@ -196,8 +199,8 @@ func (k Keeper) ProcessTokenLogicModules(
 		"compute_units", claimComputeUnits,
 		"session_id", sessionHeader.GetSessionId(),
 		"service_id", sessionHeader.GetSessionId(),
-		"supplier", supplierAddr,
-		"application", applicationAddress,
+		"supplier", supplier.Address,
+		"application", application.Address,
 	)
 	logger.Info(fmt.Sprintf("About to start processing TLMs for (%d) compute units equaling to (%s) coins", claimComputeUnits, settlementCoin))
 
@@ -212,11 +215,11 @@ func (k Keeper) ProcessTokenLogicModules(
 
 	// Update the application's on-chain record
 	k.applicationKeeper.SetApplication(ctx, application)
-	logger.Info(fmt.Sprintf("updated on-chain application record with address %q", applicationAddress))
+	logger.Info(fmt.Sprintf("updated on-chain application record with address %q", application.Address))
 
 	// Update the suppliers's on-chain record
 	k.supplierKeeper.SetSupplier(ctx, supplier)
-	logger.Info(fmt.Sprintf("updated on-chain supplier record with address %q", supplierAddr))
+	logger.Info(fmt.Sprintf("updated on-chain supplier record with address %q", supplier.Address))
 
 	// Update isSuccessful to true for telemetry
 	isSuccessful = true
@@ -257,13 +260,24 @@ func (k Keeper) TokenLogicModuleRelayBurnEqualsMint(
 	}
 	logger.Info(fmt.Sprintf("minted (%v) coins in the supplier module", settlementCoins))
 
-	// Verify that the application has enough uPOKT to pay for the services it consumed
-	if application.GetStake().IsLT(settlementCoins) {
-		settlementCoins, err = k.handleOverservicedApplication(ctx, application, settlementCoins)
-		if err != nil {
-			return err
-		}
+	// Send the newley minted uPOKT from the supplier module account
+	// to the supplier's account.
+	if err = k.bankKeeper.SendCoinsFromModuleToAccount(
+		ctx, suppliertypes.ModuleName, supplierAddr, sdk.NewCoins(settlementCoins),
+	); err != nil {
+		return tokenomicstypes.ErrTokenomicsSupplierModuleSendFailed.Wrapf(
+			"sending (%s) to supplier with address %s: %v",
+			settlementCoins,
+			supplier.Address,
+			err,
+		)
 	}
+	logger.Info(fmt.Sprintf("sent (%v) from the supplier module to the supplier account with address %q", settlementCoins, supplier.Address))
+
+	// TODO_MAINNET: Decide on the behaviour here when an app is over serviced.
+	// If an app has 10 POKT staked, but the supplier earned 20 POKT. We still
+	// end up minting 20 POKT but only burn 10 POKT from the app. There are
+	// questions and nuance here that needs to be addressed.
 
 	// Verify that the application has enough uPOKT to pay for the services it consumed
 	if application.GetStake().IsLT(settlementCoins) {
@@ -282,20 +296,6 @@ func (k Keeper) TokenLogicModuleRelayBurnEqualsMint(
 	}
 	logger.Info(fmt.Sprintf("burned (%v) from the application module account", settlementCoins))
 
-	// Send the newley minted uPOKT from the supplier module account
-	// to the supplier's account.
-	if err = k.bankKeeper.SendCoinsFromModuleToAccount(
-		ctx, suppliertypes.ModuleName, supplierAddr, sdk.NewCoins(settlementCoins),
-	); err != nil {
-		return tokenomicstypes.ErrTokenomicsSupplierModuleSendFailed.Wrapf(
-			"sending (%s) to supplier with address %s: %v",
-			settlementCoins,
-			supplier.Address,
-			err,
-		)
-	}
-	logger.Info(fmt.Sprintf("sent (%v) from the supplier module to the supplier account with address %q", settlementCoins, supplier.Address))
-
 	// Update the application's on-chain stake
 	newAppStake, err := application.Stake.SafeSub(settlementCoins)
 	if err != nil {
@@ -308,6 +308,8 @@ func (k Keeper) TokenLogicModuleRelayBurnEqualsMint(
 }
 
 // TokenLogicModuleGlobalMint processes the business logic for the GlobalMint TLM.
+// TODO_UPNEXT(@olshansk): Delete this in favor of a real TLM that mints tokens
+// and distributes them to the appropriate accounts via boosts.
 func (k Keeper) TokenLogicModuleGlobalMint(
 	ctx context.Context,
 	service *sharedtypes.Service,
@@ -329,7 +331,7 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 		return tokenomicstypes.ErrTokenomicsModuleMintFailed.Wrapf(
 			"minting %s to the tokenomics module account: %v", newMintCoins, err)
 	}
-	logger.Info(fmt.Sprintf("minted %s in the tokenomics module", newMintCoins))
+	logger.Info(fmt.Sprintf("minted (%v) coins in the tokenomics module", newMintCoins))
 
 	// Send a portion of the rewards to the application
 	if err := k.sendRewardsToAccount(ctx, application.Address, settlementAmtFloat, MintAllocationApplication); err != nil {

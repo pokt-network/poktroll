@@ -253,7 +253,7 @@ func TestProcessTokenLogicModules_AppStakeTooLow(t *testing.T) {
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx).WithProposer(consensusAddr)
 
 	// Process the token logic modules
-	err = keepers.ProcessTokenLogicModules(ctx, &claim)
+	err = keepers.ProcessTokenLogicModules(sdkCtx, &claim)
 	require.NoError(t, err)
 
 	// Assert that `applicationAddress` account balance is *unchanged*
@@ -287,7 +287,6 @@ func TestProcessTokenLogicModules_AppStakeTooLow(t *testing.T) {
 	supplierModuleEndBalance := getBalance(t, ctx, keepers, supplierModuleAddress)
 	require.EqualValues(t, supplierModuleStartBalance, supplierModuleEndBalance)
 
-	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	events := sdkCtx.EventManager().Events()
 
 	appAddrAttribute, _ := events.GetAttributes("application_addr")
@@ -308,14 +307,7 @@ func TestProcessTokenLogicModules_AppStakeTooLow(t *testing.T) {
 }
 
 func TestProcessTokenLogicModules_AppNotFound(t *testing.T) {
-	service := &sharedtypes.Service{
-		Id:                   "svc1",
-		Name:                 "svcName1",
-		ComputeUnitsPerRelay: 1,
-		OwnerAddress:         sample.AccAddress(),
-	}
-
-	keeper, ctx, _, supplierAddr := testkeeper.TokenomicsKeeperWithActorAddrs(t, service)
+	keeper, ctx, _, supplierAddr, service := testkeeper.TokenomicsKeeperWithActorAddrs(t)
 
 	// The base claim whose root will be customized for testing purposes
 	claim := prooftypes.Claim{
@@ -337,16 +329,7 @@ func TestProcessTokenLogicModules_AppNotFound(t *testing.T) {
 }
 
 func TestProcessTokenLogicModules_InvalidRoot(t *testing.T) {
-
-	// Create a service that can be registered in the application and used in the claims
-	service := &sharedtypes.Service{
-		Id:                   "svc1",
-		Name:                 "svcName1",
-		ComputeUnitsPerRelay: 1,
-		OwnerAddress:         sample.AccAddress(),
-	}
-
-	keeper, ctx, appAddr, supplierAddr := testkeeper.TokenomicsKeeperWithActorAddrs(t, service)
+	keeper, ctx, appAddr, supplierAddr, service := testkeeper.TokenomicsKeeperWithActorAddrs(t)
 
 	// Define test cases
 	tests := []struct {
@@ -415,15 +398,7 @@ func TestProcessTokenLogicModules_InvalidRoot(t *testing.T) {
 }
 
 func TestProcessTokenLogicModules_InvalidClaim(t *testing.T) {
-	// Create a service that can be registered in the application and used in the claims
-	service := &sharedtypes.Service{
-		Id:                   "svc1",
-		Name:                 "svcName1",
-		ComputeUnitsPerRelay: 1,
-		OwnerAddress:         sample.AccAddress(),
-	}
-
-	keeper, ctx, appAddr, supplierAddr := testkeeper.TokenomicsKeeperWithActorAddrs(t, service)
+	keeper, ctx, appAddr, supplierAddr, service := testkeeper.TokenomicsKeeperWithActorAddrs(t)
 
 	// Define test cases
 	tests := []struct {

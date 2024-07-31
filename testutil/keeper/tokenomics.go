@@ -74,7 +74,7 @@ type TokenomicsModuleKeepersOpt func(context.Context, *TokenomicsModuleKeepers) 
 
 func TokenomicsKeeper(t testing.TB) (tokenomicsKeeper tokenomicskeeper.Keeper, ctx context.Context) {
 	t.Helper()
-	k, ctx, _, _ := TokenomicsKeeperWithActorAddrs(t, nil)
+	k, ctx, _, _, _ := TokenomicsKeeperWithActorAddrs(t)
 	return k, ctx
 }
 
@@ -83,17 +83,22 @@ func TokenomicsKeeper(t testing.TB) (tokenomicsKeeper tokenomicskeeper.Keeper, c
 // a result of the evolution of the testutil package.
 // TODO_REFACTOR(@Olshansk): Rather than making `service`, `appAddr` and `supplierAddr`
 // explicit params, make them passable by the caller as options.
-func TokenomicsKeeperWithActorAddrs(
-	t testing.TB,
-	service *sharedtypes.Service,
-) (
+func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 	tokenomicsKeeper tokenomicskeeper.Keeper,
 	ctx context.Context,
 	appAddr string,
 	supplierAddr string,
+	service *sharedtypes.Service,
 ) {
 	t.Helper()
 	storeKey := storetypes.NewKVStoreKey(tokenomicstypes.StoreKey)
+
+	service = &sharedtypes.Service{
+		Id:                   "svc1",
+		Name:                 "svcName1",
+		ComputeUnitsPerRelay: 1,
+		OwnerAddress:         sample.AccAddress(),
+	}
 
 	// Initialize the in-memory database.
 	db := dbm.NewMemDB()
@@ -110,16 +115,9 @@ func TokenomicsKeeperWithActorAddrs(
 
 	// Prepare the test application.
 	application := apptypes.Application{
-		Address: sample.AccAddress(),
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100000)},
-	}
-
-	if service != nil {
-		application.ServiceConfigs = []*sharedtypes.ApplicationServiceConfig{
-			{
-				Service: service,
-			},
-		}
+		Address:        sample.AccAddress(),
+		Stake:          &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100000)},
+		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{Service: service}},
 	}
 
 	// Prepare the test supplier.
@@ -191,6 +189,7 @@ func TokenomicsKeeperWithActorAddrs(
 
 	// Mock the service keeper
 	mockServiceKeeper := mocks.NewMockServiceKeeper(ctrl)
+	mockServiceKeeper.EXPECT().GetService(gomock.Any(), service.Id).Return(*service, true).AnyTimes()
 
 	// Initialize the tokenomics keeper.
 	k := tokenomicskeeper.NewKeeper(
@@ -213,7 +212,7 @@ func TokenomicsKeeperWithActorAddrs(
 	// Initialize params
 	require.NoError(t, k.SetParams(sdkCtx, tokenomicstypes.DefaultParams()))
 
-	return k, sdkCtx, application.Address, supplier.Address
+	return k, sdkCtx, application.Address, supplier.Address, service
 }
 
 // NewTokenomicsModuleKeepers is a helper function to create a tokenomics keeper
