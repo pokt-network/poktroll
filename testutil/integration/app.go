@@ -267,7 +267,8 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		accountKeeper,
 		blockedAddresses,
 		authority.String(),
-		logger)
+		logger,
+	)
 
 	// Prepare the shared keeper and module
 	sharedKeeper := sharedkeeper.NewKeeper(
@@ -280,6 +281,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		cdc,
 		sharedKeeper,
 		accountKeeper,
+
 		bankKeeper,
 	)
 
@@ -289,6 +291,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		runtime.NewKVStoreService(storeKeys[servicetypes.StoreKey]),
 		logger,
 		authority.String(),
+
 		bankKeeper,
 	)
 	serviceModule := service.NewAppModule(
@@ -304,6 +307,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		runtime.NewKVStoreService(storeKeys[gatewaytypes.StoreKey]),
 		logger,
 		authority.String(),
+
 		bankKeeper,
 	)
 	gatewayModule := gateway.NewAppModule(
@@ -337,6 +341,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		runtime.NewKVStoreService(storeKeys[suppliertypes.StoreKey]),
 		logger,
 		authority.String(),
+
 		bankKeeper,
 		sharedKeeper,
 		serviceKeeper,
@@ -355,6 +360,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		runtime.NewKVStoreService(storeKeys[sessiontypes.StoreKey]),
 		logger,
 		authority.String(),
+
 		accountKeeper,
 		bankKeeper,
 		applicationKeeper,
@@ -374,6 +380,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		runtime.NewKVStoreService(storeKeys[prooftypes.StoreKey]),
 		logger,
 		authority.String(),
+
 		sessionKeeper,
 		applicationKeeper,
 		accountKeeper,
@@ -391,12 +398,15 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		runtime.NewKVStoreService(storeKeys[tokenomicstypes.StoreKey]),
 		logger,
 		authority.String(),
+
 		bankKeeper,
 		accountKeeper,
 		applicationKeeper,
+		supplierKeeper,
 		proofKeeper,
 		sharedKeeper,
 		sessionKeeper,
+		serviceKeeper,
 	)
 	tokenomicsModule := tokenomics.NewAppModule(
 		cdc,

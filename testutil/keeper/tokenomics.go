@@ -185,6 +185,10 @@ func TokenomicsKeeperWithActorAddrs(
 	// Mock the session keeper
 	mockSessionKeeper := mocks.NewMockSessionKeeper(ctrl)
 
+	// Mock the service keeper
+	mockServiceKeeper := mocks.NewMockServiceKeeper(ctrl)
+
+	// Initialize the tokenomics keeper.
 	k := tokenomicskeeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKey),
@@ -197,6 +201,7 @@ func TokenomicsKeeperWithActorAddrs(
 		mockProofKeeper,
 		mockSharedKeeper,
 		mockSessionKeeper,
+		mockServiceKeeper,
 	)
 
 	sdkCtx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
@@ -378,6 +383,7 @@ func NewTokenomicsModuleKeepers(
 		proofKeeper,
 		sharedKeeper,
 		sessionKeeper,
+		serviceKeeper,
 	)
 
 	require.NoError(t, tokenomicsKeeper.SetParams(ctx, tokenomicstypes.DefaultParams()))
