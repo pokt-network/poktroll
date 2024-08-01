@@ -3020,8 +3020,17 @@ type MsgUnstakeSupplier struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// The address of the owner (i.e. staker, custodial) that owns the funds for staking.
+	// By default, this address is the one that receives all the rewards unless owtherwise specified.
+	// The owner can initially stake the supplier and unstake it.
+	// All other configurations are managed by the operator.
 	OwnerAddress string `protobuf:"bytes,1,opt,name=owner_address,json=ownerAddress,proto3" json:"owner_address,omitempty"` // The Bech32 address of the owner (i.e. custodial, staker) using cosmos' ScalarDescriptor to ensure deterministic deterministic encoding using cosmos' ScalarDescriptor to ensure deterministic deterministic encoding
-	Address      string `protobuf:"bytes,2,opt,name=address,proto3" json:"address,omitempty"`                               // The Bech32 address of the operator (i.e. provider, non-custodial) using cosmos' ScalarDescriptor to ensure deterministic deterministic encoding using cosmos' ScalarDescriptor to ensure deterministic deterministic encoding
+	// The operator address of the supplier that operates it.
+	// The operator address can update the supplier's configurations excluding the owner
+	// and operator addresses which do not change over the supplier's lifespan.
+	// TODO(red-0ne): Rename this to `operator_address` include all downstream
+	// variables, comments, docs, tests, etc...
+	Address string `protobuf:"bytes,2,opt,name=address,proto3" json:"address,omitempty"` // The Bech32 address of the operator (i.e. provider, non-custodial) using cosmos' ScalarDescriptor to ensure deterministic deterministic encoding using cosmos' ScalarDescriptor to ensure deterministic deterministic encoding
 }
 
 func (x *MsgUnstakeSupplier) Reset() {

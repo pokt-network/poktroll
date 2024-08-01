@@ -38,12 +38,14 @@ func (k msgServer) UnstakeSupplier(
 	}
 
 	// Ensure that the message sender is the supplier owner.
-	if supplier.OwnerAddress != msg.OwnerAddress {
+	if err := supplier.EnsureOwner(msg.OwnerAddress); err != nil {
 		logger.Error(fmt.Sprintf(
 			"owner address %q in the message does not match the supplier's owner address %q",
 			msg.OwnerAddress,
 			supplier.OwnerAddress,
 		))
+
+		return nil, err
 	}
 
 	logger.Info(fmt.Sprintf("Supplier found. Unstaking supplier for address %s", msg.Address))

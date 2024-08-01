@@ -26,15 +26,16 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 // Supplier is the type defining the actor in Pocket Network that provides RPC services.
 type Supplier struct {
-	// The Bech32 address of the owner (i.e. custodial, staker) using cosmos'
-	// ScalarDescriptor to ensure deterministic encoding.
-	// This is the address that owns the funds for staking and is the one that
-	// receives the rewards.
+	// The address of the owner (i.e. staker, custodial) that owns the funds for staking.
+	// By default, this address is the one that receives all the rewards unless owtherwise specified.
+	// The owner can initially stake the supplier and unstake it.
+	// All other configurations are managed by the operator.
 	OwnerAddress string `protobuf:"bytes,1,opt,name=owner_address,json=ownerAddress,proto3" json:"owner_address,omitempty"`
-	// The Bech32 address of the operator (i.e. provider, non-custodial) using cosmos'
-	// ScalarDescriptor to ensure deterministic encoding.
-	// The operator address can update all the supplier's configurations, excluding
-	// the owner_address.
+	// The operator address of the supplier that operates it.
+	// The operator address can update the supplier's configurations excluding the owner
+	// and operator addresses which do not change over the supplier's lifespan.
+	// TODO(red-0ne): Rename this to `operator_address` include all downstream
+	// variables, comments, docs, tests, etc...
 	Address  string                   `protobuf:"bytes,2,opt,name=address,proto3" json:"address,omitempty"`
 	Stake    *types.Coin              `protobuf:"bytes,3,opt,name=stake,proto3" json:"stake,omitempty"`
 	Services []*SupplierServiceConfig `protobuf:"bytes,4,rep,name=services,proto3" json:"services,omitempty"`

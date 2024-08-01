@@ -40,12 +40,12 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 	var coinsToEscrow sdk.Coin
 	supplier, isSupplierFound := k.GetSupplier(ctx, msg.Address)
 
-	// Retain the previous operator address to check whether it changes after updating the supplier
-	var previousOperatorAddr string
 	if !isSupplierFound {
 		logger.Info(fmt.Sprintf("Supplier not found. Creating new supplier for address %q", msg.Address))
-		// Ensure that only supplier owner is able to stake.
-		if err := ensureMsgSenderIsSupplierOwner(msg); err != nil {
+		supplier = k.createSupplier(ctx, msg)
+
+		// Ensure that only the owner can stake a new supplier.
+		if err := supplier.EnsureOwner(msg.Sender); err != nil {
 			logger.Error(fmt.Sprintf(
 				"owner address %q in the message does not match the msg sender address %q",
 				msg.OwnerAddress,
@@ -54,24 +54,36 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 
 			return nil, err
 		}
-		supplier = k.createSupplier(ctx, msg)
+
 		coinsToEscrow = *msg.Stake
 	} else {
 		logger.Info(fmt.Sprintf("Supplier found. About to try updating supplier with address %q", msg.Address))
 
-		// Only the owner can update the supplier's owner and operator addresses.
-		if ownerOrOperatorAddressesChanged(msg, &supplier) {
-			if err := ensureMsgSenderIsSupplierOwner(msg); err != nil {
-				logger.Error("only the owner can update the supplier's owner and operator addresses")
+		// Ensure that only the operator can update the supplier info.
+		if err := supplier.EnsureOperator(msg.Sender); err != nil {
+			logger.Error(fmt.Sprintf(
+				"operator address %q in the message does not match the msg sender address %q",
+				msg.Address,
+				msg.Sender,
+			))
+			return nil, err
+		}
 
-				return nil, err
-			}
+		// Ensure that the owner addresses is not changed.
+		if err := supplier.EnsureOwner(msg.OwnerAddress); err != nil {
+			logger.Error("updating the supplier's owner address forbidden")
+
+			return nil, err
+		}
+
+		// Ensure that the operator addresses is not changed.
+		if err := supplier.EnsureOperator(msg.Address); err != nil {
+			logger.Error("updating the supplier's operator address forbidden")
+
+			return nil, err
 		}
 
 		currSupplierStake := *supplier.Stake
-		// Get the previous operator address to update the store by deleting the old
-		// key if it has been changed.
-		previousOperatorAddr = supplier.Address
 		if err = k.updateSupplier(ctx, &supplier, msg); err != nil {
 			logger.Error(fmt.Sprintf("could not update supplier for address %q due to error %v", msg.Address, err))
 			return nil, err
@@ -93,9 +105,9 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 	}
 
 	// Retrieve the account address of the supplier owner
-	supplierOwnerAddress, err := sdk.AccAddressFromBech32(msg.OwnerAddress)
+	supplierOwnerAddress, err := sdk.AccAddressFromBech32(supplier.OwnerAddress)
 	if err != nil {
-		logger.Error(fmt.Sprintf("could not parse address %q", msg.OwnerAddress))
+		logger.Error(fmt.Sprintf("could not parse address %q", supplier.OwnerAddress))
 		return nil, err
 	}
 
@@ -107,10 +119,6 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 	}
 	logger.Info(fmt.Sprintf("Successfully escrowed %v coins from %q to %q module account", coinsToEscrow, supplierOwnerAddress, types.ModuleName))
 
-	// Remove the previous supplier key if the operator address has changed
-	if hasDifferentOperatorAddr(previousOperatorAddr, &supplier) {
-		k.RemoveSupplier(ctx, previousOperatorAddr)
-	}
 	// Update the Supplier in the store
 	k.SetSupplier(ctx, supplier)
 	logger.Info(fmt.Sprintf("Successfully updated supplier stake for supplier: %+v", supplier))
@@ -138,15 +146,6 @@ func (k msgServer) updateSupplier(
 	supplier *sharedtypes.Supplier,
 	msg *types.MsgStakeSupplier,
 ) error {
-	// Check if the the msg owner address is the same as the current owner
-	if msg.OwnerAddress != supplier.OwnerAddress {
-		return types.ErrSupplierUnauthorized.Wrapf("msg OwnerAddress %q != supplier owner address %q", msg.OwnerAddress, supplier.OwnerAddress)
-	}
-
-	// Operator address should be already validated in `msg.ValidateBasic`.
-	// TODO_CONSIDERATION: Delay the operator address change until the next session.
-	supplier.Address = msg.Address
-
 	// Validate that the stake is not being lowered
 	if msg.Stake == nil {
 		return types.ErrSupplierInvalidStake.Wrapf("stake amount cannot be nil")
@@ -165,31 +164,4 @@ func (k msgServer) updateSupplier(
 	supplier.Services = msg.Services
 
 	return nil
-}
-
-// hasDifferentOperatorAddr checks if the new operator address differs from the old one.
-func hasDifferentOperatorAddr(oldOperatorAddress string, supplier *sharedtypes.Supplier) bool {
-	if oldOperatorAddress == "" {
-		return false
-	}
-
-	return oldOperatorAddress != supplier.Address
-}
-
-// ensureMsgSenderIsSupplierOwner returns an error if the message sender is not the supplier owner.
-func ensureMsgSenderIsSupplierOwner(msg *types.MsgStakeSupplier) error {
-	if msg.OwnerAddress == msg.Sender {
-		types.ErrSupplierUnauthorized.Wrapf(
-			"owner address %q in the message does not match the msg sender address %q",
-			msg.OwnerAddress,
-			msg.Sender,
-		)
-	}
-
-	return nil
-}
-
-// ownerOrOperatorAddressesChanged checks if the owner or operator addresses have changed.
-func ownerOrOperatorAddressesChanged(msg *types.MsgStakeSupplier, supplier *sharedtypes.Supplier) bool {
-	return msg.OwnerAddress != supplier.OwnerAddress || msg.Address != supplier.Address
 }

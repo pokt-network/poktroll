@@ -21,3 +21,29 @@ func (s *Supplier) IsActive(queryHeight int64) bool {
 	// will also need to be updated to reflect sessions when the supplier is not active.
 	return !s.IsUnbonding() || uint64(queryHeight) <= s.UnstakeSessionEndHeight
 }
+
+// EnsureOwner returns an error if the given address does not match supplier's owner address.
+func (s *Supplier) EnsureOwner(ownerAddress string) error {
+	if s.OwnerAddress != ownerAddress {
+		return ErrSharedUnauthorizedSupplierUpdate.Wrapf(
+			"msg.OwnerAddress %q != provided address %q",
+			s.OwnerAddress,
+			ownerAddress,
+		)
+	}
+
+	return nil
+}
+
+// EnsureOperator returns an error if the given address does not match supplier's operator address.
+func (s *Supplier) EnsureOperator(operatorAddress string) error {
+	if s.Address != operatorAddress {
+		return ErrSharedUnauthorizedSupplierUpdate.Wrapf(
+			"msg.OperatorAddress %q != provided address %q",
+			s.OwnerAddress,
+			operatorAddress,
+		)
+	}
+
+	return nil
+}

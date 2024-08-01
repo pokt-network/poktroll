@@ -240,8 +240,17 @@ func (m *MsgStakeSupplierResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_MsgStakeSupplierResponse proto.InternalMessageInfo
 
 type MsgUnstakeSupplier struct {
+	// The address of the owner (i.e. staker, custodial) that owns the funds for staking.
+	// By default, this address is the one that receives all the rewards unless owtherwise specified.
+	// The owner can initially stake the supplier and unstake it.
+	// All other configurations are managed by the operator.
 	OwnerAddress string `protobuf:"bytes,1,opt,name=owner_address,json=ownerAddress,proto3" json:"owner_address,omitempty"`
-	Address      string `protobuf:"bytes,2,opt,name=address,proto3" json:"address,omitempty"`
+	// The operator address of the supplier that operates it.
+	// The operator address can update the supplier's configurations excluding the owner
+	// and operator addresses which do not change over the supplier's lifespan.
+	// TODO(red-0ne): Rename this to `operator_address` include all downstream
+	// variables, comments, docs, tests, etc...
+	Address string `protobuf:"bytes,2,opt,name=address,proto3" json:"address,omitempty"`
 }
 
 func (m *MsgUnstakeSupplier) Reset()         { *m = MsgUnstakeSupplier{} }

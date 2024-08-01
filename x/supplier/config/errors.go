@@ -15,5 +15,5 @@ var (
 	ErrSupplierConfigInvalidURL            = sdkerrors.Register(types.ModuleName, 2105, "invalid endpoint url in supplier config")
 	ErrSupplierConfigEmptyContent          = sdkerrors.Register(types.ModuleName, 2106, "empty supplier config content")
 	ErrSupplierConfigInvalidStake          = sdkerrors.Register(types.ModuleName, 2107, "invalid stake amount in supplier config")
-	ErrSupplierConfigInvalidOwnerAddress   = sdkerrors.Register(types.ModuleName, 2108, "missing owner address in supplier config")
+	ErrSupplierConfigInvalidAddress        = sdkerrors.Register(types.ModuleName, 2108, "missing owner address in supplier config")
 )
