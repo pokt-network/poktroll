@@ -307,7 +307,11 @@ docker_wipe: check_docker warn_destructive prompt_user ## [WARNING] Remove all t
 ########################
 
 .PHONY: localnet_up
-localnet_up: check_docker_ps check_kind_context proto_regen localnet_regenesis ## Starts localnet
+localnet_up: check_docker_ps check_kind_context proto_regen localnet_regenesis ## Starts up a clean localnet
+	tilt up
+
+.PHONY: localnet_up_quick
+localnet_up_quick: check_docker_ps check_kind_context ## Starts up a localnet without regenerating fixtures
 	tilt up
 
 .PHONY: localnet_down
@@ -419,9 +423,12 @@ test_load_relays_stress_localnet: test_e2e_env warn_message_local_stress_test ##
 test_verbose: check_go_version ## Run all go tests verbosely
 	go test -count=1 -v -race -tags test ./...
 
+# NB: buildmode=pie is necessary to avoid linker errors on macOS.
+# It is not compatible with `-race`, which is why it's omitted here.
+# See ref for more details: https://github.com/golang/go/issues/54482#issuecomment-1251124908
 .PHONY: test_all
 test_all: warn_flaky_tests check_go_version ## Run all go tests showing detailed output only on failures
-	go test -count=1 -race -tags test ./...
+	go test -count=1 -buildmode=pie -tags test ./...
 
 .PHONY: test_all_with_integration
 test_all_with_integration: check_go_version ## Run all go tests, including those with the integration
