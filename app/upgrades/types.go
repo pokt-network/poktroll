@@ -7,8 +7,9 @@ import (
 	"github.com/pokt-network/poktroll/app/keepers"
 )
 
-// Upgrade represents a protocol upgrade in code. Once a `MsgSoftwareUpgrade` is submitted to the chain, and
-// `PlanName` matches the `Name` of the `Plan` inside the upgrade message, the upgrade will be scheduled for execution.
+// Upgrade represents a protocol upgrade in code.
+// Once a `MsgSoftwareUpgrade` is submitted on-chain, and `Upgrade.PlanName` matches the `Plan.Name`,
+// the upgrade will be scheduled for execution at the corresponding height.
 type Upgrade struct {
 	// PlanName is a name an upgrade is matched to from the on-chain `upgradetypes.Plan`.
 	PlanName string

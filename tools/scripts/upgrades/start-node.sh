@@ -1,6 +1,6 @@
 #!/bin/bash  
 
-# The script starts node locally (no LocalNet) with cosmovisor and waits for an upgrade.
+# The script starts a full node locally (not LocalNet) with cosmovisor and waits for an upgrade.
 # Cosmovisor: https://docs.cosmos.network/main/build/tooling/cosmovisor
 # Install with `go install cosmossdk.io/tools/cosmovisor/cmd/cosmovisor@v1.5.0`
 

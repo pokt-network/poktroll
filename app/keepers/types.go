@@ -67,6 +67,7 @@ type Keepers struct {
 	ScopedICAControllerKeeper capabilitykeeper.ScopedKeeper
 	ScopedICAHostKeeper       capabilitykeeper.ScopedKeeper
 
+	// Pocket specific keepers
 	ServiceKeeper     servicemodulekeeper.Keeper
 	GatewayKeeper     gatewaymodulekeeper.Keeper
 	ApplicationKeeper applicationmodulekeeper.Keeper

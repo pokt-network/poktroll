@@ -7,6 +7,7 @@ package upgrades
 // TODO_CONSIDERATION: after we verify `State Sync` is fully functional, we can hypothetically remove old upgrades from
 // the codebase, as the nodes won't have to execute upgrades and will download the "snapshot" instead. Some other
 // blockchain networks (such as `evmos`), remove the old upgrades from the codebase.
+// Note that this may inhibit a full state sync from genesis.
 
 import (
 	"context"
@@ -18,23 +19,23 @@ import (
 	"github.com/pokt-network/poktroll/app/keepers"
 )
 
-// defaultMigrationsOnlyUpgradeHandler creates an update handler that only performs module's `ConsensusVersion`
-// change in blockchain state. Useful for performing upgrades that do no require additional state modifications, such as
-// parameter changes, data migrations, authz authorizations, etc. If **any** of these are needed, a new, version-specific,
-// upgrade handler should be created.
-func defaultMigrationsOnlyUpgradeHandler(
+// defaultUpgradeHandler should be used for upgrades that only update the `ConsensusVersion`.
+// If an upgrade involves state changes, parameter updates, data migrations, authz authorisation, etc,
+// a new version-specific upgrade handler must be created.
+func defaultUpgradeHandler(
 	mm *module.Manager,
 	_ *keepers.Keepers,
-	configurator module.Configurator) upgradetypes.UpgradeHandler {
+	configurator module.Configurator,
+) upgradetypes.UpgradeHandler {
 	return func(ctx context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
 		return mm.RunMigrations(ctx, configurator, vm)
 	}
 }
 
-// An example of an upgrade that performs additional state changes.
-// Even when not changing `ConsensusVersion` of any modules, it still might be beneficial to create an upgrade
-// to signal to node runners utilizing `Cosmovisor` to automatically download and install the new binary.
-var Upgrade_Example = Upgrade{
+// An example of an upgrade that uses the default upgrade handler and also performs additional state changes.
+// For example, even if `ConsensusVersion` is not modified for any modules, it still might be beneficial to create
+// an upgrade so node runners are signalled to start utilizing `Cosmovisor` for new binaries.
+var UpgradeExample = Upgrade{
 	PlanName:             "v0.0.0-Example",
 	CreateUpgradeHandler: defaultMigrationsOnlyUpgradeHandler,
 
@@ -48,7 +49,8 @@ var Upgrade_0_0_4 = Upgrade{
 	PlanName: "v0.0.4",
 	CreateUpgradeHandler: func(mm *module.Manager,
 		keepers *keepers.Keepers,
-		configurator module.Configurator) upgradetypes.UpgradeHandler {
+		configurator module.Configurator,
+	) upgradetypes.UpgradeHandler {
 		return func(ctx context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
 			// Get current consensus module parameters
 			currentParams, err := keepers.ConsensusParamsKeeper.ParamsStore.Get(ctx)
@@ -71,8 +73,7 @@ var Upgrade_0_0_4 = Upgrade{
 			newParams.Block.MaxBytes = 22020096 * 2
 
 			// Update the chain state
-			_, err = keepers.ConsensusParamsKeeper.UpdateParams(ctx, &newParams)
-			if err != nil {
+			if _, err = keepers.ConsensusParamsKeeper.UpdateParams(ctx, &newParams); err != nil {
 				return vm, err
 			}
 
