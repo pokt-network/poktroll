@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/x/shared/keeper"
+	"github.com/pokt-network/poktroll/x/shared/types"
 
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -47,8 +48,17 @@ func TestMsgUpdateParam_UpdateClaimWindowOpenOffsetBlocks(t *testing.T) {
 	k, ctx := testkeeper.SharedKeeper(t)
 	msgSrv := keeper.NewMsgServerImpl(k)
 
-	// Set the parameters to their default values
 	defaultParams := sharedtypes.DefaultParams()
+
+	// Update the SupplierUnbondingPeriodSessions such that it is greater than the
+	// cumulative proof window close blocks to pass UpdateParam validation.
+	defaultParams.SupplierUnbondingPeriodSessions = getMinSupplierUnbondingPeriodSessions(
+		&defaultParams,
+		defaultParams.ClaimWindowOpenOffsetBlocks,
+		uint64(expectedClaimWindowOpenOffestBlocks),
+	)
+
+	// Set the parameters to their default values
 	require.NoError(t, k.SetParams(ctx, defaultParams))
 
 	// Ensure the default values are different from the new values we want to set
@@ -75,8 +85,17 @@ func TestMsgUpdateParam_UpdateClaimWindowCloseOffsetBlocks(t *testing.T) {
 	k, ctx := testkeeper.SharedKeeper(t)
 	msgSrv := keeper.NewMsgServerImpl(k)
 
-	// Set the parameters to their default values
 	defaultParams := sharedtypes.DefaultParams()
+
+	// Update the SupplierUnbondingPeriodSessions such that it is greater than the
+	// cumulative proof window close blocks to pass UpdateParam validation.
+	defaultParams.SupplierUnbondingPeriodSessions = getMinSupplierUnbondingPeriodSessions(
+		&defaultParams,
+		defaultParams.ClaimWindowCloseOffsetBlocks,
+		uint64(expectedClaimWindowCloseOffestBlocks),
+	)
+
+	// Set the parameters to their default values
 	require.NoError(t, k.SetParams(ctx, defaultParams))
 
 	// Ensure the default values are different from the new values we want to set
@@ -103,8 +122,17 @@ func TestMsgUpdateParam_UpdateProofWindowOpenOffsetBlocks(t *testing.T) {
 	k, ctx := testkeeper.SharedKeeper(t)
 	msgSrv := keeper.NewMsgServerImpl(k)
 
-	// Set the parameters to their default values
 	defaultParams := sharedtypes.DefaultParams()
+
+	// Update the SupplierUnbondingPeriodSessions such that it is greater than the
+	// cumulative proof window close blocks to pass UpdateParam validation.
+	defaultParams.SupplierUnbondingPeriodSessions = getMinSupplierUnbondingPeriodSessions(
+		&defaultParams,
+		defaultParams.ProofWindowOpenOffsetBlocks,
+		uint64(expectedProofWindowOpenOffestBlocks),
+	)
+
+	// Set the parameters to their default values
 	require.NoError(t, k.SetParams(ctx, defaultParams))
 
 	// Ensure the default values are different from the new values we want to set
@@ -131,8 +159,17 @@ func TestMsgUpdateParam_UpdateProofWindowCloseOffsetBlocks(t *testing.T) {
 	k, ctx := testkeeper.SharedKeeper(t)
 	msgSrv := keeper.NewMsgServerImpl(k)
 
-	// Set the parameters to their default values
 	defaultParams := sharedtypes.DefaultParams()
+
+	// Update the SupplierUnbondingPeriodSessions such that it is greater than the
+	// cumulative proof window close blocks to pass UpdateParam validation.
+	defaultParams.SupplierUnbondingPeriodSessions = getMinSupplierUnbondingPeriodSessions(
+		&defaultParams,
+		defaultParams.ProofWindowCloseOffsetBlocks,
+		uint64(expectedProofWindowCloseOffestBlocks),
+	)
+
+	// Set the parameters to their default values
 	require.NoError(t, k.SetParams(ctx, defaultParams))
 
 	// Ensure the default values are different from the new values we want to set
@@ -154,13 +191,18 @@ func TestMsgUpdateParam_UpdateProofWindowCloseOffsetBlocks(t *testing.T) {
 }
 
 func TestMsgUpdateParam_UpdateGracePeriodEndOffsetBlocks(t *testing.T) {
-	var expectedGracePeriodEndOffestBlocks int64 = 8
+	var expectedGracePeriodEndOffestBlocks int64 = 2
 
 	k, ctx := testkeeper.SharedKeeper(t)
 	msgSrv := keeper.NewMsgServerImpl(k)
 
-	// Set the parameters to their default values
 	defaultParams := sharedtypes.DefaultParams()
+
+	// Update the claim window open offset blocks which has to be at least equal to
+	// GracePeriodEndOffsetBlocks to pass UpdateParam validation.
+	defaultParams.ClaimWindowOpenOffsetBlocks = uint64(expectedGracePeriodEndOffestBlocks)
+
+	// Set the parameters to their default values
 	require.NoError(t, k.SetParams(ctx, defaultParams))
 
 	// Ensure the default values are different from the new values we want to set
@@ -179,4 +221,56 @@ func TestMsgUpdateParam_UpdateGracePeriodEndOffsetBlocks(t *testing.T) {
 
 	// Ensure the other parameters are unchanged
 	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, "GracePeriodEndOffsetBlocks")
+}
+
+func TestMsgUpdateParam_UpdateSupplierUnbondingPeriodSessions(t *testing.T) {
+	var expectedSupplierUnbondingPerid int64 = 5
+
+	k, ctx := testkeeper.SharedKeeper(t)
+	msgSrv := keeper.NewMsgServerImpl(k)
+
+	defaultParams := sharedtypes.DefaultParams()
+	// Set the parameters to their default values
+	require.NoError(t, k.SetParams(ctx, defaultParams))
+
+	// Ensure the default values are different from the new values we want to set
+	require.NotEqual(t, uint64(expectedSupplierUnbondingPerid), defaultParams.GetSupplierUnbondingPeriodSessions())
+
+	// Update the supplier unbonding period param
+	updateParamMsg := &sharedtypes.MsgUpdateParam{
+		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+		Name:      sharedtypes.ParamSupplierUnbondingPeriodSessions,
+		AsType:    &sharedtypes.MsgUpdateParam_AsInt64{AsInt64: expectedSupplierUnbondingPerid},
+	}
+	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
+	require.NoError(t, err)
+
+	require.Equal(t, uint64(expectedSupplierUnbondingPerid), res.Params.GetSupplierUnbondingPeriodSessions())
+
+	// Ensure the other parameters are unchanged
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, "SupplierUnbondingPeriodSessions")
+
+	// Ensure that a supplier unbonding period that is less than the cumulative
+	// proof window close blocks is not allowed.
+	updateParamMsg = &sharedtypes.MsgUpdateParam{
+		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+		Name:      sharedtypes.ParamSupplierUnbondingPeriodSessions,
+		AsType:    &sharedtypes.MsgUpdateParam_AsInt64{AsInt64: 1},
+	}
+	_, err = msgSrv.UpdateParam(ctx, updateParamMsg)
+	require.ErrorIs(t, err, sharedtypes.ErrSharedParamInvalid)
+}
+
+// getMinSupplierUnbondingPeriodSessions returns the supplier unbonding period
+// sessions such that it is greater than the cumulative proof window close blocks
+// to pass UpdateParam validation.
+func getMinSupplierUnbondingPeriodSessions(
+	params *sharedtypes.Params,
+	oldParamBlocksValue uint64,
+	newParamBlocksValue uint64,
+) uint64 {
+	deltaBlocks := newParamBlocksValue - oldParamBlocksValue
+	newProofWindowCloseBlocks := types.GetSessionEndToProofWindowCloseBlocks(params) + deltaBlocks
+
+	return (newProofWindowCloseBlocks / params.NumBlocksPerSession) + 1
 }

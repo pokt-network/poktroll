@@ -27,7 +27,14 @@ import (
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-func SupplierKeeper(t testing.TB) (keeper.Keeper, context.Context) {
+// SupplierModuleKeepers is a struct that contains the keepers needed for testing
+// the supplier module.
+type SupplierModuleKeepers struct {
+	*keeper.Keeper
+	types.SharedKeeper
+}
+
+func SupplierKeeper(t testing.TB) (SupplierModuleKeepers, context.Context) {
 	t.Helper()
 
 	storeKey := storetypes.NewKVStoreKey(types.StoreKey)
@@ -67,7 +74,7 @@ func SupplierKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 		mockBankKeeper,
 	)
 
-	k := keeper.NewKeeper(
+	supplierKeeper := keeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKey),
 		log.NewNopLogger(),
@@ -78,7 +85,7 @@ func SupplierKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 	)
 
 	// Initialize params
-	require.NoError(t, k.SetParams(sdkCtx, types.DefaultParams()))
+	require.NoError(t, supplierKeeper.SetParams(sdkCtx, types.DefaultParams()))
 
 	// Move block height to 1 to get a non zero session end height
 	ctx := SetBlockHeight(sdkCtx, 1)
@@ -87,7 +94,12 @@ func SupplierKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 	serviceKeeper.SetService(ctx, sharedtypes.Service{Id: "svcId"})
 	serviceKeeper.SetService(ctx, sharedtypes.Service{Id: "svcId2"})
 
-	return k, ctx
+	supplierModuleKeepers := SupplierModuleKeepers{
+		Keeper:       &supplierKeeper,
+		SharedKeeper: sharedKeeper,
+	}
+
+	return supplierModuleKeepers, ctx
 }
 
 // TODO_OPTIMIZE: Index suppliers by service so we can easily query k.GetAllSuppliers(ctx, Service)

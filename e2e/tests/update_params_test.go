@@ -431,6 +431,11 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 			params.ProofWindowCloseOffsetBlocks = uint64(proofWindowCloseOffsetBlocksParam.value.(int64))
 		}
 
+		supplierUnbondingPeriodSessions, ok := paramsMap[sharedtypes.ParamSupplierUnbondingPeriodSessions]
+		if ok {
+			params.SupplierUnbondingPeriodSessions = uint64(supplierUnbondingPeriodSessions.value.(int64))
+		}
+
 		assertUpdatedParams(s,
 			[]byte(res.Stdout),
 			&sharedtypes.QueryParamsResponse{

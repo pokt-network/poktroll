@@ -2,7 +2,7 @@ Feature: Stake Supplier Namespace
 
     Scenario: User can stake a Supplier
         Given the user has the pocketd binary installed
-        And the "supplier" for account "supplier2" is not staked
+        And the user verifies the "supplier" for account "supplier2" is not staked
         # Stake with 1 uPOKT more than the current stake used in genesis to make
         # the transaction succeed.
         And the account "supplier2" has a balance greater than "1000070" uPOKT
@@ -24,5 +24,5 @@ Feature: Stake Supplier Namespace
         And the pocketd binary should exit without error
         And the supplier for account "supplier2" is unbonding
         When the user waits for "supplier2" unbonding period to finish
-        Then the "supplier" for account "supplier2" is not staked
+        Then the user verifies the "supplier" for account "supplier2" is not staked
         And the account balance of "supplier2" should be "1000070" uPOKT "more" than before
