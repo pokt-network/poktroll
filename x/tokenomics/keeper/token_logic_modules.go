@@ -33,7 +33,8 @@ const (
 	MintAllocationSourceOwner = 0.15
 	MintAllocationApplication = 0.0
 	// TODO_UPNEXT(@olshansk): Remove this. An ephemeral placeholder before
-	// real values are introduced.
+	// real values are introduced. When this is changed to a governance param,
+	// make sure to also add the necessary unit tests.
 	MintGlobalAllocation = 0.0000000
 )
 
@@ -152,20 +153,6 @@ func (k Keeper) ProcessTokenLogicModules(
 		)
 	}
 
-	// Retrieve the count (i.e. number of relays) to determine the amount of work done
-	numRelays, err := root.Count()
-	if err != nil {
-		return tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrapf("%v", err)
-	}
-	// TODO_POST_ MAINNET: Because of how things have evolved, we are now using
-	// root.Count (numRelays) instead of root.Sum (numComputeUnits) to determine
-	// the amount of work done. This is because the compute_units_per_relay is
-	/// a service specific (not request specific) parameter that will be maintained
-	// by the service owner to capture the average amount of resources (i.e.
-	// compute, storage, bandwidth, electricity, etc...) per request. Modifying
-	// this on a per request basis has been deemed too complex and not a mainnet
-	// blocker.
-
 	// Retrieve the on-chain staked application record
 	application, isAppFound := k.applicationKeeper.GetApplication(ctx, applicationAddress.String())
 	if !isAppFound {
@@ -185,6 +172,20 @@ func (k Keeper) ProcessTokenLogicModules(
 		return tokenomicstypes.ErrTokenomicsServiceNotFound.Wrapf("service with ID %q not found", sessionHeader.Service.Id)
 	}
 
+	// Retrieve the count (i.e. number of relays) to determine the amount of work done
+	numRelays, err := root.Count()
+	if err != nil {
+		return tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrapf("%v", err)
+	}
+	// TODO_POST_MAINNET: Because of how things have evolved, we are now using
+	// root.Count (numRelays) instead of root.Sum (numComputeUnits) to determine
+	// the amount of work done. This is because the compute_units_per_relay is
+	/// a service specific (not request specific) parameter that will be maintained
+	// by the service owner to capture the average amount of resources (i.e.
+	// compute, storage, bandwidth, electricity, etc...) per request. Modifying
+	// this on a per request basis has been deemed too complex and not a mainnet
+	// blocker.
+
 	// Determine the total number of tokens that'll be used for settling the session.
 	// When the network achieves equilibrium, this will be the mint & burn.
 	settlementCoin, err = k.numRelaysToCoin(ctx, numRelays, &service)
@@ -195,7 +196,6 @@ func (k Keeper) ProcessTokenLogicModules(
 	// Retrieving the relay mining difficulty for the service at hand
 	relayMiningDifficulty, found := k.GetRelayMiningDifficulty(ctx, service.Id)
 	if !found {
-		numRelays, err := claim.GetNumRelays()
 		if err != nil {
 			return err
 		}
@@ -350,41 +350,47 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 	logger.Info(fmt.Sprintf("minted (%v) coins in the tokenomics module", newMintCoins))
 
 	// Send a portion of the rewards to the application
-	appCoins, err := k.sendRewardsToAccount(ctx, application.Address, settlementAmtFloat, MintAllocationApplication)
+	appCoins, err := k.sendRewardsToAccount(ctx, application.Address, newMintAmtFloat, MintAllocationApplication)
 	if err != nil {
-		return err
+		return tokenomictypes.ErrTokenomicsSendingMindRewards.Wrapf("sending rewards to application: %v", err)
 	}
+	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the application with address %q", appCoins, application.Address))
 
 	// Send a portion of the rewards to the supplier
-	supplierCoins, err := k.sendRewardsToAccount(ctx, supplier.Address, settlementAmtFloat, MintAllocationSupplier)
+	supplierCoins, err := k.sendRewardsToAccount(ctx, supplier.Address, newMintAmtFloat, MintAllocationSupplier)
 	if err != nil {
-		return err
+		return tokenomictypes.ErrTokenomicsSendingMindRewards.Wrapf("sending rewards to supplier: %v", err)
 	}
+	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the supplier with address %q", supplierCoins, supplier.Address))
 
 	// Send a portion of the rewards to the DAO
-	daoCoins, err := k.sendRewardsToAccount(ctx, k.GetAuthority(), settlementAmtFloat, MintAllocationDAO)
+	daoCoins, err := k.sendRewardsToAccount(ctx, k.GetAuthority(), newMintAmtFloat, MintAllocationDAO)
 	if err != nil {
-		return err
+		return tokenomictypes.ErrTokenomicsSendingMindRewards.Wrapf("sending rewards to DAO: %v", err)
 	}
+	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the DAO with address %q", daoCoins, k.GetAuthority()))
 
 	// Send a portion of the rewards to the source owner
-	serviceCoins, err := k.sendRewardsToAccount(ctx, service.OwnerAddress, settlementAmtFloat, MintAllocationSourceOwner)
+	serviceCoins, err := k.sendRewardsToAccount(ctx, service.OwnerAddress, newMintAmtFloat, MintAllocationSourceOwner)
 	if err != nil {
-		return err
+		return tokenomictypes.ErrTokenomicsSendingMindRewards.Wrapf("sending rewards to source owner: %v", err)
 	}
+	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the source owner with address %q", serviceCoins, service.OwnerAddress))
 
 	// Send a portion of the rewards to the block proposer
 	proposerAddr := cosmostypes.AccAddress(sdk.UnwrapSDKContext(ctx).BlockHeader().ProposerAddress).String()
-	proposerCoins, err := k.sendRewardsToAccount(ctx, proposerAddr, settlementAmtFloat, MintAllocationProposer)
+	proposerCoins, err := k.sendRewardsToAccount(ctx, proposerAddr, newMintAmtFloat, MintAllocationProposer)
 	if err != nil {
-		return err
+		return tokenomictypes.ErrTokenomicsSendingMindRewards.Wrapf("sending rewards to proposer: %v", err)
 	}
+	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the proposer with address %q", proposerCoins, proposerAddr))
 
 	// TODO_MAINNET: Verify that the total distributed coins equals the settlement coins which could happen due to float rounding
 	totalDistributedCoins := appCoins.Add(*supplierCoins).Add(*daoCoins).Add(*serviceCoins).Add(*proposerCoins)
 	if totalDistributedCoins.Amount.BigInt().Cmp(settlementCoins.Amount.BigInt()) != 0 {
 		logger.Error(fmt.Sprintf("TODO_MAINNET: The total distributed coins (%v) does not equal the settlement coins (%v)", totalDistributedCoins, settlementCoins.Amount.BigInt()))
 	}
+	logger.Info(fmt.Sprintf("distributed (%v) coins to the application, supplier, DAO, source owner, and proposer", totalDistributedCoins))
 
 	return nil
 }

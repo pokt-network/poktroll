@@ -62,6 +62,8 @@ func TestProcessTokenLogicModules_HandleAppGoingIntoDebt(t *testing.T) {
 	keepers.SetSupplier(ctx, supplier)
 
 	// The base claim whose root will be customized for testing purposes
+	numRelays := appStake.Amount.Uint64() + 1 // More than the app stake
+	numComputeUnits := numRelays * service.ComputeUnitsPerRelay
 	claim := prooftypes.Claim{
 		SupplierAddress: supplier.Address,
 		SessionHeader: &sessiontypes.SessionHeader{
@@ -71,7 +73,7 @@ func TestProcessTokenLogicModules_HandleAppGoingIntoDebt(t *testing.T) {
 			SessionStartBlockHeight: 1,
 			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
 		},
-		RootHash: testproof.SmstRootWithSum(appStake.Amount.Uint64() + 1), // More than the app stake
+		RootHash: testproof.SmstRootWithSumAndCount(numComputeUnits, numRelays),
 	}
 
 	err := keepers.ProcessTokenLogicModules(ctx, &claim)
@@ -127,6 +129,9 @@ func TestProcessTokenLogicModules_ValidAccounting(t *testing.T) {
 	// Query supplier module balance prior to the accounting.
 	supplierModuleStartBalance := getBalance(t, ctx, keepers, supplierModuleAddress)
 
+	// Assumes ComputeUnitToTokenMultiplier is 1
+	numComputeUnits := expectedAppBurn.Amount.Uint64()
+	numRelays := numComputeUnits / service.ComputeUnitsPerRelay
 	// The base claim whose root will be customized for testing purposes
 	claim := prooftypes.Claim{
 		SupplierAddress: supplier.Address,
@@ -137,17 +142,11 @@ func TestProcessTokenLogicModules_ValidAccounting(t *testing.T) {
 			SessionStartBlockHeight: 1,
 			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
 		},
-		RootHash: testproof.SmstRootWithSum(expectedAppBurn.Amount.Uint64()),
+		RootHash: testproof.SmstRootWithSumAndCount(numComputeUnits, numRelays),
 	}
 
-	// Add a block proposer address to the context
-	valAddr, err := cosmostypes.ValAddressFromBech32(sample.ConsAddress())
-	require.NoError(t, err)
-	consensusAddr := cosmostypes.ConsAddress(valAddr)
-	sdkCtx := cosmostypes.UnwrapSDKContext(ctx).WithProposer(consensusAddr)
-
 	// Process the token logic modules
-	err = keepers.ProcessTokenLogicModules(sdkCtx, &claim)
+	err = keepers.ProcessTokenLogicModules(ctx, &claim)
 	require.NoError(t, err)
 
 	// Assert that `applicationAddress` account balance is *unchanged*
@@ -233,6 +232,11 @@ func TestProcessTokenLogicModules_AppStakeTooLow(t *testing.T) {
 	// Query supplier module balance prior to the accounting.
 	supplierModuleStartBalance := getBalance(t, ctx, keepers, supplierModuleAddress)
 
+	// Determine the number of relays to use up the application's entire stake
+	sharedParams := keepers.Keeper.GetParams(ctx)
+	numComputeUnits := expectedAppBurn.Amount.Uint64() / sharedParams.ComputeUnitsToTokensMultiplier
+	numRelays := numComputeUnits / service.ComputeUnitsPerRelay
+
 	// The base claim whose root will be customized for testing purposes
 	claim := prooftypes.Claim{
 		SupplierAddress: supplier.Address,
@@ -243,17 +247,11 @@ func TestProcessTokenLogicModules_AppStakeTooLow(t *testing.T) {
 			SessionStartBlockHeight: 1,
 			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
 		},
-		RootHash: testproof.SmstRootWithSum(expectedAppBurn.Amount.Uint64()),
+		RootHash: testproof.SmstRootWithSumAndCount(numComputeUnits, numRelays),
 	}
 
-	// Add a block proposer address to the context
-	valAddr, err := cosmostypes.ValAddressFromBech32(sample.ConsAddress())
-	require.NoError(t, err)
-	consensusAddr := cosmostypes.ConsAddress(valAddr)
-	sdkCtx := cosmostypes.UnwrapSDKContext(ctx).WithProposer(consensusAddr)
-
 	// Process the token logic modules
-	err = keepers.ProcessTokenLogicModules(sdkCtx, &claim)
+	err = keepers.ProcessTokenLogicModules(ctx, &claim)
 	require.NoError(t, err)
 
 	// Assert that `applicationAddress` account balance is *unchanged*
@@ -287,8 +285,8 @@ func TestProcessTokenLogicModules_AppStakeTooLow(t *testing.T) {
 	supplierModuleEndBalance := getBalance(t, ctx, keepers, supplierModuleAddress)
 	require.EqualValues(t, supplierModuleStartBalance, supplierModuleEndBalance)
 
-	events := sdkCtx.EventManager().Events()
-
+	// Check that the expected burn >> effective burn because application is overserviced
+	events := cosmostypes.UnwrapSDKContext(ctx).EventManager().Events()
 	appAddrAttribute, _ := events.GetAttributes("application_addr")
 	expectedBurnAttribute, _ := events.GetAttributes("expected_burn")
 	effectiveBurnAttribute, _ := events.GetAttributes("effective_burn")
@@ -310,6 +308,8 @@ func TestProcessTokenLogicModules_AppNotFound(t *testing.T) {
 	keeper, ctx, _, supplierAddr, service := testkeeper.TokenomicsKeeperWithActorAddrs(t)
 
 	// The base claim whose root will be customized for testing purposes
+	numRelays := uint64(42)
+	numComputeUnits := numRelays * service.ComputeUnitsPerRelay
 	claim := prooftypes.Claim{
 		SupplierAddress: supplierAddr,
 		SessionHeader: &sessiontypes.SessionHeader{
@@ -319,7 +319,7 @@ func TestProcessTokenLogicModules_AppNotFound(t *testing.T) {
 			SessionStartBlockHeight: 1,
 			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
 		},
-		RootHash: testproof.SmstRootWithSum(42),
+		RootHash: testproof.SmstRootWithSumAndCount(numComputeUnits, numRelays),
 	}
 
 	// Process the token logic modules
@@ -330,6 +330,7 @@ func TestProcessTokenLogicModules_AppNotFound(t *testing.T) {
 
 func TestProcessTokenLogicModules_InvalidRoot(t *testing.T) {
 	keeper, ctx, appAddr, supplierAddr, service := testkeeper.TokenomicsKeeperWithActorAddrs(t)
+	numRelays := uint64(42)
 
 	// Define test cases
 	tests := []struct {
@@ -370,7 +371,7 @@ func TestProcessTokenLogicModules_InvalidRoot(t *testing.T) {
 		{
 			desc: "correct size and a valid value",
 			root: func() []byte {
-				root := testproof.SmstRootWithSum(42)
+				root := testproof.SmstRootWithSumAndCount(numRelays, numRelays)
 				return root[:]
 			}(),
 			errExpected: false,
@@ -381,7 +382,7 @@ func TestProcessTokenLogicModules_InvalidRoot(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
 			// Setup claim by copying the testproof.BaseClaim and updating the root
-			claim := testproof.BaseClaim(appAddr, supplierAddr, 0, service.Id)
+			claim := testproof.BaseClaim(service.Id, appAddr, supplierAddr, 0)
 			claim.RootHash = smt.MerkleRoot(test.root[:])
 
 			// Execute test function
@@ -399,6 +400,7 @@ func TestProcessTokenLogicModules_InvalidRoot(t *testing.T) {
 
 func TestProcessTokenLogicModules_InvalidClaim(t *testing.T) {
 	keeper, ctx, appAddr, supplierAddr, service := testkeeper.TokenomicsKeeperWithActorAddrs(t)
+	numRelays := uint64(42)
 
 	// Define test cases
 	tests := []struct {
@@ -411,7 +413,7 @@ func TestProcessTokenLogicModules_InvalidClaim(t *testing.T) {
 		{
 			desc: "Valid Claim",
 			claim: func() *prooftypes.Claim {
-				claim := testproof.BaseClaim(appAddr, supplierAddr, 42, service.Id)
+				claim := testproof.BaseClaim(service.Id, appAddr, supplierAddr, numRelays)
 				return &claim
 			}(),
 			errExpected: false,
@@ -425,7 +427,7 @@ func TestProcessTokenLogicModules_InvalidClaim(t *testing.T) {
 		{
 			desc: "Claim with nil session header",
 			claim: func() *prooftypes.Claim {
-				claim := testproof.BaseClaim(appAddr, supplierAddr, 42, service.Id)
+				claim := testproof.BaseClaim(service.Id, appAddr, supplierAddr, numRelays)
 				claim.SessionHeader = nil
 				return &claim
 			}(),
@@ -435,7 +437,7 @@ func TestProcessTokenLogicModules_InvalidClaim(t *testing.T) {
 		{
 			desc: "Claim with invalid session id",
 			claim: func() *prooftypes.Claim {
-				claim := testproof.BaseClaim(appAddr, supplierAddr, 42, service.Id)
+				claim := testproof.BaseClaim(service.Id, appAddr, supplierAddr, numRelays)
 				claim.SessionHeader.SessionId = ""
 				return &claim
 			}(),
@@ -445,7 +447,7 @@ func TestProcessTokenLogicModules_InvalidClaim(t *testing.T) {
 		{
 			desc: "Claim with invalid application address",
 			claim: func() *prooftypes.Claim {
-				claim := testproof.BaseClaim(appAddr, supplierAddr, 42, service.Id)
+				claim := testproof.BaseClaim(service.Id, appAddr, supplierAddr, numRelays)
 				claim.SessionHeader.ApplicationAddress = "invalid address"
 				return &claim
 			}(),
@@ -455,7 +457,7 @@ func TestProcessTokenLogicModules_InvalidClaim(t *testing.T) {
 		{
 			desc: "Claim with invalid supplier address",
 			claim: func() *prooftypes.Claim {
-				claim := testproof.BaseClaim(appAddr, supplierAddr, 42, service.Id)
+				claim := testproof.BaseClaim(service.Id, appAddr, supplierAddr, numRelays)
 				claim.SupplierAddress = "invalid address"
 				return &claim
 			}(),

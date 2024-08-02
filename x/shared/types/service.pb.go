@@ -8,12 +8,11 @@ package types
 
 import (
 	fmt "fmt"
+	_ "github.com/cosmos/cosmos-proto"
+	proto "github.com/cosmos/gogoproto/proto"
 	io "io"
 	math "math"
 	math_bits "math/bits"
-
-	_ "github.com/cosmos/cosmos-proto"
-	proto "github.com/cosmos/gogoproto/proto"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -96,8 +95,8 @@ type Service struct {
 	// TODO_BETA: Name is currently unused but acts as a reminder that an optional onchain representation of the service is necessary
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	// The cost of a single relay for this service in terms of compute units.
-	// Must be used alongside the global 'compute_units_to_tokens_multiplier' to calculate the cost of a relay for this service.
-	// cost_per_relay_for_specific_service = compute_units_per_relay_for_specific_service * compute_units_to_tokens_multiplier_global_value
+	// Must be used alongside the global 'compute_units_to_tokens_multipler' to calculate the cost of a relay for this service.
+	// cost_per_relay_for_specific_service = compute_units_per_relay_for_specific_service * compute_units_to_tokens_multipler_global_value
 	ComputeUnitsPerRelay uint64 `protobuf:"varint,3,opt,name=compute_units_per_relay,json=computeUnitsPerRelay,proto3" json:"compute_units_per_relay,omitempty"`
 	// The owner address that created the service.
 	// It is the address that receives rewards based on the Service's on-chain usage

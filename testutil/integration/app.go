@@ -42,6 +42,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	testutilevents "github.com/pokt-network/poktroll/testutil/events"
+	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/testutil/testkeyring"
 	appkeeper "github.com/pokt-network/poktroll/x/application/keeper"
 	application "github.com/pokt-network/poktroll/x/application/module"
@@ -131,6 +132,13 @@ func NewIntegrationApp(
 		WithIsCheckTx(true).
 		WithEventManager(cosmostypes.NewEventManager())
 
+	// Add a block proposer address to the context
+	valAddr, err := cosmostypes.ValAddressFromBech32(sample.ConsAddress())
+	require.NoError(t, err)
+	consensusAddr := cosmostypes.ConsAddress(valAddr)
+	sdkCtx = sdkCtx.WithProposer(consensusAddr)
+
+	// Create the base application
 	txConfig := authtx.NewTxConfig(cdc, authtx.DefaultSignModes)
 	bApp := baseapp.NewBaseApp(appName, logger, db, txConfig.TxDecoder(), baseapp.SetChainID(appName))
 	bApp.MountKVStores(keys)
@@ -156,7 +164,7 @@ func NewIntegrationApp(
 	msgRouter.SetInterfaceRegistry(registry)
 	bApp.SetMsgServiceRouter(msgRouter)
 
-	err := bApp.LoadLatestVersion()
+	err = bApp.LoadLatestVersion()
 	require.NoError(t, err, "failed to load latest version")
 
 	_, err = bApp.InitChain(&cmtabcitypes.RequestInitChain{ChainId: appName})
@@ -323,6 +331,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		runtime.NewKVStoreService(storeKeys[apptypes.StoreKey]),
 		logger,
 		authority.String(),
+
 		bankKeeper,
 		accountKeeper,
 		gatewayKeeper,
@@ -499,8 +508,9 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 
 	// Prepare a new default service
 	defaultService := sharedtypes.Service{
-		Id:   "svc1",
-		Name: "svcName1",
+		Id:           "svc1",
+		Name:         "svcName1",
+		OwnerAddress: sample.AccAddress(),
 	}
 	serviceKeeper.SetService(integrationApp.sdkCtx, defaultService)
 	integrationApp.DefaultService = &defaultService
