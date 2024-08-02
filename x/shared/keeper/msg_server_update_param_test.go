@@ -261,8 +261,9 @@ func TestMsgUpdateParam_UpdateSupplierUnbondingPeriodSessions(t *testing.T) {
 	require.ErrorIs(t, err, sharedtypes.ErrSharedParamInvalid)
 }
 
-// getMinSupplierUnbondingPeriodSessions returns the minimum supplier unbonding period
-// in session number that is greater than the cumulative proof window close blocks.
+// getMinSupplierUnbondingPeriodSessions returns the supplier unbonding period
+// sessions such that it is greater than the cumulative proof window close blocks
+// to pass UpdateParam validation.
 func getMinSupplierUnbondingPeriodSessions(
 	params *sharedtypes.Params,
 	oldParamBlocksValue uint64,
