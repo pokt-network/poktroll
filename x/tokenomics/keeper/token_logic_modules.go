@@ -152,11 +152,19 @@ func (k Keeper) ProcessTokenLogicModules(
 		)
 	}
 
-	// Retrieve the sum of the root hash to determine the amount of work (compute units) done
-	claimComputeUnits, err := root.Sum()
+	// Retrieve the count (i.e. number of relays) to determine the amount of work done
+	numRelays, err := root.Count()
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrapf("%v", err)
 	}
+	// TODO_POST_ MAINNET: Because of how things have evolved, we are now using
+	// root.Count (numRelays) instead of root.Sum (numComputeUnits) to determine
+	// the amount of work done. This is because the compute_units_per_relay is
+	/// a service specific (not request specific) parameter that will be maintained
+	// by the service owner to capture the average amount of resources (i.e.
+	// compute, storage, bandwidth, electricity, etc...) per request. Modifying
+	// this on a per request basis has been deemed too complex and not a mainnet
+	// blocker.
 
 	// Retrieve the on-chain staked application record
 	application, isAppFound := k.applicationKeeper.GetApplication(ctx, applicationAddress.String())
@@ -179,7 +187,7 @@ func (k Keeper) ProcessTokenLogicModules(
 
 	// Determine the total number of tokens that'll be used for settling the session.
 	// When the network achieves equilibrium, this will be the mint & burn.
-	settlementCoin, err = k.computeUnitsToCoin(ctx, claimComputeUnits, &service)
+	settlementCoin, err = k.numRelaysToCoin(ctx, numRelays, &service)
 	if err != nil {
 		return err
 	}
@@ -202,13 +210,14 @@ func (k Keeper) ProcessTokenLogicModules(
 
 	// Helpers for logging the same metadata throughout this function calls
 	logger = logger.With(
-		"compute_units", claimComputeUnits,
+		"num_relays", numRelays,
+		"num_settlement_upokt", settlementCoin.Amount,
 		"session_id", sessionHeader.GetSessionId(),
-		"service_id", sessionHeader.GetSessionId(),
+		"service_id", sessionHeader.GetService().Id,
 		"supplier", supplier.Address,
 		"application", application.Address,
 	)
-	logger.Info(fmt.Sprintf("About to start processing TLMs for (%d) compute units equaling to (%s) coins", claimComputeUnits, settlementCoin))
+	logger.Info(fmt.Sprintf("About to start processing TLMs for (%d) relays equaling to (%s) coins", numRelays, settlementCoin))
 
 	// Execute all the token logic modules processors
 	for tlm, tlmProcessor := range tokenLogicModuleProcessorMap {
@@ -329,7 +338,7 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 	// Determine how much new uPOKT to mint based on global inflation
 	// TODO_MAINNET: Consider using fixed point arithmetic for deterministic results.
 	settlementAmtFloat := new(big.Float).SetUint64(settlementCoins.Amount.Uint64())
-	newMintAmtFloat := new (big.Float).Mul(settlementAmtFloat, big.NewFloat(MintGlobalAllocation))
+	newMintAmtFloat := new(big.Float).Mul(settlementAmtFloat, big.NewFloat(MintGlobalAllocation))
 	newMintAmtInt, _ := newMintAmtFloat.Int64()
 	newMintCoins := sdk.NewCoins(cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(newMintAmtInt)))
 
@@ -448,11 +457,17 @@ func (k Keeper) handleOverservicedApplication(
 	return *application.Stake, nil
 }
 
-// computeUnitsToCoin calculates the amount of uPOKT to mint based on the number of compute units.
-func (k Keeper) computeUnitsToCoin(ctx context.Context, numComputeUnits uint64, service *sharedtypes.Service) (cosmostypes.Coin, error) {
-	computeUnitsPerRelay := service.ComputeUnitsPerRelay
+// numRelaysToCoin calculates the amount of uPOKT to mint based on the number of compute units.
+func (k Keeper) numRelaysToCoin(
+	ctx context.Context,
+	numRelays uint64, // numRelays is a session specific parameter
+	service *sharedtypes.Service,
+) (cosmostypes.Coin, error) {
+	// CUTTM is a GLOBAL network wide parameter
 	computeUnitsToTokensMultiplier := k.GetParams(ctx).ComputeUnitsToTokensMultiplier
-	upoktAmount := math.NewInt(int64(numComputeUnits * computeUnitsPerRelay * computeUnitsToTokensMultiplier))
+	// CUPR is a LOCAL service specific parameter
+	computeUnitsPerRelay := service.ComputeUnitsPerRelay
+	upoktAmount := math.NewInt(int64(numRelays * computeUnitsPerRelay * computeUnitsToTokensMultiplier))
 	if upoktAmount.IsNegative() {
 		return cosmostypes.Coin{}, tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrap("sum * compute_units_to_tokens_multiplier is negative")
 	}
