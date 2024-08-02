@@ -11,11 +11,23 @@ func (s *Supplier) IsUnbonding() bool {
 	return s.UnstakeSessionEndHeight != SupplierNotUnstaking
 }
 
-// IsActive returns whether the supplier is allowed to serve requests at the
-// given query height.
-// A supplier that has not submitted an unstake message is always active.
+// IsActive returns whether the supplier is allowed to serve requests for the
+// given serviceId and query height.
+// A supplier is active for a given service starting from the session following
+// the one during which the supplier staked for that service.
 // A supplier that has submitted an unstake message is active until the end of
 // the session containing the height at which unstake message was submitted.
-func (s *Supplier) IsActive(queryHeight int64) bool {
-	return !s.IsUnbonding() || uint64(queryHeight) <= s.UnstakeSessionEndHeight
+func (s *Supplier) IsActive(queryHeight uint64, serviceId string) bool {
+	// Service that has been staked for is not active yet.
+	if s.ServicesActivationHeightsMap[serviceId] > queryHeight {
+		return false
+	}
+
+	// If the supplier is not unbonding then its UnstakeSessionEndHeight is 0,
+	// which returns true for all query heights.
+	if s.IsUnbonding() {
+		return queryHeight > s.UnstakeSessionEndHeight
+	}
+
+	return true
 }

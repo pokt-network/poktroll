@@ -155,3 +155,9 @@ func GetEarliestSupplierProofCommitHeight(
 	//return proofWindowOpenHeight + randCreateProofHeightOffset
 	return proofWindowOpenHeight
 }
+
+// GetNextSessionStartHeight returns the start block height of the session
+// following the session that includes queryHeight, given the passed sharedParams.
+func GetNextSessionStartHeight(sharedParams *sharedtypes.Params, queryHeight int64) int64 {
+	return GetSessionEndHeight(sharedParams, queryHeight) + 1
+}

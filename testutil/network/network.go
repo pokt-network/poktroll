@@ -137,13 +137,14 @@ func DefaultSupplierModuleGenesisState(t *testing.T, n int) *suppliertypes.Genes
 	t.Helper()
 	state := suppliertypes.DefaultGenesis()
 	for i := 0; i < n; i++ {
+		svcId := fmt.Sprintf("svc%d", i)
 		stake := sdk.NewCoin("upokt", math.NewInt(int64(i)))
 		supplier := sharedtypes.Supplier{
 			Address: sample.AccAddress(),
 			Stake:   &stake,
 			Services: []*sharedtypes.SupplierServiceConfig{
 				{
-					Service: &sharedtypes.Service{Id: fmt.Sprintf("svc%d", i)},
+					Service: &sharedtypes.Service{Id: svcId},
 					Endpoints: []*sharedtypes.SupplierEndpoint{
 						{
 							Url:     fmt.Sprintf("http://localhost:%d", i),
@@ -152,6 +153,7 @@ func DefaultSupplierModuleGenesisState(t *testing.T, n int) *suppliertypes.Genes
 					},
 				},
 			},
+			ServicesActivationHeightsMap: map[string]uint64{svcId: 0},
 		}
 		// TODO_CONSIDERATION: Evaluate whether we need `nullify.Fill` or if we should enforce `(gogoproto.nullable) = false` everywhere
 		// nullify.Fill(&supplier)
@@ -180,6 +182,7 @@ func SupplierModuleGenesisStateWithAddresses(t *testing.T, addresses []string) *
 					},
 				},
 			},
+			ServicesActivationHeightsMap: map[string]uint64{"svc1": 0},
 		}
 		state.SupplierList = append(state.SupplierList, supplier)
 	}
