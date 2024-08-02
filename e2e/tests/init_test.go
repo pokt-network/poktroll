@@ -400,27 +400,11 @@ func (s *suite) TheSupplierIsStakedForService(supplierName string, serviceId str
 }
 
 func (s *suite) TheSessionForApplicationAndServiceContainsTheSupplier(appName string, serviceId string, supplierName string) {
-	app, ok := accNameToAppMap[appName]
-	require.True(s, ok, "application %s not found", appName)
-
 	expectedSupplier, ok := accNameToSupplierMap[supplierName]
 	require.True(s, ok, "supplier %s not found", supplierName)
 
-	argsAndFlags := []string{
-		"query",
-		"session",
-		"get-session",
-		app.Address,
-		serviceId,
-		fmt.Sprintf("--%s=json", cometcli.OutputFlag),
-	}
-	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, argsAndFlags...)
-	require.NoError(s, err, "error getting session for app %s and service %q", appName, serviceId)
-
-	var resp sessiontypes.QueryGetSessionResponse
-	responseBz := []byte(strings.TrimSpace(res.Stdout))
-	s.cdc.MustUnmarshalJSON(responseBz, &resp)
-	for _, supplier := range resp.Session.Suppliers {
+	session := s.getSession(appName, serviceId)
+	for _, supplier := range session.Suppliers {
 		if supplier.Address == expectedSupplier.Address {
 			return
 		}
@@ -505,6 +489,32 @@ func (s *suite) getStakedAmount(actorType, accName string) (int, bool) {
 	return 0, false
 }
 
+func (s *suite) TheUserShouldSeeThatTheSupplierForAccountIsStaked(supplierName string) {
+	supplier := s.getSupplierInfo(supplierName)
+	accNameToSupplierMap[accAddrToNameMap[supplier.Address]] = *supplier
+	require.NotNil(s, supplier, "supplier %s not found", supplierName)
+}
+
+func (s *suite) TheSessionForApplicationAndServiceDoesNotContain(appName, serviceId, supplierName string) {
+	session := s.getSession(appName, serviceId)
+
+	for _, supplier := range session.Suppliers {
+		if supplier.Address == accNameToAddrMap[supplierName] {
+			s.Fatalf(
+				"ERROR: session for app %s and service %s should not contain supplier %s",
+				appName,
+				serviceId,
+				supplierName,
+			)
+		}
+	}
+}
+
+func (s *suite) TheUserWaitsForSupplierToBecomeActiveForService(supplierName, serviceId string) {
+	supplier := s.getSupplierInfo(supplierName)
+	s.waitForBlockHeight(int64(supplier.ServicesActivationHeightsMap[serviceId]))
+}
+
 func (s *suite) buildAddrMap() {
 	s.Helper()
 	res, err := s.pocketd.RunCommand(
@@ -559,6 +569,29 @@ func (s *suite) buildSupplierMap() {
 	}
 }
 
+// getSession returns the current session for the given application and service.
+func (s *suite) getSession(appName string, serviceId string) *sessiontypes.Session {
+	app, ok := accNameToAppMap[appName]
+	require.True(s, ok, "application %s not found", appName)
+
+	argsAndFlags := []string{
+		"query",
+		"session",
+		"get-session",
+		app.Address,
+		serviceId,
+		fmt.Sprintf("--%s=json", cometcli.OutputFlag),
+	}
+	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, argsAndFlags...)
+	require.NoError(s, err, "error getting session for app %s and service %q", appName, serviceId)
+
+	var resp sessiontypes.QueryGetSessionResponse
+	responseBz := []byte(strings.TrimSpace(res.Stdout))
+	s.cdc.MustUnmarshalJSON(responseBz, &resp)
+
+	return resp.Session
+}
+
 // TODO_TECHDEBT(@bryanchriswhite): Cleanup & deduplicate the code related
 // to this accessors. Ref: https://github.com/pokt-network/poktroll/pull/448/files#r1547930911
 func (s *suite) getAccBalance(accName string) int {
@@ -601,12 +634,13 @@ func (s *suite) validateAmountChange(prevAmount, currAmount int, expectedAmountC
 }
 
 // getSupplierInfo returns the supplier information for a given supplier address
-func (s *suite) getSupplierInfo(supplierAddr string) *sharedtypes.Supplier {
+func (s *suite) getSupplierInfo(supplierName string) *sharedtypes.Supplier {
+	supplierAddr := accNameToAddrMap[supplierName]
 	args := []string{
 		"query",
 		"supplier",
 		"show-supplier",
-		accNameToAddrMap[supplierAddr],
+		supplierAddr,
 		"--output=json",
 	}
 
