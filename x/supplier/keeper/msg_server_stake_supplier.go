@@ -36,7 +36,6 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 	}
 
 	// Check if the supplier already exists or not
-	var err error
 	var coinsToEscrow sdk.Coin
 	supplier, isSupplierFound := k.GetSupplier(ctx, msg.Address)
 
@@ -84,11 +83,11 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 		}
 
 		currSupplierStake := *supplier.Stake
-		if err = k.updateSupplier(ctx, &supplier, msg); err != nil {
+		if err := k.updateSupplier(ctx, &supplier, msg); err != nil {
 			logger.Error(fmt.Sprintf("could not update supplier for address %q due to error %v", msg.Address, err))
 			return nil, err
 		}
-		coinsToEscrow, err = (*msg.Stake).SafeSub(currSupplierStake)
+		coinsToEscrow, err := (*msg.Stake).SafeSub(currSupplierStake)
 		if err != nil {
 			return nil, err
 		}
