@@ -123,8 +123,9 @@ func TestSettleSessionAccounting_ValidAccounting(t *testing.T) {
 	// Add a new supplier.
 	supplierStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
 	supplier := sharedtypes.Supplier{
-		Address: sample.AccAddress(),
-		Stake:   &supplierStake,
+		OwnerAddress: sample.AccAddress(),
+		Address:      sample.AccAddress(),
+		Stake:        &supplierStake,
 	}
 	keepers.SetSupplier(ctx, supplier)
 
@@ -169,10 +170,10 @@ func TestSettleSessionAccounting_ValidAccounting(t *testing.T) {
 	require.NotNil(t, appModuleEndBalance)
 	require.EqualValues(t, &expectedAppModuleEndBalance, appModuleEndBalance)
 
-	// Assert that `supplierAddress` account balance has *increased* by the appropriate amount
-	supplierEndBalance := getBalance(t, ctx, keepers, supplier.GetAddress())
+	// Assert that `supplierOwnerAddress` account balance has *increased* by the appropriate amount
+	supplierOwnerEndBalance := getBalance(t, ctx, keepers, supplier.GetOwnerAddress())
 	expectedSupplierBalance := supplierStartBalance.Add(expectedAppBurn)
-	require.EqualValues(t, &expectedSupplierBalance, supplierEndBalance)
+	require.EqualValues(t, &expectedSupplierBalance, supplierOwnerEndBalance)
 
 	// Assert that `supplierAddress` staked balance is *unchanged*
 	supplier, supplierIsFound := keepers.GetSupplier(ctx, supplier.GetAddress())
@@ -228,13 +229,14 @@ func TestSettleSessionAccounting_AppStakeTooLow(t *testing.T) {
 	// Add a new supplier.
 	supplierStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
 	supplier := sharedtypes.Supplier{
-		Address: sample.AccAddress(),
-		Stake:   &supplierStake,
+		OwnerAddress: sample.AccAddress(),
+		Address:      sample.AccAddress(),
+		Stake:        &supplierStake,
 	}
 	keepers.SetSupplier(ctx, supplier)
 
-	// Query supplier balance prior to the accounting.
-	supplierStartBalance := getBalance(t, ctx, keepers, supplier.GetAddress())
+	// Query supplier owner balance prior to the accounting.
+	supplierOwnerStartBalance := getBalance(t, ctx, keepers, supplier.GetOwnerAddress())
 
 	// Query supplier module balance prior to the accounting.
 	supplierModuleStartBalance := getBalance(t, ctx, keepers, supplierModuleAddress)
@@ -272,12 +274,12 @@ func TestSettleSessionAccounting_AppStakeTooLow(t *testing.T) {
 	require.NotNil(t, appModuleEndBalance)
 	require.EqualValues(t, &expectedAppModuleEndBalance, appModuleEndBalance)
 
-	// Assert that `supplierAddress` account balance has *increased* by the appropriate amount
-	supplierEndBalance := getBalance(t, ctx, keepers, supplier.GetAddress())
-	require.NotNil(t, supplierEndBalance)
+	// Assert that `supplierOwnerAddress` account balance has *increased* by the appropriate amount
+	supplierOwnerEndBalance := getBalance(t, ctx, keepers, supplier.GetOwnerAddress())
+	require.NotNil(t, supplierOwnerEndBalance)
 
-	expectedSupplierBalance := supplierStartBalance.Add(expectedAppBurn)
-	require.EqualValues(t, &expectedSupplierBalance, supplierEndBalance)
+	expectedSupplierBalance := supplierOwnerStartBalance.Add(expectedAppBurn)
+	require.EqualValues(t, &expectedSupplierBalance, supplierOwnerEndBalance)
 
 	// Assert that `supplierAddress` staked balance is *unchanged*
 	supplier, supplierIsFound := keepers.GetSupplier(ctx, supplier.GetAddress())

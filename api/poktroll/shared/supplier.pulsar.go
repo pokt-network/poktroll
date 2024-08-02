@@ -792,7 +792,7 @@ type Supplier struct {
 	// and operator addresses which do not change over the supplier's lifespan.
 	// TODO(red-0ne): Rename this to `operator_address` include all downstream
 	// variables, comments, docs, tests, etc...
-	Address  string                   `protobuf:"bytes,2,opt,name=address,proto3" json:"address,omitempty"`
+	Address  string                   `protobuf:"bytes,2,opt,name=address,proto3" json:"address,omitempty"`   // Bech32 cosmos address
 	Stake    *v1beta1.Coin            `protobuf:"bytes,3,opt,name=stake,proto3" json:"stake,omitempty"`       // The total amount of uPOKT the supplier has staked
 	Services []*SupplierServiceConfig `protobuf:"bytes,4,rep,name=services,proto3" json:"services,omitempty"` // The service configs this supplier can support
 	// The session end height at which an actively unbonding supplier unbonds its stake.

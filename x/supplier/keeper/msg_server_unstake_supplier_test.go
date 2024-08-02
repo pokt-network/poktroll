@@ -51,7 +51,10 @@ func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
 	require.True(t, isSupplierFound)
 
 	// Initiate the supplier unstaking
-	unstakeMsg := &types.MsgUnstakeSupplier{Address: unstakingSupplierAddr}
+	unstakeMsg := &types.MsgUnstakeSupplier{
+		OwnerAddress: unstakingSupplierAddr,
+		Address:      unstakingSupplierAddr,
+	}
 	_, err = srv.UnstakeSupplier(ctx, unstakeMsg)
 	require.NoError(t, err)
 
@@ -98,7 +101,10 @@ func TestMsgServer_UnstakeSupplier_CancelUnbondingIfRestaked(t *testing.T) {
 	require.False(t, foundSupplier.IsUnbonding())
 
 	// Initiate the supplier unstaking
-	unstakeMsg := &types.MsgUnstakeSupplier{Address: supplierAddr}
+	unstakeMsg := &types.MsgUnstakeSupplier{
+		OwnerAddress: supplierAddr,
+		Address:      supplierAddr,
+	}
 	_, err = srv.UnstakeSupplier(ctx, unstakeMsg)
 	require.NoError(t, err)
 
@@ -143,7 +149,10 @@ func TestMsgServer_UnstakeSupplier_FailIfNotStaked(t *testing.T) {
 	require.False(t, isSupplierFound)
 
 	// Initiate the supplier unstaking
-	unstakeMsg := &types.MsgUnstakeSupplier{Address: supplierAddr}
+	unstakeMsg := &types.MsgUnstakeSupplier{
+		OwnerAddress: supplierAddr,
+		Address:      supplierAddr,
+	}
 	_, err := srv.UnstakeSupplier(ctx, unstakeMsg)
 	require.Error(t, err)
 	require.ErrorIs(t, err, types.ErrSupplierNotFound)
@@ -166,7 +175,10 @@ func TestMsgServer_UnstakeSupplier_FailIfCurrentlyUnstaking(t *testing.T) {
 	require.NoError(t, err)
 
 	// Initiate the supplier unstaking
-	unstakeMsg := &types.MsgUnstakeSupplier{Address: supplierAddr}
+	unstakeMsg := &types.MsgUnstakeSupplier{
+		OwnerAddress: supplierAddr,
+		Address:      supplierAddr,
+	}
 	_, err = srv.UnstakeSupplier(ctx, unstakeMsg)
 	require.NoError(t, err)
 
@@ -180,8 +192,10 @@ func TestMsgServer_UnstakeSupplier_FailIfCurrentlyUnstaking(t *testing.T) {
 func createStakeMsg(supplierAddr string, stakeAmount int64) *types.MsgStakeSupplier {
 	initialStake := sdk.NewCoin("upokt", math.NewInt(stakeAmount))
 	return &types.MsgStakeSupplier{
-		Address: supplierAddr,
-		Stake:   &initialStake,
+		Sender:       supplierAddr,
+		OwnerAddress: supplierAddr,
+		Address:      supplierAddr,
+		Stake:        &initialStake,
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
 				Service: &sharedtypes.Service{

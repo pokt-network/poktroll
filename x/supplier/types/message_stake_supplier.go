@@ -12,12 +12,14 @@ const TypeMsgStakeSupplier = "stake_supplier"
 var _ sdk.Msg = (*MsgStakeSupplier)(nil)
 
 func NewMsgStakeSupplier(
+	senderAddress string,
 	ownerAddress string,
 	supplierAddress string,
 	stake sdk.Coin,
 	services []*sharedtypes.SupplierServiceConfig,
 ) *MsgStakeSupplier {
 	return &MsgStakeSupplier{
+		Sender:       senderAddress,
 		OwnerAddress: ownerAddress,
 		Address:      supplierAddress,
 		Stake:        &stake,
@@ -34,6 +36,16 @@ func (msg *MsgStakeSupplier) ValidateBasic() error {
 	// Validate the address
 	if _, err := sdk.AccAddressFromBech32(msg.Address); err != nil {
 		return ErrSupplierInvalidAddress.Wrapf("invalid supplier address %s; (%v)", msg.Address, err)
+	}
+
+	// Ensure the sender address matches the owner address or the operator address.
+	if msg.Sender != msg.OwnerAddress && msg.Sender != msg.Address {
+		return ErrSupplierInvalidAddress.Wrapf(
+			"sender address %s does not match owner address %s or supplier address %s",
+			msg.Sender,
+			msg.OwnerAddress,
+			msg.Address,
+		)
 	}
 
 	// TODO_MAINNET: Centralize stake related verification and share across different

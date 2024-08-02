@@ -66,6 +66,7 @@ func NewKeeper(
 		proofKeeper:       proofKeeper,
 		sharedKeeper:      sharedKeeper,
 		sessionKeeper:     sessionKeeper,
+		supplierKeeper:    supplierKeeper,
 
 		sharedQuerier: sharedQuerier,
 	}

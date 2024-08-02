@@ -123,8 +123,9 @@ func TokenomicsKeeperWithActorAddrs(
 
 	// Prepare the test supplier.
 	supplier := sharedtypes.Supplier{
-		Address: sample.AccAddress(),
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100000)},
+		OwnerAddress: sample.AccAddress(),
+		Address:      sample.AccAddress(),
+		Stake:        &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100000)},
 	}
 
 	ctrl := gomock.NewController(t)
@@ -175,7 +176,9 @@ func TokenomicsKeeperWithActorAddrs(
 
 	// Mock the supplier keeper
 	mockSupplierKeeper := mocks.NewMockSupplierKeeper(ctrl)
-	mockSupplierKeeper.EXPECT().GetSupplier(gomock.Any(), gomock.Any()).AnyTimes()
+	mockSupplierKeeper.EXPECT().GetSupplier(gomock.Any(), gomock.Any()).
+		Return(supplier, true).
+		AnyTimes()
 
 	// Mock the session keeper
 	mockSessionKeeper := mocks.NewMockSessionKeeper(ctrl)

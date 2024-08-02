@@ -9,25 +9,55 @@ import (
 )
 
 func TestMsgUnstakeSupplier_ValidateBasic(t *testing.T) {
+	ownerAddress := sample.AccAddress()
+	operatorAddress := sample.AccAddress()
 	tests := []struct {
 		desc        string
 		msg         MsgUnstakeSupplier
 		expectedErr error
 	}{
 		{
-			desc: "invalid address",
+			desc: "invalid operator address",
 			msg: MsgUnstakeSupplier{
-				Address: "invalid_address",
+				OwnerAddress: ownerAddress,
+				Address:      "invalid_address",
 			},
 			expectedErr: ErrSupplierInvalidAddress,
-		}, {
-			desc:        "missing address",
-			msg:         MsgUnstakeSupplier{},
-			expectedErr: ErrSupplierInvalidAddress,
-		}, {
-			desc: "valid address",
+		},
+		{
+			desc: "missing operator address",
 			msg: MsgUnstakeSupplier{
-				Address: sample.AccAddress(),
+				OwnerAddress: ownerAddress,
+			},
+			expectedErr: ErrSupplierInvalidAddress,
+		},
+		{
+			desc: "invalid owner address",
+			msg: MsgUnstakeSupplier{
+				OwnerAddress: "invalid_address",
+				Address:      operatorAddress,
+			},
+			expectedErr: ErrSupplierInvalidAddress,
+		},
+		{
+			desc: "missing owner address",
+			msg: MsgUnstakeSupplier{
+				Address: operatorAddress,
+			},
+			expectedErr: ErrSupplierInvalidAddress,
+		},
+		{
+			desc: "valid message",
+			msg: MsgUnstakeSupplier{
+				OwnerAddress: ownerAddress,
+				Address:      operatorAddress,
+			},
+		},
+		{
+			desc: "valid message - same operator and owner addresses",
+			msg: MsgUnstakeSupplier{
+				OwnerAddress: ownerAddress,
+				Address:      ownerAddress,
 			},
 		},
 	}
