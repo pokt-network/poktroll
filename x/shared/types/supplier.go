@@ -17,8 +17,6 @@ func (s *Supplier) IsUnbonding() bool {
 // A supplier that has submitted an unstake message is active until the end of
 // the session containing the height at which unstake message was submitted.
 func (s *Supplier) IsActive(queryHeight int64) bool {
-	// TODO_UPNEXT(@red-0ne): When introducing a governance parameter for unbonding, this
-	// will also need to be updated to reflect sessions when the supplier is not active.
 	return !s.IsUnbonding() || uint64(queryHeight) <= s.UnstakeSessionEndHeight
 }
 

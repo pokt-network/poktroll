@@ -14,8 +14,8 @@ import (
 func setupMsgServer(t testing.TB) (keeper.Keeper, types.MsgServer, context.Context) {
 	t.Helper()
 
-	k, ctx := keepertest.SupplierKeeper(t)
-	return k, keeper.NewMsgServerImpl(k), ctx
+	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
+	return *supplierModuleKeepers.Keeper, keeper.NewMsgServerImpl(*supplierModuleKeepers.Keeper), ctx
 }
 
 func TestMsgServer(t *testing.T) {

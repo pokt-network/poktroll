@@ -9,20 +9,23 @@ import (
 
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
+	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/keeper"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
-	k, ctx := keepertest.SupplierKeeper(t)
-	srv := keeper.NewMsgServerImpl(k)
+	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
+	srv := keeper.NewMsgServerImpl(*supplierModuleKeepers.Keeper)
+
+	sharedParams := supplierModuleKeepers.SharedKeeper.GetParams(ctx)
 
 	// Generate two addresses for an unstaking and a non-unstaking suppliers
 	unstakingSupplierAddr := sample.AccAddress()
 
 	// Verify that the supplier does not exist yet
-	_, isSupplierFound := k.GetSupplier(ctx, unstakingSupplierAddr)
+	_, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, unstakingSupplierAddr)
 	require.False(t, isSupplierFound)
 
 	initialStake := int64(100)
@@ -33,7 +36,7 @@ func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
 	require.NoError(t, err)
 
 	// Verify that the supplier exists
-	foundSupplier, isSupplierFound := k.GetSupplier(ctx, unstakingSupplierAddr)
+	foundSupplier, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, unstakingSupplierAddr)
 	require.True(t, isSupplierFound)
 	require.Equal(t, unstakingSupplierAddr, foundSupplier.Address)
 	require.Equal(t, math.NewInt(initialStake), foundSupplier.Stake.Amount)
@@ -47,7 +50,7 @@ func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
 	require.NoError(t, err)
 
 	// Verify that the non-unstaking supplier exists
-	_, isSupplierFound = k.GetSupplier(ctx, nonUnstakingSupplierAddr)
+	_, isSupplierFound = supplierModuleKeepers.GetSupplier(ctx, nonUnstakingSupplierAddr)
 	require.True(t, isSupplierFound)
 
 	// Initiate the supplier unstaking
@@ -56,32 +59,34 @@ func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
 	require.NoError(t, err)
 
 	// Make sure the supplier entered the unbonding period
-	foundSupplier, isSupplierFound = k.GetSupplier(ctx, unstakingSupplierAddr)
+	foundSupplier, isSupplierFound = supplierModuleKeepers.GetSupplier(ctx, unstakingSupplierAddr)
 	require.True(t, isSupplierFound)
 	require.True(t, foundSupplier.IsUnbonding())
 
 	// Move block height to the end of the unbonding period
-	unbondingHeight := k.GetSupplierUnbondingHeight(ctx, &foundSupplier)
-	ctx = keepertest.SetBlockHeight(ctx, unbondingHeight)
+	unbondingHeight := shared.GetSupplierUnbondingHeight(&sharedParams, &foundSupplier)
+	ctx = keepertest.SetBlockHeight(ctx, int64(unbondingHeight))
 
 	// Run the endblocker to unbond suppliers
-	err = k.EndBlockerUnbondSuppliers(ctx)
+	err = supplierModuleKeepers.EndBlockerUnbondSuppliers(ctx)
 	require.NoError(t, err)
 
 	// Make sure the unstaking supplier is removed from the suppliers list when the
 	// unbonding period is over
-	_, isSupplierFound = k.GetSupplier(ctx, unstakingSupplierAddr)
+	_, isSupplierFound = supplierModuleKeepers.GetSupplier(ctx, unstakingSupplierAddr)
 	require.False(t, isSupplierFound)
 
 	// Verify that the non-unstaking supplier still exists
-	nonUnstakingSupplier, isSupplierFound := k.GetSupplier(ctx, nonUnstakingSupplierAddr)
+	nonUnstakingSupplier, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, nonUnstakingSupplierAddr)
 	require.True(t, isSupplierFound)
 	require.False(t, nonUnstakingSupplier.IsUnbonding())
 }
 
 func TestMsgServer_UnstakeSupplier_CancelUnbondingIfRestaked(t *testing.T) {
-	k, ctx := keepertest.SupplierKeeper(t)
-	srv := keeper.NewMsgServerImpl(k)
+	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
+	srv := keeper.NewMsgServerImpl(*supplierModuleKeepers.Keeper)
+
+	sharedParams := supplierModuleKeepers.SharedKeeper.GetParams(ctx)
 
 	// Generate an address for the supplier
 	supplierAddr := sample.AccAddress()
@@ -93,7 +98,7 @@ func TestMsgServer_UnstakeSupplier_CancelUnbondingIfRestaked(t *testing.T) {
 	require.NoError(t, err)
 
 	// Verify that the supplier exists with no unbonding height
-	foundSupplier, isSupplierFound := k.GetSupplier(ctx, supplierAddr)
+	foundSupplier, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, supplierAddr)
 	require.True(t, isSupplierFound)
 	require.False(t, foundSupplier.IsUnbonding())
 
@@ -103,11 +108,11 @@ func TestMsgServer_UnstakeSupplier_CancelUnbondingIfRestaked(t *testing.T) {
 	require.NoError(t, err)
 
 	// Make sure the supplier entered the unbonding period
-	foundSupplier, isSupplierFound = k.GetSupplier(ctx, supplierAddr)
+	foundSupplier, isSupplierFound = supplierModuleKeepers.GetSupplier(ctx, supplierAddr)
 	require.True(t, isSupplierFound)
 	require.True(t, foundSupplier.IsUnbonding())
 
-	unbondingHeight := k.GetSupplierUnbondingHeight(ctx, &foundSupplier)
+	unbondingHeight := shared.GetSupplierUnbondingHeight(&sharedParams, &foundSupplier)
 
 	// Stake the supplier again
 	stakeMsg = createStakeMsg(supplierAddr, initialStake+1)
@@ -115,31 +120,31 @@ func TestMsgServer_UnstakeSupplier_CancelUnbondingIfRestaked(t *testing.T) {
 	require.NoError(t, err)
 
 	// Make sure the supplier is no longer in the unbonding period
-	foundSupplier, isSupplierFound = k.GetSupplier(ctx, supplierAddr)
+	foundSupplier, isSupplierFound = supplierModuleKeepers.GetSupplier(ctx, supplierAddr)
 	require.True(t, isSupplierFound)
 	require.False(t, foundSupplier.IsUnbonding())
 
 	ctx = keepertest.SetBlockHeight(ctx, int64(unbondingHeight))
 
 	// Run the EndBlocker, the supplier should not be unbonding.
-	err = k.EndBlockerUnbondSuppliers(ctx)
+	err = supplierModuleKeepers.EndBlockerUnbondSuppliers(ctx)
 	require.NoError(t, err)
 
 	// Make sure the supplier is still in the suppliers list with an unbonding height of 0
-	foundSupplier, isSupplierFound = k.GetSupplier(ctx, supplierAddr)
+	foundSupplier, isSupplierFound = supplierModuleKeepers.GetSupplier(ctx, supplierAddr)
 	require.True(t, isSupplierFound)
 	require.False(t, foundSupplier.IsUnbonding())
 }
 
 func TestMsgServer_UnstakeSupplier_FailIfNotStaked(t *testing.T) {
-	k, ctx := keepertest.SupplierKeeper(t)
-	srv := keeper.NewMsgServerImpl(k)
+	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
+	srv := keeper.NewMsgServerImpl(*supplierModuleKeepers.Keeper)
 
 	// Generate an address for the supplier
 	supplierAddr := sample.AccAddress()
 
 	// Verify that the supplier does not exist yet
-	_, isSupplierFound := k.GetSupplier(ctx, supplierAddr)
+	_, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, supplierAddr)
 	require.False(t, isSupplierFound)
 
 	// Initiate the supplier unstaking
@@ -148,13 +153,13 @@ func TestMsgServer_UnstakeSupplier_FailIfNotStaked(t *testing.T) {
 	require.Error(t, err)
 	require.ErrorIs(t, err, types.ErrSupplierNotFound)
 
-	_, isSupplierFound = k.GetSupplier(ctx, supplierAddr)
+	_, isSupplierFound = supplierModuleKeepers.GetSupplier(ctx, supplierAddr)
 	require.False(t, isSupplierFound)
 }
 
 func TestMsgServer_UnstakeSupplier_FailIfCurrentlyUnstaking(t *testing.T) {
-	k, ctx := keepertest.SupplierKeeper(t)
-	srv := keeper.NewMsgServerImpl(k)
+	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
+	srv := keeper.NewMsgServerImpl(*supplierModuleKeepers.Keeper)
 
 	// Generate an address for the supplier
 	supplierAddr := sample.AccAddress()
