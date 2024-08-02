@@ -322,7 +322,7 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 
 	// Determine how much new uPOKT to mint based on global inflation
 	settlementAmtFloat := new(big.Float).SetUint64(settlementCoins.Amount.Uint64())
-	newMintAmtFloat := settlementAmtFloat.Mul(settlementAmtFloat, big.NewFloat(MintGlobalAllocation))
+	newMintAmtFloat := new (big.Float).Mul(settlementAmtFloat, big.NewFloat(MintGlobalAllocation))
 	newMintAmtInt, _ := newMintAmtFloat.Int64()
 	newMintCoins := sdk.NewCoins(cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(newMintAmtInt)))
 
