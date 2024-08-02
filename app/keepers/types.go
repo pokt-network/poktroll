@@ -1,5 +1,11 @@
 package keepers
 
+// Keepers have been moved to a separate package to ensure all keepers are accessible in `upgrades.Upgrade.CreateUpgradeHandler`.
+// This allows for passing all keepers into the upgrade handler and accessing/changing blockchain state across all modules.
+// When performing `ignite scaffold` the keeper will be added to `app.go`. Please move them here.
+//
+// For more details, refer to the comment section of this PR: https://github.com/pokt-network/poktroll/pull/702
+
 import (
 	circuitkeeper "cosmossdk.io/x/circuit/keeper"
 	evidencekeeper "cosmossdk.io/x/evidence/keeper"
@@ -76,5 +82,4 @@ type Keepers struct {
 	ProofKeeper       proofmodulekeeper.Keeper
 	TokenomicsKeeper  tokenomicsmodulekeeper.Keeper
 	SharedKeeper      sharedmodulekeeper.Keeper
-	// this line is used by starport scaffolding # stargate/app/keeperDeclaration
 }

@@ -5,8 +5,10 @@ import (
 	"github.com/pokt-network/poktroll/app/upgrades"
 )
 
-// allUpgrades includes all upgrades that have upgrade strategy implemented. Only after a new upgrade is added here,
-// we can create a new release (https://github.com/pokt-network/poktroll/releases) and schedule an upgrade on chain.
+// allUpgrades includes all upgrades that have upgrade strategy implemented.
+// A new upgrade MUST be added BEFORE a new release is created; https://github.com/pokt-network/poktroll/releases).
+// The chain upgrade can be scheduled AFTER the new version (with upgrade strategy implemented) is released,
+// so `cosmovisor` can automatically pull the binary from GitHub.
 var allUpgrades = []upgrades.Upgrade{
 	upgrades.Upgrade_0_0_4,
 }
@@ -39,8 +41,8 @@ func (app *App) setUpgrades() error {
 
 	// Allows to skip the store upgrade if `--unsafe-skip-upgrades` is provided and the height matches.
 	// Makes it possible for social consensus to overrule the upgrade in case it has a bug.
-	// NOTE: if 2/3 of the consensus has this configured for upgrade heights, the chain will continue climbing
-	// without performing upgrades.
+	// NOTE: if 2/3 of the consensus has this configured (i.e. skip upgrade at a specific height),
+	// the chain will continue climbing without performing the upgrade.
 	shouldSkipStoreUpgrade := app.Keepers.UpgradeKeeper.IsSkipHeight(upgradePlan.Height)
 	if !shouldSkipStoreUpgrade {
 		app.SetStoreLoader(upgradetypes.UpgradeStoreLoader(upgradePlan.Height, &plannedUpgrade.StoreUpgrades))
