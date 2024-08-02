@@ -9,10 +9,6 @@ import (
 	"cosmossdk.io/depinject"
 	"cosmossdk.io/log"
 	storetypes "cosmossdk.io/store/types"
-	circuitkeeper "cosmossdk.io/x/circuit/keeper"
-	evidencekeeper "cosmossdk.io/x/evidence/keeper"
-	feegrantkeeper "cosmossdk.io/x/feegrant/keeper"
-	upgradekeeper "cosmossdk.io/x/upgrade/keeper"
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
@@ -26,44 +22,21 @@ import (
 	testdata_pulsar "github.com/cosmos/cosmos-sdk/testutil/testdata/testpb"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/auth"
-	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	authsims "github.com/cosmos/cosmos-sdk/x/auth/simulation"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	authzkeeper "github.com/cosmos/cosmos-sdk/x/authz/keeper"
-	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
-	consensuskeeper "github.com/cosmos/cosmos-sdk/x/consensus/keeper"
-	crisiskeeper "github.com/cosmos/cosmos-sdk/x/crisis/keeper"
-	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 	"github.com/cosmos/cosmos-sdk/x/gov"
 	govclient "github.com/cosmos/cosmos-sdk/x/gov/client"
-	govkeeper "github.com/cosmos/cosmos-sdk/x/gov/keeper"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
-	groupkeeper "github.com/cosmos/cosmos-sdk/x/group/keeper"
-	mintkeeper "github.com/cosmos/cosmos-sdk/x/mint/keeper"
 	paramsclient "github.com/cosmos/cosmos-sdk/x/params/client"
-	paramskeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
-	slashingkeeper "github.com/cosmos/cosmos-sdk/x/slashing/keeper"
-	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	capabilitykeeper "github.com/cosmos/ibc-go/modules/capability/keeper"
-	icacontrollerkeeper "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/controller/keeper"
-	icahostkeeper "github.com/cosmos/ibc-go/v8/modules/apps/27-interchain-accounts/host/keeper"
-	ibcfeekeeper "github.com/cosmos/ibc-go/v8/modules/apps/29-fee/keeper"
-	ibctransferkeeper "github.com/cosmos/ibc-go/v8/modules/apps/transfer/keeper"
 	ibckeeper "github.com/cosmos/ibc-go/v8/modules/core/keeper"
 
+	"github.com/pokt-network/poktroll/app/keepers"
 	"github.com/pokt-network/poktroll/docs"
 	"github.com/pokt-network/poktroll/telemetry"
-	applicationmodulekeeper "github.com/pokt-network/poktroll/x/application/keeper"
-	gatewaymodulekeeper "github.com/pokt-network/poktroll/x/gateway/keeper"
-	proofmodulekeeper "github.com/pokt-network/poktroll/x/proof/keeper"
-	servicemodulekeeper "github.com/pokt-network/poktroll/x/service/keeper"
-	sessionmodulekeeper "github.com/pokt-network/poktroll/x/session/keeper"
-	sharedmodulekeeper "github.com/pokt-network/poktroll/x/shared/keeper"
-	suppliermodulekeeper "github.com/pokt-network/poktroll/x/supplier/keeper"
-	tokenomicsmodulekeeper "github.com/pokt-network/poktroll/x/tokenomics/keeper"
 )
 
 const (
@@ -90,51 +63,13 @@ type App struct {
 	appCodec          codec.Codec
 	txConfig          client.TxConfig
 	interfaceRegistry codectypes.InterfaceRegistry
-
-	// keepers
-	AccountKeeper         authkeeper.AccountKeeper
-	BankKeeper            bankkeeper.Keeper
-	StakingKeeper         *stakingkeeper.Keeper
-	SlashingKeeper        slashingkeeper.Keeper
-	MintKeeper            mintkeeper.Keeper
-	DistrKeeper           distrkeeper.Keeper
-	GovKeeper             *govkeeper.Keeper
-	CrisisKeeper          *crisiskeeper.Keeper
-	UpgradeKeeper         *upgradekeeper.Keeper
-	ParamsKeeper          paramskeeper.Keeper
-	AuthzKeeper           authzkeeper.Keeper
-	EvidenceKeeper        evidencekeeper.Keeper
-	FeeGrantKeeper        feegrantkeeper.Keeper
-	GroupKeeper           groupkeeper.Keeper
-	ConsensusParamsKeeper consensuskeeper.Keeper
-	CircuitBreakerKeeper  circuitkeeper.Keeper
-
-	// IBC
-	IBCKeeper           *ibckeeper.Keeper // IBC Keeper must be a pointer in the app, so we can SetRouter on it correctly
-	CapabilityKeeper    *capabilitykeeper.Keeper
-	IBCFeeKeeper        ibcfeekeeper.Keeper
-	ICAControllerKeeper icacontrollerkeeper.Keeper
-	ICAHostKeeper       icahostkeeper.Keeper
-	TransferKeeper      ibctransferkeeper.Keeper
-
-	// Scoped IBC
-	ScopedIBCKeeper           capabilitykeeper.ScopedKeeper
-	ScopedIBCTransferKeeper   capabilitykeeper.ScopedKeeper
-	ScopedICAControllerKeeper capabilitykeeper.ScopedKeeper
-	ScopedICAHostKeeper       capabilitykeeper.ScopedKeeper
-
-	ServiceKeeper     servicemodulekeeper.Keeper
-	GatewayKeeper     gatewaymodulekeeper.Keeper
-	ApplicationKeeper applicationmodulekeeper.Keeper
-	SupplierKeeper    suppliermodulekeeper.Keeper
-	SessionKeeper     sessionmodulekeeper.Keeper
-	ProofKeeper       proofmodulekeeper.Keeper
-	TokenomicsKeeper  tokenomicsmodulekeeper.Keeper
-	SharedKeeper      sharedmodulekeeper.Keeper
-	// this line is used by starport scaffolding # stargate/app/keeperDeclaration
+	Keepers           keepers.Keepers
 
 	// simulation manager
 	sm *module.SimulationManager
+
+	// this line is used by starport scaffolding # stargate/app/keeperDeclaration
+	// Ignite CLI adds keepers here when scaffolding new modules. Please move the created keeper to the `keepers` package.
 }
 
 func init() {
@@ -186,7 +121,9 @@ func New(
 	baseAppOptions ...func(*baseapp.BaseApp),
 ) (*App, error) {
 	var (
-		app        = &App{}
+		app = &App{
+			Keepers: keepers.Keepers{},
+		}
 		appBuilder *runtime.AppBuilder
 
 		// merge the AppConfig and other configuration in one config
@@ -252,31 +189,32 @@ func New(
 		&app.legacyAmino,
 		&app.txConfig,
 		&app.interfaceRegistry,
-		&app.AccountKeeper,
-		&app.BankKeeper,
-		&app.StakingKeeper,
-		&app.SlashingKeeper,
-		&app.MintKeeper,
-		&app.DistrKeeper,
-		&app.GovKeeper,
-		&app.CrisisKeeper,
-		&app.UpgradeKeeper,
-		&app.ParamsKeeper,
-		&app.AuthzKeeper,
-		&app.EvidenceKeeper,
-		&app.FeeGrantKeeper,
-		&app.GroupKeeper,
-		&app.ConsensusParamsKeeper,
-		&app.CircuitBreakerKeeper,
-		&app.ServiceKeeper,
-		&app.GatewayKeeper,
-		&app.ApplicationKeeper,
-		&app.SupplierKeeper,
-		&app.SessionKeeper,
-		&app.ProofKeeper,
-		&app.TokenomicsKeeper,
-		&app.SharedKeeper,
+		&app.Keepers.AccountKeeper,
+		&app.Keepers.BankKeeper,
+		&app.Keepers.StakingKeeper,
+		&app.Keepers.SlashingKeeper,
+		&app.Keepers.MintKeeper,
+		&app.Keepers.DistrKeeper,
+		&app.Keepers.GovKeeper,
+		&app.Keepers.CrisisKeeper,
+		&app.Keepers.UpgradeKeeper,
+		&app.Keepers.ParamsKeeper,
+		&app.Keepers.AuthzKeeper,
+		&app.Keepers.EvidenceKeeper,
+		&app.Keepers.FeeGrantKeeper,
+		&app.Keepers.GroupKeeper,
+		&app.Keepers.ConsensusParamsKeeper,
+		&app.Keepers.CircuitBreakerKeeper,
+		&app.Keepers.ServiceKeeper,
+		&app.Keepers.GatewayKeeper,
+		&app.Keepers.ApplicationKeeper,
+		&app.Keepers.SupplierKeeper,
+		&app.Keepers.SessionKeeper,
+		&app.Keepers.ProofKeeper,
+		&app.Keepers.TokenomicsKeeper,
+		&app.Keepers.SharedKeeper,
 		// this line is used by starport scaffolding # stargate/app/keeperDefinition
+		// Ignite CLI adds keepers here when scaffolding new modules. Please move the created keeper to the `keepers` package.
 	); err != nil {
 		panic(err)
 	}
@@ -329,7 +267,7 @@ func New(
 
 	/****  Module Options ****/
 
-	app.ModuleManager.RegisterInvariants(app.CrisisKeeper)
+	app.ModuleManager.RegisterInvariants(app.Keepers.CrisisKeeper)
 
 	// add test gRPC service for testing gRPC queries in isolation
 	testdata_pulsar.RegisterQueryServer(app.GRPCQueryRouter(), testdata_pulsar.QueryImpl{})
@@ -339,7 +277,7 @@ func New(
 	// NOTE: this is not required apps that don't use the simulator for fuzz testing
 	// transactions
 	overrideModules := map[string]module.AppModuleSimulation{
-		authtypes.ModuleName: auth.NewAppModule(app.appCodec, app.AccountKeeper, authsims.RandomGenesisAccounts, app.GetSubspace(authtypes.ModuleName)),
+		authtypes.ModuleName: auth.NewAppModule(app.appCodec, app.Keepers.AccountKeeper, authsims.RandomGenesisAccounts, app.GetSubspace(authtypes.ModuleName)),
 	}
 	app.sm = module.NewSimulationManagerFromAppModules(app.ModuleManager.Modules, overrideModules)
 
@@ -355,6 +293,10 @@ func New(
 	// 	app.UpgradeKeeper.SetModuleVersionMap(ctx, app.ModuleManager.GetVersionMap())
 	// 	return app.App.InitChainer(ctx, req)
 	// })
+
+	if err := app.setUpgrades(); err != nil {
+		return nil, err
+	}
 
 	if err := app.Load(loadLatest); err != nil {
 		return nil, err
@@ -412,7 +354,7 @@ func (app *App) kvStoreKeys() map[string]*storetypes.KVStoreKey {
 
 // GetSubspace returns a param subspace for a given module name.
 func (app *App) GetSubspace(moduleName string) paramstypes.Subspace {
-	subspace, _ := app.ParamsKeeper.GetSubspace(moduleName)
+	subspace, _ := app.Keepers.ParamsKeeper.GetSubspace(moduleName)
 	return subspace
 }
 
@@ -436,12 +378,12 @@ func (app *App) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.APIConfig
 
 // GetIBCKeeper returns the IBC keeper.
 func (app *App) GetIBCKeeper() *ibckeeper.Keeper {
-	return app.IBCKeeper
+	return app.Keepers.IBCKeeper
 }
 
 // GetCapabilityScopedKeeper returns the capability scoped keeper.
 func (app *App) GetCapabilityScopedKeeper(moduleName string) capabilitykeeper.ScopedKeeper {
-	return app.CapabilityKeeper.ScopeToModule(moduleName)
+	return app.Keepers.CapabilityKeeper.ScopeToModule(moduleName)
 }
 
 // GetMaccPerms returns a copy of the module account permissions
