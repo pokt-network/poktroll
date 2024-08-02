@@ -97,5 +97,104 @@
       "msg": "\/poktroll.shared.MsgUpdateParam"
     },
     "expiration": "2500-01-01T00:00:00Z"
+  },
+  {
+    "granter": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
+    "grantee": "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw",
+    "authorization": {
+      "@type": "\/cosmos.authz.v1beta1.GenericAuthorization",
+      "msg": "\/cosmos.upgrade.v1beta1.MsgSoftwareUpgrade"
+    },
+    "expiration": "2500-01-01T00:00:00Z"
+  },
+  {
+    "granter": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
+    "grantee": "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw",
+    "authorization": {
+      "@type": "\/cosmos.authz.v1beta1.GenericAuthorization",
+      "msg": "\/cosmos.upgrade.v1beta1.MsgCancelUpgrade"
+    },
+    "expiration": "2500-01-01T00:00:00Z"
+  },
+  {
+    "granter": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
+    "grantee": "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw",
+    "authorization": {
+      "@type": "\/cosmos.authz.v1beta1.GenericAuthorization",
+      "msg": "\/cosmos.auth.v1beta1.MsgUpdateParams"
+    },
+    "expiration": "2500-01-01T00:00:00Z"
+  },
+  {
+    "granter": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
+    "grantee": "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw",
+    "authorization": {
+      "@type": "\/cosmos.authz.v1beta1.GenericAuthorization",
+      "msg": "\/cosmos.bank.v1beta1.MsgUpdateParams"
+    },
+    "expiration": "2500-01-01T00:00:00Z"
+  },
+  {
+    "granter": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
+    "grantee": "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw",
+    "authorization": {
+      "@type": "\/cosmos.authz.v1beta1.GenericAuthorization",
+      "msg": "\/cosmos.distribution.v1beta1.MsgUpdateParams"
+    },
+    "expiration": "2500-01-01T00:00:00Z"
+  },
+  {
+    "granter": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
+    "grantee": "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw",
+    "authorization": {
+      "@type": "\/cosmos.authz.v1beta1.GenericAuthorization",
+      "msg": "\/cosmos.mint.v1beta1.MsgUpdateParams"
+    },
+    "expiration": "2500-01-01T00:00:00Z"
+  },
+  {
+    "granter": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
+    "grantee": "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw",
+    "authorization": {
+      "@type": "\/cosmos.authz.v1beta1.GenericAuthorization",
+      "msg": "\/cosmos.staking.v1beta1.MsgUpdateParams"
+    },
+    "expiration": "2500-01-01T00:00:00Z"
+  },
+  {
+    "granter": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
+    "grantee": "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw",
+    "authorization": {
+      "@type": "\/cosmos.authz.v1beta1.GenericAuthorization",
+      "msg": "\/cosmos.slashing.v1beta1.MsgUpdateParams"
+    },
+    "expiration": "2500-01-01T00:00:00Z"
+  },
+  {
+    "granter": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
+    "grantee": "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw",
+    "authorization": {
+      "@type": "\/cosmos.authz.v1beta1.GenericAuthorization",
+      "msg": "\/cosmos.gov.v1.MsgUpdateParams"
+    },
+    "expiration": "2500-01-01T00:00:00Z"
+  },
+  {
+    "granter": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
+    "grantee": "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw",
+    "authorization": {
+      "@type": "\/cosmos.authz.v1beta1.GenericAuthorization",
+      "msg": "\/cosmos.gov.v1.MsgCancelProposal"
+    },
+    "expiration": "2500-01-01T00:00:00Z"
+  },
+  {
+    "granter": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
+    "grantee": "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw",
+    "authorization": {
+      "@type": "\/cosmos.authz.v1beta1.GenericAuthorization",
+      "msg": "\/cosmos.consensus.v1.MsgUpdateParams"
+    },
+    "expiration": "2500-01-01T00:00:00Z"
   }
 ]

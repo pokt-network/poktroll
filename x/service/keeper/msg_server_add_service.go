@@ -38,26 +38,33 @@ func (k msgServer) AddService(
 	}
 
 	// Check if the service already exists or not.
-	if _, found := k.GetService(ctx, msg.Service.Id); found {
-		logger.Error(fmt.Sprintf("Service already exists: %v", msg.Service))
+	foundService, found := k.GetService(ctx, msg.Service.Id)
+	if found {
+		if foundService.OwnerAddress != msg.Service.OwnerAddress {
+			logger.Error(fmt.Sprintf("Owner address of existing service (%q) does not match the owner address %q", foundService.OwnerAddress, msg.OwnerAddress))
+			return nil, types.ErrServiceInvalidOwnerAddress.Wrapf(
+				"existing owner address %q does not match the new owner address %q",
+				foundService.OwnerAddress, msg.Service.OwnerAddress,
+			)
+		}
 		return nil, types.ErrServiceAlreadyExists.Wrapf(
-			"duplicate service ID: %s", msg.Service.Id,
+			"TODO(@adshmh): This is an ephemeral state of the code. Once we s/AddService/UpdateService/g, add the business logic here for updates here.",
 		)
 	}
 
-	// Retrieve the address of the actor adding the service.
-	accAddr, err := sdk.AccAddressFromBech32(msg.Address)
+	// Retrieve the address of the actor adding the service; the owner of the service.
+	serviceOwnerAddr, err := sdk.AccAddressFromBech32(msg.OwnerAddress)
 	if err != nil {
-		logger.Error(fmt.Sprintf("could not parse address %s", msg.Address))
+		logger.Error(fmt.Sprintf("could not parse address %s", msg.OwnerAddress))
 		return nil, types.ErrServiceInvalidAddress.Wrapf(
-			"%s is not in Bech32 format", msg.Address,
+			"%s is not in Bech32 format", msg.OwnerAddress,
 		)
 	}
 
 	// Check the actor has sufficient funds to pay for the add service fee.
-	accCoins := k.bankKeeper.SpendableCoins(ctx, accAddr)
+	accCoins := k.bankKeeper.SpendableCoins(ctx, serviceOwnerAddr)
 	if accCoins.Len() == 0 {
-		logger.Error(fmt.Sprintf("%s doesn't have any funds to add service: %v", msg.Address, err))
+		logger.Error(fmt.Sprintf("%s doesn't have any funds to add service: %v", serviceOwnerAddr, err))
 		return nil, types.ErrServiceNotEnoughFunds.Wrapf(
 			"account has no spendable coins",
 		)
@@ -67,7 +74,7 @@ func (k msgServer) AddService(
 	accBalance := accCoins.AmountOf("upokt")
 	addServiceFee := math.NewIntFromUint64(k.GetParams(ctx).AddServiceFee)
 	if accBalance.LTE(addServiceFee) {
-		logger.Error(fmt.Sprintf("%s doesn't have enough funds to add service: %v", msg.Address, err))
+		logger.Error(fmt.Sprintf("%s doesn't have enough funds to add service: %v", serviceOwnerAddr, err))
 		return nil, types.ErrServiceNotEnoughFunds.Wrapf(
 			"account has %d uPOKT, but the service fee is %d uPOKT",
 			accBalance.Uint64(), k.GetParams(ctx).AddServiceFee,
@@ -76,7 +83,7 @@ func (k msgServer) AddService(
 
 	// Deduct the service fee from the actor's balance.
 	serviceFee := sdk.Coins{sdk.NewCoin("upokt", addServiceFee)}
-	err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, accAddr, types.ModuleName, serviceFee)
+	err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, serviceOwnerAddr, types.ModuleName, serviceFee)
 	if err != nil {
 		logger.Error(fmt.Sprintf("Failed to deduct service fee from actor's balance: %v", err))
 		return nil, types.ErrServiceFailedToDeductFee.Wrapf(

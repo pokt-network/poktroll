@@ -69,7 +69,7 @@ type TokenomicsModuleKeepers struct {
 
 // TokenomicsKeepersOpt is a function which receives and potentially modifies the context
 // and tokenomics keepers during construction of the aggregation.
-type TokenomicsKeepersOpt func(context.Context, *TokenomicsModuleKeepers) context.Context
+type TokenomicsModuleKeepersOpt func(context.Context, *TokenomicsModuleKeepers) context.Context
 
 func TokenomicsKeeper(t testing.TB) (tokenomicsKeeper tokenomicskeeper.Keeper, ctx context.Context) {
 	t.Helper()
@@ -77,10 +77,15 @@ func TokenomicsKeeper(t testing.TB) (tokenomicsKeeper tokenomicskeeper.Keeper, c
 	return k, ctx
 }
 
-// TODO_TECHDEBT: Have the callers use the keepers to find `appAddr` and `supplierAddr`
-// rather than returning them explicitly.
-// TODO_TECHDEBT(@Olshansk): Remove `service` parameter and convert proper options.
-func TokenomicsKeeperWithActorAddrs(t testing.TB, service *sharedtypes.Service) (
+// TODO_TECHDEBT: Remove this and force everyone to use NewTokenomicsModuleKeepers.
+// There is a difference in the method signatures and mocking, which was simply
+// a result of the evolution of the testutil package.
+// TODO_REFACTOR(@Olshansk): Rather than making `service`, `appAddr` and `supplierAddr`
+// explicit params, make them passable by the caller as options.
+func TokenomicsKeeperWithActorAddrs(
+	t testing.TB,
+	service *sharedtypes.Service,
+) (
 	tokenomicsKeeper tokenomicskeeper.Keeper,
 	ctx context.Context,
 	appAddr string,
@@ -202,7 +207,7 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB, service *sharedtypes.Service) 
 func NewTokenomicsModuleKeepers(
 	t testing.TB,
 	logger log.Logger,
-	opts ...TokenomicsKeepersOpt,
+	opts ...TokenomicsModuleKeepersOpt,
 ) (_ TokenomicsModuleKeepers, ctx context.Context) {
 	t.Helper()
 
