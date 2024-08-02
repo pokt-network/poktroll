@@ -6,7 +6,7 @@ package upgrades
 
 // TODO_CONSIDERATION: after we verify `State Sync` is fully functional, we can hypothetically remove old upgrades from
 // the codebase, as the nodes won't have to execute upgrades and will download the "snapshot" instead. Some other
-// blockchain networks (such as `evmos`), remove the old upgrades from the codebase.
+// blockchain networks do that (such as `evmos`: https://github.com/evmos/evmos/tree/main/app/upgrades).
 // Note that this may inhibit a full state sync from genesis.
 
 import (
@@ -37,10 +37,13 @@ func defaultUpgradeHandler(
 // an upgrade so node runners are signalled to start utilizing `Cosmovisor` for new binaries.
 var UpgradeExample = Upgrade{
 	PlanName:             "v0.0.0-Example",
-	CreateUpgradeHandler: defaultMigrationsOnlyUpgradeHandler,
+	CreateUpgradeHandler: defaultUpgradeHandler,
 
 	// We can also add, rename and delete KVStores.
-	StoreUpgrades: storetypes.StoreUpgrades{},
+	// More info in cosmos-sdk docs: https://docs.cosmos.network/v0.50/learn/advanced/upgrade#add-storeupgrades-for-new-modules
+	StoreUpgrades: storetypes.StoreUpgrades{
+		// Added: []string{"wowsuchrelay"},
+	},
 }
 
 // Upgrade_0_0_4 is an example of an upgrade that increases the block size.

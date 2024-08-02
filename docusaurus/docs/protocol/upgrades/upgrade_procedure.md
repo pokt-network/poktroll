@@ -9,6 +9,17 @@ sidebar_position: 2
 This page describes the protocol upgrade process, which is internal to the protocol team. If you're interested in upgrading your Pocket Network node, please check our [releases page](https://github.com/pokt-network/poktroll/releases) for upgrade instructions and changelogs.
 :::
 
+- [When is an Upgrade Warranted?](#when-is-an-upgrade-warranted)
+- [Implementing the Upgrade](#implementing-the-upgrade)
+- [Writing an Upgrade Transaction](#writing-an-upgrade-transaction)
+- [Submitting the upgrade on-chain](#submitting-the-upgrade-on-chain)
+- [Testing the Upgrade](#testing-the-upgrade)
+  - [LocalNet](#localnet)
+  - [DevNet](#devnet)
+  - [TestNet](#testnet)
+  - [Mainnet](#mainnet)
+
+
 ## Overview <!-- omit in toc -->
 
 When a consensus-breaking change is made to the protocol, we must carefully evaluate and implement an upgrade path that allows existing nodes to transition safely from one software version to another without disruption. This process involves several key steps:
@@ -59,21 +70,35 @@ An upgrade transaction includes a [Plan](https://github.com/cosmos/cosmos-sdk/bl
 **height**: The height at which an upgrade should be executed and the node will be restarted.
 **info**: While this field can theoretically contain any information about the upgrade, in practice, `cosmovisor` uses it to obtain information about the binaries. When `cosmovisor` is configured to automatically download binaries, it will pull the binary from the link provided in this field and perform a hash verification (which is optional).
 
+## Submitting the upgrade on-chain
+
+The `MsgSoftwareUpgrade` can be submitted using the following command:
+
+```bash
+poktrolld tx authz exec PATH_TO_TRANSACTION_JSON --from pnf
+```
+
+If the transaction has been accepted, upgrade plan can be viewed with this command:
+
+```bash
+poktrolld query upgrade plan
+```
+
 ## Testing the Upgrade
 
 ### LocalNet
 
 LocalNet currently does not support `cosmovisor` and automatic upgrades. However, we have provided scripts to facilitate local testing in the `tools/scripts/upgrades` directory:
 
-1. Modify `tools/scripts/upgrades/authz_upgrade_tx.json` to reflect the name of the upgrade and the height at which it should be scheduled. Note that for local testing, `cosmovisor` won't pull the binary from the `info` field.
+1. Modify `tools/scripts/upgrades/authz_upgrade_tx_example_v0.0.4_height_30.json` to reflect the name of the upgrade and the height at which it should be scheduled. Note that for local testing, `cosmovisor` won't pull the binary from the `info` field.
 
-2. Update `tools/scripts/upgrades/start-node.sh` to point to the correct binaries:
+2. Check and update the `tools/scripts/upgrades/cosmovisor-start-node.sh` to point to the correct binaries:
    - The old binary should be compiled to work before the upgrade.
    - The new binary should contain the upgrade logic to be executed immediately after the node is started using the new binary.
 
-3. Run `bash tools/scripts/upgrades/start-node.sh` to wipe the `~/.poktroll` directory and place binaries in the correct locations.
+3. Run `bash tools/scripts/upgrades/cosmovisor-start-node.sh` to wipe the `~/.poktroll` directory and place binaries in the correct locations.
 
-4. Execute `bash tools/scripts/upgrades/submit-upgrade.sh` to schedule the upgrade (using `authz_upgrade_tx.json`) and display information about the scheduled upgrade.
+4. Execute the transaction as shown in [Submitting the upgrade on-chain](#submitting-the-upgrade-on-chain).
 
 ### DevNet
 
