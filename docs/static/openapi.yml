@@ -16597,6 +16597,755 @@ paths:
             description: MsgUpdateParams is the Msg/UpdateParams request type.
       tags:
         - Msg
+  /pokt-network/poktroll/proof/claim:
+    get:
+      operationId: PoktrollProofQuery_AllClaims
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              claims:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    supplier_address:
+                      type: string
+                      title: the address of the supplier that submitted this claim
+                    session_header:
+                      description: >-
+                        The session header of the session that this claim is
+                        for.
+                      type: object
+                      properties:
+                        application_address:
+                          type: string
+                          title: >-
+                            The Bech32 address of the application using cosmos'
+                            ScalarDescriptor to ensure deterministic encoding
+                        service:
+                          title: The service this session is for
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              description: Unique identifier for the service
+                              title: >-
+                                For example, what if we want to request a
+                                session for a certain service but with some
+                                additional configs that identify it?
+                            name:
+                              type: string
+                              description: >-
+                                (Optional) Semantic human readable name for the
+                                service
+                              title: >-
+                                TODO_BETA: Name is currently unused but acts as
+                                a reminder that an optional onchain
+                                representation of the service is necessary
+                            compute_units_per_relay:
+                              type: string
+                              format: uint64
+                              description: >-
+                                Compute units required per relay for this
+                                service
+                              title: >-
+                                Used alongside the global
+                                'compute_units_to_tokens_multipler' to calculate
+                                the cost of a relay for this service
+                        session_id:
+                          type: string
+                          description: A unique pseudoranom ID for this session
+                          title: >-
+                            NOTE: session_id can be derived from the above
+                            values using on-chain but is included in the header
+                            for convenience
+                        session_start_block_height:
+                          type: string
+                          format: int64
+                          title: The height at which this session started
+                        session_end_block_height:
+                          type: string
+                          format: int64
+                          description: >-
+                            Note that`session_end_block_height` is a derivative
+                            of (`start` + `num_blocks_per_session`)
+
+                            as goverened by on-chain params at the time of the
+                            session start.
+
+                            It is stored as an additional field to simplofy
+                            business logic in case
+
+                            the number of blocks_per_session changes during the
+                            session.
+
+
+                            The height at which this session ended, this is the
+                            last block of the session
+                    root_hash:
+                      type: string
+                      format: byte
+                      description: Root hash returned from smt.SMST#Root().
+                  title: >-
+                    Claim is the serialized object stored on-chain for claims
+                    pending to be proven
+              pagination:
+                type: object
+                properties:
+                  next_key:
+                    type: string
+                    format: byte
+                    description: |-
+                      next_key is the key to be passed to PageRequest.key to
+                      query the next page most efficiently. It will be empty if
+                      there are no more results.
+                  total:
+                    type: string
+                    format: uint64
+                    title: >-
+                      total is total number of results available if
+                      PageRequest.count_total
+
+                      was set, its value is undefined otherwise
+                description: >-
+                  PageResponse is to be embedded in gRPC response messages where
+                  the
+
+                  corresponding request message has used PageRequest.
+
+                   message SomeResponse {
+                           repeated Bar results = 1;
+                           PageResponse page = 2;
+                   }
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    '@type':
+                      type: string
+                  additionalProperties: {}
+      parameters:
+        - name: pagination.key
+          description: |-
+            key is a value returned in PageResponse.next_key to begin
+            querying the next page most efficiently. Only one of offset or key
+            should be set.
+          in: query
+          required: false
+          type: string
+          format: byte
+        - name: pagination.offset
+          description: >-
+            offset is a numeric offset that can be used when key is unavailable.
+
+            It is less efficient than using key. Only one of offset or key
+            should
+
+            be set.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.limit
+          description: >-
+            limit is the total number of results to be returned in the result
+            page.
+
+            If left empty it will default to a value to be set by each app.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.count_total
+          description: >-
+            count_total is set to true  to indicate that the result set should
+            include
+
+            a count of the total number of items available for pagination in
+            UIs.
+
+            count_total is only respected when offset is used. It is ignored
+            when key
+
+            is set.
+          in: query
+          required: false
+          type: boolean
+        - name: pagination.reverse
+          description: >-
+            reverse is set to true if results are to be returned in the
+            descending order.
+
+
+            Since: cosmos-sdk 0.43
+          in: query
+          required: false
+          type: boolean
+        - name: supplier_address
+          in: query
+          required: false
+          type: string
+        - name: session_id
+          in: query
+          required: false
+          type: string
+        - name: session_end_height
+          in: query
+          required: false
+          type: string
+          format: uint64
+      tags:
+        - Query
+  /pokt-network/poktroll/proof/claim/{session_id}/{supplier_address}:
+    get:
+      summary: Queries a list of Claim items.
+      operationId: PoktrollProofQuery_Claim
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              claim:
+                type: object
+                properties:
+                  supplier_address:
+                    type: string
+                    title: the address of the supplier that submitted this claim
+                  session_header:
+                    description: The session header of the session that this claim is for.
+                    type: object
+                    properties:
+                      application_address:
+                        type: string
+                        title: >-
+                          The Bech32 address of the application using cosmos'
+                          ScalarDescriptor to ensure deterministic encoding
+                      service:
+                        title: The service this session is for
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                            description: Unique identifier for the service
+                            title: >-
+                              For example, what if we want to request a session
+                              for a certain service but with some additional
+                              configs that identify it?
+                          name:
+                            type: string
+                            description: >-
+                              (Optional) Semantic human readable name for the
+                              service
+                            title: >-
+                              TODO_BETA: Name is currently unused but acts as a
+                              reminder that an optional onchain representation
+                              of the service is necessary
+                          compute_units_per_relay:
+                            type: string
+                            format: uint64
+                            description: Compute units required per relay for this service
+                            title: >-
+                              Used alongside the global
+                              'compute_units_to_tokens_multipler' to calculate
+                              the cost of a relay for this service
+                      session_id:
+                        type: string
+                        description: A unique pseudoranom ID for this session
+                        title: >-
+                          NOTE: session_id can be derived from the above values
+                          using on-chain but is included in the header for
+                          convenience
+                      session_start_block_height:
+                        type: string
+                        format: int64
+                        title: The height at which this session started
+                      session_end_block_height:
+                        type: string
+                        format: int64
+                        description: >-
+                          Note that`session_end_block_height` is a derivative of
+                          (`start` + `num_blocks_per_session`)
+
+                          as goverened by on-chain params at the time of the
+                          session start.
+
+                          It is stored as an additional field to simplofy
+                          business logic in case
+
+                          the number of blocks_per_session changes during the
+                          session.
+
+
+                          The height at which this session ended, this is the
+                          last block of the session
+                  root_hash:
+                    type: string
+                    format: byte
+                    description: Root hash returned from smt.SMST#Root().
+                title: >-
+                  Claim is the serialized object stored on-chain for claims
+                  pending to be proven
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    '@type':
+                      type: string
+                  additionalProperties: {}
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          type: string
+        - name: supplier_address
+          in: path
+          required: true
+          type: string
+      tags:
+        - Query
+  /pokt-network/poktroll/proof/params:
+    get:
+      summary: Parameters queries the parameters of the module.
+      operationId: PoktrollProofQuery_Params
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              params:
+                description: params holds all the parameters of this module.
+                type: object
+                properties:
+                  relay_difficulty_target_hash:
+                    type: string
+                    format: byte
+                    description: >-
+                      TODO_FOLLOWUP(@olshansk, #690): Either delete this or
+                      change it to be named "minimum"
+
+                      relay_difficulty_target_hash is the maximum value a relay
+                      hash must be less than to be volume/reward applicable.
+                  proof_request_probability:
+                    type: number
+                    format: float
+                    description: >-
+                      proof_request_probability is the probability of a session
+                      requiring a proof
+
+                      if it's cost (i.e. compute unit consumption) is below the
+                      ProofRequirementThreshold.
+                  proof_requirement_threshold:
+                    type: string
+                    format: uint64
+                    description: >-
+                      proof_requirement_threshold is the session cost (i.e.
+                      compute unit consumption)
+
+                      threshold which asserts that a session MUST have a
+                      corresponding proof when its cost
+
+                      is equal to or above the threshold. This is in contrast to
+                      the this requirement
+
+                      being determined probabilistically via
+                      ProofRequestProbability.
+
+
+                      TODO_MAINNET: Consider renaming this to
+                      `proof_requirement_threshold_compute_units`.
+                  proof_missing_penalty:
+                    description: >-
+                      proof_missing_penalty is the number of tokens (uPOKT)
+                      which should be slashed from a supplier
+
+                      when a proof is required (either via
+                      proof_requirement_threshold or proof_missing_penalty)
+
+                      but is not provided.
+                    type: object
+                    properties:
+                      denom:
+                        type: string
+                      amount:
+                        type: string
+            description: >-
+              QueryParamsResponse is response type for the Query/Params RPC
+              method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    '@type':
+                      type: string
+                  additionalProperties: {}
+      tags:
+        - Query
+  /pokt-network/poktroll/proof/proof:
+    get:
+      operationId: PoktrollProofQuery_AllProofs
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              proofs:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    supplier_address:
+                      type: string
+                    session_header:
+                      description: >-
+                        The session header of the session that this claim is
+                        for.
+                      type: object
+                      properties:
+                        application_address:
+                          type: string
+                          title: >-
+                            The Bech32 address of the application using cosmos'
+                            ScalarDescriptor to ensure deterministic encoding
+                        service:
+                          title: The service this session is for
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              description: Unique identifier for the service
+                              title: >-
+                                For example, what if we want to request a
+                                session for a certain service but with some
+                                additional configs that identify it?
+                            name:
+                              type: string
+                              description: >-
+                                (Optional) Semantic human readable name for the
+                                service
+                              title: >-
+                                TODO_BETA: Name is currently unused but acts as
+                                a reminder that an optional onchain
+                                representation of the service is necessary
+                            compute_units_per_relay:
+                              type: string
+                              format: uint64
+                              description: >-
+                                Compute units required per relay for this
+                                service
+                              title: >-
+                                Used alongside the global
+                                'compute_units_to_tokens_multipler' to calculate
+                                the cost of a relay for this service
+                        session_id:
+                          type: string
+                          description: A unique pseudoranom ID for this session
+                          title: >-
+                            NOTE: session_id can be derived from the above
+                            values using on-chain but is included in the header
+                            for convenience
+                        session_start_block_height:
+                          type: string
+                          format: int64
+                          title: The height at which this session started
+                        session_end_block_height:
+                          type: string
+                          format: int64
+                          description: >-
+                            Note that`session_end_block_height` is a derivative
+                            of (`start` + `num_blocks_per_session`)
+
+                            as goverened by on-chain params at the time of the
+                            session start.
+
+                            It is stored as an additional field to simplofy
+                            business logic in case
+
+                            the number of blocks_per_session changes during the
+                            session.
+
+
+                            The height at which this session ended, this is the
+                            last block of the session
+                    closest_merkle_proof:
+                      type: string
+                      format: byte
+                      description: >-
+                        The serialized SMST proof from the `#ClosestProof()`
+                        method.
+              pagination:
+                type: object
+                properties:
+                  next_key:
+                    type: string
+                    format: byte
+                    description: |-
+                      next_key is the key to be passed to PageRequest.key to
+                      query the next page most efficiently. It will be empty if
+                      there are no more results.
+                  total:
+                    type: string
+                    format: uint64
+                    title: >-
+                      total is total number of results available if
+                      PageRequest.count_total
+
+                      was set, its value is undefined otherwise
+                description: >-
+                  PageResponse is to be embedded in gRPC response messages where
+                  the
+
+                  corresponding request message has used PageRequest.
+
+                   message SomeResponse {
+                           repeated Bar results = 1;
+                           PageResponse page = 2;
+                   }
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    '@type':
+                      type: string
+                  additionalProperties: {}
+      parameters:
+        - name: pagination.key
+          description: |-
+            key is a value returned in PageResponse.next_key to begin
+            querying the next page most efficiently. Only one of offset or key
+            should be set.
+          in: query
+          required: false
+          type: string
+          format: byte
+        - name: pagination.offset
+          description: >-
+            offset is a numeric offset that can be used when key is unavailable.
+
+            It is less efficient than using key. Only one of offset or key
+            should
+
+            be set.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.limit
+          description: >-
+            limit is the total number of results to be returned in the result
+            page.
+
+            If left empty it will default to a value to be set by each app.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.count_total
+          description: >-
+            count_total is set to true  to indicate that the result set should
+            include
+
+            a count of the total number of items available for pagination in
+            UIs.
+
+            count_total is only respected when offset is used. It is ignored
+            when key
+
+            is set.
+          in: query
+          required: false
+          type: boolean
+        - name: pagination.reverse
+          description: >-
+            reverse is set to true if results are to be returned in the
+            descending order.
+
+
+            Since: cosmos-sdk 0.43
+          in: query
+          required: false
+          type: boolean
+        - name: supplier_address
+          in: query
+          required: false
+          type: string
+        - name: session_id
+          in: query
+          required: false
+          type: string
+        - name: session_end_height
+          in: query
+          required: false
+          type: string
+          format: uint64
+      tags:
+        - Query
+  /pokt-network/poktroll/proof/proof/{session_id}/{supplier_address}:
+    get:
+      summary: Queries a list of Proof items.
+      operationId: PoktrollProofQuery_Proof
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              proof:
+                type: object
+                properties:
+                  supplier_address:
+                    type: string
+                  session_header:
+                    description: The session header of the session that this claim is for.
+                    type: object
+                    properties:
+                      application_address:
+                        type: string
+                        title: >-
+                          The Bech32 address of the application using cosmos'
+                          ScalarDescriptor to ensure deterministic encoding
+                      service:
+                        title: The service this session is for
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                            description: Unique identifier for the service
+                            title: >-
+                              For example, what if we want to request a session
+                              for a certain service but with some additional
+                              configs that identify it?
+                          name:
+                            type: string
+                            description: >-
+                              (Optional) Semantic human readable name for the
+                              service
+                            title: >-
+                              TODO_BETA: Name is currently unused but acts as a
+                              reminder that an optional onchain representation
+                              of the service is necessary
+                          compute_units_per_relay:
+                            type: string
+                            format: uint64
+                            description: Compute units required per relay for this service
+                            title: >-
+                              Used alongside the global
+                              'compute_units_to_tokens_multipler' to calculate
+                              the cost of a relay for this service
+                      session_id:
+                        type: string
+                        description: A unique pseudoranom ID for this session
+                        title: >-
+                          NOTE: session_id can be derived from the above values
+                          using on-chain but is included in the header for
+                          convenience
+                      session_start_block_height:
+                        type: string
+                        format: int64
+                        title: The height at which this session started
+                      session_end_block_height:
+                        type: string
+                        format: int64
+                        description: >-
+                          Note that`session_end_block_height` is a derivative of
+                          (`start` + `num_blocks_per_session`)
+
+                          as goverened by on-chain params at the time of the
+                          session start.
+
+                          It is stored as an additional field to simplofy
+                          business logic in case
+
+                          the number of blocks_per_session changes during the
+                          session.
+
+
+                          The height at which this session ended, this is the
+                          last block of the session
+                  closest_merkle_proof:
+                    type: string
+                    format: byte
+                    description: >-
+                      The serialized SMST proof from the `#ClosestProof()`
+                      method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    '@type':
+                      type: string
+                  additionalProperties: {}
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          type: string
+        - name: supplier_address
+          in: path
+          required: true
+          type: string
+      tags:
+        - Query
   /poktroll.proof.Msg/CreateClaim:
     post:
       operationId: PoktrollProofMsg_CreateClaim
@@ -16641,6 +17390,14 @@ paths:
                               TODO_BETA: Name is currently unused but acts as a
                               reminder that an optional onchain representation
                               of the service is necessary
+                          compute_units_per_relay:
+                            type: string
+                            format: uint64
+                            description: Compute units required per relay for this service
+                            title: >-
+                              Used alongside the global
+                              'compute_units_to_tokens_multipler' to calculate
+                              the cost of a relay for this service
                       session_id:
                         type: string
                         description: A unique pseudoranom ID for this session
@@ -16733,6 +17490,14 @@ paths:
                           TODO_BETA: Name is currently unused but acts as a
                           reminder that an optional onchain representation of
                           the service is necessary
+                      compute_units_per_relay:
+                        type: string
+                        format: uint64
+                        description: Compute units required per relay for this service
+                        title: >-
+                          Used alongside the global
+                          'compute_units_to_tokens_multipler' to calculate the
+                          cost of a relay for this service
                   session_id:
                     type: string
                     description: A unique pseudoranom ID for this session
@@ -16817,6 +17582,14 @@ paths:
                               TODO_BETA: Name is currently unused but acts as a
                               reminder that an optional onchain representation
                               of the service is necessary
+                          compute_units_per_relay:
+                            type: string
+                            format: uint64
+                            description: Compute units required per relay for this service
+                            title: >-
+                              Used alongside the global
+                              'compute_units_to_tokens_multipler' to calculate
+                              the cost of a relay for this service
                       session_id:
                         type: string
                         description: A unique pseudoranom ID for this session
@@ -16914,6 +17687,14 @@ paths:
                           TODO_BETA: Name is currently unused but acts as a
                           reminder that an optional onchain representation of
                           the service is necessary
+                      compute_units_per_relay:
+                        type: string
+                        format: uint64
+                        description: Compute units required per relay for this service
+                        title: >-
+                          Used alongside the global
+                          'compute_units_to_tokens_multipler' to calculate the
+                          cost of a relay for this service
                   session_id:
                     type: string
                     description: A unique pseudoranom ID for this session
@@ -16968,14 +17749,15 @@ paths:
               params:
                 type: object
                 properties:
-                  min_relay_difficulty_bits:
+                  relay_difficulty_target_hash:
                     type: string
-                    format: uint64
+                    format: byte
                     description: >-
-                      min_relay_difficulty_bits is the minimum difficulty in
-                      bits for a relay to
+                      TODO_FOLLOWUP(@olshansk, #690): Either delete this or
+                      change it to be named "minimum"
 
-                      be included in a Merkle proof.
+                      relay_difficulty_target_hash is the maximum value a relay
+                      hash must be less than to be volume/reward applicable.
                   proof_request_probability:
                     type: number
                     format: float
@@ -17148,14 +17930,15 @@ paths:
               params:
                 type: object
                 properties:
-                  min_relay_difficulty_bits:
+                  relay_difficulty_target_hash:
                     type: string
-                    format: uint64
+                    format: byte
                     description: >-
-                      min_relay_difficulty_bits is the minimum difficulty in
-                      bits for a relay to
+                      TODO_FOLLOWUP(@olshansk, #690): Either delete this or
+                      change it to be named "minimum"
 
-                      be included in a Merkle proof.
+                      relay_difficulty_target_hash is the maximum value a relay
+                      hash must be less than to be volume/reward applicable.
                   proof_request_probability:
                     type: number
                     format: float
@@ -18008,6 +18791,288 @@ paths:
               params at once.
       tags:
         - Msg
+  /pokt-network/poktroll/tokenomics/params:
+    get:
+      summary: Parameters queries the parameters of the module.
+      operationId: PoktrollTokenomicsQuery_Params
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              params:
+                description: params holds all the parameters of this module.
+                type: object
+                properties:
+                  compute_units_to_tokens_multiplier:
+                    type: string
+                    format: uint64
+                    description: >-
+                      The amount of upokt that a compute unit should translate
+                      to when settling a session.
+            description: >-
+              QueryParamsResponse is response type for the Query/Params RPC
+              method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    '@type':
+                      type: string
+                  additionalProperties: {}
+      tags:
+        - Query
+  /pokt-network/poktroll/tokenomics/relay_mining_difficulty:
+    get:
+      operationId: PoktrollTokenomicsQuery_RelayMiningDifficultyAll
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              relayMiningDifficulty:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    service_id:
+                      type: string
+                      description: >-
+                        The service ID the the relay mining difficulty is
+                        associated with.
+                    block_height:
+                      type: string
+                      format: int64
+                      description: >-
+                        The block height at which this relay mining difficulty
+                        was computed.
+
+                        This is needed to determine how much time has passed
+                        since the last time
+
+                        the exponential moving average was computed.
+                    num_relays_ema:
+                      type: string
+                      format: uint64
+                      description: >-
+                        The exponential moving average of the number of relays
+                        for this service.
+                    target_hash:
+                      type: string
+                      format: byte
+                      description: >-
+                        The target hash determining the difficulty to mine
+                        relays for this service.
+
+                        For example, if we use sha256 to hash the
+                        (RelayRequest,ReqlayResponse) tuple,
+
+                        and the difficulty has 4 leading zero bits, then the
+                        target hash would be:
+
+                        0b0000111... (until 32 bytes are filled up).
+                  description: >-
+                    RelayMiningDifficulty is a message used to store the
+                    on-chain Relay Mining
+
+                    difficulty associated with a specific service ID.
+              pagination:
+                type: object
+                properties:
+                  next_key:
+                    type: string
+                    format: byte
+                    description: |-
+                      next_key is the key to be passed to PageRequest.key to
+                      query the next page most efficiently. It will be empty if
+                      there are no more results.
+                  total:
+                    type: string
+                    format: uint64
+                    title: >-
+                      total is total number of results available if
+                      PageRequest.count_total
+
+                      was set, its value is undefined otherwise
+                description: >-
+                  PageResponse is to be embedded in gRPC response messages where
+                  the
+
+                  corresponding request message has used PageRequest.
+
+                   message SomeResponse {
+                           repeated Bar results = 1;
+                           PageResponse page = 2;
+                   }
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    '@type':
+                      type: string
+                  additionalProperties: {}
+      parameters:
+        - name: pagination.key
+          description: |-
+            key is a value returned in PageResponse.next_key to begin
+            querying the next page most efficiently. Only one of offset or key
+            should be set.
+          in: query
+          required: false
+          type: string
+          format: byte
+        - name: pagination.offset
+          description: >-
+            offset is a numeric offset that can be used when key is unavailable.
+
+            It is less efficient than using key. Only one of offset or key
+            should
+
+            be set.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.limit
+          description: >-
+            limit is the total number of results to be returned in the result
+            page.
+
+            If left empty it will default to a value to be set by each app.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.count_total
+          description: >-
+            count_total is set to true  to indicate that the result set should
+            include
+
+            a count of the total number of items available for pagination in
+            UIs.
+
+            count_total is only respected when offset is used. It is ignored
+            when key
+
+            is set.
+          in: query
+          required: false
+          type: boolean
+        - name: pagination.reverse
+          description: >-
+            reverse is set to true if results are to be returned in the
+            descending order.
+
+
+            Since: cosmos-sdk 0.43
+          in: query
+          required: false
+          type: boolean
+      tags:
+        - Query
+  /pokt-network/poktroll/tokenomics/relay_mining_difficulty/{serviceId}:
+    get:
+      summary: Queries a list of RelayMiningDifficulty items.
+      operationId: PoktrollTokenomicsQuery_RelayMiningDifficulty
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              relayMiningDifficulty:
+                type: object
+                properties:
+                  service_id:
+                    type: string
+                    description: >-
+                      The service ID the the relay mining difficulty is
+                      associated with.
+                  block_height:
+                    type: string
+                    format: int64
+                    description: >-
+                      The block height at which this relay mining difficulty was
+                      computed.
+
+                      This is needed to determine how much time has passed since
+                      the last time
+
+                      the exponential moving average was computed.
+                  num_relays_ema:
+                    type: string
+                    format: uint64
+                    description: >-
+                      The exponential moving average of the number of relays for
+                      this service.
+                  target_hash:
+                    type: string
+                    format: byte
+                    description: >-
+                      The target hash determining the difficulty to mine relays
+                      for this service.
+
+                      For example, if we use sha256 to hash the
+                      (RelayRequest,ReqlayResponse) tuple,
+
+                      and the difficulty has 4 leading zero bits, then the
+                      target hash would be:
+
+                      0b0000111... (until 32 bytes are filled up).
+                description: >-
+                  RelayMiningDifficulty is a message used to store the on-chain
+                  Relay Mining
+
+                  difficulty associated with a specific service ID.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    '@type':
+                      type: string
+                  additionalProperties: {}
+      parameters:
+        - name: serviceId
+          in: path
+          required: true
+          type: string
+      tags:
+        - Query
 definitions:
   cosmos.auth.v1beta1.MsgUpdateParams:
     type: object
@@ -24799,6 +25864,13 @@ definitions:
         title: >-
           TODO_BETA: Name is currently unused but acts as a reminder that an
           optional onchain representation of the service is necessary
+      compute_units_per_relay:
+        type: string
+        format: uint64
+        description: Compute units required per relay for this service
+        title: >-
+          Used alongside the global 'compute_units_to_tokens_multipler' to
+          calculate the cost of a relay for this service
     title: >-
       Service message to encapsulate unique and semantic identifiers for a
       service on the network
@@ -24855,6 +25927,83 @@ definitions:
   poktroll.gateway.Params:
     type: object
     description: Params defines the parameters for the module.
+  cosmos.base.query.v1beta1.PageRequest:
+    type: object
+    properties:
+      key:
+        type: string
+        format: byte
+        description: |-
+          key is a value returned in PageResponse.next_key to begin
+          querying the next page most efficiently. Only one of offset or key
+          should be set.
+      offset:
+        type: string
+        format: uint64
+        description: |-
+          offset is a numeric offset that can be used when key is unavailable.
+          It is less efficient than using key. Only one of offset or key should
+          be set.
+      limit:
+        type: string
+        format: uint64
+        description: >-
+          limit is the total number of results to be returned in the result
+          page.
+
+          If left empty it will default to a value to be set by each app.
+      count_total:
+        type: boolean
+        description: >-
+          count_total is set to true  to indicate that the result set should
+          include
+
+          a count of the total number of items available for pagination in UIs.
+
+          count_total is only respected when offset is used. It is ignored when
+          key
+
+          is set.
+      reverse:
+        type: boolean
+        description: >-
+          reverse is set to true if results are to be returned in the descending
+          order.
+
+
+          Since: cosmos-sdk 0.43
+    description: |-
+      message SomeRequest {
+               Foo some_parameter = 1;
+               PageRequest pagination = 2;
+       }
+    title: |-
+      PageRequest is to be embedded in gRPC request messages for efficient
+      pagination. Ex:
+  cosmos.base.query.v1beta1.PageResponse:
+    type: object
+    properties:
+      next_key:
+        type: string
+        format: byte
+        description: |-
+          next_key is the key to be passed to PageRequest.key to
+          query the next page most efficiently. It will be empty if
+          there are no more results.
+      total:
+        type: string
+        format: uint64
+        title: |-
+          total is total number of results available if PageRequest.count_total
+          was set, its value is undefined otherwise
+    description: |-
+      PageResponse is to be embedded in gRPC response messages where the
+      corresponding request message has used PageRequest.
+
+       message SomeResponse {
+               repeated Bar results = 1;
+               PageResponse page = 2;
+       }
   poktroll.proof.Claim:
     type: object
     properties:
@@ -24888,6 +26037,13 @@ definitions:
                   TODO_BETA: Name is currently unused but acts as a reminder
                   that an optional onchain representation of the service is
                   necessary
+              compute_units_per_relay:
+                type: string
+                format: uint64
+                description: Compute units required per relay for this service
+                title: >-
+                  Used alongside the global 'compute_units_to_tokens_multipler'
+                  to calculate the cost of a relay for this service
           session_id:
             type: string
             description: A unique pseudoranom ID for this session
@@ -24922,6 +26078,617 @@ definitions:
     title: >-
       Claim is the serialized object stored on-chain for claims pending to be
       proven
+  poktroll.proof.Params:
+    type: object
+    properties:
+      relay_difficulty_target_hash:
+        type: string
+        format: byte
+        description: >-
+          TODO_FOLLOWUP(@olshansk, #690): Either delete this or change it to be
+          named "minimum"
+
+          relay_difficulty_target_hash is the maximum value a relay hash must be
+          less than to be volume/reward applicable.
+      proof_request_probability:
+        type: number
+        format: float
+        description: >-
+          proof_request_probability is the probability of a session requiring a
+          proof
+
+          if it's cost (i.e. compute unit consumption) is below the
+          ProofRequirementThreshold.
+      proof_requirement_threshold:
+        type: string
+        format: uint64
+        description: >-
+          proof_requirement_threshold is the session cost (i.e. compute unit
+          consumption)
+
+          threshold which asserts that a session MUST have a corresponding proof
+          when its cost
+
+          is equal to or above the threshold. This is in contrast to the this
+          requirement
+
+          being determined probabilistically via ProofRequestProbability.
+
+
+          TODO_MAINNET: Consider renaming this to
+          `proof_requirement_threshold_compute_units`.
+      proof_missing_penalty:
+        description: >-
+          proof_missing_penalty is the number of tokens (uPOKT) which should be
+          slashed from a supplier
+
+          when a proof is required (either via proof_requirement_threshold or
+          proof_missing_penalty)
+
+          but is not provided.
+        type: object
+        properties:
+          denom:
+            type: string
+          amount:
+            type: string
+    description: Params defines the parameters for the module.
+  poktroll.proof.Proof:
+    type: object
+    properties:
+      supplier_address:
+        type: string
+      session_header:
+        description: The session header of the session that this claim is for.
+        type: object
+        properties:
+          application_address:
+            type: string
+            title: >-
+              The Bech32 address of the application using cosmos'
+              ScalarDescriptor to ensure deterministic encoding
+          service:
+            title: The service this session is for
+            type: object
+            properties:
+              id:
+                type: string
+                description: Unique identifier for the service
+                title: >-
+                  For example, what if we want to request a session for a
+                  certain service but with some additional configs that identify
+                  it?
+              name:
+                type: string
+                description: (Optional) Semantic human readable name for the service
+                title: >-
+                  TODO_BETA: Name is currently unused but acts as a reminder
+                  that an optional onchain representation of the service is
+                  necessary
+              compute_units_per_relay:
+                type: string
+                format: uint64
+                description: Compute units required per relay for this service
+                title: >-
+                  Used alongside the global 'compute_units_to_tokens_multipler'
+                  to calculate the cost of a relay for this service
+          session_id:
+            type: string
+            description: A unique pseudoranom ID for this session
+            title: >-
+              NOTE: session_id can be derived from the above values using
+              on-chain but is included in the header for convenience
+          session_start_block_height:
+            type: string
+            format: int64
+            title: The height at which this session started
+          session_end_block_height:
+            type: string
+            format: int64
+            description: >-
+              Note that`session_end_block_height` is a derivative of (`start` +
+              `num_blocks_per_session`)
+
+              as goverened by on-chain params at the time of the session start.
+
+              It is stored as an additional field to simplofy business logic in
+              case
+
+              the number of blocks_per_session changes during the session.
+
+
+              The height at which this session ended, this is the last block of
+              the session
+      closest_merkle_proof:
+        type: string
+        format: byte
+        description: The serialized SMST proof from the `#ClosestProof()` method.
+  poktroll.proof.QueryAllClaimsResponse:
+    type: object
+    properties:
+      claims:
+        type: array
+        items:
+          type: object
+          properties:
+            supplier_address:
+              type: string
+              title: the address of the supplier that submitted this claim
+            session_header:
+              description: The session header of the session that this claim is for.
+              type: object
+              properties:
+                application_address:
+                  type: string
+                  title: >-
+                    The Bech32 address of the application using cosmos'
+                    ScalarDescriptor to ensure deterministic encoding
+                service:
+                  title: The service this session is for
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      description: Unique identifier for the service
+                      title: >-
+                        For example, what if we want to request a session for a
+                        certain service but with some additional configs that
+                        identify it?
+                    name:
+                      type: string
+                      description: (Optional) Semantic human readable name for the service
+                      title: >-
+                        TODO_BETA: Name is currently unused but acts as a
+                        reminder that an optional onchain representation of the
+                        service is necessary
+                    compute_units_per_relay:
+                      type: string
+                      format: uint64
+                      description: Compute units required per relay for this service
+                      title: >-
+                        Used alongside the global
+                        'compute_units_to_tokens_multipler' to calculate the
+                        cost of a relay for this service
+                session_id:
+                  type: string
+                  description: A unique pseudoranom ID for this session
+                  title: >-
+                    NOTE: session_id can be derived from the above values using
+                    on-chain but is included in the header for convenience
+                session_start_block_height:
+                  type: string
+                  format: int64
+                  title: The height at which this session started
+                session_end_block_height:
+                  type: string
+                  format: int64
+                  description: >-
+                    Note that`session_end_block_height` is a derivative of
+                    (`start` + `num_blocks_per_session`)
+
+                    as goverened by on-chain params at the time of the session
+                    start.
+
+                    It is stored as an additional field to simplofy business
+                    logic in case
+
+                    the number of blocks_per_session changes during the session.
+
+
+                    The height at which this session ended, this is the last
+                    block of the session
+            root_hash:
+              type: string
+              format: byte
+              description: Root hash returned from smt.SMST#Root().
+          title: >-
+            Claim is the serialized object stored on-chain for claims pending to
+            be proven
+      pagination:
+        type: object
+        properties:
+          next_key:
+            type: string
+            format: byte
+            description: |-
+              next_key is the key to be passed to PageRequest.key to
+              query the next page most efficiently. It will be empty if
+              there are no more results.
+          total:
+            type: string
+            format: uint64
+            title: >-
+              total is total number of results available if
+              PageRequest.count_total
+
+              was set, its value is undefined otherwise
+        description: |-
+          PageResponse is to be embedded in gRPC response messages where the
+          corresponding request message has used PageRequest.
+
+           message SomeResponse {
+                   repeated Bar results = 1;
+                   PageResponse page = 2;
+           }
+  poktroll.proof.QueryAllProofsResponse:
+    type: object
+    properties:
+      proofs:
+        type: array
+        items:
+          type: object
+          properties:
+            supplier_address:
+              type: string
+            session_header:
+              description: The session header of the session that this claim is for.
+              type: object
+              properties:
+                application_address:
+                  type: string
+                  title: >-
+                    The Bech32 address of the application using cosmos'
+                    ScalarDescriptor to ensure deterministic encoding
+                service:
+                  title: The service this session is for
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      description: Unique identifier for the service
+                      title: >-
+                        For example, what if we want to request a session for a
+                        certain service but with some additional configs that
+                        identify it?
+                    name:
+                      type: string
+                      description: (Optional) Semantic human readable name for the service
+                      title: >-
+                        TODO_BETA: Name is currently unused but acts as a
+                        reminder that an optional onchain representation of the
+                        service is necessary
+                    compute_units_per_relay:
+                      type: string
+                      format: uint64
+                      description: Compute units required per relay for this service
+                      title: >-
+                        Used alongside the global
+                        'compute_units_to_tokens_multipler' to calculate the
+                        cost of a relay for this service
+                session_id:
+                  type: string
+                  description: A unique pseudoranom ID for this session
+                  title: >-
+                    NOTE: session_id can be derived from the above values using
+                    on-chain but is included in the header for convenience
+                session_start_block_height:
+                  type: string
+                  format: int64
+                  title: The height at which this session started
+                session_end_block_height:
+                  type: string
+                  format: int64
+                  description: >-
+                    Note that`session_end_block_height` is a derivative of
+                    (`start` + `num_blocks_per_session`)
+
+                    as goverened by on-chain params at the time of the session
+                    start.
+
+                    It is stored as an additional field to simplofy business
+                    logic in case
+
+                    the number of blocks_per_session changes during the session.
+
+
+                    The height at which this session ended, this is the last
+                    block of the session
+            closest_merkle_proof:
+              type: string
+              format: byte
+              description: The serialized SMST proof from the `#ClosestProof()` method.
+      pagination:
+        type: object
+        properties:
+          next_key:
+            type: string
+            format: byte
+            description: |-
+              next_key is the key to be passed to PageRequest.key to
+              query the next page most efficiently. It will be empty if
+              there are no more results.
+          total:
+            type: string
+            format: uint64
+            title: >-
+              total is total number of results available if
+              PageRequest.count_total
+
+              was set, its value is undefined otherwise
+        description: |-
+          PageResponse is to be embedded in gRPC response messages where the
+          corresponding request message has used PageRequest.
+
+           message SomeResponse {
+                   repeated Bar results = 1;
+                   PageResponse page = 2;
+           }
+  poktroll.proof.QueryGetClaimResponse:
+    type: object
+    properties:
+      claim:
+        type: object
+        properties:
+          supplier_address:
+            type: string
+            title: the address of the supplier that submitted this claim
+          session_header:
+            description: The session header of the session that this claim is for.
+            type: object
+            properties:
+              application_address:
+                type: string
+                title: >-
+                  The Bech32 address of the application using cosmos'
+                  ScalarDescriptor to ensure deterministic encoding
+              service:
+                title: The service this session is for
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: Unique identifier for the service
+                    title: >-
+                      For example, what if we want to request a session for a
+                      certain service but with some additional configs that
+                      identify it?
+                  name:
+                    type: string
+                    description: (Optional) Semantic human readable name for the service
+                    title: >-
+                      TODO_BETA: Name is currently unused but acts as a reminder
+                      that an optional onchain representation of the service is
+                      necessary
+                  compute_units_per_relay:
+                    type: string
+                    format: uint64
+                    description: Compute units required per relay for this service
+                    title: >-
+                      Used alongside the global
+                      'compute_units_to_tokens_multipler' to calculate the cost
+                      of a relay for this service
+              session_id:
+                type: string
+                description: A unique pseudoranom ID for this session
+                title: >-
+                  NOTE: session_id can be derived from the above values using
+                  on-chain but is included in the header for convenience
+              session_start_block_height:
+                type: string
+                format: int64
+                title: The height at which this session started
+              session_end_block_height:
+                type: string
+                format: int64
+                description: >-
+                  Note that`session_end_block_height` is a derivative of
+                  (`start` + `num_blocks_per_session`)
+
+                  as goverened by on-chain params at the time of the session
+                  start.
+
+                  It is stored as an additional field to simplofy business logic
+                  in case
+
+                  the number of blocks_per_session changes during the session.
+
+
+                  The height at which this session ended, this is the last block
+                  of the session
+          root_hash:
+            type: string
+            format: byte
+            description: Root hash returned from smt.SMST#Root().
+        title: >-
+          Claim is the serialized object stored on-chain for claims pending to
+          be proven
+  poktroll.proof.QueryGetProofResponse:
+    type: object
+    properties:
+      proof:
+        type: object
+        properties:
+          supplier_address:
+            type: string
+          session_header:
+            description: The session header of the session that this claim is for.
+            type: object
+            properties:
+              application_address:
+                type: string
+                title: >-
+                  The Bech32 address of the application using cosmos'
+                  ScalarDescriptor to ensure deterministic encoding
+              service:
+                title: The service this session is for
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: Unique identifier for the service
+                    title: >-
+                      For example, what if we want to request a session for a
+                      certain service but with some additional configs that
+                      identify it?
+                  name:
+                    type: string
+                    description: (Optional) Semantic human readable name for the service
+                    title: >-
+                      TODO_BETA: Name is currently unused but acts as a reminder
+                      that an optional onchain representation of the service is
+                      necessary
+                  compute_units_per_relay:
+                    type: string
+                    format: uint64
+                    description: Compute units required per relay for this service
+                    title: >-
+                      Used alongside the global
+                      'compute_units_to_tokens_multipler' to calculate the cost
+                      of a relay for this service
+              session_id:
+                type: string
+                description: A unique pseudoranom ID for this session
+                title: >-
+                  NOTE: session_id can be derived from the above values using
+                  on-chain but is included in the header for convenience
+              session_start_block_height:
+                type: string
+                format: int64
+                title: The height at which this session started
+              session_end_block_height:
+                type: string
+                format: int64
+                description: >-
+                  Note that`session_end_block_height` is a derivative of
+                  (`start` + `num_blocks_per_session`)
+
+                  as goverened by on-chain params at the time of the session
+                  start.
+
+                  It is stored as an additional field to simplofy business logic
+                  in case
+
+                  the number of blocks_per_session changes during the session.
+
+
+                  The height at which this session ended, this is the last block
+                  of the session
+          closest_merkle_proof:
+            type: string
+            format: byte
+            description: The serialized SMST proof from the `#ClosestProof()` method.
+  poktroll.proof.QueryParamsResponse:
+    type: object
+    properties:
+      params:
+        description: params holds all the parameters of this module.
+        type: object
+        properties:
+          relay_difficulty_target_hash:
+            type: string
+            format: byte
+            description: >-
+              TODO_FOLLOWUP(@olshansk, #690): Either delete this or change it to
+              be named "minimum"
+
+              relay_difficulty_target_hash is the maximum value a relay hash
+              must be less than to be volume/reward applicable.
+          proof_request_probability:
+            type: number
+            format: float
+            description: >-
+              proof_request_probability is the probability of a session
+              requiring a proof
+
+              if it's cost (i.e. compute unit consumption) is below the
+              ProofRequirementThreshold.
+          proof_requirement_threshold:
+            type: string
+            format: uint64
+            description: >-
+              proof_requirement_threshold is the session cost (i.e. compute unit
+              consumption)
+
+              threshold which asserts that a session MUST have a corresponding
+              proof when its cost
+
+              is equal to or above the threshold. This is in contrast to the
+              this requirement
+
+              being determined probabilistically via ProofRequestProbability.
+
+
+              TODO_MAINNET: Consider renaming this to
+              `proof_requirement_threshold_compute_units`.
+          proof_missing_penalty:
+            description: >-
+              proof_missing_penalty is the number of tokens (uPOKT) which should
+              be slashed from a supplier
+
+              when a proof is required (either via proof_requirement_threshold
+              or proof_missing_penalty)
+
+              but is not provided.
+            type: object
+            properties:
+              denom:
+                type: string
+              amount:
+                type: string
+    description: QueryParamsResponse is response type for the Query/Params RPC method.
+  poktroll.session.SessionHeader:
+    type: object
+    properties:
+      application_address:
+        type: string
+        title: >-
+          The Bech32 address of the application using cosmos' ScalarDescriptor
+          to ensure deterministic encoding
+      service:
+        title: The service this session is for
+        type: object
+        properties:
+          id:
+            type: string
+            description: Unique identifier for the service
+            title: >-
+              For example, what if we want to request a session for a certain
+              service but with some additional configs that identify it?
+          name:
+            type: string
+            description: (Optional) Semantic human readable name for the service
+            title: >-
+              TODO_BETA: Name is currently unused but acts as a reminder that an
+              optional onchain representation of the service is necessary
+          compute_units_per_relay:
+            type: string
+            format: uint64
+            description: Compute units required per relay for this service
+            title: >-
+              Used alongside the global 'compute_units_to_tokens_multipler' to
+              calculate the cost of a relay for this service
+      session_id:
+        type: string
+        description: A unique pseudoranom ID for this session
+        title: >-
+          NOTE: session_id can be derived from the above values using on-chain
+          but is included in the header for convenience
+      session_start_block_height:
+        type: string
+        format: int64
+        title: The height at which this session started
+      session_end_block_height:
+        type: string
+        format: int64
+        description: >-
+          Note that`session_end_block_height` is a derivative of (`start` +
+          `num_blocks_per_session`)
+
+          as goverened by on-chain params at the time of the session start.
+
+          It is stored as an additional field to simplofy business logic in case
+
+          the number of blocks_per_session changes during the session.
+
+
+          The height at which this session ended, this is the last block of the
+          session
+    description: >-
+      SessionHeader is a lightweight header for a session that can be passed
+      around.
+
+      It is the minimal amount of data required to hydrate & retrieve all data
+      relevant to the session.
   poktroll.proof.MsgCreateClaim:
     type: object
     properties:
@@ -24953,6 +26720,13 @@ definitions:
                   TODO_BETA: Name is currently unused but acts as a reminder
                   that an optional onchain representation of the service is
                   necessary
+              compute_units_per_relay:
+                type: string
+                format: uint64
+                description: Compute units required per relay for this service
+                title: >-
+                  Used alongside the global 'compute_units_to_tokens_multipler'
+                  to calculate the cost of a relay for this service
           session_id:
             type: string
             description: A unique pseudoranom ID for this session
@@ -25026,6 +26800,14 @@ definitions:
                       TODO_BETA: Name is currently unused but acts as a reminder
                       that an optional onchain representation of the service is
                       necessary
+                  compute_units_per_relay:
+                    type: string
+                    format: uint64
+                    description: Compute units required per relay for this service
+                    title: >-
+                      Used alongside the global
+                      'compute_units_to_tokens_multipler' to calculate the cost
+                      of a relay for this service
               session_id:
                 type: string
                 description: A unique pseudoranom ID for this session
@@ -25092,6 +26874,13 @@ definitions:
                   TODO_BETA: Name is currently unused but acts as a reminder
                   that an optional onchain representation of the service is
                   necessary
+              compute_units_per_relay:
+                type: string
+                format: uint64
+                description: Compute units required per relay for this service
+                title: >-
+                  Used alongside the global 'compute_units_to_tokens_multipler'
+                  to calculate the cost of a relay for this service
           session_id:
             type: string
             description: A unique pseudoranom ID for this session
@@ -25163,6 +26952,14 @@ definitions:
                       TODO_BETA: Name is currently unused but acts as a reminder
                       that an optional onchain representation of the service is
                       necessary
+                  compute_units_per_relay:
+                    type: string
+                    format: uint64
+                    description: Compute units required per relay for this service
+                    title: >-
+                      Used alongside the global
+                      'compute_units_to_tokens_multipler' to calculate the cost
+                      of a relay for this service
               session_id:
                 type: string
                 description: A unique pseudoranom ID for this session
@@ -25248,14 +27045,15 @@ definitions:
       params:
         type: object
         properties:
-          min_relay_difficulty_bits:
+          relay_difficulty_target_hash:
             type: string
-            format: uint64
+            format: byte
             description: >-
-              min_relay_difficulty_bits is the minimum difficulty in bits for a
-              relay to
+              TODO_FOLLOWUP(@olshansk, #690): Either delete this or change it to
+              be named "minimum"
 
-              be included in a Merkle proof.
+              relay_difficulty_target_hash is the maximum value a relay hash
+              must be less than to be volume/reward applicable.
           proof_request_probability:
             type: number
             format: float
@@ -25313,14 +27111,15 @@ definitions:
       params:
         type: object
         properties:
-          min_relay_difficulty_bits:
+          relay_difficulty_target_hash:
             type: string
-            format: uint64
+            format: byte
             description: >-
-              min_relay_difficulty_bits is the minimum difficulty in bits for a
-              relay to
+              TODO_FOLLOWUP(@olshansk, #690): Either delete this or change it to
+              be named "minimum"
 
-              be included in a Merkle proof.
+              relay_difficulty_target_hash is the maximum value a relay hash
+              must be less than to be volume/reward applicable.
           proof_request_probability:
             type: number
             format: float
@@ -25641,6 +27440,9 @@ definitions:
   poktroll.session.Params:
     type: object
     description: Params defines the parameters for the module.
+  poktroll.shared.Params:
+    type: object
+    description: Params defines the parameters for the module.
   poktroll.shared.MsgUpdateParam:
     type: object
     properties:
@@ -25792,61 +27594,6 @@ definitions:
     description: |-
       MsgUpdateParamsResponse defines the response structure for executing a
       MsgUpdateParams message.
-  poktroll.shared.Params:
-    type: object
-    properties:
-      num_blocks_per_session:
-        type: string
-        format: uint64
-        description: >-
-          num_blocks_per_session is the number of blocks between the session
-          start & end heights.
-      grace_period_end_offset_blocks:
-        type: string
-        format: uint64
-        description: >-
-          grace_period_end_offset_blocks is the number of blocks after the
-          session end height,
-
-          at which the grace period ends.
-
-          Suppliers will get paid for relays serviced during the grace period
-          but will need to recreate a claim if 
-
-          a previous one was already submitted.
-      claim_window_open_offset_blocks:
-        type: string
-        format: uint64
-        description: >-
-          claim_window_open_offset_blocks is the number of blocks after the
-          session grace
-
-          period height, at which the claim window opens.
-      claim_window_close_offset_blocks:
-        type: string
-        format: uint64
-        description: >-
-          claim_window_close_offset_blocks is the number of blocks after the
-          claim window
-
-          open height, at which the claim window closes.
-      proof_window_open_offset_blocks:
-        type: string
-        format: uint64
-        description: >-
-          proof_window_open_offset_blocks is the number of blocks after the
-          claim window
-
-          close height, at which the proof window opens.
-      proof_window_close_offset_blocks:
-        type: string
-        format: uint64
-        description: >-
-          proof_window_close_offset_blocks is the number of blocks after the
-          proof window
-
-          open height, at which the proof window closes.
-    description: Params defines the parameters for the module.
   poktroll.shared.ConfigOption:
     type: object
     properties:
@@ -26247,3 +27994,176 @@ definitions:
           The amount of upokt that a compute unit should translate to when
           settling a session.
     description: Params defines the parameters for the tokenomics module.
+  poktroll.tokenomics.QueryAllRelayMiningDifficultyResponse:
+    type: object
+    properties:
+      relayMiningDifficulty:
+        type: array
+        items:
+          type: object
+          properties:
+            service_id:
+              type: string
+              description: >-
+                The service ID the the relay mining difficulty is associated
+                with.
+            block_height:
+              type: string
+              format: int64
+              description: >-
+                The block height at which this relay mining difficulty was
+                computed.
+
+                This is needed to determine how much time has passed since the
+                last time
+
+                the exponential moving average was computed.
+            num_relays_ema:
+              type: string
+              format: uint64
+              description: >-
+                The exponential moving average of the number of relays for this
+                service.
+            target_hash:
+              type: string
+              format: byte
+              description: >-
+                The target hash determining the difficulty to mine relays for
+                this service.
+
+                For example, if we use sha256 to hash the
+                (RelayRequest,ReqlayResponse) tuple,
+
+                and the difficulty has 4 leading zero bits, then the target hash
+                would be:
+
+                0b0000111... (until 32 bytes are filled up).
+          description: >-
+            RelayMiningDifficulty is a message used to store the on-chain Relay
+            Mining
+
+            difficulty associated with a specific service ID.
+      pagination:
+        type: object
+        properties:
+          next_key:
+            type: string
+            format: byte
+            description: |-
+              next_key is the key to be passed to PageRequest.key to
+              query the next page most efficiently. It will be empty if
+              there are no more results.
+          total:
+            type: string
+            format: uint64
+            title: >-
+              total is total number of results available if
+              PageRequest.count_total
+
+              was set, its value is undefined otherwise
+        description: |-
+          PageResponse is to be embedded in gRPC response messages where the
+          corresponding request message has used PageRequest.
+
+           message SomeResponse {
+                   repeated Bar results = 1;
+                   PageResponse page = 2;
+           }
+  poktroll.tokenomics.QueryGetRelayMiningDifficultyResponse:
+    type: object
+    properties:
+      relayMiningDifficulty:
+        type: object
+        properties:
+          service_id:
+            type: string
+            description: The service ID the the relay mining difficulty is associated with.
+          block_height:
+            type: string
+            format: int64
+            description: >-
+              The block height at which this relay mining difficulty was
+              computed.
+
+              This is needed to determine how much time has passed since the
+              last time
+
+              the exponential moving average was computed.
+          num_relays_ema:
+            type: string
+            format: uint64
+            description: >-
+              The exponential moving average of the number of relays for this
+              service.
+          target_hash:
+            type: string
+            format: byte
+            description: >-
+              The target hash determining the difficulty to mine relays for this
+              service.
+
+              For example, if we use sha256 to hash the
+              (RelayRequest,ReqlayResponse) tuple,
+
+              and the difficulty has 4 leading zero bits, then the target hash
+              would be:
+
+              0b0000111... (until 32 bytes are filled up).
+        description: >-
+          RelayMiningDifficulty is a message used to store the on-chain Relay
+          Mining
+
+          difficulty associated with a specific service ID.
+  poktroll.tokenomics.QueryParamsResponse:
+    type: object
+    properties:
+      params:
+        description: params holds all the parameters of this module.
+        type: object
+        properties:
+          compute_units_to_tokens_multiplier:
+            type: string
+            format: uint64
+            description: >-
+              The amount of upokt that a compute unit should translate to when
+              settling a session.
+    description: QueryParamsResponse is response type for the Query/Params RPC method.
+  poktroll.tokenomics.RelayMiningDifficulty:
+    type: object
+    properties:
+      service_id:
+        type: string
+        description: The service ID the the relay mining difficulty is associated with.
+      block_height:
+        type: string
+        format: int64
+        description: >-
+          The block height at which this relay mining difficulty was computed.
+
+          This is needed to determine how much time has passed since the last
+          time
+
+          the exponential moving average was computed.
+      num_relays_ema:
+        type: string
+        format: uint64
+        description: >-
+          The exponential moving average of the number of relays for this
+          service.
+      target_hash:
+        type: string
+        format: byte
+        description: >-
+          The target hash determining the difficulty to mine relays for this
+          service.
+
+          For example, if we use sha256 to hash the
+          (RelayRequest,ReqlayResponse) tuple,
+
+          and the difficulty has 4 leading zero bits, then the target hash would
+          be:
+
+          0b0000111... (until 32 bytes are filled up).
+    description: |-
+      RelayMiningDifficulty is a message used to store the on-chain Relay Mining
+      difficulty associated with a specific service ID.
