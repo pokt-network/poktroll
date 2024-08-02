@@ -82,7 +82,7 @@ func init() {
 }
 
 // ProcessTokenLogicModules is responsible for calling all of the token logic
-// modules (i.e. post session claim accounting) necessary to burn, min or transfer
+// modules (i.e. post session claim accounting) necessary to burn, mint or transfer
 // tokens as a result of the amount of work (i.e. compute units) done.
 func (k Keeper) ProcessTokenLogicModules(
 	ctx context.Context,
