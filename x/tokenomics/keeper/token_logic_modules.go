@@ -39,25 +39,31 @@ const (
 
 type TokenLogicModule int
 
-func (tlm TokenLogicModule) String() string {
-	return [...]string{
-		"TLMRelayBurnEqualsMint",
-		"TLMGlobalMint",
-	}[tlm]
-}
-
-func (tlm TokenLogicModule) EnumIndex() int {
-	return int(tlm)
-}
-
 const (
 	TLMRelayBurnEqualsMint TokenLogicModule = iota
 	TLMGlobalMint
 	// TODO_UPNEXT(@olshansk): Add more TLMs
 )
 
+var tokenLogicModuleStrings = [...]string{
+	"TLMRelayBurnEqualsMint",
+	"TLMGlobalMint",
+}
+
+func (tlm TokenLogicModule) String() string {
+	return tokenLogicModuleStrings[tlm]
+}
+
+func (tlm TokenLogicModule) EnumIndex() int {
+	return int(tlm)
+}
+
 // TokenLogicModuleProcessor is the method signature that all token logic modules
 // are expected to implement.
+// IMPORTANT SIDE EFFECTS: Please note that TLMS may update the application and supplier
+// objects, which is why they are passed in as pointers. However, this IS NOT persisted.
+// The persistence to the keeper is currently done by ProcessTokenLogicModules only.
+// This may be an interim state of the implementation and may change in the future.
 type TokenLogicModuleProcessor func(
 	Keeper,
 	context.Context,
@@ -153,21 +159,21 @@ func (k Keeper) ProcessTokenLogicModules(
 	}
 
 	// Retrieve the on-chain staked application record
-	application, foundApplication := k.applicationKeeper.GetApplication(ctx, applicationAddress.String())
-	if !foundApplication {
+	application, isAppFound := k.applicationKeeper.GetApplication(ctx, applicationAddress.String())
+	if !isAppFound {
 		logger.Warn(fmt.Sprintf("application for claim with address %q not found", applicationAddress))
 		return tokenomicstypes.ErrTokenomicsApplicationNotFound
 	}
 
 	// Retrieve the on-chain staked supplier record
-	supplier, foundSupplier := k.supplierKeeper.GetSupplier(ctx, supplierAddr.String())
-	if !foundSupplier {
+	supplier, isSupplierFound := k.supplierKeeper.GetSupplier(ctx, supplierAddr.String())
+	if !isSupplierFound {
 		logger.Warn(fmt.Sprintf("supplier for claim with address %q not found", supplierAddr))
 		return tokenomicstypes.ErrTokenomicsSupplierNotFound
 	}
 
-	service, ok := k.serviceKeeper.GetService(ctx, sessionHeader.Service.Id)
-	if !ok {
+	service, isServiceFound := k.serviceKeeper.GetService(ctx, sessionHeader.Service.Id)
+	if !isServiceFound {
 		return tokenomicstypes.ErrTokenomicsServiceNotFound.Wrapf("service with ID %q not found", sessionHeader.Service.Id)
 	}
 
@@ -321,6 +327,7 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 	logger := k.Logger().With("method", "TokenLogicModuleGlobalMint")
 
 	// Determine how much new uPOKT to mint based on global inflation
+	// TODO_MAINNET: Consider using fixed point arithmetic for deterministic results.
 	settlementAmtFloat := new(big.Float).SetUint64(settlementCoins.Amount.Uint64())
 	newMintAmtFloat := new (big.Float).Mul(settlementAmtFloat, big.NewFloat(MintGlobalAllocation))
 	newMintAmtInt, _ := newMintAmtFloat.Int64()
@@ -334,30 +341,40 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 	logger.Info(fmt.Sprintf("minted (%v) coins in the tokenomics module", newMintCoins))
 
 	// Send a portion of the rewards to the application
-	if err := k.sendRewardsToAccount(ctx, application.Address, settlementAmtFloat, MintAllocationApplication); err != nil {
+	appCoins, err := k.sendRewardsToAccount(ctx, application.Address, settlementAmtFloat, MintAllocationApplication)
+	if err != nil {
 		return err
 	}
 
 	// Send a portion of the rewards to the supplier
-	if err := k.sendRewardsToAccount(ctx, supplier.Address, settlementAmtFloat, MintAllocationSupplier); err != nil {
+	supplierCoins, err := k.sendRewardsToAccount(ctx, supplier.Address, settlementAmtFloat, MintAllocationSupplier)
+	if err != nil {
 		return err
 	}
 
 	// Send a portion of the rewards to the DAO
-	if err := k.sendRewardsToAccount(ctx, k.GetAuthority(), settlementAmtFloat, MintAllocationDAO); err != nil {
+	daoCoins, err := k.sendRewardsToAccount(ctx, k.GetAuthority(), settlementAmtFloat, MintAllocationDAO)
+	if err != nil {
 		return err
 	}
 
 	// Send a portion of the rewards to the source owner
-	if err := k.sendRewardsToAccount(ctx, service.OwnerAddress, settlementAmtFloat, MintAllocationSourceOwner); err != nil {
+	serviceCoins, err := k.sendRewardsToAccount(ctx, service.OwnerAddress, settlementAmtFloat, MintAllocationSourceOwner)
+	if err != nil {
 		return err
 	}
 
 	// Send a portion of the rewards to the block proposer
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	proposerAddr := cosmostypes.AccAddress(sdkCtx.BlockHeader().ProposerAddress).String()
-	if err := k.sendRewardsToAccount(ctx, proposerAddr, settlementAmtFloat, MintAllocationProposer); err != nil {
+	proposerAddr := cosmostypes.AccAddress(sdk.UnwrapSDKContext(ctx).BlockHeader().ProposerAddress).String()
+	proposerCoins, err := k.sendRewardsToAccount(ctx, proposerAddr, settlementAmtFloat, MintAllocationProposer)
+	if err != nil {
 		return err
+	}
+
+	// TODO_MAINNET: Verify that the total distributed coins equals the settlement coins which could happen due to float rounding
+	totalDistributedCoins := appCoins.Add(*supplierCoins).Add(*daoCoins).Add(*serviceCoins).Add(*proposerCoins)
+	if totalDistributedCoins.Amount.BigInt().Cmp(settlementCoins.Amount.BigInt()) != 0 {
+		logger.Error(fmt.Sprintf("TODO_MAINNET: The total distributed coins (%v) does not equal the settlement coins (%v)", totalDistributedCoins, settlementCoins.Amount.BigInt()))
 	}
 
 	return nil
@@ -370,24 +387,24 @@ func (k Keeper) sendRewardsToAccount(
 	addr string,
 	settlementAmtFloat *big.Float,
 	allocation float64,
-) error {
+) (*sdk.Coin, error) {
 	logger := k.Logger().With("method", "mintRewardsToAccount")
 
 	accountAddr, err := cosmostypes.AccAddressFromBech32(addr)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	coinsToAccAmt, _ := new(big.Float).Mul(settlementAmtFloat, big.NewFloat(allocation)).Int64()
-	coinsToAcc := sdk.NewCoins(cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(coinsToAccAmt)))
+	coinToAcc := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(coinsToAccAmt))
 	if err := k.bankKeeper.SendCoinsFromModuleToAccount(
-		ctx, suppliertypes.ModuleName, accountAddr, coinsToAcc,
+		ctx, suppliertypes.ModuleName, accountAddr, sdk.NewCoins(coinToAcc),
 	); err != nil {
-		return err
+		return nil, err
 	}
-	logger.Info(fmt.Sprintf("sent (%v) coins from the tokenomics module to the account with address %q", coinsToAcc, addr))
+	logger.Info(fmt.Sprintf("sent (%v) coins from the tokenomics module to the account with address %q", coinToAcc, addr))
 
-	return nil
+	return &coinToAcc, nil
 }
 
 func (k Keeper) handleOverservicedApplication(
@@ -411,6 +428,7 @@ func (k Keeper) handleOverservicedApplication(
 	// goes "into debt". Need to design a way to handle this when we implement
 	// probabilistic proofs and add all the parameter logic. Do we touch the application balance?
 	// Do we just let it go into debt? Do we penalize the application? Do we unstake it? Etc...
+	// See this document from @red-0ne and @bryanchriswhite for more context: notion.so/buildwithgrove/Off-chain-Application-Stake-Tracking-6a8bebb107db4f7f9dc62cbe7ba555f7
 	expectedBurn := settlementCoins
 
 	applicationOverservicedEvent := &tokenomicstypes.EventApplicationOverserviced{
