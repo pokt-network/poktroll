@@ -22,10 +22,10 @@ An AppGate Server requires the following:
 
 1. A staked on-chain [Application](../../protocol/actors/application.md) to pay for services.
 2. An optional on-chain [Gateway](../../protocol/actors/gateway.md) to optionally proxy services.
-3. A connection to a [Full Node](./full_node_docker.md) to interact with the blockchain.
+3. A connection to a [Full Node](./full_node.md) to interact with the blockchain.
 
 :::tip
-It is crucial to deploy a [Full Node](full_node_docker.md) prior to setting up a RelayMiner.
+It is crucial to deploy a [Full Node](full_node.md) prior to setting up a RelayMiner.
 This ensures the necessary infrastructure for blockchain communication is in place.
 :::
 
