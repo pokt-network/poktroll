@@ -28,9 +28,9 @@ Feature: Stake Supplier Namespace
     Scenario: User can restake a Supplier waiting for it to become active again
         Given the user has the pocketd binary installed
         And the user verifies the "supplier" for account "supplier2" is not staked
-        Then the user stakes a "supplier" with "1000070" uPOKT for "anvil" service from the account "supplier3"
+        Then the user stakes a "supplier" with "1000070" uPOKT for "anvil" service from the account "supplier2"
         And the user should wait for the "supplier" module "StakeSupplier" message to be submitted
-        Then the user should see that the supplier for account "supplier3" is staked
-        But the session for application "app1" and service "anvil" does not contain "supplier3"
-        When the user waits for supplier "supplier3" to become active for service "anvil"
-        Then the session for application "app1" and service "anvil" contains the supplier "supplier3"
+        Then the user should see that the supplier for account "supplier2" is staked
+        But the session for application "app1" and service "anvil" does not contain "supplier2"
+        When the user waits for supplier "supplier2" to become active for service "anvil"
+        Then the session for application "app1" and service "anvil" contains the supplier "supplier2"

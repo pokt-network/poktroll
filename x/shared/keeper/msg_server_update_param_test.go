@@ -50,7 +50,7 @@ func TestMsgUpdateParam_UpdateClaimWindowOpenOffsetBlocks(t *testing.T) {
 
 	defaultParams := sharedtypes.DefaultParams()
 
-	// Update the SupplierUnbondigPeriodSessions such that it is greater than the
+	// Update the SupplierUnbondingPeriodSessions such that it is greater than the
 	// cumulative proof window close blocks to pass UpdateParam validation.
 	defaultParams.SupplierUnbondingPeriodSessions = getMinSupplierUnbondingPeriodSessions(
 		&defaultParams,
@@ -87,7 +87,7 @@ func TestMsgUpdateParam_UpdateClaimWindowCloseOffsetBlocks(t *testing.T) {
 
 	defaultParams := sharedtypes.DefaultParams()
 
-	// Update the SupplierUnbondigPeriodSessions such that it is greater than the
+	// Update the SupplierUnbondingPeriodSessions such that it is greater than the
 	// cumulative proof window close blocks to pass UpdateParam validation.
 	defaultParams.SupplierUnbondingPeriodSessions = getMinSupplierUnbondingPeriodSessions(
 		&defaultParams,
@@ -124,7 +124,7 @@ func TestMsgUpdateParam_UpdateProofWindowOpenOffsetBlocks(t *testing.T) {
 
 	defaultParams := sharedtypes.DefaultParams()
 
-	// Update the SupplierUnbondigPeriodSessions such that it is greater than the
+	// Update the SupplierUnbondingPeriodSessions such that it is greater than the
 	// cumulative proof window close blocks to pass UpdateParam validation.
 	defaultParams.SupplierUnbondingPeriodSessions = getMinSupplierUnbondingPeriodSessions(
 		&defaultParams,
@@ -161,7 +161,7 @@ func TestMsgUpdateParam_UpdateProofWindowCloseOffsetBlocks(t *testing.T) {
 
 	defaultParams := sharedtypes.DefaultParams()
 
-	// Update the SupplierUnbondigPeriodSessions such that it is greater than the
+	// Update the SupplierUnbondingPeriodSessions such that it is greater than the
 	// cumulative proof window close blocks to pass UpdateParam validation.
 	defaultParams.SupplierUnbondingPeriodSessions = getMinSupplierUnbondingPeriodSessions(
 		&defaultParams,
@@ -261,15 +261,16 @@ func TestMsgUpdateParam_UpdateSupplierUnbondingPeriodSessions(t *testing.T) {
 	require.ErrorIs(t, err, sharedtypes.ErrSharedParamInvalid)
 }
 
-// getMinSupplierUnbondingPeriodSessions returns the minimum supplier unbonding period
-// in session number that is greater than the cumulative proof window close blocks.
+// getMinSupplierUnbondingPeriodSessions returns the supplier unbonding period
+// sessions such that it is greater than the cumulative proof window close blocks
+// to pass UpdateParam validation.
 func getMinSupplierUnbondingPeriodSessions(
 	params *sharedtypes.Params,
 	oldParamBlocksValue uint64,
 	newParamBlocksValue uint64,
 ) uint64 {
 	deltaBlocks := newParamBlocksValue - oldParamBlocksValue
-	newProofWindowCloseBlobcks := types.GetSessionEndToProofWindowCloseBlocks(params) + deltaBlocks
+	newProofWindowCloseBlocks := types.GetSessionEndToProofWindowCloseBlocks(params) + deltaBlocks
 
-	return (newProofWindowCloseBlobcks / params.NumBlocksPerSession) + 1
+	return (newProofWindowCloseBlocks / params.NumBlocksPerSession) + 1
 }
