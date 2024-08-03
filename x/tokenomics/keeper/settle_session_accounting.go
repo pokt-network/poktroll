@@ -6,11 +6,10 @@ import (
 
 	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	"github.com/pokt-network/smt"
 
 	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
-
-	"github.com/pokt-network/smt"
 
 	"github.com/pokt-network/poktroll/telemetry"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -116,7 +115,7 @@ func (k Keeper) SettleSessionAccounting(
 		return tokenomicstypes.ErrTokenomicsApplicationNotFound
 	}
 
-	computeUnitsPerRelay, err := k.getComputUnitsPerRelayFromApplication(application, sessionHeader.Service.Id)
+	computeUnitsPerRelay, err := k.getComputeUnitsPerRelayFromApplication(application, sessionHeader.Service.Id)
 	if err != nil {
 		return err
 	}
@@ -228,19 +227,24 @@ func (k Keeper) SettleSessionAccounting(
 	return nil
 }
 
-// relayCountToCoin calculates the amount of uPOKT to mint based on the number of relays, the service-specific ComputeUnitsPerRelay, and the ComputeUnitsPerTokenMultiplier tokenomics param
+// relayCountToCoin calculates the amount of uPOKT to mint based on the number of relays.
+// The service-specific ComputeUnitsPerRelay, and the global ComputeUnitsPerTokenMultiplier tokenomics params
+// are used for this calculation.
 func relayCountToCoin(numRelays, computeUnitsPerRelay uint64, computeUnitsToTokensMultiplier uint64) (cosmostypes.Coin, error) {
-	upokt := math.NewInt(int64(numRelays * computeUnitsPerRelay * computeUnitsToTokensMultiplier))
+	upoktAmount := math.NewInt(int64(numRelays * computeUnitsPerRelay * computeUnitsToTokensMultiplier))
 
-	if upokt.IsNegative() {
+	if upoktAmount.IsNegative() {
 		return cosmostypes.Coin{}, tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrap("sum * compute_units_to_tokens_multiplier is negative")
 	}
 
-	return cosmostypes.NewCoin(volatile.DenomuPOKT, upokt), nil
+	return cosmostypes.NewCoin(volatile.DenomuPOKT, upoktAmount), nil
 }
 
-// getComputUnitsPerRelayFromApplication retrieves the ComputeUnitsPerRelay for a given service from the application's service configs
-func (k Keeper) getComputUnitsPerRelayFromApplication(application apptypes.Application, serviceID string) (cupr uint64, err error) {
+// getComputeUnitsPerRelayFromApplication retrieves the ComputeUnitsPerRelay for a given service from the application's service configs
+// TODO_REFACTOR: Rename this to getComputeUnitsPerRelayForService(serviceId) after
+// adding a dependency on the service module to the tokenomics module so it is cleaner
+// and more idiomatic, leveraging the `GetService` function directly. Would require updating logs below.
+func (k Keeper) getComputeUnitsPerRelayFromApplication(application apptypes.Application, serviceID string) (cupr uint64, err error) {
 	logger := k.Logger().With("method", "getComputeUnitsPerRelayFromApplication")
 
 	serviceConfigs := application.ServiceConfigs
