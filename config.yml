@@ -153,7 +153,8 @@ genesis:
             denom: upokt
     supplier:
       supplierList:
-        - address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
+        - owner_address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
+          address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
           services:
             - endpoints:
                 - configs: []

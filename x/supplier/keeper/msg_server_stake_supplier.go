@@ -88,7 +88,8 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 			logger.Error(fmt.Sprintf("could not update supplier for address %q due to error %v", msg.Address, err))
 			return nil, err
 		}
-		coinsToEscrow, err := (*msg.Stake).SafeSub(currSupplierStake)
+		var err error
+		coinsToEscrow, err = (*msg.Stake).SafeSub(currSupplierStake)
 		if err != nil {
 			return nil, err
 		}

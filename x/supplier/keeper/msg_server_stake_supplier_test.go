@@ -59,7 +59,7 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.Len(t, foundSupplier.Services, 1)
 	require.Equal(t, "svcId2", foundSupplier.Services[0].Service.Id)
 	require.Len(t, foundSupplier.Services[0].Endpoints, 1)
-	require.Equal(t, "http://localhost:8080", foundSupplier.Services[0].Endpoints[0].Url)
+	require.Equal(t, "http://localhost:8082", foundSupplier.Services[0].Endpoints[0].Url)
 }
 
 func TestMsgServer_StakeSupplier_FailRestakingDueToInvalidServices(t *testing.T) {
@@ -78,7 +78,7 @@ func TestMsgServer_StakeSupplier_FailRestakingDueToInvalidServices(t *testing.T)
 	require.NoError(t, err)
 
 	// Prepare the supplier stake message without any service endpoints
-	updateStakeMsg := prepareValidMsgStakeSupplier(ownerAddr, operatorAddr, 200)
+	updateStakeMsg := stakeSupplierForServicesMsg(ownerAddr, operatorAddr, 200, "svcId")
 	updateStakeMsg.Sender = operatorAddr
 	updateStakeMsg.Services[0].Endpoints = []*sharedtypes.SupplierEndpoint{}
 
@@ -96,7 +96,7 @@ func TestMsgServer_StakeSupplier_FailRestakingDueToInvalidServices(t *testing.T)
 	require.Equal(t, "http://localhost:8080", supplierFound.Services[0].Endpoints[0].Url)
 
 	// Prepare the supplier stake message with an invalid service ID
-	updateStakeMsg = prepareValidMsgStakeSupplier(ownerAddr, operatorAddr, 200)
+	updateStakeMsg = stakeSupplierForServicesMsg(ownerAddr, operatorAddr, 200, "svcId")
 	updateStakeMsg.Services[0].Service.Id = "svc1 INVALID ! & *"
 
 	// Fail updating the supplier when the list of services is empty
@@ -250,6 +250,7 @@ func TestMsgServer_StakeSupplier_ActiveSupplier(t *testing.T) {
 
 	// Prepare the supplier stake message with a different service
 	updateMsg := stakeSupplierForServicesMsg(ownerAddr, operatorAddr, 200, "svcId", "svcId2")
+	updateMsg.Sender = operatorAddr
 
 	// Update the staked supplier
 	_, err = srv.StakeSupplier(ctx, updateMsg)
