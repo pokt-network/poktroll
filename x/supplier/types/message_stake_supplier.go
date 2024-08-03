@@ -48,6 +48,16 @@ func (msg *MsgStakeSupplier) ValidateBasic() error {
 		return ErrSupplierInvalidAddress.Wrapf("invalid supplier address %s; (%v)", msg.Address, err)
 	}
 
+	// Ensure the sender address matches the owner address or the operator address.
+	if msg.Sender != msg.OwnerAddress && msg.Sender != msg.Address {
+		return ErrSupplierInvalidAddress.Wrapf(
+			"sender address %s does not match owner address %s or supplier address %s",
+			msg.Sender,
+			msg.OwnerAddress,
+			msg.Address,
+		)
+	}
+
 	// TODO_MAINNET: Centralize stake related verification and share across different
 	// parts of the source code
 	// Validate the stake amount
