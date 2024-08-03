@@ -53,12 +53,8 @@ $ poktrolld tx supplier stake-supplier --config stake_config.yaml --keyring-back
 				return err
 			}
 
-			// Ensure the from flag address is the same as the owner address in the stake config file.
-			if err := supplierStakeConfigs.EnsureOwner(clientCtx.GetFromAddress().String()); err != nil {
-				return nil
-			}
-
 			msg := types.NewMsgStakeSupplier(
+				clientCtx.GetFromAddress().String(),
 				supplierStakeConfigs.OwnerAddress,
 				supplierStakeConfigs.OperatorAddress,
 				supplierStakeConfigs.StakeAmount,
