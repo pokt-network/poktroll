@@ -46,7 +46,7 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 		supplier = k.createSupplier(ctx, msg)
 
 		// Ensure that only the owner can stake a new supplier.
-		if err := supplier.EnsureOwner(msg.Sender); err != nil {
+		if err = supplier.EnsureOwner(msg.Sender); err != nil {
 			logger.Error(fmt.Sprintf(
 				"owner address %q in the message does not match the msg sender address %q",
 				msg.OwnerAddress,
