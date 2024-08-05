@@ -27,9 +27,10 @@ type miner struct {
 
 	// relay_difficulty is the target hash which a relay hash must be less than to be volume/reward applicable.
 	//
-	// TODO_MAINNET(#543): This is populated by querying the corresponding on-chain parameter during construction.
-	// If this parameter is updated on-chain the relayminer will need to be restarted to query the new value.
-	// TODO_FOLLOWUP(@olshansk, #690): This needs to be maintained (and updated) on a per service level.
+	// TODO_BETA(#705): This is populated by querying the corresponding on-chain parameter during construction.
+	//                   If this parameter is updated on-chain the relayminer will need to be restarted to query the new value.
+	// TODO_BETA(#705): This needs to be maintained (and updated) on a per service level.
+	//                  Make sure to update the `smst.Update` call in `relayer/session` alongside it.
 	relayDifficultyTargetHash []byte
 }
 

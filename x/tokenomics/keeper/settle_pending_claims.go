@@ -43,9 +43,9 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 	logger.Debug("settling expiring claims")
 	for _, claim := range expiringClaims {
 		var (
-			numClaimComputeUnits   uint64
-			numRelaysInSessionTree uint64
-			proofRequirement       prooftypes.ProofRequirementReason
+			numClaimComputeUnits uint64
+			numClaimRelays       uint64
+			proofRequirement     prooftypes.ProofRequirementReason
 		)
 
 		// NB: Note that not every (Req, Res) pair in the session is inserted in
@@ -57,7 +57,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 			return settledResult, expiredResult, err
 		}
 
-		numRelaysInSessionTree, err = claim.GetNumRelays()
+		numClaimRelays, err = claim.GetNumRelays()
 		if err != nil {
 			return settledResult, expiredResult, err
 		}
@@ -76,7 +76,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 			"session_id", sessionId,
 			"supplier_address", claim.SupplierAddress,
 			"num_claim_compute_units", numClaimComputeUnits,
-			"num_relays_in_session_tree", numRelaysInSessionTree,
+			"num_relays_in_session_tree", numClaimRelays,
 			"proof_requirement", proofRequirement,
 		)
 
@@ -100,7 +100,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 				claimExpiredEvent := types.EventClaimExpired{
 					Claim:            &claim,
 					NumComputeUnits:  numClaimComputeUnits,
-					NumRelays:        numRelaysInSessionTree,
+					NumRelays:        numClaimRelays,
 					ExpirationReason: expirationReason,
 					// TODO_CONSIDERATION: Add the error to the event if the proof was invalid.
 				}
@@ -118,7 +118,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 				}
 
 				expiredResult.NumClaims++
-				expiredResult.NumRelays += numRelaysInSessionTree
+				expiredResult.NumRelays += numClaimRelays
 				expiredResult.NumComputeUnits += numClaimComputeUnits
 				continue
 			}
@@ -136,7 +136,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 
 		claimSettledEvent := types.EventClaimSettled{
 			Claim:            &claim,
-			NumRelays:        numRelaysInSessionTree,
+			NumRelays:        numClaimRelays,
 			NumComputeUnits:  numClaimComputeUnits,
 			ProofRequirement: proofRequirement,
 		}
@@ -168,9 +168,9 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 		}
 
 		settledResult.NumClaims++
-		settledResult.NumRelays += numRelaysInSessionTree
+		settledResult.NumRelays += numClaimRelays
 		settledResult.NumComputeUnits += numClaimComputeUnits
-		settledResult.RelaysPerServiceMap[claim.SessionHeader.Service.Id] += numRelaysInSessionTree
+		settledResult.RelaysPerServiceMap[claim.SessionHeader.Service.Id] += numClaimRelays
 
 		logger.Info(fmt.Sprintf("Successfully settled claim for session ID %q at block height %d", claim.SessionHeader.SessionId, blockHeight))
 	}
