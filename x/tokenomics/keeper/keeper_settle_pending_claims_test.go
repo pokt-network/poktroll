@@ -40,10 +40,11 @@ func init() {
 type TestSuite struct {
 	suite.Suite
 
-	ctx       context.Context
-	keepers   keepertest.TokenomicsModuleKeepers
-	claim     prooftypes.Claim
-	proof     prooftypes.Proof
+	ctx     context.Context
+	keepers keepertest.TokenomicsModuleKeepers
+	claim   prooftypes.Claim
+	proof   prooftypes.Proof
+
 	numRelays uint64
 }
 
@@ -268,7 +269,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequiredAndNotProv
 	// Validate the event
 	expectedEvent := expectedEvents[0]
 	require.Equal(t, tokenomicstypes.ClaimExpirationReason_PROOF_MISSING, expectedEvent.GetExpirationReason())
-	require.Equal(t, s.numRelays, expectedEvent.GetNumComputeUnits())
+	require.Equal(t, s.numRelays, expectedEvent.GetNumRelays())
 }
 
 func (s *TestSuite) TestSettlePendingClaims_ClaimSettled_ProofRequiredAndProvided_ViaThreshold() {
@@ -319,7 +320,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimSettled_ProofRequiredAndProvide
 	// Validate the event
 	expectedEvent := expectedEvents[0]
 	require.Equal(t, prooftypes.ProofRequirementReason_THRESHOLD, expectedEvent.GetProofRequirement())
-	require.Equal(t, s.numRelays, expectedEvent.GetNumComputeUnits())
+	require.Equal(t, s.numRelays, expectedEvent.GetNumRelays())
 }
 
 func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOneProvided() {
@@ -373,7 +374,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOn
 	// Validate the event
 	expectedEvent := expectedEvents[0]
 	require.Equal(t, tokenomicstypes.ClaimExpirationReason_PROOF_INVALID, expectedEvent.GetExpirationReason())
-	require.Equal(t, s.numRelays, expectedEvent.GetNumComputeUnits())
+	require.Equal(t, s.numRelays, expectedEvent.GetNumRelays())
 }
 
 func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_ViaProbability() {
@@ -424,7 +425,7 @@ func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_Vi
 	// Validate the settlement event
 	expectedEvent := expectedEvents[0]
 	require.Equal(t, prooftypes.ProofRequirementReason_PROBABILISTIC, expectedEvent.GetProofRequirement())
-	require.Equal(t, s.numRelays, expectedEvent.GetNumComputeUnits())
+	require.Equal(t, s.numRelays, expectedEvent.GetNumRelays())
 }
 
 func (s *TestSuite) TestSettlePendingClaims_Settles_WhenAProofIsNotRequired() {
@@ -433,12 +434,16 @@ func (s *TestSuite) TestSettlePendingClaims_Settles_WhenAProofIsNotRequired() {
 	ctx := s.ctx
 	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
 
+	// Retrieve the number of compute units in the claim
+	numComputeUnits, err := s.claim.GetNumComputeUnits()
+	require.NoError(t, err)
+
 	// Set the proof parameters such that s.claim DOES NOT require a proof because:
 	// - proof_request_probability is 0% AND
 	// - proof_requirement_threshold exceeds s.claim's compute units
-	err := s.keepers.ProofKeeper.SetParams(ctx, prooftypes.Params{
+	err = s.keepers.ProofKeeper.SetParams(ctx, prooftypes.Params{
 		ProofRequestProbability:   0,
-		ProofRequirementThreshold: s.numRelays + 1, /// +1 to push threshold above s.claim's compute units
+		ProofRequirementThreshold: numComputeUnits + 1, // +1 to push threshold above s.claim's compute units
 	})
 	require.NoError(t, err)
 
@@ -470,7 +475,7 @@ func (s *TestSuite) TestSettlePendingClaims_Settles_WhenAProofIsNotRequired() {
 	// Validate the settlement event
 	expectedEvent := expectedEvents[0]
 	require.Equal(t, prooftypes.ProofRequirementReason_NOT_REQUIRED.String(), expectedEvent.GetProofRequirement().String())
-	require.Equal(t, s.numRelays, expectedEvent.GetNumComputeUnits())
+	require.Equal(t, s.numRelays, expectedEvent.GetNumRelays())
 }
 
 func (s *TestSuite) TestSettlePendingClaims_DoesNotSettle_BeforeProofWindowCloses() {
@@ -496,12 +501,16 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimPendingAfterSettlement() {
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
 
+	// Retrieve the number of compute units in the claim
+	numComputeUnits, err := s.claim.GetNumComputeUnits()
+	require.NoError(t, err)
+
 	// Set the proof parameters such that s.claim DOES NOT require a proof
 	// because the proof_request_probability is 0% and the proof_request_threshold
 	// is greater than the claims' compute units.
-	err := s.keepers.ProofKeeper.SetParams(ctx, prooftypes.Params{
+	err = s.keepers.ProofKeeper.SetParams(ctx, prooftypes.Params{
 		ProofRequestProbability:   0,
-		ProofRequirementThreshold: s.numRelays + 1, /// +1 to push threshold above s.claim's compute units
+		ProofRequirementThreshold: numComputeUnits + 1, // +1 to push threshold above s.claim's compute units
 	})
 	require.NoError(t, err)
 
