@@ -349,10 +349,9 @@ send_relay_sovereign_app_REST: # Send a REST relay through the AppGateServer as 
 	--data '{"model": "qwen:0.5b", "stream": false, "messages": [{"role": "user", "content":"count from 1 to 10"}]}' \
 	$(APPGATE_SERVER)/ollama/api/chat
 
-# TODO_TECHDEBT(@okdas): Figure out how to copy these over w/ a functional state.
-# cp ${HOME}/.poktroll/config/app.toml $(POKTROLLD_HOME)/config/app.toml
-# cp ${HOME}/.poktroll/config/config.toml $(POKTROLLD_HOME)/config/config.toml
-# cp ${HOME}/.poktroll/config/client.toml $(POKTROLLD_HOME)/config/client.toml
+.PHONY: cosmovisor_start_node
+cosmovisor_start_node: # Starts the node using cosmovisor that waits for an upgrade plan
+	bash tools/scripts/upgrades/cosmovisor-start-node.sh
 
 ###############
 ### Linting ###

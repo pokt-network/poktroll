@@ -172,6 +172,7 @@ genesis:
                   rpc_type: JSON_RPC
                   url: http://relayminer1:8545
               service:
+                compute_units_per_relay: 1
                 id: anvil
                 name: ""
             - endpoints:
@@ -179,6 +180,7 @@ genesis:
                   rpc_type: REST
                   url: http://relayminer1:8545
               service:
+                compute_units_per_relay: 1
                 id: ollama
                 name: ""
           stake:
