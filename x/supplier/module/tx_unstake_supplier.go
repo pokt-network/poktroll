@@ -14,7 +14,8 @@ func CmdUnstakeSupplier() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "unstake-supplier <operator_address>",
 		Short: "Unstake a supplier",
-		Long: `Unstake an supplier with the provided parameters. This is a broadcast operation that will unstake the supplier specified by the <operator_address> and owned by 'from' address.
+		Long: `Unstake a supplier with the provided parameters. This is a broadcast operation that will
+unstake the supplier specified by the <operator_address> and owned by 'from' address.
 
 Example:
 $ poktrolld tx supplier unstake-supplier $(OPERATOR_ADDRESS) --keyring-backend test --from $(OWNER_ADDRESS) --node $(POCKET_NODE) --home=$(POKTROLLD_HOME)`,

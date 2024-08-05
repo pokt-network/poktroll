@@ -1,3 +1,30 @@
+# This file is used to stake a Supplier or update an existing Supplier's information in the Pocket Network.
+# Pocket Network supports two types of staking mechanisms: custodial and non-custodial staking:
+# * Custodial staking is the default mechanism, where the owner address (i.e., the address that
+#   owns the staked funds) is the same as the operator address (i.e., the address that operates
+#   the Supplier).
+# * Non-custodial staking is an advanced mechanism, where the owner address is different from
+#   the operator address. This is useful to avoid overuse of the private key of the
+#   address that owns the staked funds.
+
+# The address of the owner of the staked funds. This address must be used to
+# sign the staking message for a new Supplier (create a new Supplier) or the unstaking
+# message of an existing Supplier (delete an existing Supplier).
+# If the owner address differs from the operator address, the owner address cannot be used to
+# update the Supplier's information (e.g., stake more funds, change service endpoints, etc.).
+# The owner address does not identify the Supplier in the Pocket Network; the same owner
+# address can stake multiple Suppliers.
+# The owner address cannot be changed once the Supplier is created.
+owner_address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
+
+# The address of the operator of the Supplier. This address operates the Supplier,
+# (i.e., signs relay responses, submits claims and proofs, updates service endpoints, etc.).
+# This address cannot be used to stake a new Supplier or unstake an existing Supplier.
+# This address uniquely identifies the Supplier in the Pocket Network.
+# The operator address cannot be changed once the Supplier is created.
+# The operator address is optional; if not provided, the owner address is used as
+# the operator address.
+operator_address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
 # NB: The stake amount is exactly 1upokt greater than the value in genesis.json
 # so that the stake command causes a state change.
 stake_amount: 1000069upokt

@@ -1,3 +1,5 @@
+owner_address: pokt1re27pw4llwnatx4sq7rlggqzcm6j3f39epq2wa
+operator_address: pokt1re27pw4llwnatx4sq7rlggqzcm6j3f39epq2wa
 stake_amount: 1000070upokt
 services:
   - service_id: anvil
