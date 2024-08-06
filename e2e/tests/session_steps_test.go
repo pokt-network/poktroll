@@ -174,12 +174,17 @@ func (s *suite) sendRelaysForSession(
 	s.TheSupplierIsStakedForService(supplierName, serviceId)
 	s.TheSessionForApplicationAndServiceContainsTheSupplier(appName, serviceId, supplierName)
 
-	// TODO_IMPROVE/TODO_COMMUNITY: hard-code a default set of RPC calls to iterate over for coverage.
-	data := `{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}`
+	// TODO_IMPROVE: hard-code a default set of RPC calls to iterate over for coverage.
+	payload_fmt := `{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":%d}`
 
 	for i := 0; i < relayLimit; i++ {
-		s.TheApplicationSendsTheSupplierARequestForServiceWithPathAndData(appName, supplierName, serviceId, defaultJSONPRCPath, data)
-		s.TheApplicationReceivesASuccessfulRelayResponseSignedBy(appName, supplierName)
+		payload := fmt.Sprintf(payload_fmt, i+1) // i+1 to avoid id=0 which is invalid
+
+		s.TheApplicationSendsTheSupplierARequestForServiceWithPathAndData(appName, supplierName, serviceId, defaultJSONPRCPath, payload)
+		time.Sleep(1000 * time.Millisecond)
+
+		s.TheApplicationReceivesASuccessfulRelayResponseSignedByForData(appName, supplierName, payload)
+		time.Sleep(1000 * time.Millisecond)
 	}
 }
 

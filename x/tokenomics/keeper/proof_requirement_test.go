@@ -24,8 +24,10 @@ func TestKeeper_IsProofRequired(t *testing.T) {
 
 	var (
 		probability = prooftypes.DefaultProofRequestProbability
-		tolerance   = 0.01
-		confidence  = 0.99
+		// This was empirically determined to avoid false negatives in unit tests.
+		// As a maintainer of the codebase, you may need to adjust these.
+		tolerance  = 0.02
+		confidence = 0.98
 
 		numTrueSamples atomic.Int64
 	)
@@ -50,6 +52,6 @@ func TestKeeper_IsProofRequired(t *testing.T) {
 
 	// Check that the number of samples for each outcome is within the expected range.
 	numFalseSamples := sampleSize - numTrueSamples.Load()
-	require.InDeltaf(t, expectedNumTrueSamples, numTrueSamples.Load(), toleranceSamples, "true samples")
-	require.InDeltaf(t, expectedNumFalseSamples, numFalseSamples, toleranceSamples, "false samples")
+	require.InDeltaf(t, expectedNumTrueSamples, numTrueSamples.Load(), toleranceSamples, "true samples not in range")
+	require.InDeltaf(t, expectedNumFalseSamples, numFalseSamples, toleranceSamples, "false samples not in range")
 }

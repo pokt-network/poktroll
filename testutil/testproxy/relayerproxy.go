@@ -304,7 +304,6 @@ func MarshalAndSend(
 	require.NoError(test.t, err)
 	reader := io.NopCloser(bytes.NewReader(reqBz))
 	req := &http.Request{
-
 		Method: http.MethodPost,
 		Header: http.Header{
 			"Content-Type": []string{"application/json"},

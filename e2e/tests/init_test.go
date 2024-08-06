@@ -3,7 +3,9 @@
 package e2e
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -100,10 +102,9 @@ type suite struct {
 	// moduleParamsMap is a map of module names to a map of parameter names to parameter values & types.
 	expectedModuleParams moduleParamsMap
 
-	deps                            depinject.Config
-	newBlockEventsReplayClient      client.EventsReplayClient[*block.CometNewBlockEvent]
-	txResultReplayClient            client.EventsReplayClient[*abci.TxResult]
-	finalizeBlockEventsReplayClient client.EventsReplayClient[*abci.Event]
+	deps                       depinject.Config
+	newBlockEventsReplayClient client.EventsReplayClient[*block.CometNewBlockEvent]
+	txResultReplayClient       client.EventsReplayClient[*abci.TxResult]
 }
 
 func (s *suite) Before() {
@@ -420,22 +421,35 @@ func (s *suite) TheApplicationSendsTheSupplierARequestForServiceWithPathAndData(
 	res, err := s.pocketd.RunCurl(appGateServerUrl, serviceId, path, requestData)
 	require.NoError(s, err, "error sending relay request from app %q to supplier %q for service %q", appName, supplierName, serviceId)
 
-	relayKey := relayReferenceKey(appName, supplierName)
+	relayKey := relayReferenceKey(appName, supplierName, requestData)
 	s.scenarioState[relayKey] = res.Stdout
 }
 
-func (s *suite) TheApplicationReceivesASuccessfulRelayResponseSignedBy(appName string, supplierName string) {
+func (s *suite) TheApplicationReceivesASuccessfulRelayResponseSignedByForData(appName, supplierName, requestData string) {
 	// TODO_HACK: We need to support a non self_signing LocalNet AppGateServer
 	// that allows any application to send a relay in LocalNet and our E2E Tests.
 	require.Equal(s, "app1", appName, "TODO_HACK: The LocalNet AppGateServer is self_signing and only supports app1.")
 
-	relayKey := relayReferenceKey(appName, supplierName)
+	relayKey := relayReferenceKey(appName, supplierName, requestData)
 	stdout, ok := s.scenarioState[relayKey]
 	require.Truef(s, ok, "no relay response found for %s", relayKey)
 
 	var jsonContent json.RawMessage
 	err := json.Unmarshal([]byte(stdout.(string)), &jsonContent)
 	require.NoError(s, err, `Expected valid JSON, got: %s`, stdout)
+
+	// jsonMap, err := jsonToMap(jsonContent)
+	// require.NoError(s, err, "error converting JSON to map")
+
+	// Print the JSON response for reference since we're about to fail the test
+	// if jsonMap["error"] != nil || jsonMap["result"] == nil {
+	prettyJson, err := jsonPrettyPrint(jsonContent)
+	require.NoError(s, err, "error pretty printing JSON")
+	s.Log(prettyJson)
+	// }
+
+	// require.Nil(s, jsonMap["error"], "error in relay response")
+	// require.NotNil(s, jsonMap["result"], "no result in relay response")
 }
 
 func (s *suite) AModuleEndBlockEventIsBroadcast(module, eventType string) {
@@ -675,10 +689,14 @@ func (s *suite) getSupplierUnbondingHeight(accName string) int64 {
 	return unbondingHeight
 }
 
-// TODO_IMPROVE: use `sessionId` and `supplierName` since those are the two values
-// used to create the primary composite key on-chain to uniquely distinguish relays.
-func relayReferenceKey(appName, supplierName string) string {
-	return fmt.Sprintf("%s/%s", appName, supplierName)
+// TODO_IMPROVE: use (sessionId, supplierName) instead of (appName, supplierName)
+// since those are the two values used to create the primary composite key onchain
+// to uniquely distinguish claims. See ClaimPrimaryKey in the proof module for ref.
+func relayReferenceKey(appName, supplierName, requestData string) string {
+	hasher := sha256.New()
+	hasher.Write([]byte(requestData))
+	dataSha := fmt.Sprintf("%x", hasher.Sum(nil))
+	return fmt.Sprintf("relay/%s/%s/%s", appName, supplierName, dataSha)
 }
 
 // accBalanceKey is a helper function to create a key to store the balance
@@ -691,4 +709,28 @@ func accBalanceKey(accName string) string {
 // for accName of type actorType in the context of a scenario state.
 func accStakeKey(actorType, accName string) string {
 	return fmt.Sprintf("stake/%s/%s", actorType, accName)
+}
+
+// printPrettyJSON returns the given raw JSON message in a pretty format that
+// can be printed to the console.
+func jsonPrettyPrint(raw json.RawMessage) (string, error) {
+	var buf bytes.Buffer
+	err := json.Indent(&buf, raw, "", "  ")
+	if err != nil {
+		return "", err
+	}
+	return buf.String(), nil
+}
+
+// jsonToMap converts a raw JSON message into a map of string keys and interface values.
+func jsonToMap(raw json.RawMessage) (map[string]interface{}, error) {
+	var dataMap map[string]interface{}
+
+	// Unmarshal the raw message into the map
+	err := json.Unmarshal(raw, &dataMap)
+	if err != nil {
+		return nil, err
+	}
+
+	return dataMap, nil
 }
