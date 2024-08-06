@@ -51,6 +51,14 @@ accounts:
     mnemonic: "elder spatial erosion soap athlete tide subject recipe also awkward head pattern cart version beach usual oxygen confirm erupt diamond maze smooth census garment"
     coins:
       - 300000000upokt
+  - name: source_owner_anvil
+    mnemonic: "burden effort glue note honey erupt fiscal vote gold addict toy flag spare wrap chest table bomb sort arena phone sadness sustain urge wink"
+    coins:
+      - 6900000000000upokt
+  - name: source_owner_ollama
+    mnemonic: "initial scorpion soccer decrease sorry convince donor canoe bid pill monster today cycle slot judge bulb dismiss reject hurt mesh glare fork sustain wash"
+    coins:
+      - 6900000000000upokt
   - name: unauthorized
     mnemonic: "abuse tumble whip pioneer immense pipe method note upon glory switch rail metal camp gasp top require rain party total struggle glance between fossil"
     coins:
@@ -154,10 +162,12 @@ genesis:
                 id: anvil
                 name: ""
                 compute_units_per_relay: 1
+                owner_address: pokt1cwnu460557x0z78jv3hhc7356hhkrgc86c87q5
             - service:
                 id: ollama
                 name: ""
                 compute_units_per_relay: 1
+                owner_address: pokt1mx0klkkrj6v3dw8gs4nzlq0cq8lsktmx35t03e
           stake:
             # NB: This value should be exactly 1upokt smaller than the value in
             # `supplier1_stake_config.yaml` so that the stake command causes a state change.
