@@ -71,8 +71,8 @@ func TestClaim_Show(t *testing.T) {
 			expectedErr: types.ErrProofInvalidAddress.Wrapf(
 				// TODO_TECHDEBT: prefer using "%q" in error format strings
 				// to disambiguate empty string from space or no output.
-				"invalid supplier address for claim being retrieved %s; (decoding bech32 failed: invalid separator index -1)",
-				"invalid_bech32_supplier_address",
+				"invalid supplier operator address for claim being retrieved %s; (decoding bech32 failed: invalid separator index -1)",
+				"invalid_bech32_supplier_operator_address",
 			),
 		},
 		{

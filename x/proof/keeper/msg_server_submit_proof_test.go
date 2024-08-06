@@ -594,7 +594,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			expectedErr: status.Error(
 				codes.InvalidArgument,
 				prooftypes.ErrProofNotFound.Wrapf(
-					"supplier address %q not found in session ID %q",
+					"supplier operator address %q not found in session ID %q",
 					wrongSupplierOperatorAddr,
 					validSessionHeader.GetSessionId(),
 				).Error(),

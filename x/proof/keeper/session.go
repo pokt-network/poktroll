@@ -64,7 +64,7 @@ func (k Keeper) queryAndValidateSessionHeader(
 		supplierOperatorAddr,
 	); !isSupplerFound {
 		return nil, types.ErrProofNotFound.Wrapf(
-			"supplier address %q not found in session ID %q",
+			"supplier operator address %q not found in session ID %q",
 			supplierOperatorAddr,
 			sessionHeader.GetSessionId(),
 		)

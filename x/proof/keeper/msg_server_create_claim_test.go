@@ -395,7 +395,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 			expectedErr: status.Error(
 				codes.InvalidArgument,
 				types.ErrProofNotFound.Wrapf(
-					"supplier address %q not found in session ID %q",
+					"supplier operator address %q not found in session ID %q",
 					wrongSupplierAddr,
 					sessionRes.GetSession().GetSessionId(),
 				).Error(),
@@ -417,7 +417,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 			expectedErr: status.Error(
 				codes.InvalidArgument,
 				types.ErrProofNotFound.Wrapf(
-					"supplier address %q not found in session ID %q",
+					"supplier operator address %q not found in session ID %q",
 					randSupplierAddr,
 					sessionRes.GetSession().GetSessionId(),
 				).Error(),
