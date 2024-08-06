@@ -110,11 +110,23 @@ func (p *pocketdBin) RunCurlWithRetry(rpcUrl, service, path, data string, numRet
 	}
 	// Run the curl command
 	res, err := p.RunCurl(rpcUrl, service, path, data, args...)
-	// Retry if there was an error or the response contains "no such host"
-	if err != nil || strings.Contains(res.Stdout, "no such host") {
-		time.Sleep(10 * time.Millisecond)
+	if err != nil {
 		return p.RunCurlWithRetry(rpcUrl, service, path, data, numRetries-1, args...)
 	}
+
+	// TODO_HACK: This is a list of common flaky / ephemeral errors that can occur
+	// during end-to-end tests. If any of them are hit, we retry the command.
+	ephemeralEndToEndErrors := []string{
+		"no such host",
+		"internal error: upstream error",
+	}
+	for _, ephemeralError := range ephemeralEndToEndErrors {
+		if strings.Contains(res.Stderr, ephemeralError) {
+			time.Sleep(10 * time.Millisecond)
+			return p.RunCurlWithRetry(rpcUrl, service, path, data, numRetries-1, args...)
+		}
+	}
+
 	// Return a successful result
 	return res, nil
 }
