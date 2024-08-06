@@ -46,7 +46,7 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 		supplier = k.createSupplier(ctx, msg)
 
 		// Ensure that only the owner can stake a new supplier.
-		if err := supplier.EnsureOwner(msg.Sender); err != nil {
+		if err = supplier.EnsureOwner(msg.Sender); err != nil {
 			logger.Error(fmt.Sprintf(
 				"owner address %q in the message does not match the msg sender address %q",
 				msg.OwnerAddress,
@@ -61,7 +61,7 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 		logger.Info(fmt.Sprintf("Supplier found. About to try updating supplier with address %q", msg.Address))
 
 		// Ensure that only the operator can update the supplier info.
-		if err := supplier.EnsureOperator(msg.Sender); err != nil {
+		if err = supplier.EnsureOperator(msg.Sender); err != nil {
 			logger.Error(fmt.Sprintf(
 				"operator address %q in the message does not match the msg sender address %q",
 				msg.Address,
@@ -71,14 +71,14 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 		}
 
 		// Ensure that the owner addresses is not changed.
-		if err := supplier.EnsureOwner(msg.OwnerAddress); err != nil {
+		if err = supplier.EnsureOwner(msg.OwnerAddress); err != nil {
 			logger.Error("updating the supplier's owner address forbidden")
 
 			return nil, err
 		}
 
 		// Ensure that the operator addresses is not changed.
-		if err := supplier.EnsureOperator(msg.Address); err != nil {
+		if err = supplier.EnsureOperator(msg.Address); err != nil {
 			logger.Error("updating the supplier's operator address forbidden")
 
 			return nil, err
