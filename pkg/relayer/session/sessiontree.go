@@ -3,7 +3,6 @@ package session
 import (
 	"bytes"
 	"crypto/sha256"
-	"fmt"
 	"os"
 	"path/filepath"
 	"sync"
@@ -125,9 +124,10 @@ func (st *sessionTree) Update(key, value []byte, weight uint64) error {
 
 	}
 
-	count := st.sessionSMT.MustCount()
-	sum := st.sessionSMT.MustSum()
-	fmt.Printf("Count: %d, Sum: %d\n", count, sum)
+	// DO NOT DELETE: Uncomment this for debugging and change to .Debug logs post MainNet.
+	// count := st.sessionSMT.MustCount()
+	// sum := st.sessionSMT.MustSum()
+	// fmt.Printf("Count: %d, Sum: %d\n", count, sum)
 
 	return nil
 }

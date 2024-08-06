@@ -27,7 +27,7 @@ func TestKeeper_IsProofRequired(t *testing.T) {
 		// This was empirically determined to avoid false negatives in unit tests.
 		// As a maintainer of the codebase, you may need to adjust these.
 		tolerance  = 0.05
-		confidence = 0.95
+		confidence = 0.98
 
 		numTrueSamples atomic.Int64
 	)
