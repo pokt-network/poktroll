@@ -160,14 +160,8 @@ genesis:
           service_configs:
             - service:
                 id: anvil
-                name: ""
-                compute_units_per_relay: 1
-                owner_address: pokt1cwnu460557x0z78jv3hhc7356hhkrgc86c87q5
             - service:
                 id: ollama
-                name: ""
-                compute_units_per_relay: 1
-                owner_address: pokt1mx0klkkrj6v3dw8gs4nzlq0cq8lsktmx35t03e
           stake:
             # NB: This value should be exactly 1upokt smaller than the value in
             # `supplier1_stake_config.yaml` so that the stake command causes a state change.
@@ -177,22 +171,18 @@ genesis:
       supplierList:
         - address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
           services:
-            - endpoints:
+            - service:
+                id: anvil
+              endpoints:
                 - configs: []
                   rpc_type: JSON_RPC
                   url: http://relayminer1:8545
-              service:
-                compute_units_per_relay: 1
-                id: anvil
-                name: ""
-            - endpoints:
+            - service:
+                id: ollama
+              endpoints:
                 - configs: []
                   rpc_type: REST
                   url: http://relayminer1:8545
-              service:
-                compute_units_per_relay: 1
-                id: ollama
-                name: ""
           stake:
             # NB: This value should be exactly 1upokt smaller than the value in
             # `application1_stake_config.yaml` so that the stake command causes a state change.
@@ -211,7 +201,13 @@ genesis:
         add_service_fee: "1000000000"
       serviceList:
         - id: anvil
-          name: ""
+          name: "anvil"
+          compute_units_per_relay: 1
+          owner_address: pokt1cwnu460557x0z78jv3hhc7356hhkrgc86c87q5
+        - id: ollama
+          name: "ollama"
+          compute_units_per_relay: 1
+          owner_address: pokt1mx0klkkrj6v3dw8gs4nzlq0cq8lsktmx35t03e
     proof:
       params:
         proof_request_probability: "0.25"
