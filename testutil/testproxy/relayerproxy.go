@@ -10,6 +10,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"testing"
 
 	"cosmossdk.io/depinject"
@@ -146,6 +147,15 @@ func WithServicesConfigMap(
 	servicesConfigMap map[string]*config.RelayMinerServerConfig,
 ) func(*TestBehavior) {
 	return func(test *TestBehavior) {
+		if os.Getenv("INCLUDE_FLAKY_TESTS") != "true" {
+			test.t.Skip("Skipping known flaky test: 'TestRelayerProxy'")
+		} else {
+			test.t.Log(`TODO_FLAKY: Running known flaky test: 'TestRelayerProxy'
+
+Run the following command a few times to verify it passes at least once:
+
+$ go test -v -count=1 -run TestRelayerProxy ./pkg/relayer/...`)
+		}
 		for _, serviceConfig := range servicesConfigMap {
 			for serviceId, supplierConfig := range serviceConfig.SupplierConfigsMap {
 				server := &http.Server{Addr: supplierConfig.ServiceConfig.BackendUrl.Host}
@@ -156,12 +166,7 @@ func WithServicesConfigMap(
 				go func() {
 					err := server.ListenAndServe()
 					if err != nil && !errors.Is(err, http.ErrServerClosed) {
-						require.NoError(test.t, err, `
-TODO_FLAKY: Known flaky test: 'TestRelayerProxy'
-
-Run the following command a few times to verify it passes at least once:
-
-$ go test -v -count=1 -run TestRelayerProxy ./pkg/relayer/proxy/...`)
+						require.NoError(test.t, err)
 					}
 				}()
 

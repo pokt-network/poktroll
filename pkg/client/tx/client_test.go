@@ -3,6 +3,7 @@ package tx_test
 import (
 	"context"
 	"crypto/sha256"
+	"os"
 	"sync"
 	"testing"
 	"time"
@@ -289,11 +290,15 @@ func TestTxClient_SignAndBroadcast_CheckTxError(t *testing.T) {
 		ctx                  = context.Background()
 	)
 
-	t.Log(`TODO_FLAKY: Known flaky test: 'TestTxClient_SignAndBroadcast_CheckTxError'
+	if os.Getenv("INCLUDE_FLAKY_TESTS") != "true" {
+		t.Skip("Skipping known flaky test: 'TestTxClient_SignAndBroadcast_CheckTxError'")
+	} else {
+		t.Log(`TODO_FLAKY: Skipping known flaky test: 'TestTxClient_SignAndBroadcast_CheckTxError'
 
 Run the following command a few times to verify it passes at least once:
 
 $ go test -v -count=1 -run TestTxClient_SignAndBroadcast_CheckTxError ./pkg/client/tx/...`)
+	}
 
 	keyring, signingKey := testkeyring.NewTestKeyringWithKey(t, testSigningKeyName)
 

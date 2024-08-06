@@ -2,14 +2,6 @@
 
 SHELL = /bin/sh
 
-# TODO_IMPROVE: Look into how we can we source `.env.dev` and have everything
-# here work.
-
-# ifneq (,$(wildcard .env))
-# include .env
-# export $(shell sed 's/=.*//' .env)
-# endif
-
 POKTROLLD_HOME ?= ./localnet/poktrolld
 POCKET_NODE ?= tcp://127.0.0.1:26657 # The pocket node (validator in the localnet context)
 TESTNET_RPC ?= https://testnet-validated-validator-rpc.poktroll.com/ # TestNet RPC endpoint for validator maintained by Grove. Needs to be update if there's another "primary" testnet.
@@ -432,6 +424,10 @@ test_all: warn_flaky_tests check_go_version ## Run all go tests showing detailed
 .PHONY: test_all_with_integration
 test_all_with_integration: check_go_version ## Run all go tests, including those with the integration
 	go test -count=1 -v -race -tags test,integration ./...
+
+.PHONY: test_all_with_integration_and_flaky
+test_all_with_integration_and_flaky: check_go_version ## Run all go tests, including those with the integration and flaky tests
+	INCLUDE_FLAKY_TESTS=true go test -count=1 -v -race -tags test,integration ./...
 
 .PHONY: test_integration
 test_integration: check_go_version ## Run only the in-memory integration "unit" tests
