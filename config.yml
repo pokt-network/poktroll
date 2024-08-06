@@ -199,7 +199,7 @@ genesis:
           denom: upokt
     shared:
       params:
-        num_blocks_per_session: 4
+        num_blocks_per_session: 10
         grace_period_end_offset_blocks: 1
         claim_window_open_offset_blocks: 1
         claim_window_close_offset_blocks: 4

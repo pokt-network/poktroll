@@ -425,6 +425,9 @@ test_all: warn_flaky_tests check_go_version ## Run all go tests showing detailed
 test_all_with_integration: check_go_version ## Run all go tests, including those with the integration
 	go test -count=1 -v -race -tags test,integration ./...
 
+# We are explicitly using an env variable rather than a build tag to keep flaky
+# tests in line with non flaky tests and use it as a way to easily turn them
+# on and off without maintaining extra files.
 .PHONY: test_all_with_integration_and_flaky
 test_all_with_integration_and_flaky: check_go_version ## Run all go tests, including those with the integration and flaky tests
 	INCLUDE_FLAKY_TESTS=true go test -count=1 -v -race -tags test,integration ./...

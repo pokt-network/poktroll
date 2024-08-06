@@ -101,6 +101,24 @@ func (p *pocketdBin) RunCurl(rpcUrl, service, path, data string, args ...string)
 	return p.runCurlPostCmd(rpcUrl, service, path, data, args...)
 }
 
+// RunCurlWithRetry runs a curl command on the local machine with multiple retries.
+// It also accounts for an ephemeral error that may occur due to DNS resolution such as "no such host".
+func (p *pocketdBin) RunCurlWithRetry(rpcUrl, service, path, data string, numRetries uint8, args ...string) (*commandResult, error) {
+	// No more retries left
+	if numRetries <= 0 {
+		return p.RunCurl(rpcUrl, service, path, data, args...)
+	}
+	// Run the curl command
+	res, err := p.RunCurl(rpcUrl, service, path, data, args...)
+	// Retry if there was an error or the response contains "no such host"
+	if err != nil || strings.Contains(res.Stdout, "no such host") {
+		time.Sleep(10 * time.Millisecond)
+		return p.RunCurlWithRetry(rpcUrl, service, path, data, numRetries-1, args...)
+	}
+	// Return a successful result
+	return res, nil
+}
+
 // runPocketCmd is a helper to run a command using the local pocketd binary with the flags provided
 func (p *pocketdBin) runPocketCmd(args ...string) (*commandResult, error) {
 	base := []string{"--home", defaultHome}

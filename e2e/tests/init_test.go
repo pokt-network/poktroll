@@ -5,7 +5,6 @@ package e2e
 import (
 	"bytes"
 	"context"
-	"crypto/sha256"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -414,43 +413,30 @@ func (s *suite) TheSessionForApplicationAndServiceContainsTheSupplier(appName st
 	s.Fatalf("ERROR: session for app %s and service %s does not contain supplier %s", appName, serviceId, supplierName)
 }
 
-func (s *suite) TheApplicationSendsTheSupplierARequestForServiceWithPathAndData(appName, supplierName, serviceId, path, requestData string) {
+func (s *suite) TheApplicationSendsTheSupplierASuccessfulRequestForServiceWithPathAndData(appName, supplierName, serviceId, path, requestData string) {
 	// TODO_HACK: We need to support a non self_signing LocalNet AppGateServer
 	// that allows any application to send a relay in LocalNet and our E2E Tests.
 	require.Equal(s, "app1", appName, "TODO_HACK: The LocalNet AppGateServer is self_signing and only supports app1.")
 
-	res, err := s.pocketd.RunCurl(appGateServerUrl, serviceId, path, requestData)
+	res, err := s.pocketd.RunCurlWithRetry(appGateServerUrl, serviceId, path, requestData, 5)
 	require.NoError(s, err, "error sending relay request from app %q to supplier %q for service %q", appName, supplierName, serviceId)
 
-	relayKey := relayReferenceKey(appName, supplierName, requestData)
-	s.scenarioState[relayKey] = res.Stdout
-}
-
-func (s *suite) TheApplicationReceivesASuccessfulRelayResponseSignedByForData(appName, supplierName, requestData string) {
-	// TODO_HACK: We need to support a non self_signing LocalNet AppGateServer
-	// that allows any application to send a relay in LocalNet and our E2E Tests.
-	require.Equal(s, "app1", appName, "TODO_HACK: The LocalNet AppGateServer is self_signing and only supports app1.")
-
-	relayKey := relayReferenceKey(appName, supplierName, requestData)
-	stdout, ok := s.scenarioState[relayKey]
-	require.Truef(s, ok, "no relay response found for %s", relayKey)
-
 	var jsonContent json.RawMessage
-	err := json.Unmarshal([]byte(stdout.(string)), &jsonContent)
-	require.NoError(s, err, `Expected valid JSON, got: %s`, stdout)
+	err = json.Unmarshal([]byte(res.Stdout), &jsonContent)
+	require.NoError(s, err, `Expected valid JSON, got: %s`, res.Stdout)
 
-	// jsonMap, err := jsonToMap(jsonContent)
-	// require.NoError(s, err, "error converting JSON to map")
+	jsonMap, err := jsonToMap(jsonContent)
+	require.NoError(s, err, "error converting JSON to map")
 
 	// Print the JSON response for reference since we're about to fail the test
-	// if jsonMap["error"] != nil || jsonMap["result"] == nil {
-	prettyJson, err := jsonPrettyPrint(jsonContent)
-	require.NoError(s, err, "error pretty printing JSON")
-	s.Log(prettyJson)
-	// }
+	if jsonMap["error"] != nil || jsonMap["result"] == nil {
+		prettyJson, err := jsonPrettyPrint(jsonContent)
+		require.NoError(s, err, "error pretty printing JSON")
+		s.Log(prettyJson)
+	}
 
-	// require.Nil(s, jsonMap["error"], "error in relay response")
-	// require.NotNil(s, jsonMap["result"], "no result in relay response")
+	require.Nil(s, jsonMap["error"], "error in relay response")
+	require.NotNil(s, jsonMap["result"], "no result in relay response")
 }
 
 func (s *suite) AModuleEndBlockEventIsBroadcast(module, eventType string) {
@@ -688,16 +674,6 @@ func (s *suite) getSupplierUnbondingHeight(accName string) int64 {
 	s.cdc.MustUnmarshalJSON(responseBz, &resp)
 	unbondingHeight := shared.GetSupplierUnbondingHeight(&resp.Params, supplier)
 	return unbondingHeight
-}
-
-// TODO_IMPROVE: use (sessionId, supplierName) instead of (appName, supplierName)
-// since those are the two values used to create the primary composite key onchain
-// to uniquely distinguish claims. See ClaimPrimaryKey in the proof module for ref.
-func relayReferenceKey(appName, supplierName, requestData string) string {
-	hasher := sha256.New()
-	hasher.Write([]byte(requestData))
-	dataSha := fmt.Sprintf("%x", hasher.Sum(nil))
-	return fmt.Sprintf("relay/%s/%s/%s", appName, supplierName, dataSha)
 }
 
 // accBalanceKey is a helper function to create a key to store the balance
