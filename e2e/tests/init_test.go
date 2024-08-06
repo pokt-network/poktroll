@@ -428,15 +428,21 @@ func (s *suite) TheApplicationSendsTheSupplierASuccessfulRequestForServiceWithPa
 	jsonMap, err := jsonToMap(jsonContent)
 	require.NoError(s, err, "error converting JSON to map")
 
-	// Print the JSON response for reference since we're about to fail the test
-	if jsonMap["error"] != nil || jsonMap["result"] == nil {
-		prettyJson, err := jsonPrettyPrint(jsonContent)
-		require.NoError(s, err, "error pretty printing JSON")
-		s.Log(prettyJson)
-	}
+	prettyJson, err := jsonPrettyPrint(jsonContent)
+	require.NoError(s, err, "error pretty printing JSON")
+	s.Log(prettyJson)
 
-	require.Nil(s, jsonMap["error"], "error in relay response")
-	require.NotNil(s, jsonMap["result"], "no result in relay response")
+	// TODO_IMPROVE: This is a minimalistic first approach to request validation in E2E tests.
+	// Consider leveraging the shannon-sdk or path here.
+	switch path {
+	case "":
+		// Validate JSON-RPC request where the path is empty
+		require.Nil(s, jsonMap["error"], "error in relay response")
+		require.NotNil(s, jsonMap["result"], "no result in relay response")
+	default:
+		// Validate REST request where the path is non-empty
+		require.Nil(s, jsonMap["error"], "error in relay response")
+	}
 }
 
 func (s *suite) AModuleEndBlockEventIsBroadcast(module, eventType string) {
