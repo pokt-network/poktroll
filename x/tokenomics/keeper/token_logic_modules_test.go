@@ -469,13 +469,6 @@ func TestProcessTokenLogicModules_InvalidClaim(t *testing.T) {
 	// Iterate over each test case
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			// Use defer-recover to catch any panic
-			defer func() {
-				if r := recover(); r != nil {
-					t.Errorf("Test panicked: %s", r)
-				}
-			}()
-
 			// Execute test function
 			err := func() (err error) {
 				defer func() {

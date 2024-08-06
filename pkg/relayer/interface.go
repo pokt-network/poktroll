@@ -8,7 +8,6 @@ import (
 	"context"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-
 	"github.com/pokt-network/smt"
 
 	"github.com/pokt-network/poktroll/pkg/observable"
@@ -158,5 +157,6 @@ type SessionTree interface {
 	// It returns an error if it has already been marked as such.
 	StartClaiming() error
 
+	// GetSupplierAddress returns the supplier address building this tree.
 	GetSupplierAddress() *cosmostypes.AccAddress
 }

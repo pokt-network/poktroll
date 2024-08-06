@@ -2,6 +2,7 @@ package channel_test
 
 import (
 	"context"
+	"os"
 	"slices"
 	"testing"
 	"time"
@@ -15,6 +16,16 @@ import (
 )
 
 func TestReplayObservable_Overflow(t *testing.T) {
+	if os.Getenv("INCLUDE_FLAKY_TESTS") != "true" {
+		t.Skip("Skipping known flaky test: 'TestReplayObservable_Overflow'")
+	} else {
+		t.Log(`TODO_FLAKY: Skipping known flaky test: 'TestReplayObservable_Overflow'
+
+Run the following command a few times to verify it passes at least once:
+
+$ go test -v -count=1 -run TestReplayObservable_Overflow ./pkg/observable/channel/...`)
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
 

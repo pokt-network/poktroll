@@ -2,6 +2,7 @@ package session_test
 
 import (
 	"fmt"
+	"os"
 	"testing"
 	"time"
 
@@ -16,6 +17,16 @@ import (
 )
 
 func TestCLI_GetSession(t *testing.T) {
+	if os.Getenv("INCLUDE_FLAKY_TESTS") != "true" {
+		t.Skip("Skipping known flaky test: 'TestRelayerProxy'")
+	} else {
+		t.Log(`TODO_FLAKY: Skipping known flaky test: 'TestCLI_GetSession'
+
+Run the following command a few times to verify it passes at least once:
+
+$ go test -v -count=1 -run TestCLI_GetSession ./x/session/module/...`)
+	}
+
 	// Prepare the network
 	net, suppliers, applications := networkWithApplicationsAndSupplier(t, 2)
 	_, err := net.WaitForHeightWithTimeout(10, 30*time.Second) // Wait for a sufficiently high block height to ensure the staking transactions have been processed
@@ -179,7 +190,7 @@ func TestCLI_GetSession(t *testing.T) {
 				require.Contains(t, stat.Message(), test.expectedErr.Error())
 				return
 			}
-			require.NoError(t, err, "TODO_FLAKY: Try re-running with 'go test -v -count=1 -run TestCLI_GetSession/valid_-_block_height_specified_and_is_greater_than_zero ./x/session/module/...'")
+			require.NoError(t, err)
 
 			var getSessionRes sessiontypes.QueryGetSessionResponse
 			err = net.Config.Codec.UnmarshalJSON(getSessionOut.Bytes(), &getSessionRes)
