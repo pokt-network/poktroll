@@ -29,22 +29,9 @@ const (
 	// defaultJSONPRCPath is the default path used for sending JSON-RPC relay requests.
 	defaultJSONPRCPath = ""
 
-	// txSenderEventSubscriptionQueryFmt is the format string which yields the
-	// cosmos-sdk event subscription "query" string for a given sender address.
-	// This is used by an events replay client to subscribe to tx events from the supplier.
-	// See: https://docs.cosmos.network/v0.47/learn/advanced/events#subscribing-to-events
-	txSenderEventSubscriptionQueryFmt = "tm.event='Tx' AND message.sender='%s'"
-
 	// eventsReplayClientBufferSize is the buffer size for the events replay client
 	// for the subscriptions above.
 	eventsReplayClientBufferSize = 100
-
-	// txResultEventsReplayClientKey is the suite#scenarioState key for the events replay client
-	// which is subscribed to tx events where the tx sender is the scenario's supplier.
-	txResultEventsReplayClientKey = "txResultEventsReplayClientKey"
-	// newBlockEventReplayClientKey is the suite#scenarioState key for the events replay client
-	// which is subscribed to claim settlement or expiration events on-chain.
-	newBlockEventReplayClientKey = "newBlockEventReplayClientKey"
 
 	// preExistingClaimsKey is the suite#scenarioState key for any pre-existing
 	// claims when querying for all claims prior to running the scenario.
@@ -181,10 +168,10 @@ func (s *suite) sendRelaysForSession(
 		payload := fmt.Sprintf(payload_fmt, i+1) // i+1 to avoid id=0 which is invalid
 
 		s.TheApplicationSendsTheSupplierARequestForServiceWithPathAndData(appName, supplierName, serviceId, defaultJSONPRCPath, payload)
-		time.Sleep(1000 * time.Millisecond)
+		time.Sleep(10 * time.Millisecond)
 
 		s.TheApplicationReceivesASuccessfulRelayResponseSignedByForData(appName, supplierName, payload)
-		time.Sleep(1000 * time.Millisecond)
+		time.Sleep(10 * time.Millisecond)
 	}
 }
 

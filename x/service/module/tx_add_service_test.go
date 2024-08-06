@@ -155,7 +155,7 @@ func TestCLI_AddService(t *testing.T) {
 			require.NoError(t, net.Config.Codec.UnmarshalJSON(addServiceOutput.Bytes(), &resp))
 			require.NotNil(t, resp)
 			require.NotNil(t, resp.TxHash)
-			require.Equal(t, uint32(0), resp.Code)
+			require.Equal(t, uint32(0), resp.Code, "tx response failed: %v", resp)
 		})
 	}
 }

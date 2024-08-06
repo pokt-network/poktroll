@@ -298,6 +298,7 @@ func (s *suite) TheUserStakesAWithUpoktForServiceFromTheAccount(actorType string
 		"-y",
 	}
 	res, err := s.pocketd.RunCommandOnHost("", args...)
+	require.NoError(s, err, "error staking %s for service %s", actorType, serviceId)
 
 	// Remove the temporary config file
 	err = os.Remove(configFile.Name())
