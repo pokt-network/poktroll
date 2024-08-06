@@ -22,19 +22,19 @@ func (k Keeper) UpsertProof(ctx context.Context, proof types.Proof) {
 
 	primaryStore := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ProofPrimaryKeyPrefix))
 	sessionId := proof.GetSessionHeader().GetSessionId()
-	primaryKey := types.ProofPrimaryKey(sessionId, proof.GetSupplierAddress())
+	primaryKey := types.ProofPrimaryKey(sessionId, proof.GetSupplierOperatorAddress())
 	primaryStore.Set(primaryKey, proofBz)
 
 	logger.Info(
-		fmt.Sprintf("upserted proof for supplier %s with primaryKey %s", proof.GetSupplierAddress(), primaryKey),
+		fmt.Sprintf("upserted proof for supplier %s with primaryKey %s", proof.GetSupplierOperatorAddress(), primaryKey),
 	)
 
 	// Update the address index: supplierAddress -> [ProofPrimaryKey]
-	supplierAddrStore := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ProofSupplierAddressPrefix))
-	supplierAddrKey := types.ProofSupplierAddressKey(proof.GetSupplierAddress(), primaryKey)
-	supplierAddrStore.Set(supplierAddrKey, primaryKey)
+	supplierOperatorAddrStore := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ProofSupplierOperatorAddressPrefix))
+	supplierOperatorAddrKey := types.ProofSupplierOperatorAddressKey(proof.GetSupplierOperatorAddress(), primaryKey)
+	supplierOperatorAddrStore.Set(supplierOperatorAddrKey, primaryKey)
 
-	logger.Info(fmt.Sprintf("indexed Proof for supplier %s with primaryKey %s", proof.GetSupplierAddress(), primaryKey))
+	logger.Info(fmt.Sprintf("indexed Proof for supplier %s with primaryKey %s", proof.GetSupplierOperatorAddress(), primaryKey))
 
 	// Update the session end height index: sessionEndHeight -> [ProofPrimaryKey]
 	sessionEndHeightStore := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ProofSessionEndHeightPrefix))
@@ -44,26 +44,26 @@ func (k Keeper) UpsertProof(ctx context.Context, proof types.Proof) {
 }
 
 // GetProof returns a proof from its index
-func (k Keeper) GetProof(ctx context.Context, sessionId, supplierAddr string) (_ types.Proof, isProofFound bool) {
-	return k.getProofByPrimaryKey(ctx, types.ProofPrimaryKey(sessionId, supplierAddr))
+func (k Keeper) GetProof(ctx context.Context, sessionId, supplierOperatorAddr string) (_ types.Proof, isProofFound bool) {
+	return k.getProofByPrimaryKey(ctx, types.ProofPrimaryKey(sessionId, supplierOperatorAddr))
 }
 
 // RemoveProof removes a proof from the store
-func (k Keeper) RemoveProof(ctx context.Context, sessionId, supplierAddr string) {
+func (k Keeper) RemoveProof(ctx context.Context, sessionId, supplierOperatorAddr string) {
 	logger := k.Logger().With("method", "RemoveProof")
 
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	primaryStore := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ProofPrimaryKeyPrefix))
 
 	// Check if the proof exists
-	primaryKey := types.ProofPrimaryKey(sessionId, supplierAddr)
+	primaryKey := types.ProofPrimaryKey(sessionId, supplierOperatorAddr)
 	foundProof, isProofFound := k.getProofByPrimaryKey(ctx, primaryKey)
 	if !isProofFound {
 		logger.Error(
 			fmt.Sprintf(
 				"trying to delete non-existent proof with primary key %s for supplier %s and session %s",
 				primaryKey,
-				supplierAddr,
+				supplierOperatorAddr,
 				sessionId,
 			),
 		)
@@ -71,23 +71,23 @@ func (k Keeper) RemoveProof(ctx context.Context, sessionId, supplierAddr string)
 	}
 
 	// Prepare the indices for deletion
-	supplierAddrStore := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ProofSupplierAddressPrefix))
+	supplierOperatorAddrStore := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ProofSupplierOperatorAddressPrefix))
 	sessionEndHeightStore := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ProofSessionEndHeightPrefix))
 
-	supplierAddrKey := types.ProofSupplierAddressKey(foundProof.GetSupplierAddress(), primaryKey)
+	supplierOperatorAddrKey := types.ProofSupplierOperatorAddressKey(foundProof.GetSupplierOperatorAddress(), primaryKey)
 	sessionEndHeight := foundProof.GetSessionHeader().GetSessionEndBlockHeight()
 	sessionEndHeightKey := types.ProofSupplierEndSessionHeightKey(sessionEndHeight, primaryKey)
 
 	// Delete all the entries (primary store and secondary indices)
 	primaryStore.Delete(primaryKey)
-	supplierAddrStore.Delete(supplierAddrKey)
+	supplierOperatorAddrStore.Delete(supplierOperatorAddrKey)
 	sessionEndHeightStore.Delete(sessionEndHeightKey)
 
 	logger.Info(
 		fmt.Sprintf(
 			"deleted proof with primary key %s for supplier %s and session %s",
 			primaryKey,
-			supplierAddr,
+			supplierOperatorAddr,
 			sessionId,
 		),
 	)

@@ -37,7 +37,7 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 	// Verify that the supplier exists
 	foundSupplier, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
 	require.True(t, isSupplierFound)
-	require.Equal(t, operatorAddr, foundSupplier.Address)
+	require.Equal(t, operatorAddr, foundSupplier.OperatorAddress)
 	require.Equal(t, int64(100), foundSupplier.Stake.Amount.Int64())
 	require.Len(t, foundSupplier.Services, 1)
 	require.Equal(t, "svcId", foundSupplier.Services[0].Service.Id)
@@ -89,7 +89,7 @@ func TestMsgServer_StakeSupplier_FailRestakingDueToInvalidServices(t *testing.T)
 	// Verify the supplierFound still exists and is staked for svc1
 	supplierFound, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
 	require.True(t, isSupplierFound)
-	require.Equal(t, operatorAddr, supplierFound.Address)
+	require.Equal(t, operatorAddr, supplierFound.OperatorAddress)
 	require.Len(t, supplierFound.Services, 1)
 	require.Equal(t, "svcId", supplierFound.Services[0].Service.Id)
 	require.Len(t, supplierFound.Services[0].Endpoints, 1)
@@ -106,7 +106,7 @@ func TestMsgServer_StakeSupplier_FailRestakingDueToInvalidServices(t *testing.T)
 	// Verify the supplier still exists and is staked for svc1
 	supplierFound, isSupplierFound = supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
 	require.True(t, isSupplierFound)
-	require.Equal(t, operatorAddr, supplierFound.Address)
+	require.Equal(t, operatorAddr, supplierFound.OperatorAddress)
 	require.Len(t, supplierFound.Services, 1)
 	require.Equal(t, "svcId", supplierFound.Services[0].Service.Id)
 	require.Len(t, supplierFound.Services[0].Endpoints, 1)
@@ -300,10 +300,10 @@ func stakeSupplierForServicesMsg(
 	}
 
 	return &types.MsgStakeSupplier{
-		Sender:       ownerAddr,
-		OwnerAddress: ownerAddr,
-		Address:      operatorAddr,
-		Stake:        &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(amount)},
-		Services:     services,
+		Sender:          ownerAddr,
+		OwnerAddress:    ownerAddr,
+		OperatorAddress: operatorAddr,
+		Stake:           &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(amount)},
+		Services:        services,
 	}
 }

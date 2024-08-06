@@ -64,7 +64,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 
 		sessionId := claim.SessionHeader.SessionId
 
-		proof, isProofFound := k.proofKeeper.GetProof(ctx, sessionId, claim.SupplierAddress)
+		proof, isProofFound := k.proofKeeper.GetProof(ctx, sessionId, claim.SupplierOperatorAddress)
 		// Using the probabilistic proofs approach, determine if this expiring
 		// claim required an on-chain proof
 		proofRequirement, err = k.proofRequirementForClaim(ctx, &claim)
@@ -74,7 +74,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 
 		logger = k.logger.With(
 			"session_id", sessionId,
-			"supplier_address", claim.SupplierAddress,
+			"supplier_operator_address", claim.SupplierOperatorAddress,
 			"num_claim_compute_units", numClaimComputeUnits,
 			"num_relays_in_session_tree", numRelaysInSessionTree,
 			"proof_requirement", proofRequirement,
@@ -112,9 +112,9 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 
 				// The claim & proof are no longer necessary, so there's no need for them
 				// to take up on-chain space.
-				k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierAddress)
+				k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierOperatorAddress)
 				if isProofFound {
-					k.proofKeeper.RemoveProof(ctx, sessionId, claim.SupplierAddress)
+					k.proofKeeper.RemoveProof(ctx, sessionId, claim.SupplierOperatorAddress)
 				}
 
 				expiredResult.NumClaims++
@@ -158,13 +158,13 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 
 		// The claim & proof are no longer necessary, so there's no need for them
 		// to take up on-chain space.
-		k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierAddress)
+		k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierOperatorAddress)
 		// Whether or not the proof is required, the supplier may have submitted one
 		// so we need to delete it either way. If we don't have the if structure,
 		// a safe error will be printed, but it can be confusing to the operator
 		// or developer.
 		if isProofFound {
-			k.proofKeeper.RemoveProof(ctx, sessionId, claim.SupplierAddress)
+			k.proofKeeper.RemoveProof(ctx, sessionId, claim.SupplierOperatorAddress)
 		}
 
 		settledResult.NumClaims++

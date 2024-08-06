@@ -23,7 +23,7 @@ import (
 func NewFilledSessionTree(
 	ctx context.Context, t *testing.T,
 	numRelays uint,
-	supplierKeyUid, supplierAddr string,
+	supplierOperatorKeyUid, supplierOperatorAddr string,
 	sessionTreeHeader, reqHeader, resHeader *sessiontypes.SessionHeader,
 	keyRing keyring.Keyring,
 	ringClient crypto.RingClient,
@@ -31,13 +31,13 @@ func NewFilledSessionTree(
 	t.Helper()
 
 	// Initialize an empty session tree with the given session header.
-	sessionTree := NewEmptySessionTree(t, sessionTreeHeader, supplierAddr)
+	sessionTree := NewEmptySessionTree(t, sessionTreeHeader, supplierOperatorAddr)
 
 	// Add numRelays of relays to the session tree.
 	FillSessionTree(
 		ctx, t,
 		sessionTree, numRelays,
-		supplierKeyUid, supplierAddr,
+		supplierOperatorKeyUid, supplierOperatorAddr,
 		reqHeader, resHeader,
 		keyRing,
 		ringClient,
@@ -50,7 +50,7 @@ func NewFilledSessionTree(
 func NewEmptySessionTree(
 	t *testing.T,
 	sessionTreeHeader *sessiontypes.SessionHeader,
-	supplierAddr string,
+	supplierOperatorAddr string,
 ) relayer.SessionTree {
 	t.Helper()
 
@@ -63,7 +63,7 @@ func NewEmptySessionTree(
 		_ = os.RemoveAll(testSessionTreeStoreDir)
 	})
 
-	accAddress := cosmostypes.MustAccAddressFromBech32(supplierAddr)
+	accAddress := cosmostypes.MustAccAddressFromBech32(supplierOperatorAddr)
 
 	// Construct a session tree to add relays to and generate a proof from.
 	sessionTree, err := session.NewSessionTree(
@@ -83,7 +83,7 @@ func FillSessionTree(
 	ctx context.Context, t *testing.T,
 	sessionTree relayer.SessionTree,
 	numRelays uint,
-	supplierKeyUid, supplierAddr string,
+	supplierOperatorKeyUid, supplierOperatorAddr string,
 	reqHeader, resHeader *sessiontypes.SessionHeader,
 	keyRing keyring.Keyring,
 	ringClient crypto.RingClient,
@@ -93,7 +93,7 @@ func FillSessionTree(
 	for i := 0; i < int(numRelays); i++ {
 		relay := testrelayer.NewSignedEmptyRelay(
 			ctx, t,
-			supplierKeyUid, supplierAddr,
+			supplierOperatorKeyUid, supplierOperatorAddr,
 			reqHeader, resHeader,
 			keyRing,
 			ringClient,
@@ -124,7 +124,7 @@ func FillSessionTreeExpectedComputeUnits(numRelays uint) uint64 {
 // NewProof creates a new proof structure.
 func NewProof(
 	t *testing.T,
-	supplierAddr string,
+	supplierOperatorAddr string,
 	sessionHeader *sessiontypes.SessionHeader,
 	sessionTree relayer.SessionTree,
 	closestProofPath []byte,
@@ -141,22 +141,22 @@ func NewProof(
 	require.NoError(t, err)
 
 	return &prooftypes.Proof{
-		SupplierAddress:    supplierAddr,
-		SessionHeader:      sessionHeader,
-		ClosestMerkleProof: merkleProofBz,
+		SupplierOperatorAddress: supplierOperatorAddr,
+		SessionHeader:           sessionHeader,
+		ClosestMerkleProof:      merkleProofBz,
 	}
 }
 
 func NewClaim(
 	t *testing.T,
-	supplierAddr string,
+	supplierOperatorAddr string,
 	sessionHeader *sessiontypes.SessionHeader,
 	rootHash []byte,
 ) *prooftypes.Claim {
 	// Create a new claim.
 	return &prooftypes.Claim{
-		SupplierAddress: supplierAddr,
-		SessionHeader:   sessionHeader,
-		RootHash:        rootHash,
+		SupplierOperatorAddress: supplierOperatorAddr,
+		SessionHeader:           sessionHeader,
+		RootHash:                rootHash,
 	}
 }

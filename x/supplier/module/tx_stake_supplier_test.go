@@ -74,13 +74,13 @@ func TestCLI_StakeSupplier(t *testing.T) {
 
 		// Error Paths - Address Related
 		{
-			desc: "stake supplier: missing address",
+			desc: "stake supplier: missing owner address",
 			// ownerAddress:     "explicitly missing",
 			expectedErr: types.ErrSupplierInvalidAddress,
 			config:      defaultConfig,
 		},
 		{
-			desc:         "stake supplier: invalid address",
+			desc:         "stake supplier: invalid owner address",
 			ownerAddress: "invalid",
 			expectedErr:  types.ErrSupplierInvalidAddress,
 			config:       defaultConfig,

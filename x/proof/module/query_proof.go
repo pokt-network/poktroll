@@ -14,7 +14,7 @@ import (
 func AddProofFilterFlagsToCmd(cmd *cobra.Command) {
 	cmd.Flags().Uint64(FlagSessionEndHeight, 0, "proofs whose session ends at this height will be returned")
 	cmd.Flags().String(FlagSessionId, "", "proofs matching this session id will be returned")
-	cmd.Flags().String(FlagSupplierAddress, "", "proofs submitted by suppliers matching this address will be returned")
+	cmd.Flags().String(FlagSupplierOperatorAddress, "", "proofs submitted by suppliers matching this operator address will be returned")
 }
 
 func CmdListProof() *cobra.Command {
@@ -23,13 +23,13 @@ func CmdListProof() *cobra.Command {
 		Short: "list all proofs",
 		Long: `List all the proofs that the node being queried has in its state.
 
-The proofs can be optionally filtered by one of --session-end-height --session-id or --supplier-address flags
+The proofs can be optionally filtered by one of --session-end-height --session-id or --supplier-operator-address flags
 
 Example:
 $ poktrolld q proof list-proofs --node $(POCKET_NODE) --home $(POKTROLLD_HOME)
 $ poktrolld q proof list-proofs --session-id <session_id> --node $(POCKET_NODE) --home $(POKTROLLD_HOME)
 $ poktrolld q proof list-proofs --session-end-height <session_end_height> --node $(POCKET_NODE) --home $(POKTROLLD_HOME)
-$ poktrolld q proof list-proofs --supplier-address <supplier_address> --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
+$ poktrolld q proof list-proofs --supplier-operator-address <supplier_operator_address> --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			pageReq, err := client.ReadPageRequest(cmd.Flags())
@@ -71,22 +71,22 @@ $ poktrolld q proof list-proofs --supplier-address <supplier_address> --node $(P
 
 func CmdShowProof() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "show-proof <session_id> <supplier_addr>",
+		Use:   "show-proof <session_id> <supplier_operator_addr>",
 		Short: "shows a specific proof",
 		Long: `List a specific proof that the node being queried has access to.
 
 A unique proof can be defined via a session_id that a given supplier participated in.
 
 Example:
-$ poktrolld --home=$(POKTROLLD_HOME) q proof show-proofs <session_id> <supplier_address> --node $(POCKET_NODE)`,
+$ poktrolld --home=$(POKTROLLD_HOME) q proof show-proofs <session_id> <supplier_operator_address> --node $(POCKET_NODE)`,
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			sessionId := args[0]
-			supplierAddr := args[1]
+			supplierOperatorAddr := args[1]
 
 			getProofRequest := &types.QueryGetProofRequest{
-				SessionId:       sessionId,
-				SupplierAddress: supplierAddr,
+				SessionId:               sessionId,
+				SupplierOperatorAddress: supplierOperatorAddr,
 			}
 			if err = getProofRequest.ValidateBasic(); err != nil {
 				return err
@@ -116,16 +116,21 @@ $ poktrolld --home=$(POKTROLLD_HOME) q proof show-proofs <session_id> <supplier_
 // updateProofsFilter updates the proofs filter request based on the flags set provided
 func updateProofsFilter(cmd *cobra.Command, req *types.QueryAllProofsRequest) error {
 	sessionId, _ := cmd.Flags().GetString(FlagSessionId)
-	supplierAddr, _ := cmd.Flags().GetString(FlagSupplierAddress)
+	supplierOperatorAddr, _ := cmd.Flags().GetString(FlagSupplierOperatorAddress)
 	sessionEndHeight, _ := cmd.Flags().GetUint64(FlagSessionEndHeight)
 
 	// Preparing a shared error in case more than one flag was set
-	err := fmt.Errorf("can only specify one flag filter but got sessionId (%s), supplierAddr (%s) and sessionEngHeight (%d)", sessionId, supplierAddr, sessionEndHeight)
+	err := fmt.Errorf(
+		"can only specify one flag filter but got sessionId (%s), supplierOperatorAddr (%s) and sessionEngHeight (%d)",
+		sessionId,
+		supplierOperatorAddr,
+		sessionEndHeight,
+	)
 
 	// Use the session id as the filter
 	if sessionId != "" {
 		// If the session id is set, then the other flags must not be set
-		if supplierAddr != "" || sessionEndHeight > 0 {
+		if supplierOperatorAddr != "" || sessionEndHeight > 0 {
 			return err
 		}
 		// Set the session id filter
@@ -135,15 +140,15 @@ func updateProofsFilter(cmd *cobra.Command, req *types.QueryAllProofsRequest) er
 		return nil
 	}
 
-	// Use the supplier address as the filter
-	if supplierAddr != "" {
+	// Use the supplier operator address as the filter
+	if supplierOperatorAddr != "" {
 		// If the supplier address is set, then the other flags must not be set
 		if sessionId != "" || sessionEndHeight > 0 {
 			return err
 		}
-		// Set the supplier address filter
-		req.Filter = &types.QueryAllProofsRequest_SupplierAddress{
-			SupplierAddress: supplierAddr,
+		// Set the supplier operator address filter
+		req.Filter = &types.QueryAllProofsRequest_SupplierOperatorAddress{
+			SupplierOperatorAddress: supplierOperatorAddr,
 		}
 		return nil
 	}
@@ -151,7 +156,7 @@ func updateProofsFilter(cmd *cobra.Command, req *types.QueryAllProofsRequest) er
 	// Use the session end height as the filter
 	if sessionEndHeight > 0 {
 		// If the session end height is set, then the other flags must not be set
-		if sessionId != "" || supplierAddr != "" {
+		if sessionId != "" || supplierOperatorAddr != "" {
 			return err
 		}
 		// Set the session end height filter

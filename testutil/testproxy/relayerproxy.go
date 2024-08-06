@@ -179,16 +179,16 @@ $ go test -v -count=1 -run TestRelayerProxy ./pkg/relayer/proxy/...`)
 
 // WithDefaultSupplier creates the default staked supplier for the test
 func WithDefaultSupplier(
-	supplierKeyName string,
+	supplierOperatorKeyName string,
 	supplierEndpoints map[string][]*sharedtypes.SupplierEndpoint,
 ) func(*TestBehavior) {
 	return func(test *TestBehavior) {
-		supplierAddress := getAddressFromKeyName(test, supplierKeyName)
+		supplierOperatorAddress := getAddressFromKeyName(test, supplierOperatorKeyName)
 
 		for serviceId, endpoints := range supplierEndpoints {
 			testqueryclients.AddSuppliersWithServiceEndpoints(
 				test.t,
-				supplierAddress,
+				supplierOperatorAddress,
 				serviceId,
 				endpoints,
 			)
@@ -217,20 +217,20 @@ func WithDefaultApplication(appPrivateKey *secp256k1.PrivKey) func(*TestBehavior
 // If the supplierKeyName is empty, the supplier will not be staked so we can
 // test the case where the supplier is not in the application's session's supplier list.
 func WithDefaultSessionSupplier(
-	supplierKeyName string,
+	supplierOperatorKeyName string,
 	serviceId string,
 	appPrivateKey *secp256k1.PrivKey,
 ) func(*TestBehavior) {
 	return func(test *TestBehavior) {
-		if supplierKeyName == "" {
+		if supplierOperatorKeyName == "" {
 			return
 		}
 
 		appAddress := getAddressFromPrivateKey(test, appPrivateKey)
 
 		sessionSuppliers := []string{}
-		supplierAddress := getAddressFromKeyName(test, supplierKeyName)
-		sessionSuppliers = append(sessionSuppliers, supplierAddress)
+		supplierOperatorAddress := getAddressFromKeyName(test, supplierOperatorKeyName)
+		sessionSuppliers = append(sessionSuppliers, supplierOperatorAddress)
 
 		testqueryclients.AddToExistingSessions(
 			test.t,
@@ -246,7 +246,7 @@ func WithDefaultSessionSupplier(
 // and adds all of them to the sessionMap.
 // Each session is configured for the same serviceId and application provided.
 func WithSuccessiveSessions(
-	supplierKeyName string,
+	supplierOperatorKeyName string,
 	serviceId string,
 	appPrivateKey *secp256k1.PrivKey,
 	sessionsCount int,
@@ -255,8 +255,8 @@ func WithSuccessiveSessions(
 		appAddress := getAddressFromPrivateKey(test, appPrivateKey)
 
 		sessionSuppliers := []string{}
-		supplierAddress := getAddressFromKeyName(test, supplierKeyName)
-		sessionSuppliers = append(sessionSuppliers, supplierAddress)
+		supplierOperatorAddress := getAddressFromKeyName(test, supplierOperatorKeyName)
+		sessionSuppliers = append(sessionSuppliers, supplierOperatorAddress)
 
 		// Adding `sessionCount` sessions to the sessionsMap to make them available
 		// to the MockSessionQueryClient.
@@ -413,12 +413,12 @@ func GenerateRelayRequest(
 	privKey *secp256k1.PrivKey,
 	serviceId string,
 	blockHeight int64,
-	supplierKeyName string,
+	supplierOperatorKeyName string,
 	payload []byte,
 ) *servicetypes.RelayRequest {
 	appAddress := getAddressFromPrivateKey(test, privKey)
 	sessionId, _ := testsession.GetSessionIdWithDefaultParams(appAddress, serviceId, blockHashBz, blockHeight)
-	supplierAddress := getAddressFromKeyName(test, supplierKeyName)
+	supplierOperatorAddress := getAddressFromKeyName(test, supplierOperatorKeyName)
 
 	return &servicetypes.RelayRequest{
 		Meta: servicetypes.RelayRequestMetadata{
@@ -429,7 +429,7 @@ func GenerateRelayRequest(
 				SessionStartBlockHeight: testsession.GetSessionStartHeightWithDefaultParams(blockHeight),
 				SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(blockHeight),
 			},
-			SupplierAddress: supplierAddress,
+			SupplierOperatorAddress: supplierOperatorAddress,
 			// The returned relay is unsigned and must be signed elsewhere for functionality
 			Signature: []byte(""),
 		},

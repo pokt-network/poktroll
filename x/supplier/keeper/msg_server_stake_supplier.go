@@ -39,10 +39,10 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 	// Check if the supplier already exists or not
 	var err error
 	var coinsToEscrow sdk.Coin
-	supplier, isSupplierFound := k.GetSupplier(ctx, msg.Address)
+	supplier, isSupplierFound := k.GetSupplier(ctx, msg.OperatorAddress)
 
 	if !isSupplierFound {
-		logger.Info(fmt.Sprintf("Supplier not found. Creating new supplier for address %q", msg.Address))
+		logger.Info(fmt.Sprintf("Supplier not found. Creating new supplier for address %q", msg.OperatorAddress))
 		supplier = k.createSupplier(ctx, msg)
 
 		// Ensure that only the owner can stake a new supplier.
@@ -58,13 +58,13 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 
 		coinsToEscrow = *msg.Stake
 	} else {
-		logger.Info(fmt.Sprintf("Supplier found. About to try updating supplier with address %q", msg.Address))
+		logger.Info(fmt.Sprintf("Supplier found. About to try updating supplier with address %q", msg.OperatorAddress))
 
 		// Ensure that only the operator can update the supplier info.
 		if err = supplier.EnsureOperator(msg.Sender); err != nil {
 			logger.Error(fmt.Sprintf(
 				"operator address %q in the message does not match the msg sender address %q",
-				msg.Address,
+				msg.OperatorAddress,
 				msg.Sender,
 			))
 			return nil, err
@@ -78,7 +78,7 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 		}
 
 		// Ensure that the operator addresses is not changed.
-		if err = supplier.EnsureOperator(msg.Address); err != nil {
+		if err = supplier.EnsureOperator(msg.OperatorAddress); err != nil {
 			logger.Error("updating the supplier's operator address forbidden")
 
 			return nil, err
@@ -86,7 +86,7 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 
 		currSupplierStake := *supplier.Stake
 		if err = k.updateSupplier(ctx, &supplier, msg); err != nil {
-			logger.Error(fmt.Sprintf("could not update supplier for address %q due to error %v", msg.Address, err))
+			logger.Error(fmt.Sprintf("could not update supplier for address %q due to error %v", msg.OperatorAddress, err))
 			return nil, err
 		}
 		coinsToEscrow, err = (*msg.Stake).SafeSub(currSupplierStake)
@@ -101,8 +101,8 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 
 	// Must always stake or upstake (> 0 delta)
 	if coinsToEscrow.IsZero() {
-		logger.Warn(fmt.Sprintf("Supplier %q must escrow more than 0 additional coins", msg.Address))
-		return nil, types.ErrSupplierInvalidStake.Wrapf("supplier %q must escrow more than 0 additional coins", msg.Address)
+		logger.Warn(fmt.Sprintf("Supplier %q must escrow more than 0 additional coins", msg.OperatorAddress))
+		return nil, types.ErrSupplierInvalidStake.Wrapf("supplier %q must escrow more than 0 additional coins", msg.OperatorAddress)
 	}
 
 	// Retrieve the account address of the supplier owner
@@ -147,7 +147,7 @@ func (k msgServer) createSupplier(
 
 	return sharedtypes.Supplier{
 		OwnerAddress:                 msg.OwnerAddress,
-		Address:                      msg.Address,
+		OperatorAddress:              msg.OperatorAddress,
 		Stake:                        msg.Stake,
 		Services:                     msg.Services,
 		ServicesActivationHeightsMap: servicesActivationHeightsMap,

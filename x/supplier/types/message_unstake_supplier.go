@@ -8,18 +8,18 @@ var _ sdk.Msg = (*MsgUnstakeSupplier)(nil)
 
 func NewMsgUnstakeSupplier(ownerAddress, address string) *MsgUnstakeSupplier {
 	return &MsgUnstakeSupplier{
-		OwnerAddress: ownerAddress,
-		Address:      address,
+		OwnerAddress:    ownerAddress,
+		OperatorAddress: address,
 	}
 }
 
 func (msg *MsgUnstakeSupplier) ValidateBasic() error {
 	if _, err := sdk.AccAddressFromBech32(msg.OwnerAddress); err != nil {
-		return ErrSupplierInvalidAddress.Wrapf("invalid address address (%s)", err)
+		return ErrSupplierInvalidAddress.Wrapf("invalid owner address address (%s)", err)
 	}
 
-	if _, err := sdk.AccAddressFromBech32(msg.Address); err != nil {
-		return ErrSupplierInvalidAddress.Wrapf("invalid address address (%s)", err)
+	if _, err := sdk.AccAddressFromBech32(msg.OperatorAddress); err != nil {
+		return ErrSupplierInvalidAddress.Wrapf("invalid operator address address (%s)", err)
 	}
 
 	return nil

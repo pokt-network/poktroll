@@ -363,6 +363,8 @@ The following is an example config to get you started:
 
 ```bash
 cat <<EOF >> shannon_supplier_config.yaml
+owner_address: pokt1h04g6njyuv03dhd74a73pyzeadmd8dk7l9tsk8
+operator_address: pokt1h04g6njyuv03dhd74a73pyzeadmd8dk7l9tsk8
 stake_amount: 1000069upokt
 services:
   - service_id: anvil

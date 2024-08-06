@@ -76,7 +76,7 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 			appAddr := sample.AccAddress()
 
 			keepers.SetSupplier(ctx, sharedtypes.Supplier{
-				Address: supplierAddr,
+				OperatorAddress: supplierAddr,
 				Services: []*sharedtypes.SupplierServiceConfig{
 					{Service: service},
 				},
@@ -132,7 +132,7 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 			claim := claims[0]
 			claimSessionHeader := claim.GetSessionHeader()
 			require.Equal(t, claimMsg.SessionHeader.SessionId, claimSessionHeader.GetSessionId())
-			require.Equal(t, claimMsg.SupplierAddress, claim.GetSupplierAddress())
+			require.Equal(t, claimMsg.SupplierOperatorAddress, claim.GetSupplierOperatorAddress())
 			require.Equal(t, claimMsg.SessionHeader.GetSessionEndBlockHeight(), claimSessionHeader.GetSessionEndBlockHeight())
 			require.Equal(t, claimMsg.RootHash, claim.GetRootHash())
 
@@ -172,7 +172,7 @@ func TestMsgServer_CreateClaim_Error_OutsideOfWindow(t *testing.T) {
 	appAddr := sample.AccAddress()
 
 	keepers.SetSupplier(ctx, sharedtypes.Supplier{
-		Address: supplierAddr,
+		OperatorAddress: supplierAddr,
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{Service: service},
 		},
@@ -305,7 +305,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 
 	// Add a supplier that is expected to be in the session.
 	supplierKeeper.SetSupplier(ctx, sharedtypes.Supplier{
-		Address: supplierAddr,
+		OperatorAddress: supplierAddr,
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{Service: service},
 		},
@@ -313,7 +313,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 
 	// Add a supplier that is *not* expected to be in the session.
 	supplierKeeper.SetSupplier(ctx, sharedtypes.Supplier{
-		Address: wrongSupplierAddr,
+		OperatorAddress: wrongSupplierAddr,
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{Service: &sharedtypes.Service{Id: "nosvc1"}},
 		},
@@ -350,7 +350,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 
 	sessionResSuppliers := sessionRes.GetSession().GetSuppliers()
 	require.NotEmpty(t, sessionResSuppliers)
-	require.Equal(t, supplierAddr, sessionResSuppliers[0].GetAddress())
+	require.Equal(t, supplierAddr, sessionResSuppliers[0].GetOperatorAddress())
 
 	tests := []struct {
 		desc        string

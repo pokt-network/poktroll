@@ -81,7 +81,7 @@ func TestTokenomicsIntegrationExample(t *testing.T) {
 		&sharedParams,
 		session.GetHeader().GetSessionEndBlockHeight(),
 		claimWindowOpenBlockHash,
-		integrationApp.DefaultSupplier.GetAddress(),
+		integrationApp.DefaultSupplier.GetOperatorAddress(),
 	)
 
 	// Need to wait until the earliest claim commit height
@@ -93,9 +93,9 @@ func TestTokenomicsIntegrationExample(t *testing.T) {
 
 	// Create a new claim
 	createClaimMsg := prooftypes.MsgCreateClaim{
-		SupplierAddress: integrationApp.DefaultSupplier.GetAddress(),
-		SessionHeader:   session.GetHeader(),
-		RootHash:        testutilproof.SmstRootWithSum(uint64(1)),
+		SupplierOperatorAddress: integrationApp.DefaultSupplier.GetOperatorAddress(),
+		SessionHeader:           session.GetHeader(),
+		RootHash:                testutilproof.SmstRootWithSum(uint64(1)),
 	}
 
 	// Run the message to create the claim

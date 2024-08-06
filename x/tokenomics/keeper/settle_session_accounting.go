@@ -62,12 +62,12 @@ func (k Keeper) SettleSessionAccounting(
 		return tokenomicstypes.ErrTokenomicsSessionHeaderInvalid
 	}
 
-	supplierAddr, err := cosmostypes.AccAddressFromBech32(claim.GetSupplierAddress())
-	if err != nil || supplierAddr == nil {
-		return tokenomicstypes.ErrTokenomicsSupplierAddressInvalid
+	supplierOperatorAddr, err := cosmostypes.AccAddressFromBech32(claim.GetSupplierOperatorAddress())
+	if err != nil || supplierOperatorAddr == nil {
+		return tokenomicstypes.ErrTokenomicsSupplierOperatorAddressInvalid
 	}
 
-	supplier, supplierFound := k.supplierKeeper.GetSupplier(ctx, supplierAddr.String())
+	supplier, supplierFound := k.supplierKeeper.GetSupplier(ctx, supplierOperatorAddr.String())
 	if !supplierFound {
 		return tokenomicstypes.ErrTokenomicsSupplierNotFound
 	}
@@ -101,7 +101,7 @@ func (k Keeper) SettleSessionAccounting(
 	logger = logger.With(
 		"compute_units", claimComputeUnits,
 		"session_id", sessionHeader.GetSessionId(),
-		"supplier", supplierAddr,
+		"supplier_operator_address", supplierOperatorAddr,
 		"application", applicationAddress,
 	)
 
@@ -162,7 +162,7 @@ func (k Keeper) SettleSessionAccounting(
 		ctx, suppliertypes.ModuleName, supplierOwnerAddr, settlementCoins,
 	); err != nil {
 		return tokenomicstypes.ErrTokenomicsSupplierModuleMintFailed.Wrapf(
-			"sending %s to supplier with address %s: %v",
+			"sending %s to supplier owner with address %s: %v",
 			settlementCoin,
 			supplierOwnerAddr,
 			err,

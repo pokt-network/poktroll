@@ -11,21 +11,21 @@ var _ sdk.Msg = (*MsgSubmitProof)(nil)
 
 func NewMsgSubmitProof(supplierAddress string, sessionHeader *sessiontypes.SessionHeader, proof []byte) *MsgSubmitProof {
 	return &MsgSubmitProof{
-		SupplierAddress: supplierAddress,
-		SessionHeader:   sessionHeader,
-		Proof:           proof,
+		SupplierOperatorAddress: supplierAddress,
+		SessionHeader:           sessionHeader,
+		Proof:                   proof,
 	}
 }
 
-// ValidateBasic ensures that the bech32 address strings for the supplier and
+// ValidateBasic ensures that the bech32 operator address strings for the supplier and
 // application addresses are valid and that the proof and service ID are not empty.
 //
 // TODO_BETA: Call `msg.GetSessionHeader().ValidateBasic()` once its implemented
 func (msg *MsgSubmitProof) ValidateBasic() error {
-	if _, err := sdk.AccAddressFromBech32(msg.GetSupplierAddress()); err != nil {
+	if _, err := sdk.AccAddressFromBech32(msg.GetSupplierOperatorAddress()); err != nil {
 		return sdkerrors.ErrInvalidAddress.Wrapf(
-			"supplier address %q, error: %s",
-			msg.GetSupplierAddress(),
+			"supplier operator address %q, error: %s",
+			msg.GetSupplierOperatorAddress(),
 			err,
 		)
 	}

@@ -22,10 +22,10 @@ const (
 )
 
 // BaseClaim returns a base (default, example, etc..) claim with the given app
-// address, supplier address, sum, and serviceID that can be used for testing.
-func BaseClaim(appAddr, supplierAddr string, sum uint64, serviceId string) prooftypes.Claim {
+// address, supplier operator address, sum, and serviceID that can be used for testing.
+func BaseClaim(appAddr, supplierOperatorAddr string, sum uint64, serviceId string) prooftypes.Claim {
 	return prooftypes.Claim{
-		SupplierAddress: supplierAddr,
+		SupplierOperatorAddress: supplierOperatorAddr,
 		SessionHeader: &sessiontypes.SessionHeader{
 			ApplicationAddress: appAddr,
 			Service: &sharedtypes.Service{
@@ -40,11 +40,11 @@ func BaseClaim(appAddr, supplierAddr string, sum uint64, serviceId string) proof
 }
 
 // ClaimWithRandomHash returns a claim with a random SMST root hash with the given
-// app address, supplier address, and sum that can be used for testing. Each claim
-// generated this way will have a random chance to require a proof via probabilistic
-// selection.
-func ClaimWithRandomHash(t *testing.T, appAddr, supplierAddr string, sum uint64) prooftypes.Claim {
-	claim := BaseClaim(appAddr, supplierAddr, sum, DefaultTestServiceID)
+// app address, supplier operator address, and sum that can be used for testing.
+// Each claim generated this way will have a random chance to require a proof via
+// probabilistic selection.
+func ClaimWithRandomHash(t *testing.T, appAddr, supplierOperatorAddr string, sum uint64) prooftypes.Claim {
+	claim := BaseClaim(appAddr, supplierOperatorAddr, sum, DefaultTestServiceID)
 	claim.RootHash = RandSmstRootWithSum(t, sum)
 	return claim
 }

@@ -42,10 +42,10 @@ func (rp *relayerProxy) VerifyRelayRequest(
 
 	rp.logger.Debug().
 		Fields(map[string]any{
-			"session_id":          sessionHeader.GetSessionId(),
-			"application_address": appAddress,
-			"service_id":          sessionHeader.GetService().GetId(),
-			"supplier_address":    meta.GetSupplierAddress(),
+			"session_id":                sessionHeader.GetSessionId(),
+			"application_address":       appAddress,
+			"service_id":                sessionHeader.GetService().GetId(),
+			"supplier_operator_address": meta.GetSupplierOperatorAddress(),
 		}).
 		Msg("verifying relay request session")
 
@@ -75,14 +75,14 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	}
 
 	// Check if the relayRequest is allowed to be served by the relayer proxy.
-	_, isSupplierAddressPresent := rp.AddressToSigningKeyNameMap[meta.GetSupplierAddress()]
-	if !isSupplierAddressPresent {
-		return ErrRelayerProxyMissingSupplierAddress
+	_, isSupplierOperatorAddressPresent := rp.OperatorAddressToSigningKeyNameMap[meta.GetSupplierOperatorAddress()]
+	if !isSupplierOperatorAddressPresent {
+		return ErrRelayerProxyMissingSupplierOperatorAddress
 	}
 
 	for _, supplier := range session.Suppliers {
 		// Verify if the supplier address in the session matches the one in the relayRequest.
-		if isSupplierAddressPresent && supplier.Address == meta.GetSupplierAddress() {
+		if isSupplierOperatorAddressPresent && supplier.OperatorAddress == meta.GetSupplierOperatorAddress() {
 			return nil
 		}
 	}

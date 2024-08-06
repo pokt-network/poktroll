@@ -52,7 +52,7 @@ type TestSuite struct {
 // - A keepertest.TokenomicsModuleKeepers to provide access to integrated keepers.
 // - An expectedComputeUnits which is the default proof_requirement_threshold.
 // - A claim that will require a proof via threshold, given the default proof params.
-// - A proof which contains only the session header supplier address.
+// - A proof which contains only the session header supplier operator address.
 func (s *TestSuite) SetupTest() {
 	t := s.T()
 
@@ -68,7 +68,7 @@ func (s *TestSuite) SetupTest() {
 
 	// Create accounts in the account keeper with corresponding keys in the keyring
 	// // for the applications and suppliers used in the tests.
-	supplierAddr := testkeyring.CreateOnChainAccount(
+	supplierOperatorAddr := testkeyring.CreateOnChainAccount(
 		s.ctx, t,
 		"supplier",
 		keyRing,
@@ -87,10 +87,10 @@ func (s *TestSuite) SetupTest() {
 
 	supplierStake := types.NewCoin("upokt", math.NewInt(1000000))
 	supplier := sharedtypes.Supplier{
-		OwnerAddress: supplierAddr,
-		Address:      supplierAddr,
-		Stake:        &supplierStake,
-		Services:     []*sharedtypes.SupplierServiceConfig{{Service: service}},
+		OwnerAddress:    supplierOperatorAddr,
+		OperatorAddress: supplierOperatorAddr,
+		Stake:           &supplierStake,
+		Services:        []*sharedtypes.SupplierServiceConfig{{Service: service}},
 	}
 	s.keepers.SetSupplier(s.ctx, supplier)
 
@@ -128,7 +128,7 @@ func (s *TestSuite) SetupTest() {
 	sessionTree := testtree.NewFilledSessionTree(
 		s.ctx, t,
 		numRelays,
-		"supplier", supplierAddr,
+		"supplier", supplierOperatorAddr,
 		sessionHeader, sessionHeader, sessionHeader,
 		keyRing,
 		ringClient,
@@ -144,7 +144,7 @@ func (s *TestSuite) SetupTest() {
 		&sharedParams,
 		sessionHeader.GetSessionEndBlockHeight(),
 		blockHeaderHash,
-		supplierAddr,
+		supplierOperatorAddr,
 	)
 	s.sdkCtx = cosmostypes.UnwrapSDKContext(s.ctx).WithBlockHeight(claimMsgHeight).WithHeaderHash(blockHeaderHash)
 	s.ctx = s.sdkCtx
@@ -153,8 +153,8 @@ func (s *TestSuite) SetupTest() {
 	require.NoError(t, err)
 
 	// Prepare a claim that can be inserted
-	s.claim = *testtree.NewClaim(t, supplierAddr, sessionHeader, merkleRootBz)
-	s.proof = *testtree.NewProof(t, supplierAddr, sessionHeader, sessionTree, expectedMerkleProofPath)
+	s.claim = *testtree.NewClaim(t, supplierOperatorAddr, sessionHeader, merkleRootBz)
+	s.proof = *testtree.NewProof(t, supplierOperatorAddr, sessionHeader, sessionTree, expectedMerkleProofPath)
 }
 
 // TestSettleExpiringClaimsSuite tests the claim settlement process.
@@ -509,7 +509,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimPendingAfterSettlement() {
 	// Add a second claim with a session header corresponding to the next session.
 	sessionTwoClaim := testutilproof.BaseClaim(
 		sessionOneClaim.GetSessionHeader().GetApplicationAddress(),
-		sessionOneClaim.GetSupplierAddress(),
+		sessionOneClaim.GetSupplierOperatorAddress(),
 		s.expectedComputeUnits,
 		sessionOneClaim.GetSessionHeader().GetService().Id,
 	)

@@ -39,7 +39,7 @@ type MsgCreateClaim interface {
 	cosmostypes.Msg
 	GetRootHash() []byte
 	GetSessionHeader() *sessiontypes.SessionHeader
-	GetSupplierAddress() string
+	GetSupplierOperatorAddress() string
 }
 
 // MsgSubmitProof is an interface satisfying proof.MsgSubmitProof concrete type
@@ -48,7 +48,7 @@ type MsgSubmitProof interface {
 	cosmostypes.Msg
 	GetProof() []byte
 	GetSessionHeader() *sessiontypes.SessionHeader
-	GetSupplierAddress() string
+	GetSupplierOperatorAddress() string
 }
 
 // SupplierClient is an interface for sufficient for a supplier operator to be
@@ -71,8 +71,8 @@ type SupplierClient interface {
 		ctx context.Context,
 		sessionProofs ...MsgSubmitProof,
 	) error
-	// Address returns the address of the SupplierClient that will be submitting proofs & claims.
-	Address() *cosmostypes.AccAddress
+	// Address returns the operator address of the SupplierClient that will be submitting proofs & claims.
+	OperatorAddress() *cosmostypes.AccAddress
 }
 
 // TxClient provides a synchronous interface initiating and waiting for transactions
@@ -315,13 +315,13 @@ type SharedQueryClient interface {
 	GetClaimWindowOpenHeight(ctx context.Context, queryHeight int64) (int64, error)
 	// GetEarliestSupplierClaimCommitHeight returns the earliest block height at which a claim
 	// for the session that includes queryHeight can be committed for a given supplier.
-	GetEarliestSupplierClaimCommitHeight(ctx context.Context, queryHeight int64, supplierAddr string) (int64, error)
+	GetEarliestSupplierClaimCommitHeight(ctx context.Context, queryHeight int64, supplierOperatorAddr string) (int64, error)
 	// GetProofWindowOpenHeight returns the block height at which the proof window of
 	// the session that includes queryHeight opens.
 	GetProofWindowOpenHeight(ctx context.Context, queryHeight int64) (int64, error)
 	// GetEarliestSupplierProofCommitHeight returns the earliest block height at which a proof
 	// for the session that includes queryHeight can be committed for a given supplier.
-	GetEarliestSupplierProofCommitHeight(ctx context.Context, queryHeight int64, supplierAddr string) (int64, error)
+	GetEarliestSupplierProofCommitHeight(ctx context.Context, queryHeight int64, supplierOperatorAddr string) (int64, error)
 }
 
 // BlockQueryClient defines an interface that enables the querying of

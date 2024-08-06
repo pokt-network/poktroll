@@ -191,6 +191,7 @@ type relaysSuite struct {
 	// availableSupplierAddresses is the list of available supplier addresses to be used
 	// in the test. It is populated from the suppliersUrls map.
 	// It is used to ensure that the suppliers are staked in the order they are provisioned.
+	// The same address is used as the owner and the operator address (i.e. custodial staking).
 	availableSupplierAddresses []string
 
 	// fundingAccountInfo is the account entry corresponding to the fundingAccountKeyName.

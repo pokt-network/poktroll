@@ -146,12 +146,12 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 	logger.Info().Msg("observed earliest claim commit height offset seed block height")
 
 	// Get the earliest claim commit height for this supplier.
-	supplierAddr := sessionTrees[0].GetSupplierAddress().String()
+	supplierOperatorAddr := sessionTrees[0].GetSupplierOperatorAddress().String()
 	earliestSupplierClaimsCommitHeight := shared.GetEarliestSupplierClaimCommitHeight(
 		sharedParams,
 		sessionEndHeight,
 		claimsWindowOpenBlock.Hash(),
-		supplierAddr,
+		supplierOperatorAddr,
 	)
 
 	logger = logger.With("earliest_claim_commit_height", earliestSupplierClaimsCommitHeight)
@@ -184,13 +184,13 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 		claimMsgs := make([]client.MsgCreateClaim, 0)
 		for _, sessionTree := range sessionTrees {
 			claimMsgs = append(claimMsgs, &prooftypes.MsgCreateClaim{
-				RootHash:        sessionTree.GetClaimRoot(),
-				SessionHeader:   sessionTree.GetSessionHeader(),
-				SupplierAddress: sessionTree.GetSupplierAddress().String(),
+				RootHash:                sessionTree.GetClaimRoot(),
+				SessionHeader:           sessionTree.GetSessionHeader(),
+				SupplierOperatorAddress: sessionTree.GetSupplierOperatorAddress().String(),
 			})
 		}
 
-		// Create claims for each supplier address in `sessionTrees`.
+		// Create claims for each supplier operator address in `sessionTrees`.
 		if err := supplierClient.CreateClaims(ctx, claimMsgs...); err != nil {
 			failedCreateClaimsSessionsPublishCh <- sessionTrees
 			rs.logger.Error().Err(err).Msg("failed to create claims")

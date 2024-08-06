@@ -18,9 +18,7 @@ message Supplier {
   // The operator address of the supplier that operates it.
   // The operator address can update the supplier's configurations excluding the owner
   // and operator addresses which do not change over the supplier's lifespan.
-  // TODO(red-0ne): Rename this to `operator_address` include all downstream
-  // variables, comments, docs, tests, etc...
-  string address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // Bech32 cosmos address
+  string operator_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // Bech32 cosmos address
   cosmos.base.v1beta1.Coin stake = 3; // The total amount of uPOKT the supplier has staked
   repeated SupplierServiceConfig services = 4; // The service configs this supplier can support
   // The session end height at which an actively unbonding supplier unbonds its stake.

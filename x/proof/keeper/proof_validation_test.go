@@ -49,14 +49,14 @@ func TestEnsureValidProof_Error(t *testing.T) {
 
 	// Create accounts in the account keeper with corresponding keys in the keyring
 	// for the applications and suppliers used in the tests.
-	supplierAddr := testkeyring.CreateOnChainAccount(
+	supplierOperatorAddr := testkeyring.CreateOnChainAccount(
 		ctx, t,
 		supplierUid,
 		keyRing,
 		keepers,
 		preGeneratedAccts,
 	).String()
-	wrongSupplierAddr := testkeyring.CreateOnChainAccount(
+	wrongSupplierOperatorAddr := testkeyring.CreateOnChainAccount(
 		ctx, t,
 		"wrong_supplier",
 		keyRing,
@@ -82,10 +82,10 @@ func TestEnsureValidProof_Error(t *testing.T) {
 	wrongService := &sharedtypes.Service{Id: "wrong_svc"}
 
 	// Add a supplier and application pair that are expected to be in the session.
-	keepers.AddServiceActors(ctx, t, service, supplierAddr, appAddr)
+	keepers.AddServiceActors(ctx, t, service, supplierOperatorAddr, appAddr)
 
 	// Add a supplier and application pair that are *not* expected to be in the session.
-	keepers.AddServiceActors(ctx, t, wrongService, wrongSupplierAddr, wrongAppAddr)
+	keepers.AddServiceActors(ctx, t, wrongService, wrongSupplierOperatorAddr, wrongAppAddr)
 
 	// Get the session for the application/supplier pair which is expected
 	// to be claimed and for which a valid proof would be accepted.
@@ -117,7 +117,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 	validSessionTree := testtree.NewFilledSessionTree(
 		ctx, t,
 		numRelays,
-		supplierUid, supplierAddr,
+		supplierUid, supplierOperatorAddr,
 		validSessionHeader, validSessionHeader, validSessionHeader,
 		keyRing,
 		ringClient,
@@ -129,7 +129,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 		&sharedParams,
 		validSessionHeader.GetSessionEndBlockHeight(),
 		blockHeaderHash,
-		supplierAddr,
+		supplierOperatorAddr,
 	)
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	sdkCtx = sdkCtx.WithBlockHeight(claimMsgHeight)
@@ -139,9 +139,9 @@ func TestEnsureValidProof_Error(t *testing.T) {
 	require.NoError(t, err)
 
 	claim := prooftypes.Claim{
-		SessionHeader:   validSessionHeader,
-		SupplierAddress: supplierAddr,
-		RootHash:        merkleRootBz,
+		SessionHeader:           validSessionHeader,
+		SupplierOperatorAddress: supplierOperatorAddr,
+		RootHash:                merkleRootBz,
 	}
 	keepers.UpsertClaim(ctx, claim)
 
@@ -159,11 +159,11 @@ func TestEnsureValidProof_Error(t *testing.T) {
 
 	// Construct a relay to be mangled such that it fails to deserialize in order
 	// to set the error expectation for the relevant test case.
-	mangledRelay := testrelayer.NewEmptyRelay(validSessionHeader, validSessionHeader, supplierAddr)
+	mangledRelay := testrelayer.NewEmptyRelay(validSessionHeader, validSessionHeader, supplierOperatorAddr)
 
 	// Ensure valid relay request and response signatures.
 	testrelayer.SignRelayRequest(ctx, t, mangledRelay, appAddr, keyRing, ringClient)
-	testrelayer.SignRelayResponse(ctx, t, mangledRelay, supplierUid, supplierAddr, keyRing)
+	testrelayer.SignRelayResponse(ctx, t, mangledRelay, supplierUid, supplierOperatorAddr, keyRing)
 
 	// Serialize the relay so that it can be mangled.
 	mangledRelayBz, err := mangledRelay.Marshal()
@@ -202,7 +202,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 
 				// Construct new proof message.
 				return testtree.NewProof(t,
-					supplierAddr,
+					supplierOperatorAddr,
 					&emptySessionIdHeader,
 					validSessionTree,
 					expectedMerkleProofPath)
@@ -218,7 +218,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 			newProof: func(t *testing.T) *prooftypes.Proof {
 				// Construct new proof message.
 				proof := testtree.NewProof(t,
-					supplierAddr,
+					supplierOperatorAddr,
 					validSessionHeader,
 					validSessionTree,
 					expectedMerkleProofPath,
@@ -237,7 +237,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 			newProof: func(t *testing.T) *prooftypes.Proof {
 				// Construct new proof message using the wrong session ID.
 				return testtree.NewProof(t,
-					supplierAddr,
+					supplierOperatorAddr,
 					&wrongSessionIdHeader,
 					validSessionTree,
 					expectedMerkleProofPath,
@@ -254,15 +254,15 @@ func TestEnsureValidProof_Error(t *testing.T) {
 			newProof: func(t *testing.T) *prooftypes.Proof {
 				// Construct a proof message with a  supplier that does not belong in the session.
 				return testtree.NewProof(t,
-					wrongSupplierAddr,
+					wrongSupplierOperatorAddr,
 					validSessionHeader,
 					validSessionTree,
 					expectedMerkleProofPath,
 				)
 			},
 			expectedErr: prooftypes.ErrProofNotFound.Wrapf(
-				"supplier address %q not found in session ID %q",
-				wrongSupplierAddr,
+				"supplier operator address %q not found in session ID %q",
+				wrongSupplierOperatorAddr,
 				validSessionHeader.GetSessionId(),
 			),
 		},
@@ -271,7 +271,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 			newProof: func(t *testing.T) *prooftypes.Proof {
 				// Construct new proof message.
 				proof := testtree.NewProof(t,
-					supplierAddr,
+					supplierOperatorAddr,
 					validSessionHeader,
 					validSessionTree,
 					expectedMerkleProofPath,
@@ -291,7 +291,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 			desc: "relay must be deserializable",
 			newProof: func(t *testing.T) *prooftypes.Proof {
 				// Construct a session tree to which we'll add 1 unserializable relay.
-				mangledRelaySessionTree := testtree.NewEmptySessionTree(t, validSessionHeader, supplierAddr)
+				mangledRelaySessionTree := testtree.NewEmptySessionTree(t, validSessionHeader, supplierOperatorAddr)
 
 				// Add the mangled relay to the session tree.
 				err = mangledRelaySessionTree.Update([]byte{1}, mangledRelayBz, 1)
@@ -308,7 +308,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 				// Create a claim with a merkle root derived from a session tree
 				// with an unserializable relay.
 				claim := testtree.NewClaim(t,
-					supplierAddr,
+					supplierOperatorAddr,
 					validSessionHeader,
 					mangledRelayMerkleRootBz,
 				)
@@ -318,7 +318,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 				// Construct new proof message derived from a session tree
 				// with an unserializable relay.
 				return testtree.NewProof(t,
-					supplierAddr,
+					supplierOperatorAddr,
 					validSessionHeader,
 					mangledRelaySessionTree,
 					expectedMerkleProofPath,
@@ -339,7 +339,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 				wrongRequestSessionIdSessionTree := testtree.NewFilledSessionTree(
 					ctx, t,
 					numRelays,
-					supplierUid, supplierAddr,
+					supplierUid, supplierOperatorAddr,
 					validSessionHeader, &wrongSessionIdHeader, validSessionHeader,
 					keyRing,
 					ringClient,
@@ -356,7 +356,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 				// Create a claim with a merkle root derived from a relay
 				// request containing the wrong session ID.
 				claim := testtree.NewClaim(t,
-					supplierAddr,
+					supplierOperatorAddr,
 					validSessionHeader,
 					wrongRequestSessionIdMerkleRootBz,
 				)
@@ -366,7 +366,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 				// Construct new proof message using the valid session header,
 				// *not* the one used in the session tree's relay request.
 				return testtree.NewProof(t,
-					supplierAddr,
+					supplierOperatorAddr,
 					validSessionHeader,
 					wrongRequestSessionIdSessionTree,
 					expectedMerkleProofPath,
@@ -388,7 +388,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 				wrongResponseSessionIdSessionTree := testtree.NewFilledSessionTree(
 					ctx, t,
 					numRelays,
-					supplierUid, supplierAddr,
+					supplierUid, supplierOperatorAddr,
 					validSessionHeader, validSessionHeader, &wrongSessionIdHeader,
 					keyRing,
 					ringClient,
@@ -405,7 +405,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 				// Create a claim with a merkle root derived from a relay
 				// response containing the wrong session ID.
 				claim := testtree.NewClaim(t,
-					supplierAddr,
+					supplierOperatorAddr,
 					validSessionHeader,
 					wrongResponseSessionIdMerkleRootBz,
 				)
@@ -415,7 +415,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 				// Construct new proof message using the valid session header,
 				// *not* the one used in the session tree's relay response.
 				return testtree.NewProof(t,
-					supplierAddr,
+					supplierOperatorAddr,
 					validSessionHeader,
 					wrongResponseSessionIdSessionTree,
 					expectedMerkleProofPath,
@@ -431,18 +431,18 @@ func TestEnsureValidProof_Error(t *testing.T) {
 			desc: "relay request signature must be valid",
 			newProof: func(t *testing.T) *prooftypes.Proof {
 				// Set the relay request signature to an invalid byte slice.
-				invalidRequestSignatureRelay := testrelayer.NewEmptyRelay(validSessionHeader, validSessionHeader, supplierAddr)
+				invalidRequestSignatureRelay := testrelayer.NewEmptyRelay(validSessionHeader, validSessionHeader, supplierOperatorAddr)
 				invalidRequestSignatureRelay.Req.Meta.Signature = invalidSignatureBz
 
 				// Ensure a valid relay response signature.
-				testrelayer.SignRelayResponse(ctx, t, invalidRequestSignatureRelay, supplierUid, supplierAddr, keyRing)
+				testrelayer.SignRelayResponse(ctx, t, invalidRequestSignatureRelay, supplierUid, supplierOperatorAddr, keyRing)
 
 				invalidRequestSignatureRelayBz, marshalErr := invalidRequestSignatureRelay.Marshal()
 				require.NoError(t, marshalErr)
 
 				// Construct a session tree with 1 relay with a session header containing
 				// a session ID that doesn't match the expected session ID.
-				invalidRequestSignatureSessionTree := testtree.NewEmptySessionTree(t, validSessionHeader, supplierAddr)
+				invalidRequestSignatureSessionTree := testtree.NewEmptySessionTree(t, validSessionHeader, supplierOperatorAddr)
 
 				// Add the relay to the session tree.
 				err = invalidRequestSignatureSessionTree.Update([]byte{1}, invalidRequestSignatureRelayBz, 1)
@@ -460,7 +460,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 				// with an invalid relay request signature.
 
 				claim := testtree.NewClaim(t,
-					supplierAddr,
+					supplierOperatorAddr,
 					validSessionHeader,
 					invalidRequestSignatureMerkleRootBz,
 				)
@@ -470,7 +470,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 				// Construct new proof message derived from a session tree
 				// with an invalid relay request signature.
 				return testtree.NewProof(t,
-					supplierAddr,
+					supplierOperatorAddr,
 					validSessionHeader,
 					invalidRequestSignatureSessionTree,
 					expectedMerkleProofPath,
@@ -492,8 +492,8 @@ func TestEnsureValidProof_Error(t *testing.T) {
 			desc: "relay response signature must be valid",
 			newProof: func(t *testing.T) *prooftypes.Proof {
 				// Set the relay response signature to an invalid byte slice.
-				relay := testrelayer.NewEmptyRelay(validSessionHeader, validSessionHeader, supplierAddr)
-				relay.Res.Meta.SupplierSignature = invalidSignatureBz
+				relay := testrelayer.NewEmptyRelay(validSessionHeader, validSessionHeader, supplierOperatorAddr)
+				relay.Res.Meta.SupplierOperatorSignature = invalidSignatureBz
 
 				// Ensure a valid relay request signature
 				testrelayer.SignRelayRequest(ctx, t, relay, appAddr, keyRing, ringClient)
@@ -503,7 +503,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 
 				// Construct a session tree with 1 relay with a session header containing
 				// a session ID that doesn't match the expected session ID.
-				invalidResponseSignatureSessionTree := testtree.NewEmptySessionTree(t, validSessionHeader, supplierAddr)
+				invalidResponseSignatureSessionTree := testtree.NewEmptySessionTree(t, validSessionHeader, supplierOperatorAddr)
 
 				// Add the relay to the session tree.
 				err = invalidResponseSignatureSessionTree.Update([]byte{1}, relayBz, 1)
@@ -520,7 +520,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 				// Create a claim with a merkle root derived from a session tree
 				// with an invalid relay response signature.
 				claim := testtree.NewClaim(t,
-					supplierAddr,
+					supplierOperatorAddr,
 					validSessionHeader,
 					invalidResponseSignatureMerkleRootBz,
 				)
@@ -530,7 +530,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 				// Construct new proof message derived from a session tree
 				// with an invalid relay response signature.
 				return testtree.NewProof(t,
-					supplierAddr,
+					supplierOperatorAddr,
 					validSessionHeader,
 					invalidResponseSignatureSessionTree,
 					expectedMerkleProofPath,
@@ -554,7 +554,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 				wrongPathSessionTree := testtree.NewFilledSessionTree(
 					ctx, t,
 					numRelays,
-					supplierUid, supplierAddr,
+					supplierUid, supplierOperatorAddr,
 					validSessionHeader, validSessionHeader, validSessionHeader,
 					keyRing,
 					ringClient,
@@ -568,7 +568,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 
 				// Create an upsert the claim
 				claim := testtree.NewClaim(t,
-					supplierAddr,
+					supplierOperatorAddr,
 					validSessionHeader,
 					wrongPathMerkleRootBz,
 				)
@@ -577,7 +577,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 
 				// Construct new proof message derived from a session tree
 				// with an invalid relay response signature.
-				return testtree.NewProof(t, supplierAddr, validSessionHeader, wrongPathSessionTree, wrongClosestProofPath)
+				return testtree.NewProof(t, supplierOperatorAddr, validSessionHeader, wrongPathSessionTree, wrongClosestProofPath)
 			},
 			expectedErr: prooftypes.ErrProofInvalidProof.Wrapf(
 				"the path of the proof provided (%x) does not match one expected by the on-chain protocol (%x)",
@@ -604,7 +604,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 				// Construct a proof message with a session tree containing
 				// a relay of insufficient difficulty.
 				return testtree.NewProof(t,
-					supplierAddr,
+					supplierOperatorAddr,
 					validSessionHeader,
 					validSessionTree,
 					expectedMerkleProofPath,
@@ -625,7 +625,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 				unclaimedSessionTree := testtree.NewFilledSessionTree(
 					ctx, t,
 					numRelays,
-					"wrong_supplier", wrongSupplierAddr,
+					"wrong_supplier", wrongSupplierOperatorAddr,
 					unclaimedSessionHeader, unclaimedSessionHeader, unclaimedSessionHeader,
 					keyRing,
 					ringClient,
@@ -645,7 +645,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 				// Construct new proof message using the supplier & session header
 				// from the session which is *not* expected to be claimed.
 				return testtree.NewProof(t,
-					wrongSupplierAddr,
+					wrongSupplierOperatorAddr,
 					unclaimedSessionHeader,
 					unclaimedSessionTree,
 					expectedMerkleProofPath,
@@ -654,7 +654,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 			expectedErr: prooftypes.ErrProofClaimNotFound.Wrapf(
 				"no claim found for session ID %q and supplier %q",
 				unclaimedSessionHeader.GetSessionId(),
-				wrongSupplierAddr,
+				wrongSupplierOperatorAddr,
 			),
 		},
 		{
@@ -664,7 +664,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 				wrongMerkleRootSessionTree := testtree.NewFilledSessionTree(
 					ctx, t,
 					numRelays,
-					supplierUid, supplierAddr,
+					supplierUid, supplierOperatorAddr,
 					validSessionHeader, validSessionHeader, validSessionHeader,
 					keyRing,
 					ringClient,
@@ -678,7 +678,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 
 				// Create a claim with the incorrect Merkle root.
 				claim := testtree.NewClaim(t,
-					supplierAddr,
+					supplierOperatorAddr,
 					validSessionHeader,
 					wrongMerkleRootBz,
 				)
@@ -689,7 +689,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 				validSessionTree := testtree.NewFilledSessionTree(
 					ctx, t,
 					uint(5),
-					supplierUid, supplierAddr,
+					supplierUid, supplierOperatorAddr,
 					validSessionHeader, validSessionHeader, validSessionHeader,
 					keyRing,
 					ringClient,
@@ -705,7 +705,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 				)
 
 				return testtree.NewProof(t,
-					supplierAddr,
+					supplierOperatorAddr,
 					validSessionHeader,
 					validSessionTree,
 					expectedMerkleProofPath,
@@ -728,7 +728,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 			},
 		},
 		{
-			desc: "claim and proof supplier addresses must match",
+			desc: "claim and proof supplier operator addresses must match",
 			newProof: func(t *testing.T) *prooftypes.Proof {
 				t.Skip("this test case reduces to either the 'claim must exist for proof message' or 'proof session ID must match on-chain session ID cases")
 				return nil
@@ -746,7 +746,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 				&sharedParams,
 				proof.GetSessionHeader().GetSessionEndBlockHeight(),
 				blockHeaderHash,
-				proof.GetSupplierAddress(),
+				proof.GetSupplierOperatorAddress(),
 			)
 			ctx = keepertest.SetBlockHeight(ctx, earliestSupplierProofCommitHeight-1)
 

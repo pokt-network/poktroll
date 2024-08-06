@@ -47,7 +47,7 @@ func (s *Supplier) EnsureOwner(ownerAddress string) error {
 
 // EnsureOperator returns an error if the given address does not match supplier's operator address.
 func (s *Supplier) EnsureOperator(operatorAddress string) error {
-	if s.Address != operatorAddress {
+	if s.OperatorAddress != operatorAddress {
 		return ErrSharedUnauthorizedSupplierUpdate.Wrapf(
 			"msg.OperatorAddress %q != provided address %q",
 			s.OwnerAddress,

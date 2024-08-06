@@ -46,9 +46,9 @@ type ApplicationKeeper interface {
 
 type ProofKeeper interface {
 	GetAllClaims(ctx context.Context) []prooftypes.Claim
-	RemoveClaim(ctx context.Context, sessionId, supplierAddr string)
-	GetProof(ctx context.Context, sessionId, supplierAddr string) (proof prooftypes.Proof, isProofFound bool)
-	RemoveProof(ctx context.Context, sessionId, supplierAddr string)
+	RemoveClaim(ctx context.Context, sessionId, supplierOperatorAddr string)
+	GetProof(ctx context.Context, sessionId, supplierOperatorAddr string) (proof prooftypes.Proof, isProofFound bool)
+	RemoveProof(ctx context.Context, sessionId, supplierOperatorAddr string)
 
 	AllClaims(ctx context.Context, req *prooftypes.QueryAllClaimsRequest) (*prooftypes.QueryAllClaimsResponse, error)
 	EnsureValidProof(ctx context.Context, proof *prooftypes.Proof) error
@@ -75,6 +75,6 @@ type SessionKeeper interface {
 }
 
 type SupplierKeeper interface {
-	GetSupplier(ctx context.Context, supplierAddr string) (supplier sharedtypes.Supplier, found bool)
+	GetSupplier(ctx context.Context, supplierOperatorAddr string) (supplier sharedtypes.Supplier, found bool)
 	SetSupplier(ctx context.Context, supplier sharedtypes.Supplier)
 }

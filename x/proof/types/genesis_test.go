@@ -11,7 +11,7 @@ import (
 )
 
 func TestGenesisState_Validate(t *testing.T) {
-	randSupplierAddr := sample.AccAddress()
+	randSupplierOperatorAddr := sample.AccAddress()
 	mockSessionId := "mock_session_id"
 
 	tests := []struct {
@@ -30,7 +30,7 @@ func TestGenesisState_Validate(t *testing.T) {
 				Params: types.DefaultParams(),
 				ClaimList: []types.Claim{
 					{
-						SupplierAddress: sample.AccAddress(),
+						SupplierOperatorAddress: sample.AccAddress(),
 						SessionHeader: &sessiontypes.SessionHeader{
 							SessionId:          mockSessionId,
 							ApplicationAddress: sample.AccAddress(),
@@ -59,7 +59,7 @@ func TestGenesisState_Validate(t *testing.T) {
 				Params: types.DefaultParams(),
 				ClaimList: []types.Claim{
 					{
-						SupplierAddress: randSupplierAddr,
+						SupplierOperatorAddress: randSupplierOperatorAddr,
 						SessionHeader: &sessiontypes.SessionHeader{
 							SessionId:          mockSessionId,
 							ApplicationAddress: sample.AccAddress(),
@@ -67,7 +67,7 @@ func TestGenesisState_Validate(t *testing.T) {
 						RootHash: []byte{1, 2, 3},
 					},
 					{
-						SupplierAddress: randSupplierAddr,
+						SupplierOperatorAddress: randSupplierOperatorAddr,
 						SessionHeader: &sessiontypes.SessionHeader{
 							SessionId:          mockSessionId,
 							ApplicationAddress: sample.AccAddress(),
@@ -84,7 +84,7 @@ func TestGenesisState_Validate(t *testing.T) {
 				Params: types.DefaultParams(),
 				ClaimList: []types.Claim{
 					{
-						SupplierAddress: sample.AccAddress(),
+						SupplierOperatorAddress: sample.AccAddress(),
 						SessionHeader: &sessiontypes.SessionHeader{
 							SessionId:          mockSessionId,
 							ApplicationAddress: sample.AccAddress(),
@@ -101,7 +101,7 @@ func TestGenesisState_Validate(t *testing.T) {
 				Params: types.DefaultParams(),
 				ClaimList: []types.Claim{
 					{
-						SupplierAddress: sample.AccAddress(),
+						SupplierOperatorAddress: sample.AccAddress(),
 						SessionHeader: &sessiontypes.SessionHeader{
 							SessionId:          mockSessionId,
 							ApplicationAddress: sample.AccAddress(),

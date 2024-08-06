@@ -23,7 +23,7 @@ func createNClaims(keeper keeper.Keeper, ctx context.Context, n int) []types.Cla
 	claims := make([]types.Claim, n)
 
 	for i := range claims {
-		claims[i].SupplierAddress = sample.AccAddress()
+		claims[i].SupplierOperatorAddress = sample.AccAddress()
 		claims[i].SessionHeader = &sessiontypes.SessionHeader{
 			SessionId:             fmt.Sprintf("session-%d", i),
 			SessionEndBlockHeight: int64(i),
@@ -43,7 +43,7 @@ func TestClaimGet(t *testing.T) {
 		foundClaim, isClaimFound := keeper.GetClaim(
 			ctx,
 			claim.GetSessionHeader().GetSessionId(),
-			claim.SupplierAddress,
+			claim.SupplierOperatorAddress,
 		)
 		require.True(t, isClaimFound)
 		require.Equal(t,
@@ -58,8 +58,8 @@ func TestClaimRemove(t *testing.T) {
 
 	for _, claim := range claims {
 		sessionId := claim.GetSessionHeader().GetSessionId()
-		keeper.RemoveClaim(ctx, sessionId, claim.SupplierAddress)
-		_, isClaimFound := keeper.GetClaim(ctx, sessionId, claim.SupplierAddress)
+		keeper.RemoveClaim(ctx, sessionId, claim.SupplierOperatorAddress)
+		_, isClaimFound := keeper.GetClaim(ctx, sessionId, claim.SupplierOperatorAddress)
 		require.False(t, isClaimFound)
 	}
 }

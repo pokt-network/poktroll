@@ -23,7 +23,7 @@ func TestProofQuerySingle(t *testing.T) {
 	keeper, ctx := keepertest.ProofKeeper(t)
 	proofs := createNProofs(keeper, ctx, 2)
 
-	var randSupplierAddr = sample.AccAddress()
+	var randSupplierOperatorAddr = sample.AccAddress()
 	tests := []struct {
 		desc        string
 		request     *types.QueryGetProofRequest
@@ -33,46 +33,46 @@ func TestProofQuerySingle(t *testing.T) {
 		{
 			desc: "First",
 			request: &types.QueryGetProofRequest{
-				SessionId:       proofs[0].GetSessionHeader().GetSessionId(),
-				SupplierAddress: proofs[0].SupplierAddress,
+				SessionId:               proofs[0].GetSessionHeader().GetSessionId(),
+				SupplierOperatorAddress: proofs[0].SupplierOperatorAddress,
 			},
 			response: &types.QueryGetProofResponse{Proof: proofs[0]},
 		},
 		{
 			desc: "Second",
 			request: &types.QueryGetProofRequest{
-				SessionId:       proofs[1].GetSessionHeader().GetSessionId(),
-				SupplierAddress: proofs[1].SupplierAddress,
+				SessionId:               proofs[1].GetSessionHeader().GetSessionId(),
+				SupplierOperatorAddress: proofs[1].SupplierOperatorAddress,
 			},
 			response: &types.QueryGetProofResponse{Proof: proofs[1]},
 		},
 		{
 			desc: "Proof Not Found - Random SessionId",
 			request: &types.QueryGetProofRequest{
-				SessionId:       "not a real session id",
-				SupplierAddress: proofs[0].GetSupplierAddress(),
+				SessionId:               "not a real session id",
+				SupplierOperatorAddress: proofs[0].GetSupplierOperatorAddress(),
 			},
 			expectedErr: status.Error(
 				codes.NotFound,
 				types.ErrProofProofNotFound.Wrapf(
 					"session ID %q and supplier %q",
 					"not a real session id",
-					proofs[0].GetSupplierAddress(),
+					proofs[0].GetSupplierOperatorAddress(),
 				).Error(),
 			),
 		},
 		{
 			desc: "Proof Not Found - Random Supplier Address",
 			request: &types.QueryGetProofRequest{
-				SessionId:       proofs[0].GetSessionHeader().GetSessionId(),
-				SupplierAddress: randSupplierAddr,
+				SessionId:               proofs[0].GetSessionHeader().GetSessionId(),
+				SupplierOperatorAddress: randSupplierOperatorAddr,
 			},
 			expectedErr: status.Error(
 				codes.NotFound,
 				types.ErrProofProofNotFound.Wrapf(
 					"session ID %q and supplier %q",
 					proofs[0].GetSessionHeader().GetSessionId(),
-					randSupplierAddr,
+					randSupplierOperatorAddr,
 				).Error(),
 			),
 		},
@@ -80,7 +80,7 @@ func TestProofQuerySingle(t *testing.T) {
 			desc: "InvalidRequest - Missing SessionId",
 			request: &types.QueryGetProofRequest{
 				// SessionId explicitly omitted
-				SupplierAddress: proofs[0].GetSupplierAddress(),
+				SupplierOperatorAddress: proofs[0].GetSupplierOperatorAddress(),
 			},
 			expectedErr: status.Error(
 				codes.InvalidArgument,
@@ -90,15 +90,15 @@ func TestProofQuerySingle(t *testing.T) {
 			),
 		},
 		{
-			desc: "InvalidRequest - Missing SupplierAddress",
+			desc: "InvalidRequest - Missing SupplierOperatorAddress",
 			request: &types.QueryGetProofRequest{
 				SessionId: proofs[0].GetSessionHeader().GetSessionId(),
-				// SupplierAddress explicitly omitted
+				// SupplierOperatorAddress explicitly omitted
 			},
 			expectedErr: status.Error(
 				codes.InvalidArgument,
 				types.ErrProofInvalidAddress.Wrap(
-					"invalid supplier address for proof being retrieved ; (empty address string is not allowed)",
+					"invalid supplier operator address for proof being retrieved ; (empty address string is not allowed)",
 				).Error(),
 			),
 		},

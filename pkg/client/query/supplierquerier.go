@@ -42,14 +42,14 @@ func NewSupplierQuerier(deps depinject.Config) (client.SupplierQueryClient, erro
 // GetSupplier returns an suppliertypes.Supplier struct for a given address
 func (supq *supplierQuerier) GetSupplier(
 	ctx context.Context,
-	address string,
+	operatorAddress string,
 ) (sharedtypes.Supplier, error) {
-	req := &suppliertypes.QueryGetSupplierRequest{Address: address}
+	req := &suppliertypes.QueryGetSupplierRequest{OperatorAddress: operatorAddress}
 	res, err := supq.supplierQuerier.Supplier(ctx, req)
 	if err != nil {
 		return sharedtypes.Supplier{}, suppliertypes.ErrSupplierNotFound.Wrapf(
 			"address: %s [%v]",
-			address, err,
+			operatorAddress, err,
 		)
 	}
 	return res.Supplier, nil

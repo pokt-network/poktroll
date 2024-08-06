@@ -19,8 +19,8 @@ func TestMsgUnstakeSupplier_ValidateBasic(t *testing.T) {
 		{
 			desc: "invalid operator address",
 			msg: MsgUnstakeSupplier{
-				OwnerAddress: ownerAddress,
-				Address:      "invalid_address",
+				OwnerAddress:    ownerAddress,
+				OperatorAddress: "invalid_address",
 			},
 			expectedErr: ErrSupplierInvalidAddress,
 		},
@@ -34,30 +34,30 @@ func TestMsgUnstakeSupplier_ValidateBasic(t *testing.T) {
 		{
 			desc: "invalid owner address",
 			msg: MsgUnstakeSupplier{
-				OwnerAddress: "invalid_address",
-				Address:      operatorAddress,
+				OwnerAddress:    "invalid_address",
+				OperatorAddress: operatorAddress,
 			},
 			expectedErr: ErrSupplierInvalidAddress,
 		},
 		{
 			desc: "missing owner address",
 			msg: MsgUnstakeSupplier{
-				Address: operatorAddress,
+				OperatorAddress: operatorAddress,
 			},
 			expectedErr: ErrSupplierInvalidAddress,
 		},
 		{
 			desc: "valid message",
 			msg: MsgUnstakeSupplier{
-				OwnerAddress: ownerAddress,
-				Address:      operatorAddress,
+				OwnerAddress:    ownerAddress,
+				OperatorAddress: operatorAddress,
 			},
 		},
 		{
 			desc: "valid message - same operator and owner addresses",
 			msg: MsgUnstakeSupplier{
-				OwnerAddress: ownerAddress,
-				Address:      ownerAddress,
+				OwnerAddress:    ownerAddress,
+				OperatorAddress: ownerAddress,
 			},
 		},
 	}
