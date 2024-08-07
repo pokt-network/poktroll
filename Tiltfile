@@ -63,9 +63,7 @@ merge_dicts(localnet_config, localnet_config_defaults)
 # Then merge file contents over defaults
 merge_dicts(localnet_config, localnet_config_file)
 # Check if there are differences or if the file doesn't exist
-if (localnet_config_file != localnet_config) or (
-    not os.path.exists(localnet_config_path)
-):
+if (localnet_config_file != localnet_config) or (not os.path.exists(localnet_config_path)):
     print("Updating " + localnet_config_path + " with defaults")
     local("cat - > " + localnet_config_path, stdin=encode_yaml(localnet_config))
 
@@ -82,9 +80,7 @@ if localnet_config["helm_chart_local_repo"]["enabled"]:
 # Observability
 print("Observability enabled: " + str(localnet_config["observability"]["enabled"]))
 if localnet_config["observability"]["enabled"]:
-    helm_repo(
-        "prometheus-community", "https://prometheus-community.github.io/helm-charts"
-    )
+    helm_repo("prometheus-community", "https://prometheus-community.github.io/helm-charts")
     helm_repo("grafana-helm-repo", "https://grafana.github.io/helm-charts")
 
     # Increase timeout for building the image
@@ -96,9 +92,7 @@ if localnet_config["observability"]["enabled"]:
         flags=[
             "--values=./localnet/kubernetes/observability-prometheus-stack.yaml",
             "--set=grafana.defaultDashboardsEnabled="
-            + str(
-                localnet_config["observability"]["grafana"]["defaultDashboardsEnabled"]
-            ),
+            + str(localnet_config["observability"]["grafana"]["defaultDashboardsEnabled"]),
         ],
         resource_deps=["prometheus-community"],
     )
@@ -130,9 +124,7 @@ if localnet_config["observability"]["enabled"]:
     )
 
     # Import our custom grafana dashboards into Kubernetes ConfigMap
-    configmap_create(
-        "protocol-dashboards", from_file=listdir("localnet/grafana-dashboards/")
-    )
+    configmap_create("protocol-dashboards", from_file=listdir("localnet/grafana-dashboards/"))
 
     # Grafana discovers dashboards to "import" via a label
     local_resource(
@@ -142,14 +134,10 @@ if localnet_config["observability"]["enabled"]:
     )
 
 # Import keyring/keybase files into Kubernetes ConfigMap
-configmap_create(
-    "poktrolld-keys", from_file=listdir("localnet/poktrolld/keyring-test/")
-)
+configmap_create("poktrolld-keys", from_file=listdir("localnet/poktrolld/keyring-test/"))
 
 # Import keyring/keybase files into Kubernetes Secret
-secret_create_generic(
-    "poktrolld-keys", from_file=listdir("localnet/poktrolld/keyring-test/")
-)
+secret_create_generic("poktrolld-keys", from_file=listdir("localnet/poktrolld/keyring-test/"))
 
 # Import validator keys for the poktrolld helm chart to consume
 secret_create_generic(
@@ -161,9 +149,7 @@ secret_create_generic(
 )
 
 # Import configuration files into Kubernetes ConfigMap
-configmap_create(
-    "poktrolld-configs", from_file=listdir("localnet/poktrolld/config/"), watch=True
-)
+configmap_create("poktrolld-configs", from_file=listdir("localnet/poktrolld/config/"), watch=True)
 
 # Hot reload protobuf changes
 local_resource(
@@ -207,9 +193,7 @@ WORKDIR /
 )
 
 # Run data nodes & validators
-k8s_yaml(
-    ["localnet/kubernetes/anvil.yaml", "localnet/kubernetes/validator-volume.yaml"]
-)
+k8s_yaml(["localnet/kubernetes/anvil.yaml", "localnet/kubernetes/validator-volume.yaml"])
 
 # Provision validator
 helm_resource(
@@ -218,14 +202,11 @@ helm_resource(
     flags=[
         "--values=./localnet/kubernetes/values-common.yaml",
         "--values=./localnet/kubernetes/values-validator.yaml",
-        "--set=persistence.cleanupBeforeEachStart="
-        + str(localnet_config["validator"]["cleanupBeforeEachStart"]),
+        "--set=persistence.cleanupBeforeEachStart=" + str(localnet_config["validator"]["cleanupBeforeEachStart"]),
         "--set=logs.level=" + str(localnet_config["validator"]["logs"]["level"]),
         "--set=logs.format=" + str(localnet_config["validator"]["logs"]["format"]),
-        "--set=serviceMonitor.enabled="
-        + str(localnet_config["observability"]["enabled"]),
-        "--set=development.delve.enabled="
-        + str(localnet_config["validator"]["delve"]["enabled"]),
+        "--set=serviceMonitor.enabled=" + str(localnet_config["observability"]["enabled"]),
+        "--set=development.delve.enabled=" + str(localnet_config["validator"]["delve"]["enabled"]),
     ],
     image_deps=["poktrolld"],
     image_keys=[("image.repository", "image.tag")],
@@ -241,31 +222,25 @@ for x in range(localnet_config["relayminers"]["count"]):
         flags=[
             "--values=./localnet/kubernetes/values-common.yaml",
             "--values=./localnet/kubernetes/values-relayminer-common.yaml",
-            "--values=./localnet/kubernetes/values-relayminer-"
-            + str(actor_number)
-            + ".yaml",
-            "--set=metrics.serviceMonitor.enabled="
-            + str(localnet_config["observability"]["enabled"]),
-            "--set=development.delve.enabled="
-            + str(localnet_config["relayminers"]["delve"]["enabled"]),
+            "--values=./localnet/kubernetes/values-relayminer-" + str(actor_number) + ".yaml",
+            "--set=metrics.serviceMonitor.enabled=" + str(localnet_config["observability"]["enabled"]),
+            "--set=development.delve.enabled=" + str(localnet_config["relayminers"]["delve"]["enabled"]),
         ],
         image_deps=["poktrolld"],
         image_keys=[("image.repository", "image.tag")],
     )
     k8s_resource(
         "relayminer" + str(actor_number),
-        labels=["supplier_nodes"],
+        labels=["suppliers"],
         resource_deps=["validator"],
         links=[
             link(
-                "http://localhost:3003/d/relayminer/relayminer?orgId=1&var-relayminer=relayminer"
-                + str(actor_number),
+                "http://localhost:3003/d/relayminer/relayminer?orgId=1&var-relayminer=relayminer" + str(actor_number),
                 "Grafana dashboard",
             ),
         ],
         port_forwards=[
-            str(8084 + actor_number)
-            + ":8545",  # relayminer1 - exposes 8545, relayminer2 exposes 8546, etc.
+            str(8084 + actor_number) + ":8545",  # relayminer1 - exposes 8545, relayminer2 exposes 8546, etc.
             str(40044 + actor_number)
             + ":40004",  # DLV port. relayminer1 - exposes 40045, relayminer2 exposes 40046, etc.
             # Run `curl localhost:PORT` to see the current snapshot of relayminer metrics.
@@ -288,17 +263,15 @@ for x in range(localnet_config["appgateservers"]["count"]):
             "--values=./localnet/kubernetes/values-common.yaml",
             "--values=./localnet/kubernetes/values-appgateserver.yaml",
             "--set=config.signing_key=app" + str(actor_number),
-            "--set=metrics.serviceMonitor.enabled="
-            + str(localnet_config["observability"]["enabled"]),
-            "--set=development.delve.enabled="
-            + str(localnet_config["appgateservers"]["delve"]["enabled"]),
+            "--set=metrics.serviceMonitor.enabled=" + str(localnet_config["observability"]["enabled"]),
+            "--set=development.delve.enabled=" + str(localnet_config["appgateservers"]["delve"]["enabled"]),
         ],
         image_deps=["poktrolld"],
         image_keys=[("image.repository", "image.tag")],
     )
     k8s_resource(
         "appgateserver" + str(actor_number),
-        labels=["applications"],
+        labels=["gateways"],
         resource_deps=["validator"],
         links=[
             link(
@@ -308,8 +281,7 @@ for x in range(localnet_config["appgateservers"]["count"]):
             ),
         ],
         port_forwards=[
-            str(42068 + actor_number)
-            + ":42069",  # appgateserver1 - exposes 42069, appgateserver2 exposes 42070, etc.
+            str(42068 + actor_number) + ":42069",  # appgateserver1 - exposes 42069, appgateserver2 exposes 42070, etc.
             str(40054 + actor_number)
             + ":40004",  # DLV port. appgateserver1 - exposes 40055, appgateserver2 exposes 40056, etc.
             # Run `curl localhost:PORT` to see the current snapshot of appgateserver metrics.
@@ -332,10 +304,8 @@ for x in range(localnet_config["gateways"]["count"]):
             "--values=./localnet/kubernetes/values-common.yaml",
             "--values=./localnet/kubernetes/values-gateway.yaml",
             "--set=config.signing_key=gateway" + str(actor_number),
-            "--set=metrics.serviceMonitor.enabled="
-            + str(localnet_config["observability"]["enabled"]),
-            "--set=development.delve.enabled="
-            + str(localnet_config["gateways"]["delve"]["enabled"]),
+            "--set=metrics.serviceMonitor.enabled=" + str(localnet_config["observability"]["enabled"]),
+            "--set=development.delve.enabled=" + str(localnet_config["gateways"]["delve"]["enabled"]),
         ],
         image_deps=["poktrolld"],
         image_keys=[("image.repository", "image.tag")],
@@ -352,10 +322,8 @@ for x in range(localnet_config["gateways"]["count"]):
             ),
         ],
         port_forwards=[
-            str(42078 + actor_number)
-            + ":42069",  # gateway1 - exposes 42079, gateway2 exposes 42080, etc.
-            str(40064 + actor_number)
-            + ":40004",  # DLV port. gateway1 - exposes 40065, gateway2 exposes 40066, etc.
+            str(42078 + actor_number) + ":42069",  # gateway1 - exposes 42079, gateway2 exposes 42080, etc.
+            str(40064 + actor_number) + ":40004",  # DLV port. gateway1 - exposes 40065, gateway2 exposes 40066, etc.
             # Run `curl localhost:PORT` to see the current snapshot of gateway metrics.
             str(9059 + actor_number)
             + ":9090",  # gateway metrics port. gateway1 - exposes 9060, gateway2 exposes 9061, etc.
@@ -399,8 +367,6 @@ if localnet_config["ollama"]["enabled"]:
 
     local_resource(
         name="ollama-pull-model",
-        cmd=execute_in_pod(
-            "ollama", "ollama pull " + localnet_config["ollama"]["model"]
-        ),
+        cmd=execute_in_pod("ollama", "ollama pull " + localnet_config["ollama"]["model"]),
         resource_deps=["ollama"],
     )

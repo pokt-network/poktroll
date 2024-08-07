@@ -10,5 +10,6 @@ var (
 	ErrSessionTreeProofPathMismatch        = sdkerrors.Register(codespace, 4, "session tree proof path mismatch")
 	ErrSessionTreeUndefinedStoresDirectory = sdkerrors.Register(codespace, 5, "session tree key-value store directory undefined for where they will be saved on disk")
 	ErrSessionTreeAlreadyMarkedAsClaimed   = sdkerrors.Register(codespace, 6, "session tree already marked as claimed")
-	ErrSupplierClientNotFound              = sdkerrors.Register(codespace, 7, "supplier client not found")
+	ErrSessionSupplierClientNotFound       = sdkerrors.Register(codespace, 7, "supplier client not found")
+	ErrSessionUpdatingTree                 = sdkerrors.Register(codespace, 8, "error updating session SMST")
 )

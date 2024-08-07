@@ -160,6 +160,7 @@ genesis:
                   rpc_type: JSON_RPC
                   url: http://relayminer1:8545
               service:
+                compute_units_per_relay: 1
                 id: anvil
                 name: ""
             - endpoints:
@@ -167,6 +168,7 @@ genesis:
                   rpc_type: REST
                   url: http://relayminer1:8545
               service:
+                compute_units_per_relay: 1
                 id: ollama
                 name: ""
           stake:
@@ -197,7 +199,7 @@ genesis:
           denom: upokt
     shared:
       params:
-        num_blocks_per_session: 4
+        num_blocks_per_session: 10
         grace_period_end_offset_blocks: 1
         claim_window_open_offset_blocks: 1
         claim_window_close_offset_blocks: 4

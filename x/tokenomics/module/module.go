@@ -183,6 +183,7 @@ type ModuleInputs struct {
 	ProofKeeper       types.ProofKeeper
 	SharedKeeper      types.SharedKeeper
 	SessionKeeper     types.SessionKeeper
+	ServiceKeeper     types.ServiceKeeper
 }
 
 type ModuleOutputs struct {
@@ -209,6 +210,7 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 		in.ProofKeeper,
 		in.SharedKeeper,
 		in.SessionKeeper,
+		in.ServiceKeeper,
 	)
 	m := NewAppModule(
 		in.Cdc,

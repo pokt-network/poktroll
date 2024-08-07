@@ -16,7 +16,6 @@ var (
 	ErrTokenomicsSupplierAddressInvalid       = sdkerrors.Register(ModuleName, 1107, "the supplier address in the claim is not a valid bech32 address")
 	ErrTokenomicsApplicationNotFound          = sdkerrors.Register(ModuleName, 1108, "application not found")
 	ErrTokenomicsApplicationModuleBurn        = sdkerrors.Register(ModuleName, 1109, "failed to burn uPOKT from application module account")
-	ErrTokenomicsApplicationNoServiceConfigs  = sdkerrors.Register(ModuleName, 1111, "application has no service configs")
 	ErrTokenomicsApplicationAddressInvalid    = sdkerrors.Register(ModuleName, 1112, "the application address in the claim is not a valid bech32 address")
 	ErrTokenomicsParamsInvalid                = sdkerrors.Register(ModuleName, 1113, "provided params are invalid")
 	ErrTokenomicsRootHashInvalid              = sdkerrors.Register(ModuleName, 1114, "the root hash in the claim is invalid")
@@ -27,4 +26,5 @@ var (
 	ErrTokenomicsDuplicateIndex               = sdkerrors.Register(ModuleName, 1119, "cannot have a duplicate index")
 	ErrTokenomicsMissingRelayMiningDifficulty = sdkerrors.Register(ModuleName, 1120, "missing relay mining difficulty")
 	ErrTokenomicsApplicationOverserviced      = sdkerrors.Register(ModuleName, 1121, "application was overserviced")
+	ErrTokenomicsServiceNotFound              = sdkerrors.Register(ModuleName, 1122, "service not found")
 )
