@@ -124,7 +124,7 @@
             "uid": "P8E80F9AEF21F6940"
           },
           "editorMode": "builder",
-          "expr": "{container=\"poktrolld-validator\"} | json | method = `SettleSessionAccounting`",
+          "expr": "{container=\"poktrolld-validator\"} | json | method = `ProcessTokenLogicModules`",
           "queryType": "range",
           "refId": "Claim Settlement"
         }
