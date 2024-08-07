@@ -192,15 +192,10 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 	// Mock the service keeper
 	mockServiceKeeper := mocks.NewMockServiceKeeper(ctrl)
 
-	if service != nil {
-		// Get service if the ID matches.
-		mockServiceKeeper.EXPECT().
-			GetService(gomock.Any(), gomock.Eq(service.Id)).
-			Return(*service, true).
-			AnyTimes()
-	}
-
-	// Get zero-value service if the id does not match.
+	mockServiceKeeper.EXPECT().
+		GetService(gomock.Any(), gomock.Eq(service.Id)).
+		Return(*service, true).
+		AnyTimes()
 	mockServiceKeeper.EXPECT().
 		GetService(gomock.Any(), gomock.Any()).
 		Return(sharedtypes.Service{}, false).
