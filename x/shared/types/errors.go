@@ -13,4 +13,5 @@ var (
 	ErrSharedParamNameInvalid = sdkerrors.Register(ModuleName, 1102, "the provided param name is invalid")
 	ErrSharedParamInvalid     = sdkerrors.Register(ModuleName, 1103, "the provided param is invalid")
 	ErrSharedEmitEvent        = sdkerrors.Register(ModuleName, 1104, "failed to emit event")
+	ErrSharedInvalidRevShare  = sdkerrors.Register(ModuleName, 1105, "invalid rev share")
 )

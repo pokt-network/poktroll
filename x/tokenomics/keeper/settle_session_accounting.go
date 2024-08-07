@@ -3,7 +3,9 @@ package keeper
 import (
 	"context"
 	"fmt"
+	"math/big"
 
+	"cosmossdk.io/log"
 	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/smt"
@@ -13,6 +15,7 @@ import (
 	"github.com/pokt-network/poktroll/telemetry"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
@@ -146,19 +149,15 @@ func (k Keeper) SettleSessionAccounting(
 	}
 	logger.Info(fmt.Sprintf("minted %s in the supplier module", settlementCoin))
 
-	// Send the newley minted uPOKT from the supplier module account
-	// to the supplier's account.
-	if err = k.bankKeeper.SendCoinsFromModuleToAccount(
-		ctx, suppliertypes.ModuleName, supplierAddr, settlementCoins,
-	); err != nil {
+	serviceId := claim.SessionHeader.Service.Id
+	amount := settlementCoin.Amount.Uint64()
+	if err := k.distributeSupplierRewardsToShareHolders(ctx, supplierAddr.String(), serviceId, amount, logger); err != nil {
 		return tokenomicstypes.ErrTokenomicsSupplierModuleMintFailed.Wrapf(
-			"sending %s to supplier with address %s: %v",
-			settlementCoin,
+			"distributing rewards to supplier with address %s shareholders: %v",
 			supplierAddr,
 			err,
 		)
 	}
-	logger.Info(fmt.Sprintf("sent %s from the supplier module to the supplier account with address %q", settlementCoin, supplierAddr))
 
 	// Verify that the application has enough uPOKT to pay for the services it consumed
 	if application.GetStake().IsLT(settlementCoin) {
@@ -251,4 +250,64 @@ func (k Keeper) getComputeUnitsPerRelayFromApplication(application apptypes.Appl
 
 	logger.Warn(fmt.Sprintf("service with ID %q not found in application with address %q", serviceID, application.Address))
 	return 0, tokenomicstypes.ErrTokenomicsApplicationNoServiceConfigs
+}
+
+// distributeSupplierRewardsToShareHolders distributes the supplier rewards to its
+// shareholders based on the rev share percentage of the service.
+func (k Keeper) distributeSupplierRewardsToShareHolders(
+	ctx context.Context,
+	supplierAddr string,
+	serviceId string,
+	amountToDistribute uint64,
+	logger log.Logger,
+) error {
+	supplier, supplierFound := k.supplierKeeper.GetSupplier(ctx, supplierAddr)
+	if !supplierFound {
+		return tokenomicstypes.ErrTokenomicsSupplierRewardFailed.Wrapf(
+			"supplier with address %q not found",
+			supplierAddr,
+		)
+	}
+
+	var serviceRevShare []*sharedtypes.ServiceRevShare
+	for _, svc := range supplier.Services {
+		if svc.Service.Id == serviceId {
+			serviceRevShare = svc.RevShare
+			break
+		}
+	}
+
+	if serviceRevShare == nil {
+		return tokenomicstypes.ErrTokenomicsSupplierRewardFailed.Wrapf(
+			"service %q not found in supplier %v",
+			serviceId,
+			supplier,
+		)
+	}
+
+	totalDistributed := int64(0)
+
+	for _, revshare := range serviceRevShare {
+		// TODO_MAINNET: Consider using fixed point arithmetic for deterministic results.
+		settlementAmountFloat := new(big.Float).SetUint64(amountToDistribute)
+		shareFloat := big.NewFloat(float64(revshare.RevSharePercentage) / 100)
+		shareAmount, _ := big.NewFloat(0).Mul(settlementAmountFloat, shareFloat).Int64()
+		shareAmountCoin := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(shareAmount))
+
+		// Send the newley minted uPOKT from the supplier module account
+		// to the supplier's shareholders.
+		if err := k.bankKeeper.SendCoinsFromModuleToAccount(
+			ctx, suppliertypes.ModuleName, cosmostypes.AccAddress(revshare.Address), cosmostypes.NewCoins(shareAmountCoin),
+		); err != nil {
+			return err
+		}
+
+		totalDistributed += shareAmount
+
+		logger.Info(fmt.Sprintf("sent %s from the supplier module to the supplier shareholder with address %q", shareAmountCoin, supplierAddr))
+	}
+
+	logger.Info(fmt.Sprintf("distributed %d uPOKT to supplier %q shareholders", totalDistributed, supplierAddr))
+
+	return nil
 }

@@ -2,6 +2,7 @@
 package shared
 
 import (
+	binary "encoding/binary"
 	fmt "fmt"
 	_ "github.com/cosmos/cosmos-proto"
 	runtime "github.com/cosmos/cosmos-proto/runtime"
@@ -9,6 +10,7 @@ import (
 	protoiface "google.golang.org/protobuf/runtime/protoiface"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	io "io"
+	math "math"
 	reflect "reflect"
 	sync "sync"
 )
@@ -1095,10 +1097,62 @@ func (x *_SupplierServiceConfig_2_list) IsValid() bool {
 	return x.list != nil
 }
 
+var _ protoreflect.List = (*_SupplierServiceConfig_3_list)(nil)
+
+type _SupplierServiceConfig_3_list struct {
+	list *[]*ServiceRevShare
+}
+
+func (x *_SupplierServiceConfig_3_list) Len() int {
+	if x.list == nil {
+		return 0
+	}
+	return len(*x.list)
+}
+
+func (x *_SupplierServiceConfig_3_list) Get(i int) protoreflect.Value {
+	return protoreflect.ValueOfMessage((*x.list)[i].ProtoReflect())
+}
+
+func (x *_SupplierServiceConfig_3_list) Set(i int, value protoreflect.Value) {
+	valueUnwrapped := value.Message()
+	concreteValue := valueUnwrapped.Interface().(*ServiceRevShare)
+	(*x.list)[i] = concreteValue
+}
+
+func (x *_SupplierServiceConfig_3_list) Append(value protoreflect.Value) {
+	valueUnwrapped := value.Message()
+	concreteValue := valueUnwrapped.Interface().(*ServiceRevShare)
+	*x.list = append(*x.list, concreteValue)
+}
+
+func (x *_SupplierServiceConfig_3_list) AppendMutable() protoreflect.Value {
+	v := new(ServiceRevShare)
+	*x.list = append(*x.list, v)
+	return protoreflect.ValueOfMessage(v.ProtoReflect())
+}
+
+func (x *_SupplierServiceConfig_3_list) Truncate(n int) {
+	for i := n; i < len(*x.list); i++ {
+		(*x.list)[i] = nil
+	}
+	*x.list = (*x.list)[:n]
+}
+
+func (x *_SupplierServiceConfig_3_list) NewElement() protoreflect.Value {
+	v := new(ServiceRevShare)
+	return protoreflect.ValueOfMessage(v.ProtoReflect())
+}
+
+func (x *_SupplierServiceConfig_3_list) IsValid() bool {
+	return x.list != nil
+}
+
 var (
 	md_SupplierServiceConfig           protoreflect.MessageDescriptor
 	fd_SupplierServiceConfig_service   protoreflect.FieldDescriptor
 	fd_SupplierServiceConfig_endpoints protoreflect.FieldDescriptor
+	fd_SupplierServiceConfig_rev_share protoreflect.FieldDescriptor
 )
 
 func init() {
@@ -1106,6 +1160,7 @@ func init() {
 	md_SupplierServiceConfig = File_poktroll_shared_service_proto.Messages().ByName("SupplierServiceConfig")
 	fd_SupplierServiceConfig_service = md_SupplierServiceConfig.Fields().ByName("service")
 	fd_SupplierServiceConfig_endpoints = md_SupplierServiceConfig.Fields().ByName("endpoints")
+	fd_SupplierServiceConfig_rev_share = md_SupplierServiceConfig.Fields().ByName("rev_share")
 }
 
 var _ protoreflect.Message = (*fastReflection_SupplierServiceConfig)(nil)
@@ -1185,6 +1240,12 @@ func (x *fastReflection_SupplierServiceConfig) Range(f func(protoreflect.FieldDe
 			return
 		}
 	}
+	if len(x.RevShare) != 0 {
+		value := protoreflect.ValueOfList(&_SupplierServiceConfig_3_list{list: &x.RevShare})
+		if !f(fd_SupplierServiceConfig_rev_share, value) {
+			return
+		}
+	}
 }
 
 // Has reports whether a field is populated.
@@ -1204,6 +1265,8 @@ func (x *fastReflection_SupplierServiceConfig) Has(fd protoreflect.FieldDescript
 		return x.Service != nil
 	case "poktroll.shared.SupplierServiceConfig.endpoints":
 		return len(x.Endpoints) != 0
+	case "poktroll.shared.SupplierServiceConfig.rev_share":
+		return len(x.RevShare) != 0
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.SupplierServiceConfig"))
@@ -1224,6 +1287,8 @@ func (x *fastReflection_SupplierServiceConfig) Clear(fd protoreflect.FieldDescri
 		x.Service = nil
 	case "poktroll.shared.SupplierServiceConfig.endpoints":
 		x.Endpoints = nil
+	case "poktroll.shared.SupplierServiceConfig.rev_share":
+		x.RevShare = nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.SupplierServiceConfig"))
@@ -1248,6 +1313,12 @@ func (x *fastReflection_SupplierServiceConfig) Get(descriptor protoreflect.Field
 			return protoreflect.ValueOfList(&_SupplierServiceConfig_2_list{})
 		}
 		listValue := &_SupplierServiceConfig_2_list{list: &x.Endpoints}
+		return protoreflect.ValueOfList(listValue)
+	case "poktroll.shared.SupplierServiceConfig.rev_share":
+		if len(x.RevShare) == 0 {
+			return protoreflect.ValueOfList(&_SupplierServiceConfig_3_list{})
+		}
+		listValue := &_SupplierServiceConfig_3_list{list: &x.RevShare}
 		return protoreflect.ValueOfList(listValue)
 	default:
 		if descriptor.IsExtension() {
@@ -1275,6 +1346,10 @@ func (x *fastReflection_SupplierServiceConfig) Set(fd protoreflect.FieldDescript
 		lv := value.List()
 		clv := lv.(*_SupplierServiceConfig_2_list)
 		x.Endpoints = *clv.list
+	case "poktroll.shared.SupplierServiceConfig.rev_share":
+		lv := value.List()
+		clv := lv.(*_SupplierServiceConfig_3_list)
+		x.RevShare = *clv.list
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.SupplierServiceConfig"))
@@ -1306,6 +1381,12 @@ func (x *fastReflection_SupplierServiceConfig) Mutable(fd protoreflect.FieldDesc
 		}
 		value := &_SupplierServiceConfig_2_list{list: &x.Endpoints}
 		return protoreflect.ValueOfList(value)
+	case "poktroll.shared.SupplierServiceConfig.rev_share":
+		if x.RevShare == nil {
+			x.RevShare = []*ServiceRevShare{}
+		}
+		value := &_SupplierServiceConfig_3_list{list: &x.RevShare}
+		return protoreflect.ValueOfList(value)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.SupplierServiceConfig"))
@@ -1325,6 +1406,9 @@ func (x *fastReflection_SupplierServiceConfig) NewField(fd protoreflect.FieldDes
 	case "poktroll.shared.SupplierServiceConfig.endpoints":
 		list := []*SupplierEndpoint{}
 		return protoreflect.ValueOfList(&_SupplierServiceConfig_2_list{list: &list})
+	case "poktroll.shared.SupplierServiceConfig.rev_share":
+		list := []*ServiceRevShare{}
+		return protoreflect.ValueOfList(&_SupplierServiceConfig_3_list{list: &list})
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.SupplierServiceConfig"))
@@ -1404,6 +1488,12 @@ func (x *fastReflection_SupplierServiceConfig) ProtoMethods() *protoiface.Method
 				n += 1 + l + runtime.Sov(uint64(l))
 			}
 		}
+		if len(x.RevShare) > 0 {
+			for _, e := range x.RevShare {
+				l = options.Size(e)
+				n += 1 + l + runtime.Sov(uint64(l))
+			}
+		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
 		}
@@ -1432,6 +1522,22 @@ func (x *fastReflection_SupplierServiceConfig) ProtoMethods() *protoiface.Method
 		if x.unknownFields != nil {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
+		}
+		if len(x.RevShare) > 0 {
+			for iNdEx := len(x.RevShare) - 1; iNdEx >= 0; iNdEx-- {
+				encoded, err := options.Marshal(x.RevShare[iNdEx])
+				if err != nil {
+					return protoiface.MarshalOutput{
+						NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+						Buf:               input.Buf,
+					}, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+				i--
+				dAtA[i] = 0x1a
+			}
 		}
 		if len(x.Endpoints) > 0 {
 			for iNdEx := len(x.Endpoints) - 1; iNdEx >= 0; iNdEx-- {
@@ -1579,6 +1685,40 @@ func (x *fastReflection_SupplierServiceConfig) ProtoMethods() *protoiface.Method
 				}
 				x.Endpoints = append(x.Endpoints, &SupplierEndpoint{})
 				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Endpoints[len(x.Endpoints)-1]); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
+			case 3:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field RevShare", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.RevShare = append(x.RevShare, &ServiceRevShare{})
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.RevShare[len(x.RevShare)-1]); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
@@ -2224,6 +2364,467 @@ func (x *fastReflection_SupplierEndpoint) ProtoMethods() *protoiface.Methods {
 }
 
 var (
+	md_ServiceRevShare                      protoreflect.MessageDescriptor
+	fd_ServiceRevShare_address              protoreflect.FieldDescriptor
+	fd_ServiceRevShare_rev_share_percentage protoreflect.FieldDescriptor
+)
+
+func init() {
+	file_poktroll_shared_service_proto_init()
+	md_ServiceRevShare = File_poktroll_shared_service_proto.Messages().ByName("ServiceRevShare")
+	fd_ServiceRevShare_address = md_ServiceRevShare.Fields().ByName("address")
+	fd_ServiceRevShare_rev_share_percentage = md_ServiceRevShare.Fields().ByName("rev_share_percentage")
+}
+
+var _ protoreflect.Message = (*fastReflection_ServiceRevShare)(nil)
+
+type fastReflection_ServiceRevShare ServiceRevShare
+
+func (x *ServiceRevShare) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_ServiceRevShare)(x)
+}
+
+func (x *ServiceRevShare) slowProtoReflect() protoreflect.Message {
+	mi := &file_poktroll_shared_service_proto_msgTypes[4]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_ServiceRevShare_messageType fastReflection_ServiceRevShare_messageType
+var _ protoreflect.MessageType = fastReflection_ServiceRevShare_messageType{}
+
+type fastReflection_ServiceRevShare_messageType struct{}
+
+func (x fastReflection_ServiceRevShare_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_ServiceRevShare)(nil)
+}
+func (x fastReflection_ServiceRevShare_messageType) New() protoreflect.Message {
+	return new(fastReflection_ServiceRevShare)
+}
+func (x fastReflection_ServiceRevShare_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_ServiceRevShare
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_ServiceRevShare) Descriptor() protoreflect.MessageDescriptor {
+	return md_ServiceRevShare
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_ServiceRevShare) Type() protoreflect.MessageType {
+	return _fastReflection_ServiceRevShare_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_ServiceRevShare) New() protoreflect.Message {
+	return new(fastReflection_ServiceRevShare)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_ServiceRevShare) Interface() protoreflect.ProtoMessage {
+	return (*ServiceRevShare)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_ServiceRevShare) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.Address != "" {
+		value := protoreflect.ValueOfString(x.Address)
+		if !f(fd_ServiceRevShare_address, value) {
+			return
+		}
+	}
+	if x.RevSharePercentage != float32(0) || math.Signbit(float64(x.RevSharePercentage)) {
+		value := protoreflect.ValueOfFloat32(x.RevSharePercentage)
+		if !f(fd_ServiceRevShare_rev_share_percentage, value) {
+			return
+		}
+	}
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_ServiceRevShare) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	case "poktroll.shared.ServiceRevShare.address":
+		return x.Address != ""
+	case "poktroll.shared.ServiceRevShare.rev_share_percentage":
+		return x.RevSharePercentage != float32(0) || math.Signbit(float64(x.RevSharePercentage))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.ServiceRevShare"))
+		}
+		panic(fmt.Errorf("message poktroll.shared.ServiceRevShare does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_ServiceRevShare) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	case "poktroll.shared.ServiceRevShare.address":
+		x.Address = ""
+	case "poktroll.shared.ServiceRevShare.rev_share_percentage":
+		x.RevSharePercentage = float32(0)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.ServiceRevShare"))
+		}
+		panic(fmt.Errorf("message poktroll.shared.ServiceRevShare does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_ServiceRevShare) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	case "poktroll.shared.ServiceRevShare.address":
+		value := x.Address
+		return protoreflect.ValueOfString(value)
+	case "poktroll.shared.ServiceRevShare.rev_share_percentage":
+		value := x.RevSharePercentage
+		return protoreflect.ValueOfFloat32(value)
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.ServiceRevShare"))
+		}
+		panic(fmt.Errorf("message poktroll.shared.ServiceRevShare does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_ServiceRevShare) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	case "poktroll.shared.ServiceRevShare.address":
+		x.Address = value.Interface().(string)
+	case "poktroll.shared.ServiceRevShare.rev_share_percentage":
+		x.RevSharePercentage = float32(value.Float())
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.ServiceRevShare"))
+		}
+		panic(fmt.Errorf("message poktroll.shared.ServiceRevShare does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_ServiceRevShare) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "poktroll.shared.ServiceRevShare.address":
+		panic(fmt.Errorf("field address of message poktroll.shared.ServiceRevShare is not mutable"))
+	case "poktroll.shared.ServiceRevShare.rev_share_percentage":
+		panic(fmt.Errorf("field rev_share_percentage of message poktroll.shared.ServiceRevShare is not mutable"))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.ServiceRevShare"))
+		}
+		panic(fmt.Errorf("message poktroll.shared.ServiceRevShare does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_ServiceRevShare) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "poktroll.shared.ServiceRevShare.address":
+		return protoreflect.ValueOfString("")
+	case "poktroll.shared.ServiceRevShare.rev_share_percentage":
+		return protoreflect.ValueOfFloat32(float32(0))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.ServiceRevShare"))
+		}
+		panic(fmt.Errorf("message poktroll.shared.ServiceRevShare does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_ServiceRevShare) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in poktroll.shared.ServiceRevShare", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_ServiceRevShare) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_ServiceRevShare) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_ServiceRevShare) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_ServiceRevShare) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*ServiceRevShare)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		l = len(x.Address)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.RevSharePercentage != 0 || math.Signbit(float64(x.RevSharePercentage)) {
+			n += 5
+		}
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*ServiceRevShare)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if x.RevSharePercentage != 0 || math.Signbit(float64(x.RevSharePercentage)) {
+			i -= 4
+			binary.LittleEndian.PutUint32(dAtA[i:], uint32(math.Float32bits(float32(x.RevSharePercentage))))
+			i--
+			dAtA[i] = 0x15
+		}
+		if len(x.Address) > 0 {
+			i -= len(x.Address)
+			copy(dAtA[i:], x.Address)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Address)))
+			i--
+			dAtA[i] = 0xa
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*ServiceRevShare)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: ServiceRevShare: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: ServiceRevShare: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			case 1:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Address", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.Address = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 2:
+				if wireType != 5 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field RevSharePercentage", wireType)
+				}
+				var v uint32
+				if (iNdEx + 4) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				v = uint32(binary.LittleEndian.Uint32(dAtA[iNdEx:]))
+				iNdEx += 4
+				x.RevSharePercentage = float32(math.Float32frombits(v))
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
+var (
 	md_ConfigOption       protoreflect.MessageDescriptor
 	fd_ConfigOption_key   protoreflect.FieldDescriptor
 	fd_ConfigOption_value protoreflect.FieldDescriptor
@@ -2245,7 +2846,7 @@ func (x *ConfigOption) ProtoReflect() protoreflect.Message {
 }
 
 func (x *ConfigOption) slowProtoReflect() protoreflect.Message {
-	mi := &file_poktroll_shared_service_proto_msgTypes[4]
+	mi := &file_poktroll_shared_service_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2922,8 +3523,9 @@ type SupplierServiceConfig struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Service   *Service            `protobuf:"bytes,1,opt,name=service,proto3" json:"service,omitempty"`     // The Service for which the supplier is configured
-	Endpoints []*SupplierEndpoint `protobuf:"bytes,2,rep,name=endpoints,proto3" json:"endpoints,omitempty"` // List of endpoints for the service
+	Service   *Service            `protobuf:"bytes,1,opt,name=service,proto3" json:"service,omitempty"`                   // The Service for which the supplier is configured
+	Endpoints []*SupplierEndpoint `protobuf:"bytes,2,rep,name=endpoints,proto3" json:"endpoints,omitempty"`               // List of endpoints for the service
+	RevShare  []*ServiceRevShare  `protobuf:"bytes,3,rep,name=rev_share,json=revShare,proto3" json:"rev_share,omitempty"` // List of revenue share configurations for the service
 }
 
 func (x *SupplierServiceConfig) Reset() {
@@ -2956,6 +3558,13 @@ func (x *SupplierServiceConfig) GetService() *Service {
 func (x *SupplierServiceConfig) GetEndpoints() []*SupplierEndpoint {
 	if x != nil {
 		return x.Endpoints
+	}
+	return nil
+}
+
+func (x *SupplierServiceConfig) GetRevShare() []*ServiceRevShare {
+	if x != nil {
+		return x.RevShare
 	}
 	return nil
 }
@@ -3012,6 +3621,50 @@ func (x *SupplierEndpoint) GetConfigs() []*ConfigOption {
 	return nil
 }
 
+// ServiceRevShare message to hold revenue share configuration details
+type ServiceRevShare struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Address            string  `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`                                                     // The Bech32 address of the revenue share recipient
+	RevSharePercentage float32 `protobuf:"fixed32,2,opt,name=rev_share_percentage,json=revSharePercentage,proto3" json:"rev_share_percentage,omitempty"` // The percentage of revenue share the recipient will receive
+}
+
+func (x *ServiceRevShare) Reset() {
+	*x = ServiceRevShare{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_poktroll_shared_service_proto_msgTypes[4]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ServiceRevShare) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ServiceRevShare) ProtoMessage() {}
+
+// Deprecated: Use ServiceRevShare.ProtoReflect.Descriptor instead.
+func (*ServiceRevShare) Descriptor() ([]byte, []int) {
+	return file_poktroll_shared_service_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *ServiceRevShare) GetAddress() string {
+	if x != nil {
+		return x.Address
+	}
+	return ""
+}
+
+func (x *ServiceRevShare) GetRevSharePercentage() float32 {
+	if x != nil {
+		return x.RevSharePercentage
+	}
+	return 0
+}
+
 // Key-value wrapper for config options, as proto maps can't be keyed by enums
 type ConfigOption struct {
 	state         protoimpl.MessageState
@@ -3025,7 +3678,7 @@ type ConfigOption struct {
 func (x *ConfigOption) Reset() {
 	*x = ConfigOption{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_poktroll_shared_service_proto_msgTypes[4]
+		mi := &file_poktroll_shared_service_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -3039,7 +3692,7 @@ func (*ConfigOption) ProtoMessage() {}
 
 // Deprecated: Use ConfigOption.ProtoReflect.Descriptor instead.
 func (*ConfigOption) Descriptor() ([]byte, []int) {
-	return file_poktroll_shared_service_proto_rawDescGZIP(), []int{4}
+	return file_poktroll_shared_service_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *ConfigOption) GetKey() ConfigOptions {
@@ -3079,7 +3732,7 @@ var file_poktroll_shared_service_proto_rawDesc = []byte{
 	0x07, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x18,
 	0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64,
 	0x2e, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x52, 0x07, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63,
-	0x65, 0x22, 0x8c, 0x01, 0x0a, 0x15, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x53, 0x65,
+	0x65, 0x22, 0xcb, 0x01, 0x0a, 0x15, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x53, 0x65,
 	0x72, 0x76, 0x69, 0x63, 0x65, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x12, 0x32, 0x0a, 0x07, 0x73,
 	0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x18, 0x2e, 0x70,
 	0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2e, 0x53,
@@ -3088,40 +3741,52 @@ var file_poktroll_shared_service_proto_rawDesc = []byte{
 	0x28, 0x0b, 0x32, 0x21, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x68,
 	0x61, 0x72, 0x65, 0x64, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x45, 0x6e, 0x64,
 	0x70, 0x6f, 0x69, 0x6e, 0x74, 0x52, 0x09, 0x65, 0x6e, 0x64, 0x70, 0x6f, 0x69, 0x6e, 0x74, 0x73,
-	0x22, 0x92, 0x01, 0x0a, 0x10, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x45, 0x6e, 0x64,
-	0x70, 0x6f, 0x69, 0x6e, 0x74, 0x12, 0x10, 0x0a, 0x03, 0x75, 0x72, 0x6c, 0x18, 0x01, 0x20, 0x01,
-	0x28, 0x09, 0x52, 0x03, 0x75, 0x72, 0x6c, 0x12, 0x33, 0x0a, 0x08, 0x72, 0x70, 0x63, 0x5f, 0x74,
-	0x79, 0x70, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x18, 0x2e, 0x70, 0x6f, 0x6b, 0x74,
-	0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2e, 0x52, 0x50, 0x43, 0x54,
-	0x79, 0x70, 0x65, 0x52, 0x07, 0x72, 0x70, 0x63, 0x54, 0x79, 0x70, 0x65, 0x12, 0x37, 0x0a, 0x07,
-	0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1d, 0x2e,
-	0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2e,
-	0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x07, 0x63, 0x6f,
-	0x6e, 0x66, 0x69, 0x67, 0x73, 0x22, 0x56, 0x0a, 0x0c, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x4f,
-	0x70, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x30, 0x0a, 0x03, 0x6b, 0x65, 0x79, 0x18, 0x01, 0x20, 0x01,
-	0x28, 0x0e, 0x32, 0x1e, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x68,
-	0x61, 0x72, 0x65, 0x64, 0x2e, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x4f, 0x70, 0x74, 0x69, 0x6f,
-	0x6e, 0x73, 0x52, 0x03, 0x6b, 0x65, 0x79, 0x12, 0x14, 0x0a, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65,
-	0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x2a, 0x4b, 0x0a,
-	0x07, 0x52, 0x50, 0x43, 0x54, 0x79, 0x70, 0x65, 0x12, 0x0f, 0x0a, 0x0b, 0x55, 0x4e, 0x4b, 0x4e,
-	0x4f, 0x57, 0x4e, 0x5f, 0x52, 0x50, 0x43, 0x10, 0x00, 0x12, 0x08, 0x0a, 0x04, 0x47, 0x52, 0x50,
-	0x43, 0x10, 0x01, 0x12, 0x0d, 0x0a, 0x09, 0x57, 0x45, 0x42, 0x53, 0x4f, 0x43, 0x4b, 0x45, 0x54,
-	0x10, 0x02, 0x12, 0x0c, 0x0a, 0x08, 0x4a, 0x53, 0x4f, 0x4e, 0x5f, 0x52, 0x50, 0x43, 0x10, 0x03,
-	0x12, 0x08, 0x0a, 0x04, 0x52, 0x45, 0x53, 0x54, 0x10, 0x04, 0x2a, 0x30, 0x0a, 0x0d, 0x43, 0x6f,
-	0x6e, 0x66, 0x69, 0x67, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x12, 0x12, 0x0a, 0x0e, 0x55,
-	0x4e, 0x4b, 0x4e, 0x4f, 0x57, 0x4e, 0x5f, 0x43, 0x4f, 0x4e, 0x46, 0x49, 0x47, 0x10, 0x00, 0x12,
-	0x0b, 0x0a, 0x07, 0x54, 0x49, 0x4d, 0x45, 0x4f, 0x55, 0x54, 0x10, 0x01, 0x42, 0xa2, 0x01, 0x0a,
-	0x13, 0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x68,
-	0x61, 0x72, 0x65, 0x64, 0x42, 0x0c, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x50, 0x72, 0x6f,
-	0x74, 0x6f, 0x50, 0x01, 0x5a, 0x20, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e,
-	0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f,
-	0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0xa2, 0x02, 0x03, 0x50, 0x53, 0x58, 0xaa, 0x02, 0x0f, 0x50,
-	0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x53, 0x68, 0x61, 0x72, 0x65, 0x64, 0xca, 0x02,
-	0x0f, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x53, 0x68, 0x61, 0x72, 0x65, 0x64,
-	0xe2, 0x02, 0x1b, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x53, 0x68, 0x61, 0x72,
-	0x65, 0x64, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02,
-	0x10, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x3a, 0x3a, 0x53, 0x68, 0x61, 0x72, 0x65,
-	0x64, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x12, 0x3d, 0x0a, 0x09, 0x72, 0x65, 0x76, 0x5f, 0x73, 0x68, 0x61, 0x72, 0x65, 0x18, 0x03, 0x20,
+	0x03, 0x28, 0x0b, 0x32, 0x20, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73,
+	0x68, 0x61, 0x72, 0x65, 0x64, 0x2e, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x52, 0x65, 0x76,
+	0x53, 0x68, 0x61, 0x72, 0x65, 0x52, 0x08, 0x72, 0x65, 0x76, 0x53, 0x68, 0x61, 0x72, 0x65, 0x22,
+	0x92, 0x01, 0x0a, 0x10, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x45, 0x6e, 0x64, 0x70,
+	0x6f, 0x69, 0x6e, 0x74, 0x12, 0x10, 0x0a, 0x03, 0x75, 0x72, 0x6c, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x03, 0x75, 0x72, 0x6c, 0x12, 0x33, 0x0a, 0x08, 0x72, 0x70, 0x63, 0x5f, 0x74, 0x79,
+	0x70, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x18, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72,
+	0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2e, 0x52, 0x50, 0x43, 0x54, 0x79,
+	0x70, 0x65, 0x52, 0x07, 0x72, 0x70, 0x63, 0x54, 0x79, 0x70, 0x65, 0x12, 0x37, 0x0a, 0x07, 0x63,
+	0x6f, 0x6e, 0x66, 0x69, 0x67, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1d, 0x2e, 0x70,
+	0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2e, 0x43,
+	0x6f, 0x6e, 0x66, 0x69, 0x67, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x07, 0x63, 0x6f, 0x6e,
+	0x66, 0x69, 0x67, 0x73, 0x22, 0x77, 0x0a, 0x0f, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x52,
+	0x65, 0x76, 0x53, 0x68, 0x61, 0x72, 0x65, 0x12, 0x32, 0x0a, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65,
+	0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f,
+	0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69,
+	0x6e, 0x67, 0x52, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x30, 0x0a, 0x14, 0x72,
+	0x65, 0x76, 0x5f, 0x73, 0x68, 0x61, 0x72, 0x65, 0x5f, 0x70, 0x65, 0x72, 0x63, 0x65, 0x6e, 0x74,
+	0x61, 0x67, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x02, 0x52, 0x12, 0x72, 0x65, 0x76, 0x53, 0x68,
+	0x61, 0x72, 0x65, 0x50, 0x65, 0x72, 0x63, 0x65, 0x6e, 0x74, 0x61, 0x67, 0x65, 0x22, 0x56, 0x0a,
+	0x0c, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x30, 0x0a,
+	0x03, 0x6b, 0x65, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x1e, 0x2e, 0x70, 0x6f, 0x6b,
+	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2e, 0x43, 0x6f, 0x6e,
+	0x66, 0x69, 0x67, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x03, 0x6b, 0x65, 0x79, 0x12,
+	0x14, 0x0a, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05,
+	0x76, 0x61, 0x6c, 0x75, 0x65, 0x2a, 0x4b, 0x0a, 0x07, 0x52, 0x50, 0x43, 0x54, 0x79, 0x70, 0x65,
+	0x12, 0x0f, 0x0a, 0x0b, 0x55, 0x4e, 0x4b, 0x4e, 0x4f, 0x57, 0x4e, 0x5f, 0x52, 0x50, 0x43, 0x10,
+	0x00, 0x12, 0x08, 0x0a, 0x04, 0x47, 0x52, 0x50, 0x43, 0x10, 0x01, 0x12, 0x0d, 0x0a, 0x09, 0x57,
+	0x45, 0x42, 0x53, 0x4f, 0x43, 0x4b, 0x45, 0x54, 0x10, 0x02, 0x12, 0x0c, 0x0a, 0x08, 0x4a, 0x53,
+	0x4f, 0x4e, 0x5f, 0x52, 0x50, 0x43, 0x10, 0x03, 0x12, 0x08, 0x0a, 0x04, 0x52, 0x45, 0x53, 0x54,
+	0x10, 0x04, 0x2a, 0x30, 0x0a, 0x0d, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x4f, 0x70, 0x74, 0x69,
+	0x6f, 0x6e, 0x73, 0x12, 0x12, 0x0a, 0x0e, 0x55, 0x4e, 0x4b, 0x4e, 0x4f, 0x57, 0x4e, 0x5f, 0x43,
+	0x4f, 0x4e, 0x46, 0x49, 0x47, 0x10, 0x00, 0x12, 0x0b, 0x0a, 0x07, 0x54, 0x49, 0x4d, 0x45, 0x4f,
+	0x55, 0x54, 0x10, 0x01, 0x42, 0xa2, 0x01, 0x0a, 0x13, 0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x6b,
+	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x42, 0x0c, 0x53, 0x65,
+	0x72, 0x76, 0x69, 0x63, 0x65, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x20, 0x63, 0x6f,
+	0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70,
+	0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0xa2, 0x02,
+	0x03, 0x50, 0x53, 0x58, 0xaa, 0x02, 0x0f, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e,
+	0x53, 0x68, 0x61, 0x72, 0x65, 0x64, 0xca, 0x02, 0x0f, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c,
+	0x6c, 0x5c, 0x53, 0x68, 0x61, 0x72, 0x65, 0x64, 0xe2, 0x02, 0x1b, 0x50, 0x6f, 0x6b, 0x74, 0x72,
+	0x6f, 0x6c, 0x6c, 0x5c, 0x53, 0x68, 0x61, 0x72, 0x65, 0x64, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65,
+	0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x10, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c,
+	0x6c, 0x3a, 0x3a, 0x53, 0x68, 0x61, 0x72, 0x65, 0x64, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x33,
 }
 
 var (
@@ -3137,7 +3802,7 @@ func file_poktroll_shared_service_proto_rawDescGZIP() []byte {
 }
 
 var file_poktroll_shared_service_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_poktroll_shared_service_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_poktroll_shared_service_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_poktroll_shared_service_proto_goTypes = []interface{}{
 	(RPCType)(0),                     // 0: poktroll.shared.RPCType
 	(ConfigOptions)(0),               // 1: poktroll.shared.ConfigOptions
@@ -3145,20 +3810,22 @@ var file_poktroll_shared_service_proto_goTypes = []interface{}{
 	(*ApplicationServiceConfig)(nil), // 3: poktroll.shared.ApplicationServiceConfig
 	(*SupplierServiceConfig)(nil),    // 4: poktroll.shared.SupplierServiceConfig
 	(*SupplierEndpoint)(nil),         // 5: poktroll.shared.SupplierEndpoint
-	(*ConfigOption)(nil),             // 6: poktroll.shared.ConfigOption
+	(*ServiceRevShare)(nil),          // 6: poktroll.shared.ServiceRevShare
+	(*ConfigOption)(nil),             // 7: poktroll.shared.ConfigOption
 }
 var file_poktroll_shared_service_proto_depIdxs = []int32{
 	2, // 0: poktroll.shared.ApplicationServiceConfig.service:type_name -> poktroll.shared.Service
 	2, // 1: poktroll.shared.SupplierServiceConfig.service:type_name -> poktroll.shared.Service
 	5, // 2: poktroll.shared.SupplierServiceConfig.endpoints:type_name -> poktroll.shared.SupplierEndpoint
-	0, // 3: poktroll.shared.SupplierEndpoint.rpc_type:type_name -> poktroll.shared.RPCType
-	6, // 4: poktroll.shared.SupplierEndpoint.configs:type_name -> poktroll.shared.ConfigOption
-	1, // 5: poktroll.shared.ConfigOption.key:type_name -> poktroll.shared.ConfigOptions
-	6, // [6:6] is the sub-list for method output_type
-	6, // [6:6] is the sub-list for method input_type
-	6, // [6:6] is the sub-list for extension type_name
-	6, // [6:6] is the sub-list for extension extendee
-	0, // [0:6] is the sub-list for field type_name
+	6, // 3: poktroll.shared.SupplierServiceConfig.rev_share:type_name -> poktroll.shared.ServiceRevShare
+	0, // 4: poktroll.shared.SupplierEndpoint.rpc_type:type_name -> poktroll.shared.RPCType
+	7, // 5: poktroll.shared.SupplierEndpoint.configs:type_name -> poktroll.shared.ConfigOption
+	1, // 6: poktroll.shared.ConfigOption.key:type_name -> poktroll.shared.ConfigOptions
+	7, // [7:7] is the sub-list for method output_type
+	7, // [7:7] is the sub-list for method input_type
+	7, // [7:7] is the sub-list for extension type_name
+	7, // [7:7] is the sub-list for extension extendee
+	0, // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_poktroll_shared_service_proto_init() }
@@ -3216,6 +3883,18 @@ func file_poktroll_shared_service_proto_init() {
 			}
 		}
 		file_poktroll_shared_service_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ServiceRevShare); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_poktroll_shared_service_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*ConfigOption); i {
 			case 0:
 				return &v.state
@@ -3234,7 +3913,7 @@ func file_poktroll_shared_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_poktroll_shared_service_proto_rawDesc,
 			NumEnums:      2,
-			NumMessages:   5,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
