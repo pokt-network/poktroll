@@ -3,6 +3,7 @@
 package e2e
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"flag"
@@ -100,10 +101,9 @@ type suite struct {
 	// moduleParamsMap is a map of module names to a map of parameter names to parameter values & types.
 	expectedModuleParams moduleParamsMap
 
-	deps                            depinject.Config
-	newBlockEventsReplayClient      client.EventsReplayClient[*block.CometNewBlockEvent]
-	txResultReplayClient            client.EventsReplayClient[*abci.TxResult]
-	finalizeBlockEventsReplayClient client.EventsReplayClient[*abci.Event]
+	deps                       depinject.Config
+	newBlockEventsReplayClient client.EventsReplayClient[*block.CometNewBlockEvent]
+	txResultReplayClient       client.EventsReplayClient[*abci.TxResult]
 }
 
 func (s *suite) Before() {
@@ -297,6 +297,7 @@ func (s *suite) TheUserStakesAWithUpoktForServiceFromTheAccount(actorType string
 		"-y",
 	}
 	res, err := s.pocketd.RunCommandOnHost("", args...)
+	require.NoError(s, err, "error staking %s for service %s", actorType, serviceId)
 
 	// Remove the temporary config file
 	err = os.Remove(configFile.Name())
@@ -412,38 +413,46 @@ func (s *suite) TheSessionForApplicationAndServiceContainsTheSupplier(appName st
 	s.Fatalf("ERROR: session for app %s and service %s does not contain supplier %s", appName, serviceId, supplierName)
 }
 
-func (s *suite) TheApplicationSendsTheSupplierARequestForServiceWithPathAndData(appName, supplierName, serviceId, path, requestData string) {
+func (s *suite) TheApplicationSendsTheSupplierASuccessfulRequestForServiceWithPathAndData(appName, supplierName, serviceId, path, requestData string) {
 	// TODO_HACK: We need to support a non self_signing LocalNet AppGateServer
 	// that allows any application to send a relay in LocalNet and our E2E Tests.
 	require.Equal(s, "app1", appName, "TODO_HACK: The LocalNet AppGateServer is self_signing and only supports app1.")
 
-	res, err := s.pocketd.RunCurl(appGateServerUrl, serviceId, "POST", path, requestData)
+	method := "POST"
+	// If requestData is empty, assume a GET request
+	if requestData == "" {
+		method = "GET"
+	}
+
+	res, err := s.pocketd.RunCurlWithRetry(appGateServerUrl, serviceId, method, path, requestData, 5)
 	require.NoError(s, err, "error sending relay request from app %q to supplier %q for service %q", appName, supplierName, serviceId)
 
-	relayKey := relayReferenceKey(appName, supplierName)
-	s.scenarioState[relayKey] = res.Stdout
+	var jsonContent json.RawMessage
+	err = json.Unmarshal([]byte(res.Stdout), &jsonContent)
+	require.NoError(s, err, `Expected valid JSON, got: %s`, res.Stdout)
+
+	jsonMap, err := jsonToMap(jsonContent)
+	require.NoError(s, err, "error converting JSON to map")
+
+	prettyJson, err := jsonPrettyPrint(jsonContent)
+	require.NoError(s, err, "error pretty printing JSON")
+	s.Log(prettyJson)
+
+	// TODO_IMPROVE: This is a minimalistic first approach to request validation in E2E tests.
+	// Consider leveraging the shannon-sdk or path here.
+	switch path {
+	case "":
+		// Validate JSON-RPC request where the path is empty
+		require.Nil(s, jsonMap["error"], "error in relay response")
+		require.NotNil(s, jsonMap["result"], "no result in relay response")
+	default:
+		// Validate REST request where the path is non-empty
+		require.Nil(s, jsonMap["error"], "error in relay response")
+	}
 }
 
 func (s *suite) TheApplicationSendsTheSupplierARequestForServiceWithPath(appName, supplierName, serviceId, path string) {
-	res, err := s.pocketd.RunCurl(appGateServerUrl, serviceId, "GET", path, "")
-	require.NoError(s, err, "error sending relay request from app %q to supplier %q for service %q", appName, supplierName, serviceId)
-
-	relayKey := relayReferenceKey(appName, supplierName)
-	s.scenarioState[relayKey] = res.Stdout
-}
-
-func (s *suite) TheApplicationReceivesASuccessfulRelayResponseSignedBy(appName string, supplierName string) {
-	// TODO_HACK: We need to support a non self_signing LocalNet AppGateServer
-	// that allows any application to send a relay in LocalNet and our E2E Tests.
-	require.Equal(s, "app1", appName, "TODO_HACK: The LocalNet AppGateServer is self_signing and only supports app1.")
-
-	relayKey := relayReferenceKey(appName, supplierName)
-	stdout, ok := s.scenarioState[relayKey]
-	require.Truef(s, ok, "no relay response found for %s", relayKey)
-
-	var jsonContent json.RawMessage
-	err := json.Unmarshal([]byte(stdout.(string)), &jsonContent)
-	require.NoError(s, err, `Expected valid JSON, got: %s`, stdout)
+	s.TheApplicationSendsTheSupplierASuccessfulRequestForServiceWithPathAndData(appName, supplierName, serviceId, path, "")
 }
 
 func (s *suite) AModuleEndBlockEventIsBroadcast(module, eventType string) {
@@ -465,7 +474,7 @@ func (s *suite) TheUserWaitsForUnbondingPeriodToFinish(accName string) {
 	require.True(s, ok, "supplier %s not found", accName)
 
 	unbondingHeight := s.getSupplierUnbondingHeight(accName)
-	s.waitForBlockHeight(unbondingHeight)
+	s.waitForBlockHeight(unbondingHeight + 1) // Add 1 to ensure the unbonding block has been committed
 }
 
 func (s *suite) getStakedAmount(actorType, accName string) (int, bool) {
@@ -683,12 +692,6 @@ func (s *suite) getSupplierUnbondingHeight(accName string) int64 {
 	return unbondingHeight
 }
 
-// TODO_IMPROVE: use `sessionId` and `supplierName` since those are the two values
-// used to create the primary composite key on-chain to uniquely distinguish relays.
-func relayReferenceKey(appName, supplierName string) string {
-	return fmt.Sprintf("%s/%s", appName, supplierName)
-}
-
 // accBalanceKey is a helper function to create a key to store the balance
 // for accName in the context of a scenario state.
 func accBalanceKey(accName string) string {
@@ -699,4 +702,28 @@ func accBalanceKey(accName string) string {
 // for accName of type actorType in the context of a scenario state.
 func accStakeKey(actorType, accName string) string {
 	return fmt.Sprintf("stake/%s/%s", actorType, accName)
+}
+
+// printPrettyJSON returns the given raw JSON message in a pretty format that
+// can be printed to the console.
+func jsonPrettyPrint(raw json.RawMessage) (string, error) {
+	var buf bytes.Buffer
+	err := json.Indent(&buf, raw, "", "  ")
+	if err != nil {
+		return "", err
+	}
+	return buf.String(), nil
+}
+
+// jsonToMap converts a raw JSON message into a map of string keys and interface values.
+func jsonToMap(raw json.RawMessage) (map[string]interface{}, error) {
+	var dataMap map[string]interface{}
+
+	// Unmarshal the raw message into the map
+	err := json.Unmarshal(raw, &dataMap)
+	if err != nil {
+		return nil, err
+	}
+
+	return dataMap, nil
 }

@@ -6,16 +6,14 @@ Feature: Relay Namespace
         And the application "app1" is staked for service "anvil"
         And the supplier "supplier1" is staked for service "anvil"
         And the session for application "app1" and service "anvil" contains the supplier "supplier1"
-        When the application "app1" sends the supplier "supplier1" a request for service "anvil" with path "" and data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}'
-        Then the application "app1" receives a successful relay response signed by "supplier1"
+        Then the application "app1" sends the supplier "supplier1" a successful request for service "anvil" with path "" and data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}'
 
     Scenario: App can send a REST relay to Supplier
         Given the user has the pocketd binary installed
         And the application "app1" is staked for service "rest"
         And the supplier "supplier1" is staked for service "rest"
         And the session for application "app1" and service "rest" contains the supplier "supplier1"
-        When the application "app1" sends the supplier "supplier1" a request for service "rest" with path "/quote"
-        Then the application "app1" receives a successful relay response signed by "supplier1"
+        When the application "app1" sends the supplier "supplier1" a successful request for service "rest" with path "/quote"
         And a "tokenomics" module "ClaimSettled" end block event is broadcast
 
     # TODO_TEST(@Olshansk):
