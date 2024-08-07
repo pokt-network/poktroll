@@ -374,8 +374,6 @@ func (s *suite) TheServiceRegisteredForApplicationHasAComputeUnitsPerRelayOf(ser
 	cuprExpected, err := strconv.ParseUint(cuprStr, 10, 64)
 	require.NoError(s, err)
 	require.Equal(s, cuprExpected, cuprActual, "compute units per relay for service %s is not %d", serviceId, cuprExpected)
-
-	s.Fatalf("ERROR: service %s is not registered for application %s", serviceId, appName)
 }
 
 func (s *suite) TheUserVerifiesTheForAccountIsNotStaked(actorType, accName string) {
