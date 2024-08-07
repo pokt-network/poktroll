@@ -11,6 +11,7 @@ import (
 	"github.com/gogo/status"
 	"github.com/stretchr/testify/require"
 
+	_ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/testutil/yaml"
 	"github.com/pokt-network/poktroll/x/shared/types"
