@@ -404,3 +404,8 @@ if localnet_config["ollama"]["enabled"]:
         ),
         resource_deps=["ollama"],
     )
+
+if localnet_config["rest"]["enabled"]:
+    print("REST enabled: " + str(localnet_config["rest"]["enabled"]))
+    deployment_create("rest", image="davarski/go-rest-api-demo")
+    k8s_resource("rest", labels=["data_nodes"], port_forwards=["10000"])

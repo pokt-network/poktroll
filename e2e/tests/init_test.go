@@ -417,7 +417,15 @@ func (s *suite) TheApplicationSendsTheSupplierARequestForServiceWithPathAndData(
 	// that allows any application to send a relay in LocalNet and our E2E Tests.
 	require.Equal(s, "app1", appName, "TODO_HACK: The LocalNet AppGateServer is self_signing and only supports app1.")
 
-	res, err := s.pocketd.RunCurl(appGateServerUrl, serviceId, path, requestData)
+	res, err := s.pocketd.RunCurl(appGateServerUrl, serviceId, "POST", path, requestData)
+	require.NoError(s, err, "error sending relay request from app %q to supplier %q for service %q", appName, supplierName, serviceId)
+
+	relayKey := relayReferenceKey(appName, supplierName)
+	s.scenarioState[relayKey] = res.Stdout
+}
+
+func (s *suite) TheApplicationSendsTheSupplierARequestForServiceWithPath(appName, supplierName, serviceId, path string) {
+	res, err := s.pocketd.RunCurl(appGateServerUrl, serviceId, "GET", path, "")
 	require.NoError(s, err, "error sending relay request from app %q to supplier %q for service %q", appName, supplierName, serviceId)
 
 	relayKey := relayReferenceKey(appName, supplierName)

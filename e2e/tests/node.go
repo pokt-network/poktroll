@@ -49,7 +49,7 @@ type commandResult struct {
 type PocketClient interface {
 	RunCommand(args ...string) (*commandResult, error)
 	RunCommandOnHost(rpcUrl string, args ...string) (*commandResult, error)
-	RunCurl(rpcUrl, service, path, data string, args ...string) (*commandResult, error)
+	RunCurl(rpcUrl, service, method, path, data string, args ...string) (*commandResult, error)
 }
 
 // Ensure that pocketdBin struct fulfills PocketClient
@@ -94,11 +94,11 @@ func (p *pocketdBin) RunCommandOnHostWithRetry(rpcUrl string, numRetries uint8, 
 }
 
 // RunCurl runs a curl command on the local machine
-func (p *pocketdBin) RunCurl(rpcUrl, service, path, data string, args ...string) (*commandResult, error) {
+func (p *pocketdBin) RunCurl(rpcUrl, service, method, path, data string, args ...string) (*commandResult, error) {
 	if rpcUrl == "" {
 		rpcUrl = defaultAppGateServerURL
 	}
-	return p.runCurlPostCmd(rpcUrl, service, path, data, args...)
+	return p.runCurlCmd(rpcUrl, service, method, path, data, args...)
 }
 
 // runPocketCmd is a helper to run a command using the local pocketd binary with the flags provided
@@ -134,7 +134,7 @@ func (p *pocketdBin) runPocketCmd(args ...string) (*commandResult, error) {
 }
 
 // runCurlPostCmd is a helper to run a command using the local pocketd binary with the flags provided
-func (p *pocketdBin) runCurlPostCmd(rpcUrl, service, path, data string, args ...string) (*commandResult, error) {
+func (p *pocketdBin) runCurlCmd(rpcUrl, service, method, path, data string, args ...string) (*commandResult, error) {
 	dataStr := fmt.Sprintf("%s", data)
 	// Ensure that if a path is provided, it starts with a "/".
 	// This is required for RESTful APIs that use a path to identify resources.
@@ -146,9 +146,13 @@ func (p *pocketdBin) runCurlPostCmd(rpcUrl, service, path, data string, args ...
 	base := []string{
 		"-v",         // verbose output
 		"-sS",        // silent with error
-		"-X", "POST", // HTTP method
+		"-X", method, // HTTP method
 		"-H", "Content-Type: application/json", // HTTP headers
-		"--data", dataStr, urlStr, // POST data
+		urlStr,
+	}
+
+	if method == "POST" {
+		base = append(base, "--data", dataStr)
 	}
 	args = append(base, args...)
 	commandStr := "curl " + strings.Join(args, " ") // Create a string representation of the command

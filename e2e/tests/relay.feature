@@ -11,10 +11,10 @@ Feature: Relay Namespace
 
     Scenario: App can send a REST relay to Supplier
         Given the user has the pocketd binary installed
-        And the application "app1" is staked for service "ollama"
-        And the supplier "supplier1" is staked for service "ollama"
-        And the session for application "app1" and service "ollama" contains the supplier "supplier1"
-        When the application "app1" sends the supplier "supplier1" a request for service "ollama" with path "/api/chat" and data '{"model": "qwen:0.5b", "stream": false, "messages": [{"role": "user", "content":"count from 1 to 10"}]}'
+        And the application "app1" is staked for service "rest"
+        And the supplier "supplier1" is staked for service "rest"
+        And the session for application "app1" and service "rest" contains the supplier "supplier1"
+        When the application "app1" sends the supplier "supplier1" a request for service "rest" with path "/quote"
         Then the application "app1" receives a successful relay response signed by "supplier1"
         And a "tokenomics" module "ClaimSettled" end block event is broadcast
 
