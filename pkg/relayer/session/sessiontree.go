@@ -121,7 +121,6 @@ func (st *sessionTree) Update(key, value []byte, weight uint64) error {
 	err := st.sessionSMT.Update(key, value, weight)
 	if err != nil {
 		return ErrSessionUpdatingTree.Wrapf("error: %v", err)
-
 	}
 
 	// DO NOT DELETE: Uncomment this for debugging and change to .Debug logs post MainNet.
