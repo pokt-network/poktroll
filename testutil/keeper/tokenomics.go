@@ -63,6 +63,7 @@ type TokenomicsModuleKeepers struct {
 	tokenomicstypes.ProofKeeper
 	tokenomicstypes.SharedKeeper
 	tokenomicstypes.SessionKeeper
+	tokenomicstypes.ServiceKeeper
 
 	Codec *codec.ProtoCodec
 }
@@ -111,14 +112,6 @@ func TokenomicsKeeperWithActorAddrs(
 	application := apptypes.Application{
 		Address: sample.AccAddress(),
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100000)},
-	}
-
-	if service != nil {
-		application.ServiceConfigs = []*sharedtypes.ApplicationServiceConfig{
-			{
-				Service: service,
-			},
-		}
 	}
 
 	// Prepare the test supplier.
@@ -180,6 +173,23 @@ func TokenomicsKeeperWithActorAddrs(
 	// Mock the session keeper
 	mockSessionKeeper := mocks.NewMockSessionKeeper(ctrl)
 
+	// Mock the service keeper
+	mockServiceKeeper := mocks.NewMockServiceKeeper(ctrl)
+
+	if service != nil {
+		// Get service if the ID matches.
+		mockServiceKeeper.EXPECT().
+			GetService(gomock.Any(), gomock.Eq(service.Id)).
+			Return(*service, true).
+			AnyTimes()
+	}
+
+	// Get zero-value service if the id does not match.
+	mockServiceKeeper.EXPECT().
+		GetService(gomock.Any(), gomock.Any()).
+		Return(sharedtypes.Service{}, false).
+		AnyTimes()
+
 	k := tokenomicskeeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKey),
@@ -191,6 +201,7 @@ func TokenomicsKeeperWithActorAddrs(
 		mockProofKeeper,
 		mockSharedKeeper,
 		mockSessionKeeper,
+		mockServiceKeeper,
 		mockSupplierKeeper,
 	)
 
@@ -222,6 +233,7 @@ func NewTokenomicsModuleKeepers(
 		suppliertypes.StoreKey,
 		prooftypes.StoreKey,
 		sharedtypes.StoreKey,
+		servicetypes.StoreKey,
 	)
 
 	// Construct a multistore & mount store keys for each keeper that will interact with the state store.
@@ -372,6 +384,7 @@ func NewTokenomicsModuleKeepers(
 		proofKeeper,
 		sharedKeeper,
 		sessionKeeper,
+		serviceKeeper,
 		supplierKeeper,
 	)
 
@@ -386,6 +399,7 @@ func NewTokenomicsModuleKeepers(
 		ProofKeeper:       &proofKeeper,
 		SharedKeeper:      &sharedKeeper,
 		SessionKeeper:     &sessionKeeper,
+		ServiceKeeper:     &serviceKeeper,
 
 		Codec: cdc,
 	}
@@ -396,4 +410,11 @@ func NewTokenomicsModuleKeepers(
 	}
 
 	return keepers, ctx
+}
+
+func WithService(service sharedtypes.Service) TokenomicsModuleKeepersOpt {
+	return func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
+		keepers.SetService(ctx, service)
+		return ctx
+	}
 }

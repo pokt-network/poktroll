@@ -29,6 +29,7 @@ type Keeper struct {
 	proofKeeper       types.ProofKeeper
 	sharedKeeper      types.SharedKeeper
 	sessionKeeper     types.SessionKeeper
+	serviceKeeper     types.ServiceKeeper
 	supplierKeeper    types.SupplierKeeper
 
 	sharedQuerier client.SharedQueryClient
@@ -46,6 +47,7 @@ func NewKeeper(
 	proofKeeper types.ProofKeeper,
 	sharedKeeper types.SharedKeeper,
 	sessionKeeper types.SessionKeeper,
+	serviceKeeper types.ServiceKeeper,
 	supplierKeeper types.SupplierKeeper,
 ) Keeper {
 	if _, err := sdk.AccAddressFromBech32(authority); err != nil {
@@ -66,6 +68,7 @@ func NewKeeper(
 		proofKeeper:       proofKeeper,
 		sharedKeeper:      sharedKeeper,
 		sessionKeeper:     sessionKeeper,
+		serviceKeeper:     serviceKeeper,
 		supplierKeeper:    supplierKeeper,
 
 		sharedQuerier: sharedQuerier,

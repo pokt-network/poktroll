@@ -397,6 +397,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		proofKeeper,
 		sharedKeeper,
 		sessionKeeper,
+		serviceKeeper,
 		supplierKeeper,
 	)
 	tokenomicsModule := tokenomics.NewAppModule(

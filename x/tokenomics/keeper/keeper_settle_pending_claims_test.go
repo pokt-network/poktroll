@@ -83,13 +83,14 @@ func (s *TestSuite) SetupTest() {
 		preGeneratedAccts,
 	).String()
 
-	service := &sharedtypes.Service{Id: testServiceId}
+	service := sharedtypes.Service{Id: testServiceId}
+	s.keepers.SetService(s.ctx, service)
 
 	supplierStake := types.NewCoin("upokt", math.NewInt(1000000))
 	supplier := sharedtypes.Supplier{
 		Address:  supplierAddr,
 		Stake:    &supplierStake,
-		Services: []*sharedtypes.SupplierServiceConfig{{Service: service}},
+		Services: []*sharedtypes.SupplierServiceConfig{{Service: &service}},
 	}
 	s.keepers.SetSupplier(s.ctx, supplier)
 
@@ -97,7 +98,7 @@ func (s *TestSuite) SetupTest() {
 	app := apptypes.Application{
 		Address:        appAddr,
 		Stake:          &appStake,
-		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{Service: service}},
+		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{Service: &service}},
 	}
 	s.keepers.SetApplication(s.ctx, app)
 
@@ -105,7 +106,7 @@ func (s *TestSuite) SetupTest() {
 	// to be claimed and for which a valid proof would be accepted.
 	sessionReq := &sessiontypes.QueryGetSessionRequest{
 		ApplicationAddress: appAddr,
-		Service:            service,
+		Service:            &service,
 		BlockHeight:        1,
 	}
 	sessionRes, err := s.keepers.GetSession(s.sdkCtx, sessionReq)
