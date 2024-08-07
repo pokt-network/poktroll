@@ -46,7 +46,7 @@ func TestSettleSessionAccounting_HandleAppGoingIntoDebt(t *testing.T) {
 		Address: sample.AccAddress(),
 		Stake:   &appStake,
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
-			&sharedtypes.ApplicationServiceConfig{
+			{
 				Service: service,
 			},
 		},
@@ -81,7 +81,15 @@ func TestSettleSessionAccounting_HandleAppGoingIntoDebt(t *testing.T) {
 }
 
 func TestSettleSessionAccounting_ValidAccounting(t *testing.T) {
-	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil)
+	// Create a service that can be registered in the application and used in the claims
+	service := sharedtypes.Service{
+		Id:                   "svc1",
+		Name:                 "svcName1",
+		ComputeUnitsPerRelay: 1,
+		OwnerAddress:         sample.AccAddress(),
+	}
+
+	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil, testkeeper.WithService(service))
 	appModuleAddress := authtypes.NewModuleAddress(apptypes.ModuleName).String()
 	supplierModuleAddress := authtypes.NewModuleAddress(suppliertypes.ModuleName).String()
 
@@ -91,13 +99,6 @@ func TestSettleSessionAccounting_ValidAccounting(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	// Create a service that can be registered in the application and used in the claims
-	service := &sharedtypes.Service{
-		Id:                   "svc1",
-		Name:                 "svcName1",
-		ComputeUnitsPerRelay: 1,
-		OwnerAddress:         sample.AccAddress(),
-	}
 	// Add a new application
 	appStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
 	// NB: Ensure a non-zero app stake end balance to assert against.
@@ -106,11 +107,6 @@ func TestSettleSessionAccounting_ValidAccounting(t *testing.T) {
 	app := apptypes.Application{
 		Address: sample.AccAddress(),
 		Stake:   &appStake,
-		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
-			&sharedtypes.ApplicationServiceConfig{
-				Service: service,
-			},
-		},
 	}
 	keepers.SetApplication(ctx, app)
 
@@ -188,7 +184,15 @@ func TestSettleSessionAccounting_ValidAccounting(t *testing.T) {
 }
 
 func TestSettleSessionAccounting_AppStakeTooLow(t *testing.T) {
-	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil)
+	// Create a service that can be registered in the application and used in the claims
+	service := sharedtypes.Service{
+		Id:                   "svc1",
+		Name:                 "svcName1",
+		ComputeUnitsPerRelay: 1,
+		OwnerAddress:         sample.AccAddress(),
+	}
+
+	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil, testkeeper.WithService(service))
 	appModuleAddress := authtypes.NewModuleAddress(apptypes.ModuleName).String()
 	supplierModuleAddress := authtypes.NewModuleAddress(suppliertypes.ModuleName).String()
 
@@ -198,13 +202,6 @@ func TestSettleSessionAccounting_AppStakeTooLow(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	// Create a service that can be registered in the application and used in the claims
-	service := &sharedtypes.Service{
-		Id:                   "svc1",
-		Name:                 "svcName1",
-		ComputeUnitsPerRelay: 1,
-		OwnerAddress:         sample.AccAddress(),
-	}
 	// Add a new application
 	appStake := cosmostypes.NewCoin("upokt", math.NewInt(40000))
 	expectedAppEndStakeZeroAmount := cosmostypes.NewCoin("upokt", math.NewInt(0))
@@ -212,11 +209,6 @@ func TestSettleSessionAccounting_AppStakeTooLow(t *testing.T) {
 	app := apptypes.Application{
 		Address: sample.AccAddress(),
 		Stake:   &appStake,
-		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
-			&sharedtypes.ApplicationServiceConfig{
-				Service: service,
-			},
-		},
 	}
 	keepers.SetApplication(ctx, app)
 
@@ -339,6 +331,31 @@ func TestSettleSessionAccounting_AppNotFound(t *testing.T) {
 	err := keeper.SettleSessionAccounting(ctx, &claim)
 	require.Error(t, err)
 	require.ErrorIs(t, err, tokenomicstypes.ErrTokenomicsApplicationNotFound)
+}
+
+func TestSettleSessionAccounting_ServiceNotFound(t *testing.T) {
+
+	keeper, ctx, appAddr, supplierAddr := testkeeper.TokenomicsKeeperWithActorAddrs(t, nil)
+
+	claim := prooftypes.Claim{
+		SupplierAddress: supplierAddr,
+		SessionHeader: &sessiontypes.SessionHeader{
+			ApplicationAddress: appAddr,
+			Service: &sharedtypes.Service{
+				Id: "non_existent_svc",
+			},
+			SessionId:               "session_id",
+			SessionStartBlockHeight: 1,
+			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
+		},
+		RootHash: testproof.SmstRootWithSum(42),
+	}
+
+	// Execute test function
+	err := keeper.SettleSessionAccounting(ctx, &claim)
+
+	require.Error(t, err)
+	require.ErrorIs(t, err, tokenomicstypes.ErrTokenomicsServiceNotFound)
 }
 
 func TestSettleSessionAccounting_InvalidRoot(t *testing.T) {
@@ -497,13 +514,6 @@ func TestSettleSessionAccounting_InvalidClaim(t *testing.T) {
 	// Iterate over each test case
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			// Use defer-recover to catch any panic
-			defer func() {
-				if r := recover(); r != nil {
-					t.Errorf("Test panicked: %s", r)
-				}
-			}()
-
 			// Execute test function
 			err := func() (err error) {
 				defer func() {

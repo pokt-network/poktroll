@@ -2,14 +2,6 @@
 
 SHELL = /bin/sh
 
-# TODO_IMPROVE: Look into how we can we source `.env.dev` and have everything
-# here work.
-
-# ifneq (,$(wildcard .env))
-# include .env
-# export $(shell sed 's/=.*//' .env)
-# endif
-
 POKTROLLD_HOME ?= ./localnet/poktrolld
 POCKET_NODE ?= tcp://127.0.0.1:26657 # The pocket node (validator in the localnet context)
 TESTNET_RPC ?= https://testnet-validated-validator-rpc.poktroll.com/ # TestNet RPC endpoint for validator maintained by Grove. Needs to be update if there's another "primary" testnet.
@@ -349,10 +341,9 @@ send_relay_sovereign_app_REST: # Send a REST relay through the AppGateServer as 
 	--data '{"model": "qwen:0.5b", "stream": false, "messages": [{"role": "user", "content":"count from 1 to 10"}]}' \
 	$(APPGATE_SERVER)/ollama/api/chat
 
-# TODO_TECHDEBT(@okdas): Figure out how to copy these over w/ a functional state.
-# cp ${HOME}/.poktroll/config/app.toml $(POKTROLLD_HOME)/config/app.toml
-# cp ${HOME}/.poktroll/config/config.toml $(POKTROLLD_HOME)/config/config.toml
-# cp ${HOME}/.poktroll/config/client.toml $(POKTROLLD_HOME)/config/client.toml
+.PHONY: cosmovisor_start_node
+cosmovisor_start_node: # Starts the node using cosmovisor that waits for an upgrade plan
+	bash tools/scripts/upgrades/cosmovisor-start-node.sh
 
 ###############
 ### Linting ###
@@ -433,6 +424,13 @@ test_all: warn_flaky_tests check_go_version ## Run all go tests showing detailed
 .PHONY: test_all_with_integration
 test_all_with_integration: check_go_version ## Run all go tests, including those with the integration
 	go test -count=1 -v -race -tags test,integration ./...
+
+# We are explicitly using an env variable rather than a build tag to keep flaky
+# tests in line with non flaky tests and use it as a way to easily turn them
+# on and off without maintaining extra files.
+.PHONY: test_all_with_integration_and_flaky
+test_all_with_integration_and_flaky: check_go_version ## Run all go tests, including those with the integration and flaky tests
+	INCLUDE_FLAKY_TESTS=true go test -count=1 -v -race -tags test,integration ./...
 
 .PHONY: test_integration
 test_integration: check_go_version ## Run only the in-memory integration "unit" tests
