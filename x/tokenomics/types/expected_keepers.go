@@ -1,4 +1,4 @@
-//go:generate mockgen -destination ../../../testutil/tokenomics/mocks/expected_keepers_mock.go -package mocks . AccountKeeper,BankKeeper,ApplicationKeeper,ProofKeeper,SharedKeeper,SessionKeeper
+//go:generate mockgen -destination ../../../testutil/tokenomics/mocks/expected_keepers_mock.go -package mocks . AccountKeeper,BankKeeper,ApplicationKeeper,ProofKeeper,SharedKeeper,SessionKeeper,ServiceKeeper
 
 package types
 
@@ -77,4 +77,11 @@ type SessionKeeper interface {
 type SupplierKeeper interface {
 	GetSupplier(ctx context.Context, supplierAddr string) (supplier sharedtypes.Supplier, found bool)
 	SetSupplier(ctx context.Context, supplier sharedtypes.Supplier)
+}
+
+type ServiceKeeper interface {
+	GetService(ctx context.Context, serviceID string) (sharedtypes.Service, bool)
+	// NOTE: SetService is not used by the tokenomics keeper.
+	// It is only defined here to make it easier to add services to the service module in the tests.
+	SetService(ctx context.Context, service sharedtypes.Service)
 }
