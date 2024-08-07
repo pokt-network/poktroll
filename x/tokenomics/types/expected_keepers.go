@@ -81,8 +81,7 @@ type SupplierKeeper interface {
 }
 
 type ServiceKeeper interface {
-	GetService(ctx context.Context, serviceId string) (service sharedtypes.Service, found bool)
-
+	GetService(ctx context.Context, serviceID string) (sharedtypes.Service, bool)
 	// Only used for testing & simulation
 	SetService(ctx context.Context, service sharedtypes.Service)
 }

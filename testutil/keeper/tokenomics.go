@@ -191,9 +191,21 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 
 	// Mock the service keeper
 	mockServiceKeeper := mocks.NewMockServiceKeeper(ctrl)
-	mockServiceKeeper.EXPECT().GetService(gomock.Any(), service.Id).Return(*service, true).AnyTimes()
 
-	// Initialize the tokenomics keeper.
+	if service != nil {
+		// Get service if the ID matches.
+		mockServiceKeeper.EXPECT().
+			GetService(gomock.Any(), gomock.Eq(service.Id)).
+			Return(*service, true).
+			AnyTimes()
+	}
+
+	// Get zero-value service if the id does not match.
+	mockServiceKeeper.EXPECT().
+		GetService(gomock.Any(), gomock.Any()).
+		Return(sharedtypes.Service{}, false).
+		AnyTimes()
+
 	k := tokenomicskeeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKey),
@@ -429,4 +441,11 @@ func NewTokenomicsModuleKeepers(
 	}
 
 	return keepers, ctx
+}
+
+func WithService(service sharedtypes.Service) TokenomicsModuleKeepersOpt {
+	return func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
+		keepers.SetService(ctx, service)
+		return ctx
+	}
 }

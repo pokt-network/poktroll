@@ -80,8 +80,16 @@ func TestProcessTokenLogicModules_HandleAppGoingIntoDebt(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestProcessTokenLogicModules_ValidAccounting(t *testing.T) {
-	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil)
+func TestSettleSessionAccounting_ValidAccounting(t *testing.T) {
+	// Create a service that can be registered in the application and used in the claims
+	service := sharedtypes.Service{
+		Id:                   "svc1",
+		Name:                 "svcName1",
+		ComputeUnitsPerRelay: 1,
+		OwnerAddress:         sample.AccAddress(),
+	}
+
+	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil, testkeeper.WithService(service))
 	appModuleAddress := authtypes.NewModuleAddress(apptypes.ModuleName).String()
 	supplierModuleAddress := authtypes.NewModuleAddress(suppliertypes.ModuleName).String()
 
@@ -183,8 +191,16 @@ func TestProcessTokenLogicModules_ValidAccounting(t *testing.T) {
 	require.EqualValues(t, supplierModuleStartBalance, supplierModuleEndBalance)
 }
 
-func TestProcessTokenLogicModules_AppStakeTooLow(t *testing.T) {
-	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil)
+func TestSettleSessionAccounting_AppStakeTooLow(t *testing.T) {
+	// Create a service that can be registered in the application and used in the claims
+	service := sharedtypes.Service{
+		Id:                   "svc1",
+		Name:                 "svcName1",
+		ComputeUnitsPerRelay: 1,
+		OwnerAddress:         sample.AccAddress(),
+	}
+
+	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil, testkeeper.WithService(service))
 	appModuleAddress := authtypes.NewModuleAddress(apptypes.ModuleName).String()
 	supplierModuleAddress := authtypes.NewModuleAddress(suppliertypes.ModuleName).String()
 
@@ -211,6 +227,8 @@ func TestProcessTokenLogicModules_AppStakeTooLow(t *testing.T) {
 		Address:        sample.AccAddress(),
 		Stake:          &appStake,
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{Service: service}},
+		Address: sample.AccAddress(),
+		Stake:   &appStake,
 	}
 	keepers.SetApplication(ctx, app)
 
@@ -328,9 +346,34 @@ func TestProcessTokenLogicModules_AppNotFound(t *testing.T) {
 	require.ErrorIs(t, err, tokenomicstypes.ErrTokenomicsApplicationNotFound)
 }
 
+func TestSettleSessionAccounting_ServiceNotFound(t *testing.T) {
+
+	keeper, ctx, appAddr, supplierAddr := testkeeper.TokenomicsKeeperWithActorAddrs(t, nil)
+
+	claim := prooftypes.Claim{
+		SupplierAddress: supplierAddr,
+		SessionHeader: &sessiontypes.SessionHeader{
+			ApplicationAddress: appAddr,
+			Service: &sharedtypes.Service{
+				Id: "non_existent_svc",
+			},
+			SessionId:               "session_id",
+			SessionStartBlockHeight: 1,
+			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
+		},
+		RootHash: testproof.SmstRootWithSum(42),
+	}
+
+	// Execute test function
+	err := keeper.SettleSessionAccounting(ctx, &claim)
+
+	require.Error(t, err)
+	require.ErrorIs(t, err, tokenomicstypes.ErrTokenomicsServiceNotFound)
+}
+
 func TestProcessTokenLogicModules_InvalidRoot(t *testing.T) {
 	keeper, ctx, appAddr, supplierAddr, service := testkeeper.TokenomicsKeeperWithActorAddrs(t)
-	numRelays := uint64(42)
+	numRelays := uint64(42
 
 	// Define test cases
 	tests := []struct {
