@@ -227,8 +227,8 @@ func TestSettleSessionAccounting_AppStakeTooLow(t *testing.T) {
 		Address:        sample.AccAddress(),
 		Stake:          &appStake,
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{Service: service}},
-		Address: sample.AccAddress(),
-		Stake:   &appStake,
+		Address:        sample.AccAddress(),
+		Stake:          &appStake,
 	}
 	keepers.SetApplication(ctx, app)
 
@@ -373,7 +373,7 @@ func TestSettleSessionAccounting_ServiceNotFound(t *testing.T) {
 
 func TestProcessTokenLogicModules_InvalidRoot(t *testing.T) {
 	keeper, ctx, appAddr, supplierAddr, service := testkeeper.TokenomicsKeeperWithActorAddrs(t)
-	numRelays := uint64(42
+	numRelays := uint64(42)
 
 	// Define test cases
 	tests := []struct {
