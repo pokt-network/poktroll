@@ -121,7 +121,8 @@ func (p *pocketdBin) RunCurlWithRetry(rpcUrl, service, path, data string, numRet
 		"internal error: upstream error",
 	}
 	for _, ephemeralError := range ephemeralEndToEndErrors {
-		if strings.Contains(res.Stderr, ephemeralError) {
+		if strings.Contains(res.Stdout, ephemeralError) {
+			fmt.Println("Retrying due to ephemeral error:", res.Stdout)
 			time.Sleep(10 * time.Millisecond)
 			return p.RunCurlWithRetry(rpcUrl, service, path, data, numRetries-1, args...)
 		}
