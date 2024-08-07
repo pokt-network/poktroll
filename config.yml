@@ -140,15 +140,12 @@ genesis:
           service_configs:
             - service:
                 id: anvil
-                name: ""
                 compute_units_per_relay: 1
             - service:
                 id: ollama
-                name: ""
                 compute_units_per_relay: 1
             - service:
                 id: rest
-                name: ""
                 compute_units_per_relay: 1
           stake:
             # NB: This value should be exactly 1upokt smaller than the value in
@@ -166,7 +163,6 @@ genesis:
               service:
                 compute_units_per_relay: 1
                 id: anvil
-                name: ""
             - endpoints:
                 - configs: []
                   rpc_type: REST
@@ -174,7 +170,6 @@ genesis:
               service:
                 compute_units_per_relay: 1
                 id: rest
-                name: ""
             - endpoints:
                 - configs: []
                   rpc_type: REST
@@ -182,7 +177,6 @@ genesis:
               service:
                 compute_units_per_relay: 1
                 id: ollama
-                name: ""
           stake:
             # NB: This value should be exactly 1upokt smaller than the value in
             # `application1_stake_config.yaml` so that the stake command causes a state change.

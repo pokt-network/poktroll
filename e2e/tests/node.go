@@ -183,6 +183,9 @@ func (p *pocketdBin) runCurlCmd(rpcUrl, service, method, path, data string, args
 
 	if method == "POST" {
 		base = append(base, "--data", data)
+	} else if len(data) > 0 {
+		fmt.Println(fmt.Sprintf("WARN: data provided but not being included in the %s request", method))
+
 	}
 	args = append(base, args...)
 	commandStr := "curl " + strings.Join(args, " ") // Create a string representation of the command
