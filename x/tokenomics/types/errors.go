@@ -29,4 +29,5 @@ var (
 	ErrTokenomicsServiceNotFound              = sdkerrors.Register(ModuleName, 1120, "service not found")
 	ErrTokenomicsModuleMintFailed             = sdkerrors.Register(ModuleName, 1121, "failed to mint uPOKT to tokenomics module account")
 	ErrTokenomicsSendingMindRewards           = sdkerrors.Register(ModuleName, 1122, "failed to send minted rewards")
+	ErrTokenomicsSupplierModuleMintFailed     = sdkerrors.Register(ModuleName, 1123, "failed to mint uPOKT to supplier module account")
 )

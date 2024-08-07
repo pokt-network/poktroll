@@ -82,14 +82,16 @@ func TestProcessTokenLogicModules_HandleAppGoingIntoDebt(t *testing.T) {
 
 func TestSettleSessionAccounting_ValidAccounting(t *testing.T) {
 	// Create a service that can be registered in the application and used in the claims
-	service := sharedtypes.Service{
+	service := &sharedtypes.Service{
 		Id:                   "svc1",
 		Name:                 "svcName1",
 		ComputeUnitsPerRelay: 1,
 		OwnerAddress:         sample.AccAddress(),
 	}
 
-	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil, testkeeper.WithService(service))
+	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil, testkeeper.WithService(*service))
+	keepers.SetService(ctx, *service)
+
 	appModuleAddress := authtypes.NewModuleAddress(apptypes.ModuleName).String()
 	supplierModuleAddress := authtypes.NewModuleAddress(suppliertypes.ModuleName).String()
 
@@ -98,15 +100,6 @@ func TestSettleSessionAccounting_ValidAccounting(t *testing.T) {
 		ComputeUnitsToTokensMultiplier: 1,
 	})
 	require.NoError(t, err)
-
-	// Create a service that can be registered in the application and used in the claims
-	service := &sharedtypes.Service{
-		Id:                   "svc1",
-		Name:                 "svcName1",
-		ComputeUnitsPerRelay: 1,
-		OwnerAddress:         sample.AccAddress(),
-	}
-	keepers.SetService(ctx, *service)
 
 	// Add a new application with non-zero app stake end balance to assert against.
 	appStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
@@ -193,14 +186,16 @@ func TestSettleSessionAccounting_ValidAccounting(t *testing.T) {
 
 func TestSettleSessionAccounting_AppStakeTooLow(t *testing.T) {
 	// Create a service that can be registered in the application and used in the claims
-	service := sharedtypes.Service{
+	service := &sharedtypes.Service{
 		Id:                   "svc1",
 		Name:                 "svcName1",
 		ComputeUnitsPerRelay: 1,
 		OwnerAddress:         sample.AccAddress(),
 	}
 
-	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil, testkeeper.WithService(service))
+	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil, testkeeper.WithService(*service))
+	keepers.SetService(ctx, *service)
+
 	appModuleAddress := authtypes.NewModuleAddress(apptypes.ModuleName).String()
 	supplierModuleAddress := authtypes.NewModuleAddress(suppliertypes.ModuleName).String()
 
@@ -210,15 +205,6 @@ func TestSettleSessionAccounting_AppStakeTooLow(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	// Create a service that can be registered in the application and used in the claims
-	service := &sharedtypes.Service{
-		Id:                   "svc1",
-		Name:                 "svcName1",
-		ComputeUnitsPerRelay: 1,
-		OwnerAddress:         sample.AccAddress(),
-	}
-	keepers.SetService(ctx, *service)
-
 	// Add a new application
 	appStake := cosmostypes.NewCoin("upokt", math.NewInt(40000))
 	expectedAppEndStakeZeroAmount := cosmostypes.NewCoin("upokt", math.NewInt(0))
@@ -227,8 +213,6 @@ func TestSettleSessionAccounting_AppStakeTooLow(t *testing.T) {
 		Address:        sample.AccAddress(),
 		Stake:          &appStake,
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{Service: service}},
-		Address:        sample.AccAddress(),
-		Stake:          &appStake,
 	}
 	keepers.SetApplication(ctx, app)
 
@@ -347,9 +331,10 @@ func TestProcessTokenLogicModules_AppNotFound(t *testing.T) {
 }
 
 func TestSettleSessionAccounting_ServiceNotFound(t *testing.T) {
+	keeper, ctx, appAddr, supplierAddr, service := testkeeper.TokenomicsKeeperWithActorAddrs(t)
 
-	keeper, ctx, appAddr, supplierAddr := testkeeper.TokenomicsKeeperWithActorAddrs(t, nil)
-
+	numRelays := uint64(42)
+	numComputeUnits := numRelays * service.ComputeUnitsPerRelay
 	claim := prooftypes.Claim{
 		SupplierAddress: supplierAddr,
 		SessionHeader: &sessiontypes.SessionHeader{
@@ -361,7 +346,7 @@ func TestSettleSessionAccounting_ServiceNotFound(t *testing.T) {
 			SessionStartBlockHeight: 1,
 			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
 		},
-		RootHash: testproof.SmstRootWithSum(42),
+		RootHash: testproof.SmstRootWithSumAndCount(numComputeUnits, numRelays),
 	}
 
 	// Execute test function
