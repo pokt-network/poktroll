@@ -1,7 +1,6 @@
 package appgateserver
 
 import (
-	"fmt"
 	"net/url"
 	"strconv"
 
@@ -42,11 +41,6 @@ func (app *appGateServer) getRelayerUrl(
 			}
 		}
 	}
-
-	fmt.Println("-----------------")
-	fmt.Println("OLSH", requestUrlStr)
-	fmt.Println("OLSH", rpcType, endpoints)
-	fmt.Println("-----------------")
 
 	// Return an error if no relayer endpoints were found.
 	if len(matchingRPCTypeEndpoints) == 0 {

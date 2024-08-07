@@ -472,7 +472,7 @@ func (s *suite) TheUserWaitsForUnbondingPeriodToFinish(accName string) {
 	require.True(s, ok, "supplier %s not found", accName)
 
 	unbondingHeight := s.getSupplierUnbondingHeight(accName)
-	s.waitForBlockHeight(unbondingHeight)
+	s.waitForBlockHeight(unbondingHeight + 1) // Add 1 to ensure the unbonding block has been committed
 }
 
 func (s *suite) getStakedAmount(actorType, accName string) (int, bool) {

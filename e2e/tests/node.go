@@ -121,7 +121,8 @@ func (p *pocketdBin) RunCurlWithRetry(rpcUrl, service, path, data string, numRet
 		"internal error: upstream error",
 	}
 	for _, ephemeralError := range ephemeralEndToEndErrors {
-		if strings.Contains(res.Stderr, ephemeralError) {
+		if strings.Contains(res.Stdout, ephemeralError) {
+			fmt.Println("Retrying due to ephemeral error:", res.Stdout)
 			time.Sleep(10 * time.Millisecond)
 			return p.RunCurlWithRetry(rpcUrl, service, path, data, numRetries-1, args...)
 		}
@@ -164,7 +165,7 @@ func (p *pocketdBin) runPocketCmd(args ...string) (*commandResult, error) {
 }
 
 // runCurlPostCmd is a helper to run a command using the local pocketd binary with the flags provided
-func (p *pocketdBin) runCurlPostCmd(rpcUrl, service, path, jsonRpcData string, args ...string) (*commandResult, error) {
+func (p *pocketdBin) runCurlPostCmd(rpcUrl, service, path, data string, args ...string) (*commandResult, error) {
 	// Ensure that if a path is provided, it starts with a "/".
 	// This is required for RESTful APIs that use a path to identify resources.
 	// For JSON-RPC APIs, the resource path should be empty, so empty paths are allowed.
@@ -177,7 +178,7 @@ func (p *pocketdBin) runCurlPostCmd(rpcUrl, service, path, jsonRpcData string, a
 		"-sS",        // silent with error
 		"-X", "POST", // HTTP method
 		"-H", "Content-Type: application/json", // HTTP headers
-		"--data", jsonRpcData, urlStr, // POST data
+		"--data", data, urlStr, // POST data
 	}
 	args = append(base, args...)
 	commandStr := "curl " + strings.Join(args, " ") // Create a string representation of the command

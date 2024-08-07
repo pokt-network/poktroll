@@ -293,7 +293,7 @@ func TestTxClient_SignAndBroadcast_CheckTxError(t *testing.T) {
 	if os.Getenv("INCLUDE_FLAKY_TESTS") != "true" {
 		t.Skip("Skipping known flaky test: 'TestTxClient_SignAndBroadcast_CheckTxError'")
 	} else {
-		t.Log(`TODO_FLAKY: Skipping known flaky test: 'TestTxClient_SignAndBroadcast_CheckTxError'
+		t.Log(`TODO_FLAKY: Running known flaky test: 'TestTxClient_SignAndBroadcast_CheckTxError'
 
 Run the following command a few times to verify it passes at least once:
 

@@ -20,7 +20,7 @@ func TestCLI_GetSession(t *testing.T) {
 	if os.Getenv("INCLUDE_FLAKY_TESTS") != "true" {
 		t.Skip("Skipping known flaky test: 'TestRelayerProxy'")
 	} else {
-		t.Log(`TODO_FLAKY: Skipping known flaky test: 'TestCLI_GetSession'
+		t.Log(`TODO_FLAKY: Running known flaky test: 'TestCLI_GetSession'
 
 Run the following command a few times to verify it passes at least once:
 
