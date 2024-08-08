@@ -55,8 +55,8 @@ func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
 
 	// Initiate the supplier unstaking
 	unstakeMsg := &types.MsgUnstakeSupplier{
-		OwnerAddress: unstakingSupplierAddr,
-		Address:      unstakingSupplierAddr,
+		Signer:  unstakingSupplierAddr,
+		Address: unstakingSupplierAddr,
 	}
 	_, err = srv.UnstakeSupplier(ctx, unstakeMsg)
 	require.NoError(t, err)
@@ -107,8 +107,8 @@ func TestMsgServer_UnstakeSupplier_CancelUnbondingIfRestaked(t *testing.T) {
 
 	// Initiate the supplier unstaking
 	unstakeMsg := &types.MsgUnstakeSupplier{
-		OwnerAddress: supplierAddr,
-		Address:      supplierAddr,
+		Signer:  supplierAddr,
+		Address: supplierAddr,
 	}
 	_, err = srv.UnstakeSupplier(ctx, unstakeMsg)
 	require.NoError(t, err)
@@ -155,8 +155,8 @@ func TestMsgServer_UnstakeSupplier_FailIfNotStaked(t *testing.T) {
 
 	// Initiate the supplier unstaking
 	unstakeMsg := &types.MsgUnstakeSupplier{
-		OwnerAddress: supplierAddr,
-		Address:      supplierAddr,
+		Signer:  supplierAddr,
+		Address: supplierAddr,
 	}
 	_, err := srv.UnstakeSupplier(ctx, unstakeMsg)
 	require.Error(t, err)
@@ -181,8 +181,8 @@ func TestMsgServer_UnstakeSupplier_FailIfCurrentlyUnstaking(t *testing.T) {
 
 	// Initiate the supplier unstaking
 	unstakeMsg := &types.MsgUnstakeSupplier{
-		OwnerAddress: supplierAddr,
-		Address:      supplierAddr,
+		Signer:  supplierAddr,
+		Address: supplierAddr,
 	}
 	_, err = srv.UnstakeSupplier(ctx, unstakeMsg)
 	require.NoError(t, err)
@@ -197,7 +197,7 @@ func TestMsgServer_UnstakeSupplier_FailIfCurrentlyUnstaking(t *testing.T) {
 func createStakeMsg(supplierAddr string, stakeAmount int64) *types.MsgStakeSupplier {
 	initialStake := sdk.NewCoin("upokt", math.NewInt(stakeAmount))
 	return &types.MsgStakeSupplier{
-		Sender:       supplierAddr,
+		Signer:       supplierAddr,
 		OwnerAddress: supplierAddr,
 		Address:      supplierAddr,
 		Stake:        &initialStake,

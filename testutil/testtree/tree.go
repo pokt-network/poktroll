@@ -22,7 +22,7 @@ import (
 // relay is signed by the supplier and application respectively.
 func NewFilledSessionTree(
 	ctx context.Context, t *testing.T,
-	numRelays uint,
+	numRelays, computeUnitsPerRelay uint64,
 	supplierKeyUid, supplierAddr string,
 	sessionTreeHeader, reqHeader, resHeader *sessiontypes.SessionHeader,
 	keyRing keyring.Keyring,
@@ -36,7 +36,8 @@ func NewFilledSessionTree(
 	// Add numRelays of relays to the session tree.
 	FillSessionTree(
 		ctx, t,
-		sessionTree, numRelays,
+		sessionTree,
+		numRelays, computeUnitsPerRelay,
 		supplierKeyUid, supplierAddr,
 		reqHeader, resHeader,
 		keyRing,
@@ -82,7 +83,7 @@ func NewEmptySessionTree(
 func FillSessionTree(
 	ctx context.Context, t *testing.T,
 	sessionTree relayer.SessionTree,
-	numRelays uint,
+	numRelays, computeUnitsPerRelay uint64,
 	supplierKeyUid, supplierAddr string,
 	reqHeader, resHeader *sessiontypes.SessionHeader,
 	keyRing keyring.Keyring,
@@ -104,21 +105,9 @@ func FillSessionTree(
 		relayKey, err := relay.GetHash()
 		require.NoError(t, err)
 
-		// See FillSessionTreeExpectedComputeUnits below for explanation.
-		relayWeight := uint64(i)
-
-		err = sessionTree.Update(relayKey[:], relayBz, relayWeight)
+		err = sessionTree.Update(relayKey[:], relayBz, computeUnitsPerRelay)
 		require.NoError(t, err)
 	}
-}
-
-// FillSessionTreeExpectedComputeUnits returns the number of expected compute units
-// to covert numRelays (in a test scenario) whereby every subsequent relay costs
-// an addition compute unit.
-// This is basic random approach selected for testing purposes. Don't think too
-// deeply about it.
-func FillSessionTreeExpectedComputeUnits(numRelays uint) uint64 {
-	return uint64(numRelays * (numRelays - 1) / 2)
 }
 
 // NewProof creates a new proof structure.

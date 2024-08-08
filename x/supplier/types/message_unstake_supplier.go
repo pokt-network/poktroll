@@ -6,15 +6,15 @@ const TypeMsgUnstakeSupplier = "unstake_supplier"
 
 var _ sdk.Msg = (*MsgUnstakeSupplier)(nil)
 
-func NewMsgUnstakeSupplier(ownerAddress, address string) *MsgUnstakeSupplier {
+func NewMsgUnstakeSupplier(signerAddress, address string) *MsgUnstakeSupplier {
 	return &MsgUnstakeSupplier{
-		OwnerAddress: ownerAddress,
-		Address:      address,
+		Signer:  signerAddress,
+		Address: address,
 	}
 }
 
 func (msg *MsgUnstakeSupplier) ValidateBasic() error {
-	if _, err := sdk.AccAddressFromBech32(msg.OwnerAddress); err != nil {
+	if _, err := sdk.AccAddressFromBech32(msg.Signer); err != nil {
 		return ErrSupplierInvalidAddress.Wrapf("invalid address address (%s)", err)
 	}
 

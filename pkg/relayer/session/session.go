@@ -419,6 +419,8 @@ func (rs *relayerSessionsManager) mapAddMinedRelayToSessionTree(
 		With("application", smst.GetSessionHeader().GetApplicationAddress()).
 		With("supplier_address", smst.GetSupplierAddress().String())
 
+	// TODO_BETA(#705): Make sure to update the weight of each relay to the value
+	//                  associated with `relayDifficultyTargetHash` in the `miner/miner.go`.
 	if err := smst.Update(relay.Hash, relay.Bytes, 1); err != nil {
 		// TODO_IMPROVE: log additional info?
 		logger.Error().Err(err).Msg("failed to update smt")
