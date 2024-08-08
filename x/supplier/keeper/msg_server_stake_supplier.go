@@ -62,7 +62,8 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 			)
 		}
 
-		// Ensure that the operator addresses cannot be changed.
+		// Ensure that the operator addresses cannot be changed. This is because changing
+		// it mid-session invalidates the current session.
 		if !supplier.HasOperator(msg.Address) {
 			logger.Error("updating the supplier's operator address forbidden")
 

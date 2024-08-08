@@ -36,6 +36,7 @@ import (
 	"github.com/pokt-network/poktroll/testutil/yaml"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	shared "github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -359,15 +360,20 @@ func (s *suite) TheServiceRegisteredForApplicationHasAComputeUnitsPerRelayOf(ser
 	app, ok := accNameToAppMap[appName]
 	require.True(s, ok, "application %s not found", appName)
 
+	// CHeck if the application is registered for the service
+	isRegistered := false
 	for _, serviceConfig := range app.ServiceConfigs {
 		if serviceConfig.Service.Id == serviceId {
-			cupr, err := strconv.ParseUint(cuprStr, 10, 64)
-			require.NoError(s, err)
-			require.Equal(s, cupr, serviceConfig.Service.ComputeUnitsPerRelay)
-			return
+			isRegistered = true
+			break
 		}
 	}
-	s.Fatalf("ERROR: service %s is not registered for application %s", serviceId, appName)
+	require.True(s, isRegistered, "application %s is not registered for service %s", appName, serviceId)
+
+	cuprActual := s.getServiceComputeUnitsPerRelay(serviceId)
+	cuprExpected, err := strconv.ParseUint(cuprStr, 10, 64)
+	require.NoError(s, err)
+	require.Equal(s, cuprExpected, cuprActual, "compute units per relay for service %s is not %d", serviceId, cuprExpected)
 }
 
 func (s *suite) TheUserVerifiesTheForAccountIsNotStaked(actorType, accName string) {
@@ -680,6 +686,25 @@ func (s *suite) getSupplierUnbondingHeight(accName string) int64 {
 	s.cdc.MustUnmarshalJSON(responseBz, &resp)
 	unbondingHeight := shared.GetSupplierUnbondingHeight(&resp.Params, supplier)
 	return unbondingHeight
+}
+
+// getServiceComputeUnitsPerRelay returns the compute units per relay for a given service ID
+func (s *suite) getServiceComputeUnitsPerRelay(serviceId string) uint64 {
+	args := []string{
+		"query",
+		"service",
+		"show-service",
+		serviceId,
+		"--output=json",
+	}
+
+	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, args...)
+	require.NoError(s, err, "error getting shared module params")
+
+	var resp servicetypes.QueryGetServiceResponse
+	responseBz := []byte(strings.TrimSpace(res.Stdout))
+	s.cdc.MustUnmarshalJSON(responseBz, &resp)
+	return resp.Service.ComputeUnitsPerRelay
 }
 
 // accBalanceKey is a helper function to create a key to store the balance
