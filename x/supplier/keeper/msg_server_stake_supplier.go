@@ -23,6 +23,7 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 	logger := k.Logger().With("method", "StakeSupplier")
 	logger.Info(fmt.Sprintf("About to stake supplier with msg: %v", msg))
 
+	// ValidateBasic also validates that the msg signer is the owner or operator of the supplier
 	if err := msg.ValidateBasic(); err != nil {
 		logger.Error(fmt.Sprintf("invalid MsgStakeSupplier: %v", msg))
 		return nil, err
@@ -45,43 +46,29 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 		logger.Info(fmt.Sprintf("Supplier not found. Creating new supplier for address %q", msg.Address))
 		supplier = k.createSupplier(ctx, msg)
 
-		// Ensure that only the owner can stake a new supplier.
-		if err = supplier.EnsureOwner(msg.Sender); err != nil {
-			logger.Error(fmt.Sprintf(
-				"owner address %q in the message does not match the msg sender address %q",
-				msg.OwnerAddress,
-				msg.Sender,
-			))
-
-			return nil, err
-		}
-
 		coinsToEscrow = *msg.Stake
 	} else {
 		logger.Info(fmt.Sprintf("Supplier found. About to try updating supplier with address %q", msg.Address))
 
-		// Ensure that only the operator can update the supplier info.
-		if err = supplier.EnsureOperator(msg.Sender); err != nil {
-			logger.Error(fmt.Sprintf(
-				"operator address %q in the message does not match the msg sender address %q",
-				msg.Address,
-				msg.Sender,
-			))
-			return nil, err
+		// Ensure that only the owner can change the OwnerAddress.
+		// (i.e. fail if owner address changed and the owner is not the msg signer)
+		if !supplier.HasOwner(msg.OwnerAddress) && !msg.IsSigner(supplier.OwnerAddress) {
+			logger.Error("only the supplier owner is allowed to update the owner address")
+
+			return nil, sharedtypes.ErrSharedUnauthorizedSupplierUpdate.Wrapf(
+				"signer %q is not allowed to update the owner address %q",
+				msg.Signer,
+				supplier.OwnerAddress,
+			)
 		}
 
-		// Ensure that the owner addresses is not changed.
-		if err = supplier.EnsureOwner(msg.OwnerAddress); err != nil {
-			logger.Error("updating the supplier's owner address forbidden")
-
-			return nil, err
-		}
-
-		// Ensure that the operator addresses is not changed.
-		if err = supplier.EnsureOperator(msg.Address); err != nil {
+		// Ensure that the operator addresses cannot be changed.
+		if !supplier.HasOperator(msg.Address) {
 			logger.Error("updating the supplier's operator address forbidden")
 
-			return nil, err
+			return nil, sharedtypes.ErrSharedUnauthorizedSupplierUpdate.Wrap(
+				"updating the operator address is forbidden, unstake then stake again in order to change the operator address",
+			)
 		}
 
 		currSupplierStake := *supplier.Stake

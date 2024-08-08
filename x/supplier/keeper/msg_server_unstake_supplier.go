@@ -8,6 +8,7 @@ import (
 
 	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/shared"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
@@ -37,15 +38,14 @@ func (k msgServer) UnstakeSupplier(
 		return nil, types.ErrSupplierNotFound
 	}
 
-	// Ensure that the message sender is the supplier owner.
-	if err := supplier.EnsureOwner(msg.OwnerAddress); err != nil {
-		logger.Error(fmt.Sprintf(
-			"owner address %q in the message does not match the supplier's owner address %q",
-			msg.OwnerAddress,
-			supplier.OwnerAddress,
-		))
-
-		return nil, err
+	// Ensure the singer address matches the owner address or the operator address.
+	if !supplier.HasOperator(msg.Signer) && supplier.HasOwner(msg.Signer) {
+		logger.Error("only the supplier owner or operator is allowed to unstake the supplier")
+		return nil, sharedtypes.ErrSharedUnauthorizedSupplierUpdate.Wrapf(
+			"signer %q is not allowed to unstake supplier %v",
+			msg.Signer,
+			supplier,
+		)
 	}
 
 	logger.Info(fmt.Sprintf("Supplier found. Unstaking supplier for address %s", msg.Address))
