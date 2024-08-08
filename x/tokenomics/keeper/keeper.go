@@ -31,7 +31,6 @@ type Keeper struct {
 	sharedKeeper      types.SharedKeeper
 	sessionKeeper     types.SessionKeeper
 	serviceKeeper     types.ServiceKeeper
-	supplierKeeper    types.SupplierKeeper
 
 	sharedQuerier client.SharedQueryClient
 }
@@ -50,7 +49,6 @@ func NewKeeper(
 	sharedKeeper types.SharedKeeper,
 	sessionKeeper types.SessionKeeper,
 	serviceKeeper types.ServiceKeeper,
-	supplierKeeper types.SupplierKeeper,
 ) Keeper {
 	if _, err := sdk.AccAddressFromBech32(authority); err != nil {
 		panic(fmt.Sprintf("invalid authority address: %s", authority))
@@ -72,7 +70,6 @@ func NewKeeper(
 		sharedKeeper:      sharedKeeper,
 		sessionKeeper:     sessionKeeper,
 		serviceKeeper:     serviceKeeper,
-		supplierKeeper:    supplierKeeper,
 
 		sharedQuerier: sharedQuerier,
 	}

@@ -186,10 +186,6 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 	mockSharedKeeper := mocks.NewMockSharedKeeper(ctrl)
 	mockSharedKeeper.EXPECT().GetProofWindowCloseHeight(gomock.Any(), gomock.Any()).AnyTimes()
 
-	// Mock the supplier keeper
-	mockSupplierKeeper := mocks.NewMockSupplierKeeper(ctrl)
-	mockSupplierKeeper.EXPECT().GetSupplier(gomock.Any(), gomock.Any()).AnyTimes()
-
 	// Mock the session keeper
 	mockSessionKeeper := mocks.NewMockSessionKeeper(ctrl)
 
@@ -218,7 +214,6 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		mockSharedKeeper,
 		mockSessionKeeper,
 		mockServiceKeeper,
-		mockSupplierKeeper,
 	)
 
 	sdkCtx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
@@ -416,7 +411,6 @@ func NewTokenomicsModuleKeepers(
 		sharedKeeper,
 		sessionKeeper,
 		serviceKeeper,
-		supplierKeeper,
 	)
 
 	require.NoError(t, tokenomicsKeeper.SetParams(sdkCtx, tokenomicstypes.DefaultParams()))
