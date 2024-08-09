@@ -2,14 +2,6 @@
 
 SHELL = /bin/sh
 
-# TODO_IMPROVE: Look into how we can we source `.env.dev` and have everything
-# here work.
-
-# ifneq (,$(wildcard .env))
-# include .env
-# export $(shell sed 's/=.*//' .env)
-# endif
-
 POKTROLLD_HOME ?= ./localnet/poktrolld
 POCKET_NODE ?= tcp://127.0.0.1:26657 # The pocket node (validator in the localnet context)
 TESTNET_RPC ?= https://testnet-validated-validator-rpc.poktroll.com/ # TestNet RPC endpoint for validator maintained by Grove. Needs to be update if there's another "primary" testnet.
@@ -433,6 +425,13 @@ test_all: warn_flaky_tests check_go_version ## Run all go tests showing detailed
 test_all_with_integration: check_go_version ## Run all go tests, including those with the integration
 	go test -count=1 -v -race -tags test,integration ./...
 
+# We are explicitly using an env variable rather than a build tag to keep flaky
+# tests in line with non flaky tests and use it as a way to easily turn them
+# on and off without maintaining extra files.
+.PHONY: test_all_with_integration_and_flaky
+test_all_with_integration_and_flaky: check_go_version ## Run all go tests, including those with the integration and flaky tests
+	INCLUDE_FLAKY_TESTS=true go test -count=1 -v -race -tags test,integration ./...
+
 .PHONY: test_integration
 test_integration: check_go_version ## Run only the in-memory integration "unit" tests
 	go test -count=1 -v -race -tags test,integration ./tests/integration/...
@@ -753,13 +752,13 @@ acc_balance_query: ## Query the balance of the account specified (make acc_balan
 
 .PHONY: acc_balance_query_modules
 acc_balance_query_modules: ## Query the balance of the network level module accounts
-	@echo "### Application ###"
+	@echo "### Application Module ###\n"
 	make acc_balance_query ACC=$(APPLICATION_MODULE_ADDRESS)
-	@echo "### Supplier ###"
+	@echo "### Supplier Module ###\n"
 	make acc_balance_query ACC=$(SUPPLIER_MODULE_ADDRESS)
-	@echo "### Gateway ###"
+	@echo "### Gateway Module ###\n"
 	make acc_balance_query ACC=$(GATEWAY_MODULE_ADDRESS)
-	@echo "### Service ###"
+	@echo "### Service Module ###\n"
 	make acc_balance_query ACC=$(SERVICE_MODULE_ADDRESS)
 
 .PHONY: acc_balance_query_app1

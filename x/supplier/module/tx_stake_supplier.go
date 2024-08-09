@@ -38,7 +38,7 @@ $ poktrolld tx supplier stake-supplier --config stake_config.yaml --keyring-back
 				return err
 			}
 
-			supplierStakeConfigs, err := config.ParseSupplierConfigs(configContent)
+			supplierStakeConfigs, err := config.ParseSupplierConfigs(cmd.Context(), configContent)
 			if err != nil {
 				return err
 			}

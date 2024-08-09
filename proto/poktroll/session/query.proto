@@ -36,7 +36,7 @@ message QueryParamsResponse {
 }
 
 message QueryGetSessionRequest {
-  string application_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the application using cosmos' ScalarDescriptor to ensure deterministic encoding
+  string application_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the application.
   poktroll.shared.Service service = 2; // The service to query the session for
   int64 block_height = 3; // The block height to query the session for
 }

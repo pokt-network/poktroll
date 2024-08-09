@@ -101,6 +101,37 @@ func (p *pocketdBin) RunCurl(rpcUrl, service, path, data string, args ...string)
 	return p.runCurlPostCmd(rpcUrl, service, path, data, args...)
 }
 
+// RunCurlWithRetry runs a curl command on the local machine with multiple retries.
+// It also accounts for an ephemeral error that may occur due to DNS resolution such as "no such host".
+func (p *pocketdBin) RunCurlWithRetry(rpcUrl, service, path, data string, numRetries uint8, args ...string) (*commandResult, error) {
+	// No more retries left
+	if numRetries <= 0 {
+		return p.RunCurl(rpcUrl, service, path, data, args...)
+	}
+	// Run the curl command
+	res, err := p.RunCurl(rpcUrl, service, path, data, args...)
+	if err != nil {
+		return p.RunCurlWithRetry(rpcUrl, service, path, data, numRetries-1, args...)
+	}
+
+	// TODO_HACK: This is a list of common flaky / ephemeral errors that can occur
+	// during end-to-end tests. If any of them are hit, we retry the command.
+	ephemeralEndToEndErrors := []string{
+		"no such host",
+		"internal error: upstream error",
+	}
+	for _, ephemeralError := range ephemeralEndToEndErrors {
+		if strings.Contains(res.Stdout, ephemeralError) {
+			fmt.Println("Retrying due to ephemeral error:", res.Stdout)
+			time.Sleep(10 * time.Millisecond)
+			return p.RunCurlWithRetry(rpcUrl, service, path, data, numRetries-1, args...)
+		}
+	}
+
+	// Return a successful result
+	return res, nil
+}
+
 // runPocketCmd is a helper to run a command using the local pocketd binary with the flags provided
 func (p *pocketdBin) runPocketCmd(args ...string) (*commandResult, error) {
 	base := []string{"--home", defaultHome}
@@ -135,7 +166,6 @@ func (p *pocketdBin) runPocketCmd(args ...string) (*commandResult, error) {
 
 // runCurlPostCmd is a helper to run a command using the local pocketd binary with the flags provided
 func (p *pocketdBin) runCurlPostCmd(rpcUrl, service, path, data string, args ...string) (*commandResult, error) {
-	dataStr := fmt.Sprintf("%s", data)
 	// Ensure that if a path is provided, it starts with a "/".
 	// This is required for RESTful APIs that use a path to identify resources.
 	// For JSON-RPC APIs, the resource path should be empty, so empty paths are allowed.
@@ -148,7 +178,7 @@ func (p *pocketdBin) runCurlPostCmd(rpcUrl, service, path, data string, args ...
 		"-sS",        // silent with error
 		"-X", "POST", // HTTP method
 		"-H", "Content-Type: application/json", // HTTP headers
-		"--data", dataStr, urlStr, // POST data
+		"--data", data, urlStr, // POST data
 	}
 	args = append(base, args...)
 	commandStr := "curl " + strings.Join(args, " ") // Create a string representation of the command

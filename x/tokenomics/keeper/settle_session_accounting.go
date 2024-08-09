@@ -114,8 +114,9 @@ func (k Keeper) SettleSessionAccounting(
 		return tokenomicstypes.ErrTokenomicsApplicationNotFound
 	}
 
-	computeUnitsPerRelay, err := k.getComputeUnitsPerRelayFromApplication(application, sessionHeader.Service.Id)
+	computeUnitsPerRelay, err := k.getComputeUnitsPerRelayForService(ctx, sessionHeader.Service.Id)
 	if err != nil {
+		logger.Warn(fmt.Sprintf("service with address %q not found", sessionHeader.Service.Id))
 		return err
 	}
 
@@ -239,26 +240,12 @@ func relayCountToCoin(numRelays, computeUnitsPerRelay uint64, computeUnitsToToke
 	return cosmostypes.NewCoin(volatile.DenomuPOKT, upoktAmount), nil
 }
 
-// getComputeUnitsPerRelayFromApplication retrieves the ComputeUnitsPerRelay for a given service from the application's service configs
-// TODO_REFACTOR: Rename this to getComputeUnitsPerRelayForService(serviceId) after
-// adding a dependency on the service module to the tokenomics module so it is cleaner
-// and more idiomatic, leveraging the `GetService` function directly. Would require updating logs below.
-func (k Keeper) getComputeUnitsPerRelayFromApplication(application apptypes.Application, serviceID string) (cupr uint64, err error) {
-	logger := k.Logger().With("method", "getComputeUnitsPerRelayFromApplication")
-
-	serviceConfigs := application.ServiceConfigs
-	if len(serviceConfigs) == 0 {
-		logger.Warn(fmt.Sprintf("application with address %q has no service configs", application.Address))
-		return 0, tokenomicstypes.ErrTokenomicsApplicationNoServiceConfigs
+// getComputeUnitsPerRelayForService retrieves the ComputeUnitsPerRelay for a given service using the service module.
+func (k Keeper) getComputeUnitsPerRelayForService(ctx context.Context, serviceID string) (cupr uint64, err error) {
+	service, found := k.serviceKeeper.GetService(ctx, serviceID)
+	if !found {
+		return 0, tokenomicstypes.ErrTokenomicsServiceNotFound
 	}
 
-	for _, sc := range serviceConfigs {
-		service := sc.GetService()
-		if service.Id == serviceID {
-			return service.ComputeUnitsPerRelay, nil
-		}
-	}
-
-	logger.Warn(fmt.Sprintf("service with ID %q not found in application with address %q", serviceID, application.Address))
-	return 0, tokenomicstypes.ErrTokenomicsApplicationNoServiceConfigs
+	return service.ComputeUnitsPerRelay, nil
 }
