@@ -35,12 +35,12 @@ func (msg *MsgStakeSupplier) ValidateBasic() error {
 
 	// Validate the address
 	if _, err := sdk.AccAddressFromBech32(msg.Address); err != nil {
-		return ErrSupplierInvalidAddress.Wrapf("invalid supplier address %s; (%v)", msg.Address, err)
+		return ErrSupplierInvalidAddress.Wrapf("invalid operator address %s; (%v)", msg.Address, err)
 	}
 
 	// Validate the signer address
 	if _, err := sdk.AccAddressFromBech32(msg.Signer); err != nil {
-		return ErrSupplierInvalidAddress.Wrapf("invalid supplier address %s; (%v)", msg.Address, err)
+		return ErrSupplierInvalidAddress.Wrapf("invalid signer address %s; (%v)", msg.Address, err)
 	}
 
 	// TODO_MAINNET: Centralize stake related verification and share across different
