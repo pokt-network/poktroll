@@ -49,7 +49,7 @@ message MsgStakeSupplier {
 
   string signer = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the message signer (i.e. owner or operator)
   string owner_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the owner (i.e. custodial, staker)
-  string address = 3 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the operator (i.e. provider, non-custodial)
+  string operator_address = 3 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the operator (i.e. provider, non-custodial)
   cosmos.base.v1beta1.Coin stake = 4; // The total amount of uPOKT the supplier has staked. Must be ≥ to the current amount that the supplier has staked (if any)
   repeated poktroll.shared.SupplierServiceConfig services = 5; // The list of services this supplier is staked to provide service for
 }
@@ -60,7 +60,7 @@ message MsgUnstakeSupplier {
   option (cosmos.msg.v1.signer) = "signer";
 
   string signer = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the message signer (i.e. owner or operator)
-  string address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the operator (i.e. provider, non-custodial)
+  string operator_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the operator (i.e. provider, non-custodial)
 }
 
 message MsgUnstakeSupplierResponse {}

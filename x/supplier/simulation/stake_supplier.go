@@ -20,7 +20,7 @@ func SimulateMsgStakeSupplier(
 	) (simtypes.OperationMsg, []simtypes.FutureOperation, error) {
 		simAccount, _ := simtypes.RandomAcc(r, accs)
 		msg := &types.MsgStakeSupplier{
-			Address: simAccount.Address.String(),
+			OperatorAddress: simAccount.Address.String(),
 			// TODO: Update all stake message fields
 		}
 

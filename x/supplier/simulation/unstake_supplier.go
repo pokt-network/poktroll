@@ -20,7 +20,7 @@ func SimulateMsgUnstakeSupplier(
 	) (simtypes.OperationMsg, []simtypes.FutureOperation, error) {
 		simAccount, _ := simtypes.RandomAcc(r, accs)
 		msg := &types.MsgUnstakeSupplier{
-			Address: simAccount.Address.String(),
+			OperatorAddress: simAccount.Address.String(),
 		}
 
 		// TODO: Handling the UnstakeSupplier simulation

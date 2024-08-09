@@ -73,11 +73,11 @@ var (
 		},
 	}
 
-	TestSupplierUrl     = "http://olshansky.info"
-	TestSupplierAddress = sample.AccAddress()
-	TestSupplier        = sharedtypes.Supplier{
-		Address: TestSupplierAddress,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
+	TestSupplierUrl             = "http://olshansky.info"
+	TestSupplierOperatorAddress = sample.AccAddress()
+	TestSupplier                = sharedtypes.Supplier{
+		OperatorAddress: TestSupplierOperatorAddress,
+		Stake:           &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
 				Service: &sharedtypes.Service{Id: TestServiceId1},

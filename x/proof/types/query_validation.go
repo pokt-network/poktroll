@@ -14,9 +14,9 @@ import (
 
 // ValidateBasic performs basic (non-state-dependant) validation on a QueryGetClaimRequest.
 func (query *QueryGetClaimRequest) ValidateBasic() error {
-	// Validate the supplier address
-	if _, err := sdk.AccAddressFromBech32(query.SupplierAddress); err != nil {
-		return ErrProofInvalidAddress.Wrapf("invalid supplier address for claim being retrieved %s; (%v)", query.SupplierAddress, err)
+	// Validate the supplier operator address
+	if _, err := sdk.AccAddressFromBech32(query.SupplierOperatorAddress); err != nil {
+		return ErrProofInvalidAddress.Wrapf("invalid supplier operator address for claim being retrieved %s; (%v)", query.SupplierOperatorAddress, err)
 	}
 
 	if query.SessionId == "" {
@@ -29,9 +29,9 @@ func (query *QueryGetClaimRequest) ValidateBasic() error {
 // ValidateBasic performs basic (non-state-dependant) validation on a QueryAllClaimsRequest.
 func (query *QueryAllClaimsRequest) ValidateBasic() error {
 	switch filter := query.Filter.(type) {
-	case *QueryAllClaimsRequest_SupplierAddress:
-		if _, err := sdk.AccAddressFromBech32(filter.SupplierAddress); err != nil {
-			return ErrProofInvalidAddress.Wrapf("invalid supplier address for claims being retrieved %s; (%v)", filter.SupplierAddress, err)
+	case *QueryAllClaimsRequest_SupplierOperatorAddress:
+		if _, err := sdk.AccAddressFromBech32(filter.SupplierOperatorAddress); err != nil {
+			return ErrProofInvalidAddress.Wrapf("invalid supplier operator address for claims being retrieved %s; (%v)", filter.SupplierOperatorAddress, err)
 		}
 
 	case *QueryAllClaimsRequest_SessionId:
@@ -47,9 +47,9 @@ func (query *QueryAllClaimsRequest) ValidateBasic() error {
 }
 
 func (query *QueryGetProofRequest) ValidateBasic() error {
-	// Validate the supplier address
-	if _, err := sdk.AccAddressFromBech32(query.SupplierAddress); err != nil {
-		return ErrProofInvalidAddress.Wrapf("invalid supplier address for proof being retrieved %s; (%v)", query.SupplierAddress, err)
+	// Validate the supplier operator address
+	if _, err := sdk.AccAddressFromBech32(query.SupplierOperatorAddress); err != nil {
+		return ErrProofInvalidAddress.Wrapf("invalid supplier operator address for proof being retrieved %s; (%v)", query.SupplierOperatorAddress, err)
 	}
 
 	if query.SessionId == "" {
@@ -64,9 +64,9 @@ func (query *QueryAllProofsRequest) ValidateBasic() error {
 	logger := polylog.Ctx(context.TODO())
 
 	switch filter := query.Filter.(type) {
-	case *QueryAllProofsRequest_SupplierAddress:
-		if _, err := sdk.AccAddressFromBech32(filter.SupplierAddress); err != nil {
-			return ErrProofInvalidAddress.Wrapf("invalid supplier address for proofs being retrieved %s; (%v)", filter.SupplierAddress, err)
+	case *QueryAllProofsRequest_SupplierOperatorAddress:
+		if _, err := sdk.AccAddressFromBech32(filter.SupplierOperatorAddress); err != nil {
+			return ErrProofInvalidAddress.Wrapf("invalid supplier operator address for proofs being retrieved %s; (%v)", filter.SupplierOperatorAddress, err)
 		}
 
 	case *QueryAllProofsRequest_SessionId:

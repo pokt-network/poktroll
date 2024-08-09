@@ -60,16 +60,16 @@ func (k Keeper) EnsureValidProof(
 ) error {
 	logger := k.Logger().With("method", "ValidateProof")
 
-	// Retrieve the supplier's public key.
-	supplierAddr := proof.SupplierAddress
-	supplierPubKey, err := k.accountQuerier.GetPubKeyFromAddress(ctx, supplierAddr)
+	// Retrieve the supplier operator's public key.
+	supplierOperatorAddr := proof.SupplierOperatorAddress
+	supplierOperatorPubKey, err := k.accountQuerier.GetPubKeyFromAddress(ctx, supplierOperatorAddr)
 	if err != nil {
 		return err
 	}
 
 	// Validate the session header.
 	var onChainSession *sessiontypes.Session
-	onChainSession, err = k.queryAndValidateSessionHeader(ctx, proof.SessionHeader, supplierAddr)
+	onChainSession, err = k.queryAndValidateSessionHeader(ctx, proof.SessionHeader, supplierOperatorAddr)
 	if err != nil {
 		return err
 	}
@@ -82,7 +82,7 @@ func (k Keeper) EnsureValidProof(
 
 	// Validate proof message commit height is within the respective session's
 	// proof submission window using the on-chain session header.
-	if err = k.validateProofWindow(ctx, sessionHeader, supplierAddr); err != nil {
+	if err = k.validateProofWindow(ctx, sessionHeader, supplierOperatorAddr); err != nil {
 		return err
 	}
 
@@ -118,11 +118,11 @@ func (k Keeper) EnsureValidProof(
 	}
 	logger.Debug("successfully validated relay request")
 
-	// Make sure that the supplier address in the proof matches the one in the relay request.
-	if supplierAddr != relayReq.Meta.SupplierAddress {
+	// Make sure that the supplier operator address in the proof matches the one in the relay request.
+	if supplierOperatorAddr != relayReq.Meta.SupplierOperatorAddress {
 		return types.ErrProofSupplierMismatch.Wrapf("supplier type mismatch")
 	}
-	logger.Debug("the proof supplier address matches the relay request supplier address")
+	logger.Debug("the proof supplier operator address matches the relay request supplier operator address")
 
 	// Basic validation of the relay response.
 	relayRes := relay.GetRes()
@@ -150,7 +150,7 @@ func (k Keeper) EnsureValidProof(
 	logger.Debug("successfully verified relay request signature")
 
 	// Verify the relay response's signature.
-	if err = relayRes.VerifySupplierSignature(supplierPubKey); err != nil {
+	if err = relayRes.VerifySupplierOperatorSignature(supplierOperatorPubKey); err != nil {
 		return err
 	}
 	logger.Debug("successfully verified relay response signature")
@@ -179,7 +179,7 @@ func (k Keeper) EnsureValidProof(
 		ctx,
 		sparseMerkleClosestProof,
 		sessionHeader,
-		supplierAddr,
+		supplierOperatorAddr,
 	); err != nil {
 		return err
 	}
@@ -187,7 +187,7 @@ func (k Keeper) EnsureValidProof(
 
 	// Retrieve the corresponding claim for the proof submitted so it can be
 	// used in the proof validation below.
-	claim, err := k.queryAndValidateClaimForProof(ctx, sessionHeader, supplierAddr)
+	claim, err := k.queryAndValidateClaimForProof(ctx, sessionHeader, supplierOperatorAddr)
 	if err != nil {
 		return err
 	}
@@ -211,7 +211,7 @@ func (k Keeper) validateClosestPath(
 	ctx context.Context,
 	proof *smt.SparseMerkleClosestProof,
 	sessionHeader *sessiontypes.SessionHeader,
-	supplierAddr string,
+	supplierOperatorAddr string,
 ) error {
 	// The RelayMiner has to wait until the submit claim and proof windows is are open
 	// in order to to create the claim and submit claims and proofs, respectively.
@@ -229,7 +229,7 @@ func (k Keeper) validateClosestPath(
 	earliestSupplierProofCommitHeight, err := k.sharedQuerier.GetEarliestSupplierProofCommitHeight(
 		ctx,
 		sessionHeader.GetSessionEndBlockHeight(),
-		supplierAddr,
+		supplierOperatorAddr,
 	)
 	if err != nil {
 		return err
@@ -257,23 +257,23 @@ func (k Keeper) validateClosestPath(
 }
 
 // queryAndValidateClaimForProof ensures that a claim corresponding to the given
-// proof's session exists & has a matching supplier address and session header,
+// proof's session exists & has a matching supplier operator address and session header,
 // it then returns the corresponding claim if the validation is successful.
 func (k Keeper) queryAndValidateClaimForProof(
 	ctx context.Context,
 	sessionHeader *sessiontypes.SessionHeader,
-	supplierAddr string,
+	supplierOperatorAddr string,
 ) (*types.Claim, error) {
 	sessionId := sessionHeader.SessionId
-	// NB: no need to assert the testSessionId or supplier address as it is retrieved
+	// NB: no need to assert the testSessionId or supplier operator address as it is retrieved
 	// by respective values of the given proof. I.e., if the claim exists, then these
 	// values are guaranteed to match.
-	foundClaim, found := k.GetClaim(ctx, sessionId, supplierAddr)
+	foundClaim, found := k.GetClaim(ctx, sessionId, supplierOperatorAddr)
 	if !found {
 		return nil, types.ErrProofClaimNotFound.Wrapf(
 			"no claim found for session ID %q and supplier %q",
 			sessionId,
-			supplierAddr,
+			supplierOperatorAddr,
 		)
 	}
 

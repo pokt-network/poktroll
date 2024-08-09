@@ -22,7 +22,7 @@ func TestClaimQuerySingle(t *testing.T) {
 	keeper, ctx := keepertest.ProofKeeper(t)
 	claims := createNClaims(keeper, ctx, 2)
 
-	var wrongSupplierAddr = sample.AccAddress()
+	var wrongSupplierOperatorAddr = sample.AccAddress()
 	tests := []struct {
 		desc string
 
@@ -35,8 +35,8 @@ func TestClaimQuerySingle(t *testing.T) {
 			desc: "First Claim",
 
 			request: &types.QueryGetClaimRequest{
-				SessionId:       claims[0].GetSessionHeader().GetSessionId(),
-				SupplierAddress: claims[0].SupplierAddress,
+				SessionId:               claims[0].GetSessionHeader().GetSessionId(),
+				SupplierOperatorAddress: claims[0].SupplierOperatorAddress,
 			},
 
 			response:    &types.QueryGetClaimResponse{Claim: claims[0]},
@@ -46,8 +46,8 @@ func TestClaimQuerySingle(t *testing.T) {
 			desc: "Second Claim",
 
 			request: &types.QueryGetClaimRequest{
-				SessionId:       claims[1].GetSessionHeader().GetSessionId(),
-				SupplierAddress: claims[1].SupplierAddress,
+				SessionId:               claims[1].GetSessionHeader().GetSessionId(),
+				SupplierOperatorAddress: claims[1].SupplierOperatorAddress,
 			},
 
 			response:    &types.QueryGetClaimResponse{Claim: claims[1]},
@@ -57,8 +57,8 @@ func TestClaimQuerySingle(t *testing.T) {
 			desc: "Claim Not Found - Random SessionId",
 
 			request: &types.QueryGetClaimRequest{
-				SessionId:       "not a real session id",
-				SupplierAddress: claims[0].GetSupplierAddress(),
+				SessionId:               "not a real session id",
+				SupplierOperatorAddress: claims[0].GetSupplierOperatorAddress(),
 			},
 
 			expectedErr: status.Error(
@@ -67,16 +67,16 @@ func TestClaimQuerySingle(t *testing.T) {
 					// TODO_CONSIDERATION: factor out error message format strings to constants.
 					"session ID %q and supplier %q",
 					"not a real session id",
-					claims[0].GetSupplierAddress(),
+					claims[0].GetSupplierOperatorAddress(),
 				).Error(),
 			),
 		},
 		{
-			desc: "Claim Not Found - Wrong Supplier Address",
+			desc: "Claim Not Found - Wrong Supplier Operator Address",
 
 			request: &types.QueryGetClaimRequest{
-				SessionId:       claims[0].GetSessionHeader().GetSessionId(),
-				SupplierAddress: wrongSupplierAddr,
+				SessionId:               claims[0].GetSessionHeader().GetSessionId(),
+				SupplierOperatorAddress: wrongSupplierOperatorAddr,
 			},
 
 			expectedErr: status.Error(
@@ -84,7 +84,7 @@ func TestClaimQuerySingle(t *testing.T) {
 				types.ErrProofClaimNotFound.Wrapf(
 					"session ID %q and supplier %q",
 					claims[0].GetSessionHeader().GetSessionId(),
-					wrongSupplierAddr,
+					wrongSupplierOperatorAddr,
 				).Error(),
 			),
 		},
@@ -92,7 +92,7 @@ func TestClaimQuerySingle(t *testing.T) {
 			desc: "InvalidRequest - Missing SessionId",
 			request: &types.QueryGetClaimRequest{
 				// SessionId explicitly omitted
-				SupplierAddress: claims[0].GetSupplierAddress(),
+				SupplierOperatorAddress: claims[0].GetSupplierOperatorAddress(),
 			},
 
 			expectedErr: status.Error(
@@ -103,16 +103,16 @@ func TestClaimQuerySingle(t *testing.T) {
 			),
 		},
 		{
-			desc: "InvalidRequest - Missing SupplierAddress",
+			desc: "InvalidRequest - Missing SupplierOperatorAddress",
 			request: &types.QueryGetClaimRequest{
 				SessionId: claims[0].GetSessionHeader().GetSessionId(),
-				// SupplierAddress explicitly omitted
+				// SupplierOperatorAddress explicitly omitted
 			},
 
 			expectedErr: status.Error(
 				codes.InvalidArgument,
 				types.ErrProofInvalidAddress.Wrap(
-					"invalid supplier address for claim being retrieved ; (empty address string is not allowed)",
+					"invalid supplier operator address for claim being retrieved ; (empty address string is not allowed)",
 				).Error(),
 			),
 		},
@@ -202,10 +202,10 @@ func TestClaimQueryPaginated(t *testing.T) {
 		require.ErrorIs(t, err, status.Error(codes.InvalidArgument, "invalid request"))
 	})
 
-	t.Run("BySupplierAddress", func(t *testing.T) {
+	t.Run("BySupplierOperatorAddress", func(t *testing.T) {
 		req := request(nil, 0, 0, true)
-		req.Filter = &types.QueryAllClaimsRequest_SupplierAddress{
-			SupplierAddress: claims[0].SupplierAddress,
+		req.Filter = &types.QueryAllClaimsRequest_SupplierOperatorAddress{
+			SupplierOperatorAddress: claims[0].SupplierOperatorAddress,
 		}
 		resp, err := keeper.AllClaims(ctx, req)
 		require.NoError(t, err)

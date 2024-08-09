@@ -52,10 +52,10 @@ var (
 	amountRe        *regexp.Regexp
 	addrAndAmountRe *regexp.Regexp
 
-	accNameToAddrMap     = make(map[string]string)
-	accAddrToNameMap     = make(map[string]string)
-	accNameToAppMap      = make(map[string]apptypes.Application)
-	accNameToSupplierMap = make(map[string]sharedtypes.Supplier)
+	accNameToAddrMap             = make(map[string]string)
+	accAddrToNameMap             = make(map[string]string)
+	accNameToAppMap              = make(map[string]apptypes.Application)
+	operatorAccNameToSupplierMap = make(map[string]sharedtypes.Supplier)
 
 	flagFeaturesPath string
 	keyRingFlag      = "--keyring-backend=test"
@@ -423,35 +423,35 @@ func (s *suite) TheApplicationIsStakedForService(appName string, serviceId strin
 	s.Fatalf("ERROR: application %s is not staked for service %s", appName, serviceId)
 }
 
-func (s *suite) TheSupplierIsStakedForService(supplierName string, serviceId string) {
-	for _, serviceConfig := range accNameToSupplierMap[supplierName].Services {
+func (s *suite) TheSupplierIsStakedForService(supplierOperatorName string, serviceId string) {
+	for _, serviceConfig := range operatorAccNameToSupplierMap[supplierOperatorName].Services {
 		if serviceConfig.Service.Id == serviceId {
 			return
 		}
 	}
-	s.Fatalf("ERROR: supplier %s is not staked for service %s", supplierName, serviceId)
+	s.Fatalf("ERROR: supplier %s is not staked for service %s", supplierOperatorName, serviceId)
 }
 
-func (s *suite) TheSessionForApplicationAndServiceContainsTheSupplier(appName string, serviceId string, supplierName string) {
-	expectedSupplier, ok := accNameToSupplierMap[supplierName]
-	require.True(s, ok, "supplier %s not found", supplierName)
+func (s *suite) TheSessionForApplicationAndServiceContainsTheSupplier(appName string, serviceId string, supplierOperatorName string) {
+	expectedSupplier, ok := operatorAccNameToSupplierMap[supplierOperatorName]
+	require.True(s, ok, "supplier %s not found", supplierOperatorName)
 
 	session := s.getSession(appName, serviceId)
 	for _, supplier := range session.Suppliers {
-		if supplier.Address == expectedSupplier.Address {
+		if supplier.OperatorAddress == expectedSupplier.OperatorAddress {
 			return
 		}
 	}
-	s.Fatalf("ERROR: session for app %s and service %s does not contain supplier %s", appName, serviceId, supplierName)
+	s.Fatalf("ERROR: session for app %s and service %s does not contain supplier %s", appName, serviceId, supplierOperatorName)
 }
 
-func (s *suite) TheApplicationSendsTheSupplierASuccessfulRequestForServiceWithPathAndData(appName, supplierName, serviceId, path, requestData string) {
+func (s *suite) TheApplicationSendsTheSupplierASuccessfulRequestForServiceWithPathAndData(appName, supplierOperatorName, serviceId, path, requestData string) {
 	// TODO_HACK: We need to support a non self_signing LocalNet AppGateServer
 	// that allows any application to send a relay in LocalNet and our E2E Tests.
 	require.Equal(s, "app1", appName, "TODO_HACK: The LocalNet AppGateServer is self_signing and only supports app1.")
 
 	res, err := s.pocketd.RunCurlWithRetry(appGateServerUrl, serviceId, path, requestData, 5)
-	require.NoError(s, err, "error sending relay request from app %q to supplier %q for service %q", appName, supplierName, serviceId)
+	require.NoError(s, err, "error sending relay request from app %q to supplier %q for service %q", appName, supplierOperatorName, serviceId)
 
 	var jsonContent json.RawMessage
 	err = json.Unmarshal([]byte(res.Stdout), &jsonContent)
@@ -481,18 +481,18 @@ func (s *suite) AModuleEndBlockEventIsBroadcast(module, eventType string) {
 	s.waitForNewBlockEvent(newEventTypeMatchFn(module, eventType))
 }
 
-func (s *suite) TheSupplierForAccountIsUnbonding(accName string) {
-	_, ok := accNameToSupplierMap[accName]
-	require.True(s, ok, "supplier %s not found", accName)
+func (s *suite) TheSupplierForAccountIsUnbonding(supplierOperatorName string) {
+	_, ok := operatorAccNameToSupplierMap[supplierOperatorName]
+	require.True(s, ok, "supplier %s not found", supplierOperatorName)
 
 	s.waitForTxResultEvent(newEventMsgTypeMatchFn("supplier", "UnstakeSupplier"))
 
-	supplier := s.getSupplierInfo(accName)
+	supplier := s.getSupplierInfo(supplierOperatorName)
 	require.True(s, supplier.IsUnbonding())
 }
 
 func (s *suite) TheUserWaitsForUnbondingPeriodToFinish(accName string) {
-	_, ok := accNameToSupplierMap[accName]
+	_, ok := operatorAccNameToSupplierMap[accName]
 	require.True(s, ok, "supplier %s not found", accName)
 
 	unbondingHeight := s.getSupplierUnbondingHeight(accName)
@@ -528,29 +528,29 @@ func (s *suite) getStakedAmount(actorType, accName string) (int, bool) {
 	return 0, false
 }
 
-func (s *suite) TheUserShouldSeeThatTheSupplierForAccountIsStaked(supplierName string) {
-	supplier := s.getSupplierInfo(supplierName)
-	accNameToSupplierMap[accAddrToNameMap[supplier.Address]] = *supplier
-	require.NotNil(s, supplier, "supplier %s not found", supplierName)
+func (s *suite) TheUserShouldSeeThatTheSupplierForAccountIsStaked(supplierOperatorName string) {
+	supplier := s.getSupplierInfo(supplierOperatorName)
+	operatorAccNameToSupplierMap[accAddrToNameMap[supplier.OperatorAddress]] = *supplier
+	require.NotNil(s, supplier, "supplier %s not found", supplierOperatorName)
 }
 
-func (s *suite) TheSessionForApplicationAndServiceDoesNotContain(appName, serviceId, supplierName string) {
+func (s *suite) TheSessionForApplicationAndServiceDoesNotContain(appName, serviceId, supplierOperatorName string) {
 	session := s.getSession(appName, serviceId)
 
 	for _, supplier := range session.Suppliers {
-		if supplier.Address == accNameToAddrMap[supplierName] {
+		if supplier.OperatorAddress == accNameToAddrMap[supplierOperatorName] {
 			s.Fatalf(
 				"ERROR: session for app %s and service %s should not contain supplier %s",
 				appName,
 				serviceId,
-				supplierName,
+				supplierOperatorName,
 			)
 		}
 	}
 }
 
-func (s *suite) TheUserWaitsForSupplierToBecomeActiveForService(supplierName, serviceId string) {
-	supplier := s.getSupplierInfo(supplierName)
+func (s *suite) TheUserWaitsForSupplierToBecomeActiveForService(supplierOperatorName, serviceId string) {
+	supplier := s.getSupplierInfo(supplierOperatorName)
 	s.waitForBlockHeight(int64(supplier.ServicesActivationHeightsMap[serviceId]))
 }
 
@@ -604,7 +604,7 @@ func (s *suite) buildSupplierMap() {
 	responseBz := []byte(strings.TrimSpace(res.Stdout))
 	s.cdc.MustUnmarshalJSON(responseBz, &resp)
 	for _, supplier := range resp.Supplier {
-		accNameToSupplierMap[accAddrToNameMap[supplier.Address]] = supplier
+		operatorAccNameToSupplierMap[accAddrToNameMap[supplier.OperatorAddress]] = supplier
 	}
 }
 
@@ -672,19 +672,19 @@ func (s *suite) validateAmountChange(prevAmount, currAmount int, expectedAmountC
 
 }
 
-// getSupplierInfo returns the supplier information for a given supplier address
-func (s *suite) getSupplierInfo(supplierName string) *sharedtypes.Supplier {
-	supplierAddr := accNameToAddrMap[supplierName]
+// getSupplierInfo returns the supplier information for a given supplier operator address
+func (s *suite) getSupplierInfo(supplierOperatorName string) *sharedtypes.Supplier {
+	supplierOperatorAddr := accNameToAddrMap[supplierOperatorName]
 	args := []string{
 		"query",
 		"supplier",
 		"show-supplier",
-		supplierAddr,
+		supplierOperatorAddr,
 		"--output=json",
 	}
 
 	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, args...)
-	require.NoError(s, err, "error getting supplier %s", supplierAddr)
+	require.NoError(s, err, "error getting supplier %s", supplierOperatorAddr)
 	s.pocketd.result = res
 
 	var resp suppliertypes.QueryGetSupplierResponse

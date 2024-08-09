@@ -119,7 +119,7 @@ func (sq *sharedQuerier) GetSessionGracePeriodEndHeight(
 // to get the most recently (asynchronously) observed (and cached) value.
 // TODO_BLOCKER(@bryanchriswhite, #543): We also don't really want to use the current value of the params.
 // Instead, we should be using the value that the params had for the session which includes queryHeight.
-func (sq *sharedQuerier) GetEarliestSupplierClaimCommitHeight(ctx context.Context, queryHeight int64, supplierAddr string) (int64, error) {
+func (sq *sharedQuerier) GetEarliestSupplierClaimCommitHeight(ctx context.Context, queryHeight int64, supplierOperatorAddr string) (int64, error) {
 	sharedParams, err := sq.GetParams(ctx)
 	if err != nil {
 		return 0, err
@@ -140,7 +140,7 @@ func (sq *sharedQuerier) GetEarliestSupplierClaimCommitHeight(ctx context.Contex
 		sharedParams,
 		queryHeight,
 		claimWindowOpenBlockHash,
-		supplierAddr,
+		supplierOperatorAddr,
 	), nil
 }
 
@@ -152,7 +152,7 @@ func (sq *sharedQuerier) GetEarliestSupplierClaimCommitHeight(ctx context.Contex
 // to get the most recently (asynchronously) observed (and cached) value.
 // TODO_BLOCKER(@bryanchriswhite, #543): We also don't really want to use the current value of the params.
 // Instead, we should be using the value that the params had for the session which includes queryHeight.
-func (sq *sharedQuerier) GetEarliestSupplierProofCommitHeight(ctx context.Context, queryHeight int64, supplierAddr string) (int64, error) {
+func (sq *sharedQuerier) GetEarliestSupplierProofCommitHeight(ctx context.Context, queryHeight int64, supplierOperatorAddr string) (int64, error) {
 	sharedParams, err := sq.GetParams(ctx)
 	if err != nil {
 		return 0, err
@@ -170,6 +170,6 @@ func (sq *sharedQuerier) GetEarliestSupplierProofCommitHeight(ctx context.Contex
 		sharedParams,
 		queryHeight,
 		proofWindowOpenBlock.BlockID.Hash,
-		supplierAddr,
+		supplierOperatorAddr,
 	), nil
 }

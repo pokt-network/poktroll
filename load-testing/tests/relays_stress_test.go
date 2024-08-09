@@ -180,7 +180,7 @@ type relaysSuite struct {
 	// in the test. It is populated from the gatewayUrls map.
 	// It is used to ensure that the gateways are staked in the order they are provisioned.
 	availableGatewayAddresses []string
-	// suppliersUrls is a map of supplierAddress->URL representing the provisioned suppliers.
+	// suppliersUrls is a map of supplierOperatorAddress->URL representing the provisioned suppliers.
 	// These suppliers are not staked yet but have their off-chain instance running
 	// and ready to be staked and used in the test.
 	// Since RelayMiners are pre-provisioned, and already assigned a signingAddress
@@ -188,10 +188,11 @@ type relaysSuite struct {
 	// The max suppliers used in the test must be less than or equal to the number of
 	// provisioned suppliers.
 	suppliersUrls map[string]string
-	// availableSupplierAddresses is the list of available supplier addresses to be used
+	// availableSupplierOperatorAddresses is the list of available supplier operator addresses to be used
 	// in the test. It is populated from the suppliersUrls map.
 	// It is used to ensure that the suppliers are staked in the order they are provisioned.
-	availableSupplierAddresses []string
+	// The same address is used as the owner and the operator address (i.e. custodial staking).
+	availableSupplierOperatorAddresses []string
 
 	// fundingAccountInfo is the account entry corresponding to the fundingAccountKeyName.
 	// It is used to send transactions to fund other accounts.

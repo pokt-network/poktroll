@@ -29,21 +29,21 @@ func TestSupplierQuerySingle(t *testing.T) {
 		{
 			desc: "First",
 			request: &types.QueryGetSupplierRequest{
-				Address: suppliers[0].Address,
+				OperatorAddress: suppliers[0].OperatorAddress,
 			},
 			response: &types.QueryGetSupplierResponse{Supplier: suppliers[0]},
 		},
 		{
 			desc: "Second",
 			request: &types.QueryGetSupplierRequest{
-				Address: suppliers[1].Address,
+				OperatorAddress: suppliers[1].OperatorAddress,
 			},
 			response: &types.QueryGetSupplierResponse{Supplier: suppliers[1]},
 		},
 		{
 			desc: "KeyNotFound",
 			request: &types.QueryGetSupplierRequest{
-				Address: strconv.Itoa(100000),
+				OperatorAddress: strconv.Itoa(100000),
 			},
 			expectedErr: status.Error(codes.NotFound, "supplier with address \"100000\""),
 		},

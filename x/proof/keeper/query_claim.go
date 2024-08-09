@@ -28,10 +28,10 @@ func (k Keeper) AllClaims(ctx context.Context, req *types.QueryAllClaimsRequest)
 	)
 
 	switch filter := req.Filter.(type) {
-	case *types.QueryAllClaimsRequest_SupplierAddress:
+	case *types.QueryAllClaimsRequest_SupplierOperatorAddress:
 		isCustomIndex = true
-		keyPrefix = types.KeyPrefix(types.ClaimSupplierAddressPrefix)
-		keyPrefix = append(keyPrefix, []byte(filter.SupplierAddress)...)
+		keyPrefix = types.KeyPrefix(types.ClaimSupplierOperatorAddressPrefix)
+		keyPrefix = append(keyPrefix, []byte(filter.SupplierOperatorAddress)...)
 
 	case *types.QueryAllClaimsRequest_SessionEndHeight:
 		isCustomIndex = true
@@ -93,10 +93,10 @@ func (k Keeper) Claim(ctx context.Context, req *types.QueryGetClaimRequest) (*ty
 	foundClaim, isClaimFound := k.GetClaim(
 		ctx,
 		req.SessionId,
-		req.SupplierAddress,
+		req.SupplierOperatorAddress,
 	)
 	if !isClaimFound {
-		err := types.ErrProofClaimNotFound.Wrapf("session ID %q and supplier %q", req.SessionId, req.SupplierAddress)
+		err := types.ErrProofClaimNotFound.Wrapf("session ID %q and supplier %q", req.SessionId, req.SupplierOperatorAddress)
 		return nil, status.Error(codes.NotFound, err.Error())
 	}
 

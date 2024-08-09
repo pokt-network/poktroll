@@ -19,7 +19,7 @@ func SimulateMsgCreateClaim(
 	) (simtypes.OperationMsg, []simtypes.FutureOperation, error) {
 		simAccount, _ := simtypes.RandomAcc(r, accs)
 		msg := &types.MsgCreateClaim{
-			SupplierAddress: simAccount.Address.String(),
+			SupplierOperatorAddress: simAccount.Address.String(),
 		}
 
 		// TODO: Handling the CreateClaim simulation

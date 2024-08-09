@@ -114,13 +114,13 @@ func GetEarliestSupplierClaimCommitHeight(
 	sharedParams *sharedtypes.Params,
 	queryHeight int64,
 	claimWindowOpenBlockHash []byte,
-	supplierAddr string,
+	supplierOperatorAddr string,
 ) int64 {
 	claimWindowOpenHeight := GetClaimWindowOpenHeight(sharedParams, queryHeight)
 
 	// Generate a deterministic random (non-negative) int64, seeded by the claim
-	// window open block hash and the supplier address.
-	//randomNumber := poktrand.SeededInt63(claimWindowOpenBlockHash, []byte(supplierAddr))
+	// window open block hash and the supplier operator address.
+	//randomNumber := poktrand.SeededInt63(claimWindowOpenBlockHash, []byte(supplierOperatorAddr))
 
 	//distributionWindowSizeBlocks := sharedParams.GetClaimWindowCloseOffsetBlocks()
 	//randCreateClaimHeightOffset := randomNumber % int64(distributionWindowSizeBlocks)
@@ -141,13 +141,13 @@ func GetEarliestSupplierProofCommitHeight(
 	sharedParams *sharedtypes.Params,
 	queryHeight int64,
 	proofWindowOpenBlockHash []byte,
-	supplierAddr string,
+	supplierOperatorAddr string,
 ) int64 {
 	proofWindowOpenHeight := GetProofWindowOpenHeight(sharedParams, queryHeight)
 
 	// Generate a deterministic random (non-negative) int64, seeded by the proof
-	// window open block hash and the supplier address.
-	//randomNumber := poktrand.SeededInt63(proofWindowOpenBlockHash, []byte(supplierAddr))
+	// window open block hash and the supplier operator address.
+	//randomNumber := poktrand.SeededInt63(proofWindowOpenBlockHash, []byte(supplierOperatorAddr))
 
 	//distributionWindowSizeBlocks := sharedParams.GetProofWindowCloseOffsetBlocks()
 	//randCreateProofHeightOffset := randomNumber % int64(distributionWindowSizeBlocks)

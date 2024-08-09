@@ -26,7 +26,7 @@ func networkWithProofObjects(t *testing.T, n int) (*network.Network, []types.Pro
 	state := types.GenesisState{}
 	for i := 0; i < n; i++ {
 		proof := types.Proof{
-			SupplierAddress: sample.AccAddress(),
+			SupplierOperatorAddress: sample.AccAddress(),
 			SessionHeader: &sessiontypes.SessionHeader{
 				SessionId: "mock_session_id",
 				// Other fields omitted and unused for these tests.
@@ -51,26 +51,26 @@ func TestShowProof(t *testing.T) {
 		fmt.Sprintf("--%s=json", cometcli.OutputFlag),
 	}
 	tests := []struct {
-		desc         string
-		sessionId    string
-		supplierAddr string
+		desc                 string
+		sessionId            string
+		supplierOperatorAddr string
 
 		args        []string
 		expectedErr error
 		proof       types.Proof
 	}{
 		{
-			desc:         "found",
-			supplierAddr: proofs[0].SupplierAddress,
-			sessionId:    proofs[0].SessionHeader.SessionId,
+			desc:                 "found",
+			supplierOperatorAddr: proofs[0].SupplierOperatorAddress,
+			sessionId:            proofs[0].SessionHeader.SessionId,
 
 			args:  common,
 			proof: proofs[0],
 		},
 		{
-			desc:         "not found",
-			supplierAddr: sample.AccAddress(),
-			sessionId:    proofs[0].SessionHeader.SessionId,
+			desc:                 "not found",
+			supplierOperatorAddr: sample.AccAddress(),
+			sessionId:            proofs[0].SessionHeader.SessionId,
 
 			args:        common,
 			expectedErr: status.Error(codes.NotFound, "not found"),
@@ -80,7 +80,7 @@ func TestShowProof(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			args := []string{
 				test.sessionId,
-				test.supplierAddr,
+				test.supplierOperatorAddr,
 			}
 			args = append(args, test.args...)
 			out, err := clitestutil.ExecTestCLICmd(ctx, proof.CmdShowProof(), args)

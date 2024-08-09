@@ -1,4 +1,5 @@
 # Names of the key (in the keyring) used to run the suppliers for.
+# These keys must correspond to the operator addresses of the suppliers.
 default_signing_key_names: [supplier1]
 
 # Relative path (on the relayminer's machine) to the SMT KV store data on disk.

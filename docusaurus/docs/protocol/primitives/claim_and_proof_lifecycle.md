@@ -15,7 +15,8 @@ to all readers.
 :::
 
 - [Introduction](#introduction)
-- [Session Windows & On-Chain Parameters](#session-windows--on-chain-parameters)
+- [Session Windows \& On-Chain Parameters](#session-windows--on-chain-parameters)
+    - [References:](#references)
   - [Claim Expiration](#claim-expiration)
 - [Session](#session)
   - [Session Duration](#session-duration)
@@ -23,10 +24,12 @@ to all readers.
 - [Claim](#claim)
   - [Protobuf Types](#protobuf-types)
   - [CreateClaim Validation](#createclaim-validation)
+    - [References:](#references-1)
   - [Claim Window](#claim-window)
 - [Proof](#proof)
   - [Protobuf Types](#protobuf-types-1)
   - [SubmitProof Validation](#submitproof-validation)
+    - [References:](#references-2)
   - [Proof Window](#proof-window)
 - [Proof Security](#proof-security)
   - [Merkle Leaf Validation](#merkle-leaf-validation)
@@ -37,6 +40,12 @@ to all readers.
     - [Example 3: Path to empty node](#example-3-path-to-empty-node)
 - [Full Lifecycle](#full-lifecycle)
 - [Reference Diagrams](#reference-diagrams)
+  - [Session Header Validation](#session-header-validation)
+  - [Proof Basic Validation](#proof-basic-validation)
+  - [Proof Submission Relay Request Validation](#proof-submission-relay-request-validation)
+  - [Proof Submission Relay Response Validation](#proof-submission-relay-response-validation)
+  - [Proof Session Header Comparison](#proof-session-header-comparison)
+  - [Proof Submission Claim Validation](#proof-submission-claim-validation)
 
 ## Introduction
 
@@ -211,16 +220,16 @@ stateDiagram-v2
 [*] --> Validate_Claim
 state Validate_Claim {
     [*] --> Validate_Basic
-    
+
     state Validate_Basic {
         state if_session_start_gt_0 <<choice>>
         state if_session_id_empty <<choice>>
         state if_service_invalid <<choice>>
-        state if_supplier_addr_valid <<choice>>
-        
-        [*] --> if_supplier_addr_valid
-        if_supplier_addr_valid --> Basic_Validation_Error: invalid supplier address
-        if_supplier_addr_valid --> if_session_start_gt_0
+        state if_supplier_operator_addr_valid <<choice>>
+
+        [*] --> if_supplier_operator_addr_valid
+        if_supplier_operator_addr_valid --> Basic_Validation_Error: invalid supplier operator address
+        if_supplier_operator_addr_valid --> if_session_start_gt_0
         if_session_start_gt_0 --> Basic_Validation_Error: session start height < 0
         if_session_start_gt_0 --> if_session_id_empty
         if_session_id_empty --> Basic_Validation_Error: empty session ID
@@ -287,11 +296,11 @@ state Validate_Proof {
   Proof_Validate_Basic --> Validate_Session_Header
   Validate_Session_Header --> Validate_Proof_Window
   Validate_Proof_Window --> Unpack_Proven_Relay
-  
+
   state Unpack_Proven_Relay {
     state if_closest_proof_malformed <<choice>>
     state if_relay_valid <<choice>>
-    
+
     [*] --> if_closest_proof_malformed
     if_closest_proof_malformed --> Closest_Proof_Unmarshal_Error: cannot unmarshal closest proof
     if_closest_proof_malformed --> if_relay_valid
@@ -373,7 +382,7 @@ The key components of every leaf in the `Sparse Merkle Sum Trie` are shown below
 After the leaf is validated, two things happen:
 
 1. The stake of `Application` signing the `Relay Request` is decreased through burn
-2. The account balance of the `Supplier` signing the `Relay Response` is increased through mint
+2. The account balance of the `Supplier` owner is increased through mint
 
 The validation on these signatures is done on-chain as part of `Proof Validation`.
 
@@ -689,13 +698,13 @@ stateDiagram-v2
   [*] --> Proof_Validate_Basic
 
   state Proof_Validate_Basic {
-    state if_supplier_addr_valid <<choice>>
+    state if_supplier_operator_addr_valid <<choice>>
     state if_app_addr_valid <<choice>>
     state if_service_id_empty <<choice>>
     state if_proof_empty <<choice>>
-    [*] --> if_supplier_addr_valid
-    if_supplier_addr_valid --> Basic_Validation_error: invalid supplier address
-    if_supplier_addr_valid --> if_app_addr_valid
+    [*] --> if_supplier_operator_addr_valid
+    if_supplier_operator_addr_valid --> Basic_Validation_error: invalid supplier operator address
+    if_supplier_operator_addr_valid --> if_app_addr_valid
     if_app_addr_valid --> Basic_Validation_error: invalid app address
     if_app_addr_valid --> if_service_id_empty
     if_service_id_empty --> Basic_Validation_error: empty service ID
@@ -714,7 +723,7 @@ stateDiagram-v2
 
 [*] --> Validate_Relay_Request
 state Validate_Relay_Request {
-    
+
         [*] --> Validate_Relay_Request_Basic
 
     state Validate_Relay_Request_Basic {
@@ -748,7 +757,7 @@ state Validate_Relay_Request {
         state if_ring_valid <<choice>>
         state if_ring_mismatch <<choice>>
         state if_ring_sig_valid <<choice>>
-        
+
         [*] --> if_request_meta_empty
         if_request_meta_empty --> Relay_Request_Signature_Error: empty relay request metadata
         if_request_meta_empty --> if_ring_sig_empty
@@ -779,7 +788,7 @@ stateDiagram-v2
 
 [*] --> Validate_Relay_Response
 state Validate_Relay_Response {
-    
+
         [*] --> Validate_Relay_Response_Basic
 
     state Validate_Relay_Response_Basic {

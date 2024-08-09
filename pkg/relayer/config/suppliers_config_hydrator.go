@@ -29,7 +29,7 @@ func (relayMinerConfig *RelayMinerConfig) HydrateSuppliers(
 			supplierConfig.SigningKeyNames = relayMinerConfig.DefaultSigningKeyNames
 		}
 
-		// Supplier name should be unique
+		// Supplier operator name should be unique
 		if _, ok := existingSuppliers[yamlSupplierConfig.ServiceId]; ok {
 			return ErrRelayMinerConfigInvalidSupplier.Wrapf(
 				"duplicate supplier name %s",

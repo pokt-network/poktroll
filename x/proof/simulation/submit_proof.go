@@ -19,7 +19,7 @@ func SimulateMsgSubmitProof(
 	) (simtypes.OperationMsg, []simtypes.FutureOperation, error) {
 		simAccount, _ := simtypes.RandomAcc(r, accs)
 		msg := &types.MsgSubmitProof{
-			SupplierAddress: simAccount.Address.String(),
+			SupplierOperatorAddress: simAccount.Address.String(),
 		}
 
 		// TODO: Handling the SubmitProof simulation

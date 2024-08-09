@@ -32,9 +32,9 @@ func (k msgServer) UnstakeSupplier(
 	}
 
 	// Check if the supplier already exists or not
-	supplier, isSupplierFound := k.GetSupplier(ctx, msg.Address)
+	supplier, isSupplierFound := k.GetSupplier(ctx, msg.OperatorAddress)
 	if !isSupplierFound {
-		logger.Info(fmt.Sprintf("Supplier not found. Cannot unstake address %s", msg.Address))
+		logger.Info(fmt.Sprintf("Supplier not found. Cannot unstake address %s", msg.OperatorAddress))
 		return nil, types.ErrSupplierNotFound
 	}
 
@@ -48,11 +48,11 @@ func (k msgServer) UnstakeSupplier(
 		)
 	}
 
-	logger.Info(fmt.Sprintf("Supplier found. Unstaking supplier for address %s", msg.Address))
+	logger.Info(fmt.Sprintf("Supplier found. Unstaking supplier for address %s", msg.OperatorAddress))
 
 	// Check if the supplier has already initiated the unstake action.
 	if supplier.IsUnbonding() {
-		logger.Warn(fmt.Sprintf("Supplier %s still unbonding from previous unstaking", msg.Address))
+		logger.Warn(fmt.Sprintf("Supplier %s still unbonding from previous unstaking", msg.OperatorAddress))
 		return nil, types.ErrSupplierIsUnstaking
 	}
 

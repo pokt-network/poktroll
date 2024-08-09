@@ -55,8 +55,8 @@ func (req *RelayRequest) ValidateBasic() error {
 		return ErrServiceInvalidRelayRequest.Wrap("missing application signature")
 	}
 
-	if meta.GetSupplierAddress() == "" {
-		return ErrServiceInvalidRelayRequest.Wrap("relay metadata missing supplier address")
+	if meta.GetSupplierOperatorAddress() == "" {
+		return ErrServiceInvalidRelayRequest.Wrap("relay metadata missing supplier operator address")
 	}
 
 	return nil
@@ -68,7 +68,7 @@ func (req *RelayRequest) ValidateBasic() error {
 func (res RelayResponse) GetSignableBytesHash() ([protocol.RelayHasherSize]byte, error) {
 	// res and res.Meta are not pointers, so we can set the signature to nil
 	// in order to generate the signable bytes hash without the need restore it.
-	res.Meta.SupplierSignature = nil
+	res.Meta.SupplierOperatorSignature = nil
 	responseBz, err := res.Marshal()
 	if err != nil {
 		return [protocol.RelayHasherSize]byte{}, err
@@ -80,7 +80,7 @@ func (res RelayResponse) GetSignableBytesHash() ([protocol.RelayHasherSize]byte,
 }
 
 // ValidateBasic performs basic validation of the RelayResponse Meta, SessionHeader
-// and SupplierSignature fields.
+// and SupplierOperatorSignature fields.
 // TODO_TEST: Add tests for RelayResponse validation
 func (res *RelayResponse) ValidateBasic() error {
 	// TODO: if a client gets a response with an invalid/incomplete
@@ -97,22 +97,22 @@ func (res *RelayResponse) ValidateBasic() error {
 		return ErrServiceInvalidRelayResponse.Wrapf("invalid session header: %v", err)
 	}
 
-	if len(meta.GetSupplierSignature()) == 0 {
-		return ErrServiceInvalidRelayResponse.Wrap("missing supplier signature")
+	if len(meta.GetSupplierOperatorSignature()) == 0 {
+		return ErrServiceInvalidRelayResponse.Wrap("missing supplier operator signature")
 	}
 
 	return nil
 }
 
-// VerifySupplierSignature ensures the signature provided by the supplier is
+// VerifySupplierOperatorSignature ensures the signature provided by the supplier is
 // valid according to their relay response.
-func (res *RelayResponse) VerifySupplierSignature(supplierPubKey cryptotypes.PubKey) error {
+func (res *RelayResponse) VerifySupplierOperatorSignature(supplierOperatorPubKey cryptotypes.PubKey) error {
 	// Get the signable bytes hash of the response.
 	signableBz, err := res.GetSignableBytesHash()
 	if err != nil {
 		return err
 	}
-	if ok := supplierPubKey.VerifySignature(signableBz[:], res.GetMeta().SupplierSignature); !ok {
+	if ok := supplierOperatorPubKey.VerifySignature(signableBz[:], res.GetMeta().SupplierOperatorSignature); !ok {
 		return ErrServiceInvalidRelayResponse.Wrap("invalid signature")
 	}
 

@@ -24,7 +24,7 @@ func TestMsgSubmitProof_ValidateBasic(t *testing.T) {
 		{
 			desc: "application bech32 address is invalid",
 			msg: MsgSubmitProof{
-				SupplierAddress: sample.AccAddress(),
+				SupplierOperatorAddress: sample.AccAddress(),
 				SessionHeader: &sessiontypes.SessionHeader{
 					ApplicationAddress:      "not_a_bech32_address",
 					Service:                 testService,
@@ -41,9 +41,9 @@ func TestMsgSubmitProof_ValidateBasic(t *testing.T) {
 			),
 		},
 		{
-			desc: "supplier bech32 address is invalid",
+			desc: "supplier operator bech32 address is invalid",
 			msg: MsgSubmitProof{
-				SupplierAddress: "not_a_bech32_address",
+				SupplierOperatorAddress: "not_a_bech32_address",
 				SessionHeader: &sessiontypes.SessionHeader{
 					ApplicationAddress:      sample.AccAddress(),
 					Service:                 testService,
@@ -54,7 +54,7 @@ func TestMsgSubmitProof_ValidateBasic(t *testing.T) {
 				Proof: testClosestMerkleProof,
 			},
 			expectedErr: sdkerrors.ErrInvalidAddress.Wrapf(
-				"supplier address %q, error: %s",
+				"supplier operator address %q, error: %s",
 				"not_a_bech32_address",
 				"decoding bech32 failed: invalid separator index -1",
 			),
@@ -62,7 +62,7 @@ func TestMsgSubmitProof_ValidateBasic(t *testing.T) {
 		{
 			desc: "session service ID is empty",
 			msg: MsgSubmitProof{
-				SupplierAddress: sample.AccAddress(),
+				SupplierOperatorAddress: sample.AccAddress(),
 				SessionHeader: &sessiontypes.SessionHeader{
 					ApplicationAddress:      sample.AccAddress(),
 					Service:                 &sharedtypes.Service{Id: ""},
@@ -77,7 +77,7 @@ func TestMsgSubmitProof_ValidateBasic(t *testing.T) {
 		{
 			desc: "valid message metadata",
 			msg: MsgSubmitProof{
-				SupplierAddress: sample.AccAddress(),
+				SupplierOperatorAddress: sample.AccAddress(),
 				SessionHeader: &sessiontypes.SessionHeader{
 					ApplicationAddress:      sample.AccAddress(),
 					Service:                 testService,

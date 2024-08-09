@@ -22,12 +22,12 @@ const (
 )
 
 // BaseClaim returns a base (default, example, etc..) claim with the given
-// service ID, app address, supplier address and num relays that can be used for testing.
-func BaseClaim(serviceId, appAddr, supplierAddr string, numRelays uint64) prooftypes.Claim {
+// service ID, app address, supplier operator address and num relays that can be used for testing.
+func BaseClaim(serviceId, appAddr, supplierOperatorAddr string, numRelays uint64) prooftypes.Claim {
 	computeUnitsPerRelay := uint64(1)
 	sum := numRelays * computeUnitsPerRelay
 	return prooftypes.Claim{
-		SupplierAddress: supplierAddr,
+		SupplierOperatorAddress: supplierOperatorAddr,
 		SessionHeader: &sessiontypes.SessionHeader{
 			ApplicationAddress: appAddr,
 			Service: &sharedtypes.Service{
@@ -45,11 +45,11 @@ func BaseClaim(serviceId, appAddr, supplierAddr string, numRelays uint64) prooft
 }
 
 // ClaimWithRandomHash returns a claim with a random SMST root hash with the given
-// app address, supplier address, and num relays that can be used for testing.
+// app address, supplier operator address, and num relays that can be used for testing.
 // Each claim generated this way will have a random chance to require a proof via
 // probabilistic selection.
-func ClaimWithRandomHash(t *testing.T, appAddr, supplierAddr string, numRelays uint64) prooftypes.Claim {
-	claim := BaseClaim(DefaultTestServiceID, appAddr, supplierAddr, numRelays)
+func ClaimWithRandomHash(t *testing.T, appAddr, supplierOperatorAddr string, numRelays uint64) prooftypes.Claim {
+	claim := BaseClaim(DefaultTestServiceID, appAddr, supplierOperatorAddr, numRelays)
 	claim.RootHash = RandSmstRootWithSumAndCount(t, numRelays, numRelays)
 	return claim
 }

@@ -83,7 +83,7 @@ func validatedEphemeralChainManifest(manifest *LoadTestManifestYAML) (*LoadTestM
 
 	for _, supplier := range manifest.Suppliers {
 		if len(supplier.Address) == 0 {
-			return nil, ErrEphemeralChainLoadTestInvalidManifest.Wrap("empty supplier address")
+			return nil, ErrEphemeralChainLoadTestInvalidManifest.Wrap("empty supplier operator address")
 		}
 
 		if len(supplier.ExposedUrl) == 0 {

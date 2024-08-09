@@ -25,7 +25,7 @@ func (k Keeper) AllSuppliers(
 	var suppliers []sharedtypes.Supplier
 
 	store := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
-	supplierStore := prefix.NewStore(store, types.KeyPrefix(types.SupplierKeyPrefix))
+	supplierStore := prefix.NewStore(store, types.KeyPrefix(types.SupplierKeyOperatorPrefix))
 
 	pageRes, err := query.Paginate(
 		supplierStore,
@@ -56,10 +56,10 @@ func (k Keeper) Supplier(
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
 
-	supplier, found := k.GetSupplier(ctx, req.Address)
+	supplier, found := k.GetSupplier(ctx, req.OperatorAddress)
 	if !found {
 		// TODO_TECHDEBT(@bryanchriswhite, #384): conform to logging conventions once established
-		msg := fmt.Sprintf("supplier with address %q", req.GetAddress())
+		msg := fmt.Sprintf("supplier with address %q", req.GetOperatorAddress())
 		return nil, status.Error(codes.NotFound, msg)
 	}
 

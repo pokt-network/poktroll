@@ -25,10 +25,12 @@ var _ relayer.RelayerProxy = (*relayerProxy)(nil)
 type relayerProxy struct {
 	logger polylog.Logger
 
-	// signingKeyNames are the supplier key names in the Cosmos's keybase.
-	// They are used along with the keyring to get the supplier addresses and sign relay responses.
-	// A unique list of key names from all suppliers configured on RelayMiner is passed to relayerProxy,
-	// and the address for each signing key is looked up in `BuildProvidedServices`.
+	// signingKeyNames are the supplier operator key names in the Cosmos's keybase.
+	// They are used along with the keyring to get the supplier operator addresses
+	// and sign relay responses.
+	// A unique list of operator key names from all suppliers configured on RelayMiner
+	// is passed to relayerProxy, and the address for each signing key is looked up
+	// in `BuildProvidedServices`.
 	signingKeyNames []string
 	keyring         keyring.Keyring
 
@@ -70,11 +72,12 @@ type relayerProxy struct {
 	// ringCache is used to obtain and store the ring for the application.
 	ringCache crypto.RingCache
 
-	// AddressToSigningKeyNameMap is a map with a CosmoSDK address as a key, and the keyring signing key name as a value.
+	// OperatorAddressToSigningKeyNameMap is a map with a CosmoSDK address as a key,
+	// and the keyring signing key name as a value.
 	// We use this map in:
 	// 1. Relay verification to check if the incoming relay matches the supplier hosted by the relay miner;
 	// 2. Relay signing to resolve which keyring key name to use for signing;
-	AddressToSigningKeyNameMap map[string]string
+	OperatorAddressToSigningKeyNameMap map[string]string
 }
 
 // NewRelayerProxy creates a new relayer proxy with the given dependencies or returns

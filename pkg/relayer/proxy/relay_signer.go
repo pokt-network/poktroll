@@ -10,13 +10,13 @@ import (
 // TODO_TECHDEBT(@red-0ne): This method should be moved out of the RelayerProxy interface
 // that should not be responsible for signing relay responses.
 // See https://github.com/pokt-network/poktroll/issues/160 for a better design.
-func (rp *relayerProxy) SignRelayResponse(relayResponse *types.RelayResponse, supplierAddr string) error {
+func (rp *relayerProxy) SignRelayResponse(relayResponse *types.RelayResponse, supplierOperatorAddr string) error {
 	// create a simple signer for the request
-	_, ok := rp.AddressToSigningKeyNameMap[supplierAddr]
+	_, ok := rp.OperatorAddressToSigningKeyNameMap[supplierOperatorAddr]
 	if !ok {
-		return ErrRelayerProxyUndefinedSigningKeyNames.Wrapf("unable to resolve the signing key name for %s", supplierAddr)
+		return ErrRelayerProxyUndefinedSigningKeyNames.Wrapf("unable to resolve the signing key name for %s", supplierOperatorAddr)
 	}
-	signer := signer.NewSimpleSigner(rp.keyring, rp.AddressToSigningKeyNameMap[supplierAddr])
+	signer := signer.NewSimpleSigner(rp.keyring, rp.OperatorAddressToSigningKeyNameMap[supplierOperatorAddr])
 
 	// extract and hash the relay response's signable bytes
 	signableBz, err := relayResponse.GetSignableBytesHash()
@@ -31,6 +31,6 @@ func (rp *relayerProxy) SignRelayResponse(relayResponse *types.RelayResponse, su
 	}
 
 	// set the relay response's signature
-	relayResponse.Meta.SupplierSignature = responseSig
+	relayResponse.Meta.SupplierOperatorSignature = responseSig
 	return nil
 }

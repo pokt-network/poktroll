@@ -16611,7 +16611,7 @@ paths:
                 items:
                   type: object
                   properties:
-                    supplier_address:
+                    supplier_operator_address:
                       type: string
                       title: the address of the supplier that submitted this claim
                     session_header:
@@ -16795,7 +16795,7 @@ paths:
           in: query
           required: false
           type: boolean
-        - name: supplier_address
+        - name: supplier_operator_address
           in: query
           required: false
           type: string
@@ -16810,7 +16810,7 @@ paths:
           format: uint64
       tags:
         - Query
-  /pokt-network/poktroll/proof/claim/{session_id}/{supplier_address}:
+  /pokt-network/poktroll/proof/claim/{session_id}/{supplier_operator_address}:
     get:
       summary: Queries a list of Claim items.
       operationId: PoktrollProofQuery_Claim
@@ -16823,7 +16823,7 @@ paths:
               claim:
                 type: object
                 properties:
-                  supplier_address:
+                  supplier_operator_address:
                     type: string
                     title: the address of the supplier that submitted this claim
                   session_header:
@@ -16923,7 +16923,7 @@ paths:
           in: path
           required: true
           type: string
-        - name: supplier_address
+        - name: supplier_operator_address
           in: path
           required: true
           type: string
@@ -17032,7 +17032,7 @@ paths:
                 items:
                   type: object
                   properties:
-                    supplier_address:
+                    supplier_operator_address:
                       type: string
                     session_header:
                       description: >-
@@ -17214,7 +17214,7 @@ paths:
           in: query
           required: false
           type: boolean
-        - name: supplier_address
+        - name: supplier_operator_address
           in: query
           required: false
           type: string
@@ -17229,7 +17229,7 @@ paths:
           format: uint64
       tags:
         - Query
-  /pokt-network/poktroll/proof/proof/{session_id}/{supplier_address}:
+  /pokt-network/poktroll/proof/proof/{session_id}/{supplier_operator_address}:
     get:
       summary: Queries a list of Proof items.
       operationId: PoktrollProofQuery_Proof
@@ -17242,7 +17242,7 @@ paths:
               proof:
                 type: object
                 properties:
-                  supplier_address:
+                  supplier_operator_address:
                     type: string
                   session_header:
                     description: The session header of the session that this claim is for.
@@ -17340,7 +17340,7 @@ paths:
           in: path
           required: true
           type: string
-        - name: supplier_address
+        - name: supplier_operator_address
           in: path
           required: true
           type: string
@@ -17358,7 +17358,7 @@ paths:
               claim:
                 type: object
                 properties:
-                  supplier_address:
+                  supplier_operator_address:
                     type: string
                     title: the address of the supplier that submitted this claim
                   session_header:
@@ -17460,7 +17460,7 @@ paths:
           schema:
             type: object
             properties:
-              supplier_address:
+              supplier_operator_address:
                 type: string
               session_header:
                 type: object
@@ -17552,7 +17552,7 @@ paths:
               proof:
                 type: object
                 properties:
-                  supplier_address:
+                  supplier_operator_address:
                     type: string
                   session_header:
                     type: object
@@ -17657,7 +17657,7 @@ paths:
           schema:
             type: object
             properties:
-              supplier_address:
+              supplier_operator_address:
                 type: string
               session_header:
                 type: object
@@ -26007,7 +26007,7 @@ definitions:
   poktroll.proof.Claim:
     type: object
     properties:
-      supplier_address:
+      supplier_operator_address:
         type: string
         title: the address of the supplier that submitted this claim
       session_header:
@@ -26136,7 +26136,7 @@ definitions:
   poktroll.proof.Proof:
     type: object
     properties:
-      supplier_address:
+      supplier_operator_address:
         type: string
       session_header:
         description: The session header of the session that this claim is for.
@@ -26211,7 +26211,7 @@ definitions:
         items:
           type: object
           properties:
-            supplier_address:
+            supplier_operator_address:
               type: string
               title: the address of the supplier that submitted this claim
             session_header:
@@ -26318,7 +26318,7 @@ definitions:
         items:
           type: object
           properties:
-            supplier_address:
+            supplier_operator_address:
               type: string
             session_header:
               description: The session header of the session that this claim is for.
@@ -26419,7 +26419,7 @@ definitions:
       claim:
         type: object
         properties:
-          supplier_address:
+          supplier_operator_address:
             type: string
             title: the address of the supplier that submitted this claim
           session_header:
@@ -26498,7 +26498,7 @@ definitions:
       proof:
         type: object
         properties:
-          supplier_address:
+          supplier_operator_address:
             type: string
           session_header:
             description: The session header of the session that this claim is for.
@@ -26692,7 +26692,7 @@ definitions:
   poktroll.proof.MsgCreateClaim:
     type: object
     properties:
-      supplier_address:
+      supplier_operator_address:
         type: string
       session_header:
         type: object
@@ -26770,7 +26770,7 @@ definitions:
       claim:
         type: object
         properties:
-          supplier_address:
+          supplier_operator_address:
             type: string
             title: the address of the supplier that submitted this claim
           session_header:
@@ -26846,7 +26846,7 @@ definitions:
   poktroll.proof.MsgSubmitProof:
     type: object
     properties:
-      supplier_address:
+      supplier_operator_address:
         type: string
       session_header:
         type: object
@@ -26924,7 +26924,7 @@ definitions:
       proof:
         type: object
         properties:
-          supplier_address:
+          supplier_operator_address:
             type: string
           session_header:
             type: object
@@ -27228,7 +27228,7 @@ definitions:
   poktroll.proof.Proof:
     type: object
     properties:
-      supplier_address:
+      supplier_operator_address:
         type: string
       session_header:
         type: object

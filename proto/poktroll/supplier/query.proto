@@ -24,7 +24,7 @@ service Query {
 
   // Queries a list of Supplier items.
   rpc Supplier    (QueryGetSupplierRequest) returns (QueryGetSupplierResponse) {
-    option (google.api.http).get = "/pokt-network/poktroll/supplier/supplier/{address}";
+    option (google.api.http).get = "/pokt-network/poktroll/supplier/supplier/{operator_address}";
 
   }
   rpc AllSuppliers (QueryAllSuppliersRequest) returns (QueryAllSuppliersResponse) {
@@ -43,7 +43,7 @@ message QueryParamsResponse {
 }
 
 message QueryGetSupplierRequest {
-  string address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  string operator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
 }
 
 message QueryGetSupplierResponse {

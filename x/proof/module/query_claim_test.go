@@ -30,62 +30,62 @@ func TestClaim_Show(t *testing.T) {
 		fmt.Sprintf("--%s=json", cometcli.OutputFlag),
 	}
 
-	var wrongSupplierAddr = sample.AccAddress()
+	var wrongSupplierOperatorAddr = sample.AccAddress()
 	tests := []struct {
-		desc         string
-		sessionId    string
-		supplierAddr string
+		desc                 string
+		sessionId            string
+		supplierOperatorAddr string
 
 		claim       types.Claim
 		expectedErr error
 	}{
 		{
-			desc:         "claim found",
-			sessionId:    claims[0].GetSessionHeader().GetSessionId(),
-			supplierAddr: claims[0].GetSupplierAddress(),
+			desc:                 "claim found",
+			sessionId:            claims[0].GetSessionHeader().GetSessionId(),
+			supplierOperatorAddr: claims[0].GetSupplierOperatorAddress(),
 
 			claim:       claims[0],
 			expectedErr: nil,
 		},
 		{
-			desc:         "claim not found (wrong session ID)",
-			sessionId:    "wrong_session_id",
-			supplierAddr: claims[0].GetSupplierAddress(),
+			desc:                 "claim not found (wrong session ID)",
+			sessionId:            "wrong_session_id",
+			supplierOperatorAddr: claims[0].GetSupplierOperatorAddress(),
 
 			expectedErr: status.Error(
 				codes.NotFound,
 				types.ErrProofClaimNotFound.Wrapf(
 					"session ID %q and supplier %q",
 					"wrong_session_id",
-					claims[0].GetSupplierAddress(),
+					claims[0].GetSupplierOperatorAddress(),
 				).Error(),
 			),
 		},
 		{
-			desc:         "claim not found (invalid bech32 supplier address)",
-			sessionId:    claims[0].GetSessionHeader().GetSessionId(),
-			supplierAddr: "invalid_bech32_supplier_address",
+			desc:                 "claim not found (invalid bech32 supplier operator address)",
+			sessionId:            claims[0].GetSessionHeader().GetSessionId(),
+			supplierOperatorAddr: "invalid_bech32_supplier_operator_address",
 
 			// NB: this is *NOT* a gRPC status error because the bech32 parse
 			// error occurs during request validation (i.e. client-side).
 			expectedErr: types.ErrProofInvalidAddress.Wrapf(
 				// TODO_TECHDEBT: prefer using "%q" in error format strings
 				// to disambiguate empty string from space or no output.
-				"invalid supplier address for claim being retrieved %s; (decoding bech32 failed: invalid separator index -1)",
-				"invalid_bech32_supplier_address",
+				"invalid supplier operator address for claim being retrieved %s; (decoding bech32 failed: invalid separator index -1)",
+				"invalid_bech32_supplier_operator_address",
 			),
 		},
 		{
-			desc:         "claim not found (wrong supplier address)",
-			sessionId:    claims[0].GetSessionHeader().GetSessionId(),
-			supplierAddr: wrongSupplierAddr,
+			desc:                 "claim not found (wrong supplier operator address)",
+			sessionId:            claims[0].GetSessionHeader().GetSessionId(),
+			supplierOperatorAddr: wrongSupplierOperatorAddr,
 
 			expectedErr: status.Error(
 				codes.NotFound,
 				types.ErrProofClaimNotFound.Wrapf(
 					"session ID %q and supplier %q",
 					claims[0].GetSessionHeader().GetSessionId(),
-					wrongSupplierAddr,
+					wrongSupplierOperatorAddr,
 				).Error(),
 			),
 		},
@@ -94,7 +94,7 @@ func TestClaim_Show(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			args := []string{
 				test.sessionId,
-				test.supplierAddr,
+				test.supplierOperatorAddr,
 			}
 			args = append(args, commonArgs...)
 			out, err := clitestutil.ExecTestCLICmd(clientCtx, proof.CmdShowClaim(), args)
@@ -107,7 +107,7 @@ func TestClaim_Show(t *testing.T) {
 				require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 				require.NotNil(t, resp.Claim)
 
-				require.Equal(t, test.claim.GetSupplierAddress(), resp.Claim.GetSupplierAddress())
+				require.Equal(t, test.claim.GetSupplierOperatorAddress(), resp.Claim.GetSupplierOperatorAddress())
 				require.Equal(t, test.claim.GetRootHash(), resp.Claim.GetRootHash())
 				require.Equal(t, test.claim.GetSessionHeader(), resp.Claim.GetSessionHeader())
 			}
@@ -201,14 +201,14 @@ func TestClaim_List(t *testing.T) {
 		}
 	})
 
-	t.Run("BySupplierAddress", func(t *testing.T) {
-		supplierAddr := claims[0].SupplierAddress
+	t.Run("BySupplierOperatorAddress", func(t *testing.T) {
+		supplierOperatorAddr := claims[0].SupplierOperatorAddress
 		args := prepareArgs(nil, 0, uint64(totalClaims), true)
-		args = append(args, fmt.Sprintf("--%s=%s", proof.FlagSupplierAddress, supplierAddr))
+		args = append(args, fmt.Sprintf("--%s=%s", proof.FlagSupplierOperatorAddress, supplierOperatorAddr))
 
 		expectedClaims := make([]types.Claim, 0)
 		for _, claim := range claims {
-			if claim.SupplierAddress == supplierAddr {
+			if claim.SupplierOperatorAddress == supplierOperatorAddr {
 				expectedClaims = append(expectedClaims, claim)
 			}
 		}

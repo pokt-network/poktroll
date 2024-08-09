@@ -31,7 +31,7 @@ func createNProofs(keeper keeper.Keeper, ctx context.Context, n int) []types.Pro
 
 	for i := range proofs {
 		proofs[i] = types.Proof{
-			SupplierAddress: sample.AccAddress(),
+			SupplierOperatorAddress: sample.AccAddress(),
 			SessionHeader: &sessiontypes.SessionHeader{
 				ApplicationAddress:      sample.AccAddress(),
 				Service:                 &sharedtypes.Service{Id: testServiceId},
@@ -56,7 +56,7 @@ func TestProofGet(t *testing.T) {
 		foundProof, isProofFound := keeper.GetProof(
 			ctx,
 			proof.GetSessionHeader().GetSessionId(),
-			proof.GetSupplierAddress(),
+			proof.GetSupplierOperatorAddress(),
 		)
 		require.True(t, isProofFound)
 		require.Equal(t,
@@ -70,8 +70,8 @@ func TestProofRemove(t *testing.T) {
 	proofs := createNProofs(keeper, ctx, 10)
 	for _, proof := range proofs {
 		sessionId := proof.GetSessionHeader().GetSessionId()
-		keeper.RemoveProof(ctx, sessionId, proof.GetSupplierAddress())
-		_, isProofFound := keeper.GetProof(ctx, sessionId, proof.GetSupplierAddress())
+		keeper.RemoveProof(ctx, sessionId, proof.GetSupplierOperatorAddress())
+		_, isProofFound := keeper.GetProof(ctx, sessionId, proof.GetSupplierOperatorAddress())
 		require.False(t, isProofFound)
 	}
 }

@@ -46,7 +46,7 @@ func CmdListSuppliers() *cobra.Command {
 
 func CmdShowSupplier() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "show-supplier <supplier_address>",
+		Use:   "show-supplier <supplier_operator_address>",
 		Short: "shows a supplier",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
@@ -60,7 +60,7 @@ func CmdShowSupplier() *cobra.Command {
 			argAddress := args[0]
 
 			params := &types.QueryGetSupplierRequest{
-				Address: argAddress,
+				OperatorAddress: argAddress,
 			}
 
 			res, err := queryClient.Supplier(cmd.Context(), params)

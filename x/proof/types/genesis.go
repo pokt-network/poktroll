@@ -18,7 +18,7 @@ func (gs GenesisState) Validate() error {
 	// Check for duplicated index in claim
 	claimPrimaryKeyMap := make(map[string]struct{})
 
-	// Ensure claims are unique with respect to a given session ID and supplier address.
+	// Ensure claims are unique with respect to a given session ID and supplier operator address.
 	for _, claim := range gs.ClaimList {
 		// TODO_TEST: ensure the corresponding supplier exists and is staked.
 
@@ -31,9 +31,9 @@ func (gs GenesisState) Validate() error {
 		}
 
 		sessionId := claim.GetSessionHeader().GetSessionId()
-		primaryKey := string(ClaimPrimaryKey(sessionId, claim.SupplierAddress))
+		primaryKey := string(ClaimPrimaryKey(sessionId, claim.SupplierOperatorAddress))
 		if _, ok := claimPrimaryKeyMap[primaryKey]; ok {
-			return fmt.Errorf("duplicated supplierAddr for claim")
+			return fmt.Errorf("duplicated supplierOperatorAddr for claim")
 		}
 		claimPrimaryKeyMap[primaryKey] = struct{}{}
 	}
@@ -43,7 +43,7 @@ func (gs GenesisState) Validate() error {
 	for _, proof := range gs.ProofList {
 		proofPrimaryKey := string(ProofPrimaryKey(
 			proof.GetSessionHeader().GetSessionId(),
-			proof.GetSupplierAddress(),
+			proof.GetSupplierOperatorAddress(),
 		))
 		if _, ok := proofPrimaryKeyMap[proofPrimaryKey]; ok {
 			return fmt.Errorf("duplicated primaryKey for proof")

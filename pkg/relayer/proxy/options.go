@@ -6,7 +6,7 @@ import (
 )
 
 // WithSigningKeyName sets the signing key name used by the relayer proxy to sign relay responses.
-// It is used along with the keyring to get the supplier address and sign the relay responses.
+// It is used along with the keyring to get the supplier operator address and sign the relay responses.
 func WithSigningKeyNames(keyNames []string) relayer.RelayerProxyOption {
 	return func(relProxy relayer.RelayerProxy) {
 		relProxy.(*relayerProxy).signingKeyNames = keyNames

@@ -11,21 +11,21 @@ const TypeMsgCreateClaim = "create_claim"
 var _ sdk.Msg = (*MsgCreateClaim)(nil)
 
 func NewMsgCreateClaim(
-	supplierAddr string,
+	supplierOperatorAddr string,
 	sessionHeader *sessiontypes.SessionHeader,
 	rootHash []byte,
 ) *MsgCreateClaim {
 	return &MsgCreateClaim{
-		SupplierAddress: supplierAddr,
-		SessionHeader:   sessionHeader,
-		RootHash:        rootHash,
+		SupplierOperatorAddress: supplierOperatorAddr,
+		SessionHeader:           sessionHeader,
+		RootHash:                rootHash,
 	}
 }
 
 func (msg *MsgCreateClaim) ValidateBasic() error {
-	// Validate the supplier address
-	if _, err := sdk.AccAddressFromBech32(msg.GetSupplierAddress()); err != nil {
-		return ErrProofInvalidAddress.Wrapf("%s", msg.GetSupplierAddress())
+	// Validate the supplier operator address
+	if _, err := sdk.AccAddressFromBech32(msg.GetSupplierOperatorAddress()); err != nil {
+		return ErrProofInvalidAddress.Wrapf("%s", msg.GetSupplierOperatorAddress())
 	}
 
 	// Retrieve & validate the session header

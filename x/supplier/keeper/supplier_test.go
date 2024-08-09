@@ -38,7 +38,8 @@ func createNSuppliers(keeper keeper.Keeper, ctx context.Context, n int) []shared
 	suppliers := make([]sharedtypes.Supplier, n)
 	for i := range suppliers {
 		supplier := &suppliers[i]
-		supplier.Address = sample.AccAddress()
+		supplier.OwnerAddress = sample.AccAddress()
+		supplier.OperatorAddress = sample.AccAddress()
 		supplier.Stake = &sdk.Coin{Denom: "upokt", Amount: math.NewInt(int64(i))}
 		supplier.Services = []*sharedtypes.SupplierServiceConfig{
 			{
@@ -63,7 +64,7 @@ func TestSupplierGet(t *testing.T) {
 	suppliers := createNSuppliers(*supplierModuleKeepers.Keeper, ctx, 10)
 	for _, supplier := range suppliers {
 		supplierFound, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx,
-			supplier.Address,
+			supplier.OperatorAddress,
 		)
 		require.True(t, isSupplierFound)
 		require.Equal(t,
@@ -77,9 +78,9 @@ func TestSupplierRemove(t *testing.T) {
 	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
 	suppliers := createNSuppliers(*supplierModuleKeepers.Keeper, ctx, 10)
 	for _, supplier := range suppliers {
-		supplierModuleKeepers.RemoveSupplier(ctx, supplier.Address)
+		supplierModuleKeepers.RemoveSupplier(ctx, supplier.OperatorAddress)
 		_, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx,
-			supplier.Address,
+			supplier.OperatorAddress,
 		)
 		require.False(t, isSupplierFound)
 	}

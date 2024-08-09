@@ -8,7 +8,8 @@ import "cosmos_proto/cosmos.proto";
 import "poktroll/session/session.proto";
 
 message Proof {
-  string supplier_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  // Address of the supplier's operator that submitted this proof.
+  string supplier_operator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   // The session header of the session that this claim is for.
   poktroll.session.SessionHeader session_header = 2;
   // The serialized SMST proof from the `#ClosestProof()` method.

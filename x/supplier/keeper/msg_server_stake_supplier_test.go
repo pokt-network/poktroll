@@ -37,7 +37,7 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 	// Verify that the supplier exists
 	foundSupplier, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
 	require.True(t, isSupplierFound)
-	require.Equal(t, operatorAddr, foundSupplier.Address)
+	require.Equal(t, operatorAddr, foundSupplier.OperatorAddress)
 	require.Equal(t, int64(100), foundSupplier.Stake.Amount.Int64())
 	require.Len(t, foundSupplier.Services, 1)
 	require.Equal(t, "svcId", foundSupplier.Services[0].Service.Id)
@@ -87,7 +87,7 @@ func TestMsgServer_StakeSupplier_FailRestakingDueToInvalidServices(t *testing.T)
 	// Verify the supplierFound still exists and is staked for svc1
 	supplierFound, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
 	require.True(t, isSupplierFound)
-	require.Equal(t, operatorAddr, supplierFound.Address)
+	require.Equal(t, operatorAddr, supplierFound.OperatorAddress)
 	require.Len(t, supplierFound.Services, 1)
 	require.Equal(t, "svcId", supplierFound.Services[0].Service.Id)
 	require.Len(t, supplierFound.Services[0].Endpoints, 1)
@@ -104,7 +104,7 @@ func TestMsgServer_StakeSupplier_FailRestakingDueToInvalidServices(t *testing.T)
 	// Verify the supplier still exists and is staked for svc1
 	supplierFound, isSupplierFound = supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
 	require.True(t, isSupplierFound)
-	require.Equal(t, operatorAddr, supplierFound.Address)
+	require.Equal(t, operatorAddr, supplierFound.OperatorAddress)
 	require.Len(t, supplierFound.Services, 1)
 	require.Equal(t, "svcId", supplierFound.Services[0].Service.Id)
 	require.Len(t, supplierFound.Services[0].Endpoints, 1)
@@ -175,7 +175,7 @@ func TestMsgServer_StakeSupplier_OperatorAuthorizations(t *testing.T) {
 	require.NoError(t, err)
 	supplier, isSupplierFound := k.GetSupplier(ctx, operatorAddr)
 	require.True(t, isSupplierFound)
-	require.Equal(t, operatorAddr, supplier.Address)
+	require.Equal(t, operatorAddr, supplier.OperatorAddress)
 	require.Equal(t, ownerAddr, supplier.OwnerAddress)
 
 	// Update the supplier using the operator address as the signer and verify that it succeeds.
@@ -207,32 +207,32 @@ func TestMsgServer_StakeSupplier_OperatorAuthorizations(t *testing.T) {
 	// and verify that it fails.
 	stakeMsg = stakeSupplierForServicesMsg(ownerAddr, operatorAddr, 400, "svcId")
 	stakeMsg.Signer = operatorAddr
-	stakeMsg.Address = sample.AccAddress()
+	stakeMsg.OperatorAddress = sample.AccAddress()
 	_, err = srv.StakeSupplier(ctx, stakeMsg)
 	require.NoError(t, err)
 
 	// Check that the supplier was created
-	newSupplier, newSupplierFound := k.GetSupplier(ctx, stakeMsg.Address)
+	newSupplier, newSupplierFound := k.GetSupplier(ctx, stakeMsg.OperatorAddress)
 	require.True(t, newSupplierFound)
 
 	oldSupplier, oldSupplierFound := k.GetSupplier(ctx, operatorAddr)
 	require.True(t, oldSupplierFound)
 
-	require.NotEqual(t, oldSupplier.Address, newSupplier.Address)
+	require.NotEqual(t, oldSupplier.OperatorAddress, newSupplier.OperatorAddress)
 
 	// Trying to update the supplier's owner address using the owner as a signer
 	// will create a new supplier
 	stakeMsg = stakeSupplierForServicesMsg(ownerAddr, operatorAddr, 400, "svcId")
-	stakeMsg.Address = sample.AccAddress()
+	stakeMsg.OperatorAddress = sample.AccAddress()
 	_, err = srv.StakeSupplier(ctx, stakeMsg)
 	require.NoError(t, err)
 
 	// Check that a supplier was created
-	newSupplier, newSupplierFound = k.GetSupplier(ctx, stakeMsg.Address)
+	newSupplier, newSupplierFound = k.GetSupplier(ctx, stakeMsg.OperatorAddress)
 	oldSupplier, oldSupplierFound = k.GetSupplier(ctx, operatorAddr)
 	require.True(t, newSupplierFound)
 	require.True(t, oldSupplierFound)
-	require.NotEqual(t, oldSupplier.Address, newSupplier.Address)
+	require.NotEqual(t, oldSupplier.OperatorAddress, newSupplier.OperatorAddress)
 
 	newOwnerAddress := sample.AccAddress()
 
@@ -324,7 +324,7 @@ func TestMsgServer_StakeSupplier_ActiveSupplier(t *testing.T) {
 }
 
 // stakeSupplierForServicesMsg prepares and returns a MsgStakeSupplier that stakes
-// the given supplier address, stake amount, and service IDs.
+// the given supplier operator address, stake amount, and service IDs.
 func stakeSupplierForServicesMsg(
 	ownerAddr, operatorAddr string,
 	amount int64,
@@ -345,10 +345,10 @@ func stakeSupplierForServicesMsg(
 	}
 
 	return &types.MsgStakeSupplier{
-		Signer:       ownerAddr,
-		OwnerAddress: ownerAddr,
-		Address:      operatorAddr,
-		Stake:        &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(amount)},
-		Services:     services,
+		Signer:          ownerAddr,
+		OwnerAddress:    ownerAddr,
+		OperatorAddress: operatorAddr,
+		Stake:           &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(amount)},
+		Services:        services,
 	}
 }
