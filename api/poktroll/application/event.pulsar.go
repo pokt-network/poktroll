@@ -518,8 +518,8 @@ type EventRedelegation struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	AppAddress     string `protobuf:"bytes,1,opt,name=app_address,json=appAddress,proto3" json:"app_address,omitempty"`             // The Bech32 address of the application, using cosmos' ScalarDescriptor to ensure deterministic encoding
-	GatewayAddress string `protobuf:"bytes,2,opt,name=gateway_address,json=gatewayAddress,proto3" json:"gateway_address,omitempty"` // The Bech32 address of the gateway the application has changed their delegation of, using cosmos' ScalarDescriptor to ensure deterministic encoding
+	AppAddress     string `protobuf:"bytes,1,opt,name=app_address,json=appAddress,proto3" json:"app_address,omitempty"`             // The Bech32 address of the application.
+	GatewayAddress string `protobuf:"bytes,2,opt,name=gateway_address,json=gatewayAddress,proto3" json:"gateway_address,omitempty"` // The Bech32 address of the gateway the application has changed their delegation of.
 }
 
 func (x *EventRedelegation) Reset() {

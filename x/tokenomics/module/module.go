@@ -97,6 +97,7 @@ type AppModule struct {
 	tokenomicsKeeper keeper.Keeper
 	accountKeeper    types.AccountKeeper
 	bankKeeper       types.BankKeeper
+	supplierKeeper   types.SupplierKeeper
 }
 
 func NewAppModule(
@@ -104,12 +105,14 @@ func NewAppModule(
 	tokenomicsKeeper keeper.Keeper,
 	accountKeeper types.AccountKeeper,
 	bankKeeper types.BankKeeper,
+	supplierKeeper types.SupplierKeeper,
 ) AppModule {
 	return AppModule{
 		AppModuleBasic:   NewAppModuleBasic(cdc),
 		tokenomicsKeeper: tokenomicsKeeper,
 		accountKeeper:    accountKeeper,
 		bankKeeper:       bankKeeper,
+		supplierKeeper:   supplierKeeper,
 	}
 }
 
@@ -220,6 +223,7 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 		k,
 		in.AccountKeeper,
 		in.BankKeeper,
+		in.SupplierKeeper,
 	)
 
 	return ModuleOutputs{TokenomicsKeeper: k, Module: m}

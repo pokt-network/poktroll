@@ -31,3 +31,13 @@ func (s *Supplier) IsActive(queryHeight uint64, serviceId string) bool {
 
 	return true
 }
+
+// HasOwner returns whether the given address is the supplier's owner address.
+func (s *Supplier) HasOwner(address string) bool {
+	return s.OwnerAddress == address
+}
+
+// HasOperator returns whether the given address is the supplier's operator address.
+func (s *Supplier) HasOperator(address string) bool {
+	return s.Address == address
+}

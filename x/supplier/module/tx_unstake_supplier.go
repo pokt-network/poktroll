@@ -12,13 +12,13 @@ import (
 func CmdUnstakeSupplier() *cobra.Command {
 	// fromAddress & signature is retrieved via `flags.FlagFrom` in the `clientCtx`
 	cmd := &cobra.Command{
-		Use:   "unstake-supplier",
+		Use:   "unstake-supplier <operator_address>",
 		Short: "Unstake a supplier",
-		Long: `Unstake an supplier with the provided parameters. This is a broadcast operation that will unstake the supplier specified by the 'from' address.
+		Long: `Unstake an supplier with the provided parameters. This is a broadcast operation that will unstake the supplier specified by the <operator_address> and owned by 'from' address.
 
 Example:
-$ poktrolld --home=$(POKTROLLD_HOME) tx supplier unstake-supplier --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE)`,
-		Args: cobra.ExactArgs(0),
+$ poktrolld tx supplier unstake-supplier $(OPERATOR_ADDRESS) --keyring-backend test --from $(SIGNER_ADDRESS) --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 
 			clientCtx, err := client.GetClientTxContext(cmd)
@@ -26,8 +26,14 @@ $ poktrolld --home=$(POKTROLLD_HOME) tx supplier unstake-supplier --keyring-back
 				return err
 			}
 
+			// address is the must be the owner or operator address of the supplier
+			address := args[0]
+
+			signerAddress := clientCtx.GetFromAddress().String()
+
 			msg := types.NewMsgUnstakeSupplier(
-				clientCtx.GetFromAddress().String(),
+				signerAddress,
+				address,
 			)
 			if err := msg.ValidateBasic(); err != nil {
 				return err

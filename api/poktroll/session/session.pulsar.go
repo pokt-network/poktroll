@@ -1506,7 +1506,7 @@ type SessionHeader struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	ApplicationAddress string          `protobuf:"bytes,1,opt,name=application_address,json=applicationAddress,proto3" json:"application_address,omitempty"` // The Bech32 address of the application using cosmos' ScalarDescriptor to ensure deterministic encoding
+	ApplicationAddress string          `protobuf:"bytes,1,opt,name=application_address,json=applicationAddress,proto3" json:"application_address,omitempty"` // The Bech32 address of the application.
 	Service            *shared.Service `protobuf:"bytes,2,opt,name=service,proto3" json:"service,omitempty"`                                                 // The service this session is for
 	// NOTE: session_id can be derived from the above values using on-chain but is included in the header for convenience
 	SessionId               string `protobuf:"bytes,3,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`                                                // A unique pseudoranom ID for this session

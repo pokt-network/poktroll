@@ -7,5 +7,5 @@ import "cosmos_proto/cosmos.proto";
 
 // GatewayStaked defines the event emitted when a gateway has been unstaked.
 message EventGatewayUnstaked {
-  string address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the gateway the application has changed their delegation of, using cosmos' ScalarDescriptor to ensure deterministic encoding
+  string address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the gateway the application has changed their delegation of.
 }
