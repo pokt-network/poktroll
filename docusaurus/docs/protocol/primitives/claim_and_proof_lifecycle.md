@@ -225,11 +225,11 @@ state Validate_Claim {
         state if_session_start_gt_0 <<choice>>
         state if_session_id_empty <<choice>>
         state if_service_invalid <<choice>>
-        state if_supplier_addr_valid <<choice>>
+        state if_supplier_operator_addr_valid <<choice>>
 
-        [*] --> if_supplier_addr_valid
-        if_supplier_addr_valid --> Basic_Validation_Error: invalid supplier operator address
-        if_supplier_addr_valid --> if_session_start_gt_0
+        [*] --> if_supplier_operator_addr_valid
+        if_supplier_operator_addr_valid --> Basic_Validation_Error: invalid supplier operator address
+        if_supplier_operator_addr_valid --> if_session_start_gt_0
         if_session_start_gt_0 --> Basic_Validation_Error: session start height < 0
         if_session_start_gt_0 --> if_session_id_empty
         if_session_id_empty --> Basic_Validation_Error: empty session ID
@@ -698,13 +698,13 @@ stateDiagram-v2
   [*] --> Proof_Validate_Basic
 
   state Proof_Validate_Basic {
-    state if_supplier_addr_valid <<choice>>
+    state if_supplier_operator_addr_valid <<choice>>
     state if_app_addr_valid <<choice>>
     state if_service_id_empty <<choice>>
     state if_proof_empty <<choice>>
-    [*] --> if_supplier_addr_valid
-    if_supplier_addr_valid --> Basic_Validation_error: invalid supplier operator address
-    if_supplier_addr_valid --> if_app_addr_valid
+    [*] --> if_supplier_operator_addr_valid
+    if_supplier_operator_addr_valid --> Basic_Validation_error: invalid supplier operator address
+    if_supplier_operator_addr_valid --> if_app_addr_valid
     if_app_addr_valid --> Basic_Validation_error: invalid app address
     if_app_addr_valid --> if_service_id_empty
     if_service_id_empty --> Basic_Validation_error: empty service ID

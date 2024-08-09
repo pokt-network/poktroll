@@ -29,7 +29,7 @@ Example:
 $ poktrolld q claim list-claims --node $(POCKET_NODE) --home $(POKTROLLD_HOME)
 $ poktrolld q claim list-claims --session-id <session_id> --node $(POCKET_NODE) --home $(POKTROLLD_HOME)
 $ poktrolld q claim list-claims --session-end-height <session_end_height> --node $(POCKET_NODE) --home $(POKTROLLD_HOME)
-$ poktrolld q claim list-claims --supplier-operator-address <supplier_address> --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
+$ poktrolld q claim list-claims --supplier-operator-address <supplier_operator_address> --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			pageReq, pageErr := client.ReadPageRequest(cmd.Flags())

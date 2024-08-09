@@ -319,7 +319,7 @@ func (rs *relayerSessionsManager) removeFromRelayerSessions(sessionTree relayer.
 		return
 	}
 
-	logger = logger.With("supplier_address", supplierOperatorAddress)
+	logger = logger.With("supplier_operator_address", supplierOperatorAddress)
 
 	_, ok = suppliersSessionTrees[supplierOperatorAddress]
 	if !ok {
@@ -417,7 +417,7 @@ func (rs *relayerSessionsManager) mapAddMinedRelayToSessionTree(
 	logger := rs.logger.
 		With("session_id", smst.GetSessionHeader().GetSessionId()).
 		With("application", smst.GetSessionHeader().GetApplicationAddress()).
-		With("supplier_address", smst.GetSupplierOperatorAddress().String())
+		With("supplier_operator_address", smst.GetSupplierOperatorAddress().String())
 
 	// TODO_BETA(#705): Make sure to update the weight of each relay to the value
 	//                  associated with `relayDifficultyTargetHash` in the `miner/miner.go`.
