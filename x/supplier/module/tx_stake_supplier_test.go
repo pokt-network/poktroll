@@ -67,9 +67,17 @@ func TestCLI_StakeSupplier(t *testing.T) {
 			config:       defaultConfig,
 		},
 		{
-			desc:         "stake supplier: valid, omitte operator address",
+			desc:         "stake supplier: valid, omitted operator address",
 			ownerAddress: ownerAccount.Address.String(),
-			config:       defaultConfig,
+			config: fmt.Sprintf(`
+		owner_address: %s
+		stake_amount: 1000upokt
+		services:
+		  - service_id: svc1
+		    endpoints:
+		    - publicly_exposed_url: http://pokt.network:8081
+		      rpc_type: json_rpc
+		`, ownerAccount.Address.String()),
 		},
 
 		// Error Paths - Address Related

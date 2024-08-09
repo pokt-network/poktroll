@@ -50,6 +50,16 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 	} else {
 		logger.Info(fmt.Sprintf("Supplier found. About to try updating supplier with address %q", msg.Address))
 
+		// Ensure the signer is either the owner or the operator of the supplier.
+		if !msg.IsSigner(supplier.OwnerAddress) && !msg.IsSigner(supplier.Address) {
+			return nil, sharedtypes.ErrSharedUnauthorizedSupplierUpdate.Wrapf(
+				"signer address %s does not match owner address %s or supplier address %s",
+				msg.Signer,
+				msg.OwnerAddress,
+				msg.Address,
+			)
+		}
+
 		// Ensure that only the owner can change the OwnerAddress.
 		// (i.e. fail if owner address changed and the owner is not the msg signer)
 		if !supplier.HasOwner(msg.OwnerAddress) && !msg.IsSigner(supplier.OwnerAddress) {
@@ -89,24 +99,24 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 
 	// Must always stake or upstake (> 0 delta)
 	if coinsToEscrow.IsZero() {
-		logger.Warn(fmt.Sprintf("Supplier %q must escrow more than 0 additional coins", msg.Address))
-		return nil, types.ErrSupplierInvalidStake.Wrapf("supplier %q must escrow more than 0 additional coins", msg.Address)
+		logger.Warn(fmt.Sprintf("Signer %q must escrow more than 0 additional coins", msg.Signer))
+		return nil, types.ErrSupplierInvalidStake.Wrapf("Signer %q must escrow more than 0 additional coins", msg.Signer)
 	}
 
-	// Retrieve the account address of the supplier owner
-	supplierOwnerAddress, err := sdk.AccAddressFromBech32(supplier.OwnerAddress)
+	// Retrieve the account address of the message signer
+	msgSignerAddress, err := sdk.AccAddressFromBech32(msg.Signer)
 	if err != nil {
-		logger.Error(fmt.Sprintf("could not parse address %q", supplier.OwnerAddress))
+		logger.Error(fmt.Sprintf("could not parse address %q", msg.Signer))
 		return nil, err
 	}
 
-	// Send the coins from the supplier to the staked supplier pool
-	err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, supplierOwnerAddress, types.ModuleName, []sdk.Coin{coinsToEscrow})
+	// Send the coins from the message signer account to the staked supplier pool
+	err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, msgSignerAddress, types.ModuleName, []sdk.Coin{coinsToEscrow})
 	if err != nil {
-		logger.Error(fmt.Sprintf("could not send %v coins from %q to %q module account due to %v", coinsToEscrow, supplierOwnerAddress, types.ModuleName, err))
+		logger.Error(fmt.Sprintf("could not send %v coins from %q to %q module account due to %v", coinsToEscrow, msgSignerAddress, types.ModuleName, err))
 		return nil, err
 	}
-	logger.Info(fmt.Sprintf("Successfully escrowed %v coins from %q to %q module account", coinsToEscrow, supplierOwnerAddress, types.ModuleName))
+	logger.Info(fmt.Sprintf("Successfully escrowed %v coins from %q to %q module account", coinsToEscrow, msgSignerAddress, types.ModuleName))
 
 	// Update the Supplier in the store
 	k.SetSupplier(ctx, supplier)
@@ -157,6 +167,8 @@ func (k msgServer) updateSupplier(
 		return types.ErrSupplierInvalidStake.Wrapf("stake amount %v must be higher than previous stake amount %v", msg.Stake, supplier.Stake)
 	}
 	supplier.Stake = msg.Stake
+
+	supplier.OwnerAddress = msg.OwnerAddress
 
 	// Validate that the service configs maintain at least one service.
 	// Additional validation is done in `msg.ValidateBasic` above.

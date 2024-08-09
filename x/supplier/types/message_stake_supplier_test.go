@@ -61,7 +61,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 			},
 		},
 		{
-			desc: "valid sender is operator address",
+			desc: "valid signer is operator address",
 			msg: MsgStakeSupplier{
 				Signer:       operatorAddress,
 				OwnerAddress: ownerAddress,
@@ -93,9 +93,20 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 			expectedErr: ErrSupplierInvalidAddress,
 		},
 		{
+			desc: "invalid signer address",
+			msg: MsgStakeSupplier{
+				Signer:       "invalid_address",
+				OwnerAddress: ownerAddress,
+				Stake:        &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(0)},
+				Services:     defaultServicesList,
+			},
+			expectedErr: ErrSupplierInvalidAddress,
+		},
+		{
 			desc: "missing owner address",
 			msg: MsgStakeSupplier{
-				Signer:   ownerAddress,
+				Signer: ownerAddress,
+				// OwnerAddress: ownerAddress,
 				Address:  operatorAddress,
 				Stake:    &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(100)},
 				Services: defaultServicesList,
@@ -106,6 +117,17 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 			desc: "missing operator address",
 			msg: MsgStakeSupplier{
 				Signer:       ownerAddress,
+				OwnerAddress: ownerAddress,
+				// Address: operatorAddress,
+				Stake:    &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(0)},
+				Services: defaultServicesList,
+			},
+			expectedErr: ErrSupplierInvalidAddress,
+		},
+		{
+			desc: "missing signer address",
+			msg: MsgStakeSupplier{
+				// Signer: ownerAddress,
 				OwnerAddress: ownerAddress,
 				Stake:        &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(0)},
 				Services:     defaultServicesList,

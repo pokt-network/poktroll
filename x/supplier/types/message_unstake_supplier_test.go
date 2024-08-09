@@ -9,7 +9,7 @@ import (
 )
 
 func TestMsgUnstakeSupplier_ValidateBasic(t *testing.T) {
-	ownerAddress := sample.AccAddress()
+	signerAddress := sample.AccAddress()
 	operatorAddress := sample.AccAddress()
 	tests := []struct {
 		desc        string
@@ -19,7 +19,7 @@ func TestMsgUnstakeSupplier_ValidateBasic(t *testing.T) {
 		{
 			desc: "invalid operator address",
 			msg: MsgUnstakeSupplier{
-				Signer:  ownerAddress,
+				Signer:  signerAddress,
 				Address: "invalid_address",
 			},
 			expectedErr: ErrSupplierInvalidAddress,
@@ -27,12 +27,12 @@ func TestMsgUnstakeSupplier_ValidateBasic(t *testing.T) {
 		{
 			desc: "missing operator address",
 			msg: MsgUnstakeSupplier{
-				Signer: ownerAddress,
+				Signer: signerAddress,
 			},
 			expectedErr: ErrSupplierInvalidAddress,
 		},
 		{
-			desc: "invalid owner address",
+			desc: "invalid signer address",
 			msg: MsgUnstakeSupplier{
 				Signer:  "invalid_address",
 				Address: operatorAddress,
@@ -40,7 +40,7 @@ func TestMsgUnstakeSupplier_ValidateBasic(t *testing.T) {
 			expectedErr: ErrSupplierInvalidAddress,
 		},
 		{
-			desc: "missing owner address",
+			desc: "missing signer address",
 			msg: MsgUnstakeSupplier{
 				Address: operatorAddress,
 			},
@@ -49,15 +49,15 @@ func TestMsgUnstakeSupplier_ValidateBasic(t *testing.T) {
 		{
 			desc: "valid message",
 			msg: MsgUnstakeSupplier{
-				Signer:  ownerAddress,
+				Signer:  signerAddress,
 				Address: operatorAddress,
 			},
 		},
 		{
-			desc: "valid message - same operator and owner addresses",
+			desc: "valid message - same signer and operator addresses",
 			msg: MsgUnstakeSupplier{
-				Signer:  ownerAddress,
-				Address: ownerAddress,
+				Signer:  operatorAddress,
+				Address: operatorAddress,
 			},
 		},
 	}

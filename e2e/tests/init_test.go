@@ -350,7 +350,7 @@ func (s *suite) TheUserUnstakesAFromTheAccount(actorType string, accName string)
 			"tx",
 			actorType,
 			fmt.Sprintf("unstake-%s", actorType),
-			accNameToAddrMap[accName],
+			accNameToAddrMap[accName], // supplier owner or operator address
 			"--from",
 			accName,
 			keyRingFlag,

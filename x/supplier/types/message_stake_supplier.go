@@ -38,14 +38,9 @@ func (msg *MsgStakeSupplier) ValidateBasic() error {
 		return ErrSupplierInvalidAddress.Wrapf("invalid supplier address %s; (%v)", msg.Address, err)
 	}
 
-	// Ensure the sender address matches the owner address or the operator address.
-	if msg.Signer != msg.OwnerAddress && msg.Signer != msg.Address {
-		return sharedtypes.ErrSharedUnauthorizedSupplierUpdate.Wrapf(
-			"sender address %s does not match owner address %s or supplier address %s",
-			msg.Signer,
-			msg.OwnerAddress,
-			msg.Address,
-		)
+	// Validate the signer address
+	if _, err := sdk.AccAddressFromBech32(msg.Signer); err != nil {
+		return ErrSupplierInvalidAddress.Wrapf("invalid supplier address %s; (%v)", msg.Address, err)
 	}
 
 	// TODO_MAINNET: Centralize stake related verification and share across different
