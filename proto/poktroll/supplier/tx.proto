@@ -60,7 +60,7 @@ message MsgUnstakeSupplier {
   option (cosmos.msg.v1.signer) = "signer";
 
   string signer = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the message signer (i.e. owner or operator)
-  string address = 3 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the operator (i.e. provider, non-custodial)
+  string address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the operator (i.e. provider, non-custodial)
 }
 
 message MsgUnstakeSupplierResponse {}
