@@ -23,13 +23,15 @@ func CmdStakeSupplier() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "stake-supplier --config <config_file.yaml>",
 		Short: "Stake a supplier",
-		Long: `Stake a supplier using the specified configuration file. This command supports both custodial
-and non-custodial staking of the supplier's owner tokens. For more details on the staking process,
-please refer to the supplier staking configuration documentation at:
+		Long: `Stake a supplier using the specified configuration file. This command
+supports both custodial and non-custodial staking of the signer's tokens.
+It sources the necessary information from the provided configuration file.
+
+For more details on the staking process, please refer to the supplier staking documentation at:
 https://dev.poktroll.com/operate/configs/supplier_staking_config
 
 Example:
-$ poktrolld tx supplier stake-supplier --config stake_config.yaml --keyring-backend test  --from $(ADDRESS) --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
+$ poktrolld tx supplier stake-supplier --config stake_config.yaml --keyring-backend test --from $(SIGNER) --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
 
 		Args: cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, _ []string) (err error) {
