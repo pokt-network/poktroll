@@ -71,6 +71,16 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 			},
 		},
 		{
+			desc: "valid signer is neither the operator nor the owner",
+			msg: MsgStakeSupplier{
+				Signer:       sample.AccAddress(),
+				OwnerAddress: ownerAddress,
+				Address:      operatorAddress,
+				Stake:        &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(100)},
+				Services:     defaultServicesList,
+			},
+		},
+		{
 			desc: "invalid operator address",
 			msg: MsgStakeSupplier{
 				Signer:       ownerAddress,
