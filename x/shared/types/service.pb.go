@@ -93,7 +93,7 @@ func (ConfigOptions) EnumDescriptor() ([]byte, []int) {
 type Service struct {
 	// For example, what if we want to request a session for a certain service but with some additional configs that identify it?
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// TODO_BETA: Name is currently unused but acts as a reminder that an optional onchain representation of the service is necessary
+	// TODO_MAINNET: Remove this.
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	// The cost of a single relay for this service in terms of compute units.
 	// Must be used alongside the global 'compute_units_to_tokens_multipler' to calculate the cost of a relay for this service.
@@ -169,6 +169,7 @@ func (m *Service) GetOwnerAddress() string {
 
 // ApplicationServiceConfig holds the service configuration the application stakes for
 type ApplicationServiceConfig struct {
+	// TODO_MAINNET: Avoid embedding the full Service because we just need the ID.
 	Service *Service `protobuf:"bytes,1,opt,name=service,proto3" json:"service,omitempty"`
 }
 
@@ -214,6 +215,7 @@ func (m *ApplicationServiceConfig) GetService() *Service {
 
 // SupplierServiceConfig holds the service configuration the supplier stakes for
 type SupplierServiceConfig struct {
+	// TODO_MAINNET: Avoid embedding the full Service because we just need the ID.
 	Service   *Service            `protobuf:"bytes,1,opt,name=service,proto3" json:"service,omitempty"`
 	Endpoints []*SupplierEndpoint `protobuf:"bytes,2,rep,name=endpoints,proto3" json:"endpoints,omitempty"`
 	RevShare  []*ServiceRevShare  `protobuf:"bytes,3,rep,name=rev_share,json=revShare,proto3" json:"rev_share,omitempty"`

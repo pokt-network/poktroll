@@ -17,6 +17,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
+	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/testutil/testkeyring"
 	"github.com/pokt-network/poktroll/testutil/testrelayer"
 	"github.com/pokt-network/poktroll/testutil/testtree"
@@ -78,7 +79,11 @@ func TestEnsureValidProof_Error(t *testing.T) {
 		preGeneratedAccts,
 	).String()
 
-	service := &sharedtypes.Service{Id: testServiceId}
+	service := &sharedtypes.Service{
+		Id:                   testServiceId,
+		ComputeUnitsPerRelay: 1,
+		OwnerAddress:         sample.AccAddress(),
+	}
 	wrongService := &sharedtypes.Service{Id: "wrong_svc"}
 
 	// Add a supplier and application pair that are expected to be in the session.
@@ -113,10 +118,10 @@ func TestEnsureValidProof_Error(t *testing.T) {
 	require.NoError(t, err)
 
 	// Construct a valid session tree with 5 relays.
-	numRelays := uint(5)
+	numRelays := uint64(5)
 	validSessionTree := testtree.NewFilledSessionTree(
 		ctx, t,
-		numRelays,
+		numRelays, service.ComputeUnitsPerRelay,
 		supplierUid, supplierAddr,
 		validSessionHeader, validSessionHeader, validSessionHeader,
 		keyRing,
@@ -335,10 +340,10 @@ func TestEnsureValidProof_Error(t *testing.T) {
 			newProof: func(t *testing.T) *prooftypes.Proof {
 				// Construct a session tree with 1 relay with a session header containing
 				// a session ID that doesn't match the proof session ID.
-				numRelays := uint(1)
+				numRelays := uint64(1)
 				wrongRequestSessionIdSessionTree := testtree.NewFilledSessionTree(
 					ctx, t,
-					numRelays,
+					numRelays, service.ComputeUnitsPerRelay,
 					supplierUid, supplierAddr,
 					validSessionHeader, &wrongSessionIdHeader, validSessionHeader,
 					keyRing,
@@ -384,10 +389,10 @@ func TestEnsureValidProof_Error(t *testing.T) {
 			newProof: func(t *testing.T) *prooftypes.Proof {
 				// Construct a session tree with 1 relay with a session header containing
 				// a session ID that doesn't match the expected session ID.
-				numRelays := uint(1)
+				numRelays := uint64(1)
 				wrongResponseSessionIdSessionTree := testtree.NewFilledSessionTree(
 					ctx, t,
-					numRelays,
+					numRelays, service.ComputeUnitsPerRelay,
 					supplierUid, supplierAddr,
 					validSessionHeader, validSessionHeader, &wrongSessionIdHeader,
 					keyRing,
@@ -550,10 +555,10 @@ func TestEnsureValidProof_Error(t *testing.T) {
 			newProof: func(t *testing.T) *prooftypes.Proof {
 				// Construct a new valid session tree for this test case because once the
 				// closest proof has already been generated, the path cannot be changed.
-				numRelays := uint(5)
+				numRelays := uint64(5)
 				wrongPathSessionTree := testtree.NewFilledSessionTree(
 					ctx, t,
-					numRelays,
+					numRelays, service.ComputeUnitsPerRelay,
 					supplierUid, supplierAddr,
 					validSessionHeader, validSessionHeader, validSessionHeader,
 					keyRing,
@@ -621,10 +626,10 @@ func TestEnsureValidProof_Error(t *testing.T) {
 			desc: "claim must exist for proof message",
 			newProof: func(t *testing.T) *prooftypes.Proof {
 				// Construct a new session tree corresponding to the unclaimed session.
-				numRelays := uint(5)
+				numRelays := uint64(5)
 				unclaimedSessionTree := testtree.NewFilledSessionTree(
 					ctx, t,
-					numRelays,
+					numRelays, service.ComputeUnitsPerRelay,
 					"wrong_supplier", wrongSupplierAddr,
 					unclaimedSessionHeader, unclaimedSessionHeader, unclaimedSessionHeader,
 					keyRing,
@@ -660,10 +665,10 @@ func TestEnsureValidProof_Error(t *testing.T) {
 		{
 			desc: "Valid proof cannot validate claim with an incorrect root",
 			newProof: func(t *testing.T) *prooftypes.Proof {
-				numRelays := uint(10)
+				numRelays := uint64(10)
 				wrongMerkleRootSessionTree := testtree.NewFilledSessionTree(
 					ctx, t,
-					numRelays,
+					numRelays, service.ComputeUnitsPerRelay,
 					supplierUid, supplierAddr,
 					validSessionHeader, validSessionHeader, validSessionHeader,
 					keyRing,
@@ -685,10 +690,11 @@ func TestEnsureValidProof_Error(t *testing.T) {
 				keepers.UpsertClaim(claimCtx, *claim)
 				require.NoError(t, err)
 
-				// Construct a valid session tree with 5 relays.
+				// Construct a valid session tree.
+				numRelays = uint64(5)
 				validSessionTree := testtree.NewFilledSessionTree(
 					ctx, t,
-					uint(5),
+					numRelays, service.ComputeUnitsPerRelay,
 					supplierUid, supplierAddr,
 					validSessionHeader, validSessionHeader, validSessionHeader,
 					keyRing,

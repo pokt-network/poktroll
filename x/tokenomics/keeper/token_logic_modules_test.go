@@ -14,6 +14,7 @@ import (
 	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
 	testproof "github.com/pokt-network/poktroll/testutil/proof"
@@ -27,9 +28,11 @@ import (
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-func TestSettleSessionAccounting_HandleAppGoingIntoDebt(t *testing.T) {
-	t.Skip("TODO_MAINNET: Add coverage of the design choice made for how to handle this scenario.")
+func init() {
+	cmd.InitSDKConfig()
+}
 
+func TestProcessTokenLogicModules_HandleAppGoingIntoDebt(t *testing.T) {
 	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil)
 
 	// Create a service that can be registered in the application and used in the claims
@@ -39,17 +42,14 @@ func TestSettleSessionAccounting_HandleAppGoingIntoDebt(t *testing.T) {
 		ComputeUnitsPerRelay: 1,
 		OwnerAddress:         sample.AccAddress(),
 	}
+	keepers.SetService(ctx, *service)
 
 	// Add a new application
 	appStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
 	app := apptypes.Application{
-		Address: sample.AccAddress(),
-		Stake:   &appStake,
-		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
-			&sharedtypes.ApplicationServiceConfig{
-				Service: service,
-			},
-		},
+		Address:        sample.AccAddress(),
+		Stake:          &appStake,
+		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{Service: service}},
 	}
 	keepers.SetApplication(ctx, app)
 
@@ -62,26 +62,36 @@ func TestSettleSessionAccounting_HandleAppGoingIntoDebt(t *testing.T) {
 	keepers.SetSupplier(ctx, supplier)
 
 	// The base claim whose root will be customized for testing purposes
+	numRelays := appStake.Amount.Uint64() + 1 // More than the app stake
+	numComputeUnits := numRelays * service.ComputeUnitsPerRelay
 	claim := prooftypes.Claim{
 		SupplierAddress: supplier.Address,
 		SessionHeader: &sessiontypes.SessionHeader{
-			ApplicationAddress: app.Address,
-			Service: &sharedtypes.Service{
-				Id: service.Id,
-			},
+			ApplicationAddress:      app.Address,
+			Service:                 service,
 			SessionId:               "session_id",
 			SessionStartBlockHeight: 1,
 			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
 		},
-		RootHash: testproof.SmstRootWithSum(appStake.Amount.Uint64() + 1), // More than the app stake
+		RootHash: testproof.SmstRootWithSumAndCount(numComputeUnits, numRelays),
 	}
 
-	err := keepers.SettleSessionAccounting(ctx, &claim)
+	err := keepers.ProcessTokenLogicModules(ctx, &claim)
 	require.NoError(t, err)
 }
 
 func TestSettleSessionAccounting_ValidAccounting(t *testing.T) {
-	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil)
+	// Create a service that can be registered in the application and used in the claims
+	service := &sharedtypes.Service{
+		Id:                   "svc1",
+		Name:                 "svcName1",
+		ComputeUnitsPerRelay: 1,
+		OwnerAddress:         sample.AccAddress(),
+	}
+
+	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil, testkeeper.WithService(*service))
+	keepers.SetService(ctx, *service)
+
 	appModuleAddress := authtypes.NewModuleAddress(apptypes.ModuleName).String()
 	supplierModuleAddress := authtypes.NewModuleAddress(suppliertypes.ModuleName).String()
 
@@ -91,34 +101,16 @@ func TestSettleSessionAccounting_ValidAccounting(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	// Create a service that can be registered in the application and used in the claims
-	service := &sharedtypes.Service{
-		Id:                   "svc1",
-		Name:                 "svcName1",
-		ComputeUnitsPerRelay: 1,
-		OwnerAddress:         sample.AccAddress(),
-	}
-	// Add a new application
+	// Add a new application with non-zero app stake end balance to assert against.
 	appStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
-	// NB: Ensure a non-zero app stake end balance to assert against.
 	expectedAppEndStakeAmount := cosmostypes.NewCoin("upokt", math.NewInt(420))
 	expectedAppBurn := appStake.Sub(expectedAppEndStakeAmount)
 	app := apptypes.Application{
-		Address: sample.AccAddress(),
-		Stake:   &appStake,
-		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
-			&sharedtypes.ApplicationServiceConfig{
-				Service: service,
-			},
-		},
+		Address:        sample.AccAddress(),
+		Stake:          &appStake,
+		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{Service: service}},
 	}
 	keepers.SetApplication(ctx, app)
-
-	// Query application balance prior to the accounting.
-	appStartBalance := getBalance(t, ctx, keepers, app.GetAddress())
-
-	// Query application module balance prior to the accounting.
-	appModuleStartBalance := getBalance(t, ctx, keepers, appModuleAddress)
 
 	// Add a new supplier.
 	supplierStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
@@ -128,28 +120,34 @@ func TestSettleSessionAccounting_ValidAccounting(t *testing.T) {
 	}
 	keepers.SetSupplier(ctx, supplier)
 
+	// Query application balance prior to the accounting.
+	appStartBalance := getBalance(t, ctx, keepers, app.GetAddress())
+	// Query application module balance prior to the accounting.
+	appModuleStartBalance := getBalance(t, ctx, keepers, appModuleAddress)
+
 	// Query supplier balance prior to the accounting.
 	supplierStartBalance := getBalance(t, ctx, keepers, supplier.GetAddress())
-
 	// Query supplier module balance prior to the accounting.
 	supplierModuleStartBalance := getBalance(t, ctx, keepers, supplierModuleAddress)
 
+	// Assumes ComputeUnitToTokenMultiplier is 1
+	numComputeUnits := expectedAppBurn.Amount.Uint64()
+	numRelays := numComputeUnits / service.ComputeUnitsPerRelay
 	// The base claim whose root will be customized for testing purposes
 	claim := prooftypes.Claim{
 		SupplierAddress: supplier.Address,
 		SessionHeader: &sessiontypes.SessionHeader{
-			ApplicationAddress: app.Address,
-			Service: &sharedtypes.Service{
-				Id: service.Id,
-			},
+			ApplicationAddress:      app.Address,
+			Service:                 service,
 			SessionId:               "session_id",
 			SessionStartBlockHeight: 1,
 			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
 		},
-		RootHash: testproof.SmstRootWithSum(expectedAppBurn.Amount.Uint64()),
+		RootHash: testproof.SmstRootWithSumAndCount(numComputeUnits, numRelays),
 	}
 
-	err = keepers.SettleSessionAccounting(ctx, &claim)
+	// Process the token logic modules
+	err = keepers.ProcessTokenLogicModules(ctx, &claim)
 	require.NoError(t, err)
 
 	// Assert that `applicationAddress` account balance is *unchanged*
@@ -187,7 +185,17 @@ func TestSettleSessionAccounting_ValidAccounting(t *testing.T) {
 }
 
 func TestSettleSessionAccounting_AppStakeTooLow(t *testing.T) {
-	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil)
+	// Create a service that can be registered in the application and used in the claims
+	service := &sharedtypes.Service{
+		Id:                   "svc1",
+		Name:                 "svcName1",
+		ComputeUnitsPerRelay: 1,
+		OwnerAddress:         sample.AccAddress(),
+	}
+
+	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil, testkeeper.WithService(*service))
+	keepers.SetService(ctx, *service)
+
 	appModuleAddress := authtypes.NewModuleAddress(apptypes.ModuleName).String()
 	supplierModuleAddress := authtypes.NewModuleAddress(suppliertypes.ModuleName).String()
 
@@ -197,31 +205,19 @@ func TestSettleSessionAccounting_AppStakeTooLow(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	// Create a service that can be registered in the application and used in the claims
-	service := &sharedtypes.Service{
-		Id:                   "svc1",
-		Name:                 "svcName1",
-		ComputeUnitsPerRelay: 1,
-		OwnerAddress:         sample.AccAddress(),
-	}
 	// Add a new application
 	appStake := cosmostypes.NewCoin("upokt", math.NewInt(40000))
 	expectedAppEndStakeZeroAmount := cosmostypes.NewCoin("upokt", math.NewInt(0))
 	expectedAppBurn := appStake.AddAmount(math.NewInt(2000))
 	app := apptypes.Application{
-		Address: sample.AccAddress(),
-		Stake:   &appStake,
-		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
-			&sharedtypes.ApplicationServiceConfig{
-				Service: service,
-			},
-		},
+		Address:        sample.AccAddress(),
+		Stake:          &appStake,
+		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{Service: service}},
 	}
 	keepers.SetApplication(ctx, app)
 
 	// Query application balance prior to the accounting.
 	appStartBalance := getBalance(t, ctx, keepers, app.GetAddress())
-
 	// Query application module balance prior to the accounting.
 	appModuleStartBalance := getBalance(t, ctx, keepers, appModuleAddress)
 
@@ -235,26 +231,29 @@ func TestSettleSessionAccounting_AppStakeTooLow(t *testing.T) {
 
 	// Query supplier balance prior to the accounting.
 	supplierStartBalance := getBalance(t, ctx, keepers, supplier.GetAddress())
-
 	// Query supplier module balance prior to the accounting.
 	supplierModuleStartBalance := getBalance(t, ctx, keepers, supplierModuleAddress)
+
+	// Determine the number of relays to use up the application's entire stake
+	sharedParams := keepers.Keeper.GetParams(ctx)
+	numComputeUnits := expectedAppBurn.Amount.Uint64() / sharedParams.ComputeUnitsToTokensMultiplier
+	numRelays := numComputeUnits / service.ComputeUnitsPerRelay
 
 	// The base claim whose root will be customized for testing purposes
 	claim := prooftypes.Claim{
 		SupplierAddress: supplier.Address,
 		SessionHeader: &sessiontypes.SessionHeader{
-			ApplicationAddress: app.Address,
-			Service: &sharedtypes.Service{
-				Id: service.Id,
-			},
+			ApplicationAddress:      app.Address,
+			Service:                 service,
 			SessionId:               "session_id",
 			SessionStartBlockHeight: 1,
 			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
 		},
-		RootHash: testproof.SmstRootWithSum(expectedAppBurn.Amount.Uint64()),
+		RootHash: testproof.SmstRootWithSumAndCount(numComputeUnits, numRelays),
 	}
 
-	err = keepers.SettleSessionAccounting(ctx, &claim)
+	// Process the token logic modules
+	err = keepers.ProcessTokenLogicModules(ctx, &claim)
 	require.NoError(t, err)
 
 	// Assert that `applicationAddress` account balance is *unchanged*
@@ -288,9 +287,8 @@ func TestSettleSessionAccounting_AppStakeTooLow(t *testing.T) {
 	supplierModuleEndBalance := getBalance(t, ctx, keepers, supplierModuleAddress)
 	require.EqualValues(t, supplierModuleStartBalance, supplierModuleEndBalance)
 
-	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
-	events := sdkCtx.EventManager().Events()
-
+	// Check that the expected burn >> effective burn because application is overserviced
+	events := cosmostypes.UnwrapSDKContext(ctx).EventManager().Events()
 	appAddrAttribute, _ := events.GetAttributes("application_addr")
 	expectedBurnAttribute, _ := events.GetAttributes("expected_burn")
 	effectiveBurnAttribute, _ := events.GetAttributes("effective_burn")
@@ -308,48 +306,59 @@ func TestSettleSessionAccounting_AppStakeTooLow(t *testing.T) {
 	require.Greater(t, expectedBurnEventCoin.Amount.Uint64(), effectiveBurnEventCoin.Amount.Uint64())
 }
 
-func TestSettleSessionAccounting_AppNotFound(t *testing.T) {
-
-	service := &sharedtypes.Service{
-		Id:                   "svc1",
-		Name:                 "svcName1",
-		ComputeUnitsPerRelay: 1,
-		OwnerAddress:         sample.AccAddress(),
-	}
-
-	keeper, ctx, _, supplierAddr := testkeeper.TokenomicsKeeperWithActorAddrs(t, service)
+func TestProcessTokenLogicModules_AppNotFound(t *testing.T) {
+	keeper, ctx, _, supplierAddr, service := testkeeper.TokenomicsKeeperWithActorAddrs(t)
 
 	// The base claim whose root will be customized for testing purposes
+	numRelays := uint64(42)
+	numComputeUnits := numRelays * service.ComputeUnitsPerRelay
 	claim := prooftypes.Claim{
 		SupplierAddress: supplierAddr,
 		SessionHeader: &sessiontypes.SessionHeader{
-			ApplicationAddress: sample.AccAddress(), // Random address
+			ApplicationAddress:      sample.AccAddress(), // Random address
+			Service:                 service,
+			SessionId:               "session_id",
+			SessionStartBlockHeight: 1,
+			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
+		},
+		RootHash: testproof.SmstRootWithSumAndCount(numComputeUnits, numRelays),
+	}
+
+	// Process the token logic modules
+	err := keeper.ProcessTokenLogicModules(ctx, &claim)
+	require.Error(t, err)
+	require.ErrorIs(t, err, tokenomicstypes.ErrTokenomicsApplicationNotFound)
+}
+
+func TestSettleSessionAccounting_ServiceNotFound(t *testing.T) {
+	keeper, ctx, appAddr, supplierAddr, service := testkeeper.TokenomicsKeeperWithActorAddrs(t)
+
+	numRelays := uint64(42)
+	numComputeUnits := numRelays * service.ComputeUnitsPerRelay
+	claim := prooftypes.Claim{
+		SupplierAddress: supplierAddr,
+		SessionHeader: &sessiontypes.SessionHeader{
+			ApplicationAddress: appAddr,
 			Service: &sharedtypes.Service{
-				Id: service.Id,
+				Id: "non_existent_svc",
 			},
 			SessionId:               "session_id",
 			SessionStartBlockHeight: 1,
 			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
 		},
-		RootHash: testproof.SmstRootWithSum(42),
+		RootHash: testproof.SmstRootWithSumAndCount(numComputeUnits, numRelays),
 	}
 
+	// Execute test function
 	err := keeper.SettleSessionAccounting(ctx, &claim)
+
 	require.Error(t, err)
-	require.ErrorIs(t, err, tokenomicstypes.ErrTokenomicsApplicationNotFound)
+	require.ErrorIs(t, err, tokenomicstypes.ErrTokenomicsServiceNotFound)
 }
 
-func TestSettleSessionAccounting_InvalidRoot(t *testing.T) {
-
-	// Create a service that can be registered in the application and used in the claims
-	service := &sharedtypes.Service{
-		Id:                   "svc1",
-		Name:                 "svcName1",
-		ComputeUnitsPerRelay: 1,
-		OwnerAddress:         sample.AccAddress(),
-	}
-
-	keeper, ctx, appAddr, supplierAddr := testkeeper.TokenomicsKeeperWithActorAddrs(t, service)
+func TestProcessTokenLogicModules_InvalidRoot(t *testing.T) {
+	keeper, ctx, appAddr, supplierAddr, service := testkeeper.TokenomicsKeeperWithActorAddrs(t)
+	numRelays := uint64(42)
 
 	// Define test cases
 	tests := []struct {
@@ -390,7 +399,7 @@ func TestSettleSessionAccounting_InvalidRoot(t *testing.T) {
 		{
 			desc: "correct size and a valid value",
 			root: func() []byte {
-				root := testproof.SmstRootWithSum(42)
+				root := testproof.SmstRootWithSumAndCount(numRelays, numRelays)
 				return root[:]
 			}(),
 			errExpected: false,
@@ -401,11 +410,11 @@ func TestSettleSessionAccounting_InvalidRoot(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
 			// Setup claim by copying the testproof.BaseClaim and updating the root
-			claim := testproof.BaseClaim(appAddr, supplierAddr, 0, service.Id)
+			claim := testproof.BaseClaim(service.Id, appAddr, supplierAddr, 0)
 			claim.RootHash = smt.MerkleRoot(test.root[:])
 
 			// Execute test function
-			err := keeper.SettleSessionAccounting(ctx, &claim)
+			err := keeper.ProcessTokenLogicModules(ctx, &claim)
 
 			// Assert the error
 			if test.errExpected {
@@ -417,16 +426,9 @@ func TestSettleSessionAccounting_InvalidRoot(t *testing.T) {
 	}
 }
 
-func TestSettleSessionAccounting_InvalidClaim(t *testing.T) {
-	// Create a service that can be registered in the application and used in the claims
-	service := &sharedtypes.Service{
-		Id:                   "svc1",
-		Name:                 "svcName1",
-		ComputeUnitsPerRelay: 1,
-		OwnerAddress:         sample.AccAddress(),
-	}
-
-	keeper, ctx, appAddr, supplierAddr := testkeeper.TokenomicsKeeperWithActorAddrs(t, service)
+func TestProcessTokenLogicModules_InvalidClaim(t *testing.T) {
+	keeper, ctx, appAddr, supplierAddr, service := testkeeper.TokenomicsKeeperWithActorAddrs(t)
+	numRelays := uint64(42)
 
 	// Define test cases
 	tests := []struct {
@@ -439,7 +441,7 @@ func TestSettleSessionAccounting_InvalidClaim(t *testing.T) {
 		{
 			desc: "Valid Claim",
 			claim: func() *prooftypes.Claim {
-				claim := testproof.BaseClaim(appAddr, supplierAddr, 42, service.Id)
+				claim := testproof.BaseClaim(service.Id, appAddr, supplierAddr, numRelays)
 				return &claim
 			}(),
 			errExpected: false,
@@ -453,7 +455,7 @@ func TestSettleSessionAccounting_InvalidClaim(t *testing.T) {
 		{
 			desc: "Claim with nil session header",
 			claim: func() *prooftypes.Claim {
-				claim := testproof.BaseClaim(appAddr, supplierAddr, 42, service.Id)
+				claim := testproof.BaseClaim(service.Id, appAddr, supplierAddr, numRelays)
 				claim.SessionHeader = nil
 				return &claim
 			}(),
@@ -463,7 +465,7 @@ func TestSettleSessionAccounting_InvalidClaim(t *testing.T) {
 		{
 			desc: "Claim with invalid session id",
 			claim: func() *prooftypes.Claim {
-				claim := testproof.BaseClaim(appAddr, supplierAddr, 42, service.Id)
+				claim := testproof.BaseClaim(service.Id, appAddr, supplierAddr, numRelays)
 				claim.SessionHeader.SessionId = ""
 				return &claim
 			}(),
@@ -473,7 +475,7 @@ func TestSettleSessionAccounting_InvalidClaim(t *testing.T) {
 		{
 			desc: "Claim with invalid application address",
 			claim: func() *prooftypes.Claim {
-				claim := testproof.BaseClaim(appAddr, supplierAddr, 42, service.Id)
+				claim := testproof.BaseClaim(service.Id, appAddr, supplierAddr, numRelays)
 				claim.SessionHeader.ApplicationAddress = "invalid address"
 				return &claim
 			}(),
@@ -483,7 +485,7 @@ func TestSettleSessionAccounting_InvalidClaim(t *testing.T) {
 		{
 			desc: "Claim with invalid supplier address",
 			claim: func() *prooftypes.Claim {
-				claim := testproof.BaseClaim(appAddr, supplierAddr, 42, service.Id)
+				claim := testproof.BaseClaim(service.Id, appAddr, supplierAddr, numRelays)
 				claim.SupplierAddress = "invalid address"
 				return &claim
 			}(),
@@ -502,7 +504,7 @@ func TestSettleSessionAccounting_InvalidClaim(t *testing.T) {
 						err = fmt.Errorf("panic occurred: %v", r)
 					}
 				}()
-				return keeper.SettleSessionAccounting(ctx, test.claim)
+				return keeper.ProcessTokenLogicModules(ctx, test.claim)
 			}()
 
 			// Assert the error
@@ -522,7 +524,6 @@ func getBalance(
 	bankKeeper tokenomicstypes.BankKeeper,
 	accountAddr string,
 ) *cosmostypes.Coin {
-
 	appBalanceRes, err := bankKeeper.Balance(ctx, &banktypes.QueryBalanceRequest{
 		Address: accountAddr,
 		Denom:   "upokt",
