@@ -90,8 +90,8 @@ type RelayRequestMetadata struct {
 	// TODO_MAINNET: make sure we're checking/verifying this address on-chain (if needed).
 	// Relevant conversation: https://github.com/pokt-network/poktroll/pull/567#discussion_r1628722168
 	//
-	// The supplier operator address to which the relay is sent to.
-	// It is also used by the RelayMiner to route to the correct supplier.
+	// The supplier operator address the relay is sent to. It is being used on the
+	// RelayMiner to route to the correct supplier.
 	SupplierOperatorAddress string `protobuf:"bytes,3,opt,name=supplier_operator_address,json=supplierOperatorAddress,proto3" json:"supplier_operator_address,omitempty"`
 }
 

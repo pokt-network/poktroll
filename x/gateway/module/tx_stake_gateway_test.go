@@ -144,7 +144,8 @@ func TestCLI_StakeGateway(t *testing.T) {
 			require.NoError(t, net.Config.Codec.UnmarshalJSON(outStake.Bytes(), &resp))
 			require.NotNil(t, resp)
 			require.NotNil(t, resp.TxHash)
-			require.Equal(t, uint32(0), resp.Code)
+			// You can reference Cosmos SDK error codes here: https://github.com/cosmos/cosmos-sdk/blob/main/types/errors/errors.go
+			require.Equal(t, uint32(0), resp.Code, "tx response failed: %v", resp)
 		})
 	}
 }

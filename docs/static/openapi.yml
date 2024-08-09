@@ -18183,94 +18183,6 @@ paths:
             description: MsgUpdateParams is the Msg/UpdateParams request type.
       tags:
         - Msg
-  /pokt-network/poktroll/shared/params:
-    get:
-      summary: Parameters queries the parameters of the module.
-      operationId: PoktrollSharedQuery_Params
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-            properties:
-              params:
-                description: params holds all the parameters of this module.
-                type: object
-                properties:
-                  num_blocks_per_session:
-                    type: string
-                    format: uint64
-                    description: >-
-                      num_blocks_per_session is the number of blocks between the
-                      session start & end heights.
-                  grace_period_end_offset_blocks:
-                    type: string
-                    format: uint64
-                    description: >-
-                      grace_period_end_offset_blocks is the number of blocks
-                      after the session end height,
-
-                      at which the grace period ends.
-
-                      Suppliers will get paid for relays serviced during the
-                      grace period but will need to recreate a claim if 
-
-                      a previous one was already submitted.
-                  claim_window_open_offset_blocks:
-                    type: string
-                    format: uint64
-                    description: >-
-                      claim_window_open_offset_blocks is the number of blocks
-                      after the session grace
-
-                      period height, at which the claim window opens.
-                  claim_window_close_offset_blocks:
-                    type: string
-                    format: uint64
-                    description: >-
-                      claim_window_close_offset_blocks is the number of blocks
-                      after the claim window
-
-                      open height, at which the claim window closes.
-                  proof_window_open_offset_blocks:
-                    type: string
-                    format: uint64
-                    description: >-
-                      proof_window_open_offset_blocks is the number of blocks
-                      after the claim window
-
-                      close height, at which the proof window opens.
-                  proof_window_close_offset_blocks:
-                    type: string
-                    format: uint64
-                    description: >-
-                      proof_window_close_offset_blocks is the number of blocks
-                      after the proof window
-
-                      open height, at which the proof window closes.
-            description: >-
-              QueryParamsResponse is response type for the Query/Params RPC
-              method.
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    '@type':
-                      type: string
-                  additionalProperties: {}
-      tags:
-        - Query
   /poktroll.shared.Msg/UpdateParam:
     post:
       operationId: PoktrollSharedMsg_UpdateParam
@@ -27259,6 +27171,184 @@ definitions:
     description: |-
       MsgUpdateParamsResponse defines the response structure for executing a
       MsgUpdateParams message.
+  poktroll.proof.Params:
+    type: object
+    properties:
+      min_relay_difficulty_bits:
+        type: string
+        format: uint64
+        description: >-
+          min_relay_difficulty_bits is the minimum difficulty in bits for a
+          relay to
+
+          be included in a Merkle proof.
+      proof_request_probability:
+        type: number
+        format: float
+        description: >-
+          proof_request_probability is the probability of a session requiring a
+          proof
+
+          if it's cost (i.e. compute unit consumption) is below the
+          ProofRequirementThreshold.
+      proof_requirement_threshold:
+        type: string
+        format: uint64
+        description: >-
+          proof_requirement_threshold is the session cost (i.e. compute unit
+          consumption)
+
+          threshold which asserts that a session MUST have a corresponding proof
+          when its cost
+
+          is equal to or above the threshold. This is in contrast to the this
+          requirement
+
+          being determined probabilistically via ProofRequestProbability.
+
+
+          TODO_MAINNET: Consider renaming this to
+          `proof_requirement_threshold_compute_units`.
+      proof_missing_penalty:
+        description: >-
+          proof_missing_penalty is the number of tokens (uPOKT) which should be
+          slashed from a supplier
+
+          when a proof is required (either via proof_requirement_threshold or
+          proof_missing_penalty)
+
+          but is not provided.
+        type: object
+        properties:
+          denom:
+            type: string
+          amount:
+            type: string
+    description: Params defines the parameters for the module.
+  poktroll.proof.Proof:
+    type: object
+    properties:
+      supplier_address:
+        type: string
+      session_header:
+        type: object
+        properties:
+          application_address:
+            type: string
+            title: >-
+              The Bech32 address of the application using cosmos'
+              ScalarDescriptor to ensure deterministic encoding
+          service:
+            title: The service this session is for
+            type: object
+            properties:
+              id:
+                type: string
+                description: Unique identifier for the service
+                title: >-
+                  For example, what if we want to request a session for a
+                  certain service but with some additional configs that identify
+                  it?
+              name:
+                type: string
+                description: (Optional) Semantic human readable name for the service
+                title: >-
+                  TODO_BETA: Name is currently unused but acts as a reminder
+                  that an optional onchain representation of the service is
+                  necessary
+          session_id:
+            type: string
+            description: A unique pseudoranom ID for this session
+            title: >-
+              NOTE: session_id can be derived from the above values using
+              on-chain but is included in the header for convenience
+          session_start_block_height:
+            type: string
+            format: int64
+            title: The height at which this session started
+          session_end_block_height:
+            type: string
+            format: int64
+            description: >-
+              Note that`session_end_block_height` is a derivative of (`start` +
+              `num_blocks_per_session`)
+
+              as goverened by on-chain params at the time of the session start.
+
+              It is stored as an additional field to simplofy business logic in
+              case
+
+              the number of blocks_per_session changes during the session.
+
+
+              The height at which this session ended, this is the last block of
+              the session
+        description: >-
+          SessionHeader is a lightweight header for a session that can be passed
+          around.
+
+          It is the minimal amount of data required to hydrate & retrieve all
+          data relevant to the session.
+      closest_merkle_proof:
+        type: string
+        format: byte
+        description: The serialized SMST proof from the `#ClosestProof()` method.
+  poktroll.session.SessionHeader:
+    type: object
+    properties:
+      application_address:
+        type: string
+        title: >-
+          The Bech32 address of the application using cosmos' ScalarDescriptor
+          to ensure deterministic encoding
+      service:
+        title: The service this session is for
+        type: object
+        properties:
+          id:
+            type: string
+            description: Unique identifier for the service
+            title: >-
+              For example, what if we want to request a session for a certain
+              service but with some additional configs that identify it?
+          name:
+            type: string
+            description: (Optional) Semantic human readable name for the service
+            title: >-
+              TODO_BETA: Name is currently unused but acts as a reminder that an
+              optional onchain representation of the service is necessary
+      session_id:
+        type: string
+        description: A unique pseudoranom ID for this session
+        title: >-
+          NOTE: session_id can be derived from the above values using on-chain
+          but is included in the header for convenience
+      session_start_block_height:
+        type: string
+        format: int64
+        title: The height at which this session started
+      session_end_block_height:
+        type: string
+        format: int64
+        description: >-
+          Note that`session_end_block_height` is a derivative of (`start` +
+          `num_blocks_per_session`)
+
+          as goverened by on-chain params at the time of the session start.
+
+          It is stored as an additional field to simplofy business logic in case
+
+          the number of blocks_per_session changes during the session.
+
+
+          The height at which this session ended, this is the last block of the
+          session
+    description: >-
+      SessionHeader is a lightweight header for a session that can be passed
+      around.
+
+      It is the minimal amount of data required to hydrate & retrieve all data
+      relevant to the session.
   poktroll.service.MsgAddService:
     type: object
     properties:
@@ -27352,118 +27442,7 @@ definitions:
     description: Params defines the parameters for the module.
   poktroll.shared.Params:
     type: object
-    properties:
-      num_blocks_per_session:
-        type: string
-        format: uint64
-        description: >-
-          num_blocks_per_session is the number of blocks between the session
-          start & end heights.
-      grace_period_end_offset_blocks:
-        type: string
-        format: uint64
-        description: >-
-          grace_period_end_offset_blocks is the number of blocks after the
-          session end height,
-
-          at which the grace period ends.
-
-          Suppliers will get paid for relays serviced during the grace period
-          but will need to recreate a claim if 
-
-          a previous one was already submitted.
-      claim_window_open_offset_blocks:
-        type: string
-        format: uint64
-        description: >-
-          claim_window_open_offset_blocks is the number of blocks after the
-          session grace
-
-          period height, at which the claim window opens.
-      claim_window_close_offset_blocks:
-        type: string
-        format: uint64
-        description: >-
-          claim_window_close_offset_blocks is the number of blocks after the
-          claim window
-
-          open height, at which the claim window closes.
-      proof_window_open_offset_blocks:
-        type: string
-        format: uint64
-        description: >-
-          proof_window_open_offset_blocks is the number of blocks after the
-          claim window
-
-          close height, at which the proof window opens.
-      proof_window_close_offset_blocks:
-        type: string
-        format: uint64
-        description: >-
-          proof_window_close_offset_blocks is the number of blocks after the
-          proof window
-
-          open height, at which the proof window closes.
     description: Params defines the parameters for the module.
-  poktroll.shared.QueryParamsResponse:
-    type: object
-    properties:
-      params:
-        description: params holds all the parameters of this module.
-        type: object
-        properties:
-          num_blocks_per_session:
-            type: string
-            format: uint64
-            description: >-
-              num_blocks_per_session is the number of blocks between the session
-              start & end heights.
-          grace_period_end_offset_blocks:
-            type: string
-            format: uint64
-            description: >-
-              grace_period_end_offset_blocks is the number of blocks after the
-              session end height,
-
-              at which the grace period ends.
-
-              Suppliers will get paid for relays serviced during the grace
-              period but will need to recreate a claim if 
-
-              a previous one was already submitted.
-          claim_window_open_offset_blocks:
-            type: string
-            format: uint64
-            description: >-
-              claim_window_open_offset_blocks is the number of blocks after the
-              session grace
-
-              period height, at which the claim window opens.
-          claim_window_close_offset_blocks:
-            type: string
-            format: uint64
-            description: >-
-              claim_window_close_offset_blocks is the number of blocks after the
-              claim window
-
-              open height, at which the claim window closes.
-          proof_window_open_offset_blocks:
-            type: string
-            format: uint64
-            description: >-
-              proof_window_open_offset_blocks is the number of blocks after the
-              claim window
-
-              close height, at which the proof window opens.
-          proof_window_close_offset_blocks:
-            type: string
-            format: uint64
-            description: >-
-              proof_window_close_offset_blocks is the number of blocks after the
-              proof window
-
-              open height, at which the proof window closes.
-    description: QueryParamsResponse is response type for the Query/Params RPC method.
   poktroll.shared.MsgUpdateParam:
     type: object
     properties:

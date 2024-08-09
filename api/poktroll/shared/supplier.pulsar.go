@@ -1073,12 +1073,12 @@ type Supplier struct {
 
 	// The address of the owner (i.e. staker, custodial) that owns the funds for staking.
 	// By default, this address is the one that receives all the rewards unless owtherwise specified.
-	// The owner can initially stake the supplier and unstake it.
-	// All other configurations are managed by the operator.
+	// This property cannot be updated by the operator.
 	OwnerAddress string `protobuf:"bytes,1,opt,name=owner_address,json=ownerAddress,proto3" json:"owner_address,omitempty"` // Bech32 cosmos address
-	// The operator address of the supplier that operates it.
-	// The operator address can update the supplier's configurations excluding the owner
-	// and operator addresses which do not change over the supplier's lifespan.
+	// The operator address of the supplier operator (i.e. the one managing the off-chain server).
+	// The operator address can update the supplier's configurations excluding the owner address.
+	// This property do not change over the supplier's lifespan, the supplier must be usnaked
+	// and staked again to update this value.
 	OperatorAddress string                   `protobuf:"bytes,2,opt,name=operator_address,json=operatorAddress,proto3" json:"operator_address,omitempty"` // Bech32 cosmos address
 	Stake           *v1beta1.Coin            `protobuf:"bytes,3,opt,name=stake,proto3" json:"stake,omitempty"`                                            // The total amount of uPOKT the supplier has staked
 	Services        []*SupplierServiceConfig `protobuf:"bytes,4,rep,name=services,proto3" json:"services,omitempty"`                                      // The service configs this supplier can support

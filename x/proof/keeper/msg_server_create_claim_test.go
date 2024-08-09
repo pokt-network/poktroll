@@ -23,11 +23,12 @@ import (
 )
 
 const (
-	expectedNumComputeUnits = 10
-	expectedNumRelays       = 1
+	expectedNumRelays       = 10
+	computeUnitsPerRelay    = 1
+	expectedNumComputeUnits = expectedNumRelays * computeUnitsPerRelay
 )
 
-var defaultMerkleRoot = testproof.SmstRootWithSum(expectedNumComputeUnits)
+var defaultMerkleRoot = testproof.SmstRootWithSumAndCount(expectedNumComputeUnits, expectedNumRelays)
 
 func TestMsgServer_CreateClaim_Success(t *testing.T) {
 	var claimWindowOpenBlockHash []byte
@@ -72,7 +73,11 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 			// The base session start height used for testing
 			sessionStartHeight := blockHeight
 
-			service := &sharedtypes.Service{Id: testServiceId}
+			service := &sharedtypes.Service{
+				Id:                   testServiceId,
+				ComputeUnitsPerRelay: computeUnitsPerRelay,
+				OwnerAddress:         sample.AccAddress(),
+			}
 			appAddr := sample.AccAddress()
 
 			keepers.SetSupplier(ctx, sharedtypes.Supplier{
@@ -167,7 +172,11 @@ func TestMsgServer_CreateClaim_Error_OutsideOfWindow(t *testing.T) {
 	// The base session start height used for testing
 	sessionStartHeight := int64(1)
 
-	service := &sharedtypes.Service{Id: testServiceId}
+	service := &sharedtypes.Service{
+		Id:                   testServiceId,
+		ComputeUnitsPerRelay: computeUnitsPerRelay,
+		OwnerAddress:         sample.AccAddress(),
+	}
 	supplierAddr := sample.AccAddress()
 	appAddr := sample.AccAddress()
 
@@ -285,7 +294,11 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 	// The base session start height used for testing
 	sessionStartHeight := int64(1)
 	// service is the only service for which a session should exist.
-	service := &sharedtypes.Service{Id: testServiceId}
+	service := &sharedtypes.Service{
+		Id:                   testServiceId,
+		ComputeUnitsPerRelay: computeUnitsPerRelay,
+		OwnerAddress:         sample.AccAddress(),
+	}
 	// supplierAddr is staked for "svc1" such that it is expected to be in the session.
 	supplierAddr := sample.AccAddress()
 	// wrongSupplierAddr is staked for "nosvc1" such that it is *not* expected to be in the session.
@@ -315,7 +328,13 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 	supplierKeeper.SetSupplier(ctx, sharedtypes.Supplier{
 		OperatorAddress: wrongSupplierAddr,
 		Services: []*sharedtypes.SupplierServiceConfig{
-			{Service: &sharedtypes.Service{Id: "nosvc1"}},
+			{
+				Service: &sharedtypes.Service{
+					Id:                   "nosvc1",
+					ComputeUnitsPerRelay: computeUnitsPerRelay,
+					OwnerAddress:         sample.AccAddress(),
+				},
+			},
 		},
 	})
 
@@ -331,7 +350,13 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 	appKeeper.SetApplication(ctx, apptypes.Application{
 		Address: wrongAppAddr,
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
-			{Service: &sharedtypes.Service{Id: "nosvc1"}},
+			{
+				Service: &sharedtypes.Service{
+					Id:                   "nosvc1",
+					ComputeUnitsPerRelay: computeUnitsPerRelay,
+					OwnerAddress:         sample.AccAddress(),
+				},
+			},
 		},
 	})
 

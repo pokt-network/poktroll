@@ -29,22 +29,9 @@ const (
 	// defaultJSONPRCPath is the default path used for sending JSON-RPC relay requests.
 	defaultJSONPRCPath = ""
 
-	// txSenderEventSubscriptionQueryFmt is the format string which yields the
-	// cosmos-sdk event subscription "query" string for a given sender address.
-	// This is used by an events replay client to subscribe to tx events from the supplier.
-	// See: https://docs.cosmos.network/v0.47/learn/advanced/events#subscribing-to-events
-	txSenderEventSubscriptionQueryFmt = "tm.event='Tx' AND message.sender='%s'"
-
 	// eventsReplayClientBufferSize is the buffer size for the events replay client
 	// for the subscriptions above.
 	eventsReplayClientBufferSize = 100
-
-	// txResultEventsReplayClientKey is the suite#scenarioState key for the events replay client
-	// which is subscribed to tx events where the tx sender is the scenario's supplier.
-	txResultEventsReplayClientKey = "txResultEventsReplayClientKey"
-	// newBlockEventReplayClientKey is the suite#scenarioState key for the events replay client
-	// which is subscribed to claim settlement or expiration events on-chain.
-	newBlockEventReplayClientKey = "newBlockEventReplayClientKey"
 
 	// preExistingClaimsKey is the suite#scenarioState key for any pre-existing
 	// claims when querying for all claims prior to running the scenario.
@@ -174,12 +161,14 @@ func (s *suite) sendRelaysForSession(
 	s.TheSupplierIsStakedForService(supplierOperatorName, serviceId)
 	s.TheSessionForApplicationAndServiceContainsTheSupplier(appName, serviceId, supplierOperatorName)
 
-	// TODO_IMPROVE/TODO_COMMUNITY: hard-code a default set of RPC calls to iterate over for coverage.
-	data := `{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}`
+	// TODO_IMPROVE: hard-code a default set of RPC calls to iterate over for coverage.
+	payload_fmt := `{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":%d}`
 
 	for i := 0; i < relayLimit; i++ {
-		s.TheApplicationSendsTheSupplierARequestForServiceWithPathAndData(appName, supplierOperatorName, serviceId, defaultJSONPRCPath, data)
-		s.TheApplicationReceivesASuccessfulRelayResponseSignedBy(appName, supplierOperatorName)
+		payload := fmt.Sprintf(payload_fmt, i+1) // i+1 to avoid id=0 which is invalid
+
+		s.TheApplicationSendsTheSupplierASuccessfulRequestForServiceWithPathAndData(appName, supplierOperatorName, serviceId, defaultJSONPRCPath, payload)
+		time.Sleep(10 * time.Millisecond)
 	}
 }
 

@@ -83,6 +83,12 @@ func (k msgServer) CreateClaim(
 	}
 	_, isExistingClaim = k.Keeper.GetClaim(ctx, claim.GetSessionHeader().GetSessionId(), claim.GetSupplierOperatorAddress())
 
+	// TODO_UPNEXT(#705): Check (and test) that numClaimComputeUnits is equal
+	// to num_relays * the_compute_units_per_relay for this_service.
+	// Add a comment that for now, we expect it to be the case because every
+	// relay for a specific service is wroth the same, but may change in the
+	// future.
+
 	// Upsert the claim
 	k.Keeper.UpsertClaim(ctx, claim)
 	logger.Info("successfully upserted the claim")

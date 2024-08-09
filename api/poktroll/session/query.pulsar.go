@@ -1873,7 +1873,7 @@ type QueryGetSessionRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	ApplicationAddress string          `protobuf:"bytes,1,opt,name=application_address,json=applicationAddress,proto3" json:"application_address,omitempty"` // The Bech32 address of the application using cosmos' ScalarDescriptor to ensure deterministic encoding
+	ApplicationAddress string          `protobuf:"bytes,1,opt,name=application_address,json=applicationAddress,proto3" json:"application_address,omitempty"` // The Bech32 address of the application.
 	Service            *shared.Service `protobuf:"bytes,2,opt,name=service,proto3" json:"service,omitempty"`                                                 // The service to query the session for
 	BlockHeight        int64           `protobuf:"varint,3,opt,name=block_height,json=blockHeight,proto3" json:"block_height,omitempty"`                     // The block height to query the session for
 }

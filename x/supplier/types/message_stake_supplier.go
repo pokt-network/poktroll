@@ -12,14 +12,14 @@ const TypeMsgStakeSupplier = "stake_supplier"
 var _ sdk.Msg = (*MsgStakeSupplier)(nil)
 
 func NewMsgStakeSupplier(
-	senderAddress string,
+	signerAddress string,
 	ownerAddress string,
 	supplierAddress string,
 	stake sdk.Coin,
 	services []*sharedtypes.SupplierServiceConfig,
 ) *MsgStakeSupplier {
 	return &MsgStakeSupplier{
-		Sender:          senderAddress,
+		Signer:          signerAddress,
 		OwnerAddress:    ownerAddress,
 		OperatorAddress: supplierAddress,
 		Stake:           &stake,
@@ -33,29 +33,14 @@ func (msg *MsgStakeSupplier) ValidateBasic() error {
 		return ErrSupplierInvalidAddress.Wrapf("invalid owner address %s; (%v)", msg.OwnerAddress, err)
 	}
 
-	// Validate the operator address
+	// Validate the address
 	if _, err := sdk.AccAddressFromBech32(msg.OperatorAddress); err != nil {
-		return ErrSupplierInvalidAddress.Wrapf("invalid supplier operator address %s; (%v)", msg.OperatorAddress, err)
+		return ErrSupplierInvalidAddress.Wrapf("invalid operator address %s; (%v)", msg.OperatorAddress, err)
 	}
 
-	// Ensure the sender address matches the owner address or the operator address.
-	if msg.Sender != msg.OwnerAddress && msg.Sender != msg.OperatorAddress {
-		return ErrSupplierInvalidAddress.Wrapf(
-			"sender address %s does not match owner address %s or supplier address %s",
-			msg.Sender,
-			msg.OwnerAddress,
-			msg.OperatorAddress,
-		)
-	}
-
-	// Ensure the sender address matches the owner address or the operator address.
-	if msg.Sender != msg.OwnerAddress && msg.Sender != msg.OperatorAddress {
-		return ErrSupplierInvalidAddress.Wrapf(
-			"sender address %s does not match owner address %s or supplier address %s",
-			msg.Sender,
-			msg.OwnerAddress,
-			msg.OperatorAddress,
-		)
+	// Validate the signer address
+	if _, err := sdk.AccAddressFromBech32(msg.Signer); err != nil {
+		return ErrSupplierInvalidAddress.Wrapf("invalid signer address %s; (%v)", msg.Signer, err)
 	}
 
 	// TODO_MAINNET: Centralize stake related verification and share across different
@@ -84,4 +69,8 @@ func (msg *MsgStakeSupplier) ValidateBasic() error {
 	}
 
 	return nil
+}
+
+func (msg *MsgStakeSupplier) IsSigner(address string) bool {
+	return address == msg.Signer
 }

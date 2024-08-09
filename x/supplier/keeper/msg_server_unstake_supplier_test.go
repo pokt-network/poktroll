@@ -35,7 +35,7 @@ func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
 	_, err := srv.StakeSupplier(ctx, stakeMsg)
 	require.NoError(t, err)
 
-	// Verify that the supplier exists
+	// Verify that the supplier existsOperator
 	foundSupplier, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, unstakingSupplierOperatorAddr)
 	require.True(t, isSupplierFound)
 	require.Equal(t, unstakingSupplierOperatorAddr, foundSupplier.OperatorAddress)
@@ -55,7 +55,7 @@ func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
 
 	// Initiate the supplier unstaking
 	unstakeMsg := &types.MsgUnstakeSupplier{
-		OwnerAddress:    unstakingSupplierOperatorAddr,
+		Signer:          unstakingSupplierOperatorAddr,
 		OperatorAddress: unstakingSupplierOperatorAddr,
 	}
 	_, err = srv.UnstakeSupplier(ctx, unstakeMsg)
@@ -107,7 +107,7 @@ func TestMsgServer_UnstakeSupplier_CancelUnbondingIfRestaked(t *testing.T) {
 
 	// Initiate the supplier unstaking
 	unstakeMsg := &types.MsgUnstakeSupplier{
-		OwnerAddress:    supplierOperatorAddr,
+		Signer:          supplierOperatorAddr,
 		OperatorAddress: supplierOperatorAddr,
 	}
 	_, err = srv.UnstakeSupplier(ctx, unstakeMsg)
@@ -155,7 +155,7 @@ func TestMsgServer_UnstakeSupplier_FailIfNotStaked(t *testing.T) {
 
 	// Initiate the supplier unstaking
 	unstakeMsg := &types.MsgUnstakeSupplier{
-		OwnerAddress:    supplierOperatorAddr,
+		Signer:          supplierOperatorAddr,
 		OperatorAddress: supplierOperatorAddr,
 	}
 	_, err := srv.UnstakeSupplier(ctx, unstakeMsg)
@@ -181,7 +181,7 @@ func TestMsgServer_UnstakeSupplier_FailIfCurrentlyUnstaking(t *testing.T) {
 
 	// Initiate the supplier unstaking
 	unstakeMsg := &types.MsgUnstakeSupplier{
-		OwnerAddress:    supplierOperatorAddr,
+		Signer:          supplierOperatorAddr,
 		OperatorAddress: supplierOperatorAddr,
 	}
 	_, err = srv.UnstakeSupplier(ctx, unstakeMsg)
@@ -194,12 +194,41 @@ func TestMsgServer_UnstakeSupplier_FailIfCurrentlyUnstaking(t *testing.T) {
 	require.ErrorIs(t, err, types.ErrSupplierIsUnstaking)
 }
 
-func createStakeMsg(supplierAddr string, stakeAmount int64) *types.MsgStakeSupplier {
+func TestMsgServer_UnstakeSupplier_OperatorCanUnstake(t *testing.T) {
+	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
+	srv := keeper.NewMsgServerImpl(*supplierModuleKeepers.Keeper)
+
+	// Generate an address for the supplier
+	ownerAddr := sample.AccAddress()
+	supplierOperatorAddr := sample.AccAddress()
+
+	// Stake the supplier
+	initialStake := int64(100)
+	stakeMsg := createStakeMsg(ownerAddr, initialStake)
+	stakeMsg.OperatorAddress = supplierOperatorAddr
+	_, err := srv.StakeSupplier(ctx, stakeMsg)
+	require.NoError(t, err)
+
+	// Initiate the supplier unstaking
+	unstakeMsg := &types.MsgUnstakeSupplier{
+		Signer:          supplierOperatorAddr,
+		OperatorAddress: supplierOperatorAddr,
+	}
+	_, err = srv.UnstakeSupplier(ctx, unstakeMsg)
+	require.NoError(t, err)
+
+	// Make sure the supplier entered the unbonding period
+	foundSupplier, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, supplierOperatorAddr)
+	require.True(t, isSupplierFound)
+	require.True(t, foundSupplier.IsUnbonding())
+}
+
+func createStakeMsg(supplierOwnerAddr string, stakeAmount int64) *types.MsgStakeSupplier {
 	initialStake := sdk.NewCoin("upokt", math.NewInt(stakeAmount))
 	return &types.MsgStakeSupplier{
-		Sender:          supplierAddr,
-		OwnerAddress:    supplierAddr,
-		OperatorAddress: supplierAddr,
+		Signer:          supplierOwnerAddr,
+		OwnerAddress:    supplierOwnerAddr,
+		OperatorAddress: supplierOwnerAddr,
 		Stake:           &initialStake,
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{

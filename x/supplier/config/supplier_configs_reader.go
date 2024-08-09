@@ -1,12 +1,15 @@
 package config
 
 import (
+	"context"
 	"net/url"
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gopkg.in/yaml.v2"
 
+	"github.com/pokt-network/poktroll/pkg/polylog"
+	_ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	sharedhelpers "github.com/pokt-network/poktroll/x/shared/helpers"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/types"
@@ -57,8 +60,10 @@ func (cfg *SupplierStakeConfig) EnsureOwner(ownerAddress string) error {
 }
 
 // ParseSupplierServiceConfig parses the stake config file into a SupplierServiceConfig.
-func ParseSupplierConfigs(configContent []byte) (*SupplierStakeConfig, error) {
+func ParseSupplierConfigs(ctx context.Context, configContent []byte) (*SupplierStakeConfig, error) {
 	var stakeConfig *YAMLStakeConfig
+
+	logger := polylog.Ctx(ctx)
 
 	if len(configContent) == 0 {
 		return nil, ErrSupplierConfigEmptyContent
@@ -77,6 +82,7 @@ func ParseSupplierConfigs(configContent []byte) (*SupplierStakeConfig, error) {
 	// If the operator address is not set, default it to the owner address.
 	if stakeConfig.OperatorAddress == "" {
 		stakeConfig.OperatorAddress = stakeConfig.OwnerAddress
+		logger.Info().Msg("operator address not set, defaulting to owner address")
 	}
 
 	// Validate operator address.

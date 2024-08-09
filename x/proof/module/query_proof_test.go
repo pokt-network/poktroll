@@ -21,6 +21,7 @@ import (
 
 func networkWithProofObjects(t *testing.T, n int) (*network.Network, []types.Proof) {
 	t.Helper()
+
 	cfg := network.DefaultConfig()
 	state := types.GenesisState{}
 	for i := 0; i < n; i++ {
@@ -30,7 +31,7 @@ func networkWithProofObjects(t *testing.T, n int) (*network.Network, []types.Pro
 				SessionId: "mock_session_id",
 				// Other fields omitted and unused for these tests.
 			},
-			// CloseseMerkleProof not required for these tests.
+			// ClosestMerkleProof not required for these tests.
 			ClosestMerkleProof: nil,
 		}
 		nullify.Fill(&proof)

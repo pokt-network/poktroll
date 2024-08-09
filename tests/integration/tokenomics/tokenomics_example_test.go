@@ -95,7 +95,7 @@ func TestTokenomicsIntegrationExample(t *testing.T) {
 	createClaimMsg := prooftypes.MsgCreateClaim{
 		SupplierOperatorAddress: integrationApp.DefaultSupplier.GetOperatorAddress(),
 		SessionHeader:           session.GetHeader(),
-		RootHash:                testutilproof.SmstRootWithSum(uint64(1)),
+		RootHash:                testutilproof.SmstRootWithSumAndCount(1, 1),
 	}
 
 	// Run the message to create the claim

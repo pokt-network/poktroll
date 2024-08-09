@@ -17,6 +17,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	testutilevents "github.com/pokt-network/poktroll/testutil/events"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
+	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/testutil/testkeyring"
 	"github.com/pokt-network/poktroll/testutil/testtree"
 	"github.com/pokt-network/poktroll/x/proof/keeper"
@@ -29,7 +30,7 @@ import (
 // TODO_TECHDEBT(@bryanchriswhite): Simplify this file; https://github.com/pokt-network/poktroll/pull/417#pullrequestreview-1958582600
 
 const (
-	supplierUid = "supplier"
+	supplierOperatorUid = "supplier"
 )
 
 var (
@@ -104,7 +105,7 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 			// keyring for the application and supplier.
 			supplierOperatorAddr := testkeyring.CreateOnChainAccount(
 				ctx, t,
-				supplierUid,
+				supplierOperatorUid,
 				keyRing,
 				keepers,
 				preGeneratedAccts,
@@ -117,7 +118,11 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 				preGeneratedAccts,
 			).String()
 
-			service := &sharedtypes.Service{Id: testServiceId}
+			service := &sharedtypes.Service{
+				Id:                   testServiceId,
+				ComputeUnitsPerRelay: computeUnitsPerRelay,
+				OwnerAddress:         sample.AccAddress(),
+			}
 
 			// Add a supplier and application pair that are expected to be in the session.
 			keepers.AddServiceActors(ctx, t, service, supplierOperatorAddr, appAddr)
@@ -141,11 +146,12 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 			require.NoError(t, err)
 
 			// Submit the corresponding proof.
-			expectedNumRelays := uint(5)
+			numRelays := uint64(5)
+			numComputeUnits := numRelays * service.ComputeUnitsPerRelay
 			sessionTree := testtree.NewFilledSessionTree(
 				ctx, t,
-				expectedNumRelays,
-				supplierUid, supplierOperatorAddr,
+				numRelays, service.ComputeUnitsPerRelay,
+				supplierOperatorUid, supplierOperatorAddr,
 				sessionHeader, sessionHeader, sessionHeader,
 				keyRing,
 				ringClient,
@@ -221,8 +227,8 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 
 			require.EqualValues(t, claim, proofSubmittedEvent.GetClaim())
 			require.EqualValues(t, &proofs[0], proofSubmittedEvent.GetProof())
-			require.Equal(t, uint64(expectedNumComputeUnits), proofSubmittedEvent.GetNumComputeUnits())
-			require.Equal(t, uint64(expectedNumRelays), proofSubmittedEvent.GetNumRelays())
+			require.Equal(t, uint64(numRelays), proofSubmittedEvent.GetNumRelays())
+			require.Equal(t, uint64(numComputeUnits), proofSubmittedEvent.GetNumComputeUnits())
 		})
 	}
 }
@@ -251,7 +257,7 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 	// Create accounts in the account keeper with corresponding keys in the keyring for the application and supplier.
 	supplierOperatorAddr := testkeyring.CreateOnChainAccount(
 		ctx, t,
-		supplierUid,
+		supplierOperatorUid,
 		keyRing,
 		keepers,
 		preGeneratedAccts,
@@ -264,7 +270,11 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 		preGeneratedAccts,
 	).String()
 
-	service := &sharedtypes.Service{Id: testServiceId}
+	service := &sharedtypes.Service{
+		Id:                   testServiceId,
+		ComputeUnitsPerRelay: computeUnitsPerRelay,
+		OwnerAddress:         sample.AccAddress(),
+	}
 
 	// Add a supplier and application pair that are expected to be in the session.
 	keepers.AddServiceActors(ctx, t, service, supplierOperatorAddr, appAddr)
@@ -288,11 +298,11 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 	require.NoError(t, err)
 
 	// Submit the corresponding proof.
-	numRelays := uint(5)
+	numRelays := uint64(5)
 	sessionTree := testtree.NewFilledSessionTree(
 		ctx, t,
-		numRelays,
-		supplierUid, supplierOperatorAddr,
+		numRelays, service.ComputeUnitsPerRelay,
+		supplierOperatorUid, supplierOperatorAddr,
 		sessionHeader, sessionHeader, sessionHeader,
 		keyRing,
 		ringClient,
@@ -416,7 +426,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 	// for the applications and suppliers used in the tests.
 	supplierOperatorAddr := testkeyring.CreateOnChainAccount(
 		ctx, t,
-		supplierUid,
+		supplierOperatorUid,
 		keyRing,
 		keepers,
 		preGeneratedAccts,
@@ -443,8 +453,16 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 		preGeneratedAccts,
 	).String()
 
-	service := &sharedtypes.Service{Id: testServiceId}
-	wrongService := &sharedtypes.Service{Id: "wrong_svc"}
+	service := &sharedtypes.Service{
+		Id:                   testServiceId,
+		ComputeUnitsPerRelay: computeUnitsPerRelay,
+		OwnerAddress:         sample.AccAddress(),
+	}
+	wrongService := &sharedtypes.Service{
+		Id:                   "wrong_svc",
+		ComputeUnitsPerRelay: computeUnitsPerRelay,
+		OwnerAddress:         sample.AccAddress(),
+	}
 
 	// Add a supplier and application pair that are expected to be in the session.
 	keepers.AddServiceActors(ctx, t, service, supplierOperatorAddr, appAddr)
@@ -474,11 +492,11 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 	require.NoError(t, err)
 
 	// Construct a valid session tree with 5 relays.
-	numRelays := uint(5)
+	numRelays := uint64(5)
 	validSessionTree := testtree.NewFilledSessionTree(
 		ctx, t,
-		numRelays,
-		supplierUid, supplierOperatorAddr,
+		numRelays, service.ComputeUnitsPerRelay,
+		supplierOperatorUid, supplierOperatorAddr,
 		validSessionHeader, validSessionHeader, validSessionHeader,
 		keyRing,
 		ringClient,

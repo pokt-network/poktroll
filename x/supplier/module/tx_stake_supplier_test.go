@@ -67,9 +67,17 @@ func TestCLI_StakeSupplier(t *testing.T) {
 			config:       defaultConfig,
 		},
 		{
-			desc:         "stake supplier: valid, omitte operator address",
+			desc:         "stake supplier: valid, omitted operator address",
 			ownerAddress: ownerAccount.Address.String(),
-			config:       defaultConfig,
+			config: fmt.Sprintf(`
+		owner_address: %s
+		stake_amount: 1000upokt
+		services:
+		  - service_id: svc1
+		    endpoints:
+		    - publicly_exposed_url: http://pokt.network:8081
+		      rpc_type: json_rpc
+		`, ownerAccount.Address.String()),
 		},
 
 		// Error Paths - Address Related
@@ -328,7 +336,8 @@ func TestCLI_StakeSupplier(t *testing.T) {
 			require.NoError(t, net.Config.Codec.UnmarshalJSON(outStake.Bytes(), &resp))
 			require.NotNil(t, resp)
 			require.NotNil(t, resp.TxHash)
-			require.Equal(t, uint32(0), resp.Code)
+			// You can reference Cosmos SDK error codes here: https://github.com/cosmos/cosmos-sdk/blob/main/types/errors/errors.go
+			require.Equal(t, uint32(0), resp.Code, "tx response failed: %v", resp)
 		})
 	}
 }

@@ -135,10 +135,16 @@ func TestClaim_List(t *testing.T) {
 	numClaimsPerSession := sharedtypes.DefaultNumBlocksPerSession
 	totalClaims := numSessions * numClaimsPerSession
 
-	// TODO_FLAKY(@bryanchriswhite): Ths following line in this test is flaky because test configuration
-	// and management is hard (see details above). To verify if it's functioning
-	// independently, please run:
-	// $ make itest 2 5 ./x/proof/module -- -run TestClaim_List
+	// TODO_FLAKY(@bryanchriswhite): The `networkWithClaimObjects is flaky because
+	// test configuration and management is hard (see details above). To verify if
+	// it's functioning independently, please run:
+	// 		$ make itest 2 5 ./x/proof/module -- -run TestClaim_List
+	// NB: Adding the call to recover seemed to have mitigated the flakiness.
+	defer func() {
+		if r := recover(); r != nil {
+			t.Errorf("Test panicked: %s", r)
+		}
+	}()
 	net, claims, clientCtx := networkWithClaimObjects(t, numSessions, numSuppliers, numApps)
 
 	prepareArgs := func(next []byte, offset, limit uint64, total bool) []string {

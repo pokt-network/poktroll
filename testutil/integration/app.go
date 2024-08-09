@@ -42,6 +42,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	testutilevents "github.com/pokt-network/poktroll/testutil/events"
+	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/testutil/testkeyring"
 	appkeeper "github.com/pokt-network/poktroll/x/application/keeper"
 	application "github.com/pokt-network/poktroll/x/application/module"
@@ -131,6 +132,13 @@ func NewIntegrationApp(
 		WithIsCheckTx(true).
 		WithEventManager(cosmostypes.NewEventManager())
 
+	// Add a block proposer address to the context
+	valAddr, err := cosmostypes.ValAddressFromBech32(sample.ConsAddress())
+	require.NoError(t, err)
+	consensusAddr := cosmostypes.ConsAddress(valAddr)
+	sdkCtx = sdkCtx.WithProposer(consensusAddr)
+
+	// Create the base application
 	txConfig := authtx.NewTxConfig(cdc, authtx.DefaultSignModes)
 	bApp := baseapp.NewBaseApp(appName, logger, db, txConfig.TxDecoder(), baseapp.SetChainID(appName))
 	bApp.MountKVStores(keys)
@@ -156,7 +164,7 @@ func NewIntegrationApp(
 	msgRouter.SetInterfaceRegistry(registry)
 	bApp.SetMsgServiceRouter(msgRouter)
 
-	err := bApp.LoadLatestVersion()
+	err = bApp.LoadLatestVersion()
 	require.NoError(t, err, "failed to load latest version")
 
 	_, err = bApp.InitChain(&cmtabcitypes.RequestInitChain{ChainId: appName})
@@ -267,7 +275,8 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		accountKeeper,
 		blockedAddresses,
 		authority.String(),
-		logger)
+		logger,
+	)
 
 	// Prepare the shared keeper and module
 	sharedKeeper := sharedkeeper.NewKeeper(
@@ -280,6 +289,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		cdc,
 		sharedKeeper,
 		accountKeeper,
+
 		bankKeeper,
 	)
 
@@ -289,6 +299,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		runtime.NewKVStoreService(storeKeys[servicetypes.StoreKey]),
 		logger,
 		authority.String(),
+
 		bankKeeper,
 	)
 	serviceModule := service.NewAppModule(
@@ -304,6 +315,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		runtime.NewKVStoreService(storeKeys[gatewaytypes.StoreKey]),
 		logger,
 		authority.String(),
+
 		bankKeeper,
 	)
 	gatewayModule := gateway.NewAppModule(
@@ -319,6 +331,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		runtime.NewKVStoreService(storeKeys[apptypes.StoreKey]),
 		logger,
 		authority.String(),
+
 		bankKeeper,
 		accountKeeper,
 		gatewayKeeper,
@@ -337,6 +350,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		runtime.NewKVStoreService(storeKeys[suppliertypes.StoreKey]),
 		logger,
 		authority.String(),
+
 		bankKeeper,
 		sharedKeeper,
 		serviceKeeper,
@@ -355,6 +369,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		runtime.NewKVStoreService(storeKeys[sessiontypes.StoreKey]),
 		logger,
 		authority.String(),
+
 		accountKeeper,
 		bankKeeper,
 		applicationKeeper,
@@ -374,6 +389,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		runtime.NewKVStoreService(storeKeys[prooftypes.StoreKey]),
 		logger,
 		authority.String(),
+
 		sessionKeeper,
 		applicationKeeper,
 		accountKeeper,
@@ -391,13 +407,15 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		runtime.NewKVStoreService(storeKeys[tokenomicstypes.StoreKey]),
 		logger,
 		authority.String(),
+
 		bankKeeper,
 		accountKeeper,
 		applicationKeeper,
+		supplierKeeper,
 		proofKeeper,
 		sharedKeeper,
 		sessionKeeper,
-		supplierKeeper,
+		serviceKeeper,
 	)
 	tokenomicsModule := tokenomics.NewAppModule(
 		cdc,
@@ -491,8 +509,9 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 
 	// Prepare a new default service
 	defaultService := sharedtypes.Service{
-		Id:   "svc1",
-		Name: "svcName1",
+		Id:           "svc1",
+		Name:         "svcName1",
+		OwnerAddress: sample.AccAddress(),
 	}
 	serviceKeeper.SetService(integrationApp.sdkCtx, defaultService)
 	integrationApp.DefaultService = &defaultService

@@ -32,28 +32,12 @@ func (s *Supplier) IsActive(queryHeight uint64, serviceId string) bool {
 	return true
 }
 
-// EnsureOwner returns an error if the given address does not match supplier's owner address.
-func (s *Supplier) EnsureOwner(ownerAddress string) error {
-	if s.OwnerAddress != ownerAddress {
-		return ErrSharedUnauthorizedSupplierUpdate.Wrapf(
-			"msg.OwnerAddress %q != provided address %q",
-			s.OwnerAddress,
-			ownerAddress,
-		)
-	}
-
-	return nil
+// HasOwner returns whether the given address is the supplier's owner address.
+func (s *Supplier) HasOwner(address string) bool {
+	return s.OwnerAddress == address
 }
 
-// EnsureOperator returns an error if the given address does not match supplier's operator address.
-func (s *Supplier) EnsureOperator(operatorAddress string) error {
-	if s.OperatorAddress != operatorAddress {
-		return ErrSharedUnauthorizedSupplierUpdate.Wrapf(
-			"msg.OperatorAddress %q != provided address %q",
-			s.OwnerAddress,
-			operatorAddress,
-		)
-	}
-
-	return nil
+// HasOperator returns whether the given address is the supplier's operator address.
+func (s *Supplier) HasOperator(address string) bool {
+	return s.OperatorAddress == address
 }

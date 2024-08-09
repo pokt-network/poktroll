@@ -1,6 +1,7 @@
 package config_test
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/gogo/status"
 	"github.com/stretchr/testify/require"
 
+	_ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/testutil/yaml"
 	"github.com/pokt-network/poktroll/x/shared/types"
@@ -535,10 +537,11 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 		},
 	}
 
+	ctx := context.Background()
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
 			normalizedConfig := yaml.NormalizeYAMLIndentation(tt.inputConfig)
-			supplierServiceConfig, err := config.ParseSupplierConfigs([]byte(normalizedConfig))
+			supplierServiceConfig, err := config.ParseSupplierConfigs(ctx, []byte(normalizedConfig))
 
 			if tt.expectedError != nil {
 				require.Error(t, err)

@@ -26,10 +26,11 @@ type Keeper struct {
 	bankKeeper        types.BankKeeper
 	accountKeeper     types.AccountKeeper
 	applicationKeeper types.ApplicationKeeper
+	supplierKeeper    types.SupplierKeeper
 	proofKeeper       types.ProofKeeper
 	sharedKeeper      types.SharedKeeper
 	sessionKeeper     types.SessionKeeper
-	supplierKeeper    types.SupplierKeeper
+	serviceKeeper     types.ServiceKeeper
 
 	sharedQuerier client.SharedQueryClient
 }
@@ -43,10 +44,11 @@ func NewKeeper(
 	bankKeeper types.BankKeeper,
 	accountKeeper types.AccountKeeper,
 	applicationKeeper types.ApplicationKeeper,
+	supplierKeeper types.SupplierKeeper,
 	proofKeeper types.ProofKeeper,
 	sharedKeeper types.SharedKeeper,
 	sessionKeeper types.SessionKeeper,
-	supplierKeeper types.SupplierKeeper,
+	serviceKeeper types.ServiceKeeper,
 ) Keeper {
 	if _, err := sdk.AccAddressFromBech32(authority); err != nil {
 		panic(fmt.Sprintf("invalid authority address: %s", authority))
@@ -63,10 +65,11 @@ func NewKeeper(
 		bankKeeper:        bankKeeper,
 		accountKeeper:     accountKeeper,
 		applicationKeeper: applicationKeeper,
+		supplierKeeper:    supplierKeeper,
 		proofKeeper:       proofKeeper,
 		sharedKeeper:      sharedKeeper,
 		sessionKeeper:     sessionKeeper,
-		supplierKeeper:    supplierKeeper,
+		serviceKeeper:     serviceKeeper,
 
 		sharedQuerier: sharedQuerier,
 	}

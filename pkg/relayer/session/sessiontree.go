@@ -118,7 +118,17 @@ func (st *sessionTree) Update(key, value []byte, weight uint64) error {
 		return ErrSessionTreeClosed
 	}
 
-	return st.sessionSMT.Update(key, value, weight)
+	err := st.sessionSMT.Update(key, value, weight)
+	if err != nil {
+		return ErrSessionUpdatingTree.Wrapf("error: %v", err)
+	}
+
+	// DO NOT DELETE: Uncomment this for debugging and change to .Debug logs post MainNet.
+	// count := st.sessionSMT.MustCount()
+	// sum := st.sessionSMT.MustSum()
+	// fmt.Printf("Count: %d, Sum: %d\n", count, sum)
+
+	return nil
 }
 
 // ProveClosest is a wrapper for the SMST's ProveClosest function. It returns a proof for the given path.

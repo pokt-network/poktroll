@@ -45,11 +45,11 @@ message MsgUpdateParams {
 message MsgUpdateParamsResponse {}
 
 message MsgStakeSupplier {
-  option (cosmos.msg.v1.signer) = "sender"; // https://docs.cosmos.network/main/build/building-modules/messages-and-queries
+  option (cosmos.msg.v1.signer) = "signer"; // https://docs.cosmos.network/main/build/building-modules/messages-and-queries
 
-  string sender = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the message sender (i.e. owner or operator) using cosmos' ScalarDescriptor to ensure deterministic deterministic encoding using cosmos' ScalarDescriptor to ensure deterministic deterministic encoding
-  string owner_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the owner (i.e. custodial, staker) using cosmos' ScalarDescriptor to ensure deterministic deterministic encoding using cosmos' ScalarDescriptor to ensure deterministic deterministic encoding
-  string operator_address = 3 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the operator (i.e. provider, non-custodial) using cosmos' ScalarDescriptor to ensure deterministic deterministic encoding using cosmos' ScalarDescriptor to ensure deterministic deterministic encoding
+  string signer = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the message signer (i.e. owner or operator)
+  string owner_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the owner (i.e. custodial, staker)
+  string operator_address = 3 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the operator (i.e. provider, non-custodial)
   cosmos.base.v1beta1.Coin stake = 4; // The total amount of uPOKT the supplier has staked. Must be ≥ to the current amount that the supplier has staked (if any)
   repeated poktroll.shared.SupplierServiceConfig services = 5; // The list of services this supplier is staked to provide service for
 }
@@ -57,16 +57,10 @@ message MsgStakeSupplier {
 message MsgStakeSupplierResponse {}
 
 message MsgUnstakeSupplier {
-  option (cosmos.msg.v1.signer) = "owner_address";
-  // The address of the owner (i.e. staker, custodial) that owns the funds for staking.
-  // By default, this address is the one that receives all the rewards unless owtherwise specified.
-  // The owner can initially stake the supplier and unstake it.
-  // All other configurations are managed by the operator.
-  string owner_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address
-  // The operator address of the supplier that operates it.
-  // The operator address can update the supplier's configurations excluding the owner
-  // and operator addresses which do not change over the supplier's lifespan.
-  string operator_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address
+  option (cosmos.msg.v1.signer) = "signer";
+
+  string signer = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the message signer (i.e. owner or operator)
+  string operator_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the operator (i.e. provider, non-custodial)
 }
 
 message MsgUnstakeSupplierResponse {}
