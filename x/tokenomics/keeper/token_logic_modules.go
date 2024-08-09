@@ -247,7 +247,7 @@ func (k Keeper) TokenLogicModuleRelayBurnEqualsMint(
 	service *sharedtypes.Service,
 	application *apptypes.Application,
 	supplier *sharedtypes.Supplier,
-	settlementCoins cosmostypes.Coin,
+	settlementCoin cosmostypes.Coin,
 	relayMiningDifficulty *tokenomictypes.RelayMiningDifficulty,
 ) error {
 	logger := k.Logger().With("method", "TokenLogicModuleRelayBurnEqualsMint")
@@ -265,29 +265,25 @@ func (k Keeper) TokenLogicModuleRelayBurnEqualsMint(
 	// Mint new uPOKT to the supplier module account.
 	// These funds will be transferred to the supplier below.
 	if err = k.bankKeeper.MintCoins(
-		ctx, suppliertypes.ModuleName, sdk.NewCoins(settlementCoins),
+		ctx, suppliertypes.ModuleName, sdk.NewCoins(settlementCoin),
 	); err != nil {
 		return tokenomicstypes.ErrTokenomicsSupplierModuleSendFailed.Wrapf(
 			"minting %s to the supplier module account: %v",
-			settlementCoins,
+			settlementCoin,
 			err,
 		)
 	}
-	logger.Info(fmt.Sprintf("minted (%v) coins in the supplier module", settlementCoins))
+	logger.Info(fmt.Sprintf("minted (%v) coins in the supplier module", settlementCoin))
 
-	// Send the newley minted uPOKT from the supplier module account
-	// to the supplier's account.
-	if err = k.bankKeeper.SendCoinsFromModuleToAccount(
-		ctx, suppliertypes.ModuleName, supplierAddr, sdk.NewCoins(settlementCoins),
-	); err != nil {
-		return tokenomicstypes.ErrTokenomicsSupplierModuleSendFailed.Wrapf(
-			"sending (%s) to supplier with address %s: %v",
-			settlementCoins,
-			supplier.Address,
+	amount := settlementCoin.Amount.Uint64()
+	if err := k.distributeSupplierRewardsToShareHolders(ctx, supplierAddr.String(), service.Id, amount); err != nil {
+		return tokenomicstypes.ErrTokenomicsSupplierModuleMintFailed.Wrapf(
+			"distributing rewards to supplier with address %s shareholders: %v",
+			supplierAddr,
 			err,
 		)
 	}
-	logger.Info(fmt.Sprintf("sent (%v) from the supplier module to the supplier account with address %q", settlementCoins, supplier.Address))
+	logger.Info(fmt.Sprintf("sent (%v) from the supplier module to the supplier account with address %q", settlementCoin, supplier.Address))
 
 	// TODO_MAINNET: Decide on the behaviour here when an app is over serviced.
 	// If an app has 10 POKT staked, but the supplier earned 20 POKT. We still
@@ -295,8 +291,8 @@ func (k Keeper) TokenLogicModuleRelayBurnEqualsMint(
 	// questions and nuance here that needs to be addressed.
 
 	// Verify that the application has enough uPOKT to pay for the services it consumed
-	if application.GetStake().IsLT(settlementCoins) {
-		settlementCoins, err = k.handleOverservicedApplication(ctx, application, settlementCoins)
+	if application.GetStake().IsLT(settlementCoin) {
+		settlementCoin, err = k.handleOverservicedApplication(ctx, application, settlementCoin)
 		if err != nil {
 			return err
 		}
@@ -305,14 +301,14 @@ func (k Keeper) TokenLogicModuleRelayBurnEqualsMint(
 	// Burn uPOKT from the application module account which was held in escrow
 	// on behalf of the application account.
 	if err = k.bankKeeper.BurnCoins(
-		ctx, apptypes.ModuleName, sdk.NewCoins(settlementCoins),
+		ctx, apptypes.ModuleName, sdk.NewCoins(settlementCoin),
 	); err != nil {
-		return tokenomicstypes.ErrTokenomicsApplicationModuleBurn.Wrapf("burning %s from the application module account: %v", settlementCoins, err)
+		return tokenomicstypes.ErrTokenomicsApplicationModuleBurn.Wrapf("burning %s from the application module account: %v", settlementCoin, err)
 	}
-	logger.Info(fmt.Sprintf("burned (%v) from the application module account", settlementCoins))
+	logger.Info(fmt.Sprintf("burned (%v) from the application module account", settlementCoin))
 
 	// Update the application's on-chain stake
-	newAppStake, err := application.Stake.SafeSub(settlementCoins)
+	newAppStake, err := application.Stake.SafeSub(settlementCoin)
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsApplicationNewStakeInvalid.Wrapf("application %q stake cannot be reduced to a negative amount %v", application.Address, newAppStake)
 	}
@@ -350,30 +346,34 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 	logger.Info(fmt.Sprintf("minted (%v) coins in the tokenomics module", newMintCoins))
 
 	// Send a portion of the rewards to the application
-	appCoins, err := k.sendRewardsToAccount(ctx, application.Address, newMintAmtFloat, MintAllocationApplication)
+	appCoin, err := k.sendRewardsToAccount(ctx, application.Address, newMintAmtFloat, MintAllocationApplication)
 	if err != nil {
-		return tokenomictypes.ErrTokenomicsSendingMindRewards.Wrapf("sending rewards to application: %v", err)
+		return tokenomictypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to application: %v", err)
 	}
-	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the application with address %q", appCoins, application.Address))
+	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the application with address %q", appCoin, application.Address))
 
-	// Send a portion of the rewards to the supplier
-	supplierCoins, err := k.sendRewardsToAccount(ctx, supplier.Address, newMintAmtFloat, MintAllocationSupplier)
-	if err != nil {
-		return tokenomictypes.ErrTokenomicsSendingMindRewards.Wrapf("sending rewards to supplier: %v", err)
+	// Send a portion of the rewards to the supplier shareholders.
+	if err := k.distributeSupplierRewardsToShareHolders(ctx, supplier.Address, service.Id, uint64(newMintAmtInt)); err != nil {
+		return tokenomicstypes.ErrTokenomicsSupplierModuleMintFailed.Wrapf(
+			"distributing rewards to supplier with address %s shareholders: %v",
+			supplier.Address,
+			err,
+		)
 	}
-	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the supplier with address %q", supplierCoins, supplier.Address))
+	supplierCoin := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(newMintAmtInt))
+	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the supplier with address %q", supplierCoin, supplier.Address))
 
 	// Send a portion of the rewards to the DAO
-	daoCoins, err := k.sendRewardsToAccount(ctx, k.GetAuthority(), newMintAmtFloat, MintAllocationDAO)
+	daoCoin, err := k.sendRewardsToAccount(ctx, k.GetAuthority(), newMintAmtFloat, MintAllocationDAO)
 	if err != nil {
-		return tokenomictypes.ErrTokenomicsSendingMindRewards.Wrapf("sending rewards to DAO: %v", err)
+		return tokenomictypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to DAO: %v", err)
 	}
-	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the DAO with address %q", daoCoins, k.GetAuthority()))
+	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the DAO with address %q", daoCoin, k.GetAuthority()))
 
 	// Send a portion of the rewards to the source owner
 	serviceCoins, err := k.sendRewardsToAccount(ctx, service.OwnerAddress, newMintAmtFloat, MintAllocationSourceOwner)
 	if err != nil {
-		return tokenomictypes.ErrTokenomicsSendingMindRewards.Wrapf("sending rewards to source owner: %v", err)
+		return tokenomictypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to source owner: %v", err)
 	}
 	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the source owner with address %q", serviceCoins, service.OwnerAddress))
 
@@ -381,12 +381,12 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 	proposerAddr := cosmostypes.AccAddress(sdk.UnwrapSDKContext(ctx).BlockHeader().ProposerAddress).String()
 	proposerCoins, err := k.sendRewardsToAccount(ctx, proposerAddr, newMintAmtFloat, MintAllocationProposer)
 	if err != nil {
-		return tokenomictypes.ErrTokenomicsSendingMindRewards.Wrapf("sending rewards to proposer: %v", err)
+		return tokenomictypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to proposer: %v", err)
 	}
 	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the proposer with address %q", proposerCoins, proposerAddr))
 
 	// TODO_MAINNET: Verify that the total distributed coins equals the settlement coins which could happen due to float rounding
-	totalDistributedCoins := appCoins.Add(*supplierCoins).Add(*daoCoins).Add(*serviceCoins).Add(*proposerCoins)
+	totalDistributedCoins := appCoin.Add(supplierCoin).Add(*daoCoin).Add(*serviceCoins).Add(*proposerCoins)
 	if totalDistributedCoins.Amount.BigInt().Cmp(settlementCoins.Amount.BigInt()) != 0 {
 		logger.Error(fmt.Sprintf("TODO_MAINNET: The total distributed coins (%v) does not equal the settlement coins (%v)", totalDistributedCoins, settlementCoins.Amount.BigInt()))
 	}
@@ -479,4 +479,78 @@ func (k Keeper) numRelaysToCoin(
 	}
 
 	return cosmostypes.NewCoin(volatile.DenomuPOKT, upoktAmount), nil
+}
+
+// distributeSupplierRewardsToShareHolders distributes the supplier rewards to its
+// shareholders based on the rev share percentage of the service.
+func (k Keeper) distributeSupplierRewardsToShareHolders(
+	ctx context.Context,
+	supplierAddr string,
+	serviceId string,
+	amountToDistribute uint64,
+) error {
+	logger := k.Logger().With("method", "distributeSupplierRewardsToShareHolders")
+
+	supplier, supplierFound := k.supplierKeeper.GetSupplier(ctx, supplierAddr)
+	if !supplierFound {
+		return tokenomicstypes.ErrTokenomicsSupplierRevShareFailed.Wrapf(
+			"supplier with address %q not found",
+			supplierAddr,
+		)
+	}
+
+	var serviceRevShare []*sharedtypes.ServiceRevShare
+	for _, svc := range supplier.Services {
+		if svc.Service.Id == serviceId {
+			serviceRevShare = svc.RevShare
+			break
+		}
+	}
+
+	if serviceRevShare == nil {
+		return tokenomicstypes.ErrTokenomicsSupplierRevShareFailed.Wrapf(
+			"service %q not found in supplier %v",
+			serviceId,
+			supplier,
+		)
+	}
+
+	totalDistributed := int64(0)
+	settlementAmountFloat := new(big.Float).SetUint64(amountToDistribute)
+	shareAmountMap := make(map[string]int64, len(serviceRevShare))
+
+	for _, revshare := range serviceRevShare {
+		// TODO_MAINNET: Consider using fixed point arithmetic for deterministic results.
+		shareFloat := big.NewFloat(float64(revshare.RevSharePercentage) / 100)
+		shareAmount, _ := big.NewFloat(0).Mul(settlementAmountFloat, shareFloat).Int64()
+		totalDistributed += shareAmount
+		shareAmountMap[revshare.Address] = shareAmount
+	}
+
+	// Add any remainder due to floating point arithmetic to the first shareholder.
+	remainder := amountToDistribute - uint64(totalDistributed)
+	shareAmountMap[serviceRevShare[0].Address] += int64(remainder)
+
+	for shareHolderAddress, shareAmount := range shareAmountMap {
+		shareAmountCoin := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(shareAmount))
+		shareAmountCoins := cosmostypes.NewCoins(shareAmountCoin)
+		shareHolderAccAddress, err := sdk.AccAddressFromBech32(shareHolderAddress)
+		if err != nil {
+			return err
+		}
+
+		// Send the newley minted uPOKT from the supplier module account
+		// to the supplier's shareholders.
+		if err := k.bankKeeper.SendCoinsFromModuleToAccount(
+			ctx, suppliertypes.ModuleName, shareHolderAccAddress, shareAmountCoins,
+		); err != nil {
+			return err
+		}
+
+		logger.Info(fmt.Sprintf("sent %s from the supplier module to the supplier shareholder with address %q", shareAmountCoin, supplierAddr))
+	}
+
+	logger.Info(fmt.Sprintf("distributed %d uPOKT to supplier %q shareholders", amountToDistribute, supplierAddr))
+
+	return nil
 }

@@ -12,11 +12,13 @@ a stake transaction required to provide RPC services on Pocket Network._
 - [Usage](#usage)
 - [Configuration](#configuration)
   - [`stake_amount`](#stake_amount)
+  - [`default_rev_share_percent`](#default_rev_share_percent)
   - [`services`](#services)
     - [`service_id`](#service_id)
     - [`endpoints`](#endpoints)
       - [`publicly_exposed_url`](#publicly_exposed_url)
       - [`rpc_type`](#rpc_type)
+    - [`rev_share_percent`](#rev_share_percent)
 
 ## Reference Example
 
@@ -42,6 +44,8 @@ poktrolld tx supplier stake-supplier \
 ```
 
 ## Configuration
+
+<!-- TODO(#716): `owner_address` will be defined once non-custodial is merged -->
 
 ### `stake_amount`
 
@@ -72,6 +76,43 @@ sybil or flooding attacks on the network.
 
 :::
 
+### `default_rev_share_percent`
+
+_`Optional`_, _`Non-empty`_
+
+```yaml
+default_rev_share_percent:
+  <shareholder_address>: <float>
+```
+
+`default_rev_share_percent` is an optional map that defines the default the revenue
+share percentage for all the `service`s that do not have their specific `rev_share_percent`
+entry defined.
+
+This field is useful if the `Supplier` owner wants to set a default revenue share
+for all the `service`s entries that do not provide one. This way, the operator
+does not have repeat the same values for each `service` in the `services` section.
+
+This map cannot be empty but can be omitted, in which case the default revenue
+share falls back to `100%` of the rewards allocated to the `Supplier`'s `owner_address`.
+
+:::note
+
+The `shareholder_address`s MUST be valid Pocket addresses.
+
+The revenue share values MUST be strictly positive floats with a maximum value of
+100 and a total sum of 100 across all the `shareholder_address`es.
+
+:::
+
+:::warning
+
+If `default_rev_share_percent` is defined, then the `owner_address` of the `Supplier`
+MUST be **explicitly** defined in the map if they are to receive a share on the
+`service`s that fall back to the default.
+
+:::
+
 ### `services`
 
 _`Required`_, _`Non-empty`_
@@ -82,6 +123,8 @@ services:
     endpoints:
       - publicly_exposed_url: <protocol>://<hostname>:<port>
         rpc_type: <string>
+    rev_share_percent:
+      <shareholder_address>: <float>
 ```
 
 `services` define the list of services that the `Supplier` wants to provide.
@@ -154,3 +197,29 @@ endpoints:
 :::
 
 The `rpc_type` MUST be one of the [supported types found here](https://github.com/pokt-network/poktroll/tree/main/pkg/relayer/config/types.go#L8).
+
+#### `rev_share_percent`
+
+`rev_share_percent` is an optional map that defines the `service`'s specific revenue
+share percentage.
+
+It overrides the `default_rev_share_percent` if defined for the `service`.
+
+This map cannot be empty but can be omitted, in which case it falls back to the
+`default_rev_share_percent` top level configuration entry.
+
+:::note
+
+The `shareholder_address`s MUST be valid Pocket addresses.
+
+The revenue share values MUST be strictly positive decimals with a maximum value
+of 100 and a total sum of 100 across all the `shareholder_address`es.
+
+:::
+
+:::warning
+
+If `rev_share_percent` is defined for a `service`, then the `owner_address` of the
+`Supplier` MUST be **explicitly** defined in the map if they are to receive a share.
+
+:::

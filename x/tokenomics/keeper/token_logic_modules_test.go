@@ -54,10 +54,22 @@ func TestProcessTokenLogicModules_HandleAppGoingIntoDebt(t *testing.T) {
 	keepers.SetApplication(ctx, app)
 
 	// Add a new supplier
+	supplierAddress := sample.AccAddress()
 	supplierStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
 	supplier := sharedtypes.Supplier{
-		Address: sample.AccAddress(),
+		Address: supplierAddress,
 		Stake:   &supplierStake,
+		Services: []*sharedtypes.SupplierServiceConfig{
+			{
+				Service: service,
+				RevShare: []*sharedtypes.ServiceRevShare{
+					{
+						Address:            supplierAddress,
+						RevSharePercentage: 100,
+					},
+				},
+			},
+		},
 	}
 	keepers.SetSupplier(ctx, supplier)
 
@@ -80,7 +92,7 @@ func TestProcessTokenLogicModules_HandleAppGoingIntoDebt(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestSettleSessionAccounting_ValidAccounting(t *testing.T) {
+func TestProcessTokenLogicModules_ValidAccounting(t *testing.T) {
 	// Create a service that can be registered in the application and used in the claims
 	service := &sharedtypes.Service{
 		Id:                   "svc1",
@@ -112,11 +124,27 @@ func TestSettleSessionAccounting_ValidAccounting(t *testing.T) {
 	}
 	keepers.SetApplication(ctx, app)
 
+	shareRatios := []float32{12.5, 37.5, 50}
+	revShares := make([]*sharedtypes.ServiceRevShare, len(shareRatios))
+	for i := range revShares {
+		revShares[i] = &sharedtypes.ServiceRevShare{
+			Address:            sample.AccAddress(),
+			RevSharePercentage: shareRatios[i],
+		}
+	}
+
 	// Add a new supplier.
 	supplierStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
 	supplier := sharedtypes.Supplier{
-		Address: sample.AccAddress(),
+		// Make the first shareholder the supplier itself.
+		Address: revShares[0].Address,
 		Stake:   &supplierStake,
+		Services: []*sharedtypes.SupplierServiceConfig{
+			{
+				Service:  service,
+				RevShare: revShares,
+			},
+		},
 	}
 	keepers.SetSupplier(ctx, supplier)
 
@@ -125,8 +153,6 @@ func TestSettleSessionAccounting_ValidAccounting(t *testing.T) {
 	// Query application module balance prior to the accounting.
 	appModuleStartBalance := getBalance(t, ctx, keepers, appModuleAddress)
 
-	// Query supplier balance prior to the accounting.
-	supplierStartBalance := getBalance(t, ctx, keepers, supplier.GetAddress())
 	// Query supplier module balance prior to the accounting.
 	supplierModuleStartBalance := getBalance(t, ctx, keepers, supplierModuleAddress)
 
@@ -167,10 +193,17 @@ func TestSettleSessionAccounting_ValidAccounting(t *testing.T) {
 	require.NotNil(t, appModuleEndBalance)
 	require.EqualValues(t, &expectedAppModuleEndBalance, appModuleEndBalance)
 
-	// Assert that `supplierAddress` account balance has *increased* by the appropriate amount
-	supplierEndBalance := getBalance(t, ctx, keepers, supplier.GetAddress())
-	expectedSupplierBalance := supplierStartBalance.Add(expectedAppBurn)
-	require.EqualValues(t, &expectedSupplierBalance, supplierEndBalance)
+	// Assert that the supplier shareholders account balances has *increased* by
+	// the appropriate amount.
+	for i := 1; i < len(revShares); i++ {
+		shareHolderBalance := getBalance(t, ctx, keepers, revShares[i].Address)
+		expectedBalance := float32(expectedAppBurn.Amount.Int64()) * revShares[i].RevSharePercentage / 100
+
+		require.Equal(t,
+			shareHolderBalance.Amount.Int64(),
+			int64(expectedBalance),
+		)
+	}
 
 	// Assert that `supplierAddress` staked balance is *unchanged*
 	supplier, supplierIsFound := keepers.GetSupplier(ctx, supplier.GetAddress())
@@ -184,7 +217,7 @@ func TestSettleSessionAccounting_ValidAccounting(t *testing.T) {
 	require.EqualValues(t, supplierModuleStartBalance, supplierModuleEndBalance)
 }
 
-func TestSettleSessionAccounting_AppStakeTooLow(t *testing.T) {
+func TestProcessTokenLogicModules_AppStakeTooLow(t *testing.T) {
 	// Create a service that can be registered in the application and used in the claims
 	service := &sharedtypes.Service{
 		Id:                   "svc1",
@@ -222,10 +255,22 @@ func TestSettleSessionAccounting_AppStakeTooLow(t *testing.T) {
 	appModuleStartBalance := getBalance(t, ctx, keepers, appModuleAddress)
 
 	// Add a new supplier.
+	supplierAddress := sample.AccAddress()
 	supplierStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
 	supplier := sharedtypes.Supplier{
-		Address: sample.AccAddress(),
+		Address: supplierAddress,
 		Stake:   &supplierStake,
+		Services: []*sharedtypes.SupplierServiceConfig{
+			{
+				Service: service,
+				RevShare: []*sharedtypes.ServiceRevShare{
+					{
+						Address:            supplierAddress,
+						RevSharePercentage: 100,
+					},
+				},
+			},
+		},
 	}
 	keepers.SetSupplier(ctx, supplier)
 
@@ -330,7 +375,7 @@ func TestProcessTokenLogicModules_AppNotFound(t *testing.T) {
 	require.ErrorIs(t, err, tokenomicstypes.ErrTokenomicsApplicationNotFound)
 }
 
-func TestSettleSessionAccounting_ServiceNotFound(t *testing.T) {
+func TestProcessTokenLogicModules_ServiceNotFound(t *testing.T) {
 	keeper, ctx, appAddr, supplierAddr, service := testkeeper.TokenomicsKeeperWithActorAddrs(t)
 
 	numRelays := uint64(42)
@@ -350,7 +395,7 @@ func TestSettleSessionAccounting_ServiceNotFound(t *testing.T) {
 	}
 
 	// Execute test function
-	err := keeper.SettleSessionAccounting(ctx, &claim)
+	err := keeper.ProcessTokenLogicModules(ctx, &claim)
 
 	require.Error(t, err)
 	require.ErrorIs(t, err, tokenomicstypes.ErrTokenomicsServiceNotFound)

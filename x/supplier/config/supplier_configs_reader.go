@@ -38,8 +38,9 @@ type YAMLServiceEndpoint struct {
 
 // SupplierStakeConfig is the structure describing the parsed supplier stake config.
 type SupplierStakeConfig struct {
-	StakeAmount sdk.Coin
-	Services    []*sharedtypes.SupplierServiceConfig
+	OwnerAddress string
+	StakeAmount  sdk.Coin
+	Services     []*sharedtypes.SupplierServiceConfig
 }
 
 // ParseSupplierServiceConfig parses the stake config file into a SupplierServiceConfig.
@@ -81,8 +82,15 @@ func ParseSupplierConfigs(configContent []byte) (*SupplierStakeConfig, error) {
 	}
 
 	defaultRevSharePercent := map[string]float32{}
-	if stakeConfig.DefaultRevSharePercent == nil {
+	if stakeConfig.DefaultRevSharePercent == nil || len(stakeConfig.DefaultRevSharePercent) == 0 {
+		// Ensure that if no default rev share is provided, the owner address is set
+		// to 100% rev share.
+		if stakeConfig.OwnerAddress == "" {
+			return nil, ErrSupplierConfigInvalidOwnerAddress.Wrap("owner address cannot be empty")
+		}
 		defaultRevSharePercent[stakeConfig.OwnerAddress] = 100
+	} else {
+		defaultRevSharePercent = stakeConfig.DefaultRevSharePercent
 	}
 
 	// Validate the services
@@ -111,6 +119,7 @@ func ParseSupplierConfigs(configContent []byte) (*SupplierStakeConfig, error) {
 			Endpoints: []*sharedtypes.SupplierEndpoint{},
 		}
 
+		// Iterate over the service endpoints and add their parsed representation to the supplied service config
 		for _, endpoint := range svc.Endpoints {
 			parsedEndpointEntry, err := parseEndpointEntry(endpoint)
 			if err != nil {

@@ -98,9 +98,15 @@ func (s *TestSuite) SetupTest() {
 
 	supplierStake := types.NewCoin("upokt", math.NewInt(1000000))
 	supplier := sharedtypes.Supplier{
-		Address:  supplierAddr,
-		Stake:    &supplierStake,
-		Services: []*sharedtypes.SupplierServiceConfig{{Service: &service}},
+		Address: supplierAddr,
+		Stake:   &supplierStake,
+		Services: []*sharedtypes.SupplierServiceConfig{{
+			Service: &service,
+			RevShare: []*sharedtypes.ServiceRevShare{{
+				Address:            supplierAddr,
+				RevSharePercentage: 100,
+			}},
+		}},
 	}
 	s.keepers.SetSupplier(s.ctx, supplier)
 

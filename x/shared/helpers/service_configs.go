@@ -93,12 +93,18 @@ func ValidateSupplierServiceConfigs(services []*sharedtypes.SupplierServiceConfi
 	return nil
 }
 
+// ValidateServiceRevShare validates the supplier's service revenue share,
+// ensuring that the sum of the revenue share percentages is 100.
 func ValidateServiceRevShare(revShareList []*sharedtypes.ServiceRevShare) error {
 	revSharePercentageSum := float32(0)
 
 	for _, revShare := range revShareList {
 		if revShare == nil {
 			return sharedtypes.ErrSharedInvalidRevShare.Wrap("rev share cannot be nil")
+		}
+
+		if len(revShare.Address) == 0 {
+			return sharedtypes.ErrSharedInvalidRevShare.Wrap("rev share address cannot be empty")
 		}
 
 		// Validate the revshare address

@@ -199,6 +199,12 @@ func createStakeMsg(supplierAddr string, stakeAmount int64) *types.MsgStakeSuppl
 						Configs: make([]*sharedtypes.ConfigOption, 0),
 					},
 				},
+				RevShare: []*sharedtypes.ServiceRevShare{
+					{
+						Address:            supplierAddr,
+						RevSharePercentage: 100,
+					},
+				},
 			},
 		},
 	}
