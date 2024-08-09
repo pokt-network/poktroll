@@ -17,6 +17,7 @@ func CmdUnstakeSupplier() *cobra.Command {
 		Long: `Unstake a supplier with the provided parameters. This is a broadcast operation that will
 unstake the supplier specified by the <operator_address> and owned by 'from' address.
 The signer of the transaction must be the owner or operator of the supplier.
+Once the supplier is unbonded, the tokens will be sent back to the owner address.
 
 Example:
 $ poktrolld tx supplier unstake-supplier $(OPERATOR_ADDRESS) --keyring-backend test --from $(SIGNER) --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
