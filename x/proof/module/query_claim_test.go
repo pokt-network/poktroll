@@ -62,7 +62,7 @@ func TestClaim_Show(t *testing.T) {
 			),
 		},
 		{
-			desc:                 "claim not found (invalid bech32 supplier address)",
+			desc:                 "claim not found (invalid bech32 supplier operator address)",
 			sessionId:            claims[0].GetSessionHeader().GetSessionId(),
 			supplierOperatorAddr: "invalid_bech32_supplier_operator_address",
 
@@ -201,7 +201,7 @@ func TestClaim_List(t *testing.T) {
 		}
 	})
 
-	t.Run("BySupplierAddress", func(t *testing.T) {
+	t.Run("BySupplierOperatorAddress", func(t *testing.T) {
 		supplierOperatorAddr := claims[0].SupplierOperatorAddress
 		args := prepareArgs(nil, 0, uint64(totalClaims), true)
 		args = append(args, fmt.Sprintf("--%s=%s", proof.FlagSupplierOperatorAddress, supplierOperatorAddr))

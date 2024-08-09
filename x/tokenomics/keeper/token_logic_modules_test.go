@@ -174,7 +174,7 @@ func TestSettleSessionAccounting_ValidAccounting(t *testing.T) {
 	expectedSupplierBalance := supplierStartBalance.Add(expectedAppBurn)
 	require.EqualValues(t, &expectedSupplierBalance, supplierOwnerEndBalance)
 
-	// Assert that `supplierAddress` staked balance is *unchanged*
+	// Assert that `supplierOperatorAddress` staked balance is *unchanged*
 	supplier, supplierIsFound := keepers.GetSupplier(ctx, supplier.GetOperatorAddress())
 	require.True(t, supplierIsFound)
 	require.Equal(t, &supplierStake, supplier.GetStake())
@@ -282,7 +282,7 @@ func TestSettleSessionAccounting_AppStakeTooLow(t *testing.T) {
 	expectedSupplierBalance := supplierOwnerStartBalance.Add(expectedAppBurn)
 	require.EqualValues(t, &expectedSupplierBalance, supplierOwnerEndBalance)
 
-	// Assert that `supplierAddress` staked balance is *unchanged*
+	// Assert that `supplierOperatorAddress` staked balance is *unchanged*
 	supplier, supplierIsFound := keepers.GetSupplier(ctx, supplier.GetOperatorAddress())
 	require.True(t, supplierIsFound)
 	require.Equal(t, &supplierStake, supplier.GetStake())
@@ -487,7 +487,7 @@ func TestProcessTokenLogicModules_InvalidClaim(t *testing.T) {
 			expectErr:   tokenomicstypes.ErrTokenomicsSessionHeaderInvalid,
 		},
 		{
-			desc: "Claim with invalid supplier address",
+			desc: "Claim with invalid supplier operator address",
 			claim: func() *prooftypes.Claim {
 				claim := testproof.BaseClaim(service.Id, appAddr, supplierOperatorAddr, numRelays)
 				claim.SupplierOperatorAddress = "invalid address"

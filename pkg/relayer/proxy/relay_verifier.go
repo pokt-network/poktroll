@@ -81,7 +81,7 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	}
 
 	for _, supplier := range session.Suppliers {
-		// Verify if the supplier address in the session matches the one in the relayRequest.
+		// Verify if the supplier operator address in the session matches the one in the relayRequest.
 		if isSupplierOperatorAddressPresent && supplier.OperatorAddress == meta.GetSupplierOperatorAddress() {
 			return nil
 		}

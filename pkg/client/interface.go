@@ -285,7 +285,7 @@ type ApplicationQueryClient interface {
 // on-chain supplier information
 type SupplierQueryClient interface {
 	// GetSupplier queries the chain for the details of the supplier provided
-	GetSupplier(ctx context.Context, supplierAddress string) (sharedtypes.Supplier, error)
+	GetSupplier(ctx context.Context, supplierOperatorAddress string) (sharedtypes.Supplier, error)
 }
 
 // SessionQueryClient defines an interface that enables the querying of the

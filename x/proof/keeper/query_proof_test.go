@@ -62,7 +62,7 @@ func TestProofQuerySingle(t *testing.T) {
 			),
 		},
 		{
-			desc: "Proof Not Found - Random Supplier Address",
+			desc: "Proof Not Found - Random Supplier Operator Address",
 			request: &types.QueryGetProofRequest{
 				SessionId:               proofs[0].GetSessionHeader().GetSessionId(),
 				SupplierOperatorAddress: randSupplierOperatorAddr,

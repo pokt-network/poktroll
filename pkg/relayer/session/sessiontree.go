@@ -31,7 +31,7 @@ type sessionTree struct {
 	sessionSMT smt.SparseMerkleSumTrie
 
 	// supplierOperatorAddress is the address of the supplier's operator that owns this sessionTree.
-	// RelayMiner can run suppliers for many supplier addresses at the same time,
+	// RelayMiner can run suppliers for many supplier operator addresses at the same time,
 	// and we need a way to group the session trees by the supplier operator address for that.
 	supplierOperatorAddress *cosmostypes.AccAddress
 
@@ -267,7 +267,7 @@ func (st *sessionTree) StartClaiming() error {
 	return nil
 }
 
-// SupplierAddress returns a CosmosSDK address of the supplier this sessionTree belongs to.
+// GetSupplierOperatorAddress returns a CosmosSDK address of the supplier this sessionTree belongs to.
 func (st *sessionTree) GetSupplierOperatorAddress() *cosmostypes.AccAddress {
 	return st.supplierOperatorAddress
 }

@@ -120,7 +120,7 @@ func (s *relaysSuite) initFundingAccount(fundingAccountAddress string) {
 }
 
 // initializeLoadTestParams parses the load test manifest and initializes the
-// gateway and supplier addresses and the URLs used to send requests to.
+// gateway and supplier operator addresses and the URLs used to send requests to.
 func (s *relaysSuite) initializeLoadTestParams() *config.LoadTestManifestYAML {
 	workingDirectory, err := os.Getwd()
 	require.NoError(s, err)
@@ -141,7 +141,7 @@ func (s *relaysSuite) initializeLoadTestParams() *config.LoadTestManifestYAML {
 
 	for _, supplier := range loadTestManifest.Suppliers {
 		s.suppliersUrls[supplier.Address] = supplier.ExposedUrl
-		s.availableSupplierAddresses = append(s.availableSupplierAddresses, supplier.Address)
+		s.availableSupplierOperatorAddresses = append(s.availableSupplierOperatorAddresses, supplier.Address)
 	}
 
 	return loadTestManifest
@@ -517,12 +517,12 @@ func (s *relaysSuite) sendFundAvailableActorsTx() (suppliers, gateways, applicat
 
 	// Fund accounts for **all** suppliers that will be used over the duration of the test.
 	suppliersAdded := int64(0)
-	for _, supplierAddress := range s.availableSupplierAddresses {
+	for _, supplierOperatorAddress := range s.availableSupplierOperatorAddresses {
 		if suppliersAdded >= s.plans.suppliers.maxActorCount {
 			break
 		}
 
-		supplier := s.addActor(supplierAddress, supplierStakeAmount)
+		supplier := s.addActor(supplierOperatorAddress, supplierStakeAmount)
 
 		// Add a bank.MsgSend message to fund the supplier.
 		s.addPendingFundMsg(supplier.address, sdk.NewCoins(supplierStakeAmount))
@@ -832,8 +832,8 @@ func (s *relaysSuite) sendStakeSuppliersTxs(
 		)
 
 	for supplierIdx := int64(0); supplierIdx < suppliersToStake; supplierIdx++ {
-		supplierAddress := s.availableSupplierAddresses[supplierCount+supplierIdx]
-		supplier := s.addActor(supplierAddress, supplierStakeAmount)
+		supplierOperatorAddress := s.availableSupplierOperatorAddresses[supplierCount+supplierIdx]
+		supplier := s.addActor(supplierOperatorAddress, supplierStakeAmount)
 		s.addPendingStakeSupplierMsg(supplier)
 		s.sendPendingMsgsTx(supplier)
 		newSuppliers = append(newSuppliers, supplier)

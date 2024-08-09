@@ -130,10 +130,10 @@ func (k Keeper) ProcessTokenLogicModules(
 		return tokenomicstypes.ErrTokenomicsSessionHeaderInvalid
 	}
 
-	// Retrieve the supplier address that will be getting rewarded; providing services
-	supplierAddr, err := cosmostypes.AccAddressFromBech32(claim.GetSupplierOperatorAddress())
-	if err != nil || supplierAddr == nil {
-		return tokenomicstypes.ErrTokenomicsSupplierAddressInvalid
+	// Retrieve the supplier operator address that will be getting rewarded; providing services
+	supplierOperatorAddr, err := cosmostypes.AccAddressFromBech32(claim.GetSupplierOperatorAddress())
+	if err != nil || supplierOperatorAddr == nil {
+		return tokenomicstypes.ErrTokenomicsSupplierOperatorAddressInvalid
 	}
 
 	// Retrieve the application address that is being charged; getting services
@@ -161,9 +161,9 @@ func (k Keeper) ProcessTokenLogicModules(
 	}
 
 	// Retrieve the on-chain staked supplier record
-	supplier, isSupplierFound := k.supplierKeeper.GetSupplier(ctx, supplierAddr.String())
+	supplier, isSupplierFound := k.supplierKeeper.GetSupplier(ctx, supplierOperatorAddr.String())
 	if !isSupplierFound {
-		logger.Warn(fmt.Sprintf("supplier for claim with address %q not found", supplierAddr))
+		logger.Warn(fmt.Sprintf("supplier for claim with address %q not found", supplierOperatorAddr))
 		return tokenomicstypes.ErrTokenomicsSupplierNotFound
 	}
 

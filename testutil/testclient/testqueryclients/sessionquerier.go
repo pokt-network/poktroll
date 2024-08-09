@@ -88,10 +88,10 @@ func AddToExistingSessions(
 		Suppliers:           []*sharedtypes.Supplier{},
 	}
 
-	for _, supplierAddress := range supplierOperatorAddresses {
+	for _, supplierOperatorAddress := range supplierOperatorAddresses {
 		supplier := &sharedtypes.Supplier{
-			OwnerAddress:    supplierAddress,
-			OperatorAddress: supplierAddress,
+			OwnerAddress:    supplierOperatorAddress,
+			OperatorAddress: supplierOperatorAddress,
 		}
 		session.Suppliers = append(session.Suppliers, supplier)
 	}

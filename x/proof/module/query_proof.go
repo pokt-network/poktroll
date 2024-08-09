@@ -142,7 +142,7 @@ func updateProofsFilter(cmd *cobra.Command, req *types.QueryAllProofsRequest) er
 
 	// Use the supplier operator address as the filter
 	if supplierOperatorAddr != "" {
-		// If the supplier address is set, then the other flags must not be set
+		// If the supplier operator address is set, then the other flags must not be set
 		if sessionId != "" || sessionEndHeight > 0 {
 			return err
 		}

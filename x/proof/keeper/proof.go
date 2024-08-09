@@ -29,7 +29,7 @@ func (k Keeper) UpsertProof(ctx context.Context, proof types.Proof) {
 		fmt.Sprintf("upserted proof for supplier %s with primaryKey %s", proof.GetSupplierOperatorAddress(), primaryKey),
 	)
 
-	// Update the address index: supplierAddress -> [ProofPrimaryKey]
+	// Update the address index: supplierOperatorAddress -> [ProofPrimaryKey]
 	supplierOperatorAddrStore := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ProofSupplierOperatorAddressPrefix))
 	supplierOperatorAddrKey := types.ProofSupplierOperatorAddressKey(proof.GetSupplierOperatorAddress(), primaryKey)
 	supplierOperatorAddrStore.Set(supplierOperatorAddrKey, primaryKey)

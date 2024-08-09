@@ -37,7 +37,7 @@ const (
 func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 	rp.OperatorAddressToSigningKeyNameMap = make(map[string]string)
 	for _, operatorSigningKeyName := range rp.signingKeyNames {
-		// Get the supplier address from the keyring
+		// Get the supplier operator address from the keyring
 		supplierOperatorKey, err := rp.keyring.Key(operatorSigningKeyName)
 		if err != nil {
 			return err

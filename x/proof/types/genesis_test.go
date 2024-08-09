@@ -41,7 +41,7 @@ func TestGenesisState_Validate(t *testing.T) {
 				// TODO_TEST: finish genesis proof list validation.
 				//ProofList: []types.Proof{
 				//	{
-				//		SupplierAddress:    sample.AccAddress(),
+				//		SupplierOperatorAddress:    sample.AccAddress(),
 				//		SessionHeader:      &sessiontypes.SessionHeader{
 				//			SessionId:          mockSessionId,
 				//			ApplicationAddress: sample.AccAddress(),

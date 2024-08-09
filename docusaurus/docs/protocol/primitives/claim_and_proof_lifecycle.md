@@ -228,7 +228,7 @@ state Validate_Claim {
         state if_supplier_addr_valid <<choice>>
 
         [*] --> if_supplier_addr_valid
-        if_supplier_addr_valid --> Basic_Validation_Error: invalid supplier address
+        if_supplier_addr_valid --> Basic_Validation_Error: invalid supplier operator address
         if_supplier_addr_valid --> if_session_start_gt_0
         if_session_start_gt_0 --> Basic_Validation_Error: session start height < 0
         if_session_start_gt_0 --> if_session_id_empty
@@ -703,7 +703,7 @@ stateDiagram-v2
     state if_service_id_empty <<choice>>
     state if_proof_empty <<choice>>
     [*] --> if_supplier_addr_valid
-    if_supplier_addr_valid --> Basic_Validation_error: invalid supplier address
+    if_supplier_addr_valid --> Basic_Validation_error: invalid supplier operator address
     if_supplier_addr_valid --> if_app_addr_valid
     if_app_addr_valid --> Basic_Validation_error: invalid app address
     if_app_addr_valid --> if_service_id_empty

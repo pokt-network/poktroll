@@ -157,7 +157,7 @@ func TestGenesisState_Validate(t *testing.T) {
 			isValid: false,
 		},
 		{
-			desc: "invalid - due to duplicated supplier address",
+			desc: "invalid - due to duplicated supplier operator address",
 			genState: &types.GenesisState{
 				SupplierList: []sharedtypes.Supplier{
 					{

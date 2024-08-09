@@ -174,7 +174,7 @@ func (rs *relayerSessionsManager) ensureSessionTree(
 	sessionTree, ok := sessionTreeWithSessionId[supplierOperatorAddress]
 
 	// If the sessionTree does not exist, create and assign it to the
-	// sessionTreeWithSessionId map for the given supplier address.
+	// sessionTreeWithSessionId map for the given supplier operator address.
 	if !ok {
 		sessionTree, err = NewSessionTree(sessionHeader, &supplierOperatorAccAddress, rs.storesDirectory)
 		if err != nil {
@@ -323,7 +323,7 @@ func (rs *relayerSessionsManager) removeFromRelayerSessions(sessionTree relayer.
 
 	_, ok = suppliersSessionTrees[supplierOperatorAddress]
 	if !ok {
-		logger.Debug().Msg("no session tree found for the supplier address")
+		logger.Debug().Msg("no session tree found for the supplier operator address")
 		return
 	}
 

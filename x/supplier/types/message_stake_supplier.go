@@ -14,14 +14,14 @@ var _ sdk.Msg = (*MsgStakeSupplier)(nil)
 func NewMsgStakeSupplier(
 	signerAddress string,
 	ownerAddress string,
-	supplierAddress string,
+	supplierOperatorAddress string,
 	stake sdk.Coin,
 	services []*sharedtypes.SupplierServiceConfig,
 ) *MsgStakeSupplier {
 	return &MsgStakeSupplier{
 		Signer:          signerAddress,
 		OwnerAddress:    ownerAddress,
-		OperatorAddress: supplierAddress,
+		OperatorAddress: supplierOperatorAddress,
 		Stake:           &stake,
 		Services:        services,
 	}

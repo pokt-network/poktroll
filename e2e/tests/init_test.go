@@ -672,7 +672,7 @@ func (s *suite) validateAmountChange(prevAmount, currAmount int, expectedAmountC
 
 }
 
-// getSupplierInfo returns the supplier information for a given supplier address
+// getSupplierInfo returns the supplier information for a given supplier operator address
 func (s *suite) getSupplierInfo(supplierOperatorName string) *sharedtypes.Supplier {
 	supplierOperatorAddr := accNameToAddrMap[supplierOperatorName]
 	args := []string{

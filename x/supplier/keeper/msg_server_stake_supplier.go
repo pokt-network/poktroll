@@ -53,7 +53,7 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 		// Ensure the signer is either the owner or the operator of the supplier.
 		if !msg.IsSigner(supplier.OwnerAddress) && !msg.IsSigner(supplier.OperatorAddress) {
 			return nil, sharedtypes.ErrSharedUnauthorizedSupplierUpdate.Wrapf(
-				"signer address %s does not match owner address %s or supplier address %s",
+				"signer address %s does not match owner address %s or supplier operator address %s",
 				msg.Signer,
 				msg.OwnerAddress,
 				msg.OperatorAddress,

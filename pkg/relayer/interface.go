@@ -157,6 +157,6 @@ type SessionTree interface {
 	// It returns an error if it has already been marked as such.
 	StartClaiming() error
 
-	// GetSupplierOperatorAddress returns the supplier address building this tree.
+	// GetSupplierOperatorAddress returns the supplier operator address building this tree.
 	GetSupplierOperatorAddress() *cosmostypes.AccAddress
 }

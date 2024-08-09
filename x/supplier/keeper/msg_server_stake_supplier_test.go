@@ -324,7 +324,7 @@ func TestMsgServer_StakeSupplier_ActiveSupplier(t *testing.T) {
 }
 
 // stakeSupplierForServicesMsg prepares and returns a MsgStakeSupplier that stakes
-// the given supplier address, stake amount, and service IDs.
+// the given supplier operator address, stake amount, and service IDs.
 func stakeSupplierForServicesMsg(
 	ownerAddr, operatorAddr string,
 	amount int64,

@@ -24,7 +24,7 @@ func (k Keeper) UpsertClaim(ctx context.Context, claim types.Claim) {
 	primaryStore.Set(primaryKey, claimBz)
 	logger.Info(fmt.Sprintf("upserted claim for supplier %s with primaryKey %s", claim.SupplierOperatorAddress, primaryKey))
 
-	// Update the address index: supplierAddress -> [ClaimPrimaryKey]
+	// Update the address index: supplierOperatorAddress -> [ClaimPrimaryKey]
 	supplierOperatorAddrStore := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ClaimSupplierOperatorAddressPrefix))
 	supplierOperatorAddrKey := types.ClaimSupplierOperatorAddressKey(claim.SupplierOperatorAddress, primaryKey)
 	supplierOperatorAddrStore.Set(supplierOperatorAddrKey, primaryKey)

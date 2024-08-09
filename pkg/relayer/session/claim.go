@@ -180,7 +180,7 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 			return either.Success(sessionTrees), false
 		}
 
-		// Map key is the supplier address.
+		// Map key is the supplier operator address.
 		claimMsgs := make([]client.MsgCreateClaim, 0)
 		for _, sessionTree := range sessionTrees {
 			claimMsgs = append(claimMsgs, &prooftypes.MsgCreateClaim{

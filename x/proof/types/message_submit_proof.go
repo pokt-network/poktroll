@@ -9,9 +9,9 @@ import (
 
 var _ sdk.Msg = (*MsgSubmitProof)(nil)
 
-func NewMsgSubmitProof(supplierAddress string, sessionHeader *sessiontypes.SessionHeader, proof []byte) *MsgSubmitProof {
+func NewMsgSubmitProof(supplierOperatorAddress string, sessionHeader *sessiontypes.SessionHeader, proof []byte) *MsgSubmitProof {
 	return &MsgSubmitProof{
-		SupplierOperatorAddress: supplierAddress,
+		SupplierOperatorAddress: supplierOperatorAddress,
 		SessionHeader:           sessionHeader,
 		Proof:                   proof,
 	}

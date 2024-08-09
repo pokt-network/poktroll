@@ -47,7 +47,7 @@ func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) error {
 		}
 
 		// Retrieve the address of the supplier.
-		supplierAddress, err := cosmostypes.AccAddressFromBech32(supplier.OperatorAddress)
+		supplierOperatorAddress, err := cosmostypes.AccAddressFromBech32(supplier.OperatorAddress)
 		if err != nil {
 			logger.Error(fmt.Sprintf("could not parse the operator address %s", supplier.OperatorAddress))
 			return err
@@ -65,7 +65,7 @@ func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) error {
 		}
 
 		// Remove the supplier from the store.
-		k.RemoveSupplier(ctx, supplierAddress.String())
+		k.RemoveSupplier(ctx, supplierOperatorAddress.String())
 		logger.Info(fmt.Sprintf("Successfully removed the supplier: %+v", supplier))
 	}
 
