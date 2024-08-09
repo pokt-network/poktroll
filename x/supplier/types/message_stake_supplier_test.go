@@ -27,6 +27,12 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 					Configs: make([]*sharedtypes.ConfigOption, 0),
 				},
 			},
+			RevShare: []*sharedtypes.ServiceRevShare{
+				{
+					Address:            sample.AccAddress(),
+					RevSharePercentage: 100,
+				},
+			},
 		}}
 
 	tests := []struct {
@@ -113,6 +119,12 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 								Configs: make([]*sharedtypes.ConfigOption, 0),
 							},
 						},
+						RevShare: []*sharedtypes.ServiceRevShare{
+							{
+								Address:            sample.AccAddress(),
+								RevSharePercentage: 100,
+							},
+						},
 					},
 					{
 						Service: &sharedtypes.Service{
@@ -123,6 +135,12 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 								Url:     "http://localhost:8082",
 								RpcType: sharedtypes.RPCType_GRPC,
 								Configs: make([]*sharedtypes.ConfigOption, 0),
+							},
+						},
+						RevShare: []*sharedtypes.ServiceRevShare{
+							{
+								Address:            sample.AccAddress(),
+								RevSharePercentage: 100,
 							},
 						},
 					},
@@ -164,6 +182,12 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 								Configs: make([]*sharedtypes.ConfigOption, 0),
 							},
 						},
+						RevShare: []*sharedtypes.ServiceRevShare{
+							{
+								Address:            sample.AccAddress(),
+								RevSharePercentage: 100,
+							},
+						},
 					},
 				},
 			},
@@ -187,6 +211,12 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 								Configs: make([]*sharedtypes.ConfigOption, 0),
 							},
 						},
+						RevShare: []*sharedtypes.ServiceRevShare{
+							{
+								Address:            sample.AccAddress(),
+								RevSharePercentage: 100,
+							},
+						},
 					},
 				},
 			},
@@ -207,6 +237,12 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 								Url:     "http://localhost:8080",
 								RpcType: sharedtypes.RPCType_JSON_RPC,
 								Configs: make([]*sharedtypes.ConfigOption, 0),
+							},
+						},
+						RevShare: []*sharedtypes.ServiceRevShare{
+							{
+								Address:            sample.AccAddress(),
+								RevSharePercentage: 100,
 							},
 						},
 					},
@@ -232,6 +268,12 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 								Configs: make([]*sharedtypes.ConfigOption, 0),
 							},
 						},
+						RevShare: []*sharedtypes.ServiceRevShare{
+							{
+								Address:            sample.AccAddress(),
+								RevSharePercentage: 100,
+							},
+						},
 					},
 				},
 			},
@@ -255,6 +297,12 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 								Configs: make([]*sharedtypes.ConfigOption, 0),
 							},
 						},
+						RevShare: []*sharedtypes.ServiceRevShare{
+							{
+								Address:            sample.AccAddress(),
+								RevSharePercentage: 100,
+							},
+						},
 					},
 				},
 			},
@@ -276,6 +324,12 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 								Url: "http://localhost:8080",
 								// RpcType explicitly omitted,
 								Configs: make([]*sharedtypes.ConfigOption, 0),
+							},
+						},
+						RevShare: []*sharedtypes.ServiceRevShare{
+							{
+								Address:            sample.AccAddress(),
+								RevSharePercentage: 100,
 							},
 						},
 					},

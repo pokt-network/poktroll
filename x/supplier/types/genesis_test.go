@@ -26,6 +26,12 @@ func TestGenesisState_Validate(t *testing.T) {
 				Configs: make([]*sharedtypes.ConfigOption, 0),
 			},
 		},
+		RevShare: []*sharedtypes.ServiceRevShare{
+			{
+				Address:            addr1,
+				RevSharePercentage: 100,
+			},
+		},
 	}
 	serviceList1 := []*sharedtypes.SupplierServiceConfig{serviceConfig1}
 
@@ -40,6 +46,12 @@ func TestGenesisState_Validate(t *testing.T) {
 				Url:     "http://localhost:8082",
 				RpcType: sharedtypes.RPCType_GRPC,
 				Configs: make([]*sharedtypes.ConfigOption, 0),
+			},
+		},
+		RevShare: []*sharedtypes.ServiceRevShare{
+			{
+				Address:            addr2,
+				RevSharePercentage: 100,
 			},
 		},
 	}
@@ -260,6 +272,12 @@ func TestGenesisState_Validate(t *testing.T) {
 										Configs: make([]*sharedtypes.ConfigOption, 0),
 									},
 								},
+								RevShare: []*sharedtypes.ServiceRevShare{
+									{
+										Address:            addr2,
+										RevSharePercentage: 100,
+									},
+								},
 							},
 						},
 					},
@@ -289,6 +307,12 @@ func TestGenesisState_Validate(t *testing.T) {
 										Url:     "http://localhost:8081",
 										RpcType: sharedtypes.RPCType_UNKNOWN_RPC,
 										Configs: make([]*sharedtypes.ConfigOption, 0),
+									},
+								},
+								RevShare: []*sharedtypes.ServiceRevShare{
+									{
+										Address:            addr2,
+										RevSharePercentage: 100,
 									},
 								},
 							},

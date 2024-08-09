@@ -7,21 +7,25 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gopkg.in/yaml.v2"
 
+	"github.com/pokt-network/poktroll/x/shared/helpers"
 	sharedhelpers "github.com/pokt-network/poktroll/x/shared/helpers"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // YAMLStakeConfig is the structure describing the supplier stake config file.
 type YAMLStakeConfig struct {
-	StakeAmount string              `yaml:"stake_amount"`
-	Services    []*YAMLStakeService `yaml:"services"`
+	OwnerAddress           string              `yaml:"owner_address"`
+	StakeAmount            string              `yaml:"stake_amount"`
+	DefaultRevSharePercent map[string]float32  `yaml:"default_rev_share_percent"`
+	Services               []*YAMLStakeService `yaml:"services"`
 }
 
 // YAMLStakeService is the structure describing a single service entry in the
 // stake config file.
 type YAMLStakeService struct {
-	ServiceId string                `yaml:"service_id"`
-	Endpoints []YAMLServiceEndpoint `yaml:"endpoints"`
+	ServiceId       string                `yaml:"service_id"`
+	RevSharePercent map[string]float32    `yaml:"rev_share_percent"`
+	Endpoints       []YAMLServiceEndpoint `yaml:"endpoints"`
 }
 
 // YAMLServiceEndpoint is the structure describing a single service endpoint in
@@ -34,8 +38,9 @@ type YAMLServiceEndpoint struct {
 
 // SupplierStakeConfig is the structure describing the parsed supplier stake config.
 type SupplierStakeConfig struct {
-	StakeAmount sdk.Coin
-	Services    []*sharedtypes.SupplierServiceConfig
+	OwnerAddress string
+	StakeAmount  sdk.Coin
+	Services     []*sharedtypes.SupplierServiceConfig
 }
 
 // ParseSupplierServiceConfig parses the stake config file into a SupplierServiceConfig.
@@ -76,6 +81,18 @@ func ParseSupplierConfigs(configContent []byte) (*SupplierStakeConfig, error) {
 		)
 	}
 
+	defaultRevSharePercent := map[string]float32{}
+	if stakeConfig.DefaultRevSharePercent == nil || len(stakeConfig.DefaultRevSharePercent) == 0 {
+		// Ensure that if no default rev share is provided, the owner address is set
+		// to 100% rev share.
+		if stakeConfig.OwnerAddress == "" {
+			return nil, ErrSupplierConfigInvalidOwnerAddress.Wrap("owner address cannot be empty")
+		}
+		defaultRevSharePercent[stakeConfig.OwnerAddress] = 100
+	} else {
+		defaultRevSharePercent = stakeConfig.DefaultRevSharePercent
+	}
+
 	// Validate the services
 	if stakeConfig.Services == nil || len(stakeConfig.Services) == 0 {
 		return nil, ErrSupplierConfigInvalidServiceId.Wrap("serviceIds cannot be empty")
@@ -98,6 +115,7 @@ func ParseSupplierConfigs(configContent []byte) (*SupplierStakeConfig, error) {
 		// Create a supplied service config with the serviceId
 		service := &sharedtypes.SupplierServiceConfig{
 			Service:   &sharedtypes.Service{Id: svc.ServiceId},
+			RevShare:  []*sharedtypes.ServiceRevShare{},
 			Endpoints: []*sharedtypes.SupplierEndpoint{},
 		}
 
@@ -109,6 +127,24 @@ func ParseSupplierConfigs(configContent []byte) (*SupplierStakeConfig, error) {
 			}
 			service.Endpoints = append(service.Endpoints, parsedEndpointEntry)
 		}
+
+		serviceConfigRevShare := svc.RevSharePercent
+		// If the service does not have a rev share, use the default one.
+		if serviceConfigRevShare == nil {
+			serviceConfigRevShare = defaultRevSharePercent
+		}
+
+		for address, revSharePercent := range serviceConfigRevShare {
+			service.RevShare = append(service.RevShare, &sharedtypes.ServiceRevShare{
+				Address:            address,
+				RevSharePercentage: revSharePercent,
+			})
+		}
+
+		if err := helpers.ValidateServiceRevShare(service.RevShare); err != nil {
+			return nil, err
+		}
+
 		supplierServiceConfig = append(supplierServiceConfig, service)
 	}
 
