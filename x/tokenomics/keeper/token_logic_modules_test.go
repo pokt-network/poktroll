@@ -56,8 +56,9 @@ func TestProcessTokenLogicModules_HandleAppGoingIntoDebt(t *testing.T) {
 	// Add a new supplier
 	supplierStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
 	supplier := sharedtypes.Supplier{
-		Address: sample.AccAddress(),
-		Stake:   &supplierStake,
+		OwnerAddress: sample.AccAddress(),
+		Address:      sample.AccAddress(),
+		Stake:        &supplierStake,
 	}
 	keepers.SetSupplier(ctx, supplier)
 
