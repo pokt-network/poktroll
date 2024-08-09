@@ -10,7 +10,12 @@ a stake transaction required to provide RPC services on Pocket Network._
 
 - [Reference Example](#reference-example)
 - [Usage](#usage)
+- [Staking types](#staking-types)
+  - [Custodial Staking](#custodial-staking)
+  - [Non-Custodial Staking](#non-custodial-staking)
 - [Configuration](#configuration)
+  - [`owner_address`](#owner_address)
+  - [`operator_address`](#operator_address)
   - [`stake_amount`](#stake_amount)
   - [`services`](#services)
     - [`service_id`](#service_id)
@@ -41,7 +46,104 @@ poktrolld tx supplier stake-supplier \
   --node tcp://poktroll-node:26657
 ```
 
+## Staking types
+
+The `Supplier` staking command supports two types of staking:
+
+### Custodial Staking
+
+In this type, the owner of the `Supplier` is the same as the operator.
+This means the account that receives the rewards is the same as the one that
+signs the `RelayResponse`s and submits claims and proofs.
+
+Custodial staking is the simplest to set up and manage, as there is no need to
+manage multiple accounts. It is suitable for `Supplier`s that do not have concerns
+about using the private key of the staking or the rewarded account to operate the
+`RelayMiner` or update the `Supplier`'s stake and services.
+
+### Non-Custodial Staking
+
+In this staking mode, the owner of the `Supplier` is different from the operator.
+This means the account that receives the rewards is different from the one signing
+the `RelayResponse`s and submitting claims and proofs.
+
+Non-custodial staking is suitable for `Supplier`s that want to separate the staking
+or the rewarded account (i.e., the account that holds the `upokt` stake or rewards)
+from the account operates the `RelayMiner`.
+
+:::note
+
+When staking a `Supplier`, the signing account specified with the `--from` flag
+(which may differ from the `Supplier`'s owner or operator) will have its `upokt`
+balance deducted to stake the `Supplier`.
+
+When unstaking a `Supplier`, the staked `upokt` will be returned to the `owner_address`
+account.
+
+:::
+
 ## Configuration
+
+### `owner_address`
+
+_`Required`_, _`Non-empty`_
+
+```yaml
+owner_address: <address>
+```
+
+The `owner_address` is the address of the account that owns the `Supplier`s staked
+funds which will be returned to this account when the `Supplier` unstakes and finishes
+unbonding.
+
+For custodial staking, the `owner_address` is the same as the `operator_address`.
+
+For non-custodial staking, the `owner_address` must be different from the `operator_address`.
+This address can only be used to stake a new `Supplier` or unstake an existing one.
+
+The `owner_address` can only be changed with a stake message signed by the owner
+account corresponding to the `operator_address` of the `Supplier`.
+
+The owner account can also be used to unstake the `Supplier` and receive the staked
+`upokt` back.
+
+:::note
+
+The `owner_address` does not identify a `Supplier`; multiple `Supplier`s can have
+the same `owner_address`.
+
+:::
+
+### `operator_address`
+
+_`Optional`_, _`Non-empty`_
+
+```yaml
+operator_address: <address>
+```
+
+The `operator_address` is the address that identifies the `Supplier`.
+Its corresponding account is used for operational tasks such as signing `RelayResponse`s,
+submitting `Claims` and `Proofs` as well as updating the `Supplier`'s info
+(i.e. Adding or removing services, increasing the stake amount, etc).
+
+The operator account can also be used to unstake the `Supplier` and send the staked
+`upokt` back to the `owner_address`.
+
+If the `operator_address` is not specified, the `owner_address` is used as the
+`operator_address`.
+
+If the `operator_address` is the same as the `owner_address`, then the staking
+is custodial.
+
+:::warning
+
+Since the `operator_address` is the unique identifier of a `Supplier`, it cannot
+be changed once the `Supplier` is created. If it needs to be changed, then the
+corresponding `Supplier` has to be unstaked and a new one staked with the new
+`operator_address`.
+
+:::
 
 ### `stake_amount`
 
