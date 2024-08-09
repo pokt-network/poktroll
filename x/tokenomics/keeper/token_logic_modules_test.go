@@ -80,7 +80,7 @@ func TestProcessTokenLogicModules_HandleAppGoingIntoDebt(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestSettleSessionAccounting_ValidAccounting(t *testing.T) {
+func TestProcessTokenLogicModules_ValidAccounting(t *testing.T) {
 	// Create a service that can be registered in the application and used in the claims
 	service := &sharedtypes.Service{
 		Id:                   "svc1",
@@ -184,7 +184,7 @@ func TestSettleSessionAccounting_ValidAccounting(t *testing.T) {
 	require.EqualValues(t, supplierModuleStartBalance, supplierModuleEndBalance)
 }
 
-func TestSettleSessionAccounting_AppStakeTooLow(t *testing.T) {
+func TestProcessTokenLogicModules_AppStakeTooLow(t *testing.T) {
 	// Create a service that can be registered in the application and used in the claims
 	service := &sharedtypes.Service{
 		Id:                   "svc1",
@@ -330,7 +330,7 @@ func TestProcessTokenLogicModules_AppNotFound(t *testing.T) {
 	require.ErrorIs(t, err, tokenomicstypes.ErrTokenomicsApplicationNotFound)
 }
 
-func TestSettleSessionAccounting_ServiceNotFound(t *testing.T) {
+func TestProcessTokenLogicModules_ServiceNotFound(t *testing.T) {
 	keeper, ctx, appAddr, supplierAddr, service := testkeeper.TokenomicsKeeperWithActorAddrs(t)
 
 	numRelays := uint64(42)
@@ -350,7 +350,7 @@ func TestSettleSessionAccounting_ServiceNotFound(t *testing.T) {
 	}
 
 	// Execute test function
-	err := keeper.SettleSessionAccounting(ctx, &claim)
+	err := keeper.ProcessTokenLogicModules(ctx, &claim)
 
 	require.Error(t, err)
 	require.ErrorIs(t, err, tokenomicstypes.ErrTokenomicsServiceNotFound)
