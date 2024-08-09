@@ -529,8 +529,9 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	// Prepare the on-chain supplier
 	supplierStake := types.NewCoin("upokt", math.NewInt(1000000))
 	defaultSupplier := sharedtypes.Supplier{
-		Address: supplierAddr.String(),
-		Stake:   &supplierStake,
+		OwnerAddress: supplierAddr.String(),
+		Address:      supplierAddr.String(),
+		Stake:        &supplierStake,
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
 				Service: &defaultService,

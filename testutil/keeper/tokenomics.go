@@ -123,8 +123,9 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 
 	// Prepare the test supplier.
 	supplier := sharedtypes.Supplier{
-		Address: sample.AccAddress(),
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100000)},
+		OwnerAddress: sample.AccAddress(),
+		Address:      sample.AccAddress(),
+		Stake:        &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100000)},
 	}
 
 	ctrl := gomock.NewController(t)

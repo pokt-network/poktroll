@@ -25,11 +25,14 @@ func TestCLI_UnstakeSupplier(t *testing.T) {
 
 	// Create a keyring and add an account for the supplier to be unstaked
 	kr := ctx.Keyring
-	accounts := testutil.CreateKeyringAccounts(t, kr, 1)
-	supplierAccount := accounts[0]
+	accounts := testutil.CreateKeyringAccounts(t, kr, 2)
+	operatorAccount := accounts[0]
+	ownerAccount := accounts[1]
 
-	// Initialize the Supplier Account by sending it some funds from the validator account that is part of genesis
-	network.InitAccount(t, net, supplierAccount.Address)
+	// Initialize the Supplier operator account by sending it some funds from the
+	// validator account that is part of genesis
+	network.InitAccountWithSequence(t, net, operatorAccount.Address, 1)
+	network.InitAccountWithSequence(t, net, ownerAccount.Address, 2)
 
 	// Update the context with the new keyring
 	ctx = ctx.WithKeyring(kr)
@@ -42,23 +45,44 @@ func TestCLI_UnstakeSupplier(t *testing.T) {
 	}
 
 	tests := []struct {
-		desc        string
-		address     string
-		expectedErr *sdkerrors.Error
+		desc            string
+		signerAddress   string
+		operatorAddress string
+		expectedErr     *sdkerrors.Error
 	}{
 		{
-			desc:    "unstake supplier: valid",
-			address: supplierAccount.Address.String(),
+			desc:            "owner unstake supplier: valid",
+			signerAddress:   ownerAccount.Address.String(),
+			operatorAddress: operatorAccount.Address.String(),
 		},
 		{
-			desc: "unstake supplier: missing address",
-			// address: supplierAccount.Address.String(),
+			desc:            "operator unstake supplier: valid",
+			signerAddress:   operatorAccount.Address.String(),
+			operatorAddress: operatorAccount.Address.String(),
+		},
+		{
+			desc: "unstake supplier: missing singer address",
+			// signerAddress: ownerAccount.Address.String(),
+			operatorAddress: operatorAccount.Address.String(),
+			expectedErr:     types.ErrSupplierInvalidAddress,
+		},
+		{
+			desc:            "unstake supplier: invalid signer address",
+			signerAddress:   "invalid",
+			operatorAddress: operatorAccount.Address.String(),
+			expectedErr:     types.ErrSupplierInvalidAddress,
+		},
+		{
+			desc:          "unstake supplier: missing operator address",
+			signerAddress: ownerAccount.Address.String(),
+			// operatorAddress: operatorAccount.Address.String(),
 			expectedErr: types.ErrSupplierInvalidAddress,
 		},
 		{
-			desc:        "unstake supplier: invalid address",
-			address:     "invalid",
-			expectedErr: types.ErrSupplierInvalidAddress,
+			desc:            "unstake supplier: invalid operator address",
+			signerAddress:   ownerAccount.Address.String(),
+			operatorAddress: "invalid",
+			expectedErr:     types.ErrSupplierInvalidAddress,
 		},
 	}
 
@@ -70,7 +94,8 @@ func TestCLI_UnstakeSupplier(t *testing.T) {
 
 			// Prepare the arguments for the CLI command
 			args := []string{
-				fmt.Sprintf("--%s=%s", flags.FlagFrom, test.address),
+				test.operatorAddress,
+				fmt.Sprintf("--%s=%s", flags.FlagFrom, test.signerAddress),
 			}
 			args = append(args, commonArgs...)
 
