@@ -422,6 +422,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		tokenomicsKeeper,
 		accountKeeper,
 		bankKeeper,
+		supplierKeeper,
 	)
 
 	// Prepare the message & query routers

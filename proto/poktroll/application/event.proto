@@ -9,6 +9,6 @@ import "cosmos_proto/cosmos.proto";
 // delegatee gateways on chain. This is in response to both a DelegateToGateway
 // and UndelegateFromGateway message.
 message EventRedelegation {
-  string app_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the application, using cosmos' ScalarDescriptor to ensure deterministic encoding
-  string gateway_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the gateway the application has changed their delegation of, using cosmos' ScalarDescriptor to ensure deterministic encoding
+  string app_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the application.
+  string gateway_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the gateway the application has changed their delegation of.
 }

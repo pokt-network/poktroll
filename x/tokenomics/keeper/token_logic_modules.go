@@ -252,7 +252,7 @@ func (k Keeper) TokenLogicModuleRelayBurnEqualsMint(
 ) error {
 	logger := k.Logger().With("method", "TokenLogicModuleRelayBurnEqualsMint")
 
-	supplierAddr, err := cosmostypes.AccAddressFromBech32(supplier.Address)
+	ownerAddr, err := cosmostypes.AccAddressFromBech32(supplier.OwnerAddress)
 	if err != nil {
 		return err
 	}
@@ -276,10 +276,10 @@ func (k Keeper) TokenLogicModuleRelayBurnEqualsMint(
 	logger.Info(fmt.Sprintf("minted (%v) coins in the supplier module", settlementCoin))
 
 	amount := settlementCoin.Amount.Uint64()
-	if err := k.distributeSupplierRewardsToShareHolders(ctx, supplierAddr.String(), service.Id, amount); err != nil {
+	if err = k.distributeSupplierRewardsToShareHolders(ctx, ownerAddr.String(), service.Id, amount); err != nil {
 		return tokenomicstypes.ErrTokenomicsSupplierModuleMintFailed.Wrapf(
 			"distributing rewards to supplier with address %s shareholders: %v",
-			supplierAddr,
+			ownerAddr,
 			err,
 		)
 	}
@@ -353,7 +353,7 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the application with address %q", appCoin, application.Address))
 
 	// Send a portion of the rewards to the supplier shareholders.
-	if err := k.distributeSupplierRewardsToShareHolders(ctx, supplier.Address, service.Id, uint64(newMintAmtInt)); err != nil {
+	if err = k.distributeSupplierRewardsToShareHolders(ctx, supplier.Address, service.Id, uint64(newMintAmtInt)); err != nil {
 		return tokenomicstypes.ErrTokenomicsSupplierModuleMintFailed.Wrapf(
 			"distributing rewards to supplier with address %s shareholders: %v",
 			supplier.Address,

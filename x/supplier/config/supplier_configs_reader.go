@@ -1,23 +1,28 @@
 package config
 
 import (
+	"context"
 	"net/url"
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gopkg.in/yaml.v2"
 
+	"github.com/pokt-network/poktroll/pkg/polylog"
+	_ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/x/shared/helpers"
 	sharedhelpers "github.com/pokt-network/poktroll/x/shared/helpers"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 // YAMLStakeConfig is the structure describing the supplier stake config file.
 type YAMLStakeConfig struct {
 	OwnerAddress           string              `yaml:"owner_address"`
+	OperatorAddress        string              `yaml:"operator_address"`
 	StakeAmount            string              `yaml:"stake_amount"`
-	DefaultRevSharePercent map[string]float32  `yaml:"default_rev_share_percent"`
 	Services               []*YAMLStakeService `yaml:"services"`
+	DefaultRevSharePercent map[string]float32  `yaml:"default_rev_share_percent"`
 }
 
 // YAMLStakeService is the structure describing a single service entry in the
@@ -38,14 +43,30 @@ type YAMLServiceEndpoint struct {
 
 // SupplierStakeConfig is the structure describing the parsed supplier stake config.
 type SupplierStakeConfig struct {
-	OwnerAddress string
-	StakeAmount  sdk.Coin
-	Services     []*sharedtypes.SupplierServiceConfig
+	OwnerAddress    string
+	OperatorAddress string
+	StakeAmount     sdk.Coin
+	Services        []*sharedtypes.SupplierServiceConfig
+}
+
+// EnsureOwner ensures that the config owner address matches the provided address.
+func (cfg *SupplierStakeConfig) EnsureOwner(ownerAddress string) error {
+	if cfg.OwnerAddress != ownerAddress {
+		return types.ErrSupplierInvalidAddress.Wrapf(
+			"owner address %q in the stake config file does not match the address provided %q",
+			cfg.OperatorAddress,
+			ownerAddress,
+		)
+	}
+
+	return nil
 }
 
 // ParseSupplierServiceConfig parses the stake config file into a SupplierServiceConfig.
-func ParseSupplierConfigs(configContent []byte) (*SupplierStakeConfig, error) {
+func ParseSupplierConfigs(ctx context.Context, configContent []byte) (*SupplierStakeConfig, error) {
 	var stakeConfig *YAMLStakeConfig
+
+	logger := polylog.Ctx(ctx)
 
 	if len(configContent) == 0 {
 		return nil, ErrSupplierConfigEmptyContent
@@ -54,6 +75,22 @@ func ParseSupplierConfigs(configContent []byte) (*SupplierStakeConfig, error) {
 	// Unmarshal the stake config file into a stakeConfig
 	if err := yaml.Unmarshal(configContent, &stakeConfig); err != nil {
 		return nil, ErrSupplierConfigUnmarshalYAML.Wrapf("%s", err)
+	}
+
+	// Validate required owner address.
+	if _, err := sdk.AccAddressFromBech32(stakeConfig.OwnerAddress); err != nil {
+		return nil, ErrSupplierConfigInvalidAddress.Wrap("invalid owner address")
+	}
+
+	// If the operator address is not set, default it to the owner address.
+	if stakeConfig.OperatorAddress == "" {
+		stakeConfig.OperatorAddress = stakeConfig.OwnerAddress
+		logger.Info().Msg("operator address not set, defaulting to owner address")
+	}
+
+	// Validate operator address.
+	if _, err := sdk.AccAddressFromBech32(stakeConfig.OperatorAddress); err != nil {
+		return nil, ErrSupplierConfigInvalidAddress.Wrap("invalid operator address")
 	}
 
 	// Validate the stake amount
@@ -86,7 +123,7 @@ func ParseSupplierConfigs(configContent []byte) (*SupplierStakeConfig, error) {
 		// Ensure that if no default rev share is provided, the owner address is set
 		// to 100% rev share.
 		if stakeConfig.OwnerAddress == "" {
-			return nil, ErrSupplierConfigInvalidOwnerAddress.Wrap("owner address cannot be empty")
+			return nil, ErrSupplierConfigInvalidAddress.Wrap("owner address cannot be empty")
 		}
 		defaultRevSharePercent[stakeConfig.OwnerAddress] = 100
 	} else {
@@ -149,8 +186,10 @@ func ParseSupplierConfigs(configContent []byte) (*SupplierStakeConfig, error) {
 	}
 
 	return &SupplierStakeConfig{
-		StakeAmount: stakeAmount,
-		Services:    supplierServiceConfig,
+		OwnerAddress:    stakeConfig.OwnerAddress,
+		OperatorAddress: stakeConfig.OperatorAddress,
+		StakeAmount:     stakeAmount,
+		Services:        supplierServiceConfig,
 	}, nil
 }
 

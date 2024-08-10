@@ -30,5 +30,6 @@ var (
 	ErrTokenomicsModuleMintFailed             = sdkerrors.Register(ModuleName, 1121, "failed to mint uPOKT to tokenomics module account")
 	ErrTokenomicsSendingMintRewards           = sdkerrors.Register(ModuleName, 1122, "failed to send minted rewards")
 	ErrTokenomicsSupplierModuleMintFailed     = sdkerrors.Register(ModuleName, 1123, "failed to mint uPOKT to supplier module account")
-	ErrTokenomicsSupplierRevShareFailed       = sdkerrors.Register(ModuleName, 1124, "failed to send rev share to supplier shareholders")
+	ErrTokenomicsSupplierOwnerAddressInvalid  = sdkerrors.Register(ModuleName, 1124, "the supplier owner address in the claim is not a valid bech32 address")
+	ErrTokenomicsSupplierRevShareFailed       = sdkerrors.Register(ModuleName, 1125, "failed to send rev share to supplier shareholders")
 )
