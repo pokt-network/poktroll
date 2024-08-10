@@ -280,7 +280,8 @@ func (s *suite) TheUserStakesAWithUpoktForServiceFromTheAccount(actorType string
 	require.NoError(s, err, "error creating config file in %q", path.Join(os.TempDir(), configPathPattern))
 
 	// Write the config content to the file
-	configContent := s.getConfigFileContent(amount, actorType, accName, serviceId)
+	accAddress := accNameToAddrMap[accName]
+	configContent := s.getConfigFileContent(amount, accAddress, accAddress, actorType, serviceId)
 	_, err = configFile.Write([]byte(configContent))
 	require.NoError(s, err, "error writing config file %q", configFile.Name())
 
@@ -307,7 +308,13 @@ func (s *suite) TheUserStakesAWithUpoktForServiceFromTheAccount(actorType string
 	s.pocketd.result = res
 }
 
-func (s *suite) getConfigFileContent(amount int64, actorType, accName, serviceId string) string {
+func (s *suite) getConfigFileContent(
+	amount int64,
+	ownerAddress,
+	operatorAddress,
+	actorType,
+	serviceId string,
+) string {
 	var configContent string
 	switch actorType {
 	case "application":
@@ -319,13 +326,14 @@ func (s *suite) getConfigFileContent(amount int64, actorType, accName, serviceId
 	case "supplier":
 		configContent = fmt.Sprintf(`
 			owner_address: %s
+			operator_address: %s
 			stake_amount: %dupokt
 			services:
 			  - service_id: %s
 			    endpoints:
 			    - publicly_exposed_url: http://relayminer:8545
 			      rpc_type: json_rpc`,
-			accNameToAddrMap[accName], amount, serviceId)
+			ownerAddress, operatorAddress, amount, serviceId)
 	default:
 		s.Fatalf("ERROR: unknown actor type %s", actorType)
 	}
@@ -334,15 +342,32 @@ func (s *suite) getConfigFileContent(amount int64, actorType, accName, serviceId
 }
 
 func (s *suite) TheUserUnstakesAFromTheAccount(actorType string, accName string) {
-	args := []string{
-		"tx",
-		actorType,
-		fmt.Sprintf("unstake-%s", actorType),
-		"--from",
-		accName,
-		keyRingFlag,
-		chainIdFlag,
-		"-y",
+	var args []string
+
+	switch actorType {
+	case "supplier":
+		args = []string{
+			"tx",
+			actorType,
+			fmt.Sprintf("unstake-%s", actorType),
+			accNameToAddrMap[accName], // supplier owner or operator address
+			"--from",
+			accName,
+			keyRingFlag,
+			chainIdFlag,
+			"-y",
+		}
+	default:
+		args = []string{
+			"tx",
+			actorType,
+			fmt.Sprintf("unstake-%s", actorType),
+			"--from",
+			accName,
+			keyRingFlag,
+			chainIdFlag,
+			"-y",
+		}
 	}
 
 	res, err := s.pocketd.RunCommandOnHost("", args...)

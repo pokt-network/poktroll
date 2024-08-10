@@ -57,8 +57,9 @@ func TestProcessTokenLogicModules_HandleAppGoingIntoDebt(t *testing.T) {
 	supplierAddress := sample.AccAddress()
 	supplierStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
 	supplier := sharedtypes.Supplier{
-		Address: supplierAddress,
-		Stake:   &supplierStake,
+		OwnerAddress: sample.AccAddress(),
+		Address:      supplierAddress,
+		Stake:        &supplierStake,
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
 				Service: service,
@@ -137,8 +138,9 @@ func TestProcessTokenLogicModules_ValidAccounting(t *testing.T) {
 	supplierStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
 	supplier := sharedtypes.Supplier{
 		// Make the first shareholder the supplier itself.
-		Address: revShares[0].Address,
-		Stake:   &supplierStake,
+		OwnerAddress: revShares[0].Address,
+		Address:      revShares[0].Address,
+		Stake:        &supplierStake,
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
 				Service:  service,
@@ -258,8 +260,9 @@ func TestProcessTokenLogicModules_AppStakeTooLow(t *testing.T) {
 	supplierAddress := sample.AccAddress()
 	supplierStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
 	supplier := sharedtypes.Supplier{
-		Address: supplierAddress,
-		Stake:   &supplierStake,
+		OwnerAddress: sample.AccAddress(),
+		Address:      supplierAddress,
+		Stake:        &supplierStake,
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
 				Service: service,
@@ -274,8 +277,9 @@ func TestProcessTokenLogicModules_AppStakeTooLow(t *testing.T) {
 	}
 	keepers.SetSupplier(ctx, supplier)
 
-	// Query supplier balance prior to the accounting.
-	supplierStartBalance := getBalance(t, ctx, keepers, supplier.GetAddress())
+	// Query supplier owner balance prior to the accounting.
+	supplierOwnerStartBalance := getBalance(t, ctx, keepers, supplier.GetOwnerAddress())
+
 	// Query supplier module balance prior to the accounting.
 	supplierModuleStartBalance := getBalance(t, ctx, keepers, supplierModuleAddress)
 
@@ -316,12 +320,12 @@ func TestProcessTokenLogicModules_AppStakeTooLow(t *testing.T) {
 	require.NotNil(t, appModuleEndBalance)
 	require.EqualValues(t, &expectedAppModuleEndBalance, appModuleEndBalance)
 
-	// Assert that `supplierAddress` account balance has *increased* by the appropriate amount
-	supplierEndBalance := getBalance(t, ctx, keepers, supplier.GetAddress())
-	require.NotNil(t, supplierEndBalance)
+	// Assert that `supplierOwnerAddress` account balance has *increased* by the appropriate amount
+	supplierOwnerEndBalance := getBalance(t, ctx, keepers, supplier.GetOwnerAddress())
+	require.NotNil(t, supplierOwnerEndBalance)
 
-	expectedSupplierBalance := supplierStartBalance.Add(expectedAppBurn)
-	require.EqualValues(t, &expectedSupplierBalance, supplierEndBalance)
+	expectedSupplierBalance := supplierOwnerStartBalance.Add(expectedAppBurn)
+	require.EqualValues(t, &expectedSupplierBalance, supplierOwnerEndBalance)
 
 	// Assert that `supplierAddress` staked balance is *unchanged*
 	supplier, supplierIsFound := keepers.GetSupplier(ctx, supplier.GetAddress())

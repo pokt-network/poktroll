@@ -140,8 +140,9 @@ func DefaultSupplierModuleGenesisState(t *testing.T, n int) *suppliertypes.Genes
 		svcId := fmt.Sprintf("svc%d", i)
 		stake := sdk.NewCoin("upokt", math.NewInt(int64(i)))
 		supplier := sharedtypes.Supplier{
-			Address: sample.AccAddress(),
-			Stake:   &stake,
+			OwnerAddress: sample.AccAddress(),
+			Address:      sample.AccAddress(),
+			Stake:        &stake,
 			Services: []*sharedtypes.SupplierServiceConfig{
 				{
 					Service: &sharedtypes.Service{Id: svcId},
@@ -169,8 +170,9 @@ func SupplierModuleGenesisStateWithAddresses(t *testing.T, addresses []string) *
 	state := suppliertypes.DefaultGenesis()
 	for _, addr := range addresses {
 		supplier := sharedtypes.Supplier{
-			Address: addr,
-			Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(10000)},
+			OwnerAddress: sample.AccAddress(),
+			Address:      addr,
+			Stake:        &sdk.Coin{Denom: "upokt", Amount: math.NewInt(10000)},
 			Services: []*sharedtypes.SupplierServiceConfig{
 				{
 					Service: &sharedtypes.Service{Id: "svc1"},
