@@ -353,7 +353,8 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the application with address %q", appCoin, application.Address))
 
 	// Send a portion of the rewards to the supplier shareholders.
-	if err = k.distributeSupplierRewardsToShareHolders(ctx, supplier.Address, service.Id, uint64(newMintAmtInt)); err != nil {
+	coinsToShareAmt := calculateGlobalMintRewards(newMintAmtFloat, MintAllocationSupplier)
+	if err = k.distributeSupplierRewardsToShareHolders(ctx, supplier.Address, service.Id, uint64(coinsToShareAmt)); err != nil {
 		return tokenomicstypes.ErrTokenomicsSupplierModuleMintFailed.Wrapf(
 			"distributing rewards to supplier with address %s shareholders: %v",
 			supplier.Address,
@@ -371,22 +372,22 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the DAO with address %q", daoCoin, k.GetAuthority()))
 
 	// Send a portion of the rewards to the source owner
-	serviceCoins, err := k.sendRewardsToAccount(ctx, service.OwnerAddress, newMintAmtFloat, MintAllocationSourceOwner)
+	serviceCoin, err := k.sendRewardsToAccount(ctx, service.OwnerAddress, newMintAmtFloat, MintAllocationSourceOwner)
 	if err != nil {
 		return tokenomictypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to source owner: %v", err)
 	}
-	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the source owner with address %q", serviceCoins, service.OwnerAddress))
+	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the source owner with address %q", serviceCoin, service.OwnerAddress))
 
 	// Send a portion of the rewards to the block proposer
 	proposerAddr := cosmostypes.AccAddress(sdk.UnwrapSDKContext(ctx).BlockHeader().ProposerAddress).String()
-	proposerCoins, err := k.sendRewardsToAccount(ctx, proposerAddr, newMintAmtFloat, MintAllocationProposer)
+	proposerCoin, err := k.sendRewardsToAccount(ctx, proposerAddr, newMintAmtFloat, MintAllocationProposer)
 	if err != nil {
 		return tokenomictypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to proposer: %v", err)
 	}
-	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the proposer with address %q", proposerCoins, proposerAddr))
+	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the proposer with address %q", proposerCoin, proposerAddr))
 
 	// TODO_MAINNET: Verify that the total distributed coins equals the settlement coins which could happen due to float rounding
-	totalDistributedCoins := appCoin.Add(supplierCoin).Add(*daoCoin).Add(*serviceCoins).Add(*proposerCoins)
+	totalDistributedCoins := appCoin.Add(supplierCoin).Add(*daoCoin).Add(*serviceCoin).Add(*proposerCoin)
 	if totalDistributedCoins.Amount.BigInt().Cmp(settlementCoins.Amount.BigInt()) != 0 {
 		logger.Error(fmt.Sprintf("TODO_MAINNET: The total distributed coins (%v) does not equal the settlement coins (%v)", totalDistributedCoins, settlementCoins.Amount.BigInt()))
 	}
@@ -410,7 +411,7 @@ func (k Keeper) sendRewardsToAccount(
 		return nil, err
 	}
 
-	coinsToAccAmt, _ := new(big.Float).Mul(settlementAmtFloat, big.NewFloat(allocation)).Int64()
+	coinsToAccAmt := calculateGlobalMintRewards(settlementAmtFloat, allocation)
 	coinToAcc := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(coinsToAccAmt))
 	if err := k.bankKeeper.SendCoinsFromModuleToAccount(
 		ctx, suppliertypes.ModuleName, accountAddr, sdk.NewCoins(coinToAcc),
@@ -482,7 +483,7 @@ func (k Keeper) numRelaysToCoin(
 }
 
 // distributeSupplierRewardsToShareHolders distributes the supplier rewards to its
-// shareholders based on the rev share percentage of the service.
+// shareholders based on the rev share percentage of the supplier service config.
 func (k Keeper) distributeSupplierRewardsToShareHolders(
 	ctx context.Context,
 	supplierAddr string,
@@ -515,24 +516,9 @@ func (k Keeper) distributeSupplierRewardsToShareHolders(
 		)
 	}
 
-	totalDistributed := int64(0)
-	settlementAmountFloat := new(big.Float).SetUint64(amountToDistribute)
-	shareAmountMap := make(map[string]int64, len(serviceRevShare))
-
-	for _, revshare := range serviceRevShare {
-		// TODO_MAINNET: Consider using fixed point arithmetic for deterministic results.
-		shareFloat := big.NewFloat(float64(revshare.RevSharePercentage) / 100)
-		shareAmount, _ := big.NewFloat(0).Mul(settlementAmountFloat, shareFloat).Int64()
-		totalDistributed += shareAmount
-		shareAmountMap[revshare.Address] = shareAmount
-	}
-
-	// Add any remainder due to floating point arithmetic to the first shareholder.
-	remainder := amountToDistribute - uint64(totalDistributed)
-	shareAmountMap[serviceRevShare[0].Address] += int64(remainder)
-
+	shareAmountMap := GetShareAmountMap(serviceRevShare, amountToDistribute)
 	for shareHolderAddress, shareAmount := range shareAmountMap {
-		shareAmountCoin := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(shareAmount))
+		shareAmountCoin := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(int64(shareAmount)))
 		shareAmountCoins := cosmostypes.NewCoins(shareAmountCoin)
 		shareHolderAccAddress, err := sdk.AccAddressFromBech32(shareHolderAddress)
 		if err != nil {
@@ -553,4 +539,38 @@ func (k Keeper) distributeSupplierRewardsToShareHolders(
 	logger.Info(fmt.Sprintf("distributed %d uPOKT to supplier %q shareholders", amountToDistribute, supplierAddr))
 
 	return nil
+}
+
+// calculateGlobalMintRewards calculates the global mint reward to distribute to an
+// account based on the allocation percentage.
+func calculateGlobalMintRewards(
+	settlementAmtFloat *big.Float,
+	allocation float64,
+) int64 {
+	coinsToAccAmt, _ := big.NewFloat(0).Mul(settlementAmtFloat, big.NewFloat(allocation)).Int64()
+	return coinsToAccAmt
+}
+
+// GetShareAmountMap calculates the amount of uPOKT to distribute to each shareholder
+// based on the rev share percentage of the service.
+func GetShareAmountMap(
+	serviceRevShare []*sharedtypes.ServiceRevShare,
+	amountToDistribute uint64,
+) map[string]uint64 {
+	totalDistributed := uint64(0)
+	shareAmountMap := make(map[string]uint64, len(serviceRevShare))
+	for _, revshare := range serviceRevShare {
+		// TODO_MAINNET: Consider using fixed point arithmetic for deterministic results.
+		sharePercentageFloat := big.NewFloat(float64(revshare.RevSharePercentage) / 100)
+		amountToDistributeFloat := big.NewFloat(float64(amountToDistribute))
+		shareAmount, _ := big.NewFloat(0).Mul(amountToDistributeFloat, sharePercentageFloat).Uint64()
+		shareAmountMap[revshare.Address] = shareAmount
+		totalDistributed += shareAmount
+	}
+
+	// Add any remainder due to floating point arithmetic to the first shareholder.
+	remainder := amountToDistribute - totalDistributed
+	shareAmountMap[serviceRevShare[0].Address] += remainder
+
+	return shareAmountMap
 }

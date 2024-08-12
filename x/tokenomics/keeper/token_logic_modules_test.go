@@ -25,6 +25,7 @@ import (
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
+	"github.com/pokt-network/poktroll/x/tokenomics/keeper"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
@@ -57,7 +58,7 @@ func TestProcessTokenLogicModules_HandleAppGoingIntoDebt(t *testing.T) {
 	supplierAddress := sample.AccAddress()
 	supplierStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
 	supplier := sharedtypes.Supplier{
-		OwnerAddress: sample.AccAddress(),
+		OwnerAddress: supplierAddress,
 		Address:      supplierAddress,
 		Stake:        &supplierStake,
 		Services: []*sharedtypes.SupplierServiceConfig{
@@ -128,8 +129,9 @@ func TestProcessTokenLogicModules_ValidAccounting(t *testing.T) {
 	shareRatios := []float32{12.5, 37.5, 50}
 	revShares := make([]*sharedtypes.ServiceRevShare, len(shareRatios))
 	for i := range revShares {
+		shareHolderAddress := sample.AccAddress()
 		revShares[i] = &sharedtypes.ServiceRevShare{
-			Address:            sample.AccAddress(),
+			Address:            shareHolderAddress,
 			RevSharePercentage: shareRatios[i],
 		}
 	}
@@ -195,15 +197,17 @@ func TestProcessTokenLogicModules_ValidAccounting(t *testing.T) {
 	require.NotNil(t, appModuleEndBalance)
 	require.EqualValues(t, &expectedAppModuleEndBalance, appModuleEndBalance)
 
-	// Assert that the supplier shareholders account balances has *increased* by
+	// Assert that the supplier shareholders account balances have *increased* by
 	// the appropriate amount.
-	for i := 1; i < len(revShares); i++ {
-		shareHolderBalance := getBalance(t, ctx, keepers, revShares[i].Address)
-		expectedBalance := float32(expectedAppBurn.Amount.Int64()) * revShares[i].RevSharePercentage / 100
+
+	mintAmountInt := expectedAppBurn.Amount.Uint64()
+	shareAmounts := keeper.GetShareAmountMap(supplier.Services[0].RevShare, mintAmountInt)
+	for shareHolder, expectedShareAmount := range shareAmounts {
+		shareHolderBalance := getBalance(t, ctx, keepers, shareHolder)
 
 		require.Equal(t,
+			int64(expectedShareAmount),
 			shareHolderBalance.Amount.Int64(),
-			int64(expectedBalance),
 		)
 	}
 
@@ -260,7 +264,7 @@ func TestProcessTokenLogicModules_AppStakeTooLow(t *testing.T) {
 	supplierAddress := sample.AccAddress()
 	supplierStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
 	supplier := sharedtypes.Supplier{
-		OwnerAddress: sample.AccAddress(),
+		OwnerAddress: supplierAddress,
 		Address:      supplierAddress,
 		Stake:        &supplierStake,
 		Services: []*sharedtypes.SupplierServiceConfig{

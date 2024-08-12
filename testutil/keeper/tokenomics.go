@@ -124,7 +124,7 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 	// Prepare the test supplier.
 	supplierAddr = sample.AccAddress()
 	supplier := sharedtypes.Supplier{
-		OwnerAddress: sample.AccAddress(),
+		OwnerAddress: supplierAddr,
 		Address:      supplierAddr,
 		Stake:        &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100000)},
 		Services: []*sharedtypes.SupplierServiceConfig{
