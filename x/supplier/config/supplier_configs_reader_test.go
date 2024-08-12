@@ -677,7 +677,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 		{
 			desc: "missing owner address",
 			inputConfig: fmt.Sprintf(`
-				# explictly omitted owner address
+				# explicitly omitted owner address
 				operator_address: %s
 				stake_amount: 1000upokt
 				services:
