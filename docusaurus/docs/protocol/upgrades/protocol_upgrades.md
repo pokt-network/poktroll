@@ -3,10 +3,9 @@ title: Protocol Upgrades
 sidebar_position: 1
 ---
 
-
 # Protocol Upgrades <!-- omit in toc -->
 
-The Pocket Network is continuously evolving through regular protocol upgrades. We implement software upgrades via a DAO process, allowing validator nodes to incorporate consensus-breaking changes. These upgrades can be automatically applied when using [Cosmovisor](../../operate/run_a_node/full_node_cosmovisor.md), or manually if not using `cosmovisor`.
+Pocket Network is continuously evolving through regular protocol upgrades. We implement software upgrades via a DAO process, allowing validator nodes to incorporate consensus-breaking changes. These upgrades can be automatically applied when using [Cosmovisor](../../operate/run_a_node/full_node_cosmovisor.md), or manually if not using `cosmovisor`.
 
 - [What is a Protocol Upgrade?](#what-is-a-protocol-upgrade)
 - [List of Upgrades](#list-of-upgrades)
@@ -17,7 +16,13 @@ The Pocket Network is continuously evolving through regular protocol upgrades. W
 
 ## What is a Protocol Upgrade?
 
-A protocol upgrade is a process of updating the Pocket Network software to introduce new features, improve existing functionalities, or address critical issues. These upgrades ensure the network remains secure, efficient, and up-to-date with the latest technological advancements. Not every GitHub release will become a protocol upgrade.
+A protocol upgrade is a process of updating Pocket Network software to introduce new features, improve existing functionalities, or address critical issues. These upgrades ensure the network remains secure, efficient, and up-to-date with the latest technological advancements.
+
+:::info
+
+Not every GitHub release will become a protocol upgrade.
+
+:::
 
 ## List of Upgrades
 
@@ -29,7 +34,7 @@ While you can find a comprehensive list of [poktroll releases](https://github.co
 
 **Planned upgrades** are those that our team has been developing for some time and have been announced in advance. These typically include new features, improvements to existing functionalities, or optimizations.
 
-**Unplanned upgrades** may occur at any time without prior notice. These are often necessary due to unforeseen circumstances such as bugs, security issues, or network congestion when no other mitigation is possible. Such upgrades may require manual intervention from users and/or validators, potentially resulting in a hard fork.
+**Unplanned upgrades** may occur at any time without prior notice. These are often necessary due to unforeseen circumstances such as bugs, security issues, chain halts, or network congestion when no other mitigation is possible. Such upgrades may require manual intervention from users and/or validators, potentially resulting in a hard fork.
 
 ### Breaking vs. Non-breaking Upgrades
 
@@ -40,4 +45,3 @@ While you can find a comprehensive list of [poktroll releases](https://github.co
 ### Manual Interventions
 
 While the risk is low, it's possible that the blockchain may encounter unexpected issues. In situations where forking the network becomes necessary (such as in cases of non-deterministic chain state), we will issue an upgrade notice requiring manual intervention from users and/or validators to ensure the network's health and integrity.
-

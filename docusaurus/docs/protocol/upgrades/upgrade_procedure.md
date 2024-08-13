@@ -19,7 +19,6 @@ This page describes the protocol upgrade process, which is internal to the proto
   - [TestNet](#testnet)
   - [Mainnet](#mainnet)
 
-
 ## Overview <!-- omit in toc -->
 
 When a consensus-breaking change is made to the protocol, we must carefully evaluate and implement an upgrade path that allows existing nodes to transition safely from one software version to another without disruption. This process involves several key steps:
@@ -58,7 +57,7 @@ An upgrade transaction includes a [Plan](https://github.com/cosmos/cosmos-sdk/bl
         "plan": {
           "name": "v0.0.4",
           "height": "30",
-          "info": "{\"binaries\":{\"linux\/amd64\":\"https:\/\/github.com\/pokt-network\/poktroll\/releases\/download\/v0.0.4\/poktroll_linux_amd64.tar.gz?checksum=sha256:49d2bcea02702f3dcb082054dc4e7fdd93c89fcd6ff04f2bf50227dacc455638\",\"linux\/arm64\":\"https:\/\/github.com\/pokt-network\/poktroll\/releases\/download\/v0.0.4\/poktroll_linux_arm64.tar.gz?checksum=sha256:698f3fa8fa577795e330763f1dbb89a8081b552724aa154f5029d16a34baa7d8\",\"darwin\/amd64\":\"https:\/\/github.com\/pokt-network\/poktroll\/releases\/download\/v0.0.4\/poktroll_darwin_amd64.tar.gz?checksum=sha256:5ecb351fb2f1fc06013e328e5c0f245ac5e815c0b82fb6ceed61bc71b18bf8e9\",\"darwin\/arm64\":\"https:\/\/github.com\/pokt-network\/poktroll\/releases\/download\/v0.0.4\/poktroll_darwin_arm64.tar.gz?checksum=sha256:a935ab83cd770880b62d6aded3fc8dd37a30bfd15b30022e473e8387304e1c70\"}}"
+          "info": "{\"binaries\":{\"linux/amd64\":\"https://github.com/pokt-network/poktroll/releases/download/v0.0.4/poktroll_linux_amd64.tar.gz?checksum=sha256:49d2bcea02702f3dcb082054dc4e7fdd93c89fcd6ff04f2bf50227dacc455638\",\"linux/arm64\":\"https://github.com/pokt-network/poktroll/releases/download/v0.0.4/poktroll_linux_arm64.tar.gz?checksum=sha256:698f3fa8fa577795e330763f1dbb89a8081b552724aa154f5029d16a34baa7d8\",\"darwin/amd64\":\"https://github.com/pokt-network/poktroll/releases/download/v0.0.4/poktroll_darwin_amd64.tar.gz?checksum=sha256:5ecb351fb2f1fc06013e328e5c0f245ac5e815c0b82fb6ceed61bc71b18bf8e9\",\"darwin/arm64\":\"https://github.com/pokt-network/poktroll/releases/download/v0.0.4/poktroll_darwin_arm64.tar.gz?checksum=sha256:a935ab83cd770880b62d6aded3fc8dd37a30bfd15b30022e473e8387304e1c70\"}}"
         }
       }
     ]
@@ -66,9 +65,9 @@ An upgrade transaction includes a [Plan](https://github.com/cosmos/cosmos-sdk/bl
 }
 ```
 
-**name**: Name of the upgrade. It should match the `VersionName` of `upgrades.Upgrade`.
-**height**: The height at which an upgrade should be executed and the node will be restarted.
-**info**: While this field can theoretically contain any information about the upgrade, in practice, `cosmovisor` uses it to obtain information about the binaries. When `cosmovisor` is configured to automatically download binaries, it will pull the binary from the link provided in this field and perform a hash verification (which is optional).
+- `name`: Name of the upgrade. It should match the `VersionName` of `upgrades.Upgrade`.
+- `height`: The height at which an upgrade should be executed and the node will be restarted.
+- `info`: While this field can theoretically contain any information about the upgrade, in practice, `cosmovisor`uses it to obtain information about the binaries. When`cosmovisor` is configured to automatically download binaries, it will pull the binary from the link provided in this field and perform a hash verification (which is optional).
 
 ## Submitting the upgrade on-chain
 
@@ -86,19 +85,24 @@ poktrolld query upgrade plan
 
 ## Testing the Upgrade
 
+:::warning
+Note that for local testing, `cosmovisor` won't pull the binary from the info field.
+:::
+
 ### LocalNet
 
 LocalNet currently does not support `cosmovisor` and automatic upgrades. However, we have provided scripts to facilitate local testing in the `tools/scripts/upgrades` directory:
 
-1. Modify `tools/scripts/upgrades/authz_upgrade_tx_example_v0.0.4_height_30.json` to reflect the name of the upgrade and the height at which it should be scheduled. Note that for local testing, `cosmovisor` won't pull the binary from the `info` field.
+1. Modify `tools/scripts/upgrades/authz_upgrade_tx_example_v0.0.4_height_30.json` to reflect the name of the upgrade and the height at which it should be scheduled.
 
 2. Check and update the `tools/scripts/upgrades/cosmovisor-start-node.sh` to point to the correct binaries:
+
    - The old binary should be compiled to work before the upgrade.
    - The new binary should contain the upgrade logic to be executed immediately after the node is started using the new binary.
 
 3. Run `bash tools/scripts/upgrades/cosmovisor-start-node.sh` to wipe the `~/.poktroll` directory and place binaries in the correct locations.
 
-4. Execute the transaction as shown in [Submitting the upgrade on-chain](#submitting-the-upgrade-on-chain).
+4. Execute the transaction as shown in [Submitting the upgrade on-chain](#submitting-the-upgrade-on-chain) section above.
 
 ### DevNet
 
@@ -115,6 +119,10 @@ Until we transition to [cosmos-operator](https://github.com/strangelove-ventures
 1. Estimate when the upgrade height will be reached.
 2. When validator node(s) stop due to an upgrade, manually perform an ArgoCD apply and clean up old resources.
 3. Monitor validator node(s) as they start and begin producing blocks.
+
+:::tip
+If you are a member of Grove, you can find the instructions to access the infrastructure [here](https://www.notion.so/buildwithgrove/How-to-re-genesis-a-Shannon-TestNet-a6230dd8869149c3a4c21613e3cfad15?pvs=4).
+:::
 
 ### Mainnet
 

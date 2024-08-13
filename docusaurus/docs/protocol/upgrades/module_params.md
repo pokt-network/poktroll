@@ -19,7 +19,6 @@ Pocket Network utilizes an off-chain governance mechanism that enables the commu
 
 Similar to how internal parameters can be adjusted using [Adding params](../../develop/developer_guide/adding_params.md), the DAO can submit changes to other modules. For example, here's a transaction that will increase the block size (a parameter in the `consensus` module):
 
-
 ```json
 {
   "body": {
@@ -38,9 +37,7 @@ Similar to how internal parameters can be adjusted using [Adding params](../../d
           "max_bytes": "1048576"
         },
         "validator": {
-          "pub_key_types": [
-            "ed25519"
-          ]
+          "pub_key_types": ["ed25519"]
         }
       }
     ]
@@ -59,22 +56,25 @@ poktrolld query consensus params
 ```
 
 Before the upgrade:
+
 ```yaml
 params:
   block:
     max_bytes: "22020096"
-  # ... the rest of the response  
+  # ... the rest of the response
 ```
 
 To submit the transaction that increases the block size:
+
 ```bash
 poktrolld tx authz exec tools/scripts/params/consensus_increase_block_size.json --from pnf --yes
 ```
 
 After the upgrade:
+
 ```yaml
 params:
   block:
     max_bytes: "66060288"
-  # ... the rest of the response  
+  # ... the rest of the response
 ```
