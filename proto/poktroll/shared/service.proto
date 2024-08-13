@@ -13,7 +13,7 @@ message Service {
   // For example, what if we want to request a session for a certain service but with some additional configs that identify it?
   string id = 1; // Unique identifier for the service
 
-  // TODO_BETA: Name is currently unused but acts as a reminder that an optional onchain representation of the service is necessary
+  // TODO_MAINNET: Remove this.
   string name = 2; // (Optional) Semantic human readable name for the service
 
   // The cost of a single relay for this service in terms of compute units.
@@ -30,6 +30,7 @@ message Service {
 
 // ApplicationServiceConfig holds the service configuration the application stakes for
 message ApplicationServiceConfig {
+  // TODO_MAINNET: Avoid embedding the full Service because we just need the ID.
   Service service = 1; // The Service for which the application is configured
 
   // TODO_MAINNET: There is an opportunity for applications to advertise the max
@@ -39,6 +40,7 @@ message ApplicationServiceConfig {
 
 // SupplierServiceConfig holds the service configuration the supplier stakes for
 message SupplierServiceConfig {
+  // TODO_MAINNET: Avoid embedding the full Service because we just need the ID.
   Service service = 1; // The Service for which the supplier is configured
   repeated SupplierEndpoint endpoints = 2; // List of endpoints for the service
   // TODO_MAINNET: There is an opportunity for supplier to advertise the min

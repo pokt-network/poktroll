@@ -31,6 +31,9 @@ const TargetNumRelays = uint64(10e4)
 // TODO_MAINNET: Use a language agnostic float implementation or arithmetic library
 // to ensure deterministic results across different language implementations of the
 // protocol.
+//
+// TODO_MAINNET(@olshansk, @ramiro): Play around with the value N for EMA to
+// capture what the memory should be.
 var emaSmoothingFactor = new(big.Float).SetFloat64(0.1)
 
 // UpdateRelayMiningDifficulty updates the on-chain relay mining difficulty
@@ -50,9 +53,7 @@ func (k Keeper) UpdateRelayMiningDifficulty(
 				"No previous relay mining difficulty found for service %s. Initializing with default difficulty %v",
 				serviceId, prevDifficulty.TargetHash,
 			).Error())
-
-			// If a previous difficulty for the service is not found, we initialize
-			// it with a default.
+			// If a previous difficulty for the service is not found, we initialize a default.
 			prevDifficulty = types.RelayMiningDifficulty{
 				ServiceId:    serviceId,
 				BlockHeight:  sdkCtx.BlockHeight(),
