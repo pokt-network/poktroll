@@ -3021,7 +3021,7 @@ type MsgUnstakeSupplier struct {
 	unknownFields protoimpl.UnknownFields
 
 	Signer  string `protobuf:"bytes,1,opt,name=signer,proto3" json:"signer,omitempty"`   // The Bech32 address of the message signer (i.e. owner or operator)
-	Address string `protobuf:"bytes,2,opt,name=address,proto3" json:"address,omitempty"` // The Bech32 address of the operator owner (i.e. provider, non-custodial)
+	Address string `protobuf:"bytes,2,opt,name=address,proto3" json:"address,omitempty"` // The Bech32 address of the operator (i.e. provider, non-custodial)
 }
 
 func (x *MsgUnstakeSupplier) Reset() {
