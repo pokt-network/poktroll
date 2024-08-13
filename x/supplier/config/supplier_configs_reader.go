@@ -12,7 +12,6 @@ import (
 	_ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	sharedhelpers "github.com/pokt-network/poktroll/x/shared/helpers"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 // YAMLStakeConfig is the structure describing the supplier stake config file.
@@ -44,19 +43,6 @@ type SupplierStakeConfig struct {
 	OperatorAddress string
 	StakeAmount     sdk.Coin
 	Services        []*sharedtypes.SupplierServiceConfig
-}
-
-// EnsureOwner ensures that the config owner address matches the provided address.
-func (cfg *SupplierStakeConfig) EnsureOwner(ownerAddress string) error {
-	if cfg.OwnerAddress != ownerAddress {
-		return types.ErrSupplierInvalidAddress.Wrapf(
-			"owner address %q in the stake config file does not match the address provided %q",
-			cfg.OperatorAddress,
-			ownerAddress,
-		)
-	}
-
-	return nil
 }
 
 // ParseSupplierServiceConfig parses the stake config file into a SupplierServiceConfig.
