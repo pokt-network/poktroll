@@ -191,7 +191,7 @@ func TestMsgServer_StakeSupplier_OperatorAuthorizations(t *testing.T) {
 	require.True(t, supplierFound)
 	require.Equal(t, operatorUpdatedServiceUrl, foundSupplier.Services[0].Endpoints[0].Url)
 
-	// Update the supplier using the owner address as the singer and verify that it succeeds.
+	// Update the supplier URL by using the owner address as the singer and verify that it succeeds.
 	ownerUpdaterServiceUrl := "http://localhost:8082"
 	stakeMsgUpdateUrl.Services[0].Endpoints[0].Url = ownerUpdaterServiceUrl
 	stakeMsgUpdateUrl.Stake.Amount = math.NewInt(300)
@@ -203,6 +203,7 @@ func TestMsgServer_StakeSupplier_OperatorAuthorizations(t *testing.T) {
 	foundSupplier, supplierFound = k.GetSupplier(ctx, operatorAddr)
 	require.True(t, supplierFound)
 	require.Equal(t, ownerUpdaterServiceUrl, foundSupplier.Services[0].Endpoints[0].Url)
+	require.NotEqual(t, operatorUpdatedServiceUrl, foundSupplier.Services[0].Endpoints[0].Url)
 
 	// Try updating the supplier's operator address using the old operator as a signer
 	// will create a new supplier.
