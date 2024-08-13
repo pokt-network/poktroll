@@ -2,6 +2,7 @@ package config_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	sdkerrors "cosmossdk.io/errors"
@@ -10,12 +11,16 @@ import (
 	"github.com/gogo/status"
 	"github.com/stretchr/testify/require"
 
+	_ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
+	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/testutil/yaml"
 	"github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/config"
 )
 
 func Test_ParseSupplierConfigs_Services(t *testing.T) {
+	operatorAddress := sample.AccAddress()
+	ownerAddress := sample.AccAddress()
 	tests := []struct {
 		desc        string
 		inputConfig string
@@ -26,7 +31,9 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 		// Valid Configs
 		{
 			desc: "valid full service config",
-			inputConfig: `
+			inputConfig: fmt.Sprintf(`
+				owner_address: %s
+				operator_address: %s
 				stake_amount: 1000upokt
 				services:
 				  - service_id: svc
@@ -35,10 +42,12 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 				      rpc_type: json_rpc
 				      config:
 				        timeout: 10
-				`,
+				`, ownerAddress, operatorAddress),
 			expectedError: nil,
 			expectedConfig: &config.SupplierStakeConfig{
-				StakeAmount: sdk.NewCoin("upokt", math.NewInt(1000)),
+				OwnerAddress:    ownerAddress,
+				OperatorAddress: operatorAddress,
+				StakeAmount:     sdk.NewCoin("upokt", math.NewInt(1000)),
 				Services: []*types.SupplierServiceConfig{
 					{
 						Service: &types.Service{Id: "svc"},
@@ -60,17 +69,21 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 		},
 		{
 			desc: "valid service config without endpoint specific config",
-			inputConfig: `
+			inputConfig: fmt.Sprintf(`
+				owner_address: %s
+				operator_address: %s
 				stake_amount: 1000upokt
 				services:
 				  - service_id: svc
 				    endpoints:
 				    - publicly_exposed_url: http://pokt.network:8081
 				      rpc_type: json_rpc
-				`,
+				`, ownerAddress, operatorAddress),
 			expectedError: nil,
 			expectedConfig: &config.SupplierStakeConfig{
-				StakeAmount: sdk.NewCoin("upokt", math.NewInt(1000)),
+				OwnerAddress:    ownerAddress,
+				OperatorAddress: operatorAddress,
+				StakeAmount:     sdk.NewCoin("upokt", math.NewInt(1000)),
 				Services: []*types.SupplierServiceConfig{
 					{
 						Service: &types.Service{Id: "svc"},
@@ -86,7 +99,9 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 		},
 		{
 			desc: "valid service config with empty endpoint specific config",
-			inputConfig: `
+			inputConfig: fmt.Sprintf(`
+				owner_address: %s
+				operator_address: %s
 				stake_amount: 1000upokt
 				services:
 				  - service_id: svc
@@ -94,10 +109,12 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 				    - publicly_exposed_url: http://pokt.network:8081
 				      rpc_type: json_rpc
 				      config:
-				`,
+				`, ownerAddress, operatorAddress),
 			expectedError: nil,
 			expectedConfig: &config.SupplierStakeConfig{
-				StakeAmount: sdk.NewCoin("upokt", math.NewInt(1000)),
+				OwnerAddress:    ownerAddress,
+				OperatorAddress: operatorAddress,
+				StakeAmount:     sdk.NewCoin("upokt", math.NewInt(1000)),
 				Services: []*types.SupplierServiceConfig{
 					{
 						Service: &types.Service{Id: "svc"},
@@ -114,7 +131,9 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 		},
 		{
 			desc: "valid service config with multiple endpoints",
-			inputConfig: `
+			inputConfig: fmt.Sprintf(`
+				owner_address: %s
+				operator_address: %s
 				stake_amount: 1000upokt
 				services:
 				  - service_id: svc
@@ -127,10 +146,12 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 				      rpc_type: json_rpc
 				      config:
 				        timeout: 11
-				`,
+				`, ownerAddress, operatorAddress),
 			expectedError: nil,
 			expectedConfig: &config.SupplierStakeConfig{
-				StakeAmount: sdk.NewCoin("upokt", math.NewInt(1000)),
+				OwnerAddress:    ownerAddress,
+				OperatorAddress: operatorAddress,
+				StakeAmount:     sdk.NewCoin("upokt", math.NewInt(1000)),
 				Services: []*types.SupplierServiceConfig{
 					{
 						Service: &types.Service{Id: "svc"},
@@ -163,7 +184,9 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 		{
 			desc:          "valid service config with multiple services",
 			expectedError: nil,
-			inputConfig: `
+			inputConfig: fmt.Sprintf(`
+				owner_address: %s
+				operator_address: %s
 				stake_amount: 1000upokt
 				services:
 				  - service_id: svc1
@@ -178,9 +201,11 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 				      rpc_type: json_rpc
 				      config:
 				        timeout: 10
-				`,
+				`, ownerAddress, operatorAddress),
 			expectedConfig: &config.SupplierStakeConfig{
-				StakeAmount: sdk.NewCoin("upokt", math.NewInt(1000)),
+				OwnerAddress:    ownerAddress,
+				OperatorAddress: operatorAddress,
+				StakeAmount:     sdk.NewCoin("upokt", math.NewInt(1000)),
 				Services: []*types.SupplierServiceConfig{
 					{
 						Service: &types.Service{Id: "svc1"},
@@ -215,10 +240,88 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 				},
 			},
 		},
+		{
+			desc: "valid omitted operator address",
+			inputConfig: fmt.Sprintf(`
+				owner_address: %s
+				# omitted operator address
+				stake_amount: 1000upokt
+				services:
+				  - service_id: svc
+				    endpoints:
+				    - publicly_exposed_url: http://pokt.network:8081
+				      rpc_type: json_rpc
+				      config:
+				        timeout: 10
+				`, ownerAddress),
+			expectedError: nil,
+			expectedConfig: &config.SupplierStakeConfig{
+				OwnerAddress:    ownerAddress,
+				OperatorAddress: ownerAddress,
+				StakeAmount:     sdk.NewCoin("upokt", math.NewInt(1000)),
+				Services: []*types.SupplierServiceConfig{
+					{
+						Service: &types.Service{Id: "svc"},
+						Endpoints: []*types.SupplierEndpoint{
+							{
+								Url:     "http://pokt.network:8081",
+								RpcType: types.RPCType_JSON_RPC,
+								Configs: []*types.ConfigOption{
+									{
+										Key:   types.ConfigOptions_TIMEOUT,
+										Value: "10",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			desc: "valid full service config",
+			inputConfig: fmt.Sprintf(`
+				owner_address: %s
+				operator_address: %s
+				stake_amount: 1000upokt
+				services:
+				  - service_id: svc
+				    endpoints:
+				    - publicly_exposed_url: http://pokt.network:8081
+				      rpc_type: json_rpc
+				      config:
+				        timeout: 10
+				`, ownerAddress, ownerAddress),
+			expectedError: nil,
+			expectedConfig: &config.SupplierStakeConfig{
+				OwnerAddress:    ownerAddress,
+				OperatorAddress: ownerAddress,
+				StakeAmount:     sdk.NewCoin("upokt", math.NewInt(1000)),
+				Services: []*types.SupplierServiceConfig{
+					{
+						Service: &types.Service{Id: "svc"},
+						Endpoints: []*types.SupplierEndpoint{
+							{
+								Url:     "http://pokt.network:8081",
+								RpcType: types.RPCType_JSON_RPC,
+								Configs: []*types.ConfigOption{
+									{
+										Key:   types.ConfigOptions_TIMEOUT,
+										Value: "10",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 		// Invalid Configs
 		{
 			desc: "invalid service config without service ID",
-			inputConfig: `
+			inputConfig: fmt.Sprintf(`
+				owner_address: %s
+				operator_address: %s
 				stake_amount: 1000upokt
 				services:
 				  - endpoints:
@@ -226,12 +329,14 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 				      rpc_type: json_rpc
 				      config:
 				        timeout: 10
-				`,
+				`, ownerAddress, operatorAddress),
 			expectedError: config.ErrSupplierConfigInvalidServiceId,
 		},
 		{
 			desc: "invalid service config with empty service ID",
-			inputConfig: `
+			inputConfig: fmt.Sprintf(`
+				owner_address: %s
+				operator_address: %s
 				stake_amount: 1000upokt
 				services:
 				  - service_id:
@@ -240,31 +345,37 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 				      rpc_type: json_rpc
 				      config:
 				        timeout: 10
-				`,
+				`, ownerAddress, operatorAddress),
 			expectedError: config.ErrSupplierConfigInvalidServiceId,
 		},
 		{
 			desc: "invalid service config without endpoints",
-			inputConfig: `
+			inputConfig: fmt.Sprintf(`
+				owner_address: %s
+				operator_address: %s
 				stake_amount: 1000upokt
 				services:
 				  - service_id: svc
-			`,
+			`, ownerAddress, operatorAddress),
 			expectedError: config.ErrSupplierConfigNoEndpoints,
 		},
 		{
 			desc: "invalid service config with empty endpoints",
-			inputConfig: `
+			inputConfig: fmt.Sprintf(`
+				owner_address: %s
+				operator_address: %s
 				stake_amount: 1000upokt
 				services:
 				  - service_id: svc
 				    endpoints:
-				`,
+				`, ownerAddress, operatorAddress),
 			expectedError: config.ErrSupplierConfigNoEndpoints,
 		},
 		{
 			desc: "invalid service config with unknown endpoint config key",
-			inputConfig: `
+			inputConfig: fmt.Sprintf(`
+				owner_address: %s
+				operator_address: %s
 				stake_amount: 1000upokt
 				services:
 				  - service_id: svc
@@ -273,12 +384,14 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 				      rpc_type: json_rpc
 				      config:
 				        somekey: 10
-				`,
+				`, ownerAddress, operatorAddress),
 			expectedError: config.ErrSupplierConfigInvalidEndpointConfig,
 		},
 		{
 			desc: "invalid service config with unknown endpoint rpc type",
-			inputConfig: `
+			inputConfig: fmt.Sprintf(`
+				owner_address: %s
+				operator_address: %s
 				stake_amount: 1000upokt
 				services:
 				  - service_id: svc
@@ -287,12 +400,14 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 				      rpc_type: somerpc
 				      config:
 				        timeout: 10
-				`,
+				`, ownerAddress, operatorAddress),
 			expectedError: config.ErrSupplierConfigInvalidRPCType,
 		},
 		{
 			desc: "invalid service config with invalid endpoint url",
-			inputConfig: `
+			inputConfig: fmt.Sprintf(`
+				owner_address: %s
+				operator_address: %s
 				stake_amount: 1000upokt
 				services:
 				  - service_id: svc
@@ -301,7 +416,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 				      rpc_type: json_rpc
 				      config:
 				        timeout: 10
-				`,
+				`, ownerAddress, operatorAddress),
 			expectedError: config.ErrSupplierConfigInvalidURL,
 		},
 		{
@@ -311,7 +426,9 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 		},
 		{
 			desc: "missing stake amount",
-			inputConfig: `
+			inputConfig: fmt.Sprintf(`
+				owner_address: %s
+				operator_address: %s
 				services:
 				  - service_id: svc
 				    endpoints:
@@ -319,12 +436,14 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 				      rpc_type: json_rpc
 				      config:
 				        timeout: 10
-				`,
+				`, ownerAddress, operatorAddress),
 			expectedError: config.ErrSupplierConfigInvalidStake,
 		},
 		{
 			desc: "invalid stake denom",
-			inputConfig: `
+			inputConfig: fmt.Sprintf(`
+				owner_address: %s
+				operator_address: %s
 				stake_amount: 1000invalid
 				services:
 				  - service_id: svc
@@ -333,12 +452,14 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 				      rpc_type: json_rpc
 				      config:
 				        timeout: 10
-				`,
+				`, ownerAddress, operatorAddress),
 			expectedError: config.ErrSupplierConfigInvalidStake,
 		},
 		{
 			desc: "negative stake amount",
-			inputConfig: `
+			inputConfig: fmt.Sprintf(`
+				owner_address: %s
+				operator_address: %s
 				stake_amount: -1000upokt
 				services:
 				  - service_id: svc
@@ -347,12 +468,14 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 				      rpc_type: json_rpc
 				      config:
 				        timeout: 10
-				`,
+				`, ownerAddress, operatorAddress),
 			expectedError: config.ErrSupplierConfigInvalidStake,
 		},
 		{
 			desc: "zero stake amount",
-			inputConfig: `
+			inputConfig: fmt.Sprintf(`
+				owner_address: %s
+				operator_address: %s
 				stake_amount: 0upokt
 				services:
 				  - service_id: svc
@@ -361,13 +484,60 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 				      rpc_type: json_rpc
 				      config:
 				        timeout: 10
-				`,
+				`, ownerAddress, operatorAddress),
 			expectedError: config.ErrSupplierConfigInvalidStake,
+		},
+		{
+			desc: "missing owner address",
+			inputConfig: fmt.Sprintf(`
+				# explictly omitted owner address
+				operator_address: %s
+				stake_amount: 1000upokt
+				services:
+				  - service_id: svc
+				    endpoints:
+				    - publicly_exposed_url: http://pokt.network:8081
+				      rpc_type: json_rpc
+				      config:
+				        timeout: 10
+				`, operatorAddress),
+			expectedError: config.ErrSupplierConfigInvalidOwnerAddress,
+		},
+		{
+			desc: "invalid owner address",
+			inputConfig: fmt.Sprintf(`
+				owner_address: invalid_address
+				operator_address: %s
+				stake_amount: 1000upokt
+				services:
+				  - service_id: svc
+				    endpoints:
+				    - publicly_exposed_url: http://pokt.network:8081
+				      rpc_type: json_rpc
+				      config:
+				        timeout: 10
+				`, operatorAddress),
+			expectedError: config.ErrSupplierConfigInvalidOwnerAddress,
+		},
+		{
+			desc: "invalid operator address",
+			inputConfig: fmt.Sprintf(`
+				owner_address: %s
+				operator_address: invalid_address
+				stake_amount: 1000upokt
+				services:
+				  - service_id: svc
+				    endpoints:
+				    - publicly_exposed_url: http://pokt.network:8081
+				      rpc_type: json_rpc
+				      config:
+				        timeout: 10
+				`, ownerAddress),
+			expectedError: config.ErrSupplierConfigInvalidOperatorAddress,
 		},
 	}
 
 	ctx := context.Background()
-
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
 			normalizedConfig := yaml.NormalizeYAMLIndentation(tt.inputConfig)
