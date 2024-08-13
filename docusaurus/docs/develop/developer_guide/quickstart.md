@@ -142,6 +142,7 @@ Run the following command to install `golang` dependencies:
 ```bash
 make install_ci_deps
 ```
+
 If you encounter issues related to `mockgen` not being found or failing, try running the following command to verify its installation:
 ```bash
 make check_mockgen
