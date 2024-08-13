@@ -138,11 +138,11 @@ available commands. Looking inside the Makefile is a great way to learn how to u
 
 ### 1.3 Prepare your development environment
 
-Run the following command to install golang dependencies:
+Run the following command to install `golang` dependencies:
 ```bash
 make install_ci_deps
 ```
-If you run into `mockgen` related issue, try running:
+If you encounter issues related to `mockgen` not being found or failing, try running the following command to verify its installation:
 ```bash
 make check_mockgen
 ```
