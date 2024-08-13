@@ -501,7 +501,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 				      config:
 				        timeout: 10
 				`, operatorAddress),
-			expectedError: config.ErrSupplierConfigInvalidAddress,
+			expectedError: config.ErrSupplierConfigInvalidOwnerAddress,
 		},
 		{
 			desc: "invalid owner address",
@@ -517,7 +517,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 				      config:
 				        timeout: 10
 				`, operatorAddress),
-			expectedError: config.ErrSupplierConfigInvalidAddress,
+			expectedError: config.ErrSupplierConfigInvalidOwnerAddress,
 		},
 		{
 			desc: "invalid operator address",
@@ -533,7 +533,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 				      config:
 				        timeout: 10
 				`, ownerAddress),
-			expectedError: config.ErrSupplierConfigInvalidAddress,
+			expectedError: config.ErrSupplierConfigInvalidOperatorAddress,
 		},
 	}
 
