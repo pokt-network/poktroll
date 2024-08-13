@@ -78,7 +78,7 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 			logger.Error("updating the supplier's operator address forbidden")
 
 			return nil, sharedtypes.ErrSharedUnauthorizedSupplierUpdate.Wrap(
-				"updating the operator address is forbidden, unstake then stake again in order to change the operator address",
+				"updating the operator address is forbidden, unstake then re-stake with the updated operator address",
 			)
 		}
 
