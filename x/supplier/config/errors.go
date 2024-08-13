@@ -16,5 +16,5 @@ var (
 	ErrSupplierConfigEmptyContent           = sdkerrors.Register(types.ModuleName, 2106, "empty supplier config content")
 	ErrSupplierConfigInvalidStake           = sdkerrors.Register(types.ModuleName, 2107, "invalid stake amount in supplier config")
 	ErrSupplierConfigInvalidOwnerAddress    = sdkerrors.Register(types.ModuleName, 2108, "invalid owner address in supplier config")
-	ErrSupplierConfigInvalidOperatorAddress = sdkerrors.Register(types.ModuleName, 2108, "invalid operator address in supplier config")
+	ErrSupplierConfigInvalidOperatorAddress = sdkerrors.Register(types.ModuleName, 2109, "invalid operator address in supplier config")
 )
