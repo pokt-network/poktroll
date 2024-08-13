@@ -32,9 +32,9 @@ type Supplier struct {
 	OwnerAddress string `protobuf:"bytes,1,opt,name=owner_address,json=ownerAddress,proto3" json:"owner_address,omitempty"`
 	// The address of the supplier operator (i.e. the one managing the off-chain server).
 	// The operator address can update the supplier's configurations excluding the owner address.
-	// This property do not change over the supplier's lifespan, the supplier must be usnaked
-	// and staked again to update this value.
-	// TODO(#722): Rename this to `operator_address` include all downstream
+	// This property does not change over the supplier's lifespan, the supplier must be unstaked
+	// and re-staked to effectively update this value.
+	// TODO(#722): Rename this to `operator_address` including all downstream
 	// variables, comments, docs, tests, etc...
 	Address  string                   `protobuf:"bytes,2,opt,name=address,proto3" json:"address,omitempty"`
 	Stake    *types.Coin              `protobuf:"bytes,3,opt,name=stake,proto3" json:"stake,omitempty"`

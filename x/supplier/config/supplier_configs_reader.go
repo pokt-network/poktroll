@@ -76,7 +76,7 @@ func ParseSupplierConfigs(ctx context.Context, configContent []byte) (*SupplierS
 
 	// Validate required owner address.
 	if _, err := sdk.AccAddressFromBech32(stakeConfig.OwnerAddress); err != nil {
-		return nil, ErrSupplierConfigInvalidAddress.Wrap("invalid owner address")
+		return nil, ErrSupplierConfigInvalidOwnerAddress.Wrap("invalid owner address")
 	}
 
 	// If the operator address is not set, default it to the owner address.
@@ -87,7 +87,7 @@ func ParseSupplierConfigs(ctx context.Context, configContent []byte) (*SupplierS
 
 	// Validate operator address.
 	if _, err := sdk.AccAddressFromBech32(stakeConfig.OperatorAddress); err != nil {
-		return nil, ErrSupplierConfigInvalidAddress.Wrap("invalid operator address")
+		return nil, ErrSupplierConfigInvalidOperatorAddress.Wrap("invalid operator address")
 	}
 
 	// Validate the stake amount
