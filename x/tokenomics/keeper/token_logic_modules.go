@@ -252,7 +252,7 @@ func (k Keeper) TokenLogicModuleRelayBurnEqualsMint(
 ) error {
 	logger := k.Logger().With("method", "TokenLogicModuleRelayBurnEqualsMint")
 
-	supplierAddr, err := cosmostypes.AccAddressFromBech32(supplier.Address)
+	ownerAddr, err := cosmostypes.AccAddressFromBech32(supplier.OwnerAddress)
 	if err != nil {
 		return err
 	}
@@ -278,7 +278,7 @@ func (k Keeper) TokenLogicModuleRelayBurnEqualsMint(
 	// Send the newley minted uPOKT from the supplier module account
 	// to the supplier's account.
 	if err = k.bankKeeper.SendCoinsFromModuleToAccount(
-		ctx, suppliertypes.ModuleName, supplierAddr, sdk.NewCoins(settlementCoins),
+		ctx, suppliertypes.ModuleName, ownerAddr, sdk.NewCoins(settlementCoins),
 	); err != nil {
 		return tokenomicstypes.ErrTokenomicsSupplierModuleSendFailed.Wrapf(
 			"sending (%s) to supplier with address %s: %v",
@@ -357,7 +357,7 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the application with address %q", appCoins, application.Address))
 
 	// Send a portion of the rewards to the supplier
-	supplierCoins, err := k.sendRewardsToAccount(ctx, supplier.Address, newMintAmtFloat, MintAllocationSupplier)
+	supplierCoins, err := k.sendRewardsToAccount(ctx, supplier.OwnerAddress, newMintAmtFloat, MintAllocationSupplier)
 	if err != nil {
 		return tokenomictypes.ErrTokenomicsSendingMindRewards.Wrapf("sending rewards to supplier: %v", err)
 	}
