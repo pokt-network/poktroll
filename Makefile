@@ -133,6 +133,17 @@ check_ignite_version:
 		exit 1 ; \
 	fi
 
+.PHONY: check_mockgen
+# Internal helper target- Check if mockgen is installed 
+check_mockgen:
+	{ \
+	if ( ! ( command -v mockgen >/dev/null )); then \
+		echo "Seems like you don't have `mockgen` installed. Please visit https://github.com/golang/mock?tab=readme-ov-file#installation before continuing"; \
+		exit 1; \
+	fi; \
+	}
+
+
 .PHONY: check_act
 # Internal helper target - check if `act` is installed
 check_act:
