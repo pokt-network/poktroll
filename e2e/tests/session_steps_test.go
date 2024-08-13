@@ -60,12 +60,12 @@ func (s *suite) TheUserShouldWaitForTheModuleEndBlockEventToBeBroadcast(module, 
 
 // TODO_FLAKY: See how 'TheClaimCreatedBySupplierForServiceForApplicationShouldBeSuccessfullySettled'
 // was modified to using an event replay client, instead of a query, to eliminate the flakiness.
-func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBePersistedOnchain(supplierName, serviceId, appName string) {
+func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBePersistedOnchain(supplierOperatorName, serviceId, appName string) {
 	ctx := context.Background()
 
 	allClaimsRes, err := s.proofQueryClient.AllClaims(ctx, &prooftypes.QueryAllClaimsRequest{
-		Filter: &prooftypes.QueryAllClaimsRequest_SupplierAddress{
-			SupplierAddress: accNameToAddrMap[supplierName],
+		Filter: &prooftypes.QueryAllClaimsRequest_SupplierOperatorAddress{
+			SupplierOperatorAddress: accNameToAddrMap[supplierOperatorName],
 		},
 	})
 	require.NoError(s, err)
@@ -89,10 +89,10 @@ func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBePersist
 	// them into the scenarioState key(s).
 
 	claim := allClaimsRes.Claims[0]
-	require.Equal(s, accNameToAddrMap[supplierName], claim.SupplierAddress)
+	require.Equal(s, accNameToAddrMap[supplierOperatorName], claim.SupplierOperatorAddress)
 }
 
-func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication(supplierName, numRelaysStr, serviceId, appName string) {
+func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication(supplierOperatorName, numRelaysStr, serviceId, appName string) {
 	ctx := context.Background()
 
 	numRelays, err := strconv.Atoi(numRelaysStr)
@@ -113,18 +113,18 @@ func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication
 	// Send relays for the session.
 	s.sendRelaysForSession(
 		appName,
-		supplierName,
+		supplierOperatorName,
 		testServiceId,
 		numRelays,
 	)
 }
 
-func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBeSuccessfullySettled(supplierName, serviceId, appName string) {
+func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBeSuccessfullySettled(supplierOperatorName, serviceId, appName string) {
 	app, ok := accNameToAppMap[appName]
 	require.True(s, ok, "application %s not found", appName)
 
-	supplier, ok := accNameToSupplierMap[supplierName]
-	require.True(s, ok, "supplier %s not found", supplierName)
+	supplier, ok := operatorAccNameToSupplierMap[supplierOperatorName]
+	require.True(s, ok, "supplier %s not found", supplierOperatorName)
 
 	isValidClaimSettledEvent := func(event *abci.Event) bool {
 		if event.Type != "poktroll.tokenomics.EventClaimSettled" {
@@ -142,7 +142,7 @@ func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBeSuccess
 		// Assert that the claim was settled for the correct application, supplier, and service.
 		claim := claimSettledEvent.Claim
 		require.Equal(s, app.Address, claim.SessionHeader.ApplicationAddress)
-		require.Equal(s, supplier.Address, claim.SupplierAddress)
+		require.Equal(s, supplier.OperatorAddress, claim.SupplierOperatorAddress)
 		require.Equal(s, serviceId, claim.SessionHeader.Service.Id)
 		require.Greater(s, claimSettledEvent.NumComputeUnits, uint64(0), "compute units should be greater than 0")
 		return true
@@ -153,13 +153,13 @@ func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBeSuccess
 
 func (s *suite) sendRelaysForSession(
 	appName string,
-	supplierName string,
+	supplierOperatorName string,
 	serviceId string,
 	relayLimit int,
 ) {
 	s.TheApplicationIsStakedForService(appName, serviceId)
-	s.TheSupplierIsStakedForService(supplierName, serviceId)
-	s.TheSessionForApplicationAndServiceContainsTheSupplier(appName, serviceId, supplierName)
+	s.TheSupplierIsStakedForService(supplierOperatorName, serviceId)
+	s.TheSessionForApplicationAndServiceContainsTheSupplier(appName, serviceId, supplierOperatorName)
 
 	// TODO_IMPROVE: hard-code a default set of RPC calls to iterate over for coverage.
 	payload_fmt := `{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":%d}`
@@ -167,7 +167,7 @@ func (s *suite) sendRelaysForSession(
 	for i := 0; i < relayLimit; i++ {
 		payload := fmt.Sprintf(payload_fmt, i+1) // i+1 to avoid id=0 which is invalid
 
-		s.TheApplicationSendsTheSupplierASuccessfulRequestForServiceWithPathAndData(appName, supplierName, serviceId, defaultJSONPRCPath, payload)
+		s.TheApplicationSendsTheSupplierASuccessfulRequestForServiceWithPathAndData(appName, supplierOperatorName, serviceId, defaultJSONPRCPath, payload)
 		time.Sleep(10 * time.Millisecond)
 	}
 }

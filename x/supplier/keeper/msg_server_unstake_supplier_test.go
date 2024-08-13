@@ -21,48 +21,48 @@ func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
 
 	sharedParams := supplierModuleKeepers.SharedKeeper.GetParams(ctx)
 
-	// Generate two addresses for an unstaking and a non-unstaking suppliers
-	unstakingSupplierAddr := sample.AccAddress()
+	// Generate an operator addresses for a supplier that will be unstaked later in the test.
+	unstakingSupplierOperatorAddr := sample.AccAddress()
 
 	// Verify that the supplier does not exist yet
-	_, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, unstakingSupplierAddr)
+	_, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, unstakingSupplierOperatorAddr)
 	require.False(t, isSupplierFound)
 
 	initialStake := int64(100)
-	stakeMsg := createStakeMsg(unstakingSupplierAddr, initialStake)
+	stakeMsg := createStakeMsg(unstakingSupplierOperatorAddr, initialStake)
 
 	// Stake the supplier
 	_, err := srv.StakeSupplier(ctx, stakeMsg)
 	require.NoError(t, err)
 
-	// Verify that the supplier exists
-	foundSupplier, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, unstakingSupplierAddr)
+	// Verify that the supplier existsOperator
+	foundSupplier, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, unstakingSupplierOperatorAddr)
 	require.True(t, isSupplierFound)
-	require.Equal(t, unstakingSupplierAddr, foundSupplier.Address)
+	require.Equal(t, unstakingSupplierOperatorAddr, foundSupplier.OperatorAddress)
 	require.Equal(t, math.NewInt(initialStake), foundSupplier.Stake.Amount)
 	require.Len(t, foundSupplier.Services, 1)
 
 	// Create and stake another supplier that will not be unstaked to assert that only the
 	// unstaking supplier is removed from the suppliers list when the unbonding period is over.
-	nonUnstakingSupplierAddr := sample.AccAddress()
-	stakeMsg = createStakeMsg(nonUnstakingSupplierAddr, initialStake)
+	nonUnstakingSupplierOperatorAddr := sample.AccAddress()
+	stakeMsg = createStakeMsg(nonUnstakingSupplierOperatorAddr, initialStake)
 	_, err = srv.StakeSupplier(ctx, stakeMsg)
 	require.NoError(t, err)
 
 	// Verify that the non-unstaking supplier exists
-	_, isSupplierFound = supplierModuleKeepers.GetSupplier(ctx, nonUnstakingSupplierAddr)
+	_, isSupplierFound = supplierModuleKeepers.GetSupplier(ctx, nonUnstakingSupplierOperatorAddr)
 	require.True(t, isSupplierFound)
 
 	// Initiate the supplier unstaking
 	unstakeMsg := &types.MsgUnstakeSupplier{
-		Signer:  unstakingSupplierAddr,
-		Address: unstakingSupplierAddr,
+		Signer:          unstakingSupplierOperatorAddr,
+		OperatorAddress: unstakingSupplierOperatorAddr,
 	}
 	_, err = srv.UnstakeSupplier(ctx, unstakeMsg)
 	require.NoError(t, err)
 
 	// Make sure the supplier entered the unbonding period
-	foundSupplier, isSupplierFound = supplierModuleKeepers.GetSupplier(ctx, unstakingSupplierAddr)
+	foundSupplier, isSupplierFound = supplierModuleKeepers.GetSupplier(ctx, unstakingSupplierOperatorAddr)
 	require.True(t, isSupplierFound)
 	require.True(t, foundSupplier.IsUnbonding())
 
@@ -76,11 +76,11 @@ func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
 
 	// Make sure the unstaking supplier is removed from the suppliers list when the
 	// unbonding period is over
-	_, isSupplierFound = supplierModuleKeepers.GetSupplier(ctx, unstakingSupplierAddr)
+	_, isSupplierFound = supplierModuleKeepers.GetSupplier(ctx, unstakingSupplierOperatorAddr)
 	require.False(t, isSupplierFound)
 
 	// Verify that the non-unstaking supplier still exists
-	nonUnstakingSupplier, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, nonUnstakingSupplierAddr)
+	nonUnstakingSupplier, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, nonUnstakingSupplierOperatorAddr)
 	require.True(t, isSupplierFound)
 	require.False(t, nonUnstakingSupplier.IsUnbonding())
 }
@@ -92,41 +92,41 @@ func TestMsgServer_UnstakeSupplier_CancelUnbondingIfRestaked(t *testing.T) {
 	sharedParams := supplierModuleKeepers.SharedKeeper.GetParams(ctx)
 
 	// Generate an address for the supplier
-	supplierAddr := sample.AccAddress()
+	supplierOperatorAddr := sample.AccAddress()
 
 	// Stake the supplier
 	initialStake := int64(100)
-	stakeMsg := createStakeMsg(supplierAddr, initialStake)
+	stakeMsg := createStakeMsg(supplierOperatorAddr, initialStake)
 	_, err := srv.StakeSupplier(ctx, stakeMsg)
 	require.NoError(t, err)
 
 	// Verify that the supplier exists with no unbonding height
-	foundSupplier, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, supplierAddr)
+	foundSupplier, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, supplierOperatorAddr)
 	require.True(t, isSupplierFound)
 	require.False(t, foundSupplier.IsUnbonding())
 
 	// Initiate the supplier unstaking
 	unstakeMsg := &types.MsgUnstakeSupplier{
-		Signer:  supplierAddr,
-		Address: supplierAddr,
+		Signer:          supplierOperatorAddr,
+		OperatorAddress: supplierOperatorAddr,
 	}
 	_, err = srv.UnstakeSupplier(ctx, unstakeMsg)
 	require.NoError(t, err)
 
 	// Make sure the supplier entered the unbonding period
-	foundSupplier, isSupplierFound = supplierModuleKeepers.GetSupplier(ctx, supplierAddr)
+	foundSupplier, isSupplierFound = supplierModuleKeepers.GetSupplier(ctx, supplierOperatorAddr)
 	require.True(t, isSupplierFound)
 	require.True(t, foundSupplier.IsUnbonding())
 
 	unbondingHeight := shared.GetSupplierUnbondingHeight(&sharedParams, &foundSupplier)
 
 	// Stake the supplier again
-	stakeMsg = createStakeMsg(supplierAddr, initialStake+1)
+	stakeMsg = createStakeMsg(supplierOperatorAddr, initialStake+1)
 	_, err = srv.StakeSupplier(ctx, stakeMsg)
 	require.NoError(t, err)
 
 	// Make sure the supplier is no longer in the unbonding period
-	foundSupplier, isSupplierFound = supplierModuleKeepers.GetSupplier(ctx, supplierAddr)
+	foundSupplier, isSupplierFound = supplierModuleKeepers.GetSupplier(ctx, supplierOperatorAddr)
 	require.True(t, isSupplierFound)
 	require.False(t, foundSupplier.IsUnbonding())
 
@@ -137,7 +137,7 @@ func TestMsgServer_UnstakeSupplier_CancelUnbondingIfRestaked(t *testing.T) {
 	require.NoError(t, err)
 
 	// Make sure the supplier is still in the suppliers list with an unbonding height of 0
-	foundSupplier, isSupplierFound = supplierModuleKeepers.GetSupplier(ctx, supplierAddr)
+	foundSupplier, isSupplierFound = supplierModuleKeepers.GetSupplier(ctx, supplierOperatorAddr)
 	require.True(t, isSupplierFound)
 	require.False(t, foundSupplier.IsUnbonding())
 }
@@ -147,22 +147,22 @@ func TestMsgServer_UnstakeSupplier_FailIfNotStaked(t *testing.T) {
 	srv := keeper.NewMsgServerImpl(*supplierModuleKeepers.Keeper)
 
 	// Generate an address for the supplier
-	supplierAddr := sample.AccAddress()
+	supplierOperatorAddr := sample.AccAddress()
 
 	// Verify that the supplier does not exist yet
-	_, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, supplierAddr)
+	_, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, supplierOperatorAddr)
 	require.False(t, isSupplierFound)
 
 	// Initiate the supplier unstaking
 	unstakeMsg := &types.MsgUnstakeSupplier{
-		Signer:  supplierAddr,
-		Address: supplierAddr,
+		Signer:          supplierOperatorAddr,
+		OperatorAddress: supplierOperatorAddr,
 	}
 	_, err := srv.UnstakeSupplier(ctx, unstakeMsg)
 	require.Error(t, err)
 	require.ErrorIs(t, err, types.ErrSupplierNotFound)
 
-	_, isSupplierFound = supplierModuleKeepers.GetSupplier(ctx, supplierAddr)
+	_, isSupplierFound = supplierModuleKeepers.GetSupplier(ctx, supplierOperatorAddr)
 	require.False(t, isSupplierFound)
 }
 
@@ -171,18 +171,18 @@ func TestMsgServer_UnstakeSupplier_FailIfCurrentlyUnstaking(t *testing.T) {
 	srv := keeper.NewMsgServerImpl(*supplierModuleKeepers.Keeper)
 
 	// Generate an address for the supplier
-	supplierAddr := sample.AccAddress()
+	supplierOperatorAddr := sample.AccAddress()
 
 	// Stake the supplier
 	initialStake := int64(100)
-	stakeMsg := createStakeMsg(supplierAddr, initialStake)
+	stakeMsg := createStakeMsg(supplierOperatorAddr, initialStake)
 	_, err := srv.StakeSupplier(ctx, stakeMsg)
 	require.NoError(t, err)
 
 	// Initiate the supplier unstaking
 	unstakeMsg := &types.MsgUnstakeSupplier{
-		Signer:  supplierAddr,
-		Address: supplierAddr,
+		Signer:          supplierOperatorAddr,
+		OperatorAddress: supplierOperatorAddr,
 	}
 	_, err = srv.UnstakeSupplier(ctx, unstakeMsg)
 	require.NoError(t, err)
@@ -200,25 +200,25 @@ func TestMsgServer_UnstakeSupplier_OperatorCanUnstake(t *testing.T) {
 
 	// Generate an address for the supplier
 	ownerAddr := sample.AccAddress()
-	supplierAddr := sample.AccAddress()
+	supplierOperatorAddr := sample.AccAddress()
 
 	// Stake the supplier
 	initialStake := int64(100)
 	stakeMsg := createStakeMsg(ownerAddr, initialStake)
-	stakeMsg.Address = supplierAddr
+	stakeMsg.OperatorAddress = supplierOperatorAddr
 	_, err := srv.StakeSupplier(ctx, stakeMsg)
 	require.NoError(t, err)
 
 	// Initiate the supplier unstaking
 	unstakeMsg := &types.MsgUnstakeSupplier{
-		Signer:  supplierAddr,
-		Address: supplierAddr,
+		Signer:          supplierOperatorAddr,
+		OperatorAddress: supplierOperatorAddr,
 	}
 	_, err = srv.UnstakeSupplier(ctx, unstakeMsg)
 	require.NoError(t, err)
 
 	// Make sure the supplier entered the unbonding period
-	foundSupplier, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, supplierAddr)
+	foundSupplier, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, supplierOperatorAddr)
 	require.True(t, isSupplierFound)
 	require.True(t, foundSupplier.IsUnbonding())
 
@@ -238,13 +238,13 @@ func TestMsgServer_UnstakeSupplier_OperatorCanUnstake(t *testing.T) {
 	require.Equal(t, initialStake, supplierModuleKeepers.SupplierUnstakedFundsMap[ownerAddr])
 }
 
-func createStakeMsg(supplierAddr string, stakeAmount int64) *types.MsgStakeSupplier {
+func createStakeMsg(supplierOwnerAddr string, stakeAmount int64) *types.MsgStakeSupplier {
 	initialStake := sdk.NewCoin("upokt", math.NewInt(stakeAmount))
 	return &types.MsgStakeSupplier{
-		Signer:       supplierAddr,
-		OwnerAddress: supplierAddr,
-		Address:      supplierAddr,
-		Stake:        &initialStake,
+		Signer:          supplierOwnerAddr,
+		OwnerAddress:    supplierOwnerAddr,
+		OperatorAddress: supplierOwnerAddr,
+		Stake:           &initialStake,
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
 				Service: &sharedtypes.Service{

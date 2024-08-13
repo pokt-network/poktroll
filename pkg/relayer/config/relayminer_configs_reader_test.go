@@ -820,41 +820,41 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 					config.Servers[listenAddress].ServerType,
 				)
 
-				for supplierName, supplier := range server.SupplierConfigsMap {
+				for supplierOperatorName, supplier := range server.SupplierConfigsMap {
 					require.Equal(
 						t,
 						supplier.ServiceId,
-						config.Servers[listenAddress].SupplierConfigsMap[supplierName].ServiceId,
+						config.Servers[listenAddress].SupplierConfigsMap[supplierOperatorName].ServiceId,
 					)
 
 					require.Equal(
 						t,
 						supplier.ServerType,
-						config.Servers[listenAddress].SupplierConfigsMap[supplierName].ServerType,
+						config.Servers[listenAddress].SupplierConfigsMap[supplierOperatorName].ServerType,
 					)
 
 					require.Equal(
 						t,
 						supplier.ServiceConfig.BackendUrl.String(),
-						config.Servers[listenAddress].SupplierConfigsMap[supplierName].ServiceConfig.BackendUrl.String(),
+						config.Servers[listenAddress].SupplierConfigsMap[supplierOperatorName].ServiceConfig.BackendUrl.String(),
 					)
 
 					if supplier.ServiceConfig.Authentication != nil {
 						require.NotNil(
 							t,
-							config.Servers[listenAddress].SupplierConfigsMap[supplierName].ServiceConfig.Authentication,
+							config.Servers[listenAddress].SupplierConfigsMap[supplierOperatorName].ServiceConfig.Authentication,
 						)
 
 						require.Equal(
 							t,
 							supplier.ServiceConfig.Authentication.Username,
-							config.Servers[listenAddress].SupplierConfigsMap[supplierName].ServiceConfig.Authentication.Username,
+							config.Servers[listenAddress].SupplierConfigsMap[supplierOperatorName].ServiceConfig.Authentication.Username,
 						)
 
 						require.Equal(
 							t,
 							supplier.ServiceConfig.Authentication.Password,
-							config.Servers[listenAddress].SupplierConfigsMap[supplierName].ServiceConfig.Authentication.Password,
+							config.Servers[listenAddress].SupplierConfigsMap[supplierOperatorName].ServiceConfig.Authentication.Password,
 						)
 					}
 
@@ -862,7 +862,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 						require.Equal(
 							t,
 							headerValue,
-							config.Servers[listenAddress].SupplierConfigsMap[supplierName].ServiceConfig.Headers[headerKey],
+							config.Servers[listenAddress].SupplierConfigsMap[supplierOperatorName].ServiceConfig.Headers[headerKey],
 						)
 					}
 
@@ -870,7 +870,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 						require.Contains(
 							t,
 							host,
-							config.Servers[listenAddress].SupplierConfigsMap[supplierName].PubliclyExposedEndpoints[i],
+							config.Servers[listenAddress].SupplierConfigsMap[supplierOperatorName].PubliclyExposedEndpoints[i],
 						)
 					}
 				}

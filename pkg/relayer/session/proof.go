@@ -125,12 +125,12 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 	}
 
 	// Get the earliest proof commit height for this supplier.
-	supplierAddr := sessionTrees[0].GetSupplierAddress().String()
+	supplierOperatorAddr := sessionTrees[0].GetSupplierOperatorAddress().String()
 	earliestSupplierProofsCommitHeight := shared.GetEarliestSupplierProofCommitHeight(
 		sharedParams,
 		sessionEndHeight,
 		proofsWindowOpenBlock.Hash(),
-		supplierAddr,
+		supplierOperatorAddr,
 	)
 
 	logger = logger.With("earliest_supplier_proof_commit_height", earliestSupplierProofsCommitHeight)
@@ -186,17 +186,17 @@ func (rs *relayerSessionsManager) newMapProveSessionsFn(
 			return either.Success(sessionTrees), false
 		}
 
-		// Map key is the supplier address.
+		// Map key is the supplier operator address.
 		proofMsgs := make([]client.MsgSubmitProof, 0)
 		for _, session := range sessionTrees {
 			proofMsgs = append(proofMsgs, &types.MsgSubmitProof{
-				Proof:           session.GetProofBz(),
-				SessionHeader:   session.GetSessionHeader(),
-				SupplierAddress: session.GetSupplierAddress().String(),
+				Proof:                   session.GetProofBz(),
+				SessionHeader:           session.GetSessionHeader(),
+				SupplierOperatorAddress: session.GetSupplierOperatorAddress().String(),
 			})
 		}
 
-		// Submit proofs for each supplier address in `sessionTrees`.
+		// Submit proofs for each supplier operator address in `sessionTrees`.
 		if err := supplierClient.SubmitProofs(ctx, proofMsgs...); err != nil {
 			failedSubmitProofSessionsCh <- sessionTrees
 			rs.logger.Error().Err(err).Msg("failed to submit proofs")
