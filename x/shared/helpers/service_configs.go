@@ -108,10 +108,6 @@ func ValidateServiceRevShare(revShareList []*sharedtypes.ServiceRevenueShare) er
 			return sharedtypes.ErrSharedInvalidRevShare.Wrap("rev share cannot be nil")
 		}
 
-		if len(revShare.Address) == 0 {
-			return sharedtypes.ErrSharedInvalidRevShare.Wrap("rev share address cannot be empty")
-		}
-
 		// Validate the revshare address
 		if revShare.Address == "" {
 			return sharedtypes.ErrSharedInvalidRevShare.Wrapf("rev share address cannot be empty: %v", revShare)
