@@ -11,6 +11,7 @@ a stake transaction required to provide RPC services on Pocket Network._
 - [Reference Example](#reference-example)
 - [Usage](#usage)
 - [Configuration](#configuration)
+  - [`owner_address`](#owner_address)
   - [`stake_amount`](#stake_amount)
   - [`default_rev_share_percent`](#default_rev_share_percent)
   - [`services`](#services)
@@ -45,7 +46,17 @@ poktrolld tx supplier stake-supplier \
 
 ## Configuration
 
-<!-- TODO(#716): `owner_address` will be defined once non-custodial is merged -->
+### `owner_address`
+
+_`Required`_, _`Non-empty`_
+
+```yaml
+owner_address: <address>
+```
+
+The `owner_address` is used as the unique shareholder address for the `Supplier`
+if none of `default_rev_share_percent` or `rev_share_percent` is defined in the
+configuration file.
 
 ### `stake_amount`
 
