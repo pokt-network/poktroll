@@ -199,7 +199,6 @@ func TestProcessTokenLogicModules_ValidAccounting(t *testing.T) {
 
 	// Assert that the supplier shareholders account balances have *increased* by
 	// the appropriate amount.
-
 	mintAmountInt := expectedAppBurn.Amount.Uint64()
 	shareAmounts := keeper.GetShareAmountMap(supplier.Services[0].RevShare, mintAmountInt)
 	for shareHolder, expectedShareAmount := range shareAmounts {

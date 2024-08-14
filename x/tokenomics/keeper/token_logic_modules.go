@@ -353,7 +353,7 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the application with address %q", appCoin, application.Address))
 
 	// Send a portion of the rewards to the supplier shareholders.
-	coinsToShareAmt := calculateGlobalMintRewards(newMintAmtFloat, MintAllocationSupplier)
+	coinsToShareAmt := calculateGlobalMintAllocationFromSettlementAmount(newMintAmtFloat, MintAllocationSupplier)
 	if err = k.distributeSupplierRewardsToShareHolders(ctx, supplier.OperatorAddress, service.Id, uint64(coinsToShareAmt)); err != nil {
 		return tokenomicstypes.ErrTokenomicsSupplierModuleMintFailed.Wrapf(
 			"distributing rewards to supplier with operator address %s shareholders: %v",
@@ -411,7 +411,7 @@ func (k Keeper) sendRewardsToAccount(
 		return nil, err
 	}
 
-	coinsToAccAmt := calculateGlobalMintRewards(settlementAmtFloat, allocation)
+	coinsToAccAmt := calculateGlobalMintAllocationFromSettlementAmount(settlementAmtFloat, allocation)
 	coinToAcc := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(coinsToAccAmt))
 	if err := k.bankKeeper.SendCoinsFromModuleToAccount(
 		ctx, suppliertypes.ModuleName, accountAddr, sdk.NewCoins(coinToAcc),
@@ -510,7 +510,7 @@ func (k Keeper) distributeSupplierRewardsToShareHolders(
 
 	if serviceRevShare == nil {
 		return tokenomicstypes.ErrTokenomicsSupplierRevShareFailed.Wrapf(
-			"service %q not found in supplier %v",
+			"service %q not found for supplier %v",
 			serviceId,
 			supplier,
 		)
@@ -541,9 +541,10 @@ func (k Keeper) distributeSupplierRewardsToShareHolders(
 	return nil
 }
 
-// calculateGlobalMintRewards calculates the global mint reward to distribute to an
-// account based on the allocation percentage.
-func calculateGlobalMintRewards(
+// calculateGlobalMintAllocationFromSettlementAmount calculates the global mint
+// allocation resulting from the GlobalMint TLM given the settlement amount and
+// the allocation percentage.
+func calculateGlobalMintAllocationFromSettlementAmount(
 	settlementAmtFloat *big.Float,
 	allocation float64,
 ) int64 {
@@ -551,14 +552,17 @@ func calculateGlobalMintRewards(
 	return coinsToAccAmt
 }
 
-// GetShareAmountMap calculates the amount of uPOKT to distribute to each shareholder
-// based on the rev share percentage of the service.
+// GetShareAmountMap calculates the amount of uPOKT to distribute to each revenue
+// shareholder based on the rev share percentage of the service.
+// It returns a map of the shareholder address to the amount of uPOKT to distribute.
+// The first shareholder gets any remainder due to floating point arithmetic.
+// It is publically exposed to be used in the tests.
 func GetShareAmountMap(
 	serviceRevShare []*sharedtypes.ServiceRevShare,
 	amountToDistribute uint64,
-) map[string]uint64 {
+) (shareAmountMap map[string]uint64) {
 	totalDistributed := uint64(0)
-	shareAmountMap := make(map[string]uint64, len(serviceRevShare))
+	shareAmountMap = make(map[string]uint64, len(serviceRevShare))
 	for _, revshare := range serviceRevShare {
 		// TODO_MAINNET: Consider using fixed point arithmetic for deterministic results.
 		sharePercentageFloat := big.NewFloat(float64(revshare.RevSharePercentage) / 100)

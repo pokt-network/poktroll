@@ -95,8 +95,13 @@ func ValidateSupplierServiceConfigs(services []*sharedtypes.SupplierServiceConfi
 
 // ValidateServiceRevShare validates the supplier's service revenue share,
 // ensuring that the sum of the revenue share percentages is 100.
+// This function is unit tested via the supplier staking config tests.
 func ValidateServiceRevShare(revShareList []*sharedtypes.ServiceRevShare) error {
 	revSharePercentageSum := float32(0)
+
+	if revShareList == nil || len(revShareList) == 0 {
+		return sharedtypes.ErrSharedInvalidRevShare.Wrap("no rev share configurations")
+	}
 
 	for _, revShare := range revShareList {
 		if revShare == nil {

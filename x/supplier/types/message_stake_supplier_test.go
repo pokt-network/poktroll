@@ -473,6 +473,57 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 			},
 			expectedErr: ErrSupplierInvalidServiceConfig,
 		},
+		{
+			desc: "invalid service configs - empty revenue share config",
+			msg: MsgStakeSupplier{
+				Signer:          ownerAddress,
+				OwnerAddress:    ownerAddress,
+				OperatorAddress: operatorAddress,
+				Stake:           &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(100)},
+				Services: []*sharedtypes.SupplierServiceConfig{
+					{
+						Service: &sharedtypes.Service{
+							Id:   "svcId",
+							Name: "name",
+						},
+						Endpoints: []*sharedtypes.SupplierEndpoint{
+							{
+								Url: "http://localhost:8080",
+								// RpcType explicitly omitted,
+								Configs: make([]*sharedtypes.ConfigOption, 0),
+							},
+						},
+						RevShare: []*sharedtypes.ServiceRevShare{},
+					},
+				},
+			},
+			expectedErr: ErrSupplierInvalidServiceConfig,
+		},
+		{
+			desc: "invalid service configs - missing revenue share config",
+			msg: MsgStakeSupplier{
+				Signer:          ownerAddress,
+				OwnerAddress:    ownerAddress,
+				OperatorAddress: operatorAddress,
+				Stake:           &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(100)},
+				Services: []*sharedtypes.SupplierServiceConfig{
+					{
+						Service: &sharedtypes.Service{
+							Id:   "svcId",
+							Name: "name",
+						},
+						Endpoints: []*sharedtypes.SupplierEndpoint{
+							{
+								Url: "http://localhost:8080",
+								// RpcType explicitly omitted,
+								Configs: make([]*sharedtypes.ConfigOption, 0),
+							},
+						},
+					},
+				},
+			},
+			expectedErr: ErrSupplierInvalidServiceConfig,
+		},
 		// TODO_TEST: Need to add more tests around config types
 	}
 

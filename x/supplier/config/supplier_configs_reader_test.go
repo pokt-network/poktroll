@@ -281,83 +281,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 			},
 		},
 		{
-			desc: "valid omitted operator address",
-			inputConfig: fmt.Sprintf(`
-				owner_address: %s
-				# omitted operator address
-				stake_amount: 1000upokt
-				services:
-				  - service_id: svc
-				    endpoints:
-				    - publicly_exposed_url: http://pokt.network:8081
-				      rpc_type: json_rpc
-				      config:
-				        timeout: 10
-				`, ownerAddress),
-			expectedError: nil,
-			expectedConfig: &config.SupplierStakeConfig{
-				OwnerAddress:    ownerAddress,
-				OperatorAddress: ownerAddress,
-				StakeAmount:     sdk.NewCoin("upokt", math.NewInt(1000)),
-				Services: []*types.SupplierServiceConfig{
-					{
-						Service: &types.Service{Id: "svc"},
-						Endpoints: []*types.SupplierEndpoint{
-							{
-								Url:     "http://pokt.network:8081",
-								RpcType: types.RPCType_JSON_RPC,
-								Configs: []*types.ConfigOption{
-									{
-										Key:   types.ConfigOptions_TIMEOUT,
-										Value: "10",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		{
-			desc: "valid full service config",
-			inputConfig: fmt.Sprintf(`
-				owner_address: %s
-				operator_address: %s
-				stake_amount: 1000upokt
-				services:
-				  - service_id: svc
-				    endpoints:
-				    - publicly_exposed_url: http://pokt.network:8081
-				      rpc_type: json_rpc
-				      config:
-				        timeout: 10
-				`, ownerAddress, ownerAddress),
-			expectedError: nil,
-			expectedConfig: &config.SupplierStakeConfig{
-				OwnerAddress:    ownerAddress,
-				OperatorAddress: ownerAddress,
-				StakeAmount:     sdk.NewCoin("upokt", math.NewInt(1000)),
-				Services: []*types.SupplierServiceConfig{
-					{
-						Service: &types.Service{Id: "svc"},
-						Endpoints: []*types.SupplierEndpoint{
-							{
-								Url:     "http://pokt.network:8081",
-								RpcType: types.RPCType_JSON_RPC,
-								Configs: []*types.ConfigOption{
-									{
-										Key:   types.ConfigOptions_TIMEOUT,
-										Value: "10",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		{
-			desc: "valid full service config with default and service specific rev share",
+			desc: "valid full service config with both default and service specific rev share",
 			inputConfig: fmt.Sprintf(`
 				owner_address: %s
 				operator_address: %s
@@ -461,12 +385,18 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 								},
 							},
 						},
+						RevShare: []*types.ServiceRevShare{
+							{
+								Address:            ownerAddress,
+								RevSharePercentage: 100,
+							},
+						},
 					},
 				},
 			},
 		},
 		{
-			desc: "valid full service config",
+			desc: "valid missing default rev share config",
 			inputConfig: fmt.Sprintf(`
 				owner_address: %s
 				operator_address: %s
@@ -499,80 +429,10 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 								},
 							},
 						},
-					},
-				},
-			},
-		},
-		{
-			desc: "valid omitted operator address",
-			inputConfig: fmt.Sprintf(`
-				owner_address: %s
-				# omitted operator address
-				stake_amount: 1000upokt
-				services:
-				  - service_id: svc
-				    endpoints:
-				    - publicly_exposed_url: http://pokt.network:8081
-				      rpc_type: json_rpc
-				      config:
-				        timeout: 10
-				`, ownerAddress),
-			expectedError: nil,
-			expectedConfig: &config.SupplierStakeConfig{
-				OwnerAddress:    ownerAddress,
-				OperatorAddress: ownerAddress,
-				StakeAmount:     sdk.NewCoin("upokt", math.NewInt(1000)),
-				Services: []*types.SupplierServiceConfig{
-					{
-						Service: &types.Service{Id: "svc"},
-						Endpoints: []*types.SupplierEndpoint{
+						RevShare: []*types.ServiceRevShare{
 							{
-								Url:     "http://pokt.network:8081",
-								RpcType: types.RPCType_JSON_RPC,
-								Configs: []*types.ConfigOption{
-									{
-										Key:   types.ConfigOptions_TIMEOUT,
-										Value: "10",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		{
-			desc: "valid full service config",
-			inputConfig: fmt.Sprintf(`
-				owner_address: %s
-				operator_address: %s
-				stake_amount: 1000upokt
-				services:
-				  - service_id: svc
-				    endpoints:
-				    - publicly_exposed_url: http://pokt.network:8081
-				      rpc_type: json_rpc
-				      config:
-				        timeout: 10
-				`, ownerAddress, ownerAddress),
-			expectedError: nil,
-			expectedConfig: &config.SupplierStakeConfig{
-				OwnerAddress:    ownerAddress,
-				OperatorAddress: ownerAddress,
-				StakeAmount:     sdk.NewCoin("upokt", math.NewInt(1000)),
-				Services: []*types.SupplierServiceConfig{
-					{
-						Service: &types.Service{Id: "svc"},
-						Endpoints: []*types.SupplierEndpoint{
-							{
-								Url:     "http://pokt.network:8081",
-								RpcType: types.RPCType_JSON_RPC,
-								Configs: []*types.ConfigOption{
-									{
-										Key:   types.ConfigOptions_TIMEOUT,
-										Value: "10",
-									},
-								},
+								Address:            ownerAddress,
+								RevSharePercentage: 100,
 							},
 						},
 					},
@@ -799,7 +659,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 			expectedError: config.ErrSupplierConfigInvalidOperatorAddress,
 		},
 		{
-			desc: "incomplete default rev share",
+			desc: "default rev share does not sum to 100",
 			inputConfig: fmt.Sprintf(`
 				owner_address: %s
 				operator_address: %s
@@ -817,7 +677,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 			expectedError: sharedtypes.ErrSharedInvalidRevShare,
 		},
 		{
-			desc: "incomplete service specific rev share",
+			desc: "service specific rev share does not sum up to 100",
 			inputConfig: fmt.Sprintf(`
 				owner_address: %s
 				operator_address: %s
@@ -834,7 +694,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 			expectedError: sharedtypes.ErrSharedInvalidRevShare,
 		},
 		{
-			desc: "invalid share holder address",
+			desc: "invalid revenue share address",
 			inputConfig: fmt.Sprintf(`
 				owner_address: %s
 				operator_address: %s
@@ -851,7 +711,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 			expectedError: sharedtypes.ErrSharedInvalidRevShare,
 		},
 		{
-			desc: "empty share holder address",
+			desc: "empty revenue share address",
 			inputConfig: fmt.Sprintf(`
 				owner_address: %s
 				operator_address: %s
@@ -868,7 +728,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 			expectedError: config.ErrSupplierConfigUnmarshalYAML,
 		},
 		{
-			desc: "negative rev share",
+			desc: "negative revenue share allocation is disallowed",
 			inputConfig: fmt.Sprintf(`
 				owner_address: %s
 				operator_address: %s
@@ -883,6 +743,23 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 							%s: 11
 							%s: -1
 				`, ownerAddress, operatorAddress, ownerAddress, firstShareHolderAddress, secondShareHolderAddress),
+			expectedError: sharedtypes.ErrSharedInvalidRevShare,
+		},
+		{
+			desc: "empty rev share config",
+			inputConfig: fmt.Sprintf(`
+				owner_address: %s
+				operator_address: %s
+				stake_amount: 1000upokt
+				services:
+				  - service_id: svc
+				    endpoints:
+				    - publicly_exposed_url: http://pokt.network:8081
+				      rpc_type: json_rpc
+				      config:
+				        timeout: 10
+						rev_share_percent: {}
+				`, ownerAddress, ownerAddress),
 			expectedError: sharedtypes.ErrSharedInvalidRevShare,
 		},
 	}
@@ -928,6 +805,14 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 						require.Equal(t, expectedConfig.Key, config.Key)
 						require.Equal(t, expectedConfig.Value, config.Value)
 					}
+				}
+
+				require.Equal(t, len(expectedService.RevShare), len(service.RevShare))
+				for revShareIdx, expectedRevShare := range expectedService.RevShare {
+					revShare := service.RevShare[revShareIdx]
+
+					require.Equal(t, expectedRevShare.Address, revShare.Address)
+					require.Equal(t, expectedRevShare.RevSharePercentage, revShare.RevSharePercentage)
 				}
 			}
 		})
