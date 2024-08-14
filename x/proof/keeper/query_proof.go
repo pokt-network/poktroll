@@ -32,10 +32,10 @@ func (k Keeper) AllProofs(ctx context.Context, req *types.QueryAllProofsRequest)
 	)
 
 	switch filter := req.Filter.(type) {
-	case *types.QueryAllProofsRequest_SupplierAddress:
+	case *types.QueryAllProofsRequest_SupplierOperatorAddress:
 		isCustomIndex = true
-		keyPrefix = types.KeyPrefix(types.ProofSupplierAddressPrefix)
-		keyPrefix = append(keyPrefix, []byte(filter.SupplierAddress)...)
+		keyPrefix = types.KeyPrefix(types.ProofSupplierOperatorAddressPrefix)
+		keyPrefix = append(keyPrefix, []byte(filter.SupplierOperatorAddress)...)
 	case *types.QueryAllProofsRequest_SessionEndHeight:
 		isCustomIndex = true
 		keyPrefix = types.KeyPrefix(types.ProofSessionEndHeightPrefix)
@@ -89,9 +89,9 @@ func (k Keeper) Proof(ctx context.Context, req *types.QueryGetProofRequest) (*ty
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	foundProof, isProofFound := k.GetProof(ctx, req.GetSessionId(), req.GetSupplierAddress())
+	foundProof, isProofFound := k.GetProof(ctx, req.GetSessionId(), req.GetSupplierOperatorAddress())
 	if !isProofFound {
-		err := types.ErrProofProofNotFound.Wrapf("session ID %q and supplier %q", req.SessionId, req.SupplierAddress)
+		err := types.ErrProofProofNotFound.Wrapf("session ID %q and supplier %q", req.SessionId, req.SupplierOperatorAddress)
 		return nil, status.Error(codes.NotFound, err.Error())
 	}
 

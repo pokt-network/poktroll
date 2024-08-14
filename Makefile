@@ -133,6 +133,17 @@ check_ignite_version:
 		exit 1 ; \
 	fi
 
+.PHONY: check_mockgen
+# Internal helper target- Check if mockgen is installed 
+check_mockgen:
+	{ \
+	if ( ! ( command -v mockgen >/dev/null )); then \
+		echo "Seems like you don't have `mockgen` installed. Please visit https://github.com/golang/mock#installation and follow the instructions to install `mockgen` before continuing"; \
+		exit 1; \
+	fi; \
+	}
+
+
 .PHONY: check_act
 # Internal helper target - check if `act` is installed
 check_act:
@@ -852,7 +863,7 @@ claim_list: ## List all the claims
 
 .PHONY: claims_list_address
 claim_list_address: ## List all the claims for a specific address (specified via ADDR variable)
-	poktrolld --home=$(POKTROLLD_HOME) q supplier list-claims --supplier-address $(ADDR) --node $(POCKET_NODE)
+	poktrolld --home=$(POKTROLLD_HOME) q supplier list-claims --supplier-operator-address $(ADDR) --node $(POCKET_NODE)
 
 .PHONY: claims_list_address_supplier1
 claim_list_address_supplier1: ## List all the claims for supplier1

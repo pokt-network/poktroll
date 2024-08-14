@@ -62,14 +62,14 @@ func NewTestSharedQueryClient(
 			func(
 				ctx context.Context,
 				sessionEndHeight int64,
-				supplierAddr string,
+				supplierOperatorAddr string,
 			) (int64, error) {
 				sharedParams := sharedtypes.DefaultParams()
 				return shared.GetEarliestSupplierClaimCommitHeight(
 					&sharedParams,
 					sessionEndHeight,
 					[]byte{},
-					supplierAddr,
+					supplierOperatorAddr,
 				), nil
 			},
 		).
@@ -81,14 +81,14 @@ func NewTestSharedQueryClient(
 			func(
 				ctx context.Context,
 				sessionEndHeight int64,
-				supplierAddr string,
+				supplierOperatorAddr string,
 			) (int64, error) {
 				sharedParams := sharedtypes.DefaultParams()
 				return shared.GetEarliestSupplierProofCommitHeight(
 					&sharedParams,
 					sessionEndHeight,
 					[]byte{},
-					supplierAddr,
+					supplierOperatorAddr,
 				), nil
 			},
 		).
