@@ -35,7 +35,7 @@ func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
 	_, err := srv.StakeSupplier(ctx, stakeMsg)
 	require.NoError(t, err)
 
-	// Verify that the supplier existsOperator
+	// Verify that the supplier exists
 	foundSupplier, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, unstakingSupplierOperatorAddr)
 	require.True(t, isSupplierFound)
 	require.Equal(t, unstakingSupplierOperatorAddr, foundSupplier.OperatorAddress)
