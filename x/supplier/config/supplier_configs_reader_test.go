@@ -3,6 +3,7 @@ package config_test
 import (
 	"context"
 	"fmt"
+	"slices"
 	"testing"
 
 	sdkerrors "cosmossdk.io/errors"
@@ -808,11 +809,14 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 				}
 
 				require.Equal(t, len(expectedService.RevShare), len(service.RevShare))
-				for revShareIdx, expectedRevShare := range expectedService.RevShare {
-					revShare := service.RevShare[revShareIdx]
+				for _, expectedRevShare := range expectedService.RevShare {
+					revShareIdx := slices.IndexFunc(service.RevShare, func(revShare *sharedtypes.ServiceRevenueShare) bool {
+						return revShare.Address == expectedRevShare.Address
+					})
+					require.NotEqual(t, -1, revShareIdx)
 
-					require.Equal(t, expectedRevShare.Address, revShare.Address)
-					require.Equal(t, expectedRevShare.RevSharePercentage, revShare.RevSharePercentage)
+					require.Equal(t, expectedRevShare.Address, service.RevShare[revShareIdx].Address)
+					require.Equal(t, expectedRevShare.RevSharePercentage, service.RevShare[revShareIdx].RevSharePercentage)
 				}
 			}
 		})
