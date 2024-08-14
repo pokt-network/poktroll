@@ -28,7 +28,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 					Configs: make([]*sharedtypes.ConfigOption, 0),
 				},
 			},
-			RevShare: []*sharedtypes.ServiceRevShare{
+			RevShare: []*sharedtypes.ServiceRevenueShare{
 				{
 					Address:            sample.AccAddress(),
 					RevSharePercentage: 100,
@@ -239,7 +239,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 								Configs: make([]*sharedtypes.ConfigOption, 0),
 							},
 						},
-						RevShare: []*sharedtypes.ServiceRevShare{
+						RevShare: []*sharedtypes.ServiceRevenueShare{
 							{
 								Address:            sample.AccAddress(),
 								RevSharePercentage: 100,
@@ -257,7 +257,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 								Configs: make([]*sharedtypes.ConfigOption, 0),
 							},
 						},
-						RevShare: []*sharedtypes.ServiceRevShare{
+						RevShare: []*sharedtypes.ServiceRevenueShare{
 							{
 								Address:            sample.AccAddress(),
 								RevSharePercentage: 100,
@@ -308,7 +308,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 								Configs: make([]*sharedtypes.ConfigOption, 0),
 							},
 						},
-						RevShare: []*sharedtypes.ServiceRevShare{
+						RevShare: []*sharedtypes.ServiceRevenueShare{
 							{
 								Address:            sample.AccAddress(),
 								RevSharePercentage: 100,
@@ -339,7 +339,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 								Configs: make([]*sharedtypes.ConfigOption, 0),
 							},
 						},
-						RevShare: []*sharedtypes.ServiceRevShare{
+						RevShare: []*sharedtypes.ServiceRevenueShare{
 							{
 								Address:            sample.AccAddress(),
 								RevSharePercentage: 100,
@@ -369,7 +369,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 								Configs: make([]*sharedtypes.ConfigOption, 0),
 							},
 						},
-						RevShare: []*sharedtypes.ServiceRevShare{
+						RevShare: []*sharedtypes.ServiceRevenueShare{
 							{
 								Address:            sample.AccAddress(),
 								RevSharePercentage: 100,
@@ -400,7 +400,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 								Configs: make([]*sharedtypes.ConfigOption, 0),
 							},
 						},
-						RevShare: []*sharedtypes.ServiceRevShare{
+						RevShare: []*sharedtypes.ServiceRevenueShare{
 							{
 								Address:            sample.AccAddress(),
 								RevSharePercentage: 100,
@@ -431,7 +431,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 								Configs: make([]*sharedtypes.ConfigOption, 0),
 							},
 						},
-						RevShare: []*sharedtypes.ServiceRevShare{
+						RevShare: []*sharedtypes.ServiceRevenueShare{
 							{
 								Address:            sample.AccAddress(),
 								RevSharePercentage: 100,
@@ -462,7 +462,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 								Configs: make([]*sharedtypes.ConfigOption, 0),
 							},
 						},
-						RevShare: []*sharedtypes.ServiceRevShare{
+						RevShare: []*sharedtypes.ServiceRevenueShare{
 							{
 								Address:            sample.AccAddress(),
 								RevSharePercentage: 100,
@@ -493,7 +493,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 								Configs: make([]*sharedtypes.ConfigOption, 0),
 							},
 						},
-						RevShare: []*sharedtypes.ServiceRevShare{},
+						RevShare: []*sharedtypes.ServiceRevenueShare{},
 					},
 				},
 			},

@@ -64,7 +64,7 @@ func TestProcessTokenLogicModules_HandleAppGoingIntoDebt(t *testing.T) {
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
 				Service: service,
-				RevShare: []*sharedtypes.ServiceRevShare{
+				RevShare: []*sharedtypes.ServiceRevenueShare{
 					{
 						Address:            supplierOwnerAddress,
 						RevSharePercentage: 100,
@@ -127,10 +127,10 @@ func TestProcessTokenLogicModules_ValidAccounting(t *testing.T) {
 	keepers.SetApplication(ctx, app)
 
 	shareRatios := []float32{12.5, 37.5, 50}
-	revShares := make([]*sharedtypes.ServiceRevShare, len(shareRatios))
+	revShares := make([]*sharedtypes.ServiceRevenueShare, len(shareRatios))
 	for i := range revShares {
 		shareHolderAddress := sample.AccAddress()
-		revShares[i] = &sharedtypes.ServiceRevShare{
+		revShares[i] = &sharedtypes.ServiceRevenueShare{
 			Address:            shareHolderAddress,
 			RevSharePercentage: shareRatios[i],
 		}
@@ -269,7 +269,7 @@ func TestProcessTokenLogicModules_AppStakeTooLow(t *testing.T) {
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
 				Service: service,
-				RevShare: []*sharedtypes.ServiceRevShare{
+				RevShare: []*sharedtypes.ServiceRevenueShare{
 					{
 						Address:            supplierOwnerAddress,
 						RevSharePercentage: 100,

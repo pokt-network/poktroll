@@ -67,7 +67,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 								},
 							},
 						},
-						RevShare: []*types.ServiceRevShare{
+						RevShare: []*types.ServiceRevenueShare{
 							{
 								Address:            ownerAddress,
 								RevSharePercentage: 100,
@@ -103,7 +103,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 								RpcType: types.RPCType_JSON_RPC,
 							},
 						},
-						RevShare: []*types.ServiceRevShare{
+						RevShare: []*types.ServiceRevenueShare{
 							{
 								Address:            ownerAddress,
 								RevSharePercentage: 100,
@@ -141,7 +141,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 								Configs: []*types.ConfigOption{},
 							},
 						},
-						RevShare: []*types.ServiceRevShare{
+						RevShare: []*types.ServiceRevenueShare{
 							{
 								Address:            ownerAddress,
 								RevSharePercentage: 100,
@@ -199,7 +199,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 								},
 							},
 						},
-						RevShare: []*types.ServiceRevShare{
+						RevShare: []*types.ServiceRevenueShare{
 							{
 								Address:            ownerAddress,
 								RevSharePercentage: 100,
@@ -249,7 +249,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 								},
 							},
 						},
-						RevShare: []*types.ServiceRevShare{
+						RevShare: []*types.ServiceRevenueShare{
 							{
 								Address:            ownerAddress,
 								RevSharePercentage: 100,
@@ -270,7 +270,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 								},
 							},
 						},
-						RevShare: []*types.ServiceRevShare{
+						RevShare: []*types.ServiceRevenueShare{
 							{
 								Address:            ownerAddress,
 								RevSharePercentage: 100,
@@ -318,7 +318,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 								RpcType: types.RPCType_JSON_RPC,
 							},
 						},
-						RevShare: []*types.ServiceRevShare{
+						RevShare: []*types.ServiceRevenueShare{
 							{
 								Address:            firstShareHolderAddress,
 								RevSharePercentage: 50.5,
@@ -337,7 +337,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 								RpcType: types.RPCType_JSON_RPC,
 							},
 						},
-						RevShare: []*types.ServiceRevShare{
+						RevShare: []*types.ServiceRevenueShare{
 							{
 								Address:            ownerAddress,
 								RevSharePercentage: 60,
@@ -385,7 +385,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 								},
 							},
 						},
-						RevShare: []*types.ServiceRevShare{
+						RevShare: []*types.ServiceRevenueShare{
 							{
 								Address:            ownerAddress,
 								RevSharePercentage: 100,
@@ -429,7 +429,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 								},
 							},
 						},
-						RevShare: []*types.ServiceRevShare{
+						RevShare: []*types.ServiceRevenueShare{
 							{
 								Address:            ownerAddress,
 								RevSharePercentage: 100,

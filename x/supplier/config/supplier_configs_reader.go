@@ -138,7 +138,7 @@ func ParseSupplierConfigs(ctx context.Context, configContent []byte) (*SupplierS
 		// Create a supplied service config with the serviceId
 		service := &sharedtypes.SupplierServiceConfig{
 			Service:   &sharedtypes.Service{Id: svc.ServiceId},
-			RevShare:  []*sharedtypes.ServiceRevShare{},
+			RevShare:  []*sharedtypes.ServiceRevenueShare{},
 			Endpoints: []*sharedtypes.SupplierEndpoint{},
 		}
 
@@ -158,7 +158,7 @@ func ParseSupplierConfigs(ctx context.Context, configContent []byte) (*SupplierS
 		}
 
 		for address, revSharePercent := range serviceConfigRevShare {
-			service.RevShare = append(service.RevShare, &sharedtypes.ServiceRevShare{
+			service.RevShare = append(service.RevShare, &sharedtypes.ServiceRevenueShare{
 				Address:            address,
 				RevSharePercentage: revSharePercent,
 			})

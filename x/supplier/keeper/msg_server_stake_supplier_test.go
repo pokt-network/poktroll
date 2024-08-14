@@ -346,7 +346,7 @@ func stakeSupplierForServicesMsg(
 					Configs: make([]*sharedtypes.ConfigOption, 0),
 				},
 			},
-			RevShare: []*sharedtypes.ServiceRevShare{
+			RevShare: []*sharedtypes.ServiceRevenueShare{
 				{
 					Address:            ownerAddr,
 					RevSharePercentage: 100,

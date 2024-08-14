@@ -1100,7 +1100,7 @@ func (x *_SupplierServiceConfig_2_list) IsValid() bool {
 var _ protoreflect.List = (*_SupplierServiceConfig_3_list)(nil)
 
 type _SupplierServiceConfig_3_list struct {
-	list *[]*ServiceRevShare
+	list *[]*ServiceRevenueShare
 }
 
 func (x *_SupplierServiceConfig_3_list) Len() int {
@@ -1116,18 +1116,18 @@ func (x *_SupplierServiceConfig_3_list) Get(i int) protoreflect.Value {
 
 func (x *_SupplierServiceConfig_3_list) Set(i int, value protoreflect.Value) {
 	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*ServiceRevShare)
+	concreteValue := valueUnwrapped.Interface().(*ServiceRevenueShare)
 	(*x.list)[i] = concreteValue
 }
 
 func (x *_SupplierServiceConfig_3_list) Append(value protoreflect.Value) {
 	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*ServiceRevShare)
+	concreteValue := valueUnwrapped.Interface().(*ServiceRevenueShare)
 	*x.list = append(*x.list, concreteValue)
 }
 
 func (x *_SupplierServiceConfig_3_list) AppendMutable() protoreflect.Value {
-	v := new(ServiceRevShare)
+	v := new(ServiceRevenueShare)
 	*x.list = append(*x.list, v)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
@@ -1140,7 +1140,7 @@ func (x *_SupplierServiceConfig_3_list) Truncate(n int) {
 }
 
 func (x *_SupplierServiceConfig_3_list) NewElement() protoreflect.Value {
-	v := new(ServiceRevShare)
+	v := new(ServiceRevenueShare)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
 
@@ -1383,7 +1383,7 @@ func (x *fastReflection_SupplierServiceConfig) Mutable(fd protoreflect.FieldDesc
 		return protoreflect.ValueOfList(value)
 	case "poktroll.shared.SupplierServiceConfig.rev_share":
 		if x.RevShare == nil {
-			x.RevShare = []*ServiceRevShare{}
+			x.RevShare = []*ServiceRevenueShare{}
 		}
 		value := &_SupplierServiceConfig_3_list{list: &x.RevShare}
 		return protoreflect.ValueOfList(value)
@@ -1407,7 +1407,7 @@ func (x *fastReflection_SupplierServiceConfig) NewField(fd protoreflect.FieldDes
 		list := []*SupplierEndpoint{}
 		return protoreflect.ValueOfList(&_SupplierServiceConfig_2_list{list: &list})
 	case "poktroll.shared.SupplierServiceConfig.rev_share":
-		list := []*ServiceRevShare{}
+		list := []*ServiceRevenueShare{}
 		return protoreflect.ValueOfList(&_SupplierServiceConfig_3_list{list: &list})
 	default:
 		if fd.IsExtension() {
@@ -1717,7 +1717,7 @@ func (x *fastReflection_SupplierServiceConfig) ProtoMethods() *protoiface.Method
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.RevShare = append(x.RevShare, &ServiceRevShare{})
+				x.RevShare = append(x.RevShare, &ServiceRevenueShare{})
 				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.RevShare[len(x.RevShare)-1]); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
@@ -2364,27 +2364,27 @@ func (x *fastReflection_SupplierEndpoint) ProtoMethods() *protoiface.Methods {
 }
 
 var (
-	md_ServiceRevShare                      protoreflect.MessageDescriptor
-	fd_ServiceRevShare_address              protoreflect.FieldDescriptor
-	fd_ServiceRevShare_rev_share_percentage protoreflect.FieldDescriptor
+	md_ServiceRevenueShare                      protoreflect.MessageDescriptor
+	fd_ServiceRevenueShare_address              protoreflect.FieldDescriptor
+	fd_ServiceRevenueShare_rev_share_percentage protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_poktroll_shared_service_proto_init()
-	md_ServiceRevShare = File_poktroll_shared_service_proto.Messages().ByName("ServiceRevShare")
-	fd_ServiceRevShare_address = md_ServiceRevShare.Fields().ByName("address")
-	fd_ServiceRevShare_rev_share_percentage = md_ServiceRevShare.Fields().ByName("rev_share_percentage")
+	md_ServiceRevenueShare = File_poktroll_shared_service_proto.Messages().ByName("ServiceRevenueShare")
+	fd_ServiceRevenueShare_address = md_ServiceRevenueShare.Fields().ByName("address")
+	fd_ServiceRevenueShare_rev_share_percentage = md_ServiceRevenueShare.Fields().ByName("rev_share_percentage")
 }
 
-var _ protoreflect.Message = (*fastReflection_ServiceRevShare)(nil)
+var _ protoreflect.Message = (*fastReflection_ServiceRevenueShare)(nil)
 
-type fastReflection_ServiceRevShare ServiceRevShare
+type fastReflection_ServiceRevenueShare ServiceRevenueShare
 
-func (x *ServiceRevShare) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_ServiceRevShare)(x)
+func (x *ServiceRevenueShare) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_ServiceRevenueShare)(x)
 }
 
-func (x *ServiceRevShare) slowProtoReflect() protoreflect.Message {
+func (x *ServiceRevenueShare) slowProtoReflect() protoreflect.Message {
 	mi := &file_poktroll_shared_service_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2396,43 +2396,43 @@ func (x *ServiceRevShare) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_ServiceRevShare_messageType fastReflection_ServiceRevShare_messageType
-var _ protoreflect.MessageType = fastReflection_ServiceRevShare_messageType{}
+var _fastReflection_ServiceRevenueShare_messageType fastReflection_ServiceRevenueShare_messageType
+var _ protoreflect.MessageType = fastReflection_ServiceRevenueShare_messageType{}
 
-type fastReflection_ServiceRevShare_messageType struct{}
+type fastReflection_ServiceRevenueShare_messageType struct{}
 
-func (x fastReflection_ServiceRevShare_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_ServiceRevShare)(nil)
+func (x fastReflection_ServiceRevenueShare_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_ServiceRevenueShare)(nil)
 }
-func (x fastReflection_ServiceRevShare_messageType) New() protoreflect.Message {
-	return new(fastReflection_ServiceRevShare)
+func (x fastReflection_ServiceRevenueShare_messageType) New() protoreflect.Message {
+	return new(fastReflection_ServiceRevenueShare)
 }
-func (x fastReflection_ServiceRevShare_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_ServiceRevShare
+func (x fastReflection_ServiceRevenueShare_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_ServiceRevenueShare
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_ServiceRevShare) Descriptor() protoreflect.MessageDescriptor {
-	return md_ServiceRevShare
+func (x *fastReflection_ServiceRevenueShare) Descriptor() protoreflect.MessageDescriptor {
+	return md_ServiceRevenueShare
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_ServiceRevShare) Type() protoreflect.MessageType {
-	return _fastReflection_ServiceRevShare_messageType
+func (x *fastReflection_ServiceRevenueShare) Type() protoreflect.MessageType {
+	return _fastReflection_ServiceRevenueShare_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_ServiceRevShare) New() protoreflect.Message {
-	return new(fastReflection_ServiceRevShare)
+func (x *fastReflection_ServiceRevenueShare) New() protoreflect.Message {
+	return new(fastReflection_ServiceRevenueShare)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_ServiceRevShare) Interface() protoreflect.ProtoMessage {
-	return (*ServiceRevShare)(x)
+func (x *fastReflection_ServiceRevenueShare) Interface() protoreflect.ProtoMessage {
+	return (*ServiceRevenueShare)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -2440,16 +2440,16 @@ func (x *fastReflection_ServiceRevShare) Interface() protoreflect.ProtoMessage {
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_ServiceRevShare) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_ServiceRevenueShare) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 	if x.Address != "" {
 		value := protoreflect.ValueOfString(x.Address)
-		if !f(fd_ServiceRevShare_address, value) {
+		if !f(fd_ServiceRevenueShare_address, value) {
 			return
 		}
 	}
 	if x.RevSharePercentage != float32(0) || math.Signbit(float64(x.RevSharePercentage)) {
 		value := protoreflect.ValueOfFloat32(x.RevSharePercentage)
-		if !f(fd_ServiceRevShare_rev_share_percentage, value) {
+		if !f(fd_ServiceRevenueShare_rev_share_percentage, value) {
 			return
 		}
 	}
@@ -2466,17 +2466,17 @@ func (x *fastReflection_ServiceRevShare) Range(f func(protoreflect.FieldDescript
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_ServiceRevShare) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_ServiceRevenueShare) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "poktroll.shared.ServiceRevShare.address":
+	case "poktroll.shared.ServiceRevenueShare.address":
 		return x.Address != ""
-	case "poktroll.shared.ServiceRevShare.rev_share_percentage":
+	case "poktroll.shared.ServiceRevenueShare.rev_share_percentage":
 		return x.RevSharePercentage != float32(0) || math.Signbit(float64(x.RevSharePercentage))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.ServiceRevShare"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.ServiceRevenueShare"))
 		}
-		panic(fmt.Errorf("message poktroll.shared.ServiceRevShare does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.shared.ServiceRevenueShare does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -2486,17 +2486,17 @@ func (x *fastReflection_ServiceRevShare) Has(fd protoreflect.FieldDescriptor) bo
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_ServiceRevShare) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_ServiceRevenueShare) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "poktroll.shared.ServiceRevShare.address":
+	case "poktroll.shared.ServiceRevenueShare.address":
 		x.Address = ""
-	case "poktroll.shared.ServiceRevShare.rev_share_percentage":
+	case "poktroll.shared.ServiceRevenueShare.rev_share_percentage":
 		x.RevSharePercentage = float32(0)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.ServiceRevShare"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.ServiceRevenueShare"))
 		}
-		panic(fmt.Errorf("message poktroll.shared.ServiceRevShare does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.shared.ServiceRevenueShare does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -2506,19 +2506,19 @@ func (x *fastReflection_ServiceRevShare) Clear(fd protoreflect.FieldDescriptor) 
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_ServiceRevShare) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_ServiceRevenueShare) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "poktroll.shared.ServiceRevShare.address":
+	case "poktroll.shared.ServiceRevenueShare.address":
 		value := x.Address
 		return protoreflect.ValueOfString(value)
-	case "poktroll.shared.ServiceRevShare.rev_share_percentage":
+	case "poktroll.shared.ServiceRevenueShare.rev_share_percentage":
 		value := x.RevSharePercentage
 		return protoreflect.ValueOfFloat32(value)
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.ServiceRevShare"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.ServiceRevenueShare"))
 		}
-		panic(fmt.Errorf("message poktroll.shared.ServiceRevShare does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message poktroll.shared.ServiceRevenueShare does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -2532,17 +2532,17 @@ func (x *fastReflection_ServiceRevShare) Get(descriptor protoreflect.FieldDescri
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_ServiceRevShare) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_ServiceRevenueShare) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "poktroll.shared.ServiceRevShare.address":
+	case "poktroll.shared.ServiceRevenueShare.address":
 		x.Address = value.Interface().(string)
-	case "poktroll.shared.ServiceRevShare.rev_share_percentage":
+	case "poktroll.shared.ServiceRevenueShare.rev_share_percentage":
 		x.RevSharePercentage = float32(value.Float())
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.ServiceRevShare"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.ServiceRevenueShare"))
 		}
-		panic(fmt.Errorf("message poktroll.shared.ServiceRevShare does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.shared.ServiceRevenueShare does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -2556,44 +2556,44 @@ func (x *fastReflection_ServiceRevShare) Set(fd protoreflect.FieldDescriptor, va
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_ServiceRevShare) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_ServiceRevenueShare) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.shared.ServiceRevShare.address":
-		panic(fmt.Errorf("field address of message poktroll.shared.ServiceRevShare is not mutable"))
-	case "poktroll.shared.ServiceRevShare.rev_share_percentage":
-		panic(fmt.Errorf("field rev_share_percentage of message poktroll.shared.ServiceRevShare is not mutable"))
+	case "poktroll.shared.ServiceRevenueShare.address":
+		panic(fmt.Errorf("field address of message poktroll.shared.ServiceRevenueShare is not mutable"))
+	case "poktroll.shared.ServiceRevenueShare.rev_share_percentage":
+		panic(fmt.Errorf("field rev_share_percentage of message poktroll.shared.ServiceRevenueShare is not mutable"))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.ServiceRevShare"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.ServiceRevenueShare"))
 		}
-		panic(fmt.Errorf("message poktroll.shared.ServiceRevShare does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.shared.ServiceRevenueShare does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_ServiceRevShare) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_ServiceRevenueShare) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.shared.ServiceRevShare.address":
+	case "poktroll.shared.ServiceRevenueShare.address":
 		return protoreflect.ValueOfString("")
-	case "poktroll.shared.ServiceRevShare.rev_share_percentage":
+	case "poktroll.shared.ServiceRevenueShare.rev_share_percentage":
 		return protoreflect.ValueOfFloat32(float32(0))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.ServiceRevShare"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.ServiceRevenueShare"))
 		}
-		panic(fmt.Errorf("message poktroll.shared.ServiceRevShare does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.shared.ServiceRevenueShare does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_ServiceRevShare) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_ServiceRevenueShare) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in poktroll.shared.ServiceRevShare", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in poktroll.shared.ServiceRevenueShare", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -2601,7 +2601,7 @@ func (x *fastReflection_ServiceRevShare) WhichOneof(d protoreflect.OneofDescript
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_ServiceRevShare) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_ServiceRevenueShare) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -2612,7 +2612,7 @@ func (x *fastReflection_ServiceRevShare) GetUnknown() protoreflect.RawFields {
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_ServiceRevShare) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_ServiceRevenueShare) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -2624,7 +2624,7 @@ func (x *fastReflection_ServiceRevShare) SetUnknown(fields protoreflect.RawField
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_ServiceRevShare) IsValid() bool {
+func (x *fastReflection_ServiceRevenueShare) IsValid() bool {
 	return x != nil
 }
 
@@ -2634,9 +2634,9 @@ func (x *fastReflection_ServiceRevShare) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_ServiceRevShare) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_ServiceRevenueShare) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*ServiceRevShare)
+		x := input.Message.Interface().(*ServiceRevenueShare)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2665,7 +2665,7 @@ func (x *fastReflection_ServiceRevShare) ProtoMethods() *protoiface.Methods {
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*ServiceRevShare)
+		x := input.Message.Interface().(*ServiceRevenueShare)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2708,7 +2708,7 @@ func (x *fastReflection_ServiceRevShare) ProtoMethods() *protoiface.Methods {
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*ServiceRevShare)
+		x := input.Message.Interface().(*ServiceRevenueShare)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2740,10 +2740,10 @@ func (x *fastReflection_ServiceRevShare) ProtoMethods() *protoiface.Methods {
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: ServiceRevShare: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: ServiceRevenueShare: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: ServiceRevShare: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: ServiceRevenueShare: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
@@ -3525,9 +3525,9 @@ type SupplierServiceConfig struct {
 	unknownFields protoimpl.UnknownFields
 
 	// TODO_MAINNET: Avoid embedding the full Service because we just need the ID.
-	Service   *Service            `protobuf:"bytes,1,opt,name=service,proto3" json:"service,omitempty"`                   // The Service for which the supplier is configured
-	Endpoints []*SupplierEndpoint `protobuf:"bytes,2,rep,name=endpoints,proto3" json:"endpoints,omitempty"`               // List of endpoints for the service
-	RevShare  []*ServiceRevShare  `protobuf:"bytes,3,rep,name=rev_share,json=revShare,proto3" json:"rev_share,omitempty"` // List of revenue share configurations for the service
+	Service   *Service               `protobuf:"bytes,1,opt,name=service,proto3" json:"service,omitempty"`                   // The Service for which the supplier is configured
+	Endpoints []*SupplierEndpoint    `protobuf:"bytes,2,rep,name=endpoints,proto3" json:"endpoints,omitempty"`               // List of endpoints for the service
+	RevShare  []*ServiceRevenueShare `protobuf:"bytes,3,rep,name=rev_share,json=revShare,proto3" json:"rev_share,omitempty"` // List of revenue share configurations for the service
 }
 
 func (x *SupplierServiceConfig) Reset() {
@@ -3564,7 +3564,7 @@ func (x *SupplierServiceConfig) GetEndpoints() []*SupplierEndpoint {
 	return nil
 }
 
-func (x *SupplierServiceConfig) GetRevShare() []*ServiceRevShare {
+func (x *SupplierServiceConfig) GetRevShare() []*ServiceRevenueShare {
 	if x != nil {
 		return x.RevShare
 	}
@@ -3623,8 +3623,8 @@ func (x *SupplierEndpoint) GetConfigs() []*ConfigOption {
 	return nil
 }
 
-// ServiceRevShare message to hold revenue share configuration details
-type ServiceRevShare struct {
+// ServiceRevenueShare message to hold revenue share configuration details
+type ServiceRevenueShare struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -3633,8 +3633,8 @@ type ServiceRevShare struct {
 	RevSharePercentage float32 `protobuf:"fixed32,2,opt,name=rev_share_percentage,json=revSharePercentage,proto3" json:"rev_share_percentage,omitempty"` // The percentage of revenue share the recipient will receive
 }
 
-func (x *ServiceRevShare) Reset() {
-	*x = ServiceRevShare{}
+func (x *ServiceRevenueShare) Reset() {
+	*x = ServiceRevenueShare{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_poktroll_shared_service_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -3642,25 +3642,25 @@ func (x *ServiceRevShare) Reset() {
 	}
 }
 
-func (x *ServiceRevShare) String() string {
+func (x *ServiceRevenueShare) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ServiceRevShare) ProtoMessage() {}
+func (*ServiceRevenueShare) ProtoMessage() {}
 
-// Deprecated: Use ServiceRevShare.ProtoReflect.Descriptor instead.
-func (*ServiceRevShare) Descriptor() ([]byte, []int) {
+// Deprecated: Use ServiceRevenueShare.ProtoReflect.Descriptor instead.
+func (*ServiceRevenueShare) Descriptor() ([]byte, []int) {
 	return file_poktroll_shared_service_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *ServiceRevShare) GetAddress() string {
+func (x *ServiceRevenueShare) GetAddress() string {
 	if x != nil {
 		return x.Address
 	}
 	return ""
 }
 
-func (x *ServiceRevShare) GetRevSharePercentage() float32 {
+func (x *ServiceRevenueShare) GetRevSharePercentage() float32 {
 	if x != nil {
 		return x.RevSharePercentage
 	}
@@ -3734,7 +3734,7 @@ var file_poktroll_shared_service_proto_rawDesc = []byte{
 	0x07, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x18,
 	0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64,
 	0x2e, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x52, 0x07, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63,
-	0x65, 0x22, 0xcb, 0x01, 0x0a, 0x15, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x53, 0x65,
+	0x65, 0x22, 0xcf, 0x01, 0x0a, 0x15, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x53, 0x65,
 	0x72, 0x76, 0x69, 0x63, 0x65, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x12, 0x32, 0x0a, 0x07, 0x73,
 	0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x18, 0x2e, 0x70,
 	0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2e, 0x53,
@@ -3743,52 +3743,52 @@ var file_poktroll_shared_service_proto_rawDesc = []byte{
 	0x28, 0x0b, 0x32, 0x21, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x68,
 	0x61, 0x72, 0x65, 0x64, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x45, 0x6e, 0x64,
 	0x70, 0x6f, 0x69, 0x6e, 0x74, 0x52, 0x09, 0x65, 0x6e, 0x64, 0x70, 0x6f, 0x69, 0x6e, 0x74, 0x73,
-	0x12, 0x3d, 0x0a, 0x09, 0x72, 0x65, 0x76, 0x5f, 0x73, 0x68, 0x61, 0x72, 0x65, 0x18, 0x03, 0x20,
-	0x03, 0x28, 0x0b, 0x32, 0x20, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73,
+	0x12, 0x41, 0x0a, 0x09, 0x72, 0x65, 0x76, 0x5f, 0x73, 0x68, 0x61, 0x72, 0x65, 0x18, 0x03, 0x20,
+	0x03, 0x28, 0x0b, 0x32, 0x24, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73,
 	0x68, 0x61, 0x72, 0x65, 0x64, 0x2e, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x52, 0x65, 0x76,
-	0x53, 0x68, 0x61, 0x72, 0x65, 0x52, 0x08, 0x72, 0x65, 0x76, 0x53, 0x68, 0x61, 0x72, 0x65, 0x22,
-	0x92, 0x01, 0x0a, 0x10, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x45, 0x6e, 0x64, 0x70,
-	0x6f, 0x69, 0x6e, 0x74, 0x12, 0x10, 0x0a, 0x03, 0x75, 0x72, 0x6c, 0x18, 0x01, 0x20, 0x01, 0x28,
-	0x09, 0x52, 0x03, 0x75, 0x72, 0x6c, 0x12, 0x33, 0x0a, 0x08, 0x72, 0x70, 0x63, 0x5f, 0x74, 0x79,
-	0x70, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x18, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72,
-	0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2e, 0x52, 0x50, 0x43, 0x54, 0x79,
-	0x70, 0x65, 0x52, 0x07, 0x72, 0x70, 0x63, 0x54, 0x79, 0x70, 0x65, 0x12, 0x37, 0x0a, 0x07, 0x63,
-	0x6f, 0x6e, 0x66, 0x69, 0x67, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x1d, 0x2e, 0x70,
-	0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2e, 0x43,
-	0x6f, 0x6e, 0x66, 0x69, 0x67, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x07, 0x63, 0x6f, 0x6e,
-	0x66, 0x69, 0x67, 0x73, 0x22, 0x77, 0x0a, 0x0f, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x52,
-	0x65, 0x76, 0x53, 0x68, 0x61, 0x72, 0x65, 0x12, 0x32, 0x0a, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65,
-	0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f,
-	0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69,
-	0x6e, 0x67, 0x52, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x30, 0x0a, 0x14, 0x72,
-	0x65, 0x76, 0x5f, 0x73, 0x68, 0x61, 0x72, 0x65, 0x5f, 0x70, 0x65, 0x72, 0x63, 0x65, 0x6e, 0x74,
-	0x61, 0x67, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x02, 0x52, 0x12, 0x72, 0x65, 0x76, 0x53, 0x68,
-	0x61, 0x72, 0x65, 0x50, 0x65, 0x72, 0x63, 0x65, 0x6e, 0x74, 0x61, 0x67, 0x65, 0x22, 0x56, 0x0a,
-	0x0c, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x30, 0x0a,
-	0x03, 0x6b, 0x65, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x1e, 0x2e, 0x70, 0x6f, 0x6b,
-	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2e, 0x43, 0x6f, 0x6e,
-	0x66, 0x69, 0x67, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x03, 0x6b, 0x65, 0x79, 0x12,
-	0x14, 0x0a, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05,
-	0x76, 0x61, 0x6c, 0x75, 0x65, 0x2a, 0x4b, 0x0a, 0x07, 0x52, 0x50, 0x43, 0x54, 0x79, 0x70, 0x65,
-	0x12, 0x0f, 0x0a, 0x0b, 0x55, 0x4e, 0x4b, 0x4e, 0x4f, 0x57, 0x4e, 0x5f, 0x52, 0x50, 0x43, 0x10,
-	0x00, 0x12, 0x08, 0x0a, 0x04, 0x47, 0x52, 0x50, 0x43, 0x10, 0x01, 0x12, 0x0d, 0x0a, 0x09, 0x57,
-	0x45, 0x42, 0x53, 0x4f, 0x43, 0x4b, 0x45, 0x54, 0x10, 0x02, 0x12, 0x0c, 0x0a, 0x08, 0x4a, 0x53,
-	0x4f, 0x4e, 0x5f, 0x52, 0x50, 0x43, 0x10, 0x03, 0x12, 0x08, 0x0a, 0x04, 0x52, 0x45, 0x53, 0x54,
-	0x10, 0x04, 0x2a, 0x30, 0x0a, 0x0d, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x4f, 0x70, 0x74, 0x69,
-	0x6f, 0x6e, 0x73, 0x12, 0x12, 0x0a, 0x0e, 0x55, 0x4e, 0x4b, 0x4e, 0x4f, 0x57, 0x4e, 0x5f, 0x43,
-	0x4f, 0x4e, 0x46, 0x49, 0x47, 0x10, 0x00, 0x12, 0x0b, 0x0a, 0x07, 0x54, 0x49, 0x4d, 0x45, 0x4f,
-	0x55, 0x54, 0x10, 0x01, 0x42, 0xa2, 0x01, 0x0a, 0x13, 0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x6b,
-	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x42, 0x0c, 0x53, 0x65,
-	0x72, 0x76, 0x69, 0x63, 0x65, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x20, 0x63, 0x6f,
-	0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70,
-	0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0xa2, 0x02,
-	0x03, 0x50, 0x53, 0x58, 0xaa, 0x02, 0x0f, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e,
-	0x53, 0x68, 0x61, 0x72, 0x65, 0x64, 0xca, 0x02, 0x0f, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c,
-	0x6c, 0x5c, 0x53, 0x68, 0x61, 0x72, 0x65, 0x64, 0xe2, 0x02, 0x1b, 0x50, 0x6f, 0x6b, 0x74, 0x72,
-	0x6f, 0x6c, 0x6c, 0x5c, 0x53, 0x68, 0x61, 0x72, 0x65, 0x64, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65,
-	0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x10, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c,
-	0x6c, 0x3a, 0x3a, 0x53, 0x68, 0x61, 0x72, 0x65, 0x64, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x33,
+	0x65, 0x6e, 0x75, 0x65, 0x53, 0x68, 0x61, 0x72, 0x65, 0x52, 0x08, 0x72, 0x65, 0x76, 0x53, 0x68,
+	0x61, 0x72, 0x65, 0x22, 0x92, 0x01, 0x0a, 0x10, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72,
+	0x45, 0x6e, 0x64, 0x70, 0x6f, 0x69, 0x6e, 0x74, 0x12, 0x10, 0x0a, 0x03, 0x75, 0x72, 0x6c, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x75, 0x72, 0x6c, 0x12, 0x33, 0x0a, 0x08, 0x72, 0x70,
+	0x63, 0x5f, 0x74, 0x79, 0x70, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x18, 0x2e, 0x70,
+	0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2e, 0x52,
+	0x50, 0x43, 0x54, 0x79, 0x70, 0x65, 0x52, 0x07, 0x72, 0x70, 0x63, 0x54, 0x79, 0x70, 0x65, 0x12,
+	0x37, 0x0a, 0x07, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0b,
+	0x32, 0x1d, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x68, 0x61, 0x72,
+	0x65, 0x64, 0x2e, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x52,
+	0x07, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x73, 0x22, 0x7b, 0x0a, 0x13, 0x53, 0x65, 0x72, 0x76,
+	0x69, 0x63, 0x65, 0x52, 0x65, 0x76, 0x65, 0x6e, 0x75, 0x65, 0x53, 0x68, 0x61, 0x72, 0x65, 0x12,
+	0x32, 0x0a, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
+	0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64,
+	0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x07, 0x61, 0x64, 0x64, 0x72,
+	0x65, 0x73, 0x73, 0x12, 0x30, 0x0a, 0x14, 0x72, 0x65, 0x76, 0x5f, 0x73, 0x68, 0x61, 0x72, 0x65,
+	0x5f, 0x70, 0x65, 0x72, 0x63, 0x65, 0x6e, 0x74, 0x61, 0x67, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28,
+	0x02, 0x52, 0x12, 0x72, 0x65, 0x76, 0x53, 0x68, 0x61, 0x72, 0x65, 0x50, 0x65, 0x72, 0x63, 0x65,
+	0x6e, 0x74, 0x61, 0x67, 0x65, 0x22, 0x56, 0x0a, 0x0c, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x4f,
+	0x70, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x30, 0x0a, 0x03, 0x6b, 0x65, 0x79, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x0e, 0x32, 0x1e, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x68,
+	0x61, 0x72, 0x65, 0x64, 0x2e, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x4f, 0x70, 0x74, 0x69, 0x6f,
+	0x6e, 0x73, 0x52, 0x03, 0x6b, 0x65, 0x79, 0x12, 0x14, 0x0a, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65,
+	0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x2a, 0x4b, 0x0a,
+	0x07, 0x52, 0x50, 0x43, 0x54, 0x79, 0x70, 0x65, 0x12, 0x0f, 0x0a, 0x0b, 0x55, 0x4e, 0x4b, 0x4e,
+	0x4f, 0x57, 0x4e, 0x5f, 0x52, 0x50, 0x43, 0x10, 0x00, 0x12, 0x08, 0x0a, 0x04, 0x47, 0x52, 0x50,
+	0x43, 0x10, 0x01, 0x12, 0x0d, 0x0a, 0x09, 0x57, 0x45, 0x42, 0x53, 0x4f, 0x43, 0x4b, 0x45, 0x54,
+	0x10, 0x02, 0x12, 0x0c, 0x0a, 0x08, 0x4a, 0x53, 0x4f, 0x4e, 0x5f, 0x52, 0x50, 0x43, 0x10, 0x03,
+	0x12, 0x08, 0x0a, 0x04, 0x52, 0x45, 0x53, 0x54, 0x10, 0x04, 0x2a, 0x30, 0x0a, 0x0d, 0x43, 0x6f,
+	0x6e, 0x66, 0x69, 0x67, 0x4f, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x12, 0x12, 0x0a, 0x0e, 0x55,
+	0x4e, 0x4b, 0x4e, 0x4f, 0x57, 0x4e, 0x5f, 0x43, 0x4f, 0x4e, 0x46, 0x49, 0x47, 0x10, 0x00, 0x12,
+	0x0b, 0x0a, 0x07, 0x54, 0x49, 0x4d, 0x45, 0x4f, 0x55, 0x54, 0x10, 0x01, 0x42, 0xa2, 0x01, 0x0a,
+	0x13, 0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x68,
+	0x61, 0x72, 0x65, 0x64, 0x42, 0x0c, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x50, 0x72, 0x6f,
+	0x74, 0x6f, 0x50, 0x01, 0x5a, 0x20, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e,
+	0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f,
+	0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0xa2, 0x02, 0x03, 0x50, 0x53, 0x58, 0xaa, 0x02, 0x0f, 0x50,
+	0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x53, 0x68, 0x61, 0x72, 0x65, 0x64, 0xca, 0x02,
+	0x0f, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x53, 0x68, 0x61, 0x72, 0x65, 0x64,
+	0xe2, 0x02, 0x1b, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x53, 0x68, 0x61, 0x72,
+	0x65, 0x64, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02,
+	0x10, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x3a, 0x3a, 0x53, 0x68, 0x61, 0x72, 0x65,
+	0x64, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -3812,14 +3812,14 @@ var file_poktroll_shared_service_proto_goTypes = []interface{}{
 	(*ApplicationServiceConfig)(nil), // 3: poktroll.shared.ApplicationServiceConfig
 	(*SupplierServiceConfig)(nil),    // 4: poktroll.shared.SupplierServiceConfig
 	(*SupplierEndpoint)(nil),         // 5: poktroll.shared.SupplierEndpoint
-	(*ServiceRevShare)(nil),          // 6: poktroll.shared.ServiceRevShare
+	(*ServiceRevenueShare)(nil),      // 6: poktroll.shared.ServiceRevenueShare
 	(*ConfigOption)(nil),             // 7: poktroll.shared.ConfigOption
 }
 var file_poktroll_shared_service_proto_depIdxs = []int32{
 	2, // 0: poktroll.shared.ApplicationServiceConfig.service:type_name -> poktroll.shared.Service
 	2, // 1: poktroll.shared.SupplierServiceConfig.service:type_name -> poktroll.shared.Service
 	5, // 2: poktroll.shared.SupplierServiceConfig.endpoints:type_name -> poktroll.shared.SupplierEndpoint
-	6, // 3: poktroll.shared.SupplierServiceConfig.rev_share:type_name -> poktroll.shared.ServiceRevShare
+	6, // 3: poktroll.shared.SupplierServiceConfig.rev_share:type_name -> poktroll.shared.ServiceRevenueShare
 	0, // 4: poktroll.shared.SupplierEndpoint.rpc_type:type_name -> poktroll.shared.RPCType
 	7, // 5: poktroll.shared.SupplierEndpoint.configs:type_name -> poktroll.shared.ConfigOption
 	1, // 6: poktroll.shared.ConfigOption.key:type_name -> poktroll.shared.ConfigOptions
@@ -3885,7 +3885,7 @@ func file_poktroll_shared_service_proto_init() {
 			}
 		}
 		file_poktroll_shared_service_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ServiceRevShare); i {
+			switch v := v.(*ServiceRevenueShare); i {
 			case 0:
 				return &v.state
 			case 1:

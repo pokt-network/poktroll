@@ -500,7 +500,7 @@ func (k Keeper) distributeSupplierRewardsToShareHolders(
 		)
 	}
 
-	var serviceRevShare []*sharedtypes.ServiceRevShare
+	var serviceRevShare []*sharedtypes.ServiceRevenueShare
 	for _, svc := range supplier.Services {
 		if svc.Service.Id == serviceId {
 			serviceRevShare = svc.RevShare
@@ -558,7 +558,7 @@ func calculateGlobalMintAllocationFromSettlementAmount(
 // The first shareholder gets any remainder due to floating point arithmetic.
 // It is publically exposed to be used in the tests.
 func GetShareAmountMap(
-	serviceRevShare []*sharedtypes.ServiceRevShare,
+	serviceRevShare []*sharedtypes.ServiceRevenueShare,
 	amountToDistribute uint64,
 ) (shareAmountMap map[string]uint64) {
 	totalDistributed := uint64(0)

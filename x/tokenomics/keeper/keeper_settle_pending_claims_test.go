@@ -103,7 +103,7 @@ func (s *TestSuite) SetupTest() {
 		Stake:           &supplierStake,
 		Services: []*sharedtypes.SupplierServiceConfig{{
 			Service: &service,
-			RevShare: []*sharedtypes.ServiceRevShare{{
+			RevShare: []*sharedtypes.ServiceRevenueShare{{
 				Address:            supplierOwnerAddr,
 				RevSharePercentage: 100,
 			}},

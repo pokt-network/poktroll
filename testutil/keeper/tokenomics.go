@@ -130,7 +130,7 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
 				Service: service,
-				RevShare: []*sharedtypes.ServiceRevShare{
+				RevShare: []*sharedtypes.ServiceRevenueShare{
 					{
 						Address:            supplierOwnerAddr,
 						RevSharePercentage: 100,

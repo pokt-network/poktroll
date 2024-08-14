@@ -26,7 +26,7 @@ func TestGenesisState_Validate(t *testing.T) {
 				Configs: make([]*sharedtypes.ConfigOption, 0),
 			},
 		},
-		RevShare: []*sharedtypes.ServiceRevShare{
+		RevShare: []*sharedtypes.ServiceRevenueShare{
 			{
 				Address:            addr1,
 				RevSharePercentage: 100,
@@ -48,7 +48,7 @@ func TestGenesisState_Validate(t *testing.T) {
 				Configs: make([]*sharedtypes.ConfigOption, 0),
 			},
 		},
-		RevShare: []*sharedtypes.ServiceRevShare{
+		RevShare: []*sharedtypes.ServiceRevenueShare{
 			{
 				Address:            addr2,
 				RevSharePercentage: 100,
@@ -294,7 +294,7 @@ func TestGenesisState_Validate(t *testing.T) {
 										Configs: make([]*sharedtypes.ConfigOption, 0),
 									},
 								},
-								RevShare: []*sharedtypes.ServiceRevShare{
+								RevShare: []*sharedtypes.ServiceRevenueShare{
 									{
 										Address:            addr2,
 										RevSharePercentage: 100,
@@ -333,7 +333,7 @@ func TestGenesisState_Validate(t *testing.T) {
 										Configs: make([]*sharedtypes.ConfigOption, 0),
 									},
 								},
-								RevShare: []*sharedtypes.ServiceRevShare{
+								RevShare: []*sharedtypes.ServiceRevenueShare{
 									{
 										Address:            addr2,
 										RevSharePercentage: 100,
