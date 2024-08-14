@@ -240,13 +240,6 @@ func (m *Supplier) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		copy(dAtA[i:], m.OwnerAddress)
 		i = encodeVarintSupplier(dAtA, i, uint64(len(m.OwnerAddress)))
 		i--
-		dAtA[i] = 0x12
-	}
-	if len(m.OwnerAddress) > 0 {
-		i -= len(m.OwnerAddress)
-		copy(dAtA[i:], m.OwnerAddress)
-		i = encodeVarintSupplier(dAtA, i, uint64(len(m.OwnerAddress)))
-		i--
 		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
@@ -368,7 +361,7 @@ func (m *Supplier) Unmarshal(dAtA []byte) error {
 			}
 			m.OwnerAddress = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 3:
+		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field OperatorAddress", wireType)
 			}

@@ -663,20 +663,6 @@ func (m *MsgStakeSupplier) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		copy(dAtA[i:], m.Signer)
 		i = encodeVarintTx(dAtA, i, uint64(len(m.Signer)))
 		i--
-		dAtA[i] = 0x1a
-	}
-	if len(m.OwnerAddress) > 0 {
-		i -= len(m.OwnerAddress)
-		copy(dAtA[i:], m.OwnerAddress)
-		i = encodeVarintTx(dAtA, i, uint64(len(m.OwnerAddress)))
-		i--
-		dAtA[i] = 0x12
-	}
-	if len(m.Signer) > 0 {
-		i -= len(m.Signer)
-		copy(dAtA[i:], m.Signer)
-		i = encodeVarintTx(dAtA, i, uint64(len(m.Signer)))
-		i--
 		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
@@ -729,13 +715,6 @@ func (m *MsgUnstakeSupplier) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.OperatorAddress)
 		copy(dAtA[i:], m.OperatorAddress)
 		i = encodeVarintTx(dAtA, i, uint64(len(m.OperatorAddress)))
-		i--
-		dAtA[i] = 0x12
-	}
-	if len(m.Signer) > 0 {
-		i -= len(m.Signer)
-		copy(dAtA[i:], m.Signer)
-		i = encodeVarintTx(dAtA, i, uint64(len(m.Signer)))
 		i--
 		dAtA[i] = 0x12
 	}
@@ -1105,7 +1084,7 @@ func (m *MsgStakeSupplier) Unmarshal(dAtA []byte) error {
 			}
 			m.Signer = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 4:
+		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field OwnerAddress", wireType)
 			}

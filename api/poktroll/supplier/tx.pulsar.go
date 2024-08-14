@@ -1386,20 +1386,6 @@ func (x *fastReflection_MsgStakeSupplier) ProtoMethods() *protoiface.Methods {
 			copy(dAtA[i:], x.Signer)
 			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Signer)))
 			i--
-			dAtA[i] = 0x1a
-		}
-		if len(x.OwnerAddress) > 0 {
-			i -= len(x.OwnerAddress)
-			copy(dAtA[i:], x.OwnerAddress)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.OwnerAddress)))
-			i--
-			dAtA[i] = 0x12
-		}
-		if len(x.Signer) > 0 {
-			i -= len(x.Signer)
-			copy(dAtA[i:], x.Signer)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Signer)))
-			i--
 			dAtA[i] = 0xa
 		}
 		if input.Buf != nil {
@@ -1483,7 +1469,7 @@ func (x *fastReflection_MsgStakeSupplier) ProtoMethods() *protoiface.Methods {
 				}
 				x.Signer = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
-			case 4:
+			case 2:
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field OwnerAddress", wireType)
 				}
@@ -2334,13 +2320,6 @@ func (x *fastReflection_MsgUnstakeSupplier) ProtoMethods() *protoiface.Methods {
 			i -= len(x.OperatorAddress)
 			copy(dAtA[i:], x.OperatorAddress)
 			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.OperatorAddress)))
-			i--
-			dAtA[i] = 0x12
-		}
-		if len(x.Signer) > 0 {
-			i -= len(x.Signer)
-			copy(dAtA[i:], x.Signer)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Signer)))
 			i--
 			dAtA[i] = 0x12
 		}
