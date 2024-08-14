@@ -27,13 +27,13 @@ func (sync *synchronousRPCServer) newRelayRequest(request *http.Request) (*types
 }
 
 // newRelayResponse builds a RelayResponse from the serialized response and SessionHeader.
-// It also signs the RelayResponse and assigns it to RelayResponse.Meta.SupplierSignature.
+// It also signs the RelayResponse and assigns it to RelayResponse.Meta.SupplierOperatorSignature.
 // The whole serialized response (i.e. status code, headers and body) is embedded
 // into the RelayResponse.
 func (sync *synchronousRPCServer) newRelayResponse(
 	responseBz []byte,
 	sessionHeader *sessiontypes.SessionHeader,
-	supplierAddr string,
+	supplierOperatorAddr string,
 ) (*types.RelayResponse, error) {
 	relayResponse := &types.RelayResponse{
 		Meta:    types.RelayResponseMetadata{SessionHeader: sessionHeader},
@@ -41,7 +41,7 @@ func (sync *synchronousRPCServer) newRelayResponse(
 	}
 
 	// Sign the relay response and add the signature to the relay response metadata
-	if err := sync.relayerProxy.SignRelayResponse(relayResponse, supplierAddr); err != nil {
+	if err := sync.relayerProxy.SignRelayResponse(relayResponse, supplierOperatorAddr); err != nil {
 		return nil, err
 	}
 

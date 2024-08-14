@@ -8,6 +8,7 @@ import (
 
 	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/shared"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
@@ -31,16 +32,27 @@ func (k msgServer) UnstakeSupplier(
 	}
 
 	// Check if the supplier already exists or not
-	supplier, isSupplierFound := k.GetSupplier(ctx, msg.Address)
+	supplier, isSupplierFound := k.GetSupplier(ctx, msg.OperatorAddress)
 	if !isSupplierFound {
-		logger.Info(fmt.Sprintf("Supplier not found. Cannot unstake address %s", msg.Address))
+		logger.Info(fmt.Sprintf("Supplier not found. Cannot unstake address %s", msg.OperatorAddress))
 		return nil, types.ErrSupplierNotFound
 	}
-	logger.Info(fmt.Sprintf("Supplier found. Unstaking supplier for address %s", msg.Address))
+
+	// Ensure the singer address matches the owner address or the operator address.
+	if !supplier.HasOperator(msg.Signer) && !supplier.HasOwner(msg.Signer) {
+		logger.Error("only the supplier owner or operator is allowed to unstake the supplier")
+		return nil, sharedtypes.ErrSharedUnauthorizedSupplierUpdate.Wrapf(
+			"signer %q is not allowed to unstake supplier %v",
+			msg.Signer,
+			supplier,
+		)
+	}
+
+	logger.Info(fmt.Sprintf("Supplier found. Unstaking supplier for address %s", msg.OperatorAddress))
 
 	// Check if the supplier has already initiated the unstake action.
 	if supplier.IsUnbonding() {
-		logger.Warn(fmt.Sprintf("Supplier %s still unbonding from previous unstaking", msg.Address))
+		logger.Warn(fmt.Sprintf("Supplier %s still unbonding from previous unstaking", msg.OperatorAddress))
 		return nil, types.ErrSupplierIsUnstaking
 	}
 

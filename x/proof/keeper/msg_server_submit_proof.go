@@ -66,33 +66,33 @@ func (k msgServer) SubmitProof(
 	logger.Info("validated the submitProof message")
 
 	// Compare msg session header w/ on-chain session header.
-	session, err := k.queryAndValidateSessionHeader(ctx, msg.GetSessionHeader(), msg.GetSupplierAddress())
+	session, err := k.queryAndValidateSessionHeader(ctx, msg.GetSessionHeader(), msg.GetSupplierOperatorAddress())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	// Construct the proof
 	proof := types.Proof{
-		SupplierAddress:    msg.GetSupplierAddress(),
-		SessionHeader:      session.GetHeader(),
-		ClosestMerkleProof: msg.GetProof(),
+		SupplierOperatorAddress: msg.GetSupplierOperatorAddress(),
+		SessionHeader:           session.GetHeader(),
+		ClosestMerkleProof:      msg.GetProof(),
 	}
 
 	// Helpers for logging the same metadata throughout this function calls
 	logger = logger.With(
 		"session_id", proof.SessionHeader.SessionId,
 		"session_end_height", proof.SessionHeader.SessionEndBlockHeight,
-		"supplier", proof.SupplierAddress)
+		"supplier_operator_address", proof.SupplierOperatorAddress)
 
 	// Validate proof message commit height is within the respective session's
 	// proof submission window using the on-chain session header.
-	if err = k.validateProofWindow(ctx, proof.SessionHeader, proof.SupplierAddress); err != nil {
+	if err = k.validateProofWindow(ctx, proof.SessionHeader, proof.SupplierOperatorAddress); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 
 	// Retrieve the corresponding claim for the proof submitted so it can be
 	// used in the proof validation below.
-	claim, err = k.queryAndValidateClaimForProof(ctx, proof.SessionHeader, proof.SupplierAddress)
+	claim, err = k.queryAndValidateClaimForProof(ctx, proof.SessionHeader, proof.SupplierOperatorAddress)
 	if err != nil {
 		return nil, status.Error(codes.Internal, types.ErrProofClaimNotFound.Wrap(err.Error()).Error())
 	}
@@ -106,7 +106,7 @@ func (k msgServer) SubmitProof(
 	if err != nil {
 		return nil, status.Error(codes.Internal, types.ErrProofInvalidClaimRootHash.Wrap(err.Error()).Error())
 	}
-	_, isExistingProof = k.GetProof(ctx, proof.SessionHeader.SessionId, proof.SupplierAddress)
+	_, isExistingProof = k.GetProof(ctx, proof.SessionHeader.SessionId, proof.SupplierOperatorAddress)
 
 	// Upsert the proof
 	k.UpsertProof(ctx, proof)

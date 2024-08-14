@@ -68,7 +68,7 @@ func AddToExistingSessions(
 	appAddress string,
 	serviceId string,
 	blockHeight int64,
-	suppliersAddress []string,
+	supplierOperatorAddresses []string,
 ) {
 	t.Helper()
 
@@ -88,8 +88,11 @@ func AddToExistingSessions(
 		Suppliers:           []*sharedtypes.Supplier{},
 	}
 
-	for _, supplierAddress := range suppliersAddress {
-		supplier := &sharedtypes.Supplier{Address: supplierAddress}
+	for _, supplierOperatorAddress := range supplierOperatorAddresses {
+		supplier := &sharedtypes.Supplier{
+			OwnerAddress:    supplierOperatorAddress,
+			OperatorAddress: supplierOperatorAddress,
+		}
 		session.Suppliers = append(session.Suppliers, supplier)
 	}
 

@@ -30,10 +30,10 @@ type sessionTree struct {
 	// sessionSMT is the SMST (Sparse Merkle State Trie) corresponding the session.
 	sessionSMT smt.SparseMerkleSumTrie
 
-	// supplierAddress is the address of the supplier that owns this sessionTree.
-	// RelayMiner can run suppliers for many supplier addresses at the same time,
-	// and we need a way to group the session trees by the supplier address for that.
-	supplierAddress *cosmostypes.AccAddress
+	// supplierOperatorAddress is the address of the supplier's operator that owns this sessionTree.
+	// RelayMiner can run suppliers for many supplier operator addresses at the same time,
+	// and we need a way to group the session trees by the supplier operator address for that.
+	supplierOperatorAddress *cosmostypes.AccAddress
 
 	// claimedRoot is the root hash of the SMST needed for submitting the claim.
 	// If it holds a non-nil value, it means that the SMST has been flushed,
@@ -67,12 +67,12 @@ type sessionTree struct {
 // It returns an error if the KVStore fails to be created.
 func NewSessionTree(
 	sessionHeader *sessiontypes.SessionHeader,
-	supplierAddress *cosmostypes.AccAddress,
+	supplierOperatorAddress *cosmostypes.AccAddress,
 	storesDirectory string,
 ) (relayer.SessionTree, error) {
-	// Join the storePrefix and the session.sessionId and supplier address to
+	// Join the storePrefix and the session.sessionId and supplier's operator address to
 	// create a unique storePath.
-	storePath := filepath.Join(storesDirectory, supplierAddress.String(), sessionHeader.SessionId)
+	storePath := filepath.Join(storesDirectory, supplierOperatorAddress.String(), sessionHeader.SessionId)
 
 	// Make sure storePath does not exist when creating a new SessionTree
 	if _, err := os.Stat(storePath); err != nil && !os.IsNotExist(err) {
@@ -89,12 +89,12 @@ func NewSessionTree(
 	trie := smt.NewSparseMerkleSumTrie(treeStore, protocol.NewTrieHasher(), smt.WithValueHasher(nil))
 
 	sessionTree := &sessionTree{
-		sessionHeader:   sessionHeader,
-		storePath:       storePath,
-		treeStore:       treeStore,
-		sessionSMT:      trie,
-		sessionMu:       &sync.Mutex{},
-		supplierAddress: supplierAddress,
+		sessionHeader:           sessionHeader,
+		storePath:               storePath,
+		treeStore:               treeStore,
+		sessionSMT:              trie,
+		sessionMu:               &sync.Mutex{},
+		supplierOperatorAddress: supplierOperatorAddress,
 	}
 
 	return sessionTree, nil
@@ -267,7 +267,7 @@ func (st *sessionTree) StartClaiming() error {
 	return nil
 }
 
-// SupplierAddress returns a CosmosSDK address of the supplier this sessionTree belongs to.
-func (st *sessionTree) GetSupplierAddress() *cosmostypes.AccAddress {
-	return st.supplierAddress
+// GetSupplierOperatorAddress returns a CosmosSDK address of the supplier this sessionTree belongs to.
+func (st *sessionTree) GetSupplierOperatorAddress() *cosmostypes.AccAddress {
+	return st.supplierOperatorAddress
 }

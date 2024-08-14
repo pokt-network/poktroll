@@ -49,13 +49,13 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 		&sharedParams,
 		sessionEndHeight,
 		claimWindowOpenBlockHash,
-		integrationApp.DefaultSupplier.GetAddress(),
+		integrationApp.DefaultSupplier.GetOperatorAddress(),
 	)
 	earliestSupplierProofCommitHeight := shared.GetEarliestSupplierProofCommitHeight(
 		&sharedParams,
 		sessionEndHeight,
 		proofWindowOpenBlockHash,
-		integrationApp.DefaultSupplier.GetAddress(),
+		integrationApp.DefaultSupplier.GetOperatorAddress(),
 	)
 	proofWindowCloseHeight := shared.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
 
@@ -67,9 +67,9 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 
 	// Construct a new create claim message and commit it.
 	createClaimMsg := prooftypes.MsgCreateClaim{
-		SupplierAddress: integrationApp.DefaultSupplier.Address,
-		SessionHeader:   session.Header,
-		RootHash:        trie.Root(),
+		SupplierOperatorAddress: integrationApp.DefaultSupplier.OperatorAddress,
+		SessionHeader:           session.Header,
+		RootHash:                trie.Root(),
 	}
 	result := integrationApp.RunMsg(t,
 		&createClaimMsg,
@@ -86,9 +86,9 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 
 	// Construct a new proof message and commit it
 	createProofMsg := prooftypes.MsgSubmitProof{
-		SupplierAddress: integrationApp.DefaultSupplier.Address,
-		SessionHeader:   session.Header,
-		Proof:           getProof(t, trie, proofPathSeedBlockHash, session.GetHeader().GetSessionId()),
+		SupplierOperatorAddress: integrationApp.DefaultSupplier.OperatorAddress,
+		SessionHeader:           session.Header,
+		Proof:                   getProof(t, trie, proofPathSeedBlockHash, session.GetHeader().GetSessionId()),
 	}
 	result = integrationApp.RunMsg(t,
 		&createProofMsg,
@@ -186,7 +186,7 @@ func prepareSMST(
 	minedRelay := testrelayer.NewSignedMinedRelay(t, ctx,
 		session,
 		integrationApp.DefaultApplication.Address,
-		integrationApp.DefaultSupplier.Address,
+		integrationApp.DefaultSupplier.OperatorAddress,
 		integrationApp.DefaultSupplierKeyringKeyringUid,
 		integrationApp.GetKeyRing(),
 		integrationApp.GetRingClient(),

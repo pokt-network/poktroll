@@ -130,10 +130,10 @@ func (k Keeper) ProcessTokenLogicModules(
 		return tokenomicstypes.ErrTokenomicsSessionHeaderInvalid
 	}
 
-	// Retrieve the supplier address that will be getting rewarded; providing services
-	supplierAddr, err := cosmostypes.AccAddressFromBech32(claim.GetSupplierAddress())
-	if err != nil || supplierAddr == nil {
-		return tokenomicstypes.ErrTokenomicsSupplierAddressInvalid
+	// Retrieve the supplier operator address that will be getting rewarded; providing services
+	supplierOperatorAddr, err := cosmostypes.AccAddressFromBech32(claim.GetSupplierOperatorAddress())
+	if err != nil || supplierOperatorAddr == nil {
+		return tokenomicstypes.ErrTokenomicsSupplierOperatorAddressInvalid
 	}
 
 	// Retrieve the application address that is being charged; getting services
@@ -161,9 +161,9 @@ func (k Keeper) ProcessTokenLogicModules(
 	}
 
 	// Retrieve the on-chain staked supplier record
-	supplier, isSupplierFound := k.supplierKeeper.GetSupplier(ctx, supplierAddr.String())
+	supplier, isSupplierFound := k.supplierKeeper.GetSupplier(ctx, supplierOperatorAddr.String())
 	if !isSupplierFound {
-		logger.Warn(fmt.Sprintf("supplier for claim with address %q not found", supplierAddr))
+		logger.Warn(fmt.Sprintf("supplier for claim with address %q not found", supplierOperatorAddr))
 		return tokenomicstypes.ErrTokenomicsSupplierNotFound
 	}
 
@@ -214,7 +214,7 @@ func (k Keeper) ProcessTokenLogicModules(
 		"num_settlement_upokt", settlementCoin.Amount,
 		"session_id", sessionHeader.GetSessionId(),
 		"service_id", sessionHeader.GetService().Id,
-		"supplier", supplier.Address,
+		"supplier_operator", supplier.OperatorAddress,
 		"application", application.Address,
 	)
 	logger.Info(fmt.Sprintf("About to start processing TLMs for (%d) relays equaling to (%s) coins", numRelays, settlementCoin))
@@ -234,7 +234,7 @@ func (k Keeper) ProcessTokenLogicModules(
 
 	// Update the suppliers's on-chain record
 	k.supplierKeeper.SetSupplier(ctx, supplier)
-	logger.Info(fmt.Sprintf("updated on-chain supplier record with address %q", supplier.Address))
+	logger.Info(fmt.Sprintf("updated on-chain supplier record with address %q", supplier.OperatorAddress))
 
 	// Update isSuccessful to true for telemetry
 	isSuccessful = true
@@ -252,7 +252,7 @@ func (k Keeper) TokenLogicModuleRelayBurnEqualsMint(
 ) error {
 	logger := k.Logger().With("method", "TokenLogicModuleRelayBurnEqualsMint")
 
-	supplierAddr, err := cosmostypes.AccAddressFromBech32(supplier.Address)
+	ownerAddr, err := cosmostypes.AccAddressFromBech32(supplier.OwnerAddress)
 	if err != nil {
 		return err
 	}
@@ -278,16 +278,16 @@ func (k Keeper) TokenLogicModuleRelayBurnEqualsMint(
 	// Send the newley minted uPOKT from the supplier module account
 	// to the supplier's account.
 	if err = k.bankKeeper.SendCoinsFromModuleToAccount(
-		ctx, suppliertypes.ModuleName, supplierAddr, sdk.NewCoins(settlementCoins),
+		ctx, suppliertypes.ModuleName, ownerAddr, sdk.NewCoins(settlementCoins),
 	); err != nil {
 		return tokenomicstypes.ErrTokenomicsSupplierModuleSendFailed.Wrapf(
-			"sending (%s) to supplier with address %s: %v",
+			"sending (%s) to supplier with operator address %s: %v",
 			settlementCoins,
-			supplier.Address,
+			supplier.OperatorAddress,
 			err,
 		)
 	}
-	logger.Info(fmt.Sprintf("sent (%v) from the supplier module to the supplier account with address %q", settlementCoins, supplier.Address))
+	logger.Info(fmt.Sprintf("sent (%v) from the supplier module to the supplier account with operator address %q", settlementCoins, supplier.OperatorAddress))
 
 	// TODO_MAINNET: Decide on the behaviour here when an app is over serviced.
 	// If an app has 10 POKT staked, but the supplier earned 20 POKT. We still
@@ -357,11 +357,11 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the application with address %q", appCoins, application.Address))
 
 	// Send a portion of the rewards to the supplier
-	supplierCoins, err := k.sendRewardsToAccount(ctx, supplier.Address, newMintAmtFloat, MintAllocationSupplier)
+	supplierCoins, err := k.sendRewardsToAccount(ctx, supplier.OwnerAddress, newMintAmtFloat, MintAllocationSupplier)
 	if err != nil {
 		return tokenomictypes.ErrTokenomicsSendingMindRewards.Wrapf("sending rewards to supplier: %v", err)
 	}
-	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the supplier with address %q", supplierCoins, supplier.Address))
+	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the supplier with operator address %q", supplierCoins, supplier.OperatorAddress))
 
 	// Send a portion of the rewards to the DAO
 	daoCoins, err := k.sendRewardsToAccount(ctx, k.GetAuthority(), newMintAmtFloat, MintAllocationDAO)

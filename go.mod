@@ -57,7 +57,7 @@ require (
 	// This is creating a circular dependency whereby exporting the protobufs into a separate
 	// repo is the first obvious idea, but has to be carefully considered, automated, and is not
 	// a hard blocker.
-	github.com/pokt-network/shannon-sdk v0.0.0-20240628223057-7d2928722749
+	github.com/pokt-network/shannon-sdk v0.0.0-20240806142441-c21a52c209b5
 	github.com/pokt-network/smt v0.12.0
 	github.com/prometheus/client_golang v1.19.0
 	github.com/regen-network/gocuke v1.1.0

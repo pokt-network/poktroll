@@ -1,20 +1,25 @@
 package config
 
 import (
+	"context"
 	"net/url"
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gopkg.in/yaml.v2"
 
+	"github.com/pokt-network/poktroll/pkg/polylog"
+	_ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	sharedhelpers "github.com/pokt-network/poktroll/x/shared/helpers"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // YAMLStakeConfig is the structure describing the supplier stake config file.
 type YAMLStakeConfig struct {
-	StakeAmount string              `yaml:"stake_amount"`
-	Services    []*YAMLStakeService `yaml:"services"`
+	OwnerAddress    string              `yaml:"owner_address"`
+	OperatorAddress string              `yaml:"operator_address"`
+	StakeAmount     string              `yaml:"stake_amount"`
+	Services        []*YAMLStakeService `yaml:"services"`
 }
 
 // YAMLStakeService is the structure describing a single service entry in the
@@ -34,13 +39,17 @@ type YAMLServiceEndpoint struct {
 
 // SupplierStakeConfig is the structure describing the parsed supplier stake config.
 type SupplierStakeConfig struct {
-	StakeAmount sdk.Coin
-	Services    []*sharedtypes.SupplierServiceConfig
+	OwnerAddress    string
+	OperatorAddress string
+	StakeAmount     sdk.Coin
+	Services        []*sharedtypes.SupplierServiceConfig
 }
 
 // ParseSupplierServiceConfig parses the stake config file into a SupplierServiceConfig.
-func ParseSupplierConfigs(configContent []byte) (*SupplierStakeConfig, error) {
+func ParseSupplierConfigs(ctx context.Context, configContent []byte) (*SupplierStakeConfig, error) {
 	var stakeConfig *YAMLStakeConfig
+
+	logger := polylog.Ctx(ctx)
 
 	if len(configContent) == 0 {
 		return nil, ErrSupplierConfigEmptyContent
@@ -49,6 +58,22 @@ func ParseSupplierConfigs(configContent []byte) (*SupplierStakeConfig, error) {
 	// Unmarshal the stake config file into a stakeConfig
 	if err := yaml.Unmarshal(configContent, &stakeConfig); err != nil {
 		return nil, ErrSupplierConfigUnmarshalYAML.Wrapf("%s", err)
+	}
+
+	// Validate required owner address.
+	if _, err := sdk.AccAddressFromBech32(stakeConfig.OwnerAddress); err != nil {
+		return nil, ErrSupplierConfigInvalidOwnerAddress.Wrap("invalid owner address")
+	}
+
+	// If the operator address is not set, default it to the owner address.
+	if stakeConfig.OperatorAddress == "" {
+		stakeConfig.OperatorAddress = stakeConfig.OwnerAddress
+		logger.Info().Msg("operator address not set, defaulting to owner address")
+	}
+
+	// Validate operator address.
+	if _, err := sdk.AccAddressFromBech32(stakeConfig.OperatorAddress); err != nil {
+		return nil, ErrSupplierConfigInvalidOperatorAddress.Wrap("invalid operator address")
 	}
 
 	// Validate the stake amount
@@ -113,8 +138,10 @@ func ParseSupplierConfigs(configContent []byte) (*SupplierStakeConfig, error) {
 	}
 
 	return &SupplierStakeConfig{
-		StakeAmount: stakeAmount,
-		Services:    supplierServiceConfig,
+		OwnerAddress:    stakeConfig.OwnerAddress,
+		OperatorAddress: stakeConfig.OperatorAddress,
+		StakeAmount:     stakeAmount,
+		Services:        supplierServiceConfig,
 	}, nil
 }
 

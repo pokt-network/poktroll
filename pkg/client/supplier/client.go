@@ -17,7 +17,10 @@ var _ client.SupplierClient = (*supplierClient)(nil)
 
 // supplierClient
 type supplierClient struct {
+	// signingKeyName is the name of the operator key in the keyring that will be
+	// used to sign transactions.
 	signingKeyName string
+	// signingKeyAddr is the account address of the operator key in the keyring.
 	signingKeyAddr cosmostypes.AccAddress
 
 	// pendingTxMu is used to prevent concurrent txs with the same sequence number.
@@ -94,10 +97,10 @@ func (sClient *supplierClient) SubmitProofs(
 		// TODO_IMPROVE: log details related to what & how much is being proven
 		logger.Info().
 			Fields(map[string]any{
-				"supplier_addr": proofMsg.SupplierAddress,
-				"app_addr":      sessionHeader.ApplicationAddress,
-				"session_id":    sessionHeader.SessionId,
-				"service":       sessionHeader.Service.Id,
+				"supplier_operator_addr": proofMsg.SupplierOperatorAddress,
+				"app_addr":               sessionHeader.ApplicationAddress,
+				"session_id":             sessionHeader.SessionId,
+				"service":                sessionHeader.Service.Id,
 			}).
 			Msg("submitted a new proof")
 	}
@@ -140,10 +143,10 @@ func (sClient *supplierClient) CreateClaims(
 		// TODO_IMPROVE: log details related to how much is claimed
 		logger.Info().
 			Fields(map[string]any{
-				"supplier_addr": claimMsg.SupplierAddress,
-				"app_addr":      sessionHeader.ApplicationAddress,
-				"session_id":    sessionHeader.SessionId,
-				"service":       sessionHeader.Service.Id,
+				"supplier_operator_addr": claimMsg.SupplierOperatorAddress,
+				"app_addr":               sessionHeader.ApplicationAddress,
+				"session_id":             sessionHeader.SessionId,
+				"service":                sessionHeader.Service.Id,
 			}).
 			Msg("created a new claim")
 	}
@@ -152,7 +155,7 @@ func (sClient *supplierClient) CreateClaims(
 }
 
 // Address returns an address of the supplier client.
-func (sClient *supplierClient) Address() *cosmostypes.AccAddress {
+func (sClient *supplierClient) OperatorAddress() *cosmostypes.AccAddress {
 	return &sClient.signingKeyAddr
 }
 
