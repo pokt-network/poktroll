@@ -13,7 +13,6 @@ import (
 	"github.com/pokt-network/poktroll/x/shared/helpers"
 	sharedhelpers "github.com/pokt-network/poktroll/x/shared/helpers"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 // YAMLStakeConfig is the structure describing the supplier stake config file.
@@ -49,19 +48,6 @@ type SupplierStakeConfig struct {
 	Services        []*sharedtypes.SupplierServiceConfig
 }
 
-// EnsureOwner ensures that the config owner address matches the provided address.
-func (cfg *SupplierStakeConfig) EnsureOwner(ownerAddress string) error {
-	if cfg.OwnerAddress != ownerAddress {
-		return types.ErrSupplierInvalidAddress.Wrapf(
-			"owner address %q in the stake config file does not match the address provided %q",
-			cfg.OperatorAddress,
-			ownerAddress,
-		)
-	}
-
-	return nil
-}
-
 // ParseSupplierServiceConfig parses the stake config file into a SupplierServiceConfig.
 func ParseSupplierConfigs(ctx context.Context, configContent []byte) (*SupplierStakeConfig, error) {
 	var stakeConfig *YAMLStakeConfig
@@ -79,7 +65,7 @@ func ParseSupplierConfigs(ctx context.Context, configContent []byte) (*SupplierS
 
 	// Validate required owner address.
 	if _, err := sdk.AccAddressFromBech32(stakeConfig.OwnerAddress); err != nil {
-		return nil, ErrSupplierConfigInvalidAddress.Wrap("invalid owner address")
+		return nil, ErrSupplierConfigInvalidOwnerAddress.Wrap("invalid owner address")
 	}
 
 	// If the operator address is not set, default it to the owner address.
@@ -90,7 +76,7 @@ func ParseSupplierConfigs(ctx context.Context, configContent []byte) (*SupplierS
 
 	// Validate operator address.
 	if _, err := sdk.AccAddressFromBech32(stakeConfig.OperatorAddress); err != nil {
-		return nil, ErrSupplierConfigInvalidAddress.Wrap("invalid operator address")
+		return nil, ErrSupplierConfigInvalidOperatorAddress.Wrap("invalid operator address")
 	}
 
 	// Validate the stake amount
@@ -123,7 +109,7 @@ func ParseSupplierConfigs(ctx context.Context, configContent []byte) (*SupplierS
 		// Ensure that if no default rev share is provided, the owner address is set
 		// to 100% rev share.
 		if stakeConfig.OwnerAddress == "" {
-			return nil, ErrSupplierConfigInvalidAddress.Wrap("owner address cannot be empty")
+			return nil, ErrSupplierConfigInvalidOwnerAddress.Wrap("owner address cannot be empty")
 		}
 		defaultRevSharePercent[stakeConfig.OwnerAddress] = 100
 	} else {

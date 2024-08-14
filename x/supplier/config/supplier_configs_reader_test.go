@@ -503,6 +503,82 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 				},
 			},
 		},
+		{
+			desc: "valid omitted operator address",
+			inputConfig: fmt.Sprintf(`
+				owner_address: %s
+				# omitted operator address
+				stake_amount: 1000upokt
+				services:
+				  - service_id: svc
+				    endpoints:
+				    - publicly_exposed_url: http://pokt.network:8081
+				      rpc_type: json_rpc
+				      config:
+				        timeout: 10
+				`, ownerAddress),
+			expectedError: nil,
+			expectedConfig: &config.SupplierStakeConfig{
+				OwnerAddress:    ownerAddress,
+				OperatorAddress: ownerAddress,
+				StakeAmount:     sdk.NewCoin("upokt", math.NewInt(1000)),
+				Services: []*types.SupplierServiceConfig{
+					{
+						Service: &types.Service{Id: "svc"},
+						Endpoints: []*types.SupplierEndpoint{
+							{
+								Url:     "http://pokt.network:8081",
+								RpcType: types.RPCType_JSON_RPC,
+								Configs: []*types.ConfigOption{
+									{
+										Key:   types.ConfigOptions_TIMEOUT,
+										Value: "10",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			desc: "valid full service config",
+			inputConfig: fmt.Sprintf(`
+				owner_address: %s
+				operator_address: %s
+				stake_amount: 1000upokt
+				services:
+				  - service_id: svc
+				    endpoints:
+				    - publicly_exposed_url: http://pokt.network:8081
+				      rpc_type: json_rpc
+				      config:
+				        timeout: 10
+				`, ownerAddress, ownerAddress),
+			expectedError: nil,
+			expectedConfig: &config.SupplierStakeConfig{
+				OwnerAddress:    ownerAddress,
+				OperatorAddress: ownerAddress,
+				StakeAmount:     sdk.NewCoin("upokt", math.NewInt(1000)),
+				Services: []*types.SupplierServiceConfig{
+					{
+						Service: &types.Service{Id: "svc"},
+						Endpoints: []*types.SupplierEndpoint{
+							{
+								Url:     "http://pokt.network:8081",
+								RpcType: types.RPCType_JSON_RPC,
+								Configs: []*types.ConfigOption{
+									{
+										Key:   types.ConfigOptions_TIMEOUT,
+										Value: "10",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 		// Invalid Configs
 		{
 			desc: "invalid service config without service ID",
@@ -688,7 +764,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 				      config:
 				        timeout: 10
 				`, operatorAddress),
-			expectedError: config.ErrSupplierConfigInvalidAddress,
+			expectedError: config.ErrSupplierConfigInvalidOwnerAddress,
 		},
 		{
 			desc: "invalid owner address",
@@ -704,7 +780,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 				      config:
 				        timeout: 10
 				`, operatorAddress),
-			expectedError: config.ErrSupplierConfigInvalidAddress,
+			expectedError: config.ErrSupplierConfigInvalidOwnerAddress,
 		},
 		{
 			desc: "invalid operator address",
@@ -720,7 +796,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 				      config:
 				        timeout: 10
 				`, ownerAddress),
-			expectedError: config.ErrSupplierConfigInvalidAddress,
+			expectedError: config.ErrSupplierConfigInvalidOperatorAddress,
 		},
 		{
 			desc: "incomplete default rev share",

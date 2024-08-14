@@ -43,17 +43,17 @@ func NewLocalnetClient(
 func NewOneTimeClaimProofSupplierClientMap(
 	ctx context.Context,
 	t *testing.T,
-	supplierAddress string,
+	supplierOperatorAddress string,
 ) *supplier.SupplierClientMap {
 	t.Helper()
 
 	ctrl := gomock.NewController(t)
 	supplierClientMock := mockclient.NewMockSupplierClient(ctrl)
 
-	supplierAccAddress := cosmostypes.MustAccAddressFromBech32(supplierAddress)
+	supplierOperatorAccAddress := cosmostypes.MustAccAddressFromBech32(supplierOperatorAddress)
 	supplierClientMock.EXPECT().
-		Address().
-		Return(&supplierAccAddress).
+		OperatorAddress().
+		Return(&supplierOperatorAccAddress).
 		AnyTimes()
 
 	supplierClientMock.EXPECT().
@@ -73,7 +73,7 @@ func NewOneTimeClaimProofSupplierClientMap(
 		Times(1)
 
 	supplierClientMap := supplier.NewSupplierClientMap()
-	supplierClientMap.SupplierClients[supplierAddress] = supplierClientMock
+	supplierClientMap.SupplierClients[supplierOperatorAddress] = supplierClientMock
 
 	return supplierClientMap
 }

@@ -73,15 +73,15 @@ func request_Query_Claim_0(ctx context.Context, marshaler runtime.Marshaler, cli
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "session_id", err)
 	}
 
-	val, ok = pathParams["supplier_address"]
+	val, ok = pathParams["supplier_operator_address"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "supplier_address")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "supplier_operator_address")
 	}
 
-	protoReq.SupplierAddress, err = runtime.String(val)
+	protoReq.SupplierOperatorAddress, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "supplier_address", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "supplier_operator_address", err)
 	}
 
 	msg, err := client.Claim(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -111,15 +111,15 @@ func local_request_Query_Claim_0(ctx context.Context, marshaler runtime.Marshale
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "session_id", err)
 	}
 
-	val, ok = pathParams["supplier_address"]
+	val, ok = pathParams["supplier_operator_address"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "supplier_address")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "supplier_operator_address")
 	}
 
-	protoReq.SupplierAddress, err = runtime.String(val)
+	protoReq.SupplierOperatorAddress, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "supplier_address", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "supplier_operator_address", err)
 	}
 
 	msg, err := server.Claim(ctx, &protoReq)
@@ -185,15 +185,15 @@ func request_Query_Proof_0(ctx context.Context, marshaler runtime.Marshaler, cli
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "session_id", err)
 	}
 
-	val, ok = pathParams["supplier_address"]
+	val, ok = pathParams["supplier_operator_address"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "supplier_address")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "supplier_operator_address")
 	}
 
-	protoReq.SupplierAddress, err = runtime.String(val)
+	protoReq.SupplierOperatorAddress, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "supplier_address", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "supplier_operator_address", err)
 	}
 
 	msg, err := client.Proof(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -223,15 +223,15 @@ func local_request_Query_Proof_0(ctx context.Context, marshaler runtime.Marshale
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "session_id", err)
 	}
 
-	val, ok = pathParams["supplier_address"]
+	val, ok = pathParams["supplier_operator_address"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "supplier_address")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "supplier_operator_address")
 	}
 
-	protoReq.SupplierAddress, err = runtime.String(val)
+	protoReq.SupplierOperatorAddress, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "supplier_address", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "supplier_operator_address", err)
 	}
 
 	msg, err := server.Proof(ctx, &protoReq)
@@ -543,11 +543,11 @@ func RegisterQueryHandlerClient(ctx context.Context, mux *runtime.ServeMux, clie
 var (
 	pattern_Query_Params_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"pokt-network", "poktroll", "proof", "params"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Query_Claim_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4, 1, 0, 4, 1, 5, 5}, []string{"pokt-network", "poktroll", "proof", "claim", "session_id", "supplier_address"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_Query_Claim_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4, 1, 0, 4, 1, 5, 5}, []string{"pokt-network", "poktroll", "proof", "claim", "session_id", "supplier_operator_address"}, "", runtime.AssumeColonVerbOpt(false)))
 
 	pattern_Query_AllClaims_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"pokt-network", "poktroll", "proof", "claim"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Query_Proof_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 2, 1, 0, 4, 1, 5, 3, 1, 0, 4, 1, 5, 4}, []string{"pokt-network", "poktroll", "proof", "session_id", "supplier_address"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_Query_Proof_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 2, 1, 0, 4, 1, 5, 3, 1, 0, 4, 1, 5, 4}, []string{"pokt-network", "poktroll", "proof", "session_id", "supplier_operator_address"}, "", runtime.AssumeColonVerbOpt(false)))
 
 	pattern_Query_AllProofs_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 2}, []string{"pokt-network", "poktroll", "proof"}, "", runtime.AssumeColonVerbOpt(false)))
 )

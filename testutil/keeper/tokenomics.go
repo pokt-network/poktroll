@@ -82,13 +82,13 @@ func TokenomicsKeeper(t testing.TB) (tokenomicsKeeper tokenomicskeeper.Keeper, c
 // TODO_TECHDEBT: Remove this and force everyone to use NewTokenomicsModuleKeepers.
 // There is a difference in the method signatures and mocking, which was simply
 // a result of the evolution of the testutil package.
-// TODO_REFACTOR(@Olshansk): Rather than making `service`, `appAddr` and `supplierAddr`
+// TODO_REFACTOR(@Olshansk): Rather than making `service`, `appAddr` and `supplierOperatorAddr`
 // explicit params, make them passable by the caller as options.
 func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 	tokenomicsKeeper tokenomicskeeper.Keeper,
 	ctx context.Context,
 	appAddr string,
-	supplierAddr string,
+	supplierOperatorAddr string,
 	service *sharedtypes.Service,
 ) {
 	t.Helper()
@@ -122,17 +122,17 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 	}
 
 	// Prepare the test supplier.
-	supplierAddr = sample.AccAddress()
+	supplierOwnerAddr := sample.AccAddress()
 	supplier := sharedtypes.Supplier{
-		OwnerAddress: supplierAddr,
-		Address:      supplierAddr,
-		Stake:        &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100000)},
+		OwnerAddress:    supplierOwnerAddr,
+		OperatorAddress: supplierOwnerAddr,
+		Stake:           &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100000)},
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
 				Service: service,
 				RevShare: []*sharedtypes.ServiceRevShare{
 					{
-						Address:            supplierAddr,
+						Address:            supplierOwnerAddr,
 						RevSharePercentage: 100,
 					},
 				},
@@ -168,7 +168,7 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 
 	// Get test supplier if the address matches.
 	mockSupplierKeeper.EXPECT().
-		GetSupplier(gomock.Any(), gomock.Eq(supplier.Address)).
+		GetSupplier(gomock.Any(), gomock.Eq(supplier.OperatorAddress)).
 		Return(supplier, true).
 		AnyTimes()
 
@@ -240,7 +240,7 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 	// Initialize params
 	require.NoError(t, k.SetParams(sdkCtx, tokenomicstypes.DefaultParams()))
 
-	return k, sdkCtx, application.Address, supplier.Address, service
+	return k, sdkCtx, application.Address, supplier.OperatorAddress, service
 }
 
 // NewTokenomicsModuleKeepers is a helper function to create a tokenomics keeper

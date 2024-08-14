@@ -56,14 +56,14 @@ func networkWithClaimObjects(
 
 	// Create a supplier for each session in numClaimsSessions and an app for each
 	// claim in numClaimsPerSession.
-	supplierAccts := make([]*testkeyring.PreGeneratedAccount, numSuppliers)
-	supplierAddrs := make([]string, numSuppliers)
-	for i := range supplierAccts {
+	supplierOperatorAccts := make([]*testkeyring.PreGeneratedAccount, numSuppliers)
+	supplierOperatorAddrs := make([]string, numSuppliers)
+	for i := range supplierOperatorAccts {
 		account, ok := preGeneratedAccts.Next()
 		require.True(t, ok)
 
-		supplierAccts[i] = account
-		supplierAddrs[i] = account.Address.String()
+		supplierOperatorAccts[i] = account
+		supplierOperatorAddrs[i] = account.Address.String()
 	}
 	appAccts := make([]*testkeyring.PreGeneratedAccount, numApps)
 	appAddrs := make([]string, numApps)
@@ -76,7 +76,7 @@ func networkWithClaimObjects(
 	}
 
 	// Construct supplier and application module genesis states given the account addresses.
-	supplierGenesisState := network.SupplierModuleGenesisStateWithAddresses(t, supplierAddrs)
+	supplierGenesisState := network.SupplierModuleGenesisStateWithAddresses(t, supplierOperatorAddrs)
 	supplierGenesisBuffer, err := cfg.Codec.MarshalJSON(supplierGenesisState)
 	require.NoError(t, err)
 
@@ -89,10 +89,10 @@ func networkWithClaimObjects(
 	// Create numSessions * numApps * numSuppliers claims.
 	for sessionIdx := 0; sessionIdx < numSessions; sessionIdx++ {
 		for _, appAcct := range appAccts {
-			for _, supplierAcct := range supplierAccts {
+			for _, supplierOperatorAcct := range supplierOperatorAccts {
 				claim := newTestClaim(
 					t, &sharedParams,
-					supplierAcct.Address.String(),
+					supplierOperatorAcct.Address.String(),
 					testsession.GetSessionStartHeightWithDefaultParams(1),
 					appAcct.Address.String(),
 				)
@@ -120,8 +120,8 @@ func networkWithClaimObjects(
 
 	// Initialize all the accounts
 	sequenceIndex := 1
-	for _, supplierAcct := range supplierAccts {
-		network.InitAccountWithSequence(t, net, supplierAcct.Address, sequenceIndex)
+	for _, supplierOperatorAcct := range supplierOperatorAccts {
+		network.InitAccountWithSequence(t, net, supplierOperatorAcct.Address, sequenceIndex)
 		sequenceIndex++
 	}
 	for _, appAcct := range appAccts {
@@ -134,12 +134,12 @@ func networkWithClaimObjects(
 	return net, claims, clientCtx
 }
 
-// newTestClaim returns a new claim with the given supplier address, session start height,
+// newTestClaim returns a new claim with the given supplier operator address, session start height,
 // and application address. It uses mock byte slices for the root hash and block hash.
 func newTestClaim(
 	t *testing.T,
 	sharedParams *sharedtypes.Params,
-	supplierAddr string,
+	supplierOperatorAddr string,
 	sessionStartHeight int64,
 	appAddr string,
 ) *types.Claim {
@@ -160,7 +160,7 @@ func newTestClaim(
 
 	// TODO_TECHDEBT: Forward the actual claim in the response once the response is updated to return it.
 	return &types.Claim{
-		SupplierAddress: supplierAddr,
+		SupplierOperatorAddress: supplierOperatorAddr,
 		SessionHeader: &sessiontypes.SessionHeader{
 			ApplicationAddress:      appAddr,
 			Service:                 &sharedtypes.Service{Id: testServiceId},

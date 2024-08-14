@@ -46,7 +46,7 @@ func TestSession_HydrateSession_Success_BaseCase(t *testing.T) {
 	require.Len(t, suppliers, 1)
 
 	supplier := suppliers[0]
-	require.Equal(t, keepertest.TestSupplierAddress, supplier.Address)
+	require.Equal(t, keepertest.TestSupplierOperatorAddress, supplier.OperatorAddress)
 	require.Len(t, supplier.Services, 3)
 }
 

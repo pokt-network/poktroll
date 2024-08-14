@@ -72,7 +72,7 @@ type RelayerProxy interface {
 	// and append the signature to the RelayResponse.
 	// TODO_TECHDEBT(@red-0ne): This method should be moved out of the RelayerProxy interface
 	// that should not be responsible for signing relay responses.
-	SignRelayResponse(relayResponse *servicetypes.RelayResponse, supplierAddr string) error
+	SignRelayResponse(relayResponse *servicetypes.RelayResponse, supplierOperatorAddr string) error
 }
 
 type RelayerProxyOption func(RelayerProxy)
@@ -157,6 +157,6 @@ type SessionTree interface {
 	// It returns an error if it has already been marked as such.
 	StartClaiming() error
 
-	// GetSupplierAddress returns the supplier address building this tree.
-	GetSupplierAddress() *cosmostypes.AccAddress
+	// GetSupplierOperatorAddress returns the supplier operator address building this tree.
+	GetSupplierOperatorAddress() *cosmostypes.AccAddress
 }

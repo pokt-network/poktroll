@@ -256,13 +256,13 @@ func (keepers *ProofModuleKeepers) AddServiceActors(
 	ctx context.Context,
 	t *testing.T,
 	service *sharedtypes.Service,
-	supplierAddr string,
+	supplierOperatorAddr string,
 	appAddr string,
 ) {
 	t.Helper()
 
 	keepers.SetSupplier(ctx, sharedtypes.Supplier{
-		Address: supplierAddr,
+		OperatorAddress: supplierOperatorAddr,
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{Service: service},
 		},
