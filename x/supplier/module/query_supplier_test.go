@@ -35,7 +35,7 @@ func TestShowSupplier(t *testing.T) {
 	}{
 		{
 			desc:      "supplier found",
-			idAddress: suppliers[0].Address,
+			idAddress: suppliers[0].OperatorAddress,
 
 			args:     common,
 			supplier: suppliers[0],

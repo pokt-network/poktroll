@@ -14,7 +14,7 @@ import (
 
 // suppliersProvidedServicesMap is a map of maps:
 //
-//	supplierAddress -> {service -> []SupplierEndpoint}
+//	supplierOperatorAddress -> {service -> []SupplierEndpoint}
 //
 // If an address is not present in the map it is then assumed that the supplier does
 // not exist (has not staked)
@@ -36,9 +36,9 @@ func NewTestSupplierQueryClient(
 	supplierQuerier.EXPECT().GetSupplier(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(
 			_ context.Context,
-			address string,
+			supplierOperatorAddress string,
 		) (supplier sharedtypes.Supplier, err error) {
-			supplierProvidedServices, ok := suppliersProvidedServicesMap[address]
+			supplierProvidedServices, ok := suppliersProvidedServicesMap[supplierOperatorAddress]
 			if !ok {
 				return sharedtypes.Supplier{}, errors.New("address not found")
 			}
@@ -65,8 +65,9 @@ func NewTestSupplierQueryClient(
 			}
 
 			return sharedtypes.Supplier{
-				Address:  address,
-				Services: services,
+				OwnerAddress:    supplierOperatorAddress,
+				OperatorAddress: supplierOperatorAddress,
+				Services:        services,
 			}, nil
 		}).
 		AnyTimes()
@@ -79,13 +80,13 @@ func NewTestSupplierQueryClient(
 // it will also remove the address from the map when the test is cleaned up.
 func AddSuppliersWithServiceEndpoints(
 	t *testing.T,
-	address, service string,
+	supplierOperatorAddress, service string,
 	endpoints []*sharedtypes.SupplierEndpoint,
 ) {
 	t.Helper()
 	require.NotEmpty(t, endpoints)
 
-	supplier, ok := suppliersProvidedServicesMap[address]
+	supplier, ok := suppliersProvidedServicesMap[supplierOperatorAddress]
 	if !ok {
 		supplier = make(map[string][]*sharedtypes.SupplierEndpoint)
 	}
@@ -98,9 +99,9 @@ func AddSuppliersWithServiceEndpoints(
 	serviceEndpoints = append(serviceEndpoints, endpoints...)
 
 	supplier[service] = serviceEndpoints
-	suppliersProvidedServicesMap[address] = supplier
+	suppliersProvidedServicesMap[supplierOperatorAddress] = supplier
 
 	t.Cleanup(func() {
-		delete(addressAccountMap, address)
+		delete(addressAccountMap, supplierOperatorAddress)
 	})
 }

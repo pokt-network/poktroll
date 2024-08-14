@@ -22,13 +22,13 @@ func DefaultGenesis() *GenesisState {
 // failure.
 func (gs GenesisState) Validate() error {
 	// Check for duplicated index in supplier
-	supplierAddrMap := make(map[string]struct{})
+	supplierOperatorAddrMap := make(map[string]struct{})
 	for _, supplier := range gs.SupplierList {
-		supplierAddr := string(SupplierKey(supplier.Address))
-		if _, ok := supplierAddrMap[supplierAddr]; ok {
+		supplierOperatorAddr := string(SupplierOperatorKey(supplier.OperatorAddress))
+		if _, ok := supplierOperatorAddrMap[supplierOperatorAddr]; ok {
 			return fmt.Errorf("duplicated index for supplier")
 		}
-		supplierAddrMap[supplierAddr] = struct{}{}
+		supplierOperatorAddrMap[supplierOperatorAddr] = struct{}{}
 	}
 
 	// Check that the stake value for the suppliers is valid
@@ -56,6 +56,17 @@ func (gs GenesisState) Validate() error {
 		if err := servicehelpers.ValidateSupplierServiceConfigs(supplier.Services); err != nil {
 			return ErrSupplierInvalidServiceConfig.Wrapf(err.Error())
 		}
+
+		// Validate the supplier owner address
+		if _, err := sdk.AccAddressFromBech32(supplier.OwnerAddress); err != nil {
+			return ErrSupplierInvalidAddress.Wrapf("invalid supplier owner address %v", err.Error())
+		}
+
+		// Validate the supplier operator address
+		if _, err := sdk.AccAddressFromBech32(supplier.OperatorAddress); err != nil {
+			return ErrSupplierInvalidAddress.Wrapf("invalid supplier operator address %v", err.Error())
+		}
+
 	}
 	// this line is used by starport scaffolding # genesis/types/validate
 
