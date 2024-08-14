@@ -5,7 +5,7 @@
 #   the Supplier).
 # * Non-custodial staking is an advanced mechanism, where the owner address is different from
 #   the operator address. This is useful to avoid overuse of the private key of the
-#   address that owns the staked funds or receives the rewards.
+#   account that owns the staked funds or receives the rewards.
 
 # The address of the supplier's owner. This address could stake a new Supplier or
 # update any of its properties excluding the operator address which is immutable.
