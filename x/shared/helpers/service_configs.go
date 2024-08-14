@@ -99,7 +99,7 @@ func ValidateSupplierServiceConfigs(services []*sharedtypes.SupplierServiceConfi
 func ValidateServiceRevShare(revShareList []*sharedtypes.ServiceRevenueShare) error {
 	revSharePercentageSum := float32(0)
 
-	if revShareList == nil || len(revShareList) == 0 {
+	if len(revShareList) == 0 {
 		return sharedtypes.ErrSharedInvalidRevShare.Wrap("no rev share configurations")
 	}
 
