@@ -747,7 +747,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 			expectedError: sharedtypes.ErrSharedInvalidRevShare,
 		},
 		{
-			desc: "empty rev share config",
+			desc: "errors when the rev share config is empty",
 			inputConfig: fmt.Sprintf(`
 				owner_address: %s
 				operator_address: %s

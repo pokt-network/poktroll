@@ -102,7 +102,7 @@ entry defined.
 
 This field is useful if the `Supplier` owner wants to set a default revenue share
 for all the `service`s entries that do not provide one. This way, the operator
-does not have repeat the same values for each `service` in the `services` section.
+does not have to repeat the same values for each `service` in the `services` section.
 
 This map cannot be empty but can be omitted, in which case the default revenue
 share falls back to `100%` of the rewards allocated to the `Supplier`'s `owner_address`.
@@ -217,7 +217,7 @@ share percentage.
 It overrides the `default_rev_share_percent` if defined for the `service`.
 
 This map cannot be empty but can be omitted, in which case it falls back to the
-`default_rev_share_percent` top level configuration entry.
+`default_rev_share_percent` top-level configuration entry.
 
 :::note
 

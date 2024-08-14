@@ -122,7 +122,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 			desc: "missing owner address",
 			msg: MsgStakeSupplier{
 				Signer: ownerAddress,
-				// OwnerAddress: ownerAddress,
+				// OwnerAddress: ownerAddress, // intentionally commented out.
 				OperatorAddress: operatorAddress,
 				Stake:           &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(100)},
 				Services:        defaultServicesList,
@@ -134,7 +134,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 			msg: MsgStakeSupplier{
 				Signer:       ownerAddress,
 				OwnerAddress: ownerAddress,
-				// OperatorAddress: operatorAddress,
+				// OperatorAddress: operatorAddress, // intentionally commented out.
 				Stake:    &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(0)},
 				Services: defaultServicesList,
 			},
@@ -143,7 +143,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 		{
 			desc: "missing signer address",
 			msg: MsgStakeSupplier{
-				// Signer: ownerAddress,
+				// Signer: ownerAddress, // intentionally commented out.
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: operatorAddress,
 				Stake:           &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(0)},
