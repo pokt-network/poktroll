@@ -1010,7 +1010,7 @@ type Supplier struct {
 	Address  string                   `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`   // The Bech32 address of the supplier using cosmos' ScalarDescriptor to ensure deterministic encoding
 	Stake    *v1beta1.Coin            `protobuf:"bytes,2,opt,name=stake,proto3" json:"stake,omitempty"`       // The total amount of uPOKT the supplier has staked
 	Services []*SupplierServiceConfig `protobuf:"bytes,3,rep,name=services,proto3" json:"services,omitempty"` // The service configs this supplier can support
-	// The session end height at which an actively unbonding supplier unbonds its stake.
+	// The end height of the session at which a supplier initiated its unstaking process.
 	// If the supplier did not unstake, this value will be 0.
 	UnstakeSessionEndHeight uint64 `protobuf:"varint,4,opt,name=unstake_session_end_height,json=unstakeSessionEndHeight,proto3" json:"unstake_session_end_height,omitempty"`
 	// services_activation_heights_map is a map of serviceIds to the height at

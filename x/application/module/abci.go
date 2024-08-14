@@ -16,5 +16,9 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) error {
 		return err
 	}
 
+	if err := k.EndBlockerUnbondApplications(ctx); err != nil {
+		return err
+	}
+
 	return nil
 }

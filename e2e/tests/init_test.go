@@ -68,7 +68,7 @@ func init() {
 	amountRe = regexp.MustCompile(`amount:\s+"(.+?)"\s+denom:\s+upokt`)
 	addrAndAmountRe = regexp.MustCompile(`(?s)address: ([\w\d]+).*?stake:\s*amount: "(\d+)"`)
 
-	flag.StringVar(&flagFeaturesPath, "features-path", "*.feature", "Specifies glob paths for the runner to look up .feature files")
+	flag.StringVar(&flagFeaturesPath, "features-path", "stake_app.feature", "Specifies glob paths for the runner to look up .feature files")
 
 	// If "APPGATE_SERVER_URL" envar is present, use it for appGateServerUrl
 	if url := os.Getenv("APPGATE_SERVER_URL"); url != "" {
@@ -465,11 +465,29 @@ func (s *suite) TheSupplierForAccountIsUnbonding(accName string) {
 	require.True(s, supplier.IsUnbonding())
 }
 
-func (s *suite) TheUserWaitsForUnbondingPeriodToFinish(accName string) {
+func (s *suite) TheApplicationForAccountIsUnbonding(accName string) {
+	_, ok := accNameToAppMap[accName]
+	require.True(s, ok, "application %s not found", accName)
+
+	s.waitForTxResultEvent(newEventMsgTypeMatchFn("application", "UnstakeApplication"))
+
+	application := s.getApplicationInfo(accName)
+	require.True(s, application.IsUnbonding())
+}
+
+func (s *suite) TheUserWaitsForTheSupplierForAccountUnbondingPeriodToFinish(accName string) {
 	_, ok := accNameToSupplierMap[accName]
 	require.True(s, ok, "supplier %s not found", accName)
 
 	unbondingHeight := s.getSupplierUnbondingHeight(accName)
+	s.waitForBlockHeight(unbondingHeight + 1) // Add 1 to ensure the unbonding block has been committed
+}
+
+func (s *suite) TheUserWaitsForTheApplicationForAccountUnbondingPeriodToFinish(accName string) {
+	_, ok := accNameToAppMap[accName]
+	require.True(s, ok, "application %s not found", accName)
+
+	unbondingHeight := s.getApplicationUnbondingHeight(accName)
 	s.waitForBlockHeight(unbondingHeight + 1) // Add 1 to ensure the unbonding block has been committed
 }
 
@@ -685,6 +703,48 @@ func (s *suite) getSupplierUnbondingHeight(accName string) int64 {
 	responseBz := []byte(strings.TrimSpace(res.Stdout))
 	s.cdc.MustUnmarshalJSON(responseBz, &resp)
 	unbondingHeight := shared.GetSupplierUnbondingHeight(&resp.Params, supplier)
+	return unbondingHeight
+}
+
+// getApplicationInfo returns the application information for a given application address.
+func (s *suite) getApplicationInfo(appName string) *apptypes.Application {
+	appAddr := accNameToAddrMap[appName]
+	args := []string{
+		"query",
+		"application",
+		"show-application",
+		appAddr,
+		"--output=json",
+	}
+
+	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, args...)
+	require.NoError(s, err, "error getting supplier %s", appAddr)
+	s.pocketd.result = res
+
+	var resp apptypes.QueryGetApplicationResponse
+	responseBz := []byte(strings.TrimSpace(res.Stdout))
+	s.cdc.MustUnmarshalJSON(responseBz, &resp)
+	return &resp.Application
+}
+
+// getApplicationUnbondingHeight returns the height at which the application will be unbonded.
+func (s *suite) getApplicationUnbondingHeight(accName string) int64 {
+	application := s.getApplicationInfo(accName)
+
+	args := []string{
+		"query",
+		"shared",
+		"params",
+		"--output=json",
+	}
+
+	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, args...)
+	require.NoError(s, err, "error getting shared module params")
+
+	var resp sharedtypes.QueryParamsResponse
+	responseBz := []byte(strings.TrimSpace(res.Stdout))
+	s.cdc.MustUnmarshalJSON(responseBz, &resp)
+	unbondingHeight := apptypes.GetApplicationUnbondingHeight(&resp.Params, application)
 	return unbondingHeight
 }
 

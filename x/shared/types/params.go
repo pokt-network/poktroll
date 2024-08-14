@@ -5,31 +5,34 @@ import (
 )
 
 const (
-	DefaultNumBlocksPerSession             = 4
-	ParamNumBlocksPerSession               = "num_blocks_per_session"
-	DefaultGracePeriodEndOffsetBlocks      = 1
-	ParamGracePeriodEndOffsetBlocks        = "grace_period_end_offset_blocks"
-	DefaultClaimWindowOpenOffsetBlocks     = 2
-	ParamClaimWindowOpenOffsetBlocks       = "claim_window_open_offset_blocks"
-	DefaultClaimWindowCloseOffsetBlocks    = 4
-	ParamClaimWindowCloseOffsetBlocks      = "claim_window_close_offset_blocks"
-	DefaultProofWindowOpenOffsetBlocks     = 0
-	ParamProofWindowOpenOffsetBlocks       = "proof_window_open_offset_blocks"
-	DefaultProofWindowCloseOffsetBlocks    = 4
-	ParamProofWindowCloseOffsetBlocks      = "proof_window_close_offset_blocks"
-	DefaultSupplierUnbondingPeriodSessions = 4 // 4 sessions
-	ParamSupplierUnbondingPeriodSessions   = "supplier_unbonding_period_sessions"
+	DefaultNumBlocksPerSession                = 4
+	ParamNumBlocksPerSession                  = "num_blocks_per_session"
+	DefaultGracePeriodEndOffsetBlocks         = 1
+	ParamGracePeriodEndOffsetBlocks           = "grace_period_end_offset_blocks"
+	DefaultClaimWindowOpenOffsetBlocks        = 2
+	ParamClaimWindowOpenOffsetBlocks          = "claim_window_open_offset_blocks"
+	DefaultClaimWindowCloseOffsetBlocks       = 4
+	ParamClaimWindowCloseOffsetBlocks         = "claim_window_close_offset_blocks"
+	DefaultProofWindowOpenOffsetBlocks        = 0
+	ParamProofWindowOpenOffsetBlocks          = "proof_window_open_offset_blocks"
+	DefaultProofWindowCloseOffsetBlocks       = 4
+	ParamProofWindowCloseOffsetBlocks         = "proof_window_close_offset_blocks"
+	DefaultSupplierUnbondingPeriodSessions    = 4 // 4 sessions
+	ParamSupplierUnbondingPeriodSessions      = "supplier_unbonding_period_sessions"
+	DefaultApplicationUnbondingPeriodSessions = 4 // 4 sessions
+	ParamApplicationUnbondingPeriodSessions   = "application_unbonding_period_sessions"
 )
 
 var (
-	_                                  paramtypes.ParamSet = (*Params)(nil)
-	KeyNumBlocksPerSession                                 = []byte("NumBlocksPerSession")
-	KeyGracePeriodEndOffsetBlocks                          = []byte("GracePeriodEndOffsetBlocks")
-	KeyClaimWindowOpenOffsetBlocks                         = []byte("ClaimWindowOpenOffsetBlocks")
-	KeyClaimWindowCloseOffsetBlocks                        = []byte("ClaimWindowCloseOffsetBlocks")
-	KeyProofWindowOpenOffsetBlocks                         = []byte("ProofWindowOpenOffsetBlocks")
-	KeyProofWindowCloseOffsetBlocks                        = []byte("ProofWindowCloseOffsetBlocks")
-	KeySupplierUnbondingPeriodSessions                     = []byte("SupplierUnbondingPeriodSessions")
+	_                                     paramtypes.ParamSet = (*Params)(nil)
+	KeyNumBlocksPerSession                                    = []byte("NumBlocksPerSession")
+	KeyGracePeriodEndOffsetBlocks                             = []byte("GracePeriodEndOffsetBlocks")
+	KeyClaimWindowOpenOffsetBlocks                            = []byte("ClaimWindowOpenOffsetBlocks")
+	KeyClaimWindowCloseOffsetBlocks                           = []byte("ClaimWindowCloseOffsetBlocks")
+	KeyProofWindowOpenOffsetBlocks                            = []byte("ProofWindowOpenOffsetBlocks")
+	KeyProofWindowCloseOffsetBlocks                           = []byte("ProofWindowCloseOffsetBlocks")
+	KeySupplierUnbondingPeriodSessions                        = []byte("SupplierUnbondingPeriodSessions")
+	KeyApplicationUnbondingPeriodSessions                     = []byte("ApplicationUnbondingPeriodSessions")
 )
 
 // ParamKeyTable the param key table for launch module
@@ -40,13 +43,14 @@ func ParamKeyTable() paramtypes.KeyTable {
 // NewParams creates a new Params instance
 func NewParams() Params {
 	return Params{
-		NumBlocksPerSession:             DefaultNumBlocksPerSession,
-		ClaimWindowOpenOffsetBlocks:     DefaultClaimWindowOpenOffsetBlocks,
-		ClaimWindowCloseOffsetBlocks:    DefaultClaimWindowCloseOffsetBlocks,
-		ProofWindowOpenOffsetBlocks:     DefaultProofWindowOpenOffsetBlocks,
-		ProofWindowCloseOffsetBlocks:    DefaultProofWindowCloseOffsetBlocks,
-		GracePeriodEndOffsetBlocks:      DefaultGracePeriodEndOffsetBlocks,
-		SupplierUnbondingPeriodSessions: DefaultSupplierUnbondingPeriodSessions,
+		NumBlocksPerSession:                DefaultNumBlocksPerSession,
+		ClaimWindowOpenOffsetBlocks:        DefaultClaimWindowOpenOffsetBlocks,
+		ClaimWindowCloseOffsetBlocks:       DefaultClaimWindowCloseOffsetBlocks,
+		ProofWindowOpenOffsetBlocks:        DefaultProofWindowOpenOffsetBlocks,
+		ProofWindowCloseOffsetBlocks:       DefaultProofWindowCloseOffsetBlocks,
+		GracePeriodEndOffsetBlocks:         DefaultGracePeriodEndOffsetBlocks,
+		SupplierUnbondingPeriodSessions:    DefaultSupplierUnbondingPeriodSessions,
+		ApplicationUnbondingPeriodSessions: DefaultApplicationUnbondingPeriodSessions,
 	}
 }
 
@@ -93,6 +97,11 @@ func (params *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 			&params.SupplierUnbondingPeriodSessions,
 			ValidateSupplierUnbondingPeriodSessions,
 		),
+		paramtypes.NewParamSetPair(
+			KeyApplicationUnbondingPeriodSessions,
+			&params.ApplicationUnbondingPeriodSessions,
+			ValidateApplicationUnbondingPeriodSessions,
+		),
 	}
 }
 
@@ -126,6 +135,10 @@ func (params *Params) ValidateBasic() error {
 		return err
 	}
 
+	if err := ValidateApplicationUnbondingPeriodSessions(params.ApplicationUnbondingPeriodSessions); err != nil {
+		return err
+	}
+
 	if err := validateGracePeriodOffsetBlocksIsLessThanNumBlocksPerSession(params); err != nil {
 		return err
 	}
@@ -135,6 +148,10 @@ func (params *Params) ValidateBasic() error {
 	}
 
 	if err := validateSupplierUnbondingPeriodIsGreaterThanCumulativeProofWindowCloseBlocks(params); err != nil {
+		return err
+	}
+
+	if err := validateApplicationUnbondingPeriodIsGreaterThanCumulativeProofWindowCloseBlocks(params); err != nil {
 		return err
 	}
 
@@ -207,6 +224,22 @@ func ValidateSupplierUnbondingPeriodSessions(v interface{}) error {
 	return nil
 }
 
+// ValidateApplicationUnbondingPeriodSession validates the ApplicationUnbondingPeriodSessions
+// governance parameter.
+// NB: The argument is an interface type to satisfy the ParamSetPair function signature.
+func ValidateApplicationUnbondingPeriodSessions(v interface{}) error {
+	applicationUnbondingPeriodSessions, err := validateIsUint64(v)
+	if err != nil {
+		return err
+	}
+
+	if applicationUnbondingPeriodSessions < 1 {
+		return ErrSharedParamInvalid.Wrapf("invalid ApplicationUnbondingPeriodSessions: (%v)", applicationUnbondingPeriodSessions)
+	}
+
+	return nil
+}
+
 // validateIsUint64 returns the casted uin64 value or an error if value is not
 // type assertable to uint64.
 func validateIsUint64(value any) (uint64, error) {
@@ -259,6 +292,26 @@ func validateSupplierUnbondingPeriodIsGreaterThanCumulativeProofWindowCloseBlock
 			"SupplierUnbondingPeriodSessions (%v session) (%v blocks) must be greater than the cumulative ProofWindowCloseOffsetBlocks (%v)",
 			params.SupplierUnbondingPeriodSessions,
 			supplierUnbondingPeriodSessions,
+			cumulativeProofWindowCloseBlocks,
+		)
+	}
+
+	return nil
+}
+
+// validateApplicationUnbondingPeriodIsGreaterThanCumulativeProofWindowCloseBlocks
+// validates that the ApplicationUnbondingPeriodSession blocks is greater than the cumulative
+// proof window close blocks.
+// It ensures that a supplier cannot unbond before the pending claims are settled.
+func validateApplicationUnbondingPeriodIsGreaterThanCumulativeProofWindowCloseBlocks(params *Params) error {
+	cumulativeProofWindowCloseBlocks := GetSessionEndToProofWindowCloseBlocks(params)
+	applicationUnbondingPeriodSessions := params.ApplicationUnbondingPeriodSessions * params.NumBlocksPerSession
+
+	if applicationUnbondingPeriodSessions < cumulativeProofWindowCloseBlocks {
+		return ErrSharedParamInvalid.Wrapf(
+			"ApplicationUnbondingPeriodSessions (%v session) (%v blocks) must be greater than the cumulative ProofWindowCloseOffsetBlocks (%v)",
+			params.ApplicationUnbondingPeriodSessions,
+			applicationUnbondingPeriodSessions,
 			cumulativeProofWindowCloseBlocks,
 		)
 	}

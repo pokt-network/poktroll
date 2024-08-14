@@ -34,7 +34,9 @@ import (
 // WARNING: Using this map may cause issues if running multiple tests in parallel
 var stakedGatewayMap = make(map[string]struct{})
 
-func ApplicationKeeper(t testing.TB) (keeper.Keeper, context.Context) {
+// ApplicationKeeperWithSharedKeeper creates a new application keeper for testing
+// along with its dependencies returns the ApplicationKeeper, SharedKeeper and context.
+func ApplicationKeeperWithSharedKeeper(t testing.TB) (keeper.Keeper, types.SharedKeeper, context.Context) {
 	t.Helper()
 	storeKey := storetypes.NewKVStoreKey(types.StoreKey)
 
@@ -81,7 +83,7 @@ func ApplicationKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 		}).
 		AnyTimes()
 
-	k := keeper.NewKeeper(
+	appKeeper := keeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKey),
 		log.NewNopLogger(),
@@ -95,9 +97,21 @@ func ApplicationKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 	ctx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
 
 	// Initialize params
-	require.NoError(t, k.SetParams(ctx, types.DefaultParams()))
+	require.NoError(t, appKeeper.SetParams(ctx, types.DefaultParams()))
 
-	return k, ctx
+	// Move block height to 1 to get a non zero session end height
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	ctx = sdkCtx.WithBlockHeight(1)
+
+	return appKeeper, mockSharedKeeper, ctx
+}
+
+// ApplicationKeeper creates a new application keeper for testing and returns
+// the keeper and context.
+func ApplicationKeeper(t testing.TB) (keeper.Keeper, context.Context) {
+	appModuleKeepers, _, ctx := ApplicationKeeperWithSharedKeeper(t)
+
+	return appModuleKeepers, ctx
 }
 
 // AddGatewayToStakedGatewayMap adds the given gateway address to the staked
