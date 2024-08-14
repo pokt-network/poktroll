@@ -422,6 +422,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		tokenomicsKeeper,
 		accountKeeper,
 		bankKeeper,
+		supplierKeeper,
 	)
 
 	// Prepare the message & query routers
@@ -517,7 +518,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 
 	// Create a supplier account with the corresponding keys in the keyring for the supplier.
 	integrationApp.DefaultSupplierKeyringKeyringUid = "supplier"
-	supplierAddr := testkeyring.CreateOnChainAccount(
+	supplierOperatorAddr := testkeyring.CreateOnChainAccount(
 		integrationApp.sdkCtx, t,
 		integrationApp.DefaultSupplierKeyringKeyringUid,
 		keyRing,
@@ -528,8 +529,9 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	// Prepare the on-chain supplier
 	supplierStake := types.NewCoin("upokt", math.NewInt(1000000))
 	defaultSupplier := sharedtypes.Supplier{
-		Address: supplierAddr.String(),
-		Stake:   &supplierStake,
+		OwnerAddress:    supplierOperatorAddr.String(),
+		OperatorAddress: supplierOperatorAddr.String(),
+		Stake:           &supplierStake,
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
 				Service: &defaultService,

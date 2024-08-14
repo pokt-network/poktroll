@@ -1637,7 +1637,7 @@ type Application struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Address        string                             `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`                                     // The Bech32 address of the application using cosmos' ScalarDescriptor to ensure deterministic encoding
+	Address        string                             `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`                                     // The Bech32 address of the application.
 	Stake          *v1beta1.Coin                      `protobuf:"bytes,2,opt,name=stake,proto3" json:"stake,omitempty"`                                         // The total amount of uPOKT the application has staked
 	ServiceConfigs []*shared.ApplicationServiceConfig `protobuf:"bytes,3,rep,name=service_configs,json=serviceConfigs,proto3" json:"service_configs,omitempty"` // The list of services this appliccation is configured to request service for
 	// TODO_BETA: Rename `delegatee_gateway_addresses` to `gateway_addresses_delegated_to`.

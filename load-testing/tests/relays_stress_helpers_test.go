@@ -120,7 +120,7 @@ func (s *relaysSuite) initFundingAccount(fundingAccountAddress string) {
 }
 
 // initializeLoadTestParams parses the load test manifest and initializes the
-// gateway and supplier addresses and the URLs used to send requests to.
+// gateway and supplier operator addresses and the URLs used to send requests to.
 func (s *relaysSuite) initializeLoadTestParams() *config.LoadTestManifestYAML {
 	workingDirectory, err := os.Getwd()
 	require.NoError(s, err)
@@ -141,7 +141,7 @@ func (s *relaysSuite) initializeLoadTestParams() *config.LoadTestManifestYAML {
 
 	for _, supplier := range loadTestManifest.Suppliers {
 		s.suppliersUrls[supplier.Address] = supplier.ExposedUrl
-		s.availableSupplierAddresses = append(s.availableSupplierAddresses, supplier.Address)
+		s.availableSupplierOperatorAddresses = append(s.availableSupplierOperatorAddresses, supplier.Address)
 	}
 
 	return loadTestManifest
@@ -517,12 +517,12 @@ func (s *relaysSuite) sendFundAvailableActorsTx() (suppliers, gateways, applicat
 
 	// Fund accounts for **all** suppliers that will be used over the duration of the test.
 	suppliersAdded := int64(0)
-	for _, supplierAddress := range s.availableSupplierAddresses {
+	for _, supplierOperatorAddress := range s.availableSupplierOperatorAddresses {
 		if suppliersAdded >= s.plans.suppliers.maxActorCount {
 			break
 		}
 
-		supplier := s.addActor(supplierAddress, supplierStakeAmount)
+		supplier := s.addActor(supplierOperatorAddress, supplierStakeAmount)
 
 		// Add a bank.MsgSend message to fund the supplier.
 		s.addPendingFundMsg(supplier.address, sdk.NewCoins(supplierStakeAmount))
@@ -781,11 +781,15 @@ func (s *relaysSuite) addActor(actorAddress string, actorStakeAmount sdk.Coin) *
 
 // addPendingStakeSupplierMsg generates a MsgStakeSupplier message to stake a given
 // supplier then appends it to the suppliers account's pending messages.
+// The supplier is staked with custodial mode (i.e. the supplier owner is the same
+// as the operator address).
 // No transaction is sent to give flexibility to the caller to group multiple
 // messages in a single supplier transaction.
 func (s *relaysSuite) addPendingStakeSupplierMsg(supplier *accountInfo) {
 	supplier.addPendingMsg(suppliertypes.NewMsgStakeSupplier(
-		supplier.address,
+		supplier.address, // The message signer.
+		supplier.address, // The supplier owner.
+		supplier.address, // The supplier operator.
 		supplier.amountToStake,
 		[]*sharedtypes.SupplierServiceConfig{
 			{
@@ -828,8 +832,8 @@ func (s *relaysSuite) sendStakeSuppliersTxs(
 		)
 
 	for supplierIdx := int64(0); supplierIdx < suppliersToStake; supplierIdx++ {
-		supplierAddress := s.availableSupplierAddresses[supplierCount+supplierIdx]
-		supplier := s.addActor(supplierAddress, supplierStakeAmount)
+		supplierOperatorAddress := s.availableSupplierOperatorAddresses[supplierCount+supplierIdx]
+		supplier := s.addActor(supplierOperatorAddress, supplierStakeAmount)
 		s.addPendingStakeSupplierMsg(supplier)
 		s.sendPendingMsgsTx(supplier)
 		newSuppliers = append(newSuppliers, supplier)

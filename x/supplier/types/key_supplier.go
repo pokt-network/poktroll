@@ -5,16 +5,16 @@ import "encoding/binary"
 var _ binary.ByteOrder
 
 const (
-	// SupplierKeyPrefix is the prefix to retrieve all Supplier
-	SupplierKeyPrefix = "Supplier/address/"
+	// SupplierKeyOperatorPrefix is the prefix to retrieve all Supplier
+	SupplierKeyOperatorPrefix = "Supplier/operator_address/"
 )
 
-// SupplierKey returns the store key to retrieve a Supplier from the index fields
-func SupplierKey(supplierAddr string) []byte {
+// SupplierOperatorKey returns the store key to retrieve a Supplier from the index fields
+func SupplierOperatorKey(supplierOperatorAddr string) []byte {
 	var key []byte
 
-	supplierAddrBz := []byte(supplierAddr)
-	key = append(key, supplierAddrBz...)
+	supplierOperatorAddrBz := []byte(supplierOperatorAddr)
+	key = append(key, supplierOperatorAddrBz...)
 	key = append(key, []byte("/")...)
 
 	return key

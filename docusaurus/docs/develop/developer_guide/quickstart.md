@@ -138,6 +138,16 @@ available commands. Looking inside the Makefile is a great way to learn how to u
 
 ### 1.3 Prepare your development environment
 
+Run the following command to install `golang` dependencies:
+```bash
+make install_ci_deps
+```
+
+If you encounter issues related to `mockgen` not being found or failing, try running the following command to verify its installation:
+```bash
+make check_mockgen
+```
+
 Compile protobufs, generate mocks and verify that all tests are passing by running:
 
 ```bash
@@ -380,6 +390,8 @@ The following is an example config to get you started:
 
 ```bash
 cat <<EOF >> shannon_supplier_config.yaml
+owner_address: pokt1h04g6njyuv03dhd74a73pyzeadmd8dk7l9tsk8
+operator_address: pokt1h04g6njyuv03dhd74a73pyzeadmd8dk7l9tsk8
 stake_amount: 1000069upokt
 services:
   - service_id: anvil

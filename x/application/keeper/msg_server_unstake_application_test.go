@@ -42,7 +42,7 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 	require.Len(t, foundApp.ServiceConfigs, 1)
 
 	// Create and stake another application that will not be unstaked to assert that
-	/// only the unstaking application is removed from the applications list when the
+	// only the unstaking application is removed from the applications list when the
 	// unbonding period is over.
 	nonUnstakingAppAddr := sample.AccAddress()
 	stakeMsg = createAppStakeMsg(nonUnstakingAppAddr, initialStake)
@@ -129,7 +129,7 @@ func TestMsgServer_UnstakeApplication_CancelUnbondingIfRestaked(t *testing.T) {
 	err = appKeeper.EndBlockerUnbondApplications(ctx)
 	require.NoError(t, err)
 
-	// Make sure the supplier is still in the suppliers list with an unbonding height of 0
+	// Make sure the application exists with an unbonding height of 0
 	foundApp, isAppFound = appKeeper.GetApplication(ctx, appAddr)
 	require.True(t, isAppFound)
 	require.False(t, foundApp.IsUnbonding())
