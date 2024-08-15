@@ -193,7 +193,11 @@ WORKDIR /
 )
 
 # Run data nodes & validators
-k8s_yaml(["localnet/kubernetes/anvil.yaml", "localnet/kubernetes/validator-volume.yaml"])
+k8s_yaml([
+    "localnet/kubernetes/anvil.yaml",
+    "localnet/kubernetes/rest.yaml",
+    "localnet/kubernetes/validator-volume.yaml"
+])
 
 # Provision validator
 helm_resource(
@@ -370,3 +374,8 @@ if localnet_config["ollama"]["enabled"]:
         cmd=execute_in_pod("ollama", "ollama pull " + localnet_config["ollama"]["model"]),
         resource_deps=["ollama"],
     )
+
+if localnet_config["rest"]["enabled"]:
+    print("REST enabled: " + str(localnet_config["rest"]["enabled"]))
+    deployment_create("rest", image="davarski/go-rest-api-demo")
+    k8s_resource("rest", labels=["data_nodes"], port_forwards=["10000"])

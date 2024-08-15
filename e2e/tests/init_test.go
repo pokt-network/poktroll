@@ -450,7 +450,13 @@ func (s *suite) TheApplicationSendsTheSupplierASuccessfulRequestForServiceWithPa
 	// that allows any application to send a relay in LocalNet and our E2E Tests.
 	require.Equal(s, "app1", appName, "TODO_HACK: The LocalNet AppGateServer is self_signing and only supports app1.")
 
-	res, err := s.pocketd.RunCurlWithRetry(appGateServerUrl, serviceId, path, requestData, 5)
+	method := "POST"
+	// If requestData is empty, assume a GET request
+	if requestData == "" {
+		method = "GET"
+	}
+
+	res, err := s.pocketd.RunCurlWithRetry(appGateServerUrl, serviceId, method, path, requestData, 5)
 	require.NoError(s, err, "error sending relay request from app %q to supplier %q for service %q", appName, supplierOperatorName, serviceId)
 
 	var jsonContent json.RawMessage
@@ -475,6 +481,10 @@ func (s *suite) TheApplicationSendsTheSupplierASuccessfulRequestForServiceWithPa
 		// Validate REST request where the path is non-empty
 		require.Nil(s, jsonMap["error"], "error in relay response")
 	}
+}
+
+func (s *suite) TheApplicationSendsTheSupplierASuccessfulRequestForServiceWithPath(appName, supplierName, serviceId, path string) {
+	s.TheApplicationSendsTheSupplierASuccessfulRequestForServiceWithPathAndData(appName, supplierName, serviceId, path, "")
 }
 
 func (s *suite) AModuleEndBlockEventIsBroadcast(module, eventType string) {

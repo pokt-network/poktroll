@@ -43,6 +43,7 @@ message SupplierServiceConfig {
   // TODO_MAINNET: Avoid embedding the full Service because we just need the ID.
   Service service = 1; // The Service for which the supplier is configured
   repeated SupplierEndpoint endpoints = 2; // List of endpoints for the service
+  repeated ServiceRevenueShare rev_share = 3; // List of revenue share configurations for the service
   // TODO_MAINNET: There is an opportunity for supplier to advertise the min
   // they're willing to earn for a certain configuration/price, but this is outside of scope.
 }
@@ -52,6 +53,12 @@ message SupplierEndpoint {
   string url = 1; // URL of the endpoint
   RPCType rpc_type = 2; // Type of RPC exposed on the url above
   repeated ConfigOption configs = 3; // Additional configuration options for the endpoint
+}
+
+// ServiceRevenueShare message to hold revenue share configuration details
+message ServiceRevenueShare {
+  string address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the revenue share recipient
+  float rev_share_percentage = 2; // The percentage of revenue share the recipient will receive
 }
 
 // Enum to define RPC types
