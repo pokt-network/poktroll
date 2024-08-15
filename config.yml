@@ -226,6 +226,10 @@ genesis:
           name: "ollama"
           compute_units_per_relay: 1
           owner_address: pokt1mx0klkkrj6v3dw8gs4nzlq0cq8lsktmx35t03e
+        - id: rest
+          name: "rest"
+          compute_units_per_relay: 1
+          owner_address: pokt1mx0klkkrj6v3dw8gs4nzlq0cq8lsktmx35t03e
     proof:
       params:
         proof_request_probability: "0.25"
