@@ -483,7 +483,7 @@ func (s *suite) TheApplicationSendsTheSupplierASuccessfulRequestForServiceWithPa
 	}
 }
 
-func (s *suite) TheApplicationSendsTheSupplierARequestForServiceWithPath(appName, supplierName, serviceId, path string) {
+func (s *suite) TheApplicationSendsTheSupplierASuccessfulRequestForServiceWithPath(appName, supplierName, serviceId, path string) {
 	s.TheApplicationSendsTheSupplierASuccessfulRequestForServiceWithPathAndData(appName, supplierName, serviceId, path, "")
 }
 
