@@ -95,19 +95,16 @@ owner_address: <address>
 ```
 
 The `owner_address` is the address of the account that owns the `Supplier`s staked
-funds which will be returned to this account when the `Supplier` unstakes and finishes
+funds, which will be returned to this account when the `Supplier` unstakes and finishes
 unbonding.
 
 For custodial staking, the `owner_address` is the same as the `operator_address`.
 
 For non-custodial staking, the `owner_address` must be different from the `operator_address`.
-This address can only be used to stake a new `Supplier` or unstake an existing one.
+This address receives back the staked `upokt` when the `Supplier` is unstaked.
 
-The `owner_address` can only be changed with a stake message signed by the owner
-account corresponding to the `operator_address` of the `Supplier`.
-
-The owner account can also be used to unstake the `Supplier` and receive the staked
-`upokt` back.
+The `owner_address` can only be changed with a stake message signed by the
+`Supplier`'s owner account.
 
 It is also used as the unique shareholder address for the `Supplier`
 if none of `default_rev_share_percent` or `rev_share_percent` is defined in the
