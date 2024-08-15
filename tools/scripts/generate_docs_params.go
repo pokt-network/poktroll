@@ -96,6 +96,7 @@ func findProtoFiles(baseDir, pattern string) (protoFilePaths []string, err error
 	return protoFilePaths, nil
 }
 
+// prepareGovernanceParamsDocs parses the given .proto files and prepares the governance parameters documentation.
 func prepareGovernanceParamsDocs(protoFilePaths []string, template string) (string, error) {
 	docs := template
 	for _, filePath := range protoFilePaths {
