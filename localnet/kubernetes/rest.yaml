@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: rest
+spec:
+  selector:
+    app: rest
+  ports:
+    - protocol: TCP
+      name: rpc
+      port: 10000
+      targetPort: 10000
