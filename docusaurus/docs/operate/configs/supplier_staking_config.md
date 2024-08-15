@@ -52,7 +52,7 @@ The `Supplier` staking command supports two types of staking:
 
 ### Custodial Staking
 
-In this type, the owner of the `Supplier` is the same as the operator.
+The owner of the `Supplier` is the same as the operator.
 This means the account that receives the rewards is the same as the one that
 signs the `RelayResponse`s and submits claims and proofs.
 
@@ -63,7 +63,7 @@ about using the private key of the staking or the rewarded account to operate th
 
 ### Non-Custodial Staking
 
-In this staking mode, the owner of the `Supplier` is different from the operator.
+The owner of the `Supplier` is different from the operator.
 This means the account that receives the rewards is different from the one signing
 the `RelayResponse`s and submitting claims and proofs.
 
