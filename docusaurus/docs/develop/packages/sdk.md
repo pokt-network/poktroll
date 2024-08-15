@@ -248,7 +248,7 @@ It consists of the following fields:
 - `QueryNodeGRPCUrl` is the url of the Pocket Node's gRPC endpoint, used to query
   the Pocket Network's state for sessions, account information, delegations, etc.
 - `QueryNodeUrl` is the url of the Pocket Node's websocket endpoint, used to
-  subscribe to the Pocket Network's new block events needed to keep the
+  subscribe to Pocket Network's new block events needed to keep the
   `POKTRollSDK` session information up to date.
 - `PrivateKey` is the private key used to sign the relay requests. It could be
   either the `Gateway` or the `Application` private key depending on the use case.

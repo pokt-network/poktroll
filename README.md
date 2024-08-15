@@ -79,3 +79,20 @@ and much more!
 ## License
 
 This project is licensed under the MIT License; see the [LICENSE](https://github.com/pokt-network/poktroll/blob/main/LICENSE) file for details.
+
+| Module | Field Type | Field Name | Comment |
+| ------ | ---------- | ---------- | ------- |
+
+| proof | bytes | relay_difficulty_target_hash | Params defines the parameters for the module. TODO_FOLLOWUP(@olshansk, #690): Either delete this or change it to be named "minimum" relay_difficulty_target_hash is the maximum value a relay hash must be less than to be volume/reward applicable. |
+| proof | float | proof_request_probability | proof_request_probability is the probability of a session requiring a proof if it's cost (i.e. compute unit consumption) is below the ProofRequirementThreshold. |
+| proof | uint64 | proof_requirement_threshold | proof_requirement_threshold is the session cost (i.e. compute unit consumption) threshold which asserts that a session MUST have a corresponding proof when its cost is equal to or above the threshold. This is in contrast to the this requirement being determined probabilistically via ProofRequestProbability. TODO_MAINNET: Consider renaming this to `proof_requirement_threshold_compute_units`. |
+| shared | uint64 | num_blocks_per_session | Params defines the parameters for the module. num_blocks_per_session is the number of blocks between the session start & end heights. |
+| shared | uint64 | grace_period_end_offset_blocks | grace_period_end_offset_blocks is the number of blocks, after the session end height, during which the supplier can still service payable relays. Suppliers will need to recreate a claim for the previous session (if already created) to get paid for the additional relays. |
+| shared | uint64 | claim_window_open_offset_blocks | claim_window_open_offset_blocks is the number of blocks after the session grace period height, at which the claim window opens. |
+| shared | uint64 | claim_window_close_offset_blocks | claim_window_close_offset_blocks is the number of blocks after the claim window open height, at which the claim window closes. |
+| shared | uint64 | proof_window_open_offset_blocks | proof_window_open_offset_blocks is the number of blocks after the claim window close height, at which the proof window opens. |
+| shared | uint64 | proof_window_close_offset_blocks | proof_window_close_offset_blocks is the number of blocks after the proof window open height, at which the proof window closes. |
+| shared | uint64 | supplier_unbonding_period_sessions | supplier_unbonding_period_sessions is the number of sessions that a supplier must wait after unstaking before their staked assets are moved to their account balance. On-chain business logic requires, and ensures, that the corresponding block count of the unbonding period will exceed the end of any active claim & proof lifecycles. |
+| application | uint64 | max_delegated_gateways | Params defines the parameters for the module. |
+| service | uint64 | add_service_fee | Params defines the parameters for the module. The amount of uPOKT required to add a new service. This will be deducted from the signer's account balance, and transferred to the pocket network foundation. |
+| tokenomics | uint64 | compute_units_to_tokens_multiplier | Params defines the parameters for the tokenomics module. The amount of upokt that a compute unit should translate to when settling a session. |

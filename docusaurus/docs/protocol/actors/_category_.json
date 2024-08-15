@@ -1,8 +1,8 @@
 {
   "label": "Actors",
-  "position": 3,
+  "position": 1,
   "link": {
     "type": "generated-index",
-    "description": "Documentation related to the Pocket Network actors."
+    "description": "Documentation related to Pocket Network's actors."
   }
 }

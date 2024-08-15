@@ -134,7 +134,7 @@ check_ignite_version:
 	fi
 
 .PHONY: check_mockgen
-# Internal helper target- Check if mockgen is installed 
+# Internal helper target- Check if mockgen is installed
 check_mockgen:
 	{ \
 	if ( ! ( command -v mockgen >/dev/null )); then \
@@ -1029,6 +1029,10 @@ go_docs: check_godoc ## Generate documentation for the project
 .PHONY: docusaurus_start
 docusaurus_start: check_npm check_node ## Start the Docusaurus server
 	(cd docusaurus && npm i && npm run start)
+
+.PHONY: docs_update_params_page
+docs_update_params_page: ## Update the page in Docusaurus documenting all the governance parameters
+	go run tools/scripts/generate_docs_params.go
 
 ######################
 ### Ignite Helpers ###
