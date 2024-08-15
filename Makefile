@@ -1030,8 +1030,8 @@ go_docs: check_godoc ## Generate documentation for the project
 docusaurus_start: check_npm check_node ## Start the Docusaurus server
 	(cd docusaurus && npm i && npm run start)
 
-.PHONY: docs_update_params_page
-docs_update_params_page: ## Update the page in Docusaurus documenting all the governance parameters
+.PHONY: docs_update_gov_params_page
+docs_update_gov_params_page: ## Update the page in Docusaurus documenting all the governance parameters
 	go run tools/scripts/generate_docs_params.go
 
 ######################
