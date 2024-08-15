@@ -28,6 +28,12 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 					Configs: make([]*sharedtypes.ConfigOption, 0),
 				},
 			},
+			RevShare: []*sharedtypes.ServiceRevenueShare{
+				{
+					Address:            sample.AccAddress(),
+					RevSharePercentage: 100,
+				},
+			},
 		},
 	}
 
@@ -116,7 +122,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 			desc: "missing owner address",
 			msg: MsgStakeSupplier{
 				Signer: ownerAddress,
-				// OwnerAddress: ownerAddress,
+				// OwnerAddress: ownerAddress, // intentionally commented out.
 				OperatorAddress: operatorAddress,
 				Stake:           &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(100)},
 				Services:        defaultServicesList,
@@ -128,7 +134,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 			msg: MsgStakeSupplier{
 				Signer:       ownerAddress,
 				OwnerAddress: ownerAddress,
-				// OperatorAddress: operatorAddress,
+				// OperatorAddress: operatorAddress, // intentionally commented out.
 				Stake:    &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(0)},
 				Services: defaultServicesList,
 			},
@@ -137,7 +143,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 		{
 			desc: "missing signer address",
 			msg: MsgStakeSupplier{
-				// Signer: ownerAddress,
+				// Signer: ownerAddress, // intentionally commented out.
 				OwnerAddress:    ownerAddress,
 				OperatorAddress: operatorAddress,
 				Stake:           &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(0)},
@@ -233,6 +239,12 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 								Configs: make([]*sharedtypes.ConfigOption, 0),
 							},
 						},
+						RevShare: []*sharedtypes.ServiceRevenueShare{
+							{
+								Address:            sample.AccAddress(),
+								RevSharePercentage: 100,
+							},
+						},
 					},
 					{
 						Service: &sharedtypes.Service{
@@ -243,6 +255,12 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 								Url:     "http://localhost:8082",
 								RpcType: sharedtypes.RPCType_GRPC,
 								Configs: make([]*sharedtypes.ConfigOption, 0),
+							},
+						},
+						RevShare: []*sharedtypes.ServiceRevenueShare{
+							{
+								Address:            sample.AccAddress(),
+								RevSharePercentage: 100,
 							},
 						},
 					},
@@ -290,6 +308,12 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 								Configs: make([]*sharedtypes.ConfigOption, 0),
 							},
 						},
+						RevShare: []*sharedtypes.ServiceRevenueShare{
+							{
+								Address:            sample.AccAddress(),
+								RevSharePercentage: 100,
+							},
+						},
 					},
 				},
 			},
@@ -315,6 +339,12 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 								Configs: make([]*sharedtypes.ConfigOption, 0),
 							},
 						},
+						RevShare: []*sharedtypes.ServiceRevenueShare{
+							{
+								Address:            sample.AccAddress(),
+								RevSharePercentage: 100,
+							},
+						},
 					},
 				},
 			},
@@ -337,6 +367,12 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 								Url:     "http://localhost:8080",
 								RpcType: sharedtypes.RPCType_JSON_RPC,
 								Configs: make([]*sharedtypes.ConfigOption, 0),
+							},
+						},
+						RevShare: []*sharedtypes.ServiceRevenueShare{
+							{
+								Address:            sample.AccAddress(),
+								RevSharePercentage: 100,
 							},
 						},
 					},
@@ -364,6 +400,12 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 								Configs: make([]*sharedtypes.ConfigOption, 0),
 							},
 						},
+						RevShare: []*sharedtypes.ServiceRevenueShare{
+							{
+								Address:            sample.AccAddress(),
+								RevSharePercentage: 100,
+							},
+						},
 					},
 				},
 			},
@@ -389,6 +431,12 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 								Configs: make([]*sharedtypes.ConfigOption, 0),
 							},
 						},
+						RevShare: []*sharedtypes.ServiceRevenueShare{
+							{
+								Address:            sample.AccAddress(),
+								RevSharePercentage: 100,
+							},
+						},
 					},
 				},
 			},
@@ -396,6 +444,63 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 		},
 		{
 			desc: "invalid service configs - missing rpc type",
+			msg: MsgStakeSupplier{
+				Signer:          ownerAddress,
+				OwnerAddress:    ownerAddress,
+				OperatorAddress: operatorAddress,
+				Stake:           &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(100)},
+				Services: []*sharedtypes.SupplierServiceConfig{
+					{
+						Service: &sharedtypes.Service{
+							Id:   "svcId",
+							Name: "name",
+						},
+						Endpoints: []*sharedtypes.SupplierEndpoint{
+							{
+								Url: "http://localhost:8080",
+								// RpcType explicitly omitted,
+								Configs: make([]*sharedtypes.ConfigOption, 0),
+							},
+						},
+						RevShare: []*sharedtypes.ServiceRevenueShare{
+							{
+								Address:            sample.AccAddress(),
+								RevSharePercentage: 100,
+							},
+						},
+					},
+				},
+			},
+			expectedErr: ErrSupplierInvalidServiceConfig,
+		},
+		{
+			desc: "invalid service configs - empty revenue share config",
+			msg: MsgStakeSupplier{
+				Signer:          ownerAddress,
+				OwnerAddress:    ownerAddress,
+				OperatorAddress: operatorAddress,
+				Stake:           &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(100)},
+				Services: []*sharedtypes.SupplierServiceConfig{
+					{
+						Service: &sharedtypes.Service{
+							Id:   "svcId",
+							Name: "name",
+						},
+						Endpoints: []*sharedtypes.SupplierEndpoint{
+							{
+								Url: "http://localhost:8080",
+								// RpcType explicitly omitted,
+								Configs: make([]*sharedtypes.ConfigOption, 0),
+							},
+						},
+						RevShare: []*sharedtypes.ServiceRevenueShare{},
+					},
+				},
+			},
+			expectedErr: ErrSupplierInvalidServiceConfig,
+		},
+		{
+			desc: "invalid service configs - missing revenue share config",
 			msg: MsgStakeSupplier{
 				Signer:          ownerAddress,
 				OwnerAddress:    ownerAddress,

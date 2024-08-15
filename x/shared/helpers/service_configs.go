@@ -3,7 +3,13 @@ package helpers
 import (
 	"fmt"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+)
+
+const (
+	requiredRevSharePercentageSum = 100
 )
 
 // ValidateAppServiceConfigs returns an error if any of the application service configs are invalid
@@ -78,6 +84,56 @@ func ValidateSupplierServiceConfigs(services []*sharedtypes.SupplierServiceConfi
 			// 	return fmt.Errorf("endpoint.Configs must have at least one entry: %v", serviceConfig)
 			// }
 		}
+
+		if err := ValidateServiceRevShare(serviceConfig.RevShare); err != nil {
+			return err
+		}
 	}
+
+	return nil
+}
+
+// ValidateServiceRevShare validates the supplier's service revenue share,
+// ensuring that the sum of the revenue share percentages is 100.
+// NB: This function is unit tested via the supplier staking config tests.
+func ValidateServiceRevShare(revShareList []*sharedtypes.ServiceRevenueShare) error {
+	revSharePercentageSum := float32(0)
+
+	if len(revShareList) == 0 {
+		return sharedtypes.ErrSharedInvalidRevShare.Wrap("no rev share configurations")
+	}
+
+	for _, revShare := range revShareList {
+		if revShare == nil {
+			return sharedtypes.ErrSharedInvalidRevShare.Wrap("rev share cannot be nil")
+		}
+
+		// Validate the revshare address
+		if revShare.Address == "" {
+			return sharedtypes.ErrSharedInvalidRevShare.Wrapf("rev share address cannot be empty: %v", revShare)
+		}
+
+		if _, err := sdk.AccAddressFromBech32(revShare.Address); err != nil {
+			return sharedtypes.ErrSharedInvalidRevShare.Wrapf("invalid rev share address %s; (%v)", revShare.Address, err)
+		}
+
+		if revShare.RevSharePercentage <= 0 || revShare.RevSharePercentage > 100 {
+			return sharedtypes.ErrSharedInvalidRevShare.Wrapf(
+				"invalid rev share value %v; must be between 0 and 100",
+				revShare.RevSharePercentage,
+			)
+		}
+
+		revSharePercentageSum += revShare.RevSharePercentage
+	}
+
+	if revSharePercentageSum != requiredRevSharePercentageSum {
+		return sharedtypes.ErrSharedInvalidRevShare.Wrapf(
+			"invalid rev share percentage sum %v; must be equal to %v",
+			revSharePercentageSum,
+			requiredRevSharePercentageSum,
+		)
+	}
+
 	return nil
 }

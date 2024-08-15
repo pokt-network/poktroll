@@ -58,8 +58,8 @@ func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) error {
 			ctx, types.ModuleName, ownerAddress, []cosmostypes.Coin{*supplier.Stake},
 		); err != nil {
 			logger.Error(fmt.Sprintf(
-				"could not send %s coins from %s module to %s account due to %s",
-				supplier.Stake.String(), ownerAddress, types.ModuleName, err,
+				"could not send %s coins from module %s to account %s due to %s",
+				supplier.Stake.String(), types.ModuleName, ownerAddress, err,
 			))
 			return err
 		}

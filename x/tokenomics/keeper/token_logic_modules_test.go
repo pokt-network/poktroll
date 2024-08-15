@@ -25,6 +25,7 @@ import (
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
+	"github.com/pokt-network/poktroll/x/tokenomics/keeper"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
@@ -54,11 +55,23 @@ func TestProcessTokenLogicModules_HandleAppGoingIntoDebt(t *testing.T) {
 	keepers.SetApplication(ctx, app)
 
 	// Add a new supplier
+	supplierOwnerAddress := sample.AccAddress()
 	supplierStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
 	supplier := sharedtypes.Supplier{
-		OwnerAddress:    sample.AccAddress(),
-		OperatorAddress: sample.AccAddress(),
+		OwnerAddress:    supplierOwnerAddress,
+		OperatorAddress: supplierOwnerAddress,
 		Stake:           &supplierStake,
+		Services: []*sharedtypes.SupplierServiceConfig{
+			{
+				Service: service,
+				RevShare: []*sharedtypes.ServiceRevenueShare{
+					{
+						Address:            supplierOwnerAddress,
+						RevSharePercentage: 100,
+					},
+				},
+			},
+		},
 	}
 	keepers.SetSupplier(ctx, supplier)
 
@@ -113,12 +126,29 @@ func TestProcessTokenLogicModules_ValidAccounting(t *testing.T) {
 	}
 	keepers.SetApplication(ctx, app)
 
+	shareRatios := []float32{12.5, 37.5, 50}
+	revShares := make([]*sharedtypes.ServiceRevenueShare, len(shareRatios))
+	for i := range revShares {
+		shareHolderAddress := sample.AccAddress()
+		revShares[i] = &sharedtypes.ServiceRevenueShare{
+			Address:            shareHolderAddress,
+			RevSharePercentage: shareRatios[i],
+		}
+	}
+
 	// Add a new supplier.
 	supplierStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
 	supplier := sharedtypes.Supplier{
-		OwnerAddress:    sample.AccAddress(),
-		OperatorAddress: sample.AccAddress(),
+		// Make the first shareholder the supplier itself.
+		OwnerAddress:    revShares[0].Address,
+		OperatorAddress: revShares[0].Address,
 		Stake:           &supplierStake,
+		Services: []*sharedtypes.SupplierServiceConfig{
+			{
+				Service:  service,
+				RevShare: revShares,
+			},
+		},
 	}
 	keepers.SetSupplier(ctx, supplier)
 
@@ -127,8 +157,6 @@ func TestProcessTokenLogicModules_ValidAccounting(t *testing.T) {
 	// Query application module balance prior to the accounting.
 	appModuleStartBalance := getBalance(t, ctx, keepers, appModuleAddress)
 
-	// Query supplier balance prior to the accounting.
-	supplierStartBalance := getBalance(t, ctx, keepers, supplier.GetOwnerAddress())
 	// Query supplier module balance prior to the accounting.
 	supplierModuleStartBalance := getBalance(t, ctx, keepers, supplierModuleAddress)
 
@@ -169,10 +197,18 @@ func TestProcessTokenLogicModules_ValidAccounting(t *testing.T) {
 	require.NotNil(t, appModuleEndBalance)
 	require.EqualValues(t, &expectedAppModuleEndBalance, appModuleEndBalance)
 
-	// Assert that `supplierOwnerAddress` account balance has *increased* by the appropriate amount
-	supplierOwnerEndBalance := getBalance(t, ctx, keepers, supplier.GetOwnerAddress())
-	expectedSupplierBalance := supplierStartBalance.Add(expectedAppBurn)
-	require.EqualValues(t, &expectedSupplierBalance, supplierOwnerEndBalance)
+	// Assert that the supplier shareholders account balances have *increased* by
+	// the appropriate amount.
+	mintAmountInt := expectedAppBurn.Amount.Uint64()
+	shareAmounts := keeper.GetShareAmountMap(supplier.Services[0].RevShare, mintAmountInt)
+	for shareHolder, expectedShareAmount := range shareAmounts {
+		shareHolderBalance := getBalance(t, ctx, keepers, shareHolder)
+
+		require.Equal(t,
+			int64(expectedShareAmount),
+			shareHolderBalance.Amount.Int64(),
+		)
+	}
 
 	// Assert that `supplierOperatorAddress` staked balance is *unchanged*
 	supplier, supplierIsFound := keepers.GetSupplier(ctx, supplier.GetOperatorAddress())
@@ -224,11 +260,23 @@ func TestProcessTokenLogicModules_AppStakeTooLow(t *testing.T) {
 	appModuleStartBalance := getBalance(t, ctx, keepers, appModuleAddress)
 
 	// Add a new supplier.
+	supplierOwnerAddress := sample.AccAddress()
 	supplierStake := cosmostypes.NewCoin("upokt", math.NewInt(1000000))
 	supplier := sharedtypes.Supplier{
-		OwnerAddress:    sample.AccAddress(),
-		OperatorAddress: sample.AccAddress(),
+		OwnerAddress:    supplierOwnerAddress,
+		OperatorAddress: supplierOwnerAddress,
 		Stake:           &supplierStake,
+		Services: []*sharedtypes.SupplierServiceConfig{
+			{
+				Service: service,
+				RevShare: []*sharedtypes.ServiceRevenueShare{
+					{
+						Address:            supplierOwnerAddress,
+						RevSharePercentage: 100,
+					},
+				},
+			},
+		},
 	}
 	keepers.SetSupplier(ctx, supplier)
 
