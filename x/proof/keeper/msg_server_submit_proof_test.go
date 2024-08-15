@@ -17,6 +17,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	testutilevents "github.com/pokt-network/poktroll/testutil/events"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
+	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/testutil/testkeyring"
 	"github.com/pokt-network/poktroll/testutil/testtree"
 	"github.com/pokt-network/poktroll/x/proof/keeper"
@@ -29,7 +30,7 @@ import (
 // TODO_TECHDEBT(@bryanchriswhite): Simplify this file; https://github.com/pokt-network/poktroll/pull/417#pullrequestreview-1958582600
 
 const (
-	supplierUid = "supplier"
+	supplierOperatorUid = "supplier"
 )
 
 var (
@@ -56,17 +57,17 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 		getProofMsgHeight func(
 			sharedParams *sharedtypes.Params,
 			queryHeight int64,
-			supplierAddr string,
+			supplierOperatorAddr string,
 		) int64
 	}{
 		{
 			desc: "proof message height equals supplier's earliest proof commit height",
-			getProofMsgHeight: func(sharedParams *sharedtypes.Params, queryHeight int64, supplierAddr string) int64 {
+			getProofMsgHeight: func(sharedParams *sharedtypes.Params, queryHeight int64, supplierOperatorAddr string) int64 {
 				return shared.GetEarliestSupplierProofCommitHeight(
 					sharedParams,
 					queryHeight,
 					blockHeaderHash,
-					supplierAddr,
+					supplierOperatorAddr,
 				)
 			},
 		},
@@ -102,9 +103,9 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 
 			// Create accounts in the account keeper with corresponding keys in the
 			// keyring for the application and supplier.
-			supplierAddr := testkeyring.CreateOnChainAccount(
+			supplierOperatorAddr := testkeyring.CreateOnChainAccount(
 				ctx, t,
-				supplierUid,
+				supplierOperatorUid,
 				keyRing,
 				keepers,
 				preGeneratedAccts,
@@ -117,10 +118,14 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 				preGeneratedAccts,
 			).String()
 
-			service := &sharedtypes.Service{Id: testServiceId}
+			service := &sharedtypes.Service{
+				Id:                   testServiceId,
+				ComputeUnitsPerRelay: computeUnitsPerRelay,
+				OwnerAddress:         sample.AccAddress(),
+			}
 
 			// Add a supplier and application pair that are expected to be in the session.
-			keepers.AddServiceActors(ctx, t, service, supplierAddr, appAddr)
+			keepers.AddServiceActors(ctx, t, service, supplierOperatorAddr, appAddr)
 
 			// Get the session for the application/supplier pair which is expected
 			// to be claimed and for which a valid proof would be accepted.
@@ -141,11 +146,12 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 			require.NoError(t, err)
 
 			// Submit the corresponding proof.
-			expectedNumRelays := uint(5)
+			numRelays := uint64(5)
+			numComputeUnits := numRelays * service.ComputeUnitsPerRelay
 			sessionTree := testtree.NewFilledSessionTree(
 				ctx, t,
-				expectedNumRelays,
-				supplierUid, supplierAddr,
+				numRelays, service.ComputeUnitsPerRelay,
+				supplierOperatorUid, supplierOperatorAddr,
 				sessionHeader, sessionHeader, sessionHeader,
 				keyRing,
 				ringClient,
@@ -156,14 +162,14 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 				&sharedParams,
 				sessionHeader.GetSessionEndBlockHeight(),
 				blockHeaderHash,
-				supplierAddr,
+				supplierOperatorAddr,
 			)
 			ctx = keepertest.SetBlockHeight(ctx, claimMsgHeight)
 
 			// Create a valid claim.
 			claim := createClaimAndStoreBlockHash(
 				ctx, t, 1,
-				supplierAddr,
+				supplierOperatorAddr,
 				appAddr,
 				service,
 				sessionTree,
@@ -177,7 +183,7 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 				&sharedParams,
 				sessionHeader.GetSessionEndBlockHeight(),
 				blockHeaderHash,
-				supplierAddr,
+				supplierOperatorAddr,
 			)
 			ctx = keepertest.SetBlockHeight(ctx, earliestSupplierProofCommitHeight-1)
 
@@ -189,11 +195,11 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 			expectedMerkleProofPath = protocol.GetPathForProof(blockHeaderHash, sessionHeader.GetSessionId())
 
 			// Advance the block height to the test proof msg height.
-			proofMsgHeight := test.getProofMsgHeight(&sharedParams, sessionHeader.GetSessionEndBlockHeight(), supplierAddr)
+			proofMsgHeight := test.getProofMsgHeight(&sharedParams, sessionHeader.GetSessionEndBlockHeight(), supplierOperatorAddr)
 			ctx = keepertest.SetBlockHeight(ctx, proofMsgHeight)
 
 			proofMsg := newTestProofMsg(t,
-				supplierAddr,
+				supplierOperatorAddr,
 				sessionHeader,
 				sessionTree,
 				expectedMerkleProofPath,
@@ -208,7 +214,7 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 			proofs := proofRes.GetProofs()
 			require.Lenf(t, proofs, 1, "expected 1 proof, got %d", len(proofs))
 			require.Equal(t, proofMsg.SessionHeader.SessionId, proofs[0].GetSessionHeader().GetSessionId())
-			require.Equal(t, proofMsg.SupplierAddress, proofs[0].GetSupplierAddress())
+			require.Equal(t, proofMsg.SupplierOperatorAddress, proofs[0].GetSupplierOperatorAddress())
 			require.Equal(t, proofMsg.SessionHeader.GetSessionEndBlockHeight(), proofs[0].GetSessionHeader().GetSessionEndBlockHeight())
 
 			events := sdkCtx.EventManager().Events()
@@ -221,8 +227,8 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 
 			require.EqualValues(t, claim, proofSubmittedEvent.GetClaim())
 			require.EqualValues(t, &proofs[0], proofSubmittedEvent.GetProof())
-			require.Equal(t, uint64(expectedNumComputeUnits), proofSubmittedEvent.GetNumComputeUnits())
-			require.Equal(t, uint64(expectedNumRelays), proofSubmittedEvent.GetNumRelays())
+			require.Equal(t, uint64(numRelays), proofSubmittedEvent.GetNumRelays())
+			require.Equal(t, uint64(numComputeUnits), proofSubmittedEvent.GetNumComputeUnits())
 		})
 	}
 }
@@ -249,9 +255,9 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 	preGeneratedAccts := testkeyring.PreGeneratedAccounts()
 
 	// Create accounts in the account keeper with corresponding keys in the keyring for the application and supplier.
-	supplierAddr := testkeyring.CreateOnChainAccount(
+	supplierOperatorAddr := testkeyring.CreateOnChainAccount(
 		ctx, t,
-		supplierUid,
+		supplierOperatorUid,
 		keyRing,
 		keepers,
 		preGeneratedAccts,
@@ -264,10 +270,14 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 		preGeneratedAccts,
 	).String()
 
-	service := &sharedtypes.Service{Id: testServiceId}
+	service := &sharedtypes.Service{
+		Id:                   testServiceId,
+		ComputeUnitsPerRelay: computeUnitsPerRelay,
+		OwnerAddress:         sample.AccAddress(),
+	}
 
 	// Add a supplier and application pair that are expected to be in the session.
-	keepers.AddServiceActors(ctx, t, service, supplierAddr, appAddr)
+	keepers.AddServiceActors(ctx, t, service, supplierOperatorAddr, appAddr)
 
 	// Get the session for the application/supplier pair which is expected
 	// to be claimed and for which a valid proof would be accepted.
@@ -288,11 +298,11 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 	require.NoError(t, err)
 
 	// Submit the corresponding proof.
-	numRelays := uint(5)
+	numRelays := uint64(5)
 	sessionTree := testtree.NewFilledSessionTree(
 		ctx, t,
-		numRelays,
-		supplierUid, supplierAddr,
+		numRelays, service.ComputeUnitsPerRelay,
+		supplierOperatorUid, supplierOperatorAddr,
 		sessionHeader, sessionHeader, sessionHeader,
 		keyRing,
 		ringClient,
@@ -304,7 +314,7 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 		&sharedParams,
 		sessionHeader.GetSessionEndBlockHeight(),
 		claimWindowOpenHeightBlockHash,
-		supplierAddr,
+		supplierOperatorAddr,
 	)
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	sdkCtx = sdkCtx.WithBlockHeight(claimMsgHeight)
@@ -313,7 +323,7 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 	// Create a valid claim.
 	createClaimAndStoreBlockHash(
 		ctx, t, 1,
-		supplierAddr,
+		supplierOperatorAddr,
 		appAddr,
 		service,
 		sessionTree,
@@ -326,7 +336,7 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 		&sharedParams,
 		sessionHeader.GetSessionEndBlockHeight(),
 		proofWindowOpenHeightBlockHash,
-		supplierAddr,
+		supplierOperatorAddr,
 	)
 	proofWindowCloseHeight := shared.GetProofWindowCloseHeight(&sharedParams, sessionHeader.GetSessionEndBlockHeight())
 
@@ -369,7 +379,7 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 			ctx = sdkCtx
 
 			proofMsg := newTestProofMsg(t,
-				supplierAddr,
+				supplierOperatorAddr,
 				sessionHeader,
 				sessionTree,
 				expectedMerkleProofPath,
@@ -414,14 +424,14 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 
 	// Create accounts in the account keeper with corresponding keys in the keyring
 	// for the applications and suppliers used in the tests.
-	supplierAddr := testkeyring.CreateOnChainAccount(
+	supplierOperatorAddr := testkeyring.CreateOnChainAccount(
 		ctx, t,
-		supplierUid,
+		supplierOperatorUid,
 		keyRing,
 		keepers,
 		preGeneratedAccts,
 	).String()
-	wrongSupplierAddr := testkeyring.CreateOnChainAccount(
+	wrongSupplierOperatorAddr := testkeyring.CreateOnChainAccount(
 		ctx, t,
 		"wrong_supplier",
 		keyRing,
@@ -443,14 +453,22 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 		preGeneratedAccts,
 	).String()
 
-	service := &sharedtypes.Service{Id: testServiceId}
-	wrongService := &sharedtypes.Service{Id: "wrong_svc"}
+	service := &sharedtypes.Service{
+		Id:                   testServiceId,
+		ComputeUnitsPerRelay: computeUnitsPerRelay,
+		OwnerAddress:         sample.AccAddress(),
+	}
+	wrongService := &sharedtypes.Service{
+		Id:                   "wrong_svc",
+		ComputeUnitsPerRelay: computeUnitsPerRelay,
+		OwnerAddress:         sample.AccAddress(),
+	}
 
 	// Add a supplier and application pair that are expected to be in the session.
-	keepers.AddServiceActors(ctx, t, service, supplierAddr, appAddr)
+	keepers.AddServiceActors(ctx, t, service, supplierOperatorAddr, appAddr)
 
 	// Add a supplier and application pair that are *not* expected to be in the session.
-	keepers.AddServiceActors(ctx, t, wrongService, wrongSupplierAddr, wrongAppAddr)
+	keepers.AddServiceActors(ctx, t, wrongService, wrongSupplierOperatorAddr, wrongAppAddr)
 
 	// Get the session for the application/supplier pair which is expected
 	// to be claimed and for which a valid proof would be accepted.
@@ -474,11 +492,11 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 	require.NoError(t, err)
 
 	// Construct a valid session tree with 5 relays.
-	numRelays := uint(5)
+	numRelays := uint64(5)
 	validSessionTree := testtree.NewFilledSessionTree(
 		ctx, t,
-		numRelays,
-		supplierUid, supplierAddr,
+		numRelays, service.ComputeUnitsPerRelay,
+		supplierOperatorUid, supplierOperatorAddr,
 		validSessionHeader, validSessionHeader, validSessionHeader,
 		keyRing,
 		ringClient,
@@ -490,7 +508,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 		&sharedParams,
 		validSessionHeader.GetSessionEndBlockHeight(),
 		blockHeaderHash,
-		supplierAddr,
+		supplierOperatorAddr,
 	)
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	sdkCtx = sdkCtx.WithBlockHeight(claimMsgHeight)
@@ -500,7 +518,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 	// store for the corresponding session.
 	createClaimAndStoreBlockHash(
 		ctx, t, 1,
-		supplierAddr,
+		supplierOperatorAddr,
 		appAddr,
 		service,
 		validSessionTree,
@@ -523,7 +541,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 
 				// Construct new proof message.
 				return newTestProofMsg(t,
-					supplierAddr,
+					supplierOperatorAddr,
 					&emptySessionIdHeader,
 					validSessionTree,
 					expectedMerkleProofPath,
@@ -543,7 +561,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			newProofMsg: func(t *testing.T) *prooftypes.MsgSubmitProof {
 				// Construct new proof message.
 				proof := newTestProofMsg(t,
-					supplierAddr,
+					supplierOperatorAddr,
 					validSessionHeader,
 					validSessionTree,
 					expectedMerkleProofPath,
@@ -565,7 +583,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			newProofMsg: func(t *testing.T) *prooftypes.MsgSubmitProof {
 				// Construct new proof message using the wrong session ID.
 				return newTestProofMsg(t,
-					supplierAddr,
+					supplierOperatorAddr,
 					&wrongSessionIdHeader,
 					validSessionTree,
 					expectedMerkleProofPath,
@@ -585,7 +603,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			newProofMsg: func(t *testing.T) *prooftypes.MsgSubmitProof {
 				// Construct a proof message with a  supplier that does not belong in the session.
 				return newTestProofMsg(t,
-					wrongSupplierAddr,
+					wrongSupplierOperatorAddr,
 					validSessionHeader,
 					validSessionTree,
 					expectedMerkleProofPath,
@@ -594,8 +612,8 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			expectedErr: status.Error(
 				codes.InvalidArgument,
 				prooftypes.ErrProofNotFound.Wrapf(
-					"supplier address %q not found in session ID %q",
-					wrongSupplierAddr,
+					"supplier operator address %q not found in session ID %q",
+					wrongSupplierOperatorAddr,
 					validSessionHeader.GetSessionId(),
 				).Error(),
 			),
@@ -612,7 +630,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 				&sharedParams,
 				proofMsg.GetSessionHeader().GetSessionEndBlockHeight(),
 				blockHeaderHash,
-				proofMsg.GetSupplierAddress(),
+				proofMsg.GetSupplierOperatorAddress(),
 			)
 			ctx = keepertest.SetBlockHeight(ctx, earliestSupplierProofCommitHeight-1)
 
@@ -647,7 +665,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 // to be validated and stored on-chain.
 func newTestProofMsg(
 	t *testing.T,
-	supplierAddr string,
+	supplierOperatorAddr string,
 	sessionHeader *sessiontypes.SessionHeader,
 	sessionTree relayer.SessionTree,
 	closestProofPath []byte,
@@ -664,9 +682,9 @@ func newTestProofMsg(
 	require.NoError(t, err)
 
 	return &prooftypes.MsgSubmitProof{
-		SupplierAddress: supplierAddr,
-		SessionHeader:   sessionHeader,
-		Proof:           merkleProofBz,
+		SupplierOperatorAddress: supplierOperatorAddr,
+		SessionHeader:           sessionHeader,
+		Proof:                   merkleProofBz,
 	}
 }
 
@@ -678,7 +696,7 @@ func createClaimAndStoreBlockHash(
 	ctx context.Context,
 	t *testing.T,
 	sessionStartHeight int64,
-	supplierAddr, appAddr string,
+	supplierOperatorAddr, appAddr string,
 	service *sharedtypes.Service,
 	sessionTree relayer.SessionTree,
 	sessionHeader *sessiontypes.SessionHeader,
@@ -692,7 +710,7 @@ func createClaimAndStoreBlockHash(
 	claimMsg := newTestClaimMsg(t,
 		sessionStartHeight,
 		sessionHeader.GetSessionId(),
-		supplierAddr,
+		supplierOperatorAddr,
 		appAddr,
 		service,
 		merkleRootBz,
@@ -714,7 +732,7 @@ func createClaimAndStoreBlockHash(
 		&sharedParams,
 		sessionStartHeight,
 		sdkCtx.HeaderHash(),
-		supplierAddr,
+		supplierOperatorAddr,
 	)
 
 	// Set block height to be after the session grace period.

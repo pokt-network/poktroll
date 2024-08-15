@@ -32,6 +32,8 @@ import (
 type SupplierModuleKeepers struct {
 	*keeper.Keeper
 	types.SharedKeeper
+	// Tracks the amount of funds returned to the supplier owner when the supplier is unbonded.
+	SupplierUnstakedFundsMap map[string]int64
 }
 
 func SupplierKeeper(t testing.TB) (SupplierModuleKeepers, context.Context) {
@@ -51,11 +53,18 @@ func SupplierKeeper(t testing.TB) (SupplierModuleKeepers, context.Context) {
 	cdc := codec.NewProtoCodec(registry)
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName)
 
+	// Set a simple map to track the where the supplier stake is returned when
+	// the supplier is unbonded.
+	supplierUnstakedFundsMap := make(map[string]int64)
+
 	ctrl := gomock.NewController(t)
 	mockBankKeeper := mocks.NewMockBankKeeper(ctrl)
 	mockBankKeeper.EXPECT().SendCoinsFromAccountToModule(gomock.Any(), gomock.Any(), types.ModuleName, gomock.Any()).AnyTimes()
-	mockBankKeeper.EXPECT().SendCoinsFromModuleToAccount(gomock.Any(), types.ModuleName, gomock.Any(), gomock.Any()).AnyTimes()
 	mockBankKeeper.EXPECT().SpendableCoins(gomock.Any(), gomock.Any()).AnyTimes()
+	mockBankKeeper.EXPECT().SendCoinsFromModuleToAccount(gomock.Any(), types.ModuleName, gomock.Any(), gomock.Any()).AnyTimes().
+		Do(func(ctx context.Context, module string, addr sdk.AccAddress, coins sdk.Coins) {
+			supplierUnstakedFundsMap[addr.String()] += coins[0].Amount.Int64()
+		})
 
 	// Construct a real shared keeper.
 	sharedKeeper := sharedkeeper.NewKeeper(
@@ -95,12 +104,10 @@ func SupplierKeeper(t testing.TB) (SupplierModuleKeepers, context.Context) {
 	serviceKeeper.SetService(ctx, sharedtypes.Service{Id: "svcId2"})
 
 	supplierModuleKeepers := SupplierModuleKeepers{
-		Keeper:       &supplierKeeper,
-		SharedKeeper: sharedKeeper,
+		Keeper:                   &supplierKeeper,
+		SharedKeeper:             sharedKeeper,
+		SupplierUnstakedFundsMap: supplierUnstakedFundsMap,
 	}
 
 	return supplierModuleKeepers, ctx
 }
-
-// TODO_OPTIMIZE: Index suppliers by service so we can easily query k.GetAllSuppliers(ctx, Service)
-// func (k Keeper) GetAllSuppliers(ctx, sdkContext, serviceId string) (suppliers []sharedtypes.Supplier) {}

@@ -133,6 +133,17 @@ check_ignite_version:
 		exit 1 ; \
 	fi
 
+.PHONY: check_mockgen
+# Internal helper target- Check if mockgen is installed 
+check_mockgen:
+	{ \
+	if ( ! ( command -v mockgen >/dev/null )); then \
+		echo "Seems like you don't have `mockgen` installed. Please visit https://github.com/golang/mock#installation and follow the instructions to install `mockgen` before continuing"; \
+		exit 1; \
+	fi; \
+	}
+
+
 .PHONY: check_act
 # Internal helper target - check if `act` is installed
 check_act:
@@ -752,13 +763,13 @@ acc_balance_query: ## Query the balance of the account specified (make acc_balan
 
 .PHONY: acc_balance_query_modules
 acc_balance_query_modules: ## Query the balance of the network level module accounts
-	@echo "### Application ###"
+	@echo "### Application Module ###\n"
 	make acc_balance_query ACC=$(APPLICATION_MODULE_ADDRESS)
-	@echo "### Supplier ###"
+	@echo "### Supplier Module ###\n"
 	make acc_balance_query ACC=$(SUPPLIER_MODULE_ADDRESS)
-	@echo "### Gateway ###"
+	@echo "### Gateway Module ###\n"
 	make acc_balance_query ACC=$(GATEWAY_MODULE_ADDRESS)
-	@echo "### Service ###"
+	@echo "### Service Module ###\n"
 	make acc_balance_query ACC=$(SERVICE_MODULE_ADDRESS)
 
 .PHONY: acc_balance_query_app1
@@ -813,7 +824,7 @@ warn_message_local_stress_test: ## Print a warning message when kicking off a lo
 	@echo "|                                                                                               |"
 	@echo "|     1. Review the # of suppliers & gateways in 'load-testing/localnet_loadtest_manifest.yaml' |"
 	@echo "|     2. Update 'localnet_config.yaml' to reflect what you found in (1)                         |"
-	@echo "|     	DEVELOPER_TIP: If you're operating off defaults, you'll likely need to update to 3     |"
+	@echo "|     DEVELOPER_TIP: If you're operating off defaults, you'll likely need to update to 3        |"
 	@echo "|                                                                                               |"
 	@echo "|     TODO_DOCUMENT(@okdas): Move this into proper documentation w/ clearer explanations        |"
 	@echo "|                                                                                               |"
@@ -827,7 +838,7 @@ warn_flaky_tests: ## Print a warning message that some unit tests may be flaky
 	@echo "|                                                                                               |"
 	@echo "|     1. Our unit / integration tests are far from perfect & some are flaky                     |"
 	@echo "|     2. If you ran 'make go_develop_and_test' and a failure occurred, try to run:              |"
-	@echo "|     	'make test_all' once or twice more                                                     |"
+	@echo "|     'make test_all' once or twice more                                                        |"
 	@echo "|     3. If the same error persists, isolate it with 'go test -v ./path/to/failing/module       |"
 	@echo "|                                                                                               |"
 	@echo "+-----------------------------------------------------------------------------------------------+"
@@ -852,7 +863,7 @@ claim_list: ## List all the claims
 
 .PHONY: claims_list_address
 claim_list_address: ## List all the claims for a specific address (specified via ADDR variable)
-	poktrolld --home=$(POKTROLLD_HOME) q supplier list-claims --supplier-address $(ADDR) --node $(POCKET_NODE)
+	poktrolld --home=$(POKTROLLD_HOME) q supplier list-claims --supplier-operator-address $(ADDR) --node $(POCKET_NODE)
 
 .PHONY: claims_list_address_supplier1
 claim_list_address_supplier1: ## List all the claims for supplier1

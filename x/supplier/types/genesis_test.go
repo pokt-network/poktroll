@@ -26,6 +26,12 @@ func TestGenesisState_Validate(t *testing.T) {
 				Configs: make([]*sharedtypes.ConfigOption, 0),
 			},
 		},
+		RevShare: []*sharedtypes.ServiceRevenueShare{
+			{
+				Address:            addr1,
+				RevSharePercentage: 100,
+			},
+		},
 	}
 	serviceList1 := []*sharedtypes.SupplierServiceConfig{serviceConfig1}
 
@@ -40,6 +46,12 @@ func TestGenesisState_Validate(t *testing.T) {
 				Url:     "http://localhost:8082",
 				RpcType: sharedtypes.RPCType_GRPC,
 				Configs: make([]*sharedtypes.ConfigOption, 0),
+			},
+		},
+		RevShare: []*sharedtypes.ServiceRevenueShare{
+			{
+				Address:            addr2,
+				RevSharePercentage: 100,
 			},
 		},
 	}
@@ -60,14 +72,16 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				SupplierList: []sharedtypes.Supplier{
 					{
-						Address:  addr1,
-						Stake:    &stake1,
-						Services: serviceList1,
+						OwnerAddress:    addr1,
+						OperatorAddress: addr1,
+						Stake:           &stake1,
+						Services:        serviceList1,
 					},
 					{
-						Address:  addr2,
-						Stake:    &stake2,
-						Services: serviceList2,
+						OwnerAddress:    addr2,
+						OperatorAddress: addr2,
+						Stake:           &stake2,
+						Services:        serviceList2,
 					},
 				},
 				// this line is used by starport scaffolding # types/genesis/validField
@@ -79,14 +93,16 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				SupplierList: []sharedtypes.Supplier{
 					{
-						Address:  addr1,
-						Stake:    &stake1,
-						Services: serviceList1,
+						OwnerAddress:    addr1,
+						OperatorAddress: addr1,
+						Stake:           &stake1,
+						Services:        serviceList1,
 					},
 					{
-						Address:  addr2,
-						Stake:    &sdk.Coin{Denom: "upokt", Amount: math.NewInt(0)},
-						Services: serviceList2,
+						OwnerAddress:    addr2,
+						OperatorAddress: addr2,
+						Stake:           &sdk.Coin{Denom: "upokt", Amount: math.NewInt(0)},
+						Services:        serviceList2,
 					},
 				},
 			},
@@ -97,14 +113,16 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				SupplierList: []sharedtypes.Supplier{
 					{
-						Address:  addr1,
-						Stake:    &stake1,
-						Services: serviceList1,
+						OwnerAddress:    addr1,
+						OperatorAddress: addr1,
+						Stake:           &stake1,
+						Services:        serviceList1,
 					},
 					{
-						Address:  addr2,
-						Stake:    &sdk.Coin{Denom: "upokt", Amount: math.NewInt(-100)},
-						Services: serviceList2,
+						OwnerAddress:    addr2,
+						OperatorAddress: addr2,
+						Stake:           &sdk.Coin{Denom: "upokt", Amount: math.NewInt(-100)},
+						Services:        serviceList2,
 					},
 				},
 			},
@@ -115,14 +133,16 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				SupplierList: []sharedtypes.Supplier{
 					{
-						Address:  addr1,
-						Stake:    &stake1,
-						Services: serviceList1,
+						OwnerAddress:    addr1,
+						OperatorAddress: addr1,
+						Stake:           &stake1,
+						Services:        serviceList1,
 					},
 					{
-						Address:  addr2,
-						Stake:    &sdk.Coin{Denom: "invalid", Amount: math.NewInt(100)},
-						Services: serviceList2,
+						OwnerAddress:    addr2,
+						OperatorAddress: addr2,
+						Stake:           &sdk.Coin{Denom: "invalid", Amount: math.NewInt(100)},
+						Services:        serviceList2,
 					},
 				},
 			},
@@ -133,32 +153,36 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				SupplierList: []sharedtypes.Supplier{
 					{
-						Address:  addr1,
-						Stake:    &stake1,
-						Services: serviceList1,
+						OwnerAddress:    addr1,
+						OperatorAddress: addr1,
+						Stake:           &stake1,
+						Services:        serviceList1,
 					},
 					{
-						Address:  addr2,
-						Stake:    &sdk.Coin{Denom: "", Amount: math.NewInt(100)},
-						Services: serviceList2,
+						OwnerAddress:    addr2,
+						OperatorAddress: addr2,
+						Stake:           &sdk.Coin{Denom: "", Amount: math.NewInt(100)},
+						Services:        serviceList2,
 					},
 				},
 			},
 			isValid: false,
 		},
 		{
-			desc: "invalid - due to duplicated supplier address",
+			desc: "invalid - due to duplicated supplier operator address",
 			genState: &types.GenesisState{
 				SupplierList: []sharedtypes.Supplier{
 					{
-						Address:  addr1,
-						Stake:    &stake1,
-						Services: serviceList1,
+						OwnerAddress:    addr1,
+						OperatorAddress: addr1,
+						Stake:           &stake1,
+						Services:        serviceList1,
 					},
 					{
-						Address:  addr1,
-						Stake:    &stake2,
-						Services: serviceList2,
+						OwnerAddress:    addr1,
+						OperatorAddress: addr1,
+						Stake:           &stake2,
+						Services:        serviceList2,
 					},
 				},
 			},
@@ -169,14 +193,16 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				SupplierList: []sharedtypes.Supplier{
 					{
-						Address:  addr1,
-						Stake:    &stake1,
-						Services: serviceList1,
+						OwnerAddress:    addr1,
+						OperatorAddress: addr1,
+						Stake:           &stake1,
+						Services:        serviceList1,
 					},
 					{
-						Address:  addr2,
-						Stake:    nil,
-						Services: serviceList2,
+						OwnerAddress:    addr2,
+						OperatorAddress: addr2,
+						Stake:           nil,
+						Services:        serviceList2,
 					},
 				},
 			},
@@ -187,12 +213,14 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				SupplierList: []sharedtypes.Supplier{
 					{
-						Address:  addr1,
-						Stake:    &stake1,
-						Services: serviceList1,
+						OwnerAddress:    addr1,
+						OperatorAddress: addr1,
+						Stake:           &stake1,
+						Services:        serviceList1,
 					},
 					{
-						Address: addr2,
+						OwnerAddress:    addr2,
+						OperatorAddress: addr2,
 						// Stake explicitly omitted
 						Services: serviceList2,
 					},
@@ -205,13 +233,15 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				SupplierList: []sharedtypes.Supplier{
 					{
-						Address:  addr1,
-						Stake:    &stake1,
-						Services: serviceList1,
+						OwnerAddress:    addr1,
+						OperatorAddress: addr1,
+						Stake:           &stake1,
+						Services:        serviceList1,
 					},
 					{
-						Address: addr2,
-						Stake:   &stake2,
+						OwnerAddress:    addr2,
+						OperatorAddress: addr2,
+						Stake:           &stake2,
 						// Services explicitly omitted
 					},
 				},
@@ -223,14 +253,16 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				SupplierList: []sharedtypes.Supplier{
 					{
-						Address:  addr1,
-						Stake:    &stake1,
-						Services: serviceList1,
+						OwnerAddress:    addr1,
+						OperatorAddress: addr1,
+						Stake:           &stake1,
+						Services:        serviceList1,
 					},
 					{
-						Address:  addr2,
-						Stake:    &stake2,
-						Services: []*sharedtypes.SupplierServiceConfig{},
+						OwnerAddress:    addr2,
+						OperatorAddress: addr2,
+						Stake:           &stake2,
+						Services:        []*sharedtypes.SupplierServiceConfig{},
 					},
 				},
 			},
@@ -241,13 +273,15 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				SupplierList: []sharedtypes.Supplier{
 					{
-						Address:  addr1,
-						Stake:    &stake1,
-						Services: serviceList1,
+						OwnerAddress:    addr1,
+						OperatorAddress: addr1,
+						Stake:           &stake1,
+						Services:        serviceList1,
 					},
 					{
-						Address: addr2,
-						Stake:   &stake2,
+						OwnerAddress:    addr2,
+						OperatorAddress: addr2,
+						Stake:           &stake2,
 						Services: []*sharedtypes.SupplierServiceConfig{
 							{
 								Service: &sharedtypes.Service{
@@ -258,6 +292,12 @@ func TestGenesisState_Validate(t *testing.T) {
 										Url:     "invalid URL",
 										RpcType: sharedtypes.RPCType_JSON_RPC,
 										Configs: make([]*sharedtypes.ConfigOption, 0),
+									},
+								},
+								RevShare: []*sharedtypes.ServiceRevenueShare{
+									{
+										Address:            addr2,
+										RevSharePercentage: 100,
 									},
 								},
 							},
@@ -272,13 +312,15 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				SupplierList: []sharedtypes.Supplier{
 					{
-						Address:  addr1,
-						Stake:    &stake1,
-						Services: serviceList1,
+						OwnerAddress:    addr1,
+						OperatorAddress: addr1,
+						Stake:           &stake1,
+						Services:        serviceList1,
 					},
 					{
-						Address: addr2,
-						Stake:   &stake2,
+						OwnerAddress:    addr2,
+						OperatorAddress: addr2,
+						Stake:           &stake2,
 						Services: []*sharedtypes.SupplierServiceConfig{
 							{
 								Service: &sharedtypes.Service{
@@ -289,6 +331,12 @@ func TestGenesisState_Validate(t *testing.T) {
 										Url:     "http://localhost:8081",
 										RpcType: sharedtypes.RPCType_UNKNOWN_RPC,
 										Configs: make([]*sharedtypes.ConfigOption, 0),
+									},
+								},
+								RevShare: []*sharedtypes.ServiceRevenueShare{
+									{
+										Address:            addr2,
+										RevSharePercentage: 100,
 									},
 								},
 							},

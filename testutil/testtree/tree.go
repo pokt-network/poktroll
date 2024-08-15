@@ -22,8 +22,8 @@ import (
 // relay is signed by the supplier and application respectively.
 func NewFilledSessionTree(
 	ctx context.Context, t *testing.T,
-	numRelays uint,
-	supplierKeyUid, supplierAddr string,
+	numRelays, computeUnitsPerRelay uint64,
+	supplierKeyUid, supplierOperatorAddr string,
 	sessionTreeHeader, reqHeader, resHeader *sessiontypes.SessionHeader,
 	keyRing keyring.Keyring,
 	ringClient crypto.RingClient,
@@ -31,13 +31,14 @@ func NewFilledSessionTree(
 	t.Helper()
 
 	// Initialize an empty session tree with the given session header.
-	sessionTree := NewEmptySessionTree(t, sessionTreeHeader, supplierAddr)
+	sessionTree := NewEmptySessionTree(t, sessionTreeHeader, supplierOperatorAddr)
 
 	// Add numRelays of relays to the session tree.
 	FillSessionTree(
 		ctx, t,
-		sessionTree, numRelays,
-		supplierKeyUid, supplierAddr,
+		sessionTree,
+		numRelays, computeUnitsPerRelay,
+		supplierKeyUid, supplierOperatorAddr,
 		reqHeader, resHeader,
 		keyRing,
 		ringClient,
@@ -50,7 +51,7 @@ func NewFilledSessionTree(
 func NewEmptySessionTree(
 	t *testing.T,
 	sessionTreeHeader *sessiontypes.SessionHeader,
-	supplierAddr string,
+	supplierOperatorAddr string,
 ) relayer.SessionTree {
 	t.Helper()
 
@@ -63,7 +64,7 @@ func NewEmptySessionTree(
 		_ = os.RemoveAll(testSessionTreeStoreDir)
 	})
 
-	accAddress := cosmostypes.MustAccAddressFromBech32(supplierAddr)
+	accAddress := cosmostypes.MustAccAddressFromBech32(supplierOperatorAddr)
 
 	// Construct a session tree to add relays to and generate a proof from.
 	sessionTree, err := session.NewSessionTree(
@@ -82,8 +83,8 @@ func NewEmptySessionTree(
 func FillSessionTree(
 	ctx context.Context, t *testing.T,
 	sessionTree relayer.SessionTree,
-	numRelays uint,
-	supplierKeyUid, supplierAddr string,
+	numRelays, computeUnitsPerRelay uint64,
+	supplierOperatorKeyUid, supplierOperatorAddr string,
 	reqHeader, resHeader *sessiontypes.SessionHeader,
 	keyRing keyring.Keyring,
 	ringClient crypto.RingClient,
@@ -93,7 +94,7 @@ func FillSessionTree(
 	for i := 0; i < int(numRelays); i++ {
 		relay := testrelayer.NewSignedEmptyRelay(
 			ctx, t,
-			supplierKeyUid, supplierAddr,
+			supplierOperatorKeyUid, supplierOperatorAddr,
 			reqHeader, resHeader,
 			keyRing,
 			ringClient,
@@ -104,27 +105,15 @@ func FillSessionTree(
 		relayKey, err := relay.GetHash()
 		require.NoError(t, err)
 
-		// See FillSessionTreeExpectedComputeUnits below for explanation.
-		relayWeight := uint64(i)
-
-		err = sessionTree.Update(relayKey[:], relayBz, relayWeight)
+		err = sessionTree.Update(relayKey[:], relayBz, computeUnitsPerRelay)
 		require.NoError(t, err)
 	}
-}
-
-// FillSessionTreeExpectedComputeUnits returns the number of expected compute units
-// to covert numRelays (in a test scenario) whereby every subsequent relay costs
-// an addition compute unit.
-// This is basic random approach selected for testing purposes. Don't think too
-// deeply about it.
-func FillSessionTreeExpectedComputeUnits(numRelays uint) uint64 {
-	return uint64(numRelays * (numRelays - 1) / 2)
 }
 
 // NewProof creates a new proof structure.
 func NewProof(
 	t *testing.T,
-	supplierAddr string,
+	supplierOperatorAddr string,
 	sessionHeader *sessiontypes.SessionHeader,
 	sessionTree relayer.SessionTree,
 	closestProofPath []byte,
@@ -141,22 +130,22 @@ func NewProof(
 	require.NoError(t, err)
 
 	return &prooftypes.Proof{
-		SupplierAddress:    supplierAddr,
-		SessionHeader:      sessionHeader,
-		ClosestMerkleProof: merkleProofBz,
+		SupplierOperatorAddress: supplierOperatorAddr,
+		SessionHeader:           sessionHeader,
+		ClosestMerkleProof:      merkleProofBz,
 	}
 }
 
 func NewClaim(
 	t *testing.T,
-	supplierAddr string,
+	supplierOperatorAddr string,
 	sessionHeader *sessiontypes.SessionHeader,
 	rootHash []byte,
 ) *prooftypes.Claim {
 	// Create a new claim.
 	return &prooftypes.Claim{
-		SupplierAddress: supplierAddr,
-		SessionHeader:   sessionHeader,
-		RootHash:        rootHash,
+		SupplierOperatorAddress: supplierOperatorAddr,
+		SessionHeader:           sessionHeader,
+		RootHash:                rootHash,
 	}
 }

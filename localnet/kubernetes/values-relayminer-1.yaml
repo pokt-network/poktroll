@@ -20,6 +20,6 @@ config:
     - service_id: rest
       listen_url: http://0.0.0.0:8545
       service_config:
-        backend_url: http://localhost:10000/
+        backend_url: http://rest:10000/
         publicly_exposed_endpoints:
           - relayminer1

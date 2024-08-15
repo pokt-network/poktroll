@@ -51,6 +51,14 @@ accounts:
     mnemonic: "elder spatial erosion soap athlete tide subject recipe also awkward head pattern cart version beach usual oxygen confirm erupt diamond maze smooth census garment"
     coins:
       - 300000000upokt
+  - name: source_owner_anvil
+    mnemonic: "burden effort glue note honey erupt fiscal vote gold addict toy flag spare wrap chest table bomb sort arena phone sadness sustain urge wink"
+    coins:
+      - 6900000000000upokt
+  - name: source_owner_ollama
+    mnemonic: "initial scorpion soccer decrease sorry convince donor canoe bid pill monster today cycle slot judge bulb dismiss reject hurt mesh glare fork sustain wash"
+    coins:
+      - 6900000000000upokt
   - name: unauthorized
     mnemonic: "abuse tumble whip pioneer immense pipe method note upon glory switch rail metal camp gasp top require rain party total struggle glance between fossil"
     coins:
@@ -87,9 +95,21 @@ validators:
 # We can persist arbitrary genesis values via 1 to 1 mapping to genesis.json
 genesis:
   app_state:
+    # https://docs.cosmos.network/main/build/modules/mint
     mint:
       params:
         mint_denom: upokt
+        # Note that in Pocket Network, the majority of the inflation/deflation
+        # comes from the utility of network, not just the validators that
+        # secure it. Therefore, the inflation params of x/mint are set to 0.
+        # See x/tokenomics for all details related to token inflation.
+        inflation_rate_change: "0.0"
+        inflation_max: "0.0"
+        inflation_min: "0.0"
+        # These parameters are included for posterity but commented out for clarity
+        # goal_bonded: "NA"
+        # blocks_per_year: "NA"
+        # max_supply: "NA"
     staking:
       params:
         bond_denom: upokt
@@ -140,13 +160,10 @@ genesis:
           service_configs:
             - service:
                 id: anvil
-                compute_units_per_relay: 1
-            - service:
-                id: ollama
-                compute_units_per_relay: 1
             - service:
                 id: rest
-                compute_units_per_relay: 1
+            - service:
+                id: ollama
           stake:
             # NB: This value should be exactly 1upokt smaller than the value in
             # `supplier1_stake_config.yaml` so that the stake command causes a state change.
@@ -154,29 +171,36 @@ genesis:
             denom: upokt
     supplier:
       supplierList:
-        - address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
+        - owner_address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
+          operator_address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
           services:
-            - endpoints:
+            - service:
+                id: anvil
+              endpoints:
                 - configs: []
                   rpc_type: JSON_RPC
                   url: http://relayminer1:8545
-              service:
-                compute_units_per_relay: 1
-                id: anvil
-            - endpoints:
-                - configs: []
-                  rpc_type: REST
-                  url: http://relayminer1:8545
-              service:
-                compute_units_per_relay: 1
+              rev_share:
+                - address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
+                  rev_share_percentage: "100"
+            - service:
                 id: rest
-            - endpoints:
+              endpoints:
                 - configs: []
                   rpc_type: REST
                   url: http://relayminer1:8545
-              service:
-                compute_units_per_relay: 1
+              rev_share:
+                - address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
+                  rev_share_percentage: "100"
+            - service:
                 id: ollama
+              endpoints:
+                - configs: []
+                  rpc_type: REST
+                  url: http://relayminer1:8545
+              rev_share:
+                - address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
+                  rev_share_percentage: "100"
           stake:
             # NB: This value should be exactly 1upokt smaller than the value in
             # `application1_stake_config.yaml` so that the stake command causes a state change.
@@ -195,7 +219,13 @@ genesis:
         add_service_fee: "1000000000"
       serviceList:
         - id: anvil
-          name: ""
+          name: "anvil"
+          compute_units_per_relay: 1
+          owner_address: pokt1cwnu460557x0z78jv3hhc7356hhkrgc86c87q5
+        - id: ollama
+          name: "ollama"
+          compute_units_per_relay: 1
+          owner_address: pokt1mx0klkkrj6v3dw8gs4nzlq0cq8lsktmx35t03e
     proof:
       params:
         proof_request_probability: "0.25"

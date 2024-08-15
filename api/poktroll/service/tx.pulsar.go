@@ -1824,7 +1824,7 @@ type MsgAddService struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	OwnerAddress string          `protobuf:"bytes,1,opt,name=owner_address,json=ownerAddress,proto3" json:"owner_address,omitempty"` // The Bech32 address of the service owner using cosmos' ScalarDescriptor
+	OwnerAddress string          `protobuf:"bytes,1,opt,name=owner_address,json=ownerAddress,proto3" json:"owner_address,omitempty"` // The Bech32 address of the service owner.
 	Service      *shared.Service `protobuf:"bytes,2,opt,name=service,proto3" json:"service,omitempty"`                               // The Service being added to the network
 }
 

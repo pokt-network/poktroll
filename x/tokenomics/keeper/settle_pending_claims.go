@@ -43,9 +43,9 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 	logger.Debug("settling expiring claims")
 	for _, claim := range expiringClaims {
 		var (
-			numClaimComputeUnits   uint64
-			numRelaysInSessionTree uint64
-			proofRequirement       prooftypes.ProofRequirementReason
+			numClaimComputeUnits uint64
+			numClaimRelays       uint64
+			proofRequirement     prooftypes.ProofRequirementReason
 		)
 
 		// NB: Note that not every (Req, Res) pair in the session is inserted in
@@ -57,14 +57,14 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 			return settledResult, expiredResult, err
 		}
 
-		numRelaysInSessionTree, err = claim.GetNumRelays()
+		numClaimRelays, err = claim.GetNumRelays()
 		if err != nil {
 			return settledResult, expiredResult, err
 		}
 
 		sessionId := claim.SessionHeader.SessionId
 
-		proof, isProofFound := k.proofKeeper.GetProof(ctx, sessionId, claim.SupplierAddress)
+		proof, isProofFound := k.proofKeeper.GetProof(ctx, sessionId, claim.SupplierOperatorAddress)
 		// Using the probabilistic proofs approach, determine if this expiring
 		// claim required an on-chain proof
 		proofRequirement, err = k.proofRequirementForClaim(ctx, &claim)
@@ -74,9 +74,9 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 
 		logger = k.logger.With(
 			"session_id", sessionId,
-			"supplier_address", claim.SupplierAddress,
+			"supplier_operator_address", claim.SupplierOperatorAddress,
 			"num_claim_compute_units", numClaimComputeUnits,
-			"num_relays_in_session_tree", numRelaysInSessionTree,
+			"num_relays_in_session_tree", numClaimRelays,
 			"proof_requirement", proofRequirement,
 		)
 
@@ -100,7 +100,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 				claimExpiredEvent := types.EventClaimExpired{
 					Claim:            &claim,
 					NumComputeUnits:  numClaimComputeUnits,
-					NumRelays:        numRelaysInSessionTree,
+					NumRelays:        numClaimRelays,
 					ExpirationReason: expirationReason,
 					// TODO_CONSIDERATION: Add the error to the event if the proof was invalid.
 				}
@@ -112,13 +112,13 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 
 				// The claim & proof are no longer necessary, so there's no need for them
 				// to take up on-chain space.
-				k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierAddress)
+				k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierOperatorAddress)
 				if isProofFound {
-					k.proofKeeper.RemoveProof(ctx, sessionId, claim.SupplierAddress)
+					k.proofKeeper.RemoveProof(ctx, sessionId, claim.SupplierOperatorAddress)
 				}
 
 				expiredResult.NumClaims++
-				expiredResult.NumRelays += numRelaysInSessionTree
+				expiredResult.NumRelays += numClaimRelays
 				expiredResult.NumComputeUnits += numClaimComputeUnits
 				continue
 			}
@@ -129,14 +129,14 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 		// 2. The claim requires a proof and a valid proof was found.
 
 		// Manage the mint & burn accounting for the claim.
-		if err = k.SettleSessionAccounting(ctx, &claim); err != nil {
-			logger.Error(fmt.Sprintf("error settling session accounting for claim %q: %v", claim.SessionHeader.SessionId, err))
+		if err = k.ProcessTokenLogicModules(ctx, &claim); err != nil {
+			logger.Error(fmt.Sprintf("error processing token logic modules for claim %q: %v", claim.SessionHeader.SessionId, err))
 			return settledResult, expiredResult, err
 		}
 
 		claimSettledEvent := types.EventClaimSettled{
 			Claim:            &claim,
-			NumRelays:        numRelaysInSessionTree,
+			NumRelays:        numClaimRelays,
 			NumComputeUnits:  numClaimComputeUnits,
 			ProofRequirement: proofRequirement,
 		}
@@ -158,19 +158,19 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 
 		// The claim & proof are no longer necessary, so there's no need for them
 		// to take up on-chain space.
-		k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierAddress)
+		k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierOperatorAddress)
 		// Whether or not the proof is required, the supplier may have submitted one
 		// so we need to delete it either way. If we don't have the if structure,
 		// a safe error will be printed, but it can be confusing to the operator
 		// or developer.
 		if isProofFound {
-			k.proofKeeper.RemoveProof(ctx, sessionId, claim.SupplierAddress)
+			k.proofKeeper.RemoveProof(ctx, sessionId, claim.SupplierOperatorAddress)
 		}
 
 		settledResult.NumClaims++
-		settledResult.NumRelays += numRelaysInSessionTree
+		settledResult.NumRelays += numClaimRelays
 		settledResult.NumComputeUnits += numClaimComputeUnits
-		settledResult.RelaysPerServiceMap[claim.SessionHeader.Service.Id] += numRelaysInSessionTree
+		settledResult.RelaysPerServiceMap[claim.SessionHeader.Service.Id] += numClaimRelays
 
 		logger.Info(fmt.Sprintf("Successfully settled claim for session ID %q at block height %d", claim.SessionHeader.SessionId, blockHeight))
 	}
