@@ -193,7 +193,11 @@ WORKDIR /
 )
 
 # Run data nodes & validators
-k8s_yaml(["localnet/kubernetes/anvil.yaml", "localnet/kubernetes/validator-volume.yaml"])
+k8s_yaml([
+    "localnet/kubernetes/anvil.yaml",
+    "localnet/kubernetes/rest.yaml",
+    "localnet/kubernetes/validator-volume.yaml"
+])
 
 # Provision validator
 helm_resource(
