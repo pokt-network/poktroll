@@ -14,7 +14,6 @@ Feature: Relay Namespace
         And the supplier "supplier1" is staked for service "rest"
         And the session for application "app1" and service "rest" contains the supplier "supplier1"
         When the application "app1" sends the supplier "supplier1" a successful request for service "rest" with path "/quote"
-        And a "tokenomics" module "ClaimSettled" end block event is broadcast
 
     # TODO_TEST(@Olshansk):
     # - Successful relay through applicat's sovereign appgate server
