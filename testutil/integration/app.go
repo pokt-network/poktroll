@@ -534,6 +534,12 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		Stake:           &supplierStake,
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
+				RevShare: []*sharedtypes.ServiceRevenueShare{
+					{
+						Address:            sample.AccAddress(),
+						RevSharePercentage: 100,
+					},
+				},
 				Service: &defaultService,
 			},
 		},
