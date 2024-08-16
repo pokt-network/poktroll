@@ -1042,7 +1042,6 @@ docs_update_gov_params_page: ## Update the page in Docusaurus documenting all th
 poktrolld_addr: ## Retrieve the address for an account by ACC_NAME
 	@echo $(shell poktrolld --home=$(POKTROLLD_HOME) keys show -a $(ACC_NAME))
 
-
 ###################
 ### Act Helpers ###
 ###################

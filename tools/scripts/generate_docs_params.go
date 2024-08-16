@@ -96,6 +96,12 @@ func findProtoFiles(baseDir, pattern string) (protoFilePaths []string, err error
 	return protoFilePaths, nil
 }
 
+var (
+	messageParamPattern = regexp.MustCompile(`^message\s+(Params)\s*{`)
+	fieldPattern        = regexp.MustCompile(`^\s*(\w+)\s+(\w+)\s*=\s*(\d+)\s*\[(.*?)\];`)
+	commentPattern      = regexp.MustCompile(`^//\s*(.*)`)
+)
+
 // prepareGovernanceParamsDocs parses the given .proto files and prepares the governance parameters documentation.
 func prepareGovernanceParamsDocs(protoFilePaths []string, template string) (string, error) {
 	docs := template
@@ -114,10 +120,6 @@ func prepareGovernanceParamsDocs(protoFilePaths []string, template string) (stri
 		var currentParamMessage *ProtoMessage
 		var currentComment string
 
-		messageParamPattern := regexp.MustCompile(`^message\s+(Params)\s*{`)
-		fieldPattern := regexp.MustCompile(`^\s*(\w+)\s+(\w+)\s*=\s*(\d+)\s*\[(.*?)\];`)
-		commentPattern := regexp.MustCompile(`^//\s*(.*)`)
-
 		scanner := bufio.NewScanner(protoFile)
 		for scanner.Scan() {
 			line := strings.TrimSpace(scanner.Text())
@@ -133,6 +135,7 @@ func prepareGovernanceParamsDocs(protoFilePaths []string, template string) (stri
 				if currentParamMessage != nil {
 					paramsMessages = append(paramsMessages, *currentParamMessage)
 				}
+				currentComment = "" // Reset comment after associating it with a message
 				currentParamMessage = &ProtoMessage{Name: matches[1]}
 				continue
 			}
