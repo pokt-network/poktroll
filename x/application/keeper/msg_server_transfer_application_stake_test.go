@@ -54,8 +54,8 @@ func TestMsgServer_TransferApplicationStake_Success(t *testing.T) {
 	// Transfer the application stake to the beneficiary.
 	transferStakeMsg := apptypes.NewMsgTransferApplicationStake(appAddr, beneficiaryAddr)
 
-	_, err = srv.TransferApplicationStake(ctx, transferStakeMsg)
-	require.NoError(t, err)
+	transferAppStakeRes, stakeTransferErr := srv.TransferApplicationStake(ctx, transferStakeMsg)
+	require.NoError(t, stakeTransferErr)
 
 	// Verify that the beneficiary was created with the same stake and service configs.
 	foundApp, isAppFound = k.GetApplication(ctx, beneficiaryAddr)
@@ -64,7 +64,8 @@ func TestMsgServer_TransferApplicationStake_Success(t *testing.T) {
 	require.Equal(t, beneficiaryAddr, foundBeneficiary.Address)
 	require.Equal(t, expectedAppStake, foundBeneficiary.Stake)
 	require.Len(t, foundBeneficiary.ServiceConfigs, 1)
-	require.EqualValues(t, foundApp.ServiceConfigs[0], foundBeneficiary.ServiceConfigs[0])
+	require.EqualValues(t, foundApp, foundBeneficiary)
+	require.EqualValues(t, &foundBeneficiary, transferAppStakeRes.Application)
 
 	// Verify that the original app was unstaked.
 	foundApp, isAppFound = k.GetApplication(ctx, appAddr)

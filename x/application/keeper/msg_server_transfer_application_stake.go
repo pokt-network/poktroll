@@ -32,6 +32,11 @@ func (k msgServer) TransferApplicationStake(ctx context.Context, msg *types.MsgT
 		Services: foundApp.ServiceConfigs,
 	})
 
+	// TODO_TEST: add E2E coverage to assert #DelegateeGatewayAddresses and #PendingUndelegations
+	// are present on the beneficiary application.
+	beneficiary.DelegateeGatewayAddresses = foundApp.DelegateeGatewayAddresses
+	beneficiary.PendingUndelegations = foundApp.PendingUndelegations
+
 	// Update the beneficiary in the store
 	k.SetApplication(ctx, beneficiary)
 	logger.Info(fmt.Sprintf("Successfully transferred application stake from app (%s) to beneficiary (%s)", foundApp.Address, beneficiary.Address))
