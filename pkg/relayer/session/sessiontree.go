@@ -72,6 +72,10 @@ func NewSessionTree(
 ) (relayer.SessionTree, error) {
 	// Join the storePrefix and the session.sessionId and supplier's operator address to
 	// create a unique storePath.
+
+	// TODO_IMPROVE: instead of creating a new KV store for each session, it will be more beneficial to
+	// use one key store. KV databases are often optimized for writing into one database. They keys can
+	// use supplier address and session id as prefix. The current approach might not be RAM/IO efficient.
 	storePath := filepath.Join(storesDirectory, supplierOperatorAddress.String(), sessionHeader.SessionId)
 
 	// Make sure storePath does not exist when creating a new SessionTree
@@ -240,9 +244,8 @@ func (st *sessionTree) Delete() error {
 
 	st.isClaiming = false
 
-	if err := st.treeStore.ClearAll(); err != nil {
-		return err
-	}
+	// We used to `st.treeStore.ClearAll()` here, but don't need to clean up the database, causing IO load,
+	// when we close the database and delete it from the disk right away.
 
 	if err := st.treeStore.Stop(); err != nil {
 		return err
