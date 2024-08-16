@@ -3,12 +3,18 @@ package keeper
 import (
 	"context"
 	"fmt"
+	"github.com/pokt-network/poktroll/telemetry"
 
 	"github.com/pokt-network/poktroll/x/application/types"
 )
 
 func (k msgServer) TransferApplicationStake(ctx context.Context, msg *types.MsgTransferApplicationStake) (*types.MsgTransferApplicationStakeResponse, error) {
-	// TODO_IN_THIS_COMMIT: add telemetry.
+	isSuccessful := false
+	defer telemetry.EventSuccessCounter(
+		"transfer_application_stake",
+		telemetry.DefaultCounterFn,
+		func() bool { return isSuccessful },
+	)
 
 	logger := k.Logger().With("method", "TransferApplicationStake")
 
@@ -44,6 +50,8 @@ func (k msgServer) TransferApplicationStake(ctx context.Context, msg *types.MsgT
 	// Remove the transferred app from the store
 	k.RemoveApplication(ctx, foundApp.Address)
 	logger.Info(fmt.Sprintf("Successfully removed the application: %+v", foundApp))
+
+	isSuccessful = true
 
 	return &types.MsgTransferApplicationStakeResponse{
 		Application: &beneficiary,
