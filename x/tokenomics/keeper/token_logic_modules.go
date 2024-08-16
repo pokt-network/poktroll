@@ -19,6 +19,7 @@ import (
 	"github.com/pokt-network/poktroll/telemetry"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
@@ -26,29 +27,46 @@ import (
 )
 
 const (
+	// Governance parameters for the TLMGlobalMint module
+	// TODO_UPNEXT(@olshansk): Remove this. An ephemeral placeholder before
+	// real values are introduced. When this is changed to a governance param,
+	// make sure to also add the necessary unit tests.
+	MintGlobalInflation = 0.0000000
 	// TODO_UPNEXT(@olshansk): Make all of the governance params
 	MintAllocationDAO         = 0.1
 	MintAllocationProposer    = 0.05
 	MintAllocationSupplier    = 0.7
 	MintAllocationSourceOwner = 0.15
 	MintAllocationApplication = 0.0
-	// TODO_UPNEXT(@olshansk): Remove this. An ephemeral placeholder before
-	// real values are introduced. When this is changed to a governance param,
-	// make sure to also add the necessary unit tests.
-	MintGlobalAllocation = 0.0000000
 )
 
 type TokenLogicModule int
 
 const (
+	// TLMRelayBurnEqualsMint is the token logic module that burns the application's
+	// stake based on the amount of work done by the supplier. The same amount of
+	// tokens is minted and sent to the supplier.
+	// When the network achieves equilibrium, this is theoretically the only TLM that will be necessary.
 	TLMRelayBurnEqualsMint TokenLogicModule = iota
+
+	// TLMGlobalMint is the token logic module that mints new tokens based on the
+	// on global governance parameters in order to reward the participants providing
+	// services while keeping inflation in check.
 	TLMGlobalMint
-	// TODO_UPNEXT(@olshansk): Add more TLMs
+
+	// TLMGlobalMintReimbursementRequest is the token logic module that complements
+	// TLMGlobalMint to enable permissionless demand. In order to prevent self-dealing
+	// attacks, applications will be overcharged by the amount equal to global inflation,
+	// those funds will be sent to the DAO/PNF, and event will be emitted to be used
+	// for reimbursements.
+	// TODO_POST_MAINNET: Introduce proper tokenomics based on the research done by @rawthil and @shane.
+	TLMGlobalMintReimbursementRequest
 )
 
 var tokenLogicModuleStrings = [...]string{
 	"TLMRelayBurnEqualsMint",
 	"TLMGlobalMint",
+	"TLMGlobalMintReimbursementRequest",
 }
 
 func (tlm TokenLogicModule) String() string {
@@ -69,6 +87,7 @@ type TokenLogicModuleProcessor func(
 	Keeper,
 	context.Context,
 	*sharedtypes.Service,
+	*sessiontypes.SessionHeader,
 	*apptypes.Application,
 	*sharedtypes.Supplier,
 	cosmostypes.Coin,
@@ -245,6 +264,7 @@ func (k Keeper) ProcessTokenLogicModules(
 func (k Keeper) TokenLogicModuleRelayBurnEqualsMint(
 	ctx context.Context,
 	service *sharedtypes.Service,
+	_ *sessiontypes.SessionHeader,
 	application *apptypes.Application,
 	supplier *sharedtypes.Supplier,
 	settlementCoin cosmostypes.Coin,
@@ -319,24 +339,19 @@ func (k Keeper) TokenLogicModuleRelayBurnEqualsMint(
 }
 
 // TokenLogicModuleGlobalMint processes the business logic for the GlobalMint TLM.
-// TODO_UPNEXT(@olshansk): Delete this in favor of a real TLM that mints tokens
-// and distributes them to the appropriate accounts via boosts.
 func (k Keeper) TokenLogicModuleGlobalMint(
 	ctx context.Context,
 	service *sharedtypes.Service,
+	_ *sessiontypes.SessionHeader,
 	application *apptypes.Application,
 	supplier *sharedtypes.Supplier,
-	settlementCoins cosmostypes.Coin,
+	settlementCoin cosmostypes.Coin,
 	relayMiningDifficulty *tokenomictypes.RelayMiningDifficulty,
 ) error {
 	logger := k.Logger().With("method", "TokenLogicModuleGlobalMint")
 
 	// Determine how much new uPOKT to mint based on global inflation
-	// TODO_MAINNET: Consider using fixed point arithmetic for deterministic results.
-	settlementAmtFloat := new(big.Float).SetUint64(settlementCoins.Amount.Uint64())
-	newMintAmtFloat := new(big.Float).Mul(settlementAmtFloat, big.NewFloat(MintGlobalAllocation))
-	newMintAmtInt, _ := newMintAmtFloat.Int64()
-	newMintCoins := sdk.NewCoins(cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(newMintAmtInt)))
+	newMintCoins, newMintAmtFloat := calculateGlobalMintAllocationFromSettlementAmount(settlementCoin)
 
 	// Mint new uPOKT to the tokenomics module account
 	if err := k.bankKeeper.MintCoins(ctx, tokenomictypes.ModuleName, newMintCoins); err != nil {
@@ -353,15 +368,16 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the application with address %q", appCoin, application.Address))
 
 	// Send a portion of the rewards to the supplier shareholders.
-	coinsToShareAmt := calculateGlobalMintAllocationFromSettlementAmount(newMintAmtFloat, MintAllocationSupplier)
-	if err = k.distributeSupplierRewardsToShareHolders(ctx, supplier.OperatorAddress, service.Id, uint64(coinsToShareAmt)); err != nil {
+	supplierCoinsToShareAmt := calculateAllocationAmount(newMintAmtFloat, MintAllocationSupplier)
+	supplierCoin := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(supplierCoinsToShareAmt))
+	if err = k.distributeSupplierRewardsToShareHolders(ctx, supplier.OperatorAddress, service.Id, uint64(supplierCoinsToShareAmt)); err != nil {
 		return tokenomicstypes.ErrTokenomicsSupplierModuleMintFailed.Wrapf(
 			"distributing rewards to supplier with operator address %s shareholders: %v",
 			supplier.OperatorAddress,
 			err,
 		)
 	}
-	supplierCoin := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(newMintAmtInt))
+
 	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the supplier with address %q", supplierCoin, supplier.OperatorAddress))
 
 	// Send a portion of the rewards to the DAO
@@ -386,13 +402,70 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 	}
 	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the proposer with address %q", proposerCoin, proposerAddr))
 
-	// TODO_MAINNET: Verify that the total distributed coins equals the settlement coins which could happen due to float rounding
+	// Check and log the total amount of coins distributed
 	totalDistributedCoins := appCoin.Add(supplierCoin).Add(*daoCoin).Add(*serviceCoin).Add(*proposerCoin)
-	if totalDistributedCoins.Amount.BigInt().Cmp(settlementCoins.Amount.BigInt()) != 0 {
-		logger.Error(fmt.Sprintf("TODO_MAINNET: The total distributed coins (%v) does not equal the settlement coins (%v)", totalDistributedCoins, settlementCoins.Amount.BigInt()))
+	if totalDistributedCoins.Amount.BigInt().Cmp(settlementCoin.Amount.BigInt()) != 0 {
+		logger.Error(fmt.Sprintf("TODO_MAINNET: Verify why the total distributed coins (%v) do not equal the settlement coins (%v). Likely floating point arithmetic.", totalDistributedCoins, settlementCoin.Amount.BigInt()))
 	}
 	logger.Info(fmt.Sprintf("distributed (%v) coins to the application, supplier, DAO, source owner, and proposer", totalDistributedCoins))
 
+	return nil
+}
+
+// 1. Mint = Burn
+// 2. Global Mint
+// 4. Overcharge applications
+// - Determine the amount send to suppliers
+// - Determine the amount send to source owner
+// - Overcharge application based on the sum of the two above
+// - Send the overcharge to the PNF
+// - Emit an event so we can track it
+// - PNF manually reimburses the application at the end of the month
+// - Prevents self dealing because application has to ask for reimbursement
+// - Does not introduce friction to service owners getting rewarded
+// - Does not introduce friction to suppliers getting rewarded
+// - Ensure NewSession breaks if app stake is too low
+// - Ensure relayminer has a toggle to prevent over charging
+func (k Keeper) TokenLogicModuleGlobalMintReimbursementRequest(
+	ctx context.Context,
+	service *sharedtypes.Service,
+	sessionHeader *sessiontypes.SessionHeader,
+	application *apptypes.Application,
+	supplier *sharedtypes.Supplier,
+	settlementCoins cosmostypes.Coin,
+	relayMiningDifficulty *tokenomictypes.RelayMiningDifficulty,
+) error {
+	logger := k.Logger().With("method", "TokenLogicModuleGlobalMint")
+
+	// Determine how much new uPOKT to mint based on global inflation
+	newMintCoins, _ := calculateGlobalMintAllocationFromSettlementAmount(settlementCoins)
+
+
+
+	// EventApplicationReimbursementRequest
+	reimbursementRequest := tokenomictypes.EventApplicationReimbursementRequest{
+		ApplicationAddr: application.Address,
+		ServiceId:       service.Id,
+		SessionId:       sessionHeader.SessionId,
+		Amount:          &newMintCoins[0],
+	}
+
+	eventManager := cosmostypes.UnwrapSDKContext(ctx).EventManager()
+	if err := eventManager.EmitTypedEvent(&reimbursementRequest); err != nil {
+		return tokenomicstypes.ErrTokenomicsApplicationReimbursementRequestFailed.Wrapf(
+			"application address: %s; service Id %s; session Id: %s; amount: %s",
+			application.GetAddress(),
+			service.Id,
+			sessionHeader.SessionId,
+			newMintCoins.String(),
+		)
+	}
+
+	// EventApplicationReimbursementRequest
+	// What if the application is overcharged?
+	// How do I enforce running both of them?
+	// Need to add a new governance parameter?
+	// Should we prevent new application sessions from starting if its too low?
 	return nil
 }
 
@@ -411,7 +484,7 @@ func (k Keeper) sendRewardsToAccount(
 		return nil, err
 	}
 
-	coinsToAccAmt := calculateGlobalMintAllocationFromSettlementAmount(settlementAmtFloat, allocation)
+	coinsToAccAmt := calculateAllocationAmount(settlementAmtFloat, allocation)
 	coinToAcc := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(coinsToAccAmt))
 	if err := k.bankKeeper.SendCoinsFromModuleToAccount(
 		ctx, suppliertypes.ModuleName, accountAddr, sdk.NewCoins(coinToAcc),
@@ -454,12 +527,13 @@ func (k Keeper) handleOverservicedApplication(
 	}
 	eventManager := cosmostypes.UnwrapSDKContext(ctx).EventManager()
 	if err := eventManager.EmitTypedEvent(applicationOverservicedEvent); err != nil {
-		return cosmostypes.Coin{}, tokenomicstypes.ErrTokenomicsApplicationOverserviced.Wrapf(
-			"application address: %s; expected burn %s; effective burn: %s",
-			application.GetAddress(),
-			expectedBurn.String(),
-			application.GetStake().String(),
-		)
+		return cosmostypes.Coin{},
+			tokenomicstypes.ErrTokenomicsApplicationOverservicedEvent.Wrapf(
+				"application address: %s; expected burn %s; effective burn: %s",
+				application.GetAddress(),
+				expectedBurn.String(),
+				application.GetStake().String(),
+			)
 	}
 	return *application.Stake, nil
 }
@@ -518,6 +592,7 @@ func (k Keeper) distributeSupplierRewardsToShareHolders(
 
 	shareAmountMap := GetShareAmountMap(serviceRevShare, amountToDistribute)
 	for shareHolderAddress, shareAmount := range shareAmountMap {
+		// TODO_IN_THIS_PR: Why don't we use sendRewardsToAccount here?
 		shareAmountCoin := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(int64(shareAmount)))
 		shareAmountCoins := cosmostypes.NewCoins(shareAmountCoin)
 		shareHolderAccAddress, err := sdk.AccAddressFromBech32(shareHolderAddress)
@@ -541,14 +616,26 @@ func (k Keeper) distributeSupplierRewardsToShareHolders(
 	return nil
 }
 
-// calculateGlobalMintAllocationFromSettlementAmount calculates the global mint
-// allocation resulting from the GlobalMint TLM given the settlement amount and
-// the allocation percentage.
-func calculateGlobalMintAllocationFromSettlementAmount(
-	settlementAmtFloat *big.Float,
-	allocation float64,
+// calculateGlobalMintAllocationFromSettlementAmount calculates the amount of uPOKT
+// to mint based on the global inflation rate as a function of the settlement amount
+// for a particular claim(s) or session(s).
+func calculateGlobalMintAllocationFromSettlementAmount(settlementCoin sdk.Coin) (sdk.Coins, *big.Float) {
+	// Determine how much new uPOKT to mint based on global inflation
+	// TODO_MAINNET: Consider using fixed point arithmetic for deterministic results.
+	settlementAmtFloat := new(big.Float).SetUint64(settlementCoin.Amount.Uint64())
+	newMintAmtFloat := new(big.Float).Mul(settlementAmtFloat, big.NewFloat(MintGlobalInflation))
+	newMintAmtInt, _ := newMintAmtFloat.Int64()
+	mintAmtCoins := sdk.NewCoins(cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(newMintAmtInt)))
+	return mintAmtCoins, newMintAmtFloat
+}
+
+// calculateAllocationAmount does big float arithmetic to determine the absolute
+// amount from amountFloat based on the allocation percentage provided.
+func calculateAllocationAmount(
+	amountFloat *big.Float,
+	allocationPercentage float64,
 ) int64 {
-	coinsToAccAmt, _ := big.NewFloat(0).Mul(settlementAmtFloat, big.NewFloat(allocation)).Int64()
+	coinsToAccAmt, _ := big.NewFloat(0).Mul(amountFloat, big.NewFloat(allocationPercentage)).Int64()
 	return coinsToAccAmt
 }
 
@@ -563,12 +650,12 @@ func GetShareAmountMap(
 ) (shareAmountMap map[string]uint64) {
 	totalDistributed := uint64(0)
 	shareAmountMap = make(map[string]uint64, len(serviceRevShare))
-	for _, revshare := range serviceRevShare {
+	for _, revShare := range serviceRevShare {
 		// TODO_MAINNET: Consider using fixed point arithmetic for deterministic results.
-		sharePercentageFloat := big.NewFloat(float64(revshare.RevSharePercentage) / 100)
+		sharePercentageFloat := big.NewFloat(float64(revShare.RevSharePercentage) / 100)
 		amountToDistributeFloat := big.NewFloat(float64(amountToDistribute))
 		shareAmount, _ := big.NewFloat(0).Mul(amountToDistributeFloat, sharePercentageFloat).Uint64()
-		shareAmountMap[revshare.Address] = shareAmount
+		shareAmountMap[revShare.Address] = shareAmount
 		totalDistributed += shareAmount
 	}
 
