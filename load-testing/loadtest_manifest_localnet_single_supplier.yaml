@@ -27,14 +27,6 @@ suppliers:
     # The advertised URL used by the supplier when it submits a stake message on-chain.
     exposed_url: http://relayminer1:8545
 
-  # RelayMiner 2; http://localhost:10350/r/relayminer2/overview
-  - address: pokt1re27pw4llwnatx4sq7rlggqzcm6j3f39epq2wa
-    exposed_url: http://relayminer2:8545
-
-  # RelayMiner 3; http://localhost:10350/r/relayminer3/overview
-  - address: pokt1j6dun0x8eyq5mmsmq83zs3c2utt85q8478c89u
-    exposed_url: http://relayminer3:8545
-
 # List of pre-provisioned gateways used for load testing.
 # These gateways will be progressively staked and delegated to during the load test.
 #
