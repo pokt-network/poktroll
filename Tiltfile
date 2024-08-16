@@ -49,6 +49,9 @@ localnet_config_defaults = {
         "enabled": False,
         "model": "qwen:0.5b",
     },
+    "rest": {
+        "enabled": False,
+    },
     # By default, we use the `helm_repo` function below to point to the remote repository
     # but can update it to the locally cloned repo for testing & development
     "helm_chart_local_repo": {"enabled": False, "path": "../helm-charts"},
@@ -193,11 +196,9 @@ WORKDIR /
 )
 
 # Run data nodes & validators
-k8s_yaml([
-    "localnet/kubernetes/anvil.yaml",
-    "localnet/kubernetes/rest.yaml",
-    "localnet/kubernetes/validator-volume.yaml"
-])
+k8s_yaml(
+    ["localnet/kubernetes/anvil.yaml", "localnet/kubernetes/rest.yaml", "localnet/kubernetes/validator-volume.yaml"]
+)
 
 # Provision validator
 helm_resource(
