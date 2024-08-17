@@ -72,6 +72,9 @@ type RelayerProxy interface {
 	// TODO_TECHDEBT(@red-0ne): This method should be moved out of the RelayerProxy interface
 	// that should not be responsible for signing relay responses.
 	SignRelayResponse(relayResponse *servicetypes.RelayResponse, supplierOperatorAddr string) error
+
+	// Ping tests the connectivity between all the managed relay servers and their respective backend URLs.
+	Ping(ctx context.Context) []error
 }
 
 type RelayerProxyOption func(RelayerProxy)
@@ -83,7 +86,13 @@ type RelayServer interface {
 
 	// Stop terminates the service server and returns an error if it fails.
 	Stop(ctx context.Context) error
+
+	// Ping tests the connection between the relay server and its backend URL.
+	Ping(ctx context.Context) error
 }
+
+// RelayServers aggregates a slice of RelayServer interface.
+type RelayServers []RelayServer
 
 // RelayerSessionsManager is responsible for managing the relayer's session lifecycles.
 // It handles the creation and retrieval of SMSTs (trees) for a given session, as
