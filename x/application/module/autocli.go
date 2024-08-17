@@ -97,7 +97,13 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 				// $ poktrolld tx application undelegate-from-gateway $(GATEWAY_ADDR) --keyring-backend test --from $(APP) --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
 				// 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "gateway_address"}},
 				// 				},
-				// this line is used by ignite scaffolding # autocli/tx
+				{
+			RpcMethod: "TransferApplicationStake",
+			Use: "transfer-application-stake [address] [beneficiary]",
+			Short: "Send a transfer-application-stake tx",
+			PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "address"}, {ProtoField: "beneficiary"},},
+		},
+		// this line is used by ignite scaffolding # autocli/tx
 			},
 		},
 	}
