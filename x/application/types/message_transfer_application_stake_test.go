@@ -16,25 +16,24 @@ func TestMsgTransferApplicationStake_ValidateBasic(t *testing.T) {
 		{
 			name: "invalid application address",
 			msg: MsgTransferApplicationStake{
-				Address: "invalid_address",
+				Address:     "invalid_address",
+				Beneficiary: sample.AccAddress(),
 			},
 			err: ErrAppInvalidAddress,
-		}, {
-			name: "valid application address",
-			msg: MsgTransferApplicationStake{
-				Address: sample.AccAddress(),
-			},
 		},
 		{
 			name: "invalid beneficiary address",
 			msg: MsgTransferApplicationStake{
-				Address: "invalid_address",
+				Address:     sample.AccAddress(),
+				Beneficiary: "invalid_address",
 			},
 			err: ErrAppInvalidAddress,
-		}, {
-			name: "valid beneficiary address",
+		},
+		{
+			name: "valid application and beneficiary address",
 			msg: MsgTransferApplicationStake{
-				Address: sample.AccAddress(),
+				Address:     sample.AccAddress(),
+				Beneficiary: sample.AccAddress(),
 			},
 		},
 	}
