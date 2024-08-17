@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -90,6 +91,26 @@ func (sync *synchronousRPCServer) Start(ctx context.Context) error {
 // Stop terminates the service server and returns an error if it fails.
 func (sync *synchronousRPCServer) Stop(ctx context.Context) error {
 	return sync.server.Shutdown(ctx)
+}
+
+// Ping tries to dial the suppliers backend URLs to test the connection.
+func (sync *synchronousRPCServer) Ping(ctx context.Context) error {
+	for _, supplierCfg := range sync.serverConfig.SupplierConfigsMap {
+		c := &http.Client{Timeout: 2 * time.Second}
+
+		resp, err := c.Head(supplierCfg.ServiceConfig.BackendUrl.String())
+		if err != nil {
+			return err
+		}
+		_ = resp.Body.Close()
+
+		if resp.StatusCode >= http.StatusInternalServerError {
+			return errors.New("ping failed")
+		}
+
+	}
+
+	return nil
 }
 
 // ServeHTTP listens for incoming relay requests. It implements the respective

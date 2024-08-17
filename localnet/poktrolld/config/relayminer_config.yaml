@@ -17,3 +17,6 @@ suppliers:
 pprof:
   enabled: false
   addr: localhost:6060
+ping:
+  enabled: false
+  addr: localhost:8082

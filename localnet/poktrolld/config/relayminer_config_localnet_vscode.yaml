@@ -41,3 +41,6 @@ suppliers:
 pprof:
   enabled: false
   addr: localhost:6070
+ping:
+  enabled: false
+  addr: localhost:8081
