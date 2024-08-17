@@ -134,3 +134,22 @@ func (rel *relayMiner) ServePprof(ctx context.Context, addr string) error {
 
 	return nil
 }
+
+func (rel *relayMiner) ServePing(ctx context.Context, ln net.Listener) error {
+	go func() {
+		if err := http.Serve(ln, http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+			rel.logger.Debug().Msg("pinging relay servers...")
+
+			if errs := rel.relayerProxy.Ping(ctx); errs != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+
+			w.WriteHeader(http.StatusOK)
+		})); err != nil {
+			return
+		}
+	}()
+
+	return nil
+}

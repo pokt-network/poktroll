@@ -57,6 +57,9 @@ type RelayerProxy interface {
 	// A served relay is one whose RelayRequest's signature and session have been verified,
 	// and its RelayResponse has been signed and successfully sent to the client.
 	ServedRelays() RelaysObservable
+
+	// Ping tests the connectivity between all the managed relay servers and their respective backend URLs.
+	Ping(ctx context.Context) []error
 }
 
 type RelayerProxyOption func(RelayerProxy)
@@ -92,7 +95,13 @@ type RelayServer interface {
 
 	// Stop terminates the service server and returns an error if it fails.
 	Stop(ctx context.Context) error
+
+	// Ping tests the connection between the relay server and its backend URL.
+	Ping(ctx context.Context) error
 }
+
+// RelayServers aggregates a slice of RelayServer interface.
+type RelayServers []RelayServer
 
 // RelayerSessionsManager is responsible for managing the relayer's session lifecycles.
 // It handles the creation and retrieval of SMSTs (trees) for a given session, as
