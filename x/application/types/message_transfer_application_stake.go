@@ -4,7 +4,7 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 )
 
-var _ cosmostypes.Msg = &MsgTransferApplicationStake{}
+var _ cosmostypes.Msg = (*MsgTransferApplicationStake)(nil)
 
 func NewMsgTransferApplicationStake(address string, beneficiary string) *MsgTransferApplicationStake {
 	return &MsgTransferApplicationStake{

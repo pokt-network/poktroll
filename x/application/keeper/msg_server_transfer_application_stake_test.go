@@ -59,6 +59,8 @@ func TestMsgServer_TransferApplicationStake_Success(t *testing.T) {
 
 	// Verify that the beneficiary was created with the same stake and service configs.
 	foundApp, isAppFound = k.GetApplication(ctx, beneficiaryAddr)
+	require.True(t, isAppFound)
+
 	foundBeneficiary, isBeneficiaryFound := k.GetApplication(ctx, beneficiaryAddr)
 	require.True(t, isBeneficiaryFound)
 	require.Equal(t, beneficiaryAddr, foundBeneficiary.Address)

@@ -3,8 +3,8 @@ package keeper
 import (
 	"context"
 	"fmt"
-	"github.com/pokt-network/poktroll/telemetry"
 
+	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/application/types"
 )
 
