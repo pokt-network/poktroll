@@ -194,14 +194,14 @@ func (rp *relayerProxy) validateConfig() error {
 
 // Ping tests the connectivity between all the managed relay servers and their respective backend URLs.
 func (rp *relayerProxy) Ping(ctx context.Context) []error {
-	errs := make([]error, len(rp.servers))
+	var errs []error
 
 	var i int
 	for _, srv := range rp.servers {
 		if err := srv.Ping(ctx); err != nil {
 			rp.logger.Error().Err(err).
 				Msg("an unexpected error occured while pinging backend URL")
-			errs[i] = err
+			errs = append(errs, err)
 		}
 
 		i++
