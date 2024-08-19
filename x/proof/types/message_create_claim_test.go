@@ -18,10 +18,10 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 		expectedErr error
 	}{
 		{
-			desc: "invalid supplier address",
+			desc: "invalid supplier operator address",
 
 			msg: MsgCreateClaim{
-				SupplierAddress: "invalid_address",
+				SupplierOperatorAddress: "invalid_address",
 				SessionHeader: &sessiontypes.SessionHeader{
 					ApplicationAddress:      sample.AccAddress(),
 					Service:                 &sharedtypes.Service{Id: "svcId"},
@@ -33,10 +33,10 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 			expectedErr: ErrProofInvalidAddress,
 		},
 		{
-			desc: "valid supplier address but invalid session start height",
+			desc: "valid supplier operator address but invalid session start height",
 
 			msg: MsgCreateClaim{
-				SupplierAddress: sample.AccAddress(),
+				SupplierOperatorAddress: sample.AccAddress(),
 				SessionHeader: &sessiontypes.SessionHeader{
 					ApplicationAddress:      sample.AccAddress(),
 					Service:                 &sharedtypes.Service{Id: "svcId"},
@@ -48,10 +48,10 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 			expectedErr: ErrProofInvalidSessionHeader,
 		},
 		{
-			desc: "valid supplier address and session start height but invalid session ID",
+			desc: "valid supplier operator address and session start height but invalid session ID",
 
 			msg: MsgCreateClaim{
-				SupplierAddress: sample.AccAddress(),
+				SupplierOperatorAddress: sample.AccAddress(),
 				SessionHeader: &sessiontypes.SessionHeader{
 					ApplicationAddress:      sample.AccAddress(),
 					Service:                 &sharedtypes.Service{Id: "svcId"},
@@ -63,10 +63,10 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 			expectedErr: ErrProofInvalidSessionHeader,
 		},
 		{
-			desc: "valid address, session start height, session ID but invalid service",
+			desc: "valid operator address, session start height, session ID but invalid service",
 
 			msg: MsgCreateClaim{
-				SupplierAddress: sample.AccAddress(),
+				SupplierOperatorAddress: sample.AccAddress(),
 				SessionHeader: &sessiontypes.SessionHeader{
 					ApplicationAddress:      sample.AccAddress(),
 					Service:                 &sharedtypes.Service{Id: "invalid service id"},
@@ -78,10 +78,10 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 			expectedErr: ErrProofInvalidSessionHeader,
 		},
 		{
-			desc: "valid address, session start height, session ID, service but invalid root hash",
+			desc: "valid operator address, session start height, session ID, service but invalid root hash",
 
 			msg: MsgCreateClaim{
-				SupplierAddress: sample.AccAddress(),
+				SupplierOperatorAddress: sample.AccAddress(),
 				SessionHeader: &sessiontypes.SessionHeader{
 					ApplicationAddress:      sample.AccAddress(),
 					Service:                 &sharedtypes.Service{Id: "svcId"},
@@ -97,7 +97,7 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 			desc: "all valid inputs",
 
 			msg: MsgCreateClaim{
-				SupplierAddress: sample.AccAddress(),
+				SupplierOperatorAddress: sample.AccAddress(),
 				SessionHeader: &sessiontypes.SessionHeader{
 					ApplicationAddress:      sample.AccAddress(),
 					Service:                 &sharedtypes.Service{Id: "svcId"},

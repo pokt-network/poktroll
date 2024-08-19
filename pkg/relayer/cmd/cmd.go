@@ -309,7 +309,7 @@ func newSupplyRelayerSessionsManagerFn(smtStorePath string) config.SupplierFn {
 }
 
 // uniqueSigningKeyNames goes through RelayMiner configuration and returns a list of unique
-// singning key names.
+// operators singning key names.
 func uniqueSigningKeyNames(relayMinerConfig *relayerconfig.RelayMinerConfig) []string {
 	uniqueKeyMap := make(map[string]bool)
 	for _, server := range relayMinerConfig.Servers {

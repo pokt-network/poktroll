@@ -22,9 +22,9 @@ import (
 var _ relayer.RelayerSessionsManager = (*relayerSessionsManager)(nil)
 
 // sessionTreesMap is an alias type for a map of
-// sessionEndHeight->sessionId->supplierAddress->SessionTree.
+// sessionEndHeight->sessionId->supplierOperatorAddress->SessionTree.
 // It is used to keep track of the sessions that are created in the RelayMiner
-// by grouping them by their end block height, session id and supplier address.
+// by grouping them by their end block height, session id and supplier operator address.
 type sessionsTreesMap = map[int64]map[string]map[string]relayer.SessionTree
 
 // relayerSessionsManager is an implementation of the RelayerSessions interface.
@@ -34,11 +34,11 @@ type relayerSessionsManager struct {
 
 	relayObs relayer.MinedRelaysObservable
 
-	// sessionTrees is a map of blockHeight->sessionId->supplierAddress->sessionTree.
+	// sessionTrees is a map of blockHeight->sessionId->supplierOperatorAddress->sessionTree.
 	// The block height index is used to know when the sessions contained in the
 	// entry should be closed, this helps to avoid iterating over all sessionsTrees
 	// to check if they are ready to be closed.
-	// The sessionTrees are grouped by supplierAddress since each supplier has to
+	// The sessionTrees are grouped by supplierOperatorAddress since each supplier has to
 	// claim the work it has been assigned.
 	sessionsTrees   sessionsTreesMap
 	sessionsTreesMu *sync.Mutex
@@ -120,8 +120,8 @@ func (rs *relayerSessionsManager) Start(ctx context.Context) {
 	logging.LogErrors(ctx, miningErrorsObs)
 
 	// Start claim/proof pipeline for each supplier that is present in the RelayMiner.
-	for supplierAddress, supplierClient := range rs.supplierClients.SupplierClients {
-		supplierSessionsToClaimObs := rs.supplierSessionsToClaim(ctx, supplierAddress)
+	for supplierOperatorAddress, supplierClient := range rs.supplierClients.SupplierClients {
+		supplierSessionsToClaimObs := rs.supplierSessionsToClaim(ctx, supplierOperatorAddress)
 		claimedSessionsObs := rs.createClaims(ctx, supplierClient, supplierSessionsToClaimObs)
 		rs.submitProofs(ctx, supplierClient, claimedSessionsObs)
 	}
@@ -170,24 +170,24 @@ func (rs *relayerSessionsManager) ensureSessionTree(
 		sessionTreesWithEndHeight[sessionHeader.SessionId] = sessionTreeWithSessionId
 	}
 
-	supplierAccAddress, err := cosmostypes.AccAddressFromBech32(relayRequestMetadata.SupplierAddress)
+	supplierOperatorAccAddress, err := cosmostypes.AccAddressFromBech32(relayRequestMetadata.SupplierOperatorAddress)
 	if err != nil {
 		return nil, err
 	}
-	supplierAddress := supplierAccAddress.String()
+	supplierOperatorAddress := supplierOperatorAccAddress.String()
 
 	// Get the sessionTree for the supplier corresponding to the relay request.
-	sessionTree, ok := sessionTreeWithSessionId[supplierAddress]
+	sessionTree, ok := sessionTreeWithSessionId[supplierOperatorAddress]
 
 	// If the sessionTree does not exist, create and assign it to the
-	// sessionTreeWithSessionId map for the given supplier address.
+	// sessionTreeWithSessionId map for the given supplier operator address.
 	if !ok {
-		sessionTree, err = NewSessionTree(sessionHeader, &supplierAccAddress, rs.storesDirectory)
+		sessionTree, err = NewSessionTree(sessionHeader, &supplierOperatorAccAddress, rs.storesDirectory)
 		if err != nil {
 			return nil, err
 		}
 
-		sessionTreeWithSessionId[supplierAddress] = sessionTree
+		sessionTreeWithSessionId[supplierOperatorAddress] = sessionTree
 	}
 
 	return sessionTree, nil
@@ -307,7 +307,7 @@ func (rs *relayerSessionsManager) removeFromRelayerSessions(sessionTree relayer.
 	defer rs.sessionsTreesMu.Unlock()
 
 	sessionHeader := sessionTree.GetSessionHeader()
-	supplierAddress := sessionTree.GetSupplierAddress().String()
+	supplierOperatorAddress := sessionTree.GetSupplierOperatorAddress().String()
 
 	logger := rs.logger.With("session_end_block_height", sessionHeader.SessionEndBlockHeight)
 
@@ -325,15 +325,15 @@ func (rs *relayerSessionsManager) removeFromRelayerSessions(sessionTree relayer.
 		return
 	}
 
-	logger = logger.With("supplier_address", supplierAddress)
+	logger = logger.With("supplier_operator_address", supplierOperatorAddress)
 
-	_, ok = suppliersSessionTrees[supplierAddress]
+	_, ok = suppliersSessionTrees[supplierOperatorAddress]
 	if !ok {
-		logger.Debug().Msg("no session tree found for the supplier address")
+		logger.Debug().Msg("no session tree found for the supplier operator address")
 		return
 	}
 
-	delete(suppliersSessionTrees, supplierAddress)
+	delete(suppliersSessionTrees, supplierOperatorAddress)
 
 	// Check if the suppliersSessionTrees map is empty and delete it if so.
 	if len(suppliersSessionTrees) == 0 {
@@ -423,7 +423,7 @@ func (rs *relayerSessionsManager) mapAddMinedRelayToSessionTree(
 	logger := rs.logger.
 		With("session_id", smst.GetSessionHeader().GetSessionId()).
 		With("application", smst.GetSessionHeader().GetApplicationAddress()).
-		With("supplier_address", smst.GetSupplierAddress().String())
+		With("supplier_operator_address", smst.GetSupplierOperatorAddress().String())
 
 	serviceComputeUnitsPerRelay, err := rs.getServiceComputeUnitsPerRelay(ctx, &relayMetadata)
 	if err != nil {
@@ -470,7 +470,7 @@ func (rs *relayerSessionsManager) deleteExpiredSessionTreesFn(
 					rs.logger.Error().
 						Err(err).
 						Str("session_id", sessionTree.GetSessionHeader().GetSessionId()).
-						Str("supplier_address", sessionTree.GetSupplierAddress().String()).
+						Str("supplier_operator_address", sessionTree.GetSupplierOperatorAddress().String()).
 						Msg("failed to delete session tree")
 				}
 				continue
@@ -483,13 +483,13 @@ func (rs *relayerSessionsManager) deleteExpiredSessionTreesFn(
 // are handled by the given supplier are ready to be claimed.
 func (rs *relayerSessionsManager) supplierSessionsToClaim(
 	ctx context.Context,
-	supplierAddress string,
+	supplierOperatorAddress string,
 ) observable.Observable[[]relayer.SessionTree] {
 	sessionsToClaimObs, sessionsToClaimPublishCh := channel.NewObservable[[]relayer.SessionTree]()
 	channel.ForEach(
 		ctx,
 		rs.blockClient.CommittedBlocksSequence(ctx),
-		rs.forEachBlockClaimSessionsFn(supplierAddress, sessionsToClaimPublishCh),
+		rs.forEachBlockClaimSessionsFn(supplierOperatorAddress, sessionsToClaimPublishCh),
 	)
 
 	return sessionsToClaimObs

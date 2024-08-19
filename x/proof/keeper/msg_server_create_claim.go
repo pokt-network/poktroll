@@ -47,16 +47,16 @@ func (k msgServer) CreateClaim(
 	logger.Info("validated the createClaim message")
 
 	// Compare msg session header w/ on-chain session header.
-	session, err := k.queryAndValidateSessionHeader(ctx, msg.GetSessionHeader(), msg.GetSupplierAddress())
+	session, err := k.queryAndValidateSessionHeader(ctx, msg.GetSessionHeader(), msg.GetSupplierOperatorAddress())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	// Construct and insert claim
 	claim = types.Claim{
-		SupplierAddress: msg.GetSupplierAddress(),
-		SessionHeader:   session.GetHeader(),
-		RootHash:        msg.GetRootHash(),
+		SupplierOperatorAddress: msg.GetSupplierOperatorAddress(),
+		SessionHeader:           session.GetHeader(),
+		RootHash:                msg.GetRootHash(),
 	}
 
 	// Helpers for logging the same metadata throughout this function calls
@@ -64,12 +64,12 @@ func (k msgServer) CreateClaim(
 		With(
 			"session_id", session.GetSessionId(),
 			"session_end_height", claim.SessionHeader.GetSessionEndBlockHeight(),
-			"supplier", msg.GetSupplierAddress(),
+			"supplier_operator_address", msg.GetSupplierOperatorAddress(),
 		)
 
 	// Validate claim message commit height is within the respective session's
 	// claim creation window using the on-chain session header.
-	if err = k.validateClaimWindow(ctx, claim.SessionHeader, claim.SupplierAddress); err != nil {
+	if err = k.validateClaimWindow(ctx, claim.SessionHeader, claim.SupplierOperatorAddress); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 
@@ -107,7 +107,7 @@ func (k msgServer) CreateClaim(
 		)
 	}
 
-	_, isExistingClaim = k.Keeper.GetClaim(ctx, claim.GetSessionHeader().GetSessionId(), claim.GetSupplierAddress())
+	_, isExistingClaim = k.Keeper.GetClaim(ctx, claim.GetSessionHeader().GetSessionId(), claim.GetSupplierOperatorAddress())
 
 	// Upsert the claim
 	k.Keeper.UpsertClaim(ctx, claim)

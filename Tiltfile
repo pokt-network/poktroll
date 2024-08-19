@@ -21,6 +21,9 @@ def merge_dicts(base, updates):
 
 
 # Create a localnet config file from defaults, and if a default configuration doesn't exist, populate it with default values
+# TODO_TEST: Non urgent requirement, but we need to find a way to ensure that the Tiltfile works (e.g. through config checks)
+#            so that if we merge something that passes E2E tests but was not manually validated by the developer, the developer
+#            environment is not broken for future engineers.
 localnet_config_path = "localnet_config.yaml"
 localnet_config_defaults = {
     "validator": {
@@ -48,6 +51,9 @@ localnet_config_defaults = {
     "ollama": {
         "enabled": False,
         "model": "qwen:0.5b",
+    },
+    "rest": {
+        "enabled": False,
     },
     # By default, we use the `helm_repo` function below to point to the remote repository
     # but can update it to the locally cloned repo for testing & development
@@ -193,7 +199,9 @@ WORKDIR /
 )
 
 # Run data nodes & validators
-k8s_yaml(["localnet/kubernetes/anvil.yaml", "localnet/kubernetes/validator-volume.yaml"])
+k8s_yaml(
+    ["localnet/kubernetes/anvil.yaml", "localnet/kubernetes/rest.yaml", "localnet/kubernetes/validator-volume.yaml"]
+)
 
 # Provision validator
 helm_resource(
@@ -370,3 +378,8 @@ if localnet_config["ollama"]["enabled"]:
         cmd=execute_in_pod("ollama", "ollama pull " + localnet_config["ollama"]["model"]),
         resource_deps=["ollama"],
     )
+
+if localnet_config["rest"]["enabled"]:
+    print("REST enabled: " + str(localnet_config["rest"]["enabled"]))
+    deployment_create("rest", image="davarski/go-rest-api-demo")
+    k8s_resource("rest", labels=["data_nodes"], port_forwards=["10000"])

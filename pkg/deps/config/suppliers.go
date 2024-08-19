@@ -382,6 +382,8 @@ func NewSupplyShannonSDKFn(signingKeyName string) SupplierFn {
 // NewSupplySupplierClientsFn returns a function which constructs a
 // SupplierClientMap and returns a new depinject.Config which is
 // supplied with the given deps and the new SupplierClientMap.
+// - signingKeyNames is a list of operators signing key name corresponding to
+// the staked suppliers operator addresess.
 func NewSupplySupplierClientsFn(signingKeyNames []string) SupplierFn {
 	return func(
 		ctx context.Context,
@@ -404,7 +406,7 @@ func NewSupplySupplierClientsFn(signingKeyNames []string) SupplierFn {
 			}
 
 			// Making sure we use addresses as keys.
-			suppliers.SupplierClients[supplierClient.Address().String()] = supplierClient
+			suppliers.SupplierClients[supplierClient.OperatorAddress().String()] = supplierClient
 		}
 		return depinject.Configs(deps, depinject.Supply(suppliers)), nil
 	}

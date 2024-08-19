@@ -113,7 +113,7 @@ smt_store_path: <string>
 
 ### `default_signing_key_names`
 
-_`Required`_ if `suppliers.*.signing_key_names` is not specified. 
+_`Required`_ if `suppliers.*.signing_key_names` is not specified.
 
 This configuration option specifies a list of key names from the keyring that the
 `RelayMiner` will use to sign transactions. These key names are used to derive the public

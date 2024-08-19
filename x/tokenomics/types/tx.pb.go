@@ -130,7 +130,7 @@ type MsgUpdateParam struct {
 	// authority is the address that controls the module (defaults to x/gov unless overwritten).
 	Authority string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
 	// The (name, as_type) tuple must match the corresponding name and type as
-	// specified in the `Params`` message in `proof/params.proto.`
+	// specified in the `Params` message in `proof/params.proto.`
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	// Types that are valid to be assigned to AsType:
 	//	*MsgUpdateParam_AsString

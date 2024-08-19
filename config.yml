@@ -161,6 +161,8 @@ genesis:
             - service:
                 id: anvil
             - service:
+                id: rest
+            - service:
                 id: ollama
           stake:
             # NB: This value should be exactly 1upokt smaller than the value in
@@ -169,7 +171,8 @@ genesis:
             denom: upokt
     supplier:
       supplierList:
-        - address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
+        - owner_address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
+          operator_address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
           services:
             - service:
                 id: anvil
@@ -177,12 +180,27 @@ genesis:
                 - configs: []
                   rpc_type: JSON_RPC
                   url: http://relayminer1:8545
+              rev_share:
+                - address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
+                  rev_share_percentage: "100"
+            - service:
+                id: rest
+              endpoints:
+                - configs: []
+                  rpc_type: REST
+                  url: http://relayminer1:8545
+              rev_share:
+                - address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
+                  rev_share_percentage: "100"
             - service:
                 id: ollama
               endpoints:
                 - configs: []
                   rpc_type: REST
                   url: http://relayminer1:8545
+              rev_share:
+                - address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
+                  rev_share_percentage: "100"
           stake:
             # NB: This value should be exactly 1upokt smaller than the value in
             # `application1_stake_config.yaml` so that the stake command causes a state change.
@@ -206,6 +224,10 @@ genesis:
           owner_address: pokt1cwnu460557x0z78jv3hhc7356hhkrgc86c87q5
         - id: ollama
           name: "ollama"
+          compute_units_per_relay: 1
+          owner_address: pokt1mx0klkkrj6v3dw8gs4nzlq0cq8lsktmx35t03e
+        - id: rest
+          name: "rest"
           compute_units_per_relay: 1
           owner_address: pokt1mx0klkkrj6v3dw8gs4nzlq0cq8lsktmx35t03e
     proof:

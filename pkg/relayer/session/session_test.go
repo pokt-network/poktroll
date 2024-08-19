@@ -55,8 +55,8 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 	// Set up dependencies.
 	blocksObs, blockPublishCh := channel.NewReplayObservable[client.Block](ctx, 20)
 	blockClient := testblock.NewAnyTimesCommittedBlocksSequenceBlockClient(t, emptyBlockHash, blocksObs)
-	supplierAddress := sample.AccAddress()
-	supplierClientMap := testsupplier.NewOneTimeClaimProofSupplierClientMap(ctx, t, supplierAddress)
+	supplierOperatorAddress := sample.AccAddress()
+	supplierClientMap := testsupplier.NewOneTimeClaimProofSupplierClientMap(ctx, t, supplierOperatorAddress)
 
 	ctrl := gomock.NewController(t)
 	blockQueryClientMock := mockclient.NewMockCometRPC(ctrl)
@@ -109,7 +109,7 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 	waitSimulateIO()
 
 	// Publish a mined relay to the minedRelaysPublishCh to insert into the session tree.
-	minedRelay := testrelayer.NewUnsignedMinedRelay(t, activeSession, supplierAddress)
+	minedRelay := testrelayer.NewUnsignedMinedRelay(t, activeSession, supplierOperatorAddress)
 	minedRelaysPublishCh <- minedRelay
 
 	// The relayerSessionsManager should have created a session tree for the relay.
@@ -131,7 +131,7 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 		&sharedParams,
 		sessionEndHeight,
 		emptyBlockHash,
-		supplierAddress,
+		supplierOperatorAddress,
 	)
 
 	claimOpenHeightBlock := testblock.NewAnyTimesBlock(t, emptyBlockHash, claimWindowOpenHeight)
@@ -158,7 +158,7 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 		&sharedParams,
 		sessionEndHeight,
 		emptyBlockHash,
-		supplierAddress,
+		supplierOperatorAddress,
 	)
 	triggerProofBlock := testblock.NewAnyTimesBlock(t, emptyBlockHash, earliestSupplierProofCommitHeight)
 	blockPublishCh <- triggerProofBlock

@@ -39,26 +39,33 @@ func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) error {
 			continue
 		}
 
-		// Retrieve the address of the supplier.
-		supplierAddress, err := cosmostypes.AccAddressFromBech32(supplier.Address)
+		// Retrieve the owner address of the supplier.
+		ownerAddress, err := cosmostypes.AccAddressFromBech32(supplier.OwnerAddress)
 		if err != nil {
-			logger.Error(fmt.Sprintf("could not parse address %s", supplier.Address))
+			logger.Error(fmt.Sprintf("could not parse the owner address %s", supplier.OwnerAddress))
+			return err
+		}
+
+		// Retrieve the address of the supplier.
+		supplierOperatorAddress, err := cosmostypes.AccAddressFromBech32(supplier.OperatorAddress)
+		if err != nil {
+			logger.Error(fmt.Sprintf("could not parse the operator address %s", supplier.OperatorAddress))
 			return err
 		}
 
 		// Send the coins from the supplier pool back to the supplier.
 		if err = k.bankKeeper.SendCoinsFromModuleToAccount(
-			ctx, types.ModuleName, supplierAddress, []cosmostypes.Coin{*supplier.Stake},
+			ctx, types.ModuleName, ownerAddress, []cosmostypes.Coin{*supplier.Stake},
 		); err != nil {
 			logger.Error(fmt.Sprintf(
-				"could not send %s coins from %s module to %s account due to %s",
-				supplier.Stake.String(), supplierAddress, types.ModuleName, err,
+				"could not send %s coins from module %s to account %s due to %s",
+				supplier.Stake.String(), types.ModuleName, ownerAddress, err,
 			))
 			return err
 		}
 
 		// Remove the supplier from the store.
-		k.RemoveSupplier(ctx, supplierAddress.String())
+		k.RemoveSupplier(ctx, supplierOperatorAddress.String())
 		logger.Info(fmt.Sprintf("Successfully removed the supplier: %+v", supplier))
 	}
 

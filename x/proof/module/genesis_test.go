@@ -21,7 +21,7 @@ func TestGenesis(t *testing.T) {
 
 		ClaimList: []types.Claim{
 			{
-				SupplierAddress: sample.AccAddress(),
+				SupplierOperatorAddress: sample.AccAddress(),
 				SessionHeader: &sessiontypes.SessionHeader{
 					SessionId:          mockSessionId,
 					ApplicationAddress: sample.AccAddress(),

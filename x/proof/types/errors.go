@@ -31,7 +31,7 @@ var (
 	ErrProofParamInvalid              = sdkerrors.Register(ModuleName, 1120, "the provided param is invalid")
 	ErrProofClaimOutsideOfWindow      = sdkerrors.Register(ModuleName, 1121, "claim attempted outside of the session's claim window")
 	ErrProofProofOutsideOfWindow      = sdkerrors.Register(ModuleName, 1122, "proof attempted outside of the session's proof window")
-	ErrProofSupplierMismatch          = sdkerrors.Register(ModuleName, 1123, "supplier address does not match the claim or proof")
+	ErrProofSupplierMismatch          = sdkerrors.Register(ModuleName, 1123, "supplier operator address does not match the claim or proof")
 	ErrProofAccNotFound               = sdkerrors.Register(ModuleName, 1124, "account not found")
 	ErrProofServiceNotFound           = sdkerrors.Register(ModuleName, 1125, "service not found")
 	ErrProofComputeUnitsMismatch      = sdkerrors.Register(ModuleName, 1126, "mismatch: claim compute units != number of relays * service compute units per relay")
