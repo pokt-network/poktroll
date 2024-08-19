@@ -2,6 +2,8 @@ package channel
 
 import (
 	"context"
+	"fmt"
+	"runtime/debug"
 
 	"github.com/pokt-network/poktroll/pkg/observable"
 )
@@ -99,9 +101,13 @@ func (obs *channelObservable[V]) UnsubscribeAll() {
 // goPublish to the publishCh and notify observers when values are received.
 // This function is blocking and should be run in a goroutine.
 func (obs *channelObservable[V]) goPublish() {
+	// TODO_INVESTIGATE: Relayminer: lots of goroutines wait here. At what point do we ever close this channel?
 	for notification := range obs.publishCh {
 		obs.observerManager.notifyAll(notification)
 	}
+
+	fmt.Println("DIMA_CHANNEL_CLOSED")
+	debug.PrintStack()
 
 	// Here we know that the publisher channel has been closed.
 	// Unsubscribe all observers as they can no longer receive notifications.
