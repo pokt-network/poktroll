@@ -563,7 +563,7 @@ func TestMsgServer_CreateClaim_Error_ComputeUnitsMismatch(t *testing.T) {
 
 	// Add a supplier that is expected to be in the session.
 	supplierKeeper.SetSupplier(ctx, sharedtypes.Supplier{
-		Address: supplierAddr,
+		OperatorAddress: supplierAddr,
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{Service: service},
 		},
@@ -595,7 +595,7 @@ func TestMsgServer_CreateClaim_Error_ComputeUnitsMismatch(t *testing.T) {
 
 	sessionResSuppliers := sessionRes.GetSession().GetSuppliers()
 	require.NotEmpty(t, sessionResSuppliers)
-	require.Equal(t, supplierAddr, sessionResSuppliers[0].GetAddress())
+	require.Equal(t, supplierAddr, sessionResSuppliers[0].GetOperatorAddress())
 
 	// Increment the block height to the test claim height.
 	sessionHeader := sessionRes.GetSession().GetHeader()
