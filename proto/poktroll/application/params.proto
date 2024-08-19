@@ -10,5 +10,8 @@ import "gogoproto/gogo.proto";
 message Params {
   option (amino.name) = "poktroll/x/application/Params";
   option (gogoproto.equal) = true;
+  // max_delegated_gateways defines the maximum number of gateways that a single
+  // application can delegate to. This is used to prevent performance issues
+  // in case the relay ring signature becomes too large.
   uint64 max_delegated_gateways = 1 [(gogoproto.jsontag) = "max_delegated_gateways", (gogoproto.moretags) = "yaml:\"max_delegated_gateways\""];
 }
