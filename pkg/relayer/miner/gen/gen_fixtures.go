@@ -8,9 +8,9 @@ import (
 	"bytes"
 	"context"
 	"crypto/rand"
+	"encoding/hex"
 	"flag"
 	"fmt"
-	"hash"
 	"log"
 	"os"
 	"strings"
@@ -21,25 +21,35 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/relayer"
-	"github.com/pokt-network/poktroll/pkg/relayer/miner"
+	"github.com/pokt-network/poktroll/testutil/sample"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 const (
-	defaultDifficultyBits       = 16
-	defaultFixtureLimitPerGroup = 5
-	defaultRandLength           = 16
-	defaultOutPath              = "relay_fixtures_test.go"
+	// defaultDifficultyThresholdHashStr is the default difficulty hash in string formet, used to separate the generated relays into minable and unminable categories.
+	// This hash should match the service-specific difficulty target hash used by the relay miner tests in pkg/relayer/miner/miner_test.go.
+	defaultDifficultyThresholdHashStr = "0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+	defaultFixtureLimitPerGroup       = 5
+	defaultRandLength                 = 16
+	defaultOutPath                    = "relay_fixtures_test.go"
+
+	// svcId is the ID of the service referenced in each relay request's metadata.
+	// This is passed to the tokenomics client to get the service's difficulty target hash.
+	// It should match the testSvcId const in pkg/relayer/miner/miner_test.go
+	testSvcId = "svc1"
 )
 
 // TODO_FOLLOWUP(@olshansk, #690): Do a global anycase grep for "DifficultyBits" and update/remove things appropriately.
 var (
-	// flagDifficultyBitsThreshold is the number of leading zero bits that a
-	// randomized, serialized relay must have to be included in the
-	// `marshaledMinableRelaysHex` slice which is generated. It is also used as
-	// the maximum difficulty allowed for relays to be included in the
-	// `marshaledUnminableRelaysHex` slice.
-	flagDifficultyBitsThreshold int
+
+	// flagDifficultyThresholdHashStr is the difficulty threshold hash, in string format, that a
+	// randomized, serialized relay must be greater than to be included in the
+	// `marshaledMinableRelaysHex` slice which is generated.
+	// It is also used as the maximum difficulty threshold hash allowed for relays to be
+	// included in the `marshaledUnminableRelaysHex` slice.
+	flagDifficultyThresholdHashStr string
 
 	// flagFixtureLimitPerGroup is the number of randomized, serialized relays that will be
 	// generated for each of `marshaledMinableRelaysHex` and
@@ -56,7 +66,7 @@ type marshalable interface {
 }
 
 func init() {
-	flag.IntVar(&flagDifficultyBitsThreshold, "difficulty-bits-threshold", defaultDifficultyBits, "the number of leading zero bits that a randomized, serialized relay must have to be included in the `marshaledMinableRelaysHex` slice which is generated. It is also used as the maximum difficulty allowed for relays to be included in the `marshaledUnminableRelaysHex` slice.")
+	flag.StringVar(&flagDifficultyThresholdHashStr, "difficulty-threshold-hash-str", defaultDifficultyThresholdHashStr, "the difficulty threshold hash, in string format, that a randomized, serialized relay be greater than or equal to when hashed, to be included in the `marshaledMinableRelaysHex` slice which is generated. It is also used as the maximum difficulty threshold hash for relays to be included in the `marshaledUnminableRelaysHex` slice.")
 	flag.IntVar(&flagFixtureLimitPerGroup, "fixture-limit-per-group", defaultFixtureLimitPerGroup, "the number of randomized, serialized relays that will be generated for each of `marshaledMinableRelaysHex` and `marshaledUnminableRelaysHex`.")
 	flag.StringVar(&flagOut, "out", defaultOutPath, "the path to the generated file.")
 }
@@ -84,7 +94,8 @@ func main() {
 	randRelaysObs, errCh := genRandomizedMinedRelayFixtures(
 		ctx,
 		defaultRandLength,
-		miner.DefaultRelayHasher,
+		// TODO_TECHDEBT: need to find out how the removal of miner.DefaultRelayerHasher in commit 608edc31b39c6ff9a285af46d1c1037cd36a7252 did not
+		// trigger any test failures while it was still referenced here (in the line that was in this comment's position before being deleted).
 	)
 	exitOnError(errCh)
 
@@ -100,7 +111,7 @@ func main() {
 	if err := relayFixturesTemplate.Execute(
 		outputBuffer,
 		map[string]any{
-			"difficultyBitsThreshold":     flagDifficultyBitsThreshold,
+			"difficultyThresholdHashStr":  flagDifficultyThresholdHashStr,
 			"MarshaledMinableRelaysHex":   marshaledMinableRelaysHex,
 			"MarshaledUnminableRelaysHex": marshaledUnminableRelaysHex,
 		},
@@ -121,7 +132,6 @@ func main() {
 func genRandomizedMinedRelayFixtures(
 	ctx context.Context,
 	randLength int,
-	newHasher func() hash.Hash,
 ) (observable.Observable[*relayer.MinedRelay], <-chan error) {
 	var (
 		errCh                      = make(chan error, 1)
@@ -145,7 +155,17 @@ func genRandomizedMinedRelayFixtures(
 			// Populate a relay with the minimally sufficient randomized data.
 			relay := servicetypes.Relay{
 				Req: &servicetypes.RelayRequest{
-					Meta: &servicetypes.RelayRequestMetadata{
+					Meta: servicetypes.RelayRequestMetadata{
+						SessionHeader: &sessiontypes.SessionHeader{
+							ApplicationAddress: sample.AccAddress(),
+							Service: &sharedtypes.Service{
+								Id: testSvcId,
+							},
+							SessionId:               "session_id",
+							SessionStartBlockHeight: 1,
+							SessionEndBlockHeight:   2,
+						},
+
 						Signature: randBz,
 					},
 					Payload: nil,
@@ -160,11 +180,8 @@ func genRandomizedMinedRelayFixtures(
 			}
 
 			// Hash relay bytes
-			relayHash, err := hashBytes(newHasher, relayBz)
-			if err != nil {
-				errCh <- err
-				return
-			}
+			relayHashArr := protocol.GetRelayHashFromBytes(relayBz)
+			relayHash := relayHashArr[:]
 
 			randBzPublishCh <- &relayer.MinedRelay{
 				Relay: relay,
@@ -177,16 +194,6 @@ func genRandomizedMinedRelayFixtures(
 	return randBzObs, errCh
 }
 
-// hashBytes hashes the given bytes using the given hasher.
-func hashBytes(newHasher func() hash.Hash, relayBz []byte) ([]byte, error) {
-	hasher := newHasher()
-	if _, err := hasher.Write(relayBz); err != nil {
-		return nil, err
-	}
-
-	return hasher.Sum(nil), nil
-}
-
 // exitOnError exits the program if an error is received on the given error
 // channel.
 func exitOnError(errCh <-chan error) {
@@ -197,18 +204,36 @@ func exitOnError(errCh <-chan error) {
 	}()
 }
 
+// getDifficultyThresholdHash returns the difficulty threshold hash set by the
+// flagDifficultyThresholdHashStr flag in string formet, or the default value if
+// the flag has not been set.
+func getDifficultyThresholdHash() [protocol.RelayHasherSize]byte {
+	difficultyThresholdHash, _ := hex.DecodeString(flagDifficultyThresholdHashStr)
+	var thresholdHashArr [protocol.RelayHasherSize]byte
+	copy(thresholdHashArr[:], difficultyThresholdHash)
+	return thresholdHashArr
+}
+
 // difficultyGTE returns true if the given hash has a difficulty greater than or
-// equal to flagDifficultyBitsThreshold.
+// equal to that represented by flagDifficultyThresholdHashStr.
 func difficultyGTE(hash []byte) bool {
-	return protocol.CountDifficultyBits(hash) >= flagDifficultyBitsThreshold
+	var hashArr [protocol.RelayHasherSize]byte
+	copy(hashArr[:], hash)
+
+	return protocol.GetDifficultyFromHash(hashArr) >= protocol.GetDifficultyFromHash(getDifficultyThresholdHash())
 }
 
 // difficultyLT returns true if the given hash has a difficulty less than
-// flagDifficultyBitsThreshold.
+// that represented by flagDifficultyThresholdHashStr.
 func difficultyLT(hash []byte) bool {
-	return protocol.CountDifficultyBits(hash) < flagDifficultyBitsThreshold
+	var hashArr [protocol.RelayHasherSize]byte
+	copy(hashArr[:], hash)
+
+	return protocol.GetDifficultyFromHash(hashArr) < protocol.GetDifficultyFromHash(getDifficultyThresholdHash())
 }
 
+// TODO_IMPROVE: this function could be simplified to a great extent to make it easier to understand the
+// test cases.
 // getMarshaledRelayFmtLines performs two map operations followed by a collect.
 // The first map filters mined relays from the given observable, skipping when
 // shouldAccept is false. This map, and as a result, all downstream observables

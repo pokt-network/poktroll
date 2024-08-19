@@ -2,6 +2,8 @@ package miner
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"cosmossdk.io/depinject"
 
@@ -22,16 +24,9 @@ var _ relayer.Miner = (*miner)(nil)
 // difficulty of each, finally publishing those with sufficient difficulty to
 // minedRelayObs as they are applicable for relay volume.
 type miner struct {
-	// proofQueryClient is used to query for the minimum relay difficulty.
-	proofQueryClient client.ProofQueryClient
-
+	// tokenomicsQueryClient is used to query for the relay difficulty target hash of a service.
 	// relay_difficulty is the target hash which a relay hash must be less than to be volume/reward applicable.
-	//
-	// TODO_BETA(#705): This is populated by querying the corresponding on-chain parameter during construction.
-	//                   If this parameter is updated on-chain the relayminer will need to be restarted to query the new value.
-	// TODO_BETA(#705): This needs to be maintained (and updated) on a per service level.
-	//                  Make sure to update the `smst.Update` call in `relayer/session` alongside it.
-	relayDifficultyTargetHash []byte
+	tokenomicsQueryClient client.TokenomicsQueryClient
 }
 
 // NewMiner creates a new miner from the given dependencies and options. It
@@ -48,16 +43,12 @@ func NewMiner(
 ) (*miner, error) {
 	mnr := &miner{}
 
-	if err := depinject.Inject(deps, &mnr.proofQueryClient); err != nil {
+	if err := depinject.Inject(deps, &mnr.tokenomicsQueryClient); err != nil {
 		return nil, err
 	}
 
 	for _, opt := range opts {
 		opt(mnr)
-	}
-
-	if err := mnr.setDefaults(); err != nil {
-		return nil, err
 	}
 
 	return mnr, nil
@@ -86,28 +77,13 @@ func (mnr *miner) MinedRelays(
 	return filter.EitherSuccess(ctx, eitherMinedRelaysObs)
 }
 
-// setDefaults ensures that the miner has been configured with a hasherConstructor and uses
-// the default hasherConstructor if not.
-func (mnr *miner) setDefaults() error {
-	ctx := context.TODO()
-	params, err := mnr.proofQueryClient.GetParams(ctx)
-	if err != nil {
-		return err
-	}
-
-	if len(mnr.relayDifficultyTargetHash) == 0 {
-		mnr.relayDifficultyTargetHash = params.GetRelayDifficultyTargetHash()
-	}
-	return nil
-}
-
 // mapMineRelay is intended to be used as a MapFn.
-// 1. It hashes the relay and compares its difficult to the minimum threshold.
+// 1. It hashes the relay and compares its difficulty to the minimum threshold.
 // 2. If the relay difficulty is sufficient -> return an Either[MineRelay Value]
 // 3. If an error is encountered -> return an Either[error]
 // 4. Otherwise, skip the relay.
 func (mnr *miner) mapMineRelay(
-	_ context.Context,
+	ctx context.Context,
 	relay *servicetypes.Relay,
 ) (_ either.Either[*relayer.MinedRelay], skip bool) {
 	relayBz, err := relay.Marshal()
@@ -117,8 +93,13 @@ func (mnr *miner) mapMineRelay(
 	relayHashArr := protocol.GetRelayHashFromBytes(relayBz)
 	relayHash := relayHashArr[:]
 
+	relayDifficultyTargetHash, err := mnr.getServiceRelayDifficultyTargetHash(ctx, relay.Req)
+	if err != nil {
+		return either.Error[*relayer.MinedRelay](err), false
+	}
+
 	// The relay IS NOT volume / reward applicable
-	if !protocol.IsRelayVolumeApplicable(relayHash, mnr.relayDifficultyTargetHash) {
+	if !protocol.IsRelayVolumeApplicable(relayHash, relayDifficultyTargetHash) {
 		return either.Success[*relayer.MinedRelay](nil), true
 	}
 
@@ -128,4 +109,34 @@ func (mnr *miner) mapMineRelay(
 		Bytes: relayBz,
 		Hash:  relayHash,
 	}), false
+}
+
+// getServiceRelayDifficultyTargetHash returns the relay difficulty target hash for the service referenced by the relay.
+// If the service does not have a relay difficulty target hash defined, the default difficulty target hash is returned.
+func (mnr *miner) getServiceRelayDifficultyTargetHash(ctx context.Context, req *servicetypes.RelayRequest) ([]byte, error) {
+	if req == nil {
+		return nil, errors.New("relay request is nil")
+	}
+
+	sessionHeader := req.Meta.SessionHeader
+	if sessionHeader == nil {
+		return nil, errors.New("relay metadata has nil session header")
+	}
+
+	if err := sessionHeader.ValidateBasic(); err != nil {
+		return nil, fmt.Errorf("invalid session header: %w", err)
+	}
+
+	serviceRelayDifficulty, err := mnr.tokenomicsQueryClient.GetServiceRelayDifficultyTargetHash(ctx, sessionHeader.Service.Id)
+	if err != nil {
+		// TODO_DISCUSS_IN_THIS_COMMIT: do we need to distinguish between errors? There could potentially be a scenario in the future where
+		// the query client fails for some reason other than "service has no relay difficulty set", which is currently the only
+		// error scenario. The line below could then lead to masking the error and returning a default value for a service that
+		// has a relay difficulty target hash set.
+		// Solving this needs updating the tokenomics keeper to use an additional boolean in the output to distinguish errors
+		// from the case where the service has no relay difficulty target hash set.
+		return protocol.BaseRelayDifficultyHashBz, nil
+	}
+
+	return serviceRelayDifficulty.GetTargetHash(), nil
 }

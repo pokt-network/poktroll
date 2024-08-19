@@ -18,7 +18,7 @@ package miner_test
 
 var (
 	// marshaledMinableRelaysHex are the hex encoded strings of serialized
-	// relayer.MinedRelays which have been pre-mined to difficulty {{.difficultyBitsThreshold}} by
+	// relayer.MinedRelays which have been pre-mined to difficulty {{.difficultyThresholdHashStr}} by
 	// populating the signature with random bytes. It is intended for use
 	// in tests.
 	marshaledMinableRelaysHex = []string{
@@ -27,7 +27,7 @@ var (
 
 	// marshaledUnminableRelaysHex are the hex encoded strings of serialized
 	// relayer.MinedRelays which have been pre-mined to **exclude** relays with
-	// difficulty {{.difficultyBitsThreshold}} (or greater). Like marshaledMinableRelaysHex, this is done
+	// difficulty {{.difficultyThresholdHashStr}} (or greater). Like marshaledMinableRelaysHex, this is done
 	// by populating the signature with random bytes. It is intended for use in
 	// tests.
 	marshaledUnminableRelaysHex = []string{
