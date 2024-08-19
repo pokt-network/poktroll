@@ -54,6 +54,11 @@ type relayerSessionsManager struct {
 
 	// sharedQueryClient is used to query shared module parameters.
 	sharedQueryClient client.SharedQueryClient
+
+	// serviceQueryClient is used to query for a service with a given ID.
+	// This is used to get the ComputeUnitsPerRelay, which is used as the weight of a mined relay
+	// when adding a mined relay to a session's tree.
+	serviceQueryClient client.ServiceQueryClient
 }
 
 // NewRelayerSessions creates a new relayerSessions.
@@ -81,6 +86,7 @@ func NewRelayerSessions(
 		&rs.blockClient,
 		&rs.supplierClients,
 		&rs.sharedQueryClient,
+		&rs.serviceQueryClient,
 	); err != nil {
 		return nil, err
 	}
@@ -400,7 +406,7 @@ func (rs *relayerSessionsManager) waitForBlock(ctx context.Context, targetHeight
 // to the session tree. If it encounters an error, it returns the error. Otherwise,
 // it skips output (only outputs errors).
 func (rs *relayerSessionsManager) mapAddMinedRelayToSessionTree(
-	_ context.Context,
+	ctx context.Context,
 	relay *relayer.MinedRelay,
 ) (_ error, skip bool) {
 	// ensure the session tree exists for this relay
@@ -419,9 +425,16 @@ func (rs *relayerSessionsManager) mapAddMinedRelayToSessionTree(
 		With("application", smst.GetSessionHeader().GetApplicationAddress()).
 		With("supplier_address", smst.GetSupplierAddress().String())
 
-	// TODO_BETA(#705): Make sure to update the weight of each relay to the value
-	//                  associated with `relayDifficultyTargetHash` in the `miner/miner.go`.
-	if err := smst.Update(relay.Hash, relay.Bytes, 1); err != nil {
+	serviceComputeUnitsPerRelay, err := rs.getServiceComputeUnitsPerRelay(ctx, &relayMetadata)
+	if err != nil {
+		// TODO_IMPROVE: log additional info?
+		rs.logger.Error().Err(err).Msg("failed to get service compute units per relay")
+		return err, false
+	}
+
+	// The weight of each relay is specified by the corresponding service's ComputeUnitsPerRelay field.
+	// This is independent of the relay difficulty target hash for each service, which is supplied by the tokenomics module.
+	if err := smst.Update(relay.Hash, relay.Bytes, serviceComputeUnitsPerRelay); err != nil {
 		// TODO_IMPROVE: log additional info?
 		logger.Error().Err(err).Msg("failed to update smt")
 		return err, false

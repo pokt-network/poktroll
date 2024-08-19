@@ -32,6 +32,9 @@ import (
 
 // TODO_TEST: Add a test case which simulates a cold-started relayminer with unclaimed relays.
 
+// TODO_INCOMPLETE: Add a test case which verifies that the service's compute units per relay is used as
+// the weight of a relay when updating a session's SMT.
+
 func TestRelayerSessionsManager_Start(t *testing.T) {
 	// TODO_TECHDEBT(#446): Centralize the configuration for the SMT spec.
 	var (
@@ -84,7 +87,9 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 
 	sharedQueryClientMock := testqueryclients.NewTestSharedQueryClient(t)
 
-	deps := depinject.Supply(blockClient, blockQueryClientMock, supplierClientMap, sharedQueryClientMock)
+	serviceQueryClientMock := testqueryclients.NewTestServiceQueryClient(t)
+
+	deps := depinject.Supply(blockClient, blockQueryClientMock, supplierClientMap, sharedQueryClientMock, serviceQueryClientMock)
 	storesDirectoryOpt := testrelayer.WithTempStoresDirectory(t)
 
 	// Create a new relayer sessions manager.

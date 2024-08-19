@@ -9,6 +9,8 @@
 //go:generate mockgen -destination=../../testutil/mockclient/session_query_client_mock.go -package=mockclient . SessionQueryClient
 //go:generate mockgen -destination=../../testutil/mockclient/shared_query_client_mock.go -package=mockclient . SharedQueryClient
 //go:generate mockgen -destination=../../testutil/mockclient/proof_query_client_mock.go -package=mockclient . ProofQueryClient
+//go:generate mockgen -destination=../../testutil/mockclient/tokenomics_query_client_mock.go -package=mockclient . TokenomicsQueryClient
+//go:generate mockgen -destination=../../testutil/mockclient/service_query_client_mock.go -package=mockclient . ServiceQueryClient
 //go:generate mockgen -destination=../../testutil/mockclient/cosmos_tx_builder_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/client TxBuilder
 //go:generate mockgen -destination=../../testutil/mockclient/cosmos_keyring_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/crypto/keyring Keyring
 //go:generate mockgen -destination=../../testutil/mockclient/cosmos_client_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/client AccountRetriever
@@ -335,7 +337,6 @@ type BlockQueryClient interface {
 // protobuf message. Since the generated go types don't include interface types, this
 // is necessary to prevent dependency cycles.
 type ProofParams interface {
-	GetRelayDifficultyTargetHash() []byte
 	GetProofRequestProbability() float32
 	GetProofRequirementThreshold() uint64
 	GetProofMissingPenalty() *cosmostypes.Coin
@@ -346,4 +347,21 @@ type ProofParams interface {
 type ProofQueryClient interface {
 	// GetParams queries the chain for the current shared module parameters.
 	GetParams(ctx context.Context) (ProofParams, error)
+}
+
+// TokenomicsRelayMiningDifficulty is a go interface type which corresponding to the poktroll.tokenomics.RelayMiningDifficulty
+// protobuf message. This is necessary to prevent dependency cycles.
+type TokenomicsRelayMiningDifficulty interface {
+	GetTargetHash() []byte
+}
+
+type TokenomicsQueryClient interface {
+	GetServiceRelayDifficultyTargetHash(ctx context.Context, serviceId string) (TokenomicsRelayMiningDifficulty, error)
+}
+
+// ServiceQueryClient defines an interface that enables the querying of the
+// on-chain service information
+type ServiceQueryClient interface {
+	// GetService queries the chain for the details of the service provided
+	GetService(ctx context.Context, serviceId string) (sharedtypes.Service, error)
 }
