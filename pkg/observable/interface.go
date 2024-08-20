@@ -39,6 +39,8 @@ type Observable[V any] interface {
 	Subscribe(context.Context) Observer[V]
 	// UnsubscribeAll unsubscribes and removes all observers from the observable.
 	UnsubscribeAll()
+	// Stop signals the observable to stop publishing and clean up resources.
+	Stop()
 }
 
 // Observer is a generic interface that provides access to the notified
