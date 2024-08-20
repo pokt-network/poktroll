@@ -31,6 +31,8 @@ type channelObservable[V any] struct {
 	// publishCh is an observable-wide channel that is used to receive values
 	// which are subsequently fanned out to observers.
 	publishCh chan V
+	// done is a channel used to signal when the observable should stop
+	done chan struct{}
 }
 
 // NewObservable creates a new observable which is notified when the publishCh
@@ -39,6 +41,7 @@ func NewObservable[V any](opts ...option[V]) (observable.Observable[V], chan<- V
 	// initialize an observable that publishes messages from 1 publishCh to N observers
 	obs := &channelObservable[V]{
 		observerManager: newObserverManager[V](),
+		done:            make(chan struct{}),
 	}
 
 	for _, opt := range opts {
@@ -99,11 +102,23 @@ func (obs *channelObservable[V]) UnsubscribeAll() {
 // goPublish to the publishCh and notify observers when values are received.
 // This function is blocking and should be run in a goroutine.
 func (obs *channelObservable[V]) goPublish() {
-	for notification := range obs.publishCh {
-		obs.observerManager.notifyAll(notification)
+	for {
+		select {
+		case notification, ok := <-obs.publishCh:
+			if !ok {
+				// Channel closed, unsubscribe all observers
+				obs.observerManager.removeAll()
+				return
+			}
+			obs.observerManager.notifyAll(notification)
+		case <-obs.done:
+			// Observable is being stopped, unsubscribe all observers
+			obs.observerManager.removeAll()
+			return
+		}
 	}
-
-	// Here we know that the publisher channel has been closed.
-	// Unsubscribe all observers as they can no longer receive notifications.
-	obs.observerManager.removeAll()
+}
+// Stop signals the observable to stop publishing and clean up resources.
+func (obs *channelObservable[V]) Stop() {
+	close(obs.done)
 }
