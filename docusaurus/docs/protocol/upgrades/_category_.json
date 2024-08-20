@@ -1,0 +1,8 @@
+{
+  "label": "Upgrades",
+  "position": 7,
+  "link": {
+    "type": "generated-index",
+    "description": "Documentation related to Pocket Network protocol upgrades."
+  }
+}

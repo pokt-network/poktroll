@@ -13,6 +13,21 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  update-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: "0" # Per https://github.com/ignite/cli/issues/1674#issuecomment-1144619147
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.22.2"
+
+      - name: Update gov params page
+        run: make docs_update_gov_params_page
+
   validate:
     runs-on: ubuntu-latest
     steps:
