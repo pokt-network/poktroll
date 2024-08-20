@@ -1,5 +1,5 @@
 signing_key_name: supplier1
-smt_store_path: /root/.pocket/smt
+smt_store_path: /root/.poktroll/smt
 metrics:
   enabled: true
   addr: :9090
