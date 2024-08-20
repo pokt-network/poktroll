@@ -121,4 +121,5 @@ func (obs *channelObservable[V]) goPublish() {
 // Stop signals the observable to stop publishing and clean up resources.
 func (obs *channelObservable[V]) Stop() {
 	close(obs.done)
+	obs.UnsubscribeAll()
 }
