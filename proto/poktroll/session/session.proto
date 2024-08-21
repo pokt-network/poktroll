@@ -6,7 +6,7 @@ option go_package = "github.com/pokt-network/poktroll/x/session/types";
 import "cosmos_proto/cosmos.proto";
 
 import "poktroll/shared/service.proto";
-import "poktroll/application/application.proto";
+import "poktroll/application/types.proto";
 import "poktroll/shared/supplier.proto";
 
 // NOTE: Using signed integers for consistency with the cosmos SDK
