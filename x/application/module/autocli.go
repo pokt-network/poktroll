@@ -46,7 +46,7 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 		Tx: &autocliv1.ServiceCommandDescriptor{
 			Service:              modulev1.Msg_ServiceDesc.ServiceName,
 			EnhanceCustomCommand: true, // only required if you want to use the custom command
-			RpcCommandOptions:    []*autocliv1.RpcCommandOptions{
+			RpcCommandOptions: []*autocliv1.RpcCommandOptions{
 				// 				{
 				// 					RpcMethod: "UpdateParams",
 				// 					Skip:      true, // skipped because authority gated
@@ -98,12 +98,12 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 				// 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "gateway_address"}},
 				// 				},
 				{
-			RpcMethod: "TransferApplicationStake",
-			Use: "transfer-application-stake [address] [beneficiary]",
-			Short: "Send a transfer-application-stake tx",
-			PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "address"}, {ProtoField: "beneficiary"},},
-		},
-		// this line is used by ignite scaffolding # autocli/tx
+					RpcMethod:      "TransferApplicationStake",
+					Use:            "transfer [address] [beneficiary]",
+					Short:          "Transfer the application stake from [address] to [beneciciary]",
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "address"}, {ProtoField: "beneficiary"}},
+				},
+				// this line is used by ignite scaffolding # autocli/tx
 			},
 		},
 	}
