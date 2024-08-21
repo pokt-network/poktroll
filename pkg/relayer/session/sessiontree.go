@@ -70,6 +70,7 @@ type sessionTree struct {
 // removeFromRelayerSessions that removes the sessionTree from the RelayerSessionsManager.
 // It returns an error if the KVStore fails to be created.
 // TODO_BETA(@red-0ne): When starting a new session, check how many relays the app can handle.
+// See the TODO next to the `sessionTree` struct definition for more details.
 func NewSessionTree(
 	sessionHeader *sessiontypes.SessionHeader,
 	supplierOperatorAddress *cosmostypes.AccAddress,

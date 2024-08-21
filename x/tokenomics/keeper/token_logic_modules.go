@@ -26,12 +26,10 @@ import (
 
 const (
 	// Governance parameters for the TLMGlobalMint module
-	// TODO_BETA_TEST(@olshansk): Remove this. It is an ephemeral placeholder before
-	// real values are introduced. When this is changed to a governance param,
-	// make sure to also add the necessary unit tests.
+	// TODO_UPNEXT(@olshansk, #732): Make this a governance parameter and give it a non-zero value + tests.
 	MintPerClaimGlobalInflation = 0.0000000
 
-	// TODO_BETA: Make all of the governance params
+	// TODO_BETA(@bryanchriswhite): Make all of the governance params
 	MintAllocationDAO         = 0.1
 	MintAllocationProposer    = 0.05
 	MintAllocationSupplier    = 0.7
@@ -97,7 +95,7 @@ type TokenLogicModuleProcessor func(
 var tokenLogicModuleProcessorMap = map[TokenLogicModule]TokenLogicModuleProcessor{
 	TLMRelayBurnEqualsMint: Keeper.TokenLogicModuleRelayBurnEqualsMint,
 	TLMGlobalMint:          Keeper.TokenLogicModuleGlobalMint,
-	// TODO_BETA_UPNEXT(@Olshansky): Uncomment this and add tests.
+	// TODO_UPNEXT(@olshansk, #732): Uncomment this, finish implementation, and add tests.
 	// TLMGlobalMintReimbursementRequest: Keeper.TokenLogicModuleGlobalMintReimbursementRequest,
 }
 
@@ -423,10 +421,10 @@ func (k Keeper) TokenLogicModuleGlobalMintReimbursementRequest(
 	newMintCoins, _ := calculateGlobalPerClaimMintInflationFromSettlementAmount(settlementCoins)
 
 	/*
-		TODO_UPNEXT_BETA(@Olshansky): Finish implementing this:
+		TODO_UPNEXT(@olshansk, #732): Finish implementing this:
 		1. Overcharge the application (reduce stake and burn app module tokens)
 		2. Send the overcharge to the DAO/PNF address
-		3. Add extensive tests for this.
+		3. Add necessary tests.
 	*/
 
 	// Prepare and emit the event for the application being overcharged

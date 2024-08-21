@@ -26,6 +26,9 @@ Feature: Tokenomics Namespace
         Then the account balance of "supplier1" should be "420" uPOKT "more" than before
         And the "application" stake of "app1" should be "420" uPOKT "less" than before
 
+    # TODO_IN_THIS_PR: Add the following test
+    # Scenario: Supplier overservices an application and gets paid for less work than claimed
+
     # TODO_ADDTEST: Implement the following scenarios
     # Scenario: Emissions equals burn when a claim is created and a valid proof is submitted but not required
     # Scenario: No emissions or burn when a claim is created and an invalid proof is submitted

@@ -33,8 +33,11 @@ func init() {
 	cmd.InitSDKConfig()
 }
 
-// TODO_IN_THIS_PR: Tests to add or list
-// 	claimSettlementAmount > maxClaimableAmount
+// TODO_IN_THIS_PR: Add these tests or update existing tests to account for it.
+// 	func TestProcessTokenLogicModules_HandleMaxClaimGreaterActualClaim(t *testing.T) {...}
+// TODO_UPNEXT(@olshansk, #732): Add the following tests
+//  func TestProcessTokenLogicModules_ValidateAppOverServicingEvent(t *testing.T) {...}
+// 	func TestProcessTokenLogicModules_ValidateAppReimbursedRequestEvent(t *testing.T) {...}
 
 func TestProcessTokenLogicModules_HandleAppGoingIntoDebt(t *testing.T) {
 	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil)

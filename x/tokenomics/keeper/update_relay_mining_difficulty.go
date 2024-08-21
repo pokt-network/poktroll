@@ -183,6 +183,9 @@ func computeEma(alpha *big.Float, prevEma, currValue uint64) uint64 {
 	return newEma
 }
 
+// newDefaultRelayMiningDifficulty is a helper that creates a new RelayMiningDifficulty
+// structure if one is not available. It is often used to set the default when a service's
+// difficulty is being initialized for the first time.
 func newDefaultRelayMiningDifficulty(
 	ctx context.Context,
 	methodLogger log.Logger,
@@ -192,8 +195,7 @@ func newDefaultRelayMiningDifficulty(
 	logger := methodLogger.With("helper", "newDefaultRelayMiningDifficulty")
 	logger.Warn(types.ErrTokenomicsMissingRelayMiningDifficulty.Wrapf(
 		"No previous relay mining difficulty found for service %s. Creating a temporary relay mining difficulty with %d relays and default target hash %x",
-		serviceId, numRelays,
-	).Error())
+		serviceId, numRelays, prooftypes.DefaultRelayDifficultyTargetHash).Error())
 
 	return tokenomicstypes.RelayMiningDifficulty{
 		ServiceId:    serviceId,
