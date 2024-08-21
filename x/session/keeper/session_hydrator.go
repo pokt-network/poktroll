@@ -20,8 +20,8 @@ import (
 
 var SHA3HashLen = crypto.SHA3_256.Size()
 
-// TODO_BLOCKER(@bryanchriswhite, #21): Make these configurable governance param
 const (
+	// TODO_BETA(@bryanchriswhite): Make this a governance parameter
 	NumSupplierPerSession       = 15
 	SessionIDComponentDelimiter = "."
 )

@@ -25,7 +25,7 @@ var (
 	ErrTokenomicsUnmarshalInvalid                      = sdkerrors.Register(ModuleName, 1116, "failed to unmarshal the provided bytes")
 	ErrTokenomicsDuplicateIndex                        = sdkerrors.Register(ModuleName, 1117, "cannot have a duplicate index")
 	ErrTokenomicsMissingRelayMiningDifficulty          = sdkerrors.Register(ModuleName, 1118, "missing relay mining difficulty")
-	ErrTokenomicsApplicationOverservicedEvent          = sdkerrors.Register(ModuleName, 1119, "application overserviced event cannot be sent")
+	ErrTokenomicsEmittingEventFailed                   = sdkerrors.Register(ModuleName, 1119, "failed to emit event")
 	ErrTokenomicsServiceNotFound                       = sdkerrors.Register(ModuleName, 1120, "service not found")
 	ErrTokenomicsModuleMintFailed                      = sdkerrors.Register(ModuleName, 1121, "failed to mint uPOKT to tokenomics module account")
 	ErrTokenomicsSendingMintRewards                    = sdkerrors.Register(ModuleName, 1122, "failed to send minted rewards")

@@ -49,16 +49,15 @@ message EventRelayMiningDifficultyUpdated {
 message EventApplicationOverserviced {
     string application_addr = 1;
     string supplier_addr = 2;
+    // Expected burn is the amount the supplier is claiming for work done
+    // to service the application during the session.
+    // This is usually the amount in the Claim object.
     cosmos.base.v1beta1.Coin expected_burn  = 3;
+    // Effective burn is the amount that is actually being paid to the supplier
+    // for the work done. It is less than the expected burn (claim amount) and
+    // most likely equal to the application's stake divided by the number of suppliers
+    // in a session.
     cosmos.base.v1beta1.Coin effective_burn  = 4;
-}
-
-// EventSupplierExceededClaimableAmount is emitted when a supplier application has less stake
-// than the expected burn.
-message EventSupplierExceededClaimableAmount {
-    string supplier_addr = 1;
-    cosmos.base.v1beta1.Coin expected_burn  = 2;
-    cosmos.base.v1beta1.Coin effective_burn  = 3;
 }
 
 // EventApplicationReimbursementRequest is emitted when an application requests
