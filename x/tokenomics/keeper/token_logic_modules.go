@@ -98,6 +98,7 @@ type TokenLogicModuleProcessor func(
 var tokenLogicModuleProcessorMap = map[TokenLogicModule]TokenLogicModuleProcessor{
 	TLMRelayBurnEqualsMint: Keeper.TokenLogicModuleRelayBurnEqualsMint,
 	TLMGlobalMint:          Keeper.TokenLogicModuleGlobalMint,
+	// TLMGlobalMintReimbursementRequest: Keeper.TokenLogicModuleGlobalMintReimbursementRequest,
 }
 
 func init() {
@@ -107,9 +108,9 @@ func init() {
 	}
 }
 
-// ProcessTokenLogicModules is responsible for calling all of the token logic
-// modules (i.e. post session claim accounting) necessary to burn, mint or transfer
-// tokens as a result of the amount of work (i.e. compute units) done.
+// ProcessTokenLogicModules is the main TLM processor. It is responsible for calling
+// all of the token logic module necessary to limit, burn, mint or transfer tokens
+// as a result of the amount of work (i.e. compute units) done and governance parameters.
 func (k Keeper) ProcessTokenLogicModules(
 	ctx context.Context,
 	claim *prooftypes.Claim, // IMPORTANT: It is assumed the proof for the claim has been validated BEFORE calling this function
@@ -117,17 +118,17 @@ func (k Keeper) ProcessTokenLogicModules(
 	logger := k.Logger().With("method", "ProcessTokenLogicModules")
 
 	// Declaring variables that will be emitted by telemetry
-	settlementCoin := cosmostypes.NewCoin("upokt", math.NewInt(0))
+	claimSettlementCoin := cosmostypes.NewCoin("upokt", math.NewInt(0))
 	isSuccessful := false
 
 	// This is emitted only when the function returns (successful or not)
 	defer telemetry.EventSuccessCounter(
 		"process_token_logic_modules",
 		func() float32 {
-			if settlementCoin.Amount.BigInt() == nil {
+			if claimSettlementCoin.Amount.BigInt() == nil {
 				return 0
 			}
-			return float32(settlementCoin.Amount.Int64())
+			return float32(claimSettlementCoin.Amount.Int64())
 		},
 		func() bool { return isSuccessful },
 	)
@@ -196,6 +197,7 @@ func (k Keeper) ProcessTokenLogicModules(
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrapf("%v", err)
 	}
+
 	// TODO_POST_MAINNET: Because of how things have evolved, we are now using
 	// root.Count (numRelays) instead of root.Sum (numComputeUnits) to determine
 	// the amount of work done. This is because the compute_units_per_relay is
@@ -207,7 +209,7 @@ func (k Keeper) ProcessTokenLogicModules(
 
 	// Determine the total number of tokens that'll be used for settling the session.
 	// When the network achieves equilibrium, this will be the mint & burn.
-	settlementCoin, err = k.numRelaysToCoin(ctx, numRelays, &service)
+	claimSettlementCoin, err = k.numRelaysToCoin(ctx, numRelays, &service)
 	if err != nil {
 		return err
 	}
@@ -230,18 +232,33 @@ func (k Keeper) ProcessTokenLogicModules(
 	// Helpers for logging the same metadata throughout this function calls
 	logger = logger.With(
 		"num_relays", numRelays,
-		"num_settlement_upokt", settlementCoin.Amount,
+		"claim_settlement_upokt", claimSettlementCoin.Amount,
 		"session_id", sessionHeader.GetSessionId(),
 		"service_id", sessionHeader.GetService().Id,
 		"supplier_operator", supplier.OperatorAddress,
 		"application", application.Address,
 	)
-	logger.Info(fmt.Sprintf("About to start processing TLMs for (%d) relays equaling to (%s) coins", numRelays, settlementCoin))
+	logger.Info(fmt.Sprintf("About to start processing TLMs for (%d) relays equaling to (%s) upokt claimed", numRelays, claimSettlementCoin))
+
+	maxClaimableAmount := application.GetStake().QuoUint64(uint64(relayMiningDifficulty.NumNodesPerSession))
+
+	// Reduce the settlement amount if the application was over-serviced
+	var actualSettlementCoin cosmostypes.Coin
+	if application.GetStake().IsLT(claimSettlementCoin) {
+		actualSettlementCoin, err = k.handleOverservicedApplication(ctx, &application, claimSettlementCoin)
+		if err != nil {
+			return err
+		}
+		logger.Warn(fmt.Sprintf("Application with address %s was over-serviced so the actual amount being settled is (%v) instead of the claimed amount (%v) ", application.Address, actualSettlementCoin, claimSettlementCoin))
+	} else {
+		actualSettlementCoin = claimSettlementCoin
+	}
+	logger = logger.With("actual_settlement_upokt", actualSettlementCoin)
 
 	// Execute all the token logic modules processors
 	for tlm, tlmProcessor := range tokenLogicModuleProcessorMap {
 		logger.Info(fmt.Sprintf("Starting to execute TLM %q", tlm))
-		if err := tlmProcessor(k, ctx, &service, &application, &supplier, settlementCoin, &relayMiningDifficulty); err != nil {
+		if err := tlmProcessor(k, ctx, &service, claim.SessionHeader, &application, &supplier, actualSettlementCoin, &relayMiningDifficulty); err != nil {
 			return err
 		}
 		logger.Info(fmt.Sprintf("Finished executing TLM %q", tlm))
@@ -277,7 +294,7 @@ func (k Keeper) TokenLogicModuleRelayBurnEqualsMint(
 		return err
 	}
 
-	// NB: We are doing a mint & burn + transfer, instead of a simple transfer
+	// DEV_NOTE: We are doing a mint & burn + transfer, instead of a simple transfer
 	// of funds from the supplier to the application in order to enable second
 	// order economic effects with more optionality. This could include funds
 	// going to pnf, delegators, enabling bonuses/rebates, etc...
@@ -304,19 +321,6 @@ func (k Keeper) TokenLogicModuleRelayBurnEqualsMint(
 		)
 	}
 	logger.Info(fmt.Sprintf("sent (%v) from the supplier module to the supplier account with address %q", settlementCoin, supplier.OperatorAddress))
-
-	// TODO_MAINNET: Decide on the behaviour here when an app is over serviced.
-	// If an app has 10 POKT staked, but the supplier earned 20 POKT. We still
-	// end up minting 20 POKT but only burn 10 POKT from the app. There are
-	// questions and nuance here that needs to be addressed.
-
-	// Verify that the application has enough uPOKT to pay for the services it consumed
-	if application.GetStake().IsLT(settlementCoin) {
-		settlementCoin, err = k.handleOverservicedApplication(ctx, application, settlementCoin)
-		if err != nil {
-			return err
-		}
-	}
 
 	// Burn uPOKT from the application module account which was held in escrow
 	// on behalf of the application account.
@@ -404,8 +408,8 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 
 	// Check and log the total amount of coins distributed
 	totalDistributedCoins := appCoin.Add(supplierCoin).Add(*daoCoin).Add(*serviceCoin).Add(*proposerCoin)
-	if totalDistributedCoins.Amount.BigInt().Cmp(settlementCoin.Amount.BigInt()) != 0 {
-		logger.Error(fmt.Sprintf("TODO_MAINNET: Verify why the total distributed coins (%v) do not equal the settlement coins (%v). Likely floating point arithmetic.", totalDistributedCoins, settlementCoin.Amount.BigInt()))
+	if totalDistributedCoins.Amount.BigInt().Cmp(newMintCoins[0].Amount.BigInt()) != 0 {
+		return tokenomictypes.ErrTokenomicsAmountMismatch.Wrapf("the total distributed coins (%v) do not equal the settlement coins (%v). Likely floating point arithmetic.", totalDistributedCoins, settlementCoin.Amount.BigInt())
 	}
 	logger.Info(fmt.Sprintf("distributed (%v) coins to the application, supplier, DAO, source owner, and proposer", totalDistributedCoins))
 
@@ -435,15 +439,13 @@ func (k Keeper) TokenLogicModuleGlobalMintReimbursementRequest(
 	settlementCoins cosmostypes.Coin,
 	relayMiningDifficulty *tokenomictypes.RelayMiningDifficulty,
 ) error {
-	logger := k.Logger().With("method", "TokenLogicModuleGlobalMint")
+	// logger := k.Logger().With("method", "TokenLogicModuleGlobalMintReimbursementRequest")
 
 	// Determine how much new uPOKT to mint based on global inflation
 	newMintCoins, _ := calculateGlobalMintAllocationFromSettlementAmount(settlementCoins)
 
-
-
 	// EventApplicationReimbursementRequest
-	reimbursementRequest := tokenomictypes.EventApplicationReimbursementRequest{
+	reimbursementRequestEvent := tokenomictypes.EventApplicationReimbursementRequest{
 		ApplicationAddr: application.Address,
 		ServiceId:       service.Id,
 		SessionId:       sessionHeader.SessionId,
@@ -451,7 +453,7 @@ func (k Keeper) TokenLogicModuleGlobalMintReimbursementRequest(
 	}
 
 	eventManager := cosmostypes.UnwrapSDKContext(ctx).EventManager()
-	if err := eventManager.EmitTypedEvent(&reimbursementRequest); err != nil {
+	if err := eventManager.EmitTypedEvent(&reimbursementRequestEvent); err != nil {
 		return tokenomicstypes.ErrTokenomicsApplicationReimbursementRequestFailed.Wrapf(
 			"application address: %s; service Id %s; session Id: %s; amount: %s",
 			application.GetAddress(),
@@ -496,20 +498,25 @@ func (k Keeper) sendRewardsToAccount(
 	return &coinToAcc, nil
 }
 
+// handleOverservicedApplication handles the case where an application has been over-serviced.
+// Per Algorithm #1 in the Relay Mining paper, the maximum amount that a single supplier
+// can claim in a session is AppStake/NumNodesPerSession.
+// If this is not the case, then the supplier essentially did "free work" and the actual
+// claim amount is less than what was claimed.
+// Ref: https://arxiv.org/pdf/2305.10672
 func (k Keeper) handleOverservicedApplication(
 	ctx context.Context,
 	application *apptypes.Application,
-	settlementCoins cosmostypes.Coin,
+	claimSettlementCoin cosmostypes.Coin,
 ) (
-	newSettlementCoins cosmostypes.Coin,
+	actualSettlementCoins cosmostypes.Coin,
 	err error,
 ) {
 	logger := k.Logger().With("method", "handleOverservicedApplication")
-	// over-serviced application
 	logger.Warn(fmt.Sprintf(
 		"THIS SHOULD NEVER HAPPEN. Application with address %s needs to be charged more than it has staked: %v > %v",
 		application.Address,
-		settlementCoins,
+		claimSettlementCoin,
 		application.Stake,
 	))
 
@@ -518,7 +525,7 @@ func (k Keeper) handleOverservicedApplication(
 	// probabilistic proofs and add all the parameter logic. Do we touch the application balance?
 	// Do we just let it go into debt? Do we penalize the application? Do we unstake it? Etc...
 	// See this document from @red-0ne and @bryanchriswhite for more context: notion.so/buildwithgrove/Off-chain-Application-Stake-Tracking-6a8bebb107db4f7f9dc62cbe7ba555f7
-	expectedBurn := settlementCoins
+	expectedBurn := claimSettlementCoin
 
 	applicationOverservicedEvent := &tokenomicstypes.EventApplicationOverserviced{
 		ApplicationAddr: application.Address,
@@ -535,6 +542,9 @@ func (k Keeper) handleOverservicedApplication(
 				application.GetStake().String(),
 			)
 	}
+
+	// TODO(@red-0ne)
+
 	return *application.Stake, nil
 }
 
@@ -592,7 +602,7 @@ func (k Keeper) distributeSupplierRewardsToShareHolders(
 
 	shareAmountMap := GetShareAmountMap(serviceRevShare, amountToDistribute)
 	for shareHolderAddress, shareAmount := range shareAmountMap {
-		// TODO_IN_THIS_PR: Why don't we use sendRewardsToAccount here?
+		// TODO_TECHDEBT(@red-0ne): Refactor to reuse the sendRewardsToAccount helper here.
 		shareAmountCoin := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(int64(shareAmount)))
 		shareAmountCoins := cosmostypes.NewCoins(shareAmountCoin)
 		shareHolderAccAddress, err := sdk.AccAddressFromBech32(shareHolderAddress)

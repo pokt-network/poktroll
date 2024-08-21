@@ -44,16 +44,25 @@ message EventRelayMiningDifficultyUpdated {
     uint64 new_num_relays_ema = 5;
 }
 
-// EventApplicationOverserviced is emitted when an application has less stake
-// than the expected burn.
+// EventApplicationOverserviced is emitted when an application has less stake than
+// what a supplier is claiming (i.e. burn is not high enough).
 message EventApplicationOverserviced {
     string application_addr = 1;
+    string supplier_addr = 2;
+    cosmos.base.v1beta1.Coin expected_burn  = 3;
+    cosmos.base.v1beta1.Coin effective_burn  = 4;
+}
+
+// EventSupplierExceededClaimableAmount is emitted when a supplier application has less stake
+// than the expected burn.
+message EventSupplierExceededClaimableAmount {
+    string supplier_addr = 1;
     cosmos.base.v1beta1.Coin expected_burn  = 2;
     cosmos.base.v1beta1.Coin effective_burn  = 3;
 }
 
-// EventApplicationReimbursementRequest is emitted when an application requests a
-// reimbursement
+// EventApplicationReimbursementRequest is emitted when an application requests
+// a reimbursement
 message EventApplicationReimbursementRequest {
     string application_addr = 1;
     string service_id = 2;

@@ -335,8 +335,8 @@ func (m *EventApplicationOverserviced) GetEffectiveBurn() *types1.Coin {
 	return nil
 }
 
-// EventApplicationReimbursementRequest is emitted when an application requests a
-// reimbursement
+// EventApplicationReimbursementRequest is emitted when an application requests
+// a reimbursement
 type EventApplicationReimbursementRequest struct {
 	ApplicationAddr string       `protobuf:"bytes,1,opt,name=application_addr,json=applicationAddr,proto3" json:"application_addr,omitempty"`
 	ServiceId       string       `protobuf:"bytes,2,opt,name=service_id,json=serviceId,proto3" json:"service_id,omitempty"`

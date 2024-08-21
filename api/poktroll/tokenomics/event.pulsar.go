@@ -3330,8 +3330,8 @@ func (x *EventApplicationOverserviced) GetEffectiveBurn() *v1beta1.Coin {
 	return nil
 }
 
-// EventApplicationReimbursementRequest is emitted when an application requests a
-// reimbursement
+// EventApplicationReimbursementRequest is emitted when an application requests
+// a reimbursement
 type EventApplicationReimbursementRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

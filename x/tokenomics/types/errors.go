@@ -33,4 +33,5 @@ var (
 	ErrTokenomicsSupplierOwnerAddressInvalid           = sdkerrors.Register(ModuleName, 1124, "the supplier owner address in the claim is not a valid bech32 address")
 	ErrTokenomicsSupplierRevShareFailed                = sdkerrors.Register(ModuleName, 1125, "failed to send rev share to supplier shareholders")
 	ErrTokenomicsApplicationReimbursementRequestFailed = sdkerrors.Register(ModuleName, 1126, "failed to send application reimbursement request event")
+	ErrTokenomicsAmountMismatch                        = sdkerrors.Register(ModuleName, 1127, "an unexpected amount mismatch occurred")
 )
