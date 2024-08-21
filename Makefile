@@ -385,9 +385,13 @@ test_e2e: test_e2e_env ## Run all E2E tests
 test_e2e_relay: test_e2e_env ## Run only the E2E suite that exercises the relay life-cycle
 	go test -v ./e2e/tests/... -tags=e2e,test --features-path=relay.feature
 
-.PHONY: test_e2e_app
-test_e2e_app: test_e2e_env ## Run only the E2E suite that exercises the application life-cycle
+.PHONY: test_e2e_app_stake
+test_e2e_app_stake: test_e2e_env ## Run only the E2E suite that exercises the application life-cycle
 	go test -v ./e2e/tests/... -tags=e2e,test --features-path=stake_app.feature
+
+.PHONY: test_e2e_app_transfer
+test_e2e_app_transfer: test_e2e_env ## Run only the E2E suite that exercises application stake transfer
+	go test -v ./e2e/tests/... -tags=e2e,test --features-path=app_stake_transfer.feature
 
 .PHONY: test_e2e_supplier
 test_e2e_supplier: test_e2e_env ## Run only the E2E suite that exercises the supplier life-cycle
