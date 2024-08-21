@@ -9,7 +9,7 @@ option go_package = "github.com/pokt-network/poktroll/x/proof/types";
 
 import "cosmos_proto/cosmos.proto";
 
-import "poktroll/session/session.proto";
+import "poktroll/session/types.proto";
 
 message Proof {
   // Address of the supplier's operator that submitted this proof.
