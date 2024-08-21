@@ -994,8 +994,8 @@ github.com/pokt-network/ring-go v0.1.0 h1:hF7mDR4VVCIqqDAsrloP8azM9y1mprc99YgnTj
 github.com/pokt-network/ring-go v0.1.0/go.mod h1:8NHPH7H3EwrPX3XHfpyRI6bz4gApkE3+fd0XZRbMWP0=
 github.com/pokt-network/shannon-sdk v0.0.0-20240814144717-dfa95b525d46 h1:rkJa3LGPN+f/k2Vv9t09UWtgbpkMA0NLHRZDiGKPqo4=
 github.com/pokt-network/shannon-sdk v0.0.0-20240814144717-dfa95b525d46/go.mod h1:Jql/lobckajY8BVHDRkQPf6zYraompTK1et78jKVi68=
-github.com/pokt-network/smt v0.12.0 h1:uqru/0ykC4LnBoMacakobNOd1iRK69PlohqjMtLmYNA=
-github.com/pokt-network/smt v0.12.0/go.mod h1:S4Ho4OPkK2v2vUCHNtA49XDjqUC/OFYpBbynRVYmxvA=
+github.com/pokt-network/smt v0.0.0-20240819232427-be8f5d598321 h1:Ru+yl6E6+chh/wAqkVcAI6OtR17s83p6x4t/6Hur+jk=
+github.com/pokt-network/smt v0.0.0-20240819232427-be8f5d598321/go.mod h1:S4Ho4OPkK2v2vUCHNtA49XDjqUC/OFYpBbynRVYmxvA=
 github.com/pokt-network/smt/kvstore/pebble v0.0.0-20240819232427-be8f5d598321 h1:jMNlDjbmzEqW5/o9a05LbF+GjDQNVFTZQkoIbFyOX5E=
 github.com/pokt-network/smt/kvstore/pebble v0.0.0-20240819232427-be8f5d598321/go.mod h1:CZlY7W+7LU5hMFoTb9PmyL4wu/i41t3+gVMvDePxAmo=
 github.com/posener/complete v1.1.1/go.mod h1:em0nMJCgc9GFtwrmVmEMR/ZL6WyhyjMBndrE9hABlRI=

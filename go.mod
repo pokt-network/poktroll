@@ -13,6 +13,9 @@ replace (
 	// github.com/pokt-network/smt/kvstore/badger => ../smt/kvstore/badger
 	// github.com/pokt-network/smt/kvstore/pebble => ../smt/kvstore/pebble
 
+	// TODO_IN_THIS_PR: bump and remove
+	github.com/pokt-network/smt => github.com/pokt-network/smt v0.0.0-20240819232427-be8f5d598321
+
 	// replace broken goleveldb
 	github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
 )
