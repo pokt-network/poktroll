@@ -11,7 +11,7 @@ import "cosmos/base/query/v1beta1/pagination.proto";
 
 import "poktroll/proof/params.proto";
 import "poktroll/proof/claim.proto";
-import "poktroll/proof/proof.proto";
+import "poktroll/proof/types.proto";
 
 // Query defines the gRPC querier service.
 service Query {

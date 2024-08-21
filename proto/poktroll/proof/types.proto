@@ -1,3 +1,7 @@
+// TODO_AUTOMATE: Add a CI workflow which detects .proto files with incompatible names (i.e. same as the package).
+// NB: This file CANNOT be named "application.proto" due to an as of yet unidentified
+// issue in how cosmos-proto generates the pulsar plugin output go source code imports.
+
 syntax = "proto3";
 package poktroll.proof;
 

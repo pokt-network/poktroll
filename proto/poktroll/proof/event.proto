@@ -5,7 +5,7 @@ option go_package = "github.com/pokt-network/poktroll/x/proof/types";
 
 import "gogoproto/gogo.proto";
 import "poktroll/proof/claim.proto";
-import "poktroll/proof/proof.proto";
+import "poktroll/proof/types.proto";
 
 message EventClaimCreated {
   poktroll.proof.Claim claim = 1 [(gogoproto.jsontag) = "claim"];
