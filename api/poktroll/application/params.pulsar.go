@@ -437,9 +437,6 @@ type Params struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// max_delegated_gateways defines the maximum number of gateways that a single
-	// application can delegate to. This is used to prevent performance issues
-	// in case the relay ring signature becomes too large.
 	MaxDelegatedGateways uint64 `protobuf:"varint,1,opt,name=max_delegated_gateways,json=maxDelegatedGateways,proto3" json:"max_delegated_gateways,omitempty"`
 }
 

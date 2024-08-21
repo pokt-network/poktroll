@@ -20,8 +20,8 @@ import (
 
 var SHA3HashLen = crypto.SHA3_256.Size()
 
+// TODO_BLOCKER(@bryanchriswhite, #21): Make these configurable governance param
 const (
-	// TODO_BETA(@bryanchriswhite): Make this a governance parameter
 	NumSupplierPerSession       = 15
 	SessionIDComponentDelimiter = "."
 )
@@ -59,7 +59,6 @@ func NewSessionHydrator(
 
 // GetSession implements of the exposed `UtilityModule.GetSession` function
 // TECHDEBT(#519,#348): Add custom error types depending on the type of issue that occurred and assert on them in the unit tests.
-// TODO_BETA: Consider returning an error if the application's stake has become very low.
 func (k Keeper) HydrateSession(ctx context.Context, sh *sessionHydrator) (*types.Session, error) {
 	logger := k.Logger().With("method", "hydrateSession")
 

@@ -19,11 +19,7 @@ import (
 var _ relayer.SessionTree = (*sessionTree)(nil)
 
 // sessionTree is an implementation of the SessionTree interface.
-// TODO_BETA(@red-0ne): Per the Relay Mining paper, we need to optimistically store
-// the number of requests that an application can pay for. This needs to be tracked
-// based on the app's stake in the beginning of a session and the number of nodes
-// per session. An operator should be able to specify "overservicing_okay" whereby
-// it keeps replying to requests even though it may not get paid for them.
+// TODO_TEST: Add tests to the sessionTree.
 type sessionTree struct {
 	// sessionMu is a mutex used to protect sessionTree operations from concurrent access.
 	sessionMu *sync.Mutex
@@ -69,7 +65,6 @@ type sessionTree struct {
 // NewSessionTree creates a new sessionTree from a Session and a storePrefix. It also takes a function
 // removeFromRelayerSessions that removes the sessionTree from the RelayerSessionsManager.
 // It returns an error if the KVStore fails to be created.
-// TODO_BETA(@red-0ne): When starting a new session, check how many relays the app can handle.
 func NewSessionTree(
 	sessionHeader *sessiontypes.SessionHeader,
 	supplierOperatorAddress *cosmostypes.AccAddress,

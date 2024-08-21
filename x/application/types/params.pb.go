@@ -26,9 +26,6 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 // Params defines the parameters for the module.
 type Params struct {
-	// max_delegated_gateways defines the maximum number of gateways that a single
-	// application can delegate to. This is used to prevent performance issues
-	// in case the relay ring signature becomes too large.
 	MaxDelegatedGateways uint64 `protobuf:"varint,1,opt,name=max_delegated_gateways,json=maxDelegatedGateways,proto3" json:"max_delegated_gateways" yaml:"max_delegated_gateways"`
 }
 
