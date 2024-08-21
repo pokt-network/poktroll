@@ -61,7 +61,7 @@ require (
 	// repo is the first obvious idea, but has to be carefully considered, automated, and is not
 	// a hard blocker.
 	github.com/pokt-network/shannon-sdk v0.0.0-20240814144717-dfa95b525d46
-	// TODO_IB_THIS_PR: bump after https://github.com/pokt-network/smt/pull/52 is in
+	// TODO_IN_THIS_PR: bump after https://github.com/pokt-network/smt/pull/52 is in
 	github.com/pokt-network/smt v0.12.0
 	github.com/prometheus/client_golang v1.19.0
 	github.com/regen-network/gocuke v1.1.0
@@ -84,7 +84,7 @@ require (
 )
 
 require (
-	// TODO_IB_THIS_PR: bump to the main branch commit after https://github.com/pokt-network/smt/pull/52 is in
+	// TODO_IN_THIS_PR: bump to the main branch commit after https://github.com/pokt-network/smt/pull/52 is in
 	github.com/pokt-network/smt/kvstore/pebble v0.0.0-20240819232427-be8f5d598321
 	golang.org/x/text v0.16.0
 )

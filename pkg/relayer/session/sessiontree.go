@@ -244,8 +244,9 @@ func (st *sessionTree) Delete() error {
 
 	st.isClaiming = false
 
-	// We used to `st.treeStore.ClearAll()` here, but don't need to clean up the database, causing IO load,
-	// when we close the database and delete it from the disk right away.
+	// NB: We used to call `st.treeStore.ClearAll()` here.
+	// This was intentionally removed to lower the IO load.
+	// When the database is closed, it is deleted it from disk right away.
 
 	if err := st.treeStore.Stop(); err != nil {
 		return err
