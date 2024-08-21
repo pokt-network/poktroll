@@ -1,5 +1,5 @@
 ---
-title: Outdated - Pocket Actors, Nodes & Data Availability Network
+title: Pocket Actors, Nodes & Data Availability Network
 sidebar_position: 1
 ---
 
