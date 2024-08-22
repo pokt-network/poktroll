@@ -401,8 +401,8 @@ test_e2e_gateway: test_e2e_env ## Run only the E2E suite that exercises the gate
 test_e2e_session: test_e2e_env ## Run only the E2E suite that exercises the session (i.e. claim/proof) life-cycle
 	go test -v ./e2e/tests/... -tags=e2e,test --features-path=session.feature
 
-.PHONY: test_e2e_settlement
-test_e2e_settlement: test_e2e_env ## Run only the E2E suite that exercises the session & tokenomics settlement
+.PHONY: test_e2e_tokenomics
+test_e2e_tokenomics: test_e2e_env ## Run only the E2E suite that exercises the session & tokenomics settlement
 	go test -v ./e2e/tests/... -tags=e2e,test --features-path=0_settlement.feature
 
 .PHONY: test_e2e_params
