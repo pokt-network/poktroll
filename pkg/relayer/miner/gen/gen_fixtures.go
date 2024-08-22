@@ -223,10 +223,7 @@ func difficultyGTE(hash []byte) bool {
 // difficultyLT returns true if the given hash has a difficulty less than
 // that represented by flagDifficultyThresholdHashStr.
 func difficultyLT(hash []byte) bool {
-	var hashArr [protocol.RelayHasherSize]byte
-	copy(hashArr[:], hash)
-
-	return protocol.GetDifficultyFromHash(hashArr) < protocol.GetDifficultyFromHash(getDifficultyThresholdHash())
+	return !protocol.IsRelayVolumeApplicable(hash, getDifficultyThresholdHash())
 }
 
 // TODO_IMPROVE: this function could be simplified to a great extent to make it easier to understand the
