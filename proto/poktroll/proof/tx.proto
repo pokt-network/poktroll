@@ -10,9 +10,8 @@ import "cosmos/msg/v1/msg.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 import "poktroll/proof/params.proto";
-import "poktroll/proof/claim.proto";
-import "poktroll/proof/proof.proto";
-import "poktroll/session/session.proto";
+import "poktroll/proof/types.proto";
+import "poktroll/session/types.proto";
 import "poktroll/shared/service.proto";
 
 // Msg defines the Msg service.

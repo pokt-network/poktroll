@@ -5,8 +5,7 @@ option go_package = "github.com/pokt-network/poktroll/x/tokenomics/types";
 
 import "cosmos/base/v1beta1/coin.proto";
 import "gogoproto/gogo.proto";
-import "poktroll/proof/claim.proto";
-import "poktroll/proof/requirement.proto";
+import "poktroll/proof/types.proto";
 
 enum ClaimExpirationReason {
   EXPIRATION_REASON_UNSPECIFIED = 0; // Default value, means may be valid
