@@ -5,10 +5,10 @@ import (
 	"fmt"
 )
 
-// getServiceCupr ensures that a service with the ServiceID of the given service
+// getServiceComputeUnitsPerRelay is used to ensure that a service with the ServiceID exists.
 // exists.
 // It returns the compute units per relay for the service with the given id.
-func (k Keeper) getServiceCupr(
+func (k Keeper) getServiceComputeUnitsPerRelay(
 	ctx context.Context,
 	serviceId string,
 ) (uint64, error) {
