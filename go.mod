@@ -2,21 +2,18 @@ module github.com/pokt-network/poktroll
 
 go 1.22.2
 
-replace (
-	// DEVELOPER_TIP: Uncomment to use a local copy of shannon-sdk for development purposes.
-	// github.com/pokt-network/shannon-sdk => ../shannon-sdk
+// replace (
+// DEVELOPER_TIP: Uncomment to use a local copy of shannon-sdk for development purposes.
+// github.com/pokt-network/shannon-sdk => ../shannon-sdk
 
-	// DEVELOPER_TIP: Uncomment to use a local copy of smt for development purposes.
-	// github.com/pokt-network/smt => ../smt
-	// github.com/pokt-network/smt/kvstore/badger => ../smt/kvstore/badger
-	// github.com/pokt-network/smt/kvstore/pebble => ../smt/kvstore/pebble
+// DEVELOPER_TIP: Uncomment to use a local copy of smt for development purposes.
+// github.com/pokt-network/smt => ../smt
+// github.com/pokt-network/smt/kvstore/badger => ../smt/kvstore/badger
+// github.com/pokt-network/smt/kvstore/pebble => ../smt/kvstore/pebble
+// )
 
-	// TODO_IN_THIS_PR: bump and remove
-	github.com/pokt-network/smt => github.com/pokt-network/smt v0.0.0-20240819232427-be8f5d598321
-
-	// replace broken goleveldb
-	github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
-)
+// replace broken goleveldb
+replace github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
 
 require (
 	cosmossdk.io/api v0.7.5
@@ -59,8 +56,8 @@ require (
 	// repo is the first obvious idea, but has to be carefully considered, automated, and is not
 	// a hard blocker.
 	github.com/pokt-network/shannon-sdk v0.0.0-20240814144717-dfa95b525d46
-	// TODO_IN_THIS_PR: bump after https://github.com/pokt-network/smt/pull/52 is in
-	github.com/pokt-network/smt v0.12.0
+	github.com/pokt-network/smt v0.13.0
+	github.com/pokt-network/smt/kvstore/pebble v0.0.0-20240822175047-21ea8639c188
 	github.com/prometheus/client_golang v1.19.0
 	github.com/regen-network/gocuke v1.1.0
 	github.com/rs/zerolog v1.32.0
@@ -73,18 +70,13 @@ require (
 	golang.org/x/crypto v0.25.0
 	golang.org/x/exp v0.0.0-20240707233637-46b078467d37
 	golang.org/x/sync v0.7.0
+	golang.org/x/text v0.16.0
 	golang.org/x/tools v0.23.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20240709173604-40e1e62336c5
 	google.golang.org/grpc v1.65.0
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.4.0
 	google.golang.org/protobuf v1.34.2
 	gopkg.in/yaml.v2 v2.4.0
-)
-
-require (
-	// TODO_IN_THIS_PR: bump to the main branch commit after https://github.com/pokt-network/smt/pull/52 is in
-	github.com/pokt-network/smt/kvstore/pebble v0.0.0-20240819232427-be8f5d598321
-	golang.org/x/text v0.16.0
 )
 
 require (
