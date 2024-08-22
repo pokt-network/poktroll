@@ -3,8 +3,6 @@ module github.com/pokt-network/poktroll
 go 1.22.2
 
 replace (
-	// fix upstream GHSA-h395-qcrw-5vmq vulnerability.
-	github.com/gin-gonic/gin => github.com/gin-gonic/gin v1.7.0
 	// DEVELOPER_TIP: Uncomment to use a local copy of shannon-sdk for development purposes.
 	// github.com/pokt-network/shannon-sdk => ../shannon-sdk
 

@@ -11,7 +11,7 @@ A guide on how to perform load testing on DevNets.
 - [Prerequisites](#prerequisites)
   - [1. Create and configure the DevNet](#1-create-and-configure-the-devnet)
   - [2. Stake the necessary actors](#2-stake-the-necessary-actors)
-  - [3. Configure the load testing manifest](#3-configure-the-load-testing-manifest)
+  - [3. Configure the load test manifest](#3-configure-the-load-test-manifest)
 - [Full example](#full-example)
 
 ## Overview
@@ -90,7 +90,7 @@ service_id: "anvil"
 # The address of the account that will be used to fund the application accounts
 # so that they can stake on the network.
 # TODO_TECHDEBT(@bryanchriswhite, #512): Replace with faucet address.
-funding_account_address: pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw # address for pnf account
+funding_account_address: pokt1awtlw5sjmw2f5lgj8ekdkaqezphgz88rdk93sk # address for faucet account
 
 # In non-ephemeral chains, the gateways are identified by their addresses.
 gateways:

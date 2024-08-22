@@ -8,7 +8,7 @@ service_id: anvil
 
 # The address of the account that will be used to fund the the application,
 # gateway and supplier accounts so that they can stake on the network.
-funding_account_address: pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw # address for pnf account
+funding_account_address: pokt1awtlw5sjmw2f5lgj8ekdkaqezphgz88rdk93sk # address for faucet account
 
 # List of pre-provisioned suppliers used for load testing.
 # These suppliers will be progressively staked during the load test, according
