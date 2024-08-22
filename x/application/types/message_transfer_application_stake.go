@@ -1,26 +1,27 @@
 package types
 
 import (
-	errorsmod "cosmossdk.io/errors"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 )
 
-var _ sdk.Msg = &MsgTransferApplicationStake{}
+var _ cosmostypes.Msg = &MsgTransferApplicationStake{}
 
-func NewMsgTransferApplicationStake(creator string, address string, beneficiary string) *MsgTransferApplicationStake {
-  return &MsgTransferApplicationStake{
-		Creator: creator,
-    Address: address,
-    Beneficiary: beneficiary,
+func NewMsgTransferApplicationStake(address string, beneficiary string) *MsgTransferApplicationStake {
+	return &MsgTransferApplicationStake{
+		Address:     address,
+		Beneficiary: beneficiary,
 	}
 }
 
 func (msg *MsgTransferApplicationStake) ValidateBasic() error {
-  _, err := sdk.AccAddressFromBech32(msg.Creator)
-  	if err != nil {
-  		return errorsmod.Wrapf(sdkerrors.ErrInvalidAddress, "invalid creator address (%s)", err)
-  	}
-  return nil
-}
+	_, addrErr := cosmostypes.AccAddressFromBech32(msg.Address)
+	if addrErr != nil {
+		return ErrAppInvalidAddress.Wrapf("invalid application address (%s): %v", msg.Address, addrErr)
+	}
 
+	_, beneficiaryErr := cosmostypes.AccAddressFromBech32(msg.Address)
+	if beneficiaryErr != nil {
+		return ErrAppInvalidAddress.Wrapf("invalid beneficiary address (%s): %v", msg.Address, beneficiaryErr)
+	}
+	return nil
+}

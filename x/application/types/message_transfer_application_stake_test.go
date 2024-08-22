@@ -3,9 +3,8 @@ package types
 import (
 	"testing"
 
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/stretchr/testify/require"
 	"github.com/pokt-network/poktroll/testutil/sample"
+	"github.com/stretchr/testify/require"
 )
 
 func TestMsgTransferApplicationStake_ValidateBasic(t *testing.T) {
@@ -15,15 +14,27 @@ func TestMsgTransferApplicationStake_ValidateBasic(t *testing.T) {
 		err  error
 	}{
 		{
-			name: "invalid address",
+			name: "invalid application address",
 			msg: MsgTransferApplicationStake{
-				Creator: "invalid_address",
+				Address: "invalid_address",
 			},
-			err: sdkerrors.ErrInvalidAddress,
+			err: ErrAppInvalidAddress,
 		}, {
-			name: "valid address",
+			name: "valid application address",
 			msg: MsgTransferApplicationStake{
-				Creator: sample.AccAddress(),
+				Address: sample.AccAddress(),
+			},
+		},
+		{
+			name: "invalid beneficiary address",
+			msg: MsgTransferApplicationStake{
+				Address: "invalid_address",
+			},
+			err: ErrAppInvalidAddress,
+		}, {
+			name: "valid beneficiary address",
+			msg: MsgTransferApplicationStake{
+				Address: sample.AccAddress(),
 			},
 		},
 	}
@@ -32,6 +43,7 @@ func TestMsgTransferApplicationStake_ValidateBasic(t *testing.T) {
 			err := tt.msg.ValidateBasic()
 			if tt.err != nil {
 				require.ErrorIs(t, err, tt.err)
+				require.Contains(t, err.Error(), tt.msg.Address)
 				return
 			}
 			require.NoError(t, err)

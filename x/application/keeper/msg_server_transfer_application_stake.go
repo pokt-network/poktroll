@@ -2,17 +2,45 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 
-    "github.com/pokt-network/poktroll/x/application/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/pokt-network/poktroll/x/application/types"
 )
 
+func (k msgServer) TransferApplicationStake(ctx context.Context, msg *types.MsgTransferApplicationStake) (*types.MsgTransferApplicationStakeResponse, error) {
+	// TODO_IN_THIS_COMMIT: add telemetry.
 
-func (k msgServer) TransferApplicationStake(goCtx context.Context,  msg *types.MsgTransferApplicationStake) (*types.MsgTransferApplicationStakeResponse, error) {
-	ctx := sdk.UnwrapSDKContext(goCtx)
+	logger := k.Logger().With("method", "TransferApplicationStake")
 
-    // TODO: Handling the message
-    _ = ctx
+	if err := msg.ValidateBasic(); err != nil {
+		return nil, err
+	}
 
-	return &types.MsgTransferApplicationStakeResponse{}, nil
+	_, isBeneficiaryFound := k.GetApplication(ctx, msg.Beneficiary)
+	if isBeneficiaryFound {
+		return nil, types.ErrAppDuplicateAddress.Wrapf("beneficiary (%q) exists", msg.Beneficiary)
+	}
+
+	foundApp, isAppFound := k.GetApplication(ctx, msg.Address)
+	if !isAppFound {
+		return nil, types.ErrAppNotFound.Wrapf("application %q not found", msg.Address)
+	}
+
+	beneficiary := k.createApplication(ctx, &types.MsgStakeApplication{
+		Address:  msg.Beneficiary,
+		Stake:    foundApp.Stake,
+		Services: foundApp.ServiceConfigs,
+	})
+
+	// Update the beneficiary in the store
+	k.SetApplication(ctx, beneficiary)
+	logger.Info(fmt.Sprintf("Successfully transferred application stake from app (%s) to beneficiary (%s)", foundApp.Address, beneficiary.Address))
+
+	// Remove the transferred app from the store
+	k.RemoveApplication(ctx, foundApp.Address)
+	logger.Info(fmt.Sprintf("Successfully removed the application: %+v", foundApp))
+
+	return &types.MsgTransferApplicationStakeResponse{
+		Application: &beneficiary,
+	}, nil
 }

@@ -9,6 +9,7 @@ import "cosmos_proto/cosmos.proto";
 import "cosmos/base/v1beta1/coin.proto";
 import "cosmos/msg/v1/msg.proto";
 import "gogoproto/gogo.proto";
+import "poktroll/application/application.proto";
 import "poktroll/application/params.proto";
 import "poktroll/shared/service.proto";
 
@@ -79,11 +80,12 @@ message MsgUndelegateFromGateway {
 message MsgUndelegateFromGatewayResponse {}
 
 message MsgTransferApplicationStake {
-  option (cosmos.msg.v1.signer) = "creator";
-  string creator     = 1;
-  string address     = 2;
-  string beneficiary = 3;
+  option (cosmos.msg.v1.signer) = "address";
+  string address     = 1;
+  string beneficiary = 2;
 }
 
-message MsgTransferApplicationStakeResponse {}
+message MsgTransferApplicationStakeResponse {
+  poktroll.application.Application application = 1;
+}
 
