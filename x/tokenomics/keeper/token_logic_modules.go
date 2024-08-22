@@ -50,20 +50,11 @@ const (
 	// on global governance parameters in order to reward the participants providing
 	// services while keeping inflation in check.
 	TLMGlobalMint
-
-	// TLMGlobalMintReimbursementRequest is the token logic module that complements
-	// TLMGlobalMint to enable permissionless demand. In order to prevent self-dealing
-	// attacks, applications will be overcharged by the amount equal to global inflation,
-	// those funds will be sent to the DAO/PNF, and an event will be emitted to track
-	// and send reimbursements; managed offchain by PNF.
-	// TODO_POST_MAINNET: Introduce proper tokenomics based on the research done by @rawthil and @shane.
-	TLMGlobalMintReimbursementRequest
 )
 
 var tokenLogicModuleStrings = [...]string{
 	"TLMRelayBurnEqualsMint",
 	"TLMGlobalMint",
-	"TLMGlobalMintReimbursementRequest",
 }
 
 func (tlm TokenLogicModule) String() string {
@@ -95,8 +86,6 @@ type TokenLogicModuleProcessor func(
 var tokenLogicModuleProcessorMap = map[TokenLogicModule]TokenLogicModuleProcessor{
 	TLMRelayBurnEqualsMint: Keeper.TokenLogicModuleRelayBurnEqualsMint,
 	TLMGlobalMint:          Keeper.TokenLogicModuleGlobalMint,
-	// TODO_UPNEXT(@olshansk, #732): Uncomment this, finish implementation, and add tests.
-	// TLMGlobalMintReimbursementRequest: Keeper.TokenLogicModuleGlobalMintReimbursementRequest,
 }
 
 func init() {
@@ -402,42 +391,6 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 		return tokenomictypes.ErrTokenomicsAmountMismatch.Wrapf("the total distributed coins (%v) do not equal the settlement coins (%v). Likely floating point arithmetic.", totalDistributedCoins, settlementCoin.Amount.BigInt())
 	}
 	logger.Info(fmt.Sprintf("distributed (%v) coins to the application, supplier, DAO, source owner, and proposer", totalDistributedCoins))
-
-	return nil
-}
-
-// TokenLogicModuleGlobalMintReimbursementRequest processes the business logic for the GlobalMintReimbursementRequest TLM.
-func (k Keeper) TokenLogicModuleGlobalMintReimbursementRequest(
-	ctx context.Context,
-	service *sharedtypes.Service,
-	sessionHeader *sessiontypes.SessionHeader,
-	application *apptypes.Application,
-	supplier *sharedtypes.Supplier,
-	settlementCoins cosmostypes.Coin,
-	relayMiningDifficulty *tokenomictypes.RelayMiningDifficulty,
-) error {
-
-	// Determine how much new uPOKT to mint based on global inflation
-	newMintCoins, _ := calculateGlobalPerClaimMintInflationFromSettlementAmount(settlementCoins)
-
-	/*
-		TODO_UPNEXT(@olshansk, #732): Finish implementing this:
-		1. Overcharge the application (reduce stake and burn app module tokens)
-		2. Send the overcharge to the DAO/PNF address
-		3. Add necessary tests.
-	*/
-
-	// Prepare and emit the event for the application being overcharged
-	reimbursementRequestEvent := tokenomictypes.EventApplicationReimbursementRequest{
-		ApplicationAddr: application.Address,
-		ServiceId:       service.Id,
-		SessionId:       sessionHeader.SessionId,
-		Amount:          &newMintCoins[0],
-	}
-	eventManager := cosmostypes.UnwrapSDKContext(ctx).EventManager()
-	if err := eventManager.EmitTypedEvent(&reimbursementRequestEvent); err != nil {
-		return tokenomicstypes.ErrTokenomicsEmittingEventFailed.Wrapf("error emitting event %v", reimbursementRequestEvent)
-	}
 
 	return nil
 }

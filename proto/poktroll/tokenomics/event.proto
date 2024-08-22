@@ -58,12 +58,3 @@ message EventApplicationOverserviced {
     // in a session.
     cosmos.base.v1beta1.Coin effective_burn  = 4;
 }
-
-// EventApplicationReimbursementRequest is emitted when an application requests
-// a reimbursement
-message EventApplicationReimbursementRequest {
-    string application_addr = 1;
-    string service_id = 2;
-    string session_id = 3;
-    cosmos.base.v1beta1.Coin amount = 4;
-}
