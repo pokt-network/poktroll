@@ -16,7 +16,7 @@ func (k Keeper) getServiceComputeUnitsPerRelay(
 
 	service, found := k.serviceKeeper.GetService(ctx, serviceId)
 	if !found {
-		return 0, fmt.Errorf("service %s not found", serviceId)
+		return 0, prooftypes.ErrProofServiceNotFound.Wrapf("service %s not found", serviceId)
 	}
 
 	logger.
