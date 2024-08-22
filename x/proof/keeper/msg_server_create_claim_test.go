@@ -34,7 +34,7 @@ const (
 var (
 	defaultMerkleRoot = testproof.SmstRootWithSumAndCount(expectedNumComputeUnits, expectedNumRelays)
 
-	// Merkle root for Smst of a claim for the service with non-default custom units per relay
+	// Merkle root for Smst of a claim for the service with non-default compute units per relay
 	customCuprMerkleRoot = testproof.SmstRootWithSumAndCount(expectedNonDefaultNumComputeUnits, expectedNumRelays)
 )
 
