@@ -27,6 +27,7 @@ func init() {
 func NewTestTokenomicsQueryClient(
 	t *testing.T,
 ) *mockclient.MockTokenomicsQueryClient {
+	t.Helper()
 	ctrl := gomock.NewController(t)
 
 	tokenomicsQuerier := mockclient.NewMockTokenomicsQueryClient(ctrl)

@@ -14,8 +14,8 @@ func (rs *relayerSessionsManager) getServiceComputeUnitsPerRelay(
 	ctx context.Context,
 	relayRequestMetadata *types.RelayRequestMetadata,
 ) (uint64, error) {
-	sessionHeader := relayRequestMetadata.SessionHeader
-	if sessionHeader.Service == nil {
+	sessionHeader := relayRequestMetadata.GetSessionHeader()
+	if sessionHeader.GetService() == nil {
 		return 0, fmt.Errorf("getServiceComputeUnitsPerRelay: received nil service")
 	}
 
@@ -27,5 +27,5 @@ func (rs *relayerSessionsManager) getServiceComputeUnitsPerRelay(
 		)
 	}
 
-	return service.ComputeUnitsPerRelay, nil
+	return service.GetComputeUnitsPerRelay(), nil
 }

@@ -24,6 +24,7 @@ func init() {
 func NewTestServiceQueryClient(
 	t *testing.T,
 ) *mockclient.MockServiceQueryClient {
+	t.Helper()
 	ctrl := gomock.NewController(t)
 
 	serviceQuerier := mockclient.NewMockServiceQueryClient(ctrl)
