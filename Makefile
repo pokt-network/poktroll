@@ -421,6 +421,12 @@ test_load_relays_stress_localnet: test_e2e_env warn_message_local_stress_test ##
 	-tags=load,test -run LoadRelays --log-level=debug --timeout=30m \
 	--manifest ./load-testing/loadtest_manifest_localnet.yaml
 
+.PHONY: test_load_relays_stress_localnet_single_supplier
+test_load_relays_stress_localnet_single_supplier: test_e2e_env warn_message_local_stress_test ## Run the stress test for E2E relays on LocalNet using exclusively one supplier.
+	go test -v -count=1 ./load-testing/tests/... \
+	-tags=load,test -run TestLoadRelaysSingleSupplier --log-level=debug --timeout=30m \
+	--manifest ./load-testing/loadtest_manifest_localnet_single_supplier.yaml
+
 .PHONY: test_verbose
 test_verbose: check_go_version ## Run all go tests verbosely
 	go test -count=1 -v -race -tags test ./...
