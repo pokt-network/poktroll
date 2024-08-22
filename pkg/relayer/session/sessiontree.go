@@ -73,7 +73,7 @@ func NewSessionTree(
 	// Join the storePrefix and the session.sessionId and supplier's operator address to
 	// create a unique storePath.
 
-	// TODO_IMPROVE: instead of creating a new KV store for each session, it will be more beneficial to
+	// TODO_IMPROVE(#621): instead of creating a new KV store for each session, it will be more beneficial to
 	// use one key store. KV databases are often optimized for writing into one database. They keys can
 	// use supplier address and session id as prefix. The current approach might not be RAM/IO efficient.
 	storePath := filepath.Join(storesDirectory, supplierOperatorAddress.String(), sessionHeader.SessionId)
