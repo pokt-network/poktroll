@@ -100,7 +100,7 @@ func (k msgServer) CreateClaim(
 				fmt.Sprintf("claim compute units: %d is not equal to number of relays %d * compute units per relay %d for service %s",
 					numClaimComputeUnits,
 					numRelays,
-					serviceCupr,
+					serviceComputeUnitsPerRelay,
 					claim.SessionHeader.Service.Id,
 				),
 			).Error(),
