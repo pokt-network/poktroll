@@ -10,8 +10,6 @@ import (
 	"github.com/pokt-network/poktroll/x/application/types"
 )
 
-// TODO_IN_THIS_COMMIT: update.
-
 func SimulateMsgTransferApplicationStake(
 	ak types.AccountKeeper,
 	bk types.BankKeeper,
