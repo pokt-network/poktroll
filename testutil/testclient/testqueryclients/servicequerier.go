@@ -35,7 +35,7 @@ func NewTestServiceQueryClient(
 		) (*sharedtypes.Service, error) {
 			service, ok := services[serviceId]
 			if !ok {
-				return nil, fmt.Errorf("error while trying to retrieve a service")
+				return nil, prooftypes.ErrProofServiceNotFound.Wrapf("service %s not found", serviceId)
 			}
 
 			return &service, nil
