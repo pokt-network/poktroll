@@ -81,19 +81,19 @@ func (k msgServer) CreateClaim(
 
 	numClaimComputeUnits, err = claim.GetNumComputeUnits()
 	if err != nil {
-		return nil, status.Error(codes.Internal, types.ErrProofInvalidClaimRootHash.Wrap(err.Error()).Error())
+		return nil, status.Error(codes.Internal, types.ErrProofInvalidClaimRootHash.Wrapf("%v", err).Error())
 	}
 
-	// For now we expect the following equation to always hold:
+	// For now, we expect the following equation to always hold:
 	// numClaimComputeUnits = numRelays * service.computeUnitsPerRelay
 	// This is because for any specific service, every relay is worth the same.
 	// However, this may change in the future.
-	serviceCupr, err := k.getServiceCupr(ctx, claim.SessionHeader.Service.Id)
+	serviceComputeUnitsPerRelay, err := k.getServiceCupr(ctx, claim.SessionHeader.Service.Id)
 	if err != nil {
-		return nil, status.Error(codes.Internal, types.ErrProofServiceNotFound.Wrap(err.Error()).Error())
+		return nil, status.Error(codes.NotFound, types.ErrProofServiceNotFound.Wrapf("%v", err).Error())
 	}
 
-	if numClaimComputeUnits != numRelays*serviceCupr {
+	if numClaimComputeUnits != numRelays*serviceComputeUnitsPerRelay {
 		return nil, status.Error(
 			codes.InvalidArgument,
 			types.ErrProofComputeUnitsMismatch.Wrap(

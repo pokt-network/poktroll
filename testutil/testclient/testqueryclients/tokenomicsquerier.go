@@ -38,7 +38,7 @@ func NewTestTokenomicsQueryClient(
 		) (*tokenomicstypes.RelayMiningDifficulty, error) {
 			relayDifficulty, ok := relayDifficultyTargets[serviceId]
 			if !ok {
-				return nil, fmt.Errorf("error while trying to retrieve the relay mining difficulty for service %s", serviceId)
+				return nil, tokenomicstypes.ErrTokenomicsMissingRelayMiningDifficulty.Wrapf("retrieving the relay mining difficulty for service %s", serviceId)
 			}
 
 			return relayDifficulty, nil
