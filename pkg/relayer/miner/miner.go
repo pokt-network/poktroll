@@ -118,7 +118,7 @@ func (mnr *miner) getServiceRelayDifficultyTargetHash(ctx context.Context, req *
 		return nil, errors.New("relay request is nil")
 	}
 
-	sessionHeader := req.Meta.SessionHeader
+	sessionHeader := req.GetMeta().GetSessionHeader()
 	if sessionHeader == nil {
 		return nil, errors.New("relay metadata has nil session header")
 	}
