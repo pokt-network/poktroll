@@ -35,7 +35,7 @@ the maximum amount a supplier can claim from an application in a single session 
 proportional to the Application's stake divided by the number of suppliers in the session.
 
 This is referred to as "Relay Mining Payable Relay Accumulation" in the paper and
-can be seen in the following image:
+is described by the following pseudo-code:
 
 ![Algorithm 1](https://github.com/user-attachments/assets/d1a61535-aa31-447d-88ea-c8d14dcb20c6)
 
