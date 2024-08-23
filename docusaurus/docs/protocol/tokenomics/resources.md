@@ -7,7 +7,7 @@ sidebar_position: 1
 
 :::warning
 
-This is an active an ever evolving work. We are working on a single source of truth.
+This is an active an ever evolving work. We are working towards consolidating these resources into a single source of truth.
 
 :::
 
