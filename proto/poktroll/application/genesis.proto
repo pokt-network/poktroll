@@ -7,7 +7,7 @@ import "amino/amino.proto";
 import "gogoproto/gogo.proto";
 
 import "poktroll/application/params.proto";
-import "poktroll/application/application.proto";
+import "poktroll/application/types.proto";
 
 // GenesisState defines the application module's genesis state.
 message GenesisState {
