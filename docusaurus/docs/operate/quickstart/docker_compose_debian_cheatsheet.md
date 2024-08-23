@@ -3,8 +3,6 @@ sidebar_position: 2
 title: Docker Compose - Debian Cheatsheet
 ---
 
-import ReactPlayer from "react-player";
-
 # tl;dr Debian Cheat Sheet <!-- omit in toc -->
 
 - [Results](#results)
@@ -19,6 +17,12 @@ import ReactPlayer from "react-player";
 - [Stake an Application \& Deploy an AppGate Server](#stake-an-application--deploy-an-appgate-server)
 - [Send a Relay](#send-a-relay)
   - [Ensure you get a response](#ensure-you-get-a-response)
+- [Managing a re-genesis](#managing-a-re-genesis)
+  - [Full Nodes](#full-nodes)
+  - [Fund the same accounts](#fund-the-same-accounts)
+    - [Faucet is not ready and you need to fund the accounts manually](#faucet-is-not-ready-and-you-need-to-fund-the-accounts-manually)
+  - [Start the RelayMiner](#start-the-relayminer)
+  - [Start the AppGate Server](#start-the-appgate-server)
 
 ## Results
 
@@ -60,6 +64,15 @@ echo \
   $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
   sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 sudo apt-get update
+
+# Check if UFW is installed and add rules if it is
+if command -v ufw > /dev/null 2>&1; then
+    sudo ufw allow from 172.16.0.0/12
+    sudo ufw allow from 192.168.0.0/16
+    echo "UFW rules added for Docker networks"
+else
+    echo "UFW is not installed, skipping firewall configuration"
+fi
 ```
 
 And then install docker:
@@ -81,13 +94,12 @@ cd poktroll-docker-compose-example
 ## Update your environment
 
 ```bash
-echo "source $(pwd)/helpers.sh" >> ~/.bashrc
-source ~/.bashrc
+cp .env.sample .env
 
 EXTERNAL_IP=$(curl -4 ifconfig.me/ip)
-
-cp .env.sample .env
 sed -i -e s/NODE_HOSTNAME=/NODE_HOSTNAME=$EXTERNAL_IP/g .env
+
+echo "source $(pwd)/helpers.sh" >> ~/.bashrc
 echo "source $(pwd)/.env" >> ~/.bashrc
 source ~/.bashrc
 ```
@@ -108,7 +120,7 @@ Supplier:
 ```bash
 poktrolld keys add supplier > /tmp/supplier
 
-mnemonic=$(tail -n 1 /tmp/supplier | tr -d '\r') sed -i "s|SUPPLIER_MNEMONIC=\".*\"|SUPPLIER_MNEMONIC=\"$mnemonic\"|" .env
+mnemonic=$(tail -n 1 /tmp/supplier | tr -d '\r'); sed -i "s|SUPPLIER_MNEMONIC=\".*\"|SUPPLIER_MNEMONIC=\"$mnemonic\"|" .env
 
 address=$(awk '/address:/{print $3; exit}' /tmp/supplier | tr -d '\r'); sed -i "s|SUPPLIER_ADDR=\".*\"|SUPPLIER_ADDR=\"$address\"|g" .env
 ```
@@ -118,7 +130,7 @@ Application:
 ```bash
 poktrolld keys add application > /tmp/application
 
-mnemonic=$(tail -n 1 /tmp/application | tr -d '\r') sed -i "s|APPLICATION_MNEMONIC=\".*\"|APPLICATION_MNEMONIC=\"$mnemonic\"|" .env
+mnemonic=$(tail -n 1 /tmp/application | tr -d '\r'); sed -i "s|APPLICATION_MNEMONIC=\".*\"|APPLICATION_MNEMONIC=\"$mnemonic\"|" .env
 
 address=$(awk '/address:/{print $3; exit}' /tmp/application | tr -d '\r'); sed -i "s|APPLICATION_ADDR=\".*\"|APPLICATION_ADDR=\"$address\"|g" .env
 ```
@@ -128,21 +140,19 @@ Gateway:
 ```bash
 poktrolld keys add gateway > /tmp/gateway
 
-mnemonic=$(tail -n 1 /tmp/gateway | tr -d '\r') sed -i "s|GATEWAY_MNEMONIC=\".*\"|GATEWAY_MNEMONIC=\"$mnemonic\"|" .env
+mnemonic=$(tail -n 1 /tmp/gateway | tr -d '\r'); sed -i "s|GATEWAY_MNEMONIC=\".*\"|GATEWAY_MNEMONIC=\"$mnemonic\"|" .env
 
 address=$(awk '/address:/{print $3; exit}' /tmp/gateway | tr -d '\r'); sed -i "s|GATEWAY_ADDR=\".*\"|GATEWAY_ADDR=\"$address\"|g" .env
 ```
 
-Finally, `source .env` to update the environment variables.
+FINALLY, `source .env` to update the environment variables.
 
 ## Fund your accounts
 
 Run the following:
 
 ```bash
-echo $APPLICATION_ADDR
-echo $GATEWAY_ADDR
-echo $SUPPLIER_ADDR
+show_actor_addresses
 ```
 
 For each one, fund the accounts using the [faucet](https://faucet.testnet.pokt.network/)
@@ -150,36 +160,48 @@ For each one, fund the accounts using the [faucet](https://faucet.testnet.pokt.n
 Next, run this helper (it's part of `helpers.sh`) to find each of them on the explorer:
 
 ```bash
-explorer_urls
+show_explorer_urls
 ```
 
 ## Stake a Supplier & Deploy a RelayMiner
 
+Stake the supplier:
+
 ```bash
-# Stake the supplier
 sed -i -e s/YOUR_NODE_IP_OR_HOST/$NODE_HOSTNAME/g ./stake_configs/supplier_stake_config_example.yaml
+sed -i -e s/YOUR_OWNER_ADDRESS/$SUPPLIER_ADDR/g ./stake_configs/supplier_stake_config_example.yaml
 poktrolld tx supplier stake-supplier --config=/poktroll/stake_configs/supplier_stake_config_example.yaml --from=supplier --chain-id=poktroll --yes
+
 # OPTIONALLY check the supplier's status
 poktrolld query supplier show-supplier $SUPPLIER_ADDR
 
 # Start the relay miner (please update the grove app ID if you can)
 sed -i -e s/YOUR_NODE_IP_OR_HOST/$NODE_HOSTNAME/g relayminer-example/config/relayminer_config.yaml
 sed -i -e "s|backend_url: \".*\"|backend_url: \"https://eth-mainnet.rpc.grove.city/v1/c7f14c60\"|g" relayminer-example/config/relayminer_config.yaml
-sed -i -e s/key-for-supplier1/supplier/g relayminer-example/config/relayminer_config.yaml
-docker-compose up -d relayminer-example
+```
+
+Start the supplier
+
+```bash
+docker compose up -d relayminer-example
 # OPTIONALLY view the logs
 docker logs -f --tail 100 relay_miner
 ```
 
 ## Stake an Application & Deploy an AppGate Server
 
+Stake the application:
+
 ```bash
-# Stake the application
 poktrolld tx application stake-application --config=/poktroll/stake_configs/application_stake_config_example.yaml --from=application --chain-id=poktroll --yes
+
 # OPTIONALLY check the application's status
 poktrolld query application show-application $APPLICATION_ADDR
+```
 
-# Start the appgate server
+Start the appgate server:
+
+```bash
 docker compose up -d appgate-server-example
 # OPTIONALLY view the logs
 docker logs -f --tail 100 appgate_server
@@ -207,4 +229,74 @@ for i in {1..10}; do
     --max-time 1
   echo ""
 done
+```
+
+## Managing a re-genesis
+
+Assuming you already had everything functioning following the steps above, this
+is a quick way to reset everything (without recreating keys) after a re-genesis.
+
+### Full Nodes
+
+```bash
+# Stop all containers
+docker-compose down
+docker rm $(docker ps -aq) -f
+
+# Remove existing data
+rm -rf poktrolld-data/config/addrbook.json poktrolld-data/config/genesis.json poktrolld-data/data/ poktrolld-data/config/node_key.json poktrolld-data/config/priv_validator_key.json
+```
+
+Update `POKTROLLD_IMAGE_TAG` in `.env` based on the releases [here](https://github.com/pokt-network/poktroll/releases/tag/v0.0.6).
+
+```bash
+# Start the full
+docker compose up -d poktrolld poktrolld
+
+# Sanity check the logs
+docker logs full_node -f --tail 100
+```
+
+### Fund the same accounts
+
+Go to the [faucet](https://faucet.testnet.pokt.network/) and fund the same accounts:
+
+```bash
+echo $APPLICATION_ADDR
+echo $GATEWAY_ADDR
+echo $SUPPLIER_ADDR
+```
+
+#### Faucet is not ready and you need to fund the accounts manually
+
+```bash
+# Import the faucet using the mnemonic
+poktrolld keys add --recover -i faucet
+poktrolld tx bank multi-send faucet $APPLICATION_ADDR $GATEWAY_ADDR $SUPPLIER_ADDR 100000upokt --chain-id=poktroll --yes
+```
+
+### Start the RelayMiner
+
+```bash
+# Stake
+poktrolld tx supplier stake-supplier --config=/poktroll/stake_configs/supplier_stake_config_example.yaml --from=supplier --chain-id=poktroll --yes
+# Check
+poktrolld query supplier show-supplier $SUPPLIER_ADDR
+# Start
+docker compose up -d relayminer-example
+# View
+docker logs -f --tail 100 relay_miner
+```
+
+### Start the AppGate Server
+
+```bash
+# Stake
+poktrolld tx application stake-application --config=/poktroll/stake_configs/application_stake_config_example.yaml --from=application --chain-id=poktroll --yes
+# Check
+poktrolld query application show-application $APPLICATION_ADDR
+# Start
+docker compose up -d appgate-server-example
+# View
+docker logs -f --tail 100 appgate_server
 ```
