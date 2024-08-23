@@ -95,7 +95,7 @@ flowchart TB
 
 ## TLM: Mint=Burn (MEB)
 
-_tl;dr The transfer of tokens from the application to the supplier based on the amount of work received and provided respectively.._
+_tl;dr The transfer of tokens from the applications to the suppliers based on the amount of work received and provided respectively._
 
 The `Mint=Burn` TLM is, _theoretically_, the only TLM necessary once the network
 reaches equilibrium in the far future.
