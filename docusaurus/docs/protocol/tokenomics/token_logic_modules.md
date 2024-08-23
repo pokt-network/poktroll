@@ -22,7 +22,7 @@ Note that this is an active WIP and the [resources here](./resources.md) are the
 
 Token Logic Modules (TLMs) processing involves:
 
-1. `TLM pre-processing` - A general pre-processor determining the amount of tokens to settle per claim.
+1. `TLM pre-processing` - General pre-processing to determine the number of tokens to settle per claim.
 2. `TLM processing` - Iteration through all of the TLMs one by one.
 3. `TLM processor` - Individual processing each TLM independent of one another.
 
