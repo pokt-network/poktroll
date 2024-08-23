@@ -100,7 +100,7 @@ _tl;dr The transfer of tokens from the application to the supplier based on the 
 The `Mint=Burn` TLM is, _theoretically_, the only TLM necessary once the network
 reaches equilibrium in the far future.
 
-The same amount of tokens that is minted in the **supplier module** is burned from
+The same amount of tokens that is minted to the **supplier module** is burned from
 the **application module**. The stake of the application paying for work is reduced
 and the rewards are distributed to the supplier and its revenue shareholder addresses.
 
