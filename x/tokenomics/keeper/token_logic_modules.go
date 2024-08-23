@@ -24,11 +24,13 @@ import (
 	tokenomictypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-const (
+var (
 	// Governance parameters for the TLMGlobalMint module
 	// TODO_UPNEXT(@olshansk, #732): Make this a governance parameter and give it a non-zero value + tests.
-	MintPerClaimGlobalInflation = 0.0000000
+	MintPerClaimGlobalInflation = 0.1
+)
 
+const (
 	// TODO_BETA(@bryanchriswhite): Make all of the governance params
 	MintAllocationDAO         = 0.1
 	MintAllocationProposer    = 0.05
@@ -333,18 +335,23 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 ) error {
 	logger := k.Logger().With("method", "TokenLogicModuleGlobalMint")
 
+	if MintPerClaimGlobalInflation == 0 {
+		logger.Warn("global inflation is set to zero. Skipping Global Mint TLM.")
+		return nil
+	}
+
 	// Determine how much new uPOKT to mint based on global inflation
-	newMintCoins, newMintAmtFloat := calculateGlobalPerClaimMintInflationFromSettlementAmount(settlementCoin)
+	newMintCoin, newMintAmtFloat := calculateGlobalPerClaimMintInflationFromSettlementAmount(settlementCoin)
 
 	// Mint new uPOKT to the tokenomics module account
-	if err := k.bankKeeper.MintCoins(ctx, tokenomictypes.ModuleName, newMintCoins); err != nil {
+	if err := k.bankKeeper.MintCoins(ctx, tokenomictypes.ModuleName, sdk.NewCoins(newMintCoin)); err != nil {
 		return tokenomicstypes.ErrTokenomicsModuleMintFailed.Wrapf(
-			"minting %s to the tokenomics module account: %v", newMintCoins, err)
+			"minting %s to the tokenomics module account: %v", newMintCoin, err)
 	}
-	logger.Info(fmt.Sprintf("minted (%v) coins in the tokenomics module", newMintCoins))
+	logger.Info(fmt.Sprintf("minted (%v) coins in the tokenomics module", newMintCoin))
 
 	// Send a portion of the rewards to the application
-	appCoin, err := k.sendRewardsToAccount(ctx, application.Address, newMintAmtFloat, MintAllocationApplication)
+	appCoin, err := k.sendRewardsToAccount(ctx, tokenomictypes.ModuleName, application.Address, newMintAmtFloat, MintAllocationApplication)
 	if err != nil {
 		return tokenomictypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to application: %v", err)
 	}
@@ -353,6 +360,15 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 	// Send a portion of the rewards to the supplier shareholders.
 	supplierCoinsToShareAmt := calculateAllocationAmount(newMintAmtFloat, MintAllocationSupplier)
 	supplierCoin := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(supplierCoinsToShareAmt))
+	// Send funds from the tokenomics module to the supplier module account
+	if err = k.bankKeeper.SendCoinsFromModuleToModule(ctx, tokenomicstypes.ModuleName, suppliertypes.ModuleName, sdk.NewCoins(supplierCoin)); err != nil {
+		return tokenomicstypes.ErrTokenomicsSupplierModuleSendFailed.Wrapf(
+			"sending %s from the tokenomics module to the supplier module account: %v",
+			supplierCoin,
+			err,
+		)
+	}
+	// Distribute the rewards from within the supplier's module account.
 	if err = k.distributeSupplierRewardsToShareHolders(ctx, supplier.OperatorAddress, service.Id, uint64(supplierCoinsToShareAmt)); err != nil {
 		return tokenomicstypes.ErrTokenomicsSupplierModuleMintFailed.Wrapf(
 			"distributing rewards to supplier with operator address %s shareholders: %v",
@@ -364,14 +380,14 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the supplier with address %q", supplierCoin, supplier.OperatorAddress))
 
 	// Send a portion of the rewards to the DAO
-	daoCoin, err := k.sendRewardsToAccount(ctx, k.GetAuthority(), newMintAmtFloat, MintAllocationDAO)
+	daoCoin, err := k.sendRewardsToAccount(ctx, tokenomictypes.ModuleName, k.GetAuthority(), newMintAmtFloat, MintAllocationDAO)
 	if err != nil {
 		return tokenomictypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to DAO: %v", err)
 	}
 	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the DAO with address %q", daoCoin, k.GetAuthority()))
 
 	// Send a portion of the rewards to the source owner
-	serviceCoin, err := k.sendRewardsToAccount(ctx, service.OwnerAddress, newMintAmtFloat, MintAllocationSourceOwner)
+	serviceCoin, err := k.sendRewardsToAccount(ctx, tokenomictypes.ModuleName, service.OwnerAddress, newMintAmtFloat, MintAllocationSourceOwner)
 	if err != nil {
 		return tokenomictypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to source owner: %v", err)
 	}
@@ -379,18 +395,30 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 
 	// Send a portion of the rewards to the block proposer
 	proposerAddr := cosmostypes.AccAddress(sdk.UnwrapSDKContext(ctx).BlockHeader().ProposerAddress).String()
-	proposerCoin, err := k.sendRewardsToAccount(ctx, proposerAddr, newMintAmtFloat, MintAllocationProposer)
+	proposerCoin, err := k.sendRewardsToAccount(ctx, tokenomictypes.ModuleName, proposerAddr, newMintAmtFloat, MintAllocationProposer)
 	if err != nil {
 		return tokenomictypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to proposer: %v", err)
 	}
 	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the proposer with address %q", proposerCoin, proposerAddr))
 
 	// Check and log the total amount of coins distributed
-	totalDistributedCoins := appCoin.Add(supplierCoin).Add(*daoCoin).Add(*serviceCoin).Add(*proposerCoin)
-	if totalDistributedCoins.Amount.BigInt().Cmp(newMintCoins[0].Amount.BigInt()) != 0 {
-		return tokenomictypes.ErrTokenomicsAmountMismatch.Wrapf("the total distributed coins (%v) do not equal the settlement coins (%v). Likely floating point arithmetic.", totalDistributedCoins, settlementCoin.Amount.BigInt())
+	totalMintDistributedCoin := appCoin.Add(supplierCoin).Add(*daoCoin).Add(*serviceCoin).Add(*proposerCoin)
+	coinDifference := new(big.Int).Sub(totalMintDistributedCoin.Amount.BigInt(), newMintCoin.Amount.BigInt())
+	coinDifference = coinDifference.Abs(coinDifference)
+	percentDifference := new(big.Float).Quo(new(big.Float).SetInt(coinDifference), new(big.Float).SetInt(newMintCoin.Amount.BigInt()))
+	if percentDifference.Cmp(big.NewFloat(0.01)) > 0 {
+		return tokenomictypes.ErrTokenomicsAmountMismatchTooLarge.Wrapf(
+			"the total distributed coins (%v) do not equal the amount of new minted coins (%v). Likely floating point arithmetic.\n"+
+				"appCoin: %v, supplierCoin: %v, daoCoin: %v, serviceCoin: %v, proposerCoin: %v",
+			totalMintDistributedCoin, newMintCoin,
+			appCoin, supplierCoin, daoCoin, serviceCoin, proposerCoin)
+	} else if coinDifference.Cmp(big.NewInt(0)) > 0 {
+		logger.Warn(fmt.Sprintf("Floating point arithmetic led to a discrepancy of %v (%f) between the total distributed coins (%v) and the amount of new minted coins (%v).\n"+
+			"appCoin: %v, supplierCoin: %v, daoCoin: %v, serviceCoin: %v, proposerCoin: %v",
+			coinDifference, percentDifference, totalMintDistributedCoin, newMintCoin,
+			appCoin, supplierCoin, daoCoin, serviceCoin, proposerCoin))
 	}
-	logger.Info(fmt.Sprintf("distributed (%v) coins to the application, supplier, DAO, source owner, and proposer", totalDistributedCoins))
+	logger.Info(fmt.Sprintf("distributed (%v) coins to the application, supplier, DAO, source owner, and proposer", totalMintDistributedCoin))
 
 	return nil
 }
@@ -399,13 +427,14 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 // tokenomics module account to the specified address.
 func (k Keeper) sendRewardsToAccount(
 	ctx context.Context,
-	addr string,
+	srcModule string,
+	destAdr string,
 	settlementAmtFloat *big.Float,
 	allocation float64,
 ) (*sdk.Coin, error) {
 	logger := k.Logger().With("method", "mintRewardsToAccount")
 
-	accountAddr, err := cosmostypes.AccAddressFromBech32(addr)
+	accountAddr, err := cosmostypes.AccAddressFromBech32(destAdr)
 	if err != nil {
 		return nil, err
 	}
@@ -413,11 +442,11 @@ func (k Keeper) sendRewardsToAccount(
 	coinsToAccAmt := calculateAllocationAmount(settlementAmtFloat, allocation)
 	coinToAcc := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(coinsToAccAmt))
 	if err := k.bankKeeper.SendCoinsFromModuleToAccount(
-		ctx, suppliertypes.ModuleName, accountAddr, sdk.NewCoins(coinToAcc),
+		ctx, srcModule, accountAddr, sdk.NewCoins(coinToAcc),
 	); err != nil {
 		return nil, err
 	}
-	logger.Info(fmt.Sprintf("sent (%v) coins from the tokenomics module to the account with address %q", coinToAcc, addr))
+	logger.Info(fmt.Sprintf("sent (%v) coins from the tokenomics module to the account with address %q", coinToAcc, destAdr))
 
 	return &coinToAcc, nil
 }
@@ -504,17 +533,17 @@ func (k Keeper) numRelaysToCoin(
 // shareholders based on the rev share percentage of the supplier service config.
 func (k Keeper) distributeSupplierRewardsToShareHolders(
 	ctx context.Context,
-	supplierAddr string,
+	supplierOperatorAddr string,
 	serviceId string,
 	amountToDistribute uint64,
 ) error {
 	logger := k.Logger().With("method", "distributeSupplierRewardsToShareHolders")
 
-	supplier, supplierFound := k.supplierKeeper.GetSupplier(ctx, supplierAddr)
+	supplier, supplierFound := k.supplierKeeper.GetSupplier(ctx, supplierOperatorAddr)
 	if !supplierFound {
 		return tokenomicstypes.ErrTokenomicsSupplierRevShareFailed.Wrapf(
 			"supplier with address %q not found",
-			supplierAddr,
+			supplierOperatorAddr,
 		)
 	}
 
@@ -552,10 +581,10 @@ func (k Keeper) distributeSupplierRewardsToShareHolders(
 			return err
 		}
 
-		logger.Info(fmt.Sprintf("sent %s from the supplier module to the supplier shareholder with address %q", shareAmountCoin, supplierAddr))
+		logger.Info(fmt.Sprintf("sent %s from the supplier module to the supplier shareholder with address %q", shareAmountCoin, supplierOperatorAddr))
 	}
 
-	logger.Info(fmt.Sprintf("distributed %d uPOKT to supplier %q shareholders", amountToDistribute, supplierAddr))
+	logger.Info(fmt.Sprintf("distributed %d uPOKT to supplier %q shareholders", amountToDistribute, supplierOperatorAddr))
 
 	return nil
 }
@@ -563,14 +592,14 @@ func (k Keeper) distributeSupplierRewardsToShareHolders(
 // calculateGlobalPerClaimMintInflationFromSettlementAmount calculates the amount
 // of uPOKT to mint based on the global per claim inflation rate as a function of
 // the settlement amount for a particular claim(s) or session(s).
-func calculateGlobalPerClaimMintInflationFromSettlementAmount(settlementCoin sdk.Coin) (sdk.Coins, *big.Float) {
+func calculateGlobalPerClaimMintInflationFromSettlementAmount(settlementCoin sdk.Coin) (sdk.Coin, *big.Float) {
 	// Determine how much new uPOKT to mint based on global per claim inflation.
 	// TODO_MAINNET: Consider using fixed point arithmetic for deterministic results.
 	settlementAmtFloat := new(big.Float).SetUint64(settlementCoin.Amount.Uint64())
 	newMintAmtFloat := new(big.Float).Mul(settlementAmtFloat, big.NewFloat(MintPerClaimGlobalInflation))
 	newMintAmtInt, _ := newMintAmtFloat.Int64()
-	mintAmtCoins := sdk.NewCoins(cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(newMintAmtInt)))
-	return mintAmtCoins, newMintAmtFloat
+	mintAmtCoin := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(newMintAmtInt))
+	return mintAmtCoin, newMintAmtFloat
 }
 
 // calculateAllocationAmount does big float arithmetic to determine the absolute

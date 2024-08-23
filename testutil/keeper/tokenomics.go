@@ -186,6 +186,9 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 	mockBankKeeper.EXPECT().
 		SendCoinsFromModuleToAccount(gomock.Any(), tokenomicstypes.ModuleName, gomock.Any(), gomock.Any()).
 		AnyTimes()
+	mockBankKeeper.EXPECT().
+		SendCoinsFromModuleToModule(gomock.Any(), tokenomicstypes.ModuleName, suppliertypes.ModuleName, gomock.Any()).
+		AnyTimes()
 
 	// Mock the account keeper
 	mockAccountKeeper := mocks.NewMockAccountKeeper(ctrl)
