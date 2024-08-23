@@ -23,7 +23,7 @@ Note that this is an active WIP and the [resources here](./resources.md) are the
 Token Logic Module (TLM) processing consists of the following sequential steps:
 
 1. `TLM pre-processing` - General pre-processing to determine the number of tokens to settle per claim.
-2. `TLM processing` - Iteration through all of the TLMs one by one.
+2. `TLM processing` - Iterating through each TLM, sequentially.
 3. `TLM processor` - Individual processing each TLM independent of one another.
 
 ## Background: Max Claimable Amount
@@ -41,22 +41,22 @@ is described by the following pseudo-code:
 
 ## TLM (pre) Processing
 
-_tl;dr Determine if the claim settlement amount is greater than the maximum claimable amount and then run each individual TLM._
+_tl;dr Determine if the claim settlement amount is greater than the maximum claimable amount prior to running each individual TLM._
 
 **Prior to** processing each individual TLM, we need to understand if the amount claimed
-by the supplier adheres to the optimistic maxima set per the limits of Relay Mining.
+by the supplier adheres to the optimistic maxima set per the limits of the Relay Mining algorithm.
 
 Suppliers always have the option to over-service an application (**i.e. do free work**),
-in exchange for providing a good service to the network. This may lead to offchain
-reputation benefits (e.g. Gateways favoring them), but their on-chain rewards
-are still limited as a function of the application's stake before the session started
+in order to ensure high quality service in the network. This may lead to offchain
+reputation benefits (e.g. Gateways favoring them), but suppliers' on-chain rewards
+are always limited by the cumulative amounts applications' stakes (at session start; per service)
 and the number of suppliers in the session.
 
 :::note
 
 TODO_POST_MAINNET: After the Shannon upgrade, the team at Grove has a lot of ideas
-related to on-chain reputation, [supplier gossiping](https://www.notion.so/buildwithgrove/Off-chain-Application-Stake-Tracking-6a8bebb107db4f7f9dc62cbe7ba555f7?pvs=4), and
-much more, but that is out of scope for the initial implementation.
+related to on-chain reputation, [supplier overlay networks](https://www.notion.so/buildwithgrove/Off-chain-Application-Stake-Tracking-6a8bebb107db4f7f9dc62cbe7ba555f7?pvs=4), and
+much more, all of which is out of scope for the initial implementation.
 
 :::
 
