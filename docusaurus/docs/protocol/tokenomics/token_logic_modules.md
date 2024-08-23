@@ -1,6 +1,6 @@
 ---
 title: Token Logic Modules
-sidebar_position: 2
+sidebar_position: 1
 ---
 
 # Token Logic Modules <!-- omit in toc -->
