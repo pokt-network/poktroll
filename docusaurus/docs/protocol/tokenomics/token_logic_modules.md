@@ -24,7 +24,6 @@ Token Logic Module (TLM) processing consists of the following sequential steps:
 
 1. `TLM pre-processing` - General pre-processing to determine the number of tokens to settle per claim.
 2. `TLM processing` - Iterating through each TLM, sequentially.
-3. `TLM processor` - Individual processing each TLM independent of one another.
 
 ## Background: Max Claimable Amount
 
@@ -68,9 +67,9 @@ flowchart TB
     CSA(["Claim Settlement Amount (CSA)"])
     MCA(["MaxClaimPerSupplier (MCA) <br> = (AppStake / NumSuppliersPerSession)"])
     CC{"Is CSA > MCA?"}
-    Update(Set SA = MCA <br>Broadcast Event)
+    Update(Broadcast Event <br> that SA = MCA)
     SOAE{{Application Overserviced <br> Event}}
-    TLMP[["TLM Processor (SA)"]]
+    TLMP("Process TLMs (SA)")
 
     CSA -- CSA --> CC
     MCA -- MCA --> CC
@@ -88,7 +87,7 @@ flowchart TB
     classDef question fill:#e3db6d,stroke:#333,stroke-width:2px;
     classDef event fill:#e8b761,stroke:#333,stroke-width:2px;
 
-    class TLMP,TLMBEM,TLMGI,TLMGIRR tlm;
+    class TLMBEM,TLMGI,TLMGIRR tlm;
     class SOAE event;
     class CC question;
 ```
@@ -98,11 +97,12 @@ flowchart TB
 _tl;dr The transfer of tokens from the applications to the suppliers based on the amount of work received and provided respectively._
 
 The `Mint=Burn` TLM is, _theoretically_, the only TLM necessary once the network
-reaches equilibrium in the far future.
+reaches maturity in the far future.
 
 The same amount of tokens that is minted to the **supplier module** is burned from
-the **application module**. The stake of the application paying for work is reduced
-and the rewards are distributed to the supplier and its revenue shareholder addresses.
+the **application module**. The stake (in escrow) owned by the application which is
+paying for work is reduced and the rewards are distributed to the supplier and its
+revenue shareholder addresses.
 
 ```mermaid
 ---
@@ -163,7 +163,7 @@ Make sure to document whatever decision we come to.
 _tl;dr Distributed newly minted coins on a per claim basis to all involved stakeholders._
 
 The `Global Mint` TLM is, _theoretically_, going to reach `zero`the only when the network
-reaches equilibrium in the far future.
+reaches maturity in the far future.
 
 On a per claim basis, the network mints new tokens based on the the amount of work
 claimed. The newly minted tokens are distributed to the supplier, DAO, service owner
