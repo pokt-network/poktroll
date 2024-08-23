@@ -11,7 +11,7 @@ This is an active an ever evolving work. We are working towards consolidating th
 
 :::
 
-The following resources serve as the foundation for the Shannon Upgrade Tokenomics.
+The following external resources serve as the foundation for the Shannon Upgrade Tokenomics.
 
 - [Token Logic Module](https://docs.pokt.network/pokt-protocol/the-shannon-upgrade/proposed-tokenomics/token-logic-modules) design approach.
 - [Shannon Tokenomics Static](https://github.com/pokt-network/shannon-tokenomics-static-tests) modeling & evaluation
