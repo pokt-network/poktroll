@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"fmt"
+	"sort"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -136,6 +137,11 @@ func (k msgServer) createSupplier(
 	currentHeight := sdkCtx.BlockHeight()
 	nextSessionStartHeight := shared.GetNextSessionStartHeight(&sharedParams, currentHeight)
 
+	// Sort the services by their ID
+	sort.Slice(msg.Services, func(i, j int) bool {
+		return msg.Services[i].Service.Id < msg.Services[j].Service.Id
+	})
+
 	// Register activation height for each service. Since the supplier is new,
 	// all services are activated at the end of the current session.
 	servicesActivationHeightsMap := make(map[string]uint64)
@@ -144,10 +150,11 @@ func (k msgServer) createSupplier(
 	}
 
 	return sharedtypes.Supplier{
-		OwnerAddress:                 msg.OwnerAddress,
-		OperatorAddress:              msg.OperatorAddress,
-		Stake:                        msg.Stake,
-		Services:                     msg.Services,
+		OwnerAddress:    msg.OwnerAddress,
+		OperatorAddress: msg.OperatorAddress,
+		Stake:           msg.Stake,
+		Services:        msg.Services,
+		// TODO_IN_THIS_PR: how do we sort this?
 		ServicesActivationHeightsMap: servicesActivationHeightsMap,
 	}
 }
@@ -180,6 +187,11 @@ func (k msgServer) updateSupplier(
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	currentHeight := sdkCtx.BlockHeight()
 	nextSessionStartHeight := shared.GetNextSessionStartHeight(&sharedParams, currentHeight)
+
+	// Sort the services by their ID
+	sort.Slice(msg.Services, func(i, j int) bool {
+		return msg.Services[i].Service.Id < msg.Services[j].Service.Id
+	})
 
 	// Update activation height for services update. New services are activated at the
 	// end of the current session, while existing ones keep their activation height.
