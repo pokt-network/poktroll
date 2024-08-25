@@ -85,7 +85,7 @@ sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin 
 
 ## Retrieve the source code
 
-Then install docker-compose
+Then pull the github repo
 
 ```bash
 mkdir ~/workspace && cd ~/workspace
