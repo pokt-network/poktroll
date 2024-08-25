@@ -37,6 +37,15 @@ const (
 	MintAllocationSupplier    = 0.7
 	MintAllocationSourceOwner = 0.15
 	MintAllocationApplication = 0.0
+
+	// The percent difference that is allowable between the number of minted
+	// tokens in the tokenomics module and what is distributed to pocket network
+	// participants.
+	// This internal constant SHOULD ONLY be used in TokenLogicModuleGlobalMint.
+	// Due to floating point arithmetic, the total amount of minted coins may be slightly
+	// larger than what is distributed to pocket network participants
+	// TODO_MAINNET: Figure out if we can avoid this tolerance and use fixed point arithmetic.
+	mintDistributionAllowableTolerance = 0.02
 )
 
 type TokenLogicModule int
@@ -154,6 +163,9 @@ func (k Keeper) ProcessTokenLogicModules(
 	numRelays, err := root.Count()
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrapf("%v", err)
+	}
+	if numRelays == 0 {
+		return tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrap("root hash has zero relays")
 	}
 
 	/*
@@ -343,6 +355,8 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 	// Determine how much new uPOKT to mint based on global inflation
 	newMintCoin, newMintAmtFloat := calculateGlobalPerClaimMintInflationFromSettlementAmount(settlementCoin)
 
+	fmt.Println("OLSH ", newMintCoin, MintPerClaimGlobalInflation, settlementCoin)
+
 	// Mint new uPOKT to the tokenomics module account
 	if err := k.bankKeeper.MintCoins(ctx, tokenomictypes.ModuleName, sdk.NewCoins(newMintCoin)); err != nil {
 		return tokenomicstypes.ErrTokenomicsModuleMintFailed.Wrapf(
@@ -406,11 +420,11 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 	coinDifference := new(big.Int).Sub(totalMintDistributedCoin.Amount.BigInt(), newMintCoin.Amount.BigInt())
 	coinDifference = coinDifference.Abs(coinDifference)
 	percentDifference := new(big.Float).Quo(new(big.Float).SetInt(coinDifference), new(big.Float).SetInt(newMintCoin.Amount.BigInt()))
-	if percentDifference.Cmp(big.NewFloat(0.01)) > 0 {
+	if percentDifference.Cmp(big.NewFloat(mintDistributionAllowableTolerance)) > 0 {
 		return tokenomictypes.ErrTokenomicsAmountMismatchTooLarge.Wrapf(
-			"the total distributed coins (%v) do not equal the amount of new minted coins (%v). Likely floating point arithmetic.\n"+
+			"the total distributed coins (%v) do not equal the amount of newly minted coins (%v) with a percent difference of (%f). Likely floating point arithmetic.\n"+
 				"appCoin: %v, supplierCoin: %v, daoCoin: %v, serviceCoin: %v, proposerCoin: %v",
-			totalMintDistributedCoin, newMintCoin,
+			totalMintDistributedCoin, newMintCoin, percentDifference,
 			appCoin, supplierCoin, daoCoin, serviceCoin, proposerCoin)
 	} else if coinDifference.Cmp(big.NewInt(0)) > 0 {
 		logger.Warn(fmt.Sprintf("Floating point arithmetic led to a discrepancy of %v (%f) between the total distributed coins (%v) and the amount of new minted coins (%v).\n"+
@@ -497,10 +511,10 @@ func (k Keeper) ensureClaimAmountLimits(
 
 	// Prepare and emit the event for the application being overserviced
 	applicationOverservicedEvent := &tokenomicstypes.EventApplicationOverserviced{
-		ApplicationAddr: application.Address,
-		SupplierAddr:    supplier.OperatorAddress,
-		ExpectedBurn:    &claimSettlementCoin,
-		EffectiveBurn:   &maxClaimableCoin,
+		ApplicationAddr:      application.Address,
+		SupplierOperatorAddr: supplier.OperatorAddress,
+		ExpectedBurn:         &claimSettlementCoin,
+		EffectiveBurn:        &maxClaimableCoin,
 	}
 	eventManager := cosmostypes.UnwrapSDKContext(ctx).EventManager()
 	if err := eventManager.EmitTypedEvent(applicationOverservicedEvent); err != nil {

@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"cosmossdk.io/math"
-	"github.com/cometbft/cometbft/libs/json"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -37,35 +36,24 @@ func init() {
 	cmd.InitSDKConfig()
 }
 
-// TODO_IN_THIS_PR: Add these tests or update existing tests to account for it.
-// 	func TestProcessTokenLogicModules_HandleMaxClaimGreaterActualClaim(t *testing.T) {...}
-// TODO_UPNEXT(@olshansk, #732): Add the following tests
-//  func TestProcessTokenLogicModules_ValidateAppOverServicingEvent(t *testing.T) {...}
-// 	func TestProcessTokenLogicModules_ValidateAppReimbursedRequestEvent(t *testing.T) {...}
-
-func TestProcessTokenLogicModules_TLMBurnEqualsMintValid(t *testing.T) {
+func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 	// Test Parameters
 	appInitialStake := math.NewInt(1000000)
 	supplierInitialStake := math.NewInt(1000000)
 	supplierRevShareRatios := []float32{12.5, 37.5, 50}
 	globalComputeUnitsToTokensMultiplier := uint64(1)
 	serviceComputeUnitsPerRelay := uint64(1)
+	service := prepareTestService(serviceComputeUnitsPerRelay)
 	numRelays := uint64(1000) // By supplier for application in this session
+
+	// Prepare the keepers
+	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil, testkeeper.WithService(*service))
+	keepers.SetService(ctx, *service)
 
 	// Ensure the claim is within relay mining bounds
 	numTokensClaimed := int64(numRelays * serviceComputeUnitsPerRelay * globalComputeUnitsToTokensMultiplier)
 	maxClaimableAmountPerSupplier := appInitialStake.Quo(math.NewInt(sessionkeeper.NumSupplierPerSession))
 	require.GreaterOrEqual(t, maxClaimableAmountPerSupplier.Int64(), numTokensClaimed)
-
-	// Create a service that can be registered in the application and used in the claims
-	service := &sharedtypes.Service{
-		Id:                   "svc1",
-		Name:                 "svcName1",
-		ComputeUnitsPerRelay: serviceComputeUnitsPerRelay,
-		OwnerAddress:         sample.AccAddress(),
-	}
-	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil, testkeeper.WithService(*service))
-	keepers.SetService(ctx, *service)
 
 	// Retrieve the app and supplier module addresses
 	appModuleAddress := authtypes.NewModuleAddress(apptypes.ModuleName).String()
@@ -120,7 +108,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMintValid(t *testing.T) {
 	supplierModuleStartBalance := getBalance(t, ctx, keepers, supplierModuleAddress)
 
 	// Prepare the claim for which the supplier did work for the application
-	claim := prepareClaim(numRelays, service, &app, &supplier)
+	claim := prepareTestClaim(numRelays, service, &app, &supplier)
 
 	// Process the token logic modules
 	err = keepers.ProcessTokenLogicModules(ctx, &claim)
@@ -131,8 +119,8 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMintValid(t *testing.T) {
 	require.EqualValues(t, appStartBalance, appEndBalance)
 
 	// Determine the expected app end stake amount and the expected app burn
-	expectedAppBurn := math.NewInt(numTokensClaimed)
-	expectedAppEndStakeAmount := appInitialStake.Sub(expectedAppBurn)
+	appBurn := math.NewInt(numTokensClaimed)
+	expectedAppEndStakeAmount := appInitialStake.Sub(appBurn)
 
 	// Assert that `applicationAddress` staked balance has decreased by the appropriate amount
 	app, appIsFound := keepers.GetApplication(ctx, app.GetAddress())
@@ -143,7 +131,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMintValid(t *testing.T) {
 	// Assert that app module balance is *decreased* by the appropriate amount
 	// NB: The application module account burns the amount of uPOKT that was held in escrow
 	// on behalf of the applications which were serviced in a given session.
-	expectedAppModuleEndBalance := appModuleStartBalance.Sub(sdk.NewCoin(volatile.DenomuPOKT, expectedAppBurn))
+	expectedAppModuleEndBalance := appModuleStartBalance.Sub(sdk.NewCoin(volatile.DenomuPOKT, appBurn))
 	appModuleEndBalance := getBalance(t, ctx, keepers, appModuleAddress)
 	require.NotNil(t, appModuleEndBalance)
 	require.EqualValues(t, &expectedAppModuleEndBalance, appModuleEndBalance)
@@ -161,7 +149,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMintValid(t *testing.T) {
 
 	// Assert that the supplier shareholders account balances have *increased* by
 	// the appropriate amount w.r.t token distribution.
-	shareAmounts := tokenomicskeeper.GetShareAmountMap(supplierRevShares, expectedAppBurn.Uint64())
+	shareAmounts := tokenomicskeeper.GetShareAmountMap(supplierRevShares, appBurn.Uint64())
 	for shareHolderAddr, expectedShareAmount := range shareAmounts {
 		shareHolderBalance := getBalance(t, ctx, keepers, shareHolderAddr)
 		require.Equal(t, int64(expectedShareAmount), shareHolderBalance.Amount.Int64())
@@ -171,13 +159,18 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMintValid(t *testing.T) {
 // DEV_NOTE: Most of the setup here is a copy-paste of TLMBurnEqualsMintValid
 // except that the application stake is calculated to explicitly be too low to
 // handle all the relays completed.
-func TestProcessTokenLogicModules_TLMBurnEqualsMintInvalid_SupplierExceedsMaxClaimableAmount(t *testing.T) {
+func TestProcessTokenLogicModules_TLMBurnEqualsMint_Invalid_SupplierExceedsMaxClaimableAmount(t *testing.T) {
 	// Test Parameters
 	globalComputeUnitsToTokensMultiplier := uint64(1)
 	serviceComputeUnitsPerRelay := uint64(1)
+	service := prepareTestService(serviceComputeUnitsPerRelay)
 	numRelays := uint64(1000) // By a single supplier for application in this session
 	supplierInitialStake := math.NewInt(1000000)
 	supplierRevShareRatios := []float32{12.5, 37.5, 50}
+
+	// Prepare the keepers
+	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil, testkeeper.WithService(*service))
+	keepers.SetService(ctx, *service)
 
 	// Set up the relays to exceed the max claimable amount
 	// Determine the max a supplier can claim
@@ -188,16 +181,6 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMintInvalid_SupplierExceedsMaxCla
 	// be able to claim more than the max claimable amount.
 	numRelays *= 5
 	numTokensClaimed := int64(numRelays * serviceComputeUnitsPerRelay * globalComputeUnitsToTokensMultiplier)
-
-	// Create a service that can be registered in the application and used in the claims
-	service := &sharedtypes.Service{
-		Id:                   "svc1",
-		Name:                 "svcName1",
-		ComputeUnitsPerRelay: serviceComputeUnitsPerRelay,
-		OwnerAddress:         sample.AccAddress(),
-	}
-	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil, testkeeper.WithService(*service))
-	keepers.SetService(ctx, *service)
 
 	// Retrieve the app and supplier module addresses
 	appModuleAddress := authtypes.NewModuleAddress(apptypes.ModuleName).String()
@@ -252,7 +235,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMintInvalid_SupplierExceedsMaxCla
 	supplierModuleStartBalance := getBalance(t, ctx, keepers, supplierModuleAddress)
 
 	// Prepare the claim for which the supplier did work for the application
-	claim := prepareClaim(numRelays, service, &app, &supplier)
+	claim := prepareTestClaim(numRelays, service, &app, &supplier)
 
 	// Process the token logic modules
 	err = keepers.ProcessTokenLogicModules(ctx, &claim)
@@ -263,8 +246,9 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMintInvalid_SupplierExceedsMaxCla
 	require.EqualValues(t, appStartBalance, appEndBalance)
 
 	// Determine the expected app end stake amount and the expected app burn
-	expectedAppBurn := math.NewInt(maxClaimableAmountPerSupplier)
-	expectedAppEndStakeAmount := appInitialStake.Sub(expectedAppBurn)
+	appBurn := math.NewInt(maxClaimableAmountPerSupplier)
+	appBurnCoin := sdk.NewCoin(volatile.DenomuPOKT, appBurn)
+	expectedAppEndStakeAmount := appInitialStake.Sub(appBurn)
 
 	// Assert that `applicationAddress` staked balance has decreased by the max claimable amount
 	app, appIsFound := keepers.GetApplication(ctx, app.GetAddress())
@@ -278,7 +262,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMintInvalid_SupplierExceedsMaxCla
 	// Assert that app module balance is *decreased* by the appropriate amount
 	// NB: The application module account burns the amount of uPOKT that was held in escrow
 	// on behalf of the applications which were serviced in a given session.
-	expectedAppModuleEndBalance := appModuleStartBalance.Sub(sdk.NewCoin(volatile.DenomuPOKT, expectedAppBurn))
+	expectedAppModuleEndBalance := appModuleStartBalance.Sub(appBurnCoin)
 	appModuleEndBalance := getBalance(t, ctx, keepers, appModuleAddress)
 	require.NotNil(t, appModuleEndBalance)
 	require.EqualValues(t, &expectedAppModuleEndBalance, appModuleEndBalance)
@@ -296,7 +280,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMintInvalid_SupplierExceedsMaxCla
 
 	// Assert that the supplier shareholders account balances have *increased* by
 	// the appropriate amount w.r.t token distribution.
-	shareAmounts := tokenomicskeeper.GetShareAmountMap(supplierRevShares, expectedAppBurn.Uint64())
+	shareAmounts := tokenomicskeeper.GetShareAmountMap(supplierRevShares, appBurn.Uint64())
 	for shareHolderAddr, expectedShareAmount := range shareAmounts {
 		shareHolderBalance := getBalance(t, ctx, keepers, shareHolderAddr)
 		require.Equal(t, int64(expectedShareAmount), shareHolderBalance.Amount.Int64())
@@ -311,22 +295,14 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMintInvalid_SupplierExceedsMaxCla
 	require.Len(t, appOverservicedEvents, 1, "unexpected number of event overserviced events")
 	appOverservicedEvent := appOverservicedEvents[0]
 
-	events := cosmostypes.UnwrapSDKContext(ctx).EventManager().Events()
-	appAddrAttribute, _ := events.GetAttributes("application_addr")
-	expectedBurnAttribute, _ := events.GetAttributes("expected_burn")
-	effectiveBurnAttribute, _ := events.GetAttributes("effective_burn")
+	require.Equal(t, app.GetAddress(), appOverservicedEvent.ApplicationAddr)
+	require.Equal(t, supplier.GetOperatorAddress(), appOverservicedEvent.SupplierOperatorAddr)
+	require.Equal(t, numTokensClaimed, appOverservicedEvent.ExpectedBurn.Amount.Int64())
+	require.Equal(t, appBurn, appOverservicedEvent.EffectiveBurn.Amount)
+	require.Less(t, appBurn.Int64(), numTokensClaimed)
+}
 
-	require.Equal(t, 1, len(appAddrAttribute))
-	require.Equal(t, fmt.Sprintf("\"%s\"", app.GetAddress()), appAddrAttribute[0].Value)
-
-	var expectedBurnEventCoin, effectiveBurnEventCoin cosmostypes.Coin
-	err = json.Unmarshal([]byte(expectedBurnAttribute[0].Value), &expectedBurnEventCoin)
-	require.NoError(t, err)
-	err = json.Unmarshal([]byte(effectiveBurnAttribute[0].Value), &effectiveBurnEventCoin)
-	require.NoError(t, err)
-
-	// require.EqualValues(t, expectedAppBurn, expectedBurnEventCoin)
-	require.Greater(t, expectedBurnEventCoin.Amount.Uint64(), effectiveBurnEventCoin.Amount.Uint64())
+func TestProcessTokenLogicModules_TLMGlobalMint_Valid_CorrectMintDistribution(t *testing.T) {
 }
 
 func TestProcessTokenLogicModules_AppNotFound(t *testing.T) {
@@ -361,10 +337,8 @@ func TestProcessTokenLogicModules_ServiceNotFound(t *testing.T) {
 	claim := prooftypes.Claim{
 		SupplierOperatorAddress: supplierOperatorAddr,
 		SessionHeader: &sessiontypes.SessionHeader{
-			ApplicationAddress: appAddr,
-			Service: &sharedtypes.Service{
-				Id: "non_existent_svc",
-			},
+			ApplicationAddress:      appAddr,
+			Service:                 &sharedtypes.Service{Id: "non_existent_svc"},
 			SessionId:               "session_id",
 			SessionStartBlockHeight: 1,
 			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
@@ -410,7 +384,7 @@ func TestProcessTokenLogicModules_InvalidRoot(t *testing.T) {
 				root := make([]byte, protocol.TrieRootSize) // All 0s
 				return root[:]
 			}(),
-			errExpected: false,
+			errExpected: true,
 		},
 		{
 			desc: "correct size but invalid value",
@@ -541,7 +515,9 @@ func TestProcessTokenLogicModules_InvalidClaim(t *testing.T) {
 	}
 }
 
-func prepareClaim(
+// prepareTestClaim uses the given number of relays and compute unit per relay in the
+// service provided to set up the test claim correctly.
+func prepareTestClaim(
 	numRelays uint64,
 	service *sharedtypes.Service,
 	app *apptypes.Application,
@@ -559,7 +535,16 @@ func prepareClaim(
 		},
 		RootHash: testproof.SmstRootWithSumAndCount(numComputeUnits, numRelays),
 	}
+}
 
+// prepareTestService creates a service with the given compute units per relay.
+func prepareTestService(serviceComputeUnitsPerRelay uint64) *sharedtypes.Service {
+	return &sharedtypes.Service{
+		Id:                   "svc1",
+		Name:                 "svcName1",
+		ComputeUnitsPerRelay: serviceComputeUnitsPerRelay,
+		OwnerAddress:         sample.AccAddress(),
+	}
 }
 
 func getBalance(
