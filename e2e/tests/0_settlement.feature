@@ -7,7 +7,7 @@
 
 Feature: Tokenomics Namespace
 
-    Scenario: Mint equals burn when a claim is created and a valid proof is submitted and required
+    Scenario: TLM Mint=Burn when a valid claim is within max limits
         Given the user has the pocketd binary installed
         # Network preparation and validation
         And an account exists for "supplier1"
@@ -25,23 +25,12 @@ Feature: Tokenomics Namespace
         Then the account balance of "supplier1" should be "420" uPOKT "more" than before
         And the "application" stake of "app1" should be "420" uPOKT "less" than before
 
-    Scenario:
-        Given the user has the pocketd binary installed
-        # Network preparation
-        And an account exists for "supplier1"
-        And the "supplier" account for "supplier1" is staked
-        And an account exists for "app1"
-        And the "application" account for "app1" is staked
-        And the service "anvil" registered for application "app1" has a compute units per relay of "1"
-        # Start servicing relays
-        When the supplier "supplier1" has serviced a session with "10" relays for service "anvil" for application "app1"
-        # Wait for the Claim & Proof lifecycle
-        And the user should wait for the "tokenomics" module "ClaimSettled" end block event to be broadcast
-
-    # TODO_IN_THIS_PR: Add the following test
-    # Scenario: Supplier overservices an application and gets paid for less work than claimed
-
     # TODO_ADDTEST: Implement the following scenarios
+    # Scenario: Supplier revenue shares are properly distributedTestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime
+    # Scenario: TLM Mint=Burn when a valid claim is outside Max Limits
+    #   - Ensure over serviced event is submitted
+    # Scenario: TLM GlobalMint properly distributes minted rewards to all actors
+    #   - Ensure reimbursement request is submitted
     # Scenario: Mint equals burn when a claim is created and a valid proof is submitted but not required
     # Scenario: No emissions or burn when a claim is created and an invalid proof is submitted
     # Scenario: No emissions or burn when a claim is created and a proof is required but is not submitted
