@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	signingtypes "github.com/cosmos/cosmos-sdk/types/tx/signing"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/rand"
 
 	"github.com/pokt-network/poktroll/pkg/crypto"
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
@@ -93,13 +95,13 @@ func NewSignedMinedRelay(
 				SessionHeader:           session.Header,
 				SupplierOperatorAddress: supplierOperatorAddr,
 			},
-			Payload: []byte("request_payload"),
+			Payload: randomPayload(),
 		},
 		Res: &servicetypes.RelayResponse{
 			Meta: servicetypes.RelayResponseMetadata{
 				SessionHeader: session.Header,
 			},
-			Payload: []byte("response_payload"),
+			Payload: randomPayload(),
 		},
 	}
 
@@ -233,4 +235,18 @@ func NewEmptyRelay(reqHeader, resHeader *sessiontypes.SessionHeader, supplierOpe
 			Payload: nil,
 		},
 	}
+}
+
+const (
+	charset       = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	payloadLength = 32
+)
+
+func randomPayload() []byte {
+	rand.Seed(uint64(time.Now().UnixNano()))
+	bz := make([]byte, payloadLength)
+	for i := range bz {
+		bz[i] = charset[rand.Intn(len(charset))]
+	}
+	return bz
 }
