@@ -18,6 +18,12 @@ sidebar_position: 1
 
 Note that this is an active WIP and the [resources here](./resources.md) are the best starting references to learn more.
 
+In particular:
+
+- This is better than what exists in production today
+- This should be seen as an interim solution to avoid further delays
+- Implicit QoS is the best solution, but adds a lot of complexity alongside the existing upgrade
+
 :::
 
 Token Logic Module (TLM) processing consists of the following sequential steps:
