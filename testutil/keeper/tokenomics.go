@@ -460,3 +460,16 @@ func WithService(service sharedtypes.Service) TokenomicsModuleKeepersOpt {
 		return ctx
 	}
 }
+
+func WithProposerAddr(addr string) TokenomicsModuleKeepersOpt {
+	return func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
+		valAddr, err := cosmostypes.ValAddressFromBech32(addr)
+		if err != nil {
+			panic(err)
+		}
+		consensusAddr := cosmostypes.ConsAddress(valAddr)
+		sdkCtx := sdk.UnwrapSDKContext(ctx)
+		sdkCtx = sdkCtx.WithProposer(consensusAddr)
+		return sdkCtx
+	}
+}

@@ -34,4 +34,5 @@ var (
 	ErrTokenomicsSupplierRevShareFailed                = sdkerrors.Register(ModuleName, 1125, "failed to send rev share to supplier shareholders")
 	ErrTokenomicsApplicationReimbursementRequestFailed = sdkerrors.Register(ModuleName, 1126, "failed to send application reimbursement request event")
 	ErrTokenomicsAmountMismatchTooLarge                = sdkerrors.Register(ModuleName, 1127, "an unexpected amount mismatch occurred")
+	ErrTokenomicsMintAmountZero                        = sdkerrors.Register(ModuleName, 1128, "mint amount cannot be zero")
 )

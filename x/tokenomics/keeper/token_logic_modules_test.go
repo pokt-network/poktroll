@@ -11,6 +11,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"
 
@@ -35,6 +36,9 @@ import (
 func init() {
 	cmd.InitSDKConfig()
 }
+
+// TODO_IMPROVE: Consider using a TestSuite, similar to `x/tokenomics/keeper/keeper_settle_pending_claims_test.go`
+// for the TLM based tests in this file.
 
 func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 	// Test Parameters
@@ -66,10 +70,10 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 	require.NoError(t, err)
 	// TODO_TECHDEBT: Setting inflation to zero so we are testing the BurnEqualsMint logic exclusively.
 	// Once it is a governance param, update it using the keeper above.
-	prevInflationValue := tokenomicskeeper.MintPerClaimGlobalInflation
-	tokenomicskeeper.MintPerClaimGlobalInflation = 0
+	prevInflationValue := tokenomicskeeper.MintPerClaimedTokenGlobalInflation
+	tokenomicskeeper.MintPerClaimedTokenGlobalInflation = 0
 	t.Cleanup(func() {
-		tokenomicskeeper.MintPerClaimGlobalInflation = prevInflationValue
+		tokenomicskeeper.MintPerClaimedTokenGlobalInflation = prevInflationValue
 	})
 
 	// Add a new application with non-zero app stake end balance to assert against.
@@ -193,10 +197,10 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Invalid_SupplierExceedsMaxCl
 	require.NoError(t, err)
 	// TODO_TECHDEBT: Setting inflation to zero so we are testing the BurnEqualsMint logic exclusively.
 	// Once it is a governance param, update it using the keeper above.
-	prevInflationValue := tokenomicskeeper.MintPerClaimGlobalInflation
-	tokenomicskeeper.MintPerClaimGlobalInflation = 0
+	prevInflationValue := tokenomicskeeper.MintPerClaimedTokenGlobalInflation
+	tokenomicskeeper.MintPerClaimedTokenGlobalInflation = 0
 	t.Cleanup(func() {
-		tokenomicskeeper.MintPerClaimGlobalInflation = prevInflationValue
+		tokenomicskeeper.MintPerClaimedTokenGlobalInflation = prevInflationValue
 	})
 
 	// Add a new application with non-zero app stake end balance to assert against.
@@ -302,7 +306,118 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Invalid_SupplierExceedsMaxCl
 	require.Less(t, appBurn.Int64(), numTokensClaimed)
 }
 
-func TestProcessTokenLogicModules_TLMGlobalMint_Valid_CorrectMintDistribution(t *testing.T) {
+func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t *testing.T) {
+	// Test Parameters
+	appInitialStake := math.NewInt(1000000)
+	supplierInitialStake := math.NewInt(1000000)
+	supplierRevShareRatios := []float32{12.5, 37.5, 50}
+	globalComputeUnitsToTokensMultiplier := uint64(1)
+	serviceComputeUnitsPerRelay := uint64(1)
+	service := prepareTestService(serviceComputeUnitsPerRelay)
+	numRelays := uint64(1000) // By supplier for application in this session
+	numTokensClaimed := float64(numRelays * serviceComputeUnitsPerRelay * globalComputeUnitsToTokensMultiplier)
+	validatorConsAddr := sample.ConsAddress()
+
+	// Prepare the keepers
+	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil, testkeeper.WithService(*service), testkeeper.WithProposerAddr(validatorConsAddr))
+	keepers.SetService(ctx, *service)
+
+	// Set compute_units_to_tokens_multiplier to simplify expectation calculations.
+	err := keepers.Keeper.SetParams(ctx, tokenomicstypes.Params{
+		ComputeUnitsToTokensMultiplier: globalComputeUnitsToTokensMultiplier,
+	})
+	require.NoError(t, err)
+
+	// Add a new application with non-zero app stake end balance to assert against.
+	appStake := cosmostypes.NewCoin(volatile.DenomuPOKT, appInitialStake)
+	app := apptypes.Application{
+		Address:        sample.AccAddress(),
+		Stake:          &appStake,
+		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{Service: service}},
+	}
+	keepers.SetApplication(ctx, app)
+
+	// Prepare the supplier revenue shares
+	supplierRevShares := make([]*sharedtypes.ServiceRevenueShare, len(supplierRevShareRatios))
+	for i := range supplierRevShares {
+		shareHolderAddress := sample.AccAddress()
+		supplierRevShares[i] = &sharedtypes.ServiceRevenueShare{
+			Address:            shareHolderAddress,
+			RevSharePercentage: supplierRevShareRatios[i],
+		}
+	}
+
+	// Add a new supplier.
+	supplierStake := cosmostypes.NewCoin(volatile.DenomuPOKT, supplierInitialStake)
+	supplier := sharedtypes.Supplier{
+		// Make the first shareholder the supplier itself.
+		OwnerAddress:    supplierRevShares[0].Address,
+		OperatorAddress: supplierRevShares[0].Address,
+		Stake:           &supplierStake,
+		Services:        []*sharedtypes.SupplierServiceConfig{{Service: service, RevShare: supplierRevShares}},
+	}
+	keepers.SetSupplier(ctx, supplier)
+
+	// Prepare the claim for which the supplier did work for the application
+	claim := prepareTestClaim(numRelays, service, &app, &supplier)
+
+	// Prepare addresses
+	daoAddr := authtypes.NewModuleAddress(govtypes.ModuleName)
+	appAddress := app.Address
+	proposerAddress := sample.AccAddressFromConsAddress(validatorConsAddr)
+	// supplierOperatorAddr := supplier.OperatorAddress
+
+	// Determine balances before inflation
+	daoBalanceBefore := getBalance(t, ctx, keepers, daoAddr.String())
+	propBalanceBefore := getBalance(t, ctx, keepers, proposerAddress)
+	serviceOwnerBalanceBefore := getBalance(t, ctx, keepers, service.OwnerAddress)
+	appBalanceBefore := getBalance(t, ctx, keepers, appAddress)
+	supplierShareholderBalancesBefore := make(map[string]*sdk.Coin, len(supplierRevShares))
+	for _, revShare := range supplierRevShares {
+		addr := revShare.Address
+		supplierShareholderBalancesBefore[addr] = getBalance(t, ctx, keepers, addr)
+	}
+
+	// Process the token logic modules
+	err = keepers.ProcessTokenLogicModules(ctx, &claim)
+	require.NoError(t, err)
+
+	// Determine balances after inflation
+	daoBalanceAfter := getBalance(t, ctx, keepers, daoAddr.String())
+	propBalanceAfter := getBalance(t, ctx, keepers, proposerAddress)
+	serviceOwnerBalanceAfter := getBalance(t, ctx, keepers, service.OwnerAddress)
+	appBalanceAfter := getBalance(t, ctx, keepers, appAddress)
+	supplierShareholderBalancesAfter := make(map[string]*sdk.Coin, len(supplierRevShares))
+	for _, revShare := range supplierRevShares {
+		addr := revShare.Address
+		supplierShareholderBalancesAfter[addr] = getBalance(t, ctx, keepers, addr)
+	}
+
+	// Compute mint per actor
+	numTokensMinted := numTokensClaimed * tokenomicskeeper.MintPerClaimedTokenGlobalInflation
+	daoMint := math.NewInt(int64(numTokensMinted * tokenomicskeeper.MintAllocationDAO))
+	propMint := math.NewInt(int64(numTokensMinted * tokenomicskeeper.MintAllocationProposer))
+	serviceOwnerMint := math.NewInt(int64(numTokensMinted * tokenomicskeeper.MintAllocationSourceOwner))
+	appMint := math.NewInt(int64(numTokensMinted * tokenomicskeeper.MintAllocationApplication))
+	supplierMint := float32(numTokensMinted * tokenomicskeeper.MintAllocationSupplier)
+
+	// Ensure the balance was increase be the appropriate amount
+	require.Equal(t, daoBalanceBefore.Amount.Add(daoMint), daoBalanceAfter.Amount)
+	require.Equal(t, propBalanceBefore.Amount.Add(propMint), propBalanceAfter.Amount)
+	require.Equal(t, serviceOwnerBalanceBefore.Amount.Add(serviceOwnerMint), serviceOwnerBalanceAfter.Amount)
+	require.Equal(t, appBalanceBefore.Amount.Add(appMint), appBalanceAfter.Amount)
+	for _, revShare := range supplierRevShares {
+		addr := revShare.Address
+		balanceBefore := supplierShareholderBalancesBefore[addr]
+		balanceAfter := supplierShareholderBalancesAfter[addr].Amount.Int64()
+		mintShare := int64(supplierMint * revShare.RevSharePercentage / 100)
+		rewardShare := int64(float32(numTokensClaimed) * revShare.RevSharePercentage / 100)
+		balanceIncrease := math.NewInt(mintShare + rewardShare)
+		expectedBalanceAfter := balanceBefore.Amount.Add(balanceIncrease).Int64()
+		// TODO_MAINNET: Remove the InDelta check and use the exact amount once the floating point arithmetic is fixed
+		acceptableRoundingDelta := tokenomicskeeper.MintDistributionAllowableTolerance * float64(balanceAfter)
+		require.InDelta(t, expectedBalanceAfter, balanceAfter, acceptableRoundingDelta)
+	}
 }
 
 func TestProcessTokenLogicModules_AppNotFound(t *testing.T) {
