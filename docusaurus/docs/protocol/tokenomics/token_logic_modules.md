@@ -187,7 +187,7 @@ flowchart TD
     DA(["DAO Mint Allocation"])
     PA(["Proposer Mint Allocation"])
     SA(["Supplier Mint Allocation"])
-    SOA(["Source Owner Mint Allocation"])
+    SOM(["Source Owner Mint Allocation"])
     AA(["Application Mint Allocation"])
 
 
