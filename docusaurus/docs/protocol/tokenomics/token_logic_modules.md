@@ -202,11 +202,12 @@ flowchart TD
     end
 
 
-    DA --> ID
-    PA --> ID
-    TO -- New Mint Coin (NMC)--> ID
-    SA --> ID
     AA --> ID
+    DA --> ID
+    TO --Distribute Inflation (IMC)--> ID
+    PA --> ID
+    SOM --> ID
+    SA --> ID
 
     subgraph ID[Inflation Distribution]
         NMC["New Mint Coin (NMC)"]
