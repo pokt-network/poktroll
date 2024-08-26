@@ -145,6 +145,16 @@ func (k Keeper) hydrateSessionApplication(ctx context.Context, sh *sessionHydrat
 		)
 	}
 
+	// Do not provide sessions for applications that initiated the unstaking process
+	// and that are no longer active.
+	if !foundApp.IsActive(sh.sessionHeader.SessionEndBlockHeight) {
+		return types.ErrSessionAppNotActive.Wrapf(
+			"application %q is not active for session %s",
+			sh.sessionHeader.ApplicationAddress,
+			sh.sessionHeader.SessionId,
+		)
+	}
+
 	for _, appServiceConfig := range foundApp.ServiceConfigs {
 		if appServiceConfig.Service.Id == sh.sessionHeader.Service.Id {
 			sh.session.Application = &foundApp
