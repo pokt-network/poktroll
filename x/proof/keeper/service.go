@@ -12,7 +12,7 @@ func (k Keeper) getServiceComputeUnitsPerRelay(
 	ctx context.Context,
 	serviceId string,
 ) (uint64, error) {
-	logger := k.Logger().With("method", "getServiceCupr")
+	logger := k.Logger().With("method", "getServiceComputeUnitsPerRelay")
 
 	service, found := k.serviceKeeper.GetService(ctx, serviceId)
 	if !found {

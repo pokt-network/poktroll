@@ -35,7 +35,7 @@ var (
 	defaultMerkleRoot = testproof.SmstRootWithSumAndCount(expectedNumComputeUnits, expectedNumRelays)
 
 	// Merkle root for Smst of a claim for the service with non-default compute units per relay
-	customCuprMerkleRoot = testproof.SmstRootWithSumAndCount(expectedNonDefaultNumComputeUnits, expectedNumRelays)
+	customComputeUnitsPerRelayMerkleRoot = testproof.SmstRootWithSumAndCount(expectedNonDefaultNumComputeUnits, expectedNumRelays)
 )
 
 func TestMsgServer_CreateClaim_Success(t *testing.T) {
@@ -77,7 +77,7 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 		{
 			desc:                        "claim message for service with >1 compute units per relay",
 			getClaimMsgHeight:           shared.GetClaimWindowCloseHeight,
-			merkleRoot:                  customCuprMerkleRoot,
+			merkleRoot:                  customComputeUnitsPerRelayMerkleRoot,
 			serviceComputeUnitsPerRelay: nonDefaultComputeUnitsPerRelay,
 			expectedNumComputeUnits:     expectedNonDefaultNumComputeUnits,
 		},

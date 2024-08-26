@@ -88,7 +88,7 @@ func (k msgServer) CreateClaim(
 	// numClaimComputeUnits = numRelays * service.computeUnitsPerRelay
 	// This is because for any specific service, every relay is worth the same.
 	// However, this may change in the future.
-	serviceComputeUnitsPerRelay, err := k.getServiceCupr(ctx, claim.SessionHeader.Service.Id)
+	serviceComputeUnitsPerRelay, err := k.getServiceComputeUnitsPerRelay(ctx, claim.SessionHeader.Service.Id)
 	if err != nil {
 		return nil, status.Error(codes.NotFound, types.ErrProofServiceNotFound.Wrapf("%v", err).Error())
 	}
