@@ -6,7 +6,7 @@ option go_package = "github.com/pokt-network/poktroll/x/service/types";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 
-import "poktroll/session/session.proto";
+import "poktroll/session/types.proto";
 
 // Relay contains both the RelayRequest (signed by the Application) and the RelayResponse (signed by the Supplier).
 // The serialized tuple is inserted into the SMST leaves as values in the Claim/Proof lifecycle.
