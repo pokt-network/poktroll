@@ -8,6 +8,7 @@ import (
 
 	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/application/types"
+	"github.com/pokt-network/poktroll/x/shared"
 )
 
 // TODO(#489): Determine if an application needs an unbonding period after unstaking.
@@ -25,8 +26,7 @@ func (k msgServer) UnstakeApplication(
 	logger := k.Logger().With("method", "UnstakeApplication")
 	logger.Info(fmt.Sprintf("About to unstake application with msg: %v", msg))
 
-	// Check if the application already exists or not
-	var err error
+	// Check if the application already exists or not.
 	foundApp, isAppFound := k.GetApplication(ctx, msg.Address)
 	if !isAppFound {
 		logger.Info(fmt.Sprintf("Application not found. Cannot unstake address %s", msg.Address))
@@ -34,23 +34,22 @@ func (k msgServer) UnstakeApplication(
 	}
 	logger.Info(fmt.Sprintf("Application found. Unstaking application for address %s", msg.Address))
 
-	// Retrieve the address of the application
-	appAddress, err := sdk.AccAddressFromBech32(msg.Address)
-	if err != nil {
-		logger.Error(fmt.Sprintf("could not parse address %s", msg.Address))
-		return nil, err
+	// Check if the application has already initiated the unstaking process.
+	if foundApp.IsUnbonding() {
+		logger.Warn(fmt.Sprintf("Application %s is still unbonding from previous unstaking", msg.Address))
+		return nil, types.ErrAppIsUnstaking
 	}
 
-	// Send the coins from the application pool back to the application
-	err = k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, appAddress, []sdk.Coin{*foundApp.Stake})
-	if err != nil {
-		logger.Error(fmt.Sprintf("could not send %v coins from %s module to %s account due to %v", foundApp.Stake, appAddress, types.ModuleName, err))
-		return nil, err
-	}
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	currentHeight := sdkCtx.BlockHeight()
+	sharedParams := k.sharedKeeper.GetParams(sdkCtx)
 
-	// Update the Application in the store
-	k.RemoveApplication(ctx, appAddress.String())
-	logger.Info(fmt.Sprintf("Successfully removed the application: %+v", foundApp))
+	// Mark the application as unstaking by recording the height at which it should
+	// no longer be able to request services.
+	// The application MAY continue to request service until the end of the current
+	// session. After that, the application will be considered inactive.
+	foundApp.UnstakeSessionEndHeight = uint64(shared.GetSessionEndHeight(&sharedParams, currentHeight))
+	k.SetApplication(ctx, foundApp)
 
 	isSuccessful = true
 	return &types.MsgUnstakeApplicationResponse{}, nil
