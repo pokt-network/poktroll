@@ -124,13 +124,21 @@ flowchart TD
         SM[[Supplier Module]]
         SK[(Supplier Keeper)]
         SD{Distribute SA coins}
-        OPA[Operator Address]
-        OA[Owner Address]
-        RSA[Revenue Share Addresses]
+        RSA[Other Revenue Share Addresses]
 
         SM -.- SK
+        SK -. Burn if proof <br> is missing or invalid .-> OA
         SD -->|% Distribution <br> Increase Balance| OA
-        SD -->|% Distribution <br> Increase Balance| RSA
+        SD -->|% Distribution <br> Increase Balance| RSH1
+        SD -->|% Distribution <br> Increase Balance| RSH2
+        SD -->|% Distribution <br> Increase Balance| OPA
+
+        subgraph RSA[Revenue Share Addresses]
+            OA[Owner Address]
+            OPA[Operator Address]
+            RSH1[Revenue shareholder 1]
+            RSH2[Revenue shareholder 2]
+        end
     end
 
     subgraph AO[Application Operations]
@@ -151,7 +159,7 @@ flowchart TD
     classDef event fill:#e8b761,stroke:#333,stroke-width:2px;
 
     class SM,AM module;
-    class RSA,OA,OPA,AA address;
+    class RSH1,RSH2,OA,OPA,AA address;
     class TODO question;
 ```
 
