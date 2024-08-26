@@ -238,7 +238,7 @@ flowchart TD
 
 _tl;dr Prevent self-dealing by over-charging applications, sending the excess to the DAO/PNF, and emitting an event as a reimbursement request._
 
-This TLM **MUST** be processed alongside the Global Mint TLM.
+This TLM is a dependency of the Global Mint TLM; i.e., it **MUST** be active if Global Mint is active.
 
 This TLM can, **theoretically**, be removed if self-dealing attacks are not a concern,
 or if the global mint per claim governance parameter is set to zero.
