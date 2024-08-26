@@ -180,7 +180,7 @@ and application based on the values of various governance params.
 title: "Token Logic Module: Global Mint"
 ---
 flowchart TD
-    SC(["Settlement Coin (SC)"])
+    SC(["Settlement Amount Coins (SA)"])
     PCI(["Per Claim Global Inflation <br> (Governance Parameter)"])
     IMC(["Inflation Mint Coin (IMC)"])
 
