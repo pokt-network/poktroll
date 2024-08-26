@@ -217,11 +217,11 @@ flowchart TD
         SOA["Service Owner Address"]
         PRA["Proposer Address"]
 
-        NMC -->|% Mint Allocation| APPA
-        NMC -->|% Mint Allocation| SPPA
-        NMC -->|% Mint Allocation| DAOA
-        NMC -->|% Mint Allocation| SOA
-        NMC -->|% Mint Allocation| PRA
+        DI -->|% Mint Allocation| APPA
+        DI -->|% Mint Allocation| DAOA
+        DI -->|% Mint Allocation| PRA
+        DI -->|% Mint Allocation| SOA
+        DI -->|% Mint Allocation| SPPA
     end
 
     classDef module fill:#f9f,stroke:#333,stroke-width:2px;
