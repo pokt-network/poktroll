@@ -182,7 +182,7 @@ title: "Token Logic Module: Global Mint"
 flowchart TD
     SC(["Settlement Amount Coins (SA)"])
     PCI(["Per Claim Global Inflation <br> (Governance Parameter)"])
-    IMC(["Inflation Mint Coin (IMC)"])
+    IMC(["Inflation Mint Coins (IMC)"])
 
     DA(["DAO Mint Allocation"])
     PA(["Proposer Mint Allocation"])
