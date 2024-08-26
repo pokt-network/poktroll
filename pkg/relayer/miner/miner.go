@@ -130,13 +130,7 @@ func (mnr *miner) getServiceRelayDifficultyTargetHash(ctx context.Context, req *
 
 	serviceRelayDifficulty, err := mnr.tokenomicsQueryClient.GetServiceRelayDifficultyTargetHash(ctx, sessionHeader.Service.Id)
 	if err != nil {
-		// TODO_DISCUSS_IN_THIS_COMMIT: do we need to distinguish between errors? There could potentially be a scenario in the future where
-		// the query client fails for some reason other than "service has no relay difficulty set", which is currently the only
-		// error scenario. The line below could then lead to masking the error and returning a default value for a service that
-		// has a relay difficulty target hash set.
-		// Solving this needs updating the tokenomics keeper to use an additional boolean in the output to distinguish errors
-		// from the case where the service has no relay difficulty target hash set.
-		return protocol.BaseRelayDifficultyHashBz, nil
+		return nil, err
 	}
 
 	return serviceRelayDifficulty.GetTargetHash(), nil
