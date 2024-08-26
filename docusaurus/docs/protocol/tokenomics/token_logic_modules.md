@@ -129,7 +129,6 @@ flowchart TD
         RSA[Revenue Share Addresses]
 
         SM -.- SK
-        SD -->|% Distribution <br> Increase Balance| OPA
         SD -->|% Distribution <br> Increase Balance| OA
         SD -->|% Distribution <br> Increase Balance| RSA
     end
