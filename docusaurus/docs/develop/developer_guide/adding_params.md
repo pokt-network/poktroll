@@ -36,6 +36,13 @@ See [pokt-network/poktroll#595](https://github.com/pokt-network/poktroll/pull/59
 
 ## Step-by-Step Instructions
 
+:::note
+
+TODO_IMPROVE_POST_MAINNET(@bryanchriswhite): Once the new version if `ignite` is release, leverage
+the new tools to update this documentation to use it: https://github.com/ignite/cli/issues/3684
+
+:::
+
 ### 1. Define the Parameter in the Protocol Buffers File
 
 Open the appropriate `.proto` file for your module (e.g., `params.proto`) and define the new parameter.
