@@ -226,7 +226,7 @@ flowchart TD
     classDef module fill:#f9f,stroke:#333,stroke-width:2px;
     classDef address fill:#bbf,stroke:#333,stroke-width:2px;
     classDef question fill:#e3db6d,stroke:#333,stroke-width:2px;
-    classDef govparam fill:#d04a36,stroke:#333,stroke-width:2px;
+    classDef govparam fill:#eba69a,stroke:#333,stroke-width:2px;
     classDef event fill:#e8b761,stroke:#333,stroke-width:2px;
 
     class TM module;
