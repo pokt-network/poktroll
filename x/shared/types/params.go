@@ -300,9 +300,7 @@ func validateSupplierUnbondingPeriodIsGreaterThanCumulativeProofWindowCloseBlock
 }
 
 // validateApplicationUnbondingPeriodIsGreaterThanCumulativeProofWindowCloseBlocks
-// validates that the ApplicationUnbondingPeriodSession blocks is greater than the cumulative
-// proof window close blocks.
-// It ensures that a supplier cannot unbond before the pending claims are settled.
+// ensures that a supplier cannot unbond before the pending claims are settled.
 func validateApplicationUnbondingPeriodIsGreaterThanCumulativeProofWindowCloseBlocks(params *Params) error {
 	cumulativeProofWindowCloseBlocks := GetSessionEndToProofWindowCloseBlocks(params)
 	applicationUnbondingPeriodSessions := params.ApplicationUnbondingPeriodSessions * params.NumBlocksPerSession

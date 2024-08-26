@@ -15,15 +15,15 @@ import (
 )
 
 func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
-	appKeeper, sharedKeeper, ctx := keepertest.ApplicationKeeperWithSharedKeeper(t)
-	srv := keeper.NewMsgServerImpl(appKeeper)
-	sharedParams := sharedKeeper.GetParams(ctx)
+	applicationModuleKeepers, ctx := keepertest.NewApplicationModuleKeepers(t)
+	srv := keeper.NewMsgServerImpl(*applicationModuleKeepers.Keeper)
+	sharedParams := applicationModuleKeepers.SharedKeeper.GetParams(ctx)
 
 	// Generate an address for the application
 	unstakingAppAddr := sample.AccAddress()
 
 	// Verify that the app does not exist yet
-	_, isAppFound := appKeeper.GetApplication(ctx, unstakingAppAddr)
+	_, isAppFound := applicationModuleKeepers.GetApplication(ctx, unstakingAppAddr)
 	require.False(t, isAppFound)
 
 	// Prepare the application
@@ -35,7 +35,7 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 	require.NoError(t, err)
 
 	// Verify that the application exists
-	foundApp, isAppFound := appKeeper.GetApplication(ctx, unstakingAppAddr)
+	foundApp, isAppFound := applicationModuleKeepers.GetApplication(ctx, unstakingAppAddr)
 	require.True(t, isAppFound)
 	require.Equal(t, unstakingAppAddr, foundApp.Address)
 	require.Equal(t, initialStake, foundApp.Stake.Amount.Int64())
@@ -50,7 +50,7 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 	require.NoError(t, err)
 
 	// Verify that the non-unstaking application exists
-	_, isAppFound = appKeeper.GetApplication(ctx, nonUnstakingAppAddr)
+	_, isAppFound = applicationModuleKeepers.GetApplication(ctx, nonUnstakingAppAddr)
 	require.True(t, isAppFound)
 
 	// Unstake the application
@@ -59,7 +59,7 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 	require.NoError(t, err)
 
 	// Make sure the application entered the unbonding period
-	foundApp, isAppFound = appKeeper.GetApplication(ctx, unstakingAppAddr)
+	foundApp, isAppFound = applicationModuleKeepers.GetApplication(ctx, unstakingAppAddr)
 	require.True(t, isAppFound)
 	require.True(t, foundApp.IsUnbonding())
 
@@ -68,24 +68,24 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 	ctx = keepertest.SetBlockHeight(ctx, unbondingHeight)
 
 	// Run the endblocker to unbond applications
-	err = appKeeper.EndBlockerUnbondApplications(ctx)
+	err = applicationModuleKeepers.EndBlockerUnbondApplications(ctx)
 	require.NoError(t, err)
 
 	// Make sure the unstaking application is removed from the applications list when
 	// the unbonding period is over.
-	_, isAppFound = appKeeper.GetApplication(ctx, unstakingAppAddr)
+	_, isAppFound = applicationModuleKeepers.GetApplication(ctx, unstakingAppAddr)
 	require.False(t, isAppFound)
 
 	// Verify that the non-unstaking application still exists.
-	nonUnstakingApplication, isAppFound := appKeeper.GetApplication(ctx, nonUnstakingAppAddr)
+	nonUnstakingApplication, isAppFound := applicationModuleKeepers.GetApplication(ctx, nonUnstakingAppAddr)
 	require.True(t, isAppFound)
 	require.False(t, nonUnstakingApplication.IsUnbonding())
 }
 
 func TestMsgServer_UnstakeApplication_CancelUnbondingIfRestaked(t *testing.T) {
-	appKeeper, sharedKeeper, ctx := keepertest.ApplicationKeeperWithSharedKeeper(t)
-	srv := keeper.NewMsgServerImpl(appKeeper)
-	sharedParams := sharedKeeper.GetParams(ctx)
+	applicationModuleKeepers, ctx := keepertest.NewApplicationModuleKeepers(t)
+	srv := keeper.NewMsgServerImpl(*applicationModuleKeepers.Keeper)
+	sharedParams := applicationModuleKeepers.SharedKeeper.GetParams(ctx)
 
 	// Generate an address for the application
 	appAddr := sample.AccAddress()
@@ -97,7 +97,7 @@ func TestMsgServer_UnstakeApplication_CancelUnbondingIfRestaked(t *testing.T) {
 	require.NoError(t, err)
 
 	// Verify that the application exists with no unbonding height
-	foundApp, isAppFound := appKeeper.GetApplication(ctx, appAddr)
+	foundApp, isAppFound := applicationModuleKeepers.GetApplication(ctx, appAddr)
 	require.True(t, isAppFound)
 	require.False(t, foundApp.IsUnbonding())
 
@@ -107,7 +107,7 @@ func TestMsgServer_UnstakeApplication_CancelUnbondingIfRestaked(t *testing.T) {
 	require.NoError(t, err)
 
 	// Make sure the application entered the unbonding period
-	foundApp, isAppFound = appKeeper.GetApplication(ctx, appAddr)
+	foundApp, isAppFound = applicationModuleKeepers.GetApplication(ctx, appAddr)
 	require.True(t, isAppFound)
 	require.True(t, foundApp.IsUnbonding())
 
@@ -119,31 +119,31 @@ func TestMsgServer_UnstakeApplication_CancelUnbondingIfRestaked(t *testing.T) {
 	require.NoError(t, err)
 
 	// Make sure the application is no longer in the unbonding period
-	foundApp, isAppFound = appKeeper.GetApplication(ctx, appAddr)
+	foundApp, isAppFound = applicationModuleKeepers.GetApplication(ctx, appAddr)
 	require.True(t, isAppFound)
 	require.False(t, foundApp.IsUnbonding())
 
 	ctx = keepertest.SetBlockHeight(ctx, int64(unbondingHeight))
 
 	// Run the EndBlocker, the application should not be unbonding.
-	err = appKeeper.EndBlockerUnbondApplications(ctx)
+	err = applicationModuleKeepers.EndBlockerUnbondApplications(ctx)
 	require.NoError(t, err)
 
 	// Make sure the application exists with an unbonding height of 0
-	foundApp, isAppFound = appKeeper.GetApplication(ctx, appAddr)
+	foundApp, isAppFound = applicationModuleKeepers.GetApplication(ctx, appAddr)
 	require.True(t, isAppFound)
 	require.False(t, foundApp.IsUnbonding())
 }
 
 func TestMsgServer_UnstakeApplication_FailIfNotStaked(t *testing.T) {
-	appKeeper, ctx := keepertest.ApplicationKeeper(t)
-	srv := keeper.NewMsgServerImpl(appKeeper)
+	applicationModuleKeepers, ctx := keepertest.NewApplicationModuleKeepers(t)
+	srv := keeper.NewMsgServerImpl(*applicationModuleKeepers.Keeper)
 
 	// Generate an address for the application
 	appAddr := sample.AccAddress()
 
 	// Verify that the app does not exist yet
-	_, isAppFound := appKeeper.GetApplication(ctx, appAddr)
+	_, isAppFound := applicationModuleKeepers.GetApplication(ctx, appAddr)
 	require.False(t, isAppFound)
 
 	// Unstake the application
@@ -152,13 +152,13 @@ func TestMsgServer_UnstakeApplication_FailIfNotStaked(t *testing.T) {
 	require.Error(t, err)
 	require.ErrorIs(t, err, types.ErrAppNotFound)
 
-	_, isAppFound = appKeeper.GetApplication(ctx, appAddr)
+	_, isAppFound = applicationModuleKeepers.GetApplication(ctx, appAddr)
 	require.False(t, isAppFound)
 }
 
 func TestMsgServer_UnstakeApplication_FailIfCurrentlyUnstaking(t *testing.T) {
-	appKeeper, ctx := keepertest.ApplicationKeeper(t)
-	srv := keeper.NewMsgServerImpl(appKeeper)
+	applicationModuleKeepers, ctx := keepertest.NewApplicationModuleKeepers(t)
+	srv := keeper.NewMsgServerImpl(*applicationModuleKeepers.Keeper)
 
 	// Generate an address for the application
 	appAddr := sample.AccAddress()
@@ -177,6 +177,7 @@ func TestMsgServer_UnstakeApplication_FailIfCurrentlyUnstaking(t *testing.T) {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	ctx = keepertest.SetBlockHeight(ctx, int64(sdkCtx.BlockHeight()+1))
 
+	// Verify that the application cannot unstake if it is already unstaking.
 	_, err = srv.UnstakeApplication(ctx, unstakeMsg)
 	require.ErrorIs(t, err, types.ErrAppIsUnstaking)
 }

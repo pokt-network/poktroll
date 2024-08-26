@@ -34,9 +34,16 @@ import (
 // WARNING: Using this map may cause issues if running multiple tests in parallel
 var stakedGatewayMap = make(map[string]struct{})
 
-// ApplicationKeeperWithSharedKeeper creates a new application keeper for testing
-// along with its dependencies returns the ApplicationKeeper, SharedKeeper and context.
-func ApplicationKeeperWithSharedKeeper(t testing.TB) (keeper.Keeper, types.SharedKeeper, context.Context) {
+// ApplicationModuleKeepers is a struct that contains the keepers needed for testing
+// the application module.
+type ApplicationModuleKeepers struct {
+	*keeper.Keeper
+	types.SharedKeeper
+}
+
+// NewApplicationModuleKeepers creates a new application keeper for testing along
+// with its dependencies then returns the application module keepers and context.
+func NewApplicationModuleKeepers(t testing.TB) (ApplicationModuleKeepers, context.Context) {
 	t.Helper()
 	storeKey := storetypes.NewKVStoreKey(types.StoreKey)
 
@@ -103,15 +110,20 @@ func ApplicationKeeperWithSharedKeeper(t testing.TB) (keeper.Keeper, types.Share
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	ctx = sdkCtx.WithBlockHeight(1)
 
-	return appKeeper, mockSharedKeeper, ctx
+	applicationModuleKeepers := ApplicationModuleKeepers{
+		Keeper:       &appKeeper,
+		SharedKeeper: mockSharedKeeper,
+	}
+
+	return applicationModuleKeepers, ctx
 }
 
-// ApplicationKeeper creates a new application keeper for testing and returns
-// the keeper and context.
 func ApplicationKeeper(t testing.TB) (keeper.Keeper, context.Context) {
-	appModuleKeepers, _, ctx := ApplicationKeeperWithSharedKeeper(t)
+	t.Helper()
 
-	return appModuleKeepers, ctx
+	applicationModuleKeepers, ctx := NewApplicationModuleKeepers(t)
+
+	return *applicationModuleKeepers.Keeper, ctx
 }
 
 // AddGatewayToStakedGatewayMap adds the given gateway address to the staked
