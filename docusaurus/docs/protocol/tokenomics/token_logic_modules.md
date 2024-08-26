@@ -230,7 +230,7 @@ flowchart TD
     classDef event fill:#e8b761,stroke:#333,stroke-width:2px;
 
     class TM module;
-    class PCI,DA,PA,SA,AA govparam;
+    class PCI,DA,PA,SA,SOM,AA govparam;
     class APPA,SPPA,DAOA,SOA,PRA address;
 ```
 
