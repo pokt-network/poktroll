@@ -210,7 +210,7 @@ flowchart TD
     SA --> ID
 
     subgraph ID[Inflation Distribution]
-        NMC["New Mint Coin (NMC)"]
+        DI["Distribute Inflation (IMC)"]
         APPA["Application Address"]
         SPPA["Supplier Address"]
         DAOA["DAO Address"]
