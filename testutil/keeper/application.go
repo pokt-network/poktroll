@@ -118,6 +118,8 @@ func NewApplicationModuleKeepers(t testing.TB) (ApplicationModuleKeepers, contex
 	return applicationModuleKeepers, ctx
 }
 
+// ApplicationKeeper creates a new application keeper for testing and returns
+// the keeper and context.
 func ApplicationKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 	t.Helper()
 
