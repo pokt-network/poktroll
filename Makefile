@@ -472,7 +472,7 @@ go_testgen_accounts: ## Generate test accounts for usage in test environments
 	go generate ./testutil/testkeyring/keyring.go
 
 .PHONY: go_develop
-go_develop: check_ignite_version proto_regen go_mockgen ## Generate protos and mocks
+go_develop: check_ignite_version proto_regen go_mockgen go_testgen_fixtures ## Generate protos and mocks
 
 .PHONY: go_develop_and_test
 go_develop_and_test: go_develop test_all ## Generate protos, mocks and run all tests

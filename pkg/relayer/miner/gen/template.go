@@ -18,9 +18,11 @@ package miner_test
 
 var (
 	// marshaledMinableRelaysHex are the hex encoded strings of serialized
-	// relayer.MinedRelays which have been pre-mined to difficult {{.difficultyThresholdHashStr}} (or greater) by
-	// populating the signature with random bytes. It is intended for use
-	// in tests.
+	// relayer.MinedRelays which have been pre-mined to difficulty {{.difficultyThresholdHashStr}} (or greater) by
+	// randomizing the application address and populating the signature with random bytes.
+	// The ID, starting block height, and ending block height of the session referenced in the relays.
+	// are hard-coded to "session_id", 1, and 2, respectively.
+	// The resulting slice of minable relays is intended for use in tests.
 	marshaledMinableRelaysHex = []string{
 {{.MarshaledMinableRelaysHex}}
 	}

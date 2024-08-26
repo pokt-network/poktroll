@@ -35,10 +35,10 @@ const (
 	defaultRandLength                 = 16
 	defaultOutPath                    = "relay_fixtures_test.go"
 
-	// svcId is the ID of the service referenced in each relay request's metadata.
+	// defaultSvcID is the ID of the service referenced in each relay request's metadata.
 	// This is passed to the tokenomics client to get the service's difficulty target hash.
 	// It should match the testSvcId const in pkg/relayer/miner/miner_test.go
-	testSvcId = "svc1"
+	defaultSvcID = "svc1"
 )
 
 // TODO_FOLLOWUP(@olshansk, #690): Do a global anycase grep for "DifficultyBits" and update/remove things appropriately.
@@ -58,6 +58,9 @@ var (
 
 	// flagOut is the path to the generated file.
 	flagOut string
+
+	// flagSvcID is the service ID referenced in generated relay fixtures.
+	flagSvcID string
 )
 
 // TODO_TECHDEBT: remove once marshaling using canonical codec.
@@ -69,6 +72,7 @@ func init() {
 	flag.StringVar(&flagDifficultyThresholdHashStr, "difficulty-threshold-hash-str", defaultDifficultyThresholdHashStr, "the difficulty threshold hash, in string format, that a randomized, serialized relay be greater than or equal to when hashed, to be included in the `marshaledMinableRelaysHex` slice which is generated. It is also used as the maximum difficulty threshold hash for relays to be included in the `marshaledUnminableRelaysHex` slice.")
 	flag.IntVar(&flagFixtureLimitPerGroup, "fixture-limit-per-group", defaultFixtureLimitPerGroup, "the number of randomized, serialized relays that will be generated for each of `marshaledMinableRelaysHex` and `marshaledUnminableRelaysHex`.")
 	flag.StringVar(&flagOut, "out", defaultOutPath, "the path to the generated file.")
+	flag.StringVar(&flagSvcID, "service-id", defaultSvcID, "the service ID referenced in generated relays.")
 }
 
 // This is utility for generating relay fixtures for testing. It is not intended
@@ -94,8 +98,6 @@ func main() {
 	randRelaysObs, errCh := genRandomizedMinedRelayFixtures(
 		ctx,
 		defaultRandLength,
-		// TODO_TECHDEBT: need to find out how the removal of miner.DefaultRelayerHasher in commit 608edc31b39c6ff9a285af46d1c1037cd36a7252 did not
-		// trigger any test failures while it was still referenced here (in the line that was in this comment's position before being deleted).
 	)
 	exitOnError(errCh)
 
@@ -159,7 +161,7 @@ func genRandomizedMinedRelayFixtures(
 						SessionHeader: &sessiontypes.SessionHeader{
 							ApplicationAddress: sample.AccAddress(),
 							Service: &sharedtypes.Service{
-								Id: testSvcId,
+								Id: flagSvcID,
 							},
 							SessionId:               "session_id",
 							SessionStartBlockHeight: 1,
@@ -179,14 +181,12 @@ func genRandomizedMinedRelayFixtures(
 				return
 			}
 
-			// Hash relay bytes
 			relayHashArr := protocol.GetRelayHashFromBytes(relayBz)
-			relayHash := relayHashArr[:]
 
 			randBzPublishCh <- &relayer.MinedRelay{
 				Relay: relay,
 				Bytes: relayBz,
-				Hash:  relayHash,
+				Hash:  relayHashArr[:],
 			}
 		}
 	}()
@@ -207,11 +207,9 @@ func exitOnError(errCh <-chan error) {
 // getDifficultyThresholdHash returns the difficulty threshold hash set by the
 // flagDifficultyThresholdHashStr flag in string formet, or the default value if
 // the flag has not been set.
-func getDifficultyThresholdHash() [protocol.RelayHasherSize]byte {
+func getDifficultyThresholdHash() []byte {
 	difficultyThresholdHash, _ := hex.DecodeString(flagDifficultyThresholdHashStr)
-	var thresholdHashArr [protocol.RelayHasherSize]byte
-	copy(thresholdHashArr[:], difficultyThresholdHash)
-	return thresholdHashArr
+	return difficultyThresholdHash
 }
 
 // difficultyGTE returns true if the given hash has a difficulty greater than or
