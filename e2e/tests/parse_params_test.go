@@ -172,6 +172,8 @@ func (s *suite) newSharedMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 			msgUpdateParams.Params.ProofWindowCloseOffsetBlocks = uint64(paramValue.value.(int64))
 		case sharedtypes.ParamSupplierUnbondingPeriodSessions:
 			msgUpdateParams.Params.SupplierUnbondingPeriodSessions = uint64(paramValue.value.(int64))
+		case sharedtypes.ParamApplicationUnbondingPeriodSessions:
+			msgUpdateParams.Params.ApplicationUnbondingPeriodSessions = uint64(paramValue.value.(int64))
 		default:
 			s.Fatalf("ERROR: unexpected %q type param name %q", paramValue.typeStr, paramName)
 		}
