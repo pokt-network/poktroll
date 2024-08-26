@@ -2,7 +2,6 @@ package session
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/pokt-network/poktroll/x/service/types"
 )
@@ -16,12 +15,13 @@ func (rs *relayerSessionsManager) getServiceComputeUnitsPerRelay(
 ) (uint64, error) {
 	sessionHeader := relayRequestMetadata.GetSessionHeader()
 	if sessionHeader.GetService() == nil {
-		return 0, fmt.Errorf("getServiceComputeUnitsPerRelay: received nil service")
+		return 0, ErrSessionRelayMetaHasNoServiceID
 	}
 
 	service, err := rs.serviceQueryClient.GetService(ctx, sessionHeader.Service.Id)
 	if err != nil {
-		return 0, fmt.Errorf("getServiceComputeUnitsPerRelay: could not get on-chain service %s: %w",
+		return 0, ErrSessionRelayMetaHasInvalidServiceID.Wrapf(
+			"getServiceComputeUnitsPerRelay: could not get on-chain service %s: %w",
 			sessionHeader.Service.Id,
 			err,
 		)

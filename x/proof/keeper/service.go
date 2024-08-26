@@ -2,7 +2,8 @@ package keeper
 
 import (
 	"context"
-	"fmt"
+
+	"github.com/pokt-network/poktroll/x/proof/types"
 )
 
 // getServiceComputeUnitsPerRelay is used to ensure that a service with the ServiceID exists.
@@ -16,7 +17,7 @@ func (k Keeper) getServiceComputeUnitsPerRelay(
 
 	service, found := k.serviceKeeper.GetService(ctx, serviceId)
 	if !found {
-		return 0, prooftypes.ErrProofServiceNotFound.Wrapf("service %s not found", serviceId)
+		return 0, types.ErrProofServiceNotFound.Wrapf("service %s not found", serviceId)
 	}
 
 	logger.
