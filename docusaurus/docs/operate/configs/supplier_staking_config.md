@@ -50,7 +50,54 @@ poktrolld tx supplier stake-supplier \
 
 ## Staking types
 
-The `Supplier` staking command supports two types of staking:
+The `Supplier` staking command supports `Custodial` and `Non-Custodial` staking
+which can be illustrated in the following flowchart:
+
+```mermaid
+flowchart TD
+  AWF(["Account with funds <br> owner_address"])
+  ISC{Is custodial?}
+  US[Unstake]
+
+  AWF -- stake --> ISC
+  ISC -- yes --> CS
+  ISC -- no --> NCS
+
+
+  subgraph CS[Custodial Staking]
+    direction LR
+    subgraph S1[Supplier]
+      OW1["address: owner_address"]
+    end
+    subgraph RM1[RelayMiner]
+      OW2["address: owner_address"]
+    end
+    S1 --- RM1
+  end
+
+  subgraph NCS[Non Custodial Staking]
+    direction LR
+    subgraph S2[Supplier]
+      OW21["address: owner_address"]
+    end
+    subgraph RM2[RelayMiner]
+      OP22["address: operator_address"]
+    end
+    S2 -.- RM2
+  end
+
+  CS ---> |owner_address| US
+  NCS  ---> |owner_address or operator_address| US
+
+  US -- funds --> OWA{{owner_address}}
+  US -- remove on-chain record --> OPA{{owner_address or operator_address}}
+
+  classDef owner fill:#f9f,stroke:#333,stroke-width:2px,color:#222;
+  classDef operator fill:#e05a46,stroke:#333,stroke-width:2px,color:#222;
+
+  class OW1,OW2,OW21,AWF owner
+  class OP22 operator
+```
 
 ### Custodial Staking
 
@@ -69,9 +116,9 @@ The owner of the `Supplier` is different from the operator.
 This means the account that receives the rewards is different from the one signing
 the `RelayResponse`s and submitting claims and proofs.
 
-Non-custodial staking is suitable for `Supplier`s that want to separate the staking
-or the rewarded account (i.e., the account that holds the `upokt` stake or rewards)
-from the account operates the `RelayMiner`.
+Non-custodial staking is suitable for `Supplier`s that want to separate the `RelayMiner`
+staking operations from the account that has custody over the staked funds, and in turn,
+the rewards being earned.
 
 :::note
 
@@ -88,7 +135,7 @@ account.
 
 ### `owner_address`
 
-_`Required`_, _`Non-empty`_
+_`Required`_
 
 ```yaml
 owner_address: <address>
@@ -100,8 +147,8 @@ unbonding.
 
 For custodial staking, the `owner_address` is the same as the `operator_address`.
 
-For non-custodial staking, the `owner_address` must be different from the `operator_address`.
-This address receives back the staked `upokt` when the `Supplier` is unstaked.
+For non-custodial staking, the `owner_address` MUST be different from the `operator_address`.
+This address receives the staked `upokt` when the `Supplier` is unstaked and finished unbonding.
 
 The `owner_address` can only be changed with a stake message signed by the
 `Supplier`'s owner account.
@@ -119,7 +166,7 @@ the same `owner_address`.
 
 ### `operator_address`
 
-_`Optional`_, _`Non-empty`_
+_`Optional`_
 
 ```yaml
 operator_address: <address>
@@ -130,11 +177,11 @@ Its corresponding account is used for operational tasks such as signing `RelayRe
 submitting `Claims` and `Proofs` as well as updating the `Supplier`'s info
 (i.e. Adding or removing services, increasing the stake amount, etc).
 
-The operator account can also be used to unstake the `Supplier` and send the staked
-`upokt` back to the `owner_address`.
+The operator account can also be used to unstake the `Supplier`, which will cause
+the staked `upokt` to be sent to the `owner_address` after unbonding finishes.
 
-If the `operator_address` is not specified, the `owner_address` is used as the
-`operator_address`.
+If the `operator_address` is empty or not specified, the `owner_address` is used
+as the `operator_address`.
 
 If the `operator_address` is the same as the `owner_address`, then the staking
 is custodial.
