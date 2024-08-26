@@ -101,7 +101,13 @@ func (s *TestSuite) SetupTest() {
 		OwnerAddress:    supplierOwnerAddr,
 		OperatorAddress: supplierOwnerAddr,
 		Stake:           &supplierStake,
-		Services:        []*sharedtypes.SupplierServiceConfig{{Service: &service}},
+		Services: []*sharedtypes.SupplierServiceConfig{{
+			Service: &service,
+			RevShare: []*sharedtypes.ServiceRevenueShare{{
+				Address:            supplierOwnerAddr,
+				RevSharePercentage: 100,
+			}},
+		}},
 	}
 	s.keepers.SetSupplier(s.ctx, supplier)
 

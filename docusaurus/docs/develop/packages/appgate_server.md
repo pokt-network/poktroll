@@ -167,7 +167,7 @@ curl -X POST \
 The `AppGate Server` implementation uses the [POKTRollSDK](../packages/sdk.md) to
 interact with the Pocket Network. It can either be used directly or referenced on how
 the `POKTRollSDK` can be used with a custom build `Application` / `Gateway`.
-RPC requests to the Pocket Network.
+RPC requests to Pocket Network.
 
 The `AppGate Server`'s own logic is responsible for:
 

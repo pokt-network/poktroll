@@ -270,6 +270,10 @@ func TestLoadRelays(t *testing.T) {
 	gocuke.NewRunner(t, &relaysSuite{}).Path(filepath.Join(".", "relays_stress.feature")).Run()
 }
 
+func TestLoadRelaysSingleSupplier(t *testing.T) {
+	gocuke.NewRunner(t, &relaysSuite{}).Path(filepath.Join(".", "relays_stress_single_suppier.feature")).Run()
+}
+
 func (s *relaysSuite) LocalnetIsRunning() {
 	s.ctx, s.cancelCtx = context.WithCancel(context.Background())
 

@@ -15,11 +15,11 @@ func NewMsgUnstakeSupplier(signerAddress, operatorAddress string) *MsgUnstakeSup
 
 func (msg *MsgUnstakeSupplier) ValidateBasic() error {
 	if _, err := sdk.AccAddressFromBech32(msg.Signer); err != nil {
-		return ErrSupplierInvalidAddress.Wrapf("invalid signer address address (%s)", err)
+		return ErrSupplierInvalidAddress.Wrapf("invalid signer address (%s)", err)
 	}
 
 	if _, err := sdk.AccAddressFromBech32(msg.OperatorAddress); err != nil {
-		return ErrSupplierInvalidAddress.Wrapf("invalid operator address address (%s)", err)
+		return ErrSupplierInvalidAddress.Wrapf("invalid operator address (%s)", err)
 	}
 
 	return nil
