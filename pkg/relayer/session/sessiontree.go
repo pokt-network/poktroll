@@ -9,7 +9,7 @@ import (
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/smt"
-	"github.com/pokt-network/smt/kvstore/badger"
+	"github.com/pokt-network/smt/kvstore/pebble"
 
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/pkg/relayer"
@@ -51,7 +51,7 @@ type sessionTree struct {
 	proofBz []byte
 
 	// treeStore is the KVStore used to store the SMST.
-	treeStore badger.BadgerKVStore
+	treeStore pebble.PebbleKVStore
 
 	// storePath is the path to the KVStore used to store the SMST.
 	// It is created from the storePrefix and the session.sessionId.
@@ -72,14 +72,18 @@ func NewSessionTree(
 ) (relayer.SessionTree, error) {
 	// Join the storePrefix and the session.sessionId and supplier's operator address to
 	// create a unique storePath.
-	storePath := filepath.Join(storesDirectory, sessionHeader.SessionId, "_", supplierOperatorAddress.String())
+
+	// TODO_IMPROVE(#621): instead of creating a new KV store for each session, it will be more beneficial to
+	// use one key store. KV databases are often optimized for writing into one database. They keys can
+	// use supplier address and session id as prefix. The current approach might not be RAM/IO efficient.
+	storePath := filepath.Join(storesDirectory, supplierOperatorAddress.String(), sessionHeader.SessionId)
 
 	// Make sure storePath does not exist when creating a new SessionTree
 	if _, err := os.Stat(storePath); err != nil && !os.IsNotExist(err) {
 		return nil, ErrSessionTreeStorePathExists.Wrapf("storePath: %q", storePath)
 	}
 
-	treeStore, err := badger.NewKVStore(storePath)
+	treeStore, err := pebble.NewKVStore(storePath)
 	if err != nil {
 		return nil, err
 	}
@@ -157,7 +161,7 @@ func (st *sessionTree) ProveClosest(path []byte) (proof *smt.SparseMerkleClosest
 	}
 
 	// Restore the KVStore from disk since it has been closed after the claim has been generated.
-	st.treeStore, err = badger.NewKVStore(st.storePath)
+	st.treeStore, err = pebble.NewKVStore(st.storePath)
 	if err != nil {
 		return nil, err
 	}
@@ -240,9 +244,9 @@ func (st *sessionTree) Delete() error {
 
 	st.isClaiming = false
 
-	if err := st.treeStore.ClearAll(); err != nil {
-		return err
-	}
+	// NB: We used to call `st.treeStore.ClearAll()` here.
+	// This was intentionally removed to lower the IO load.
+	// When the database is closed, it is deleted it from disk right away.
 
 	if err := st.treeStore.Stop(); err != nil {
 		return err

@@ -15,4 +15,5 @@ var (
 	ErrSessionInvalidService         = sdkerrors.Register(ModuleName, 1106, "invalid service in session")
 	ErrSessionInvalidBlockHeight     = sdkerrors.Register(ModuleName, 1107, "invalid block height for session")
 	ErrSessionInvalidSessionId       = sdkerrors.Register(ModuleName, 1108, "invalid sessionId")
+	ErrSessionAppNotActive           = sdkerrors.Register(ModuleName, 1109, "application is not active")
 )

@@ -8,7 +8,7 @@ import (
 	"cosmossdk.io/depinject"
 	"github.com/golang/mock/gomock"
 	"github.com/pokt-network/smt"
-	"github.com/pokt-network/smt/kvstore/badger"
+	"github.com/pokt-network/smt/kvstore/pebble"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/client/keyring"
@@ -175,7 +175,7 @@ func TestSupplierClient_SubmitProof(t *testing.T) {
 		},
 	}
 
-	kvStore, err := badger.NewKVStore("")
+	kvStore, err := pebble.NewKVStore("")
 	require.NoError(t, err)
 
 	// Generating an ephemeral tree & spec just so we can submit

@@ -1,5 +1,5 @@
 config:
-  smt_store_path: smt_stores
+  smt_store_path: /root/.poktroll/smt
   metrics:
     enabled: true
     addr: :9090
