@@ -2,7 +2,6 @@ package testqueryclients
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -15,11 +14,7 @@ import (
 // It is updated by the SetServiceRelayDifficultyTargetHash, and read by
 // the mock tokenomics query client to get a specific service's relay difficulty
 // target hash.
-var relayDifficultyTargets map[string]*tokenomicstypes.RelayMiningDifficulty
-
-func init() {
-	relayDifficultyTargets = make(map[string]*tokenomicstypes.RelayMiningDifficulty)
-}
+var relayDifficultyTargets = make(map[string]*tokenomicstypes.RelayMiningDifficulty)
 
 // NewTestTokenomicsQueryClient creates a mock of the TokenomicsQueryClient
 // which allows the caller to call GetSession any times and will return

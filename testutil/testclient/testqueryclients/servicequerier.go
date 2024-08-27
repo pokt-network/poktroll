@@ -2,21 +2,17 @@ package testqueryclients
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/golang/mock/gomock"
 
 	"github.com/pokt-network/poktroll/testutil/mockclient"
+	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // services is a map of: serviceId -> Service
-var services map[string]sharedtypes.Service
-
-func init() {
-	services = make(map[string]sharedtypes.Service)
-}
+var services = make(map[string]sharedtypes.Service)
 
 // NewTestSessionQueryClient creates a mock of the SessionQueryClient
 // which allows the caller to call GetSession any times and will return

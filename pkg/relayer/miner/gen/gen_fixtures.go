@@ -28,7 +28,7 @@ import (
 )
 
 const (
-	// defaultDifficultyThresholdHashStr is the default difficulty hash in string formet, used to separate the generated relays into minable and unminable categories.
+	// defaultDifficultyThresholdHashStr is the default difficulty hash as a hex string, used to separate the generated relays into minable and unminable categories.
 	// This hash should match the service-specific difficulty target hash used by the relay miner tests in pkg/relayer/miner/miner_test.go.
 	defaultDifficultyThresholdHashStr = "0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
 	defaultFixtureLimitPerGroup       = 5
@@ -43,12 +43,11 @@ const (
 
 // TODO_FOLLOWUP(@olshansk, #690): Do a global anycase grep for "DifficultyBits" and update/remove things appropriately.
 var (
-
-	// flagDifficultyThresholdHashStr is the difficulty threshold hash, in string format, that a
+	// flagDifficultyThresholdHashStr is the difficulty threshold hash, as a hex string, that a
 	// randomized, serialized relay must be greater than to be included in the
-	// `marshaledMinableRelaysHex` slice which is generated.
-	// It is also used as the maximum difficulty threshold hash allowed for relays to be
-	// included in the `marshaledUnminableRelaysHex` slice.
+	// generated `marshaledMinableRelaysHex` slice.
+	// It is also used as the maximum difficulty threshold hash, below which, relays
+	// included in the generated `marshaledUnminableRelaysHex` slice.
 	flagDifficultyThresholdHashStr string
 
 	// flagFixtureLimitPerGroup is the number of randomized, serialized relays that will be
@@ -204,9 +203,8 @@ func exitOnError(errCh <-chan error) {
 	}()
 }
 
-// getDifficultyThresholdHash returns the difficulty threshold hash set by the
-// flagDifficultyThresholdHashStr flag in string formet, or the default value if
-// the flag has not been set.
+// getDifficultyThresholdHash returns the difficulty threshold hash represented by the
+// flagDifficultyThresholdHashStr flag, or the default value if the flag has not been set.
 func getDifficultyThresholdHash() []byte {
 	difficultyThresholdHash, _ := hex.DecodeString(flagDifficultyThresholdHashStr)
 	return difficultyThresholdHash
