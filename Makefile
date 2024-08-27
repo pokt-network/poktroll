@@ -391,7 +391,7 @@ test_e2e_app_stake: test_e2e_env ## Run only the E2E suite that exercises the ap
 
 .PHONY: test_e2e_app_transfer
 test_e2e_app_transfer: test_e2e_env ## Run only the E2E suite that exercises application stake transfer
-	go test -v ./e2e/tests/... -tags=e2e,test --features-path=app_stake_transfer.feature
+	go test -v ./e2e/tests/... -tags=e2e,test --features-path=stake_app_transfer.feature
 
 .PHONY: test_e2e_supplier
 test_e2e_supplier: test_e2e_env ## Run only the E2E suite that exercises the supplier life-cycle
