@@ -41,6 +41,7 @@ func (s *suite) TheUserTransfersTheStakeFromAccountToAccount(actorType, fromAccN
 	s.pocketd.result = res
 }
 
+// This helper ensures that the actor is unstaked if it was staked when this step ran.
 func (s *suite) ThisTestEnsuresTheForAccountIsNotStaked(actorType, accName string) {
 	if _, ok := s.getStakedAmount(actorType, accName); ok {
 		s.TheUserUnstakesAFromTheAccount(actorType, accName)

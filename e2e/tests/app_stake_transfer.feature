@@ -2,6 +2,7 @@ Feature: App Stake Transfer Namespace
 
     Scenario: User can transfer Application stake to non-existing application address
         Given the user has the pocketd binary installed
+	# Unstake the applications in case they're already staked.
         And this test ensures the "application" for account "app2" is not staked
         And this test ensures the "application" for account "app3" is not staked
         # Stake with 1 uPOKT more than the current stake used in genesis to make
