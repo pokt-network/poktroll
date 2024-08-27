@@ -31,5 +31,10 @@ func (msg *MsgTransferApplicationStake) ValidateBasic() error {
 	if dstBech32Err != nil {
 		return ErrAppInvalidAddress.Wrapf("invalid destination application address (%s): %v", msg.GetDestinationAddress(), dstBech32Err)
 	}
+
+	if msg.GetSourceAddress() == msg.GetDestinationAddress() {
+		return ErrAppDuplicateAddress.Wrapf("source and destination application addresses are the same: %s", msg.GetSourceAddress())
+	}
+
 	return nil
 }

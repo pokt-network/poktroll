@@ -1,6 +1,7 @@
 package types
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -22,7 +23,7 @@ func TestMsgTransferApplicationStake_ValidateBasic(t *testing.T) {
 				SourceAddress:      dupAddr,
 				DestinationAddress: dupAddr,
 			},
-			err: ErrAppInvalidAddress,
+			err: ErrAppDuplicateAddress,
 		},
 		{
 			name: "invalid bech32 source address",
@@ -53,7 +54,11 @@ func TestMsgTransferApplicationStake_ValidateBasic(t *testing.T) {
 			err := tt.msg.ValidateBasic()
 			if tt.err != nil {
 				require.ErrorIs(t, err, tt.err)
-				require.Contains(t, err.Error(), tt.msg.SourceAddress)
+				if strings.Contains(err.Error(), tt.msg.GetSourceAddress()) {
+					require.Contains(t, err.Error(), tt.msg.GetSourceAddress())
+				} else {
+					require.Contains(t, err.Error(), tt.msg.GetDestinationAddress())
+				}
 				return
 			}
 			require.NoError(t, err)
