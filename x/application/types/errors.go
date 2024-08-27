@@ -19,5 +19,5 @@ var (
 	ErrAppInvalidMaxDelegatedGateways = sdkerrors.Register(ModuleName, 1111, "invalid MaxDelegatedGateways parameter")
 	ErrAppNotDelegated                = sdkerrors.Register(ModuleName, 1112, "application not delegated to gateway")
 	ErrAppIsUnstaking                 = sdkerrors.Register(ModuleName, 1113, "application is in unbonding period")
-	ErrAppDuplicateAddress            = sdkerrors.Register(ModuleName, 1113, "duplicate application address")
+	ErrAppDuplicateAddress            = sdkerrors.Register(ModuleName, 1114, "duplicate application address")
 )
