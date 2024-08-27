@@ -17,3 +17,5 @@ Feature: App Stake Transfer Namespace
         And the user should wait for the "application" module "TransferApplicationStake" message to be submitted
         And the "application" for account "app3" is staked with "1000070" uPOKT
         And the account balance of "app3" should be "0" uPOKT "less" than before
+        And the user verifies the "application" for account "app2" is not staked
+        And the account balance of "app2" should be "0" uPOKT "more" than before

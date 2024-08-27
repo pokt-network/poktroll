@@ -99,9 +99,9 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 				// 				},
 				{
 					RpcMethod:      "TransferApplicationStake",
-					Use:            "transfer [address] [beneficiary]",
-					Short:          "Transfer the application stake from [address] to [beneciciary]",
-					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "address"}, {ProtoField: "beneficiary"}},
+					Use:            "transfer [source app address] [destination app address]",
+					Short:          "Transfer the application stake from [source app address] to [destination app address] and unstake the source application",
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "source_address"}, {ProtoField: "destination_address"}},
 				},
 				// this line is used by ignite scaffolding # autocli/tx
 			},

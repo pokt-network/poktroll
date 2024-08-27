@@ -18,19 +18,19 @@ func TestMsgServer_TransferApplicationStake_Success(t *testing.T) {
 	k, ctx := keepertest.ApplicationKeeper(t)
 	srv := appkeeper.NewMsgServerImpl(k)
 
-	// Generate an address for the application and beneficiary.
-	appAddr := sample.AccAddress()
-	beneficiaryAddr := sample.AccAddress()
+	// Generate an address for the source and destination applications.
+	srcAddr := sample.AccAddress()
+	dstAddr := sample.AccAddress()
 
 	// Verify that the app does not exist yet.
-	_, isAppFound := k.GetApplication(ctx, appAddr)
-	require.False(t, isAppFound)
+	_, isSrcFound := k.GetApplication(ctx, srcAddr)
+	require.False(t, isSrcFound)
 
 	expectedAppStake := &cosmostypes.Coin{Denom: "upokt", Amount: math.NewInt(100)}
 
 	// Prepare the application.
 	stakeMsg := &apptypes.MsgStakeApplication{
-		Address: appAddr,
+		Address: srcAddr,
 		Stake:   expectedAppStake,
 		Services: []*sharedtypes.ApplicationServiceConfig{
 			{
@@ -44,56 +44,56 @@ func TestMsgServer_TransferApplicationStake_Success(t *testing.T) {
 	require.NoError(t, err)
 
 	// Verify that the application exists.
-	foundApp, isAppFound := k.GetApplication(ctx, appAddr)
-	require.True(t, isAppFound)
-	require.Equal(t, appAddr, foundApp.Address)
-	require.Equal(t, expectedAppStake, foundApp.Stake)
-	require.Len(t, foundApp.ServiceConfigs, 1)
-	require.Equal(t, "svc1", foundApp.ServiceConfigs[0].Service.Id)
+	srcApp, isSrcFound := k.GetApplication(ctx, srcAddr)
+	require.True(t, isSrcFound)
+	require.Equal(t, srcAddr, srcApp.Address)
+	require.Equal(t, expectedAppStake, srcApp.Stake)
+	require.Len(t, srcApp.ServiceConfigs, 1)
+	require.Equal(t, "svc1", srcApp.ServiceConfigs[0].Service.Id)
 
-	// Transfer the application stake to the beneficiary.
-	transferStakeMsg := apptypes.NewMsgTransferApplicationStake(appAddr, beneficiaryAddr)
+	// Transfer the application stake from the source to the destination application address.
+	transferStakeMsg := apptypes.NewMsgTransferApplicationStake(srcAddr, dstAddr)
 
 	transferAppStakeRes, stakeTransferErr := srv.TransferApplicationStake(ctx, transferStakeMsg)
 	require.NoError(t, stakeTransferErr)
 
-	// Verify that the beneficiary was created with the same stake and service configs.
-	foundApp, isAppFound = k.GetApplication(ctx, beneficiaryAddr)
-	require.True(t, isAppFound)
+	// Verify that the destination app was created with the correct state.
+	srcApp, isSrcFound = k.GetApplication(ctx, dstAddr)
+	require.True(t, isSrcFound)
 
-	foundBeneficiary, isBeneficiaryFound := k.GetApplication(ctx, beneficiaryAddr)
-	require.True(t, isBeneficiaryFound)
-	require.Equal(t, beneficiaryAddr, foundBeneficiary.Address)
-	require.Equal(t, expectedAppStake, foundBeneficiary.Stake)
-	require.Len(t, foundBeneficiary.ServiceConfigs, 1)
-	require.EqualValues(t, foundApp, foundBeneficiary)
-	require.EqualValues(t, &foundBeneficiary, transferAppStakeRes.Application)
+	dstApp, isDstFound := k.GetApplication(ctx, dstAddr)
+	require.True(t, isDstFound)
+	require.Equal(t, dstAddr, dstApp.Address)
+	require.Equal(t, expectedAppStake, dstApp.Stake)
+	require.Len(t, dstApp.ServiceConfigs, 1)
+	require.EqualValues(t, srcApp, dstApp)
+	require.EqualValues(t, &dstApp, transferAppStakeRes.Application)
 
-	// Verify that the original app was unstaked.
-	foundApp, isAppFound = k.GetApplication(ctx, appAddr)
-	require.False(t, isAppFound)
+	// Verify that the source app was unstaked.
+	srcApp, isSrcFound = k.GetApplication(ctx, srcAddr)
+	require.False(t, isSrcFound)
 }
 
-func TestMsgServer_TransferApplicationStake_Error_BeneficiaryExists(t *testing.T) {
+func TestMsgServer_TransferApplicationStake_Error_DestinationExists(t *testing.T) {
 	k, ctx := keepertest.ApplicationKeeper(t)
 	srv := appkeeper.NewMsgServerImpl(k)
 
-	// Generate an address for the application and beneficiary.
-	appAddr := sample.AccAddress()
-	beneficiaryAddr := sample.AccAddress()
+	// Generate an address for the source and destination applications.
+	srcAddr := sample.AccAddress()
+	dstAddr := sample.AccAddress()
 
-	// Verify that neither the app nor the beneficiary exists yet.
-	_, isAppFound := k.GetApplication(ctx, appAddr)
-	require.False(t, isAppFound)
+	// Verify that neither the source nor the destination application exists yet.
+	_, isSrcFound := k.GetApplication(ctx, srcAddr)
+	require.False(t, isSrcFound)
 
-	_, isBeneficiaryFound := k.GetApplication(ctx, beneficiaryAddr)
-	require.False(t, isBeneficiaryFound)
+	_, isDstFound := k.GetApplication(ctx, dstAddr)
+	require.False(t, isDstFound)
 
 	expectedAppStake := &cosmostypes.Coin{Denom: "upokt", Amount: math.NewInt(100)}
 
 	// Prepare and stake the application.
 	appStakeMsg := &apptypes.MsgStakeApplication{
-		Address: appAddr,
+		Address: srcAddr,
 		Stake:   expectedAppStake,
 		Services: []*sharedtypes.ApplicationServiceConfig{
 			{
@@ -105,9 +105,9 @@ func TestMsgServer_TransferApplicationStake_Error_BeneficiaryExists(t *testing.T
 	_, err := srv.StakeApplication(ctx, appStakeMsg)
 	require.NoError(t, err)
 
-	// Prepare and stake the beneficiary.
-	beneficiaryStakeMsg := &apptypes.MsgStakeApplication{
-		Address: beneficiaryAddr,
+	// Prepare and stake the destination application.
+	dstAppStakeMsg := &apptypes.MsgStakeApplication{
+		Address: dstAddr,
 		Stake:   expectedAppStake,
 		Services: []*sharedtypes.ApplicationServiceConfig{
 			{
@@ -116,20 +116,20 @@ func TestMsgServer_TransferApplicationStake_Error_BeneficiaryExists(t *testing.T
 		},
 	}
 
-	_, err = srv.StakeApplication(ctx, beneficiaryStakeMsg)
+	_, err = srv.StakeApplication(ctx, dstAppStakeMsg)
 	require.NoError(t, err)
 
-	// Attempt to transfer the application stake to the beneficiary.
-	transferStakeMsg := apptypes.NewMsgTransferApplicationStake(appAddr, beneficiaryAddr)
+	// Attempt to transfer the source application stake to the destination.
+	transferStakeMsg := apptypes.NewMsgTransferApplicationStake(srcAddr, dstAddr)
 
 	_, err = srv.TransferApplicationStake(ctx, transferStakeMsg)
-	require.ErrorContains(t, err, apptypes.ErrAppDuplicateAddress.Wrapf("beneficiary (%q) exists", beneficiaryAddr).Error())
+	require.ErrorContains(t, err, apptypes.ErrAppDuplicateAddress.Wrapf("destination (%q) exists", dstAddr).Error())
 
 	// Verify that the original application still exists.
 	var foundApp apptypes.Application
-	foundApp, isAppFound = k.GetApplication(ctx, appAddr)
-	require.True(t, isAppFound)
-	require.Equal(t, appAddr, foundApp.Address)
+	foundApp, isSrcFound = k.GetApplication(ctx, srcAddr)
+	require.True(t, isSrcFound)
+	require.Equal(t, srcAddr, foundApp.Address)
 	require.Equal(t, int64(100), foundApp.Stake.Amount.Int64())
 	require.Len(t, foundApp.ServiceConfigs, 1)
 	require.Equal(t, "svc1", foundApp.ServiceConfigs[0].Service.Id)

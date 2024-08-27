@@ -6,30 +6,30 @@ import (
 
 var _ cosmostypes.Msg = (*MsgTransferApplicationStake)(nil)
 
-func NewMsgTransferApplicationStake(address string, beneficiary string) *MsgTransferApplicationStake {
+func NewMsgTransferApplicationStake(srcAddr string, dstAddr string) *MsgTransferApplicationStake {
 	return &MsgTransferApplicationStake{
-		Address:     address,
-		Beneficiary: beneficiary,
+		SourceAddress:      srcAddr,
+		DestinationAddress: dstAddr,
 	}
 }
 
 func (msg *MsgTransferApplicationStake) ValidateBasic() error {
-	if msg.Address == "" {
-		return ErrAppInvalidAddress.Wrap("empty application address")
+	if msg.GetSourceAddress() == "" {
+		return ErrAppInvalidAddress.Wrap("empty source application address")
 	}
 
-	if msg.Beneficiary == "" {
-		return ErrAppInvalidAddress.Wrap("empty beneficiary address")
+	if msg.GetDestinationAddress() == "" {
+		return ErrAppInvalidAddress.Wrap("empty destination application address")
 	}
 
-	_, addrErr := cosmostypes.AccAddressFromBech32(msg.Address)
-	if addrErr != nil {
-		return ErrAppInvalidAddress.Wrapf("invalid application address (%s): %v", msg.Address, addrErr)
+	_, srcBech32Err := cosmostypes.AccAddressFromBech32(msg.GetSourceAddress())
+	if srcBech32Err != nil {
+		return ErrAppInvalidAddress.Wrapf("invalid source application address (%s): %v", msg.GetSourceAddress(), srcBech32Err)
 	}
 
-	_, beneficiaryErr := cosmostypes.AccAddressFromBech32(msg.Beneficiary)
-	if beneficiaryErr != nil {
-		return ErrAppInvalidAddress.Wrapf("invalid beneficiary address (%s): %v", msg.Address, beneficiaryErr)
+	_, dstBech32Err := cosmostypes.AccAddressFromBech32(msg.GetDestinationAddress())
+	if dstBech32Err != nil {
+		return ErrAppInvalidAddress.Wrapf("invalid destination application address (%s): %v", msg.GetDestinationAddress(), dstBech32Err)
 	}
 	return nil
 }

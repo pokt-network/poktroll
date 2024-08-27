@@ -6,6 +6,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
+
 	"github.com/pokt-network/poktroll/x/application/keeper"
 	"github.com/pokt-network/poktroll/x/application/types"
 )
@@ -17,9 +18,11 @@ func SimulateMsgTransferApplicationStake(
 ) simtypes.Operation {
 	return func(r *rand.Rand, app *baseapp.BaseApp, ctx sdk.Context, accs []simtypes.Account, chainID string,
 	) (simtypes.OperationMsg, []simtypes.FutureOperation, error) {
-		simAccount, _ := simtypes.RandomAcc(r, accs)
+		simSrcAppAccount, _ := simtypes.RandomAcc(r, accs)
+		simDstAppAccount, _ := simtypes.RandomAcc(r, accs)
 		msg := &types.MsgTransferApplicationStake{
-			Address: simAccount.Address.String(),
+			SourceAddress:      simSrcAppAccount.Address.String(),
+			DestinationAddress: simDstAppAccount.Address.String(),
 		}
 
 		// TODO: Handling the TransferApplicationStake simulation

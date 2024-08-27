@@ -80,9 +80,9 @@ message MsgUndelegateFromGateway {
 message MsgUndelegateFromGatewayResponse {}
 
 message MsgTransferApplicationStake {
-  option (cosmos.msg.v1.signer) = "address";
-  string address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
-  string beneficiary = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  option (cosmos.msg.v1.signer) = "source_address";
+  string source_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  string destination_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
 }
 
 message MsgTransferApplicationStakeResponse {
