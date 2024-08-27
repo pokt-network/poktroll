@@ -77,6 +77,7 @@ end
 
 end
 ```
+
 > **See**: [Legend > Sequence Diagram](#sequence-diagram)
 
 ### Delegated Application
@@ -91,14 +92,12 @@ start of the session in question.
 title: Delegated Application - RPC Request/Response & Claim/Proof
 ---
 sequenceDiagram
-
     actor user as User
     actor app as Application (Delegated to Gateway)
     participant gw as Gateway
     participant pokt as Pokt Network
     participant sup as Supplier
     participant rpc as RPC Server
-
 
 %% par Staking & Delegation
     gw-)pokt: Stake
@@ -108,43 +107,34 @@ sequenceDiagram
 %% end
 
     loop Session N
-
         pokt--xpokt: Store current ring state for application
-
         gw-xpokt: Construct ring for signing (query application & delegates' public keys)
         sup-xpokt: Construct ring for verifying (query application & delegates' public keys)
-
         loop Every Request
-
             Note over user,rpc: ref: RPC Request/Response Relay (Delegated Application)
-
         end
-
     end
 
-break Wait for session grace period to end
-sup->>sup: 
-    sup->>sup: Persist unclaimed & unproven session trees
-end
+    note over user,rpc: Wait for session grace period to
 
-loop Session+GracePeriod+1
+    loop
+        sup->>sup: "Persist unclaimed & unproven session trees"
+    end
 
-loop Every application session from session N
-
-Note over pokt,sup: ref: Supplier Claim/Proof
-
-end
-
-pokt--xpokt: Delete ring state for application
-
-end
-
+    loop Session+GracePeriod+1
+        loop Every application session from session N
+            Note over pokt,sup: ref: Supplier Claim/Proof
+        end
+        pokt--xpokt: Delete ring state for application
+    end
 ```
+
 > **See**: [Legend > Sequence Diagram](#sequence-diagram)
 
 ## Legend
 
 ### Sequence Diagram
+
 ```mermaid
 ---
 title: Sequence Diagram Legend
@@ -173,11 +163,3 @@ sequenceDiagram
 
     end
 ```
-
-## Reference Diagrams
-
-### RPC Request/Response Relay (Sovereign Application)
-
-### RPC Request/Response Relay (Delegated Application)
-
-### 
