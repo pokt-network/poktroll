@@ -1,10 +1,9 @@
+owner_address: pokt1re27pw4llwnatx4sq7rlggqzcm6j3f39epq2wa
+operator_address: pokt1re27pw4llwnatx4sq7rlggqzcm6j3f39epq2wa
 stake_amount: 1000070upokt
 services:
   - service_id: anvil
     endpoints:
-      # The endpoint URL for the Anvil service is provided via the RelayMiner.
-      # The RelayMiner acts as a proxy, forwarding requests to the actual Anvil data node behind it.
-      # This setup allows for flexible and dynamic service provisioning within the network.
       - publicly_exposed_url: http://relayminer2:8545
         rpc_type: JSON_RPC
   - service_id: ollama
