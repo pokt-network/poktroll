@@ -92,8 +92,8 @@ flowchart TD
   US -- funds --> OWA{{owner_address}}
   US -- remove on-chain record --> OPA{{owner_address or operator_address}}
 
-  classDef owner fill:#f9f,stroke:#333,stroke-width:2px,color:#222;
-  classDef operator fill:#e05a46,stroke:#333,stroke-width:2px,color:#222;
+  classDef owner fill:#f9f, stroke:#333, stroke-width:2px, color:#222;
+  classDef operator fill:#eba69a, color: #333, stroke:#333, stroke-width:2px;
 
   class OW1,OW2,OW21,AWF owner
   class OP22 operator
@@ -142,8 +142,8 @@ owner_address: <address>
 ```
 
 The `owner_address` is the address of the account that owns the `Supplier`s staked
-funds, which will be returned to this account when the `Supplier` unstakes and finishes
-unbonding.
+funds, which will be transferred to this account's balannce when the `Supplier`
+unstakes and finishes unbonding.
 
 For custodial staking, the `owner_address` is the same as the `operator_address`.
 
@@ -175,7 +175,7 @@ operator_address: <address>
 The `operator_address` is the address that identifies the `Supplier`.
 Its corresponding account is used for operational tasks such as signing `RelayResponse`s,
 submitting `Claims` and `Proofs` as well as updating the `Supplier`'s info
-(i.e. Adding or removing services, increasing the stake amount, etc).
+(i.e. Adding or removing services, increasing the stake amount, etc.)
 
 The operator account can also be used to unstake the `Supplier`, which will cause
 the staked `upokt` to be sent to the `owner_address` after unbonding finishes.
