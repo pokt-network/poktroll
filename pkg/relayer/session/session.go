@@ -54,6 +54,9 @@ type relayerSessionsManager struct {
 
 	// sharedQueryClient is used to query shared module parameters.
 	sharedQueryClient client.SharedQueryClient
+	// proofQueryClient is used to query for the proof requirement threshold and
+	// requirement probability to determine whether a submitted claim requires a proof.
+	proofQueryClient client.ProofQueryClient
 }
 
 // NewRelayerSessions creates a new relayerSessions.
@@ -61,6 +64,7 @@ type relayerSessionsManager struct {
 // Required dependencies:
 //   - client.BlockClient
 //   - client.SupplierClientMap
+//   - client.ProofQueryClient
 //
 // Available options:
 //   - WithStoresDirectory
@@ -81,6 +85,7 @@ func NewRelayerSessions(
 		&rs.blockClient,
 		&rs.supplierClients,
 		&rs.sharedQueryClient,
+		&rs.proofQueryClient,
 	); err != nil {
 		return nil, err
 	}

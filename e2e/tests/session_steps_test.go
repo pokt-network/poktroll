@@ -10,6 +10,7 @@ import (
 
 	abci "github.com/cometbft/cometbft/abci/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/client/block"
@@ -49,47 +50,14 @@ func (s *suite) TheUserShouldWaitForTheModuleTxEventToBeBroadcast(module, eventT
 	s.waitForTxResultEvent(newEventTypeMatchFn(module, eventType))
 }
 
-func (s *suite) TheUserShouldWaitForTheModuleEndBlockEventToBeBroadcast(module, eventType string) {
+func (s *suite) TheUserShouldWaitForTheModuleEndBlockEventWithProofRequirementToBeBroadcast(module, eventType, proofRequirement string) {
 	s.waitForNewBlockEvent(
 		combineEventMatchFns(
 			newEventTypeMatchFn(module, eventType),
 			newEventModeMatchFn("EndBlock"),
+			newEventAttributeMatchFn("proof_requirement", fmt.Sprintf("%q", proofRequirement)),
 		),
 	)
-}
-
-// TODO_FLAKY: See how 'TheClaimCreatedBySupplierForServiceForApplicationShouldBeSuccessfullySettled'
-// was modified to using an event replay client, instead of a query, to eliminate the flakiness.
-func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBePersistedOnchain(supplierOperatorName, serviceId, appName string) {
-	ctx := context.Background()
-
-	allClaimsRes, err := s.proofQueryClient.AllClaims(ctx, &prooftypes.QueryAllClaimsRequest{
-		Filter: &prooftypes.QueryAllClaimsRequest_SupplierOperatorAddress{
-			SupplierOperatorAddress: accNameToAddrMap[supplierOperatorName],
-		},
-	})
-	require.NoError(s, err)
-	require.NotNil(s, allClaimsRes)
-
-	// Assert that the number of claims has increased by one.
-	preExistingClaims, ok := s.scenarioState[preExistingClaimsKey].([]prooftypes.Claim)
-	require.Truef(s, ok, "%s not found in scenarioState", preExistingClaimsKey)
-	// NB: We are avoiding the use of require.Len here because it provides unreadable output
-	// TODO_TECHDEBT: Due to the speed of the blocks of the LocalNet validator, along with the small number
-	// of blocks per session, multiple claims may be created throughout the duration of the test. Until
-	// these values are appropriately adjusted
-	require.Greater(s, len(allClaimsRes.Claims), len(preExistingClaims), "number of claims must have increased")
-
-	// TODO_IMPROVE: assert that the root hash of the claim contains the correct
-	// SMST sum. The sum can be retrieved by parsing the last 8 bytes as a
-	// binary-encoded uint64; e.g. something like:
-	// `binary.Uvarint(claim.RootHash[len(claim.RootHash-8):])`
-
-	// TODO_IMPROVE: add assertions about serviceId and appName and/or incorporate
-	// them into the scenarioState key(s).
-
-	claim := allClaimsRes.Claims[0]
-	require.Equal(s, accNameToAddrMap[supplierOperatorName], claim.SupplierOperatorAddress)
 }
 
 func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication(supplierOperatorName, numRelaysStr, serviceId, appName string) {
@@ -149,6 +117,18 @@ func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBeSuccess
 	}
 
 	s.waitForNewBlockEvent(isValidClaimSettledEvent)
+}
+
+func (suite *suite) TheProofGovernanceParametersAreSetAsFollowsToNotRequireAProof(params gocuke.DataTable) {
+	suite.AnAuthzGrantFromTheAccountToTheAccountForTheMessageExists(
+		"gov",
+		"module",
+		"pnf",
+		"user",
+		"/poktroll.proof.MsgUpdateParams",
+	)
+
+	suite.TheAccountSendsAnAuthzExecMessageToUpdateAllModuleParams("pnf", "proof", params)
 }
 
 func (s *suite) sendRelaysForSession(

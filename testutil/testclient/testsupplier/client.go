@@ -40,10 +40,11 @@ func NewLocalnetClient(
 	return supplierClient
 }
 
-func NewOneTimeClaimProofSupplierClientMap(
+func NewClaimProofSupplierClientMap(
 	ctx context.Context,
 	t *testing.T,
 	supplierOperatorAddress string,
+	proofCount int,
 ) *supplier.SupplierClientMap {
 	t.Helper()
 
@@ -70,7 +71,7 @@ func NewOneTimeClaimProofSupplierClientMap(
 			gomock.AssignableToTypeOf(([]client.MsgSubmitProof)(nil)),
 		).
 		Return(nil).
-		Times(1)
+		Times(proofCount)
 
 	supplierClientMap := supplier.NewSupplierClientMap()
 	supplierClientMap.SupplierClients[supplierOperatorAddress] = supplierClientMock
