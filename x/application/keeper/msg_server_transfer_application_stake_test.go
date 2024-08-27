@@ -123,7 +123,7 @@ func TestMsgServer_TransferApplicationStake_Error_DestinationExists(t *testing.T
 	transferStakeMsg := apptypes.NewMsgTransferApplicationStake(srcAddr, dstAddr)
 
 	_, err = srv.TransferApplicationStake(ctx, transferStakeMsg)
-	require.ErrorContains(t, err, apptypes.ErrAppDuplicateAddress.Wrapf("destination (%q) exists", dstAddr).Error())
+	require.ErrorContains(t, err, apptypes.ErrAppDuplicateAddress.Wrapf("destination application (%q) exists", dstAddr).Error())
 
 	// Verify that the original application still exists.
 	var foundApp apptypes.Application
