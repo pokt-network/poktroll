@@ -24,22 +24,33 @@ func (k msgServer) TransferApplicationStake(ctx context.Context, msg *types.MsgT
 		return nil, err
 	}
 
+	// Ensure destination application does not already exist.
 	_, isDstFound := k.GetApplication(ctx, msg.GetDestinationAddress())
 	if isDstFound {
 		return nil, types.ErrAppDuplicateAddress.Wrapf("destination application (%q) exists", msg.GetDestinationAddress())
 	}
 
+	// Ensure source application exists.
 	srcApp, isAppFound := k.GetApplication(ctx, msg.GetSourceAddress())
 	if !isAppFound {
 		return nil, types.ErrAppNotFound.Wrapf("source application %q not found", msg.GetSourceAddress())
+	}
+
+	// Ensure source application is not already unbonding.
+	// TODO_TEST: Add E2E coverage to assert that an unbonding app cannot be transferred.
+	if srcApp.IsUnbonding() {
+		return nil, types.ErrAppIsUnstaking.Wrapf("cannot transfer stake of unbonding source application %q", msg.GetSourceAddress())
 	}
 
 	// Create a new application derived from the source application.
 	dstApp := srcApp
 	dstApp.Address = msg.GetDestinationAddress()
 
+	// TODO_IN_THIS_PR: Reconcile app unbonding logic with the new transfer stake logic.
+	// I.e., the source should not immediately be transferred.
+
 	// TODO_TEST: add E2E coverage to assert #DelegateeGatewayAddresses and #PendingUndelegations
-	// are present on the dstApp application.
+	// are present and correct on the dstApp application.
 
 	// Update the dstApp in the store
 	k.SetApplication(ctx, dstApp)
