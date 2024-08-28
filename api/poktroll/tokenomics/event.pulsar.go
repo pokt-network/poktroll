@@ -2715,7 +2715,7 @@ func (x *EventRelayMiningDifficultyUpdated) GetNewNumRelaysEma() uint64 {
 }
 
 // EventApplicationOverserviced is emitted when an application has less stake than
-// what a supplier is claiming (i.e. burn is not high enough).
+// what a supplier is claiming (i.e. amount available for burning is insufficient).
 type EventApplicationOverserviced struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

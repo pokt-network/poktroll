@@ -306,7 +306,7 @@ func (k Keeper) TokenLogicModuleRelayBurnEqualsMint(
 	logger.Info(fmt.Sprintf("minted (%v) coins in the supplier module", settlementCoin))
 
 	// Distribute the rewards to the supplier's shareholders based on the rev share percentage.
-	if err = k.distributeSupplierRewardsToShareHolders(ctx, ownerAddr.String(), service.Id, settlementCoin.Amount.Uint64()); err != nil {
+	if err = k.distributeSupplierRewardsToShareHolders(ctx, supplier, service.Id, settlementCoin.Amount.Uint64()); err != nil {
 		return tokenomicstypes.ErrTokenomicsSupplierModuleMintFailed.Wrapf(
 			"distributing rewards to supplier with operator address %s shareholders: %v",
 			supplier.OperatorAddress,
@@ -547,19 +547,11 @@ func (k Keeper) numRelaysToCoin(
 // shareholders based on the rev share percentage of the supplier service config.
 func (k Keeper) distributeSupplierRewardsToShareHolders(
 	ctx context.Context,
-	supplierOperatorAddr string,
+	supplier *sharedtypes.Supplier,
 	serviceId string,
 	amountToDistribute uint64,
 ) error {
 	logger := k.Logger().With("method", "distributeSupplierRewardsToShareHolders")
-
-	supplier, supplierFound := k.supplierKeeper.GetSupplier(ctx, supplierOperatorAddr)
-	if !supplierFound {
-		return tokenomicstypes.ErrTokenomicsSupplierRevShareFailed.Wrapf(
-			"supplier with address %q not found",
-			supplierOperatorAddr,
-		)
-	}
 
 	var serviceRevShare []*sharedtypes.ServiceRevenueShare
 	for _, svc := range supplier.Services {
@@ -618,6 +610,7 @@ func calculateGlobalPerClaimMintInflationFromSettlementAmount(settlementCoin sdk
 
 // calculateAllocationAmount does big float arithmetic to determine the absolute
 // amount from amountFloat based on the allocation percentage provided.
+// TODO_MAINNET()
 func calculateAllocationAmount(
 	amountFloat *big.Float,
 	allocationPercentage float64,

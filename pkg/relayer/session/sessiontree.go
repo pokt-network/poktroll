@@ -19,7 +19,7 @@ import (
 var _ relayer.SessionTree = (*sessionTree)(nil)
 
 // sessionTree is an implementation of the SessionTree interface.
-// TODO_BETA(@red-0ne): Per the Relay Mining paper, we need to optimistically store
+// TODO_IN_THIS_PR_DISCUSS: Per the Relay Mining paper, we need to optimistically store
 // the number of requests that an application can pay for. This needs to be tracked
 // based on the app's stake in the beginning of a session and the number of nodes
 // per session. An operator should be able to specify "overservicing_okay" whereby
