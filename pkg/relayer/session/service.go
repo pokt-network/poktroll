@@ -21,7 +21,7 @@ func (rs *relayerSessionsManager) getServiceComputeUnitsPerRelay(
 	service, err := rs.serviceQueryClient.GetService(ctx, sessionHeader.Service.Id)
 	if err != nil {
 		return 0, ErrSessionRelayMetaHasInvalidServiceID.Wrapf(
-			"getServiceComputeUnitsPerRelay: could not get on-chain service %s: %w",
+			"getServiceComputeUnitsPerRelay: could not get on-chain service %s: %v",
 			sessionHeader.Service.Id,
 			err,
 		)
