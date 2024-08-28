@@ -165,7 +165,7 @@ func getSession(t *testing.T, integrationApp *testutil.App) *sessiontypes.Sessio
 	return getSessionRes.Session
 }
 
-// prepareSMST prepares an SMST with a the number of mined relays specified.
+// prepareSMST prepares an SMST with the given number of mined relays.
 func prepareSMST(
 	t *testing.T, ctx context.Context,
 	integrationApp *testutil.App,
