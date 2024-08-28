@@ -83,6 +83,8 @@ func (tlm TokenLogicModule) EnumIndex() int {
 // Persistence of updated application and supplier to the keeper is currently done by the TLM
 // processor in `ProcessTokenLogicModules()`. This design and separation of concerns may change
 // in the future.
+// DEV_NOTE: As of writing this, this is only in anticipation of potentially unstaking
+// actors if their stake falls below a certain threshold.
 type TokenLogicModuleProcessor func(
 	Keeper,
 	context.Context,
@@ -105,6 +107,9 @@ func init() {
 	if 1.0 != MintAllocationDAO+MintAllocationProposer+MintAllocationSupplier+MintAllocationSourceOwner+MintAllocationApplication {
 		panic("mint allocation percentages do not add to 1.0")
 	}
+
+	// TODO_UPNEXT(@Olshansk): Ensure that if `TLMGlobalMint` is present in the map,
+	// then TLMGlobalMintReimbursementRequest will need to be there too.
 }
 
 // ProcessTokenLogicModules is the entrypoint for all TLM processing. It is responsible for running
@@ -211,7 +216,7 @@ func (k Keeper) ProcessTokenLogicModules(
 		return tokenomicstypes.ErrTokenomicsServiceNotFound.Wrapf("service with ID %q not found", sessionHeader.Service.Id)
 	}
 
-	// Determine the total number of tokens being claimed (i.e. requested)
+	// Determine the total number of tokens being claimed (i.e. for the work completed)
 	// by the supplier for the amount of work they did to service the application
 	// in the session.
 	claimSettlementCoin, err = k.numRelaysToCoin(ctx, numRelays, &service)
@@ -384,7 +389,7 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 		)
 	}
 	// Distribute the rewards from within the supplier's module account.
-	if err = k.distributeSupplierRewardsToShareHolders(ctx, supplier.OperatorAddress, service.Id, uint64(supplierCoinsToShareAmt)); err != nil {
+	if err = k.distributeSupplierRewardsToShareHolders(ctx, supplier, service.Id, uint64(supplierCoinsToShareAmt)); err != nil {
 		return tokenomicstypes.ErrTokenomicsSupplierModuleMintFailed.Wrapf(
 			"distributing rewards to supplier with operator address %s shareholders: %v",
 			supplier.OperatorAddress,
@@ -417,24 +422,47 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the proposer with address %q", proposerCoin, proposerAddr))
 
 	// Check and log the total amount of coins distributed
-	totalMintDistributedCoin := appCoin.Add(supplierCoin).Add(*daoCoin).Add(*serviceCoin).Add(*proposerCoin)
+	if k.ensureMintedCoinsAreDistributed(logger, appCoin, supplierCoin, daoCoin, serviceCoin, proposerCoin, newMintCoin); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (k Keeper) ensureMintedCoinsAreDistributed(
+	logger log.Logger,
+	appCoin, supplierCoin, daoCoin, serviceCoin, proposerCoin, newMintCoin cosmostypes.Coin,
+) error {
+	// Compute the difference between the total distributed coins and the amount of newly minted coins
+	totalMintDistributedCoin := appCoin.Add(supplierCoin).Add(daoCoin).Add(serviceCoin).Add(proposerCoin)
 	coinDifference := new(big.Int).Sub(totalMintDistributedCoin.Amount.BigInt(), newMintCoin.Amount.BigInt())
 	coinDifference = coinDifference.Abs(coinDifference)
 	percentDifference := new(big.Float).Quo(new(big.Float).SetInt(coinDifference), new(big.Float).SetInt(newMintCoin.Amount.BigInt()))
-	if percentDifference.Cmp(big.NewFloat(MintDistributionAllowableTolerance)) > 0 {
+
+	// Helper booleans for readability
+	isPercentDifferentTooLarge := percentDifference.Cmp(big.NewFloat(MintDistributionAllowableTolerance)) > 0
+	doesDiscrepancyExist := coinDifference.Cmp(big.NewInt(0)) > 0
+
+	// No discrepancy, return early
+	logger.Info(fmt.Sprintf("distributed (%v) coins to the application, supplier, DAO, source owner, and proposer", totalMintDistributedCoin))
+	if !doesDiscrepancyExist {
+		return nil
+	}
+
+	// Discrepancy exists and is too large, log and return an error
+	if isPercentDifferentTooLarge {
 		return tokenomictypes.ErrTokenomicsAmountMismatchTooLarge.Wrapf(
 			"the total distributed coins (%v) do not equal the amount of newly minted coins (%v) with a percent difference of (%f). Likely floating point arithmetic.\n"+
 				"appCoin: %v, supplierCoin: %v, daoCoin: %v, serviceCoin: %v, proposerCoin: %v",
 			totalMintDistributedCoin, newMintCoin, percentDifference,
 			appCoin, supplierCoin, daoCoin, serviceCoin, proposerCoin)
-	} else if coinDifference.Cmp(big.NewInt(0)) > 0 {
-		logger.Warn(fmt.Sprintf("Floating point arithmetic led to a discrepancy of %v (%f) between the total distributed coins (%v) and the amount of new minted coins (%v).\n"+
-			"appCoin: %v, supplierCoin: %v, daoCoin: %v, serviceCoin: %v, proposerCoin: %v",
-			coinDifference, percentDifference, totalMintDistributedCoin, newMintCoin,
-			appCoin, supplierCoin, daoCoin, serviceCoin, proposerCoin))
 	}
-	logger.Info(fmt.Sprintf("distributed (%v) coins to the application, supplier, DAO, source owner, and proposer", totalMintDistributedCoin))
 
+	// Discrepancy exists but is within tolerance, log and return nil
+	logger.Warn(fmt.Sprintf("Floating point arithmetic led to a discrepancy of %v (%f) between the total distributed coins (%v) and the amount of new minted coins (%v).\n"+
+		"appCoin: %v, supplierCoin: %v, daoCoin: %v, serviceCoin: %v, proposerCoin: %v",
+		coinDifference, percentDifference, totalMintDistributedCoin, newMintCoin,
+		appCoin, supplierCoin, daoCoin, serviceCoin, proposerCoin))
 	return nil
 }
 
@@ -446,12 +474,12 @@ func (k Keeper) sendRewardsToAccount(
 	destAdr string,
 	settlementAmtFloat *big.Float,
 	allocation float64,
-) (*sdk.Coin, error) {
+) (sdk.Coin, error) {
 	logger := k.Logger().With("method", "mintRewardsToAccount")
 
 	accountAddr, err := cosmostypes.AccAddressFromBech32(destAdr)
 	if err != nil {
-		return nil, err
+		return sdk.Coin{}, err
 	}
 
 	coinsToAccAmt := calculateAllocationAmount(settlementAmtFloat, allocation)
@@ -459,11 +487,11 @@ func (k Keeper) sendRewardsToAccount(
 	if err := k.bankKeeper.SendCoinsFromModuleToAccount(
 		ctx, srcModule, accountAddr, sdk.NewCoins(coinToAcc),
 	); err != nil {
-		return nil, err
+		return sdk.Coin{}, err
 	}
 	logger.Info(fmt.Sprintf("sent (%v) coins from the tokenomics module to the account with address %q", coinToAcc, destAdr))
 
-	return &coinToAcc, nil
+	return coinToAcc, nil
 }
 
 // ensureClaimAmountLimits checks if the application was overserviced and handles
@@ -610,7 +638,7 @@ func calculateGlobalPerClaimMintInflationFromSettlementAmount(settlementCoin sdk
 
 // calculateAllocationAmount does big float arithmetic to determine the absolute
 // amount from amountFloat based on the allocation percentage provided.
-// TODO_MAINNET()
+// TODO_MAINNET(@bryanchriswhite): Measure and limit the precision loss here.
 func calculateAllocationAmount(
 	amountFloat *big.Float,
 	allocationPercentage float64,

@@ -45,6 +45,7 @@ message EventRelayMiningDifficultyUpdated {
 
 // EventApplicationOverserviced is emitted when an application has less stake than
 // what a supplier is claiming (i.e. amount available for burning is insufficient).
+// This means the following will ALWAYS be strictly true: effective_burn < expected_burn.
 message EventApplicationOverserviced {
     string application_addr = 1;
     string supplier_operator_addr = 2;
