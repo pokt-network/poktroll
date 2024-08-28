@@ -243,10 +243,10 @@ const (
 )
 
 func randomPayload() []byte {
-	rand.Seed(uint64(time.Now().UnixNano()))
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	bz := make([]byte, payloadLength)
 	for i := range bz {
-		bz[i] = charset[rand.Intn(len(charset))]
+		bz[i] = charset[r.Intn(len(charset))]
 	}
 	return bz
 }
