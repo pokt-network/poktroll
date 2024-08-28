@@ -140,7 +140,7 @@ func (s *TestSuite) SetupTest() {
 	))
 	require.NoError(t, err)
 
-	// Construct a valid session tree with 10 relays.
+	// Construct a valid session tree with 100 relays.
 	s.numRelays = uint64(100)
 	sessionTree := testtree.NewFilledSessionTree(
 		sdkCtx, t,
