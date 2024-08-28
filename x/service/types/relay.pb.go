@@ -210,7 +210,7 @@ type RelayResponse struct {
 	Meta RelayResponseMetadata `protobuf:"bytes,1,opt,name=meta,proto3" json:"meta"`
 	// payload is the serialized payload for the response.
 	// The payload is passed directly from the service and as such can be any
-	// format the the service responds with: JSON-RPC, REST, gRPC, etc.
+	// format the service responds with: JSON-RPC, REST, gRPC, etc.
 	Payload []byte `protobuf:"bytes,2,opt,name=payload,proto3" json:"payload,omitempty"`
 }
 

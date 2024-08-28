@@ -386,7 +386,7 @@ func TestMsgServer_UndelegateFromGateway_DelegationIsPrunedAfterRetentionPeriod(
 	require.True(t, isAppFound)
 	require.NotNil(t, app)
 
-	// Verify that the the pending undelegation map no longer contains the
+	// Verify that the pending undelegation map no longer contains the
 	// sessionEndHeight key.
 	sessionEndHeight := uint64(testsession.GetSessionEndHeightWithDefaultParams(undelegationHeight))
 	require.Empty(t, app.PendingUndelegations[sessionEndHeight])
@@ -451,7 +451,7 @@ func TestMsgServer_UndelegateFromGateway_RedelegationAfterUndelegationAtTheSameS
 	// Verify that the application is still delegated to the gateway
 	require.Contains(t, app.DelegateeGatewayAddresses, gatewayAddrToRedelegate)
 
-	// Verify that the the pending undelegation map no longer contains the
+	// Verify that the pending undelegation map no longer contains the
 	// sessionEndHeight key.
 	require.Empty(t, app.PendingUndelegations[sessionEndHeight])
 
