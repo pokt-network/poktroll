@@ -55,7 +55,8 @@ type relayerSessionsManager struct {
 	// sharedQueryClient is used to query shared module parameters.
 	sharedQueryClient client.SharedQueryClient
 	// proofQueryClient is used to query for the proof requirement threshold and
-	// requirement probability to determine whether a submitted claim requires a proof.
+	// requirement probability governance parameters to determine whether a submitted
+	// claim requires a proof.
 	proofQueryClient client.ProofQueryClient
 }
 

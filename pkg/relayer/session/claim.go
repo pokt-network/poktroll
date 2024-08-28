@@ -258,7 +258,7 @@ func (rs *relayerSessionsManager) goCreateClaimRoots(
 }
 
 // isProofRequired determines whether a proof is required for the given session's
-// claim based on the proof governance parameters.
+// claim based on the current proof module governance parameters.
 func (rs *relayerSessionsManager) isProofRequired(
 	ctx context.Context,
 	sessionTree relayer.SessionTree,
@@ -270,11 +270,7 @@ func (rs *relayerSessionsManager) isProofRequired(
 	)
 
 	// Create the claim object and use its methods to determine if a proof is required.
-	claim := prooftypes.Claim{
-		SupplierOperatorAddress: sessionTree.GetSupplierOperatorAddress().String(),
-		SessionHeader:           sessionTree.GetSessionHeader(),
-		RootHash:                sessionTree.GetClaimRoot(),
-	}
+	claim := claimFromSessionTree(sessionTree)
 
 	// Get the number of compute units accumulated through the given session.
 	numClaimComputeUnits, err := claim.GetNumComputeUnits()
@@ -330,4 +326,13 @@ func (rs *relayerSessionsManager) isProofRequired(
 
 	logger.Info().Msg("claim does not require proof")
 	return false, nil
+}
+
+// claimFromSessionTree creates a Claim object from the given SessionTree.
+func claimFromSessionTree(sessionTree relayer.SessionTree) prooftypes.Claim {
+	return prooftypes.Claim{
+		SupplierOperatorAddress: sessionTree.GetSupplierOperatorAddress().String(),
+		SessionHeader:           sessionTree.GetSessionHeader(),
+		RootHash:                sessionTree.GetClaimRoot(),
+	}
 }
