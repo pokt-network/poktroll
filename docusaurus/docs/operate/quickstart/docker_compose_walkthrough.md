@@ -510,7 +510,7 @@ The endpoint you want to send request to is: `http://your_node:appgate_server_po
 represented by `0021`:
 
 ```bash
-curl http://$NODE_HOSTNAME:85/00\
+curl http://$NODE_HOSTNAME:85/0021 \
   -X POST \
   -H "Content-Type: application/json" \
   --data '{"method":"eth_blockNumber","params":[],"id":1,"jsonrpc":"2.0"}'
@@ -658,7 +658,7 @@ To ensure you get a response, you may need to run the request a few times:
 
 ```bash
 for i in {1..10}; do
-  curl http://$NODE_HOSTNAME:85/00\
+  curl http://$NODE_HOSTNAME:85/0021 \
     -X POST \
     -H "Content-Type: application/json" \
     --data '{"method":"eth_blockNumber","params":[],"id":1,"jsonrpc":"2.0"}' \

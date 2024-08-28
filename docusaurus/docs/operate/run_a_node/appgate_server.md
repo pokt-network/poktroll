@@ -7,6 +7,7 @@ sidebar_position: 3
 
 - [What is AppGate Server?](#what-is-appgate-server)
 - [AppGate Server Operation Requirements](#appgate-server-operation-requirements)
+- [Hardware requirements](#hardware-requirements)
 - [Docker Compose Example](#docker-compose-example)
 - [Kubernetes Example](#kubernetes-example)
 
@@ -28,6 +29,10 @@ An AppGate Server requires the following:
 It is crucial to deploy a [Full Node](full_node_docker.md) prior to setting up a RelayMiner.
 This ensures the necessary infrastructure for blockchain communication is in place.
 :::
+
+## Hardware requirements
+
+Please see the [Hardware Requirements](./hardware_requirements.md#appgate-server--gateway) page.
 
 ## Docker Compose Example
 

@@ -7,6 +7,7 @@ sidebar_position: 4
 
 - [What is a RelayMiner](#what-is-a-relayminer)
 - [RelayMiner Operation Requirements](#relayminer-operation-requirements)
+- [Hardware requirements](#hardware-requirements)
 - [Docker Compose Example](#docker-compose-example)
 - [Kubernetes Example](#kubernetes-example)
 
@@ -27,6 +28,10 @@ A RelayMiner requires the following:
 It is crucial to deploy a [Full Node](full_node_docker.md) prior to setting up a RelayMiner.
 This ensures the necessary infrastructure for blockchain communication is in place.
 :::
+
+## Hardware requirements
+
+Please see the [Hardware Requirements](./hardware_requirements.md#relayminer) page.
 
 ## Docker Compose Example
 

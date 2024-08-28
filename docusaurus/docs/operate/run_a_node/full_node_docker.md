@@ -9,6 +9,7 @@ sidebar_position: 2
 - [Roles \& Responsibilities](#roles--responsibilities)
 - [Types of Full Nodes](#types-of-full-nodes)
 - [Pocket Network Full Nodes](#pocket-network-full-nodes)
+- [Hardware requirements](#hardware-requirements)
 - [Docker Compose Example](#docker-compose-example)
 - [Kubernetes Example](#kubernetes-example)
 
@@ -18,6 +19,7 @@ In blockchain networks, a Full Node retains a complete copy of the ledger.
 
 You can visit the [Cosmos SDK documentation](https://docs.cosmos.network/main/user/run-node/run-node)
 for more information on Full Nodes.
+
 
 ## Roles & Responsibilities
 
@@ -48,6 +50,10 @@ nodes needed for off-chain entities like [RelayMiners](./relay_miner.md) and
 blockchain for full functionality.
 
 This guide outlines how to configure, deploy nad maintain Full Nodes.
+
+## Hardware requirements
+
+Please see the [Hardware Requirements](./hardware_requirements.md#validator--full-node) page.
 
 ## Docker Compose Example
 
