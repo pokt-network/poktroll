@@ -31,7 +31,7 @@ You can find a fully featured example configuration at [appgate_server_config_ex
 
 ## Introduction
 
-It is responsible for multiple things:
+The `AppGateServer` is responsible for multiple things:
 
 1. Determines how the `AppGateServer` with respect to Pocket network connectivity
 2. Whether it acts as a self serving `Application` or a `Gateway` to other `Applications`
