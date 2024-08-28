@@ -38,9 +38,9 @@ const (
 	MintAllocationSourceOwner = 0.15
 	MintAllocationApplication = 0.0
 
-	// The percent difference that is allowable between the number of minted
-	// tokens in the tokenomics module and what is distributed to pocket network
-	// participants.
+	// MintDistributionAllowableTolerance is the percent difference that is allowable
+	// between the number of minted/ tokens in the tokenomics module and what is distributed
+	// to pocket network participants.
 	// This internal constant SHOULD ONLY be used in TokenLogicModuleGlobalMint.
 	// Due to floating point arithmetic, the total amount of minted coins may be slightly
 	// larger than what is distributed to pocket network participants
@@ -58,7 +58,7 @@ const (
 	TLMRelayBurnEqualsMint TokenLogicModule = iota
 
 	// TLMGlobalMint is the token logic module that mints new tokens based on the
-	// on global governance parameters in order to reward the participants providing
+	// global governance parameters in order to reward the participants providing
 	// services while keeping inflation in check.
 	TLMGlobalMint
 )
@@ -78,10 +78,11 @@ func (tlm TokenLogicModule) EnumIndex() int {
 
 // TokenLogicModuleProcessor is the method signature that all token logic modules
 // are expected to implement.
-// IMPORTANT_SIDE_EFFECTS: Please note that TLMs may update the application and supplier
-// objects, which is why they are passed in as pointers. NOTE THAT THIS IS NOT PERSISTED.
-// The persistence to the keeper is currently done by the TLM processor: ProcessTokenLogicModules.
-// This design and separation of concerns may change in the future.
+// IMPORTANT_SIDE_EFFECTS: Please note that TLMs may update the application and supplier objects,
+// which is why they are passed in as pointers. NOTE: TLMs SHOULD NOT persist any state changes.
+// Persistence of updated application and supplier to the keeper is currently done by the TLM
+// processor in `ProcessTokenLogicModules()`. This design and separation of concerns may change
+// in the future.
 type TokenLogicModuleProcessor func(
 	Keeper,
 	context.Context,
