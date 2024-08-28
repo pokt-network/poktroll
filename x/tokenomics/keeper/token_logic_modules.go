@@ -31,7 +31,7 @@ var (
 )
 
 const (
-	// TODO_BETA(@bryanchriswhite): Make all of the governance params
+	// TODO_BETA(@bryanchriswhite): Make all of these governance params
 	MintAllocationDAO         = 0.1
 	MintAllocationProposer    = 0.05
 	MintAllocationSupplier    = 0.7
@@ -236,19 +236,19 @@ func (k Keeper) ProcessTokenLogicModules(
 	}
 
 	// Ensure the claim amount is within the limits set by Relay Mining.
-	// Update the settlement amount if not and emit any necessary events in doing so.
+	// If not, update the settlement amount and emit relevant events.
 	actualSettlementCoin, err := k.ensureClaimAmountLimits(ctx, logger, &application, &supplier, claimSettlementCoin)
 	if err != nil {
 		return err
 	}
 	logger = logger.With("actual_settlement_upokt", actualSettlementCoin)
 
-	logger.Info(fmt.Sprintf("About to start processing TLMs for (%d) relays equaling to (%s) upokt claimed", numRelays, actualSettlementCoin))
+	logger.Info(fmt.Sprintf("About to start processing TLMs for (%d) relays, equal to (%s) claimed", numRelays, actualSettlementCoin))
 	// Execute all the token logic modules processors
 	for tlm, tlmProcessor := range tokenLogicModuleProcessorMap {
 		logger.Info(fmt.Sprintf("Starting TLM processing: %q", tlm))
-		if err := tlmProcessor(k, ctx, &service, claim.SessionHeader, &application, &supplier, actualSettlementCoin, &relayMiningDifficulty); err != nil {
-			return err
+		if err := tlmProcessor(k, ctx, &service, claim.GetSessionHeader(), &application, &supplier, actualSettlementCoin, &relayMiningDifficulty); err != nil {
+			return ErrTokenomicsTLMError.Wrapf("TLM %q: %v", tlm err)
 		}
 		logger.Info(fmt.Sprintf("Finished TLM processing: %q", tlm))
 	}
@@ -258,7 +258,7 @@ func (k Keeper) ProcessTokenLogicModules(
 	logger.Info(fmt.Sprintf("updated on-chain application record with address %q", application.Address))
 
 	// TODO_MAINNET: If the application stake has dropped to (near?) zero, should
-	// we unstake it? Should we use it's balance? Should their be a payee of last resort?
+	// we unstake it? Should we use it's balance? Should there be a payee of last resort?
 	// Make sure to document whatever decision we come to.
 
 	// State mutation: Update the suppliers's on-chain record
@@ -361,7 +361,7 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 	// Mint new uPOKT to the tokenomics module account
 	if err := k.bankKeeper.MintCoins(ctx, tokenomictypes.ModuleName, sdk.NewCoins(newMintCoin)); err != nil {
 		return tokenomicstypes.ErrTokenomicsModuleMintFailed.Wrapf(
-			"minting %s to the tokenomics module account: %v", newMintCoin, err)
+			"minting (%s) to the tokenomics module account: %v", newMintCoin, err)
 	}
 	logger.Info(fmt.Sprintf("minted (%v) coins in the tokenomics module", newMintCoin))
 
@@ -499,12 +499,12 @@ func (k Keeper) ensureClaimAmountLimits(
 
 	if maxClaimableCoin.Amount.GTE(claimSettlementCoin.Amount) {
 		logger.Info(fmt.Sprintf("Claim by supplier %s IS WITHIN LIMITS of servicing application %s. Max claimable amount >= Claim amount: %v >= %v",
-			supplier.OperatorAddress, application.Address, maxClaimableCoin, claimSettlementCoin.Amount))
+			supplier.GetOperatorAddress(), application.GetAddress(), maxClaimableCoin, claimSettlementCoin.Amount))
 		return claimSettlementCoin, nil
 	}
 
 	logger.Warn(fmt.Sprintf("Claim by supplier %s EXCEEDS LIMITS for application %s. Max claimable amount < Claim amount: %v < %v",
-		supplier.OperatorAddress, application.Address, maxClaimableCoin, claimSettlementCoin.Amount))
+		supplier.GetOperatorAddress(), application.GetAddress(), maxClaimableCoin, claimSettlementCoin.Amount))
 
 	// Reduce the settlement amount if the application was over-serviced
 	actualSettlementCoins = maxClaimableCoin
@@ -512,7 +512,7 @@ func (k Keeper) ensureClaimAmountLimits(
 	// Prepare and emit the event for the application being overserviced
 	applicationOverservicedEvent := &tokenomicstypes.EventApplicationOverserviced{
 		ApplicationAddr:      application.Address,
-		SupplierOperatorAddr: supplier.OperatorAddress,
+		SupplierOperatorAddr: supplier.GetOperatorAddress(),
 		ExpectedBurn:         &claimSettlementCoin,
 		EffectiveBurn:        &maxClaimableCoin,
 	}
