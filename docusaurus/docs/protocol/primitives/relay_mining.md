@@ -115,7 +115,7 @@ sequenceDiagram
         end
     end
 
-    note over user,rpc: Wait for session grace period to
+    note over user,rpc: Wait for session grace period to end
 
     loop
         sup->>sup: "Persist unclaimed & unproven session trees"
