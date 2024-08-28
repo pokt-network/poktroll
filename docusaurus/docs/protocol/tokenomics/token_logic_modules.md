@@ -6,7 +6,7 @@ sidebar_position: 1
 # Token Logic Modules <!-- omit in toc -->
 
 - [Introduction](#introduction)
-- [Background: Max ClaIAble Amount](#background-max-claiable-amount)
+- [Background: Max Claimable Amount](#background-max-claimable-amount)
 - [TLM (pre) Processing](#tlm-pre-processing)
 - [TLM: Mint=Burn (MEB)](#tlm-mintburn-meb)
 - [TLM: Global Mint (GM)](#tlm-global-mint-gm)
@@ -35,9 +35,9 @@ Token Logic Module (TLM) processing consists of the following sequential steps:
 1. `TLM pre-processing` - General pre-processing to determine the number of tokens to settle per claim.
 2. `TLM processing` - Iterating through each TLM, sequentially, independently of each other.
 
-## Background: Max ClaIAble Amount
+## Background: Max Claimable Amount
 
-_tl;dr Max ClaIAble Amount ∝ (Application Stake / Number of Suppliers per Session)_
+_tl;dr Max Claimable Amount ∝ (Application Stake / Number of Suppliers per Session)_
 
 Per **Algorithm 1** of the [Relay Mining paper](https://arxiv.org/pdf/2305.10672),
 the maximum amount a supplier can claim from an application in a single session
@@ -56,7 +56,7 @@ See the [relay mining docs](../primitives/relay_mining.md) or the [annotated pre
 
 ## TLM (pre) Processing
 
-_tl;dr Determine if the claim amount is greater than the maximum claIAble amount prior to running each individual TLM._
+_tl;dr Determine if the claim amount is greater than the maximum claimable amount prior to running each individual TLM._
 
 **Prior to** processing each individual TLM, we need to understand if the amount claimed
 by the supplier adheres to the optimistic maxIA set per the limits of the Relay Mining algorithm.
@@ -82,7 +82,7 @@ title: "Token Logic Modules Pre-Processing"
 ---
 flowchart TB
     CA(["Claim Amount (CA)"])
-    MCA(["Mac ClaIAble Amount (MCA) <br> = (AppStake / NumSuppliersPerSession)"])
+    MCA(["Mac Claimable Amount (MCA) <br> = (AppStake / NumSuppliersPerSession)"])
     CC{"Is CA > MCA?"}
     Update(Broadcast Event <br> that SA = MCA)
     SOAE{{Application Overserviced <br> Event}}
