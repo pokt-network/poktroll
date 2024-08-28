@@ -6,37 +6,45 @@ sidebar_position: 1
 # Token Logic Modules <!-- omit in toc -->
 
 - [Introduction](#introduction)
-- [Background: Max Claimable Amount](#background-max-claimable-amount)
+- [Background: Max ClaIAble Amount](#background-max-claiable-amount)
 - [TLM (pre) Processing](#tlm-pre-processing)
 - [TLM: Mint=Burn (MEB)](#tlm-mintburn-meb)
 - [TLM: Global Mint (GM)](#tlm-global-mint-gm)
 - [TLM: Global Mint Reimbursement Request (GMRR)](#tlm-global-mint-reimbursement-request-gmrr)
+  - [Self Dealing Attack](#self-dealing-attack)
+  - [Reimbursement Request Philosophy](#reimbursement-request-philosophy)
+  - [Reimbursement Request Design](#reimbursement-request-design)
+  - [FAQ](#faq)
+    - [Is the application going to endorse the whole global mint amount (Including the supplier share)?](#is-the-application-going-to-endorse-the-whole-global-mint-amount-including-the-supplier-share)
+    - [Will there be any on-chain enforcement on the way application get reimbursed? Or do they just have to trust the DAO to reimburse them?](#will-there-be-any-on-chain-enforcement-on-the-way-application-get-reimbursed-or-do-they-just-have-to-trust-the-dao-to-reimburse-them)
+    - [How does this solution scale for sovereign applications? Do they have to show face too?](#how-does-this-solution-scale-for-sovereign-applications-do-they-have-to-show-face-too)
+    - [Are we taking into account the resources needed to scale and automate reimbursement? (Event reader, tx submission, accounting...)](#are-we-taking-into-account-the-resources-needed-to-scale-and-automate-reimbursement-event-reader-tx-submission-accounting)
 
 ## Introduction
 
 :::warning
 
-Note that this is an active WIP and the [resources here](./resources.md) are the best starting references to learn more.
+This is an active WIP and the [resources here](./resources.md) are the best starting references to learn more.
 
 In particular:
 
-- This is better than what exists in production today
-- This should be seen as an interim solution to avoid further delays
-- Implicit QoS is the best solution, but adds a lot of complexity alongside the existing upgrade
+- This is better than what exists in production (Morse) today in enabling permissionless demand
+- This should be seen as an interim solution to avoid delaying the Shannon upgrade
+- The goal is to iterate and experiment with tokenomics post upgrade
 
 :::
 
 Token Logic Module (TLM) processing consists of the following sequential steps:
 
 1. `TLM pre-processing` - General pre-processing to determine the number of tokens to settle per claim.
-2. `TLM processing` - Iterating through each TLM, sequentially.
+2. `TLM processing` - Iterating through each TLM, sequentially, independently of each other.
 
-## Background: Max Claimable Amount
+## Background: Max ClaIAble Amount
 
-_tl;dr Max Claimable Amount ∝ (Application Stake / Number of Suppliers per Session)_
+_tl;dr Max ClaIAble Amount ∝ (Application Stake / Number of Suppliers per Session)_
 
 Per **Algorithm 1** of the [Relay Mining paper](https://arxiv.org/pdf/2305.10672),
-the maximum amount a supplier can claim from an application in a single session is
+the maximum amount a Supplier can claim from an Application in a single session is
 proportional to the Application's stake divided by the number of suppliers in the session.
 
 This is referred to as "Relay Mining Payable Relay Accumulation" in the paper and
@@ -44,18 +52,67 @@ is described by the following pseudo-code:
 
 ![Algorithm 1](https://github.com/user-attachments/assets/d1a61535-aa31-447d-88ea-c8d14dcb20c6)
 
+:::tip
+
+See the [relay mining docs](../primitives/relay_mining.md) or the [annotated presentation](https://olshansky.substack.com/p/annotated-presentation-relay-mining) for more information.
+
+:::
+
 ## TLM (pre) Processing
 
-_tl;dr Determine if the claim settlement amount is greater than the maximum claimable amount prior to running each individual TLM._
+_tl;dr Determine if the claim amount is greater than the maximum claIAble amount prior to running each individual TLM._
 
 **Prior to** processing each individual TLM, we need to understand if the amount claimed
-by the supplier adheres to the optimistic maxima set per the limits of the Relay Mining algorithm.
+by the supplier adheres to the optimistic maxIA set per the limits of the Relay Mining algorithm.
 
-Suppliers always have the option to over-service an application (**i.e. do free work**),
+:::info
+
+Pocket Network can be seen as a probabilistic, optimistic permissionless multi-tenant rate limiter.
+
+This works by putting funds in escrow, burning it after work is done, and putting optimistic limits
+in place whose work volume is proven on-chain.
+
+:::
+
+Suppliers always have the option to over-service an Application (**i.e. do free work**),
 in order to ensure high quality service in the network. This may lead to offchain
 reputation benefits (e.g. Gateways favoring them), but suppliers' on-chain rewards
-are always limited by the cumulative amounts applications' stakes (at session start; per service)
-and the number of suppliers in the session.
+are always limited by the cumulative amounts Applications' stakes (at session start; per service)
+and the number of Suppliers in the session.
+
+```mermaid
+---
+title: "Token Logic Modules Pre-Processing"
+---
+flowchart TB
+    CA(["Claim Amount (CA)"])
+    MCA(["Mac ClaIAble Amount (MCA) <br> = (AppStake / NumSuppliersPerSession)"])
+    CC{"Is CA > MCA?"}
+    Update(Broadcast Event <br> that SA = MCA)
+    SOAE{{Application Overserviced <br> Event}}
+    TLMP("Process TLMs <br> Settlement Amount (SA)")
+
+    CA -- CA --> CC
+    MCA -- MCA --> CC
+
+    Update -..-> SOAE
+    CC -- Yes --> Update
+    CC -- No<br>SA=CA --> TLMP
+    Update -- SA=MCA --> TLMP
+
+    TLMP --SA--> TLMBEM[[TLM: Burn Equals Mint]]
+    TLMP --SA--> TLMGI[[TLM: Global Inflation]]
+    TLMP --SA--> TLMO[[TLM: ...]]
+    TLMGI --> TLMGIRR[[TLM: Global Inflation Reimbursement Request]]
+
+    classDef tlm fill:#54ebd5,stroke:#333,stroke-width:2px;
+    classDef question fill:#e3db6d,stroke:#333,stroke-width:2px;
+    classDef event fill:#e8b761,stroke:#333,stroke-width:2px;
+
+    class TLMBEM,TLMGI,TLMGIRR,TLMO tlm;
+    class SOAE event;
+    class CC question;
+```
 
 :::note
 
@@ -65,39 +122,6 @@ much more, all of which is out of scope for the initial implementation.
 
 :::
 
-```mermaid
----
-title: "Token Logic Modules (pre) Processing"
----
-flowchart TB
-    CSA(["Claim Settlement Amount (CSA)"])
-    MCA(["MaxClaimPerSupplier (MCA) <br> = (AppStake / NumSuppliersPerSession)"])
-    CC{"Is CSA > MCA?"}
-    Update(Broadcast Event <br> that SA = MCA)
-    SOAE{{Application Overserviced <br> Event}}
-    TLMP("Process TLMs (SA)")
-
-    CSA -- CSA --> CC
-    MCA -- MCA --> CC
-
-    Update -..-> SOAE
-    CC -- Yes --> Update
-    CC -- No<br>SA=CSA --> TLMP
-    Update -- SA=CSA --> TLMP
-
-    TLMP --SA--> TLMBEM[[TLM: Burn Equals Mint]]
-    TLMP --SA--> TLMGI[[TLM: Global Inflation]]
-    TLMP --SA--> TLMGIRR[[TLM: Global Inflation Reimbursement Request]]
-
-    classDef tlm fill:#54ebd5,stroke:#333,stroke-width:2px;
-    classDef question fill:#e3db6d,stroke:#333,stroke-width:2px;
-    classDef event fill:#e8b761,stroke:#333,stroke-width:2px;
-
-    class TLMBEM,TLMGI,TLMGIRR tlm;
-    class SOAE event;
-    class CC question;
-```
-
 ## TLM: Mint=Burn (MEB)
 
 _tl;dr The transfer of tokens from the applications to the suppliers based on the amount of work received and provided respectively._
@@ -105,8 +129,8 @@ _tl;dr The transfer of tokens from the applications to the suppliers based on th
 The `Mint=Burn` TLM is, _theoretically_, the only TLM necessary once the network
 reaches maturity in the far future.
 
-The same number of tokens minted to the **supplier module** is burned from
-the **application module**. The stake (in escrow) owned by the application which is
+The same number of tokens minted to the **Supplier module** is burned from
+the **Application module**. The stake (in escrow) owned by the application which is
 paying for work is reduced and the rewards are distributed to the supplier and its
 revenue shareholder addresses.
 
@@ -117,27 +141,27 @@ title: "Token Logic Module: Mint=Burn"
 flowchart TD
     SA(["Settlement Amount (SA)"])
 
-    SA -- Mint SA coins --> SM
-    SA -- Burn SA coins--> AM
+    SA -- 💲 MINT SA coins --> SM
+    SA -- 🔥 BURN SA coins--> AM
 
     subgraph SO[Supplier Operations]
         SM[[Supplier Module]]
         SK[(Supplier Keeper)]
-        SD{Distribute SA coins}
+        SD(Distribute SA coins)
         RSA[Other Revenue Share Addresses]
 
         SM -.- SK
-        SK -. Burn if proof <br> is missing or invalid .-> OA
-        SD -->|% Distribution <br> Increase Balance| OA
-        SD -->|% Distribution <br> Increase Balance| RSH1
-        SD -->|% Distribution <br> Increase Balance| RSH2
-        SD -->|% Distribution <br> Increase Balance| OPA
+        SM -. 🔥 BURN if proof <br> is missing or invalid .-> OA
+        SD -->|"⬆️ INCREASE Balance <br> (% distribution)"| OA
+        SD -->|"⬆️ INCREASE Balance <br> (% distribution)"| RSH1
+        SD -->|"⬆️ INCREASE Balance <br> (% distribution)"| RSH2
+        SD -->|"⬆️ INCREASE Balance <br> (% distribution)"| OPA
 
         subgraph RSA[Revenue Share Addresses]
             OA[Owner Address]
             OPA[Operator Address]
             RSH1[Revenue shareholder 1]
-            RSH2[Revenue shareholder 2]
+            RSH2[Revenue shareholder ...]
         end
     end
 
@@ -147,7 +171,7 @@ flowchart TD
         AA[Application Address]
 
         AM -.- AK
-        AK -. Reduce Stake by SA .-> AA
+        AM -. ⬇️ REDUCE Stake by SA .-> AA
         AA -.- TODO{See TODO below}
     end
 
@@ -175,60 +199,60 @@ Make sure to document whatever decision we come to.
 
 _tl;dr Distributed newly minted coins on a per claim basis to all involved stakeholders._
 
-The `Global Mint` TLM is, _theoretically_, going to reach `zero`the only when the network
+The `Global Mint` TLM is, _theoretically_, going to reach `zero` the only when the network
 reaches maturity in the far future.
 
 On a per claim basis, the network mints new tokens based on the the amount of work
-claimed. The newly minted tokens are distributed to the supplier, DAO, service owner
-and application based on the values of various governance params.
+claimed. The newly minted tokens are distributed to the DAO, Service Owner, Application,
+Supplier and its Revenue Shareholders based on the values of various governance params.
 
 ```mermaid
 ---
 title: "Token Logic Module: Global Mint"
 ---
 flowchart TD
-    SC(["Settlement Amount Coins (SA)"])
-    PCI(["Per Claim Global Inflation <br> (Governance Parameter)"])
-    IMC(["Inflation Mint Coins (IMC)"])
+    SA(["Settlement Amount (SA)"])
+    PCI(["Per Claim Global Inflation (PCGI) <br> (Governance Parameter)"])
 
     DA(["DAO Mint Allocation"])
     PA(["Proposer Mint Allocation"])
-    SA(["Supplier Mint Allocation"])
+    SMA(["Supplier Mint Allocation"])
     SOM(["Source Owner Mint Allocation"])
     AA(["Application Mint Allocation"])
 
-
-    SC --> IMC
-    PCI --> IMC
-    IMC --> TO
+    SA --> TO
+    PCI --> TO
+    IA --> TO
 
     subgraph TO[Tokenomics Operations]
         TM[[Tokenomics Module]]
         TK[(Tokenomics Keeper)]
+        IA("IA = SA * PCGI <br> (IA: Inflation Amount)")
         TM -..- TK
-    end
+        TM -- "💲 MINT IA" --> IA
 
+    end
 
     AA --> ID
     DA --> ID
-    TO --Distribute Inflation (IMC)--> ID
+    TO --Distribute Inflation (IA)--> ID
     PA --> ID
     SOM --> ID
-    SA --> ID
+    SMA --> ID
 
     subgraph ID[Inflation Distribution]
-        DI["Distribute Inflation (IMC)"]
+        DI("Distribute Inflation Amount (IA)")
         APPA["Application Address"]
         SPPA["Supplier Address"]
         DAOA["DAO Address"]
         SOA["Service Owner Address"]
         PRA["Proposer Address"]
 
-        DI -->|% Mint Allocation| APPA
-        DI -->|% Mint Allocation| DAOA
-        DI -->|% Mint Allocation| PRA
-        DI -->|% Mint Allocation| SOA
-        DI -->|% Mint Allocation| SPPA
+        DI -->|"⬆️ INCREASE Balance <br> (% mint allocation)"| APPA
+        DI -->|"⬆️ INCREASE Balance <br> (% mint allocation)"| DAOA
+        DI -->|"⬆️ INCREASE Balance <br> (% mint allocation)"| PRA
+        DI -->|"⬆️ INCREASE Balance <br> (% mint allocation)"| SOA
+        DI -->|"⬆️ INCREASE Balance <br> (% mint allocation)"| SPPA
     end
 
     classDef module fill:#f9f,stroke:#333,stroke-width:2px;
@@ -238,7 +262,7 @@ flowchart TD
     classDef event fill:#e8b761,stroke:#333,stroke-width:2px;
 
     class TM module;
-    class PCI,DA,PA,SA,SOM,AA govparam;
+    class PCI,DA,PA,SMA,SOM,AA govparam;
     class APPA,SPPA,DAOA,SOA,PRA address;
 ```
 
@@ -246,56 +270,182 @@ flowchart TD
 
 _tl;dr Prevent self-dealing by over-charging applications, sending the excess to the DAO/PNF, and emitting an event as a reimbursement request._
 
+### Self Dealing Attack
+
+A self-dealing attack is when an application leverages the inflationary nature of the
+tokenomics to increase its balance by sending spam traffic.
+
+- Above the `Inflation` note, the number of tokens in circulation remains constant.
+- After the `Inflation` note, the number of tokens in circulation increases.
+
+**If the individual managing the Application/Gateway is the same one who is managing
+the Supplier and/or Service Owner, they could mint an unbounded number of new tokens
+for themselves by sending fake traffic. This is shown in red.**
+
+```mermaid
+---
+title: "Self Dealing Attack"
+---
+sequenceDiagram
+    actor U as End User
+    participant AG as Application | Gateway
+    participant S as Supplier
+    participant P as Protocol
+    participant SO as Service Owner
+    participant DAO as DAO
+    participant BP as Block Proposer
+
+    loop "provide service throughout session"
+        U ->> +AG: RPC Request
+        AG ->> +S: POKT Relay Request
+        S ->> -AG: POKT Relay Response
+        AG ->> -U: RPC Response
+    end
+
+    critical "settle session accounting"
+        AG -->> +P: Pay POKT (based on work done)
+        P -->> -S: Receive POKT (based on work done)
+        note over AG,P: Inflation: Mint new POKT
+        rect rgb(247, 13, 26)
+            P -->> S: Send rewards (% of mint)
+            P -->> SO: Send mint rewards (% of mint)
+        end
+        P -->> DAO: Send mint rewards (% of mint)
+        P -->> BP: Send mint rewards (% of mint)
+    end
+```
+
+### Reimbursement Request Philosophy
+
+_Solving the above problem is non-trivial_.
+
+See the [resources](./resources.md) for more information on the long-term game-theoretic solutions.
+
+In the meantime, the interim manual approach described below is a stepping stone
+do things that don't scale in the short term, but can be easily automated, while
+enabling permissionless demand and dissuading self-dealing attacks.
+
+### Reimbursement Request Design
+
 This TLM is a dependency of the Global Mint TLM; i.e., it **MUST** be active if Global Mint is active.
 
 This TLM can, **theoretically**, be removed if self-dealing attacks are not a concern,
 or if the global mint per claim governance parameter is set to zero.
 
-The goal of the TLM is to overcharge applications equal to the global inflation amount
-and send those funds to the DAO/PNF. This forces potentially self-dealing gateways to
-"show face" in front of the DAO/PNF and request reimbursement.
+The goal of the TLM is supplement the Global Mint TLM such that:
 
-The event emitted creates an easy, onchain mechanism, to track reimbursement handled offchain.
+1. The application is overcharged by the inflation amount in `TLM: Global Mint`.
+2. The application must **"show face"** in front of the DAO/PNF to request reimbursement.
+3. PNF needs to **manually approve** the reimbursement request.
 
-A side effect of this TLM is creating additional buy pressure of the token as Applications
-and Gateways will be responsible for frequently "topping up" their balances and app stakes.
+**While this is not perfect, it follows on the **[Deterrence Theory](<https://en.wikipedia.org/wiki/Deterrence_(penology)>)** that
+the increased risk of punishment will dissuade bad actors.**
+
+_NOTE: A side effect of this TLM is creating additional buy pressure of the token as Applications
+and Gateways will be responsible for frequently "topping up" their balances and app stakes._
 
 ```mermaid
 ---
 title: "Token Logic Module: Global Mint Reimbursement Request"
 ---
 flowchart TD
-    SC(["Settlement Coin (SC)"])
-    PCI(["Per Claim Global Inflation <br> (Governance Parameter)"])
-    IMC(["Inflation Mint Coin (IMC)"])
+    SA(["Settlement Amount (SA)"])
+    PCI(["Per Claim Global Inflation (PCGI)"])
     ARRE{{Application Reimbursement <br> Request Event}}
+    TM2["Tokenomics Module"]
 
-    SC --> IMC
-    PCI --> IMC
-    IMC --IMC--> AO
+    subgraph TLMGM["TLM: Global Mint"]
+        IA(["Inflation Mint Coin (IA)"])
+        ID["Inflation Distribution <br> (see TLM above for details)"]
+        GP["Governance Params"]
 
+        subgraph TO[Tokenomics Operations]
+            TM[[Tokenomics Module]]
+            IA("IA = SA * PCGI <br> (IA: Inflation Amount)")
+            TM  --> |"💲 MINT IA"|IA
+        end
+
+        %% Mint Inputs
+        SA --> TO
+        PCI --> TO
+        IA --> TO
+
+        %% Distribute Inflation
+        TO --> |"Distribute Inflation (IA) <br> ⬆️ INCREASE Balances"| ID
+        GP --> ID
+    end
 
     subgraph AO[Application Operations]
         AM[[Application Module]]
         AK[(Application Keeper)]
         AA[Application Address]
-        DA[DAO Address]
 
+        %% Reimbursement Request Actions
         AM -.- AK
-        AK -. Reduce Stake by IMC .-> AA
-        AM -..-> |Increase Balance by IMC| DA
+        AM -. ⬇️ REDUCE Stake by IA .-> AA
     end
 
-    AO -. Emit Event.-> ARRE
+
+    %% Reimbursement Request Logic
+    TO ---> |Prevent Self Dealing <br> 🤝 HOLD IA| AO
+    AO -.-> |Emit Event| ARRE
+    AO --> |"⬆️ INCREASE Module Balance (IA)"| TM2
 
     classDef module fill:#f9f,stroke:#333,stroke-width:2px;
     classDef address fill:#bbf,stroke:#333,stroke-width:2px;
-    classDef question fill:#e3db6d,stroke:#333,stroke-width:2px;
-    classDef govparam fill:#d04a36,stroke:#333,stroke-width:2px;
+    classDef govparam fill:#eba69a,stroke:#333,stroke-width:2px;
     classDef event fill:#e8b761,stroke:#333,stroke-width:2px;
 
-    class AM module;
+    class TM,AM,TM2 module;
+    class PCI,GP govparam;
+    class PRA,AA,DAO address;
     class ARRE event;
-    class PCI govparam;
-    class AA,DA address;
 ```
+
+Later, PNF, on behalf of the DAO, will review the reimbursement requests and approve them.
+
+```mermaid
+---
+title: "Off-Chain Reimbursement Request Flow"
+---
+sequenceDiagram
+    participant PNF as Pocket Network Foundation
+    participant BS as Blockchain State
+    participant T as Tokenomics Module
+    participant Apps as Applications 1..N
+
+    PNF ->> +BS: Get All Reimbursement Requests
+    BS ->> -PNF: List of Reimbursement Requests
+    PNF ->> PNF: Review Reimbursement Requests
+    loop "for each request"
+        alt "Approve"
+            PNF ->> T: Reimburse Application Funds
+            T ->> Apps: Send Reimbursement
+        else "Reject"
+            note over PNF, Apps: PNF maintains funds
+        end
+
+    end
+```
+
+### FAQ
+
+#### Is the application going to endorse the whole global mint amount (Including the supplier share)?
+
+The application `PAYS` the supplier for work done (i.e. Mint=Burn)
+The application `GETS REIMBURSED` for the inflation (i.e. Global Mint)
+
+#### Will there be any on-chain enforcement on the way application get reimbursed? Or do they just have to trust the DAO to reimburse them?
+
+No. They have to trust the DAO/PNF reimburses them.
+
+This is similar to how we trust Gateways in Morse not to do self dealing.
+
+#### How does this solution scale for sovereign applications? Do they have to show face too?
+
+Correct.
+
+#### Are we taking into account the resources needed to scale and automate reimbursement? (Event reader, tx submission, accounting...)
+
+- **On-chain**: load testing will show if events take up too much space. Unlikely to be an issue relative to proofs.
+- **Off-chain**: PNF Directors are aware of the operational overhead this will require and is okay with it.
