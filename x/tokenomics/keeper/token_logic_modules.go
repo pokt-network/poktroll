@@ -107,10 +107,9 @@ func init() {
 	}
 }
 
-// ProcessTokenLogicModules is the main TLM processor. It is responsible for running
-// all of the independent TLMs necessary to limit, burn, mint or transfer tokens
-// as a result of the amount of work (i.e. relays, compute units) done in proportion
-// to the global governance parameters.
+// ProcessTokenLogicModules is the entrypoint for all TLM processing. It is responsible for running
+// all the independent TLMs necessary to limit, burn, mint or transfer tokens as a result of the
+// amount of work (i.e. relays, compute units) done in proportion to the global governance parameters.
 // IMPORTANT: It is assumed the proof for the claim has been validated BEFORE calling this function.
 func (k Keeper) ProcessTokenLogicModules(
 	ctx context.Context,
@@ -118,7 +117,7 @@ func (k Keeper) ProcessTokenLogicModules(
 ) (err error) {
 	logger := k.Logger().With("method", "ProcessTokenLogicModules")
 
-	// Telemetry variable declaration to be emitted a the end of the function
+	// Telemetry variable declaration to be emitted at the end of the function
 	claimSettlementCoin := cosmostypes.NewCoin("upokt", math.NewInt(0))
 	isSuccessful := false
 
@@ -173,17 +172,17 @@ func (k Keeper) ProcessTokenLogicModules(
 		TODO_POST_MAINNET: Because of how things have evolved, we are now using
 		root.Count (numRelays) instead of root.Sum (numComputeUnits) to determine
 		the amount of work done. This is because the compute_units_per_relay is
-		 a service specific (not request specific) parameter that will be maintained
+		a service specific (not request specific) parameter that will be maintained
 		by the service owner to capture the average amount of resources (i.e.
 		compute, storage, bandwidth, electricity, etc...) per request. Modifying
 		this on a per request basis has been deemed too complex and not a mainnet
 		blocker.
 	*/
 
-	// Retrieve the application address that is being charged; getting services and paying tokens
+	// Retrieve the application address that is being charged; getting services and paying tokens.
 	applicationAddress, err := cosmostypes.AccAddressFromBech32(sessionHeader.GetApplicationAddress())
 	if err != nil || applicationAddress == nil {
-		return tokenomicstypes.ErrTokenomicsApplicationAddressInvalid
+		return tokenomicstypes.ErrTokenomicsApplicationAddressInvalid.Wrapf("address (%q)", sessionHeader.GetApplicationAddress())
 	}
 
 	// Retrieve the on-chain staked application record
@@ -196,7 +195,7 @@ func (k Keeper) ProcessTokenLogicModules(
 	// Retrieve the supplier operator address that will be getting rewarded; providing services and earning tokens
 	supplierOperatorAddr, err := cosmostypes.AccAddressFromBech32(claim.GetSupplierOperatorAddress())
 	if err != nil || supplierOperatorAddr == nil {
-		return tokenomicstypes.ErrTokenomicsSupplierOperatorAddressInvalid
+		return tokenomicstypes.ErrTokenomicsSupplierOperatorAddressInvalid.Wrapf("address (%q)", claim.GetSupplierOperatorAddress())
 	}
 
 	// Retrieve the on-chain staked supplier record
@@ -284,7 +283,7 @@ func (k Keeper) TokenLogicModuleRelayBurnEqualsMint(
 	logger := k.Logger().With("method", "TokenLogicModuleRelayBurnEqualsMint")
 
 	// DEV_NOTE: We are doing a mint & burn + transfer, instead of a simple transfer
-	// of funds from the supplier to the application in order to enable second
+	// of funds from the application stake to the supplier balance in order to enable second
 	// order economic effects with more optionality. This could include funds
 	// going to pnf, delegators, enabling bonuses/rebates, etc...
 
@@ -364,10 +363,10 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 		return tokenomicstypes.ErrTokenomicsModuleMintFailed.Wrapf(
 			"minting (%s) to the tokenomics module account: %v", newMintCoin, err)
 	}
-	logger.Info(fmt.Sprintf("minted (%v) coins in the tokenomics module", newMintCoin))
+	logger.Info(fmt.Sprintf("minted (%s) to the tokenomics module account", newMintCoin))
 
 	// Send a portion of the rewards to the application
-	appCoin, err := k.sendRewardsToAccount(ctx, tokenomictypes.ModuleName, application.Address, &newMintAmtFloat, MintAllocationApplication)
+	appCoin, err := k.sendRewardsToAccount(ctx, tokenomictypes.ModuleName, application.GetAddress(), &newMintAmtFloat, MintAllocationApplication)
 	if err != nil {
 		return tokenomictypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to application: %v", err)
 	}
@@ -379,7 +378,7 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 	// Send funds from the tokenomics module to the supplier module account
 	if err = k.bankKeeper.SendCoinsFromModuleToModule(ctx, tokenomicstypes.ModuleName, suppliertypes.ModuleName, sdk.NewCoins(supplierCoin)); err != nil {
 		return tokenomicstypes.ErrTokenomicsSupplierModuleSendFailed.Wrapf(
-			"sending %s from the tokenomics module to the supplier module account: %v",
+			"transferring (%s) from the tokenomics module account to the supplier module account: %v",
 			supplierCoin,
 			err,
 		)
