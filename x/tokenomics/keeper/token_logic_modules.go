@@ -475,7 +475,7 @@ func (k Keeper) sendRewardsToAccount(
 // Ref: https://arxiv.org/pdf/2305.10672
 func (k Keeper) ensureClaimAmountLimits(
 	ctx context.Context,
-	methodLogger log.Logger,
+	logger log.Logger,
 	application *apptypes.Application,
 	supplier *sharedtypes.Supplier,
 	claimSettlementCoin cosmostypes.Coin,
@@ -483,7 +483,7 @@ func (k Keeper) ensureClaimAmountLimits(
 	actualSettlementCoins cosmostypes.Coin,
 	err error,
 ) {
-	logger := methodLogger.With("helper", "ensureClaimAmountLimits")
+	logger = logger.With("helper", "ensureClaimAmountLimits")
 
 	// TODO_BETA_OR_MAINNET(@red-0ne): The application stake gets reduced with every claim
 	// settlement. Relay miners use the appStake at the beginning of a session to determine
@@ -494,8 +494,7 @@ func (k Keeper) ensureClaimAmountLimits(
 	// solution and implementation ends up being, make sure to KISS.
 	appStake := application.GetStake()
 
-	// Determine the max claimable amount for the supplier based on the application's stake
-	// in this session.
+	// Determine the max claimable amount for the supplier based on the application's stake in this session.
 	maxClaimableCoin := sdk.NewCoin(volatile.DenomuPOKT, appStake.Amount.Quo(math.NewInt(sessionkeeper.NumSupplierPerSession)))
 
 	if maxClaimableCoin.Amount.GTE(claimSettlementCoin.Amount) {

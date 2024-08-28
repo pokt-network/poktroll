@@ -69,8 +69,15 @@ type sessionTree struct {
 // NewSessionTree creates a new sessionTree from a Session and a storePrefix. It also takes a function
 // removeFromRelayerSessions that removes the sessionTree from the RelayerSessionsManager.
 // It returns an error if the KVStore fails to be created.
-// TODO_BETA(@red-0ne): When starting a new session, check how many relays the app can handle.
-// See the TODO next to the `sessionTree` struct definition for more details.
+//
+// TODO_BETA(@red-0ne): When starting a new session, check what the MaxClaimableAmount
+// (in uPOKT) by the Supplier as a function of
+// (app_stake, compute_units_per_relay_for_service, global_compute_units_to_token_multiplier).
+// TODO_CONFIG_NOTE: Whether or not the RelayMiner stop handling requests when the max is reached should be
+// configurable by the operator.
+// TODO_ERROR_NOTE: If overservicing is set to false, create a new error that the relay is rejected
+// specifically because the supplier has reached the max claimable amount, so the caller should relay
+// the request to another supplier.
 func NewSessionTree(
 	sessionHeader *sessiontypes.SessionHeader,
 	supplierOperatorAddress *cosmostypes.AccAddress,

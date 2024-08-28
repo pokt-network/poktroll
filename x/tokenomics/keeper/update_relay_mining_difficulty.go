@@ -188,11 +188,11 @@ func computeEma(alpha *big.Float, prevEma, currValue uint64) uint64 {
 // difficulty is being initialized for the first time.
 func newDefaultRelayMiningDifficulty(
 	ctx context.Context,
-	methodLogger log.Logger,
+	logger log.Logger,
 	serviceId string,
 	numRelays uint64,
 ) tokenomicstypes.RelayMiningDifficulty {
-	logger := methodLogger.With("helper", "newDefaultRelayMiningDifficulty")
+	logger = logger.With("helper", "newDefaultRelayMiningDifficulty")
 	logger.Warn(types.ErrTokenomicsMissingRelayMiningDifficulty.Wrapf(
 		"No previous relay mining difficulty found for service %s. Creating a temporary relay mining difficulty with %d relays and default target hash %x",
 		serviceId, numRelays, prooftypes.DefaultRelayDifficultyTargetHash).Error())
