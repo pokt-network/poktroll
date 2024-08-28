@@ -7,8 +7,7 @@ sidebar_position: 5
 
 This document describes the configuration options for the `AppGateServer`,
 an `Application` or `Gateway` co-processor/sidecar
-co-processor that acts as the real server for querying request, building claims
-and submitting proofs.
+that acts as the real server for querying request, signing requests and verifying responses.
 
 This document describes the configuration options available for the
 `AppGateServer`through the `appgate_server_config.yaml` file.
