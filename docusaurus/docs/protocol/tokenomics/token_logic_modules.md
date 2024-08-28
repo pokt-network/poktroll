@@ -15,10 +15,6 @@ sidebar_position: 1
   - [Reimbursement Request Philosophy](#reimbursement-request-philosophy)
   - [Reimbursement Request Design](#reimbursement-request-design)
   - [FAQ](#faq)
-    - [Is the application going to endorse the whole global mint amount (Including the supplier share)?](#is-the-application-going-to-endorse-the-whole-global-mint-amount-including-the-supplier-share)
-    - [Will there be any on-chain enforcement on the way application get reimbursed? Or do they just have to trust the DAO to reimburse them?](#will-there-be-any-on-chain-enforcement-on-the-way-application-get-reimbursed-or-do-they-just-have-to-trust-the-dao-to-reimburse-them)
-    - [How does this solution scale for sovereign applications? Do they have to show face too?](#how-does-this-solution-scale-for-sovereign-applications-do-they-have-to-show-face-too)
-    - [Are we taking into account the resources needed to scale and automate reimbursement? (Event reader, tx submission, accounting...)](#are-we-taking-into-account-the-resources-needed-to-scale-and-automate-reimbursement-event-reader-tx-submission-accounting)
 
 ## Introduction
 
@@ -44,8 +40,8 @@ Token Logic Module (TLM) processing consists of the following sequential steps:
 _tl;dr Max ClaIAble Amount ∝ (Application Stake / Number of Suppliers per Session)_
 
 Per **Algorithm 1** of the [Relay Mining paper](https://arxiv.org/pdf/2305.10672),
-the maximum amount a Supplier can claim from an Application in a single session is
-proportional to the Application's stake divided by the number of suppliers in the session.
+the maximum amount a supplier can claim from an application in a single session
+MUST NOT exceed the Application's stake divided by the number of suppliers in the session.
 
 This is referred to as "Relay Mining Payable Relay Accumulation" in the paper and
 is described by the following pseudo-code:
@@ -105,9 +101,9 @@ flowchart TB
     TLMP --SA--> TLMO[[TLM: ...]]
     TLMGI --> TLMGIRR[[TLM: Global Inflation Reimbursement Request]]
 
-    classDef tlm fill:#54ebd5,stroke:#333,stroke-width:2px;
-    classDef question fill:#e3db6d,stroke:#333,stroke-width:2px;
-    classDef event fill:#e8b761,stroke:#333,stroke-width:2px;
+    classDef tlm fill:#54ebd5,color: #333,stroke:#333,stroke-width:2px;
+    classDef question fill:#e3db6d,color: #333,stroke:#333,stroke-width:2px;
+    classDef event fill:#e8b761,color: #333,stroke:#333,stroke-width:2px;
 
     class TLMBEM,TLMGI,TLMGIRR,TLMO tlm;
     class SOAE event;
@@ -131,7 +127,7 @@ reaches maturity in the far future.
 
 The same number of tokens minted to the **Supplier module** is burned from
 the **Application module**. The stake (in escrow) owned by the application which is
-paying for work is reduced and the rewards are distributed to the supplier and its
+paying for work is reduced and the rewards are distributed to the suppliers and their
 revenue shareholder addresses.
 
 ```mermaid
@@ -177,10 +173,10 @@ flowchart TD
 
     SM --> SD
 
-    classDef module fill:#f9f,stroke:#333,stroke-width:2px;
-    classDef address fill:#bbf,stroke:#333,stroke-width:2px;
-    classDef question fill:#e3db6d,stroke:#333,stroke-width:2px;
-    classDef event fill:#e8b761,stroke:#333,stroke-width:2px;
+    classDef module fill:#f9f,color: #333,stroke:#333,stroke-width:2px;
+    classDef address fill:#bbf,color: #333,stroke:#333,stroke-width:2px;
+    classDef question fill:#e3db6d,color: #333,stroke:#333,stroke-width:2px;
+    classDef event fill:#e8b761,color: #333,stroke:#333,stroke-width:2px;
 
     class SM,AM module;
     class RSH1,RSH2,OA,OPA,AA address;
@@ -197,12 +193,12 @@ Make sure to document whatever decision we come to.
 
 ## TLM: Global Mint (GM)
 
-_tl;dr Distributed newly minted coins on a per claim basis to all involved stakeholders._
+_tl;dr Distribute newly minted coins on a per claim basis to all involved stakeholders._
 
-The `Global Mint` TLM is, _theoretically_, going to reach `zero` the only when the network
+The `Global Mint` TLM is, _theoretically_, going to reach `zero` when the network
 reaches maturity in the far future.
 
-On a per claim basis, the network mints new tokens based on the the amount of work
+On a per claim basis, the network mints new tokens based on the amount of work
 claimed. The newly minted tokens are distributed to the DAO, Service Owner, Application,
 Supplier and its Revenue Shareholders based on the values of various governance params.
 
@@ -243,7 +239,7 @@ flowchart TD
     subgraph ID[Inflation Distribution]
         DI("Distribute Inflation Amount (IA)")
         APPA["Application Address"]
-        SPPA["Supplier Address"]
+        SPPA["Supplier Address & <br> Revenue Shareholders"]
         DAOA["DAO Address"]
         SOA["Service Owner Address"]
         PRA["Proposer Address"]
@@ -255,11 +251,11 @@ flowchart TD
         DI -->|"⬆️ INCREASE Balance <br> (% mint allocation)"| SPPA
     end
 
-    classDef module fill:#f9f,stroke:#333,stroke-width:2px;
-    classDef address fill:#bbf,stroke:#333,stroke-width:2px;
-    classDef question fill:#e3db6d,stroke:#333,stroke-width:2px;
-    classDef govparam fill:#eba69a,stroke:#333,stroke-width:2px;
-    classDef event fill:#e8b761,stroke:#333,stroke-width:2px;
+    classDef module fill:#f9f,color: #333,stroke:#333,stroke-width:2px;
+    classDef address fill:#bbf,color: #333,stroke:#333,stroke-width:2px;
+    classDef question fill:#e3db6d,color: #333,stroke:#333,stroke-width:2px;
+    classDef govparam fill:#eba69a,color: #333,stroke:#333,stroke-width:2px;
+    classDef event fill:#e8b761,color: #333,stroke:#333,stroke-width:2px;
 
     class TM module;
     class PCI,DA,PA,SMA,SOM,AA govparam;
@@ -327,7 +323,7 @@ enabling permissionless demand and dissuading self-dealing attacks.
 
 ### Reimbursement Request Design
 
-This TLM is a dependency of the Global Mint TLM; i.e., it **MUST** be active if Global Mint is active.
+This TLM is a dependency of the Global Mint TLM; i.e., it **MUST** be active ONLY IF Global Mint is active.
 
 This TLM can, **theoretically**, be removed if self-dealing attacks are not a concern,
 or if the global mint per claim governance parameter is set to zero.
@@ -391,10 +387,10 @@ flowchart TD
     AO -.-> |Emit Event| ARRE
     AO --> |"⬆️ INCREASE Module Balance (IA)"| TM2
 
-    classDef module fill:#f9f,stroke:#333,stroke-width:2px;
-    classDef address fill:#bbf,stroke:#333,stroke-width:2px;
-    classDef govparam fill:#eba69a,stroke:#333,stroke-width:2px;
-    classDef event fill:#e8b761,stroke:#333,stroke-width:2px;
+    classDef module fill:#f9f,color: #333,stroke:#333,stroke-width:2px;
+    classDef address fill:#bbf,color: #333,stroke:#333,stroke-width:2px;
+    classDef govparam fill:#eba69a,color: #333,stroke:#333,stroke-width:2px;
+    classDef event fill:#e8b761,color: #333,stroke:#333,stroke-width:2px;
 
     class TM,AM,TM2 module;
     class PCI,GP govparam;
@@ -424,28 +420,27 @@ sequenceDiagram
         else "Reject"
             note over PNF, Apps: PNF maintains funds
         end
-
     end
 ```
 
 ### FAQ
 
-#### Is the application going to endorse the whole global mint amount (Including the supplier share)?
+#### Is the application going to endorse the whole global mint amount (Including the supplier share)? <!-- omit in toc -->
 
 The application `PAYS` the supplier for work done (i.e. Mint=Burn)
 The application `GETS REIMBURSED` for the inflation (i.e. Global Mint)
 
-#### Will there be any on-chain enforcement on the way application get reimbursed? Or do they just have to trust the DAO to reimburse them?
+#### Will there be any on-chain enforcement on the way application get reimbursed? Or do they just have to trust the DAO to reimburse them? <!-- omit in toc -->
 
 No. They have to trust the DAO/PNF reimburses them.
 
 This is similar to how we trust Gateways in Morse not to do self dealing.
 
-#### How does this solution scale for sovereign applications? Do they have to show face too?
+#### How does this solution scale for sovereign applications? Do they have to show face too? <!-- omit in toc -->
 
 Correct.
 
-#### Are we taking into account the resources needed to scale and automate reimbursement? (Event reader, tx submission, accounting...)
+#### Are we taking into account the resources needed to scale and automate reimbursement? (Event reader, tx submission, accounting...) <!-- omit in toc -->
 
 - **On-chain**: load testing will show if events take up too much space. Unlikely to be an issue relative to proofs.
 - **Off-chain**: PNF Directors are aware of the operational overhead this will require and is okay with it.
