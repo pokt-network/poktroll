@@ -20,10 +20,13 @@ import (
 
 var SHA3HashLen = crypto.SHA3_256.Size()
 
+// TODO_BETA(@bryanchriswhite): Make this a governance parameter
 const (
-	// TODO_BETA(@bryanchriswhite): Make this a governance parameter
-	NumSupplierPerSession       = 15
-	SessionIDComponentDelimiter = "."
+	NumSupplierPerSession = 15
+)
+
+const (
+	sessionIDComponentDelimiter = "."
 )
 
 type sessionHydrator struct {
@@ -305,7 +308,7 @@ func GetSessionId(
 
 	sessionStartHeightBz := getSessionStartBlockHeightBz(sharedParams, blockHeight)
 	sessionIdBz = concatWithDelimiter(
-		SessionIDComponentDelimiter,
+		sessionIDComponentDelimiter,
 		blockHashBz,
 		serviceIdBz,
 		appAddrBz,
