@@ -55,6 +55,6 @@ message EventApplicationOverserviced {
     // Effective burn is the amount that is actually being paid to the supplier
     // for the work done. It is less than the expected burn (claim amount) and
     // is a function of the relay mining algorithm.
-    // E.g. Te application's stake divided by the number of suppliers in a session.
+    // E.g. The application's stake divided by the number of suppliers in a session.
     cosmos.base.v1beta1.Coin effective_burn  = 4;
 }
