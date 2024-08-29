@@ -3,8 +3,8 @@ package poktroll.tokenomics;
 
 option go_package = "github.com/pokt-network/poktroll/x/tokenomics/types";
 
-import "gogoproto/gogo.proto";
 import "cosmos/base/v1beta1/coin.proto";
+import "gogoproto/gogo.proto";
 import "poktroll/proof/types.proto";
 
 enum ClaimExpirationReason {
@@ -43,10 +43,19 @@ message EventRelayMiningDifficultyUpdated {
     uint64 new_num_relays_ema = 5;
 }
 
-// EventApplicationOverserviced is emitted when an application has less stake
-// than the expected burn.
+// EventApplicationOverserviced is emitted when an application has less stake than
+// what a supplier is claiming (i.e. amount available for burning is insufficient).
+// This means the following will ALWAYS be strictly true: effective_burn < expected_burn.
 message EventApplicationOverserviced {
     string application_addr = 1;
-    cosmos.base.v1beta1.Coin expected_burn  = 2;
-    cosmos.base.v1beta1.Coin effective_burn  = 3;
+    string supplier_operator_addr = 2;
+    // Expected burn is the amount the supplier is claiming for work done
+    // to service the application during the session.
+    // This is usually the amount in the Claim submitted.
+    cosmos.base.v1beta1.Coin expected_burn  = 3;
+    // Effective burn is the amount that is actually being paid to the supplier
+    // for the work done. It is less than the expected burn (claim amount) and
+    // is a function of the relay mining algorithm.
+    // E.g. The application's stake divided by the number of suppliers in a session.
+    cosmos.base.v1beta1.Coin effective_burn  = 4;
 }

@@ -509,9 +509,10 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 
 	// Prepare a new default service
 	defaultService := sharedtypes.Service{
-		Id:           "svc1",
-		Name:         "svcName1",
-		OwnerAddress: sample.AccAddress(),
+		Id:                   "svc1",
+		Name:                 "svcName1",
+		ComputeUnitsPerRelay: 1,
+		OwnerAddress:         sample.AccAddress(),
 	}
 	serviceKeeper.SetService(integrationApp.sdkCtx, defaultService)
 	integrationApp.DefaultService = &defaultService

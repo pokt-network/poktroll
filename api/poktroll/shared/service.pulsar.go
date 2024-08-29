@@ -3420,7 +3420,7 @@ type Service struct {
 
 	// For example, what if we want to request a session for a certain service but with some additional configs that identify it?
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"` // Unique identifier for the service
-	// TODO_MAINNET: Remove this.
+	// TODO_BETA: Either remove this or rename it to alias.
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"` // (Optional) Semantic human readable name for the service
 	// The cost of a single relay for this service in terms of compute units.
 	// Must be used alongside the global 'compute_units_to_tokens_multipler' to calculate the cost of a relay for this service.
@@ -3487,7 +3487,7 @@ type ApplicationServiceConfig struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// TODO_MAINNET: Avoid embedding the full Service because we just need the ID.
+	// TODO_BETA: Avoid embedding the full Service because we just need the ID.
 	Service *Service `protobuf:"bytes,1,opt,name=service,proto3" json:"service,omitempty"` // The Service for which the application is configured
 }
 
@@ -3524,7 +3524,7 @@ type SupplierServiceConfig struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// TODO_MAINNET: Avoid embedding the full Service because we just need the ID.
+	// TODO_BETA: Avoid embedding the full Service because we just need the ID.
 	Service   *Service               `protobuf:"bytes,1,opt,name=service,proto3" json:"service,omitempty"`                   // The Service for which the supplier is configured
 	Endpoints []*SupplierEndpoint    `protobuf:"bytes,2,rep,name=endpoints,proto3" json:"endpoints,omitempty"`               // List of endpoints for the service
 	RevShare  []*ServiceRevenueShare `protobuf:"bytes,3,rep,name=rev_share,json=revShare,proto3" json:"rev_share,omitempty"` // List of revenue share configurations for the service

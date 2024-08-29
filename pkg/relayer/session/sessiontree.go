@@ -19,7 +19,11 @@ import (
 var _ relayer.SessionTree = (*sessionTree)(nil)
 
 // sessionTree is an implementation of the SessionTree interface.
-// TODO_TEST: Add tests to the sessionTree.
+// TODO_IN_THIS_PR_DISCUSS: Per the Relay Mining paper, we need to optimistically store
+// the number of requests that an application can pay for. This needs to be tracked
+// based on the app's stake in the beginning of a session and the number of nodes
+// per session. An operator should be able to specify "overservicing_okay" whereby
+// it keeps replying to requests even though it may not get paid for them.
 type sessionTree struct {
 	// sessionMu is a mutex used to protect sessionTree operations from concurrent access.
 	sessionMu *sync.Mutex
@@ -65,6 +69,15 @@ type sessionTree struct {
 // NewSessionTree creates a new sessionTree from a Session and a storePrefix. It also takes a function
 // removeFromRelayerSessions that removes the sessionTree from the RelayerSessionsManager.
 // It returns an error if the KVStore fails to be created.
+//
+// TODO_BETA(@red-0ne): When starting a new session, check what the MaxClaimableAmount
+// (in uPOKT) by the Supplier as a function of
+// (app_stake, compute_units_per_relay_for_service, global_compute_units_to_token_multiplier).
+// TODO_CONFIG_NOTE: Whether or not the RelayMiner stop handling requests when the max is reached should be
+// configurable by the operator.
+// TODO_ERROR_NOTE: If overservicing is set to false, create a new error that the relay is rejected
+// specifically because the supplier has reached the max claimable amount, so the caller should relay
+// the request to another supplier.
 func NewSessionTree(
 	sessionHeader *sessiontypes.SessionHeader,
 	supplierOperatorAddress *cosmostypes.AccAddress,

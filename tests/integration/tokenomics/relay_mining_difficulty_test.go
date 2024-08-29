@@ -39,8 +39,9 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	session := getSession(t, integrationApp)
 	sharedParams := getSharedParams(t, integrationApp)
 
-	// Prepare the trie with a single mined relay
-	trie := prepareSMST(t, sdkCtx, integrationApp, session)
+	// Prepare the trie with several mined relays
+	expectedNumRelays := uint64(100)
+	trie := prepareSMST(t, sdkCtx, integrationApp, session, expectedNumRelays)
 
 	// Compute the number of blocks to wait between different events
 	// TODO_BLOCKER(@bryanchriswhite): See this comment: https://github.com/pokt-network/poktroll/pull/610#discussion_r1645777322
@@ -118,8 +119,8 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	require.Equal(t, prooftypes.DefaultRelayDifficultyTargetHashHex, relayMiningEvent.NewTargetHashHexEncoded)
 
 	// The previous EMA is the same as the current one if the service is new
-	require.Equal(t, uint64(1), relayMiningEvent.PrevNumRelaysEma)
-	require.Equal(t, uint64(1), relayMiningEvent.NewNumRelaysEma)
+	require.Equal(t, expectedNumRelays, relayMiningEvent.PrevNumRelaysEma)
+	require.Equal(t, expectedNumRelays, relayMiningEvent.NewNumRelaysEma)
 }
 
 func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
@@ -207,11 +208,12 @@ func getSession(t *testing.T, integrationApp *testutil.App) *sessiontypes.Sessio
 	return getSessionRes.Session
 }
 
-// prepareSMST prepares an SMST with a single mined relay for the given session.
+// prepareSMST prepares an SMST with the given number of mined relays.
 func prepareSMST(
 	t *testing.T, ctx context.Context,
 	integrationApp *testutil.App,
 	session *sessiontypes.Session,
+	numRelays uint64,
 ) *smt.SMST {
 	t.Helper()
 
@@ -221,23 +223,25 @@ func prepareSMST(
 	kvStore, err := pebble.NewKVStore("")
 	require.NoError(t, err)
 
-	// NB: A signed mined relay is a MinedRelay type with the appropriate
-	// payload, signatures and metadata populated.
-	//
-	// It does not (as of writing) adhere to the actual on-chain difficulty (i.e.
-	// hash check) of the test service surrounding the scope of this test.
-	minedRelay := testrelayer.NewSignedMinedRelay(t, ctx,
-		session,
-		integrationApp.DefaultApplication.Address,
-		integrationApp.DefaultSupplier.OperatorAddress,
-		integrationApp.DefaultSupplierKeyringKeyringUid,
-		integrationApp.GetKeyRing(),
-		integrationApp.GetRingClient(),
-	)
-
 	trie := smt.NewSparseMerkleSumTrie(kvStore, protocol.NewTrieHasher(), smt.WithValueHasher(nil))
-	err = trie.Update(minedRelay.Hash, minedRelay.Bytes, 1)
-	require.NoError(t, err)
+
+	for i := uint64(0); i < numRelays; i++ {
+		// DEV_NOTE: A signed mined relay is a MinedRelay type with the appropriate
+		// payload, signatures and metadata populated.
+		// It does not (as of writing) adhere to the actual on-chain difficulty (i.e.
+		// hash check) of the test service surrounding the scope of this test.
+		minedRelay := testrelayer.NewSignedMinedRelay(t, ctx,
+			session,
+			integrationApp.DefaultApplication.Address,
+			integrationApp.DefaultSupplier.OperatorAddress,
+			integrationApp.DefaultSupplierKeyringKeyringUid,
+			integrationApp.GetKeyRing(),
+			integrationApp.GetRingClient(),
+		)
+
+		err = trie.Update(minedRelay.Hash, minedRelay.Bytes, 1)
+		require.NoError(t, err)
+	}
 
 	return trie
 }
