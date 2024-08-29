@@ -253,7 +253,7 @@ func (k Keeper) ProcessTokenLogicModules(
 	for tlm, tlmProcessor := range tokenLogicModuleProcessorMap {
 		logger.Info(fmt.Sprintf("Starting TLM processing: %q", tlm))
 		if err := tlmProcessor(k, ctx, &service, claim.GetSessionHeader(), &application, &supplier, actualSettlementCoin, &relayMiningDifficulty); err != nil {
-			return ErrTokenomicsTLMError.Wrapf("TLM %q: %v", tlm err)
+			return tokenomictypes.ErrTokenomicsTLMError.Wrapf("TLM %q: %v", tlm, err)
 		}
 		logger.Info(fmt.Sprintf("Finished TLM processing: %q", tlm))
 	}
@@ -292,14 +292,10 @@ func (k Keeper) TokenLogicModuleRelayBurnEqualsMint(
 	// order economic effects with more optionality. This could include funds
 	// going to pnf, delegators, enabling bonuses/rebates, etc...
 
-	ownerAddr, err := cosmostypes.AccAddressFromBech32(supplier.OwnerAddress)
-	if err != nil {
-		return err
-	}
-
 	// Mint new uPOKT to the supplier module account.
-	// These funds will be transferred to the supplier below.
-	if err = k.bankKeeper.MintCoins(
+	// These funds will be transferred to the supplier's shareholders below.
+	// For reference, see operate/configs/supplier_staking_config.md.
+	if err := k.bankKeeper.MintCoins(
 		ctx, suppliertypes.ModuleName, sdk.NewCoins(settlementCoin),
 	); err != nil {
 		return tokenomicstypes.ErrTokenomicsSupplierModuleSendFailed.Wrapf(
@@ -311,7 +307,7 @@ func (k Keeper) TokenLogicModuleRelayBurnEqualsMint(
 	logger.Info(fmt.Sprintf("minted (%v) coins in the supplier module", settlementCoin))
 
 	// Distribute the rewards to the supplier's shareholders based on the rev share percentage.
-	if err = k.distributeSupplierRewardsToShareHolders(ctx, supplier, service.Id, settlementCoin.Amount.Uint64()); err != nil {
+	if err := k.distributeSupplierRewardsToShareHolders(ctx, supplier, service.Id, settlementCoin.Amount.Uint64()); err != nil {
 		return tokenomicstypes.ErrTokenomicsSupplierModuleMintFailed.Wrapf(
 			"distributing rewards to supplier with operator address %s shareholders: %v",
 			supplier.OperatorAddress,
@@ -322,7 +318,7 @@ func (k Keeper) TokenLogicModuleRelayBurnEqualsMint(
 
 	// Burn uPOKT from the application module account which was held in escrow
 	// on behalf of the application account.
-	if err = k.bankKeeper.BurnCoins(
+	if err := k.bankKeeper.BurnCoins(
 		ctx, apptypes.ModuleName, sdk.NewCoins(settlementCoin),
 	); err != nil {
 		return tokenomicstypes.ErrTokenomicsApplicationModuleBurn.Wrapf("burning %s from the application module account: %v", settlementCoin, err)
@@ -615,10 +611,10 @@ func (k Keeper) distributeSupplierRewardsToShareHolders(
 			return err
 		}
 
-		logger.Info(fmt.Sprintf("sent %s from the supplier module to the supplier shareholder with address %q", shareAmountCoin, supplierOperatorAddr))
+		logger.Info(fmt.Sprintf("sent %s from the supplier module to the supplier shareholder with address %q", shareAmountCoin, supplier.GetOperatorAddress()))
 	}
 
-	logger.Info(fmt.Sprintf("distributed %d uPOKT to supplier %q shareholders", amountToDistribute, supplierOperatorAddr))
+	logger.Info(fmt.Sprintf("distributed %d uPOKT to supplier %q shareholders", amountToDistribute, supplier.GetOperatorAddress()))
 
 	return nil
 }

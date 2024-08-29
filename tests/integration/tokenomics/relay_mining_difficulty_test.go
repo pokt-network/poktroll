@@ -40,8 +40,8 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	sharedParams := getSharedParams(t, integrationApp)
 
 	// Prepare the trie with several mined relays
-	numRelays := uint64(100)
-	trie := prepareSMST(t, sdkCtx, integrationApp, session, numRelays)
+	expectedNumRelays := uint64(100)
+	trie := prepareSMST(t, sdkCtx, integrationApp, session, expectedNumRelays)
 
 	// Compute the number of blocks to wait between different events
 	// TODO_BLOCKER(@bryanchriswhite): See this comment: https://github.com/pokt-network/poktroll/pull/610#discussion_r1645777322
@@ -119,8 +119,8 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	require.Equal(t, prooftypes.DefaultRelayDifficultyTargetHashHex, relayMiningEvent.NewTargetHashHexEncoded)
 
 	// The previous EMA is the same as the current one if the service is new
-	require.Equal(t, numRelays, relayMiningEvent.PrevNumRelaysEma)
-	require.Equal(t, numRelays, relayMiningEvent.NewNumRelaysEma)
+	require.Equal(t, expectedNumRelays, relayMiningEvent.PrevNumRelaysEma)
+	require.Equal(t, expectedNumRelays, relayMiningEvent.NewNumRelaysEma)
 }
 
 func UpdateRelayMiningDifficulty_UpdatingMultipleServicesAtOnce(t *testing.T) {}

@@ -3,6 +3,7 @@ package testrelayer
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"strings"
 	"testing"
 	"time"
@@ -11,7 +12,6 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	signingtypes "github.com/cosmos/cosmos-sdk/types/tx/signing"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/exp/rand"
 
 	"github.com/pokt-network/poktroll/pkg/crypto"
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"

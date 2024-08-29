@@ -35,4 +35,5 @@ var (
 	ErrTokenomicsApplicationReimbursementRequestFailed = sdkerrors.Register(ModuleName, 1126, "failed to send application reimbursement request event")
 	ErrTokenomicsAmountMismatchTooLarge                = sdkerrors.Register(ModuleName, 1127, "an unexpected amount mismatch occurred")
 	ErrTokenomicsMintAmountZero                        = sdkerrors.Register(ModuleName, 1128, "mint amount cannot be zero")
+	ErrTokenomicsTLMError                              = sdkerrors.Register(ModuleName, 1129, "failed to process TLM")
 )

@@ -2716,6 +2716,7 @@ func (x *EventRelayMiningDifficultyUpdated) GetNewNumRelaysEma() uint64 {
 
 // EventApplicationOverserviced is emitted when an application has less stake than
 // what a supplier is claiming (i.e. amount available for burning is insufficient).
+// This means the following will ALWAYS be strictly true: effective_burn < expected_burn.
 type EventApplicationOverserviced struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -2730,7 +2731,7 @@ type EventApplicationOverserviced struct {
 	// Effective burn is the amount that is actually being paid to the supplier
 	// for the work done. It is less than the expected burn (claim amount) and
 	// is a function of the relay mining algorithm.
-	// E.g. Te application's stake divided by the number of suppliers in a session.
+	// E.g. The application's stake divided by the number of suppliers in a session.
 	EffectiveBurn *v1beta1.Coin `protobuf:"bytes,4,opt,name=effective_burn,json=effectiveBurn,proto3" json:"effective_burn,omitempty"`
 }
 
