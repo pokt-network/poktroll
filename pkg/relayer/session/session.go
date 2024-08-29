@@ -427,7 +427,6 @@ func (rs *relayerSessionsManager) mapAddMinedRelayToSessionTree(
 
 	serviceComputeUnitsPerRelay, err := rs.getServiceComputeUnitsPerRelay(ctx, &relayMetadata)
 	if err != nil {
-		// TODO_IMPROVE: log additional info?
 		rs.logger.Error().Err(err).Msg("failed to get service compute units per relay")
 		return err, false
 	}
