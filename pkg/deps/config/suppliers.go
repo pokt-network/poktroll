@@ -484,6 +484,9 @@ func NewSupplyTokenomicsQueryClientFn() SupplierFn {
 	}
 }
 
+// NewSupplyServiceQueryClientFn returns a function which constructs a
+// NewSupplyServiceQueryClient instance and returns a new depinject.Config which
+// is supplied with the given deps and the new ServiceQueryClient.
 func NewSupplyServiceQueryClientFn() SupplierFn {
 	return func(
 		_ context.Context,
