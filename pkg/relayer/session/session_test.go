@@ -2,7 +2,6 @@ package session_test
 
 import (
 	"context"
-	"crypto/sha256"
 	"testing"
 	"time"
 
@@ -14,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/pkg/relayer"
@@ -30,13 +30,14 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-// TODO_TEST: Add a test case which simulates a cold-started relayminer with unclaimed relays.
+func TestRelayerSessionsManager_ColdStartRelayMinerWithUnclaimedRelays(t *testing.T) {
+	t.Skip("TODO_TEST: Add a test case which simulates a cold-started relayminer with unclaimed relays.")
+}
 
 func TestRelayerSessionsManager_Start(t *testing.T) {
-	// TODO_TECHDEBT(#446): Centralize the configuration for the SMT spec.
 	var (
 		_, ctx         = testpolylog.NewLoggerWithCtx(context.Background(), polyzero.DebugLevel)
-		spec           = smt.NewTrieSpec(sha256.New(), true)
+		spec           = smt.NewTrieSpec(protocol.NewTrieHasher(), true)
 		emptyBlockHash = make([]byte, spec.PathHasherSize())
 		activeSession  *sessiontypes.Session
 	)

@@ -262,6 +262,9 @@ func (k Keeper) proofRequirementForClaim(ctx sdk.Context, claim *prooftypes.Clai
 		return requirementReason, err
 	}
 
+	// TODO_IN_THIS_PR: Multiple num compute units by the difficulty to make sure
+	// it's reflected in the rewards.
+
 	proofParams := k.proofKeeper.GetParams(ctx)
 
 	// Require a proof if the claim's compute units meets or exceeds the threshold.

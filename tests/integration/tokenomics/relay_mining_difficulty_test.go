@@ -187,7 +187,6 @@ func prepareSMST(
 	// TODO_TECHDEBT(#446): Centralize the configuration for the SMT spec.
 	kvStore, err := pebble.NewKVStore("")
 	require.NoError(t, err)
-
 	trie := smt.NewSparseMerkleSumTrie(kvStore, protocol.NewTrieHasher(), smt.WithValueHasher(nil))
 
 	for i := uint64(0); i < numRelays; i++ {
