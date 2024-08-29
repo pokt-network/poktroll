@@ -2,11 +2,13 @@ package keeper_test
 
 import (
 	"bytes"
+	"fmt"
 	"testing"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	testutilevents "github.com/pokt-network/poktroll/testutil/events"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
@@ -15,6 +17,78 @@ import (
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
+
+func TestComputeNewDifficultyHash_MonotonicallyIncreasingRelays(t *testing.T) {
+	svcId := "svc1"
+
+	keeper, ctx := keepertest.TokenomicsKeeper(t)
+
+	prevEMA := uint64(0)
+	prevTargetHash := protocol.BaseRelayDifficultyHashBz
+	for numRelays := uint64(1e3); numRelays < 1e12; numRelays *= 10 {
+		// Update the relay mining difficulty
+		_, err := keeper.UpdateRelayMiningDifficulty(ctx, map[string]uint64{svcId: numRelays})
+		require.NoError(t, err)
+
+		// Retrieve the relay mining difficulty
+		svcRelayMiningDifficulty, found := keeper.GetRelayMiningDifficulty(ctx, svcId)
+		require.True(t, found)
+
+		// Since the num relays is monotonically increasing, the EMA should also
+		// be increasing but always less than the num relays.
+		require.Greater(t, numRelays, prevEMA)
+		require.Greater(t, svcRelayMiningDifficulty.NumRelaysEma, prevEMA)
+		prevEMA = svcRelayMiningDifficulty.NumRelaysEma
+
+		// Only enforce that the target hash is monotonically decreasing if it is not the default
+		if !bytes.Equal(prevTargetHash, protocol.BaseRelayDifficultyHashBz) {
+			require.Greater(t, svcRelayMiningDifficulty.TargetHash, prevTargetHash)
+			prevTargetHash = svcRelayMiningDifficulty.TargetHash
+		}
+
+		// DEV_NOTE: This is very useful for visualizing how the numbers change
+		t.Logf("Relay Mining Increasing Difficult Debug. NumRelays: %d, EMA: %d, TargetHash: %x",
+			numRelays, svcRelayMiningDifficulty.NumRelaysEma, svcRelayMiningDifficulty.TargetHash)
+	}
+}
+
+func TestComputeNewDifficultyHash_MonotonicallyDecreasingRelays(t *testing.T) {
+	svcId := "svc1"
+
+	keeper, ctx := keepertest.TokenomicsKeeper(t)
+
+	prevEMA := uint64(0)
+	prevTargetHash := protocol.BaseRelayDifficultyHashBz
+	for numRelays := uint64(1e12); numRelays >= uint64(1); numRelays /= 10 {
+		// Update the relay mining difficulty
+		_, err := keeper.UpdateRelayMiningDifficulty(ctx, map[string]uint64{svcId: numRelays})
+		require.NoError(t, err)
+
+		// Retrieve the relay mining difficulty
+		svcRelayMiningDifficulty, found := keeper.GetRelayMiningDifficulty(ctx, svcId)
+		require.True(t, found)
+
+		// Only enforce that the num relays is monotonically decreasing if it is not the default
+		if prevEMA != 0 {
+			// Since the num relays is monotonically decreasing, the EMA should also
+			// be decreasing but always greater than the num relays.
+			require.Less(t, numRelays, prevEMA)
+			require.Less(t, svcRelayMiningDifficulty.NumRelaysEma, prevEMA)
+			prevEMA = svcRelayMiningDifficulty.NumRelaysEma
+		}
+
+		// Only enforce that the target hash is monotonically increasing if it is not the default
+		if !bytes.Equal(prevTargetHash, protocol.BaseRelayDifficultyHashBz) {
+			fmt.Println(prevTargetHash)
+			require.Less(t, svcRelayMiningDifficulty.TargetHash, prevTargetHash)
+			prevTargetHash = svcRelayMiningDifficulty.TargetHash
+		}
+
+		// DEV_NOTE: This is very useful for visualizing how the numbers change
+		t.Logf("Relay Mining Decreasing Difficult Debug. NumRelays: %d, EMA: %d, TargetHash: %x",
+			numRelays, svcRelayMiningDifficulty.NumRelaysEma, svcRelayMiningDifficulty.TargetHash)
+	}
+}
 
 // This is a "base" test for updating relay mining difficulty to go through
 // a flow testing a few different scenarios, but does not cover the full range
