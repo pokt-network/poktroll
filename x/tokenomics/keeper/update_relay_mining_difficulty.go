@@ -34,7 +34,7 @@ const TargetNumRelays = uint64(10e4)
 // to ensure deterministic results across different language implementations of the
 // protocol.
 //
-// TODO_MAINNET(@olshansk, @ramiro): Play around with the value N for EMA to
+// TODO_MAINNET(@olshansk, @rawthil): Play around with the value N for EMA to
 // capture what the memory should be.
 var emaSmoothingFactor = new(big.Float).SetFloat64(0.1)
 

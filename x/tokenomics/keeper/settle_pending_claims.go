@@ -207,8 +207,9 @@ func (k Keeper) getExpiringClaims(ctx sdk.Context) (expiringClaims []prooftypes.
 		int64(claimWindowSizeBlocks+
 			proofWindowSizeBlocks+1)
 
-	allClaims := k.proofKeeper.GetAllClaims(ctx)
-	_ = allClaims
+	// DEV_NOTE: This is being kept in for an easy uncomment plus debugging purposes.
+	// allClaims := k.proofKeeper.GetAllClaims(ctx)
+	// _ = allClaims
 
 	var nextKey []byte
 	for {

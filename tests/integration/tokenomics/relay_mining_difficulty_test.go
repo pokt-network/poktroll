@@ -123,41 +123,6 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	require.Equal(t, expectedNumRelays, relayMiningEvent.NewNumRelaysEma)
 }
 
-func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
-
-	// Create a new integration app
-	integrationApp := integration.NewCompleteIntegrationApp(t)
-	sdkCtx := integrationApp.GetSdkCtx()
-
-	// Move forward a few blocks to move away from the genesis block
-	integrationApp.NextBlocks(t, 3)
-
-	err := keepers.Keeper.SetParams(ctx, tokenomicstypes.Params{
-		ComputeUnitsToTokensMultiplier: globalComputeUnitsToTokensMultiplier,
-	})
-	require.NoError(t, err)
-
-	// Prepare w/ a simple setup
-	// - Set GlobalTokensPerComputeUnit = 1
-	// - Set Service ComputeUnitsPerRelay = 1
-
-	// Create a tree + claim where:
-	// - 1 Relay -> Earn small reward
-	// - 10 Relays -> Increase reward
-	// - 100 Relays -> Increase reward
-	// - 1000,...,1e12 Relays -> Continue increasing reward
-
-	// Update the relay mining difficulty and
-	// - Check that EMA is changing
-	// - Check that the difficulty is chaing
-
-	// Maintain a map of {num_relays -> num_rewards}
-	// Then compute, for everything we have in the map (double list)
-	// - Ratio of curr_relays to prev_relays
-	// - Ratio of curr_rewards to prev_rewards
-	// - Ensure the above are the same
-}
-
 func UpdateRelayMiningDifficulty_UpdatingMultipleServicesAtOnce(t *testing.T) {
 	t.Skip("TODO_TEST: Implement this test")
 }

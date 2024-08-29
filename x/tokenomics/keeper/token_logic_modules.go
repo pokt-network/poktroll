@@ -585,6 +585,13 @@ func (k Keeper) distributeSupplierRewardsToShareHolders(
 		}
 	}
 
+	// TODO_BETA(@red-0ne): This forces the service to have a rev share config
+	// but "MsgStakeSupplier.ValidateBasic()" doesn't enforce this. We need to
+	// either:
+	// - Allow an empty rev share and account of it here
+	// - Build a default one
+	// - Fix ValidateBasic to enforce it
+
 	if serviceRevShare == nil {
 		return tokenomicstypes.ErrTokenomicsSupplierRevShareFailed.Wrapf(
 			"service %q not found for supplier %v",
