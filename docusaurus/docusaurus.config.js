@@ -117,12 +117,6 @@ const config = {
           {
             type: "docSidebar",
             position: "left",
-            sidebarId: "planningSidebar",
-            label: "🗒️ Planning",
-          },
-          {
-            type: "docSidebar",
-            position: "left",
             sidebarId: "exploreSidebar",
             label: "🗺 Explore",
           },

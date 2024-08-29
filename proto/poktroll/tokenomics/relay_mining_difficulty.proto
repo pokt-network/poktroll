@@ -6,7 +6,7 @@ option go_package = "github.com/pokt-network/poktroll/x/tokenomics/types";
 // RelayMiningDifficulty is a message used to store the on-chain Relay Mining
 // difficulty associated with a specific service ID.
 message RelayMiningDifficulty {
-    // The service ID the the relay mining difficulty is associated with.
+    // The service ID the relay mining difficulty is associated with.
     string service_id = 1;
 
     // The block height at which this relay mining difficulty was computed.
