@@ -84,7 +84,7 @@ func (k msgServer) CreateClaim(
 		return nil, status.Error(codes.Internal, types.ErrProofInvalidClaimRootHash.Wrapf("%v", err).Error())
 	}
 
-	// For now, we expect the following equation to always hold:
+	// DEV_NOTE: For now, we expect the following equation to always hold:
 	// numClaimComputeUnits = numRelays * service.computeUnitsPerRelay
 	// This is because for any specific service, every relay is worth the same.
 	// However, this may change in the future.
