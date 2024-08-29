@@ -32,7 +32,7 @@ import (
 
 // TODO_TEST: Add a test case which simulates a cold-started relayminer with unclaimed relays.
 
-// TODO_INCOMPLETE: Add a test case which verifies that the service's compute units per relay is used as
+// TODO_BETA(@red-0ne): Add a test case which verifies that the service's compute units per relay is used as
 // the weight of a relay when updating a session's SMT.
 
 func TestRelayerSessionsManager_Start(t *testing.T) {
