@@ -2,22 +2,22 @@ package supplier_test
 
 import (
 	"context"
-	"crypto/sha256"
 	"testing"
 	"time"
 
 	"cosmossdk.io/depinject"
 	"github.com/golang/mock/gomock"
 	"github.com/pokt-network/smt"
-	"github.com/pokt-network/smt/kvstore/badger"
+	"github.com/pokt-network/smt/kvstore/pebble"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/client/keyring"
 	"github.com/pokt-network/poktroll/pkg/client/supplier"
-	"github.com/pokt-network/poktroll/pkg/relayer"
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/testclient/testkeyring"
 	"github.com/pokt-network/poktroll/testutil/testclient/testtx"
+	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -112,15 +112,13 @@ func TestSupplierClient_CreateClaim(t *testing.T) {
 		},
 	}
 
-	sessionClaims := []*relayer.SessionClaim{
-		{
-			RootHash:      rootHash,
-			SessionHeader: &sessionHeader,
-		},
+	msgClaim := &prooftypes.MsgCreateClaim{
+		RootHash:      rootHash,
+		SessionHeader: &sessionHeader,
 	}
 
 	go func() {
-		err = supplierClient.CreateClaims(ctx, sessionClaims)
+		err = supplierClient.CreateClaims(ctx, msgClaim)
 		require.NoError(t, err)
 		close(doneCh)
 	}()
@@ -177,13 +175,13 @@ func TestSupplierClient_SubmitProof(t *testing.T) {
 		},
 	}
 
-	kvStore, err := badger.NewKVStore("")
+	kvStore, err := pebble.NewKVStore("")
 	require.NoError(t, err)
 
 	// Generating an ephemeral tree & spec just so we can submit
 	// a proof of the right size.
 	// TODO_TECHDEBT(#446): Centralize the configuration for the SMT spec.
-	tree := smt.NewSparseMerkleSumTrie(kvStore, sha256.New())
+	tree := smt.NewSparseMerkleSumTrie(kvStore, protocol.NewTrieHasher())
 	emptyPath := make([]byte, tree.PathHasherSize())
 	proof, err := tree.ProveClosest(emptyPath)
 	require.NoError(t, err)
@@ -191,15 +189,13 @@ func TestSupplierClient_SubmitProof(t *testing.T) {
 	proofBz, err := proof.Marshal()
 	require.NoError(t, err)
 
-	sessionProofs := []*relayer.SessionProof{
-		{
-			ProofBz:       proofBz,
-			SessionHeader: &sessionHeader,
-		},
+	msgProof := &prooftypes.MsgSubmitProof{
+		Proof:         proofBz,
+		SessionHeader: &sessionHeader,
 	}
 
 	go func() {
-		err = supplierClient.SubmitProofs(ctx, sessionProofs)
+		err = supplierClient.SubmitProofs(ctx, msgProof)
 		require.NoError(t, err)
 		close(doneCh)
 	}()

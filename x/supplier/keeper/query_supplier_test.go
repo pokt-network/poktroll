@@ -18,8 +18,8 @@ import (
 var _ = strconv.IntSize
 
 func TestSupplierQuerySingle(t *testing.T) {
-	keeper, ctx := keepertest.SupplierKeeper(t)
-	suppliers := createNSuppliers(keeper, ctx, 2)
+	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
+	suppliers := createNSuppliers(*supplierModuleKeepers.Keeper, ctx, 2)
 	tests := []struct {
 		desc        string
 		request     *types.QueryGetSupplierRequest
@@ -29,21 +29,21 @@ func TestSupplierQuerySingle(t *testing.T) {
 		{
 			desc: "First",
 			request: &types.QueryGetSupplierRequest{
-				Address: suppliers[0].Address,
+				OperatorAddress: suppliers[0].OperatorAddress,
 			},
 			response: &types.QueryGetSupplierResponse{Supplier: suppliers[0]},
 		},
 		{
 			desc: "Second",
 			request: &types.QueryGetSupplierRequest{
-				Address: suppliers[1].Address,
+				OperatorAddress: suppliers[1].OperatorAddress,
 			},
 			response: &types.QueryGetSupplierResponse{Supplier: suppliers[1]},
 		},
 		{
 			desc: "KeyNotFound",
 			request: &types.QueryGetSupplierRequest{
-				Address: strconv.Itoa(100000),
+				OperatorAddress: strconv.Itoa(100000),
 			},
 			expectedErr: status.Error(codes.NotFound, "supplier with address \"100000\""),
 		},
@@ -54,7 +54,7 @@ func TestSupplierQuerySingle(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			response, err := keeper.Supplier(ctx, test.request)
+			response, err := supplierModuleKeepers.Supplier(ctx, test.request)
 			if test.expectedErr != nil {
 				require.ErrorIs(t, err, test.expectedErr)
 			} else {
@@ -69,8 +69,8 @@ func TestSupplierQuerySingle(t *testing.T) {
 }
 
 func TestSupplierQueryPaginated(t *testing.T) {
-	keeper, ctx := keepertest.SupplierKeeper(t)
-	msgs := createNSuppliers(keeper, ctx, 5)
+	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
+	msgs := createNSuppliers(*supplierModuleKeepers.Keeper, ctx, 5)
 
 	request := func(next []byte, offset, limit uint64, total bool) *types.QueryAllSuppliersRequest {
 		return &types.QueryAllSuppliersRequest{
@@ -85,7 +85,7 @@ func TestSupplierQueryPaginated(t *testing.T) {
 	t.Run("ByOffset", func(t *testing.T) {
 		step := 2
 		for i := 0; i < len(msgs); i += step {
-			resp, err := keeper.AllSuppliers(ctx, request(nil, uint64(i), uint64(step), false))
+			resp, err := supplierModuleKeepers.AllSuppliers(ctx, request(nil, uint64(i), uint64(step), false))
 			require.NoError(t, err)
 			require.LessOrEqual(t, len(resp.Supplier), step)
 			require.Subset(t,
@@ -98,7 +98,7 @@ func TestSupplierQueryPaginated(t *testing.T) {
 		step := 2
 		var next []byte
 		for i := 0; i < len(msgs); i += step {
-			resp, err := keeper.AllSuppliers(ctx, request(next, 0, uint64(step), false))
+			resp, err := supplierModuleKeepers.AllSuppliers(ctx, request(next, 0, uint64(step), false))
 			require.NoError(t, err)
 			require.LessOrEqual(t, len(resp.Supplier), step)
 			require.Subset(t,
@@ -109,7 +109,7 @@ func TestSupplierQueryPaginated(t *testing.T) {
 		}
 	})
 	t.Run("Total", func(t *testing.T) {
-		resp, err := keeper.AllSuppliers(ctx, request(nil, 0, 0, true))
+		resp, err := supplierModuleKeepers.AllSuppliers(ctx, request(nil, 0, 0, true))
 		require.NoError(t, err)
 		require.Equal(t, len(msgs), int(resp.Pagination.Total))
 		require.ElementsMatch(t,
@@ -118,7 +118,7 @@ func TestSupplierQueryPaginated(t *testing.T) {
 		)
 	})
 	t.Run("InvalidRequest", func(t *testing.T) {
-		_, err := keeper.AllSuppliers(ctx, nil)
+		_, err := supplierModuleKeepers.AllSuppliers(ctx, nil)
 		require.ErrorIs(t, err, status.Error(codes.InvalidArgument, "invalid request"))
 	})
 }

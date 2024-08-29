@@ -136,7 +136,7 @@ func (app *appGateServer) Start(ctx context.Context) error {
 	// Shutdown the HTTP server when the context is done.
 	go func() {
 		<-ctx.Done()
-		app.server.Shutdown(ctx)
+		_ = app.server.Shutdown(ctx)
 	}()
 
 	// This hooks https://github.com/slok/go-http-metrics to the appgate server HTTP server.
@@ -300,13 +300,15 @@ func (app *appGateServer) ServePprof(ctx context.Context, addr string) error {
 	// If no error, start the server in a new goroutine
 	go func() {
 		app.logger.Info().Str("endpoint", addr).Msg("starting a pprof endpoint")
-		server.ListenAndServe()
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			app.logger.Error().Str("endpoint", addr).Msg("unable to start a pprof endpoint")
+		}
 	}()
 
 	go func() {
 		<-ctx.Done()
 		app.logger.Info().Str("endpoint", addr).Msg("stopping a pprof endpoint")
-		server.Shutdown(ctx)
+		_ = server.Shutdown(ctx)
 	}()
 
 	return nil

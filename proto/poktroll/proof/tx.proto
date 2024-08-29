@@ -10,9 +10,8 @@ import "cosmos/msg/v1/msg.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 import "poktroll/proof/params.proto";
-import "poktroll/proof/claim.proto";
-import "poktroll/proof/proof.proto";
-import "poktroll/session/session.proto";
+import "poktroll/proof/types.proto";
+import "poktroll/session/types.proto";
 import "poktroll/shared/service.proto";
 
 // Msg defines the Msg service.
@@ -74,8 +73,8 @@ message MsgUpdateParamResponse {
 }
 
 message MsgCreateClaim {
-  option (cosmos.msg.v1.signer) = "supplier_address";
-  string                         supplier_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  option (cosmos.msg.v1.signer) = "supplier_operator_address";
+  string                         supplier_operator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   poktroll.session.SessionHeader session_header = 2;
 
   // root returned from smt.SMST#Root()
@@ -87,8 +86,8 @@ message MsgCreateClaimResponse {
 }
 
 message MsgSubmitProof {
-  option (cosmos.msg.v1.signer) = "supplier_address";
-  string                         supplier_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  option (cosmos.msg.v1.signer) = "supplier_operator_address";
+  string                         supplier_operator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   poktroll.session.SessionHeader session_header = 2;
 
   // serialized version of *smt.SparseMerkleClosestProof

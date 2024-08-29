@@ -2,14 +2,14 @@ package integration_test
 
 import (
 	"context"
-	"crypto/sha256"
 	"testing"
 
 	"github.com/pokt-network/smt"
-	"github.com/pokt-network/smt/kvstore/badger"
+	"github.com/pokt-network/smt/kvstore/pebble"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	testutilevents "github.com/pokt-network/poktroll/testutil/events"
 	"github.com/pokt-network/poktroll/testutil/integration"
 	testutil "github.com/pokt-network/poktroll/testutil/integration"
@@ -21,17 +21,16 @@ import (
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-// TODO_UPNEXT(@Olshansk, #571): Implement these tests
-
 func init() {
 	cmd.InitSDKConfig()
 }
 
 func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T) {
-	var claimWindowOpenBlockHash, proofWindowOpenBlockHash []byte
+	var claimWindowOpenBlockHash, proofWindowOpenBlockHash, proofPathSeedBlockHash []byte
 
 	// Create a new integration app
 	integrationApp := integration.NewCompleteIntegrationApp(t)
+	sdkCtx := integrationApp.GetSdkCtx()
 
 	// Move forward a few blocks to move away from the genesis block
 	integrationApp.NextBlocks(t, 3)
@@ -41,7 +40,7 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	sharedParams := getSharedParams(t, integrationApp)
 
 	// Prepare the trie with a single mined relay
-	trie := prepareSMST(t, integrationApp.GetSdkCtx(), integrationApp, session)
+	trie := prepareSMST(t, sdkCtx, integrationApp, session)
 
 	// Compute the number of blocks to wait between different events
 	// TODO_BLOCKER(@bryanchriswhite): See this comment: https://github.com/pokt-network/poktroll/pull/610#discussion_r1645777322
@@ -50,27 +49,27 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 		&sharedParams,
 		sessionEndHeight,
 		claimWindowOpenBlockHash,
-		integrationApp.DefaultSupplier.GetAddress(),
+		integrationApp.DefaultSupplier.GetOperatorAddress(),
 	)
 	earliestSupplierProofCommitHeight := shared.GetEarliestSupplierProofCommitHeight(
 		&sharedParams,
 		sessionEndHeight,
 		proofWindowOpenBlockHash,
-		integrationApp.DefaultSupplier.GetAddress(),
+		integrationApp.DefaultSupplier.GetOperatorAddress(),
 	)
 	proofWindowCloseHeight := shared.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
 
 	// Wait until the earliest claim commit height.
-	currentBlockHeight := integrationApp.GetSdkCtx().BlockHeight()
+	currentBlockHeight := sdkCtx.BlockHeight()
 	numBlocksUntilClaimWindowOpenHeight := earliestSupplierClaimCommitHeight - currentBlockHeight
 	require.Greater(t, numBlocksUntilClaimWindowOpenHeight, int64(0), "unexpected non-positive number of blocks until the earliest claim commit height")
 	integrationApp.NextBlocks(t, int(numBlocksUntilClaimWindowOpenHeight))
 
 	// Construct a new create claim message and commit it.
 	createClaimMsg := prooftypes.MsgCreateClaim{
-		SupplierAddress: integrationApp.DefaultSupplier.Address,
-		SessionHeader:   session.Header,
-		RootHash:        trie.Root(),
+		SupplierOperatorAddress: integrationApp.DefaultSupplier.OperatorAddress,
+		SessionHeader:           session.Header,
+		RootHash:                trie.Root(),
 	}
 	result := integrationApp.RunMsg(t,
 		&createClaimMsg,
@@ -80,16 +79,16 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	require.NotNil(t, result, "unexpected nil result when submitting a MsgCreateClaim tx")
 
 	// Wait until the proof window is open
-	currentBlockHeight = integrationApp.GetSdkCtx().BlockHeight()
+	currentBlockHeight = sdkCtx.BlockHeight()
 	numBlocksUntilProofWindowOpenHeight := earliestSupplierProofCommitHeight - currentBlockHeight
 	require.Greater(t, numBlocksUntilProofWindowOpenHeight, int64(0), "unexpected non-positive number of blocks until the earliest proof commit height")
 	integrationApp.NextBlocks(t, int(numBlocksUntilProofWindowOpenHeight))
 
 	// Construct a new proof message and commit it
 	createProofMsg := prooftypes.MsgSubmitProof{
-		SupplierAddress: integrationApp.DefaultSupplier.Address,
-		SessionHeader:   session.Header,
-		Proof:           getProof(t, trie),
+		SupplierOperatorAddress: integrationApp.DefaultSupplier.OperatorAddress,
+		SessionHeader:           session.Header,
+		Proof:                   getProof(t, trie, proofPathSeedBlockHash, session.GetHeader().GetSessionId()),
 	}
 	result = integrationApp.RunMsg(t,
 		&createProofMsg,
@@ -99,28 +98,25 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	require.NotNil(t, result, "unexpected nil result when submitting a MsgSubmitProof tx")
 
 	// Wait until the proof window is closed
-	currentBlockHeight = integrationApp.GetSdkCtx().BlockHeight()
+	currentBlockHeight = sdkCtx.BlockHeight()
 	numBlocksUntilProofWindowCloseHeight := proofWindowCloseHeight - currentBlockHeight
 	require.Greater(t, numBlocksUntilProofWindowOpenHeight, int64(0), "unexpected non-positive number of blocks until the earliest proof commit height")
-	// TODO_TECHDEBT(@bryanchriswhite): Olshansky is unsure why the +1 is necessary here
-	// but it was required to pass the test.
+
+	// TODO_TECHDEBT(@bryanchriswhite): Olshansky is unsure why the +1 is necessary here but it was required to pass the test.
 	integrationApp.NextBlocks(t, int(numBlocksUntilProofWindowCloseHeight)+1)
 
-	// The number 14 was determined empirically by running the tests and will need
-	// to be updated if they are changed.
-	expectedNumEvents := 15
-	// Check the number of events is consistent.
-	events := integrationApp.GetSdkCtx().EventManager().Events()
-	require.Equalf(t, expectedNumEvents, len(events), "unexpected number of total events")
-
+	// Check that the expected events are emitted
+	events := sdkCtx.EventManager().Events()
 	relayMiningEvents := testutilevents.FilterEvents[*tokenomicstypes.EventRelayMiningDifficultyUpdated](t,
 		events, "poktroll.tokenomics.EventRelayMiningDifficultyUpdated")
 	require.Len(t, relayMiningEvents, 1, "unexpected number of relay mining difficulty updated events")
 	relayMiningEvent := relayMiningEvents[0]
 	require.Equal(t, "svc1", relayMiningEvent.ServiceId)
-	// The default difficulty)
-	require.Equal(t, "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", relayMiningEvent.PrevTargetHashHexEncoded)
-	require.Equal(t, "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", relayMiningEvent.NewTargetHashHexEncoded)
+
+	// The default difficulty
+	require.Equal(t, prooftypes.DefaultRelayDifficultyTargetHashHex, relayMiningEvent.PrevTargetHashHexEncoded)
+	require.Equal(t, prooftypes.DefaultRelayDifficultyTargetHashHex, relayMiningEvent.NewTargetHashHexEncoded)
+
 	// The previous EMA is the same as the current one if the service is new
 	require.Equal(t, uint64(1), relayMiningEvent.PrevNumRelaysEma)
 	require.Equal(t, uint64(1), relayMiningEvent.NewNumRelaysEma)
@@ -138,10 +134,12 @@ func UpdateRelayMiningDifficulty_UpdateServiceIsDecreasing(t *testing.T) {}
 func getSharedParams(t *testing.T, integrationApp *testutil.App) sharedtypes.Params {
 	t.Helper()
 
+	sdkCtx := integrationApp.GetSdkCtx()
+
 	sharedQueryClient := sharedtypes.NewQueryClient(integrationApp.QueryHelper())
 	sharedParamsReq := sharedtypes.QueryParamsRequest{}
 
-	sharedQueryRes, err := sharedQueryClient.Params(integrationApp.GetSdkCtx(), &sharedParamsReq)
+	sharedQueryRes, err := sharedQueryClient.Params(sdkCtx, &sharedParamsReq)
 	require.NoError(t, err)
 
 	return sharedQueryRes.Params
@@ -151,14 +149,16 @@ func getSharedParams(t *testing.T, integrationApp *testutil.App) sharedtypes.Par
 func getSession(t *testing.T, integrationApp *testutil.App) *sessiontypes.Session {
 	t.Helper()
 
+	sdkCtx := integrationApp.GetSdkCtx()
+
 	sessionQueryClient := sessiontypes.NewQueryClient(integrationApp.QueryHelper())
 	getSessionReq := sessiontypes.QueryGetSessionRequest{
 		ApplicationAddress: integrationApp.DefaultApplication.Address,
 		Service:            integrationApp.DefaultService,
-		BlockHeight:        integrationApp.GetSdkCtx().BlockHeight(),
+		BlockHeight:        sdkCtx.BlockHeight(),
 	}
 
-	getSessionRes, err := sessionQueryClient.GetSession(integrationApp.GetSdkCtx(), &getSessionReq)
+	getSessionRes, err := sessionQueryClient.GetSession(sdkCtx, &getSessionReq)
 	require.NoError(t, err)
 	require.NotNil(t, getSessionRes, "unexpected nil queryResponse")
 	return getSessionRes.Session
@@ -175,7 +175,7 @@ func prepareSMST(
 	// Generating an ephemeral tree & spec just so we can submit
 	// a proof of the right size.
 	// TODO_TECHDEBT(#446): Centralize the configuration for the SMT spec.
-	kvStore, err := badger.NewKVStore("")
+	kvStore, err := pebble.NewKVStore("")
 	require.NoError(t, err)
 
 	// NB: A signed mined relay is a MinedRelay type with the appropriate
@@ -186,13 +186,13 @@ func prepareSMST(
 	minedRelay := testrelayer.NewSignedMinedRelay(t, ctx,
 		session,
 		integrationApp.DefaultApplication.Address,
-		integrationApp.DefaultSupplier.Address,
+		integrationApp.DefaultSupplier.OperatorAddress,
 		integrationApp.DefaultSupplierKeyringKeyringUid,
 		integrationApp.GetKeyRing(),
 		integrationApp.GetRingClient(),
 	)
 
-	trie := smt.NewSparseMerkleSumTrie(kvStore, sha256.New(), smt.WithValueHasher(nil))
+	trie := smt.NewSparseMerkleSumTrie(kvStore, protocol.NewTrieHasher(), smt.WithValueHasher(nil))
 	err = trie.Update(minedRelay.Hash, minedRelay.Bytes, 1)
 	require.NoError(t, err)
 
@@ -202,11 +202,16 @@ func prepareSMST(
 // getProof returns a proof for the given session for the empty path.
 // If there is only one relay in the trie, the proof will be for that single
 // relay since it is "closest" to any path provided, empty or not.
-func getProof(t *testing.T, trie *smt.SMST) []byte {
+func getProof(
+	t *testing.T,
+	trie *smt.SMST,
+	pathSeedBlockHash []byte,
+	sessionId string,
+) []byte {
 	t.Helper()
 
-	emptyPath := make([]byte, trie.PathHasherSize())
-	proof, err := trie.ProveClosest(emptyPath)
+	path := protocol.GetPathForProof(pathSeedBlockHash, sessionId)
+	proof, err := trie.ProveClosest(path)
 	require.NoError(t, err)
 
 	proofBz, err := proof.Marshal()

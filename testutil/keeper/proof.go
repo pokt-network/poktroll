@@ -28,6 +28,7 @@ import (
 	applicationmocks "github.com/pokt-network/poktroll/testutil/application/mocks"
 	gatewaymocks "github.com/pokt-network/poktroll/testutil/gateway/mocks"
 	"github.com/pokt-network/poktroll/testutil/proof/mocks"
+	servicemocks "github.com/pokt-network/poktroll/testutil/service/mocks"
 	sessionmocks "github.com/pokt-network/poktroll/testutil/session/mocks"
 	suppliermocks "github.com/pokt-network/poktroll/testutil/supplier/mocks"
 	appkeeper "github.com/pokt-network/poktroll/x/application/keeper"
@@ -37,6 +38,8 @@ import (
 	"github.com/pokt-network/poktroll/x/proof/keeper"
 	"github.com/pokt-network/poktroll/x/proof/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
+	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedkeeper "github.com/pokt-network/poktroll/x/shared/keeper"
@@ -118,6 +121,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 		gatewaytypes.StoreKey,
 		authtypes.StoreKey,
 		sharedtypes.StoreKey,
+		servicetypes.StoreKey,
 	)
 
 	// Construct a multistore & mount store keys for each keeper that will interact with the state store.
@@ -179,6 +183,15 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 	)
 	require.NoError(t, appKeeper.SetParams(ctx, apptypes.DefaultParams()))
 
+	// Construct a service keeper need by the supplier keeper.
+	serviceKeeper := servicekeeper.NewKeeper(
+		cdc,
+		runtime.NewKVStoreService(keys[types.StoreKey]),
+		log.NewNopLogger(),
+		authority.String(),
+		servicemocks.NewMockBankKeeper(ctrl),
+	)
+
 	// Construct a real supplier keeper to add suppliers to sessions.
 	supplierKeeper := supplierkeeper.NewKeeper(
 		cdc,
@@ -186,6 +199,8 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 		log.NewNopLogger(),
 		authority.String(),
 		suppliermocks.NewMockBankKeeper(ctrl),
+		sharedKeeper,
+		serviceKeeper,
 	)
 	require.NoError(t, supplierKeeper.SetParams(ctx, suppliertypes.DefaultParams()))
 
@@ -241,13 +256,13 @@ func (keepers *ProofModuleKeepers) AddServiceActors(
 	ctx context.Context,
 	t *testing.T,
 	service *sharedtypes.Service,
-	supplierAddr string,
+	supplierOperatorAddr string,
 	appAddr string,
 ) {
 	t.Helper()
 
 	keepers.SetSupplier(ctx, sharedtypes.Supplier{
-		Address: supplierAddr,
+		OperatorAddress: supplierOperatorAddr,
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{Service: service},
 		},

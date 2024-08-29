@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/crypto"
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	testutilkeyring "github.com/pokt-network/poktroll/testutil/testkeyring"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
@@ -32,15 +33,15 @@ import (
 func NewUnsignedMinedRelay(
 	t *testing.T,
 	session *sessiontypes.Session,
-	supplierAddress string,
+	supplierOperatorAddress string,
 ) *relayer.MinedRelay {
 	t.Helper()
 
 	relay := servicetypes.Relay{
 		Req: &servicetypes.RelayRequest{
 			Meta: servicetypes.RelayRequestMetadata{
-				SessionHeader:   session.Header,
-				SupplierAddress: supplierAddress,
+				SessionHeader:           session.Header,
+				SupplierOperatorAddress: supplierOperatorAddress,
 			},
 			Payload: []byte("request_payload"),
 		},
@@ -52,11 +53,10 @@ func NewUnsignedMinedRelay(
 		},
 	}
 
-	// TODO_TECHDEBT(@red-0ne): marshal using canonical codec.
 	relayBz, err := relay.Marshal()
 	require.NoError(t, err)
 
-	relayHashArr := servicetypes.GetHashFromBytes(relayBz)
+	relayHashArr := protocol.GetRelayHashFromBytes(relayBz)
 	relayHash := relayHashArr[:]
 
 	return &relayer.MinedRelay{
@@ -81,7 +81,7 @@ func NewSignedMinedRelay(
 	t *testing.T,
 	ctx context.Context,
 	session *sessiontypes.Session,
-	appAddr, supplierAddr, supplierKeyUid string,
+	appAddr, supplierOperatorAddr, supplierOperatorKeyUid string,
 	keyRing keyring.Keyring,
 	ringClient crypto.RingClient,
 ) *relayer.MinedRelay {
@@ -90,8 +90,8 @@ func NewSignedMinedRelay(
 	relay := servicetypes.Relay{
 		Req: &servicetypes.RelayRequest{
 			Meta: servicetypes.RelayRequestMetadata{
-				SessionHeader:   session.Header,
-				SupplierAddress: supplierAddr,
+				SessionHeader:           session.Header,
+				SupplierOperatorAddress: supplierOperatorAddr,
 			},
 			Payload: []byte("request_payload"),
 		},
@@ -104,13 +104,13 @@ func NewSignedMinedRelay(
 	}
 
 	SignRelayRequest(ctx, t, &relay, appAddr, keyRing, ringClient)
-	SignRelayResponse(ctx, t, &relay, supplierKeyUid, supplierAddr, keyRing)
+	SignRelayResponse(ctx, t, &relay, supplierOperatorKeyUid, supplierOperatorAddr, keyRing)
 
 	// TODO_TECHDEBT(@red-0ne): marshal using canonical codec.
 	relayBz, err := relay.Marshal()
 	require.NoError(t, err)
 
-	relayHashArr := servicetypes.GetHashFromBytes(relayBz)
+	relayHashArr := protocol.GetRelayHashFromBytes(relayBz)
 	relayHash := relayHashArr[:]
 
 	return &relayer.MinedRelay{
@@ -164,13 +164,13 @@ func SignRelayRequest(
 
 // TODO_TECHDEBT(@red-0ne): Centralize this logic in the relayer package.
 // in the relayer package?
-// SignRelayResponse signs the relay response (updates relay.Res.Meta.SupplierSignature)
-// on behalf of supplierAddr using the clients provided.
+// SignRelayResponse signs the relay response (updates relay.Res.Meta.SupplierOperatorSignature)
+// on behalf of supplierOperatorAddr using the clients provided.
 func SignRelayResponse(
 	_ context.Context,
 	t *testing.T,
 	relay *servicetypes.Relay,
-	supplierKeyUid, supplierAddr string,
+	supplierOperatorKeyUid, supplierOperatorAddr string,
 	keyRing keyring.Keyring,
 ) {
 	t.Helper()
@@ -180,17 +180,17 @@ func SignRelayResponse(
 	require.NoError(t, err)
 
 	// Sign the relay response.
-	signatureBz, signerPubKey, err := keyRing.Sign(supplierKeyUid, relayResSignableBz[:], signingtypes.SignMode_SIGN_MODE_DIRECT)
+	signatureBz, signerPubKey, err := keyRing.Sign(supplierOperatorKeyUid, relayResSignableBz[:], signingtypes.SignMode_SIGN_MODE_DIRECT)
 	require.NoError(t, err)
 
-	// Verify the signer address matches the expected supplier address.
-	addr, err := cosmostypes.AccAddressFromBech32(supplierAddr)
+	// Verify the signer address matches the expected supplier operator address.
+	addr, err := cosmostypes.AccAddressFromBech32(supplierOperatorAddr)
 	require.NoError(t, err)
 	addrHexBz := strings.ToUpper(fmt.Sprintf("%x", addr.Bytes()))
 	require.Equal(t, addrHexBz, signerPubKey.Address().String())
 
 	// Update the relay response signature.
-	relay.Res.Meta.SupplierSignature = signatureBz
+	relay.Res.Meta.SupplierOperatorSignature = signatureBz
 }
 
 // NewSignedEmptyRelay creates a new relay structure for the given req & res headers.
@@ -199,36 +199,36 @@ func SignRelayResponse(
 func NewSignedEmptyRelay(
 	ctx context.Context,
 	t *testing.T,
-	supplierKeyUid, supplierAddr string,
+	supplierOperatorKeyUid, supplierOperatorAddr string,
 	reqHeader, resHeader *sessiontypes.SessionHeader,
 	keyRing keyring.Keyring,
 	ringClient crypto.RingClient,
 ) *servicetypes.Relay {
 	t.Helper()
 
-	relay := NewEmptyRelay(reqHeader, resHeader, supplierAddr)
+	relay := NewEmptyRelay(reqHeader, resHeader, supplierOperatorAddr)
 	SignRelayRequest(ctx, t, relay, reqHeader.GetApplicationAddress(), keyRing, ringClient)
-	SignRelayResponse(ctx, t, relay, supplierKeyUid, supplierAddr, keyRing)
+	SignRelayResponse(ctx, t, relay, supplierOperatorKeyUid, supplierOperatorAddr, keyRing)
 
 	return relay
 }
 
 // NewEmptyRelay creates a new relay structure for the given req & res headers
 // WITHOUT any payload or signatures.
-func NewEmptyRelay(reqHeader, resHeader *sessiontypes.SessionHeader, supplierAddr string) *servicetypes.Relay {
+func NewEmptyRelay(reqHeader, resHeader *sessiontypes.SessionHeader, supplierOperatorAddr string) *servicetypes.Relay {
 	return &servicetypes.Relay{
 		Req: &servicetypes.RelayRequest{
 			Meta: servicetypes.RelayRequestMetadata{
-				SessionHeader:   reqHeader,
-				Signature:       nil, // Signature added elsewhere.
-				SupplierAddress: supplierAddr,
+				SessionHeader:           reqHeader,
+				Signature:               nil, // Signature added elsewhere.
+				SupplierOperatorAddress: supplierOperatorAddr,
 			},
 			Payload: nil,
 		},
 		Res: &servicetypes.RelayResponse{
 			Meta: servicetypes.RelayResponseMetadata{
-				SessionHeader:     resHeader,
-				SupplierSignature: nil, // Signature added elsewhere.
+				SessionHeader:             resHeader,
+				SupplierOperatorSignature: nil, // Signature added elsewhere.
 			},
 			Payload: nil,
 		},

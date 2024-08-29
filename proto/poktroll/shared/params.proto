@@ -13,10 +13,10 @@ message Params {
 
   // num_blocks_per_session is the number of blocks between the session start & end heights.
   uint64 num_blocks_per_session = 1 [(gogoproto.jsontag) = "num_blocks_per_session"];
-  // grace_period_end_offset_blocks is the number of blocks after the session end height,
-  // at which the grace period ends.
-  // Suppliers will get paid for relays serviced during the grace period but will need to recreate a claim if 
-  // a previous one was already submitted.
+  // grace_period_end_offset_blocks is the number of blocks, after the session end height,
+  // during which the supplier can still service payable relays.
+  // Suppliers will need to recreate a claim for the previous session (if already created) to
+  // get paid for the additional relays.
   uint64 grace_period_end_offset_blocks = 2 [(gogoproto.jsontag) = "grace_period_end_offset_blocks"];
   // claim_window_open_offset_blocks is the number of blocks after the session grace
   // period height, at which the claim window opens.
@@ -30,4 +30,14 @@ message Params {
   // proof_window_close_offset_blocks is the number of blocks after the proof window
   // open height, at which the proof window closes.
   uint64 proof_window_close_offset_blocks = 6 [(gogoproto.jsontag) = "proof_window_close_offset_blocks"];
+  // supplier_unbonding_period_sessions is the number of sessions that a supplier must wait after
+  // unstaking before their staked assets are moved to their account balance.
+  // On-chain business logic requires, and ensures, that the corresponding block count of the unbonding
+  // period will exceed the end of any active claim & proof lifecycles.
+  uint64 supplier_unbonding_period_sessions = 7 [(gogoproto.jsontag) = "supplier_unbonding_period_sessions"];
+  // application_unbonding_period_sessions is the number of sessions that an application must wait after
+  // unstaking before their staked assets are moved to their account balance.
+  // On-chain business logic requires, and ensures, that the corresponding block count of the
+  // application unbonding period will exceed the end of its corresponding proof window close height.
+  uint64 application_unbonding_period_sessions = 8 [(gogoproto.jsontag) = "application_unbonding_period_sessions"];
 }

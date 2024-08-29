@@ -25,7 +25,7 @@ func (rp *relayerProxy) VerifyRelayRequest(
 
 	// Verify the relayRequest metadata, signature, session header and other
 	// basic validation.
-	if err := rp.ringCache.VerifyRelayRequestSignature(ctx, relayRequest); err != nil {
+	if err = rp.ringCache.VerifyRelayRequestSignature(ctx, relayRequest); err != nil {
 		return err
 	}
 
@@ -42,10 +42,10 @@ func (rp *relayerProxy) VerifyRelayRequest(
 
 	rp.logger.Debug().
 		Fields(map[string]any{
-			"session_id":          sessionHeader.GetSessionId(),
-			"application_address": appAddress,
-			"service_id":          sessionHeader.GetService().GetId(),
-			"supplier_address":    meta.GetSupplierAddress(),
+			"session_id":                sessionHeader.GetSessionId(),
+			"application_address":       appAddress,
+			"service_id":                sessionHeader.GetService().GetId(),
+			"supplier_operator_address": meta.GetSupplierOperatorAddress(),
 		}).
 		Msg("verifying relay request session")
 
@@ -65,27 +65,24 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	// Since the retrieved sessionId was in terms of:
 	// - the current block height and sessionGracePeriod (which are not provided by the relayRequest)
 	// - serviceId (which is not provided by the relayRequest)
-	// - applicationAddress (which is used to to verify the relayRequest signature)
-	//
-	// TODO_BLOCKER(@Olshansk): Revisit the assumptions above and updated this if
-	// structure if necessary.
+	// - applicationAddress (which is used to verify the relayRequest signature)
 	if session.SessionId != sessionHeader.GetSessionId() {
 		return ErrRelayerProxyInvalidSession.Wrapf(
-			"session mismatch, expecting: %+v, got: %+v",
-			session.Header,
-			relayRequest.Meta.SessionHeader,
+			"session ID mismatch, expecting: %+v, got: %+v",
+			session.GetSessionId(),
+			relayRequest.Meta.GetSessionHeader().GetSessionId(),
 		)
 	}
 
 	// Check if the relayRequest is allowed to be served by the relayer proxy.
-	_, isSupplierAddressPresent := rp.AddressToSigningKeyNameMap[meta.GetSupplierAddress()]
-	if !isSupplierAddressPresent {
-		return ErrRelayerProxyMissingSupplierAddress
+	_, isSupplierOperatorAddressPresent := rp.OperatorAddressToSigningKeyNameMap[meta.GetSupplierOperatorAddress()]
+	if !isSupplierOperatorAddressPresent {
+		return ErrRelayerProxyMissingSupplierOperatorAddress
 	}
 
 	for _, supplier := range session.Suppliers {
-		// Verify if the supplier address in the session matches the one in the relayRequest.
-		if isSupplierAddressPresent && supplier.Address == meta.GetSupplierAddress() {
+		// Verify if the supplier operator address in the session matches the one in the relayRequest.
+		if isSupplierOperatorAddressPresent && supplier.OperatorAddress == meta.GetSupplierOperatorAddress() {
 			return nil
 		}
 	}

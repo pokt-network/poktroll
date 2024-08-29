@@ -1,19 +1,18 @@
-# NB: The stake amount is exactly 1upokt greater than the value in genesis.json
-# so that the stake command causes a state change.
+owner_address: pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4
+operator_address: pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4
 stake_amount: 1000069upokt
+default_rev_share_percent:
+  - pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4: 80.5
+  - pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw: 19.5
 services:
-  - service_id: svc1
-    endpoints:
-      - publicly_exposed_url: http://localhost:8081
-        rpc_type: JSON_RPC
-  # The endpoint URL for the Anvil service is provided via the RelayMiner.
-  # The RelayMiner acts as a proxy, forwarding requests to the actual Anvil data node behind it.
-  # This setup allows for flexible and dynamic service provisioning within the network.
   - service_id: anvil
     endpoints:
       - publicly_exposed_url: http://relayminer1:8545
         rpc_type: JSON_RPC
   - service_id: ollama
+    rev_share_percent:
+      - pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4: 50
+      - pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw: 50
     endpoints:
       - publicly_exposed_url: http://relayminer1:8545
         rpc_type: REST

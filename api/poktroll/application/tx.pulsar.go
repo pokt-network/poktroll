@@ -5,11 +5,11 @@ import (
 	_ "cosmossdk.io/api/amino"
 	v1beta1 "cosmossdk.io/api/cosmos/base/v1beta1"
 	_ "cosmossdk.io/api/cosmos/msg/v1"
+	shared "github.com/pokt-network/poktroll/api/poktroll/shared"
 	fmt "fmt"
 	_ "github.com/cosmos/cosmos-proto"
 	runtime "github.com/cosmos/cosmos-proto/runtime"
 	_ "github.com/cosmos/gogoproto/gogoproto"
-	shared "github.com/pokt-network/poktroll/api/poktroll/shared"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoiface "google.golang.org/protobuf/runtime/protoiface"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -4415,7 +4415,7 @@ type MsgStakeApplication struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Address  string                             `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`   // The Bech32 address of the application using cosmos' ScalarDescriptor to ensure deterministic encoding
+	Address  string                             `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`   // The Bech32 address of the application.
 	Stake    *v1beta1.Coin                      `protobuf:"bytes,2,opt,name=stake,proto3" json:"stake,omitempty"`       // The total amount of uPOKT the application has staked. Must be ≥ to the current amount that the application has staked (if any)
 	Services []*shared.ApplicationServiceConfig `protobuf:"bytes,3,rep,name=services,proto3" json:"services,omitempty"` // The list of services this application is staked to request service for
 }
@@ -4553,8 +4553,8 @@ type MsgDelegateToGateway struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	AppAddress     string `protobuf:"bytes,1,opt,name=app_address,json=appAddress,proto3" json:"app_address,omitempty"`             // The Bech32 address of the application using cosmos' ScalarDescriptor to ensure deterministic deterministic encoding using cosmos' ScalarDescriptor to ensure deterministic deterministic encoding
-	GatewayAddress string `protobuf:"bytes,2,opt,name=gateway_address,json=gatewayAddress,proto3" json:"gateway_address,omitempty"` // The Bech32 address of the gateway the application wants to delegate to using cosmos' ScalarDescriptor to ensure deterministic deterministic encoding using cosmos' ScalarDescriptor to ensure deterministic deterministic encoding
+	AppAddress     string `protobuf:"bytes,1,opt,name=app_address,json=appAddress,proto3" json:"app_address,omitempty"`             // The Bech32 address of the application.
+	GatewayAddress string `protobuf:"bytes,2,opt,name=gateway_address,json=gatewayAddress,proto3" json:"gateway_address,omitempty"` // The Bech32 address of the gateway the application wants to delegate to.
 }
 
 func (x *MsgDelegateToGateway) Reset() {
@@ -4622,8 +4622,8 @@ type MsgUndelegateFromGateway struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	AppAddress     string `protobuf:"bytes,1,opt,name=app_address,json=appAddress,proto3" json:"app_address,omitempty"`             // The Bech32 address of the application using cosmos' ScalarDescriptor to ensure deterministic deterministic encoding using cosmos' ScalarDescriptor to ensure deterministic deterministic encoding
-	GatewayAddress string `protobuf:"bytes,2,opt,name=gateway_address,json=gatewayAddress,proto3" json:"gateway_address,omitempty"` // The Bech32 address of the gateway the application wants to undelegate from using cosmos' ScalarDescriptor to ensure deterministic deterministic encoding using cosmos' ScalarDescriptor to ensure deterministic deterministic encoding
+	AppAddress     string `protobuf:"bytes,1,opt,name=app_address,json=appAddress,proto3" json:"app_address,omitempty"`             // The Bech32 address of the application.
+	GatewayAddress string `protobuf:"bytes,2,opt,name=gateway_address,json=gatewayAddress,proto3" json:"gateway_address,omitempty"` // The Bech32 address of the gateway the application wants to undelegate from.
 }
 
 func (x *MsgUndelegateFromGateway) Reset() {

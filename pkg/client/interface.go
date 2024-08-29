@@ -20,7 +20,6 @@ import (
 	"context"
 
 	cometrpctypes "github.com/cometbft/cometbft/rpc/core/types"
-	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 	comettypes "github.com/cometbft/cometbft/types"
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
@@ -29,11 +28,28 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
-	"github.com/pokt-network/poktroll/pkg/relayer"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
+
+// MsgCreateClaim is an interface satisfying proof.MsgCreateClaim concrete type
+// used by the SupplierClient interface to avoid cyclic dependencies.
+type MsgCreateClaim interface {
+	cosmostypes.Msg
+	GetRootHash() []byte
+	GetSessionHeader() *sessiontypes.SessionHeader
+	GetSupplierOperatorAddress() string
+}
+
+// MsgSubmitProof is an interface satisfying proof.MsgSubmitProof concrete type
+// used by the SupplierClient interface to avoid cyclic dependencies.
+type MsgSubmitProof interface {
+	cosmostypes.Msg
+	GetProof() []byte
+	GetSessionHeader() *sessiontypes.SessionHeader
+	GetSupplierOperatorAddress() string
+}
 
 // SupplierClient is an interface for sufficient for a supplier operator to be
 // able to construct blockchain transactions from pocket protocol-specific messages
@@ -44,7 +60,7 @@ type SupplierClient interface {
 	// session's mined relays.
 	CreateClaims(
 		ctx context.Context,
-		sessionClaims []*relayer.SessionClaim,
+		claimMsgs ...MsgCreateClaim,
 	) error
 	// SubmitProof sends proof messages which contain the smt.SparseMerkleClosestProof,
 	// corresponding to some previously created claim for the same session.
@@ -53,10 +69,10 @@ type SupplierClient interface {
 	// the amount of data stored on-chain.
 	SubmitProofs(
 		ctx context.Context,
-		sessionProofs []*relayer.SessionProof,
+		sessionProofs ...MsgSubmitProof,
 	) error
-	// Address returns the address of the SupplierClient that will be submitting proofs & claims.
-	Address() *cosmostypes.AccAddress
+	// Address returns the operator address of the SupplierClient that will be submitting proofs & claims.
+	OperatorAddress() *cosmostypes.AccAddress
 }
 
 // TxClient provides a synchronous interface initiating and waiting for transactions
@@ -269,7 +285,7 @@ type ApplicationQueryClient interface {
 // on-chain supplier information
 type SupplierQueryClient interface {
 	// GetSupplier queries the chain for the details of the supplier provided
-	GetSupplier(ctx context.Context, supplierAddress string) (sharedtypes.Supplier, error)
+	GetSupplier(ctx context.Context, supplierOperatorAddress string) (sharedtypes.Supplier, error)
 }
 
 // SessionQueryClient defines an interface that enables the querying of the
@@ -299,27 +315,27 @@ type SharedQueryClient interface {
 	GetClaimWindowOpenHeight(ctx context.Context, queryHeight int64) (int64, error)
 	// GetEarliestSupplierClaimCommitHeight returns the earliest block height at which a claim
 	// for the session that includes queryHeight can be committed for a given supplier.
-	GetEarliestSupplierClaimCommitHeight(ctx context.Context, queryHeight int64, supplierAddr string) (int64, error)
+	GetEarliestSupplierClaimCommitHeight(ctx context.Context, queryHeight int64, supplierOperatorAddr string) (int64, error)
 	// GetProofWindowOpenHeight returns the block height at which the proof window of
 	// the session that includes queryHeight opens.
 	GetProofWindowOpenHeight(ctx context.Context, queryHeight int64) (int64, error)
 	// GetEarliestSupplierProofCommitHeight returns the earliest block height at which a proof
 	// for the session that includes queryHeight can be committed for a given supplier.
-	GetEarliestSupplierProofCommitHeight(ctx context.Context, queryHeight int64, supplierAddr string) (int64, error)
+	GetEarliestSupplierProofCommitHeight(ctx context.Context, queryHeight int64, supplierOperatorAddr string) (int64, error)
 }
 
 // BlockQueryClient defines an interface that enables the querying of
 // on-chain block information for a given height. If height is nil, the
 // latest block is returned.
 type BlockQueryClient interface {
-	Block(ctx context.Context, height *int64) (*coretypes.ResultBlock, error)
+	Block(ctx context.Context, height *int64) (*cometrpctypes.ResultBlock, error)
 }
 
 // ProofParams is a go interface type which corresponds to the poktroll.proof.Params
 // protobuf message. Since the generated go types don't include interface types, this
 // is necessary to prevent dependency cycles.
 type ProofParams interface {
-	GetMinRelayDifficultyBits() uint64
+	GetRelayDifficultyTargetHash() []byte
 	GetProofRequestProbability() float32
 	GetProofRequirementThreshold() uint64
 	GetProofMissingPenalty() *cosmostypes.Coin

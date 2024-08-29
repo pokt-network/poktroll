@@ -35,15 +35,15 @@ const (
 // It populates the relayerProxy's `advertisedRelayServers` map of servers for each service, where each server
 // is responsible for listening for incoming relay requests and relaying them to the supported proxied service.
 func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
-	rp.AddressToSigningKeyNameMap = make(map[string]string)
-	for _, signingKeyName := range rp.signingKeyNames {
-		// Get the supplier address from the keyring
-		supplierKey, err := rp.keyring.Key(signingKeyName)
+	rp.OperatorAddressToSigningKeyNameMap = make(map[string]string)
+	for _, operatorSigningKeyName := range rp.signingKeyNames {
+		// Get the supplier operator address from the keyring
+		supplierOperatorKey, err := rp.keyring.Key(operatorSigningKeyName)
 		if err != nil {
 			return err
 		}
 
-		supplierAddress, err := supplierKey.GetAddress()
+		supplierOperatorAddress, err := supplierOperatorKey.GetAddress()
 		if err != nil {
 			return err
 		}
@@ -58,7 +58,7 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 
 		// Prevent the RelayMiner from stopping by waiting until its associated supplier
 		// is staked and its on-chain record retrieved.
-		supplier, err := rp.waitForSupplierToStake(ctx, supplierAddress.String())
+		supplier, err := rp.waitForSupplierToStake(ctx, supplierOperatorAddress.String())
 		if err != nil {
 			return err
 		}
@@ -69,9 +69,9 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 		// service's endpoint
 		for _, service := range supplier.Services {
 			for _, endpoint := range service.Endpoints {
-				endpointUrl, err := url.Parse(endpoint.Url)
-				if err != nil {
-					return err
+				endpointUrl, urlErr := url.Parse(endpoint.Url)
+				if urlErr != nil {
+					return urlErr
 				}
 				found := false
 				// Iterate over the server configs and check if `endpointUrl` is present
@@ -94,29 +94,26 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 			}
 		}
 
-		rp.AddressToSigningKeyNameMap[supplier.Address] = signingKeyName
+		rp.OperatorAddressToSigningKeyNameMap[supplier.OperatorAddress] = operatorSigningKeyName
+	}
 
-		if rp.servers, err = rp.initializeProxyServers(supplier.Services); err != nil {
-			return err
-		}
+	var err error
+	if rp.servers, err = rp.initializeProxyServers(); err != nil {
+		return err
 	}
 
 	return nil
 }
 
 // initializeProxyServers initializes the proxy servers for each server config.
-func (rp *relayerProxy) initializeProxyServers(
-	supplierServices []*sharedtypes.SupplierServiceConfig,
-) (proxyServerMap map[string]relayer.RelayServer, err error) {
+func (rp *relayerProxy) initializeProxyServers() (proxyServerMap map[string]relayer.RelayServer, err error) {
 	// Build a map of serviceId -> service for the supplier's advertised services
-	supplierServiceMap := make(map[string]*sharedtypes.Service)
-	for _, service := range supplierServices {
-		supplierServiceMap[service.Service.Id] = service.Service
-	}
 
 	// Build a map of listenAddress -> RelayServer for each server defined in the config file
 	servers := make(map[string]relayer.RelayServer)
 
+	// serverConfigs is a map with ListenAddress as the key which guarantees that
+	// there are no duplicate servers with the same ListenAddress.
 	for _, serverConfig := range rp.serverConfigs {
 		rp.logger.Info().Str("server host", serverConfig.ListenAddress).Msg("starting relay proxy server")
 
@@ -129,7 +126,6 @@ func (rp *relayerProxy) initializeProxyServers(
 			servers[serverConfig.ListenAddress] = NewSynchronousServer(
 				rp.logger,
 				serverConfig,
-				supplierServiceMap,
 				rp.servedRelaysPublishCh,
 				rp,
 			)
@@ -147,12 +143,12 @@ func (rp *relayerProxy) initializeProxyServers(
 // is most likely staked before the relay miner starts.
 func (rp *relayerProxy) waitForSupplierToStake(
 	ctx context.Context,
-	supplierAddress string,
+	supplierOperatorAddress string,
 ) (supplier sharedtypes.Supplier, err error) {
 	startTime := time.Now()
 	for {
 		// Get the supplier's on-chain record
-		supplier, err = rp.supplierQuerier.GetSupplier(ctx, supplierAddress)
+		supplier, err = rp.supplierQuerier.GetSupplier(ctx, supplierOperatorAddress)
 
 		// If the supplier is not found, wait for the supplier to be staked.
 		// This enables provisioning and deploying a RelayMiner without staking a
@@ -163,7 +159,7 @@ func (rp *relayerProxy) waitForSupplierToStake(
 			rp.logger.Info().Msgf(
 				"Waiting %d seconds for the supplier with address %s to stake",
 				supplierStakeWaitTime/time.Second,
-				supplierAddress,
+				supplierOperatorAddress,
 			)
 			time.Sleep(supplierStakeWaitTime)
 

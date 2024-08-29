@@ -12,7 +12,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/supplier"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
-	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/testclient/testtx"
 )
@@ -44,23 +43,23 @@ func NewLocalnetClient(
 func NewOneTimeClaimProofSupplierClientMap(
 	ctx context.Context,
 	t *testing.T,
-	supplierAddress string,
+	supplierOperatorAddress string,
 ) *supplier.SupplierClientMap {
 	t.Helper()
 
 	ctrl := gomock.NewController(t)
 	supplierClientMock := mockclient.NewMockSupplierClient(ctrl)
 
-	supplierAccAddress := cosmostypes.MustAccAddressFromBech32(supplierAddress)
+	supplierOperatorAccAddress := cosmostypes.MustAccAddressFromBech32(supplierOperatorAddress)
 	supplierClientMock.EXPECT().
-		Address().
-		Return(&supplierAccAddress).
+		OperatorAddress().
+		Return(&supplierOperatorAccAddress).
 		AnyTimes()
 
 	supplierClientMock.EXPECT().
 		CreateClaims(
 			gomock.Eq(ctx),
-			gomock.AssignableToTypeOf([]*relayer.SessionClaim{}),
+			gomock.AssignableToTypeOf(([]client.MsgCreateClaim)(nil)),
 		).
 		Return(nil).
 		Times(1)
@@ -68,13 +67,13 @@ func NewOneTimeClaimProofSupplierClientMap(
 	supplierClientMock.EXPECT().
 		SubmitProofs(
 			gomock.Eq(ctx),
-			gomock.AssignableToTypeOf([]*relayer.SessionProof{}),
+			gomock.AssignableToTypeOf(([]client.MsgSubmitProof)(nil)),
 		).
 		Return(nil).
 		Times(1)
 
 	supplierClientMap := supplier.NewSupplierClientMap()
-	supplierClientMap.SupplierClients[supplierAddress] = supplierClientMock
+	supplierClientMap.SupplierClients[supplierOperatorAddress] = supplierClientMock
 
 	return supplierClientMap
 }

@@ -15,13 +15,15 @@ import (
 )
 
 var (
-	md_Params                                  protoreflect.MessageDescriptor
-	fd_Params_num_blocks_per_session           protoreflect.FieldDescriptor
-	fd_Params_grace_period_end_offset_blocks   protoreflect.FieldDescriptor
-	fd_Params_claim_window_open_offset_blocks  protoreflect.FieldDescriptor
-	fd_Params_claim_window_close_offset_blocks protoreflect.FieldDescriptor
-	fd_Params_proof_window_open_offset_blocks  protoreflect.FieldDescriptor
-	fd_Params_proof_window_close_offset_blocks protoreflect.FieldDescriptor
+	md_Params                                       protoreflect.MessageDescriptor
+	fd_Params_num_blocks_per_session                protoreflect.FieldDescriptor
+	fd_Params_grace_period_end_offset_blocks        protoreflect.FieldDescriptor
+	fd_Params_claim_window_open_offset_blocks       protoreflect.FieldDescriptor
+	fd_Params_claim_window_close_offset_blocks      protoreflect.FieldDescriptor
+	fd_Params_proof_window_open_offset_blocks       protoreflect.FieldDescriptor
+	fd_Params_proof_window_close_offset_blocks      protoreflect.FieldDescriptor
+	fd_Params_supplier_unbonding_period_sessions    protoreflect.FieldDescriptor
+	fd_Params_application_unbonding_period_sessions protoreflect.FieldDescriptor
 )
 
 func init() {
@@ -33,6 +35,8 @@ func init() {
 	fd_Params_claim_window_close_offset_blocks = md_Params.Fields().ByName("claim_window_close_offset_blocks")
 	fd_Params_proof_window_open_offset_blocks = md_Params.Fields().ByName("proof_window_open_offset_blocks")
 	fd_Params_proof_window_close_offset_blocks = md_Params.Fields().ByName("proof_window_close_offset_blocks")
+	fd_Params_supplier_unbonding_period_sessions = md_Params.Fields().ByName("supplier_unbonding_period_sessions")
+	fd_Params_application_unbonding_period_sessions = md_Params.Fields().ByName("application_unbonding_period_sessions")
 }
 
 var _ protoreflect.Message = (*fastReflection_Params)(nil)
@@ -136,6 +140,18 @@ func (x *fastReflection_Params) Range(f func(protoreflect.FieldDescriptor, proto
 			return
 		}
 	}
+	if x.SupplierUnbondingPeriodSessions != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.SupplierUnbondingPeriodSessions)
+		if !f(fd_Params_supplier_unbonding_period_sessions, value) {
+			return
+		}
+	}
+	if x.ApplicationUnbondingPeriodSessions != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.ApplicationUnbondingPeriodSessions)
+		if !f(fd_Params_application_unbonding_period_sessions, value) {
+			return
+		}
+	}
 }
 
 // Has reports whether a field is populated.
@@ -163,6 +179,10 @@ func (x *fastReflection_Params) Has(fd protoreflect.FieldDescriptor) bool {
 		return x.ProofWindowOpenOffsetBlocks != uint64(0)
 	case "poktroll.shared.Params.proof_window_close_offset_blocks":
 		return x.ProofWindowCloseOffsetBlocks != uint64(0)
+	case "poktroll.shared.Params.supplier_unbonding_period_sessions":
+		return x.SupplierUnbondingPeriodSessions != uint64(0)
+	case "poktroll.shared.Params.application_unbonding_period_sessions":
+		return x.ApplicationUnbondingPeriodSessions != uint64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.Params"))
@@ -191,6 +211,10 @@ func (x *fastReflection_Params) Clear(fd protoreflect.FieldDescriptor) {
 		x.ProofWindowOpenOffsetBlocks = uint64(0)
 	case "poktroll.shared.Params.proof_window_close_offset_blocks":
 		x.ProofWindowCloseOffsetBlocks = uint64(0)
+	case "poktroll.shared.Params.supplier_unbonding_period_sessions":
+		x.SupplierUnbondingPeriodSessions = uint64(0)
+	case "poktroll.shared.Params.application_unbonding_period_sessions":
+		x.ApplicationUnbondingPeriodSessions = uint64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.Params"))
@@ -225,6 +249,12 @@ func (x *fastReflection_Params) Get(descriptor protoreflect.FieldDescriptor) pro
 	case "poktroll.shared.Params.proof_window_close_offset_blocks":
 		value := x.ProofWindowCloseOffsetBlocks
 		return protoreflect.ValueOfUint64(value)
+	case "poktroll.shared.Params.supplier_unbonding_period_sessions":
+		value := x.SupplierUnbondingPeriodSessions
+		return protoreflect.ValueOfUint64(value)
+	case "poktroll.shared.Params.application_unbonding_period_sessions":
+		value := x.ApplicationUnbondingPeriodSessions
+		return protoreflect.ValueOfUint64(value)
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.Params"))
@@ -257,6 +287,10 @@ func (x *fastReflection_Params) Set(fd protoreflect.FieldDescriptor, value proto
 		x.ProofWindowOpenOffsetBlocks = value.Uint()
 	case "poktroll.shared.Params.proof_window_close_offset_blocks":
 		x.ProofWindowCloseOffsetBlocks = value.Uint()
+	case "poktroll.shared.Params.supplier_unbonding_period_sessions":
+		x.SupplierUnbondingPeriodSessions = value.Uint()
+	case "poktroll.shared.Params.application_unbonding_period_sessions":
+		x.ApplicationUnbondingPeriodSessions = value.Uint()
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.Params"))
@@ -289,6 +323,10 @@ func (x *fastReflection_Params) Mutable(fd protoreflect.FieldDescriptor) protore
 		panic(fmt.Errorf("field proof_window_open_offset_blocks of message poktroll.shared.Params is not mutable"))
 	case "poktroll.shared.Params.proof_window_close_offset_blocks":
 		panic(fmt.Errorf("field proof_window_close_offset_blocks of message poktroll.shared.Params is not mutable"))
+	case "poktroll.shared.Params.supplier_unbonding_period_sessions":
+		panic(fmt.Errorf("field supplier_unbonding_period_sessions of message poktroll.shared.Params is not mutable"))
+	case "poktroll.shared.Params.application_unbonding_period_sessions":
+		panic(fmt.Errorf("field application_unbonding_period_sessions of message poktroll.shared.Params is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.Params"))
@@ -313,6 +351,10 @@ func (x *fastReflection_Params) NewField(fd protoreflect.FieldDescriptor) protor
 	case "poktroll.shared.Params.proof_window_open_offset_blocks":
 		return protoreflect.ValueOfUint64(uint64(0))
 	case "poktroll.shared.Params.proof_window_close_offset_blocks":
+		return protoreflect.ValueOfUint64(uint64(0))
+	case "poktroll.shared.Params.supplier_unbonding_period_sessions":
+		return protoreflect.ValueOfUint64(uint64(0))
+	case "poktroll.shared.Params.application_unbonding_period_sessions":
 		return protoreflect.ValueOfUint64(uint64(0))
 	default:
 		if fd.IsExtension() {
@@ -401,6 +443,12 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 		if x.ProofWindowCloseOffsetBlocks != 0 {
 			n += 1 + runtime.Sov(uint64(x.ProofWindowCloseOffsetBlocks))
 		}
+		if x.SupplierUnbondingPeriodSessions != 0 {
+			n += 1 + runtime.Sov(uint64(x.SupplierUnbondingPeriodSessions))
+		}
+		if x.ApplicationUnbondingPeriodSessions != 0 {
+			n += 1 + runtime.Sov(uint64(x.ApplicationUnbondingPeriodSessions))
+		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
 		}
@@ -429,6 +477,16 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 		if x.unknownFields != nil {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
+		}
+		if x.ApplicationUnbondingPeriodSessions != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.ApplicationUnbondingPeriodSessions))
+			i--
+			dAtA[i] = 0x40
+		}
+		if x.SupplierUnbondingPeriodSessions != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.SupplierUnbondingPeriodSessions))
+			i--
+			dAtA[i] = 0x38
 		}
 		if x.ProofWindowCloseOffsetBlocks != 0 {
 			i = runtime.EncodeVarint(dAtA, i, uint64(x.ProofWindowCloseOffsetBlocks))
@@ -623,6 +681,44 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 						break
 					}
 				}
+			case 7:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field SupplierUnbondingPeriodSessions", wireType)
+				}
+				x.SupplierUnbondingPeriodSessions = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.SupplierUnbondingPeriodSessions |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			case 8:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ApplicationUnbondingPeriodSessions", wireType)
+				}
+				x.ApplicationUnbondingPeriodSessions = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.ApplicationUnbondingPeriodSessions |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
 			default:
 				iNdEx = preIndex
 				skippy, err := runtime.Skip(dAtA[iNdEx:])
@@ -679,10 +775,10 @@ type Params struct {
 
 	// num_blocks_per_session is the number of blocks between the session start & end heights.
 	NumBlocksPerSession uint64 `protobuf:"varint,1,opt,name=num_blocks_per_session,json=numBlocksPerSession,proto3" json:"num_blocks_per_session,omitempty"`
-	// grace_period_end_offset_blocks is the number of blocks after the session end height,
-	// at which the grace period ends.
-	// Suppliers will get paid for relays serviced during the grace period but will need to recreate a claim if
-	// a previous one was already submitted.
+	// grace_period_end_offset_blocks is the number of blocks, after the session end height,
+	// during which the supplier can still service payable relays.
+	// Suppliers will need to recreate a claim for the previous session (if already created) to
+	// get paid for the additional relays.
 	GracePeriodEndOffsetBlocks uint64 `protobuf:"varint,2,opt,name=grace_period_end_offset_blocks,json=gracePeriodEndOffsetBlocks,proto3" json:"grace_period_end_offset_blocks,omitempty"`
 	// claim_window_open_offset_blocks is the number of blocks after the session grace
 	// period height, at which the claim window opens.
@@ -696,6 +792,16 @@ type Params struct {
 	// proof_window_close_offset_blocks is the number of blocks after the proof window
 	// open height, at which the proof window closes.
 	ProofWindowCloseOffsetBlocks uint64 `protobuf:"varint,6,opt,name=proof_window_close_offset_blocks,json=proofWindowCloseOffsetBlocks,proto3" json:"proof_window_close_offset_blocks,omitempty"`
+	// supplier_unbonding_period_sessions is the number of sessions that a supplier must wait after
+	// unstaking before their staked assets are moved to their account balance.
+	// On-chain business logic requires, and ensures, that the corresponding block count of the unbonding
+	// period will exceed the end of any active claim & proof lifecycles.
+	SupplierUnbondingPeriodSessions uint64 `protobuf:"varint,7,opt,name=supplier_unbonding_period_sessions,json=supplierUnbondingPeriodSessions,proto3" json:"supplier_unbonding_period_sessions,omitempty"`
+	// application_unbonding_period_sessions is the number of sessions that an application must wait after
+	// unstaking before their staked assets are moved to their account balance.
+	// On-chain business logic requires, and ensures, that the corresponding block count of the
+	// application unbonding period will exceed the end of its corresponding proof window close height.
+	ApplicationUnbondingPeriodSessions uint64 `protobuf:"varint,8,opt,name=application_unbonding_period_sessions,json=applicationUnbondingPeriodSessions,proto3" json:"application_unbonding_period_sessions,omitempty"`
 }
 
 func (x *Params) Reset() {
@@ -760,6 +866,20 @@ func (x *Params) GetProofWindowCloseOffsetBlocks() uint64 {
 	return 0
 }
 
+func (x *Params) GetSupplierUnbondingPeriodSessions() uint64 {
+	if x != nil {
+		return x.SupplierUnbondingPeriodSessions
+	}
+	return 0
+}
+
+func (x *Params) GetApplicationUnbondingPeriodSessions() uint64 {
+	if x != nil {
+		return x.ApplicationUnbondingPeriodSessions
+	}
+	return 0
+}
+
 var File_poktroll_shared_params_proto protoreflect.FileDescriptor
 
 var file_poktroll_shared_params_proto_rawDesc = []byte{
@@ -768,7 +888,7 @@ var file_poktroll_shared_params_proto_rawDesc = []byte{
 	0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x1a,
 	0x11, 0x61, 0x6d, 0x69, 0x6e, 0x6f, 0x2f, 0x61, 0x6d, 0x69, 0x6e, 0x6f, 0x2e, 0x70, 0x72, 0x6f,
 	0x74, 0x6f, 0x1a, 0x14, 0x67, 0x6f, 0x67, 0x6f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x67, 0x6f,
-	0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x96, 0x05, 0x0a, 0x06, 0x50, 0x61, 0x72,
+	0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x89, 0x07, 0x0a, 0x06, 0x50, 0x61, 0x72,
 	0x61, 0x6d, 0x73, 0x12, 0x4f, 0x0a, 0x16, 0x6e, 0x75, 0x6d, 0x5f, 0x62, 0x6c, 0x6f, 0x63, 0x6b,
 	0x73, 0x5f, 0x70, 0x65, 0x72, 0x5f, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20,
 	0x01, 0x28, 0x04, 0x42, 0x1a, 0xea, 0xde, 0x1f, 0x16, 0x6e, 0x75, 0x6d, 0x5f, 0x62, 0x6c, 0x6f,
@@ -807,20 +927,35 @@ var file_poktroll_shared_params_proto_rawDesc = []byte{
 	0x70, 0x72, 0x6f, 0x6f, 0x66, 0x5f, 0x77, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x5f, 0x63, 0x6c, 0x6f,
 	0x73, 0x65, 0x5f, 0x6f, 0x66, 0x66, 0x73, 0x65, 0x74, 0x5f, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x73,
 	0x52, 0x1c, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x57, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x43, 0x6c, 0x6f,
-	0x73, 0x65, 0x4f, 0x66, 0x66, 0x73, 0x65, 0x74, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x73, 0x3a, 0x21,
-	0xe8, 0xa0, 0x1f, 0x01, 0x8a, 0xe7, 0xb0, 0x2a, 0x18, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c,
-	0x6c, 0x2f, 0x78, 0x2f, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2f, 0x50, 0x61, 0x72, 0x61, 0x6d,
-	0x73, 0x42, 0xa1, 0x01, 0x0a, 0x13, 0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f,
-	0x6c, 0x6c, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x42, 0x0b, 0x50, 0x61, 0x72, 0x61, 0x6d,
-	0x73, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x20, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73,
-	0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72,
-	0x6f, 0x6c, 0x6c, 0x2f, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0xa2, 0x02, 0x03, 0x50, 0x53, 0x58,
-	0xaa, 0x02, 0x0f, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x53, 0x68, 0x61, 0x72,
-	0x65, 0x64, 0xca, 0x02, 0x0f, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x53, 0x68,
-	0x61, 0x72, 0x65, 0x64, 0xe2, 0x02, 0x1b, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c,
-	0x53, 0x68, 0x61, 0x72, 0x65, 0x64, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61,
-	0x74, 0x61, 0xea, 0x02, 0x10, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x3a, 0x3a, 0x53,
-	0x68, 0x61, 0x72, 0x65, 0x64, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x73, 0x65, 0x4f, 0x66, 0x66, 0x73, 0x65, 0x74, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x73, 0x12, 0x73,
+	0x0a, 0x22, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x5f, 0x75, 0x6e, 0x62, 0x6f, 0x6e,
+	0x64, 0x69, 0x6e, 0x67, 0x5f, 0x70, 0x65, 0x72, 0x69, 0x6f, 0x64, 0x5f, 0x73, 0x65, 0x73, 0x73,
+	0x69, 0x6f, 0x6e, 0x73, 0x18, 0x07, 0x20, 0x01, 0x28, 0x04, 0x42, 0x26, 0xea, 0xde, 0x1f, 0x22,
+	0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x5f, 0x75, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69,
+	0x6e, 0x67, 0x5f, 0x70, 0x65, 0x72, 0x69, 0x6f, 0x64, 0x5f, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f,
+	0x6e, 0x73, 0x52, 0x1f, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x55, 0x6e, 0x62, 0x6f,
+	0x6e, 0x64, 0x69, 0x6e, 0x67, 0x50, 0x65, 0x72, 0x69, 0x6f, 0x64, 0x53, 0x65, 0x73, 0x73, 0x69,
+	0x6f, 0x6e, 0x73, 0x12, 0x7c, 0x0a, 0x25, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x5f, 0x75, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x5f, 0x70, 0x65, 0x72,
+	0x69, 0x6f, 0x64, 0x5f, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x73, 0x18, 0x08, 0x20, 0x01,
+	0x28, 0x04, 0x42, 0x29, 0xea, 0xde, 0x1f, 0x25, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0x5f, 0x75, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x5f, 0x70, 0x65,
+	0x72, 0x69, 0x6f, 0x64, 0x5f, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x22, 0x61,
+	0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x55, 0x6e, 0x62, 0x6f, 0x6e, 0x64,
+	0x69, 0x6e, 0x67, 0x50, 0x65, 0x72, 0x69, 0x6f, 0x64, 0x53, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e,
+	0x73, 0x3a, 0x21, 0xe8, 0xa0, 0x1f, 0x01, 0x8a, 0xe7, 0xb0, 0x2a, 0x18, 0x70, 0x6f, 0x6b, 0x74,
+	0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x78, 0x2f, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2f, 0x50, 0x61,
+	0x72, 0x61, 0x6d, 0x73, 0x42, 0xa1, 0x01, 0x0a, 0x13, 0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x6b,
+	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x42, 0x0b, 0x50, 0x61,
+	0x72, 0x61, 0x6d, 0x73, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x20, 0x63, 0x6f, 0x73,
+	0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f,
+	0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0xa2, 0x02, 0x03,
+	0x50, 0x53, 0x58, 0xaa, 0x02, 0x0f, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x53,
+	0x68, 0x61, 0x72, 0x65, 0x64, 0xca, 0x02, 0x0f, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c,
+	0x5c, 0x53, 0x68, 0x61, 0x72, 0x65, 0x64, 0xe2, 0x02, 0x1b, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f,
+	0x6c, 0x6c, 0x5c, 0x53, 0x68, 0x61, 0x72, 0x65, 0x64, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74,
+	0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x10, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c,
+	0x3a, 0x3a, 0x53, 0x68, 0x61, 0x72, 0x65, 0x64, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (

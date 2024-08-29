@@ -52,7 +52,7 @@ func newObserverManager[V any]() *channelObserverManager[V] {
 	}
 }
 
-func (com *channelObserverManager[V]) notifyAll(notification V) {
+func (com *channelObserverManager[V]) notifyAll(notification V) { //nolint:unused // Used in the observable implementation.
 	// Copy currentObservers to avoid holding the lock while notifying them.
 	// New or existing Observers may (un)subscribe while this notification
 	// is being fanned out.
@@ -74,7 +74,7 @@ func (com *channelObserverManager[V]) notifyAll(notification V) {
 // by the channelObservable implementation as well as embedders of observerManager
 // (e.g. replayObservable).
 // It panics if toAdd is not a channelObserver.
-func (com *channelObserverManager[V]) add(toAdd observable.Observer[V]) {
+func (com *channelObserverManager[V]) add(toAdd observable.Observer[V]) { //nolint:unused // Used in the observable implementation.
 	// must (write) lock observersMu so that we can safely append to the observers list
 	com.observersMu.Lock()
 	defer com.observersMu.Unlock()
@@ -86,7 +86,7 @@ func (com *channelObserverManager[V]) add(toAdd observable.Observer[V]) {
 // It implements the respective member of observerManager and is used by
 // the channelObservable implementation as well as embedders of observerManager
 // (e.g. replayObservable).
-func (com *channelObserverManager[V]) remove(toRemove observable.Observer[V]) {
+func (com *channelObserverManager[V]) remove(toRemove observable.Observer[V]) { //nolint:unused // Used in the observable implementation.
 	// must (write) lock to iterate over and modify the observers list
 	com.observersMu.Lock()
 	defer com.observersMu.Unlock()
@@ -103,7 +103,7 @@ func (com *channelObserverManager[V]) remove(toRemove observable.Observer[V]) {
 // It implements the respective member of observerManager and is used by
 // the channelObservable implementation as well as embedders of observerManager
 // (e.g. replayObservable).
-func (com *channelObserverManager[V]) removeAll() {
+func (com *channelObserverManager[V]) removeAll() { //nolint:unused // Used in the observable implementation.
 	// Copy currentObservers to avoid holding the lock while unsubscribing them.
 	// The observers at the time of locking, prior to copying, are the canonical
 	// set of observers which are unsubscribed.
@@ -124,10 +124,10 @@ func (com *channelObserverManager[V]) removeAll() {
 
 // goUnsubscribeOnDone unsubscribes from the subscription when the context is done.
 // It is a blocking function and intended to be called in a goroutine.
-func (com *channelObserverManager[V]) goUnsubscribeOnDone(
+func (com *channelObserverManager[V]) goUnsubscribeOnDone( //nolint:unused // Used in the observable implementation.
 	ctx context.Context,
 	observer observable.Observer[V],
-) {
+) { //nolint:unused // Used in the observable implementation.
 	<-ctx.Done()
 	if observer.IsClosed() {
 		return
@@ -137,7 +137,7 @@ func (com *channelObserverManager[V]) goUnsubscribeOnDone(
 
 // copyObservers returns a copy of the current observers list. It is safe to
 // call concurrently. Notably, it is not part of the observerManager interface.
-func (com *channelObserverManager[V]) copyObservers() (observers []*channelObserver[V]) {
+func (com *channelObserverManager[V]) copyObservers() (observers []*channelObserver[V]) { //nolint:unused // Used in the observable implementation.
 	defer com.observersMu.RUnlock()
 
 	// This loop blocks on acquiring a read lock on observersMu. If TryRLock

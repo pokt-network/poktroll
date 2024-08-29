@@ -9,8 +9,9 @@ import (
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/smt"
-	"github.com/pokt-network/smt/kvstore/badger"
+	"github.com/pokt-network/smt/kvstore/pebble"
 
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
@@ -29,10 +30,10 @@ type sessionTree struct {
 	// sessionSMT is the SMST (Sparse Merkle State Trie) corresponding the session.
 	sessionSMT smt.SparseMerkleSumTrie
 
-	// supplierAddress is the address of the supplier that owns this sessionTree.
-	// RelayMiner can run suppliers for many supplier addresses at the same time,
-	// and we need a way to group the session trees by the supplier address for that.
-	supplierAddress *cosmostypes.AccAddress
+	// supplierOperatorAddress is the address of the supplier's operator that owns this sessionTree.
+	// RelayMiner can run suppliers for many supplier operator addresses at the same time,
+	// and we need a way to group the session trees by the supplier operator address for that.
+	supplierOperatorAddress *cosmostypes.AccAddress
 
 	// claimedRoot is the root hash of the SMST needed for submitting the claim.
 	// If it holds a non-nil value, it means that the SMST has been flushed,
@@ -50,20 +51,13 @@ type sessionTree struct {
 	proofBz []byte
 
 	// treeStore is the KVStore used to store the SMST.
-	treeStore badger.BadgerKVStore
+	treeStore pebble.PebbleKVStore
 
 	// storePath is the path to the KVStore used to store the SMST.
 	// It is created from the storePrefix and the session.sessionId.
 	// We keep track of it so we can use it at the end of the claim/proof lifecycle
 	// to delete the KVStore when it is no longer needed.
 	storePath string
-
-	// removeFromRelayerSessions is a function that removes the sessionTree from
-	// the RelayerSessionsManager.
-	// Since the sessionTree has no knowledge of the RelayerSessionsManager,
-	// we pass this callback from the session manager to the sessionTree so
-	// it can remove itself from the RelayerSessionsManager when it is no longer needed.
-	removeFromRelayerSessions func(sessionHeader *sessiontypes.SessionHeader)
 
 	isClaiming bool
 }
@@ -73,36 +67,38 @@ type sessionTree struct {
 // It returns an error if the KVStore fails to be created.
 func NewSessionTree(
 	sessionHeader *sessiontypes.SessionHeader,
-	supplierAddress *cosmostypes.AccAddress,
+	supplierOperatorAddress *cosmostypes.AccAddress,
 	storesDirectory string,
-	removeFromRelayerSessions func(sessionHeader *sessiontypes.SessionHeader),
 ) (relayer.SessionTree, error) {
-	// Join the storePrefix and the session.sessionId to create a unique storePath
-	storePath := filepath.Join(storesDirectory, sessionHeader.SessionId)
+	// Join the storePrefix and the session.sessionId and supplier's operator address to
+	// create a unique storePath.
+
+	// TODO_IMPROVE(#621): instead of creating a new KV store for each session, it will be more beneficial to
+	// use one key store. KV databases are often optimized for writing into one database. They keys can
+	// use supplier address and session id as prefix. The current approach might not be RAM/IO efficient.
+	storePath := filepath.Join(storesDirectory, supplierOperatorAddress.String(), sessionHeader.SessionId)
 
 	// Make sure storePath does not exist when creating a new SessionTree
 	if _, err := os.Stat(storePath); err != nil && !os.IsNotExist(err) {
 		return nil, ErrSessionTreeStorePathExists.Wrapf("storePath: %q", storePath)
 	}
 
-	treeStore, err := badger.NewKVStore(storePath)
+	treeStore, err := pebble.NewKVStore(storePath)
 	if err != nil {
 		return nil, err
 	}
 
 	// Create the SMST from the KVStore and a nil value hasher so the proof would
 	// contain a non-hashed Relay that could be used to validate the proof on-chain.
-	trie := smt.NewSparseMerkleSumTrie(treeStore, sha256.New(), smt.WithValueHasher(nil))
+	trie := smt.NewSparseMerkleSumTrie(treeStore, protocol.NewTrieHasher(), smt.WithValueHasher(nil))
 
 	sessionTree := &sessionTree{
-		sessionHeader:   sessionHeader,
-		storePath:       storePath,
-		treeStore:       treeStore,
-		sessionSMT:      trie,
-		sessionMu:       &sync.Mutex{},
-		supplierAddress: supplierAddress,
-
-		removeFromRelayerSessions: removeFromRelayerSessions,
+		sessionHeader:           sessionHeader,
+		storePath:               storePath,
+		treeStore:               treeStore,
+		sessionSMT:              trie,
+		sessionMu:               &sync.Mutex{},
+		supplierOperatorAddress: supplierOperatorAddress,
 	}
 
 	return sessionTree, nil
@@ -126,7 +122,17 @@ func (st *sessionTree) Update(key, value []byte, weight uint64) error {
 		return ErrSessionTreeClosed
 	}
 
-	return st.sessionSMT.Update(key, value, weight)
+	err := st.sessionSMT.Update(key, value, weight)
+	if err != nil {
+		return ErrSessionUpdatingTree.Wrapf("error: %v", err)
+	}
+
+	// DO NOT DELETE: Uncomment this for debugging and change to .Debug logs post MainNet.
+	// count := st.sessionSMT.MustCount()
+	// sum := st.sessionSMT.MustSum()
+	// fmt.Printf("Count: %d, Sum: %d\n", count, sum)
+
+	return nil
 }
 
 // ProveClosest is a wrapper for the SMST's ProveClosest function. It returns a proof for the given path.
@@ -155,7 +161,7 @@ func (st *sessionTree) ProveClosest(path []byte) (proof *smt.SparseMerkleClosest
 	}
 
 	// Restore the KVStore from disk since it has been closed after the claim has been generated.
-	st.treeStore, err = badger.NewKVStore(st.storePath)
+	st.treeStore, err = pebble.NewKVStore(st.storePath)
 	if err != nil {
 		return nil, err
 	}
@@ -236,11 +242,11 @@ func (st *sessionTree) Delete() error {
 	st.sessionMu.Lock()
 	defer st.sessionMu.Unlock()
 
-	st.removeFromRelayerSessions(st.sessionHeader)
+	st.isClaiming = false
 
-	if err := st.treeStore.ClearAll(); err != nil {
-		return err
-	}
+	// NB: We used to call `st.treeStore.ClearAll()` here.
+	// This was intentionally removed to lower the IO load.
+	// When the database is closed, it is deleted it from disk right away.
 
 	if err := st.treeStore.Stop(); err != nil {
 		return err
@@ -265,7 +271,7 @@ func (st *sessionTree) StartClaiming() error {
 	return nil
 }
 
-// SupplierAddress returns a CosmosSDK address of the supplier this sessionTree belongs to.
-func (st *sessionTree) GetSupplierAddress() *cosmostypes.AccAddress {
-	return st.supplierAddress
+// GetSupplierOperatorAddress returns a CosmosSDK address of the supplier this sessionTree belongs to.
+func (st *sessionTree) GetSupplierOperatorAddress() *cosmostypes.AccAddress {
+	return st.supplierOperatorAddress
 }

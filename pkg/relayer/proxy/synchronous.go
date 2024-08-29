@@ -34,10 +34,6 @@ func init() {
 type synchronousRPCServer struct {
 	logger polylog.Logger
 
-	// supplierServiceMap is a map of serviceId -> SupplierServiceConfig
-	// representing the supplier's advertised services.
-	supplierServiceMap map[string]*sharedtypes.Service
-
 	// serverConfig is the configuration of the proxy server. It contains the
 	// host address of the server, the service endpoint, and the advertised service.
 	// endpoints it gets relay requests from.
@@ -64,13 +60,11 @@ type synchronousRPCServer struct {
 func NewSynchronousServer(
 	logger polylog.Logger,
 	serverConfig *config.RelayMinerServerConfig,
-	supplierServiceMap map[string]*sharedtypes.Service,
 	servedRelaysProducer chan<- *types.Relay,
 	proxy relayer.RelayerProxy,
 ) relayer.RelayServer {
 	return &synchronousRPCServer{
 		logger:               logger,
-		supplierServiceMap:   supplierServiceMap,
 		server:               &http.Server{Addr: serverConfig.ListenAddress},
 		relayerProxy:         proxy,
 		servedRelaysProducer: servedRelaysProducer,
@@ -84,7 +78,7 @@ func NewSynchronousServer(
 func (sync *synchronousRPCServer) Start(ctx context.Context) error {
 	go func() {
 		<-ctx.Done()
-		sync.server.Shutdown(ctx)
+		_ = sync.server.Shutdown(ctx)
 	}()
 
 	// Set the HTTP handler.
@@ -118,7 +112,7 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 		return
 	}
 
-	if err := relayRequest.ValidateBasic(); err != nil {
+	if err = relayRequest.ValidateBasic(); err != nil {
 		sync.replyWithError(err, relayRequest, writer)
 		sync.logger.Warn().Err(err).Msg("failed validating relay response")
 		return
@@ -378,7 +372,7 @@ func (sync *synchronousRPCServer) serveHTTP(
 	// Build the relay response using the original service's response.
 	// Use relayRequest.Meta.SessionHeader on the relayResponse session header since it
 	// was verified to be valid and has to be the same as the relayResponse session header.
-	relayResponse, err := sync.newRelayResponse(responseBz, relayRequest.Meta.SessionHeader, relayRequest.Meta.SupplierAddress)
+	relayResponse, err := sync.newRelayResponse(responseBz, relayRequest.Meta.SessionHeader, relayRequest.Meta.SupplierOperatorAddress)
 	if err != nil {
 		// The client should not have knowledge about the RelayMiner's issues with
 		// building the relay response. Reply with an internal error so that the

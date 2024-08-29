@@ -20,7 +20,7 @@ func TestGetEarliestSupplierClaimCommitHeight_IsDeterministic(t *testing.T) {
 		wg           = sync.WaitGroup{}
 	)
 
-	// Randomize queryHeight, claimWindowOpenBlockHash, and supplierAddr.
+	// Randomize queryHeight, claimWindowOpenBlockHash, and supplierOperatorAddr.
 	for randomizeIdx := 0; randomizeIdx < 100; randomizeIdx++ {
 		select {
 		case <-ctx.Done():
@@ -34,17 +34,17 @@ func TestGetEarliestSupplierClaimCommitHeight_IsDeterministic(t *testing.T) {
 		// NB: sample concurrently to save time.
 		go func() {
 			queryHeight := rand.Int63()
-			supplierAddr := sample.AccAddress()
+			supplierOperatorAddr := sample.AccAddress()
 			var claimWindowOpenBlockHash [32]byte
 
-			_, err := rand.Read(claimWindowOpenBlockHash[:])
+			_, err := rand.Read(claimWindowOpenBlockHash[:]) //nolint:staticcheck // We need a deterministic pseudo-random source.
 			require.NoError(t, err)
 
 			expected := GetEarliestSupplierClaimCommitHeight(
 				&sharedParams,
 				queryHeight,
 				claimWindowOpenBlockHash[:],
-				supplierAddr,
+				supplierOperatorAddr,
 			)
 
 			// Ensure consecutive calls are deterministic.
@@ -57,16 +57,16 @@ func TestGetEarliestSupplierClaimCommitHeight_IsDeterministic(t *testing.T) {
 				}
 
 				wg.Add(1)
-				go func() {
+				go func(deterministicIdx int) {
 					actual := GetEarliestSupplierClaimCommitHeight(
 						&sharedParams,
 						queryHeight,
 						claimWindowOpenBlockHash[:],
-						supplierAddr,
+						supplierOperatorAddr,
 					)
 					require.Equalf(t, expected, actual, "on call number %d", deterministicIdx)
 					wg.Done()
-				}()
+				}(deterministicIdx)
 			}
 			wg.Done()
 		}()
@@ -95,11 +95,11 @@ func TestGetEarliestSupplierProofCommitHeight_IsDeterministic(t *testing.T) {
 
 		// NB: sample concurrently to save time.
 		go func() {
-			// Randomize queryHeight, proofWindowOpenBlockHash, and supplierAddr.
+			// Randomize queryHeight, proofWindowOpenBlockHash, and supplierOperatorAddr.
 			queryHeight := rand.Int63()
-			supplierAddr := sample.AccAddress()
+			supplierOperatorAddr := sample.AccAddress()
 			var proofWindowOpenBlockHash [32]byte
-			_, err := rand.Read(proofWindowOpenBlockHash[:])
+			_, err := rand.Read(proofWindowOpenBlockHash[:]) //nolint:staticcheck // We need a deterministic pseudo-random source.
 
 			if !assert.NoError(t, err) {
 				cancel()
@@ -111,7 +111,7 @@ func TestGetEarliestSupplierProofCommitHeight_IsDeterministic(t *testing.T) {
 				&sharedParams,
 				queryHeight,
 				proofWindowOpenBlockHash[:],
-				supplierAddr,
+				supplierOperatorAddr,
 			)
 
 			// Ensure consecutive calls are deterministic.
@@ -125,19 +125,19 @@ func TestGetEarliestSupplierProofCommitHeight_IsDeterministic(t *testing.T) {
 				wg.Add(1)
 
 				// NB: sample concurrently to save time.
-				go func() {
+				go func(deterministicIdx int) {
 					actual := GetEarliestSupplierProofCommitHeight(
 						&sharedParams,
 						queryHeight,
 						proofWindowOpenBlockHash[:],
-						supplierAddr,
+						supplierOperatorAddr,
 					)
 
 					if !assert.Equalf(t, expected, actual, "on call number %d", deterministicIdx) {
 						cancel()
 					}
 					wg.Done()
-				}()
+				}(deterministicIdx)
 			}
 			wg.Done()
 		}()
@@ -183,9 +183,9 @@ func TestClaimProofWindows(t *testing.T) {
 			for i := 0; i < sampleSize; i++ {
 				// NB: sample concurrently to save time.
 				go func() {
-					// Randomize the supplier address for each sample.
+					// Randomize the supplier operator address for each sample.
 					// This will produce different randomized earliest claim & proof offsets.
-					supplierAddr := sample.AccAddress()
+					supplierOperatorAddr := sample.AccAddress()
 
 					claimWindowOpenHeight := GetClaimWindowOpenHeight(&test.sharedParams, test.queryHeight)
 					claimWindowCloseHeight := GetClaimWindowCloseHeight(&test.sharedParams, test.queryHeight)
@@ -202,7 +202,7 @@ func TestClaimProofWindows(t *testing.T) {
 						&test.sharedParams,
 						test.queryHeight,
 						blockHash,
-						supplierAddr,
+						supplierOperatorAddr,
 					)
 
 					require.Greater(t, claimWindowCloseHeight, earliestClaimCommitHeight)
@@ -211,16 +211,16 @@ func TestClaimProofWindows(t *testing.T) {
 						&test.sharedParams,
 						test.queryHeight,
 						blockHash,
-						supplierAddr,
+						supplierOperatorAddr,
 					)
 
 					require.GreaterOrEqual(t, earliestProofCommitHeight, claimWindowCloseHeight)
 					require.Greater(t, proofWindowCloseHeight, earliestProofCommitHeight)
 
-					claimWindowSizeBlocks := GetClaimWindowSizeBlocks(&test.sharedParams)
+					claimWindowSizeBlocks := test.sharedParams.GetClaimWindowCloseOffsetBlocks()
 					require.Greater(t, claimWindowSizeBlocks, uint64(0))
 
-					proofWindowSizeBlocks := GetProofWindowSizeBlocks(&test.sharedParams)
+					proofWindowSizeBlocks := test.sharedParams.GetProofWindowCloseOffsetBlocks()
 					require.Greater(t, proofWindowSizeBlocks, uint64(0))
 
 					wg.Done()

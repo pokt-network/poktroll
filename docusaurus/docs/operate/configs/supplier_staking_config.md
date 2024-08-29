@@ -10,13 +10,20 @@ a stake transaction required to provide RPC services on Pocket Network._
 
 - [Reference Example](#reference-example)
 - [Usage](#usage)
+- [Staking types](#staking-types)
+  - [Custodial Staking](#custodial-staking)
+  - [Non-Custodial Staking](#non-custodial-staking)
 - [Configuration](#configuration)
+  - [`owner_address`](#owner_address)
+  - [`operator_address`](#operator_address)
   - [`stake_amount`](#stake_amount)
+  - [`default_rev_share_percent`](#default_rev_share_percent)
   - [`services`](#services)
     - [`service_id`](#service_id)
     - [`endpoints`](#endpoints)
       - [`publicly_exposed_url`](#publicly_exposed_url)
       - [`rpc_type`](#rpc_type)
+    - [`rev_share_percent`](#rev_share_percent)
 
 ## Reference Example
 
@@ -41,7 +48,152 @@ poktrolld tx supplier stake-supplier \
   --node tcp://poktroll-node:26657
 ```
 
+## Staking types
+
+The `Supplier` staking command supports `Custodial` and `Non-Custodial` staking
+which can be illustrated in the following flowchart:
+
+```mermaid
+flowchart TD
+  AWF(["Account with funds <br> owner_address"])
+  ISC{Is custodial?}
+  US[Unstake]
+
+  AWF -- stake --> ISC
+  ISC -- yes --> CS
+  ISC -- no --> NCS
+
+
+  subgraph CS[Custodial Staking]
+    direction LR
+    subgraph S1[Supplier]
+      OW1["address: owner_address"]
+    end
+    subgraph RM1[RelayMiner]
+      OW2["address: owner_address"]
+    end
+    S1 --- RM1
+  end
+
+  subgraph NCS[Non Custodial Staking]
+    direction LR
+    subgraph S2[Supplier]
+      OW21["address: owner_address"]
+    end
+    subgraph RM2[RelayMiner]
+      OP22["address: operator_address"]
+    end
+    S2 -.- RM2
+  end
+
+  CS ---> |owner_address| US
+  NCS  ---> |owner_address or operator_address| US
+
+  US -- funds --> OWA{{owner_address}}
+  US -- remove on-chain record --> OPA{{owner_address or operator_address}}
+
+  classDef owner fill:#f9f, stroke:#333, stroke-width:2px, color:#222;
+  classDef operator fill:#eba69a, color: #333, stroke:#333, stroke-width:2px;
+
+  class OW1,OW2,OW21,AWF owner
+  class OP22 operator
+```
+
+### Custodial Staking
+
+The owner of the `Supplier` is the same as the operator.
+This means the account that receives the rewards is the same as the one that
+signs the `RelayResponse`s and submits claims and proofs.
+
+Custodial staking is the simplest to set up and manage, as there is no need to
+manage multiple accounts. It is suitable for `Supplier`s that do not have concerns
+about using the private key of the staking or the rewarded account to operate the
+`RelayMiner` or update the `Supplier`'s stake and services.
+
+### Non-Custodial Staking
+
+The owner of the `Supplier` is different from the operator.
+This means the account that receives the rewards is different from the one signing
+the `RelayResponse`s and submitting claims and proofs.
+
+Non-custodial staking is suitable for `Supplier`s that want to separate the `RelayMiner`
+staking operations from the account that has custody over the staked funds, and in turn,
+the rewards being earned.
+
+:::note
+
+When staking a `Supplier`, the signing account specified with the `--from` flag
+(which may differ from the `Supplier`'s owner or operator) will have its `upokt`
+balance deducted to stake the `Supplier`.
+
+When unstaking a `Supplier`, the staked `upokt` will be returned to the `owner_address`
+account.
+
+:::
+
 ## Configuration
+
+### `owner_address`
+
+_`Required`_
+
+```yaml
+owner_address: <address>
+```
+
+The `owner_address` is the address of the account that owns the `Supplier`s staked
+funds, which will be transferred to this account's balannce when the `Supplier`
+unstakes and finishes unbonding.
+
+For custodial staking, the `owner_address` is the same as the `operator_address`.
+
+For non-custodial staking, the `owner_address` MUST be different from the `operator_address`.
+This address receives the staked `upokt` when the `Supplier` is unstaked and finished unbonding.
+
+The `owner_address` can only be changed with a stake message signed by the
+`Supplier`'s owner account.
+
+It is also used as the unique shareholder address for the `Supplier`
+if none of `default_rev_share_percent` or `rev_share_percent` is defined in the
+configuration file.
+
+:::note
+
+The `owner_address` does not identify a `Supplier`; multiple `Supplier`s can have
+the same `owner_address`.
+
+:::
+
+### `operator_address`
+
+_`Optional`_
+
+```yaml
+operator_address: <address>
+```
+
+The `operator_address` is the address that identifies the `Supplier`.
+Its corresponding account is used for operational tasks such as signing `RelayResponse`s,
+submitting `Claims` and `Proofs` as well as updating the `Supplier`'s info
+(i.e. Adding or removing services, increasing the stake amount, etc.)
+
+The operator account can also be used to unstake the `Supplier`, which will cause
+the staked `upokt` to be sent to the `owner_address` after unbonding finishes.
+
+If the `operator_address` is empty or not specified, the `owner_address` is used
+as the `operator_address`.
+
+If the `operator_address` is the same as the `owner_address`, then the staking
+is custodial.
+
+:::warning
+
+Since the `operator_address` is the unique identifier of a `Supplier`, it cannot
+be changed once the `Supplier` is created. If it needs to be changed, then the
+corresponding `Supplier` has to be unstaked and a new one staked with the new
+`operator_address`.
+
+:::
 
 ### `stake_amount`
 
@@ -72,6 +224,43 @@ sybil or flooding attacks on the network.
 
 :::
 
+### `default_rev_share_percent`
+
+_`Optional`_, _`Non-empty`_
+
+```yaml
+default_rev_share_percent:
+  <shareholder_address>: <float>
+```
+
+`default_rev_share_percent` is an optional map that defines the default the revenue
+share percentage for all the `service`s that do not have their specific `rev_share_percent`
+entry defined.
+
+This field is useful if the `Supplier` owner wants to set a default revenue share
+for all the `service`s entries that do not provide one. This way, the operator
+does not have to repeat the same values for each `service` in the `services` section.
+
+This map cannot be empty but can be omitted, in which case the default revenue
+share falls back to `100%` of the rewards allocated to the `Supplier`'s `owner_address`.
+
+:::note
+
+The `shareholder_address`s MUST be valid Pocket addresses.
+
+The revenue share values MUST be strictly positive floats with a maximum value of
+100 and a total sum of 100 across all the `shareholder_address`es.
+
+:::
+
+:::warning
+
+If `default_rev_share_percent` is defined, then the `owner_address` of the `Supplier`
+MUST be **explicitly** defined in the map if they are to receive a share on the
+`service`s that fall back to the default.
+
+:::
+
 ### `services`
 
 _`Required`_, _`Non-empty`_
@@ -82,6 +271,8 @@ services:
     endpoints:
       - publicly_exposed_url: <protocol>://<hostname>:<port>
         rpc_type: <string>
+    rev_share_percent:
+      <shareholder_address>: <float>
 ```
 
 `services` define the list of services that the `Supplier` wants to provide.
@@ -154,3 +345,29 @@ endpoints:
 :::
 
 The `rpc_type` MUST be one of the [supported types found here](https://github.com/pokt-network/poktroll/tree/main/pkg/relayer/config/types.go#L8).
+
+#### `rev_share_percent`
+
+`rev_share_percent` is an optional map that defines the `service`'s specific revenue
+share percentage.
+
+It overrides the `default_rev_share_percent` if defined for the `service`.
+
+This map cannot be empty but can be omitted, in which case it falls back to the
+`default_rev_share_percent` top-level configuration entry.
+
+:::note
+
+The `shareholder_address`s MUST be valid Pocket addresses.
+
+The revenue share values MUST be strictly positive decimals with a maximum value
+of 100 and a total sum of 100 across all the `shareholder_address`es.
+
+:::
+
+:::warning
+
+If `rev_share_percent` is defined for a `service`, then the `owner_address` of the
+`Supplier` MUST be **explicitly** defined in the map if they are to receive a share.
+
+:::

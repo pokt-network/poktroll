@@ -20,8 +20,9 @@ func TestGenesis(t *testing.T) {
 		Params: types.DefaultParams(),
 		SupplierList: []sharedtypes.Supplier{
 			{
-				Address: sample.AccAddress(),
-				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
+				OwnerAddress:    sample.AccAddress(),
+				OperatorAddress: sample.AccAddress(),
+				Stake:           &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 				Services: []*sharedtypes.SupplierServiceConfig{
 					{
 						Service: &sharedtypes.Service{
@@ -38,8 +39,9 @@ func TestGenesis(t *testing.T) {
 				},
 			},
 			{
-				Address: sample.AccAddress(),
-				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
+				OwnerAddress:    sample.AccAddress(),
+				OperatorAddress: sample.AccAddress(),
+				Stake:           &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 				Services: []*sharedtypes.SupplierServiceConfig{
 					{
 						Service: &sharedtypes.Service{
@@ -59,9 +61,9 @@ func TestGenesis(t *testing.T) {
 		// this line is used by starport scaffolding # genesis/test/state
 	}
 
-	k, ctx := keepertest.SupplierKeeper(t)
-	supplier.InitGenesis(ctx, k, genesisState)
-	got := supplier.ExportGenesis(ctx, k)
+	supplierModuleKeepers, ctx := keepertest.SupplierKeeper(t)
+	supplier.InitGenesis(ctx, *supplierModuleKeepers.Keeper, genesisState)
+	got := supplier.ExportGenesis(ctx, *supplierModuleKeepers.Keeper)
 	require.NotNil(t, got)
 
 	nullify.Fill(&genesisState)

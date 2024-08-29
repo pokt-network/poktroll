@@ -2,6 +2,7 @@ package supplier
 
 import (
 	"context"
+	"sync"
 
 	"cosmossdk.io/depinject"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
@@ -9,7 +10,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/keyring"
 	"github.com/pokt-network/poktroll/pkg/polylog"
-	"github.com/pokt-network/poktroll/pkg/relayer"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 )
 
@@ -17,8 +17,14 @@ var _ client.SupplierClient = (*supplierClient)(nil)
 
 // supplierClient
 type supplierClient struct {
+	// signingKeyName is the name of the operator key in the keyring that will be
+	// used to sign transactions.
 	signingKeyName string
+	// signingKeyAddr is the account address of the operator key in the keyring.
 	signingKeyAddr cosmostypes.AccAddress
+
+	// pendingTxMu is used to prevent concurrent txs with the same sequence number.
+	pendingTxMu sync.Mutex
 
 	txClient client.TxClient
 	txCtx    client.TxContext
@@ -63,37 +69,38 @@ func NewSupplierClient(
 // the transaction is included in a block or times out.
 func (sClient *supplierClient) SubmitProofs(
 	ctx context.Context,
-	sessionProofs []*relayer.SessionProof,
+	proofMsgs ...client.MsgSubmitProof,
 ) error {
+	sClient.pendingTxMu.Lock()
+	defer sClient.pendingTxMu.Unlock()
 	logger := polylog.Ctx(ctx)
 
-	msgs := make([]cosmostypes.Msg, len(sessionProofs))
-
-	for i, sessionProof := range sessionProofs {
-		// TODO(@bryanchriswhite): reconcile splitting of supplier & proof modules
-		//  with off-chain pkgs/nomenclature.
-		msgs[i] = &prooftypes.MsgSubmitProof{
-			SupplierAddress: sessionProof.SupplierAddress.String(),
-			SessionHeader:   sessionProof.SessionHeader,
-			Proof:           sessionProof.ProofBz,
-		}
+	msgs := make([]cosmostypes.Msg, 0, len(proofMsgs))
+	for _, p := range proofMsgs {
+		msgs = append(msgs, p)
 	}
 
+	// TODO(@bryanchriswhite): reconcile splitting of supplier & proof modules
+	//  with off-chain pkgs/nomenclature.
 	eitherErr := sClient.txClient.SignAndBroadcast(ctx, msgs...)
 	err, errCh := eitherErr.SyncOrAsyncError()
 	if err != nil {
 		return err
 	}
 
-	for _, sessionProof := range sessionProofs {
-		sessionHeader := sessionProof.SessionHeader
+	for _, p := range proofMsgs {
+		// Type casting does not need to be checked here since the concrete type is
+		// guaranteed to implement the interface which is just an identity for the
+		// concrete type.
+		proofMsg, _ := p.(*prooftypes.MsgSubmitProof)
+		sessionHeader := proofMsg.SessionHeader
 		// TODO_IMPROVE: log details related to what & how much is being proven
 		logger.Info().
 			Fields(map[string]any{
-				"supplier_addr": sessionProof.SupplierAddress.String(),
-				"app_addr":      sessionHeader.ApplicationAddress,
-				"session_id":    sessionHeader.SessionId,
-				"service":       sessionHeader.Service.Id,
+				"supplier_operator_addr": proofMsg.SupplierOperatorAddress,
+				"app_addr":               sessionHeader.ApplicationAddress,
+				"session_id":             sessionHeader.SessionId,
+				"service":                sessionHeader.Service.Id,
 			}).
 			Msg("submitted a new proof")
 	}
@@ -106,36 +113,40 @@ func (sClient *supplierClient) SubmitProofs(
 // the transaction is included in a block or times out.
 func (sClient *supplierClient) CreateClaims(
 	ctx context.Context,
-	sessionClaims []*relayer.SessionClaim,
+	claimMsgs ...client.MsgCreateClaim,
 ) error {
+	// Prevent concurrent txs with the same sequence number.
+	sClient.pendingTxMu.Lock()
+	defer sClient.pendingTxMu.Unlock()
+
 	logger := polylog.Ctx(ctx)
 
-	msgs := make([]cosmostypes.Msg, len(sessionClaims))
+	msgs := make([]cosmostypes.Msg, 0, len(claimMsgs))
+	for _, c := range claimMsgs {
+		msgs = append(msgs, c)
+	}
 
 	// TODO(@bryanchriswhite): reconcile splitting of supplier & proof modules
 	//  with off-chain pkgs/nomenclature.
-	for i, sessionClaim := range sessionClaims {
-		msgs[i] = &prooftypes.MsgCreateClaim{
-			SupplierAddress: sessionClaim.SupplierAddress.String(),
-			SessionHeader:   sessionClaim.SessionHeader,
-			RootHash:        sessionClaim.RootHash,
-		}
-	}
 	eitherErr := sClient.txClient.SignAndBroadcast(ctx, msgs...)
 	err, errCh := eitherErr.SyncOrAsyncError()
 	if err != nil {
 		return err
 	}
 
-	for _, claim := range sessionClaims {
-		sessionHeader := claim.SessionHeader
+	for _, c := range claimMsgs {
+		// Type casting does not need to be checked here since the concrete type is
+		// guaranteed to implement the interface which is just an identity for the
+		// concrete type.
+		claimMsg, _ := c.(*prooftypes.MsgCreateClaim)
+		sessionHeader := claimMsg.SessionHeader
 		// TODO_IMPROVE: log details related to how much is claimed
 		logger.Info().
 			Fields(map[string]any{
-				"supplier_addr": claim.SupplierAddress.String(),
-				"app_addr":      sessionHeader.ApplicationAddress,
-				"session_id":    sessionHeader.SessionId,
-				"service":       sessionHeader.Service.Id,
+				"supplier_operator_addr": claimMsg.SupplierOperatorAddress,
+				"app_addr":               sessionHeader.ApplicationAddress,
+				"session_id":             sessionHeader.SessionId,
+				"service":                sessionHeader.Service.Id,
 			}).
 			Msg("created a new claim")
 	}
@@ -144,7 +155,7 @@ func (sClient *supplierClient) CreateClaims(
 }
 
 // Address returns an address of the supplier client.
-func (sClient *supplierClient) Address() *cosmostypes.AccAddress {
+func (sClient *supplierClient) OperatorAddress() *cosmostypes.AccAddress {
 	return &sClient.signingKeyAddr
 }
 

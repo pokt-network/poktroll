@@ -42,6 +42,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	testutilevents "github.com/pokt-network/poktroll/testutil/events"
+	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/testutil/testkeyring"
 	appkeeper "github.com/pokt-network/poktroll/x/application/keeper"
 	application "github.com/pokt-network/poktroll/x/application/module"
@@ -131,6 +132,13 @@ func NewIntegrationApp(
 		WithIsCheckTx(true).
 		WithEventManager(cosmostypes.NewEventManager())
 
+	// Add a block proposer address to the context
+	valAddr, err := cosmostypes.ValAddressFromBech32(sample.ConsAddress())
+	require.NoError(t, err)
+	consensusAddr := cosmostypes.ConsAddress(valAddr)
+	sdkCtx = sdkCtx.WithProposer(consensusAddr)
+
+	// Create the base application
 	txConfig := authtx.NewTxConfig(cdc, authtx.DefaultSignModes)
 	bApp := baseapp.NewBaseApp(appName, logger, db, txConfig.TxDecoder(), baseapp.SetChainID(appName))
 	bApp.MountKVStores(keys)
@@ -156,7 +164,7 @@ func NewIntegrationApp(
 	msgRouter.SetInterfaceRegistry(registry)
 	bApp.SetMsgServiceRouter(msgRouter)
 
-	err := bApp.LoadLatestVersion()
+	err = bApp.LoadLatestVersion()
 	require.NoError(t, err, "failed to load latest version")
 
 	_, err = bApp.InitChain(&cmtabcitypes.RequestInitChain{ChainId: appName})
@@ -267,7 +275,8 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		accountKeeper,
 		blockedAddresses,
 		authority.String(),
-		logger)
+		logger,
+	)
 
 	// Prepare the shared keeper and module
 	sharedKeeper := sharedkeeper.NewKeeper(
@@ -280,6 +289,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		cdc,
 		sharedKeeper,
 		accountKeeper,
+
 		bankKeeper,
 	)
 
@@ -289,6 +299,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		runtime.NewKVStoreService(storeKeys[servicetypes.StoreKey]),
 		logger,
 		authority.String(),
+
 		bankKeeper,
 	)
 	serviceModule := service.NewAppModule(
@@ -304,6 +315,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		runtime.NewKVStoreService(storeKeys[gatewaytypes.StoreKey]),
 		logger,
 		authority.String(),
+
 		bankKeeper,
 	)
 	gatewayModule := gateway.NewAppModule(
@@ -319,6 +331,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		runtime.NewKVStoreService(storeKeys[apptypes.StoreKey]),
 		logger,
 		authority.String(),
+
 		bankKeeper,
 		accountKeeper,
 		gatewayKeeper,
@@ -337,13 +350,17 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		runtime.NewKVStoreService(storeKeys[suppliertypes.StoreKey]),
 		logger,
 		authority.String(),
+
 		bankKeeper,
+		sharedKeeper,
+		serviceKeeper,
 	)
 	supplierModule := supplier.NewAppModule(
 		cdc,
 		supplierKeeper,
 		accountKeeper,
 		bankKeeper,
+		serviceKeeper,
 	)
 
 	// Prepare the session keeper and module
@@ -352,6 +369,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		runtime.NewKVStoreService(storeKeys[sessiontypes.StoreKey]),
 		logger,
 		authority.String(),
+
 		accountKeeper,
 		bankKeeper,
 		applicationKeeper,
@@ -371,6 +389,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		runtime.NewKVStoreService(storeKeys[prooftypes.StoreKey]),
 		logger,
 		authority.String(),
+
 		sessionKeeper,
 		applicationKeeper,
 		accountKeeper,
@@ -388,17 +407,22 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		runtime.NewKVStoreService(storeKeys[tokenomicstypes.StoreKey]),
 		logger,
 		authority.String(),
+
 		bankKeeper,
 		accountKeeper,
 		applicationKeeper,
+		supplierKeeper,
 		proofKeeper,
 		sharedKeeper,
+		sessionKeeper,
+		serviceKeeper,
 	)
 	tokenomicsModule := tokenomics.NewAppModule(
 		cdc,
 		tokenomicsKeeper,
 		accountKeeper,
 		bankKeeper,
+		supplierKeeper,
 	)
 
 	// Prepare the message & query routers
@@ -455,9 +479,6 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	// authtypes.RegisterQueryServer(queryHelper, accountKeeper)
 	sessiontypes.RegisterQueryServer(queryHelper, sessionKeeper)
 
-	// Need to go to the next block to finalize the genesis and setup
-	integrationApp.NextBlock(t)
-
 	// Set the default params for all the modules
 	err := sharedKeeper.SetParams(integrationApp.GetSdkCtx(), sharedtypes.DefaultParams())
 	require.NoError(t, err)
@@ -472,6 +493,11 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	err = applicationKeeper.SetParams(integrationApp.GetSdkCtx(), apptypes.DefaultParams())
 	require.NoError(t, err)
 
+	// Need to go to the next block to finalize the genesis and setup.
+	// This has to be after the params are set, as the params are stored in the
+	// store and need to be committed.
+	integrationApp.NextBlock(t)
+
 	// Prepare default testing fixtures //
 
 	// Construct a keyring to hold the keypairs for the accounts used in the test.
@@ -483,15 +509,16 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 
 	// Prepare a new default service
 	defaultService := sharedtypes.Service{
-		Id:   "svc1",
-		Name: "svcName1",
+		Id:           "svc1",
+		Name:         "svcName1",
+		OwnerAddress: sample.AccAddress(),
 	}
 	serviceKeeper.SetService(integrationApp.sdkCtx, defaultService)
 	integrationApp.DefaultService = &defaultService
 
 	// Create a supplier account with the corresponding keys in the keyring for the supplier.
 	integrationApp.DefaultSupplierKeyringKeyringUid = "supplier"
-	supplierAddr := testkeyring.CreateOnChainAccount(
+	supplierOperatorAddr := testkeyring.CreateOnChainAccount(
 		integrationApp.sdkCtx, t,
 		integrationApp.DefaultSupplierKeyringKeyringUid,
 		keyRing,
@@ -502,10 +529,17 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	// Prepare the on-chain supplier
 	supplierStake := types.NewCoin("upokt", math.NewInt(1000000))
 	defaultSupplier := sharedtypes.Supplier{
-		Address: supplierAddr.String(),
-		Stake:   &supplierStake,
+		OwnerAddress:    supplierOperatorAddr.String(),
+		OperatorAddress: supplierOperatorAddr.String(),
+		Stake:           &supplierStake,
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
+				RevShare: []*sharedtypes.ServiceRevenueShare{
+					{
+						Address:            sample.AccAddress(),
+						RevSharePercentage: 100,
+					},
+				},
 				Service: &defaultService,
 			},
 		},
@@ -552,8 +586,10 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	// This can result in the module accounts balance going negative. Giving them a baseline balance
 	// to start with to avoid this issue. There is opportunity to improve this in the future.
 	moduleBaseMint := types.NewCoins(sdk.NewCoin("upokt", math.NewInt(690000000000000042)))
-	bankKeeper.MintCoins(integrationApp.sdkCtx, suppliertypes.ModuleName, moduleBaseMint)
-	bankKeeper.MintCoins(integrationApp.sdkCtx, apptypes.ModuleName, moduleBaseMint)
+	err = bankKeeper.MintCoins(integrationApp.sdkCtx, suppliertypes.ModuleName, moduleBaseMint)
+	require.NoError(t, err)
+	err = bankKeeper.MintCoins(integrationApp.sdkCtx, apptypes.ModuleName, moduleBaseMint)
+	require.NoError(t, err)
 
 	// Commit all the changes above by committing, finalizing and moving
 	// to the next block.
@@ -705,7 +741,10 @@ func (app *App) nextBlockUpdateCtx() {
 	newContext := app.BaseApp.NewUncachedContext(true, header).
 		WithBlockHeader(header).
 		WithHeaderInfo(headerInfo).
-		WithEventManager(prevCtx.EventManager())
+		WithEventManager(prevCtx.EventManager()).
+		// Pass the multi-store to the new context, otherwise the new context will
+		// create a new multi-store.
+		WithMultiStore(prevCtx.MultiStore())
 	*app.sdkCtx = newContext
 }
 

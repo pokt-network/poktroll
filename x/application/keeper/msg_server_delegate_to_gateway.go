@@ -57,7 +57,7 @@ func (k msgServer) DelegateToGateway(ctx context.Context, msg *types.MsgDelegate
 
 	// Update the application with the new delegatee public key
 	app.DelegateeGatewayAddresses = append(app.DelegateeGatewayAddresses, msg.GatewayAddress)
-	logger.Info(fmt.Sprintf("Successfully added delegatee public key to application"))
+	logger.Info("Successfully added delegatee public key to application")
 
 	// Update the application store with the new delegation
 	k.SetApplication(ctx, app)

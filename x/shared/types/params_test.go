@@ -190,3 +190,73 @@ func TestParams_ValidateGracePeriodEndOffsetBlocks(t *testing.T) {
 		})
 	}
 }
+
+func TestParams_ValidateSupplierUnbondingPeriodSessions(t *testing.T) {
+	tests := []struct {
+		desc                            string
+		supplierUnbondingPeriodSessions any
+		err                             error
+	}{
+		{
+			desc:                            "invalid type",
+			supplierUnbondingPeriodSessions: "invalid",
+			err:                             ErrSharedParamInvalid.Wrapf("invalid parameter type: %T", "invalid"),
+		},
+		{
+			desc:                            "valid SupplierUnbondingPeriodSessions",
+			supplierUnbondingPeriodSessions: uint64(2),
+		},
+		{
+			desc:                            "zero SupplierUnbondingPeriodSessions",
+			supplierUnbondingPeriodSessions: uint64(0),
+			err:                             ErrSharedParamInvalid.Wrapf("invalid SupplierUnbondingPeriodSessions: (%v)", uint64(0)),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			err := ValidateSupplierUnbondingPeriodSessions(tt.supplierUnbondingPeriodSessions)
+			if tt.err != nil {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), tt.err.Error())
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestParams_ValidateApplicationUnbondingPeriodSessions(t *testing.T) {
+	tests := []struct {
+		desc                               string
+		applicationUnbondingPeriodSessions any
+		err                                error
+	}{
+		{
+			desc:                               "invalid type",
+			applicationUnbondingPeriodSessions: "invalid",
+			err:                                ErrSharedParamInvalid.Wrapf("invalid parameter type: %T", "invalid"),
+		},
+		{
+			desc:                               "valid ApplicationUnbondingPeriodSessions",
+			applicationUnbondingPeriodSessions: uint64(2),
+		},
+		{
+			desc:                               "zero ApplicationUnbondingPeriodSessions",
+			applicationUnbondingPeriodSessions: uint64(0),
+			err:                                ErrSharedParamInvalid.Wrapf("invalid ApplicationUnbondingPeriodSessions: (%v)", uint64(0)),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			err := ValidateApplicationUnbondingPeriodSessions(tt.applicationUnbondingPeriodSessions)
+			if tt.err != nil {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), tt.err.Error())
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}

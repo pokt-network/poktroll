@@ -50,7 +50,7 @@ func New(t *testing.T, configs ...Config) *Network {
 		cfg = configs[0]
 	}
 	net, err := network.New(t, t.TempDir(), cfg)
-	require.NoError(t, err)
+	require.NoError(t, err, "TODO_FLAKY: This config setup is periodically flaky")
 	_, err = net.WaitForHeight(1)
 	require.NoError(t, err)
 	t.Cleanup(net.Cleanup)
@@ -137,13 +137,15 @@ func DefaultSupplierModuleGenesisState(t *testing.T, n int) *suppliertypes.Genes
 	t.Helper()
 	state := suppliertypes.DefaultGenesis()
 	for i := 0; i < n; i++ {
+		svcId := fmt.Sprintf("svc%d", i)
 		stake := sdk.NewCoin("upokt", math.NewInt(int64(i)))
 		supplier := sharedtypes.Supplier{
-			Address: sample.AccAddress(),
-			Stake:   &stake,
+			OwnerAddress:    sample.AccAddress(),
+			OperatorAddress: sample.AccAddress(),
+			Stake:           &stake,
 			Services: []*sharedtypes.SupplierServiceConfig{
 				{
-					Service: &sharedtypes.Service{Id: fmt.Sprintf("svc%d", i)},
+					Service: &sharedtypes.Service{Id: svcId},
 					Endpoints: []*sharedtypes.SupplierEndpoint{
 						{
 							Url:     fmt.Sprintf("http://localhost:%d", i),
@@ -152,6 +154,7 @@ func DefaultSupplierModuleGenesisState(t *testing.T, n int) *suppliertypes.Genes
 					},
 				},
 			},
+			ServicesActivationHeightsMap: map[string]uint64{svcId: 0},
 		}
 		// TODO_CONSIDERATION: Evaluate whether we need `nullify.Fill` or if we should enforce `(gogoproto.nullable) = false` everywhere
 		// nullify.Fill(&supplier)
@@ -167,8 +170,9 @@ func SupplierModuleGenesisStateWithAddresses(t *testing.T, addresses []string) *
 	state := suppliertypes.DefaultGenesis()
 	for _, addr := range addresses {
 		supplier := sharedtypes.Supplier{
-			Address: addr,
-			Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(10000)},
+			OwnerAddress:    sample.AccAddress(),
+			OperatorAddress: addr,
+			Stake:           &sdk.Coin{Denom: "upokt", Amount: math.NewInt(10000)},
 			Services: []*sharedtypes.SupplierServiceConfig{
 				{
 					Service: &sharedtypes.Service{Id: "svc1"},
@@ -180,6 +184,7 @@ func SupplierModuleGenesisStateWithAddresses(t *testing.T, addresses []string) *
 					},
 				},
 			},
+			ServicesActivationHeightsMap: map[string]uint64{"svc1": 0},
 		}
 		state.SupplierList = append(state.SupplierList, supplier)
 	}
@@ -253,7 +258,6 @@ func InitAccount(t *testing.T, net *Network, addr sdk.AccAddress) {
 		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, math.NewInt(10))).String()),
 	}
 	amount := sdk.NewCoins(sdk.NewCoin("stake", math.NewInt(200)))
-	addrCodec := addresscodec.NewBech32Codec(app.AccountAddressPrefix)
 	responseRaw, err := clitestutil.MsgSendExec(ctx, val.Address, addr, amount, addrCodec, args...)
 	require.NoError(t, err)
 	var responseJSON map[string]interface{}

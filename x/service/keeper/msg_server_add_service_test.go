@@ -19,37 +19,39 @@ func TestMsgServer_AddService(t *testing.T) {
 	k, ctx := keepertest.ServiceKeeper(t)
 	srv := keeper.NewMsgServerImpl(k)
 
-	// Declare test services
-	svc1 := sharedtypes.Service{
-		Id:   "svc1",
-		Name: "service 1",
+	oldServiceOwnerAddr := sample.AccAddress()
+	newServiceOwnerAddr := sample.AccAddress()
+
+	// Pre-existing service
+	oldService := sharedtypes.Service{
+		Id:                   "svc0",
+		Name:                 "service 0",
+		ComputeUnitsPerRelay: 1,
+		OwnerAddress:         oldServiceOwnerAddr,
 	}
 
-	preExistingService := sharedtypes.Service{
-		Id:   "svc2",
-		Name: "service 2",
+	// Declare new test service to be added
+	newService := sharedtypes.Service{
+		Id:                   "svc1",
+		Name:                 "service 1",
+		ComputeUnitsPerRelay: 1,
+		OwnerAddress:         newServiceOwnerAddr,
 	}
-
-	// Generate a valid address
-	addr := sample.AccAddress()
 
 	// Mock adding a balance to the account
-	keepertest.AddAccToAccMapCoins(t, addr, "upokt", oneUPOKTGreaterThanFee)
+	keepertest.AddAccToAccMapCoins(t, oldServiceOwnerAddr, "upokt", oneUPOKTGreaterThanFee)
 
 	// Add the service to the store
 	_, err := srv.AddService(ctx, &types.MsgAddService{
-		Address: addr,
-		Service: preExistingService,
+		OwnerAddress: oldServiceOwnerAddr,
+		Service:      oldService,
 	})
 	require.NoError(t, err)
 
 	// Validate the service was added
-	serviceFound, found := k.GetService(ctx, preExistingService.Id)
+	serviceFound, found := k.GetService(ctx, oldService.Id)
 	require.True(t, found)
-	require.Equal(t, preExistingService, serviceFound)
-
-	validAddr1 := sample.AccAddress()
-	validAddr2 := sample.AccAddress()
+	require.Equal(t, oldService, serviceFound)
 
 	tests := []struct {
 		desc        string
@@ -62,14 +64,14 @@ func TestMsgServer_AddService(t *testing.T) {
 			desc: "valid - service added successfully",
 			setup: func(t *testing.T) {
 				// Add 10000000001 upokt to the account
-				keepertest.AddAccToAccMapCoins(t, validAddr1, "upokt", oneUPOKTGreaterThanFee)
+				keepertest.AddAccToAccMapCoins(t, newServiceOwnerAddr, "upokt", oneUPOKTGreaterThanFee)
 			},
-			address:     validAddr1,
-			service:     svc1,
+			address:     newServiceOwnerAddr,
+			service:     newService,
 			expectedErr: nil,
 		},
 		{
-			desc:    "invalid - service supplier address is empty",
+			desc:    "invalid - service owner address is empty",
 			setup:   func(t *testing.T) {},
 			address: "", // explicitly set to empty string
 			service: sharedtypes.Service{
@@ -79,111 +81,122 @@ func TestMsgServer_AddService(t *testing.T) {
 			expectedErr: types.ErrServiceInvalidAddress,
 		},
 		{
-			desc:        "invalid - invalid service supplier address",
+			desc:        "invalid - invalid service owner address",
 			setup:       func(t *testing.T) {},
 			address:     "invalid address",
-			service:     svc1,
+			service:     newService,
 			expectedErr: types.ErrServiceInvalidAddress,
 		},
 		{
 			desc:    "invalid - missing service ID",
 			setup:   func(t *testing.T) {},
-			address: sample.AccAddress(),
+			address: newServiceOwnerAddr,
 			service: sharedtypes.Service{
 				// Explicitly omitting Id field
-				Name: "service 1",
+				Name:         "service 1",
+				OwnerAddress: newServiceOwnerAddr,
 			},
 			expectedErr: types.ErrServiceMissingID,
 		},
 		{
 			desc:    "invalid - empty service ID",
 			setup:   func(t *testing.T) {},
-			address: sample.AccAddress(),
+			address: newServiceOwnerAddr,
 			service: sharedtypes.Service{
-				Id:   "", // explicitly set to empty string
-				Name: "service 1",
+				Id:           "", // explicitly set to empty string
+				Name:         "service 1",
+				OwnerAddress: newServiceOwnerAddr,
 			},
 			expectedErr: types.ErrServiceMissingID,
 		},
 		{
 			desc:    "invalid - missing service name",
 			setup:   func(t *testing.T) {},
-			address: sample.AccAddress(),
+			address: newServiceOwnerAddr,
 			service: sharedtypes.Service{
 				Id: "svc1",
 				// Explicitly omitting Name field
+				OwnerAddress: newServiceOwnerAddr,
 			},
 			expectedErr: types.ErrServiceMissingName,
 		},
 		{
 			desc:    "invalid - empty service name",
 			setup:   func(t *testing.T) {},
-			address: sample.AccAddress(),
+			address: newServiceOwnerAddr,
 			service: sharedtypes.Service{
-				Id:   "svc1",
-				Name: "", // explicitly set to empty string
+				Id:           "svc1",
+				Name:         "", // explicitly set to empty string
+				OwnerAddress: newServiceOwnerAddr,
 			},
 			expectedErr: types.ErrServiceMissingName,
 		},
 		{
-			desc:        "invalid - service already exists (same service supplier)",
-			setup:       func(t *testing.T) {},
-			address:     addr,
-			service:     preExistingService,
-			expectedErr: types.ErrServiceAlreadyExists,
-		},
-		{
-			desc:        "invalid - service already exists (different service supplier)",
-			setup:       func(t *testing.T) {},
-			address:     sample.AccAddress(),
-			service:     preExistingService,
-			expectedErr: types.ErrServiceAlreadyExists,
+			desc:    "invalid - zero compute units per relay",
+			setup:   func(t *testing.T) {},
+			address: newServiceOwnerAddr,
+			service: sharedtypes.Service{
+				Id:                   "svc1",
+				Name:                 "service 1",
+				ComputeUnitsPerRelay: 0,
+			},
+			expectedErr: types.ErrServiceInvalidComputeUnitsPerRelay,
 		},
 		{
 			desc:        "invalid - no spendable coins",
 			setup:       func(t *testing.T) {},
-			address:     sample.AccAddress(),
-			service:     svc1,
+			address:     newServiceOwnerAddr,
+			service:     newService,
 			expectedErr: types.ErrServiceNotEnoughFunds,
 		},
 		{
 			desc: "invalid - insufficient upokt balance",
 			setup: func(t *testing.T) {
 				// Add 999999999 upokt to the account (one less than AddServiceFee)
-				keepertest.AddAccToAccMapCoins(t, validAddr2, "upokt", oneUPOKTGreaterThanFee-2)
+				keepertest.AddAccToAccMapCoins(t, newServiceOwnerAddr, "upokt", oneUPOKTGreaterThanFee-2)
 			},
-			address:     validAddr2,
-			service:     svc1,
+			address:     newServiceOwnerAddr,
+			service:     newService,
 			expectedErr: types.ErrServiceNotEnoughFunds,
 		},
 		{
 			desc: "invalid - account has exactly AddServiceFee",
 			setup: func(t *testing.T) {
 				// Add the exact fee in upokt to the account
-				keepertest.AddAccToAccMapCoins(t, validAddr2, "upokt", types.DefaultAddServiceFee)
+				keepertest.AddAccToAccMapCoins(t, newServiceOwnerAddr, "upokt", types.DefaultAddServiceFee)
 			},
-			address:     validAddr2,
-			service:     svc1,
+			address:     newServiceOwnerAddr,
+			service:     newService,
 			expectedErr: types.ErrServiceNotEnoughFunds,
 		},
 		{
 			desc: "invalid - sufficient balance of different denom",
 			setup: func(t *testing.T) {
 				// Adds 10000000001 wrong coins to the account
-				keepertest.AddAccToAccMapCoins(t, validAddr2, "wrong", oneUPOKTGreaterThanFee)
+				keepertest.AddAccToAccMapCoins(t, newServiceOwnerAddr, "not_upokt", oneUPOKTGreaterThanFee)
 			},
-			address:     validAddr2,
-			service:     svc1,
+			address:     newServiceOwnerAddr,
+			service:     newService,
 			expectedErr: types.ErrServiceNotEnoughFunds,
 		},
+		{
+			desc:        "invalid - existing service owner address does match new service address",
+			setup:       func(t *testing.T) {},
+			address:     newServiceOwnerAddr,
+			service:     oldService,
+			expectedErr: types.ErrServiceInvalidOwnerAddress,
+		},
+		// {
+		// 	desc: "TODO(@adshmh): valid - update compute_units_pre_relay if the owner is correct",
+		// },
 	}
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
 			test.setup(t)
 			_, err := srv.AddService(ctx, &types.MsgAddService{
-				Address: test.address,
-				Service: test.service,
+				OwnerAddress: test.address,
+				Service:      test.service,
 			})
 			if test.expectedErr != nil {
 				// Using ErrorAs as wrapping the error sometimes gives errors with ErrorIs

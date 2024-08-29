@@ -16,6 +16,7 @@ Create a new [GitHub issue here](https://github.com/pokt-network/pocket/issues/n
 **if you encounter any problems.**
 :::
 
+- [Deployment Walkthrough](#deployment-walkthrough)
 - [Video Walkthrough](#video-walkthrough)
 - [0. Install Dependencies](#0-install-dependencies)
 - [1. Launch \& Inspect LocalNet](#1-launch--inspect-localnet)
@@ -57,12 +58,28 @@ Create a new [GitHub issue here](https://github.com/pokt-network/pocket/issues/n
   - [Makefile](#makefile)
   - [Ignite](#ignite)
 
+## Deployment Walkthrough
+
+:::info
+
+This quickstart guide is intended for setting up your local environment for
+development purposes.
+
+:::
+
+If you want to deploy your own Gateway and Supplier, please follow the instructions
+in our [poktroll-docker-compose-example](https://github.com/pokt-network/poktroll-docker-compose-example)
+example.
+
+If you want to deploy a Supplier & Gateway via a copy-pasta method without understanding
+anything, see the instructions [here](https://github.com/pokt-network/poktroll-docker-compose-example/blob/main/debian_cheasheet.md).
+
 ## Video Walkthrough
 
 You can access the video [here](https://www.youtube.com/watch?v=H-R5FqrCYQs).
 
 <ReactPlayer
-  playing
+  playing={false}
   controls
   url="https://www.youtube.com/watch?v=H-R5FqrCYQs"
 />
@@ -120,6 +137,16 @@ available commands. Looking inside the Makefile is a great way to learn how to u
 :::
 
 ### 1.3 Prepare your development environment
+
+Run the following command to install `golang` dependencies:
+```bash
+make install_ci_deps
+```
+
+If you encounter issues related to `mockgen` not being found or failing, try running the following command to verify its installation:
+```bash
+make check_mockgen
+```
 
 Compile protobufs, generate mocks and verify that all tests are passing by running:
 
@@ -363,6 +390,8 @@ The following is an example config to get you started:
 
 ```bash
 cat <<EOF >> shannon_supplier_config.yaml
+owner_address: pokt1h04g6njyuv03dhd74a73pyzeadmd8dk7l9tsk8
+operator_address: pokt1h04g6njyuv03dhd74a73pyzeadmd8dk7l9tsk8
 stake_amount: 1000069upokt
 services:
   - service_id: anvil
@@ -403,11 +432,11 @@ The following is an example config to get you started:
 
 ```bash
 cat <<EOF >> shannon_relayminer_config.yaml
-default_signing_key_names: [ "keybase-key-name" ]
-smt_store_path: smt_stores
+default_signing_key_names: [ "shannon_supplier" ]
+smt_store_path: $HOME/.poktroll/smt
 metrics:
   enabled: true
-  addr: :9090
+  addr: :9999 # you may need to change the metrics server port due to port conflicts.
 pocket_node:
   query_node_rpc_url: tcp://127.0.0.1:26657
   query_node_grpc_url: tcp://127.0.0.1:9090
@@ -651,7 +680,7 @@ Given that we just staked a few suppliers, you customize the query to look for
 
 ## 6. Dynamically Scaling LocalNet
 
-We went through a low of steps above just so you can get a feel for how things work.
+We went through a flow of steps above just so you can get a feel for how things work.
 
 That said, you can dynamically scale the number of any actors in LocalNet by ony changing one line!
 

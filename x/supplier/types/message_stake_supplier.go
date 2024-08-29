@@ -12,21 +12,35 @@ const TypeMsgStakeSupplier = "stake_supplier"
 var _ sdk.Msg = (*MsgStakeSupplier)(nil)
 
 func NewMsgStakeSupplier(
-	address string,
+	signerAddress string,
+	ownerAddress string,
+	supplierOperatorAddress string,
 	stake sdk.Coin,
 	services []*sharedtypes.SupplierServiceConfig,
 ) *MsgStakeSupplier {
 	return &MsgStakeSupplier{
-		Address:  address,
-		Stake:    &stake,
-		Services: services,
+		Signer:          signerAddress,
+		OwnerAddress:    ownerAddress,
+		OperatorAddress: supplierOperatorAddress,
+		Stake:           &stake,
+		Services:        services,
 	}
 }
 
 func (msg *MsgStakeSupplier) ValidateBasic() error {
+	// Validate the owner address
+	if _, err := sdk.AccAddressFromBech32(msg.OwnerAddress); err != nil {
+		return ErrSupplierInvalidAddress.Wrapf("invalid owner address %s; (%v)", msg.OwnerAddress, err)
+	}
+
 	// Validate the address
-	if _, err := sdk.AccAddressFromBech32(msg.Address); err != nil {
-		return ErrSupplierInvalidAddress.Wrapf("invalid supplier address %s; (%v)", msg.Address, err)
+	if _, err := sdk.AccAddressFromBech32(msg.OperatorAddress); err != nil {
+		return ErrSupplierInvalidAddress.Wrapf("invalid operator address %s; (%v)", msg.OperatorAddress, err)
+	}
+
+	// Validate the signer address
+	if _, err := sdk.AccAddressFromBech32(msg.Signer); err != nil {
+		return ErrSupplierInvalidAddress.Wrapf("invalid signer address %s; (%v)", msg.Signer, err)
 	}
 
 	// TODO_MAINNET: Centralize stake related verification and share across different
@@ -55,4 +69,8 @@ func (msg *MsgStakeSupplier) ValidateBasic() error {
 	}
 
 	return nil
+}
+
+func (msg *MsgStakeSupplier) IsSigner(address string) bool {
+	return address == msg.Signer
 }

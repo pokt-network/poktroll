@@ -5,13 +5,14 @@ import (
 	"fmt"
 
 	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/observable/filter"
 	"github.com/pokt-network/poktroll/pkg/observable/logging"
 	"github.com/pokt-network/poktroll/pkg/relayer"
-	proofkeeper "github.com/pokt-network/poktroll/x/proof/keeper"
+	"github.com/pokt-network/poktroll/x/proof/types"
 	"github.com/pokt-network/poktroll/x/shared"
 )
 
@@ -23,6 +24,7 @@ import (
 // It DOES NOT BLOCK as map operations run in their own goroutines.
 func (rs *relayerSessionsManager) submitProofs(
 	ctx context.Context,
+	supplierClient client.SupplierClient,
 	claimedSessionsObs observable.Observable[[]relayer.SessionTree],
 ) {
 	failedSubmitProofsSessionsObs, failedSubmitProofsSessionsPublishCh :=
@@ -40,12 +42,18 @@ func (rs *relayerSessionsManager) submitProofs(
 	// proof has been submitted or an error has been encountered, respectively.
 	eitherProvenSessionsObs := channel.Map(
 		ctx, sessionsWithOpenProofWindowObs,
-		rs.newMapProveSessionsFn(failedSubmitProofsSessionsPublishCh),
+		rs.newMapProveSessionsFn(supplierClient, failedSubmitProofsSessionsPublishCh),
 	)
 
 	// TODO_TECHDEBT: pass failed submit proof sessions to some retry mechanism.
 	_ = failedSubmitProofsSessionsObs
 	logging.LogErrors(ctx, filter.EitherError(ctx, eitherProvenSessionsObs))
+
+	// Delete expired session trees so they don't get proven again.
+	channel.ForEach(
+		ctx, failedSubmitProofsSessionsObs,
+		rs.deleteExpiredSessionTreesFn(shared.GetProofWindowCloseHeight),
+	)
 }
 
 // mapWaitForEarliestSubmitProofsHeight is intended to be used as a MapFn. It
@@ -88,6 +96,7 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 	// we should be using the value that the params had for the session which includes queryHeight.
 	sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
 	if err != nil {
+		logger.Error().Err(err).Msg("failed to get shared params")
 		failedSubmitProofsSessionsCh <- sessionTrees
 		return nil
 	}
@@ -101,19 +110,27 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 	logger.Info().Msg("waiting & blocking until the proof window open height")
 
 	proofsWindowOpenBlock := rs.waitForBlock(ctx, proofWindowOpenHeight)
-
-	// TODO_BLOCKER(@bryanchriswhite, @red0ne): After lean client, there's no
-	// guarantee that all session trees have the same supplier address. Group
-	// session trees by supplier to re-use as much code as possible and still
-	// support batching proofs.
+	// TODO_MAINNET: If a relayminer is cold-started with persisted but unproven ("late")
+	// sessions, the proofsWindowOpenBlock will never be observed. Where a "late" session
+	// is one whic is unclaimed and whose earliest claim commit height has already elapsed.
 	//
+	// In this case, we should
+	// use a block query client to populate the block client replay observable at the time
+	// of block client construction. This check and failure branch can be removed once this
+	// is implemented.
+	if proofsWindowOpenBlock == nil {
+		logger.Warn().Msg("failed to observe earliest proof commit height offset seed block height")
+		failedSubmitProofsSessionsCh <- sessionTrees
+		return nil
+	}
+
 	// Get the earliest proof commit height for this supplier.
-	supplierAddr := sessionTrees[0].GetSupplierAddress().String()
+	supplierOperatorAddr := sessionTrees[0].GetSupplierOperatorAddress().String()
 	earliestSupplierProofsCommitHeight := shared.GetEarliestSupplierProofCommitHeight(
 		sharedParams,
 		sessionEndHeight,
 		proofsWindowOpenBlock.Hash(),
-		supplierAddr,
+		supplierOperatorAddr,
 	)
 
 	logger = logger.With("earliest_supplier_proof_commit_height", earliestSupplierProofsCommitHeight)
@@ -158,47 +175,40 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 // session number. Any session which encounters errors while submitting a proof
 // is sent on the failedSubmitProofSessions channel.
 func (rs *relayerSessionsManager) newMapProveSessionsFn(
+	supplierClient client.SupplierClient,
 	failedSubmitProofSessionsCh chan<- []relayer.SessionTree,
 ) channel.MapFn[[]relayer.SessionTree, either.SessionTrees] {
 	return func(
 		ctx context.Context,
 		sessionTrees []relayer.SessionTree,
 	) (_ either.SessionTrees, skip bool) {
-		rs.pendingTxMu.Lock()
-		defer rs.pendingTxMu.Unlock()
-
 		if len(sessionTrees) == 0 {
 			return either.Success(sessionTrees), false
 		}
 
-		// Map key is the supplier address.
-		sessionProofs := map[string][]*relayer.SessionProof{}
+		// Map key is the supplier operator address.
+		proofMsgs := make([]client.MsgSubmitProof, 0)
 		for _, session := range sessionTrees {
-			supplierAddr := session.GetSupplierAddress().String()
-			sessionProofs[supplierAddr] = append(sessionProofs[supplierAddr], &relayer.SessionProof{
-				ProofBz:         session.GetProofBz(),
-				SessionHeader:   session.GetSessionHeader(),
-				SupplierAddress: *session.GetSupplierAddress(),
+			proofMsgs = append(proofMsgs, &types.MsgSubmitProof{
+				Proof:                   session.GetProofBz(),
+				SessionHeader:           session.GetSessionHeader(),
+				SupplierOperatorAddress: session.GetSupplierOperatorAddress().String(),
 			})
 		}
 
-		// Submit proofs for each supplier address in `sessionTrees`.
-		for supplierAddr := range sessionProofs {
-			// SubmitProof ensures on-chain proof inclusion so we can safely prune the tree.
-			supplierClient, ok := rs.supplierClients.SupplierClients[supplierAddr]
-			if !ok {
-				return either.Error[[]relayer.SessionTree](ErrSupplierClientNotFound), false
-			}
-			if err := supplierClient.SubmitProofs(ctx, sessionProofs[supplierAddr]); err != nil {
-				failedSubmitProofSessionsCh <- sessionTrees
-				return either.Error[[]relayer.SessionTree](err), false
-			}
+		// Submit proofs for each supplier operator address in `sessionTrees`.
+		if err := supplierClient.SubmitProofs(ctx, proofMsgs...); err != nil {
+			failedSubmitProofSessionsCh <- sessionTrees
+			rs.logger.Error().Err(err).Msg("failed to submit proofs")
+			return either.Error[[]relayer.SessionTree](err), false
 		}
 
 		for _, sessionTree := range sessionTrees {
-			// Prune the session tree since the proofs have already been submitted.
+			rs.removeFromRelayerSessions(sessionTree)
 			if err := sessionTree.Delete(); err != nil {
-				return either.Error[[]relayer.SessionTree](err), false
+				// Do not fail the entire operation if a session tree cannot be deleted
+				// as this does not affect the C&P lifecycle.
+				rs.logger.Error().Err(err).Msg("failed to delete session tree")
 			}
 		}
 
@@ -216,6 +226,8 @@ func (rs *relayerSessionsManager) goProveClaims(
 	proofsGeneratedCh chan<- []relayer.SessionTree,
 	failSubmitProofsSessionsCh chan<- []relayer.SessionTree,
 ) {
+	logger := rs.logger.With("method", "goProveClaims")
+
 	// Separate the sessionTrees into those that failed to generate a proof
 	// and those that succeeded, then send them on their respective channels.
 	failedProofs := []relayer.SessionTree{}
@@ -228,13 +240,15 @@ func (rs *relayerSessionsManager) goProveClaims(
 		}
 		// Generate the proof path for the sessionTree using the previously committed
 		// sessionPathBlock hash.
-		path := proofkeeper.GetPathForProof(
+		path := protocol.GetPathForProof(
 			sessionPathBlock.Hash(),
 			sessionTree.GetSessionHeader().GetSessionId(),
 		)
 
 		// If the proof cannot be generated, add the sessionTree to the failedProofs.
 		if _, err := sessionTree.ProveClosest(path); err != nil {
+			logger.Error().Err(err).Msg("failed to generate proof")
+
 			failedProofs = append(failedProofs, sessionTree)
 			continue
 		}

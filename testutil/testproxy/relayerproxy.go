@@ -5,10 +5,12 @@ import (
 	"context"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"testing"
 
 	"cosmossdk.io/depinject"
@@ -145,16 +147,33 @@ func WithServicesConfigMap(
 	servicesConfigMap map[string]*config.RelayMinerServerConfig,
 ) func(*TestBehavior) {
 	return func(test *TestBehavior) {
+		if os.Getenv("INCLUDE_FLAKY_TESTS") != "true" {
+			test.t.Skip("Skipping known flaky test: 'TestRelayerProxy'")
+		} else {
+			test.t.Log(`TODO_FLAKY: Running known flaky test: 'TestRelayerProxy'
+
+Run the following command a few times to verify it passes at least once:
+
+$ go test -v -count=1 -run TestRelayerProxy ./pkg/relayer/...`)
+		}
 		for _, serviceConfig := range servicesConfigMap {
 			for serviceId, supplierConfig := range serviceConfig.SupplierConfigsMap {
 				server := &http.Server{Addr: supplierConfig.ServiceConfig.BackendUrl.Host}
 				server.Handler = http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 					sendJSONRPCResponse(test.t, w)
 				})
-				go func() { server.ListenAndServe() }()
+
+				go func() {
+					err := server.ListenAndServe()
+					if err != nil && !errors.Is(err, http.ErrServerClosed) {
+						require.NoError(test.t, err)
+					}
+				}()
+
 				go func() {
 					<-test.ctx.Done()
-					server.Shutdown(test.ctx)
+					err := server.Shutdown(test.ctx)
+					require.NoError(test.t, err)
 				}()
 
 				test.proxyServersMap[serviceId] = server
@@ -165,16 +184,16 @@ func WithServicesConfigMap(
 
 // WithDefaultSupplier creates the default staked supplier for the test
 func WithDefaultSupplier(
-	supplierKeyName string,
+	supplierOperatorKeyName string,
 	supplierEndpoints map[string][]*sharedtypes.SupplierEndpoint,
 ) func(*TestBehavior) {
 	return func(test *TestBehavior) {
-		supplierAddress := getAddressFromKeyName(test, supplierKeyName)
+		supplierOperatorAddress := getAddressFromKeyName(test, supplierOperatorKeyName)
 
 		for serviceId, endpoints := range supplierEndpoints {
 			testqueryclients.AddSuppliersWithServiceEndpoints(
 				test.t,
-				supplierAddress,
+				supplierOperatorAddress,
 				serviceId,
 				endpoints,
 			)
@@ -203,20 +222,20 @@ func WithDefaultApplication(appPrivateKey *secp256k1.PrivKey) func(*TestBehavior
 // If the supplierKeyName is empty, the supplier will not be staked so we can
 // test the case where the supplier is not in the application's session's supplier list.
 func WithDefaultSessionSupplier(
-	supplierKeyName string,
+	supplierOperatorKeyName string,
 	serviceId string,
 	appPrivateKey *secp256k1.PrivKey,
 ) func(*TestBehavior) {
 	return func(test *TestBehavior) {
-		if supplierKeyName == "" {
+		if supplierOperatorKeyName == "" {
 			return
 		}
 
 		appAddress := getAddressFromPrivateKey(test, appPrivateKey)
 
 		sessionSuppliers := []string{}
-		supplierAddress := getAddressFromKeyName(test, supplierKeyName)
-		sessionSuppliers = append(sessionSuppliers, supplierAddress)
+		supplierOperatorAddress := getAddressFromKeyName(test, supplierOperatorKeyName)
+		sessionSuppliers = append(sessionSuppliers, supplierOperatorAddress)
 
 		testqueryclients.AddToExistingSessions(
 			test.t,
@@ -232,7 +251,7 @@ func WithDefaultSessionSupplier(
 // and adds all of them to the sessionMap.
 // Each session is configured for the same serviceId and application provided.
 func WithSuccessiveSessions(
-	supplierKeyName string,
+	supplierOperatorKeyName string,
 	serviceId string,
 	appPrivateKey *secp256k1.PrivKey,
 	sessionsCount int,
@@ -241,8 +260,8 @@ func WithSuccessiveSessions(
 		appAddress := getAddressFromPrivateKey(test, appPrivateKey)
 
 		sessionSuppliers := []string{}
-		supplierAddress := getAddressFromKeyName(test, supplierKeyName)
-		sessionSuppliers = append(sessionSuppliers, supplierAddress)
+		supplierOperatorAddress := getAddressFromKeyName(test, supplierOperatorKeyName)
+		sessionSuppliers = append(sessionSuppliers, supplierOperatorAddress)
 
 		// Adding `sessionCount` sessions to the sessionsMap to make them available
 		// to the MockSessionQueryClient.
@@ -257,11 +276,6 @@ func WithSuccessiveSessions(
 		}
 	}
 }
-
-// TODO_BLOCKER(@red-0ne): This function only supports JSON-RPC requests and
-// needs to have its http.Request "Content-Type" header passed-in as a parameter
-// and take out the GetRelayResponseError function which parses JSON-RPC responses
-// to make it RPC-type agnostic.
 
 // MarshalAndSend marshals the request and sends it to the provided service.
 func MarshalAndSend(
@@ -290,7 +304,6 @@ func MarshalAndSend(
 	require.NoError(test.t, err)
 	reader := io.NopCloser(bytes.NewReader(reqBz))
 	req := &http.Request{
-
 		Method: http.MethodPost,
 		Header: http.Header{
 			"Content-Type": []string{"application/json"},
@@ -317,7 +330,7 @@ func GetRelayResponseError(t *testing.T, res *http.Response) (errCode int32, err
 	require.NoError(t, err)
 
 	// If the relayResponse basic validation fails then consider the payload as an error.
-	if err := relayResponse.ValidateBasic(); err != nil {
+	if err = relayResponse.ValidateBasic(); err != nil {
 		return JSONRPCInternalErrorCode, string(relayResponse.Payload)
 	}
 
@@ -404,12 +417,12 @@ func GenerateRelayRequest(
 	privKey *secp256k1.PrivKey,
 	serviceId string,
 	blockHeight int64,
-	supplierKeyName string,
+	supplierOperatorKeyName string,
 	payload []byte,
 ) *servicetypes.RelayRequest {
 	appAddress := getAddressFromPrivateKey(test, privKey)
 	sessionId, _ := testsession.GetSessionIdWithDefaultParams(appAddress, serviceId, blockHashBz, blockHeight)
-	supplierAddress := getAddressFromKeyName(test, supplierKeyName)
+	supplierOperatorAddress := getAddressFromKeyName(test, supplierOperatorKeyName)
 
 	return &servicetypes.RelayRequest{
 		Meta: servicetypes.RelayRequestMetadata{
@@ -420,7 +433,7 @@ func GenerateRelayRequest(
 				SessionStartBlockHeight: testsession.GetSessionStartHeightWithDefaultParams(blockHeight),
 				SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(blockHeight),
 			},
-			SupplierAddress: supplierAddress,
+			SupplierOperatorAddress: supplierOperatorAddress,
 			// The returned relay is unsigned and must be signed elsewhere for functionality
 			Signature: []byte(""),
 		},

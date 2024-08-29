@@ -26,7 +26,7 @@ import (
 	ibctransferkeeper "github.com/cosmos/ibc-go/v8/modules/apps/transfer/keeper"
 	ibctransfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
 	ibc "github.com/cosmos/ibc-go/v8/modules/core"
-	ibcclienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types"
+	ibcclienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types" //nolint:staticcheck // SA1019
 	ibcconnectiontypes "github.com/cosmos/ibc-go/v8/modules/core/03-connection/types"
 	porttypes "github.com/cosmos/ibc-go/v8/modules/core/05-port/types"
 	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
@@ -55,31 +55,31 @@ func (app *App) registerIBCModules() {
 	// register the key tables for legacy param subspaces
 	keyTable := ibcclienttypes.ParamKeyTable()
 	keyTable.RegisterParamSet(&ibcconnectiontypes.Params{})
-	app.ParamsKeeper.Subspace(ibcexported.ModuleName).WithKeyTable(keyTable)
-	app.ParamsKeeper.Subspace(ibctransfertypes.ModuleName).WithKeyTable(ibctransfertypes.ParamKeyTable())
-	app.ParamsKeeper.Subspace(icacontrollertypes.SubModuleName).WithKeyTable(icacontrollertypes.ParamKeyTable())
-	app.ParamsKeeper.Subspace(icahosttypes.SubModuleName).WithKeyTable(icahosttypes.ParamKeyTable())
+	app.Keepers.ParamsKeeper.Subspace(ibcexported.ModuleName).WithKeyTable(keyTable)
+	app.Keepers.ParamsKeeper.Subspace(ibctransfertypes.ModuleName).WithKeyTable(ibctransfertypes.ParamKeyTable())
+	app.Keepers.ParamsKeeper.Subspace(icacontrollertypes.SubModuleName).WithKeyTable(icacontrollertypes.ParamKeyTable())
+	app.Keepers.ParamsKeeper.Subspace(icahosttypes.SubModuleName).WithKeyTable(icahosttypes.ParamKeyTable())
 
 	// add capability keeper and ScopeToModule for ibc module
-	app.CapabilityKeeper = capabilitykeeper.NewKeeper(
+	app.Keepers.CapabilityKeeper = capabilitykeeper.NewKeeper(
 		app.AppCodec(),
 		app.GetKey(capabilitytypes.StoreKey),
 		app.GetMemKey(capabilitytypes.MemStoreKey),
 	)
 
 	// add capability keeper and ScopeToModule for ibc module
-	scopedIBCKeeper := app.CapabilityKeeper.ScopeToModule(ibcexported.ModuleName)
-	scopedIBCTransferKeeper := app.CapabilityKeeper.ScopeToModule(ibctransfertypes.ModuleName)
-	scopedICAControllerKeeper := app.CapabilityKeeper.ScopeToModule(icacontrollertypes.SubModuleName)
-	scopedICAHostKeeper := app.CapabilityKeeper.ScopeToModule(icahosttypes.SubModuleName)
+	scopedIBCKeeper := app.Keepers.CapabilityKeeper.ScopeToModule(ibcexported.ModuleName)
+	scopedIBCTransferKeeper := app.Keepers.CapabilityKeeper.ScopeToModule(ibctransfertypes.ModuleName)
+	scopedICAControllerKeeper := app.Keepers.CapabilityKeeper.ScopeToModule(icacontrollertypes.SubModuleName)
+	scopedICAHostKeeper := app.Keepers.CapabilityKeeper.ScopeToModule(icahosttypes.SubModuleName)
 
 	// Create IBC keeper
-	app.IBCKeeper = ibckeeper.NewKeeper(
+	app.Keepers.IBCKeeper = ibckeeper.NewKeeper(
 		app.appCodec,
 		app.GetKey(ibcexported.StoreKey),
 		app.GetSubspace(ibcexported.ModuleName),
-		app.StakingKeeper,
-		app.UpgradeKeeper,
+		app.Keepers.StakingKeeper,
+		app.Keepers.UpgradeKeeper,
 		scopedIBCKeeper,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)
@@ -91,64 +91,64 @@ func (app *App) registerIBCModules() {
 	govRouter := govv1beta1.NewRouter()
 	govRouter.AddRoute(govtypes.RouterKey, govv1beta1.ProposalHandler)
 
-	app.IBCFeeKeeper = ibcfeekeeper.NewKeeper(
+	app.Keepers.IBCFeeKeeper = ibcfeekeeper.NewKeeper(
 		app.appCodec, app.GetKey(ibcfeetypes.StoreKey),
-		app.IBCKeeper.ChannelKeeper, // may be replaced with IBC middleware
-		app.IBCKeeper.ChannelKeeper,
-		app.IBCKeeper.PortKeeper, app.AccountKeeper, app.BankKeeper,
+		app.Keepers.IBCKeeper.ChannelKeeper, // may be replaced with IBC middleware
+		app.Keepers.IBCKeeper.ChannelKeeper,
+		app.Keepers.IBCKeeper.PortKeeper, app.Keepers.AccountKeeper, app.Keepers.BankKeeper,
 	)
 
 	// Create IBC transfer keeper
-	app.TransferKeeper = ibctransferkeeper.NewKeeper(
+	app.Keepers.TransferKeeper = ibctransferkeeper.NewKeeper(
 		app.appCodec,
 		app.GetKey(ibctransfertypes.StoreKey),
 		app.GetSubspace(ibctransfertypes.ModuleName),
-		app.IBCFeeKeeper,
-		app.IBCKeeper.ChannelKeeper,
-		app.IBCKeeper.PortKeeper,
-		app.AccountKeeper,
-		app.BankKeeper,
+		app.Keepers.IBCFeeKeeper,
+		app.Keepers.IBCKeeper.ChannelKeeper,
+		app.Keepers.IBCKeeper.PortKeeper,
+		app.Keepers.AccountKeeper,
+		app.Keepers.BankKeeper,
 		scopedIBCTransferKeeper,
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)
 
 	// Create interchain account keepers
-	app.ICAHostKeeper = icahostkeeper.NewKeeper(
+	app.Keepers.ICAHostKeeper = icahostkeeper.NewKeeper(
 		app.appCodec,
 		app.GetKey(icahosttypes.StoreKey),
 		app.GetSubspace(icahosttypes.SubModuleName),
-		app.IBCFeeKeeper, // use ics29 fee as ics4Wrapper in middleware stack
-		app.IBCKeeper.ChannelKeeper,
-		app.IBCKeeper.PortKeeper,
-		app.AccountKeeper,
+		app.Keepers.IBCFeeKeeper, // use ics29 fee as ics4Wrapper in middleware stack
+		app.Keepers.IBCKeeper.ChannelKeeper,
+		app.Keepers.IBCKeeper.PortKeeper,
+		app.Keepers.AccountKeeper,
 		scopedICAHostKeeper,
 		app.MsgServiceRouter(),
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)
-	app.ICAControllerKeeper = icacontrollerkeeper.NewKeeper(
+	app.Keepers.ICAControllerKeeper = icacontrollerkeeper.NewKeeper(
 		app.appCodec,
 		app.GetKey(icacontrollertypes.StoreKey),
 		app.GetSubspace(icacontrollertypes.SubModuleName),
-		app.IBCFeeKeeper, // use ics29 fee as ics4Wrapper in middleware stack
-		app.IBCKeeper.ChannelKeeper,
-		app.IBCKeeper.PortKeeper,
+		app.Keepers.IBCFeeKeeper, // use ics29 fee as ics4Wrapper in middleware stack
+		app.Keepers.IBCKeeper.ChannelKeeper,
+		app.Keepers.IBCKeeper.PortKeeper,
 		scopedICAControllerKeeper,
 		app.MsgServiceRouter(),
 		authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 	)
-	app.GovKeeper.SetLegacyRouter(govRouter)
+	app.Keepers.GovKeeper.SetLegacyRouter(govRouter)
 
 	// Create IBC modules with ibcfee middleware
-	transferIBCModule := ibcfee.NewIBCMiddleware(ibctransfer.NewIBCModule(app.TransferKeeper), app.IBCFeeKeeper)
+	transferIBCModule := ibcfee.NewIBCMiddleware(ibctransfer.NewIBCModule(app.Keepers.TransferKeeper), app.Keepers.IBCFeeKeeper)
 
 	// integration point for custom authentication modules
 	var noAuthzModule porttypes.IBCModule
 	icaControllerIBCModule := ibcfee.NewIBCMiddleware(
-		icacontroller.NewIBCMiddleware(noAuthzModule, app.ICAControllerKeeper),
-		app.IBCFeeKeeper,
+		icacontroller.NewIBCMiddleware(noAuthzModule, app.Keepers.ICAControllerKeeper),
+		app.Keepers.IBCFeeKeeper,
 	)
 
-	icaHostIBCModule := ibcfee.NewIBCMiddleware(icahost.NewIBCModule(app.ICAHostKeeper), app.IBCFeeKeeper)
+	icaHostIBCModule := ibcfee.NewIBCMiddleware(icahost.NewIBCModule(app.Keepers.ICAHostKeeper), app.Keepers.IBCFeeKeeper)
 
 	// Create static IBC router, add transfer route, then set and seal it
 	ibcRouter := porttypes.NewRouter().
@@ -158,20 +158,20 @@ func (app *App) registerIBCModules() {
 
 	// this line is used by starport scaffolding # ibc/app/module
 
-	app.IBCKeeper.SetRouter(ibcRouter)
+	app.Keepers.IBCKeeper.SetRouter(ibcRouter)
 
-	app.ScopedIBCKeeper = scopedIBCKeeper
-	app.ScopedIBCTransferKeeper = scopedIBCTransferKeeper
-	app.ScopedICAHostKeeper = scopedICAHostKeeper
-	app.ScopedICAControllerKeeper = scopedICAControllerKeeper
+	app.Keepers.ScopedIBCKeeper = scopedIBCKeeper
+	app.Keepers.ScopedIBCTransferKeeper = scopedIBCTransferKeeper
+	app.Keepers.ScopedICAHostKeeper = scopedICAHostKeeper
+	app.Keepers.ScopedICAControllerKeeper = scopedICAControllerKeeper
 
 	// register IBC modules
 	if err := app.RegisterModules(
-		ibc.NewAppModule(app.IBCKeeper),
-		ibctransfer.NewAppModule(app.TransferKeeper),
-		ibcfee.NewAppModule(app.IBCFeeKeeper),
-		icamodule.NewAppModule(&app.ICAControllerKeeper, &app.ICAHostKeeper),
-		capability.NewAppModule(app.appCodec, *app.CapabilityKeeper, false),
+		ibc.NewAppModule(app.Keepers.IBCKeeper),
+		ibctransfer.NewAppModule(app.Keepers.TransferKeeper),
+		ibcfee.NewAppModule(app.Keepers.IBCFeeKeeper),
+		icamodule.NewAppModule(&app.Keepers.ICAControllerKeeper, &app.Keepers.ICAHostKeeper),
+		capability.NewAppModule(app.appCodec, *app.Keepers.CapabilityKeeper, false),
 		ibctm.AppModule{},
 		solomachine.AppModule{},
 	); err != nil {

@@ -135,12 +135,22 @@ func (k Keeper) hydrateSessionID(ctx context.Context, sh *sessionHydrator) error
 
 // hydrateSessionApplication hydrates the full Application actor based on the address provided
 func (k Keeper) hydrateSessionApplication(ctx context.Context, sh *sessionHydrator) error {
-	foundApp, appIsFound := k.applicationKeeper.GetApplication(ctx, sh.sessionHeader.ApplicationAddress)
-	if !appIsFound {
+	foundApp, isAppFound := k.applicationKeeper.GetApplication(ctx, sh.sessionHeader.ApplicationAddress)
+	if !isAppFound {
 		return types.ErrSessionAppNotFound.Wrapf(
 			"could not find app with address %q at height %d",
 			sh.sessionHeader.ApplicationAddress,
 			sh.sessionHeader.SessionStartBlockHeight,
+		)
+	}
+
+	// Do not provide sessions for applications that initiated the unstaking process
+	// and that are no longer active.
+	if !foundApp.IsActive(sh.sessionHeader.SessionEndBlockHeight) {
+		return types.ErrSessionAppNotActive.Wrapf(
+			"application %q is not active for session %s",
+			sh.sessionHeader.ApplicationAddress,
+			sh.sessionHeader.SessionId,
 		)
 	}
 
@@ -163,15 +173,15 @@ func (k Keeper) hydrateSessionApplication(ctx context.Context, sh *sessionHydrat
 func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator) error {
 	logger := k.Logger().With("method", "hydrateSessionSuppliers")
 
-	// TODO_BLOCKER(@Olshansk): Retrieve the suppliers at SessionStartBlockHeight,
-	// NOT THE CURRENT ONE which is what's provided by the context. For now, for
-	// simplicity, only retrieving the suppliers at the current block height which
-	// could create a discrepancy if new suppliers were staked mid session.
-	// TODO(@bryanchriswhite): Investigate if `BlockClient` + `ReplayObservable` where `N = SessionLength` could be used here.`
 	suppliers := k.supplierKeeper.GetAllSuppliers(ctx)
 
 	candidateSuppliers := make([]*sharedtypes.Supplier, 0)
 	for _, s := range suppliers {
+		// Exclude suppliers that are inactive (i.e. currently unbonding).
+		if !s.IsActive(uint64(sh.sessionHeader.SessionEndBlockHeight), sh.sessionHeader.Service.Id) {
+			continue
+		}
+
 		// NB: Allocate a new heap variable as s is a value and we're appending
 		// to a slice of  pointers; otherwise, we'd be appending new pointers to
 		// the same memory address containing the last supplier in the loop.

@@ -25,9 +25,13 @@ type miner struct {
 	// proofQueryClient is used to query for the minimum relay difficulty.
 	proofQueryClient client.ProofQueryClient
 
-	// relayDifficultyBits is the minimum difficulty that a relay must have to be
-	// volume / reward applicable.
-	relayDifficultyBits uint64
+	// relay_difficulty is the target hash which a relay hash must be less than to be volume/reward applicable.
+	//
+	// TODO_BETA(#705): This is populated by querying the corresponding on-chain parameter during construction.
+	//                   If this parameter is updated on-chain the relayminer will need to be restarted to query the new value.
+	// TODO_BETA(#705): This needs to be maintained (and updated) on a per service level.
+	//                  Make sure to update the `smst.Update` call in `relayer/session` alongside it.
+	relayDifficultyTargetHash []byte
 }
 
 // NewMiner creates a new miner from the given dependencies and options. It
@@ -37,7 +41,7 @@ type miner struct {
 // - ProofQueryClient
 //
 // Available options:
-//   - WithDifficulty
+//   - WithRelayDifficultyTargetHash
 func NewMiner(
 	deps depinject.Config,
 	opts ...relayer.MinerOption,
@@ -91,8 +95,8 @@ func (mnr *miner) setDefaults() error {
 		return err
 	}
 
-	if mnr.relayDifficultyBits == 0 {
-		mnr.relayDifficultyBits = params.GetMinRelayDifficultyBits()
+	if len(mnr.relayDifficultyTargetHash) == 0 {
+		mnr.relayDifficultyTargetHash = params.GetRelayDifficultyTargetHash()
 	}
 	return nil
 }
@@ -106,16 +110,15 @@ func (mnr *miner) mapMineRelay(
 	_ context.Context,
 	relay *servicetypes.Relay,
 ) (_ either.Either[*relayer.MinedRelay], skip bool) {
-	// TODO_TECHDEBT(@red-0ne, #446): Centralize the configuration for the SMT spec.
-	// TODO_TECHDEBT(@red-0ne): marshal using canonical codec.
 	relayBz, err := relay.Marshal()
 	if err != nil {
 		return either.Error[*relayer.MinedRelay](err), false
 	}
-	relayHash := servicetypes.GetHashFromBytes(relayBz)
+	relayHashArr := protocol.GetRelayHashFromBytes(relayBz)
+	relayHash := relayHashArr[:]
 
 	// The relay IS NOT volume / reward applicable
-	if uint64(protocol.CountHashDifficultyBits(relayHash)) < mnr.relayDifficultyBits {
+	if !protocol.IsRelayVolumeApplicable(relayHash, mnr.relayDifficultyTargetHash) {
 		return either.Success[*relayer.MinedRelay](nil), true
 	}
 
@@ -123,6 +126,6 @@ func (mnr *miner) mapMineRelay(
 	return either.Success(&relayer.MinedRelay{
 		Relay: *relay,
 		Bytes: relayBz,
-		Hash:  relayHash[:],
+		Hash:  relayHash,
 	}), false
 }

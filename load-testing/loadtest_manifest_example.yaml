@@ -1,24 +1,23 @@
-# The load test uses the provided gateways and the staked suppliers to send relays.
-
 # This file is used to configure the load test for non-ephemeral chains.
 # It is intended to target a remote environment, such as a devnet or testnet.
 is_ephemeral_chain: false
 
 # testnet_node is the URL of the node that the load test will use to query the
 # chain and submit transactions.
-testnet_node: https://testnet-validated-validator-rpc.poktroll.com
+testnet_node: https://devnet-sophon-validator-rpc.poktroll.com
 
 # The service ID to request relays from.
-service_id: "0021"
+service_id: "anvil"
 
 # The address of the account that will be used to fund the the application accounts
 # so that they can stake on the network.
-funding_account_address: pokt14eh973xt99s7edugnyvd5d5u50d6j0hysw2vsm # address for pnf account
+funding_account_address: pokt1awtlw5sjmw2f5lgj8ekdkaqezphgz88rdk93sk # address for faucet account
 
 # In non-ephemeral chains, the gateways are identified by their address.
 gateways:
-  # address is the bech32 pokt address of the gateway.
-  - address: pokt16sty9mjdh4u2fwgj8ptufg42cysvh6gsyx6wfp
-    # The url used to send relays to the gateway on.
-    # TODO_INVESTIGATE(@okdas): Why is this port number so low? What should it be?
-    exposed_url: http://localhost:84
+  - address: pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4
+    exposed_url: https://devnet-sophon-gateway-1.poktroll.com
+  - address: pokt15w3fhfyc0lttv7r585e2ncpf6t2kl9uh8rsnyz
+    exposed_url: https://devnet-sophon-gateway-2.poktroll.com
+  - address: pokt1zhmkkd0rh788mc9prfq0m2h88t9ge0j83gnxya
+    exposed_url: https://devnet-sophon-gateway-3.poktroll.com

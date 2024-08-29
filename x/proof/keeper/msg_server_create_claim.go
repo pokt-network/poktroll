@@ -10,7 +10,6 @@ import (
 
 	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/proof/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -30,64 +29,50 @@ func (k msgServer) CreateClaim(
 	defer func() {
 		// Only increment these metrics counters if handling a new claim.
 		if !isExistingClaim {
-			// TODO_IMPROVE: We could track on-chain relays here with claim.GetNumRelays().
 			telemetry.ClaimCounter(types.ClaimProofStage_CLAIMED, 1, err)
-			telemetry.ClaimComputeUnitsCounter(
-				types.ClaimProofStage_CLAIMED,
-				numComputeUnits,
-				err,
-			)
+			telemetry.ClaimRelaysCounter(types.ClaimProofStage_CLAIMED, numRelays, err)
+			telemetry.ClaimComputeUnitsCounter(types.ClaimProofStage_CLAIMED, numComputeUnits, err)
 		}
 	}()
 
 	logger := k.Logger().With("method", "CreateClaim")
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	logger.Info("creating claim")
 
+	// Basic validation of the CreateClaim message.
 	if err = msg.ValidateBasic(); err != nil {
 		return nil, err
 	}
+	logger.Info("validated the createClaim message")
 
 	// Compare msg session header w/ on-chain session header.
-	var session *sessiontypes.Session
-	session, err = k.queryAndValidateSessionHeader(ctx, msg)
+	session, err := k.queryAndValidateSessionHeader(ctx, msg.GetSessionHeader(), msg.GetSupplierOperatorAddress())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	// Use the session header from the on-chain hydrated session.
-	sessionHeader := session.GetHeader()
-
-	// Set the session header to the on-chain hydrated session header.
-	msg.SessionHeader = sessionHeader
-
-	// Validate claim message commit height is within the respective session's
-	// claim creation window using the on-chain session header.
-	if err = k.validateClaimWindow(ctx, msg); err != nil {
-		return nil, status.Error(codes.FailedPrecondition, err.Error())
+	// Construct and insert claim
+	claim = types.Claim{
+		SupplierOperatorAddress: msg.GetSupplierOperatorAddress(),
+		SessionHeader:           session.GetHeader(),
+		RootHash:                msg.GetRootHash(),
 	}
 
+	// Helpers for logging the same metadata throughout this function calls
 	logger = logger.
 		With(
 			"session_id", session.GetSessionId(),
-			"session_end_height", sessionHeader.GetSessionEndBlockHeight(),
-			"supplier", msg.GetSupplierAddress(),
+			"session_end_height", claim.SessionHeader.GetSessionEndBlockHeight(),
+			"supplier_operator_address", msg.GetSupplierOperatorAddress(),
 		)
 
-	logger.Info("validated claim")
-
-	// Assign and upsert claim after all validation.
-	claim = types.Claim{
-		SupplierAddress: msg.GetSupplierAddress(),
-		SessionHeader:   sessionHeader,
-		RootHash:        msg.GetRootHash(),
+	// Validate claim message commit height is within the respective session's
+	// claim creation window using the on-chain session header.
+	if err = k.validateClaimWindow(ctx, claim.SessionHeader, claim.SupplierOperatorAddress); err != nil {
+		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 
-	_, isExistingClaim = k.Keeper.GetClaim(ctx, claim.GetSessionHeader().GetSessionId(), claim.GetSupplierAddress())
-
-	k.Keeper.UpsertClaim(ctx, claim)
-
-	logger.Info("created new claim")
-
+	// Get metadata for the event we want to emit
 	numRelays, err = claim.GetNumRelays()
 	if err != nil {
 		return nil, status.Error(codes.Internal, types.ErrProofInvalidClaimRootHash.Wrap(err.Error()).Error())
@@ -96,6 +81,17 @@ func (k msgServer) CreateClaim(
 	if err != nil {
 		return nil, status.Error(codes.Internal, types.ErrProofInvalidClaimRootHash.Wrap(err.Error()).Error())
 	}
+	_, isExistingClaim = k.Keeper.GetClaim(ctx, claim.GetSessionHeader().GetSessionId(), claim.GetSupplierOperatorAddress())
+
+	// TODO_UPNEXT(#705): Check (and test) that numClaimComputeUnits is equal
+	// to num_relays * the_compute_units_per_relay for this_service.
+	// Add a comment that for now, we expect it to be the case because every
+	// relay for a specific service is wroth the same, but may change in the
+	// future.
+
+	// Upsert the claim
+	k.Keeper.UpsertClaim(ctx, claim)
+	logger.Info("successfully upserted the claim")
 
 	// Emit the appropriate event based on whether the claim was created or updated.
 	var claimUpsertEvent proto.Message
@@ -117,8 +113,6 @@ func (k msgServer) CreateClaim(
 			},
 		)
 	}
-
-	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	if err = sdkCtx.EventManager().EmitTypedEvent(claimUpsertEvent); err != nil {
 		return nil, status.Error(
 			codes.Internal,
@@ -130,7 +124,6 @@ func (k msgServer) CreateClaim(
 		)
 	}
 
-	// TODO_BETA: return the claim in the response.
 	return &types.MsgCreateClaimResponse{
 		Claim: &claim,
 	}, nil

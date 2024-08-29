@@ -2,20 +2,13 @@
 
 SHELL = /bin/sh
 
-# TODO_IMPROVE: Look into how we can we source `.env.dev` and have everything
-# here work.
-
-# ifneq (,$(wildcard .env))
-# include .env
-# export $(shell sed 's/=.*//' .env)
-# endif
-
 POKTROLLD_HOME ?= ./localnet/poktrolld
 POCKET_NODE ?= tcp://127.0.0.1:26657 # The pocket node (validator in the localnet context)
 TESTNET_RPC ?= https://testnet-validated-validator-rpc.poktroll.com/ # TestNet RPC endpoint for validator maintained by Grove. Needs to be update if there's another "primary" testnet.
 APPGATE_SERVER ?= http://localhost:42069
 GATEWAY_URL ?= http://localhost:42079
 POCKET_ADDR_PREFIX = pokt
+LOAD_TEST_CUSTOM_MANIFEST ?= loadtest_manifest_example.yaml
 
 # The domain ending in ".town" is staging, ".city" is production
 GROVE_GATEWAY_STAGING_ETH_MAINNET = https://eth-mainnet.rpc.grove.town
@@ -85,11 +78,10 @@ endif
 ####################
 
 # TODO_IMPROVE(@okdas): Add other dependencies (ignite, docker, k8s, etc) here
-# TODO_BLOCKER(@okdas): bump `golangci-lint` when we upgrade golang to 1.21+
 .PHONY: install_ci_deps
 install_ci_deps: ## Installs `mockgen` and other go tools
 	go install "github.com/golang/mock/mockgen@v1.6.0" && mockgen --version
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.53.3 && golangci-lint --version
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.59.1 && golangci-lint --version
 	go install golang.org/x/tools/cmd/goimports@latest
 	go install github.com/mikefarah/yq/v4@latest
 
@@ -140,6 +132,17 @@ check_ignite_version:
 		echo "Error: Version $$version is less than v28. Exiting with error." ; \
 		exit 1 ; \
 	fi
+
+.PHONY: check_mockgen
+# Internal helper target- Check if mockgen is installed
+check_mockgen:
+	{ \
+	if ( ! ( command -v mockgen >/dev/null )); then \
+		echo "Seems like you don't have `mockgen` installed. Please visit https://github.com/golang/mock#installation and follow the instructions to install `mockgen` before continuing"; \
+		exit 1; \
+	fi; \
+	}
+
 
 .PHONY: check_act
 # Internal helper target - check if `act` is installed
@@ -307,7 +310,11 @@ docker_wipe: check_docker warn_destructive prompt_user ## [WARNING] Remove all t
 ########################
 
 .PHONY: localnet_up
-localnet_up: check_docker_ps check_kind_context proto_regen localnet_regenesis ## Starts localnet
+localnet_up: check_docker_ps check_kind_context proto_regen localnet_regenesis ## Starts up a clean localnet
+	tilt up
+
+.PHONY: localnet_up_quick
+localnet_up_quick: check_docker_ps check_kind_context ## Starts up a localnet without regenerating fixtures
 	tilt up
 
 .PHONY: localnet_down
@@ -345,10 +352,9 @@ send_relay_sovereign_app_REST: warn_message_acc_initialize_pubkeys # Send a REST
 	--data '{"model": "qwen:0.5b", "stream": false, "messages": [{"role": "user", "content":"count from 1 to 10"}]}' \
 	$(APPGATE_SERVER)/ollama/api/chat
 
-# TODO_TECHDEBT(@okdas): Figure out how to copy these over w/ a functional state.
-# cp ${HOME}/.poktroll/config/app.toml $(POKTROLLD_HOME)/config/app.toml
-# cp ${HOME}/.poktroll/config/config.toml $(POKTROLLD_HOME)/config/config.toml
-# cp ${HOME}/.poktroll/config/client.toml $(POKTROLLD_HOME)/config/client.toml
+.PHONY: cosmovisor_start_node
+cosmovisor_start_node: # Starts the node using cosmovisor that waits for an upgrade plan
+	bash tools/scripts/upgrades/cosmovisor-start-node.sh
 
 ###############
 ### Linting ###
@@ -395,19 +401,19 @@ test_e2e_gateway: test_e2e_env ## Run only the E2E suite that exercises the gate
 test_e2e_session: test_e2e_env ## Run only the E2E suite that exercises the session (i.e. claim/proof) life-cycle
 	go test -v ./e2e/tests/... -tags=e2e,test --features-path=session.feature
 
-.PHONY: test_e2e_settlement
-test_e2e_settlement: test_e2e_env ## Run only the E2E suite that exercises the session & tokenomics settlement
+.PHONY: test_e2e_tokenomics
+test_e2e_tokenomics: test_e2e_env ## Run only the E2E suite that exercises the session & tokenomics settlement
 	go test -v ./e2e/tests/... -tags=e2e,test --features-path=0_settlement.feature
 
 .PHONY: test_e2e_params
 test_e2e_params: test_e2e_env ## Run only the E2E suite that exercises parameter updates for all modules
 	go test -v ./e2e/tests/... -tags=e2e,test --features-path=update_params.feature
 
-.PHONY: test_load_relays_stress_example
-test_load_relays_stress_example: ## Run the stress test for E2E relays on a persistent (non-ephemeral) remote (devnet) chain. Note that this is just an example.
+.PHONY: test_load_relays_stress_custom
+test_load_relays_stress_custom: ## Run the stress test for E2E relays using custom manifest. "loadtest_manifest_example.yaml" manifest is used by default. Set `LOAD_TEST_CUSTOM_MANIFEST` environment variable to use the different manifest.
 	go test -v -count=1 ./load-testing/tests/... \
 	-tags=load,test -run LoadRelays --log-level=debug --timeout=30m \
-	--manifest ./load-testing/loadtest_manifest_example.yaml
+	--manifest ./load-testing/$(LOAD_TEST_CUSTOM_MANIFEST)
 
 .PHONY: test_load_relays_stress_localnet
 test_load_relays_stress_localnet: test_e2e_env warn_message_local_stress_test ## Run the stress test for E2E relays on LocalNet.
@@ -415,17 +421,33 @@ test_load_relays_stress_localnet: test_e2e_env warn_message_local_stress_test ##
 	-tags=load,test -run LoadRelays --log-level=debug --timeout=30m \
 	--manifest ./load-testing/loadtest_manifest_localnet.yaml
 
+.PHONY: test_load_relays_stress_localnet_single_supplier
+test_load_relays_stress_localnet_single_supplier: test_e2e_env warn_message_local_stress_test ## Run the stress test for E2E relays on LocalNet using exclusively one supplier.
+	go test -v -count=1 ./load-testing/tests/... \
+	-tags=load,test -run TestLoadRelaysSingleSupplier --log-level=debug --timeout=30m \
+	--manifest ./load-testing/loadtest_manifest_localnet_single_supplier.yaml
+
 .PHONY: test_verbose
 test_verbose: check_go_version ## Run all go tests verbosely
 	go test -count=1 -v -race -tags test ./...
 
+# NB: buildmode=pie is necessary to avoid linker errors on macOS.
+# It is not compatible with `-race`, which is why it's omitted here.
+# See ref for more details: https://github.com/golang/go/issues/54482#issuecomment-1251124908
 .PHONY: test_all
-test_all: check_go_version ## Run all go tests showing detailed output only on failures
-	go test -count=1 -race -tags test ./...
+test_all: warn_flaky_tests check_go_version ## Run all go tests showing detailed output only on failures
+	go test -count=1 -buildmode=pie -tags test ./...
 
 .PHONY: test_all_with_integration
 test_all_with_integration: check_go_version ## Run all go tests, including those with the integration
 	go test -count=1 -v -race -tags test,integration ./...
+
+# We are explicitly using an env variable rather than a build tag to keep flaky
+# tests in line with non flaky tests and use it as a way to easily turn them
+# on and off without maintaining extra files.
+.PHONY: test_all_with_integration_and_flaky
+test_all_with_integration_and_flaky: check_go_version ## Run all go tests, including those with the integration and flaky tests
+	INCLUDE_FLAKY_TESTS=true go test -count=1 -v -race -tags test,integration ./...
 
 .PHONY: test_integration
 test_integration: check_go_version ## Run only the in-memory integration "unit" tests
@@ -503,17 +525,22 @@ go_develop_and_test: go_develop test_all ## Generate protos, mocks and run all t
 # TODO_DISCUSS_IN_THIS_COMMIT - SHOULD NEVER BE COMMITTED TO MASTER. It is a way for the reviewer of a PR to start / reply to a discussion.
 # TODO_IN_THIS_COMMIT         - SHOULD NEVER BE COMMITTED TO MASTER. It is a way to start the review process while non-critical changes are still in progress
 
+
+# Define shared variable for the exclude parameters
+EXCLUDE_GREP = --exclude-dir={.git,vendor,./docusaurus,.vscode,.idea} --exclude={Makefile,reviewdog.yml,*.pb.go,*.pulsar.go}
+
 .PHONY: todo_list
 todo_list: ## List all the TODOs in the project (excludes vendor and prototype directories)
-	grep --exclude-dir={.git,vendor,./docusaurus} -r TODO  .
+	grep -r $(EXCLUDE_GREP) TODO . | grep -v 'TODO()'
 
 .PHONY: todo_count
 todo_count: ## Print a count of all the TODOs in the project
-	grep --exclude-dir={.git,vendor,./docusaurus} -r TODO  . | wc -l
+	grep -r $(EXCLUDE_GREP) TODO . | grep -v 'TODO()' | wc -l
 
 .PHONY: todo_this_commit
 todo_this_commit: ## List all the TODOs needed to be done in this commit
-	grep -n --exclude-dir={.git,vendor,.vscode,.idea} --exclude={Makefile,reviewdog.yml} -r -e "TODO_IN_THIS_"
+	grep -r $(EXCLUDE_GREP) TODO_IN_THIS .| grep -v 'TODO()'
+
 
 ####################
 ###   Gateways   ###
@@ -659,7 +686,7 @@ supplier3_stake: ## Stake supplier3
 
 .PHONY: supplier_unstake
 supplier_unstake: ## Unstake an supplier (must specify the SUPPLIER env var)
-	poktrolld --home=$(POKTROLLD_HOME) tx supplier unstake-supplier --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE)
+	poktrolld --home=$(POKTROLLD_HOME) tx supplier unstake-supplier $(SUPPLIER) --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE)
 
 .PHONY: supplier1_unstake
 supplier1_unstake: ## Unstake supplier1
@@ -742,13 +769,13 @@ acc_balance_query: ## Query the balance of the account specified (make acc_balan
 
 .PHONY: acc_balance_query_modules
 acc_balance_query_modules: ## Query the balance of the network level module accounts
-	@echo "### Application ###"
+	@echo "### Application Module ###\n"
 	make acc_balance_query ACC=$(APPLICATION_MODULE_ADDRESS)
-	@echo "### Supplier ###"
+	@echo "### Supplier Module ###\n"
 	make acc_balance_query ACC=$(SUPPLIER_MODULE_ADDRESS)
-	@echo "### Gateway ###"
+	@echo "### Gateway Module ###\n"
 	make acc_balance_query ACC=$(GATEWAY_MODULE_ADDRESS)
-	@echo "### Service ###"
+	@echo "### Service Module ###\n"
 	make acc_balance_query ACC=$(SERVICE_MODULE_ADDRESS)
 
 .PHONY: acc_balance_query_app1
@@ -803,9 +830,22 @@ warn_message_local_stress_test: ## Print a warning message when kicking off a lo
 	@echo "|                                                                                               |"
 	@echo "|     1. Review the # of suppliers & gateways in 'load-testing/localnet_loadtest_manifest.yaml' |"
 	@echo "|     2. Update 'localnet_config.yaml' to reflect what you found in (1)                         |"
-	@echo "|     	DEVELOPER_TIP: If you're operating off defaults, you'll likely need to update to 3     |"
+	@echo "|     DEVELOPER_TIP: If you're operating off defaults, you'll likely need to update to 3        |"
 	@echo "|                                                                                               |"
 	@echo "|     TODO_DOCUMENT(@okdas): Move this into proper documentation w/ clearer explanations        |"
+	@echo "|                                                                                               |"
+	@echo "+-----------------------------------------------------------------------------------------------+"
+
+PHONY: warn_flaky_tests
+warn_flaky_tests: ## Print a warning message that some unit tests may be flaky
+	@echo "+-----------------------------------------------------------------------------------------------+"
+	@echo "|                                                                                               |"
+	@echo "|     IMPORTANT: READ ME IF YOUR TESTS FAIL!!!                                                  |"
+	@echo "|                                                                                               |"
+	@echo "|     1. Our unit / integration tests are far from perfect & some are flaky                     |"
+	@echo "|     2. If you ran 'make go_develop_and_test' and a failure occurred, try to run:              |"
+	@echo "|     'make test_all' once or twice more                                                        |"
+	@echo "|     3. If the same error persists, isolate it with 'go test -v ./path/to/failing/module       |"
 	@echo "|                                                                                               |"
 	@echo "+-----------------------------------------------------------------------------------------------+"
 
@@ -829,7 +869,7 @@ claim_list: ## List all the claims
 
 .PHONY: claims_list_address
 claim_list_address: ## List all the claims for a specific address (specified via ADDR variable)
-	poktrolld --home=$(POKTROLLD_HOME) q supplier list-claims --supplier-address $(ADDR) --node $(POCKET_NODE)
+	poktrolld --home=$(POKTROLLD_HOME) q supplier list-claims --supplier-operator-address $(ADDR) --node $(POCKET_NODE)
 
 .PHONY: claims_list_address_supplier1
 claim_list_address_supplier1: ## List all the claims for supplier1
@@ -996,6 +1036,10 @@ go_docs: check_godoc ## Generate documentation for the project
 docusaurus_start: check_npm check_node ## Start the Docusaurus server
 	(cd docusaurus && npm i && npm run start)
 
+.PHONY: docs_update_gov_params_page
+docs_update_gov_params_page: ## Update the page in Docusaurus documenting all the governance parameters
+	go run tools/scripts/generate_docs_params.go
+
 ######################
 ### Ignite Helpers ###
 ######################
@@ -1003,7 +1047,6 @@ docusaurus_start: check_npm check_node ## Start the Docusaurus server
 .PHONY: poktrolld_addr
 poktrolld_addr: ## Retrieve the address for an account by ACC_NAME
 	@echo $(shell poktrolld --home=$(POKTROLLD_HOME) keys show -a $(ACC_NAME))
-
 
 ###################
 ### Act Helpers ###

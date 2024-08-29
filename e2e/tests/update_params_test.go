@@ -3,6 +3,7 @@
 package e2e
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -370,9 +371,9 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 		params := prooftypes.DefaultParams()
 		paramsMap := s.expectedModuleParams[moduleName]
 
-		minRelayDifficultyBits, ok := paramsMap[prooftypes.ParamMinRelayDifficultyBits]
+		relayDifficultyTargetHash, ok := paramsMap[prooftypes.ParamRelayDifficultyTargetHash]
 		if ok {
-			params.MinRelayDifficultyBits = uint64(minRelayDifficultyBits.value.(int64))
+			params.RelayDifficultyTargetHash, _ = hex.DecodeString(string(relayDifficultyTargetHash.value.([]byte)))
 		}
 
 		proofRequestProbability, ok := paramsMap[prooftypes.ParamProofRequestProbability]
@@ -428,6 +429,16 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 		proofWindowCloseOffsetBlocksParam, ok := paramsMap[sharedtypes.ParamProofWindowCloseOffsetBlocks]
 		if ok {
 			params.ProofWindowCloseOffsetBlocks = uint64(proofWindowCloseOffsetBlocksParam.value.(int64))
+		}
+
+		supplierUnbondingPeriodSessions, ok := paramsMap[sharedtypes.ParamSupplierUnbondingPeriodSessions]
+		if ok {
+			params.SupplierUnbondingPeriodSessions = uint64(supplierUnbondingPeriodSessions.value.(int64))
+		}
+
+		applicationUnbondingPeriodSessions, ok := paramsMap[sharedtypes.ParamApplicationUnbondingPeriodSessions]
+		if ok {
+			params.ApplicationUnbondingPeriodSessions = uint64(applicationUnbondingPeriodSessions.value.(int64))
 		}
 
 		assertUpdatedParams(s,

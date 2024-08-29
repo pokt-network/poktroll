@@ -10,7 +10,7 @@ import (
 func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 	return &autocliv1.ModuleOptions{
 		Query: &autocliv1.ServiceCommandDescriptor{
-			Service:           modulev1.Query_ServiceDesc.ServiceName,
+			Service: modulev1.Query_ServiceDesc.ServiceName,
 			RpcCommandOptions: []*autocliv1.RpcCommandOptions{
 				//			{
 				//				RpcMethod: "Params",
@@ -22,12 +22,13 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 				//				Use:       "list-service",
 				//				Short:     "List all service",
 				//			},
-				//			{
-				//				RpcMethod:      "Service",
-				//				Use:            "show-service [id]",
-				//				Short:          "Shows a service",
-				//				PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "index"}},
-				//			},
+				{
+					RpcMethod:      "Service",
+					Use:            "show-service [id]",
+					Short:          "Shows a service",
+					Long:           "Retrieve the service details by its id.",
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "id"}},
+				},
 				// this line is used by ignite scaffolding # autocli/query
 			},
 		},

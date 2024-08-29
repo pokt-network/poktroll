@@ -69,6 +69,6 @@ func TestServiceGetAll(t *testing.T) {
 	services := createNServices(keeper, ctx, 10)
 	require.ElementsMatch(t,
 		nullify.Fill(services),
-		nullify.Fill(keeper.GetAllService(ctx)),
+		nullify.Fill(keeper.GetAllServices(ctx)),
 	)
 }

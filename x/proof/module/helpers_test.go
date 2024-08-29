@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"testing"
 
+	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/stretchr/testify/require"
 
@@ -36,7 +37,7 @@ func networkWithClaimObjects(
 	numSessions int,
 	numSuppliers int,
 	numApps int,
-) (net *network.Network, claims []types.Claim) {
+) (net *network.Network, claims []types.Claim, clientCtx cosmosclient.Context) {
 	t.Helper()
 
 	// Initialize a network config.
@@ -55,14 +56,14 @@ func networkWithClaimObjects(
 
 	// Create a supplier for each session in numClaimsSessions and an app for each
 	// claim in numClaimsPerSession.
-	supplierAccts := make([]*testkeyring.PreGeneratedAccount, numSuppliers)
-	supplierAddrs := make([]string, numSuppliers)
-	for i := range supplierAccts {
+	supplierOperatorAccts := make([]*testkeyring.PreGeneratedAccount, numSuppliers)
+	supplierOperatorAddrs := make([]string, numSuppliers)
+	for i := range supplierOperatorAccts {
 		account, ok := preGeneratedAccts.Next()
 		require.True(t, ok)
 
-		supplierAccts[i] = account
-		supplierAddrs[i] = account.Address.String()
+		supplierOperatorAccts[i] = account
+		supplierOperatorAddrs[i] = account.Address.String()
 	}
 	appAccts := make([]*testkeyring.PreGeneratedAccount, numApps)
 	appAddrs := make([]string, numApps)
@@ -75,7 +76,7 @@ func networkWithClaimObjects(
 	}
 
 	// Construct supplier and application module genesis states given the account addresses.
-	supplierGenesisState := network.SupplierModuleGenesisStateWithAddresses(t, supplierAddrs)
+	supplierGenesisState := network.SupplierModuleGenesisStateWithAddresses(t, supplierOperatorAddrs)
 	supplierGenesisBuffer, err := cfg.Codec.MarshalJSON(supplierGenesisState)
 	require.NoError(t, err)
 
@@ -88,10 +89,10 @@ func networkWithClaimObjects(
 	// Create numSessions * numApps * numSuppliers claims.
 	for sessionIdx := 0; sessionIdx < numSessions; sessionIdx++ {
 		for _, appAcct := range appAccts {
-			for _, supplierAcct := range supplierAccts {
+			for _, supplierOperatorAcct := range supplierOperatorAccts {
 				claim := newTestClaim(
 					t, &sharedParams,
-					supplierAcct.Address.String(),
+					supplierOperatorAcct.Address.String(),
 					testsession.GetSessionStartHeightWithDefaultParams(1),
 					appAcct.Address.String(),
 				)
@@ -114,15 +115,13 @@ func networkWithClaimObjects(
 	net = network.New(t, cfg)
 	// Only the first validator's client context is populated.
 	// (see: https://pkg.go.dev/github.com/cosmos/cosmos-sdk/testutil/network#pkg-overview)
-	ctx := net.Validators[0].ClientCtx
-	// Overwrite the client context's keyring with the in-memory one that contains
-	// our pre-generated accounts.
-	ctx = ctx.WithKeyring(kr)
+	clientCtx = net.Validators[0].ClientCtx
+	clientCtx = clientCtx.WithKeyring(kr)
 
 	// Initialize all the accounts
 	sequenceIndex := 1
-	for _, supplierAcct := range supplierAccts {
-		network.InitAccountWithSequence(t, net, supplierAcct.Address, sequenceIndex)
+	for _, supplierOperatorAcct := range supplierOperatorAccts {
+		network.InitAccountWithSequence(t, net, supplierOperatorAcct.Address, sequenceIndex)
 		sequenceIndex++
 	}
 	for _, appAcct := range appAccts {
@@ -132,15 +131,15 @@ func networkWithClaimObjects(
 	// need to wait for the account to be initialized in the next block
 	require.NoError(t, net.WaitForNextBlock())
 
-	return net, claims
+	return net, claims, clientCtx
 }
 
-// newTestClaim returns a new claim with the given supplier address, session start height,
+// newTestClaim returns a new claim with the given supplier operator address, session start height,
 // and application address. It uses mock byte slices for the root hash and block hash.
 func newTestClaim(
 	t *testing.T,
 	sharedParams *sharedtypes.Params,
-	supplierAddr string,
+	supplierOperatorAddr string,
 	sessionStartHeight int64,
 	appAddr string,
 ) *types.Claim {
@@ -161,7 +160,7 @@ func newTestClaim(
 
 	// TODO_TECHDEBT: Forward the actual claim in the response once the response is updated to return it.
 	return &types.Claim{
-		SupplierAddress: supplierAddr,
+		SupplierOperatorAddress: supplierOperatorAddr,
 		SessionHeader: &sessiontypes.SessionHeader{
 			ApplicationAddress:      appAddr,
 			Service:                 &sharedtypes.Service{Id: testServiceId},
