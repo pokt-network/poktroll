@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"context"
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -9,6 +10,7 @@ import (
 	poktrand "github.com/pokt-network/poktroll/pkg/crypto/rand"
 	"github.com/pokt-network/poktroll/telemetry"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	"github.com/pokt-network/poktroll/x/shared"
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
@@ -286,9 +288,16 @@ func (k Keeper) proofRequirementForClaim(ctx sdk.Context, claim *prooftypes.Clai
 		return requirementReason, err
 	}
 
+	proofPathSeedBlockHash, err := k.getEarliestSupplierProofCommitBlockHash(ctx, claim)
+	if err != nil {
+		return requirementReason, err
+	}
+
+	proofRequirementSeed := append(claimHash, proofPathSeedBlockHash...)
+
 	// Sample a pseudo-random value between 0 and 1 to determine if a proof is required probabilistically.
 	var randFloat float32
-	randFloat, err = poktrand.SeededFloat32(claimHash[:])
+	randFloat, err = poktrand.SeededFloat32(proofRequirementSeed)
 	if err != nil {
 		return requirementReason, err
 	}
@@ -315,4 +324,31 @@ func (k Keeper) proofRequirementForClaim(ctx sdk.Context, claim *prooftypes.Clai
 		proofParams.GetProofRequestProbability(),
 	))
 	return requirementReason, nil
+}
+
+// getEarliestSupplierProofCommitBlockHash returns the block hash of the earliest
+// block at which a claim might have its proof committed.
+func (k Keeper) getEarliestSupplierProofCommitBlockHash(
+	ctx context.Context,
+	claim *prooftypes.Claim,
+) (blockHash []byte, err error) {
+	sharedParams, err := k.sharedQuerier.GetParams(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	sessionEndHeight := claim.GetSessionHeader().GetSessionEndBlockHeight()
+	supplierOperatorAddress := claim.GetSupplierOperatorAddress()
+
+	proofWindowOpenHeight := shared.GetProofWindowOpenHeight(sharedParams, sessionEndHeight)
+	proofWindowOpenBlockHash := k.sessionKeeper.GetBlockHash(ctx, proofWindowOpenHeight)
+
+	earliestSupplierProofCommitHeight := shared.GetEarliestSupplierProofCommitHeight(
+		sharedParams,
+		sessionEndHeight,
+		proofWindowOpenBlockHash,
+		supplierOperatorAddress,
+	)
+
+	return k.sessionKeeper.GetBlockHash(ctx, earliestSupplierProofCommitHeight), nil
 }

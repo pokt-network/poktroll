@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/pokt-network/poktroll/pkg/client"
-	poktrand "github.com/pokt-network/poktroll/pkg/crypto/rand"
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
@@ -182,25 +181,7 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 		}
 
 		claimMsgs := make([]client.MsgCreateClaim, 0, len(sessionTrees))
-		// sessionTreesWithProofRequired will accumulate all the sessionTrees that
-		// will require a proof to be submitted.
-		sessionTreesWithProofRequired := make([]relayer.SessionTree, 0)
 		for _, sessionTree := range sessionTrees {
-			isProofRequired, err := rs.isProofRequired(ctx, sessionTree)
-
-			// If an error is encountered while determining if a proof is required,
-			// do not create the claim since the proof requirement is unknown.
-			if err != nil {
-				failedCreateClaimsSessionsPublishCh <- sessionTrees
-				rs.logger.Error().Err(err).Msg("failed to determine if proof is required")
-				continue
-			}
-
-			// If a proof is required, add the session to the list of sessions that require a proof.
-			if isProofRequired {
-				sessionTreesWithProofRequired = append(sessionTreesWithProofRequired, sessionTree)
-			}
-
 			claimMsgs = append(claimMsgs, &prooftypes.MsgCreateClaim{
 				RootHash:                sessionTree.GetClaimRoot(),
 				SessionHeader:           sessionTree.GetSessionHeader(),
@@ -215,14 +196,7 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 			return either.Error[[]relayer.SessionTree](err), false
 		}
 
-		// Skip the proof submission logic if none of the sessionTrees require a proof.
-		if len(sessionTreesWithProofRequired) == 0 {
-			return either.Success(sessionTreesWithProofRequired), true
-		}
-
-		// Only return the sessionTrees that require a proof so that they can be further
-		// processed by the proof submission logic.
-		return either.Success(sessionTreesWithProofRequired), false
+		return either.Success(sessionTrees), false
 	}
 }
 
@@ -255,84 +229,4 @@ func (rs *relayerSessionsManager) goCreateClaimRoots(
 
 	failSubmitProofsSessionsCh <- failedClaims
 	claimsFlushedCh <- flushedClaims
-}
-
-// isProofRequired determines whether a proof is required for the given session's
-// claim based on the current proof module governance parameters.
-func (rs *relayerSessionsManager) isProofRequired(
-	ctx context.Context,
-	sessionTree relayer.SessionTree,
-) (isProofRequired bool, err error) {
-	logger := rs.logger.With(
-		"session_id", sessionTree.GetSessionHeader().GetSessionId(),
-		"claim_root", fmt.Sprintf("%x", sessionTree.GetClaimRoot()),
-		"supplier_operator_address", sessionTree.GetSupplierOperatorAddress().String(),
-	)
-
-	// Create the claim object and use its methods to determine if a proof is required.
-	claim := claimFromSessionTree(sessionTree)
-
-	// Get the number of compute units accumulated through the given session.
-	numClaimComputeUnits, err := claim.GetNumComputeUnits()
-	if err != nil {
-		return false, err
-	}
-
-	proofParams, err := rs.proofQueryClient.GetParams(ctx)
-	if err != nil {
-		return false, err
-	}
-
-	logger = logger.With(
-		"num_claim_compute_units", numClaimComputeUnits,
-		"proof_requirement_threshold", proofParams.GetProofRequirementThreshold(),
-	)
-
-	// Require a proof if the claim's compute units meets or exceeds the threshold.
-	if numClaimComputeUnits >= proofParams.GetProofRequirementThreshold() {
-		logger.Info().Msg("compute units is above threshold, claim requires proof")
-
-		return true, nil
-	}
-
-	// Get the hash of the claim to seed the random number generator.
-	var claimHash []byte
-	claimHash, err = claim.GetHash()
-	if err != nil {
-		return false, err
-	}
-
-	// Sample a pseudo-random value between 0 and 1 to determine if a proof is required probabilistically.
-	var randFloat float32
-	randFloat, err = poktrand.SeededFloat32(claimHash[:])
-	if err != nil {
-		return false, err
-	}
-
-	logger = logger.With(
-		"claim_hash", fmt.Sprintf("%x", claimHash),
-		"rand_float", randFloat,
-		"proof_request_probability", proofParams.GetProofRequestProbability(),
-	)
-
-	// Require a proof probabilistically based on the proof_request_probability param.
-	// NB: A random value between 0 and 1 will be less than or equal to proof_request_probability
-	// with probability equal to the proof_request_probability.
-	if randFloat <= proofParams.GetProofRequestProbability() {
-		logger.Info().Msg("claim hash seed is below proof request probability, claim requires proof")
-
-		return true, nil
-	}
-
-	logger.Info().Msg("claim does not require proof")
-	return false, nil
-}
-
-// claimFromSessionTree creates a Claim object from the given SessionTree.
-func claimFromSessionTree(sessionTree relayer.SessionTree) prooftypes.Claim {
-	return prooftypes.Claim{
-		SupplierOperatorAddress: sessionTree.GetSupplierOperatorAddress().String(),
-		SessionHeader:           sessionTree.GetSessionHeader(),
-		RootHash:                sessionTree.GetClaimRoot(),
-	}
 }

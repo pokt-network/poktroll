@@ -34,11 +34,11 @@ import (
 
 // TODO_TEST: Add a test case which simulates a cold-started relayminer with unclaimed relays.
 
-// setupAndStartRelayerSessionsManager sets up the session manager along with its
-// dependencies before starting it.
+// requireProofCountEqualsExpectedValueFromProofParams sets up the session manager
+// along with its dependencies before starting it.
 // It takes in the proofParams to configure the proof requirements and the proofCount
 // to assert the number of proofs to be requested.
-func setupAndStartRelayerSessionsManager(t *testing.T, proofParams prooftypes.Params, proofCount int) {
+func requireProofCountEqualsExpectedValueFromProofParams(t *testing.T, proofParams prooftypes.Params, proofCount int) {
 	// TODO_TECHDEBT(#446): Centralize the configuration for the SMT spec.
 	var (
 		_, ctx         = testpolylog.NewLoggerWithCtx(context.Background(), polyzero.DebugLevel)
@@ -177,7 +177,7 @@ func TestRelayerSessionsManager_ProofThresholdRequired(t *testing.T) {
 
 	numExpectedProofs := 1
 
-	setupAndStartRelayerSessionsManager(t, proofParams, numExpectedProofs)
+	requireProofCountEqualsExpectedValueFromProofParams(t, proofParams, numExpectedProofs)
 }
 
 func TestRelayerSessionsManager_ProofProbabilityRequired(t *testing.T) {
@@ -190,7 +190,7 @@ func TestRelayerSessionsManager_ProofProbabilityRequired(t *testing.T) {
 
 	numExpectedProofs := 1
 
-	setupAndStartRelayerSessionsManager(t, proofParams, numExpectedProofs)
+	requireProofCountEqualsExpectedValueFromProofParams(t, proofParams, numExpectedProofs)
 }
 
 func TestRelayerSessionsManager_ProofNotRequired(t *testing.T) {
@@ -203,7 +203,7 @@ func TestRelayerSessionsManager_ProofNotRequired(t *testing.T) {
 
 	numExpectedProofs := 0
 
-	setupAndStartRelayerSessionsManager(t, proofParams, numExpectedProofs)
+	requireProofCountEqualsExpectedValueFromProofParams(t, proofParams, numExpectedProofs)
 }
 
 // waitSimulateIO sleeps for a bit to allow the relayer sessions manager to

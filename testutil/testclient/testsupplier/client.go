@@ -40,6 +40,8 @@ func NewLocalnetClient(
 	return supplierClient
 }
 
+// NewClaimProofSupplierClientMap creates and returns a map of supplier to supplier
+// mock client. Which expect to create one claim and a given number of proofs.
 func NewClaimProofSupplierClientMap(
 	ctx context.Context,
 	t *testing.T,
