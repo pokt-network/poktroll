@@ -13,17 +13,6 @@ import (
 )
 
 var (
-	zlConsoleWriter = zerolog.ConsoleWriter{
-		Out: os.Stderr,
-		// Remove the timestamp from the output
-		FormatTimestamp: func(i interface{}) string {
-			return ""
-		},
-	}
-	logger = polyzero.NewLogger(
-		polyzero.WithOutput(zlConsoleWriter),
-	)
-
 	flagRootName      = "root"
 	flagRootShorthand = "r"
 	flagRootValue     = "./proto"
@@ -47,6 +36,17 @@ func init() {
 
 func main() {
 	flag.Parse()
+
+	zlConsoleWriter := zerolog.ConsoleWriter{
+		Out: os.Stderr,
+		// Remove the timestamp from the output
+		FormatTimestamp: func(i interface{}) string {
+			return ""
+		},
+	}
+	logger := polyzero.NewLogger(
+		polyzero.WithOutput(zlConsoleWriter),
+	)
 
 	loggerCtx := logger.WithContext(context.Background())
 	if err := rootCmd.ExecuteContext(loggerCtx); err != nil {
