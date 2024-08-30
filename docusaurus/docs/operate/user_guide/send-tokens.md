@@ -3,7 +3,7 @@ title: Send tokens
 sidebar_position: 4
 ---
 
-# Sending Tokens <!-- omit in toc -->
+# Sending Tokens Between Accounts <!-- omit in toc -->
 
 This guide covers the process of sending tokens from one account to another on
 Pocket Network using the `poktrolld` command-line interface (CLI).

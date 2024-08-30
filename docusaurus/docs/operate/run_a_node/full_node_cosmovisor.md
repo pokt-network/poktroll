@@ -3,7 +3,12 @@ title: Full Node - Cosmovisor
 sidebar_position: 1
 ---
 
+<<<<<<< HEAD
 ## Table of Contents  <!-- omit in toc -->
+=======
+# Run a Full Node using Cosmovisor <!-- omit in toc -->
+
+>>>>>>> origin/main
 - [What is a Full Node](#what-is-a-full-node)
 - [What is Cosmovisor](#what-is-cosmovisor)
 - [Installation](#installation)
@@ -33,6 +38,7 @@ To install and set up a Poktroll Full Node using Cosmovisor, we provide a compre
 
 ### Installation Steps
 
+<<<<<<< HEAD
 1. Download the installation script:
 
 ```bash
@@ -94,3 +100,6 @@ sudo systemctl restart cosmovisor.service
 ```
 
 Remember to keep your system updated and monitor your node regularly to ensure its proper functioning and security.
+=======
+[Content to be added]
+>>>>>>> origin/main

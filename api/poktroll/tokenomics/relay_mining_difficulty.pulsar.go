@@ -614,7 +614,7 @@ type RelayMiningDifficulty struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The service ID the the relay mining difficulty is associated with.
+	// The service ID the relay mining difficulty is associated with.
 	ServiceId string `protobuf:"bytes,1,opt,name=service_id,json=serviceId,proto3" json:"service_id,omitempty"`
 	// The block height at which this relay mining difficulty was computed.
 	// This is needed to determine how much time has passed since the last time

@@ -3,7 +3,7 @@ title: AppGate Server
 sidebar_position: 3
 ---
 
-# AppGate Server Operation <!-- omit in toc -->
+# Run an AppGate Server <!-- omit in toc -->
 
 - [What is AppGate Server?](#what-is-appgate-server)
 - [AppGate Server Operation Requirements](#appgate-server-operation-requirements)

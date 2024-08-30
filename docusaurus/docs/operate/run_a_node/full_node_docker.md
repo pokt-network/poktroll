@@ -3,7 +3,7 @@ title: Full Node - Docker
 sidebar_position: 2
 ---
 
-# Full Node - Docker <!-- omit in toc -->
+# Run a Full Node using Docker <!-- omit in toc -->
 
 - [What is a Full Node](#what-is-a-full-node)
 - [Roles \& Responsibilities](#roles--responsibilities)

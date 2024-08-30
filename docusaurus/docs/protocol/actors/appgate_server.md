@@ -17,7 +17,7 @@ Network, handling all intermediary business logic.
 
 A [Gateway](./gateway.md) operator or a sovereign [Application](./application.md)
 interested in accessing Pocket Network directly would need to run an
-`AppGate Server` or custom software that implements the same functionality.[POKTRollSDK](../../develop/packages/sdk.md) could be leverage or referenced to build such software.
+`AppGate Server` or custom software that implements the same functionality.
 
 ## Configuration
 

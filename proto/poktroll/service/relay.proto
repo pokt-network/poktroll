@@ -46,7 +46,7 @@ message RelayResponse {
   RelayResponseMetadata meta = 1 [(gogoproto.nullable) = false];
   // payload is the serialized payload for the response.
   // The payload is passed directly from the service and as such can be any
-  // format the the service responds with: JSON-RPC, REST, gRPC, etc.
+  // format the service responds with: JSON-RPC, REST, gRPC, etc.
   bytes payload = 2;
 }
 

@@ -1,11 +1,11 @@
 ---
 sidebar_position: 2
-title: Docker Compose - Debian Cheatsheet
+title: Docker Compose Cheat Sheet
 ---
 
 import ReactPlayer from "react-player";
 
-# tl;dr Debian Cheat Sheet <!-- omit in toc -->
+# Docker Compose Cheat Sheet <!-- omit in toc --> <!-- omit in toc -->
 
 - [Results](#results)
 - [Deploy your server](#deploy-your-server)
