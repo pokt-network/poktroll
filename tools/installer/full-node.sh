@@ -80,7 +80,7 @@ install_dependencies() {
         yum update -y
         yum install -y curl tar wget
     else
-        print_color $RED "Unsupported distribution. Please install curl, tar, wget, and jq manually."
+        print_color $RED "Unsupported distribution. Please install curl, tar and wget manually."
         exit 1
     fi
     print_color $GREEN "Dependencies installed successfully."
