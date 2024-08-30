@@ -70,7 +70,7 @@ The blockchain data is stored in `protobuf` format, encoded as hexadecimal. To i
 2. Input the hexadecimal data into CyberChef.
 3. Apply the "From Hex" operation followed by "Protobuf Decode" to reveal the human-readable content.
 
-![CyberChef Decoding Example](https://github.com/user-attachments/assets/6d0fe2db-520f-4a28-bc65-24a83486a899)
+![CyberChef Decoding Example](./img/cyberchef_1.png)
 
 ### Step 5: Comparing Records
 
@@ -80,7 +80,7 @@ After decoding, compare the data from both nodes:
 2. Identify specific fields or values that differ between the two records.
 3. Pay close attention to timestamps, numerical values, and complex data structures.
 
-![CyberChef Diff Example](https://github.com/user-attachments/assets/4a2df6bb-c19a-4c17-8e71-966d96eba1e7)
+![CyberChef Diff Example](./img/cyberchef_2.png)
 
 The image above illustrates a difference in the JSON representation of an object, which is likely the root cause of the non-deterministic state breaking consensus between nodes.
 
