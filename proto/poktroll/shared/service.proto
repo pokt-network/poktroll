@@ -6,7 +6,9 @@ package poktroll.shared;
 
 import "cosmos_proto/cosmos.proto";
 
+import "gogoproto/gogo.proto";
 option go_package = "github.com/pokt-network/poktroll/x/shared/types";
+option (gogoproto.stable_marshaler_all) = true;
 
 // Service message to encapsulate unique and semantic identifiers for a service on the network
 message Service {

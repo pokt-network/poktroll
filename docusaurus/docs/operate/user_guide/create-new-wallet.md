@@ -1,9 +1,9 @@
 ---
-title: Create new wallet
+title: Create a New Wallet
 sidebar_position: 1
 ---
 
-# Creating a New Wallet <!-- omit in toc -->
+# Create a New Wallet <!-- omit in toc -->
 
 :::warning Security Notice
 

@@ -3,7 +3,7 @@ title: RelayMiner
 sidebar_position: 4
 ---
 
-# RelayMiner <!-- omit in toc -->
+# Run a RelayMiner <!-- omit in toc -->
 
 - [What is a RelayMiner](#what-is-a-relayminer)
 - [RelayMiner Operation Requirements](#relayminer-operation-requirements)
