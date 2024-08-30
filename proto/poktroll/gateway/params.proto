@@ -2,6 +2,7 @@ syntax = "proto3";
 package poktroll.gateway;
 
 option go_package = "github.com/pokt-network/poktroll/x/gateway/types";
+option (gogoproto.stable_marshaler_all) = true;
 
 import "amino/amino.proto";
 import "gogoproto/gogo.proto";
