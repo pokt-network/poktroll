@@ -86,6 +86,20 @@ install_dependencies() {
     print_color $GREEN "Dependencies installed successfully."
 }
 
+# Function to set up environment variables
+setup_env_vars() {
+    print_color $YELLOW "Setting up environment variables..."
+    sudo -u "$POKTROLL_USER" bash << EOF
+    echo "export DAEMON_NAME=poktrolld" >> \$HOME/.profile
+    echo "export DAEMON_HOME=\$HOME/.poktroll" >> \$HOME/.profile
+    echo "export DAEMON_RESTART_AFTER_UPGRADE=true" >> \$HOME/.profile
+    echo "export DAEMON_ALLOW_DOWNLOAD_BINARIES=true" >> \$HOME/.profile
+    echo "export UNSAFE_SKIP_BACKUP=true" >> \$HOME/.profile
+    source \$HOME/.profile
+EOF
+    print_color $GREEN "Environment variables set up successfully."
+}
+
 # Function to download and set up Cosmovisor
 setup_cosmovisor() {
     print_color $YELLOW "Setting up Cosmovisor..."
@@ -128,11 +142,11 @@ setup_poktrolld() {
     POKTROLLD_URL="https://github.com/pokt-network/poktroll/releases/download/${POKTROLLD_VERSION}/poktroll_linux_${ARCH}.tar.gz"
 
     sudo -u "$POKTROLL_USER" bash << EOF
-    curl -L "$POKTROLLD_URL" | tar -zxvf - -C \$HOME/bin
-    chmod +x \$HOME/bin/poktrolld
     mkdir -p \$HOME/.poktroll/cosmovisor/genesis/bin
-    cp \$HOME/bin/poktrolld \$HOME/.poktroll/cosmovisor/genesis/bin/
+    curl -L "$POKTROLLD_URL" | tar -zxvf - -C \$HOME/.poktroll/cosmovisor/genesis/bin
+    chmod +x \$HOME/.poktroll/cosmovisor/genesis/bin/poktrolld
     ln -sf \$HOME/.poktroll/cosmovisor/genesis/bin/poktrolld \$HOME/bin/poktrolld
+    source \$HOME/.profile
 EOF
     print_color $GREEN "Poktrolld set up successfully."
 }
@@ -141,25 +155,12 @@ EOF
 configure_poktrolld() {
     print_color $YELLOW "Configuring Poktrolld..."
     sudo -u "$POKTROLL_USER" bash << EOF
+    source \$HOME/.profile
     poktrolld init "$NODE_MONIKER" --chain-id="$CHAIN_ID" --home=\$HOME/.poktroll
     curl -o \$HOME/.poktroll/config/genesis.json https://raw.githubusercontent.com/pokt-network/pocket-network-genesis/master/poktrolld/testnet-validated.json
     sed -i -e "s|^seeds *=.*|seeds = \"$SEEDS\"|" \$HOME/.poktroll/config/config.toml
 EOF
     print_color $GREEN "Poktrolld configured successfully."
-}
-
-# Function to set up environment variables
-setup_env_vars() {
-    print_color $YELLOW "Setting up environment variables..."
-    sudo -u "$POKTROLL_USER" bash << EOF
-    echo "export DAEMON_NAME=poktrolld" >> \$HOME/.profile
-    echo "export DAEMON_HOME=\$HOME/.poktroll" >> \$HOME/.profile
-    echo "export DAEMON_RESTART_AFTER_UPGRADE=true" >> \$HOME/.profile
-    echo "export DAEMON_ALLOW_DOWNLOAD_BINARIES=true" >> \$HOME/.profile
-    echo "export UNSAFE_SKIP_BACKUP=true" >> \$HOME/.profile
-    source \$HOME/.profile
-EOF
-    print_color $GREEN "Environment variables set up successfully."
 }
 
 # Function to set up systemd service
@@ -200,10 +201,10 @@ main() {
     get_user_input
     create_user
     install_dependencies
+    setup_env_vars
     setup_cosmovisor
     setup_poktrolld
     configure_poktrolld
-    setup_env_vars
     setup_systemd
     print_color $GREEN "Poktroll Full Node installation completed successfully!"
     print_color $YELLOW "You can check the status of your node with: sudo systemctl status cosmovisor.service"
