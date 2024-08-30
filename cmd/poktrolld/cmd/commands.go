@@ -88,7 +88,6 @@ func queryCommand() *cobra.Command {
 		authcmd.QueryTxCmd(),
 		server.QueryBlockResultsCmd(),
 	)
-	// TODO_MAINNET: adjust chain ID for the mainnet (assuming it's going to change)
 	cmd.PersistentFlags().String(flags.FlagChainID, DefaultChainID, "The network chain ID")
 
 	return cmd

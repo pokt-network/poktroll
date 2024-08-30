@@ -29,6 +29,7 @@ To install and set up a Poktroll Full Node using Cosmovisor, we provide a compre
 
 - A Linux-based system (Debian-based distributions are fully supported, others may work as well)
 - Root or sudo access
+- A dedicated server or a virtual machine (any provider should work, Vultr and Hetzner have been tested)
 
 ### Installation Steps
 
