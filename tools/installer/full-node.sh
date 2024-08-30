@@ -31,8 +31,8 @@ get_user_input() {
     read -p "Enter the node moniker (default: $(hostname)): " NODE_MONIKER
     NODE_MONIKER=${NODE_MONIKER:-$(hostname)}
 
-    read -p "Enter the chain-id (default: poktroll-testnet): " CHAIN_ID
-    CHAIN_ID=${CHAIN_ID:-"poktroll-testnet"}
+    read -p "Enter the chain-id (default: poktroll): " CHAIN_ID
+    CHAIN_ID=${CHAIN_ID:-"poktroll"}
 
     # Fetch seeds from the provided URL
     SEEDS_URL="https://raw.githubusercontent.com/pokt-network/pocket-network-genesis/master/poktrolld/testnet-validated.seeds"
@@ -51,16 +51,22 @@ get_user_input() {
     fi
 }
 
-
 # Function to create user
 create_user() {
     if id "$POKTROLL_USER" &>/dev/null; then
         print_color $YELLOW "User $POKTROLL_USER already exists. Skipping user creation."
     else
         useradd -m -s /bin/bash "$POKTROLL_USER"
-        echo "$POKTROLL_USER:$POKTROLL_USER" | chpasswd
+        print_color $YELLOW "User $POKTROLL_USER created. Please set a password for this user."
+        while true; do
+            if passwd "$POKTROLL_USER"; then
+                break
+            else
+                print_color $RED "Password change failed. Please try again."
+            fi
+        done
         usermod -aG sudo "$POKTROLL_USER"
-        print_color $GREEN "User $POKTROLL_USER created successfully."
+        print_color $GREEN "User $POKTROLL_USER created successfully and added to sudo group."
     fi
 }
 
