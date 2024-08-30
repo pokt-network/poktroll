@@ -55,5 +55,6 @@ Select one or more:
 - [ ] I have tested my changes using the available tooling
 - [ ] I have commented my code
 - [ ] I have performed a self-review of my own code; both comments & source code
+    - [ ] I have **thoroughly** reviewed any on-chain business logic which may result in non-deterministic serialization of repeated fields
 - [ ] I create and reference any new tickets, if applicable
 - [ ] I have left TODOs throughout the codebase, if applicable
