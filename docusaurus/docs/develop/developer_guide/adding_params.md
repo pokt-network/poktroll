@@ -34,6 +34,13 @@ the process using a generic approach, illustrated by adding a parameter to the `
 
 See [pokt-network/poktroll#595](https://github.com/pokt-network/poktroll/pull/595) for a real-world example.
 
+:::note
+
+TODO_POST_MAINNET(@bryanchriswhite): Once the next version of `ignite` is out, leverage:
+https://github.com/ignite/cli/issues/3684#issuecomment-2299796210
+
+:::
+
 ## Step-by-Step Instructions
 
 ### 1. Define the Parameter in the Protocol Buffers File

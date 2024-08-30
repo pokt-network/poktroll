@@ -1,6 +1,6 @@
 ---
 title: Application staking config
-sidebar_position: 4
+sidebar_position: 1
 ---
 
 # Application staking config <!-- omit in toc -->
@@ -9,15 +9,16 @@ This document describes the configuration file used by the `Application` actor
 to submit a `stake` transaction, **which is a prerequisite** for it to use the
 Pocket Network's RPC services.
 
-- [Reference Example](#reference-example)
+:::tip
+
+You can find a fully featured example configuration at [application1_stake_config.yaml](https://github.com/pokt-network/poktroll/blob/main/localnet/poktrolld/config/application1_stake_config.yaml).
+
+:::
+
 - [Usage](#usage)
 - [Configuration](#configuration)
   - [`stake_amount`](#stake_amount)
   - [`service_ids`](#service_ids)
-
-## Reference Example
-
-A full example of the configuration file could be found at [application_staking_config.yaml](https://github.com/pokt-network/poktroll/tree/main/localnet/poktrolld/config/application1_stake_config.yaml)
 
 ## Usage
 
