@@ -85,7 +85,7 @@ func runUnstable(cmd *cobra.Command, args []string) error {
 
 	// Fix discovered unstable marshaler proto files if the fix flag is set.
 	if flagFixValue {
-		runFixUnstable(unstableProtoFilesByPath)
+		runFixUnstable(ctx, unstableProtoFilesByPath)
 	}
 
 	if len(unstableProtoFilesByPath) == 0 {
@@ -101,7 +101,8 @@ func runUnstable(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func runFixUnstable(unstableProtoFilesByPath map[string]*protoFileStat) {
+func runFixUnstable(ctx context.Context, unstableProtoFilesByPath map[string]*protoFileStat) {
+	logger := polylog.Ctx(ctx)
 	logger.Info().Msg("Fixing unstable marshaler proto files...")
 
 	var fixedProtoFilePaths []string
@@ -160,6 +161,8 @@ func findUnstableProtosInFileFn(
 	ctx context.Context,
 	unstableProtoFilesByPath map[string]*protoFileStat,
 ) func(path string) {
+	logger := polylog.Ctx(ctx)
+
 	return func(protoFilePath string) {
 		// Parse the .proto file into file nodes.
 		// NB: MUST use #ParseToAST instead of #ParseFiles to get source positions.
@@ -377,7 +380,7 @@ func insertLine(filePath string, lineNumber int, columnNumber int, textToInsert 
 	for scanner.Scan() {
 		lines = append(lines, scanner.Text())
 	}
-	if err := scanner.Err(); err != nil {
+	if err = scanner.Err(); err != nil {
 		return err
 	}
 
