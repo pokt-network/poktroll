@@ -88,7 +88,8 @@ func queryCommand() *cobra.Command {
 		authcmd.QueryTxCmd(),
 		server.QueryBlockResultsCmd(),
 	)
-	cmd.PersistentFlags().String(flags.FlagChainID, "", "The network chain ID")
+	// TODO_MAINNET: adjust chain ID for the mainnet (assuming it's going to change)
+	cmd.PersistentFlags().String(flags.FlagChainID, DefaultChainID, "The network chain ID")
 
 	return cmd
 }
@@ -114,7 +115,7 @@ func txCommand() *cobra.Command {
 		authcmd.GetDecodeCommand(),
 		authcmd.GetSimulateCmd(),
 	)
-	cmd.PersistentFlags().String(flags.FlagChainID, "", "The network chain ID")
+	cmd.PersistentFlags().String(flags.FlagChainID, DefaultChainID, "The network chain ID")
 
 	return cmd
 }

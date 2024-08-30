@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"sync"
+	"time"
 
 	cmtcfg "github.com/cometbft/cometbft/config"
 	serverconfig "github.com/cosmos/cosmos-sdk/server/config"
@@ -43,6 +44,18 @@ func initCometBFTConfig() *cmtcfg.Config {
 	// cfg.P2P.MaxNumInboundPeers = 100
 	// cfg.P2P.MaxNumOutboundPeers = 40
 
+	// Set default values so `poktrolld init` creates configs with "blessed" values:
+	// TODO_MAINNET: discuss block times
+	cfg.Consensus.TimeoutPropose = 60 * time.Second
+	cfg.Consensus.TimeoutProposeDelta = 5 * time.Second
+	cfg.Consensus.TimeoutPrevote = 10 * time.Second
+	cfg.Consensus.TimeoutPrevoteDelta = 5 * time.Second
+	cfg.Consensus.TimeoutPrecommit = 10 * time.Second
+	cfg.Consensus.TimeoutPrecommitDelta = 5 * time.Second
+	cfg.Consensus.TimeoutCommit = 60 * time.Second
+	cfg.Instrumentation.Prometheus = true
+	cfg.LogLevel = "info"
+
 	return cfg
 }
 
@@ -71,6 +84,18 @@ func initAppConfig() (string, interface{}) {
 	// In tests, we set the min gas prices to 0.
 	// srvCfg.MinGasPrices = "0stake"
 	// srvCfg.BaseConfig.IAVLDisableFastNode = true // disable fastnode by default
+
+	// TODO_MAINNET: reconsider values, especially MinGasPrices and MaxTxs
+	// Set default values so `poktrolld init` creates configs with "blessed" values:
+	srvCfg.MinGasPrices = "0.000000001upokt"
+	srvCfg.Mempool.MaxTxs = 10000
+	srvCfg.Telemetry.Enabled = true
+	srvCfg.Telemetry.PrometheusRetentionTime = 60 // in seconds
+	srvCfg.Telemetry.MetricsSink = "mem"
+	srvCfg.Pruning = "nothing" // archiving node by default
+	srvCfg.API.Enable = true
+	srvCfg.GRPC.Enable = true
+	srvCfg.GRPCWeb.Enable = true
 
 	customAppConfig := CustomAppConfig{
 		Config: *srvCfg,
