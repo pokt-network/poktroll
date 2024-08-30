@@ -218,7 +218,6 @@ flowchart TD
 
     SA --> TO
     PCI --> TO
-    IA --> TO
 
     subgraph TO[Tokenomics Operations]
         TM[[Tokenomics Module]]
@@ -353,7 +352,7 @@ flowchart TD
     subgraph TLMGM["TLM: Global Mint"]
         IA(["Inflation Mint Coin (IA)"])
         ID["Inflation Distribution <br> (see TLM above for details)"]
-        GP["Governance Params"]
+        GP(["Governance Params"])
 
         subgraph TO[Tokenomics Operations]
             TM[[Tokenomics Module]]
@@ -364,7 +363,6 @@ flowchart TD
         %% Mint Inputs
         SA --> TO
         PCI --> TO
-        IA --> TO
 
         %% Distribute Inflation
         TO --> |"Distribute Inflation (IA) <br> ⬆️ INCREASE Balances"| ID
@@ -425,22 +423,55 @@ sequenceDiagram
 
 ### FAQ
 
-#### Is the application going to endorse the whole global mint amount (Including the supplier share)? <!-- omit in toc -->
+#### Are Applications responsible for endorsing/covering the whole global mint amount? <!-- omit in toc -->
 
-The application `PAYS` the supplier for work done (i.e. Mint=Burn)
-The application `GETS REIMBURSED` for the inflation (i.e. Global Mint)
+_tl;dr Yes, for the first version._
 
-#### Will there be any on-chain enforcement on the way application get reimbursed? Or do they just have to trust the DAO to reimburse them? <!-- omit in toc -->
+The application `PAYS` the supplier for work done (i.e. Mint=Burn).
+The application `GETS REIMBURSED` for the inflation (i.e. Global Mint).
 
-No. They have to trust the DAO/PNF reimburses them.
+This will require staked Applications (sovereign or those managed by Gateways) to periodically
+"top up" their balances to cover not only the on-chain costs/burn, but also the inflation
+until it is reimbursed by the DAO/PNF.
 
-This is similar to how we trust Gateways in Morse not to do self dealing.
+#### Will there be on-chain enforcement of how Applications get reimbursed? <!-- omit in toc -->
 
-#### How does this solution scale for sovereign applications? Do they have to show face too? <!-- omit in toc -->
+_tl;dr Unfortunately, no._
 
-Correct.
+They Applications will indeed have to trust the DAO/PNF to reimburse them.
 
-#### Are we taking into account the resources needed to scale and automate reimbursement? (Event reader, tx submission, accounting...) <!-- omit in toc -->
+The following is an example of the approach PNF could take.
 
-- **On-chain**: load testing will show if events take up too much space. Unlikely to be an issue relative to proofs.
-- **Off-chain**: PNF Directors are aware of the operational overhead this will require and is okay with it.
+- Assume Application staking by Gateways is permissionless and done.
+- Applications pay on-chain for costs and inflation
+- PNF KYCs Gateways who seek reimbursement.
+- Gateways that don't go through the KYC process cover the cost of inflation
+  out of pocket.
+- A script that retrieves on-chain reimbursement requests will be written that
+  automatically send funds to previously KYCed gateways
+- The script above, and the trust that it'll be maintained, updated and executed
+  relies in the Gateways' trust in the PNF.
+
+This is similar, in spirit, but still an improvement on top of the trust
+between Gateways and PNF in Morse today in order to:
+
+- Get access to the limited supply of Gateway keys
+- Gateways paying the on-chain burn manually
+
+#### How does this solution scale for Sovereign Applications? <!-- omit in toc -->
+
+Sovereign Applications are no different than Gateway Applications in this respect.
+
+They are smaller and a much less common use case, but will have to follow the same
+reimbursement process described above.
+
+Read more about about their differences and similarities [here](./../../protocol/primitives/gateways.md).
+
+#### What kind of resources are needed to to scale and automate reimbursement? <!-- omit in toc -->
+
+This will be a combination of on-chain and off-chain resources (EventReader, TxSubmission, Accounting, etc...).
+
+In particular:
+
+- **On-chain**: load testing will show if events take up too much on-chain space. This is unlikely to be an issue relative to proofs.
+- **Off-chain**: PNF Directors are aware and approve of the operational overhead this will require. This will require some off-chain scripting to automate the process.
