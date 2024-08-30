@@ -439,18 +439,17 @@ until it is reimbursed by the DAO/PNF.
 _tl;dr Unfortunately, no._
 
 They Applications will indeed have to trust the DAO/PNF to reimburse them.
-
 The following is an example of the approach PNF could take.
 
-- Assume Application staking by Gateways is permissionless and done.
-- Applications pay on-chain for costs and inflation
-- PNF KYCs Gateways who seek reimbursement.
-- Gateways that don't go through the KYC process cover the cost of inflation
-  out of pocket.
-- A script that retrieves on-chain reimbursement requests will be written that
-  automatically send funds to previously KYCed gateways
-- The script above, and the trust that it'll be maintained, updated and executed
-  relies in the Gateways' trust in the PNF.
+1. Assume Application staking by Gateways is permissionless and done.
+2. Applications pay on-chain for costs and inflation
+3. PNF KYCs Gateways who seek reimbursement.
+4. Gateways that don't go through the KYC process cover the cost of inflation
+   out of pocket.
+5. A script that retrieves on-chain reimbursement requests will be written that
+   automatically send funds to previously KYCed gateways
+6. The script above, and the trust that it'll be maintained, updated and executed
+   relies in the Gateways' trust in the PNF.
 
 This is similar, in spirit, but still an improvement on top of the trust
 between Gateways and PNF in Morse today in order to:
@@ -461,17 +460,14 @@ between Gateways and PNF in Morse today in order to:
 #### How does this solution scale for Sovereign Applications? <!-- omit in toc -->
 
 Sovereign Applications are no different than Gateway Applications in this respect.
-
 They are smaller and a much less common use case, but will have to follow the same
 reimbursement process described above.
 
-Read more about about their differences and similarities [here](./../../protocol/primitives/gateways.md).
+_Read more about about their differences and similarities [here](./../../protocol/primitives/gateways.md)._
 
 #### What kind of resources are needed to to scale and automate reimbursement? <!-- omit in toc -->
 
-This will be a combination of on-chain and off-chain resources (EventReader, TxSubmission, Accounting, etc...).
-
-In particular:
+This will be a combination of on-chain and off-chain resources (EventReader, TxSubmission, Accounting, etc...). In particular:
 
 - **On-chain**: load testing will show if events take up too much on-chain space. This is unlikely to be an issue relative to proofs.
 - **Off-chain**: PNF Directors are aware and approve of the operational overhead this will require. This will require some off-chain scripting to automate the process.
