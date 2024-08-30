@@ -465,7 +465,7 @@ reimbursement process described above.
 
 _Read more about about their differences and similarities [here](./../../protocol/primitives/gateways.md)._
 
-#### What kind of resources are needed to to scale and automate reimbursement? <!-- omit in toc -->
+#### What kind of resources are needed to scale and automate reimbursement? <!-- omit in toc -->
 
 This will be a combination of on-chain and off-chain resources (EventReader, TxSubmission, Accounting, etc...). In particular:
 
