@@ -438,7 +438,7 @@ until it is reimbursed by the DAO/PNF.
 
 _tl;dr Unfortunately, no._
 
-They Applications will indeed have to trust the DAO/PNF to reimburse them.
+The Applications will indeed have to trust the DAO/PNF to reimburse them.
 The following is an example of the approach PNF could take.
 
 1. Assume Application staking by Gateways is permissionless and done.
