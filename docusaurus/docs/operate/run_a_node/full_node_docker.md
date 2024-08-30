@@ -1,6 +1,6 @@
 ---
 title: Full Node - Docker
-sidebar_position: 2
+sidebar_position: 3
 ---
 
 # Run a Full Node using Docker <!-- omit in toc -->
@@ -49,7 +49,7 @@ nodes needed for off-chain entities like [RelayMiners](./relay_miner.md) and
 [AppGates](./appgate_server.md), which rely on interaction with the Pocket Network
 blockchain for full functionality.
 
-This guide outlines how to configure, deploy nad maintain Full Nodes.
+This guide outlines how to configure, deploy and maintain Full Nodes.
 
 ## Hardware requirements
 
@@ -57,10 +57,8 @@ Please see the [Hardware Requirements](./hardware_requirements.md#validator--ful
 
 ## Docker Compose Example
 
-Please refer to the `Deploying a Full Node` section in [poktroll-docker-compose-example](https://github.com/pokt-network/poktroll-docker-compose-example#deploying-a-full-node)
-GitHub repository on how to deploy an AppGate Server using `docker-compose`.
-
-_TODO: Move over the relevant information from the `poktroll-docker-compose-example` repository into the docs_
+Please refer to the `Deploying a Full Node` section in [Docker Compose Walkthrough](../quickstart/docker_compose_walkthrough.md)
+on how to deploy a Full Node using `docker-compose`.
 
 ## Kubernetes Example
 

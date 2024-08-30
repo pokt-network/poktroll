@@ -1,6 +1,6 @@
 ---
 title: RelayMiner
-sidebar_position: 4
+sidebar_position: 5
 ---
 
 # Run a RelayMiner <!-- omit in toc -->

@@ -1,6 +1,6 @@
 ---
 title: AppGate Server
-sidebar_position: 3
+sidebar_position: 4
 ---
 
 # Run an AppGate Server <!-- omit in toc -->

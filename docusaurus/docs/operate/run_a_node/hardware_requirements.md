@@ -1,6 +1,6 @@
 ---
 title: Hardware Requirements
-sidebar_position: 0
+sidebar_position: 1
 ---
 
 # Hardware Requirements <!-- omit in toc -->

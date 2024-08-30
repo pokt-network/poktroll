@@ -1,9 +1,10 @@
 ---
 title: Full Node - Cosmovisor
-sidebar_position: 1
+sidebar_position: 2
 ---
 
-## Table of Contents  <!-- omit in toc -->
+# Run a Full Node using Cosmovisor  <!-- omit in toc -->
+
 - [What is a Full Node](#what-is-a-full-node)
 - [What is Cosmovisor](#what-is-cosmovisor)
 - [Installation](#installation)
