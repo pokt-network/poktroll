@@ -98,6 +98,7 @@ func runUnstable(cmd *cobra.Command, args []string) error {
 		logger.Info().Msgf("\t%s", unstableProtoFile)
 	}
 
+	os.Exit(CodeUnstableProtosFound)
 	return nil
 }
 
