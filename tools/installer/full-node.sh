@@ -80,7 +80,7 @@ install_dependencies() {
         yum update -y
         yum install -y curl tar wget
     else
-        print_color $RED "Unsupported distribution. Please install curl, tar, and wget manually."
+        print_color $RED "Unsupported distribution. Please install curl, tar, wget, and jq manually."
         exit 1
     fi
     print_color $GREEN "Dependencies installed successfully."
@@ -138,12 +138,12 @@ setup_poktrolld() {
         exit 1
     fi
 
-    POKTROLLD_VERSION="v0.0.6"
-    POKTROLLD_URL="https://github.com/pokt-network/poktroll/releases/download/${POKTROLLD_VERSION}/poktroll_linux_${ARCH}.tar.gz"
+    # Use the direct download link for the latest release
+    LATEST_RELEASE_URL="https://github.com/pokt-network/poktroll/releases/latest/download/poktroll_linux_${ARCH}.tar.gz"
 
     sudo -u "$POKTROLL_USER" bash << EOF
     mkdir -p \$HOME/.poktroll/cosmovisor/genesis/bin
-    curl -L "$POKTROLLD_URL" | tar -zxvf - -C \$HOME/.poktroll/cosmovisor/genesis/bin
+    curl -L "$LATEST_RELEASE_URL" | tar -zxvf - -C \$HOME/.poktroll/cosmovisor/genesis/bin
     chmod +x \$HOME/.poktroll/cosmovisor/genesis/bin/poktrolld
     ln -sf \$HOME/.poktroll/cosmovisor/genesis/bin/poktrolld \$HOME/bin/poktrolld
     source \$HOME/.profile
@@ -167,9 +167,14 @@ configure_poktrolld() {
 
     sudo -u "$POKTROLL_USER" bash << EOF
     source \$HOME/.profile
+    
+    # Check poktrolld version
+    POKTROLLD_VERSION=\$(poktrolld version)
+    echo "Poktrolld version: \$POKTROLLD_VERSION"
+    
     poktrolld init "$NODE_MONIKER" --chain-id="$CHAIN_ID" --home=\$HOME/.poktroll
     curl -o \$HOME/.poktroll/config/genesis.json $GENESIS_URL
-    if [ $? -ne 0 ]; then
+    if [ \$? -ne 0 ]; then
         echo "Failed to download genesis file. Please check your internet connection and try again."
         exit 1
     fi
