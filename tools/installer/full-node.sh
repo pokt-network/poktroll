@@ -154,13 +154,33 @@ EOF
 # Function to configure Poktrolld
 configure_poktrolld() {
     print_color $YELLOW "Configuring Poktrolld..."
+    
+    # Ask for confirmation to download the genesis file
+    GENESIS_URL="https://raw.githubusercontent.com/pokt-network/pocket-network-genesis/master/poktrolld/testnet-validated.json"
+    print_color $YELLOW "The script will download the genesis file from:"
+    print_color $YELLOW "$GENESIS_URL"
+    read -p "Are you OK with downloading and using this genesis file? (y/N): " confirm_genesis
+    if [[ ! $confirm_genesis =~ ^[Yy] ]]; then
+        print_color $RED "Genesis file download cancelled. Exiting."
+        exit 1
+    fi
+
     sudo -u "$POKTROLL_USER" bash << EOF
     source \$HOME/.profile
     poktrolld init "$NODE_MONIKER" --chain-id="$CHAIN_ID" --home=\$HOME/.poktroll
-    curl -o \$HOME/.poktroll/config/genesis.json https://raw.githubusercontent.com/pokt-network/pocket-network-genesis/master/poktrolld/testnet-validated.json
+    curl -o \$HOME/.poktroll/config/genesis.json $GENESIS_URL
+    if [ $? -ne 0 ]; then
+        echo "Failed to download genesis file. Please check your internet connection and try again."
+        exit 1
+    fi
     sed -i -e "s|^seeds *=.*|seeds = \"$SEEDS\"|" \$HOME/.poktroll/config/config.toml
 EOF
-    print_color $GREEN "Poktrolld configured successfully."
+    if [ $? -eq 0 ]; then
+        print_color $GREEN "Poktrolld configured successfully."
+    else
+        print_color $RED "Failed to configure Poktrolld. Please check the error messages above."
+        exit 1
+    fi
 }
 
 # Function to set up systemd service
