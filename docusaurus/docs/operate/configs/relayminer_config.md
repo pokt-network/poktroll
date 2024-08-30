@@ -1,17 +1,21 @@
 ---
 title: RelayMiner config
-sidebar_position: 1
+sidebar_position: 4
 ---
 
 # RelayMiner config <!-- omit in toc -->
 
-_This document describes the configuration options available through the
-`relayminer_config.yaml` file. It configures how the `RelayMiner` is setup in terms
-of Pocket network connectivity, starting up backend servers, querying requests
-and which domains to accept queries from._
+This document describes the configuration options for the `RelayMiner`, a `Supplier`
+co-processor/sidecar that acts as the real server for querying request, building
+claims and submitting proofs.
 
-- [Full config reference example](#full-config-reference-example)
-- [RelayMiner (off-chain) config -\> Supplier (on-chain) configs](#relayminer-off-chain-config---supplier-on-chain-configs)
+:::tip
+
+You can find a fully featured example configuration at [relayminer_config_full_example.yaml](https://github.com/pokt-network/poktroll/tree/main/localnet/poktrolld/config/relayminer_config_full_example.yaml).
+
+:::
+
+- [Introduction](#introduction)
 - [Usage](#usage)
 - [Structure](#structure)
 - [Global options](#global-options)
@@ -37,12 +41,7 @@ and which domains to accept queries from._
   - [Example Configuration](#example-configuration)
 - [Supported server types](#supported-server-types)
 
-## Full config reference example
-
-A full and commented example of a `RelayMiner` configuration file can be found
-at [localnet/poktrolld/config/relayminer_config_full_example.yaml](https://github.com/pokt-network/poktroll/tree/main/localnet/poktrolld/config/relayminer_config_full_example.yaml)
-
-## RelayMiner (off-chain) config -> Supplier (on-chain) configs
+## Introduction
 
 The following diagram illustrates how the _off-chain_ `RelayMiner` operator
 config (yaml) MUST match the _on-chain_ `Supplier` actor service endpoints
@@ -107,7 +106,7 @@ and `supplier` specific sections and configurations.
 ## Global options
 
 ```yaml
-default_signing_key_names: [ <string>, <string> ]
+default_signing_key_names: [<string>, <string>]
 smt_store_path: <string>
 ```
 
@@ -122,7 +121,6 @@ Each key name listed here must be present in the keyring used to start the
 `RelayMiner` instance.
 
 For more details, see [Configuring Signing Keys](#configuring-signing-keys).
-
 
 ### `smt_store_path`
 
@@ -340,10 +338,12 @@ There are two ways to configure signing keys for `RelayMiner`: globally using `d
 or individually for each supplier using `signing_key_names`.
 
 1. **Global Configuration (`default_signing_key_names`)**
+
 - Provides a default list of key names used by all suppliers unless overridden.
 - Useful for ensuring a base level of configuration and simplicity.
 
 1. **Supplier-specific Configuration (`signing_key_names`)**
+
 - Allows each supplier to have its own set of signing key names.
 - Provides flexibility and granular control over key management.
 
@@ -405,7 +405,6 @@ flowchart TB
     etherium-mainnet-config --> Effective_Signing_Keys
 
 ```
-
 
 :::note
 

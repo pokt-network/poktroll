@@ -380,7 +380,7 @@ func compareSessionHeaders(expectedSessionHeader, sessionHeader *sessiontypes.Se
 	return nil
 }
 
-// verifyClosestProof verifies the the correctness of the ClosestMerkleProof
+// verifyClosestProof verifies the correctness of the ClosestMerkleProof
 // against the root hash committed to when creating the claim.
 func verifyClosestProof(
 	proof *smt.SparseMerkleClosestProof,
