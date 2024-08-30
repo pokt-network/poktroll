@@ -9,6 +9,7 @@ import "gogoproto/gogo.proto";
 import "poktroll/shared/params.proto";
 
 option go_package = "github.com/pokt-network/poktroll/x/shared/types";
+option (gogoproto.stable_marshaler_all) = true;
 
 // Msg defines the Msg service.
 service Msg {
