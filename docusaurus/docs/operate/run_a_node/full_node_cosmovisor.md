@@ -35,25 +35,25 @@ To install and set up a Poktroll Full Node using Cosmovisor, we provide a compre
 1. Download the installation script:
 
 ```bash
-curl -O https://raw.githubusercontent.com/pokt-network/poktroll/main/scripts/install_poktroll_node.sh
+curl -O https://raw.githubusercontent.com/pokt-network/poktroll/main/tools/installer/full-node.sh
 ```
 
 2. Make the script executable:
 
 ```bash
-chmod +x install_poktroll_node.sh
+chmod +x full-node.sh
 ```
 
 3. Run the script with sudo privileges:
 
 ```bash
-sudo ./install_poktroll_node.sh
+sudo ./full-node.sh
 ```
 
 4. Follow the prompts to provide the necessary information:
    - Desired username to run poktrolld (default: poktroll)
    - Node moniker (default: hostname)
-   - Seeds (default: 838625e3cfc7a2e347a1afc769957157441f649b@35.184.192.176:26656)
+   - Seeds (default: fetched [from the official source](https://github.com/pokt-network/pocket-network-genesis/tree/master/poktrolld))
    - Chain ID (default: poktroll-testnet)
 
 The script will then proceed with the installation and setup process.
