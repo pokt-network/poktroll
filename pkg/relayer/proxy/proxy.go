@@ -142,6 +142,8 @@ func (rp *relayerProxy) Start(ctx context.Context) error {
 	for _, relayServer := range rp.servers {
 		server := relayServer // create a new variable scoped to the anonymous function
 
+		// Ensure that each backing data node responds to a ping request
+		// (at least) before continuing operation.
 		if err := server.Ping(ctx); err != nil {
 			return err
 		}
