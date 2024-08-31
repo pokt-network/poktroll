@@ -274,9 +274,10 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequiredAndNotProv
 	require.Len(t, expectedEvents, 1)
 
 	// Validate the event
-	expectedEvent := expectedEvents[0]
-	require.Equal(t, tokenomicstypes.ClaimExpirationReason_PROOF_MISSING, expectedEvent.GetExpirationReason())
-	require.Equal(t, s.numRelays, expectedEvent.GetNumRelays())
+	claimExpirationEvent := expectedEvents[0]
+	require.Equal(t, tokenomicstypes.ClaimExpirationReason_PROOF_MISSING, claimExpirationEvent.GetExpirationReason())
+	require.Equal(t, s.numRelays, claimExpirationEvent.GetNumRelays())
+	// TODO_IN_THIS_PR: Test other fields of the event
 }
 
 func (s *TestSuite) TestSettlePendingClaims_ClaimSettled_ProofRequiredAndProvided_ViaThreshold() {
@@ -379,9 +380,10 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOn
 	require.Len(t, expectedEvents, 1)
 
 	// Validate the event
-	expectedEvent := expectedEvents[0]
-	require.Equal(t, tokenomicstypes.ClaimExpirationReason_PROOF_INVALID, expectedEvent.GetExpirationReason())
-	require.Equal(t, s.numRelays, expectedEvent.GetNumRelays())
+	claimExpirationEvent := expectedEvents[0]
+	require.Equal(t, tokenomicstypes.ClaimExpirationReason_PROOF_INVALID, claimExpirationEvent.GetExpirationReason())
+	require.Equal(t, s.numRelays, claimExpirationEvent.GetNumRelays())
+	// TODO_IN_THIS_PR: Test other fields of the event
 }
 
 func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_ViaProbability() {

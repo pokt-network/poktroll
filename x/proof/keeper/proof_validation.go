@@ -156,7 +156,7 @@ func (k Keeper) EnsureValidProof(
 	logger.Debug("successfully verified relay response signature")
 
 	// Get the proof module's governance parameters.
-	// TODO_FOLLOWUP(@olshansk, #690): Get the difficulty associated with the service
+	// TODO_BETA(@olshansk, #690): Get the difficulty associated with the service
 	params := k.GetParams(ctx)
 	relayDifficultyTargetHash := params.RelayDifficultyTargetHash
 	if len(relayDifficultyTargetHash) == 0 {

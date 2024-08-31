@@ -53,6 +53,11 @@ func TestGetDifficultyFromHash(t *testing.T) {
 	}
 }
 
+func TestGetDifficultyFromHash_Incremental(t *testing.T) {
+	for numRelays := 1e3; numRelays < 1e18; numRelays *= 10 {
+	}
+}
+
 func TestIsRelayVolumeApplicable(t *testing.T) {
 	tests := []struct {
 		desc                     string

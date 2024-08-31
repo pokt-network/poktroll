@@ -216,10 +216,16 @@ func (k Keeper) ProcessTokenLogicModules(
 		return tokenomicstypes.ErrTokenomicsServiceNotFound.Wrapf("service with ID %q not found", sessionHeader.Service.Id)
 	}
 
+	// Retrieving the relay mining difficulty for the service at hand
+	relayMiningDifficulty, found := k.GetRelayMiningDifficulty(ctx, service.Id)
+	if !found {
+		relayMiningDifficulty = newDefaultRelayMiningDifficulty(ctx, logger, service.Id, numRelays)
+	}
+
 	// Determine the total number of tokens being claimed (i.e. for the work completed)
 	// by the supplier for the amount of work they did to service the application
 	// in the session.
-	claimSettlementCoin, err = k.numRelaysToCoin(ctx, numRelays, &service)
+	claimSettlementCoin, err = k.numRelaysToCoin(ctx, numRelays, &relayMiningDifficulty, &service)
 	if err != nil {
 		return err
 	}
@@ -233,12 +239,6 @@ func (k Keeper) ProcessTokenLogicModules(
 		"supplier_operator", supplier.OperatorAddress,
 		"application", application.Address,
 	)
-
-	// Retrieving the relay mining difficulty for the service at hand
-	relayMiningDifficulty, found := k.GetRelayMiningDifficulty(ctx, service.Id)
-	if !found {
-		relayMiningDifficulty = newDefaultRelayMiningDifficulty(ctx, logger, service.Id, numRelays)
-	}
 
 	// Ensure the claim amount is within the limits set by Relay Mining.
 	// If not, update the settlement amount and emit relevant events.
@@ -553,18 +553,57 @@ func (k Keeper) ensureClaimAmountLimits(
 func (k Keeper) numRelaysToCoin(
 	ctx context.Context,
 	numRelays uint64, // numRelays is a session specific parameter
+	relayMiningDifficulty *tokenomictypes.RelayMiningDifficulty,
 	service *sharedtypes.Service,
 ) (cosmostypes.Coin, error) {
+	logger := k.Logger().With("method", "numRelaysToCoin")
+
 	// CUTTM is a GLOBAL network wide parameter
-	computeUnitsToTokensMultiplier := k.GetParams(ctx).ComputeUnitsToTokensMultiplier
+	networkComputeUnitsToTokensMultiplier := k.GetParams(ctx).ComputeUnitsToTokensMultiplier
+
 	// CUPR is a LOCAL service specific parameter
-	computeUnitsPerRelay := service.ComputeUnitsPerRelay
-	upoktAmount := math.NewInt(int64(numRelays * computeUnitsPerRelay * computeUnitsToTokensMultiplier))
+	serviceComputeUnitsPerRelay := service.ComputeUnitsPerRelay
+
+	// Compute the number of claimed compute units in this claim
+	numClaimedComputeUnits := int64(numRelays * serviceComputeUnitsPerRelay * networkComputeUnitsToTokensMultiplier)
+	numEstimatedComputeUnits, err := k.claimedToEstimatedComputeUnits(ctx, numClaimedComputeUnits, relayMiningDifficulty, service)
+	if err != nil {
+		return cosmostypes.Coin{}, err
+	}
+
+	// upoktAmount is the number of POKT tokens the numRelays equate to for said service
+	upoktAmount := math.NewInt(numEstimatedComputeUnits)
 	if upoktAmount.IsNegative() {
 		return cosmostypes.Coin{}, tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrap("sum * compute_units_to_tokens_multiplier is negative")
 	}
+	upoktCoin := cosmostypes.NewCoin(volatile.DenomuPOKT, upoktAmount)
 
-	return cosmostypes.NewCoin(volatile.DenomuPOKT, upoktAmount), nil
+	logger.Info(fmt.Sprintf("Converted (%d) relays to (%v) for service (%s)", numRelays, upoktCoin, service.Id))
+	return upoktCoin, nil
+}
+
+// numClaimedToEstimatedComputeUnitsRelaysToCoin calculates the number of estimated
+// compute units serviced/processed off-chain based on the number of claimed compute
+// units in a particular session. The reason these are not equal is because the relay
+// mining difficulty keeps trees small and therefore less relays are inserted into
+// the tree for large volumes.
+func (k Keeper) claimedToEstimatedComputeUnits(
+	ctx context.Context,
+	numClaimedComputeUnits int64,
+	relayMiningDifficulty *tokenomictypes.RelayMiningDifficulty,
+	service *sharedtypes.Service,
+) (numEstimatedComputeUnits int64, err error) {
+	logger := k.Logger().With("method", "claimedToEstimatedComputeUnits")
+
+	// The number of estimated compute unites is a multiplier of the number of
+	// claimed compute units since it depends on whether the relay is minable or not.
+	difficultyMultiplier := protocol.GetDifficultyFromHash([32]byte(relayMiningDifficulty.TargetHash))
+	numEstimatedComputeUnits = numClaimedComputeUnits * difficultyMultiplier
+
+	logger.Info(fmt.Sprintf("Estimated (%d) serviced compute units from (%d) claimed compute units"+
+		"with a difficulty multiplier of (%d) for relay difficulty (%v)", numEstimatedComputeUnits, numClaimedComputeUnits, difficultyMultiplier, relayMiningDifficulty.TargetHash))
+
+	return numEstimatedComputeUnits, nil
 }
 
 // distributeSupplierRewardsToShareHolders distributes the supplier rewards to its

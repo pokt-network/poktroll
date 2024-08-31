@@ -135,13 +135,13 @@ func ComputeNewDifficultyTargetHash(prevTargetHash []byte, targetNumRelays, newR
 	return newTargetHash
 }
 
-// scaleDifficultyTargetHash scales the target hash based on the given ratio
+// scaleDifficultyTargetHash scales the target hash based on the given ratio.
 //
 // TODO_MAINNET: Use a language agnostic float implementation or arithmetic library
 // to ensure deterministic results across different language implementations of the
 // protocol.
 func scaleDifficultyTargetHash(targetHash []byte, ratio *big.Float) []byte {
-	// Convert targetHash to a big.Float to miminize precision loss.
+	// Convert targetHash to a big.Float to minimize precision loss.
 	targetInt := new(big.Int).SetBytes(targetHash)
 	targetFloat := new(big.Float).SetInt(targetInt)
 
@@ -193,15 +193,21 @@ func newDefaultRelayMiningDifficulty(
 	numRelays uint64,
 ) tokenomicstypes.RelayMiningDifficulty {
 	logger = logger.With("helper", "newDefaultRelayMiningDifficulty")
-	logger.Warn(types.ErrTokenomicsMissingRelayMiningDifficulty.Wrapf(
-		"No previous relay mining difficulty found for service %s. Creating a temporary relay mining difficulty with %d relays and default target hash %x",
-		serviceId, numRelays, prooftypes.DefaultRelayDifficultyTargetHash).Error())
 
+	// Compute the target hash based on the number of relays seen for the first time.
+	targetHash := ComputeNewDifficultyTargetHash(prooftypes.DefaultRelayDifficultyTargetHash, TargetNumRelays, numRelays)
+
+	logger.Warn(types.ErrTokenomicsMissingRelayMiningDifficulty.Wrapf(
+		"No previous relay mining difficulty found for service %s.\n"+
+			"Creating a new relay mining difficulty with %d relays and an initial target hash %x",
+		serviceId, numRelays, targetHash).Error())
+
+	// Return a new RelayMiningDifficulty with the computed target hash.
 	return tokenomicstypes.RelayMiningDifficulty{
 		ServiceId:    serviceId,
 		BlockHeight:  sdk.UnwrapSDKContext(ctx).BlockHeight(),
 		NumRelaysEma: numRelays,
-		TargetHash:   prooftypes.DefaultRelayDifficultyTargetHash,
+		TargetHash:   targetHash,
 	}
 
 }

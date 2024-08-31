@@ -106,6 +106,14 @@ func (k msgServer) SubmitProof(
 	if err != nil {
 		return nil, status.Error(codes.Internal, types.ErrProofInvalidClaimRootHash.Wrap(err.Error()).Error())
 	}
+
+	// TODO_IN_THIS_PR_AFTER_#745_IS_MERGED: Check (and test) that numClaimComputeUnits is equal
+	// to num_relays * the_compute_units_per_relay for this_service.
+	// Add a comment that for now, we expect it to be the case because every
+	// relay for a specific service is wroth the same, but may change in the
+	// future.
+
+	// Check if a prior proof already exists.
 	_, isExistingProof = k.GetProof(ctx, proof.SessionHeader.SessionId, proof.SupplierOperatorAddress)
 
 	// Upsert the proof
