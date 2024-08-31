@@ -164,3 +164,50 @@ func TestParams_ValidateProofMissingPenalty(t *testing.T) {
 		})
 	}
 }
+
+func TestParams_ValidateProofSubmissionFee(t *testing.T) {
+	invalidDenomCoin := cosmostypes.NewCoin("invalid_denom", math.NewInt(1))
+
+	tests := []struct {
+		desc               string
+		proofSubmissionFee any
+		expectedErr        error
+	}{
+		{
+			desc:               "invalid type",
+			proofSubmissionFee: int64(-1),
+			expectedErr:        prooftypes.ErrProofParamInvalid.Wrap("invalid parameter type: int64"),
+		},
+		{
+			desc:               "invalid denomination",
+			proofSubmissionFee: &invalidDenomCoin,
+			expectedErr:        prooftypes.ErrProofParamInvalid.Wrap("invalid coin denom: invalid_denom"),
+		},
+		{
+			desc:               "missing",
+			proofSubmissionFee: nil,
+			expectedErr:        prooftypes.ErrProofParamInvalid.Wrap("invalid parameter type: <nil>"),
+		},
+		{
+			desc:               "missing (typed)",
+			proofSubmissionFee: (*cosmostypes.Coin)(nil),
+			expectedErr:        prooftypes.ErrProofParamInvalid.Wrap("missing proof_submission_fee"),
+		},
+		{
+			desc:               "valid",
+			proofSubmissionFee: &prooftypes.DefaultProofSubmissionFee,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			err := prooftypes.ValidateProofSubmissionFee(tt.proofSubmissionFee)
+			if tt.expectedErr != nil {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), tt.expectedErr.Error())
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}

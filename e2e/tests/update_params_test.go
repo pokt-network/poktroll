@@ -393,6 +393,11 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 			params.ProofMissingPenalty = proofMissingPenalty.value.(*cosmostypes.Coin)
 		}
 
+		proofSubmissionFee, ok := paramsMap[prooftypes.ParamProofSubmissionFee]
+		if ok {
+			params.ProofSubmissionFee = proofSubmissionFee.value.(*cosmostypes.Coin)
+		}
+
 		assertUpdatedParams(s,
 			[]byte(res.Stdout),
 			&prooftypes.QueryParamsResponse{

@@ -33,6 +33,11 @@ var (
 	KeyProofMissingPenalty     = []byte("ProofMissingPenalty")
 	ParamProofMissingPenalty   = "proof_missing_penalty"
 	DefaultProofMissingPenalty = cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(320)) // See: https://github.com/pokt-network/pocket-core/blob/staging/docs/proposals/probabilistic_proofs.md
+
+	KeyProofSubmissionFee   = []byte("ProofSubmissionFee")
+	ParamProofSubmissionFee = "proof_submission_fee"
+	// TODO_TECHDEBT: Determine a sensible default value for the proof submission fee.
+	DefaultProofSubmissionFee = cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(1000000))
 )
 
 // ParamKeyTable the param key table for launch module
@@ -46,12 +51,14 @@ func NewParams(
 	proofRequestProbability float32,
 	proofRequirementThreshold uint64,
 	proofMissingPenalty *cosmostypes.Coin,
+	proofSubmissionFee *cosmostypes.Coin,
 ) Params {
 	return Params{
 		RelayDifficultyTargetHash: relayDifficultyTargetHash,
 		ProofRequestProbability:   proofRequestProbability,
 		ProofRequirementThreshold: proofRequirementThreshold,
 		ProofMissingPenalty:       proofMissingPenalty,
+		ProofSubmissionFee:        proofSubmissionFee,
 	}
 }
 
@@ -62,6 +69,7 @@ func DefaultParams() Params {
 		DefaultProofRequestProbability,
 		DefaultProofRequirementThreshold,
 		&DefaultProofMissingPenalty,
+		&DefaultProofSubmissionFee,
 	)
 }
 
@@ -88,6 +96,11 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 			&p.ProofMissingPenalty,
 			ValidateProofMissingPenalty,
 		),
+		paramtypes.NewParamSetPair(
+			KeyProofSubmissionFee,
+			&p.ProofSubmissionFee,
+			ValidateProofSubmissionFee,
+		),
 	}
 }
 
@@ -107,6 +120,10 @@ func (params *Params) ValidateBasic() error {
 	}
 
 	if err := ValidateProofMissingPenalty(params.ProofMissingPenalty); err != nil {
+		return err
+	}
+
+	if err := ValidateProofSubmissionFee(params.ProofSubmissionFee); err != nil {
 		return err
 	}
 
@@ -173,6 +190,33 @@ func ValidateProofMissingPenalty(v interface{}) error {
 
 	if coin.Denom != volatile.DenomuPOKT {
 		return ErrProofParamInvalid.Wrapf("invalid coin denom: %s", coin.Denom)
+	}
+
+	return nil
+}
+
+// ValidateProofSubmission validates the ProofSubmissionFee param.
+// NB: The argument is an interface type to satisfy the ParamSetPair function signature.
+func ValidateProofSubmissionFee(v interface{}) error {
+	submissionFeeCoin, ok := v.(*cosmostypes.Coin)
+	if !ok {
+		return ErrProofParamInvalid.Wrapf("invalid parameter type: %T", v)
+	}
+
+	if submissionFeeCoin == nil {
+		return ErrProofParamInvalid.Wrap("missing proof_submission_fee")
+	}
+
+	if submissionFeeCoin.Denom != volatile.DenomuPOKT {
+		return ErrProofParamInvalid.Wrapf("invalid coin denom: %s", submissionFeeCoin.Denom)
+	}
+
+	if submissionFeeCoin.Amount.LT(DefaultProofSubmissionFee.Amount) {
+		return ErrProofParamInvalid.Wrapf(
+			"ProofSubmissionFee param is below minimum value %s: got %s",
+			DefaultProofSubmissionFee,
+			submissionFeeCoin,
+		)
 	}
 
 	return nil

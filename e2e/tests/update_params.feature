@@ -42,6 +42,7 @@ Feature: Params Namespace
       | proof_request_probability    | 0.1                                                              | float |
       | proof_requirement_threshold  | 100                                                              | int64 |
       | proof_missing_penalty        | 500                                                              | coin  |
+      | proof_submission_fee         | 5000000                                                          | coin  |
     Then all "proof" module params should be updated
 
   # NB: If you are reading this and the proof module has parameters
@@ -92,6 +93,7 @@ Feature: Params Namespace
       | proof      | /poktroll.proof.MsgUpdateParam      | proof_request_probability             | 0.1         | float      |
       | proof      | /poktroll.proof.MsgUpdateParam      | proof_requirement_threshold           | 100         | int64      |
       | proof      | /poktroll.proof.MsgUpdateParam      | proof_missing_penalty                 | 500         | coin       |
+      | proof      | /poktroll.proof.MsgUpdateParam      | proof_submission_fee                  | 5000000     | coin       |
       | shared     | /poktroll.shared.MsgUpdateParam     | num_blocks_per_session                | 5           | int64      |
       | shared     | /poktroll.shared.MsgUpdateParam     | grace_period_end_offset_blocks        | 2           | int64      |
       | shared     | /poktroll.shared.MsgUpdateParam     | claim_window_open_offset_blocks       | 2           | int64      |
