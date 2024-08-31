@@ -22,7 +22,7 @@ type zerologLogger struct {
 // os.Stderr and log at the Debug level.
 //
 // TODO_IMPROVE/TODO_COMMUNITY: Add `NewProductionLogger`, `NewDevelopmentLogger`,
-// and `NewExampleLogger` functions with reasonable defaults the their respective
+// and `NewExampleLogger` functions with reasonable defaults their respective
 // environments; conceptually similar to the respective analogues in zap.
 // See: https://pkg.go.dev/github.com/uber-go/zap#hdr-Configuring_Zap.
 func NewLogger(
