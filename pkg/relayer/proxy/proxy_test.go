@@ -152,7 +152,7 @@ func TestRelayerProxy_StartAndStop(t *testing.T) {
 	// Block so relayerProxy has sufficient time to start
 	time.Sleep(100 * time.Millisecond)
 
-	errs := rp.Ping(ctx)
+	errs := rp.PingAll(ctx)
 	for _, err := range errs {
 		require.NoError(t, err)
 	}

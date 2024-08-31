@@ -58,8 +58,8 @@ type RelayerProxy interface {
 	// and its RelayResponse has been signed and successfully sent to the client.
 	ServedRelays() RelaysObservable
 
-	// Ping tests the connectivity between all the managed relay servers and their respective backend URLs.
-	Ping(ctx context.Context) []error
+	// PingAll tests the connectivity between all the managed relay servers and their respective backend URLs.
+	PingAll(ctx context.Context) []error
 }
 
 type RelayerProxyOption func(RelayerProxy)

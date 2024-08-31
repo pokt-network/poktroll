@@ -140,7 +140,7 @@ func (rel *relayMiner) ServePing(ctx context.Context, ln net.Listener) error {
 		if err := http.Serve(ln, http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 			rel.logger.Debug().Msg("pinging relay servers...")
 
-			if errs := rel.relayerProxy.Ping(ctx); errs != nil {
+			if errs := rel.relayerProxy.PingAll(ctx); errs != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
