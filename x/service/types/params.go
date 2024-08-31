@@ -15,7 +15,7 @@ var (
 
 	KeyAddServiceFee   = []byte("AddServiceFee")
 	ParamAddServiceFee = "add_service_fee"
-	// TODO_TECHDEBT: Determine a sensible default value for the proof submission fee.
+	// TODO_TECHDEBT: Determine a sensible default value for the add service fee.
 	DefaultAddServiceFee = cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(1000000000))
 )
 

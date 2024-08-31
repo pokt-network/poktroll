@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"cosmossdk.io/log"
+	"cosmossdk.io/math"
 	"cosmossdk.io/store"
 	"cosmossdk.io/store/metrics"
 	storetypes "cosmossdk.io/store/types"
@@ -19,18 +20,15 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app"
-	applicationmocks "github.com/pokt-network/poktroll/testutil/application/mocks"
-	gatewaymocks "github.com/pokt-network/poktroll/testutil/gateway/mocks"
 	"github.com/pokt-network/poktroll/testutil/proof/mocks"
-	servicemocks "github.com/pokt-network/poktroll/testutil/service/mocks"
-	sessionmocks "github.com/pokt-network/poktroll/testutil/session/mocks"
-	suppliermocks "github.com/pokt-network/poktroll/testutil/supplier/mocks"
 	appkeeper "github.com/pokt-network/poktroll/x/application/keeper"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gatewaykeeper "github.com/pokt-network/poktroll/x/gateway/keeper"
@@ -56,6 +54,7 @@ import (
 // MUST be specified (e.g. `keepers.AccountKeeper#SetParams()`).
 type ProofModuleKeepers struct {
 	*keeper.Keeper
+	prooftypes.BankKeeper
 	prooftypes.SessionKeeper
 	prooftypes.SupplierKeeper
 	prooftypes.ApplicationKeeper
@@ -85,6 +84,20 @@ func ProofKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName)
 
 	ctrl := gomock.NewController(t)
+	mockBankKeeper := mocks.NewMockBankKeeper(ctrl)
+	mockBankKeeper.EXPECT().
+		SpendableCoins(gomock.Any(), gomock.Any()).
+		DoAndReturn(
+			func(ctx context.Context, addr sdk.AccAddress) sdk.Coins {
+				mapMu.RLock()
+				defer mapMu.RUnlock()
+				if coins, ok := mapAccAddrCoins[addr.String()]; ok {
+					return coins
+				}
+				return sdk.Coins{}
+			},
+		).AnyTimes()
+
 	mockSessionKeeper := mocks.NewMockSessionKeeper(ctrl)
 	mockAppKeeper := mocks.NewMockApplicationKeeper(ctrl)
 	mockAccountKeeper := mocks.NewMockAccountKeeper(ctrl)
@@ -95,6 +108,7 @@ func ProofKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 		runtime.NewKVStoreService(storeKey),
 		log.NewNopLogger(),
 		authority.String(),
+		mockBankKeeper,
 		mockSessionKeeper,
 		mockAppKeeper,
 		mockAccountKeeper,
@@ -115,6 +129,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 	// Collect store keys for all keepers which be constructed & interact with the state store.
 	keys := storetypes.NewKVStoreKeys(
 		types.StoreKey,
+		banktypes.StoreKey,
 		sessiontypes.StoreKey,
 		suppliertypes.StoreKey,
 		apptypes.StoreKey,
@@ -137,18 +152,32 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 	cdc := codec.NewProtoCodec(registry)
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName)
 
-	// Mock the bank keeper.
-	ctrl := gomock.NewController(t)
-
 	// Construct a real account keeper so that public keys can be queried.
 	accountKeeper := authkeeper.NewAccountKeeper(
 		cdc,
 		runtime.NewKVStoreService(keys[authtypes.StoreKey]),
 		authtypes.ProtoBaseAccount,
-		map[string][]string{minttypes.ModuleName: {authtypes.Minter}},
+		map[string][]string{
+			minttypes.ModuleName:     {authtypes.Minter},
+			suppliertypes.ModuleName: {authtypes.Minter, authtypes.Burner, authtypes.Staking},
+			prooftypes.ModuleName:    {authtypes.Minter, authtypes.Burner},
+		},
 		addresscodec.NewBech32Codec(app.AccountAddressPrefix),
 		app.AccountAddressPrefix,
 		authority.String(),
+	)
+
+	// Prepare the bank keeper
+	blockedAddresses := map[string]bool{
+		accountKeeper.GetAuthority(): false,
+	}
+	bankKeeper := bankkeeper.NewBaseKeeper(
+		cdc,
+		runtime.NewKVStoreService(keys[banktypes.StoreKey]),
+		accountKeeper,
+		blockedAddresses,
+		authority.String(),
+		logger,
 	)
 
 	// Construct a real shared keeper.
@@ -166,7 +195,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 		runtime.NewKVStoreService(keys[gatewaytypes.StoreKey]),
 		logger,
 		authority.String(),
-		gatewaymocks.NewMockBankKeeper(ctrl),
+		bankKeeper,
 	)
 	require.NoError(t, gatewayKeeper.SetParams(ctx, gatewaytypes.DefaultParams()))
 
@@ -176,7 +205,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 		runtime.NewKVStoreService(keys[apptypes.StoreKey]),
 		logger,
 		authority.String(),
-		applicationmocks.NewMockBankKeeper(ctrl),
+		bankKeeper,
 		accountKeeper,
 		gatewayKeeper,
 		sharedKeeper,
@@ -189,7 +218,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 		runtime.NewKVStoreService(keys[types.StoreKey]),
 		log.NewNopLogger(),
 		authority.String(),
-		servicemocks.NewMockBankKeeper(ctrl),
+		bankKeeper,
 	)
 
 	// Construct a real supplier keeper to add suppliers to sessions.
@@ -198,7 +227,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 		runtime.NewKVStoreService(keys[suppliertypes.StoreKey]),
 		log.NewNopLogger(),
 		authority.String(),
-		suppliermocks.NewMockBankKeeper(ctrl),
+		bankKeeper,
 		sharedKeeper,
 		serviceKeeper,
 	)
@@ -211,7 +240,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 		log.NewNopLogger(),
 		authority.String(),
 		accountKeeper,
-		sessionmocks.NewMockBankKeeper(ctrl),
+		bankKeeper,
 		appKeeper,
 		supplierKeeper,
 		sharedKeeper,
@@ -224,6 +253,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 		runtime.NewKVStoreService(keys[types.StoreKey]),
 		log.NewNopLogger(),
 		authority.String(),
+		bankKeeper,
 		sessionKeeper,
 		appKeeper,
 		accountKeeper,
@@ -233,6 +263,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 
 	keepers := &ProofModuleKeepers{
 		Keeper:            &proofKeeper,
+		BankKeeper:        &bankKeeper,
 		SessionKeeper:     &sessionKeeper,
 		SupplierKeeper:    &supplierKeeper,
 		ApplicationKeeper: &appKeeper,
@@ -241,6 +272,10 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 
 		Codec: cdc,
 	}
+
+	moduleBaseMint := sdk.NewCoins(sdk.NewCoin("upokt", math.NewInt(690000000000000042)))
+	err := bankKeeper.MintCoins(ctx, suppliertypes.ModuleName, moduleBaseMint)
+	require.NoError(t, err)
 
 	// Apply any options to update the keepers or context prior to returning them.
 	for _, opt := range opts {

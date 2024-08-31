@@ -42,7 +42,21 @@ const (
 )
 
 func (s *suite) TheUserShouldWaitForTheModuleMessageToBeSubmitted(module, msgType string) {
-	s.waitForTxResultEvent(newEventMsgTypeMatchFn(module, msgType))
+	event := s.waitForTxResultEvent(newEventMsgTypeMatchFn(module, msgType))
+
+	// Currently the proof submission fee may be higher than the reward amount,
+	// an adjustment the current balance to account for the proof submission fee
+	// is needed so validateAmountChange can assert on the reward change with the
+	// given condition.
+	if msgType == "SubmitProof" {
+
+		supplierOperatorAddress := getMsgSubmitProofSenderAddress(event)
+		require.NotEmpty(s, supplierOperatorAddress)
+
+		proofSubmissionFee := s.getProofSubmissionFee()
+		accName := accAddrToNameMap[supplierOperatorAddress]
+		s.TheUserSendsUpoktFromAccountToAccount(proofSubmissionFee, "pnf", accName)
+	}
 }
 
 func (s *suite) TheUserShouldWaitForTheModuleTxEventToBeBroadcast(module, eventType string) {
@@ -173,7 +187,7 @@ func (s *suite) sendRelaysForSession(
 }
 
 // waitForTxResultEvent waits for an event to be observed which has the given message action.
-func (s *suite) waitForTxResultEvent(eventIsMatch func(*abci.Event) bool) {
+func (s *suite) waitForTxResultEvent(eventIsMatch func(*abci.Event) bool) (matchedEvent *abci.Event) {
 	ctx, cancel := context.WithCancel(s.ctx)
 
 	// For each observed event, **asynchronously** check if it contains the given action.
@@ -188,6 +202,7 @@ func (s *suite) waitForTxResultEvent(eventIsMatch func(*abci.Event) bool) {
 			// and compare its value to that of the action provided.
 			for _, event := range txResult.Result.Events {
 				if eventIsMatch(&event) {
+					matchedEvent = &event
 					cancel()
 				}
 			}
@@ -200,6 +215,8 @@ func (s *suite) waitForTxResultEvent(eventIsMatch func(*abci.Event) bool) {
 	case <-ctx.Done():
 		s.Log("Success; message detected before timeout.")
 	}
+
+	return matchedEvent
 }
 
 // waitForNewBlockEvent waits for an event to be observed whose type and data
@@ -335,4 +352,15 @@ func combineEventMatchFns(fns ...func(*abci.Event) bool) func(*abci.Event) bool 
 		}
 		return true
 	}
+}
+
+// getMsgSubmitProofSenderAddress returns the sender address from the given event.
+func getMsgSubmitProofSenderAddress(event *abci.Event) string {
+	for _, attribute := range event.Attributes {
+		if attribute.Key == "sender" {
+			return attribute.Value
+		}
+	}
+
+	return ""
 }

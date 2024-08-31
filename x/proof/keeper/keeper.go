@@ -28,6 +28,7 @@ type (
 		// should be the x/gov module account.
 		authority string
 
+		bankKeeper        types.BankKeeper
 		sessionKeeper     types.SessionKeeper
 		applicationKeeper types.ApplicationKeeper
 		accountKeeper     types.AccountKeeper
@@ -45,6 +46,7 @@ func NewKeeper(
 	logger log.Logger,
 	authority string,
 
+	bankKeeper types.BankKeeper,
 	sessionKeeper types.SessionKeeper,
 	applicationKeeper types.ApplicationKeeper,
 	accountKeeper types.AccountKeeper,
@@ -87,6 +89,7 @@ func NewKeeper(
 		authority:    authority,
 		logger:       logger,
 
+		bankKeeper:        bankKeeper,
 		sessionKeeper:     sessionKeeper,
 		applicationKeeper: applicationKeeper,
 		accountKeeper:     accountKeeper,

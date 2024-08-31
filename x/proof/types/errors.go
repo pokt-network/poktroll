@@ -33,4 +33,6 @@ var (
 	ErrProofProofOutsideOfWindow      = sdkerrors.Register(ModuleName, 1122, "proof attempted outside of the session's proof window")
 	ErrProofSupplierMismatch          = sdkerrors.Register(ModuleName, 1123, "supplier operator address does not match the claim or proof")
 	ErrProofAccNotFound               = sdkerrors.Register(ModuleName, 1124, "account not found")
+	ErrProofNotEnoughFunds            = sdkerrors.Register(ModuleName, 1125, "not enough funds to submit proof")
+	ErrProofFailedToDeductFee         = sdkerrors.Register(ModuleName, 1126, "failed to deduct proof submission fee")
 )

@@ -246,6 +246,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		sessiontypes.ModuleName:    {authtypes.Minter, authtypes.Burner},
 		apptypes.ModuleName:        {authtypes.Minter, authtypes.Burner, authtypes.Staking},
 		suppliertypes.ModuleName:   {authtypes.Minter, authtypes.Burner, authtypes.Staking},
+		prooftypes.ModuleName:      {authtypes.Minter, authtypes.Burner},
 	}
 
 	// Prepare the account keeper and module
@@ -390,6 +391,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		logger,
 		authority.String(),
 
+		bankKeeper,
 		sessionKeeper,
 		applicationKeeper,
 		accountKeeper,
@@ -399,6 +401,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		cdc,
 		proofKeeper,
 		accountKeeper,
+		bankKeeper,
 	)
 
 	// Prepare the tokenomics keeper and module
@@ -590,6 +593,19 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	require.NoError(t, err)
 	err = bankKeeper.MintCoins(integrationApp.sdkCtx, apptypes.ModuleName, moduleBaseMint)
 	require.NoError(t, err)
+
+	// Fund the supplier operator account to be able to submit proofs
+	err = bankKeeper.SendCoinsFromModuleToAccount(
+		integrationApp.sdkCtx,
+		suppliertypes.ModuleName,
+		supplierOperatorAddr,
+		types.NewCoins(types.NewCoin("upokt", math.NewInt(100000000))),
+	)
+
+	require.NoError(t, err)
+
+	coin := bankKeeper.SpendableCoins(integrationApp.sdkCtx, supplierOperatorAddr)
+	require.Equal(t, coin[0].Amount, math.NewInt(100000000))
 
 	// Commit all the changes above by committing, finalizing and moving
 	// to the next block.
