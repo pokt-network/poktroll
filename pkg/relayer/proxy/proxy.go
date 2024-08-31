@@ -198,15 +198,12 @@ func (rp *relayerProxy) validateConfig() error {
 func (rp *relayerProxy) PingAll(ctx context.Context) []error {
 	var errs []error
 
-	var i int
 	for _, srv := range rp.servers {
 		if err := srv.Ping(ctx); err != nil {
 			rp.logger.Error().Err(err).
 				Msg("an unexpected error occured while pinging backend URL")
 			errs = append(errs, err)
 		}
-
-		i++
 	}
 
 	if len(errs) > 0 {
