@@ -106,7 +106,6 @@ func (sync *synchronousRPCServer) Ping(ctx context.Context) error {
 		if resp.StatusCode >= http.StatusInternalServerError {
 			return errors.New("ping failed")
 		}
-
 	}
 
 	return nil
