@@ -239,6 +239,9 @@ genesis:
         proof_missing_penalty:
           amount: "320"
           denom: upokt
+        proof_submission_fee:
+          amount: "1000000"
+          denom: upokt
     shared:
       params:
         num_blocks_per_session: 10
