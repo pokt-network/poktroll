@@ -5,6 +5,7 @@ option go_package = "github.com/pokt-network/poktroll/x/service/types";
 
 import "amino/amino.proto";
 import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
 
 
 // Params defines the parameters for the module.
@@ -15,5 +16,5 @@ message Params {
   // The amount of uPOKT required to add a new service.
   // This will be deducted from the signer's account balance,
   // and transferred to the pocket network foundation.
-  uint64 add_service_fee = 1 [(gogoproto.jsontag) = "add_service_fee", (gogoproto.moretags) = "yaml:\"add_service_fee\""];
+  cosmos.base.v1beta1.Coin add_service_fee = 1 [(gogoproto.jsontag) = "add_service_fee", (gogoproto.moretags) = "yaml:\"add_service_fee\""];
 }
