@@ -194,8 +194,8 @@ func (rp *relayerProxy) validateConfig() error {
 	return nil
 }
 
-// Ping tests the connectivity between all the managed relay servers and their respective backend URLs.
-func (rp *relayerProxy) Ping(ctx context.Context) []error {
+// PingAll tests the connectivity between all the managed relay servers and their respective backend URLs.
+func (rp *relayerProxy) PingAll(ctx context.Context) []error {
 	var errs []error
 
 	var i int

@@ -61,7 +61,7 @@ func NewMockOneTimeRelayerProxyWithPing(
 		Return(returnedRelaysObs).
 		Times(1)
 	relayerProxyMock.EXPECT().
-		Ping(gomock.Eq(ctx)).
+		PingAll(gomock.Eq(ctx)).
 		Times(1)
 
 	return relayerProxyMock
