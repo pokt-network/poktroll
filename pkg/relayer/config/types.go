@@ -27,6 +27,7 @@ type YAMLRelayMinerConfig struct {
 	Ping                   YAMLRelayMinerPingConfig       `yaml:"ping"`
 }
 
+// YAMLRelayMinerPingConfig represents the configuration to expose a ping server.
 type YAMLRelayMinerPingConfig struct {
 	Enabled bool   `yaml:"enabled"`
 	Addr    string `yaml:"addr"`
@@ -92,6 +93,8 @@ type RelayMinerConfig struct {
 	Ping                   *RelayMinerPingConfig
 }
 
+// RelayMinerPingConfig is the structure resulting from parsing the ping
+// server configuration.
 type RelayMinerPingConfig struct {
 	Enabled bool
 	Addr    string
