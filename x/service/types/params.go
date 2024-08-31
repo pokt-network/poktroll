@@ -1,23 +1,22 @@
 package types
 
 import (
-	"fmt"
-
+	"cosmossdk.io/math"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
+	"github.com/pokt-network/poktroll/app/volatile"
 )
 
 // DefaultAddServiceFee is the default value for the add service fee
 // parameter in the genesis state of the service module.
 // TODO_BETA: Revisit default param values for service fee
-const (
-	ParamAddServiceFee   = "add_service_fee"
-	DefaultAddServiceFee = 1000000000 // 1000 POKT
-)
-
 var (
 	_ paramtypes.ParamSet = (*Params)(nil)
 
-	KeyAddServiceFee = []byte("AddServiceFee")
+	KeyAddServiceFee   = []byte("AddServiceFee")
+	ParamAddServiceFee = "add_service_fee"
+	// TODO_TECHDEBT: Determine a sensible default value for the proof submission fee.
+	DefaultAddServiceFee = cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(1000000000))
 )
 
 // ParamKeyTable the param key table for launch module
@@ -26,7 +25,7 @@ func ParamKeyTable() paramtypes.KeyTable {
 }
 
 // NewParams creates a new Params instance
-func NewParams(addServiceFee uint64) Params {
+func NewParams(addServiceFee *cosmostypes.Coin) Params {
 	return Params{
 		AddServiceFee: addServiceFee,
 	}
@@ -35,39 +34,48 @@ func NewParams(addServiceFee uint64) Params {
 // DefaultParams returns a default set of parameters
 func DefaultParams() Params {
 	return NewParams(
-		DefaultAddServiceFee,
+		&DefaultAddServiceFee,
 	)
 }
 
 // ParamSetPairs get the params.ParamSet
 func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 	return paramtypes.ParamSetPairs{
-		paramtypes.NewParamSetPair(KeyAddServiceFee, &p.AddServiceFee, validateAddServiceFee),
+		paramtypes.NewParamSetPair(KeyAddServiceFee, &p.AddServiceFee, ValidateAddServiceFee),
 	}
 }
 
-// Validate validates the set of params
-func (p Params) Validate() error {
-	// TODO_MAINNET: Look into better validation
-	if p.AddServiceFee < DefaultAddServiceFee {
-		return ErrServiceInvalidServiceFee.Wrapf(
-			"AddServiceFee param %d uPOKT: got %d",
-			DefaultAddServiceFee,
-			p.AddServiceFee,
-		)
+// ValidateBasic validates the set of params
+func (p Params) ValidateBasic() error {
+	if err := ValidateAddServiceFee(p.AddServiceFee); err != nil {
+		return err
 	}
 	return nil
 }
 
 // validateAddServiceFee validates the AddServiceFee param
-func validateAddServiceFee(v interface{}) error {
-	addServiceFee, ok := v.(uint64)
+func ValidateAddServiceFee(v interface{}) error {
+	addServiceFeeCoin, ok := v.(*cosmostypes.Coin)
 	if !ok {
-		return fmt.Errorf("invalid parameter type: %T", v)
+		return ErrServiceInvalidServiceFee.Wrapf("invalid parameter type: %T", v)
 	}
 
-	// TODO_BETA: implement validation
-	_ = addServiceFee
+	if addServiceFeeCoin == nil {
+		return ErrServiceInvalidServiceFee.Wrap("missing proof_submission_fee")
+	}
+
+	if addServiceFeeCoin.Denom != volatile.DenomuPOKT {
+		return ErrServiceInvalidServiceFee.Wrapf("invalid coin denom: %s", addServiceFeeCoin.Denom)
+	}
+
+	// TODO_MAINNET: Look into better validation
+	if addServiceFeeCoin.Amount.LT(DefaultAddServiceFee.Amount) {
+		return ErrServiceInvalidServiceFee.Wrapf(
+			"AddServiceFee param is below minimum value %s: got %s",
+			DefaultAddServiceFee,
+			addServiceFeeCoin,
+		)
+	}
 
 	return nil
 }

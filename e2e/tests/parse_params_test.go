@@ -213,7 +213,7 @@ func (s *suite) newServiceMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 		s.Logf("paramName: %s, value: %v", paramName, paramValue.value)
 		switch paramName {
 		case servicetypes.ParamAddServiceFee:
-			msgUpdateParams.Params.AddServiceFee = uint64(paramValue.value.(int64))
+			msgUpdateParams.Params.AddServiceFee = paramValue.value.(*cosmostypes.Coin)
 		default:
 			s.Fatalf("ERROR: unexpected %q type param name %q", paramValue.typeStr, paramName)
 		}
@@ -238,6 +238,8 @@ func (s *suite) newMsgUpdateParam(
 		msg = s.newProofMsgUpdateParam(authority, param)
 	case sharedtypes.ModuleName:
 		msg = s.newSharedMsgUpdateParam(authority, param)
+	case servicetypes.ModuleName:
+		msg = s.newServiceMsgUpdateParam(authority, param)
 	default:
 		err := fmt.Errorf("ERROR: unexpected module name %q", moduleName)
 		s.Fatal(err)
@@ -280,7 +282,7 @@ func (s *suite) newTokenomicsMsgUpdateParam(authority string, param paramAny) (m
 			},
 		})
 	default:
-		s.Fatal("unexpected param type %q for %s module", param.typeStr, tokenomicstypes.ModuleName)
+		s.Fatalf("unexpected param type %q for %s module", param.typeStr, tokenomicstypes.ModuleName)
 	}
 
 	return msg
@@ -329,7 +331,7 @@ func (s *suite) newProofMsgUpdateParam(authority string, param paramAny) (msg pr
 			},
 		})
 	default:
-		s.Fatal("unexpected param type %q for %s module", param.typeStr, prooftypes.ModuleName)
+		s.Fatalf("unexpected param type %q for %s module", param.typeStr, prooftypes.ModuleName)
 	}
 
 	return msg
@@ -362,7 +364,24 @@ func (s *suite) newSharedMsgUpdateParam(authority string, param paramAny) (msg p
 			},
 		})
 	default:
-		s.Fatal("unexpected param type %q for %s module", param.typeStr, sharedtypes.ModuleName)
+		s.Fatalf("unexpected param type %q for %s module", param.typeStr, sharedtypes.ModuleName)
+	}
+
+	return msg
+}
+
+func (s *suite) newServiceMsgUpdateParam(authority string, param paramAny) (msg proto.Message) {
+	switch param.typeStr {
+	case "coin":
+		msg = proto.Message(&servicetypes.MsgUpdateParam{
+			Authority: authority,
+			Name:      param.name,
+			AsType: &servicetypes.MsgUpdateParam_AsCoin{
+				AsCoin: param.value.(*cosmostypes.Coin),
+			},
+		})
+	default:
+		s.Fatalf("unexpected param type %q for %s module", param.typeStr, tokenomicstypes.ModuleName)
 	}
 
 	return msg

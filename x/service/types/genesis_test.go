@@ -3,8 +3,11 @@ package types_test
 import (
 	"testing"
 
+	"cosmossdk.io/math"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/x/service/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -70,7 +73,7 @@ func TestGenesisState_Validate(t *testing.T) {
 			desc: "invalid - invalid add service fee parameter (below minimum)",
 			genState: &types.GenesisState{
 				Params: types.Params{
-					AddServiceFee: 999999, // 0.999999 POKT
+					AddServiceFee: &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(999999)}, // 0.999999 POKT
 				},
 				ServiceList: []sharedtypes.Service{
 					*svc1, *svc2,

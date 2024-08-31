@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/app/volatile"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/x/service/keeper"
@@ -13,7 +14,7 @@ import (
 )
 
 // oneUPOKTGreaterThanFee is 1 upokt more than the AddServiceFee
-const oneUPOKTGreaterThanFee = types.DefaultAddServiceFee + 1
+var oneUPOKTGreaterThanFee = types.DefaultAddServiceFee.Amount.Uint64() + 1
 
 func TestMsgServer_AddService(t *testing.T) {
 	k, ctx := keepertest.ServiceKeeper(t)
@@ -39,7 +40,7 @@ func TestMsgServer_AddService(t *testing.T) {
 	}
 
 	// Mock adding a balance to the account
-	keepertest.AddAccToAccMapCoins(t, oldServiceOwnerAddr, "upokt", oneUPOKTGreaterThanFee)
+	keepertest.AddAccToAccMapCoins(t, oldServiceOwnerAddr, volatile.DenomuPOKT, oneUPOKTGreaterThanFee)
 
 	// Add the service to the store
 	_, err := srv.AddService(ctx, &types.MsgAddService{
@@ -64,7 +65,7 @@ func TestMsgServer_AddService(t *testing.T) {
 			desc: "valid - service added successfully",
 			setup: func(t *testing.T) {
 				// Add 10000000001 upokt to the account
-				keepertest.AddAccToAccMapCoins(t, newServiceOwnerAddr, "upokt", oneUPOKTGreaterThanFee)
+				keepertest.AddAccToAccMapCoins(t, newServiceOwnerAddr, volatile.DenomuPOKT, oneUPOKTGreaterThanFee)
 			},
 			address:     newServiceOwnerAddr,
 			service:     newService,
@@ -153,7 +154,7 @@ func TestMsgServer_AddService(t *testing.T) {
 			desc: "invalid - insufficient upokt balance",
 			setup: func(t *testing.T) {
 				// Add 999999999 upokt to the account (one less than AddServiceFee)
-				keepertest.AddAccToAccMapCoins(t, newServiceOwnerAddr, "upokt", oneUPOKTGreaterThanFee-2)
+				keepertest.AddAccToAccMapCoins(t, newServiceOwnerAddr, volatile.DenomuPOKT, oneUPOKTGreaterThanFee-2)
 			},
 			address:     newServiceOwnerAddr,
 			service:     newService,
@@ -163,7 +164,7 @@ func TestMsgServer_AddService(t *testing.T) {
 			desc: "invalid - account has exactly AddServiceFee",
 			setup: func(t *testing.T) {
 				// Add the exact fee in upokt to the account
-				keepertest.AddAccToAccMapCoins(t, newServiceOwnerAddr, "upokt", types.DefaultAddServiceFee)
+				keepertest.AddAccToAccMapCoins(t, newServiceOwnerAddr, volatile.DenomuPOKT, types.DefaultAddServiceFee.Amount.Uint64())
 			},
 			address:     newServiceOwnerAddr,
 			service:     newService,
@@ -173,7 +174,7 @@ func TestMsgServer_AddService(t *testing.T) {
 			desc: "invalid - sufficient balance of different denom",
 			setup: func(t *testing.T) {
 				// Adds 10000000001 wrong coins to the account
-				keepertest.AddAccToAccMapCoins(t, newServiceOwnerAddr, "not_upokt", oneUPOKTGreaterThanFee)
+				keepertest.AddAccToAccMapCoins(t, newServiceOwnerAddr, volatile.DenomuPOKT, oneUPOKTGreaterThanFee)
 			},
 			address:     newServiceOwnerAddr,
 			service:     newService,
