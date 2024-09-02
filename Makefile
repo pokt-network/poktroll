@@ -250,6 +250,15 @@ check_node:
 	fi; \
 	}
 
+.PHONY: check_proto_unstable_marshalers
+check_proto_unstable_marshalers: ## Check that all protobuf files have the `stable_marshalers_all` option set to true.
+	go run ./tools/scripts/protocheck/cmd unstable
+
+.PHONY: fix_proto_unstable_marshalers
+fix_proto_unstable_marshalers: ## Ensure the `stable_marshaler_all` option is present on all protobuf files.
+	go run ./tools/scripts/protocheck/cmd unstable --fix
+	${MAKE} proto_regen
+
 
 .PHONY: warn_destructive
 warn_destructive: ## Print WARNING to the user
