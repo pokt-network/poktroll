@@ -6,12 +6,14 @@ syntax = "proto3";
 package poktroll.session;
 
 option go_package = "github.com/pokt-network/poktroll/x/session/types";
+option (gogoproto.stable_marshaler_all) = true;
 
 import "cosmos_proto/cosmos.proto";
 
 import "poktroll/shared/service.proto";
 import "poktroll/application/types.proto";
 import "poktroll/shared/supplier.proto";
+import "gogoproto/gogo.proto";
 
 // NOTE: Using signed integers for consistency with the cosmos SDK
 

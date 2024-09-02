@@ -2,6 +2,9 @@ syntax = "proto3";
 package poktroll.tokenomics;
 
 option go_package = "github.com/pokt-network/poktroll/x/tokenomics/types";
+option (gogoproto.stable_marshaler_all) = true;
+
+import "gogoproto/gogo.proto";
 
 // RelayMiningDifficulty is a message used to store the on-chain Relay Mining
 // difficulty associated with a specific service ID.
