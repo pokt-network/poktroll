@@ -93,7 +93,7 @@ func (k msgServer) CreateClaim(
 		return nil, status.Error(codes.NotFound, types.ErrProofServiceNotFound.Wrapf("%v", err).Error())
 	}
 
-	numExpectedComputeUnitsToClaim := numRelays*serviceComputeUnitsPerRelay
+	numExpectedComputeUnitsToClaim := numRelays * serviceComputeUnitsPerRelay
 	if numClaimComputeUnits != numExpectedComputeUnitsToClaim {
 		return nil, status.Error(
 			codes.InvalidArgument,
