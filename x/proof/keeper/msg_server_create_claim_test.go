@@ -545,7 +545,7 @@ func TestMsgServer_CreateClaim_Error_ComputeUnitsMismatch(t *testing.T) {
 
 	// The base session start height used for testing
 	sessionStartHeight := int64(1)
-	
+
 	// service is the only service for which a session should exist.
 	// this service has a value of greater than 1 for the compute units per relay.
 	service := &sharedtypes.Service{
