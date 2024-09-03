@@ -24,7 +24,7 @@ func init() {
 	regexExprServiceName = regexp.MustCompile(regexServiceName)
 }
 
-// ValidateBasic performs basic stateless validation of a SessionHeader.
+// ValidateBasic performs basic stateless validation of a Service.
 func (s *Service) ValidateBasic() error {
 	if !IsValidServiceId(s.Id) {
 		return ErrSharedInvalidService.Wrapf("invalid service ID: %s", s.Id)
