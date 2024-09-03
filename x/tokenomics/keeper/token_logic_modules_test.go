@@ -362,13 +362,12 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	claim := prepareTestClaim(numRelays, service, &app, &supplier)
 
 	// Prepare addresses
-	daoAddr := authtypes.NewModuleAddress(govtypes.ModuleName)
+	daoAddress := authtypes.NewModuleAddress(govtypes.ModuleName)
 	appAddress := app.Address
 	proposerAddress := sample.AccAddressFromConsAddress(validatorConsAddr)
-	// supplierOperatorAddr := supplier.OperatorAddress
 
 	// Determine balances before inflation
-	daoBalanceBefore := getBalance(t, ctx, keepers, daoAddr.String())
+	daoBalanceBefore := getBalance(t, ctx, keepers, daoAddress.String())
 	propBalanceBefore := getBalance(t, ctx, keepers, proposerAddress)
 	serviceOwnerBalanceBefore := getBalance(t, ctx, keepers, service.OwnerAddress)
 	appBalanceBefore := getBalance(t, ctx, keepers, appAddress)
@@ -383,7 +382,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	require.NoError(t, err)
 
 	// Determine balances after inflation
-	daoBalanceAfter := getBalance(t, ctx, keepers, daoAddr.String())
+	daoBalanceAfter := getBalance(t, ctx, keepers, daoAddress.String())
 	propBalanceAfter := getBalance(t, ctx, keepers, proposerAddress)
 	serviceOwnerBalanceAfter := getBalance(t, ctx, keepers, service.OwnerAddress)
 	appBalanceAfter := getBalance(t, ctx, keepers, appAddress)
@@ -401,7 +400,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	appMint := math.NewInt(int64(numTokensMinted * tokenomicskeeper.MintAllocationApplication))
 	supplierMint := float32(numTokensMinted * tokenomicskeeper.MintAllocationSupplier)
 
-	// Ensure the balance was increase be the appropriate amount
+	// Ensure the balance was increased be the appropriate amount
 	require.Equal(t, daoBalanceBefore.Amount.Add(daoMint), daoBalanceAfter.Amount)
 	require.Equal(t, propBalanceBefore.Amount.Add(propMint), propBalanceAfter.Amount)
 	require.Equal(t, serviceOwnerBalanceBefore.Amount.Add(serviceOwnerMint), serviceOwnerBalanceAfter.Amount)
