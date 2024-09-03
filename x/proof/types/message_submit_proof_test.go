@@ -17,9 +17,9 @@ func TestMsgSubmitProof_ValidateBasic(t *testing.T) {
 	testClosestMerkleProof := []byte{1, 2, 3, 4}
 
 	tests := []struct {
-		desc        string
-		msg         MsgSubmitProof
-		expectedErr error
+		desc                      string
+		msg                       MsgSubmitProof
+		msgSubmitProofExpectedErr func(sessiontypes.SessionHeader) error
 	}{
 		{
 			desc: "application bech32 address is invalid",
@@ -34,11 +34,14 @@ func TestMsgSubmitProof_ValidateBasic(t *testing.T) {
 				},
 				Proof: testClosestMerkleProof,
 			},
-			expectedErr: sdkerrors.ErrInvalidAddress.Wrapf(
-				"application address: %q, error: %s",
-				"not_a_bech32_address",
-				"decoding bech32 failed: invalid separator index -1",
-			),
+			msgSubmitProofExpectedErr: func(sh sessiontypes.SessionHeader) error {
+				sessionError := sessiontypes.ErrSessionInvalidAppAddress.Wrapf(
+					"invalid application address: %s; (%s)",
+					sh.ApplicationAddress,
+					"decoding bech32 failed: invalid separator index -1",
+				)
+				return ErrProofInvalidSessionHeader.Wrapf("invalid session header: %s", sessionError)
+			},
 		},
 		{
 			desc: "supplier operator bech32 address is invalid",
@@ -53,11 +56,13 @@ func TestMsgSubmitProof_ValidateBasic(t *testing.T) {
 				},
 				Proof: testClosestMerkleProof,
 			},
-			expectedErr: sdkerrors.ErrInvalidAddress.Wrapf(
-				"supplier operator address %q, error: %s",
-				"not_a_bech32_address",
-				"decoding bech32 failed: invalid separator index -1",
-			),
+			msgSubmitProofExpectedErr: func(sh sessiontypes.SessionHeader) error {
+				return sdkerrors.ErrInvalidAddress.Wrapf(
+					"supplier operator address %q, error: %s",
+					"not_a_bech32_address",
+					"decoding bech32 failed: invalid separator index -1",
+				)
+			},
 		},
 		{
 			desc: "session service ID is empty",
@@ -72,7 +77,11 @@ func TestMsgSubmitProof_ValidateBasic(t *testing.T) {
 				},
 				Proof: testClosestMerkleProof,
 			},
-			expectedErr: ErrProofInvalidService.Wrap("proof service ID %q cannot be empty"),
+			msgSubmitProofExpectedErr: func(sh sessiontypes.SessionHeader) error {
+				serviceError := sharedtypes.ErrSharedInvalidService.Wrapf("invalid service ID: %s", sh.Service.Id)
+				sessionError := sessiontypes.ErrSessionInvalidService.Wrapf("invalid service: %v; %s", sh.Service, serviceError)
+				return ErrProofInvalidSessionHeader.Wrapf("invalid session header: %s", sessionError)
+			},
 		},
 		{
 			desc: "valid message metadata",
@@ -92,9 +101,10 @@ func TestMsgSubmitProof_ValidateBasic(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
 			err := test.msg.ValidateBasic()
-			if test.expectedErr != nil {
-				require.ErrorIs(t, err, test.expectedErr)
-				require.ErrorContains(t, err, test.expectedErr.Error())
+			if test.msgSubmitProofExpectedErr != nil {
+				expectedErr := test.msgSubmitProofExpectedErr(*test.msg.SessionHeader)
+				require.ErrorIs(t, err, expectedErr)
+				require.ErrorContains(t, err, expectedErr.Error())
 				return
 			}
 			require.NoError(t, err)
