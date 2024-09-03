@@ -1,9 +1,9 @@
 ---
 title: RelayMiner
-sidebar_position: 3
+sidebar_position: 4
 ---
 
-# RelayMiner <!-- omit in toc -->
+# Run a RelayMiner <!-- omit in toc -->
 
 - [What is a RelayMiner](#what-is-a-relayminer)
 - [RelayMiner Operation Requirements](#relayminer-operation-requirements)
@@ -21,10 +21,10 @@ details on how to deploy and operate it.
 A RelayMiner requires the following:
 
 1. A staked on-chain [Supplier](../../protocol/actors/supplier.md) to provide services.
-2. A connection to a [Full Node](./full_node.md) to interact with the blockchain.
+2. A connection to a [Full Node](./full_node_docker.md) to interact with the blockchain.
 
 :::tip
-It is crucial to deploy a [Full Node](full_node.md) prior to setting up a RelayMiner.
+It is crucial to deploy a [Full Node](full_node_docker.md) prior to setting up a RelayMiner.
 This ensures the necessary infrastructure for blockchain communication is in place.
 :::
 

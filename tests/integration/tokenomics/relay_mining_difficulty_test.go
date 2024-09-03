@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/pokt-network/smt"
-	"github.com/pokt-network/smt/kvstore/badger"
+	"github.com/pokt-network/smt/kvstore/pebble"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
@@ -175,7 +175,7 @@ func prepareSMST(
 	// Generating an ephemeral tree & spec just so we can submit
 	// a proof of the right size.
 	// TODO_TECHDEBT(#446): Centralize the configuration for the SMT spec.
-	kvStore, err := badger.NewKVStore("")
+	kvStore, err := pebble.NewKVStore("")
 	require.NoError(t, err)
 
 	// NB: A signed mined relay is a MinedRelay type with the appropriate

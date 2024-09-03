@@ -2,6 +2,7 @@ syntax = "proto3";
 package poktroll.session;
 
 option go_package = "github.com/pokt-network/poktroll/x/session/types";
+option (gogoproto.stable_marshaler_all) = true;
 
 import "amino/amino.proto";
 import "gogoproto/gogo.proto";
@@ -9,7 +10,7 @@ import "google/api/annotations.proto";
 import "cosmos_proto/cosmos.proto";
 
 import "poktroll/session/params.proto";
-import "poktroll/session/session.proto";
+import "poktroll/session/types.proto";
 import "poktroll/shared/service.proto";
 
 // Query defines the gRPC querier service.

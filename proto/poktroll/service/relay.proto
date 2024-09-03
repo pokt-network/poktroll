@@ -2,11 +2,12 @@ syntax = "proto3";
 package poktroll.service;
 
 option go_package = "github.com/pokt-network/poktroll/x/service/types";
+option (gogoproto.stable_marshaler_all) = true;
 
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 
-import "poktroll/session/session.proto";
+import "poktroll/session/types.proto";
 
 // Relay contains both the RelayRequest (signed by the Application) and the RelayResponse (signed by the Supplier).
 // The serialized tuple is inserted into the SMST leaves as values in the Claim/Proof lifecycle.
@@ -46,7 +47,7 @@ message RelayResponse {
   RelayResponseMetadata meta = 1 [(gogoproto.nullable) = false];
   // payload is the serialized payload for the response.
   // The payload is passed directly from the service and as such can be any
-  // format the the service responds with: JSON-RPC, REST, gRPC, etc.
+  // format the service responds with: JSON-RPC, REST, gRPC, etc.
   bytes payload = 2;
 }
 

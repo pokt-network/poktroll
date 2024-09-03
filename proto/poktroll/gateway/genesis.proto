@@ -2,12 +2,13 @@ syntax = "proto3";
 package poktroll.gateway;
 
 option go_package = "github.com/pokt-network/poktroll/x/gateway/types";
+option (gogoproto.stable_marshaler_all) = true;
 
 import "amino/amino.proto";
 import "gogoproto/gogo.proto";
 
 import "poktroll/gateway/params.proto";
-import "poktroll/gateway/gateway.proto";
+import "poktroll/gateway/types.proto";
 
 // GenesisState defines the gateway module's genesis state.
 message GenesisState {

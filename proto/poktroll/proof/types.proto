@@ -1,0 +1,45 @@
+// TODO_AUTOMATE: Add a CI workflow which detects .proto files with incompatible names (i.e. same as the package).
+// NB: This file CANNOT be named "application.proto" due to an as of yet unidentified
+// issue in how cosmos-proto generates the pulsar plugin output go source code.
+
+syntax = "proto3";
+package poktroll.proof;
+
+option go_package = "github.com/pokt-network/poktroll/x/proof/types";
+option (gogoproto.stable_marshaler_all) = true;
+
+import "cosmos_proto/cosmos.proto";
+
+import "poktroll/session/types.proto";
+import "gogoproto/gogo.proto";
+
+message Proof {
+  // Address of the supplier's operator that submitted this proof.
+  string supplier_operator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  // The session header of the session that this claim is for.
+  poktroll.session.SessionHeader session_header = 2;
+  // The serialized SMST proof from the `#ClosestProof()` method.
+  bytes closest_merkle_proof = 3;
+}
+
+// Claim is the serialized object stored on-chain for claims pending to be proven
+message Claim {
+  string supplier_operator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // the address of the supplier's operator that submitted this claim
+  // The session header of the session that this claim is for.
+  poktroll.session.SessionHeader session_header = 2;
+  // Root hash returned from smt.SMST#Root().
+  bytes root_hash = 3;
+}
+
+enum ProofRequirementReason {
+  NOT_REQUIRED = 0;
+  PROBABILISTIC = 1;
+  THRESHOLD = 2;
+}
+
+enum ClaimProofStage {
+  CLAIMED = 0;
+  PROVEN = 1;
+  SETTLED = 2;
+  EXPIRED = 3;
+}

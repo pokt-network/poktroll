@@ -3,6 +3,7 @@ syntax = "proto3";
 package poktroll.proof;
 
 option go_package = "github.com/pokt-network/poktroll/x/proof/types";
+option (gogoproto.stable_marshaler_all) = true;
 
 import "amino/amino.proto";
 import "cosmos/base/v1beta1/coin.proto";
@@ -10,9 +11,8 @@ import "cosmos/msg/v1/msg.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 import "poktroll/proof/params.proto";
-import "poktroll/proof/claim.proto";
-import "poktroll/proof/proof.proto";
-import "poktroll/session/session.proto";
+import "poktroll/proof/types.proto";
+import "poktroll/session/types.proto";
 import "poktroll/shared/service.proto";
 
 // Msg defines the Msg service.

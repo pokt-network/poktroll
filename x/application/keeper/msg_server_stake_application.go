@@ -47,6 +47,9 @@ func (k msgServer) StakeApplication(ctx context.Context, msg *types.MsgStakeAppl
 			return nil, err
 		}
 		logger.Info(fmt.Sprintf("Application is going to escrow an additional %+v coins", coinsToEscrow))
+
+		// If the application has initiated an unstake action, cancel it since it is staking again.
+		foundApp.UnstakeSessionEndHeight = types.ApplicationNotUnstaking
 	}
 
 	// Must always stake or upstake (> 0 delta)
@@ -96,7 +99,7 @@ func (k msgServer) updateApplication(
 	app *types.Application,
 	msg *types.MsgStakeApplication,
 ) error {
-	// Checks if the the msg address is the same as the current owner
+	// Checks if the msg address is the same as the current owner
 	if msg.Address != app.Address {
 		return types.ErrAppUnauthorized.Wrapf("msg Address %q != application address %q", msg.Address, app.Address)
 	}

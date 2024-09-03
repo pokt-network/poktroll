@@ -1,5 +1,5 @@
 ---
-title: Installation
+title: CLI Installation
 sidebar_position: 0
 ---
 

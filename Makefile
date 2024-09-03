@@ -134,7 +134,7 @@ check_ignite_version:
 	fi
 
 .PHONY: check_mockgen
-# Internal helper target- Check if mockgen is installed 
+# Internal helper target- Check if mockgen is installed
 check_mockgen:
 	{ \
 	if ( ! ( command -v mockgen >/dev/null )); then \
@@ -249,6 +249,15 @@ check_node:
 		exit 1; \
 	fi; \
 	}
+
+.PHONY: check_proto_unstable_marshalers
+check_proto_unstable_marshalers: ## Check that all protobuf files have the `stable_marshalers_all` option set to true.
+	go run ./tools/scripts/protocheck/cmd unstable
+
+.PHONY: fix_proto_unstable_marshalers
+fix_proto_unstable_marshalers: ## Ensure the `stable_marshaler_all` option is present on all protobuf files.
+	go run ./tools/scripts/protocheck/cmd unstable --fix
+	${MAKE} proto_regen
 
 
 .PHONY: warn_destructive
@@ -401,8 +410,8 @@ test_e2e_gateway: test_e2e_env ## Run only the E2E suite that exercises the gate
 test_e2e_session: test_e2e_env ## Run only the E2E suite that exercises the session (i.e. claim/proof) life-cycle
 	go test -v ./e2e/tests/... -tags=e2e,test --features-path=session.feature
 
-.PHONY: test_e2e_settlement
-test_e2e_settlement: test_e2e_env ## Run only the E2E suite that exercises the session & tokenomics settlement
+.PHONY: test_e2e_tokenomics
+test_e2e_tokenomics: test_e2e_env ## Run only the E2E suite that exercises the session & tokenomics settlement
 	go test -v ./e2e/tests/... -tags=e2e,test --features-path=0_settlement.feature
 
 .PHONY: test_e2e_params
@@ -420,6 +429,12 @@ test_load_relays_stress_localnet: test_e2e_env warn_message_local_stress_test ##
 	go test -v -count=1 ./load-testing/tests/... \
 	-tags=load,test -run LoadRelays --log-level=debug --timeout=30m \
 	--manifest ./load-testing/loadtest_manifest_localnet.yaml
+
+.PHONY: test_load_relays_stress_localnet_single_supplier
+test_load_relays_stress_localnet_single_supplier: test_e2e_env warn_message_local_stress_test ## Run the stress test for E2E relays on LocalNet using exclusively one supplier.
+	go test -v -count=1 ./load-testing/tests/... \
+	-tags=load,test -run TestLoadRelaysSingleSupplier --log-level=debug --timeout=30m \
+	--manifest ./load-testing/loadtest_manifest_localnet_single_supplier.yaml
 
 .PHONY: test_verbose
 test_verbose: check_go_version ## Run all go tests verbosely
@@ -688,7 +703,7 @@ supplier3_stake: ## Stake supplier3
 
 .PHONY: supplier_unstake
 supplier_unstake: ## Unstake an supplier (must specify the SUPPLIER env var)
-	poktrolld --home=$(POKTROLLD_HOME) tx supplier unstake-supplier --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE)
+	poktrolld --home=$(POKTROLLD_HOME) tx supplier unstake-supplier $(SUPPLIER) --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE)
 
 .PHONY: supplier1_unstake
 supplier1_unstake: ## Unstake supplier1
@@ -1038,6 +1053,10 @@ go_docs: check_godoc ## Generate documentation for the project
 docusaurus_start: check_npm check_node ## Start the Docusaurus server
 	(cd docusaurus && npm i && npm run start)
 
+.PHONY: docs_update_gov_params_page
+docs_update_gov_params_page: ## Update the page in Docusaurus documenting all the governance parameters
+	go run tools/scripts/generate_docs_params.go
+
 ######################
 ### Ignite Helpers ###
 ######################
@@ -1045,7 +1064,6 @@ docusaurus_start: check_npm check_node ## Start the Docusaurus server
 .PHONY: poktrolld_addr
 poktrolld_addr: ## Retrieve the address for an account by ACC_NAME
 	@echo $(shell poktrolld --home=$(POKTROLLD_HOME) keys show -a $(ACC_NAME))
-
 
 ###################
 ### Act Helpers ###

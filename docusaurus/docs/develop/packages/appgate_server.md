@@ -12,7 +12,7 @@ sidebar_position: 3
   - [Application RPC Request Schema](#application-rpc-request-schema)
 - [Gateway Mode (self_signing = false)](#gateway-mode-self_signing--false)
   - [Gateway RPC Request Schema](#gateway-rpc-request-schema)
-- [POKTRollSDK integration](#poktrollsdk-integration)
+- [Shannon SDK integration](#shannon-sdk-integration)
 
 ## What is AppGate Server?
 
@@ -31,7 +31,7 @@ The following diagram captures a high-level overview of the `AppGate Server`'s m
 flowchart TB
     Client([Client])
     AGS(AppGate Server)
-    SDK[[POKTRollSDK]]
+    SDK[[ShannonSDK]]
     FN[Full Node]
     S[Supplier]
 
@@ -162,25 +162,32 @@ curl -X POST \
   }'
 ```
 
-## POKTRollSDK integration
+## Shannon SDK integration
 
-The `AppGate Server` implementation uses the [POKTRollSDK](../packages/sdk.md) to
+:::warning
+
+TODO_LEGACY: This was written before the Shannon SDK was fully implemented so
+some of the details may be outdated.
+
+:::
+
+The `AppGate Server` implementation uses the [Shannon SDK](https://github.com/pokt-network/shannon-sdk) to
 interact with the Pocket Network. It can either be used directly or referenced on how
-the `POKTRollSDK` can be used with a custom build `Application` / `Gateway`.
-RPC requests to the Pocket Network.
+the `ShannonSDK` can be used with a custom build `Application` / `Gateway`.
+RPC requests to Pocket Network.
 
 The `AppGate Server`'s own logic is responsible for:
 
 - Exposing the HTTP server that listens for incoming RPC requests.
 - Extracting the `serviceId` and `Application` address from the RPC request.
-- Calling `POKTRollSDK.GetSessionSupplierEndpoints` to get the list of `Supplier`s
+- Calling `ShannonSDK.GetSessionSupplierEndpoints` to get the list of `Supplier`s
   that are allowed to serve the `Application` at a specific point in time.
 - Selecting a `Supplier` to send the RPC request to.
-- Calling the `POKTRollSDK.SendRelay` to send the `RelayRequest` to the selected
+- Calling the `ShannonSDK.SendRelay` to send the `RelayRequest` to the selected
   `Supplier`.
 - Verifying and returning the `RelayResponse` to the RPC request sender.
 
-While `POKTRollSDK` manages:
+While `ShannonSDK` manages:
 
 - Being up-to-date with the latest `Session`.
 - Maintaining the list of `Supplier`s that are allowed to serve the `Application`.
@@ -190,4 +197,4 @@ While `POKTRollSDK` manages:
 - Verifying the `Supplier`'s signature.
 
 A sequence diagram demonstrating the interaction between the `AppGate Server` and
-the `POKTRollSDK` can be found in the [POKTRollSDK documentation](../packages/sdk.md).
+the `ShannonSDK` can be found in the [ShannonSDK documentation](https://github.com/pokt-network/shannon-sdk).

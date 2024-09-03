@@ -1,19 +1,24 @@
 ---
 title: AppGateServer config
-sidebar_position: 2
+sidebar_position: 5
 ---
 
 # AppGateServer config <!-- omit in toc -->
 
+This document describes the configuration options for the `AppGateServer`,
+an `Application` or `Gateway` co-processor/sidecar
+that acts as the real server for querying request, signing requests and verifying responses.
+
 This document describes the configuration options available for the
 `AppGateServer`through the `appgate_server_config.yaml` file.
 
-It is responsible for multiple things:
+:::tip
 
-1. Determines how the `AppGateServer` with respect to Pocket network connectivity
-2. Whether it acts as a self serving `Application` or a `Gateway` to other `Applications`
-3. Configures the host(s) it listens on for incoming `RelayRequests`
+You can find a fully featured example configuration at [appgate_server_config_example.yaml](https://github.com/pokt-network/poktroll/blob/main/localnet/poktrolld/config/appgate_server_config_example.yaml).
 
+:::
+
+- [Introduction](#introduction)
 - [Usage](#usage)
 - [Configuration](#configuration)
   - [`query_node_rpc_url`](#query_node_rpc_url)
@@ -23,6 +28,14 @@ It is responsible for multiple things:
   - [`listening_endpoint`](#listening_endpoint)
   - [`metrics`](#metrics)
   - [`pprof`](#pprof)
+
+## Introduction
+
+The `AppGateServer` is responsible for multiple things:
+
+1. Determines how the `AppGateServer` with respect to Pocket network connectivity
+2. Whether it acts as a self serving `Application` or a `Gateway` to other `Applications`
+3. Configures the host(s) it listens on for incoming `RelayRequests`
 
 ## Usage
 

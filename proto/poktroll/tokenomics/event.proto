@@ -2,11 +2,11 @@ syntax = "proto3";
 package poktroll.tokenomics;
 
 option go_package = "github.com/pokt-network/poktroll/x/tokenomics/types";
+option (gogoproto.stable_marshaler_all) = true;
 
 import "gogoproto/gogo.proto";
 import "cosmos/base/v1beta1/coin.proto";
-import "poktroll/proof/claim.proto";
-import "poktroll/proof/requirement.proto";
+import "poktroll/proof/types.proto";
 
 enum ClaimExpirationReason {
   EXPIRATION_REASON_UNSPECIFIED = 0; // Default value, means may be valid
