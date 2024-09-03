@@ -545,6 +545,7 @@ func TestMsgServer_CreateClaim_Error_ComputeUnitsMismatch(t *testing.T) {
 
 	// The base session start height used for testing
 	sessionStartHeight := int64(1)
+	
 	// service is the only service for which a session should exist.
 	// this service has a value of greater than 1 for the compute units per relay.
 	service := &sharedtypes.Service{
@@ -552,16 +553,13 @@ func TestMsgServer_CreateClaim_Error_ComputeUnitsMismatch(t *testing.T) {
 		ComputeUnitsPerRelay: nonDefaultComputeUnitsPerRelay,
 		OwnerAddress:         sample.AccAddress(),
 	}
-	// supplierAddr is staked for "svc1" such that it is expected to be in the session.
-	supplierAddr := sample.AccAddress()
-
-	// appAddr is staked for "svc1" such that it is expected to be in the session.
-	appAddr := sample.AccAddress()
-
-	supplierKeeper := keepers.SupplierKeeper
-	appKeeper := keepers.ApplicationKeeper
+	// Add the service that is expected to be on-chain.
+	keepers.SetService(ctx, *service)
 
 	// Add a supplier that is expected to be in the session.
+	// supplierAddr is staked for "svc1" such that it is expected to be in the session.
+	supplierKeeper := keepers.SupplierKeeper
+	supplierAddr := sample.AccAddress()
 	supplierKeeper.SetSupplier(ctx, sharedtypes.Supplier{
 		OperatorAddress: supplierAddr,
 		Services: []*sharedtypes.SupplierServiceConfig{
@@ -570,15 +568,15 @@ func TestMsgServer_CreateClaim_Error_ComputeUnitsMismatch(t *testing.T) {
 	})
 
 	// Add an application that is expected to be in the session.
+	// appAddr is staked for "svc1" such that it is expected to be in the session.
+	appKeeper := keepers.ApplicationKeeper
+	appAddr := sample.AccAddress()
 	appKeeper.SetApplication(ctx, apptypes.Application{
 		Address: appAddr,
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
 			{Service: service},
 		},
 	})
-
-	// Add the service that is expected to be on-chain.
-	keepers.SetService(ctx, *service)
 
 	// Query for the session which contains the expected app and supplier pair.
 	sessionRes, err := keepers.SessionKeeper.GetSession(
