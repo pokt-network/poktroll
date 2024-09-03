@@ -602,6 +602,7 @@ func TestMsgServer_CreateClaim_Error_ComputeUnitsMismatch(t *testing.T) {
 	sdkCtx = sdkCtx.WithBlockHeight(testClaimHeight)
 	ctx = sdkCtx
 
+	// Prepare a message to submit a claim while also creating a new test claim
 	testClaimMsg := newTestClaimMsg(t,
 		sessionStartHeight,
 		sessionRes.GetSession().GetSessionId(),
