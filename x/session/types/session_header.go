@@ -2,11 +2,8 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-
-	sharedhelpers "github.com/pokt-network/poktroll/x/shared/helpers"
 )
 
-// TODO_BETA: Ensure this is used everywhere a SessionHeader is validated.
 // ValidateBasic performs basic stateless validation of a SessionHeader.
 func (sh *SessionHeader) ValidateBasic() error {
 	// Validate the application address
@@ -20,8 +17,12 @@ func (sh *SessionHeader) ValidateBasic() error {
 	}
 
 	// Validate the service
-	if sh.Service == nil || !sharedhelpers.IsValidService(sh.Service) {
-		return ErrSessionInvalidService.Wrapf("invalid service: %s", sh.Service)
+	if sh.Service == nil {
+		return ErrSessionInvalidService.Wrapf("missing service: %s", sh.Service)
+	}
+
+	if err := sh.Service.ValidateBasic(); err != nil {
+		return ErrSessionInvalidService.Wrapf("invalid service: %v; %s", sh.Service, err)
 	}
 
 	// Sessions can only start at height 1
