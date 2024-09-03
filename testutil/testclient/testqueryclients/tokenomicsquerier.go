@@ -10,6 +10,9 @@ import (
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
+// TODO_TECHDEBT: refactor the methods using this variable to avoid having a global scope
+// for the map across unit tests run under the same testing.T instance.
+// Ditto for other similar package-level variables in this package.
 // relayDifficultyTargets is a map of: serviceId -> RelayMiningDifficulty
 // It is updated by the SetServiceRelayDifficultyTargetHash, and read by
 // the mock tokenomics query client to get a specific service's relay difficulty

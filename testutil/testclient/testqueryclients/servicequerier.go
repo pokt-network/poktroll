@@ -11,6 +11,8 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
+// TODO_TECHDEBT: refactor the methods using this variable to avoid having a global scope
+// for the map across unit tests run under the same testing.T instance.
 // services is a map of: serviceId -> Service
 var services = make(map[string]sharedtypes.Service)
 
