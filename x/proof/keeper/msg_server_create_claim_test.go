@@ -619,8 +619,9 @@ func TestMsgServer_CreateClaim_Error_ComputeUnitsMismatch(t *testing.T) {
 	testClaimNumRelays, err := testClaim.GetNumRelays()
 	require.NoError(t, err)
 
+	// Ensure that submitting the claim fails because the number of compute units
+	// claimed does not match the expected amount as a function of (relay, service_CUPR)
 	createClaimRes, err := srv.CreateClaim(ctx, testClaimMsg)
-
 	require.ErrorContains(t,
 		err,
 		status.Error(
