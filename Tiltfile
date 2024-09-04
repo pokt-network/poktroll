@@ -53,7 +53,7 @@ localnet_config_defaults = {
         "model": "qwen:0.5b",
     },
     "rest": {
-        "enabled": False,
+        "enabled": True,
     },
     # By default, we use the `helm_repo` function below to point to the remote repository
     # but can update it to the locally cloned repo for testing & development
