@@ -62,9 +62,9 @@ func TestMsgUpdateParam_UpdateClaimWindowOpenOffsetBlocks(t *testing.T) {
 	// cumulative proof window close blocks to pass UpdateParam validation.
 	defaultParams.SupplierUnbondingPeriodSessions = minUnbodningPeriodSessions
 
-	// Update the ApplicationUnbondingPeriodSessions such that it is greater than the
+	// Update the ApplicationTransferAndUnbondingPeriodSessions such that it is greater than the
 	// cumulative proof window close blocks to pass UpdateParam validation.
-	defaultParams.ApplicationUnbondingPeriodSessions = minUnbodningPeriodSessions
+	defaultParams.ApplicationTransferAndUnbondingPeriodSessions = minUnbodningPeriodSessions
 
 	// Set the parameters to their default values
 	require.NoError(t, k.SetParams(ctx, defaultParams))
@@ -107,9 +107,9 @@ func TestMsgUpdateParam_UpdateClaimWindowCloseOffsetBlocks(t *testing.T) {
 	// cumulative proof window close blocks to pass UpdateParam validation.
 	defaultParams.SupplierUnbondingPeriodSessions = minUnbodningPeriodSessions
 
-	// Update the ApplicationUnbondingPeriodSessions such that it is greater than the
+	// Update the ApplicationTransferAndUnbondingPeriodSessions such that it is greater than the
 	// cumulative proof window close blocks to pass UpdateParam validation.
-	defaultParams.ApplicationUnbondingPeriodSessions = minUnbodningPeriodSessions
+	defaultParams.ApplicationTransferAndUnbondingPeriodSessions = minUnbodningPeriodSessions
 
 	// Set the parameters to their default values
 	require.NoError(t, k.SetParams(ctx, defaultParams))
@@ -152,9 +152,9 @@ func TestMsgUpdateParam_UpdateProofWindowOpenOffsetBlocks(t *testing.T) {
 	// cumulative proof window close blocks to pass UpdateParam validation.
 	defaultParams.SupplierUnbondingPeriodSessions = minUnbodningPeriodSessions
 
-	// Update the ApplicationUnbondingPeriodSessions such that it is greater than the
+	// Update the ApplicationTransferAndUnbondingPeriodSessions such that it is greater than the
 	// cumulative proof window close blocks to pass UpdateParam validation.
-	defaultParams.ApplicationUnbondingPeriodSessions = minUnbodningPeriodSessions
+	defaultParams.ApplicationTransferAndUnbondingPeriodSessions = minUnbodningPeriodSessions
 
 	// Set the parameters to their default values
 	require.NoError(t, k.SetParams(ctx, defaultParams))
@@ -197,9 +197,9 @@ func TestMsgUpdateParam_UpdateProofWindowCloseOffsetBlocks(t *testing.T) {
 	// cumulative proof window close blocks to pass UpdateParam validation.
 	defaultParams.SupplierUnbondingPeriodSessions = minUnbodningPeriodSessions
 
-	// Update the ApplicationUnbondingPeriodSessions such that it is greater than the
+	// Update the ApplicationTransferAndUnbondingPeriodSessions such that it is greater than the
 	// cumulative proof window close blocks to pass UpdateParam validation.
-	defaultParams.ApplicationUnbondingPeriodSessions = minUnbodningPeriodSessions
+	defaultParams.ApplicationTransferAndUnbondingPeriodSessions = minUnbodningPeriodSessions
 
 	// Set the parameters to their default values
 	require.NoError(t, k.SetParams(ctx, defaultParams))
@@ -293,7 +293,7 @@ func TestMsgUpdateParam_UpdateSupplierUnbondingPeriodSessions(t *testing.T) {
 	require.ErrorIs(t, err, sharedtypes.ErrSharedParamInvalid)
 }
 
-func TestMsgUpdateParam_UpdateApplicationUnbondingPeriodSessions(t *testing.T) {
+func TestMsgUpdateParam_UpdateApplicationTransferAndUnbondingPeriodSessions(t *testing.T) {
 	var expectedApplicationUnbondingPerid int64 = 5
 
 	k, ctx := testkeeper.SharedKeeper(t)
@@ -304,27 +304,27 @@ func TestMsgUpdateParam_UpdateApplicationUnbondingPeriodSessions(t *testing.T) {
 	require.NoError(t, k.SetParams(ctx, defaultParams))
 
 	// Ensure the default values are different from the new values we want to set
-	require.NotEqual(t, uint64(expectedApplicationUnbondingPerid), defaultParams.GetApplicationUnbondingPeriodSessions())
+	require.NotEqual(t, uint64(expectedApplicationUnbondingPerid), defaultParams.GetApplicationTransferAndUnbondingPeriodSessions())
 
 	// Update the application unbonding period param
 	updateParamMsg := &sharedtypes.MsgUpdateParam{
 		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		Name:      sharedtypes.ParamApplicationUnbondingPeriodSessions,
+		Name:      sharedtypes.ParamApplicationTransferAndUnbondingPeriodSessions,
 		AsType:    &sharedtypes.MsgUpdateParam_AsInt64{AsInt64: expectedApplicationUnbondingPerid},
 	}
 	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.NoError(t, err)
 
-	require.Equal(t, uint64(expectedApplicationUnbondingPerid), res.Params.GetApplicationUnbondingPeriodSessions())
+	require.Equal(t, uint64(expectedApplicationUnbondingPerid), res.Params.GetApplicationTransferAndUnbondingPeriodSessions())
 
 	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, "ApplicationUnbondingPeriodSessions")
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, "ApplicationTransferAndUnbondingPeriodSessions")
 
 	// Ensure that a application unbonding period that is less than the cumulative
 	// proof window close blocks is not allowed.
 	updateParamMsg = &sharedtypes.MsgUpdateParam{
 		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		Name:      sharedtypes.ParamApplicationUnbondingPeriodSessions,
+		Name:      sharedtypes.ParamApplicationTransferAndUnbondingPeriodSessions,
 		AsType:    &sharedtypes.MsgUpdateParam_AsInt64{AsInt64: 1},
 	}
 	_, err = msgSrv.UpdateParam(ctx, updateParamMsg)

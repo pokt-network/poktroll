@@ -436,9 +436,9 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 			params.SupplierUnbondingPeriodSessions = uint64(supplierUnbondingPeriodSessions.value.(int64))
 		}
 
-		applicationUnbondingPeriodSessions, ok := paramsMap[sharedtypes.ParamApplicationUnbondingPeriodSessions]
+		applicationTransferAndUnbondingPeriodSessions, ok := paramsMap[sharedtypes.ParamApplicationTransferAndUnbondingPeriodSessions]
 		if ok {
-			params.ApplicationUnbondingPeriodSessions = uint64(applicationUnbondingPeriodSessions.value.(int64))
+			params.ApplicationTransferAndUnbondingPeriodSessions = uint64(applicationTransferAndUnbondingPeriodSessions.value.(int64))
 		}
 
 		assertUpdatedParams(s,

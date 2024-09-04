@@ -28,7 +28,7 @@ func GetApplicationUnbondingHeight(
 	sharedParams *sharedtypes.Params,
 	application *Application,
 ) int64 {
-	applicationUnbondingPeriodSessions := sharedParams.ApplicationUnbondingPeriodSessions * sharedParams.NumBlocksPerSession
+	applicationUnbondingPeriodBlocks := sharedParams.ApplicationTransferAndUnbondingPeriodSessions * sharedParams.NumBlocksPerSession
 
-	return int64(application.UnstakeSessionEndHeight + applicationUnbondingPeriodSessions)
+	return int64(application.UnstakeSessionEndHeight + applicationUnbondingPeriodBlocks)
 }

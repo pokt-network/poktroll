@@ -226,31 +226,31 @@ func TestParams_ValidateSupplierUnbondingPeriodSessions(t *testing.T) {
 	}
 }
 
-func TestParams_ValidateApplicationUnbondingPeriodSessions(t *testing.T) {
+func TestParams_ValidateApplicationTransferAndUnbondingPeriodSessions(t *testing.T) {
 	tests := []struct {
-		desc                               string
-		applicationUnbondingPeriodSessions any
-		err                                error
+		desc                                          string
+		applicationTransferAndUnbondingPeriodSessions any
+		err                                           error
 	}{
 		{
-			desc:                               "invalid type",
-			applicationUnbondingPeriodSessions: "invalid",
-			err:                                ErrSharedParamInvalid.Wrapf("invalid parameter type: %T", "invalid"),
+			desc: "invalid type",
+			applicationTransferAndUnbondingPeriodSessions: "invalid",
+			err: ErrSharedParamInvalid.Wrapf("invalid parameter type: %T", "invalid"),
 		},
 		{
-			desc:                               "valid ApplicationUnbondingPeriodSessions",
-			applicationUnbondingPeriodSessions: uint64(2),
+			desc: "valid ApplicationTransferAndUnbondingPeriodSessions",
+			applicationTransferAndUnbondingPeriodSessions: uint64(2),
 		},
 		{
-			desc:                               "zero ApplicationUnbondingPeriodSessions",
-			applicationUnbondingPeriodSessions: uint64(0),
-			err:                                ErrSharedParamInvalid.Wrapf("invalid ApplicationUnbondingPeriodSessions: (%v)", uint64(0)),
+			desc: "zero ApplicationTransferAndUnbondingPeriodSessions",
+			applicationTransferAndUnbondingPeriodSessions: uint64(0),
+			err: ErrSharedParamInvalid.Wrapf("invalid ApplicationTransferAndUnbondingPeriodSessions: (%v)", uint64(0)),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			err := ValidateApplicationUnbondingPeriodSessions(tt.applicationUnbondingPeriodSessions)
+			err := ValidateApplicationTransferAndUnbondingPeriodSessions(tt.applicationTransferAndUnbondingPeriodSessions)
 			if tt.err != nil {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), tt.err.Error())
