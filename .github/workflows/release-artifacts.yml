@@ -41,6 +41,7 @@ jobs:
           make ignite_update_ldflags
           make ignite_release
           make ignite_release_extract_binaries
+          make cosmovisor_cross_compile
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
