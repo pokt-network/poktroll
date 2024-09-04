@@ -38,7 +38,7 @@ func newAccount(curve string) account {
 	var pubkey cryptotypes.PubKey
 	switch curve {
 	case "ed25519":
-		addr, pubkey = sample.AccAddressAndPubKeyEd2519()
+		addr, pubkey = sample.AccAddressAndPubKeyEd25519()
 	case "secp256k1":
 		addr, pubkey = sample.AccAddressAndPubKey()
 	}
