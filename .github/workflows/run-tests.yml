@@ -49,7 +49,7 @@ jobs:
         run: make go_lint
 
       - name: Run Gosec Security Scanner
-        uses: cosmos/gosec@master
+        uses: okdas/gosec@bump-tools # custom branch with fixes as official repo is quite outdated
         with:
           args: ./...
 
