@@ -4,6 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/application/types"
 )
@@ -13,7 +17,7 @@ import (
 func (k msgServer) TransferApplication(ctx context.Context, msg *types.MsgTransferApplication) (*types.MsgTransferApplicationResponse, error) {
 	isSuccessful := false
 	defer telemetry.EventSuccessCounter(
-		"transfer_application_stake",
+		"transfer_application_begin",
 		telemetry.DefaultCounterFn,
 		func() bool { return isSuccessful },
 	)
@@ -51,23 +55,25 @@ func (k msgServer) TransferApplication(ctx context.Context, msg *types.MsgTransf
 		)
 	}
 
-	// Create a new application derived from the source application.
-	dstApp := srcApp
-	dstApp.Address = msg.GetDestinationAddress()
-
-	// TODO_IN_THIS_PR: Reconcile app unbonding logic with the new transfer stake logic.
-	// I.e., the source should not immediately be transferred.
-
 	// TODO_TEST: add E2E coverage to assert #DelegateeGatewayAddresses and #PendingUndelegations
 	// are present and correct on the dstApp application.
 
-	// Update the dstApp in the store
-	k.SetApplication(ctx, dstApp)
-	logger.Info(fmt.Sprintf("Successfully transferred application stake from (%s) to (%s)", srcApp.Address, dstApp.Address))
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	sessionEndHeight := k.sharedKeeper.GetSessionEndHeight(ctx, sdkCtx.BlockHeight())
 
-	// Remove the transferred app from the store
-	k.RemoveApplication(ctx, srcApp.GetAddress())
-	logger.Info(fmt.Sprintf("Successfully removed the application: %+v", srcApp))
+	srcApp.PendingTransfer = &types.PendingTransfer{
+		Destination:      msg.GetDestinationAddress(),
+		SessionEndHeight: uint64(sessionEndHeight),
+	}
+
+	// Update the dstApp in the store
+	k.SetApplication(ctx, srcApp)
+	logger.Info(fmt.Sprintf(
+		"Successfully began transfer of application stake from (%s) to (%s)",
+		srcApp.Address, msg.GetDestinationAddress(),
+	))
+
+	// TODO_IN_THIS_PR: add and emit an ApplicationTransferBeginEvent.
 
 	isSuccessful = true
 

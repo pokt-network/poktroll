@@ -51,15 +51,15 @@ Feature: Params Namespace
     And all "shared" module params are set to their default values
     And an authz grant from the "gov" "module" account to the "pnf" "user" account for the "/poktroll.shared.MsgUpdateParams" message exists
     When the "pnf" account sends an authz exec message to update all "shared" module params
-      | name                                  | value | type  |
-      | num_blocks_per_session                | 5     | int64 |
-      | grace_period_end_offset_blocks        | 2     | int64 |
-      | claim_window_open_offset_blocks       | 2     | int64 |
-      | claim_window_close_offset_blocks      | 3     | int64 |
-      | proof_window_open_offset_blocks       | 1     | int64 |
-      | proof_window_close_offset_blocks      | 5     | int64 |
-      | supplier_unbonding_period_sessions    | 5     | int64 |
-      | application_unbonding_period_sessions | 5     | int64 |
+      | name                                               | value | type  |
+      | num_blocks_per_session                             | 5     | int64 |
+      | grace_period_end_offset_blocks                     | 2     | int64 |
+      | claim_window_open_offset_blocks                    | 2     | int64 |
+      | claim_window_close_offset_blocks                   | 3     | int64 |
+      | proof_window_open_offset_blocks                    | 1     | int64 |
+      | proof_window_close_offset_blocks                   | 5     | int64 |
+      | supplier_unbonding_period_sessions                 | 5     | int64 |
+      | application_transfer_and_unbonding_period_sessions | 5     | int64 |
     Then all "shared" module params should be updated
 
   # NB: If you are reading this and any module has parameters that

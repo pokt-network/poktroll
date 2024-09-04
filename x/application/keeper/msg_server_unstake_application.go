@@ -27,17 +27,26 @@ func (k msgServer) UnstakeApplication(
 	logger.Info(fmt.Sprintf("About to unstake application with msg: %v", msg))
 
 	// Check if the application already exists or not.
-	foundApp, isAppFound := k.GetApplication(ctx, msg.Address)
+	foundApp, isAppFound := k.GetApplication(ctx, msg.GetAddress())
 	if !isAppFound {
-		logger.Info(fmt.Sprintf("Application not found. Cannot unstake address %s", msg.Address))
-		return nil, types.ErrAppNotFound
+		logger.Info(fmt.Sprintf("Application not found. Cannot unstake address (%s)", msg.GetAddress()))
+		return nil, types.ErrAppNotFound.Wrapf("application (%s)", msg.GetAddress())
 	}
-	logger.Info(fmt.Sprintf("Application found. Unstaking application for address %s", msg.Address))
+	logger.Info(fmt.Sprintf("Application found. Unstaking application for address (%s)", msg.GetAddress()))
 
 	// Check if the application has already initiated the unstaking process.
 	if foundApp.IsUnbonding() {
-		logger.Warn(fmt.Sprintf("Application %s is still unbonding from previous unstaking", msg.Address))
-		return nil, types.ErrAppIsUnstaking
+		logger.Warn(fmt.Sprintf("Application (%s) is still unbonding from previous unstaking", msg.GetAddress()))
+		return nil, types.ErrAppIsUnstaking.Wrapf("application (%s)", msg.GetAddress())
+	}
+
+	// Check if the application has already initiated a transfer process.
+	if foundApp.HasPendingTransfer() {
+		logger.Warn(fmt.Sprintf(
+			"Application (%s) has a pending transfer to (%s)",
+			msg.Address, foundApp.GetPendingTransfer().GetDestination()),
+		)
+		return nil, types.ErrAppHasPendingTransfer.Wrapf("application (%s)", msg.GetAddress())
 	}
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)

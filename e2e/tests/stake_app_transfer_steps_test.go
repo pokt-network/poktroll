@@ -49,3 +49,12 @@ func (s *suite) ThisTestEnsuresTheForAccountIsNotStaked(actorType, accName strin
 		s.TheUserShouldBeAbleToSeeStandardOutputContaining("code: 0")
 	}
 }
+
+func (s *suite) TheUserSuccessfullyUnstakesAFromTheAccount(actorType, accName string) {
+	s.TheUserUnstakesAFromTheAccount(actorType, accName)
+	s.TheUserShouldBeAbleToSeeStandardOutputContaining("txhash:")
+	s.TheUserShouldBeAbleToSeeStandardOutputContaining("code: 0")
+	s.ThePocketdBinaryShouldExitWithoutError()
+	s.TheApplicationForAccountIsUnbonding(accName)
+	s.TheUserWaitsForTheApplicationForAccountPeriodToFinish(accName, "unbonding")
+}

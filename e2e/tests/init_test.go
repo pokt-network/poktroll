@@ -38,7 +38,7 @@ import (
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	shared "github.com/pokt-network/poktroll/x/shared"
+	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
@@ -174,7 +174,7 @@ func (s *suite) TheUserRunsTheCommand(cmd string) {
 }
 
 func (s *suite) TheUserShouldBeAbleToSeeStandardOutputContaining(arg1 string) {
-	require.Contains(s, s.pocketd.result.Stdout, arg1)
+	require.Containsf(s, s.pocketd.result.Stdout, arg1, s.pocketd.result.Stderr)
 }
 
 func (s *suite) TheUserSendsUpoktFromAccountToAccount(amount int64, accName1, accName2 string) {
@@ -373,6 +373,13 @@ func (s *suite) TheUserUnstakesAFromTheAccount(actorType string, accName string)
 	res, err := s.pocketd.RunCommandOnHost("", args...)
 	require.NoError(s, err, "error unstaking %s", actorType)
 
+	// Get current balance
+	balanceKey := accBalanceKey(accName)
+	currBalance := s.getAccBalance(accName)
+	s.scenarioState[balanceKey] = currBalance // save the balance for later
+
+	// NB: s.pocketd.result MUST be set AFTER the balance is queried because the
+	// balance query sets the result first while getting the account balance.
 	s.pocketd.result = res
 }
 
@@ -519,12 +526,24 @@ func (s *suite) TheApplicationForAccountIsUnbonding(appName string) {
 	require.True(s, supplier.IsUnbonding())
 }
 
-func (s *suite) TheUserWaitsForTheApplicationForAccountUnbondingPeriodToFinish(accName string) {
+func (s *suite) TheUserWaitsForTheApplicationForAccountPeriodToFinish(accName, periodType string) {
 	_, ok := accNameToAppMap[accName]
 	require.True(s, ok, "application %s not found", accName)
 
-	unbondingHeight := s.getApplicationUnbondingHeight(accName)
-	s.waitForBlockHeight(unbondingHeight + 1) // Add 1 to ensure the unbonding block has been committed
+	// TODO_IMPROVE: Add an event to listen for instead. This will require
+	// refactoring and/or splitting of this method for each event type.
+
+	switch periodType {
+	case "unbonding":
+		unbondingHeight := s.getApplicationUnbondingHeight(accName)
+		s.waitForBlockHeight(unbondingHeight + 1) // Add 1 to ensure the unbonding block has been committed
+	case "transfer":
+		transferEndHeight := s.getApplicationTransferEndHeight(accName)
+		s.waitForBlockHeight(transferEndHeight + 1) // Add 1 to ensure the transfer end block has been committed
+	}
+
+	// Rebuild app map after the relevant period has elapsed.
+	s.buildAppMap()
 }
 
 func (s *suite) getStakedAmount(actorType, accName string) (int, bool) {
@@ -782,6 +801,27 @@ func (s *suite) getApplicationUnbondingHeight(accName string) int64 {
 	s.cdc.MustUnmarshalJSON(responseBz, &resp)
 	unbondingHeight := apptypes.GetApplicationUnbondingHeight(&resp.Params, application)
 	return unbondingHeight
+}
+
+// getApplicationTransferEndHeight returns the height at which the application will be transferred to the destination.
+func (s *suite) getApplicationTransferEndHeight(accName string) int64 {
+	application := s.getApplicationInfo(accName)
+
+	args := []string{
+		"query",
+		"shared",
+		"params",
+		"--output=json",
+	}
+
+	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, args...)
+	require.NoError(s, err, "error getting shared module params")
+
+	var resp sharedtypes.QueryParamsResponse
+	responseBz := []byte(strings.TrimSpace(res.Stdout))
+	s.cdc.MustUnmarshalJSON(responseBz, &resp)
+	transferEndHeight := apptypes.GetApplicationTransferHeight(&resp.Params, application)
+	return transferEndHeight
 }
 
 // getServiceComputeUnitsPerRelay returns the compute units per relay for a given service ID

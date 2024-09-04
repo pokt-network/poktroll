@@ -245,3 +245,5 @@ genesis:
         claim_window_close_offset_blocks: 4
         proof_window_open_offset_blocks: 0
         proof_window_close_offset_blocks: 4
+        supplier_unbonding_period_sessions: 4
+        application_transfer_and_unbonding_period_sessions: 4

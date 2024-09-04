@@ -21,6 +21,6 @@ Feature: Stake App Namespaces
         And the user should be able to see standard output containing "code: 0"
         And the pocketd binary should exit without error
         And the application for account "app2" is unbonding
-        When the user waits for the application for account "app2" unbonding period to finish
+        When the user waits for the application for account "app2" "unbonding" period to finish
         And the user verifies the "application" for account "app2" is not staked
         And the account balance of "app2" should be "1000070" uPOKT "more" than before
