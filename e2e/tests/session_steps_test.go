@@ -43,10 +43,24 @@ const (
 
 func (s *suite) TheUserShouldWaitForTheModuleMessageToBeSubmitted(module, msgType string) {
 	s.waitForTxResultEvent(newEventMsgTypeMatchFn(module, msgType))
+
+	// Rebuild actor maps after the relevant messages have been committed.
+	switch module {
+	case "application":
+		s.buildAppMap()
+	case "supplier":
+		s.buildSupplierMap()
+	}
 }
 
 func (s *suite) TheUserShouldWaitForTheModuleTxEventToBeBroadcast(module, eventType string) {
 	s.waitForTxResultEvent(newEventTypeMatchFn(module, eventType))
+
+	// Rebuild actor maps after the relevant messages have been committed.
+	switch module {
+	case "application":
+		s.buildAppMap()
+	}
 }
 
 func (s *suite) TheUserShouldWaitForTheModuleEndBlockEventToBeBroadcast(module, eventType string) {
