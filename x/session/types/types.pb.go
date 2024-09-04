@@ -5,14 +5,16 @@ package types
 
 import (
 	fmt "fmt"
-	_ "github.com/cosmos/cosmos-proto"
-	_ "github.com/cosmos/gogoproto/gogoproto"
-	proto "github.com/cosmos/gogoproto/proto"
-	types1 "github.com/pokt-network/poktroll/x/application/types"
-	types "github.com/pokt-network/poktroll/x/shared/types"
 	io "io"
 	math "math"
 	math_bits "math/bits"
+
+	_ "github.com/cosmos/cosmos-proto"
+	_ "github.com/cosmos/gogoproto/gogoproto"
+	proto "github.com/cosmos/gogoproto/proto"
+
+	types1 "github.com/pokt-network/poktroll/x/application/types"
+	types "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -106,7 +108,7 @@ func (m *SessionHeader) GetSessionEndBlockHeight() int64 {
 }
 
 // Session is a fully hydrated session object that contains all the information for the Session
-// and its parcipants.
+// and its participants.
 type Session struct {
 	Header              *SessionHeader      `protobuf:"bytes,1,opt,name=header,proto3" json:"header,omitempty"`
 	SessionId           string              `protobuf:"bytes,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
@@ -114,6 +116,12 @@ type Session struct {
 	NumBlocksPerSession int64               `protobuf:"varint,4,opt,name=num_blocks_per_session,json=numBlocksPerSession,proto3" json:"num_blocks_per_session,omitempty"`
 	Application         *types1.Application `protobuf:"bytes,5,opt,name=application,proto3" json:"application,omitempty"`
 	Suppliers           []*types.Supplier   `protobuf:"bytes,6,rep,name=suppliers,proto3" json:"suppliers,omitempty"`
+	// TODO_MAINNET(@bryanchriswhite): Add a RelayMining field that can be used for UX/DevX
+	// purposes capturing things like:
+	// - The probability of a proof being required for this session
+	// - The threshold of the probability that triggers a proof definitively
+	// - The maximum claimable pokt per supplier in this session
+	// See the discussion here: https://github.com/pokt-network/poktroll/pull/755#discussion_r1743286043
 }
 
 func (m *Session) Reset()         { *m = Session{} }

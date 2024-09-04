@@ -113,9 +113,14 @@ func init() {
 	// then TLMGlobalMintReimbursementRequest will need to be there too.
 }
 
-// ProcessTokenLogicModules is the entrypoint for all TLM processing. It is responsible for running
-// all the independent TLMs necessary to limit, burn, mint or transfer tokens as a result of the
+// ProcessTokenLogicModules is the entrypoint for all TLM processing.
+//
+// It is responsible for running all the independent TLMs necessary to limit, burn, mint or transfer tokens as a result of the
 // amount of work (i.e. relays, compute units) done in proportion to the global governance parameters.
+//
+// Prior to running the TLMs, it handles the business logic of converting the claimed
+// amount to the actual settlement amount and handling the case for overserviced applications.
+//
 // IMPORTANT: It is assumed that the proof for the claim has been validated BEFORE calling this function.
 func (k Keeper) ProcessTokenLogicModules(
 	ctx context.Context,
@@ -285,56 +290,56 @@ func (k Keeper) TokenLogicModuleRelayBurnEqualsMint(
 	_ *sessiontypes.SessionHeader,
 	application *apptypes.Application,
 	supplier *sharedtypes.Supplier,
-	settlementCoin cosmostypes.Coin,
+	actualSettlementCoin cosmostypes.Coin, // Note that actualSettlementCoin may differ from claimSettlementCoin; see ensureClaimAmountLimits for details.
 	relayMiningDifficulty *tokenomictypes.RelayMiningDifficulty,
 ) error {
 	logger := k.Logger().With("method", "TokenLogicModuleRelayBurnEqualsMint")
 
-	// DEV_NOTE: We are doing a mint & burn + transfer, instead of a simple transfer
+	// DEV_NOTE: We are doing a burn & mint + transfer instead of a simple transfer
 	// of funds from the application stake to the supplier balance in order to enable second
 	// order economic effects with more optionality. This could include funds
 	// going to pnf, delegators, enabling bonuses/rebates, etc...
+
+	// Update the application's on-chain stake
+	newAppStake, err := application.Stake.SafeSub(actualSettlementCoin)
+	if err != nil {
+		return tokenomicstypes.ErrTokenomicsApplicationNewStakeInvalid.Wrapf("application %q stake cannot be reduced to a negative amount %v", application.Address, newAppStake)
+	}
+	application.Stake = &newAppStake
+	logger.Info(fmt.Sprintf("updated application %q stake to %v", application.Address, newAppStake))
+
+	// Burn uPOKT from the application module account which was held in escrow
+	// on behalf of the application account.
+	if err := k.bankKeeper.BurnCoins(
+		ctx, apptypes.ModuleName, sdk.NewCoins(actualSettlementCoin),
+	); err != nil {
+		return tokenomicstypes.ErrTokenomicsApplicationModuleBurn.Wrapf("burning %s from the application module account: %v", actualSettlementCoin, err)
+	}
+	logger.Info(fmt.Sprintf("burned (%v) from the application module account", actualSettlementCoin))
 
 	// Mint new uPOKT to the supplier module account.
 	// These funds will be transferred to the supplier's shareholders below.
 	// For reference, see operate/configs/supplier_staking_config.md.
 	if err := k.bankKeeper.MintCoins(
-		ctx, suppliertypes.ModuleName, sdk.NewCoins(settlementCoin),
+		ctx, suppliertypes.ModuleName, sdk.NewCoins(actualSettlementCoin),
 	); err != nil {
 		return tokenomicstypes.ErrTokenomicsSupplierModuleSendFailed.Wrapf(
 			"minting %s to the supplier module account: %v",
-			settlementCoin,
+			actualSettlementCoin,
 			err,
 		)
 	}
-	logger.Info(fmt.Sprintf("minted (%v) coins in the supplier module", settlementCoin))
+	logger.Info(fmt.Sprintf("minted (%v) coins in the supplier module", actualSettlementCoin))
 
 	// Distribute the rewards to the supplier's shareholders based on the rev share percentage.
-	if err := k.distributeSupplierRewardsToShareHolders(ctx, supplier, service.Id, settlementCoin.Amount.Uint64()); err != nil {
+	if err := k.distributeSupplierRewardsToShareHolders(ctx, supplier, service.Id, actualSettlementCoin.Amount.Uint64()); err != nil {
 		return tokenomicstypes.ErrTokenomicsSupplierModuleMintFailed.Wrapf(
 			"distributing rewards to supplier with operator address %s shareholders: %v",
 			supplier.OperatorAddress,
 			err,
 		)
 	}
-	logger.Info(fmt.Sprintf("sent (%v) from the supplier module to the supplier account with address %q", settlementCoin, supplier.OperatorAddress))
-
-	// Burn uPOKT from the application module account which was held in escrow
-	// on behalf of the application account.
-	if err := k.bankKeeper.BurnCoins(
-		ctx, apptypes.ModuleName, sdk.NewCoins(settlementCoin),
-	); err != nil {
-		return tokenomicstypes.ErrTokenomicsApplicationModuleBurn.Wrapf("burning %s from the application module account: %v", settlementCoin, err)
-	}
-	logger.Info(fmt.Sprintf("burned (%v) from the application module account", settlementCoin))
-
-	// Update the application's on-chain stake
-	newAppStake, err := application.Stake.SafeSub(settlementCoin)
-	if err != nil {
-		return tokenomicstypes.ErrTokenomicsApplicationNewStakeInvalid.Wrapf("application %q stake cannot be reduced to a negative amount %v", application.Address, newAppStake)
-	}
-	application.Stake = &newAppStake
-	logger.Info(fmt.Sprintf("updated application %q stake to %v", application.Address, newAppStake))
+	logger.Info(fmt.Sprintf("sent (%v) from the supplier module to the supplier account with address %q", actualSettlementCoin, supplier.OperatorAddress))
 
 	return nil
 }
@@ -346,7 +351,7 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 	_ *sessiontypes.SessionHeader,
 	application *apptypes.Application,
 	supplier *sharedtypes.Supplier,
-	settlementCoin cosmostypes.Coin,
+	actualSettlementCoin cosmostypes.Coin, // Note that actualSettlementCoin may differ from claimSettlementCoin; see ensureClaimAmountLimits for details.
 	relayMiningDifficulty *tokenomictypes.RelayMiningDifficulty,
 ) error {
 	logger := k.Logger().With("method", "TokenLogicModuleGlobalMint")
@@ -358,7 +363,7 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 	}
 
 	// Determine how much new uPOKT to mint based on global inflation
-	newMintCoin, newMintAmtFloat := calculateGlobalPerClaimMintInflationFromSettlementAmount(settlementCoin)
+	newMintCoin, newMintAmtFloat := calculateGlobalPerClaimMintInflationFromSettlementAmount(actualSettlementCoin)
 	if newMintCoin.Amount.Int64() == 0 {
 		return tokenomicstypes.ErrTokenomicsMintAmountZero
 	}
