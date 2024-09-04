@@ -41,7 +41,7 @@ test in the `pkg/client/tx` 50 times in total (5 consecutive tests over 10 runs)
 make itest 5 10 ./pkg/client/tx/... -- -run TxClient_SignAndBroadcast_Succeeds
 ```
 
-### `poktrolld query tx` - Investigating Failed Transactions
+## `poktrolld query tx` - Investigating Failed Transactions
 
 If a transaction, e.g. staking a new service, is successfully posted but does not seem to have taken effect,
 it could be due to any error that prevented the corresponding state transition from taking place.
@@ -63,10 +63,10 @@ The TX hash is returned by the above command:
 txhash: 9E4CA2B72FCD6F74C771A5B2289CEACED30C2717ABEA4330E12543D3714D322B
 ```
 
-To investigate this, the following command is used to get the details of the transaction:
+To investigate this issue, the following command is used to get the details of the transaction:
 
 ```bash
-poktrolld query tx --type=hash  9E4CA2B72FCD6F74C771A5B2289CEACED30C2717ABEA4330E12543D3714D322B
+poktrolld query tx --type=hash 9E4CA2B72FCD6F74C771A5B2289CEACED30C2717ABEA4330E12543D3714D322B
 ```
 
 Which shows the following log entry:
