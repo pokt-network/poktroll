@@ -21,25 +21,34 @@ func (k msgServer) TransferApplication(ctx context.Context, msg *types.MsgTransf
 	logger := k.Logger().With("method", "TransferApplication")
 
 	if err := msg.ValidateBasic(); err != nil {
-		return nil, err
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	// Ensure destination application does not already exist.
 	_, isDstFound := k.GetApplication(ctx, msg.GetDestinationAddress())
 	if isDstFound {
-		return nil, types.ErrAppDuplicateAddress.Wrapf("destination application (%q) exists", msg.GetDestinationAddress())
+		return nil, status.Error(
+			codes.FailedPrecondition,
+			types.ErrAppDuplicateAddress.Wrapf("destination application (%s) exists", msg.GetDestinationAddress()).Error(),
+		)
 	}
 
 	// Ensure source application exists.
 	srcApp, isAppFound := k.GetApplication(ctx, msg.GetSourceAddress())
 	if !isAppFound {
-		return nil, types.ErrAppNotFound.Wrapf("source application %q not found", msg.GetSourceAddress())
+		return nil, status.Error(
+			codes.InvalidArgument,
+			types.ErrAppNotFound.Wrapf("source application (%s) not found", msg.GetSourceAddress()).Error(),
+		)
 	}
 
 	// Ensure source application is not already unbonding.
 	// TODO_TEST: Add E2E coverage to assert that an unbonding app cannot be transferred.
 	if srcApp.IsUnbonding() {
-		return nil, types.ErrAppIsUnstaking.Wrapf("cannot transfer stake of unbonding source application %q", msg.GetSourceAddress())
+		return nil, status.Error(
+			codes.FailedPrecondition,
+			types.ErrAppIsUnstaking.Wrapf("cannot transfer stake of unbonding source application %q", msg.GetSourceAddress()).Error(),
+		)
 	}
 
 	// Create a new application derived from the source application.
