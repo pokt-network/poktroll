@@ -87,7 +87,7 @@ func initAppConfig() (string, interface{}) {
 
 	// TODO_MAINNET: reconsider values, especially MinGasPrices and MaxTxs
 	// Set default values so `poktrolld init` creates configs with "blessed" values:
-	srvCfg.MinGasPrices = "0.000000001upokt"
+	srvCfg.MinGasPrices = "0.000000001upokt" // Also adjust `config.yml`.
 	srvCfg.Mempool.MaxTxs = 10000
 	srvCfg.Telemetry.Enabled = true
 	srvCfg.Telemetry.PrometheusRetentionTime = 60 // in seconds
