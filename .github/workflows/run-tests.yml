@@ -42,6 +42,9 @@ jobs:
       - name: Generate mocks
         run: make go_mockgen
 
+      - name: Verify all proto files have stable marshaler configured
+        run: make check_proto_unstable_marshalers
+
       - name: Run golangci-lint
         run: make go_lint
 
