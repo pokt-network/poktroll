@@ -15,6 +15,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/filter"
 	"github.com/pokt-network/poktroll/pkg/observable/logging"
 	"github.com/pokt-network/poktroll/pkg/relayer"
+	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 )
 
@@ -130,7 +131,9 @@ func (mnr *miner) getServiceRelayDifficultyTargetHash(ctx context.Context, req *
 
 	serviceRelayDifficulty, err := mnr.tokenomicsQueryClient.GetServiceRelayDifficultyTargetHash(ctx, sessionHeader.Service.Id)
 	if err != nil {
-		return nil, err
+		// TODO_IMPROVE: log the error and a message saying the default relay difficulty target hash
+		// is being used.
+		return prooftypes.DefaultRelayDifficultyTargetHash, nil
 	}
 
 	return serviceRelayDifficulty.GetTargetHash(), nil
