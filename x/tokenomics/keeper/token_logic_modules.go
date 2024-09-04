@@ -52,7 +52,7 @@ type TokenLogicModule int
 
 const (
 	// TLMRelayBurnEqualsMint is the token logic module that burns the application's
-	// stake based on the amount of work done by the supplier.
+	// stake balance based on the amount of work done by the supplier.
 	// The same amount of tokens is minted and added to the supplier account balance.
 	// When the network achieves equilibrium, this is theoretically the only TLM that will be necessary.
 	TLMRelayBurnEqualsMint TokenLogicModule = iota
