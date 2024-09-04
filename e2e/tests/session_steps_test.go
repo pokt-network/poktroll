@@ -60,6 +60,8 @@ func (s *suite) TheUserShouldWaitForTheModuleTxEventToBeBroadcast(module, eventT
 	switch module {
 	case "application":
 		s.buildAppMap()
+	case "supplier":
+		s.buildSupplierMap()
 	}
 }
 
@@ -70,6 +72,14 @@ func (s *suite) TheUserShouldWaitForTheModuleEndBlockEventToBeBroadcast(module, 
 			newEventModeMatchFn("EndBlock"),
 		),
 	)
+
+	// Update the actor maps after the relevant end block events have been emitted.
+	switch module {
+	case "application":
+		s.buildAppMap()
+	case "supplier":
+		s.buildSupplierMap()
+	}
 }
 
 // TODO_FLAKY: See how 'TheClaimCreatedBySupplierForServiceForApplicationShouldBeSuccessfullySettled'

@@ -73,7 +73,13 @@ func (k msgServer) TransferApplication(ctx context.Context, msg *types.MsgTransf
 		srcApp.Address, msg.GetDestinationAddress(),
 	))
 
-	// TODO_IN_THIS_PR: add and emit an ApplicationTransferBeginEvent.
+	if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventTransferBegin{
+		SourceAddress:      srcApp.GetAddress(),
+		DestinationAddress: srcApp.GetPendingTransfer().GetDestination(),
+		SourceApplication:  &srcApp,
+	}); err != nil {
+
+	}
 
 	isSuccessful = true
 

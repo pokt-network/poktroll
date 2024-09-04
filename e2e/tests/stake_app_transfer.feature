@@ -7,19 +7,23 @@ Feature: App Stake Transfer Namespace
         # the transaction succeed.
         And the account "app2" has a balance greater than "1000070" uPOKT
         And the user successfully stakes a "application" with "1000070" uPOKT for "anvil" service from the account "app2"
+        # Begin transfer
         When the user transfers the "application" stake from account "app2" to account "app3"
         Then the user should be able to see standard output containing "txhash:"
         And the user should be able to see standard output containing "code: 0"
         And the pocketd binary should exit without error
         And the user should wait for the "application" module "TransferApplication" message to be submitted
-        # TODO_IN_THIS_PR: wait for the transfer begin event...
-        # TODO_IN_THIS_PR: assert app2 is still staked and transferring
-        # TODO_IN_THIS_PR: assert app3 does not exist
-        #    TODO_CONSIDER: how does this factor into minimum stake requirements?
-        And the user waits for the application for account "app2" "transfer" period to finish
-        # TODO_IN_THIS_PR: wait for the transfer complete event...
+        And the user should wait for the "application" module "TransferBegin" tx event to be broadcast
+        # The source application should still be staked and in the transfer period
+        And the "application" for account "app2" is staked with "1000070" uPOKT
+        And the application for account "app2" is in the "transfer" period
+        # The destination application is not created until the transfer period ends
+        And the user verifies the "application" for account "app3" is not staked
+        And the user should wait for the "application" module "TransferEnd" end block event to be broadcast
         And the "application" for account "app3" is staked with "1000070" uPOKT
         And the account balance of "app3" should be "0" uPOKT "less" than before
+        # The source application should be unstaked with no account balance
+        # change after the transfer period
         And the user verifies the "application" for account "app2" is not staked
         And the account balance of "app2" should be "0" uPOKT "more" than before
         # Cleanup for other tests

@@ -516,14 +516,31 @@ func (s *suite) TheUserWaitsForTheSupplierForAccountUnbondingPeriodToFinish(accN
 	s.waitForBlockHeight(unbondingHeight + 1) // Add 1 to ensure the unbonding block has been committed
 }
 
-func (s *suite) TheApplicationForAccountIsUnbonding(appName string) {
+func (s *suite) TheApplicationForAccountIsInThePeriod(appName, periodName string) {
 	_, ok := accNameToAppMap[appName]
 	require.True(s, ok, "application %s not found", appName)
 
-	s.waitForTxResultEvent(newEventMsgTypeMatchFn("application", "UnstakeApplication"))
+	var (
+		msgType       string
+		isAppInPeriod func(*apptypes.Application) bool
+	)
+	switch periodName {
+	case "unbonding":
+		msgType = "UnstakeApplication"
+		isAppInPeriod = func(app *apptypes.Application) bool {
+			return app.IsUnbonding()
+		}
+	case "transfer":
+		msgType = "TransferApplication"
+		isAppInPeriod = func(application *apptypes.Application) bool {
+			return application.HasPendingTransfer()
+		}
+	}
 
-	supplier := s.getApplicationInfo(appName)
-	require.True(s, supplier.IsUnbonding())
+	s.waitForTxResultEvent(newEventMsgTypeMatchFn("application", msgType))
+
+	application := s.getApplicationInfo(appName)
+	require.True(s, isAppInPeriod(application))
 }
 
 func (s *suite) TheUserWaitsForTheApplicationForAccountPeriodToFinish(accName, periodType string) {
@@ -820,7 +837,7 @@ func (s *suite) getApplicationTransferEndHeight(accName string) int64 {
 	var resp sharedtypes.QueryParamsResponse
 	responseBz := []byte(strings.TrimSpace(res.Stdout))
 	s.cdc.MustUnmarshalJSON(responseBz, &resp)
-	transferEndHeight := apptypes.GetApplicationTransferHeight(&resp.Params, application)
+	transferEndHeight := apptypes.GetApplicationTransferEndHeight(&resp.Params, application)
 	return transferEndHeight
 }
 

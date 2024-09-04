@@ -5,10 +5,42 @@ option go_package = "github.com/pokt-network/poktroll/x/application/types";
 
 import "cosmos_proto/cosmos.proto";
 
+import "poktroll/application/types.proto";
+
 // EventRedelegation is an event emitted whenever an application changes its
 // delegatee gateways on chain. This is in response to both a DelegateToGateway
 // and UndelegateFromGateway message.
 message EventRedelegation {
   string app_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the application.
   string gateway_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the gateway the application has changed their delegation of.
+}
+
+// EventTransferBegin is emitted whenever an application begins a transfer. It
+// includes the source application state immediately after the transfer began.
+message EventTransferBegin {
+  string source_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  string destination_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  poktroll.application.Application source_application = 3;
+}
+
+// EventTransferEnd is emitted whenever an application transfer is completed. It
+// includes the destination application state at the time the transfer completed.
+// Either EventTransferEnd or EventTransferError will be emitted corresponding to
+// any given EventTransferBegin event.
+message EventTransferEnd {
+  string source_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  string destination_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  poktroll.application.Application destination_application = 3;
+}
+
+// EventTransferError is emitted whenever an application transfer fails. It
+// includes the source application state at the time the transfer failed and
+// the error message.
+// Either EventTransferEnd or EventTransferError will be emitted corresponding to
+// any given EventTransferBegin event.
+message EventTransferError {
+  string source_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  string destination_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  poktroll.application.Application source_application = 3;
+  string error = 4;
 }

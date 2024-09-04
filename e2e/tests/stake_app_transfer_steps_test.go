@@ -55,6 +55,6 @@ func (s *suite) TheUserSuccessfullyUnstakesAFromTheAccount(actorType, accName st
 	s.TheUserShouldBeAbleToSeeStandardOutputContaining("txhash:")
 	s.TheUserShouldBeAbleToSeeStandardOutputContaining("code: 0")
 	s.ThePocketdBinaryShouldExitWithoutError()
-	s.TheApplicationForAccountIsUnbonding(accName)
+	s.TheApplicationForAccountIsInThePeriod(accName, "unbonding")
 	s.TheUserWaitsForTheApplicationForAccountPeriodToFinish(accName, "unbonding")
 }

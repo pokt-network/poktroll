@@ -14,7 +14,7 @@ import (
 func (k Keeper) EndBlockerTransferApplication(ctx context.Context) error {
 	isSuccessful := false
 	defer telemetry.EventSuccessCounter(
-		"transfer_application_stake_complete",
+		"transfer_application_end",
 		telemetry.DefaultCounterFn,
 		func() bool { return isSuccessful },
 	)
@@ -41,14 +41,24 @@ func (k Keeper) EndBlockerTransferApplication(ctx context.Context) error {
 			continue
 		}
 
-		transferCompleteHeight := types.GetApplicationTransferHeight(&sharedParams, &srcApp)
-		if sdkCtx.BlockHeight() < transferCompleteHeight {
+		transferEndHeight := types.GetApplicationTransferEndHeight(&sharedParams, &srcApp)
+		if sdkCtx.BlockHeight() < transferEndHeight {
 			continue
 		}
 
 		// Transfer the stake of the source application to the destination application.
 		if transferErr := k.transferApplication(ctx, srcApp); transferErr != nil {
 			logger.Warn(transferErr.Error())
+
+			if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventTransferError{
+				SourceAddress:      srcApp.GetAddress(),
+				DestinationAddress: srcApp.GetPendingTransfer().GetDestination(),
+				SourceApplication:  &srcApp,
+				Error:              transferErr.Error(),
+			}); err != nil {
+				logger.Error(fmt.Sprintf("could not emit transfer error event: %v", err))
+			}
+
 			continue
 		}
 
@@ -110,7 +120,13 @@ func (k Keeper) transferApplication(ctx context.Context, srcApp types.Applicatio
 
 	logger.Info(fmt.Sprintf("Successfully transferred application stake from (%s) to (%s)", srcApp.GetAddress(), dstApp.GetAddress()))
 
-	// TODO_IN_THIS_PR: add and emit an ApplicationTransferEndEvent.
+	if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventTransferEnd{
+		SourceAddress:          srcApp.GetAddress(),
+		DestinationAddress:     dstApp.GetAddress(),
+		DestinationApplication: &dstApp,
+	}); err != nil {
+		logger.Error(fmt.Sprintf("could not emit transfer end event: %v", err))
+	}
 
 	return nil
 }
