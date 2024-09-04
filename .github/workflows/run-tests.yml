@@ -48,5 +48,10 @@ jobs:
       - name: Run golangci-lint
         run: make go_lint
 
+      - name: Run Gosec Security Scanner
+        uses: cosmos/gosec@master
+        with:
+          args: ./...
+
       - name: Test
         run: make test_all
