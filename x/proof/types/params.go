@@ -26,13 +26,19 @@ var (
 	ParamProofRequestProbability           = "proof_request_probability"
 	DefaultProofRequestProbability float32 = 0.25 // See: https://github.com/pokt-network/pocket-core/blob/staging/docs/proposals/probabilistic_proofs.md
 
+	// TODO_BETA(@red-0ne): Change the proofRequirementThreshold to be of type uPOKT coin.
+	// The probabilistic proofs paper specifies a threshold of 20 POKT.
+	// We should change this param's name to ProofRequirementThresholduPOKT and type
+	// to uPOKT coin with a default value of 20e6 uPOKT.
 	KeyProofRequirementThreshold            = []byte("ProofRequirementThreshold")
 	ParamProofRequirementThreshold          = "proof_requirement_threshold"
-	DefaultProofRequirementThreshold uint64 = 20 // See: https://github.com/pokt-network/pocket-core/blob/staging/docs/proposals/probabilistic_proofs.md
+	DefaultProofRequirementThreshold uint64 = 20e6 // See: https://github.com/pokt-network/pocket-core/blob/staging/docs/proposals/probabilistic_proofs.md
 
-	KeyProofMissingPenalty     = []byte("ProofMissingPenalty")
-	ParamProofMissingPenalty   = "proof_missing_penalty"
-	DefaultProofMissingPenalty = cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(320)) // See: https://github.com/pokt-network/pocket-core/blob/staging/docs/proposals/probabilistic_proofs.md
+	// TODO_DISCUSS: Should ProofMissingPenalty be moved to the tokenomics module?
+	KeyProofMissingPenalty   = []byte("ProofMissingPenalty")
+	ParamProofMissingPenalty = "proof_missing_penalty"
+	// As per the probabilistic proofs paper, the penalty for missing a proof is 320 POKT (i.e. 320e6 uPOKT).
+	DefaultProofMissingPenalty = cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(320e6)) // See: https://github.com/pokt-network/pocket-core/blob/staging/docs/proposals/probabilistic_proofs.md
 )
 
 // ParamKeyTable the param key table for launch module

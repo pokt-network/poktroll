@@ -1641,8 +1641,13 @@ type Application struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Address        string                             `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`                                     // The Bech32 address of the application.
-	Stake          *v1beta1.Coin                      `protobuf:"bytes,2,opt,name=stake,proto3" json:"stake,omitempty"`                                         // The total amount of uPOKT the application has staked
+	Address string        `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"` // The Bech32 address of the application.
+	Stake   *v1beta1.Coin `protobuf:"bytes,2,opt,name=stake,proto3" json:"stake,omitempty"`     // The total amount of uPOKT the application has staked
+	// TODO_BETA(@red-0ne, @olshansk): Limit this to one service_config.
+	//
+	//	Remove `repeated`, drop the `s` from service_configs and document why
+	//	this is the case in the app config (and here) per this discussion:
+	//	https://github.com/pokt-network/poktroll/pull/750#discussion_r1735025033
 	ServiceConfigs []*shared.ApplicationServiceConfig `protobuf:"bytes,3,rep,name=service_configs,json=serviceConfigs,proto3" json:"service_configs,omitempty"` // The list of services this appliccation is configured to request service for
 	// TODO_BETA: Rename `delegatee_gateway_addresses` to `gateway_addresses_delegated_to`.
 	// Ensure to rename all relevant configs, comments, variables, function names, etc as well.

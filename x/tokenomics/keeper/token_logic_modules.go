@@ -180,7 +180,7 @@ func (k Keeper) ProcessTokenLogicModules(
 	// TODO_POST_MAINNET: Because of how things have evolved, we are now using
 	// root.Count (numRelays) instead of root.Sum (numComputeUnits) to determine
 	// the amount of work done. This is because the compute_units_per_relay is
-	/// a service specific (not request specific) parameter that will be maintained
+	// a service specific (not request specific) parameter that will be maintained
 	// by the service owner to capture the average amount of resources (i.e.
 	// compute, storage, bandwidth, electricity, etc...) per request. Modifying
 	// this on a per request basis has been deemed too complex and not a mainnet
@@ -464,7 +464,13 @@ func (k Keeper) handleOverservicedApplication(
 	return *application.Stake, nil
 }
 
-// numRelaysToCoin calculates the amount of uPOKT to mint based on the number of compute units.
+// TODO_BETA(@red-0ne, #745): Once #745 is merged rename numRelaysToCoin to
+// numComputeUnitsToCoin and input it numClaimComputeUnits instead of numRelays.
+// This function should be made static to be used in proofRequirementForClaim to
+// check whether a proof is required due to threshold being met.
+// This is to maintain consistency in what is being used to calculate the claimed uPOKT.
+// TODO_BETA(@red-0ne, #771): This function should take the relay mining difficulty
+// as an argument and use it to calculate the claimed uPOKT.
 func (k Keeper) numRelaysToCoin(
 	ctx context.Context,
 	numRelays uint64, // numRelays is a session specific parameter

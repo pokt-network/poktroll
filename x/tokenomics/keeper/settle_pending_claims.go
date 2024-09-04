@@ -3,12 +3,16 @@ package keeper
 import (
 	"fmt"
 
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
 
+	"github.com/pokt-network/poktroll/app/volatile"
 	poktrand "github.com/pokt-network/poktroll/pkg/crypto/rand"
 	"github.com/pokt-network/poktroll/telemetry"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	"github.com/pokt-network/poktroll/x/shared"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
@@ -40,6 +44,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 	settledResult = types.NewClaimSettlementResult()
 	expiredResult = types.NewClaimSettlementResult()
 
+	supplierToSlashCount := make(map[string]uint64)
 	logger.Debug("settling expiring claims")
 	for _, claim := range expiringClaims {
 		var (
@@ -95,7 +100,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 
 			// If the proof is missing or invalid -> expire it
 			if expirationReason != types.ClaimExpirationReason_EXPIRATION_REASON_UNSPECIFIED {
-				// Proof was required but not found.
+				// Proof was required but is invalid or not found.
 				// Emit an event that a claim has expired and being removed without being settled.
 				claimExpiredEvent := types.EventClaimExpired{
 					Claim:            &claim,
@@ -108,7 +113,17 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 					return settledResult, expiredResult, err
 				}
 
-				logger.Info("claim expired; required proof not found")
+				logger.Info(fmt.Sprintf(
+					"claim expired due to %s",
+					types.ClaimExpirationReason_name[int32(expirationReason)]),
+				)
+
+				// Collect all the slashed supplier operator addresses to later check
+				// if they have to be unstaked because of stake below the minimum.
+				// The unstaking check is not done here because the slashed supplier may
+				// have other valid claims and the protocol might want to touch the supplier
+				// owner or operator balances if the stake is negative.
+				supplierToSlashCount[claim.SupplierOperatorAddress]++
 
 				// The claim & proof are no longer necessary, so there's no need for them
 				// to take up on-chain space.
@@ -175,6 +190,14 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 		logger.Info(fmt.Sprintf("Successfully settled claim for session ID %q at block height %d", claim.SessionHeader.SessionId, blockHeight))
 	}
 
+	// Slash all the suppliers that have been marked for slashing slashingCount times.
+	for supplierOperatorAddress, slashingCount := range supplierToSlashCount {
+		if err := k.slashSupplierStake(ctx, supplierOperatorAddress, slashingCount); err != nil {
+			logger.Error(fmt.Sprintf("error slashing supplier %s: %s", supplierOperatorAddress, err))
+			return settledResult, expiredResult, err
+		}
+	}
+
 	logger.Info(fmt.Sprintf(
 		"settled %d and expired %d claims at block height %d",
 		settledResult.NumClaims,
@@ -194,17 +217,10 @@ func (k Keeper) getExpiringClaims(ctx sdk.Context) (expiringClaims []prooftypes.
 
 	// NB: This error can be safely ignored as on-chain SharedQueryClient implementation cannot return an error.
 	sharedParams, _ := k.sharedQuerier.GetParams(ctx)
-	claimWindowSizeBlocks := sharedParams.GetClaimWindowOpenOffsetBlocks() + sharedParams.GetClaimWindowCloseOffsetBlocks()
-	proofWindowSizeBlocks := sharedParams.GetProofWindowOpenOffsetBlocks() + sharedParams.GetProofWindowCloseOffsetBlocks()
 
 	// expiringSessionEndHeight is the session end height of the session whose proof
 	// window has most recently closed.
-	expiringSessionEndHeight := blockHeight -
-		int64(claimWindowSizeBlocks+
-			proofWindowSizeBlocks+1)
-
-	allClaims := k.proofKeeper.GetAllClaims(ctx)
-	_ = allClaims
+	expiringSessionEndHeight := blockHeight - int64(sharedtypes.GetSessionEndToProofWindowCloseBlocks(sharedParams)+1)
 
 	var nextKey []byte
 	for {
@@ -258,6 +274,21 @@ func (k Keeper) proofRequirementForClaim(ctx sdk.Context, claim *prooftypes.Clai
 	}
 
 	proofParams := k.proofKeeper.GetParams(ctx)
+	computeUnitsToTokensMultiplier := k.GetParams(ctx).ComputeUnitsToTokensMultiplier
+
+	// TODO_BETA(@red-0ne): Change the proofRequirementThreshold to be of type uPOKT coin.
+	// For now, convert the uint64 representing the threshold in POKT to uPOKT.
+	proofRequirementThresholduPOKT := sdk.NewCoin(
+		volatile.DenomuPOKT,
+		math.NewIntFromUint64(proofParams.GetProofRequirementThreshold()),
+	)
+
+	// Proof requirement threshold should be checked against the claimed uPOKT since
+	// the corresponding governance parameter represents coins and not compute units.
+	claimeduPOKT := sdk.NewCoin(
+		volatile.DenomuPOKT,
+		math.NewIntFromUint64(numClaimComputeUnits*computeUnitsToTokensMultiplier),
+	)
 
 	// Require a proof if the claim's compute units meets or exceeds the threshold.
 	//
@@ -268,7 +299,7 @@ func (k Keeper) proofRequirementForClaim(ctx sdk.Context, claim *prooftypes.Clai
 	// TODO_IMPROVE(@bryanchriswhite, @red-0ne): It might make sense to include
 	// whether there was a proof submission error downstream from here. This would
 	// require a more comprehensive metrics API.
-	if numClaimComputeUnits >= proofParams.GetProofRequirementThreshold() {
+	if claimeduPOKT.Amount.GTE(proofRequirementThresholduPOKT.Amount) {
 		requirementReason = prooftypes.ProofRequirementReason_THRESHOLD
 
 		logger.Info(fmt.Sprintf(
@@ -315,4 +346,76 @@ func (k Keeper) proofRequirementForClaim(ctx sdk.Context, claim *prooftypes.Clai
 		proofParams.GetProofRequestProbability(),
 	))
 	return requirementReason, nil
+}
+
+// slashSupplierStake slashes the stake of a supplier slashingCount times and mints
+// the total slashing amount to the tokenomics module account.
+func (k Keeper) slashSupplierStake(
+	ctx sdk.Context,
+	supplierOperatorAddress string,
+	slashingCount uint64,
+) error {
+	logger := k.logger.With("method", "slashSupplierStake")
+
+	proofParams := k.proofKeeper.GetParams(ctx)
+	slashingPenalty := proofParams.GetProofMissingPenalty()
+
+	totalSlashingAmt := slashingPenalty.Amount.Mul(math.NewIntFromUint64(slashingCount))
+	totalSlashingCoin := sdk.NewCoin(volatile.DenomuPOKT, totalSlashingAmt)
+
+	supplierToSlash, supplierFound := k.supplierKeeper.GetSupplier(ctx, supplierOperatorAddress)
+	if !supplierFound {
+		return types.ErrTokenomicsSupplierNotFound
+	}
+
+	remainingStakeAmt := math.NewInt(0)
+	if supplierToSlash.GetStake().Amount.GT(totalSlashingAmt) {
+		remainingStakeAmt = supplierToSlash.GetStake().Amount.Sub(totalSlashingAmt)
+	}
+
+	err := k.bankKeeper.MintCoins(ctx, types.ModuleName, sdk.NewCoins(totalSlashingCoin))
+	if err != nil {
+		return err
+	}
+
+	supplierToSlash.Stake.Amount = remainingStakeAmt
+
+	logger.Warn(fmt.Sprintf(
+		"slashing supplier %s stake by %s, remaining stake: %s",
+		supplierToSlash.GetOperatorAddress(),
+		totalSlashingCoin,
+		remainingStakeAmt,
+	))
+
+	// Check if the supplier's stake is below the minimum and unstake it if necessary.
+	// TODO_BETA(@red-0ne, #612): Use minimum stake governance parameter once available.
+	// TODO_BETA(@red-0ne): Since SettlePendingClaims is not necessarily called
+	// at session end height so the unstaked supplier may not be immediately removed.
+	// Ensure that Gateways and Applications do not interact with a supplier that
+	// is below the minimum stake.
+	if remainingStakeAmt.LT(math.NewInt(1)) {
+		sharedParams := k.sharedKeeper.GetParams(ctx)
+		sdkCtx := sdk.UnwrapSDKContext(ctx)
+		currentHeight := sdkCtx.BlockHeight()
+		unstakeSessionEndHeight := uint64(shared.GetSessionEndHeight(&sharedParams, currentHeight))
+
+		logger.Warn(fmt.Sprintf(
+			"unstaking supplier %s due to stake below the minimum",
+			supplierOperatorAddress,
+		))
+
+		// TODO_CONSIDERATION: Should we just remove the supplier if the stake is
+		// below the minimum, at the risk of making the off-chain actors have an
+		// inconsistent session supplier list?
+		supplierToSlash.UnstakeSessionEndHeight = unstakeSessionEndHeight
+
+	}
+
+	k.supplierKeeper.SetSupplier(ctx, supplierToSlash)
+
+	// TODO_CONSIDERATION: Handle the case where the total slashing amount is
+	// greater than the supplier's stake. The protocol could take the remaining
+	// amount from the supplier's owner or operator balances.
+
+	return nil
 }
