@@ -14,7 +14,7 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-func TestMsgServer_TransferApplicationStake_Success(t *testing.T) {
+func TestMsgServer_TransferApplication_Success(t *testing.T) {
 	k, ctx := keepertest.ApplicationKeeper(t)
 	srv := appkeeper.NewMsgServerImpl(k)
 
@@ -52,9 +52,9 @@ func TestMsgServer_TransferApplicationStake_Success(t *testing.T) {
 	require.Equal(t, "svc1", srcApp.ServiceConfigs[0].Service.Id)
 
 	// Transfer the application stake from the source to the destination application address.
-	transferStakeMsg := apptypes.NewMsgTransferApplicationStake(srcAddr, dstAddr)
+	transferStakeMsg := apptypes.NewMsgTransferApplication(srcAddr, dstAddr)
 
-	transferAppStakeRes, stakeTransferErr := srv.TransferApplicationStake(ctx, transferStakeMsg)
+	transferAppStakeRes, stakeTransferErr := srv.TransferApplication(ctx, transferStakeMsg)
 	require.NoError(t, stakeTransferErr)
 
 	// Verify that the destination app was created with the correct state.
@@ -74,7 +74,7 @@ func TestMsgServer_TransferApplicationStake_Success(t *testing.T) {
 	require.False(t, isSrcFound)
 }
 
-func TestMsgServer_TransferApplicationStake_Error_DestinationExists(t *testing.T) {
+func TestMsgServer_TransferApplication_Error_DestinationExists(t *testing.T) {
 	k, ctx := keepertest.ApplicationKeeper(t)
 	srv := appkeeper.NewMsgServerImpl(k)
 
@@ -120,9 +120,9 @@ func TestMsgServer_TransferApplicationStake_Error_DestinationExists(t *testing.T
 	require.NoError(t, err)
 
 	// Attempt to transfer the source application stake to the destination.
-	transferStakeMsg := apptypes.NewMsgTransferApplicationStake(srcAddr, dstAddr)
+	transferStakeMsg := apptypes.NewMsgTransferApplication(srcAddr, dstAddr)
 
-	_, err = srv.TransferApplicationStake(ctx, transferStakeMsg)
+	_, err = srv.TransferApplication(ctx, transferStakeMsg)
 	require.ErrorContains(t, err, apptypes.ErrAppDuplicateAddress.Wrapf("destination application (%q) exists", dstAddr).Error())
 
 	// Verify that the original application still exists.

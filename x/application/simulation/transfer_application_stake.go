@@ -11,7 +11,7 @@ import (
 	"github.com/pokt-network/poktroll/x/application/types"
 )
 
-func SimulateMsgTransferApplicationStake(
+func SimulateMsgTransferApplication(
 	ak types.AccountKeeper,
 	bk types.BankKeeper,
 	k keeper.Keeper,
@@ -20,13 +20,13 @@ func SimulateMsgTransferApplicationStake(
 	) (simtypes.OperationMsg, []simtypes.FutureOperation, error) {
 		simSrcAppAccount, _ := simtypes.RandomAcc(r, accs)
 		simDstAppAccount, _ := simtypes.RandomAcc(r, accs)
-		msg := &types.MsgTransferApplicationStake{
+		msg := &types.MsgTransferApplication{
 			SourceAddress:      simSrcAppAccount.Address.String(),
 			DestinationAddress: simDstAppAccount.Address.String(),
 		}
 
-		// TODO: Handling the TransferApplicationStake simulation
+		// TODO: Handling the TransferApplication simulation
 
-		return simtypes.NoOpMsg(types.ModuleName, sdk.MsgTypeURL(msg), "TransferApplicationStake simulation not implemented"), nil, nil
+		return simtypes.NoOpMsg(types.ModuleName, sdk.MsgTypeURL(msg), "TransferApplication simulation not implemented"), nil, nil
 	}
 }
