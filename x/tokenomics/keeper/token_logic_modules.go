@@ -445,7 +445,7 @@ func (k Keeper) ensureMintedCoinsAreDistributed(
 		return nil
 	}
 
-	// Discrepancy exists and is too large, log and return an error
+	// Discrepancy exists and is too large, return an error
 	if isPercentDifferentTooLarge {
 		return tokenomictypes.ErrTokenomicsAmountMismatchTooLarge.Wrapf(
 			"the total distributed coins (%v) do not equal the amount of newly minted coins (%v) with a percent difference of (%f). Likely floating point arithmetic.\n"+
