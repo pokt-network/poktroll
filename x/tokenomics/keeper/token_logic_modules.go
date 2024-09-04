@@ -54,7 +54,8 @@ const (
 	// TLMRelayBurnEqualsMint is the token logic module that burns the application's
 	// stake balance based on the amount of work done by the supplier.
 	// The same amount of tokens is minted and added to the supplier account balance.
-	// When the network achieves equilibrium, this is theoretically the only TLM that will be necessary.
+	// When the network achieves maturity in the far future, this is theoretically
+	// the only TLM that will be necessary.
 	TLMRelayBurnEqualsMint TokenLogicModule = iota
 
 	// TLMGlobalMint is the token logic module that mints new tokens based on the
@@ -169,6 +170,8 @@ func (k Keeper) ProcessTokenLogicModules(
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrapf("%v", err)
 	}
+	// TODO_MAINNET(@bryanchriswhite, @red-0ne): Fix the low-volume exploit here.
+	// https://www.notion.so/buildwithgrove/RelayMiningDifficulty-and-low-volume-7aab3edf6f324786933af369c2fa5f01?pvs=4
 	if numRelays == 0 {
 		return tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrap("root hash has zero relays")
 	}
@@ -349,6 +352,7 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 	logger := k.Logger().With("method", "TokenLogicModuleGlobalMint")
 
 	if MintPerClaimedTokenGlobalInflation == 0 {
+		// TODO_UPNEXT(@olshansk): Make sure to skip GMRR TLM in this case as well.
 		logger.Warn("global inflation is set to zero. Skipping Global Mint TLM.")
 		return nil
 	}
