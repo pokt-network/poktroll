@@ -115,7 +115,7 @@ func init() {
 // ProcessTokenLogicModules is the entrypoint for all TLM processing. It is responsible for running
 // all the independent TLMs necessary to limit, burn, mint or transfer tokens as a result of the
 // amount of work (i.e. relays, compute units) done in proportion to the global governance parameters.
-// IMPORTANT: It is assumed the proof for the claim has been validated BEFORE calling this function.
+// IMPORTANT: It is assumed that the proof for the claim has been validated BEFORE calling this function.
 func (k Keeper) ProcessTokenLogicModules(
 	ctx context.Context,
 	claim *prooftypes.Claim,
