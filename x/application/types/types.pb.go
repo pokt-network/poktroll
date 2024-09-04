@@ -29,8 +29,12 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 // Application defines the type used to store an on-chain definition and state for an application
 type Application struct {
-	Address        string                             `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
-	Stake          *types.Coin                        `protobuf:"bytes,2,opt,name=stake,proto3" json:"stake,omitempty"`
+	Address string      `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
+	Stake   *types.Coin `protobuf:"bytes,2,opt,name=stake,proto3" json:"stake,omitempty"`
+	// TODO_BETA(@red-0ne, @olshansk): Limit this to one service_config.
+	//    Remove `repeated`, drop the `s` from service_configs and document why
+	//    this is the case in the app config (and here) per this discussion:
+	//    https://github.com/pokt-network/poktroll/pull/750#discussion_r1735025033
 	ServiceConfigs []*types1.ApplicationServiceConfig `protobuf:"bytes,3,rep,name=service_configs,json=serviceConfigs,proto3" json:"service_configs,omitempty"`
 	// TODO_BETA: Rename `delegatee_gateway_addresses` to `gateway_addresses_delegated_to`.
 	// Ensure to rename all relevant configs, comments, variables, function names, etc as well.
