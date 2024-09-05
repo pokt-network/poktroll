@@ -1093,6 +1093,36 @@ act_reviewdog: check_act check_gh ## Run the reviewdog workflow locally like so:
 	@echo "Detected architecture: $(CONTAINER_ARCH)"
 	act -v -s GITHUB_TOKEN=$(GITHUB_TOKEN) -W .github/workflows/reviewdog.yml --container-architecture $(CONTAINER_ARCH)
 
+
+###########################
+###   Release Helpers   ###
+###########################
+
+# List tags: git tag
+# Delete tag locally: git tag -d v1.2.3
+# Delete tag remotely: git push --delete origin v1.2.3
+
+.PHONY: release_tag_bug_fix
+release_tag_bug_fix: ## Tag a new bug fix release (e.g. v1.0.1 -> v1.0.2)
+	@$(eval LATEST_TAG=$(shell git tag --sort=-v:refname | head -n 1))
+	@$(eval NEW_TAG=$(shell echo $(LATEST_TAG) | awk -F. -v OFS=. '{ $$NF = sprintf("%d", $$NF + 1); print }'))
+	@git tag $(NEW_TAG)
+	@echo "New bug fix version tagged: $(NEW_TAG)"
+	@echo "Run the following commands to push the new tag:"
+	@echo "  git push origin $(NEW_TAG)"
+	@echo "And draft a new release at https://github.com/pokt-network/poktroll/releases/new"
+
+
+.PHONY: release_tag_minor_release
+release_tag_minor_release: ## Tag a new minor release (e.g. v1.0.0 -> v1.1.0)
+	@$(eval LATEST_TAG=$(shell git tag --sort=-v:refname | head -n 1))
+	@$(eval NEW_TAG=$(shell echo $(LATEST_TAG) | awk -F. '{$$2 += 1; $$3 = 0; print $$1 "." $$2 "." $$3}'))
+	@git tag $(NEW_TAG)
+	@echo "New minor release version tagged: $(NEW_TAG)"
+	@echo "Run the following commands to push the new tag:"
+	@echo "  git push origin $(NEW_TAG)"
+	@echo "And draft a new release at https://github.com/pokt-network/poktroll/releases/new"
+
 #############################
 ### Grove Gateway Helpers ###
 #############################
