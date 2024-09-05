@@ -394,6 +394,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		applicationKeeper,
 		accountKeeper,
 		sharedKeeper,
+		serviceKeeper,
 	)
 	proofModule := proof.NewAppModule(
 		cdc,

@@ -410,6 +410,7 @@ func NewTokenomicsModuleKeepers(
 		appKeeper,
 		accountKeeper,
 		sharedKeeper,
+		serviceKeeper,
 	)
 	require.NoError(t, proofKeeper.SetParams(sdkCtx, prooftypes.DefaultParams()))
 

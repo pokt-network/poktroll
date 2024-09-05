@@ -61,6 +61,7 @@ type ProofModuleKeepers struct {
 	prooftypes.ApplicationKeeper
 	prooftypes.AccountKeeper
 	prooftypes.SharedKeeper
+	prooftypes.ServiceKeeper
 
 	Codec *codec.ProtoCodec
 }
@@ -89,6 +90,7 @@ func ProofKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 	mockAppKeeper := mocks.NewMockApplicationKeeper(ctrl)
 	mockAccountKeeper := mocks.NewMockAccountKeeper(ctrl)
 	mockSharedKeeper := mocks.NewMockSharedKeeper(ctrl)
+	mockServiceKeeper := mocks.NewMockServiceKeeper(ctrl)
 
 	k := keeper.NewKeeper(
 		cdc,
@@ -99,6 +101,7 @@ func ProofKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 		mockAppKeeper,
 		mockAccountKeeper,
 		mockSharedKeeper,
+		mockServiceKeeper,
 	)
 
 	ctx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
@@ -228,6 +231,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 		appKeeper,
 		accountKeeper,
 		sharedKeeper,
+		serviceKeeper,
 	)
 	require.NoError(t, proofKeeper.SetParams(ctx, types.DefaultParams()))
 
@@ -238,6 +242,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 		ApplicationKeeper: &appKeeper,
 		AccountKeeper:     &accountKeeper,
 		SharedKeeper:      &sharedKeeper,
+		ServiceKeeper:     &serviceKeeper,
 
 		Codec: cdc,
 	}
@@ -274,6 +279,8 @@ func (keepers *ProofModuleKeepers) AddServiceActors(
 			{Service: service},
 		},
 	})
+
+	keepers.SetService(ctx, *service)
 }
 
 // GetSessionHeader is a helper to retrieve the session header
