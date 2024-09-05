@@ -46,24 +46,38 @@ func TestMsgServer_TransferApplication_Success(t *testing.T) {
 	// Verify that the application exists.
 	srcApp, isSrcFound := k.GetApplication(ctx, srcAddr)
 	require.True(t, isSrcFound)
-	require.Equal(t, srcAddr, srcApp.Address)
-	require.Equal(t, expectedAppStake, srcApp.Stake)
-	require.Len(t, srcApp.ServiceConfigs, 1)
-	require.Equal(t, "svc1", srcApp.ServiceConfigs[0].Service.Id)
+	require.Equal(t, srcAddr, srcApp.GetAddress())
+	require.Equal(t, expectedAppStake, srcApp.GetStake())
+	require.Len(t, srcApp.GetServiceConfigs(), 1)
+	require.Equal(t, "svc1", srcApp.GetServiceConfigs()[0].GetService().GetId())
 
 	// Transfer the application stake from the source to the destination application address.
 	transferStakeMsg := apptypes.NewMsgTransferApplication(srcAddr, dstAddr)
 
 	transferAppStakeRes, stakeTransferErr := srv.TransferApplication(ctx, transferStakeMsg)
 	require.NoError(t, stakeTransferErr)
+	transferResApp := transferAppStakeRes.GetApplication()
+	require.NotNil(t, transferResApp.GetPendingTransfer())
+
+	// Assert that the source app and the transfer response app are the same except for the #PendingTransfer.
+	transferResApp.PendingTransfer = nil
+	require.EqualValues(t, &srcApp, transferResApp)
+
+	// Set the height to the end of the session.
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	ctx = sdkCtx.WithBlockHeight(sharedtypes.DefaultNumBlocksPerSession)
+
+	// Run application module end-blockers to complete the transfer.
+	err = k.EndBlockerTransferApplication(ctx)
+	require.NoError(t, err)
 
 	// Verify that the destination app was created with the correct state.
 	dstApp, isDstFound := k.GetApplication(ctx, dstAddr)
 	require.True(t, isDstFound)
-	require.Equal(t, dstAddr, dstApp.Address)
-	require.Equal(t, expectedAppStake, dstApp.Stake)
-	require.Len(t, dstApp.ServiceConfigs, 1)
-	require.EqualValues(t, &srcApp, transferAppStakeRes.Application)
+	require.Equal(t, dstAddr, dstApp.GetAddress())
+	require.Equal(t, expectedAppStake, dstApp.GetStake())
+	require.Len(t, dstApp.GetServiceConfigs(), 1)
+	require.Equal(t, "svc1", dstApp.GetServiceConfigs()[0].GetService().GetId())
 
 	srcApp.Address = ""
 	dstApp.Address = ""
@@ -123,7 +137,7 @@ func TestMsgServer_TransferApplication_Error_DestinationExists(t *testing.T) {
 	transferStakeMsg := apptypes.NewMsgTransferApplication(srcAddr, dstAddr)
 
 	_, err = srv.TransferApplication(ctx, transferStakeMsg)
-	require.ErrorContains(t, err, apptypes.ErrAppDuplicateAddress.Wrapf("destination application (%q) exists", dstAddr).Error())
+	require.ErrorContains(t, err, apptypes.ErrAppDuplicateAddress.Wrapf("destination application (%s) exists", dstAddr).Error())
 
 	// Verify that the original application still exists.
 	var foundApp apptypes.Application
