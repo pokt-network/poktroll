@@ -41,21 +41,3 @@ func GetApplicationUnbondingHeight(
 
 	return int64(application.UnstakeSessionEndHeight + applicationUnbondingPeriodSessions)
 }
-
-// GetApplicationTransferEndHeight returns the session end height at which the given
-// application finishes transferring. It returns -1 if the application has no
-// pending transfer.
-func GetApplicationTransferEndHeight(
-	sharedParams *sharedtypes.Params,
-	application *Application,
-) int64 {
-	// TODO_IN_THIS_COMMIT: add and use a new param: `ApplicationTransferPeriodSessions`.
-	applicationTransferPeriodBlocks := sharedParams.ApplicationTransferAndUnbondingPeriodSessions * sharedParams.NumBlocksPerSession
-
-	pendingTransfer := application.GetPendingTransfer()
-	if pendingTransfer == nil {
-		return -1
-	}
-
-	return int64(pendingTransfer.GetSessionEndHeight() + applicationTransferPeriodBlocks)
-}

@@ -8,7 +8,6 @@ import (
 
 	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/application/types"
-	"github.com/pokt-network/poktroll/x/shared"
 )
 
 func (k Keeper) EndBlockerTransferApplication(ctx context.Context) error {
@@ -21,12 +20,11 @@ func (k Keeper) EndBlockerTransferApplication(ctx context.Context) error {
 
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	currentHeight := sdkCtx.BlockHeight()
-	sharedParams := k.sharedKeeper.GetParams(sdkCtx)
 	logger := k.Logger().With("method", "EndBlockerTransferApplication")
 
 	// Only process application transfers at the end of the session.
 	// TODO_CONSIDER: refactoring this logic into a shared function, `IsCurrentSessionEndHeight`.
-	currentSessionEndHeight := shared.GetSessionEndHeight(&sharedParams, currentHeight)
+	currentSessionEndHeight := k.sharedKeeper.GetSessionEndHeight(ctx, currentHeight)
 	if currentHeight != currentSessionEndHeight {
 		return nil
 	}
@@ -41,8 +39,8 @@ func (k Keeper) EndBlockerTransferApplication(ctx context.Context) error {
 			continue
 		}
 
-		transferEndHeight := types.GetApplicationTransferEndHeight(&sharedParams, &srcApp)
-		if sdkCtx.BlockHeight() < transferEndHeight {
+		transferEndHeight := srcApp.GetPendingTransfer().GetSessionEndHeight()
+		if uint64(sdkCtx.BlockHeight()) < transferEndHeight {
 			continue
 		}
 
