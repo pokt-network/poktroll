@@ -58,16 +58,16 @@ func TestMsgServer_TransferApplication_Success(t *testing.T) {
 	require.NoError(t, stakeTransferErr)
 
 	// Verify that the destination app was created with the correct state.
-	srcApp, isSrcFound = k.GetApplication(ctx, dstAddr)
-	require.True(t, isSrcFound)
-
 	dstApp, isDstFound := k.GetApplication(ctx, dstAddr)
 	require.True(t, isDstFound)
 	require.Equal(t, dstAddr, dstApp.Address)
 	require.Equal(t, expectedAppStake, dstApp.Stake)
 	require.Len(t, dstApp.ServiceConfigs, 1)
+	require.EqualValues(t, &srcApp, transferAppStakeRes.Application)
+
+	srcApp.Address = ""
+	dstApp.Address = ""
 	require.EqualValues(t, srcApp, dstApp)
-	require.EqualValues(t, &dstApp, transferAppStakeRes.Application)
 
 	// Verify that the source app was unstaked.
 	srcApp, isSrcFound = k.GetApplication(ctx, srcAddr)

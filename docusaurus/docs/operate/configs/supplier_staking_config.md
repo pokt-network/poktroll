@@ -5,10 +5,16 @@ sidebar_position: 3
 
 # Supplier staking config <!-- omit in toc -->
 
-_This document describes the configuration file used by the `Supplier` to submit
-a stake transaction required to provide RPC services on Pocket Network._
+This document describes the configuration file used by the `Supplier` actor
+to submit a `stake` transaction, **which is a prerequisite** for it to provide
+RPC services on Pocket Network.
 
-- [Reference Example](#reference-example)
+:::tip
+
+You can find a fully featured example configuration at [supplier_staking_config.yaml](https://github.com/pokt-network/poktroll/tree/main/localnet/poktrolld/config/supplier1_stake_config.yaml).
+
+:::
+
 - [Usage](#usage)
 - [Staking types](#staking-types)
   - [Custodial Staking](#custodial-staking)
@@ -24,10 +30,6 @@ a stake transaction required to provide RPC services on Pocket Network._
       - [`publicly_exposed_url`](#publicly_exposed_url)
       - [`rpc_type`](#rpc_type)
     - [`rev_share_percent`](#rev_share_percent)
-
-## Reference Example
-
-A full example of the configuration file could be found at [supplier_staking_config.yaml](https://github.com/pokt-network/poktroll/tree/main/localnet/poktrolld/config/supplier1_stake_config.yaml).
 
 ## Usage
 

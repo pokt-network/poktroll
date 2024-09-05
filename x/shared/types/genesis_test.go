@@ -24,9 +24,9 @@ func TestGenesisState_Validate(t *testing.T) {
 			desc: "valid genesis state",
 			genState: &types.GenesisState{
 				Params: types.Params{
-					NumBlocksPerSession:                           defaultParams.NumBlocksPerSession,
-					SupplierUnbondingPeriodSessions:               defaultParams.SupplierUnbondingPeriodSessions,
-					ApplicationTransferAndUnbondingPeriodSessions: defaultParams.ApplicationTransferAndUnbondingPeriodSessions,
+					NumBlocksPerSession:                defaultParams.NumBlocksPerSession,
+					SupplierUnbondingPeriodSessions:    defaultParams.SupplierUnbondingPeriodSessions,
+					ApplicationUnbondingPeriodSessions: defaultParams.ApplicationUnbondingPeriodSessions,
 				},
 
 				// this line is used by starport scaffolding # types/genesis/validField
