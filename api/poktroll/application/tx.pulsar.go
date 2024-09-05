@@ -4323,27 +4323,27 @@ func (x *fastReflection_MsgUndelegateFromGatewayResponse) ProtoMethods() *protoi
 }
 
 var (
-	md_MsgTransferApplication                     protoreflect.MessageDescriptor
-	fd_MsgTransferApplication_source_address      protoreflect.FieldDescriptor
-	fd_MsgTransferApplication_destination_address protoreflect.FieldDescriptor
+	md_MsgTransferApplicationStake                     protoreflect.MessageDescriptor
+	fd_MsgTransferApplicationStake_source_address      protoreflect.FieldDescriptor
+	fd_MsgTransferApplicationStake_destination_address protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_poktroll_application_tx_proto_init()
-	md_MsgTransferApplication = File_poktroll_application_tx_proto.Messages().ByName("MsgTransferApplication")
-	fd_MsgTransferApplication_source_address = md_MsgTransferApplication.Fields().ByName("source_address")
-	fd_MsgTransferApplication_destination_address = md_MsgTransferApplication.Fields().ByName("destination_address")
+	md_MsgTransferApplicationStake = File_poktroll_application_tx_proto.Messages().ByName("MsgTransferApplicationStake")
+	fd_MsgTransferApplicationStake_source_address = md_MsgTransferApplicationStake.Fields().ByName("source_address")
+	fd_MsgTransferApplicationStake_destination_address = md_MsgTransferApplicationStake.Fields().ByName("destination_address")
 }
 
-var _ protoreflect.Message = (*fastReflection_MsgTransferApplication)(nil)
+var _ protoreflect.Message = (*fastReflection_MsgTransferApplicationStake)(nil)
 
-type fastReflection_MsgTransferApplication MsgTransferApplication
+type fastReflection_MsgTransferApplicationStake MsgTransferApplicationStake
 
-func (x *MsgTransferApplication) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_MsgTransferApplication)(x)
+func (x *MsgTransferApplicationStake) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_MsgTransferApplicationStake)(x)
 }
 
-func (x *MsgTransferApplication) slowProtoReflect() protoreflect.Message {
+func (x *MsgTransferApplicationStake) slowProtoReflect() protoreflect.Message {
 	mi := &file_poktroll_application_tx_proto_msgTypes[10]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -4355,43 +4355,43 @@ func (x *MsgTransferApplication) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_MsgTransferApplication_messageType fastReflection_MsgTransferApplication_messageType
-var _ protoreflect.MessageType = fastReflection_MsgTransferApplication_messageType{}
+var _fastReflection_MsgTransferApplicationStake_messageType fastReflection_MsgTransferApplicationStake_messageType
+var _ protoreflect.MessageType = fastReflection_MsgTransferApplicationStake_messageType{}
 
-type fastReflection_MsgTransferApplication_messageType struct{}
+type fastReflection_MsgTransferApplicationStake_messageType struct{}
 
-func (x fastReflection_MsgTransferApplication_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_MsgTransferApplication)(nil)
+func (x fastReflection_MsgTransferApplicationStake_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_MsgTransferApplicationStake)(nil)
 }
-func (x fastReflection_MsgTransferApplication_messageType) New() protoreflect.Message {
-	return new(fastReflection_MsgTransferApplication)
+func (x fastReflection_MsgTransferApplicationStake_messageType) New() protoreflect.Message {
+	return new(fastReflection_MsgTransferApplicationStake)
 }
-func (x fastReflection_MsgTransferApplication_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgTransferApplication
+func (x fastReflection_MsgTransferApplicationStake_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgTransferApplicationStake
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_MsgTransferApplication) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgTransferApplication
+func (x *fastReflection_MsgTransferApplicationStake) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgTransferApplicationStake
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_MsgTransferApplication) Type() protoreflect.MessageType {
-	return _fastReflection_MsgTransferApplication_messageType
+func (x *fastReflection_MsgTransferApplicationStake) Type() protoreflect.MessageType {
+	return _fastReflection_MsgTransferApplicationStake_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_MsgTransferApplication) New() protoreflect.Message {
-	return new(fastReflection_MsgTransferApplication)
+func (x *fastReflection_MsgTransferApplicationStake) New() protoreflect.Message {
+	return new(fastReflection_MsgTransferApplicationStake)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_MsgTransferApplication) Interface() protoreflect.ProtoMessage {
-	return (*MsgTransferApplication)(x)
+func (x *fastReflection_MsgTransferApplicationStake) Interface() protoreflect.ProtoMessage {
+	return (*MsgTransferApplicationStake)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -4399,16 +4399,16 @@ func (x *fastReflection_MsgTransferApplication) Interface() protoreflect.ProtoMe
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_MsgTransferApplication) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_MsgTransferApplicationStake) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 	if x.SourceAddress != "" {
 		value := protoreflect.ValueOfString(x.SourceAddress)
-		if !f(fd_MsgTransferApplication_source_address, value) {
+		if !f(fd_MsgTransferApplicationStake_source_address, value) {
 			return
 		}
 	}
 	if x.DestinationAddress != "" {
 		value := protoreflect.ValueOfString(x.DestinationAddress)
-		if !f(fd_MsgTransferApplication_destination_address, value) {
+		if !f(fd_MsgTransferApplicationStake_destination_address, value) {
 			return
 		}
 	}
@@ -4425,17 +4425,17 @@ func (x *fastReflection_MsgTransferApplication) Range(f func(protoreflect.FieldD
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_MsgTransferApplication) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_MsgTransferApplicationStake) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "poktroll.application.MsgTransferApplication.source_address":
+	case "poktroll.application.MsgTransferApplicationStake.source_address":
 		return x.SourceAddress != ""
-	case "poktroll.application.MsgTransferApplication.destination_address":
+	case "poktroll.application.MsgTransferApplicationStake.destination_address":
 		return x.DestinationAddress != ""
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.MsgTransferApplication"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.MsgTransferApplicationStake"))
 		}
-		panic(fmt.Errorf("message poktroll.application.MsgTransferApplication does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.application.MsgTransferApplicationStake does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -4445,17 +4445,17 @@ func (x *fastReflection_MsgTransferApplication) Has(fd protoreflect.FieldDescrip
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgTransferApplication) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_MsgTransferApplicationStake) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "poktroll.application.MsgTransferApplication.source_address":
+	case "poktroll.application.MsgTransferApplicationStake.source_address":
 		x.SourceAddress = ""
-	case "poktroll.application.MsgTransferApplication.destination_address":
+	case "poktroll.application.MsgTransferApplicationStake.destination_address":
 		x.DestinationAddress = ""
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.MsgTransferApplication"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.MsgTransferApplicationStake"))
 		}
-		panic(fmt.Errorf("message poktroll.application.MsgTransferApplication does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.application.MsgTransferApplicationStake does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -4465,19 +4465,19 @@ func (x *fastReflection_MsgTransferApplication) Clear(fd protoreflect.FieldDescr
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_MsgTransferApplication) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgTransferApplicationStake) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "poktroll.application.MsgTransferApplication.source_address":
+	case "poktroll.application.MsgTransferApplicationStake.source_address":
 		value := x.SourceAddress
 		return protoreflect.ValueOfString(value)
-	case "poktroll.application.MsgTransferApplication.destination_address":
+	case "poktroll.application.MsgTransferApplicationStake.destination_address":
 		value := x.DestinationAddress
 		return protoreflect.ValueOfString(value)
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.MsgTransferApplication"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.MsgTransferApplicationStake"))
 		}
-		panic(fmt.Errorf("message poktroll.application.MsgTransferApplication does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message poktroll.application.MsgTransferApplicationStake does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -4491,17 +4491,17 @@ func (x *fastReflection_MsgTransferApplication) Get(descriptor protoreflect.Fiel
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgTransferApplication) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_MsgTransferApplicationStake) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "poktroll.application.MsgTransferApplication.source_address":
+	case "poktroll.application.MsgTransferApplicationStake.source_address":
 		x.SourceAddress = value.Interface().(string)
-	case "poktroll.application.MsgTransferApplication.destination_address":
+	case "poktroll.application.MsgTransferApplicationStake.destination_address":
 		x.DestinationAddress = value.Interface().(string)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.MsgTransferApplication"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.MsgTransferApplicationStake"))
 		}
-		panic(fmt.Errorf("message poktroll.application.MsgTransferApplication does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.application.MsgTransferApplicationStake does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -4515,44 +4515,44 @@ func (x *fastReflection_MsgTransferApplication) Set(fd protoreflect.FieldDescrip
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgTransferApplication) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgTransferApplicationStake) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.application.MsgTransferApplication.source_address":
-		panic(fmt.Errorf("field source_address of message poktroll.application.MsgTransferApplication is not mutable"))
-	case "poktroll.application.MsgTransferApplication.destination_address":
-		panic(fmt.Errorf("field destination_address of message poktroll.application.MsgTransferApplication is not mutable"))
+	case "poktroll.application.MsgTransferApplicationStake.source_address":
+		panic(fmt.Errorf("field source_address of message poktroll.application.MsgTransferApplicationStake is not mutable"))
+	case "poktroll.application.MsgTransferApplicationStake.destination_address":
+		panic(fmt.Errorf("field destination_address of message poktroll.application.MsgTransferApplicationStake is not mutable"))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.MsgTransferApplication"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.MsgTransferApplicationStake"))
 		}
-		panic(fmt.Errorf("message poktroll.application.MsgTransferApplication does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.application.MsgTransferApplicationStake does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_MsgTransferApplication) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgTransferApplicationStake) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.application.MsgTransferApplication.source_address":
+	case "poktroll.application.MsgTransferApplicationStake.source_address":
 		return protoreflect.ValueOfString("")
-	case "poktroll.application.MsgTransferApplication.destination_address":
+	case "poktroll.application.MsgTransferApplicationStake.destination_address":
 		return protoreflect.ValueOfString("")
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.MsgTransferApplication"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.MsgTransferApplicationStake"))
 		}
-		panic(fmt.Errorf("message poktroll.application.MsgTransferApplication does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.application.MsgTransferApplicationStake does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_MsgTransferApplication) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_MsgTransferApplicationStake) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in poktroll.application.MsgTransferApplication", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in poktroll.application.MsgTransferApplicationStake", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -4560,7 +4560,7 @@ func (x *fastReflection_MsgTransferApplication) WhichOneof(d protoreflect.OneofD
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_MsgTransferApplication) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_MsgTransferApplicationStake) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -4571,7 +4571,7 @@ func (x *fastReflection_MsgTransferApplication) GetUnknown() protoreflect.RawFie
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgTransferApplication) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_MsgTransferApplicationStake) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -4583,7 +4583,7 @@ func (x *fastReflection_MsgTransferApplication) SetUnknown(fields protoreflect.R
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_MsgTransferApplication) IsValid() bool {
+func (x *fastReflection_MsgTransferApplicationStake) IsValid() bool {
 	return x != nil
 }
 
@@ -4593,9 +4593,9 @@ func (x *fastReflection_MsgTransferApplication) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_MsgTransferApplication) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_MsgTransferApplicationStake) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*MsgTransferApplication)
+		x := input.Message.Interface().(*MsgTransferApplicationStake)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -4625,7 +4625,7 @@ func (x *fastReflection_MsgTransferApplication) ProtoMethods() *protoiface.Metho
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*MsgTransferApplication)
+		x := input.Message.Interface().(*MsgTransferApplicationStake)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -4669,7 +4669,7 @@ func (x *fastReflection_MsgTransferApplication) ProtoMethods() *protoiface.Metho
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*MsgTransferApplication)
+		x := input.Message.Interface().(*MsgTransferApplicationStake)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -4701,10 +4701,10 @@ func (x *fastReflection_MsgTransferApplication) ProtoMethods() *protoiface.Metho
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgTransferApplication: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgTransferApplicationStake: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgTransferApplication: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgTransferApplicationStake: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
@@ -4807,25 +4807,25 @@ func (x *fastReflection_MsgTransferApplication) ProtoMethods() *protoiface.Metho
 }
 
 var (
-	md_MsgTransferApplicationResponse             protoreflect.MessageDescriptor
-	fd_MsgTransferApplicationResponse_application protoreflect.FieldDescriptor
+	md_MsgTransferApplicationStakeResponse             protoreflect.MessageDescriptor
+	fd_MsgTransferApplicationStakeResponse_application protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_poktroll_application_tx_proto_init()
-	md_MsgTransferApplicationResponse = File_poktroll_application_tx_proto.Messages().ByName("MsgTransferApplicationResponse")
-	fd_MsgTransferApplicationResponse_application = md_MsgTransferApplicationResponse.Fields().ByName("application")
+	md_MsgTransferApplicationStakeResponse = File_poktroll_application_tx_proto.Messages().ByName("MsgTransferApplicationStakeResponse")
+	fd_MsgTransferApplicationStakeResponse_application = md_MsgTransferApplicationStakeResponse.Fields().ByName("application")
 }
 
-var _ protoreflect.Message = (*fastReflection_MsgTransferApplicationResponse)(nil)
+var _ protoreflect.Message = (*fastReflection_MsgTransferApplicationStakeResponse)(nil)
 
-type fastReflection_MsgTransferApplicationResponse MsgTransferApplicationResponse
+type fastReflection_MsgTransferApplicationStakeResponse MsgTransferApplicationStakeResponse
 
-func (x *MsgTransferApplicationResponse) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_MsgTransferApplicationResponse)(x)
+func (x *MsgTransferApplicationStakeResponse) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_MsgTransferApplicationStakeResponse)(x)
 }
 
-func (x *MsgTransferApplicationResponse) slowProtoReflect() protoreflect.Message {
+func (x *MsgTransferApplicationStakeResponse) slowProtoReflect() protoreflect.Message {
 	mi := &file_poktroll_application_tx_proto_msgTypes[11]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -4837,43 +4837,43 @@ func (x *MsgTransferApplicationResponse) slowProtoReflect() protoreflect.Message
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_MsgTransferApplicationResponse_messageType fastReflection_MsgTransferApplicationResponse_messageType
-var _ protoreflect.MessageType = fastReflection_MsgTransferApplicationResponse_messageType{}
+var _fastReflection_MsgTransferApplicationStakeResponse_messageType fastReflection_MsgTransferApplicationStakeResponse_messageType
+var _ protoreflect.MessageType = fastReflection_MsgTransferApplicationStakeResponse_messageType{}
 
-type fastReflection_MsgTransferApplicationResponse_messageType struct{}
+type fastReflection_MsgTransferApplicationStakeResponse_messageType struct{}
 
-func (x fastReflection_MsgTransferApplicationResponse_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_MsgTransferApplicationResponse)(nil)
+func (x fastReflection_MsgTransferApplicationStakeResponse_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_MsgTransferApplicationStakeResponse)(nil)
 }
-func (x fastReflection_MsgTransferApplicationResponse_messageType) New() protoreflect.Message {
-	return new(fastReflection_MsgTransferApplicationResponse)
+func (x fastReflection_MsgTransferApplicationStakeResponse_messageType) New() protoreflect.Message {
+	return new(fastReflection_MsgTransferApplicationStakeResponse)
 }
-func (x fastReflection_MsgTransferApplicationResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgTransferApplicationResponse
+func (x fastReflection_MsgTransferApplicationStakeResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgTransferApplicationStakeResponse
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_MsgTransferApplicationResponse) Descriptor() protoreflect.MessageDescriptor {
-	return md_MsgTransferApplicationResponse
+func (x *fastReflection_MsgTransferApplicationStakeResponse) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgTransferApplicationStakeResponse
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_MsgTransferApplicationResponse) Type() protoreflect.MessageType {
-	return _fastReflection_MsgTransferApplicationResponse_messageType
+func (x *fastReflection_MsgTransferApplicationStakeResponse) Type() protoreflect.MessageType {
+	return _fastReflection_MsgTransferApplicationStakeResponse_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_MsgTransferApplicationResponse) New() protoreflect.Message {
-	return new(fastReflection_MsgTransferApplicationResponse)
+func (x *fastReflection_MsgTransferApplicationStakeResponse) New() protoreflect.Message {
+	return new(fastReflection_MsgTransferApplicationStakeResponse)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_MsgTransferApplicationResponse) Interface() protoreflect.ProtoMessage {
-	return (*MsgTransferApplicationResponse)(x)
+func (x *fastReflection_MsgTransferApplicationStakeResponse) Interface() protoreflect.ProtoMessage {
+	return (*MsgTransferApplicationStakeResponse)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -4881,10 +4881,10 @@ func (x *fastReflection_MsgTransferApplicationResponse) Interface() protoreflect
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_MsgTransferApplicationResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_MsgTransferApplicationStakeResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 	if x.Application != nil {
 		value := protoreflect.ValueOfMessage(x.Application.ProtoReflect())
-		if !f(fd_MsgTransferApplicationResponse_application, value) {
+		if !f(fd_MsgTransferApplicationStakeResponse_application, value) {
 			return
 		}
 	}
@@ -4901,15 +4901,15 @@ func (x *fastReflection_MsgTransferApplicationResponse) Range(f func(protoreflec
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_MsgTransferApplicationResponse) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_MsgTransferApplicationStakeResponse) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "poktroll.application.MsgTransferApplicationResponse.application":
+	case "poktroll.application.MsgTransferApplicationStakeResponse.application":
 		return x.Application != nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.MsgTransferApplicationResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.MsgTransferApplicationStakeResponse"))
 		}
-		panic(fmt.Errorf("message poktroll.application.MsgTransferApplicationResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.application.MsgTransferApplicationStakeResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -4919,15 +4919,15 @@ func (x *fastReflection_MsgTransferApplicationResponse) Has(fd protoreflect.Fiel
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgTransferApplicationResponse) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_MsgTransferApplicationStakeResponse) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "poktroll.application.MsgTransferApplicationResponse.application":
+	case "poktroll.application.MsgTransferApplicationStakeResponse.application":
 		x.Application = nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.MsgTransferApplicationResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.MsgTransferApplicationStakeResponse"))
 		}
-		panic(fmt.Errorf("message poktroll.application.MsgTransferApplicationResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.application.MsgTransferApplicationStakeResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -4937,16 +4937,16 @@ func (x *fastReflection_MsgTransferApplicationResponse) Clear(fd protoreflect.Fi
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_MsgTransferApplicationResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgTransferApplicationStakeResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "poktroll.application.MsgTransferApplicationResponse.application":
+	case "poktroll.application.MsgTransferApplicationStakeResponse.application":
 		value := x.Application
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.MsgTransferApplicationResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.MsgTransferApplicationStakeResponse"))
 		}
-		panic(fmt.Errorf("message poktroll.application.MsgTransferApplicationResponse does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message poktroll.application.MsgTransferApplicationStakeResponse does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -4960,15 +4960,15 @@ func (x *fastReflection_MsgTransferApplicationResponse) Get(descriptor protorefl
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgTransferApplicationResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_MsgTransferApplicationStakeResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "poktroll.application.MsgTransferApplicationResponse.application":
+	case "poktroll.application.MsgTransferApplicationStakeResponse.application":
 		x.Application = value.Message().Interface().(*Application)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.MsgTransferApplicationResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.MsgTransferApplicationStakeResponse"))
 		}
-		panic(fmt.Errorf("message poktroll.application.MsgTransferApplicationResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.application.MsgTransferApplicationStakeResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -4982,44 +4982,44 @@ func (x *fastReflection_MsgTransferApplicationResponse) Set(fd protoreflect.Fiel
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgTransferApplicationResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgTransferApplicationStakeResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.application.MsgTransferApplicationResponse.application":
+	case "poktroll.application.MsgTransferApplicationStakeResponse.application":
 		if x.Application == nil {
 			x.Application = new(Application)
 		}
 		return protoreflect.ValueOfMessage(x.Application.ProtoReflect())
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.MsgTransferApplicationResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.MsgTransferApplicationStakeResponse"))
 		}
-		panic(fmt.Errorf("message poktroll.application.MsgTransferApplicationResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.application.MsgTransferApplicationStakeResponse does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_MsgTransferApplicationResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_MsgTransferApplicationStakeResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.application.MsgTransferApplicationResponse.application":
+	case "poktroll.application.MsgTransferApplicationStakeResponse.application":
 		m := new(Application)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.MsgTransferApplicationResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.MsgTransferApplicationStakeResponse"))
 		}
-		panic(fmt.Errorf("message poktroll.application.MsgTransferApplicationResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.application.MsgTransferApplicationStakeResponse does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_MsgTransferApplicationResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_MsgTransferApplicationStakeResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in poktroll.application.MsgTransferApplicationResponse", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in poktroll.application.MsgTransferApplicationStakeResponse", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -5027,7 +5027,7 @@ func (x *fastReflection_MsgTransferApplicationResponse) WhichOneof(d protoreflec
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_MsgTransferApplicationResponse) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_MsgTransferApplicationStakeResponse) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -5038,7 +5038,7 @@ func (x *fastReflection_MsgTransferApplicationResponse) GetUnknown() protoreflec
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_MsgTransferApplicationResponse) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_MsgTransferApplicationStakeResponse) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -5050,7 +5050,7 @@ func (x *fastReflection_MsgTransferApplicationResponse) SetUnknown(fields protor
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_MsgTransferApplicationResponse) IsValid() bool {
+func (x *fastReflection_MsgTransferApplicationStakeResponse) IsValid() bool {
 	return x != nil
 }
 
@@ -5060,9 +5060,9 @@ func (x *fastReflection_MsgTransferApplicationResponse) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_MsgTransferApplicationResponse) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_MsgTransferApplicationStakeResponse) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*MsgTransferApplicationResponse)
+		x := input.Message.Interface().(*MsgTransferApplicationStakeResponse)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -5088,7 +5088,7 @@ func (x *fastReflection_MsgTransferApplicationResponse) ProtoMethods() *protoifa
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*MsgTransferApplicationResponse)
+		x := input.Message.Interface().(*MsgTransferApplicationStakeResponse)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -5132,7 +5132,7 @@ func (x *fastReflection_MsgTransferApplicationResponse) ProtoMethods() *protoifa
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*MsgTransferApplicationResponse)
+		x := input.Message.Interface().(*MsgTransferApplicationStakeResponse)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -5164,10 +5164,10 @@ func (x *fastReflection_MsgTransferApplicationResponse) ProtoMethods() *protoifa
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgTransferApplicationResponse: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgTransferApplicationStakeResponse: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgTransferApplicationResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgTransferApplicationStakeResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
@@ -5605,7 +5605,7 @@ func (*MsgUndelegateFromGatewayResponse) Descriptor() ([]byte, []int) {
 	return file_poktroll_application_tx_proto_rawDescGZIP(), []int{9}
 }
 
-type MsgTransferApplication struct {
+type MsgTransferApplicationStake struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -5614,8 +5614,8 @@ type MsgTransferApplication struct {
 	DestinationAddress string `protobuf:"bytes,2,opt,name=destination_address,json=destinationAddress,proto3" json:"destination_address,omitempty"`
 }
 
-func (x *MsgTransferApplication) Reset() {
-	*x = MsgTransferApplication{}
+func (x *MsgTransferApplicationStake) Reset() {
+	*x = MsgTransferApplicationStake{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_poktroll_application_tx_proto_msgTypes[10]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -5623,32 +5623,32 @@ func (x *MsgTransferApplication) Reset() {
 	}
 }
 
-func (x *MsgTransferApplication) String() string {
+func (x *MsgTransferApplicationStake) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*MsgTransferApplication) ProtoMessage() {}
+func (*MsgTransferApplicationStake) ProtoMessage() {}
 
-// Deprecated: Use MsgTransferApplication.ProtoReflect.Descriptor instead.
-func (*MsgTransferApplication) Descriptor() ([]byte, []int) {
+// Deprecated: Use MsgTransferApplicationStake.ProtoReflect.Descriptor instead.
+func (*MsgTransferApplicationStake) Descriptor() ([]byte, []int) {
 	return file_poktroll_application_tx_proto_rawDescGZIP(), []int{10}
 }
 
-func (x *MsgTransferApplication) GetSourceAddress() string {
+func (x *MsgTransferApplicationStake) GetSourceAddress() string {
 	if x != nil {
 		return x.SourceAddress
 	}
 	return ""
 }
 
-func (x *MsgTransferApplication) GetDestinationAddress() string {
+func (x *MsgTransferApplicationStake) GetDestinationAddress() string {
 	if x != nil {
 		return x.DestinationAddress
 	}
 	return ""
 }
 
-type MsgTransferApplicationResponse struct {
+type MsgTransferApplicationStakeResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -5656,8 +5656,8 @@ type MsgTransferApplicationResponse struct {
 	Application *Application `protobuf:"bytes,1,opt,name=application,proto3" json:"application,omitempty"`
 }
 
-func (x *MsgTransferApplicationResponse) Reset() {
-	*x = MsgTransferApplicationResponse{}
+func (x *MsgTransferApplicationStakeResponse) Reset() {
+	*x = MsgTransferApplicationStakeResponse{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_poktroll_application_tx_proto_msgTypes[11]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -5665,18 +5665,18 @@ func (x *MsgTransferApplicationResponse) Reset() {
 	}
 }
 
-func (x *MsgTransferApplicationResponse) String() string {
+func (x *MsgTransferApplicationStakeResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*MsgTransferApplicationResponse) ProtoMessage() {}
+func (*MsgTransferApplicationStakeResponse) ProtoMessage() {}
 
-// Deprecated: Use MsgTransferApplicationResponse.ProtoReflect.Descriptor instead.
-func (*MsgTransferApplicationResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use MsgTransferApplicationStakeResponse.ProtoReflect.Descriptor instead.
+func (*MsgTransferApplicationStakeResponse) Descriptor() ([]byte, []int) {
 	return file_poktroll_application_tx_proto_rawDescGZIP(), []int{11}
 }
 
-func (x *MsgTransferApplicationResponse) GetApplication() *Application {
+func (x *MsgTransferApplicationStakeResponse) GetApplication() *Application {
 	if x != nil {
 		return x.Application
 	}
@@ -5764,82 +5764,84 @@ var file_poktroll_application_tx_proto_rawDesc = []byte{
 	0x3a, 0x10, 0x82, 0xe7, 0xb0, 0x2a, 0x0b, 0x61, 0x70, 0x70, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65,
 	0x73, 0x73, 0x22, 0x22, 0x0a, 0x20, 0x4d, 0x73, 0x67, 0x55, 0x6e, 0x64, 0x65, 0x6c, 0x65, 0x67,
 	0x61, 0x74, 0x65, 0x46, 0x72, 0x6f, 0x6d, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x52, 0x65,
-	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0xb9, 0x01, 0x0a, 0x16, 0x4d, 0x73, 0x67, 0x54, 0x72,
+	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0xbe, 0x01, 0x0a, 0x1b, 0x4d, 0x73, 0x67, 0x54, 0x72,
 	0x61, 0x6e, 0x73, 0x66, 0x65, 0x72, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f,
-	0x6e, 0x12, 0x3f, 0x0a, 0x0e, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x5f, 0x61, 0x64, 0x64, 0x72,
-	0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63,
-	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72,
-	0x69, 0x6e, 0x67, 0x52, 0x0d, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x41, 0x64, 0x64, 0x72, 0x65,
-	0x73, 0x73, 0x12, 0x49, 0x0a, 0x13, 0x64, 0x65, 0x73, 0x74, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f,
-	0x6e, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42,
-	0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72,
-	0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x12, 0x64, 0x65, 0x73, 0x74, 0x69,
-	0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x3a, 0x13, 0x82,
-	0xe7, 0xb0, 0x2a, 0x0e, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65,
-	0x73, 0x73, 0x22, 0x65, 0x0a, 0x1e, 0x4d, 0x73, 0x67, 0x54, 0x72, 0x61, 0x6e, 0x73, 0x66, 0x65,
-	0x72, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x70,
-	0x6f, 0x6e, 0x73, 0x65, 0x12, 0x43, 0x0a, 0x0b, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74,
-	0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x21, 0x2e, 0x70, 0x6f, 0x6b, 0x74,
-	0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e,
-	0x2e, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x0b, 0x61, 0x70,
-	0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x32, 0xcd, 0x05, 0x0a, 0x03, 0x4d, 0x73,
-	0x67, 0x12, 0x64, 0x0a, 0x0c, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d,
-	0x73, 0x12, 0x25, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70, 0x70,
-	0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61,
-	0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x1a, 0x2d, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72,
-	0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e,
-	0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52,
-	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x70, 0x0a, 0x10, 0x53, 0x74, 0x61, 0x6b, 0x65,
-	0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x29, 0x2e, 0x70, 0x6f,
+	0x6e, 0x53, 0x74, 0x61, 0x6b, 0x65, 0x12, 0x3f, 0x0a, 0x0e, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65,
+	0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18,
+	0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65,
+	0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x0d, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65,
+	0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x49, 0x0a, 0x13, 0x64, 0x65, 0x73, 0x74, 0x69,
+	0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x02,
+	0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73,
+	0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x12,
+	0x64, 0x65, 0x73, 0x74, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x41, 0x64, 0x64, 0x72, 0x65,
+	0x73, 0x73, 0x3a, 0x13, 0x82, 0xe7, 0xb0, 0x2a, 0x0e, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x5f,
+	0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x22, 0x6a, 0x0a, 0x23, 0x4d, 0x73, 0x67, 0x54, 0x72,
+	0x61, 0x6e, 0x73, 0x66, 0x65, 0x72, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0x53, 0x74, 0x61, 0x6b, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x43,
+	0x0a, 0x0b, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x21, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61,
+	0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x41, 0x70, 0x70, 0x6c, 0x69,
+	0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x0b, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0x32, 0xdd, 0x05, 0x0a, 0x03, 0x4d, 0x73, 0x67, 0x12, 0x64, 0x0a, 0x0c, 0x55,
+	0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x25, 0x2e, 0x70, 0x6f,
 	0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69,
-	0x6f, 0x6e, 0x2e, 0x4d, 0x73, 0x67, 0x53, 0x74, 0x61, 0x6b, 0x65, 0x41, 0x70, 0x70, 0x6c, 0x69,
-	0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x1a, 0x31, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c,
+	0x6f, 0x6e, 0x2e, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61,
+	0x6d, 0x73, 0x1a, 0x2d, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70,
+	0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64,
+	0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x12, 0x70, 0x0a, 0x10, 0x53, 0x74, 0x61, 0x6b, 0x65, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x29, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c,
+	0x2e, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x4d, 0x73, 0x67,
+	0x53, 0x74, 0x61, 0x6b, 0x65, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x1a, 0x31, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70, 0x70, 0x6c,
+	0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x4d, 0x73, 0x67, 0x53, 0x74, 0x61, 0x6b, 0x65,
+	0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f,
+	0x6e, 0x73, 0x65, 0x12, 0x76, 0x0a, 0x12, 0x55, 0x6e, 0x73, 0x74, 0x61, 0x6b, 0x65, 0x41, 0x70,
+	0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x2b, 0x2e, 0x70, 0x6f, 0x6b, 0x74,
+	0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x2e, 0x4d, 0x73, 0x67, 0x55, 0x6e, 0x73, 0x74, 0x61, 0x6b, 0x65, 0x41, 0x70, 0x70, 0x6c, 0x69,
+	0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x1a, 0x33, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c,
 	0x6c, 0x2e, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x4d, 0x73,
-	0x67, 0x53, 0x74, 0x61, 0x6b, 0x65, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f,
-	0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x76, 0x0a, 0x12, 0x55, 0x6e, 0x73,
-	0x74, 0x61, 0x6b, 0x65, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12,
-	0x2b, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70, 0x70, 0x6c, 0x69,
-	0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x4d, 0x73, 0x67, 0x55, 0x6e, 0x73, 0x74, 0x61, 0x6b,
-	0x65, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x1a, 0x33, 0x2e, 0x70,
+	0x67, 0x55, 0x6e, 0x73, 0x74, 0x61, 0x6b, 0x65, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x73, 0x0a, 0x11, 0x44,
+	0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x65, 0x54, 0x6f, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79,
+	0x12, 0x2a, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70, 0x70, 0x6c,
+	0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x4d, 0x73, 0x67, 0x44, 0x65, 0x6c, 0x65, 0x67,
+	0x61, 0x74, 0x65, 0x54, 0x6f, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x1a, 0x32, 0x2e, 0x70,
 	0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74,
-	0x69, 0x6f, 0x6e, 0x2e, 0x4d, 0x73, 0x67, 0x55, 0x6e, 0x73, 0x74, 0x61, 0x6b, 0x65, 0x41, 0x70,
-	0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x12, 0x73, 0x0a, 0x11, 0x44, 0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x65, 0x54, 0x6f, 0x47,
-	0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x12, 0x2a, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c,
-	0x6c, 0x2e, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x4d, 0x73,
-	0x67, 0x44, 0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x65, 0x54, 0x6f, 0x47, 0x61, 0x74, 0x65, 0x77,
-	0x61, 0x79, 0x1a, 0x32, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70,
-	0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x4d, 0x73, 0x67, 0x44, 0x65, 0x6c,
-	0x65, 0x67, 0x61, 0x74, 0x65, 0x54, 0x6f, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x52, 0x65,
-	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x7f, 0x0a, 0x15, 0x55, 0x6e, 0x64, 0x65, 0x6c, 0x65,
-	0x67, 0x61, 0x74, 0x65, 0x46, 0x72, 0x6f, 0x6d, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x12,
-	0x2e, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70, 0x70, 0x6c, 0x69,
-	0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x4d, 0x73, 0x67, 0x55, 0x6e, 0x64, 0x65, 0x6c, 0x65,
-	0x67, 0x61, 0x74, 0x65, 0x46, 0x72, 0x6f, 0x6d, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x1a,
-	0x36, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70, 0x70, 0x6c, 0x69,
-	0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x4d, 0x73, 0x67, 0x55, 0x6e, 0x64, 0x65, 0x6c, 0x65,
-	0x67, 0x61, 0x74, 0x65, 0x46, 0x72, 0x6f, 0x6d, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x52,
-	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x79, 0x0a, 0x13, 0x54, 0x72, 0x61, 0x6e, 0x73,
-	0x66, 0x65, 0x72, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x2c,
+	0x69, 0x6f, 0x6e, 0x2e, 0x4d, 0x73, 0x67, 0x44, 0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x65, 0x54,
+	0x6f, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x12, 0x7f, 0x0a, 0x15, 0x55, 0x6e, 0x64, 0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x65, 0x46, 0x72,
+	0x6f, 0x6d, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x12, 0x2e, 0x2e, 0x70, 0x6f, 0x6b, 0x74,
+	0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x2e, 0x4d, 0x73, 0x67, 0x55, 0x6e, 0x64, 0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x65, 0x46, 0x72,
+	0x6f, 0x6d, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x1a, 0x36, 0x2e, 0x70, 0x6f, 0x6b, 0x74,
+	0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x2e, 0x4d, 0x73, 0x67, 0x55, 0x6e, 0x64, 0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x65, 0x46, 0x72,
+	0x6f, 0x6d, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x12, 0x88, 0x01, 0x0a, 0x18, 0x54, 0x72, 0x61, 0x6e, 0x73, 0x66, 0x65, 0x72, 0x41, 0x70,
+	0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x74, 0x61, 0x6b, 0x65, 0x12, 0x31,
 	0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63,
 	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x4d, 0x73, 0x67, 0x54, 0x72, 0x61, 0x6e, 0x73, 0x66, 0x65,
-	0x72, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x1a, 0x34, 0x2e, 0x70,
-	0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74,
-	0x69, 0x6f, 0x6e, 0x2e, 0x4d, 0x73, 0x67, 0x54, 0x72, 0x61, 0x6e, 0x73, 0x66, 0x65, 0x72, 0x41,
-	0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
-	0x73, 0x65, 0x1a, 0x05, 0x80, 0xe7, 0xb0, 0x2a, 0x01, 0x42, 0xbb, 0x01, 0x0a, 0x18, 0x63, 0x6f,
-	0x6d, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70, 0x70, 0x6c, 0x69,
-	0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x42, 0x07, 0x54, 0x78, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50,
-	0x01, 0x5a, 0x25, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f,
-	0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x61, 0x70, 0x70,
-	0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xa2, 0x02, 0x03, 0x50, 0x41, 0x58, 0xaa, 0x02,
-	0x14, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63,
-	0x61, 0x74, 0x69, 0x6f, 0x6e, 0xca, 0x02, 0x14, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c,
-	0x5c, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xe2, 0x02, 0x20, 0x50,
-	0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74,
-	0x69, 0x6f, 0x6e, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea,
-	0x02, 0x15, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x3a, 0x3a, 0x41, 0x70, 0x70, 0x6c,
-	0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x72, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x74, 0x61, 0x6b,
+	0x65, 0x1a, 0x39, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70, 0x70,
+	0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x4d, 0x73, 0x67, 0x54, 0x72, 0x61, 0x6e,
+	0x73, 0x66, 0x65, 0x72, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53,
+	0x74, 0x61, 0x6b, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x1a, 0x05, 0x80, 0xe7,
+	0xb0, 0x2a, 0x01, 0x42, 0xbf, 0x01, 0xd8, 0xe2, 0x1e, 0x01, 0x0a, 0x18, 0x63, 0x6f, 0x6d, 0x2e,
+	0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61,
+	0x74, 0x69, 0x6f, 0x6e, 0x42, 0x07, 0x54, 0x78, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a,
+	0x25, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70,
+	0x69, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x61, 0x70, 0x70, 0x6c, 0x69,
+	0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xa2, 0x02, 0x03, 0x50, 0x41, 0x58, 0xaa, 0x02, 0x14, 0x50,
+	0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0xca, 0x02, 0x14, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x41,
+	0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xe2, 0x02, 0x20, 0x50, 0x6f, 0x6b,
+	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x15,
+	0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x3a, 0x3a, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -5856,40 +5858,40 @@ func file_poktroll_application_tx_proto_rawDescGZIP() []byte {
 
 var file_poktroll_application_tx_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_poktroll_application_tx_proto_goTypes = []interface{}{
-	(*MsgUpdateParams)(nil),                  // 0: poktroll.application.MsgUpdateParams
-	(*MsgUpdateParamsResponse)(nil),          // 1: poktroll.application.MsgUpdateParamsResponse
-	(*MsgStakeApplication)(nil),              // 2: poktroll.application.MsgStakeApplication
-	(*MsgStakeApplicationResponse)(nil),      // 3: poktroll.application.MsgStakeApplicationResponse
-	(*MsgUnstakeApplication)(nil),            // 4: poktroll.application.MsgUnstakeApplication
-	(*MsgUnstakeApplicationResponse)(nil),    // 5: poktroll.application.MsgUnstakeApplicationResponse
-	(*MsgDelegateToGateway)(nil),             // 6: poktroll.application.MsgDelegateToGateway
-	(*MsgDelegateToGatewayResponse)(nil),     // 7: poktroll.application.MsgDelegateToGatewayResponse
-	(*MsgUndelegateFromGateway)(nil),         // 8: poktroll.application.MsgUndelegateFromGateway
-	(*MsgUndelegateFromGatewayResponse)(nil), // 9: poktroll.application.MsgUndelegateFromGatewayResponse
-	(*MsgTransferApplication)(nil),           // 10: poktroll.application.MsgTransferApplication
-	(*MsgTransferApplicationResponse)(nil),   // 11: poktroll.application.MsgTransferApplicationResponse
-	(*Params)(nil),                           // 12: poktroll.application.Params
-	(*v1beta1.Coin)(nil),                     // 13: cosmos.base.v1beta1.Coin
-	(*shared.ApplicationServiceConfig)(nil),  // 14: poktroll.shared.ApplicationServiceConfig
-	(*Application)(nil),                      // 15: poktroll.application.Application
+	(*MsgUpdateParams)(nil),                     // 0: poktroll.application.MsgUpdateParams
+	(*MsgUpdateParamsResponse)(nil),             // 1: poktroll.application.MsgUpdateParamsResponse
+	(*MsgStakeApplication)(nil),                 // 2: poktroll.application.MsgStakeApplication
+	(*MsgStakeApplicationResponse)(nil),         // 3: poktroll.application.MsgStakeApplicationResponse
+	(*MsgUnstakeApplication)(nil),               // 4: poktroll.application.MsgUnstakeApplication
+	(*MsgUnstakeApplicationResponse)(nil),       // 5: poktroll.application.MsgUnstakeApplicationResponse
+	(*MsgDelegateToGateway)(nil),                // 6: poktroll.application.MsgDelegateToGateway
+	(*MsgDelegateToGatewayResponse)(nil),        // 7: poktroll.application.MsgDelegateToGatewayResponse
+	(*MsgUndelegateFromGateway)(nil),            // 8: poktroll.application.MsgUndelegateFromGateway
+	(*MsgUndelegateFromGatewayResponse)(nil),    // 9: poktroll.application.MsgUndelegateFromGatewayResponse
+	(*MsgTransferApplicationStake)(nil),         // 10: poktroll.application.MsgTransferApplicationStake
+	(*MsgTransferApplicationStakeResponse)(nil), // 11: poktroll.application.MsgTransferApplicationStakeResponse
+	(*Params)(nil),                              // 12: poktroll.application.Params
+	(*v1beta1.Coin)(nil),                        // 13: cosmos.base.v1beta1.Coin
+	(*shared.ApplicationServiceConfig)(nil),     // 14: poktroll.shared.ApplicationServiceConfig
+	(*Application)(nil),                         // 15: poktroll.application.Application
 }
 var file_poktroll_application_tx_proto_depIdxs = []int32{
 	12, // 0: poktroll.application.MsgUpdateParams.params:type_name -> poktroll.application.Params
 	13, // 1: poktroll.application.MsgStakeApplication.stake:type_name -> cosmos.base.v1beta1.Coin
 	14, // 2: poktroll.application.MsgStakeApplication.services:type_name -> poktroll.shared.ApplicationServiceConfig
-	15, // 3: poktroll.application.MsgTransferApplicationResponse.application:type_name -> poktroll.application.Application
+	15, // 3: poktroll.application.MsgTransferApplicationStakeResponse.application:type_name -> poktroll.application.Application
 	0,  // 4: poktroll.application.Msg.UpdateParams:input_type -> poktroll.application.MsgUpdateParams
 	2,  // 5: poktroll.application.Msg.StakeApplication:input_type -> poktroll.application.MsgStakeApplication
 	4,  // 6: poktroll.application.Msg.UnstakeApplication:input_type -> poktroll.application.MsgUnstakeApplication
 	6,  // 7: poktroll.application.Msg.DelegateToGateway:input_type -> poktroll.application.MsgDelegateToGateway
 	8,  // 8: poktroll.application.Msg.UndelegateFromGateway:input_type -> poktroll.application.MsgUndelegateFromGateway
-	10, // 9: poktroll.application.Msg.TransferApplication:input_type -> poktroll.application.MsgTransferApplication
+	10, // 9: poktroll.application.Msg.TransferApplicationStake:input_type -> poktroll.application.MsgTransferApplicationStake
 	1,  // 10: poktroll.application.Msg.UpdateParams:output_type -> poktroll.application.MsgUpdateParamsResponse
 	3,  // 11: poktroll.application.Msg.StakeApplication:output_type -> poktroll.application.MsgStakeApplicationResponse
 	5,  // 12: poktroll.application.Msg.UnstakeApplication:output_type -> poktroll.application.MsgUnstakeApplicationResponse
 	7,  // 13: poktroll.application.Msg.DelegateToGateway:output_type -> poktroll.application.MsgDelegateToGatewayResponse
 	9,  // 14: poktroll.application.Msg.UndelegateFromGateway:output_type -> poktroll.application.MsgUndelegateFromGatewayResponse
-	11, // 15: poktroll.application.Msg.TransferApplication:output_type -> poktroll.application.MsgTransferApplicationResponse
+	11, // 15: poktroll.application.Msg.TransferApplicationStake:output_type -> poktroll.application.MsgTransferApplicationStakeResponse
 	10, // [10:16] is the sub-list for method output_type
 	4,  // [4:10] is the sub-list for method input_type
 	4,  // [4:4] is the sub-list for extension type_name
@@ -6026,7 +6028,7 @@ func file_poktroll_application_tx_proto_init() {
 			}
 		}
 		file_poktroll_application_tx_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgTransferApplication); i {
+			switch v := v.(*MsgTransferApplicationStake); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -6038,7 +6040,7 @@ func file_poktroll_application_tx_proto_init() {
 			}
 		}
 		file_poktroll_application_tx_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgTransferApplicationResponse); i {
+			switch v := v.(*MsgTransferApplicationStakeResponse); i {
 			case 0:
 				return &v.state
 			case 1:

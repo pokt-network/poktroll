@@ -79,6 +79,8 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 )
 
+require github.com/jhump/protoreflect v1.16.0
+
 require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.34.2-20240508200655-46a4cf4ba109.2 // indirect
 	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.16.2-20240710174705-f2077dee5ad4.1 // indirect

@@ -16,7 +16,7 @@ to all readers.
 
 - [Introduction](#introduction)
 - [Session Windows \& On-Chain Parameters](#session-windows--on-chain-parameters)
-    - [References:](#references)
+  - [References:](#references)
   - [Claim Expiration](#claim-expiration)
 - [Session](#session)
   - [Session Duration](#session-duration)
@@ -85,8 +85,11 @@ sequenceDiagram
         note over S, PN: Proof Window (Wait a few blocks)
         S ->> PN: SubmitProof(Session, ClosestMerkleProof)
         PN ->> PN: Validate Proof & <br> Validate Leaf
-        PN -->> S: Increase account balance (emission)
-        PN -->> A: Deduct staked balance (burn)
+        critical Token Logic Module Processing
+          PN -->> S: Increase account balance (emission)
+          PN -->> A: Deduct staked balance (burn)
+          note over A,S: Inflation, Other TLMs...
+        end
     end
 ```
 
@@ -124,14 +127,14 @@ gantt
 
 > NB: Depicted with the default values (see below); x-axis is units are blocks.
 
-| Parameter                          | Description                                                                                                                                                                                                                                                                                                                                                                                      | Default |
-|------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------|
-| `num_blocks_per_session`           | The number of blocks between the session start & end heights. Relays handled in these blocks are included in session N. It is positively correlated with the number of relays in (i.e. size of) each session tree for each session number (less other scaling factors; e.g. relaymining).                                                                                                        | 4       |
-| `grace_period_end_offset_blocks`   | The number of blocks after the session end height, at which the grace period ends. Valid relays from both sessions N and N +1 are accepted in these blocks. It is positively correlated to the amount of time gateways have to transition sending relays to suppliers in the next session.                                                                                                       | 1       |
+| Parameter                          | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Default |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| `num_blocks_per_session`           | The number of blocks between the session start & end heights. Relays handled in these blocks are included in session N. It is positively correlated with the number of relays in (i.e. size of) each session tree for each session number (less other scaling factors; e.g. relaymining).                                                                                                                                                                        | 4       |
+| `grace_period_end_offset_blocks`   | The number of blocks after the session end height, at which the grace period ends. Valid relays from both sessions N and N +1 are accepted in these blocks. It is positively correlated to the amount of time gateways have to transition sending relays to suppliers in the next session.                                                                                                                                                                       | 1       |
 | `claim_window_open_offset_blocks`  | The number of blocks after the session end height, at which the claim window opens. Valid relays from both sessions N and N +1 are accepted in these blocks. Valid claims for session N will be rejected in these blocks. This parameter MUST NOT be less than grace_period_end_offset_blocks. It is positively correlated with the number of relays in (i.e. size of) each session tree for each session number (less other scaling factors; e.g. relaymining). | 1       |
-| `claim_window_close_offset_blocks` | The number of blocks after the claim window open height, at which the claim window closes. Valid claims for session N will be accepted in these blocks. It is negatively correlated with density of claim creation (and update) messages over blocks in a given session number.                                                                                                                  | 4       |
-| `proof_window_open_offset_blocks`  | The number of blocks after the claim window close height, at which the proof window opens. Valid proofs for session N will be rejected in these block. It is positively correlated with the amount of time suppliers MUST persist the complete merkle trees for unproven sessions (proof path is revealed at earliest_supplier_proof_commit_height - 1).                                                      | 0       |
-| `proof_window_close_offset_blocks` | The number of blocks after the proof window open height, at which the proof window closes. Valid proofs for session N will be accepted in these blocks. It is negatively correlated with the density of proof submission messages over blocks in a given session number.                                                                                                                         | 4       |
+| `claim_window_close_offset_blocks` | The number of blocks after the claim window open height, at which the claim window closes. Valid claims for session N will be accepted in these blocks. It is negatively correlated with density of claim creation (and update) messages over blocks in a given session number.                                                                                                                                                                                  | 4       |
+| `proof_window_open_offset_blocks`  | The number of blocks after the claim window close height, at which the proof window opens. Valid proofs for session N will be rejected in these block. It is positively correlated with the amount of time suppliers MUST persist the complete merkle trees for unproven sessions (proof path is revealed at earliest_supplier_proof_commit_height - 1).                                                                                                         | 0       |
+| `proof_window_close_offset_blocks` | The number of blocks after the proof window open height, at which the proof window closes. Valid proofs for session N will be accepted in these blocks. It is negatively correlated with the density of proof submission messages over blocks in a given session number.                                                                                                                                                                                         | 4       |
 
 #### References:
 
@@ -205,7 +208,7 @@ that were necessary to service that request.
 ### Protobuf Types
 
 | Type                                                                                                 | Description                                             |
-|------------------------------------------------------------------------------------------------------|---------------------------------------------------------|
+| ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
 | [`Claim`](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/proof/claim.proto)       | A serialized version of the `Claim` is stored on-chain. |
 | [`MsgCreateClaim`](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/proof/tx.proto) | Submitted by a `Supplier` to store a claim `on-chain`.  |
 
@@ -279,7 +282,7 @@ rewarded for the work done.
 ### Protobuf Types
 
 | Type                                                                                                 | Description                                                                                                                                                                  |
-|------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [`Proof`](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/proof/proof.proto)       | A serialized version of the `Proof` is stored on-chain.                                                                                                                      |
 | [`MsgSubmitProof`](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/proof/tx.proto) | Submitted by a `Supplier` to store a proof `on-chain`. If the `Proof` is invalid, or if there is no corresponding `Claim` for the `Proof`, the transaction will be rejected. |
 

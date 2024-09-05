@@ -1,9 +1,9 @@
 ---
-title: Check balance
+title: Balance check
 sidebar_position: 3
 ---
 
-# Checking Your Wallet Balance <!-- omit in toc -->
+# Checking Your Wallet Account Balance <!-- omit in toc -->
 
 :::note Usage requirements
 

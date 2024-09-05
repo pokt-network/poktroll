@@ -2,8 +2,10 @@ syntax = "proto3";
 package poktroll.application;
 
 option go_package = "github.com/pokt-network/poktroll/x/application/types";
+option (gogoproto.stable_marshaler_all) = true;
 
 import "cosmos_proto/cosmos.proto";
+import "gogoproto/gogo.proto";
 
 // EventRedelegation is an event emitted whenever an application changes its
 // delegatee gateways on chain. This is in response to both a DelegateToGateway
