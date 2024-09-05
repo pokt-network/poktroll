@@ -521,18 +521,18 @@ func (s *suite) TheApplicationForAccountIsInThePeriod(appName, periodName string
 	require.True(s, ok, "application %s not found", appName)
 
 	var (
-		msgType       string
-		isAppInPeriod func(*apptypes.Application) bool
+		msgType      string
+		isAppInState func(*apptypes.Application) bool
 	)
 	switch periodName {
 	case "unbonding":
 		msgType = "UnstakeApplication"
-		isAppInPeriod = func(app *apptypes.Application) bool {
+		isAppInState = func(app *apptypes.Application) bool {
 			return app.IsUnbonding()
 		}
 	case "transfer":
 		msgType = "TransferApplication"
-		isAppInPeriod = func(application *apptypes.Application) bool {
+		isAppInState = func(application *apptypes.Application) bool {
 			return application.HasPendingTransfer()
 		}
 	}
@@ -540,7 +540,7 @@ func (s *suite) TheApplicationForAccountIsInThePeriod(appName, periodName string
 	s.waitForTxResultEvent(newEventMsgTypeMatchFn("application", msgType))
 
 	application := s.getApplicationInfo(appName)
-	require.True(s, isAppInPeriod(application))
+	require.True(s, isAppInState(application))
 }
 
 func (s *suite) TheUserWaitsForTheApplicationForAccountPeriodToFinish(accName, periodType string) {

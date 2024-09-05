@@ -25,6 +25,8 @@ func (s *Application) HasPendingTransfer() bool {
 // An application that has not submitted an unstake message is always active.
 // An application that has submitted an unstake message is active until the end of
 // the session containing the height at which unstake message was submitted.
+// An application that has a pending transfer is active until the end of the session
+// containing the height at which the transfer was initiated.
 func (s *Application) IsActive(queryHeight int64) bool {
 	return !s.IsUnbonding() || !s.HasPendingTransfer() ||
 		uint64(queryHeight) <= s.GetUnstakeSessionEndHeight() ||
