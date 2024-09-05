@@ -6,10 +6,12 @@ syntax = "proto3";
 package poktroll.proof;
 
 option go_package = "github.com/pokt-network/poktroll/x/proof/types";
+option (gogoproto.stable_marshaler_all) = true;
 
 import "cosmos_proto/cosmos.proto";
 
 import "poktroll/session/types.proto";
+import "gogoproto/gogo.proto";
 
 message Proof {
   // Address of the supplier's operator that submitted this proof.

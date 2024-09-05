@@ -38,6 +38,8 @@ import (
 // along with its dependencies before starting it.
 // It takes in the proofParams to configure the proof requirements and the proofCount
 // to assert the number of proofs to be requested.
+// TODO_BETA(@red-0ne): Add a test case which verifies that the service's compute units per relay is used as
+// the weight of a relay when updating a session's SMT.
 func requireProofCountEqualsExpectedValueFromProofParams(t *testing.T, proofParams prooftypes.Params, proofCount int) {
 	// TODO_TECHDEBT(#446): Centralize the configuration for the SMT spec.
 	var (
@@ -90,9 +92,17 @@ func requireProofCountEqualsExpectedValueFromProofParams(t *testing.T, proofPara
 
 	sharedQueryClientMock := testqueryclients.NewTestSharedQueryClient(t)
 
+	serviceQueryClientMock := testqueryclients.NewTestServiceQueryClient(t)
 	proofQueryClientMock := testqueryclients.NewTestProofQueryClientWithParams(t, &proofParams)
 
-	deps := depinject.Supply(blockClient, blockQueryClientMock, supplierClientMap, sharedQueryClientMock, proofQueryClientMock)
+	deps := depinject.Supply(
+		blockClient,
+		blockQueryClientMock,
+		supplierClientMap,
+		sharedQueryClientMock,
+		serviceQueryClientMock,
+		proofQueryClientMock,
+	)
 	storesDirectoryOpt := testrelayer.WithTempStoresDirectory(t)
 
 	// Create a new relayer sessions manager.
