@@ -36,7 +36,6 @@ func (k Keeper) EndBlockerTransferApplication(ctx context.Context) error {
 	// Iterate over all applications and transfer the ones that have finished the transfer period.
 	// TODO_IMPROVE: Use an index to iterate over the applications that have initiated
 	// the transfer action instead of iterating over all of them.
-	var transferredSrcApps []types.Application
 	for _, srcApp := range k.GetAllApplications(ctx) {
 		// Ignore applications that have not initiated the transfer action.
 		if !srcApp.HasPendingTransfer() {
@@ -61,20 +60,7 @@ func (k Keeper) EndBlockerTransferApplication(ctx context.Context) error {
 			}); err != nil {
 				logger.Error(fmt.Sprintf("could not emit transfer error event: %v", err))
 			}
-
-			continue
 		}
-
-		transferredSrcApps = append(transferredSrcApps, srcApp)
-	}
-
-	// Remove the transferred apps from the store
-	for _, srcApp := range transferredSrcApps {
-		k.RemoveApplication(ctx, srcApp.GetAddress())
-		logger.Info(fmt.Sprintf(
-			"Successfully completed transfer of application stake from (%s) to (%s)",
-			srcApp.GetAddress(), srcApp.GetPendingTransfer().GetDestinationAddress(),
-		))
 	}
 
 	isSuccessful = true
