@@ -33,6 +33,8 @@ Feature: App Stake Transfer Namespace
         When the user successfully unstakes a "application" from the account "app3"
 
 #    TODO_TEST: Scenario: User cannot start an Application stake transfer from Application which has a pending transfer
+#    TODO_TEST: Scenario: User cannot start an Application stake transfer from Application which is unbonding
+#    TODO_TEST: Scenario: User cannot start an Application transfer to the same destination Application as another pending transfer
 #    TODO_TEST: Scenario: Application stake transfer fails if the destination Application stakes before the transfer period elapses
-#    TODO_TEST: Scenario: The user cannot unstake an Application which has a pending transfer
-#    TODO_TEST: Scenario: The user can (un/re-)delegate an Application which has a pending transfer
+#    TODO_TEST: Scenario: User cannot unstake an Application which has a pending transfer
+#    TODO_TEST: Scenario: User can (un/re-)delegate an Application which has a pending transfer

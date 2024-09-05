@@ -47,7 +47,6 @@ func (k msgServer) TransferApplication(ctx context.Context, msg *types.MsgTransf
 	}
 
 	// Ensure source application is not already unbonding.
-	// TODO_TEST: Add E2E coverage to assert that an unbonding app cannot be transferred.
 	if srcApp.IsUnbonding() {
 		return nil, status.Error(
 			codes.FailedPrecondition,
@@ -55,15 +54,12 @@ func (k msgServer) TransferApplication(ctx context.Context, msg *types.MsgTransf
 		)
 	}
 
-	// TODO_TEST: add E2E coverage to assert #DelegateeGatewayAddresses and #PendingUndelegations
-	// are present and correct on the dstApp application.
-
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	sessionEndHeight := k.sharedKeeper.GetSessionEndHeight(ctx, sdkCtx.BlockHeight())
 
-	srcApp.PendingTransfer = &types.PendingTransfer{
-		Destination:      msg.GetDestinationAddress(),
-		SessionEndHeight: uint64(sessionEndHeight),
+	srcApp.PendingTransfer = &types.PendingApplicationTransfer{
+		DestinationAddress: msg.GetDestinationAddress(),
+		SessionEndHeight:   uint64(sessionEndHeight),
 	}
 
 	// Update the dstApp in the store
@@ -75,10 +71,10 @@ func (k msgServer) TransferApplication(ctx context.Context, msg *types.MsgTransf
 
 	if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventTransferBegin{
 		SourceAddress:      srcApp.GetAddress(),
-		DestinationAddress: srcApp.GetPendingTransfer().GetDestination(),
+		DestinationAddress: srcApp.GetPendingTransfer().GetDestinationAddress(),
 		SourceApplication:  &srcApp,
 	}); err != nil {
-
+		logger.Error(fmt.Sprintf("could not emit transfer begin event: %v", err))
 	}
 
 	isSuccessful = true

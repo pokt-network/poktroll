@@ -44,7 +44,7 @@ func (k msgServer) UnstakeApplication(
 	if foundApp.HasPendingTransfer() {
 		logger.Warn(fmt.Sprintf(
 			"Application (%s) has a pending transfer to (%s)",
-			msg.Address, foundApp.GetPendingTransfer().GetDestination()),
+			msg.Address, foundApp.GetPendingTransfer().GetDestinationAddress()),
 		)
 		return nil, types.ErrAppHasPendingTransfer.Wrapf("application (%s)", msg.GetAddress())
 	}

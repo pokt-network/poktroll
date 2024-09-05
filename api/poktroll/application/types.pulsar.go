@@ -3,11 +3,11 @@ package application
 
 import (
 	v1beta1 "cosmossdk.io/api/cosmos/base/v1beta1"
-	shared "github.com/pokt-network/poktroll/api/poktroll/shared"
 	fmt "fmt"
 	_ "github.com/cosmos/cosmos-proto"
 	runtime "github.com/cosmos/cosmos-proto/runtime"
 	_ "github.com/cosmos/gogoproto/gogoproto"
+	shared "github.com/pokt-network/poktroll/api/poktroll/shared"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoiface "google.golang.org/protobuf/runtime/protoiface"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -478,7 +478,7 @@ func (x *fastReflection_Application) Set(fd protoreflect.FieldDescriptor, value 
 	case "poktroll.application.Application.unstake_session_end_height":
 		x.UnstakeSessionEndHeight = value.Uint()
 	case "poktroll.application.Application.pending_transfer":
-		x.PendingTransfer = value.Message().Interface().(*PendingTransfer)
+		x.PendingTransfer = value.Message().Interface().(*PendingApplicationTransfer)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.Application"))
@@ -524,7 +524,7 @@ func (x *fastReflection_Application) Mutable(fd protoreflect.FieldDescriptor) pr
 		return protoreflect.ValueOfMap(value)
 	case "poktroll.application.Application.pending_transfer":
 		if x.PendingTransfer == nil {
-			x.PendingTransfer = new(PendingTransfer)
+			x.PendingTransfer = new(PendingApplicationTransfer)
 		}
 		return protoreflect.ValueOfMessage(x.PendingTransfer.ProtoReflect())
 	case "poktroll.application.Application.address":
@@ -561,7 +561,7 @@ func (x *fastReflection_Application) NewField(fd protoreflect.FieldDescriptor) p
 	case "poktroll.application.Application.unstake_session_end_height":
 		return protoreflect.ValueOfUint64(uint64(0))
 	case "poktroll.application.Application.pending_transfer":
-		m := new(PendingTransfer)
+		m := new(PendingApplicationTransfer)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	default:
 		if fd.IsExtension() {
@@ -1176,7 +1176,7 @@ func (x *fastReflection_Application) ProtoMethods() *protoiface.Methods {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
 				if x.PendingTransfer == nil {
-					x.PendingTransfer = &PendingTransfer{}
+					x.PendingTransfer = &PendingApplicationTransfer{}
 				}
 				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.PendingTransfer); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
@@ -1698,27 +1698,27 @@ func (x *fastReflection_UndelegatingGatewayList) ProtoMethods() *protoiface.Meth
 }
 
 var (
-	md_PendingTransfer                    protoreflect.MessageDescriptor
-	fd_PendingTransfer_destination        protoreflect.FieldDescriptor
-	fd_PendingTransfer_session_end_height protoreflect.FieldDescriptor
+	md_PendingApplicationTransfer                     protoreflect.MessageDescriptor
+	fd_PendingApplicationTransfer_destination_address protoreflect.FieldDescriptor
+	fd_PendingApplicationTransfer_session_end_height  protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_poktroll_application_types_proto_init()
-	md_PendingTransfer = File_poktroll_application_types_proto.Messages().ByName("PendingTransfer")
-	fd_PendingTransfer_destination = md_PendingTransfer.Fields().ByName("destination")
-	fd_PendingTransfer_session_end_height = md_PendingTransfer.Fields().ByName("session_end_height")
+	md_PendingApplicationTransfer = File_poktroll_application_types_proto.Messages().ByName("PendingApplicationTransfer")
+	fd_PendingApplicationTransfer_destination_address = md_PendingApplicationTransfer.Fields().ByName("destination_address")
+	fd_PendingApplicationTransfer_session_end_height = md_PendingApplicationTransfer.Fields().ByName("session_end_height")
 }
 
-var _ protoreflect.Message = (*fastReflection_PendingTransfer)(nil)
+var _ protoreflect.Message = (*fastReflection_PendingApplicationTransfer)(nil)
 
-type fastReflection_PendingTransfer PendingTransfer
+type fastReflection_PendingApplicationTransfer PendingApplicationTransfer
 
-func (x *PendingTransfer) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_PendingTransfer)(x)
+func (x *PendingApplicationTransfer) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_PendingApplicationTransfer)(x)
 }
 
-func (x *PendingTransfer) slowProtoReflect() protoreflect.Message {
+func (x *PendingApplicationTransfer) slowProtoReflect() protoreflect.Message {
 	mi := &file_poktroll_application_types_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1730,43 +1730,43 @@ func (x *PendingTransfer) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_PendingTransfer_messageType fastReflection_PendingTransfer_messageType
-var _ protoreflect.MessageType = fastReflection_PendingTransfer_messageType{}
+var _fastReflection_PendingApplicationTransfer_messageType fastReflection_PendingApplicationTransfer_messageType
+var _ protoreflect.MessageType = fastReflection_PendingApplicationTransfer_messageType{}
 
-type fastReflection_PendingTransfer_messageType struct{}
+type fastReflection_PendingApplicationTransfer_messageType struct{}
 
-func (x fastReflection_PendingTransfer_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_PendingTransfer)(nil)
+func (x fastReflection_PendingApplicationTransfer_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_PendingApplicationTransfer)(nil)
 }
-func (x fastReflection_PendingTransfer_messageType) New() protoreflect.Message {
-	return new(fastReflection_PendingTransfer)
+func (x fastReflection_PendingApplicationTransfer_messageType) New() protoreflect.Message {
+	return new(fastReflection_PendingApplicationTransfer)
 }
-func (x fastReflection_PendingTransfer_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_PendingTransfer
+func (x fastReflection_PendingApplicationTransfer_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_PendingApplicationTransfer
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_PendingTransfer) Descriptor() protoreflect.MessageDescriptor {
-	return md_PendingTransfer
+func (x *fastReflection_PendingApplicationTransfer) Descriptor() protoreflect.MessageDescriptor {
+	return md_PendingApplicationTransfer
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_PendingTransfer) Type() protoreflect.MessageType {
-	return _fastReflection_PendingTransfer_messageType
+func (x *fastReflection_PendingApplicationTransfer) Type() protoreflect.MessageType {
+	return _fastReflection_PendingApplicationTransfer_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_PendingTransfer) New() protoreflect.Message {
-	return new(fastReflection_PendingTransfer)
+func (x *fastReflection_PendingApplicationTransfer) New() protoreflect.Message {
+	return new(fastReflection_PendingApplicationTransfer)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_PendingTransfer) Interface() protoreflect.ProtoMessage {
-	return (*PendingTransfer)(x)
+func (x *fastReflection_PendingApplicationTransfer) Interface() protoreflect.ProtoMessage {
+	return (*PendingApplicationTransfer)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -1774,16 +1774,16 @@ func (x *fastReflection_PendingTransfer) Interface() protoreflect.ProtoMessage {
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_PendingTransfer) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.Destination != "" {
-		value := protoreflect.ValueOfString(x.Destination)
-		if !f(fd_PendingTransfer_destination, value) {
+func (x *fastReflection_PendingApplicationTransfer) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.DestinationAddress != "" {
+		value := protoreflect.ValueOfString(x.DestinationAddress)
+		if !f(fd_PendingApplicationTransfer_destination_address, value) {
 			return
 		}
 	}
 	if x.SessionEndHeight != uint64(0) {
 		value := protoreflect.ValueOfUint64(x.SessionEndHeight)
-		if !f(fd_PendingTransfer_session_end_height, value) {
+		if !f(fd_PendingApplicationTransfer_session_end_height, value) {
 			return
 		}
 	}
@@ -1800,17 +1800,17 @@ func (x *fastReflection_PendingTransfer) Range(f func(protoreflect.FieldDescript
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_PendingTransfer) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_PendingApplicationTransfer) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "poktroll.application.PendingTransfer.destination":
-		return x.Destination != ""
-	case "poktroll.application.PendingTransfer.session_end_height":
+	case "poktroll.application.PendingApplicationTransfer.destination_address":
+		return x.DestinationAddress != ""
+	case "poktroll.application.PendingApplicationTransfer.session_end_height":
 		return x.SessionEndHeight != uint64(0)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.PendingTransfer"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.PendingApplicationTransfer"))
 		}
-		panic(fmt.Errorf("message poktroll.application.PendingTransfer does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.application.PendingApplicationTransfer does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1820,17 +1820,17 @@ func (x *fastReflection_PendingTransfer) Has(fd protoreflect.FieldDescriptor) bo
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_PendingTransfer) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_PendingApplicationTransfer) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "poktroll.application.PendingTransfer.destination":
-		x.Destination = ""
-	case "poktroll.application.PendingTransfer.session_end_height":
+	case "poktroll.application.PendingApplicationTransfer.destination_address":
+		x.DestinationAddress = ""
+	case "poktroll.application.PendingApplicationTransfer.session_end_height":
 		x.SessionEndHeight = uint64(0)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.PendingTransfer"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.PendingApplicationTransfer"))
 		}
-		panic(fmt.Errorf("message poktroll.application.PendingTransfer does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.application.PendingApplicationTransfer does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1840,19 +1840,19 @@ func (x *fastReflection_PendingTransfer) Clear(fd protoreflect.FieldDescriptor) 
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_PendingTransfer) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_PendingApplicationTransfer) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "poktroll.application.PendingTransfer.destination":
-		value := x.Destination
+	case "poktroll.application.PendingApplicationTransfer.destination_address":
+		value := x.DestinationAddress
 		return protoreflect.ValueOfString(value)
-	case "poktroll.application.PendingTransfer.session_end_height":
+	case "poktroll.application.PendingApplicationTransfer.session_end_height":
 		value := x.SessionEndHeight
 		return protoreflect.ValueOfUint64(value)
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.PendingTransfer"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.PendingApplicationTransfer"))
 		}
-		panic(fmt.Errorf("message poktroll.application.PendingTransfer does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message poktroll.application.PendingApplicationTransfer does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -1866,17 +1866,17 @@ func (x *fastReflection_PendingTransfer) Get(descriptor protoreflect.FieldDescri
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_PendingTransfer) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_PendingApplicationTransfer) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "poktroll.application.PendingTransfer.destination":
-		x.Destination = value.Interface().(string)
-	case "poktroll.application.PendingTransfer.session_end_height":
+	case "poktroll.application.PendingApplicationTransfer.destination_address":
+		x.DestinationAddress = value.Interface().(string)
+	case "poktroll.application.PendingApplicationTransfer.session_end_height":
 		x.SessionEndHeight = value.Uint()
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.PendingTransfer"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.PendingApplicationTransfer"))
 		}
-		panic(fmt.Errorf("message poktroll.application.PendingTransfer does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.application.PendingApplicationTransfer does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1890,44 +1890,44 @@ func (x *fastReflection_PendingTransfer) Set(fd protoreflect.FieldDescriptor, va
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_PendingTransfer) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_PendingApplicationTransfer) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.application.PendingTransfer.destination":
-		panic(fmt.Errorf("field destination of message poktroll.application.PendingTransfer is not mutable"))
-	case "poktroll.application.PendingTransfer.session_end_height":
-		panic(fmt.Errorf("field session_end_height of message poktroll.application.PendingTransfer is not mutable"))
+	case "poktroll.application.PendingApplicationTransfer.destination_address":
+		panic(fmt.Errorf("field destination_address of message poktroll.application.PendingApplicationTransfer is not mutable"))
+	case "poktroll.application.PendingApplicationTransfer.session_end_height":
+		panic(fmt.Errorf("field session_end_height of message poktroll.application.PendingApplicationTransfer is not mutable"))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.PendingTransfer"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.PendingApplicationTransfer"))
 		}
-		panic(fmt.Errorf("message poktroll.application.PendingTransfer does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.application.PendingApplicationTransfer does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_PendingTransfer) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_PendingApplicationTransfer) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.application.PendingTransfer.destination":
+	case "poktroll.application.PendingApplicationTransfer.destination_address":
 		return protoreflect.ValueOfString("")
-	case "poktroll.application.PendingTransfer.session_end_height":
+	case "poktroll.application.PendingApplicationTransfer.session_end_height":
 		return protoreflect.ValueOfUint64(uint64(0))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.PendingTransfer"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.PendingApplicationTransfer"))
 		}
-		panic(fmt.Errorf("message poktroll.application.PendingTransfer does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.application.PendingApplicationTransfer does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_PendingTransfer) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_PendingApplicationTransfer) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in poktroll.application.PendingTransfer", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in poktroll.application.PendingApplicationTransfer", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -1935,7 +1935,7 @@ func (x *fastReflection_PendingTransfer) WhichOneof(d protoreflect.OneofDescript
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_PendingTransfer) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_PendingApplicationTransfer) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -1946,7 +1946,7 @@ func (x *fastReflection_PendingTransfer) GetUnknown() protoreflect.RawFields {
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_PendingTransfer) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_PendingApplicationTransfer) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -1958,7 +1958,7 @@ func (x *fastReflection_PendingTransfer) SetUnknown(fields protoreflect.RawField
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_PendingTransfer) IsValid() bool {
+func (x *fastReflection_PendingApplicationTransfer) IsValid() bool {
 	return x != nil
 }
 
@@ -1968,9 +1968,9 @@ func (x *fastReflection_PendingTransfer) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_PendingTransfer) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_PendingApplicationTransfer) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*PendingTransfer)
+		x := input.Message.Interface().(*PendingApplicationTransfer)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1982,7 +1982,7 @@ func (x *fastReflection_PendingTransfer) ProtoMethods() *protoiface.Methods {
 		var n int
 		var l int
 		_ = l
-		l = len(x.Destination)
+		l = len(x.DestinationAddress)
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
@@ -1999,7 +1999,7 @@ func (x *fastReflection_PendingTransfer) ProtoMethods() *protoiface.Methods {
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*PendingTransfer)
+		x := input.Message.Interface().(*PendingApplicationTransfer)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2021,14 +2021,14 @@ func (x *fastReflection_PendingTransfer) ProtoMethods() *protoiface.Methods {
 		if x.SessionEndHeight != 0 {
 			i = runtime.EncodeVarint(dAtA, i, uint64(x.SessionEndHeight))
 			i--
-			dAtA[i] = 0x18
+			dAtA[i] = 0x10
 		}
-		if len(x.Destination) > 0 {
-			i -= len(x.Destination)
-			copy(dAtA[i:], x.Destination)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Destination)))
+		if len(x.DestinationAddress) > 0 {
+			i -= len(x.DestinationAddress)
+			copy(dAtA[i:], x.DestinationAddress)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.DestinationAddress)))
 			i--
-			dAtA[i] = 0x12
+			dAtA[i] = 0xa
 		}
 		if input.Buf != nil {
 			input.Buf = append(input.Buf, dAtA...)
@@ -2041,7 +2041,7 @@ func (x *fastReflection_PendingTransfer) ProtoMethods() *protoiface.Methods {
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*PendingTransfer)
+		x := input.Message.Interface().(*PendingApplicationTransfer)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2073,15 +2073,15 @@ func (x *fastReflection_PendingTransfer) ProtoMethods() *protoiface.Methods {
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: PendingTransfer: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: PendingApplicationTransfer: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: PendingTransfer: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: PendingApplicationTransfer: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
-			case 2:
+			case 1:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Destination", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field DestinationAddress", wireType)
 				}
 				var stringLen uint64
 				for shift := uint(0); ; shift += 7 {
@@ -2109,9 +2109,9 @@ func (x *fastReflection_PendingTransfer) ProtoMethods() *protoiface.Methods {
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.Destination = string(dAtA[iNdEx:postIndex])
+				x.DestinationAddress = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
-			case 3:
+			case 2:
 				if wireType != 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field SessionEndHeight", wireType)
 				}
@@ -2208,8 +2208,8 @@ type Application struct {
 	PendingUndelegations map[uint64]*UndelegatingGatewayList `protobuf:"bytes,5,rep,name=pending_undelegations,json=pendingUndelegations,proto3" json:"pending_undelegations,omitempty" protobuf_key:"varint,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	// The end height of the session at which an application initiated its unstaking process.
 	// If the application did not unstake, this value will be 0.
-	UnstakeSessionEndHeight uint64           `protobuf:"varint,6,opt,name=unstake_session_end_height,json=unstakeSessionEndHeight,proto3" json:"unstake_session_end_height,omitempty"`
-	PendingTransfer         *PendingTransfer `protobuf:"bytes,7,opt,name=pending_transfer,json=pendingTransfer,proto3" json:"pending_transfer,omitempty"`
+	UnstakeSessionEndHeight uint64                      `protobuf:"varint,6,opt,name=unstake_session_end_height,json=unstakeSessionEndHeight,proto3" json:"unstake_session_end_height,omitempty"`
+	PendingTransfer         *PendingApplicationTransfer `protobuf:"bytes,7,opt,name=pending_transfer,json=pendingTransfer,proto3" json:"pending_transfer,omitempty"`
 }
 
 func (x *Application) Reset() {
@@ -2274,7 +2274,7 @@ func (x *Application) GetUnstakeSessionEndHeight() uint64 {
 	return 0
 }
 
-func (x *Application) GetPendingTransfer() *PendingTransfer {
+func (x *Application) GetPendingTransfer() *PendingApplicationTransfer {
 	if x != nil {
 		return x.PendingTransfer
 	}
@@ -2319,17 +2319,17 @@ func (x *UndelegatingGatewayList) GetGatewayAddresses() []string {
 }
 
 // PendingTransfer is used to store the details of a pending transfer.
-type PendingTransfer struct {
+type PendingApplicationTransfer struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Destination      string `protobuf:"bytes,2,opt,name=destination,proto3" json:"destination,omitempty"`
-	SessionEndHeight uint64 `protobuf:"varint,3,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height,omitempty"`
+	DestinationAddress string `protobuf:"bytes,1,opt,name=destination_address,json=destinationAddress,proto3" json:"destination_address,omitempty"`
+	SessionEndHeight   uint64 `protobuf:"varint,2,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height,omitempty"`
 }
 
-func (x *PendingTransfer) Reset() {
-	*x = PendingTransfer{}
+func (x *PendingApplicationTransfer) Reset() {
+	*x = PendingApplicationTransfer{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_poktroll_application_types_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2337,25 +2337,25 @@ func (x *PendingTransfer) Reset() {
 	}
 }
 
-func (x *PendingTransfer) String() string {
+func (x *PendingApplicationTransfer) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*PendingTransfer) ProtoMessage() {}
+func (*PendingApplicationTransfer) ProtoMessage() {}
 
-// Deprecated: Use PendingTransfer.ProtoReflect.Descriptor instead.
-func (*PendingTransfer) Descriptor() ([]byte, []int) {
+// Deprecated: Use PendingApplicationTransfer.ProtoReflect.Descriptor instead.
+func (*PendingApplicationTransfer) Descriptor() ([]byte, []int) {
 	return file_poktroll_application_types_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *PendingTransfer) GetDestination() string {
+func (x *PendingApplicationTransfer) GetDestinationAddress() string {
 	if x != nil {
-		return x.Destination
+		return x.DestinationAddress
 	}
 	return ""
 }
 
-func (x *PendingTransfer) GetSessionEndHeight() uint64 {
+func (x *PendingApplicationTransfer) GetSessionEndHeight() uint64 {
 	if x != nil {
 		return x.SessionEndHeight
 	}
@@ -2375,7 +2375,7 @@ var file_poktroll_application_types_proto_rawDesc = []byte{
 	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x5f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x63, 0x6f, 0x73,
 	0x6d, 0x6f, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x1d, 0x70, 0x6f, 0x6b, 0x74, 0x72,
 	0x6f, 0x6c, 0x6c, 0x2f, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2f, 0x73, 0x65, 0x72, 0x76, 0x69,
-	0x63, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xa3, 0x05, 0x0a, 0x0b, 0x41, 0x70, 0x70,
+	0x63, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xae, 0x05, 0x0a, 0x0b, 0x41, 0x70, 0x70,
 	0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x32, 0x0a, 0x07, 0x61, 0x64, 0x64, 0x72,
 	0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63,
 	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72,
@@ -2405,46 +2405,49 @@ var file_poktroll_application_types_proto_rawDesc = []byte{
 	0x6b, 0x65, 0x5f, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68,
 	0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x06, 0x20, 0x01, 0x28, 0x04, 0x52, 0x17, 0x75, 0x6e, 0x73,
 	0x74, 0x61, 0x6b, 0x65, 0x53, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x45, 0x6e, 0x64, 0x48, 0x65,
-	0x69, 0x67, 0x68, 0x74, 0x12, 0x50, 0x0a, 0x10, 0x70, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x5f,
-	0x74, 0x72, 0x61, 0x6e, 0x73, 0x66, 0x65, 0x72, 0x18, 0x07, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x25,
+	0x69, 0x67, 0x68, 0x74, 0x12, 0x5b, 0x0a, 0x10, 0x70, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x5f,
+	0x74, 0x72, 0x61, 0x6e, 0x73, 0x66, 0x65, 0x72, 0x18, 0x07, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x30,
 	0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63,
-	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x50, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x54, 0x72, 0x61,
-	0x6e, 0x73, 0x66, 0x65, 0x72, 0x52, 0x0f, 0x70, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x54, 0x72,
-	0x61, 0x6e, 0x73, 0x66, 0x65, 0x72, 0x1a, 0x76, 0x0a, 0x19, 0x50, 0x65, 0x6e, 0x64, 0x69, 0x6e,
-	0x67, 0x55, 0x6e, 0x64, 0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x45, 0x6e,
-	0x74, 0x72, 0x79, 0x12, 0x10, 0x0a, 0x03, 0x6b, 0x65, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04,
-	0x52, 0x03, 0x6b, 0x65, 0x79, 0x12, 0x43, 0x0a, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x02,
-	0x20, 0x01, 0x28, 0x0b, 0x32, 0x2d, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e,
-	0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x55, 0x6e, 0x64, 0x65,
-	0x6c, 0x65, 0x67, 0x61, 0x74, 0x69, 0x6e, 0x67, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x4c,
-	0x69, 0x73, 0x74, 0x52, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x3a, 0x02, 0x38, 0x01, 0x22, 0x64,
-	0x0a, 0x17, 0x55, 0x6e, 0x64, 0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x69, 0x6e, 0x67, 0x47, 0x61,
-	0x74, 0x65, 0x77, 0x61, 0x79, 0x4c, 0x69, 0x73, 0x74, 0x12, 0x49, 0x0a, 0x11, 0x67, 0x61, 0x74,
-	0x65, 0x77, 0x61, 0x79, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x65, 0x73, 0x18, 0x02,
-	0x20, 0x03, 0x28, 0x09, 0x42, 0x1c, 0xc8, 0xde, 0x1f, 0x00, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f,
-	0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69,
-	0x6e, 0x67, 0x52, 0x10, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x41, 0x64, 0x64, 0x72, 0x65,
-	0x73, 0x73, 0x65, 0x73, 0x22, 0x7b, 0x0a, 0x0f, 0x50, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x54,
-	0x72, 0x61, 0x6e, 0x73, 0x66, 0x65, 0x72, 0x12, 0x3a, 0x0a, 0x0b, 0x64, 0x65, 0x73, 0x74, 0x69,
-	0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4,
-	0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73,
-	0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x0b, 0x64, 0x65, 0x73, 0x74, 0x69, 0x6e, 0x61, 0x74,
-	0x69, 0x6f, 0x6e, 0x12, 0x2c, 0x0a, 0x12, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x65,
-	0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x52,
-	0x10, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x45, 0x6e, 0x64, 0x48, 0x65, 0x69, 0x67, 0x68,
-	0x74, 0x42, 0xc2, 0x01, 0xd8, 0xe2, 0x1e, 0x01, 0x0a, 0x18, 0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f,
-	0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69,
-	0x6f, 0x6e, 0x42, 0x0a, 0x54, 0x79, 0x70, 0x65, 0x73, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01,
-	0x5a, 0x25, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61,
-	0x70, 0x69, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x61, 0x70, 0x70, 0x6c,
-	0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xa2, 0x02, 0x03, 0x50, 0x41, 0x58, 0xaa, 0x02, 0x14,
-	0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61,
-	0x74, 0x69, 0x6f, 0x6e, 0xca, 0x02, 0x14, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c,
-	0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xe2, 0x02, 0x20, 0x50, 0x6f,
-	0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69,
-	0x6f, 0x6e, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02,
-	0x15, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x3a, 0x3a, 0x41, 0x70, 0x70, 0x6c, 0x69,
-	0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x50, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x41, 0x70, 0x70,
+	0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x54, 0x72, 0x61, 0x6e, 0x73, 0x66, 0x65, 0x72,
+	0x52, 0x0f, 0x70, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x54, 0x72, 0x61, 0x6e, 0x73, 0x66, 0x65,
+	0x72, 0x1a, 0x76, 0x0a, 0x19, 0x50, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x55, 0x6e, 0x64, 0x65,
+	0x6c, 0x65, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x12, 0x10,
+	0x0a, 0x03, 0x6b, 0x65, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x03, 0x6b, 0x65, 0x79,
+	0x12, 0x43, 0x0a, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x2d, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70, 0x70, 0x6c, 0x69,
+	0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x55, 0x6e, 0x64, 0x65, 0x6c, 0x65, 0x67, 0x61, 0x74,
+	0x69, 0x6e, 0x67, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x4c, 0x69, 0x73, 0x74, 0x52, 0x05,
+	0x76, 0x61, 0x6c, 0x75, 0x65, 0x3a, 0x02, 0x38, 0x01, 0x22, 0x64, 0x0a, 0x17, 0x55, 0x6e, 0x64,
+	0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x69, 0x6e, 0x67, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79,
+	0x4c, 0x69, 0x73, 0x74, 0x12, 0x49, 0x0a, 0x11, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x5f,
+	0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x65, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x09, 0x42,
+	0x1c, 0xc8, 0xde, 0x1f, 0x00, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e,
+	0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x10, 0x67,
+	0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x65, 0x73, 0x22,
+	0x95, 0x01, 0x0a, 0x1a, 0x50, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x41, 0x70, 0x70, 0x6c, 0x69,
+	0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x54, 0x72, 0x61, 0x6e, 0x73, 0x66, 0x65, 0x72, 0x12, 0x49,
+	0x0a, 0x13, 0x64, 0x65, 0x73, 0x74, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x61, 0x64,
+	0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d,
+	0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53,
+	0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x12, 0x64, 0x65, 0x73, 0x74, 0x69, 0x6e, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x2c, 0x0a, 0x12, 0x73, 0x65, 0x73,
+	0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18,
+	0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x10, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x45, 0x6e,
+	0x64, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x42, 0xc2, 0x01, 0xd8, 0xe2, 0x1e, 0x01, 0x0a, 0x18,
+	0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70, 0x70,
+	0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x42, 0x0a, 0x54, 0x79, 0x70, 0x65, 0x73, 0x50,
+	0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x25, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64,
+	0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c,
+	0x6c, 0x2f, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xa2, 0x02, 0x03,
+	0x50, 0x41, 0x58, 0xaa, 0x02, 0x14, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x41,
+	0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xca, 0x02, 0x14, 0x50, 0x6f, 0x6b,
+	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0xe2, 0x02, 0x20, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x41, 0x70, 0x70,
+	0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61,
+	0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x15, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x3a,
+	0x3a, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x62, 0x06, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -2463,7 +2466,7 @@ var file_poktroll_application_types_proto_msgTypes = make([]protoimpl.MessageInf
 var file_poktroll_application_types_proto_goTypes = []interface{}{
 	(*Application)(nil),                     // 0: poktroll.application.Application
 	(*UndelegatingGatewayList)(nil),         // 1: poktroll.application.UndelegatingGatewayList
-	(*PendingTransfer)(nil),                 // 2: poktroll.application.PendingTransfer
+	(*PendingApplicationTransfer)(nil),      // 2: poktroll.application.PendingApplicationTransfer
 	nil,                                     // 3: poktroll.application.Application.PendingUndelegationsEntry
 	(*v1beta1.Coin)(nil),                    // 4: cosmos.base.v1beta1.Coin
 	(*shared.ApplicationServiceConfig)(nil), // 5: poktroll.shared.ApplicationServiceConfig
@@ -2472,7 +2475,7 @@ var file_poktroll_application_types_proto_depIdxs = []int32{
 	4, // 0: poktroll.application.Application.stake:type_name -> cosmos.base.v1beta1.Coin
 	5, // 1: poktroll.application.Application.service_configs:type_name -> poktroll.shared.ApplicationServiceConfig
 	3, // 2: poktroll.application.Application.pending_undelegations:type_name -> poktroll.application.Application.PendingUndelegationsEntry
-	2, // 3: poktroll.application.Application.pending_transfer:type_name -> poktroll.application.PendingTransfer
+	2, // 3: poktroll.application.Application.pending_transfer:type_name -> poktroll.application.PendingApplicationTransfer
 	1, // 4: poktroll.application.Application.PendingUndelegationsEntry.value:type_name -> poktroll.application.UndelegatingGatewayList
 	5, // [5:5] is the sub-list for method output_type
 	5, // [5:5] is the sub-list for method input_type
@@ -2512,7 +2515,7 @@ func file_poktroll_application_types_proto_init() {
 			}
 		}
 		file_poktroll_application_types_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PendingTransfer); i {
+			switch v := v.(*PendingApplicationTransfer); i {
 			case 0:
 				return &v.state
 			case 1:

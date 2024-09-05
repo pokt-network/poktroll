@@ -50,7 +50,7 @@ func (k Keeper) EndBlockerTransferApplication(ctx context.Context) error {
 
 			if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventTransferError{
 				SourceAddress:      srcApp.GetAddress(),
-				DestinationAddress: srcApp.GetPendingTransfer().GetDestination(),
+				DestinationAddress: srcApp.GetPendingTransfer().GetDestinationAddress(),
 				SourceApplication:  &srcApp,
 				Error:              transferErr.Error(),
 			}); err != nil {
@@ -68,7 +68,7 @@ func (k Keeper) EndBlockerTransferApplication(ctx context.Context) error {
 		k.RemoveApplication(ctx, srcApp.GetAddress())
 		logger.Info(fmt.Sprintf(
 			"Successfully completed transfer of application stake from (%s) to (%s)",
-			srcApp.GetAddress(), srcApp.GetPendingTransfer().GetDestination(),
+			srcApp.GetAddress(), srcApp.GetPendingTransfer().GetDestinationAddress(),
 		))
 	}
 
@@ -90,24 +90,24 @@ func (k Keeper) transferApplication(ctx context.Context, srcApp types.Applicatio
 	}
 
 	// Ensure destination application was not staked during transfer period.
-	_, isDstFound := k.GetApplication(ctx, srcApp.GetPendingTransfer().GetDestination())
+	_, isDstFound := k.GetApplication(ctx, srcApp.GetPendingTransfer().GetDestinationAddress())
 	if isDstFound {
 		return types.ErrAppDuplicateAddress.Wrapf(
 			"destination application (%s) was staked during transfer period of application (%s)",
-			srcApp.GetPendingTransfer().GetDestination(), srcApp.GetAddress(),
+			srcApp.GetPendingTransfer().GetDestinationAddress(), srcApp.GetAddress(),
 		)
 	}
 
 	dstApp := srcApp
-	dstApp.Address = srcApp.GetPendingTransfer().GetDestination()
+	dstApp.Address = srcApp.GetPendingTransfer().GetDestinationAddress()
 	dstApp.PendingTransfer = nil
 
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	sessionEndHeight := k.sharedKeeper.GetSessionEndHeight(ctx, sdkCtx.BlockHeight())
 
-	srcApp.PendingTransfer = &types.PendingTransfer{
-		Destination:      dstApp.Address,
-		SessionEndHeight: uint64(sessionEndHeight),
+	srcApp.PendingTransfer = &types.PendingApplicationTransfer{
+		DestinationAddress: dstApp.Address,
+		SessionEndHeight:   uint64(sessionEndHeight),
 	}
 
 	// Remove srcApp from the store
