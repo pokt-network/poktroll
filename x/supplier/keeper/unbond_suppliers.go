@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+
 	"github.com/pokt-network/poktroll/x/shared"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
@@ -16,7 +17,7 @@ func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) error {
 	currentHeight := sdkCtx.BlockHeight()
 
 	// Only process unbonding suppliers at the end of the session.
-	if currentHeight != k.sharedKeeper.GetSessionEndHeight(ctx, currentHeight) {
+	if shared.IsSessionEndHeight(&sharedParams, currentHeight) {
 		return nil
 	}
 

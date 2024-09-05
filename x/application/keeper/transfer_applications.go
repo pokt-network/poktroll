@@ -8,8 +8,13 @@ import (
 
 	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/application/types"
+	"github.com/pokt-network/poktroll/x/shared"
 )
 
+// EndBlockerTransferApplication completes pending application transfers at the
+// end of the session in which they began by copying the current state of the source
+// application onto a new destination application, unstaking (removing) the source,
+// and staking (storing) the destination.
 func (k Keeper) EndBlockerTransferApplication(ctx context.Context) error {
 	isSuccessful := false
 	defer telemetry.EventSuccessCounter(
@@ -20,12 +25,11 @@ func (k Keeper) EndBlockerTransferApplication(ctx context.Context) error {
 
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	currentHeight := sdkCtx.BlockHeight()
+	sharedParams := k.sharedKeeper.GetParams(ctx)
 	logger := k.Logger().With("method", "EndBlockerTransferApplication")
 
 	// Only process application transfers at the end of the session.
-	// TODO_CONSIDER: refactoring this logic into a shared function, `IsCurrentSessionEndHeight`.
-	currentSessionEndHeight := k.sharedKeeper.GetSessionEndHeight(ctx, currentHeight)
-	if currentHeight != currentSessionEndHeight {
+	if shared.IsSessionEndHeight(&sharedParams, currentHeight) {
 		return nil
 	}
 
