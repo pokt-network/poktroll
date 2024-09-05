@@ -39,6 +39,7 @@ func (k Keeper) EndBlockerTransferApplication(ctx context.Context) error {
 			continue
 		}
 
+		// Ignore applications that have initiated a transfer but still active
 		transferEndHeight := srcApp.GetPendingTransfer().GetSessionEndHeight()
 		if uint64(sdkCtx.BlockHeight()) < transferEndHeight {
 			continue
@@ -98,7 +99,7 @@ func (k Keeper) transferApplication(ctx context.Context, srcApp types.Applicatio
 		)
 	}
 
-	dstApp := srcApp
+	dstApp := srcApp // intentional copy
 	dstApp.Address = srcApp.GetPendingTransfer().GetDestinationAddress()
 	dstApp.PendingTransfer = nil
 
