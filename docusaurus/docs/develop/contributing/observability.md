@@ -15,9 +15,9 @@ We are still refining our observability guidelines. If in doubt - please reach o
   - [Best Practices](#best-practices)
   - [Examples](#examples)
   - [Counter](#counter)
-      - [x/proof/keeper/msg_server_create_claim.go](#xproofkeepermsg_server_create_claimgo)
+    - [x/proof/keeper/msg_server_create_claim.go](#xproofkeepermsg_server_create_claimgo)
   - [Gauage](#gauage)
-      - [x/tokenomics/module/abci.go](#xtokenomicsmoduleabcigo)
+    - [x/tokenomics/module/abci.go](#xtokenomicsmoduleabcigo)
   - [Histogram](#histogram)
 - [Logs](#logs)
 
@@ -57,14 +57,14 @@ the memory usage and reduce the performance of the Prometheus server. To mitigat
 - **Consistency:** Follow the Prometheus Metric and Label Naming Guide for consistent naming and labeling. See more at [Prometheus Naming Guide](https://prometheus.io/docs/practices/naming/).
 - **Defer:** When the code being metered includes conditional branches, defer calls to metrics methods to ensure that any referenced variables are in their final state prior to reporting.
 - **Sufficient Variable Scope:** Ensure any variables which are passed to metrics methods are declared in a scope which is sufficient for reference by such calls.
-    - Ensure that these variables **are not shadowed** by usage of a subsequent walrus operator `:=` (redeclaration) within the same scope.
-    - The above might requrie declaring previously undeclared variables which are part of a multiple return.
+  - Ensure that these variables **are not shadowed** by usage of a subsequent walrus operator `:=` (redeclaration) within the same scope.
+  - The above might requrie declaring previously undeclared variables which are part of a multiple return.
 
 ### Examples
 
 ### Counter
 
-#### [x/proof/keeper/msg_server_create_claim.go](https://github.com/pokt-network/poktroll/blob/main/x/proof/keeper/msg_server_create_claim.go):
+#### [x/proof/keeper/msg_server_create_claim.go](https://github.com/pokt-network/poktroll/blob/main/x/proof/keeper/msg_server_create_claim.go)
 
 ```go
 // Declare a named `error` return argument.
@@ -98,7 +98,8 @@ func (k msgServer) CreateClaim(...) (_ *types.MsgCreateClaimResponse, err error)
 
 ### Gauage
 
-#### [x/tokenomics/module/abci.go](https://github.com/pokt-network/poktroll/blob/main/x/tokenomics/module/abci.go):
+#### [x/tokenomics/module/abci.go](https://github.com/pokt-network/poktroll/blob/main/x/tokenomics/module/abci.go)
+
 ```go
 	// Emit telemetry for each service's relay mining difficulty.
 	for serviceId, newDifficulty := range difficultyPerServiceMap {

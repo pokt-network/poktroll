@@ -3,7 +3,7 @@ sidebar_position: 3
 title: Code Review Guidelines
 ---
 
-# Pocket's Code Review Guidelines <!-- omit in toc -->
+# Code Review Guidelines <!-- omit in toc -->
 
 :::note
 This is a living document and will be updated as the ecosystem matures & grows.

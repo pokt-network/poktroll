@@ -2,11 +2,13 @@ syntax = "proto3";
 package poktroll.shared;
 
 option go_package = "github.com/pokt-network/poktroll/x/shared/types";
+option (gogoproto.stable_marshaler_all) = true;
 
 import "cosmos_proto/cosmos.proto";
 import "cosmos/base/v1beta1/coin.proto";
 
 import "poktroll/shared/service.proto";
+import "gogoproto/gogo.proto";
 
 // Supplier is the type defining the actor in Pocket Network that provides RPC services.
 message Supplier {

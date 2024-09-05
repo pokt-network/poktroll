@@ -3,7 +3,7 @@ title: Full Node - Cosmovisor
 sidebar_position: 1
 ---
 
-# Full Node - Cosmovisor <!-- omit in toc -->
+# Run a Full Node using Cosmovisor <!-- omit in toc -->
 
 - [What is a Full Node](#what-is-a-full-node)
 - [What is Cosmovisor](#what-is-cosmovisor)

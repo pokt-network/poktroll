@@ -97,7 +97,7 @@ func (k msgServer) updateGateway(
 	gateway *types.Gateway,
 	msg *types.MsgStakeGateway,
 ) error {
-	// Checks if the the msg address is the same as the current owner
+	// Checks if the msg address is the same as the current owner
 	if msg.Address != gateway.Address {
 		return types.ErrGatewayUnauthorized.Wrapf("msg Address %q != gateway address %q", msg.Address, gateway.Address)
 	}

@@ -99,7 +99,7 @@ func (k msgServer) updateApplication(
 	app *types.Application,
 	msg *types.MsgStakeApplication,
 ) error {
-	// Checks if the the msg address is the same as the current owner
+	// Checks if the msg address is the same as the current owner
 	if msg.Address != app.Address {
 		return types.ErrAppUnauthorized.Wrapf("msg Address %q != application address %q", msg.Address, app.Address)
 	}

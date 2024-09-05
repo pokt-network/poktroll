@@ -5,7 +5,7 @@ title: Docker Compose Walkthrough
 
 import ReactPlayer from "react-player";
 
-# Poktrolld Docker-Compose Example <!-- omit in toc -->
+# Docker Compose Walkthrough <!-- omit in toc -->
 
 - [Introduction and Cheat Sheet](#introduction-and-cheat-sheet)
 - [Key Terms in Morse and Shannon](#key-terms-in-morse-and-shannon)

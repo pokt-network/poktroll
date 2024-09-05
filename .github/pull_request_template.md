@@ -24,9 +24,10 @@
 
 ## Type of change
 
-Select one or more:
+Select one or more from the following:
 
 - [ ] New feature, functionality or library
+- [ ] Consensus breaking; add the `consensus-breaking` label if so. See #791 for details
 - [ ] Bug fix
 - [ ] Code health or cleanup
 - [ ] Documentation
