@@ -26,7 +26,7 @@ This table is currently incomplete and does not include all protocol upgrades. O
 
 | Version                                                                  | Planned | Breaking | Requires Manual Intervention | Upgrade Height |
 | ------------------------------------------------------------------------ | :-----: | :------: | :--------------------------: | -------------- |
-| [`v0.0.4`](https://github.com/pokt-network/poktroll/releases/tag/v0.0.4) |    ❓    |    ❓     |              ❌               | ❓              |
+| [`v0.0.4`](https://github.com/pokt-network/poktroll/releases/tag/v0.0.4) |   ❓    |    ❓    |              ❌              | ❓             |
 
 ## MainNet
 

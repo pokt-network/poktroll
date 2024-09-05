@@ -3,19 +3,21 @@ title: Hardware Requirements
 sidebar_position: 1
 ---
 
-# Hardware Requirements <!-- omit in toc -->
+## Hardware Requirements <!-- omit in toc -->
 
 :::warning
-We are continuously evaluating the hardware requirements as we work on the next version of Pocket Network. Recommendations may change as we approach the Shannon Mainnet release.
+We are continuously evaluating the hardware requirements as we work on the next version of Pocket Network.
+
+TODO_MAINNET: Update this document prior to MainNet release
 :::
 
 - [Validator / Full Node](#validator--full-node)
+- [RPC Node](#rpc-node)
 - [RelayMiner](#relayminer)
 - [AppGate Server / Gateway](#appgate-server--gateway)
 - [Additional Considerations](#additional-considerations)
 
-
-## Validator / Full Node
+### Validator / Full Node
 
 | Component   | Minimum | Recommended |
 | ----------- | ------- | ----------- |
@@ -23,14 +25,14 @@ We are continuously evaluating the hardware requirements as we work on the next 
 | RAM         | 8GB     | 16GB        |
 | SSD Storage | 50GB    | 50GB        |
 
-:::info
-If the Full Node will serve as the RPC endpoint for Gateway and RelayMiners under high load, consider:
+### RPC Node
+
+If the Full Node will serve as the RPC endpoint for Gateways and RelayMiners under high load, consider:
+
 - Providing more resources
 - Deploying multiple Full Nodes for continuous service
-:::
 
-
-## RelayMiner
+### RelayMiner
 
 See the [RelayMiner](../../protocol/actors/appgate_server.md) documentation for more
 information on what a RelayMiner is.
@@ -41,14 +43,18 @@ information on what a RelayMiner is.
 | RAM         | 1GB     | 16GB        |
 | SSD Storage | 5GB     | 5GB         |
 
-:::info
-Resource requirements for RelayMiner scale linearly with load:
-- More suppliers and traffic = Higher resource consumption
-- We strongly recommend continuous monitoring to ensure optimal performance
+Note that resource requirements for RelayMiner scale linearly with load:
+
+- More suppliers --> Higher resource consumption
+- More relays --> HIgher resource consumption
+
+:::note
+
+TODO_POST_MAINNET(@okdas): Provide benchmarks for relayminers handling different traffic amounts.
+
 :::
 
-
-## AppGate Server / Gateway
+### AppGate Server / Gateway
 
 See the [AppGate Server](../../protocol/actors/appgate_server.md) documentation for more
 information on what an AppGate Server is.
@@ -61,7 +67,7 @@ information on what an AppGate Server is.
 
 **Note**: This service is stateless and does not require SSD storage.
 
-## Additional Considerations
+### Additional Considerations
 
 1. **Scalability**: As your infrastructure grows, you may need to adjust resources accordingly.
 2. **Monitoring**: Implement a robust monitoring system to track resource usage and performance.
