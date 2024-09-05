@@ -417,8 +417,22 @@ func (s *suite) TheUserVerifiesTheForAccountIsNotStaked(actorType, accName strin
 func (s *suite) TheForAccountIsStakedWithUpokt(actorType, accName string, amount int64) {
 	stakeAmount, ok := s.getStakedAmount(actorType, accName)
 	require.Truef(s, ok, "account %s of type %s SHOULD be staked", accName, actorType)
-	require.Equalf(s, int64(stakeAmount), amount, "account %s stake amount is not %d", accName, amount)
+	require.Equalf(s, amount, int64(stakeAmount), "account %s stake amount is not %d", accName, amount)
 	s.scenarioState[accStakeKey(actorType, accName)] = stakeAmount // save the stakeAmount for later
+}
+
+func (s *suite) TheForAccountIsStakedAboveMinimum(actorType, accName string) {
+	minActorStake := s.getMinStake(actorType)
+
+	stakeAmount, ok := s.getStakedAmount(actorType, accName)
+	require.Truef(s, ok, "account %s of type %s SHOULD be staked", accName, actorType)
+	require.Greaterf(s, int64(stakeAmount), minActorStake, "account %s stake is not greater than minimum %d", accName, minActorStake)
+	s.scenarioState[accStakeKey(actorType, accName)] = stakeAmount // save the stakeAmount for later
+}
+
+// TODO_UP_NEXT(@bryanchriswhite, #612): replace with the actual minimum stake values.
+func (s *suite) getMinStake(actorType string) int64 {
+	return 0
 }
 
 func (s *suite) TheApplicationIsStakedForService(appName string, serviceId string) {
