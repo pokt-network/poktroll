@@ -54,7 +54,7 @@ func (gs GenesisState) Validate() error {
 
 		// Validate the application service configs
 		if err := servicehelpers.ValidateSupplierServiceConfigs(supplier.Services); err != nil {
-			return ErrSupplierInvalidServiceConfig.Wrapf(err.Error())
+			return ErrSupplierInvalidServiceConfig.Wrapf("%s", err.Error())
 		}
 
 		// Validate the supplier owner address
