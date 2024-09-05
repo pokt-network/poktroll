@@ -20,4 +20,6 @@ var (
 	ErrServiceInvalidRelayRequest         = sdkerrors.Register(ModuleName, 1111, "invalid relay request")
 	ErrServiceInvalidComputeUnitsPerRelay = sdkerrors.Register(ModuleName, 1112, "invalid compute units per relay")
 	ErrServiceInvalidOwnerAddress         = sdkerrors.Register(ModuleName, 1113, "invalid owner address")
+	ErrServiceParamNameInvalid            = sdkerrors.Register(ModuleName, 1114, "the provided param name is invalid")
+	ErrServiceParamInvalid                = sdkerrors.Register(ModuleName, 1115, "the provided param is invalid")
 )

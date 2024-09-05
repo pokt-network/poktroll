@@ -216,7 +216,9 @@ genesis:
             denom: upokt
     service:
       params:
-        add_service_fee: "1000000000"
+        add_service_fee:
+          amount: "1000000000"
+          denom: upokt
       serviceList:
         - id: anvil
           name: "anvil"

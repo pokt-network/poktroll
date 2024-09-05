@@ -971,6 +971,11 @@ params_update_shared_proof_window_open_offset_blocks: ## Update the shared modul
 params_update_shared_proof_window_close_offset_blocks: ## Update the shared module proof_window_close_offset_blocks param
 	poktrolld tx authz exec ./tools/scripts/params/shared_proof_window_close_offset_blocks.json $(PARAM_FLAGS)
 
+.PHONY: params_update_service_add_service_fee
+params_update_service_add_service_fee: ## Update the service module add_service_fee param
+	poktrolld tx authz exec ./tools/scripts/params/service_add_service_fee.json $(PARAM_FLAGS)
+
+
 .PHONY: params_query_all
 params_query_all: check_jq ## Query the params from all available modules
 	@for module in $(MODULES); do \

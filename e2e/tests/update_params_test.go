@@ -19,6 +19,7 @@ import (
 	"github.com/pokt-network/poktroll/api/poktroll/application"
 	"github.com/pokt-network/poktroll/api/poktroll/gateway"
 	"github.com/pokt-network/poktroll/api/poktroll/proof"
+	"github.com/pokt-network/poktroll/api/poktroll/service"
 	"github.com/pokt-network/poktroll/api/poktroll/session"
 	"github.com/pokt-network/poktroll/api/poktroll/shared"
 	"github.com/pokt-network/poktroll/api/poktroll/supplier"
@@ -55,6 +56,7 @@ var allModuleMsgUpdateParamTypes = []string{
 	shared.Msg_UpdateParams_FullMethodName,
 	supplier.Msg_UpdateParams_FullMethodName,
 	tokenomics.Msg_UpdateParams_FullMethodName,
+	service.Msg_UpdateParams_FullMethodName,
 }
 
 func init() {
@@ -458,7 +460,7 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 			},
 		)
 	case servicetypes.ModuleName:
-		addServiceFee := uint64(s.expectedModuleParams[moduleName][servicetypes.ParamAddServiceFee].value.(int64))
+		addServiceFee := s.expectedModuleParams[moduleName][servicetypes.ParamAddServiceFee].value.(*cosmostypes.Coin)
 		assertUpdatedParams(s,
 			[]byte(res.Stdout),
 			&servicetypes.QueryParamsResponse{

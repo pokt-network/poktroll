@@ -62,6 +62,18 @@ Feature: Params Namespace
       | application_unbonding_period_sessions | 5     | int64 |
     Then all "shared" module params should be updated
 
+
+  # NB: If you are reading this and any module has parameters that
+  # are not being updated in this test, please update the test.
+  Scenario: An authorized user updates all "service" module params
+    Given the user has the pocketd binary installed
+    And all "service" module params are set to their default values
+    And an authz grant from the "gov" "module" account to the "pnf" "user" account for the "/poktroll.service.MsgUpdateParams" message exists
+    When the "pnf" account sends an authz exec message to update all "service" module params
+      | name            | value        | type  |
+      | add_service_fee | 1000000001   | coin  |
+    Then all "service" module params should be updated
+
   # NB: If you are reading this and any module has parameters that
   # are not being updated in this test, please update the test.
   Scenario Outline: An authorized user updates individual <module> module params
@@ -88,6 +100,7 @@ Feature: Params Namespace
       | shared     | /poktroll.shared.MsgUpdateParam     | proof_window_close_offset_blocks      | 5           | int64      |
       | shared     | /poktroll.shared.MsgUpdateParam     | supplier_unbonding_period_sessions    | 5           | int64      |
       | shared     | /poktroll.shared.MsgUpdateParam     | application_unbonding_period_sessions | 5           | int64      |
+      | service    | /poktroll.service.MsgUpdateParam    | add_service_fee                       | 1000000001  | coin       |
 
   Scenario: An unauthorized user cannot update individual module params
     Given the user has the pocketd binary installed
