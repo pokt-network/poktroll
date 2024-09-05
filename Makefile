@@ -448,7 +448,7 @@ test_verbose: check_go_version ## Run all go tests verbosely
 # It is not compatible with `-race`, which is why it's omitted here.
 # See ref for more details: https://github.com/golang/go/issues/54482#issuecomment-1251124908
 .PHONY: test_all
-test_all: warn_flaky_tests check_go_version ## Run all go tests showing detailed output only on failures
+test_all: warn_flaky_tests check_go_version test_gen_fixtures ## Run all go tests showing detailed output only on failures
 	go test -count=1 -buildmode=pie -tags test ./...
 
 .PHONY: test_all_with_integration
@@ -469,6 +469,14 @@ test_integration: check_go_version ## Run only the in-memory integration "unit" 
 .PHONY: itest
 itest: check_go_version ## Run tests iteratively (see usage for more)
 	./tools/scripts/itest.sh $(filter-out $@,$(MAKECMDGOALS))
+
+# Verify there are no compile errors in pkg/relayer/miner/gen directory.
+# This is done by overriding the build tags through passing a `*.go` argument to `go test`.
+# .go files in that directory contain a `go:build ignore` directive to avoid introducing
+# unintentional churn in the randomly generated fixtures.
+.PHONY: test_gen_fixtures
+test_gen_fixtures: check_go_version ## Run all go tests verbosely
+	go test -count=1 -v -race ./pkg/relayer/miner/gen/*.go
 
 .PHONY: go_mockgen
 go_mockgen: ## Use `mockgen` to generate mocks used for testing purposes of all the modules.
