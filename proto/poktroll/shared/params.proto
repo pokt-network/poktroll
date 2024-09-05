@@ -35,10 +35,9 @@ message Params {
   // On-chain business logic requires, and ensures, that the corresponding block count of the unbonding
   // period will exceed the end of any active claim & proof lifecycles.
   uint64 supplier_unbonding_period_sessions = 7 [(gogoproto.jsontag) = "supplier_unbonding_period_sessions"];
-  // application_transfer_and_unbonding_period_sessions is the number of sessions that an application
-  // must wait, after beginning a transfer or unstake operation, before their staked assets are moved
-  // to the destination application or their account balance, respectively.
+  // application_unbonding_period_sessions is the number of sessions that an application must wait after
+  // unstaking before their staked assets are moved to their account balance.
   // On-chain business logic requires, and ensures, that the corresponding block count of the
-  // application transfer/unbonding period will exceed the end of its corresponding proof window close height.
-  uint64 application_transfer_and_unbonding_period_sessions = 8 [(gogoproto.jsontag) = "application_transfer_and_unbonding_period_sessions"];
+  // application unbonding period will exceed the end of its corresponding proof window close height.
+  uint64 application_unbonding_period_sessions = 8 [(gogoproto.jsontag) = "application_unbonding_period_sessions"];
 }
