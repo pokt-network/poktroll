@@ -81,7 +81,7 @@ endif
 .PHONY: install_ci_deps
 install_ci_deps: ## Installs `mockgen` and other go tools
 	go install "github.com/golang/mock/mockgen@v1.6.0" && mockgen --version
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.59.1 && golangci-lint --version
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.60.3 && golangci-lint --version
 	go install golang.org/x/tools/cmd/goimports@latest
 	go install github.com/mikefarah/yq/v4@latest
 
@@ -444,7 +444,7 @@ test_verbose: check_go_version ## Run all go tests verbosely
 # It is not compatible with `-race`, which is why it's omitted here.
 # See ref for more details: https://github.com/golang/go/issues/54482#issuecomment-1251124908
 .PHONY: test_all
-test_all: warn_flaky_tests check_go_version ## Run all go tests showing detailed output only on failures
+test_all: warn_flaky_tests check_go_version test_gen_fixtures ## Run all go tests showing detailed output only on failures
 	go test -count=1 -buildmode=pie -tags test ./...
 
 .PHONY: test_all_with_integration
@@ -465,6 +465,14 @@ test_integration: check_go_version ## Run only the in-memory integration "unit" 
 .PHONY: itest
 itest: check_go_version ## Run tests iteratively (see usage for more)
 	./tools/scripts/itest.sh $(filter-out $@,$(MAKECMDGOALS))
+
+# Verify there are no compile errors in pkg/relayer/miner/gen directory.
+# This is done by overriding the build tags through passing a `*.go` argument to `go test`.
+# .go files in that directory contain a `go:build ignore` directive to avoid introducing
+# unintentional churn in the randomly generated fixtures.
+.PHONY: test_gen_fixtures
+test_gen_fixtures: check_go_version ## Run all go tests verbosely
+	go test -count=1 -v -race ./pkg/relayer/miner/gen/*.go
 
 .PHONY: go_mockgen
 go_mockgen: ## Use `mockgen` to generate mocks used for testing purposes of all the modules.
@@ -1089,6 +1097,36 @@ act_reviewdog: check_act check_gh ## Run the reviewdog workflow locally like so:
 	$(eval CONTAINER_ARCH := $(shell make -s detect_arch))
 	@echo "Detected architecture: $(CONTAINER_ARCH)"
 	act -v -s GITHUB_TOKEN=$(GITHUB_TOKEN) -W .github/workflows/reviewdog.yml --container-architecture $(CONTAINER_ARCH)
+
+
+###########################
+###   Release Helpers   ###
+###########################
+
+# List tags: git tag
+# Delete tag locally: git tag -d v1.2.3
+# Delete tag remotely: git push --delete origin v1.2.3
+
+.PHONY: release_tag_bug_fix
+release_tag_bug_fix: ## Tag a new bug fix release (e.g. v1.0.1 -> v1.0.2)
+	@$(eval LATEST_TAG=$(shell git tag --sort=-v:refname | head -n 1))
+	@$(eval NEW_TAG=$(shell echo $(LATEST_TAG) | awk -F. -v OFS=. '{ $$NF = sprintf("%d", $$NF + 1); print }'))
+	@git tag $(NEW_TAG)
+	@echo "New bug fix version tagged: $(NEW_TAG)"
+	@echo "Run the following commands to push the new tag:"
+	@echo "  git push origin $(NEW_TAG)"
+	@echo "And draft a new release at https://github.com/pokt-network/poktroll/releases/new"
+
+
+.PHONY: release_tag_minor_release
+release_tag_minor_release: ## Tag a new minor release (e.g. v1.0.0 -> v1.1.0)
+	@$(eval LATEST_TAG=$(shell git tag --sort=-v:refname | head -n 1))
+	@$(eval NEW_TAG=$(shell echo $(LATEST_TAG) | awk -F. '{$$2 += 1; $$3 = 0; print $$1 "." $$2 "." $$3}'))
+	@git tag $(NEW_TAG)
+	@echo "New minor release version tagged: $(NEW_TAG)"
+	@echo "Run the following commands to push the new tag:"
+	@echo "  git push origin $(NEW_TAG)"
+	@echo "And draft a new release at https://github.com/pokt-network/poktroll/releases/new"
 
 #############################
 ### Grove Gateway Helpers ###
