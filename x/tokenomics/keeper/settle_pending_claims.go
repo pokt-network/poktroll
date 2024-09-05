@@ -7,7 +7,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
 
-	poktrand "github.com/pokt-network/poktroll/pkg/crypto/rand"
 	"github.com/pokt-network/poktroll/telemetry"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	"github.com/pokt-network/poktroll/x/shared"
@@ -281,23 +280,12 @@ func (k Keeper) proofRequirementForClaim(ctx sdk.Context, claim *prooftypes.Clai
 		return requirementReason, nil
 	}
 
-	// Get the hash of the claim to seed the random number generator.
-	var claimHash []byte
-	claimHash, err = claim.GetHash()
+	earliestProofCommitBlockHash, err := k.getEarliestSupplierProofCommitBlockHash(ctx, claim)
 	if err != nil {
 		return requirementReason, err
 	}
 
-	proofPathSeedBlockHash, err := k.getEarliestSupplierProofCommitBlockHash(ctx, claim)
-	if err != nil {
-		return requirementReason, err
-	}
-
-	proofRequirementSeed := append(claimHash, proofPathSeedBlockHash...)
-
-	// Sample a pseudo-random value between 0 and 1 to determine if a proof is required probabilistically.
-	var randFloat float32
-	randFloat, err = poktrand.SeededFloat32(proofRequirementSeed)
+	proofRequirementCheckValue, err := claim.GetProofRequirementCheckValue(earliestProofCommitBlockHash)
 	if err != nil {
 		return requirementReason, err
 	}
@@ -305,12 +293,12 @@ func (k Keeper) proofRequirementForClaim(ctx sdk.Context, claim *prooftypes.Clai
 	// Require a proof probabilistically based on the proof_request_probability param.
 	// NB: A random value between 0 and 1 will be less than or equal to proof_request_probability
 	// with probability equal to the proof_request_probability.
-	if randFloat <= proofParams.GetProofRequestProbability() {
+	if proofRequirementCheckValue <= proofParams.GetProofRequestProbability() {
 		requirementReason = prooftypes.ProofRequirementReason_PROBABILISTIC
 
 		logger.Info(fmt.Sprintf(
 			"claim requires proof due to random sample (%.2f) being less than or equal to probability (%.2f)",
-			randFloat,
+			proofRequirementCheckValue,
 			proofParams.GetProofRequestProbability(),
 		))
 		return requirementReason, nil
@@ -320,7 +308,7 @@ func (k Keeper) proofRequirementForClaim(ctx sdk.Context, claim *prooftypes.Clai
 		"claim does not require proof due to compute units (%d) being less than the threshold (%d) and random sample (%.2f) being greater than probability (%.2f)",
 		numClaimComputeUnits,
 		proofParams.GetProofRequirementThreshold(),
-		randFloat,
+		proofRequirementCheckValue,
 		proofParams.GetProofRequestProbability(),
 	))
 	return requirementReason, nil

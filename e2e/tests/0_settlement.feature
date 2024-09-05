@@ -17,12 +17,13 @@ Feature: Tokenomics Namespace
         And the "application" account for "app1" is staked
         And the service "anvil" registered for application "app1" has a compute units per relay of "1"
         # Start servicing
-        # Set proof_requirement_threshold to 1 to make sure a proof is required.
+        # Set proof_requirement_threshold to 9 < num_relays (10) * compute_units_per_relay (1)
+        # to make sure a proof is required.
         And the "proof" module parameters are set as follows
             | name                         | value                                                            | type  |
             | relay_difficulty_target_hash | ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff | bytes |
             | proof_request_probability    | 0.25                                                             | float |
-            | proof_requirement_threshold  | 1                                                                | int64 |
+            | proof_requirement_threshold  | 9                                                                | int64 |
             | proof_missing_penalty        | 320                                                              | coin  |
         When the supplier "supplier1" has serviced a session with "10" relays for service "anvil" for application "app1"
         # Wait for the Claim & Proof lifecycle

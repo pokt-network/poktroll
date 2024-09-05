@@ -331,7 +331,7 @@ func (s *suite) getConfigFileContent(
 			services:
 			  - service_id: %s
 			    endpoints:
-			    - publicly_exposed_url: http://relayminer:8545
+			    - publicly_exposed_url: http://relayminer1:8545
 			      rpc_type: json_rpc`,
 			ownerAddress, operatorAddress, amount, serviceId)
 	default:

@@ -47,12 +47,21 @@ func requireProofCountEqualsExpectedValueFromProofParams(t *testing.T, proofPara
 		spec           = smt.NewTrieSpec(sha256.New(), true)
 		emptyBlockHash = make([]byte, spec.PathHasherSize())
 		activeSession  *sessiontypes.Session
+		service        sharedtypes.Service
 	)
+
+	service = sharedtypes.Service{
+		Id:                   "svc",
+		ComputeUnitsPerRelay: 2,
+	}
+	// Add the service to the existing services.
+	testqueryclients.AddToExistingServices(t, service)
 
 	activeSession = &sessiontypes.Session{
 		Header: &sessiontypes.SessionHeader{
 			SessionStartBlockHeight: 1,
 			SessionEndBlockHeight:   2,
+			Service:                 &service,
 		},
 	}
 	sessionHeader := activeSession.GetHeader()
@@ -185,6 +194,8 @@ func TestRelayerSessionsManager_ProofThresholdRequired(t *testing.T) {
 	// Set proof requirement threshold to a low enough value so a proof is always requested.
 	proofParams.ProofRequirementThreshold = 1
 
+	// The test is submitting a single claim. Having the proof requirement threshold
+	// set to 1 results in exactly 1 proof being requested.
 	numExpectedProofs := 1
 
 	requireProofCountEqualsExpectedValueFromProofParams(t, proofParams, numExpectedProofs)
@@ -198,6 +209,8 @@ func TestRelayerSessionsManager_ProofProbabilityRequired(t *testing.T) {
 	// Set proof request probability to 1 so a proof is always requested.
 	proofParams.ProofRequestProbability = 1
 
+	// The test is submitting a single claim. Having the proof request probability
+	// set to 1 results in exactly 1 proof being requested.
 	numExpectedProofs := 1
 
 	requireProofCountEqualsExpectedValueFromProofParams(t, proofParams, numExpectedProofs)
@@ -211,6 +224,9 @@ func TestRelayerSessionsManager_ProofNotRequired(t *testing.T) {
 	// Set proof request probability to 0 so a proof is never requested.
 	proofParams.ProofRequestProbability = 0
 
+	// The test is submitting a single claim. Having the proof request probability
+	// set to 0 and proof requirement threshold set to max uint64 results in no proofs
+	// being requested.
 	numExpectedProofs := 0
 
 	requireProofCountEqualsExpectedValueFromProofParams(t, proofParams, numExpectedProofs)

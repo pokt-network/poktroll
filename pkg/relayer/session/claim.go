@@ -180,13 +180,13 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 			return either.Success(sessionTrees), false
 		}
 
-		claimMsgs := make([]client.MsgCreateClaim, 0, len(sessionTrees))
-		for _, sessionTree := range sessionTrees {
-			claimMsgs = append(claimMsgs, &prooftypes.MsgCreateClaim{
+		claimMsgs := make([]client.MsgCreateClaim, len(sessionTrees))
+		for idx, sessionTree := range sessionTrees {
+			claimMsgs[idx] = &prooftypes.MsgCreateClaim{
 				RootHash:                sessionTree.GetClaimRoot(),
 				SessionHeader:           sessionTree.GetSessionHeader(),
 				SupplierOperatorAddress: sessionTree.GetSupplierOperatorAddress().String(),
-			})
+			}
 		}
 
 		// Create claims for each supplier operator address in `sessionTrees`.

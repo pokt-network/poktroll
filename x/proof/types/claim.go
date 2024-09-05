@@ -3,6 +3,7 @@ package types
 import (
 	"github.com/cometbft/cometbft/crypto"
 
+	poktrand "github.com/pokt-network/poktroll/pkg/crypto/rand"
 	"github.com/pokt-network/smt"
 )
 
@@ -26,4 +27,31 @@ func (claim *Claim) GetHash() ([]byte, error) {
 	}
 
 	return crypto.Sha256(claimBz), nil
+}
+
+// GetProofRequirementCheckValue returns a pseudo-random value between 0 and 1 to
+// determine if a proof is required probabilistically.
+func (claim *Claim) GetProofRequirementCheckValue(
+	proofRequirementSeedBlockHash []byte,
+) (proofRequirementCheckValue float32, err error) {
+	// Get the hash of the claim to seed the random number generator.
+	var claimHash []byte
+	claimHash, err = claim.GetHash()
+	if err != nil {
+		return 0, err
+	}
+
+	// Append the hash of the proofRequirementSeedBlockHash to the claim hash to seed
+	// the random number generator to ensure that the proof requirement probability
+	// is unknown until the proofRequirementSeedBlockHash is observed.
+	proofRequirementSeed := append(claimHash, proofRequirementSeedBlockHash...)
+
+	// Sample a pseudo-random value between 0 and 1 to determine if a proof is
+	// required probabilistically.
+	proofRequirementCheckValue, err = poktrand.SeededFloat32(proofRequirementSeed)
+	if err != nil {
+		return 0, err
+	}
+
+	return proofRequirementCheckValue, nil
 }

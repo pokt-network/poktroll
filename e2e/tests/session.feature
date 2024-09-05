@@ -2,13 +2,15 @@ Feature: Session Namespace
 
   Scenario: Supplier completes claim/proof lifecycle for a valid session
     Given the user has the pocketd binary installed
-    # The number of relays serviced is set to make the resulting compute units sum
-    # above the current ProofRequirementThreshold governance parameter so a proof
-    # is always required.
-    # TODO_TECHDEBT(#745): Once the SMST is updated with the proper weights,
-    # using the appropriate compute units per relay, we can then restore the
-    # previous relay count.
-    When the supplier "supplier1" has serviced a session with "30" relays for service "anvil" for application "app1"
+    # Set proof_requirement_threshold to 4 < num_relays (5) * compute_units_per_relay (1)
+    # to make sure a proof is required.
+    And the "proof" module parameters are set as follows
+        | name                         | value                                                            | type  |
+        | relay_difficulty_target_hash | ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff | bytes |
+        | proof_request_probability    | 0.25                                                             | float |
+        | proof_requirement_threshold  | 4                                                                | int64 |
+        | proof_missing_penalty        | 320                                                              | coin  |
+    When the supplier "supplier1" has serviced a session with "5" relays for service "anvil" for application "app1"
     And the user should wait for the "proof" module "CreateClaim" Message to be submitted
     And the user should wait for the "proof" module "ClaimCreated" tx event to be broadcast
     Then the claim created by supplier "supplier1" for service "svc1" for application "app1" should be persisted on-chain
