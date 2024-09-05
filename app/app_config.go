@@ -190,13 +190,13 @@ var (
 		icatypes.ModuleName,
 		ibcfeetypes.ModuleName,
 		// chain modules
+		tokenomicsmoduletypes.ModuleName,
 		servicemoduletypes.ModuleName,
 		gatewaymoduletypes.ModuleName,
 		applicationmoduletypes.ModuleName,
 		suppliermoduletypes.ModuleName,
 		sessionmoduletypes.ModuleName,
 		proofmoduletypes.ModuleName,
-		tokenomicsmoduletypes.ModuleName,
 		sharedmoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/endBlockers
 	}
