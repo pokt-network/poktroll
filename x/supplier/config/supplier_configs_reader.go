@@ -105,7 +105,7 @@ func ParseSupplierConfigs(ctx context.Context, configContent []byte) (*SupplierS
 	}
 
 	defaultRevSharePercent := map[string]float32{}
-	if stakeConfig.DefaultRevSharePercent == nil || len(stakeConfig.DefaultRevSharePercent) == 0 {
+	if len(stakeConfig.DefaultRevSharePercent) == 0 {
 		// Ensure that if no default rev share is provided, the owner address is set
 		// to 100% rev share.
 		if stakeConfig.OwnerAddress == "" {
@@ -117,7 +117,7 @@ func ParseSupplierConfigs(ctx context.Context, configContent []byte) (*SupplierS
 	}
 
 	// Validate the services
-	if stakeConfig.Services == nil || len(stakeConfig.Services) == 0 {
+	if len(stakeConfig.Services) == 0 {
 		return nil, ErrSupplierConfigInvalidServiceId.Wrap("serviceIds cannot be empty")
 	}
 

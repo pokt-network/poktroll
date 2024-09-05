@@ -14,7 +14,7 @@ import (
 )
 
 // oneUPOKTGreaterThanFee is 1 upokt more than the AddServiceFee
-var oneUPOKTGreaterThanFee = types.DefaultAddServiceFee.Amount.Uint64() + 1
+var oneUPOKTGreaterThanFee = types.MinAddServiceFee.Amount.Uint64() + 1
 
 func TestMsgServer_AddService(t *testing.T) {
 	k, ctx := keepertest.ServiceKeeper(t)
@@ -164,7 +164,7 @@ func TestMsgServer_AddService(t *testing.T) {
 			desc: "invalid - account has exactly AddServiceFee",
 			setup: func(t *testing.T) {
 				// Add the exact fee in upokt to the account
-				keepertest.AddAccToAccMapCoins(t, newServiceOwnerAddr, volatile.DenomuPOKT, types.DefaultAddServiceFee.Amount.Uint64())
+				keepertest.AddAccToAccMapCoins(t, newServiceOwnerAddr, volatile.DenomuPOKT, types.MinAddServiceFee.Amount.Uint64())
 			},
 			address:     newServiceOwnerAddr,
 			service:     newService,

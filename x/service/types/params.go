@@ -15,8 +15,9 @@ var (
 
 	KeyAddServiceFee   = []byte("AddServiceFee")
 	ParamAddServiceFee = "add_service_fee"
-	// TODO_TECHDEBT: Determine a sensible default value for the add service fee.
-	DefaultAddServiceFee = cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(1000000000))
+	// TODO_TECHDEBT: Determine a sensible default/min value for the add service fee.
+	// MinAddServiceFee is the default and minimum fee for adding a new service.
+	MinAddServiceFee = cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(1000000000))
 )
 
 // ParamKeyTable the param key table for launch module
@@ -34,7 +35,7 @@ func NewParams(addServiceFee *cosmostypes.Coin) Params {
 // DefaultParams returns a default set of parameters
 func DefaultParams() Params {
 	return NewParams(
-		&DefaultAddServiceFee,
+		&MinAddServiceFee,
 	)
 }
 
@@ -69,10 +70,10 @@ func ValidateAddServiceFee(v interface{}) error {
 	}
 
 	// TODO_MAINNET: Look into better validation
-	if addServiceFeeCoin.Amount.LT(DefaultAddServiceFee.Amount) {
+	if addServiceFeeCoin.Amount.LT(MinAddServiceFee.Amount) {
 		return ErrServiceInvalidServiceFee.Wrapf(
 			"AddServiceFee param is below minimum value %s: got %s",
-			DefaultAddServiceFee,
+			MinAddServiceFee,
 			addServiceFeeCoin,
 		)
 	}
