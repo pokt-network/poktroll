@@ -37,7 +37,7 @@ message Params {
   // proof_submission_fee is the number of tokens (uPOKT) which should be paid by
   // the supplier operator when submitting a proof.
   // This is needed to account for the cost of storing proofs on-chain and prevent
-  // spamming the network with non-required proofs.
+  // spamming (i.e. sybil bloat attacks) the network with non-required proofs.
   cosmos.base.v1beta1.Coin proof_submission_fee = 5 [(gogoproto.jsontag) = "proof_submission_fee"];
 
   // IMPORTANT: Make sure to update all related files if you're modifying or adding a new parameter.

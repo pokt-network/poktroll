@@ -36,8 +36,9 @@ var (
 
 	KeyProofSubmissionFee   = []byte("ProofSubmissionFee")
 	ParamProofSubmissionFee = "proof_submission_fee"
-	// TODO_TECHDEBT: Determine a sensible default value for the proof submission fee.
-	DefaultProofSubmissionFee = cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(1000000))
+	// TODO_MAINNET: Determine a sensible default value for the proof submission fee.
+	// MinProofSubmissionFee is the default and minimum fee for submitting a proof.
+	MinProofSubmissionFee = cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(1000000))
 )
 
 // ParamKeyTable the param key table for launch module
@@ -69,7 +70,7 @@ func DefaultParams() Params {
 		DefaultProofRequestProbability,
 		DefaultProofRequirementThreshold,
 		&DefaultProofMissingPenalty,
-		&DefaultProofSubmissionFee,
+		&MinProofSubmissionFee,
 	)
 }
 
@@ -211,10 +212,10 @@ func ValidateProofSubmissionFee(v interface{}) error {
 		return ErrProofParamInvalid.Wrapf("invalid coin denom: %s", submissionFeeCoin.Denom)
 	}
 
-	if submissionFeeCoin.Amount.LT(DefaultProofSubmissionFee.Amount) {
+	if submissionFeeCoin.Amount.LT(MinProofSubmissionFee.Amount) {
 		return ErrProofParamInvalid.Wrapf(
 			"ProofSubmissionFee param is below minimum value %s: got %s",
-			DefaultProofSubmissionFee,
+			MinProofSubmissionFee,
 			submissionFeeCoin,
 		)
 	}
