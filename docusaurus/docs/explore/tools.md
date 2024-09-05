@@ -3,7 +3,7 @@ title: Tools & References
 sidebar_position: 1
 ---
 
-# 🛠️ Tools & References <!-- omit in toc -->
+## 🛠️ Tools & References <!-- omit in toc -->
 
 - 🪙 [Shannon Token Faucet](https://faucet.testnet.pokt.network/)
 - 🗺️ [Shannon Explorer](https://shannon.testnet.pokt.network/poktroll/block)
