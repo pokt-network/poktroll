@@ -68,7 +68,7 @@ Feature: Params Namespace
     Given the user has the pocketd binary installed
     And all "<module>" module params are set to their default values
     And an authz grant from the "gov" "module" account to the "pnf" "user" account for the "<message_type>" message exists
-    When the "pnf" account sends an authz exec message to update "<module>" the module param
+    When the "pnf" account sends an authz exec message to update the "<module>" module param
       | name         | value         | type         |
       | <param_name> | <param_value> | <param_type> |
     Then the "<module>" module param "<param_name>" should be updated
@@ -93,7 +93,7 @@ Feature: Params Namespace
     Given the user has the pocketd binary installed
     And all "proof" module params are set to their default values
     And an authz grant from the "gov" "module" account to the "pnf" "user" account for the "/poktroll.proof.MsgUpdateParams" message exists
-    When the "unauthorized" account sends an authz exec message to update "proof" the module param
+    When the "unauthorized" account sends an authz exec message to update the "proof" module param
       | name                      | value | type  |
       | proof_request_probability | 0.1   | float |
     Then the "proof" module param "min_relay_difficulty_bits" should be set to its default value
