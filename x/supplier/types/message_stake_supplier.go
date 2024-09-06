@@ -65,7 +65,7 @@ func (msg *MsgStakeSupplier) ValidateBasic() error {
 
 	// Validate the supplier service configs
 	if err := servicehelpers.ValidateSupplierServiceConfigs(msg.Services); err != nil {
-		return ErrSupplierInvalidServiceConfig.Wrapf(err.Error())
+		return ErrSupplierInvalidServiceConfig.Wrapf("%s", err.Error())
 	}
 
 	return nil

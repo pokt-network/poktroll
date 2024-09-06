@@ -53,7 +53,7 @@ localnet_config_defaults = {
         "model": "qwen:0.5b",
     },
     "rest": {
-        "enabled": False,
+        "enabled": True,
     },
     # By default, we use the `helm_repo` function below to point to the remote repository
     # but can update it to the locally cloned repo for testing & development
@@ -185,7 +185,7 @@ local_resource(
 docker_build_with_restart(
     "poktrolld",
     ".",
-    dockerfile_contents="""FROM golang:1.22.2
+    dockerfile_contents="""FROM golang:1.23.0
 RUN apt-get -q update && apt-get install -qyy curl jq less
 RUN go install github.com/go-delve/delve/cmd/dlv@latest
 COPY bin/poktrolld /usr/local/bin/poktrolld

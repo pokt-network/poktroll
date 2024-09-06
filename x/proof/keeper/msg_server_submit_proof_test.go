@@ -5,12 +5,16 @@ import (
 	"testing"
 
 	"cosmossdk.io/depinject"
+	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+	"github.com/cosmos/cosmos-sdk/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
@@ -25,6 +29,7 @@ import (
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 // TODO_TECHDEBT(@bryanchriswhite): Simplify this file; https://github.com/pokt-network/poktroll/pull/417#pullrequestreview-1958582600
@@ -92,7 +97,10 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 			sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 
 			// Set proof keeper params to disable relay mining and always require a proof.
-			err := keepers.Keeper.SetParams(ctx, testProofParams)
+			proofParams := keepers.Keeper.GetParams(ctx)
+			proofParams.ProofRequestProbability = testProofParams.ProofRequestProbability
+			proofParams.RelayDifficultyTargetHash = testProofParams.RelayDifficultyTargetHash
+			err := keepers.Keeper.SetParams(ctx, proofParams)
 			require.NoError(t, err)
 
 			// Construct a keyring to hold the keypairs for the accounts used in the test.
@@ -117,6 +125,8 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 				keepers,
 				preGeneratedAccts,
 			).String()
+
+			fundSupplierOperatorAccount(t, ctx, keepers, supplierOperatorAddr)
 
 			service := &sharedtypes.Service{
 				Id:                   testServiceId,
@@ -218,10 +228,12 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 			require.Equal(t, proofMsg.SessionHeader.GetSessionEndBlockHeight(), proofs[0].GetSessionHeader().GetSessionEndBlockHeight())
 
 			events := sdkCtx.EventManager().Events()
-			require.Equal(t, 2, len(events))
+
+			claimCreatedEvents := testutilevents.FilterEvents[*prooftypes.EventClaimCreated](t, events, "poktroll.proof.EventClaimCreated")
+			require.Len(t, claimCreatedEvents, 1)
 
 			proofSubmittedEvents := testutilevents.FilterEvents[*prooftypes.EventProofSubmitted](t, events, "poktroll.proof.EventProofSubmitted")
-			require.Equal(t, 1, len(proofSubmittedEvents))
+			require.Len(t, proofSubmittedEvents, 1)
 
 			proofSubmittedEvent := proofSubmittedEvents[0]
 
@@ -245,7 +257,10 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 	keepers, ctx := keepertest.NewProofModuleKeepers(t, opts...)
 
 	// Set proof keeper params to disable relaymining and always require a proof.
-	err := keepers.Keeper.SetParams(ctx, testProofParams)
+	proofParams := keepers.Keeper.GetParams(ctx)
+	proofParams.ProofRequestProbability = testProofParams.ProofRequestProbability
+	proofParams.RelayDifficultyTargetHash = testProofParams.RelayDifficultyTargetHash
+	err := keepers.Keeper.SetParams(ctx, proofParams)
 	require.NoError(t, err)
 
 	// Construct a keyring to hold the keypairs for the accounts used in the test.
@@ -275,6 +290,8 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 		ComputeUnitsPerRelay: computeUnitsPerRelay,
 		OwnerAddress:         sample.AccAddress(),
 	}
+
+	fundSupplierOperatorAccount(t, ctx, keepers, supplierOperatorAddr)
 
 	// Add a supplier and application pair that are expected to be in the session.
 	keepers.AddServiceActors(ctx, t, service, supplierOperatorAddr, appAddr)
@@ -395,8 +412,12 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 
 			// Assert that only the create claim event was emitted.
 			events := sdkCtx.EventManager().Events()
-			require.Equal(t, 1, len(events))
-			require.Equal(t, "poktroll.proof.EventClaimCreated", events[0].Type)
+
+			claimCreatedEvents := testutilevents.FilterEvents[*prooftypes.EventClaimCreated](t, events, "poktroll.proof.EventClaimCreated")
+			require.Len(t, claimCreatedEvents, 1)
+
+			proofSubmittedEvents := testutilevents.FilterEvents[*prooftypes.EventProofSubmitted](t, events, "poktroll.proof.EventProofSubmitted")
+			require.Len(t, proofSubmittedEvents, 0)
 		})
 	}
 }
@@ -755,4 +776,23 @@ func createClaimAndStoreBlockHash(
 	keepers.StoreBlockHash(earliestSupplierClaimCommitCtx)
 
 	return claimRes.GetClaim()
+}
+
+// fundSupplierOperatorAccount sends enough coins to the supplier operator account
+// to cover the cost of the proof submission.
+func fundSupplierOperatorAccount(t *testing.T, ctx context.Context, keepers *keepertest.ProofModuleKeepers, supplierOperatorAddr string) {
+	supplierOperatorAccAddr, err := sdk.AccAddressFromBech32(supplierOperatorAddr)
+	require.NoError(t, err)
+
+	err = keepers.SendCoinsFromModuleToAccount(
+		ctx,
+		suppliertypes.ModuleName,
+		supplierOperatorAccAddr,
+		types.NewCoins(types.NewCoin(volatile.DenomuPOKT, math.NewInt(100000000))),
+	)
+	require.NoError(t, err)
+
+	coin := keepers.SpendableCoins(ctx, supplierOperatorAccAddr)
+	require.Equal(t, coin[0].Amount, math.NewInt(100000000))
+
 }
