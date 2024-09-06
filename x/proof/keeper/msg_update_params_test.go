@@ -43,6 +43,7 @@ func TestMsgUpdateParams(t *testing.T) {
 				Authority: k.GetAuthority(),
 				Params: types.Params{
 					ProofMissingPenalty:       &types.DefaultProofMissingPenalty,
+					ProofSubmissionFee:        &types.MinProofSubmissionFee,
 					RelayDifficultyTargetHash: types.DefaultRelayDifficultyTargetHash,
 				},
 			},

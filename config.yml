@@ -222,7 +222,9 @@ genesis:
             denom: upokt
     service:
       params:
-        add_service_fee: "1000000000"
+        add_service_fee:
+          amount: "1000000000"
+          denom: upokt
       serviceList:
         - id: anvil
           name: "anvil"
@@ -242,6 +244,9 @@ genesis:
         proof_requirement_threshold: 20
         proof_missing_penalty:
           amount: "320"
+          denom: upokt
+        proof_submission_fee:
+          amount: "1000000"
           denom: upokt
     shared:
       params:

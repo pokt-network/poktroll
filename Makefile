@@ -81,7 +81,7 @@ endif
 .PHONY: install_ci_deps
 install_ci_deps: ## Installs `mockgen` and other go tools
 	go install "github.com/golang/mock/mockgen@v1.6.0" && mockgen --version
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.59.1 && golangci-lint --version
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.60.3 && golangci-lint --version
 	go install golang.org/x/tools/cmd/goimports@latest
 	go install github.com/mikefarah/yq/v4@latest
 
@@ -942,6 +942,10 @@ params_update_proof_proof_requirement_threshold: ## Update the proof module proo
 params_update_proof_proof_missing_penalty: ## Update the proof module proof_missing_penalty param
 	poktrolld tx authz exec ./tools/scripts/params/proof_proof_missing_penalty.json $(PARAM_FLAGS)
 
+.PHONY: params_update_proof_proof_submission_fee
+params_update_proof_proof_submission_fee: ## Update the proof module proof_submission_fee param
+	poktrolld tx authz exec ./tools/scripts/params/proof_proof_submission_fee.json $(PARAM_FLAGS)
+
 ### Shared Module Params ###
 .PHONY: params_update_shared_all
 params_update_shared_all: ## Update the session module params
@@ -970,6 +974,11 @@ params_update_shared_proof_window_open_offset_blocks: ## Update the shared modul
 .PHONY: params_update_shared_proof_window_close_offset_blocks
 params_update_shared_proof_window_close_offset_blocks: ## Update the shared module proof_window_close_offset_blocks param
 	poktrolld tx authz exec ./tools/scripts/params/shared_proof_window_close_offset_blocks.json $(PARAM_FLAGS)
+
+.PHONY: params_update_service_add_service_fee
+params_update_service_add_service_fee: ## Update the service module add_service_fee param
+	poktrolld tx authz exec ./tools/scripts/params/service_add_service_fee.json $(PARAM_FLAGS)
+
 
 .PHONY: params_query_all
 params_query_all: check_jq ## Query the params from all available modules
@@ -1092,6 +1101,36 @@ act_reviewdog: check_act check_gh ## Run the reviewdog workflow locally like so:
 	$(eval CONTAINER_ARCH := $(shell make -s detect_arch))
 	@echo "Detected architecture: $(CONTAINER_ARCH)"
 	act -v -s GITHUB_TOKEN=$(GITHUB_TOKEN) -W .github/workflows/reviewdog.yml --container-architecture $(CONTAINER_ARCH)
+
+
+###########################
+###   Release Helpers   ###
+###########################
+
+# List tags: git tag
+# Delete tag locally: git tag -d v1.2.3
+# Delete tag remotely: git push --delete origin v1.2.3
+
+.PHONY: release_tag_bug_fix
+release_tag_bug_fix: ## Tag a new bug fix release (e.g. v1.0.1 -> v1.0.2)
+	@$(eval LATEST_TAG=$(shell git tag --sort=-v:refname | head -n 1))
+	@$(eval NEW_TAG=$(shell echo $(LATEST_TAG) | awk -F. -v OFS=. '{ $$NF = sprintf("%d", $$NF + 1); print }'))
+	@git tag $(NEW_TAG)
+	@echo "New bug fix version tagged: $(NEW_TAG)"
+	@echo "Run the following commands to push the new tag:"
+	@echo "  git push origin $(NEW_TAG)"
+	@echo "And draft a new release at https://github.com/pokt-network/poktroll/releases/new"
+
+
+.PHONY: release_tag_minor_release
+release_tag_minor_release: ## Tag a new minor release (e.g. v1.0.0 -> v1.1.0)
+	@$(eval LATEST_TAG=$(shell git tag --sort=-v:refname | head -n 1))
+	@$(eval NEW_TAG=$(shell echo $(LATEST_TAG) | awk -F. '{$$2 += 1; $$3 = 0; print $$1 "." $$2 "." $$3}'))
+	@git tag $(NEW_TAG)
+	@echo "New minor release version tagged: $(NEW_TAG)"
+	@echo "Run the following commands to push the new tag:"
+	@echo "  git push origin $(NEW_TAG)"
+	@echo "And draft a new release at https://github.com/pokt-network/poktroll/releases/new"
 
 #############################
 ### Grove Gateway Helpers ###

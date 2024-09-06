@@ -95,17 +95,20 @@ type AppModule struct {
 
 	keeper        keeper.Keeper
 	accountKeeper types.AccountKeeper
+	bankKeeper    types.BankKeeper
 }
 
 func NewAppModule(
 	cdc codec.Codec,
 	keeper keeper.Keeper,
 	accountKeeper types.AccountKeeper,
+	bankKeeper types.BankKeeper,
 ) AppModule {
 	return AppModule{
 		AppModuleBasic: NewAppModuleBasic(cdc),
 		keeper:         keeper,
 		accountKeeper:  accountKeeper,
+		bankKeeper:     bankKeeper,
 	}
 }
 
@@ -172,6 +175,7 @@ type ModuleInputs struct {
 	Config       *modulev1.Module
 	Logger       log.Logger
 
+	BankKeeper        types.BankKeeper
 	SessionKeeper     types.SessionKeeper
 	ApplicationKeeper types.ApplicationKeeper
 	AccountKeeper     types.AccountKeeper
@@ -197,6 +201,7 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 		in.StoreService,
 		in.Logger,
 		authority.String(),
+		in.BankKeeper,
 		in.SessionKeeper,
 		in.ApplicationKeeper,
 		in.AccountKeeper,
@@ -207,6 +212,7 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 		in.Cdc,
 		k,
 		in.AccountKeeper,
+		in.BankKeeper,
 	)
 
 	return ModuleOutputs{ProofKeeper: k, Module: m}
