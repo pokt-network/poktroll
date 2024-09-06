@@ -18,6 +18,10 @@ func InitSDKConfig() {
 	})
 }
 
+// checkOrInitSDKConfig updates the prefixes for all account types and seals the config.
+// DEV_NOTE: Due to the separation of this repo and the SDK, where the config is also sealed,
+// we have an added check to return early in case the config has already been set to the expected
+// value.
 func checkOrInitSDKConfig() {
 	config := sdk.GetConfig()
 
