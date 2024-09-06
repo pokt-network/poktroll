@@ -35,8 +35,16 @@ func initSDKConfig() {
 	config.Seal()
 }
 
-// initCometBFTConfig helps to override default CometBFT Config values.
-// return cmtcfg.DefaultConfig if no custom configuration is required for the application.
+// The code below changes how the default configuration files are rendered on `poktrolld init` command. This command
+// is ofter used by the validator and full node runners to provision the configuration prior to starting the node.
+// These are the values **WE WANT** participants to have. This doesn't guarantee the node runners won't adjust the values
+// but it helps making sure most of them are using the following configuration.
+// Worth noting that changing these values in the future won't magically update them in the existing configuration,
+// which makes it's important to pick the sensible defaults.
+
+// initCometBFTConfig helps to override default CometBFT Config (config.toml) values.
+// These values are going to be rendered into the config file on `poktrolld init`.
+// TODO_MAINNET: Reconsider values - check `config.toml` for possible options.
 func initCometBFTConfig() *cmtcfg.Config {
 	cfg := cmtcfg.DefaultConfig()
 
@@ -44,8 +52,6 @@ func initCometBFTConfig() *cmtcfg.Config {
 	// cfg.P2P.MaxNumInboundPeers = 100
 	// cfg.P2P.MaxNumOutboundPeers = 40
 
-	// Set default values so `poktrolld init` creates configs with "blessed" values:
-	// TODO_MAINNET: discuss block times
 	cfg.Consensus.TimeoutPropose = 60 * time.Second
 	cfg.Consensus.TimeoutProposeDelta = 5 * time.Second
 	cfg.Consensus.TimeoutPrevote = 10 * time.Second
@@ -59,8 +65,10 @@ func initCometBFTConfig() *cmtcfg.Config {
 	return cfg
 }
 
-// initAppConfig helps to override default appConfig template and configs.
+// initAppConfig helps to override default appConfig (app.toml) template and configs.
+// These values are going to be rendered into the config file on `poktrolld init`.
 // return "", nil if no custom configuration is required for the application.
+// TODO_MAINNET: Reconsider values - check `app.toml` for possible options.
 func initAppConfig() (string, interface{}) {
 	// The following code snippet is just for reference.
 	type CustomAppConfig struct {
@@ -85,12 +93,10 @@ func initAppConfig() (string, interface{}) {
 	// srvCfg.MinGasPrices = "0stake"
 	// srvCfg.BaseConfig.IAVLDisableFastNode = true // disable fastnode by default
 
-	// TODO_MAINNET: reconsider values, especially MinGasPrices and MaxTxs
-	// Set default values so `poktrolld init` creates configs with "blessed" values:
-	srvCfg.MinGasPrices = "0.000000001upokt" // Also adjust `config.yml`.
+	srvCfg.MinGasPrices = "0.000000001upokt" // Also adjust ignite's `config.yml`.
 	srvCfg.Mempool.MaxTxs = 10000
 	srvCfg.Telemetry.Enabled = true
-	srvCfg.Telemetry.PrometheusRetentionTime = 60 // in seconds
+	srvCfg.Telemetry.PrometheusRetentionTime = 60 // in seconds. This turns on Prometheus support.
 	srvCfg.Telemetry.MetricsSink = "mem"
 	srvCfg.Pruning = "nothing" // archiving node by default
 	srvCfg.API.Enable = true
