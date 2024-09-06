@@ -784,25 +784,6 @@ func (s *suite) getApplicationUnbondingHeight(accName string) int64 {
 	return unbondingHeight
 }
 
-// getProofSubmissionFee returns the fee amount required to submit a proof.
-func (s *suite) getProofSubmissionFee() int64 {
-	args := []string{
-		"query",
-		"proof",
-		"params",
-		"--output=json",
-	}
-
-	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, args...)
-	require.NoError(s, err, "error getting proof module params")
-
-	var resp prooftypes.QueryParamsResponse
-	responseBz := []byte(strings.TrimSpace(res.Stdout))
-	s.cdc.MustUnmarshalJSON(responseBz, &resp)
-
-	return resp.Params.ProofSubmissionFee.Amount.Int64()
-}
-
 // getServiceComputeUnitsPerRelay returns the compute units per relay for a given service ID
 func (s *suite) getServiceComputeUnitsPerRelay(serviceId string) uint64 {
 	args := []string{

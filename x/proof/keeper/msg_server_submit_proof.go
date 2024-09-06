@@ -182,8 +182,7 @@ func (k Keeper) deductProofSubmissionFee(ctx context.Context, supplierOperatorAd
 
 	// Deduct the proof submission fee from the supplier operator's balance.
 	proofSubmissionFeeCoins := cosmostypes.NewCoins(*proofSubmissionFee)
-	err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, supplierOperatorAccAddress, types.ModuleName, proofSubmissionFeeCoins)
-	if err != nil {
+	if err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, supplierOperatorAccAddress, types.ModuleName, proofSubmissionFeeCoins); err != nil {
 		return types.ErrProofFailedToDeductFee.Wrapf(
 			"account has %s, failed to deduct %s",
 			accBalance, proofSubmissionFee,

@@ -5,6 +5,7 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strconv"
 	"time"
 
@@ -44,18 +45,19 @@ const (
 func (s *suite) TheUserShouldWaitForTheModuleMessageToBeSubmitted(module, msgType string) {
 	event := s.waitForTxResultEvent(newEventMsgTypeMatchFn(module, msgType))
 
-	// Currently the proof submission fee may be higher than the reward amount,
-	// an adjustment the current balance to account for the proof submission fee
-	// is needed so validateAmountChange can assert on the reward change with the
-	// given condition.
+	// If the message type is "SubmitProof", save the supplier balance
+	// so that next steps that assert on supplier rewards can do it without having
+	// the proof submission fee skewing the results.
 	if msgType == "SubmitProof" {
-
 		supplierOperatorAddress := getMsgSubmitProofSenderAddress(event)
 		require.NotEmpty(s, supplierOperatorAddress)
 
-		proofSubmissionFee := s.getProofSubmissionFee()
-		accName := accAddrToNameMap[supplierOperatorAddress]
-		s.TheUserSendsUpoktFromAccountToAccount(proofSubmissionFee, "pnf", accName)
+		supplierAccName := accAddrToNameMap[supplierOperatorAddress]
+
+		// Get current balance
+		balanceKey := accBalanceKey(supplierAccName)
+		currBalance := s.getAccBalance(supplierAccName)
+		s.scenarioState[balanceKey] = currBalance // save the balance for later
 	}
 }
 
@@ -356,11 +358,9 @@ func combineEventMatchFns(fns ...func(*abci.Event) bool) func(*abci.Event) bool 
 
 // getMsgSubmitProofSenderAddress returns the sender address from the given event.
 func getMsgSubmitProofSenderAddress(event *abci.Event) string {
-	for _, attribute := range event.Attributes {
-		if attribute.Key == "sender" {
-			return attribute.Value
-		}
-	}
+	senderAttrIdx := slices.IndexFunc(event.Attributes, func(attr abci.EventAttribute) bool {
+		return attr.Key == "sender"
+	})
 
-	return ""
+	return event.Attributes[senderAttrIdx].Value
 }
