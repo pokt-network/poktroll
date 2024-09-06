@@ -466,9 +466,12 @@ func (s *suite) TheApplicationSendsTheSupplierASuccessfulRequestForServiceWithPa
 	jsonMap, err := jsonToMap(jsonContent)
 	require.NoError(s, err, "error converting JSON to map")
 
-	prettyJson, err := jsonPrettyPrint(jsonContent)
-	require.NoError(s, err, "error pretty printing JSON")
-	s.Log(prettyJson)
+	// Log the JSON content if the test is verbose
+	if isVerbose() {
+		prettyJson, err := jsonPrettyPrint(jsonContent)
+		require.NoError(s, err, "error pretty printing JSON")
+		s.Log(prettyJson)
+	}
 
 	// TODO_IMPROVE: This is a minimalistic first approach to request validation in E2E tests.
 	// Consider leveraging the shannon-sdk or path here.
