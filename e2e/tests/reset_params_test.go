@@ -10,6 +10,7 @@ import (
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
@@ -39,6 +40,7 @@ func (s *suite) allModulesMsgUpdateParamsToDefaultsAny() []*codectypes.Any {
 		s.msgUpdateParamsToDefaultsAny(prooftypes.ModuleName),
 		s.msgUpdateParamsToDefaultsAny(tokenomicstypes.ModuleName),
 		s.msgUpdateParamsToDefaultsAny(sharedtypes.ModuleName),
+		s.msgUpdateParamsToDefaultsAny(servicetypes.ModuleName),
 	}
 }
 
@@ -93,6 +95,13 @@ func (s *suite) msgUpdateParamsToDefaultsAny(moduleName string) *codectypes.Any 
 			&sharedtypes.MsgUpdateParams{
 				Authority: authtypes.NewModuleAddress(s.granterName).String(),
 				Params:    sharedtypes.DefaultParams(),
+			},
+		)
+	case servicetypes.ModuleName:
+		anyMsg, err = codectypes.NewAnyWithValue(
+			&servicetypes.MsgUpdateParams{
+				Authority: authtypes.NewModuleAddress(s.granterName).String(),
+				Params:    servicetypes.DefaultParams(),
 			},
 		)
 	default:
