@@ -5,6 +5,7 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strconv"
 	"time"
 
@@ -43,7 +44,22 @@ const (
 )
 
 func (s *suite) TheUserShouldWaitForTheModuleMessageToBeSubmitted(module, msgType string) {
-	s.waitForTxResultEvent(newEventMsgTypeMatchFn(module, msgType))
+	event := s.waitForTxResultEvent(newEventMsgTypeMatchFn(module, msgType))
+
+	// If the message type is "SubmitProof", save the supplier balance
+	// so that next steps that assert on supplier rewards can do it without having
+	// the proof submission fee skewing the results.
+	if msgType == "SubmitProof" {
+		supplierOperatorAddress := getMsgSubmitProofSenderAddress(event)
+		require.NotEmpty(s, supplierOperatorAddress)
+
+		supplierAccName := accAddrToNameMap[supplierOperatorAddress]
+
+		// Get current balance
+		balanceKey := accBalanceKey(supplierAccName)
+		currBalance := s.getAccBalance(supplierAccName)
+		s.scenarioState[balanceKey] = currBalance // save the balance for later
+	}
 }
 
 func (s *suite) TheUserShouldWaitForTheModuleTxEventToBeBroadcast(module, eventType string) {
@@ -187,7 +203,7 @@ func (s *suite) sendRelaysForSession(
 }
 
 // waitForTxResultEvent waits for an event to be observed which has the given message action.
-func (s *suite) waitForTxResultEvent(eventIsMatch func(*abci.Event) bool) {
+func (s *suite) waitForTxResultEvent(eventIsMatch func(*abci.Event) bool) (matchedEvent *abci.Event) {
 	ctx, cancel := context.WithCancel(s.ctx)
 
 	// For each observed event, **asynchronously** check if it contains the given action.
@@ -202,6 +218,7 @@ func (s *suite) waitForTxResultEvent(eventIsMatch func(*abci.Event) bool) {
 			// and compare its value to that of the action provided.
 			for _, event := range txResult.Result.Events {
 				if eventIsMatch(&event) {
+					matchedEvent = &event
 					cancel()
 				}
 			}
@@ -214,6 +231,8 @@ func (s *suite) waitForTxResultEvent(eventIsMatch func(*abci.Event) bool) {
 	case <-ctx.Done():
 		s.Log("Success; message detected before timeout.")
 	}
+
+	return matchedEvent
 }
 
 // waitForNewBlockEvent waits for an event to be observed whose type and data
@@ -349,4 +368,13 @@ func combineEventMatchFns(fns ...func(*abci.Event) bool) func(*abci.Event) bool 
 		}
 		return true
 	}
+}
+
+// getMsgSubmitProofSenderAddress returns the sender address from the given event.
+func getMsgSubmitProofSenderAddress(event *abci.Event) string {
+	senderAttrIdx := slices.IndexFunc(event.Attributes, func(attr abci.EventAttribute) bool {
+		return attr.Key == "sender"
+	})
+
+	return event.Attributes[senderAttrIdx].Value
 }

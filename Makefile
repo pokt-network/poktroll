@@ -942,6 +942,10 @@ params_update_proof_proof_requirement_threshold: ## Update the proof module proo
 params_update_proof_proof_missing_penalty: ## Update the proof module proof_missing_penalty param
 	poktrolld tx authz exec ./tools/scripts/params/proof_proof_missing_penalty.json $(PARAM_FLAGS)
 
+.PHONY: params_update_proof_proof_submission_fee
+params_update_proof_proof_submission_fee: ## Update the proof module proof_submission_fee param
+	poktrolld tx authz exec ./tools/scripts/params/proof_proof_submission_fee.json $(PARAM_FLAGS)
+
 ### Shared Module Params ###
 .PHONY: params_update_shared_all
 params_update_shared_all: ## Update the session module params
@@ -970,6 +974,11 @@ params_update_shared_proof_window_open_offset_blocks: ## Update the shared modul
 .PHONY: params_update_shared_proof_window_close_offset_blocks
 params_update_shared_proof_window_close_offset_blocks: ## Update the shared module proof_window_close_offset_blocks param
 	poktrolld tx authz exec ./tools/scripts/params/shared_proof_window_close_offset_blocks.json $(PARAM_FLAGS)
+
+.PHONY: params_update_service_add_service_fee
+params_update_service_add_service_fee: ## Update the service module add_service_fee param
+	poktrolld tx authz exec ./tools/scripts/params/service_add_service_fee.json $(PARAM_FLAGS)
+
 
 .PHONY: params_query_all
 params_query_all: check_jq ## Query the params from all available modules

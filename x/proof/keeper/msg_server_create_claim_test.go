@@ -3,13 +3,13 @@ package keeper_test
 import (
 	"testing"
 
-	abci "github.com/cometbft/cometbft/abci/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	testutilevents "github.com/pokt-network/poktroll/testutil/events"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	testproof "github.com/pokt-network/poktroll/testutil/proof"
 	"github.com/pokt-network/poktroll/testutil/sample"
@@ -17,6 +17,7 @@ import (
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	"github.com/pokt-network/poktroll/x/proof/keeper"
 	"github.com/pokt-network/poktroll/x/proof/types"
+	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -169,19 +170,13 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 			require.Equal(t, claimMsg.RootHash, claim.GetRootHash())
 
 			events := sdkCtx.EventManager().Events()
-			require.Equal(t, 1, len(events))
 
-			require.Equal(t, "poktroll.proof.EventClaimCreated", events[0].Type)
+			claimCreatedEvents := testutilevents.FilterEvents[*prooftypes.EventClaimCreated](t, events, "poktroll.proof.EventClaimCreated")
+			require.Len(t, claimCreatedEvents, 1)
 
-			event, err := cosmostypes.ParseTypedEvent(abci.Event(events[0]))
-			require.NoError(t, err)
-
-			claimCreatedEvent, ok := event.(*types.EventClaimCreated)
-			require.Truef(t, ok, "unexpected event type %T", event)
-
-			require.EqualValues(t, &claim, claimCreatedEvent.GetClaim())
-			require.Equal(t, uint64(test.expectedNumComputeUnits), claimCreatedEvent.GetNumComputeUnits())
-			require.Equal(t, uint64(expectedNumRelays), claimCreatedEvent.GetNumRelays())
+			require.EqualValues(t, &claim, claimCreatedEvents[0].GetClaim())
+			require.Equal(t, uint64(test.expectedNumComputeUnits), claimCreatedEvents[0].GetNumComputeUnits())
+			require.Equal(t, uint64(expectedNumRelays), claimCreatedEvents[0].GetNumRelays())
 		})
 	}
 }
@@ -307,7 +302,8 @@ func TestMsgServer_CreateClaim_Error_OutsideOfWindow(t *testing.T) {
 
 			// Assert that no events were emitted.
 			events := sdkCtx.EventManager().Events()
-			require.Equal(t, 0, len(events))
+			claimCreatedEvents := testutilevents.FilterEvents[*prooftypes.EventClaimCreated](t, events, "poktroll.proof.EventClaimCreated")
+			require.Len(t, claimCreatedEvents, 0)
 		})
 	}
 }
@@ -531,7 +527,8 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 			// Assert that no events were emitted.
 			sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 			events := sdkCtx.EventManager().Events()
-			require.Equal(t, 0, len(events))
+			claimCreatedEvents := testutilevents.FilterEvents[*prooftypes.EventClaimCreated](t, events, "poktroll.proof.EventClaimCreated")
+			require.Len(t, claimCreatedEvents, 0)
 		})
 	}
 }
@@ -641,7 +638,8 @@ func TestMsgServer_CreateClaim_Error_ComputeUnitsMismatch(t *testing.T) {
 	// Assert that no events were emitted.
 	sdkCtx = cosmostypes.UnwrapSDKContext(ctx)
 	events := sdkCtx.EventManager().Events()
-	require.Equal(t, 0, len(events))
+	claimCreatedEvents := testutilevents.FilterEvents[*prooftypes.EventClaimCreated](t, events, "poktroll.proof.EventClaimCreated")
+	require.Len(t, claimCreatedEvents, 0)
 }
 
 func newTestClaimMsg(
