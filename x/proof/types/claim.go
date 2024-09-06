@@ -29,11 +29,12 @@ func (claim *Claim) GetHash() ([]byte, error) {
 	return crypto.Sha256(claimBz), nil
 }
 
-// GetProofRequirementCheckValue returns a pseudo-random value between 0 and 1 to
+// GetProofRequirementSampleValue returns a pseudo-random value between 0 and 1 to
 // determine if a proof is required probabilistically.
-func (claim *Claim) GetProofRequirementCheckValue(
+// IMPORTANT: It is assumed that the caller has ensured the hash of the block seed
+func (claim *Claim) GetProofRequirementSampleValue(
 	proofRequirementSeedBlockHash []byte,
-) (proofRequirementCheckValue float32, err error) {
+) (proofRequirementSampleValue float32, err error) {
 	// Get the hash of the claim to seed the random number generator.
 	var claimHash []byte
 	claimHash, err = claim.GetHash()
@@ -48,10 +49,10 @@ func (claim *Claim) GetProofRequirementCheckValue(
 
 	// Sample a pseudo-random value between 0 and 1 to determine if a proof is
 	// required probabilistically.
-	proofRequirementCheckValue, err = poktrand.SeededFloat32(proofRequirementSeed)
+	proofRequirementSampleValue, err = poktrand.SeededFloat32(proofRequirementSeed)
 	if err != nil {
 		return 0, err
 	}
 
-	return proofRequirementCheckValue, nil
+	return proofRequirementSampleValue, nil
 }

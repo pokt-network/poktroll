@@ -216,7 +216,7 @@ func (rs *relayerSessionsManager) proveClaims(
 
 		// If an error is encountered while determining if a proof is required,
 		// do not create the claim since the proof requirement is unknown.
-		// Creating a claim and not submitting a proof (if necessary) could lead to a stake burn!!
+		// WARNING: Creating a claim and not submitting a proof (if necessary) could lead to a stake burn!!
 		if err != nil {
 			failedProofs = append(failedProofs, sessionTree)
 			rs.logger.Error().Err(err).Msg("failed to determine if proof is required, skipping claim creation")
@@ -299,20 +299,20 @@ func (rs *relayerSessionsManager) isProofRequired(
 		return true, nil
 	}
 
-	proofRequirementCheckValue, err := claim.GetProofRequirementCheckValue(proofRequirementSeedBlock.Hash())
+	proofRequirementSampleValue, err := claim.GetProofRequirementSampleValue(proofRequirementSeedBlock.Hash())
 	if err != nil {
 		return false, err
 	}
 
 	logger = logger.With(
-		"proof_requirement_check_value", proofRequirementCheckValue,
+		"proof_requirement_sample_value", proofRequirementSampleValue,
 		"proof_request_probability", proofParams.GetProofRequestProbability(),
 	)
 
 	// Require a proof probabilistically based on the proof_request_probability param.
 	// NB: A random value between 0 and 1 will be less than or equal to proof_request_probability
 	// with probability equal to the proof_request_probability.
-	if proofRequirementCheckValue <= proofParams.GetProofRequestProbability() {
+	if proofRequirementSampleValue <= proofParams.GetProofRequestProbability() {
 		logger.Info().Msg("claim hash seed is below proof request probability, claim requires proof")
 
 		return true, nil

@@ -285,7 +285,7 @@ func (k Keeper) proofRequirementForClaim(ctx sdk.Context, claim *prooftypes.Clai
 		return requirementReason, err
 	}
 
-	proofRequirementCheckValue, err := claim.GetProofRequirementCheckValue(earliestProofCommitBlockHash)
+	proofRequirementSampleValue, err := claim.GetProofRequirementSampleValue(earliestProofCommitBlockHash)
 	if err != nil {
 		return requirementReason, err
 	}
@@ -293,12 +293,12 @@ func (k Keeper) proofRequirementForClaim(ctx sdk.Context, claim *prooftypes.Clai
 	// Require a proof probabilistically based on the proof_request_probability param.
 	// NB: A random value between 0 and 1 will be less than or equal to proof_request_probability
 	// with probability equal to the proof_request_probability.
-	if proofRequirementCheckValue <= proofParams.GetProofRequestProbability() {
+	if proofRequirementSampleValue <= proofParams.GetProofRequestProbability() {
 		requirementReason = prooftypes.ProofRequirementReason_PROBABILISTIC
 
 		logger.Info(fmt.Sprintf(
 			"claim requires proof due to random sample (%.2f) being less than or equal to probability (%.2f)",
-			proofRequirementCheckValue,
+			proofRequirementSampleValue,
 			proofParams.GetProofRequestProbability(),
 		))
 		return requirementReason, nil
@@ -308,7 +308,7 @@ func (k Keeper) proofRequirementForClaim(ctx sdk.Context, claim *prooftypes.Clai
 		"claim does not require proof due to compute units (%d) being less than the threshold (%d) and random sample (%.2f) being greater than probability (%.2f)",
 		numClaimComputeUnits,
 		proofParams.GetProofRequirementThreshold(),
-		proofRequirementCheckValue,
+		proofRequirementSampleValue,
 		proofParams.GetProofRequestProbability(),
 	))
 	return requirementReason, nil
