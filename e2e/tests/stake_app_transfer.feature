@@ -2,6 +2,11 @@ Feature: App Stake Transfer Namespace
 
     Scenario: User can transfer Application stake to non-existing application address
         Given the user has the pocketd binary installed
+        # Reduce the application unbonding period to avoid timeouts.
+        And an authz grant from the "gov" "module" account to the "pnf" "user" account for each module MsgUpdateParam message exists
+        And the "pnf" account sends an authz exec message to update the "shared" module param
+            | name                                  | value | type  |
+            | application_unbonding_period_sessions | 1     | int64 |
         And an account exists for "app3"
         # Stake with 1 uPOKT more than the current stake used in genesis to make
         # the transaction succeed.
