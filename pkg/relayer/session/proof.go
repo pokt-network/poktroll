@@ -257,8 +257,9 @@ func (rs *relayerSessionsManager) proveClaims(
 
 // isProofRequired determines whether a proof is required for the given session's
 // claim based on the current proof module governance parameters.
-// TODO_TECHDEBT: Once the on/off-chain loggers are unified, move this logic to
-// a shared helper used by both off-chain and on-chain routines.
+// TODO_TECHDEBT: Refactor the method to be static and used both on-chain and off-chain.
+// TODO_INVESTIGATE: Passing a polylog.Logger should allow for on-chain/off-chain
+// usage of this function but it is currently raising a type error.
 func (rs *relayerSessionsManager) isProofRequired(
 	ctx context.Context,
 	sessionTree relayer.SessionTree,
