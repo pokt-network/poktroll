@@ -10,6 +10,7 @@ Feature: Session Namespace
         | proof_request_probability    | 0.25                                                             | float |
         | proof_requirement_threshold  | 4                                                                | int64 |
         | proof_missing_penalty        | 320                                                              | coin  |
+        | proof_submission_fee         | 1000000                                                          | coin  |
     When the supplier "supplier1" has serviced a session with "5" relays for service "anvil" for application "app1"
     And the user should wait for the "proof" module "CreateClaim" Message to be submitted
     And the user should wait for the "proof" module "ClaimCreated" tx event to be broadcast
