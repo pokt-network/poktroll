@@ -136,7 +136,7 @@ func ParseSupplierConfigs(ctx context.Context, configContent []byte) (*SupplierS
 
 		// Create a supplied service config with the serviceId
 		service := &sharedtypes.SupplierServiceConfig{
-			Service:   &sharedtypes.Service{Id: svc.ServiceId},
+			ServiceId: svc.ServiceId,
 			RevShare:  []*sharedtypes.ServiceRevenueShare{},
 			Endpoints: []*sharedtypes.SupplierEndpoint{},
 		}

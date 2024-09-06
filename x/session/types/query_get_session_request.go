@@ -12,10 +12,8 @@ import (
 func NewQueryGetSessionRequest(appAddress, serviceId string, blockHeight int64) *QueryGetSessionRequest {
 	return &QueryGetSessionRequest{
 		ApplicationAddress: appAddress,
-		Service: &sharedtypes.Service{
-			Id: serviceId,
-		},
-		BlockHeight: blockHeight,
+		ServiceId:          serviceId,
+		BlockHeight:        blockHeight,
 	}
 }
 
@@ -26,8 +24,8 @@ func (query *QueryGetSessionRequest) ValidateBasic() error {
 	}
 
 	// Validate the Service ID
-	if err := query.Service.ValidateBasic(); err != nil {
-		return ErrSessionInvalidService.Wrapf("invalid service for session being retrieved %s; %v", query.Service, err)
+	if !sharedtypes.IsValidServiceId(query.ServiceId) {
+		return ErrSessionInvalidService.Wrapf("invalid service for session being retrieved %s", query.ServiceId)
 	}
 
 	// Validate the height for which a session is being retrieved

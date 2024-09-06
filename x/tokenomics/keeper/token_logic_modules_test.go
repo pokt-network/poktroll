@@ -50,7 +50,7 @@ func TestProcessTokenLogicModules_HandleAppGoingIntoDebt(t *testing.T) {
 	app := apptypes.Application{
 		Address:        sample.AccAddress(),
 		Stake:          &appStake,
-		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{Service: service}},
+		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{ServiceId: service.Id}},
 	}
 	keepers.SetApplication(ctx, app)
 
@@ -63,7 +63,7 @@ func TestProcessTokenLogicModules_HandleAppGoingIntoDebt(t *testing.T) {
 		Stake:           &supplierStake,
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
-				Service: service,
+				ServiceId: service.Id,
 				RevShare: []*sharedtypes.ServiceRevenueShare{
 					{
 						Address:            supplierOwnerAddress,
@@ -82,7 +82,7 @@ func TestProcessTokenLogicModules_HandleAppGoingIntoDebt(t *testing.T) {
 		SupplierOperatorAddress: supplier.OperatorAddress,
 		SessionHeader: &sessiontypes.SessionHeader{
 			ApplicationAddress:      app.Address,
-			Service:                 service,
+			ServiceId:               service.Id,
 			SessionId:               "session_id",
 			SessionStartBlockHeight: 1,
 			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
@@ -122,7 +122,7 @@ func TestProcessTokenLogicModules_ValidAccounting(t *testing.T) {
 	app := apptypes.Application{
 		Address:        sample.AccAddress(),
 		Stake:          &appStake,
-		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{Service: service}},
+		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{ServiceId: service.Id}},
 	}
 	keepers.SetApplication(ctx, app)
 
@@ -145,8 +145,8 @@ func TestProcessTokenLogicModules_ValidAccounting(t *testing.T) {
 		Stake:           &supplierStake,
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
-				Service:  service,
-				RevShare: revShares,
+				ServiceId: service.Id,
+				RevShare:  revShares,
 			},
 		},
 	}
@@ -168,7 +168,7 @@ func TestProcessTokenLogicModules_ValidAccounting(t *testing.T) {
 		SupplierOperatorAddress: supplier.OperatorAddress,
 		SessionHeader: &sessiontypes.SessionHeader{
 			ApplicationAddress:      app.Address,
-			Service:                 service,
+			ServiceId:               service.Id,
 			SessionId:               "session_id",
 			SessionStartBlockHeight: 1,
 			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
@@ -250,7 +250,7 @@ func TestProcessTokenLogicModules_AppStakeTooLow(t *testing.T) {
 	app := apptypes.Application{
 		Address:        sample.AccAddress(),
 		Stake:          &appStake,
-		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{Service: service}},
+		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{ServiceId: service.Id}},
 	}
 	keepers.SetApplication(ctx, app)
 
@@ -268,7 +268,7 @@ func TestProcessTokenLogicModules_AppStakeTooLow(t *testing.T) {
 		Stake:           &supplierStake,
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
-				Service: service,
+				ServiceId: service.Id,
 				RevShare: []*sharedtypes.ServiceRevenueShare{
 					{
 						Address:            supplierOwnerAddress,
@@ -296,7 +296,7 @@ func TestProcessTokenLogicModules_AppStakeTooLow(t *testing.T) {
 		SupplierOperatorAddress: supplier.OperatorAddress,
 		SessionHeader: &sessiontypes.SessionHeader{
 			ApplicationAddress:      app.Address,
-			Service:                 service,
+			ServiceId:               service.Id,
 			SessionId:               "session_id",
 			SessionStartBlockHeight: 1,
 			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
@@ -368,7 +368,7 @@ func TestProcessTokenLogicModules_AppNotFound(t *testing.T) {
 		SupplierOperatorAddress: supplierOperatorAddr,
 		SessionHeader: &sessiontypes.SessionHeader{
 			ApplicationAddress:      sample.AccAddress(), // Random address
-			Service:                 service,
+			ServiceId:               service.Id,
 			SessionId:               "session_id",
 			SessionStartBlockHeight: 1,
 			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
@@ -390,10 +390,8 @@ func TestProcessTokenLogicModules_ServiceNotFound(t *testing.T) {
 	claim := prooftypes.Claim{
 		SupplierOperatorAddress: supplierOperatorAddr,
 		SessionHeader: &sessiontypes.SessionHeader{
-			ApplicationAddress: appAddr,
-			Service: &sharedtypes.Service{
-				Id: "non_existent_svc",
-			},
+			ApplicationAddress:      appAddr,
+			ServiceId:               "non_existent_svc",
 			SessionId:               "session_id",
 			SessionStartBlockHeight: 1,
 			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),

@@ -725,7 +725,7 @@ func createClaimAndStoreBlockHash(
 		sessionHeader.GetSessionId(),
 		supplierOperatorAddr,
 		appAddr,
-		service,
+		testServiceId,
 		merkleRootBz,
 	)
 	claimRes, err := msgServer.CreateClaim(ctx, claimMsg)

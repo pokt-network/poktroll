@@ -118,7 +118,7 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 	application := apptypes.Application{
 		Address:        sample.AccAddress(),
 		Stake:          &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100000)},
-		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{Service: service}},
+		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{ServiceId: service.Id}},
 	}
 
 	// Prepare the test supplier.
@@ -129,7 +129,7 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		Stake:           &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100000)},
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
-				Service: service,
+				ServiceId: service.Id,
 				RevShare: []*sharedtypes.ServiceRevenueShare{
 					{
 						Address:            supplierOwnerAddr,

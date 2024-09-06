@@ -18,9 +18,7 @@ import (
 func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 	defaultServicesList := []*sharedtypes.SupplierServiceConfig{
 		{
-			Service: &sharedtypes.Service{
-				Id: "svcId1",
-			},
+			ServiceId: "svcId1",
 			Endpoints: []*sharedtypes.SupplierEndpoint{
 				{
 					Url:     "http://localhost:8081",
@@ -229,9 +227,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 				Stake:           &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(100)},
 				Services: []*sharedtypes.SupplierServiceConfig{
 					{
-						Service: &sharedtypes.Service{
-							Id: "svcId1",
-						},
+						ServiceId: "svcId1",
 						Endpoints: []*sharedtypes.SupplierEndpoint{
 							{
 								Url:     "http://localhost:8081",
@@ -247,9 +243,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 						},
 					},
 					{
-						Service: &sharedtypes.Service{
-							Id: "svcId2",
-						},
+						ServiceId: "svcId2",
 						Endpoints: []*sharedtypes.SupplierEndpoint{
 							{
 								Url:     "http://localhost:8082",
@@ -298,40 +292,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 				Stake:           &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(100)},
 				Services: []*sharedtypes.SupplierServiceConfig{
 					{
-						Service: &sharedtypes.Service{
-							Id: "TooLongId1234567890",
-						},
-						Endpoints: []*sharedtypes.SupplierEndpoint{
-							{
-								Url:     "http://localhost:8080",
-								RpcType: sharedtypes.RPCType_JSON_RPC,
-								Configs: make([]*sharedtypes.ConfigOption, 0),
-							},
-						},
-						RevShare: []*sharedtypes.ServiceRevenueShare{
-							{
-								Address:            sample.AccAddress(),
-								RevSharePercentage: 100,
-							},
-						},
-					},
-				},
-			},
-			expectedErr: ErrSupplierInvalidServiceConfig,
-		},
-		{
-			desc: "invalid service configs - invalid service Name that's too long",
-			msg: MsgStakeSupplier{
-				Signer:          ownerAddress,
-				OwnerAddress:    ownerAddress,
-				OperatorAddress: operatorAddress,
-				Stake:           &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(100)},
-				Services: []*sharedtypes.SupplierServiceConfig{
-					{
-						Service: &sharedtypes.Service{
-							Id:   "123",
-							Name: "abcdefghijklmnopqrstuvwxyzab-abcdefghijklmnopqrstuvwxyzab",
-						},
+						ServiceId: "TooLongId1234567890",
 						Endpoints: []*sharedtypes.SupplierEndpoint{
 							{
 								Url:     "http://localhost:8080",
@@ -359,9 +320,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 				Stake:           &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(100)},
 				Services: []*sharedtypes.SupplierServiceConfig{
 					{
-						Service: &sharedtypes.Service{
-							Id: "12 45 !",
-						},
+						ServiceId: "12 45 !",
 						Endpoints: []*sharedtypes.SupplierEndpoint{
 							{
 								Url:     "http://localhost:8080",
@@ -389,10 +348,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 				Stake:           &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(100)},
 				Services: []*sharedtypes.SupplierServiceConfig{
 					{
-						Service: &sharedtypes.Service{
-							Id:   "svcId",
-							Name: "name",
-						},
+						ServiceId: "svcId",
 						Endpoints: []*sharedtypes.SupplierEndpoint{
 							{
 								// Url explicitly omitted
@@ -420,10 +376,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 				Stake:           &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(100)},
 				Services: []*sharedtypes.SupplierServiceConfig{
 					{
-						Service: &sharedtypes.Service{
-							Id:   "svcId",
-							Name: "name",
-						},
+						ServiceId: "svcId",
 						Endpoints: []*sharedtypes.SupplierEndpoint{
 							{
 								Url:     "I am not a valid URL",
@@ -451,10 +404,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 				Stake:           &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(100)},
 				Services: []*sharedtypes.SupplierServiceConfig{
 					{
-						Service: &sharedtypes.Service{
-							Id:   "svcId",
-							Name: "name",
-						},
+						ServiceId: "svcId",
 						Endpoints: []*sharedtypes.SupplierEndpoint{
 							{
 								Url: "http://localhost:8080",
@@ -482,10 +432,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 				Stake:           &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(100)},
 				Services: []*sharedtypes.SupplierServiceConfig{
 					{
-						Service: &sharedtypes.Service{
-							Id:   "svcId",
-							Name: "name",
-						},
+						ServiceId: "svcId",
 						Endpoints: []*sharedtypes.SupplierEndpoint{
 							{
 								Url: "http://localhost:8080",
@@ -508,10 +455,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 				Stake:           &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(100)},
 				Services: []*sharedtypes.SupplierServiceConfig{
 					{
-						Service: &sharedtypes.Service{
-							Id:   "svcId",
-							Name: "name",
-						},
+						ServiceId: "svcId",
 						Endpoints: []*sharedtypes.SupplierEndpoint{
 							{
 								Url: "http://localhost:8080",

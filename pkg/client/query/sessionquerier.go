@@ -8,7 +8,6 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 var _ client.SessionQueryClient = (*sessionQuerier)(nil)
@@ -49,10 +48,9 @@ func (sessq *sessionQuerier) GetSession(
 	serviceId string,
 	blockHeight int64,
 ) (*sessiontypes.Session, error) {
-	service := &sharedtypes.Service{Id: serviceId}
 	req := &sessiontypes.QueryGetSessionRequest{
 		ApplicationAddress: appAddress,
-		Service:            service,
+		ServiceId:          serviceId,
 		BlockHeight:        blockHeight,
 	}
 	res, err := sessq.sessionQuerier.GetSession(ctx, req)

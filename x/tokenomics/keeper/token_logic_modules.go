@@ -167,9 +167,9 @@ func (k Keeper) ProcessTokenLogicModules(
 		return tokenomicstypes.ErrTokenomicsSupplierNotFound
 	}
 
-	service, isServiceFound := k.serviceKeeper.GetService(ctx, sessionHeader.Service.Id)
+	service, isServiceFound := k.serviceKeeper.GetService(ctx, sessionHeader.ServiceId)
 	if !isServiceFound {
-		return tokenomicstypes.ErrTokenomicsServiceNotFound.Wrapf("service with ID %q not found", sessionHeader.Service.Id)
+		return tokenomicstypes.ErrTokenomicsServiceNotFound.Wrapf("service with ID %q not found", sessionHeader.ServiceId)
 	}
 
 	// Retrieve the count (i.e. number of relays) to determine the amount of work done
@@ -213,7 +213,7 @@ func (k Keeper) ProcessTokenLogicModules(
 		"num_relays", numRelays,
 		"num_settlement_upokt", settlementCoin.Amount,
 		"session_id", sessionHeader.GetSessionId(),
-		"service_id", sessionHeader.GetService().Id,
+		"service_id", sessionHeader.GetServiceId(),
 		"supplier_operator", supplier.OperatorAddress,
 		"application", application.Address,
 	)
@@ -502,7 +502,7 @@ func (k Keeper) distributeSupplierRewardsToShareHolders(
 
 	var serviceRevShare []*sharedtypes.ServiceRevenueShare
 	for _, svc := range supplier.Services {
-		if svc.Service.Id == serviceId {
+		if svc.ServiceId == serviceId {
 			serviceRevShare = svc.RevShare
 			break
 		}

@@ -73,24 +73,19 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 			// The base session start height used for testing
 			sessionStartHeight := blockHeight
 
-			service := &sharedtypes.Service{
-				Id:                   testServiceId,
-				ComputeUnitsPerRelay: computeUnitsPerRelay,
-				OwnerAddress:         sample.AccAddress(),
-			}
 			appAddr := sample.AccAddress()
 
 			keepers.SetSupplier(ctx, sharedtypes.Supplier{
 				OperatorAddress: supplierOperatorAddr,
 				Services: []*sharedtypes.SupplierServiceConfig{
-					{Service: service},
+					{ServiceId: testServiceId},
 				},
 			})
 
 			keepers.SetApplication(ctx, apptypes.Application{
 				Address: appAddr,
 				ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
-					{Service: service},
+					{ServiceId: testServiceId},
 				},
 			})
 
@@ -98,7 +93,7 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 				ctx,
 				&sessiontypes.QueryGetSessionRequest{
 					ApplicationAddress: appAddr,
-					Service:            service,
+					ServiceId:          testServiceId,
 					BlockHeight:        blockHeight,
 				},
 			)
@@ -118,7 +113,7 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 				sessionRes.GetSession().GetSessionId(),
 				supplierOperatorAddr,
 				appAddr,
-				service,
+				testServiceId,
 				defaultMerkleRoot,
 			)
 			createClaimRes, err := srv.CreateClaim(ctx, claimMsg)
@@ -172,25 +167,20 @@ func TestMsgServer_CreateClaim_Error_OutsideOfWindow(t *testing.T) {
 	// The base session start height used for testing
 	sessionStartHeight := int64(1)
 
-	service := &sharedtypes.Service{
-		Id:                   testServiceId,
-		ComputeUnitsPerRelay: computeUnitsPerRelay,
-		OwnerAddress:         sample.AccAddress(),
-	}
 	supplierOperatorAddr := sample.AccAddress()
 	appAddr := sample.AccAddress()
 
 	keepers.SetSupplier(ctx, sharedtypes.Supplier{
 		OperatorAddress: supplierOperatorAddr,
 		Services: []*sharedtypes.SupplierServiceConfig{
-			{Service: service},
+			{ServiceId: testServiceId},
 		},
 	})
 
 	keepers.SetApplication(ctx, apptypes.Application{
 		Address: appAddr,
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
-			{Service: service},
+			{ServiceId: testServiceId},
 		},
 	})
 
@@ -198,7 +188,7 @@ func TestMsgServer_CreateClaim_Error_OutsideOfWindow(t *testing.T) {
 		ctx,
 		&sessiontypes.QueryGetSessionRequest{
 			ApplicationAddress: appAddr,
-			Service:            service,
+			ServiceId:          testServiceId,
 			BlockHeight:        1,
 		},
 	)
@@ -266,7 +256,7 @@ func TestMsgServer_CreateClaim_Error_OutsideOfWindow(t *testing.T) {
 				sessionRes.GetSession().GetSessionId(),
 				supplierOperatorAddr,
 				appAddr,
-				service,
+				testServiceId,
 				defaultMerkleRoot,
 			)
 			_, err = srv.CreateClaim(ctx, claimMsg)
@@ -293,12 +283,6 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 
 	// The base session start height used for testing
 	sessionStartHeight := int64(1)
-	// service is the only service for which a session should exist.
-	service := &sharedtypes.Service{
-		Id:                   testServiceId,
-		ComputeUnitsPerRelay: computeUnitsPerRelay,
-		OwnerAddress:         sample.AccAddress(),
-	}
 	// supplierOperatorAddr is staked for "svc1" such that it is expected to be in the session.
 	supplierOperatorAddr := sample.AccAddress()
 	// wrongSupplierOperatorAddr is staked for "nosvc1" such that it is *not* expected to be in the session.
@@ -320,7 +304,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 	supplierKeeper.SetSupplier(ctx, sharedtypes.Supplier{
 		OperatorAddress: supplierOperatorAddr,
 		Services: []*sharedtypes.SupplierServiceConfig{
-			{Service: service},
+			{ServiceId: testServiceId},
 		},
 	})
 
@@ -328,13 +312,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 	supplierKeeper.SetSupplier(ctx, sharedtypes.Supplier{
 		OperatorAddress: wrongSupplierOperatorAddr,
 		Services: []*sharedtypes.SupplierServiceConfig{
-			{
-				Service: &sharedtypes.Service{
-					Id:                   "nosvc1",
-					ComputeUnitsPerRelay: computeUnitsPerRelay,
-					OwnerAddress:         sample.AccAddress(),
-				},
-			},
+			{ServiceId: "nosvc1"},
 		},
 	})
 
@@ -342,7 +320,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 	appKeeper.SetApplication(ctx, apptypes.Application{
 		Address: appAddr,
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
-			{Service: service},
+			{ServiceId: testServiceId},
 		},
 	})
 
@@ -350,13 +328,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 	appKeeper.SetApplication(ctx, apptypes.Application{
 		Address: wrongAppAddr,
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
-			{
-				Service: &sharedtypes.Service{
-					Id:                   "nosvc1",
-					ComputeUnitsPerRelay: computeUnitsPerRelay,
-					OwnerAddress:         sample.AccAddress(),
-				},
-			},
+			{ServiceId: "nosvc1"},
 		},
 	})
 
@@ -365,7 +337,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 		ctx,
 		&sessiontypes.QueryGetSessionRequest{
 			ApplicationAddress: appAddr,
-			Service:            service,
+			ServiceId:          testServiceId,
 			BlockHeight:        1,
 		},
 	)
@@ -391,7 +363,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 					"invalid_session_id",
 					supplierOperatorAddr,
 					appAddr,
-					service,
+					testServiceId,
 					defaultMerkleRoot,
 				)
 			},
@@ -413,7 +385,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 					// Use a supplier operator address not included in the session.
 					wrongSupplierOperatorAddr,
 					appAddr,
-					service,
+					testServiceId,
 					defaultMerkleRoot,
 				)
 			},
@@ -435,7 +407,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 					// Use a supplier operat address that's nonexistent on-chain.
 					randSupplierOperatorAddr,
 					appAddr,
-					service,
+					testServiceId,
 					defaultMerkleRoot,
 				)
 			},
@@ -457,7 +429,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 					supplierOperatorAddr,
 					// Use an application address not included in the session.
 					wrongAppAddr,
-					service,
+					testServiceId,
 					defaultMerkleRoot,
 				)
 			},
@@ -466,7 +438,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 				sessiontypes.ErrSessionAppNotStakedForService.Wrapf(
 					"application %q not staked for service ID %q",
 					wrongAppAddr,
-					service.GetId(),
+					testServiceId,
 				).Error(),
 			),
 		},
@@ -479,7 +451,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 					supplierOperatorAddr,
 					// Use an application address that's nonexistent on-chain.
 					randAppAddr,
-					service,
+					testServiceId,
 					defaultMerkleRoot,
 				)
 			},
@@ -514,7 +486,7 @@ func newTestClaimMsg(
 	sessionId string,
 	supplierOperatorAddr string,
 	appAddr string,
-	service *sharedtypes.Service,
+	serviceId string,
 	merkleRoot smt.MerkleSumRoot,
 ) *types.MsgCreateClaim {
 	t.Helper()
@@ -523,7 +495,7 @@ func newTestClaimMsg(
 		supplierOperatorAddr,
 		&sessiontypes.SessionHeader{
 			ApplicationAddress:      appAddr,
-			Service:                 service,
+			ServiceId:               serviceId,
 			SessionId:               sessionId,
 			SessionStartBlockHeight: sessionStartHeight,
 			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(sessionStartHeight),

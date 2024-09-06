@@ -5,7 +5,6 @@ import (
 
 	"github.com/pokt-network/poktroll/x/service/types"
 	"github.com/pokt-network/poktroll/x/shared"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // VerifyRelayRequest is a shared method used by RelayServers to check the relay
@@ -13,7 +12,7 @@ import (
 func (rp *relayerProxy) VerifyRelayRequest(
 	ctx context.Context,
 	relayRequest *types.RelayRequest,
-	supplierService *sharedtypes.Service,
+	supplierServiceId string,
 ) error {
 	// Get the block height at which the relayRequest should be processed.
 	// Check if the relayRequest is on time or within the session's grace period
@@ -44,7 +43,7 @@ func (rp *relayerProxy) VerifyRelayRequest(
 		Fields(map[string]any{
 			"session_id":                sessionHeader.GetSessionId(),
 			"application_address":       appAddress,
-			"service_id":                sessionHeader.GetService().GetId(),
+			"service_id":                sessionHeader.GetServiceId(),
 			"supplier_operator_address": meta.GetSupplierOperatorAddress(),
 		}).
 		Msg("verifying relay request session")
@@ -53,7 +52,7 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	session, err := rp.sessionQuerier.GetSession(
 		ctx,
 		appAddress,
-		supplierService.Id,
+		supplierServiceId,
 		sessionBlockHeight,
 	)
 	if err != nil {
