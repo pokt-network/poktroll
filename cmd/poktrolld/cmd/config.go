@@ -36,11 +36,14 @@ func initSDKConfig() {
 }
 
 // The code below changes how the default configuration files are rendered on `poktrolld init` command. This command
-// is ofter used by the validator and full node runners to provision the configuration prior to starting the node.
+// is often used by the validator and full node runners to provision the configuration prior to starting the node.
 // These are the values **WE WANT** participants to have. This doesn't guarantee the node runners won't adjust the values
 // but it helps making sure most of them are using the following configuration.
 // Worth noting that changing these values in the future won't magically update them in the existing configuration,
 // which makes it's important to pick the sensible defaults.
+
+// As we use `ignite` CLI to provision the first validator it is important to note that the configuration files
+// provisioned by ignite have additional overrides adjusted in ignite's `config.yml`
 
 // initCometBFTConfig helps to override default CometBFT Config (config.toml) values.
 // These values are going to be rendered into the config file on `poktrolld init`.
