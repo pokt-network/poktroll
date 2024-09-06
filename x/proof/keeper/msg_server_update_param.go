@@ -71,6 +71,18 @@ func (k msgServer) UpdateParam(
 		}
 
 		params.ProofMissingPenalty = proofMissingPenalty
+	case types.ParamProofSubmissionFee:
+		value, ok := msg.AsType.(*types.MsgUpdateParam_AsCoin)
+		if !ok {
+			return nil, types.ErrProofParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
+		}
+		proofSubmissionFee := value.AsCoin
+
+		if err := types.ValidateProofSubmissionFee(proofSubmissionFee); err != nil {
+			return nil, err
+		}
+
+		params.ProofSubmissionFee = proofSubmissionFee
 	default:
 		return nil, types.ErrProofParamInvalid.Wrapf("unsupported param %q", msg.Name)
 	}

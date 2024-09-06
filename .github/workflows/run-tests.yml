@@ -27,7 +27,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: "1.22.2"
+          go-version: "1.23.0"
 
       - name: Install CI dependencies
         run: make install_ci_deps
@@ -41,6 +41,9 @@ jobs:
 
       - name: Generate mocks
         run: make go_mockgen
+
+      - name: Verify all proto files have stable marshaler configured
+        run: make check_proto_unstable_marshalers
 
       - name: Run golangci-lint
         run: make go_lint
