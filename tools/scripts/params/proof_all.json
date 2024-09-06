@@ -11,6 +11,10 @@
           "proof_missing_penalty": {
             "amount": "320",
             "denom": "upokt"
+          },
+          "proof_submission_fee": {
+            "amount": "1000000",
+            "denom": "upokt"
           }
         }
       }

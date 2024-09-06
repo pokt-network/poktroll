@@ -141,6 +141,8 @@ func (s *suite) newProofMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 			msgUpdateParams.Params.ProofRequirementThreshold = uint64(paramValue.value.(int64))
 		case prooftypes.ParamProofMissingPenalty:
 			msgUpdateParams.Params.ProofMissingPenalty = paramValue.value.(*cosmostypes.Coin)
+		case prooftypes.ParamProofSubmissionFee:
+			msgUpdateParams.Params.ProofSubmissionFee = paramValue.value.(*cosmostypes.Coin)
 		default:
 			s.Fatalf("ERROR: unexpected %q type param name %q", paramValue.typeStr, paramName)
 		}
