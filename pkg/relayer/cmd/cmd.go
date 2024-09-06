@@ -201,6 +201,7 @@ func setupRelayerDependencies(
 		config.NewSupplySupplierQuerierFn(),
 		config.NewSupplySessionQuerierFn(),
 		config.NewSupplyServiceQueryClientFn(),
+		config.NewSupplyProofQueryClientFn(),
 		config.NewSupplyRingCacheFn(),
 		supplyTxFactory,
 		supplyTxContext,

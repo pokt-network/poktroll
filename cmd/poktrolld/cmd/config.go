@@ -14,11 +14,23 @@ var once sync.Once
 
 func InitSDKConfig() {
 	once.Do(func() {
-		initSDKConfig()
+		checkOrInitSDKConfig()
 	})
 }
 
-func initSDKConfig() {
+// checkOrInitSDKConfig updates the prefixes for all account types and seals the config.
+// DEV_NOTE: Due to the separation of this repo and the SDK, where the config is also sealed,
+// we have an added check to return early in case the config has already been set to the expected
+// value.
+func checkOrInitSDKConfig() {
+	config := sdk.GetConfig()
+
+	// Check if the config is already set with the correct prefixes
+	if config.GetBech32AccountAddrPrefix() == app.AccountAddressPrefix {
+		// Config is already initialized, return early
+		return
+	}
+
 	// Set prefixes
 	accountPubKeyPrefix := app.AccountAddressPrefix + "pub"
 	validatorAddressPrefix := app.AccountAddressPrefix + "valoper"
@@ -27,7 +39,6 @@ func initSDKConfig() {
 	consNodePubKeyPrefix := app.AccountAddressPrefix + "valconspub"
 
 	// Set and seal config
-	config := sdk.GetConfig()
 	config.SetBech32PrefixForAccount(app.AccountAddressPrefix, accountPubKeyPrefix)
 	config.SetBech32PrefixForValidator(validatorAddressPrefix, validatorPubKeyPrefix)
 	config.SetBech32PrefixForConsensusNode(consNodeAddressPrefix, consNodePubKeyPrefix)

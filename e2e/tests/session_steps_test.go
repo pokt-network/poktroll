@@ -11,6 +11,7 @@ import (
 
 	abci "github.com/cometbft/cometbft/abci/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/client/block"
@@ -65,11 +66,12 @@ func (s *suite) TheUserShouldWaitForTheModuleTxEventToBeBroadcast(module, eventT
 	s.waitForTxResultEvent(newEventTypeMatchFn(module, eventType))
 }
 
-func (s *suite) TheUserShouldWaitForTheModuleEndBlockEventToBeBroadcast(module, eventType string) {
+func (s *suite) TheUserShouldWaitForTheClaimsettledEventWithProofRequirementToBeBroadcast(proofRequirement string) {
 	s.waitForNewBlockEvent(
 		combineEventMatchFns(
-			newEventTypeMatchFn(module, eventType),
+			newEventTypeMatchFn("tokenomics", "ClaimSettled"),
 			newEventModeMatchFn("EndBlock"),
+			newEventAttributeMatchFn("proof_requirement", fmt.Sprintf("%q", proofRequirement)),
 		),
 	)
 }
@@ -165,6 +167,18 @@ func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBeSuccess
 	}
 
 	s.waitForNewBlockEvent(isValidClaimSettledEvent)
+}
+
+func (suite *suite) TheModuleParametersAreSetAsFollows(moduleName string, params gocuke.DataTable) {
+	suite.AnAuthzGrantFromTheAccountToTheAccountForTheMessageExists(
+		"gov",
+		"module",
+		"pnf",
+		"user",
+		fmt.Sprintf("/poktroll.%s.MsgUpdateParams", moduleName),
+	)
+
+	suite.TheAccountSendsAnAuthzExecMessageToUpdateAllModuleParams("pnf", moduleName, params)
 }
 
 func (s *suite) sendRelaysForSession(

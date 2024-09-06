@@ -59,6 +59,11 @@ type relayerSessionsManager struct {
 	// This is used to get the ComputeUnitsPerRelay, which is used as the weight of a mined relay
 	// when adding a mined relay to a session's tree.
 	serviceQueryClient client.ServiceQueryClient
+
+	// proofQueryClient is used to query for the proof requirement threshold and
+	// requirement probability governance parameters to determine whether a submitted
+	// claim requires a proof.
+	proofQueryClient client.ProofQueryClient
 }
 
 // NewRelayerSessions creates a new relayerSessions.
@@ -66,6 +71,7 @@ type relayerSessionsManager struct {
 // Required dependencies:
 //   - client.BlockClient
 //   - client.SupplierClientMap
+//   - client.ProofQueryClient
 //
 // Available options:
 //   - WithStoresDirectory
@@ -87,6 +93,7 @@ func NewRelayerSessions(
 		&rs.supplierClients,
 		&rs.sharedQueryClient,
 		&rs.serviceQueryClient,
+		&rs.proofQueryClient,
 	); err != nil {
 		return nil, err
 	}

@@ -331,7 +331,7 @@ func (s *suite) getConfigFileContent(
 			services:
 			  - service_id: %s
 			    endpoints:
-			    - publicly_exposed_url: http://relayminer:8545
+			    - publicly_exposed_url: http://relayminer1:8545
 			      rpc_type: json_rpc`,
 			ownerAddress, operatorAddress, amount, serviceId)
 	default:
@@ -465,9 +465,12 @@ func (s *suite) TheApplicationSendsTheSupplierASuccessfulRequestForServiceWithPa
 	jsonMap, err := jsonToMap(jsonContent)
 	require.NoError(s, err, "error converting JSON to map")
 
-	prettyJson, err := jsonPrettyPrint(jsonContent)
-	require.NoError(s, err, "error pretty printing JSON")
-	s.Log(prettyJson)
+	// Log the JSON content if the test is verbose
+	if isVerbose() {
+		prettyJson, err := jsonPrettyPrint(jsonContent)
+		require.NoError(s, err, "error pretty printing JSON")
+		s.Log(prettyJson)
+	}
 
 	// TODO_IMPROVE: This is a minimalistic first approach to request validation in E2E tests.
 	// Consider leveraging the shannon-sdk or path here.
