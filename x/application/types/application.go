@@ -39,7 +39,18 @@ func GetApplicationUnbondingHeight(
 	sharedParams *sharedtypes.Params,
 	application *Application,
 ) int64 {
-	applicationUnbondingPeriodSessions := sharedParams.ApplicationUnbondingPeriodSessions * sharedParams.NumBlocksPerSession
+	applicationUnbondingPeriodBlocks := sharedParams.ApplicationUnbondingPeriodSessions * sharedParams.NumBlocksPerSession
 
-	return int64(application.UnstakeSessionEndHeight + applicationUnbondingPeriodSessions)
+	return int64(application.UnstakeSessionEndHeight + applicationUnbondingPeriodBlocks)
+}
+
+// GetApplicationTransferHeight returns the session end height at which the given
+// application transfer completes.
+func GetApplicationTransferHeight(
+	sharedParams *sharedtypes.Params,
+	application *Application,
+) int64 {
+	sessionEndToProofWindowCloseBlocks := sharedtypes.GetSessionEndToProofWindowCloseBlocks(sharedParams)
+
+	return int64(application.GetPendingTransfer().GetSessionEndHeight() + sessionEndToProofWindowCloseBlocks)
 }

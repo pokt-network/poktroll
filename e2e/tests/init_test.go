@@ -839,7 +839,21 @@ func (s *suite) getApplicationTransferEndHeight(accName string) int64 {
 	application := s.getApplicationInfo(accName)
 	require.NotNil(s, application.GetPendingTransfer())
 
-	return int64(application.GetPendingTransfer().GetSessionEndHeight())
+	args := []string{
+		"query",
+		"shared",
+		"params",
+		"--output=json",
+	}
+
+	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, args...)
+	require.NoError(s, err, "error getting shared module params")
+
+	var resp sharedtypes.QueryParamsResponse
+	responseBz := []byte(strings.TrimSpace(res.Stdout))
+	s.cdc.MustUnmarshalJSON(responseBz, &resp)
+
+	return apptypes.GetApplicationTransferHeight(&resp.Params, application)
 }
 
 // getServiceComputeUnitsPerRelay returns the compute units per relay for a given service ID

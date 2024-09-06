@@ -43,8 +43,8 @@ func (k Keeper) EndBlockerTransferApplication(ctx context.Context) error {
 		}
 
 		// Ignore applications that have initiated a transfer but still active
-		transferEndHeight := srcApp.GetPendingTransfer().GetSessionEndHeight()
-		if uint64(sdkCtx.BlockHeight()) < transferEndHeight {
+		transferEndHeight := types.GetApplicationTransferHeight(&sharedParams, &srcApp)
+		if sdkCtx.BlockHeight() < transferEndHeight {
 			continue
 		}
 
