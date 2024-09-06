@@ -331,6 +331,8 @@ func (k Keeper) getEarliestSupplierProofCommitBlockHash(
 	proofWindowOpenHeight := shared.GetProofWindowOpenHeight(sharedParams, sessionEndHeight)
 	proofWindowOpenBlockHash := k.sessionKeeper.GetBlockHash(ctx, proofWindowOpenHeight)
 
+	// TODO_TECHDEBT: Update the method header of this function to accept (sharedParams, Claim, BlockHash).
+	// After doing so, please review all calling sites and simplify them accordingly.
 	earliestSupplierProofCommitHeight := shared.GetEarliestSupplierProofCommitHeight(
 		sharedParams,
 		sessionEndHeight,
