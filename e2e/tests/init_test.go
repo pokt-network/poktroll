@@ -222,7 +222,7 @@ func (s *suite) TheStakeOfShouldBeUpoktThanBefore(actorType string, accName stri
 	s.validateAmountChange(prevStake, currStake, expectedStakeChange, accName, condition, "stake")
 }
 
-func (s *suite) TheAccountBalanceOfShouldBeUpoktThanBefore(accName string, expectedStakeChange int64, condition string) {
+func (s *suite) TheAccountBalanceOfShouldBeUpoktThanBefore(accName string, expectedBalanceChange int64, condition string) {
 	// Get previous balance
 	balanceKey := accBalanceKey(accName)
 	prevBalanceAny, ok := s.scenarioState[balanceKey]
@@ -235,7 +235,7 @@ func (s *suite) TheAccountBalanceOfShouldBeUpoktThanBefore(accName string, expec
 	s.scenarioState[balanceKey] = currBalance // save the balance for later
 
 	// Validate the change in stake
-	s.validateAmountChange(prevBalance, currBalance, expectedStakeChange, accName, condition, "balance")
+	s.validateAmountChange(prevBalance, currBalance, expectedBalanceChange, accName, condition, "balance")
 }
 
 func (s *suite) TheUserShouldWaitForSeconds(dur int64) {
