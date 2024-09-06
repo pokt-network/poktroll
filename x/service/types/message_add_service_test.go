@@ -23,33 +23,47 @@ func TestMsgAddService_ValidateBasic(t *testing.T) {
 				// Service: intentionally omitted,
 			},
 			expectedErr: ErrServiceInvalidAddress,
-		}, {
-			desc: "valid service owner address - no service ID",
+		},
+		{
+			desc: "no service ID",
 			msg: MsgAddService{
 				OwnerAddress: serviceOwnerAddress,
-				Service:      sharedtypes.Service{Name: "service name", OwnerAddress: serviceOwnerAddress}, // ID intentionally omitted
+				Service: sharedtypes.Service{
+					// ID intentionally omitted
+					Name:                 "service name",
+					OwnerAddress:         serviceOwnerAddress,
+					ComputeUnitsPerRelay: 1,
+				},
 			},
-			expectedErr: ErrServiceMissingID,
-		}, {
-			desc: "valid service owner address - no service name",
+			expectedErr: sharedtypes.ErrSharedInvalidService.Wrapf("invalid service ID: %s", ""),
+		},
+		{
+			desc: "no service name",
 			msg: MsgAddService{
 				OwnerAddress: serviceOwnerAddress,
-				Service:      sharedtypes.Service{Id: "svc1", OwnerAddress: serviceOwnerAddress}, // Name intentionally omitted
+				Service: sharedtypes.Service{
+					Id: "svc1",
+					// Name intentionally omitted
+					OwnerAddress:         serviceOwnerAddress,
+					ComputeUnitsPerRelay: 1,
+				},
 			},
-			expectedErr: ErrServiceMissingName,
-		}, {
-			desc: "valid service owner address - zero compute units per relay",
+			expectedErr: nil,
+		},
+		{
+			desc: "invalid service name",
 			msg: MsgAddService{
 				OwnerAddress: serviceOwnerAddress,
 				Service: sharedtypes.Service{
 					Id:                   "svc1",
-					Name:                 "service name",
-					ComputeUnitsPerRelay: 0,
+					Name:                 "service&name",
 					OwnerAddress:         serviceOwnerAddress,
+					ComputeUnitsPerRelay: 1,
 				},
 			},
-			expectedErr: ErrServiceInvalidComputeUnitsPerRelay,
-		}, {
+			expectedErr: sharedtypes.ErrSharedInvalidService.Wrapf("invalid service name: %s", "service&name"),
+		},
+		{
 			desc: "signer address does not equal service owner address",
 			msg: MsgAddService{
 				OwnerAddress: serviceOwnerAddress,
@@ -63,7 +77,35 @@ func TestMsgAddService_ValidateBasic(t *testing.T) {
 			expectedErr: ErrServiceInvalidOwnerAddress,
 		},
 		{
-			desc: "valid msg add service",
+			desc: "zero compute units per relay",
+			msg: MsgAddService{
+				OwnerAddress: serviceOwnerAddress,
+				Service: sharedtypes.Service{
+					Id:                   "svc1",
+					Name:                 "service name",
+					ComputeUnitsPerRelay: 0,
+					OwnerAddress:         serviceOwnerAddress,
+				},
+			},
+			expectedErr: sharedtypes.ErrSharedInvalidService.
+				Wrapf("%s", sharedtypes.ErrSharedInvalidComputeUnitsPerRelay),
+		},
+		{
+			desc: "compute units per relay greater than max",
+			msg: MsgAddService{
+				OwnerAddress: serviceOwnerAddress,
+				Service: sharedtypes.Service{
+					Id:                   "svc1",
+					Name:                 "service name",
+					ComputeUnitsPerRelay: sharedtypes.ComputeUnitsPerRelayMax + 1,
+					OwnerAddress:         serviceOwnerAddress,
+				},
+			},
+			expectedErr: sharedtypes.ErrSharedInvalidService.
+				Wrapf("%s", sharedtypes.ErrSharedInvalidComputeUnitsPerRelay),
+		},
+		{
+			desc: "min compute units per relay",
 			msg: MsgAddService{
 				OwnerAddress: serviceOwnerAddress,
 				Service: sharedtypes.Service{
@@ -75,48 +117,26 @@ func TestMsgAddService_ValidateBasic(t *testing.T) {
 			},
 			expectedErr: nil,
 		},
+		{
+			desc: "max compute units per relay",
+			msg: MsgAddService{
+				OwnerAddress: serviceOwnerAddress,
+				Service: sharedtypes.Service{
+					Id:                   "svc1",
+					Name:                 "service name",
+					ComputeUnitsPerRelay: sharedtypes.ComputeUnitsPerRelayMax,
+					OwnerAddress:         serviceOwnerAddress,
+				},
+			},
+			expectedErr: nil,
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
 			err := test.msg.ValidateBasic()
 			if test.expectedErr != nil {
 				require.ErrorIs(t, err, test.expectedErr)
-				return
-			}
-			require.NoError(t, err)
-		})
-	}
-}
-
-func TestValidateComputeUnitsPerRelay(t *testing.T) {
-	tests := []struct {
-		desc                 string
-		computeUnitsPerRelay uint64
-		expectedErr          error
-	}{
-		{
-			desc:                 "zero compute units per relay",
-			computeUnitsPerRelay: 0,
-			expectedErr:          ErrServiceInvalidComputeUnitsPerRelay,
-		}, {
-			desc:                 "valid compute units per relay",
-			computeUnitsPerRelay: 1,
-			expectedErr:          nil,
-		}, {
-			desc:                 "max compute units per relay",
-			computeUnitsPerRelay: ComputeUnitsPerRelayMax,
-			expectedErr:          nil,
-		}, {
-			desc:                 "compute units per relay greater than max",
-			computeUnitsPerRelay: ComputeUnitsPerRelayMax + 1,
-			expectedErr:          ErrServiceInvalidComputeUnitsPerRelay,
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.desc, func(t *testing.T) {
-			err := ValidateComputeUnitsPerRelay(test.computeUnitsPerRelay)
-			if test.expectedErr != nil {
-				require.ErrorIs(t, err, test.expectedErr)
+				require.ErrorContains(t, err, test.expectedErr.Error())
 				return
 			}
 			require.NoError(t, err)

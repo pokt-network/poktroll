@@ -17,9 +17,9 @@ func TestMsgSubmitProof_ValidateBasic(t *testing.T) {
 	testClosestMerkleProof := []byte{1, 2, 3, 4}
 
 	tests := []struct {
-		desc                      string
-		msg                       MsgSubmitProof
-		msgSubmitProofExpectedErr func(sessiontypes.SessionHeader) error
+		desc                           string
+		msg                            MsgSubmitProof
+		sessionHeaderToExpectedErrorFn func(sessiontypes.SessionHeader) error
 	}{
 		{
 			desc: "application bech32 address is invalid",
@@ -34,7 +34,7 @@ func TestMsgSubmitProof_ValidateBasic(t *testing.T) {
 				},
 				Proof: testClosestMerkleProof,
 			},
-			msgSubmitProofExpectedErr: func(sh sessiontypes.SessionHeader) error {
+			sessionHeaderToExpectedErrorFn: func(sh sessiontypes.SessionHeader) error {
 				sessionError := sessiontypes.ErrSessionInvalidAppAddress.Wrapf(
 					"invalid application address: %s; (%s)",
 					sh.ApplicationAddress,
@@ -56,7 +56,7 @@ func TestMsgSubmitProof_ValidateBasic(t *testing.T) {
 				},
 				Proof: testClosestMerkleProof,
 			},
-			msgSubmitProofExpectedErr: func(sh sessiontypes.SessionHeader) error {
+			sessionHeaderToExpectedErrorFn: func(sh sessiontypes.SessionHeader) error {
 				return sdkerrors.ErrInvalidAddress.Wrapf(
 					"supplier operator address %q, error: %s",
 					"not_a_bech32_address",
@@ -77,7 +77,7 @@ func TestMsgSubmitProof_ValidateBasic(t *testing.T) {
 				},
 				Proof: testClosestMerkleProof,
 			},
-			msgSubmitProofExpectedErr: func(sh sessiontypes.SessionHeader) error {
+			sessionHeaderToExpectedErrorFn: func(sh sessiontypes.SessionHeader) error {
 				serviceError := sharedtypes.ErrSharedInvalidService.Wrapf("invalid service ID: %s", sh.Service.Id)
 				sessionError := sessiontypes.ErrSessionInvalidService.Wrapf("invalid service: %v; %s", sh.Service, serviceError)
 				return ErrProofInvalidSessionHeader.Wrapf("invalid session header: %s", sessionError)
@@ -101,8 +101,8 @@ func TestMsgSubmitProof_ValidateBasic(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
 			err := test.msg.ValidateBasic()
-			if test.msgSubmitProofExpectedErr != nil {
-				expectedErr := test.msgSubmitProofExpectedErr(*test.msg.SessionHeader)
+			if test.sessionHeaderToExpectedErrorFn != nil {
+				expectedErr := test.sessionHeaderToExpectedErrorFn(*test.msg.SessionHeader)
 				require.ErrorIs(t, err, expectedErr)
 				require.ErrorContains(t, err, expectedErr.Error())
 				return

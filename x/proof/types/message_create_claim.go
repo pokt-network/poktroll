@@ -22,9 +22,7 @@ func NewMsgCreateClaim(
 	}
 }
 
-// ValidateBasic performs basic stateless validation of a MsgCreateClaim by ensuring
-// that each of the SupplierOperatorAddress, SessionHeader, and RootHash are non-empty
-// and valid ones.
+// ValidateBasic performs basic stateless validation of a MsgCreateClaim.
 func (msg *MsgCreateClaim) ValidateBasic() error {
 	// Validate the supplier operator address
 	if _, err := sdk.AccAddressFromBech32(msg.GetSupplierOperatorAddress()); err != nil {

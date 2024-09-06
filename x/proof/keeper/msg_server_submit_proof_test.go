@@ -528,9 +528,9 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 	)
 
 	tests := []struct {
-		desc                 string
-		newProofMsg          func(t *testing.T) *prooftypes.MsgSubmitProof
-		proofToExpectedError func(*prooftypes.MsgSubmitProof) error
+		desc                            string
+		newProofMsg                     func(t *testing.T) *prooftypes.MsgSubmitProof
+		msgSubmitProofToExpectedErrorFn func(*prooftypes.MsgSubmitProof) error
 	}{
 		{
 			desc: "proof service ID cannot be empty",
@@ -547,7 +547,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 					expectedMerkleProofPath,
 				)
 			},
-			proofToExpectedError: func(msgSubmitProof *prooftypes.MsgSubmitProof) error {
+			msgSubmitProofToExpectedErrorFn: func(msgSubmitProof *prooftypes.MsgSubmitProof) error {
 				sessionError := sessiontypes.ErrSessionInvalidSessionId.Wrapf(
 					"invalid session ID: %s",
 					msgSubmitProof.GetSessionHeader().GetSessionId(),
@@ -576,7 +576,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 				proof.Proof = []byte{}
 				return proof
 			},
-			proofToExpectedError: func(_ *prooftypes.MsgSubmitProof) error {
+			msgSubmitProofToExpectedErrorFn: func(_ *prooftypes.MsgSubmitProof) error {
 				return status.Error(
 					codes.InvalidArgument,
 					prooftypes.ErrProofInvalidProof.Wrap(
@@ -596,7 +596,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 					expectedMerkleProofPath,
 				)
 			},
-			proofToExpectedError: func(msgSubmitProof *prooftypes.MsgSubmitProof) error {
+			msgSubmitProofToExpectedErrorFn: func(msgSubmitProof *prooftypes.MsgSubmitProof) error {
 				return status.Error(
 					codes.InvalidArgument,
 					prooftypes.ErrProofInvalidSessionId.Wrapf(
@@ -618,7 +618,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 					expectedMerkleProofPath,
 				)
 			},
-			proofToExpectedError: func(msgSubmitProof *prooftypes.MsgSubmitProof) error {
+			msgSubmitProofToExpectedErrorFn: func(msgSubmitProof *prooftypes.MsgSubmitProof) error {
 				return status.Error(
 					codes.InvalidArgument,
 					prooftypes.ErrProofNotFound.Wrapf(
@@ -654,7 +654,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 
 			submitProofRes, err := srv.SubmitProof(ctx, msgSubmitProof)
 
-			expectedErr := test.proofToExpectedError(msgSubmitProof)
+			expectedErr := test.msgSubmitProofToExpectedErrorFn(msgSubmitProof)
 			require.ErrorIs(t, err, expectedErr)
 			require.ErrorContains(t, err, expectedErr.Error())
 			require.Nil(t, submitProofRes)

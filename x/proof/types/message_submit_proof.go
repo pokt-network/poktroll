@@ -17,9 +17,7 @@ func NewMsgSubmitProof(supplierOperatorAddress string, sessionHeader *sessiontyp
 	}
 }
 
-// ValidateBasic performs basic stateless validation of a MsgSubmitProof by ensuring
-// that each of the SupplierOperatorAddress, SessionHeader, and Proof are non-empty
-// and valid ones.
+// ValidateBasic performs basic stateless validation of a MsgSubmitProof.
 func (msg *MsgSubmitProof) ValidateBasic() error {
 	if _, err := sdk.AccAddressFromBech32(msg.GetSupplierOperatorAddress()); err != nil {
 		return sdkerrors.ErrInvalidAddress.Wrapf(
