@@ -29,7 +29,7 @@ func (k Keeper) EndBlockerTransferApplication(ctx context.Context) error {
 	logger := k.Logger().With("method", "EndBlockerTransferApplication")
 
 	// Only process application transfers at the end of the session.
-	if shared.IsSessionEndHeight(&sharedParams, currentHeight) {
+	if !shared.IsSessionEndHeight(&sharedParams, currentHeight) {
 		return nil
 	}
 

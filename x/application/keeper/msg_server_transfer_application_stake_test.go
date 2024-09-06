@@ -60,12 +60,15 @@ func TestMsgServer_TransferApplication_Success(t *testing.T) {
 	require.NotNil(t, transferResApp.GetPendingTransfer())
 
 	// Assert that the source app and the transfer response app are the same except for the #PendingTransfer.
-	transferResApp.PendingTransfer = nil
-	require.EqualValues(t, &srcApp, transferResApp)
+	transferResAppCopy := *transferResApp
+	transferResAppCopy.PendingTransfer = nil
+	require.EqualValues(t, srcApp, transferResAppCopy)
 
-	// Set the height to the end of the session.
+	// Set the height to the proof window close height for the session.
+	sharedParams := sharedtypes.DefaultParams()
+	proofWindowCloseHeight := apptypes.GetApplicationTransferHeight(&sharedParams, transferResApp)
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
-	ctx = sdkCtx.WithBlockHeight(sharedtypes.DefaultNumBlocksPerSession)
+	ctx = sdkCtx.WithBlockHeight(proofWindowCloseHeight)
 
 	// Run application module end-blockers to complete the transfer.
 	err = k.EndBlockerTransferApplication(ctx)
