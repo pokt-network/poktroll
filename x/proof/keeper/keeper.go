@@ -33,6 +33,7 @@ type (
 		applicationKeeper types.ApplicationKeeper
 		accountKeeper     types.AccountKeeper
 		sharedKeeper      types.SharedKeeper
+		serviceKeeper     types.ServiceKeeper
 
 		ringClient     crypto.RingClient
 		accountQuerier client.AccountQueryClient
@@ -51,6 +52,7 @@ func NewKeeper(
 	applicationKeeper types.ApplicationKeeper,
 	accountKeeper types.AccountKeeper,
 	sharedKeeper types.SharedKeeper,
+	serviceKeeper types.ServiceKeeper,
 ) Keeper {
 	if _, err := sdk.AccAddressFromBech32(authority); err != nil {
 		panic(fmt.Sprintf("invalid authority address: %s", authority))
@@ -94,6 +96,7 @@ func NewKeeper(
 		applicationKeeper: applicationKeeper,
 		accountKeeper:     accountKeeper,
 		sharedKeeper:      sharedKeeper,
+		serviceKeeper:     serviceKeeper,
 
 		ringClient:     ringKeeperClient,
 		accountQuerier: accountQuerier,

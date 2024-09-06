@@ -1,4 +1,4 @@
-//go:generate mockgen -destination=../../../testutil/proof/mocks/expected_keepers_mock.go -package=mocks . BankKeeper,SessionKeeper,ApplicationKeeper,AccountKeeper,SharedKeeper
+//go:generate mockgen -destination=../../../testutil/proof/mocks/expected_keepers_mock.go -package=mocks . BankKeeper,SessionKeeper,ApplicationKeeper,AccountKeeper,SharedKeeper,ServiceKeeper
 
 package types
 
@@ -53,4 +53,11 @@ type ApplicationKeeper interface {
 // SharedKeeper defines the expected interface needed to retrieve shared information.
 type SharedKeeper interface {
 	GetParams(ctx context.Context) sharedtypes.Params
+}
+
+// ServiceKeeper defines the expected interface for the Service module.
+type ServiceKeeper interface {
+	GetService(ctx context.Context, serviceID string) (sharedtypes.Service, bool)
+	// Only used for testing & simulation
+	SetService(ctx context.Context, service sharedtypes.Service)
 }

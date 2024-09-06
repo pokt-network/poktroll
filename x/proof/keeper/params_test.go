@@ -7,6 +7,7 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/app/volatile"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 )
@@ -167,6 +168,8 @@ func TestParams_ValidateProofMissingPenalty(t *testing.T) {
 
 func TestParams_ValidateProofSubmissionFee(t *testing.T) {
 	invalidDenomCoin := cosmostypes.NewCoin("invalid_denom", math.NewInt(1))
+	belowMinProofSubmissionFee := prooftypes.MinProofSubmissionFee.
+		Sub(cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(1)))
 
 	tests := []struct {
 		desc               string
@@ -194,8 +197,17 @@ func TestParams_ValidateProofSubmissionFee(t *testing.T) {
 			expectedErr:        prooftypes.ErrProofParamInvalid.Wrap("missing proof_submission_fee"),
 		},
 		{
+			desc:               "below minimum",
+			proofSubmissionFee: &belowMinProofSubmissionFee,
+			expectedErr: prooftypes.ErrProofParamInvalid.Wrapf(
+				"ProofSubmissionFee param is below minimum value %s: got %s",
+				prooftypes.MinProofSubmissionFee,
+				belowMinProofSubmissionFee,
+			),
+		},
+		{
 			desc:               "valid",
-			proofSubmissionFee: &prooftypes.DefaultProofSubmissionFee,
+			proofSubmissionFee: &prooftypes.MinProofSubmissionFee,
 		},
 	}
 

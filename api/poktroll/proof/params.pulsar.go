@@ -725,7 +725,7 @@ type Params struct {
 	// proof_submission_fee is the number of tokens (uPOKT) which should be paid by
 	// the supplier operator when submitting a proof.
 	// This is needed to account for the cost of storing proofs on-chain and prevent
-	// spamming the network with non-required proofs.
+	// spamming (i.e. sybil bloat attacks) the network with non-required proofs.
 	ProofSubmissionFee *v1beta1.Coin `protobuf:"bytes,5,opt,name=proof_submission_fee,json=proofSubmissionFee,proto3" json:"proof_submission_fee,omitempty"`
 }
 

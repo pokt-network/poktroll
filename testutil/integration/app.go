@@ -398,6 +398,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		applicationKeeper,
 		accountKeeper,
 		sharedKeeper,
+		serviceKeeper,
 	)
 	proofModule := proof.NewAppModule(
 		cdc,
@@ -514,9 +515,10 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 
 	// Prepare a new default service
 	defaultService := sharedtypes.Service{
-		Id:           "svc1",
-		Name:         "svcName1",
-		OwnerAddress: sample.AccAddress(),
+		Id:                   "svc1",
+		Name:                 "svcName1",
+		OwnerAddress:         sample.AccAddress(),
+		ComputeUnitsPerRelay: 1,
 	}
 	serviceKeeper.SetService(integrationApp.sdkCtx, defaultService)
 	integrationApp.DefaultService = &defaultService
