@@ -3,16 +3,9 @@ package types
 import (
 	"net/url"
 	"regexp"
-
-	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 const (
-	// ComputeUnitsPerRelayMax is the maximum allowed compute_units_per_relay value when adding or updating a service.
-	// TODO_MAINNET: The reason we have a maximum is to account for potential integer overflows.
-	// Should we revisit all uint64 and convert them to BigInts?
-	ComputeUnitsPerRelayMax uint64 = 2 ^ 16
-
 	maxServiceIdLength = 16 // Limiting all serviceIds to 16 characters
 	maxServiceIdName   = 42 // Limit the name of the service name to 42 characters
 
@@ -41,13 +34,16 @@ func (s *Service) ValidateBasic() error {
 		return ErrSharedInvalidService.Wrapf("invalid service name: %s", s.Name)
 	}
 
-	if _, err := sdk.AccAddressFromBech32(s.OwnerAddress); err != nil {
-		return ErrSharedInvalidService.Wrapf("invalid owner address: %s", s.OwnerAddress)
-	}
+	// TODO_FOLLOWUP: Enabling these checks will break code where Service is created
+	// without OwnerAddress or ComputeUnitsPerRelay.
+	// Remove the comments in a follow-up PR where embedded Service is replaced by ServiceId.
+	//if _, err := sdk.AccAddressFromBech32(s.OwnerAddress); err != nil {
+	//	return ErrSharedInvalidService.Wrapf("invalid owner address: %s", s.OwnerAddress)
+	//}
 
-	if err := ValidateComputeUnitsPerRelay(s.ComputeUnitsPerRelay); err != nil {
-		return ErrSharedInvalidService.Wrapf("%s", err)
-	}
+	//if err := ValidateComputeUnitsPerRelay(s.ComputeUnitsPerRelay); err != nil {
+	//	return ErrSharedInvalidService.Wrapf("%s", err)
+	//}
 
 	return nil
 }
@@ -100,14 +96,4 @@ func IsValidEndpointUrl(endpoint string) bool {
 	}
 
 	return true
-}
-
-// ValidateComputeUnitsPerRelay makes sure the compute units per relay is a valid value
-func ValidateComputeUnitsPerRelay(computeUnitsPerRelay uint64) error {
-	if computeUnitsPerRelay == 0 {
-		return ErrSharedInvalidComputeUnitsPerRelay.Wrap("compute units per relay must be greater than 0")
-	} else if computeUnitsPerRelay > ComputeUnitsPerRelayMax {
-		return ErrSharedInvalidComputeUnitsPerRelay.Wrapf("compute units per relay must be less than %d", ComputeUnitsPerRelayMax)
-	}
-	return nil
 }

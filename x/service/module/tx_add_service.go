@@ -13,7 +13,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/x/service/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 var _ = strconv.Itoa(0)
@@ -47,7 +46,7 @@ $ poktrolld tx service add-service "svc1" "service_one" 1 --keyring-backend test
 			if len(args) > 2 {
 				computeUnitsPerRelay, err = strconv.ParseUint(args[2], 10, 64)
 				if err != nil {
-					return sharedtypes.ErrSharedInvalidComputeUnitsPerRelay.Wrapf("unable to parse as uint64: %s", args[2])
+					return types.ErrServiceInvalidComputeUnitsPerRelay.Wrapf("unable to parse as uint64: %s", args[2])
 				}
 			} else {
 				fmt.Printf("Using default compute_units_per_relay: %d\n", types.DefaultComputeUnitsPerRelay)

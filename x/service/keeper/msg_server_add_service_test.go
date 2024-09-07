@@ -141,7 +141,7 @@ func TestMsgServer_AddService(t *testing.T) {
 				Name:                 "service 1",
 				ComputeUnitsPerRelay: 0,
 			},
-			expectedErr: sharedtypes.ErrSharedInvalidComputeUnitsPerRelay,
+			expectedErr: types.ErrServiceInvalidComputeUnitsPerRelay,
 		},
 		{
 			desc:        "invalid - no spendable coins",
