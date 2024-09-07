@@ -3,6 +3,7 @@ package session_test
 import (
 	"context"
 	"crypto/sha256"
+	"math"
 	"testing"
 	"time"
 
@@ -25,6 +26,7 @@ import (
 	"github.com/pokt-network/poktroll/testutil/testclient/testsupplier"
 	"github.com/pokt-network/poktroll/testutil/testpolylog"
 	"github.com/pokt-network/poktroll/testutil/testrelayer"
+	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -32,19 +34,34 @@ import (
 
 // TODO_TEST: Add a test case which simulates a cold-started relayminer with unclaimed relays.
 
-func TestRelayerSessionsManager_Start(t *testing.T) {
+// requireProofCountEqualsExpectedValueFromProofParams sets up the session manager
+// along with its dependencies before starting it.
+// It takes in the proofParams to configure the proof requirements and the proofCount
+// to assert the number of proofs to be requested.
+// TODO_BETA(@red-0ne): Add a test case which verifies that the service's compute units per relay is used as
+// the weight of a relay when updating a session's SMT.
+func requireProofCountEqualsExpectedValueFromProofParams(t *testing.T, proofParams prooftypes.Params, proofCount int) {
 	// TODO_TECHDEBT(#446): Centralize the configuration for the SMT spec.
 	var (
 		_, ctx         = testpolylog.NewLoggerWithCtx(context.Background(), polyzero.DebugLevel)
 		spec           = smt.NewTrieSpec(sha256.New(), true)
 		emptyBlockHash = make([]byte, spec.PathHasherSize())
 		activeSession  *sessiontypes.Session
+		service        sharedtypes.Service
 	)
+
+	service = sharedtypes.Service{
+		Id:                   "svc",
+		ComputeUnitsPerRelay: 2,
+	}
+	// Add the service to the existing services.
+	testqueryclients.AddToExistingServices(t, service)
 
 	activeSession = &sessiontypes.Session{
 		Header: &sessiontypes.SessionHeader{
 			SessionStartBlockHeight: 1,
 			SessionEndBlockHeight:   2,
+			ServiceId:               service.Id,
 		},
 	}
 	sessionHeader := activeSession.GetHeader()
@@ -53,7 +70,7 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 	blocksObs, blockPublishCh := channel.NewReplayObservable[client.Block](ctx, 20)
 	blockClient := testblock.NewAnyTimesCommittedBlocksSequenceBlockClient(t, emptyBlockHash, blocksObs)
 	supplierOperatorAddress := sample.AccAddress()
-	supplierClientMap := testsupplier.NewOneTimeClaimProofSupplierClientMap(ctx, t, supplierOperatorAddress)
+	supplierClientMap := testsupplier.NewClaimProofSupplierClientMap(ctx, t, supplierOperatorAddress, proofCount)
 
 	ctrl := gomock.NewController(t)
 	blockQueryClientMock := mockclient.NewMockCometRPC(ctrl)
@@ -84,7 +101,17 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 
 	sharedQueryClientMock := testqueryclients.NewTestSharedQueryClient(t)
 
-	deps := depinject.Supply(blockClient, blockQueryClientMock, supplierClientMap, sharedQueryClientMock)
+	serviceQueryClientMock := testqueryclients.NewTestServiceQueryClient(t)
+	proofQueryClientMock := testqueryclients.NewTestProofQueryClientWithParams(t, &proofParams)
+
+	deps := depinject.Supply(
+		blockClient,
+		blockQueryClientMock,
+		supplierClientMap,
+		sharedQueryClientMock,
+		serviceQueryClientMock,
+		proofQueryClientMock,
+	)
 	storesDirectoryOpt := testrelayer.WithTempStoresDirectory(t)
 
 	// Create a new relayer sessions manager.
@@ -159,6 +186,50 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 	blockPublishCh <- triggerProofBlock
 
 	waitSimulateIO()
+}
+
+func TestRelayerSessionsManager_ProofThresholdRequired(t *testing.T) {
+	proofParams := prooftypes.DefaultParams()
+
+	// Set proof requirement threshold to a low enough value so a proof is always requested.
+	proofParams.ProofRequirementThreshold = 1
+
+	// The test is submitting a single claim. Having the proof requirement threshold
+	// set to 1 results in exactly 1 proof being requested.
+	numExpectedProofs := 1
+
+	requireProofCountEqualsExpectedValueFromProofParams(t, proofParams, numExpectedProofs)
+}
+
+func TestRelayerSessionsManager_ProofProbabilityRequired(t *testing.T) {
+	proofParams := prooftypes.DefaultParams()
+
+	// Set proof requirement threshold to max uint64 to skip the threshold check.
+	proofParams.ProofRequirementThreshold = math.MaxUint64
+	// Set proof request probability to 1 so a proof is always requested.
+	proofParams.ProofRequestProbability = 1
+
+	// The test is submitting a single claim. Having the proof request probability
+	// set to 1 results in exactly 1 proof being requested.
+	numExpectedProofs := 1
+
+	requireProofCountEqualsExpectedValueFromProofParams(t, proofParams, numExpectedProofs)
+}
+
+func TestRelayerSessionsManager_ProofNotRequired(t *testing.T) {
+	proofParams := prooftypes.DefaultParams()
+
+	// Set proof requirement threshold to max uint64 to skip the threshold check.
+	proofParams.ProofRequirementThreshold = math.MaxUint64
+	// Set proof request probability to 0 so a proof is never requested.
+	proofParams.ProofRequestProbability = 0
+
+	// The test is submitting a single claim. Having the proof request probability
+	// set to 0 and proof requirement threshold set to max uint64 results in no proofs
+	// being requested.
+	numExpectedProofs := 0
+
+	requireProofCountEqualsExpectedValueFromProofParams(t, proofParams, numExpectedProofs)
 }
 
 // waitSimulateIO sleeps for a bit to allow the relayer sessions manager to

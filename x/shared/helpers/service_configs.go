@@ -23,7 +23,7 @@ func ValidateAppServiceConfigs(services []*sharedtypes.ApplicationServiceConfig)
 		}
 		// Check the Service ID
 		if !sharedtypes.IsValidServiceId(serviceConfig.ServiceId) {
-			return sharedtypes.ErrSharedInvalidServiceId.Wrapf("%s", serviceConfig.ServiceId)
+			return sharedtypes.ErrSharedInvalidService.Wrapf("%s", serviceConfig.ServiceId)
 		}
 	}
 	return nil
@@ -41,7 +41,7 @@ func ValidateSupplierServiceConfigs(services []*sharedtypes.SupplierServiceConfi
 
 		// Check the Service ID
 		if !sharedtypes.IsValidServiceId(serviceConfig.ServiceId) {
-			return sharedtypes.ErrSharedInvalidServiceId.Wrapf("%s", serviceConfig.ServiceId)
+			return sharedtypes.ErrSharedInvalidService.Wrapf("%s", serviceConfig.ServiceId)
 		}
 
 		// Check the Endpoints

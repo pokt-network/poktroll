@@ -122,3 +122,30 @@ func TestMsgUpdateParam_UpdateProofMissingPenaltyOnly(t *testing.T) {
 	// Ensure the other parameters are unchanged
 	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, "ProofMissingPenalty")
 }
+
+func TestMsgUpdateParam_UpdateProofSubmissionFeeOnly(t *testing.T) {
+	expectedProofSubmissionFee := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(1000001))
+
+	// Set the parameters to their default values
+	k, msgSrv, ctx := setupMsgServer(t)
+	defaultParams := prooftypes.DefaultParams()
+	require.NoError(t, k.SetParams(ctx, defaultParams))
+
+	// Ensure the default values are different from the new values we want to set
+	require.NotEqual(t, expectedProofSubmissionFee, defaultParams.ProofSubmissionFee)
+
+	// Update the proof request probability
+	updateParamMsg := &prooftypes.MsgUpdateParam{
+		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+		Name:      prooftypes.ParamProofSubmissionFee,
+		AsType:    &prooftypes.MsgUpdateParam_AsCoin{AsCoin: &expectedProofSubmissionFee},
+	}
+	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
+	require.NoError(t, err)
+
+	require.NotEqual(t, defaultParams.ProofSubmissionFee, res.Params.ProofSubmissionFee)
+	require.Equal(t, &expectedProofSubmissionFee, res.Params.ProofSubmissionFee)
+
+	// Ensure the other parameters are unchanged
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, "ProofSubmissionFee")
+}

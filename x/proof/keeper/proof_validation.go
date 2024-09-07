@@ -86,7 +86,7 @@ func (k Keeper) EnsureValidProof(
 		return err
 	}
 
-	if proof.ClosestMerkleProof == nil || len(proof.ClosestMerkleProof) == 0 {
+	if len(proof.ClosestMerkleProof) == 0 {
 		return types.ErrProofInvalidProof.Wrap("proof cannot be empty")
 	}
 

@@ -79,7 +79,7 @@ func TestMsgSubmitProof_ValidateBasic(t *testing.T) {
 				Proof: testClosestMerkleProof,
 			},
 			sessionHeaderToExpectedErrorFn: func(sh sessiontypes.SessionHeader) error {
-				serviceError := sharedtypes.ErrSharedInvalidServiceId.Wrapf("invalid service ID: %s", sh.ServiceId)
+				serviceError := sharedtypes.ErrSharedInvalidService.Wrapf("invalid service ID: %s", sh.ServiceId)
 				return ErrProofInvalidSessionHeader.Wrapf("invalid session header: %s", serviceError)
 			},
 		},

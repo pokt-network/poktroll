@@ -141,7 +141,7 @@ func TestIsValidServiceName(t *testing.T) {
 			if test.expectedIsValid {
 				require.NoError(t, err)
 			} else {
-				require.ErrorIs(t, err, sharedtypes.ErrSharedInvalidServiceId.Wrapf("invalid service name: %s", test.serviceName))
+				require.ErrorIs(t, err, sharedtypes.ErrSharedInvalidService.Wrapf("invalid service name: %s", test.serviceName))
 			}
 		})
 	}
@@ -221,7 +221,7 @@ func TestIsValidServiceId(t *testing.T) {
 			if test.expectedIsValid {
 				require.NoError(t, err)
 			} else {
-				require.ErrorIs(t, err, sharedtypes.ErrSharedInvalidServiceId.Wrapf("invalid service ID: %s", test.serviceId))
+				require.ErrorIs(t, err, sharedtypes.ErrSharedInvalidService.Wrapf("invalid service ID: %s", test.serviceId))
 			}
 		})
 	}
