@@ -45,7 +45,7 @@ func TestServiceQuerySingle(t *testing.T) {
 			request: &types.QueryGetServiceRequest{
 				Id: strconv.Itoa(100000),
 			},
-			expectedErr: status.Error(codes.NotFound, "not found"),
+			expectedErr: status.Error(codes.NotFound, "service ID not found"),
 		},
 		{
 			desc:        "InvalidRequest",
