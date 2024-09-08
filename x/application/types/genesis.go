@@ -61,7 +61,7 @@ func (gs GenesisState) Validate() error {
 
 		// Validate the application service configs
 		if err := servicehelpers.ValidateAppServiceConfigs(app.ServiceConfigs); err != nil {
-			return ErrAppInvalidServiceConfigs.Wrapf(err.Error())
+			return ErrAppInvalidServiceConfigs.Wrapf("%s", err.Error())
 		}
 	}
 

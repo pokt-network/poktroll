@@ -12,4 +12,6 @@ var (
 	ErrSessionTreeAlreadyMarkedAsClaimed   = sdkerrors.Register(codespace, 6, "session tree already marked as claimed")
 	ErrSessionSupplierClientNotFound       = sdkerrors.Register(codespace, 7, "supplier client not found")
 	ErrSessionUpdatingTree                 = sdkerrors.Register(codespace, 8, "error updating session SMST")
+	ErrSessionRelayMetaHasNoServiceID      = sdkerrors.Register(codespace, 9, "service ID not specified in relay metadata")
+	ErrSessionRelayMetaHasInvalidServiceID = sdkerrors.Register(codespace, 10, "service specified in relay metadata not found")
 )
