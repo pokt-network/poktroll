@@ -35,12 +35,15 @@ func initSDKConfig() {
 	config.Seal()
 }
 
-// The code below changes how the default configuration files are rendered on `poktrolld init` command. This command
-// is often used by the validator and full node runners to provision the configuration prior to starting the node.
-// These are the values **WE WANT** participants to have. This doesn't guarantee the node runners won't adjust the values
-// but it helps making sure most of them are using the following configuration.
-// Worth noting that changing these values in the future won't magically update them in the existing configuration,
-// which makes it's important to pick the sensible defaults.
+// The values set here become the default configuration for newly initialized nodes.
+// However, it's crucial to note that:
+// 1. These defaults only apply when a node is first initialized using `poktrolld init`.
+// 2. Changing these values in the code will not automatically update existing node configurations.
+// 3. Node operators can still manually override these defaults in their local config files.
+//
+// Therefore, it's critical to choose sensible default values carefully, as they will form
+// the baseline configuration for most network participants. Any future changes to these
+// defaults will only affect newly initialized nodes, not existing ones.
 
 // As we use `ignite` CLI to provision the first validator it is important to note that the configuration files
 // provisioned by ignite have additional overrides adjusted in ignite's `config.yml`
