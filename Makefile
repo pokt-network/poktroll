@@ -85,6 +85,35 @@ install_ci_deps: ## Installs `mockgen` and other go tools
 	go install golang.org/x/tools/cmd/goimports@latest
 	go install github.com/mikefarah/yq/v4@latest
 
+.PHONY: install_cosmovisor
+install_cosmovisor: ## Installs `cosmovisor`
+	go install cosmossdk.io/tools/cosmovisor/cmd/cosmovisor@v1.6.0 && cosmovisor version --cosmovisor-only
+
+.PHONY: cosmovisor_cross_compile
+cosmovisor_cross_compile: # Installs multiple cosmovisor binaries for different platforms (used by Dockerfile.release)
+	@COSMOVISOR_VERSION="v1.6.0"; \
+	PLATFORMS="linux/amd64 linux/arm64"; \
+	mkdir -p ./tmp; \
+	echo "Fetching Cosmovisor source..."; \
+	temp_dir=$$(mktemp -d); \
+	cd $$temp_dir; \
+	go mod init temp; \
+	go get cosmossdk.io/tools/cosmovisor/cmd/cosmovisor@$$COSMOVISOR_VERSION; \
+	for platform in $$PLATFORMS; do \
+		OS=$${platform%/*}; \
+		ARCH=$${platform#*/}; \
+		echo "Compiling for $$OS/$$ARCH..."; \
+		GOOS=$$OS GOARCH=$$ARCH go build -o $(CURDIR)/tmp/cosmovisor-$$OS-$$ARCH cosmossdk.io/tools/cosmovisor/cmd/cosmovisor; \
+	done; \
+	cd $(CURDIR); \
+	rm -rf $$temp_dir; \
+	echo "Compilation complete. Binaries are in ./tmp/"; \
+	ls -l ./tmp/cosmovisor-*
+
+.PHONY: cosmovisor_clean
+cosmovisor_clean:
+	rm -f ./tmp/cosmovisor-*
+
 ########################
 ### Makefile Helpers ###
 ########################

@@ -1,5 +1,5 @@
 # This Dockerfile is used to build container image for production workloads.
-# It relies on the binaries produced by `ignite_release` and `ignite_release_extract_binaries` make targets.
+# It relies on the binaries produced by `cosmovisor_cross_compile`, `ignite_release` and `ignite_release_extract_binaries` make targets.
 FROM alpine:3.19
 ARG TARGETARCH
 
@@ -10,6 +10,7 @@ RUN addgroup --gid 1025 -S pocket && adduser --uid 1025 -S pocket -G pocket
 RUN apk add --no-cache gcompat
 
 COPY --chown=pocket:pocket release_binaries/poktroll_linux_$TARGETARCH /bin/poktrolld
+COPY --chown=pocket:pocket tmp/cosmovisor-linux-$TARGETARCH /bin/cosmovisor
 
 USER pocket
 
