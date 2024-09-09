@@ -337,7 +337,6 @@ func (s *suite) getConfigFileContent(
 	default:
 		s.Fatalf("ERROR: unknown actor type %s", actorType)
 	}
-	fmt.Println(yaml.NormalizeYAMLIndentation(configContent))
 	return yaml.NormalizeYAMLIndentation(configContent)
 }
 
