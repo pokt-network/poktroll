@@ -272,7 +272,7 @@ func (txnClient *txClient) SignAndBroadcast(
 	}
 
 	if txResponse.Code != 0 {
-		return either.SyncErr(ErrCheckTx.Wrapf(txResponse.RawLog))
+		return either.SyncErr(ErrCheckTx.Wrapf("%s", txResponse.RawLog))
 	}
 
 	return txnClient.addPendingTransactions(encoding.NormalizeTxHashHex(txResponse.TxHash), timeoutHeight)

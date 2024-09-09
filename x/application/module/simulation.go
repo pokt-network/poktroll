@@ -39,7 +39,7 @@ const (
 	// TODO: Determine the simulation weight value
 	defaultWeightMsgUndelegateFromGateway int = 100
 
-	opWeightMsgTransferApplication = "op_weight_msg_transfer_application_stake"
+	opWeightMsgTransferApplication = "op_weight_msg_transfer_application"
 	// TODO: Determine the simulation weight value
 	defaultWeightMsgTransferApplication int = 100
 

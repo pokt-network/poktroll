@@ -1,4 +1,4 @@
 # Run `asdf plugin add golang` and `asdf install` to install the dependencies,
 # and `asdf current` to switch to the versions of dependencies listed below
-golang 1.22.2
-go 1.22.2
+golang 1.23.0
+go 1.23.0
