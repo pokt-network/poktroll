@@ -118,7 +118,7 @@ func (k Keeper) hydrateSessionID(ctx context.Context, sh *sessionHydrator) error
 	// a valid service depending on whether or not its permissioned or permissionless
 
 	if err := sh.sessionHeader.Service.ValidateBasic(); err != nil {
-		return types.ErrSessionHydration.Wrapf("invalid service: %v; err %s", sh.sessionHeader.Service, err)
+		return types.ErrSessionHydration.Wrapf("%s", err)
 	}
 
 	sh.sessionHeader.SessionId, sh.sessionIDBz = k.GetSessionId(

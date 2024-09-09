@@ -23,7 +23,7 @@ func ValidateAppServiceConfigs(services []*sharedtypes.ApplicationServiceConfig)
 		}
 		// Check the Service
 		if err := serviceConfig.Service.ValidateBasic(); err != nil {
-			return sharedtypes.ErrSharedInvalidService.Wrapf("invalid service: %v; %s", serviceConfig.Service, err)
+			return sharedtypes.ErrSharedInvalidService.Wrapf("%s", err)
 		}
 	}
 	return nil
@@ -41,7 +41,7 @@ func ValidateSupplierServiceConfigs(services []*sharedtypes.SupplierServiceConfi
 
 		// Check the Service
 		if err := serviceConfig.Service.ValidateBasic(); err != nil {
-			return sharedtypes.ErrSharedInvalidService.Wrapf("invalid service: %v; %s", serviceConfig.Service, err)
+			return sharedtypes.ErrSharedInvalidService.Wrapf("%s", err)
 		}
 
 		// Check the Endpoints

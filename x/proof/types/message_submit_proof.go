@@ -34,7 +34,7 @@ func (msg *MsgSubmitProof) ValidateBasic() error {
 	}
 
 	if err := sessionHeader.ValidateBasic(); err != nil {
-		return ErrProofInvalidSessionHeader.Wrapf("invalid session header: %s", err)
+		return ErrProofInvalidSessionHeader.Wrapf("%s", err)
 	}
 
 	if len(msg.GetProof()) == 0 {

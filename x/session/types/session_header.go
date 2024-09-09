@@ -8,21 +8,21 @@ import (
 func (sh *SessionHeader) ValidateBasic() error {
 	// Validate the application address
 	if _, err := sdk.AccAddressFromBech32(sh.ApplicationAddress); err != nil {
-		return ErrSessionInvalidAppAddress.Wrapf("invalid application address: %s; (%s)", sh.ApplicationAddress, err)
+		return ErrSessionInvalidAppAddress.Wrapf("%q; (%s)", sh.ApplicationAddress, err)
 	}
 
 	// Validate the session ID
 	if len(sh.SessionId) == 0 {
-		return ErrSessionInvalidSessionId.Wrapf("invalid session ID: %s", sh.SessionId)
+		return ErrSessionInvalidSessionId.Wrapf("%q", sh.SessionId)
 	}
 
 	// Validate the service
 	if sh.Service == nil {
-		return ErrSessionInvalidService.Wrapf("missing service: %s", sh.Service)
+		return ErrSessionInvalidService.Wrapf("missing service")
 	}
 
 	if err := sh.Service.ValidateBasic(); err != nil {
-		return ErrSessionInvalidService.Wrapf("invalid service: %v; %s", sh.Service, err)
+		return ErrSessionInvalidService.Wrapf("%s", err)
 	}
 
 	// Sessions can only start at height 1

@@ -22,12 +22,12 @@ func NewQueryGetSessionRequest(appAddress, serviceId string, blockHeight int64) 
 func (query *QueryGetSessionRequest) ValidateBasic() error {
 	// Validate the application address
 	if _, err := sdk.AccAddressFromBech32(query.ApplicationAddress); err != nil {
-		return ErrSessionInvalidAppAddress.Wrapf("invalid app address for session being retrieved %s; (%v)", query.ApplicationAddress, err)
+		return ErrSessionInvalidAppAddress.Wrapf("%s", err)
 	}
 
 	// Validate the Service ID
 	if err := query.Service.ValidateBasic(); err != nil {
-		return ErrSessionInvalidService.Wrapf("invalid service for session being retrieved %s; %v", query.Service, err)
+		return ErrSessionInvalidService.Wrapf("invalid service for session being retrieved %s; %s", query.Service, err)
 	}
 
 	// Validate the height for which a session is being retrieved

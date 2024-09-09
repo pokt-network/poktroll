@@ -36,11 +36,11 @@ func TestMsgSubmitProof_ValidateBasic(t *testing.T) {
 			},
 			sessionHeaderToExpectedErrorFn: func(sh sessiontypes.SessionHeader) error {
 				sessionError := sessiontypes.ErrSessionInvalidAppAddress.Wrapf(
-					"invalid application address: %s; (%s)",
+					"%q; (%s)",
 					sh.ApplicationAddress,
 					"decoding bech32 failed: invalid separator index -1",
 				)
-				return ErrProofInvalidSessionHeader.Wrapf("invalid session header: %s", sessionError)
+				return ErrProofInvalidSessionHeader.Wrapf("%s", sessionError)
 			},
 		},
 		{
@@ -78,9 +78,9 @@ func TestMsgSubmitProof_ValidateBasic(t *testing.T) {
 				Proof: testClosestMerkleProof,
 			},
 			sessionHeaderToExpectedErrorFn: func(sh sessiontypes.SessionHeader) error {
-				serviceError := sharedtypes.ErrSharedInvalidService.Wrapf("invalid service ID: %s", sh.Service.Id)
-				sessionError := sessiontypes.ErrSessionInvalidService.Wrapf("invalid service: %v; %s", sh.Service, serviceError)
-				return ErrProofInvalidSessionHeader.Wrapf("invalid session header: %s", sessionError)
+				serviceError := sharedtypes.ErrSharedInvalidService.Wrapf("ID: %q", sh.Service.Id)
+				sessionError := sessiontypes.ErrSessionInvalidService.Wrapf("%s", serviceError)
+				return ErrProofInvalidSessionHeader.Wrapf("%s", sessionError)
 			},
 		},
 		{
