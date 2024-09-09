@@ -7,11 +7,13 @@ import (
 	"fmt"
 	"math/big"
 
+	"cosmossdk.io/log"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
+	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 // TargetNumRelays is the target number of relays we want the network to mine for
@@ -49,17 +51,7 @@ func (k Keeper) UpdateRelayMiningDifficulty(
 	for serviceId, numRelays := range relaysPerServiceMap {
 		prevDifficulty, found := k.GetRelayMiningDifficulty(ctx, serviceId)
 		if !found {
-			logger.Warn(types.ErrTokenomicsMissingRelayMiningDifficulty.Wrapf(
-				"No previous relay mining difficulty found for service %s. Initializing with default difficulty %v",
-				serviceId, prevDifficulty.TargetHash,
-			).Error())
-			// If a previous difficulty for the service is not found, we initialize a default.
-			prevDifficulty = types.RelayMiningDifficulty{
-				ServiceId:    serviceId,
-				BlockHeight:  sdkCtx.BlockHeight(),
-				NumRelaysEma: numRelays,
-				TargetHash:   prooftypes.DefaultRelayDifficultyTargetHash,
-			}
+			prevDifficulty = newDefaultRelayMiningDifficulty(ctx, logger, serviceId, numRelays)
 		}
 
 		// TODO_MAINNET(@Olshansk): We could potentially compute the smoothing factor
@@ -189,4 +181,27 @@ func computeEma(alpha *big.Float, prevEma, currValue uint64) uint64 {
 	weightedPreviousContribution := new(big.Float).Mul(oneMinusAlpha, prevEmaFloat)
 	newEma, _ := new(big.Float).Add(weightedCurrentContribution, weightedPreviousContribution).Uint64()
 	return newEma
+}
+
+// newDefaultRelayMiningDifficulty is a helper that creates a new RelayMiningDifficulty
+// structure if one is not available. It is often used to set the default when a service's
+// difficulty is being initialized for the first time.
+func newDefaultRelayMiningDifficulty(
+	ctx context.Context,
+	logger log.Logger,
+	serviceId string,
+	numRelays uint64,
+) tokenomicstypes.RelayMiningDifficulty {
+	logger = logger.With("helper", "newDefaultRelayMiningDifficulty")
+	logger.Warn(types.ErrTokenomicsMissingRelayMiningDifficulty.Wrapf(
+		"No previous relay mining difficulty found for service %s. Creating a temporary relay mining difficulty with %d relays and default target hash %x",
+		serviceId, numRelays, prooftypes.DefaultRelayDifficultyTargetHash).Error())
+
+	return tokenomicstypes.RelayMiningDifficulty{
+		ServiceId:    serviceId,
+		BlockHeight:  sdk.UnwrapSDKContext(ctx).BlockHeight(),
+		NumRelaysEma: numRelays,
+		TargetHash:   prooftypes.DefaultRelayDifficultyTargetHash,
+	}
+
 }
