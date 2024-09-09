@@ -49,7 +49,7 @@ func (k Keeper) Service(ctx context.Context, req *types.QueryGetServiceRequest) 
 
 	service, found := k.GetService(ctx, req.Id)
 	if !found {
-		return nil, status.Error(codes.NotFound, "not found")
+		return nil, status.Error(codes.NotFound, "service ID not found")
 	}
 
 	return &types.QueryGetServiceResponse{Service: service}, nil
