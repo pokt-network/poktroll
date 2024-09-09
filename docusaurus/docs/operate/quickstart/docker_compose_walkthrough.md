@@ -305,7 +305,7 @@ Add funds to your supplier account by either going to the [faucet](https://fauce
 or using the `faucet` account directly if you have access to it:
 
 ```bash
-poktrolld tx bank send faucet $SUPPLIER_ADDR 10000upokt --chain-id=poktroll --yes
+poktrolld tx bank send faucet $SUPPLIER_ADDR 10000upokt --fees 1upokt --chain-id=poktroll --yes
 ```
 
 You can check that your address is funded correctly by running:
@@ -442,7 +442,7 @@ Add funds to your application account by either going to the [faucet](https://fa
 or using the `faucet` account directly if you have access to it:
 
 ```bash
-poktrolld tx bank send faucet $APPLICATION_ADDR 10000upokt --chain-id=poktroll --yes
+poktrolld tx bank send faucet $APPLICATION_ADDR 10000upokt --fees 1upokt --chain-id=poktroll --yes
 ```
 
 You can check that your address is funded correctly by running:
@@ -568,7 +568,7 @@ Add funds to your gateway account by either going to the [faucet](https://faucet
 or using the `faucet` account directly if you have access to it:
 
 ```bash
-poktrolld tx bank send faucet $GATEWAY_ADDR 10000upokt --chain-id=poktroll --yes
+poktrolld tx bank send faucet $GATEWAY_ADDR 10000upokt --fees 1upokt --chain-id=poktroll --yes
 ```
 
 You can check that your address is funded correctly by running:

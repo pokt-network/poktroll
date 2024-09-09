@@ -40,6 +40,7 @@ sender's address or key name, the recipient's address, and the amount to send.
 
 ```sh
 poktrolld tx bank send [from_key_or_address] [to_address] [amount] \
+    --fees 1upokt \
     --node=<node_endpoint> [additional_flags]
 ```
 
@@ -52,6 +53,7 @@ For example, the following command sends `1000upokt` from `myWallet` to `pokt1re
 
 ```bash
 poktrolld tx bank send myWallet pokt1recipientaddress420 1000upokt \
+    --fees 1upokt \
     --node=https://testnet-validated-validator-rpc.poktroll.com/
 ```
 

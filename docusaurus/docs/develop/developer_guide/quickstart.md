@@ -139,11 +139,13 @@ available commands. Looking inside the Makefile is a great way to learn how to u
 ### 1.3 Prepare your development environment
 
 Run the following command to install `golang` dependencies:
+
 ```bash
 make install_ci_deps
 ```
 
 If you encounter issues related to `mockgen` not being found or failing, try running the following command to verify its installation:
+
 ```bash
 make check_mockgen
 ```
@@ -303,6 +305,7 @@ You can send some uPOKT to your `shannon_supplier` by running:
 poktrolld \
   tx bank send \
   faucet $SHANNON_SUPPLIER 420000000000069upokt \
+  --fees 1upokt \
   --node tcp://127.0.0.1:26657 \
   --home=./localnet/poktrolld
 ```
@@ -326,6 +329,7 @@ Let's do the same thing for the `shannon_application`:
 poktrolld \
   tx bank send \
   faucet $SHANNON_APPLICATION 420000000000069upokt \
+  --fees 1upokt \
   --node tcp://127.0.0.1:26657 \
   --home=./localnet/poktrolld
 ```

@@ -853,6 +853,7 @@ acc_initialize_pubkeys: ## Make sure the account keeper has public keys for all 
 		echo $(addr);\
 		poktrolld tx bank send \
 			$(addr) $(PNF_ADDRESS) 1000upokt \
+			--fees 1upokt \
 			--yes \
 			--home=$(POKTROLLD_HOME) \
 			--node $(POCKET_NODE);)

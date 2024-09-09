@@ -314,6 +314,7 @@ func (s *suite) fundAddress(addr string, coin cosmostypes.Coin) {
 		addr,
 		coin.String(),
 		"--yes",
+		"--fees 1upokt",
 	}
 
 	_, err := s.pocketd.RunCommandOnHost("", argsAndFlags...)
