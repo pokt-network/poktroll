@@ -6,7 +6,7 @@
 # that can be used to clear the state of the chain between tests.
 
 Feature: Tokenomics Namespace
-    Scenario: TLM Mint=Burn when a valid claim is within max limits and a valid proof is submitted and required via threshold
+    Scenario: Settle the session when a valid claim is within max limits and a valid proof is submitted and required via threshold
         # Baseline
         Given the user has the pocketd binary installed
         # Network preparation and validation
@@ -31,10 +31,13 @@ Feature: Tokenomics Namespace
         And the user should wait for the "proof" module "SubmitProof" Message to be submitted
         And the user should wait for the ClaimSettled event with "THRESHOLD" proof requirement to be broadcast
         # Validate the results
+        # Please note that supplier mint is > app burn because of inflation
+        # TODO_TECHDEBT: Update this test such the the inflation is set and enforce that Mint=Burn
+        # Then add a separate test that only validates that inflation is enforced correctly
         Then the account balance of "supplier1" should be "898" uPOKT "more" than before
         And the "application" stake of "app1" should be "840" uPOKT "less" than before
 
-    Scenario: TLM Mint=Burn when a valid claim is create but not required
+    Scenario: Settle the session when a valid claim is create but not required
         # Baseline
         Given the user has the pocketd binary installed
         # Network preparation
@@ -57,8 +60,10 @@ Feature: Tokenomics Namespace
         And the user should wait for the "proof" module "CreateClaim" Message to be submitted
         # No proof should be submitted, don't wait for one.
         And the user should wait for the ClaimSettled event with "NOT_REQUIRED" proof requirement to be broadcast
-        # Validate that mint equals burn
-        Then the account balance of "supplier1" should be "420" uPOKT "more" than before
+        # Validate the results
+        # Please note that supplier mint is > app burn because of inflation
+        # TODO_TECHDEBT: Update this test such the the inflation is set and enforce that Mint=Burn
+        Then the account balance of "supplier1" should be "449" uPOKT "more" than before
         And the "application" stake of "app1" should be "420" uPOKT "less" than before
 
     # TODO_ADDTEST: Implement the following scenarios
