@@ -39,7 +39,7 @@ const (
 	txDelaySeconds = 3
 	// txFeesCoinStr is the string representation of the amount & denom of tokens
 	// which are sufficient to pay for tx fees in the test.
-	txFeesCoinStr = "1000000upokt"
+	txFeesCoinStr = "1upokt"
 	// PNF is the account that acts on behalf of the DAO and is therefore the only
 	// one authorized to perform certain actions such as updating params.
 	pnfKeyName = "pnf"
@@ -313,8 +313,8 @@ func (s *suite) fundAddress(addr string, coin cosmostypes.Coin) {
 		pnfKeyName,
 		addr,
 		coin.String(),
+		fmt.FormatString("--fees=%s", keyRingFlag, txFeesCoinStr),
 		"--yes",
-		"--fees 1upokt",
 	}
 
 	_, err := s.pocketd.RunCommandOnHost("", argsAndFlags...)
