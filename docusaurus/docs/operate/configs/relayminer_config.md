@@ -40,6 +40,11 @@ You can find a fully featured example configuration at [relayminer_config_full_e
 - [Configuring Signing Keys](#configuring-signing-keys)
   - [Example Configuration](#example-configuration)
 - [Supported server types](#supported-server-types)
+- [Payable Proof Submissions](#payable-proof-submissions)
+  - [Overview](#overview)
+  - [Key Requirements for Operators](#key-requirements-for-operators)
+  - [Recommendations for Supplier Operators](#recommendations-for-supplier-operators)
+  - [Implications for Network Participation](#implications-for-network-participation)
 
 ## Introduction
 
@@ -115,8 +120,9 @@ smt_store_path: <string>
 _`Required`_ if `suppliers.*.signing_key_names` is not specified.
 
 This configuration option specifies a list of key names from the keyring that the
-`RelayMiner` will use to sign transactions. These key names are used to derive the public
-key and the corresponding address, which are essential for interacting with POKT.
+`RelayMiner` will use to sign transactions (i.e. `SupplierOperator`).
+These key names are used to derive the public key and the corresponding address,
+which are essential for interacting with POKT.
 Each key name listed here must be present in the keyring used to start the
 `RelayMiner` instance.
 
@@ -451,3 +457,44 @@ flowchart
 ## Supported server types
 
 The list of supported server types can be found at [pkg/relayer/config/types.go](https://github.com/pokt-network/poktroll/tree/main/pkg/relayer/config/types.go#L8)
+
+## Payable Proof Submissions
+
+### Overview
+
+Submitting `Proofs` requires the payment of a fee, which is defined by the
+`proof_submission_fee` governance parameter.
+
+This fee mechanism is designed to prevent spam attacks (e.g., Sybil bloat attacks)
+by discouraging invalid or unnecessary `Proofs`.
+
+Since `Proofs` are the most block space-consuming primitive in the Pocket Network,
+this fee plays a crucial role in maintaining the integrity of the network.
+
+### Key Requirements for Operators
+
+Due to the probabilistic nature of the `Proof` requirement, `Supplier` operators must
+ensure that they maintain sufficient funds to cover the submission fees for all
+`Proof`s associated with the `Claim`s they plan to submit.
+
+Failure to maintain adequate funds can result in missed submissions, which can
+result in `Supplier` slashing if the `Proof` is required.
+
+### Recommendations for Supplier Operators
+
+- **Sufficient Balance**: Operators should regularly check their account balance
+and ensure they have enough funds to cover the submission fees for `Proofs`.
+
+- **Automated Monitoring**: It is highly recommended to implement balance monitoring
+or alert systems to avoid running out of funds during critical periods.
+
+- **Cost Awareness**: Operators should familiarize themselves with the current
+`proof_submission_fee` and plan their funding accordingly, especially if they
+anticipate submitting a higher volume of `Proofs`.
+
+### Implications for Network Participation
+
+Having insufficient funds could lead to rejected `Proof` submissions and
+potentially disrupt the operator’s participation in the Pocket Network.
+To maintain a smooth operation, operators must plan and manage their account
+balance as part of their operational procedures.
