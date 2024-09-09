@@ -15,6 +15,7 @@ import ReactPlayer from "react-player";
 - [B. Creating a Supplier and Deploying a RelayMiner](#b-creating-a-supplier-and-deploying-a-relayminer)
 - [C. Creating an Application and Deploying an AppGate Server](#c-creating-an-application-and-deploying-an-appgate-server)
 - [D. Creating a Gateway Deploying an Gateway Server](#d-creating-a-gateway-deploying-an-gateway-server)
+  - [\[BONUS\] Deploy a PATH Gateway](#bonus-deploy-a-path-gateway)
 
 <!--
 
@@ -628,7 +629,13 @@ docker-compose logs -f --tail 100 gateway-example
 
 ### Delegate your Application to the Gateway <!-- omit in toc -->
 
+```bash
 poktrolld tx application delegate-to-gateway $GATEWAY_ADDR --from=application-1 --chain-id=poktroll --chain-id=poktroll --yes
+```
+
+### [BONUS] Deploy a PATH Gateway
+
+If you want to deploy a real Gateway, you can use [Grove's PATH](https://github.com/buildwithgrove/path).
 
 ### Send a relay <!-- omit in toc -->
 
