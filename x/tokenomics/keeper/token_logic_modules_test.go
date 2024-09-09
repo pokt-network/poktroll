@@ -414,7 +414,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 		balanceIncrease := math.NewInt(mintShare + rewardShare)
 		expectedBalanceAfter := balanceBefore.Amount.Add(balanceIncrease).Int64()
 		// TODO_MAINNET: Remove the InDelta check and use the exact amount once the floating point arithmetic is fixed
-		acceptableRoundingDelta := tokenomicskeeper.MintDistributionAllowableTolerance * float64(balanceAfter)
+		acceptableRoundingDelta := tokenomicskeeper.MintDistributionAllowableTolerancePercent * float64(balanceAfter)
 		require.InDelta(t, expectedBalanceAfter, balanceAfter, acceptableRoundingDelta)
 	}
 }

@@ -38,14 +38,19 @@ const (
 	MintAllocationSourceOwner = 0.15
 	MintAllocationApplication = 0.0
 
-	// MintDistributionAllowableTolerance is the percent difference that is allowable
+	// MintDistributionAllowableTolerancePercent is the percent difference that is allowable
 	// between the number of minted/ tokens in the tokenomics module and what is distributed
 	// to pocket network participants.
 	// This internal constant SHOULD ONLY be used in TokenLogicModuleGlobalMint.
 	// Due to floating point arithmetic, the total amount of minted coins may be slightly
 	// larger than what is distributed to pocket network participants
 	// TODO_MAINNET: Figure out if we can avoid this tolerance and use fixed point arithmetic.
-	MintDistributionAllowableTolerance = 0.02
+	MintDistributionAllowableTolerancePercent = 0.02 // 2%
+	// MintDistributionAllowableToleranceAbsolution is similar to MintDistributionAllowableTolerancePercent
+	// but provides an absolute number where the % difference might no be
+	// meaningful for small absolute numbers.
+	// TODO_MAINNET: Figure out if we can avoid this tolerance and use fixed point arithmetic.
+	MintDistributionAllowableToleranceAbs = 5.0 // 5 uPOKT
 )
 
 type TokenLogicModule int
@@ -445,8 +450,9 @@ func (k Keeper) ensureMintedCoinsAreDistributed(
 	percentDifference := new(big.Float).Quo(new(big.Float).SetInt(coinDifference), new(big.Float).SetInt(newMintCoin.Amount.BigInt()))
 
 	// Helper booleans for readability
-	isPercentDifferentTooLarge := percentDifference.Cmp(big.NewFloat(MintDistributionAllowableTolerance)) > 0
 	doesDiscrepancyExist := coinDifference.Cmp(big.NewInt(0)) > 0
+	isPercentDifferenceTooLarge := percentDifference.Cmp(big.NewFloat(MintDistributionAllowableTolerancePercent)) > 0
+	isAbsDifferenceSignificant := coinDifference.Cmp(big.NewInt(int64(MintDistributionAllowableToleranceAbs))) > 0
 
 	// No discrepancy, return early
 	logger.Info(fmt.Sprintf("distributed (%v) coins to the application, supplier, DAO, source owner, and proposer", totalMintDistributedCoin))
@@ -455,7 +461,7 @@ func (k Keeper) ensureMintedCoinsAreDistributed(
 	}
 
 	// Discrepancy exists and is too large, return an error
-	if isPercentDifferentTooLarge {
+	if isPercentDifferenceTooLarge && isAbsDifferenceSignificant {
 		return tokenomictypes.ErrTokenomicsAmountMismatchTooLarge.Wrapf(
 			"the total distributed coins (%v) do not equal the amount of newly minted coins (%v) with a percent difference of (%f). Likely floating point arithmetic.\n"+
 				"appCoin: %v, supplierCoin: %v, daoCoin: %v, serviceCoin: %v, proposerCoin: %v",
