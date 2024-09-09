@@ -46,6 +46,7 @@ message UndelegatingGatewayList {
 }
 
 // PendingTransfer is used to store the details of a pending transfer.
+// It is only intended to be used inside of an Application object.
 message PendingApplicationTransfer {
   string destination_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   uint64 session_end_height = 2;
