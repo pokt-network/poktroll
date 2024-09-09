@@ -81,7 +81,13 @@ client:
 validators:
   - name: validator1
     bonded: 900000000upokt
+    # DEV_NOTE: adjust `cmd/poktrolld/cmd/config.go` to change the default options. The section below **ONLY** changes
+    # the values for the first validator, and the config is rendered using `ignite` cli. This is primarily used for
+    # LocalNet. Other participants of the network are relying on `poktrolld init`, which gets values from `cmd/config.go`.
     app:
+      # DEV_NOTE: Ignite does not carry over all defaults, so we are going to match `minimum-gas-prices` with `cmd/config.go`.
+      # See the enhancement request here: https://github.com/ignite/cli/issues/4340
+      minimum-gas-prices: 0.000000001upokt
       telemetry:
         enabled: true
         prometheus-retention-time: "600" # seconds
