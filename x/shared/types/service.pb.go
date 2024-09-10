@@ -94,7 +94,7 @@ func (ConfigOptions) EnumDescriptor() ([]byte, []int) {
 type Service struct {
 	// For example, what if we want to request a session for a certain service but with some additional configs that identify it?
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// TODO_MAINNET: Remove this.
+	// TODO_BETA: Either remove this or rename it to alias.
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	// The cost of a single relay for this service in terms of compute units.
 	// Must be used alongside the global 'compute_units_to_tokens_multipler' to calculate the cost of a relay for this service.

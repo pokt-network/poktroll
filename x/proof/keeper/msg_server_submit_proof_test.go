@@ -570,15 +570,12 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			},
 			msgSubmitProofToExpectedErrorFn: func(msgSubmitProof *prooftypes.MsgSubmitProof) error {
 				sessionError := sessiontypes.ErrSessionInvalidSessionId.Wrapf(
-					"invalid session ID: %s",
+					"%q",
 					msgSubmitProof.GetSessionHeader().GetSessionId(),
 				)
 				return status.Error(
 					codes.InvalidArgument,
-					prooftypes.ErrProofInvalidSessionHeader.Wrapf(
-						"invalid session header: %s",
-						sessionError,
-					).Error(),
+					prooftypes.ErrProofInvalidSessionHeader.Wrapf("%s", sessionError).Error(),
 				)
 			},
 		},

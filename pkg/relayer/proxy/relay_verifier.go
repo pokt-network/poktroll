@@ -48,6 +48,7 @@ func (rp *relayerProxy) VerifyRelayRequest(
 		}).
 		Msg("verifying relay request session")
 
+	// TODO_TECHDEBT(@red-0ne): Optimize this so we don't have to query the session for every relay request.
 	// Query for the current session to check if relayRequest sessionId matches the current session.
 	session, err := rp.sessionQuerier.GetSession(
 		ctx,

@@ -37,6 +37,5 @@ func (msg *MsgAddService) ValidateBasic() error {
 	if err := msg.Service.ValidateBasic(); err != nil {
 		return err
 	}
-
 	return nil
 }

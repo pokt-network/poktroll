@@ -9,6 +9,7 @@ import (
 	"github.com/pokt-network/poktroll/testutil/sample"
 	testsession "github.com/pokt-network/poktroll/testutil/session"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 const testServiceId = "svc01"
@@ -36,11 +37,11 @@ func TestMsgSubmitProof_ValidateBasic(t *testing.T) {
 			},
 			sessionHeaderToExpectedErrorFn: func(sh sessiontypes.SessionHeader) error {
 				sessionError := sessiontypes.ErrSessionInvalidAppAddress.Wrapf(
-					"invalid application address: %s; (%s)",
+					"%q; (%s)",
 					sh.ApplicationAddress,
 					"decoding bech32 failed: invalid separator index -1",
 				)
-				return ErrProofInvalidSessionHeader.Wrapf("invalid session header: %s", sessionError)
+				return ErrProofInvalidSessionHeader.Wrapf("%s", sessionError)
 			},
 		},
 		{
@@ -78,8 +79,9 @@ func TestMsgSubmitProof_ValidateBasic(t *testing.T) {
 				Proof: testClosestMerkleProof,
 			},
 			sessionHeaderToExpectedErrorFn: func(sh sessiontypes.SessionHeader) error {
-				serviceError := sessiontypes.ErrSessionInvalidService.Wrapf("invalid service ID: %s", sh.ServiceId)
-				return ErrProofInvalidSessionHeader.Wrapf("invalid session header: %s", serviceError)
+				serviceError := sharedtypes.ErrSharedInvalidService.Wrapf("ID: %q", sh.ServiceId)
+				sessionError := sessiontypes.ErrSessionInvalidService.Wrapf("%s", serviceError)
+				return ErrProofInvalidSessionHeader.Wrapf("%s", sessionError)
 			},
 		},
 		{

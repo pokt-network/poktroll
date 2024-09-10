@@ -41,7 +41,7 @@ func ValidateSupplierServiceConfigs(services []*sharedtypes.SupplierServiceConfi
 
 		// Check the Service ID
 		if !sharedtypes.IsValidServiceId(serviceConfig.ServiceId) {
-			return sharedtypes.ErrSharedInvalidService.Wrapf("%s", serviceConfig.ServiceId)
+			return sharedtypes.ErrSharedInvalidService.Wrapf("ID: %s", serviceConfig.ServiceId)
 		}
 
 		// Check the Endpoints

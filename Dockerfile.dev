@@ -17,6 +17,9 @@ WORKDIR /poktroll
 
 RUN mv /poktroll/bin/ignite /usr/bin/ && mv /poktroll/bin/poktrolld /usr/bin/
 
+# Install Cosmovisor
+RUN make install_cosmovisor
+
 # These are helpful for testing locally:
 # RUN mv bin/poktrolld /usr/bin/
 # RUN mv bin/ignite /usr/bin/

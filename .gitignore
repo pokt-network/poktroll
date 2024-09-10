@@ -98,3 +98,6 @@ cmd/poktrolld/*debug_bin*
 
 # The temporary file created by e2e scripts
 job.yaml
+
+# tmp directory for locally produced artifacts
+tmp/*

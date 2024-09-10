@@ -15,7 +15,7 @@ func (sh *SessionHeader) ValidateBasic() error {
 
 	// Validate the session ID
 	if len(sh.SessionId) == 0 {
-		return ErrSessionInvalidSessionId.Wrapf("invalid session ID: %s", sh.SessionId)
+		return ErrSessionInvalidSessionId.Wrapf("%q", sh.SessionId)
 	}
 
 	if !sharedtypes.IsValidServiceId(sh.ServiceId) {
