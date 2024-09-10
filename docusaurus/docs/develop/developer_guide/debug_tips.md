@@ -89,6 +89,13 @@ The output above shows the cause of the transaction failure: `insufficient funds
 more funds to the corresponding supplier account will allow the transaction to result in the expected
 state transition.
 
+:::note
+
+If you are reading this and the `9E4CA...` hash is no longer valid, we may have done a re-genesis of 
+TestNet at this point. Please consider updating with a new one!
+
+:::
+
 ### TODO: pprof
 
 ### TODO: dlv
