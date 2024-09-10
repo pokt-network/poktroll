@@ -85,7 +85,7 @@ raw_log: 'failed to execute message; message index: 0: account has 100000 uPOKT,
   the service fee is 1000000000 uPOKT: not enough funds to add service'
 ```
 
-The output above shows the cause of the transaction failure: insufficient funds. Fixing this by adding
+The output above shows the cause of the transaction failure: `insufficient funds`. Fixing this by adding
 more funds to the corresponding supplier account will allow the transaction to result in the expected
 state transition.
 
