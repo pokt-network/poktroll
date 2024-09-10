@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/gogoproto/proto"
@@ -19,10 +20,10 @@ func (k msgServer) CreateClaim(
 ) (_ *types.MsgCreateClaimResponse, err error) {
 	// Declare claim to reference in telemetry.
 	var (
-		claim           types.Claim
-		isExistingClaim bool
-		numRelays       uint64
-		numComputeUnits uint64
+		claim                types.Claim
+		isExistingClaim      bool
+		numRelays            uint64
+		numClaimComputeUnits uint64
 	)
 
 	// Defer telemetry calls so that they reference the final values the relevant variables.
@@ -31,7 +32,7 @@ func (k msgServer) CreateClaim(
 		if !isExistingClaim {
 			telemetry.ClaimCounter(types.ClaimProofStage_CLAIMED, 1, err)
 			telemetry.ClaimRelaysCounter(types.ClaimProofStage_CLAIMED, numRelays, err)
-			telemetry.ClaimComputeUnitsCounter(types.ClaimProofStage_CLAIMED, numComputeUnits, err)
+			telemetry.ClaimComputeUnitsCounter(types.ClaimProofStage_CLAIMED, numClaimComputeUnits, err)
 		}
 	}()
 
@@ -77,17 +78,42 @@ func (k msgServer) CreateClaim(
 	if err != nil {
 		return nil, status.Error(codes.Internal, types.ErrProofInvalidClaimRootHash.Wrap(err.Error()).Error())
 	}
-	numComputeUnits, err = claim.GetNumComputeUnits()
-	if err != nil {
-		return nil, status.Error(codes.Internal, types.ErrProofInvalidClaimRootHash.Wrap(err.Error()).Error())
-	}
-	_, isExistingClaim = k.Keeper.GetClaim(ctx, claim.GetSessionHeader().GetSessionId(), claim.GetSupplierOperatorAddress())
 
 	// TODO_IN_THIS_PR_AFTER_#745_IS_MERGED: Check (and test) that numClaimComputeUnits is equal
 	// to num_relays * the_compute_units_per_relay for this_service.
 	// Add a comment that for now, we expect it to be the case because every
 	// relay for a specific service is wroth the same, but may change in the
 	// future.
+	numClaimComputeUnits, err = claim.GetNumComputeUnits()
+	if err != nil {
+		return nil, status.Error(codes.Internal, types.ErrProofInvalidClaimRootHash.Wrapf("%v", err).Error())
+	}
+
+	// DEV_NOTE: For now, we expect the following equation to always hold:
+	// numClaimComputeUnits = numRelays * service.computeUnitsPerRelay
+	// This is because for any specific service, every relay is worth the same.
+	// However, this may change in the future.
+	serviceComputeUnitsPerRelay, err := k.getServiceComputeUnitsPerRelay(ctx, claim.SessionHeader.Service.Id)
+	if err != nil {
+		return nil, status.Error(codes.NotFound, types.ErrProofServiceNotFound.Wrapf("%v", err).Error())
+	}
+
+	numExpectedComputeUnitsToClaim := numRelays * serviceComputeUnitsPerRelay
+	if numClaimComputeUnits != numExpectedComputeUnitsToClaim {
+		return nil, status.Error(
+			codes.InvalidArgument,
+			types.ErrProofComputeUnitsMismatch.Wrap(
+				fmt.Sprintf("claim compute units: %d is not equal to number of relays %d * compute units per relay %d for service %s",
+					numClaimComputeUnits,
+					numRelays,
+					serviceComputeUnitsPerRelay,
+					claim.SessionHeader.Service.Id,
+				),
+			).Error(),
+		)
+	}
+
+	_, isExistingClaim = k.Keeper.GetClaim(ctx, claim.GetSessionHeader().GetSessionId(), claim.GetSupplierOperatorAddress())
 
 	// Upsert the claim
 	k.Keeper.UpsertClaim(ctx, claim)
@@ -101,7 +127,7 @@ func (k msgServer) CreateClaim(
 			&types.EventClaimUpdated{
 				Claim:           &claim,
 				NumRelays:       numRelays,
-				NumComputeUnits: numComputeUnits,
+				NumComputeUnits: numClaimComputeUnits,
 			},
 		)
 	case false:
@@ -109,7 +135,7 @@ func (k msgServer) CreateClaim(
 			&types.EventClaimCreated{
 				Claim:           &claim,
 				NumRelays:       numRelays,
-				NumComputeUnits: numComputeUnits,
+				NumComputeUnits: numClaimComputeUnits,
 			},
 		)
 	}

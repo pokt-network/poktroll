@@ -50,7 +50,7 @@ func (msg *MsgStakeApplication) ValidateBasic() error {
 
 	// Validate the application service configs
 	if err := servicehelpers.ValidateAppServiceConfigs(msg.Services); err != nil {
-		return ErrAppInvalidServiceConfigs.Wrapf(err.Error())
+		return ErrAppInvalidServiceConfigs.Wrapf("%s", err.Error())
 	}
 
 	return nil

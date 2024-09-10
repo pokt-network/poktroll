@@ -6,6 +6,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/gogoproto/proto"
@@ -69,6 +70,11 @@ func (k msgServer) SubmitProof(
 	session, err := k.queryAndValidateSessionHeader(ctx, msg.GetSessionHeader(), msg.GetSupplierOperatorAddress())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	if err = k.deductProofSubmissionFee(ctx, msg.GetSupplierOperatorAddress()); err != nil {
+		logger.Error(fmt.Sprintf("failed to deduct proof submission fee: %v", err))
+		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 
 	// Construct the proof
@@ -156,4 +162,40 @@ func (k msgServer) SubmitProof(
 	return &types.MsgSubmitProofResponse{
 		Proof: &proof,
 	}, nil
+}
+
+// deductProofSubmissionFee deducts the proof submission fee from the supplier operator's account balance.
+func (k Keeper) deductProofSubmissionFee(ctx context.Context, supplierOperatorAddress string) error {
+	proofSubmissionFee := k.GetParams(ctx).ProofSubmissionFee
+	supplierOperatorAccAddress, err := cosmostypes.AccAddressFromBech32(supplierOperatorAddress)
+	if err != nil {
+		return err
+	}
+
+	accCoins := k.bankKeeper.SpendableCoins(ctx, supplierOperatorAccAddress)
+	if accCoins.Len() == 0 {
+		return types.ErrProofNotEnoughFunds.Wrapf(
+			"account has no spendable coins",
+		)
+	}
+
+	// Check the balance of upokt is enough to cover the ProofSubmissionFee.
+	accBalance := accCoins.AmountOf("upokt")
+	if accBalance.LTE(proofSubmissionFee.Amount) {
+		return types.ErrProofNotEnoughFunds.Wrapf(
+			"account has %s, but the proof submission fee is %s",
+			accBalance, proofSubmissionFee,
+		)
+	}
+
+	// Deduct the proof submission fee from the supplier operator's balance.
+	proofSubmissionFeeCoins := cosmostypes.NewCoins(*proofSubmissionFee)
+	if err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, supplierOperatorAccAddress, types.ModuleName, proofSubmissionFeeCoins); err != nil {
+		return types.ErrProofFailedToDeductFee.Wrapf(
+			"account has %s, failed to deduct %s",
+			accBalance, proofSubmissionFee,
+		)
+	}
+
+	return nil
 }

@@ -1,7 +1,7 @@
 # This Dockerfile is used to build container image for development purposes.
 # It intentionally contains no security features, ships with code and troubleshooting tools.
 
-FROM golang:1.22.2 as base
+FROM golang:1.23.0 as base
 
 RUN apt update && \
     apt-get install -y \
@@ -16,6 +16,9 @@ COPY . /poktroll
 WORKDIR /poktroll
 
 RUN mv /poktroll/bin/ignite /usr/bin/ && mv /poktroll/bin/poktrolld /usr/bin/
+
+# Install Cosmovisor
+RUN make install_cosmovisor
 
 # These are helpful for testing locally:
 # RUN mv bin/poktrolld /usr/bin/

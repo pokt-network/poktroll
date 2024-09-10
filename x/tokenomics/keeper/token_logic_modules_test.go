@@ -362,13 +362,12 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	claim := prepareTestClaim(numRelays, service, &app, &supplier)
 
 	// Prepare addresses
-	daoAddr := authtypes.NewModuleAddress(govtypes.ModuleName)
+	daoAddress := authtypes.NewModuleAddress(govtypes.ModuleName)
 	appAddress := app.Address
 	proposerAddress := sample.AccAddressFromConsAddress(validatorConsAddr)
-	// supplierOperatorAddr := supplier.OperatorAddress
 
 	// Determine balances before inflation
-	daoBalanceBefore := getBalance(t, ctx, keepers, daoAddr.String())
+	daoBalanceBefore := getBalance(t, ctx, keepers, daoAddress.String())
 	propBalanceBefore := getBalance(t, ctx, keepers, proposerAddress)
 	serviceOwnerBalanceBefore := getBalance(t, ctx, keepers, service.OwnerAddress)
 	appBalanceBefore := getBalance(t, ctx, keepers, appAddress)
@@ -383,7 +382,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	require.NoError(t, err)
 
 	// Determine balances after inflation
-	daoBalanceAfter := getBalance(t, ctx, keepers, daoAddr.String())
+	daoBalanceAfter := getBalance(t, ctx, keepers, daoAddress.String())
 	propBalanceAfter := getBalance(t, ctx, keepers, proposerAddress)
 	serviceOwnerBalanceAfter := getBalance(t, ctx, keepers, service.OwnerAddress)
 	appBalanceAfter := getBalance(t, ctx, keepers, appAddress)
@@ -415,7 +414,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 		balanceIncrease := math.NewInt(mintShare + rewardShare)
 		expectedBalanceAfter := balanceBefore.Amount.Add(balanceIncrease).Int64()
 		// TODO_MAINNET: Remove the InDelta check and use the exact amount once the floating point arithmetic is fixed
-		acceptableRoundingDelta := tokenomicskeeper.MintDistributionAllowableTolerance * float64(balanceAfter)
+		acceptableRoundingDelta := tokenomicskeeper.MintDistributionAllowableTolerancePercent * float64(balanceAfter)
 		require.InDelta(t, expectedBalanceAfter, balanceAfter, acceptableRoundingDelta)
 	}
 }

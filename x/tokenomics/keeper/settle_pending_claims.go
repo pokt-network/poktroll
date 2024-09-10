@@ -1,15 +1,16 @@
 package keeper
 
 import (
+	"context"
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
 
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
-	poktrand "github.com/pokt-network/poktroll/pkg/crypto/rand"
 	"github.com/pokt-network/poktroll/telemetry"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	"github.com/pokt-network/poktroll/x/shared"
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 	tokenomictypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
@@ -313,18 +314,12 @@ func (k Keeper) proofRequirementForClaim(ctx sdk.Context, claim prooftypes.Claim
 		return requirementReason, nil
 	}
 
-	// Get the hash of the claim to seed the random number generator.
-	var claimHash []byte
-	claimHash, err = claim.GetHash()
+	earliestProofCommitBlockHash, err := k.getEarliestSupplierProofCommitBlockHash(ctx, claim)
 	if err != nil {
 		return requirementReason, err
 	}
 
-	// Sample a pseudo-random value between 0 and 1 to determine if a proof is required probabilistically.
-	// TODO_BETA(@red-0ne): Ensure that the randomness is seeded by values after the
-	// claim window is closed.
-	var randFloat float32
-	randFloat, err = poktrand.SeededFloat32(claimHash[:])
+	proofRequirementSampleValue, err := claim.GetProofRequirementSampleValue(earliestProofCommitBlockHash)
 	if err != nil {
 		return requirementReason, err
 	}
@@ -332,12 +327,12 @@ func (k Keeper) proofRequirementForClaim(ctx sdk.Context, claim prooftypes.Claim
 	// Require a proof probabilistically based on the proof_request_probability param.
 	// NB: A random value between 0 and 1 will be less than or equal to proof_request_probability
 	// with probability equal to the proof_request_probability.
-	if randFloat <= proofParams.GetProofRequestProbability() {
+	if proofRequirementSampleValue <= proofParams.GetProofRequestProbability() {
 		requirementReason = prooftypes.ProofRequirementReason_PROBABILISTIC
 
 		logger.Info(fmt.Sprintf(
 			"claim requires proof due to random sample (%.2f) being less than or equal to probability (%.2f)",
-			randFloat,
+			proofRequirementSampleValue,
 			proofParams.GetProofRequestProbability(),
 		))
 		return requirementReason, nil
@@ -347,8 +342,37 @@ func (k Keeper) proofRequirementForClaim(ctx sdk.Context, claim prooftypes.Claim
 		"claim does not require proof due to compute units (%d) being less than the threshold (%d) and random sample (%.2f) being greater than probability (%.2f)",
 		numClaimComputeUnits,
 		proofParams.GetProofRequirementThreshold(),
-		randFloat,
+		proofRequirementSampleValue,
 		proofParams.GetProofRequestProbability(),
 	))
 	return requirementReason, nil
+}
+
+// getEarliestSupplierProofCommitBlockHash returns the block hash of the earliest
+// block at which a claim might have its proof committed.
+func (k Keeper) getEarliestSupplierProofCommitBlockHash(
+	ctx context.Context,
+	claim *prooftypes.Claim,
+) (blockHash []byte, err error) {
+	sharedParams, err := k.sharedQuerier.GetParams(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	sessionEndHeight := claim.GetSessionHeader().GetSessionEndBlockHeight()
+	supplierOperatorAddress := claim.GetSupplierOperatorAddress()
+
+	proofWindowOpenHeight := shared.GetProofWindowOpenHeight(sharedParams, sessionEndHeight)
+	proofWindowOpenBlockHash := k.sessionKeeper.GetBlockHash(ctx, proofWindowOpenHeight)
+
+	// TODO_TECHDEBT: Update the method header of this function to accept (sharedParams, Claim, BlockHash).
+	// After doing so, please review all calling sites and simplify them accordingly.
+	earliestSupplierProofCommitHeight := shared.GetEarliestSupplierProofCommitHeight(
+		sharedParams,
+		sessionEndHeight,
+		proofWindowOpenBlockHash,
+		supplierOperatorAddress,
+	)
+
+	return k.sessionKeeper.GetBlockHash(ctx, earliestSupplierProofCommitHeight), nil
 }

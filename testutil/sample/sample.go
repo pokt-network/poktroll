@@ -23,8 +23,8 @@ func AccAddress() string {
 	return addr
 }
 
-// AccAddressAndPubKeyEd2519 returns a sample account address and public key
-func AccAddressAndPubKeyEd2519() (string, cryptotypes.PubKey) {
+// AccAddressAndPubKeyEd25519 returns a sample account address and public key
+func AccAddressAndPubKeyEd25519() (string, cryptotypes.PubKey) {
 	pk := ed25519.GenPrivKey().PubKey()
 	addr := pk.Address()
 	return sdk.AccAddress(addr).String(), pk

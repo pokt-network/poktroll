@@ -20,6 +20,8 @@ func NewMsgUpdateParam(authority string, name string, value any) (*MsgUpdatePara
 		valueAsType = &MsgUpdateParam_AsInt64{AsInt64: v}
 	case []byte:
 		valueAsType = &MsgUpdateParam_AsBytes{AsBytes: v}
+	case *sdk.Coin:
+		valueAsType = &MsgUpdateParam_AsCoin{AsCoin: v}
 	default:
 		return nil, fmt.Errorf("unexpected param value type: %T", value)
 	}
@@ -54,6 +56,8 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 	case ParamProofRequirementThreshold:
 		return msg.paramTypeIsInt64()
 	case ParamProofMissingPenalty:
+		return msg.paramTypeIsCoin()
+	case ParamProofSubmissionFee:
 		return msg.paramTypeIsCoin()
 	default:
 		return ErrProofParamNameInvalid.Wrapf("unsupported param %q", msg.Name)
