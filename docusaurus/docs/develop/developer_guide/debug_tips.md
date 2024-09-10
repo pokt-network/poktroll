@@ -43,10 +43,14 @@ make itest 5 10 ./pkg/client/tx/... -- -run TxClient_SignAndBroadcast_Succeeds
 
 ## `poktrolld query tx` - Investigating Failed Transactions
 
-If a transaction, e.g. staking a new service, is successfully posted but does not seem to have taken effect,
-it could be due to any error that prevented the corresponding state transition from taking place.
-In other words, receiving a transaction (TX) hash doesn't mean it was committed.
-But the transaction (TX) hash can be used to investigate the failed transaction.
+_tl;dr Submitted Transaction != Committed Transaction_ 
+
+After a transaction (e.g. staking a new service) is successfully sent to an RPC node, we have to wait
+until the next block, when a proposer will try to commit to the network's state, to see if its valid.
+If the transaction's (TX) state transition is invalid, it will not be committed. 
+
+In other words, receiving a transaction (TX) hash from the `poktrolld` CLI doesn't mean it was committed.
+However, the transaction (TX) hash can be used to investigate the failed transaction.
 
 ### `poktrolld query tx` Example
 
