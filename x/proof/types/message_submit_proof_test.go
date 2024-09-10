@@ -9,7 +9,6 @@ import (
 	"github.com/pokt-network/poktroll/testutil/sample"
 	testsession "github.com/pokt-network/poktroll/testutil/session"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 const testServiceId = "svc01"
@@ -79,9 +78,8 @@ func TestMsgSubmitProof_ValidateBasic(t *testing.T) {
 				Proof: testClosestMerkleProof,
 			},
 			sessionHeaderToExpectedErrorFn: func(sh sessiontypes.SessionHeader) error {
-				serviceError := sharedtypes.ErrSharedInvalidService.Wrapf("ID: %q", sh.ServiceId)
-				sessionError := sessiontypes.ErrSessionInvalidService.Wrapf("%s", serviceError)
-				return ErrProofInvalidSessionHeader.Wrapf("%s", sessionError)
+				serviceError := sessiontypes.ErrSessionInvalidService.Wrapf("invalid service ID: %q", sh.ServiceId)
+				return ErrProofInvalidSessionHeader.Wrapf("%s", serviceError)
 			},
 		},
 		{

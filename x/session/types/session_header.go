@@ -10,7 +10,7 @@ import (
 func (sh *SessionHeader) ValidateBasic() error {
 	// Validate the application address
 	if _, err := sdk.AccAddressFromBech32(sh.ApplicationAddress); err != nil {
-		return ErrSessionInvalidAppAddress.Wrapf("invalid application address: %s; (%s)", sh.ApplicationAddress, err)
+		return ErrSessionInvalidAppAddress.Wrapf("%q; (%s)", sh.ApplicationAddress, err)
 	}
 
 	// Validate the session ID
@@ -19,7 +19,7 @@ func (sh *SessionHeader) ValidateBasic() error {
 	}
 
 	if !sharedtypes.IsValidServiceId(sh.ServiceId) {
-		return ErrSessionInvalidService.Wrapf("invalid service ID: %s", sh.ServiceId)
+		return ErrSessionInvalidService.Wrapf("invalid service ID: %q", sh.ServiceId)
 	}
 
 	// Sessions can only start at height 1
