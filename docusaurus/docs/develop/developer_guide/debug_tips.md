@@ -71,7 +71,9 @@ txhash: 9E4CA2B72FCD6F74C771A5B2289CEACED30C2717ABEA4330E12543D3714D322B
 To investigate this issue, the following command is used to get the details of the transaction:
 
 ```bash
-poktrolld query tx --type=hash 9E4CA2B72FCD6F74C771A5B2289CEACED30C2717ABEA4330E12543D3714D322B
+poktrolld query tx \
+--type=hash 9E4CA2B72FCD6F74C771A5B2289CEACED30C2717ABEA4330E12543D3714D322B \
+--node https://shannon-testnet-grove-seed-rpc.poktroll.com
 ```
 
 Which shows the following log entry:
