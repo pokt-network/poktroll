@@ -2,13 +2,13 @@ Feature: Session Namespace
 
   Scenario: Supplier completes claim/proof lifecycle for a valid session
     Given the user has the pocketd binary installed
-    # Set proof_requirement_threshold to 4 < num_relays (5) * compute_units_per_relay (1)
+    # Set proof_requirement_threshold to 209 < num_relays (5) * compute_units_per_relay (1) * computeUnitsToTokensMultiplier (42)
     # to make sure a proof is required.
     And the "proof" module parameters are set as follows
         | name                         | value                                                            | type  |
         | relay_difficulty_target_hash | ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff | bytes |
         | proof_request_probability    | 0.25                                                             | float |
-        | proof_requirement_threshold  | 4                                                                | int64 |
+        | proof_requirement_threshold  | 209                                                              | int64 |
         | proof_missing_penalty        | 320                                                              | coin  |
         | proof_submission_fee         | 1000000                                                          | coin  |
     When the supplier "supplier1" has serviced a session with "5" relays for service "anvil" for application "app1"

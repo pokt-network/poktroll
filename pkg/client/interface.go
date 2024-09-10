@@ -355,8 +355,19 @@ type TokenomicsRelayMiningDifficulty interface {
 	GetTargetHash() []byte
 }
 
+// TokenomicsParams is a go interface type which corresponds to the poktroll.tokenomics.Params
+// protobuf message. Since the generated go types don't include interface types, this
+// is necessary to prevent dependency cycles.
+type TokenomicsParams interface {
+	GetComputeUnitsToTokensMultiplier() uint64
+}
+
+// TokenomicsQueryClient defines an interface that enables the querying of the
+// on-chain tokenomics information
 type TokenomicsQueryClient interface {
 	GetServiceRelayDifficultyTargetHash(ctx context.Context, serviceId string) (TokenomicsRelayMiningDifficulty, error)
+	// GetParams queries the chain for the current tokenomics module parameters.
+	GetParams(ctx context.Context) (TokenomicsParams, error)
 }
 
 // ServiceQueryClient defines an interface that enables the querying of the

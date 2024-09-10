@@ -303,9 +303,9 @@ func (k Keeper) proofRequirementForClaim(ctx sdk.Context, claim *prooftypes.Clai
 		requirementReason = prooftypes.ProofRequirementReason_THRESHOLD
 
 		logger.Info(fmt.Sprintf(
-			"claim requires proof due to compute units (%d) exceeding threshold (%d)",
-			numClaimComputeUnits,
-			proofParams.GetProofRequirementThreshold(),
+			"claim requires proof due to claimed amount (%s) exceeding threshold (%s)",
+			claimeduPOKT,
+			proofRequirementThresholduPOKT,
 		))
 		return requirementReason, nil
 	}
@@ -335,9 +335,9 @@ func (k Keeper) proofRequirementForClaim(ctx sdk.Context, claim *prooftypes.Clai
 	}
 
 	logger.Info(fmt.Sprintf(
-		"claim does not require proof due to compute units (%d) being less than the threshold (%d) and random sample (%.2f) being greater than probability (%.2f)",
-		numClaimComputeUnits,
-		proofParams.GetProofRequirementThreshold(),
+		"claim does not require proof due to claimed amount (%s) being less than the threshold (%s) and random sample (%.2f) being greater than probability (%.2f)",
+		claimeduPOKT,
+		proofRequirementThresholduPOKT,
 		proofRequirementSampleValue,
 		proofParams.GetProofRequestProbability(),
 	))

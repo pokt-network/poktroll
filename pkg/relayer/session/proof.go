@@ -287,14 +287,21 @@ func (rs *relayerSessionsManager) isProofRequired(
 		return false, err
 	}
 
+	tokenomicsParams, err := rs.tokenomicsQueryClient.GetParams(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	claimedAmount := numClaimComputeUnits * tokenomicsParams.GetComputeUnitsToTokensMultiplier()
+
 	logger = logger.With(
-		"num_claim_compute_units", numClaimComputeUnits,
+		"claimedAmount", claimedAmount,
 		"proof_requirement_threshold", proofParams.GetProofRequirementThreshold(),
 	)
 
-	// Require a proof if the claim's compute units meets or exceeds the threshold.
+	// Require a proof if the claimed amount meets or exceeds the threshold.
 	// TODO_MAINNET: This should be proportional to the supplier's stake as well.
-	if numClaimComputeUnits >= proofParams.GetProofRequirementThreshold() {
+	if claimedAmount >= proofParams.GetProofRequirementThreshold() {
 		logger.Info().Msg("compute units is above threshold, claim requires proof")
 
 		return true, nil

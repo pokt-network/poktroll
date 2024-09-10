@@ -103,6 +103,7 @@ func requireProofCountEqualsExpectedValueFromProofParams(t *testing.T, proofPara
 
 	serviceQueryClientMock := testqueryclients.NewTestServiceQueryClient(t)
 	proofQueryClientMock := testqueryclients.NewTestProofQueryClientWithParams(t, &proofParams)
+	tokenomicsQueryClient := testqueryclients.NewTestTokenomicsQueryClient(t)
 
 	deps := depinject.Supply(
 		blockClient,
@@ -111,6 +112,7 @@ func requireProofCountEqualsExpectedValueFromProofParams(t *testing.T, proofPara
 		sharedQueryClientMock,
 		serviceQueryClientMock,
 		proofQueryClientMock,
+		tokenomicsQueryClient,
 	)
 	storesDirectoryOpt := testrelayer.WithTempStoresDirectory(t)
 

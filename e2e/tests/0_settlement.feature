@@ -16,13 +16,13 @@ Feature: Tokenomics Namespace
         And the "application" account for "app1" is staked
         And the service "anvil" registered for application "app1" has a compute units per relay of "1"
         # Start servicing relays
-        # Set proof_requirement_threshold to 19 < num_relays (20) * compute_units_per_relay (1)
+        # Set proof_requirement_threshold to 839 < num_relays (20) * compute_units_per_relay (1) * computeUnitsToTokensMultiplier (42)
         # to make sure a proof is required.
         And the "proof" module parameters are set as follows
             | name                         | value                                                            | type  |
             | relay_difficulty_target_hash | ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff | bytes |
             | proof_request_probability    | 0.25                                                             | float |
-            | proof_requirement_threshold  | 19                                                               | int64 |
+            | proof_requirement_threshold  | 839                                                              | int64 |
             | proof_missing_penalty        | 320                                                              | coin  |
             | proof_submission_fee         | 1000000                                                          | coin  |
         When the supplier "supplier1" has serviced a session with "20" relays for service "anvil" for application "app1"
@@ -51,7 +51,7 @@ Feature: Tokenomics Namespace
             | name                         | value                                                            | type  |
             | relay_difficulty_target_hash | ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff | bytes |
             | proof_request_probability    | 0                                                                | float |
-            | proof_requirement_threshold  | 100                                                              | int64 |
+            | proof_requirement_threshold  | 421                                                              | int64 |
             | proof_missing_penalty        | 320                                                              | coin  |
             | proof_submission_fee         | 1000000                                                          | coin  |
         # Start servicing

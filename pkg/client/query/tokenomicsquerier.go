@@ -53,3 +53,17 @@ func (tq *tokenomicsQuerier) GetServiceRelayDifficultyTargetHash(
 	}
 	return &res.RelayMiningDifficulty, nil
 }
+
+// GetParams queries & returns the tokenomics module on-chain parameters.
+//
+// TODO_TECHDEBT(#543): We don't really want to have to query the params for every method call.
+// Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
+// to get the most recently (asynchronously) observed (and cached) value.
+func (sq *tokenomicsQuerier) GetParams(ctx context.Context) (client.TokenomicsParams, error) {
+	req := &tokenomicstypes.QueryParamsRequest{}
+	res, err := sq.tokenomicsQuerier.Params(ctx, req)
+	if err != nil {
+		return nil, ErrQuerySessionParams.Wrapf("[%v]", err)
+	}
+	return &res.Params, nil
+}
