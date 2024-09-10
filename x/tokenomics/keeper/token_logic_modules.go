@@ -98,7 +98,7 @@ type TokenLogicModuleProcessor func(
 	*sessiontypes.SessionHeader,
 	*apptypes.Application,
 	*sharedtypes.Supplier,
-	cosmostypes.Coin,
+	cosmostypes.Coin, // This is the "actualSettlementCoin" rather than just the "claimCoin" because of how settlement functions; see ensureClaimAmountLimits for details.
 	*tokenomictypes.RelayMiningDifficulty,
 ) error
 
@@ -301,7 +301,7 @@ func (k Keeper) TokenLogicModuleRelayBurnEqualsMint(
 	_ *sessiontypes.SessionHeader,
 	application *apptypes.Application,
 	supplier *sharedtypes.Supplier,
-	actualSettlementCoin cosmostypes.Coin, // Note that actualSettlementCoin may differ from claimSettlementCoin; see ensureClaimAmountLimits for details.
+	settlementCoin cosmostypes.Coin,
 	relayMiningDifficulty *tokenomictypes.RelayMiningDifficulty,
 ) error {
 	logger := k.Logger().With("method", "TokenLogicModuleRelayBurnEqualsMint")
@@ -345,7 +345,7 @@ func (k Keeper) TokenLogicModuleRelayBurnEqualsMint(
 	logger.Info(fmt.Sprintf("burned (%v) from the application module account", settlementCoin))
 
 	// Update the application's on-chain stake
-	newAppStake, err := application.Stake.SafeSub(actualSettlementCoin)
+	newAppStake, err := application.Stake.SafeSub(settlementCoin)
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsApplicationNewStakeInvalid.Wrapf("application %q stake cannot be reduced to a negative amount %v", application.Address, newAppStake)
 	}
@@ -389,28 +389,29 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 	appCoin, err := k.sendRewardsToAccount(ctx, tokenomictypes.ModuleName, application.GetAddress(), &newMintAmtFloat, MintAllocationApplication)
 	if err != nil {
 		return tokenomictypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to application: %v", err)
+	}
 	// Burn uPOKT from the application module account which was held in escrow
 	// on behalf of the application account.
 	if err := k.bankKeeper.BurnCoins(
-		ctx, apptypes.ModuleName, sdk.NewCoins(actualSettlementCoin),
+		ctx, apptypes.ModuleName, sdk.NewCoins(settlementCoin),
 	); err != nil {
-		return tokenomicstypes.ErrTokenomicsApplicationModuleBurn.Wrapf("burning %s from the application module account: %v", actualSettlementCoin, err)
+		return tokenomicstypes.ErrTokenomicsApplicationModuleBurn.Wrapf("burning %s from the application module account: %v", settlementCoin, err)
 	}
-	logger.Info(fmt.Sprintf("burned (%v) from the application module account", actualSettlementCoin))
+	logger.Info(fmt.Sprintf("burned (%v) from the application module account", settlementCoin))
 
 	// Mint new uPOKT to the supplier module account.
 	// These funds will be transferred to the supplier's shareholders below.
 	// For reference, see operate/configs/supplier_staking_config.md.
 	if err := k.bankKeeper.MintCoins(
-		ctx, suppliertypes.ModuleName, sdk.NewCoins(actualSettlementCoin),
+		ctx, suppliertypes.ModuleName, sdk.NewCoins(settlementCoin),
 	); err != nil {
 		return tokenomicstypes.ErrTokenomicsSupplierModuleSendFailed.Wrapf(
 			"minting %s to the supplier module account: %v",
-			actualSettlementCoin,
+			settlementCoin,
 			err,
 		)
 	}
-	logger.Info(fmt.Sprintf("minted (%v) coins in the supplier module", actualSettlementCoin))
+	logger.Info(fmt.Sprintf("minted (%v) coins in the supplier module", settlementCoin))
 
 	// Send a portion of the rewards to the supplier shareholders.
 	supplierCoinsToShareAmt := calculateAllocationAmount(&newMintAmtFloat, MintAllocationSupplier)
@@ -431,19 +432,18 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 			err,
 		)
 	}
-	logger.Info(fmt.Sprintf("sent (%v) from the supplier module to the supplier account with address %q", actualSettlementCoin, supplier.OperatorAddress))
+	logger.Info(fmt.Sprintf("sent (%v) from the supplier module to the supplier account with address %q", settlementCoin, supplier.OperatorAddress))
 
 	return nil
 }
 
 // TokenLogicModuleGlobalMint processes the business logic for the GlobalMint TLM.
-func (k Keeper) TokenLogicModuleGlobalMint(
-	ctx context.Context,
+func (k Keeper) TokenLogicModuleGlobalMint(ctx context.Context,
 	service *sharedtypes.Service,
 	_ *sessiontypes.SessionHeader,
 	application *apptypes.Application,
 	supplier *sharedtypes.Supplier,
-	actualSettlementCoin cosmostypes.Coin, // Note that actualSettlementCoin may differ from claimSettlementCoin; see ensureClaimAmountLimits for details.
+	settlementCoin cosmostypes.Coin,
 	relayMiningDifficulty *tokenomictypes.RelayMiningDifficulty,
 ) error {
 	logger := k.Logger().With("method", "TokenLogicModuleGlobalMint")
@@ -455,7 +455,7 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 	}
 
 	// Determine how much new uPOKT to mint based on global inflation
-	newMintCoin, newMintAmtFloat := calculateGlobalPerClaimMintInflationFromSettlementAmount(actualSettlementCoin)
+	newMintCoin, newMintAmtFloat := calculateGlobalPerClaimMintInflationFromSettlementAmount(settlementCoin)
 	if newMintCoin.Amount.Int64() == 0 {
 		return tokenomicstypes.ErrTokenomicsMintAmountZero
 	}
