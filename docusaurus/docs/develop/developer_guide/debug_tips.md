@@ -96,6 +96,25 @@ TestNet at this point. Please consider updating with a new one!
 
 :::
 
+:::tip
+
+`poktrolld query tx` supports an `--output` flag which can have the values text or json. This can be useful for programatic querying or in combination with tools like `jq`, e.g.:
+
+```bash
+poktrolld query tx \
+--type=hash 9E4CA2B72FCD6F74C771A5B2289CEACED30C2717ABEA4330E12543D3714D322B \
+--node https://shannon-testnet-grove-seed-rpc.poktroll.com \
+ --output json | jq .raw_log
+```
+
+The above command will produce the following output:
+
+```bash
+"failed to execute message; message index: 0: account has 100000 uPOKT, but the service fee is 1000000000 uPOKT: not enough funds to add service"
+```
+
+:::
+
 ### TODO: pprof
 
 ### TODO: dlv
