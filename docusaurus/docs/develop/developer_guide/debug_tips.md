@@ -59,6 +59,7 @@ poktrolld tx service add-service "svc1" "service1" 1 --from $SUPPLIER_ADDRESS --
 ```
 
 The TX hash is returned by the above command:
+
 ```bash
 txhash: 9E4CA2B72FCD6F74C771A5B2289CEACED30C2717ABEA4330E12543D3714D322B
 ```
