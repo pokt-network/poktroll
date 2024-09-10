@@ -5,12 +5,16 @@ import (
 	"testing"
 
 	"cosmossdk.io/depinject"
+	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+	"github.com/cosmos/cosmos-sdk/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
@@ -25,6 +29,7 @@ import (
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 // TODO_TECHDEBT(@bryanchriswhite): Simplify this file; https://github.com/pokt-network/poktroll/pull/417#pullrequestreview-1958582600
@@ -92,7 +97,10 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 			sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 
 			// Set proof keeper params to disable relay mining and always require a proof.
-			err := keepers.Keeper.SetParams(ctx, testProofParams)
+			proofParams := keepers.Keeper.GetParams(ctx)
+			proofParams.ProofRequestProbability = testProofParams.ProofRequestProbability
+			proofParams.RelayDifficultyTargetHash = testProofParams.RelayDifficultyTargetHash
+			err := keepers.Keeper.SetParams(ctx, proofParams)
 			require.NoError(t, err)
 
 			// Construct a keyring to hold the keypairs for the accounts used in the test.
@@ -117,6 +125,8 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 				keepers,
 				preGeneratedAccts,
 			).String()
+
+			fundSupplierOperatorAccount(t, ctx, keepers, supplierOperatorAddr)
 
 			service := &sharedtypes.Service{
 				Id:                   testServiceId,
@@ -218,10 +228,12 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 			require.Equal(t, proofMsg.SessionHeader.GetSessionEndBlockHeight(), proofs[0].GetSessionHeader().GetSessionEndBlockHeight())
 
 			events := sdkCtx.EventManager().Events()
-			require.Equal(t, 2, len(events))
+
+			claimCreatedEvents := testutilevents.FilterEvents[*prooftypes.EventClaimCreated](t, events, "poktroll.proof.EventClaimCreated")
+			require.Len(t, claimCreatedEvents, 1)
 
 			proofSubmittedEvents := testutilevents.FilterEvents[*prooftypes.EventProofSubmitted](t, events, "poktroll.proof.EventProofSubmitted")
-			require.Equal(t, 1, len(proofSubmittedEvents))
+			require.Len(t, proofSubmittedEvents, 1)
 
 			proofSubmittedEvent := proofSubmittedEvents[0]
 
@@ -245,7 +257,10 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 	keepers, ctx := keepertest.NewProofModuleKeepers(t, opts...)
 
 	// Set proof keeper params to disable relaymining and always require a proof.
-	err := keepers.Keeper.SetParams(ctx, testProofParams)
+	proofParams := keepers.Keeper.GetParams(ctx)
+	proofParams.ProofRequestProbability = testProofParams.ProofRequestProbability
+	proofParams.RelayDifficultyTargetHash = testProofParams.RelayDifficultyTargetHash
+	err := keepers.Keeper.SetParams(ctx, proofParams)
 	require.NoError(t, err)
 
 	// Construct a keyring to hold the keypairs for the accounts used in the test.
@@ -275,6 +290,8 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 		ComputeUnitsPerRelay: computeUnitsPerRelay,
 		OwnerAddress:         sample.AccAddress(),
 	}
+
+	fundSupplierOperatorAccount(t, ctx, keepers, supplierOperatorAddr)
 
 	// Add a supplier and application pair that are expected to be in the session.
 	keepers.AddServiceActors(ctx, t, service, supplierOperatorAddr, appAddr)
@@ -395,8 +412,12 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 
 			// Assert that only the create claim event was emitted.
 			events := sdkCtx.EventManager().Events()
-			require.Equal(t, 1, len(events))
-			require.Equal(t, "poktroll.proof.EventClaimCreated", events[0].Type)
+
+			claimCreatedEvents := testutilevents.FilterEvents[*prooftypes.EventClaimCreated](t, events, "poktroll.proof.EventClaimCreated")
+			require.Len(t, claimCreatedEvents, 1)
+
+			proofSubmittedEvents := testutilevents.FilterEvents[*prooftypes.EventProofSubmitted](t, events, "poktroll.proof.EventProofSubmitted")
+			require.Len(t, proofSubmittedEvents, 0)
 		})
 	}
 }
@@ -528,9 +549,9 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 	)
 
 	tests := []struct {
-		desc        string
-		newProofMsg func(t *testing.T) *prooftypes.MsgSubmitProof
-		expectedErr error
+		desc                            string
+		newProofMsg                     func(t *testing.T) *prooftypes.MsgSubmitProof
+		msgSubmitProofToExpectedErrorFn func(*prooftypes.MsgSubmitProof) error
 	}{
 		{
 			desc: "proof service ID cannot be empty",
@@ -547,14 +568,16 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 					expectedMerkleProofPath,
 				)
 			},
-			expectedErr: status.Error(
-				codes.InvalidArgument,
-				prooftypes.ErrProofInvalidSessionId.Wrapf(
-					"session ID does not match on-chain session ID; expected %q, got %q",
-					validSessionHeader.GetSessionId(),
-					"",
-				).Error(),
-			),
+			msgSubmitProofToExpectedErrorFn: func(msgSubmitProof *prooftypes.MsgSubmitProof) error {
+				sessionError := sessiontypes.ErrSessionInvalidSessionId.Wrapf(
+					"%q",
+					msgSubmitProof.GetSessionHeader().GetSessionId(),
+				)
+				return status.Error(
+					codes.InvalidArgument,
+					prooftypes.ErrProofInvalidSessionHeader.Wrapf("%s", sessionError).Error(),
+				)
+			},
 		},
 		{
 			desc: "merkle proof cannot be empty",
@@ -571,12 +594,14 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 				proof.Proof = []byte{}
 				return proof
 			},
-			expectedErr: status.Error(
-				codes.InvalidArgument,
-				prooftypes.ErrProofInvalidProof.Wrap(
-					"proof cannot be empty",
-				).Error(),
-			),
+			msgSubmitProofToExpectedErrorFn: func(_ *prooftypes.MsgSubmitProof) error {
+				return status.Error(
+					codes.InvalidArgument,
+					prooftypes.ErrProofInvalidProof.Wrap(
+						"proof cannot be empty",
+					).Error(),
+				)
+			},
 		},
 		{
 			desc: "proof session ID must match on-chain session ID",
@@ -589,14 +614,16 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 					expectedMerkleProofPath,
 				)
 			},
-			expectedErr: status.Error(
-				codes.InvalidArgument,
-				prooftypes.ErrProofInvalidSessionId.Wrapf(
-					"session ID does not match on-chain session ID; expected %q, got %q",
-					validSessionHeader.GetSessionId(),
-					wrongSessionIdHeader.GetSessionId(),
-				).Error(),
-			),
+			msgSubmitProofToExpectedErrorFn: func(msgSubmitProof *prooftypes.MsgSubmitProof) error {
+				return status.Error(
+					codes.InvalidArgument,
+					prooftypes.ErrProofInvalidSessionId.Wrapf(
+						"session ID does not match on-chain session ID; expected %q, got %q",
+						validSessionHeader.GetSessionId(),
+						msgSubmitProof.GetSessionHeader().GetSessionId(),
+					).Error(),
+				)
+			},
 		},
 		{
 			desc: "proof supplier must be in on-chain session",
@@ -609,28 +636,30 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 					expectedMerkleProofPath,
 				)
 			},
-			expectedErr: status.Error(
-				codes.InvalidArgument,
-				prooftypes.ErrProofNotFound.Wrapf(
-					"supplier operator address %q not found in session ID %q",
-					wrongSupplierOperatorAddr,
-					validSessionHeader.GetSessionId(),
-				).Error(),
-			),
+			msgSubmitProofToExpectedErrorFn: func(msgSubmitProof *prooftypes.MsgSubmitProof) error {
+				return status.Error(
+					codes.InvalidArgument,
+					prooftypes.ErrProofNotFound.Wrapf(
+						"supplier operator address %q not found in session ID %q",
+						wrongSupplierOperatorAddr,
+						msgSubmitProof.GetSessionHeader().GetSessionId(),
+					).Error(),
+				)
+			},
 		},
 	}
 
 	// Submit the corresponding proof.
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			proofMsg := test.newProofMsg(t)
+			msgSubmitProof := test.newProofMsg(t)
 
 			// Advance the block height to the proof path seed height.
 			earliestSupplierProofCommitHeight := shared.GetEarliestSupplierProofCommitHeight(
 				&sharedParams,
-				proofMsg.GetSessionHeader().GetSessionEndBlockHeight(),
+				msgSubmitProof.GetSessionHeader().GetSessionEndBlockHeight(),
 				blockHeaderHash,
-				proofMsg.GetSupplierOperatorAddress(),
+				msgSubmitProof.GetSupplierOperatorAddress(),
 			)
 			ctx = keepertest.SetBlockHeight(ctx, earliestSupplierProofCommitHeight-1)
 
@@ -641,9 +670,11 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			// Advance the block height to the earliest proof commit height.
 			ctx = keepertest.SetBlockHeight(ctx, earliestSupplierProofCommitHeight)
 
-			submitProofRes, err := srv.SubmitProof(ctx, proofMsg)
+			submitProofRes, err := srv.SubmitProof(ctx, msgSubmitProof)
 
-			require.ErrorContains(t, err, test.expectedErr.Error())
+			expectedErr := test.msgSubmitProofToExpectedErrorFn(msgSubmitProof)
+			require.ErrorIs(t, err, expectedErr)
+			require.ErrorContains(t, err, expectedErr.Error())
 			require.Nil(t, submitProofRes)
 
 			proofRes, err := keepers.AllProofs(ctx, &prooftypes.QueryAllProofsRequest{})
@@ -742,4 +773,23 @@ func createClaimAndStoreBlockHash(
 	keepers.StoreBlockHash(earliestSupplierClaimCommitCtx)
 
 	return claimRes.GetClaim()
+}
+
+// fundSupplierOperatorAccount sends enough coins to the supplier operator account
+// to cover the cost of the proof submission.
+func fundSupplierOperatorAccount(t *testing.T, ctx context.Context, keepers *keepertest.ProofModuleKeepers, supplierOperatorAddr string) {
+	supplierOperatorAccAddr, err := sdk.AccAddressFromBech32(supplierOperatorAddr)
+	require.NoError(t, err)
+
+	err = keepers.SendCoinsFromModuleToAccount(
+		ctx,
+		suppliertypes.ModuleName,
+		supplierOperatorAccAddr,
+		types.NewCoins(types.NewCoin(volatile.DenomuPOKT, math.NewInt(100000000))),
+	)
+	require.NoError(t, err)
+
+	coin := keepers.SpendableCoins(ctx, supplierOperatorAccAddr)
+	require.Equal(t, coin[0].Amount, math.NewInt(100000000))
+
 }

@@ -47,6 +47,7 @@ func (msg *MsgAddService) ValidateBasic() error {
 	if err := ValidateComputeUnitsPerRelay(msg.Service.ComputeUnitsPerRelay); err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -57,5 +58,6 @@ func ValidateComputeUnitsPerRelay(computeUnitsPerRelay uint64) error {
 	} else if computeUnitsPerRelay > ComputeUnitsPerRelayMax {
 		return ErrServiceInvalidComputeUnitsPerRelay.Wrapf("compute units per relay must be less than %d", ComputeUnitsPerRelayMax)
 	}
+
 	return nil
 }
