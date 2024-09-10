@@ -24,8 +24,8 @@ func (query *QueryGetSessionRequest) ValidateBasic() error {
 	}
 
 	// Validate the Service ID
-	if !sharedtypes.IsValidServiceId(query.ServiceId) {
-		return ErrSessionInvalidService.Wrapf("invalid service for session being retrieved %s", query.ServiceId)
+	if !sharedtypes.IsValidServiceId(query.GetServiceId()) {
+		return ErrSessionInvalidService.Wrapf("invalid service ID: %q", query.GetServiceId())
 	}
 
 	// Validate the height for which a session is being retrieved

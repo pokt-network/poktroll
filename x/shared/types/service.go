@@ -34,11 +34,11 @@ func init() {
 // ValidateBasic performs basic stateless validation of a Service.
 func (s *Service) ValidateBasic() error {
 	if !IsValidServiceId(s.Id) {
-		return ErrSharedInvalidService.Wrapf("invalid service ID: %s", s.Id)
+		return ErrSharedInvalidService.Wrapf("invalid service ID: %q", s.Id)
 	}
 
 	if !IsValidServiceName(s.Name) {
-		return ErrSharedInvalidService.Wrapf("invalid service name: %s", s.Name)
+		return ErrSharedInvalidService.Wrapf("invalid service name: %q", s.Name)
 	}
 
 	if _, err := sdk.AccAddressFromBech32(s.OwnerAddress); err != nil {

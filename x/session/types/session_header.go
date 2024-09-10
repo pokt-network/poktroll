@@ -18,8 +18,8 @@ func (sh *SessionHeader) ValidateBasic() error {
 		return ErrSessionInvalidSessionId.Wrapf("%q", sh.SessionId)
 	}
 
-	if !sharedtypes.IsValidServiceId(sh.ServiceId) {
-		return ErrSessionInvalidService.Wrapf("invalid service ID: %q", sh.ServiceId)
+	if !sharedtypes.IsValidServiceId(sh.GetServiceId()) {
+		return ErrSessionInvalidService.Wrapf("invalid service ID: %q", sh.GetServiceId())
 	}
 
 	// Sessions can only start at height 1

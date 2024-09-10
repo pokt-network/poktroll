@@ -35,7 +35,7 @@ func TestMsgAddService_ValidateBasic(t *testing.T) {
 					ComputeUnitsPerRelay: 1,
 				},
 			},
-			expectedErr: sharedtypes.ErrSharedInvalidService.Wrapf("invalid service ID: %s", ""),
+			expectedErr: sharedtypes.ErrSharedInvalidService.Wrapf("invalid service ID: %q", ""),
 		},
 		{
 			desc: "no service name",
@@ -61,7 +61,7 @@ func TestMsgAddService_ValidateBasic(t *testing.T) {
 					ComputeUnitsPerRelay: 1,
 				},
 			},
-			expectedErr: sharedtypes.ErrSharedInvalidService.Wrapf("invalid service name: %s", "service&name"),
+			expectedErr: sharedtypes.ErrSharedInvalidService.Wrapf("invalid service name: %q", "service&name"),
 		},
 		{
 			desc: "signer address does not equal service owner address",
