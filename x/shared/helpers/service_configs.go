@@ -22,8 +22,8 @@ func ValidateAppServiceConfigs(services []*sharedtypes.ApplicationServiceConfig)
 			return fmt.Errorf("serviceConfig cannot be nil: %v", services)
 		}
 		// Check the Service
-		if !IsValidService(serviceConfig.Service) {
-			return fmt.Errorf("invalid service: %v", serviceConfig.Service)
+		if err := serviceConfig.Service.ValidateBasic(); err != nil {
+			return sharedtypes.ErrSharedInvalidService.Wrapf("%s", err)
 		}
 	}
 	return nil
@@ -40,8 +40,8 @@ func ValidateSupplierServiceConfigs(services []*sharedtypes.SupplierServiceConfi
 		}
 
 		// Check the Service
-		if !IsValidService(serviceConfig.Service) {
-			return fmt.Errorf("invalid service: %v", serviceConfig.Service)
+		if err := serviceConfig.Service.ValidateBasic(); err != nil {
+			return sharedtypes.ErrSharedInvalidService.Wrapf("%s", err)
 		}
 
 		// Check the Endpoints
@@ -62,7 +62,7 @@ func ValidateSupplierServiceConfigs(services []*sharedtypes.SupplierServiceConfi
 			if endpoint.Url == "" {
 				return fmt.Errorf("endpoint.Url cannot be empty: %v", serviceConfig)
 			}
-			if !IsValidEndpointUrl(endpoint.Url) {
+			if !sharedtypes.IsValidEndpointUrl(endpoint.Url) {
 				return fmt.Errorf("invalid endpoint.Url: %v", serviceConfig)
 			}
 

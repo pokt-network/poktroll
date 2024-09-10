@@ -73,8 +73,12 @@ func TestIsValidService(t *testing.T) {
 				Id:   test.serviceId,
 				Name: test.serviceName,
 			}
-			isValid := IsValidService(service)
-			require.Equal(t, test.expectedIsValid, isValid)
+			err := service.ValidateBasic()
+			if test.expectedIsValid {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+			}
 		})
 	}
 }
@@ -124,8 +128,13 @@ func TestIsValidServiceName(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			isValid := IsValidServiceName(test.serviceName)
-			require.Equal(t, test.expectedIsValid, isValid)
+			service := &sharedtypes.Service{Id: "svc", Name: test.serviceName}
+			err := service.ValidateBasic()
+			if test.expectedIsValid {
+				require.NoError(t, err)
+			} else {
+				require.ErrorIs(t, err, sharedtypes.ErrSharedInvalidService.Wrapf("invalid service name: %s", test.serviceName))
+			}
 		})
 	}
 }
@@ -195,8 +204,13 @@ func TestIsValidServiceId(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			isValid := IsValidServiceId(test.serviceId)
-			require.Equal(t, test.expectedIsValid, isValid)
+			service := &sharedtypes.Service{Id: test.serviceId}
+			err := service.ValidateBasic()
+			if test.expectedIsValid {
+				require.NoError(t, err)
+			} else {
+				require.ErrorIs(t, err, sharedtypes.ErrSharedInvalidService.Wrapf("invalid service ID: %s", test.serviceId))
+			}
 		})
 	}
 }
@@ -254,7 +268,7 @@ func TestIsValidEndpointUrl(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			isValid := IsValidEndpointUrl(test.endpointURL)
+			isValid := sharedtypes.IsValidEndpointUrl(test.endpointURL)
 			require.Equal(t, test.expectedIsValid, isValid)
 		})
 	}

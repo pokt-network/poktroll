@@ -1,10 +1,8 @@
-package helpers
+package types
 
 import (
 	"net/url"
 	"regexp"
-
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 const (
@@ -24,20 +22,33 @@ func init() {
 	// Compile the regex pattern
 	regexExprServiceId = regexp.MustCompile(regexServiceId)
 	regexExprServiceName = regexp.MustCompile(regexServiceName)
-
 }
 
-// IsValidService checks if the provided ServiceId struct has valid fields
-// TODO_TECHDEBT(BETA): Refactor to a `Service#ValidateBasic` method.
-func IsValidService(service *sharedtypes.Service) bool {
-	// Check if service Id and Name are valid using the provided helper functions
-	return service != nil &&
-		IsValidServiceId(service.Id) &&
-		IsValidServiceName(service.Name)
+// ValidateBasic performs basic stateless validation of a Service.
+func (s *Service) ValidateBasic() error {
+	if !IsValidServiceId(s.Id) {
+		return ErrSharedInvalidService.Wrapf("ID: %q", s.Id)
+	}
+
+	if !IsValidServiceName(s.Name) {
+		return ErrSharedInvalidService.Wrapf("name: %q", s.Name)
+	}
+
+	// TODO_FOLLOWUP: Enabling these checks will break code where Service is created
+	// without OwnerAddress or ComputeUnitsPerRelay.
+	// Remove the comments in a follow-up PR where embedded Service is replaced by ServiceId.
+	//if _, err := sdk.AccAddressFromBech32(s.OwnerAddress); err != nil {
+	//	return ErrSharedInvalidService.Wrapf("invalid owner address: %s", s.OwnerAddress)
+	//}
+
+	//if err := ValidateComputeUnitsPerRelay(s.ComputeUnitsPerRelay); err != nil {
+	//	return ErrSharedInvalidService.Wrapf("%s", err)
+	//}
+
+	return nil
 }
 
 // IsValidServiceId checks if the input string is a valid serviceId
-// TODO_TECHDEBT(BETA): Refactor to a `ServiceId#ValidateBasic` method.
 func IsValidServiceId(serviceId string) bool {
 	// ServiceId CANNOT be empty
 	if len(serviceId) == 0 {

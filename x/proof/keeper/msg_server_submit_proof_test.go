@@ -549,9 +549,9 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 	)
 
 	tests := []struct {
-		desc        string
-		newProofMsg func(t *testing.T) *prooftypes.MsgSubmitProof
-		expectedErr error
+		desc                            string
+		newProofMsg                     func(t *testing.T) *prooftypes.MsgSubmitProof
+		msgSubmitProofToExpectedErrorFn func(*prooftypes.MsgSubmitProof) error
 	}{
 		{
 			desc: "proof service ID cannot be empty",
@@ -568,14 +568,16 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 					expectedMerkleProofPath,
 				)
 			},
-			expectedErr: status.Error(
-				codes.InvalidArgument,
-				prooftypes.ErrProofInvalidSessionId.Wrapf(
-					"session ID does not match on-chain session ID; expected %q, got %q",
-					validSessionHeader.GetSessionId(),
-					"",
-				).Error(),
-			),
+			msgSubmitProofToExpectedErrorFn: func(msgSubmitProof *prooftypes.MsgSubmitProof) error {
+				sessionError := sessiontypes.ErrSessionInvalidSessionId.Wrapf(
+					"%q",
+					msgSubmitProof.GetSessionHeader().GetSessionId(),
+				)
+				return status.Error(
+					codes.InvalidArgument,
+					prooftypes.ErrProofInvalidSessionHeader.Wrapf("%s", sessionError).Error(),
+				)
+			},
 		},
 		{
 			desc: "merkle proof cannot be empty",
@@ -592,12 +594,14 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 				proof.Proof = []byte{}
 				return proof
 			},
-			expectedErr: status.Error(
-				codes.InvalidArgument,
-				prooftypes.ErrProofInvalidProof.Wrap(
-					"proof cannot be empty",
-				).Error(),
-			),
+			msgSubmitProofToExpectedErrorFn: func(_ *prooftypes.MsgSubmitProof) error {
+				return status.Error(
+					codes.InvalidArgument,
+					prooftypes.ErrProofInvalidProof.Wrap(
+						"proof cannot be empty",
+					).Error(),
+				)
+			},
 		},
 		{
 			desc: "proof session ID must match on-chain session ID",
@@ -610,14 +614,16 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 					expectedMerkleProofPath,
 				)
 			},
-			expectedErr: status.Error(
-				codes.InvalidArgument,
-				prooftypes.ErrProofInvalidSessionId.Wrapf(
-					"session ID does not match on-chain session ID; expected %q, got %q",
-					validSessionHeader.GetSessionId(),
-					wrongSessionIdHeader.GetSessionId(),
-				).Error(),
-			),
+			msgSubmitProofToExpectedErrorFn: func(msgSubmitProof *prooftypes.MsgSubmitProof) error {
+				return status.Error(
+					codes.InvalidArgument,
+					prooftypes.ErrProofInvalidSessionId.Wrapf(
+						"session ID does not match on-chain session ID; expected %q, got %q",
+						validSessionHeader.GetSessionId(),
+						msgSubmitProof.GetSessionHeader().GetSessionId(),
+					).Error(),
+				)
+			},
 		},
 		{
 			desc: "proof supplier must be in on-chain session",
@@ -630,28 +636,30 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 					expectedMerkleProofPath,
 				)
 			},
-			expectedErr: status.Error(
-				codes.InvalidArgument,
-				prooftypes.ErrProofNotFound.Wrapf(
-					"supplier operator address %q not found in session ID %q",
-					wrongSupplierOperatorAddr,
-					validSessionHeader.GetSessionId(),
-				).Error(),
-			),
+			msgSubmitProofToExpectedErrorFn: func(msgSubmitProof *prooftypes.MsgSubmitProof) error {
+				return status.Error(
+					codes.InvalidArgument,
+					prooftypes.ErrProofNotFound.Wrapf(
+						"supplier operator address %q not found in session ID %q",
+						wrongSupplierOperatorAddr,
+						msgSubmitProof.GetSessionHeader().GetSessionId(),
+					).Error(),
+				)
+			},
 		},
 	}
 
 	// Submit the corresponding proof.
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			proofMsg := test.newProofMsg(t)
+			msgSubmitProof := test.newProofMsg(t)
 
 			// Advance the block height to the proof path seed height.
 			earliestSupplierProofCommitHeight := shared.GetEarliestSupplierProofCommitHeight(
 				&sharedParams,
-				proofMsg.GetSessionHeader().GetSessionEndBlockHeight(),
+				msgSubmitProof.GetSessionHeader().GetSessionEndBlockHeight(),
 				blockHeaderHash,
-				proofMsg.GetSupplierOperatorAddress(),
+				msgSubmitProof.GetSupplierOperatorAddress(),
 			)
 			ctx = keepertest.SetBlockHeight(ctx, earliestSupplierProofCommitHeight-1)
 
@@ -662,9 +670,11 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			// Advance the block height to the earliest proof commit height.
 			ctx = keepertest.SetBlockHeight(ctx, earliestSupplierProofCommitHeight)
 
-			submitProofRes, err := srv.SubmitProof(ctx, proofMsg)
+			submitProofRes, err := srv.SubmitProof(ctx, msgSubmitProof)
 
-			require.ErrorContains(t, err, test.expectedErr.Error())
+			expectedErr := test.msgSubmitProofToExpectedErrorFn(msgSubmitProof)
+			require.ErrorIs(t, err, expectedErr)
+			require.ErrorContains(t, err, expectedErr.Error())
 			require.Nil(t, submitProofRes)
 
 			proofRes, err := keepers.AllProofs(ctx, &prooftypes.QueryAllProofsRequest{})

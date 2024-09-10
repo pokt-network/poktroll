@@ -14,7 +14,6 @@ import (
 
 	"github.com/pokt-network/poktroll/x/session/types"
 	"github.com/pokt-network/poktroll/x/shared"
-	sharedhelpers "github.com/pokt-network/poktroll/x/shared/helpers"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -122,8 +121,8 @@ func (k Keeper) hydrateSessionID(ctx context.Context, sh *sessionHydrator) error
 	// TODO_MAINNET: In the future, we will need to validate that the Service is
 	// a valid service depending on whether or not its permissioned or permissionless
 
-	if !sharedhelpers.IsValidService(sh.sessionHeader.Service) {
-		return types.ErrSessionHydration.Wrapf("invalid service: %v", sh.sessionHeader.Service)
+	if err := sh.sessionHeader.Service.ValidateBasic(); err != nil {
+		return types.ErrSessionHydration.Wrapf("%s", err)
 	}
 
 	sh.sessionHeader.SessionId, sh.sessionIDBz = k.GetSessionId(
