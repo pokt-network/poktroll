@@ -25,9 +25,7 @@ func TestGenesis(t *testing.T) {
 				Stake:           &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 				Services: []*sharedtypes.SupplierServiceConfig{
 					{
-						Service: &sharedtypes.Service{
-							Id: "svcId1",
-						},
+						ServiceId: "svcId1",
 						Endpoints: []*sharedtypes.SupplierEndpoint{
 							{
 								Url:     "http://localhost:8081",
@@ -44,9 +42,7 @@ func TestGenesis(t *testing.T) {
 				Stake:           &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 				Services: []*sharedtypes.SupplierServiceConfig{
 					{
-						Service: &sharedtypes.Service{
-							Id: "svcId2",
-						},
+						ServiceId: "svcId2",
 						Endpoints: []*sharedtypes.SupplierEndpoint{
 							{
 								Url:     "http://localhost:8082",

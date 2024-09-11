@@ -77,7 +77,7 @@ func ParseApplicationConfigs(configContent []byte) (*ApplicationStakeConfig, err
 		}
 
 		appServiceConfig := &sharedtypes.ApplicationServiceConfig{
-			Service: &sharedtypes.Service{Id: serviceId},
+			ServiceId: serviceId,
 		}
 
 		applicationServiceConfig = append(applicationServiceConfig, appServiceConfig)

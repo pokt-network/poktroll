@@ -247,9 +247,7 @@ func createStakeMsg(supplierOwnerAddr string, stakeAmount int64) *types.MsgStake
 		Stake:           &initialStake,
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
-				Service: &sharedtypes.Service{
-					Id: "svcId",
-				},
+				ServiceId: "svcId",
 				Endpoints: []*sharedtypes.SupplierEndpoint{
 					{
 						Url:     "http://localhost:8080",

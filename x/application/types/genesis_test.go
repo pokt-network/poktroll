@@ -15,15 +15,11 @@ import (
 func TestGenesisState_Validate(t *testing.T) {
 	addr1 := sample.AccAddress()
 	stake1 := sdk.NewCoin("upokt", math.NewInt(100))
-	svc1AppConfig := &sharedtypes.ApplicationServiceConfig{
-		Service: &sharedtypes.Service{Id: "svc1"},
-	}
+	svc1AppConfig := &sharedtypes.ApplicationServiceConfig{ServiceId: "svc1"}
 
 	addr2 := sample.AccAddress()
 	stake2 := sdk.NewCoin("upokt", math.NewInt(100))
-	svc2AppConfig := &sharedtypes.ApplicationServiceConfig{
-		Service: &sharedtypes.Service{Id: "svc2"},
-	}
+	svc2AppConfig := &sharedtypes.ApplicationServiceConfig{ServiceId: "svc2"}
 
 	emptyDelegatees := make([]string, 0)
 	gatewayAddr1 := sample.AccAddress()
@@ -315,29 +311,7 @@ func TestGenesisState_Validate(t *testing.T) {
 						Address: addr1,
 						Stake:   &stake1,
 						ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
-							{Service: &sharedtypes.Service{Id: "TooLongId1234567890"}},
-						},
-						DelegateeGatewayAddresses: emptyDelegatees,
-					},
-				},
-			},
-			isValid: false,
-		},
-		{
-			desc: "invalid - service name too long",
-			genState: &types.GenesisState{
-				Params: types.Params{
-					MaxDelegatedGateways: 7,
-				},
-				ApplicationList: []types.Application{
-					{
-						Address: addr1,
-						Stake:   &stake1,
-						ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
-							{Service: &sharedtypes.Service{
-								Id:   "123",
-								Name: "abcdefghijklmnopqrstuvwxyzab-abcdefghijklmnopqrstuvwxyzab",
-							}},
+							{ServiceId: "TooLongId1234567890"},
 						},
 						DelegateeGatewayAddresses: emptyDelegatees,
 					},
@@ -356,7 +330,7 @@ func TestGenesisState_Validate(t *testing.T) {
 						Address: addr1,
 						Stake:   &stake1,
 						ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
-							{Service: &sharedtypes.Service{Id: "12 45 !"}},
+							{ServiceId: "12 45 !"},
 						},
 						DelegateeGatewayAddresses: emptyDelegatees,
 					},

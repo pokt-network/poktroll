@@ -21,7 +21,7 @@ import "gogoproto/gogo.proto";
 // It is the minimal amount of data required to hydrate & retrieve all data relevant to the session.
 message SessionHeader {
   string application_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the application.
-  poktroll.shared.Service service = 2; // The service this session is for
+  string service_id = 2; // The service id this session is for
   // NOTE: session_id can be derived from the above values using on-chain but is included in the header for convenience
   string session_id = 3; // A unique pseudoranom ID for this session
   int64 session_start_block_height = 4; // The height at which this session started
