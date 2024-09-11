@@ -11,6 +11,7 @@
 //go:generate mockgen -destination=../../testutil/mockclient/proof_query_client_mock.go -package=mockclient . ProofQueryClient
 //go:generate mockgen -destination=../../testutil/mockclient/tokenomics_query_client_mock.go -package=mockclient . TokenomicsQueryClient
 //go:generate mockgen -destination=../../testutil/mockclient/service_query_client_mock.go -package=mockclient . ServiceQueryClient
+//go:generate mockgen -destination=../../testutil/mockclient/bank_query_client_mock.go -package=mockclient . BankQueryClient
 //go:generate mockgen -destination=../../testutil/mockclient/cosmos_tx_builder_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/client TxBuilder
 //go:generate mockgen -destination=../../testutil/mockclient/cosmos_keyring_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/crypto/keyring Keyring
 //go:generate mockgen -destination=../../testutil/mockclient/cosmos_client_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/client AccountRetriever
@@ -377,4 +378,11 @@ type TokenomicsQueryClient interface {
 type ServiceQueryClient interface {
 	// GetService queries the chain for the details of the service provided
 	GetService(ctx context.Context, serviceId string) (sharedtypes.Service, error)
+}
+
+// BankQueryClient defines an interface that enables the querying of the
+// on-chain bank information
+type BankQueryClient interface {
+	// GetBalance queries the chain for the uPOKT balance of the account provided
+	GetBalance(ctx context.Context, address string) (*cosmostypes.Coin, error)
 }

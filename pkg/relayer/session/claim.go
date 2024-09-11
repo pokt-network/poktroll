@@ -3,6 +3,7 @@ package session
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/either"
@@ -13,6 +14,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	"github.com/pokt-network/poktroll/x/shared"
+	"github.com/pokt-network/smt"
 )
 
 // createClaims maps over the sessionsToClaimObs observable. For each claim batch, it:
@@ -180,14 +182,16 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 			return either.Success(sessionTrees), false
 		}
 
-		// Map key is the supplier operator address.
-		// TODO_FOLLOWUP(@red-0ne): Ensure that the supplier operator account
-		// has enough funds to cover for any potential proof submission in order to
-		// avoid slashing due to missing proofs.
-		// We should order the claimMsgs by reward amount and include claims up to
-		// whatever the supplier can afford to cover.
-		claimMsgs := make([]client.MsgCreateClaim, len(sessionTrees))
-		for idx, sessionTree := range sessionTrees {
+		// Filter out the session trees that the supplier operator can afford to claim.
+		claimableSessionTrees, err := rs.payableProofsSessionTrees(ctx, sessionTrees)
+		if err != nil {
+			failedCreateClaimsSessionsPublishCh <- sessionTrees
+			rs.logger.Error().Err(err).Msg("failed to calculate payable proofs session trees")
+			return either.Error[[]relayer.SessionTree](err), false
+		}
+
+		claimMsgs := make([]client.MsgCreateClaim, len(claimableSessionTrees))
+		for idx, sessionTree := range claimableSessionTrees {
 			claimMsgs[idx] = &prooftypes.MsgCreateClaim{
 				RootHash:                sessionTree.GetClaimRoot(),
 				SessionHeader:           sessionTree.GetSessionHeader(),
@@ -197,12 +201,12 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 
 		// Create claims for each supplier operator address in `sessionTrees`.
 		if err := supplierClient.CreateClaims(ctx, claimMsgs...); err != nil {
-			failedCreateClaimsSessionsPublishCh <- sessionTrees
+			failedCreateClaimsSessionsPublishCh <- claimableSessionTrees
 			rs.logger.Error().Err(err).Msg("failed to create claims")
 			return either.Error[[]relayer.SessionTree](err), false
 		}
 
-		return either.Success(sessionTrees), false
+		return either.Success(claimableSessionTrees), false
 	}
 }
 
@@ -235,4 +239,76 @@ func (rs *relayerSessionsManager) goCreateClaimRoots(
 
 	failSubmitProofsSessionsCh <- failedClaims
 	claimsFlushedCh <- flushedClaims
+}
+
+// payableProofsSessionTrees returns the session trees that the supplier operator
+// can afford to claim.
+func (rs *relayerSessionsManager) payableProofsSessionTrees(
+	ctx context.Context,
+	sessionTrees []relayer.SessionTree,
+) ([]relayer.SessionTree, error) {
+	logger := rs.logger.With(
+		"supplier_operator_address", sessionTrees[0].GetSupplierOperatorAddress().String(),
+	)
+
+	proofParams, err := rs.proofQueryClient.GetParams(ctx)
+	if err != nil {
+		return nil, err
+	}
+	proofSubmissionFeeCoin := proofParams.GetProofSubmissionFee()
+
+	supplierOperatorBalanceCoin, err := rs.bankQueryClient.GetBalance(
+		ctx,
+		sessionTrees[0].GetSupplierOperatorAddress().String(),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// Sort the session trees by the sum of the claim root to ensure that the
+	// biggest claim roots are claimed first.
+	slices.SortFunc(sessionTrees, func(a, b relayer.SessionTree) int {
+		rootA := a.GetClaimRoot()
+		sumA, errA := smt.MerkleSumRoot(rootA).Sum()
+		if errA != nil {
+			logger.With(
+				"session_id", a.GetSessionHeader().GetSessionId(),
+				"claim_root", fmt.Sprintf("%x", rootA),
+			).Error().Err(errA).Msg("failed to calculate sum of claim root, assuming 0")
+			sumA = 0
+		}
+
+		rootB := b.GetClaimRoot()
+		sumB, errB := smt.MerkleSumRoot(rootB).Sum()
+		if errB != nil {
+			logger.With(
+				"session_id", a.GetSessionHeader().GetSessionId(),
+				"claim_root", fmt.Sprintf("%x", rootA),
+			).Error().Err(errB).Msg("failed to calculate sum of claim root, assuming 0")
+			sumB = 0
+		}
+
+		// Sort in descending order.
+		return int(sumB - sumA)
+	})
+
+	claimableSessionTrees := []relayer.SessionTree{}
+	for _, sessionTree := range sessionTrees {
+		// If the supplier operator can afford to claim the session, add it to the
+		// claimableSessionTrees slice.
+		if supplierOperatorBalanceCoin.IsGTE(*proofSubmissionFeeCoin) {
+			claimableSessionTrees = append(claimableSessionTrees, sessionTree)
+			newSupplierOperatorBalanceCoin := supplierOperatorBalanceCoin.Sub(*proofSubmissionFeeCoin)
+			supplierOperatorBalanceCoin = &newSupplierOperatorBalanceCoin
+			continue
+		}
+
+		logger.With(
+			"session_id", sessionTree.GetSessionHeader().GetSessionId(),
+			"supplier_operator_balance", supplierOperatorBalanceCoin,
+			"proof_submission_fee", proofSubmissionFeeCoin,
+		).Warn().Msg("supplier operator cannot afford to submit proof for claim, skipping")
+	}
+
+	return claimableSessionTrees, nil
 }
