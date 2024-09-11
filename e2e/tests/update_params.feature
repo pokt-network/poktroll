@@ -40,7 +40,7 @@ Feature: Params Namespace
       | name                         | value                                                            | type  |
       | relay_difficulty_target_hash | 00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff | bytes |
       | proof_request_probability    | 0.1                                                              | float |
-      | proof_requirement_threshold  | 100                                                              | int64 |
+      | proof_requirement_threshold  | 100                                                              | coin  |
       | proof_missing_penalty        | 500                                                              | coin  |
       | proof_submission_fee         | 5000000                                                          | coin  |
     Then all "proof" module params should be updated
@@ -91,7 +91,7 @@ Feature: Params Namespace
       | tokenomics | /poktroll.tokenomics.MsgUpdateParam | compute_units_to_tokens_multiplier    | 68          | int64      |
       | proof      | /poktroll.proof.MsgUpdateParam      | min_relay_difficulty_bits             | 12          | int64      |
       | proof      | /poktroll.proof.MsgUpdateParam      | proof_request_probability             | 0.1         | float      |
-      | proof      | /poktroll.proof.MsgUpdateParam      | proof_requirement_threshold           | 100         | int64      |
+      | proof      | /poktroll.proof.MsgUpdateParam      | proof_requirement_threshold           | 100         | coin       |
       | proof      | /poktroll.proof.MsgUpdateParam      | proof_missing_penalty                 | 500         | coin       |
       | proof      | /poktroll.proof.MsgUpdateParam      | proof_submission_fee                  | 5000000     | coin       |
       | shared     | /poktroll.shared.MsgUpdateParam     | num_blocks_per_session                | 5           | int64      |

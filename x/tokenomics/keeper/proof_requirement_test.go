@@ -13,15 +13,17 @@ import (
 	tetsproof "github.com/pokt-network/poktroll/testutil/proof"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
-	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 func TestKeeper_IsProofRequired(t *testing.T) {
-	// Set expectedCompute units to be below the proof requirement threshold to only
-	// exercise the probabilistic branch of the #isProofRequired() logic.
-	expectedComputeUnits := (prooftypes.DefaultProofRequirementThreshold.Amount.Uint64() - 1) / tokenomicstypes.DefaultComputeUnitsToTokensMultiplier
 	keepers, ctx := keeper.NewTokenomicsModuleKeepers(t, log.NewNopLogger())
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+
+	proofParams := keepers.ProofKeeper.GetParams(sdkCtx)
+	tokenomicsParams := keepers.Keeper.GetParams(sdkCtx)
+	// Set expectedCompute units to be below the proof requirement threshold to only
+	// exercise the probabilistic branch of the #isProofRequired() logic.
+	expectedComputeUnits := (proofParams.ProofRequirementThreshold.Amount.Uint64() - 1) / tokenomicsParams.ComputeUnitsToTokensMultiplier
 
 	var (
 		probability = prooftypes.DefaultProofRequestProbability

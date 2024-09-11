@@ -405,6 +405,16 @@ func (k Keeper) slashSupplierStake(
 
 	k.supplierKeeper.SetSupplier(ctx, supplierToSlash)
 
+	// Emit an event that a supplier has been slashed.
+	supplierSlashedEvent := types.EventSupplierSlashed{
+		SupplierOperatorAddr: supplierOperatorAddress,
+		NumExpiredClaims:     slashingCount,
+		SlashingAmount:       &totalSlashingCoin,
+	}
+	if err = ctx.EventManager().EmitTypedEvent(&supplierSlashedEvent); err != nil {
+		return err
+	}
+
 	// TODO_CONSIDERATION: Handle the case where the total slashing amount is
 	// greater than the supplier's stake. The protocol could take the remaining
 	// amount from the supplier's owner or operator balances.

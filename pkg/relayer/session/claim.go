@@ -181,7 +181,7 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 		}
 
 		// Map key is the supplier operator address.
-		// TODO_BETA(@red-0ne, #780, #765): Ensure that the supplier operator account
+		// TODO_FOLLOWUP(@red-0ne): Ensure that the supplier operator account
 		// has enough funds to cover for any potential proof submission in order to
 		// avoid slashing due to missing proofs.
 		// We should order the claimMsgs by reward amount and include claims up to

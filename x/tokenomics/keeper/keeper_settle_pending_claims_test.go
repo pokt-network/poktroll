@@ -283,21 +283,35 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequiredAndNotProv
 	require.Len(t, claims, 0)
 
 	// Slashing should have occurred without unstaking the supplier.
+	// The supplier is not unstaked because it got slashed by an amount that is
+	// half its stake (i.e. missing proof penalty == stake / 2), resulting in a
+	// remaining stake that is above the minimum stake (i.e. new_stake == prev_stake / 2).
 	slashedSupplier, supplierFound := s.keepers.GetSupplier(sdkCtx, s.claim.SupplierOperatorAddress)
 	require.True(t, supplierFound)
 	require.Equal(t, math.NewInt(supplierStake/2), slashedSupplier.Stake.Amount)
 	require.Equal(t, uint64(0), slashedSupplier.UnstakeSessionEndHeight)
 
-	// Confirm an expiration event was emitted
 	events := sdkCtx.EventManager().Events()
-	require.Len(t, events, 7) // asserting on the length of events so the developer must consciously update it upon changes
-	expectedEvents := testutilevents.FilterEvents[*tokenomicstypes.EventClaimExpired](t, events, "poktroll.tokenomics.EventClaimExpired")
-	require.Len(t, expectedEvents, 1)
+	require.Len(t, events, 8) // asserting on the length of events so the developer must consciously update it upon changes
 
-	// Validate the event
-	expectedEvent := expectedEvents[0]
-	require.Equal(t, tokenomicstypes.ClaimExpirationReason_PROOF_MISSING, expectedEvent.GetExpirationReason())
-	require.Equal(t, s.numRelays, expectedEvent.GetNumRelays())
+	// Confirm an expiration event was emitted
+	expectedClaimExpiredEvents := testutilevents.FilterEvents[*tokenomicstypes.EventClaimExpired](t, events, "poktroll.tokenomics.EventClaimExpired")
+	require.Len(t, expectedClaimExpiredEvents, 1)
+
+	// Validate the claim expired event
+	expectedClaimExpiredEvent := expectedClaimExpiredEvents[0]
+	require.Equal(t, tokenomicstypes.ClaimExpirationReason_PROOF_MISSING, expectedClaimExpiredEvent.GetExpirationReason())
+	require.Equal(t, s.numRelays, expectedClaimExpiredEvent.GetNumRelays())
+
+	// Confirm that a slashing event was emitted
+	expectedSlashingEvents := testutilevents.FilterEvents[*tokenomicstypes.EventSupplierSlashed](t, events, "poktroll.tokenomics.EventSupplierSlashed")
+	require.Len(t, expectedSlashingEvents, 1)
+
+	// Validate the slashing event
+	expectedSlashingEvent := expectedSlashingEvents[0]
+	require.Equal(t, slashedSupplier.GetOperatorAddress(), expectedSlashingEvent.GetSupplierOperatorAddr())
+	require.Equal(t, uint64(1), expectedSlashingEvent.GetNumExpiredClaims())
+	require.Equal(t, &belowStakeAmountProofMissingPenalty, expectedSlashingEvent.GetSlashingAmount())
 }
 
 func (s *TestSuite) TestSettlePendingClaims_ClaimSettled_ProofRequiredAndProvided_ViaThreshold() {
@@ -411,14 +425,24 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOn
 
 	// Confirm an expiration event was emitted
 	events := sdkCtx.EventManager().Events()
-	require.Len(t, events, 7) // minting, burning, settling, etc..
-	expectedEvents := testutilevents.FilterEvents[*tokenomicstypes.EventClaimExpired](t, events, "poktroll.tokenomics.EventClaimExpired")
-	require.Len(t, expectedEvents, 1)
+	require.Len(t, events, 8) // minting, burning, settling, etc..
+	expectedClaimExpiredEvents := testutilevents.FilterEvents[*tokenomicstypes.EventClaimExpired](t, events, "poktroll.tokenomics.EventClaimExpired")
+	require.Len(t, expectedClaimExpiredEvents, 1)
 
 	// Validate the event
-	expectedEvent := expectedEvents[0]
-	require.Equal(t, tokenomicstypes.ClaimExpirationReason_PROOF_INVALID, expectedEvent.GetExpirationReason())
-	require.Equal(t, s.numRelays, expectedEvent.GetNumRelays())
+	expectedClaimExpiredEvent := expectedClaimExpiredEvents[0]
+	require.Equal(t, tokenomicstypes.ClaimExpirationReason_PROOF_INVALID, expectedClaimExpiredEvent.GetExpirationReason())
+	require.Equal(t, s.numRelays, expectedClaimExpiredEvent.GetNumRelays())
+
+	// Confirm that a slashing event was emitted
+	expectedSlashingEvents := testutilevents.FilterEvents[*tokenomicstypes.EventSupplierSlashed](t, events, "poktroll.tokenomics.EventSupplierSlashed")
+	require.Len(t, expectedSlashingEvents, 1)
+
+	// Validate the slashing event
+	expectedSlashingEvent := expectedSlashingEvents[0]
+	require.Equal(t, slashedSupplier.GetOperatorAddress(), expectedSlashingEvent.GetSupplierOperatorAddr())
+	require.Equal(t, uint64(1), expectedSlashingEvent.GetNumExpiredClaims())
+	require.Equal(t, &belowStakeAmountProofMissingPenalty, expectedSlashingEvent.GetSlashingAmount())
 }
 
 func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_ViaProbability() {
@@ -685,4 +709,17 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	require.Equal(t, math.NewInt(0), slashedSupplier.Stake.Amount)
 	require.Equal(t, upcomingSessionEndHeight, slashedSupplier.UnstakeSessionEndHeight)
 	require.True(t, slashedSupplier.IsUnbonding())
+
+	// Confirm an expiration event was emitted
+	events := sdkCtx.EventManager().Events()
+
+	// Confirm that a slashing event was emitted
+	expectedSlashingEvents := testutilevents.FilterEvents[*tokenomicstypes.EventSupplierSlashed](t, events, "poktroll.tokenomics.EventSupplierSlashed")
+	require.Len(t, expectedSlashingEvents, 1)
+
+	// Validate the slashing event
+	expectedSlashingEvent := expectedSlashingEvents[0]
+	require.Equal(t, slashedSupplier.GetOperatorAddress(), expectedSlashingEvent.GetSupplierOperatorAddr())
+	require.Equal(t, uint64(1), expectedSlashingEvent.GetNumExpiredClaims())
+	require.Equal(t, proofParams.ProofMissingPenalty, expectedSlashingEvent.GetSlashingAmount())
 }

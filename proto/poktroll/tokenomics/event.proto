@@ -60,3 +60,14 @@ message EventApplicationOverserviced {
     // E.g. The application's stake divided by the number of suppliers in a session.
     cosmos.base.v1beta1.Coin effective_burn  = 4;
 }
+
+// EventSupplierSlashed is emitted when a supplier is slashed for not providing,
+// or provided invalid required proofs for claims.
+message EventSupplierSlashed {
+    string supplier_operator_addr = 1;
+    // Number of claims that were expired and led to the slashing.
+    uint64 num_expired_claims = 2;
+    // Amount slashed from the supplier's stake due to the expired claims.
+    // This is a function of the number of expired claims and proof missing penalty.
+    cosmos.base.v1beta1.Coin slashing_amount = 3;
+}
