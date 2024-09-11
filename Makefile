@@ -740,15 +740,19 @@ supplier_unstake: ## Unstake an supplier (must specify the SUPPLIER env var)
 
 .PHONY: supplier1_unstake
 supplier1_unstake: ## Unstake supplier1
-	SUPPLIER=supplier1 make supplier_unstake
+	SUPPLIER1=$$(make -s poktrolld_addr ACC_NAME=supplier1) && \
+	SUPPLIER=$$SUPPLIER1 make supplier_unstake
 
 .PHONY: supplier2_unstake
 supplier2_unstake: ## Unstake supplier2
-	SUPPLIER=supplier2 make supplier_unstake
+	SUPPLIER2=$$(make -s poktrolld_addr ACC_NAME=supplier2) && \
+	SUPPLIER=$$SUPPLIER2 make supplier_unstake
+
 
 .PHONY: supplier3_unstake
 supplier3_unstake: ## Unstake supplier3
-	SUPPLIER=supplier3 make supplier_unstake
+	SUPPLIER3=$$(make -s poktrolld_addr ACC_NAME=supplier3) && \
+	SUPPLIER=$$SUPPLIER3 make supplier_unstake
 
 ###############
 ### Session ###
