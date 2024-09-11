@@ -180,7 +180,6 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 			return either.Success(sessionTrees), false
 		}
 
-		// Map key is the supplier operator address.
 		// TODO_FOLLOWUP(@red-0ne): Ensure that the supplier operator account
 		// has enough funds to cover for any potential proof submission in order to
 		// avoid slashing due to missing proofs.
