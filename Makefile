@@ -394,6 +394,18 @@ send_relay_sovereign_app_REST: # Send a REST relay through the AppGateServer as 
 cosmovisor_start_node: # Starts the node using cosmovisor that waits for an upgrade plan
 	bash tools/scripts/upgrades/cosmovisor-start-node.sh
 
+.PHONY: query_tx
+query_tx: ## Query for a transaction by hash and output as YAML (default).
+	poktrolld --home=$(POKTROLLD_HOME) query tx $(HASH) --node $(POCKET_NODE)
+
+.PHONY: query_tx_json
+query_tx_json: ## Query for a transaction by hash and output as JSON.
+	poktrolld --home=$(POKTROLLD_HOME) query tx $(HASH) --output json --node $(POCKET_NODE)
+
+.PHONY: query_tx_log
+query_tx_log: ## Query for a transaction and print its raw log.
+	$(MAKE) -s query_tx_json | jq .raw_log
+
 ###############
 ### Linting ###
 ###############
