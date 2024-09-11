@@ -43,7 +43,7 @@ func createNSuppliers(keeper keeper.Keeper, ctx context.Context, n int) []shared
 		supplier.Stake = &sdk.Coin{Denom: "upokt", Amount: math.NewInt(int64(i))}
 		supplier.Services = []*sharedtypes.SupplierServiceConfig{
 			{
-				Service: &sharedtypes.Service{Id: fmt.Sprintf("svc%d", i)},
+				ServiceId: fmt.Sprintf("svc%d", i),
 				Endpoints: []*sharedtypes.SupplierEndpoint{
 					{
 						Url:     fmt.Sprintf("http://localhost:%d", i),

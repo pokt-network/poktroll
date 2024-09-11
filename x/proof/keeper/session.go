@@ -23,7 +23,7 @@ func (k Keeper) queryAndValidateSessionHeader(
 
 	sessionReq := &sessiontypes.QueryGetSessionRequest{
 		ApplicationAddress: sessionHeader.GetApplicationAddress(),
-		Service:            sessionHeader.GetService(),
+		ServiceId:          sessionHeader.GetServiceId(),
 		BlockHeight:        sessionHeader.GetSessionStartBlockHeight(),
 	}
 

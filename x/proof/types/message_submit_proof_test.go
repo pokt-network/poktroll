@@ -9,11 +9,11 @@ import (
 	"github.com/pokt-network/poktroll/testutil/sample"
 	testsession "github.com/pokt-network/poktroll/testutil/session"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
+const testServiceId = "svc01"
+
 func TestMsgSubmitProof_ValidateBasic(t *testing.T) {
-	testService := &sharedtypes.Service{Id: "svc01"}
 	testClosestMerkleProof := []byte{1, 2, 3, 4}
 
 	tests := []struct {
@@ -27,7 +27,7 @@ func TestMsgSubmitProof_ValidateBasic(t *testing.T) {
 				SupplierOperatorAddress: sample.AccAddress(),
 				SessionHeader: &sessiontypes.SessionHeader{
 					ApplicationAddress:      "not_a_bech32_address",
-					Service:                 testService,
+					ServiceId:               testServiceId,
 					SessionId:               "mock_session_id",
 					SessionStartBlockHeight: 1,
 					SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
@@ -49,7 +49,7 @@ func TestMsgSubmitProof_ValidateBasic(t *testing.T) {
 				SupplierOperatorAddress: "not_a_bech32_address",
 				SessionHeader: &sessiontypes.SessionHeader{
 					ApplicationAddress:      sample.AccAddress(),
-					Service:                 testService,
+					ServiceId:               testServiceId,
 					SessionId:               "mock_session_id",
 					SessionStartBlockHeight: 1,
 					SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
@@ -70,7 +70,7 @@ func TestMsgSubmitProof_ValidateBasic(t *testing.T) {
 				SupplierOperatorAddress: sample.AccAddress(),
 				SessionHeader: &sessiontypes.SessionHeader{
 					ApplicationAddress:      sample.AccAddress(),
-					Service:                 &sharedtypes.Service{Id: ""},
+					ServiceId:               "",
 					SessionId:               "mock_session_id",
 					SessionStartBlockHeight: 1,
 					SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
@@ -78,9 +78,8 @@ func TestMsgSubmitProof_ValidateBasic(t *testing.T) {
 				Proof: testClosestMerkleProof,
 			},
 			sessionHeaderToExpectedErrorFn: func(sh sessiontypes.SessionHeader) error {
-				serviceError := sharedtypes.ErrSharedInvalidService.Wrapf("ID: %q", sh.Service.Id)
-				sessionError := sessiontypes.ErrSessionInvalidService.Wrapf("%s", serviceError)
-				return ErrProofInvalidSessionHeader.Wrapf("%s", sessionError)
+				serviceError := sessiontypes.ErrSessionInvalidService.Wrapf("invalid service ID: %q", sh.ServiceId)
+				return ErrProofInvalidSessionHeader.Wrapf("%s", serviceError)
 			},
 		},
 		{
@@ -89,7 +88,7 @@ func TestMsgSubmitProof_ValidateBasic(t *testing.T) {
 				SupplierOperatorAddress: sample.AccAddress(),
 				SessionHeader: &sessiontypes.SessionHeader{
 					ApplicationAddress:      sample.AccAddress(),
-					Service:                 testService,
+					ServiceId:               testServiceId,
 					SessionId:               "mock_session_id",
 					SessionStartBlockHeight: 1,
 					SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),

@@ -547,7 +547,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 						RevSharePercentage: 100,
 					},
 				},
-				Service: &defaultService,
+				ServiceId: defaultService.Id,
 			},
 		},
 	}
@@ -571,7 +571,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		Stake:   &appStake,
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
 			{
-				Service: &defaultService,
+				ServiceId: defaultService.Id,
 			},
 		},
 	}

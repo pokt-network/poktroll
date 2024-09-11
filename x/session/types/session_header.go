@@ -2,6 +2,8 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // ValidateBasic performs basic stateless validation of a SessionHeader.
@@ -16,13 +18,8 @@ func (sh *SessionHeader) ValidateBasic() error {
 		return ErrSessionInvalidSessionId.Wrapf("%q", sh.SessionId)
 	}
 
-	// Validate the service
-	if sh.Service == nil {
-		return ErrSessionInvalidService.Wrapf("missing service")
-	}
-
-	if err := sh.Service.ValidateBasic(); err != nil {
-		return ErrSessionInvalidService.Wrapf("%s", err)
+	if !sharedtypes.IsValidServiceId(sh.GetServiceId()) {
+		return ErrSessionInvalidService.Wrapf("invalid service ID: %q", sh.GetServiceId())
 	}
 
 	// Sessions can only start at height 1

@@ -25,8 +25,7 @@ func TestSession_HydrateSession_Success_BaseCase(t *testing.T) {
 	// Check the header
 	sessionHeader := session.Header
 	require.Equal(t, keepertest.TestApp1Address, sessionHeader.ApplicationAddress)
-	require.Equal(t, keepertest.TestServiceId1, sessionHeader.Service.Id)
-	require.Equal(t, "", sessionHeader.Service.Name)
+	require.Equal(t, keepertest.TestServiceId1, sessionHeader.ServiceId)
 	require.Equal(t, int64(9), sessionHeader.SessionStartBlockHeight)
 	require.Equal(t, int64(12), sessionHeader.SessionEndBlockHeight)
 	require.Equal(t, "fea5d6f7544ff6d8af5c22529b2ccf01ed7930b3d454d42dda5ccc0b65b6ebfd", sessionHeader.SessionId)

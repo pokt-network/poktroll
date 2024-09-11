@@ -185,7 +185,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 		settledResult.NumClaims++
 		settledResult.NumRelays += numClaimRelays
 		settledResult.NumComputeUnits += numClaimComputeUnits
-		settledResult.RelaysPerServiceMap[claim.SessionHeader.Service.Id] += numClaimRelays
+		settledResult.RelaysPerServiceMap[claim.SessionHeader.ServiceId] += numClaimRelays
 
 		logger.Info(fmt.Sprintf("Successfully settled claim for session ID %q at block height %d", claim.SessionHeader.SessionId, blockHeight))
 	}

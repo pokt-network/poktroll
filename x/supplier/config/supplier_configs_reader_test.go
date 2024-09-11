@@ -55,7 +55,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 				StakeAmount:     sdk.NewCoin("upokt", math.NewInt(1000)),
 				Services: []*types.SupplierServiceConfig{
 					{
-						Service: &types.Service{Id: "svc"},
+						ServiceId: "svc",
 						Endpoints: []*types.SupplierEndpoint{
 							{
 								Url:     "http://pokt.network:8081",
@@ -97,7 +97,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 				StakeAmount:     sdk.NewCoin("upokt", math.NewInt(1000)),
 				Services: []*types.SupplierServiceConfig{
 					{
-						Service: &types.Service{Id: "svc"},
+						ServiceId: "svc",
 						Endpoints: []*types.SupplierEndpoint{
 							{
 								Url:     "http://pokt.network:8081",
@@ -134,7 +134,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 				StakeAmount:     sdk.NewCoin("upokt", math.NewInt(1000)),
 				Services: []*types.SupplierServiceConfig{
 					{
-						Service: &types.Service{Id: "svc"},
+						ServiceId: "svc",
 						Endpoints: []*types.SupplierEndpoint{
 							{
 								Url:     "http://pokt.network:8081",
@@ -177,7 +177,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 				StakeAmount:     sdk.NewCoin("upokt", math.NewInt(1000)),
 				Services: []*types.SupplierServiceConfig{
 					{
-						Service: &types.Service{Id: "svc"},
+						ServiceId: "svc",
 						Endpoints: []*types.SupplierEndpoint{
 							{
 								Url:     "http://pokt.network:8081",
@@ -237,7 +237,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 				StakeAmount:     sdk.NewCoin("upokt", math.NewInt(1000)),
 				Services: []*types.SupplierServiceConfig{
 					{
-						Service: &types.Service{Id: "svc1"},
+						ServiceId: "svc1",
 						Endpoints: []*types.SupplierEndpoint{
 							{
 								Url:     "http://pokt.network:8081",
@@ -258,7 +258,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 						},
 					},
 					{
-						Service: &types.Service{Id: "svc2"},
+						ServiceId: "svc2",
 						Endpoints: []*types.SupplierEndpoint{
 							{
 								Url:     "http://pokt.network:8081",
@@ -312,7 +312,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 				StakeAmount:     sdk.NewCoin("upokt", math.NewInt(1000)),
 				Services: []*types.SupplierServiceConfig{
 					{
-						Service: &types.Service{Id: "svc"},
+						ServiceId: "svc",
 						Endpoints: []*types.SupplierEndpoint{
 							{
 								Url:     "http://pokt.network:8081",
@@ -331,7 +331,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 						},
 					},
 					{
-						Service: &types.Service{Id: "svc2"},
+						ServiceId: "svc2",
 						Endpoints: []*types.SupplierEndpoint{
 							{
 								Url:     "http://pokt.network:8082",
@@ -373,7 +373,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 				StakeAmount:     sdk.NewCoin("upokt", math.NewInt(1000)),
 				Services: []*types.SupplierServiceConfig{
 					{
-						Service: &types.Service{Id: "svc"},
+						ServiceId: "svc",
 						Endpoints: []*types.SupplierEndpoint{
 							{
 								Url:     "http://pokt.network:8081",
@@ -417,7 +417,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 				StakeAmount:     sdk.NewCoin("upokt", math.NewInt(1000)),
 				Services: []*types.SupplierServiceConfig{
 					{
-						Service: &types.Service{Id: "svc"},
+						ServiceId: "svc",
 						Endpoints: []*types.SupplierEndpoint{
 							{
 								Url:     "http://pokt.network:8081",
@@ -790,7 +790,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 			for svcIdx, expectedService := range tt.expectedConfig.Services {
 				service := supplierServiceConfig.Services[svcIdx]
 
-				require.Equal(t, expectedService.Service.Id, service.Service.Id)
+				require.Equal(t, expectedService.ServiceId, service.ServiceId)
 
 				require.Equal(t, len(expectedService.Endpoints), len(service.Endpoints))
 				for endpointIdx, expectedEndpoint := range expectedService.Endpoints {

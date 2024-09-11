@@ -107,7 +107,7 @@ func (s *TestSuite) SetupTest() {
 		OperatorAddress: supplierOwnerAddr,
 		Stake:           &supplierStake,
 		Services: []*sharedtypes.SupplierServiceConfig{{
-			Service: &service,
+			ServiceId: testServiceId,
 			RevShare: []*sharedtypes.ServiceRevenueShare{{
 				Address:            supplierOwnerAddr,
 				RevSharePercentage: 100,
@@ -120,7 +120,7 @@ func (s *TestSuite) SetupTest() {
 	app := apptypes.Application{
 		Address:        appAddr,
 		Stake:          &appStake,
-		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{Service: &service}},
+		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{ServiceId: testServiceId}},
 	}
 	s.keepers.SetApplication(s.ctx, app)
 
@@ -128,7 +128,7 @@ func (s *TestSuite) SetupTest() {
 	// to be claimed and for which a valid proof would be accepted.
 	sessionReq := &sessiontypes.QueryGetSessionRequest{
 		ApplicationAddress: appAddr,
-		Service:            &service,
+		ServiceId:          testServiceId,
 		BlockHeight:        1,
 	}
 	sessionRes, err := s.keepers.GetSession(sdkCtx, sessionReq)
@@ -564,7 +564,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimPendingAfterSettlement() {
 
 	// Add a second claim with a session header corresponding to the next session.
 	sessionTwoClaim := testutilproof.BaseClaim(
-		sessionOneClaim.GetSessionHeader().GetService().Id,
+		sessionOneClaim.GetSessionHeader().GetServiceId(),
 		sessionOneClaim.GetSessionHeader().GetApplicationAddress(),
 		sessionOneClaim.GetSupplierOperatorAddress(),
 		s.numRelays,
@@ -576,7 +576,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimPendingAfterSettlement() {
 
 	sessionTwoClaim.SessionHeader = &sessiontypes.SessionHeader{
 		ApplicationAddress:      sessionOneClaim.GetSessionHeader().GetApplicationAddress(),
-		Service:                 s.claim.GetSessionHeader().GetService(),
+		ServiceId:               s.claim.GetSessionHeader().GetServiceId(),
 		SessionId:               "session_two_id",
 		SessionStartBlockHeight: sessionTwoStartHeight,
 		SessionEndBlockHeight:   shared.GetSessionEndHeight(&sharedParams, sessionTwoStartHeight),

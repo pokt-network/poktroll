@@ -155,7 +155,7 @@ func getSession(t *testing.T, integrationApp *testutil.App) *sessiontypes.Sessio
 	sessionQueryClient := sessiontypes.NewQueryClient(integrationApp.QueryHelper())
 	getSessionReq := sessiontypes.QueryGetSessionRequest{
 		ApplicationAddress: integrationApp.DefaultApplication.Address,
-		Service:            integrationApp.DefaultService,
+		ServiceId:          integrationApp.DefaultService.Id,
 		BlockHeight:        sdkCtx.BlockHeight(),
 	}
 

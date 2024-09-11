@@ -21,9 +21,9 @@ func ValidateAppServiceConfigs(services []*sharedtypes.ApplicationServiceConfig)
 		if serviceConfig == nil {
 			return fmt.Errorf("serviceConfig cannot be nil: %v", services)
 		}
-		// Check the Service
-		if err := serviceConfig.Service.ValidateBasic(); err != nil {
-			return sharedtypes.ErrSharedInvalidService.Wrapf("%s", err)
+		// Check the Service ID
+		if !sharedtypes.IsValidServiceId(serviceConfig.GetServiceId()) {
+			return sharedtypes.ErrSharedInvalidService.Wrapf("invalid service ID: %q", serviceConfig.GetServiceId())
 		}
 	}
 	return nil
@@ -39,9 +39,9 @@ func ValidateSupplierServiceConfigs(services []*sharedtypes.SupplierServiceConfi
 			return fmt.Errorf("serviceConfig cannot be nil: %v", services)
 		}
 
-		// Check the Service
-		if err := serviceConfig.Service.ValidateBasic(); err != nil {
-			return sharedtypes.ErrSharedInvalidService.Wrapf("%s", err)
+		// Check the Service ID
+		if !sharedtypes.IsValidServiceId(serviceConfig.GetServiceId()) {
+			return sharedtypes.ErrSharedInvalidService.Wrapf("invalid service ID: %s", serviceConfig.GetServiceId())
 		}
 
 		// Check the Endpoints
