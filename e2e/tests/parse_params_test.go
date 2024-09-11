@@ -138,7 +138,7 @@ func (s *suite) newProofMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 		case prooftypes.ParamProofRequestProbability:
 			msgUpdateParams.Params.ProofRequestProbability = paramValue.value.(float32)
 		case prooftypes.ParamProofRequirementThreshold:
-			msgUpdateParams.Params.ProofRequirementThreshold = uint64(paramValue.value.(int64))
+			msgUpdateParams.Params.ProofRequirementThreshold = paramValue.value.(*cosmostypes.Coin)
 		case prooftypes.ParamProofMissingPenalty:
 			msgUpdateParams.Params.ProofMissingPenalty = paramValue.value.(*cosmostypes.Coin)
 		case prooftypes.ParamProofSubmissionFee:

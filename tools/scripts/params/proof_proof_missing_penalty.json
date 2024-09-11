@@ -7,7 +7,7 @@
         "name": "proof_missing_penalty",
         "as_coin": {
           "denom": "upokt",
-          "amount": "320"
+          "amount": "320000000"
         }
       }
     ]

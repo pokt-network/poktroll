@@ -44,7 +44,10 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 	settledResult = types.NewClaimSettlementResult()
 	expiredResult = types.NewClaimSettlementResult()
 
-	supplierToSlashCount := make(map[string]uint64)
+	// A map from a supplier operator address to the number of expired claims that
+	// supplier has in this session.
+	// Expired claims due to reasons such as invalid or missing proofs when required.
+	supplierToExpiredClaimCount := make(map[string]uint64)
 	logger.Debug("settling expiring claims")
 	for _, claim := range expiringClaims {
 		var (
@@ -123,7 +126,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 				// The unstaking check is not done here because the slashed supplier may
 				// have other valid claims and the protocol might want to touch the supplier
 				// owner or operator balances if the stake is negative.
-				supplierToSlashCount[claim.SupplierOperatorAddress]++
+				supplierToExpiredClaimCount[claim.SupplierOperatorAddress]++
 
 				// The claim & proof are no longer necessary, so there's no need for them
 				// to take up on-chain space.
@@ -191,7 +194,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 	}
 
 	// Slash all the suppliers that have been marked for slashing slashingCount times.
-	for supplierOperatorAddress, slashingCount := range supplierToSlashCount {
+	for supplierOperatorAddress, slashingCount := range supplierToExpiredClaimCount {
 		if err := k.slashSupplierStake(ctx, supplierOperatorAddress, slashingCount); err != nil {
 			logger.Error(fmt.Sprintf("error slashing supplier %s: %s", supplierOperatorAddress, err))
 			return settledResult, expiredResult, err
@@ -274,21 +277,14 @@ func (k Keeper) proofRequirementForClaim(ctx sdk.Context, claim *prooftypes.Clai
 	}
 
 	proofParams := k.proofKeeper.GetParams(ctx)
-	computeUnitsToTokensMultiplier := k.GetParams(ctx).ComputeUnitsToTokensMultiplier
-
-	// TODO_BETA(@red-0ne): Change the proofRequirementThreshold to be of type uPOKT coin.
-	// For now, convert the uint64 representing the threshold in POKT to uPOKT.
-	proofRequirementThresholduPOKT := sdk.NewCoin(
-		volatile.DenomuPOKT,
-		math.NewIntFromUint64(proofParams.GetProofRequirementThreshold()),
-	)
+	tokenomicsParams := k.GetParams(ctx)
 
 	// Proof requirement threshold should be checked against the claimed uPOKT since
 	// the corresponding governance parameter represents coins and not compute units.
-	claimeduPOKT := sdk.NewCoin(
-		volatile.DenomuPOKT,
-		math.NewIntFromUint64(numClaimComputeUnits*computeUnitsToTokensMultiplier),
-	)
+	claimeduPOKT, err := tokenomicsParams.NumComputeUnitsToCoin(numClaimComputeUnits)
+	if err != nil {
+		return requirementReason, err
+	}
 
 	// Require a proof if the claim's compute units meets or exceeds the threshold.
 	//
@@ -299,13 +295,13 @@ func (k Keeper) proofRequirementForClaim(ctx sdk.Context, claim *prooftypes.Clai
 	// TODO_IMPROVE(@bryanchriswhite, @red-0ne): It might make sense to include
 	// whether there was a proof submission error downstream from here. This would
 	// require a more comprehensive metrics API.
-	if claimeduPOKT.Amount.GTE(proofRequirementThresholduPOKT.Amount) {
+	if claimeduPOKT.Amount.GTE(proofParams.GetProofRequirementThreshold().Amount) {
 		requirementReason = prooftypes.ProofRequirementReason_THRESHOLD
 
 		logger.Info(fmt.Sprintf(
 			"claim requires proof due to claimed amount (%s) exceeding threshold (%s)",
 			claimeduPOKT,
-			proofRequirementThresholduPOKT,
+			proofParams.GetProofRequirementThreshold(),
 		))
 		return requirementReason, nil
 	}
@@ -337,7 +333,7 @@ func (k Keeper) proofRequirementForClaim(ctx sdk.Context, claim *prooftypes.Clai
 	logger.Info(fmt.Sprintf(
 		"claim does not require proof due to claimed amount (%s) being less than the threshold (%s) and random sample (%.2f) being greater than probability (%.2f)",
 		claimeduPOKT,
-		proofRequirementThresholduPOKT,
+		proofParams.GetProofRequirementThreshold(),
 		proofRequirementSampleValue,
 		proofParams.GetProofRequestProbability(),
 	))

@@ -34,7 +34,7 @@ import (
 
 const (
 	testServiceId = "svc1"
-	supplierStake = 1000000
+	supplierStake = 1000000 // uPOKT
 )
 
 func init() {
@@ -244,6 +244,10 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequiredAndNotProv
 	require.NoError(t, err)
 
 	tokenomicsParams := s.keepers.Keeper.GetParams(ctx)
+	proofRequirementThreshold, err := tokenomicsParams.NumComputeUnitsToCoin(numComputeUnits - 1)
+	require.NoError(t, err)
+
+	belowStakeAmountProofMissingPenalty := sdk.NewCoin(volatile.DenomuPOKT, math.NewInt(supplierStake/2))
 
 	// Set the proof parameters such that s.claim requires a proof because:
 	// - proof_request_probability is 0%
@@ -251,10 +255,10 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequiredAndNotProv
 	err = s.keepers.ProofKeeper.SetParams(ctx, prooftypes.Params{
 		ProofRequestProbability: 0,
 		// -1 to push threshold below s.claim's compute units
-		ProofRequirementThreshold: uint64(numComputeUnits-1) * tokenomicsParams.ComputeUnitsToTokensMultiplier,
+		ProofRequirementThreshold: &proofRequirementThreshold,
 		// Set the proof missing penalty to half the supplier's stake so it is not
 		// unstaked when being slashed.
-		ProofMissingPenalty: &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(supplierStake / 2)},
+		ProofMissingPenalty: &belowStakeAmountProofMissingPenalty,
 	})
 	require.NoError(t, err)
 
@@ -278,9 +282,15 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequiredAndNotProv
 	claims := s.keepers.GetAllClaims(ctx)
 	require.Len(t, claims, 0)
 
+	// Slashing should have occurred without unstaking the supplier.
+	slashedSupplier, supplierFound := s.keepers.GetSupplier(sdkCtx, s.claim.SupplierOperatorAddress)
+	require.True(t, supplierFound)
+	require.Equal(t, math.NewInt(supplierStake/2), slashedSupplier.Stake.Amount)
+	require.Equal(t, uint64(0), slashedSupplier.UnstakeSessionEndHeight)
+
 	// Confirm an expiration event was emitted
 	events := sdkCtx.EventManager().Events()
-	require.Len(t, events, 7) // minting, burning, settling, etc..
+	require.Len(t, events, 7) // asserting on the length of events so the developer must consciously update it upon changes
 	expectedEvents := testutilevents.FilterEvents[*tokenomicstypes.EventClaimExpired](t, events, "poktroll.tokenomics.EventClaimExpired")
 	require.Len(t, expectedEvents, 1)
 
@@ -288,12 +298,6 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequiredAndNotProv
 	expectedEvent := expectedEvents[0]
 	require.Equal(t, tokenomicstypes.ClaimExpirationReason_PROOF_MISSING, expectedEvent.GetExpirationReason())
 	require.Equal(t, s.numRelays, expectedEvent.GetNumRelays())
-
-	// Slashing should have occurred without unstaking the supplier.
-	slashedSupplier, supplierFound := s.keepers.GetSupplier(sdkCtx, s.claim.SupplierOperatorAddress)
-	require.True(t, supplierFound)
-	require.Equal(t, math.NewInt(supplierStake/2), slashedSupplier.Stake.Amount)
-	require.Equal(t, uint64(0), slashedSupplier.UnstakeSessionEndHeight)
 }
 
 func (s *TestSuite) TestSettlePendingClaims_ClaimSettled_ProofRequiredAndProvided_ViaThreshold() {
@@ -306,12 +310,17 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimSettled_ProofRequiredAndProvide
 	numComputeUnits, err := s.claim.GetNumComputeUnits()
 	require.NoError(t, err)
 
+	tokenomicsParams := s.keepers.Keeper.GetParams(ctx)
+	proofRequirementThreshold, err := tokenomicsParams.NumComputeUnitsToCoin(numComputeUnits - 1)
+	require.NoError(t, err)
+
 	// Set the proof parameters such that s.claim requires a proof because:
 	// - proof_request_probability is 0%
 	// - proof_requirement_threshold is below the claim (i.e. claim is above threshold)
 	err = s.keepers.ProofKeeper.SetParams(ctx, prooftypes.Params{
-		ProofRequestProbability:   0,
-		ProofRequirementThreshold: uint64(numComputeUnits - 1), // -1 to push threshold below s.claim's compute units
+		ProofRequestProbability: 0,
+		// -1 to push threshold below s.claim's compute units
+		ProofRequirementThreshold: &proofRequirementThreshold,
 	})
 	require.NoError(t, err)
 
@@ -353,14 +362,16 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOn
 	ctx := s.ctx
 	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
 
+	belowStakeAmountProofMissingPenalty := sdk.NewCoin(volatile.DenomuPOKT, math.NewInt(supplierStake/2))
+
+	proofParams := s.keepers.ProofKeeper.GetParams(ctx)
 	// Set the proof parameters such that s.claim DOES NOT require a proof because:
 	// - proof_request_probability is 100%
-	err := s.keepers.ProofKeeper.SetParams(ctx, prooftypes.Params{
-		ProofRequestProbability: 1,
-		// Set the proof missing penalty to half the supplier's stake so it is not
-		// unstaked when being slashed.
-		ProofMissingPenalty: &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(supplierStake / 2)},
-	})
+	proofParams.ProofRequestProbability = 1
+	// Set the proof missing penalty to half the supplier's stake so it is not
+	// unstaked when being slashed.
+	proofParams.ProofMissingPenalty = &belowStakeAmountProofMissingPenalty
+	err := s.keepers.ProofKeeper.SetParams(ctx, proofParams)
 	require.NoError(t, err)
 
 	// Create a claim that requires a proof and an invalid proof
@@ -392,6 +403,12 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOn
 	proofs := s.keepers.GetAllProofs(ctx)
 	require.Len(t, proofs, 0)
 
+	// Slashing should have occurred without unstaking the supplier.
+	slashedSupplier, supplierFound := s.keepers.GetSupplier(sdkCtx, s.claim.SupplierOperatorAddress)
+	require.True(t, supplierFound)
+	require.Equal(t, math.NewInt(supplierStake/2), slashedSupplier.Stake.Amount)
+	require.Equal(t, uint64(0), slashedSupplier.UnstakeSessionEndHeight)
+
 	// Confirm an expiration event was emitted
 	events := sdkCtx.EventManager().Events()
 	require.Len(t, events, 7) // minting, burning, settling, etc..
@@ -402,12 +419,6 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOn
 	expectedEvent := expectedEvents[0]
 	require.Equal(t, tokenomicstypes.ClaimExpirationReason_PROOF_INVALID, expectedEvent.GetExpirationReason())
 	require.Equal(t, s.numRelays, expectedEvent.GetNumRelays())
-
-	// Slashing should have occurred without unstaking the supplier.
-	slashedSupplier, supplierFound := s.keepers.GetSupplier(sdkCtx, s.claim.SupplierOperatorAddress)
-	require.True(t, supplierFound)
-	require.Equal(t, math.NewInt(supplierStake/2), slashedSupplier.Stake.Amount)
-	require.Equal(t, uint64(0), slashedSupplier.UnstakeSessionEndHeight)
 }
 
 func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_ViaProbability() {
@@ -421,15 +432,17 @@ func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_Vi
 	require.NoError(t, err)
 
 	tokenomicsParams := s.keepers.Keeper.GetParams(ctx)
+	proofRequirementThreshold, err := tokenomicsParams.NumComputeUnitsToCoin(numComputeUnits + 1)
+	require.NoError(t, err)
 
 	// Set the proof parameters such that s.claim requires a proof because:
 	// - proof_request_probability is 100%
 	// - proof_requirement_threshold is 0, should not matter
-	err = s.keepers.ProofKeeper.SetParams(ctx, prooftypes.Params{
-		ProofRequestProbability: 1,
-		// +1 so its not required via probability
-		ProofRequirementThreshold: (numComputeUnits + 1) * tokenomicsParams.ComputeUnitsToTokensMultiplier,
-	})
+	proofParams := s.keepers.ProofKeeper.GetParams(ctx)
+	proofParams.ProofRequestProbability = 1
+	// +1 so its not required via probability
+	proofParams.ProofRequirementThreshold = &proofRequirementThreshold
+	err = s.keepers.ProofKeeper.SetParams(ctx, proofParams)
 	require.NoError(t, err)
 
 	// Upsert the claim & proof
@@ -475,15 +488,17 @@ func (s *TestSuite) TestSettlePendingClaims_Settles_WhenAProofIsNotRequired() {
 	require.NoError(t, err)
 
 	tokenomicsParams := s.keepers.Keeper.GetParams(ctx)
+	proofRequirementThreshold, err := tokenomicsParams.NumComputeUnitsToCoin(numComputeUnits + 1)
+	require.NoError(t, err)
 
 	// Set the proof parameters such that s.claim DOES NOT require a proof because:
 	// - proof_request_probability is 0% AND
 	// - proof_requirement_threshold exceeds s.claim's compute units
-	err = s.keepers.ProofKeeper.SetParams(ctx, prooftypes.Params{
-		ProofRequestProbability: 0,
-		// +1 to push threshold above s.claim's compute units
-		ProofRequirementThreshold: (numComputeUnits + 1) * tokenomicsParams.ComputeUnitsToTokensMultiplier,
-	})
+	proofParams := s.keepers.ProofKeeper.GetParams(ctx)
+	proofParams.ProofRequestProbability = 0
+	// +1 to push threshold above s.claim's compute units
+	proofParams.ProofRequirementThreshold = &proofRequirementThreshold
+	err = s.keepers.ProofKeeper.SetParams(ctx, proofParams)
 	require.NoError(t, err)
 
 	// Upsert the claim only (not the proof)
@@ -545,15 +560,17 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimPendingAfterSettlement() {
 	require.NoError(t, err)
 
 	tokenomicsParams := s.keepers.Keeper.GetParams(ctx)
+	proofRequirementThreshold, err := tokenomicsParams.NumComputeUnitsToCoin(numComputeUnits + 1)
+	require.NoError(t, err)
 
 	// Set the proof parameters such that s.claim DOES NOT require a proof
 	// because the proof_request_probability is 0% and the proof_request_threshold
 	// is greater than the claims' compute units.
-	err = s.keepers.ProofKeeper.SetParams(ctx, prooftypes.Params{
-		ProofRequestProbability: 0,
-		// +1 to push threshold above s.claim's compute units
-		ProofRequirementThreshold: (numComputeUnits + 1) * tokenomicsParams.ComputeUnitsToTokensMultiplier,
-	})
+	proofParams := s.keepers.ProofKeeper.GetParams(ctx)
+	proofParams.ProofRequestProbability = 0
+	// +1 to push threshold above s.claim's compute units
+	proofParams.ProofRequirementThreshold = &proofRequirementThreshold
+	err = s.keepers.ProofKeeper.SetParams(ctx, proofParams)
 	require.NoError(t, err)
 
 	// 0. Add the claims & verify they exists
@@ -632,25 +649,27 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	require.NoError(t, err)
 
 	tokenomicsParams := s.keepers.Keeper.GetParams(ctx)
+	proofRequirementThreshold, err := tokenomicsParams.NumComputeUnitsToCoin(numComputeUnits - 1)
+	require.NoError(t, err)
 
 	// Set the proof parameters such that s.claim requires a proof because:
 	// - proof_request_probability is 0%
 	// - proof_requirement_threshold is below the claim (i.e. claim is above threshold)
-	err = s.keepers.ProofKeeper.SetParams(ctx, prooftypes.Params{
-		ProofRequestProbability: 0,
-		// -1 to push threshold below s.claim's compute units
-		ProofRequirementThreshold: uint64(numComputeUnits-1) * tokenomicsParams.ComputeUnitsToTokensMultiplier,
-		// Set the proof missing penalty to be equal to the supplier's stake to make
-		// its stake below the minimum stake requirement and trigger an unstake.
-		ProofMissingPenalty: &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(supplierStake)},
-	})
+	proofParams := s.keepers.ProofKeeper.GetParams(ctx)
+	proofParams.ProofRequestProbability = 0
+	// -1 to push threshold below s.claim's compute units
+	proofParams.ProofRequirementThreshold = &proofRequirementThreshold
+	// Set the proof missing penalty to be equal to the supplier's stake to make
+	// its stake below the minimum stake requirement and trigger an unstake.
+	proofParams.ProofMissingPenalty = &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(supplierStake)}
+	err = s.keepers.ProofKeeper.SetParams(ctx, proofParams)
 	require.NoError(t, err)
 
-	// Upsert the claim ONLY
+	// Upsert the claim ONLY because it should be processed without needing a proof.
 	s.keepers.UpsertClaim(ctx, s.claim)
 
 	// Settle pending claims after proof window closes
-	// Expectation: All (1) claims should be expired.
+	// Expectation: All (1) claims should expire.
 	// NB: proofs should be rejected when the current height equals the proof window close height.
 	sessionEndHeight := s.claim.SessionHeader.SessionEndBlockHeight
 	blockHeight := shared.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)

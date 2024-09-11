@@ -6,6 +6,7 @@ import (
 
 	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/stretchr/testify/require"
@@ -70,7 +71,7 @@ func TestMsgUpdateParam_UpdateProofRequestProbabilityOnly(t *testing.T) {
 }
 
 func TestMsgUpdateParam_UpdateProofRequirementThresholdOnly(t *testing.T) {
-	var expectedProofRequirementThreshold uint64 = 100
+	var expectedProofRequirementThreshold = sdk.NewCoin(volatile.DenomuPOKT, math.NewInt(100))
 
 	// Set the parameters to their default values
 	k, msgSrv, ctx := setupMsgServer(t)
@@ -84,13 +85,13 @@ func TestMsgUpdateParam_UpdateProofRequirementThresholdOnly(t *testing.T) {
 	updateParamMsg := &prooftypes.MsgUpdateParam{
 		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		Name:      prooftypes.ParamProofRequirementThreshold,
-		AsType:    &prooftypes.MsgUpdateParam_AsInt64{AsInt64: int64(expectedProofRequirementThreshold)},
+		AsType:    &prooftypes.MsgUpdateParam_AsCoin{AsCoin: &expectedProofRequirementThreshold},
 	}
 	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.NoError(t, err)
 
 	require.NotEqual(t, defaultParams.ProofRequirementThreshold, res.Params.ProofRequirementThreshold)
-	require.Equal(t, expectedProofRequirementThreshold, res.Params.ProofRequirementThreshold)
+	require.Equal(t, &expectedProofRequirementThreshold, res.Params.ProofRequirementThreshold)
 
 	// Ensure the other parameters are unchanged
 	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, "ProofRequirementThreshold")

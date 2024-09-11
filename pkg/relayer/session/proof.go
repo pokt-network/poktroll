@@ -292,16 +292,20 @@ func (rs *relayerSessionsManager) isProofRequired(
 		return false, err
 	}
 
-	claimedAmount := numClaimComputeUnits * tokenomicsParams.GetComputeUnitsToTokensMultiplier()
+	// The amount of uPOKT being claimed.
+	claimedAmount, err := tokenomicsParams.NumComputeUnitsToCoin(numClaimComputeUnits)
+	if err != nil {
+		return false, err
+	}
 
 	logger = logger.With(
-		"claimedAmount", claimedAmount,
-		"proof_requirement_threshold", proofParams.GetProofRequirementThreshold(),
+		"claimed_amount_upokt", claimedAmount.Amount.Uint64(),
+		"proof_requirement_threshold_upokt", proofParams.GetProofRequirementThreshold(),
 	)
 
 	// Require a proof if the claimed amount meets or exceeds the threshold.
 	// TODO_MAINNET: This should be proportional to the supplier's stake as well.
-	if claimedAmount >= proofParams.GetProofRequirementThreshold() {
+	if claimedAmount.Amount.GTE(proofParams.GetProofRequirementThreshold().Amount) {
 		logger.Info().Msg("compute units is above threshold, claim requires proof")
 
 		return true, nil

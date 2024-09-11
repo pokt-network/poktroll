@@ -338,8 +338,9 @@ type BlockQueryClient interface {
 // is necessary to prevent dependency cycles.
 type ProofParams interface {
 	GetProofRequestProbability() float32
-	GetProofRequirementThreshold() uint64
+	GetProofRequirementThreshold() *cosmostypes.Coin
 	GetProofMissingPenalty() *cosmostypes.Coin
+	GetProofSubmissionFee() *cosmostypes.Coin
 }
 
 // ProofQueryClient defines an interface that enables the querying of the
@@ -360,6 +361,7 @@ type TokenomicsRelayMiningDifficulty interface {
 // is necessary to prevent dependency cycles.
 type TokenomicsParams interface {
 	GetComputeUnitsToTokensMultiplier() uint64
+	NumComputeUnitsToCoin(numClaimComputeUnits uint64) (cosmostypes.Coin, error)
 }
 
 // TokenomicsQueryClient defines an interface that enables the querying of the

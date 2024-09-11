@@ -385,7 +385,7 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 
 		proofRequirementThreshold, ok := paramsMap[prooftypes.ParamProofRequirementThreshold]
 		if ok {
-			params.ProofRequirementThreshold = uint64(proofRequirementThreshold.value.(int64))
+			params.ProofRequirementThreshold = proofRequirementThreshold.value.(*cosmostypes.Coin)
 		}
 
 		proofMissingPenalty, ok := paramsMap[prooftypes.ParamProofMissingPenalty]

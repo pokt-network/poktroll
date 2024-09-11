@@ -54,7 +54,7 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 	case ParamProofRequestProbability:
 		return msg.paramTypeIsFloat()
 	case ParamProofRequirementThreshold:
-		return msg.paramTypeIsInt64()
+		return msg.paramTypeIsCoin()
 	case ParamProofMissingPenalty:
 		return msg.paramTypeIsCoin()
 	case ParamProofSubmissionFee:
