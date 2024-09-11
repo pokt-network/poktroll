@@ -1,6 +1,6 @@
 Feature: Stake Supplier Namespace
 
-    Scenario: User can stake and unstake a Supplier waiting for it to unbound
+    Scenario: User can stake a Supplier
         Given the user has the pocketd binary installed
         And the user verifies the "supplier" for account "supplier2" is not staked
         And the account "supplier2" has a balance greater than "1000070" uPOKT
