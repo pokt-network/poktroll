@@ -962,6 +962,22 @@ claim_list_session: ## List all the claims ending at a specific session (specifi
 PARAM_FLAGS = --home=$(POKTROLLD_HOME) --keyring-backend test --from $(PNF_ADDRESS) --node $(POCKET_NODE)
 
 ### Tokenomics Module Params ###
+.PHONY: params_get_tokenomics
+params_get_tokenomics: ## Get the tokenomics module params
+	poktrolld query tokenomics params --node $(POCKET_NODE)
+
+.PHONY: params_get_proof
+params_get_proof: ## Get the proof module params
+	poktrolld query proof params --node $(POCKET_NODE)
+
+.PHONY: params_get_shared
+params_get_shared: ## Get the shared module params
+	poktrolld query shared params --node $(POCKET_NODE)
+
+.PHONY: params_get_service
+params_get_service: ## Get the service module params
+	poktrolld query service params --node $(POCKET_NODE)
+
 .PHONY: update_tokenomics_params_all
 params_update_tokenomics_all: ## Update the tokenomics module params
 	poktrolld tx authz exec ./tools/scripts/params/tokenomics_all.json $(PARAM_FLAGS)
