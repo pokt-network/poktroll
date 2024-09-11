@@ -76,18 +76,6 @@ func (msg *MsgUpdateParam) paramTypeIsBytes() error {
 	return nil
 }
 
-// paramTypeIsInt64 checks if the parameter type is int64, returning an error if not.
-func (msg *MsgUpdateParam) paramTypeIsInt64() error {
-	if _, ok := msg.AsType.(*MsgUpdateParam_AsInt64); !ok {
-		return ErrProofParamInvalid.Wrapf(
-			"invalid type for param %q expected %T, got %T",
-			msg.Name, &MsgUpdateParam_AsInt64{},
-			msg.AsType,
-		)
-	}
-	return nil
-}
-
 // paramTypeIsFloat checks if the parameter type is Float, returning an error if not.
 func (msg *MsgUpdateParam) paramTypeIsFloat() error {
 	if _, ok := msg.AsType.(*MsgUpdateParam_AsFloat); !ok {

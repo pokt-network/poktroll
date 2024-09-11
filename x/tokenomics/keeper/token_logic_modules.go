@@ -253,9 +253,9 @@ func (k Keeper) ProcessTokenLogicModules(
 	if !found {
 		// If the relay mining difficulty is not found, we initialize it with the
 		// current number of relays.
-		numRelays, err := root.Count()
-		if err != nil {
-			return tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrapf("%v", err)
+		numRelays, countErr := root.Count()
+		if countErr != nil {
+			return tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrapf("%v", countErr)
 		}
 
 		relayMiningDifficulty = newDefaultRelayMiningDifficulty(ctx, logger, service.Id, numRelays)
