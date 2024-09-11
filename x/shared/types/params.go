@@ -4,6 +4,7 @@ import (
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 )
 
+// TODO_DISCUSS: Should these defaults be updated to match the current config.yml?
 const (
 	DefaultNumBlocksPerSession                = 4
 	ParamNumBlocksPerSession                  = "num_blocks_per_session"
