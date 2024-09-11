@@ -394,6 +394,18 @@ send_relay_sovereign_app_REST: # Send a REST relay through the AppGateServer as 
 cosmovisor_start_node: # Starts the node using cosmovisor that waits for an upgrade plan
 	bash tools/scripts/upgrades/cosmovisor-start-node.sh
 
+.PHONY: query_tx
+query_tx: ## Query for a transaction by hash and output as YAML (default).
+	poktrolld --home=$(POKTROLLD_HOME) query tx $(HASH) --node $(POCKET_NODE)
+
+.PHONY: query_tx_json
+query_tx_json: ## Query for a transaction by hash and output as JSON.
+	poktrolld --home=$(POKTROLLD_HOME) query tx $(HASH) --output json --node $(POCKET_NODE)
+
+.PHONY: query_tx_log
+query_tx_log: ## Query for a transaction and print its raw log.
+	$(MAKE) -s query_tx_json | jq .raw_log
+
 ###############
 ### Linting ###
 ###############
@@ -740,15 +752,19 @@ supplier_unstake: ## Unstake an supplier (must specify the SUPPLIER env var)
 
 .PHONY: supplier1_unstake
 supplier1_unstake: ## Unstake supplier1
-	SUPPLIER=supplier1 make supplier_unstake
+	SUPPLIER1=$$(make -s poktrolld_addr ACC_NAME=supplier1) && \
+	SUPPLIER=$$SUPPLIER1 make supplier_unstake
 
 .PHONY: supplier2_unstake
 supplier2_unstake: ## Unstake supplier2
-	SUPPLIER=supplier2 make supplier_unstake
+	SUPPLIER2=$$(make -s poktrolld_addr ACC_NAME=supplier2) && \
+	SUPPLIER=$$SUPPLIER2 make supplier_unstake
+
 
 .PHONY: supplier3_unstake
 supplier3_unstake: ## Unstake supplier3
-	SUPPLIER=supplier3 make supplier_unstake
+	SUPPLIER3=$$(make -s poktrolld_addr ACC_NAME=supplier3) && \
+	SUPPLIER=$$SUPPLIER3 make supplier_unstake
 
 ###############
 ### Session ###
@@ -946,6 +962,22 @@ claim_list_session: ## List all the claims ending at a specific session (specifi
 PARAM_FLAGS = --home=$(POKTROLLD_HOME) --keyring-backend test --from $(PNF_ADDRESS) --node $(POCKET_NODE)
 
 ### Tokenomics Module Params ###
+.PHONY: params_get_tokenomics
+params_get_tokenomics: ## Get the tokenomics module params
+	poktrolld query tokenomics params --node $(POCKET_NODE)
+
+.PHONY: params_get_proof
+params_get_proof: ## Get the proof module params
+	poktrolld query proof params --node $(POCKET_NODE)
+
+.PHONY: params_get_shared
+params_get_shared: ## Get the shared module params
+	poktrolld query shared params --node $(POCKET_NODE)
+
+.PHONY: params_get_service
+params_get_service: ## Get the service module params
+	poktrolld query service params --node $(POCKET_NODE)
+
 .PHONY: update_tokenomics_params_all
 params_update_tokenomics_all: ## Update the tokenomics module params
 	poktrolld tx authz exec ./tools/scripts/params/tokenomics_all.json $(PARAM_FLAGS)
