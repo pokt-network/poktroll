@@ -34,3 +34,6 @@ Feature: Stake Supplier Namespace
         But the session for application "app1" and service "anvil" does not contain "supplier2"
         When the user waits for supplier "supplier2" to become active for service "anvil"
         Then the session for application "app1" and service "anvil" contains the supplier "supplier2"
+        # Cleanup to make this feature idempotent.
+        And the user unstakes a "supplier" from the account "supplier2"
+        And the user waits for the supplier for account "supplier2" unbonding period to finish
