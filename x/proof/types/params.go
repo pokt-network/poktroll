@@ -1,8 +1,6 @@
 package types
 
 import (
-	"encoding/hex"
-
 	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
@@ -16,11 +14,10 @@ var (
 	_ client.ProofParams  = (*Params)(nil)
 	_ paramtypes.ParamSet = (*Params)(nil)
 
-	// TODO_FOLLOWUP(@olshansk, #690): Delete this parameter.
-	KeyRelayDifficultyTargetHash        = []byte("RelayDifficultyTargetHash")
-	ParamRelayDifficultyTargetHash      = "relay_difficulty_target_hash"
-	DefaultRelayDifficultyTargetHashHex = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" // all relays are payable
-	DefaultRelayDifficultyTargetHash, _ = hex.DecodeString(DefaultRelayDifficultyTargetHashHex)
+	// TODO_TECHDEBT(#690): Delete this parameter.
+	KeyRelayDifficultyTargetHash     = []byte("RelayDifficultyTargetHash")
+	ParamRelayDifficultyTargetHash   = "relay_difficulty_target_hash"
+	DefaultRelayDifficultyTargetHash = protocol.BaseRelayDifficultyHashBz
 
 	// TODO_BETA(@red-0ne): Iterate on the parameters below by adding unit suffixes and
 	// consider having the proof_requirement_threshold to be a function of the supplier's stake amount.
@@ -69,7 +66,6 @@ func NewParams(
 // DefaultParams returns a default set of parameters
 func DefaultParams() Params {
 	return NewParams(
-		DefaultRelayDifficultyTargetHash,
 		DefaultProofRequestProbability,
 		DefaultProofRequirementThreshold,
 		&DefaultProofMissingPenalty,

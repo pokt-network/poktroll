@@ -22,7 +22,7 @@ import (
 // the off-chain SMTs, across all suppliers, for each service.
 // It indirectly drives the off-chain resource requirements of the network
 // in additional to playing a critical role in Relay Mining.
-// TODO_BLOCKER(@Olshansk, #542): Make this a governance parameter.
+// TODO_MAINNET(#542): Make this a governance parameter and figure out the correct value.
 const TargetNumRelays = uint64(10e4)
 
 // Exponential moving average (ema) smoothing factor, commonly known as alpha.
@@ -64,7 +64,7 @@ func (k Keeper) UpdateRelayMiningDifficulty(
 		// Compute the updated EMA of the number of relays.
 		prevRelaysEma := prevDifficulty.NumRelaysEma
 		newRelaysEma := computeEma(alpha, prevRelaysEma, numRelays)
-		difficultyHash := ComputeNewDifficultyTargetHash(prevDifficulty.TargetHash, TargetNumRelays, newRelaysEma)
+		difficultyHash := protocol.ComputeNewDifficultyTargetHash(prevDifficulty.TargetHash, TargetNumRelays, newRelaysEma)
 		newDifficulty := types.RelayMiningDifficulty{
 			ServiceId:    serviceId,
 			BlockHeight:  sdkCtx.BlockHeight(),
@@ -108,64 +108,6 @@ func (k Keeper) UpdateRelayMiningDifficulty(
 	return difficultyPerServiceMap, nil
 }
 
-// ComputeNewDifficultyTargetHash computes the new difficulty target hash based
-// on the target number of relays we want the network to mine and the new EMA of
-// the number of relays.
-// NB: Exported for testing purposes only.
-func ComputeNewDifficultyTargetHash(prevTargetHash []byte, targetNumRelays, newRelaysEma uint64) []byte {
-	// The target number of relays we want the network to mine is greater than
-	// the actual on-chain relays, so we don't need to scale to anything above
-	// the default.
-	if targetNumRelays > newRelaysEma {
-		return prooftypes.DefaultRelayDifficultyTargetHash
-	}
-
-	// Calculate the proportion of target relays relative to the EMA of actual volume applicable relays
-	// TODO_MAINNET: Use a language agnostic float implementation or arithmetic library
-	// to ensure deterministic results across different language implementations of the
-	// protocol.
-	ratio := new(big.Float).Quo(
-		new(big.Float).SetUint64(targetNumRelays),
-		new(big.Float).SetUint64(newRelaysEma),
-	)
-
-	// Compute the new target hash by scaling the previous target hash based on the ratio
-	newTargetHash := scaleDifficultyTargetHash(prevTargetHash, ratio)
-
-	return newTargetHash
-}
-
-// scaleDifficultyTargetHash scales the target hash based on the given ratio.
-//
-// TODO_MAINNET: Use a language agnostic float implementation or arithmetic library
-// to ensure deterministic results across different language implementations of the
-// protocol.
-func scaleDifficultyTargetHash(targetHash []byte, ratio *big.Float) []byte {
-	// Convert targetHash to a big.Float to minimize precision loss.
-	targetInt := new(big.Int).SetBytes(targetHash)
-	targetFloat := new(big.Float).SetInt(targetInt)
-
-	// Scale the target by multiplying it by the ratio.
-	scaledTargetFloat := new(big.Float).Mul(targetFloat, ratio)
-	// NB: Some precision is lost when converting back to an integer.
-	scaledTargetInt, _ := scaledTargetFloat.Int(nil)
-	scaledTargetHash := scaledTargetInt.Bytes()
-
-	// Ensure the scaled target hash maxes out at BaseRelayDifficulty
-	if len(scaledTargetHash) > len(targetHash) {
-		return protocol.BaseRelayDifficultyHashBz
-	}
-
-	// Ensure the scaled target hash has the same length as the default target hash.
-	if len(scaledTargetHash) < len(targetHash) {
-		paddedTargetHash := make([]byte, len(targetHash))
-		copy(paddedTargetHash[len(paddedTargetHash)-len(scaledTargetHash):], scaledTargetHash)
-		return paddedTargetHash
-	}
-
-	return scaledTargetHash
-}
-
 // computeEma computes the EMA at time t, given the EMA at time t-1, the raw
 // data revealed at time t, and the smoothing factor α.
 // Src: https://en.wikipedia.org/wiki/Exponential_smoothing
@@ -195,7 +137,7 @@ func newDefaultRelayMiningDifficulty(
 	logger = logger.With("helper", "newDefaultRelayMiningDifficulty")
 
 	// Compute the target hash based on the number of relays seen for the first time.
-	targetHash := ComputeNewDifficultyTargetHash(prooftypes.DefaultRelayDifficultyTargetHash, TargetNumRelays, numRelays)
+	targetHash := protocol.ComputeNewDifficultyTargetHash(prooftypes.DefaultRelayDifficultyTargetHash, TargetNumRelays, numRelays)
 
 	logger.Warn(types.ErrTokenomicsMissingRelayMiningDifficulty.Wrapf(
 		"No previous relay mining difficulty found for service %s.\n"+

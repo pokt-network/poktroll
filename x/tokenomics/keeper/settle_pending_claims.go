@@ -7,7 +7,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
 
-	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/telemetry"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	"github.com/pokt-network/poktroll/x/shared"
@@ -61,20 +60,41 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 			return settledResult, expiredResult, err
 		}
 
+		// DEV_NOTE: We are assuming that (numRelays := numComputeUnits * service.ComputeUnitsPerRelay)
+		// because this code path is only reached if that has already been validated.
+		numClaimComputeUnits, err = claim.GetNumComputeUnits()
+		if err != nil {
+			return settledResult, expiredResult, err
+		}
+
+		// TODO_TECHDEBT: Consider having a function like "GetRelayMiningDifficultyOrDefault" so
+		// we can avoid manually calling "newDefaultRelayMiningDifficulty" everywhere
+		relayMiningDifficulty, found := k.GetRelayMiningDifficulty(ctx, claim.SessionHeader.Service.Id)
+		if !found {
+			serviceId := claim.GetSessionHeader().GetService().GetId()
+			relayMiningDifficulty = newDefaultRelayMiningDifficulty(ctx, logger, serviceId, numClaimRelays)
+		}
+
 		// Retrieve the service to which the claim is associated.
+		// TODO_TECHDEBT: Consider having a method like "claim.Hydrate" that ensures the service
+		// in the claim object is complete
 		service, serviceFound := k.serviceKeeper.GetService(ctx, claim.SessionHeader.Service.Id)
 		if !serviceFound {
 			return settledResult, expiredResult, tokenomictypes.ErrTokenomicsServiceNotFound.Wrapf("service with ID %q not found", claim.SessionHeader.Service.Id)
 		}
 
-		numComputeUnits := k.claimedToEstimatedComputeUnits(ctx, numClaimRelays)
+		//
+		numClaimEstimatedComputeUnits, err = k.getClaimEstimatedComputeUnits(ctx, &service, &relayMiningDifficulty, numClaimComputeUnits)
+		if err != nil {
+			return settledResult, expiredResult, err
+		}
 
 		sessionId := claim.SessionHeader.SessionId
 
 		proof, isProofFound := k.proofKeeper.GetProof(ctx, sessionId, claim.SupplierOperatorAddress)
 		// Using the probabilistic proofs approach, determine if this expiring
 		// claim required an on-chain proof
-		proofRequirement, err = k.proofRequirementForClaim(ctx, claim)
+		proofRequirement, err = k.proofRequirementForClaim(ctx, claim, numClaimEstimatedComputeUnits)
 		if err != nil {
 			return settledResult, expiredResult, err
 		}
@@ -109,10 +129,11 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 				// Proof was required but not found.
 				// Emit an event that a claim has expired and being removed without being settled.
 				claimExpiredEvent := types.EventClaimExpired{
-					Claim:            &claim,
-					ExpirationReason: expirationReason,
-					NumRelays:        numClaimRelays,
-					NumComputeUnits:  numClaimedComputeUnits,
+					Claim:                    &claim,
+					ExpirationReason:         expirationReason,
+					NumRelays:                numClaimRelays,
+					NumComputeUnits:          numClaimComputeUnits,
+					NumEstimatedComputeUnits: numClaimEstimatedComputeUnits,
 				}
 				if err = ctx.EventManager().EmitTypedEvent(&claimExpiredEvent); err != nil {
 					return settledResult, expiredResult, err
@@ -129,7 +150,8 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 
 				expiredResult.NumClaims++
 				expiredResult.NumRelays += numClaimRelays
-				expiredResult.NumComputeUnits += numClaimedComputeUnits
+				// TODO_IN_THIS_PR: Estimated?
+				expiredResult.NumComputeUnits += numClaimComputeUnits
 				continue
 			}
 		}
@@ -147,7 +169,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 		claimSettledEvent := types.EventClaimSettled{
 			Claim:            &claim,
 			NumRelays:        numClaimRelays,
-			NumComputeUnits:  numClaimedComputeUnits,
+			NumComputeUnits:  numClaimComputeUnits,
 			ProofRequirement: proofRequirement,
 		}
 
@@ -179,7 +201,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 
 		settledResult.NumClaims++
 		settledResult.NumRelays += numClaimRelays
-		settledResult.NumComputeUnits += numClaimedComputeUnits
+		settledResult.NumComputeUnits += numClaimComputeUnits
 		settledResult.RelaysPerServiceMap[claim.SessionHeader.Service.Id] += numClaimRelays
 
 		logger.Info(fmt.Sprintf("Successfully settled claim for session ID %q at block height %d", claim.SessionHeader.SessionId, blockHeight))
@@ -250,7 +272,11 @@ func (k Keeper) getExpiringClaims(ctx sdk.Context) (expiringClaims []prooftypes.
 // If it is not, the claim will be settled without a proof.
 // If it is, the claim will only be settled if a valid proof is available.
 // TODO_BLOCKER(@bryanchriswhite, #419): Document safety assumptions of the probabilistic proofs mechanism.
-func (k Keeper) proofRequirementForClaim(ctx sdk.Context, claim prooftypes.Claim) (_ prooftypes.ProofRequirementReason, err error) {
+func (k Keeper) proofRequirementForClaim(
+	ctx sdk.Context,
+	claim prooftypes.Claim,
+	numClaimEstimatedComputeUnits uint64,
+) (_ prooftypes.ProofRequirementReason, err error) {
 	logger := k.logger.With("method", "proofRequirementForClaim")
 
 	// Defer telemetry calls so that they reference the final values the relevant variables.
@@ -258,41 +284,6 @@ func (k Keeper) proofRequirementForClaim(ctx sdk.Context, claim prooftypes.Claim
 	defer func() {
 		telemetry.ProofRequirementCounter(requirementReason, err)
 	}()
-
-	// Get the number of claimed compute units in the claim.
-	numClaimComputeUnits, err := claim.GetNumComputeUnits()
-	if err != nil {
-		return requirementReason, err
-	}
-
-	// Get the number of claimed compute units in the claim.
-	numRelays, err := claim.GetNumRelays()
-	if err != nil {
-		return requirementReason, err
-	}
-
-	numEstimatedComputeUnits := claimedToEstimatedComputeUnits(ctx, num)
-
-	// Retrieve the relay mining difficulty for the claim's service to determine
-	// the estimated number of compute units handled off-chain.
-	relayMiningDifficulty, found := k.GetRelayMiningDifficulty(ctx, claim.SessionHeader.Service.Id)
-	if !found {
-		var numRelays uint64
-		numRelays, err = claim.GetNumRelays()
-		if err != nil {
-			return requirementReason, err
-		}
-		serviceId := claim.GetSessionHeader().GetService().GetId()
-		relayMiningDifficulty = newDefaultRelayMiningDifficulty(ctx, logger, serviceId, numRelays)
-	}
-
-	// The number of estimated compute unites is a multiplier of the number of
-	// claimed compute units since it depends on whether the relay is minable or not.
-	difficultyMultiplier := protocol.GetDifficultyFromHash([32]byte(relayMiningDifficulty.TargetHash))
-	numEstimatedComputeUnits := numClaimComputeUnits * uint64(difficultyMultiplier)
-
-	logger.Info(fmt.Sprintf("Estimated (%d) serviced compute units from (%d) claimed compute units"+
-		"with a difficulty multiplier of (%d) for relay difficulty (%v)", numEstimatedComputeUnits, numClaimComputeUnits, difficultyMultiplier, relayMiningDifficulty.TargetHash))
 
 	proofParams := k.proofKeeper.GetParams(ctx)
 
@@ -303,18 +294,19 @@ func (k Keeper) proofRequirementForClaim(ctx sdk.Context, claim prooftypes.Claim
 	// TODO_IMPROVE(@red-0ne): It might make sense to include
 	// whether there was a proof submission error downstream from here. This would
 	// require a more comprehensive metrics API.
-	if numEstimatedComputeUnits >= proofParams.GetProofRequirementThreshold() {
+	// TODO_IN_THIS_PR: Should the threshold be depenent on the stake as well?
+	if numClaimEstimatedComputeUnits >= proofParams.GetProofRequirementThreshold() {
 		requirementReason = prooftypes.ProofRequirementReason_THRESHOLD
 
 		logger.Info(fmt.Sprintf(
 			"claim requires proof due to estimated serviced compute units (%d) exceeding threshold (%d)",
-			numEstimatedComputeUnits,
+			numClaimEstimatedComputeUnits,
 			proofParams.GetProofRequirementThreshold(),
 		))
 		return requirementReason, nil
 	}
 
-	earliestProofCommitBlockHash, err := k.getEarliestSupplierProofCommitBlockHash(ctx, claim)
+	earliestProofCommitBlockHash, err := k.getEarliestSupplierProofCommitBlockHash(ctx, &claim)
 	if err != nil {
 		return requirementReason, err
 	}
@@ -340,7 +332,7 @@ func (k Keeper) proofRequirementForClaim(ctx sdk.Context, claim prooftypes.Claim
 
 	logger.Info(fmt.Sprintf(
 		"claim does not require proof due to compute units (%d) being less than the threshold (%d) and random sample (%.2f) being greater than probability (%.2f)",
-		numClaimComputeUnits,
+		numClaimEstimatedComputeUnits,
 		proofParams.GetProofRequirementThreshold(),
 		proofRequirementSampleValue,
 		proofParams.GetProofRequestProbability(),
