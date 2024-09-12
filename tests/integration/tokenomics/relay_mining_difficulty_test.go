@@ -218,8 +218,11 @@ func getProof(
 	proof, err := trie.ProveClosest(path)
 	require.NoError(t, err)
 
-	proofBz, err := proof.Marshal()
+	compactProof, err := smt.CompactClosestProof(proof, &trie.TrieSpec)
 	require.NoError(t, err)
 
-	return proofBz
+	compactProofBz, err := compactProof.Marshal()
+	require.NoError(t, err)
+
+	return compactProofBz
 }
