@@ -14,10 +14,11 @@ import (
 
 func (s *suite) TheUnbondingPeriodParamIsSuccessfullySetToSessionsOfBlocks(
 	_ string,
-	supplierUnbondingPeriodSessions,
+	unbondingPeriodSessions,
 	numBlocksPerSession int64,
 ) {
-	require.GreaterOrEqualf(s, numBlocksPerSession, 2,
+	s.Logf("numBlocksPerSession: %d, unbondingPeriodSessions: %d", numBlocksPerSession, unbondingPeriodSessions)
+	require.GreaterOrEqualf(s, numBlocksPerSession, int64(2),
 		"num_blocks_per_session MUST be at least 2 to satisfy parameter validation requirements")
 
 	paramModuleName := "shared"
@@ -39,7 +40,7 @@ func (s *suite) TheUnbondingPeriodParamIsSuccessfullySetToSessionsOfBlocks(
 		ClaimWindowCloseOffsetBlocks:       1,
 		ProofWindowOpenOffsetBlocks:        0,
 		ProofWindowCloseOffsetBlocks:       1,
-		SupplierUnbondingPeriodSessions:    uint64(supplierUnbondingPeriodSessions),
+		SupplierUnbondingPeriodSessions:    uint64(unbondingPeriodSessions),
 		ApplicationUnbondingPeriodSessions: 1,
 	}
 
