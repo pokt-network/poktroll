@@ -180,19 +180,24 @@ func TestComputeNewDifficultyHash(t *testing.T) {
 }
 
 func Test_EnsureRelayMiningMultiplierIsProportional(t *testing.T) {
-	// Target Num Relays is the target number of volume applicable relays
-	// a session tree should have.
-	const targetNumRelays = uint64(10e2) // Target number of volume applicable relays
-	const lowVolumeService = 1e4         // Number of actual off-chain relays serviced by a RelayMiner
-	const highVolumeService = 1e6        // Number of actual off-chain relays serviced by a RelayMiner
+	// Target Num Relays is the target number of volume applicable relays a session tree should have.
+	const (
+		targetNumRelays   = uint64(10e2) // Target number of volume applicable relays
+		lowVolumeService  = 1e4          // Number of actual off-chain relays serviced by a RelayMiner
+		highVolumeService = 1e6          // Number of actual off-chain relays serviced by a RelayMiner
+		allowableDelta    = 0.05         // Allow a 5% error margin between estimated probabilities and results
+	)
 
 	highVolumeSvcDifficultyHash := ComputeNewDifficultyTargetHash(BaseRelayDifficultyHashBz, targetNumRelays, highVolumeService)
-	highVolumeRelayProbability := RelayDifficultyProbability(highVolumeSvcDifficultyHash)
-	highVolumeRelayMultiplier := RelayDifficultyMultiplier(highVolumeSvcDifficultyHash)
+	highVolumeRelayProbabilityRat := RelayDifficultyProbability(highVolumeSvcDifficultyHash)
+	highVolumeRelayProbability, _ := highVolumeRelayProbabilityRat.Float64()
+	highVolumeRelayMultiplierRat := RelayDifficultyMultiplier(highVolumeSvcDifficultyHash)
+	highVolumeRelayMultiplier, _ := highVolumeRelayMultiplierRat.Float64()
 
 	lowVolumeSvcDifficultyHash := ComputeNewDifficultyTargetHash(BaseRelayDifficultyHashBz, targetNumRelays, lowVolumeService)
-	lowVolumeRelayProbability := RelayDifficultyProbability(lowVolumeSvcDifficultyHash)
-	lowVolumeRelayMultiplier := RelayDifficultyMultiplier(lowVolumeSvcDifficultyHash)
+	lowVolumeRelayProbabilityRat := RelayDifficultyProbability(lowVolumeSvcDifficultyHash)
+	lowVolumeRelayProbability, _ := lowVolumeRelayProbabilityRat.Float64()
+	// lowVolumeRelayMultiplier := RelayDifficultyMultiplier(lowVolumeSvcDifficultyHash)
 
 	numApplicableHighVolumeSvcRelays := 0
 	numActualHighVolumeSvcRelays := 0
@@ -206,6 +211,8 @@ func Test_EnsureRelayMiningMultiplierIsProportional(t *testing.T) {
 			break
 		}
 	}
+	numEstimatedHighVolumeSvcRelays := float64(numApplicableHighVolumeSvcRelays) * highVolumeRelayMultiplier
+	fractionHighVolumeSvcRelays := float64(numApplicableHighVolumeSvcRelays) / float64(numActualHighVolumeSvcRelays)
 
 	numApplicableLowVolumeSvcRelays := 0
 	numActualLowVolumeSvcRelays := 0
@@ -219,9 +226,16 @@ func Test_EnsureRelayMiningMultiplierIsProportional(t *testing.T) {
 			break
 		}
 	}
+	fractionLowVolumeSvcRelays := float64(numApplicableLowVolumeSvcRelays) / float64(numActualLowVolumeSvcRelays)
 
-	require.Equal(t, numActualHighVolumeSvcRelays, highVolumeService)
-	fmt.Println(numActualHighVolumeSvcRelays, numActualLowVolumeSvcRelays)
+	// Ensure probabilities of a relay being applicable is within the allowable delta
+	require.InDelta(t, highVolumeRelayProbability, fractionHighVolumeSvcRelays, allowableDelta*highVolumeRelayProbability)
+	require.InDelta(t, lowVolumeRelayProbability, fractionLowVolumeSvcRelays, allowableDelta*lowVolumeRelayProbability)
+
+	fmt.Println(numEstimatedHighVolumeSvcRelays, numActualHighVolumeSvcRelays)
+	// fmt.Println(fractionHighVolumeSvcRelays, highVolumeRelayProbability)
+	// fmt.Println(fractionLowVolumeSvcRelays, lowVolumeRelayProbability)
+	// fmt.Println(numActualHighVolumeSvcRelays, numActualLowVolumeSvcRelays)
 }
 
 func Test_EnsureRelayMiningProbabilityIsProportional(t *testing.T) {

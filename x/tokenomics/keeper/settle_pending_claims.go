@@ -69,18 +69,18 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 
 		// TODO_TECHDEBT: Consider having a function like "GetRelayMiningDifficultyOrDefault" so
 		// we can avoid manually calling "newDefaultRelayMiningDifficulty" everywhere
-		relayMiningDifficulty, found := k.GetRelayMiningDifficulty(ctx, claim.SessionHeader.Service.Id)
+		relayMiningDifficulty, found := k.GetRelayMiningDifficulty(ctx, claim.SessionHeader.ServiceId)
 		if !found {
-			serviceId := claim.GetSessionHeader().GetService().GetId()
+			serviceId := claim.GetSessionHeader().GetServiceId()
 			relayMiningDifficulty = newDefaultRelayMiningDifficulty(ctx, logger, serviceId, numClaimRelays)
 		}
 
 		// Retrieve the service to which the claim is associated.
 		// TODO_TECHDEBT: Consider having a method like "claim.Hydrate" that ensures the service
 		// in the claim object is complete
-		service, serviceFound := k.serviceKeeper.GetService(ctx, claim.SessionHeader.Service.Id)
+		service, serviceFound := k.serviceKeeper.GetService(ctx, claim.SessionHeader.ServiceId)
 		if !serviceFound {
-			return settledResult, expiredResult, tokenomictypes.ErrTokenomicsServiceNotFound.Wrapf("service with ID %q not found", claim.SessionHeader.Service.Id)
+			return settledResult, expiredResult, tokenomictypes.ErrTokenomicsServiceNotFound.Wrapf("service with ID %q not found", claim.GetSessionHeader().GetServiceId())
 		}
 
 		//

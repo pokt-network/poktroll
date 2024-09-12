@@ -66,6 +66,7 @@ func NewParams(
 // DefaultParams returns a default set of parameters
 func DefaultParams() Params {
 	return NewParams(
+		DefaultRelayDifficultyTargetHash,
 		DefaultProofRequestProbability,
 		DefaultProofRequirementThreshold,
 		&DefaultProofMissingPenalty,
