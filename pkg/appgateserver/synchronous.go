@@ -42,8 +42,8 @@ func (app *appGateServer) handleSynchronousRelay(
 	currentHeight := app.sdk.GetHeight(ctx)
 
 	// Cache matching endpoints
-	cacheKey := cacheKey{height: currentHeight, serviceId: serviceId, rpcType: rpcType}
-	matchingEndpoints, err := app.getCachedEndpoints(ctx, cacheKey, appAddress)
+	relayCacheKey := cacheKey{height: currentHeight, serviceId: serviceId, rpcType: rpcType}
+	matchingEndpoints, err := app.getCachedEndpoints(ctx, relayCacheKey, appAddress)
 	if err != nil {
 		return ErrAppGateHandleRelay.Wrapf("getting matching endpoints: %s", err)
 	}
