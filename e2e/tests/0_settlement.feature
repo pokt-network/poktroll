@@ -25,6 +25,7 @@ Feature: Tokenomics Namespace
             | proof_requirement_threshold  | 19                                                               | int64 |
             | proof_missing_penalty        | 320                                                              | coin  |
             | proof_submission_fee         | 1000000                                                          | coin  |
+        And all "proof" module params should be updated
         When the supplier "supplier1" has serviced a session with "20" relays for service "anvil" for application "app1"
         # Wait for the Claim & Proof lifecycle
         And the user should wait for the "proof" module "CreateClaim" Message to be submitted
@@ -54,6 +55,7 @@ Feature: Tokenomics Namespace
             | proof_requirement_threshold  | 100                                                              | int64 |
             | proof_missing_penalty        | 320                                                              | coin  |
             | proof_submission_fee         | 1000000                                                          | coin  |
+        And all "proof" module params should be updated
         # Start servicing
         When the supplier "supplier1" has serviced a session with "10" relays for service "anvil" for application "app1"
         # Wait for the Claim & Proof lifecycle
