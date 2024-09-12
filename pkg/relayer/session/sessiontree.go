@@ -154,8 +154,6 @@ func (st *sessionTree) Update(key, value []byte, weight uint64) error {
 // This function is intended to be called after a session has been claimed and needs to be proven.
 // If the proof has already been generated, it returns the cached proof.
 // It returns an error if the SMST has not been flushed yet (the claim has not been generated)
-// TODO_IMPROVE(#427): Compress the proof into a SparseCompactClosestMerkleProof
-// prior to submitting to chain to reduce on-chain storage requirements for proofs.
 func (st *sessionTree) ProveClosest(path []byte) (compactProof *smt.SparseCompactMerkleClosestProof, err error) {
 	st.sessionMu.Lock()
 	defer st.sessionMu.Unlock()

@@ -159,7 +159,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 
 	// Store the expected error returned during deserialization of the invalid
 	// closest Merkle proof bytes.
-	sparseMerkleClosestProof := &smt.SparseMerkleClosestProof{}
+	sparseMerkleClosestProof := &smt.SparseCompactMerkleClosestProof{}
 	expectedInvalidProofUnmarshalErr := sparseMerkleClosestProof.Unmarshal(invalidClosestProofBytes)
 
 	// Construct a relay to be mangled such that it fails to deserialize in order
