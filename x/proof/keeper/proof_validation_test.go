@@ -189,9 +189,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 	copy(wrongClosestProofPath, "wrong closest proof path")
 
 	lowTargetHash, _ := hex.DecodeString("00000000000000000000000000000000000000000000000000000000000000ff")
-	var lowTargetHashArr [protocol.RelayHasherSize]byte
-	copy(lowTargetHashArr[:], lowTargetHash)
-	highExpectedTargetDifficulty := protocol.GetDifficultyFromHash(lowTargetHashArr)
+	highExpectedTargetDifficulty := protocol.GetRelayDifficultyMultiplierInt(lowTargetHash)
 
 	tests := []struct {
 		desc        string
@@ -790,5 +788,5 @@ func getClosestRelayDifficulty(
 	relayHash, err := relay.GetHash()
 	require.NoError(t, err)
 
-	return protocol.GetDifficultyFromHash(relayHash)
+	return protocol.GetRelayDifficultyMultiplierInt(relayHash[:])
 }

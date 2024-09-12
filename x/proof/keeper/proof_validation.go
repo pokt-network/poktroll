@@ -156,7 +156,8 @@ func (k Keeper) EnsureValidProof(
 	logger.Debug("successfully verified relay response signature")
 
 	// Get the proof module's governance parameters.
-	// TODO_BETA(@olshansk, #690): Get the difficulty associated with the service
+	// TODO_BETA(@adshmh): Ensure we use the difficulty from the service and add
+	// a test for a proof with an invalid difficulty.
 	params := k.GetParams(ctx)
 	relayDifficultyTargetHash := params.RelayDifficultyTargetHash
 	if len(relayDifficultyTargetHash) == 0 {
@@ -393,30 +394,27 @@ func verifyClosestProof(
 // required minimum threshold.
 // TODO_TECHDEBT: Factor out the relay mining difficulty validation into a shared
 // function that can be used by both the proof and the miner packages.
-func validateRelayDifficulty(relayBz, targetHash []byte, serviceId string) error {
+func validateRelayDifficulty(relayBz, relayDifficultyTargetHash []byte, serviceId string) error {
 	relayHashArr := protocol.GetRelayHashFromBytes(relayBz)
 	relayHash := relayHashArr[:]
 
-	if len(targetHash) != protocol.RelayHasherSize {
+	if len(relayDifficultyTargetHash) != protocol.RelayHasherSize {
 		return types.ErrProofInvalidRelay.Wrapf(
 			"invalid RelayDifficultyTargetHash: (%x); length wanted: %d; got: %d",
-			targetHash,
+			relayDifficultyTargetHash,
 			protocol.RelayHasherSize,
-			len(targetHash),
+			len(relayDifficultyTargetHash),
 		)
 	}
 
-	if !protocol.IsRelayVolumeApplicable(relayHash, targetHash) {
-		var targetHashArr [protocol.RelayHasherSize]byte
-		copy(targetHashArr[:], targetHash)
-
-		relayDifficulty := protocol.GetDifficultyFromHash(relayHashArr)
-		targetDifficulty := protocol.GetDifficultyFromHash(targetHashArr)
+	if !protocol.IsRelayVolumeApplicable(relayHash, relayDifficultyTargetHash) {
+		relayDifficultyMultiplierInt := protocol.GetRelayDifficultyMultiplierInt(relayHash)
+		targetDifficultyMultiplierIn := protocol.GetRelayDifficultyMultiplierInt(relayDifficultyTargetHash)
 
 		return types.ErrProofInvalidRelay.Wrapf(
 			"the difficulty relay being proven is (%d), and is smaller than the target difficulty (%d) for service %s",
-			relayDifficulty,
-			targetDifficulty,
+			relayDifficultyMultiplierInt,
+			targetDifficultyMultiplierIn,
 			serviceId,
 		)
 	}

@@ -16,12 +16,11 @@ import (
 )
 
 var (
-	md_EventClaimExpired                             protoreflect.MessageDescriptor
-	fd_EventClaimExpired_claim                       protoreflect.FieldDescriptor
-	fd_EventClaimExpired_expiration_reason           protoreflect.FieldDescriptor
-	fd_EventClaimExpired_num_relays                  protoreflect.FieldDescriptor
-	fd_EventClaimExpired_num_compute_units           protoreflect.FieldDescriptor
-	fd_EventClaimExpired_num_estimated_compute_units protoreflect.FieldDescriptor
+	md_EventClaimExpired                   protoreflect.MessageDescriptor
+	fd_EventClaimExpired_claim             protoreflect.FieldDescriptor
+	fd_EventClaimExpired_expiration_reason protoreflect.FieldDescriptor
+	fd_EventClaimExpired_num_relays        protoreflect.FieldDescriptor
+	fd_EventClaimExpired_num_compute_units protoreflect.FieldDescriptor
 )
 
 func init() {
@@ -31,7 +30,6 @@ func init() {
 	fd_EventClaimExpired_expiration_reason = md_EventClaimExpired.Fields().ByName("expiration_reason")
 	fd_EventClaimExpired_num_relays = md_EventClaimExpired.Fields().ByName("num_relays")
 	fd_EventClaimExpired_num_compute_units = md_EventClaimExpired.Fields().ByName("num_compute_units")
-	fd_EventClaimExpired_num_estimated_compute_units = md_EventClaimExpired.Fields().ByName("num_estimated_compute_units")
 }
 
 var _ protoreflect.Message = (*fastReflection_EventClaimExpired)(nil)
@@ -123,12 +121,6 @@ func (x *fastReflection_EventClaimExpired) Range(f func(protoreflect.FieldDescri
 			return
 		}
 	}
-	if x.NumEstimatedComputeUnits != uint64(0) {
-		value := protoreflect.ValueOfUint64(x.NumEstimatedComputeUnits)
-		if !f(fd_EventClaimExpired_num_estimated_compute_units, value) {
-			return
-		}
-	}
 }
 
 // Has reports whether a field is populated.
@@ -152,8 +144,6 @@ func (x *fastReflection_EventClaimExpired) Has(fd protoreflect.FieldDescriptor) 
 		return x.NumRelays != uint64(0)
 	case "poktroll.tokenomics.EventClaimExpired.num_compute_units":
 		return x.NumComputeUnits != uint64(0)
-	case "poktroll.tokenomics.EventClaimExpired.num_estimated_compute_units":
-		return x.NumEstimatedComputeUnits != uint64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.tokenomics.EventClaimExpired"))
@@ -178,8 +168,6 @@ func (x *fastReflection_EventClaimExpired) Clear(fd protoreflect.FieldDescriptor
 		x.NumRelays = uint64(0)
 	case "poktroll.tokenomics.EventClaimExpired.num_compute_units":
 		x.NumComputeUnits = uint64(0)
-	case "poktroll.tokenomics.EventClaimExpired.num_estimated_compute_units":
-		x.NumEstimatedComputeUnits = uint64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.tokenomics.EventClaimExpired"))
@@ -207,9 +195,6 @@ func (x *fastReflection_EventClaimExpired) Get(descriptor protoreflect.FieldDesc
 		return protoreflect.ValueOfUint64(value)
 	case "poktroll.tokenomics.EventClaimExpired.num_compute_units":
 		value := x.NumComputeUnits
-		return protoreflect.ValueOfUint64(value)
-	case "poktroll.tokenomics.EventClaimExpired.num_estimated_compute_units":
-		value := x.NumEstimatedComputeUnits
 		return protoreflect.ValueOfUint64(value)
 	default:
 		if descriptor.IsExtension() {
@@ -239,8 +224,6 @@ func (x *fastReflection_EventClaimExpired) Set(fd protoreflect.FieldDescriptor, 
 		x.NumRelays = value.Uint()
 	case "poktroll.tokenomics.EventClaimExpired.num_compute_units":
 		x.NumComputeUnits = value.Uint()
-	case "poktroll.tokenomics.EventClaimExpired.num_estimated_compute_units":
-		x.NumEstimatedComputeUnits = value.Uint()
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.tokenomics.EventClaimExpired"))
@@ -272,8 +255,6 @@ func (x *fastReflection_EventClaimExpired) Mutable(fd protoreflect.FieldDescript
 		panic(fmt.Errorf("field num_relays of message poktroll.tokenomics.EventClaimExpired is not mutable"))
 	case "poktroll.tokenomics.EventClaimExpired.num_compute_units":
 		panic(fmt.Errorf("field num_compute_units of message poktroll.tokenomics.EventClaimExpired is not mutable"))
-	case "poktroll.tokenomics.EventClaimExpired.num_estimated_compute_units":
-		panic(fmt.Errorf("field num_estimated_compute_units of message poktroll.tokenomics.EventClaimExpired is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.tokenomics.EventClaimExpired"))
@@ -295,8 +276,6 @@ func (x *fastReflection_EventClaimExpired) NewField(fd protoreflect.FieldDescrip
 	case "poktroll.tokenomics.EventClaimExpired.num_relays":
 		return protoreflect.ValueOfUint64(uint64(0))
 	case "poktroll.tokenomics.EventClaimExpired.num_compute_units":
-		return protoreflect.ValueOfUint64(uint64(0))
-	case "poktroll.tokenomics.EventClaimExpired.num_estimated_compute_units":
 		return protoreflect.ValueOfUint64(uint64(0))
 	default:
 		if fd.IsExtension() {
@@ -380,9 +359,6 @@ func (x *fastReflection_EventClaimExpired) ProtoMethods() *protoiface.Methods {
 		if x.NumComputeUnits != 0 {
 			n += 1 + runtime.Sov(uint64(x.NumComputeUnits))
 		}
-		if x.NumEstimatedComputeUnits != 0 {
-			n += 1 + runtime.Sov(uint64(x.NumEstimatedComputeUnits))
-		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
 		}
@@ -411,11 +387,6 @@ func (x *fastReflection_EventClaimExpired) ProtoMethods() *protoiface.Methods {
 		if x.unknownFields != nil {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
-		}
-		if x.NumEstimatedComputeUnits != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.NumEstimatedComputeUnits))
-			i--
-			dAtA[i] = 0x28
 		}
 		if x.NumComputeUnits != 0 {
 			i = runtime.EncodeVarint(dAtA, i, uint64(x.NumComputeUnits))
@@ -588,25 +559,6 @@ func (x *fastReflection_EventClaimExpired) ProtoMethods() *protoiface.Methods {
 						break
 					}
 				}
-			case 5:
-				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field NumEstimatedComputeUnits", wireType)
-				}
-				x.NumEstimatedComputeUnits = 0
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					x.NumEstimatedComputeUnits |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
 			default:
 				iNdEx = preIndex
 				skippy, err := runtime.Skip(dAtA[iNdEx:])
@@ -643,12 +595,11 @@ func (x *fastReflection_EventClaimExpired) ProtoMethods() *protoiface.Methods {
 }
 
 var (
-	md_EventClaimSettled                             protoreflect.MessageDescriptor
-	fd_EventClaimSettled_claim                       protoreflect.FieldDescriptor
-	fd_EventClaimSettled_proof_requirement           protoreflect.FieldDescriptor
-	fd_EventClaimSettled_num_relays                  protoreflect.FieldDescriptor
-	fd_EventClaimSettled_num_compute_units           protoreflect.FieldDescriptor
-	fd_EventClaimSettled_num_estimated_compute_units protoreflect.FieldDescriptor
+	md_EventClaimSettled                   protoreflect.MessageDescriptor
+	fd_EventClaimSettled_claim             protoreflect.FieldDescriptor
+	fd_EventClaimSettled_proof_requirement protoreflect.FieldDescriptor
+	fd_EventClaimSettled_num_relays        protoreflect.FieldDescriptor
+	fd_EventClaimSettled_num_compute_units protoreflect.FieldDescriptor
 )
 
 func init() {
@@ -658,7 +609,6 @@ func init() {
 	fd_EventClaimSettled_proof_requirement = md_EventClaimSettled.Fields().ByName("proof_requirement")
 	fd_EventClaimSettled_num_relays = md_EventClaimSettled.Fields().ByName("num_relays")
 	fd_EventClaimSettled_num_compute_units = md_EventClaimSettled.Fields().ByName("num_compute_units")
-	fd_EventClaimSettled_num_estimated_compute_units = md_EventClaimSettled.Fields().ByName("num_estimated_compute_units")
 }
 
 var _ protoreflect.Message = (*fastReflection_EventClaimSettled)(nil)
@@ -750,12 +700,6 @@ func (x *fastReflection_EventClaimSettled) Range(f func(protoreflect.FieldDescri
 			return
 		}
 	}
-	if x.NumEstimatedComputeUnits != uint64(0) {
-		value := protoreflect.ValueOfUint64(x.NumEstimatedComputeUnits)
-		if !f(fd_EventClaimSettled_num_estimated_compute_units, value) {
-			return
-		}
-	}
 }
 
 // Has reports whether a field is populated.
@@ -779,8 +723,6 @@ func (x *fastReflection_EventClaimSettled) Has(fd protoreflect.FieldDescriptor) 
 		return x.NumRelays != uint64(0)
 	case "poktroll.tokenomics.EventClaimSettled.num_compute_units":
 		return x.NumComputeUnits != uint64(0)
-	case "poktroll.tokenomics.EventClaimSettled.num_estimated_compute_units":
-		return x.NumEstimatedComputeUnits != uint64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.tokenomics.EventClaimSettled"))
@@ -805,8 +747,6 @@ func (x *fastReflection_EventClaimSettled) Clear(fd protoreflect.FieldDescriptor
 		x.NumRelays = uint64(0)
 	case "poktroll.tokenomics.EventClaimSettled.num_compute_units":
 		x.NumComputeUnits = uint64(0)
-	case "poktroll.tokenomics.EventClaimSettled.num_estimated_compute_units":
-		x.NumEstimatedComputeUnits = uint64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.tokenomics.EventClaimSettled"))
@@ -834,9 +774,6 @@ func (x *fastReflection_EventClaimSettled) Get(descriptor protoreflect.FieldDesc
 		return protoreflect.ValueOfUint64(value)
 	case "poktroll.tokenomics.EventClaimSettled.num_compute_units":
 		value := x.NumComputeUnits
-		return protoreflect.ValueOfUint64(value)
-	case "poktroll.tokenomics.EventClaimSettled.num_estimated_compute_units":
-		value := x.NumEstimatedComputeUnits
 		return protoreflect.ValueOfUint64(value)
 	default:
 		if descriptor.IsExtension() {
@@ -866,8 +803,6 @@ func (x *fastReflection_EventClaimSettled) Set(fd protoreflect.FieldDescriptor, 
 		x.NumRelays = value.Uint()
 	case "poktroll.tokenomics.EventClaimSettled.num_compute_units":
 		x.NumComputeUnits = value.Uint()
-	case "poktroll.tokenomics.EventClaimSettled.num_estimated_compute_units":
-		x.NumEstimatedComputeUnits = value.Uint()
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.tokenomics.EventClaimSettled"))
@@ -899,8 +834,6 @@ func (x *fastReflection_EventClaimSettled) Mutable(fd protoreflect.FieldDescript
 		panic(fmt.Errorf("field num_relays of message poktroll.tokenomics.EventClaimSettled is not mutable"))
 	case "poktroll.tokenomics.EventClaimSettled.num_compute_units":
 		panic(fmt.Errorf("field num_compute_units of message poktroll.tokenomics.EventClaimSettled is not mutable"))
-	case "poktroll.tokenomics.EventClaimSettled.num_estimated_compute_units":
-		panic(fmt.Errorf("field num_estimated_compute_units of message poktroll.tokenomics.EventClaimSettled is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.tokenomics.EventClaimSettled"))
@@ -922,8 +855,6 @@ func (x *fastReflection_EventClaimSettled) NewField(fd protoreflect.FieldDescrip
 	case "poktroll.tokenomics.EventClaimSettled.num_relays":
 		return protoreflect.ValueOfUint64(uint64(0))
 	case "poktroll.tokenomics.EventClaimSettled.num_compute_units":
-		return protoreflect.ValueOfUint64(uint64(0))
-	case "poktroll.tokenomics.EventClaimSettled.num_estimated_compute_units":
 		return protoreflect.ValueOfUint64(uint64(0))
 	default:
 		if fd.IsExtension() {
@@ -1007,9 +938,6 @@ func (x *fastReflection_EventClaimSettled) ProtoMethods() *protoiface.Methods {
 		if x.NumComputeUnits != 0 {
 			n += 1 + runtime.Sov(uint64(x.NumComputeUnits))
 		}
-		if x.NumEstimatedComputeUnits != 0 {
-			n += 1 + runtime.Sov(uint64(x.NumEstimatedComputeUnits))
-		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
 		}
@@ -1038,11 +966,6 @@ func (x *fastReflection_EventClaimSettled) ProtoMethods() *protoiface.Methods {
 		if x.unknownFields != nil {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
-		}
-		if x.NumEstimatedComputeUnits != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.NumEstimatedComputeUnits))
-			i--
-			dAtA[i] = 0x28
 		}
 		if x.NumComputeUnits != 0 {
 			i = runtime.EncodeVarint(dAtA, i, uint64(x.NumComputeUnits))
@@ -1211,25 +1134,6 @@ func (x *fastReflection_EventClaimSettled) ProtoMethods() *protoiface.Methods {
 					b := dAtA[iNdEx]
 					iNdEx++
 					x.NumComputeUnits |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-			case 5:
-				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field NumEstimatedComputeUnits", wireType)
-				}
-				x.NumEstimatedComputeUnits = 0
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					x.NumEstimatedComputeUnits |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
@@ -2632,12 +2536,7 @@ type EventClaimExpired struct {
 	NumRelays uint64 `protobuf:"varint,3,opt,name=num_relays,json=numRelays,proto3" json:"num_relays,omitempty"`
 	// Number of compute units claimed as a function of the number of relays
 	// and the compute units per relay for the particular service.
-	// TODO_IN_THIS_PR: Should we call this "num_claimed_compute_units"?
 	NumComputeUnits uint64 `protobuf:"varint,4,opt,name=num_compute_units,json=numComputeUnits,proto3" json:"num_compute_units,omitempty"`
-	// Number of estimated compute units serviced off chain taking into account
-	// the claimed compute units and the service relay mining difficulty.
-	// TODO_IN_THIS_PR: Should we call this "num_actual_compute_units"?
-	NumEstimatedComputeUnits uint64 `protobuf:"varint,5,opt,name=num_estimated_compute_units,json=numEstimatedComputeUnits,proto3" json:"num_estimated_compute_units,omitempty"`
 }
 
 func (x *EventClaimExpired) Reset() {
@@ -2688,13 +2587,6 @@ func (x *EventClaimExpired) GetNumComputeUnits() uint64 {
 	return 0
 }
 
-func (x *EventClaimExpired) GetNumEstimatedComputeUnits() uint64 {
-	if x != nil {
-		return x.NumEstimatedComputeUnits
-	}
-	return 0
-}
-
 // EventClaimSettled is an event emitted whenever a claim is settled.
 // The proof_required determines whether the claim requires a proof that has been submitted or not
 type EventClaimSettled struct {
@@ -2710,9 +2602,6 @@ type EventClaimSettled struct {
 	// Number of compute units claimed as a function of the number of relays
 	// and the compute units per relay for the particular service.
 	NumComputeUnits uint64 `protobuf:"varint,4,opt,name=num_compute_units,json=numComputeUnits,proto3" json:"num_compute_units,omitempty"`
-	// Number of estimated compute units serviced off chain taking into account
-	// the claimed compute units and the service relay mining difficulty.
-	NumEstimatedComputeUnits uint64 `protobuf:"varint,5,opt,name=num_estimated_compute_units,json=numEstimatedComputeUnits,proto3" json:"num_estimated_compute_units,omitempty"`
 }
 
 func (x *EventClaimSettled) Reset() {
@@ -2759,13 +2648,6 @@ func (x *EventClaimSettled) GetNumRelays() uint64 {
 func (x *EventClaimSettled) GetNumComputeUnits() uint64 {
 	if x != nil {
 		return x.NumComputeUnits
-	}
-	return 0
-}
-
-func (x *EventClaimSettled) GetNumEstimatedComputeUnits() uint64 {
-	if x != nil {
-		return x.NumEstimatedComputeUnits
 	}
 	return 0
 }
@@ -2919,7 +2801,7 @@ var file_poktroll_tokenomics_event_proto_rawDesc = []byte{
 	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x14, 0x67, 0x6f, 0x67, 0x6f, 0x70, 0x72, 0x6f, 0x74,
 	0x6f, 0x2f, 0x67, 0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x1a, 0x70, 0x6f,
 	0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2f, 0x74, 0x79, 0x70,
-	0x65, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x8d, 0x03, 0x0a, 0x11, 0x45, 0x76, 0x65,
+	0x65, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xad, 0x02, 0x0a, 0x11, 0x45, 0x76, 0x65,
 	0x6e, 0x74, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x45, 0x78, 0x70, 0x69, 0x72, 0x65, 0x64, 0x12, 0x36,
 	0x0a, 0x05, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x15, 0x2e,
 	0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2e, 0x43,
@@ -2938,13 +2820,7 @@ var file_poktroll_tokenomics_event_proto_rawDesc = []byte{
 	0x70, 0x75, 0x74, 0x65, 0x5f, 0x75, 0x6e, 0x69, 0x74, 0x73, 0x18, 0x04, 0x20, 0x01, 0x28, 0x04,
 	0x42, 0x15, 0xea, 0xde, 0x1f, 0x11, 0x6e, 0x75, 0x6d, 0x5f, 0x63, 0x6f, 0x6d, 0x70, 0x75, 0x74,
 	0x65, 0x5f, 0x75, 0x6e, 0x69, 0x74, 0x73, 0x52, 0x0f, 0x6e, 0x75, 0x6d, 0x43, 0x6f, 0x6d, 0x70,
-	0x75, 0x74, 0x65, 0x55, 0x6e, 0x69, 0x74, 0x73, 0x12, 0x5e, 0x0a, 0x1b, 0x6e, 0x75, 0x6d, 0x5f,
-	0x65, 0x73, 0x74, 0x69, 0x6d, 0x61, 0x74, 0x65, 0x64, 0x5f, 0x63, 0x6f, 0x6d, 0x70, 0x75, 0x74,
-	0x65, 0x5f, 0x75, 0x6e, 0x69, 0x74, 0x73, 0x18, 0x05, 0x20, 0x01, 0x28, 0x04, 0x42, 0x1f, 0xea,
-	0xde, 0x1f, 0x1b, 0x6e, 0x75, 0x6d, 0x5f, 0x65, 0x73, 0x74, 0x69, 0x6d, 0x61, 0x74, 0x65, 0x64,
-	0x5f, 0x63, 0x6f, 0x6d, 0x70, 0x75, 0x74, 0x65, 0x5f, 0x75, 0x6e, 0x69, 0x74, 0x73, 0x52, 0x18,
-	0x6e, 0x75, 0x6d, 0x45, 0x73, 0x74, 0x69, 0x6d, 0x61, 0x74, 0x65, 0x64, 0x43, 0x6f, 0x6d, 0x70,
-	0x75, 0x74, 0x65, 0x55, 0x6e, 0x69, 0x74, 0x73, 0x22, 0x89, 0x03, 0x0a, 0x11, 0x45, 0x76, 0x65,
+	0x75, 0x74, 0x65, 0x55, 0x6e, 0x69, 0x74, 0x73, 0x22, 0xa9, 0x02, 0x0a, 0x11, 0x45, 0x76, 0x65,
 	0x6e, 0x74, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x53, 0x65, 0x74, 0x74, 0x6c, 0x65, 0x64, 0x12, 0x36,
 	0x0a, 0x05, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x15, 0x2e,
 	0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2e, 0x43,
@@ -2963,12 +2839,6 @@ var file_poktroll_tokenomics_event_proto_rawDesc = []byte{
 	0x5f, 0x75, 0x6e, 0x69, 0x74, 0x73, 0x18, 0x04, 0x20, 0x01, 0x28, 0x04, 0x42, 0x15, 0xea, 0xde,
 	0x1f, 0x11, 0x6e, 0x75, 0x6d, 0x5f, 0x63, 0x6f, 0x6d, 0x70, 0x75, 0x74, 0x65, 0x5f, 0x75, 0x6e,
 	0x69, 0x74, 0x73, 0x52, 0x0f, 0x6e, 0x75, 0x6d, 0x43, 0x6f, 0x6d, 0x70, 0x75, 0x74, 0x65, 0x55,
-	0x6e, 0x69, 0x74, 0x73, 0x12, 0x5e, 0x0a, 0x1b, 0x6e, 0x75, 0x6d, 0x5f, 0x65, 0x73, 0x74, 0x69,
-	0x6d, 0x61, 0x74, 0x65, 0x64, 0x5f, 0x63, 0x6f, 0x6d, 0x70, 0x75, 0x74, 0x65, 0x5f, 0x75, 0x6e,
-	0x69, 0x74, 0x73, 0x18, 0x05, 0x20, 0x01, 0x28, 0x04, 0x42, 0x1f, 0xea, 0xde, 0x1f, 0x1b, 0x6e,
-	0x75, 0x6d, 0x5f, 0x65, 0x73, 0x74, 0x69, 0x6d, 0x61, 0x74, 0x65, 0x64, 0x5f, 0x63, 0x6f, 0x6d,
-	0x70, 0x75, 0x74, 0x65, 0x5f, 0x75, 0x6e, 0x69, 0x74, 0x73, 0x52, 0x18, 0x6e, 0x75, 0x6d, 0x45,
-	0x73, 0x74, 0x69, 0x6d, 0x61, 0x74, 0x65, 0x64, 0x43, 0x6f, 0x6d, 0x70, 0x75, 0x74, 0x65, 0x55,
 	0x6e, 0x69, 0x74, 0x73, 0x22, 0x9c, 0x02, 0x0a, 0x21, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x52, 0x65,
 	0x6c, 0x61, 0x79, 0x4d, 0x69, 0x6e, 0x69, 0x6e, 0x67, 0x44, 0x69, 0x66, 0x66, 0x69, 0x63, 0x75,
 	0x6c, 0x74, 0x79, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x64, 0x12, 0x1d, 0x0a, 0x0a, 0x73, 0x65,

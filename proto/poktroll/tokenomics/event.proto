@@ -25,12 +25,9 @@ message EventClaimExpired {
     uint64 num_relays = 3 [(gogoproto.jsontag) = "num_relays"];
     // Number of compute units claimed as a function of the number of relays
     // and the compute units per relay for the particular service.
-    // TODO_IN_THIS_PR: Should we call this "num_claimed_compute_units"?
     uint64 num_compute_units = 4 [(gogoproto.jsontag) = "num_compute_units"];
-    // Number of estimated compute units serviced off chain taking into account
-    // the claimed compute units and the service relay mining difficulty.
-    // TODO_IN_THIS_PR: Should we call this "num_actual_compute_units"?
-    uint64 num_estimated_compute_units = 5 [(gogoproto.jsontag) = "num_estimated_compute_units"];
+    // TODO_BETA(@adshmh): Rename 'num_compute_units' to 'num_claimed_compute_units'
+    // and introduce a 'num_estimated_compute_units' field.
 }
 
 // EventClaimSettled is an event emitted whenever a claim is settled.
@@ -44,9 +41,8 @@ message EventClaimSettled {
     // Number of compute units claimed as a function of the number of relays
     // and the compute units per relay for the particular service.
     uint64 num_compute_units = 4 [(gogoproto.jsontag) = "num_compute_units"];
-    // Number of estimated compute units serviced off chain taking into account
-    // the claimed compute units and the service relay mining difficulty.
-    uint64 num_estimated_compute_units = 5 [(gogoproto.jsontag) = "num_estimated_compute_units"];
+    // TODO_BETA(@adshmh): Rename 'num_compute_units' to 'num_claimed_compute_units'
+    // and introduce a 'num_estimated_compute_units' field.
 }
 
 // EventRelayMiningDifficultyUpdated is an event emitted whenever the relay mining difficulty is updated

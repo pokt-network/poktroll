@@ -134,17 +134,17 @@ func (params *Params) ValidateBasic() error {
 // ValidateRelayDifficultyTargetHash validates the MinRelayDifficultyBits param.
 // NB: The argument is an interface type to satisfy the ParamSetPair function signature.
 func ValidateRelayDifficultyTargetHash(v interface{}) error {
-	targetHash, ok := v.([]byte)
+	relayDifficultyTargetHash, ok := v.([]byte)
 	if !ok {
 		return ErrProofParamInvalid.Wrapf("invalid parameter type: %T", v)
 	}
 
-	if len(targetHash) != protocol.RelayHasherSize {
+	if len(relayDifficultyTargetHash) != protocol.RelayHasherSize {
 		return ErrProofParamInvalid.Wrapf(
 			"invalid RelayDifficultyTargetHash: (%x); length wanted: %d; got: %d",
-			targetHash,
+			relayDifficultyTargetHash,
 			32,
-			len(targetHash),
+			len(relayDifficultyTargetHash),
 		)
 	}
 

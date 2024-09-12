@@ -9,5 +9,5 @@ import (
 
 // ProofRequirementForClaim wraps the unexported proofRequirementForClaim function for testing purposes.
 func (k Keeper) ProofRequirementForClaim(ctx cosmostypes.Context, claim *prooftypes.Claim) (prooftypes.ProofRequirementReason, error) {
-	return k.proofRequirementForClaim(ctx, claim)
+	return k.proofRequirementForClaim(ctx, *claim)
 }

@@ -4,14 +4,14 @@ import (
 	"bytes"
 	"crypto/rand"
 	"encoding/hex"
-	"fmt"
 	"math/big"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"gotest.tools/assert"
 )
 
-func TestGetDifficultyFromHash(t *testing.T) {
+func TestRelayDifficulty_GetRelayDifficultyMultiplier(t *testing.T) {
 	tests := []struct {
 		desc               string
 		hashHex            string
@@ -35,7 +35,7 @@ func TestGetDifficultyFromHash(t *testing.T) {
 		{
 			desc:               "Highest difficulty",
 			hashHex:            "0000000000000000000000000000000000000000000000000000000000000001",
-			expectedDifficulty: new(big.Int).SetBytes(BaseRelayDifficultyHashBz).Int64(),
+			expectedDifficulty: 9223372036854775807,
 		},
 	}
 
@@ -46,17 +46,15 @@ func TestGetDifficultyFromHash(t *testing.T) {
 				t.Fatalf("failed to decode hash: %v", err)
 			}
 
-			var hashBz [RelayHasherSize]byte
-			copy(hashBz[:], hashBytes)
-
-			difficulty := GetDifficultyFromHash(hashBz)
-			t.Logf("test: %s, difficulty: %d", test.desc, difficulty)
-			require.Equal(t, test.expectedDifficulty, difficulty)
+			difficultyMultiplier := GetRelayDifficultyMultiplier(hashBytes)
+			difficulty, _ := difficultyMultiplier.Float64()
+			// require.True(t, exact, "expected exact value for difficulty multiplier")
+			require.Equal(t, test.expectedDifficulty, int64(difficulty))
 		})
 	}
 }
 
-func TestIsRelayVolumeApplicable(t *testing.T) {
+func TestRelayDifficulty_IsRelayVolumeApplicable(t *testing.T) {
 	tests := []struct {
 		desc                     string
 		relayHashHex             string
@@ -108,7 +106,7 @@ func TestIsRelayVolumeApplicable(t *testing.T) {
 	}
 }
 
-func TestComputeNewDifficultyHash(t *testing.T) {
+func TestRelayDifficulty_ComputeNewDifficultyHash(t *testing.T) {
 	tests := []struct {
 		desc                        string
 		numRelaysTarget             uint64
@@ -179,7 +177,134 @@ func TestComputeNewDifficultyHash(t *testing.T) {
 	}
 }
 
-func Test_EnsureRelayMiningMultiplierIsProportional(t *testing.T) {
+// TestScaleDifficultyTargetHash tests the scaling of a target hash by a given ratio.
+// Some expectations are manually adjusted to account for some precision loss in the
+// implementation.
+func TestRelayDifficulty_ScaleDifficultyTargetHash(t *testing.T) {
+	tests := []struct {
+		desc                  string
+		currDifficultyHashHex string
+		ratio                 float64
+		expectedHashHex       string
+	}{
+		{
+			desc:                  "Scale by 0.5",
+			currDifficultyHashHex: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			ratio:                 0.5,
+			expectedHashHex:       "7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+		},
+		{
+			desc:                  "Scale by 2",
+			currDifficultyHashHex: "7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			ratio:                 2,
+			expectedHashHex:       "fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe",
+		},
+		{
+			desc:                  "Scale by 0.25",
+			currDifficultyHashHex: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			ratio:                 0.25,
+			expectedHashHex:       "3fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+		},
+		{
+			desc:                  "Scale by 4",
+			currDifficultyHashHex: "3fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			ratio:                 4,
+			expectedHashHex:       "fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc",
+		},
+		{
+			desc:                  "Scale by 1 (no change)",
+			currDifficultyHashHex: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			ratio:                 1,
+			expectedHashHex:       "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+		},
+		{
+			desc:                  "Scale by 0.1",
+			currDifficultyHashHex: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			ratio:                 0.1,
+			expectedHashHex:       "19999999999999ffffffffffffffffffffffffffffffffffffffffffffffffff",
+		},
+		{
+			desc:                  "Scale by 10",
+			currDifficultyHashHex: "1999999999999999999999999999999999999999999999999999999999999999",
+			ratio:                 10,
+			expectedHashHex:       "fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff8",
+		},
+		{
+			desc:                  "Scale by 10e-12",
+			currDifficultyHashHex: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			ratio:                 10e-12,
+			expectedHashHex:       "000000000afebff0bcb24a7fffffffffffffffffffffffffffffffffffffffff",
+		},
+		{
+			desc:                  "Scale by 10e12",
+			currDifficultyHashHex: "000000000afebff0bcb24a7fffffffffffffffffffffffffffffffffffffffff",
+			ratio:                 10e12,
+			expectedHashHex:       "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+		},
+		{
+			desc:                  "Maxes out at BaseRelayDifficulty",
+			currDifficultyHashHex: "3fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			ratio:                 10,
+			expectedHashHex:       "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			currHashBz, targetErr := hex.DecodeString(test.currDifficultyHashHex)
+			require.NoError(t, targetErr)
+
+			expectedHashBz, expectedErr := hex.DecodeString(test.expectedHashHex)
+			require.NoError(t, expectedErr)
+
+			ratio := new(big.Float).SetFloat64(test.ratio)
+			scaledDifficultyHash := ScaleRelayDifficultyHash(currHashBz, ratio)
+			assert.Equal(t, len(scaledDifficultyHash), len(currHashBz))
+
+			// Ensure the scaled difficulty hash equals the one provided
+			require.Zero(t, bytes.Compare(expectedHashBz, scaledDifficultyHash),
+				"expected difficulty hash %x, but got %x", expectedHashBz, scaledDifficultyHash)
+		})
+	}
+}
+
+func TestRelayDifficulty_EnsureRelayMiningProbabilityIsProportional(t *testing.T) {
+	// Target Num Relays is the target number of volume applicable relays
+	// a session tree should have.
+	const targetNumRelays = uint64(10e4)
+
+	// numEstimatedRelays aims to simulate the actual (i.e. off-chain) number of relays
+	// a RelayMiner would service successfully.
+	for numEstimatedRelays := uint64(1); numEstimatedRelays < 1e18; numEstimatedRelays *= 10 {
+		// Compute the relay mining difficulty corresponding to the actual number of relays
+		// to match the target number of relays.
+		targetDifficultyHash := ComputeNewDifficultyTargetHash(BaseRelayDifficultyHashBz, targetNumRelays, numEstimatedRelays)
+
+		// The probability that a relay is a volume applicable relay
+		relayProbability := GetRelayDifficultyProbability(targetDifficultyHash)
+
+		volumeApplicableRelays := scaleRelaysFromActualToTarget(t, relayProbability, numEstimatedRelays)
+		if numEstimatedRelays < targetNumRelays {
+			require.InDelta(t, numEstimatedRelays, volumeApplicableRelays, 2)
+		} else {
+			require.InDelta(t, targetNumRelays, volumeApplicableRelays, 2)
+		}
+	}
+}
+
+// scaleRelaysFromActualToTarget scales the number of relays (i.e. estimated offchain serviced relays)
+// down to the number of expected on-chain volume applicable relays
+func scaleRelaysFromActualToTarget(t *testing.T, relayDifficultyProbability *big.Rat, numRelays uint64) uint64 {
+	mr := new(big.Rat).SetUint64(numRelays)
+	result := new(big.Rat).Mul(relayDifficultyProbability, mr)
+	num := result.Num()
+	denom := result.Denom()
+	quotient := new(big.Int).Div(num, denom)
+	require.True(t, quotient.IsUint64(), "value out of range for uint64")
+	return quotient.Uint64()
+}
+
+func TestRelayDifficulty_EnsureRelayMiningMultiplierIsProportional(t *testing.T) {
 	// Target Num Relays is the target number of volume applicable relays a session tree should have.
 	const (
 		targetNumRelays   = uint64(10e2) // Target number of volume applicable relays
@@ -189,15 +314,16 @@ func Test_EnsureRelayMiningMultiplierIsProportional(t *testing.T) {
 	)
 
 	highVolumeSvcDifficultyHash := ComputeNewDifficultyTargetHash(BaseRelayDifficultyHashBz, targetNumRelays, highVolumeService)
-	highVolumeRelayProbabilityRat := RelayDifficultyProbability(highVolumeSvcDifficultyHash)
+	highVolumeRelayProbabilityRat := GetRelayDifficultyProbability(highVolumeSvcDifficultyHash)
 	highVolumeRelayProbability, _ := highVolumeRelayProbabilityRat.Float64()
-	highVolumeRelayMultiplierRat := RelayDifficultyMultiplier(highVolumeSvcDifficultyHash)
+	highVolumeRelayMultiplierRat := GetRelayDifficultyMultiplier(highVolumeSvcDifficultyHash)
 	highVolumeRelayMultiplier, _ := highVolumeRelayMultiplierRat.Float64()
 
 	lowVolumeSvcDifficultyHash := ComputeNewDifficultyTargetHash(BaseRelayDifficultyHashBz, targetNumRelays, lowVolumeService)
-	lowVolumeRelayProbabilityRat := RelayDifficultyProbability(lowVolumeSvcDifficultyHash)
+	lowVolumeRelayProbabilityRat := GetRelayDifficultyProbability(lowVolumeSvcDifficultyHash)
 	lowVolumeRelayProbability, _ := lowVolumeRelayProbabilityRat.Float64()
-	// lowVolumeRelayMultiplier := RelayDifficultyMultiplier(lowVolumeSvcDifficultyHash)
+	lowVolumeRelayMultiplierRat := GetRelayDifficultyMultiplier(lowVolumeSvcDifficultyHash)
+	lowVolumeRelayMultiplier, _ := lowVolumeRelayMultiplierRat.Float64()
 
 	numApplicableHighVolumeSvcRelays := 0
 	numActualHighVolumeSvcRelays := 0
@@ -226,42 +352,19 @@ func Test_EnsureRelayMiningMultiplierIsProportional(t *testing.T) {
 			break
 		}
 	}
+	numEstimatedLowVolumeSvcRelays := float64(numApplicableLowVolumeSvcRelays) * lowVolumeRelayMultiplier
 	fractionLowVolumeSvcRelays := float64(numApplicableLowVolumeSvcRelays) / float64(numActualLowVolumeSvcRelays)
 
 	// Ensure probabilities of a relay being applicable is within the allowable delta
 	require.InDelta(t, highVolumeRelayProbability, fractionHighVolumeSvcRelays, allowableDelta*highVolumeRelayProbability)
 	require.InDelta(t, lowVolumeRelayProbability, fractionLowVolumeSvcRelays, allowableDelta*lowVolumeRelayProbability)
 
-	fmt.Println(numEstimatedHighVolumeSvcRelays, numActualHighVolumeSvcRelays)
-	// fmt.Println(fractionHighVolumeSvcRelays, highVolumeRelayProbability)
-	// fmt.Println(fractionLowVolumeSvcRelays, lowVolumeRelayProbability)
-	// fmt.Println(numActualHighVolumeSvcRelays, numActualLowVolumeSvcRelays)
+	// Ensure the estimated number of relays is within the allowable delta
+	require.InDelta(t, numEstimatedHighVolumeSvcRelays, float64(numActualHighVolumeSvcRelays), allowableDelta*numEstimatedHighVolumeSvcRelays)
+	require.InDelta(t, numEstimatedLowVolumeSvcRelays, float64(numActualLowVolumeSvcRelays), allowableDelta*numEstimatedLowVolumeSvcRelays)
+
 }
 
-func Test_EnsureRelayMiningProbabilityIsProportional(t *testing.T) {
-	// Target Num Relays is the target number of volume applicable relays
-	// a session tree should have.
-	const targetNumRelays = uint64(10e4)
-
-	// numActualRelays aims to simulate the actual (i.e. off-chain) number of relays
-	// a RelayMiner would service successfully.
-	for numActualRelays := uint64(1); numActualRelays < 1e18; numActualRelays *= 10 {
-		// Compute the relay mining difficulty corresponding to the actual number of relays
-		// to match the target number of relays.
-		targetDifficultyHash := ComputeNewDifficultyTargetHash(BaseRelayDifficultyHashBz, targetNumRelays, numActualRelays)
-
-		// The probability that a relay is a volume applicable relay
-		relayProbability := RelayDifficultyProbability(targetDifficultyHash)
-
-		fmt.Println(ratToUint64(t, RelayDifficultyMultiplier(targetDifficultyHash)))
-		r := ScaleRelays(t, relayProbability, numActualRelays)
-		if numActualRelays < targetNumRelays {
-			require.InDelta(t, numActualRelays, r, 2)
-		} else {
-			require.InDelta(t, targetNumRelays, r, 2)
-		}
-	}
-}
 func makeBytesFullOfOnes(length int) []byte {
 	output := make([]byte, length)
 	for i := range output {

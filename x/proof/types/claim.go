@@ -9,8 +9,6 @@ import (
 
 // GetNumComputeUnits returns the number of compute units for a given claim
 // as determined by the sum of the root hash.
-// TODO_MAINNET: Consider marking this function as deprecated to avoid confusion
-// as to whether we should use "ComputeUnits" or "Relays*Service.ComputeUnitsPerRelay".
 func (claim *Claim) GetNumComputeUnits() (numComputeUnits uint64, err error) {
 	return smt.MerkleSumRoot(claim.GetRootHash()).Sum()
 }

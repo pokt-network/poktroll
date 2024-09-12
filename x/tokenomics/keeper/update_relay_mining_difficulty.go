@@ -134,22 +134,22 @@ func newDefaultRelayMiningDifficulty(
 	serviceId string,
 	numRelays uint64,
 ) tokenomicstypes.RelayMiningDifficulty {
-	logger = logger.With("helper", "newDefaultRelayMiningDifficulty")
+	logger = logger.With("helper", "NewDefaultRelayMiningDifficulty")
 
 	// Compute the target hash based on the number of relays seen for the first time.
-	targetHash := protocol.ComputeNewDifficultyTargetHash(prooftypes.DefaultRelayDifficultyTargetHash, TargetNumRelays, numRelays)
+	newDifficultyHash := protocol.ComputeNewDifficultyTargetHash(prooftypes.DefaultRelayDifficultyTargetHash, TargetNumRelays, numRelays)
 
 	logger.Warn(types.ErrTokenomicsMissingRelayMiningDifficulty.Wrapf(
 		"No previous relay mining difficulty found for service %s.\n"+
 			"Creating a new relay mining difficulty with %d relays and an initial target hash %x",
-		serviceId, numRelays, targetHash).Error())
+		serviceId, numRelays, newDifficultyHash).Error())
 
 	// Return a new RelayMiningDifficulty with the computed target hash.
 	return tokenomicstypes.RelayMiningDifficulty{
 		ServiceId:    serviceId,
 		BlockHeight:  sdk.UnwrapSDKContext(ctx).BlockHeight(),
 		NumRelaysEma: numRelays,
-		TargetHash:   targetHash,
+		TargetHash:   newDifficultyHash,
 	}
 
 }

@@ -73,32 +73,30 @@ func (k msgServer) CreateClaim(
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 
-	// Get metadata for the event we want to emit
+	// Get the number of volume applicable relays in the claim
 	numRelays, err = claim.GetNumRelays()
 	if err != nil {
 		return nil, status.Error(codes.Internal, types.ErrProofInvalidClaimRootHash.Wrap(err.Error()).Error())
 	}
 
-	// TODO_IN_THIS_PR_AFTER_#745_IS_MERGED: Check (and test) that numClaimComputeUnits is equal
-	// to num_relays * the_compute_units_per_relay for this_service.
-	// Add a comment that for now, we expect it to be the case because every
-	// relay for a specific service is wroth the same, but may change in the
-	// future.
+	// Get the number of claimed compute units in the claim
 	numClaimComputeUnits, err = claim.GetNumComputeUnits()
 	if err != nil {
 		return nil, status.Error(codes.Internal, types.ErrProofInvalidClaimRootHash.Wrapf("%v", err).Error())
 	}
 
-	// DEV_NOTE: For now, we expect the following equation to always hold:
-	// numClaimComputeUnits = numRelays * service.computeUnitsPerRelay
-	// This is because for any specific service, every relay is worth the same.
-	// However, this may change in the future.
+	// Get the number of compute units per relay for the service
 	serviceComputeUnitsPerRelay, err := k.getServiceComputeUnitsPerRelay(ctx, claim.SessionHeader.ServiceId)
 	if err != nil {
 		return nil, status.Error(codes.NotFound, types.ErrProofServiceNotFound.Wrapf("%v", err).Error())
 	}
 
+	// DEV_NOTE: For now, we expect the following equation to always hold:
 	numExpectedComputeUnitsToClaim := numRelays * serviceComputeUnitsPerRelay
+	// This is because for any specific service, every relay is worth the same.
+	// However, this may change in the future.
+
+	// Ensure the number of compute units claimed is equal to the number of relays
 	if numClaimComputeUnits != numExpectedComputeUnitsToClaim {
 		return nil, status.Error(
 			codes.InvalidArgument,

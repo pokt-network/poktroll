@@ -277,7 +277,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequiredAndNotProv
 	claimExpirationEvent := expectedEvents[0]
 	require.Equal(t, tokenomicstypes.ClaimExpirationReason_PROOF_MISSING, claimExpirationEvent.GetExpirationReason())
 	require.Equal(t, s.numRelays, claimExpirationEvent.GetNumRelays())
-	// TODO_IN_THIS_PR: Test other fields of the event
+	// TODO(@adshmh, #781): Ensure other claim expiration event fields are validated once added
 }
 
 func (s *TestSuite) TestSettlePendingClaims_ClaimSettled_ProofRequiredAndProvided_ViaThreshold() {
@@ -329,6 +329,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimSettled_ProofRequiredAndProvide
 	expectedEvent := expectedEvents[0]
 	require.Equal(t, prooftypes.ProofRequirementReason_THRESHOLD, expectedEvent.GetProofRequirement())
 	require.Equal(t, s.numRelays, expectedEvent.GetNumRelays())
+	// TODO(@adshmh, #781): Ensure other claim expiration event fields are validated once added
 }
 
 func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOneProvided() {
@@ -383,7 +384,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOn
 	claimExpirationEvent := expectedEvents[0]
 	require.Equal(t, tokenomicstypes.ClaimExpirationReason_PROOF_INVALID, claimExpirationEvent.GetExpirationReason())
 	require.Equal(t, s.numRelays, claimExpirationEvent.GetNumRelays())
-	// TODO_IN_THIS_PR: Test other fields of the event
+	// TODO(@adshmh, #781): Ensure other claim expiration event fields are validated once added
 }
 
 func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_ViaProbability() {
@@ -435,6 +436,7 @@ func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_Vi
 	expectedEvent := expectedEvents[0]
 	require.Equal(t, prooftypes.ProofRequirementReason_PROBABILISTIC, expectedEvent.GetProofRequirement())
 	require.Equal(t, s.numRelays, expectedEvent.GetNumRelays())
+	// TODO(@adshmh, #781): Ensure other claim expiration event fields are validated once added
 }
 
 func (s *TestSuite) TestSettlePendingClaims_Settles_WhenAProofIsNotRequired() {
@@ -485,6 +487,7 @@ func (s *TestSuite) TestSettlePendingClaims_Settles_WhenAProofIsNotRequired() {
 	expectedEvent := expectedEvents[0]
 	require.Equal(t, prooftypes.ProofRequirementReason_NOT_REQUIRED.String(), expectedEvent.GetProofRequirement().String())
 	require.Equal(t, s.numRelays, expectedEvent.GetNumRelays())
+	// TODO(@adshmh, #781): Ensure other claim expiration event fields are validated once added
 }
 
 func (s *TestSuite) TestSettlePendingClaims_DoesNotSettle_BeforeProofWindowCloses() {

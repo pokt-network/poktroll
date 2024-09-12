@@ -115,8 +115,8 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	require.Equal(t, "svc1", relayMiningEvent.ServiceId)
 
 	// The default difficulty
-	require.Equal(t, prooftypes.DefaultRelayDifficultyTargetHashHex, relayMiningEvent.PrevTargetHashHexEncoded)
-	require.Equal(t, prooftypes.DefaultRelayDifficultyTargetHashHex, relayMiningEvent.NewTargetHashHexEncoded)
+	require.Equal(t, protocol.BaseRelayDifficultyHashHex, relayMiningEvent.PrevTargetHashHexEncoded)
+	require.Equal(t, protocol.BaseRelayDifficultyHashHex, relayMiningEvent.NewTargetHashHexEncoded)
 
 	// The previous EMA is the same as the current one if the service is new
 	require.Equal(t, expectedNumRelays, relayMiningEvent.PrevNumRelaysEma)

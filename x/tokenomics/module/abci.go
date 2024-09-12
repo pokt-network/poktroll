@@ -88,7 +88,7 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) (err error) {
 
 		// NB: The difficulty integer is just a human readable interpretation of
 		// the target hash and is not actually used for business logic.
-		difficulty := protocol.GetDifficultyFromHash(newRelayMiningTargetHash)
+		difficulty := protocol.GetRelayDifficultyMultiplierInt(newRelayMiningDifficulty.TargetHash)
 		telemetry.RelayMiningDifficultyGauge(difficulty, serviceId)
 		telemetry.RelayEMAGauge(newRelayMiningDifficulty.NumRelaysEma, serviceId)
 	}

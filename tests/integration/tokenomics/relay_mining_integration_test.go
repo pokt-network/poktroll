@@ -2,7 +2,6 @@ package integration_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/pokt-network/smt"
@@ -22,7 +21,7 @@ import (
 func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 	// Test params
 	globalComputeUnitsToTokensMultiplier := uint64(1) // keeping the math simple
-	serviceComputeUnitsPerRelay := uint64(1)          // keeping the math simple
+	// serviceComputeUnitsPerRelay := uint64(1)          // keeping the math simple
 
 	// Prepare the keepers and integration app
 	integrationApp := integration.NewCompleteIntegrationApp(t)
@@ -42,63 +41,66 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	// Determine the height at which the claim will expire.
-	sharedParams := sharedtypes.DefaultParams()
-	claimWindowSizeBlocks := int64(sharedParams.GetClaimWindowOpenOffsetBlocks() + sharedParams.GetClaimWindowCloseOffsetBlocks())
-	proofWindowSizeBlocks := int64(sharedParams.GetProofWindowOpenOffsetBlocks() + sharedParams.GetProofWindowCloseOffsetBlocks())
+	// TODO(@adshmh, #781): Implement this test after the business logic is done.
 
-	app := integrationApp.DefaultApplication
-	supplier := integrationApp.DefaultSupplier
-	service := integrationApp.DefaultService
+	/*
+		// Determine the height at which the claim will expire.
+		sharedParams := sharedtypes.DefaultParams()
+		claimWindowSizeBlocks := int64(sharedParams.GetClaimWindowOpenOffsetBlocks() + sharedParams.GetClaimWindowCloseOffsetBlocks())
+		proofWindowSizeBlocks := int64(sharedParams.GetProofWindowOpenOffsetBlocks() + sharedParams.GetProofWindowCloseOffsetBlocks())
 
-	// Monotonically increase the number of relays from a very small number
-	// to a very large number
-	for numRelays := uint64(1e3); numRelays <= 1e16; numRelays *= 10 {
-		session := getSession(t, integrationApp)
+		app := integrationApp.DefaultApplication
+		supplier := integrationApp.DefaultSupplier
+		service := integrationApp.DefaultService
 
-		sessionEndHeight := session.GetHeader().GetSessionEndBlockHeight()
-		claimExpirationHeight := int64(sessionEndHeight + claimWindowSizeBlocks + proofWindowSizeBlocks + 1)
+		// Monotonically increase the number of relays from a very small number
+		// to a very large number
+		for numRelays := uint64(1e3); numRelays <= 1e16; numRelays *= 10 {
+			session := getSession(t, integrationApp)
 
-		ctxAtHeight := sdkCtx.WithBlockHeight(claimExpirationHeight)
+			sessionEndHeight := session.GetHeader().GetSessionEndBlockHeight()
+			claimExpirationHeight := int64(sessionEndHeight + claimWindowSizeBlocks + proofWindowSizeBlocks + 1)
 
-		relayMiningDifficulty, ok := keepers.TokenomicsKeeper.GetRelayMiningDifficulty(ctxAtHeight, service.Id)
-		require.True(t, ok)
+			ctxAtHeight := sdkCtx.WithBlockHeight(claimExpirationHeight)
 
-		// Prepare a claim with the given number of relays and store it
-		claim := prepareRealClaim(t, ctxAtHeight, integrationApp, numRelays, app, supplier, session, service, &relayMiningDifficulty)
-		keepers.ProofKeeper.UpsertClaim(ctxAtHeight, *claim)
+			relayMiningDifficulty, ok := keepers.TokenomicsKeeper.GetRelayMiningDifficulty(ctxAtHeight, service.Id)
+			require.True(t, ok)
 
-		// Calling SettlePendingClaims calls ProcessTokenLogicModules behind
-		// the scenes
-		settledResult, expiredResult, err := keepers.TokenomicsKeeper.SettlePendingClaims(ctxAtHeight)
-		require.NoError(t, err)
-		require.Equal(t, 1, int(settledResult.NumClaims))
-		require.Equal(t, 0, int(expiredResult.NumClaims))
+			// Prepare a claim with the given number of relays and store it
+			claim := prepareRealClaim(t, ctxAtHeight, integrationApp, numRelays, app, supplier, session, service, &relayMiningDifficulty)
+			keepers.ProofKeeper.UpsertClaim(ctxAtHeight, *claim)
 
-		// Update the relay mining difficulty
-		_, err = keepers.TokenomicsKeeper.UpdateRelayMiningDifficulty(ctxAtHeight, map[string]uint64{service.Id: numRelays})
-		require.NoError(t, err)
+			// Calling SettlePendingClaims calls ProcessTokenLogicModules behind the scenes
+			settledResult, expiredResult, err := keepers.TokenomicsKeeper.SettlePendingClaims(ctxAtHeight)
+			require.NoError(t, err)
+			require.Equal(t, 1, int(settledResult.NumClaims))
+			require.Equal(t, 0, int(expiredResult.NumClaims))
 
-		// Compute the expected reward
-		expectedReward := numRelays * serviceComputeUnitsPerRelay * globalComputeUnitsToTokensMultiplier
-		fmt.Println("Expected reward:", expectedReward)
+			// Update the relay mining difficulty
+			_, err = keepers.TokenomicsKeeper.UpdateRelayMiningDifficulty(ctxAtHeight, map[string]uint64{service.Id: numRelays})
+			require.NoError(t, err)
 
-		// Compute the new difficulty hash
-		// newDifficultyHash := keepers.Keeper.ComputeNewDifficultyHash(ctx, numRelays)
+			// Compute the expected reward
+			expectedReward := numRelays * serviceComputeUnitsPerRelay * globalComputeUnitsToTokensMultiplier
+			fmt.Println("Expected reward:", expectedReward)
 
-		// // Check that the new difficulty hash is correct
-		// require.Equal(t, expectedReward, newDifficultyHash.Reward)
+			// Compute the new difficulty hash
+			newDifficultyHash := protocol.ComputeNewDifficultyHash(ctx, numRelays)
 
-		// Update the relay mining difficulty and
-		// - Check that EMA is changing
-		// - Check that the difficulty is changing
+			// // Check that the new difficulty hash is correct
+			require.Equal(t, expectedReward, newDifficultyHash.Reward)
 
-		// Maintain a map of {num_relays -> num_rewards}
-		// Then compute, for everything we have in the map (double list)
-		// - Ratio of curr_relays to prev_relays
-		// - Ratio of curr_rewards to prev_rewards
-		// - Ensure the above are the same
-	}
+			// Update the relay mining difficulty and
+			// - Check that EMA is changing
+			// - Check that the difficulty is changing
+
+			// Maintain a map of {num_relays -> num_rewards}
+			// Then compute, for everything we have in the map (double list)
+			// - Ratio of curr_relays to prev_relays
+			// - Ratio of curr_rewards to prev_rewards
+			// - Ensure the above are the same
+		}
+	*/
 }
 
 // prepareRealClaim prepares a claim by creating a real SMST with the given number

@@ -570,12 +570,6 @@ func (k Keeper) numRelaysToCoin(
 ) (cosmostypes.Coin, error) {
 	logger := k.Logger().With("method", "numRelaysToCoin")
 
-	// Retrieving the relay mining difficulty for the service at hand
-	relayMiningDifficulty, found := k.GetRelayMiningDifficulty(ctx, service.Id)
-	if !found {
-		relayMiningDifficulty = newDefaultRelayMiningDifficulty(ctx, logger, service.Id, numRelays)
-	}
-
 	// CUTTM is a GLOBAL network wide parameter
 	networkComputeUnitsToTokensMultiplier := k.GetParams(ctx).ComputeUnitsToTokensMultiplier
 
@@ -585,14 +579,10 @@ func (k Keeper) numRelaysToCoin(
 	// Calculate the number of claimed compute units in this claim
 	numClaimedComputeUnits := numRelays * serviceComputeUnitsPerRelay
 
-	// Compute the number of claimed compute units in this claim
-	numEstimatedComputeUnits, err := k.getClaimEstimatedComputeUnits(ctx, service, &relayMiningDifficulty, numClaimedComputeUnits)
-	if err != nil {
-		return cosmostypes.Coin{}, err
-	}
+	// TODO(@adshmh, #781): Convert numClaimedComputeUnits to numEstimatedComputeUnits to reflect reward/payment based on real usage.
 
 	// upoktAmount is the number of POKT tokens the numRelays equate to for said service
-	upoktAmount := math.NewInt(int64(numEstimatedComputeUnits * networkComputeUnitsToTokensMultiplier))
+	upoktAmount := math.NewInt(int64(numClaimedComputeUnits * networkComputeUnitsToTokensMultiplier))
 	if upoktAmount.IsNegative() {
 		return cosmostypes.Coin{}, tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrap("sum * compute_units_to_tokens_multiplier is negative")
 	}
@@ -600,30 +590,6 @@ func (k Keeper) numRelaysToCoin(
 
 	logger.Info(fmt.Sprintf("Converted (%d) relays to (%v) for service (%s)", numRelays, upoktCoin, service.Id))
 	return upoktCoin, nil
-}
-
-// numClaimedToEstimatedComputeUnitsRelaysToCoin calculates the number of estimated
-// compute units serviced/processed off-chain based on the number of claimed compute
-// units in a particular session. The reason these are not equal is because the relay
-// mining difficulty keeps trees small and therefore less relays are inserted into
-// the tree for large volumes.
-func (k Keeper) getClaimEstimatedComputeUnits(
-	ctx context.Context,
-	service *sharedtypes.Service,
-	relayMiningDifficulty *tokenomictypes.RelayMiningDifficulty,
-	numClaimedComputeUnits uint64,
-) (numEstimatedComputeUnits uint64, err error) {
-	logger := k.Logger().With("method", "getClaimEstimatedComputeUnits")
-
-	// The number of estimated compute unites is a multiplier of the number of
-	// claimed compute units since it depends on whether the relay is minable or not.
-	difficultyMultiplier := uint64(protocol.GetDifficultyFromHash([32]byte(relayMiningDifficulty.TargetHash)))
-	numEstimatedComputeUnits = uint64(numClaimedComputeUnits * difficultyMultiplier)
-
-	logger.Info(fmt.Sprintf("Estimated (%d) serviced compute units from (%d) claimed compute units"+
-		"with a difficulty multiplier of (%d) for relay difficulty (%v)", numEstimatedComputeUnits, numClaimedComputeUnits, difficultyMultiplier, relayMiningDifficulty.TargetHash))
-
-	return numEstimatedComputeUnits, nil
 }
 
 // distributeSupplierRewardsToShareHolders distributes the supplier rewards to its
