@@ -217,16 +217,9 @@ func (s *suite) AllModuleParamsShouldBeSetToTheirDefaultValues(moduleName string
 // TheAccountSendsAnAuthzExecMessageToUpdateAllModuleParams sends an authz exec
 // message to update all module params for the given module.
 func (s *suite) TheAccountSendsAnAuthzExecMessageToUpdateAllModuleParams(accountName, moduleName string, table gocuke.DataTable) {
-	// NB: set s#moduleParamsMap for later assertion.
-	s.expectedModuleParams = moduleParamsMap{
-		moduleName: s.parseParamsTable(table),
-	}
+	paramsTableMap := s.parseParamsTable(table)
 
-	// Use the map of params to populate a tx JSON template & write it to a file.
-	txJSONFile := s.newTempUpdateParamsTxJSONFile(s.expectedModuleParams)
-
-	// Send the authz exec tx to update all module params.
-	s.sendAuthzExecTx(accountName, txJSONFile.Name())
+	s.sendAuthzExecToUpdateAllModuleParams(accountName, moduleName, paramsTableMap)
 }
 
 // AllModuleParamsShouldBeUpdated asserts that all module params have been updated as expected.
@@ -477,6 +470,21 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 	default:
 		s.Fatalf("ERROR: unexpected module name %q", moduleName)
 	}
+}
+
+// sendAuthzExecToUpdateAllModuleParams constructs and sends an authz exec
+// tx to update all params for moduleName the given params.
+func (s *suite) sendAuthzExecToUpdateAllModuleParams(accountName, moduleName string, params paramsAnyMap) {
+	// NB: set s#moduleParamsMap for later assertion.
+	s.expectedModuleParams = moduleParamsMap{
+		moduleName: params,
+	}
+
+	// Use the map of params to populate a tx JSON template & write it to a file.
+	txJSONFile := s.newTempUpdateParamsTxJSONFile(s.expectedModuleParams)
+
+	// Send the authz exec tx to update all module params.
+	s.sendAuthzExecTx(accountName, txJSONFile.Name())
 }
 
 // assertUpdatedParams deserializes the param query response JSON into a
