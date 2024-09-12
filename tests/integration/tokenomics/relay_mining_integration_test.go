@@ -22,7 +22,7 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 	// Test params
 	globalComputeUnitsToTokensMultiplier := uint64(1) // keeping the math simple
 	// serviceComputeUnitsPerRelay := uint64(1)          // keeping the math simple
-
+	
 	// Prepare the keepers and integration app
 	integrationApp := integration.NewCompleteIntegrationApp(t)
 	sdkCtx := integrationApp.GetSdkCtx()
