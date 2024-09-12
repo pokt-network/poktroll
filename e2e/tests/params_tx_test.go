@@ -41,6 +41,15 @@ func (s *suite) sendAuthzExecTx(signingKeyName, txJSONFilePath string) {
 
 	// TODO_IMPROVE: wait for the tx to be committed using an events query client
 	// instead of sleeping for a specific amount of time.
+	//
+	// First attempt:
+	// eventAttrMatchFn := newEventAttributeMatchFn("action", "/cosmos.authz.v1beta1.MsgExec")
+	// s.waitForTxResultEvent(eventAttrMatchFn)
+	//
+	// This resulted in observing many more events than expected, even accounting
+	// for those corresponding to the param reset step, which is automatically
+	// registered in a s.Cleanup() below.
+
 	s.Logf("waiting %d seconds for the authz exec tx to be committed...", txDelaySeconds)
 	time.Sleep(txDelaySeconds * time.Second)
 
