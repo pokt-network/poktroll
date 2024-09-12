@@ -22,7 +22,7 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 	// Test params
 	globalComputeUnitsToTokensMultiplier := uint64(1) // keeping the math simple
 	// serviceComputeUnitsPerRelay := uint64(1)          // keeping the math simple
-	
+
 	// Prepare the keepers and integration app
 	integrationApp := integration.NewCompleteIntegrationApp(t)
 	sdkCtx := integrationApp.GetSdkCtx()
@@ -114,7 +114,7 @@ func prepareRealClaim(
 	session *sessiontypes.Session,
 	service *sharedtypes.Service,
 	relayMiningDifficulty *tokenomicstypes.RelayMiningDifficulty,
-) *prooftypes.Claim {
+) *prooftypes.Claim { //nolint:unused // Will be used once the test above is implemented.
 	t.Helper()
 
 	// Prepare an in-memory key-value store
