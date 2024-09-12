@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+
 	"github.com/pokt-network/poktroll/x/shared"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
@@ -67,6 +68,13 @@ func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) error {
 		// Remove the supplier from the store.
 		k.RemoveSupplier(ctx, supplierOperatorAddress.String())
 		logger.Info(fmt.Sprintf("Successfully removed the supplier: %+v", supplier))
+
+		event := &types.EventSupplierUnbondingEnd{
+			Supplier: &supplier,
+		}
+		if eventErr := sdkCtx.EventManager().EmitTypedEvent(event); eventErr != nil {
+			logger.Error(fmt.Sprintf("failed to emit event: %+v; %s", event, eventErr))
+		}
 	}
 
 	return nil

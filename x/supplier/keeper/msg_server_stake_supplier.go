@@ -122,6 +122,14 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 	k.SetSupplier(ctx, supplier)
 	logger.Info(fmt.Sprintf("Successfully updated supplier stake for supplier: %+v", supplier))
 
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	event := &types.EventSupplierStaked{
+		Supplier: &supplier,
+	}
+	if eventErr := sdkCtx.EventManager().EmitTypedEvent(event); eventErr != nil {
+		logger.Error(fmt.Sprintf("failed to emit event: %+v; %s", event, eventErr))
+	}
+
 	isSuccessful = true
 	return &types.MsgStakeSupplierResponse{}, nil
 }

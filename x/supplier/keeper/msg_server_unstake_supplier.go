@@ -69,6 +69,13 @@ func (k msgServer) UnstakeSupplier(
 	supplier.UnstakeSessionEndHeight = uint64(shared.GetSessionEndHeight(&sharedParams, currentHeight))
 	k.SetSupplier(ctx, supplier)
 
+	event := &types.EventSupplierUnbondingBegin{
+		Supplier: &supplier,
+	}
+	if eventErr := sdkCtx.EventManager().EmitTypedEvent(event); eventErr != nil {
+		logger.Error(fmt.Sprintf("failed to emit event: %+v; %s", event, eventErr))
+	}
+
 	isSuccessful = true
 	return &types.MsgUnstakeSupplierResponse{}, nil
 }
