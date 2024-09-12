@@ -1,0 +1,16 @@
+{
+    "pubkey": {
+        "@type": "/cosmos.crypto.ed25519.PubKey",
+        "key": "etLIiQS7ud7xuAKe0/gxQryW8vONDCs4KRdrZBhb530="
+    },
+    "amount": "900000000upokt",
+    "moniker": "validator2",
+    "identity": "",
+    "website": "",
+    "security": "",
+    "details": "",
+    "commission-rate": "0.1",
+    "commission-max-rate": "0.2",
+    "commission-max-change-rate": "0.1",
+    "min-self-delegation": "1"
+}
