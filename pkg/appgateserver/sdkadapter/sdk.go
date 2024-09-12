@@ -18,7 +18,7 @@ import (
 	"github.com/pokt-network/poktroll/x/service/types"
 )
 
-// ShannonSDK is a wrapper around the Shannon SDK that is used by the AppGateServer
+// ShannonSDK is a wrapper around the Shannon SDK used by the AppGateServer
 // to encapsulate the SDK's functionality and dependencies.
 type ShannonSDK struct {
 	blockClient   client.BlockClient
@@ -29,23 +29,24 @@ type ShannonSDK struct {
 	signer        *shannonsdk.Signer
 }
 
-// Cache structure to store session results and ensure thread-safety
+// sessionCache stores session results to reduce redundant queries.
 type sessionCache struct {
 	mu    sync.RWMutex
 	cache map[string]*cachedSession
 }
 
-// Cached session data
+// cachedSession represents a cached session data.
 type cachedSession struct {
 	filter *shannonsdk.SessionFilter
 	height int64
 }
 
+// sessionCacheInstance is a global instance of the session cache.
 var sessionCacheInstance = sessionCache{
 	cache: make(map[string]*cachedSession),
 }
 
-// Cache structure for block height
+// heightCache caches the latest block height to reduce queries.
 type heightCache struct {
 	mu              sync.RWMutex
 	cachedHeight    int64
@@ -53,17 +54,17 @@ type heightCache struct {
 	invalidationDur time.Duration
 }
 
-// Height cache instance with a configurable invalidation duration
+// blockHeightCache is a global instance of the height cache with a default 1-second invalidation duration.
 var blockHeightCache = heightCache{
-	invalidationDur: time.Second, // Default 1 second
+	invalidationDur: time.Second,
 }
 
-// Generate cache key from appAddress, serviceId, and height
+// cacheKey generates a unique key for the session cache.
 func cacheKey(appAddress, serviceId string, height int64) string {
 	return fmt.Sprintf("%s-%s-%d", appAddress, serviceId, height)
 }
 
-// Remove old cache entries with heights smaller than the current height
+// cleanupCache removes outdated entries from the session cache.
 func (c *sessionCache) cleanupCache(currentHeight int64) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -75,76 +76,77 @@ func (c *sessionCache) cleanupCache(currentHeight int64) {
 	}
 }
 
-// GetCachedHeight retrieves the block height and caches it. It invalidates
-// the cached value if the configured duration has passed since the last update.
 func (shannonSDK *ShannonSDK) GetCachedHeight(ctx context.Context) (int64, error) {
 	blockHeightCache.mu.RLock()
-	// Check if cached height is still valid
-	if time.Since(blockHeightCache.lastUpdated) < blockHeightCache.invalidationDur {
+	if blockHeightCache.cachedHeight != 0 && time.Since(blockHeightCache.lastUpdated) < blockHeightCache.invalidationDur {
 		cachedHeight := blockHeightCache.cachedHeight
 		blockHeightCache.mu.RUnlock()
 		return cachedHeight, nil
 	}
 	blockHeightCache.mu.RUnlock()
 
-	// Fetch new height from the block client
-	newHeight := shannonSDK.blockClient.LastBlock(ctx).Height()
-
-	// Update the cached height
 	blockHeightCache.mu.Lock()
+	defer blockHeightCache.mu.Unlock()
+
+	// Double-check the condition after acquiring the write lock
+	if blockHeightCache.cachedHeight != 0 && time.Since(blockHeightCache.lastUpdated) < blockHeightCache.invalidationDur {
+		return blockHeightCache.cachedHeight, nil
+	}
+
+	lastBlock := shannonSDK.blockClient.LastBlock(ctx)
+	if lastBlock == nil {
+		return 0, fmt.Errorf("failed to get last block")
+	}
+
+	newHeight := lastBlock.Height()
 	blockHeightCache.cachedHeight = newHeight
 	blockHeightCache.lastUpdated = time.Now()
-	blockHeightCache.mu.Unlock()
 
 	return newHeight, nil
 }
 
 // NewShannonSDK creates a new ShannonSDK instance with the given signing key and dependencies.
-// It initializes the necessary clients and signer for the SDK.
 func NewShannonSDK(
 	ctx context.Context,
 	signingKey cryptotypes.PrivKey,
 	deps depinject.Config,
 ) (*ShannonSDK, error) {
-	sessionClient, sessionClientErr := query.NewSessionQuerier(deps)
-	if sessionClientErr != nil {
-		return nil, sessionClientErr
+	sessionClient, err := query.NewSessionQuerier(deps)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create session querier: %w", err)
 	}
 
-	accountClient, accountClientErr := query.NewAccountQuerier(deps)
-	if accountClientErr != nil {
-		return nil, accountClientErr
+	accountClient, err := query.NewAccountQuerier(deps)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create account querier: %w", err)
 	}
 
-	appClient, appClientErr := query.NewApplicationQuerier(deps)
-	if appClientErr != nil {
-		return nil, appClientErr
+	appClient, err := query.NewApplicationQuerier(deps)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create application querier: %w", err)
 	}
 
-	blockClient := client.BlockClient(nil)
-	if depsErr := depinject.Inject(deps, &blockClient); depsErr != nil {
-		return nil, depsErr
+	var blockClient client.BlockClient
+	if err := depinject.Inject(deps, &blockClient); err != nil {
+		return nil, fmt.Errorf("failed to inject block client: %w", err)
 	}
 
-	signer, signerErr := NewSigner(signingKey)
-	if signerErr != nil {
-		return nil, signerErr
+	signer, err := NewSigner(signingKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create signer: %w", err)
 	}
 
-	shannonSDK := &ShannonSDK{
+	return &ShannonSDK{
 		blockClient:   blockClient,
 		sessionClient: sessionClient,
 		accountClient: accountClient,
 		appClient:     appClient,
 		relayClient:   http.DefaultClient,
 		signer:        signer,
-	}
-
-	return shannonSDK, nil
+	}, nil
 }
 
-// SendRelay builds a relay request from the given requestBz, signs it with the
-// application address, then sends it to the given endpoint.
+// SendRelay builds and sends a relay request to the given endpoint.
 func (shannonSDK *ShannonSDK) SendRelay(
 	ctx context.Context,
 	appAddress string,
@@ -153,12 +155,12 @@ func (shannonSDK *ShannonSDK) SendRelay(
 ) (*types.RelayResponse, error) {
 	relayRequest, err := shannonsdk.BuildRelayRequest(endpoint, requestBz)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to build relay request: %w", err)
 	}
 
 	application, err := shannonSDK.appClient.GetApplication(ctx, appAddress)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get application: %w", err)
 	}
 
 	appRing := shannonsdk.ApplicationRing{
@@ -167,12 +169,12 @@ func (shannonSDK *ShannonSDK) SendRelay(
 	}
 
 	if _, err = shannonSDK.signer.Sign(ctx, relayRequest, appRing); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to sign relay request: %w", err)
 	}
 
 	relayRequestBz, err := relayRequest.Marshal()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to marshal relay request: %w", err)
 	}
 
 	response, err := shannonSDK.relayClient.Post(
@@ -181,13 +183,13 @@ func (shannonSDK *ShannonSDK) SendRelay(
 		bytes.NewReader(relayRequestBz),
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to send relay request: %w", err)
 	}
 	defer response.Body.Close()
 
 	responseBodyBz, err := io.ReadAll(response.Body)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
 
 	return shannonsdk.ValidateRelayResponse(
@@ -198,21 +200,19 @@ func (shannonSDK *ShannonSDK) SendRelay(
 	)
 }
 
-// GetSessionSupplierEndpoints returns the current session's supplier endpoints
-// for the given appAddress and serviceId, using a cached result if available.
+// GetSessionSupplierEndpoints returns the current session's supplier endpoints,
+// using a cached result if available.
 func (shannonSDK *ShannonSDK) GetSessionSupplierEndpoints(
 	ctx context.Context,
 	appAddress, serviceId string,
 ) (*shannonsdk.SessionFilter, error) {
-	// Use the cached block height
 	currentHeight, err := shannonSDK.GetCachedHeight(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get current height: %w", err)
 	}
 
 	key := cacheKey(appAddress, serviceId, currentHeight)
 
-	// Check if result is cached
 	sessionCacheInstance.mu.RLock()
 	if result, found := sessionCacheInstance.cache[key]; found {
 		sessionCacheInstance.mu.RUnlock()
@@ -220,17 +220,15 @@ func (shannonSDK *ShannonSDK) GetSessionSupplierEndpoints(
 	}
 	sessionCacheInstance.mu.RUnlock()
 
-	// Fetch session from the session client if not cached
 	session, err := shannonSDK.sessionClient.GetSession(ctx, appAddress, serviceId, currentHeight)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get session: %w", err)
 	}
 
 	filteredSession := &shannonsdk.SessionFilter{
 		Session: session,
 	}
 
-	// Store the result in cache
 	sessionCacheInstance.mu.Lock()
 	sessionCacheInstance.cache[key] = &cachedSession{
 		filter: filteredSession,
@@ -238,7 +236,6 @@ func (shannonSDK *ShannonSDK) GetSessionSupplierEndpoints(
 	}
 	sessionCacheInstance.mu.Unlock()
 
-	// Cleanup old cache entries
 	sessionCacheInstance.cleanupCache(currentHeight)
 
 	return filteredSession, nil
