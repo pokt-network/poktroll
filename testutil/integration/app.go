@@ -2,6 +2,7 @@ package integration
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -33,6 +34,7 @@ import (
 	authsims "github.com/cosmos/cosmos-sdk/x/auth/simulation"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/cosmos/cosmos-sdk/x/bank"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
@@ -81,14 +83,15 @@ type App struct {
 	*baseapp.BaseApp
 
 	// Internal state of the App needed for properly configuring the blockchain.
-	sdkCtx        *sdk.Context
-	cdc           codec.Codec
-	logger        log.Logger
-	authority     sdk.AccAddress
-	moduleManager module.Manager
-	queryHelper   *baseapp.QueryServiceTestHelper
-	keyRing       keyring.Keyring
-	ringClient    crypto.RingClient
+	sdkCtx            *sdk.Context
+	cdc               codec.Codec
+	logger            log.Logger
+	authority         sdk.AccAddress
+	moduleManager     module.Manager
+	queryHelper       *baseapp.QueryServiceTestHelper
+	keyRing           keyring.Keyring
+	ringClient        crypto.RingClient
+	preGeneratedAccts *testkeyring.PreGeneratedAccountIterator
 
 	// Some default helper fixtures for general testing.
 	// They're publically exposed and should/could be improve and expand on
@@ -113,6 +116,7 @@ func NewIntegrationApp(
 	keys map[string]*storetypes.KVStoreKey,
 	msgRouter *baseapp.MsgServiceRouter,
 	queryHelper *baseapp.QueryServiceTestHelper,
+	moduleOpts ...ModuleOption,
 ) *App {
 	t.Helper()
 
@@ -148,8 +152,21 @@ func NewIntegrationApp(
 	bApp.SetInitChainer(
 		func(ctx sdk.Context, _ *cmtabcitypes.RequestInitChain) (*cmtabcitypes.ResponseInitChain, error) {
 			for _, mod := range modules {
-				if m, ok := mod.(module.HasGenesis); ok {
-					m.InitGenesis(ctx, cdc, m.DefaultGenesis(cdc))
+				//t.Logf(">>> moduleName: %s", moduleName)
+				//t.Logf(">>> moduleType: %T", mod)
+				var isGenesisInitiated bool
+				for _, opt := range moduleOpts {
+					if opt(ctx, cdc, mod) {
+						isGenesisInitiated = true
+					}
+				}
+
+				if !isGenesisInitiated {
+					if m, ok := mod.(module.HasGenesis); ok {
+						m.InitGenesis(ctx, cdc, m.DefaultGenesis(cdc))
+					}
+				} else {
+					fmt.Printf(">>> isGenesisInitiated: %v\n", isGenesisInitiated)
 				}
 			}
 
@@ -186,16 +203,24 @@ func NewIntegrationApp(
 	}
 }
 
+// TODO_IN_THIS_COMMIT: move...
+type ModuleOption func(
+	cosmostypes.Context,
+	codec.Codec,
+	appmodule.AppModule,
+) (isGenesisImported bool)
+
 // NewCompleteIntegrationApp creates a new instance of the App, abstracting out
 // all of the internal details and complexities of the application setup.
 // TODO_TECHDEBT: Not all of the modules are created here (e.g. minting module),
 // so it is up to the developer to add / improve / update this function over time
 // as the need arises.
-func NewCompleteIntegrationApp(t *testing.T) *App {
+func NewCompleteIntegrationApp(t *testing.T, moduleOpts ...ModuleOption) *App {
 	t.Helper()
 
 	// Prepare & register the codec for all the interfaces
 	registry := codectypes.NewInterfaceRegistry()
+	banktypes.RegisterInterfaces(registry)
 	tokenomicstypes.RegisterInterfaces(registry)
 	sharedtypes.RegisterInterfaces(registry)
 	banktypes.RegisterInterfaces(registry)
@@ -279,6 +304,12 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		blockedAddresses,
 		authority.String(),
 		logger,
+	)
+	bankModule := bank.NewAppModule(
+		cdc,
+		bankKeeper,
+		accountKeeper,
+		nil,
 	)
 
 	// Prepare the shared keeper and module
@@ -437,6 +468,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 
 	// Prepare the list of modules
 	modules := map[string]appmodule.AppModule{
+		banktypes.ModuleName:       bankModule,
 		tokenomicstypes.ModuleName: tokenomicsModule,
 		servicetypes.ModuleName:    serviceModule,
 		sharedtypes.ModuleName:     sharedModule,
@@ -460,9 +492,11 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		storeKeys,
 		msgRouter,
 		queryHelper,
+		moduleOpts...,
 	)
 
 	// Register the message servers
+	banktypes.RegisterMsgServer(msgRouter, bankkeeper.NewMsgServerImpl(bankKeeper))
 	tokenomicstypes.RegisterMsgServer(msgRouter, tokenomicskeeper.NewMsgServerImpl(tokenomicsKeeper))
 	servicetypes.RegisterMsgServer(msgRouter, servicekeeper.NewMsgServerImpl(serviceKeeper))
 	sharedtypes.RegisterMsgServer(msgRouter, sharedkeeper.NewMsgServerImpl(sharedKeeper))
@@ -474,6 +508,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	sessiontypes.RegisterMsgServer(msgRouter, sessionkeeper.NewMsgServerImpl(sessionKeeper))
 
 	// Register query servers
+	banktypes.RegisterQueryServer(queryHelper, bankKeeper)
 	tokenomicstypes.RegisterQueryServer(queryHelper, tokenomicsKeeper)
 	servicetypes.RegisterQueryServer(queryHelper, serviceKeeper)
 	sharedtypes.RegisterQueryServer(queryHelper, sharedKeeper)
@@ -486,7 +521,9 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	sessiontypes.RegisterQueryServer(queryHelper, sessionKeeper)
 
 	// Set the default params for all the modules
-	err := sharedKeeper.SetParams(integrationApp.GetSdkCtx(), sharedtypes.DefaultParams())
+	err := bankKeeper.SetParams(integrationApp.GetSdkCtx(), banktypes.DefaultParams())
+	require.NoError(t, err)
+	err = sharedKeeper.SetParams(integrationApp.GetSdkCtx(), sharedtypes.DefaultParams())
 	require.NoError(t, err)
 	err = tokenomicsKeeper.SetParams(integrationApp.GetSdkCtx(), tokenomicstypes.DefaultParams())
 	require.NoError(t, err)
@@ -512,6 +549,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 
 	// Create a pre-generated account iterator to create accounts for the test.
 	preGeneratedAccts := testkeyring.PreGeneratedAccounts()
+	integrationApp.preGeneratedAccts = preGeneratedAccts
 
 	// Prepare a new default service
 	defaultService := sharedtypes.Service{
@@ -616,6 +654,11 @@ func (app *App) GetRingClient() crypto.RingClient {
 // GetKeyRing returns the keyring used by the application.
 func (app *App) GetKeyRing() keyring.Keyring {
 	return app.keyRing
+}
+
+// GetPreGeneratedAccts returns the pre-generated account iterator used by the integration application.
+func (app *App) GetPreGeneratedAccts() *testkeyring.PreGeneratedAccountIterator {
+	return app.preGeneratedAccts
 }
 
 // GetCodec returns the codec used by the application.

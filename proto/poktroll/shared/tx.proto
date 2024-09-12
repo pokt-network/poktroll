@@ -36,7 +36,9 @@ message MsgUpdateParams {
 
 // MsgUpdateParamsResponse defines the response structure for executing a
 // MsgUpdateParams message.
-message MsgUpdateParamsResponse {}
+message MsgUpdateParamsResponse {
+  Params params = 1;
+}
 
 // MsgUpdateParam is the Msg/UpdateParam request type to update a single param.
 message MsgUpdateParam {

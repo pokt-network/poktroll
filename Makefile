@@ -85,6 +85,35 @@ install_ci_deps: ## Installs `mockgen` and other go tools
 	go install golang.org/x/tools/cmd/goimports@latest
 	go install github.com/mikefarah/yq/v4@latest
 
+.PHONY: install_cosmovisor
+install_cosmovisor: ## Installs `cosmovisor`
+	go install cosmossdk.io/tools/cosmovisor/cmd/cosmovisor@v1.6.0 && cosmovisor version --cosmovisor-only
+
+.PHONY: cosmovisor_cross_compile
+cosmovisor_cross_compile: # Installs multiple cosmovisor binaries for different platforms (used by Dockerfile.release)
+	@COSMOVISOR_VERSION="v1.6.0"; \
+	PLATFORMS="linux/amd64 linux/arm64"; \
+	mkdir -p ./tmp; \
+	echo "Fetching Cosmovisor source..."; \
+	temp_dir=$$(mktemp -d); \
+	cd $$temp_dir; \
+	go mod init temp; \
+	go get cosmossdk.io/tools/cosmovisor/cmd/cosmovisor@$$COSMOVISOR_VERSION; \
+	for platform in $$PLATFORMS; do \
+		OS=$${platform%/*}; \
+		ARCH=$${platform#*/}; \
+		echo "Compiling for $$OS/$$ARCH..."; \
+		GOOS=$$OS GOARCH=$$ARCH go build -o $(CURDIR)/tmp/cosmovisor-$$OS-$$ARCH cosmossdk.io/tools/cosmovisor/cmd/cosmovisor; \
+	done; \
+	cd $(CURDIR); \
+	rm -rf $$temp_dir; \
+	echo "Compilation complete. Binaries are in ./tmp/"; \
+	ls -l ./tmp/cosmovisor-*
+
+.PHONY: cosmovisor_clean
+cosmovisor_clean:
+	rm -f ./tmp/cosmovisor-*
+
 ########################
 ### Makefile Helpers ###
 ########################
@@ -365,6 +394,18 @@ send_relay_sovereign_app_REST: # Send a REST relay through the AppGateServer as 
 cosmovisor_start_node: # Starts the node using cosmovisor that waits for an upgrade plan
 	bash tools/scripts/upgrades/cosmovisor-start-node.sh
 
+.PHONY: query_tx
+query_tx: ## Query for a transaction by hash and output as YAML (default).
+	poktrolld --home=$(POKTROLLD_HOME) query tx $(HASH) --node $(POCKET_NODE)
+
+.PHONY: query_tx_json
+query_tx_json: ## Query for a transaction by hash and output as JSON.
+	poktrolld --home=$(POKTROLLD_HOME) query tx $(HASH) --output json --node $(POCKET_NODE)
+
+.PHONY: query_tx_log
+query_tx_log: ## Query for a transaction and print its raw log.
+	$(MAKE) -s query_tx_json | jq .raw_log
+
 ###############
 ### Linting ###
 ###############
@@ -390,17 +431,17 @@ test_e2e_env: warn_message_acc_initialize_pubkeys ## Setup the default env vars 
 test_e2e: test_e2e_env ## Run all E2E tests
 	go test -count=1 -v ./e2e/tests/... -tags=e2e,test
 
+.PHONY: test_e2e_verbose
+test_e2e_verbose: test_e2e_env ## Run all E2E tests with verbose debug output
+	E2E_DEBUG_OUTPUT=true go test -count=1 -v ./e2e/tests/... -tags=e2e,test
+
 .PHONY: test_e2e_relay
 test_e2e_relay: test_e2e_env ## Run only the E2E suite that exercises the relay life-cycle
 	go test -v ./e2e/tests/... -tags=e2e,test --features-path=relay.feature
 
-.PHONY: test_e2e_app_stake
-test_e2e_app_stake: test_e2e_env ## Run only the E2E suite that exercises the application life-cycle
+.PHONY: test_e2e_app
+test_e2e_app: test_e2e_env ## Run only the E2E suite that exercises the application life-cycle
 	go test -v ./e2e/tests/... -tags=e2e,test --features-path=stake_app.feature
-
-.PHONY: test_e2e_app_transfer
-test_e2e_app_transfer: test_e2e_env ## Run only the E2E suite that exercises application stake transfer
-	go test -v ./e2e/tests/... -tags=e2e,test --features-path=stake_app_transfer.feature
 
 .PHONY: test_e2e_supplier
 test_e2e_supplier: test_e2e_env ## Run only the E2E suite that exercises the supplier life-cycle
@@ -711,15 +752,19 @@ supplier_unstake: ## Unstake an supplier (must specify the SUPPLIER env var)
 
 .PHONY: supplier1_unstake
 supplier1_unstake: ## Unstake supplier1
-	SUPPLIER=supplier1 make supplier_unstake
+	SUPPLIER1=$$(make -s poktrolld_addr ACC_NAME=supplier1) && \
+	SUPPLIER=$$SUPPLIER1 make supplier_unstake
 
 .PHONY: supplier2_unstake
 supplier2_unstake: ## Unstake supplier2
-	SUPPLIER=supplier2 make supplier_unstake
+	SUPPLIER2=$$(make -s poktrolld_addr ACC_NAME=supplier2) && \
+	SUPPLIER=$$SUPPLIER2 make supplier_unstake
+
 
 .PHONY: supplier3_unstake
 supplier3_unstake: ## Unstake supplier3
-	SUPPLIER=supplier3 make supplier_unstake
+	SUPPLIER3=$$(make -s poktrolld_addr ACC_NAME=supplier3) && \
+	SUPPLIER=$$SUPPLIER3 make supplier_unstake
 
 ###############
 ### Session ###
@@ -917,6 +962,22 @@ claim_list_session: ## List all the claims ending at a specific session (specifi
 PARAM_FLAGS = --home=$(POKTROLLD_HOME) --keyring-backend test --from $(PNF_ADDRESS) --node $(POCKET_NODE)
 
 ### Tokenomics Module Params ###
+.PHONY: params_get_tokenomics
+params_get_tokenomics: ## Get the tokenomics module params
+	poktrolld query tokenomics params --node $(POCKET_NODE)
+
+.PHONY: params_get_proof
+params_get_proof: ## Get the proof module params
+	poktrolld query proof params --node $(POCKET_NODE)
+
+.PHONY: params_get_shared
+params_get_shared: ## Get the shared module params
+	poktrolld query shared params --node $(POCKET_NODE)
+
+.PHONY: params_get_service
+params_get_service: ## Get the service module params
+	poktrolld query service params --node $(POCKET_NODE)
+
 .PHONY: update_tokenomics_params_all
 params_update_tokenomics_all: ## Update the tokenomics module params
 	poktrolld tx authz exec ./tools/scripts/params/tokenomics_all.json $(PARAM_FLAGS)
@@ -979,17 +1040,10 @@ params_update_shared_proof_window_open_offset_blocks: ## Update the shared modul
 params_update_shared_proof_window_close_offset_blocks: ## Update the shared module proof_window_close_offset_blocks param
 	poktrolld tx authz exec ./tools/scripts/params/shared_proof_window_close_offset_blocks.json $(PARAM_FLAGS)
 
-.PHONY: params_update_shared_supplier_unbonding_period_sessions
-params_update_shared_supplier_unbonding_period_sessions: ## Update the shared module supplier_unbonding_period_sessions param
-	poktrolld tx authz exec ./tools/scripts/params/shared_supplier_unbonding_period_sessions.json $(PARAM_FLAGS)
-
-.PHONY: params_update_shared_application_unbonding_period_sessions
-params_update_shared_application_unbonding_period_sessions: ## Update the shared module application_unbonding_period_sessions param
-	poktrolld tx authz exec ./tools/scripts/params/shared_application_unbonding_period_sessions.json $(PARAM_FLAGS)
-
 .PHONY: params_update_service_add_service_fee
 params_update_service_add_service_fee: ## Update the service module add_service_fee param
 	poktrolld tx authz exec ./tools/scripts/params/service_add_service_fee.json $(PARAM_FLAGS)
+
 
 .PHONY: params_query_all
 params_query_all: check_jq ## Query the params from all available modules
