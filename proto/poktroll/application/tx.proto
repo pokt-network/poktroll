@@ -55,7 +55,9 @@ message MsgStakeApplication {
   repeated poktroll.shared.ApplicationServiceConfig services = 3; // The list of services this application is staked to request service for
 }
 
-message MsgStakeApplicationResponse {}
+message MsgStakeApplicationResponse {
+  poktroll.application.Application application = 1;
+}
 
 message MsgUnstakeApplication {
   option (cosmos.msg.v1.signer) = "address"; // https://docs.cosmos.network/main/build/building-modules/messages-and-queries

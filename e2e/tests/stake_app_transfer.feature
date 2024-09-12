@@ -1,12 +1,16 @@
 Feature: App Stake Transfer Namespace
 
-    Scenario: User can transfer Application stake to non-existing application address
+    Scenario: User can transfer Application stake to non-existing destination application address
         Given the user has the pocketd binary installed
         # Reduce the application unbonding period to avoid timeouts.
         And an authz grant from the "gov" "module" account to the "pnf" "user" account for each module MsgUpdateParam message exists
+
+        # TODO_IN_THIS_COMMIT: use TheUnbondingPeriodParamIsSuccessfullySetToSessionsOfBlocks instead:
         And the "pnf" account sends an authz exec message to update the "shared" module param
             | name                                  | value | type  |
             | application_unbonding_period_sessions | 1     | int64 |
+        And all "shared" module params should be updated
+
         And an account exists for "app3"
         # Stake with 1 uPOKT more than the current stake used in genesis to make
         # the transaction succeed.
@@ -37,7 +41,7 @@ Feature: App Stake Transfer Namespace
         # which may otherwise make false assumptions about the starting state.
         And the user successfully unstakes a "application" from the account "app3"
 
-    Scenario: Only one Application transfer with a given destination address in the same session will succeed
+    Scenario: User can transfer multiple Applications to the same destination simultaneously
         Given the user has the pocketd binary installed
         And an account exists for "app3"
         And an account exists for "app1"
@@ -68,12 +72,12 @@ Feature: App Stake Transfer Namespace
         And the user should wait for the "application" module "TransferEnd" end block event to be broadcast
         And the "application" for account "app3" is staked with "1000070" uPOKT
         And the account balance of "app3" should be "0" uPOKT "less" than before
-        # Only one source application should be unstaked with no account balance
+        # Both source application should be unstaked with no account balance
         # change after the transfer period
+        And the user verifies the "application" for account "app1" is not staked
+        And the account balance of "app1" should be "0" uPOKT "more" than before
         And the user verifies the "application" for account "app2" is not staked
         And the account balance of "app2" should be "0" uPOKT "more" than before
-        And the "application" for account "app1" is staked above minimum
-        And the account balance of "app1" should be "0" uPOKT "more" than before
         # Cleanup for other tests
         # TODO(#): Until a network state reset API is implemented, we SHOULD
         # manually unstake the applications to mitigate failures in other features
