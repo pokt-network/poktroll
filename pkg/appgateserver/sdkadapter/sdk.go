@@ -225,8 +225,11 @@ func (shannonSDK *ShannonSDK) GetSessionSupplierEndpoints(
 		return nil, fmt.Errorf("failed to get session: %w", err)
 	}
 
+	// Create a deep copy of the session to ensure immutability
+	sessionCopy := *session
+
 	filteredSession := &shannonsdk.SessionFilter{
-		Session: session,
+		Session: &sessionCopy, // Store a pointer to our copy
 	}
 
 	sessionCacheInstance.mu.Lock()
