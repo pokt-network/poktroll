@@ -9,22 +9,10 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-// getRelayerUrl returns the next relayer endpoint to use for the given serviceId and rpcType.
-// NB: This is a naive implementation of the endpoint selection strategy.
-// It is intentionally kept simple for the sake of a clear example, and future
-// optimizations (i.e. quality of service implementations) are left as an exercise
-// to gateways.
-func (app *appGateServer) getRelayerUrl(
-	rpcType sharedtypes.RPCType,
+func (app *appGateServer) getMatchingEndpoints(
 	sessionFilter shannonsdk.SessionFilter,
-	requestUrlStr string,
-) (supplierEndpoint shannonsdk.Endpoint, err error) {
-	// AppGateServer uses the custom getRelayerUrl instead of leveraging the SDK's
-	// filter to select the next endpoint to use.
-	// This is because it needs to maintain the state of the last selected endpoint
-	// and have a view on the original request URL to determine the next endpoint.
-	// This behavior is specific to the AppGateServer and needed by clients that
-	// need to instrument the endpoint selection strategy, such as the Load testing tool.
+	rpcType sharedtypes.RPCType,
+) ([]shannonsdk.Endpoint, error) {
 	endpoints, err := sessionFilter.AllEndpoints()
 	if err != nil {
 		return nil, err
@@ -46,6 +34,25 @@ func (app *appGateServer) getRelayerUrl(
 	if len(matchingRPCTypeEndpoints) == 0 {
 		return nil, ErrAppGateNoRelayEndpoints
 	}
+
+	return matchingRPCTypeEndpoints, nil
+}
+
+// getRelayerUrl returns the next relayer endpoint to use for the given serviceId and rpcType.
+// NB: This is a naive implementation of the endpoint selection strategy.
+// It is intentionally kept simple for the sake of a clear example, and future
+// optimizations (i.e. quality of service implementations) are left as an exercise
+// to gateways.
+func (app *appGateServer) getRelayerUrl(
+	requestUrlStr string,
+	matchingRPCTypeEndpoints []shannonsdk.Endpoint,
+) (supplierEndpoint shannonsdk.Endpoint, err error) {
+	// AppGateServer uses the custom getRelayerUrl instead of leveraging the SDK's
+	// filter to select the next endpoint to use.
+	// This is because it needs to maintain the state of the last selected endpoint
+	// and have a view on the original request URL to determine the next endpoint.
+	// This behavior is specific to the AppGateServer and needed by clients that
+	// need to instrument the endpoint selection strategy, such as the Load testing tool.
 
 	// Protect the endpointSelectionIndex update from concurrent relay requests.
 	app.endpointSelectionIndexMu.Lock()

@@ -3,7 +3,9 @@ package appgateserver
 import (
 	"context"
 	"net/http"
+	"time"
 
+	shannonsdk "github.com/pokt-network/shannon-sdk"
 	sdktypes "github.com/pokt-network/shannon-sdk/types"
 
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -37,13 +39,17 @@ func (app *appGateServer) handleSynchronousRelay(
 		With("service_id", serviceId, "rpc_type", rpcType.String()).
 		Add(1)
 
-	sessionSuppliers, err := app.sdk.GetSessionSupplierEndpoints(ctx, appAddress, serviceId)
+	currentHeight := app.sdk.GetHeight(ctx)
+
+	// Cache matching endpoints
+	cacheKey := cacheKey{height: currentHeight, serviceId: serviceId, rpcType: rpcType}
+	matchingEndpoints, err := app.getCachedEndpoints(ctx, cacheKey, appAddress)
 	if err != nil {
-		return ErrAppGateHandleRelay.Wrapf("getting current session: %s", err)
+		return ErrAppGateHandleRelay.Wrapf("getting matching endpoints: %s", err)
 	}
 
 	// Get a supplier URL and address for the given service and session.
-	supplierEndpoint, err := app.getRelayerUrl(rpcType, *sessionSuppliers, poktRequest.Url)
+	supplierEndpoint, err := app.getRelayerUrl(poktRequest.Url, matchingEndpoints)
 	if err != nil {
 		return ErrAppGateHandleRelay.Wrapf("getting supplier URL: %s", err)
 	}
@@ -88,4 +94,67 @@ func (app *appGateServer) handleSynchronousRelay(
 		Add(1)
 
 	return nil
+}
+
+// getCachedEndpoints retrieves matching endpoints from cache or fetches and caches them
+func (app *appGateServer) getCachedEndpoints(
+	ctx context.Context,
+	key cacheKey,
+	appAddress string,
+) ([]shannonsdk.Endpoint, error) {
+	app.endpointCacheMu.RLock()
+	entry, found := app.endpointCache[key]
+	app.endpointCacheMu.RUnlock()
+
+	if found {
+		return entry.endpoints, nil
+	}
+
+	// If not found in cache, fetch and cache the endpoints
+	sessionSuppliers, err := app.sdk.GetSessionSupplierEndpoints(ctx, key.height, appAddress, key.serviceId)
+	if err != nil {
+		return nil, ErrAppGateHandleRelay.Wrapf("getting current session: %s", err)
+	}
+
+	matchingEndpoints, err := app.getMatchingEndpoints(*sessionSuppliers, key.rpcType)
+	if err != nil {
+		return nil, ErrAppGateHandleRelay.Wrapf("getting matching endpoints: %s", err)
+	}
+
+	app.endpointCacheMu.Lock()
+	app.endpointCache[key] = cacheEntry{
+		endpoints: matchingEndpoints,
+		timestamp: time.Now(),
+	}
+	app.endpointCacheMu.Unlock()
+
+	// Trigger cache cleanup if not already running
+	app.triggerCacheCleanup()
+
+	return matchingEndpoints, nil
+}
+
+// triggerCacheCleanup starts a timer to clean up old cache entries
+func (app *appGateServer) triggerCacheCleanup() {
+	if app.cacheCleanupTimer == nil {
+		app.cacheCleanupTimer = time.AfterFunc(3*time.Minute, func() {
+			app.cleanupCache()
+		})
+	}
+}
+
+// cleanupCache removes old cache entries
+func (app *appGateServer) cleanupCache() {
+	app.endpointCacheMu.Lock()
+	defer app.endpointCacheMu.Unlock()
+
+	currentHeight := app.sdk.GetHeight(context.Background())
+	for key, entry := range app.endpointCache {
+		if key.height < currentHeight || time.Since(entry.timestamp) > 5*time.Minute {
+			delete(app.endpointCache, key)
+		}
+	}
+
+	// Reset the cleanup timer
+	app.cacheCleanupTimer = nil
 }

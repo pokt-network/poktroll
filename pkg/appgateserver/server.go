@@ -9,8 +9,10 @@ import (
 	"net/url"
 	"strings"
 	"sync"
+	"time"
 
 	"cosmossdk.io/depinject"
+	shannonsdk "github.com/pokt-network/shannon-sdk"
 	sdktypes "github.com/pokt-network/shannon-sdk/types"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	metrics "github.com/slok/go-http-metrics/metrics/prometheus"
@@ -74,6 +76,23 @@ type appGateServer struct {
 	// endpointSelectionIndex is the index of the last selected endpoint.
 	// It is used to cycle through the available endpoints using a round-robin strategy.
 	endpointSelectionIndex int
+
+	endpointCache     map[cacheKey]cacheEntry
+	endpointCacheMu   sync.RWMutex
+	cacheCleanupTimer *time.Timer
+}
+
+// cacheEntry represents a cached item for matching endpoints
+type cacheEntry struct {
+	endpoints []shannonsdk.Endpoint
+	timestamp time.Time
+}
+
+// cacheKey is used as the key for the cache map
+type cacheKey struct {
+	height    int64
+	serviceId string
+	rpcType   sharedtypes.RPCType
 }
 
 // NewAppGateServer creates a new appGateServer instance with the given dependencies.
@@ -88,7 +107,9 @@ func NewAppGateServer(
 	deps depinject.Config,
 	opts ...appGateServerOption,
 ) (*appGateServer, error) {
-	app := &appGateServer{}
+	app := &appGateServer{
+		endpointCache: make(map[cacheKey]cacheEntry),
+	}
 
 	if err := depinject.Inject(
 		deps,

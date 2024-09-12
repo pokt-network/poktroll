@@ -3,10 +3,8 @@ package sdkadapter
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"net/http"
-	"sync"
 
 	"cosmossdk.io/depinject"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
@@ -131,73 +129,23 @@ func (shannonSDK *ShannonSDK) SendRelay(
 // for the given appAddress and serviceId.
 func (shannonSDK *ShannonSDK) GetSessionSupplierEndpoints(
 	ctx context.Context,
+	currentHeight int64,
 	appAddress, serviceId string,
 ) (*shannonsdk.SessionFilter, error) {
-	currentHeight := shannonSDK.blockClient.LastBlock(ctx).Height()
-
-	key := cacheKey(appAddress, serviceId, currentHeight)
-
-	sessionCacheInstance.mu.RLock()
-	if result, found := sessionCacheInstance.cache[key]; found {
-		sessionCacheInstance.mu.RUnlock()
-		return result.filter, nil
-	}
-	sessionCacheInstance.mu.RUnlock()
-
 	session, err := shannonSDK.sessionClient.GetSession(ctx, appAddress, serviceId, currentHeight)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get session: %w", err)
+		return nil, err
 	}
-
-	// Create a deep copy of the session to ensure immutability
-	sessionCopy := *session
 
 	filteredSession := &shannonsdk.SessionFilter{
-		Session: &sessionCopy, // Store a pointer to our copy
+		Session: session,
 	}
-
-	sessionCacheInstance.mu.Lock()
-	sessionCacheInstance.cache[key] = &cachedSession{
-		filter: filteredSession,
-		height: currentHeight,
-	}
-	sessionCacheInstance.mu.Unlock()
-
-	sessionCacheInstance.cleanupCache(currentHeight)
 
 	return filteredSession, nil
 }
 
-// cacheKey generates a unique key for the session cache.
-func cacheKey(appAddress, serviceId string, height int64) string {
-	return fmt.Sprintf("%s-%s-%d", appAddress, serviceId, height)
-}
-
-// sessionCacheInstance is a global instance of the session cache.
-var sessionCacheInstance = sessionCache{
-	cache: make(map[string]*cachedSession),
-}
-
-// sessionCache stores session results to reduce redundant queries.
-type sessionCache struct {
-	mu    sync.RWMutex
-	cache map[string]*cachedSession
-}
-
-// cachedSession represents a cached session data.
-type cachedSession struct {
-	filter *shannonsdk.SessionFilter
-	height int64
-}
-
-// cleanupCache removes outdated entries from the session cache.
-func (c *sessionCache) cleanupCache(currentHeight int64) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	for key, entry := range c.cache {
-		if entry.height < currentHeight {
-			delete(c.cache, key)
-		}
-	}
+func (shannonSDK *ShannonSDK) GetHeight(
+	ctx context.Context,
+) int64 {
+	return shannonSDK.blockClient.LastBlock(ctx).Height()
 }
