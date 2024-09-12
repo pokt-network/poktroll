@@ -2632,9 +2632,11 @@ type EventClaimExpired struct {
 	NumRelays uint64 `protobuf:"varint,3,opt,name=num_relays,json=numRelays,proto3" json:"num_relays,omitempty"`
 	// Number of compute units claimed as a function of the number of relays
 	// and the compute units per relay for the particular service.
+	// TODO_IN_THIS_PR: Should we call this "num_claimed_compute_units"?
 	NumComputeUnits uint64 `protobuf:"varint,4,opt,name=num_compute_units,json=numComputeUnits,proto3" json:"num_compute_units,omitempty"`
 	// Number of estimated compute units serviced off chain taking into account
 	// the claimed compute units and the service relay mining difficulty.
+	// TODO_IN_THIS_PR: Should we call this "num_actual_compute_units"?
 	NumEstimatedComputeUnits uint64 `protobuf:"varint,5,opt,name=num_estimated_compute_units,json=numEstimatedComputeUnits,proto3" json:"num_estimated_compute_units,omitempty"`
 }
 

@@ -1,5 +1,3 @@
-//go:generate mockgen -destination=../../../testutil/proof/mocks/expected_keepers_mock.go -package=mocks . BankKeeper,SessionKeeper,ApplicationKeeper,AccountKeeper,SharedKeeper,ServiceKeeper
-
 package types
 
 import (
