@@ -39,3 +39,7 @@ warn_flaky_tests: ## Print a warning message that some unit tests may be flaky
 	@echo "|     3. If the same error persists, isolate it with 'go test -v ./path/to/failing/module       |"
 	@echo "|                                                                                               |"
 	@echo "+-----------------------------------------------------------------------------------------------+"
+
+.PHONY: warn_destructive
+warn_destructive: ## Print WARNING to the user
+	@echo "This is a destructive action that will affect docker resources outside the scope of this repo!"

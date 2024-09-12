@@ -153,8 +153,3 @@ check_proto_unstable_marshalers: ## Check that all protobuf files have the `stab
 fix_proto_unstable_marshalers: ## Ensure the `stable_marshaler_all` option is present on all protobuf files.
 	go run ./tools/scripts/protocheck/cmd unstable --fix
 	${MAKE} proto_regen
-
-
-.PHONY: warn_destructive
-warn_destructive: ## Print WARNING to the user
-	@echo "This is a destructive action that will affect docker resources outside the scope of this repo!"
