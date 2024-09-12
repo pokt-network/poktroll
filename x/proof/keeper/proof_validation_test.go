@@ -619,7 +619,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 				"the difficulty relay being proven is (%d), and is smaller than the target difficulty (%d) for service %s",
 				validClosestRelayDifficultyBits,
 				highExpectedTargetDifficulty,
-				validSessionHeader.Service.Id,
+				validSessionHeader.ServiceId,
 			),
 		},
 		{

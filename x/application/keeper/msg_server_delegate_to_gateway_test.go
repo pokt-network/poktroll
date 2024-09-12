@@ -33,7 +33,7 @@ func TestMsgServer_DelegateToGateway_SuccessfullyDelegate(t *testing.T) {
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 		Services: []*sharedtypes.ApplicationServiceConfig{
 			{
-				Service: &sharedtypes.Service{Id: "svc1"},
+				ServiceId: "svc1",
 			},
 		},
 	}
@@ -113,7 +113,7 @@ func TestMsgServer_DelegateToGateway_FailDuplicate(t *testing.T) {
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 		Services: []*sharedtypes.ApplicationServiceConfig{
 			{
-				Service: &sharedtypes.Service{Id: "svc1"},
+				ServiceId: "svc1",
 			},
 		},
 	}
@@ -182,7 +182,7 @@ func TestMsgServer_DelegateToGateway_FailGatewayNotStaked(t *testing.T) {
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 		Services: []*sharedtypes.ApplicationServiceConfig{
 			{
-				Service: &sharedtypes.Service{Id: "svc1"},
+				ServiceId: "svc1",
 			},
 		},
 	}
@@ -220,7 +220,7 @@ func TestMsgServer_DelegateToGateway_FailMaxReached(t *testing.T) {
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 		Services: []*sharedtypes.ApplicationServiceConfig{
 			{
-				Service: &sharedtypes.Service{Id: "svc1"},
+				ServiceId: "svc1",
 			},
 		},
 	}

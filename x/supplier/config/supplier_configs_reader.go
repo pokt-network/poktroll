@@ -11,7 +11,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	_ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/x/shared/helpers"
-	sharedhelpers "github.com/pokt-network/poktroll/x/shared/helpers"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -127,7 +126,7 @@ func ParseSupplierConfigs(ctx context.Context, configContent []byte) (*SupplierS
 	// Populate the services slice
 	for _, svc := range stakeConfig.Services {
 		// Validate the serviceId
-		if !sharedhelpers.IsValidServiceId(svc.ServiceId) {
+		if !sharedtypes.IsValidServiceId(svc.ServiceId) {
 			return nil, ErrSupplierConfigInvalidServiceId.Wrapf("%s", svc.ServiceId)
 		}
 
@@ -137,7 +136,7 @@ func ParseSupplierConfigs(ctx context.Context, configContent []byte) (*SupplierS
 
 		// Create a supplied service config with the serviceId
 		service := &sharedtypes.SupplierServiceConfig{
-			Service:   &sharedtypes.Service{Id: svc.ServiceId},
+			ServiceId: svc.ServiceId,
 			RevShare:  []*sharedtypes.ServiceRevenueShare{},
 			Endpoints: []*sharedtypes.SupplierEndpoint{},
 		}

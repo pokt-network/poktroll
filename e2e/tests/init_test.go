@@ -388,7 +388,7 @@ func (s *suite) TheServiceRegisteredForApplicationHasAComputeUnitsPerRelayOf(ser
 	// CHeck if the application is registered for the service
 	isRegistered := false
 	for _, serviceConfig := range app.ServiceConfigs {
-		if serviceConfig.Service.Id == serviceId {
+		if serviceConfig.ServiceId == serviceId {
 			isRegistered = true
 			break
 		}
@@ -415,7 +415,7 @@ func (s *suite) TheForAccountIsStakedWithUpokt(actorType, accName string, amount
 
 func (s *suite) TheApplicationIsStakedForService(appName string, serviceId string) {
 	for _, serviceConfig := range accNameToAppMap[appName].ServiceConfigs {
-		if serviceConfig.Service.Id == serviceId {
+		if serviceConfig.ServiceId == serviceId {
 			return
 		}
 	}
@@ -424,7 +424,7 @@ func (s *suite) TheApplicationIsStakedForService(appName string, serviceId strin
 
 func (s *suite) TheSupplierIsStakedForService(supplierOperatorName string, serviceId string) {
 	for _, serviceConfig := range operatorAccNameToSupplierMap[supplierOperatorName].Services {
-		if serviceConfig.Service.Id == serviceId {
+		if serviceConfig.ServiceId == serviceId {
 			return
 		}
 	}

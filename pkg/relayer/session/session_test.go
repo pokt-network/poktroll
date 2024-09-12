@@ -62,7 +62,7 @@ func requireProofCountEqualsExpectedValueFromProofParams(t *testing.T, proofPara
 		Header: &sessiontypes.SessionHeader{
 			SessionStartBlockHeight: 1,
 			SessionEndBlockHeight:   2,
-			Service:                 &service,
+			ServiceId:               service.Id,
 		},
 	}
 	sessionHeader := activeSession.GetHeader()

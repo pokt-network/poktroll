@@ -7,15 +7,11 @@ import (
 
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/x/session/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-func TestSessionHeader_ValidateBasic(t *testing.T) {
-	svc := sharedtypes.Service{
-		Id:   "svc_id",
-		Name: "svc_name",
-	}
+const testServiceId = "svc_id"
 
+func TestSessionHeader_ValidateBasic(t *testing.T) {
 	tests := []struct {
 		desc          string
 		sessionHeader types.SessionHeader
@@ -26,7 +22,7 @@ func TestSessionHeader_ValidateBasic(t *testing.T) {
 			sessionHeader: types.SessionHeader{
 				ApplicationAddress:      "invalid_address",
 				SessionId:               "valid_session_id",
-				Service:                 &svc,
+				ServiceId:               testServiceId,
 				SessionStartBlockHeight: 100,
 				SessionEndBlockHeight:   101,
 			},
@@ -37,18 +33,18 @@ func TestSessionHeader_ValidateBasic(t *testing.T) {
 			sessionHeader: types.SessionHeader{
 				ApplicationAddress:      sample.AccAddress(),
 				SessionId:               "",
-				Service:                 &svc,
+				ServiceId:               testServiceId,
 				SessionStartBlockHeight: 100,
 				SessionEndBlockHeight:   101,
 			},
 			expectedErr: types.ErrSessionInvalidSessionId,
 		},
 		{
-			desc: "invalid - nil service",
+			desc: "invalid - empty service id",
 			sessionHeader: types.SessionHeader{
 				ApplicationAddress:      sample.AccAddress(),
 				SessionId:               "valid_session_id",
-				Service:                 nil,
+				ServiceId:               "",
 				SessionStartBlockHeight: 100,
 				SessionEndBlockHeight:   101,
 			},
@@ -59,7 +55,7 @@ func TestSessionHeader_ValidateBasic(t *testing.T) {
 			sessionHeader: types.SessionHeader{
 				ApplicationAddress:      sample.AccAddress(),
 				SessionId:               "valid_session_id",
-				Service:                 &svc,
+				ServiceId:               testServiceId,
 				SessionStartBlockHeight: 0,
 				SessionEndBlockHeight:   42,
 			},
@@ -70,7 +66,7 @@ func TestSessionHeader_ValidateBasic(t *testing.T) {
 			sessionHeader: types.SessionHeader{
 				ApplicationAddress:      sample.AccAddress(),
 				SessionId:               "valid_session_id",
-				Service:                 &svc,
+				ServiceId:               testServiceId,
 				SessionStartBlockHeight: 100,
 				SessionEndBlockHeight:   99,
 			},
@@ -81,7 +77,7 @@ func TestSessionHeader_ValidateBasic(t *testing.T) {
 			sessionHeader: types.SessionHeader{
 				ApplicationAddress:      sample.AccAddress(),
 				SessionId:               "valid_session_id",
-				Service:                 &svc,
+				ServiceId:               testServiceId,
 				SessionStartBlockHeight: 100,
 				SessionEndBlockHeight:   101,
 			},

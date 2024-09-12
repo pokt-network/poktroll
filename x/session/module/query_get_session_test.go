@@ -41,10 +41,10 @@ $ go test -v -count=1 -run TestCLI_GetSession ./x/session/module/...`)
 	require.Len(t, appSvc0.ServiceConfigs, 2)
 	require.Len(t, appSvc1.ServiceConfigs, 2)
 
-	require.Equal(t, appSvc0.ServiceConfigs[0].Service.Id, "svc0")  // svc0 has a supplier
-	require.Equal(t, appSvc0.ServiceConfigs[1].Service.Id, "svc00") // svc00 doesn't have a supplier
-	require.Equal(t, appSvc1.ServiceConfigs[0].Service.Id, "svc1")  // svc1 has a supplier
-	require.Equal(t, appSvc1.ServiceConfigs[1].Service.Id, "svc11") // svc11 doesn't have a supplier
+	require.Equal(t, appSvc0.ServiceConfigs[0].ServiceId, "svc0")  // svc0 has a supplier
+	require.Equal(t, appSvc0.ServiceConfigs[1].ServiceId, "svc00") // svc00 doesn't have a supplier
+	require.Equal(t, appSvc1.ServiceConfigs[0].ServiceId, "svc1")  // svc1 has a supplier
+	require.Equal(t, appSvc1.ServiceConfigs[1].ServiceId, "svc11") // svc11 doesn't have a supplier
 
 	// Sanity check the supplier configs are what we expect them to be
 	supplierSvc0 := suppliers[0] // supplier for svc0
@@ -53,8 +53,8 @@ $ go test -v -count=1 -run TestCLI_GetSession ./x/session/module/...`)
 	require.Len(t, supplierSvc0.Services, 1)
 	require.Len(t, supplierSvc1.Services, 1)
 
-	require.Equal(t, supplierSvc0.Services[0].Service.Id, "svc0")
-	require.Equal(t, supplierSvc1.Services[0].Service.Id, "svc1")
+	require.Equal(t, supplierSvc0.Services[0].ServiceId, "svc0")
+	require.Equal(t, supplierSvc1.Services[0].ServiceId, "svc1")
 
 	// Prepare the test cases
 	tests := []struct {
@@ -202,7 +202,7 @@ $ go test -v -count=1 -run TestCLI_GetSession ./x/session/module/...`)
 
 			// Verify some data about the session
 			require.Equal(t, test.appAddress, session.Application.Address)
-			require.Equal(t, test.serviceId, session.Header.Service.Id)
+			require.Equal(t, test.serviceId, session.Header.ServiceId)
 			require.Len(t, session.Suppliers, test.expectedNumSuppliers)
 		})
 	}

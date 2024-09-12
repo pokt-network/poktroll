@@ -304,14 +304,14 @@ func (keepers *ProofModuleKeepers) AddServiceActors(
 	keepers.SetSupplier(ctx, sharedtypes.Supplier{
 		OperatorAddress: supplierOperatorAddr,
 		Services: []*sharedtypes.SupplierServiceConfig{
-			{Service: service},
+			{ServiceId: service.Id},
 		},
 	})
 
 	keepers.SetApplication(ctx, apptypes.Application{
 		Address: appAddr,
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
-			{Service: service},
+			{ServiceId: service.Id},
 		},
 	})
 
@@ -333,7 +333,7 @@ func (keepers *ProofModuleKeepers) GetSessionHeader(
 		ctx,
 		&sessiontypes.QueryGetSessionRequest{
 			ApplicationAddress: appAddr,
-			Service:            service,
+			ServiceId:          service.Id,
 			BlockHeight:        blockHeight,
 		},
 	)

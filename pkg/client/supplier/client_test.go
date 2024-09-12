@@ -19,7 +19,6 @@ import (
 	"github.com/pokt-network/poktroll/testutil/testclient/testtx"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 const (
@@ -107,9 +106,7 @@ func TestSupplierClient_CreateClaim(t *testing.T) {
 		ApplicationAddress:      testAppAddr.String(),
 		SessionStartBlockHeight: 1,
 		SessionId:               "",
-		Service: &sharedtypes.Service{
-			Id: testService,
-		},
+		ServiceId:               testService,
 	}
 
 	msgClaim := &prooftypes.MsgCreateClaim{
@@ -170,9 +167,7 @@ func TestSupplierClient_SubmitProof(t *testing.T) {
 		ApplicationAddress:      testAppAddr.String(),
 		SessionStartBlockHeight: 1,
 		SessionId:               "",
-		Service: &sharedtypes.Service{
-			Id: testService,
-		},
+		ServiceId:               testService,
 	}
 
 	kvStore, err := pebble.NewKVStore("")

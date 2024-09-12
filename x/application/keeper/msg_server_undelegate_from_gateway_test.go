@@ -41,9 +41,7 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 		Address: appAddr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 		Services: []*sharedtypes.ApplicationServiceConfig{
-			{
-				Service: &sharedtypes.Service{Id: "svc1"},
-			},
+			{ServiceId: "svc1"},
 		},
 	}
 
@@ -135,9 +133,7 @@ func TestMsgServer_UndelegateFromGateway_FailNotDelegated(t *testing.T) {
 		Address: appAddr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 		Services: []*sharedtypes.ApplicationServiceConfig{
-			{
-				Service: &sharedtypes.Service{Id: "svc1"},
-			},
+			{ServiceId: "svc1"},
 		},
 	}
 
@@ -212,9 +208,7 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegateFromUnstakedGatew
 		Address: appAddr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 		Services: []*sharedtypes.ApplicationServiceConfig{
-			{
-				Service: &sharedtypes.Service{Id: "svc1"},
-			},
+			{ServiceId: "svc1"},
 		},
 	}
 
@@ -522,9 +516,7 @@ func createAppStakeDelegateAndUndelegate(
 		Address: appAddr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 		Services: []*sharedtypes.ApplicationServiceConfig{
-			{
-				Service: &sharedtypes.Service{Id: "svc1"},
-			},
+			{ServiceId: "svc1"},
 		},
 	}
 	_, err := srv.StakeApplication(ctx, stakeMsg)
