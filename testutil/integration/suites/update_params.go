@@ -117,28 +117,29 @@ var (
 			"uint64": sharedtypes.MsgUpdateParam_AsInt64{},
 			"int64":  sharedtypes.MsgUpdateParam_AsInt64{},
 			"string": sharedtypes.MsgUpdateParam_AsString{},
-			"[]byte": sharedtypes.MsgUpdateParam_AsBytes{},
+			"uint8":  sharedtypes.MsgUpdateParam_AsBytes{},
 		},
 		servicetypes.ModuleName: {
-			// TODO_IN_THIS_COMMIT: check type name...
-			"coin": servicetypes.MsgUpdateParam_AsCoin{},
+			"Coin": servicetypes.MsgUpdateParam_AsCoin{},
 		},
 		prooftypes.ModuleName: {
-			"uint64":  sharedtypes.MsgUpdateParam_AsInt64{},
+			"uint64":  prooftypes.MsgUpdateParam_AsInt64{},
 			"int64":   prooftypes.MsgUpdateParam_AsInt64{},
 			"string":  prooftypes.MsgUpdateParam_AsString{},
-			"[]byte":  prooftypes.MsgUpdateParam_AsBytes{},
-			"float64": prooftypes.MsgUpdateParam_AsFloat{},
-			// TODO_IN_THIS_COMMIT: check type name...
-			"coin": prooftypes.MsgUpdateParam_AsCoin{},
+			"uint8":   prooftypes.MsgUpdateParam_AsBytes{},
+			"float32": prooftypes.MsgUpdateParam_AsFloat{},
+			//"float64": prooftypes.MsgUpdateParam_AsFloat{},
+			"Coin": prooftypes.MsgUpdateParam_AsCoin{},
 		},
 		tokenomicstypes.ModuleName: {
-			"uint64": sharedtypes.MsgUpdateParam_AsInt64{},
+			"uint64": tokenomicstypes.MsgUpdateParam_AsInt64{},
 			"int64":  tokenomicstypes.MsgUpdateParam_AsInt64{},
 			"string": tokenomicstypes.MsgUpdateParam_AsString{},
-			"[]byte": tokenomicstypes.MsgUpdateParam_AsBytes{},
+			"uint8":  tokenomicstypes.MsgUpdateParam_AsBytes{},
 		},
 	}
+
+	MsgUpdateParamEnabledModuleNames []string
 
 	NewParamClientFns = map[string]any{
 		sharedtypes.ModuleName:     sharedtypes.NewQueryClient,
@@ -176,6 +177,12 @@ var (
 	_ IntegrationSuite = (*UpdateParamsSuite)(nil)
 )
 
+func init() {
+	for moduleName := range MsgUpdateParamByModule {
+		MsgUpdateParamEnabledModuleNames = append(MsgUpdateParamEnabledModuleNames, moduleName)
+	}
+}
+
 type UpdateParamsSuite struct {
 	AuthzIntegrationSuite
 }
@@ -200,17 +207,12 @@ func (s *UpdateParamsSuite) SetupTest() {
 		s.GetModuleNames()...,
 	)
 
-	var msgUpdateParamEnabledModuleNames []string
-	for moduleName := range MsgUpdateParamByModule {
-		msgUpdateParamEnabledModuleNames = append(msgUpdateParamEnabledModuleNames, moduleName)
-	}
-
 	// Create authz grants for all poktroll modules' MsgUpdateParam messages.
 	s.SendAuthzGrantMsgForPoktrollModules(s.T(),
 		AuthorityAddr,
 		AuthorizedAddr,
 		MsgUpdateParamName,
-		msgUpdateParamEnabledModuleNames...,
+		MsgUpdateParamEnabledModuleNames...,
 	)
 }
 

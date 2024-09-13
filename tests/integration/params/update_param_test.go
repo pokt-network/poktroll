@@ -30,15 +30,18 @@ func (s *MsgUpdateParamSuite) SetupTest() {
 }
 
 func (s *MsgUpdateParamSuite) TestUnauthorizedMsgUpdateParamFails() {
-	for _, moduleName := range s.GetModuleNames() {
+	for _, moduleName := range suites.MsgUpdateParamEnabledModuleNames {
 		// TODO_IN_THIS_COMMIT: improve comment...
 		// iterate over each field in the current module's MsgUpdateParam...
 		// for each field, send a new MsgUpdateParam populated with the corresopnding field from that module's "validParams" struct...
 		defaultParamsValue := reflect.ValueOf(suites.DefaultParamsByModule[moduleName])
-		for fieldIdx := defaultParamsValue.NumField(); fieldIdx < defaultParamsValue.NumField(); fieldIdx++ {
+		for fieldIdx := 0; fieldIdx < defaultParamsValue.NumField(); fieldIdx++ {
 			fieldValue := defaultParamsValue.Field(fieldIdx)
-			fieldType := defaultParamsValue.Type().Field(fieldIdx).Type.Name()
 			fieldName := defaultParamsValue.Type().Field(fieldIdx).Name
+			fieldType := defaultParamsValue.Type().Field(fieldIdx).Type.Name()
+			if fieldType == "" {
+				fieldType = defaultParamsValue.Type().Field(fieldIdx).Type.Elem().Name()
+			}
 
 			testName := fmt.Sprintf("%s_%s", moduleName, fieldName)
 			s.T().Run(testName, func(t *testing.T) {
@@ -46,7 +49,7 @@ func (s *MsgUpdateParamSuite) TestUnauthorizedMsgUpdateParamFails() {
 				s.RequireModuleHasDefaultParams(t, moduleName)
 
 				msgIface, isMsgTypeFound := suites.MsgUpdateParamByModule[moduleName]
-				require.Truef(s.T(), isMsgTypeFound, "unknown message type for module %q", moduleName)
+				require.Truef(t, isMsgTypeFound, "unknown message type for module %q: %T", moduleName, msgIface)
 
 				msgValue := reflect.ValueOf(msgIface)
 				msgType := msgValue.Type()
@@ -58,18 +61,32 @@ func (s *MsgUpdateParamSuite) TestUnauthorizedMsgUpdateParamFails() {
 					FieldByName("Authority").
 					SetString(suites.AuthorityAddr.String())
 
-				msgValueCopy.Elem().FieldByName("Name").SetString(fieldType)
+				msgValueCopy.Elem().FieldByName("Name").SetString(cases.ToSnakeCase(fieldName))
 
-				msgValueField := msgValueCopy.Elem().FieldByName(fieldName)
+				msgAsTypeStruct := suites.MsgUpdateParamTypesByModuleName[moduleName][fieldType]
+				msgAsTypeType := reflect.TypeOf(msgAsTypeStruct)
+				t.Logf("fieldType: %q", fieldType)
+				t.Logf("msgAsTypeType: %+v", msgAsTypeType)
+				msgAsTypeValue := reflect.New(msgAsTypeType)
 				switch fieldType {
-				case "string":
-					msgValueField.SetString(fieldValue.String())
 				case "uint64":
-					msgValueField.SetUint(fieldValue.Uint())
-					msgValueCopy.Elem().FieldByName("Name").SetString("int64")
-				case "float64":
-					msgValueField.SetFloat(fieldValue.Float())
+					msgAsTypeValue.Elem().FieldByName("AsInt64").SetInt(int64(fieldValue.Interface().(uint64)))
+				case "int64":
+					msgAsTypeValue.Elem().FieldByName("AsInt64").Set(fieldValue)
+				case "float32":
+					msgAsTypeValue.Elem().FieldByName("AsFloat").Set(fieldValue)
+				case "string":
+					msgAsTypeValue.Elem().FieldByName("AsString").Set(fieldValue)
+				case "uint8":
+					msgAsTypeValue.Elem().FieldByName("AsBytes").Set(fieldValue)
+				// TODO_IN_THIS_COMMIT: check type name...
+				case "Coin":
+					msgAsTypeValue.Elem().FieldByName("AsCoin").Set(fieldValue)
+				default:
+					t.Fatalf("ERROR: unknown field type %q", fieldType)
 				}
+
+				msgValueCopy.Elem().FieldByName("AsType").Set(msgAsTypeValue)
 
 				msgUpdateParam := msgValueCopy.Interface().(cosmostypes.Msg)
 
@@ -91,15 +108,18 @@ func (s *MsgUpdateParamSuite) TestUnauthorizedMsgUpdateParamFails() {
 }
 
 func (s *MsgUpdateParamSuite) TestAuthorizedMsgUpdateParamSucceeds() {
-	for _, moduleName := range s.GetModuleNames() {
+	for _, moduleName := range suites.MsgUpdateParamEnabledModuleNames {
 		// TODO_IN_THIS_COMMIT: improve comment...
 		// iterate over each field in the current module's MsgUpdateParam...
 		// for each field, send a new MsgUpdateParam populated with the corresopnding field from that module's "validParams" struct...
 		defaultParamsValue := reflect.ValueOf(suites.DefaultParamsByModule[moduleName])
 		for fieldIdx := 0; fieldIdx < defaultParamsValue.NumField(); fieldIdx++ {
 			fieldValue := defaultParamsValue.Field(fieldIdx)
-			fieldType := defaultParamsValue.Type().Field(fieldIdx).Type.Name()
 			fieldName := defaultParamsValue.Type().Field(fieldIdx).Name
+			fieldType := defaultParamsValue.Type().Field(fieldIdx).Type.Name()
+			if fieldType == "" {
+				fieldType = defaultParamsValue.Type().Field(fieldIdx).Type.Elem().Name()
+			}
 
 			testName := fmt.Sprintf("%s_%s", moduleName, fieldName)
 			s.T().Run(testName, func(t *testing.T) {
@@ -111,7 +131,7 @@ func (s *MsgUpdateParamSuite) TestAuthorizedMsgUpdateParamSucceeds() {
 				s.RequireModuleHasDefaultParams(t, moduleName)
 
 				msgIface, isMsgTypeFound := suites.MsgUpdateParamByModule[moduleName]
-				require.Truef(s.T(), isMsgTypeFound, "unknown message type for module %q", moduleName)
+				require.Truef(t, isMsgTypeFound, "unknown message type for module %q: %T", moduleName, msgIface)
 
 				msgValue := reflect.ValueOf(msgIface)
 				msgType := msgValue.Type()
@@ -135,17 +155,17 @@ func (s *MsgUpdateParamSuite) TestAuthorizedMsgUpdateParamSucceeds() {
 					msgAsTypeValue.Elem().FieldByName("AsInt64").SetInt(int64(fieldValue.Interface().(uint64)))
 				case "int64":
 					msgAsTypeValue.Elem().FieldByName("AsInt64").Set(fieldValue)
-				case "float64":
-					msgAsTypeValue.Elem().FieldByName("AsFloat64").Set(fieldValue)
+				case "float32":
+					msgAsTypeValue.Elem().FieldByName("AsFloat").Set(fieldValue)
 				case "string":
 					msgAsTypeValue.Elem().FieldByName("AsString").Set(fieldValue)
-				case "[]byte":
+				case "uint8":
 					msgAsTypeValue.Elem().FieldByName("AsBytes").Set(fieldValue)
 				// TODO_IN_THIS_COMMIT: check type name...
-				case "coin":
+				case "Coin":
 					msgAsTypeValue.Elem().FieldByName("AsCoin").Set(fieldValue)
 				default:
-					t.Logf(">>> unknown field type %q", fieldType)
+					t.Fatalf("ERROR: unknown field type %q", fieldType)
 				}
 
 				msgValueCopy.Elem().FieldByName("AsType").Set(msgAsTypeValue)
