@@ -156,10 +156,10 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 
 	// Assert that the supplier shareholders account balances have *increased* by
 	// the appropriate amount w.r.t token distribution.
-	shareAmounts := tokenomicskeeper.GetShareAmountMap(supplierRevShares, appBurn.Uint64())
+	shareAmounts := tokenomicskeeper.GetShareAmountMap(supplierRevShares, appBurn)
 	for shareHolderAddr, expectedShareAmount := range shareAmounts {
 		shareHolderBalance := getBalance(t, ctx, keepers, shareHolderAddr)
-		require.Equal(t, int64(expectedShareAmount), shareHolderBalance.Amount.Int64())
+		require.True(t, expectedShareAmount.Equal(shareHolderBalance.Amount))
 	}
 }
 
@@ -290,10 +290,10 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Invalid_SupplierExceedsMaxCl
 
 	// Assert that the supplier shareholders account balances have *increased* by
 	// the appropriate amount w.r.t token distribution.
-	shareAmounts := tokenomicskeeper.GetShareAmountMap(supplierRevShares, appBurn.Uint64())
+	shareAmounts := tokenomicskeeper.GetShareAmountMap(supplierRevShares, appBurn)
 	for shareHolderAddr, expectedShareAmount := range shareAmounts {
 		shareHolderBalance := getBalance(t, ctx, keepers, shareHolderAddr)
-		require.Equal(t, int64(expectedShareAmount), shareHolderBalance.Amount.Int64())
+		require.True(t, expectedShareAmount.Equal(shareHolderBalance.Amount))
 	}
 
 	// Check that the expected burn >> effective burn because application is overserviced
