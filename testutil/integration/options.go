@@ -1,5 +1,12 @@
 package integration
 
+var (
+	RunUntilNextBlockOpts = RunOptions{
+		WithAutomaticCommit(),
+		WithAutomaticFinalizeBlock(),
+	}
+)
+
 // RunConfig is the configuration for the testing integration app.
 type RunConfig struct {
 	AutomaticFinalizeBlock bool
@@ -9,6 +16,14 @@ type RunConfig struct {
 
 // RunOption is a function that can be used to configure the integration app.
 type RunOption func(*RunConfig)
+
+// TODO_IN_THIS_COMMIT: godoc
+type RunOptions []RunOption
+
+// TODO_IN_THIS_COMMIT: godoc
+func (runOpts RunOptions) Append(newRunOpts ...RunOption) RunOptions {
+	return append(runOpts, newRunOpts...)
+}
 
 // WithAutomaticFinalizeBlock calls ABCI finalize block.
 func WithAutomaticFinalizeBlock() RunOption {
