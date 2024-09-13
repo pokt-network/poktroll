@@ -81,14 +81,15 @@ type App struct {
 	*baseapp.BaseApp
 
 	// Internal state of the App needed for properly configuring the blockchain.
-	sdkCtx        *sdk.Context
-	cdc           codec.Codec
-	logger        log.Logger
-	authority     sdk.AccAddress
-	moduleManager module.Manager
-	queryHelper   *baseapp.QueryServiceTestHelper
-	keyRing       keyring.Keyring
-	ringClient    crypto.RingClient
+	sdkCtx            *sdk.Context
+	cdc               codec.Codec
+	logger            log.Logger
+	authority         sdk.AccAddress
+	moduleManager     module.Manager
+	queryHelper       *baseapp.QueryServiceTestHelper
+	keyRing           keyring.Keyring
+	ringClient        crypto.RingClient
+	preGeneratedAccts *testkeyring.PreGeneratedAccountIterator
 
 	// Some default helper fixtures for general testing.
 	// They're publically exposed and should/could be improve and expand on
@@ -524,6 +525,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 
 	// Create a pre-generated account iterator to create accounts for the test.
 	preGeneratedAccts := testkeyring.PreGeneratedAccounts()
+	integrationApp.preGeneratedAccts = preGeneratedAccts
 
 	// Prepare a new default service
 	defaultService := sharedtypes.Service{
@@ -643,6 +645,11 @@ func (app *App) GetSdkCtx() *sdk.Context {
 // GetAuthority returns the authority address used by the application.
 func (app *App) GetAuthority() string {
 	return app.authority.String()
+}
+
+// GetPreGeneratedAccounts returns the pre-generated accounts iterater used by the application.
+func (app *App) GetPreGeneratedAccounts() *testkeyring.PreGeneratedAccountIterator {
+	return app.preGeneratedAccts
 }
 
 // QueryHelper returns the query helper used by the application that can be
