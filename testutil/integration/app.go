@@ -100,6 +100,12 @@ type App struct {
 	DefaultSupplierKeyringKeyringUid string
 }
 
+// TODO_IN_THIS_COMMIT: godoc...
+func NewBaseApp(cdc codec.Codec, logger log.Logger, db dbm.DB) *baseapp.BaseApp {
+	txConfig := authtx.NewTxConfig(cdc, authtx.DefaultSignModes)
+	return baseapp.NewBaseApp(appName, logger, db, txConfig.TxDecoder(), baseapp.SetChainID(appName))
+}
+
 // NewIntegrationApp creates a new instance of the App with the provided details
 // on how the modules should be configured.
 func NewIntegrationApp(
@@ -107,6 +113,7 @@ func NewIntegrationApp(
 	sdkCtx sdk.Context,
 	cdc codec.Codec,
 	registry codectypes.InterfaceRegistry,
+	bApp *baseapp.BaseApp,
 	logger log.Logger,
 	authority sdk.AccAddress,
 	modules map[string]appmodule.AppModule,
@@ -115,8 +122,6 @@ func NewIntegrationApp(
 	queryHelper *baseapp.QueryServiceTestHelper,
 ) *App {
 	t.Helper()
-
-	db := dbm.NewMemDB()
 
 	moduleManager := module.NewManagerFromMap(modules)
 	basicModuleManager := module.NewBasicManagerFromManager(moduleManager, nil)
@@ -141,8 +146,6 @@ func NewIntegrationApp(
 	sdkCtx = sdkCtx.WithProposer(consensusAddr)
 
 	// Create the base application
-	txConfig := authtx.NewTxConfig(cdc, authtx.DefaultSignModes)
-	bApp := baseapp.NewBaseApp(appName, logger, db, txConfig.TxDecoder(), baseapp.SetChainID(appName))
 	bApp.MountKVStores(keys)
 
 	bApp.SetInitChainer(
@@ -228,9 +231,17 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		authtypes.StoreKey,
 	)
 
-	// Prepare the context
+	// Construct a no-op logger.
 	logger := log.NewNopLogger() // Use this if you need more output: log.NewTestLogger(t)
-	cms := CreateMultiStore(storeKeys, logger)
+
+	// Prepare the database and multi-store.
+	db := dbm.NewMemDB()
+	cms := CreateMultiStore(storeKeys, logger, db)
+
+	// Prepare the base application.
+	bApp := NewBaseApp(cdc, logger, db)
+
+	// Prepare the context
 	sdkCtx := sdk.NewContext(cms, cmtproto.Header{
 		ChainID: appName,
 		Height:  1,
@@ -454,6 +465,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		sdkCtx,
 		cdc,
 		registry,
+		bApp,
 		logger,
 		authority,
 		modules,
@@ -759,8 +771,11 @@ func (app *App) nextBlockUpdateCtx() {
 }
 
 // CreateMultiStore is a helper for setting up multiple stores for provided modules.
-func CreateMultiStore(keys map[string]*storetypes.KVStoreKey, logger log.Logger) storetypes.CommitMultiStore {
-	db := dbm.NewMemDB()
+func CreateMultiStore(
+	keys map[string]*storetypes.KVStoreKey,
+	logger log.Logger,
+	db dbm.DB,
+) storetypes.CommitMultiStore {
 	cms := store.NewCommitMultiStore(db, logger, metrics.NewNoOpMetrics())
 
 	for key := range keys {
