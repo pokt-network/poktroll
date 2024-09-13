@@ -13,6 +13,7 @@ import (
 	"cosmossdk.io/store"
 	"cosmossdk.io/store/metrics"
 	storetypes "cosmossdk.io/store/types"
+	"cosmossdk.io/x/tx/signing"
 	abci "github.com/cometbft/cometbft/abci/types"
 	cmtabcitypes "github.com/cometbft/cometbft/abci/types"
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
@@ -33,9 +34,14 @@ import (
 	authsims "github.com/cosmos/cosmos-sdk/x/auth/simulation"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/cosmos/cosmos-sdk/x/authz"
+	authzkeeper "github.com/cosmos/cosmos-sdk/x/authz/keeper"
+	authzmodule "github.com/cosmos/cosmos-sdk/x/authz/module"
+	"github.com/cosmos/cosmos-sdk/x/bank"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	"github.com/cosmos/gogoproto/proto"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app"
@@ -198,8 +204,24 @@ func NewIntegrationApp(
 func NewCompleteIntegrationApp(t *testing.T) *App {
 	t.Helper()
 
+	sdkCfg := cosmostypes.GetConfig()
+	addrCodec := addresscodec.NewBech32Codec(sdkCfg.GetBech32AccountAddrPrefix())
+	valCodec := addresscodec.NewBech32Codec(sdkCfg.GetBech32ValidatorAddrPrefix())
+
 	// Prepare & register the codec for all the interfaces
-	registry := codectypes.NewInterfaceRegistry()
+	registry, err := codectypes.NewInterfaceRegistryWithOptions(
+		codectypes.InterfaceRegistryOptions{
+			ProtoFiles: proto.HybridResolver,
+			SigningOptions: signing.Options{
+				AddressCodec:          addrCodec,
+				ValidatorAddressCodec: valCodec,
+			},
+		},
+	)
+	require.NoError(t, err)
+
+	banktypes.RegisterInterfaces(registry)
+	authz.RegisterInterfaces(registry)
 	tokenomicstypes.RegisterInterfaces(registry)
 	sharedtypes.RegisterInterfaces(registry)
 	banktypes.RegisterInterfaces(registry)
@@ -220,6 +242,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 
 	// Prepare all the store keys
 	storeKeys := storetypes.NewKVStoreKeys(
+		authzkeeper.StoreKey,
 		sharedtypes.StoreKey,
 		tokenomicstypes.StoreKey,
 		banktypes.StoreKey,
@@ -252,7 +275,6 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName)
 
 	// Prepare the account keeper dependencies
-	addrCodec := addresscodec.NewBech32Codec(app.AccountAddressPrefix)
 	macPerms := map[string][]string{
 		banktypes.ModuleName:       {authtypes.Minter, authtypes.Burner},
 		tokenomicstypes.ModuleName: {authtypes.Minter, authtypes.Burner},
@@ -280,7 +302,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		nil, // subspace is nil because we don't test params (which is legacy anyway)
 	)
 
-	// Prepare the bank keeper
+	// Prepare the bank keeper and module
 	blockedAddresses := map[string]bool{
 		accountKeeper.GetAuthority(): false,
 	}
@@ -291,6 +313,12 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		blockedAddresses,
 		authority.String(),
 		logger,
+	)
+	bankModule := bank.NewAppModule(
+		cdc,
+		bankKeeper,
+		accountKeeper,
+		nil,
 	)
 
 	// Prepare the shared keeper and module
@@ -447,8 +475,25 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	msgRouter := baseapp.NewMsgServiceRouter()
 	queryHelper := baseapp.NewQueryServerTestHelper(sdkCtx, registry)
 
+	// Prepare the authz keeper and module
+	authzKeeper := authzkeeper.NewKeeper(
+		runtime.NewKVStoreService(storeKeys[authzkeeper.StoreKey]),
+		cdc,
+		msgRouter,
+		accountKeeper,
+	).SetBankKeeper(bankKeeper)
+	authzModule := authzmodule.NewAppModule(
+		cdc,
+		authzKeeper,
+		accountKeeper,
+		bankKeeper,
+		registry,
+	)
+
 	// Prepare the list of modules
 	modules := map[string]appmodule.AppModule{
+		banktypes.ModuleName:       bankModule,
+		authz.ModuleName:           authzModule,
 		tokenomicstypes.ModuleName: tokenomicsModule,
 		servicetypes.ModuleName:    serviceModule,
 		sharedtypes.ModuleName:     sharedModule,
@@ -476,6 +521,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	)
 
 	// Register the message servers
+	banktypes.RegisterMsgServer(msgRouter, bankkeeper.NewMsgServerImpl(bankKeeper))
 	tokenomicstypes.RegisterMsgServer(msgRouter, tokenomicskeeper.NewMsgServerImpl(tokenomicsKeeper))
 	servicetypes.RegisterMsgServer(msgRouter, servicekeeper.NewMsgServerImpl(serviceKeeper))
 	sharedtypes.RegisterMsgServer(msgRouter, sharedkeeper.NewMsgServerImpl(sharedKeeper))
@@ -485,8 +531,11 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	prooftypes.RegisterMsgServer(msgRouter, proofkeeper.NewMsgServerImpl(proofKeeper))
 	authtypes.RegisterMsgServer(msgRouter, authkeeper.NewMsgServerImpl(accountKeeper))
 	sessiontypes.RegisterMsgServer(msgRouter, sessionkeeper.NewMsgServerImpl(sessionKeeper))
+	authz.RegisterMsgServer(msgRouter, authzKeeper)
 
 	// Register query servers
+	banktypes.RegisterQueryServer(queryHelper, bankKeeper)
+	authz.RegisterQueryServer(queryHelper, authzKeeper)
 	tokenomicstypes.RegisterQueryServer(queryHelper, tokenomicsKeeper)
 	servicetypes.RegisterQueryServer(queryHelper, serviceKeeper)
 	sharedtypes.RegisterQueryServer(queryHelper, sharedKeeper)
@@ -499,7 +548,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	sessiontypes.RegisterQueryServer(queryHelper, sessionKeeper)
 
 	// Set the default params for all the modules
-	err := sharedKeeper.SetParams(integrationApp.GetSdkCtx(), sharedtypes.DefaultParams())
+	err = sharedKeeper.SetParams(integrationApp.GetSdkCtx(), sharedtypes.DefaultParams())
 	require.NoError(t, err)
 	err = tokenomicsKeeper.SetParams(integrationApp.GetSdkCtx(), tokenomicstypes.DefaultParams())
 	require.NoError(t, err)
