@@ -2,10 +2,15 @@
 
 package suites
 
-import "github.com/pokt-network/poktroll/testutil/integration"
+import (
+	"testing"
+
+	"github.com/pokt-network/poktroll/testutil/integration"
+)
 
 // TODO_IN_THIS_COMMIT: godoc
 type IntegrationSuite interface {
-	GetApp() *integration.App
+	NewApp(t *testing.T) *integration.App
+	GetApp(t *testing.T) *integration.App
 	GetModuleNames() []string
 }

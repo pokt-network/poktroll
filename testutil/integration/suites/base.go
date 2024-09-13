@@ -3,6 +3,8 @@
 package suites
 
 import (
+	"testing"
+
 	"github.com/stretchr/testify/suite"
 
 	"github.com/pokt-network/poktroll/testutil/integration"
@@ -25,14 +27,25 @@ type BaseIntegrationSuite struct {
 }
 
 // TODO_IN_THIS_COMMIT: godoc
-func (s *BaseIntegrationSuite) GetApp() *integration.App {
+func (s *BaseIntegrationSuite) NewApp(t *testing.T) *integration.App {
+	t.Helper()
+
+	s.app = integration.NewCompleteIntegrationApp(t)
+	return s.app
+}
+
+// TODO_IN_THIS_COMMIT: godoc
+func (s *BaseIntegrationSuite) GetApp(t *testing.T) *integration.App {
+	t.Helper()
+
 	// Construct and assign a new app on first call.
 	if s.app == nil {
-		s.app = integration.NewCompleteIntegrationApp(s.T())
+		return s.NewApp(t)
 	}
 	return s.app
 }
 
+// TODO_IN_THIS_COMMIT: godoc
 func (s *BaseIntegrationSuite) GetModuleNames() []string {
 	return allPoktrollModuleNames
 }
