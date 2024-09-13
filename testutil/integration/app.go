@@ -678,6 +678,11 @@ func (app *App) RunMsg(t *testing.T, msg sdk.Msg, option ...RunOption) *codectyp
 	if cfg.AutomaticCommit {
 		defer func() {
 			_, err := app.Commit()
+			if cfg.ErrorAssertion != nil && err != nil {
+				cfg.ErrorAssertion(err)
+				return
+			}
+
 			require.NoError(t, err, "failed to commit")
 			app.nextBlockUpdateCtx()
 		}()
@@ -691,6 +696,12 @@ func (app *App) RunMsg(t *testing.T, msg sdk.Msg, option ...RunOption) *codectyp
 				Votes: []cmtabcitypes.VoteInfo{{}},
 			},
 		})
+
+		if cfg.ErrorAssertion != nil && err != nil {
+			cfg.ErrorAssertion(err)
+			return nil
+		}
+
 		require.NoError(t, err, "failed to finalize block")
 		app.emitEvents(t, finalizedBlockResponse)
 	}
@@ -700,10 +711,15 @@ func (app *App) RunMsg(t *testing.T, msg sdk.Msg, option ...RunOption) *codectyp
 	handler := app.MsgServiceRouter().Handler(msg)
 	require.NotNil(t, handler, "handler not found for message %s", sdk.MsgTypeURL(msg))
 
+	var response *codectypes.Any
 	msgResult, err := handler(*app.sdkCtx, msg)
+	if cfg.ErrorAssertion != nil && err != nil {
+		cfg.ErrorAssertion(err)
+		return nil
+	}
+
 	require.NoError(t, err, "failed to execute message %s", sdk.MsgTypeURL(msg))
 
-	var response *codectypes.Any
 	if len(msgResult.MsgResponses) > 0 {
 		msgResponse := msgResult.MsgResponses[0]
 		require.NotNil(t, msgResponse, "unexpected nil msg response %s in message result: %s", sdk.MsgTypeURL(msg), msgResult.String())

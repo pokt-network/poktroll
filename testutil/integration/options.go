@@ -4,6 +4,7 @@ package integration
 type RunConfig struct {
 	AutomaticFinalizeBlock bool
 	AutomaticCommit        bool
+	ErrorAssertion         func(error)
 }
 
 // RunOption is a function that can be used to configure the integration app.
@@ -21,5 +22,13 @@ func WithAutomaticFinalizeBlock() RunOption {
 func WithAutomaticCommit() RunOption {
 	return func(cfg *RunConfig) {
 		cfg.AutomaticCommit = true
+	}
+}
+
+// WithErrorAssertion registers an error assertion function which is called when
+// RunMsg() encounters an error.
+func WithErrorAssertion(errAssertFn func(error)) RunOption {
+	return func(cfg *RunConfig) {
+		cfg.ErrorAssertion = errAssertFn
 	}
 }
