@@ -2,6 +2,7 @@ package integration
 
 import (
 	"context"
+	fmt"fmt"
 	"testing"
 	"time"
 
@@ -161,20 +162,20 @@ func NewIntegrationApp(
 			for _, mod := range modules {
 				//t.Logf(">>> moduleName: %s", moduleName)
 				//t.Logf(">>> moduleType: %T", mod)
-				//var isGenesisInitialized bool
+				var isGenesisInitialized bool
 
 				// TODO_IN_THIS_COMMIT: test if this is actually necessary...
-				//if !isGenesisInitialized {
-				if m, ok := mod.(module.HasGenesis); ok {
-					m.InitGenesis(ctx, cdc, m.DefaultGenesis(cdc))
+				if !isGenesisInitialized {
+					if m, ok := mod.(module.HasGenesis); ok {
+						m.InitGenesis(ctx, cdc, m.DefaultGenesis(cdc))
+					}
+				} else {
+					fmt.Printf(">>> isGenesisInitialized: %v\n", isGenesisInitialized)
 				}
-				//} else {
-				//	fmt.Printf(">>> isGenesisInitialized: %v\n", isGenesisInitialized)
-				//}
 
 				for _, opt := range opts {
 					if opt(ctx, cdc, mod) {
-						//isGenesisInitialized = true
+						isGenesisInitialized = true
 					}
 				}
 			}

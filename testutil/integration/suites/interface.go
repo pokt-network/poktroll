@@ -10,7 +10,7 @@ import (
 
 // TODO_IN_THIS_COMMIT: godoc
 type IntegrationSuite interface {
-	NewApp(t *testing.T) *integration.App
+	NewApp(t *testing.T, opts ...integration.IntegrationAppOption) *integration.App
 	GetApp(t *testing.T) *integration.App
 	GetModuleNames() []string
 }

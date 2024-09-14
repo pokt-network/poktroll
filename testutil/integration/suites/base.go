@@ -31,10 +31,10 @@ type BaseIntegrationSuite struct {
 }
 
 // TODO_IN_THIS_COMMIT: godoc
-func (s *BaseIntegrationSuite) NewApp(t *testing.T) *integration.App {
+func (s *BaseIntegrationSuite) NewApp(t *testing.T, opts ...integration.IntegrationAppOption) *integration.App {
 	t.Helper()
 
-	s.app = integration.NewCompleteIntegrationApp(t)
+	s.app = integration.NewCompleteIntegrationApp(t, opts...)
 	return s.app
 }
 

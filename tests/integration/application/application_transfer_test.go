@@ -1,12 +1,21 @@
 package application
 
 import (
+	"fmt"
+	"math"
 	"testing"
 
+	"cosmossdk.io/core/appmodule"
+	"github.com/cosmos/cosmos-sdk/codec"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/module"
+	"github.com/cosmos/cosmos-sdk/x/bank"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/testutil/integration"
 	"github.com/pokt-network/poktroll/testutil/integration/suites"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	"github.com/pokt-network/poktroll/x/shared"
@@ -33,10 +42,54 @@ type AppTransferSuite struct {
 	app3Addr cosmostypes.AccAddress
 }
 
+// TODO_IN_THIS_COMMIT: move
+var faucetCoins = cosmostypes.NewCoins(cosmostypes.NewInt64Coin(volatile.DenomuPOKT, math.MaxInt64))
+
+// TODO_INVESTIGATE: why doesn't this work? This genesis state seems to be ignored. 🤔
+// TODO_IN_THIS_COMMIT: move
+func faucetAcctGenesisOpt(sdkCtx cosmostypes.Context, cdc codec.Codec, mod appmodule.AppModule) (isGenesisImported bool) {
+	hasGenesis := mod.(module.HasGenesis)
+	if hasGenesis == nil {
+		fmt.Printf(">>> hasGenesis: %v\n", hasGenesis != nil)
+		return false
+	}
+	//fmt.Printf(">>> hasGenesis: %v\n", hasGenesis != nil)
+
+	bankModule, isBankMod := mod.(bank.AppModule)
+	//fmt.Printf(">>> isBankMod: %v\n", isBankMod)
+
+	if !isBankMod {
+		return false
+	}
+
+	genesisState := &banktypes.GenesisState{
+		Params: banktypes.Params{
+			DefaultSendEnabled: true,
+		},
+		Balances: []banktypes.Balance{
+			{
+				Address: integration.FaucetAddrStr,
+				Coins:   faucetCoins,
+			},
+		},
+		//Supply:        faucetCoins,
+		//DenomMetadata: []banktypes.Metadata{},
+		//SendEnabled: []banktypes.SendEnabled{
+		//	{Denom: volatile.DenomuPOKT, Enabled: true},
+		//},
+	}
+	genesisStateJSON := cdc.MustMarshalJSON(genesisState)
+	bankModule.InitGenesis(sdkCtx, cdc, genesisStateJSON)
+	exportGenesisJSON := bankModule.ExportGenesis(sdkCtx, cdc)
+	fmt.Printf(">>> exportGenesisJSON: %s\n", string(exportGenesisJSON))
+	return true
+	//return false
+}
+
 // TODO_IN_THIS_COMMIT: godoc
 func (s *AppTransferSuite) SetupTest() {
 	// Construct a fresh integration app for each test.
-	s.NewApp(s.T())
+	s.NewApp(s.T(), faucetAcctGenesisOpt)
 
 	s.ApplicationModuleSuite.SetupTest()
 
@@ -152,6 +205,35 @@ func (s *AppTransferSuite) setupTestAccounts() {
 func (s *AppTransferSuite) setupTestAccount() cosmostypes.AccAddress {
 	appAccount, ok := s.GetApp(s.T()).GetPreGeneratedAccounts().Next()
 	require.Truef(s.T(), ok, "insufficient pre-generated accounts available")
+
+	sdkCtx := s.GetApp(s.T()).GetSdkCtx()
+	bankQueryClient := banktypes.NewQueryClient(s.GetApp(s.T()).QueryHelper())
+	bankParamsRes, err := bankQueryClient.Params(sdkCtx, &banktypes.QueryParamsRequest{})
+	require.NoError(s.T(), err)
+	s.T().Logf(">>> bankParamsRes: %+v", bankParamsRes)
+
+	bankBalsRes, err := bankQueryClient.AllBalances(sdkCtx, &banktypes.QueryAllBalancesRequest{
+		Address: integration.FaucetAddrStr,
+		//Pagination:   nil,
+		//ResolveDenom: false,
+	})
+	require.NoError(s.T(), err)
+
+	bankBalRes, err := bankQueryClient.Balance(sdkCtx, &banktypes.QueryBalanceRequest{
+		Address: integration.FaucetAddrStr,
+		Denom:   volatile.DenomuPOKT,
+		//Pagination:   nil,
+		//ResolveDenom: false,
+	})
+	require.NoError(s.T(), err)
+
+	bankSupRes, err := bankQueryClient.TotalSupply(sdkCtx, &banktypes.QueryTotalSupplyRequest{})
+	require.NoError(s.T(), err)
+
+	s.T().Logf(">>> faucetAddr: %s", integration.FaucetAddrStr)
+	s.T().Logf(">>> bankBalsRes: %+v", bankBalsRes)
+	s.T().Logf(">>> bankBalRes: %+v", bankBalRes)
+	s.T().Logf(">>> bankSupRes: %+v", bankSupRes)
 
 	addr := appAccount.Address
 	s.FundAddress(s.T(), addr, 99999999999)
