@@ -28,11 +28,11 @@ const (
 	paramTypeColIdx
 )
 
-// parseParamsTable parses a gocuke.DataTable into a paramsMap.
-func (s *suite) parseParamsTable(table gocuke.DataTable) paramsMap {
+// parseParamsTable parses a gocuke.DataTable into a paramsAnyMap.
+func (s *suite) parseParamsTable(table gocuke.DataTable) paramsAnyMap {
 	s.Helper()
 
-	paramsMap := make(paramsMap)
+	paramsMap := make(paramsAnyMap)
 
 	// NB: skip the header row.
 	for rowIdx := 1; rowIdx < table.NumRows(); rowIdx++ {
@@ -78,9 +78,9 @@ func (s *suite) parseParam(table gocuke.DataTable, rowIdx int) paramAny {
 	}
 }
 
-// paramsMapToMsgUpdateParams converts a paramsMap into a MsgUpdateParams, which
+// paramsMapToMsgUpdateParams converts a paramsAnyMap into a MsgUpdateParams, which
 // it returns as a proto.Message/cosmostypes.Msg interface type.
-func (s *suite) paramsMapToMsgUpdateParams(moduleName string, paramsMap paramsMap) (msgUpdateParams cosmostypes.Msg) {
+func (s *suite) paramsMapToMsgUpdateParams(moduleName string, paramsMap paramsAnyMap) (msgUpdateParams cosmostypes.Msg) {
 	s.Helper()
 
 	switch moduleName {
@@ -104,7 +104,7 @@ func (s *suite) paramsMapToMsgUpdateParams(moduleName string, paramsMap paramsMa
 	return msgUpdateParams
 }
 
-func (s *suite) newTokenomicsMsgUpdateParams(params paramsMap) cosmostypes.Msg {
+func (s *suite) newTokenomicsMsgUpdateParams(params paramsAnyMap) cosmostypes.Msg {
 	authority := authtypes.NewModuleAddress(s.granterName).String()
 
 	msgUpdateParams := &tokenomicstypes.MsgUpdateParams{
@@ -123,7 +123,7 @@ func (s *suite) newTokenomicsMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 	return proto.Message(msgUpdateParams)
 }
 
-func (s *suite) newProofMsgUpdateParams(params paramsMap) cosmostypes.Msg {
+func (s *suite) newProofMsgUpdateParams(params paramsAnyMap) cosmostypes.Msg {
 	authority := authtypes.NewModuleAddress(s.granterName).String()
 
 	msgUpdateParams := &prooftypes.MsgUpdateParams{
@@ -150,7 +150,7 @@ func (s *suite) newProofMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 	return proto.Message(msgUpdateParams)
 }
 
-func (s *suite) newSharedMsgUpdateParams(params paramsMap) cosmostypes.Msg {
+func (s *suite) newSharedMsgUpdateParams(params paramsAnyMap) cosmostypes.Msg {
 	authority := authtypes.NewModuleAddress(s.granterName).String()
 
 	msgUpdateParams := &sharedtypes.MsgUpdateParams{
@@ -183,7 +183,7 @@ func (s *suite) newSharedMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 	return proto.Message(msgUpdateParams)
 }
 
-func (s *suite) newAppMsgUpdateParams(params paramsMap) cosmostypes.Msg {
+func (s *suite) newAppMsgUpdateParams(params paramsAnyMap) cosmostypes.Msg {
 	authority := authtypes.NewModuleAddress(s.granterName).String()
 
 	msgUpdateParams := &apptypes.MsgUpdateParams{
@@ -203,7 +203,7 @@ func (s *suite) newAppMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 	return proto.Message(msgUpdateParams)
 }
 
-func (s *suite) newServiceMsgUpdateParams(params paramsMap) cosmostypes.Msg {
+func (s *suite) newServiceMsgUpdateParams(params paramsAnyMap) cosmostypes.Msg {
 	authority := authtypes.NewModuleAddress(s.granterName).String()
 
 	msgUpdateParams := &servicetypes.MsgUpdateParams{
