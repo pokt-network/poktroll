@@ -25,8 +25,7 @@ func TestSession_HydrateSession_Success_BaseCase(t *testing.T) {
 	// Check the header
 	sessionHeader := session.Header
 	require.Equal(t, keepertest.TestApp1Address, sessionHeader.ApplicationAddress)
-	require.Equal(t, keepertest.TestServiceId1, sessionHeader.Service.Id)
-	require.Equal(t, "", sessionHeader.Service.Name)
+	require.Equal(t, keepertest.TestServiceId1, sessionHeader.ServiceId)
 	require.Equal(t, int64(9), sessionHeader.SessionStartBlockHeight)
 	require.Equal(t, int64(12), sessionHeader.SessionEndBlockHeight)
 	require.Equal(t, "fea5d6f7544ff6d8af5c22529b2ccf01ed7930b3d454d42dda5ccc0b65b6ebfd", sessionHeader.SessionId)
@@ -289,7 +288,7 @@ func TestSession_HydrateSession_Application(t *testing.T) {
 
 // TODO_TEST: Expand these tests to account for supplier joining/leaving the network at different heights as well changing the services they support
 func TestSession_HydrateSession_Suppliers(t *testing.T) {
-	// TODO_TEST: Extend these tests once `NumBlocksPerSession` is configurable.
+	// TODO_BETA(@bryanchriswhite): Extend these tests once `NumBlocksPerSession` is configurable.
 	// Currently assumes NumSupplierPerSession=15
 	tests := []struct {
 		// Description

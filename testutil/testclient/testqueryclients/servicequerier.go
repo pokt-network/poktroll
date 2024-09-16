@@ -30,13 +30,13 @@ func NewTestServiceQueryClient(
 		DoAndReturn(func(
 			_ context.Context,
 			serviceId string,
-		) (*sharedtypes.Service, error) {
+		) (sharedtypes.Service, error) {
 			service, ok := services[serviceId]
 			if !ok {
-				return nil, prooftypes.ErrProofServiceNotFound.Wrapf("service %s not found", serviceId)
+				return sharedtypes.Service{}, prooftypes.ErrProofServiceNotFound.Wrapf("service %s not found", serviceId)
 			}
 
-			return &service, nil
+			return service, nil
 		}).
 		AnyTimes()
 

@@ -109,14 +109,14 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 			keepers.SetSupplier(ctx, sharedtypes.Supplier{
 				OperatorAddress: supplierOperatorAddr,
 				Services: []*sharedtypes.SupplierServiceConfig{
-					{Service: service},
+					{ServiceId: service.Id},
 				},
 			})
 
 			keepers.SetApplication(ctx, apptypes.Application{
 				Address: appAddr,
 				ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
-					{Service: service},
+					{ServiceId: service.Id},
 				},
 			})
 
@@ -126,7 +126,7 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 				ctx,
 				&sessiontypes.QueryGetSessionRequest{
 					ApplicationAddress: appAddr,
-					Service:            service,
+					ServiceId:          service.Id,
 					BlockHeight:        blockHeight,
 				},
 			)
@@ -205,14 +205,14 @@ func TestMsgServer_CreateClaim_Error_OutsideOfWindow(t *testing.T) {
 	keepers.SetSupplier(ctx, sharedtypes.Supplier{
 		OperatorAddress: supplierOperatorAddr,
 		Services: []*sharedtypes.SupplierServiceConfig{
-			{Service: service},
+			{ServiceId: service.Id},
 		},
 	})
 
 	keepers.SetApplication(ctx, apptypes.Application{
 		Address: appAddr,
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
-			{Service: service},
+			{ServiceId: service.Id},
 		},
 	})
 
@@ -220,7 +220,7 @@ func TestMsgServer_CreateClaim_Error_OutsideOfWindow(t *testing.T) {
 		ctx,
 		&sessiontypes.QueryGetSessionRequest{
 			ApplicationAddress: appAddr,
-			Service:            service,
+			ServiceId:          service.Id,
 			BlockHeight:        1,
 		},
 	)
@@ -343,7 +343,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 	supplierKeeper.SetSupplier(ctx, sharedtypes.Supplier{
 		OperatorAddress: supplierOperatorAddr,
 		Services: []*sharedtypes.SupplierServiceConfig{
-			{Service: service},
+			{ServiceId: service.Id},
 		},
 	})
 
@@ -351,13 +351,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 	supplierKeeper.SetSupplier(ctx, sharedtypes.Supplier{
 		OperatorAddress: wrongSupplierOperatorAddr,
 		Services: []*sharedtypes.SupplierServiceConfig{
-			{
-				Service: &sharedtypes.Service{
-					Id:                   "nosvc1",
-					ComputeUnitsPerRelay: computeUnitsPerRelay,
-					OwnerAddress:         sample.AccAddress(),
-				},
-			},
+			{ServiceId: "nosvc1"},
 		},
 	})
 
@@ -365,7 +359,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 	appKeeper.SetApplication(ctx, apptypes.Application{
 		Address: appAddr,
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
-			{Service: service},
+			{ServiceId: service.Id},
 		},
 	})
 
@@ -373,13 +367,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 	appKeeper.SetApplication(ctx, apptypes.Application{
 		Address: wrongAppAddr,
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
-			{
-				Service: &sharedtypes.Service{
-					Id:                   "nosvc1",
-					ComputeUnitsPerRelay: computeUnitsPerRelay,
-					OwnerAddress:         sample.AccAddress(),
-				},
-			},
+			{ServiceId: "nosvc1"},
 		},
 	})
 
@@ -388,7 +376,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 		ctx,
 		&sessiontypes.QueryGetSessionRequest{
 			ApplicationAddress: appAddr,
-			Service:            service,
+			ServiceId:          service.Id,
 			BlockHeight:        1,
 		},
 	)
@@ -560,7 +548,7 @@ func TestMsgServer_CreateClaim_Error_ComputeUnitsMismatch(t *testing.T) {
 	supplierKeeper.SetSupplier(ctx, sharedtypes.Supplier{
 		OperatorAddress: supplierAddr,
 		Services: []*sharedtypes.SupplierServiceConfig{
-			{Service: service},
+			{ServiceId: service.Id},
 		},
 	})
 
@@ -571,7 +559,7 @@ func TestMsgServer_CreateClaim_Error_ComputeUnitsMismatch(t *testing.T) {
 	appKeeper.SetApplication(ctx, apptypes.Application{
 		Address: appAddr,
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
-			{Service: service},
+			{ServiceId: service.Id},
 		},
 	})
 
@@ -580,7 +568,7 @@ func TestMsgServer_CreateClaim_Error_ComputeUnitsMismatch(t *testing.T) {
 		ctx,
 		&sessiontypes.QueryGetSessionRequest{
 			ApplicationAddress: appAddr,
-			Service:            service,
+			ServiceId:          service.Id,
 			BlockHeight:        1,
 		},
 	)
@@ -628,7 +616,7 @@ func TestMsgServer_CreateClaim_Error_ComputeUnitsMismatch(t *testing.T) {
 				testClaimNumComputeUnits,
 				testClaimNumRelays,
 				nonDefaultComputeUnitsPerRelay,
-				sessionHeader.Service.Id,
+				sessionHeader.ServiceId,
 			).Error(),
 		).Error(),
 	)
@@ -657,7 +645,7 @@ func newTestClaimMsg(
 		supplierOperatorAddr,
 		&sessiontypes.SessionHeader{
 			ApplicationAddress:      appAddr,
-			Service:                 service,
+			ServiceId:               service.Id,
 			SessionId:               sessionId,
 			SessionStartBlockHeight: sessionStartHeight,
 			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(sessionStartHeight),

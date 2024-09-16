@@ -24,7 +24,6 @@ import (
 	"github.com/pokt-network/poktroll/testutil/sample"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 const (
@@ -158,10 +157,8 @@ func genRandomizedMinedRelayFixtures(
 				Req: &servicetypes.RelayRequest{
 					Meta: servicetypes.RelayRequestMetadata{
 						SessionHeader: &sessiontypes.SessionHeader{
-							ApplicationAddress: sample.AccAddress(),
-							Service: &sharedtypes.Service{
-								Id: flagSvcID,
-							},
+							ApplicationAddress:      sample.AccAddress(),
+							ServiceId:               flagSvcID,
 							SessionId:               "session_id",
 							SessionStartBlockHeight: 1,
 							SessionEndBlockHeight:   2,

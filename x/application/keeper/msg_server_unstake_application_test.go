@@ -189,9 +189,7 @@ func createAppStakeMsg(appAddr string, stakeAmount int64) *types.MsgStakeApplica
 		Address: appAddr,
 		Stake:   &initialStake,
 		Services: []*sharedtypes.ApplicationServiceConfig{
-			{
-				Service: &sharedtypes.Service{Id: "svc1"},
-			},
+			{ServiceId: "svc1"},
 		},
 	}
 }

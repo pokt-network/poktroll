@@ -118,7 +118,7 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 	application := apptypes.Application{
 		Address:        sample.AccAddress(),
 		Stake:          &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100000)},
-		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{Service: service}},
+		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{ServiceId: service.Id}},
 	}
 
 	// Prepare the test supplier.
@@ -129,7 +129,7 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		Stake:           &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100000)},
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
-				Service: service,
+				ServiceId: service.Id,
 				RevShare: []*sharedtypes.ServiceRevenueShare{
 					{
 						Address:            supplierOwnerAddr,
@@ -185,6 +185,9 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		AnyTimes()
 	mockBankKeeper.EXPECT().
 		SendCoinsFromModuleToAccount(gomock.Any(), tokenomicstypes.ModuleName, gomock.Any(), gomock.Any()).
+		AnyTimes()
+	mockBankKeeper.EXPECT().
+		SendCoinsFromModuleToModule(gomock.Any(), tokenomicstypes.ModuleName, suppliertypes.ModuleName, gomock.Any()).
 		AnyTimes()
 
 	// Mock the account keeper
@@ -457,5 +460,18 @@ func WithService(service sharedtypes.Service) TokenomicsModuleKeepersOpt {
 	return func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
 		keepers.SetService(ctx, service)
 		return ctx
+	}
+}
+
+func WithProposerAddr(addr string) TokenomicsModuleKeepersOpt {
+	return func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
+		valAddr, err := cosmostypes.ValAddressFromBech32(addr)
+		if err != nil {
+			panic(err)
+		}
+		consensusAddr := cosmostypes.ConsAddress(valAddr)
+		sdkCtx := sdk.UnwrapSDKContext(ctx)
+		sdkCtx = sdkCtx.WithProposer(consensusAddr)
+		return sdkCtx
 	}
 }

@@ -331,13 +331,12 @@ func (s *suite) getConfigFileContent(
 			services:
 			  - service_id: %s
 			    endpoints:
-			    - publicly_exposed_url: http://relayminer:8545
+			    - publicly_exposed_url: http://relayminer1:8545
 			      rpc_type: json_rpc`,
 			ownerAddress, operatorAddress, amount, serviceId)
 	default:
 		s.Fatalf("ERROR: unknown actor type %s", actorType)
 	}
-	fmt.Println(yaml.NormalizeYAMLIndentation(configContent))
 	return yaml.NormalizeYAMLIndentation(configContent)
 }
 
@@ -396,7 +395,7 @@ func (s *suite) TheServiceRegisteredForApplicationHasAComputeUnitsPerRelayOf(ser
 	// CHeck if the application is registered for the service
 	isRegistered := false
 	for _, serviceConfig := range app.ServiceConfigs {
-		if serviceConfig.Service.Id == serviceId {
+		if serviceConfig.ServiceId == serviceId {
 			isRegistered = true
 			break
 		}
@@ -437,7 +436,7 @@ func (s *suite) getMinStake(actorType string) int64 {
 
 func (s *suite) TheApplicationIsStakedForService(appName string, serviceId string) {
 	for _, serviceConfig := range accNameToAppMap[appName].ServiceConfigs {
-		if serviceConfig.Service.Id == serviceId {
+		if serviceConfig.ServiceId == serviceId {
 			return
 		}
 	}
@@ -446,7 +445,7 @@ func (s *suite) TheApplicationIsStakedForService(appName string, serviceId strin
 
 func (s *suite) TheSupplierIsStakedForService(supplierOperatorName string, serviceId string) {
 	for _, serviceConfig := range operatorAccNameToSupplierMap[supplierOperatorName].Services {
-		if serviceConfig.Service.Id == serviceId {
+		if serviceConfig.ServiceId == serviceId {
 			return
 		}
 	}
@@ -487,9 +486,12 @@ func (s *suite) TheApplicationSendsTheSupplierASuccessfulRequestForServiceWithPa
 	jsonMap, err := jsonToMap(jsonContent)
 	require.NoError(s, err, "error converting JSON to map")
 
-	prettyJson, err := jsonPrettyPrint(jsonContent)
-	require.NoError(s, err, "error pretty printing JSON")
-	s.Log(prettyJson)
+	// Log the JSON content if the test is verbose
+	if isVerbose() {
+		prettyJson, err := jsonPrettyPrint(jsonContent)
+		require.NoError(s, err, "error pretty printing JSON")
+		s.Log(prettyJson)
+	}
 
 	// TODO_IMPROVE: This is a minimalistic first approach to request validation in E2E tests.
 	// Consider leveraging the shannon-sdk or path here.

@@ -5,7 +5,6 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // GetHash returns the hash of the relay, which contains both the signed
@@ -126,9 +125,7 @@ func (sourceRelayRequest *RelayRequest) NullifyForObservability() *RelayRequest 
 	emptyRelayRequest := &RelayRequest{
 		Meta: RelayRequestMetadata{
 			SessionHeader: &sessiontypes.SessionHeader{
-				Service: &sharedtypes.Service{
-					Id: "",
-				},
+				ServiceId: "",
 			},
 		},
 		Payload: []byte{},
@@ -143,9 +140,7 @@ func (sourceRelayRequest *RelayRequest) NullifyForObservability() *RelayRequest 
 	}
 
 	if sourceRelayRequest.Meta.SessionHeader != nil {
-		if sourceRelayRequest.Meta.SessionHeader.Service != nil {
-			emptyRelayRequest.Meta.SessionHeader.Service = sourceRelayRequest.Meta.SessionHeader.Service
-		}
+		emptyRelayRequest.Meta.SessionHeader.ServiceId = sourceRelayRequest.Meta.SessionHeader.ServiceId
 	}
 
 	return emptyRelayRequest

@@ -63,7 +63,7 @@ func TestTokenomicsIntegrationExample(t *testing.T) {
 	sessionQueryClient := sessiontypes.NewQueryClient(integrationApp.QueryHelper())
 	getSessionReq := sessiontypes.QueryGetSessionRequest{
 		ApplicationAddress: integrationApp.DefaultApplication.Address,
-		Service:            integrationApp.DefaultService,
+		ServiceId:          integrationApp.DefaultService.Id,
 		BlockHeight:        integrationApp.GetSdkCtx().BlockHeight(),
 	}
 

@@ -429,7 +429,7 @@ func GenerateRelayRequest(
 			SessionHeader: &sessiontypes.SessionHeader{
 				ApplicationAddress:      appAddress,
 				SessionId:               string(sessionId[:]),
-				Service:                 &sharedtypes.Service{Id: serviceId},
+				ServiceId:               serviceId,
 				SessionStartBlockHeight: testsession.GetSessionStartHeightWithDefaultParams(blockHeight),
 				SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(blockHeight),
 			},

@@ -17,10 +17,7 @@ func NewMsgSubmitProof(supplierOperatorAddress string, sessionHeader *sessiontyp
 	}
 }
 
-// ValidateBasic ensures that the bech32 operator address strings for the supplier and
-// application addresses are valid and that the proof and service ID are not empty.
-//
-// TODO_BETA: Call `msg.GetSessionHeader().ValidateBasic()` once its implemented
+// ValidateBasic performs basic stateless validation of a MsgSubmitProof.
 func (msg *MsgSubmitProof) ValidateBasic() error {
 	if _, err := sdk.AccAddressFromBech32(msg.GetSupplierOperatorAddress()); err != nil {
 		return sdkerrors.ErrInvalidAddress.Wrapf(
@@ -30,16 +27,14 @@ func (msg *MsgSubmitProof) ValidateBasic() error {
 		)
 	}
 
-	if _, err := sdk.AccAddressFromBech32(msg.GetSessionHeader().GetApplicationAddress()); err != nil {
-		return sdkerrors.ErrInvalidAddress.Wrapf(
-			"application address: %q, error: %s",
-			msg.GetSessionHeader().GetApplicationAddress(),
-			err,
-		)
+	// Retrieve & validate the session header
+	sessionHeader := msg.SessionHeader
+	if sessionHeader == nil {
+		return ErrProofInvalidSessionHeader.Wrapf("session header is nil")
 	}
 
-	if msg.GetSessionHeader().GetService().GetId() == "" {
-		return ErrProofInvalidService.Wrap("proof service ID %q cannot be empty")
+	if err := sessionHeader.ValidateBasic(); err != nil {
+		return ErrProofInvalidSessionHeader.Wrapf("%s", err)
 	}
 
 	if len(msg.GetProof()) == 0 {
