@@ -24,7 +24,7 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 				Address: "invalid_address",
 				// Stake explicitly omitted
 				Services: []*sharedtypes.ApplicationServiceConfig{
-					{Service: &sharedtypes.Service{Id: "svc1"}},
+					{ServiceId: "svc1"},
 				},
 			},
 			expectedErr: ErrAppInvalidAddress,
@@ -37,7 +37,7 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 				Address: sample.AccAddress(),
 				// Stake explicitly omitted
 				Services: []*sharedtypes.ApplicationServiceConfig{
-					{Service: &sharedtypes.Service{Id: "svc1"}},
+					{ServiceId: "svc1"},
 				},
 			},
 			expectedErr: ErrAppInvalidStake,
@@ -47,7 +47,7 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 				Address: sample.AccAddress(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 				Services: []*sharedtypes.ApplicationServiceConfig{
-					{Service: &sharedtypes.Service{Id: "svc1"}},
+					{ServiceId: "svc1"},
 				},
 			},
 		}, {
@@ -56,7 +56,7 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 				Address: sample.AccAddress(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(0)},
 				Services: []*sharedtypes.ApplicationServiceConfig{
-					{Service: &sharedtypes.Service{Id: "svc1"}},
+					{ServiceId: "svc1"},
 				},
 			},
 			expectedErr: ErrAppInvalidStake,
@@ -66,7 +66,7 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 				Address: sample.AccAddress(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(-100)},
 				Services: []*sharedtypes.ApplicationServiceConfig{
-					{Service: &sharedtypes.Service{Id: "svc1"}},
+					{ServiceId: "svc1"},
 				},
 			},
 			expectedErr: ErrAppInvalidStake,
@@ -76,7 +76,7 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 				Address: sample.AccAddress(),
 				Stake:   &sdk.Coin{Denom: "invalid", Amount: math.NewInt(100)},
 				Services: []*sharedtypes.ApplicationServiceConfig{
-					{Service: &sharedtypes.Service{Id: "svc1"}},
+					{ServiceId: "svc1"},
 				},
 			},
 			expectedErr: ErrAppInvalidStake,
@@ -86,7 +86,7 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 				Address: sample.AccAddress(),
 				Stake:   &sdk.Coin{Denom: "", Amount: math.NewInt(100)},
 				Services: []*sharedtypes.ApplicationServiceConfig{
-					{Service: &sharedtypes.Service{Id: "svc1"}},
+					{ServiceId: "svc1"},
 				},
 			},
 			expectedErr: ErrAppInvalidStake,
@@ -99,8 +99,8 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 				Address: sample.AccAddress(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 				Services: []*sharedtypes.ApplicationServiceConfig{
-					{Service: &sharedtypes.Service{Id: "svc1"}},
-					{Service: &sharedtypes.Service{Id: "svc2"}},
+					{ServiceId: "svc1"},
+					{ServiceId: "svc2"},
 				},
 			},
 		},
@@ -128,21 +128,7 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 				Address: sample.AccAddress(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 				Services: []*sharedtypes.ApplicationServiceConfig{
-					{Service: &sharedtypes.Service{Id: "TooLongId1234567890"}},
-				},
-			},
-			expectedErr: ErrAppInvalidServiceConfigs,
-		},
-		{
-			desc: "invalid service configs - invalid service Name that's too long",
-			msg: MsgStakeApplication{
-				Address: sample.AccAddress(),
-				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
-				Services: []*sharedtypes.ApplicationServiceConfig{
-					{Service: &sharedtypes.Service{
-						Id:   "123",
-						Name: "abcdefghijklmnopqrstuvwxyzab-abcdefghijklmnopqrstuvwxyzab",
-					}},
+					{ServiceId: "TooLongId1234567890"},
 				},
 			},
 			expectedErr: ErrAppInvalidServiceConfigs,
@@ -153,7 +139,7 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 				Address: sample.AccAddress(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 				Services: []*sharedtypes.ApplicationServiceConfig{
-					{Service: &sharedtypes.Service{Id: "12 45 !"}},
+					{ServiceId: "12 45 !"},
 				},
 			},
 			expectedErr: ErrAppInvalidServiceConfigs,

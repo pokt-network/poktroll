@@ -22,6 +22,9 @@ var (
 	DefaultRelayDifficultyTargetHashHex = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" // all relays are payable
 	DefaultRelayDifficultyTargetHash, _ = hex.DecodeString(DefaultRelayDifficultyTargetHashHex)
 
+	// TODO_BETA(@red-0ne): Iterate on the parameters below by adding unit suffixes and
+	// consider having the proof_requirement_threshold to be a function of the supplier's stake amount.
+
 	KeyProofRequestProbability             = []byte("ProofRequestProbability")
 	ParamProofRequestProbability           = "proof_request_probability"
 	DefaultProofRequestProbability float32 = 0.25 // See: https://github.com/pokt-network/pocket-core/blob/staging/docs/proposals/probabilistic_proofs.md

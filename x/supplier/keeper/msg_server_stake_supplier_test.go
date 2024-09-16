@@ -40,7 +40,7 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.Equal(t, operatorAddr, foundSupplier.OperatorAddress)
 	require.Equal(t, int64(100), foundSupplier.Stake.Amount.Int64())
 	require.Len(t, foundSupplier.Services, 1)
-	require.Equal(t, "svcId", foundSupplier.Services[0].Service.Id)
+	require.Equal(t, "svcId", foundSupplier.Services[0].ServiceId)
 	require.Len(t, foundSupplier.Services[0].Endpoints, 1)
 	require.Equal(t, "http://localhost:8080", foundSupplier.Services[0].Endpoints[0].Url)
 
@@ -56,7 +56,7 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.True(t, isSupplierFound)
 	require.Equal(t, int64(200), foundSupplier.Stake.Amount.Int64())
 	require.Len(t, foundSupplier.Services, 1)
-	require.Equal(t, "svcId2", foundSupplier.Services[0].Service.Id)
+	require.Equal(t, "svcId2", foundSupplier.Services[0].ServiceId)
 	require.Len(t, foundSupplier.Services[0].Endpoints, 1)
 	require.Equal(t, "http://localhost:8082", foundSupplier.Services[0].Endpoints[0].Url)
 }
@@ -89,13 +89,13 @@ func TestMsgServer_StakeSupplier_FailRestakingDueToInvalidServices(t *testing.T)
 	require.True(t, isSupplierFound)
 	require.Equal(t, operatorAddr, supplierFound.OperatorAddress)
 	require.Len(t, supplierFound.Services, 1)
-	require.Equal(t, "svcId", supplierFound.Services[0].Service.Id)
+	require.Equal(t, "svcId", supplierFound.Services[0].ServiceId)
 	require.Len(t, supplierFound.Services[0].Endpoints, 1)
 	require.Equal(t, "http://localhost:8080", supplierFound.Services[0].Endpoints[0].Url)
 
 	// Prepare the supplier stake message with an invalid service ID
 	updateStakeMsg = stakeSupplierForServicesMsg(ownerAddr, operatorAddr, 200, "svcId")
-	updateStakeMsg.Services[0].Service.Id = "svc1 INVALID ! & *"
+	updateStakeMsg.Services[0].ServiceId = "svc1 INVALID ! & *"
 
 	// Fail updating the supplier when the list of services is empty
 	_, err = srv.StakeSupplier(ctx, updateStakeMsg)
@@ -106,7 +106,7 @@ func TestMsgServer_StakeSupplier_FailRestakingDueToInvalidServices(t *testing.T)
 	require.True(t, isSupplierFound)
 	require.Equal(t, operatorAddr, supplierFound.OperatorAddress)
 	require.Len(t, supplierFound.Services, 1)
-	require.Equal(t, "svcId", supplierFound.Services[0].Service.Id)
+	require.Equal(t, "svcId", supplierFound.Services[0].ServiceId)
 	require.Len(t, supplierFound.Services[0].Endpoints, 1)
 	require.Equal(t, "http://localhost:8080", supplierFound.Services[0].Endpoints[0].Url)
 }
@@ -338,7 +338,7 @@ func stakeSupplierForServicesMsg(
 	services := make([]*sharedtypes.SupplierServiceConfig, 0, len(serviceIds))
 	for _, serviceId := range serviceIds {
 		services = append(services, &sharedtypes.SupplierServiceConfig{
-			Service: &sharedtypes.Service{Id: serviceId},
+			ServiceId: serviceId,
 			Endpoints: []*sharedtypes.SupplierEndpoint{
 				{
 					Url:     "http://localhost:8080",

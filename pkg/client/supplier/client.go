@@ -100,7 +100,7 @@ func (sClient *supplierClient) SubmitProofs(
 				"supplier_operator_addr": proofMsg.SupplierOperatorAddress,
 				"app_addr":               sessionHeader.ApplicationAddress,
 				"session_id":             sessionHeader.SessionId,
-				"service":                sessionHeader.Service.Id,
+				"service_id":             sessionHeader.ServiceId,
 			}).
 			Msg("submitted a new proof")
 	}
@@ -146,7 +146,7 @@ func (sClient *supplierClient) CreateClaims(
 				"supplier_operator_addr": claimMsg.SupplierOperatorAddress,
 				"app_addr":               sessionHeader.ApplicationAddress,
 				"session_id":             sessionHeader.SessionId,
-				"service":                sessionHeader.Service.Id,
+				"service_id":             sessionHeader.ServiceId,
 			}).
 			Msg("created a new claim")
 	}

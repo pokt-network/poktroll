@@ -40,10 +40,14 @@ func NewLocalnetClient(
 	return supplierClient
 }
 
-func NewOneTimeClaimProofSupplierClientMap(
+// NewClaimProofSupplierClientMap creates and returns a map of supplier to supplier
+// client mocks. Each supplier client is expected to submit exactly 1 claim and
+// exactly proofCount proofs.
+func NewClaimProofSupplierClientMap(
 	ctx context.Context,
 	t *testing.T,
 	supplierOperatorAddress string,
+	proofCount int,
 ) *supplier.SupplierClientMap {
 	t.Helper()
 
@@ -70,7 +74,7 @@ func NewOneTimeClaimProofSupplierClientMap(
 			gomock.AssignableToTypeOf(([]client.MsgSubmitProof)(nil)),
 		).
 		Return(nil).
-		Times(1)
+		Times(proofCount)
 
 	supplierClientMap := supplier.NewSupplierClientMap()
 	supplierClientMap.SupplierClients[supplierOperatorAddress] = supplierClientMock

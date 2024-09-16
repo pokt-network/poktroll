@@ -7,7 +7,6 @@ import (
 
 	"github.com/pokt-network/poktroll/testutil/sample"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
@@ -24,7 +23,7 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 				SupplierOperatorAddress: "invalid_address",
 				SessionHeader: &sessiontypes.SessionHeader{
 					ApplicationAddress:      sample.AccAddress(),
-					Service:                 &sharedtypes.Service{Id: "svcId"},
+					ServiceId:               "svcId",
 					SessionStartBlockHeight: 100,
 					SessionEndBlockHeight:   101,
 					SessionId:               "valid_session_id",
@@ -39,7 +38,7 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 				SupplierOperatorAddress: sample.AccAddress(),
 				SessionHeader: &sessiontypes.SessionHeader{
 					ApplicationAddress:      sample.AccAddress(),
-					Service:                 &sharedtypes.Service{Id: "svcId"},
+					ServiceId:               "svcId",
 					SessionStartBlockHeight: -1,
 					SessionEndBlockHeight:   101,
 					SessionId:               "valid_session_id",
@@ -54,7 +53,7 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 				SupplierOperatorAddress: sample.AccAddress(),
 				SessionHeader: &sessiontypes.SessionHeader{
 					ApplicationAddress:      sample.AccAddress(),
-					Service:                 &sharedtypes.Service{Id: "svcId"},
+					ServiceId:               "svcId",
 					SessionStartBlockHeight: 100,
 					SessionEndBlockHeight:   101,
 					SessionId:               "",
@@ -69,7 +68,7 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 				SupplierOperatorAddress: sample.AccAddress(),
 				SessionHeader: &sessiontypes.SessionHeader{
 					ApplicationAddress:      sample.AccAddress(),
-					Service:                 &sharedtypes.Service{Id: "invalid service id"},
+					ServiceId:               "invalid service id",
 					SessionStartBlockHeight: 100,
 					SessionEndBlockHeight:   101,
 					SessionId:               "valid_session_id",
@@ -84,7 +83,7 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 				SupplierOperatorAddress: sample.AccAddress(),
 				SessionHeader: &sessiontypes.SessionHeader{
 					ApplicationAddress:      sample.AccAddress(),
-					Service:                 &sharedtypes.Service{Id: "svcId"},
+					ServiceId:               "svcId",
 					SessionStartBlockHeight: 100,
 					SessionEndBlockHeight:   101,
 					SessionId:               "valid_session_id",
@@ -100,7 +99,7 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 				SupplierOperatorAddress: sample.AccAddress(),
 				SessionHeader: &sessiontypes.SessionHeader{
 					ApplicationAddress:      sample.AccAddress(),
-					Service:                 &sharedtypes.Service{Id: "svcId"},
+					ServiceId:               "svcId",
 					SessionStartBlockHeight: 100,
 					SessionEndBlockHeight:   101,
 					SessionId:               "valid_session_id",

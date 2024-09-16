@@ -129,7 +129,7 @@ func (mnr *miner) getServiceRelayDifficultyTargetHash(ctx context.Context, req *
 		return nil, fmt.Errorf("invalid session header: %w", err)
 	}
 
-	serviceRelayDifficulty, err := mnr.tokenomicsQueryClient.GetServiceRelayDifficultyTargetHash(ctx, sessionHeader.Service.Id)
+	serviceRelayDifficulty, err := mnr.tokenomicsQueryClient.GetServiceRelayDifficultyTargetHash(ctx, sessionHeader.ServiceId)
 	if err != nil {
 		// TODO_IMPROVE: log the error and a message saying the default relay difficulty target hash
 		// is being used.
