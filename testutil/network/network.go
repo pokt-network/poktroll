@@ -94,7 +94,7 @@ func ApplicationModuleGenesisStateWithAddresses(t *testing.T, addresses []string
 			Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(10000)},
 			ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
 				{
-					Service: &sharedtypes.Service{Id: "svc1"},
+					ServiceId: "svc1",
 				},
 			},
 		}
@@ -116,10 +116,10 @@ func DefaultApplicationModuleGenesisState(t *testing.T, n int) *apptypes.Genesis
 			Stake:   &stake,
 			ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
 				{
-					Service: &sharedtypes.Service{Id: fmt.Sprintf("svc%d", i)},
+					ServiceId: fmt.Sprintf("svc%d", i),
 				},
 				{
-					Service: &sharedtypes.Service{Id: fmt.Sprintf("svc%d%d", i, i)},
+					ServiceId: fmt.Sprintf("svc%d%d", i, i),
 				},
 			},
 			PendingUndelegations: map[uint64]apptypes.UndelegatingGatewayList{},
@@ -145,7 +145,7 @@ func DefaultSupplierModuleGenesisState(t *testing.T, n int) *suppliertypes.Genes
 			Stake:           &stake,
 			Services: []*sharedtypes.SupplierServiceConfig{
 				{
-					Service: &sharedtypes.Service{Id: svcId},
+					ServiceId: svcId,
 					Endpoints: []*sharedtypes.SupplierEndpoint{
 						{
 							Url:     fmt.Sprintf("http://localhost:%d", i),
@@ -175,7 +175,7 @@ func SupplierModuleGenesisStateWithAddresses(t *testing.T, addresses []string) *
 			Stake:           &sdk.Coin{Denom: "upokt", Amount: math.NewInt(10000)},
 			Services: []*sharedtypes.SupplierServiceConfig{
 				{
-					Service: &sharedtypes.Service{Id: "svc1"},
+					ServiceId: "svc1",
 					Endpoints: []*sharedtypes.SupplierEndpoint{
 						{
 							Url:     "http://localhost:1",

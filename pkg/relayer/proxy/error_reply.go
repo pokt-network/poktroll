@@ -25,7 +25,7 @@ func (sync *synchronousRPCServer) replyWithError(
 
 	// Fill in the needed missing fields of the RelayRequest with empty values.
 	relayRequest = relayRequest.NullifyForObservability()
-	serviceId := relayRequest.Meta.SessionHeader.Service.Id
+	serviceId := relayRequest.Meta.SessionHeader.ServiceId
 
 	errorLogger := sync.logger.With().
 		Error().

@@ -30,9 +30,7 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 		Address: appAddr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 		Services: []*sharedtypes.ApplicationServiceConfig{
-			{
-				Service: &sharedtypes.Service{Id: "svc1"},
-			},
+			{ServiceId: "svc1"},
 		},
 	}
 
@@ -46,19 +44,15 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.Equal(t, appAddr, foundApp.Address)
 	require.Equal(t, int64(100), foundApp.Stake.Amount.Int64())
 	require.Len(t, foundApp.ServiceConfigs, 1)
-	require.Equal(t, "svc1", foundApp.ServiceConfigs[0].Service.Id)
+	require.Equal(t, "svc1", foundApp.ServiceConfigs[0].ServiceId)
 
 	// Prepare an updated application with a higher stake and another service
 	updateStakeMsg := &types.MsgStakeApplication{
 		Address: appAddr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(200)},
 		Services: []*sharedtypes.ApplicationServiceConfig{
-			{
-				Service: &sharedtypes.Service{Id: "svc1"},
-			},
-			{
-				Service: &sharedtypes.Service{Id: "svc2"},
-			},
+			{ServiceId: "svc1"},
+			{ServiceId: "svc2"},
 		},
 	}
 
@@ -69,8 +63,8 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.True(t, isAppFound)
 	require.Equal(t, int64(200), foundApp.Stake.Amount.Int64())
 	require.Len(t, foundApp.ServiceConfigs, 2)
-	require.Equal(t, "svc1", foundApp.ServiceConfigs[0].Service.Id)
-	require.Equal(t, "svc2", foundApp.ServiceConfigs[1].Service.Id)
+	require.Equal(t, "svc1", foundApp.ServiceConfigs[0].ServiceId)
+	require.Equal(t, "svc2", foundApp.ServiceConfigs[1].ServiceId)
 }
 
 func TestMsgServer_StakeApplication_FailRestakingDueToInvalidServices(t *testing.T) {
@@ -84,9 +78,7 @@ func TestMsgServer_StakeApplication_FailRestakingDueToInvalidServices(t *testing
 		Address: appAddr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 		Services: []*sharedtypes.ApplicationServiceConfig{
-			{
-				Service: &sharedtypes.Service{Id: "svc1"},
-			},
+			{ServiceId: "svc1"},
 		},
 	}
 
@@ -110,16 +102,14 @@ func TestMsgServer_StakeApplication_FailRestakingDueToInvalidServices(t *testing
 	require.True(t, isAppFound)
 	require.Equal(t, appAddr, foundApp.Address)
 	require.Len(t, foundApp.ServiceConfigs, 1)
-	require.Equal(t, "svc1", foundApp.ServiceConfigs[0].Service.Id)
+	require.Equal(t, "svc1", foundApp.ServiceConfigs[0].ServiceId)
 
 	// Prepare the application stake message with an invalid service ID
 	updateStakeMsg = &types.MsgStakeApplication{
 		Address: appAddr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 		Services: []*sharedtypes.ApplicationServiceConfig{
-			{
-				Service: &sharedtypes.Service{Id: "svc1 INVALID ! & *"},
-			},
+			{ServiceId: "svc1 INVALID ! & *"},
 		},
 	}
 
@@ -132,7 +122,7 @@ func TestMsgServer_StakeApplication_FailRestakingDueToInvalidServices(t *testing
 	require.True(t, isAppFound)
 	require.Equal(t, appAddr, foundApp.Address)
 	require.Len(t, foundApp.ServiceConfigs, 1)
-	require.Equal(t, "svc1", foundApp.ServiceConfigs[0].Service.Id)
+	require.Equal(t, "svc1", foundApp.ServiceConfigs[0].ServiceId)
 }
 
 func TestMsgServer_StakeApplication_FailLoweringStake(t *testing.T) {
@@ -145,9 +135,7 @@ func TestMsgServer_StakeApplication_FailLoweringStake(t *testing.T) {
 		Address: appAddr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 		Services: []*sharedtypes.ApplicationServiceConfig{
-			{
-				Service: &sharedtypes.Service{Id: "svc1"},
-			},
+			{ServiceId: "svc1"},
 		},
 	}
 
@@ -162,9 +150,7 @@ func TestMsgServer_StakeApplication_FailLoweringStake(t *testing.T) {
 		Address: appAddr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(50)},
 		Services: []*sharedtypes.ApplicationServiceConfig{
-			{
-				Service: &sharedtypes.Service{Id: "svc1"},
-			},
+			{ServiceId: "svc1"},
 		},
 	}
 

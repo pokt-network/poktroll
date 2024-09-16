@@ -14,15 +14,11 @@ func (rs *relayerSessionsManager) getServiceComputeUnitsPerRelay(
 	relayRequestMetadata *types.RelayRequestMetadata,
 ) (uint64, error) {
 	sessionHeader := relayRequestMetadata.GetSessionHeader()
-	if sessionHeader.GetService() == nil {
-		return 0, ErrSessionRelayMetaHasNoServiceID
-	}
-
-	service, err := rs.serviceQueryClient.GetService(ctx, sessionHeader.Service.Id)
+	service, err := rs.serviceQueryClient.GetService(ctx, sessionHeader.ServiceId)
 	if err != nil {
 		return 0, ErrSessionRelayMetaHasInvalidServiceID.Wrapf(
 			"getServiceComputeUnitsPerRelay: could not get on-chain service %s: %v",
-			sessionHeader.Service.Id,
+			sessionHeader.ServiceId,
 			err,
 		)
 	}

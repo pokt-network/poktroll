@@ -3,8 +3,10 @@ package testrelayer
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
@@ -93,13 +95,13 @@ func NewSignedMinedRelay(
 				SessionHeader:           session.Header,
 				SupplierOperatorAddress: supplierOperatorAddr,
 			},
-			Payload: []byte("request_payload"),
+			Payload: randomPayload(),
 		},
 		Res: &servicetypes.RelayResponse{
 			Meta: servicetypes.RelayResponseMetadata{
 				SessionHeader: session.Header,
 			},
-			Payload: []byte("response_payload"),
+			Payload: randomPayload(),
 		},
 	}
 
@@ -233,4 +235,18 @@ func NewEmptyRelay(reqHeader, resHeader *sessiontypes.SessionHeader, supplierOpe
 			Payload: nil,
 		},
 	}
+}
+
+const (
+	charset       = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	payloadLength = 32
+)
+
+func randomPayload() []byte {
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	bz := make([]byte, payloadLength)
+	for i := range bz {
+		bz[i] = charset[r.Intn(len(charset))]
+	}
+	return bz
 }
