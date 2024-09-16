@@ -110,6 +110,7 @@ func (k msgServer) SubmitProof(
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	if proofRequirement == types.ProofRequirementReason_NOT_REQUIRED {
+		logger.Warn("trying to submit a proof for a claim that does not require one")
 		return nil, status.Error(codes.FailedPrecondition, types.ErrProofNotRequired.Error())
 	}
 
@@ -205,7 +206,7 @@ func (k Keeper) deductProofSubmissionFee(ctx context.Context, supplierOperatorAd
 // proofRequirementForClaim checks if a proof is required for a claim.
 // If it is not, the claim will be settled without a proof.
 // If it is, the claim will only be settled if a valid proof is available.
-// TODO_BLOCKER(@bryanchriswhite, #419): Document safety assumptions of the probabilistic proofs mechanism.
+// TODO_BLOCKER(@olshansk, #419): Document safety assumptions of the probabilistic proofs mechanism.
 func (k Keeper) ProofRequirementForClaim(ctx context.Context, claim *types.Claim) (_ types.ProofRequirementReason, err error) {
 	logger := k.logger.With("method", "proofRequirementForClaim")
 
@@ -297,7 +298,7 @@ func (k Keeper) getEarliestSupplierProofCommitBlockHash(
 	proofWindowOpenHeight := shared.GetProofWindowOpenHeight(sharedParams, sessionEndHeight)
 	proofWindowOpenBlockHash := k.sessionKeeper.GetBlockHash(ctx, proofWindowOpenHeight)
 
-	// TODO_TECHDEBT: Update the method header of this function to accept (sharedParams, Claim, BlockHash).
+	// TODO_TECHDEBT(@red-0ne): Update the method header of this function to accept (sharedParams, Claim, BlockHash).
 	// After doing so, please review all calling sites and simplify them accordingly.
 	earliestSupplierProofCommitHeight := shared.GetEarliestSupplierProofCommitHeight(
 		sharedParams,
