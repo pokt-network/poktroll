@@ -2,6 +2,7 @@ package integration
 
 import (
 	"context"
+	math2 "math"
 	"testing"
 	"time"
 
@@ -73,6 +74,15 @@ import (
 )
 
 const appName = "poktroll-integration-app"
+
+var (
+	// FaucetAddrStr is a random address which is funded with FaucetAmountUpokt
+	// coins such that it can be used as a faucet for integration tests.
+	FaucetAddrStr = sample.AccAddress()
+	// FaucetAmountUpokt is the number of upokt coins that the faucet account
+	// is funded with.
+	FaucetAmountUpokt = int64(math2.MaxInt64)
+)
 
 // App is a test application that can be used to test the behaviour when none
 // of the modules are mocked and their integration (cross module interaction)
@@ -623,8 +633,17 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	err = bankKeeper.MintCoins(integrationApp.sdkCtx, apptypes.ModuleName, moduleBaseMint)
 	require.NoError(t, err)
 
+	// Fund the faucet address.
+	faucetAddr, err := cosmostypes.AccAddressFromBech32(FaucetAddrStr)
+	require.NoError(t, err)
+	fundAccount(t, integrationApp.sdkCtx, bankKeeper, faucetAddr, FaucetAmountUpokt)
+
+	// TODO_IMPROVE: Refactor the relay_mining_difficulty_test.go to use the
+	// BaseIntegrationTestSuite and its #FundAddress() method and remove the
+	// need for this.
+	//
 	// Fund the supplier operator account to be able to submit proofs
-	fundAccount(t, integrationApp.sdkCtx, bankKeeper, supplierOperatorAddr)
+	fundAccount(t, integrationApp.sdkCtx, bankKeeper, supplierOperatorAddr, 100000000)
 
 	// Commit all the changes above by committing, finalizing and moving
 	// to the next block.
@@ -809,9 +828,10 @@ func fundAccount(
 	ctx context.Context,
 	bankKeeper bankkeeper.Keeper,
 	supplierOperatorAddr sdk.AccAddress,
+	amountUpokt int64,
 ) {
 
-	fundingCoins := types.NewCoins(types.NewCoin(volatile.DenomuPOKT, math.NewInt(100000000)))
+	fundingCoins := types.NewCoins(types.NewCoin(volatile.DenomuPOKT, math.NewInt(amountUpokt)))
 
 	err := bankKeeper.MintCoins(ctx, banktypes.ModuleName, fundingCoins)
 	require.NoError(t, err)
@@ -820,5 +840,5 @@ func fundAccount(
 	require.NoError(t, err)
 
 	coin := bankKeeper.SpendableCoin(ctx, supplierOperatorAddr, volatile.DenomuPOKT)
-	require.Equal(t, coin.Amount, math.NewInt(100000000))
+	require.Equal(t, coin.Amount, math.NewInt(amountUpokt))
 }
