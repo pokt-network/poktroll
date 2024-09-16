@@ -38,7 +38,7 @@ import (
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	"github.com/pokt-network/poktroll/x/shared"
+	shared "github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
@@ -740,8 +740,8 @@ func (s *suite) getSupplierUnbondingHeight(accName string) int64 {
 	var resp sharedtypes.QueryParamsResponse
 	responseBz := []byte(strings.TrimSpace(res.Stdout))
 	s.cdc.MustUnmarshalJSON(responseBz, &resp)
-
-	return shared.GetSupplierUnbondingHeight(&resp.Params, supplier)
+	unbondingHeight := shared.GetSupplierUnbondingHeight(&resp.Params, supplier)
+	return unbondingHeight
 }
 
 // getApplicationInfo returns the application information for a given application address.
