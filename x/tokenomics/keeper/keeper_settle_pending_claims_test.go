@@ -29,6 +29,7 @@ import (
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/poktroll/x/tokenomics"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
@@ -245,7 +246,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequiredAndNotProv
 
 	tokenomicsParams := s.keepers.Keeper.GetParams(ctx)
 	// -1 to push threshold below s.claim's compute units
-	proofRequirementThreshold, err := tokenomicsParams.NumComputeUnitsToCoin(numComputeUnits - 1)
+	proofRequirementThreshold, err := tokenomics.NumComputeUnitsToCoin(tokenomicsParams, numComputeUnits-1)
 	require.NoError(t, err)
 
 	// Set the proof missing penalty to half the supplier's stake so it is not
@@ -326,7 +327,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimSettled_ProofRequiredAndProvide
 
 	tokenomicsParams := s.keepers.Keeper.GetParams(ctx)
 	// -1 to push threshold below s.claim's compute units
-	proofRequirementThreshold, err := tokenomicsParams.NumComputeUnitsToCoin(numComputeUnits - 1)
+	proofRequirementThreshold, err := tokenomics.NumComputeUnitsToCoin(tokenomicsParams, numComputeUnits-1)
 	require.NoError(t, err)
 
 	// Set the proof parameters such that s.claim requires a proof because:
@@ -457,7 +458,7 @@ func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_Vi
 
 	tokenomicsParams := s.keepers.Keeper.GetParams(ctx)
 	// +1 so its not required via probability
-	proofRequirementThreshold, err := tokenomicsParams.NumComputeUnitsToCoin(numComputeUnits + 1)
+	proofRequirementThreshold, err := tokenomics.NumComputeUnitsToCoin(tokenomicsParams, numComputeUnits+1)
 	require.NoError(t, err)
 
 	// Set the proof parameters such that s.claim requires a proof because:
@@ -513,7 +514,7 @@ func (s *TestSuite) TestSettlePendingClaims_Settles_WhenAProofIsNotRequired() {
 
 	tokenomicsParams := s.keepers.Keeper.GetParams(ctx)
 	// +1 to push threshold above s.claim's compute units
-	proofRequirementThreshold, err := tokenomicsParams.NumComputeUnitsToCoin(numComputeUnits + 1)
+	proofRequirementThreshold, err := tokenomics.NumComputeUnitsToCoin(tokenomicsParams, numComputeUnits+1)
 	require.NoError(t, err)
 
 	// Set the proof parameters such that s.claim DOES NOT require a proof because:
@@ -585,7 +586,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimPendingAfterSettlement() {
 
 	tokenomicsParams := s.keepers.Keeper.GetParams(ctx)
 	// +1 to push threshold above s.claim's compute units
-	proofRequirementThreshold, err := tokenomicsParams.NumComputeUnitsToCoin(numComputeUnits + 1)
+	proofRequirementThreshold, err := tokenomics.NumComputeUnitsToCoin(tokenomicsParams, numComputeUnits+1)
 	require.NoError(t, err)
 
 	// Set the proof parameters such that s.claim DOES NOT require a proof
@@ -674,7 +675,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 
 	tokenomicsParams := s.keepers.Keeper.GetParams(ctx)
 	// -1 to push threshold below s.claim's compute units
-	proofRequirementThreshold, err := tokenomicsParams.NumComputeUnitsToCoin(numComputeUnits - 1)
+	proofRequirementThreshold, err := tokenomics.NumComputeUnitsToCoin(tokenomicsParams, numComputeUnits-1)
 	require.NoError(t, err)
 
 	// Set the proof parameters such that s.claim requires a proof because:

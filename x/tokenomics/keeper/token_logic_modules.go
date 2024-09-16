@@ -20,6 +20,7 @@ import (
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
+	"github.com/pokt-network/poktroll/x/tokenomics"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 	tokenomictypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
@@ -233,7 +234,7 @@ func (k Keeper) ProcessTokenLogicModules(
 	// Determine the total number of tokens being claimed (i.e. for the work completed)
 	// by the supplier for the amount of work they did to service the application
 	// in the session.
-	claimSettlementCoin, err = tokenomicsParams.NumComputeUnitsToCoin(numClaimComputeUnits)
+	claimSettlementCoin, err = tokenomics.NumComputeUnitsToCoin(tokenomicsParams, numClaimComputeUnits)
 	if err != nil {
 		return err
 	}

@@ -14,6 +14,7 @@ import (
 	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
+	"github.com/pokt-network/poktroll/x/tokenomics"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
@@ -284,7 +285,7 @@ func (k Keeper) proofRequirementForClaim(ctx sdk.Context, claim *prooftypes.Clai
 	// Retrieve the number of tokens claimed to compare against the threshold.
 	// Different services have varying compute_unit -> token multipliers, so the
 	// threshold value is done in a common unit denomination.
-	claimeduPOKT, err := tokenomicsParams.NumComputeUnitsToCoin(numClaimComputeUnits)
+	claimeduPOKT, err := tokenomics.NumComputeUnitsToCoin(tokenomicsParams, numClaimComputeUnits)
 	if err != nil {
 		return requirementReason, err
 	}
