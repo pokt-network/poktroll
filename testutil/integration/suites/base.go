@@ -76,13 +76,13 @@ func (s *BaseIntegrationSuite) FundAddress(
 	amountUpokt int64,
 ) {
 	coinUpokt := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, amountUpokt)
-	sendToAppMsg := &banktypes.MsgSend{
+	sendMsg := &banktypes.MsgSend{
 		FromAddress: integration.FaucetAddrStr,
 		ToAddress:   addr.String(),
 		Amount:      cosmostypes.NewCoins(coinUpokt),
 	}
 
-	anyRes := s.GetApp().RunMsg(t, sendToAppMsg, integration.RunUntilNextBlockOpts...)
+	anyRes := s.GetApp().RunMsg(t, sendMsg, integration.RunUntilNextBlockOpts...)
 	require.NotNil(t, anyRes)
 
 	sendRes := new(banktypes.MsgSendResponse)
