@@ -2,6 +2,7 @@ package integration
 
 import (
 	"context"
+	math2 "math"
 	"testing"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 	"cosmossdk.io/store"
 	"cosmossdk.io/store/metrics"
 	storetypes "cosmossdk.io/store/types"
+	"cosmossdk.io/x/tx/signing"
 	abci "github.com/cometbft/cometbft/abci/types"
 	cmtabcitypes "github.com/cometbft/cometbft/abci/types"
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
@@ -33,9 +35,14 @@ import (
 	authsims "github.com/cosmos/cosmos-sdk/x/auth/simulation"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/cosmos/cosmos-sdk/x/authz"
+	authzkeeper "github.com/cosmos/cosmos-sdk/x/authz/keeper"
+	authzmodule "github.com/cosmos/cosmos-sdk/x/authz/module"
+	"github.com/cosmos/cosmos-sdk/x/bank"
 	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	"github.com/cosmos/gogoproto/proto"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app"
@@ -74,6 +81,15 @@ import (
 
 const appName = "poktroll-integration-app"
 
+var (
+	// FaucetAddrStr is a random address which is funded with FaucetAmountUpokt
+	// coins such that it can be used as a faucet for integration tests.
+	FaucetAddrStr = sample.AccAddress()
+	// FaucetAmountUpokt is the number of upokt coins that the faucet account
+	// is funded with.
+	FaucetAmountUpokt = int64(math2.MaxInt64)
+)
+
 // App is a test application that can be used to test the behaviour when none
 // of the modules are mocked and their integration (cross module interaction)
 // needs to be validated.
@@ -81,23 +97,31 @@ type App struct {
 	*baseapp.BaseApp
 
 	// Internal state of the App needed for properly configuring the blockchain.
-	sdkCtx        *sdk.Context
-	cdc           codec.Codec
-	logger        log.Logger
-	authority     sdk.AccAddress
-	moduleManager module.Manager
-	queryHelper   *baseapp.QueryServiceTestHelper
-	keyRing       keyring.Keyring
-	ringClient    crypto.RingClient
+	sdkCtx            *sdk.Context
+	cdc               codec.Codec
+	logger            log.Logger
+	authority         sdk.AccAddress
+	moduleManager     module.Manager
+	queryHelper       *baseapp.QueryServiceTestHelper
+	keyRing           keyring.Keyring
+	ringClient        crypto.RingClient
+	preGeneratedAccts *testkeyring.PreGeneratedAccountIterator
 
 	// Some default helper fixtures for general testing.
-	// They're publically exposed and should/could be improve and expand on
+	// They're publicly exposed and should/could be improved and expand on
 	// over time.
 	DefaultService                   *sharedtypes.Service
 	DefaultApplication               *apptypes.Application
 	DefaultApplicationKeyringUid     string
 	DefaultSupplier                  *sharedtypes.Supplier
 	DefaultSupplierKeyringKeyringUid string
+}
+
+// NewBaseApp creates a new instance of the base application with the given
+// codec, logger and database.
+func NewBaseApp(cdc codec.Codec, logger log.Logger, db dbm.DB) *baseapp.BaseApp {
+	txConfig := authtx.NewTxConfig(cdc, authtx.DefaultSignModes)
+	return baseapp.NewBaseApp(appName, logger, db, txConfig.TxDecoder(), baseapp.SetChainID(appName))
 }
 
 // NewIntegrationApp creates a new instance of the App with the provided details
@@ -107,6 +131,7 @@ func NewIntegrationApp(
 	sdkCtx sdk.Context,
 	cdc codec.Codec,
 	registry codectypes.InterfaceRegistry,
+	bApp *baseapp.BaseApp,
 	logger log.Logger,
 	authority sdk.AccAddress,
 	modules map[string]appmodule.AppModule,
@@ -115,8 +140,6 @@ func NewIntegrationApp(
 	queryHelper *baseapp.QueryServiceTestHelper,
 ) *App {
 	t.Helper()
-
-	db := dbm.NewMemDB()
 
 	moduleManager := module.NewManagerFromMap(modules)
 	basicModuleManager := module.NewBasicManagerFromManager(moduleManager, nil)
@@ -141,8 +164,6 @@ func NewIntegrationApp(
 	sdkCtx = sdkCtx.WithProposer(consensusAddr)
 
 	// Create the base application
-	txConfig := authtx.NewTxConfig(cdc, authtx.DefaultSignModes)
-	bApp := baseapp.NewBaseApp(appName, logger, db, txConfig.TxDecoder(), baseapp.SetChainID(appName))
 	bApp.MountKVStores(keys)
 
 	bApp.SetInitChainer(
@@ -194,8 +215,24 @@ func NewIntegrationApp(
 func NewCompleteIntegrationApp(t *testing.T) *App {
 	t.Helper()
 
+	sdkCfg := cosmostypes.GetConfig()
+	addrCodec := addresscodec.NewBech32Codec(sdkCfg.GetBech32AccountAddrPrefix())
+	valCodec := addresscodec.NewBech32Codec(sdkCfg.GetBech32ValidatorAddrPrefix())
+
 	// Prepare & register the codec for all the interfaces
-	registry := codectypes.NewInterfaceRegistry()
+	registry, err := codectypes.NewInterfaceRegistryWithOptions(
+		codectypes.InterfaceRegistryOptions{
+			ProtoFiles: proto.HybridResolver,
+			SigningOptions: signing.Options{
+				AddressCodec:          addrCodec,
+				ValidatorAddressCodec: valCodec,
+			},
+		},
+	)
+	require.NoError(t, err)
+
+	banktypes.RegisterInterfaces(registry)
+	authz.RegisterInterfaces(registry)
 	tokenomicstypes.RegisterInterfaces(registry)
 	sharedtypes.RegisterInterfaces(registry)
 	banktypes.RegisterInterfaces(registry)
@@ -216,6 +253,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 
 	// Prepare all the store keys
 	storeKeys := storetypes.NewKVStoreKeys(
+		authzkeeper.StoreKey,
 		sharedtypes.StoreKey,
 		tokenomicstypes.StoreKey,
 		banktypes.StoreKey,
@@ -228,9 +266,17 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		authtypes.StoreKey,
 	)
 
-	// Prepare the context
+	// Construct a no-op logger.
 	logger := log.NewNopLogger() // Use this if you need more output: log.NewTestLogger(t)
-	cms := CreateMultiStore(storeKeys, logger)
+
+	// Prepare the database and multi-store.
+	db := dbm.NewMemDB()
+	cms := CreateMultiStore(storeKeys, logger, db)
+
+	// Prepare the base application.
+	bApp := NewBaseApp(cdc, logger, db)
+
+	// Prepare the context
 	sdkCtx := sdk.NewContext(cms, cmtproto.Header{
 		ChainID: appName,
 		Height:  1,
@@ -240,7 +286,6 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName)
 
 	// Prepare the account keeper dependencies
-	addrCodec := addresscodec.NewBech32Codec(app.AccountAddressPrefix)
 	macPerms := map[string][]string{
 		banktypes.ModuleName:       {authtypes.Minter, authtypes.Burner},
 		tokenomicstypes.ModuleName: {authtypes.Minter, authtypes.Burner},
@@ -268,7 +313,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		nil, // subspace is nil because we don't test params (which is legacy anyway)
 	)
 
-	// Prepare the bank keeper
+	// Prepare the bank keeper and module
 	blockedAddresses := map[string]bool{
 		accountKeeper.GetAuthority(): false,
 	}
@@ -279,6 +324,12 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		blockedAddresses,
 		authority.String(),
 		logger,
+	)
+	bankModule := bank.NewAppModule(
+		cdc,
+		bankKeeper,
+		accountKeeper,
+		nil,
 	)
 
 	// Prepare the shared keeper and module
@@ -435,8 +486,25 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	msgRouter := baseapp.NewMsgServiceRouter()
 	queryHelper := baseapp.NewQueryServerTestHelper(sdkCtx, registry)
 
+	// Prepare the authz keeper and module
+	authzKeeper := authzkeeper.NewKeeper(
+		runtime.NewKVStoreService(storeKeys[authzkeeper.StoreKey]),
+		cdc,
+		msgRouter,
+		accountKeeper,
+	).SetBankKeeper(bankKeeper)
+	authzModule := authzmodule.NewAppModule(
+		cdc,
+		authzKeeper,
+		accountKeeper,
+		bankKeeper,
+		registry,
+	)
+
 	// Prepare the list of modules
 	modules := map[string]appmodule.AppModule{
+		banktypes.ModuleName:       bankModule,
+		authz.ModuleName:           authzModule,
 		tokenomicstypes.ModuleName: tokenomicsModule,
 		servicetypes.ModuleName:    serviceModule,
 		sharedtypes.ModuleName:     sharedModule,
@@ -454,6 +522,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		sdkCtx,
 		cdc,
 		registry,
+		bApp,
 		logger,
 		authority,
 		modules,
@@ -463,6 +532,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	)
 
 	// Register the message servers
+	banktypes.RegisterMsgServer(msgRouter, bankkeeper.NewMsgServerImpl(bankKeeper))
 	tokenomicstypes.RegisterMsgServer(msgRouter, tokenomicskeeper.NewMsgServerImpl(tokenomicsKeeper))
 	servicetypes.RegisterMsgServer(msgRouter, servicekeeper.NewMsgServerImpl(serviceKeeper))
 	sharedtypes.RegisterMsgServer(msgRouter, sharedkeeper.NewMsgServerImpl(sharedKeeper))
@@ -472,8 +542,11 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	prooftypes.RegisterMsgServer(msgRouter, proofkeeper.NewMsgServerImpl(proofKeeper))
 	authtypes.RegisterMsgServer(msgRouter, authkeeper.NewMsgServerImpl(accountKeeper))
 	sessiontypes.RegisterMsgServer(msgRouter, sessionkeeper.NewMsgServerImpl(sessionKeeper))
+	authz.RegisterMsgServer(msgRouter, authzKeeper)
 
 	// Register query servers
+	banktypes.RegisterQueryServer(queryHelper, bankKeeper)
+	authz.RegisterQueryServer(queryHelper, authzKeeper)
 	tokenomicstypes.RegisterQueryServer(queryHelper, tokenomicsKeeper)
 	servicetypes.RegisterQueryServer(queryHelper, serviceKeeper)
 	sharedtypes.RegisterQueryServer(queryHelper, sharedKeeper)
@@ -486,7 +559,9 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	sessiontypes.RegisterQueryServer(queryHelper, sessionKeeper)
 
 	// Set the default params for all the modules
-	err := sharedKeeper.SetParams(integrationApp.GetSdkCtx(), sharedtypes.DefaultParams())
+	err = bankKeeper.SetParams(integrationApp.GetSdkCtx(), banktypes.DefaultParams())
+	require.NoError(t, err)
+	err = sharedKeeper.SetParams(integrationApp.GetSdkCtx(), sharedtypes.DefaultParams())
 	require.NoError(t, err)
 	err = tokenomicsKeeper.SetParams(integrationApp.GetSdkCtx(), tokenomicstypes.DefaultParams())
 	require.NoError(t, err)
@@ -497,6 +572,12 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	err = gatewayKeeper.SetParams(integrationApp.GetSdkCtx(), gatewaytypes.DefaultParams())
 	require.NoError(t, err)
 	err = applicationKeeper.SetParams(integrationApp.GetSdkCtx(), apptypes.DefaultParams())
+	require.NoError(t, err)
+	err = supplierKeeper.SetParams(integrationApp.GetSdkCtx(), suppliertypes.DefaultParams())
+	require.NoError(t, err)
+	err = serviceKeeper.SetParams(integrationApp.GetSdkCtx(), servicetypes.DefaultParams())
+	require.NoError(t, err)
+	err = gatewayKeeper.SetParams(integrationApp.GetSdkCtx(), gatewaytypes.DefaultParams())
 	require.NoError(t, err)
 
 	// Need to go to the next block to finalize the genesis and setup.
@@ -512,6 +593,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 
 	// Create a pre-generated account iterator to create accounts for the test.
 	preGeneratedAccts := testkeyring.PreGeneratedAccounts()
+	integrationApp.preGeneratedAccts = preGeneratedAccts
 
 	// Prepare a new default service
 	defaultService := sharedtypes.Service{
@@ -598,8 +680,17 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	err = bankKeeper.MintCoins(integrationApp.sdkCtx, apptypes.ModuleName, moduleBaseMint)
 	require.NoError(t, err)
 
+	// Fund the faucet address.
+	faucetAddr, err := cosmostypes.AccAddressFromBech32(FaucetAddrStr)
+	require.NoError(t, err)
+	fundAccount(t, integrationApp.sdkCtx, bankKeeper, faucetAddr, FaucetAmountUpokt)
+
+	// TODO_IMPROVE: Refactor the relay_mining_difficulty_test.go to use the
+	// BaseIntegrationTestSuite and its #FundAddress() method and remove the
+	// need for this.
+	//
 	// Fund the supplier operator account to be able to submit proofs
-	fundAccount(t, integrationApp.sdkCtx, bankKeeper, supplierOperatorAddr)
+	fundAccount(t, integrationApp.sdkCtx, bankKeeper, supplierOperatorAddr, 100000000)
 
 	// Commit all the changes above by committing, finalizing and moving
 	// to the next block.
@@ -633,6 +724,11 @@ func (app *App) GetAuthority() string {
 	return app.authority.String()
 }
 
+// GetPreGeneratedAccounts returns the pre-generated accounts iterater used by the application.
+func (app *App) GetPreGeneratedAccounts() *testkeyring.PreGeneratedAccountIterator {
+	return app.preGeneratedAccts
+}
+
 // QueryHelper returns the query helper used by the application that can be
 // used to submit queries to the application.
 func (app *App) QueryHelper() *baseapp.QueryServiceTestHelper {
@@ -659,6 +755,11 @@ func (app *App) RunMsg(t *testing.T, msg sdk.Msg, option ...RunOption) *codectyp
 	if cfg.AutomaticCommit {
 		defer func() {
 			_, err := app.Commit()
+			if cfg.ErrorAssertion != nil && err != nil {
+				cfg.ErrorAssertion(err)
+				return
+			}
+
 			require.NoError(t, err, "failed to commit")
 			app.nextBlockUpdateCtx()
 		}()
@@ -672,6 +773,12 @@ func (app *App) RunMsg(t *testing.T, msg sdk.Msg, option ...RunOption) *codectyp
 				Votes: []cmtabcitypes.VoteInfo{{}},
 			},
 		})
+
+		if cfg.ErrorAssertion != nil && err != nil {
+			cfg.ErrorAssertion(err)
+			return nil
+		}
+
 		require.NoError(t, err, "failed to finalize block")
 		app.emitEvents(t, finalizedBlockResponse)
 	}
@@ -681,10 +788,15 @@ func (app *App) RunMsg(t *testing.T, msg sdk.Msg, option ...RunOption) *codectyp
 	handler := app.MsgServiceRouter().Handler(msg)
 	require.NotNil(t, handler, "handler not found for message %s", sdk.MsgTypeURL(msg))
 
+	var response *codectypes.Any
 	msgResult, err := handler(*app.sdkCtx, msg)
+	if cfg.ErrorAssertion != nil && err != nil {
+		cfg.ErrorAssertion(err)
+		return nil
+	}
+
 	require.NoError(t, err, "failed to execute message %s", sdk.MsgTypeURL(msg))
 
-	var response *codectypes.Any
 	if len(msgResult.MsgResponses) > 0 {
 		msgResponse := msgResult.MsgResponses[0]
 		require.NotNil(t, msgResponse, "unexpected nil msg response %s in message result: %s", sdk.MsgTypeURL(msg), msgResult.String())
@@ -759,8 +871,11 @@ func (app *App) nextBlockUpdateCtx() {
 }
 
 // CreateMultiStore is a helper for setting up multiple stores for provided modules.
-func CreateMultiStore(keys map[string]*storetypes.KVStoreKey, logger log.Logger) storetypes.CommitMultiStore {
-	db := dbm.NewMemDB()
+func CreateMultiStore(
+	keys map[string]*storetypes.KVStoreKey,
+	logger log.Logger,
+	db dbm.DB,
+) storetypes.CommitMultiStore {
 	cms := store.NewCommitMultiStore(db, logger, metrics.NewNoOpMetrics())
 
 	for key := range keys {
@@ -776,9 +891,10 @@ func fundAccount(
 	ctx context.Context,
 	bankKeeper bankkeeper.Keeper,
 	supplierOperatorAddr sdk.AccAddress,
+	amountUpokt int64,
 ) {
 
-	fundingCoins := types.NewCoins(types.NewCoin(volatile.DenomuPOKT, math.NewInt(100000000)))
+	fundingCoins := types.NewCoins(types.NewCoin(volatile.DenomuPOKT, math.NewInt(amountUpokt)))
 
 	err := bankKeeper.MintCoins(ctx, banktypes.ModuleName, fundingCoins)
 	require.NoError(t, err)
@@ -787,5 +903,5 @@ func fundAccount(
 	require.NoError(t, err)
 
 	coin := bankKeeper.SpendableCoin(ctx, supplierOperatorAddr, volatile.DenomuPOKT)
-	require.Equal(t, coin.Amount, math.NewInt(100000000))
+	require.Equal(t, coin.Amount, math.NewInt(amountUpokt))
 }
