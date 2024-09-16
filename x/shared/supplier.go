@@ -10,7 +10,7 @@ func GetSupplierUnbondingHeight(
 	sharedParams *sharedtypes.Params,
 	supplier *sharedtypes.Supplier,
 ) int64 {
-	supplierUnbondingPeriodBlocks := sharedParams.SupplierUnbondingPeriodSessions * sharedParams.NumBlocksPerSession
+	supplierUnbondingPeriodSessions := sharedParams.SupplierUnbondingPeriodSessions * sharedParams.NumBlocksPerSession
 
-	return int64(supplier.UnstakeSessionEndHeight + supplierUnbondingPeriodBlocks)
+	return int64(supplier.UnstakeSessionEndHeight + supplierUnbondingPeriodSessions)
 }
