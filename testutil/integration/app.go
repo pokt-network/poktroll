@@ -515,6 +515,12 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	require.NoError(t, err)
 	err = applicationKeeper.SetParams(integrationApp.GetSdkCtx(), apptypes.DefaultParams())
 	require.NoError(t, err)
+	err = supplierKeeper.SetParams(integrationApp.GetSdkCtx(), suppliertypes.DefaultParams())
+	require.NoError(t, err)
+	err = serviceKeeper.SetParams(integrationApp.GetSdkCtx(), servicetypes.DefaultParams())
+	require.NoError(t, err)
+	err = gatewayKeeper.SetParams(integrationApp.GetSdkCtx(), gatewaytypes.DefaultParams())
+	require.NoError(t, err)
 
 	// Need to go to the next block to finalize the genesis and setup.
 	// This has to be after the params are set, as the params are stored in the
