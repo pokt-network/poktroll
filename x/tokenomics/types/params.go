@@ -56,7 +56,7 @@ func (params *Params) ValidateBasic() error {
 	return nil
 }
 
-// numComputeUnitsToCoin calculates the amount of uPOKT to mint based on the number of compute units.
+// NumComputeUnitsToCoin calculates the amount of uPOKT to mint based on the number of compute units.
 func (params *Params) NumComputeUnitsToCoin(numClaimComputeUnits uint64) (sdk.Coin, error) {
 	// CUPR is a LOCAL service specific parameter
 	upoktAmount := math.NewInt(int64(numClaimComputeUnits * params.ComputeUnitsToTokensMultiplier))

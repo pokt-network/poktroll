@@ -198,7 +198,7 @@ var (
 		// Gateway, Application and Supplier end blockers should be called after the
 		// tokenomics module end blocker to ensure that the tokenomics module has
 		// processed all the pending claims, minting, burning or slashing before
-		// any of the actors has a chance to withdraw their tokens.
+		// any of the actors have a chance to withdraw their tokens.
 		gatewaymoduletypes.ModuleName,
 		applicationmoduletypes.ModuleName,
 		suppliermoduletypes.ModuleName,

@@ -176,7 +176,7 @@ func (k Keeper) ProcessTokenLogicModules(
 	}
 
 	// Retrieve the sum (i.e. number of compute units) to determine the amount of work done
-	numClaimComputeUnits, err := root.Sum()
+	numClaimComputeUnits, err := claim.GetNumComputeUnits()
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrapf("%v", err)
 	}
@@ -253,7 +253,7 @@ func (k Keeper) ProcessTokenLogicModules(
 	if !found {
 		// If the relay mining difficulty is not found, we initialize it with the
 		// current number of relays.
-		numRelays, countErr := root.Count()
+		numRelays, countErr := claim.GetNumRelays()
 		if countErr != nil {
 			return tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrapf("%v", countErr)
 		}
