@@ -22,11 +22,6 @@ func (k msgServer) UpdateParam(
 
 	params := k.GetParams(ctx)
 
-	switch msg.Name {
-	default:
-		return nil, types.ErrTokenomicsParamsInvalid.Wrapf("unsupported param %q", msg.Name)
-	}
-
 	if err := k.SetParams(ctx, params); err != nil {
 		return nil, err
 	}

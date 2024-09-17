@@ -4,7 +4,6 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"cosmossdk.io/log"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
@@ -12,21 +11,21 @@ import (
 	"github.com/pokt-network/poktroll/testutil/keeper"
 	tetsproof "github.com/pokt-network/poktroll/testutil/proof"
 	"github.com/pokt-network/poktroll/testutil/sample"
-	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	"github.com/pokt-network/poktroll/x/proof/types"
 )
 
 func TestKeeper_IsProofRequired(t *testing.T) {
-	keepers, ctx := keeper.NewTokenomicsModuleKeepers(t, log.NewNopLogger())
+	keepers, ctx := keeper.NewProofModuleKeepers(t)
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 
-	proofParams := keepers.ProofKeeper.GetParams(sdkCtx)
+	proofParams := keepers.Keeper.GetParams(sdkCtx)
 	sharedParams := keepers.SharedKeeper.GetParams(sdkCtx)
 	// Set expected compute units to be below the proof requirement threshold to only
 	// exercise the probabilistic branch of the #isProofRequired() logic.
 	expectedComputeUnits := (proofParams.ProofRequirementThreshold.Amount.Uint64() - 1) / sharedParams.ComputeUnitsToTokensMultiplier
 
 	var (
-		probability = prooftypes.DefaultProofRequestProbability
+		probability = types.DefaultProofRequestProbability
 		// This was empirically determined to avoid false negatives in unit tests.
 		// As a maintainer of the codebase, you may need to adjust these.
 		tolerance  = 0.10
@@ -43,10 +42,10 @@ func TestKeeper_IsProofRequired(t *testing.T) {
 	for i := int64(0); i < sampleSize; i++ {
 		claim := tetsproof.ClaimWithRandomHash(t, sample.AccAddress(), sample.AccAddress(), expectedComputeUnits)
 
-		proofRequirementReason, err := keepers.Keeper.ProofRequirementForClaim(sdkCtx, &claim)
+		proofRequirementReason, err := keepers.ProofRequirementForClaim(sdkCtx, &claim)
 		require.NoError(t, err)
 
-		if proofRequirementReason != prooftypes.ProofRequirementReason_NOT_REQUIRED {
+		if proofRequirementReason != types.ProofRequirementReason_NOT_REQUIRED {
 			numTrueSamples.Add(1)
 		}
 	}

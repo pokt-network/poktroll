@@ -262,7 +262,7 @@ func (s *suite) TheModuleParamShouldBeUpdated(moduleName, paramName string) {
 	require.True(s, ok, "module %q params expectation not set on the test suite", moduleName)
 
 	var foundExpectedParam bool
-	for expectedParamName, _ := range moduleParamsMap {
+	for expectedParamName := range moduleParamsMap {
 		if paramName == expectedParamName {
 			foundExpectedParam = true
 			break
