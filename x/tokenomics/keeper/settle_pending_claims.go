@@ -344,8 +344,8 @@ func (k Keeper) proofRequirementForClaim(ctx sdk.Context, claim *prooftypes.Clai
 	return requirementReason, nil
 }
 
-// slashSupplierStake slashes the stake of a supplier and mints the total slashing
-// amount to the tokenomics module account.
+// slashSupplierStake slashes the stake of a supplier and transfers the total
+// slashing amount from the supplier bank module to the tokenomics module account.
 func (k Keeper) slashSupplierStake(
 	ctx sdk.Context,
 	supplierOperatorAddress string,
@@ -361,7 +361,10 @@ func (k Keeper) slashSupplierStake(
 
 	supplierToSlash, supplierFound := k.supplierKeeper.GetSupplier(ctx, supplierOperatorAddress)
 	if !supplierFound {
-		return tokenomicstypes.ErrTokenomicsSupplierNotFound
+		return tokenomicstypes.ErrTokenomicsSupplierNotFound.Wrapf(
+			"cannot slash supplier with operator address: %q",
+			supplierOperatorAddress,
+		)
 	}
 
 	slashedSupplierInitialStakeCoin := supplierToSlash.GetStake()
@@ -370,6 +373,7 @@ func (k Keeper) slashSupplierStake(
 	if slashedSupplierInitialStakeCoin.IsGTE(totalSlashingCoin) {
 		remainingStakeCoin = slashedSupplierInitialStakeCoin.Sub(totalSlashingCoin)
 	} else {
+		// TODO_MAINNET: Consider emitting an event for this case.
 		logger.Warn(fmt.Sprintf(
 			"total slashing amount (%s) is greater than supplier %q stake (%s)",
 			totalSlashingCoin,
@@ -392,7 +396,7 @@ func (k Keeper) slashSupplierStake(
 
 	supplierToSlash.Stake = &remainingStakeCoin
 
-	logger.Warn(fmt.Sprintf(
+	logger.Info(fmt.Sprintf(
 		"slashing supplier owner with address %q operated by %q by %s, remaining stake: %s",
 		supplierToSlash.GetOwnerAddress(),
 		supplierToSlash.GetOperatorAddress(),
@@ -403,10 +407,12 @@ func (k Keeper) slashSupplierStake(
 	// Check if the supplier's stake is below the minimum and unstake it if necessary.
 	// TODO_BETA(@bryanchriswhite, #612): Use minimum stake governance parameter once available.
 	minSupplierStakeCoin := sdk.NewCoin(volatile.DenomuPOKT, math.NewInt(1))
-	// TODO_MAINNET(@red-0ne): Since SettlePendingClaims is not necessarily called
-	// at session end height so the unstaked supplier may not be immediately removed.
-	// Ensure that Gateways and Applications do not interact with a supplier that
-	// is below the minimum stake.
+	// TODO_MAINNET(@red-0ne): SettlePendingClaims is called at the end of every block,
+	// but not every block corresponds to the end of a session. This may lead to a situation
+	// where a force unstaked supplier may still be able to interact with a Gateway or Application.
+	// However, claims are only processed when sessions end.
+	// INVESTIGATION: This requires an investigation if the race condition exists
+	// at all and fixed only if it does.
 	if supplierToSlash.GetStake().IsLT(minSupplierStakeCoin) {
 		sharedParams := k.sharedKeeper.GetParams(ctx)
 		sdkCtx := sdk.UnwrapSDKContext(ctx)
@@ -423,7 +429,7 @@ func (k Keeper) slashSupplierStake(
 
 		// TODO_MAINNET: Should we just remove the supplier if the stake is
 		// below the minimum, at the risk of making the off-chain actors have an
-		// inconsistent session supplier list?
+		// inconsistent session supplier list? See the comment above for more details.
 		supplierToSlash.UnstakeSessionEndHeight = unstakeSessionEndHeight
 
 	}

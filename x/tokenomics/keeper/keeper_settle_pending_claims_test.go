@@ -377,14 +377,13 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOn
 	ctx := s.ctx
 	sharedParams := s.keepers.SharedKeeper.GetParams(ctx)
 
-	belowStakeAmountProofMissingPenalty := sdk.NewCoin(volatile.DenomuPOKT, math.NewInt(supplierStake/2))
-
 	proofParams := s.keepers.ProofKeeper.GetParams(ctx)
 	// Set the proof parameters such that s.claim DOES NOT require a proof because:
 	// - proof_request_probability is 100%
 	proofParams.ProofRequestProbability = 1
 	// Set the proof missing penalty to half the supplier's stake so it is not
 	// unstaked when being slashed.
+	belowStakeAmountProofMissingPenalty := sdk.NewCoin(volatile.DenomuPOKT, math.NewInt(supplierStake/2))
 	proofParams.ProofMissingPenalty = &belowStakeAmountProofMissingPenalty
 	err := s.keepers.ProofKeeper.SetParams(ctx, proofParams)
 	require.NoError(t, err)
