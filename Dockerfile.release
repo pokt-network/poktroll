@@ -1,13 +1,10 @@
 # This Dockerfile is used to build container image for production workloads.
-# It relies on the binaries produced by `cosmovisor_cross_compile`, `ignite_release` and `ignite_release_extract_binaries` make targets.
-FROM alpine:3.19
+# The image depends on `cosmovisor_cross_compile`, `ignite_release` and `ignite_release_extract_binaries` make targets.
+FROM debian:bookworm
 ARG TARGETARCH
 
 # Use `1025` G/UID so users can switch between this and `heighliner` image without a need to chown the files.
-RUN addgroup --gid 1025 -S pocket && adduser --uid 1025 -S pocket -G pocket
-
-# Install gcompat to provide compatibility with glibc binary on amd64
-RUN apk add --no-cache gcompat
+RUN groupadd -g 1025 pocket && useradd -u 1025 -g pocket -M -s /sbin/nologin pocket
 
 COPY --chown=pocket:pocket release_binaries/poktroll_linux_$TARGETARCH /bin/poktrolld
 COPY --chown=pocket:pocket tmp/cosmovisor-linux-$TARGETARCH /bin/cosmovisor
