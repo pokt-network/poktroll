@@ -76,6 +76,20 @@ func (s *BaseIntegrationSuite) FundAddress(
 	amountUpokt int64,
 ) {
 	coinUpokt := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, amountUpokt)
+
+	// TODO_IN_THIS_COMMIT: HACK: get a reference to the bank keeper directly
+	// via the integration app to send tokens.
+
+	//faucetAddr := cosmostypes.MustAccAddressFromBech32(integration.FaucetAddrStr)
+	//
+	//err := s.GetApp().GetBankKeeper().SendCoins(
+	//	s.GetApp().GetSdkCtx(),
+	//	faucetAddr,
+	//	addr,
+	//	cosmostypes.NewCoins(coinUpokt),
+	//)
+	//require.NoError(t, err)
+
 	sendMsg := &banktypes.MsgSend{
 		FromAddress: integration.FaucetAddrStr,
 		ToAddress:   addr.String(),

@@ -173,6 +173,7 @@ func (m *UndelegatingGatewayList) GetGatewayAddresses() []string {
 }
 
 // PendingTransfer is used to store the details of a pending transfer.
+// It is only intended to be used inside of an Application object.
 type PendingApplicationTransfer struct {
 	DestinationAddress string `protobuf:"bytes,1,opt,name=destination_address,json=destinationAddress,proto3" json:"destination_address,omitempty"`
 	SessionEndHeight   uint64 `protobuf:"varint,2,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height,omitempty"`

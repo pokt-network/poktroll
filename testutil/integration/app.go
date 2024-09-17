@@ -20,6 +20,7 @@ import (
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/cosmos/cosmos-sdk/baseapp"
+	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	addresscodec "github.com/cosmos/cosmos-sdk/codec/address"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -30,6 +31,7 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
+	"github.com/cosmos/cosmos-sdk/types/tx"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	authsims "github.com/cosmos/cosmos-sdk/x/auth/simulation"
@@ -90,6 +92,18 @@ var (
 	FaucetAmountUpokt = int64(math2.MaxInt64)
 )
 
+type IntegrationApp interface {
+	// ... calls the respective msg handler each msg is a tx and each call commits and finalizes a block.
+	// CommitMsg(cosmostypes.Msg) *cosmostypes.Result
+	CommitMsg(...cosmostypes.Msg) *abci.ResponseFinalizeBlock
+
+	// ... txResponse represents a tx that has NOT been passed to DeliverTx ABCI method yet.
+	// ... accumulating txs between FinalizeBlock() calls.
+	EnqueueMsg(cosmostypes.Msg) (txResponse *cosmostypes.TxResponse)
+	// ... is where msg handlers will be called.
+	CommitPendingMsgs() *abci.ResponseFinalizeBlock
+}
+
 // App is a test application that can be used to test the behaviour when none
 // of the modules are mocked and their integration (cross module interaction)
 // needs to be validated.
@@ -106,6 +120,15 @@ type App struct {
 	keyRing           keyring.Keyring
 	ringClient        crypto.RingClient
 	preGeneratedAccts *testkeyring.PreGeneratedAccountIterator
+
+	txCfg client.TxConfig
+	// TODO_IN_THIS_COMMIT: godoc
+	collectedMsgs []sdk.Msg
+	// TODO_IN_THIS_COMMIT: godoc
+	collectedTxs []tx.Tx
+
+	// TODO_IN_THIS_COMMIT: scary comment regarding how this is hack..
+	bankKeeper bankkeeper.Keeper
 
 	// Some default helper fixtures for general testing.
 	// They're publicly exposed and should/could be improved and expand on
@@ -130,6 +153,7 @@ func NewIntegrationApp(
 	t *testing.T,
 	sdkCtx sdk.Context,
 	cdc codec.Codec,
+	txCfg client.TxConfig,
 	registry codectypes.InterfaceRegistry,
 	bApp *baseapp.BaseApp,
 	logger log.Logger,
@@ -141,6 +165,10 @@ func NewIntegrationApp(
 ) *App {
 	t.Helper()
 
+	// TODO_IN_THIS_COMMIT: make sure this is the best place for this.
+	bApp.SetInterfaceRegistry(registry)
+
+	// TODO_IMPROVE: use moduleManager.ModuleNames() to populate allModuleNames.
 	moduleManager := module.NewManagerFromMap(modules)
 	basicModuleManager := module.NewBasicManagerFromManager(moduleManager, nil)
 	basicModuleManager.RegisterInterfaces(registry)
@@ -196,12 +224,15 @@ func NewIntegrationApp(
 	_, err = bApp.Commit()
 	require.NoError(t, err, "failed to commit")
 
+	bApp.SetTxEncoder(txCfg.TxEncoder())
+
 	return &App{
 		BaseApp:       bApp,
 		logger:        logger,
 		authority:     authority,
 		sdkCtx:        &sdkCtx,
 		cdc:           cdc,
+		txCfg:         txCfg,
 		moduleManager: *moduleManager,
 		queryHelper:   queryHelper,
 	}
@@ -250,6 +281,9 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 
 	// Prepare the codec
 	cdc := codec.NewProtoCodec(registry)
+
+	// Prepare the TxConfig
+	txCfg := authtx.NewTxConfig(cdc, authtx.DefaultSignModes)
 
 	// Prepare all the store keys
 	storeKeys := storetypes.NewKVStoreKeys(
@@ -521,6 +555,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		t,
 		sdkCtx,
 		cdc,
+		txCfg,
 		registry,
 		bApp,
 		logger,
@@ -530,6 +565,11 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		msgRouter,
 		queryHelper,
 	)
+
+	// TODO_IN_THIS_COMMIT: HACK: ...
+	integrationApp.bankKeeper = bankKeeper
+
+	msgRouter = integrationApp.MsgServiceRouter()
 
 	// Register the message servers
 	banktypes.RegisterMsgServer(msgRouter, bankkeeper.NewMsgServerImpl(bankKeeper))
@@ -696,7 +736,16 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	// to the next block.
 	integrationApp.NextBlock(t)
 
+	bankParmsRes, err := bankKeeper.Params(sdkCtx, &banktypes.QueryParamsRequest{})
+	require.NoError(t, err)
+	t.Logf(">>> app construction bankParams: %+v", bankParmsRes)
+
 	return integrationApp
+}
+
+// TODO_IN_THIS_COMMIT: HACK: ...
+func (app *App) GetBankKeeper() bankkeeper.Keeper {
+	return app.bankKeeper
 }
 
 // GetRingClient returns the ring client used by the application.
@@ -745,43 +794,59 @@ func (app *App) QueryHelper() *baseapp.QueryServiceTestHelper {
 func (app *App) RunMsg(t *testing.T, msg sdk.Msg, option ...RunOption) *codectypes.Any {
 	t.Helper()
 
+	app.collectedMsgs = append(app.collectedMsgs, msg)
+
 	// set options
 	cfg := &RunConfig{}
 	for _, opt := range option {
 		opt(cfg)
 	}
 
-	// If configured, commit after the message is executed.
-	if cfg.AutomaticCommit {
-		defer func() {
-			_, err := app.Commit()
-			if cfg.ErrorAssertion != nil && err != nil {
-				cfg.ErrorAssertion(err)
-				return
-			}
-
-			require.NoError(t, err, "failed to commit")
-			app.nextBlockUpdateCtx()
-		}()
-	}
-
 	// If configured, finalize the block after the message is executed.
-	if cfg.AutomaticFinalizeBlock {
-		finalizedBlockResponse, err := app.FinalizeBlock(&cmtabcitypes.RequestFinalizeBlock{
-			Height: app.LastBlockHeight() + 1,
-			DecidedLastCommit: cmtabcitypes.CommitInfo{
-				Votes: []cmtabcitypes.VoteInfo{{}},
-			},
-		})
+	//if cfg.AutomaticFinalizeBlock {
+	//	defer func() {
+	// TODO_IN_THIS_COMMIT: refactor & de-dup
+	// Construct a tx builder.
+	txBuilder := app.txCfg.NewTxBuilder()
+	err := txBuilder.SetMsgs(app.reapMsgs()...)
+	require.NoError(t, err)
 
-		if cfg.ErrorAssertion != nil && err != nil {
-			cfg.ErrorAssertion(err)
-			return nil
-		}
+	// Encode the tx.
+	txBz, err := app.TxEncode(txBuilder.GetTx())
+	require.NoError(t, err)
 
-		require.NoError(t, err, "failed to finalize block")
-		app.emitEvents(t, finalizedBlockResponse)
+	txsBz := [][]byte{txBz}
+
+	finalizedBlockResponse, err := app.FinalizeBlock(&cmtabcitypes.RequestFinalizeBlock{
+		Height: app.LastBlockHeight() + 1,
+		DecidedLastCommit: cmtabcitypes.CommitInfo{
+			Votes: []cmtabcitypes.VoteInfo{{}},
+		},
+		Txs: txsBz,
+	})
+
+	if cfg.ErrorAssertion != nil && err != nil {
+		cfg.ErrorAssertion(err)
 	}
+
+	require.NoError(t, err, "failed to finalize block")
+	app.emitEvents(t, finalizedBlockResponse)
+	//	}()
+	//}
+
+	// If configured, commit after the message is executed.
+	//if cfg.AutomaticCommit {
+	//	defer func() {
+	_, err = app.Commit()
+	if cfg.ErrorAssertion != nil && err != nil {
+		cfg.ErrorAssertion(err)
+		return nil
+	}
+
+	require.NoError(t, err, "failed to commit")
+	app.nextBlockUpdateCtx()
+	//	}()
+	//}
 
 	app.logger.Info("Running msg", "msg", msg.String())
 
@@ -796,6 +861,15 @@ func (app *App) RunMsg(t *testing.T, msg sdk.Msg, option ...RunOption) *codectyp
 	}
 
 	require.NoError(t, err, "failed to execute message %s", sdk.MsgTypeURL(msg))
+
+	// Serialize and collect the transaction
+	//tx := sdk.NewTxBuilder().WithMsgs(msg) // Add msg to transaction builder
+	//tx2.NewAuxTxBuilder().SetMsgs()
+	//txBytes, err := app.BaseApp.TxEncoder()(tx.GetTx())
+	//require.NoError(t, err, "failed to encode transaction")
+
+	//app.collectedMsgs = append(app.collectedMsgs, msg)
+	//app.collectedTxs = append(app.collectedTxs, txBytes)
 
 	if len(msgResult.MsgResponses) > 0 {
 		msgResponse := msgResult.MsgResponses[0]
@@ -819,10 +893,18 @@ func (app *App) NextBlocks(t *testing.T, numBlocks int) {
 // of the context in the active app.
 func (app *App) emitEvents(t *testing.T, res *abci.ResponseFinalizeBlock) {
 	t.Helper()
+
 	for _, event := range res.Events {
 		testutilevents.QuoteEventMode(&event)
 		abciEvent := cosmostypes.Event(event)
 		app.sdkCtx.EventManager().EmitEvent(abciEvent)
+	}
+
+	for _, txResult := range res.TxResults {
+		for _, event := range txResult.Events {
+			abciEvent := cosmostypes.Event(event)
+			app.sdkCtx.EventManager().EmitEvent(abciEvent)
+		}
 	}
 }
 
@@ -831,9 +913,25 @@ func (app *App) emitEvents(t *testing.T, res *abci.ResponseFinalizeBlock) {
 func (app *App) NextBlock(t *testing.T) {
 	t.Helper()
 
+	//// TODO_IN_THIS_COMMIT: refactor & de-dup
+	//// Construct a tx builder.
+	//txBuilder := app.txCfg.NewTxBuilder()
+	//err := txBuilder.SetMsgs(app.reapMsgs()...)
+	//require.NoError(t, err)
+	//
+	//// Encode the tx.
+	//tx := txBuilder.GetTx()
+	//txBz, err := app.TxEncode(tx)
+	//require.NoError(t, err)
+	//
+	//txsBz := [][]byte{txBz}
+
 	finalizedBlockResponse, err := app.FinalizeBlock(&abci.RequestFinalizeBlock{
 		Height: app.sdkCtx.BlockHeight(),
-		Time:   app.sdkCtx.BlockTime()})
+		Time:   app.sdkCtx.BlockTime(),
+		//Txs:    txsBz,
+	})
+
 	require.NoError(t, err)
 	app.emitEvents(t, finalizedBlockResponse)
 
@@ -841,6 +939,15 @@ func (app *App) NextBlock(t *testing.T) {
 	require.NoError(t, err)
 
 	app.nextBlockUpdateCtx()
+}
+
+// TODO_IN_THIS_COMMIT: godoc..
+func (app *App) reapMsgs() (msgs []sdk.Msg) {
+	for _, msg := range app.collectedMsgs {
+		msgs = append(msgs, msg)
+	}
+	app.collectedMsgs = nil
+	return msgs
 }
 
 // nextBlockUpdateCtx is responsible for updating the app's (receiver) context
@@ -860,7 +967,7 @@ func (app *App) nextBlockUpdateCtx() {
 		Time:    header.Time,
 	}
 
-	newContext := app.BaseApp.NewUncachedContext(true, header).
+	newContext := app.NewUncachedContext(true, header).
 		WithBlockHeader(header).
 		WithHeaderInfo(headerInfo).
 		WithEventManager(prevCtx.EventManager()).

@@ -2319,6 +2319,7 @@ func (x *UndelegatingGatewayList) GetGatewayAddresses() []string {
 }
 
 // PendingTransfer is used to store the details of a pending transfer.
+// It is only intended to be used inside of an Application object.
 type PendingApplicationTransfer struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
