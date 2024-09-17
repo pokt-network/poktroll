@@ -49,15 +49,3 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 		return ErrTokenomicsParamNameInvalid.Wrapf("unsupported param %q", msg.Name)
 	}
 }
-
-// paramTypeIsInt64 checks if the parameter type is int64, returning an error if not.
-func (msg *MsgUpdateParam) paramTypeIsInt64() error {
-	if _, ok := msg.AsType.(*MsgUpdateParam_AsInt64); !ok {
-		return ErrTokenomicsParamInvalid.Wrapf(
-			"invalid type for param %q expected %T, got %T",
-			msg.Name, &MsgUpdateParam_AsInt64{},
-			msg.AsType,
-		)
-	}
-	return nil
-}
