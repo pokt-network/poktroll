@@ -203,7 +203,7 @@ func (k Keeper) deductProofSubmissionFee(ctx context.Context, supplierOperatorAd
 	return nil
 }
 
-// proofRequirementForClaim checks if a proof is required for a claim.
+// ProofRequirementForClaim checks if a proof is required for a claim.
 // If it is not, the claim will be settled without a proof.
 // If it is, the claim will only be settled if a valid proof is available.
 // TODO_BLOCKER(@olshansk, #419): Document safety assumptions of the probabilistic proofs mechanism.
@@ -229,7 +229,7 @@ func (k Keeper) ProofRequirementForClaim(ctx context.Context, claim *types.Claim
 
 	// Require a proof if the claim's compute units meets or exceeds the threshold.
 	//
-	// TODO_BLOCKER(@bryanchriswhite, #419): This is just VERY BASIC placeholder logic to have something
+	// TODO_BLOCKER(@Olshansk, #419): This is just VERY BASIC placeholder logic to have something
 	// in place while we implement proper probabilistic proofs. If you're reading it,
 	// do not overthink it and look at the documents linked in #419.
 	//
@@ -247,11 +247,13 @@ func (k Keeper) ProofRequirementForClaim(ctx context.Context, claim *types.Claim
 		return requirementReason, nil
 	}
 
+	// Hash of block when proof submission is allowed.
 	earliestProofCommitBlockHash, err := k.getEarliestSupplierProofCommitBlockHash(ctx, claim)
 	if err != nil {
 		return requirementReason, err
 	}
 
+	// The probability that a proof is required.
 	proofRequirementSampleValue, err := claim.GetProofRequirementSampleValue(earliestProofCommitBlockHash)
 	if err != nil {
 		return requirementReason, err
@@ -282,7 +284,7 @@ func (k Keeper) ProofRequirementForClaim(ctx context.Context, claim *types.Claim
 }
 
 // getEarliestSupplierProofCommitBlockHash returns the block hash of the earliest
-// block at which a claim might have its proof committed.
+// block at which a claim may have its proof committed.
 func (k Keeper) getEarliestSupplierProofCommitBlockHash(
 	ctx context.Context,
 	claim *types.Claim,
