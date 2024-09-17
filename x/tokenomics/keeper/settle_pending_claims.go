@@ -280,12 +280,12 @@ func (k Keeper) proofRequirementForClaim(ctx sdk.Context, claim *prooftypes.Clai
 	}
 
 	proofParams := k.proofKeeper.GetParams(ctx)
-	tokenomicsParams := k.GetParams(ctx)
+	sharedParams := k.sharedKeeper.GetParams(ctx)
 
 	// Retrieve the number of tokens claimed to compare against the threshold.
 	// Different services have varying compute_unit -> token multipliers, so the
 	// threshold value is done in a common unit denomination.
-	claimeduPOKT, err := tokenomics.NumComputeUnitsToCoin(tokenomicsParams, numClaimComputeUnits)
+	claimeduPOKT, err := tokenomics.NumComputeUnitsToCoin(sharedParams, numClaimComputeUnits)
 	if err != nil {
 		return requirementReason, err
 	}

@@ -20,10 +20,10 @@ func TestKeeper_IsProofRequired(t *testing.T) {
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 
 	proofParams := keepers.ProofKeeper.GetParams(sdkCtx)
-	tokenomicsParams := keepers.Keeper.GetParams(sdkCtx)
+	sharedParams := keepers.SharedKeeper.GetParams(sdkCtx)
 	// Set expected compute units to be below the proof requirement threshold to only
 	// exercise the probabilistic branch of the #isProofRequired() logic.
-	expectedComputeUnits := (proofParams.ProofRequirementThreshold.Amount.Uint64() - 1) / tokenomicsParams.ComputeUnitsToTokensMultiplier
+	expectedComputeUnits := (proofParams.ProofRequirementThreshold.Amount.Uint64() - 1) / sharedParams.ComputeUnitsToTokensMultiplier
 
 	var (
 		probability = prooftypes.DefaultProofRequestProbability

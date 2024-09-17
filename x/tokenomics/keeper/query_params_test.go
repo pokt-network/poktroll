@@ -16,7 +16,6 @@ func TestGetParams(t *testing.T) {
 
 	require.NoError(t, k.SetParams(ctx, params))
 	require.EqualValues(t, params, k.GetParams(ctx))
-	require.EqualValues(t, params.ComputeUnitsToTokensMultiplier, k.ComputeUnitsToTokensMultiplier(ctx))
 }
 
 func TestParamsQuery(t *testing.T) {

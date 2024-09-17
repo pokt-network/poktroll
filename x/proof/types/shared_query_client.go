@@ -126,3 +126,12 @@ func (sqc *SharedKeeperQueryClient) GetEarliestSupplierProofCommitHeight(
 		supplierOperatorAddr,
 	), nil
 }
+
+// GetComputeUnitsToTokensMultiplier returns the multiplier used to convert compute units to tokens.
+//
+// TODO_BLOCKER(@bryanchriswhite, #543): We don't really want to use the current value of the params.
+// Instead, we should be using the value that the params had for the session given by blockHeight.
+func (sqc *SharedKeeperQueryClient) GetComputeUnitsToTokensMultiplier(ctx context.Context) (uint64, error) {
+	sharedParams := sqc.sharedKeeper.GetParams(ctx)
+	return sharedParams.GetComputeUnitsToTokensMultiplier(), nil
+}

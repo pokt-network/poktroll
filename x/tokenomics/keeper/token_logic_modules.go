@@ -229,12 +229,12 @@ func (k Keeper) ProcessTokenLogicModules(
 		return tokenomicstypes.ErrTokenomicsServiceNotFound.Wrapf("service with ID %q not found", sessionHeader.ServiceId)
 	}
 
-	tokenomicsParams := k.GetParams(ctx)
+	sharedParams := k.sharedKeeper.GetParams(ctx)
 
 	// Determine the total number of tokens being claimed (i.e. for the work completed)
 	// by the supplier for the amount of work they did to service the application
 	// in the session.
-	claimSettlementCoin, err = tokenomics.NumComputeUnitsToCoin(tokenomicsParams, numClaimComputeUnits)
+	claimSettlementCoin, err = tokenomics.NumComputeUnitsToCoin(sharedParams, numClaimComputeUnits)
 	if err != nil {
 		return err
 	}

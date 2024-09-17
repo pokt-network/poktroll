@@ -6,7 +6,6 @@ import (
 
 	"github.com/golang/mock/gomock"
 
-	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
@@ -41,13 +40,6 @@ func NewTestTokenomicsQueryClient(
 			}
 
 			return relayDifficulty, nil
-		}).
-		AnyTimes()
-
-	tokenomicsParams := tokenomicstypes.DefaultParams()
-	tokenomicsQuerier.EXPECT().GetParams(gomock.Any()).
-		DoAndReturn(func(_ context.Context) (client.TokenomicsParams, error) {
-			return &tokenomicsParams, nil
 		}).
 		AnyTimes()
 

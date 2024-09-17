@@ -5,12 +5,13 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/app/volatile"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 // NumComputeUnitsToCoin converts compute units to uPOKT to mint based on global
 // network parameters.
-func NumComputeUnitsToCoin(params tokenomicstypes.Params, numClaimComputeUnits uint64) (sdk.Coin, error) {
+func NumComputeUnitsToCoin(params sharedtypes.Params, numClaimComputeUnits uint64) (sdk.Coin, error) {
 	// CUTTM is a GLOBAL network wide parameter.
 	upoktAmount := math.NewInt(int64(numClaimComputeUnits * params.GetComputeUnitsToTokensMultiplier()))
 	if upoktAmount.IsNegative() {
