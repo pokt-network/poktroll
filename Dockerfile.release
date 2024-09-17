@@ -4,7 +4,7 @@ FROM debian:bookworm
 ARG TARGETARCH
 
 # Use `1025` G/UID so users can switch between this and `heighliner` image without a need to chown the files.
-RUN groupadd -g 1025 pocket && useradd -u 1025 -g pocket -M -s /sbin/nologin pocket
+RUN groupadd -g 1025 pocket && useradd -u 1025 -g pocket -m -s /sbin/nologin pocket
 
 COPY --chown=pocket:pocket release_binaries/poktroll_linux_$TARGETARCH /bin/poktrolld
 COPY --chown=pocket:pocket tmp/cosmovisor-linux-$TARGETARCH /bin/cosmovisor
