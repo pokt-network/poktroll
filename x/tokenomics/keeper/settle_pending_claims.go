@@ -72,7 +72,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 		proof, isProofFound := k.proofKeeper.GetProof(ctx, sessionId, claim.SupplierOperatorAddress)
 		// Using the probabilistic proofs approach, determine if this expiring
 		// claim required an on-chain proof
-		proofRequirement, err = k.proofRequirementForClaim(ctx, claim)
+		proofRequirement, err = k.proofKeeper.ProofRequirementForClaim(ctx, &claim)
 		if err != nil {
 			return settledResult, expiredResult, err
 		}

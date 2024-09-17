@@ -15,6 +15,7 @@ import (
 
 	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/proof/types"
+	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -101,6 +102,16 @@ func (k msgServer) SubmitProof(
 	claim, err = k.queryAndValidateClaimForProof(ctx, proof.SessionHeader, proof.SupplierOperatorAddress)
 	if err != nil {
 		return nil, status.Error(codes.Internal, types.ErrProofClaimNotFound.Wrap(err.Error()).Error())
+	}
+
+	// Check if a proof is required for the claim.
+	proofRequirement, err := k.ProofRequirementForClaim(ctx, claim)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	if proofRequirement == types.ProofRequirementReason_NOT_REQUIRED {
+		logger.Warn("trying to submit a proof for a claim that does not require one")
+		return nil, status.Error(codes.FailedPrecondition, types.ErrProofNotRequired.Error())
 	}
 
 	// Get metadata for the event we want to emit
@@ -193,4 +204,113 @@ func (k Keeper) deductProofSubmissionFee(ctx context.Context, supplierOperatorAd
 	}
 
 	return nil
+}
+
+// ProofRequirementForClaim checks if a proof is required for a claim.
+// If it is not, the claim will be settled without a proof.
+// If it is, the claim will only be settled if a valid proof is available.
+// TODO_BLOCKER(@olshansk, #419): Document safety assumptions of the probabilistic proofs mechanism.
+func (k Keeper) ProofRequirementForClaim(ctx context.Context, claim *types.Claim) (_ types.ProofRequirementReason, err error) {
+	logger := k.logger.With("method", "proofRequirementForClaim")
+
+	var requirementReason = types.ProofRequirementReason_NOT_REQUIRED
+
+	// Defer telemetry calls so that they reference the final values the relevant variables.
+	defer func() {
+		telemetry.ProofRequirementCounter(requirementReason, err)
+	}()
+
+	// NB: Assumption that claim is non-nil and has a valid root sum because it
+	// is retrieved from the store and validated, on-chain, at time of creation.
+	var numClaimComputeUnits uint64
+	numClaimComputeUnits, err = claim.GetNumComputeUnits()
+	if err != nil {
+		return requirementReason, err
+	}
+
+	proofParams := k.GetParams(ctx)
+
+	// Require a proof if the claim's compute units meets or exceeds the threshold.
+	//
+	// TODO_BLOCKER(@Olshansk, #419): This is just VERY BASIC placeholder logic to have something
+	// in place while we implement proper probabilistic proofs. If you're reading it,
+	// do not overthink it and look at the documents linked in #419.
+	//
+	// TODO_IMPROVE(@bryanchriswhite, @red-0ne): It might make sense to include
+	// whether there was a proof submission error downstream from here. This would
+	// require a more comprehensive metrics API.
+	if numClaimComputeUnits >= proofParams.GetProofRequirementThreshold() {
+		requirementReason = types.ProofRequirementReason_THRESHOLD
+
+		logger.Info(fmt.Sprintf(
+			"claim requires proof due to compute units (%d) exceeding threshold (%d)",
+			numClaimComputeUnits,
+			proofParams.GetProofRequirementThreshold(),
+		))
+		return requirementReason, nil
+	}
+
+	// Hash of block when proof submission is allowed.
+	earliestProofCommitBlockHash, err := k.getEarliestSupplierProofCommitBlockHash(ctx, claim)
+	if err != nil {
+		return requirementReason, err
+	}
+
+	// The probability that a proof is required.
+	proofRequirementSampleValue, err := claim.GetProofRequirementSampleValue(earliestProofCommitBlockHash)
+	if err != nil {
+		return requirementReason, err
+	}
+
+	// Require a proof probabilistically based on the proof_request_probability param.
+	// NB: A random value between 0 and 1 will be less than or equal to proof_request_probability
+	// with probability equal to the proof_request_probability.
+	if proofRequirementSampleValue <= proofParams.GetProofRequestProbability() {
+		requirementReason = types.ProofRequirementReason_PROBABILISTIC
+
+		logger.Info(fmt.Sprintf(
+			"claim requires proof due to random sample (%.2f) being less than or equal to probability (%.2f)",
+			proofRequirementSampleValue,
+			proofParams.GetProofRequestProbability(),
+		))
+		return requirementReason, nil
+	}
+
+	logger.Info(fmt.Sprintf(
+		"claim does not require proof due to compute units (%d) being less than the threshold (%d) and random sample (%.2f) being greater than probability (%.2f)",
+		numClaimComputeUnits,
+		proofParams.GetProofRequirementThreshold(),
+		proofRequirementSampleValue,
+		proofParams.GetProofRequestProbability(),
+	))
+	return requirementReason, nil
+}
+
+// getEarliestSupplierProofCommitBlockHash returns the block hash of the earliest
+// block at which a claim may have its proof committed.
+func (k Keeper) getEarliestSupplierProofCommitBlockHash(
+	ctx context.Context,
+	claim *types.Claim,
+) (blockHash []byte, err error) {
+	sharedParams, err := k.sharedQuerier.GetParams(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	sessionEndHeight := claim.GetSessionHeader().GetSessionEndBlockHeight()
+	supplierOperatorAddress := claim.GetSupplierOperatorAddress()
+
+	proofWindowOpenHeight := shared.GetProofWindowOpenHeight(sharedParams, sessionEndHeight)
+	proofWindowOpenBlockHash := k.sessionKeeper.GetBlockHash(ctx, proofWindowOpenHeight)
+
+	// TODO_TECHDEBT(@red-0ne): Update the method header of this function to accept (sharedParams, Claim, BlockHash).
+	// After doing so, please review all calling sites and simplify them accordingly.
+	earliestSupplierProofCommitHeight := shared.GetEarliestSupplierProofCommitHeight(
+		sharedParams,
+		sessionEndHeight,
+		proofWindowOpenBlockHash,
+		supplierOperatorAddress,
+	)
+
+	return k.sessionKeeper.GetBlockHash(ctx, earliestSupplierProofCommitHeight), nil
 }
