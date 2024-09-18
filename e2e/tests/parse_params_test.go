@@ -114,8 +114,6 @@ func (s *suite) newTokenomicsMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 
 	for paramName, paramValue := range params {
 		switch paramName {
-		case tokenomicstypes.ParamComputeUnitsToTokensMultiplier:
-			msgUpdateParams.Params.ComputeUnitsToTokensMultiplier = uint64(paramValue.value.(int64))
 		default:
 			s.Fatalf("ERROR: unexpected %q type param name %q", paramValue.typeStr, paramName)
 		}
@@ -138,7 +136,7 @@ func (s *suite) newProofMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 		case prooftypes.ParamProofRequestProbability:
 			msgUpdateParams.Params.ProofRequestProbability = paramValue.value.(float32)
 		case prooftypes.ParamProofRequirementThreshold:
-			msgUpdateParams.Params.ProofRequirementThreshold = uint64(paramValue.value.(int64))
+			msgUpdateParams.Params.ProofRequirementThreshold = paramValue.value.(*cosmostypes.Coin)
 		case prooftypes.ParamProofMissingPenalty:
 			msgUpdateParams.Params.ProofMissingPenalty = paramValue.value.(*cosmostypes.Coin)
 		case prooftypes.ParamProofSubmissionFee:
@@ -176,6 +174,8 @@ func (s *suite) newSharedMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 			msgUpdateParams.Params.SupplierUnbondingPeriodSessions = uint64(paramValue.value.(int64))
 		case sharedtypes.ParamApplicationUnbondingPeriodSessions:
 			msgUpdateParams.Params.ApplicationUnbondingPeriodSessions = uint64(paramValue.value.(int64))
+		case sharedtypes.ParamComputeUnitsToTokensMultiplier:
+			msgUpdateParams.Params.ComputeUnitsToTokensMultiplier = uint64(paramValue.value.(int64))
 		default:
 			s.Fatalf("ERROR: unexpected %q type param name %q", paramValue.typeStr, paramName)
 		}

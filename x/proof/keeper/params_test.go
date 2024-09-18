@@ -102,7 +102,7 @@ func TestParams_ValidateProofRequirementThreshold(t *testing.T) {
 		},
 		{
 			desc:                      "valid ProofRequirementThreshold",
-			proofRequirementThreshold: uint64(20),
+			proofRequirementThreshold: &cosmostypes.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(20)},
 		},
 	}
 

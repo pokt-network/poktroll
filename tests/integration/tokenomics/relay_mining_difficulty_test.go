@@ -26,7 +26,7 @@ func init() {
 }
 
 func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T) {
-	var claimWindowOpenBlockHash, proofWindowOpenBlockHash, proofPathSeedBlockHash []byte
+	var claimWindowOpenBlockHash, proofWindowOpenBlockHash []byte
 
 	// Create a new integration app
 	integrationApp := integration.NewCompleteIntegrationApp(t)
@@ -84,19 +84,6 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	numBlocksUntilProofWindowOpenHeight := earliestSupplierProofCommitHeight - currentBlockHeight
 	require.Greater(t, numBlocksUntilProofWindowOpenHeight, int64(0), "unexpected non-positive number of blocks until the earliest proof commit height")
 	integrationApp.NextBlocks(t, int(numBlocksUntilProofWindowOpenHeight))
-
-	// Construct a new proof message and commit it
-	createProofMsg := prooftypes.MsgSubmitProof{
-		SupplierOperatorAddress: integrationApp.DefaultSupplier.OperatorAddress,
-		SessionHeader:           session.Header,
-		Proof:                   getProof(t, trie, proofPathSeedBlockHash, session.GetHeader().GetSessionId()),
-	}
-	result = integrationApp.RunMsg(t,
-		&createProofMsg,
-		integration.WithAutomaticFinalizeBlock(),
-		integration.WithAutomaticCommit(),
-	)
-	require.NotNil(t, result, "unexpected nil result when submitting a MsgSubmitProof tx")
 
 	// Wait until the proof window is closed
 	currentBlockHeight = sdkCtx.BlockHeight()
@@ -208,25 +195,4 @@ func prepareSMST(
 	}
 
 	return trie
-}
-
-// getProof returns a proof for the given session for the empty path.
-// If there is only one relay in the trie, the proof will be for that single
-// relay since it is "closest" to any path provided, empty or not.
-func getProof(
-	t *testing.T,
-	trie *smt.SMST,
-	pathSeedBlockHash []byte,
-	sessionId string,
-) []byte {
-	t.Helper()
-
-	path := protocol.GetPathForProof(pathSeedBlockHash, sessionId)
-	proof, err := trie.ProveClosest(path)
-	require.NoError(t, err)
-
-	proofBz, err := proof.Marshal()
-	require.NoError(t, err)
-
-	return proofBz
 }

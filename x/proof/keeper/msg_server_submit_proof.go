@@ -17,6 +17,7 @@ import (
 	"github.com/pokt-network/poktroll/x/proof/types"
 	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/poktroll/x/tokenomics"
 )
 
 // SubmitProof is the server handler to submit and store a proof on-chain.
@@ -222,6 +223,7 @@ func (k Keeper) ProofRequirementForClaim(ctx context.Context, claim *types.Claim
 
 	// NB: Assumption that claim is non-nil and has a valid root sum because it
 	// is retrieved from the store and validated, on-chain, at time of creation.
+	// TODO(@adshmh, #781): Ensure we're using the scaled/estimated compute units here.
 	var numClaimComputeUnits uint64
 	numClaimComputeUnits, err = claim.GetNumComputeUnits()
 	if err != nil {
@@ -229,22 +231,27 @@ func (k Keeper) ProofRequirementForClaim(ctx context.Context, claim *types.Claim
 	}
 
 	proofParams := k.GetParams(ctx)
+	sharedParams := k.sharedKeeper.GetParams(ctx)
+
+	// Retrieve the number of tokens claimed to compare against the threshold.
+	// Different services have varying compute_unit -> token multipliers, so the
+	// threshold value is done in a common unit denomination.
+	claimeduPOKT, err := tokenomics.NumComputeUnitsToCoin(sharedParams, numClaimComputeUnits)
+	if err != nil {
+		return requirementReason, err
+	}
 
 	// Require a proof if the claim's compute units meets or exceeds the threshold.
-	//
-	// TODO_BLOCKER(@Olshansk, #419): This is just VERY BASIC placeholder logic to have something
-	// in place while we implement proper probabilistic proofs. If you're reading it,
-	// do not overthink it and look at the documents linked in #419.
-	//
-	// TODO_IMPROVE(@bryanchriswhite, @red-0ne): It might make sense to include
-	// whether there was a proof submission error downstream from here. This would
-	// require a more comprehensive metrics API.
-	if numClaimComputeUnits >= proofParams.GetProofRequirementThreshold() {
+	// TODO_MAINNET(@olshansk, @red-0ne): Should the threshold be dependant on the stake as well
+	// so we slash proportional to the compute units?
+	// TODO_IMPROVE(@red-0ne): It might make sense to include whether there was a proof
+	// submission error downstream from here. This would require a more comprehensive metrics API.
+	if claimeduPOKT.Amount.GTE(proofParams.GetProofRequirementThreshold().Amount) {
 		requirementReason = types.ProofRequirementReason_THRESHOLD
 
 		logger.Info(fmt.Sprintf(
-			"claim requires proof due to compute units (%d) exceeding threshold (%d)",
-			numClaimComputeUnits,
+			"claim requires proof due to claimed tokens (%s) exceeding threshold (%s)",
+			claimeduPOKT,
 			proofParams.GetProofRequirementThreshold(),
 		))
 		return requirementReason, nil
@@ -277,8 +284,8 @@ func (k Keeper) ProofRequirementForClaim(ctx context.Context, claim *types.Claim
 	}
 
 	logger.Info(fmt.Sprintf(
-		"claim does not require proof due to compute units (%d) being less than the threshold (%d) and random sample (%.2f) being greater than probability (%.2f)",
-		numClaimComputeUnits,
+		"claim does not require proof due to claimed amount (%s) being less than the threshold (%s) and random sample (%.2f) being greater than probability (%.2f)",
+		claimeduPOKT,
 		proofParams.GetProofRequirementThreshold(),
 		proofRequirementSampleValue,
 		proofParams.GetProofRequestProbability(),

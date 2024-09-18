@@ -7,9 +7,12 @@
         "params": {
           "min_relay_difficulty_bits": "0",
           "proof_request_probability": "0.25",
-          "proof_requirement_threshold": "20",
+          "proof_requirement_threshold":  {
+            "denom": "upokt",
+            "amount": "20000000"
+          },
           "proof_missing_penalty": {
-            "amount": "320",
+            "amount": "320000000",
             "denom": "upokt"
           },
           "proof_submission_fee": {

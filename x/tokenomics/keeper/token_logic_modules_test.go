@@ -64,7 +64,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 	supplierModuleAddress := authtypes.NewModuleAddress(suppliertypes.ModuleName).String()
 
 	// Set compute_units_to_tokens_multiplier to simplify expectation calculations.
-	err := keepers.Keeper.SetParams(ctx, tokenomicstypes.Params{
+	err := keepers.SharedKeeper.SetParams(ctx, sharedtypes.Params{
 		ComputeUnitsToTokensMultiplier: globalComputeUnitsToTokensMultiplier,
 	})
 	require.NoError(t, err)
@@ -194,7 +194,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Invalid_SupplierExceedsMaxCl
 	supplierModuleAddress := authtypes.NewModuleAddress(suppliertypes.ModuleName).String()
 
 	// Set compute_units_to_tokens_multiplier to simplify expectation calculations.
-	err := keepers.Keeper.SetParams(ctx, tokenomicstypes.Params{
+	err := keepers.SharedKeeper.SetParams(ctx, sharedtypes.Params{
 		ComputeUnitsToTokensMultiplier: globalComputeUnitsToTokensMultiplier,
 	})
 	require.NoError(t, err)
@@ -329,7 +329,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	keepers.SetService(ctx, *service)
 
 	// Set compute_units_to_tokens_multiplier to simplify expectation calculations.
-	err := keepers.Keeper.SetParams(ctx, tokenomicstypes.Params{
+	err := keepers.SharedKeeper.SetParams(ctx, sharedtypes.Params{
 		ComputeUnitsToTokensMultiplier: globalComputeUnitsToTokensMultiplier,
 	})
 	require.NoError(t, err)
