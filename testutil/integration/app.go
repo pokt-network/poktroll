@@ -88,6 +88,13 @@ var (
 	// FaucetAmountUpokt is the number of upokt coins that the faucet account
 	// is funded with.
 	FaucetAmountUpokt = int64(math2.MaxInt64)
+
+	// defaultIntegrationAppConfig is the default configuration for the integration app.
+	defaultIntegrationAppConfig = IntegrationAppConfig{
+		InitChainerModuleFns: []InitChainerModuleFn{
+			newFaucetInitChainerFn(FaucetAddrStr, FaucetAmountUpokt),
+		},
+	}
 )
 
 // App is a test application that can be used to test the behaviour when none
@@ -119,13 +126,6 @@ type App struct {
 	DefaultSupplierKeyringKeyringUid string
 }
 
-// NewBaseApp creates a new instance of the base application with the given
-// codec, logger and database.
-func NewBaseApp(cdc codec.Codec, logger log.Logger, db dbm.DB) *baseapp.BaseApp {
-	txConfig := authtx.NewTxConfig(cdc, authtx.DefaultSignModes)
-	return baseapp.NewBaseApp(appName, logger, db, txConfig.TxDecoder(), baseapp.SetChainID(appName))
-}
-
 // NewIntegrationApp creates a new instance of the App with the provided details
 // on how the modules should be configured.
 func NewIntegrationApp(
@@ -141,8 +141,14 @@ func NewIntegrationApp(
 	keys map[string]*storetypes.KVStoreKey,
 	msgRouter *baseapp.MsgServiceRouter,
 	queryHelper *baseapp.QueryServiceTestHelper,
+	opts ...IntegrationAppOption,
 ) *App {
 	t.Helper()
+
+	cfg := &defaultIntegrationAppConfig
+	for _, opt := range opts {
+		opt(cfg)
+	}
 
 	bApp.SetInterfaceRegistry(registry)
 
@@ -151,9 +157,6 @@ func NewIntegrationApp(
 	basicModuleManager := module.NewBasicManagerFromManager(moduleManager, nil)
 	basicModuleManager.RegisterInterfaces(registry)
 
-	// TODO_HACK(@Olshansk): I needed to set the height to 2 so downstream logic
-	// works. I'm not 100% sure why, but believe it's a result of genesis and the
-	// first block being special and iterated over during the setup process.
 	cometHeader := cmtproto.Header{
 		ChainID: appName,
 		Height:  1,
@@ -177,6 +180,10 @@ func NewIntegrationApp(
 			for _, mod := range modules {
 				if m, ok := mod.(module.HasGenesis); ok {
 					m.InitGenesis(ctx, cdc, m.DefaultGenesis(cdc))
+				}
+
+				for _, fn := range cfg.InitChainerModuleFns {
+					fn(ctx, cdc, mod)
 				}
 			}
 
@@ -218,7 +225,7 @@ func NewIntegrationApp(
 // TODO_TECHDEBT: Not all of the modules are created here (e.g. minting module),
 // so it is up to the developer to add / improve / update this function over time
 // as the need arises.
-func NewCompleteIntegrationApp(t *testing.T) *App {
+func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOption) *App {
 	t.Helper()
 
 	sdkCfg := cosmostypes.GetConfig()
@@ -254,12 +261,6 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	cryptocodec.RegisterInterfaces(registry)
 	banktypes.RegisterInterfaces(registry)
 
-	// Prepare the codec
-	cdc := codec.NewProtoCodec(registry)
-
-	// Prepare the TxConfig
-	txCfg := authtx.NewTxConfig(cdc, authtx.DefaultSignModes)
-
 	// Prepare all the store keys
 	storeKeys := storetypes.NewKVStoreKeys(
 		authzkeeper.StoreKey,
@@ -275,6 +276,12 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		authtypes.StoreKey,
 	)
 
+	// Prepare the codec
+	cdc := codec.NewProtoCodec(registry)
+
+	// Prepare the TxConfig
+	txCfg := authtx.NewTxConfig(cdc, authtx.DefaultSignModes)
+
 	// Construct a no-op logger.
 	logger := log.NewNopLogger() // Use this if you need more output: log.NewTestLogger(t)
 
@@ -282,7 +289,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	db := dbm.NewMemDB()
 
 	// Prepare the base application.
-	bApp := NewBaseApp(cdc, logger, db)
+	bApp := baseapp.NewBaseApp(appName, logger, db, txCfg.TxDecoder(), baseapp.SetChainID(appName))
 
 	// Prepare the context
 	sdkCtx := bApp.NewUncachedContext(false, cmtproto.Header{
@@ -538,6 +545,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		storeKeys,
 		msgRouter,
 		queryHelper,
+		opts...,
 	)
 
 	// Register the message servers
@@ -582,102 +590,17 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	preGeneratedAccts := testkeyring.PreGeneratedAccounts()
 	integrationApp.preGeneratedAccts = preGeneratedAccts
 
-	// Prepare a new default service
-	defaultService := sharedtypes.Service{
-		Id:                   "svc1",
-		Name:                 "svcName1",
-		ComputeUnitsPerRelay: 1,
-		OwnerAddress:         sample.AccAddress(),
-	}
-	serviceKeeper.SetService(integrationApp.sdkCtx, defaultService)
-	integrationApp.DefaultService = &defaultService
-
-	// Create a supplier account with the corresponding keys in the keyring for the supplier.
-	integrationApp.DefaultSupplierKeyringKeyringUid = "supplier"
-	supplierOperatorAddr := testkeyring.CreateOnChainAccount(
-		integrationApp.sdkCtx, t,
-		integrationApp.DefaultSupplierKeyringKeyringUid,
-		keyRing,
+	// TODO_IMPROVE: Eliminate usage of and remove this function in favor of
+	// integration.NewInitChainerModuleGenesisStateOptionFn.
+	integrationApp.setupDefaultActorsState(t,
 		accountKeeper,
-		preGeneratedAccts,
+		bankKeeper,
+		serviceKeeper,
+		supplierKeeper,
+		applicationKeeper,
+		sessionKeeper,
+		sharedKeeper,
 	)
-
-	// Prepare the on-chain supplier
-	supplierStake := types.NewCoin("upokt", math.NewInt(1000000))
-	defaultSupplier := sharedtypes.Supplier{
-		OwnerAddress:    supplierOperatorAddr.String(),
-		OperatorAddress: supplierOperatorAddr.String(),
-		Stake:           &supplierStake,
-		Services: []*sharedtypes.SupplierServiceConfig{
-			{
-				RevShare: []*sharedtypes.ServiceRevenueShare{
-					{
-						Address:            sample.AccAddress(),
-						RevSharePercentage: 100,
-					},
-				},
-				ServiceId: defaultService.Id,
-			},
-		},
-	}
-	supplierKeeper.SetSupplier(integrationApp.sdkCtx, defaultSupplier)
-	integrationApp.DefaultSupplier = &defaultSupplier
-
-	// Create an application account with the corresponding keys in the keyring for the application.
-	integrationApp.DefaultApplicationKeyringUid = "application"
-	applicationAddr := testkeyring.CreateOnChainAccount(
-		integrationApp.sdkCtx, t,
-		integrationApp.DefaultApplicationKeyringUid,
-		keyRing,
-		accountKeeper,
-		preGeneratedAccts,
-	)
-
-	// Prepare the on-chain supplier
-	appStake := types.NewCoin("upokt", math.NewInt(1000000))
-	defaultApplication := apptypes.Application{
-		Address: applicationAddr.String(),
-		Stake:   &appStake,
-		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
-			{
-				ServiceId: defaultService.Id,
-			},
-		},
-	}
-	applicationKeeper.SetApplication(integrationApp.sdkCtx, defaultApplication)
-	integrationApp.DefaultApplication = &defaultApplication
-
-	// Construct a ringClient to get the application's ring & verify the relay
-	// request signature.
-	ringClient, err := rings.NewRingClient(depinject.Supply(
-		polyzero.NewLogger(),
-		prooftypes.NewAppKeeperQueryClient(applicationKeeper),
-		prooftypes.NewAccountKeeperQueryClient(accountKeeper),
-		prooftypes.NewSharedKeeperQueryClient(sharedKeeper, sessionKeeper),
-	))
-	require.NoError(t, err)
-	integrationApp.ringClient = ringClient
-
-	// TODO_IMPROVE: The setup above does not to proper "staking" of the suppliers and applications.
-	// This can result in the module accounts balance going negative. Giving them a baseline balance
-	// to start with to avoid this issue. There is opportunity to improve this in the future.
-	moduleBaseMint := types.NewCoins(sdk.NewCoin("upokt", math.NewInt(690000000000000042)))
-	err = bankKeeper.MintCoins(integrationApp.sdkCtx, suppliertypes.ModuleName, moduleBaseMint)
-	require.NoError(t, err)
-	err = bankKeeper.MintCoins(integrationApp.sdkCtx, apptypes.ModuleName, moduleBaseMint)
-	require.NoError(t, err)
-
-	// Fund the faucet address.
-	faucetAddr, err := cosmostypes.AccAddressFromBech32(FaucetAddrStr)
-	require.NoError(t, err)
-	fundAccount(t, integrationApp.sdkCtx, bankKeeper, faucetAddr, FaucetAmountUpokt)
-
-	// TODO_IMPROVE: Refactor the relay_mining_difficulty_test.go to use the
-	// BaseIntegrationTestSuite and its #FundAddress() method and remove the
-	// need for this.
-	//
-	// Fund the supplier operator account to be able to submit proofs
-	fundAccount(t, integrationApp.sdkCtx, bankKeeper, supplierOperatorAddr, 100000000)
 
 	// Commit all the changes above by committing, finalizing and moving
 	// to the next block.
@@ -880,6 +803,119 @@ func (app *App) nextBlockUpdateCtx() {
 	*app.sdkCtx = newContext
 }
 
+// TODO_IN_THIS_COMMIT: godoc...
+//
+// TODO_IMPROVE: Eliminate usage of and remove this function in favor of
+// integration.NewInitChainerModuleGenesisStateOptionFn.
+func (app *App) setupDefaultActorsState(
+	t *testing.T,
+	accountKeeper authkeeper.AccountKeeper,
+	bankKeeper bankkeeper.Keeper,
+	serviceKeeper servicekeeper.Keeper,
+	supplierKeeper supplierkeeper.Keeper,
+	applicationKeeper appkeeper.Keeper,
+	sessionKeeper sessionkeeper.Keeper,
+	sharedKeeper sharedkeeper.Keeper,
+) {
+	t.Helper()
+
+	// Prepare a new default service
+	defaultService := sharedtypes.Service{
+		Id:                   "svc1",
+		Name:                 "svcName1",
+		ComputeUnitsPerRelay: 1,
+		OwnerAddress:         sample.AccAddress(),
+	}
+	serviceKeeper.SetService(app.sdkCtx, defaultService)
+	app.DefaultService = &defaultService
+
+	// Create a supplier account with the corresponding keys in the keyring for the supplier.
+	app.DefaultSupplierKeyringKeyringUid = "supplier"
+	supplierOperatorAddr := testkeyring.CreateOnChainAccount(
+		app.sdkCtx, t,
+		app.DefaultSupplierKeyringKeyringUid,
+		app.keyRing,
+		accountKeeper,
+		app.preGeneratedAccts,
+	)
+
+	// Prepare the on-chain supplier
+	supplierStake := types.NewCoin("upokt", math.NewInt(1000000))
+	defaultSupplier := sharedtypes.Supplier{
+		OwnerAddress:    supplierOperatorAddr.String(),
+		OperatorAddress: supplierOperatorAddr.String(),
+		Stake:           &supplierStake,
+		Services: []*sharedtypes.SupplierServiceConfig{
+			{
+				RevShare: []*sharedtypes.ServiceRevenueShare{
+					{
+						Address:            sample.AccAddress(),
+						RevSharePercentage: 100,
+					},
+				},
+				ServiceId: defaultService.Id,
+			},
+		},
+	}
+	supplierKeeper.SetSupplier(app.sdkCtx, defaultSupplier)
+	app.DefaultSupplier = &defaultSupplier
+
+	// Create an application account with the corresponding keys in the keyring for the application.
+	app.DefaultApplicationKeyringUid = "application"
+	applicationAddr := testkeyring.CreateOnChainAccount(
+		app.sdkCtx, t,
+		app.DefaultApplicationKeyringUid,
+		app.keyRing,
+		accountKeeper,
+		app.preGeneratedAccts,
+	)
+
+	// Prepare the on-chain supplier
+	appStake := types.NewCoin("upokt", math.NewInt(1000000))
+	defaultApplication := apptypes.Application{
+		Address: applicationAddr.String(),
+		Stake:   &appStake,
+		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
+			{
+				ServiceId: defaultService.Id,
+			},
+		},
+	}
+	applicationKeeper.SetApplication(app.sdkCtx, defaultApplication)
+	app.DefaultApplication = &defaultApplication
+
+	// Construct a ringClient to get the application's ring & verify the relay
+	// request signature.
+	ringClient, err := rings.NewRingClient(depinject.Supply(
+		polyzero.NewLogger(),
+		prooftypes.NewAppKeeperQueryClient(applicationKeeper),
+		prooftypes.NewAccountKeeperQueryClient(accountKeeper),
+		prooftypes.NewSharedKeeperQueryClient(sharedKeeper, sessionKeeper),
+	))
+	require.NoError(t, err)
+	app.ringClient = ringClient
+
+	// TODO_IMPROVE: The setup above does not to proper "staking" of the suppliers and applications.
+	// This can result in the module accounts balance going negative. Giving them a baseline balance
+	// to start with to avoid this issue. There is opportunity to improve this in the future.
+	moduleBaseMint := types.NewCoins(sdk.NewCoin("upokt", math.NewInt(690000000000000042)))
+	err = bankKeeper.MintCoins(app.sdkCtx, suppliertypes.ModuleName, moduleBaseMint)
+	require.NoError(t, err)
+	err = bankKeeper.MintCoins(app.sdkCtx, apptypes.ModuleName, moduleBaseMint)
+	require.NoError(t, err)
+
+	// TODO_IMPROVE: Refactor the relay_mining_difficulty_test.go to use the
+	// BaseIntegrationTestSuite and its #FundAddress() method and remove the
+	// need for this.
+	//
+	// Fund the supplier operator account to be able to submit proofs
+	fundAccount(t, app.sdkCtx, bankKeeper, supplierOperatorAddr, 100000000)
+}
+
+// TODO_IN_THIS_COMMIT: godoc...
+//
+// TODO_IMPROVE: Eliminate usage of and remove this function in favor of
+// integration.NewInitChainerModuleGenesisStateOptionFn.
 func fundAccount(
 	t *testing.T,
 	ctx context.Context,
@@ -898,4 +934,22 @@ func fundAccount(
 
 	coin := bankKeeper.SpendableCoin(ctx, supplierOperatorAddr, volatile.DenomuPOKT)
 	require.Equal(t, coin.Amount, math.NewInt(amountUpokt))
+}
+
+// TODO_IN_THIS_COMMIT: godoc...
+func newFaucetInitChainerFn(faucetBech32 string, faucetAmtUpokt int64) InitChainerModuleFn {
+	return NewInitChainerModuleGenesisStateOptionFn[bank.AppModule](&banktypes.GenesisState{
+		Params: banktypes.DefaultParams(),
+		Balances: []banktypes.Balance{
+			{
+				Address: faucetBech32,
+				Coins: sdk.NewCoins(
+					sdk.NewInt64Coin(
+						volatile.DenomuPOKT,
+						faucetAmtUpokt,
+					),
+				),
+			},
+		},
+	})
 }
