@@ -46,7 +46,6 @@ func (s *BaseIntegrationSuiteTestSuite) TestGetApp_PanicsIfNil() {
 	s.GetApp()
 }
 
-// TODO_INVESTIGATE: Why this test fails.
 func (s *BaseIntegrationSuiteTestSuite) TestNewApp() {
 	require.Nil(s.T(), s.app)
 
@@ -115,7 +114,8 @@ func (s *BaseIntegrationSuiteTestSuite) TestFilterLatestEventsWithNewMsgEventMat
 	s.NewApp(s.T())
 	s.generateBankMsgSendEvents(expectedNumEvents)
 
-	// Filter for the unstake event.
+	// Filter for the "message" type event with "action" attribute value
+	// equal to the MsgSend TypeURL.
 	msgSendTypeURL := cosmostypes.MsgTypeURL(&banktypes.MsgSend{})
 	matchedEvents := s.FilterLatestEvents(events.NewMsgEventMatchFn(msgSendTypeURL))
 
@@ -132,7 +132,7 @@ func (s *BaseIntegrationSuiteTestSuite) TestFilterLatestEventsWithNewEventTypeMa
 	s.NewApp(s.T())
 	s.emitPoktrollGatewayUnstakedEvents(expectedNumEvents)
 
-	// Filter for the unstake event.
+	// Filter for the event with type equal to the EventGatewayUnstaked TypeURL.
 	eventGatewayUnstakedTypeURL := cosmostypes.MsgTypeURL(&gatewaytypes.EventGatewayUnstaked{})
 	matchedEvents := s.FilterLatestEvents(events.NewEventTypeMatchFn(eventGatewayUnstakedTypeURL))
 
