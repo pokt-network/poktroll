@@ -3,13 +3,13 @@ package keeper_test
 import (
 	"testing"
 
-	abci "github.com/cometbft/cometbft/abci/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	testutilevents "github.com/pokt-network/poktroll/testutil/events"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	testproof "github.com/pokt-network/poktroll/testutil/proof"
 	"github.com/pokt-network/poktroll/testutil/sample"
@@ -17,6 +17,7 @@ import (
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	"github.com/pokt-network/poktroll/x/proof/keeper"
 	"github.com/pokt-network/poktroll/x/proof/types"
+	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -26,9 +27,17 @@ const (
 	expectedNumRelays       = 10
 	computeUnitsPerRelay    = 1
 	expectedNumComputeUnits = expectedNumRelays * computeUnitsPerRelay
+
+	nonDefaultComputeUnitsPerRelay    = 9999
+	expectedNonDefaultNumComputeUnits = expectedNumRelays * nonDefaultComputeUnitsPerRelay
 )
 
-var defaultMerkleRoot = testproof.SmstRootWithSumAndCount(expectedNumComputeUnits, expectedNumRelays)
+var (
+	defaultMerkleRoot = testproof.SmstRootWithSumAndCount(expectedNumComputeUnits, expectedNumRelays)
+
+	// Merkle root for Smst of a claim for the service with non-default compute units per relay
+	customComputeUnitsPerRelayMerkleRoot = testproof.SmstRootWithSumAndCount(expectedNonDefaultNumComputeUnits, expectedNumRelays)
+)
 
 func TestMsgServer_CreateClaim_Success(t *testing.T) {
 	var claimWindowOpenBlockHash []byte
@@ -40,6 +49,10 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 			sharedParams *sharedtypes.Params,
 			queryHeight int64,
 		) int64
+		merkleRoot smt.MerkleSumRoot
+		// The Compute Units Per Relay for the service used in the test.
+		serviceComputeUnitsPerRelay uint64
+		expectedNumComputeUnits     uint64
 	}{
 		{
 			desc: "claim message height equals supplier's earliest claim commit height",
@@ -51,10 +64,23 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 					supplierOperatorAddr,
 				)
 			},
+			merkleRoot:                  defaultMerkleRoot,
+			serviceComputeUnitsPerRelay: computeUnitsPerRelay,
+			expectedNumComputeUnits:     expectedNumComputeUnits,
 		},
 		{
-			desc:              "claim message height equals claim window close height",
-			getClaimMsgHeight: shared.GetClaimWindowCloseHeight,
+			desc:                        "claim message height equals claim window close height",
+			getClaimMsgHeight:           shared.GetClaimWindowCloseHeight,
+			merkleRoot:                  defaultMerkleRoot,
+			serviceComputeUnitsPerRelay: computeUnitsPerRelay,
+			expectedNumComputeUnits:     expectedNumComputeUnits,
+		},
+		{
+			desc:                        "claim message for service with >1 compute units per relay",
+			getClaimMsgHeight:           shared.GetClaimWindowCloseHeight,
+			merkleRoot:                  customComputeUnitsPerRelayMerkleRoot,
+			serviceComputeUnitsPerRelay: nonDefaultComputeUnitsPerRelay,
+			expectedNumComputeUnits:     expectedNonDefaultNumComputeUnits,
 		},
 	}
 
@@ -75,7 +101,7 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 
 			service := &sharedtypes.Service{
 				Id:                   testServiceId,
-				ComputeUnitsPerRelay: computeUnitsPerRelay,
+				ComputeUnitsPerRelay: test.serviceComputeUnitsPerRelay,
 				OwnerAddress:         sample.AccAddress(),
 			}
 			appAddr := sample.AccAddress()
@@ -83,22 +109,24 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 			keepers.SetSupplier(ctx, sharedtypes.Supplier{
 				OperatorAddress: supplierOperatorAddr,
 				Services: []*sharedtypes.SupplierServiceConfig{
-					{Service: service},
+					{ServiceId: service.Id},
 				},
 			})
 
 			keepers.SetApplication(ctx, apptypes.Application{
 				Address: appAddr,
 				ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
-					{Service: service},
+					{ServiceId: service.Id},
 				},
 			})
+
+			keepers.SetService(ctx, *service)
 
 			sessionRes, err := keepers.GetSession(
 				ctx,
 				&sessiontypes.QueryGetSessionRequest{
 					ApplicationAddress: appAddr,
-					Service:            service,
+					ServiceId:          service.Id,
 					BlockHeight:        blockHeight,
 				},
 			)
@@ -119,7 +147,7 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 				supplierOperatorAddr,
 				appAddr,
 				service,
-				defaultMerkleRoot,
+				test.merkleRoot,
 			)
 			createClaimRes, err := srv.CreateClaim(ctx, claimMsg)
 			require.NoError(t, err)
@@ -142,19 +170,13 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 			require.Equal(t, claimMsg.RootHash, claim.GetRootHash())
 
 			events := sdkCtx.EventManager().Events()
-			require.Equal(t, 1, len(events))
 
-			require.Equal(t, "poktroll.proof.EventClaimCreated", events[0].Type)
+			claimCreatedEvents := testutilevents.FilterEvents[*prooftypes.EventClaimCreated](t, events, "poktroll.proof.EventClaimCreated")
+			require.Len(t, claimCreatedEvents, 1)
 
-			event, err := cosmostypes.ParseTypedEvent(abci.Event(events[0]))
-			require.NoError(t, err)
-
-			claimCreatedEvent, ok := event.(*types.EventClaimCreated)
-			require.Truef(t, ok, "unexpected event type %T", event)
-
-			require.EqualValues(t, &claim, claimCreatedEvent.GetClaim())
-			require.Equal(t, uint64(expectedNumComputeUnits), claimCreatedEvent.GetNumComputeUnits())
-			require.Equal(t, uint64(expectedNumRelays), claimCreatedEvent.GetNumRelays())
+			require.EqualValues(t, &claim, claimCreatedEvents[0].GetClaim())
+			require.Equal(t, uint64(test.expectedNumComputeUnits), claimCreatedEvents[0].GetNumComputeUnits())
+			require.Equal(t, uint64(expectedNumRelays), claimCreatedEvents[0].GetNumRelays())
 		})
 	}
 }
@@ -183,14 +205,14 @@ func TestMsgServer_CreateClaim_Error_OutsideOfWindow(t *testing.T) {
 	keepers.SetSupplier(ctx, sharedtypes.Supplier{
 		OperatorAddress: supplierOperatorAddr,
 		Services: []*sharedtypes.SupplierServiceConfig{
-			{Service: service},
+			{ServiceId: service.Id},
 		},
 	})
 
 	keepers.SetApplication(ctx, apptypes.Application{
 		Address: appAddr,
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
-			{Service: service},
+			{ServiceId: service.Id},
 		},
 	})
 
@@ -198,7 +220,7 @@ func TestMsgServer_CreateClaim_Error_OutsideOfWindow(t *testing.T) {
 		ctx,
 		&sessiontypes.QueryGetSessionRequest{
 			ApplicationAddress: appAddr,
-			Service:            service,
+			ServiceId:          service.Id,
 			BlockHeight:        1,
 		},
 	)
@@ -280,7 +302,8 @@ func TestMsgServer_CreateClaim_Error_OutsideOfWindow(t *testing.T) {
 
 			// Assert that no events were emitted.
 			events := sdkCtx.EventManager().Events()
-			require.Equal(t, 0, len(events))
+			claimCreatedEvents := testutilevents.FilterEvents[*prooftypes.EventClaimCreated](t, events, "poktroll.proof.EventClaimCreated")
+			require.Len(t, claimCreatedEvents, 0)
 		})
 	}
 }
@@ -320,7 +343,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 	supplierKeeper.SetSupplier(ctx, sharedtypes.Supplier{
 		OperatorAddress: supplierOperatorAddr,
 		Services: []*sharedtypes.SupplierServiceConfig{
-			{Service: service},
+			{ServiceId: service.Id},
 		},
 	})
 
@@ -328,13 +351,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 	supplierKeeper.SetSupplier(ctx, sharedtypes.Supplier{
 		OperatorAddress: wrongSupplierOperatorAddr,
 		Services: []*sharedtypes.SupplierServiceConfig{
-			{
-				Service: &sharedtypes.Service{
-					Id:                   "nosvc1",
-					ComputeUnitsPerRelay: computeUnitsPerRelay,
-					OwnerAddress:         sample.AccAddress(),
-				},
-			},
+			{ServiceId: "nosvc1"},
 		},
 	})
 
@@ -342,7 +359,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 	appKeeper.SetApplication(ctx, apptypes.Application{
 		Address: appAddr,
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
-			{Service: service},
+			{ServiceId: service.Id},
 		},
 	})
 
@@ -350,13 +367,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 	appKeeper.SetApplication(ctx, apptypes.Application{
 		Address: wrongAppAddr,
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
-			{
-				Service: &sharedtypes.Service{
-					Id:                   "nosvc1",
-					ComputeUnitsPerRelay: computeUnitsPerRelay,
-					OwnerAddress:         sample.AccAddress(),
-				},
-			},
+			{ServiceId: "nosvc1"},
 		},
 	})
 
@@ -365,10 +376,11 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 		ctx,
 		&sessiontypes.QueryGetSessionRequest{
 			ApplicationAddress: appAddr,
-			Service:            service,
+			ServiceId:          service.Id,
 			BlockHeight:        1,
 		},
 	)
+	require.NoError(t, err)
 	require.NoError(t, err)
 	require.NotNil(t, sessionRes)
 	require.Equal(t, appAddr, sessionRes.GetSession().GetApplication().GetAddress())
@@ -503,9 +515,119 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 			// Assert that no events were emitted.
 			sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 			events := sdkCtx.EventManager().Events()
-			require.Equal(t, 0, len(events))
+			claimCreatedEvents := testutilevents.FilterEvents[*prooftypes.EventClaimCreated](t, events, "poktroll.proof.EventClaimCreated")
+			require.Len(t, claimCreatedEvents, 0)
 		})
 	}
+}
+
+func TestMsgServer_CreateClaim_Error_ComputeUnitsMismatch(t *testing.T) {
+	// Set block height to 1 so there is a valid session on-chain.
+	blockHeightOpt := keepertest.WithBlockHeight(1)
+	keepers, ctx := keepertest.NewProofModuleKeepers(t, blockHeightOpt)
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	srv := keeper.NewMsgServerImpl(*keepers.Keeper)
+
+	// The base session start height used for testing
+	sessionStartHeight := int64(1)
+
+	// service is the only service for which a session should exist.
+	// this service has a value of greater than 1 for the compute units per relay.
+	service := &sharedtypes.Service{
+		Id:                   testServiceId,
+		ComputeUnitsPerRelay: nonDefaultComputeUnitsPerRelay,
+		OwnerAddress:         sample.AccAddress(),
+	}
+	// Add the service that is expected to be on-chain.
+	keepers.SetService(ctx, *service)
+
+	// Add a supplier that is expected to be in the session.
+	// supplierAddr is staked for "svc1" such that it is expected to be in the session.
+	supplierKeeper := keepers.SupplierKeeper
+	supplierAddr := sample.AccAddress()
+	supplierKeeper.SetSupplier(ctx, sharedtypes.Supplier{
+		OperatorAddress: supplierAddr,
+		Services: []*sharedtypes.SupplierServiceConfig{
+			{ServiceId: service.Id},
+		},
+	})
+
+	// Add an application that is expected to be in the session.
+	// appAddr is staked for "svc1" such that it is expected to be in the session.
+	appKeeper := keepers.ApplicationKeeper
+	appAddr := sample.AccAddress()
+	appKeeper.SetApplication(ctx, apptypes.Application{
+		Address: appAddr,
+		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
+			{ServiceId: service.Id},
+		},
+	})
+
+	// Query for the session which contains the expected app and supplier pair.
+	sessionRes, err := keepers.SessionKeeper.GetSession(
+		ctx,
+		&sessiontypes.QueryGetSessionRequest{
+			ApplicationAddress: appAddr,
+			ServiceId:          service.Id,
+			BlockHeight:        1,
+		},
+	)
+	require.NoError(t, err)
+	require.NotNil(t, sessionRes)
+	require.Equal(t, appAddr, sessionRes.GetSession().GetApplication().GetAddress())
+
+	sessionResSuppliers := sessionRes.GetSession().GetSuppliers()
+	require.NotEmpty(t, sessionResSuppliers)
+	require.Equal(t, supplierAddr, sessionResSuppliers[0].GetOperatorAddress())
+
+	// Increment the block height to the test claim height.
+	sessionHeader := sessionRes.GetSession().GetHeader()
+	sharedParams := keepers.SharedKeeper.GetParams(ctx)
+	testClaimHeight := shared.GetClaimWindowCloseHeight(&sharedParams, sessionHeader.GetSessionEndBlockHeight())
+	sdkCtx = sdkCtx.WithBlockHeight(testClaimHeight)
+	ctx = sdkCtx
+
+	// Prepare a message to submit a claim while also creating a new test claim
+	testClaimMsg := newTestClaimMsg(t,
+		sessionStartHeight,
+		sessionRes.GetSession().GetSessionId(),
+		supplierAddr,
+		appAddr,
+		service,
+		defaultMerkleRoot,
+	)
+
+	// use the test claim message to create a claim object to get the number of relays and compute units in the claim.
+	testClaim := types.Claim{RootHash: testClaimMsg.GetRootHash()}
+	testClaimNumComputeUnits, err := testClaim.GetNumComputeUnits()
+	require.NoError(t, err)
+	testClaimNumRelays, err := testClaim.GetNumRelays()
+	require.NoError(t, err)
+
+	// Ensure that submitting the claim fails because the number of compute units
+	// claimed does not match the expected amount as a function of (relay, service_CUPR)
+	createClaimRes, err := srv.CreateClaim(ctx, testClaimMsg)
+	require.ErrorContains(t,
+		err,
+		status.Error(
+			codes.InvalidArgument,
+			types.ErrProofComputeUnitsMismatch.Wrapf(
+				"claim compute units: %d is not equal to number of relays %d * compute units per relay %d for service %s",
+				testClaimNumComputeUnits,
+				testClaimNumRelays,
+				nonDefaultComputeUnitsPerRelay,
+				sessionHeader.ServiceId,
+			).Error(),
+		).Error(),
+	)
+
+	require.Nil(t, createClaimRes)
+
+	// Assert that no events were emitted.
+	sdkCtx = cosmostypes.UnwrapSDKContext(ctx)
+	events := sdkCtx.EventManager().Events()
+	claimCreatedEvents := testutilevents.FilterEvents[*prooftypes.EventClaimCreated](t, events, "poktroll.proof.EventClaimCreated")
+	require.Len(t, claimCreatedEvents, 0)
 }
 
 func newTestClaimMsg(
@@ -523,7 +645,7 @@ func newTestClaimMsg(
 		supplierOperatorAddr,
 		&sessiontypes.SessionHeader{
 			ApplicationAddress:      appAddr,
-			Service:                 service,
+			ServiceId:               service.Id,
 			SessionId:               sessionId,
 			SessionStartBlockHeight: sessionStartHeight,
 			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(sessionStartHeight),

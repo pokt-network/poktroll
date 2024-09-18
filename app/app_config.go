@@ -191,12 +191,17 @@ var (
 		ibcfeetypes.ModuleName,
 		// chain modules
 		servicemoduletypes.ModuleName,
-		gatewaymoduletypes.ModuleName,
-		applicationmoduletypes.ModuleName,
-		suppliermoduletypes.ModuleName,
 		sessionmoduletypes.ModuleName,
 		proofmoduletypes.ModuleName,
 		tokenomicsmoduletypes.ModuleName,
+		// CRITICAL: THE ORDER HERE IS IMPORTANT AND MUST BE CAREFULLY MAINTAINED.
+		// Gateway, Application and Supplier end blockers should be called after the
+		// tokenomics module end blocker to ensure that the tokenomics module has
+		// processed all the pending claims, minting, burning or slashing before
+		// any of the actors have a chance to withdraw their tokens.
+		gatewaymoduletypes.ModuleName,
+		applicationmoduletypes.ModuleName,
+		suppliermoduletypes.ModuleName,
 		sharedmoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/endBlockers
 	}
@@ -223,6 +228,7 @@ var (
 		{Account: suppliermoduletypes.ModuleName, Permissions: []string{authtypes.Minter, authtypes.Burner, authtypes.Staking}},
 		{Account: sessionmoduletypes.ModuleName, Permissions: []string{authtypes.Minter, authtypes.Burner, authtypes.Staking}},
 		{Account: tokenomicsmoduletypes.ModuleName, Permissions: []string{authtypes.Minter, authtypes.Burner, authtypes.Staking}},
+		{Account: proofmoduletypes.ModuleName, Permissions: []string{authtypes.Minter, authtypes.Burner, authtypes.Staking}},
 		// this line is used by starport scaffolding # stargate/app/maccPerms	}
 	}
 

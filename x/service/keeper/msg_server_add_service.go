@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/telemetry"
@@ -72,23 +71,23 @@ func (k msgServer) AddService(
 
 	// Check the balance of upokt is enough to cover the AddServiceFee.
 	accBalance := accCoins.AmountOf("upokt")
-	addServiceFee := math.NewIntFromUint64(k.GetParams(ctx).AddServiceFee)
-	if accBalance.LTE(addServiceFee) {
+	addServiceFee := k.GetParams(ctx).AddServiceFee
+	if accBalance.LTE(addServiceFee.Amount) {
 		logger.Error(fmt.Sprintf("%s doesn't have enough funds to add service: %v", serviceOwnerAddr, err))
 		return nil, types.ErrServiceNotEnoughFunds.Wrapf(
-			"account has %d uPOKT, but the service fee is %d uPOKT",
-			accBalance.Uint64(), k.GetParams(ctx).AddServiceFee,
+			"account has %s, but the service fee is %s",
+			accBalance, k.GetParams(ctx).AddServiceFee,
 		)
 	}
 
 	// Deduct the service fee from the actor's balance.
-	serviceFee := sdk.Coins{sdk.NewCoin("upokt", addServiceFee)}
+	serviceFee := sdk.NewCoins(*addServiceFee)
 	err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, serviceOwnerAddr, types.ModuleName, serviceFee)
 	if err != nil {
 		logger.Error(fmt.Sprintf("Failed to deduct service fee from actor's balance: %v", err))
 		return nil, types.ErrServiceFailedToDeductFee.Wrapf(
-			"account has %d uPOKT, failed to deduct %d uPOKT",
-			accBalance.Uint64(), k.GetParams(ctx).AddServiceFee,
+			"account has %s, failed to deduct %s",
+			accBalance, k.GetParams(ctx).AddServiceFee,
 		)
 	}
 

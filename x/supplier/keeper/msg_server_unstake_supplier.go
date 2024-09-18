@@ -12,7 +12,6 @@ import (
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-// TODO_BETA(#489): Determine if an application needs an unbonding period after unstaking.
 func (k msgServer) UnstakeSupplier(
 	ctx context.Context,
 	msg *types.MsgUnstakeSupplier,

@@ -76,7 +76,7 @@ func AddToExistingSessions(
 
 	session := sessiontypes.Session{
 		Header: &sessiontypes.SessionHeader{
-			Service:                 &sharedtypes.Service{Id: serviceId},
+			ServiceId:               serviceId,
 			ApplicationAddress:      appAddress,
 			SessionId:               sessionId,
 			SessionStartBlockHeight: testsession.GetSessionStartHeightWithDefaultParams(blockHeight),

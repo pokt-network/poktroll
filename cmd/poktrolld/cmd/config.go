@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"sync"
+	"time"
 
 	cmtcfg "github.com/cometbft/cometbft/config"
 	serverconfig "github.com/cosmos/cosmos-sdk/server/config"
@@ -14,11 +15,23 @@ var once sync.Once
 
 func InitSDKConfig() {
 	once.Do(func() {
-		initSDKConfig()
+		checkOrInitSDKConfig()
 	})
 }
 
-func initSDKConfig() {
+// checkOrInitSDKConfig updates the prefixes for all account types and seals the config.
+// DEV_NOTE: Due to the separation of this repo and the SDK, where the config is also sealed,
+// we have an added check to return early in case the config has already been set to the expected
+// value.
+func checkOrInitSDKConfig() {
+	config := sdk.GetConfig()
+
+	// Check if the config is already set with the correct prefixes
+	if config.GetBech32AccountAddrPrefix() == app.AccountAddressPrefix {
+		// Config is already initialized, return early
+		return
+	}
+
 	// Set prefixes
 	accountPubKeyPrefix := app.AccountAddressPrefix + "pub"
 	validatorAddressPrefix := app.AccountAddressPrefix + "valoper"
@@ -27,15 +40,28 @@ func initSDKConfig() {
 	consNodePubKeyPrefix := app.AccountAddressPrefix + "valconspub"
 
 	// Set and seal config
-	config := sdk.GetConfig()
 	config.SetBech32PrefixForAccount(app.AccountAddressPrefix, accountPubKeyPrefix)
 	config.SetBech32PrefixForValidator(validatorAddressPrefix, validatorPubKeyPrefix)
 	config.SetBech32PrefixForConsensusNode(consNodeAddressPrefix, consNodePubKeyPrefix)
 	config.Seal()
 }
 
-// initCometBFTConfig helps to override default CometBFT Config values.
-// return cmtcfg.DefaultConfig if no custom configuration is required for the application.
+// The values set here become the default configuration for newly initialized nodes.
+// However, it's crucial to note that:
+// 1. These defaults only apply when a node is first initialized using `poktrolld init`.
+// 2. Changing these values in the code will not automatically update existing node configurations.
+// 3. Node operators can still manually override these defaults in their local config files.
+//
+// Therefore, it's critical to choose sensible default values carefully, as they will form
+// the baseline configuration for most network participants. Any future changes to these
+// defaults will only affect newly initialized nodes, not existing ones.
+
+// As we use `ignite` CLI to provision the first validator it is important to note that the configuration files
+// provisioned by ignite have additional overrides adjusted in ignite's `config.yml`
+
+// initCometBFTConfig helps to override default CometBFT Config (config.toml) values.
+// These values are going to be rendered into the config file on `poktrolld init`.
+// TODO_MAINNET: Reconsider values - check `config.toml` for possible options.
 func initCometBFTConfig() *cmtcfg.Config {
 	cfg := cmtcfg.DefaultConfig()
 
@@ -43,11 +69,23 @@ func initCometBFTConfig() *cmtcfg.Config {
 	// cfg.P2P.MaxNumInboundPeers = 100
 	// cfg.P2P.MaxNumOutboundPeers = 40
 
+	cfg.Consensus.TimeoutPropose = 60 * time.Second
+	cfg.Consensus.TimeoutProposeDelta = 5 * time.Second
+	cfg.Consensus.TimeoutPrevote = 10 * time.Second
+	cfg.Consensus.TimeoutPrevoteDelta = 5 * time.Second
+	cfg.Consensus.TimeoutPrecommit = 10 * time.Second
+	cfg.Consensus.TimeoutPrecommitDelta = 5 * time.Second
+	cfg.Consensus.TimeoutCommit = 60 * time.Second
+	cfg.Instrumentation.Prometheus = true
+	cfg.LogLevel = "info"
+
 	return cfg
 }
 
-// initAppConfig helps to override default appConfig template and configs.
+// initAppConfig helps to override default appConfig (app.toml) template and configs.
+// These values are going to be rendered into the config file on `poktrolld init`.
 // return "", nil if no custom configuration is required for the application.
+// TODO_MAINNET: Reconsider values - check `app.toml` for possible options.
 func initAppConfig() (string, interface{}) {
 	// The following code snippet is just for reference.
 	type CustomAppConfig struct {
@@ -71,6 +109,16 @@ func initAppConfig() (string, interface{}) {
 	// In tests, we set the min gas prices to 0.
 	// srvCfg.MinGasPrices = "0stake"
 	// srvCfg.BaseConfig.IAVLDisableFastNode = true // disable fastnode by default
+
+	srvCfg.MinGasPrices = "0.000000001upokt" // Also adjust ignite's `config.yml`.
+	srvCfg.Mempool.MaxTxs = 10000
+	srvCfg.Telemetry.Enabled = true
+	srvCfg.Telemetry.PrometheusRetentionTime = 60 // in seconds. This turns on Prometheus support.
+	srvCfg.Telemetry.MetricsSink = "mem"
+	srvCfg.Pruning = "nothing" // archiving node by default
+	srvCfg.API.Enable = true
+	srvCfg.GRPC.Enable = true
+	srvCfg.GRPCWeb.Enable = true
 
 	customAppConfig := CustomAppConfig{
 		Config: *srvCfg,

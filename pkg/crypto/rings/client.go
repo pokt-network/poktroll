@@ -104,7 +104,7 @@ func (rc *ringClient) VerifyRelayRequestSignature(
 		Fields(map[string]any{
 			"session_id":          sessionHeader.GetSessionId(),
 			"application_address": sessionHeader.GetApplicationAddress(),
-			"service_id":          sessionHeader.GetService().GetId(),
+			"service_id":          sessionHeader.GetServiceId(),
 		}).
 		Msg("verifying relay request signature")
 

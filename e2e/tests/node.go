@@ -28,6 +28,10 @@ var (
 	defaultDebugOutput = os.Getenv("E2E_DEBUG_OUTPUT")
 )
 
+func isVerbose() bool {
+	return defaultDebugOutput == "true"
+}
+
 func init() {
 	if defaultRPCURL == "" {
 		defaultRPCURL = fmt.Sprintf("tcp://%s:%d", defaultRPCHost, defaultRPCPort)
@@ -122,7 +126,9 @@ func (p *pocketdBin) RunCurlWithRetry(rpcUrl, service, method, path, data string
 	}
 	for _, ephemeralError := range ephemeralEndToEndErrors {
 		if strings.Contains(res.Stdout, ephemeralError) {
-			fmt.Println("Retrying due to ephemeral error:", res.Stdout)
+			if isVerbose() {
+				fmt.Println("Retrying due to ephemeral error:", res.Stdout)
+			}
 			time.Sleep(10 * time.Millisecond)
 			return p.RunCurlWithRetry(rpcUrl, service, method, path, data, numRetries-1, args...)
 		}

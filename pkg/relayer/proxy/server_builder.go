@@ -77,7 +77,7 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 				// Iterate over the server configs and check if `endpointUrl` is present
 				// in any of the server config's suppliers' service's PubliclyExposedEndpoints
 				for _, serverConfig := range rp.serverConfigs {
-					supplierService, ok := serverConfig.SupplierConfigsMap[service.Service.Id]
+					supplierService, ok := serverConfig.SupplierConfigsMap[service.ServiceId]
 					hostname := endpointUrl.Hostname()
 					if ok && slices.Contains(supplierService.PubliclyExposedEndpoints, hostname) {
 						found = true

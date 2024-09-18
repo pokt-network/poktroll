@@ -27,6 +27,10 @@ accounts:
     mnemonic: "involve clean slab term real human green immune valid swing protect talk silent unique cart few ice era right thunder again drop among bounce"
     coins:
       - 300000000upokt
+  - name: apptiny
+    mnemonic: "worry pupil rival such jump pitch flame prosper tattoo eternal round receive cube crowd remove afraid garment brand toy nut guitar toy sausage fragile"
+    coins:
+      - 1000000upokt # 1 POKT
   - name: supplier1
     mnemonic: "cool industry busy tumble funny relax error state height like board wing goat emerge visual idle never unveil announce hill primary okay spatial frog"
     coins:
@@ -77,7 +81,14 @@ client:
 validators:
   - name: validator1
     bonded: 900000000upokt
+    # DEV_NOTE: adjust `cmd/poktrolld/cmd/config.go` to change the default options. The section below **ONLY** changes
+    # the values for the first validator, and the config is rendered using `ignite` cli. This is primarily used for
+    # LocalNet. Other participants of the network are relying on `poktrolld init`, which gets values from `cmd/config.go`.
     app:
+      # DEV_NOTE: Ignite does not carry over all defaults, so we are going to match `minimum-gas-prices` with `cmd/config.go`.
+      # See the enhancement request here: https://github.com/ignite/cli/issues/4340
+      # TODO(#794): turn on `minimum-gas-prices` back
+      # minimum-gas-prices: 0.000000001upokt
       telemetry:
         enabled: true
         prometheus-retention-time: "600" # seconds
@@ -158,12 +169,20 @@ genesis:
         - address: pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4
           delegatee_gateway_addresses: []
           service_configs:
-            - service:
-                id: anvil
-            - service:
-                id: rest
-            - service:
-                id: ollama
+            - service_id: anvil
+            - service_id: rest
+            - service_id: ollama
+          stake:
+            # NB: This value should be exactly 1upokt smaller than the value in
+            # `supplier1_stake_config.yaml` so that the stake command causes a state change.
+            amount: "1000068"
+            denom: upokt
+        - address: pokt1ad28jdap2zfanjd7hpkh984yveney6k9a42man
+          delegatee_gateway_addresses: []
+          service_configs:
+            - service_id: anvil
+            - service_id: rest
+            - service_id: ollama
           stake:
             # NB: This value should be exactly 1upokt smaller than the value in
             # `supplier1_stake_config.yaml` so that the stake command causes a state change.
@@ -174,8 +193,7 @@ genesis:
         - owner_address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
           operator_address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
           services:
-            - service:
-                id: anvil
+            - service_id: anvil
               endpoints:
                 - configs: []
                   rpc_type: JSON_RPC
@@ -183,8 +201,7 @@ genesis:
               rev_share:
                 - address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
                   rev_share_percentage: "100"
-            - service:
-                id: rest
+            - service_id: rest
               endpoints:
                 - configs: []
                   rpc_type: REST
@@ -192,8 +209,7 @@ genesis:
               rev_share:
                 - address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
                   rev_share_percentage: "100"
-            - service:
-                id: ollama
+            - service_id: ollama
               endpoints:
                 - configs: []
                   rpc_type: REST
@@ -216,7 +232,9 @@ genesis:
             denom: upokt
     service:
       params:
-        add_service_fee: "1000000000"
+        add_service_fee:
+          amount: "1000000000"
+          denom: upokt
       serviceList:
         - id: anvil
           name: "anvil"
@@ -233,9 +251,14 @@ genesis:
     proof:
       params:
         proof_request_probability: "0.25"
-        proof_requirement_threshold: 20
+        proof_requirement_threshold:
+          amount: "20000000"
+          denom: upokt
         proof_missing_penalty:
-          amount: "320"
+          amount: "320000000"
+          denom: upokt
+        proof_submission_fee:
+          amount: "1000000"
           denom: upokt
     shared:
       params:

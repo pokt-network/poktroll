@@ -23,7 +23,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: "1.22.2"
+          go-version: "1.23.0"
 
       - name: Install CI dependencies
         run: make install_ci_deps
@@ -88,7 +88,7 @@ jobs:
           context: .
 
   run-e2e-tests:
-    timeout-minutes: 20
+    timeout-minutes: 30
     needs: build-push-container
     if: contains(github.event.pull_request.labels.*.name, 'devnet-test-e2e')
     runs-on: ubuntu-latest

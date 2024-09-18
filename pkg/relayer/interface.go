@@ -13,7 +13,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // RelaysObservable is an observable which is notified with Relay values.
@@ -65,7 +64,7 @@ type RelayerProxy interface {
 	VerifyRelayRequest(
 		ctx context.Context,
 		relayRequest *servicetypes.RelayRequest,
-		service *sharedtypes.Service,
+		serviceId string,
 	) error
 
 	// SignRelayResponse is a shared method used by RelayServers to sign

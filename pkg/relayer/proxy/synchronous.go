@@ -19,7 +19,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/config"
 	"github.com/pokt-network/poktroll/x/service/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 var _ relayer.RelayServer = (*synchronousRPCServer)(nil)
@@ -138,7 +137,7 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 		return
 	}
 
-	supplierService := relayRequest.Meta.SessionHeader.Service
+	supplierServiceId := relayRequest.Meta.SessionHeader.ServiceId
 
 	originHost := request.Host
 	// When the proxy is behind a reverse proxy, or is getting its requests from
@@ -178,7 +177,7 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 	// key so that we can get the service and serviceUrl in O(1) time.
 	for _, supplierServiceConfig := range sync.serverConfig.SupplierConfigsMap {
 		for _, host := range supplierServiceConfig.PubliclyExposedEndpoints {
-			if host == originHostUrl.Hostname() && supplierService.Id == supplierServiceConfig.ServiceId {
+			if host == originHostUrl.Hostname() && supplierServiceId == supplierServiceConfig.ServiceId {
 				serviceConfig = supplierServiceConfig.ServiceConfig
 				break
 			}
@@ -195,18 +194,18 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 	}
 
 	// Increment the relays counter.
-	relaysTotal.With("service_id", supplierService.Id).Add(1)
+	relaysTotal.With("service_id", supplierServiceId).Add(1)
 	defer func() {
 		duration := time.Since(startTime).Seconds()
 
 		// Capture the relay request duration metric.
-		relaysDurationSeconds.With("service_id", supplierService.Id).Observe(duration)
+		relaysDurationSeconds.With("service_id", supplierServiceId).Observe(duration)
 	}()
 
-	relayRequestSizeBytes.With("service_id", supplierService.Id).
+	relayRequestSizeBytes.With("service_id", supplierServiceId).
 		Observe(float64(relayRequest.Size()))
 
-	relay, err := sync.serveHTTP(ctx, serviceConfig, supplierService, relayRequest)
+	relay, err := sync.serveHTTP(ctx, serviceConfig, supplierServiceId, relayRequest)
 	if err != nil {
 		// Reply with an error if the relay could not be served.
 		sync.replyWithError(err, relayRequest, writer)
@@ -226,14 +225,14 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 
 	sync.logger.Info().Fields(map[string]any{
 		"application_address":  relay.Res.Meta.SessionHeader.ApplicationAddress,
-		"service_id":           relay.Res.Meta.SessionHeader.Service.Id,
+		"service_id":           relay.Res.Meta.SessionHeader.ServiceId,
 		"session_start_height": relay.Res.Meta.SessionHeader.SessionStartBlockHeight,
 		"server_addr":          sync.server.Addr,
 	}).Msg("relay request served successfully")
 
-	relaysSuccessTotal.With("service_id", supplierService.Id).Add(1)
+	relaysSuccessTotal.With("service_id", supplierServiceId).Add(1)
 
-	relayResponseSizeBytes.With("service_id", supplierService.Id).
+	relayResponseSizeBytes.With("service_id", supplierServiceId).
 		Observe(float64(relay.Res.Size()))
 
 	// Emit the relay to the servedRelays observable.
@@ -244,7 +243,7 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 func (sync *synchronousRPCServer) serveHTTP(
 	ctx context.Context,
 	serviceConfig *config.RelayMinerSupplierServiceConfig,
-	supplierService *sharedtypes.Service,
+	supplierServiceId string,
 	relayRequest *types.RelayRequest,
 ) (*types.Relay, error) {
 	// Verify the relay request signature and session.
@@ -254,7 +253,7 @@ func (sync *synchronousRPCServer) serveHTTP(
 	// request signature verification, session verification, and response signature.
 	// This would help in separating concerns and improving code maintainability.
 	// See https://github.com/pokt-network/poktroll/issues/160
-	if err := sync.relayerProxy.VerifyRelayRequest(ctx, relayRequest, supplierService); err != nil {
+	if err := sync.relayerProxy.VerifyRelayRequest(ctx, relayRequest, supplierServiceId); err != nil {
 		return nil, err
 	}
 
