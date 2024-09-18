@@ -11,8 +11,6 @@ import (
 	"cosmossdk.io/depinject"
 	"cosmossdk.io/log"
 	"cosmossdk.io/math"
-	"cosmossdk.io/store"
-	"cosmossdk.io/store/metrics"
 	storetypes "cosmossdk.io/store/types"
 	"cosmossdk.io/x/tx/signing"
 	abci "github.com/cometbft/cometbft/abci/types"
@@ -178,7 +176,7 @@ func NewIntegrationApp(
 	// first block being special and iterated over during the setup process.
 	cometHeader := cmtproto.Header{
 		ChainID: appName,
-		Height:  2,
+		Height:  1,
 	}
 	sdkCtx = sdkCtx.
 		WithBlockHeader(cometHeader).
@@ -205,11 +203,11 @@ func NewIntegrationApp(
 			return &cmtabcitypes.ResponseInitChain{}, nil
 		})
 
-	bApp.SetBeginBlocker(func(_ sdk.Context) (sdk.BeginBlock, error) {
-		return moduleManager.BeginBlock(sdkCtx)
+	bApp.SetBeginBlocker(func(ctx sdk.Context) (sdk.BeginBlock, error) {
+		return moduleManager.BeginBlock(ctx)
 	})
-	bApp.SetEndBlocker(func(_ sdk.Context) (sdk.EndBlock, error) {
-		return moduleManager.EndBlock(sdkCtx)
+	bApp.SetEndBlocker(func(ctx sdk.Context) (sdk.EndBlock, error) {
+		return moduleManager.EndBlock(ctx)
 	})
 
 	msgRouter.SetInterfaceRegistry(registry)
@@ -221,8 +219,8 @@ func NewIntegrationApp(
 	_, err = bApp.InitChain(&cmtabcitypes.RequestInitChain{ChainId: appName})
 	require.NoError(t, err, "failed to initialize chain")
 
-	_, err = bApp.Commit()
-	require.NoError(t, err, "failed to commit")
+	//_, err = bApp.Commit()
+	//require.NoError(t, err, "failed to commit")
 
 	bApp.SetTxEncoder(txCfg.TxEncoder())
 
@@ -305,16 +303,22 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 
 	// Prepare the database and multi-store.
 	db := dbm.NewMemDB()
-	cms := CreateMultiStore(storeKeys, logger, db)
+	//cms := CreateMultiStore(storeKeys, logger, db)
 
 	// Prepare the base application.
 	bApp := NewBaseApp(cdc, logger, db)
 
 	// Prepare the context
-	sdkCtx := sdk.NewContext(cms, cmtproto.Header{
+	sdkCtx := bApp.NewUncachedContext(false, cmtproto.Header{
 		ChainID: appName,
 		Height:  1,
-	}, true, logger)
+	})
+	//bApp.NewContext(false).
+	//	With...
+	//sdkCtx := sdk.NewContext(cms, cmtproto.Header{
+	//	ChainID: appName,
+	//	Height:  1,
+	//}, true, logger)
 
 	// Get the authority address
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName)
@@ -599,26 +603,26 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	sessiontypes.RegisterQueryServer(queryHelper, sessionKeeper)
 
 	// Set the default params for all the modules
-	err = bankKeeper.SetParams(integrationApp.GetSdkCtx(), banktypes.DefaultParams())
-	require.NoError(t, err)
-	err = sharedKeeper.SetParams(integrationApp.GetSdkCtx(), sharedtypes.DefaultParams())
-	require.NoError(t, err)
-	err = tokenomicsKeeper.SetParams(integrationApp.GetSdkCtx(), tokenomicstypes.DefaultParams())
-	require.NoError(t, err)
-	err = proofKeeper.SetParams(integrationApp.GetSdkCtx(), prooftypes.DefaultParams())
-	require.NoError(t, err)
-	err = sessionKeeper.SetParams(integrationApp.GetSdkCtx(), sessiontypes.DefaultParams())
-	require.NoError(t, err)
-	err = gatewayKeeper.SetParams(integrationApp.GetSdkCtx(), gatewaytypes.DefaultParams())
-	require.NoError(t, err)
-	err = applicationKeeper.SetParams(integrationApp.GetSdkCtx(), apptypes.DefaultParams())
-	require.NoError(t, err)
-	err = supplierKeeper.SetParams(integrationApp.GetSdkCtx(), suppliertypes.DefaultParams())
-	require.NoError(t, err)
-	err = serviceKeeper.SetParams(integrationApp.GetSdkCtx(), servicetypes.DefaultParams())
-	require.NoError(t, err)
-	err = gatewayKeeper.SetParams(integrationApp.GetSdkCtx(), gatewaytypes.DefaultParams())
-	require.NoError(t, err)
+	//err = bankKeeper.SetParams(integrationApp.GetSdkCtx(), banktypes.DefaultParams())
+	//require.NoError(t, err)
+	//err = sharedKeeper.SetParams(integrationApp.GetSdkCtx(), sharedtypes.DefaultParams())
+	//require.NoError(t, err)
+	//err = tokenomicsKeeper.SetParams(integrationApp.GetSdkCtx(), tokenomicstypes.DefaultParams())
+	//require.NoError(t, err)
+	//err = proofKeeper.SetParams(integrationApp.GetSdkCtx(), prooftypes.DefaultParams())
+	//require.NoError(t, err)
+	//err = sessionKeeper.SetParams(integrationApp.GetSdkCtx(), sessiontypes.DefaultParams())
+	//require.NoError(t, err)
+	//err = gatewayKeeper.SetParams(integrationApp.GetSdkCtx(), gatewaytypes.DefaultParams())
+	//require.NoError(t, err)
+	//err = applicationKeeper.SetParams(integrationApp.GetSdkCtx(), apptypes.DefaultParams())
+	//require.NoError(t, err)
+	//err = supplierKeeper.SetParams(integrationApp.GetSdkCtx(), suppliertypes.DefaultParams())
+	//require.NoError(t, err)
+	//err = serviceKeeper.SetParams(integrationApp.GetSdkCtx(), servicetypes.DefaultParams())
+	//require.NoError(t, err)
+	//err = gatewayKeeper.SetParams(integrationApp.GetSdkCtx(), gatewaytypes.DefaultParams())
+	//require.NoError(t, err)
 
 	// Need to go to the next block to finalize the genesis and setup.
 	// This has to be after the params are set, as the params are stored in the
@@ -791,7 +795,9 @@ func (app *App) QueryHelper() *baseapp.QueryServiceTestHelper {
 // The result of the message execution is returned as an Any type.
 // That any type can be unmarshaled to the expected response type.
 // If the message execution fails, an error is returned.
-func (app *App) RunMsg(t *testing.T, msg sdk.Msg, option ...RunOption) []byte {
+//
+// TODO_IN_THIS_COMMIT: update comment regarding return type...
+func (app *App) RunMsg(t *testing.T, msg sdk.Msg, option ...RunOption) (txMsgRes tx.MsgResponse) {
 	//func (app *App) RunMsg(t *testing.T, msg sdk.Msg, option ...RunOption) *codectypes.Any {
 	t.Helper()
 
@@ -872,7 +878,18 @@ func (app *App) RunMsg(t *testing.T, msg sdk.Msg, option ...RunOption) []byte {
 	txResult := finalizedBlockResponse.TxResults[0]
 	require.Truef(t, txResult.IsOK(), "tx failed with log: %s", txResult.GetLog())
 
-	return txResult.GetData()
+	txMsgDataBz := txResult.GetData()
+	require.NotNil(t, txMsgDataBz)
+
+	txMsgData := new(cosmostypes.TxMsgData)
+	err = app.GetCodec().Unmarshal(txMsgDataBz, txMsgData)
+
+	// TODO_IN_THIS_COMMIT: assumes only one msg per tx...
+	err = app.GetCodec().UnpackAny(txMsgData.MsgResponses[0], &txMsgRes)
+	//err = s.GetApp().GetCodec().UnpackAny(txMsgData.MsgResponses[0], stakeAppRes)
+	require.NoError(t, err)
+	require.NotNil(t, txMsgRes)
+	return txMsgRes
 
 	// Serialize and collect the transaction
 	//tx := sdk.NewTxBuilder().WithMsgs(msg) // Add msg to transaction builder
@@ -987,22 +1004,6 @@ func (app *App) nextBlockUpdateCtx() {
 		// create a new multi-store.
 		WithMultiStore(prevCtx.MultiStore())
 	*app.sdkCtx = newContext
-}
-
-// CreateMultiStore is a helper for setting up multiple stores for provided modules.
-func CreateMultiStore(
-	keys map[string]*storetypes.KVStoreKey,
-	logger log.Logger,
-	db dbm.DB,
-) storetypes.CommitMultiStore {
-	cms := store.NewCommitMultiStore(db, logger, metrics.NewNoOpMetrics())
-
-	for key := range keys {
-		cms.MountStoreWithDB(keys[key], storetypes.StoreTypeIAVL, db)
-	}
-
-	_ = cms.LoadLatestVersion()
-	return cms
 }
 
 func fundAccount(

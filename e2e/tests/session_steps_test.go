@@ -91,13 +91,9 @@ func (s *suite) TheUserShouldWaitForTheClaimsettledEventWithProofRequirementToBe
 		),
 	)
 
-	// Update the actor maps after the relevant end block events have been emitted.
-	switch module {
-	case "application":
-		s.buildAppMap()
-	case "supplier":
-		s.buildSupplierMap()
-	}
+	// Update the actor maps after end block events have been emitted.
+	s.buildAppMap()
+	s.buildSupplierMap()
 }
 
 // TODO_FLAKY: See how 'TheClaimCreatedBySupplierForServiceForApplicationShouldBeSuccessfullySettled'
