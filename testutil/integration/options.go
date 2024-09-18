@@ -20,6 +20,16 @@ type RunOption func(*RunConfig)
 // RunOptions is a list of RunOption. It implements the Append method for convenience.
 type RunOptions []RunOption
 
+func (runOpts RunOptions) Config() *RunConfig {
+	cfg := &RunConfig{}
+
+	for _, opt := range runOpts {
+		opt(cfg)
+	}
+
+	return cfg
+}
+
 // Append returns a new RunOptions with the given RunOptions appended.
 func (runOpts RunOptions) Append(newRunOpts ...RunOption) RunOptions {
 	return append(runOpts, newRunOpts...)
