@@ -851,6 +851,7 @@ type Params struct {
 	// application unbonding period will exceed the end of its corresponding proof window close height.
 	ApplicationUnbondingPeriodSessions uint64 `protobuf:"varint,8,opt,name=application_unbonding_period_sessions,json=applicationUnbondingPeriodSessions,proto3" json:"application_unbonding_period_sessions,omitempty"`
 	// The amount of upokt that a compute unit should translate to when settling a session.
+	// DEV_NOTE: This used to be under x/tokenomics but has been moved here to avoid cyclic dependencies.
 	ComputeUnitsToTokensMultiplier uint64 `protobuf:"varint,9,opt,name=compute_units_to_tokens_multiplier,json=computeUnitsToTokensMultiplier,proto3" json:"compute_units_to_tokens_multiplier,omitempty"`
 }
 
