@@ -2,6 +2,7 @@ package events
 
 import (
 	"strconv"
+	"strings"
 	"testing"
 
 	abci "github.com/cometbft/cometbft/abci/types"
@@ -45,5 +46,33 @@ func QuoteEventMode(event *abci.Event) {
 			event.Attributes[i].Value = strconv.Quote(attr.Value)
 			return
 		}
+	}
+}
+
+// TODO_IN_THIS_COMMIT: godoc...
+func NewMsgEventMatchFn(matchMsgTypeURL string) func(*cosmostypes.Event) bool {
+	return func(event *cosmostypes.Event) bool {
+		if event.Type != "message" {
+			return false
+		}
+
+		actionAttr, hasActionAttr := event.GetAttribute("action")
+		if !hasActionAttr {
+			return false
+		}
+
+		eventMsgTypeURL := strings.Trim(actionAttr.GetValue(), "\"")
+		if strings.Trim(eventMsgTypeURL, "/") != strings.Trim(matchMsgTypeURL, "/") {
+			return false
+		}
+
+		return true
+	}
+}
+
+// TODO_IN_THIS_COMMIT: godoc...
+func NewEventTypeMatchFn(matchEventType string) func(*cosmostypes.Event) bool {
+	return func(event *cosmostypes.Event) bool {
+		return strings.Trim(event.Type, "/") == strings.Trim(matchEventType, "/")
 	}
 }

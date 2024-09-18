@@ -3,6 +3,7 @@
 package suites
 
 import (
+	"strings"
 	"testing"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
@@ -11,6 +12,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/testutil/integration"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
@@ -41,6 +43,8 @@ var _ IntegrationSuite = (*BaseIntegrationSuite)(nil)
 type BaseIntegrationSuite struct {
 	suite.Suite
 	app *integration.App
+
+	appQueryClient client.ApplicationQueryClient
 }
 
 // NewApp constructs a new integration app and sets it on the suite.
@@ -69,12 +73,20 @@ func (s *BaseIntegrationSuite) GetModuleNames() []string {
 	return allPoktrollModuleNames
 }
 
+// SdkCtx returns the integration app's SDK context.
+func (s *BaseIntegrationSuite) SdkCtx() *cosmostypes.Context {
+	return s.GetApp().GetSdkCtx()
+
+}
+
 // FundAddress sends amountUpokt coins from the faucet to the given address.
 func (s *BaseIntegrationSuite) FundAddress(
 	t *testing.T,
 	addr cosmostypes.AccAddress,
 	amountUpokt int64,
+	runOpts ...integration.RunOption,
 ) {
+	opts := integration.RunOptions(runOpts)
 	coinUpokt := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, amountUpokt)
 	sendMsg := &banktypes.MsgSend{
 		FromAddress: integration.FaucetAddrStr,
@@ -82,12 +94,66 @@ func (s *BaseIntegrationSuite) FundAddress(
 		Amount:      cosmostypes.NewCoins(coinUpokt),
 	}
 
-	anyRes := s.GetApp().RunMsg(t, sendMsg, integration.RunUntilNextBlockOpts...)
-	require.NotNil(t, anyRes)
-
-	sendRes := new(banktypes.MsgSendResponse)
-	err := s.GetApp().GetCodec().UnpackAny(anyRes, &sendRes)
-	require.NoError(t, err)
+	txMsgRes := s.GetApp().RunMsg(t, opts.Config(), sendMsg)
+	require.NotNil(t, txMsgRes)
 
 	// NB: no use in returning sendRes because it has no fields.
+}
+
+func (s *BaseIntegrationSuite) GetBankQueryClient() banktypes.QueryClient {
+	return banktypes.NewQueryClient(s.GetApp().QueryHelper())
+}
+
+// TODO_IN_THIS_COMMIT: godoc...
+func (s *BaseIntegrationSuite) FilterLatestEvents(matchFn func(*cosmostypes.Event) bool) (matchedEvents []*cosmostypes.Event) {
+	return s.filterEvents(matchFn, false)
+}
+
+// TODO_IN_THIS_COMMIT: godoc...
+func (s *BaseIntegrationSuite) LatestMatchingEvent(matchFn func(*cosmostypes.Event) bool) (matchedEvent *cosmostypes.Event) {
+	filteredEvents := s.filterEvents(matchFn, true)
+
+	if len(filteredEvents) < 1 {
+		return nil
+	}
+
+	return filteredEvents[0]
+}
+
+// TODO_IN_THIS_COMMIT: godoc...
+func (s *BaseIntegrationSuite) GetAttributeValue(event *cosmostypes.Event, key string) (value string, hasAttr bool) {
+	attr, hasAttr := event.GetAttribute(key)
+	if !hasAttr {
+		return "", false
+	}
+
+	return strings.Trim(attr.GetValue(), "\""), true
+}
+
+// TODO_IN_THIS_COMMIT: godoc...
+// TODO_IMPROVE: consolidate with testutil/events/filter.go
+func (s *BaseIntegrationSuite) filterEvents(
+	matchFn func(*cosmostypes.Event) bool,
+	latestOnly bool,
+) (matchedEvents []*cosmostypes.Event) {
+	events := s.GetApp().GetSdkCtx().EventManager().Events()
+
+	// TODO_IN_THIS_COMMIT: comment about why reverse order and/or figure out why events accumulate across blocks.
+	for i := len(events) - 1; i >= 0; i-- {
+		// TODO_IN_THIS_COMMIT: double-check that there's no issue here with
+		// pointing to a variable which is reused by the loop.
+		event := events[i]
+
+		if !matchFn(&event) {
+			continue
+		}
+
+		matchedEvents = append(matchedEvents, &event)
+
+		if latestOnly {
+			break
+		}
+	}
+
+	return matchedEvents
 }
