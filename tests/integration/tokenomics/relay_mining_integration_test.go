@@ -4,10 +4,13 @@ import (
 	"context"
 	"testing"
 
+	"cosmossdk.io/math"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/smt"
 	"github.com/pokt-network/smt/kvstore/pebble"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/testutil/integration"
 	"github.com/pokt-network/poktroll/testutil/testrelayer"
@@ -29,15 +32,15 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 	keepers := integrationApp.GetKeepers()
 
 	// Set the global tokenomics params
-	err := keepers.TokenomicsKeeper.SetParams(sdkCtx, tokenomicstypes.Params{
+	err := keepers.SharedKeeper.SetParams(sdkCtx, sharedtypes.Params{
 		ComputeUnitsToTokensMultiplier: globalComputeUnitsToTokensMultiplier,
 	})
 	require.NoError(t, err)
 
 	// Set the global proof params so we never need a proof (for simplicity of this test)
 	err = keepers.ProofKeeper.SetParams(sdkCtx, prooftypes.Params{
-		ProofRequestProbability:   0,            // we never need a proof randomly
-		ProofRequirementThreshold: uint64(1e18), // a VERY high threshold
+		ProofRequestProbability:   0,                                                                // we never need a proof randomly
+		ProofRequirementThreshold: &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(1e18)}, // a VERY high threshold
 	})
 	require.NoError(t, err)
 
