@@ -1,10 +1,10 @@
 {
     "pubkey": {
         "@type": "/cosmos.crypto.ed25519.PubKey",
-        "key": "etLIiQS7ud7xuAKe0/gxQryW8vONDCs4KRdrZBhb530="
+        "key": "+wZ4BYFGBuT8mGSIWtciiE6bFu+nlonGNXkIk0VC3O8="
     },
     "amount": "900000000upokt",
-    "moniker": "validator2",
+    "moniker": "grove2",
     "identity": "",
     "website": "",
     "security": "",
