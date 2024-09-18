@@ -22,9 +22,7 @@ func TestGenesisState_Validate(t *testing.T) {
 		{
 			desc: "valid genesis state",
 			genState: &types.GenesisState{
-				Params: types.Params{
-					ComputeUnitsToTokensMultiplier: 1,
-				},
+				Params: types.Params{},
 				RelayMiningDifficultyList: []types.RelayMiningDifficulty{
 					{
 						ServiceId: "0",
@@ -36,16 +34,6 @@ func TestGenesisState_Validate(t *testing.T) {
 				// this line is used by starport scaffolding # types/genesis/validField
 			},
 			isValid: true,
-		},
-		{
-			desc: "invalid genesis state - ComputeUnitsToTokensMultiplier is 0",
-			genState: &types.GenesisState{
-				Params: types.Params{
-					ComputeUnitsToTokensMultiplier: 0,
-				},
-				// this line is used by starport scaffolding # types/genesis/validField
-			},
-			isValid: false,
 		},
 		{
 			desc: "duplicated relayMiningDifficulty",
