@@ -736,7 +736,7 @@ func (app *App) RunMsgs(t *testing.T, msgs ...sdk.Msg) (txMsgResps []tx.MsgRespo
 	for _, txResult := range finalizeBlockRes.TxResults {
 		if !txResult.IsOK() {
 			err = fmt.Errorf("tx failed with log: %q", txResult.GetLog())
-			errors.Join(txResultErrs, err)
+			txResultErrs = errors.Join(txResultErrs, err)
 			continue
 		}
 
