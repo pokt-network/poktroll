@@ -99,9 +99,12 @@ func GetRelayDifficultyMultiplier(relayDifficultyHash []byte) *big.Rat {
 	return new(big.Rat).Inv(probability)
 }
 
-// GetRelayDifficultyMultiplierInt returns a human readable integer representation
+// GetRelayDifficultyMultiplierUInt returns a human readable integer representation
 // of GetRelayDifficultyMultiplier for telemetry purposes.
-func GetRelayDifficultyMultiplierInt(relayDifficultyHash []byte) uint64 {
+// TODO_BETA(@red-0ne): Refactor this function to avoid using ints for both
+// telemetry and business logic. Use Rat in business logic and float32 for telemetry.
+// Ref: https://github.com/pokt-network/poktroll/pull/771#discussion_r1761517063
+func GetRelayDifficultyMultiplierUInt(relayDifficultyHash []byte) uint64 {
 	ratToUint64 := func(rat *big.Rat) uint64 {
 		float, _ := rat.Float64()
 		return uint64(float)

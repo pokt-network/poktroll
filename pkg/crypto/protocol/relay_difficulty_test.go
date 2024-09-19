@@ -62,7 +62,6 @@ func TestRelayDifficulty_GetRelayDifficultyMultiplier(t *testing.T) {
 				require.Equal(t, "1", denominator.String(), "denominator should be 1 when value is out of range")
 				require.Equal(t, test.expectedDifficulty, numerator.String())
 			} else {
-
 				// Compute quotient and remainder
 				quotient := new(big.Int)
 				remainder := new(big.Int)
@@ -130,26 +129,26 @@ func TestRelayDifficulty_IsRelayVolumeApplicable(t *testing.T) {
 func TestRelayDifficulty_ComputeNewDifficultyHash(t *testing.T) {
 	tests := []struct {
 		desc                        string
-		numRelaysTarget             uint64
-		relaysEma                   uint64
+		numRelaysTarget             uint64 // the protocol's "target" for how many relays a session tree should have
+		numRelaysEMA                uint64 // the actual number of relays (as an exponential moving average) a RelayMiner would service successfully
 		expectedRelayDifficultyHash []byte
 	}{
 		{
 			desc:                        "Relays Target > Relays EMA",
 			numRelaysTarget:             100,
-			relaysEma:                   50,
+			numRelaysEMA:                50,
 			expectedRelayDifficultyHash: defaultDifficulty(),
 		},
 		{
 			desc:                        "Relays Target == Relays EMA",
 			numRelaysTarget:             100,
-			relaysEma:                   100,
+			numRelaysEMA:                100,
 			expectedRelayDifficultyHash: defaultDifficulty(),
 		},
 		{
 			desc:            "Relays Target < Relays EMA",
 			numRelaysTarget: 50,
-			relaysEma:       100,
+			numRelaysEMA:    100,
 			expectedRelayDifficultyHash: append(
 				[]byte{0b01111111},
 				makeBytesFullOfOnes(31)...,
@@ -158,25 +157,16 @@ func TestRelayDifficulty_ComputeNewDifficultyHash(t *testing.T) {
 		{
 			desc:            "Relays Target << Relays EMA",
 			numRelaysTarget: 50,
-			relaysEma:       200,
-			expectedRelayDifficultyHash: append(
-				[]byte{0b00111111},
-				makeBytesFullOfOnes(31)...,
-			),
-		},
-		{
-			desc:            "Relays Target << Relays EMA",
-			numRelaysTarget: 50,
-			relaysEma:       1000,
+			numRelaysEMA:    800,
 			expectedRelayDifficultyHash: append(
 				[]byte{0b00001111},
 				makeBytesFullOfOnes(31)...,
 			),
 		},
 		{
-			desc:            "Relays Target << Relays EMA",
+			desc:            "Relays Target <<< Relays EMA",
 			numRelaysTarget: 50,
-			relaysEma:       10000,
+			numRelaysEMA:    6400,
 			expectedRelayDifficultyHash: append(
 				[]byte{0b00000001},
 				makeBytesFullOfOnes(31)...,
@@ -186,10 +176,13 @@ func TestRelayDifficulty_ComputeNewDifficultyHash(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			newRelayDifficultyTargetHash := ComputeNewDifficultyTargetHash(BaseRelayDifficultyHashBz, tt.numRelaysTarget, tt.relaysEma)
+			// Explanation: An increase in difficulty is indicated by a decrease in the target hash.
+			// We expect the new difficulty (newRelayDifficultyHash) to be less than or equal to the base difficulty (BaseRelayDifficultyHashBz).
+			// This is because numRelaysEMA is greater than numRelaysTarget.
+			newRelayDifficultyTargetHash := ComputeNewDifficultyTargetHash(BaseRelayDifficultyHashBz, tt.numRelaysTarget, tt.numRelaysEMA)
 
-			// NB: An increase in difficulty is indicated by a decrease in the target hash
-			didDifficultyIncrease := bytes.Compare(newRelayDifficultyTargetHash, tt.expectedRelayDifficultyHash) < 1
+			// DEV_NOTE: The number were set up to ensure the bytes equal, but we could have used LessThanOrEqualTo here
+			didDifficultyIncrease := bytes.Equal(newRelayDifficultyTargetHash, tt.expectedRelayDifficultyHash)
 			require.True(t, didDifficultyIncrease,
 				"expected difficulty.TargetHash (%x) to be equal to expectedRelayMiningDifficulty.TargetHash (%x)",
 				newRelayDifficultyTargetHash, tt.expectedRelayDifficultyHash,
@@ -306,9 +299,9 @@ func TestRelayDifficulty_EnsureRelayMiningProbabilityIsProportional(t *testing.T
 
 		volumeApplicableRelays := scaleRelaysFromActualToTarget(t, relayProbability, numEstimatedRelays)
 		if numEstimatedRelays < targetNumRelays {
-			require.InDelta(t, numEstimatedRelays, volumeApplicableRelays, 2)
+			require.InDelta(t, numEstimatedRelays, volumeApplicableRelays, 1)
 		} else {
-			require.InDelta(t, targetNumRelays, volumeApplicableRelays, 2)
+			require.InDelta(t, targetNumRelays, volumeApplicableRelays, 1)
 		}
 	}
 }
@@ -316,13 +309,16 @@ func TestRelayDifficulty_EnsureRelayMiningProbabilityIsProportional(t *testing.T
 // scaleRelaysFromActualToTarget scales the number of relays (i.e. estimated offchain serviced relays)
 // down to the number of expected on-chain volume applicable relays
 func scaleRelaysFromActualToTarget(t *testing.T, relayDifficultyProbability *big.Rat, numRelays uint64) uint64 {
-	mr := new(big.Rat).SetUint64(numRelays)
-	result := new(big.Rat).Mul(relayDifficultyProbability, mr)
-	num := result.Num()
-	denom := result.Denom()
-	quotient := new(big.Int).Div(num, denom)
-	require.True(t, quotient.IsUint64(), "value out of range for uint64")
-	return quotient.Uint64()
+	numRelaysRat := new(big.Rat).SetUint64(numRelays)
+	volumeApplicableRelaysRat := new(big.Rat).Mul(relayDifficultyProbability, numRelaysRat)
+
+	numerator := volumeApplicableRelaysRat.Num()
+	denominator := volumeApplicableRelaysRat.Denom()
+
+	numRelaysTarget := new(big.Int).Div(numerator, denominator)
+	require.True(t, numRelaysTarget.IsUint64(), "value out of range for uint64")
+
+	return numRelaysTarget.Uint64()
 }
 
 func TestRelayDifficulty_EnsureRelayMiningMultiplierIsProportional(t *testing.T) {

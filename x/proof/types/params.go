@@ -14,7 +14,9 @@ var (
 	_ client.ProofParams  = (*Params)(nil)
 	_ paramtypes.ParamSet = (*Params)(nil)
 
-	// TODO_TECHDEBT(#690): Delete this parameter.
+	// TODO_TECHDEBT(#690): Delete this parameter and just use "protocol.BaseRelayDifficultyHashBz"
+	// as a hard-coded version. This param was originally intended to be a "minimum",
+	// but the minimum equivalent of "0" in this case is "BaseRelayDifficultyHashBz".
 	KeyRelayDifficultyTargetHash     = []byte("RelayDifficultyTargetHash")
 	ParamRelayDifficultyTargetHash   = "relay_difficulty_target_hash"
 	DefaultRelayDifficultyTargetHash = protocol.BaseRelayDifficultyHashBz

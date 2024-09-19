@@ -2,7 +2,6 @@ package keeper_test
 
 import (
 	"bytes"
-	"fmt"
 	"testing"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
@@ -39,7 +38,7 @@ func TestComputeNewDifficultyHash_MonotonicallyIncreasingRelays(t *testing.T) {
 		require.Greater(t, svcRelayMiningDifficulty.NumRelaysEma, prevEMA)
 		prevEMA = svcRelayMiningDifficulty.NumRelaysEma
 
-		// Only enforce that the target hash is monotonically decreasing if it is not the default
+		// DECREASING: Only enforce that the target hash is monotonically decreasing if it is not the default
 		if !bytes.Equal(prevTargetHash, protocol.BaseRelayDifficultyHashBz) {
 			require.Greater(t, svcRelayMiningDifficulty.TargetHash, prevTargetHash)
 			prevTargetHash = svcRelayMiningDifficulty.TargetHash
@@ -76,9 +75,8 @@ func TestComputeNewDifficultyHash_MonotonicallyDecreasingRelays(t *testing.T) {
 			prevEMA = svcRelayMiningDifficulty.NumRelaysEma
 		}
 
-		// Only enforce that the target hash is monotonically increasing if it is not the default
+		// INCREASING: Only enforce that the target hash is monotonically increasing if it is not the default
 		if !bytes.Equal(prevTargetHash, protocol.BaseRelayDifficultyHashBz) {
-			fmt.Println(prevTargetHash)
 			require.Less(t, svcRelayMiningDifficulty.TargetHash, prevTargetHash)
 			prevTargetHash = svcRelayMiningDifficulty.TargetHash
 		}

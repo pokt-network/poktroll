@@ -408,13 +408,13 @@ func validateRelayDifficulty(relayBz, relayDifficultyTargetHash []byte, serviceI
 	}
 
 	if !protocol.IsRelayVolumeApplicable(relayHash, relayDifficultyTargetHash) {
-		relayDifficultyMultiplierInt := protocol.GetRelayDifficultyMultiplierInt(relayHash)
-		targetDifficultyMultiplierIn := protocol.GetRelayDifficultyMultiplierInt(relayDifficultyTargetHash)
+		relayDifficultyMultiplierStr := protocol.GetRelayDifficultyMultiplier(relayHash).String()
+		targetDifficultyMultiplierStr := protocol.GetRelayDifficultyMultiplier(relayDifficultyTargetHash).String()
 
 		return types.ErrProofInvalidRelay.Wrapf(
-			"the difficulty relay being proven is (%d), and is smaller than the target difficulty (%d) for service %s",
-			relayDifficultyMultiplierInt,
-			targetDifficultyMultiplierIn,
+			"the difficulty relay being proven is (%s), and is smaller than the target difficulty (%s) for service %s",
+			relayDifficultyMultiplierStr,
+			targetDifficultyMultiplierStr,
 			serviceId,
 		)
 	}

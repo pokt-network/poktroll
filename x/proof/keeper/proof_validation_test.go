@@ -2,6 +2,7 @@ package keeper_test
 
 import (
 	"encoding/hex"
+	"fmt"
 	"testing"
 
 	"cosmossdk.io/depinject"
@@ -189,7 +190,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 	copy(wrongClosestProofPath, "wrong closest proof path")
 
 	lowTargetHash, _ := hex.DecodeString("00000000000000000000000000000000000000000000000000000000000000ff")
-	highExpectedTargetDifficulty := protocol.GetRelayDifficultyMultiplierInt(lowTargetHash)
+	highExpectedTargetDifficulty := protocol.GetRelayDifficultyMultiplierUInt(lowTargetHash)
 
 	tests := []struct {
 		desc        string
@@ -614,7 +615,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 				)
 			},
 			expectedErr: prooftypes.ErrProofInvalidRelay.Wrapf(
-				"the difficulty relay being proven is (%d), and is smaller than the target difficulty (%d) for service %s",
+				"the difficulty relay being proven is (%d), and is smaller than the target difficulty (%d) for service (%s)",
 				validClosestRelayDifficultyBits,
 				highExpectedTargetDifficulty,
 				validSessionHeader.ServiceId,
@@ -774,7 +775,10 @@ func getClosestRelayDifficulty(
 	sessionTree relayer.SessionTree,
 	closestMerkleProofPath []byte,
 ) uint64 {
+	t.Helper()
+
 	// Retrieve a merkle proof that is closest to the path provided
+	fmt.Println("closestMerkleProofPath", closestMerkleProofPath)
 	closestMerkleProof, err := sessionTree.ProveClosest(closestMerkleProofPath)
 	require.NoError(t, err)
 
@@ -788,5 +792,5 @@ func getClosestRelayDifficulty(
 	relayHash, err := relay.GetHash()
 	require.NoError(t, err)
 
-	return protocol.GetRelayDifficultyMultiplierInt(relayHash[:])
+	return protocol.GetRelayDifficultyMultiplierUInt(relayHash[:])
 }
