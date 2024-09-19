@@ -773,7 +773,7 @@ func getClosestRelayDifficulty(
 	t *testing.T,
 	sessionTree relayer.SessionTree,
 	closestMerkleProofPath []byte,
-) int64 {
+) uint64 {
 	// Retrieve a merkle proof that is closest to the path provided
 	closestMerkleProof, err := sessionTree.ProveClosest(closestMerkleProofPath)
 	require.NoError(t, err)

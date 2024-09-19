@@ -91,10 +91,10 @@ func (k msgServer) CreateClaim(
 		return nil, status.Error(codes.NotFound, types.ErrProofServiceNotFound.Wrapf("%v", err).Error())
 	}
 
-	// DEV_NOTE: For now, we expect the following equation to always hold:
+	// For a specific service, each relay costs the same amount.
+	// TODO_POST_MAINNET: Investigate ways of having request specific compute unit
+	// costs within the same service.
 	numExpectedComputeUnitsToClaim := numRelays * serviceComputeUnitsPerRelay
-	// This is because for any specific service, every relay is worth the same.
-	// However, this may change in the future.
 
 	// Ensure the number of compute units claimed is equal to the number of relays
 	if numClaimComputeUnits != numExpectedComputeUnitsToClaim {

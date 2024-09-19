@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"math/big"
+	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -15,27 +16,27 @@ func TestRelayDifficulty_GetRelayDifficultyMultiplier(t *testing.T) {
 	tests := []struct {
 		desc               string
 		hashHex            string
-		expectedDifficulty int64
+		expectedDifficulty string
 	}{
 		{
 			desc:               "Difficulty 1",
 			hashHex:            "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-			expectedDifficulty: 1,
+			expectedDifficulty: "1",
 		},
 		{
 			desc:               "Difficulty 2",
 			hashHex:            "7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-			expectedDifficulty: 2,
+			expectedDifficulty: "2",
 		},
 		{
 			desc:               "Difficulty 4",
 			hashHex:            "3fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-			expectedDifficulty: 4,
+			expectedDifficulty: "4",
 		},
 		{
 			desc:               "Highest difficulty",
 			hashHex:            "0000000000000000000000000000000000000000000000000000000000000001",
-			expectedDifficulty: 9223372036854775807,
+			expectedDifficulty: "115792089237316195423570985008687907853269984665640564039457584007913129639935",
 		},
 	}
 
@@ -46,10 +47,30 @@ func TestRelayDifficulty_GetRelayDifficultyMultiplier(t *testing.T) {
 				t.Fatalf("failed to decode hash: %v", err)
 			}
 
-			difficultyMultiplier := GetRelayDifficultyMultiplier(hashBytes)
-			difficulty, _ := difficultyMultiplier.Float64()
-			// require.True(t, exact, "expected exact value for difficulty multiplier")
-			require.Equal(t, test.expectedDifficulty, int64(difficulty))
+			// Get the difficulty multiplier as a quotient of arbitrary precision
+			difficultyMultiplierRat := GetRelayDifficultyMultiplier(hashBytes)
+			require.NotNil(t, difficultyMultiplierRat)
+
+			// Extract the numerator and denominator
+			numerator := difficultyMultiplierRat.Num()
+			denominator := difficultyMultiplierRat.Denom()
+
+			// Determine if it fits within an int64
+			difficultyMultiplierInt, err := strconv.ParseInt(test.expectedDifficulty, 10, 64)
+			if err != nil {
+				require.ErrorContains(t, err, "value out of range", "the only expected error for large numbers is out of range")
+				require.Equal(t, "1", denominator.String(), "denominator should be 1 when value is out of range")
+				require.Equal(t, test.expectedDifficulty, numerator.String())
+			} else {
+
+				// Compute quotient and remainder
+				quotient := new(big.Int)
+				remainder := new(big.Int)
+				quotient.DivMod(numerator, denominator, remainder)
+
+				require.NoError(t, err)
+				require.Equal(t, difficultyMultiplierInt, quotient.Int64())
+			}
 		})
 	}
 }

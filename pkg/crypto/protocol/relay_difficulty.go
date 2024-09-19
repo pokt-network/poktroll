@@ -101,10 +101,10 @@ func GetRelayDifficultyMultiplier(relayDifficultyHash []byte) *big.Rat {
 
 // GetRelayDifficultyMultiplierInt returns a human readable integer representation
 // of GetRelayDifficultyMultiplier for telemetry purposes.
-func GetRelayDifficultyMultiplierInt(relayDifficultyHash []byte) int64 {
-	ratToUint64 := func(rat *big.Rat) int64 {
+func GetRelayDifficultyMultiplierInt(relayDifficultyHash []byte) uint64 {
+	ratToUint64 := func(rat *big.Rat) uint64 {
 		float, _ := rat.Float64()
-		return int64(float)
+		return uint64(float)
 	}
 	probability := GetRelayDifficultyProbability(relayDifficultyHash)
 	return ratToUint64(probability)
