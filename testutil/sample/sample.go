@@ -30,12 +30,21 @@ func AccAddressAndPubKeyEd25519() (string, cryptotypes.PubKey) {
 	return sdk.AccAddress(addr).String(), pk
 }
 
-// ConsAddress returns a sample consensus address, which has the prefix
-// of validators (i.e. consensus nodes) when converted to bech32.
+// ValAddress returns a sample validator address, which has the prefix
+// of validators when converted to bech32.
+func ValAddress() string {
+	_, pk := AccAddressAndPubKey()
+	validatorAddress := tmhash.SumTruncated(pk.Address())
+	valAddress := sdk.ValAddress(validatorAddress)
+	return valAddress.String()
+}
+
+// ConsAddress returns a sample consensus node address, which has the prefix
+// of consensus nodes when converted to bech32.
 func ConsAddress() string {
 	_, pk := AccAddressAndPubKey()
 	consensusAddress := tmhash.SumTruncated(pk.Address())
-	valAddress := sdk.ValAddress(consensusAddress)
+	valAddress := sdk.ConsAddress(consensusAddress)
 	return valAddress.String()
 }
 

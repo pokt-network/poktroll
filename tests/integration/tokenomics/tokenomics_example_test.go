@@ -46,18 +46,15 @@ func TestTokenomicsIntegrationExample(t *testing.T) {
 	}
 
 	// Run the request
-	result := integrationApp.RunMsg(t,
-		updateTokenomicsParamMsg,
-		integration.WithAutomaticFinalizeBlock(),
-		integration.WithAutomaticCommit(),
-	)
+	result, err := integrationApp.RunMsg(t, updateTokenomicsParamMsg)
+	require.NoError(t, err)
 	require.NotNil(t, result, "unexpected nil result")
 
+	updateTokenomicsParamRes, ok := result.(*tokenomicstypes.MsgUpdateParamResponse)
+	require.True(t, ok)
+
 	// Validate the response is correct and that the value was updated
-	updateTokenomicsParamRes := tokenomicstypes.MsgUpdateParamResponse{}
-	err = integrationApp.GetCodec().Unmarshal(result.Value, &updateTokenomicsParamRes)
-	require.NoError(t, err)
-	require.EqualValues(t, uint64(11), uint64(updateTokenomicsParamRes.Params.ComputeUnitsToTokensMultiplier))
+	require.EqualValues(t, uint64(11), updateTokenomicsParamRes.Params.ComputeUnitsToTokensMultiplier)
 
 	// Prepare a request to query a session so it can be used to create a claim.
 	sessionQueryClient := sessiontypes.NewQueryClient(integrationApp.QueryHelper())
@@ -99,10 +96,7 @@ func TestTokenomicsIntegrationExample(t *testing.T) {
 	}
 
 	// Run the message to create the claim
-	result = integrationApp.RunMsg(t,
-		&createClaimMsg,
-		integration.WithAutomaticFinalizeBlock(),
-		integration.WithAutomaticCommit(),
-	)
+	result, err = integrationApp.RunMsg(t, &createClaimMsg)
+	require.NoError(t, err)
 	require.NotNil(t, result, "unexpected nil result")
 }

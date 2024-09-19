@@ -72,11 +72,8 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 		SessionHeader:           session.Header,
 		RootHash:                trie.Root(),
 	}
-	result := integrationApp.RunMsg(t,
-		&createClaimMsg,
-		integration.WithAutomaticFinalizeBlock(),
-		integration.WithAutomaticCommit(),
-	)
+	result, err := integrationApp.RunMsg(t, &createClaimMsg)
+	require.NoError(t, err)
 	require.NotNil(t, result, "unexpected nil result when submitting a MsgCreateClaim tx")
 
 	// Wait until the proof window is open
@@ -91,11 +88,8 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 		SessionHeader:           session.Header,
 		Proof:                   getProof(t, trie, proofPathSeedBlockHash, session.GetHeader().GetSessionId()),
 	}
-	result = integrationApp.RunMsg(t,
-		&createProofMsg,
-		integration.WithAutomaticFinalizeBlock(),
-		integration.WithAutomaticCommit(),
-	)
+	result, err = integrationApp.RunMsg(t, &createProofMsg)
+	require.NoError(t, err)
 	require.NotNil(t, result, "unexpected nil result when submitting a MsgSubmitProof tx")
 
 	// Wait until the proof window is closed

@@ -168,7 +168,7 @@ func NewIntegrationApp(
 		WithEventManager(cosmostypes.NewEventManager())
 
 	// Add a block proposer address to the context
-	valAddr, err := cosmostypes.ValAddressFromBech32(sample.ConsAddress())
+	valAddr, err := cosmostypes.ValAddressFromBech32(sample.ValAddress())
 	require.NoError(t, err)
 	consensusAddr := cosmostypes.ConsAddress(valAddr)
 	sdkCtx = sdkCtx.WithProposer(consensusAddr)
@@ -714,6 +714,8 @@ func (app *App) RunMsgs(t *testing.T, msgs ...sdk.Msg) (txMsgResps []tx.MsgRespo
 	// Finalize the block with the transaction.
 	finalizeBlockReq := &cmtabcitypes.RequestFinalizeBlock{
 		Height: app.LastBlockHeight() + 1,
+		// Randomize the proposer address for each block.
+		ProposerAddress: newProposerAddrBz(t),
 		DecidedLastCommit: cmtabcitypes.CommitInfo{
 			Votes: []cmtabcitypes.VoteInfo{{}},
 		},
@@ -746,8 +748,8 @@ func (app *App) RunMsgs(t *testing.T, msgs ...sdk.Msg) (txMsgResps []tx.MsgRespo
 		err = app.GetCodec().Unmarshal(txMsgDataBz, txMsgData)
 		require.NoError(t, err)
 
-		txMsgRes := new(tx.MsgResponse)
-		err = app.GetCodec().UnpackAny(txMsgData.MsgResponses[0], txMsgRes)
+		var txMsgRes tx.MsgResponse
+		err = app.GetCodec().UnpackAny(txMsgData.MsgResponses[0], &txMsgRes)
 		require.NoError(t, err)
 		require.NotNil(t, txMsgRes)
 
@@ -796,15 +798,20 @@ func (app *App) NextBlock(t *testing.T) {
 	finalizedBlockResponse, err := app.FinalizeBlock(&abci.RequestFinalizeBlock{
 		Height: app.sdkCtx.BlockHeight(),
 		Time:   app.sdkCtx.BlockTime(),
+		// Randomize the proposer address for each block.
+		ProposerAddress: newProposerAddrBz(t),
 	})
-
 	require.NoError(t, err)
-	app.emitEvents(t, finalizedBlockResponse)
 
 	_, err = app.Commit()
 	require.NoError(t, err)
 
 	app.nextBlockUpdateCtx()
+
+	// Emit events MUST happen AFTER the context has been updated so that
+	// events are available on the context for the block after their actions
+	// were committed (e.g. msgs, begin/end block trigger).
+	app.emitEvents(t, finalizedBlockResponse)
 }
 
 // nextBlockUpdateCtx is responsible for updating the app's (receiver) context
@@ -974,4 +981,13 @@ func newFaucetInitChainerFn(faucetBech32 string, faucetAmtUpokt int64) InitChain
 			},
 		},
 	})
+}
+
+// newProposerAddrBz returns a random proposer address in bytes.
+func newProposerAddrBz(t *testing.T) []byte {
+	bech32 := sample.ConsAddress()
+	addr, err := cosmostypes.ConsAddressFromBech32(bech32)
+	require.NoError(t, err)
+
+	return addr.Bytes()
 }
