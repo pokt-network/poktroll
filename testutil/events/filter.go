@@ -63,11 +63,7 @@ func NewMsgEventMatchFn(matchMsgTypeURL string) func(*cosmostypes.Event) bool {
 		}
 
 		eventMsgTypeURL := strings.Trim(actionAttr.GetValue(), "\"")
-		if strings.Trim(eventMsgTypeURL, "/") == strings.Trim(matchMsgTypeURL, "/") {
-			return true
-		}
-
-		return false
+		return strings.Trim(eventMsgTypeURL, "/") == strings.Trim(matchMsgTypeURL, "/")
 	}
 }
 
