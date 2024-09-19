@@ -1429,7 +1429,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// EventSupplierStaked is emitted with the commitment of the supplier is stake message.
+// EventSupplierStaked is emitted with the commitment of the supplier stake message.
 type EventSupplierStaked struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1465,7 +1465,7 @@ func (x *EventSupplierStaked) GetSupplier() *shared.Supplier {
 	return nil
 }
 
-// EventSupplierUnstaked is emitted with the commitment of the supplier is unstake message.
+// EventSupplierUnstaked is emitted with the commitment of the supplier unstake message.
 type EventSupplierUnbondingBegin struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
