@@ -14,10 +14,10 @@ import (
 
 func (s *suite) TheUnbondingPeriodParamIsSuccessfullySetToSessionsOfBlocks(
 	_ string,
-	supplierUnbondingPeriodSessions,
+	unbondingPeriodSessions,
 	numBlocksPerSession int64,
 ) {
-	require.GreaterOrEqualf(s, numBlocksPerSession, 2,
+	require.GreaterOrEqualf(s, numBlocksPerSession, int64(2),
 		"num_blocks_per_session MUST be at least 2 to satisfy parameter validation requirements")
 
 	paramModuleName := "shared"
@@ -39,8 +39,9 @@ func (s *suite) TheUnbondingPeriodParamIsSuccessfullySetToSessionsOfBlocks(
 		ClaimWindowCloseOffsetBlocks:       1,
 		ProofWindowOpenOffsetBlocks:        0,
 		ProofWindowCloseOffsetBlocks:       1,
-		SupplierUnbondingPeriodSessions:    uint64(supplierUnbondingPeriodSessions),
-		ApplicationUnbondingPeriodSessions: 1,
+		SupplierUnbondingPeriodSessions:    uint64(unbondingPeriodSessions),
+		ApplicationUnbondingPeriodSessions: uint64(unbondingPeriodSessions),
+		ComputeUnitsToTokensMultiplier:     sharedtypes.DefaultComputeUnitsToTokensMultiplier,
 	}
 
 	// Convert params struct to the map type expected by
