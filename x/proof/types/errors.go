@@ -37,4 +37,5 @@ var (
 	ErrProofComputeUnitsMismatch      = sdkerrors.Register(ModuleName, 1126, "mismatch: claim compute units != number of relays * service compute units per relay")
 	ErrProofNotEnoughFunds            = sdkerrors.Register(ModuleName, 1127, "not enough funds to submit proof")
 	ErrProofFailedToDeductFee         = sdkerrors.Register(ModuleName, 1128, "failed to deduct proof submission fee")
+	ErrProofNotRequired               = sdkerrors.Register(ModuleName, 1129, "proof not required")
 )

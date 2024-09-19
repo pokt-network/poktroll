@@ -13,7 +13,6 @@ import (
 
 	"github.com/pokt-network/poktroll/testutil/network"
 	tokenomics "github.com/pokt-network/poktroll/x/tokenomics/module"
-	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 func TestCLI_UpdateParams(t *testing.T) {
@@ -36,14 +35,8 @@ func TestCLI_UpdateParams(t *testing.T) {
 	}{
 		{
 			desc:        "valid update of all params",
-			args:        []string{"42"},
+			args:        []string{},
 			expectedErr: nil,
-		},
-		{
-			desc:                "invalid compute_units_to_tokens_multiplier update",
-			args:                []string{"0"},
-			expectedErr:         types.ErrTokenomicsParamsInvalid,
-			expectedExtraErrMsg: "invalid ComputeUnitsToTokensMultiplier",
 		},
 	}
 

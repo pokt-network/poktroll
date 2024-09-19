@@ -12,7 +12,6 @@ import (
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 func init() {
@@ -37,24 +36,6 @@ func TestTokenomicsIntegrationExample(t *testing.T) {
 	require.EqualValues(t, sharedtypes.DefaultParams(), sharedQueryRes.GetParams())
 
 	sharedParams := sharedQueryRes.GetParams()
-
-	// Prepare a request to update the compute_units_to_tokens_multiplier
-	updateTokenomicsParamMsg := &tokenomicstypes.MsgUpdateParam{
-		Authority: integrationApp.GetAuthority(),
-		Name:      tokenomicstypes.ParamComputeUnitsToTokensMultiplier,
-		AsType:    &tokenomicstypes.MsgUpdateParam_AsInt64{AsInt64: 11},
-	}
-
-	// Run the request
-	result, err := integrationApp.RunMsg(t, updateTokenomicsParamMsg)
-	require.NoError(t, err)
-	require.NotNil(t, result, "unexpected nil result")
-
-	updateTokenomicsParamRes, ok := result.(*tokenomicstypes.MsgUpdateParamResponse)
-	require.True(t, ok)
-
-	// Validate the response is correct and that the value was updated
-	require.EqualValues(t, uint64(11), updateTokenomicsParamRes.Params.ComputeUnitsToTokensMultiplier)
 
 	// Prepare a request to query a session so it can be used to create a claim.
 	sessionQueryClient := sessiontypes.NewQueryClient(integrationApp.QueryHelper())
@@ -96,7 +77,7 @@ func TestTokenomicsIntegrationExample(t *testing.T) {
 	}
 
 	// Run the message to create the claim
-	result, err = integrationApp.RunMsg(t, &createClaimMsg)
+	result, err := integrationApp.RunMsg(t, &createClaimMsg)
 	require.NoError(t, err)
 	require.NotNil(t, result, "unexpected nil result")
 }

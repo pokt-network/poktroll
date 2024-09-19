@@ -16,22 +16,16 @@ var _ = strconv.Itoa(0)
 // TODO_BLOCKER(@bryanchriswhite, #322): Update the CLI once we determine settle on how to maintain and update parameters.
 func CmdUpdateParams() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "update-params <compute_units_to_tokens_multiplier>",
+		Use:   "update-params",
 		Short: "Update the parameters of the tokenomics module",
 		Long: `Update the parameters in the tokenomics module.",
 
 All parameters must be provided when updating.
 
 Example:
-$ poktrolld tx tokenomics update-params <compute_units_to_tokens_multiplier> --from pnf --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
-		Args: cobra.ExactArgs(1),
+$ poktrolld tx tokenomics update-params --from pnf --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
+		Args: cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
-			// Parse computeUnitsToTokensMultiplier
-			computeUnitsToTokensMultiplier, err := strconv.ParseUint(args[0], 10, 64)
-			if err != nil {
-				return err
-			}
-
 			// Get client context
 			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
@@ -41,7 +35,6 @@ $ poktrolld tx tokenomics update-params <compute_units_to_tokens_multiplier> --f
 			// Create update params message
 			msg := types.NewMsgUpdateParams(
 				clientCtx.GetFromAddress().String(),
-				computeUnitsToTokensMultiplier,
 			)
 			if err := msg.ValidateBasic(); err != nil {
 				return err

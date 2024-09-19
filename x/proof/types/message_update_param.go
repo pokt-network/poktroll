@@ -54,7 +54,7 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 	case ParamProofRequestProbability:
 		return msg.paramTypeIsFloat()
 	case ParamProofRequirementThreshold:
-		return msg.paramTypeIsInt64()
+		return msg.paramTypeIsCoin()
 	case ParamProofMissingPenalty:
 		return msg.paramTypeIsCoin()
 	case ParamProofSubmissionFee:
@@ -70,18 +70,6 @@ func (msg *MsgUpdateParam) paramTypeIsBytes() error {
 		return ErrProofParamInvalid.Wrapf(
 			"invalid type for param %q expected %T, got %T",
 			msg.Name, &MsgUpdateParam_AsBytes{},
-			msg.AsType,
-		)
-	}
-	return nil
-}
-
-// paramTypeIsInt64 checks if the parameter type is int64, returning an error if not.
-func (msg *MsgUpdateParam) paramTypeIsInt64() error {
-	if _, ok := msg.AsType.(*MsgUpdateParam_AsInt64); !ok {
-		return ErrProofParamInvalid.Wrapf(
-			"invalid type for param %q expected %T, got %T",
-			msg.Name, &MsgUpdateParam_AsInt64{},
 			msg.AsType,
 		)
 	}
