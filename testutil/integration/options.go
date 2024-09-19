@@ -1,25 +1,61 @@
 package integration
 
-// RunConfig is the configuration for the testing integration app.
-type RunConfig struct {
-	AutomaticFinalizeBlock bool
-	AutomaticCommit        bool
+import (
+	"cosmossdk.io/core/appmodule"
+	"github.com/cosmos/cosmos-sdk/codec"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/module"
+)
+
+// IntegrationAppConfig is a configuration struct for an integration App. Its fields
+// are intended to be set/updated by IntegrationAppOption functions which are passed
+// during integration App construction.
+type IntegrationAppConfig struct {
+	// InitChainerModuleFns are called for each module during the integration App's
+	// InitChainer function.
+	InitChainerModuleFns []InitChainerModuleFn
 }
 
-// RunOption is a function that can be used to configure the integration app.
-type RunOption func(*RunConfig)
+// IntegrationAppOption is a function that receives and has the opportunity to
+// modify the IntegrationAppConfig. It is intended to be passed during integration
+// App construction to modify the behavior of the integration App.
+type IntegrationAppOption func(*IntegrationAppConfig)
 
-// WithAutomaticFinalizeBlock calls ABCI finalize block.
-func WithAutomaticFinalizeBlock() RunOption {
-	return func(cfg *RunConfig) {
-		cfg.AutomaticFinalizeBlock = true
+// InitChainerModuleFn is a function that is called for each module during the
+// integration App's InitChainer function.
+type InitChainerModuleFn func(cosmostypes.Context, codec.Codec, appmodule.AppModule)
+
+// WithInitChainerModuleFn returns an IntegrationAppOption that appends the given
+// InitChainerModuleFn to the IntegrationAppConfig's InitChainerModuleFns.
+func WithInitChainerModuleFn(fn InitChainerModuleFn) IntegrationAppOption {
+	return func(config *IntegrationAppConfig) {
+		config.InitChainerModuleFns = append(config.InitChainerModuleFns, fn)
 	}
 }
 
-// WithAutomaticCommit enables automatic commit.
-// This means that the integration app will automatically commit the state after each msg.
-func WithAutomaticCommit() RunOption {
-	return func(cfg *RunConfig) {
-		cfg.AutomaticCommit = true
+// WithModuleGenesisState returns an IntegrationAppOption that appends an
+// InitChainerModuleFn to the IntegrationAppConfig's InitChainerModuleFns which
+// initializes the module's genesis state with the given genesisState. T is expected
+// to be the module's AppModule type.
+func WithModuleGenesisState[T module.HasGenesis](genesisState cosmostypes.Msg) IntegrationAppOption {
+	return WithInitChainerModuleFn(
+		NewInitChainerModuleGenesisStateOptionFn[T](genesisState),
+	)
+}
+
+// NewInitChainerModuleGenesisStateOptionFn returns an InitChainerModuleFn that
+// initializes the module's genesis state with the given genesisState. T is expected
+// to be the module's AppModule type.
+func NewInitChainerModuleGenesisStateOptionFn[T module.HasGenesis](genesisState cosmostypes.Msg) InitChainerModuleFn {
+	return func(ctx cosmostypes.Context, cdc codec.Codec, mod appmodule.AppModule) {
+		targetModule, isTypeT := mod.(T)
+
+		// Bail if this isn't the module we're looking for. 👋
+		if !isTypeT {
+			return
+		}
+
+		genesisJSON := cdc.MustMarshalJSON(genesisState)
+		targetModule.InitGenesis(ctx, cdc, genesisJSON)
 	}
 }
