@@ -11,16 +11,18 @@ import "poktroll/shared/supplier.proto";
 
 // EventSupplierStaked is emitted with the commitment of the supplier is stake message.
 message EventSupplierStaked {
-  poktroll.shared.Supplier supplier = 1;
+  poktroll.shared.Supplier supplier = 1 [(gogoproto.jsontag) = "supplier"];
 }
 
 // EventSupplierUnstaked is emitted with the commitment of the supplier is unstake message.
 message EventSupplierUnbondingBegin {
-  poktroll.shared.Supplier supplier = 1;
+  poktroll.shared.Supplier supplier = 1 [(gogoproto.jsontag) = "supplier"];
+  int64 unbonding_height = 2 [(gogoproto.jsontag) = "unbonding_height"];
 }
 
 // EventSupplierUnbondingEnd is emitted with the commitment of last block of the
 // supplier unbonding period.
 message EventSupplierUnbondingEnd {
-  poktroll.shared.Supplier supplier = 1;
+  poktroll.shared.Supplier supplier = 1 [(gogoproto.jsontag) = "supplier"];
+  int64 unbonding_height = 2 [(gogoproto.jsontag) = "unbonding_height"];
 }
