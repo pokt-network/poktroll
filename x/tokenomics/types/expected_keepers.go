@@ -53,6 +53,7 @@ type ProofKeeper interface {
 
 	AllClaims(ctx context.Context, req *prooftypes.QueryAllClaimsRequest) (*prooftypes.QueryAllClaimsResponse, error)
 	EnsureValidProof(ctx context.Context, proof *prooftypes.Proof) error
+	ProofRequirementForClaim(ctx context.Context, claim *prooftypes.Claim) (prooftypes.ProofRequirementReason, error)
 
 	// Only used for testing & simulation
 	GetAllProofs(ctx context.Context) []prooftypes.Proof

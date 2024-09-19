@@ -20,6 +20,7 @@ import (
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
+	"github.com/pokt-network/poktroll/x/tokenomics"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 	tokenomictypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
@@ -176,7 +177,7 @@ func (k Keeper) ProcessTokenLogicModules(
 	}
 
 	// Retrieve the sum (i.e. number of compute units) to determine the amount of work done
-	numClaimComputeUnits, err := root.Sum()
+	numClaimComputeUnits, err := claim.GetNumComputeUnits()
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrapf("%v", err)
 	}
@@ -228,12 +229,12 @@ func (k Keeper) ProcessTokenLogicModules(
 		return tokenomicstypes.ErrTokenomicsServiceNotFound.Wrapf("service with ID %q not found", sessionHeader.ServiceId)
 	}
 
-	tokenomicsParams := k.GetParams(ctx)
+	sharedParams := k.sharedKeeper.GetParams(ctx)
 
 	// Determine the total number of tokens being claimed (i.e. for the work completed)
 	// by the supplier for the amount of work they did to service the application
 	// in the session.
-	claimSettlementCoin, err = tokenomicsParams.NumComputeUnitsToCoin(numClaimComputeUnits)
+	claimSettlementCoin, err = tokenomics.NumComputeUnitsToCoin(sharedParams, numClaimComputeUnits)
 	if err != nil {
 		return err
 	}
@@ -253,7 +254,7 @@ func (k Keeper) ProcessTokenLogicModules(
 	if !found {
 		// If the relay mining difficulty is not found, we initialize it with the
 		// current number of relays.
-		numRelays, countErr := root.Count()
+		numRelays, countErr := claim.GetNumRelays()
 		if countErr != nil {
 			return tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrapf("%v", countErr)
 		}

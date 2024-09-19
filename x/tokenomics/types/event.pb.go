@@ -339,7 +339,7 @@ func (m *EventApplicationOverserviced) GetEffectiveBurn() *types1.Coin {
 // or provided invalid required proofs for claims.
 type EventSupplierSlashed struct {
 	SupplierOperatorAddr string `protobuf:"bytes,1,opt,name=supplier_operator_addr,json=supplierOperatorAddr,proto3" json:"supplier_operator_addr,omitempty"`
-	// Number of claims that were expired and led to the slashing.
+	// Number of expired claims (due to missing or invalid proof) that led to slashing.
 	NumExpiredClaims uint64 `protobuf:"varint,2,opt,name=num_expired_claims,json=numExpiredClaims,proto3" json:"num_expired_claims,omitempty"`
 	// Amount slashed from the supplier's stake due to the expired claims.
 	// This is a function of the number of expired claims and proof missing penalty.

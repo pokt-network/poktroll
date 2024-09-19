@@ -15,6 +15,7 @@ import (
 	"github.com/pokt-network/poktroll/x/proof/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	"github.com/pokt-network/poktroll/x/shared"
+	tokenomics "github.com/pokt-network/poktroll/x/tokenomics"
 )
 
 // submitProofs maps over the given claimedSessions observable.
@@ -287,13 +288,13 @@ func (rs *relayerSessionsManager) isProofRequired(
 		return false, err
 	}
 
-	tokenomicsParams, err := rs.tokenomicsQueryClient.GetParams(ctx)
+	sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
 	if err != nil {
 		return false, err
 	}
 
 	// The amount of uPOKT being claimed.
-	claimedAmount, err := tokenomicsParams.NumComputeUnitsToCoin(numClaimComputeUnits)
+	claimedAmount, err := tokenomics.NumComputeUnitsToCoin(*sharedParams, numClaimComputeUnits)
 	if err != nil {
 		return false, err
 	}
