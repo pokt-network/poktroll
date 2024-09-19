@@ -664,8 +664,11 @@ func (app *App) RunMsg(t *testing.T, msg sdk.Msg) (tx.MsgResponse, error) {
 	t.Helper()
 
 	txMsgRes, err := app.RunMsgs(t, msg)
-	require.Equal(t, 1, len(txMsgRes), "expected exactly 1 tx msg response")
+	if err != nil {
+		return nil, err
+	}
 
+	require.Equal(t, 1, len(txMsgRes), "expected exactly 1 tx msg response")
 	return txMsgRes[0], err
 }
 
@@ -682,7 +685,7 @@ func (app *App) RunMsgs(t *testing.T, msgs ...sdk.Msg) (txMsgResps []tx.MsgRespo
 	// Commit the updated state after the message has been handled.
 	var finalizeBlockRes *abci.ResponseFinalizeBlock
 	defer func() {
-		if _, commitErr := app.Commit(); err != nil {
+		if _, commitErr := app.Commit(); commitErr != nil {
 			err = fmt.Errorf("committing state: %w", commitErr)
 			return
 		}

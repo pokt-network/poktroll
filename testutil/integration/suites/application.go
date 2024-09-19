@@ -71,3 +71,29 @@ func (s *ApplicationModuleSuite) Transfer(
 
 	return txMsgRes.(*apptypes.MsgTransferApplicationResponse)
 }
+
+func (s *ApplicationModuleSuite) MultiTransfer(
+	t *testing.T,
+	srcToDstBech32Map map[string]string,
+) (transferResps []*apptypes.MsgTransferApplicationResponse) {
+	t.Helper()
+
+	var msgs []cosmostypes.Msg
+	for srcBech32, dstBech32 := range srcToDstBech32Map {
+		msgs = append(msgs, &apptypes.MsgTransferApplication{
+			SourceAddress:      srcBech32,
+			DestinationAddress: dstBech32,
+		})
+	}
+
+	txMsgResps, err := s.GetApp().RunMsgs(t, msgs...)
+	require.NoError(t, err)
+
+	for _, txMsgRes := range txMsgResps {
+		transferRes, ok := txMsgRes.(*apptypes.MsgTransferApplicationResponse)
+		require.Truef(t, ok, "unexpected txMsgRes type: %T", txMsgRes)
+		transferResps = append(transferResps, transferRes)
+	}
+
+	return transferResps
+}
