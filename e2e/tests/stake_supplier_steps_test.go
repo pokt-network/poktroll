@@ -64,6 +64,7 @@ func paramsAnyMapFromParamsStruct(paramStruct any) paramsAnyMap {
 		paramName := toSnakeCase(fieldStruct.Name)
 
 		fieldTypeName := fieldStruct.Type.Name()
+		// TODO_IMPROVE: MsgUpdateParam currently only supports int64 and not uint64 value types.
 		if fieldTypeName == "uint64" {
 			fieldTypeName = "int64"
 			fieldValue = reflect.ValueOf(int64(fieldValue.Interface().(uint64)))
