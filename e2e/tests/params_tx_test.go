@@ -48,7 +48,8 @@ func (s *suite) sendAuthzExecTx(signingKeyName, txJSONFilePath string) {
 	//
 	// This resulted in observing many more events than expected, even accounting
 	// for those corresponding to the param reset step, which is automatically
-	// registered in a s.Cleanup() below.
+	// registered in a s.Cleanup() below. There are no useful attributes on these
+	// events such that we can filter out the noise.
 
 	s.Logf("waiting %d seconds for the authz exec tx to be committed...", txDelaySeconds)
 	time.Sleep(txDelaySeconds * time.Second)
