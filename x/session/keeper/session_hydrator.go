@@ -14,16 +14,18 @@ import (
 
 	"github.com/pokt-network/poktroll/x/session/types"
 	"github.com/pokt-network/poktroll/x/shared"
-	sharedhelpers "github.com/pokt-network/poktroll/x/shared/helpers"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 var SHA3HashLen = crypto.SHA3_256.Size()
 
+// TODO_BETA(@bryanchriswhite): Make this a governance parameter
 const (
-	// TODO_BETA(@bryanchriswhite): Make this a governance parameter
-	NumSupplierPerSession       = 15
-	SessionIDComponentDelimiter = "."
+	NumSupplierPerSession = 15
+)
+
+const (
+	sessionIDComponentDelimiter = "."
 )
 
 type sessionHydrator struct {
@@ -47,7 +49,7 @@ func NewSessionHydrator(
 ) *sessionHydrator {
 	sessionHeader := &types.SessionHeader{
 		ApplicationAddress: appAddress,
-		Service:            &sharedtypes.Service{Id: serviceId},
+		ServiceId:          serviceId,
 	}
 	return &sessionHydrator{
 		sessionHeader: sessionHeader,
@@ -119,14 +121,14 @@ func (k Keeper) hydrateSessionID(ctx context.Context, sh *sessionHydrator) error
 	// TODO_MAINNET: In the future, we will need to validate that the Service is
 	// a valid service depending on whether or not its permissioned or permissionless
 
-	if !sharedhelpers.IsValidService(sh.sessionHeader.Service) {
-		return types.ErrSessionHydration.Wrapf("invalid service: %v", sh.sessionHeader.Service)
+	if !sharedtypes.IsValidServiceId(sh.sessionHeader.ServiceId) {
+		return types.ErrSessionHydration.Wrapf("invalid service ID: %s", sh.sessionHeader.ServiceId)
 	}
 
 	sh.sessionHeader.SessionId, sh.sessionIDBz = k.GetSessionId(
 		ctx,
 		sh.sessionHeader.ApplicationAddress,
-		sh.sessionHeader.Service.Id,
+		sh.sessionHeader.ServiceId,
 		prevHashBz,
 		sh.blockHeight,
 	)
@@ -156,7 +158,7 @@ func (k Keeper) hydrateSessionApplication(ctx context.Context, sh *sessionHydrat
 	}
 
 	for _, appServiceConfig := range foundApp.ServiceConfigs {
-		if appServiceConfig.Service.Id == sh.sessionHeader.Service.Id {
+		if appServiceConfig.ServiceId == sh.sessionHeader.ServiceId {
 			sh.session.Application = &foundApp
 			return nil
 		}
@@ -165,7 +167,7 @@ func (k Keeper) hydrateSessionApplication(ctx context.Context, sh *sessionHydrat
 	return types.ErrSessionAppNotStakedForService.Wrapf(
 		"application %q not staked for service ID %q",
 		sh.sessionHeader.ApplicationAddress,
-		sh.sessionHeader.Service.Id,
+		sh.sessionHeader.ServiceId,
 	)
 }
 
@@ -179,7 +181,7 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 	candidateSuppliers := make([]*sharedtypes.Supplier, 0)
 	for _, s := range suppliers {
 		// Exclude suppliers that are inactive (i.e. currently unbonding).
-		if !s.IsActive(uint64(sh.sessionHeader.SessionEndBlockHeight), sh.sessionHeader.Service.Id) {
+		if !s.IsActive(uint64(sh.sessionHeader.SessionEndBlockHeight), sh.sessionHeader.ServiceId) {
 			continue
 		}
 
@@ -189,7 +191,7 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 		supplier := s
 		// TODO_OPTIMIZE: If `supplier.Services` was a map[string]struct{}, we could eliminate `slices.Contains()`'s loop
 		for _, supplierServiceConfig := range supplier.Services {
-			if supplierServiceConfig.Service.Id == sh.sessionHeader.Service.Id {
+			if supplierServiceConfig.ServiceId == sh.sessionHeader.ServiceId {
 				candidateSuppliers = append(candidateSuppliers, &supplier)
 				break
 			}
@@ -200,7 +202,7 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 		logger.Error("[ERROR] no suppliers found for session")
 		return types.ErrSessionSuppliersNotFound.Wrapf(
 			"could not find suppliers for service %s at height %d",
-			sh.sessionHeader.Service,
+			sh.sessionHeader.ServiceId,
 			sh.sessionHeader.SessionStartBlockHeight,
 		)
 	}
@@ -305,7 +307,7 @@ func GetSessionId(
 
 	sessionStartHeightBz := getSessionStartBlockHeightBz(sharedParams, blockHeight)
 	sessionIdBz = concatWithDelimiter(
-		SessionIDComponentDelimiter,
+		sessionIDComponentDelimiter,
 		blockHashBz,
 		serviceIdBz,
 		appAddrBz,

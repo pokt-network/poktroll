@@ -19,6 +19,7 @@ import (
 	"github.com/pokt-network/poktroll/api/poktroll/application"
 	"github.com/pokt-network/poktroll/api/poktroll/gateway"
 	"github.com/pokt-network/poktroll/api/poktroll/proof"
+	"github.com/pokt-network/poktroll/api/poktroll/service"
 	"github.com/pokt-network/poktroll/api/poktroll/session"
 	"github.com/pokt-network/poktroll/api/poktroll/shared"
 	"github.com/pokt-network/poktroll/api/poktroll/supplier"
@@ -55,6 +56,7 @@ var allModuleMsgUpdateParamTypes = []string{
 	shared.Msg_UpdateParams_FullMethodName,
 	supplier.Msg_UpdateParams_FullMethodName,
 	tokenomics.Msg_UpdateParams_FullMethodName,
+	service.Msg_UpdateParams_FullMethodName,
 }
 
 func init() {
@@ -260,7 +262,7 @@ func (s *suite) TheModuleParamShouldBeUpdated(moduleName, paramName string) {
 	require.True(s, ok, "module %q params expectation not set on the test suite", moduleName)
 
 	var foundExpectedParam bool
-	for expectedParamName, _ := range moduleParamsMap {
+	for expectedParamName := range moduleParamsMap {
 		if paramName == expectedParamName {
 			foundExpectedParam = true
 			break
@@ -358,13 +360,10 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 
 	switch moduleName {
 	case tokenomicstypes.ModuleName:
-		computeUnitsToTokensMultiplier := uint64(s.expectedModuleParams[moduleName][tokenomicstypes.ParamComputeUnitsToTokensMultiplier].value.(int64))
 		assertUpdatedParams(s,
 			[]byte(res.Stdout),
 			&tokenomicstypes.QueryParamsResponse{
-				Params: tokenomicstypes.Params{
-					ComputeUnitsToTokensMultiplier: computeUnitsToTokensMultiplier,
-				},
+				Params: tokenomicstypes.Params{},
 			},
 		)
 	case prooftypes.ModuleName:
@@ -383,12 +382,17 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 
 		proofRequirementThreshold, ok := paramsMap[prooftypes.ParamProofRequirementThreshold]
 		if ok {
-			params.ProofRequirementThreshold = uint64(proofRequirementThreshold.value.(int64))
+			params.ProofRequirementThreshold = proofRequirementThreshold.value.(*cosmostypes.Coin)
 		}
 
 		proofMissingPenalty, ok := paramsMap[prooftypes.ParamProofMissingPenalty]
 		if ok {
 			params.ProofMissingPenalty = proofMissingPenalty.value.(*cosmostypes.Coin)
+		}
+
+		proofSubmissionFee, ok := paramsMap[prooftypes.ParamProofSubmissionFee]
+		if ok {
+			params.ProofSubmissionFee = proofSubmissionFee.value.(*cosmostypes.Coin)
 		}
 
 		assertUpdatedParams(s,
@@ -441,6 +445,11 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 			params.ApplicationUnbondingPeriodSessions = uint64(applicationUnbondingPeriodSessions.value.(int64))
 		}
 
+		computeUnitsToTokensMultiplier, ok := paramsMap[sharedtypes.ParamComputeUnitsToTokensMultiplier]
+		if ok {
+			params.ComputeUnitsToTokensMultiplier = uint64(computeUnitsToTokensMultiplier.value.(int64))
+		}
+
 		assertUpdatedParams(s,
 			[]byte(res.Stdout),
 			&sharedtypes.QueryParamsResponse{
@@ -458,7 +467,7 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 			},
 		)
 	case servicetypes.ModuleName:
-		addServiceFee := uint64(s.expectedModuleParams[moduleName][servicetypes.ParamAddServiceFee].value.(int64))
+		addServiceFee := s.expectedModuleParams[moduleName][servicetypes.ParamAddServiceFee].value.(*cosmostypes.Coin)
 		assertUpdatedParams(s,
 			[]byte(res.Stdout),
 			&servicetypes.QueryParamsResponse{

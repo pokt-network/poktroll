@@ -3,6 +3,7 @@ package testrelayer
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"strings"
 	"testing"
 	"time"
@@ -11,7 +12,6 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	signingtypes "github.com/cosmos/cosmos-sdk/types/tx/signing"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/exp/rand"
 
 	"github.com/pokt-network/poktroll/pkg/crypto"
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
@@ -243,10 +243,10 @@ const (
 )
 
 func randomPayload() []byte {
-	rand.Seed(uint64(time.Now().UnixNano()))
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	bz := make([]byte, payloadLength)
 	for i := range bz {
-		bz[i] = charset[rand.Intn(len(charset))]
+		bz[i] = charset[r.Intn(len(charset))]
 	}
 	return bz
 }

@@ -13,7 +13,9 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/logging"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/x/proof/types"
+	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	"github.com/pokt-network/poktroll/x/shared"
+	tokenomics "github.com/pokt-network/poktroll/x/tokenomics"
 )
 
 // submitProofs maps over the given claimedSessions observable.
@@ -136,39 +138,19 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 	logger = logger.With("earliest_supplier_proof_commit_height", earliestSupplierProofsCommitHeight)
 	logger.Info().Msg("waiting & blocking for proof path seed block height")
 
-	// proofWindowOpenHeight - 1 is the block that will have its hash used as the
-	// source of entropy for all the session trees in that batch, waiting for it to
-	// be received before proceeding.
+	// earliestSupplierProofsCommitHeight - 1 is the block that will have its hash
+	// used as the source of entropy for all the session trees in that batch,
+	// waiting for it to be received before proceeding.
 	proofPathSeedBlockHeight := earliestSupplierProofsCommitHeight - 1
 	proofPathSeedBlock := rs.waitForBlock(ctx, proofPathSeedBlockHeight)
 
-	logger = logger.With("proof_path_bock_hash", fmt.Sprintf("%x", proofPathSeedBlock.Hash()))
+	logger = logger.With("proof_path_seed_block", fmt.Sprintf("%x", proofPathSeedBlock.Hash()))
 	logger.Info().Msg("observed proof path seed block height")
 
-	// Generate proofs for all sessionTrees concurrently while waiting for the
-	// earliest submitProofsHeight (pseudorandom submission distribution) to be reached.
-	// Use a channel to block until all proofs for the sessionTrees have been generated.
-	proofsGeneratedCh := make(chan []relayer.SessionTree)
-	defer close(proofsGeneratedCh)
-	go rs.goProveClaims(
-		ctx,
-		sessionTrees,
-		proofPathSeedBlock,
-		proofsGeneratedCh,
-		failedSubmitProofsSessionsCh,
-	)
+	successProofs, failedProofs := rs.proveClaims(ctx, sessionTrees, proofPathSeedBlock)
+	failedSubmitProofsSessionsCh <- failedProofs
 
-	logger.Info().Msg("waiting & blocking for earliest supplier proof commit height")
-
-	// Wait for the earliestSupplierProofsCommitHeight to be reached before proceeding.
-	_ = rs.waitForBlock(ctx, earliestSupplierProofsCommitHeight)
-
-	logger.Info().Msg("observed earliest supplier proof commit height")
-
-	// Once the earliest submitProofsHeight has been reached, and all proofs have
-	// been generated, return the sessionTrees that have been successfully proven
-	// to be submitted on-chain.
-	return <-proofsGeneratedCh
+	return successProofs
 }
 
 // newMapProveSessionsFn returns a new MapFn that submits proofs on the given
@@ -187,13 +169,13 @@ func (rs *relayerSessionsManager) newMapProveSessionsFn(
 		}
 
 		// Map key is the supplier operator address.
-		proofMsgs := make([]client.MsgSubmitProof, 0)
-		for _, session := range sessionTrees {
-			proofMsgs = append(proofMsgs, &types.MsgSubmitProof{
+		proofMsgs := make([]client.MsgSubmitProof, len(sessionTrees))
+		for idx, session := range sessionTrees {
+			proofMsgs[idx] = &types.MsgSubmitProof{
 				Proof:                   session.GetProofBz(),
 				SessionHeader:           session.GetSessionHeader(),
 				SupplierOperatorAddress: session.GetSupplierOperatorAddress().String(),
-			})
+			}
 		}
 
 		// Submit proofs for each supplier operator address in `sessionTrees`.
@@ -216,32 +198,45 @@ func (rs *relayerSessionsManager) newMapProveSessionsFn(
 	}
 }
 
-// goProveClaims generates the proofs corresponding to the given sessionTrees,
+// proveClaims generates the proofs corresponding to the given sessionTrees,
 // then sends the successful and failed proofs to their respective channels.
-// This function MUST be run as a goroutine.
-func (rs *relayerSessionsManager) goProveClaims(
+func (rs *relayerSessionsManager) proveClaims(
 	ctx context.Context,
 	sessionTrees []relayer.SessionTree,
-	sessionPathBlock client.Block,
-	proofsGeneratedCh chan<- []relayer.SessionTree,
-	failSubmitProofsSessionsCh chan<- []relayer.SessionTree,
-) {
+	// The hash of this block is used to determine which branch of the proof
+	// should be generated for.
+	proofPathSeedBlock client.Block,
+) (successProofs []relayer.SessionTree, failedProofs []relayer.SessionTree) {
 	logger := rs.logger.With("method", "goProveClaims")
 
-	// Separate the sessionTrees into those that failed to generate a proof
-	// and those that succeeded, then send them on their respective channels.
-	failedProofs := []relayer.SessionTree{}
-	successProofs := []relayer.SessionTree{}
+	// sessionTreesWithProofRequired will accumulate all the sessionTrees that
+	// will require a proof to be submitted.
+	sessionTreesWithProofRequired := make([]relayer.SessionTree, 0)
 	for _, sessionTree := range sessionTrees {
-		select {
-		case <-ctx.Done():
-			return
-		default:
+		isProofRequired, err := rs.isProofRequired(ctx, sessionTree, proofPathSeedBlock)
+
+		// If an error is encountered while determining if a proof is required,
+		// do not create the claim since the proof requirement is unknown.
+		// WARNING: Creating a claim and not submitting a proof (if necessary) could lead to a stake burn!!
+		if err != nil {
+			failedProofs = append(failedProofs, sessionTree)
+			rs.logger.Error().Err(err).Msg("failed to determine if proof is required, skipping claim creation")
+			continue
 		}
+
+		// If a proof is required, add the session to the list of sessions that require a proof.
+		if isProofRequired {
+			sessionTreesWithProofRequired = append(sessionTreesWithProofRequired, sessionTree)
+		}
+	}
+
+	// Separate the sessionTrees into those that failed to generate a proof
+	// and those that succeeded, before returning each of them.
+	for _, sessionTree := range sessionTreesWithProofRequired {
 		// Generate the proof path for the sessionTree using the previously committed
 		// sessionPathBlock hash.
 		path := protocol.GetPathForProof(
-			sessionPathBlock.Hash(),
+			proofPathSeedBlock.Hash(),
 			sessionTree.GetSessionHeader().GetSessionId(),
 		)
 
@@ -258,6 +253,93 @@ func (rs *relayerSessionsManager) goProveClaims(
 		successProofs = append(successProofs, sessionTree)
 	}
 
-	failSubmitProofsSessionsCh <- failedProofs
-	proofsGeneratedCh <- successProofs
+	return successProofs, failedProofs
+}
+
+// isProofRequired determines whether a proof is required for the given session's
+// claim based on the current proof module governance parameters.
+// TODO_TECHDEBT: Refactor the method to be static and used both on-chain and off-chain.
+// TODO_INVESTIGATE: Passing a polylog.Logger should allow for on-chain/off-chain
+// usage of this function but it is currently raising a type error.
+func (rs *relayerSessionsManager) isProofRequired(
+	ctx context.Context,
+	sessionTree relayer.SessionTree,
+	// The hash of this block is used to determine whether the proof is required
+	// w.r.t. the probabilistic features.
+	proofRequirementSeedBlock client.Block,
+) (isProofRequired bool, err error) {
+	logger := rs.logger.With(
+		"session_id", sessionTree.GetSessionHeader().GetSessionId(),
+		"claim_root", fmt.Sprintf("%x", sessionTree.GetClaimRoot()),
+		"supplier_operator_address", sessionTree.GetSupplierOperatorAddress().String(),
+	)
+
+	// Create the claim object and use its methods to determine if a proof is required.
+	claim := claimFromSessionTree(sessionTree)
+
+	// Get the number of compute units accumulated through the given session.
+	numClaimComputeUnits, err := claim.GetNumComputeUnits()
+	if err != nil {
+		return false, err
+	}
+
+	proofParams, err := rs.proofQueryClient.GetParams(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	// The amount of uPOKT being claimed.
+	claimedAmount, err := tokenomics.NumComputeUnitsToCoin(*sharedParams, numClaimComputeUnits)
+	if err != nil {
+		return false, err
+	}
+
+	logger = logger.With(
+		"claimed_amount_upokt", claimedAmount.Amount.Uint64(),
+		"proof_requirement_threshold_upokt", proofParams.GetProofRequirementThreshold(),
+	)
+
+	// Require a proof if the claimed amount meets or exceeds the threshold.
+	// TODO_MAINNET: This should be proportional to the supplier's stake as well.
+	if claimedAmount.Amount.GTE(proofParams.GetProofRequirementThreshold().Amount) {
+		logger.Info().Msg("compute units is above threshold, claim requires proof")
+
+		return true, nil
+	}
+
+	proofRequirementSampleValue, err := claim.GetProofRequirementSampleValue(proofRequirementSeedBlock.Hash())
+	if err != nil {
+		return false, err
+	}
+
+	logger = logger.With(
+		"proof_requirement_sample_value", proofRequirementSampleValue,
+		"proof_request_probability", proofParams.GetProofRequestProbability(),
+	)
+
+	// Require a proof probabilistically based on the proof_request_probability param.
+	// NB: A random value between 0 and 1 will be less than or equal to proof_request_probability
+	// with probability equal to the proof_request_probability.
+	if proofRequirementSampleValue <= proofParams.GetProofRequestProbability() {
+		logger.Info().Msg("claim hash seed is below proof request probability, claim requires proof")
+
+		return true, nil
+	}
+
+	logger.Info().Msg("claim does not require proof")
+	return false, nil
+}
+
+// claimFromSessionTree creates a Claim object from the given SessionTree.
+func claimFromSessionTree(sessionTree relayer.SessionTree) prooftypes.Claim {
+	return prooftypes.Claim{
+		SupplierOperatorAddress: sessionTree.GetSupplierOperatorAddress().String(),
+		SessionHeader:           sessionTree.GetSessionHeader(),
+		RootHash:                sessionTree.GetClaimRoot(),
+	}
 }

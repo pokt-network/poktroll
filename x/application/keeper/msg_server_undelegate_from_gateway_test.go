@@ -41,9 +41,7 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 		Address: appAddr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 		Services: []*sharedtypes.ApplicationServiceConfig{
-			{
-				Service: &sharedtypes.Service{Id: "svc1"},
-			},
+			{ServiceId: "svc1"},
 		},
 	}
 
@@ -135,9 +133,7 @@ func TestMsgServer_UndelegateFromGateway_FailNotDelegated(t *testing.T) {
 		Address: appAddr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 		Services: []*sharedtypes.ApplicationServiceConfig{
-			{
-				Service: &sharedtypes.Service{Id: "svc1"},
-			},
+			{ServiceId: "svc1"},
 		},
 	}
 
@@ -212,9 +208,7 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegateFromUnstakedGatew
 		Address: appAddr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 		Services: []*sharedtypes.ApplicationServiceConfig{
-			{
-				Service: &sharedtypes.Service{Id: "svc1"},
-			},
+			{ServiceId: "svc1"},
 		},
 	}
 
@@ -386,7 +380,7 @@ func TestMsgServer_UndelegateFromGateway_DelegationIsPrunedAfterRetentionPeriod(
 	require.True(t, isAppFound)
 	require.NotNil(t, app)
 
-	// Verify that the the pending undelegation map no longer contains the
+	// Verify that the pending undelegation map no longer contains the
 	// sessionEndHeight key.
 	sessionEndHeight := uint64(testsession.GetSessionEndHeightWithDefaultParams(undelegationHeight))
 	require.Empty(t, app.PendingUndelegations[sessionEndHeight])
@@ -451,7 +445,7 @@ func TestMsgServer_UndelegateFromGateway_RedelegationAfterUndelegationAtTheSameS
 	// Verify that the application is still delegated to the gateway
 	require.Contains(t, app.DelegateeGatewayAddresses, gatewayAddrToRedelegate)
 
-	// Verify that the the pending undelegation map no longer contains the
+	// Verify that the pending undelegation map no longer contains the
 	// sessionEndHeight key.
 	require.Empty(t, app.PendingUndelegations[sessionEndHeight])
 
@@ -522,9 +516,7 @@ func createAppStakeDelegateAndUndelegate(
 		Address: appAddr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 		Services: []*sharedtypes.ApplicationServiceConfig{
-			{
-				Service: &sharedtypes.Service{Id: "svc1"},
-			},
+			{ServiceId: "svc1"},
 		},
 	}
 	_, err := srv.StakeApplication(ctx, stakeMsg)

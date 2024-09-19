@@ -180,14 +180,18 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 			return either.Success(sessionTrees), false
 		}
 
-		// Map key is the supplier operator address.
-		claimMsgs := make([]client.MsgCreateClaim, 0)
-		for _, sessionTree := range sessionTrees {
-			claimMsgs = append(claimMsgs, &prooftypes.MsgCreateClaim{
+		// TODO_FOLLOWUP(@red-0ne): Ensure that the supplier operator account
+		// has enough funds to cover for any potential proof submission in order to
+		// avoid slashing due to missing proofs.
+		// We should order the claimMsgs by reward amount and include claims up to
+		// whatever the supplier can afford to cover.
+		claimMsgs := make([]client.MsgCreateClaim, len(sessionTrees))
+		for idx, sessionTree := range sessionTrees {
+			claimMsgs[idx] = &prooftypes.MsgCreateClaim{
 				RootHash:                sessionTree.GetClaimRoot(),
 				SessionHeader:           sessionTree.GetSessionHeader(),
 				SupplierOperatorAddress: sessionTree.GetSupplierOperatorAddress().String(),
-			})
+			}
 		}
 
 		// Create claims for each supplier operator address in `sessionTrees`.

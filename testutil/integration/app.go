@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -38,6 +39,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app"
+	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/pkg/crypto"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
@@ -246,6 +248,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		sessiontypes.ModuleName:    {authtypes.Minter, authtypes.Burner},
 		apptypes.ModuleName:        {authtypes.Minter, authtypes.Burner, authtypes.Staking},
 		suppliertypes.ModuleName:   {authtypes.Minter, authtypes.Burner, authtypes.Staking},
+		prooftypes.ModuleName:      {authtypes.Minter, authtypes.Burner},
 	}
 
 	// Prepare the account keeper and module
@@ -390,15 +393,18 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		logger,
 		authority.String(),
 
+		bankKeeper,
 		sessionKeeper,
 		applicationKeeper,
 		accountKeeper,
 		sharedKeeper,
+		serviceKeeper,
 	)
 	proofModule := proof.NewAppModule(
 		cdc,
 		proofKeeper,
 		accountKeeper,
+		bankKeeper,
 	)
 
 	// Prepare the tokenomics keeper and module
@@ -541,7 +547,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 						RevSharePercentage: 100,
 					},
 				},
-				Service: &defaultService,
+				ServiceId: defaultService.Id,
 			},
 		},
 	}
@@ -565,7 +571,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		Stake:   &appStake,
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
 			{
-				Service: &defaultService,
+				ServiceId: defaultService.Id,
 			},
 		},
 	}
@@ -591,6 +597,9 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	require.NoError(t, err)
 	err = bankKeeper.MintCoins(integrationApp.sdkCtx, apptypes.ModuleName, moduleBaseMint)
 	require.NoError(t, err)
+
+	// Fund the supplier operator account to be able to submit proofs
+	fundAccount(t, integrationApp.sdkCtx, bankKeeper, supplierOperatorAddr)
 
 	// Commit all the changes above by committing, finalizing and moving
 	// to the next block.
@@ -760,4 +769,23 @@ func CreateMultiStore(keys map[string]*storetypes.KVStoreKey, logger log.Logger)
 
 	_ = cms.LoadLatestVersion()
 	return cms
+}
+
+func fundAccount(
+	t *testing.T,
+	ctx context.Context,
+	bankKeeper bankkeeper.Keeper,
+	supplierOperatorAddr sdk.AccAddress,
+) {
+
+	fundingCoins := types.NewCoins(types.NewCoin(volatile.DenomuPOKT, math.NewInt(100000000)))
+
+	err := bankKeeper.MintCoins(ctx, banktypes.ModuleName, fundingCoins)
+	require.NoError(t, err)
+
+	err = bankKeeper.SendCoinsFromModuleToAccount(ctx, banktypes.ModuleName, supplierOperatorAddr, fundingCoins)
+	require.NoError(t, err)
+
+	coin := bankKeeper.SpendableCoin(ctx, supplierOperatorAddr, volatile.DenomuPOKT)
+	require.Equal(t, coin.Amount, math.NewInt(100000000))
 }

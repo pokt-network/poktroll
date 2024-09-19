@@ -23,6 +23,7 @@ var (
 	fd_Params_proof_request_probability    protoreflect.FieldDescriptor
 	fd_Params_proof_requirement_threshold  protoreflect.FieldDescriptor
 	fd_Params_proof_missing_penalty        protoreflect.FieldDescriptor
+	fd_Params_proof_submission_fee         protoreflect.FieldDescriptor
 )
 
 func init() {
@@ -32,6 +33,7 @@ func init() {
 	fd_Params_proof_request_probability = md_Params.Fields().ByName("proof_request_probability")
 	fd_Params_proof_requirement_threshold = md_Params.Fields().ByName("proof_requirement_threshold")
 	fd_Params_proof_missing_penalty = md_Params.Fields().ByName("proof_missing_penalty")
+	fd_Params_proof_submission_fee = md_Params.Fields().ByName("proof_submission_fee")
 }
 
 var _ protoreflect.Message = (*fastReflection_Params)(nil)
@@ -111,8 +113,8 @@ func (x *fastReflection_Params) Range(f func(protoreflect.FieldDescriptor, proto
 			return
 		}
 	}
-	if x.ProofRequirementThreshold != uint64(0) {
-		value := protoreflect.ValueOfUint64(x.ProofRequirementThreshold)
+	if x.ProofRequirementThreshold != nil {
+		value := protoreflect.ValueOfMessage(x.ProofRequirementThreshold.ProtoReflect())
 		if !f(fd_Params_proof_requirement_threshold, value) {
 			return
 		}
@@ -120,6 +122,12 @@ func (x *fastReflection_Params) Range(f func(protoreflect.FieldDescriptor, proto
 	if x.ProofMissingPenalty != nil {
 		value := protoreflect.ValueOfMessage(x.ProofMissingPenalty.ProtoReflect())
 		if !f(fd_Params_proof_missing_penalty, value) {
+			return
+		}
+	}
+	if x.ProofSubmissionFee != nil {
+		value := protoreflect.ValueOfMessage(x.ProofSubmissionFee.ProtoReflect())
+		if !f(fd_Params_proof_submission_fee, value) {
 			return
 		}
 	}
@@ -143,9 +151,11 @@ func (x *fastReflection_Params) Has(fd protoreflect.FieldDescriptor) bool {
 	case "poktroll.proof.Params.proof_request_probability":
 		return x.ProofRequestProbability != float32(0) || math.Signbit(float64(x.ProofRequestProbability))
 	case "poktroll.proof.Params.proof_requirement_threshold":
-		return x.ProofRequirementThreshold != uint64(0)
+		return x.ProofRequirementThreshold != nil
 	case "poktroll.proof.Params.proof_missing_penalty":
 		return x.ProofMissingPenalty != nil
+	case "poktroll.proof.Params.proof_submission_fee":
+		return x.ProofSubmissionFee != nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.Params"))
@@ -167,9 +177,11 @@ func (x *fastReflection_Params) Clear(fd protoreflect.FieldDescriptor) {
 	case "poktroll.proof.Params.proof_request_probability":
 		x.ProofRequestProbability = float32(0)
 	case "poktroll.proof.Params.proof_requirement_threshold":
-		x.ProofRequirementThreshold = uint64(0)
+		x.ProofRequirementThreshold = nil
 	case "poktroll.proof.Params.proof_missing_penalty":
 		x.ProofMissingPenalty = nil
+	case "poktroll.proof.Params.proof_submission_fee":
+		x.ProofSubmissionFee = nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.Params"))
@@ -194,9 +206,12 @@ func (x *fastReflection_Params) Get(descriptor protoreflect.FieldDescriptor) pro
 		return protoreflect.ValueOfFloat32(value)
 	case "poktroll.proof.Params.proof_requirement_threshold":
 		value := x.ProofRequirementThreshold
-		return protoreflect.ValueOfUint64(value)
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	case "poktroll.proof.Params.proof_missing_penalty":
 		value := x.ProofMissingPenalty
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	case "poktroll.proof.Params.proof_submission_fee":
+		value := x.ProofSubmissionFee
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	default:
 		if descriptor.IsExtension() {
@@ -223,9 +238,11 @@ func (x *fastReflection_Params) Set(fd protoreflect.FieldDescriptor, value proto
 	case "poktroll.proof.Params.proof_request_probability":
 		x.ProofRequestProbability = float32(value.Float())
 	case "poktroll.proof.Params.proof_requirement_threshold":
-		x.ProofRequirementThreshold = value.Uint()
+		x.ProofRequirementThreshold = value.Message().Interface().(*v1beta1.Coin)
 	case "poktroll.proof.Params.proof_missing_penalty":
 		x.ProofMissingPenalty = value.Message().Interface().(*v1beta1.Coin)
+	case "poktroll.proof.Params.proof_submission_fee":
+		x.ProofSubmissionFee = value.Message().Interface().(*v1beta1.Coin)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.Params"))
@@ -246,17 +263,25 @@ func (x *fastReflection_Params) Set(fd protoreflect.FieldDescriptor, value proto
 // Mutable is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_Params) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
+	case "poktroll.proof.Params.proof_requirement_threshold":
+		if x.ProofRequirementThreshold == nil {
+			x.ProofRequirementThreshold = new(v1beta1.Coin)
+		}
+		return protoreflect.ValueOfMessage(x.ProofRequirementThreshold.ProtoReflect())
 	case "poktroll.proof.Params.proof_missing_penalty":
 		if x.ProofMissingPenalty == nil {
 			x.ProofMissingPenalty = new(v1beta1.Coin)
 		}
 		return protoreflect.ValueOfMessage(x.ProofMissingPenalty.ProtoReflect())
+	case "poktroll.proof.Params.proof_submission_fee":
+		if x.ProofSubmissionFee == nil {
+			x.ProofSubmissionFee = new(v1beta1.Coin)
+		}
+		return protoreflect.ValueOfMessage(x.ProofSubmissionFee.ProtoReflect())
 	case "poktroll.proof.Params.relay_difficulty_target_hash":
 		panic(fmt.Errorf("field relay_difficulty_target_hash of message poktroll.proof.Params is not mutable"))
 	case "poktroll.proof.Params.proof_request_probability":
 		panic(fmt.Errorf("field proof_request_probability of message poktroll.proof.Params is not mutable"))
-	case "poktroll.proof.Params.proof_requirement_threshold":
-		panic(fmt.Errorf("field proof_requirement_threshold of message poktroll.proof.Params is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.Params"))
@@ -275,8 +300,12 @@ func (x *fastReflection_Params) NewField(fd protoreflect.FieldDescriptor) protor
 	case "poktroll.proof.Params.proof_request_probability":
 		return protoreflect.ValueOfFloat32(float32(0))
 	case "poktroll.proof.Params.proof_requirement_threshold":
-		return protoreflect.ValueOfUint64(uint64(0))
+		m := new(v1beta1.Coin)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	case "poktroll.proof.Params.proof_missing_penalty":
+		m := new(v1beta1.Coin)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
+	case "poktroll.proof.Params.proof_submission_fee":
 		m := new(v1beta1.Coin)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	default:
@@ -355,11 +384,16 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 		if x.ProofRequestProbability != 0 || math.Signbit(float64(x.ProofRequestProbability)) {
 			n += 5
 		}
-		if x.ProofRequirementThreshold != 0 {
-			n += 1 + runtime.Sov(uint64(x.ProofRequirementThreshold))
+		if x.ProofRequirementThreshold != nil {
+			l = options.Size(x.ProofRequirementThreshold)
+			n += 1 + l + runtime.Sov(uint64(l))
 		}
 		if x.ProofMissingPenalty != nil {
 			l = options.Size(x.ProofMissingPenalty)
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.ProofSubmissionFee != nil {
+			l = options.Size(x.ProofSubmissionFee)
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
 		if x.unknownFields != nil {
@@ -391,6 +425,20 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
+		if x.ProofSubmissionFee != nil {
+			encoded, err := options.Marshal(x.ProofSubmissionFee)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			i--
+			dAtA[i] = 0x2a
+		}
 		if x.ProofMissingPenalty != nil {
 			encoded, err := options.Marshal(x.ProofMissingPenalty)
 			if err != nil {
@@ -405,10 +453,19 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 			i--
 			dAtA[i] = 0x22
 		}
-		if x.ProofRequirementThreshold != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.ProofRequirementThreshold))
+		if x.ProofRequirementThreshold != nil {
+			encoded, err := options.Marshal(x.ProofRequirementThreshold)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			i--
-			dAtA[i] = 0x18
+			dAtA[i] = 0x1a
 		}
 		if x.ProofRequestProbability != 0 || math.Signbit(float64(x.ProofRequestProbability)) {
 			i -= 4
@@ -518,10 +575,10 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 				iNdEx += 4
 				x.ProofRequestProbability = float32(math.Float32frombits(v))
 			case 3:
-				if wireType != 0 {
+				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ProofRequirementThreshold", wireType)
 				}
-				x.ProofRequirementThreshold = 0
+				var msglen int
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -531,11 +588,28 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					x.ProofRequirementThreshold |= uint64(b&0x7F) << shift
+					msglen |= int(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if x.ProofRequirementThreshold == nil {
+					x.ProofRequirementThreshold = &v1beta1.Coin{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.ProofRequirementThreshold); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
 			case 4:
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ProofMissingPenalty", wireType)
@@ -569,6 +643,42 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 					x.ProofMissingPenalty = &v1beta1.Coin{}
 				}
 				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.ProofMissingPenalty); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
+			case 5:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ProofSubmissionFee", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if x.ProofSubmissionFee == nil {
+					x.ProofSubmissionFee = &v1beta1.Coin{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.ProofSubmissionFee); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
@@ -637,12 +747,19 @@ type Params struct {
 	// is equal to or above the threshold. This is in contrast to the this requirement
 	// being determined probabilistically via ProofRequestProbability.
 	//
-	// TODO_MAINNET: Consider renaming this to `proof_requirement_threshold_compute_units`.
-	ProofRequirementThreshold uint64 `protobuf:"varint,3,opt,name=proof_requirement_threshold,json=proofRequirementThreshold,proto3" json:"proof_requirement_threshold,omitempty"`
+	// TODO_MAINNET: Consider renaming this to `proof_requirement_threshold_upokt`.
+	ProofRequirementThreshold *v1beta1.Coin `protobuf:"bytes,3,opt,name=proof_requirement_threshold,json=proofRequirementThreshold,proto3" json:"proof_requirement_threshold,omitempty"`
 	// proof_missing_penalty is the number of tokens (uPOKT) which should be slashed from a supplier
 	// when a proof is required (either via proof_requirement_threshold or proof_missing_penalty)
 	// but is not provided.
+	// TODO_MAINNET: Consider renaming this to `proof_missing_penalty_upokt`.
 	ProofMissingPenalty *v1beta1.Coin `protobuf:"bytes,4,opt,name=proof_missing_penalty,json=proofMissingPenalty,proto3" json:"proof_missing_penalty,omitempty"`
+	// proof_submission_fee is the number of tokens (uPOKT) which should be paid by
+	// the supplier operator when submitting a proof.
+	// This is needed to account for the cost of storing proofs on-chain and prevent
+	// spamming (i.e. sybil bloat attacks) the network with non-required proofs.
+	// TODO_MAINNET: Consider renaming this to `proof_submission_fee_upokt`.
+	ProofSubmissionFee *v1beta1.Coin `protobuf:"bytes,5,opt,name=proof_submission_fee,json=proofSubmissionFee,proto3" json:"proof_submission_fee,omitempty"`
 }
 
 func (x *Params) Reset() {
@@ -679,16 +796,23 @@ func (x *Params) GetProofRequestProbability() float32 {
 	return 0
 }
 
-func (x *Params) GetProofRequirementThreshold() uint64 {
+func (x *Params) GetProofRequirementThreshold() *v1beta1.Coin {
 	if x != nil {
 		return x.ProofRequirementThreshold
 	}
-	return 0
+	return nil
 }
 
 func (x *Params) GetProofMissingPenalty() *v1beta1.Coin {
 	if x != nil {
 		return x.ProofMissingPenalty
+	}
+	return nil
+}
+
+func (x *Params) GetProofSubmissionFee() *v1beta1.Coin {
+	if x != nil {
+		return x.ProofSubmissionFee
 	}
 	return nil
 }
@@ -703,7 +827,7 @@ var file_poktroll_proof_params_proto_rawDesc = []byte{
 	0x1a, 0x14, 0x67, 0x6f, 0x67, 0x6f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x67, 0x6f, 0x67, 0x6f,
 	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x1e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2f, 0x62,
 	0x61, 0x73, 0x65, 0x2f, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2f, 0x63, 0x6f, 0x69, 0x6e,
-	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xb3, 0x03, 0x0a, 0x06, 0x50, 0x61, 0x72, 0x61, 0x6d,
+	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xb5, 0x04, 0x0a, 0x06, 0x50, 0x61, 0x72, 0x61, 0x6d,
 	0x73, 0x12, 0x61, 0x0a, 0x1c, 0x72, 0x65, 0x6c, 0x61, 0x79, 0x5f, 0x64, 0x69, 0x66, 0x66, 0x69,
 	0x63, 0x75, 0x6c, 0x74, 0x79, 0x5f, 0x74, 0x61, 0x72, 0x67, 0x65, 0x74, 0x5f, 0x68, 0x61, 0x73,
 	0x68, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x42, 0x20, 0xea, 0xde, 0x1f, 0x1c, 0x72, 0x65, 0x6c,
@@ -716,32 +840,40 @@ var file_poktroll_proof_params_proto_rawDesc = []byte{
 	0x6f, 0x66, 0x5f, 0x72, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x5f, 0x70, 0x72, 0x6f, 0x62, 0x61,
 	0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x52, 0x17, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x52, 0x65, 0x71,
 	0x75, 0x65, 0x73, 0x74, 0x50, 0x72, 0x6f, 0x62, 0x61, 0x62, 0x69, 0x6c, 0x69, 0x74, 0x79, 0x12,
-	0x5f, 0x0a, 0x1b, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x5f, 0x72, 0x65, 0x71, 0x75, 0x69, 0x72, 0x65,
+	0x7a, 0x0a, 0x1b, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x5f, 0x72, 0x65, 0x71, 0x75, 0x69, 0x72, 0x65,
 	0x6d, 0x65, 0x6e, 0x74, 0x5f, 0x74, 0x68, 0x72, 0x65, 0x73, 0x68, 0x6f, 0x6c, 0x64, 0x18, 0x03,
-	0x20, 0x01, 0x28, 0x04, 0x42, 0x1f, 0xea, 0xde, 0x1f, 0x1b, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x5f,
-	0x72, 0x65, 0x71, 0x75, 0x69, 0x72, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x5f, 0x74, 0x68, 0x72, 0x65,
-	0x73, 0x68, 0x6f, 0x6c, 0x64, 0x52, 0x19, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x52, 0x65, 0x71, 0x75,
-	0x69, 0x72, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x54, 0x68, 0x72, 0x65, 0x73, 0x68, 0x6f, 0x6c, 0x64,
-	0x12, 0x68, 0x0a, 0x15, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x5f, 0x6d, 0x69, 0x73, 0x73, 0x69, 0x6e,
-	0x67, 0x5f, 0x70, 0x65, 0x6e, 0x61, 0x6c, 0x74, 0x79, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32,
-	0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31,
-	0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x19, 0xea, 0xde, 0x1f, 0x15,
-	0x70, 0x72, 0x6f, 0x6f, 0x66, 0x5f, 0x6d, 0x69, 0x73, 0x73, 0x69, 0x6e, 0x67, 0x5f, 0x70, 0x65,
-	0x6e, 0x61, 0x6c, 0x74, 0x79, 0x52, 0x13, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x4d, 0x69, 0x73, 0x73,
-	0x69, 0x6e, 0x67, 0x50, 0x65, 0x6e, 0x61, 0x6c, 0x74, 0x79, 0x3a, 0x20, 0xe8, 0xa0, 0x1f, 0x01,
-	0x8a, 0xe7, 0xb0, 0x2a, 0x17, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x78, 0x2f,
-	0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2f, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x42, 0x9b, 0x01, 0x0a,
-	0x12, 0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x70, 0x72,
-	0x6f, 0x6f, 0x66, 0x42, 0x0b, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x50, 0x72, 0x6f, 0x74, 0x6f,
-	0x50, 0x01, 0x5a, 0x1f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f,
-	0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x70, 0x72,
-	0x6f, 0x6f, 0x66, 0xa2, 0x02, 0x03, 0x50, 0x50, 0x58, 0xaa, 0x02, 0x0e, 0x50, 0x6f, 0x6b, 0x74,
-	0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0xca, 0x02, 0x0e, 0x50, 0x6f, 0x6b,
-	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0xe2, 0x02, 0x1a, 0x50, 0x6f,
-	0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x5c, 0x47, 0x50, 0x42,
-	0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x0f, 0x50, 0x6f, 0x6b, 0x74, 0x72,
-	0x6f, 0x6c, 0x6c, 0x3a, 0x3a, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74,
-	0x6f, 0x33,
+	0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61,
+	0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42,
+	0x1f, 0xea, 0xde, 0x1f, 0x1b, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x5f, 0x72, 0x65, 0x71, 0x75, 0x69,
+	0x72, 0x65, 0x6d, 0x65, 0x6e, 0x74, 0x5f, 0x74, 0x68, 0x72, 0x65, 0x73, 0x68, 0x6f, 0x6c, 0x64,
+	0x52, 0x19, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x52, 0x65, 0x71, 0x75, 0x69, 0x72, 0x65, 0x6d, 0x65,
+	0x6e, 0x74, 0x54, 0x68, 0x72, 0x65, 0x73, 0x68, 0x6f, 0x6c, 0x64, 0x12, 0x68, 0x0a, 0x15, 0x70,
+	0x72, 0x6f, 0x6f, 0x66, 0x5f, 0x6d, 0x69, 0x73, 0x73, 0x69, 0x6e, 0x67, 0x5f, 0x70, 0x65, 0x6e,
+	0x61, 0x6c, 0x74, 0x79, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73,
+	0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31,
+	0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x19, 0xea, 0xde, 0x1f, 0x15, 0x70, 0x72, 0x6f, 0x6f, 0x66,
+	0x5f, 0x6d, 0x69, 0x73, 0x73, 0x69, 0x6e, 0x67, 0x5f, 0x70, 0x65, 0x6e, 0x61, 0x6c, 0x74, 0x79,
+	0x52, 0x13, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x4d, 0x69, 0x73, 0x73, 0x69, 0x6e, 0x67, 0x50, 0x65,
+	0x6e, 0x61, 0x6c, 0x74, 0x79, 0x12, 0x65, 0x0a, 0x14, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x5f, 0x73,
+	0x75, 0x62, 0x6d, 0x69, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x66, 0x65, 0x65, 0x18, 0x05, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73,
+	0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x18,
+	0xea, 0xde, 0x1f, 0x14, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x5f, 0x73, 0x75, 0x62, 0x6d, 0x69, 0x73,
+	0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x66, 0x65, 0x65, 0x52, 0x12, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x53,
+	0x75, 0x62, 0x6d, 0x69, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x46, 0x65, 0x65, 0x3a, 0x20, 0xe8, 0xa0,
+	0x1f, 0x01, 0x8a, 0xe7, 0xb0, 0x2a, 0x17, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f,
+	0x78, 0x2f, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2f, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x42, 0x9f,
+	0x01, 0xd8, 0xe2, 0x1e, 0x01, 0x0a, 0x12, 0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72,
+	0x6f, 0x6c, 0x6c, 0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x42, 0x0b, 0x50, 0x61, 0x72, 0x61, 0x6d,
+	0x73, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x1f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73,
+	0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72,
+	0x6f, 0x6c, 0x6c, 0x2f, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0xa2, 0x02, 0x03, 0x50, 0x50, 0x58, 0xaa,
+	0x02, 0x0e, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x50, 0x72, 0x6f, 0x6f, 0x66,
+	0xca, 0x02, 0x0e, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x50, 0x72, 0x6f, 0x6f,
+	0x66, 0xe2, 0x02, 0x1a, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x50, 0x72, 0x6f,
+	0x6f, 0x66, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02,
+	0x0f, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x3a, 0x3a, 0x50, 0x72, 0x6f, 0x6f, 0x66,
+	0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -762,12 +894,14 @@ var file_poktroll_proof_params_proto_goTypes = []interface{}{
 	(*v1beta1.Coin)(nil), // 1: cosmos.base.v1beta1.Coin
 }
 var file_poktroll_proof_params_proto_depIdxs = []int32{
-	1, // 0: poktroll.proof.Params.proof_missing_penalty:type_name -> cosmos.base.v1beta1.Coin
-	1, // [1:1] is the sub-list for method output_type
-	1, // [1:1] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	1, // 0: poktroll.proof.Params.proof_requirement_threshold:type_name -> cosmos.base.v1beta1.Coin
+	1, // 1: poktroll.proof.Params.proof_missing_penalty:type_name -> cosmos.base.v1beta1.Coin
+	1, // 2: poktroll.proof.Params.proof_submission_fee:type_name -> cosmos.base.v1beta1.Coin
+	3, // [3:3] is the sub-list for method output_type
+	3, // [3:3] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_poktroll_proof_params_proto_init() }

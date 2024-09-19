@@ -64,7 +64,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 	supplierModuleAddress := authtypes.NewModuleAddress(suppliertypes.ModuleName).String()
 
 	// Set compute_units_to_tokens_multiplier to simplify expectation calculations.
-	err := keepers.Keeper.SetParams(ctx, tokenomicstypes.Params{
+	err := keepers.SharedKeeper.SetParams(ctx, sharedtypes.Params{
 		ComputeUnitsToTokensMultiplier: globalComputeUnitsToTokensMultiplier,
 	})
 	require.NoError(t, err)
@@ -81,7 +81,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 	app := apptypes.Application{
 		Address:        sample.AccAddress(),
 		Stake:          &appStake,
-		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{Service: service}},
+		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{ServiceId: service.Id}},
 	}
 	keepers.SetApplication(ctx, app)
 
@@ -102,7 +102,10 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 		OwnerAddress:    supplierRevShares[0].Address,
 		OperatorAddress: supplierRevShares[0].Address,
 		Stake:           &supplierStake,
-		Services:        []*sharedtypes.SupplierServiceConfig{{Service: service, RevShare: supplierRevShares}},
+		Services: []*sharedtypes.SupplierServiceConfig{{
+			ServiceId: service.Id,
+			RevShare:  supplierRevShares,
+		}},
 	}
 	keepers.SetSupplier(ctx, supplier)
 
@@ -191,7 +194,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Invalid_SupplierExceedsMaxCl
 	supplierModuleAddress := authtypes.NewModuleAddress(suppliertypes.ModuleName).String()
 
 	// Set compute_units_to_tokens_multiplier to simplify expectation calculations.
-	err := keepers.Keeper.SetParams(ctx, tokenomicstypes.Params{
+	err := keepers.SharedKeeper.SetParams(ctx, sharedtypes.Params{
 		ComputeUnitsToTokensMultiplier: globalComputeUnitsToTokensMultiplier,
 	})
 	require.NoError(t, err)
@@ -208,7 +211,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Invalid_SupplierExceedsMaxCl
 	app := apptypes.Application{
 		Address:        sample.AccAddress(),
 		Stake:          &appStake,
-		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{Service: service}},
+		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{ServiceId: service.Id}},
 	}
 	keepers.SetApplication(ctx, app)
 
@@ -229,7 +232,10 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Invalid_SupplierExceedsMaxCl
 		OwnerAddress:    supplierRevShares[0].Address,
 		OperatorAddress: supplierRevShares[0].Address,
 		Stake:           &supplierStake,
-		Services:        []*sharedtypes.SupplierServiceConfig{{Service: service, RevShare: supplierRevShares}},
+		Services: []*sharedtypes.SupplierServiceConfig{{
+			ServiceId: service.Id,
+			RevShare:  supplierRevShares,
+		}},
 	}
 	keepers.SetSupplier(ctx, supplier)
 
@@ -323,7 +329,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	keepers.SetService(ctx, *service)
 
 	// Set compute_units_to_tokens_multiplier to simplify expectation calculations.
-	err := keepers.Keeper.SetParams(ctx, tokenomicstypes.Params{
+	err := keepers.SharedKeeper.SetParams(ctx, sharedtypes.Params{
 		ComputeUnitsToTokensMultiplier: globalComputeUnitsToTokensMultiplier,
 	})
 	require.NoError(t, err)
@@ -333,7 +339,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	app := apptypes.Application{
 		Address:        sample.AccAddress(),
 		Stake:          &appStake,
-		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{Service: service}},
+		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{ServiceId: service.Id}},
 	}
 	keepers.SetApplication(ctx, app)
 
@@ -354,7 +360,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 		OwnerAddress:    supplierRevShares[0].Address,
 		OperatorAddress: supplierRevShares[0].Address,
 		Stake:           &supplierStake,
-		Services:        []*sharedtypes.SupplierServiceConfig{{Service: service, RevShare: supplierRevShares}},
+		Services:        []*sharedtypes.SupplierServiceConfig{{ServiceId: service.Id, RevShare: supplierRevShares}},
 	}
 	keepers.SetSupplier(ctx, supplier)
 
@@ -362,13 +368,12 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	claim := prepareTestClaim(numRelays, service, &app, &supplier)
 
 	// Prepare addresses
-	daoAddr := authtypes.NewModuleAddress(govtypes.ModuleName)
+	daoAddress := authtypes.NewModuleAddress(govtypes.ModuleName)
 	appAddress := app.Address
 	proposerAddress := sample.AccAddressFromConsAddress(validatorConsAddr)
-	// supplierOperatorAddr := supplier.OperatorAddress
 
 	// Determine balances before inflation
-	daoBalanceBefore := getBalance(t, ctx, keepers, daoAddr.String())
+	daoBalanceBefore := getBalance(t, ctx, keepers, daoAddress.String())
 	propBalanceBefore := getBalance(t, ctx, keepers, proposerAddress)
 	serviceOwnerBalanceBefore := getBalance(t, ctx, keepers, service.OwnerAddress)
 	appBalanceBefore := getBalance(t, ctx, keepers, appAddress)
@@ -383,7 +388,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	require.NoError(t, err)
 
 	// Determine balances after inflation
-	daoBalanceAfter := getBalance(t, ctx, keepers, daoAddr.String())
+	daoBalanceAfter := getBalance(t, ctx, keepers, daoAddress.String())
 	propBalanceAfter := getBalance(t, ctx, keepers, proposerAddress)
 	serviceOwnerBalanceAfter := getBalance(t, ctx, keepers, service.OwnerAddress)
 	appBalanceAfter := getBalance(t, ctx, keepers, appAddress)
@@ -401,7 +406,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	appMint := math.NewInt(int64(numTokensMinted * tokenomicskeeper.MintAllocationApplication))
 	supplierMint := float32(numTokensMinted * tokenomicskeeper.MintAllocationSupplier)
 
-	// Ensure the balance was increase be the appropriate amount
+	// Ensure the balance was increased be the appropriate amount
 	require.Equal(t, daoBalanceBefore.Amount.Add(daoMint), daoBalanceAfter.Amount)
 	require.Equal(t, propBalanceBefore.Amount.Add(propMint), propBalanceAfter.Amount)
 	require.Equal(t, serviceOwnerBalanceBefore.Amount.Add(serviceOwnerMint), serviceOwnerBalanceAfter.Amount)
@@ -415,7 +420,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 		balanceIncrease := math.NewInt(mintShare + rewardShare)
 		expectedBalanceAfter := balanceBefore.Amount.Add(balanceIncrease).Int64()
 		// TODO_MAINNET: Remove the InDelta check and use the exact amount once the floating point arithmetic is fixed
-		acceptableRoundingDelta := tokenomicskeeper.MintDistributionAllowableTolerance * float64(balanceAfter)
+		acceptableRoundingDelta := tokenomicskeeper.MintDistributionAllowableTolerancePercent * float64(balanceAfter)
 		require.InDelta(t, expectedBalanceAfter, balanceAfter, acceptableRoundingDelta)
 	}
 }
@@ -430,7 +435,7 @@ func TestProcessTokenLogicModules_AppNotFound(t *testing.T) {
 		SupplierOperatorAddress: supplierOperatorAddr,
 		SessionHeader: &sessiontypes.SessionHeader{
 			ApplicationAddress:      sample.AccAddress(), // Random address
-			Service:                 service,
+			ServiceId:               service.Id,
 			SessionId:               "session_id",
 			SessionStartBlockHeight: 1,
 			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
@@ -453,7 +458,7 @@ func TestProcessTokenLogicModules_ServiceNotFound(t *testing.T) {
 		SupplierOperatorAddress: supplierOperatorAddr,
 		SessionHeader: &sessiontypes.SessionHeader{
 			ApplicationAddress:      appAddr,
-			Service:                 &sharedtypes.Service{Id: "non_existent_svc"},
+			ServiceId:               "non_existent_svc",
 			SessionId:               "session_id",
 			SessionStartBlockHeight: 1,
 			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),
@@ -643,7 +648,7 @@ func prepareTestClaim(
 		SupplierOperatorAddress: supplier.OperatorAddress,
 		SessionHeader: &sessiontypes.SessionHeader{
 			ApplicationAddress:      app.Address,
-			Service:                 service,
+			ServiceId:               service.Id,
 			SessionId:               "session_id",
 			SessionStartBlockHeight: 1,
 			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),

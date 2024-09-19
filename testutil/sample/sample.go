@@ -23,8 +23,8 @@ func AccAddress() string {
 	return addr
 }
 
-// AccAddressAndPubKeyEdd2519 returns a sample account address and public key
-func AccAddressAndPubKeyEdd2519() (string, cryptotypes.PubKey) {
+// AccAddressAndPubKeyEd25519 returns a sample account address and public key
+func AccAddressAndPubKeyEd25519() (string, cryptotypes.PubKey) {
 	pk := ed25519.GenPrivKey().PubKey()
 	addr := pk.Address()
 	return sdk.AccAddress(addr).String(), pk
@@ -39,6 +39,19 @@ func ConsAddress() string {
 	return valAddress.String()
 }
 
+// AccAddressFromConsAddress returns an account address (with the Bech32PrefixForAccount prefix)
+// from a given consensus address (with the Bech32PrefixForValidator prefix).
+//
+// Reference: see initSDKConfig in  `cmd/poktrolld/cmd`.
+//
+// Use case: in the native cosmos SDK mint module, we set inflation_rate_change to 0
+// because Pocket Network has a custom inflation mechanism. Data availability and
+// block validation is a small part of the network's utility, so the majority of
+// inflation comes from the relays serviced. Therefore, the validator's (block producer's)
+// rewards are proportional to that as well. For this reason, we need a helper function
+// to identify the proposer address from the validator consensus address.
+//
+// TODO_MAINNET: Add E2E tests to validate this works as expected.
 func AccAddressFromConsAddress(validatorConsAddr string) string {
 	valAddr, _ := sdk.ValAddressFromBech32(validatorConsAddr)
 	proposerAddress, _ := sdk.AccAddressFromHexUnsafe(hex.EncodeToString(valAddr.Bytes()))

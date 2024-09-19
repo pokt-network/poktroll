@@ -1,11 +1,11 @@
 ---
 sidebar_position: 2
-title: Docker Compose - Debian Cheatsheet
+title: Docker Compose Cheat Sheet
 ---
 
 import ReactPlayer from "react-player";
 
-# tl;dr Debian Cheat Sheet <!-- omit in toc -->
+# Docker Compose Cheat Sheet <!-- omit in toc --> <!-- omit in toc -->
 
 - [Results](#results)
 - [Deploy your server](#deploy-your-server)
@@ -19,12 +19,14 @@ import ReactPlayer from "react-player";
 - [Stake an Application \& Deploy an AppGate Server](#stake-an-application--deploy-an-appgate-server)
 - [Send a Relay](#send-a-relay)
   - [Ensure you get a response](#ensure-you-get-a-response)
+- [\[BONUS\] Deploy a PATH Gateway](#bonus-deploy-a-path-gateway)
 - [Managing a re-genesis](#managing-a-re-genesis)
   - [Full Nodes](#full-nodes)
   - [Fund the same accounts](#fund-the-same-accounts)
     - [Faucet is not ready and you need to fund the accounts manually](#faucet-is-not-ready-and-you-need-to-fund-the-accounts-manually)
   - [Start the RelayMiner](#start-the-relayminer)
   - [Start the AppGate Server](#start-the-appgate-server)
+  - [Re-stake the gateway](#re-stake-the-gateway)
 
 ## Results
 
@@ -233,6 +235,22 @@ for i in {1..10}; do
 done
 ```
 
+## [BONUS] Deploy a PATH Gateway
+
+If you want to deploy a real Gateway, you can use [Grove's PATH](https://github.com/buildwithgrove/path)
+after running the following commands:
+
+```bash
+# Stake the gateway
+poktrolld tx gateway stake-gateway --config=/poktroll/stake_configs/gateway_stake_config_example.yaml --from=gateway --chain-id=poktroll --yes
+# Delegate from the application to the gateway
+poktrolld tx application delegate-to-gateway $GATEWAY_ADDR --from=application --chain-id=poktroll --chain-id=poktroll --yes
+
+# OPTIONALLY check the gateway's and application's status
+poktrolld query gateway show-gateway $GATEWAY_ADDR
+poktrolld query application show-application $APPLICATION_ADDR
+```
+
 ## Managing a re-genesis
 
 Assuming you already had everything functioning following the steps above, this
@@ -242,14 +260,14 @@ is a quick way to reset everything (without recreating keys) after a re-genesis.
 
 ```bash
 # Stop all containers
-docker-compose down
+docker compose down
 docker rm $(docker ps -aq) -f
 
 # Remove existing data
 rm -rf poktrolld-data/config/addrbook.json poktrolld-data/config/genesis.json poktrolld-data/data/ poktrolld-data/config/node_key.json poktrolld-data/config/priv_validator_key.json
 ```
 
-Update `POKTROLLD_IMAGE_TAG` in `.env` based on the releases [here](https://github.com/pokt-network/poktroll/releases/tag/v0.0.6).
+Update `POKTROLLD_IMAGE_TAG` in `.env` based on the releases [here](https://github.com/pokt-network/poktroll/releases).
 
 ```bash
 # Start the full
@@ -302,3 +320,5 @@ docker compose up -d appgate-server-example
 # View
 docker logs -f --tail 100 appgate_server
 ```
+
+### Re-stake the gateway

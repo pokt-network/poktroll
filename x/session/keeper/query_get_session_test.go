@@ -10,7 +10,6 @@ import (
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/x/session/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func init() {
@@ -54,10 +53,8 @@ func TestSession_GetSession_Success(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			req := &types.QueryGetSessionRequest{
 				ApplicationAddress: test.appAddr,
-				Service: &sharedtypes.Service{
-					Id: test.serviceId,
-				},
-				BlockHeight: 1,
+				ServiceId:          test.serviceId,
+				BlockHeight:        1,
 			}
 
 			response, err := keeper.GetSession(ctx, req)
@@ -146,10 +143,8 @@ func TestSession_GetSession_Failure(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			req := &types.QueryGetSessionRequest{
 				ApplicationAddress: test.appAddr,
-				Service: &sharedtypes.Service{
-					Id: test.serviceId,
-				},
-				BlockHeight: test.blockHeight,
+				ServiceId:          test.serviceId,
+				BlockHeight:        test.blockHeight,
 			}
 
 			res, err := keeper.GetSession(ctx, req)

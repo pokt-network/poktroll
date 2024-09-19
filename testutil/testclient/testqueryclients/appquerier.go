@@ -47,12 +47,7 @@ func NewTestApplicationQueryClient(
 				Address: appAddress,
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 				ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
-					{
-						Service: &sharedtypes.Service{
-							Id:   "svc1",
-							Name: "service one",
-						},
-					},
+					{ServiceId: "svc1"},
 				},
 				DelegateeGatewayAddresses: delegateeAddresses,
 			}, nil

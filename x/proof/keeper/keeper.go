@@ -28,10 +28,12 @@ type (
 		// should be the x/gov module account.
 		authority string
 
+		bankKeeper        types.BankKeeper
 		sessionKeeper     types.SessionKeeper
 		applicationKeeper types.ApplicationKeeper
 		accountKeeper     types.AccountKeeper
 		sharedKeeper      types.SharedKeeper
+		serviceKeeper     types.ServiceKeeper
 
 		ringClient     crypto.RingClient
 		accountQuerier client.AccountQueryClient
@@ -45,10 +47,12 @@ func NewKeeper(
 	logger log.Logger,
 	authority string,
 
+	bankKeeper types.BankKeeper,
 	sessionKeeper types.SessionKeeper,
 	applicationKeeper types.ApplicationKeeper,
 	accountKeeper types.AccountKeeper,
 	sharedKeeper types.SharedKeeper,
+	serviceKeeper types.ServiceKeeper,
 ) Keeper {
 	if _, err := sdk.AccAddressFromBech32(authority); err != nil {
 		panic(fmt.Sprintf("invalid authority address: %s", authority))
@@ -87,10 +91,12 @@ func NewKeeper(
 		authority:    authority,
 		logger:       logger,
 
+		bankKeeper:        bankKeeper,
 		sessionKeeper:     sessionKeeper,
 		applicationKeeper: applicationKeeper,
 		accountKeeper:     accountKeeper,
 		sharedKeeper:      sharedKeeper,
+		serviceKeeper:     serviceKeeper,
 
 		ringClient:     ringKeeperClient,
 		accountQuerier: accountQuerier,

@@ -32,8 +32,3 @@ func (k msgServer) UpdateParams(ctx context.Context, msg *types.MsgUpdateParams)
 
 	return &types.MsgUpdateParamsResponse{}, nil
 }
-
-// ComputeUnitsToTokensMultiplier returns the ComputeUnitsToTokensMultiplier param
-func (k Keeper) ComputeUnitsToTokensMultiplier(ctx context.Context) uint64 {
-	return k.GetParams(ctx).ComputeUnitsToTokensMultiplier
-}

@@ -1,5 +1,5 @@
 ---
-title: Recover using Mnemonic Seed Phrase
+title: Mnemonic Seed Phrase Recovery
 sidebar_position: 2
 ---
 

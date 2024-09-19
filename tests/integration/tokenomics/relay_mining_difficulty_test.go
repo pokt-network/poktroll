@@ -26,7 +26,7 @@ func init() {
 }
 
 func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T) {
-	var claimWindowOpenBlockHash, proofWindowOpenBlockHash, proofPathSeedBlockHash []byte
+	var claimWindowOpenBlockHash, proofWindowOpenBlockHash []byte
 
 	// Create a new integration app
 	integrationApp := integration.NewCompleteIntegrationApp(t)
@@ -40,8 +40,8 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	sharedParams := getSharedParams(t, integrationApp)
 
 	// Prepare the trie with several mined relays
-	numRelays := uint64(100)
-	trie := prepareSMST(t, sdkCtx, integrationApp, session, numRelays)
+	expectedNumRelays := uint64(100)
+	trie := prepareSMST(t, sdkCtx, integrationApp, session, expectedNumRelays)
 
 	// Compute the number of blocks to wait between different events
 	// TODO_BLOCKER(@bryanchriswhite): See this comment: https://github.com/pokt-network/poktroll/pull/610#discussion_r1645777322
@@ -85,19 +85,6 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	require.Greater(t, numBlocksUntilProofWindowOpenHeight, int64(0), "unexpected non-positive number of blocks until the earliest proof commit height")
 	integrationApp.NextBlocks(t, int(numBlocksUntilProofWindowOpenHeight))
 
-	// Construct a new proof message and commit it
-	createProofMsg := prooftypes.MsgSubmitProof{
-		SupplierOperatorAddress: integrationApp.DefaultSupplier.OperatorAddress,
-		SessionHeader:           session.Header,
-		Proof:                   getProof(t, trie, proofPathSeedBlockHash, session.GetHeader().GetSessionId()),
-	}
-	result = integrationApp.RunMsg(t,
-		&createProofMsg,
-		integration.WithAutomaticFinalizeBlock(),
-		integration.WithAutomaticCommit(),
-	)
-	require.NotNil(t, result, "unexpected nil result when submitting a MsgSubmitProof tx")
-
 	// Wait until the proof window is closed
 	currentBlockHeight = sdkCtx.BlockHeight()
 	numBlocksUntilProofWindowCloseHeight := proofWindowCloseHeight - currentBlockHeight
@@ -119,8 +106,8 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	require.Equal(t, prooftypes.DefaultRelayDifficultyTargetHashHex, relayMiningEvent.NewTargetHashHexEncoded)
 
 	// The previous EMA is the same as the current one if the service is new
-	require.Equal(t, numRelays, relayMiningEvent.PrevNumRelaysEma)
-	require.Equal(t, numRelays, relayMiningEvent.NewNumRelaysEma)
+	require.Equal(t, expectedNumRelays, relayMiningEvent.PrevNumRelaysEma)
+	require.Equal(t, expectedNumRelays, relayMiningEvent.NewNumRelaysEma)
 }
 
 func UpdateRelayMiningDifficulty_UpdatingMultipleServicesAtOnce(t *testing.T) {}
@@ -155,7 +142,7 @@ func getSession(t *testing.T, integrationApp *testutil.App) *sessiontypes.Sessio
 	sessionQueryClient := sessiontypes.NewQueryClient(integrationApp.QueryHelper())
 	getSessionReq := sessiontypes.QueryGetSessionRequest{
 		ApplicationAddress: integrationApp.DefaultApplication.Address,
-		Service:            integrationApp.DefaultService,
+		ServiceId:          integrationApp.DefaultService.Id,
 		BlockHeight:        sdkCtx.BlockHeight(),
 	}
 
@@ -165,7 +152,7 @@ func getSession(t *testing.T, integrationApp *testutil.App) *sessiontypes.Sessio
 	return getSessionRes.Session
 }
 
-// prepareSMST prepares an SMST with a the number of mined relays specified.
+// prepareSMST prepares an SMST with the given number of mined relays.
 func prepareSMST(
 	t *testing.T, ctx context.Context,
 	integrationApp *testutil.App,
@@ -201,25 +188,4 @@ func prepareSMST(
 	}
 
 	return trie
-}
-
-// getProof returns a proof for the given session for the empty path.
-// If there is only one relay in the trie, the proof will be for that single
-// relay since it is "closest" to any path provided, empty or not.
-func getProof(
-	t *testing.T,
-	trie *smt.SMST,
-	pathSeedBlockHash []byte,
-	sessionId string,
-) []byte {
-	t.Helper()
-
-	path := protocol.GetPathForProof(pathSeedBlockHash, sessionId)
-	proof, err := trie.ProveClosest(path)
-	require.NoError(t, err)
-
-	proofBz, err := proof.Marshal()
-	require.NoError(t, err)
-
-	return proofBz
 }

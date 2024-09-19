@@ -15,7 +15,6 @@ import (
 	"github.com/pokt-network/poktroll/x/proof/keeper"
 	"github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 const (
@@ -34,7 +33,7 @@ func createNProofs(keeper keeper.Keeper, ctx context.Context, n int) []types.Pro
 			SupplierOperatorAddress: sample.AccAddress(),
 			SessionHeader: &sessiontypes.SessionHeader{
 				ApplicationAddress:      sample.AccAddress(),
-				Service:                 &sharedtypes.Service{Id: testServiceId},
+				ServiceId:               testServiceId,
 				SessionId:               fmt.Sprintf("session-%d", i),
 				SessionStartBlockHeight: 1,
 				SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),

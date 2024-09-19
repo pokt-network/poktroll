@@ -86,7 +86,7 @@ func (k Keeper) EnsureValidProof(
 		return err
 	}
 
-	if proof.ClosestMerkleProof == nil || len(proof.ClosestMerkleProof) == 0 {
+	if len(proof.ClosestMerkleProof) == 0 {
 		return types.ErrProofInvalidProof.Wrap("proof cannot be empty")
 	}
 
@@ -167,7 +167,7 @@ func (k Keeper) EnsureValidProof(
 	if err = validateRelayDifficulty(
 		relayBz,
 		relayDifficultyTargetHash,
-		sessionHeader.Service.Id,
+		sessionHeader.ServiceId,
 	); err != nil {
 		return err
 	}
@@ -308,11 +308,11 @@ func (k Keeper) queryAndValidateClaimForProof(
 	}
 
 	// Ensure service IDs match.
-	if claimSessionHeader.GetService().GetId() != proofSessionHeader.GetService().GetId() {
+	if claimSessionHeader.GetServiceId() != proofSessionHeader.GetServiceId() {
 		return nil, types.ErrProofInvalidService.Wrapf(
 			"claim service ID %q does not match proof service ID %q",
-			claimSessionHeader.GetService().GetId(),
-			proofSessionHeader.GetService().GetId(),
+			claimSessionHeader.GetServiceId(),
+			proofSessionHeader.GetServiceId(),
 		)
 	}
 
@@ -333,20 +333,11 @@ func compareSessionHeaders(expectedSessionHeader, sessionHeader *sessiontypes.Se
 	}
 
 	// Compare the Service IDs.
-	if sessionHeader.GetService().GetId() != expectedSessionHeader.GetService().GetId() {
+	if sessionHeader.GetServiceId() != expectedSessionHeader.GetServiceId() {
 		return types.ErrProofInvalidRelay.Wrapf(
 			"session headers service IDs mismatch; expected: %q, got: %q",
-			expectedSessionHeader.GetService().GetId(),
-			sessionHeader.GetService().GetId(),
-		)
-	}
-
-	// Compare the Service names.
-	if sessionHeader.GetService().GetName() != expectedSessionHeader.GetService().GetName() {
-		return types.ErrProofInvalidRelay.Wrapf(
-			"sessionHeaders service names mismatch expect: %q, got: %q",
-			expectedSessionHeader.GetService().GetName(),
-			sessionHeader.GetService().GetName(),
+			expectedSessionHeader.GetServiceId(),
+			sessionHeader.GetServiceId(),
 		)
 	}
 
@@ -380,7 +371,7 @@ func compareSessionHeaders(expectedSessionHeader, sessionHeader *sessiontypes.Se
 	return nil
 }
 
-// verifyClosestProof verifies the the correctness of the ClosestMerkleProof
+// verifyClosestProof verifies the correctness of the ClosestMerkleProof
 // against the root hash committed to when creating the claim.
 func verifyClosestProof(
 	proof *smt.SparseMerkleClosestProof,
