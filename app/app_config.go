@@ -190,13 +190,18 @@ var (
 		icatypes.ModuleName,
 		ibcfeetypes.ModuleName,
 		// chain modules
-		tokenomicsmoduletypes.ModuleName,
 		servicemoduletypes.ModuleName,
+		sessionmoduletypes.ModuleName,
+		proofmoduletypes.ModuleName,
+		tokenomicsmoduletypes.ModuleName,
+		// CRITICAL: THE ORDER HERE IS IMPORTANT AND MUST BE CAREFULLY MAINTAINED.
+		// Gateway, Application and Supplier end blockers should be called after the
+		// tokenomics module end blocker to ensure that the tokenomics module has
+		// processed all the pending claims, minting, burning or slashing before
+		// any of the actors have a chance to withdraw their tokens.
 		gatewaymoduletypes.ModuleName,
 		applicationmoduletypes.ModuleName,
 		suppliermoduletypes.ModuleName,
-		sessionmoduletypes.ModuleName,
-		proofmoduletypes.ModuleName,
 		sharedmoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/endBlockers
 	}

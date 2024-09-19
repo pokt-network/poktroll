@@ -251,9 +251,11 @@ genesis:
     proof:
       params:
         proof_request_probability: "0.25"
-        proof_requirement_threshold: 20
+        proof_requirement_threshold:
+          amount: "20000000"
+          denom: upokt
         proof_missing_penalty:
-          amount: "320"
+          amount: "320000000"
           denom: upokt
         proof_submission_fee:
           amount: "1000000"

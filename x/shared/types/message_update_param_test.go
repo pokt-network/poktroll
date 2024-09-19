@@ -45,6 +45,13 @@ func TestMsgUpdateParam_ValidateBasic(t *testing.T) {
 				Name:      ParamNumBlocksPerSession,
 				AsType:    &MsgUpdateParam_AsInt64{AsInt64: 1},
 			},
+		}, {
+			desc: "invalid ComputeUnitsToTokensMultiplier",
+			msg: MsgUpdateParam{
+				Authority: sample.AccAddress(),
+				Name:      ParamComputeUnitsToTokensMultiplier,
+				AsType:    &MsgUpdateParam_AsInt64{AsInt64: 0},
+			},
 		},
 	}
 	for _, tt := range tests {

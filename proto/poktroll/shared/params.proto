@@ -41,4 +41,7 @@ message Params {
   // On-chain business logic requires, and ensures, that the corresponding block count of the
   // application unbonding period will exceed the end of its corresponding proof window close height.
   uint64 application_unbonding_period_sessions = 8 [(gogoproto.jsontag) = "application_unbonding_period_sessions"];
+  // The amount of upokt that a compute unit should translate to when settling a session.
+  // DEV_NOTE: This used to be under x/tokenomics but has been moved here to avoid cyclic dependencies.
+  uint64 compute_units_to_tokens_multiplier = 9 [(gogoproto.jsontag) = "compute_units_to_tokens_multiplier", (gogoproto.moretags) = "yaml:\"compute_units_to_tokens_multiplier\""];
 }
