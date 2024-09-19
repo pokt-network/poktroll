@@ -68,9 +68,16 @@ func (s *BaseIntegrationSuiteTestSuite) TestSetApp() {
 	require.Same(s.T(), app, s.app)
 }
 
-func (s *BaseIntegrationSuiteTestSuite) TestGetModuleNames() {
-	moduleNames := s.GetModuleNames()
-	require.ElementsMatch(s.T(), allPoktrollModuleNames, moduleNames)
+func (s *BaseIntegrationSuiteTestSuite) TestGetPoktrollModuleNames() {
+	moduleNames := s.GetPoktrollModuleNames()
+	require.Greater(s.T(), len(moduleNames), 0, "expected non-empty module names")
+	require.ElementsMatch(s.T(), s.poktrollModuleNames, moduleNames)
+}
+
+func (s *BaseIntegrationSuiteTestSuite) TestGetCosmosModuleNames() {
+	moduleNames := s.GetCosmosModuleNames()
+	require.Greater(s.T(), len(moduleNames), 0, "expected non-empty module names")
+	require.ElementsMatch(s.T(), s.cosmosModuleNames, moduleNames)
 }
 
 func (s *BaseIntegrationSuiteTestSuite) TestSdkCtx() {
@@ -163,7 +170,9 @@ func (s *BaseIntegrationSuiteTestSuite) TestGetAttributeValue() {
 	require.Equal(s.T(), banktypes.ModuleName, value)
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// generateBankMsgSendEvents causes the bank module to emit events as the result
+// of handling a MsgSend message which are intended to be used to make assertions
+// in tests.
 func (s *BaseIntegrationSuiteTestSuite) generateBankMsgSendEvents(expectedNumEvents int) {
 	msgs := make([]cosmostypes.Msg, 0)
 
@@ -182,10 +191,13 @@ func (s *BaseIntegrationSuiteTestSuite) generateBankMsgSendEvents(expectedNumEve
 		msgs = append(msgs, sendMsg)
 	}
 
-	s.GetApp().RunMsg(s.T(), nil, msgs...)
+	_, err := s.GetApp().RunMsgs(s.T(), msgs...)
+	require.NoError(s.T(), err)
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// emitPoktrollGatewayUnstakedEvents emits the given number of EventGatewayUnstaked
+// events to the event manager. These events are intended to be used to make
+// assertions in tests.
 func (s *BaseIntegrationSuiteTestSuite) emitPoktrollGatewayUnstakedEvents(expectedNumEvents int) {
 	for i := 0; i < expectedNumEvents; i++ {
 		err := s.SdkCtx().EventManager().EmitTypedEvent(&gatewaytypes.EventGatewayUnstaked{

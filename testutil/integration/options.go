@@ -7,86 +7,45 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 )
 
-var (
-	RunUntilNextBlockOpts = RunOptions{
-		WithAutomaticCommit(),
-		WithAutomaticFinalizeBlock(),
-	}
-)
-
-// RunConfig is the configuration for the testing integration app.
-type RunConfig struct {
-	AutomaticFinalizeBlock bool
-	AutomaticCommit        bool
-	ErrorAssertion         func(error)
-}
-
-// RunOption is a function that can be used to configure the integration app.
-type RunOption func(*RunConfig)
-
-// RunOptions is a list of RunOption. It implements the Append method for convenience.
-type RunOptions []RunOption
-
-func (runOpts RunOptions) Config() *RunConfig {
-	cfg := &RunConfig{}
-
-	for _, opt := range runOpts {
-		opt(cfg)
-	}
-
-	return cfg
-}
-
-// Append returns a new RunOptions with the given RunOptions appended.
-func (runOpts RunOptions) Append(newRunOpts ...RunOption) RunOptions {
-	return append(runOpts, newRunOpts...)
-}
-
-// WithAutomaticFinalizeBlock calls ABCI finalize block.
-func WithAutomaticFinalizeBlock() RunOption {
-	return func(cfg *RunConfig) {
-		cfg.AutomaticFinalizeBlock = true
-	}
-}
-
-// WithAutomaticCommit enables automatic commit.
-// This means that the integration app will automatically commit the state after each msg.
-func WithAutomaticCommit() RunOption {
-	return func(cfg *RunConfig) {
-		cfg.AutomaticCommit = true
-	}
-}
-
-// WithErrorAssertion registers an error assertion function which is called when
-// RunMsg() encounters an error.
-func WithErrorAssertion(errAssertFn func(error)) RunOption {
-	return func(cfg *RunConfig) {
-		cfg.ErrorAssertion = errAssertFn
-	}
-}
-
-// TODO_IN_THIS_COMMIT: godoc...
+// IntegrationAppConfig is a configuration struct for an integration App. Its fields
+// are intended to be set/updated by IntegrationAppOption functions which are passed
+// during integration App construction.
 type IntegrationAppConfig struct {
+	// InitChainerModuleFns are called for each module during the integration App's
+	// InitChainer function.
 	InitChainerModuleFns []InitChainerModuleFn
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// IntegrationAppOption is a function that receives and has the opportunity to
+// modify the IntegrationAppConfig. It is intended to be passed during integration
+// App construction to modify the behavior of the integration App.
 type IntegrationAppOption func(*IntegrationAppConfig)
 
-// TODO_IN_THIS_COMMIT: godoc...
+// InitChainerModuleFn is a function that is called for each module during the
+// integration App's InitChainer function.
 type InitChainerModuleFn func(cosmostypes.Context, codec.Codec, appmodule.AppModule)
 
-// TODO_IN_THIS_COMMIT: godoc...
-func WithModuleGenesisState[T module.HasGenesis](genesisState cosmostypes.Msg) IntegrationAppOption {
+// WithInitChainerModuleFn returns an IntegrationAppOption that appends the given
+// InitChainerModuleFn to the IntegrationAppConfig's InitChainerModuleFns.
+func WithInitChainerModuleFn(fn InitChainerModuleFn) IntegrationAppOption {
 	return func(config *IntegrationAppConfig) {
-		config.InitChainerModuleFns = append(
-			config.InitChainerModuleFns,
-			NewInitChainerModuleGenesisStateOptionFn[T](genesisState),
-		)
+		config.InitChainerModuleFns = append(config.InitChainerModuleFns, fn)
 	}
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// WithModuleGenesisState returns an IntegrationAppOption that appends an
+// InitChainerModuleFn to the IntegrationAppConfig's InitChainerModuleFns which
+// initializes the module's genesis state with the given genesisState. T is expected
+// to be the module's AppModule type.
+func WithModuleGenesisState[T module.HasGenesis](genesisState cosmostypes.Msg) IntegrationAppOption {
+	return WithInitChainerModuleFn(
+		NewInitChainerModuleGenesisStateOptionFn[T](genesisState),
+	)
+}
+
+// NewInitChainerModuleGenesisStateOptionFn returns an InitChainerModuleFn that
+// initializes the module's genesis state with the given genesisState. T is expected
+// to be the module's AppModule type.
 func NewInitChainerModuleGenesisStateOptionFn[T module.HasGenesis](genesisState cosmostypes.Msg) InitChainerModuleFn {
 	return func(ctx cosmostypes.Context, cdc codec.Codec, mod appmodule.AppModule) {
 		targetModule, isTypeT := mod.(T)

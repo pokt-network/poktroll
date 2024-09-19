@@ -2,6 +2,8 @@ package integration
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	math2 "math"
 	"testing"
 	"time"
@@ -152,7 +154,6 @@ func NewIntegrationApp(
 
 	bApp.SetInterfaceRegistry(registry)
 
-	// TODO_IMPROVE: use moduleManager.ModuleNames() to populate allModuleNames.
 	moduleManager := module.NewManagerFromMap(modules)
 	basicModuleManager := module.NewBasicManagerFromManager(moduleManager, nil)
 	basicModuleManager.RegisterInterfaces(registry)
@@ -221,7 +222,8 @@ func NewIntegrationApp(
 }
 
 // NewCompleteIntegrationApp creates a new instance of the App, abstracting out
-// all of the internal details and complexities of the application setup.
+// all the internal details and complexities of the application setup.
+//
 // TODO_TECHDEBT: Not all of the modules are created here (e.g. minting module),
 // so it is up to the developer to add / improve / update this function over time
 // as the need arises.
@@ -590,6 +592,17 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOption) *App 
 	preGeneratedAccts := testkeyring.PreGeneratedAccounts()
 	integrationApp.preGeneratedAccts = preGeneratedAccts
 
+	// Construct a ringClient to get the application's ring & verify the relay
+	// request signature.
+	ringClient, err := rings.NewRingClient(depinject.Supply(
+		polyzero.NewLogger(),
+		prooftypes.NewAppKeeperQueryClient(applicationKeeper),
+		prooftypes.NewAccountKeeperQueryClient(accountKeeper),
+		prooftypes.NewSharedKeeperQueryClient(sharedKeeper, sessionKeeper),
+	))
+	require.NoError(t, err)
+	integrationApp.ringClient = ringClient
+
 	// TODO_IMPROVE: Eliminate usage of and remove this function in favor of
 	// integration.NewInitChainerModuleGenesisStateOptionFn.
 	integrationApp.setupDefaultActorsState(t,
@@ -598,8 +611,6 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOption) *App 
 		serviceKeeper,
 		supplierKeeper,
 		applicationKeeper,
-		sessionKeeper,
-		sharedKeeper,
 	)
 
 	// Commit all the changes above by committing, finalizing and moving
@@ -646,86 +657,107 @@ func (app *App) QueryHelper() *baseapp.QueryServiceTestHelper {
 	return app.queryHelper
 }
 
-// RunMsg provides the ability to run a message and return the response.
-// In order to run a message, the application must have a handler for it.
-// These handlers are registered on the application message service router.
-// The result of the message execution is returned as an Any type.
-// That any type can be unmarshaled to the expected response type.
-// If the message execution fails, an error is returned.
-//
-// TODO_IN_THIS_COMMIT: update comment...
-func (app *App) RunMsg(t *testing.T, cfg *RunConfig, msgs ...sdk.Msg) (txMsgRes tx.MsgResponse) {
+// RunMsg provides the ability to process a message by packing it into a tx and
+// driving the ABCI through block finalization. It returns a tx.MsgResponse (any)
+// which corresponds to the request message. It is a convenience method which wraps
+// RunMsgs.
+func (app *App) RunMsg(t *testing.T, msg sdk.Msg) (tx.MsgResponse, error) {
 	t.Helper()
 
-	if cfg == nil {
-		cfg = new(RunConfig)
-	}
+	txMsgRes, err := app.RunMsgs(t, msg)
+	require.Equal(t, 1, len(txMsgRes), "expected exactly 1 tx msg response")
+
+	return txMsgRes[0], err
+}
+
+// RunMsgs provides the ability to process messages by packing them into a tx and
+// driving the ABCI through block finalization. It returns a slice of tx.MsgResponse
+// (any) which correspond to the request message of the same index. These responses
+// can be type asserted to the expected response type.
+// If execution for ANY message fails, ALL failing messages' errors are joined and
+// returned. In order to run a message, the application must have a handler for it.
+// These handlers are registered on the application message service router.
+func (app *App) RunMsgs(t *testing.T, msgs ...sdk.Msg) (txMsgResps []tx.MsgResponse, err error) {
+	t.Helper()
 
 	// Commit the updated state after the message has been handled.
-	var finalizedBlockResponse *abci.ResponseFinalizeBlock
+	var finalizeBlockRes *abci.ResponseFinalizeBlock
 	defer func() {
-		_, err := app.Commit()
-		if cfg.ErrorAssertion != nil && err != nil {
-			cfg.ErrorAssertion(err)
-		} else {
-			require.NoError(t, err, "failed to commit")
+		if _, commitErr := app.Commit(); err != nil {
+			err = fmt.Errorf("committing state: %w", commitErr)
+			return
 		}
+
 		app.nextBlockUpdateCtx()
 
-		// Emit events AFTER the context has been updated.
-		app.emitEvents(t, finalizedBlockResponse)
+		// Emit events MUST happen AFTER the context has been updated so that
+		// events are available on the context for the block after their actions
+		// were committed (e.g. msgs, begin/end block trigger).
+		app.emitEvents(t, finalizeBlockRes)
 	}()
 
 	// Package the message into a transaction.
 	txBuilder := app.txCfg.NewTxBuilder()
-	err := txBuilder.SetMsgs(msgs...)
-	require.NoError(t, err)
+	if err = txBuilder.SetMsgs(msgs...); err != nil {
+		return nil, fmt.Errorf("setting tx messages: %w", err)
+	}
 
-	txBz, err := app.TxEncode(txBuilder.GetTx())
-	require.NoError(t, err)
+	txBz, txErr := app.TxEncode(txBuilder.GetTx())
+	if txErr != nil {
+		return nil, fmt.Errorf("encoding tx: %w", err)
+	}
 
 	for _, msg := range msgs {
 		app.logger.Info("Running msg", "msg", msg.String())
 	}
 
 	// Finalize the block with the transaction.
-	finalizedBlockResponse, err = app.FinalizeBlock(&cmtabcitypes.RequestFinalizeBlock{
+	finalizeBlockReq := &cmtabcitypes.RequestFinalizeBlock{
 		Height: app.LastBlockHeight() + 1,
 		DecidedLastCommit: cmtabcitypes.CommitInfo{
 			Votes: []cmtabcitypes.VoteInfo{{}},
 		},
 		Txs: [][]byte{txBz},
-	})
-
-	if cfg.ErrorAssertion != nil && err != nil {
-		cfg.ErrorAssertion(err)
-		return nil
 	}
 
-	require.NoError(t, err, "failed to finalize block")
-
-	if cfg.ErrorAssertion != nil {
-		cfg.ErrorAssertion(err)
-		return nil
+	finalizeBlockRes, err = app.FinalizeBlock(finalizeBlockReq)
+	if err != nil {
+		return nil, fmt.Errorf("finalizing block: %w", err)
 	}
 
-	// TODO_IN_THIS_COMMIT: comment or improve... assume each tx has a single msg.
-	require.Equalf(t, 1, len(finalizedBlockResponse.TxResults), "expected 1 tx result, got %d", len(finalizedBlockResponse.TxResults))
+	// NB: We're batching the messages in a single transaction, so we expect
+	// a single transaction result.
+	require.Equal(t, 1, len(finalizeBlockRes.TxResults))
 
-	txResult := finalizedBlockResponse.TxResults[0]
-	require.Truef(t, txResult.IsOK(), "tx failed with log: %s", txResult.GetLog())
+	// Collect the message responses. Accumulate errors related to message handling
+	// failure. If any message fails, an error will be returned.
+	var txResultErrs error
+	for _, txResult := range finalizeBlockRes.TxResults {
+		if !txResult.IsOK() {
+			err = fmt.Errorf("tx failed with log: %q", txResult.GetLog())
+			errors.Join(txResultErrs, err)
+			continue
+		}
 
-	txMsgDataBz := txResult.GetData()
-	require.NotNil(t, txMsgDataBz)
+		txMsgDataBz := txResult.GetData()
+		require.NotNil(t, txMsgDataBz)
 
-	txMsgData := new(cosmostypes.TxMsgData)
-	err = app.GetCodec().Unmarshal(txMsgDataBz, txMsgData)
+		txMsgData := new(cosmostypes.TxMsgData)
+		err = app.GetCodec().Unmarshal(txMsgDataBz, txMsgData)
+		require.NoError(t, err)
 
-	// TODO_IN_THIS_COMMIT: assumes only one msg per tx...
-	err = app.GetCodec().UnpackAny(txMsgData.MsgResponses[0], &txMsgRes)
-	require.NoError(t, err)
-	require.NotNil(t, txMsgRes)
-	return txMsgRes
+		txMsgRes := new(tx.MsgResponse)
+		err = app.GetCodec().UnpackAny(txMsgData.MsgResponses[0], txMsgRes)
+		require.NoError(t, err)
+		require.NotNil(t, txMsgRes)
+
+		txMsgResps = append(txMsgResps, txMsgRes)
+	}
+	if txResultErrs != nil {
+		return nil, err
+	}
+
+	return txMsgResps, nil
 }
 
 // NextBlocks calls NextBlock numBlocks times
@@ -792,18 +824,20 @@ func (app *App) nextBlockUpdateCtx() {
 		Time:    header.Time,
 	}
 
+	// NB: Intentionally omitting the previous contexts EventManager.
+	// This ensures that each event is only observed for 1 block.
 	newContext := app.NewUncachedContext(true, header).
 		WithBlockHeader(header).
 		WithHeaderInfo(headerInfo).
-		// TODO_IN_THIS_COMMIT: should we really be doing this?
-		//WithEventManager(prevCtx.EventManager()).
 		// Pass the multi-store to the new context, otherwise the new context will
 		// create a new multi-store.
 		WithMultiStore(prevCtx.MultiStore())
 	*app.sdkCtx = newContext
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// setupDefaultActorsState uses the integration app keepers to stake "default"
+// on-chain actors for use in tests. In creates a service, and stakes a supplier
+// and application as well as funding the bank balance of both accounts.
 //
 // TODO_IMPROVE: Eliminate usage of and remove this function in favor of
 // integration.NewInitChainerModuleGenesisStateOptionFn.
@@ -814,8 +848,6 @@ func (app *App) setupDefaultActorsState(
 	serviceKeeper servicekeeper.Keeper,
 	supplierKeeper supplierkeeper.Keeper,
 	applicationKeeper appkeeper.Keeper,
-	sessionKeeper sessionkeeper.Keeper,
-	sharedKeeper sharedkeeper.Keeper,
 ) {
 	t.Helper()
 
@@ -870,7 +902,7 @@ func (app *App) setupDefaultActorsState(
 		app.preGeneratedAccts,
 	)
 
-	// Prepare the on-chain supplier
+	// Prepare the on-chain application
 	appStake := types.NewCoin("upokt", math.NewInt(1000000))
 	defaultApplication := apptypes.Application{
 		Address: applicationAddr.String(),
@@ -884,22 +916,11 @@ func (app *App) setupDefaultActorsState(
 	applicationKeeper.SetApplication(app.sdkCtx, defaultApplication)
 	app.DefaultApplication = &defaultApplication
 
-	// Construct a ringClient to get the application's ring & verify the relay
-	// request signature.
-	ringClient, err := rings.NewRingClient(depinject.Supply(
-		polyzero.NewLogger(),
-		prooftypes.NewAppKeeperQueryClient(applicationKeeper),
-		prooftypes.NewAccountKeeperQueryClient(accountKeeper),
-		prooftypes.NewSharedKeeperQueryClient(sharedKeeper, sessionKeeper),
-	))
-	require.NoError(t, err)
-	app.ringClient = ringClient
-
 	// TODO_IMPROVE: The setup above does not to proper "staking" of the suppliers and applications.
 	// This can result in the module accounts balance going negative. Giving them a baseline balance
 	// to start with to avoid this issue. There is opportunity to improve this in the future.
 	moduleBaseMint := types.NewCoins(sdk.NewCoin("upokt", math.NewInt(690000000000000042)))
-	err = bankKeeper.MintCoins(app.sdkCtx, suppliertypes.ModuleName, moduleBaseMint)
+	err := bankKeeper.MintCoins(app.sdkCtx, suppliertypes.ModuleName, moduleBaseMint)
 	require.NoError(t, err)
 	err = bankKeeper.MintCoins(app.sdkCtx, apptypes.ModuleName, moduleBaseMint)
 	require.NoError(t, err)
@@ -912,7 +933,7 @@ func (app *App) setupDefaultActorsState(
 	fundAccount(t, app.sdkCtx, bankKeeper, supplierOperatorAddr, 100000000)
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// fundAccount mints and sends amountUpokt tokens to the given recipientAddr.
 //
 // TODO_IMPROVE: Eliminate usage of and remove this function in favor of
 // integration.NewInitChainerModuleGenesisStateOptionFn.
@@ -920,7 +941,7 @@ func fundAccount(
 	t *testing.T,
 	ctx context.Context,
 	bankKeeper bankkeeper.Keeper,
-	supplierOperatorAddr sdk.AccAddress,
+	recipientAddr sdk.AccAddress,
 	amountUpokt int64,
 ) {
 
@@ -929,14 +950,15 @@ func fundAccount(
 	err := bankKeeper.MintCoins(ctx, banktypes.ModuleName, fundingCoins)
 	require.NoError(t, err)
 
-	err = bankKeeper.SendCoinsFromModuleToAccount(ctx, banktypes.ModuleName, supplierOperatorAddr, fundingCoins)
+	err = bankKeeper.SendCoinsFromModuleToAccount(ctx, banktypes.ModuleName, recipientAddr, fundingCoins)
 	require.NoError(t, err)
 
-	coin := bankKeeper.SpendableCoin(ctx, supplierOperatorAddr, volatile.DenomuPOKT)
+	coin := bankKeeper.SpendableCoin(ctx, recipientAddr, volatile.DenomuPOKT)
 	require.Equal(t, coin.Amount, math.NewInt(amountUpokt))
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// newFaucetInitChainerFn returns an InitChainerModuleFn that initializes the bank module
+// with a genesis state which contains a faucet account that has faucetAmtUpokt coins.
 func newFaucetInitChainerFn(faucetBech32 string, faucetAmtUpokt int64) InitChainerModuleFn {
 	return NewInitChainerModuleGenesisStateOptionFn[bank.AppModule](&banktypes.GenesisState{
 		Params: banktypes.DefaultParams(),

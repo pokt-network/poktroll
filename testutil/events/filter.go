@@ -49,7 +49,8 @@ func QuoteEventMode(event *abci.Event) {
 	}
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// NewMsgEventMatchFn returns a function that matches events whose type equals
+// the given event (protobuf message) type URL.
 func NewMsgEventMatchFn(matchMsgTypeURL string) func(*cosmostypes.Event) bool {
 	return func(event *cosmostypes.Event) bool {
 		if event.Type != "message" {
@@ -70,7 +71,8 @@ func NewMsgEventMatchFn(matchMsgTypeURL string) func(*cosmostypes.Event) bool {
 	}
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// NewEventTypeMatchFn returns a function that matches events whose type is "message"
+// and whose "action" attribute matches the given message (protobuf message) type URL.
 func NewEventTypeMatchFn(matchEventType string) func(*cosmostypes.Event) bool {
 	return func(event *cosmostypes.Event) bool {
 		return strings.Trim(event.Type, "/") == strings.Trim(matchEventType, "/")
