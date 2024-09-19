@@ -17,7 +17,6 @@ func (s *suite) TheUnbondingPeriodParamIsSuccessfullySetToSessionsOfBlocks(
 	unbondingPeriodSessions,
 	numBlocksPerSession int64,
 ) {
-	s.Logf("numBlocksPerSession: %d, unbondingPeriodSessions: %d", numBlocksPerSession, unbondingPeriodSessions)
 	require.GreaterOrEqualf(s, numBlocksPerSession, int64(2),
 		"num_blocks_per_session MUST be at least 2 to satisfy parameter validation requirements")
 
@@ -41,7 +40,8 @@ func (s *suite) TheUnbondingPeriodParamIsSuccessfullySetToSessionsOfBlocks(
 		ProofWindowOpenOffsetBlocks:        0,
 		ProofWindowCloseOffsetBlocks:       1,
 		SupplierUnbondingPeriodSessions:    uint64(unbondingPeriodSessions),
-		ApplicationUnbondingPeriodSessions: 1,
+		ApplicationUnbondingPeriodSessions: uint64(unbondingPeriodSessions),
+		ComputeUnitsToTokensMultiplier:     sharedtypes.DefaultComputeUnitsToTokensMultiplier,
 	}
 
 	// Convert params struct to the map type expected by
@@ -64,6 +64,7 @@ func paramsAnyMapFromParamsStruct(paramStruct any) paramsAnyMap {
 		paramName := toSnakeCase(fieldStruct.Name)
 
 		fieldTypeName := fieldStruct.Type.Name()
+		// TODO_IMPROVE: MsgUpdateParam currently only supports int64 and not uint64 value types.
 		if fieldTypeName == "uint64" {
 			fieldTypeName = "int64"
 			fieldValue = reflect.ValueOf(int64(fieldValue.Interface().(uint64)))
