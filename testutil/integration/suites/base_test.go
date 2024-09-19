@@ -119,7 +119,7 @@ func (s *BaseIntegrationSuiteTestSuite) TestFilterLatestEventsWithNewMsgEventMat
 	expectedNumEvents := 3
 
 	s.NewApp(s.T())
-	s.generateBankMsgSendEvents(expectedNumEvents)
+	s.emitBankMsgSendEvents(expectedNumEvents)
 
 	// Filter for the "message" type event with "action" attribute value
 	// equal to the MsgSend TypeURL.
@@ -152,7 +152,7 @@ func (s *BaseIntegrationSuiteTestSuite) TestFilterLatestEventsWithNewEventTypeMa
 
 func (s *BaseIntegrationSuiteTestSuite) TestGetAttributeValue() {
 	s.NewApp(s.T())
-	s.generateBankMsgSendEvents(1)
+	s.emitBankMsgSendEvents(1)
 
 	testEvents := s.SdkCtx().EventManager().Events()
 	// NB: 5 events are emitted for a single MsgSend:
@@ -162,18 +162,19 @@ func (s *BaseIntegrationSuiteTestSuite) TestGetAttributeValue() {
 	// - transfer
 	// - coinbase
 	require.Equal(s.T(), 5, len(testEvents), "expected 5 events")
-	event := testEvents[0]
 
-	// Get the matched event and check its attributes.
+	// Get the "message" event and check its "module" attribute. Cosmos-sdk emits
+	// a "message" event alongside other txResult events for each message in a tx.
+	event := testEvents[0]
 	value, hasAttr := s.GetAttributeValue(&event, "module")
 	require.True(s.T(), hasAttr)
 	require.Equal(s.T(), banktypes.ModuleName, value)
 }
 
-// generateBankMsgSendEvents causes the bank module to emit events as the result
+// emitBankMsgSendEvents causes the bank module to emit events as the result
 // of handling a MsgSend message which are intended to be used to make assertions
 // in tests.
-func (s *BaseIntegrationSuiteTestSuite) generateBankMsgSendEvents(expectedNumEvents int) {
+func (s *BaseIntegrationSuiteTestSuite) emitBankMsgSendEvents(expectedNumEvents int) {
 	msgs := make([]cosmostypes.Msg, 0)
 
 	for i := 0; i < expectedNumEvents; i++ {
@@ -207,6 +208,7 @@ func (s *BaseIntegrationSuiteTestSuite) emitPoktrollGatewayUnstakedEvents(expect
 	}
 }
 
+// Run the test suite.
 func TestBaseIntegrationSuite(t *testing.T) {
 	suite.Run(t, new(BaseIntegrationSuiteTestSuite))
 }

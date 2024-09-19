@@ -109,6 +109,7 @@ type App struct {
 	sdkCtx            *sdk.Context
 	cdc               codec.Codec
 	logger            log.Logger
+	txCfg             client.TxConfig
 	authority         sdk.AccAddress
 	moduleManager     module.Manager
 	queryHelper       *baseapp.QueryServiceTestHelper
@@ -116,11 +117,11 @@ type App struct {
 	ringClient        crypto.RingClient
 	preGeneratedAccts *testkeyring.PreGeneratedAccountIterator
 
-	txCfg client.TxConfig
-
 	// Some default helper fixtures for general testing.
 	// They're publicly exposed and should/could be improved and expand on
 	// over time.
+	//
+	// TODO_IMPROVE: Refactor into a DefaultActorsIntegrationSuite test suite.
 	DefaultService                   *sharedtypes.Service
 	DefaultApplication               *apptypes.Application
 	DefaultApplicationKeyringUid     string
@@ -179,10 +180,13 @@ func NewIntegrationApp(
 	bApp.SetInitChainer(
 		func(ctx sdk.Context, _ *cmtabcitypes.RequestInitChain) (*cmtabcitypes.ResponseInitChain, error) {
 			for _, mod := range modules {
+				// Set each module's genesis state to the default. This MAY be
+				// overridden via the InitChainerModuleFns option.
 				if m, ok := mod.(module.HasGenesis); ok {
 					m.InitGenesis(ctx, cdc, m.DefaultGenesis(cdc))
 				}
 
+				// Call each of the InitChainerModuleFns for each module.
 				for _, fn := range cfg.InitChainerModuleFns {
 					fn(ctx, cdc, mod)
 				}
@@ -230,20 +234,19 @@ func NewIntegrationApp(
 func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOption) *App {
 	t.Helper()
 
+	// Prepare & register the codec for all the interfaces
 	sdkCfg := cosmostypes.GetConfig()
 	addrCodec := addresscodec.NewBech32Codec(sdkCfg.GetBech32AccountAddrPrefix())
 	valCodec := addresscodec.NewBech32Codec(sdkCfg.GetBech32ValidatorAddrPrefix())
-
-	// Prepare & register the codec for all the interfaces
-	registry, err := codectypes.NewInterfaceRegistryWithOptions(
-		codectypes.InterfaceRegistryOptions{
-			ProtoFiles: proto.HybridResolver,
-			SigningOptions: signing.Options{
-				AddressCodec:          addrCodec,
-				ValidatorAddressCodec: valCodec,
-			},
-		},
-	)
+	signingOpts := signing.Options{
+		AddressCodec:          addrCodec,
+		ValidatorAddressCodec: valCodec,
+	}
+	registryOpts := codectypes.InterfaceRegistryOptions{
+		ProtoFiles:     proto.HybridResolver,
+		SigningOptions: signingOpts,
+	}
+	registry, err := codectypes.NewInterfaceRegistryWithOptions(registryOpts)
 	require.NoError(t, err)
 
 	banktypes.RegisterInterfaces(registry)
@@ -613,10 +616,6 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOption) *App 
 		applicationKeeper,
 	)
 
-	// Commit all the changes above by committing, finalizing and moving
-	// to the next block.
-	integrationApp.NextBlock(t)
-
 	return integrationApp
 }
 
@@ -672,8 +671,8 @@ func (app *App) RunMsg(t *testing.T, msg sdk.Msg) (tx.MsgResponse, error) {
 
 // RunMsgs provides the ability to process messages by packing them into a tx and
 // driving the ABCI through block finalization. It returns a slice of tx.MsgResponse
-// (any) which correspond to the request message of the same index. These responses
-// can be type asserted to the expected response type.
+// (any) whose elements correspond to the request message of the same index. These
+// responses can be type asserted to the expected response type.
 // If execution for ANY message fails, ALL failing messages' errors are joined and
 // returned. In order to run a message, the application must have a handler for it.
 // These handlers are registered on the application message service router.
@@ -771,17 +770,19 @@ func (app *App) NextBlocks(t *testing.T, numBlocks int) {
 	}
 }
 
-// emitEvents emits the events from the finalized block to the event manager
-// of the context in the active app.
+// emitEvents emits the events from the finalized block such that they are available
+// via the current context's event manager (i.e. app.GetSdkCtx().EventManager.Events()).
 func (app *App) emitEvents(t *testing.T, res *abci.ResponseFinalizeBlock) {
 	t.Helper()
 
+	// Emit begin/end blocker events.
 	for _, event := range res.Events {
 		testutilevents.QuoteEventMode(&event)
 		abciEvent := cosmostypes.Event(event)
 		app.sdkCtx.EventManager().EmitEvent(abciEvent)
 	}
 
+	// Emit txResult events.
 	for _, txResult := range res.TxResults {
 		for _, event := range txResult.Events {
 			abciEvent := cosmostypes.Event(event)
@@ -844,7 +845,7 @@ func (app *App) nextBlockUpdateCtx() {
 
 // setupDefaultActorsState uses the integration app keepers to stake "default"
 // on-chain actors for use in tests. In creates a service, and stakes a supplier
-// and application as well as funding the bank balance of both accounts.
+// and application as well as funding the bank balance of the default supplier.
 //
 // TODO_IMPROVE: Eliminate usage of and remove this function in favor of
 // integration.NewInitChainerModuleGenesisStateOptionFn.
@@ -933,11 +934,15 @@ func (app *App) setupDefaultActorsState(
 	require.NoError(t, err)
 
 	// TODO_IMPROVE: Refactor the relay_mining_difficulty_test.go to use the
-	// BaseIntegrationTestSuite and its #FundAddress() method and remove the
-	// need for this.
+	// BaseIntegrationTestSuite (or a DefaultActorIntegrationSuite) and its
+	// #FundAddress() method and remove the need for this.
 	//
 	// Fund the supplier operator account to be able to submit proofs
 	fundAccount(t, app.sdkCtx, bankKeeper, supplierOperatorAddr, 100000000)
+
+	// Commit all the changes above by finalizing, committing, and moving
+	// to the next block.
+	app.NextBlock(t)
 }
 
 // fundAccount mints and sends amountUpokt tokens to the given recipientAddr.
