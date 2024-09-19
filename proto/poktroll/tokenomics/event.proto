@@ -26,7 +26,7 @@ message EventClaimExpired {
     // Number of compute units claimed as a function of the number of relays
     // and the compute units per relay for the particular service.
     uint64 num_compute_units = 4 [(gogoproto.jsontag) = "num_compute_units"];
-    // TODO_BETA(@adshmh): Rename 'num_compute_units' to 'num_claimed_compute_units'
+    // TODO_BETA(@red-0ne): Rename 'num_compute_units' to 'num_claimed_compute_units'
     // and introduce a 'num_estimated_compute_units' field.
 }
 
@@ -41,7 +41,7 @@ message EventClaimSettled {
     // Number of compute units claimed as a function of the number of relays
     // and the compute units per relay for the particular service.
     uint64 num_compute_units = 4 [(gogoproto.jsontag) = "num_compute_units"];
-    // TODO_BETA(@adshmh): Rename 'num_compute_units' to 'num_claimed_compute_units'
+    // TODO_BETA(@red-0ne): Rename 'num_compute_units' to 'num_claimed_compute_units'
     // and introduce a 'num_estimated_compute_units' field.
 }
 

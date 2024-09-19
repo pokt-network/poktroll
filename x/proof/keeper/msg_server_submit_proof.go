@@ -223,7 +223,7 @@ func (k Keeper) ProofRequirementForClaim(ctx context.Context, claim *types.Claim
 
 	// NB: Assumption that claim is non-nil and has a valid root sum because it
 	// is retrieved from the store and validated, on-chain, at time of creation.
-	// TODO(@adshmh, #781): Ensure we're using the scaled/estimated compute units here.
+	// TODO(@red-0ne, #781): Ensure we're using the scaled/estimated compute units here.
 	var numClaimComputeUnits uint64
 	numClaimComputeUnits, err = claim.GetNumComputeUnits()
 	if err != nil {

@@ -41,8 +41,6 @@ import (
 )
 
 // EnsureValidProof validates the proof submitted by the supplier is correct with
-// respect to an on-chain claim.
-//
 // This function should be called during session settlement (i.e. EndBlocker)
 // rather than during proof submission (i.e. SubmitProof) because:
 //  1. RPC requests should be quick, lightweight and only do basic validation
@@ -156,21 +154,20 @@ func (k Keeper) EnsureValidProof(
 	logger.Debug("successfully verified relay response signature")
 
 	// Get the proof module's governance parameters.
-	// TODO_BETA(@adshmh): Ensure we use the difficulty from the service and add
+	// TODO_BETA(@red-0ne): Ensure we use the difficulty from the service and add
 	// a test for a proof with an invalid difficulty.
 	params := k.GetParams(ctx)
-	relayDifficultyTargetHash := params.RelayDifficultyTargetHash
-	if len(relayDifficultyTargetHash) == 0 {
-		relayDifficultyTargetHash = types.DefaultRelayDifficultyTargetHash
+	serviceRelayDifficultyTargetHash := params.RelayDifficultyTargetHash
+	if len(serviceRelayDifficultyTargetHash) == 0 {
+		serviceRelayDifficultyTargetHash = types.DefaultRelayDifficultyTargetHash
 	}
 
 	// Verify the relay difficulty is above the minimum required to earn rewards.
 	if err = validateRelayDifficulty(
 		relayBz,
-		relayDifficultyTargetHash,
-		sessionHeader.ServiceId,
+		serviceRelayDifficultyTargetHash,
 	); err != nil {
-		return err
+		return types.ErrProofInvalidRelayDifficulty.Wrapf("failed to validate relay difficulty for service %s due to: %v", sessionHeader.ServiceId, err)
 	}
 	logger.Debug("successfully validated relay mining difficulty")
 
@@ -391,33 +388,36 @@ func verifyClosestProof(
 }
 
 // validateRelayDifficulty ensures that the relay's mining difficulty meets the
-// required minimum threshold.
-// TODO_TECHDEBT: Factor out the relay mining difficulty validation into a shared
+// required minimum difficulty of the service.
+// TODO_TECHDEBT(@red-0ne): Factor out to the relay mining difficulty validation into a shared
 // function that can be used by both the proof and the miner packages.
-func validateRelayDifficulty(relayBz, relayDifficultyTargetHash []byte, serviceId string) error {
+func validateRelayDifficulty(relayBz, serviceRelayDifficultyTargetHash []byte) error {
+	// This should theoretically never happen, but it's better to be safe than sorry.
+	if len(serviceRelayDifficultyTargetHash) != protocol.RelayHasherSize {
+		return types.ErrProofInvalidRelay.Wrapf(
+			"invalid RelayDifficultyTargetHash: (%x); length wanted: %d; got: %d",
+			serviceRelayDifficultyTargetHash,
+			protocol.RelayHasherSize,
+			len(serviceRelayDifficultyTargetHash),
+		)
+	}
+
+	// Convert the array to a slice
 	relayHashArr := protocol.GetRelayHashFromBytes(relayBz)
 	relayHash := relayHashArr[:]
 
-	if len(relayDifficultyTargetHash) != protocol.RelayHasherSize {
-		return types.ErrProofInvalidRelay.Wrapf(
-			"invalid RelayDifficultyTargetHash: (%x); length wanted: %d; got: %d",
-			relayDifficultyTargetHash,
-			protocol.RelayHasherSize,
-			len(relayDifficultyTargetHash),
-		)
+	// Relay difficulty is within the service difficulty
+	if protocol.IsRelayVolumeApplicable(relayHash, serviceRelayDifficultyTargetHash) {
+		return nil
 	}
 
-	if !protocol.IsRelayVolumeApplicable(relayHash, relayDifficultyTargetHash) {
-		relayDifficultyMultiplierStr := protocol.GetRelayDifficultyMultiplier(relayHash).String()
-		targetDifficultyMultiplierStr := protocol.GetRelayDifficultyMultiplier(relayDifficultyTargetHash).String()
+	relayDifficultyMultiplierStr := protocol.GetRelayDifficultyMultiplier(relayHash).String()
+	targetDifficultyMultiplierStr := protocol.GetRelayDifficultyMultiplier(serviceRelayDifficultyTargetHash).String()
 
-		return types.ErrProofInvalidRelay.Wrapf(
-			"the difficulty relay being proven is (%s), and is smaller than the target difficulty (%s) for service %s",
-			relayDifficultyMultiplierStr,
-			targetDifficultyMultiplierStr,
-			serviceId,
-		)
-	}
+	return types.ErrProofInvalidRelay.Wrapf(
+		"the difficulty relay being proven is (%s), and is smaller than the target difficulty (%s)",
+		relayDifficultyMultiplierStr,
+		targetDifficultyMultiplierStr,
+	)
 
-	return nil
 }

@@ -44,7 +44,7 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	// TODO(@adshmh, #781): Implement this test after the business logic is done.
+	// TODO(@red-0ne, #781): Implement this test after the business logic is done.
 
 	/*
 		// Determine the height at which the claim will expire.

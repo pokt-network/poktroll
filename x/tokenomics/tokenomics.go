@@ -13,7 +13,7 @@ import (
 // network parameters.
 func NumComputeUnitsToCoin(params sharedtypes.Params, numClaimComputeUnits uint64) (sdk.Coin, error) {
 	// CUTTM is a GLOBAL network wide parameter.
-	// TODO(@adshmh, #781): Convert numClaimComputeUnits to numEstimatedComputeUnits to reflect reward/payment based on real usage.
+	// TODO(@red-0ne, #781): Convert numClaimComputeUnits to numEstimatedComputeUnits to reflect reward/payment based on real usage.
 	upoktAmount := math.NewInt(int64(numClaimComputeUnits * params.GetComputeUnitsToTokensMultiplier()))
 	if upoktAmount.IsNegative() {
 		return sdk.Coin{}, tokenomicstypes.ErrTokenomicsCalculation.Wrapf(

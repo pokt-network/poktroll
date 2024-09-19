@@ -332,15 +332,15 @@ func TestRelayDifficulty_EnsureRelayMiningMultiplierIsProportional(t *testing.T)
 
 	highVolumeSvcDifficultyHash := ComputeNewDifficultyTargetHash(BaseRelayDifficultyHashBz, targetNumRelays, highVolumeService)
 	highVolumeRelayProbabilityRat := GetRelayDifficultyProbability(highVolumeSvcDifficultyHash)
-	highVolumeRelayProbability, _ := highVolumeRelayProbabilityRat.Float64()
+	highVolumeRelayProbabilityFloat, _ := highVolumeRelayProbabilityRat.Float64()
 	highVolumeRelayMultiplierRat := GetRelayDifficultyMultiplier(highVolumeSvcDifficultyHash)
-	highVolumeRelayMultiplier, _ := highVolumeRelayMultiplierRat.Float64()
+	highVolumeRelayMultiplierFloat, _ := highVolumeRelayMultiplierRat.Float64()
 
 	lowVolumeSvcDifficultyHash := ComputeNewDifficultyTargetHash(BaseRelayDifficultyHashBz, targetNumRelays, lowVolumeService)
 	lowVolumeRelayProbabilityRat := GetRelayDifficultyProbability(lowVolumeSvcDifficultyHash)
-	lowVolumeRelayProbability, _ := lowVolumeRelayProbabilityRat.Float64()
+	lowVolumeRelayProbabilityFloat, _ := lowVolumeRelayProbabilityRat.Float64()
 	lowVolumeRelayMultiplierRat := GetRelayDifficultyMultiplier(lowVolumeSvcDifficultyHash)
-	lowVolumeRelayMultiplier, _ := lowVolumeRelayMultiplierRat.Float64()
+	lowVolumeRelayMultiplierFloat, _ := lowVolumeRelayMultiplierRat.Float64()
 
 	numApplicableHighVolumeSvcRelays := 0
 	numActualHighVolumeSvcRelays := 0
@@ -354,7 +354,7 @@ func TestRelayDifficulty_EnsureRelayMiningMultiplierIsProportional(t *testing.T)
 			break
 		}
 	}
-	numEstimatedHighVolumeSvcRelays := float64(numApplicableHighVolumeSvcRelays) * highVolumeRelayMultiplier
+	numEstimatedHighVolumeSvcRelays := float64(numApplicableHighVolumeSvcRelays) * highVolumeRelayMultiplierFloat
 	fractionHighVolumeSvcRelays := float64(numApplicableHighVolumeSvcRelays) / float64(numActualHighVolumeSvcRelays)
 
 	numApplicableLowVolumeSvcRelays := 0
@@ -369,12 +369,12 @@ func TestRelayDifficulty_EnsureRelayMiningMultiplierIsProportional(t *testing.T)
 			break
 		}
 	}
-	numEstimatedLowVolumeSvcRelays := float64(numApplicableLowVolumeSvcRelays) * lowVolumeRelayMultiplier
+	numEstimatedLowVolumeSvcRelays := float64(numApplicableLowVolumeSvcRelays) * lowVolumeRelayMultiplierFloat
 	fractionLowVolumeSvcRelays := float64(numApplicableLowVolumeSvcRelays) / float64(numActualLowVolumeSvcRelays)
 
 	// Ensure probabilities of a relay being applicable is within the allowable delta
-	require.InDelta(t, highVolumeRelayProbability, fractionHighVolumeSvcRelays, allowableDelta*highVolumeRelayProbability)
-	require.InDelta(t, lowVolumeRelayProbability, fractionLowVolumeSvcRelays, allowableDelta*lowVolumeRelayProbability)
+	require.InDelta(t, highVolumeRelayProbabilityFloat, fractionHighVolumeSvcRelays, allowableDelta*highVolumeRelayProbabilityFloat)
+	require.InDelta(t, lowVolumeRelayProbabilityFloat, fractionLowVolumeSvcRelays, allowableDelta*lowVolumeRelayProbabilityFloat)
 
 	// Ensure the estimated number of relays is within the allowable delta
 	require.InDelta(t, numEstimatedHighVolumeSvcRelays, float64(numActualHighVolumeSvcRelays), allowableDelta*numEstimatedHighVolumeSvcRelays)
