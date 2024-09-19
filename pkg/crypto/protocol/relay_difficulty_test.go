@@ -170,7 +170,7 @@ func TestRelayDifficulty_ComputeNewDifficultyHash(t *testing.T) {
 			// NB: An increase in difficulty is indicated by a decrease in the target hash
 			didDifficultyIncrease := bytes.Compare(newRelayDifficultyTargetHash, tt.expectedRelayDifficultyHash) < 1
 			require.True(t, didDifficultyIncrease,
-				"expected difficulty.TargetHash (%x) to be less than or equal to expectedRelayMiningDifficulty.TargetHash (%x)",
+				"expected difficulty.TargetHash (%x) to be equal to expectedRelayMiningDifficulty.TargetHash (%x)",
 				newRelayDifficultyTargetHash, tt.expectedRelayDifficultyHash,
 			)
 		})
