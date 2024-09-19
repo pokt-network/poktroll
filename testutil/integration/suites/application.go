@@ -10,7 +10,6 @@ import (
 	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/query"
-	"github.com/pokt-network/poktroll/testutil/integration"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -35,7 +34,6 @@ func (s *ApplicationModuleSuite) StakeApp(
 	appBech32 string,
 	appStakeAmount int64,
 	serviceIds []string,
-	opts ...integration.RunOption,
 ) *apptypes.MsgStakeApplicationResponse {
 	t.Helper()
 
@@ -50,8 +48,8 @@ func (s *ApplicationModuleSuite) StakeApp(
 		serviceConfigs,
 	)
 
-	opts = integration.RunUntilNextBlockOpts.Append(opts...)
-	txMsgRes := s.GetApp().RunMsg(t, stakeAppMsg, opts...)
+	txMsgRes, err := s.GetApp().RunMsg(t, stakeAppMsg)
+	require.NoError(t, err)
 
 	return txMsgRes.(*apptypes.MsgStakeApplicationResponse)
 }
@@ -60,7 +58,6 @@ func (s *ApplicationModuleSuite) StakeApp(
 func (s *ApplicationModuleSuite) Transfer(
 	t *testing.T,
 	srcAddr, dstAddr cosmostypes.AccAddress,
-	opts ...integration.RunOption,
 ) *apptypes.MsgTransferApplicationResponse {
 	t.Helper()
 
@@ -69,8 +66,8 @@ func (s *ApplicationModuleSuite) Transfer(
 		DestinationAddress: dstAddr.String(),
 	}
 
-	opts = integration.RunUntilNextBlockOpts.Append(opts...)
-	txMsgRes := s.GetApp().RunMsg(t, msgTransferApp, opts...)
+	txMsgRes, err := s.GetApp().RunMsg(t, msgTransferApp)
+	require.NoError(t, err)
 
 	return txMsgRes.(*apptypes.MsgTransferApplicationResponse)
 }
