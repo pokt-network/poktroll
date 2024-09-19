@@ -3,38 +3,23 @@
 package suites
 
 import (
+	"reflect"
 	"strings"
 	"testing"
 
+	"cosmossdk.io/core/appmodule"
+	"github.com/cosmos/cosmos-sdk/codec"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/module"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/pokt-network/poktroll/app/volatile"
-	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/polylog"
+	_ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/testutil/integration"
-	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
-	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
-	servicetypes "github.com/pokt-network/poktroll/x/service/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
-	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
-
-// TODO_IMPROVE: Ideally this list should be populated during integration app construction.
-var allPoktrollModuleNames = []string{
-	sharedtypes.ModuleName,
-	sessiontypes.ModuleName,
-	servicetypes.ModuleName,
-	apptypes.ModuleName,
-	gatewaytypes.ModuleName,
-	suppliertypes.ModuleName,
-	prooftypes.ModuleName,
-	tokenomicstypes.ModuleName,
-}
 
 var _ IntegrationSuite = (*BaseIntegrationSuite)(nil)
 
@@ -44,14 +29,17 @@ type BaseIntegrationSuite struct {
 	suite.Suite
 	app *integration.App
 
-	appQueryClient client.ApplicationQueryClient
+	poktrollModuleNames []string
+	cosmosModuleNames   []string
 }
 
 // NewApp constructs a new integration app and sets it on the suite.
-func (s *BaseIntegrationSuite) NewApp(t *testing.T) *integration.App {
+func (s *BaseIntegrationSuite) NewApp(t *testing.T, opts ...integration.IntegrationAppOption) *integration.App {
 	t.Helper()
 
-	s.app = integration.NewCompleteIntegrationApp(t)
+	defaultIntegrationAppOption := integration.WithInitChainerModuleFn(newInitChainerCollectModuleNamesFn(s))
+	opts = append([]integration.IntegrationAppOption{defaultIntegrationAppOption}, opts...)
+	s.app = integration.NewCompleteIntegrationApp(t, opts...)
 	return s.app
 }
 
@@ -68,9 +56,22 @@ func (s *BaseIntegrationSuite) GetApp() *integration.App {
 	return s.app
 }
 
-// GetModuleNames returns the list of all poktroll modules names in the integration app.
-func (s *BaseIntegrationSuite) GetModuleNames() []string {
-	return allPoktrollModuleNames
+// GetPoktrollModuleNames returns the list of the names of all poktroll modules
+// in the integration app.
+func (s *BaseIntegrationSuite) GetPoktrollModuleNames() []string {
+	return s.poktrollModuleNames
+}
+
+// GetCosmosModuleNames returns the list of the names of all cosmos-sdk modules
+// in the integration app.
+func (s *BaseIntegrationSuite) GetCosmosModuleNames() []string {
+	return s.cosmosModuleNames
+}
+
+// SdkCtx returns the integration app's SDK context.
+func (s *BaseIntegrationSuite) SdkCtx() *cosmostypes.Context {
+	return s.GetApp().GetSdkCtx()
+
 }
 
 // FundAddress sends amountUpokt coins from the faucet to the given address.
@@ -80,43 +81,38 @@ func (s *BaseIntegrationSuite) FundAddress(
 	amountUpokt int64,
 ) {
 	coinUpokt := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, amountUpokt)
-
-	// TODO_IN_THIS_COMMIT: HACK: get a reference to the bank keeper directly
-	// via the integration app to send tokens.
-
-	//faucetAddr := cosmostypes.MustAccAddressFromBech32(integration.FaucetAddrStr)
-	//
-	//err := s.GetApp().GetBankKeeper().SendCoins(
-	//	s.GetApp().GetSdkCtx(),
-	//	faucetAddr,
-	//	addr,
-	//	cosmostypes.NewCoins(coinUpokt),
-	//)
-	//require.NoError(t, err)
-
 	sendMsg := &banktypes.MsgSend{
 		FromAddress: integration.FaucetAddrStr,
 		ToAddress:   addr.String(),
 		Amount:      cosmostypes.NewCoins(coinUpokt),
 	}
 
-	txMsgRes := s.GetApp().RunMsg(t, sendMsg, integration.RunUntilNextBlockOpts...)
+	txMsgRes, err := s.GetApp().RunMsg(t, sendMsg)
+	require.NoError(t, err)
 	require.NotNil(t, txMsgRes)
 
 	// NB: no use in returning sendRes because it has no fields.
 }
 
+// GetBankQueryClient constructs and returns a query client for the bank module
+// of the integration app.
 func (s *BaseIntegrationSuite) GetBankQueryClient() banktypes.QueryClient {
 	return banktypes.NewQueryClient(s.GetApp().QueryHelper())
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
-func (s *BaseIntegrationSuite) FilterEvents(matchFn func(*cosmostypes.Event) bool) (matchedEvents []*cosmostypes.Event) {
+// FilterLatestEvents returns the most recent events in the event manager that
+// match the given matchFn.
+func (s *BaseIntegrationSuite) FilterLatestEvents(
+	matchFn func(*cosmostypes.Event) bool,
+) (matchedEvents []*cosmostypes.Event) {
 	return s.filterEvents(matchFn, false)
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
-func (s *BaseIntegrationSuite) LatestMatchingEvent(matchFn func(*cosmostypes.Event) bool) (matchedEvent *cosmostypes.Event) {
+// LatestMatchingEvent returns the most recent event in the event manager that
+// matches the given matchFn.
+func (s *BaseIntegrationSuite) LatestMatchingEvent(
+	matchFn func(*cosmostypes.Event) bool,
+) (matchedEvent *cosmostypes.Event) {
 	filteredEvents := s.filterEvents(matchFn, true)
 
 	if len(filteredEvents) < 1 {
@@ -126,8 +122,13 @@ func (s *BaseIntegrationSuite) LatestMatchingEvent(matchFn func(*cosmostypes.Eve
 	return filteredEvents[0]
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
-func (s *BaseIntegrationSuite) GetAttributeValue(event cosmostypes.Event, key string) (value string, hasAttr bool) {
+// GetAttributeValue returns the value of the attribute with the given key in the
+// event. The returned attribute value is trimmed of any quotation marks. If the
+// attribute does not exist, hasAttr is false.
+func (s *BaseIntegrationSuite) GetAttributeValue(
+	event *cosmostypes.Event,
+	key string,
+) (value string, hasAttr bool) {
 	attr, hasAttr := event.GetAttribute(key)
 	if !hasAttr {
 		return "", false
@@ -136,18 +137,18 @@ func (s *BaseIntegrationSuite) GetAttributeValue(event cosmostypes.Event, key st
 	return strings.Trim(attr.GetValue(), "\""), true
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
-// TODO_IN_THIS_COMMIT: consolidate with testutil/events/filter.go
+// filterEvents returns the events from the event manager that match the given matchFn.
+// If latestOnly is true, then only the most recent matching event is returned.
+//
+// TODO_IMPROVE: consolidate with testutil/events/filter.go
 func (s *BaseIntegrationSuite) filterEvents(
 	matchFn func(*cosmostypes.Event) bool,
 	latestOnly bool,
 ) (matchedEvents []*cosmostypes.Event) {
 	events := s.GetApp().GetSdkCtx().EventManager().Events()
 
-	// TODO_IN_THIS_COMMIT: comment about why reverse order and/or figure out why events accumulate across blocks.
+	// NB: Iterate in reverse to get the latest events first.
 	for i := len(events) - 1; i >= 0; i-- {
-		// TODO_IN_THIS_COMMIT: double-check that there's no issue here with
-		// pointing to a variable which is reused by the loop.
 		event := events[i]
 
 		if !matchFn(&event) {
@@ -162,4 +163,26 @@ func (s *BaseIntegrationSuite) filterEvents(
 	}
 
 	return matchedEvents
+}
+
+// newInitChainerCollectModuleNamesFn returns an InitChainerModuleFn that collects
+// the names of cosmos and poktroll modules in their respective suite field slices.
+func newInitChainerCollectModuleNamesFn(suite *BaseIntegrationSuite) integration.InitChainerModuleFn {
+	return func(ctx cosmostypes.Context, cdc codec.Codec, mod appmodule.AppModule) {
+		modName, hasName := mod.(module.HasName)
+		if !hasName {
+			polylog.DefaultContextLogger.Warn().Msg("unable to get module name")
+		}
+
+		modType := reflect.TypeOf(mod)
+		if strings.Contains(modType.PkgPath(), "poktroll") {
+			suite.poktrollModuleNames = append(suite.poktrollModuleNames, modName.Name())
+			return
+		}
+
+		// NB: We can assume that any non-poktroll module is a cosmos-sdk module
+		// so long as we're not importing any third-party modules; in which case,
+		// we would have to add another check above.
+		suite.cosmosModuleNames = append(suite.cosmosModuleNames, modName.Name())
+	}
 }

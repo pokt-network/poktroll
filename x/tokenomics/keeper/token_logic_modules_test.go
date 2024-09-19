@@ -322,7 +322,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	service := prepareTestService(serviceComputeUnitsPerRelay)
 	numRelays := uint64(1000) // By supplier for application in this session
 	numTokensClaimed := float64(numRelays * serviceComputeUnitsPerRelay * globalComputeUnitsToTokensMultiplier)
-	validatorConsAddr := sample.ConsAddress()
+	validatorConsAddr := sample.ValAddress()
 
 	// Prepare the keepers
 	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil, testkeeper.WithService(*service), testkeeper.WithProposerAddr(validatorConsAddr))

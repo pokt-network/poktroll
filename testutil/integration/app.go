@@ -2,6 +2,8 @@ package integration
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	math2 "math"
 	"testing"
 	"time"
@@ -88,19 +90,14 @@ var (
 	// FaucetAmountUpokt is the number of upokt coins that the faucet account
 	// is funded with.
 	FaucetAmountUpokt = int64(math2.MaxInt64)
+
+	// defaultIntegrationAppConfig is the default configuration for the integration app.
+	defaultIntegrationAppConfig = IntegrationAppConfig{
+		InitChainerModuleFns: []InitChainerModuleFn{
+			newFaucetInitChainerFn(FaucetAddrStr, FaucetAmountUpokt),
+		},
+	}
 )
-
-type IntegrationApp interface {
-	// ... calls the respective msg handler each msg is a tx and each call commits and finalizes a block.
-	// CommitMsg(cosmostypes.Msg) *cosmostypes.Result
-	CommitMsg(...cosmostypes.Msg) *abci.ResponseFinalizeBlock
-
-	// ... txResponse represents a tx that has NOT been passed to DeliverTx ABCI method yet.
-	// ... accumulating txs between FinalizeBlock() calls.
-	EnqueueMsg(cosmostypes.Msg) (txResponse *cosmostypes.TxResponse)
-	// ... is where msg handlers will be called.
-	CommitPendingMsgs() *abci.ResponseFinalizeBlock
-}
 
 // App is a test application that can be used to test the behaviour when none
 // of the modules are mocked and their integration (cross module interaction)
@@ -112,6 +109,7 @@ type App struct {
 	sdkCtx            *sdk.Context
 	cdc               codec.Codec
 	logger            log.Logger
+	txCfg             client.TxConfig
 	authority         sdk.AccAddress
 	moduleManager     module.Manager
 	queryHelper       *baseapp.QueryServiceTestHelper
@@ -119,30 +117,16 @@ type App struct {
 	ringClient        crypto.RingClient
 	preGeneratedAccts *testkeyring.PreGeneratedAccountIterator
 
-	txCfg client.TxConfig
-	// TODO_IN_THIS_COMMIT: godoc
-	collectedMsgs []sdk.Msg
-	// TODO_IN_THIS_COMMIT: godoc
-	collectedTxs []tx.Tx
-
-	// TODO_IN_THIS_COMMIT: scary comment regarding how this is hack..
-	bankKeeper bankkeeper.Keeper
-
 	// Some default helper fixtures for general testing.
 	// They're publicly exposed and should/could be improved and expand on
 	// over time.
+	//
+	// TODO_IMPROVE: Refactor into a DefaultActorsIntegrationSuite test suite.
 	DefaultService                   *sharedtypes.Service
 	DefaultApplication               *apptypes.Application
 	DefaultApplicationKeyringUid     string
 	DefaultSupplier                  *sharedtypes.Supplier
 	DefaultSupplierKeyringKeyringUid string
-}
-
-// NewBaseApp creates a new instance of the base application with the given
-// codec, logger and database.
-func NewBaseApp(cdc codec.Codec, logger log.Logger, db dbm.DB) *baseapp.BaseApp {
-	txConfig := authtx.NewTxConfig(cdc, authtx.DefaultSignModes)
-	return baseapp.NewBaseApp(appName, logger, db, txConfig.TxDecoder(), baseapp.SetChainID(appName))
 }
 
 // NewIntegrationApp creates a new instance of the App with the provided details
@@ -160,20 +144,21 @@ func NewIntegrationApp(
 	keys map[string]*storetypes.KVStoreKey,
 	msgRouter *baseapp.MsgServiceRouter,
 	queryHelper *baseapp.QueryServiceTestHelper,
+	opts ...IntegrationAppOption,
 ) *App {
 	t.Helper()
 
-	// TODO_IN_THIS_COMMIT: make sure this is the best place for this.
+	cfg := &defaultIntegrationAppConfig
+	for _, opt := range opts {
+		opt(cfg)
+	}
+
 	bApp.SetInterfaceRegistry(registry)
 
-	// TODO_IMPROVE: use moduleManager.ModuleNames() to populate allModuleNames.
 	moduleManager := module.NewManagerFromMap(modules)
 	basicModuleManager := module.NewBasicManagerFromManager(moduleManager, nil)
 	basicModuleManager.RegisterInterfaces(registry)
 
-	// TODO_HACK(@Olshansk): I needed to set the height to 2 so downstream logic
-	// works. I'm not 100% sure why, but believe it's a result of genesis and the
-	// first block being special and iterated over during the setup process.
 	cometHeader := cmtproto.Header{
 		ChainID: appName,
 		Height:  1,
@@ -184,7 +169,7 @@ func NewIntegrationApp(
 		WithEventManager(cosmostypes.NewEventManager())
 
 	// Add a block proposer address to the context
-	valAddr, err := cosmostypes.ValAddressFromBech32(sample.ConsAddress())
+	valAddr, err := cosmostypes.ValAddressFromBech32(sample.ValAddress())
 	require.NoError(t, err)
 	consensusAddr := cosmostypes.ConsAddress(valAddr)
 	sdkCtx = sdkCtx.WithProposer(consensusAddr)
@@ -195,8 +180,15 @@ func NewIntegrationApp(
 	bApp.SetInitChainer(
 		func(ctx sdk.Context, _ *cmtabcitypes.RequestInitChain) (*cmtabcitypes.ResponseInitChain, error) {
 			for _, mod := range modules {
+				// Set each module's genesis state to the default. This MAY be
+				// overridden via the InitChainerModuleFns option.
 				if m, ok := mod.(module.HasGenesis); ok {
 					m.InitGenesis(ctx, cdc, m.DefaultGenesis(cdc))
+				}
+
+				// Call each of the InitChainerModuleFns for each module.
+				for _, fn := range cfg.InitChainerModuleFns {
+					fn(ctx, cdc, mod)
 				}
 			}
 
@@ -219,9 +211,6 @@ func NewIntegrationApp(
 	_, err = bApp.InitChain(&cmtabcitypes.RequestInitChain{ChainId: appName})
 	require.NoError(t, err, "failed to initialize chain")
 
-	//_, err = bApp.Commit()
-	//require.NoError(t, err, "failed to commit")
-
 	bApp.SetTxEncoder(txCfg.TxEncoder())
 
 	return &App{
@@ -237,27 +226,27 @@ func NewIntegrationApp(
 }
 
 // NewCompleteIntegrationApp creates a new instance of the App, abstracting out
-// all of the internal details and complexities of the application setup.
+// all the internal details and complexities of the application setup.
+//
 // TODO_TECHDEBT: Not all of the modules are created here (e.g. minting module),
 // so it is up to the developer to add / improve / update this function over time
 // as the need arises.
-func NewCompleteIntegrationApp(t *testing.T) *App {
+func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOption) *App {
 	t.Helper()
 
+	// Prepare & register the codec for all the interfaces
 	sdkCfg := cosmostypes.GetConfig()
 	addrCodec := addresscodec.NewBech32Codec(sdkCfg.GetBech32AccountAddrPrefix())
 	valCodec := addresscodec.NewBech32Codec(sdkCfg.GetBech32ValidatorAddrPrefix())
-
-	// Prepare & register the codec for all the interfaces
-	registry, err := codectypes.NewInterfaceRegistryWithOptions(
-		codectypes.InterfaceRegistryOptions{
-			ProtoFiles: proto.HybridResolver,
-			SigningOptions: signing.Options{
-				AddressCodec:          addrCodec,
-				ValidatorAddressCodec: valCodec,
-			},
-		},
-	)
+	signingOpts := signing.Options{
+		AddressCodec:          addrCodec,
+		ValidatorAddressCodec: valCodec,
+	}
+	registryOpts := codectypes.InterfaceRegistryOptions{
+		ProtoFiles:     proto.HybridResolver,
+		SigningOptions: signingOpts,
+	}
+	registry, err := codectypes.NewInterfaceRegistryWithOptions(registryOpts)
 	require.NoError(t, err)
 
 	banktypes.RegisterInterfaces(registry)
@@ -277,12 +266,6 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	cryptocodec.RegisterInterfaces(registry)
 	banktypes.RegisterInterfaces(registry)
 
-	// Prepare the codec
-	cdc := codec.NewProtoCodec(registry)
-
-	// Prepare the TxConfig
-	txCfg := authtx.NewTxConfig(cdc, authtx.DefaultSignModes)
-
 	// Prepare all the store keys
 	storeKeys := storetypes.NewKVStoreKeys(
 		authzkeeper.StoreKey,
@@ -298,27 +281,26 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		authtypes.StoreKey,
 	)
 
+	// Prepare the codec
+	cdc := codec.NewProtoCodec(registry)
+
+	// Prepare the TxConfig
+	txCfg := authtx.NewTxConfig(cdc, authtx.DefaultSignModes)
+
 	// Construct a no-op logger.
 	logger := log.NewNopLogger() // Use this if you need more output: log.NewTestLogger(t)
 
 	// Prepare the database and multi-store.
 	db := dbm.NewMemDB()
-	//cms := CreateMultiStore(storeKeys, logger, db)
 
 	// Prepare the base application.
-	bApp := NewBaseApp(cdc, logger, db)
+	bApp := baseapp.NewBaseApp(appName, logger, db, txCfg.TxDecoder(), baseapp.SetChainID(appName))
 
 	// Prepare the context
 	sdkCtx := bApp.NewUncachedContext(false, cmtproto.Header{
 		ChainID: appName,
 		Height:  1,
 	})
-	//bApp.NewContext(false).
-	//	With...
-	//sdkCtx := sdk.NewContext(cms, cmtproto.Header{
-	//	ChainID: appName,
-	//	Height:  1,
-	//}, true, logger)
 
 	// Get the authority address
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName)
@@ -568,12 +550,8 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		storeKeys,
 		msgRouter,
 		queryHelper,
+		opts...,
 	)
-
-	// TODO_IN_THIS_COMMIT: HACK: ...
-	integrationApp.bankKeeper = bankKeeper
-
-	msgRouter = integrationApp.MsgServiceRouter()
 
 	// Register the message servers
 	banktypes.RegisterMsgServer(msgRouter, bankkeeper.NewMsgServerImpl(bankKeeper))
@@ -602,28 +580,6 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	// authtypes.RegisterQueryServer(queryHelper, accountKeeper)
 	sessiontypes.RegisterQueryServer(queryHelper, sessionKeeper)
 
-	// Set the default params for all the modules
-	//err = bankKeeper.SetParams(integrationApp.GetSdkCtx(), banktypes.DefaultParams())
-	//require.NoError(t, err)
-	//err = sharedKeeper.SetParams(integrationApp.GetSdkCtx(), sharedtypes.DefaultParams())
-	//require.NoError(t, err)
-	//err = tokenomicsKeeper.SetParams(integrationApp.GetSdkCtx(), tokenomicstypes.DefaultParams())
-	//require.NoError(t, err)
-	//err = proofKeeper.SetParams(integrationApp.GetSdkCtx(), prooftypes.DefaultParams())
-	//require.NoError(t, err)
-	//err = sessionKeeper.SetParams(integrationApp.GetSdkCtx(), sessiontypes.DefaultParams())
-	//require.NoError(t, err)
-	//err = gatewayKeeper.SetParams(integrationApp.GetSdkCtx(), gatewaytypes.DefaultParams())
-	//require.NoError(t, err)
-	//err = applicationKeeper.SetParams(integrationApp.GetSdkCtx(), apptypes.DefaultParams())
-	//require.NoError(t, err)
-	//err = supplierKeeper.SetParams(integrationApp.GetSdkCtx(), suppliertypes.DefaultParams())
-	//require.NoError(t, err)
-	//err = serviceKeeper.SetParams(integrationApp.GetSdkCtx(), servicetypes.DefaultParams())
-	//require.NoError(t, err)
-	//err = gatewayKeeper.SetParams(integrationApp.GetSdkCtx(), gatewaytypes.DefaultParams())
-	//require.NoError(t, err)
-
 	// Need to go to the next block to finalize the genesis and setup.
 	// This has to be after the params are set, as the params are stored in the
 	// store and need to be committed.
@@ -639,71 +595,6 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	preGeneratedAccts := testkeyring.PreGeneratedAccounts()
 	integrationApp.preGeneratedAccts = preGeneratedAccts
 
-	// Prepare a new default service
-	defaultService := sharedtypes.Service{
-		Id:                   "svc1",
-		Name:                 "svcName1",
-		ComputeUnitsPerRelay: 1,
-		OwnerAddress:         sample.AccAddress(),
-	}
-	serviceKeeper.SetService(integrationApp.sdkCtx, defaultService)
-	integrationApp.DefaultService = &defaultService
-
-	// Create a supplier account with the corresponding keys in the keyring for the supplier.
-	integrationApp.DefaultSupplierKeyringKeyringUid = "supplier"
-	supplierOperatorAddr := testkeyring.CreateOnChainAccount(
-		integrationApp.sdkCtx, t,
-		integrationApp.DefaultSupplierKeyringKeyringUid,
-		keyRing,
-		accountKeeper,
-		preGeneratedAccts,
-	)
-
-	// Prepare the on-chain supplier
-	supplierStake := types.NewCoin("upokt", math.NewInt(1000000))
-	defaultSupplier := sharedtypes.Supplier{
-		OwnerAddress:    supplierOperatorAddr.String(),
-		OperatorAddress: supplierOperatorAddr.String(),
-		Stake:           &supplierStake,
-		Services: []*sharedtypes.SupplierServiceConfig{
-			{
-				RevShare: []*sharedtypes.ServiceRevenueShare{
-					{
-						Address:            sample.AccAddress(),
-						RevSharePercentage: 100,
-					},
-				},
-				ServiceId: defaultService.Id,
-			},
-		},
-	}
-	supplierKeeper.SetSupplier(integrationApp.sdkCtx, defaultSupplier)
-	integrationApp.DefaultSupplier = &defaultSupplier
-
-	// Create an application account with the corresponding keys in the keyring for the application.
-	integrationApp.DefaultApplicationKeyringUid = "application"
-	applicationAddr := testkeyring.CreateOnChainAccount(
-		integrationApp.sdkCtx, t,
-		integrationApp.DefaultApplicationKeyringUid,
-		keyRing,
-		accountKeeper,
-		preGeneratedAccts,
-	)
-
-	// Prepare the on-chain supplier
-	appStake := types.NewCoin("upokt", math.NewInt(1000000))
-	defaultApplication := apptypes.Application{
-		Address: applicationAddr.String(),
-		Stake:   &appStake,
-		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
-			{
-				ServiceId: defaultService.Id,
-			},
-		},
-	}
-	applicationKeeper.SetApplication(integrationApp.sdkCtx, defaultApplication)
-	integrationApp.DefaultApplication = &defaultApplication
-
 	// Construct a ringClient to get the application's ring & verify the relay
 	// request signature.
 	ringClient, err := rings.NewRingClient(depinject.Supply(
@@ -715,41 +606,17 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	require.NoError(t, err)
 	integrationApp.ringClient = ringClient
 
-	// TODO_IMPROVE: The setup above does not to proper "staking" of the suppliers and applications.
-	// This can result in the module accounts balance going negative. Giving them a baseline balance
-	// to start with to avoid this issue. There is opportunity to improve this in the future.
-	moduleBaseMint := types.NewCoins(sdk.NewCoin("upokt", math.NewInt(690000000000000042)))
-	err = bankKeeper.MintCoins(integrationApp.sdkCtx, suppliertypes.ModuleName, moduleBaseMint)
-	require.NoError(t, err)
-	err = bankKeeper.MintCoins(integrationApp.sdkCtx, apptypes.ModuleName, moduleBaseMint)
-	require.NoError(t, err)
-
-	// Fund the faucet address.
-	faucetAddr, err := cosmostypes.AccAddressFromBech32(FaucetAddrStr)
-	require.NoError(t, err)
-	fundAccount(t, integrationApp.sdkCtx, bankKeeper, faucetAddr, FaucetAmountUpokt)
-
-	// TODO_IMPROVE: Refactor the relay_mining_difficulty_test.go to use the
-	// BaseIntegrationTestSuite and its #FundAddress() method and remove the
-	// need for this.
-	//
-	// Fund the supplier operator account to be able to submit proofs
-	fundAccount(t, integrationApp.sdkCtx, bankKeeper, supplierOperatorAddr, 100000000)
-
-	// Commit all the changes above by committing, finalizing and moving
-	// to the next block.
-	integrationApp.NextBlock(t)
-
-	bankParmsRes, err := bankKeeper.Params(sdkCtx, &banktypes.QueryParamsRequest{})
-	require.NoError(t, err)
-	t.Logf(">>> app construction bankParams: %+v", bankParmsRes)
+	// TODO_IMPROVE: Eliminate usage of and remove this function in favor of
+	// integration.NewInitChainerModuleGenesisStateOptionFn.
+	integrationApp.setupDefaultActorsState(t,
+		accountKeeper,
+		bankKeeper,
+		serviceKeeper,
+		supplierKeeper,
+		applicationKeeper,
+	)
 
 	return integrationApp
-}
-
-// TODO_IN_THIS_COMMIT: HACK: ...
-func (app *App) GetBankKeeper() bankkeeper.Keeper {
-	return app.bankKeeper
 }
 
 // GetRingClient returns the ring client used by the application.
@@ -789,124 +656,109 @@ func (app *App) QueryHelper() *baseapp.QueryServiceTestHelper {
 	return app.queryHelper
 }
 
-// RunMsg provides the ability to run a message and return the response.
-// In order to run a message, the application must have a handler for it.
-// These handlers are registered on the application message service router.
-// The result of the message execution is returned as an Any type.
-// That any type can be unmarshaled to the expected response type.
-// If the message execution fails, an error is returned.
-//
-// TODO_IN_THIS_COMMIT: update comment regarding return type...
-func (app *App) RunMsg(t *testing.T, msg sdk.Msg, option ...RunOption) (txMsgRes tx.MsgResponse) {
-	//func (app *App) RunMsg(t *testing.T, msg sdk.Msg, option ...RunOption) *codectypes.Any {
+// RunMsg provides the ability to process a message by packing it into a tx and
+// driving the ABCI through block finalization. It returns a tx.MsgResponse (any)
+// which corresponds to the request message. It is a convenience method which wraps
+// RunMsgs.
+func (app *App) RunMsg(t *testing.T, msg sdk.Msg) (tx.MsgResponse, error) {
 	t.Helper()
 
-	//app.collectedMsgs = append(app.collectedMsgs, msg)
+	txMsgRes, err := app.RunMsgs(t, msg)
+	require.Equal(t, 1, len(txMsgRes), "expected exactly 1 tx msg response")
 
-	// set options
-	cfg := &RunConfig{}
-	for _, opt := range option {
-		opt(cfg)
+	return txMsgRes[0], err
+}
+
+// RunMsgs provides the ability to process messages by packing them into a tx and
+// driving the ABCI through block finalization. It returns a slice of tx.MsgResponse
+// (any) whose elements correspond to the request message of the same index. These
+// responses can be type asserted to the expected response type.
+// If execution for ANY message fails, ALL failing messages' errors are joined and
+// returned. In order to run a message, the application must have a handler for it.
+// These handlers are registered on the application message service router.
+func (app *App) RunMsgs(t *testing.T, msgs ...sdk.Msg) (txMsgResps []tx.MsgResponse, err error) {
+	t.Helper()
+
+	// Commit the updated state after the message has been handled.
+	var finalizeBlockRes *abci.ResponseFinalizeBlock
+	defer func() {
+		if _, commitErr := app.Commit(); err != nil {
+			err = fmt.Errorf("committing state: %w", commitErr)
+			return
+		}
+
+		app.nextBlockUpdateCtx()
+
+		// Emit events MUST happen AFTER the context has been updated so that
+		// events are available on the context for the block after their actions
+		// were committed (e.g. msgs, begin/end block trigger).
+		app.emitEvents(t, finalizeBlockRes)
+	}()
+
+	// Package the message into a transaction.
+	txBuilder := app.txCfg.NewTxBuilder()
+	if err = txBuilder.SetMsgs(msgs...); err != nil {
+		return nil, fmt.Errorf("setting tx messages: %w", err)
 	}
 
-	// If configured, commit after the message is executed.
-	//if cfg.AutomaticCommit {
-	defer func() {
-		_, err := app.Commit()
-		if cfg.ErrorAssertion != nil && err != nil {
-			cfg.ErrorAssertion(err)
-		} else {
-			require.NoError(t, err, "failed to commit")
-		}
-		app.nextBlockUpdateCtx()
-	}()
-	//}
+	txBz, txErr := app.TxEncode(txBuilder.GetTx())
+	if txErr != nil {
+		return nil, fmt.Errorf("encoding tx: %w", err)
+	}
 
-	// If configured, finalize the block after the message is executed.
-	//if cfg.AutomaticFinalizeBlock {
-	// TODO_IN_THIS_COMMIT: refactor & de-dup
-	// Construct a tx builder.
-	txBuilder := app.txCfg.NewTxBuilder()
-	//err := txBuilder.SetMsgs(app.reapMsgs()...)
-	err := txBuilder.SetMsgs(msg)
-	require.NoError(t, err)
+	for _, msg := range msgs {
+		app.logger.Info("Running msg", "msg", msg.String())
+	}
 
-	// Encode the tx.
-	txBz, err := app.TxEncode(txBuilder.GetTx())
-	require.NoError(t, err)
-
-	txsBz := [][]byte{txBz}
-
-	finalizedBlockResponse, err := app.FinalizeBlock(&cmtabcitypes.RequestFinalizeBlock{
+	// Finalize the block with the transaction.
+	finalizeBlockReq := &cmtabcitypes.RequestFinalizeBlock{
 		Height: app.LastBlockHeight() + 1,
+		// Randomize the proposer address for each block.
+		ProposerAddress: newProposerAddrBz(t),
 		DecidedLastCommit: cmtabcitypes.CommitInfo{
 			Votes: []cmtabcitypes.VoteInfo{{}},
 		},
-		Txs: txsBz,
-	})
-
-	if cfg.ErrorAssertion != nil && err != nil {
-		cfg.ErrorAssertion(err)
+		Txs: [][]byte{txBz},
 	}
 
-	require.NoError(t, err, "failed to finalize block")
-	app.emitEvents(t, finalizedBlockResponse)
-	//}
-
-	app.logger.Info("Running msg", "msg", msg.String())
-
-	//handler := app.MsgServiceRouter().Handler(msg)
-	//require.NotNil(t, handler, "handler not found for message %s", sdk.MsgTypeURL(msg))
-
-	//var response *codectypes.Any
-	//msgResult, err := handler(*app.sdkCtx, msg)
-	//if cfg.ErrorAssertion != nil && err != nil {
-	//	cfg.ErrorAssertion(err)
-	//	return nil
-	//}
-	//
-	//require.NoError(t, err, "failed to execute message %s", sdk.MsgTypeURL(msg))
-
-	if cfg.ErrorAssertion != nil {
-		cfg.ErrorAssertion(err)
-		return nil
+	finalizeBlockRes, err = app.FinalizeBlock(finalizeBlockReq)
+	if err != nil {
+		return nil, fmt.Errorf("finalizing block: %w", err)
 	}
 
-	// TODO_IN_THIS_COMMIT: comment or improve... assume each tx has a single msg.
-	require.Equalf(t, 1, len(finalizedBlockResponse.TxResults), "expected 1 tx result, got %d", len(finalizedBlockResponse.TxResults))
+	// NB: We're batching the messages in a single transaction, so we expect
+	// a single transaction result.
+	require.Equal(t, 1, len(finalizeBlockRes.TxResults))
 
-	txResult := finalizedBlockResponse.TxResults[0]
-	require.Truef(t, txResult.IsOK(), "tx failed with log: %s", txResult.GetLog())
+	// Collect the message responses. Accumulate errors related to message handling
+	// failure. If any message fails, an error will be returned.
+	var txResultErrs error
+	for _, txResult := range finalizeBlockRes.TxResults {
+		if !txResult.IsOK() {
+			err = fmt.Errorf("tx failed with log: %q", txResult.GetLog())
+			errors.Join(txResultErrs, err)
+			continue
+		}
 
-	txMsgDataBz := txResult.GetData()
-	require.NotNil(t, txMsgDataBz)
+		txMsgDataBz := txResult.GetData()
+		require.NotNil(t, txMsgDataBz)
 
-	txMsgData := new(cosmostypes.TxMsgData)
-	err = app.GetCodec().Unmarshal(txMsgDataBz, txMsgData)
+		txMsgData := new(cosmostypes.TxMsgData)
+		err = app.GetCodec().Unmarshal(txMsgDataBz, txMsgData)
+		require.NoError(t, err)
 
-	// TODO_IN_THIS_COMMIT: assumes only one msg per tx...
-	err = app.GetCodec().UnpackAny(txMsgData.MsgResponses[0], &txMsgRes)
-	//err = s.GetApp().GetCodec().UnpackAny(txMsgData.MsgResponses[0], stakeAppRes)
-	require.NoError(t, err)
-	require.NotNil(t, txMsgRes)
-	return txMsgRes
+		var txMsgRes tx.MsgResponse
+		err = app.GetCodec().UnpackAny(txMsgData.MsgResponses[0], &txMsgRes)
+		require.NoError(t, err)
+		require.NotNil(t, txMsgRes)
 
-	// Serialize and collect the transaction
-	//tx := sdk.NewTxBuilder().WithMsgs(msg) // Add msg to transaction builder
-	//tx2.NewAuxTxBuilder().SetMsgs()
-	//txBytes, err := app.BaseApp.TxEncoder()(tx.GetTx())
-	//require.NoError(t, err, "failed to encode transaction")
+		txMsgResps = append(txMsgResps, txMsgRes)
+	}
+	if txResultErrs != nil {
+		return nil, err
+	}
 
-	//app.collectedMsgs = append(app.collectedMsgs, msg)
-	//app.collectedTxs = append(app.collectedTxs, txBytes)
-
-	//if len(msgResult.MsgResponses) > 0 {
-	//	msgResponse := msgResult.MsgResponses[0]
-	//	require.NotNil(t, msgResponse, "unexpected nil msg response %s in message result: %s", sdk.MsgTypeURL(msg), msgResult.String())
-	//	response = msgResponse
-	//}
-	//
-	//return response
+	return txMsgResps, nil
 }
 
 // NextBlocks calls NextBlock numBlocks times
@@ -918,17 +770,19 @@ func (app *App) NextBlocks(t *testing.T, numBlocks int) {
 	}
 }
 
-// emitEvents emits the events from the finalized block to the event manager
-// of the context in the active app.
+// emitEvents emits the events from the finalized block such that they are available
+// via the current context's event manager (i.e. app.GetSdkCtx().EventManager.Events()).
 func (app *App) emitEvents(t *testing.T, res *abci.ResponseFinalizeBlock) {
 	t.Helper()
 
+	// Emit begin/end blocker events.
 	for _, event := range res.Events {
 		testutilevents.QuoteEventMode(&event)
 		abciEvent := cosmostypes.Event(event)
 		app.sdkCtx.EventManager().EmitEvent(abciEvent)
 	}
 
+	// Emit txResult events.
 	for _, txResult := range res.TxResults {
 		for _, event := range txResult.Events {
 			abciEvent := cosmostypes.Event(event)
@@ -942,41 +796,23 @@ func (app *App) emitEvents(t *testing.T, res *abci.ResponseFinalizeBlock) {
 func (app *App) NextBlock(t *testing.T) {
 	t.Helper()
 
-	//// TODO_IN_THIS_COMMIT: refactor & de-dup
-	//// Construct a tx builder.
-	//txBuilder := app.txCfg.NewTxBuilder()
-	//err := txBuilder.SetMsgs(app.reapMsgs()...)
-	//require.NoError(t, err)
-	//
-	//// Encode the tx.
-	//tx := txBuilder.GetTx()
-	//txBz, err := app.TxEncode(tx)
-	//require.NoError(t, err)
-	//
-	//txsBz := [][]byte{txBz}
-
 	finalizedBlockResponse, err := app.FinalizeBlock(&abci.RequestFinalizeBlock{
 		Height: app.sdkCtx.BlockHeight(),
 		Time:   app.sdkCtx.BlockTime(),
-		//Txs:    txsBz,
+		// Randomize the proposer address for each block.
+		ProposerAddress: newProposerAddrBz(t),
 	})
-
 	require.NoError(t, err)
-	app.emitEvents(t, finalizedBlockResponse)
 
 	_, err = app.Commit()
 	require.NoError(t, err)
 
 	app.nextBlockUpdateCtx()
-}
 
-// TODO_IN_THIS_COMMIT: godoc..
-func (app *App) reapMsgs() (msgs []sdk.Msg) {
-	for _, msg := range app.collectedMsgs {
-		msgs = append(msgs, msg)
-	}
-	app.collectedMsgs = nil
-	return msgs
+	// Emit events MUST happen AFTER the context has been updated so that
+	// events are available on the context for the block after their actions
+	// were committed (e.g. msgs, begin/end block trigger).
+	app.emitEvents(t, finalizedBlockResponse)
 }
 
 // nextBlockUpdateCtx is responsible for updating the app's (receiver) context
@@ -996,21 +832,128 @@ func (app *App) nextBlockUpdateCtx() {
 		Time:    header.Time,
 	}
 
+	// NB: Intentionally omitting the previous contexts EventManager.
+	// This ensures that each event is only observed for 1 block.
 	newContext := app.NewUncachedContext(true, header).
 		WithBlockHeader(header).
 		WithHeaderInfo(headerInfo).
-		WithEventManager(prevCtx.EventManager()).
 		// Pass the multi-store to the new context, otherwise the new context will
 		// create a new multi-store.
 		WithMultiStore(prevCtx.MultiStore())
 	*app.sdkCtx = newContext
 }
 
+// setupDefaultActorsState uses the integration app keepers to stake "default"
+// on-chain actors for use in tests. In creates a service, and stakes a supplier
+// and application as well as funding the bank balance of the default supplier.
+//
+// TODO_IMPROVE: Eliminate usage of and remove this function in favor of
+// integration.NewInitChainerModuleGenesisStateOptionFn.
+func (app *App) setupDefaultActorsState(
+	t *testing.T,
+	accountKeeper authkeeper.AccountKeeper,
+	bankKeeper bankkeeper.Keeper,
+	serviceKeeper servicekeeper.Keeper,
+	supplierKeeper supplierkeeper.Keeper,
+	applicationKeeper appkeeper.Keeper,
+) {
+	t.Helper()
+
+	// Prepare a new default service
+	defaultService := sharedtypes.Service{
+		Id:                   "svc1",
+		Name:                 "svcName1",
+		ComputeUnitsPerRelay: 1,
+		OwnerAddress:         sample.AccAddress(),
+	}
+	serviceKeeper.SetService(app.sdkCtx, defaultService)
+	app.DefaultService = &defaultService
+
+	// Create a supplier account with the corresponding keys in the keyring for the supplier.
+	app.DefaultSupplierKeyringKeyringUid = "supplier"
+	supplierOperatorAddr := testkeyring.CreateOnChainAccount(
+		app.sdkCtx, t,
+		app.DefaultSupplierKeyringKeyringUid,
+		app.keyRing,
+		accountKeeper,
+		app.preGeneratedAccts,
+	)
+
+	// Prepare the on-chain supplier
+	supplierStake := types.NewCoin("upokt", math.NewInt(1000000))
+	defaultSupplier := sharedtypes.Supplier{
+		OwnerAddress:    supplierOperatorAddr.String(),
+		OperatorAddress: supplierOperatorAddr.String(),
+		Stake:           &supplierStake,
+		Services: []*sharedtypes.SupplierServiceConfig{
+			{
+				RevShare: []*sharedtypes.ServiceRevenueShare{
+					{
+						Address:            sample.AccAddress(),
+						RevSharePercentage: 100,
+					},
+				},
+				ServiceId: defaultService.Id,
+			},
+		},
+	}
+	supplierKeeper.SetSupplier(app.sdkCtx, defaultSupplier)
+	app.DefaultSupplier = &defaultSupplier
+
+	// Create an application account with the corresponding keys in the keyring for the application.
+	app.DefaultApplicationKeyringUid = "application"
+	applicationAddr := testkeyring.CreateOnChainAccount(
+		app.sdkCtx, t,
+		app.DefaultApplicationKeyringUid,
+		app.keyRing,
+		accountKeeper,
+		app.preGeneratedAccts,
+	)
+
+	// Prepare the on-chain application
+	appStake := types.NewCoin("upokt", math.NewInt(1000000))
+	defaultApplication := apptypes.Application{
+		Address: applicationAddr.String(),
+		Stake:   &appStake,
+		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
+			{
+				ServiceId: defaultService.Id,
+			},
+		},
+	}
+	applicationKeeper.SetApplication(app.sdkCtx, defaultApplication)
+	app.DefaultApplication = &defaultApplication
+
+	// TODO_IMPROVE: The setup above does not to proper "staking" of the suppliers and applications.
+	// This can result in the module accounts balance going negative. Giving them a baseline balance
+	// to start with to avoid this issue. There is opportunity to improve this in the future.
+	moduleBaseMint := types.NewCoins(sdk.NewCoin("upokt", math.NewInt(690000000000000042)))
+	err := bankKeeper.MintCoins(app.sdkCtx, suppliertypes.ModuleName, moduleBaseMint)
+	require.NoError(t, err)
+	err = bankKeeper.MintCoins(app.sdkCtx, apptypes.ModuleName, moduleBaseMint)
+	require.NoError(t, err)
+
+	// TODO_IMPROVE: Refactor the relay_mining_difficulty_test.go to use the
+	// BaseIntegrationTestSuite (or a DefaultActorIntegrationSuite) and its
+	// #FundAddress() method and remove the need for this.
+	//
+	// Fund the supplier operator account to be able to submit proofs
+	fundAccount(t, app.sdkCtx, bankKeeper, supplierOperatorAddr, 100000000)
+
+	// Commit all the changes above by finalizing, committing, and moving
+	// to the next block.
+	app.NextBlock(t)
+}
+
+// fundAccount mints and sends amountUpokt tokens to the given recipientAddr.
+//
+// TODO_IMPROVE: Eliminate usage of and remove this function in favor of
+// integration.NewInitChainerModuleGenesisStateOptionFn.
 func fundAccount(
 	t *testing.T,
 	ctx context.Context,
 	bankKeeper bankkeeper.Keeper,
-	supplierOperatorAddr sdk.AccAddress,
+	recipientAddr sdk.AccAddress,
 	amountUpokt int64,
 ) {
 
@@ -1019,9 +962,37 @@ func fundAccount(
 	err := bankKeeper.MintCoins(ctx, banktypes.ModuleName, fundingCoins)
 	require.NoError(t, err)
 
-	err = bankKeeper.SendCoinsFromModuleToAccount(ctx, banktypes.ModuleName, supplierOperatorAddr, fundingCoins)
+	err = bankKeeper.SendCoinsFromModuleToAccount(ctx, banktypes.ModuleName, recipientAddr, fundingCoins)
 	require.NoError(t, err)
 
-	coin := bankKeeper.SpendableCoin(ctx, supplierOperatorAddr, volatile.DenomuPOKT)
+	coin := bankKeeper.SpendableCoin(ctx, recipientAddr, volatile.DenomuPOKT)
 	require.Equal(t, coin.Amount, math.NewInt(amountUpokt))
+}
+
+// newFaucetInitChainerFn returns an InitChainerModuleFn that initializes the bank module
+// with a genesis state which contains a faucet account that has faucetAmtUpokt coins.
+func newFaucetInitChainerFn(faucetBech32 string, faucetAmtUpokt int64) InitChainerModuleFn {
+	return NewInitChainerModuleGenesisStateOptionFn[bank.AppModule](&banktypes.GenesisState{
+		Params: banktypes.DefaultParams(),
+		Balances: []banktypes.Balance{
+			{
+				Address: faucetBech32,
+				Coins: sdk.NewCoins(
+					sdk.NewInt64Coin(
+						volatile.DenomuPOKT,
+						faucetAmtUpokt,
+					),
+				),
+			},
+		},
+	})
+}
+
+// newProposerAddrBz returns a random proposer address in bytes.
+func newProposerAddrBz(t *testing.T) []byte {
+	bech32 := sample.ConsAddress()
+	addr, err := cosmostypes.ConsAddressFromBech32(bech32)
+	require.NoError(t, err)
+
+	return addr.Bytes()
 }
