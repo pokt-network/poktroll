@@ -15,11 +15,14 @@ import (
 )
 
 func TestKeeper_IsProofRequired(t *testing.T) {
-	// Set expectedCompute units to be below the proof requirement threshold to only
-	// exercise the probabilistic branch of the #isProofRequired() logic.
-	expectedComputeUnits := types.DefaultProofRequirementThreshold - 1
 	keepers, ctx := keeper.NewProofModuleKeepers(t)
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+
+	proofParams := keepers.Keeper.GetParams(sdkCtx)
+	sharedParams := keepers.SharedKeeper.GetParams(sdkCtx)
+	// Set expected compute units to be below the proof requirement threshold to only
+	// exercise the probabilistic branch of the #isProofRequired() logic.
+	expectedComputeUnits := (proofParams.ProofRequirementThreshold.Amount.Uint64() - 1) / sharedParams.ComputeUnitsToTokensMultiplier
 
 	var (
 		probability = types.DefaultProofRequestProbability

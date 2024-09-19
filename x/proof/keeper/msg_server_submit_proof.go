@@ -17,6 +17,7 @@ import (
 	"github.com/pokt-network/poktroll/x/proof/types"
 	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/poktroll/x/tokenomics"
 )
 
 // SubmitProof is the server handler to submit and store a proof on-chain.
@@ -226,6 +227,15 @@ func (k Keeper) ProofRequirementForClaim(ctx context.Context, claim *types.Claim
 	}
 
 	proofParams := k.GetParams(ctx)
+	sharedParams := k.sharedKeeper.GetParams(ctx)
+
+	// Retrieve the number of tokens claimed to compare against the threshold.
+	// Different services have varying compute_unit -> token multipliers, so the
+	// threshold value is done in a common unit denomination.
+	claimeduPOKT, err := tokenomics.NumComputeUnitsToCoin(sharedParams, numClaimComputeUnits)
+	if err != nil {
+		return requirementReason, err
+	}
 
 	// Require a proof if the claim's compute units meets or exceeds the threshold.
 	//
@@ -236,12 +246,12 @@ func (k Keeper) ProofRequirementForClaim(ctx context.Context, claim *types.Claim
 	// TODO_IMPROVE(@bryanchriswhite, @red-0ne): It might make sense to include
 	// whether there was a proof submission error downstream from here. This would
 	// require a more comprehensive metrics API.
-	if numClaimComputeUnits >= proofParams.GetProofRequirementThreshold() {
+	if claimeduPOKT.Amount.GTE(proofParams.GetProofRequirementThreshold().Amount) {
 		requirementReason = types.ProofRequirementReason_THRESHOLD
 
 		logger.Info(fmt.Sprintf(
-			"claim requires proof due to compute units (%d) exceeding threshold (%d)",
-			numClaimComputeUnits,
+			"claim requires proof due to compute units (%s) exceeding threshold (%s)",
+			claimeduPOKT,
 			proofParams.GetProofRequirementThreshold(),
 		))
 		return requirementReason, nil
@@ -274,8 +284,8 @@ func (k Keeper) ProofRequirementForClaim(ctx context.Context, claim *types.Claim
 	}
 
 	logger.Info(fmt.Sprintf(
-		"claim does not require proof due to compute units (%d) being less than the threshold (%d) and random sample (%.2f) being greater than probability (%.2f)",
-		numClaimComputeUnits,
+		"claim does not require proof due to claimed amount (%s) being less than the threshold (%s) and random sample (%.2f) being greater than probability (%.2f)",
+		claimeduPOKT,
 		proofParams.GetProofRequirementThreshold(),
 		proofRequirementSampleValue,
 		proofParams.GetProofRequestProbability(),
