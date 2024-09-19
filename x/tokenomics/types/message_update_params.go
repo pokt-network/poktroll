@@ -4,15 +4,10 @@ import sdk "github.com/cosmos/cosmos-sdk/types"
 
 var _ sdk.Msg = (*MsgUpdateParams)(nil)
 
-func NewMsgUpdateParams(
-	authority string,
-	computeUnitsToTokensMultiplier uint64,
-) *MsgUpdateParams {
+func NewMsgUpdateParams(authority string) *MsgUpdateParams {
 	return &MsgUpdateParams{
 		Authority: authority,
-		Params: Params{
-			ComputeUnitsToTokensMultiplier: computeUnitsToTokensMultiplier,
-		},
+		Params:    Params{},
 	}
 }
 

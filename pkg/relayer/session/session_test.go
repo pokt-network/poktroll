@@ -8,12 +8,15 @@ import (
 	"time"
 
 	"cosmossdk.io/depinject"
+	sdkmath "cosmossdk.io/math"
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 	cmttypes "github.com/cometbft/cometbft/types"
+	sdktypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/golang/mock/gomock"
 	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
@@ -103,6 +106,7 @@ func requireProofCountEqualsExpectedValueFromProofParams(t *testing.T, proofPara
 
 	serviceQueryClientMock := testqueryclients.NewTestServiceQueryClient(t)
 	proofQueryClientMock := testqueryclients.NewTestProofQueryClientWithParams(t, &proofParams)
+	tokenomicsQueryClient := testqueryclients.NewTestTokenomicsQueryClient(t)
 
 	deps := depinject.Supply(
 		blockClient,
@@ -111,6 +115,7 @@ func requireProofCountEqualsExpectedValueFromProofParams(t *testing.T, proofPara
 		sharedQueryClientMock,
 		serviceQueryClientMock,
 		proofQueryClientMock,
+		tokenomicsQueryClient,
 	)
 	storesDirectoryOpt := testrelayer.WithTempStoresDirectory(t)
 
@@ -192,7 +197,7 @@ func TestRelayerSessionsManager_ProofThresholdRequired(t *testing.T) {
 	proofParams := prooftypes.DefaultParams()
 
 	// Set proof requirement threshold to a low enough value so a proof is always requested.
-	proofParams.ProofRequirementThreshold = 1
+	proofParams.ProofRequirementThreshold = &sdktypes.Coin{Denom: volatile.DenomuPOKT, Amount: sdkmath.NewInt(1)}
 
 	// The test is submitting a single claim. Having the proof requirement threshold
 	// set to 1 results in exactly 1 proof being requested.
@@ -204,8 +209,8 @@ func TestRelayerSessionsManager_ProofThresholdRequired(t *testing.T) {
 func TestRelayerSessionsManager_ProofProbabilityRequired(t *testing.T) {
 	proofParams := prooftypes.DefaultParams()
 
-	// Set proof requirement threshold to max uint64 to skip the threshold check.
-	proofParams.ProofRequirementThreshold = math.MaxUint64
+	// Set proof requirement threshold to max int64 to skip the threshold check.
+	proofParams.ProofRequirementThreshold = &sdktypes.Coin{Denom: volatile.DenomuPOKT, Amount: sdkmath.NewInt(math.MaxInt64)}
 	// Set proof request probability to 1 so a proof is always requested.
 	proofParams.ProofRequestProbability = 1
 
@@ -219,8 +224,8 @@ func TestRelayerSessionsManager_ProofProbabilityRequired(t *testing.T) {
 func TestRelayerSessionsManager_ProofNotRequired(t *testing.T) {
 	proofParams := prooftypes.DefaultParams()
 
-	// Set proof requirement threshold to max uint64 to skip the threshold check.
-	proofParams.ProofRequirementThreshold = math.MaxUint64
+	// Set proof requirement threshold to max int64 to skip the threshold check.
+	proofParams.ProofRequirementThreshold = &sdktypes.Coin{Denom: volatile.DenomuPOKT, Amount: sdkmath.NewInt(math.MaxInt64)}
 	// Set proof request probability to 0 so a proof is never requested.
 	proofParams.ProofRequestProbability = 0
 

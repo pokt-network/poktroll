@@ -262,7 +262,7 @@ func (s *suite) TheModuleParamShouldBeUpdated(moduleName, paramName string) {
 	require.True(s, ok, "module %q params expectation not set on the test suite", moduleName)
 
 	var foundExpectedParam bool
-	for expectedParamName, _ := range moduleParamsMap {
+	for expectedParamName := range moduleParamsMap {
 		if paramName == expectedParamName {
 			foundExpectedParam = true
 			break
@@ -360,13 +360,10 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 
 	switch moduleName {
 	case tokenomicstypes.ModuleName:
-		computeUnitsToTokensMultiplier := uint64(s.expectedModuleParams[moduleName][tokenomicstypes.ParamComputeUnitsToTokensMultiplier].value.(int64))
 		assertUpdatedParams(s,
 			[]byte(res.Stdout),
 			&tokenomicstypes.QueryParamsResponse{
-				Params: tokenomicstypes.Params{
-					ComputeUnitsToTokensMultiplier: computeUnitsToTokensMultiplier,
-				},
+				Params: tokenomicstypes.Params{},
 			},
 		)
 	case prooftypes.ModuleName:
@@ -385,7 +382,7 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 
 		proofRequirementThreshold, ok := paramsMap[prooftypes.ParamProofRequirementThreshold]
 		if ok {
-			params.ProofRequirementThreshold = uint64(proofRequirementThreshold.value.(int64))
+			params.ProofRequirementThreshold = proofRequirementThreshold.value.(*cosmostypes.Coin)
 		}
 
 		proofMissingPenalty, ok := paramsMap[prooftypes.ParamProofMissingPenalty]
@@ -446,6 +443,11 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 		applicationUnbondingPeriodSessions, ok := paramsMap[sharedtypes.ParamApplicationUnbondingPeriodSessions]
 		if ok {
 			params.ApplicationUnbondingPeriodSessions = uint64(applicationUnbondingPeriodSessions.value.(int64))
+		}
+
+		computeUnitsToTokensMultiplier, ok := paramsMap[sharedtypes.ParamComputeUnitsToTokensMultiplier]
+		if ok {
+			params.ComputeUnitsToTokensMultiplier = uint64(computeUnitsToTokensMultiplier.value.(int64))
 		}
 
 		assertUpdatedParams(s,

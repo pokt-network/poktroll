@@ -15,6 +15,7 @@ import (
 	"github.com/pokt-network/poktroll/x/proof/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	"github.com/pokt-network/poktroll/x/shared"
+	tokenomics "github.com/pokt-network/poktroll/x/tokenomics"
 )
 
 // submitProofs maps over the given claimedSessions observable.
@@ -287,14 +288,25 @@ func (rs *relayerSessionsManager) isProofRequired(
 		return false, err
 	}
 
+	sharedParams, err := rs.sharedQueryClient.GetParams(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	// The amount of uPOKT being claimed.
+	claimedAmount, err := tokenomics.NumComputeUnitsToCoin(*sharedParams, numClaimComputeUnits)
+	if err != nil {
+		return false, err
+	}
+
 	logger = logger.With(
-		"num_claim_compute_units", numClaimComputeUnits,
-		"proof_requirement_threshold", proofParams.GetProofRequirementThreshold(),
+		"claimed_amount_upokt", claimedAmount.Amount.Uint64(),
+		"proof_requirement_threshold_upokt", proofParams.GetProofRequirementThreshold(),
 	)
 
-	// Require a proof if the claim's compute units meets or exceeds the threshold.
+	// Require a proof if the claimed amount meets or exceeds the threshold.
 	// TODO_MAINNET: This should be proportional to the supplier's stake as well.
-	if numClaimComputeUnits >= proofParams.GetProofRequirementThreshold() {
+	if claimedAmount.Amount.GTE(proofParams.GetProofRequirementThreshold().Amount) {
 		logger.Info().Msg("compute units is above threshold, claim requires proof")
 
 		return true, nil
