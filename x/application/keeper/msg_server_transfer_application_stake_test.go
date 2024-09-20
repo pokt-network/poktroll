@@ -4,33 +4,37 @@ import (
 	"testing"
 
 	"cosmossdk.io/math"
+	"github.com/cosmos/cosmos-sdk/codec/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
+	events2 "github.com/pokt-network/poktroll/testutil/events"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	appkeeper "github.com/pokt-network/poktroll/x/application/keeper"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func TestMsgServer_TransferApplication_Success(t *testing.T) {
 	k, ctx := keepertest.ApplicationKeeper(t)
 	srv := appkeeper.NewMsgServerImpl(k)
+	sharedParams := sharedtypes.DefaultParams()
 
 	// Generate an address for the source and destination applications.
-	srcAddr := sample.AccAddress()
-	dstAddr := sample.AccAddress()
+	srcBech32 := sample.AccAddress()
+	dstBech32 := sample.AccAddress()
 
 	// Verify that the app does not exist yet.
-	_, isSrcFound := k.GetApplication(ctx, srcAddr)
+	_, isSrcFound := k.GetApplication(ctx, srcBech32)
 	require.False(t, isSrcFound)
 
 	expectedAppStake := &cosmostypes.Coin{Denom: "upokt", Amount: math.NewInt(100)}
 
 	// Prepare the application.
 	stakeMsg := &apptypes.MsgStakeApplication{
-		Address: srcAddr,
+		Address: srcBech32,
 		Stake:   expectedAppStake,
 		Services: []*sharedtypes.ApplicationServiceConfig{
 			{
@@ -44,16 +48,22 @@ func TestMsgServer_TransferApplication_Success(t *testing.T) {
 	require.NoError(t, err)
 
 	// Verify that the application exists.
-	srcApp, isSrcFound := k.GetApplication(ctx, srcAddr)
+	srcApp, isSrcFound := k.GetApplication(ctx, srcBech32)
 	require.True(t, isSrcFound)
-	require.Equal(t, srcAddr, srcApp.GetAddress())
+	require.Equal(t, srcBech32, srcApp.GetAddress())
 	require.Equal(t, expectedAppStake, srcApp.GetStake())
 	require.Len(t, srcApp.GetServiceConfigs(), 1)
 	require.Equal(t, "svc1", srcApp.GetServiceConfigs()[0].GetServiceId())
 
-	// Transfer the application stake from the source to the destination application address.
-	transferStakeMsg := apptypes.NewMsgTransferApplication(srcAddr, dstAddr)
+	transferBeginHeight := cosmostypes.UnwrapSDKContext(ctx).BlockHeight()
+	transferSessionEndHeight := shared.GetSessionEndHeight(&sharedParams, transferBeginHeight)
+	expectedPendingTransfer := &apptypes.PendingApplicationTransfer{
+		DestinationAddress: dstBech32,
+		SessionEndHeight:   uint64(transferSessionEndHeight),
+	}
 
+	// Transfer the application stake from the source to the destination application address.
+	transferStakeMsg := apptypes.NewMsgTransferApplication(srcBech32, dstBech32)
 	transferAppStakeRes, stakeTransferErr := srv.TransferApplication(ctx, transferStakeMsg)
 	require.NoError(t, stakeTransferErr)
 	transferResApp := transferAppStakeRes.GetApplication()
@@ -64,20 +74,48 @@ func TestMsgServer_TransferApplication_Success(t *testing.T) {
 	transferResAppCopy.PendingTransfer = nil
 	require.EqualValues(t, srcApp, transferResAppCopy)
 
-	// Set the height to the proof window close height for the session.
-	sharedParams := sharedtypes.DefaultParams()
-	proofWindowCloseHeight := apptypes.GetApplicationTransferHeight(&sharedParams, transferResApp)
+	// Assert that the transfer end event was emitted.
+	events := cosmostypes.UnwrapSDKContext(ctx).EventManager().Events()
+	transferBeginEventTypeURL := types.MsgTypeURL(&apptypes.EventTransferBegin{})
+	transferBeginEvents := events2.FilterEvents[*apptypes.EventTransferBegin](t, events, transferBeginEventTypeURL)
+	require.Equal(t, 1, len(transferBeginEvents), "expected 1 transfer begin event")
+
+	// Set the height to the transfer end height - 1 for the session.
+	transferEndHeight := apptypes.GetApplicationTransferHeight(&sharedParams, transferResApp)
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
-	ctx = sdkCtx.WithBlockHeight(proofWindowCloseHeight)
+	ctx = sdkCtx.WithBlockHeight(transferEndHeight - 1)
+
+	// Run application module end-blockers to assert that the transfer is not completed yet.
+	err = k.EndBlockerTransferApplication(ctx)
+	require.NoError(t, err)
+
+	// Assert that the source app is still pending transfer.
+	pendingSrcApp, isSrcFound := k.GetApplication(ctx, srcBech32)
+	require.True(t, isSrcFound)
+	require.EqualValues(t, expectedPendingTransfer, pendingSrcApp.GetPendingTransfer())
+
+	// Assert that the destination app was not created yet.
+	_, isDstFound := k.GetApplication(ctx, dstBech32)
+	require.True(t, isSrcFound)
+
+	// Set the height to the transfer end height for the session.
+	sdkCtx = cosmostypes.UnwrapSDKContext(ctx)
+	ctx = sdkCtx.WithBlockHeight(transferEndHeight)
 
 	// Run application module end-blockers to complete the transfer.
 	err = k.EndBlockerTransferApplication(ctx)
 	require.NoError(t, err)
 
+	// Assert that the transfer end event was emitted.
+	events = cosmostypes.UnwrapSDKContext(ctx).EventManager().Events()
+	transferEndEventTypeURL := types.MsgTypeURL(&apptypes.EventTransferEnd{})
+	transferEndEvents := events2.FilterEvents[*apptypes.EventTransferEnd](t, events, transferEndEventTypeURL)
+	require.Equal(t, 1, len(transferEndEvents), "expected 1 transfer end event")
+
 	// Verify that the destination app was created with the correct state.
-	dstApp, isDstFound := k.GetApplication(ctx, dstAddr)
+	dstApp, isDstFound := k.GetApplication(ctx, dstBech32)
 	require.True(t, isDstFound)
-	require.Equal(t, dstAddr, dstApp.GetAddress())
+	require.Equal(t, dstBech32, dstApp.GetAddress())
 	require.Equal(t, expectedAppStake, dstApp.GetStake())
 	require.Len(t, dstApp.GetServiceConfigs(), 1)
 	require.Equal(t, "svc1", dstApp.GetServiceConfigs()[0].GetServiceId())
@@ -87,6 +125,6 @@ func TestMsgServer_TransferApplication_Success(t *testing.T) {
 	require.EqualValues(t, srcApp, dstApp)
 
 	// Verify that the source app was unstaked.
-	srcApp, isSrcFound = k.GetApplication(ctx, srcAddr)
+	srcApp, isSrcFound = k.GetApplication(ctx, srcBech32)
 	require.False(t, isSrcFound)
 }
