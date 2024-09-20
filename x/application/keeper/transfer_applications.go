@@ -71,11 +71,13 @@ func (k Keeper) EndBlockerTransferApplication(ctx context.Context) error {
 	return nil
 }
 
-// TODO_IN_THIS_COMMIT: update comment...
-//
 // transferApplication transfers the fields of srcApp, except for address and pending_transfer,
-// to a newly created destination application whose address is set to the destination address
-// in the pending transfer of srcApp. It is intended to be called during the EndBlock ABCI method.
+// to an application whose address is the destination address of the pending transfer of srcApp.
+// If the destination application does not exist, it is created. If it does exist, the stake of
+// the destination application is incremented by the stake of the source application, and the
+// delegatees and service configs of the destination application are set to the union of the
+// source application's delegatees and service configs and the destination application's
+// delegatees. It is intended to be called during the EndBlock ABCI method.
 func (k Keeper) transferApplication(ctx context.Context, srcApp types.Application) error {
 	logger := k.Logger().With("method", "transferApplication")
 
@@ -86,11 +88,10 @@ func (k Keeper) transferApplication(ctx context.Context, srcApp types.Applicatio
 		return types.ErrAppIsUnstaking.Wrapf("cannot transfer stake of unbonding source application (%s)", srcApp.GetAddress())
 	}
 
-	// TODO_IN_THIS_COMMIT: update comment...
-	//
 	// Check if the destination application already exists. If not, derive it from
 	// the source application. If so, "merge" the source application into the
-	// destination by summing stake amounts and taking the union of delegations.
+	// destination by summing stake amounts and taking the union of delegations
+	// and service configs.
 	dstApp, isDstFound := k.GetApplication(ctx, srcApp.GetPendingTransfer().GetDestinationAddress())
 	if !isDstFound {
 		dstApp = srcApp //intentional copy
@@ -124,7 +125,8 @@ func (k Keeper) transferApplication(ctx context.Context, srcApp types.Applicatio
 	return nil
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// mergeAppDelegatees takes the union of the srcApp and dstApp's delegatees and
+// sets the result in dstApp.
 func mergeAppDelegatees(srcApp, dstApp *types.Application) {
 	// Build a set of the destination application's delegatees.
 	delagateeBech32Set := make(map[string]struct{})
@@ -141,7 +143,8 @@ func mergeAppDelegatees(srcApp, dstApp *types.Application) {
 	}
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// mergeAppServiceConfigs takes the union of the srcApp and dstApp's service configs
+// and sets the result in dstApp.
 func mergeAppServiceConfigs(srcApp, dstApp *types.Application) {
 	// Build a set of the destination application's service configs.
 	serviceIDSet := make(map[string]struct{})

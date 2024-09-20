@@ -3,7 +3,6 @@
 package application
 
 import (
-	"strings"
 	"testing"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
@@ -48,7 +47,7 @@ func (s *AppTransferSuite) SetupTest() {
 	s.gatewaySuite.SetApp(s.GetApp())
 
 	// Ensure gateways and apps have bank balances.
-	s.setupTestAccounts()
+	s.setupTestAddresses()
 
 	// Stake gateways for applications to delegate to.
 	s.setupStakeGateways()
@@ -67,60 +66,17 @@ func (s *AppTransferSuite) SetupTest() {
 
 	// Assert the on-chain state shows the application 3 as NOT staked.
 	_, queryErr := s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app3Bech32)
-	// TODO_IN_THIS_COMMIT: assert error message contains
-	require.Error(s.T(), queryErr)
-}
-
-// TODO_IN_THIS_COMMIT: move & godoc...
-func (s *AppTransferSuite) setupStakeGateways() {
-	gatewayBech32s := []string{
-		s.gateway1Bech32,
-		s.gateway2Bech32,
-		s.gateway3Bech32,
-	}
-
-	for _, gatewayBech32 := range gatewayBech32s {
-		gwStakeRes := s.gatewaySuite.StakeGateway(s.T(), gatewayBech32, stakeAmount)
-		require.Equal(s.T(), gatewayBech32, gwStakeRes.GetGateway().GetAddress())
-		require.Equal(s.T(), stakeAmount, gwStakeRes.GetGateway().GetStake().Amount.Int64())
-	}
-}
-
-// TODO_IN_THIS_COMMIT: move & godoc...
-func (s *AppTransferSuite) setupStakeApps(appBech32ToServiceIdsMap map[string][]string) {
-	// Stake application.
-	for appBech32, serviceIds := range appBech32ToServiceIdsMap {
-		stakeAppRes := s.StakeApp(s.T(), appBech32, stakeAmount, serviceIds)
-		require.Equal(s.T(), appBech32, stakeAppRes.GetApplication().GetAddress())
-		require.Equal(s.T(), stakeAmount, stakeAppRes.GetApplication().GetStake().Amount.Int64())
-
-		// Assert the on-chain state shows the application as staked.
-		foundApp, queryErr := s.GetAppQueryClient().GetApplication(s.SdkCtx(), appBech32)
-		require.NoError(s.T(), queryErr)
-		require.Equal(s.T(), appBech32, foundApp.GetAddress())
-		require.Equal(s.T(), stakeAmount, foundApp.GetStake().Amount.Int64())
-	}
-}
-
-// TODO_IN_THIS_COMMIT: move & godoc...
-func (s *AppTransferSuite) setupDelegateAppsToGateway(appBech32ToServiceIdsMap map[string][]string) {
-	for appBech32, gatewayBech32s := range appBech32ToServiceIdsMap {
-		for _, gatewayBech32 := range gatewayBech32s {
-			delegateRes := s.DelegateAppToGateway(s.T(), appBech32, gatewayBech32)
-			require.Equal(s.T(), appBech32, delegateRes.GetApplication().GetAddress())
-			require.Contains(s.T(), delegateRes.GetApplication().GetDelegateeGatewayAddresses(), gatewayBech32)
-		}
-	}
+	require.ErrorContains(s.T(), queryErr, "application not found")
+	require.ErrorContains(s.T(), queryErr, s.app3Bech32)
 }
 
 func (s *AppTransferSuite) TestSingleSourceToNonexistentDestinationSucceeds() {
-	// TODO_IN_THIS_COMMIT: comment - assume default shared params
 	sharedParams := sharedtypes.DefaultParams()
 	sessionEndHeight := shared.GetSessionEndHeight(&sharedParams, s.SdkCtx().BlockHeight())
 
 	transferBeginHeight := s.SdkCtx().BlockHeight()
 
-	// transfer app1 to app3
+	// Transfer app1 to app3
 	transferRes := s.Transfer(s.T(), s.app1Bech32, s.app3Bech32)
 	srcApp := transferRes.GetApplication()
 
@@ -148,19 +104,19 @@ func (s *AppTransferSuite) TestSingleSourceToNonexistentDestinationSucceeds() {
 	// Assert that the transfer begin event (tx result event) is observed.
 	s.shouldObserveTransferBeginEvent(&foundApp1, s.app3Bech32)
 
-	// wait for transfer end commit height - 1
+	// Continue until transfer end commit height - 1.
 	transferEndHeight := apptypes.GetApplicationTransferHeight(&sharedParams, &foundApp1)
 	blocksUntilTransferEndHeight := transferEndHeight - transferBeginHeight
 	s.GetApp().NextBlocks(s.T(), int(blocksUntilTransferEndHeight)-1)
 
-	// assert that app1 is in transfer period
+	// Assert that app1 is in transfer period.
 	foundApp1, err = s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app1Bech32)
 	require.NoError(s.T(), err)
 
 	require.Equal(s.T(), s.app1Bech32, foundApp1.GetAddress())
 	require.Equal(s.T(), expectedPendingTransfer, foundApp1.GetPendingTransfer())
 
-	// wait for end block event (end)
+	// Continue to transfer end height.
 	s.GetApp().NextBlock(s.T())
 
 	// Query for and assert that the destination application was created.
@@ -174,11 +130,12 @@ func (s *AppTransferSuite) TestSingleSourceToNonexistentDestinationSucceeds() {
 	// Assert that the transfer end event (end block event) is observed.
 	s.shouldObserveTransferEndEvent(&foundApp3, s.app1Bech32)
 
-	// assert that app1 is unstaked
+	// Assert that app1 is unstaked.
 	_, err = s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app1Bech32)
 	require.ErrorContains(s.T(), err, "application not found")
+	require.ErrorContains(s.T(), err, s.app1Bech32)
 
-	// assert that app1's bank balance has not changed
+	// Assert that app1's bank balance has not changed.
 	balanceRes, err := s.GetBankQueryClient().Balance(s.SdkCtx(), &banktypes.QueryBalanceRequest{
 		Address: s.app1Bech32,
 		Denom:   volatile.DenomuPOKT,
@@ -193,14 +150,13 @@ func (s *AppTransferSuite) TestSingleSourceToNonexistentDestinationSucceeds() {
 }
 
 func (s *AppTransferSuite) TestMultipleSourceToSameNonexistentDestinationSucceedsForFirst() {
-	// TODO_IN_THIS_COMMIT: comment - assume default shared params
 	sharedParams := sharedtypes.DefaultParams()
 	msgTransferAppTypeURL := cosmostypes.MsgTypeURL(&apptypes.MsgTransferApplication{})
 	sessionEndHeight := shared.GetSessionEndHeight(&sharedParams, s.SdkCtx().BlockHeight())
 
 	transferBeginHeight := s.SdkCtx().BlockHeight()
 
-	// transfer app1 & app2 to app3
+	// Transfer app1 & app2 to app3 in the same session (and tx).
 	srcToDstTransferMap := map[string]string{
 		s.app1Bech32: s.app3Bech32,
 		s.app2Bech32: s.app3Bech32,
@@ -260,25 +216,21 @@ func (s *AppTransferSuite) TestMultipleSourceToSameNonexistentDestinationSucceed
 	msgEvents := s.FilterLatestEvents(events2.NewMsgEventMatchFn(msgTransferAppTypeURL))
 	require.Equal(s.T(), 2, len(msgEvents), "expected 2 application transfer message events")
 
-	// wait for transfer end commit height - 1
-	foundApp1, err := s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app1Bech32)
-	require.NoError(s.T(), err)
-
-	// wait for transfer end commit height - 1
+	// Continue until transfer end commit height - 1.
 	blocksUntilTransferEndHeight := transferEndHeight - transferBeginHeight
 	s.GetApp().NextBlocks(s.T(), int(blocksUntilTransferEndHeight)-1)
 
-	// assert that app1 is in transfer period
-	foundApp1, err = s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app1Bech32)
+	// Assert that app1 is in transfer period.
+	foundApp1, err := s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app1Bech32)
 	require.NoError(s.T(), err)
 
 	require.Equal(s.T(), s.app1Bech32, foundApp1.GetAddress())
 	require.Equal(s.T(), expectedPendingTransfer, foundApp1.GetPendingTransfer())
 
-	// wait for end block event (end)
+	// Continue to transfer end height.
 	s.GetApp().NextBlock(s.T())
 
-	// assert that app3 is staked (w/ sum amount: app1 + app2)
+	// Assert that app3 is staked with the sum amount: app1 + app2.
 	foundApp3, err := s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app3Bech32)
 	require.NoError(s.T(), err)
 
@@ -312,19 +264,17 @@ func (s *AppTransferSuite) TestMultipleSourceToSameNonexistentDestinationSucceed
 	}
 	require.Equal(s.T(), len(serviceIds), len(foundApp3.GetServiceConfigs()))
 
-	// assert that app1 is unstaked
-	// Query and assert application pending transfer field updated in the store.
+	// Assert that app1 is unstaked.
 	foundApp1, err = s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app1Bech32)
-	// TODO_IN_THIS_COMMIT: assert error message contains
-	require.Error(s.T(), err)
+	require.ErrorContains(s.T(), err, "application not found")
+	require.ErrorContains(s.T(), err, s.app1Bech32)
 
-	// assert that app2 is unstaked
-	// Query and assert application pending transfer field updated in the store.
+	// Assert that app2 is unstaked.
 	_, err = s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app2Bech32)
-	// TODO_IN_THIS_COMMIT: assert error message contains
-	require.Error(s.T(), err)
+	require.ErrorContains(s.T(), err, "application not found")
+	require.ErrorContains(s.T(), err, s.app2Bech32)
 
-	// assert that app1's bank balance has not changed
+	// Assert that app1's bank balance has not changed
 	balRes, err := s.GetBankQueryClient().Balance(s.SdkCtx(), &banktypes.QueryBalanceRequest{
 		Address: s.app1Bech32,
 		Denom:   volatile.DenomuPOKT,
@@ -332,7 +282,7 @@ func (s *AppTransferSuite) TestMultipleSourceToSameNonexistentDestinationSucceed
 	require.NoError(s.T(), err)
 	require.Equal(s.T(), appFundAmount-stakeAmount, balRes.GetBalance().Amount.Int64())
 
-	// assert that app2's bank balance has not changed
+	// Assert that app2's bank balance has not changed
 	balRes, err = s.GetBankQueryClient().Balance(s.SdkCtx(), &banktypes.QueryBalanceRequest{
 		Address: s.app2Bech32,
 		Denom:   volatile.DenomuPOKT,
@@ -342,12 +292,15 @@ func (s *AppTransferSuite) TestMultipleSourceToSameNonexistentDestinationSucceed
 }
 
 // TODO_TEST:
-//func (s *AppTransferSuite) TestSequentialTransfersSucceed() {
-//
-//}
+//func (s *AppTransferSuite) TestSequentialTransfersSucceed() {}
 
-// setupTestAccounts sets up the pre-generated accounts for the test suite.
-func (s *AppTransferSuite) setupTestAccounts() {
+// TODO_TEST: Scenario: User cannot start an Application stake transfer from Application which has a pending transfer
+// TODO_TEST: Scenario: The user cannot unstake an Application which has a pending transfer
+// TODO_TEST: Scenario: The user can (un/re-)delegate an Application which has a pending transfer
+
+// setupTestAddresses sets up the required addresses for the test suite using
+// pre-generated accounts.
+func (s *AppTransferSuite) setupTestAddresses() {
 	s.gateway1Bech32 = s.setupTestAccount().Address.String()
 	s.gateway2Bech32 = s.setupTestAccount().Address.String()
 	s.gateway3Bech32 = s.setupTestAccount().Address.String()
@@ -365,7 +318,50 @@ func (s *AppTransferSuite) setupTestAccount() *testkeyring.PreGeneratedAccount {
 	return appAccount
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// TODO_IN_THIS_COMMIT: move & godoc...
+func (s *AppTransferSuite) setupStakeGateways() {
+	gatewayBech32s := []string{
+		s.gateway1Bech32,
+		s.gateway2Bech32,
+		s.gateway3Bech32,
+	}
+
+	for _, gatewayBech32 := range gatewayBech32s {
+		gwStakeRes := s.gatewaySuite.StakeGateway(s.T(), gatewayBech32, stakeAmount)
+		require.Equal(s.T(), gatewayBech32, gwStakeRes.GetGateway().GetAddress())
+		require.Equal(s.T(), stakeAmount, gwStakeRes.GetGateway().GetStake().Amount.Int64())
+	}
+}
+
+// TODO_IN_THIS_COMMIT: move & godoc...
+func (s *AppTransferSuite) setupStakeApps(appBech32ToServiceIdsMap map[string][]string) {
+	// Stake application.
+	for appBech32, serviceIds := range appBech32ToServiceIdsMap {
+		stakeAppRes := s.StakeApp(s.T(), appBech32, stakeAmount, serviceIds)
+		require.Equal(s.T(), appBech32, stakeAppRes.GetApplication().GetAddress())
+		require.Equal(s.T(), stakeAmount, stakeAppRes.GetApplication().GetStake().Amount.Int64())
+
+		// Assert the on-chain state shows the application as staked.
+		foundApp, queryErr := s.GetAppQueryClient().GetApplication(s.SdkCtx(), appBech32)
+		require.NoError(s.T(), queryErr)
+		require.Equal(s.T(), appBech32, foundApp.GetAddress())
+		require.Equal(s.T(), stakeAmount, foundApp.GetStake().Amount.Int64())
+	}
+}
+
+// TODO_IN_THIS_COMMIT: move & godoc...
+func (s *AppTransferSuite) setupDelegateAppsToGateway(appBech32ToServiceIdsMap map[string][]string) {
+	for appBech32, gatewayBech32s := range appBech32ToServiceIdsMap {
+		for _, gatewayBech32 := range gatewayBech32s {
+			delegateRes := s.DelegateAppToGateway(s.T(), appBech32, gatewayBech32)
+			require.Equal(s.T(), appBech32, delegateRes.GetApplication().GetAddress())
+			require.Contains(s.T(), delegateRes.GetApplication().GetDelegateeGatewayAddresses(), gatewayBech32)
+		}
+	}
+}
+
+// shouldObserveTransferBeginEvent asserts that the transfer begin event from
+// expectedSrcApp to expectedDstAppBech32 is observed.
 func (s *AppTransferSuite) shouldObserveTransferBeginEvent(
 	expectedSrcApp *apptypes.Application,
 	expectedDstAppBech32 string,
@@ -376,7 +372,9 @@ func (s *AppTransferSuite) shouldObserveTransferBeginEvent(
 
 	transferBeginEvent := new(cosmostypes.Event)
 	for _, event := range transferBeginEvents {
-		eventSrcAddr := GetTrimmedEventAttribute(s.T(), event, "source_address")
+		eventSrcAddr, hasSrcAddr := s.GetAttributeValue(event, "source_address")
+		require.True(s.T(), hasSrcAddr)
+
 		if eventSrcAddr == expectedSrcApp.GetAddress() {
 			transferBeginEvent = event
 			break
@@ -384,20 +382,26 @@ func (s *AppTransferSuite) shouldObserveTransferBeginEvent(
 	}
 	require.NotNil(s.T(), transferBeginEvent)
 
-	evtSrcAddr := GetTrimmedEventAttribute(s.T(), transferBeginEvent, "source_address")
+	evtSrcAddr, hasSrcAddr := s.GetAttributeValue(transferBeginEvent, "source_address")
+	require.True(s.T(), hasSrcAddr)
 	require.Equal(s.T(), expectedSrcApp.GetAddress(), evtSrcAddr)
 
-	evtDstAddr := GetTrimmedEventAttribute(s.T(), transferBeginEvent, "destination_address")
+	evtDstAddr, hasDstAddr := s.GetAttributeValue(transferBeginEvent, "destination_address")
+	require.True(s.T(), hasDstAddr)
 	require.Equal(s.T(), expectedDstAppBech32, evtDstAddr)
 
 	evtSrcApp := new(apptypes.Application)
-	evtSrcAppBz := []byte(GetTrimmedEventAttribute(s.T(), transferBeginEvent, "source_application"))
+	evtSrcAppStr, hasSrcApp := s.GetAttributeValue(transferBeginEvent, "source_application")
+	require.True(s.T(), hasSrcApp)
+
+	evtSrcAppBz := []byte(evtSrcAppStr)
 	err := s.GetApp().GetCodec().UnmarshalJSON(evtSrcAppBz, evtSrcApp)
 	require.NoError(s.T(), err)
 	require.EqualValues(s.T(), expectedSrcApp.GetPendingTransfer(), evtSrcApp.GetPendingTransfer())
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// shouldObserveTransferEndEvent asserts that the transfer end event from
+// expectedSrcAppBech32 to expectedDstApp is observed.
 func (s *AppTransferSuite) shouldObserveTransferEndEvent(
 	expectedDstApp *apptypes.Application,
 	expectedSrcAppBech32 string,
@@ -406,25 +410,22 @@ func (s *AppTransferSuite) shouldObserveTransferEndEvent(
 	transferEndEvent := s.LatestMatchingEvent(events2.NewEventTypeMatchFn(eventTypeURL))
 	require.NotNil(s.T(), transferEndEvent)
 
-	evtSrcAddr := GetTrimmedEventAttribute(s.T(), transferEndEvent, "source_address")
+	evtSrcAddr, hasSrcAddrAttr := s.GetAttributeValue(transferEndEvent, "source_address")
+	require.True(s.T(), hasSrcAddrAttr)
 	require.Equal(s.T(), expectedSrcAppBech32, evtSrcAddr)
 
-	evtDstAddr := GetTrimmedEventAttribute(s.T(), transferEndEvent, "destination_address")
+	evtDstAddr, hasDstAddrAttr := s.GetAttributeValue(transferEndEvent, "destination_address")
+	require.True(s.T(), hasDstAddrAttr)
 	require.Equal(s.T(), expectedDstApp.GetAddress(), evtDstAddr)
 
 	evtDstApp := new(apptypes.Application)
-	evtDstAppBz := []byte(GetTrimmedEventAttribute(s.T(), transferEndEvent, "destination_application"))
+	evtDstAppStr, hasDstAppAttr := s.GetAttributeValue(transferEndEvent, "destination_application")
+	require.True(s.T(), hasDstAppAttr)
+
+	evtDstAppBz := []byte(evtDstAppStr)
 	err := s.GetApp().GetCodec().UnmarshalJSON(evtDstAppBz, evtDstApp)
 	require.NoError(s.T(), err)
 	require.EqualValues(s.T(), expectedDstApp.GetPendingTransfer(), evtDstApp.GetPendingTransfer())
-}
-
-// TODO_IN_THIS_COMMIT: move...
-func GetTrimmedEventAttribute(t *testing.T, event *cosmostypes.Event, key string) string {
-	attr, hasAttr := event.GetAttribute(key)
-	require.Truef(t, hasAttr, "expected %q attribute in %q event", key, event.Type)
-
-	return strings.Trim(attr.GetValue(), "\"")
 }
 
 // TestAppTransferSuite runs the application transfer test suite.

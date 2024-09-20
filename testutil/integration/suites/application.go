@@ -18,10 +18,14 @@ import (
 
 var _ IntegrationSuite = (*ApplicationModuleSuite)(nil)
 
+// ApplicationModuleSuite is a test suite which abstracts common application module
+// functionality. It is intended to be embedded in dependent integration test suites.
 type ApplicationModuleSuite struct {
 	BaseIntegrationSuite
 }
 
+// GetAppQueryClient constructs and returns a query client for the application
+// module of the integration app.
 func (s *ApplicationModuleSuite) GetAppQueryClient() client.ApplicationQueryClient {
 	deps := depinject.Supply(s.GetApp().QueryHelper())
 	appQueryClient, err := query.NewApplicationQuerier(deps)
@@ -30,7 +34,8 @@ func (s *ApplicationModuleSuite) GetAppQueryClient() client.ApplicationQueryClie
 	return appQueryClient
 }
 
-// TODO_IN_THIS_COMMIT: godoc
+// StakeApp sends a MsgStakeApplication with the given bech32 address,
+// stake amount, and service IDs.
 func (s *ApplicationModuleSuite) StakeApp(
 	t *testing.T,
 	bech32 string,
@@ -56,16 +61,17 @@ func (s *ApplicationModuleSuite) StakeApp(
 	return txMsgRes.(*apptypes.MsgStakeApplicationResponse)
 }
 
-// TODO_IN_THIS_COMMIT: godoc
+// Transfer sends a MsgApplicationTransfer to begin an application transfer
+// from srcBech32 to dstDst32.
 func (s *ApplicationModuleSuite) Transfer(
 	t *testing.T,
-	srcAddr, dstAddr cosmostypes.AccAddress,
+	srcBech32, dstBech32 string,
 ) *apptypes.MsgTransferApplicationResponse {
 	t.Helper()
 
 	msgTransferApp := &apptypes.MsgTransferApplication{
-		SourceAddress:      srcAddr.String(),
-		DestinationAddress: dstAddr.String(),
+		SourceAddress:      srcBech32,
+		DestinationAddress: dstBech32,
 	}
 
 	txMsgRes, err := s.GetApp().RunMsg(t, msgTransferApp)
@@ -74,6 +80,9 @@ func (s *ApplicationModuleSuite) Transfer(
 	return txMsgRes.(*apptypes.MsgTransferApplicationResponse)
 }
 
+// MultiTransfer sends multiple MsgTransferApplication messages to transfer
+// applications from the source to the destination addresses specified in the
+// srcToDstBech32Map. All transfer messages are included in a single transaction.
 func (s *ApplicationModuleSuite) MultiTransfer(
 	t *testing.T,
 	srcToDstBech32Map map[string]string,
@@ -100,7 +109,8 @@ func (s *ApplicationModuleSuite) MultiTransfer(
 	return transferResps
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// DelegateAppToGateway sends a MsgDelegateToGateway to delegate the application
+// with the given bech32 address to the gateway with the given bech32 address.
 func (s *ApplicationModuleSuite) DelegateAppToGateway(
 	t *testing.T,
 	appBech32, gatewayBech32 string,
