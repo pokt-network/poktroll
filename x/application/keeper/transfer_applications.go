@@ -48,7 +48,8 @@ func (k Keeper) EndBlockerTransferApplication(ctx context.Context) error {
 			continue
 		}
 
-		// Transfer the stake of the source application to the destination application.
+		// Transfer the stake of the source application to the destination application and
+		// merge their gateway delegations and service configs.
 		if transferErr := k.transferApplication(ctx, srcApp); transferErr != nil {
 			logger.Warn(transferErr.Error())
 
