@@ -79,10 +79,7 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 )
 
-require (
-	github.com/jhump/protoreflect v1.16.0
-	gotest.tools v2.2.0+incompatible
-)
+require github.com/jhump/protoreflect v1.16.0
 
 require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.34.2-20240508200655-46a4cf4ba109.2 // indirect
