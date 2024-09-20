@@ -65,12 +65,17 @@ func (k Keeper) UpdateRelayMiningDifficulty(
 		prevRelaysEma := prevDifficulty.NumRelaysEma
 		newRelaysEma := computeEma(alpha, prevRelaysEma, numRelays)
 
-		// DEV_NOTE:
-		// prevDifficulty.TargetHash
-
-		// 10 / 100 -> scale down
-		// 10 / 50 -> scale down
-
+		// CRITICAL_DEV_NOTE: We changed this code to pass in  "DefaultRelayDifficultyTargetHash" instead of "prevDifficulty.TargetHash"
+		// to "ComputeNewDifficultyTargetHash" because we used to have 2 moving variables:
+		// 		1. Input difficulty
+		// 		2. Relays EMA
+		// However, since the "TargetNumRelays" remained constant, the following case would keep scaling down the difficulty:
+		// 		- newRelaysEma = 100 -> scaled by 10 / 100 -> scaled down by 0.1
+		// 		- newRelaysEma = 50 -> scaled by 10 / 50 -> scaled down by 0.2
+		// 		- newRelaysEma = 20 -> scaled by 10 / 20 -> scaled down by 0.5
+		// We kept scaling down even though numRelaysEma was decreasing.
+		// To avoid continuing to increase the difficulty (i.e. scaling down), the
+		// relative starting difficulty has to be kept constant.
 		difficultyHash := protocol.ComputeNewDifficultyTargetHash(prooftypes.DefaultRelayDifficultyTargetHash, TargetNumRelays, newRelaysEma)
 		newDifficulty := types.RelayMiningDifficulty{
 			ServiceId:    serviceId,

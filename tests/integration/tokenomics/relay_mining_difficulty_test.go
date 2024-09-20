@@ -96,7 +96,7 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 
 	// TODO_TECHDEBT: Aiming to get PR #771 over the finish line and this is a hacky
 	// workaround: https://github.com/pokt-network/poktroll/pull/771#issuecomment-2364071636
-	time.Sleep(1 * time.Second)
+	time.Sleep(3 * time.Second)
 
 	// Check that the expected events are emitted
 	events := sdkCtx.EventManager().Events()
