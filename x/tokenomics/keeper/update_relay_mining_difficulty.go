@@ -64,7 +64,14 @@ func (k Keeper) UpdateRelayMiningDifficulty(
 		// Compute the updated EMA of the number of relays.
 		prevRelaysEma := prevDifficulty.NumRelaysEma
 		newRelaysEma := computeEma(alpha, prevRelaysEma, numRelays)
-		difficultyHash := protocol.ComputeNewDifficultyTargetHash(prevDifficulty.TargetHash, TargetNumRelays, newRelaysEma)
+
+		// DEV_NOTE:
+		// prevDifficulty.TargetHash
+
+		// 10 / 100 -> scale down
+		// 10 / 50 -> scale down
+
+		difficultyHash := protocol.ComputeNewDifficultyTargetHash(prooftypes.DefaultRelayDifficultyTargetHash, TargetNumRelays, newRelaysEma)
 		newDifficulty := types.RelayMiningDifficulty{
 			ServiceId:    serviceId,
 			BlockHeight:  sdkCtx.BlockHeight(),

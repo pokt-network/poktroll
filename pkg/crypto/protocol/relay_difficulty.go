@@ -33,44 +33,59 @@ func IsRelayVolumeApplicable(relayHash, targetHash []byte) bool {
 // on the target number of relays we want the network to mine and the new EMA of
 // the number of relays.
 func ComputeNewDifficultyTargetHash(prevTargetHash []byte, targetNumRelays, newRelaysEma uint64) []byte {
-	// Calculate the proportion of target relays relative to the EMA of actual volume applicable relays
 	// TODO_MAINNET(@red-0ne): Use a language agnostic float implementation to ensure
 	// deterministic results and avoid loss of precision. Specifically, we need to
 	// use big.Rat, delay any computation.
-	ratio := new(big.Float).Quo(
+
+	// Calculate the proportion of target relays relative to the EMA of actual volume applicable relays
+	difficultyScalingRatio := new(big.Float).Quo(
 		new(big.Float).SetUint64(targetNumRelays),
 		new(big.Float).SetUint64(newRelaysEma),
 	)
+	// If difficultyScalingRatio < 1 -> scale down -> increase difficulty to mine relays
+	// If difficultyScalingRatio > 1 -> scale up -> decrease difficulty to mine relays
+	if difficultyScalingRatio.Cmp(big.NewFloat(1)) == 0 {
+		return prevTargetHash
+	}
 
 	// You can't scale the base relay difficulty hash below BaseRelayDifficultyHashBz
-	isIncreasingDifficulty := ratio.Cmp(big.NewFloat(1)) < 1
-	if bytes.Equal(prevTargetHash, BaseRelayDifficultyHashBz) && !isIncreasingDifficulty {
+	isDecreasingDifficulty := difficultyScalingRatio.Cmp(big.NewFloat(1)) == 1
+	if isDecreasingDifficulty && bytes.Equal(prevTargetHash, BaseRelayDifficultyHashBz) {
+		return BaseRelayDifficultyHashBz
+	}
+
+	scaledDifficultyHash := ScaleRelayDifficultyHash(prevTargetHash, difficultyScalingRatio)
+	if len(scaledDifficultyHash) > len(BaseRelayDifficultyHashBz) {
 		return BaseRelayDifficultyHashBz
 	}
 
 	// Compute the new target hash by scaling the previous target hash based on the ratio
-	return ScaleRelayDifficultyHash(prevTargetHash, ratio)
+	return ScaleRelayDifficultyHash(prevTargetHash, difficultyScalingRatio)
 }
 
-// ScaleRelayDifficultyHash scales the current hash based on the given ratio.
-func ScaleRelayDifficultyHash(currHashBz []byte, ratio *big.Float) []byte {
-	// Convert currentHash to a big.Float to minimize precision loss.
-	// TODO_POST_MAINNET: Use a language agnostic float implementation or arithmetic library
+// ScaleRelayDifficultyHash scales the provided hash based on the given ratio.
+// If the ratio is less than 1, the hash will be scaled down.
+// DEV_NOTE: Only exposed publicly for testing purposes.
+func ScaleRelayDifficultyHash(difficultyHashBz []byte, ratio *big.Float) []byte {
+	// Convert difficultyHashBz to a big.Float to minimize precision loss.
+	// TODO_MAINNET(@red-one): Use a language agnostic float implementation or arithmetic library
 	// to ensure deterministic results across different language implementations of the
 	// protocol.
-	currHashInt := bytesToBigInt(currHashBz)
-	currHashFloat := new(big.Float).SetInt(currHashInt)
+	prevHashInt := bytesToBigInt(difficultyHashBz)
+	prevHashFloat := new(big.Float).SetInt(prevHashInt)
 
 	// Scale the current by multiplying it by the ratio.
 	// TODO(@red-0ne): Ensure that the precision lost here doesn't cause any
-	// major issues
-	scaledHashFloat := new(big.Float).Mul(currHashFloat, ratio)
+	// major issues by using big.Rat.
+	scaledHashFloat := new(big.Float).Mul(prevHashFloat, ratio)
 	scaledHashInt, _ := scaledHashFloat.Int(nil)
+	// scaledHashBz := make([]byte, len(BaseRelayDifficultyHashBz))
+	// scaledHashInt.FillBytes(scaledHashBz)
 	scaledHashBz := scaledHashInt.Bytes()
 
-	// Ensure the scaled current hash has the same length as the default current hash.
-	if len(scaledHashBz) < len(currHashBz) {
-		paddedHash := make([]byte, len(currHashBz))
+	// Ensure the scaled hash is padded to (at least) the same length as the provided hash.
+	if len(scaledHashBz) < len(difficultyHashBz) {
+		paddedHash := make([]byte, len(difficultyHashBz))
 		copy(paddedHash[len(paddedHash)-len(scaledHashBz):], scaledHashBz)
 		return paddedHash
 	}

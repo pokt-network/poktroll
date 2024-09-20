@@ -9,40 +9,39 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"gotest.tools/assert"
 )
 
 func TestRelayDifficulty_GetRelayDifficultyMultiplier(t *testing.T) {
 	tests := []struct {
 		desc               string
-		hashHex            string
+		relayDifficultyHex string
 		expectedDifficulty string
 	}{
 		{
 			desc:               "Difficulty 1",
-			hashHex:            "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			relayDifficultyHex: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", // all relays are payable
 			expectedDifficulty: "1",
 		},
 		{
 			desc:               "Difficulty 2",
-			hashHex:            "7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			relayDifficultyHex: "7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", // almost all relays are payable
 			expectedDifficulty: "2",
 		},
 		{
 			desc:               "Difficulty 4",
-			hashHex:            "3fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			relayDifficultyHex: "3fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", // slightly less, but almost all relays are payable
 			expectedDifficulty: "4",
 		},
 		{
 			desc:               "Highest difficulty",
-			hashHex:            "0000000000000000000000000000000000000000000000000000000000000001",
+			relayDifficultyHex: "0000000000000000000000000000000000000000000000000000000000000001", // relays are almost always not payable
 			expectedDifficulty: "115792089237316195423570985008687907853269984665640564039457584007913129639935",
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			hashBytes, err := hex.DecodeString(test.hashHex)
+			hashBytes, err := hex.DecodeString(test.relayDifficultyHex)
 			if err != nil {
 				t.Fatalf("failed to decode hash: %v", err)
 			}
@@ -77,38 +76,38 @@ func TestRelayDifficulty_GetRelayDifficultyMultiplier(t *testing.T) {
 func TestRelayDifficulty_IsRelayVolumeApplicable(t *testing.T) {
 	tests := []struct {
 		desc                     string
-		relayHashHex             string
-		targetHashHex            string
+		relayHashHex             string // The hex representation of the relay hash
+		relayDifficultyHashHex   string // The hex representation of the relay difficulty hash
 		expectedVolumeApplicable bool
 	}{
 		{
 			desc:                     "Applicable: relayHash << targetHash",
 			relayHashHex:             "000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-			targetHashHex:            "00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			relayDifficultyHashHex:   "00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
 			expectedVolumeApplicable: true,
 		},
 		{
 			desc:                     "Applicable: relayHash < targetHash",
 			relayHashHex:             "00efffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-			targetHashHex:            "00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			relayDifficultyHashHex:   "00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
 			expectedVolumeApplicable: true,
 		},
 		{
 			desc:                     "Not Applicable: relayHash = targetHash",
 			relayHashHex:             "00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-			targetHashHex:            "00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			relayDifficultyHashHex:   "00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
 			expectedVolumeApplicable: false,
 		},
 		{
 			desc:                     "Not applicable: relayHash > targetHash",
 			relayHashHex:             "0effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-			targetHashHex:            "00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			relayDifficultyHashHex:   "00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
 			expectedVolumeApplicable: false,
 		},
 		{
 			desc:                     "Not applicable: relayHash >> targetHash",
 			relayHashHex:             "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-			targetHashHex:            "00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			relayDifficultyHashHex:   "00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
 			expectedVolumeApplicable: false,
 		},
 	}
@@ -118,7 +117,7 @@ func TestRelayDifficulty_IsRelayVolumeApplicable(t *testing.T) {
 			relayHash, err := hex.DecodeString(test.relayHashHex)
 			require.NoError(t, err)
 
-			targetHash, err := hex.DecodeString(test.targetHashHex)
+			targetHash, err := hex.DecodeString(test.relayDifficultyHashHex)
 			require.NoError(t, err)
 
 			require.Equal(t, test.expectedVolumeApplicable, IsRelayVolumeApplicable(relayHash, targetHash))
@@ -197,87 +196,143 @@ func TestRelayDifficulty_ComputeNewDifficultyHash(t *testing.T) {
 func TestRelayDifficulty_ScaleDifficultyTargetHash(t *testing.T) {
 	tests := []struct {
 		desc                  string
-		currDifficultyHashHex string
-		ratio                 float64
-		expectedHashHex       string
+		prevDifficultyHashHex string
+		scalingRatio          float64
+
+		expectedScaledDifficultyHashHex string // scaled but unbounded
+		expectedNewDifficultyHashHex    string // uses the scaled result but bounded
 	}{
 		{
-			desc:                  "Scale by 0.5",
-			currDifficultyHashHex: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-			ratio:                 0.5,
-			expectedHashHex:       "7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			desc:                  "Scale by 1 (same number of relays)",
+			prevDifficultyHashHex: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			scalingRatio:          1,
+
+			// Scaled hash == expected hash
+			expectedScaledDifficultyHashHex: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			expectedNewDifficultyHashHex:    "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+		},
+
+		// Scale down and up by half
+		{
+			desc:                  "Scale by 0.5 (allow less relays)",
+			prevDifficultyHashHex: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			scalingRatio:          0.5,
+
+			// Scaled hash == expected hash
+			expectedScaledDifficultyHashHex: "7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			expectedNewDifficultyHashHex:    "7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
 		},
 		{
-			desc:                  "Scale by 2",
-			currDifficultyHashHex: "7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-			ratio:                 2,
-			expectedHashHex:       "fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe",
+			desc:                  "Scale by 2 (allow more relays)",
+			prevDifficultyHashHex: "7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			scalingRatio:          2,
+
+			// Scaled hash == expected hash
+			expectedScaledDifficultyHashHex: "fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe",
+			expectedNewDifficultyHashHex:    "fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe",
+		},
+
+		// Scale down and up by 4
+		{
+			desc:                  "Scale by 0.25 (allow less relays)",
+			prevDifficultyHashHex: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			scalingRatio:          0.25,
+
+			// Scaled hash == expected hash
+			expectedScaledDifficultyHashHex: "3fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			expectedNewDifficultyHashHex:    "3fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
 		},
 		{
-			desc:                  "Scale by 0.25",
-			currDifficultyHashHex: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-			ratio:                 0.25,
-			expectedHashHex:       "3fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			desc:                  "Scale by 4 (allow more relays)",
+			prevDifficultyHashHex: "3fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			scalingRatio:          4,
+
+			// Scaled hash == expected hash
+			expectedScaledDifficultyHashHex: "fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc",
+			expectedNewDifficultyHashHex:    "fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc",
+		},
+
+		// Scale down and up by 10
+		{
+			desc:                  "Scale by 0.1 (allow less relays)",
+			prevDifficultyHashHex: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			scalingRatio:          0.1,
+
+			// Scaled hash != expected hash
+			expectedScaledDifficultyHashHex: "19999999999999ffffffffffffffffffffffffffffffffffffffffffffffffff",
+			expectedNewDifficultyHashHex:    "19999999999999999fffffffffffffffffffffffffffffffffffffffffffffff",
 		},
 		{
-			desc:                  "Scale by 4",
-			currDifficultyHashHex: "3fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-			ratio:                 4,
-			expectedHashHex:       "fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc",
+			desc:                  "Scale by 10 (allow more relays)",
+			prevDifficultyHashHex: "1999999999999999999999999999999999999999999999999999999999999999",
+			scalingRatio:          10,
+
+			// Scaled hash == expected hash
+			expectedScaledDifficultyHashHex: "fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff8",
+			expectedNewDifficultyHashHex:    "fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff8",
+		},
+
+		// Scale down and up by 10e-12 and 10e12
+		{
+			desc:                  "Scale by 10e-12 (allow less relays)",
+			prevDifficultyHashHex: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			scalingRatio:          10e-12,
+
+			// Scaled hash != expected hash
+			expectedScaledDifficultyHashHex: "000000000afebff0bcb24a7fffffffffffffffffffffffffffffffffffffffff",
+			expectedNewDifficultyHashHex:    "000000000afebff0bcb24aafefffffffffffffffffffffffffffffffffffffff",
 		},
 		{
-			desc:                  "Scale by 1 (no change)",
-			currDifficultyHashHex: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-			ratio:                 1,
-			expectedHashHex:       "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-		},
-		{
-			desc:                  "Scale by 0.1",
-			currDifficultyHashHex: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-			ratio:                 0.1,
-			expectedHashHex:       "19999999999999ffffffffffffffffffffffffffffffffffffffffffffffffff",
-		},
-		{
-			desc:                  "Scale by 10",
-			currDifficultyHashHex: "1999999999999999999999999999999999999999999999999999999999999999",
-			ratio:                 10,
-			expectedHashHex:       "fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff8",
-		},
-		{
-			desc:                  "Scale by 10e-12",
-			currDifficultyHashHex: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-			ratio:                 10e-12,
-			expectedHashHex:       "000000000afebff0bcb24a7fffffffffffffffffffffffffffffffffffffffff",
-		},
-		{
-			desc:                  "Scale by 10e12",
-			currDifficultyHashHex: "000000000afebff0bcb24a7fffffffffffffffffffffffffffffffffffffffff",
-			ratio:                 10e12,
-			expectedHashHex:       "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-		},
-		{
-			desc:                  "Maxes out at BaseRelayDifficulty",
-			currDifficultyHashHex: "3fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-			ratio:                 10,
-			expectedHashHex:       "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			desc:                  "Scale by 10e12 (allow more relays)",
+			prevDifficultyHashHex: "000000000afebff0bcb24a7fffffffffffffffffffffffffffffffffffffffff",
+			scalingRatio:          10e12,
+
+			// Scaled hash != expected hash
+			expectedScaledDifficultyHashHex: "63fffffffffffe4c079b8ffffffffffffffffffffffffffffffffff80000000000",
+			expectedNewDifficultyHashHex:    "0001357c299a88ea715eae88eddcd3879fffffffffffffffffffffffffe00000",
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			currHashBz, targetErr := hex.DecodeString(test.currDifficultyHashHex)
-			require.NoError(t, targetErr)
+			currHashBz, err := hex.DecodeString(test.prevDifficultyHashHex)
+			require.NoError(t, err)
 
-			expectedHashBz, expectedErr := hex.DecodeString(test.expectedHashHex)
-			require.NoError(t, expectedErr)
+			// Verify the scaled difficulty hash (raw, unbounded and not used in the protocol)
+			expectedScaledHashBz, err := hex.DecodeString(test.expectedScaledDifficultyHashHex)
+			require.NoError(t, err)
 
-			ratio := new(big.Float).SetFloat64(test.ratio)
+			ratio := new(big.Float).SetFloat64(test.scalingRatio)
 			scaledDifficultyHash := ScaleRelayDifficultyHash(currHashBz, ratio)
-			assert.Equal(t, len(scaledDifficultyHash), len(currHashBz))
 
-			// Ensure the scaled difficulty hash equals the one provided
-			require.Zero(t, bytes.Compare(expectedHashBz, scaledDifficultyHash),
-				"expected difficulty hash %x, but got %x", expectedHashBz, scaledDifficultyHash)
+			isScaledHashAsExpected := bytes.Equal(expectedScaledHashBz, scaledDifficultyHash)
+			require.True(t, isScaledHashAsExpected, "expected scaled (unbounded) difficulty hash %x, but got %x", expectedScaledHashBz, scaledDifficultyHash)
+
+			// Verify the new difficulty hash (bounded, and used in the protocol)
+			expectedNewHashBz, err := hex.DecodeString(test.expectedNewDifficultyHashHex)
+			require.NoError(t, err)
+
+			// Multiplying by 10e12 to avoid precision loss
+			targetNumRelays := uint64(test.scalingRatio * 10e12)
+			newRelaysEma := uint64(1 * 10e12)
+
+			newDifficultyHash := ComputeNewDifficultyTargetHash(currHashBz, targetNumRelays, newRelaysEma)
+			isNewHashAsExpected := bytes.Equal(expectedNewHashBz, newDifficultyHash)
+			require.True(t, isNewHashAsExpected, "expected new (bounded) difficulty hash %x, but got %x", expectedNewHashBz, newDifficultyHash)
+
+			// If the scaled (raw) difficulty does not equal the new (bounded) difficulty, then one of
+			// two things happened:
+			// 1. We scaled the difficulty down so much (ratio < 1) and the new difficulty was padded appropriately
+			// 2. We scaled the difficulty up so much (ratio > 1) and the new difficulty was truncated appropriately
+			if test.expectedNewDifficultyHashHex != test.expectedScaledDifficultyHashHex {
+				require.NotEqual(t, test.scalingRatio, 1, "should not reach this code path if scaling ratio is 1")
+				// New difficulty was padded
+				if test.scalingRatio < 1 {
+					require.Equal(t, len(scaledDifficultyHash), len(newDifficultyHash), "scaled down difficulty should have been padded")
+				} else if test.scalingRatio > 1 {
+					require.Greater(t, len(scaledDifficultyHash), len(newDifficultyHash), "scaled up difficulty should have been truncated")
+				}
+			}
 		})
 	}
 }

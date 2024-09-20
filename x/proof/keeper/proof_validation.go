@@ -41,6 +41,8 @@ import (
 )
 
 // EnsureValidProof validates the proof submitted by the supplier is correct with
+// respect to an on-chain claim.
+//
 // This function should be called during session settlement (i.e. EndBlocker)
 // rather than during proof submission (i.e. SubmitProof) because:
 //  1. RPC requests should be quick, lightweight and only do basic validation
