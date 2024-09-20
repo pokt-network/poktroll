@@ -488,7 +488,7 @@ and ensure they have enough funds to cover the submission fees for `Proofs`.
 
 The following command can be used to check the balance of a `Supplier` operator:
 ```bash
-poktrolld query bank balance <supplier_operator_address> --node $(POCKET_NODE) upokt
+poktrolld query bank balance <supplier_operator_address> upokt
 
 balance:
   amount: "109999000"
@@ -506,7 +506,7 @@ anticipate submitting a higher volume of `Proofs`.
 
 The following command can be used to check the current `proof_submission_fee`:
 ```bash
-poktrolld query proof params --node $(POCKET_NODE)
+poktrolld query proof params
 
 ...
   proof_submission_fee:
