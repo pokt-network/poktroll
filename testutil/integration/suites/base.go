@@ -34,11 +34,11 @@ type BaseIntegrationSuite struct {
 }
 
 // NewApp constructs a new integration app and sets it on the suite.
-func (s *BaseIntegrationSuite) NewApp(t *testing.T, opts ...integration.IntegrationAppOption) *integration.App {
+func (s *BaseIntegrationSuite) NewApp(t *testing.T, opts ...integration.IntegrationAppOptionFn) *integration.App {
 	t.Helper()
 
 	defaultIntegrationAppOption := integration.WithInitChainerModuleFn(newInitChainerCollectModuleNamesFn(s))
-	opts = append([]integration.IntegrationAppOption{defaultIntegrationAppOption}, opts...)
+	opts = append([]integration.IntegrationAppOptionFn{defaultIntegrationAppOption}, opts...)
 	s.app = integration.NewCompleteIntegrationApp(t, opts...)
 	return s.app
 }
@@ -100,9 +100,10 @@ func (s *BaseIntegrationSuite) GetBankQueryClient() banktypes.QueryClient {
 	return banktypes.NewQueryClient(s.GetApp().QueryHelper())
 }
 
-// FilterLatestEvents returns the most recent events in the event manager that
-// match the given matchFn.
-func (s *BaseIntegrationSuite) FilterLatestEvents(
+// FilterEvents returns the events from the event manager which match the given
+// matchFn. Events are returned in reverse order, i.e. the most recent event is
+// first.
+func (s *BaseIntegrationSuite) FilterEvents(
 	matchFn func(*cosmostypes.Event) bool,
 ) (matchedEvents []*cosmostypes.Event) {
 	return s.filterEvents(matchFn, false)
@@ -120,21 +121,6 @@ func (s *BaseIntegrationSuite) LatestMatchingEvent(
 	}
 
 	return filteredEvents[0]
-}
-
-// GetAttributeValue returns the value of the attribute with the given key in the
-// event. The returned attribute value is trimmed of any quotation marks. If the
-// attribute does not exist, hasAttr is false.
-func (s *BaseIntegrationSuite) GetAttributeValue(
-	event *cosmostypes.Event,
-	key string,
-) (value string, hasAttr bool) {
-	attr, hasAttr := event.GetAttribute(key)
-	if !hasAttr {
-		return "", false
-	}
-
-	return strings.Trim(attr.GetValue(), "\""), true
 }
 
 // filterEvents returns the events from the event manager that match the given matchFn.

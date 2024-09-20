@@ -15,7 +15,7 @@ import (
 // exercise an integration.App.
 type IntegrationSuite interface {
 	// NewApp constructs a new integration app and sets it on the suite.
-	NewApp(*testing.T, ...integration.IntegrationAppOption) *integration.App
+	NewApp(*testing.T, ...integration.IntegrationAppOptionFn) *integration.App
 	// SetApp sets the integration app on the suite.
 	SetApp(*integration.App)
 	// GetApp returns the integration app from the suite.
@@ -37,12 +37,8 @@ type IntegrationSuite interface {
 
 	// FilterLatestEvents returns the most recent events in the event manager that
 	// match the given matchFn.
-	FilterLatestEvents(matchFn func(*cosmostypes.Event) bool) []*cosmostypes.Event
+	FilterEvents(matchFn func(*cosmostypes.Event) bool) []*cosmostypes.Event
 	// LatestMatchingEvent returns the most recent event in the event manager that
 	// matches the given matchFn.
 	LatestMatchingEvent(matchFn func(*cosmostypes.Event) bool) *cosmostypes.Event
-	// GetAttributeValue returns the value of the attribute with the given key in the
-	// event. The returned attribute value is trimmed of any quotation marks. If the
-	// attribute does not exist, hasAttr is false.
-	GetAttributeValue(event *cosmostypes.Event, key string) (value string, hasAttr bool)
 }
