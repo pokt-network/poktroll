@@ -28,7 +28,6 @@ import (
 	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/api/poktroll/tokenomics"
 	"github.com/pokt-network/poktroll/load-testing/config"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/events"
@@ -646,7 +645,7 @@ func (s *relaysSuite) addPendingStakeApplicationMsg(application *accountInfo) {
 	application.addPendingMsg(apptypes.NewMsgStakeApplication(
 		application.address,
 		application.amountToStake,
-		[]*sharedtypes.ApplicationServiceConfig{{Service: testedService}},
+		[]*sharedtypes.ApplicationServiceConfig{{ServiceId: testedServiceId}},
 	))
 }
 
@@ -793,7 +792,7 @@ func (s *relaysSuite) addPendingStakeSupplierMsg(supplier *accountInfo) {
 		supplier.amountToStake,
 		[]*sharedtypes.SupplierServiceConfig{
 			{
-				Service: testedService,
+				ServiceId: testedServiceId,
 				Endpoints: []*sharedtypes.SupplierEndpoint{
 					{
 						Url:     s.suppliersUrls[supplier.address],
@@ -1046,7 +1045,7 @@ func (s *relaysSuite) sendRelay(iteration uint64, relayPayload string) (appAddre
 	gatewayUrl.RawQuery = query.Encode()
 
 	// Use the pre-defined service ID that all application and suppliers are staking for.
-	gatewayUrl.Path = testedService.Id
+	gatewayUrl.Path = testedServiceId
 
 	// TODO_MAINNET: Capture the relay response to check for failing relays.
 	// Send the relay request within a goroutine to avoid blocking the test batches
@@ -1185,9 +1184,9 @@ func (s *relaysSuite) getRelayCost() int64 {
 	// Set up the tokenomics client.
 	flagSet := testclient.NewLocalnetFlagSet(s)
 	clientCtx := testclient.NewLocalnetClientCtx(s, flagSet)
-	tokenomicsClient := tokenomics.NewQueryClient(clientCtx)
+	sharedClient := sharedtypes.NewQueryClient(clientCtx)
 
-	res, err := tokenomicsClient.Params(s.ctx, &tokenomics.QueryParamsRequest{})
+	res, err := sharedClient.Params(s.ctx, &sharedtypes.QueryParamsRequest{})
 	require.NoError(s, err)
 
 	return int64(res.Params.ComputeUnitsToTokensMultiplier)

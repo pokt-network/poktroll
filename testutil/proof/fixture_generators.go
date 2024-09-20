@@ -9,11 +9,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
-	"github.com/pokt-network/poktroll/testutil/sample"
 	testsession "github.com/pokt-network/poktroll/testutil/session"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 const (
@@ -29,12 +27,8 @@ func BaseClaim(serviceId, appAddr, supplierOperatorAddr string, numRelays uint64
 	return prooftypes.Claim{
 		SupplierOperatorAddress: supplierOperatorAddr,
 		SessionHeader: &sessiontypes.SessionHeader{
-			ApplicationAddress: appAddr,
-			Service: &sharedtypes.Service{
-				Id:                   serviceId,
-				ComputeUnitsPerRelay: computeUnitsPerRelay,
-				OwnerAddress:         sample.AccAddress(), // This may need to be an input param in the future.
-			},
+			ApplicationAddress:      appAddr,
+			ServiceId:               serviceId,
 			SessionId:               "session_id",
 			SessionStartBlockHeight: 1,
 			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(1),

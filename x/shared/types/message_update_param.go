@@ -54,7 +54,8 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 		ParamProofWindowOpenOffsetBlocks,
 		ParamProofWindowCloseOffsetBlocks,
 		ParamSupplierUnbondingPeriodSessions,
-		ParamApplicationUnbondingPeriodSessions:
+		ParamApplicationUnbondingPeriodSessions,
+		ParamComputeUnitsToTokensMultiplier:
 		return msg.paramTypeIsInt64()
 	default:
 		return ErrSharedParamNameInvalid.Wrapf("unsupported param %q", msg.Name)

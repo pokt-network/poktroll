@@ -47,9 +47,7 @@ func NewTestSupplierQueryClient(
 
 			for serviceId, providedService := range supplierProvidedServices {
 				serviceConfig := &sharedtypes.SupplierServiceConfig{
-					Service: &sharedtypes.Service{
-						Id: serviceId,
-					},
+					ServiceId: serviceId,
 					Endpoints: []*sharedtypes.SupplierEndpoint{},
 				}
 

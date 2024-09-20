@@ -83,9 +83,9 @@ var (
 	supplierStakeAmount sdk.Coin
 	// gatewayStakeAmount is the amount of tokens to stake by gateways.
 	gatewayStakeAmount sdk.Coin
-	// testedService is the service ID for that all applications and suppliers will
+	// testedServiceId is the service ID for that all applications and suppliers will
 	// be using in this test.
-	testedService *sharedtypes.Service
+	testedServiceId string
 	// blockDuration is the duration of a block in seconds.
 	// NB: This value SHOULD be equal to `timeout_propose` in `config.yml`.
 	blockDuration = int64(2)
@@ -312,7 +312,7 @@ func (s *relaysSuite) LocalnetIsRunning() {
 	loadTestParams := s.initializeLoadTestParams()
 
 	// Set the tested service ID from the load test manifest.
-	testedService = &sharedtypes.Service{Id: loadTestParams.ServiceId}
+	testedServiceId = loadTestParams.ServiceId
 
 	// If the test is run on a non-ephemeral chain, set the CometLocalTCPURL and
 	// CometLocalWebsocketURL to the TestNetNode URL. These variables are used

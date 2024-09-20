@@ -163,7 +163,7 @@ func newTestClaim(
 		SupplierOperatorAddress: supplierOperatorAddr,
 		SessionHeader: &sessiontypes.SessionHeader{
 			ApplicationAddress:      appAddr,
-			Service:                 &sharedtypes.Service{Id: testServiceId},
+			ServiceId:               testServiceId,
 			SessionId:               sessionId,
 			SessionStartBlockHeight: sessionStartHeight,
 			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(sessionStartHeight),

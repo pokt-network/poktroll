@@ -549,9 +549,9 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 	)
 
 	tests := []struct {
-		desc        string
-		newProofMsg func(t *testing.T) *prooftypes.MsgSubmitProof
-		expectedErr error
+		desc                            string
+		newProofMsg                     func(t *testing.T) *prooftypes.MsgSubmitProof
+		msgSubmitProofToExpectedErrorFn func(*prooftypes.MsgSubmitProof) error
 	}{
 		{
 			desc: "proof service ID cannot be empty",
@@ -568,14 +568,16 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 					expectedMerkleProofPath,
 				)
 			},
-			expectedErr: status.Error(
-				codes.InvalidArgument,
-				prooftypes.ErrProofInvalidSessionId.Wrapf(
-					"session ID does not match on-chain session ID; expected %q, got %q",
-					validSessionHeader.GetSessionId(),
-					"",
-				).Error(),
-			),
+			msgSubmitProofToExpectedErrorFn: func(msgSubmitProof *prooftypes.MsgSubmitProof) error {
+				sessionError := sessiontypes.ErrSessionInvalidSessionId.Wrapf(
+					"%q",
+					msgSubmitProof.GetSessionHeader().GetSessionId(),
+				)
+				return status.Error(
+					codes.InvalidArgument,
+					prooftypes.ErrProofInvalidSessionHeader.Wrapf("%s", sessionError).Error(),
+				)
+			},
 		},
 		{
 			desc: "merkle proof cannot be empty",
@@ -592,12 +594,14 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 				proof.Proof = []byte{}
 				return proof
 			},
-			expectedErr: status.Error(
-				codes.InvalidArgument,
-				prooftypes.ErrProofInvalidProof.Wrap(
-					"proof cannot be empty",
-				).Error(),
-			),
+			msgSubmitProofToExpectedErrorFn: func(_ *prooftypes.MsgSubmitProof) error {
+				return status.Error(
+					codes.InvalidArgument,
+					prooftypes.ErrProofInvalidProof.Wrap(
+						"proof cannot be empty",
+					).Error(),
+				)
+			},
 		},
 		{
 			desc: "proof session ID must match on-chain session ID",
@@ -610,14 +614,16 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 					expectedMerkleProofPath,
 				)
 			},
-			expectedErr: status.Error(
-				codes.InvalidArgument,
-				prooftypes.ErrProofInvalidSessionId.Wrapf(
-					"session ID does not match on-chain session ID; expected %q, got %q",
-					validSessionHeader.GetSessionId(),
-					wrongSessionIdHeader.GetSessionId(),
-				).Error(),
-			),
+			msgSubmitProofToExpectedErrorFn: func(msgSubmitProof *prooftypes.MsgSubmitProof) error {
+				return status.Error(
+					codes.InvalidArgument,
+					prooftypes.ErrProofInvalidSessionId.Wrapf(
+						"session ID does not match on-chain session ID; expected %q, got %q",
+						validSessionHeader.GetSessionId(),
+						msgSubmitProof.GetSessionHeader().GetSessionId(),
+					).Error(),
+				)
+			},
 		},
 		{
 			desc: "proof supplier must be in on-chain session",
@@ -630,28 +636,30 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 					expectedMerkleProofPath,
 				)
 			},
-			expectedErr: status.Error(
-				codes.InvalidArgument,
-				prooftypes.ErrProofNotFound.Wrapf(
-					"supplier operator address %q not found in session ID %q",
-					wrongSupplierOperatorAddr,
-					validSessionHeader.GetSessionId(),
-				).Error(),
-			),
+			msgSubmitProofToExpectedErrorFn: func(msgSubmitProof *prooftypes.MsgSubmitProof) error {
+				return status.Error(
+					codes.InvalidArgument,
+					prooftypes.ErrProofNotFound.Wrapf(
+						"supplier operator address %q not found in session ID %q",
+						wrongSupplierOperatorAddr,
+						msgSubmitProof.GetSessionHeader().GetSessionId(),
+					).Error(),
+				)
+			},
 		},
 	}
 
 	// Submit the corresponding proof.
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			proofMsg := test.newProofMsg(t)
+			msgSubmitProof := test.newProofMsg(t)
 
 			// Advance the block height to the proof path seed height.
 			earliestSupplierProofCommitHeight := shared.GetEarliestSupplierProofCommitHeight(
 				&sharedParams,
-				proofMsg.GetSessionHeader().GetSessionEndBlockHeight(),
+				msgSubmitProof.GetSessionHeader().GetSessionEndBlockHeight(),
 				blockHeaderHash,
-				proofMsg.GetSupplierOperatorAddress(),
+				msgSubmitProof.GetSupplierOperatorAddress(),
 			)
 			ctx = keepertest.SetBlockHeight(ctx, earliestSupplierProofCommitHeight-1)
 
@@ -662,9 +670,11 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			// Advance the block height to the earliest proof commit height.
 			ctx = keepertest.SetBlockHeight(ctx, earliestSupplierProofCommitHeight)
 
-			submitProofRes, err := srv.SubmitProof(ctx, proofMsg)
+			submitProofRes, err := srv.SubmitProof(ctx, msgSubmitProof)
 
-			require.ErrorContains(t, err, test.expectedErr.Error())
+			expectedErr := test.msgSubmitProofToExpectedErrorFn(msgSubmitProof)
+			require.ErrorIs(t, err, expectedErr)
+			require.ErrorContains(t, err, expectedErr.Error())
 			require.Nil(t, submitProofRes)
 
 			proofRes, err := keepers.AllProofs(ctx, &prooftypes.QueryAllProofsRequest{})
@@ -680,6 +690,143 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			require.Equal(t, 0, len(proofSubmittedEvents))
 		})
 	}
+}
+
+func TestMsgServer_SubmitProof_FailSubmittingNonRequiredProof(t *testing.T) {
+	opts := []keepertest.ProofKeepersOpt{
+		// Set block hash so we can have a deterministic expected on-chain proof requested by the protocol.
+		keepertest.WithBlockHash(blockHeaderHash),
+		// Set block height to 1 so there is a valid session on-chain.
+		keepertest.WithBlockHeight(1),
+	}
+	keepers, ctx := keepertest.NewProofModuleKeepers(t, opts...)
+	sharedParams := keepers.SharedKeeper.GetParams(ctx)
+
+	// Set proof keeper params to disable relay mining but never require a proof.
+	proofParams := keepers.Keeper.GetParams(ctx)
+	proofParams.ProofRequestProbability = 0
+	proofParams.RelayDifficultyTargetHash = testProofParams.RelayDifficultyTargetHash
+	err := keepers.Keeper.SetParams(ctx, proofParams)
+	require.NoError(t, err)
+
+	// Construct a keyring to hold the keypairs for the accounts used in the test.
+	keyRing := keyring.NewInMemory(keepers.Codec)
+
+	// Create a pre-generated account iterator to create accounts for the test.
+	preGeneratedAccts := testkeyring.PreGeneratedAccounts()
+
+	// Create accounts in the account keeper with corresponding keys in the
+	// keyring for the application and supplier.
+	supplierOperatorAddr := testkeyring.CreateOnChainAccount(
+		ctx, t,
+		supplierOperatorUid,
+		keyRing,
+		keepers,
+		preGeneratedAccts,
+	).String()
+	appAddr := testkeyring.CreateOnChainAccount(
+		ctx, t,
+		"app",
+		keyRing,
+		keepers,
+		preGeneratedAccts,
+	).String()
+
+	fundSupplierOperatorAccount(t, ctx, keepers, supplierOperatorAddr)
+
+	service := &sharedtypes.Service{
+		Id:                   testServiceId,
+		ComputeUnitsPerRelay: computeUnitsPerRelay,
+		OwnerAddress:         sample.AccAddress(),
+	}
+
+	// Add a supplier and application pair that are expected to be in the session.
+	keepers.AddServiceActors(ctx, t, service, supplierOperatorAddr, appAddr)
+
+	// Get the session for the application/supplier pair which is expected
+	// to be claimed and for which a valid proof would be accepted.
+	// Given the setup above, it is guaranteed that the supplier created
+	// will be part of the session.
+	sessionHeader := keepers.GetSessionHeader(ctx, t, appAddr, service, 1)
+
+	// Construct a proof message server from the proof keeper.
+	srv := keeper.NewMsgServerImpl(*keepers.Keeper)
+
+	// Prepare a ring client to sign & validate relays.
+	ringClient, err := rings.NewRingClient(depinject.Supply(
+		polyzero.NewLogger(),
+		prooftypes.NewAppKeeperQueryClient(keepers.ApplicationKeeper),
+		prooftypes.NewAccountKeeperQueryClient(keepers.AccountKeeper),
+		prooftypes.NewSharedKeeperQueryClient(keepers.SharedKeeper, keepers.SessionKeeper),
+	))
+	require.NoError(t, err)
+
+	// Submit the corresponding proof.
+	numRelays := uint64(5)
+	sessionTree := testtree.NewFilledSessionTree(
+		ctx, t,
+		numRelays, service.ComputeUnitsPerRelay,
+		supplierOperatorUid, supplierOperatorAddr,
+		sessionHeader, sessionHeader, sessionHeader,
+		keyRing,
+		ringClient,
+	)
+
+	// Advance the block height to the test claim msg height.
+	claimMsgHeight := shared.GetEarliestSupplierClaimCommitHeight(
+		&sharedParams,
+		sessionHeader.GetSessionEndBlockHeight(),
+		blockHeaderHash,
+		supplierOperatorAddr,
+	)
+	ctx = keepertest.SetBlockHeight(ctx, claimMsgHeight)
+
+	// Create a valid claim.
+	createClaimAndStoreBlockHash(
+		ctx, t, 1,
+		supplierOperatorAddr,
+		appAddr,
+		service,
+		sessionTree,
+		sessionHeader,
+		srv,
+		keepers,
+	)
+
+	// Advance the block height to the proof path seed height.
+	earliestSupplierProofCommitHeight := shared.GetEarliestSupplierProofCommitHeight(
+		&sharedParams,
+		sessionHeader.GetSessionEndBlockHeight(),
+		blockHeaderHash,
+		supplierOperatorAddr,
+	)
+	ctx = keepertest.SetBlockHeight(ctx, earliestSupplierProofCommitHeight-1)
+
+	// Store proof path seed block hash in the session keeper so that it can
+	// look it up during proof validation.
+	keepers.StoreBlockHash(ctx)
+
+	// Compute expected proof path.
+	expectedMerkleProofPath = protocol.GetPathForProof(blockHeaderHash, sessionHeader.GetSessionId())
+
+	// Advance the block height to the test proof msg height.
+	proofMsgHeight := shared.GetEarliestSupplierProofCommitHeight(
+		&sharedParams,
+		sessionHeader.GetSessionEndBlockHeight(),
+		blockHeaderHash,
+		supplierOperatorAddr,
+	)
+	ctx = keepertest.SetBlockHeight(ctx, proofMsgHeight)
+
+	proofMsg := newTestProofMsg(t,
+		supplierOperatorAddr,
+		sessionHeader,
+		sessionTree,
+		expectedMerkleProofPath,
+	)
+	submitProofRes, err := srv.SubmitProof(ctx, proofMsg)
+	require.Nil(t, submitProofRes)
+	require.ErrorIs(t, err, status.Error(codes.FailedPrecondition, prooftypes.ErrProofNotRequired.Error()))
 }
 
 // newTestProofMsg creates a new submit proof message that can be submitted

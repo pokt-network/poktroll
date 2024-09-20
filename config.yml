@@ -169,12 +169,9 @@ genesis:
         - address: pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4
           delegatee_gateway_addresses: []
           service_configs:
-            - service:
-                id: anvil
-            - service:
-                id: rest
-            - service:
-                id: ollama
+            - service_id: anvil
+            - service_id: rest
+            - service_id: ollama
           stake:
             # NB: This value should be exactly 1upokt smaller than the value in
             # `supplier1_stake_config.yaml` so that the stake command causes a state change.
@@ -183,12 +180,9 @@ genesis:
         - address: pokt1ad28jdap2zfanjd7hpkh984yveney6k9a42man
           delegatee_gateway_addresses: []
           service_configs:
-            - service:
-                id: anvil
-            - service:
-                id: rest
-            - service:
-                id: ollama
+            - service_id: anvil
+            - service_id: rest
+            - service_id: ollama
           stake:
             # NB: This value should be exactly 1upokt smaller than the value in
             # `supplier1_stake_config.yaml` so that the stake command causes a state change.
@@ -199,8 +193,7 @@ genesis:
         - owner_address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
           operator_address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
           services:
-            - service:
-                id: anvil
+            - service_id: anvil
               endpoints:
                 - configs: []
                   rpc_type: JSON_RPC
@@ -208,8 +201,7 @@ genesis:
               rev_share:
                 - address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
                   rev_share_percentage: "100"
-            - service:
-                id: rest
+            - service_id: rest
               endpoints:
                 - configs: []
                   rpc_type: REST
@@ -217,8 +209,7 @@ genesis:
               rev_share:
                 - address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
                   rev_share_percentage: "100"
-            - service:
-                id: ollama
+            - service_id: ollama
               endpoints:
                 - configs: []
                   rpc_type: REST
@@ -260,9 +251,11 @@ genesis:
     proof:
       params:
         proof_request_probability: "0.25"
-        proof_requirement_threshold: 20
+        proof_requirement_threshold:
+          amount: "20000000"
+          denom: upokt
         proof_missing_penalty:
-          amount: "320"
+          amount: "320000000"
           denom: upokt
         proof_submission_fee:
           amount: "1000000"

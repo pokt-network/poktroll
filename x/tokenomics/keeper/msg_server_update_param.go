@@ -22,23 +22,6 @@ func (k msgServer) UpdateParam(
 
 	params := k.GetParams(ctx)
 
-	switch msg.Name {
-	case types.ParamComputeUnitsToTokensMultiplier:
-		value, ok := msg.AsType.(*types.MsgUpdateParam_AsInt64)
-		if !ok {
-			return nil, types.ErrTokenomicsParamsInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
-		}
-		computeUnitsToTokensMultiplier := uint64(value.AsInt64)
-
-		if err := types.ValidateComputeUnitsToTokensMultiplier(computeUnitsToTokensMultiplier); err != nil {
-			return nil, err
-		}
-
-		params.ComputeUnitsToTokensMultiplier = computeUnitsToTokensMultiplier
-	default:
-		return nil, types.ErrTokenomicsParamsInvalid.Wrapf("unsupported param %q", msg.Name)
-	}
-
 	if err := k.SetParams(ctx, params); err != nil {
 		return nil, err
 	}
