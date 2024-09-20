@@ -99,7 +99,7 @@ func TestMsgServer_TransferApplication_Success(t *testing.T) {
 
 	// Assert that the destination app was not created yet.
 	_, isDstFound := k.GetApplication(ctx, dstBech32)
-	require.True(t, isSrcFound)
+	require.True(t, isDstFound)
 
 	// Set the height to the transfer end height for the session.
 	sdkCtx = cosmostypes.UnwrapSDKContext(ctx)
