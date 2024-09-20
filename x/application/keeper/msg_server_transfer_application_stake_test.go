@@ -91,7 +91,7 @@ func TestMsgServer_TransferApplicationStake_Error_DestinationExists(t *testing.T
 
 	expectedAppStake := &cosmostypes.Coin{Denom: "upokt", Amount: math.NewInt(100)}
 
-	// Prepare and stake the application.
+	// Prepare and stake the source application.
 	appStakeMsg := &apptypes.MsgStakeApplication{
 		Address: srcAddr,
 		Stake:   expectedAppStake,
