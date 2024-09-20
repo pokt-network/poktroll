@@ -53,6 +53,9 @@ message MsgStakeApplication {
   string                                   address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the application.
   cosmos.base.v1beta1.Coin                 stake = 2; // The total amount of uPOKT the application has staked. Must be ≥ to the current amount that the application has staked (if any)
   repeated poktroll.shared.ApplicationServiceConfig services = 3; // The list of services this application is staked to request service for
+  // TODO_POST_MAINNET_CONSIDERATION: Consdier allowing appplications to delegate
+  // to gateways at time of staking for a better developer experience.
+  // repeated string gateway_addresss
 }
 
 message MsgStakeApplicationResponse {
