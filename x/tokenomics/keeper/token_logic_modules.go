@@ -381,7 +381,6 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 	logger := k.Logger().With("method", "TokenLogicModuleGlobalMint")
 
 	if MintPerClaimedTokenGlobalInflation == 0 {
-		// TODO_UPNEXT(@olshansk): Make sure to skip GMRR TLM in this case as well.
 		logger.Warn("global inflation is set to zero. Skipping Global Mint TLM.")
 		return nil
 	}
@@ -471,6 +470,11 @@ func (k Keeper) TokenLogicModuleGlobalMintReimbursementRequest(
 ) error {
 	logger := k.Logger().With("method", "TokenLogicModuleGlobalMintReimbursementRequest")
 
+	if MintPerClaimedTokenGlobalInflation == 0 {
+		logger.Warn("global inflation is set to zero. Skipping Global Mint Reimbursement Request TLM.")
+		return nil
+	}
+
 	// Determine how much new uPOKT to mint based on global inflation
 	newMintCoin, _ := calculateGlobalPerClaimMintInflationFromSettlementAmount(actualSettlementCoin)
 	if newMintCoin.Amount.Int64() == 0 {
@@ -491,7 +495,7 @@ func (k Keeper) TokenLogicModuleGlobalMintReimbursementRequest(
 
 	// Send the global per claim mint inflation uPOKT from the application module
 	// account to the tokenomics module account.
-	if err := k.bankKeeper.SendCoinsFromModuleToModule(
+	if err = k.bankKeeper.SendCoinsFromModuleToModule(
 		ctx, apptypes.ModuleName, tokenomicstypes.ModuleName, sdk.NewCoins(actualSettlementCoin),
 	); err != nil {
 		return tokenomicstypes.ErrTokenomicsApplicationReimbursementRequestFailed.Wrapf(
