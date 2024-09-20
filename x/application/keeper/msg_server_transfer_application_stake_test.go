@@ -80,7 +80,7 @@ func TestMsgServer_TransferApplication_Success(t *testing.T) {
 	require.Equal(t, dstAddr, dstApp.GetAddress())
 	require.Equal(t, expectedAppStake, dstApp.GetStake())
 	require.Len(t, dstApp.GetServiceConfigs(), 1)
-	require.Equal(t, "svc1", dstApp.GetServiceConfigs()[0].GetServiceId)
+	require.Equal(t, "svc1", dstApp.GetServiceConfigs()[0].GetServiceId())
 
 	srcApp.Address = ""
 	dstApp.Address = ""
