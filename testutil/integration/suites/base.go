@@ -37,6 +37,9 @@ type BaseIntegrationSuite struct {
 func (s *BaseIntegrationSuite) NewApp(t *testing.T, opts ...integration.IntegrationAppOptionFn) *integration.App {
 	t.Helper()
 
+	s.poktrollModuleNames = nil
+	s.cosmosModuleNames = nil
+
 	defaultIntegrationAppOption := integration.WithInitChainerModuleFn(newInitChainerCollectModuleNamesFn(s))
 	opts = append([]integration.IntegrationAppOptionFn{defaultIntegrationAppOption}, opts...)
 	s.app = integration.NewCompleteIntegrationApp(t, opts...)

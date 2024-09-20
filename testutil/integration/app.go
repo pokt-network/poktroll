@@ -90,14 +90,14 @@ var (
 	// FaucetAmountUpokt is the number of upokt coins that the faucet account
 	// is funded with.
 	FaucetAmountUpokt = int64(math2.MaxInt64)
-
-	// defaultIntegrationAppConfig is the default configuration for the integration app.
-	defaultIntegrationAppConfig = IntegrationAppConfig{
-		InitChainerModuleFns: []InitChainerModuleFn{
-			newFaucetInitChainerFn(FaucetAddrStr, FaucetAmountUpokt),
-		},
-	}
 )
+
+// defaultIntegrationAppOptionFn is the default integration module function for the
+// integration app. It ensures that the bank module genesis state includes the faucet
+// account with a large balance.
+func defaultIntegrationAppOptionFn(cfg *IntegrationAppConfig) {
+	WithInitChainerModuleFn(newFaucetInitChainerFn(FaucetAddrStr, FaucetAmountUpokt))(cfg)
+}
 
 // App is a test application that can be used to test the behaviour when none
 // of the modules are mocked and their integration (cross module interaction)
@@ -148,7 +148,8 @@ func NewIntegrationApp(
 ) *App {
 	t.Helper()
 
-	cfg := &defaultIntegrationAppConfig
+	cfg := &IntegrationAppConfig{}
+	opts = append(opts, defaultIntegrationAppOptionFn)
 	for _, opt := range opts {
 		opt(cfg)
 	}
@@ -664,8 +665,11 @@ func (app *App) RunMsg(t *testing.T, msg sdk.Msg) (tx.MsgResponse, error) {
 	t.Helper()
 
 	txMsgRes, err := app.RunMsgs(t, msg)
-	require.Equal(t, 1, len(txMsgRes), "expected exactly 1 tx msg response")
+	if err != nil {
+		return nil, err
+	}
 
+	require.Equal(t, 1, len(txMsgRes), "expected exactly 1 tx msg response")
 	return txMsgRes[0], err
 }
 
@@ -682,7 +686,7 @@ func (app *App) RunMsgs(t *testing.T, msgs ...sdk.Msg) (txMsgResps []tx.MsgRespo
 	// Commit the updated state after the message has been handled.
 	var finalizeBlockRes *abci.ResponseFinalizeBlock
 	defer func() {
-		if _, commitErr := app.Commit(); err != nil {
+		if _, commitErr := app.Commit(); commitErr != nil {
 			err = fmt.Errorf("committing state: %w", commitErr)
 			return
 		}
