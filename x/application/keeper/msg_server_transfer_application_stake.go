@@ -46,7 +46,7 @@ func (k msgServer) TransferApplication(ctx context.Context, msg *types.MsgTransf
 	dstApp := srcApp
 	dstApp.Address = msg.GetDestinationAddress()
 
-	// TODO_IN_THIS_PR: Reconcile app unbonding logic with the new transfer stake logic.
+	// TODO_NEXT(#789): Reconcile app unbonding logic with the new transfer stake logic.
 	// I.e., the source should not immediately be transferred.
 
 	// TODO_TEST: add E2E coverage to assert #DelegateeGatewayAddresses and #PendingUndelegations
