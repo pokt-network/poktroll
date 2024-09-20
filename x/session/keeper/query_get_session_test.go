@@ -21,7 +21,7 @@ func init() {
 // the Cosmos SDK context aware wrapper around it.
 
 func TestSession_GetSession_Success(t *testing.T) {
-	keeper, ctx := keepertest.SessionKeeper(t)
+	keeper, ctx := keepertest.SessionKeeper(t, sharedParamsOpt)
 	ctx = sdk.UnwrapSDKContext(ctx).WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
 
 	tests := []struct {
@@ -69,7 +69,7 @@ func TestSession_GetSession_Success(t *testing.T) {
 }
 
 func TestSession_GetSession_Failure(t *testing.T) {
-	keeper, ctx := keepertest.SessionKeeper(t)
+	keeper, ctx := keepertest.SessionKeeper(t, sharedParamsOpt)
 	ctx = sdk.UnwrapSDKContext(ctx).WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
 
 	tests := []struct {
