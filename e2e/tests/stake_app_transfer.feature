@@ -16,7 +16,6 @@ Feature: App Stake Transfer Namespace
         And the pocketd binary should exit without error
         And the user should wait for the "application" module "TransferApplication" message to be submitted
         And the "application" for account "app3" is staked with "1000070" uPOKT
-        # TODO_IN_THIS_PR: fix idempotency issue with this scenario (this step passes on the first run but fails on subsequent runs)
         And the account balance of "app3" should be "0" uPOKT "less" than before
         And the user verifies the "application" for account "app2" is not staked
         And the account balance of "app2" should be "0" uPOKT "more" than before
