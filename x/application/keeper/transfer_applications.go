@@ -84,35 +84,42 @@ func (k Keeper) transferApplication(ctx context.Context, srcApp types.Applicatio
 		return types.ErrAppIsUnstaking.Wrapf("cannot transfer stake of unbonding source application (%s)", srcApp.GetAddress())
 	}
 
-	// Ensure destination application was not staked during transfer period.
-	_, isDstFound := k.GetApplication(ctx, srcApp.GetPendingTransfer().GetDestinationAddress())
-	if isDstFound {
-		return types.ErrAppDuplicateAddress.Wrapf(
-			"destination application (%s) was staked during transfer period of application (%s)",
-			srcApp.GetPendingTransfer().GetDestinationAddress(), srcApp.GetAddress(),
-		)
-	}
+	// Check if the destination application already exists. If not, derive it from
+	// the source application. If so, "merge" the source application into the
+	// destination by summing stake amounts and taking the union of delegations.
+	dstApp, isDstFound := k.GetApplication(ctx, srcApp.GetPendingTransfer().GetDestinationAddress())
+	if !isDstFound {
+		dstApp = srcApp //intentional copy
+		dstApp.Address = srcApp.GetPendingTransfer().GetDestinationAddress()
+		dstApp.PendingTransfer = nil
+	} else {
+		srcStakeSumCoin := dstApp.GetStake().Add(*dstApp.GetStake())
+		dstApp.Stake = &srcStakeSumCoin
 
-	dstApp := srcApp // intentional copy
-	dstApp.Address = srcApp.GetPendingTransfer().GetDestinationAddress()
-	dstApp.PendingTransfer = nil
+		// Build a set of the destination application's delegatees.
+		delagateeBech32Set := make(map[string]struct{})
+		for _, dstDelegateeBech32 := range dstApp.DelegateeGatewayAddresses {
+			delagateeBech32Set[dstDelegateeBech32] = struct{}{}
+		}
 
-	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
-	sessionEndHeight := k.sharedKeeper.GetSessionEndHeight(ctx, sdkCtx.BlockHeight())
-
-	srcApp.PendingTransfer = &types.PendingApplicationTransfer{
-		DestinationAddress: dstApp.Address,
-		SessionEndHeight:   uint64(sessionEndHeight),
+		// Build the union of the source and destination applications' delagatees by
+		// appending source application delegatees which are not already in the set.
+		for _, srcDelegateeBech32 := range srcApp.DelegateeGatewayAddresses {
+			if _, ok := delagateeBech32Set[srcDelegateeBech32]; !ok {
+				dstApp.DelegateeGatewayAddresses = append(dstApp.DelegateeGatewayAddresses, srcDelegateeBech32)
+			}
+		}
 	}
 
 	// Remove srcApp from the store
 	k.RemoveApplication(ctx, srcApp.GetAddress())
 
-	// Add the dstApp in the store
+	// Add or update the dstApp in the store
 	k.SetApplication(ctx, dstApp)
 
 	logger.Info(fmt.Sprintf("Successfully transferred application stake from (%s) to (%s)", srcApp.GetAddress(), dstApp.GetAddress()))
 
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventTransferEnd{
 		SourceAddress:          srcApp.GetAddress(),
 		DestinationAddress:     dstApp.GetAddress(),
