@@ -70,7 +70,8 @@ func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) error {
 		logger.Info(fmt.Sprintf("Successfully removed the supplier: %+v", supplier))
 
 		event := &types.EventSupplierUnbondingEnd{
-			Supplier: &supplier,
+			Supplier:        &supplier,
+			UnbondingHeight: unbondingHeight,
 		}
 		if eventErr := sdkCtx.EventManager().EmitTypedEvent(event); eventErr != nil {
 			logger.Error(fmt.Sprintf("failed to emit event: %+v; %s", event, eventErr))
