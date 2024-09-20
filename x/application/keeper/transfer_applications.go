@@ -52,7 +52,7 @@ func (k Keeper) EndBlockerTransferApplication(ctx context.Context) error {
 		if transferErr := k.transferApplication(ctx, srcApp); transferErr != nil {
 			logger.Warn(transferErr.Error())
 
-			// Remove the pending transfer from the source application.
+			// Application transfer failed, removing the pending transfer from the source application.
 			srcApp.PendingTransfer = nil
 			k.SetApplication(ctx, srcApp)
 
