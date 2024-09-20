@@ -79,6 +79,9 @@ func TestMsgServer_TransferApplication_Success(t *testing.T) {
 	transferBeginEventTypeURL := types.MsgTypeURL(&apptypes.EventTransferBegin{})
 	transferBeginEvents := events2.FilterEvents[*apptypes.EventTransferBegin](t, events, transferBeginEventTypeURL)
 	require.Equal(t, 1, len(transferBeginEvents), "expected 1 transfer begin event")
+	require.Equal(t, srcBech32, transferBeginEvents[0].GetSourceAddress())
+	require.Equal(t, dstBech32, transferBeginEvents[0].GetDestinationAddress())
+	require.Equal(t, srcBech32, transferBeginEvents[0].GetSourceApplication().GetAddress())
 
 	// Set the height to the transfer end height - 1 for the session.
 	transferEndHeight := apptypes.GetApplicationTransferHeight(&sharedParams, transferResApp)
@@ -106,12 +109,6 @@ func TestMsgServer_TransferApplication_Success(t *testing.T) {
 	err = k.EndBlockerTransferApplication(ctx)
 	require.NoError(t, err)
 
-	// Assert that the transfer end event was emitted.
-	events = cosmostypes.UnwrapSDKContext(ctx).EventManager().Events()
-	transferEndEventTypeURL := types.MsgTypeURL(&apptypes.EventTransferEnd{})
-	transferEndEvents := events2.FilterEvents[*apptypes.EventTransferEnd](t, events, transferEndEventTypeURL)
-	require.Equal(t, 1, len(transferEndEvents), "expected 1 transfer end event")
-
 	// Verify that the destination app was created with the correct state.
 	dstApp, isDstFound := k.GetApplication(ctx, dstBech32)
 	require.True(t, isDstFound)
@@ -119,6 +116,15 @@ func TestMsgServer_TransferApplication_Success(t *testing.T) {
 	require.Equal(t, expectedAppStake, dstApp.GetStake())
 	require.Len(t, dstApp.GetServiceConfigs(), 1)
 	require.Equal(t, "svc1", dstApp.GetServiceConfigs()[0].GetServiceId())
+
+	// Assert that the transfer end event was emitted.
+	events = cosmostypes.UnwrapSDKContext(ctx).EventManager().Events()
+	transferEndEventTypeURL := types.MsgTypeURL(&apptypes.EventTransferEnd{})
+	transferEndEvents := events2.FilterEvents[*apptypes.EventTransferEnd](t, events, transferEndEventTypeURL)
+	require.Equal(t, 1, len(transferEndEvents), "expected 1 transfer end event")
+	require.Equal(t, srcBech32, transferEndEvents[0].GetSourceAddress())
+	require.Equal(t, dstBech32, transferEndEvents[0].GetDestinationAddress())
+	require.Equal(t, dstBech32, transferEndEvents[0].GetDestinationApplication().GetAddress())
 
 	srcApp.Address = ""
 	dstApp.Address = ""
