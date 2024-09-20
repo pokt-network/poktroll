@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/pokt-network/poktroll/app/volatile"
-	events2 "github.com/pokt-network/poktroll/testutil/events"
+	"github.com/pokt-network/poktroll/testutil/events"
 	"github.com/pokt-network/poktroll/testutil/integration/suites"
 	"github.com/pokt-network/poktroll/testutil/testkeyring"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -98,7 +98,7 @@ func (s *AppTransferSuite) TestSingleSourceToNonexistentDestinationSucceeds() {
 	// Assert that the "message" type event (tx result event) is observed which
 	// corresponds to the MsgTransferApplication message.
 	msgTypeURL := cosmostypes.MsgTypeURL(&apptypes.MsgTransferApplication{})
-	msgEvent := s.LatestMatchingEvent(events2.NewMsgEventMatchFn(msgTypeURL))
+	msgEvent := s.LatestMatchingEvent(events.NewMsgEventMatchFn(msgTypeURL))
 	require.NotNil(s.T(), msgEvent, "expected transfer application message event")
 
 	// Assert that the transfer begin event (tx result event) is observed.
@@ -198,7 +198,7 @@ func (s *AppTransferSuite) TestMultipleSourceToSameNonexistentDestinationMergesS
 
 		// Assert that the "message" type event (tx result event) is observed which
 		// corresponds to the MsgTransferApplication message.
-		msgEvent := s.LatestMatchingEvent(events2.NewMsgEventMatchFn(msgTransferAppTypeURL))
+		msgEvent := s.LatestMatchingEvent(events.NewMsgEventMatchFn(msgTransferAppTypeURL))
 		require.NotNil(s.T(), msgEvent, "expected transfer application message event")
 
 		// Assert that the transfer begin event (tx result event) is observed.
@@ -213,7 +213,7 @@ func (s *AppTransferSuite) TestMultipleSourceToSameNonexistentDestinationMergesS
 
 	// Assert that the "message" type event (tx result event) is observed which
 	// corresponds to the MsgTransferApplication message.
-	msgEvents := s.FilterLatestEvents(events2.NewMsgEventMatchFn(msgTransferAppTypeURL))
+	msgEvents := s.FilterEvents(events.NewMsgEventMatchFn(msgTransferAppTypeURL))
 	require.Equal(s.T(), 2, len(msgEvents), "expected 2 application transfer message events")
 
 	// Continue until transfer end commit height - 1.
@@ -367,12 +367,12 @@ func (s *AppTransferSuite) shouldObserveTransferBeginEvent(
 	expectedDstAppBech32 string,
 ) {
 	eventTypeURL := cosmostypes.MsgTypeURL(&apptypes.EventTransferBegin{})
-	transferBeginEvents := s.FilterLatestEvents(events2.NewEventTypeMatchFn(eventTypeURL))
+	transferBeginEvents := s.FilterEvents(events.NewEventTypeMatchFn(eventTypeURL))
 	require.NotEmpty(s.T(), transferBeginEvents)
 
 	transferBeginEvent := new(cosmostypes.Event)
 	for _, event := range transferBeginEvents {
-		eventSrcAddr, hasSrcAddr := s.GetAttributeValue(event, "source_address")
+		eventSrcAddr, hasSrcAddr := events.GetAttributeValue(event, "source_address")
 		require.True(s.T(), hasSrcAddr)
 
 		if eventSrcAddr == expectedSrcApp.GetAddress() {
@@ -382,16 +382,16 @@ func (s *AppTransferSuite) shouldObserveTransferBeginEvent(
 	}
 	require.NotNil(s.T(), transferBeginEvent)
 
-	evtSrcAddr, hasSrcAddr := s.GetAttributeValue(transferBeginEvent, "source_address")
+	evtSrcAddr, hasSrcAddr := events.GetAttributeValue(transferBeginEvent, "source_address")
 	require.True(s.T(), hasSrcAddr)
 	require.Equal(s.T(), expectedSrcApp.GetAddress(), evtSrcAddr)
 
-	evtDstAddr, hasDstAddr := s.GetAttributeValue(transferBeginEvent, "destination_address")
+	evtDstAddr, hasDstAddr := events.GetAttributeValue(transferBeginEvent, "destination_address")
 	require.True(s.T(), hasDstAddr)
 	require.Equal(s.T(), expectedDstAppBech32, evtDstAddr)
 
 	evtSrcApp := new(apptypes.Application)
-	evtSrcAppStr, hasSrcApp := s.GetAttributeValue(transferBeginEvent, "source_application")
+	evtSrcAppStr, hasSrcApp := events.GetAttributeValue(transferBeginEvent, "source_application")
 	require.True(s.T(), hasSrcApp)
 
 	evtSrcAppBz := []byte(evtSrcAppStr)
@@ -407,19 +407,19 @@ func (s *AppTransferSuite) shouldObserveTransferEndEvent(
 	expectedSrcAppBech32 string,
 ) {
 	eventTypeURL := cosmostypes.MsgTypeURL(&apptypes.EventTransferEnd{})
-	transferEndEvent := s.LatestMatchingEvent(events2.NewEventTypeMatchFn(eventTypeURL))
+	transferEndEvent := s.LatestMatchingEvent(events.NewEventTypeMatchFn(eventTypeURL))
 	require.NotNil(s.T(), transferEndEvent)
 
-	evtSrcAddr, hasSrcAddrAttr := s.GetAttributeValue(transferEndEvent, "source_address")
+	evtSrcAddr, hasSrcAddrAttr := events.GetAttributeValue(transferEndEvent, "source_address")
 	require.True(s.T(), hasSrcAddrAttr)
 	require.Equal(s.T(), expectedSrcAppBech32, evtSrcAddr)
 
-	evtDstAddr, hasDstAddrAttr := s.GetAttributeValue(transferEndEvent, "destination_address")
+	evtDstAddr, hasDstAddrAttr := events.GetAttributeValue(transferEndEvent, "destination_address")
 	require.True(s.T(), hasDstAddrAttr)
 	require.Equal(s.T(), expectedDstApp.GetAddress(), evtDstAddr)
 
 	evtDstApp := new(apptypes.Application)
-	evtDstAppStr, hasDstAppAttr := s.GetAttributeValue(transferEndEvent, "destination_application")
+	evtDstAppStr, hasDstAppAttr := events.GetAttributeValue(transferEndEvent, "destination_application")
 	require.True(s.T(), hasDstAppAttr)
 
 	evtDstAppBz := []byte(evtDstAppStr)
