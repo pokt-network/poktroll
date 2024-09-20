@@ -470,7 +470,7 @@ by discouraging invalid or unnecessary `Proofs`.
 Since `Proofs` are the most block space-consuming primitive in the Pocket Network,
 this fee plays a crucial role in maintaining the integrity of the network.
 
-TODO_MAINNET(@red-0ne): Add a link to a block in our explorer showcasing this.
+<!-- TODO_MAINNET(@red-0ne): Add a link to a block in our explorer showcasing this. -->
 
 ### Key Requirements for Operators
 
@@ -498,7 +498,7 @@ balance:
 - **Automated Monitoring**: It is highly recommended to implement balance monitoring
 or alert systems to avoid running out of funds during critical periods.
 
-TODO_POST_MAINNET(@okdas): Link to example alerts & infrastructure others can use.
+<!-- TODO_POST_MAINNET(@okdas): Link to example alerts & infrastructure others can use. -->
 
 - **Cost Awareness**: Operators should familiarize themselves with the current
 `proof_submission_fee` and plan their funding accordingly, especially if they
@@ -515,7 +515,7 @@ poktrolld query proof params
 ...
 ```
 
-The list of `Proof` governance parameters can be found at [/proto/proof/params.proto](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/proof/params.proto)
+The list of `Proof` governance parameters can be found at [proto/proof/params.proto](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/proof/params.proto)
 
 :::warning
 
