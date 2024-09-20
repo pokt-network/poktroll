@@ -75,7 +75,9 @@ message MsgDelegateToGateway {
   string gateway_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the gateway the application wants to delegate to.
 }
 
-message MsgDelegateToGatewayResponse {}
+message MsgDelegateToGatewayResponse {
+  poktroll.application.Application application = 1;
+}
 
 message MsgUndelegateFromGateway {
   option (cosmos.msg.v1.signer) = "app_address"; // https://docs.cosmos.network/main/build/building-modules/messages-and-queries
