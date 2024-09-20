@@ -144,7 +144,7 @@ func NewIntegrationApp(
 	keys map[string]*storetypes.KVStoreKey,
 	msgRouter *baseapp.MsgServiceRouter,
 	queryHelper *baseapp.QueryServiceTestHelper,
-	opts ...IntegrationAppOption,
+	opts ...IntegrationAppOptionFn,
 ) *App {
 	t.Helper()
 
@@ -231,7 +231,7 @@ func NewIntegrationApp(
 // TODO_TECHDEBT: Not all of the modules are created here (e.g. minting module),
 // so it is up to the developer to add / improve / update this function over time
 // as the need arises.
-func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOption) *App {
+func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *App {
 	t.Helper()
 
 	// Prepare & register the codec for all the interfaces
