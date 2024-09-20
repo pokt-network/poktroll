@@ -8,7 +8,7 @@ import (
 )
 
 // IntegrationAppConfig is a configuration struct for an integration App. Its fields
-// are intended to be set/updated by IntegrationAppOption functions which are passed
+// are intended to be set/updated by IntegrationAppOptionFn functions which are passed
 // during integration App construction.
 type IntegrationAppConfig struct {
 	// InitChainerModuleFns are called for each module during the integration App's
@@ -16,28 +16,28 @@ type IntegrationAppConfig struct {
 	InitChainerModuleFns []InitChainerModuleFn
 }
 
-// IntegrationAppOption is a function that receives and has the opportunity to
+// IntegrationAppOptionFn is a function that receives and has the opportunity to
 // modify the IntegrationAppConfig. It is intended to be passed during integration
 // App construction to modify the behavior of the integration App.
-type IntegrationAppOption func(*IntegrationAppConfig)
+type IntegrationAppOptionFn func(*IntegrationAppConfig)
 
 // InitChainerModuleFn is a function that is called for each module during the
 // integration App's InitChainer function.
 type InitChainerModuleFn func(cosmostypes.Context, codec.Codec, appmodule.AppModule)
 
-// WithInitChainerModuleFn returns an IntegrationAppOption that appends the given
+// WithInitChainerModuleFn returns an IntegrationAppOptionFn that appends the given
 // InitChainerModuleFn to the IntegrationAppConfig's InitChainerModuleFns.
-func WithInitChainerModuleFn(fn InitChainerModuleFn) IntegrationAppOption {
+func WithInitChainerModuleFn(fn InitChainerModuleFn) IntegrationAppOptionFn {
 	return func(config *IntegrationAppConfig) {
 		config.InitChainerModuleFns = append(config.InitChainerModuleFns, fn)
 	}
 }
 
-// WithModuleGenesisState returns an IntegrationAppOption that appends an
+// WithModuleGenesisState returns an IntegrationAppOptionFn that appends an
 // InitChainerModuleFn to the IntegrationAppConfig's InitChainerModuleFns which
 // initializes the module's genesis state with the given genesisState. T is expected
 // to be the module's AppModule type.
-func WithModuleGenesisState[T module.HasGenesis](genesisState cosmostypes.Msg) IntegrationAppOption {
+func WithModuleGenesisState[T module.HasGenesis](genesisState cosmostypes.Msg) IntegrationAppOptionFn {
 	return WithInitChainerModuleFn(
 		NewInitChainerModuleGenesisStateOptionFn[T](genesisState),
 	)
