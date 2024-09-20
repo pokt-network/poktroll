@@ -108,6 +108,8 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 
 // prepareRealClaim prepares a claim by creating a real SMST with the given number
 // of mined relays that adhere to the actual on-chain difficulty of the test service.
+//
+//nolint:unused // Will be used once the test above is implemented.
 func prepareRealClaim(
 	t *testing.T, ctx context.Context,
 	integrationApp *integration.App,
@@ -117,7 +119,7 @@ func prepareRealClaim(
 	session *sessiontypes.Session,
 	service *sharedtypes.Service,
 	relayMiningDifficulty *tokenomicstypes.RelayMiningDifficulty,
-) *prooftypes.Claim { //nolint:unused // Will be used once the test above is implemented.
+) *prooftypes.Claim {
 	t.Helper()
 
 	// Prepare an in-memory key-value store

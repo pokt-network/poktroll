@@ -184,7 +184,7 @@ func TestRelayDifficulty_ComputeNewDifficultyHash(t *testing.T) {
 			// DEV_NOTE: The number were set up to ensure the bytes equal, but we could have used LessThanOrEqualTo here
 			didDifficultyIncrease := bytes.Equal(newRelayDifficultyTargetHash, tt.expectedRelayDifficultyHash)
 			require.True(t, didDifficultyIncrease,
-				"expected difficulty.TargetHash (%x) to be equal to expectedRelayMiningDifficulty.TargetHash (%x)",
+				"newDifficulty.TargetHash(%x) != expectedRelayMiningDifficulty.TargetHash(%x)",
 				newRelayDifficultyTargetHash, tt.expectedRelayDifficultyHash,
 			)
 		})

@@ -33,21 +33,20 @@ func IsRelayVolumeApplicable(relayHash, targetHash []byte) bool {
 // on the target number of relays we want the network to mine and the new EMA of
 // the number of relays.
 func ComputeNewDifficultyTargetHash(prevTargetHash []byte, targetNumRelays, newRelaysEma uint64) []byte {
-	// The target number of relays we want the network to mine is greater than
-	// the actual volume applicable relays.
-	// Default to the baseline relay mining difficulty (no scaling necessary)
-	if targetNumRelays > newRelaysEma {
-		return BaseRelayDifficultyHashBz
-	}
-
 	// Calculate the proportion of target relays relative to the EMA of actual volume applicable relays
-	// TODO_POST_MAINNET: Use a language agnostic float implementation or arithmetic library
-	// to ensure deterministic results across different language implementations of the
-	// protocol.
+	// TODO_MAINNET(@red-0ne): Use a language agnostic float implementation to ensure
+	// deterministic results and avoid loss of precision. Specifically, we need to
+	// use big.Rat, delay any computation.
 	ratio := new(big.Float).Quo(
 		new(big.Float).SetUint64(targetNumRelays),
 		new(big.Float).SetUint64(newRelaysEma),
 	)
+
+	// You can't scale the base relay difficulty hash below BaseRelayDifficultyHashBz
+	isIncreasingDifficulty := ratio.Cmp(big.NewFloat(1)) < 1
+	if bytes.Equal(prevTargetHash, BaseRelayDifficultyHashBz) && !isIncreasingDifficulty {
+		return BaseRelayDifficultyHashBz
+	}
 
 	// Compute the new target hash by scaling the previous target hash based on the ratio
 	return ScaleRelayDifficultyHash(prevTargetHash, ratio)
@@ -63,15 +62,11 @@ func ScaleRelayDifficultyHash(currHashBz []byte, ratio *big.Float) []byte {
 	currHashFloat := new(big.Float).SetInt(currHashInt)
 
 	// Scale the current by multiplying it by the ratio.
+	// TODO(@red-0ne): Ensure that the precision lost here doesn't cause any
+	// major issues
 	scaledHashFloat := new(big.Float).Mul(currHashFloat, ratio)
-	// NB: Some precision is lost when converting back to an integer.
 	scaledHashInt, _ := scaledHashFloat.Int(nil)
 	scaledHashBz := scaledHashInt.Bytes()
-
-	// Ensure the scaled current hash maxes out at BaseRelayDifficulty
-	if len(scaledHashBz) > len(currHashBz) {
-		return BaseRelayDifficultyHashBz
-	}
 
 	// Ensure the scaled current hash has the same length as the default current hash.
 	if len(scaledHashBz) < len(currHashBz) {
