@@ -57,6 +57,7 @@ func (s *BaseIntegrationSuiteTestSuite) TestGetApp_ReturnsApp() {
 	app := s.NewApp(s.T())
 	require.Same(s.T(), app, s.GetApp())
 }
+
 func (s *BaseIntegrationSuiteTestSuite) TestSetApp() {
 	// Construct an app.
 	app := s.NewApp(s.T())
@@ -124,7 +125,7 @@ func (s *BaseIntegrationSuiteTestSuite) TestFilterLatestEventsWithNewMsgEventMat
 	// Filter for the "message" type event with "action" attribute value
 	// equal to the MsgSend TypeURL.
 	msgSendTypeURL := cosmostypes.MsgTypeURL(&banktypes.MsgSend{})
-	matchedEvents := s.FilterLatestEvents(events.NewMsgEventMatchFn(msgSendTypeURL))
+	matchedEvents := s.FilterEvents(events.NewMsgEventMatchFn(msgSendTypeURL))
 
 	require.Equal(s.T(), expectedNumEvents, len(matchedEvents), "unexpected number of matched events")
 
@@ -135,13 +136,17 @@ func (s *BaseIntegrationSuiteTestSuite) TestFilterLatestEventsWithNewMsgEventMat
 
 func (s *BaseIntegrationSuiteTestSuite) TestFilterLatestEventsWithNewEventTypeMatchFn() {
 	expectedNumEvents := 3
-
 	s.NewApp(s.T())
+
+	// Assert that the event manager is empty before emitting events.
+	require.Equal(s.T(), 0, len(s.SdkCtx().EventManager().Events()))
+
+	// Emit the expected number of EventGatewayUnstaked events.
 	s.emitPoktrollGatewayUnstakedEvents(expectedNumEvents)
 
 	// Filter for the event with type equal to the EventGatewayUnstaked TypeURL.
 	eventGatewayUnstakedTypeURL := cosmostypes.MsgTypeURL(&gatewaytypes.EventGatewayUnstaked{})
-	matchedEvents := s.FilterLatestEvents(events.NewEventTypeMatchFn(eventGatewayUnstakedTypeURL))
+	matchedEvents := s.FilterEvents(events.NewEventTypeMatchFn(eventGatewayUnstakedTypeURL))
 
 	require.Equal(s.T(), expectedNumEvents, len(matchedEvents), "unexpected number of matched events")
 
