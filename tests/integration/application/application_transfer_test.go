@@ -149,7 +149,7 @@ func (s *AppTransferSuite) TestSingleSourceToNonexistentDestinationSucceeds() {
 	)
 }
 
-func (s *AppTransferSuite) TestMultipleSourceToSameNonexistentDestinationSucceedsForFirst() {
+func (s *AppTransferSuite) TestMultipleSourceToSameNonexistentDestinationMergesSources() {
 	sharedParams := sharedtypes.DefaultParams()
 	msgTransferAppTypeURL := cosmostypes.MsgTypeURL(&apptypes.MsgTransferApplication{})
 	sessionEndHeight := shared.GetSessionEndHeight(&sharedParams, s.SdkCtx().BlockHeight())
