@@ -33,8 +33,8 @@ func (s *ApplicationModuleSuite) GetAppQueryClient() client.ApplicationQueryClie
 // TODO_IN_THIS_COMMIT: godoc
 func (s *ApplicationModuleSuite) StakeApp(
 	t *testing.T,
-	appBech32 string,
-	appStakeAmount int64,
+	bech32 string,
+	stakeAmtUpokt int64,
 	serviceIds []string,
 ) *apptypes.MsgStakeApplicationResponse {
 	t.Helper()
@@ -45,8 +45,8 @@ func (s *ApplicationModuleSuite) StakeApp(
 	}
 
 	stakeAppMsg := apptypes.NewMsgStakeApplication(
-		appBech32,
-		cosmostypes.NewInt64Coin(volatile.DenomuPOKT, appStakeAmount),
+		bech32,
+		cosmostypes.NewInt64Coin(volatile.DenomuPOKT, stakeAmtUpokt),
 		serviceConfigs,
 	)
 
@@ -98,4 +98,18 @@ func (s *ApplicationModuleSuite) MultiTransfer(
 	}
 
 	return transferResps
+}
+
+// TODO_IN_THIS_COMMIT: godoc...
+func (s *ApplicationModuleSuite) DelegateAppToGateway(
+	t *testing.T,
+	appBech32, gatewayBech32 string,
+) *apptypes.MsgDelegateToGatewayResponse {
+	t.Helper()
+
+	delegateAppToGatewayMsg := apptypes.NewMsgDelegateToGateway(appBech32, gatewayBech32)
+	txMsgRes, err := s.GetApp().RunMsg(t, delegateAppToGatewayMsg)
+	require.NoError(t, err)
+
+	return txMsgRes.(*apptypes.MsgDelegateToGatewayResponse)
 }

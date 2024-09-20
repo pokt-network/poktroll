@@ -71,6 +71,8 @@ func (k Keeper) EndBlockerTransferApplication(ctx context.Context) error {
 	return nil
 }
 
+// TODO_IN_THIS_COMMIT: update comment...
+//
 // transferApplication transfers the fields of srcApp, except for address and pending_transfer,
 // to a newly created destination application whose address is set to the destination address
 // in the pending transfer of srcApp. It is intended to be called during the EndBlock ABCI method.
@@ -84,6 +86,8 @@ func (k Keeper) transferApplication(ctx context.Context, srcApp types.Applicatio
 		return types.ErrAppIsUnstaking.Wrapf("cannot transfer stake of unbonding source application (%s)", srcApp.GetAddress())
 	}
 
+	// TODO_IN_THIS_COMMIT: update comment...
+	//
 	// Check if the destination application already exists. If not, derive it from
 	// the source application. If so, "merge" the source application into the
 	// destination by summing stake amounts and taking the union of delegations.
@@ -96,19 +100,8 @@ func (k Keeper) transferApplication(ctx context.Context, srcApp types.Applicatio
 		srcStakeSumCoin := dstApp.GetStake().Add(*dstApp.GetStake())
 		dstApp.Stake = &srcStakeSumCoin
 
-		// Build a set of the destination application's delegatees.
-		delagateeBech32Set := make(map[string]struct{})
-		for _, dstDelegateeBech32 := range dstApp.DelegateeGatewayAddresses {
-			delagateeBech32Set[dstDelegateeBech32] = struct{}{}
-		}
-
-		// Build the union of the source and destination applications' delagatees by
-		// appending source application delegatees which are not already in the set.
-		for _, srcDelegateeBech32 := range srcApp.DelegateeGatewayAddresses {
-			if _, ok := delagateeBech32Set[srcDelegateeBech32]; !ok {
-				dstApp.DelegateeGatewayAddresses = append(dstApp.DelegateeGatewayAddresses, srcDelegateeBech32)
-			}
-		}
+		mergeAppDelegatees(&srcApp, &dstApp)
+		mergeAppServiceConfigs(&srcApp, &dstApp)
 	}
 
 	// Remove srcApp from the store
@@ -129,4 +122,38 @@ func (k Keeper) transferApplication(ctx context.Context, srcApp types.Applicatio
 	}
 
 	return nil
+}
+
+// TODO_IN_THIS_COMMIT: godoc...
+func mergeAppDelegatees(srcApp, dstApp *types.Application) {
+	// Build a set of the destination application's delegatees.
+	delagateeBech32Set := make(map[string]struct{})
+	for _, dstDelegateeBech32 := range dstApp.DelegateeGatewayAddresses {
+		delagateeBech32Set[dstDelegateeBech32] = struct{}{}
+	}
+
+	// Build the union of the source and destination applications' delagatees by
+	// appending source application delegatees which are not already in the set.
+	for _, srcDelegateeBech32 := range srcApp.DelegateeGatewayAddresses {
+		if _, ok := delagateeBech32Set[srcDelegateeBech32]; !ok {
+			dstApp.DelegateeGatewayAddresses = append(dstApp.DelegateeGatewayAddresses, srcDelegateeBech32)
+		}
+	}
+}
+
+// TODO_IN_THIS_COMMIT: godoc...
+func mergeAppServiceConfigs(srcApp, dstApp *types.Application) {
+	// Build a set of the destination application's service configs.
+	serviceIDSet := make(map[string]struct{})
+	for _, dstServiceConfig := range dstApp.ServiceConfigs {
+		serviceIDSet[dstServiceConfig.GetServiceId()] = struct{}{}
+	}
+
+	// Build the union of the source and destination applications' service configs by
+	// appending source application service configs which are not already in the set.
+	for _, srcServiceConfig := range srcApp.ServiceConfigs {
+		if _, ok := serviceIDSet[srcServiceConfig.GetServiceId()]; !ok {
+			dstApp.ServiceConfigs = append(dstApp.ServiceConfigs, srcServiceConfig)
+		}
+	}
 }

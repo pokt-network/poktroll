@@ -21,20 +21,21 @@ import (
 )
 
 var (
-	appFundAmount  = int64(100000000)
-	appStakeAmount = int64(100)
+	appFundAmount = int64(100000000)
+	stakeAmount   = int64(100)
 
-	service1Config = &sharedtypes.ApplicationServiceConfig{
-		ServiceId: "svc1",
-	}
-
-	service2Config = &sharedtypes.ApplicationServiceConfig{
-		ServiceId: "svc2",
-	}
+	service1Id = "svc1"
+	service2Id = "svc2"
+	service3Id = "svc3"
 )
 
 type AppTransferSuite struct {
 	suites.ApplicationModuleSuite
+	gatewaySuite suites.GatewayModuleSuite
+
+	gateway1Addr cosmostypes.AccAddress
+	gateway2Addr cosmostypes.AccAddress
+	gateway3Addr cosmostypes.AccAddress
 
 	app1Addr cosmostypes.AccAddress
 	app2Addr cosmostypes.AccAddress
@@ -44,36 +45,72 @@ type AppTransferSuite struct {
 func (s *AppTransferSuite) SetupTest() {
 	// Construct a new integration app for each test.
 	s.NewApp(s.T())
+	s.gatewaySuite.SetApp(s.GetApp())
 
-	// Ensure app1, app2, and app3 have bank balances.
+	// Ensure gateways and apps have bank balances.
 	s.setupTestAccounts()
 
-	// Stake application 1.
-	stakeApp1Res := s.StakeApp(s.T(), s.app1Addr.String(), appStakeAmount, []string{service1Config.ServiceId})
-	require.Equal(s.T(), s.app1Addr.String(), stakeApp1Res.GetApplication().GetAddress())
-	require.Equal(s.T(), appStakeAmount, stakeApp1Res.GetApplication().GetStake().Amount.Int64())
+	// Stake gateways for applications to delegate to.
+	s.setupStakeGateways()
 
-	// Stake application 2.
-	stakeApp2Res := s.StakeApp(s.T(), s.app2Addr.String(), appStakeAmount, []string{service2Config.ServiceId})
-	require.Equal(s.T(), s.app2Addr.String(), stakeApp2Res.GetApplication().GetAddress())
-	require.Equal(s.T(), appStakeAmount, stakeApp2Res.GetApplication().GetStake().Amount.Int64())
+	// Stake app1 and app2.
+	s.setupStakeApps(map[string][]string{
+		s.app1Addr.String(): {service1Id, service3Id},
+		s.app2Addr.String(): {service1Id, service2Id},
+	})
 
-	// Assert the on-chain state shows the application 1 as staked.
-	foundApp, queryErr := s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app1Addr.String())
-	require.NoError(s.T(), queryErr)
-	require.Equal(s.T(), s.app1Addr.String(), foundApp.GetAddress())
-	require.Equal(s.T(), appStakeAmount, foundApp.GetStake().Amount.Int64())
-
-	// Assert the on-chain state shows the application 2 as staked.
-	foundApp, queryErr = s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app2Addr.String())
-	require.NoError(s.T(), queryErr)
-	require.Equal(s.T(), s.app2Addr.String(), foundApp.GetAddress())
-	require.Equal(s.T(), appStakeAmount, foundApp.GetStake().Amount.Int64())
+	// Delegate app 1 to gateway 1 and app2 to gateways 1 and 2.
+	s.setupDelegateAppsToGateway(map[string][]string{
+		s.app1Addr.String(): {s.gateway1Addr.String(), s.gateway3Addr.String()},
+		s.app2Addr.String(): {s.gateway1Addr.String(), s.gateway2Addr.String()},
+	})
 
 	// Assert the on-chain state shows the application 3 as NOT staked.
-	foundApp, queryErr = s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app3Addr.String())
+	_, queryErr := s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app3Addr.String())
 	// TODO_IN_THIS_COMMIT: assert error message contains
 	require.Error(s.T(), queryErr)
+}
+
+// TODO_IN_THIS_COMMIT: move & godoc...
+func (s *AppTransferSuite) setupStakeGateways() {
+	gatewayBech32s := []string{
+		s.gateway1Addr.String(),
+		s.gateway2Addr.String(),
+		s.gateway3Addr.String(),
+	}
+
+	for _, gatewayBech32 := range gatewayBech32s {
+		gwStakeRes := s.gatewaySuite.StakeGateway(s.T(), gatewayBech32, stakeAmount)
+		require.Equal(s.T(), gatewayBech32, gwStakeRes.GetGateway().GetAddress())
+		require.Equal(s.T(), stakeAmount, gwStakeRes.GetGateway().GetStake().Amount.Int64())
+	}
+}
+
+// TODO_IN_THIS_COMMIT: move & godoc...
+func (s *AppTransferSuite) setupStakeApps(appBech32ToServiceIdsMap map[string][]string) {
+	// Stake application.
+	for appBech32, serviceIds := range appBech32ToServiceIdsMap {
+		stakeAppRes := s.StakeApp(s.T(), appBech32, stakeAmount, serviceIds)
+		require.Equal(s.T(), appBech32, stakeAppRes.GetApplication().GetAddress())
+		require.Equal(s.T(), stakeAmount, stakeAppRes.GetApplication().GetStake().Amount.Int64())
+
+		// Assert the on-chain state shows the application as staked.
+		foundApp, queryErr := s.GetAppQueryClient().GetApplication(s.SdkCtx(), appBech32)
+		require.NoError(s.T(), queryErr)
+		require.Equal(s.T(), appBech32, foundApp.GetAddress())
+		require.Equal(s.T(), stakeAmount, foundApp.GetStake().Amount.Int64())
+	}
+}
+
+// TODO_IN_THIS_COMMIT: move & godoc...
+func (s *AppTransferSuite) setupDelegateAppsToGateway(appBech32ToServiceIdsMap map[string][]string) {
+	for appBech32, gatewayBech32s := range appBech32ToServiceIdsMap {
+		for _, gatewayBech32 := range gatewayBech32s {
+			delegateRes := s.DelegateAppToGateway(s.T(), appBech32, gatewayBech32)
+			require.Equal(s.T(), appBech32, delegateRes.GetApplication().GetAddress())
+			require.Contains(s.T(), delegateRes.GetApplication().GetDelegateeGatewayAddresses(), gatewayBech32)
+		}
+	}
 }
 
 func (s *AppTransferSuite) TestSingleSourceToNonexistentDestinationSucceeds() {
@@ -132,7 +169,7 @@ func (s *AppTransferSuite) TestSingleSourceToNonexistentDestinationSucceeds() {
 
 	// Assert that the application was created with the correct address and stake amount.
 	require.Equal(s.T(), s.app3Addr.String(), foundApp3.GetAddress())
-	require.Equal(s.T(), appStakeAmount, foundApp3.GetStake().Amount.Int64())
+	require.Equal(s.T(), stakeAmount, foundApp3.GetStake().Amount.Int64())
 
 	// Assert that the transfer end event (end block event) is observed.
 	s.shouldObserveTransferEndEvent(&foundApp3, s.app1Addr.String())
@@ -150,7 +187,7 @@ func (s *AppTransferSuite) TestSingleSourceToNonexistentDestinationSucceeds() {
 	require.NotNil(s.T(), balanceRes)
 
 	require.EqualValues(s.T(),
-		cosmostypes.NewInt64Coin(volatile.DenomuPOKT, appFundAmount-appStakeAmount),
+		cosmostypes.NewInt64Coin(volatile.DenomuPOKT, appFundAmount-stakeAmount),
 		*balanceRes.GetBalance(),
 	)
 }
@@ -246,10 +283,34 @@ func (s *AppTransferSuite) TestMultipleSourceToSameNonexistentDestinationSucceed
 	require.NoError(s.T(), err)
 
 	require.Equal(s.T(), s.app3Addr.String(), foundApp3.GetAddress())
-	require.Equal(s.T(), appStakeAmount*2, foundApp3.GetStake().Amount.Int64())
+	require.Equal(s.T(), stakeAmount*2, foundApp3.GetStake().Amount.Int64())
 
-	// TODO_IN_THIS_COMMIT: add delegations...
-	// assert that delegations were merged
+	// Assert that delegations were merged.
+	gatewayBech32s := []string{
+		s.gateway1Addr.String(),
+		s.gateway2Addr.String(),
+		s.gateway3Addr.String(),
+	}
+	for _, gatewayBech32 := range gatewayBech32s {
+		require.Contains(s.T(), foundApp3.GetDelegateeGatewayAddresses(), gatewayBech32)
+	}
+	require.Equal(s.T(), len(gatewayBech32s), len(foundApp3.GetDelegateeGatewayAddresses()))
+
+	// Assert that services were merged.
+	serviceIds := []string{
+		service1Id,
+		service2Id,
+		service3Id,
+	}
+	for _, serviceId := range serviceIds {
+		require.Contains(s.T(),
+			foundApp3.GetServiceConfigs(),
+			&sharedtypes.ApplicationServiceConfig{
+				ServiceId: serviceId,
+			},
+		)
+	}
+	require.Equal(s.T(), len(serviceIds), len(foundApp3.GetServiceConfigs()))
 
 	// assert that app1 is unstaked
 	// Query and assert application pending transfer field updated in the store.
@@ -269,7 +330,7 @@ func (s *AppTransferSuite) TestMultipleSourceToSameNonexistentDestinationSucceed
 		Denom:   volatile.DenomuPOKT,
 	})
 	require.NoError(s.T(), err)
-	require.Equal(s.T(), appFundAmount-appStakeAmount, balRes.GetBalance().Amount.Int64())
+	require.Equal(s.T(), appFundAmount-stakeAmount, balRes.GetBalance().Amount.Int64())
 
 	// assert that app2's bank balance has not changed
 	balRes, err = s.GetBankQueryClient().Balance(s.SdkCtx(), &banktypes.QueryBalanceRequest{
@@ -277,7 +338,7 @@ func (s *AppTransferSuite) TestMultipleSourceToSameNonexistentDestinationSucceed
 		Denom:   volatile.DenomuPOKT,
 	})
 	require.NoError(s.T(), err)
-	require.Equal(s.T(), appFundAmount-appStakeAmount, balRes.GetBalance().Amount.Int64())
+	require.Equal(s.T(), appFundAmount-stakeAmount, balRes.GetBalance().Amount.Int64())
 }
 
 // TODO_TEST:
@@ -287,6 +348,9 @@ func (s *AppTransferSuite) TestMultipleSourceToSameNonexistentDestinationSucceed
 
 // setupTestAccounts sets up the pre-generated accounts for the test suite.
 func (s *AppTransferSuite) setupTestAccounts() {
+	s.gateway1Addr = s.setupTestAccount().Address
+	s.gateway2Addr = s.setupTestAccount().Address
+	s.gateway3Addr = s.setupTestAccount().Address
 	s.app1Addr = s.setupTestAccount().Address
 	s.app2Addr = s.setupTestAccount().Address
 	s.app3Addr = s.setupTestAccount().Address
