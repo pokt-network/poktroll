@@ -34,7 +34,7 @@ func TestMsgServer_TransferApplication_Success(t *testing.T) {
 		Stake:   expectedAppStake,
 		Services: []*sharedtypes.ApplicationServiceConfig{
 			{
-				Service: &sharedtypes.Service{Id: "svc1"},
+				ServiceId: "svc1",
 			},
 		},
 	}
@@ -49,7 +49,7 @@ func TestMsgServer_TransferApplication_Success(t *testing.T) {
 	require.Equal(t, srcAddr, srcApp.GetAddress())
 	require.Equal(t, expectedAppStake, srcApp.GetStake())
 	require.Len(t, srcApp.GetServiceConfigs(), 1)
-	require.Equal(t, "svc1", srcApp.GetServiceConfigs()[0].GetService().GetId())
+	require.Equal(t, "svc1", srcApp.GetServiceConfigs()[0].GetServiceId())
 
 	// Transfer the application stake from the source to the destination application address.
 	transferStakeMsg := apptypes.NewMsgTransferApplication(srcAddr, dstAddr)
@@ -80,7 +80,7 @@ func TestMsgServer_TransferApplication_Success(t *testing.T) {
 	require.Equal(t, dstAddr, dstApp.GetAddress())
 	require.Equal(t, expectedAppStake, dstApp.GetStake())
 	require.Len(t, dstApp.GetServiceConfigs(), 1)
-	require.Equal(t, "svc1", dstApp.GetServiceConfigs()[0].GetService().GetId())
+	require.Equal(t, "svc1", dstApp.GetServiceConfigs()[0].GetServiceId)
 
 	srcApp.Address = ""
 	dstApp.Address = ""
@@ -114,7 +114,7 @@ func TestMsgServer_TransferApplication_Error_DestinationExists(t *testing.T) {
 		Stake:   expectedAppStake,
 		Services: []*sharedtypes.ApplicationServiceConfig{
 			{
-				Service: &sharedtypes.Service{Id: "svc1"},
+				ServiceId: "svc1",
 			},
 		},
 	}
@@ -128,7 +128,7 @@ func TestMsgServer_TransferApplication_Error_DestinationExists(t *testing.T) {
 		Stake:   expectedAppStake,
 		Services: []*sharedtypes.ApplicationServiceConfig{
 			{
-				Service: &sharedtypes.Service{Id: "svc1"},
+				ServiceId: "svc1",
 			},
 		},
 	}
@@ -149,5 +149,5 @@ func TestMsgServer_TransferApplication_Error_DestinationExists(t *testing.T) {
 	require.Equal(t, srcAddr, foundApp.Address)
 	require.Equal(t, int64(100), foundApp.Stake.Amount.Int64())
 	require.Len(t, foundApp.ServiceConfigs, 1)
-	require.Equal(t, "svc1", foundApp.ServiceConfigs[0].Service.Id)
+	require.Equal(t, "svc1", foundApp.ServiceConfigs[0].GetServiceId())
 }
