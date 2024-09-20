@@ -33,13 +33,13 @@ type AppTransferSuite struct {
 	suites.ApplicationModuleSuite
 	gatewaySuite suites.GatewayModuleSuite
 
-	gateway1Addr cosmostypes.AccAddress
-	gateway2Addr cosmostypes.AccAddress
-	gateway3Addr cosmostypes.AccAddress
+	gateway1Bech32 string
+	gateway2Bech32 string
+	gateway3Bech32 string
 
-	app1Addr cosmostypes.AccAddress
-	app2Addr cosmostypes.AccAddress
-	app3Addr cosmostypes.AccAddress
+	app1Bech32 string
+	app2Bech32 string
+	app3Bech32 string
 }
 
 func (s *AppTransferSuite) SetupTest() {
@@ -55,18 +55,18 @@ func (s *AppTransferSuite) SetupTest() {
 
 	// Stake app1 and app2.
 	s.setupStakeApps(map[string][]string{
-		s.app1Addr.String(): {service1Id, service3Id},
-		s.app2Addr.String(): {service1Id, service2Id},
+		s.app1Bech32: {service1Id, service3Id},
+		s.app2Bech32: {service1Id, service2Id},
 	})
 
 	// Delegate app 1 to gateway 1 and app2 to gateways 1 and 2.
 	s.setupDelegateAppsToGateway(map[string][]string{
-		s.app1Addr.String(): {s.gateway1Addr.String(), s.gateway3Addr.String()},
-		s.app2Addr.String(): {s.gateway1Addr.String(), s.gateway2Addr.String()},
+		s.app1Bech32: {s.gateway1Bech32, s.gateway3Bech32},
+		s.app2Bech32: {s.gateway1Bech32, s.gateway2Bech32},
 	})
 
 	// Assert the on-chain state shows the application 3 as NOT staked.
-	_, queryErr := s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app3Addr.String())
+	_, queryErr := s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app3Bech32)
 	// TODO_IN_THIS_COMMIT: assert error message contains
 	require.Error(s.T(), queryErr)
 }
@@ -74,9 +74,9 @@ func (s *AppTransferSuite) SetupTest() {
 // TODO_IN_THIS_COMMIT: move & godoc...
 func (s *AppTransferSuite) setupStakeGateways() {
 	gatewayBech32s := []string{
-		s.gateway1Addr.String(),
-		s.gateway2Addr.String(),
-		s.gateway3Addr.String(),
+		s.gateway1Bech32,
+		s.gateway2Bech32,
+		s.gateway3Bech32,
 	}
 
 	for _, gatewayBech32 := range gatewayBech32s {
@@ -121,7 +121,7 @@ func (s *AppTransferSuite) TestSingleSourceToNonexistentDestinationSucceeds() {
 	transferBeginHeight := s.SdkCtx().BlockHeight()
 
 	// transfer app1 to app3
-	transferRes := s.Transfer(s.T(), s.app1Addr, s.app3Addr)
+	transferRes := s.Transfer(s.T(), s.app1Bech32, s.app3Bech32)
 	srcApp := transferRes.GetApplication()
 
 	// Assert application pending transfer field updated in the msg response.
@@ -129,13 +129,13 @@ func (s *AppTransferSuite) TestSingleSourceToNonexistentDestinationSucceeds() {
 	require.NotNil(s.T(), pendingTransfer)
 
 	expectedPendingTransfer := &apptypes.PendingApplicationTransfer{
-		DestinationAddress: s.app3Addr.String(),
+		DestinationAddress: s.app3Bech32,
 		SessionEndHeight:   uint64(sessionEndHeight),
 	}
 	require.EqualValues(s.T(), expectedPendingTransfer, pendingTransfer)
 
 	// Query and assert application pending transfer field updated in the store.
-	foundApp1, err := s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app1Addr.String())
+	foundApp1, err := s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app1Bech32)
 	require.NoError(s.T(), err)
 	require.EqualValues(s.T(), expectedPendingTransfer, foundApp1.GetPendingTransfer())
 
@@ -146,7 +146,7 @@ func (s *AppTransferSuite) TestSingleSourceToNonexistentDestinationSucceeds() {
 	require.NotNil(s.T(), msgEvent, "expected transfer application message event")
 
 	// Assert that the transfer begin event (tx result event) is observed.
-	s.shouldObserveTransferBeginEvent(&foundApp1, s.app3Addr.String())
+	s.shouldObserveTransferBeginEvent(&foundApp1, s.app3Bech32)
 
 	// wait for transfer end commit height - 1
 	transferEndHeight := apptypes.GetApplicationTransferHeight(&sharedParams, &foundApp1)
@@ -154,33 +154,33 @@ func (s *AppTransferSuite) TestSingleSourceToNonexistentDestinationSucceeds() {
 	s.GetApp().NextBlocks(s.T(), int(blocksUntilTransferEndHeight)-1)
 
 	// assert that app1 is in transfer period
-	foundApp1, err = s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app1Addr.String())
+	foundApp1, err = s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app1Bech32)
 	require.NoError(s.T(), err)
 
-	require.Equal(s.T(), s.app1Addr.String(), foundApp1.GetAddress())
+	require.Equal(s.T(), s.app1Bech32, foundApp1.GetAddress())
 	require.Equal(s.T(), expectedPendingTransfer, foundApp1.GetPendingTransfer())
 
 	// wait for end block event (end)
 	s.GetApp().NextBlock(s.T())
 
 	// Query for and assert that the destination application was created.
-	foundApp3, err := s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app3Addr.String())
+	foundApp3, err := s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app3Bech32)
 	require.NoError(s.T(), err)
 
 	// Assert that the application was created with the correct address and stake amount.
-	require.Equal(s.T(), s.app3Addr.String(), foundApp3.GetAddress())
+	require.Equal(s.T(), s.app3Bech32, foundApp3.GetAddress())
 	require.Equal(s.T(), stakeAmount, foundApp3.GetStake().Amount.Int64())
 
 	// Assert that the transfer end event (end block event) is observed.
-	s.shouldObserveTransferEndEvent(&foundApp3, s.app1Addr.String())
+	s.shouldObserveTransferEndEvent(&foundApp3, s.app1Bech32)
 
 	// assert that app1 is unstaked
-	_, err = s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app1Addr.String())
+	_, err = s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app1Bech32)
 	require.ErrorContains(s.T(), err, "application not found")
 
 	// assert that app1's bank balance has not changed
 	balanceRes, err := s.GetBankQueryClient().Balance(s.SdkCtx(), &banktypes.QueryBalanceRequest{
-		Address: s.app1Addr.String(),
+		Address: s.app1Bech32,
 		Denom:   volatile.DenomuPOKT,
 	})
 	require.NoError(s.T(), err)
@@ -202,14 +202,14 @@ func (s *AppTransferSuite) TestMultipleSourceToSameNonexistentDestinationSucceed
 
 	// transfer app1 & app2 to app3
 	srcToDstTransferMap := map[string]string{
-		s.app1Addr.String(): s.app3Addr.String(),
-		s.app2Addr.String(): s.app3Addr.String(),
+		s.app1Bech32: s.app3Bech32,
+		s.app2Bech32: s.app3Bech32,
 	}
 	transferResps := s.MultiTransfer(s.T(), srcToDstTransferMap)
 
 	transferResSrcIndices := []string{
-		s.app1Addr.String(),
-		s.app2Addr.String(),
+		s.app1Bech32,
+		s.app2Bech32,
 	}
 	var (
 		transferEndHeight       int64
@@ -261,7 +261,7 @@ func (s *AppTransferSuite) TestMultipleSourceToSameNonexistentDestinationSucceed
 	require.Equal(s.T(), 2, len(msgEvents), "expected 2 application transfer message events")
 
 	// wait for transfer end commit height - 1
-	foundApp1, err := s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app1Addr.String())
+	foundApp1, err := s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app1Bech32)
 	require.NoError(s.T(), err)
 
 	// wait for transfer end commit height - 1
@@ -269,27 +269,27 @@ func (s *AppTransferSuite) TestMultipleSourceToSameNonexistentDestinationSucceed
 	s.GetApp().NextBlocks(s.T(), int(blocksUntilTransferEndHeight)-1)
 
 	// assert that app1 is in transfer period
-	foundApp1, err = s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app1Addr.String())
+	foundApp1, err = s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app1Bech32)
 	require.NoError(s.T(), err)
 
-	require.Equal(s.T(), s.app1Addr.String(), foundApp1.GetAddress())
+	require.Equal(s.T(), s.app1Bech32, foundApp1.GetAddress())
 	require.Equal(s.T(), expectedPendingTransfer, foundApp1.GetPendingTransfer())
 
 	// wait for end block event (end)
 	s.GetApp().NextBlock(s.T())
 
 	// assert that app3 is staked (w/ sum amount: app1 + app2)
-	foundApp3, err := s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app3Addr.String())
+	foundApp3, err := s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app3Bech32)
 	require.NoError(s.T(), err)
 
-	require.Equal(s.T(), s.app3Addr.String(), foundApp3.GetAddress())
+	require.Equal(s.T(), s.app3Bech32, foundApp3.GetAddress())
 	require.Equal(s.T(), stakeAmount*2, foundApp3.GetStake().Amount.Int64())
 
 	// Assert that delegations were merged.
 	gatewayBech32s := []string{
-		s.gateway1Addr.String(),
-		s.gateway2Addr.String(),
-		s.gateway3Addr.String(),
+		s.gateway1Bech32,
+		s.gateway2Bech32,
+		s.gateway3Bech32,
 	}
 	for _, gatewayBech32 := range gatewayBech32s {
 		require.Contains(s.T(), foundApp3.GetDelegateeGatewayAddresses(), gatewayBech32)
@@ -314,19 +314,19 @@ func (s *AppTransferSuite) TestMultipleSourceToSameNonexistentDestinationSucceed
 
 	// assert that app1 is unstaked
 	// Query and assert application pending transfer field updated in the store.
-	foundApp1, err = s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app1Addr.String())
+	foundApp1, err = s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app1Bech32)
 	// TODO_IN_THIS_COMMIT: assert error message contains
 	require.Error(s.T(), err)
 
 	// assert that app2 is unstaked
 	// Query and assert application pending transfer field updated in the store.
-	_, err = s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app2Addr.String())
+	_, err = s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app2Bech32)
 	// TODO_IN_THIS_COMMIT: assert error message contains
 	require.Error(s.T(), err)
 
 	// assert that app1's bank balance has not changed
 	balRes, err := s.GetBankQueryClient().Balance(s.SdkCtx(), &banktypes.QueryBalanceRequest{
-		Address: s.app1Addr.String(),
+		Address: s.app1Bech32,
 		Denom:   volatile.DenomuPOKT,
 	})
 	require.NoError(s.T(), err)
@@ -334,7 +334,7 @@ func (s *AppTransferSuite) TestMultipleSourceToSameNonexistentDestinationSucceed
 
 	// assert that app2's bank balance has not changed
 	balRes, err = s.GetBankQueryClient().Balance(s.SdkCtx(), &banktypes.QueryBalanceRequest{
-		Address: s.app2Addr.String(),
+		Address: s.app2Bech32,
 		Denom:   volatile.DenomuPOKT,
 	})
 	require.NoError(s.T(), err)
@@ -348,12 +348,12 @@ func (s *AppTransferSuite) TestMultipleSourceToSameNonexistentDestinationSucceed
 
 // setupTestAccounts sets up the pre-generated accounts for the test suite.
 func (s *AppTransferSuite) setupTestAccounts() {
-	s.gateway1Addr = s.setupTestAccount().Address
-	s.gateway2Addr = s.setupTestAccount().Address
-	s.gateway3Addr = s.setupTestAccount().Address
-	s.app1Addr = s.setupTestAccount().Address
-	s.app2Addr = s.setupTestAccount().Address
-	s.app3Addr = s.setupTestAccount().Address
+	s.gateway1Bech32 = s.setupTestAccount().Address.String()
+	s.gateway2Bech32 = s.setupTestAccount().Address.String()
+	s.gateway3Bech32 = s.setupTestAccount().Address.String()
+	s.app1Bech32 = s.setupTestAccount().Address.String()
+	s.app2Bech32 = s.setupTestAccount().Address.String()
+	s.app3Bech32 = s.setupTestAccount().Address.String()
 }
 
 func (s *AppTransferSuite) setupTestAccount() *testkeyring.PreGeneratedAccount {
