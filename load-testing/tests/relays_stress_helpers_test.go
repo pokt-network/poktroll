@@ -28,7 +28,6 @@ import (
 	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/api/poktroll/tokenomics"
 	"github.com/pokt-network/poktroll/load-testing/config"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/events"
@@ -1185,9 +1184,9 @@ func (s *relaysSuite) getRelayCost() int64 {
 	// Set up the tokenomics client.
 	flagSet := testclient.NewLocalnetFlagSet(s)
 	clientCtx := testclient.NewLocalnetClientCtx(s, flagSet)
-	tokenomicsClient := tokenomics.NewQueryClient(clientCtx)
+	sharedClient := sharedtypes.NewQueryClient(clientCtx)
 
-	res, err := tokenomicsClient.Params(s.ctx, &tokenomics.QueryParamsRequest{})
+	res, err := sharedClient.Params(s.ctx, &sharedtypes.QueryParamsRequest{})
 	require.NoError(s, err)
 
 	return int64(res.Params.ComputeUnitsToTokensMultiplier)

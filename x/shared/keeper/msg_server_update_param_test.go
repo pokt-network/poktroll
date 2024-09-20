@@ -331,6 +331,43 @@ func TestMsgUpdateParam_UpdateApplicationUnbondingPeriodSessions(t *testing.T) {
 	require.ErrorIs(t, err, sharedtypes.ErrSharedParamInvalid)
 }
 
+func TestMsgUpdateParam_ComputeUnitsToTokenMultiplier(t *testing.T) {
+	var expectedComputeUnitsToTokenMultiplier int64 = 5
+
+	k, ctx := testkeeper.SharedKeeper(t)
+	msgSrv := keeper.NewMsgServerImpl(k)
+
+	defaultParams := sharedtypes.DefaultParams()
+	// Set the parameters to their default values
+	require.NoError(t, k.SetParams(ctx, defaultParams))
+
+	// Ensure the default values are different from the new values we want to set
+	require.NotEqual(t, uint64(expectedComputeUnitsToTokenMultiplier), defaultParams.GetComputeUnitsToTokensMultiplier())
+
+	// Update the compute units to token multiplier param
+	updateParamMsg := &sharedtypes.MsgUpdateParam{
+		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+		Name:      sharedtypes.ParamComputeUnitsToTokensMultiplier,
+		AsType:    &sharedtypes.MsgUpdateParam_AsInt64{AsInt64: expectedComputeUnitsToTokenMultiplier},
+	}
+	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
+	require.NoError(t, err)
+
+	require.Equal(t, uint64(expectedComputeUnitsToTokenMultiplier), res.Params.GetComputeUnitsToTokensMultiplier())
+
+	// Ensure the other parameters are unchanged
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, "ComputeUnitsToTokensMultiplier")
+
+	// Ensure that compute units to token multiplier that is less than 1 is not allowed.
+	updateParamMsg = &sharedtypes.MsgUpdateParam{
+		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+		Name:      sharedtypes.ParamComputeUnitsToTokensMultiplier,
+		AsType:    &sharedtypes.MsgUpdateParam_AsInt64{AsInt64: 0},
+	}
+	_, err = msgSrv.UpdateParam(ctx, updateParamMsg)
+	require.ErrorIs(t, err, sharedtypes.ErrSharedParamInvalid)
+}
+
 // getMinActorUnbondingPeriodSessions returns the actors unbonding period
 // sessions such that it is greater than the cumulative proof window close blocks
 // to pass UpdateParam validation.
