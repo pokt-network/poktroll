@@ -1,3 +1,5 @@
+//go:build integration
+
 package params
 
 import (
@@ -11,7 +13,6 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/pokt-network/poktroll/testutil/cases"
-	"github.com/pokt-network/poktroll/testutil/integration"
 	"github.com/pokt-network/poktroll/testutil/integration/suites"
 )
 
@@ -24,7 +25,7 @@ func (s *MsgUpdateParamSuite) SetupTest() {
 	s.UpdateParamsSuite.SetupTest()
 
 	// Allocate an address for unauthorized user.
-	nextAcct, ok := s.GetApp(s.T()).GetPreGeneratedAccounts().Next()
+	nextAcct, ok := s.GetApp().GetPreGeneratedAccounts().Next()
 	require.True(s.T(), ok, "insufficient pre-generated accounts available")
 	unauthorizedAddr = nextAcct.Address
 }
@@ -90,17 +91,10 @@ func (s *MsgUpdateParamSuite) TestUnauthorizedMsgUpdateParamFails() {
 
 				msgUpdateParam := msgValueCopy.Interface().(cosmostypes.Msg)
 
-				// Set up assertion that the MsgExec will fail.
-				errAssertionOpt := integration.WithErrorAssertion(
-					func(err error) {
-						require.ErrorIs(t, err, authz.ErrNoAuthorizationFound)
-					},
-				)
-
 				// Send an authz MsgExec from an unauthorized address.
-				runOpts := integration.RunUntilNextBlockOpts.Append(errAssertionOpt)
 				execMsg := authz.NewMsgExec(unauthorizedAddr, []cosmostypes.Msg{msgUpdateParam})
-				anyRes := s.GetApp(t).RunMsg(t, &execMsg, runOpts...)
+				anyRes, err := s.GetApp().RunMsg(t, &execMsg)
+				require.ErrorContains(t, err, authz.ErrNoAuthorizationFound.Error())
 				require.Nil(t, anyRes)
 			})
 		}
@@ -174,8 +168,9 @@ func (s *MsgUpdateParamSuite) TestAuthorizedMsgUpdateParamSucceeds() {
 
 				// Send an authz MsgExec from an unauthorized address.
 				execMsg := authz.NewMsgExec(suites.AuthorizedAddr, []cosmostypes.Msg{msgUpdateParam})
-				anyRes := s.GetApp(t).RunMsg(t, &execMsg, integration.RunUntilNextBlockOpts...)
-				require.NotNil(t, anyRes)
+				authzExecResps := s.RunAuthzExecMsg(t, suites.AuthorizedAddr, &execMsg)
+				require.Equal(t, 1, len(authzExecResps))
+				//authzExecResps[0].(*)
 
 				// Query for the module's params.
 				params, err := s.QueryModuleParams(t, moduleName)

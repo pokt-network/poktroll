@@ -38,6 +38,7 @@ var (
 		ProofWindowCloseOffsetBlocks:       5,
 		SupplierUnbondingPeriodSessions:    9,
 		ApplicationUnbondingPeriodSessions: 9,
+		ComputeUnitsToTokensMultiplier:     420,
 	}
 
 	ValidSessionParams = sessiontypes.Params{}
@@ -51,24 +52,21 @@ var (
 		MaxDelegatedGateways: 999,
 	}
 
-	ValidGatewayParams = gatewaytypes.Params{}
-
-	ValidSupplierParams = suppliertypes.Params{}
+	ValidGatewayParams    = gatewaytypes.Params{}
+	ValidSupplierParams   = suppliertypes.Params{}
+	ValidTokenomicsParams = tokenomicstypes.Params{}
 
 	ValidMissingPenaltyCoin           = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 500)
 	ValidSubmissionFeeCoin            = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 5000000)
 	ValidRelayDifficultyTargetHash, _ = hex.DecodeString("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff")
 
-	ValidProofParams = prooftypes.Params{
+	ValidProofRequirementThresholdCoin = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 100)
+	ValidProofParams                   = prooftypes.Params{
 		RelayDifficultyTargetHash: ValidRelayDifficultyTargetHash,
 		ProofRequestProbability:   0.1,
-		ProofRequirementThreshold: 100,
+		ProofRequirementThreshold: &ValidProofRequirementThresholdCoin,
 		ProofMissingPenalty:       &ValidMissingPenaltyCoin,
 		ProofSubmissionFee:        &ValidSubmissionFeeCoin,
-	}
-
-	ValidTokenomicsParams = tokenomicstypes.Params{
-		ComputeUnitsToTokensMultiplier: 420,
 	}
 
 	// TODO_IN_THIS_COMMIT: godoc...
@@ -193,9 +191,9 @@ func (s *UpdateParamsSuite) SetupTest() {
 	s.NewApp(s.T())
 
 	// Set the authority, authorized, and unauthorized addresses.
-	AuthorityAddr = cosmostypes.MustAccAddressFromBech32(s.GetApp(s.T()).GetAuthority())
+	AuthorityAddr = cosmostypes.MustAccAddressFromBech32(s.GetApp().GetAuthority())
 
-	nextAcct, ok := s.GetApp(s.T()).GetPreGeneratedAccounts().Next()
+	nextAcct, ok := s.GetApp().GetPreGeneratedAccounts().Next()
 	require.True(s.T(), ok, "insufficient pre-generated accounts available")
 	AuthorizedAddr = nextAcct.Address
 
@@ -204,7 +202,7 @@ func (s *UpdateParamsSuite) SetupTest() {
 		AuthorityAddr,
 		AuthorizedAddr,
 		MsgUpdateParamsName,
-		s.GetModuleNames()...,
+		s.GetPoktrollModuleNames()...,
 	)
 
 	// Create authz grants for all poktroll modules' MsgUpdateParam messages.
@@ -234,14 +232,14 @@ func (s *UpdateParamsSuite) QueryModuleParams(t *testing.T, moduleName string) (
 	// Construct a new param client.
 	newParamClientFn := reflect.ValueOf(NewParamClientFns[moduleName])
 	newParamClientFnArgs := []reflect.Value{
-		reflect.ValueOf(s.GetApp(t).QueryHelper()),
+		reflect.ValueOf(s.GetApp().QueryHelper()),
 	}
 	paramClient := newParamClientFn.Call(newParamClientFnArgs)[0]
 
 	// Query for the module's params.
 	paramsQueryReqValue := reflect.New(reflect.TypeOf(QueryParamsRequestByModule[moduleName]))
 	callParamsArgs := []reflect.Value{
-		reflect.ValueOf(s.GetApp(t).GetSdkCtx()),
+		reflect.ValueOf(s.GetApp().GetSdkCtx()),
 		paramsQueryReqValue,
 	}
 	callParamsReturnValues := paramClient.MethodByName("Params").Call(callParamsArgs)

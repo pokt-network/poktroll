@@ -7,11 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cosmos/cosmos-sdk/types"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/tx"
 	"github.com/cosmos/cosmos-sdk/x/authz"
 	"github.com/stretchr/testify/require"
-
-	"github.com/pokt-network/poktroll/testutil/integration"
 )
 
 const (
@@ -32,25 +31,19 @@ type AuthzIntegrationSuite struct {
 // TODO_IN_THIS_COMMIT: godoc
 func (s *AuthzIntegrationSuite) SendAuthzGrantMsgForPoktrollModules(
 	t *testing.T,
-	granterAddr, granteeAddr types.AccAddress,
+	granterAddr, granteeAddr cosmostypes.AccAddress,
 	msgName string,
 	moduleNames ...string,
 ) {
 	t.Helper()
 
 	var (
-		runOpts           []integration.RunOption
 		foundModuleGrants = make(map[string]int)
 	)
-	for moduleIdx, moduleName := range moduleNames {
-		// Commit and finalize the block after the last module's grant.
-		if moduleIdx == len(moduleNames)-1 {
-			runOpts = append(runOpts, integration.RunUntilNextBlockOpts...)
-		}
-
+	for _, moduleName := range moduleNames {
 		msgType := fmt.Sprintf(poktrollMsgTypeFormat, moduleName, msgName)
 		authorization := &authz.GenericAuthorization{Msg: msgType}
-		s.RunAuthzGrantMsg(t, granterAddr, granteeAddr, authorization, runOpts...)
+		s.RunAuthzGrantMsg(t, granterAddr, granteeAddr, authorization)
 
 		// Query for the created grant to assert that they were created.
 		authzQueryClient := authz.NewQueryClient(s.app.QueryHelper())
@@ -78,32 +71,36 @@ func (s *AuthzIntegrationSuite) SendAuthzGrantMsgForPoktrollModules(
 func (s *AuthzIntegrationSuite) RunAuthzGrantMsg(
 	t *testing.T,
 	granterAddr,
-	granteeAddr types.AccAddress,
+	granteeAddr cosmostypes.AccAddress,
 	authorization authz.Authorization,
-	runOpts ...integration.RunOption,
 ) {
 	t.Helper()
 
 	grantMsg, err := authz.NewMsgGrant(granterAddr, granteeAddr, authorization, &defaultAuthzGrantExpiration)
 	require.NoError(t, err)
 
-	anyRes := s.app.RunMsg(s.T(), grantMsg, runOpts...)
+	anyRes, err := s.app.RunMsg(s.T(), grantMsg)
+	require.NoError(t, err)
 	require.NotNil(t, anyRes)
 }
 
 // TODO_IN_THIS_COMMIT: godoc
 func (s *AuthzIntegrationSuite) RunAuthzExecMsg(
 	t *testing.T,
-	fromAddr types.AccAddress,
-	msgs ...types.Msg,
-) {
+	fromAddr cosmostypes.AccAddress,
+	msgs ...cosmostypes.Msg,
+) (msgRespsBz []tx.MsgResponse) {
 	t.Helper()
 
 	execMsg := authz.NewMsgExec(fromAddr, msgs)
-	anyRes := s.GetApp(t).RunMsg(s.T(), &execMsg, integration.RunUntilNextBlockOpts...)
+	anyRes, err := s.GetApp().RunMsg(s.T(), &execMsg)
+	require.NoError(t, err)
 	require.NotNil(t, anyRes)
 
-	execRes := new(authz.MsgExecResponse)
-	err := s.GetApp(t).GetCodec().UnpackAny(anyRes, &execRes)
-	require.NoError(t, err)
+	execRes := anyRes.(*authz.MsgExecResponse)
+	for _, msgResBz := range execRes.Results {
+		msgRespsBz = append(msgRespsBz, msgResBz)
+	}
+
+	return msgRespsBz
 }

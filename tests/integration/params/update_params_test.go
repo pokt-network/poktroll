@@ -1,3 +1,5 @@
+//go:build integration
+
 package params
 
 import (
@@ -9,7 +11,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/pokt-network/poktroll/testutil/integration"
 	"github.com/pokt-network/poktroll/testutil/integration/suites"
 )
 
@@ -24,13 +25,13 @@ func (s *MsgUpdateParamsSuite) SetupTest() {
 	s.UpdateParamsSuite.SetupTest()
 
 	// Allocate an address for unauthorized user.
-	nextAcct, ok := s.GetApp(s.T()).GetPreGeneratedAccounts().Next()
+	nextAcct, ok := s.GetApp().GetPreGeneratedAccounts().Next()
 	require.True(s.T(), ok, "insufficient pre-generated accounts available")
 	unauthorizedAddr = nextAcct.Address
 }
 
 func (s *MsgUpdateParamsSuite) TestUnauthorizedMsgUpdateParamsFails() {
-	for _, moduleName := range s.GetModuleNames() {
+	for _, moduleName := range s.GetPoktrollModuleNames() {
 		s.T().Run(moduleName, func(t *testing.T) {
 			// Assert that the module's params are set to their default values.
 			s.RequireModuleHasDefaultParams(t, moduleName)
@@ -49,24 +50,17 @@ func (s *MsgUpdateParamsSuite) TestUnauthorizedMsgUpdateParamsFails() {
 				SetString(suites.AuthorityAddr.String())
 			msgUpdateParams := msgValueCopy.Interface().(cosmostypes.Msg)
 
-			// Set up assertion that the MsgExec will fail.
-			errAssertionOpt := integration.WithErrorAssertion(
-				func(err error) {
-					require.ErrorIs(t, err, authz.ErrNoAuthorizationFound)
-				},
-			)
-
 			// Send an authz MsgExec from an unauthorized address.
-			runOpts := integration.RunUntilNextBlockOpts.Append(errAssertionOpt)
 			execMsg := authz.NewMsgExec(unauthorizedAddr, []cosmostypes.Msg{msgUpdateParams})
-			anyRes := s.GetApp(t).RunMsg(t, &execMsg, runOpts...)
+			anyRes, err := s.GetApp().RunMsg(t, &execMsg)
+			require.ErrorContains(t, err, authz.ErrNoAuthorizationFound.Error())
 			require.Nil(t, anyRes)
 		})
 	}
 }
 
 func (s *MsgUpdateParamsSuite) TestAuthorizedMsgUpdateParamsSucceeds() {
-	for _, moduleName := range s.GetModuleNames() {
+	for _, moduleName := range s.GetPoktrollModuleNames() {
 		s.T().Run(moduleName, func(t *testing.T) {
 			// Assert that the module's params are set to their default values.
 			s.RequireModuleHasDefaultParams(t, moduleName)
@@ -89,7 +83,10 @@ func (s *MsgUpdateParamsSuite) TestAuthorizedMsgUpdateParamsSucceeds() {
 
 			// Send an authz MsgExec from an unauthorized address.
 			execMsg := authz.NewMsgExec(suites.AuthorizedAddr, []cosmostypes.Msg{msgUpdateParams})
-			anyRes := s.GetApp(t).RunMsg(t, &execMsg, integration.RunUntilNextBlockOpts...)
+			s.RunAuthzExecMsg(t, suites.AuthorizedAddr, &execMsg)
+
+			anyRes, err := s.GetApp().RunMsg(t, &execMsg)
+			require.NoError(t, err)
 			require.NotNil(t, anyRes)
 
 			// Query for the module's params.
