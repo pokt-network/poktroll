@@ -171,7 +171,7 @@ func (s *BaseIntegrationSuiteTestSuite) TestGetAttributeValue() {
 	// Get the "message" event and check its "module" attribute. Cosmos-sdk emits
 	// a "message" event alongside other txResult events for each message in a tx.
 	event := testEvents[0]
-	value, hasAttr := s.GetAttributeValue(&event, "module")
+	value, hasAttr := events.GetAttributeValue(&event, "module")
 	require.True(s.T(), hasAttr)
 	require.Equal(s.T(), banktypes.ModuleName, value)
 }
