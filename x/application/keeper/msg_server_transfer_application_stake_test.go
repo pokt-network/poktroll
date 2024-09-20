@@ -34,7 +34,7 @@ func TestMsgServer_TransferApplicationStake_Success(t *testing.T) {
 		Stake:   expectedAppStake,
 		Services: []*sharedtypes.ApplicationServiceConfig{
 			{
-				Service: &sharedtypes.Service{Id: "svc1"},
+				ServiceId: "svc1",
 			},
 		},
 	}
@@ -49,7 +49,7 @@ func TestMsgServer_TransferApplicationStake_Success(t *testing.T) {
 	require.Equal(t, srcAddr, srcApp.Address)
 	require.Equal(t, expectedAppStake, srcApp.Stake)
 	require.Len(t, srcApp.ServiceConfigs, 1)
-	require.Equal(t, "svc1", srcApp.ServiceConfigs[0].Service.Id)
+	require.Equal(t, "svc1", srcApp.ServiceConfigs[0].ServiceId)
 
 	// Transfer the application stake from the source to the destination application address.
 	transferStakeMsg := apptypes.NewMsgTransferApplicationStake(srcAddr, dstAddr)
@@ -97,7 +97,7 @@ func TestMsgServer_TransferApplicationStake_Error_DestinationExists(t *testing.T
 		Stake:   expectedAppStake,
 		Services: []*sharedtypes.ApplicationServiceConfig{
 			{
-				Service: &sharedtypes.Service{Id: "svc1"},
+				ServiceId: "svc1",
 			},
 		},
 	}
@@ -111,7 +111,7 @@ func TestMsgServer_TransferApplicationStake_Error_DestinationExists(t *testing.T
 		Stake:   expectedAppStake,
 		Services: []*sharedtypes.ApplicationServiceConfig{
 			{
-				Service: &sharedtypes.Service{Id: "svc1"},
+				ServiceId: "svc1",
 			},
 		},
 	}
@@ -132,5 +132,5 @@ func TestMsgServer_TransferApplicationStake_Error_DestinationExists(t *testing.T
 	require.Equal(t, srcAddr, foundApp.Address)
 	require.Equal(t, int64(100), foundApp.Stake.Amount.Int64())
 	require.Len(t, foundApp.ServiceConfigs, 1)
-	require.Equal(t, "svc1", foundApp.ServiceConfigs[0].Service.Id)
+	require.Equal(t, "svc1", foundApp.ServiceConfigs[0].ServiceId)
 }
