@@ -44,7 +44,6 @@ You can find a fully featured example configuration at [relayminer_config_full_e
   - [Overview](#overview)
   - [Key Requirements for Operators](#key-requirements-for-operators)
   - [Recommendations for Supplier Operators](#recommendations-for-supplier-operators)
-  - [Implications for Network Participation](#implications-for-network-participation)
 
 ## Introduction
 
@@ -471,6 +470,8 @@ by discouraging invalid or unnecessary `Proofs`.
 Since `Proofs` are the most block space-consuming primitive in the Pocket Network,
 this fee plays a crucial role in maintaining the integrity of the network.
 
+TODO_MAINNET(@red-0ne): Add a link to a block in our explorer showcasing this.
+
 ### Key Requirements for Operators
 
 Due to the probabilistic nature of the `Proof` requirement, `Supplier` operators must
@@ -485,16 +486,44 @@ result in `Supplier` slashing if the `Proof` is required.
 - **Sufficient Balance**: Operators should regularly check their account balance
 and ensure they have enough funds to cover the submission fees for `Proofs`.
 
+The following command can be used to check the balance of a `Supplier` operator:
+```bash
+poktrolld query bank balance <supplier_operator_address> --node $(POCKET_NODE) upokt
+
+balance:
+  amount: "109999000"
+  denom: upokt
+```
+
 - **Automated Monitoring**: It is highly recommended to implement balance monitoring
 or alert systems to avoid running out of funds during critical periods.
+
+TODO_POST_MAINNET(@okdas): Link to example alerts & infrastructure others can use.
 
 - **Cost Awareness**: Operators should familiarize themselves with the current
 `proof_submission_fee` and plan their funding accordingly, especially if they
 anticipate submitting a higher volume of `Proofs`.
 
-### Implications for Network Participation
+The following command can be used to check the current `proof_submission_fee`:
+```bash
+poktrolld query proof params --node $(POCKET_NODE)
 
-Having insufficient funds could lead to rejected `Proof` submissions and
-potentially disrupt the operator’s participation in the Pocket Network.
-To maintain a smooth operation, operators must plan and manage their account
-balance as part of their operational procedures.
+...
+  proof_submission_fee:
+    amount: "1000000"
+    denom: upokt
+...
+```
+
+The list of `Proof` governance parameters can be found at [/proto/proof/params.proto](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/proof/params.proto)
+
+:::warning
+
+If you submit a claim but do not submit its corresponding proof, this could result in SLASHING!
+
+Having insufficient funds could lead to rejected `Proof` submissions . This
+can disrupt the operator’s participation in the Pocket Network. To maintain a
+smooth operation, avoid being slashed, and earn your rewards, operators must plan
+and manage their account balance as part of their operational procedures.
+
+:::
