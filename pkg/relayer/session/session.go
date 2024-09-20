@@ -64,6 +64,9 @@ type relayerSessionsManager struct {
 	// requirement probability governance parameters to determine whether a submitted
 	// claim requires a proof.
 	proofQueryClient client.ProofQueryClient
+
+	// tokenomicsQueryClient is used to query for the tokenomics module parameters.
+	tokenomicsQueryClient client.TokenomicsQueryClient
 }
 
 // NewRelayerSessions creates a new relayerSessions.
@@ -94,6 +97,7 @@ func NewRelayerSessions(
 		&rs.sharedQueryClient,
 		&rs.serviceQueryClient,
 		&rs.proofQueryClient,
+		&rs.tokenomicsQueryClient,
 	); err != nil {
 		return nil, err
 	}

@@ -29,13 +29,17 @@ var (
 	ParamProofRequestProbability           = "proof_request_probability"
 	DefaultProofRequestProbability float32 = 0.25 // See: https://github.com/pokt-network/pocket-core/blob/staging/docs/proposals/probabilistic_proofs.md
 
-	KeyProofRequirementThreshold            = []byte("ProofRequirementThreshold")
-	ParamProofRequirementThreshold          = "proof_requirement_threshold"
-	DefaultProofRequirementThreshold uint64 = 20 // See: https://github.com/pokt-network/pocket-core/blob/staging/docs/proposals/probabilistic_proofs.md
+	// The probabilistic proofs paper specifies a threshold of 20 POKT.
+	// TODO_MAINNET(@Olshansk, @RawthiL): Figure out what this value should be.
+	KeyProofRequirementThreshold     = []byte("ProofRequirementThreshold")
+	ParamProofRequirementThreshold   = "proof_requirement_threshold"
+	DefaultProofRequirementThreshold = cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(20e6)) // See: https://github.com/pokt-network/pocket-core/blob/staging/docs/proposals/probabilistic_proofs.md
 
-	KeyProofMissingPenalty     = []byte("ProofMissingPenalty")
-	ParamProofMissingPenalty   = "proof_missing_penalty"
-	DefaultProofMissingPenalty = cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(320)) // See: https://github.com/pokt-network/pocket-core/blob/staging/docs/proposals/probabilistic_proofs.md
+	// TODO_DISCUSS: Should ProofMissingPenalty be moved to the tokenomics module?
+	KeyProofMissingPenalty   = []byte("ProofMissingPenalty")
+	ParamProofMissingPenalty = "proof_missing_penalty"
+	// As per the probabilistic proofs paper, the penalty for missing a proof is 320 POKT (i.e. 320e6 uPOKT).
+	DefaultProofMissingPenalty = cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(320e6)) // See: https://github.com/pokt-network/pocket-core/blob/staging/docs/proposals/probabilistic_proofs.md
 
 	KeyProofSubmissionFee   = []byte("ProofSubmissionFee")
 	ParamProofSubmissionFee = "proof_submission_fee"
@@ -53,7 +57,7 @@ func ParamKeyTable() paramtypes.KeyTable {
 func NewParams(
 	relayDifficultyTargetHash []byte,
 	proofRequestProbability float32,
-	proofRequirementThreshold uint64,
+	proofRequirementThreshold *cosmostypes.Coin,
 	proofMissingPenalty *cosmostypes.Coin,
 	proofSubmissionFee *cosmostypes.Coin,
 ) Params {
@@ -71,7 +75,7 @@ func DefaultParams() Params {
 	return NewParams(
 		DefaultRelayDifficultyTargetHash,
 		DefaultProofRequestProbability,
-		DefaultProofRequirementThreshold,
+		&DefaultProofRequirementThreshold,
 		&DefaultProofMissingPenalty,
 		&MinProofSubmissionFee,
 	)
@@ -172,7 +176,7 @@ func ValidateProofRequestProbability(v interface{}) error {
 // ValidateProofRequirementThreshold validates the ProofRequirementThreshold param.
 // NB: The argument is an interface type to satisfy the ParamSetPair function signature.
 func ValidateProofRequirementThreshold(v interface{}) error {
-	_, ok := v.(uint64)
+	_, ok := v.(*cosmostypes.Coin)
 	if !ok {
 		return ErrProofParamInvalid.Wrapf("invalid parameter type: %T", v)
 	}

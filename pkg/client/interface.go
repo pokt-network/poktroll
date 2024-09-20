@@ -322,6 +322,8 @@ type SharedQueryClient interface {
 	// GetEarliestSupplierProofCommitHeight returns the earliest block height at which a proof
 	// for the session that includes queryHeight can be committed for a given supplier.
 	GetEarliestSupplierProofCommitHeight(ctx context.Context, queryHeight int64, supplierOperatorAddr string) (int64, error)
+	// GetComputeUnitsToTokensMultiplier returns the multiplier used to convert compute units to tokens.
+	GetComputeUnitsToTokensMultiplier(ctx context.Context) (uint64, error)
 }
 
 // BlockQueryClient defines an interface that enables the querying of
@@ -336,8 +338,9 @@ type BlockQueryClient interface {
 // is necessary to prevent dependency cycles.
 type ProofParams interface {
 	GetProofRequestProbability() float32
-	GetProofRequirementThreshold() uint64
+	GetProofRequirementThreshold() *cosmostypes.Coin
 	GetProofMissingPenalty() *cosmostypes.Coin
+	GetProofSubmissionFee() *cosmostypes.Coin
 }
 
 // ProofQueryClient defines an interface that enables the querying of the
@@ -353,8 +356,11 @@ type TokenomicsRelayMiningDifficulty interface {
 	GetTargetHash() []byte
 }
 
+// TokenomicsQueryClient defines an interface that enables the querying of the
+// on-chain tokenomics information
 type TokenomicsQueryClient interface {
 	GetServiceRelayDifficultyTargetHash(ctx context.Context, serviceId string) (TokenomicsRelayMiningDifficulty, error)
+	// GetParams queries the chain for the current tokenomics module parameters.
 }
 
 // ServiceQueryClient defines an interface that enables the querying of the

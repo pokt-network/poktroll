@@ -21,6 +21,8 @@ const (
 	ParamSupplierUnbondingPeriodSessions      = "supplier_unbonding_period_sessions"
 	DefaultApplicationUnbondingPeriodSessions = 4 // 4 sessions
 	ParamApplicationUnbondingPeriodSessions   = "application_unbonding_period_sessions"
+	DefaultComputeUnitsToTokensMultiplier     = 42 // TODO_MAINNET: Determine the default value.
+	ParamComputeUnitsToTokensMultiplier       = "compute_units_to_tokens_multiplier"
 )
 
 var (
@@ -33,6 +35,7 @@ var (
 	KeyProofWindowCloseOffsetBlocks                           = []byte("ProofWindowCloseOffsetBlocks")
 	KeySupplierUnbondingPeriodSessions                        = []byte("SupplierUnbondingPeriodSessions")
 	KeyApplicationUnbondingPeriodSessions                     = []byte("ApplicationUnbondingPeriodSessions")
+	KeyComputeUnitsToTokensMultiplier                         = []byte("ComputeUnitsToTokensMultiplier")
 )
 
 // ParamKeyTable the param key table for launch module
@@ -51,6 +54,7 @@ func NewParams() Params {
 		GracePeriodEndOffsetBlocks:         DefaultGracePeriodEndOffsetBlocks,
 		SupplierUnbondingPeriodSessions:    DefaultSupplierUnbondingPeriodSessions,
 		ApplicationUnbondingPeriodSessions: DefaultApplicationUnbondingPeriodSessions,
+		ComputeUnitsToTokensMultiplier:     DefaultComputeUnitsToTokensMultiplier,
 	}
 }
 
@@ -102,6 +106,11 @@ func (params *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 			&params.ApplicationUnbondingPeriodSessions,
 			ValidateApplicationUnbondingPeriodSessions,
 		),
+		paramtypes.NewParamSetPair(
+			KeyComputeUnitsToTokensMultiplier,
+			&params.ComputeUnitsToTokensMultiplier,
+			ValidateComputeUnitsToTokensMultiplier,
+		),
 	}
 }
 
@@ -136,6 +145,10 @@ func (params *Params) ValidateBasic() error {
 	}
 
 	if err := ValidateApplicationUnbondingPeriodSessions(params.ApplicationUnbondingPeriodSessions); err != nil {
+		return err
+	}
+
+	if err := ValidateComputeUnitsToTokensMultiplier(params.ComputeUnitsToTokensMultiplier); err != nil {
 		return err
 	}
 
@@ -235,6 +248,21 @@ func ValidateApplicationUnbondingPeriodSessions(v interface{}) error {
 
 	if applicationUnbondingPeriodSessions < 1 {
 		return ErrSharedParamInvalid.Wrapf("invalid ApplicationUnbondingPeriodSessions: (%v)", applicationUnbondingPeriodSessions)
+	}
+
+	return nil
+}
+
+// ValidateComputeUnitsToTokensMultiplier validates the ComputeUnitsToTokensMultiplier governance parameter.
+// NB: The argument is an interface type to satisfy the ParamSetPair function signature.
+func ValidateComputeUnitsToTokensMultiplier(v interface{}) error {
+	computeUnitsToTokensMultiplier, ok := v.(uint64)
+	if !ok {
+		return ErrSharedParamInvalid.Wrapf("invalid parameter type: %T", v)
+	}
+
+	if computeUnitsToTokensMultiplier <= 0 {
+		return ErrSharedParamInvalid.Wrapf("invalid ComputeUnitsToTokensMultiplier: (%v)", computeUnitsToTokensMultiplier)
 	}
 
 	return nil

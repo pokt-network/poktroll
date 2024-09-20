@@ -201,6 +201,10 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 	// Mock the shared keeper
 	mockSharedKeeper := mocks.NewMockSharedKeeper(ctrl)
 	mockSharedKeeper.EXPECT().GetProofWindowCloseHeight(gomock.Any(), gomock.Any()).AnyTimes()
+	mockSharedKeeper.EXPECT().
+		GetParams(gomock.Any()).
+		Return(sharedtypes.DefaultParams()).
+		AnyTimes()
 
 	// Mock the session keeper
 	mockSessionKeeper := mocks.NewMockSessionKeeper(ctrl)

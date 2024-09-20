@@ -20,6 +20,7 @@ import (
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
+	"github.com/pokt-network/poktroll/x/tokenomics"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 	tokenomictypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
@@ -175,14 +176,14 @@ func (k Keeper) ProcessTokenLogicModules(
 		)
 	}
 
-	// Retrieve the count (i.e. number of relays) to determine the amount of work done
-	numRelays, err := root.Count()
+	// Retrieve the sum (i.e. number of compute units) to determine the amount of work done
+	numClaimComputeUnits, err := claim.GetNumComputeUnits()
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrapf("%v", err)
 	}
 	// TODO_MAINNET(@bryanchriswhite, @red-0ne): Fix the low-volume exploit here.
 	// https://www.notion.so/buildwithgrove/RelayMiningDifficulty-and-low-volume-7aab3edf6f324786933af369c2fa5f01?pvs=4
-	if numRelays == 0 {
+	if numClaimComputeUnits == 0 {
 		return tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrap("root hash has zero relays")
 	}
 
@@ -228,17 +229,19 @@ func (k Keeper) ProcessTokenLogicModules(
 		return tokenomicstypes.ErrTokenomicsServiceNotFound.Wrapf("service with ID %q not found", sessionHeader.ServiceId)
 	}
 
+	sharedParams := k.sharedKeeper.GetParams(ctx)
+
 	// Determine the total number of tokens being claimed (i.e. for the work completed)
 	// by the supplier for the amount of work they did to service the application
 	// in the session.
-	claimSettlementCoin, err = k.numRelaysToCoin(ctx, numRelays, &service)
+	claimSettlementCoin, err = tokenomics.NumComputeUnitsToCoin(sharedParams, numClaimComputeUnits)
 	if err != nil {
 		return err
 	}
 
 	// Helpers for logging the same metadata throughout this function calls
 	logger = logger.With(
-		"num_relays", numRelays,
+		"num_claim_compute_units", numClaimComputeUnits,
 		"claim_settlement_upokt", claimSettlementCoin.Amount,
 		"session_id", sessionHeader.GetSessionId(),
 		"service_id", sessionHeader.GetServiceId(),
@@ -249,6 +252,13 @@ func (k Keeper) ProcessTokenLogicModules(
 	// Retrieving the relay mining difficulty for the service at hand
 	relayMiningDifficulty, found := k.GetRelayMiningDifficulty(ctx, service.Id)
 	if !found {
+		// If the relay mining difficulty is not found, we initialize it with the
+		// current number of relays.
+		numRelays, countErr := claim.GetNumRelays()
+		if countErr != nil {
+			return tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrapf("%v", countErr)
+		}
+
 		relayMiningDifficulty = newDefaultRelayMiningDifficulty(ctx, logger, service.Id, numRelays)
 	}
 
@@ -260,7 +270,7 @@ func (k Keeper) ProcessTokenLogicModules(
 	}
 	logger = logger.With("actual_settlement_upokt", actualSettlementCoin)
 
-	logger.Info(fmt.Sprintf("About to start processing TLMs for (%d) relays, equal to (%s) claimed", numRelays, actualSettlementCoin))
+	logger.Info(fmt.Sprintf("About to start processing TLMs for (%d) compute units, equal to (%s) claimed", numClaimComputeUnits, actualSettlementCoin))
 	// Execute all the token logic modules processors
 	for tlm, tlmProcessor := range tokenLogicModuleProcessorMap {
 		logger.Info(fmt.Sprintf("Starting TLM processing: %q", tlm))
@@ -561,24 +571,6 @@ func (k Keeper) ensureClaimAmountLimits(
 	}
 
 	return actualSettlementCoins, nil
-}
-
-// numRelaysToCoin calculates the amount of uPOKT to mint based on the number of compute units.
-func (k Keeper) numRelaysToCoin(
-	ctx context.Context,
-	numRelays uint64, // numRelays is a session specific parameter
-	service *sharedtypes.Service,
-) (cosmostypes.Coin, error) {
-	// CUTTM is a GLOBAL network wide parameter
-	computeUnitsToTokensMultiplier := k.GetParams(ctx).ComputeUnitsToTokensMultiplier
-	// CUPR is a LOCAL service specific parameter
-	computeUnitsPerRelay := service.ComputeUnitsPerRelay
-	upoktAmount := math.NewInt(int64(numRelays * computeUnitsPerRelay * computeUnitsToTokensMultiplier))
-	if upoktAmount.IsNegative() {
-		return cosmostypes.Coin{}, tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrap("sum * compute_units_to_tokens_multiplier is negative")
-	}
-
-	return cosmostypes.NewCoin(volatile.DenomuPOKT, upoktAmount), nil
 }
 
 // distributeSupplierRewardsToShareHolders distributes the supplier rewards to its
