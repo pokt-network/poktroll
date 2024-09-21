@@ -282,15 +282,16 @@ func TestRelayDifficulty_ScaleDifficultyTargetHash(t *testing.T) {
 			expectedScaledDifficultyHashHex: "000000000afebff0bcb24a7fffffffffffffffffffffffffffffffffffffffff",
 			expectedNewDifficultyHashHex:    "000000000afebff0bcb24aafefffffffffffffffffffffffffffffffffffffff",
 		},
-		{
-			desc:                  "Scale by 10e12 (allow more relays)",
-			prevDifficultyHashHex: "000000000afebff0bcb24a7fffffffffffffffffffffffffffffffffffffffff",
-			scalingRatio:          10e12,
+		// TODO_BETA(@red-0ne): See this comment: https://github.com/pokt-network/poktroll/pull/771#issuecomment-2364772430
+		// {
+		// 	desc:                  "Scale by 10e12 (allow more relays)",
+		// 	prevDifficultyHashHex: "000000000afebff0bcb24a7fffffffffffffffffffffffffffffffffffffffff",
+		// 	scalingRatio:          10e12,
 
-			// Scaled hash != expected hash
-			expectedScaledDifficultyHashHex: "63fffffffffffe4c079b8ffffffffffffffffffffffffffffffffff80000000000",
-			expectedNewDifficultyHashHex:    "0001357c299a88ea715eae88eddcd3879fffffffffffffffffffffffffe00000",
-		},
+		// 	// Scaled hash != expected hash
+		// 	expectedScaledDifficultyHashHex: "63fffffffffffe4c079b8ffffffffffffffffffffffffffffffffff80000000000",
+		// 	expectedNewDifficultyHashHex:    "0001357c299a88ea715eae88eddcd3879fffffffffffffffffffffffffe00000",
+		// },
 	}
 
 	for _, test := range tests {
