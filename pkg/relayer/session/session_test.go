@@ -72,7 +72,9 @@ func requireProofCountEqualsExpectedValueFromProofParams(t *testing.T, proofPara
 	}
 	supplierOperatorAddress := sample.AccAddress()
 	// Set the supplier operator balance to be able to submit the expected number of proofs.
-	supplierOperatorBalance := prooftypes.DefaultParams().ProofSubmissionFee.Amount.Int64() * 2
+	feePerProof := prooftypes.DefaultParams().ProofSubmissionFee.Amount.Int64()
+	numExpectedProofs := int64(2)
+	supplierOperatorBalance := feePerProof * numExpectedProofs
 	supplierClientMap := testsupplier.NewClaimProofSupplierClientMap(ctx, t, supplierOperatorAddress, proofCount)
 	blockPublishCh, minedRelaysPublishCh := setupDependencies(t, ctx, supplierClientMap, emptyBlockHash, proofParams, supplierOperatorBalance)
 
@@ -264,6 +266,7 @@ func waitSimulateIO() {
 	time.Sleep(50 * time.Millisecond)
 }
 
+// uPOKTCoin returns a pointer to a uPOKT denomination coin with the given amount.
 func uPOKTCoin(amount int64) *sdktypes.Coin {
 	return &sdktypes.Coin{Denom: volatile.DenomuPOKT, Amount: sdkmath.NewInt(amount)}
 }
@@ -355,7 +358,8 @@ func playClaimAndProofSubmissionBlocks(
 	blockPublishCh chan<- client.Block,
 ) {
 	// Publish a block to the blockPublishCh to simulate non-actionable blocks.
-	// NB: This does not need to be done for each service.
+	// NB: This only needs to be done once per block regardless of the number of
+	// services, claims and proofs.
 	noopBlock := testblock.NewAnyTimesBlock(t, blockHash, sessionStartHeight)
 	blockPublishCh <- noopBlock
 

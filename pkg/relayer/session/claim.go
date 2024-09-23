@@ -242,13 +242,17 @@ func (rs *relayerSessionsManager) goCreateClaimRoots(
 }
 
 // payableProofsSessionTrees returns the session trees that the supplier operator
-// can afford to claim.
+// can afford to claim (i.e. pay the fee for submitting a proof).
+// The session trees are sorted from the most rewarding to the least rewarding to
+// ensure optimal rewards in the case of insufficient funds.
+// Note that all sessionTrees are associated with the same supplier operator address.
 func (rs *relayerSessionsManager) payableProofsSessionTrees(
 	ctx context.Context,
 	sessionTrees []relayer.SessionTree,
 ) ([]relayer.SessionTree, error) {
+	supplierOpeartorAddress := sessionTrees[0].GetSupplierOperatorAddress().String()
 	logger := rs.logger.With(
-		"supplier_operator_address", sessionTrees[0].GetSupplierOperatorAddress().String(),
+		"supplier_operator_address", supplierOpeartorAddress,
 	)
 
 	proofParams, err := rs.proofQueryClient.GetParams(ctx)
@@ -266,7 +270,7 @@ func (rs *relayerSessionsManager) payableProofsSessionTrees(
 	}
 
 	// Sort the session trees by the sum of the claim root to ensure that the
-	// biggest claim roots are claimed first.
+	// most rewarding claims are claimed first.
 	slices.SortFunc(sessionTrees, func(a, b relayer.SessionTree) int {
 		rootA := a.GetClaimRoot()
 		sumA, errA := smt.MerkleSumRoot(rootA).Sum()
@@ -303,12 +307,18 @@ func (rs *relayerSessionsManager) payableProofsSessionTrees(
 			continue
 		}
 
+		// Log a warning of any session that the supplier operator cannot afford to claim.
 		logger.With(
 			"session_id", sessionTree.GetSessionHeader().GetSessionId(),
 			"supplier_operator_balance", supplierOperatorBalanceCoin,
 			"proof_submission_fee", proofSubmissionFeeCoin,
 		).Warn().Msg("supplier operator cannot afford to submit proof for claim, skipping")
 	}
+
+	logger.Warn().Msgf(
+		"Supplier operator %q can only affort %d out of %d claims",
+		supplierOpeartorAddress, len(claimableSessionTrees), len(sessionTrees),
+	)
 
 	return claimableSessionTrees, nil
 }
