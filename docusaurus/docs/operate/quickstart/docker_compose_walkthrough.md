@@ -162,18 +162,18 @@ running a newer version of Docker where `docker-compose` is integrated into `doc
 Initiate the node with:
 
 ```bash
-docker-compose up -d poktrolld
+docker-compose up -d full-node
 ```
 
 Monitor node activity through logs with:
 
 ```bash
-docker-compose logs -f --tail 100 poktrolld
+docker-compose logs -f --tail 100 full-node
 ```
 
 ### Inspecting the Full Node <!-- omit in toc -->
 
-If you run `docker ps`, you should see a `full_node` running which you can inspect
+If you run `docker ps`, you should see a `full-node` running which you can inspect
 using the commands below.
 
 ### CometBFT Status <!-- omit in toc -->
@@ -245,7 +245,7 @@ docker-compose down
 docker rm $(docker ps -aq) -f
 
 # Remove existing data and renew genesis
-rm -rf poktrolld-data/config/addrbook.json poktrolld-data/config/genesis.json poktrolld-data/data/
+rm -rf poktrolld-data/config/addrbook.json poktrolld-data/config/genesis.json poktrolld-data/config/genesis.seeds poktrolld-data/data/ poktrolld-data/config/node_key.json poktrolld-data/config/priv_validator_key.json
 
 # Re-start the node
 docker-compose up -d
@@ -375,26 +375,26 @@ explains what the RelayMiner operation config is and how it can be used.
 Update the provided example RelayMiner operation config:
 
 ```bash
-sed -i -e s/YOUR_NODE_IP_OR_HOST/$NODE_HOSTNAME/g relayminer-example/config/relayminer_config.yaml
+sed -i -e s/YOUR_NODE_IP_OR_HOST/$NODE_HOSTNAME/g relayminer/config/relayminer_config.yaml
 ```
 
 Update the `backend_url` in `relayminer_config.yaml` with a valid `002(i.e. ETH MainNet)
 service URL. We suggest using your own node, but you can get one from Grove for testing purposes.
 
 ```bash
-sed -i "s|backend_url:\".*\"|backend_url: \"https://eth-mainnet.rpc.grove.city/v1/<APP_ID>\"|g" relayminer-example/config/relayminer_config.yaml
+sed -i "s|backend_url:\".*\"|backend_url: \"https://eth-mainnet.rpc.grove.city/v1/<APP_ID>\"|g" relayminer/config/relayminer_config.yaml
 ```
 
 Start up the RelayMiner:
 
 ```bash
-docker-compose up -d relayminer-example
+docker-compose up -d relayminer
 ```
 
 Check logs and confirm the node works as expected:
 
 ```bash
-docker-compose logs -f --tail 100 relayminer-example
+docker-compose logs -f --tail 100 relayminer
 ```
 
 ## C. Creating an Application and Deploying an AppGate Server
@@ -489,16 +489,16 @@ explains what the AppGate Server operation config is and how it can be used.
 
 :::
 
-appgate-server-example/config/appgate_config.yaml
+appgate/config/appgate_config.yaml
 
 ```bash
-docker-compose up -d appgate-server-example
+docker-compose up -d appgate
 ```
 
 Check logs and confirm the node works as expected:
 
 ```bash
-docker-compose logs -f --tail 100 appgate-server-example
+docker-compose logs -f --tail 100 appgate
 ```
 
 ### Send a relay <!-- omit in toc -->
@@ -615,7 +615,7 @@ explains what the Gateway Server operation config is and how it can be used.
 
 :::
 
-appgate-server-example/config/gateway_config.yaml
+appgate/config/gateway_config.yaml
 
 ```bash
 docker-compose up -d gateway-example
