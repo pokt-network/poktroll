@@ -316,7 +316,7 @@ func (rs *relayerSessionsManager) payableProofsSessionTrees(
 	}
 
 	logger.Warn().Msgf(
-		"Supplier operator %q can only affort %d out of %d claims",
+		"Supplier operator %q can only afford %d out of %d claims",
 		supplierOpeartorAddress, len(claimableSessionTrees), len(sessionTrees),
 	)
 
