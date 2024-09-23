@@ -7,12 +7,10 @@ import (
 	"reflect"
 	"testing"
 
-	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/authz"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/pokt-network/poktroll/testutil/cases"
 	"github.com/pokt-network/poktroll/testutil/integration/suites"
 )
 
@@ -21,8 +19,11 @@ type MsgUpdateParamSuite struct {
 }
 
 func (s *MsgUpdateParamSuite) SetupTest() {
+	s.NewApp(s.T())
+
 	// Call the SetupTest() of the inherited UpdateParamsSuite.
-	s.UpdateParamsSuite.SetupTest()
+	s.SetupTestAccounts()
+	s.SetupTestAuthzGrants()
 
 	// Allocate an address for unauthorized user.
 	nextAcct, ok := s.GetApp().GetPreGeneratedAccounts().Next()
@@ -49,53 +50,14 @@ func (s *MsgUpdateParamSuite) TestUnauthorizedMsgUpdateParamFails() {
 				// Assert that the module's params are set to their default values.
 				s.RequireModuleHasDefaultParams(t, moduleName)
 
-				msgIface, isMsgTypeFound := suites.MsgUpdateParamByModule[moduleName]
-				require.Truef(t, isMsgTypeFound, "unknown message type for module %q: %T", moduleName, msgIface)
-
-				msgValue := reflect.ValueOf(msgIface)
-				msgType := msgValue.Type()
-
-				// Copy the message and set the authority field.
-				msgValueCopy := reflect.New(msgType)
-				msgValueCopy.Elem().Set(msgValue)
-				msgValueCopy.Elem().
-					FieldByName("Authority").
-					SetString(suites.AuthorityAddr.String())
-
-				msgValueCopy.Elem().FieldByName("Name").SetString(cases.ToSnakeCase(fieldName))
-
-				msgAsTypeStruct := suites.MsgUpdateParamTypesByModuleName[moduleName][fieldType]
-				msgAsTypeType := reflect.TypeOf(msgAsTypeStruct)
-				t.Logf("fieldType: %q", fieldType)
-				t.Logf("msgAsTypeType: %+v", msgAsTypeType)
-				msgAsTypeValue := reflect.New(msgAsTypeType)
-				switch fieldType {
-				case "uint64":
-					msgAsTypeValue.Elem().FieldByName("AsInt64").SetInt(int64(fieldValue.Interface().(uint64)))
-				case "int64":
-					msgAsTypeValue.Elem().FieldByName("AsInt64").Set(fieldValue)
-				case "float32":
-					msgAsTypeValue.Elem().FieldByName("AsFloat").Set(fieldValue)
-				case "string":
-					msgAsTypeValue.Elem().FieldByName("AsString").Set(fieldValue)
-				case "uint8":
-					msgAsTypeValue.Elem().FieldByName("AsBytes").Set(fieldValue)
-				// TODO_IN_THIS_COMMIT: check type name...
-				case "Coin":
-					msgAsTypeValue.Elem().FieldByName("AsCoin").Set(fieldValue)
-				default:
-					t.Fatalf("ERROR: unknown field type %q", fieldType)
-				}
-
-				msgValueCopy.Elem().FieldByName("AsType").Set(msgAsTypeValue)
-
-				msgUpdateParam := msgValueCopy.Interface().(cosmostypes.Msg)
-
-				// Send an authz MsgExec from an unauthorized address.
-				execMsg := authz.NewMsgExec(unauthorizedAddr, []cosmostypes.Msg{msgUpdateParam})
-				anyRes, err := s.GetApp().RunMsg(t, &execMsg)
+				updateParamResAny, err := s.RunUpdateParamAsSigner(t,
+					moduleName,
+					fieldName,
+					fieldValue.Interface(),
+					unauthorizedAddr,
+				)
 				require.ErrorContains(t, err, authz.ErrNoAuthorizationFound.Error())
-				require.Nil(t, anyRes)
+				require.Nil(t, updateParamResAny)
 			})
 		}
 	}
@@ -124,53 +86,14 @@ func (s *MsgUpdateParamSuite) TestAuthorizedMsgUpdateParamSucceeds() {
 				// Assert that the module's params are set to their default values.
 				s.RequireModuleHasDefaultParams(t, moduleName)
 
-				msgIface, isMsgTypeFound := suites.MsgUpdateParamByModule[moduleName]
-				require.Truef(t, isMsgTypeFound, "unknown message type for module %q: %T", moduleName, msgIface)
-
-				msgValue := reflect.ValueOf(msgIface)
-				msgType := msgValue.Type()
-
-				// Copy the message and set the authority field.
-				msgValueCopy := reflect.New(msgType)
-				msgValueCopy.Elem().Set(msgValue)
-				msgValueCopy.Elem().
-					FieldByName("Authority").
-					SetString(suites.AuthorityAddr.String())
-
-				msgValueCopy.Elem().FieldByName("Name").SetString(cases.ToSnakeCase(fieldName))
-				// TODO_IN_THIS_COMMIT: merge expected param value with defaults...
-				//expectedParamsValue := msgValueCopy.Elem().FieldByName("Params")
-
-				msgAsTypeStruct := suites.MsgUpdateParamTypesByModuleName[moduleName][fieldType]
-				msgAsTypeType := reflect.TypeOf(msgAsTypeStruct)
-				msgAsTypeValue := reflect.New(msgAsTypeType)
-				switch fieldType {
-				case "uint64":
-					msgAsTypeValue.Elem().FieldByName("AsInt64").SetInt(int64(fieldValue.Interface().(uint64)))
-				case "int64":
-					msgAsTypeValue.Elem().FieldByName("AsInt64").Set(fieldValue)
-				case "float32":
-					msgAsTypeValue.Elem().FieldByName("AsFloat").Set(fieldValue)
-				case "string":
-					msgAsTypeValue.Elem().FieldByName("AsString").Set(fieldValue)
-				case "uint8":
-					msgAsTypeValue.Elem().FieldByName("AsBytes").Set(fieldValue)
-				// TODO_IN_THIS_COMMIT: check type name...
-				case "Coin":
-					msgAsTypeValue.Elem().FieldByName("AsCoin").Set(fieldValue)
-				default:
-					t.Fatalf("ERROR: unknown field type %q", fieldType)
-				}
-
-				msgValueCopy.Elem().FieldByName("AsType").Set(msgAsTypeValue)
-
-				msgUpdateParam := msgValueCopy.Interface().(cosmostypes.Msg)
-
-				// Send an authz MsgExec from an unauthorized address.
-				execMsg := authz.NewMsgExec(suites.AuthorizedAddr, []cosmostypes.Msg{msgUpdateParam})
-				authzExecResps := s.RunAuthzExecMsg(t, suites.AuthorizedAddr, &execMsg)
-				require.Equal(t, 1, len(authzExecResps))
-				//authzExecResps[0].(*)
+				updateParamResAny, err := s.RunUpdateParamAsSigner(t,
+					moduleName,
+					fieldName,
+					fieldValue.Interface(),
+					suites.AuthorizedAddr,
+				)
+				require.NoError(t, err)
+				require.NotNil(t, updateParamResAny)
 
 				// Query for the module's params.
 				params, err := s.QueryModuleParams(t, moduleName)

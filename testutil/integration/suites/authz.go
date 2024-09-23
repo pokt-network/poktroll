@@ -79,9 +79,9 @@ func (s *AuthzIntegrationSuite) RunAuthzGrantMsg(
 	grantMsg, err := authz.NewMsgGrant(granterAddr, granteeAddr, authorization, &defaultAuthzGrantExpiration)
 	require.NoError(t, err)
 
-	anyRes, err := s.app.RunMsg(s.T(), grantMsg)
+	grantResAny, err := s.app.RunMsg(s.T(), grantMsg)
 	require.NoError(t, err)
-	require.NotNil(t, anyRes)
+	require.NotNil(t, grantResAny)
 }
 
 // TODO_IN_THIS_COMMIT: godoc
@@ -89,18 +89,20 @@ func (s *AuthzIntegrationSuite) RunAuthzExecMsg(
 	t *testing.T,
 	fromAddr cosmostypes.AccAddress,
 	msgs ...cosmostypes.Msg,
-) (msgRespsBz []tx.MsgResponse) {
+) (msgRespsBz []tx.MsgResponse, err error) {
 	t.Helper()
 
 	execMsg := authz.NewMsgExec(fromAddr, msgs)
-	anyRes, err := s.GetApp().RunMsg(s.T(), &execMsg)
-	require.NoError(t, err)
-	require.NotNil(t, anyRes)
+	execResAny, err := s.GetApp().RunMsg(s.T(), &execMsg)
+	if err != nil {
+		return nil, err
+	}
 
-	execRes := anyRes.(*authz.MsgExecResponse)
+	require.NotNil(t, execResAny)
+	execRes := execResAny.(*authz.MsgExecResponse)
 	for _, msgResBz := range execRes.Results {
 		msgRespsBz = append(msgRespsBz, msgResBz)
 	}
 
-	return msgRespsBz
+	return msgRespsBz, nil
 }

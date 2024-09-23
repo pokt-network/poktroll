@@ -8,9 +8,12 @@ import (
 	"testing"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/tx"
+	"github.com/cosmos/cosmos-sdk/x/authz"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/testutil/cases"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
@@ -19,6 +22,18 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
+)
+
+// TODO_IN_THIS_COMMIT: godoc...
+type ParamType = string
+
+const (
+	ParamTypeInt64   ParamType = "int64"
+	ParamTypeUint64  ParamType = "uint64"
+	ParamTypeFloat32 ParamType = "float32"
+	ParamTypeString  ParamType = "string"
+	ParamTypeBytes   ParamType = "uint8"
+	ParamTypeCoin    ParamType = "Coin"
 )
 
 const (
@@ -101,6 +116,7 @@ var (
 		},
 	}
 
+	// TODO_IN_THIS_COMMIT: godoc...
 	MsgUpdateParamByModule = map[string]any{
 		sharedtypes.ModuleName:     sharedtypes.MsgUpdateParam{},
 		servicetypes.ModuleName:    servicetypes.MsgUpdateParam{},
@@ -112,35 +128,38 @@ var (
 		//suppliertypes.ModuleName:   suppliertypes.MsgUpdateParam{},
 	}
 
-	MsgUpdateParamTypesByModuleName = map[string]map[string]any{
+	// TODO_IN_THIS_COMMIT: ... each module defines its own MsgUpdateParam_As* structs
+	// ... not every module has all types...
+	MsgUpdateParamTypesByModuleName = map[string]map[ParamType]any{
 		sharedtypes.ModuleName: {
-			"uint64": sharedtypes.MsgUpdateParam_AsInt64{},
-			"int64":  sharedtypes.MsgUpdateParam_AsInt64{},
-			"string": sharedtypes.MsgUpdateParam_AsString{},
-			"uint8":  sharedtypes.MsgUpdateParam_AsBytes{},
+			ParamTypeUint64: sharedtypes.MsgUpdateParam_AsInt64{},
+			ParamTypeInt64:  sharedtypes.MsgUpdateParam_AsInt64{},
+			ParamTypeString: sharedtypes.MsgUpdateParam_AsString{},
+			ParamTypeBytes:  sharedtypes.MsgUpdateParam_AsBytes{},
 		},
 		servicetypes.ModuleName: {
-			"Coin": servicetypes.MsgUpdateParam_AsCoin{},
+			ParamTypeCoin: servicetypes.MsgUpdateParam_AsCoin{},
 		},
 		prooftypes.ModuleName: {
-			"uint64":  prooftypes.MsgUpdateParam_AsInt64{},
-			"int64":   prooftypes.MsgUpdateParam_AsInt64{},
-			"string":  prooftypes.MsgUpdateParam_AsString{},
-			"uint8":   prooftypes.MsgUpdateParam_AsBytes{},
-			"float32": prooftypes.MsgUpdateParam_AsFloat{},
-			//"float64": prooftypes.MsgUpdateParam_AsFloat{},
-			"Coin": prooftypes.MsgUpdateParam_AsCoin{},
+			ParamTypeUint64:  prooftypes.MsgUpdateParam_AsInt64{},
+			ParamTypeInt64:   prooftypes.MsgUpdateParam_AsInt64{},
+			ParamTypeString:  prooftypes.MsgUpdateParam_AsString{},
+			ParamTypeBytes:   prooftypes.MsgUpdateParam_AsBytes{},
+			ParamTypeFloat32: prooftypes.MsgUpdateParam_AsFloat{},
+			ParamTypeCoin:    prooftypes.MsgUpdateParam_AsCoin{},
 		},
 		tokenomicstypes.ModuleName: {
-			"uint64": tokenomicstypes.MsgUpdateParam_AsInt64{},
-			"int64":  tokenomicstypes.MsgUpdateParam_AsInt64{},
-			"string": tokenomicstypes.MsgUpdateParam_AsString{},
-			"uint8":  tokenomicstypes.MsgUpdateParam_AsBytes{},
+			ParamTypeUint64: tokenomicstypes.MsgUpdateParam_AsInt64{},
+			ParamTypeInt64:  tokenomicstypes.MsgUpdateParam_AsInt64{},
+			ParamTypeString: tokenomicstypes.MsgUpdateParam_AsString{},
+			ParamTypeBytes:  tokenomicstypes.MsgUpdateParam_AsBytes{},
 		},
 	}
 
+	// TODO_IN_THIS_COMMIT: godoc...
 	MsgUpdateParamEnabledModuleNames []string
 
+	// TODO_IN_THIS_COMMIT: godoc...
 	NewParamClientFns = map[string]any{
 		sharedtypes.ModuleName:     sharedtypes.NewQueryClient,
 		sessiontypes.ModuleName:    sessiontypes.NewQueryClient,
@@ -152,6 +171,7 @@ var (
 		tokenomicstypes.ModuleName: tokenomicstypes.NewQueryClient,
 	}
 
+	// TODO_IN_THIS_COMMIT: godoc...
 	QueryParamsRequestByModule = map[string]any{
 		sharedtypes.ModuleName:     sharedtypes.QueryParamsRequest{},
 		sessiontypes.ModuleName:    sessiontypes.QueryParamsRequest{},
@@ -163,6 +183,7 @@ var (
 		tokenomicstypes.ModuleName: tokenomicstypes.QueryParamsRequest{},
 	}
 
+	// TODO_IN_THIS_COMMIT: godoc...
 	DefaultParamsByModule = map[string]any{
 		sharedtypes.ModuleName:     sharedtypes.DefaultParams(),
 		sessiontypes.ModuleName:    sessiontypes.DefaultParams(),
@@ -178,6 +199,7 @@ var (
 )
 
 func init() {
+	// TODO_IN_THIS_COMMIT: godoc...
 	for moduleName := range MsgUpdateParamByModule {
 		MsgUpdateParamEnabledModuleNames = append(MsgUpdateParamEnabledModuleNames, moduleName)
 	}
@@ -187,18 +209,20 @@ type UpdateParamsSuite struct {
 	AuthzIntegrationSuite
 }
 
-// SetupTest runs before each test in the suite.
-func (s *UpdateParamsSuite) SetupTest() {
-	// Construct a fresh integration app for each test.
-	s.NewApp(s.T())
-
+// TODO_IN_THIS_COMMIT: godoc
+// SetupTestAccounts ... expected to be called after s.NewApp() ... accounts ... and module names...
+func (s *UpdateParamsSuite) SetupTestAccounts() {
 	// Set the authority, authorized, and unauthorized addresses.
 	AuthorityAddr = cosmostypes.MustAccAddressFromBech32(s.GetApp().GetAuthority())
 
 	nextAcct, ok := s.GetApp().GetPreGeneratedAccounts().Next()
 	require.True(s.T(), ok, "insufficient pre-generated accounts available")
 	AuthorizedAddr = nextAcct.Address
+}
 
+// TODO_IN_THIS_COMMIT: godoc
+// SetupTestAuthzGrants ... expected to be called after s.NewApp() ... authority and authorized addresses...
+func (s *UpdateParamsSuite) SetupTestAuthzGrants() {
 	// Create authz grants for all poktroll modules' MsgUpdateParams messages.
 	s.SendAuthzGrantMsgForPoktrollModules(s.T(),
 		AuthorityAddr,
@@ -214,6 +238,82 @@ func (s *UpdateParamsSuite) SetupTest() {
 		MsgUpdateParamName,
 		MsgUpdateParamEnabledModuleNames...,
 	)
+}
+
+func (s *UpdateParamsSuite) RunUpdateParam(
+	t *testing.T,
+	moduleName string,
+	paramName string,
+	paramValue any,
+) (tx.MsgResponse, error) {
+	return s.RunUpdateParamAsSigner(t,
+		moduleName,
+		paramName,
+		paramValue,
+		AuthorizedAddr,
+	)
+}
+
+func (s *UpdateParamsSuite) RunUpdateParamAsSigner(
+	t *testing.T,
+	moduleName string,
+	paramName string,
+	paramValue any,
+	signerAddr cosmostypes.AccAddress,
+) (tx.MsgResponse, error) {
+	paramReflectValue := reflect.ValueOf(paramValue)
+	paramType := paramReflectValue.Type().Name()
+	if paramReflectValue.Kind() == reflect.Pointer {
+		paramType = paramReflectValue.Elem().Type().Name()
+	}
+
+	msgIface, isMsgTypeFound := MsgUpdateParamByModule[moduleName]
+	require.Truef(t, isMsgTypeFound, "unknown message type for module %q: %T", moduleName, msgIface)
+
+	msgValue := reflect.ValueOf(msgIface)
+	msgType := msgValue.Type()
+
+	// Copy the message and set the authority field.
+	msgValueCopy := reflect.New(msgType)
+	msgValueCopy.Elem().Set(msgValue)
+	msgValueCopy.Elem().
+		FieldByName("Authority").
+		SetString(AuthorityAddr.String())
+
+	msgValueCopy.Elem().FieldByName("Name").SetString(cases.ToSnakeCase(paramName))
+
+	msgAsTypeStruct := MsgUpdateParamTypesByModuleName[moduleName][paramType]
+	msgAsTypeType := reflect.TypeOf(msgAsTypeStruct)
+	msgAsTypeValue := reflect.New(msgAsTypeType)
+	switch paramType {
+	case ParamTypeUint64:
+		// NB: MsgUpdateParam doesn't currently support uint64 param type.
+		msgAsTypeValue.Elem().FieldByName("AsInt64").SetInt(int64(paramReflectValue.Interface().(uint64)))
+	case ParamTypeInt64:
+		msgAsTypeValue.Elem().FieldByName("AsInt64").Set(paramReflectValue)
+	case ParamTypeFloat32:
+		msgAsTypeValue.Elem().FieldByName("AsFloat").Set(paramReflectValue)
+	case ParamTypeString:
+		msgAsTypeValue.Elem().FieldByName("AsString").Set(paramReflectValue)
+	case ParamTypeBytes:
+		msgAsTypeValue.Elem().FieldByName("AsBytes").Set(paramReflectValue)
+	case ParamTypeCoin:
+		msgAsTypeValue.Elem().FieldByName("AsCoin").Set(paramReflectValue)
+	default:
+		t.Fatalf("ERROR: unknown field type %q", paramType)
+	}
+
+	msgValueCopy.Elem().FieldByName("AsType").Set(msgAsTypeValue)
+
+	msgUpdateParam := msgValueCopy.Interface().(cosmostypes.Msg)
+
+	// Send an authz MsgExec from the authority address.
+	execMsg := authz.NewMsgExec(signerAddr, []cosmostypes.Msg{msgUpdateParam})
+	execResps, err := s.RunAuthzExecMsg(t, signerAddr, &execMsg)
+
+	require.Equal(t, 1, len(execResps), "expected exactly one MsgResponse")
+
+	return execResps[0], err
 }
 
 // TODO_IN_THIS_COMMIT: godoc
