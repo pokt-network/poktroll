@@ -8,9 +8,9 @@ import (
 	"github.com/pokt-network/poktroll/x/application/types"
 )
 
-// TransferApplicationStake transfers the stake (held in escrow in the application
+// TransferApplication transfers the stake (held in escrow in the application
 // module account) from a source to a (new) destination application account .
-func (k msgServer) TransferApplicationStake(ctx context.Context, msg *types.MsgTransferApplicationStake) (*types.MsgTransferApplicationStakeResponse, error) {
+func (k msgServer) TransferApplication(ctx context.Context, msg *types.MsgTransferApplication) (*types.MsgTransferApplicationResponse, error) {
 	isSuccessful := false
 	defer telemetry.EventSuccessCounter(
 		"transfer_application_stake",
@@ -18,7 +18,7 @@ func (k msgServer) TransferApplicationStake(ctx context.Context, msg *types.MsgT
 		func() bool { return isSuccessful },
 	)
 
-	logger := k.Logger().With("method", "TransferApplicationStake")
+	logger := k.Logger().With("method", "TransferApplication")
 
 	if err := msg.ValidateBasic(); err != nil {
 		return nil, err
@@ -62,7 +62,7 @@ func (k msgServer) TransferApplicationStake(ctx context.Context, msg *types.MsgT
 
 	isSuccessful = true
 
-	return &types.MsgTransferApplicationStakeResponse{
-		Application: &dstApp,
+	return &types.MsgTransferApplicationResponse{
+		Application: &srcApp,
 	}, nil
 }

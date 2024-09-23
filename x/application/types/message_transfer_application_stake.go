@@ -4,16 +4,16 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 )
 
-var _ cosmostypes.Msg = (*MsgTransferApplicationStake)(nil)
+var _ cosmostypes.Msg = (*MsgTransferApplication)(nil)
 
-func NewMsgTransferApplicationStake(srcAddr string, dstAddr string) *MsgTransferApplicationStake {
-	return &MsgTransferApplicationStake{
+func NewMsgTransferApplication(srcAddr string, dstAddr string) *MsgTransferApplication {
+	return &MsgTransferApplication{
 		SourceAddress:      srcAddr,
 		DestinationAddress: dstAddr,
 	}
 }
 
-func (msg *MsgTransferApplicationStake) ValidateBasic() error {
+func (msg *MsgTransferApplication) ValidateBasic() error {
 	if msg.GetSourceAddress() == "" {
 		return ErrAppInvalidAddress.Wrap("empty source application address")
 	}

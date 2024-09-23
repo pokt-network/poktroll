@@ -14,7 +14,7 @@ Feature: App Stake Transfer Namespace
         Then the user should be able to see standard output containing "txhash:"
         And the user should be able to see standard output containing "code: 0"
         And the pocketd binary should exit without error
-        And the user should wait for the "application" module "TransferApplicationStake" message to be submitted
+        And the user should wait for the "application" module "TransferApplication" message to be submitted
         And the "application" for account "app3" is staked with "1000070" uPOKT
         And the account balance of "app3" should be "0" uPOKT "less" than before
         And the user verifies the "application" for account "app2" is not staked

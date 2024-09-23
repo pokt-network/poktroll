@@ -9,17 +9,17 @@ import (
 	"github.com/pokt-network/poktroll/testutil/sample"
 )
 
-func TestMsgTransferApplicationStake_ValidateBasic(t *testing.T) {
+func TestMsgTransferApplication_ValidateBasic(t *testing.T) {
 	dupAddr := sample.AccAddress()
 
 	tests := []struct {
 		name string
-		msg  MsgTransferApplicationStake
+		msg  MsgTransferApplication
 		err  error
 	}{
 		{
 			name: "invalid duplicate source address",
-			msg: MsgTransferApplicationStake{
+			msg: MsgTransferApplication{
 				SourceAddress:      dupAddr,
 				DestinationAddress: dupAddr,
 			},
@@ -27,7 +27,7 @@ func TestMsgTransferApplicationStake_ValidateBasic(t *testing.T) {
 		},
 		{
 			name: "invalid bech32 source address",
-			msg: MsgTransferApplicationStake{
+			msg: MsgTransferApplication{
 				SourceAddress:      "invalid_address",
 				DestinationAddress: sample.AccAddress(),
 			},
@@ -35,7 +35,7 @@ func TestMsgTransferApplicationStake_ValidateBasic(t *testing.T) {
 		},
 		{
 			name: "invalid bech32 destination address",
-			msg: MsgTransferApplicationStake{
+			msg: MsgTransferApplication{
 				SourceAddress:      sample.AccAddress(),
 				DestinationAddress: "invalid_address",
 			},
@@ -43,7 +43,7 @@ func TestMsgTransferApplicationStake_ValidateBasic(t *testing.T) {
 		},
 		{
 			name: "valid source and destination addresses",
-			msg: MsgTransferApplicationStake{
+			msg: MsgTransferApplication{
 				SourceAddress:      sample.AccAddress(),
 				DestinationAddress: sample.AccAddress(),
 			},
