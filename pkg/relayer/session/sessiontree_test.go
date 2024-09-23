@@ -13,7 +13,12 @@ import (
 )
 
 const (
-	maxLeafs      = 10000
+	// Test multiple SMST sizes to see how the compaction ratio changes when the number
+	// of leaves increases.
+	// maxLeafs is the maximum number of leaves to test, after which the test stops.
+	maxLeafs = 10000
+	// Since the inserted leaves are random, we run the test for a given leaf count
+	// multiple times to remove the randomness bias.
 	numIterations = 100
 )
 
@@ -83,11 +88,14 @@ func TestSessionTree_CompactProofsAreSmallerThanNonCompactProofs(t *testing.T) {
 			cumulativeGzippedProofSize += len(buf.Bytes())
 		}
 
-		compactionRatio := float32(cumulativeCompactProofSize) / float32(cumulativeProofSize)
-		compressionRatio := float32(cumulativeGzippedProofSize) / float32(cumulativeProofSize)
+		// Calculate how much more efficient compact SMT proofs are compared to non-compact proofs.
+		compactionRatio := float32(cumulativeProofSize) / float32(cumulativeCompactProofSize)
 
-		// Gzip compression is more efficient than compaction.
-		require.Greater(t, compactionRatio, compressionRatio)
+		// Claculate how much more efficient gzipped proofs are compared to non-compact proofs.
+		compressionRatio := float32(cumulativeProofSize) / float32(cumulativeGzippedProofSize)
+
+		// Gzip compression is more efficient than SMT compaction.
+		require.Greater(t, compressionRatio, compactionRatio)
 
 		t.Logf(
 			"numLeaf=%d: compactionRatio: %f, compressionRatio: %f",
