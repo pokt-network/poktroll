@@ -26,10 +26,9 @@ Feature: Tokenomics Namespace
             | proof_missing_penalty        | 320                                                              | coin  |
             | proof_submission_fee         | 1000000                                                          | coin  |
         And all "proof" module params should be updated
-        # TODO_IN_THIS_COMMIT: param moved to shared module?
-        And the "tokenomics" module parameters are set as follows
+        And the "shared" module parameters are set as follows
             | compute_units_to_tokens_multiplier | 42                                                         | int64 |
-        # TODO_IN_THIS_COMMIT: all module params should be updated
+        And all "shared" module params should be updated
         When the supplier "supplier1" has serviced a session with "20" relays for service "anvil" for application "app1"
         # Wait for the Claim & Proof lifecycle
         And the user should wait for the "proof" module "CreateClaim" Message to be submitted
@@ -45,7 +44,7 @@ Feature: Tokenomics Namespace
     Scenario: Settle the session when a valid claim is create but not required
         # Baseline
         Given the user has the pocketd binary installed
-        # Network preparation
+        # Network preparation and validation
         And an account exists for "supplier1"
         And the "supplier" account for "supplier1" is staked
         And an account exists for "app1"
