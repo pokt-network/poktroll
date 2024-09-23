@@ -38,4 +38,5 @@ var (
 	ErrProofNotEnoughFunds            = sdkerrors.Register(ModuleName, 1127, "not enough funds to submit proof")
 	ErrProofFailedToDeductFee         = sdkerrors.Register(ModuleName, 1128, "failed to deduct proof submission fee")
 	ErrProofNotRequired               = sdkerrors.Register(ModuleName, 1129, "proof not required")
+	ErrProofInvalidRelayDifficulty    = sdkerrors.Register(ModuleName, 1130, "invalid relay difficulty")
 )

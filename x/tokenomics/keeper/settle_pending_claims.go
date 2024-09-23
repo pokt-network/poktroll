@@ -50,26 +50,30 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 	logger.Debug("settling expiring claims")
 	for _, claim := range expiringClaims {
 		var (
-			numClaimComputeUnits uint64
-			numClaimRelays       uint64
 			proofRequirement     prooftypes.ProofRequirementReason
+			numClaimRelays       uint64
+			numClaimComputeUnits uint64
 		)
 
-		// NB: Note that not every (Req, Res) pair in the session is inserted in
-		// the tree for scalability reasons. This is the count of non-empty leaves
-		// that matched the necessary difficulty and is therefore an estimation
-		// of the total number of relays serviced and work done.
-		numClaimComputeUnits, err = claim.GetNumComputeUnits()
-		if err != nil {
-			return settledResult, expiredResult, err
-		}
+		sessionId := claim.GetSessionHeader().GetSessionId()
 
+		// NB: Not every (Req, Res) pair in the session is inserted into the tree due
+		// to the relay mining difficulty. This is the count of non-empty leaves that
+		// matched the necessary difficulty and is therefore an estimation of the total
+		// number of relays serviced and work done.
 		numClaimRelays, err = claim.GetNumRelays()
 		if err != nil {
 			return settledResult, expiredResult, err
 		}
 
-		sessionId := claim.SessionHeader.SessionId
+		// DEV_NOTE: We are assuming that (numRelays := numComputeUnits * service.ComputeUnitsPerRelay)
+		// because this code path is only reached if that has already been validated.
+		numClaimComputeUnits, err = claim.GetNumComputeUnits()
+		if err != nil {
+			return settledResult, expiredResult, err
+		}
+
+		// TODO(@red-0ne, #781): Convert numClaimedComputeUnits to numEstimatedComputeUnits to reflect reward/payment based on real usage.
 
 		proof, isProofFound := k.proofKeeper.GetProof(ctx, sessionId, claim.SupplierOperatorAddress)
 		// Using the probabilistic proofs approach, determine if this expiring
@@ -102,14 +106,17 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 
 			// If the proof is missing or invalid -> expire it
 			if expirationReason != tokenomicstypes.ClaimExpirationReason_EXPIRATION_REASON_UNSPECIFIED {
+				// TODO_BETA(@red-0ne, @olshansk): Slash the supplier in proportion
+				// to their stake. Consider allowing suppliers to RemoveClaim via a new
+				// message in case it was sent by accident
+
 				// Proof was required but is invalid or not found.
 				// Emit an event that a claim has expired and being removed without being settled.
 				claimExpiredEvent := tokenomicstypes.EventClaimExpired{
 					Claim:            &claim,
-					NumComputeUnits:  numClaimComputeUnits,
-					NumRelays:        numClaimRelays,
 					ExpirationReason: expirationReason,
-					// TODO_CONSIDERATION: Add the error to the event if the proof was invalid.
+					NumRelays:        numClaimRelays,
+					NumComputeUnits:  numClaimComputeUnits,
 				}
 				if err = ctx.EventManager().EmitTypedEvent(&claimExpiredEvent); err != nil {
 					return settledResult, expiredResult, err

@@ -2,7 +2,6 @@ package session_test
 
 import (
 	"context"
-	"crypto/sha256"
 	"fmt"
 	"math"
 	"testing"
@@ -20,6 +19,7 @@ import (
 	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/supplier"
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/pkg/relayer"
@@ -37,13 +37,9 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-var (
-	spec           = smt.NewTrieSpec(sha256.New(), true)
-	emptyBlockHash = make([]byte, spec.PathHasherSize())
-	_, ctx         = testpolylog.NewLoggerWithCtx(context.Background(), polyzero.DebugLevel)
-)
-
-// TODO_TEST: Add a test case which simulates a cold-started relayminer with unclaimed relays.
+func TestRelayerSessionsManager_ColdStartRelayMinerWithUnclaimedRelays(t *testing.T) {
+	t.Skip("TODO_TEST: Add a test case which simulates a cold-started relayminer with unclaimed relays.")
+}
 
 // requireProofCountEqualsExpectedValueFromProofParams sets up the session manager
 // along with its dependencies before starting it.
@@ -52,10 +48,12 @@ var (
 // TODO_BETA(@red-0ne): Add a test case which verifies that the service's compute units per relay is used as
 // the weight of a relay when updating a session's SMT.
 func requireProofCountEqualsExpectedValueFromProofParams(t *testing.T, proofParams prooftypes.Params, proofCount int) {
-	// TODO_TECHDEBT(#446): Centralize the configuration for the SMT spec.
 	var (
-		activeSession *sessiontypes.Session
-		service       sharedtypes.Service
+		_, ctx         = testpolylog.NewLoggerWithCtx(context.Background(), polyzero.DebugLevel)
+		spec           = smt.NewTrieSpec(protocol.NewTrieHasher(), true)
+		emptyBlockHash = make([]byte, spec.PathHasherSize())
+		activeSession  *sessiontypes.Session
+		service        sharedtypes.Service
 	)
 
 	service = sharedtypes.Service{
@@ -89,7 +87,7 @@ func requireProofCountEqualsExpectedValueFromProofParams(t *testing.T, proofPara
 	sessionStartHeight := activeSession.GetHeader().GetSessionStartBlockHeight()
 	sessionEndHeight := activeSession.GetHeader().GetSessionEndBlockHeight()
 
-	playClaimAndProofSubmissionBlocks(t, sessionStartHeight, sessionEndHeight, supplierOperatorAddress, blockPublishCh)
+	playClaimAndProofSubmissionBlocks(t, sessionStartHeight, sessionEndHeight, supplierOperatorAddress, emptyBlockHash, blockPublishCh)
 }
 
 func TestRelayerSessionsManager_ProofThresholdRequired(t *testing.T) {
@@ -137,6 +135,12 @@ func TestRelayerSessionsManager_ProofNotRequired(t *testing.T) {
 }
 
 func TestRelayerSessionsManager_InsufficientBalanceForProofSubmission(t *testing.T) {
+	var (
+		_, ctx         = testpolylog.NewLoggerWithCtx(context.Background(), polyzero.DebugLevel)
+		spec           = smt.NewTrieSpec(protocol.NewTrieHasher(), true)
+		emptyBlockHash = make([]byte, spec.PathHasherSize())
+	)
+
 	proofParams := prooftypes.DefaultParams()
 
 	// Set proof requirement threshold to a low enough value so a proof is always requested.
@@ -250,7 +254,7 @@ func TestRelayerSessionsManager_InsufficientBalanceForProofSubmission(t *testing
 	// The relayerSessionsManager should have created a session tree for the high CUPR relay.
 	waitSimulateIO()
 
-	playClaimAndProofSubmissionBlocks(t, sessionStartHeight, sessionEndHeight, supplierOperatorAddress, blockPublishCh)
+	playClaimAndProofSubmissionBlocks(t, sessionStartHeight, sessionEndHeight, supplierOperatorAddress, emptyBlockHash, blockPublishCh)
 }
 
 // waitSimulateIO sleeps for a bit to allow the relayer sessions manager to
@@ -347,11 +351,12 @@ func playClaimAndProofSubmissionBlocks(
 	t *testing.T,
 	sessionStartHeight, sessionEndHeight int64,
 	supplierOperatorAddress string,
+	blockHash []byte,
 	blockPublishCh chan<- client.Block,
 ) {
 	// Publish a block to the blockPublishCh to simulate non-actionable blocks.
 	// NB: This does not need to be done for each service.
-	noopBlock := testblock.NewAnyTimesBlock(t, emptyBlockHash, sessionStartHeight)
+	noopBlock := testblock.NewAnyTimesBlock(t, blockHash, sessionStartHeight)
 	blockPublishCh <- noopBlock
 
 	waitSimulateIO()
@@ -363,23 +368,23 @@ func playClaimAndProofSubmissionBlocks(
 	earliestSupplierClaimCommitHeight := shared.GetEarliestSupplierClaimCommitHeight(
 		&sharedParams,
 		sessionEndHeight,
-		emptyBlockHash,
+		blockHash,
 		supplierOperatorAddress,
 	)
 
-	claimOpenHeightBlock := testblock.NewAnyTimesBlock(t, emptyBlockHash, claimWindowOpenHeight)
+	claimOpenHeightBlock := testblock.NewAnyTimesBlock(t, blockHash, claimWindowOpenHeight)
 	blockPublishCh <- claimOpenHeightBlock
 
 	waitSimulateIO()
 
 	// Publish a block to the blockPublishCh to trigger claims creation for the session number.
-	triggerClaimBlock := testblock.NewAnyTimesBlock(t, emptyBlockHash, earliestSupplierClaimCommitHeight)
+	triggerClaimBlock := testblock.NewAnyTimesBlock(t, blockHash, earliestSupplierClaimCommitHeight)
 	blockPublishCh <- triggerClaimBlock
 
 	waitSimulateIO()
 
 	proofWindowOpenHeight := shared.GetProofWindowOpenHeight(&sharedParams, sessionEndHeight)
-	proofPathSeedBlock := testblock.NewAnyTimesBlock(t, emptyBlockHash, proofWindowOpenHeight)
+	proofPathSeedBlock := testblock.NewAnyTimesBlock(t, blockHash, proofWindowOpenHeight)
 	blockPublishCh <- proofPathSeedBlock
 
 	waitSimulateIO()
@@ -388,10 +393,10 @@ func playClaimAndProofSubmissionBlocks(
 	earliestSupplierProofCommitHeight := shared.GetEarliestSupplierProofCommitHeight(
 		&sharedParams,
 		sessionEndHeight,
-		emptyBlockHash,
+		blockHash,
 		supplierOperatorAddress,
 	)
-	triggerProofBlock := testblock.NewAnyTimesBlock(t, emptyBlockHash, earliestSupplierProofCommitHeight)
+	triggerProofBlock := testblock.NewAnyTimesBlock(t, blockHash, earliestSupplierProofCommitHeight)
 	blockPublishCh <- triggerProofBlock
 
 	waitSimulateIO()
