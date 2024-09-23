@@ -7,14 +7,85 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	testutilevents "github.com/pokt-network/poktroll/testutil/events"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
-	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	"github.com/pokt-network/poktroll/x/tokenomics/keeper"
 	tokenomicskeeper "github.com/pokt-network/poktroll/x/tokenomics/keeper"
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
+
+func TestComputeNewDifficultyHash_MonotonicallyIncreasingRelays(t *testing.T) {
+	svcId := "svc1"
+
+	keeper, ctx := keepertest.TokenomicsKeeper(t)
+
+	prevEMA := uint64(0)
+	prevTargetHash := protocol.BaseRelayDifficultyHashBz
+	for numRelays := uint64(1e3); numRelays < 1e12; numRelays *= 10 {
+		// Update the relay mining difficulty
+		_, err := keeper.UpdateRelayMiningDifficulty(ctx, map[string]uint64{svcId: numRelays})
+		require.NoError(t, err)
+
+		// Retrieve the relay mining difficulty
+		svcRelayMiningDifficulty, found := keeper.GetRelayMiningDifficulty(ctx, svcId)
+		require.True(t, found)
+
+		// Since the num relays is monotonically increasing, the EMA should also
+		// be increasing but always less than the num relays.
+		require.Greater(t, numRelays, prevEMA)
+		require.Greater(t, svcRelayMiningDifficulty.NumRelaysEma, prevEMA)
+		prevEMA = svcRelayMiningDifficulty.NumRelaysEma
+
+		// DECREASING: Only enforce that the target hash is monotonically decreasing if it is not the default
+		if !bytes.Equal(prevTargetHash, protocol.BaseRelayDifficultyHashBz) {
+			require.Greater(t, svcRelayMiningDifficulty.TargetHash, prevTargetHash)
+			prevTargetHash = svcRelayMiningDifficulty.TargetHash
+		}
+
+		// DEV_NOTE: This is very useful for visualizing how the numbers change
+		t.Logf("Relay Mining Increasing Difficult Debug. NumRelays: %d, EMA: %d, TargetHash: %x",
+			numRelays, svcRelayMiningDifficulty.NumRelaysEma, svcRelayMiningDifficulty.TargetHash)
+	}
+}
+
+func TestComputeNewDifficultyHash_MonotonicallyDecreasingRelays(t *testing.T) {
+	svcId := "svc1"
+
+	keeper, ctx := keepertest.TokenomicsKeeper(t)
+
+	prevEMA := uint64(0)
+	prevTargetHash := protocol.BaseRelayDifficultyHashBz
+	for numRelays := uint64(1e12); numRelays >= uint64(1); numRelays /= 10 {
+		// Update the relay mining difficulty
+		_, err := keeper.UpdateRelayMiningDifficulty(ctx, map[string]uint64{svcId: numRelays})
+		require.NoError(t, err)
+
+		// Retrieve the relay mining difficulty
+		svcRelayMiningDifficulty, found := keeper.GetRelayMiningDifficulty(ctx, svcId)
+		require.True(t, found)
+
+		// Only enforce that the num relays is monotonically decreasing if it is not the default
+		if prevEMA != 0 {
+			// Since the num relays is monotonically decreasing, the EMA should also
+			// be decreasing but always greater than the num relays.
+			require.Less(t, numRelays, prevEMA)
+			require.Less(t, svcRelayMiningDifficulty.NumRelaysEma, prevEMA)
+			prevEMA = svcRelayMiningDifficulty.NumRelaysEma
+		}
+
+		// INCREASING: Only enforce that the target hash is monotonically increasing if it is not the default
+		if !bytes.Equal(prevTargetHash, protocol.BaseRelayDifficultyHashBz) {
+			require.Less(t, svcRelayMiningDifficulty.TargetHash, prevTargetHash)
+			prevTargetHash = svcRelayMiningDifficulty.TargetHash
+		}
+
+		// DEV_NOTE: This is very useful for visualizing how the numbers change
+		t.Logf("Relay Mining Decreasing Difficult Debug. NumRelays: %d, EMA: %d, TargetHash: %x",
+			numRelays, svcRelayMiningDifficulty.NumRelaysEma, svcRelayMiningDifficulty.TargetHash)
+	}
+}
 
 // This is a "base" test for updating relay mining difficulty to go through
 // a flow testing a few different scenarios, but does not cover the full range
@@ -154,77 +225,6 @@ func TestUpdateRelayMiningDifficulty_FirstDifficulty(t *testing.T) {
 			require.True(t, didDifficultyIncrease,
 				"expected difficulty.TargetHash (%x) to be less than or equal to expectedRelayMiningDifficulty.TargetHash (%x)",
 				relayDifficulty.TargetHash, tt.expectedRelayMiningDifficulty.TargetHash,
-			)
-		})
-	}
-}
-
-func TestComputeNewDifficultyHash(t *testing.T) {
-	tests := []struct {
-		desc                        string
-		numRelaysTarget             uint64
-		relaysEma                   uint64
-		expectedRelayDifficultyHash []byte
-	}{
-		{
-			desc:                        "Relays Target > Relays EMA",
-			numRelaysTarget:             100,
-			relaysEma:                   50,
-			expectedRelayDifficultyHash: defaultDifficulty(),
-		},
-		{
-			desc:                        "Relays Target == Relays EMA",
-			numRelaysTarget:             100,
-			relaysEma:                   100,
-			expectedRelayDifficultyHash: defaultDifficulty(),
-		},
-		{
-			desc:            "Relays Target < Relays EMA",
-			numRelaysTarget: 50,
-			relaysEma:       100,
-			expectedRelayDifficultyHash: append(
-				[]byte{0b01111111},
-				makeBytesFullOfOnes(31)...,
-			),
-		},
-		{
-			desc:            "Relays Target << Relays EMA",
-			numRelaysTarget: 50,
-			relaysEma:       200,
-			expectedRelayDifficultyHash: append(
-				[]byte{0b00111111},
-				makeBytesFullOfOnes(31)...,
-			),
-		},
-		{
-			desc:            "Relays Target << Relays EMA",
-			numRelaysTarget: 50,
-			relaysEma:       1000,
-			expectedRelayDifficultyHash: append(
-				[]byte{0b00001111},
-				makeBytesFullOfOnes(31)...,
-			),
-		},
-		{
-			desc:            "Relays Target << Relays EMA",
-			numRelaysTarget: 50,
-			relaysEma:       10000,
-			expectedRelayDifficultyHash: append(
-				[]byte{0b00000001},
-				makeBytesFullOfOnes(31)...,
-			),
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.desc, func(t *testing.T) {
-			newRelayDifficultyTargetHash := keeper.ComputeNewDifficultyTargetHash(prooftypes.DefaultRelayDifficultyTargetHash, tt.numRelaysTarget, tt.relaysEma)
-
-			// NB: An increase in difficulty is indicated by a decrease in the target hash
-			didDifficultyIncrease := bytes.Compare(newRelayDifficultyTargetHash, tt.expectedRelayDifficultyHash) < 1
-			require.True(t, didDifficultyIncrease,
-				"expected difficulty.TargetHash (%x) to be less than or equal to expectedRelayMiningDifficulty.TargetHash (%x)",
-				newRelayDifficultyTargetHash, tt.expectedRelayDifficultyHash,
 			)
 		})
 	}
