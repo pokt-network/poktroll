@@ -1,18 +1,21 @@
+//go:build integration
+
 package integration_test
 
 import (
 	"context"
 	"testing"
 
-	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/smt"
 	"github.com/pokt-network/smt/kvstore/pebble"
 	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 
 	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/testutil/integration"
+	"github.com/pokt-network/poktroll/testutil/integration/suites"
 	"github.com/pokt-network/poktroll/testutil/testrelayer"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
@@ -21,28 +24,52 @@ import (
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
-	// Test params
-	globalComputeUnitsToTokensMultiplier := uint64(1) // keeping the math simple
-	// serviceComputeUnitsPerRelay := uint64(1)          // keeping the math simple
+var (
+	// Test params.
+	computeUnitsToTokensMultiplier = uint64(1) // keeping the math simple
+	proofRequirementThreshold      = sdk.NewInt64Coin(volatile.DenomuPOKT, 1e18)
+	//serviceComputeUnitsPerRelay = uint64(1)   // keeping the math simple
+)
 
-	// Prepare the keepers and integration app
-	integrationApp := integration.NewCompleteIntegrationApp(t)
-	sdkCtx := integrationApp.GetSdkCtx()
-	keepers := integrationApp.GetKeepers()
+type RelayMiningIntegrationTestSuite struct {
+	suites.UpdateParamsSuite
+}
 
-	// Set the global tokenomics params
-	err := keepers.SharedKeeper.SetParams(sdkCtx, sharedtypes.Params{
-		ComputeUnitsToTokensMultiplier: globalComputeUnitsToTokensMultiplier,
-	})
-	require.NoError(t, err)
+func (s *RelayMiningIntegrationTestSuite) SetupTest() {
+	// Construct a fresh integration app for each test.
+	// TODO_BLOCKED(#826): wait for integration app & suites refactor to be merged.
+	//s.NewApp(s.T())
+	//s.SetupTestAccounts()
+	//s.SetupTestAuthzGrants()
+}
 
-	// Set the global proof params so we never need a proof (for simplicity of this test)
-	err = keepers.ProofKeeper.SetParams(sdkCtx, prooftypes.Params{
-		ProofRequestProbability:   0,                                                                // we never need a proof randomly
-		ProofRequirementThreshold: &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(1e18)}, // a VERY high threshold
-	})
-	require.NoError(t, err)
+func (s *RelayMiningIntegrationTestSuite) TestComputeNewDifficultyHash_RewardsReflectWorkCompleted() {
+	// Set the shared module param compute_units_to_tokens_multiplier.
+	// TODO_BLOCKED(#826): wait for integration app & suites refactor to be merged.
+	//_, err := s.RunUpdateParam(s.T(),
+	//	sharedtypes.ModuleName,
+	//	sharedtypes.ParamComputeUnitsToTokensMultiplier,
+	//	computeUnitsToTokensMultiplier,
+	//)
+	//require.NoError(s.T(), err)
+
+	// Set the proof params so we never need a proof (for simplicity of this test)
+	// TODO_BLOCKED(#826): wait for integration app & suites refactor to be merged.
+	//_, err = s.RunUpdateParam(s.T(),
+	//	prooftypes.ModuleName,
+	//	prooftypes.ParamProofRequestProbability,
+	//	float32(0),
+	//)
+	//require.NoError(s.T(), err)
+
+	// Set the proof requirement threshold to be VERY high.
+	// TODO_BLOCKED(#826): wait for integration app & suites refactor to be merged.
+	//_, err = s.RunUpdateParam(s.T(),
+	//	prooftypes.ModuleName,
+	//	prooftypes.ParamProofRequirementThreshold,
+	//	&proofRequirementThreshold,
+	//)
+	//require.NoError(s.T(), err)
 
 	// TODO(@red-0ne, #781): Implement this test after the business logic is done.
 
@@ -84,7 +111,7 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 			require.NoError(t, err)
 
 			// Compute the expected reward
-			expectedReward := numRelays * serviceComputeUnitsPerRelay * globalComputeUnitsToTokensMultiplier
+			expectedReward := numRelays * serviceComputeUnitsPerRelay * computeUnitsToTokensMultiplier
 			fmt.Println("Expected reward:", expectedReward)
 
 			// Compute the new difficulty hash
@@ -153,4 +180,9 @@ func prepareRealClaim(
 		SessionHeader:           session.GetHeader(),
 		RootHash:                trie.Root(),
 	}
+}
+
+func TestRelayMiningIntegrationSuite(t *testing.T) {
+	t.Skip("TODO_BLOCKED(#826): wait for integration app & suites refactor to be merged.")
+	suite.Run(t, new(RelayMiningIntegrationTestSuite))
 }
