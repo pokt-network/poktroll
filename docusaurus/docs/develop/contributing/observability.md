@@ -69,23 +69,23 @@ the memory usage and reduce the performance of the Prometheus server. To mitigat
 ```go
 // Declare a named `error` return argument.
 func (k msgServer) CreateClaim(...) (_ *types.MsgCreateClaimResponse, err error) {
-	// Declare claim to reference in telemetry.
-	var (
-		claim           types.Claim
-		isExistingClaim bool
-		numRelays       uint64
-		numComputeUnits uint64
-	)
+    // Declare claim to reference in telemetry.
+    var (
+        claim           types.Claim
+        isExistingClaim bool
+        numRelays       uint64
+        numComputeUnits uint64
+    )
 
-	// Defer telemetry calls so that they reference the final values the relevant variables.
-	defer func() {
-		// Only increment these metrics counters if handling a new claim.
-		if !isExistingClaim {
-			telemetry.ClaimCounter(types.ClaimProofStage_CLAIMED, 1, err)
-			telemetry.ClaimRelaysCounter(types.ClaimProofStage_CLAIMED, numRelays, err)
-			telemetry.ClaimComputeUnitsCounter(types.ClaimProofStage_CLAIMED, numComputeUnits, err)
-		}
-	}()
+    // Defer telemetry calls so that they reference the final values the relevant variables.
+    defer func() {
+        // Only increment these metrics counters if handling a new claim.
+        if !isExistingClaim {
+            telemetry.ClaimCounter(types.ClaimProofStage_CLAIMED, 1, err)
+            telemetry.ClaimRelaysCounter(types.ClaimProofStage_CLAIMED, numRelays, err)
+            telemetry.ClaimComputeUnitsCounter(types.ClaimProofStage_CLAIMED, numComputeUnits, err)
+        }
+    }()
 
 
     // Ensure `err` is not shadowed by avoiding `:=` operator.
@@ -101,12 +101,12 @@ func (k msgServer) CreateClaim(...) (_ *types.MsgCreateClaimResponse, err error)
 #### [x/tokenomics/module/abci.go](https://github.com/pokt-network/poktroll/blob/main/x/tokenomics/module/abci.go)
 
 ```go
-	// Emit telemetry for each service's relay mining difficulty.
-	for serviceId, newDifficulty := range difficultyPerServiceMap {
-		miningDifficultyNumBits := keeper.RelayMiningTargetHashToDifficulty(newDifficulty.TargetHash)
-		telemetry.RelayMiningDifficultyGauge(miningDifficultyNumBits, serviceId)
-		telemetry.RelayEMAGauge(newDifficulty.NumRelaysEma, serviceId)
-	}
+    // Emit telemetry for each service's relay mining difficulty.
+    for serviceId, newDifficulty := range difficultyPerServiceMap {
+        miningDifficultyNumBits := keeper.RelayMiningTargetHashToDifficulty(newDifficulty.TargetHash)
+        telemetry.RelayMiningDifficultyGauge(miningDifficultyNumBits, serviceId)
+        telemetry.RelayEMAGauge(newDifficulty.NumRelaysEma, serviceId)
+    }
 ```
 
 ### Histogram
