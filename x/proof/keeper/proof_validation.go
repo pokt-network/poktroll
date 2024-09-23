@@ -156,20 +156,20 @@ func (k Keeper) EnsureValidProof(
 	logger.Debug("successfully verified relay response signature")
 
 	// Get the proof module's governance parameters.
-	// TODO_FOLLOWUP(@olshansk, #690): Get the difficulty associated with the service
+	// TODO_BETA(@red-0ne): Ensure we use the difficulty from the service and add
+	// a test for a proof with an invalid difficulty.
 	params := k.GetParams(ctx)
-	relayDifficultyTargetHash := params.RelayDifficultyTargetHash
-	if len(relayDifficultyTargetHash) == 0 {
-		relayDifficultyTargetHash = types.DefaultRelayDifficultyTargetHash
+	serviceRelayDifficultyTargetHash := params.RelayDifficultyTargetHash
+	if len(serviceRelayDifficultyTargetHash) == 0 {
+		serviceRelayDifficultyTargetHash = types.DefaultRelayDifficultyTargetHash
 	}
 
 	// Verify the relay difficulty is above the minimum required to earn rewards.
 	if err = validateRelayDifficulty(
 		relayBz,
-		relayDifficultyTargetHash,
-		sessionHeader.ServiceId,
+		serviceRelayDifficultyTargetHash,
 	); err != nil {
-		return err
+		return types.ErrProofInvalidRelayDifficulty.Wrapf("failed to validate relay difficulty for service %s due to: %v", sessionHeader.ServiceId, err)
 	}
 	logger.Debug("successfully validated relay mining difficulty")
 
@@ -390,36 +390,36 @@ func verifyClosestProof(
 }
 
 // validateRelayDifficulty ensures that the relay's mining difficulty meets the
-// required minimum threshold.
-// TODO_TECHDEBT: Factor out the relay mining difficulty validation into a shared
+// required minimum difficulty of the service.
+// TODO_TECHDEBT(@red-0ne): Factor out to the relay mining difficulty validation into a shared
 // function that can be used by both the proof and the miner packages.
-func validateRelayDifficulty(relayBz, targetHash []byte, serviceId string) error {
+func validateRelayDifficulty(relayBz, serviceRelayDifficultyTargetHash []byte) error {
+	// This should theoretically never happen, but it's better to be safe than sorry.
+	if len(serviceRelayDifficultyTargetHash) != protocol.RelayHasherSize {
+		return types.ErrProofInvalidRelay.Wrapf(
+			"invalid RelayDifficultyTargetHash: (%x); length wanted: %d; got: %d",
+			serviceRelayDifficultyTargetHash,
+			protocol.RelayHasherSize,
+			len(serviceRelayDifficultyTargetHash),
+		)
+	}
+
+	// Convert the array to a slice
 	relayHashArr := protocol.GetRelayHashFromBytes(relayBz)
 	relayHash := relayHashArr[:]
 
-	if len(targetHash) != protocol.RelayHasherSize {
-		return types.ErrProofInvalidRelay.Wrapf(
-			"invalid RelayDifficultyTargetHash: (%x); length wanted: %d; got: %d",
-			targetHash,
-			protocol.RelayHasherSize,
-			len(targetHash),
-		)
+	// Relay difficulty is within the service difficulty
+	if protocol.IsRelayVolumeApplicable(relayHash, serviceRelayDifficultyTargetHash) {
+		return nil
 	}
 
-	if !protocol.IsRelayVolumeApplicable(relayHash, targetHash) {
-		var targetHashArr [protocol.RelayHasherSize]byte
-		copy(targetHashArr[:], targetHash)
+	relayDifficultyMultiplierStr := protocol.GetRelayDifficultyMultiplier(relayHash).String()
+	targetDifficultyMultiplierStr := protocol.GetRelayDifficultyMultiplier(serviceRelayDifficultyTargetHash).String()
 
-		relayDifficulty := protocol.GetDifficultyFromHash(relayHashArr)
-		targetDifficulty := protocol.GetDifficultyFromHash(targetHashArr)
+	return types.ErrProofInvalidRelay.Wrapf(
+		"the difficulty relay being proven is (%s), and is smaller than the target difficulty (%s)",
+		relayDifficultyMultiplierStr,
+		targetDifficultyMultiplierStr,
+	)
 
-		return types.ErrProofInvalidRelay.Wrapf(
-			"the difficulty relay being proven is (%d), and is smaller than the target difficulty (%d) for service %s",
-			relayDifficulty,
-			targetDifficulty,
-			serviceId,
-		)
-	}
-
-	return nil
 }
