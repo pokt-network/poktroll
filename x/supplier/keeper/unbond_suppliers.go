@@ -69,6 +69,7 @@ func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) error {
 		k.RemoveSupplier(ctx, supplierOperatorAddress.String())
 		logger.Info(fmt.Sprintf("Successfully removed the supplier: %+v", supplier))
 
+		// Emit an event which signals that the supplier has sucessfully unbonded.
 		event := &types.EventSupplierUnbondingEnd{
 			Supplier:        &supplier,
 			UnbondingHeight: unbondingHeight,

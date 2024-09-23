@@ -123,6 +123,7 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 	logger.Info(fmt.Sprintf("Successfully updated supplier stake for supplier: %+v", supplier))
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	// Emit an event which signals that the supplier staked.
 	event := &types.EventSupplierStaked{
 		Supplier: &supplier,
 	}
