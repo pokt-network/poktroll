@@ -488,8 +488,10 @@ and ensure they have enough funds to cover the submission fees for `Proofs`.
 
 The following command can be used to check the balance of a `Supplier` operator:
 ```bash
-poktrolld query bank balance <supplier_operator_address> upokt
-
+poktrolld query bank balance <supplier_operator_address> upokt --node https://shannon-testnet-grove-seed-rpc.poktroll.com
+```
+Which output would look like:
+```yaml
 balance:
   amount: "109999000"
   denom: upokt
@@ -506,13 +508,13 @@ anticipate submitting a higher volume of `Proofs`.
 
 The following command can be used to check the current `proof_submission_fee`:
 ```bash
-poktrolld query proof params
-
-...
+poktrolld query proof params --node https://shannon-testnet-grove-seed-rpc.poktroll.com
+```
+Which output would look like:
+```yaml
   proof_submission_fee:
     amount: "1000000"
     denom: upokt
-...
 ```
 
 The list of `Proof` governance parameters can be found at [proto/proof/params.proto](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/proof/params.proto)
