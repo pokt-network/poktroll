@@ -42,7 +42,7 @@ Feature: Tokenomics Namespace
     Scenario: Settle the session when a valid claim is create but not required
         # Baseline
         Given the user has the pocketd binary installed
-        # Network preparation
+        # Network preparation and validation
         And an account exists for "supplier1"
         And the "supplier" account for "supplier1" is staked
         And an account exists for "app1"

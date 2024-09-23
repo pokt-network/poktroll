@@ -2,7 +2,6 @@ package tx_test
 
 import (
 	"context"
-	"crypto/sha256"
 	"os"
 	"sync"
 	"testing"
@@ -22,6 +21,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/keyring"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/testclient"
@@ -364,6 +364,10 @@ func TestTxClient_SignAndBroadcast_Timeout(t *testing.T) {
 		txResultsBzPublishCh chan<- either.Bytes
 		blocksPublishCh      = make(chan client.Block, tx.DefaultCommitTimeoutHeightOffset)
 		ctx                  = context.Background()
+
+		// Trie related variables
+		spec           = smt.NewTrieSpec(protocol.NewTrieHasher(), true)
+		emptyBlockHash = make([]byte, spec.PathHasherSize())
 	)
 
 	keyring, signingKey := testkeyring.NewTestKeyringWithKey(t, testSigningKeyName)
@@ -414,10 +418,6 @@ func TestTxClient_SignAndBroadcast_Timeout(t *testing.T) {
 	eitherErr := txClient.SignAndBroadcast(ctx, appStakeMsg)
 	err, errCh := eitherErr.SyncOrAsyncError()
 	require.NoError(t, err)
-
-	// TODO_TECHDEBT(#446): Centralize the configuration for the SMT spec.
-	spec := smt.NewTrieSpec(sha256.New(), true)
-	emptyBlockHash := make([]byte, spec.PathHasherSize())
 
 	for i := 0; i < tx.DefaultCommitTimeoutHeightOffset; i++ {
 		blocksPublishCh <- testblock.NewAnyTimesBlock(t, emptyBlockHash, int64(i+1))
