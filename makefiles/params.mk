@@ -110,6 +110,19 @@ params_update_service_all: ## Update the session module params
 params_get_service: ## Get the service module params
 	poktrolld query service params --node $(POCKET_NODE)
 
+### Gateway Module Params ###
+.PHONY: params_get_gateway
+params_get_gateway: ## Get the gateway module params
+	poktrolld query gateway params --node $(POCKET_NODE)
+
+.PHONY: params_update_gateway_all
+params_update_gateway_all: ## Update the session module params
+	poktrolld tx authz exec ./tools/scripts/params/gateway_all.json $(PARAM_FLAGS)
+
+.PHONY: params_update_gateway_min_stake
+params_update_gateway_min_stake: ## Update the gateway module min_stake param
+	poktrolld tx authz exec ./tools/scripts/params/gateway_min_stake.json $(PARAM_FLAGS)
+
 .PHONY: params_query_all
 params_query_all: check_jq ## Query the params from all available modules
 	@for module in $(MODULES); do \
