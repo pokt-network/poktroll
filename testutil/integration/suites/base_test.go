@@ -17,8 +17,6 @@ import (
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 )
 
-var gatewayStakeAmount = int64(1000)
-
 type BaseIntegrationSuiteTestSuite struct {
 	BaseIntegrationSuite
 }
