@@ -97,6 +97,18 @@ params_update_shared_proof_window_close_offset_blocks: ## Update the shared modu
 params_update_shared_compute_units_to_tokens_multiplier: ## Update the shared module compute_units_to_tokens_multiplier param
 	poktrolld tx authz exec ./tools/scripts/params/shared_compute_units_to_tokens_multiplier.json $(PARAM_FLAGS)
 
+### Service Module Params ###
+.PHONY: params_get_service
+params_get_service: ## Get the service module params
+	poktrolld query service params --node $(POCKET_NODE)
+
+.PHONY: params_update_service_all
+params_update_service_all: ## Update the session module params
+	poktrolld tx authz exec ./tools/scripts/params/service_all.json $(PARAM_FLAGS)
+
+.PHONY: params_get_service
+params_get_service: ## Get the service module params
+	poktrolld query service params --node $(POCKET_NODE)
 
 .PHONY: params_query_all
 params_query_all: check_jq ## Query the params from all available modules
