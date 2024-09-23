@@ -188,7 +188,7 @@ func TestMsgServer_AddService(t *testing.T) {
 			expectedErr: types.ErrServiceInvalidOwnerAddress,
 		},
 		// {
-		// 	desc: "TODO(@adshmh): valid - update compute_units_pre_relay if the owner is correct",
+		// 	desc: "// TODO(@red-0ne, #781): valid - update compute_units_pre_relay if the owner is correct",
 		// },
 	}
 

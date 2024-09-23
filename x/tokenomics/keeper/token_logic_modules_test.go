@@ -406,7 +406,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	appMint := math.NewInt(int64(numTokensMinted * tokenomicskeeper.MintAllocationApplication))
 	supplierMint := float32(numTokensMinted * tokenomicskeeper.MintAllocationSupplier)
 
-	// Ensure the balance was increased be the appropriate amount
+	// Ensure the balance was increase be the appropriate amount
 	require.Equal(t, daoBalanceBefore.Amount.Add(daoMint), daoBalanceAfter.Amount)
 	require.Equal(t, propBalanceBefore.Amount.Add(propMint), propBalanceAfter.Amount)
 	require.Equal(t, serviceOwnerBalanceBefore.Amount.Add(serviceOwnerMint), serviceOwnerBalanceAfter.Amount)
