@@ -12,21 +12,32 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	maxLeafs      = 10000
+	numIterations = 100
+)
+
+// No significant performance gains were observed when using compact proofs compared
+// to non-compact proofs.
+// In fact, compact proofs appear to be less efficient than gzipped proofs, even
+// without considering the "proof closest value" compression.
+// For a sample comparison between compression and compaction ratios, see:
+// https://github.com/pokt-network/poktroll/pull/823#issuecomment-2363987920
 func TestSessionTree_CompactProofsAreSmallerThanNonCompactProofs(t *testing.T) {
 	// Run the test for different number of leaves.
-	for numLeaf := 10; numLeaf <= 1000000; numLeaf *= 10 {
-		// We run the test 1000 times for each number of leaves to remove the randomness bias.
+	for numLeafs := 10; numLeafs <= maxLeafs; numLeafs *= 10 {
 		cumulativeProofSize := 0
 		cumulativeCompactProofSize := 0
 		cumulativeGzippedProofSize := 0
-		for numLeaf := 0; numLeaf <= 1000; numLeaf++ {
+		// We run the test numIterations times for each number of leaves to remove the randomness bias.
+		for iteration := 0; iteration <= numIterations; iteration++ {
 			kvStore, err := pebble.NewKVStore("")
 			require.NoError(t, err)
 
 			trie := smt.NewSparseMerkleSumTrie(kvStore, protocol.NewTrieHasher(), smt.WithValueHasher(nil))
 
 			// Insert numLeaf random leaves.
-			for i := 0; i < numLeaf; i++ {
+			for i := 0; i < numLeafs; i++ {
 				key := make([]byte, 32)
 				_, err := rand.Read(key)
 				require.NoError(t, err)
@@ -47,7 +58,7 @@ func TestSessionTree_CompactProofsAreSmallerThanNonCompactProofs(t *testing.T) {
 			proofBz, err := proof.Marshal()
 			require.NoError(t, err)
 
-			// Accumulate the proof size over 1000 runs.
+			// Accumulate the proof size over numIterations runs.
 			cumulativeProofSize += len(proofBz)
 
 			// Generate the compacted proof.
@@ -57,7 +68,7 @@ func TestSessionTree_CompactProofsAreSmallerThanNonCompactProofs(t *testing.T) {
 			compactProofBz, err := compactProof.Marshal()
 			require.NoError(t, err)
 
-			// Accumulate the compact proof size over 1000 runs.
+			// Accumulate the compact proof size over numIterations runs.
 			cumulativeCompactProofSize += len(compactProofBz)
 
 			// Gzip the non compacted proof.
@@ -68,29 +79,19 @@ func TestSessionTree_CompactProofsAreSmallerThanNonCompactProofs(t *testing.T) {
 			err = gzipWriter.Close()
 			require.NoError(t, err)
 
-			// Accumulate the gzipped proof size over 1000 runs.
+			// Accumulate the gzipped proof size over numIterations runs.
 			cumulativeGzippedProofSize += len(buf.Bytes())
-
-			//t.Logf(
-			//	"numLeaf: %d, proofSize: %d, compactProofSize: %d, gzipProofSize: %d",
-			//	numLeaf, len(proofBz), len(compactProofBz), len(buf.Bytes()),
-			//)
-
-			// Commenting out the assertion to not fail the test since compaction is not
-			// guaranteed to always reduce the proof size.
-			//require.Less(t, len(compactProofBz), len(proofBz))
 		}
 
-		//t.Logf(
-		//	"numLeaf=%d: cumulativeProofSize: %d, cumulativeCompactProofSize: %d, cumulativeGzippedProofSize: %d",
-		//	numLeaf, cumulativeProofSize, cumulativeCompactProofSize, cumulativeGzippedProofSize,
-		//)
+		compactionRatio := float32(cumulativeCompactProofSize) / float32(cumulativeProofSize)
+		compressionRatio := float32(cumulativeGzippedProofSize) / float32(cumulativeProofSize)
+
+		// Gzip compression is more efficient than compaction.
+		require.Greater(t, compactionRatio, compressionRatio)
 
 		t.Logf(
 			"numLeaf=%d: compactionRatio: %f, compressionRatio: %f",
-			numLeaf,
-			float32(cumulativeCompactProofSize)/float32(cumulativeProofSize),
-			float32(cumulativeGzippedProofSize)/float32(cumulativeProofSize),
+			numLeafs, compactionRatio, compressionRatio,
 		)
 	}
 }
