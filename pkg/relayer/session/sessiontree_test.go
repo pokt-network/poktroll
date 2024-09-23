@@ -39,7 +39,7 @@ func TestSessionTree_CompactProofsAreSmallerThanNonCompactProofs(t *testing.T) {
 			// Insert numLeaf random leaves.
 			for i := 0; i < numLeafs; i++ {
 				key := make([]byte, 32)
-				_, err := rand.Read(key)
+				_, err = rand.Read(key)
 				require.NoError(t, err)
 				// Insert an empty value since this does not get affected by the compaction,
 				// this is also to not favor proof compression that compresses the value too.

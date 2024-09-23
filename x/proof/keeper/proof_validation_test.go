@@ -613,7 +613,8 @@ func TestEnsureValidProof_Error(t *testing.T) {
 				// Extract relayHash to check below that it's difficulty is insufficient
 				err = sparseCompactMerkleClosestProof.Unmarshal(proof.ClosestMerkleProof)
 				require.NoError(t, err)
-				sparseMerkleClosestProof, err := smt.DecompactClosestProof(sparseCompactMerkleClosestProof, &protocol.SmtSpec)
+				sparseMerkleClosestProof := &smt.SparseMerkleClosestProof{}
+				sparseMerkleClosestProof, err = smt.DecompactClosestProof(sparseCompactMerkleClosestProof, &protocol.SmtSpec)
 				require.NoError(t, err)
 				relayBz := sparseMerkleClosestProof.GetValueHash(&protocol.SmtSpec)
 				relayHashArr := protocol.GetRelayHashFromBytes(relayBz)
