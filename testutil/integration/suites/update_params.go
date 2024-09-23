@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/types/tx"
 	"github.com/cosmos/cosmos-sdk/x/authz"
 	"github.com/stretchr/testify/require"
 
@@ -24,7 +23,8 @@ import (
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-// TODO_IN_THIS_COMMIT: godoc...
+// ParamType is a type alias for a module parameter type. It is the string that
+// is returned when calling reflect.Value#Type()#Name() on a module parameter.
 type ParamType = string
 
 const (
@@ -41,177 +41,186 @@ const (
 	MsgUpdateParamName  = "MsgUpdateParam"
 )
 
-var (
-	AuthorityAddr cosmostypes.AccAddress
+// ModuleParamConfig holds a set of valid parameters and type information for a
+// given module. It uses any instead of cosmostypes.Msg to mitigate easy mistakes
+// that could result from using pointers instead (unintended mutation). It is still
+// possible to mutate this global variable; however, it is less likely to happen
+// unintentionally.
+type ModuleParamConfig struct {
+	ValidParams             any
+	MsgUpdateParams         any
+	MsgUpdateParamsResponse any
+	MsgUpdateParam          any
+	MsgUpdateParamResponse  any
+	ParamTypes              map[ParamType]any
+	QueryParamsRequest      any
+	QueryParamsResponse     any
+	DefaultParams           any
+	NewParamClientFn        any
+}
 
+var (
+	// AuthorityAddr is the cosmos account address of the authority for the integration app.
+	AuthorityAddr cosmostypes.AccAddress
+	// AuthorizedAddr is the cosmos account address which is the grantee of authz
+	// grants for parameter update messages.
 	AuthorizedAddr cosmostypes.AccAddress
 
-	ValidSharedParams = sharedtypes.Params{
-		NumBlocksPerSession:                5,
-		GracePeriodEndOffsetBlocks:         2,
-		ClaimWindowOpenOffsetBlocks:        5,
-		ClaimWindowCloseOffsetBlocks:       5,
-		ProofWindowOpenOffsetBlocks:        2,
-		ProofWindowCloseOffsetBlocks:       5,
-		SupplierUnbondingPeriodSessions:    9,
-		ApplicationUnbondingPeriodSessions: 9,
-		ComputeUnitsToTokensMultiplier:     420,
-	}
-
-	ValidSessionParams = sessiontypes.Params{}
-
-	ValidServiceFeeCoin = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1000000001)
-	ValidServiceParams  = servicetypes.Params{
-		AddServiceFee: &ValidServiceFeeCoin,
-	}
-
-	ValidApplicationParams = apptypes.Params{
-		MaxDelegatedGateways: 999,
-	}
-
-	ValidGatewayParams    = gatewaytypes.Params{}
-	ValidSupplierParams   = suppliertypes.Params{}
-	ValidTokenomicsParams = tokenomicstypes.Params{}
-
-	ValidMissingPenaltyCoin           = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 500)
-	ValidSubmissionFeeCoin            = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 5000000)
-	ValidRelayDifficultyTargetHash, _ = hex.DecodeString("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff")
-
+	ValidServiceFeeCoin                = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1000000001)
+	ValidMissingPenaltyCoin            = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 500)
+	ValidSubmissionFeeCoin             = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 5000000)
+	ValidRelayDifficultyTargetHash, _  = hex.DecodeString("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff")
 	ValidProofRequirementThresholdCoin = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 100)
-	ValidProofParams                   = prooftypes.Params{
-		RelayDifficultyTargetHash: ValidRelayDifficultyTargetHash,
-		ProofRequestProbability:   0.1,
-		ProofRequirementThreshold: &ValidProofRequirementThresholdCoin,
-		ProofMissingPenalty:       &ValidMissingPenaltyCoin,
-		ProofSubmissionFee:        &ValidSubmissionFeeCoin,
-	}
 
-	// TODO_IN_THIS_COMMIT: godoc...
-	// NB: Authority fields are intentionally omitted and expected to be added
-	// to a **copy** of the respective message by the test.
-	MsgUpdateParamsByModule = map[string]any{
-		sharedtypes.ModuleName: sharedtypes.MsgUpdateParams{
-			Params: ValidSharedParams,
-		},
-		sessiontypes.ModuleName: sessiontypes.MsgUpdateParams{
-			Params: ValidSessionParams,
-		},
-		servicetypes.ModuleName: servicetypes.MsgUpdateParams{
-			Params: ValidServiceParams,
-		},
-		apptypes.ModuleName: apptypes.MsgUpdateParams{
-			Params: ValidApplicationParams,
-		},
-		gatewaytypes.ModuleName: gatewaytypes.MsgUpdateParams{
-			Params: ValidGatewayParams,
-		},
-		suppliertypes.ModuleName: suppliertypes.MsgUpdateParams{
-			Params: ValidSupplierParams,
-		},
-		prooftypes.ModuleName: prooftypes.MsgUpdateParams{
-			Params: ValidProofParams,
-		},
-		tokenomicstypes.ModuleName: tokenomicstypes.MsgUpdateParams{
-			Params: ValidTokenomicsParams,
-		},
-	}
-
-	// TODO_IN_THIS_COMMIT: godoc...
-	MsgUpdateParamByModule = map[string]any{
-		sharedtypes.ModuleName:     sharedtypes.MsgUpdateParam{},
-		servicetypes.ModuleName:    servicetypes.MsgUpdateParam{},
-		prooftypes.ModuleName:      prooftypes.MsgUpdateParam{},
-		tokenomicstypes.ModuleName: tokenomicstypes.MsgUpdateParam{},
-		//sessiontypes.ModuleName:    sessiontypes.MsgUpdateParam{},
-		//apptypes.ModuleName:        apptypes.MsgUpdateParam{},
-		//gatewaytypes.ModuleName:    gatewaytypes.MsgUpdateParam{},
-		//suppliertypes.ModuleName:   suppliertypes.MsgUpdateParam{},
-	}
-
-	// TODO_IN_THIS_COMMIT: ... each module defines its own MsgUpdateParam_As* structs
-	// ... not every module has all types...
-	MsgUpdateParamTypesByModuleName = map[string]map[ParamType]any{
+	// ModuleParamConfigMap is a map of module names to their respective parameter
+	// configurations. It is used by the UpdateParamsSuite, mostly via reflection,
+	// to construct and send parameter update messages and assert on their results.
+	ModuleParamConfigMap = map[string]ModuleParamConfig{
 		sharedtypes.ModuleName: {
-			ParamTypeUint64: sharedtypes.MsgUpdateParam_AsInt64{},
-			ParamTypeInt64:  sharedtypes.MsgUpdateParam_AsInt64{},
-			ParamTypeString: sharedtypes.MsgUpdateParam_AsString{},
-			ParamTypeBytes:  sharedtypes.MsgUpdateParam_AsBytes{},
+			ValidParams: sharedtypes.Params{
+				NumBlocksPerSession:                12,
+				GracePeriodEndOffsetBlocks:         0,
+				ClaimWindowOpenOffsetBlocks:        2,
+				ClaimWindowCloseOffsetBlocks:       3,
+				ProofWindowOpenOffsetBlocks:        1,
+				ProofWindowCloseOffsetBlocks:       3,
+				SupplierUnbondingPeriodSessions:    9,
+				ApplicationUnbondingPeriodSessions: 9,
+				ComputeUnitsToTokensMultiplier:     420,
+			},
+			MsgUpdateParams:         sharedtypes.MsgUpdateParams{},
+			MsgUpdateParamsResponse: sharedtypes.MsgUpdateParamsResponse{},
+			MsgUpdateParam:          sharedtypes.MsgUpdateParam{},
+			MsgUpdateParamResponse:  sharedtypes.MsgUpdateParamResponse{},
+			ParamTypes: map[ParamType]any{
+				ParamTypeUint64: sharedtypes.MsgUpdateParam_AsInt64{},
+				ParamTypeInt64:  sharedtypes.MsgUpdateParam_AsInt64{},
+				ParamTypeString: sharedtypes.MsgUpdateParam_AsString{},
+				ParamTypeBytes:  sharedtypes.MsgUpdateParam_AsBytes{},
+			},
+			QueryParamsRequest:  sharedtypes.QueryParamsRequest{},
+			QueryParamsResponse: sharedtypes.QueryParamsResponse{},
+			DefaultParams:       sharedtypes.DefaultParams(),
+			NewParamClientFn:    sharedtypes.NewQueryClient,
+		},
+		sessiontypes.ModuleName: {
+			ValidParams:             sessiontypes.Params{},
+			MsgUpdateParams:         sessiontypes.MsgUpdateParams{},
+			MsgUpdateParamsResponse: sessiontypes.MsgUpdateParamsResponse{},
+			QueryParamsRequest:      sessiontypes.QueryParamsRequest{},
+			QueryParamsResponse:     sessiontypes.QueryParamsResponse{},
+			DefaultParams:           sessiontypes.DefaultParams(),
+			NewParamClientFn:        sessiontypes.NewQueryClient,
 		},
 		servicetypes.ModuleName: {
-			ParamTypeCoin: servicetypes.MsgUpdateParam_AsCoin{},
+			ValidParams: servicetypes.Params{
+				AddServiceFee: &ValidServiceFeeCoin,
+			},
+			MsgUpdateParams:         servicetypes.MsgUpdateParams{},
+			MsgUpdateParamsResponse: servicetypes.MsgUpdateParamsResponse{},
+			MsgUpdateParam:          servicetypes.MsgUpdateParam{},
+			MsgUpdateParamResponse:  servicetypes.MsgUpdateParamResponse{},
+			ParamTypes: map[ParamType]any{
+				ParamTypeCoin: servicetypes.MsgUpdateParam_AsCoin{},
+			},
+			QueryParamsRequest:  servicetypes.QueryParamsRequest{},
+			QueryParamsResponse: servicetypes.QueryParamsResponse{},
+			DefaultParams:       servicetypes.DefaultParams(),
+			NewParamClientFn:    servicetypes.NewQueryClient,
+		},
+		apptypes.ModuleName: {
+			ValidParams: apptypes.Params{
+				MaxDelegatedGateways: 999,
+			},
+			MsgUpdateParams:         apptypes.MsgUpdateParams{},
+			MsgUpdateParamsResponse: apptypes.MsgUpdateParamsResponse{},
+			QueryParamsRequest:      apptypes.QueryParamsRequest{},
+			QueryParamsResponse:     apptypes.QueryParamsResponse{},
+			DefaultParams:           apptypes.DefaultParams(),
+			NewParamClientFn:        apptypes.NewQueryClient,
+		},
+		gatewaytypes.ModuleName: {
+			ValidParams:             gatewaytypes.Params{},
+			MsgUpdateParams:         gatewaytypes.MsgUpdateParams{},
+			MsgUpdateParamsResponse: gatewaytypes.MsgUpdateParamsResponse{},
+			QueryParamsRequest:      gatewaytypes.QueryParamsRequest{},
+			QueryParamsResponse:     gatewaytypes.QueryParamsResponse{},
+			DefaultParams:           gatewaytypes.DefaultParams(),
+			NewParamClientFn:        gatewaytypes.NewQueryClient,
+		},
+		suppliertypes.ModuleName: {
+			ValidParams:             suppliertypes.Params{},
+			MsgUpdateParams:         suppliertypes.MsgUpdateParams{},
+			MsgUpdateParamsResponse: suppliertypes.MsgUpdateParamsResponse{},
+			QueryParamsRequest:      suppliertypes.QueryParamsRequest{},
+			QueryParamsResponse:     suppliertypes.QueryParamsResponse{},
+			DefaultParams:           suppliertypes.DefaultParams(),
+			NewParamClientFn:        suppliertypes.NewQueryClient,
 		},
 		prooftypes.ModuleName: {
-			ParamTypeUint64:  prooftypes.MsgUpdateParam_AsInt64{},
-			ParamTypeInt64:   prooftypes.MsgUpdateParam_AsInt64{},
-			ParamTypeString:  prooftypes.MsgUpdateParam_AsString{},
-			ParamTypeBytes:   prooftypes.MsgUpdateParam_AsBytes{},
-			ParamTypeFloat32: prooftypes.MsgUpdateParam_AsFloat{},
-			ParamTypeCoin:    prooftypes.MsgUpdateParam_AsCoin{},
+			ValidParams: prooftypes.Params{
+				RelayDifficultyTargetHash: ValidRelayDifficultyTargetHash,
+				ProofRequestProbability:   0.1,
+				ProofRequirementThreshold: &ValidProofRequirementThresholdCoin,
+				ProofMissingPenalty:       &ValidMissingPenaltyCoin,
+				ProofSubmissionFee:        &ValidSubmissionFeeCoin,
+			},
+			MsgUpdateParams:         prooftypes.MsgUpdateParams{},
+			MsgUpdateParamsResponse: prooftypes.MsgUpdateParamsResponse{},
+			MsgUpdateParam:          prooftypes.MsgUpdateParam{},
+			MsgUpdateParamResponse:  prooftypes.MsgUpdateParamResponse{},
+			ParamTypes: map[ParamType]any{
+				ParamTypeUint64:  prooftypes.MsgUpdateParam_AsInt64{},
+				ParamTypeInt64:   prooftypes.MsgUpdateParam_AsInt64{},
+				ParamTypeString:  prooftypes.MsgUpdateParam_AsString{},
+				ParamTypeBytes:   prooftypes.MsgUpdateParam_AsBytes{},
+				ParamTypeFloat32: prooftypes.MsgUpdateParam_AsFloat{},
+				ParamTypeCoin:    prooftypes.MsgUpdateParam_AsCoin{},
+			},
+			QueryParamsRequest:  prooftypes.QueryParamsRequest{},
+			QueryParamsResponse: prooftypes.QueryParamsResponse{},
+			DefaultParams:       prooftypes.DefaultParams(),
+			NewParamClientFn:    prooftypes.NewQueryClient,
 		},
 		tokenomicstypes.ModuleName: {
-			ParamTypeUint64: tokenomicstypes.MsgUpdateParam_AsInt64{},
-			ParamTypeInt64:  tokenomicstypes.MsgUpdateParam_AsInt64{},
-			ParamTypeString: tokenomicstypes.MsgUpdateParam_AsString{},
-			ParamTypeBytes:  tokenomicstypes.MsgUpdateParam_AsBytes{},
+			ValidParams:             tokenomicstypes.Params{},
+			MsgUpdateParams:         tokenomicstypes.MsgUpdateParams{},
+			MsgUpdateParamsResponse: tokenomicstypes.MsgUpdateParamsResponse{},
+			QueryParamsRequest:      tokenomicstypes.QueryParamsRequest{},
+			QueryParamsResponse:     tokenomicstypes.QueryParamsResponse{},
+			DefaultParams:           tokenomicstypes.DefaultParams(),
+			NewParamClientFn:        tokenomicstypes.NewQueryClient,
 		},
 	}
 
-	// TODO_IN_THIS_COMMIT: godoc...
+	// MsgUpdateParamEnabledModuleNames is a list of module names which support
+	// individual parameter updates (i.e. MsgUpdateParam). It is initialized in
+	// init().
 	MsgUpdateParamEnabledModuleNames []string
-
-	// TODO_IN_THIS_COMMIT: godoc...
-	NewParamClientFns = map[string]any{
-		sharedtypes.ModuleName:     sharedtypes.NewQueryClient,
-		sessiontypes.ModuleName:    sessiontypes.NewQueryClient,
-		servicetypes.ModuleName:    servicetypes.NewQueryClient,
-		apptypes.ModuleName:        apptypes.NewQueryClient,
-		gatewaytypes.ModuleName:    gatewaytypes.NewQueryClient,
-		suppliertypes.ModuleName:   suppliertypes.NewQueryClient,
-		prooftypes.ModuleName:      prooftypes.NewQueryClient,
-		tokenomicstypes.ModuleName: tokenomicstypes.NewQueryClient,
-	}
-
-	// TODO_IN_THIS_COMMIT: godoc...
-	QueryParamsRequestByModule = map[string]any{
-		sharedtypes.ModuleName:     sharedtypes.QueryParamsRequest{},
-		sessiontypes.ModuleName:    sessiontypes.QueryParamsRequest{},
-		servicetypes.ModuleName:    servicetypes.QueryParamsRequest{},
-		apptypes.ModuleName:        apptypes.QueryParamsRequest{},
-		gatewaytypes.ModuleName:    gatewaytypes.QueryParamsRequest{},
-		suppliertypes.ModuleName:   suppliertypes.QueryParamsRequest{},
-		prooftypes.ModuleName:      prooftypes.QueryParamsRequest{},
-		tokenomicstypes.ModuleName: tokenomicstypes.QueryParamsRequest{},
-	}
-
-	// TODO_IN_THIS_COMMIT: godoc...
-	DefaultParamsByModule = map[string]any{
-		sharedtypes.ModuleName:     sharedtypes.DefaultParams(),
-		sessiontypes.ModuleName:    sessiontypes.DefaultParams(),
-		servicetypes.ModuleName:    servicetypes.DefaultParams(),
-		apptypes.ModuleName:        apptypes.DefaultParams(),
-		gatewaytypes.ModuleName:    gatewaytypes.DefaultParams(),
-		suppliertypes.ModuleName:   suppliertypes.DefaultParams(),
-		prooftypes.ModuleName:      prooftypes.DefaultParams(),
-		tokenomicstypes.ModuleName: tokenomicstypes.DefaultParams(),
-	}
 
 	_ IntegrationSuite = (*UpdateParamsSuite)(nil)
 )
 
 func init() {
-	// TODO_IN_THIS_COMMIT: godoc...
-	for moduleName := range MsgUpdateParamByModule {
-		MsgUpdateParamEnabledModuleNames = append(MsgUpdateParamEnabledModuleNames, moduleName)
+	for moduleName, moduleThing := range ModuleParamConfigMap {
+		if moduleThing.MsgUpdateParam != nil {
+			MsgUpdateParamEnabledModuleNames = append(MsgUpdateParamEnabledModuleNames, moduleName)
+		}
 	}
 }
 
+// UpdateParamsSuite is an integration test suite that provides helper functions for
+// running parameter update messages. It is intended to be embedded in other integration
+// test suites which are dependent on parameter updates.
 type UpdateParamsSuite struct {
 	AuthzIntegrationSuite
 }
 
-// TODO_IN_THIS_COMMIT: godoc
-// SetupTestAccounts ... expected to be called after s.NewApp() ... accounts ... and module names...
-func (s *UpdateParamsSuite) SetupTestAccounts() {
+// SetupTestAuthzAccounts sets AuthorityAddr for the suite by getting the authority
+// from the integration app. It also assigns a new pre-generated identity to be used
+// as the AuthorizedAddr for the suite. It is expected to be called after s.NewApp()
+// as it depends on the integration app and its pre-generated account iterator.
+func (s *UpdateParamsSuite) SetupTestAuthzAccounts() {
 	// Set the authority, authorized, and unauthorized addresses.
 	AuthorityAddr = cosmostypes.MustAccAddressFromBech32(s.GetApp().GetAuthority())
 
@@ -220,11 +229,12 @@ func (s *UpdateParamsSuite) SetupTestAccounts() {
 	AuthorizedAddr = nextAcct.Address
 }
 
-// TODO_IN_THIS_COMMIT: godoc
-// SetupTestAuthzGrants ... expected to be called after s.NewApp() ... authority and authorized addresses...
+// SetupTestAuthzGrants creates on-chain authz grants for the MsgUpdateUpdateParam and
+// MsgUpdateParams message for each module. It is expected to be called after s.NewApp()
+// as it depends on the authority and authorized addresses having been set.
 func (s *UpdateParamsSuite) SetupTestAuthzGrants() {
 	// Create authz grants for all poktroll modules' MsgUpdateParams messages.
-	s.SendAuthzGrantMsgForPoktrollModules(s.T(),
+	s.RunAuthzGrantMsgForPoktrollModules(s.T(),
 		AuthorityAddr,
 		AuthorizedAddr,
 		MsgUpdateParamsName,
@@ -232,20 +242,61 @@ func (s *UpdateParamsSuite) SetupTestAuthzGrants() {
 	)
 
 	// Create authz grants for all poktroll modules' MsgUpdateParam messages.
-	s.SendAuthzGrantMsgForPoktrollModules(s.T(),
+	s.RunAuthzGrantMsgForPoktrollModules(s.T(),
 		AuthorityAddr,
 		AuthorizedAddr,
 		MsgUpdateParamName,
+		// NB: only modules with params are expected to support MsgUpdateParam.
 		MsgUpdateParamEnabledModuleNames...,
 	)
 }
 
+// RunUpdateParams runs the given MsgUpdateParams message via an authz exec as the
+// AuthorizedAddr and returns the response bytes and error. It is expected to be called
+// after s.SetupTestAuthzGrants() as it depends on an on-chain authz grant to AuthorizedAddr
+// for MsgUpdateParams for the given module.
+func (s *UpdateParamsSuite) RunUpdateParams(
+	t *testing.T,
+	msgUpdateParams cosmostypes.Msg,
+) (msgResponseBz []byte, err error) {
+	t.Helper()
+
+	return s.RunUpdateParamsAsSigner(t, msgUpdateParams, AuthorizedAddr)
+}
+
+// RunUpdateParamsAsSigner runs the given MsgUpdateParams message via an authz exec
+// as signerAddr and returns the response bytes and error. It depends on an on-chain
+// authz grant to signerAddr for MsgUpdateParams for the given module.
+func (s *UpdateParamsSuite) RunUpdateParamsAsSigner(
+	t *testing.T,
+	msgUpdateParams cosmostypes.Msg,
+	signerAddr cosmostypes.AccAddress,
+) (msgResponseBz []byte, err error) {
+	t.Helper()
+
+	// Send an authz MsgExec from an unauthorized address.
+	execMsg := authz.NewMsgExec(AuthorizedAddr, []cosmostypes.Msg{msgUpdateParams})
+	msgRespsBz, err := s.RunAuthzExecMsg(t, signerAddr, &execMsg)
+	if err != nil {
+		return nil, err
+	}
+
+	require.Equal(t, 1, len(msgRespsBz), "expected exactly 1 message response")
+	return msgRespsBz[0], err
+}
+
+// RunUpdateParam constructs and runs an MsgUpdateParam message via an authz exec
+// as the AuthorizedAddr for the given module, parameter name, and value. It returns
+// the response bytes and error. It is expected to be called after s.SetupTestAuthzGrants()
+// as it depends on an on-chain authz grant to AuthorizedAddr for MsgUpdateParam for the given module.
 func (s *UpdateParamsSuite) RunUpdateParam(
 	t *testing.T,
 	moduleName string,
 	paramName string,
 	paramValue any,
-) (tx.MsgResponse, error) {
+) (msgResponseBz []byte, err error) {
+	t.Helper()
+
 	return s.RunUpdateParamAsSigner(t,
 		moduleName,
 		paramName,
@@ -254,35 +305,43 @@ func (s *UpdateParamsSuite) RunUpdateParam(
 	)
 }
 
+// RunUpdateParamAsSigner constructs and runs an MsgUpdateParam message via an authz exec
+// as the given signerAddr for the given module, parameter name, and value. It returns
+// the response bytes and error. It depends on an on-chain authz grant to signerAddr for
+// MsgUpdateParam for the given module.
 func (s *UpdateParamsSuite) RunUpdateParamAsSigner(
 	t *testing.T,
 	moduleName string,
 	paramName string,
 	paramValue any,
 	signerAddr cosmostypes.AccAddress,
-) (tx.MsgResponse, error) {
+) (msgResponseBz []byte, err error) {
+	t.Helper()
+
+	moduleCfg := ModuleParamConfigMap[moduleName]
+
 	paramReflectValue := reflect.ValueOf(paramValue)
 	paramType := paramReflectValue.Type().Name()
-	if paramReflectValue.Kind() == reflect.Pointer {
+	switch paramReflectValue.Kind() {
+	case reflect.Pointer:
 		paramType = paramReflectValue.Elem().Type().Name()
+	case reflect.Slice:
+		paramType = paramReflectValue.Type().Elem().Name()
 	}
 
-	msgIface, isMsgTypeFound := MsgUpdateParamByModule[moduleName]
-	require.Truef(t, isMsgTypeFound, "unknown message type for module %q: %T", moduleName, msgIface)
-
+	msgIface := moduleCfg.MsgUpdateParam
 	msgValue := reflect.ValueOf(msgIface)
 	msgType := msgValue.Type()
 
 	// Copy the message and set the authority field.
-	msgValueCopy := reflect.New(msgType)
-	msgValueCopy.Elem().Set(msgValue)
-	msgValueCopy.Elem().
+	msgUpdateParamValue := reflect.New(msgType)
+	msgUpdateParamValue.Elem().
 		FieldByName("Authority").
 		SetString(AuthorityAddr.String())
 
-	msgValueCopy.Elem().FieldByName("Name").SetString(cases.ToSnakeCase(paramName))
+	msgUpdateParamValue.Elem().FieldByName("Name").SetString(cases.ToSnakeCase(paramName))
 
-	msgAsTypeStruct := MsgUpdateParamTypesByModuleName[moduleName][paramType]
+	msgAsTypeStruct := moduleCfg.ParamTypes[paramType]
 	msgAsTypeType := reflect.TypeOf(msgAsTypeStruct)
 	msgAsTypeValue := reflect.New(msgAsTypeType)
 	switch paramType {
@@ -303,43 +362,49 @@ func (s *UpdateParamsSuite) RunUpdateParamAsSigner(
 		t.Fatalf("ERROR: unknown field type %q", paramType)
 	}
 
-	msgValueCopy.Elem().FieldByName("AsType").Set(msgAsTypeValue)
+	msgUpdateParamValue.Elem().FieldByName("AsType").Set(msgAsTypeValue)
 
-	msgUpdateParam := msgValueCopy.Interface().(cosmostypes.Msg)
+	msgUpdateParam := msgUpdateParamValue.Interface().(cosmostypes.Msg)
 
 	// Send an authz MsgExec from the authority address.
 	execMsg := authz.NewMsgExec(signerAddr, []cosmostypes.Msg{msgUpdateParam})
 	execResps, err := s.RunAuthzExecMsg(t, signerAddr, &execMsg)
+	if err != nil {
+		return nil, err
+	}
 
-	require.Equal(t, 1, len(execResps), "expected exactly one MsgResponse")
-
+	require.Equal(t, 1, len(execResps), "expected exactly 1 message response")
 	return execResps[0], err
 }
 
-// TODO_IN_THIS_COMMIT: godoc
+// RequireModuleHasDefaultParams asserts that the given module's parameters are set
+// to their default values.
 func (s *UpdateParamsSuite) RequireModuleHasDefaultParams(t *testing.T, moduleName string) {
 	t.Helper()
 
 	params, err := s.QueryModuleParams(t, moduleName)
 	require.NoError(t, err)
 
-	defaultParams := DefaultParamsByModule[moduleName]
-	require.EqualValues(t, defaultParams, params)
+	moduleCfg := ModuleParamConfigMap[moduleName]
+	require.EqualValues(t, moduleCfg.DefaultParams, params)
 }
 
-// TODO_IN_THIS_COMMIT: godoc
+// QueryModuleParams queries the given module's parameters and returns them. It is
+// expected to be called after s.NewApp() as it depends on the app's query helper.
 func (s *UpdateParamsSuite) QueryModuleParams(t *testing.T, moduleName string) (params any, err error) {
 	t.Helper()
 
+	moduleCfg := ModuleParamConfigMap[moduleName]
+
 	// Construct a new param client.
-	newParamClientFn := reflect.ValueOf(NewParamClientFns[moduleName])
+	newParamClientFn := reflect.ValueOf(moduleCfg.NewParamClientFn)
 	newParamClientFnArgs := []reflect.Value{
 		reflect.ValueOf(s.GetApp().QueryHelper()),
 	}
 	paramClient := newParamClientFn.Call(newParamClientFnArgs)[0]
 
 	// Query for the module's params.
-	paramsQueryReqValue := reflect.New(reflect.TypeOf(QueryParamsRequestByModule[moduleName]))
+	paramsQueryReqValue := reflect.New(reflect.TypeOf(moduleCfg.QueryParamsRequest))
 	callParamsArgs := []reflect.Value{
 		reflect.ValueOf(s.GetApp().GetSdkCtx()),
 		paramsQueryReqValue,

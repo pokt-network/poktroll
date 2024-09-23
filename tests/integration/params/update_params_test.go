@@ -21,8 +21,12 @@ type MsgUpdateParamsSuite struct {
 }
 
 func (s *MsgUpdateParamsSuite) SetupTest() {
-	// Call the SetupTest() of the inherited UpdateParamsSuite.
-	s.UpdateParamsSuite.SetupTest()
+	// Create a fresh integration app for each test.
+	s.NewApp(s.T())
+
+	// Initialize the test accounts and create authz grants.
+	s.SetupTestAuthzAccounts()
+	s.SetupTestAuthzGrants()
 
 	// Allocate an address for unauthorized user.
 	nextAcct, ok := s.GetApp().GetPreGeneratedAccounts().Next()
@@ -32,62 +36,54 @@ func (s *MsgUpdateParamsSuite) SetupTest() {
 
 func (s *MsgUpdateParamsSuite) TestUnauthorizedMsgUpdateParamsFails() {
 	for _, moduleName := range s.GetPoktrollModuleNames() {
+		moduleCfg := suites.ModuleParamConfigMap[moduleName]
+
 		s.T().Run(moduleName, func(t *testing.T) {
 			// Assert that the module's params are set to their default values.
 			s.RequireModuleHasDefaultParams(t, moduleName)
 
-			msgIface, isMsgTypeFound := suites.MsgUpdateParamsByModule[moduleName]
-			require.Truef(t, isMsgTypeFound, "unknown message type for module %q", moduleName)
-
-			msgValue := reflect.ValueOf(msgIface)
-			msgType := msgValue.Type()
-
-			// Copy the message and set the authority field.
-			msgValueCopy := reflect.New(msgType)
-			msgValueCopy.Elem().Set(msgValue)
-			msgValueCopy.Elem().
+			// Construct a new MsgUpdateParams and set its authority and params fields.
+			expectedParams := moduleCfg.ValidParams
+			msgUpdateParamsValue := reflect.New(reflect.TypeOf(moduleCfg.MsgUpdateParams))
+			msgUpdateParamsValue.Elem().
 				FieldByName("Authority").
 				SetString(suites.AuthorityAddr.String())
-			msgUpdateParams := msgValueCopy.Interface().(cosmostypes.Msg)
+			msgUpdateParamsValue.Elem().
+				FieldByName("Params").
+				Set(reflect.ValueOf(expectedParams))
 
-			// Send an authz MsgExec from an unauthorized address.
-			execMsg := authz.NewMsgExec(unauthorizedAddr, []cosmostypes.Msg{msgUpdateParams})
-			anyRes, err := s.GetApp().RunMsg(t, &execMsg)
+			msgUpdateParams := msgUpdateParamsValue.Interface().(cosmostypes.Msg)
+			updateRes, err := s.RunUpdateParamsAsSigner(t, msgUpdateParams, unauthorizedAddr)
 			require.ErrorContains(t, err, authz.ErrNoAuthorizationFound.Error())
-			require.Nil(t, anyRes)
+			require.Nil(t, updateRes)
 		})
 	}
 }
 
 func (s *MsgUpdateParamsSuite) TestAuthorizedMsgUpdateParamsSucceeds() {
 	for _, moduleName := range s.GetPoktrollModuleNames() {
+		moduleCfg := suites.ModuleParamConfigMap[moduleName]
+
 		s.T().Run(moduleName, func(t *testing.T) {
 			// Assert that the module's params are set to their default values.
 			s.RequireModuleHasDefaultParams(t, moduleName)
 
-			msgIface, isMsgTypeFound := suites.MsgUpdateParamsByModule[moduleName]
-			require.Truef(t, isMsgTypeFound, "unknown message type for module %q", moduleName)
-
-			msgValue := reflect.ValueOf(msgIface)
-			msgType := msgValue.Type()
-
-			// Copy the message and set the authority field.
-			msgValueCopy := reflect.New(msgType)
-			msgValueCopy.Elem().Set(msgValue)
-			msgValueCopy.Elem().
+			// Construct a new MsgUpdateParams and set its authority and params fields.
+			expectedParams := moduleCfg.ValidParams
+			msgUpdateParamsValue := reflect.New(reflect.TypeOf(moduleCfg.MsgUpdateParams))
+			msgUpdateParamsValue.Elem().
 				FieldByName("Authority").
 				SetString(suites.AuthorityAddr.String())
-			expectedParamsValue := msgValueCopy.Elem().FieldByName("Params")
+			msgUpdateParamsValue.Elem().
+				FieldByName("Params").
+				Set(reflect.ValueOf(expectedParams))
+			//expectedParams := reflect.ValueOf(moduleCfg.ValidParams).FieldByName("Params")
 
-			msgUpdateParams := msgValueCopy.Interface().(cosmostypes.Msg)
-
-			// Send an authz MsgExec from an unauthorized address.
-			execMsg := authz.NewMsgExec(suites.AuthorizedAddr, []cosmostypes.Msg{msgUpdateParams})
-			s.RunAuthzExecMsg(t, suites.AuthorizedAddr, &execMsg)
-
-			anyRes, err := s.GetApp().RunMsg(t, &execMsg)
+			// TODO_IMPROVE: add a Params field to the MsgUpdateParamsResponse
+			// and assert that it reflects the updated params.
+			msgUpdateParams := msgUpdateParamsValue.Interface().(cosmostypes.Msg)
+			_, err := s.RunUpdateParams(t, msgUpdateParams)
 			require.NoError(t, err)
-			require.NotNil(t, anyRes)
 
 			// Query for the module's params.
 			params, err := s.QueryModuleParams(t, moduleName)
@@ -95,9 +91,9 @@ func (s *MsgUpdateParamsSuite) TestAuthorizedMsgUpdateParamsSucceeds() {
 
 			// Assert that the module's params are updated.
 			require.True(t,
-				reflect.DeepEqual(params, expectedParamsValue.Interface()),
+				reflect.DeepEqual(expectedParams, params),
 				"expected:\n%+v\nto deeply equal:\n%+v",
-				params, suites.ValidSharedParams,
+				expectedParams, params,
 			)
 		})
 	}

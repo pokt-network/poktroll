@@ -8,7 +8,6 @@ import (
 	"time"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/types/tx"
 	"github.com/cosmos/cosmos-sdk/x/authz"
 	"github.com/stretchr/testify/require"
 )
@@ -19,17 +18,19 @@ const (
 	poktrollMsgTypeFormat = "/poktroll.%s.%s"
 )
 
-var (
-	defaultAuthzGrantExpiration = time.Now().Add(time.Hour)
-)
+var defaultAuthzGrantExpiration = time.Now().Add(time.Hour)
 
-// TODO_IN_THIS_COMMIT: move...
+// AuthzIntegrationSuite is an integration test suite that provides helper functions for
+// running authz grant and exec messages. It is intended to be embedded in other integration
+// test suites which are dependent on authz.
 type AuthzIntegrationSuite struct {
 	BaseIntegrationSuite
 }
 
-// TODO_IN_THIS_COMMIT: godoc
-func (s *AuthzIntegrationSuite) SendAuthzGrantMsgForPoktrollModules(
+// RunAuthzGrantMsgForPoktrollModules creates an on-chain authz grant for the given
+// granter and grantee addresses for the specified message name in each of the poktroll
+// modules present in the integration app.
+func (s *AuthzIntegrationSuite) RunAuthzGrantMsgForPoktrollModules(
 	t *testing.T,
 	granterAddr, granteeAddr cosmostypes.AccAddress,
 	msgName string,
@@ -37,9 +38,7 @@ func (s *AuthzIntegrationSuite) SendAuthzGrantMsgForPoktrollModules(
 ) {
 	t.Helper()
 
-	var (
-		foundModuleGrants = make(map[string]int)
-	)
+	var foundModuleGrants = make(map[string]int)
 	for _, moduleName := range moduleNames {
 		msgType := fmt.Sprintf(poktrollMsgTypeFormat, moduleName, msgName)
 		authorization := &authz.GenericAuthorization{Msg: msgType}
@@ -67,7 +66,8 @@ func (s *AuthzIntegrationSuite) SendAuthzGrantMsgForPoktrollModules(
 	}
 }
 
-// TODO_IN_THIS_COMMIT: godoc
+// RunAuthzGrantMsg creates an on-chain authz grant for the given granter and
+// grantee addresses and authorization object.
 func (s *AuthzIntegrationSuite) RunAuthzGrantMsg(
 	t *testing.T,
 	granterAddr,
@@ -84,15 +84,16 @@ func (s *AuthzIntegrationSuite) RunAuthzGrantMsg(
 	require.NotNil(t, grantResAny)
 }
 
-// TODO_IN_THIS_COMMIT: godoc
+// RunAuthzExecMsg executes the given messag(es) using authz. It assumes that an
+// authorization exists for which signerAdder is the grantee.
 func (s *AuthzIntegrationSuite) RunAuthzExecMsg(
 	t *testing.T,
-	fromAddr cosmostypes.AccAddress,
+	signerAddr cosmostypes.AccAddress,
 	msgs ...cosmostypes.Msg,
-) (msgRespsBz []tx.MsgResponse, err error) {
+) (msgRespsBz [][]byte, err error) {
 	t.Helper()
 
-	execMsg := authz.NewMsgExec(fromAddr, msgs)
+	execMsg := authz.NewMsgExec(signerAddr, msgs)
 	execResAny, err := s.GetApp().RunMsg(s.T(), &execMsg)
 	if err != nil {
 		return nil, err
