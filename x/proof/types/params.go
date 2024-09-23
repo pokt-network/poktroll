@@ -1,8 +1,6 @@
 package types
 
 import (
-	"encoding/hex"
-
 	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
@@ -16,11 +14,12 @@ var (
 	_ client.ProofParams  = (*Params)(nil)
 	_ paramtypes.ParamSet = (*Params)(nil)
 
-	// TODO_FOLLOWUP(@olshansk, #690): Delete this parameter.
-	KeyRelayDifficultyTargetHash        = []byte("RelayDifficultyTargetHash")
-	ParamRelayDifficultyTargetHash      = "relay_difficulty_target_hash"
-	DefaultRelayDifficultyTargetHashHex = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" // all relays are payable
-	DefaultRelayDifficultyTargetHash, _ = hex.DecodeString(DefaultRelayDifficultyTargetHashHex)
+	// TODO_TECHDEBT(#690): Delete this parameter and just use "protocol.BaseRelayDifficultyHashBz"
+	// as a hard-coded version. This param was originally intended to be a "minimum",
+	// but the minimum equivalent of "0" in this case is "BaseRelayDifficultyHashBz".
+	KeyRelayDifficultyTargetHash     = []byte("RelayDifficultyTargetHash")
+	ParamRelayDifficultyTargetHash   = "relay_difficulty_target_hash"
+	DefaultRelayDifficultyTargetHash = protocol.BaseRelayDifficultyHashBz
 
 	// TODO_BETA(@red-0ne): Iterate on the parameters below by adding unit suffixes and
 	// consider having the proof_requirement_threshold to be a function of the supplier's stake amount.
@@ -141,17 +140,17 @@ func (params *Params) ValidateBasic() error {
 // ValidateRelayDifficultyTargetHash validates the MinRelayDifficultyBits param.
 // NB: The argument is an interface type to satisfy the ParamSetPair function signature.
 func ValidateRelayDifficultyTargetHash(v interface{}) error {
-	targetHash, ok := v.([]byte)
+	relayDifficultyTargetHash, ok := v.([]byte)
 	if !ok {
 		return ErrProofParamInvalid.Wrapf("invalid parameter type: %T", v)
 	}
 
-	if len(targetHash) != protocol.RelayHasherSize {
+	if len(relayDifficultyTargetHash) != protocol.RelayHasherSize {
 		return ErrProofParamInvalid.Wrapf(
 			"invalid RelayDifficultyTargetHash: (%x); length wanted: %d; got: %d",
-			targetHash,
+			relayDifficultyTargetHash,
 			32,
-			len(targetHash),
+			len(relayDifficultyTargetHash),
 		)
 	}
 

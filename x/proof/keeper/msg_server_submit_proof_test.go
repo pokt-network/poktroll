@@ -40,7 +40,7 @@ const (
 
 var (
 	blockHeaderHash         []byte
-	expectedMerkleProofPath []byte
+	expectedMerkleProofPath []byte = make([]byte, protocol.TrieHasherSize)
 
 	// testProofParams sets:
 	//  - the relay difficulty target hash to the easiest difficulty so that these tests don't need to mine for valid relays.
