@@ -197,7 +197,7 @@ func TestRelayDifficulty_ScaleDifficultyTargetHash(t *testing.T) {
 	tests := []struct {
 		desc                  string
 		prevDifficultyHashHex string
-		scalingRatio          float64
+		scalingRatio          big.Rat
 
 		expectedScaledDifficultyHashHex string // scaled but unbounded
 		expectedNewDifficultyHashHex    string // uses the scaled result but bounded
@@ -205,7 +205,7 @@ func TestRelayDifficulty_ScaleDifficultyTargetHash(t *testing.T) {
 		{
 			desc:                  "Scale by 1 (same number of relays)",
 			prevDifficultyHashHex: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-			scalingRatio:          1,
+			scalingRatio:          *big.NewRat(1, 1),
 
 			// Scaled hash == expected hash
 			expectedScaledDifficultyHashHex: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
@@ -216,7 +216,7 @@ func TestRelayDifficulty_ScaleDifficultyTargetHash(t *testing.T) {
 		{
 			desc:                  "Scale by 0.5 (allow less relays)",
 			prevDifficultyHashHex: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-			scalingRatio:          0.5,
+			scalingRatio:          *big.NewRat(1, 2),
 
 			// Scaled hash == expected hash
 			expectedScaledDifficultyHashHex: "7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
@@ -225,7 +225,7 @@ func TestRelayDifficulty_ScaleDifficultyTargetHash(t *testing.T) {
 		{
 			desc:                  "Scale by 2 (allow more relays)",
 			prevDifficultyHashHex: "7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-			scalingRatio:          2,
+			scalingRatio:          *big.NewRat(2, 1),
 
 			// Scaled hash == expected hash
 			expectedScaledDifficultyHashHex: "fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe",
@@ -236,7 +236,7 @@ func TestRelayDifficulty_ScaleDifficultyTargetHash(t *testing.T) {
 		{
 			desc:                  "Scale by 0.25 (allow less relays)",
 			prevDifficultyHashHex: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-			scalingRatio:          0.25,
+			scalingRatio:          *big.NewRat(1, 4),
 
 			// Scaled hash == expected hash
 			expectedScaledDifficultyHashHex: "3fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
@@ -245,7 +245,7 @@ func TestRelayDifficulty_ScaleDifficultyTargetHash(t *testing.T) {
 		{
 			desc:                  "Scale by 4 (allow more relays)",
 			prevDifficultyHashHex: "3fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-			scalingRatio:          4,
+			scalingRatio:          *big.NewRat(4, 1),
 
 			// Scaled hash == expected hash
 			expectedScaledDifficultyHashHex: "fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc",
@@ -256,42 +256,61 @@ func TestRelayDifficulty_ScaleDifficultyTargetHash(t *testing.T) {
 		{
 			desc:                  "Scale by 0.1 (allow less relays)",
 			prevDifficultyHashHex: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-			scalingRatio:          0.1,
+			scalingRatio:          *big.NewRat(1, 10),
 
-			// Scaled hash != expected hash
-			expectedScaledDifficultyHashHex: "19999999999999ffffffffffffffffffffffffffffffffffffffffffffffffff",
-			expectedNewDifficultyHashHex:    "19999999999999999fffffffffffffffffffffffffffffffffffffffffffffff",
+			// Scaled hash == expected hash
+			// Scaling down 0xff..ff by 10 leads a non-Int result (...987.5 rounded down to ...987),
+			// making a scaling up of the result (0x19..99) by 10 not equal to the original hash.
+			expectedScaledDifficultyHashHex: "1999999999999999999999999999999999999999999999999999999999999999",
+			expectedNewDifficultyHashHex:    "1999999999999999999999999999999999999999999999999999999999999999",
 		},
 		{
 			desc:                  "Scale by 10 (allow more relays)",
 			prevDifficultyHashHex: "1999999999999999999999999999999999999999999999999999999999999999",
-			scalingRatio:          10,
+			scalingRatio:          *big.NewRat(10, 1),
 
 			// Scaled hash == expected hash
-			expectedScaledDifficultyHashHex: "fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff8",
-			expectedNewDifficultyHashHex:    "fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff8",
+			expectedScaledDifficultyHashHex: "fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffa",
+			expectedNewDifficultyHashHex:    "fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffa",
 		},
 
 		// Scale down and up by 10e-12 and 10e12
 		{
 			desc:                  "Scale by 10e-12 (allow less relays)",
 			prevDifficultyHashHex: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-			scalingRatio:          10e-12,
+			scalingRatio:          *big.NewRat(1, 10e12),
 
 			// Scaled hash != expected hash
-			expectedScaledDifficultyHashHex: "000000000afebff0bcb24a7fffffffffffffffffffffffffffffffffffffffff",
-			expectedNewDifficultyHashHex:    "000000000afebff0bcb24aafefffffffffffffffffffffffffffffffffffffff",
+			expectedScaledDifficultyHashHex: "1c25c268497681c2650cb4be40d60df7311e9872477f201c409ec0",
+			expectedNewDifficultyHashHex:    "00000000001c25c268497681c2650cb4be40d60df7311e9872477f201c409ec0",
 		},
-		// TODO_BETA(@red-0ne): See this comment: https://github.com/pokt-network/poktroll/pull/771#issuecomment-2364772430
-		// {
-		// 	desc:                  "Scale by 10e12 (allow more relays)",
-		// 	prevDifficultyHashHex: "000000000afebff0bcb24a7fffffffffffffffffffffffffffffffffffffffff",
-		// 	scalingRatio:          10e12,
+		{
+			desc:                  "Scale by 10e12 (allow more relays)",
+			prevDifficultyHashHex: "00000000001c25c268497681c2650cb4be40d60df7311e9872477f201c409ec0",
+			scalingRatio:          *big.NewRat(10e12, 1),
 
-		// 	// Scaled hash != expected hash
-		// 	expectedScaledDifficultyHashHex: "63fffffffffffe4c079b8ffffffffffffffffffffffffffffffffff80000000000",
-		// 	expectedNewDifficultyHashHex:    "0001357c299a88ea715eae88eddcd3879fffffffffffffffffffffffffe00000",
-		// },
+			// Scaled hash == expected hash
+			expectedScaledDifficultyHashHex: "fffffffffffffffffffffffffffffffffffffffffffffffffffff8cd94b80000",
+			expectedNewDifficultyHashHex:    "fffffffffffffffffffffffffffffffffffffffffffffffffffff8cd94b80000",
+		},
+		{
+			desc:                  "Scale by 10e-12 (allow more relays) padding",
+			prevDifficultyHashHex: "0fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			scalingRatio:          *big.NewRat(1, 10e12),
+
+			// Scaled hash != expected hash: Padding
+			expectedScaledDifficultyHashHex: "01c25c268497681c2650cb4be40d60df7311e9872477f201c409ec",
+			expectedNewDifficultyHashHex:    "000000000001c25c268497681c2650cb4be40d60df7311e9872477f201c409ec",
+		},
+		{
+			desc:                  "Scale by 10e12 (allow more relays) truncating",
+			prevDifficultyHashHex: "0000000fffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+			scalingRatio:          *big.NewRat(10e12, 1),
+
+			// Scaled hash != expected hash: Truncating
+			expectedScaledDifficultyHashHex: "9184e729fffffffffffffffffffffffffffffffffffffffffffffffff6e7b18d6000",
+			expectedNewDifficultyHashHex:    "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+		},
 	}
 
 	for _, test := range tests {
@@ -303,8 +322,7 @@ func TestRelayDifficulty_ScaleDifficultyTargetHash(t *testing.T) {
 			expectedScaledHashBz, err := hex.DecodeString(test.expectedScaledDifficultyHashHex)
 			require.NoError(t, err)
 
-			ratio := new(big.Float).SetFloat64(test.scalingRatio)
-			scaledDifficultyHash := ScaleRelayDifficultyHash(currHashBz, ratio)
+			scaledDifficultyHash := ScaleRelayDifficultyHash(currHashBz, &test.scalingRatio)
 
 			isScaledHashAsExpected := bytes.Equal(expectedScaledHashBz, scaledDifficultyHash)
 			require.True(t, isScaledHashAsExpected, "expected scaled (unbounded) difficulty hash %x, but got %x", expectedScaledHashBz, scaledDifficultyHash)
@@ -313,9 +331,8 @@ func TestRelayDifficulty_ScaleDifficultyTargetHash(t *testing.T) {
 			expectedNewHashBz, err := hex.DecodeString(test.expectedNewDifficultyHashHex)
 			require.NoError(t, err)
 
-			// Multiplying by 10e12 to avoid precision loss
-			targetNumRelays := uint64(test.scalingRatio * 10e12)
-			newRelaysEma := uint64(1 * 10e12)
+			targetNumRelays := test.scalingRatio.Num().Uint64()
+			newRelaysEma := test.scalingRatio.Denom().Uint64()
 
 			newDifficultyHash := ComputeNewDifficultyTargetHash(currHashBz, targetNumRelays, newRelaysEma)
 			isNewHashAsExpected := bytes.Equal(expectedNewHashBz, newDifficultyHash)
@@ -328,10 +345,12 @@ func TestRelayDifficulty_ScaleDifficultyTargetHash(t *testing.T) {
 			if test.expectedNewDifficultyHashHex != test.expectedScaledDifficultyHashHex {
 				require.NotEqual(t, test.scalingRatio, 1, "should not reach this code path if scaling ratio is 1")
 				// New difficulty was padded
-				if test.scalingRatio < 1 {
-					require.Equal(t, len(scaledDifficultyHash), len(newDifficultyHash), "scaled down difficulty should have been padded")
-				} else if test.scalingRatio > 1 {
-					require.Greater(t, len(scaledDifficultyHash), len(newDifficultyHash), "scaled up difficulty should have been truncated")
+				if targetNumRelays < newRelaysEma {
+					require.Less(t, len(expectedScaledHashBz), len(newDifficultyHash))
+					require.Equal(t, len(expectedNewHashBz), len(newDifficultyHash), "scaled down difficulty should have been padded")
+				} else if targetNumRelays > newRelaysEma {
+					require.Greater(t, len(expectedScaledHashBz), len(newDifficultyHash))
+					require.Equal(t, len(expectedNewHashBz), len(newDifficultyHash), "scaled down difficulty should have been padded")
 				}
 			}
 		})
