@@ -2,9 +2,9 @@ package types
 
 import (
 	"github.com/cometbft/cometbft/crypto"
+	"github.com/pokt-network/smt"
 
 	poktrand "github.com/pokt-network/poktroll/pkg/crypto/rand"
-	"github.com/pokt-network/smt"
 )
 
 // GetNumComputeUnits returns the number of compute units for a given claim
