@@ -39,9 +39,9 @@ const (
 	// TODO: Determine the simulation weight value
 	defaultWeightMsgUndelegateFromGateway int = 100
 
-	opWeightMsgTransferApplicationStake = "op_weight_msg_transfer_application_stake"
+	opWeightMsgTransferApplication = "op_weight_msg_transfer_application"
 	// TODO: Determine the simulation weight value
-	defaultWeightMsgTransferApplicationStake int = 100
+	defaultWeightMsgTransferApplication int = 100
 
 	// this line is used by starport scaffolding # simapp/module/const
 )
@@ -115,15 +115,15 @@ func (am AppModule) WeightedOperations(simState module.SimulationState) []simtyp
 		applicationsimulation.SimulateMsgUndelegateFromGateway(am.accountKeeper, am.bankKeeper, am.applicationKeeper),
 	))
 
-	var weightMsgTransferApplicationStake int
-	simState.AppParams.GetOrGenerate(opWeightMsgTransferApplicationStake, &weightMsgTransferApplicationStake, nil,
+	var weightMsgTransferApplication int
+	simState.AppParams.GetOrGenerate(opWeightMsgTransferApplication, &weightMsgTransferApplication, nil,
 		func(_ *rand.Rand) {
-			weightMsgTransferApplicationStake = defaultWeightMsgTransferApplicationStake
+			weightMsgTransferApplication = defaultWeightMsgTransferApplication
 		},
 	)
 	operations = append(operations, simulation.NewWeightedOperation(
-		weightMsgTransferApplicationStake,
-		applicationsimulation.SimulateMsgTransferApplicationStake(am.accountKeeper, am.bankKeeper, am.applicationKeeper),
+		weightMsgTransferApplication,
+		applicationsimulation.SimulateMsgTransferApplication(am.accountKeeper, am.bankKeeper, am.applicationKeeper),
 	))
 
 	// this line is used by starport scaffolding # simapp/module/operation
@@ -167,10 +167,10 @@ func (am AppModule) ProposalMsgs(simState module.SimulationState) []simtypes.Wei
 			},
 		),
 		simulation.NewWeightedProposalMsg(
-			opWeightMsgTransferApplicationStake,
-			defaultWeightMsgTransferApplicationStake,
+			opWeightMsgTransferApplication,
+			defaultWeightMsgTransferApplication,
 			func(r *rand.Rand, ctx sdk.Context, accs []simtypes.Account) sdk.Msg {
-				applicationsimulation.SimulateMsgTransferApplicationStake(am.accountKeeper, am.bankKeeper, am.applicationKeeper)
+				applicationsimulation.SimulateMsgTransferApplication(am.accountKeeper, am.bankKeeper, am.applicationKeeper)
 				return nil
 			},
 		),
