@@ -46,6 +46,13 @@ var UpgradeExample = Upgrade{
 	},
 }
 
+// Upgrade_0_0_9 is a small upgrade on TestNet.
+var Upgrade_0_0_9 = Upgrade{
+	PlanName:             "v0.0.9",
+	CreateUpgradeHandler: defaultUpgradeHandler,
+	StoreUpgrades:        storetypes.StoreUpgrades{},
+}
+
 // Upgrade_0_0_4 is an example of an upgrade that increases the block size.
 // This example demonstrates how to change the block size using an upgrade.
 var Upgrade_0_0_4 = Upgrade{
