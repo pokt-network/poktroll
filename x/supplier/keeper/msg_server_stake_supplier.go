@@ -31,9 +31,9 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 
 	// Check if the services the supplier is staking for exist
 	for _, serviceConfig := range msg.Services {
-		if _, serviceFound := k.serviceKeeper.GetService(ctx, serviceConfig.Service.Id); !serviceFound {
-			logger.Error(fmt.Sprintf("service %q does not exist", serviceConfig.Service.Id))
-			return nil, types.ErrSupplierServiceNotFound.Wrapf("service %q does not exist", serviceConfig.Service.Id)
+		if _, serviceFound := k.serviceKeeper.GetService(ctx, serviceConfig.ServiceId); !serviceFound {
+			logger.Error(fmt.Sprintf("service %q does not exist", serviceConfig.ServiceId))
+			return nil, types.ErrSupplierServiceNotFound.Wrapf("service %q does not exist", serviceConfig.ServiceId)
 		}
 	}
 
@@ -122,6 +122,15 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 	k.SetSupplier(ctx, supplier)
 	logger.Info(fmt.Sprintf("Successfully updated supplier stake for supplier: %+v", supplier))
 
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	// Emit an event which signals that the supplier staked.
+	event := &types.EventSupplierStaked{
+		Supplier: &supplier,
+	}
+	if eventErr := sdkCtx.EventManager().EmitTypedEvent(event); eventErr != nil {
+		logger.Error(fmt.Sprintf("failed to emit event: %+v; %s", event, eventErr))
+	}
+
 	isSuccessful = true
 	return &types.MsgStakeSupplierResponse{}, nil
 }
@@ -140,7 +149,7 @@ func (k msgServer) createSupplier(
 	// all services are activated at the end of the current session.
 	servicesActivationHeightsMap := make(map[string]uint64)
 	for _, serviceConfig := range msg.Services {
-		servicesActivationHeightsMap[serviceConfig.Service.Id] = uint64(nextSessionStartHeight)
+		servicesActivationHeightsMap[serviceConfig.ServiceId] = uint64(nextSessionStartHeight)
 	}
 
 	return sharedtypes.Supplier{
@@ -190,12 +199,12 @@ func (k msgServer) updateSupplier(
 	// beginning of the next session.
 	ServicesActivationHeightMap := make(map[string]uint64)
 	for _, serviceConfig := range msg.Services {
-		ServicesActivationHeightMap[serviceConfig.Service.Id] = uint64(nextSessionStartHeight)
+		ServicesActivationHeightMap[serviceConfig.ServiceId] = uint64(nextSessionStartHeight)
 		// If the service has already been staked for, keep its activation height.
 		for _, existingServiceConfig := range supplier.Services {
-			if existingServiceConfig.Service.Id == serviceConfig.Service.Id {
-				existingServiceActivationHeight := supplier.ServicesActivationHeightsMap[serviceConfig.Service.Id]
-				ServicesActivationHeightMap[serviceConfig.Service.Id] = existingServiceActivationHeight
+			if existingServiceConfig.ServiceId == serviceConfig.ServiceId {
+				existingServiceActivationHeight := supplier.ServicesActivationHeightsMap[serviceConfig.ServiceId]
+				ServicesActivationHeightMap[serviceConfig.ServiceId] = existingServiceActivationHeight
 				break
 			}
 		}

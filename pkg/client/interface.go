@@ -9,6 +9,9 @@
 //go:generate mockgen -destination=../../testutil/mockclient/session_query_client_mock.go -package=mockclient . SessionQueryClient
 //go:generate mockgen -destination=../../testutil/mockclient/shared_query_client_mock.go -package=mockclient . SharedQueryClient
 //go:generate mockgen -destination=../../testutil/mockclient/proof_query_client_mock.go -package=mockclient . ProofQueryClient
+//go:generate mockgen -destination=../../testutil/mockclient/tokenomics_query_client_mock.go -package=mockclient . TokenomicsQueryClient
+//go:generate mockgen -destination=../../testutil/mockclient/service_query_client_mock.go -package=mockclient . ServiceQueryClient
+//go:generate mockgen -destination=../../testutil/mockclient/bank_query_client_mock.go -package=mockclient . BankQueryClient
 //go:generate mockgen -destination=../../testutil/mockclient/cosmos_tx_builder_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/client TxBuilder
 //go:generate mockgen -destination=../../testutil/mockclient/cosmos_keyring_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/crypto/keyring Keyring
 //go:generate mockgen -destination=../../testutil/mockclient/cosmos_client_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/client AccountRetriever
@@ -62,11 +65,9 @@ type SupplierClient interface {
 		ctx context.Context,
 		claimMsgs ...MsgCreateClaim,
 	) error
-	// SubmitProof sends proof messages which contain the smt.SparseMerkleClosestProof,
+	// SubmitProof sends proof messages which contain the smt.SparseCompactMerkleClosestProof,
 	// corresponding to some previously created claim for the same session.
 	// The proof is validated on-chain as part of the pocket protocol.
-	// TODO_MAINNET(#427): Use SparseCompactClosestProof here to reduce
-	// the amount of data stored on-chain.
 	SubmitProofs(
 		ctx context.Context,
 		sessionProofs ...MsgSubmitProof,
@@ -322,6 +323,8 @@ type SharedQueryClient interface {
 	// GetEarliestSupplierProofCommitHeight returns the earliest block height at which a proof
 	// for the session that includes queryHeight can be committed for a given supplier.
 	GetEarliestSupplierProofCommitHeight(ctx context.Context, queryHeight int64, supplierOperatorAddr string) (int64, error)
+	// GetComputeUnitsToTokensMultiplier returns the multiplier used to convert compute units to tokens.
+	GetComputeUnitsToTokensMultiplier(ctx context.Context) (uint64, error)
 }
 
 // BlockQueryClient defines an interface that enables the querying of
@@ -335,10 +338,10 @@ type BlockQueryClient interface {
 // protobuf message. Since the generated go types don't include interface types, this
 // is necessary to prevent dependency cycles.
 type ProofParams interface {
-	GetRelayDifficultyTargetHash() []byte
 	GetProofRequestProbability() float32
-	GetProofRequirementThreshold() uint64
+	GetProofRequirementThreshold() *cosmostypes.Coin
 	GetProofMissingPenalty() *cosmostypes.Coin
+	GetProofSubmissionFee() *cosmostypes.Coin
 }
 
 // ProofQueryClient defines an interface that enables the querying of the
@@ -346,4 +349,31 @@ type ProofParams interface {
 type ProofQueryClient interface {
 	// GetParams queries the chain for the current shared module parameters.
 	GetParams(ctx context.Context) (ProofParams, error)
+}
+
+// TokenomicsRelayMiningDifficulty is a go interface type which corresponding to the poktroll.tokenomics.RelayMiningDifficulty
+// protobuf message. This is necessary to prevent dependency cycles.
+type TokenomicsRelayMiningDifficulty interface {
+	GetTargetHash() []byte
+}
+
+// TokenomicsQueryClient defines an interface that enables the querying of the
+// on-chain tokenomics information
+type TokenomicsQueryClient interface {
+	GetServiceRelayDifficultyTargetHash(ctx context.Context, serviceId string) (TokenomicsRelayMiningDifficulty, error)
+	// GetParams queries the chain for the current tokenomics module parameters.
+}
+
+// ServiceQueryClient defines an interface that enables the querying of the
+// on-chain service information
+type ServiceQueryClient interface {
+	// GetService queries the chain for the details of the service provided
+	GetService(ctx context.Context, serviceId string) (sharedtypes.Service, error)
+}
+
+// BankQueryClient defines an interface that enables the querying of the
+// on-chain bank information
+type BankQueryClient interface {
+	// GetBalance queries the chain for the uPOKT balance of the account provided
+	GetBalance(ctx context.Context, address string) (*cosmostypes.Coin, error)
 }

@@ -12,7 +12,6 @@ import (
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-// TODO_BETA(#489): Determine if an application needs an unbonding period after unstaking.
 func (k msgServer) UnstakeSupplier(
 	ctx context.Context,
 	msg *types.MsgUnstakeSupplier,
@@ -69,6 +68,16 @@ func (k msgServer) UnstakeSupplier(
 	// off-chain actors that need to listen to session supplier's change mid-session, etc).
 	supplier.UnstakeSessionEndHeight = uint64(shared.GetSessionEndHeight(&sharedParams, currentHeight))
 	k.SetSupplier(ctx, supplier)
+
+	// Emit an event which signals that the supplier successfully began unbonding their stake.
+	unbondingHeight := shared.GetSupplierUnbondingHeight(&sharedParams, &supplier)
+	event := &types.EventSupplierUnbondingBegin{
+		Supplier:        &supplier,
+		UnbondingHeight: unbondingHeight,
+	}
+	if eventErr := sdkCtx.EventManager().EmitTypedEvent(event); eventErr != nil {
+		logger.Error(fmt.Sprintf("failed to emit event: %+v; %s", event, eventErr))
+	}
 
 	isSuccessful = true
 	return &types.MsgUnstakeSupplierResponse{}, nil

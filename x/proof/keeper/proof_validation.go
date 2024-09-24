@@ -86,21 +86,28 @@ func (k Keeper) EnsureValidProof(
 		return err
 	}
 
-	if proof.ClosestMerkleProof == nil || len(proof.ClosestMerkleProof) == 0 {
+	if len(proof.ClosestMerkleProof) == 0 {
 		return types.ErrProofInvalidProof.Wrap("proof cannot be empty")
 	}
 
 	// Unmarshal the closest merkle proof from the message.
-	sparseMerkleClosestProof := &smt.SparseMerkleClosestProof{}
-	if err = sparseMerkleClosestProof.Unmarshal(proof.ClosestMerkleProof); err != nil {
+	sparseCompactMerkleClosestProof := &smt.SparseCompactMerkleClosestProof{}
+	if err = sparseCompactMerkleClosestProof.Unmarshal(proof.ClosestMerkleProof); err != nil {
 		return types.ErrProofInvalidProof.Wrapf(
 			"failed to unmarshal closest merkle proof: %s",
 			err,
 		)
 	}
 
-	// TODO_MAINNET(#427): Utilize smt.VerifyCompactClosestProof here to
-	// reduce on-chain storage requirements for proofs.
+	// SparseCompactMerkeClosestProof does not implement GetValueHash, so we need to decompact it.
+	sparseMerkleClosestProof, err := smt.DecompactClosestProof(sparseCompactMerkleClosestProof, &protocol.SmtSpec)
+	if err != nil {
+		return types.ErrProofInvalidProof.Wrapf(
+			"failed to decompact closest merkle proof: %s",
+			err,
+		)
+	}
+
 	// Get the relay request and response from the proof.GetClosestMerkleProof.
 	relayBz := sparseMerkleClosestProof.GetValueHash(&protocol.SmtSpec)
 	relay := &servicetypes.Relay{}
@@ -156,20 +163,20 @@ func (k Keeper) EnsureValidProof(
 	logger.Debug("successfully verified relay response signature")
 
 	// Get the proof module's governance parameters.
-	// TODO_FOLLOWUP(@olshansk, #690): Get the difficulty associated with the service
+	// TODO_BETA(@red-0ne): Ensure we use the difficulty from the service and add
+	// a test for a proof with an invalid difficulty.
 	params := k.GetParams(ctx)
-	relayDifficultyTargetHash := params.RelayDifficultyTargetHash
-	if len(relayDifficultyTargetHash) == 0 {
-		relayDifficultyTargetHash = types.DefaultRelayDifficultyTargetHash
+	serviceRelayDifficultyTargetHash := params.RelayDifficultyTargetHash
+	if len(serviceRelayDifficultyTargetHash) == 0 {
+		serviceRelayDifficultyTargetHash = types.DefaultRelayDifficultyTargetHash
 	}
 
 	// Verify the relay difficulty is above the minimum required to earn rewards.
 	if err = validateRelayDifficulty(
 		relayBz,
-		relayDifficultyTargetHash,
-		sessionHeader.Service.Id,
+		serviceRelayDifficultyTargetHash,
 	); err != nil {
-		return err
+		return types.ErrProofInvalidRelayDifficulty.Wrapf("failed to validate relay difficulty for service %s due to: %v", sessionHeader.ServiceId, err)
 	}
 	logger.Debug("successfully validated relay mining difficulty")
 
@@ -308,11 +315,11 @@ func (k Keeper) queryAndValidateClaimForProof(
 	}
 
 	// Ensure service IDs match.
-	if claimSessionHeader.GetService().GetId() != proofSessionHeader.GetService().GetId() {
+	if claimSessionHeader.GetServiceId() != proofSessionHeader.GetServiceId() {
 		return nil, types.ErrProofInvalidService.Wrapf(
 			"claim service ID %q does not match proof service ID %q",
-			claimSessionHeader.GetService().GetId(),
-			proofSessionHeader.GetService().GetId(),
+			claimSessionHeader.GetServiceId(),
+			proofSessionHeader.GetServiceId(),
 		)
 	}
 
@@ -333,20 +340,11 @@ func compareSessionHeaders(expectedSessionHeader, sessionHeader *sessiontypes.Se
 	}
 
 	// Compare the Service IDs.
-	if sessionHeader.GetService().GetId() != expectedSessionHeader.GetService().GetId() {
+	if sessionHeader.GetServiceId() != expectedSessionHeader.GetServiceId() {
 		return types.ErrProofInvalidRelay.Wrapf(
 			"session headers service IDs mismatch; expected: %q, got: %q",
-			expectedSessionHeader.GetService().GetId(),
-			sessionHeader.GetService().GetId(),
-		)
-	}
-
-	// Compare the Service names.
-	if sessionHeader.GetService().GetName() != expectedSessionHeader.GetService().GetName() {
-		return types.ErrProofInvalidRelay.Wrapf(
-			"sessionHeaders service names mismatch expect: %q, got: %q",
-			expectedSessionHeader.GetService().GetName(),
-			sessionHeader.GetService().GetName(),
+			expectedSessionHeader.GetServiceId(),
+			sessionHeader.GetServiceId(),
 		)
 	}
 
@@ -399,36 +397,36 @@ func verifyClosestProof(
 }
 
 // validateRelayDifficulty ensures that the relay's mining difficulty meets the
-// required minimum threshold.
-// TODO_TECHDEBT: Factor out the relay mining difficulty validation into a shared
+// required minimum difficulty of the service.
+// TODO_TECHDEBT(@red-0ne): Factor out to the relay mining difficulty validation into a shared
 // function that can be used by both the proof and the miner packages.
-func validateRelayDifficulty(relayBz, targetHash []byte, serviceId string) error {
+func validateRelayDifficulty(relayBz, serviceRelayDifficultyTargetHash []byte) error {
+	// This should theoretically never happen, but it's better to be safe than sorry.
+	if len(serviceRelayDifficultyTargetHash) != protocol.RelayHasherSize {
+		return types.ErrProofInvalidRelay.Wrapf(
+			"invalid RelayDifficultyTargetHash: (%x); length wanted: %d; got: %d",
+			serviceRelayDifficultyTargetHash,
+			protocol.RelayHasherSize,
+			len(serviceRelayDifficultyTargetHash),
+		)
+	}
+
+	// Convert the array to a slice
 	relayHashArr := protocol.GetRelayHashFromBytes(relayBz)
 	relayHash := relayHashArr[:]
 
-	if len(targetHash) != protocol.RelayHasherSize {
-		return types.ErrProofInvalidRelay.Wrapf(
-			"invalid RelayDifficultyTargetHash: (%x); length wanted: %d; got: %d",
-			targetHash,
-			protocol.RelayHasherSize,
-			len(targetHash),
-		)
+	// Relay difficulty is within the service difficulty
+	if protocol.IsRelayVolumeApplicable(relayHash, serviceRelayDifficultyTargetHash) {
+		return nil
 	}
 
-	if !protocol.IsRelayVolumeApplicable(relayHash, targetHash) {
-		var targetHashArr [protocol.RelayHasherSize]byte
-		copy(targetHashArr[:], targetHash)
+	relayDifficultyMultiplierStr := protocol.GetRelayDifficultyMultiplier(relayHash).String()
+	targetDifficultyMultiplierStr := protocol.GetRelayDifficultyMultiplier(serviceRelayDifficultyTargetHash).String()
 
-		relayDifficulty := protocol.GetDifficultyFromHash(relayHashArr)
-		targetDifficulty := protocol.GetDifficultyFromHash(targetHashArr)
+	return types.ErrProofInvalidRelay.Wrapf(
+		"the difficulty relay being proven is (%s), and is smaller than the target difficulty (%s)",
+		relayDifficultyMultiplierStr,
+		targetDifficultyMultiplierStr,
+	)
 
-		return types.ErrProofInvalidRelay.Wrapf(
-			"the difficulty relay being proven is (%d), and is smaller than the target difficulty (%d) for service %s",
-			relayDifficulty,
-			targetDifficulty,
-			serviceId,
-		)
-	}
-
-	return nil
 }

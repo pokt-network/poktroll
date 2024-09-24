@@ -1,13 +1,18 @@
-package helpers
+package types
 
 import (
 	"net/url"
 	"regexp"
 
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 const (
+	// ComputeUnitsPerRelayMax is the maximum allowed compute_units_per_relay value when adding or updating a service.
+	// TODO_MAINNET: The reason we have a maximum is to account for potential integer overflows.
+	// Should we revisit all uint64 and convert them to BigInts?
+	ComputeUnitsPerRelayMax uint64 = 2 ^ 16 // 65536
+
 	maxServiceIdLength = 16 // Limiting all serviceIds to 16 characters
 	maxServiceIdName   = 42 // Limit the name of the service name to 42 characters
 
@@ -24,20 +29,30 @@ func init() {
 	// Compile the regex pattern
 	regexExprServiceId = regexp.MustCompile(regexServiceId)
 	regexExprServiceName = regexp.MustCompile(regexServiceName)
-
 }
 
-// IsValidService checks if the provided ServiceId struct has valid fields
-// TODO_TECHDEBT(BETA): Refactor to a `Service#ValidateBasic` method.
-func IsValidService(service *sharedtypes.Service) bool {
-	// Check if service Id and Name are valid using the provided helper functions
-	return service != nil &&
-		IsValidServiceId(service.Id) &&
-		IsValidServiceName(service.Name)
+// ValidateBasic performs basic stateless validation of a Service.
+func (s *Service) ValidateBasic() error {
+	if !IsValidServiceId(s.Id) {
+		return ErrSharedInvalidService.Wrapf("invalid service ID: %q", s.Id)
+	}
+
+	if !IsValidServiceName(s.Name) {
+		return ErrSharedInvalidService.Wrapf("invalid service name: %q", s.Name)
+	}
+
+	if _, err := sdk.AccAddressFromBech32(s.OwnerAddress); err != nil {
+		return ErrSharedInvalidService.Wrapf("invalid owner address: %s", s.OwnerAddress)
+	}
+
+	if err := ValidateComputeUnitsPerRelay(s.ComputeUnitsPerRelay); err != nil {
+		return ErrSharedInvalidService.Wrapf("%s", err)
+	}
+
+	return nil
 }
 
 // IsValidServiceId checks if the input string is a valid serviceId
-// TODO_TECHDEBT(BETA): Refactor to a `ServiceId#ValidateBasic` method.
 func IsValidServiceId(serviceId string) bool {
 	// ServiceId CANNOT be empty
 	if len(serviceId) == 0 {
@@ -85,4 +100,14 @@ func IsValidEndpointUrl(endpoint string) bool {
 	}
 
 	return true
+}
+
+// ValidateComputeUnitsPerRelay makes sure the compute units per relay is a valid value
+func ValidateComputeUnitsPerRelay(computeUnitsPerRelay uint64) error {
+	if computeUnitsPerRelay == 0 {
+		return ErrSharedInvalidComputeUnitsPerRelay.Wrap("compute units per relay must be greater than 0")
+	} else if computeUnitsPerRelay > ComputeUnitsPerRelayMax {
+		return ErrSharedInvalidComputeUnitsPerRelay.Wrapf("compute units per relay must be less than %d", ComputeUnitsPerRelayMax)
+	}
+	return nil
 }

@@ -41,6 +41,16 @@ func (s *suite) sendAuthzExecTx(signingKeyName, txJSONFilePath string) {
 
 	// TODO_IMPROVE: wait for the tx to be committed using an events query client
 	// instead of sleeping for a specific amount of time.
+	//
+	// First attempt:
+	// eventAttrMatchFn := newEventAttributeMatchFn("action", "/cosmos.authz.v1beta1.MsgExec")
+	// s.waitForTxResultEvent(eventAttrMatchFn)
+	//
+	// This resulted in observing many more events than expected, even accounting
+	// for those corresponding to the param reset step, which is automatically
+	// registered in a s.Cleanup() below. There are no useful attributes on these
+	// events such that we can filter out the noise.
+
 	s.Logf("waiting %d seconds for the authz exec tx to be committed...", txDelaySeconds)
 	time.Sleep(txDelaySeconds * time.Second)
 
@@ -51,7 +61,7 @@ func (s *suite) sendAuthzExecTx(signingKeyName, txJSONFilePath string) {
 }
 
 // newTempUpdateParamsTxJSONFile creates & returns a new temp file with the JSON representation of a tx
-// which contains a MsgUpdateParams to update **all module params** for each module & paramsMap
+// which contains a MsgUpdateParams to update **all module params** for each module & paramsAnyMap
 // in the given moduleParamsMap. The returned file is intended for use with the `authz exec` CLI
 // subcommand: `poktrolld tx authz exec <tx_json_file>`.
 func (s *suite) newTempUpdateParamsTxJSONFile(moduleParams moduleParamsMap) *os.File {
@@ -76,7 +86,7 @@ func (s *suite) newTempUpdateParamsTxJSONFile(moduleParams moduleParamsMap) *os.
 }
 
 // newTempUpdateParamTxJSONFile creates & returns a new temp file with the JSON representation of a tx
-// which contains a MsgUpdateParam to update params **individually** for each module & paramsMap in the
+// which contains a MsgUpdateParam to update params **individually** for each module & paramsAnyMap in the
 // given moduleParamsMap. The returned file is intended for use with the `authz exec` CLI subcommand:
 // `poktrolld tx authz exec <tx_json_file>`.
 func (s *suite) newTempUpdateParamTxJSONFile(moduleParams moduleParamsMap) *os.File {

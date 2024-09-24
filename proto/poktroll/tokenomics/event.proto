@@ -2,9 +2,10 @@ syntax = "proto3";
 package poktroll.tokenomics;
 
 option go_package = "github.com/pokt-network/poktroll/x/tokenomics/types";
+option (gogoproto.stable_marshaler_all) = true;
 
-import "gogoproto/gogo.proto";
 import "cosmos/base/v1beta1/coin.proto";
+import "gogoproto/gogo.proto";
 import "poktroll/proof/types.proto";
 
 enum ClaimExpirationReason {
@@ -18,19 +19,30 @@ enum ClaimExpirationReason {
 // never being rewarded.
 message EventClaimExpired {
     poktroll.proof.Claim claim = 1 [(gogoproto.jsontag) = "claim"];
-    // TODO_MAINNET: Shold we include the proof here too?
-    uint64 num_relays = 2 [(gogoproto.jsontag) = "num_relays"];
-    uint64 num_compute_units = 3 [(gogoproto.jsontag) = "num_compute_units"];
-    ClaimExpirationReason expiration_reason = 4 [(gogoproto.jsontag) = "expiration_reason"];
+    // The reason why the claim expired, leading to a Supplier being penalized (i.e. burn).
+    ClaimExpirationReason expiration_reason = 2 [(gogoproto.jsontag) = "expiration_reason"];
+    //Number of relays claimed to be in the session tree.
+    uint64 num_relays = 3 [(gogoproto.jsontag) = "num_relays"];
+    // Number of compute units claimed as a function of the number of relays
+    // and the compute units per relay for the particular service.
+    uint64 num_compute_units = 4 [(gogoproto.jsontag) = "num_compute_units"];
+    // TODO_BETA(@red-0ne): Rename 'num_compute_units' to 'num_claimed_compute_units'
+    // and introduce a 'num_estimated_compute_units' field.
 }
 
 // EventClaimSettled is an event emitted whenever a claim is settled.
 // The proof_required determines whether the claim requires a proof that has been submitted or not
 message EventClaimSettled {
     poktroll.proof.Claim claim = 1 [(gogoproto.jsontag) = "claim"];
-    uint64 num_relays = 2 [(gogoproto.jsontag) = "num_relays"];
-    uint64 num_compute_units = 3 [(gogoproto.jsontag) = "num_compute_units"];
-    poktroll.proof.ProofRequirementReason proof_requirement = 4 [(gogoproto.jsontag) = "proof_requirement"];
+    // The reason why the claim was settled, leading to a Supplier being rewarded (i.e. mint).
+    poktroll.proof.ProofRequirementReason proof_requirement = 2 [(gogoproto.jsontag) = "proof_requirement"];
+    // Number of relays claimed to be in the session tree.
+    uint64 num_relays = 3 [(gogoproto.jsontag) = "num_relays"];
+    // Number of compute units claimed as a function of the number of relays
+    // and the compute units per relay for the particular service.
+    uint64 num_compute_units = 4 [(gogoproto.jsontag) = "num_compute_units"];
+    // TODO_BETA(@red-0ne): Rename 'num_compute_units' to 'num_claimed_compute_units'
+    // and introduce a 'num_estimated_compute_units' field.
 }
 
 // EventRelayMiningDifficultyUpdated is an event emitted whenever the relay mining difficulty is updated
@@ -43,10 +55,30 @@ message EventRelayMiningDifficultyUpdated {
     uint64 new_num_relays_ema = 5;
 }
 
-// EventApplicationOverserviced is emitted when an application has less stake
-// than the expected burn.
+// EventApplicationOverserviced is emitted when an application has less stake than
+// what a supplier is claiming (i.e. amount available for burning is insufficient).
+// This means the following will ALWAYS be strictly true: effective_burn < expected_burn.
 message EventApplicationOverserviced {
     string application_addr = 1;
-    cosmos.base.v1beta1.Coin expected_burn  = 2;
-    cosmos.base.v1beta1.Coin effective_burn  = 3;
+    string supplier_operator_addr = 2;
+    // Expected burn is the amount the supplier is claiming for work done
+    // to service the application during the session.
+    // This is usually the amount in the Claim submitted.
+    cosmos.base.v1beta1.Coin expected_burn  = 3;
+    // Effective burn is the amount that is actually being paid to the supplier
+    // for the work done. It is less than the expected burn (claim amount) and
+    // is a function of the relay mining algorithm.
+    // E.g. The application's stake divided by the number of suppliers in a session.
+    cosmos.base.v1beta1.Coin effective_burn  = 4;
+}
+
+// EventSupplierSlashed is emitted when a supplier is slashed for not providing,
+// or provided invalid required proofs for claims.
+message EventSupplierSlashed {
+    string supplier_operator_addr = 1;
+    // Number of expired claims (due to missing or invalid proof) that led to slashing.
+    uint64 num_expired_claims = 2;
+    // Amount slashed from the supplier's stake due to the expired claims.
+    // This is a function of the number of expired claims and proof missing penalty.
+    cosmos.base.v1beta1.Coin slashing_amount = 3;
 }

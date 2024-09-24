@@ -15,6 +15,7 @@ import ReactPlayer from "react-player";
 - [B. Creating a Supplier and Deploying a RelayMiner](#b-creating-a-supplier-and-deploying-a-relayminer)
 - [C. Creating an Application and Deploying an AppGate Server](#c-creating-an-application-and-deploying-an-appgate-server)
 - [D. Creating a Gateway Deploying an Gateway Server](#d-creating-a-gateway-deploying-an-gateway-server)
+  - [\[BONUS\] Deploy a PATH Gateway](#bonus-deploy-a-path-gateway)
 
 <!--
 
@@ -161,18 +162,18 @@ running a newer version of Docker where `docker-compose` is integrated into `doc
 Initiate the node with:
 
 ```bash
-docker-compose up -d poktrolld
+docker-compose up -d full-node
 ```
 
 Monitor node activity through logs with:
 
 ```bash
-docker-compose logs -f --tail 100 poktrolld
+docker-compose logs -f --tail 100 full-node
 ```
 
 ### Inspecting the Full Node <!-- omit in toc -->
 
-If you run `docker ps`, you should see a `full_node` running which you can inspect
+If you run `docker ps`, you should see a `full-node` running which you can inspect
 using the commands below.
 
 ### CometBFT Status <!-- omit in toc -->
@@ -244,7 +245,7 @@ docker-compose down
 docker rm $(docker ps -aq) -f
 
 # Remove existing data and renew genesis
-rm -rf poktrolld-data/config/addrbook.json poktrolld-data/config/genesis.json poktrolld-data/data/
+rm -rf poktrolld-data/config/addrbook.json poktrolld-data/config/genesis.json poktrolld-data/config/genesis.seeds poktrolld-data/data/ poktrolld-data/config/node_key.json poktrolld-data/config/priv_validator_key.json
 
 # Re-start the node
 docker-compose up -d
@@ -374,26 +375,26 @@ explains what the RelayMiner operation config is and how it can be used.
 Update the provided example RelayMiner operation config:
 
 ```bash
-sed -i -e s/YOUR_NODE_IP_OR_HOST/$NODE_HOSTNAME/g relayminer-example/config/relayminer_config.yaml
+sed -i -e s/YOUR_NODE_IP_OR_HOST/$NODE_HOSTNAME/g relayminer/config/relayminer_config.yaml
 ```
 
 Update the `backend_url` in `relayminer_config.yaml` with a valid `002(i.e. ETH MainNet)
 service URL. We suggest using your own node, but you can get one from Grove for testing purposes.
 
 ```bash
-sed -i "s|backend_url:\".*\"|backend_url: \"https://eth-mainnet.rpc.grove.city/v1/<APP_ID>\"|g" relayminer-example/config/relayminer_config.yaml
+sed -i "s|backend_url:\".*\"|backend_url: \"https://eth-mainnet.rpc.grove.city/v1/<APP_ID>\"|g" relayminer/config/relayminer_config.yaml
 ```
 
 Start up the RelayMiner:
 
 ```bash
-docker-compose up -d relayminer-example
+docker-compose up -d relayminer
 ```
 
 Check logs and confirm the node works as expected:
 
 ```bash
-docker-compose logs -f --tail 100 relayminer-example
+docker-compose logs -f --tail 100 relayminer
 ```
 
 ## C. Creating an Application and Deploying an AppGate Server
@@ -488,16 +489,16 @@ explains what the AppGate Server operation config is and how it can be used.
 
 :::
 
-appgate-server-example/config/appgate_config.yaml
+appgate/config/appgate_config.yaml
 
 ```bash
-docker-compose up -d appgate-server-example
+docker-compose up -d appgate
 ```
 
 Check logs and confirm the node works as expected:
 
 ```bash
-docker-compose logs -f --tail 100 appgate-server-example
+docker-compose logs -f --tail 100 appgate
 ```
 
 ### Send a relay <!-- omit in toc -->
@@ -510,7 +511,7 @@ The endpoint you want to send request to is: `http://your_node:appgate_server_po
 represented by `0021`:
 
 ```bash
-curl http://$NODE_HOSTNAME:85/00\
+curl http://$NODE_HOSTNAME:85/0021 \
   -X POST \
   -H "Content-Type: application/json" \
   --data '{"method":"eth_blockNumber","params":[],"id":1,"jsonrpc":"2.0"}'
@@ -614,7 +615,7 @@ explains what the Gateway Server operation config is and how it can be used.
 
 :::
 
-appgate-server-example/config/gateway_config.yaml
+appgate/config/gateway_config.yaml
 
 ```bash
 docker-compose up -d gateway-example
@@ -628,7 +629,13 @@ docker-compose logs -f --tail 100 gateway-example
 
 ### Delegate your Application to the Gateway <!-- omit in toc -->
 
+```bash
 poktrolld tx application delegate-to-gateway $GATEWAY_ADDR --from=application-1 --chain-id=poktroll --chain-id=poktroll --yes
+```
+
+### [BONUS] Deploy a PATH Gateway
+
+If you want to deploy a real Gateway, you can use [Grove's PATH](https://github.com/buildwithgrove/path).
 
 ### Send a relay <!-- omit in toc -->
 
@@ -658,7 +665,7 @@ To ensure you get a response, you may need to run the request a few times:
 
 ```bash
 for i in {1..10}; do
-  curl http://$NODE_HOSTNAME:85/00\
+  curl http://$NODE_HOSTNAME:85/0021 \
     -X POST \
     -H "Content-Type: application/json" \
     --data '{"method":"eth_blockNumber","params":[],"id":1,"jsonrpc":"2.0"}' \

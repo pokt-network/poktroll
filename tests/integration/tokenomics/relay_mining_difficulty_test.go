@@ -3,6 +3,7 @@ package integration_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/pokt-network/smt"
 	"github.com/pokt-network/smt/kvstore/pebble"
@@ -26,7 +27,7 @@ func init() {
 }
 
 func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T) {
-	var claimWindowOpenBlockHash, proofWindowOpenBlockHash, proofPathSeedBlockHash []byte
+	var claimWindowOpenBlockHash, proofWindowOpenBlockHash []byte
 
 	// Create a new integration app
 	integrationApp := integration.NewCompleteIntegrationApp(t)
@@ -39,8 +40,9 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	session := getSession(t, integrationApp)
 	sharedParams := getSharedParams(t, integrationApp)
 
-	// Prepare the trie with a single mined relay
-	trie := prepareSMST(t, sdkCtx, integrationApp, session)
+	// Prepare the trie with several mined relays
+	expectedNumRelays := uint64(100)
+	trie := prepareSMST(t, sdkCtx, integrationApp, session, expectedNumRelays)
 
 	// Compute the number of blocks to wait between different events
 	// TODO_BLOCKER(@bryanchriswhite): See this comment: https://github.com/pokt-network/poktroll/pull/610#discussion_r1645777322
@@ -84,19 +86,6 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	require.Greater(t, numBlocksUntilProofWindowOpenHeight, int64(0), "unexpected non-positive number of blocks until the earliest proof commit height")
 	integrationApp.NextBlocks(t, int(numBlocksUntilProofWindowOpenHeight))
 
-	// Construct a new proof message and commit it
-	createProofMsg := prooftypes.MsgSubmitProof{
-		SupplierOperatorAddress: integrationApp.DefaultSupplier.OperatorAddress,
-		SessionHeader:           session.Header,
-		Proof:                   getProof(t, trie, proofPathSeedBlockHash, session.GetHeader().GetSessionId()),
-	}
-	result = integrationApp.RunMsg(t,
-		&createProofMsg,
-		integration.WithAutomaticFinalizeBlock(),
-		integration.WithAutomaticCommit(),
-	)
-	require.NotNil(t, result, "unexpected nil result when submitting a MsgSubmitProof tx")
-
 	// Wait until the proof window is closed
 	currentBlockHeight = sdkCtx.BlockHeight()
 	numBlocksUntilProofWindowCloseHeight := proofWindowCloseHeight - currentBlockHeight
@@ -104,6 +93,10 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 
 	// TODO_TECHDEBT(@bryanchriswhite): Olshansky is unsure why the +1 is necessary here but it was required to pass the test.
 	integrationApp.NextBlocks(t, int(numBlocksUntilProofWindowCloseHeight)+1)
+
+	// TODO_TECHDEBT: Aiming to get PR #771 over the finish line and this is a hacky
+	// workaround: https://github.com/pokt-network/poktroll/pull/771#issuecomment-2364071636
+	time.Sleep(3 * time.Second)
 
 	// Check that the expected events are emitted
 	events := sdkCtx.EventManager().Events()
@@ -114,21 +107,29 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	require.Equal(t, "svc1", relayMiningEvent.ServiceId)
 
 	// The default difficulty
-	require.Equal(t, prooftypes.DefaultRelayDifficultyTargetHashHex, relayMiningEvent.PrevTargetHashHexEncoded)
-	require.Equal(t, prooftypes.DefaultRelayDifficultyTargetHashHex, relayMiningEvent.NewTargetHashHexEncoded)
+	require.Equal(t, protocol.BaseRelayDifficultyHashHex, relayMiningEvent.PrevTargetHashHexEncoded)
+	require.Equal(t, protocol.BaseRelayDifficultyHashHex, relayMiningEvent.NewTargetHashHexEncoded)
 
 	// The previous EMA is the same as the current one if the service is new
-	require.Equal(t, uint64(1), relayMiningEvent.PrevNumRelaysEma)
-	require.Equal(t, uint64(1), relayMiningEvent.NewNumRelaysEma)
+	require.Equal(t, expectedNumRelays, relayMiningEvent.PrevNumRelaysEma)
+	require.Equal(t, expectedNumRelays, relayMiningEvent.NewNumRelaysEma)
 }
 
-func UpdateRelayMiningDifficulty_UpdatingMultipleServicesAtOnce(t *testing.T) {}
+func UpdateRelayMiningDifficulty_UpdatingMultipleServicesAtOnce(t *testing.T) {
+	t.Skip("TODO_TEST: Implement this test")
+}
 
-func UpdateRelayMiningDifficulty_UpdateServiceIsNotSeenForAWhile(t *testing.T) {}
+func UpdateRelayMiningDifficulty_UpdateServiceIsNotSeenForAWhile(t *testing.T) {
+	t.Skip("TODO_TEST: Implement this test")
+}
 
-func UpdateRelayMiningDifficulty_UpdateServiceIsIncreasing(t *testing.T) {}
+func UpdateRelayMiningDifficulty_UpdateServiceIsIncreasing(t *testing.T) {
+	t.Skip("TODO_TEST: Implement this test")
+}
 
-func UpdateRelayMiningDifficulty_UpdateServiceIsDecreasing(t *testing.T) {}
+func UpdateRelayMiningDifficulty_UpdateServiceIsDecreasing(t *testing.T) {
+	t.Skip("TODO_TEST: Implement this test")
+}
 
 // getSharedParams returns the shared parameters for the current block height.
 func getSharedParams(t *testing.T, integrationApp *testutil.App) sharedtypes.Params {
@@ -154,7 +155,7 @@ func getSession(t *testing.T, integrationApp *testutil.App) *sessiontypes.Sessio
 	sessionQueryClient := sessiontypes.NewQueryClient(integrationApp.QueryHelper())
 	getSessionReq := sessiontypes.QueryGetSessionRequest{
 		ApplicationAddress: integrationApp.DefaultApplication.Address,
-		Service:            integrationApp.DefaultService,
+		ServiceId:          integrationApp.DefaultService.Id,
 		BlockHeight:        sdkCtx.BlockHeight(),
 	}
 
@@ -164,11 +165,12 @@ func getSession(t *testing.T, integrationApp *testutil.App) *sessiontypes.Sessio
 	return getSessionRes.Session
 }
 
-// prepareSMST prepares an SMST with a single mined relay for the given session.
+// prepareSMST prepares an SMST with the given number of mined relays.
 func prepareSMST(
 	t *testing.T, ctx context.Context,
 	integrationApp *testutil.App,
 	session *sessiontypes.Session,
+	numRelays uint64,
 ) *smt.SMST {
 	t.Helper()
 
@@ -177,45 +179,25 @@ func prepareSMST(
 	// TODO_TECHDEBT(#446): Centralize the configuration for the SMT spec.
 	kvStore, err := pebble.NewKVStore("")
 	require.NoError(t, err)
-
-	// NB: A signed mined relay is a MinedRelay type with the appropriate
-	// payload, signatures and metadata populated.
-	//
-	// It does not (as of writing) adhere to the actual on-chain difficulty (i.e.
-	// hash check) of the test service surrounding the scope of this test.
-	minedRelay := testrelayer.NewSignedMinedRelay(t, ctx,
-		session,
-		integrationApp.DefaultApplication.Address,
-		integrationApp.DefaultSupplier.OperatorAddress,
-		integrationApp.DefaultSupplierKeyringKeyringUid,
-		integrationApp.GetKeyRing(),
-		integrationApp.GetRingClient(),
-	)
-
 	trie := smt.NewSparseMerkleSumTrie(kvStore, protocol.NewTrieHasher(), smt.WithValueHasher(nil))
-	err = trie.Update(minedRelay.Hash, minedRelay.Bytes, 1)
-	require.NoError(t, err)
+
+	for i := uint64(0); i < numRelays; i++ {
+		// DEV_NOTE: A signed mined relay is a MinedRelay type with the appropriate
+		// payload, signatures and metadata populated.
+		// It does not (as of writing) adhere to the actual on-chain difficulty (i.e.
+		// hash check) of the test service surrounding the scope of this test.
+		minedRelay := testrelayer.NewSignedMinedRelay(t, ctx,
+			session,
+			integrationApp.DefaultApplication.Address,
+			integrationApp.DefaultSupplier.OperatorAddress,
+			integrationApp.DefaultSupplierKeyringKeyringUid,
+			integrationApp.GetKeyRing(),
+			integrationApp.GetRingClient(),
+		)
+
+		err = trie.Update(minedRelay.Hash, minedRelay.Bytes, 1)
+		require.NoError(t, err)
+	}
 
 	return trie
-}
-
-// getProof returns a proof for the given session for the empty path.
-// If there is only one relay in the trie, the proof will be for that single
-// relay since it is "closest" to any path provided, empty or not.
-func getProof(
-	t *testing.T,
-	trie *smt.SMST,
-	pathSeedBlockHash []byte,
-	sessionId string,
-) []byte {
-	t.Helper()
-
-	path := protocol.GetPathForProof(pathSeedBlockHash, sessionId)
-	proof, err := trie.ProveClosest(path)
-	require.NoError(t, err)
-
-	proofBz, err := proof.Marshal()
-	require.NoError(t, err)
-
-	return proofBz
 }

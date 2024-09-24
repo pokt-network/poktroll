@@ -10,10 +10,29 @@ import (
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/x/session/keeper"
 	"github.com/pokt-network/poktroll/x/session/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+)
+
+var (
+	testSharedParams = sharedtypes.Params{
+		NumBlocksPerSession:                4,
+		GracePeriodEndOffsetBlocks:         1,
+		ClaimWindowOpenOffsetBlocks:        1,
+		ClaimWindowCloseOffsetBlocks:       0,
+		ProofWindowOpenOffsetBlocks:        4,
+		ProofWindowCloseOffsetBlocks:       4,
+		SupplierUnbondingPeriodSessions:    1,
+		ApplicationUnbondingPeriodSessions: 1,
+		ComputeUnitsToTokensMultiplier:     42,
+	}
+
+	sharedParamsOpt = keepertest.WithModuleParams(map[string]sdk.Msg{
+		sharedtypes.ModuleName: &testSharedParams,
+	})
 )
 
 func TestSession_HydrateSession_Success_BaseCase(t *testing.T) {
-	sessionKeeper, ctx := keepertest.SessionKeeper(t)
+	sessionKeeper, ctx := keepertest.SessionKeeper(t, sharedParamsOpt)
 
 	ctx = sdk.UnwrapSDKContext(ctx).WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
 	blockHeight := int64(10)
@@ -25,8 +44,7 @@ func TestSession_HydrateSession_Success_BaseCase(t *testing.T) {
 	// Check the header
 	sessionHeader := session.Header
 	require.Equal(t, keepertest.TestApp1Address, sessionHeader.ApplicationAddress)
-	require.Equal(t, keepertest.TestServiceId1, sessionHeader.Service.Id)
-	require.Equal(t, "", sessionHeader.Service.Name)
+	require.Equal(t, keepertest.TestServiceId1, sessionHeader.ServiceId)
 	require.Equal(t, int64(9), sessionHeader.SessionStartBlockHeight)
 	require.Equal(t, int64(12), sessionHeader.SessionEndBlockHeight)
 	require.Equal(t, "fea5d6f7544ff6d8af5c22529b2ccf01ed7930b3d454d42dda5ccc0b65b6ebfd", sessionHeader.SessionId)
@@ -113,7 +131,7 @@ func TestSession_HydrateSession_Metadata(t *testing.T) {
 
 	appAddr := keepertest.TestApp1Address
 	serviceId := keepertest.TestServiceId1
-	sessionKeeper, ctx := keepertest.SessionKeeper(t)
+	sessionKeeper, ctx := keepertest.SessionKeeper(t, sharedParamsOpt)
 	ctx = sdk.UnwrapSDKContext(ctx).WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
 
 	for _, test := range tests {
@@ -200,7 +218,7 @@ func TestSession_HydrateSession_SessionId(t *testing.T) {
 		},
 	}
 
-	sessionKeeper, ctx := keepertest.SessionKeeper(t)
+	sessionKeeper, ctx := keepertest.SessionKeeper(t, sharedParamsOpt)
 	ctx = sdk.UnwrapSDKContext(ctx).WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
 
 	for _, test := range tests {
@@ -271,7 +289,7 @@ func TestSession_HydrateSession_Application(t *testing.T) {
 	}
 
 	blockHeight := int64(10)
-	sessionKeeper, ctx := keepertest.SessionKeeper(t)
+	sessionKeeper, ctx := keepertest.SessionKeeper(t, sharedParamsOpt)
 	ctx = sdk.UnwrapSDKContext(ctx).WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
 
 	for _, test := range tests {
@@ -289,7 +307,7 @@ func TestSession_HydrateSession_Application(t *testing.T) {
 
 // TODO_TEST: Expand these tests to account for supplier joining/leaving the network at different heights as well changing the services they support
 func TestSession_HydrateSession_Suppliers(t *testing.T) {
-	// TODO_TEST: Extend these tests once `NumBlocksPerSession` is configurable.
+	// TODO_BETA(@bryanchriswhite): Extend these tests once `NumBlocksPerSession` is configurable.
 	// Currently assumes NumSupplierPerSession=15
 	tests := []struct {
 		// Description
@@ -332,7 +350,7 @@ func TestSession_HydrateSession_Suppliers(t *testing.T) {
 	}
 
 	blockHeight := int64(10)
-	sessionKeeper, ctx := keepertest.SessionKeeper(t)
+	sessionKeeper, ctx := keepertest.SessionKeeper(t, sharedParamsOpt)
 	ctx = sdk.UnwrapSDKContext(ctx).WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
 
 	for _, test := range tests {

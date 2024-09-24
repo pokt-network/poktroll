@@ -4,7 +4,6 @@ import (
 	"errors"
 	"log"
 	"os"
-	"strings"
 
 	"cosmossdk.io/client/v2/autocli"
 	clientv2keyring "cosmossdk.io/client/v2/autocli/keyring"
@@ -30,6 +29,9 @@ import (
 	appgateservercmd "github.com/pokt-network/poktroll/pkg/appgateserver/cmd"
 	relayercmd "github.com/pokt-network/poktroll/pkg/relayer/cmd"
 )
+
+// TODO_MAINNET: adjust chain ID for the mainnet if it's going to change
+const DefaultChainID = "poktroll"
 
 // NewRootCmd creates a new root command for poktrolld. It is called once in the main function.
 func NewRootCmd() *cobra.Command {
@@ -118,7 +120,7 @@ func NewRootCmd() *cobra.Command {
 	initRootCmd(rootCmd, clientCtx.TxConfig, clientCtx.InterfaceRegistry, clientCtx.Codec, moduleBasicManager)
 
 	if err := overwriteFlagDefaults(rootCmd, map[string]string{
-		flags.FlagChainID:        strings.ReplaceAll(app.Name, "-", ""),
+		flags.FlagChainID:        DefaultChainID,
 		flags.FlagKeyringBackend: "test",
 	}); err != nil {
 		log.Fatal(err)

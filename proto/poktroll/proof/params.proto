@@ -2,6 +2,7 @@ syntax = "proto3";
 package poktroll.proof;
 
 option go_package = "github.com/pokt-network/poktroll/x/proof/types";
+option (gogoproto.stable_marshaler_all) = true;
 
 import "amino/amino.proto";
 import "gogoproto/gogo.proto";
@@ -25,13 +26,21 @@ message Params {
   // is equal to or above the threshold. This is in contrast to the this requirement
   // being determined probabilistically via ProofRequestProbability.
   //
-  // TODO_MAINNET: Consider renaming this to `proof_requirement_threshold_compute_units`.
-  uint64 proof_requirement_threshold = 3 [(gogoproto.jsontag) = "proof_requirement_threshold"];
+  // TODO_MAINNET: Consider renaming this to `proof_requirement_threshold_upokt`.
+  cosmos.base.v1beta1.Coin proof_requirement_threshold = 3 [(gogoproto.jsontag) = "proof_requirement_threshold"];
 
   // proof_missing_penalty is the number of tokens (uPOKT) which should be slashed from a supplier
   // when a proof is required (either via proof_requirement_threshold or proof_missing_penalty)
   // but is not provided.
+  // TODO_MAINNET: Consider renaming this to `proof_missing_penalty_upokt`.
   cosmos.base.v1beta1.Coin proof_missing_penalty = 4 [(gogoproto.jsontag) = "proof_missing_penalty"];
+
+  // proof_submission_fee is the number of tokens (uPOKT) which should be paid by
+  // the supplier operator when submitting a proof.
+  // This is needed to account for the cost of storing proofs on-chain and prevent
+  // spamming (i.e. sybil bloat attacks) the network with non-required proofs.
+  // TODO_MAINNET: Consider renaming this to `proof_submission_fee_upokt`.
+  cosmos.base.v1beta1.Coin proof_submission_fee = 5 [(gogoproto.jsontag) = "proof_submission_fee"];
 
   // IMPORTANT: Make sure to update all related files if you're modifying or adding a new parameter.
   // Try the following grep to find all related places: `grep -r compute_units_to_tokens_multiplier`

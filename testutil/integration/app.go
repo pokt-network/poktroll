@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -38,6 +39,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app"
+	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/pkg/crypto"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
@@ -87,6 +89,7 @@ type App struct {
 	queryHelper   *baseapp.QueryServiceTestHelper
 	keyRing       keyring.Keyring
 	ringClient    crypto.RingClient
+	keepers       *AppKeepers
 
 	// Some default helper fixtures for general testing.
 	// They're publically exposed and should/could be improve and expand on
@@ -96,6 +99,21 @@ type App struct {
 	DefaultApplicationKeyringUid     string
 	DefaultSupplier                  *sharedtypes.Supplier
 	DefaultSupplierKeyringKeyringUid string
+}
+
+// AppKeepers is a struct that holds all the keepers for the integration app.
+// It provides convenient direct access to the keepers for the testing so
+// not everything needs to go through the query and message routers.
+type AppKeepers struct {
+	TokenomicsKeeper *tokenomicskeeper.Keeper
+	ServiceKeeper    *servicekeeper.Keeper
+	SharedKeeper     *sharedkeeper.Keeper
+	GatewayKeeper    *gatewaykeeper.Keeper
+	AppKeeper        *appkeeper.Keeper
+	SupplierKeeper   *supplierkeeper.Keeper
+	ProofKeeper      *proofkeeper.Keeper
+	AuthKeeper       *authkeeper.AccountKeeper
+	SessionKeeper    *sessionkeeper.Keeper
 }
 
 // NewIntegrationApp creates a new instance of the App with the provided details
@@ -246,6 +264,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		sessiontypes.ModuleName:    {authtypes.Minter, authtypes.Burner},
 		apptypes.ModuleName:        {authtypes.Minter, authtypes.Burner, authtypes.Staking},
 		suppliertypes.ModuleName:   {authtypes.Minter, authtypes.Burner, authtypes.Staking},
+		prooftypes.ModuleName:      {authtypes.Minter, authtypes.Burner},
 	}
 
 	// Prepare the account keeper and module
@@ -390,15 +409,18 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		logger,
 		authority.String(),
 
+		bankKeeper,
 		sessionKeeper,
 		applicationKeeper,
 		accountKeeper,
 		sharedKeeper,
+		serviceKeeper,
 	)
 	proofModule := proof.NewAppModule(
 		cdc,
 		proofKeeper,
 		accountKeeper,
+		bankKeeper,
 	)
 
 	// Prepare the tokenomics keeper and module
@@ -509,9 +531,10 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 
 	// Prepare a new default service
 	defaultService := sharedtypes.Service{
-		Id:           "svc1",
-		Name:         "svcName1",
-		OwnerAddress: sample.AccAddress(),
+		Id:                   "svc1",
+		Name:                 "svcName1",
+		ComputeUnitsPerRelay: 1,
+		OwnerAddress:         sample.AccAddress(),
 	}
 	serviceKeeper.SetService(integrationApp.sdkCtx, defaultService)
 	integrationApp.DefaultService = &defaultService
@@ -540,7 +563,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 						RevSharePercentage: 100,
 					},
 				},
-				Service: &defaultService,
+				ServiceId: defaultService.Id,
 			},
 		},
 	}
@@ -564,7 +587,7 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 		Stake:   &appStake,
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
 			{
-				Service: &defaultService,
+				ServiceId: defaultService.Id,
 			},
 		},
 	}
@@ -591,9 +614,24 @@ func NewCompleteIntegrationApp(t *testing.T) *App {
 	err = bankKeeper.MintCoins(integrationApp.sdkCtx, apptypes.ModuleName, moduleBaseMint)
 	require.NoError(t, err)
 
+	// Fund the supplier operator account to be able to submit proofs
+	fundAccount(t, integrationApp.sdkCtx, bankKeeper, supplierOperatorAddr)
+
 	// Commit all the changes above by committing, finalizing and moving
 	// to the next block.
 	integrationApp.NextBlock(t)
+
+	integrationApp.keepers = &AppKeepers{
+		TokenomicsKeeper: &tokenomicsKeeper,
+		ServiceKeeper:    &serviceKeeper,
+		SharedKeeper:     &sharedKeeper,
+		GatewayKeeper:    &gatewayKeeper,
+		AppKeeper:        &applicationKeeper,
+		SupplierKeeper:   &supplierKeeper,
+		ProofKeeper:      &proofKeeper,
+		AuthKeeper:       &accountKeeper,
+		SessionKeeper:    &sessionKeeper,
+	}
 
 	return integrationApp
 }
@@ -621,6 +659,10 @@ func (app *App) GetSdkCtx() *sdk.Context {
 // GetAuthority returns the authority address used by the application.
 func (app *App) GetAuthority() string {
 	return app.authority.String()
+}
+
+func (app *App) GetKeepers() *AppKeepers {
+	return app.keepers
 }
 
 // QueryHelper returns the query helper used by the application that can be
@@ -759,4 +801,23 @@ func CreateMultiStore(keys map[string]*storetypes.KVStoreKey, logger log.Logger)
 
 	_ = cms.LoadLatestVersion()
 	return cms
+}
+
+func fundAccount(
+	t *testing.T,
+	ctx context.Context,
+	bankKeeper bankkeeper.Keeper,
+	supplierOperatorAddr sdk.AccAddress,
+) {
+
+	fundingCoins := types.NewCoins(types.NewCoin(volatile.DenomuPOKT, math.NewInt(100000000)))
+
+	err := bankKeeper.MintCoins(ctx, banktypes.ModuleName, fundingCoins)
+	require.NoError(t, err)
+
+	err = bankKeeper.SendCoinsFromModuleToAccount(ctx, banktypes.ModuleName, supplierOperatorAddr, fundingCoins)
+	require.NoError(t, err)
+
+	coin := bankKeeper.SpendableCoin(ctx, supplierOperatorAddr, volatile.DenomuPOKT)
+	require.Equal(t, coin.Amount, math.NewInt(100000000))
 }

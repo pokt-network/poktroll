@@ -37,12 +37,8 @@ func Test_ParseApplicationConfigs(t *testing.T) {
 			expectedConfig: &config.ApplicationStakeConfig{
 				StakeAmount: sdk.NewCoin("upokt", math.NewInt(1000)),
 				Services: []*sharedtypes.ApplicationServiceConfig{
-					{
-						Service: &sharedtypes.Service{Id: "svc1"},
-					},
-					{
-						Service: &sharedtypes.Service{Id: "svc2"},
-					},
+					{ServiceId: "svc1"},
+					{ServiceId: "svc2"},
 				},
 			},
 		},
@@ -134,7 +130,7 @@ func Test_ParseApplicationConfigs(t *testing.T) {
 			t.Logf("serviceIds: %v", test.expectedConfig.Services)
 			require.Equal(t, len(test.expectedConfig.Services), len(appServiceConfig.Services))
 			for i, expected := range test.expectedConfig.Services {
-				require.Equal(t, expected.Service.Id, appServiceConfig.Services[i].Service.Id)
+				require.Equal(t, expected.ServiceId, appServiceConfig.Services[i].ServiceId)
 			}
 		})
 	}

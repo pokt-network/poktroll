@@ -28,11 +28,11 @@ const (
 	paramTypeColIdx
 )
 
-// parseParamsTable parses a gocuke.DataTable into a paramsMap.
-func (s *suite) parseParamsTable(table gocuke.DataTable) paramsMap {
+// parseParamsTable parses a gocuke.DataTable into a paramsAnyMap.
+func (s *suite) parseParamsTable(table gocuke.DataTable) paramsAnyMap {
 	s.Helper()
 
-	paramsMap := make(paramsMap)
+	paramsMap := make(paramsAnyMap)
 
 	// NB: skip the header row.
 	for rowIdx := 1; rowIdx < table.NumRows(); rowIdx++ {
@@ -78,9 +78,9 @@ func (s *suite) parseParam(table gocuke.DataTable, rowIdx int) paramAny {
 	}
 }
 
-// paramsMapToMsgUpdateParams converts a paramsMap into a MsgUpdateParams, which
+// paramsMapToMsgUpdateParams converts a paramsAnyMap into a MsgUpdateParams, which
 // it returns as a proto.Message/cosmostypes.Msg interface type.
-func (s *suite) paramsMapToMsgUpdateParams(moduleName string, paramsMap paramsMap) (msgUpdateParams cosmostypes.Msg) {
+func (s *suite) paramsMapToMsgUpdateParams(moduleName string, paramsMap paramsAnyMap) (msgUpdateParams cosmostypes.Msg) {
 	s.Helper()
 
 	switch moduleName {
@@ -104,7 +104,7 @@ func (s *suite) paramsMapToMsgUpdateParams(moduleName string, paramsMap paramsMa
 	return msgUpdateParams
 }
 
-func (s *suite) newTokenomicsMsgUpdateParams(params paramsMap) cosmostypes.Msg {
+func (s *suite) newTokenomicsMsgUpdateParams(params paramsAnyMap) cosmostypes.Msg {
 	authority := authtypes.NewModuleAddress(s.granterName).String()
 
 	msgUpdateParams := &tokenomicstypes.MsgUpdateParams{
@@ -114,8 +114,6 @@ func (s *suite) newTokenomicsMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 
 	for paramName, paramValue := range params {
 		switch paramName {
-		case tokenomicstypes.ParamComputeUnitsToTokensMultiplier:
-			msgUpdateParams.Params.ComputeUnitsToTokensMultiplier = uint64(paramValue.value.(int64))
 		default:
 			s.Fatalf("ERROR: unexpected %q type param name %q", paramValue.typeStr, paramName)
 		}
@@ -123,7 +121,7 @@ func (s *suite) newTokenomicsMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 	return proto.Message(msgUpdateParams)
 }
 
-func (s *suite) newProofMsgUpdateParams(params paramsMap) cosmostypes.Msg {
+func (s *suite) newProofMsgUpdateParams(params paramsAnyMap) cosmostypes.Msg {
 	authority := authtypes.NewModuleAddress(s.granterName).String()
 
 	msgUpdateParams := &prooftypes.MsgUpdateParams{
@@ -138,9 +136,11 @@ func (s *suite) newProofMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 		case prooftypes.ParamProofRequestProbability:
 			msgUpdateParams.Params.ProofRequestProbability = paramValue.value.(float32)
 		case prooftypes.ParamProofRequirementThreshold:
-			msgUpdateParams.Params.ProofRequirementThreshold = uint64(paramValue.value.(int64))
+			msgUpdateParams.Params.ProofRequirementThreshold = paramValue.value.(*cosmostypes.Coin)
 		case prooftypes.ParamProofMissingPenalty:
 			msgUpdateParams.Params.ProofMissingPenalty = paramValue.value.(*cosmostypes.Coin)
+		case prooftypes.ParamProofSubmissionFee:
+			msgUpdateParams.Params.ProofSubmissionFee = paramValue.value.(*cosmostypes.Coin)
 		default:
 			s.Fatalf("ERROR: unexpected %q type param name %q", paramValue.typeStr, paramName)
 		}
@@ -148,7 +148,7 @@ func (s *suite) newProofMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 	return proto.Message(msgUpdateParams)
 }
 
-func (s *suite) newSharedMsgUpdateParams(params paramsMap) cosmostypes.Msg {
+func (s *suite) newSharedMsgUpdateParams(params paramsAnyMap) cosmostypes.Msg {
 	authority := authtypes.NewModuleAddress(s.granterName).String()
 
 	msgUpdateParams := &sharedtypes.MsgUpdateParams{
@@ -174,6 +174,8 @@ func (s *suite) newSharedMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 			msgUpdateParams.Params.SupplierUnbondingPeriodSessions = uint64(paramValue.value.(int64))
 		case sharedtypes.ParamApplicationUnbondingPeriodSessions:
 			msgUpdateParams.Params.ApplicationUnbondingPeriodSessions = uint64(paramValue.value.(int64))
+		case sharedtypes.ParamComputeUnitsToTokensMultiplier:
+			msgUpdateParams.Params.ComputeUnitsToTokensMultiplier = uint64(paramValue.value.(int64))
 		default:
 			s.Fatalf("ERROR: unexpected %q type param name %q", paramValue.typeStr, paramName)
 		}
@@ -181,7 +183,7 @@ func (s *suite) newSharedMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 	return proto.Message(msgUpdateParams)
 }
 
-func (s *suite) newAppMsgUpdateParams(params paramsMap) cosmostypes.Msg {
+func (s *suite) newAppMsgUpdateParams(params paramsAnyMap) cosmostypes.Msg {
 	authority := authtypes.NewModuleAddress(s.granterName).String()
 
 	msgUpdateParams := &apptypes.MsgUpdateParams{
@@ -201,7 +203,7 @@ func (s *suite) newAppMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 	return proto.Message(msgUpdateParams)
 }
 
-func (s *suite) newServiceMsgUpdateParams(params paramsMap) cosmostypes.Msg {
+func (s *suite) newServiceMsgUpdateParams(params paramsAnyMap) cosmostypes.Msg {
 	authority := authtypes.NewModuleAddress(s.granterName).String()
 
 	msgUpdateParams := &servicetypes.MsgUpdateParams{
@@ -213,7 +215,7 @@ func (s *suite) newServiceMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 		s.Logf("paramName: %s, value: %v", paramName, paramValue.value)
 		switch paramName {
 		case servicetypes.ParamAddServiceFee:
-			msgUpdateParams.Params.AddServiceFee = uint64(paramValue.value.(int64))
+			msgUpdateParams.Params.AddServiceFee = paramValue.value.(*cosmostypes.Coin)
 		default:
 			s.Fatalf("ERROR: unexpected %q type param name %q", paramValue.typeStr, paramName)
 		}
@@ -238,6 +240,8 @@ func (s *suite) newMsgUpdateParam(
 		msg = s.newProofMsgUpdateParam(authority, param)
 	case sharedtypes.ModuleName:
 		msg = s.newSharedMsgUpdateParam(authority, param)
+	case servicetypes.ModuleName:
+		msg = s.newServiceMsgUpdateParam(authority, param)
 	default:
 		err := fmt.Errorf("ERROR: unexpected module name %q", moduleName)
 		s.Fatal(err)
@@ -280,7 +284,7 @@ func (s *suite) newTokenomicsMsgUpdateParam(authority string, param paramAny) (m
 			},
 		})
 	default:
-		s.Fatal("unexpected param type %q for %s module", param.typeStr, tokenomicstypes.ModuleName)
+		s.Fatalf("unexpected param type %q for %s module", param.typeStr, tokenomicstypes.ModuleName)
 	}
 
 	return msg
@@ -329,7 +333,7 @@ func (s *suite) newProofMsgUpdateParam(authority string, param paramAny) (msg pr
 			},
 		})
 	default:
-		s.Fatal("unexpected param type %q for %s module", param.typeStr, prooftypes.ModuleName)
+		s.Fatalf("unexpected param type %q for %s module", param.typeStr, prooftypes.ModuleName)
 	}
 
 	return msg
@@ -362,7 +366,24 @@ func (s *suite) newSharedMsgUpdateParam(authority string, param paramAny) (msg p
 			},
 		})
 	default:
-		s.Fatal("unexpected param type %q for %s module", param.typeStr, sharedtypes.ModuleName)
+		s.Fatalf("unexpected param type %q for %s module", param.typeStr, sharedtypes.ModuleName)
+	}
+
+	return msg
+}
+
+func (s *suite) newServiceMsgUpdateParam(authority string, param paramAny) (msg proto.Message) {
+	switch param.typeStr {
+	case "coin":
+		msg = proto.Message(&servicetypes.MsgUpdateParam{
+			Authority: authority,
+			Name:      param.name,
+			AsType: &servicetypes.MsgUpdateParam_AsCoin{
+				AsCoin: param.value.(*cosmostypes.Coin),
+			},
+		})
+	default:
+		s.Fatalf("unexpected param type %q for %s module", param.typeStr, tokenomicstypes.ModuleName)
 	}
 
 	return msg

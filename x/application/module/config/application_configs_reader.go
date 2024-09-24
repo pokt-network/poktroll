@@ -5,7 +5,6 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	sharedhelpers "github.com/pokt-network/poktroll/x/shared/helpers"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -73,12 +72,12 @@ func ParseApplicationConfigs(configContent []byte) (*ApplicationStakeConfig, err
 
 	for _, serviceId := range parsedAppConfig.ServiceIds {
 		// Validate serviceId
-		if !sharedhelpers.IsValidServiceId(serviceId) {
+		if !sharedtypes.IsValidServiceId(serviceId) {
 			return nil, ErrApplicationConfigInvalidServiceId.Wrapf("%s", serviceId)
 		}
 
 		appServiceConfig := &sharedtypes.ApplicationServiceConfig{
-			Service: &sharedtypes.Service{Id: serviceId},
+			ServiceId: serviceId,
 		}
 
 		applicationServiceConfig = append(applicationServiceConfig, appServiceConfig)

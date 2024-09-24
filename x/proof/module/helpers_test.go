@@ -37,6 +37,7 @@ func networkWithClaimObjects(
 	numSessions int,
 	numSuppliers int,
 	numApps int,
+	sharedParams *sharedtypes.Params,
 ) (net *network.Network, claims []types.Claim, clientCtx cosmosclient.Context) {
 	t.Helper()
 
@@ -84,14 +85,12 @@ func networkWithClaimObjects(
 	appGenesisBuffer, err := cfg.Codec.MarshalJSON(appGenesisState)
 	require.NoError(t, err)
 
-	sharedParams := sharedtypes.DefaultParams()
-
 	// Create numSessions * numApps * numSuppliers claims.
 	for sessionIdx := 0; sessionIdx < numSessions; sessionIdx++ {
 		for _, appAcct := range appAccts {
 			for _, supplierOperatorAcct := range supplierOperatorAccts {
 				claim := newTestClaim(
-					t, &sharedParams,
+					t, sharedParams,
 					supplierOperatorAcct.Address.String(),
 					testsession.GetSessionStartHeightWithDefaultParams(1),
 					appAcct.Address.String(),
@@ -163,7 +162,7 @@ func newTestClaim(
 		SupplierOperatorAddress: supplierOperatorAddr,
 		SessionHeader: &sessiontypes.SessionHeader{
 			ApplicationAddress:      appAddr,
-			Service:                 &sharedtypes.Service{Id: testServiceId},
+			ServiceId:               testServiceId,
 			SessionId:               sessionId,
 			SessionStartBlockHeight: sessionStartHeight,
 			SessionEndBlockHeight:   testsession.GetSessionEndHeightWithDefaultParams(sessionStartHeight),

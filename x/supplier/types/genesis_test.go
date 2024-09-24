@@ -16,9 +16,7 @@ func TestGenesisState_Validate(t *testing.T) {
 	addr1 := sample.AccAddress()
 	stake1 := sdk.NewCoin("upokt", math.NewInt(100))
 	serviceConfig1 := &sharedtypes.SupplierServiceConfig{
-		Service: &sharedtypes.Service{
-			Id: "svcId1",
-		},
+		ServiceId: "svcId1",
 		Endpoints: []*sharedtypes.SupplierEndpoint{
 			{
 				Url:     "http://localhost:8081",
@@ -38,9 +36,7 @@ func TestGenesisState_Validate(t *testing.T) {
 	addr2 := sample.AccAddress()
 	stake2 := sdk.NewCoin("upokt", math.NewInt(100))
 	serviceConfig2 := &sharedtypes.SupplierServiceConfig{
-		Service: &sharedtypes.Service{
-			Id: "svcId2",
-		},
+		ServiceId: "svcId2",
 		Endpoints: []*sharedtypes.SupplierEndpoint{
 			{
 				Url:     "http://localhost:8082",
@@ -284,9 +280,7 @@ func TestGenesisState_Validate(t *testing.T) {
 						Stake:           &stake2,
 						Services: []*sharedtypes.SupplierServiceConfig{
 							{
-								Service: &sharedtypes.Service{
-									Id: "svcId1",
-								},
+								ServiceId: "svcId1",
 								Endpoints: []*sharedtypes.SupplierEndpoint{
 									{
 										Url:     "invalid URL",
@@ -323,9 +317,7 @@ func TestGenesisState_Validate(t *testing.T) {
 						Stake:           &stake2,
 						Services: []*sharedtypes.SupplierServiceConfig{
 							{
-								Service: &sharedtypes.Service{
-									Id: "svcId1",
-								},
+								ServiceId: "svcId1",
 								Endpoints: []*sharedtypes.SupplierEndpoint{
 									{
 										Url:     "http://localhost:8081",

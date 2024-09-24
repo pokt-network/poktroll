@@ -19,7 +19,13 @@ import (
 var _ relayer.SessionTree = (*sessionTree)(nil)
 
 // sessionTree is an implementation of the SessionTree interface.
-// TODO_TEST: Add tests to the sessionTree.
+// TODO_BETA(@red-0ne): Per the Relay Mining paper, we need to optimistically store
+// the number of requests that an application can pay for. This needs to be tracked
+// based on the app's stake in the beginning of a session and the number of nodes
+// per session. An operator should be able to specify "overservicing_compute_units_limit"
+// whereby an upper bound on how much it can overservice an application is set. The
+// default value for this should be -1, implying "unlimited".
+// Ref discussion: https://github.com/pokt-network/poktroll/pull/755#discussion_r1737287860
 type sessionTree struct {
 	// sessionMu is a mutex used to protect sessionTree operations from concurrent access.
 	sessionMu *sync.Mutex
@@ -44,11 +50,11 @@ type sessionTree struct {
 	// proofPath is the path for which the proof was generated.
 	proofPath []byte
 
-	// proof is the generated proof for the session given a proofPath.
-	proof *smt.SparseMerkleClosestProof
+	// compactProof is the generated compactProof for the session given a proofPath.
+	compactProof *smt.SparseCompactMerkleClosestProof
 
-	// proofBz is the marshaled proof for the session.
-	proofBz []byte
+	// compactProofBz is the marshaled proof for the session.
+	compactProofBz []byte
 
 	// treeStore is the KVStore used to store the SMST.
 	treeStore pebble.PebbleKVStore
@@ -65,6 +71,15 @@ type sessionTree struct {
 // NewSessionTree creates a new sessionTree from a Session and a storePrefix. It also takes a function
 // removeFromRelayerSessions that removes the sessionTree from the RelayerSessionsManager.
 // It returns an error if the KVStore fails to be created.
+//
+// TODO_BETA(@red-0ne): When starting a new session, check what the MaxClaimableAmount
+// (in uPOKT) by the Supplier as a function of
+// (app_stake, compute_units_per_relay_for_service, global_compute_units_to_token_multiplier).
+// TODO_CONFIG_NOTE: Whether or not the RelayMiner stop handling requests when the max is reached should be
+// configurable by the operator.
+// TODO_ERROR_NOTE: If overservicing is set to false, create a new error that the relay is rejected
+// specifically because the supplier has reached the max claimable amount, so the caller should relay
+// the request to another supplier.
 func NewSessionTree(
 	sessionHeader *sessiontypes.SessionHeader,
 	supplierOperatorAddress *cosmostypes.AccAddress,
@@ -139,9 +154,7 @@ func (st *sessionTree) Update(key, value []byte, weight uint64) error {
 // This function is intended to be called after a session has been claimed and needs to be proven.
 // If the proof has already been generated, it returns the cached proof.
 // It returns an error if the SMST has not been flushed yet (the claim has not been generated)
-// TODO_IMPROVE(#427): Compress the proof into a SparseCompactClosestMerkleProof
-// prior to submitting to chain to reduce on-chain storage requirements for proofs.
-func (st *sessionTree) ProveClosest(path []byte) (proof *smt.SparseMerkleClosestProof, err error) {
+func (st *sessionTree) ProveClosest(path []byte) (compactProof *smt.SparseCompactMerkleClosestProof, err error) {
 	st.sessionMu.Lock()
 	defer st.sessionMu.Unlock()
 
@@ -151,13 +164,13 @@ func (st *sessionTree) ProveClosest(path []byte) (proof *smt.SparseMerkleClosest
 	}
 
 	// If the proof has already been generated, return the cached proof.
-	if st.proof != nil {
+	if st.compactProof != nil {
 		// Make sure the path is the same as the one for which the proof was generated.
 		if !bytes.Equal(path, st.proofPath) {
 			return nil, ErrSessionTreeProofPathMismatch
 		}
 
-		return st.proof, nil
+		return st.compactProof, nil
 	}
 
 	// Restore the KVStore from disk since it has been closed after the claim has been generated.
@@ -169,12 +182,19 @@ func (st *sessionTree) ProveClosest(path []byte) (proof *smt.SparseMerkleClosest
 	sessionSMT := smt.ImportSparseMerkleSumTrie(st.treeStore, sha256.New(), st.claimedRoot, smt.WithValueHasher(nil))
 
 	// Generate the proof and cache it along with the path for which it was generated.
-	proof, err = sessionSMT.ProveClosest(path)
+	// There is no ProveClosest variant that generates a compact proof directly.
+	// Generate a regular SparseMerkleClosestProof then compact it.
+	proof, err := sessionSMT.ProveClosest(path)
 	if err != nil {
 		return nil, err
 	}
 
-	proofBz, err := proof.Marshal()
+	compactProof, err = smt.CompactClosestProof(proof, &sessionSMT.TrieSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	compactProofBz, err := compactProof.Marshal()
 	if err != nil {
 		return nil, err
 	}
@@ -182,20 +202,25 @@ func (st *sessionTree) ProveClosest(path []byte) (proof *smt.SparseMerkleClosest
 	// If no error occurred, cache the proof and the path for which it was generated.
 	st.sessionSMT = sessionSMT
 	st.proofPath = path
-	st.proof = proof
-	st.proofBz = proofBz
+	st.compactProof = compactProof
+	st.compactProofBz = compactProofBz
 
-	return st.proof, nil
+	return st.compactProof, nil
 }
 
 // GetProofBz returns the marshaled proof for the session.
 func (st *sessionTree) GetProofBz() []byte {
-	return st.proofBz
+	return st.compactProofBz
+}
+
+// GetTrieSpec returns the trie spec of the SMST.
+func (st *sessionTree) GetTrieSpec() smt.TrieSpec {
+	return *st.sessionSMT.Spec()
 }
 
 // GetProof returns the proof for the SMST if it has been generated or nil otherwise.
-func (st *sessionTree) GetProof() *smt.SparseMerkleClosestProof {
-	return st.proof
+func (st *sessionTree) GetProof() *smt.SparseCompactMerkleClosestProof {
+	return st.compactProof
 }
 
 // Flush gets the root hash of the SMST needed for submitting the claim;

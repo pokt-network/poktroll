@@ -5,11 +5,13 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strconv"
 	"time"
 
 	abci "github.com/cometbft/cometbft/abci/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/client/block"
@@ -42,18 +44,34 @@ const (
 )
 
 func (s *suite) TheUserShouldWaitForTheModuleMessageToBeSubmitted(module, msgType string) {
-	s.waitForTxResultEvent(newEventMsgTypeMatchFn(module, msgType))
+	event := s.waitForTxResultEvent(newEventMsgTypeMatchFn(module, msgType))
+
+	// If the message type is "SubmitProof", save the supplier balance
+	// so that next steps that assert on supplier rewards can do it without having
+	// the proof submission fee skewing the results.
+	if msgType == "SubmitProof" {
+		supplierOperatorAddress := getMsgSubmitProofSenderAddress(event)
+		require.NotEmpty(s, supplierOperatorAddress)
+
+		supplierAccName := accAddrToNameMap[supplierOperatorAddress]
+
+		// Get current balance
+		balanceKey := accBalanceKey(supplierAccName)
+		currBalance := s.getAccBalance(supplierAccName)
+		s.scenarioState[balanceKey] = currBalance // save the balance for later
+	}
 }
 
 func (s *suite) TheUserShouldWaitForTheModuleTxEventToBeBroadcast(module, eventType string) {
 	s.waitForTxResultEvent(newEventTypeMatchFn(module, eventType))
 }
 
-func (s *suite) TheUserShouldWaitForTheModuleEndBlockEventToBeBroadcast(module, eventType string) {
+func (s *suite) TheUserShouldWaitForTheClaimsettledEventWithProofRequirementToBeBroadcast(proofRequirement string) {
 	s.waitForNewBlockEvent(
 		combineEventMatchFns(
-			newEventTypeMatchFn(module, eventType),
+			newEventTypeMatchFn("tokenomics", "ClaimSettled"),
 			newEventModeMatchFn("EndBlock"),
+			newEventAttributeMatchFn("proof_requirement", fmt.Sprintf("%q", proofRequirement)),
 		),
 	)
 }
@@ -143,12 +161,24 @@ func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBeSuccess
 		claim := claimSettledEvent.Claim
 		require.Equal(s, app.Address, claim.SessionHeader.ApplicationAddress)
 		require.Equal(s, supplier.OperatorAddress, claim.SupplierOperatorAddress)
-		require.Equal(s, serviceId, claim.SessionHeader.Service.Id)
+		require.Equal(s, serviceId, claim.SessionHeader.ServiceId)
 		require.Greater(s, claimSettledEvent.NumComputeUnits, uint64(0), "compute units should be greater than 0")
 		return true
 	}
 
 	s.waitForNewBlockEvent(isValidClaimSettledEvent)
+}
+
+func (suite *suite) TheModuleParametersAreSetAsFollows(moduleName string, params gocuke.DataTable) {
+	suite.AnAuthzGrantFromTheAccountToTheAccountForTheMessageExists(
+		"gov",
+		"module",
+		"pnf",
+		"user",
+		fmt.Sprintf("/poktroll.%s.MsgUpdateParams", moduleName),
+	)
+
+	suite.TheAccountSendsAnAuthzExecMessageToUpdateAllModuleParams("pnf", moduleName, params)
 }
 
 func (s *suite) sendRelaysForSession(
@@ -173,12 +203,11 @@ func (s *suite) sendRelaysForSession(
 }
 
 // waitForTxResultEvent waits for an event to be observed which has the given message action.
-func (s *suite) waitForTxResultEvent(eventIsMatch func(*abci.Event) bool) {
+func (s *suite) waitForTxResultEvent(eventIsMatch func(*abci.Event) bool) (matchedEvent *abci.Event) {
 	ctx, cancel := context.WithCancel(s.ctx)
 
 	// For each observed event, **asynchronously** check if it contains the given action.
-	channel.ForEach[*abci.TxResult](
-		ctx, s.txResultReplayClient.EventsSequence(ctx),
+	s.forEachTxResult(ctx,
 		func(_ context.Context, txResult *abci.TxResult) {
 			if txResult == nil {
 				return
@@ -188,18 +217,14 @@ func (s *suite) waitForTxResultEvent(eventIsMatch func(*abci.Event) bool) {
 			// and compare its value to that of the action provided.
 			for _, event := range txResult.Result.Events {
 				if eventIsMatch(&event) {
+					matchedEvent = &event
 					cancel()
 				}
 			}
 		},
 	)
 
-	select {
-	case <-time.After(eventTimeout):
-		s.Fatalf("ERROR: timed out waiting for tx result event")
-	case <-ctx.Done():
-		s.Log("Success; message detected before timeout.")
-	}
+	return matchedEvent
 }
 
 // waitForNewBlockEvent waits for an event to be observed whose type and data
@@ -212,8 +237,7 @@ func (s *suite) waitForNewBlockEvent(
 	ctx, done := context.WithCancel(s.ctx)
 
 	// For each observed event, **asynchronously** check if it contains the given action.
-	channel.ForEach[*block.CometNewBlockEvent](
-		ctx, s.newBlockEventsReplayClient.EventsSequence(ctx),
+	s.forEachBlockEvent(ctx,
 		func(_ context.Context, newBlockEvent *block.CometNewBlockEvent) {
 			if newBlockEvent == nil {
 				return
@@ -231,13 +255,6 @@ func (s *suite) waitForNewBlockEvent(
 			}
 		},
 	)
-
-	select {
-	case <-time.After(eventTimeout):
-		s.Fatalf("ERROR: timed out waiting for NewBlock event")
-	case <-ctx.Done():
-		s.Log("Success; message detected before timeout.")
-	}
 }
 
 // waitForBlockHeight waits for a NewBlock event to be observed whose height is
@@ -247,8 +264,7 @@ func (s *suite) waitForBlockHeight(targetHeight int64) {
 
 	// For each observed event, **asynchronously** check if it is greater than
 	// or equal to the target height
-	channel.ForEach[*block.CometNewBlockEvent](
-		ctx, s.newBlockEventsReplayClient.EventsSequence(ctx),
+	s.forEachBlockEvent(ctx,
 		func(_ context.Context, newBlockEvent *block.CometNewBlockEvent) {
 			if newBlockEvent == nil {
 				return
@@ -260,12 +276,46 @@ func (s *suite) waitForBlockHeight(targetHeight int64) {
 			}
 		},
 	)
+}
+
+// forEachBlockEvent calls blockEventFn for each observed block event **asynchronously**
+// and blocks on waiting for the given context to be cancelled. If the context is
+// not cancelled before eventTimeout, the test will fail.
+func (s *suite) forEachBlockEvent(
+	ctx context.Context,
+	blockEventFn func(_ context.Context, newBlockEvent *block.CometNewBlockEvent),
+) {
+	channel.ForEach[*block.CometNewBlockEvent](ctx,
+		s.newBlockEventsReplayClient.EventsSequence(ctx),
+		blockEventFn,
+	)
 
 	select {
 	case <-time.After(eventTimeout):
-		s.Fatalf("ERROR: timed out waiting for block height", targetHeight)
+		s.Fatalf("ERROR: timed out waiting new block event")
 	case <-ctx.Done():
-		s.Log("Success; height detected before timeout.")
+		s.Log("Success; new block event detected before timeout.")
+	}
+}
+
+// forEachTxResult calls txResult for each observed tx result **asynchronously**
+// and blocks on waiting for the given context to be cancelled. If the context is
+// not cancelled before eventTimeout, the test will fail.
+func (s *suite) forEachTxResult(
+	ctx context.Context,
+	txResultFn func(_ context.Context, txResult *abci.TxResult),
+) {
+
+	channel.ForEach[*abci.TxResult](ctx,
+		s.txResultReplayClient.EventsSequence(ctx),
+		txResultFn,
+	)
+
+	select {
+	case <-time.After(eventTimeout):
+		s.Fatalf("ERROR: timed out waiting for tx result")
+	case <-ctx.Done():
+		s.Log("Success; tx result detected before timeout.")
 	}
 }
 
@@ -335,4 +385,13 @@ func combineEventMatchFns(fns ...func(*abci.Event) bool) func(*abci.Event) bool 
 		}
 		return true
 	}
+}
+
+// getMsgSubmitProofSenderAddress returns the sender address from the given event.
+func getMsgSubmitProofSenderAddress(event *abci.Event) string {
+	senderAttrIdx := slices.IndexFunc(event.Attributes, func(attr abci.EventAttribute) bool {
+		return attr.Key == "sender"
+	})
+
+	return event.Attributes[senderAttrIdx].Value
 }

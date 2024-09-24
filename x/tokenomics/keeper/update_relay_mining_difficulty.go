@@ -7,11 +7,13 @@ import (
 	"fmt"
 	"math/big"
 
+	"cosmossdk.io/log"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
+	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 // TargetNumRelays is the target number of relays we want the network to mine for
@@ -20,7 +22,7 @@ import (
 // the off-chain SMTs, across all suppliers, for each service.
 // It indirectly drives the off-chain resource requirements of the network
 // in additional to playing a critical role in Relay Mining.
-// TODO_BLOCKER(@Olshansk, #542): Make this a governance parameter.
+// TODO_MAINNET(#542): Make this a governance parameter and figure out the correct value.
 const TargetNumRelays = uint64(10e4)
 
 // Exponential moving average (ema) smoothing factor, commonly known as alpha.
@@ -32,7 +34,7 @@ const TargetNumRelays = uint64(10e4)
 // to ensure deterministic results across different language implementations of the
 // protocol.
 //
-// TODO_MAINNET(@olshansk, @ramiro): Play around with the value N for EMA to
+// TODO_MAINNET(@olshansk, @rawthil): Play around with the value N for EMA to
 // capture what the memory should be.
 var emaSmoothingFactor = new(big.Float).SetFloat64(0.1)
 
@@ -49,17 +51,7 @@ func (k Keeper) UpdateRelayMiningDifficulty(
 	for serviceId, numRelays := range relaysPerServiceMap {
 		prevDifficulty, found := k.GetRelayMiningDifficulty(ctx, serviceId)
 		if !found {
-			logger.Warn(types.ErrTokenomicsMissingRelayMiningDifficulty.Wrapf(
-				"No previous relay mining difficulty found for service %s. Initializing with default difficulty %v",
-				serviceId, prevDifficulty.TargetHash,
-			).Error())
-			// If a previous difficulty for the service is not found, we initialize a default.
-			prevDifficulty = types.RelayMiningDifficulty{
-				ServiceId:    serviceId,
-				BlockHeight:  sdkCtx.BlockHeight(),
-				NumRelaysEma: numRelays,
-				TargetHash:   prooftypes.DefaultRelayDifficultyTargetHash,
-			}
+			prevDifficulty = newDefaultRelayMiningDifficulty(ctx, logger, serviceId, numRelays)
 		}
 
 		// TODO_MAINNET(@Olshansk): We could potentially compute the smoothing factor
@@ -72,7 +64,19 @@ func (k Keeper) UpdateRelayMiningDifficulty(
 		// Compute the updated EMA of the number of relays.
 		prevRelaysEma := prevDifficulty.NumRelaysEma
 		newRelaysEma := computeEma(alpha, prevRelaysEma, numRelays)
-		difficultyHash := ComputeNewDifficultyTargetHash(prevDifficulty.TargetHash, TargetNumRelays, newRelaysEma)
+
+		// CRITICAL_DEV_NOTE: We changed this code to pass in  "DefaultRelayDifficultyTargetHash" instead of "prevDifficulty.TargetHash"
+		// to "ComputeNewDifficultyTargetHash" because we used to have 2 moving variables:
+		// 		1. Input difficulty
+		// 		2. Relays EMA
+		// However, since the "TargetNumRelays" remained constant, the following case would keep scaling down the difficulty:
+		// 		- newRelaysEma = 100 -> scaled by 10 / 100 -> scaled down by 0.1
+		// 		- newRelaysEma = 50 -> scaled by 10 / 50 -> scaled down by 0.2
+		// 		- newRelaysEma = 20 -> scaled by 10 / 20 -> scaled down by 0.5
+		// We kept scaling down even though numRelaysEma was decreasing.
+		// To avoid continuing to increase the difficulty (i.e. scaling down), the
+		// relative starting difficulty has to be kept constant.
+		difficultyHash := protocol.ComputeNewDifficultyTargetHash(prooftypes.DefaultRelayDifficultyTargetHash, TargetNumRelays, newRelaysEma)
 		newDifficulty := types.RelayMiningDifficulty{
 			ServiceId:    serviceId,
 			BlockHeight:  sdkCtx.BlockHeight(),
@@ -116,64 +120,6 @@ func (k Keeper) UpdateRelayMiningDifficulty(
 	return difficultyPerServiceMap, nil
 }
 
-// ComputeNewDifficultyTargetHash computes the new difficulty target hash based
-// on the target number of relays we want the network to mine and the new EMA of
-// the number of relays.
-// NB: Exported for testing purposes only.
-func ComputeNewDifficultyTargetHash(prevTargetHash []byte, targetNumRelays, newRelaysEma uint64) []byte {
-	// The target number of relays we want the network to mine is greater than
-	// the actual on-chain relays, so we don't need to scale to anything above
-	// the default.
-	if targetNumRelays > newRelaysEma {
-		return prooftypes.DefaultRelayDifficultyTargetHash
-	}
-
-	// Calculate the proportion of target relays relative to the EMA of actual volume applicable relays
-	// TODO_MAINNET: Use a language agnostic float implementation or arithmetic library
-	// to ensure deterministic results across different language implementations of the
-	// protocol.
-	ratio := new(big.Float).Quo(
-		new(big.Float).SetUint64(targetNumRelays),
-		new(big.Float).SetUint64(newRelaysEma),
-	)
-
-	// Compute the new target hash by scaling the previous target hash based on the ratio
-	newTargetHash := scaleDifficultyTargetHash(prevTargetHash, ratio)
-
-	return newTargetHash
-}
-
-// scaleDifficultyTargetHash scales the target hash based on the given ratio
-//
-// TODO_MAINNET: Use a language agnostic float implementation or arithmetic library
-// to ensure deterministic results across different language implementations of the
-// protocol.
-func scaleDifficultyTargetHash(targetHash []byte, ratio *big.Float) []byte {
-	// Convert targetHash to a big.Float to miminize precision loss.
-	targetInt := new(big.Int).SetBytes(targetHash)
-	targetFloat := new(big.Float).SetInt(targetInt)
-
-	// Scale the target by multiplying it by the ratio.
-	scaledTargetFloat := new(big.Float).Mul(targetFloat, ratio)
-	// NB: Some precision is lost when converting back to an integer.
-	scaledTargetInt, _ := scaledTargetFloat.Int(nil)
-	scaledTargetHash := scaledTargetInt.Bytes()
-
-	// Ensure the scaled target hash maxes out at BaseRelayDifficulty
-	if len(scaledTargetHash) > len(targetHash) {
-		return protocol.BaseRelayDifficultyHashBz
-	}
-
-	// Ensure the scaled target hash has the same length as the default target hash.
-	if len(scaledTargetHash) < len(targetHash) {
-		paddedTargetHash := make([]byte, len(targetHash))
-		copy(paddedTargetHash[len(paddedTargetHash)-len(scaledTargetHash):], scaledTargetHash)
-		return paddedTargetHash
-	}
-
-	return scaledTargetHash
-}
-
 // computeEma computes the EMA at time t, given the EMA at time t-1, the raw
 // data revealed at time t, and the smoothing factor α.
 // Src: https://en.wikipedia.org/wiki/Exponential_smoothing
@@ -189,4 +135,33 @@ func computeEma(alpha *big.Float, prevEma, currValue uint64) uint64 {
 	weightedPreviousContribution := new(big.Float).Mul(oneMinusAlpha, prevEmaFloat)
 	newEma, _ := new(big.Float).Add(weightedCurrentContribution, weightedPreviousContribution).Uint64()
 	return newEma
+}
+
+// newDefaultRelayMiningDifficulty is a helper that creates a new RelayMiningDifficulty
+// structure if one is not available. It is often used to set the default when a service's
+// difficulty is being initialized for the first time.
+func newDefaultRelayMiningDifficulty(
+	ctx context.Context,
+	logger log.Logger,
+	serviceId string,
+	numRelays uint64,
+) tokenomicstypes.RelayMiningDifficulty {
+	logger = logger.With("helper", "NewDefaultRelayMiningDifficulty")
+
+	// Compute the target hash based on the number of relays seen for the first time.
+	newDifficultyHash := protocol.ComputeNewDifficultyTargetHash(prooftypes.DefaultRelayDifficultyTargetHash, TargetNumRelays, numRelays)
+
+	logger.Warn(types.ErrTokenomicsMissingRelayMiningDifficulty.Wrapf(
+		"No previous relay mining difficulty found for service %s.\n"+
+			"Creating a new relay mining difficulty with %d relays and an initial target hash %x",
+		serviceId, numRelays, newDifficultyHash).Error())
+
+	// Return a new RelayMiningDifficulty with the computed target hash.
+	return tokenomicstypes.RelayMiningDifficulty{
+		ServiceId:    serviceId,
+		BlockHeight:  sdk.UnwrapSDKContext(ctx).BlockHeight(),
+		NumRelaysEma: numRelays,
+		TargetHash:   newDifficultyHash,
+	}
+
 }

@@ -19,12 +19,14 @@ import ReactPlayer from "react-player";
 - [Stake an Application \& Deploy an AppGate Server](#stake-an-application--deploy-an-appgate-server)
 - [Send a Relay](#send-a-relay)
   - [Ensure you get a response](#ensure-you-get-a-response)
+- [\[BONUS\] Deploy a PATH Gateway](#bonus-deploy-a-path-gateway)
 - [Managing a re-genesis](#managing-a-re-genesis)
   - [Full Nodes](#full-nodes)
   - [Fund the same accounts](#fund-the-same-accounts)
     - [Faucet is not ready and you need to fund the accounts manually](#faucet-is-not-ready-and-you-need-to-fund-the-accounts-manually)
   - [Start the RelayMiner](#start-the-relayminer)
   - [Start the AppGate Server](#start-the-appgate-server)
+  - [Re-stake the gateway](#re-stake-the-gateway)
 
 ## Results
 
@@ -109,9 +111,9 @@ source ~/.bashrc
 ## Start up the full node
 
 ```bash
-docker compose up -d poktrolld poktrolld
+docker compose up -d full-node
 # Optional: watch the block height sync up & logs
-docker logs -f --tail 100 full_node
+docker logs -f --tail 100 full-node
 watch_height
 ```
 
@@ -178,16 +180,16 @@ poktrolld tx supplier stake-supplier --config=/poktroll/stake_configs/supplier_s
 poktrolld query supplier show-supplier $SUPPLIER_ADDR
 
 # Start the relay miner (please update the grove app ID if you can)
-sed -i -e s/YOUR_NODE_IP_OR_HOST/$NODE_HOSTNAME/g relayminer-example/config/relayminer_config.yaml
-sed -i -e "s|backend_url: \".*\"|backend_url: \"https://eth-mainnet.rpc.grove.city/v1/c7f14c60\"|g" relayminer-example/config/relayminer_config.yaml
+sed -i -e s/YOUR_NODE_IP_OR_HOST/$NODE_HOSTNAME/g relayminer/config/relayminer_config.yaml
+sed -i -e "s|backend_url: \".*\"|backend_url: \"https://eth-mainnet.rpc.grove.city/v1/c7f14c60\"|g" relayminer/config/relayminer_config.yaml
 ```
 
 Start the supplier
 
 ```bash
-docker compose up -d relayminer-example
+docker compose up -d relayminer
 # OPTIONALLY view the logs
-docker logs -f --tail 100 relay_miner
+docker logs -f --tail 100 relayminer
 ```
 
 ## Stake an Application & Deploy an AppGate Server
@@ -204,9 +206,9 @@ poktrolld query application show-application $APPLICATION_ADDR
 Start the appgate server:
 
 ```bash
-docker compose up -d appgate-server-example
+docker compose up -d appgate
 # OPTIONALLY view the logs
-docker logs -f --tail 100 appgate_server
+docker logs -f --tail 100 appgate
 ```
 
 ## Send a Relay
@@ -233,6 +235,22 @@ for i in {1..10}; do
 done
 ```
 
+## [BONUS] Deploy a PATH Gateway
+
+If you want to deploy a real Gateway, you can use [Grove's PATH](https://github.com/buildwithgrove/path)
+after running the following commands:
+
+```bash
+# Stake the gateway
+poktrolld tx gateway stake-gateway --config=/poktroll/stake_configs/gateway_stake_config_example.yaml --from=gateway --chain-id=poktroll --yes
+# Delegate from the application to the gateway
+poktrolld tx application delegate-to-gateway $GATEWAY_ADDR --from=application --chain-id=poktroll --chain-id=poktroll --yes
+
+# OPTIONALLY check the gateway's and application's status
+poktrolld query gateway show-gateway $GATEWAY_ADDR
+poktrolld query application show-application $APPLICATION_ADDR
+```
+
 ## Managing a re-genesis
 
 Assuming you already had everything functioning following the steps above, this
@@ -242,21 +260,21 @@ is a quick way to reset everything (without recreating keys) after a re-genesis.
 
 ```bash
 # Stop all containers
-docker-compose down
+docker compose down
 docker rm $(docker ps -aq) -f
 
 # Remove existing data
-rm -rf poktrolld-data/config/addrbook.json poktrolld-data/config/genesis.json poktrolld-data/data/ poktrolld-data/config/node_key.json poktrolld-data/config/priv_validator_key.json
+rm -rf poktrolld-data/config/addrbook.json poktrolld-data/config/genesis.json poktrolld-data/config/genesis.seeds poktrolld-data/data/ poktrolld-data/config/node_key.json poktrolld-data/config/priv_validator_key.json
 ```
 
-Update `POKTROLLD_IMAGE_TAG` in `.env` based on the releases [here](https://github.com/pokt-network/poktroll/releases/tag/v0.0.6).
+Update `POKTROLLD_IMAGE_TAG` in `.env` based on the releases [here](https://github.com/pokt-network/poktroll/releases).
 
 ```bash
 # Start the full
-docker compose up -d poktrolld poktrolld
+docker compose up -d full-node
 
 # Sanity check the logs
-docker logs full_node -f --tail 100
+docker logs full-node -f --tail 100
 ```
 
 ### Fund the same accounts
@@ -285,9 +303,9 @@ poktrolld tx supplier stake-supplier --config=/poktroll/stake_configs/supplier_s
 # Check
 poktrolld query supplier show-supplier $SUPPLIER_ADDR
 # Start
-docker compose up -d relayminer-example
+docker compose up -d relayminer
 # View
-docker logs -f --tail 100 relay_miner
+docker logs -f --tail 100 relayminer
 ```
 
 ### Start the AppGate Server
@@ -298,7 +316,9 @@ poktrolld tx application stake-application --config=/poktroll/stake_configs/appl
 # Check
 poktrolld query application show-application $APPLICATION_ADDR
 # Start
-docker compose up -d appgate-server-example
+docker compose up -d appgate
 # View
-docker logs -f --tail 100 appgate_server
+docker logs -f --tail 100 appgate
 ```
+
+### Re-stake the gateway

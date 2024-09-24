@@ -466,6 +466,60 @@ func NewSupplyProofQueryClientFn() SupplierFn {
 	}
 }
 
+// NewSupplyTokenomicsQueryClientFn returns a function which constructs a
+// TokenomicsQueryClient instance and returns a new depinject.Config which
+// is supplied with the given deps and the new TokenomicsQueryClient.
+func NewSupplyTokenomicsQueryClientFn() SupplierFn {
+	return func(
+		_ context.Context,
+		deps depinject.Config,
+		_ *cobra.Command,
+	) (depinject.Config, error) {
+		tokenomicsQuerier, err := query.NewTokenomicsQuerier(deps)
+		if err != nil {
+			return nil, err
+		}
+
+		return depinject.Configs(deps, depinject.Supply(tokenomicsQuerier)), nil
+	}
+}
+
+// NewSupplyServiceQueryClientFn returns a function which constructs a
+// NewSupplyServiceQueryClient instance and returns a new depinject.Config which
+// is supplied with the given deps and the new ServiceQueryClient.
+func NewSupplyServiceQueryClientFn() SupplierFn {
+	return func(
+		_ context.Context,
+		deps depinject.Config,
+		_ *cobra.Command,
+	) (depinject.Config, error) {
+		serviceQuerier, err := query.NewServiceQuerier(deps)
+		if err != nil {
+			return nil, err
+		}
+
+		return depinject.Configs(deps, depinject.Supply(serviceQuerier)), nil
+	}
+}
+
+// NewSupplyBankQuerierFn supplies a depinject config with an BankQuerier.
+func NewSupplyBankQuerierFn() SupplierFn {
+	return func(
+		_ context.Context,
+		deps depinject.Config,
+		_ *cobra.Command,
+	) (depinject.Config, error) {
+		// Create the bank querier.
+		bankQuerier, err := query.NewBankQuerier(deps)
+		if err != nil {
+			return nil, err
+		}
+
+		// Supply the bank querier to the provided deps
+		return depinject.Configs(deps, depinject.Supply(bankQuerier)), nil
+	}
+}
+
 // newSupplyTxClientFn returns a new depinject.Config which is supplied with
 // the given deps and the new TxClient.
 func newSupplyTxClientsFn(ctx context.Context, deps depinject.Config, signingKeyName string) (depinject.Config, error) {

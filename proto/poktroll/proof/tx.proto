@@ -3,6 +3,7 @@ syntax = "proto3";
 package poktroll.proof;
 
 option go_package = "github.com/pokt-network/poktroll/x/proof/types";
+option (gogoproto.stable_marshaler_all) = true;
 
 import "amino/amino.proto";
 import "cosmos/base/v1beta1/coin.proto";
@@ -90,7 +91,7 @@ message MsgSubmitProof {
   string                         supplier_operator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   poktroll.session.SessionHeader session_header = 2;
 
-  // serialized version of *smt.SparseMerkleClosestProof
+  // serialized version of *smt.SparseCompactMerkleClosestProof
   bytes proof = 3;
 }
 

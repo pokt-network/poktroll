@@ -10,7 +10,6 @@ import (
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/x/session/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func init() {
@@ -22,7 +21,7 @@ func init() {
 // the Cosmos SDK context aware wrapper around it.
 
 func TestSession_GetSession_Success(t *testing.T) {
-	keeper, ctx := keepertest.SessionKeeper(t)
+	keeper, ctx := keepertest.SessionKeeper(t, sharedParamsOpt)
 	ctx = sdk.UnwrapSDKContext(ctx).WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
 
 	tests := []struct {
@@ -54,10 +53,8 @@ func TestSession_GetSession_Success(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			req := &types.QueryGetSessionRequest{
 				ApplicationAddress: test.appAddr,
-				Service: &sharedtypes.Service{
-					Id: test.serviceId,
-				},
-				BlockHeight: 1,
+				ServiceId:          test.serviceId,
+				BlockHeight:        1,
 			}
 
 			response, err := keeper.GetSession(ctx, req)
@@ -72,7 +69,7 @@ func TestSession_GetSession_Success(t *testing.T) {
 }
 
 func TestSession_GetSession_Failure(t *testing.T) {
-	keeper, ctx := keepertest.SessionKeeper(t)
+	keeper, ctx := keepertest.SessionKeeper(t, sharedParamsOpt)
 	ctx = sdk.UnwrapSDKContext(ctx).WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
 
 	tests := []struct {
@@ -146,10 +143,8 @@ func TestSession_GetSession_Failure(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			req := &types.QueryGetSessionRequest{
 				ApplicationAddress: test.appAddr,
-				Service: &sharedtypes.Service{
-					Id: test.serviceId,
-				},
-				BlockHeight: test.blockHeight,
+				ServiceId:          test.serviceId,
+				BlockHeight:        test.blockHeight,
 			}
 
 			res, err := keeper.GetSession(ctx, req)

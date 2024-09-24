@@ -11,7 +11,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	_ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/x/shared/helpers"
-	sharedhelpers "github.com/pokt-network/poktroll/x/shared/helpers"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -105,7 +104,7 @@ func ParseSupplierConfigs(ctx context.Context, configContent []byte) (*SupplierS
 	}
 
 	defaultRevSharePercent := map[string]float32{}
-	if stakeConfig.DefaultRevSharePercent == nil || len(stakeConfig.DefaultRevSharePercent) == 0 {
+	if len(stakeConfig.DefaultRevSharePercent) == 0 {
 		// Ensure that if no default rev share is provided, the owner address is set
 		// to 100% rev share.
 		if stakeConfig.OwnerAddress == "" {
@@ -117,7 +116,7 @@ func ParseSupplierConfigs(ctx context.Context, configContent []byte) (*SupplierS
 	}
 
 	// Validate the services
-	if stakeConfig.Services == nil || len(stakeConfig.Services) == 0 {
+	if len(stakeConfig.Services) == 0 {
 		return nil, ErrSupplierConfigInvalidServiceId.Wrap("serviceIds cannot be empty")
 	}
 
@@ -127,7 +126,7 @@ func ParseSupplierConfigs(ctx context.Context, configContent []byte) (*SupplierS
 	// Populate the services slice
 	for _, svc := range stakeConfig.Services {
 		// Validate the serviceId
-		if !sharedhelpers.IsValidServiceId(svc.ServiceId) {
+		if !sharedtypes.IsValidServiceId(svc.ServiceId) {
 			return nil, ErrSupplierConfigInvalidServiceId.Wrapf("%s", svc.ServiceId)
 		}
 
@@ -137,7 +136,7 @@ func ParseSupplierConfigs(ctx context.Context, configContent []byte) (*SupplierS
 
 		// Create a supplied service config with the serviceId
 		service := &sharedtypes.SupplierServiceConfig{
-			Service:   &sharedtypes.Service{Id: svc.ServiceId},
+			ServiceId: svc.ServiceId,
 			RevShare:  []*sharedtypes.ServiceRevenueShare{},
 			Endpoints: []*sharedtypes.SupplierEndpoint{},
 		}

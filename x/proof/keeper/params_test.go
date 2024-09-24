@@ -7,6 +7,7 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/app/volatile"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 )
@@ -101,7 +102,7 @@ func TestParams_ValidateProofRequirementThreshold(t *testing.T) {
 		},
 		{
 			desc:                      "valid ProofRequirementThreshold",
-			proofRequirementThreshold: uint64(20),
+			proofRequirementThreshold: &cosmostypes.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(20)},
 		},
 	}
 
@@ -155,6 +156,64 @@ func TestParams_ValidateProofMissingPenalty(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
 			err := prooftypes.ValidateProofMissingPenalty(tt.proofMissingPenalty)
+			if tt.expectedErr != nil {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), tt.expectedErr.Error())
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestParams_ValidateProofSubmissionFee(t *testing.T) {
+	invalidDenomCoin := cosmostypes.NewCoin("invalid_denom", math.NewInt(1))
+	belowMinProofSubmissionFee := prooftypes.MinProofSubmissionFee.
+		Sub(cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(1)))
+
+	tests := []struct {
+		desc               string
+		proofSubmissionFee any
+		expectedErr        error
+	}{
+		{
+			desc:               "invalid type",
+			proofSubmissionFee: int64(-1),
+			expectedErr:        prooftypes.ErrProofParamInvalid.Wrap("invalid parameter type: int64"),
+		},
+		{
+			desc:               "invalid denomination",
+			proofSubmissionFee: &invalidDenomCoin,
+			expectedErr:        prooftypes.ErrProofParamInvalid.Wrap("invalid coin denom: invalid_denom"),
+		},
+		{
+			desc:               "missing",
+			proofSubmissionFee: nil,
+			expectedErr:        prooftypes.ErrProofParamInvalid.Wrap("invalid parameter type: <nil>"),
+		},
+		{
+			desc:               "missing (typed)",
+			proofSubmissionFee: (*cosmostypes.Coin)(nil),
+			expectedErr:        prooftypes.ErrProofParamInvalid.Wrap("missing proof_submission_fee"),
+		},
+		{
+			desc:               "below minimum",
+			proofSubmissionFee: &belowMinProofSubmissionFee,
+			expectedErr: prooftypes.ErrProofParamInvalid.Wrapf(
+				"ProofSubmissionFee param is below minimum value %s: got %s",
+				prooftypes.MinProofSubmissionFee,
+				belowMinProofSubmissionFee,
+			),
+		},
+		{
+			desc:               "valid",
+			proofSubmissionFee: &prooftypes.MinProofSubmissionFee,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			err := prooftypes.ValidateProofSubmissionFee(tt.proofSubmissionFee)
 			if tt.expectedErr != nil {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), tt.expectedErr.Error())
