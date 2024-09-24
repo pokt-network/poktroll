@@ -224,6 +224,7 @@ func NewIntegrationApp(
 		txCfg:         txCfg,
 		moduleManager: *moduleManager,
 		queryHelper:   queryHelper,
+		faucetBech32:  faucetBech32,
 	}
 }
 

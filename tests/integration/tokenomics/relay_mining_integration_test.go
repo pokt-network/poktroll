@@ -4,13 +4,11 @@ import (
 	"context"
 	"testing"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/smt"
 	"github.com/pokt-network/smt/kvstore/pebble"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/testutil/integration"
 	"github.com/pokt-network/poktroll/testutil/testrelayer"
@@ -22,9 +20,9 @@ import (
 )
 
 var (
-	// Test params.
-	computeUnitsToTokensMultiplier = uint64(1) // keeping the math simple
-	proofRequirementThreshold      = sdk.NewInt64Coin(volatile.DenomuPOKT, 1e18)
+// Test params.
+// computeUnitsToTokensMultiplier = uint64(1) // keeping the math simple
+// proofRequirementThreshold      = sdk.NewInt64Coin(volatile.DenomuPOKT, 1e18)
 )
 
 type RelayMiningIntegrationTestSuite struct {
