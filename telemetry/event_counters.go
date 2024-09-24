@@ -28,15 +28,21 @@ func EventSuccessCounter(
 	getValue func() float32,
 	isSuccessful func() bool,
 ) {
-	successResult := strconv.FormatBool(isSuccessful())
 	value := getValue()
 
+	var metricName []string
+
+	if isSuccessful() {
+		metricName = []string{"event", "success"}
+	} else {
+		metricName = []string{"event", "failed"}
+	}
+
 	telemetry.IncrCounterWithLabels(
-		[]string{eventTypeMetricKey},
+		metricName,
 		value,
 		[]metrics.Label{
 			{Name: "type", Value: eventType},
-			{Name: "is_successful", Value: successResult},
 		},
 	)
 }

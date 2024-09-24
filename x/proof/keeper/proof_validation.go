@@ -61,7 +61,7 @@ func (k Keeper) EnsureValidProof(
 	ctx context.Context,
 	proof *types.Proof,
 ) error {
-	defer cosmostelemetry.ModuleMeasureSince(types.ModuleName, cosmostelemetry.Now(), "validation")
+	defer cosmostelemetry.MeasureSince(cosmostelemetry.Now(), "proof", "validation")
 
 	logger := k.Logger().With("method", "ValidateProof")
 
