@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	DefaultCacheSize int = 10000
+	defaultCacheSize int = 10000
 )
 
 func main() {
@@ -164,7 +164,7 @@ func ReadTree(dir string, version int64, prefix []byte) (*iavl.MutableTree, dbm.
 		db = dbm.NewPrefixDB(db, prefix)
 	}
 
-	tree := iavl.NewMutableTree(db, DefaultCacheSize, false, nil)
+	tree := iavl.NewMutableTree(db, defaultCacheSize, false, nil)
 
 	_, err = tree.LoadVersion(version)
 	if err != nil {

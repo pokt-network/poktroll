@@ -1,6 +1,13 @@
-# iavl-tree-diff
+# iavl-tree-diff <!-- omit in toc -->
 
-**iavl-tree-diff** is a tool designed to compare IAVL tree databases in Cosmos SDK-based blockchains. It identifies differences between two IAVL tree versions across multiple prefixes and highlights key-value discrepancies. This is particularly useful for debugging non-deterministic issues in distributed systems where consistency is critical.
+- [Features](#features)
+- [How It Works](#how-it-works)
+- [Usage](#usage)
+- [Example Output](#example-output)
+
+**iavl-tree-diff** is a tool designed to compare IAVL tree databases in Cosmos SDK-based blockchains.
+
+It identifies differences between two IAVL tree versions across multiple prefixes and highlights key-value discrepancies. This is particularly useful for debugging non-deterministic issues in distributed systems where consistency is critical.
 
 ## Features
 
@@ -18,6 +25,15 @@
 
 ## Usage
 
+Ensure you're in the `iavl-tree-diff` directory:
+
+```bash
+git clone https://github.com/pokt-network/poktroll.git && cd poktroll
+cd tools/iavl-tree-diff
+```
+
+Then, simply run the tool with the following command:
+
 ```bash
 go run . <path_to_db1> <path_to_db2>
 ```
@@ -30,7 +46,7 @@ go run . $HOME/pocket/testnet/halt-08-26/data-val/application.db $HOME/pocket/te
 
 ## Example Output
 
-```
+```text
 Checking prefix: s/k:group/
 Using lower version: 15910
 Tree hash from db1: A89113C07AE262E84FA49E6D9111BF7C638679604357FA388526A976CFD021E0

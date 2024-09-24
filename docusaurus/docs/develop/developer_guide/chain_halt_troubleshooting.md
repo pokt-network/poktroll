@@ -3,7 +3,7 @@ sidebar_position: 6
 title: Chain Halt Troubleshooting
 ---
 
-# Chain Halt Troubleshooting <!-- omit in toc -->
+## Chain Halt Troubleshooting <!-- omit in toc -->
 
 - [Understanding Chain Halts](#understanding-chain-halts)
   - [Definition and Causes](#definition-and-causes)
@@ -64,9 +64,11 @@ Utilize the [iavl-tree-diff](https://github.com/pokt-network/poktroll/tree/main/
 
 ### Step 4: Decoding and Interpreting Data
 
-The blockchain data is stored in `protobuf` format, encoded as hexadecimal. To interpret this data:
+The blockchain data is stored in `protobuf` format, encoded as hexadecimal.
 
-1. Use [CyberChef](https://gchq.github.io/CyberChef/#recipe=From_Hex('Auto')Protobuf_Decode('',false,false)), a versatile data manipulation tool.
+To interpret this data:
+
+1. Use [CyberChef](<https://gchq.github.io/CyberChef/#recipe=From_Hex('Auto')Protobuf_Decode('',false,false)>): a versatile data manipulation tool.
 2. Input the hexadecimal data into CyberChef.
 3. Apply the "From Hex" operation followed by "Protobuf Decode" to reveal the human-readable content.
 
