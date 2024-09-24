@@ -100,9 +100,7 @@ func (s *AuthzIntegrationSuite) RunAuthzExecMsg(
 
 	require.NotNil(t, execResAny)
 	execRes := execResAny.(*authz.MsgExecResponse)
-	for _, msgResBz := range execRes.Results {
-		msgRespsBz = append(msgRespsBz, msgResBz)
-	}
+	msgRespsBz = append(msgRespsBz, execRes.Results...)
 
 	return msgRespsBz, nil
 }
