@@ -62,18 +62,6 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 	}
 }
 
-// paramTypeIsBytes checks if the parameter type is a byte slice, returning an error if not.
-func (msg *MsgUpdateParam) paramTypeIsBytes() error {
-	if _, ok := msg.AsType.(*MsgUpdateParam_AsBytes); !ok {
-		return ErrProofParamInvalid.Wrapf(
-			"invalid type for param %q expected %T, got %T",
-			msg.Name, &MsgUpdateParam_AsBytes{},
-			msg.AsType,
-		)
-	}
-	return nil
-}
-
 // paramTypeIsFloat checks if the parameter type is Float, returning an error if not.
 func (msg *MsgUpdateParam) paramTypeIsFloat() error {
 	if _, ok := msg.AsType.(*MsgUpdateParam_AsFloat); !ok {
