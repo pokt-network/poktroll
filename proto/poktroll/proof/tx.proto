@@ -91,7 +91,7 @@ message MsgSubmitProof {
   string                         supplier_operator_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   poktroll.session.SessionHeader session_header = 2;
 
-  // serialized version of *smt.SparseMerkleClosestProof
+  // serialized version of *smt.SparseCompactMerkleClosestProof
   bytes proof = 3;
 }
 

@@ -156,8 +156,8 @@ func TestEnsureValidProof_Error(t *testing.T) {
 
 	// Store the expected error returned during deserialization of the invalid
 	// closest Merkle proof bytes.
-	sparseMerkleClosestProof := &smt.SparseMerkleClosestProof{}
-	expectedInvalidProofUnmarshalErr := sparseMerkleClosestProof.Unmarshal(invalidClosestProofBytes)
+	sparseCompactMerkleClosestProof := &smt.SparseCompactMerkleClosestProof{}
+	expectedInvalidProofUnmarshalErr := sparseCompactMerkleClosestProof.Unmarshal(invalidClosestProofBytes)
 
 	// Construct a relay to be mangled such that it fails to deserialize in order
 	// to set the error expectation for the relevant test case.
@@ -611,9 +611,12 @@ func TestEnsureValidProof_Error(t *testing.T) {
 				)
 
 				// Extract relayHash to check below that it's difficulty is insufficient
-				sparseMerkleClosestProof := &smt.SparseMerkleClosestProof{}
-				err = sparseMerkleClosestProof.Unmarshal(proof.ClosestMerkleProof)
+				err = sparseCompactMerkleClosestProof.Unmarshal(proof.ClosestMerkleProof)
 				require.NoError(t, err)
+				var sparseMerkleClosestProof *smt.SparseMerkleClosestProof
+				sparseMerkleClosestProof, err = smt.DecompactClosestProof(sparseCompactMerkleClosestProof, &protocol.SmtSpec)
+				require.NoError(t, err)
+
 				relayBz := sparseMerkleClosestProof.GetValueHash(&protocol.SmtSpec)
 				relayHashArr := protocol.GetRelayHashFromBytes(relayBz)
 				relayHash := relayHashArr[:]

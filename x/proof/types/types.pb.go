@@ -89,7 +89,7 @@ type Proof struct {
 	SupplierOperatorAddress string `protobuf:"bytes,1,opt,name=supplier_operator_address,json=supplierOperatorAddress,proto3" json:"supplier_operator_address,omitempty"`
 	// The session header of the session that this claim is for.
 	SessionHeader *types.SessionHeader `protobuf:"bytes,2,opt,name=session_header,json=sessionHeader,proto3" json:"session_header,omitempty"`
-	// The serialized SMST proof from the `#ClosestProof()` method.
+	// The serialized SMST compacted proof from the `#ClosestProof()` method.
 	ClosestMerkleProof []byte `protobuf:"bytes,3,opt,name=closest_merkle_proof,json=closestMerkleProof,proto3" json:"closest_merkle_proof,omitempty"`
 }
 
