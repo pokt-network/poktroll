@@ -1,5 +1,3 @@
-//go:build integration
-
 package integration_test
 
 import (
@@ -15,7 +13,6 @@ import (
 	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/testutil/integration"
-	"github.com/pokt-network/poktroll/testutil/integration/suites"
 	"github.com/pokt-network/poktroll/testutil/testrelayer"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
@@ -28,48 +25,52 @@ var (
 	// Test params.
 	computeUnitsToTokensMultiplier = uint64(1) // keeping the math simple
 	proofRequirementThreshold      = sdk.NewInt64Coin(volatile.DenomuPOKT, 1e18)
-	//serviceComputeUnitsPerRelay = uint64(1)   // keeping the math simple
 )
 
 type RelayMiningIntegrationTestSuite struct {
-	suites.UpdateParamsSuite
+	// TODO_BETA(#826): wait for integration app & suites refactor to be merged.
+	// Once suites.ParamsSuite is avialable, embed it here. In the meantime, we
+	// MUST embed suite.Suite to avoid compilation errors.
+	//
+	// suites.ParamsSuite
+	suite.Suite
 }
 
 func (s *RelayMiningIntegrationTestSuite) SetupTest() {
 	// Construct a fresh integration app for each test.
-	// TODO_BLOCKED(#826): wait for integration app & suites refactor to be merged.
-	//s.NewApp(s.T())
-	//s.SetupTestAccounts()
-	//s.SetupTestAuthzGrants()
+	// TODO_BETA(#826): wait for integration app & suites refactor to be merged.
+	// s.NewApp(s.T())
+	// s.SetupTestAccounts()
+	// s.SetupTestAuthzGrants()
 }
 
 func (s *RelayMiningIntegrationTestSuite) TestComputeNewDifficultyHash_RewardsReflectWorkCompleted() {
 	// Set the shared module param compute_units_to_tokens_multiplier.
-	// TODO_BLOCKED(#826): wait for integration app & suites refactor to be merged.
-	//_, err := s.RunUpdateParam(s.T(),
-	//	sharedtypes.ModuleName,
-	//	sharedtypes.ParamComputeUnitsToTokensMultiplier,
-	//	computeUnitsToTokensMultiplier,
-	//)
-	//require.NoError(s.T(), err)
+	// TODO_BETA(#826): wait for integration app & suites refactor to be merged.
+	// _, err := s.RunUpdateParam(s.T(),
+	// 	sharedtypes.ModuleName,
+	// 	sharedtypes.ParamComputeUnitsToTokensMultiplier,
+	// 	computeUnitsToTokensMultiplier,
+	// )
+	// require.NoError(s.T(), err)
 
 	// Set the proof params so we never need a proof (for simplicity of this test)
-	// TODO_BLOCKED(#826): wait for integration app & suites refactor to be merged.
-	//_, err = s.RunUpdateParam(s.T(),
-	//	prooftypes.ModuleName,
-	//	prooftypes.ParamProofRequestProbability,
-	//	float32(0),
-	//)
-	//require.NoError(s.T(), err)
+	// TODO_BETA(#826): wait for integration app & suites refactor to be merged.
+	// _, err = s.RunUpdateParam(s.T(),
+	// 	prooftypes.ModuleName,
+	// 	prooftypes.ParamProofRequestProbability,
+	// 	float32(0),
+	// )
+	// require.NoError(s.T(), err)
 
 	// Set the proof requirement threshold to be VERY high.
-	// TODO_BLOCKED(#826): wait for integration app & suites refactor to be merged.
-	//_, err = s.RunUpdateParam(s.T(),
-	//	prooftypes.ModuleName,
-	//	prooftypes.ParamProofRequirementThreshold,
-	//	&proofRequirementThreshold,
-	//)
-	//require.NoError(s.T(), err)
+	// TODO_BETA(#826): wait for integration app & suites refactor to be merged.
+	// _, err = s.RunUpdateParam(s.T(),
+	// 	prooftypes.ModuleName,
+	// 	prooftypes.ParamProofRequirementThreshold,
+	// 	&proofRequirementThreshold,
+	// )
+	// require.NoError(s.T(), err)
 
 	// TODO(@red-0ne, #781): Implement this test after the business logic is done.
 
@@ -183,6 +184,6 @@ func prepareRealClaim(
 }
 
 func TestRelayMiningIntegrationSuite(t *testing.T) {
-	t.Skip("TODO_BLOCKED(#826): wait for integration app & suites refactor to be merged.")
+	t.Skip("TODO_BETA(#826): wait for integration app & suites refactor to be merged.")
 	suite.Run(t, new(RelayMiningIntegrationTestSuite))
 }

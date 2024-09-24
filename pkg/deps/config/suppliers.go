@@ -502,6 +502,24 @@ func NewSupplyServiceQueryClientFn() SupplierFn {
 	}
 }
 
+// NewSupplyBankQuerierFn supplies a depinject config with an BankQuerier.
+func NewSupplyBankQuerierFn() SupplierFn {
+	return func(
+		_ context.Context,
+		deps depinject.Config,
+		_ *cobra.Command,
+	) (depinject.Config, error) {
+		// Create the bank querier.
+		bankQuerier, err := query.NewBankQuerier(deps)
+		if err != nil {
+			return nil, err
+		}
+
+		// Supply the bank querier to the provided deps
+		return depinject.Configs(deps, depinject.Supply(bankQuerier)), nil
+	}
+}
+
 // newSupplyTxClientFn returns a new depinject.Config which is supplied with
 // the given deps and the new TxClient.
 func newSupplyTxClientsFn(ctx context.Context, deps depinject.Config, signingKeyName string) (depinject.Config, error) {
