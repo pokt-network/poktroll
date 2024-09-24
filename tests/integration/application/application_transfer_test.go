@@ -58,7 +58,7 @@ func (s *AppTransferSuite) SetupTest() {
 		s.app2Bech32: {service1Id, service2Id},
 	})
 
-	// Delegate app 1 to gateway 1 and app2 to gateways 1 and 2.
+	// Delegate app 1 to gateway 1 and 3 and app 2 to gateways 1 and 2.
 	s.setupDelegateAppsToGateway(map[string][]string{
 		s.app1Bech32: {s.gateway1Bech32, s.gateway3Bech32},
 		s.app2Bech32: {s.gateway1Bech32, s.gateway2Bech32},
@@ -71,6 +71,8 @@ func (s *AppTransferSuite) SetupTest() {
 }
 
 func (s *AppTransferSuite) TestSingleSourceToNonexistentDestinationSucceeds() {
+	// TODO_TECHDEBT(#826): Once the ParamsSuite is available, embed it in the
+	// AppTransferSuite to fetch the current integration app's params instead.
 	sharedParams := sharedtypes.DefaultParams()
 	sessionEndHeight := shared.GetSessionEndHeight(&sharedParams, s.SdkCtx().BlockHeight())
 
@@ -150,6 +152,8 @@ func (s *AppTransferSuite) TestSingleSourceToNonexistentDestinationSucceeds() {
 }
 
 func (s *AppTransferSuite) TestMultipleSourceToSameNonexistentDestinationMergesSources() {
+	// TODO_TECHDEBT(#826): Once the ParamsSuite is available, embed it in the
+	// AppTransferSuite to fetch the current integration app's params instead.
 	sharedParams := sharedtypes.DefaultParams()
 	msgTransferAppTypeURL := cosmostypes.MsgTypeURL(&apptypes.MsgTransferApplication{})
 	sessionEndHeight := shared.GetSessionEndHeight(&sharedParams, s.SdkCtx().BlockHeight())

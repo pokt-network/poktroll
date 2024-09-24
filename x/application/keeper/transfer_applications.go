@@ -54,16 +54,17 @@ func (k Keeper) EndBlockerTransferApplication(ctx context.Context) error {
 			logger.Warn(transferErr.Error())
 
 			// Application transfer failed, removing the pending transfer from the source application.
+			dstBech32 := srcApp.GetPendingTransfer().GetDestinationAddress()
 			srcApp.PendingTransfer = nil
 			k.SetApplication(ctx, srcApp)
 
 			if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventTransferError{
 				SourceAddress:      srcApp.GetAddress(),
-				DestinationAddress: srcApp.GetPendingTransfer().GetDestinationAddress(),
+				DestinationAddress: dstBech32,
 				SourceApplication:  &srcApp,
 				Error:              transferErr.Error(),
 			}); err != nil {
-				logger.Error(fmt.Sprintf("could not emit transfer error event: %v", err))
+				return err
 			}
 		}
 	}
@@ -102,8 +103,9 @@ func (k Keeper) transferApplication(ctx context.Context, srcApp types.Applicatio
 		srcStakeSumCoin := dstApp.GetStake().Add(*dstApp.GetStake())
 		dstApp.Stake = &srcStakeSumCoin
 
-		mergeAppDelegatees(&srcApp, &dstApp)
-		mergeAppServiceConfigs(&srcApp, &dstApp)
+		MergeAppDelegatees(&srcApp, &dstApp)
+		MergeAppPendingUndelegations(&srcApp, &dstApp)
+		MergeAppServiceConfigs(&srcApp, &dstApp)
 	}
 
 	// Remove srcApp from the store
@@ -126,9 +128,9 @@ func (k Keeper) transferApplication(ctx context.Context, srcApp types.Applicatio
 	return nil
 }
 
-// mergeAppDelegatees takes the union of the srcApp and dstApp's delegatees and
-// sets the result in dstApp.
-func mergeAppDelegatees(srcApp, dstApp *types.Application) {
+// MergeAppDelegatees takes the union of the srcApp and dstApp's delegatees and
+// sets the result in dstApp. It is exported for testing purposes.
+func MergeAppDelegatees(srcApp, dstApp *types.Application) {
 	// Build a set of the destination application's delegatees.
 	delagateeBech32Set := make(map[string]struct{})
 	for _, dstDelegateeBech32 := range dstApp.DelegateeGatewayAddresses {
@@ -144,9 +146,82 @@ func mergeAppDelegatees(srcApp, dstApp *types.Application) {
 	}
 }
 
-// mergeAppServiceConfigs takes the union of the srcApp and dstApp's service configs
-// and sets the result in dstApp.
-func mergeAppServiceConfigs(srcApp, dstApp *types.Application) {
+// TODO_IN_THIS_COMMIT: godoc... dst pending undelegations are not overwritten by src pending undelegations...
+// It is exported for testing purposes.
+func MergeAppPendingUndelegations(srcApp, dstApp *types.Application) {
+	allPendingUndelegationGatewayAddrs := make(map[string]struct{})
+
+	for dstHeight, dstUndelegatingGatewaysList := range dstApp.PendingUndelegations {
+		for _, gatewayBech32 := range dstUndelegatingGatewaysList.GatewayAddresses {
+			allPendingUndelegationGatewayAddrs[gatewayBech32] = struct{}{}
+		}
+
+		srcPendingUndelegationsAtDstHeight, srcHasPendingUndelegationsAtDstHeight := srcApp.PendingUndelegations[dstHeight]
+
+		// Skip this height if the source application does not have pending undelegations in it.
+		if !srcHasPendingUndelegationsAtDstHeight {
+			continue
+		}
+
+		// Build a set of gateway addresses from which the destination application
+		// has pending undelegations.
+		dstGatewayAddrsAtHeight := make(map[string]struct{})
+		for _, dstGatewayBech32 := range dstUndelegatingGatewaysList.GatewayAddresses {
+			if _, ok := dstGatewayAddrsAtHeight[dstGatewayBech32]; !ok {
+				dstGatewayAddrsAtHeight[dstGatewayBech32] = struct{}{}
+			}
+
+			// Also add the gateway address to the set of all pending undelegations.
+			if _, ok := allPendingUndelegationGatewayAddrs[dstGatewayBech32]; !ok {
+				allPendingUndelegationGatewayAddrs[dstGatewayBech32] = struct{}{}
+			}
+		}
+
+		// Build the union of the source and destination applications' pending
+		// undelegations at the current height by appending source application
+		// pending undelegations which are not already in the set.
+		for _, srcGatewayBech32 := range srcPendingUndelegationsAtDstHeight.GatewayAddresses {
+			// TDOO_IN_THIS_COMMIT: comment...
+			if _, ok := allPendingUndelegationGatewayAddrs[srcGatewayBech32]; ok {
+				continue
+			}
+
+			allPendingUndelegationGatewayAddrs[srcGatewayBech32] = struct{}{}
+
+			if _, ok := dstGatewayAddrsAtHeight[srcGatewayBech32]; !ok {
+				dstPendingUndelegationsAtDstHeight := dstApp.PendingUndelegations[dstHeight]
+				dstGatewayAddrsAtDstHeight := dstPendingUndelegationsAtDstHeight.GatewayAddresses
+				dstPendingUndelegationsAtDstHeight.GatewayAddresses = append(dstGatewayAddrsAtDstHeight, srcGatewayBech32)
+				dstApp.PendingUndelegations[dstHeight] = dstPendingUndelegationsAtDstHeight
+			}
+		}
+	}
+
+	// Complete the union by adding source application pending undelegations for heights
+	// which were not present in the destination application pending undelegations map.
+	for srcHeight, srcUndelegatingGatewayList := range srcApp.PendingUndelegations {
+		if _, ok := dstApp.PendingUndelegations[srcHeight]; !ok {
+			for _, srcGatewayBech32 := range srcUndelegatingGatewayList.GatewayAddresses {
+				// TDOO_IN_THIS_COMMIT: comment...
+				if _, ok := allPendingUndelegationGatewayAddrs[srcGatewayBech32]; ok {
+					continue
+				}
+
+				// TODO_IN_THIS_COMMIT: add test case for and check when a src pending
+				// undelegation address is in allPendingUndelegationGatewayAddrs.
+
+				dstPendingUndelegationsAtSrcHeight := dstApp.PendingUndelegations[srcHeight]
+				dstGatewayAddrsAtSrcHeight := dstPendingUndelegationsAtSrcHeight.GatewayAddresses
+				dstPendingUndelegationsAtSrcHeight.GatewayAddresses = append(dstGatewayAddrsAtSrcHeight, srcGatewayBech32)
+				dstApp.PendingUndelegations[srcHeight] = dstPendingUndelegationsAtSrcHeight
+			}
+		}
+	}
+}
+
+// MergeAppServiceConfigs takes the union of the srcApp and dstApp's service configs
+// and sets the result in dstApp. It is exported for testing purposes.
+func MergeAppServiceConfigs(srcApp, dstApp *types.Application) {
 	// Build a set of the destination application's service configs.
 	serviceIDSet := make(map[string]struct{})
 	for _, dstServiceConfig := range dstApp.ServiceConfigs {
