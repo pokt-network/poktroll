@@ -12,7 +12,9 @@ This page describes the protocol upgrade process, which is internal to the proto
 - [When is an Upgrade Warranted?](#when-is-an-upgrade-warranted)
 - [Implementing the Upgrade](#implementing-the-upgrade)
 - [Writing an Upgrade Transaction](#writing-an-upgrade-transaction)
+  - [Validate the URLs](#validate-the-urls)
 - [Submitting the upgrade on-chain](#submitting-the-upgrade-on-chain)
+- [Cancelling the upgrade plan](#cancelling-the-upgrade-plan)
 - [Testing the Upgrade](#testing-the-upgrade)
   - [LocalNet](#localnet)
   - [DevNet](#devnet)
@@ -39,7 +41,7 @@ An upgrade is necessary whenever there's an API, State Machine, or other Consens
 1. When a new version includes a consensus-breaking change, plan for the next protocol upgrade:
    - If there's a change to a specific module, bump that module's consensus version.
    - Note any potential parameter changes to include in the upgrade.
-2. Create a new upgrade in `app/upgrades`:
+2. Create a new upgrade in `app/upgrades`. **THIS MUST BE DONE** even if there are no state changes.
    - Refer to `historical.go` for past upgrades and examples.
    - Consult Cosmos-sdk documentation on upgrades for additional guidance [here](https://docs.cosmos.network/main/build/building-apps/app-upgrade) and [here](https://docs.cosmos.network/main/build/modules/upgrade).
 
@@ -69,18 +71,56 @@ An upgrade transaction includes a [Plan](https://github.com/cosmos/cosmos-sdk/bl
 - `height`: The height at which an upgrade should be executed and the node will be restarted.
 - `info`: While this field can theoretically contain any information about the upgrade, in practice, `cosmovisor`uses it to obtain information about the binaries. When`cosmovisor` is configured to automatically download binaries, it will pull the binary from the link provided in this field and perform a hash verification (which is optional).
 
+### Validate the URLs
+
+The URLs of the binaries contain checksums. It is important to make sure they are correct, otherwise Cosmovisor won't be able
+to download the binaries and go through the upgrade. Here's a little command that uses `jq` and `go-getter` (same library used by Cosmovisor - so it is a good test).
+
+:::tip
+
+Go-getter can be installed using the following command:
+
+```bash
+go install github.com/hashicorp/go-getter/cmd/go-getter@latest
+```
+
+:::
+
+```bash
+jq -r '.body.messages[0].plan.info | fromjson | .binaries[]' PATH_TO_UPGRADE_TRANSACTION_JSON | while IFS= read -r url; do
+  go-getter "$url" .
+done
+```
+
+The output should look like this:
+
+```text
+2024/09/24 12:40:40 success!
+2024/09/24 12:40:42 success!
+2024/09/24 12:40:44 success!
+2024/09/24 12:40:46 success!
+```
+
 ## Submitting the upgrade on-chain
 
 The `MsgSoftwareUpgrade` can be submitted using the following command:
 
 ```bash
-poktrolld tx authz exec PATH_TO_TRANSACTION_JSON --from pnf
+poktrolld tx authz exec PATH_TO_UPGRADE_TRANSACTION_JSON --from pnf
 ```
 
 If the transaction has been accepted, upgrade plan can be viewed with this command:
 
 ```bash
 poktrolld query upgrade plan
+```
+
+## Cancelling the upgrade plan
+
+It is possible to cancel the upgrade before the upgrade plan height is reached. To do so, execute the following transaction:
+
+```bash
+poktrolld tx authz exec tools/scripts/upgrades/authz_cancel_upgrade_tx.json --gas=auto --from pnf
 ```
 
 ## Testing the Upgrade
