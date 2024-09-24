@@ -1,5 +1,3 @@
-//go:build integration
-
 package suites
 
 import (
@@ -12,21 +10,22 @@ import (
 
 	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/testutil/events"
-	"github.com/pokt-network/poktroll/testutil/integration"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 )
 
-type BaseIntegrationSuiteTestSuite struct {
+// baseIntegrationSuiteTestSuite is a test suite which embeds BaseIntegrationSuite.
+// **in order to test it**. It is intended to be embedded in other test suites.
+type baseIntegrationSuiteTestSuite struct {
 	BaseIntegrationSuite
 }
 
-func (s *BaseIntegrationSuite) SetupTest() {
+func (s *baseIntegrationSuiteTestSuite) SetupTest() {
 	// Reset app to nil before each test.
 	s.app = nil
 }
 
-func (s *BaseIntegrationSuiteTestSuite) TestGetApp_PanicsIfNil() {
+func (s *baseIntegrationSuiteTestSuite) TestGetApp_PanicsIfNil() {
 	require.Nil(s.T(), s.app)
 
 	// Expect the call to GetApp() to panic, defer recovery to check.
@@ -44,19 +43,19 @@ func (s *BaseIntegrationSuiteTestSuite) TestGetApp_PanicsIfNil() {
 	s.GetApp()
 }
 
-func (s *BaseIntegrationSuiteTestSuite) TestNewApp() {
+func (s *baseIntegrationSuiteTestSuite) TestNewApp() {
 	require.Nil(s.T(), s.app)
 
 	app := s.NewApp(s.T())
 	require.Same(s.T(), app, s.app)
 }
 
-func (s *BaseIntegrationSuiteTestSuite) TestGetApp_ReturnsApp() {
+func (s *baseIntegrationSuiteTestSuite) TestGetApp_ReturnsApp() {
 	app := s.NewApp(s.T())
 	require.Same(s.T(), app, s.GetApp())
 }
 
-func (s *BaseIntegrationSuiteTestSuite) TestSetApp() {
+func (s *baseIntegrationSuiteTestSuite) TestSetApp() {
 	// Construct an app.
 	app := s.NewApp(s.T())
 
@@ -67,19 +66,19 @@ func (s *BaseIntegrationSuiteTestSuite) TestSetApp() {
 	require.Same(s.T(), app, s.app)
 }
 
-func (s *BaseIntegrationSuiteTestSuite) TestGetPoktrollModuleNames() {
+func (s *baseIntegrationSuiteTestSuite) TestGetPoktrollModuleNames() {
 	moduleNames := s.GetPoktrollModuleNames()
 	require.Greater(s.T(), len(moduleNames), 0, "expected non-empty module names")
 	require.ElementsMatch(s.T(), s.poktrollModuleNames, moduleNames)
 }
 
-func (s *BaseIntegrationSuiteTestSuite) TestGetCosmosModuleNames() {
+func (s *baseIntegrationSuiteTestSuite) TestGetCosmosModuleNames() {
 	moduleNames := s.GetCosmosModuleNames()
 	require.Greater(s.T(), len(moduleNames), 0, "expected non-empty module names")
 	require.ElementsMatch(s.T(), s.cosmosModuleNames, moduleNames)
 }
 
-func (s *BaseIntegrationSuiteTestSuite) TestSdkCtx() {
+func (s *baseIntegrationSuiteTestSuite) TestSdkCtx() {
 	s.NewApp(s.T())
 	sdkCtx := s.SdkCtx()
 
@@ -87,7 +86,7 @@ func (s *BaseIntegrationSuiteTestSuite) TestSdkCtx() {
 	require.Greater(s.T(), sdkCtx.BlockHeight(), int64(0))
 }
 
-func (s *BaseIntegrationSuiteTestSuite) TestFundAddressAndGetBankQueryClient() {
+func (s *baseIntegrationSuiteTestSuite) TestFundAddressAndGetBankQueryClient() {
 	s.NewApp(s.T())
 	fundAmount := int64(1000)
 	fundAddr, err := cosmostypes.AccAddressFromBech32(sample.AccAddress())
@@ -114,7 +113,7 @@ func (s *BaseIntegrationSuiteTestSuite) TestFundAddressAndGetBankQueryClient() {
 	require.Equal(s.T(), fundAmount, balRes.GetBalance().Amount.Int64())
 }
 
-func (s *BaseIntegrationSuiteTestSuite) TestFilterLatestEventsWithNewMsgEventMatchFn() {
+func (s *baseIntegrationSuiteTestSuite) TestFilterLatestEventsWithNewMsgEventMatchFn() {
 	expectedNumEvents := 3
 
 	s.NewApp(s.T())
@@ -132,7 +131,7 @@ func (s *BaseIntegrationSuiteTestSuite) TestFilterLatestEventsWithNewMsgEventMat
 	require.Equal(s.T(), 0, len(s.SdkCtx().EventManager().Events()), "expected no events in the next block")
 }
 
-func (s *BaseIntegrationSuiteTestSuite) TestFilterLatestEventsWithNewEventTypeMatchFn() {
+func (s *baseIntegrationSuiteTestSuite) TestFilterLatestEventsWithNewEventTypeMatchFn() {
 	expectedNumEvents := 3
 	s.NewApp(s.T())
 
@@ -153,7 +152,7 @@ func (s *BaseIntegrationSuiteTestSuite) TestFilterLatestEventsWithNewEventTypeMa
 	require.Equal(s.T(), 0, len(s.SdkCtx().EventManager().Events()), "expected no events in the next block")
 }
 
-func (s *BaseIntegrationSuiteTestSuite) TestGetAttributeValue() {
+func (s *baseIntegrationSuiteTestSuite) TestGetAttributeValue() {
 	s.NewApp(s.T())
 	s.emitBankMsgSendEvents(1)
 
@@ -177,11 +176,11 @@ func (s *BaseIntegrationSuiteTestSuite) TestGetAttributeValue() {
 // emitBankMsgSendEvents causes the bank module to emit events as the result
 // of handling a MsgSend message which are intended to be used to make assertions
 // in tests.
-func (s *BaseIntegrationSuiteTestSuite) emitBankMsgSendEvents(expectedNumEvents int) {
+func (s *baseIntegrationSuiteTestSuite) emitBankMsgSendEvents(expectedNumEvents int) {
 	msgs := make([]cosmostypes.Msg, 0)
 
 	for i := 0; i < expectedNumEvents; i++ {
-		faucetAddr, err := cosmostypes.AccAddressFromBech32(integration.FaucetAddrStr)
+		faucetAddr, err := cosmostypes.AccAddressFromBech32(s.GetApp().GetFaucetBech32())
 		require.NoError(s.T(), err)
 
 		randomAddr, err := cosmostypes.AccAddressFromBech32(sample.AccAddress())
@@ -202,7 +201,7 @@ func (s *BaseIntegrationSuiteTestSuite) emitBankMsgSendEvents(expectedNumEvents 
 // emitPoktrollGatewayUnstakedEvents emits the given number of EventGatewayUnstaked
 // events to the event manager. These events are intended to be used to make
 // assertions in tests.
-func (s *BaseIntegrationSuiteTestSuite) emitPoktrollGatewayUnstakedEvents(expectedNumEvents int) {
+func (s *baseIntegrationSuiteTestSuite) emitPoktrollGatewayUnstakedEvents(expectedNumEvents int) {
 	for i := 0; i < expectedNumEvents; i++ {
 		err := s.SdkCtx().EventManager().EmitTypedEvent(&gatewaytypes.EventGatewayUnstaked{
 			Address: sample.AccAddress(),
@@ -213,5 +212,5 @@ func (s *BaseIntegrationSuiteTestSuite) emitPoktrollGatewayUnstakedEvents(expect
 
 // Run the test suite.
 func TestBaseIntegrationSuite(t *testing.T) {
-	suite.Run(t, new(BaseIntegrationSuiteTestSuite))
+	suite.Run(t, new(baseIntegrationSuiteTestSuite))
 }
