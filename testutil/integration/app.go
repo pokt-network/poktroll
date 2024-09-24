@@ -84,20 +84,10 @@ import (
 const appName = "poktroll-integration-app"
 
 var (
-	// FaucetAddrStr is a random address which is funded with FaucetAmountUpokt
-	// coins such that it can be used as a faucet for integration tests.
-	FaucetAddrStr = sample.AccAddress()
-	// FaucetAmountUpokt is the number of upokt coins that the faucet account
+	// faucetAmountUpokt is the number of upokt coins that the faucet account
 	// is funded with.
-	FaucetAmountUpokt = int64(math2.MaxInt64)
+	faucetAmountUpokt = int64(math2.MaxInt64)
 )
-
-// defaultIntegrationAppOptionFn is the default integration module function for the
-// integration app. It ensures that the bank module genesis state includes the faucet
-// account with a large balance.
-func defaultIntegrationAppOptionFn(cfg *IntegrationAppConfig) {
-	WithInitChainerModuleFn(newFaucetInitChainerFn(FaucetAddrStr, FaucetAmountUpokt))(cfg)
-}
 
 // App is a test application that can be used to test the behaviour when none
 // of the modules are mocked and their integration (cross module interaction)
@@ -116,6 +106,11 @@ type App struct {
 	keyRing           keyring.Keyring
 	ringClient        crypto.RingClient
 	preGeneratedAccts *testkeyring.PreGeneratedAccountIterator
+
+	// faucetBech32 is a random address which is selected as the primary faucet
+	// to fund other accounts. It is funded with faucetAmountUpokt coins such that
+	// it can be used as a faucet for integration tests.
+	faucetBech32 string
 
 	// Some default helper fixtures for general testing.
 	// They're publicly exposed and should/could be improved and expand on
@@ -148,8 +143,14 @@ func NewIntegrationApp(
 ) *App {
 	t.Helper()
 
+	// Prepare the faucet init-chainer module option function. It ensures that the
+	// bank module genesis state includes the faucet account with a large balance.
+	faucetBech32 := sample.AccAddress()
+	faucetInitChainerFn := newFaucetInitChainerFn(faucetBech32, faucetAmountUpokt)
+	initChainerModuleOptFn := WithInitChainerModuleFn(faucetInitChainerFn)
+
 	cfg := &IntegrationAppConfig{}
-	opts = append(opts, defaultIntegrationAppOptionFn)
+	opts = append(opts, initChainerModuleOptFn)
 	for _, opt := range opts {
 		opt(cfg)
 	}
@@ -673,10 +674,15 @@ func (app *App) RunMsg(t *testing.T, msg sdk.Msg) (tx.MsgResponse, error) {
 	return txMsgRes[0], err
 }
 
+// GetFaucetBech32 returns the faucet address used by the application.
+func (app *App) GetFaucetBech32() string {
+	return app.faucetBech32
+}
+
 // RunMsgs provides the ability to process messages by packing them into a tx and
 // driving the ABCI through block finalization. It returns a slice of tx.MsgResponse
-// (any) whose elements correspond to the request message of the same index. These
-// responses can be type asserted to the expected response type.
+// (any) whose elements correspond to the request message of the same index.
+// These responses can be type asserted to the expected response type.
 // If execution for ANY message fails, ALL failing messages' errors are joined and
 // returned. In order to run a message, the application must have a handler for it.
 // These handlers are registered on the application message service router.
@@ -851,7 +857,7 @@ func (app *App) nextBlockUpdateCtx() {
 // on-chain actors for use in tests. In creates a service, and stakes a supplier
 // and application as well as funding the bank balance of the default supplier.
 //
-// TODO_IMPROVE: Eliminate usage of and remove this function in favor of
+// TODO_TECHDEBT(@bryanchriswhite): Eliminate usage of and remove this function in favor of
 // integration.NewInitChainerModuleGenesisStateOptionFn.
 func (app *App) setupDefaultActorsState(
 	t *testing.T,

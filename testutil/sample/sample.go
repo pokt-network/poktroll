@@ -31,7 +31,9 @@ func AccAddressAndPubKeyEd25519() (string, cryptotypes.PubKey) {
 }
 
 // ValAddress returns a sample validator address, which has the prefix
-// of validators when converted to bech32.
+// of validators when converted to bech32. Validator addresses identify
+// the validator operator on-chain account and are derived using secp256k1.
+// See: https://docs.cosmos.network/main/learn/beginner/accounts#addresses
 func ValAddress() string {
 	_, pk := AccAddressAndPubKey()
 	validatorAddress := tmhash.SumTruncated(pk.Address())
@@ -40,9 +42,11 @@ func ValAddress() string {
 }
 
 // ConsAddress returns a sample consensus node address, which has the prefix
-// of consensus nodes when converted to bech32.
+// of consensus nodes when converted to bech32. Consensus addresses identify
+// the validator node in the consensus engine and are derived using ed25519.
+// See: https://docs.cosmos.network/main/learn/beginner/accounts#addresses
 func ConsAddress() string {
-	_, pk := AccAddressAndPubKey()
+	_, pk := AccAddressAndPubKeyEd25519()
 	consensusAddress := tmhash.SumTruncated(pk.Address())
 	valAddress := sdk.ConsAddress(consensusAddress)
 	return valAddress.String()

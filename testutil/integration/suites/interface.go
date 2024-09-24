@@ -1,5 +1,3 @@
-//go:build integration
-
 package suites
 
 import (
@@ -35,8 +33,9 @@ type IntegrationSuite interface {
 	// of the integration app.
 	GetBankQueryClient() banktypes.QueryClient
 
-	// FilterLatestEvents returns the most recent events in the event manager that
-	// match the given matchFn.
+	// FilterEvents returns the events from the event manager which match the given
+	// matchFn. Events are returned in reverse order, i.e. the most recent event is
+	// first.
 	FilterEvents(matchFn func(*cosmostypes.Event) bool) []*cosmostypes.Event
 	// LatestMatchingEvent returns the most recent event in the event manager that
 	// matches the given matchFn.

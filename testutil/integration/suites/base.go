@@ -1,5 +1,3 @@
-//go:build integration
-
 package suites
 
 import (
@@ -85,7 +83,7 @@ func (s *BaseIntegrationSuite) FundAddress(
 ) {
 	coinUpokt := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, amountUpokt)
 	sendMsg := &banktypes.MsgSend{
-		FromAddress: integration.FaucetAddrStr,
+		FromAddress: s.GetApp().GetFaucetBech32(),
 		ToAddress:   addr.String(),
 		Amount:      cosmostypes.NewCoins(coinUpokt),
 	}

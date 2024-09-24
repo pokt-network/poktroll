@@ -4542,7 +4542,7 @@ type MsgSubmitProof struct {
 
 	SupplierOperatorAddress string                 `protobuf:"bytes,1,opt,name=supplier_operator_address,json=supplierOperatorAddress,proto3" json:"supplier_operator_address,omitempty"`
 	SessionHeader           *session.SessionHeader `protobuf:"bytes,2,opt,name=session_header,json=sessionHeader,proto3" json:"session_header,omitempty"`
-	// serialized version of *smt.SparseMerkleClosestProof
+	// serialized version of *smt.SparseCompactMerkleClosestProof
 	Proof []byte `protobuf:"bytes,3,opt,name=proof,proto3" json:"proof,omitempty"`
 }
 
