@@ -12,12 +12,12 @@ import (
 	"github.com/pokt-network/poktroll/testutil/integration/suites"
 )
 
-// MsgUpdateParamsSuite is a test suite which exercises the MsgUpdateParams message
+// msgUpdateParamsSuite is a test suite which exercises the MsgUpdateParams message
 // for each poktroll module via authz, as would be done in a live network in order
 // to update **all** parameter values for a given module.
 // NB: Not to be confused with MsgUpdateParam (singular), which updates a single
 // parameter value for a module.
-type MsgUpdateParamsSuite struct {
+type msgUpdateParamsSuite struct {
 	suites.ParamsSuite
 
 	unauthorizedAddr cosmostypes.AccAddress
@@ -29,10 +29,10 @@ type MsgUpdateParamsSuite struct {
 // reflection to construct the messages and make assertions about the results to
 // improve maintainability and reduce boilerplate.
 func TestUpdateParamsSuite(t *testing.T) {
-	suite.Run(t, &MsgUpdateParamsSuite{})
+	suite.Run(t, &msgUpdateParamsSuite{})
 }
 
-func (s *MsgUpdateParamsSuite) SetupTest() {
+func (s *msgUpdateParamsSuite) SetupTest() {
 	// Create a fresh integration app for each test.
 	s.NewApp(s.T())
 
@@ -46,7 +46,7 @@ func (s *MsgUpdateParamsSuite) SetupTest() {
 	s.unauthorizedAddr = nextAcct.Address
 }
 
-func (s *MsgUpdateParamsSuite) TestUnauthorizedMsgUpdateParamsFails() {
+func (s *msgUpdateParamsSuite) TestUnauthorizedMsgUpdateParamsFails() {
 	for _, moduleName := range s.GetPoktrollModuleNames() {
 		moduleCfg := suites.ModuleParamConfigMap[moduleName]
 
@@ -69,7 +69,7 @@ func (s *MsgUpdateParamsSuite) TestUnauthorizedMsgUpdateParamsFails() {
 	}
 }
 
-func (s *MsgUpdateParamsSuite) TestAuthorizedMsgUpdateParamsSucceeds() {
+func (s *msgUpdateParamsSuite) TestAuthorizedMsgUpdateParamsSucceeds() {
 	for _, moduleName := range s.GetPoktrollModuleNames() {
 		moduleCfg := suites.ModuleParamConfigMap[moduleName]
 
