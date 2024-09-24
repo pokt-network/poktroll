@@ -32,7 +32,7 @@ var (
 )
 
 type RelayMiningIntegrationTestSuite struct {
-	suites.UpdateParamsSuite
+	suites.ParamsSuite
 }
 
 func (s *RelayMiningIntegrationTestSuite) SetupTest() {

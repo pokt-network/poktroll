@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"testing"
 
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/authz"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -14,11 +15,22 @@ import (
 	"github.com/pokt-network/poktroll/testutil/integration/suites"
 )
 
+// MsgUpdateParamSuite is a test suite which exercises the MsgUpdateParam message
+// for each poktroll module via authz, as would be done in a live network in order
+// to update **individual** parameter values for a given module.
+// NB: Not to be confused with MsgUpdateParams (plural), which updates all parameter
+// values for a module.
 type MsgUpdateParamSuite struct {
-	suites.UpdateParamsSuite
+	suites.ParamsSuite
+
+	unauthorizedAddr cosmostypes.AccAddress
 }
 
-func (s *MsgUpdateParamSuite) SetupTest() {
+func TestUpdateParamSuite(t *testing.T) {
+	suite.Run(t, new(MsgUpdateParamSuite))
+}
+
+func (s *MsgUpdateParamSuite) SetupSubTest() {
 	// Create a fresh integration app for each test.
 	s.NewApp(s.T())
 
@@ -29,7 +41,7 @@ func (s *MsgUpdateParamSuite) SetupTest() {
 	// Allocate an address for unauthorized user.
 	nextAcct, ok := s.GetApp().GetPreGeneratedAccounts().Next()
 	require.True(s.T(), ok, "insufficient pre-generated accounts available")
-	unauthorizedAddr = nextAcct.Address
+	s.unauthorizedAddr = nextAcct.Address
 }
 
 func (s *MsgUpdateParamSuite) TestUnauthorizedMsgUpdateParamFails() {
@@ -46,6 +58,10 @@ func (s *MsgUpdateParamSuite) TestUnauthorizedMsgUpdateParamFails() {
 
 			testName := fmt.Sprintf("%s_%s", moduleName, fieldName)
 			s.T().Run(testName, func(t *testing.T) {
+				// Reset the app state in order to assert that each module
+				// param is updated correctly.
+				s.SetupSubTest()
+
 				// Assert that the module's params are set to their default values.
 				s.RequireModuleHasDefaultParams(t, moduleName)
 
@@ -53,7 +69,7 @@ func (s *MsgUpdateParamSuite) TestUnauthorizedMsgUpdateParamFails() {
 					moduleName,
 					fieldName,
 					fieldValue.Interface(),
-					unauthorizedAddr,
+					s.unauthorizedAddr,
 				)
 				require.ErrorContains(t, err, authz.ErrNoAuthorizationFound.Error())
 				require.Nil(t, updateResBz)
@@ -78,7 +94,7 @@ func (s *MsgUpdateParamSuite) TestAuthorizedMsgUpdateParamSucceeds() {
 			s.T().Run(testName, func(t *testing.T) {
 				// Reset the app state in order to assert that each module
 				// param is updated correctly.
-				s.SetupTest()
+				s.SetupSubTest()
 
 				// Assert that the module's params are set to their default values.
 				s.RequireModuleHasDefaultParams(t, moduleName)
@@ -98,7 +114,13 @@ func (s *MsgUpdateParamSuite) TestAuthorizedMsgUpdateParamSucceeds() {
 				// These result byte slices are accumulated for each message in the MsgExec and
 				// set on the MsgExecResponse#Results field.
 				//
-				//I would've expected the following to work, but it does not:
+				// - https://github.com/cosmos/cosmos-sdk/blob/v0.50.9/x/authz/keeper/msg_server.go#L120
+				// - https://github.com/cosmos/cosmos-sdk/blob/v0.50.9/x/authz/keeper/keeper.go#L166
+				// - https://github.com/cosmos/cosmos-sdk/blob/v0.50.9/baseapp/msg_service_router.go#L55
+				// - https://github.com/cosmos/cosmos-sdk/blob/v0.50.9/baseapp/msg_service_router.go#L198
+				// - https://github.com/cosmos/cosmos-sdk/blob/v0.50.9/types/result.go#L213
+				//
+				// I (@bryanchriswhite) would've expected the following to work, but it does not:
 				//
 				// updateResValue := reflect.New(reflect.TypeOf(moduleCfg.MsgUpdateParamResponse))
 				// // NB: using proto.Unmarshal here because authz seems to use
@@ -118,8 +140,4 @@ func (s *MsgUpdateParamSuite) TestAuthorizedMsgUpdateParamSucceeds() {
 			})
 		}
 	}
-}
-
-func TestUpdateParamSuite(t *testing.T) {
-	suite.Run(t, new(MsgUpdateParamSuite))
 }

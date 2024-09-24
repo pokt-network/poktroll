@@ -40,7 +40,7 @@ func (s *AuthzIntegrationSuite) RunAuthzGrantMsgForPoktrollModules(
 
 	var foundModuleGrants = make(map[string]int)
 	for _, moduleName := range moduleNames {
-		msgType := fmt.Sprintf(poktrollMsgTypeFormat, moduleName, msgName)
+		msgType := fmtPoktrollMsgType(moduleName, msgName)
 		authorization := &authz.GenericAuthorization{Msg: msgType}
 		s.RunAuthzGrantMsg(t, granterAddr, granteeAddr, authorization)
 
@@ -55,6 +55,7 @@ func (s *AuthzIntegrationSuite) RunAuthzGrantMsgForPoktrollModules(
 		require.NoError(t, err)
 		require.NotNil(t, queryGrantsRes)
 
+		// Count the number of grants found for each module.
 		for range queryGrantsRes.GetGrants() {
 			foundModuleGrants[moduleName]++
 		}
@@ -66,8 +67,8 @@ func (s *AuthzIntegrationSuite) RunAuthzGrantMsgForPoktrollModules(
 	}
 }
 
-// RunAuthzGrantMsg creates an on-chain authz grant for the given granter and
-// grantee addresses and authorization object.
+// RunAuthzGrantMsg creates an on-chain authz grant from the given granter to the
+// grantee addresses for the authorization object provided.
 func (s *AuthzIntegrationSuite) RunAuthzGrantMsg(
 	t *testing.T,
 	granterAddr,
@@ -106,4 +107,9 @@ func (s *AuthzIntegrationSuite) RunAuthzExecMsg(
 	}
 
 	return msgRespsBz, nil
+}
+
+// fmtPoktrollMsgType returns the formatted message type for a poktroll module.
+func fmtPoktrollMsgType(moduleName, msgName string) string {
+	return fmt.Sprintf(poktrollMsgTypeFormat, moduleName, msgName)
 }

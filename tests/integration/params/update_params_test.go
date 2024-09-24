@@ -14,10 +14,24 @@ import (
 	"github.com/pokt-network/poktroll/testutil/integration/suites"
 )
 
-var unauthorizedAddr cosmostypes.AccAddress
-
+// MsgUpdateParamsSuite is a test suite which exercises the MsgUpdateParams message
+// for each poktroll module via authz, as would be done in a live network in order
+// to update **all** parameter values for a given module.
+// NB: Not to be confused with MsgUpdateParam (singular), which updates a single
+// parameter value for a module.
 type MsgUpdateParamsSuite struct {
-	suites.UpdateParamsSuite
+	suites.ParamsSuite
+
+	unauthorizedAddr cosmostypes.AccAddress
+}
+
+// TestUpdateParamsSuite uses the ModuleParamConfig for each module to test the
+// MsgUpdateParams message execution via authz on an integration app, as would be
+// done in a live network in order to update module parameter values. It uses
+// reflection to construct the messages and make assertions about the results to
+// improve maintainability and reduce boilerplate.
+func TestUpdateParamsSuite(t *testing.T) {
+	suite.Run(t, &MsgUpdateParamsSuite{})
 }
 
 func (s *MsgUpdateParamsSuite) SetupTest() {
@@ -31,7 +45,7 @@ func (s *MsgUpdateParamsSuite) SetupTest() {
 	// Allocate an address for unauthorized user.
 	nextAcct, ok := s.GetApp().GetPreGeneratedAccounts().Next()
 	require.True(s.T(), ok, "insufficient pre-generated accounts available")
-	unauthorizedAddr = nextAcct.Address
+	s.unauthorizedAddr = nextAcct.Address
 }
 
 func (s *MsgUpdateParamsSuite) TestUnauthorizedMsgUpdateParamsFails() {
@@ -44,16 +58,13 @@ func (s *MsgUpdateParamsSuite) TestUnauthorizedMsgUpdateParamsFails() {
 
 			// Construct a new MsgUpdateParams and set its authority and params fields.
 			expectedParams := moduleCfg.ValidParams
-			msgUpdateParamsValue := reflect.New(reflect.TypeOf(moduleCfg.MsgUpdateParams))
-			msgUpdateParamsValue.Elem().
-				FieldByName("Authority").
-				SetString(suites.AuthorityAddr.String())
-			msgUpdateParamsValue.Elem().
-				FieldByName("Params").
-				Set(reflect.ValueOf(expectedParams))
-
-			msgUpdateParams := msgUpdateParamsValue.Interface().(cosmostypes.Msg)
-			updateRes, err := s.RunUpdateParamsAsSigner(t, msgUpdateParams, unauthorizedAddr)
+			msgUpdateParamsType := reflect.TypeOf(moduleCfg.ParamsMsgs.MsgUpdateParams)
+			msgUpdateParams := suites.NewMsgUpdateParams(
+				msgUpdateParamsType,
+				s.AuthorityAddr.String(),
+				expectedParams,
+			)
+			updateRes, err := s.RunUpdateParamsAsSigner(t, msgUpdateParams, s.unauthorizedAddr)
 			require.ErrorContains(t, err, authz.ErrNoAuthorizationFound.Error())
 			require.Nil(t, updateRes)
 		})
@@ -70,18 +81,14 @@ func (s *MsgUpdateParamsSuite) TestAuthorizedMsgUpdateParamsSucceeds() {
 
 			// Construct a new MsgUpdateParams and set its authority and params fields.
 			expectedParams := moduleCfg.ValidParams
-			msgUpdateParamsValue := reflect.New(reflect.TypeOf(moduleCfg.MsgUpdateParams))
-			msgUpdateParamsValue.Elem().
-				FieldByName("Authority").
-				SetString(suites.AuthorityAddr.String())
-			msgUpdateParamsValue.Elem().
-				FieldByName("Params").
-				Set(reflect.ValueOf(expectedParams))
-			//expectedParams := reflect.ValueOf(moduleCfg.ValidParams).FieldByName("Params")
-
+			msgUpdateParamsType := reflect.TypeOf(moduleCfg.ParamsMsgs.MsgUpdateParams)
+			msgUpdateParams := suites.NewMsgUpdateParams(
+				msgUpdateParamsType,
+				s.AuthorityAddr.String(),
+				expectedParams,
+			)
 			// TODO_IMPROVE: add a Params field to the MsgUpdateParamsResponse
 			// and assert that it reflects the updated params.
-			msgUpdateParams := msgUpdateParamsValue.Interface().(cosmostypes.Msg)
 			_, err := s.RunUpdateParams(t, msgUpdateParams)
 			require.NoError(t, err)
 
@@ -97,8 +104,4 @@ func (s *MsgUpdateParamsSuite) TestAuthorizedMsgUpdateParamsSucceeds() {
 			)
 		})
 	}
-}
-
-func TestUpdateParamsSuite(t *testing.T) {
-	suite.Run(t, &MsgUpdateParamsSuite{})
 }
