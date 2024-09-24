@@ -13,6 +13,7 @@ import (
 	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/testutil/integration"
+	"github.com/pokt-network/poktroll/testutil/integration/suites"
 	"github.com/pokt-network/poktroll/testutil/testrelayer"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
@@ -28,20 +29,14 @@ var (
 )
 
 type RelayMiningIntegrationTestSuite struct {
-	// TODO_BETA(#826): wait for integration app & suites refactor to be merged.
-	// Once suites.ParamsSuite is avialable, embed it here. In the meantime, we
-	// MUST embed suite.Suite to avoid compilation errors.
-	//
-	// suites.ParamsSuite
-	suite.Suite
+	suites.ParamsSuite
 }
 
 func (s *RelayMiningIntegrationTestSuite) SetupTest() {
 	// Construct a fresh integration app for each test.
-	// TODO_BETA(#826): wait for integration app & suites refactor to be merged.
-	// s.NewApp(s.T())
-	// s.SetupTestAccounts()
-	// s.SetupTestAuthzGrants()
+	s.NewApp(s.T())
+	s.SetupTestAuthzAccounts()
+	s.SetupTestAuthzGrants()
 }
 
 func (s *RelayMiningIntegrationTestSuite) TestComputeNewDifficultyHash_RewardsReflectWorkCompleted() {
@@ -184,6 +179,5 @@ func prepareRealClaim(
 }
 
 func TestRelayMiningIntegrationSuite(t *testing.T) {
-	t.Skip("TODO_BETA(#826): wait for integration app & suites refactor to be merged.")
 	suite.Run(t, new(RelayMiningIntegrationTestSuite))
 }
