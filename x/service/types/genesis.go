@@ -5,7 +5,8 @@ import sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 // DefaultGenesis returns the default genesis state
 func DefaultGenesis() *GenesisState {
 	return &GenesisState{
-		ServiceList: []sharedtypes.Service{},
+		ServiceList:               []sharedtypes.Service{},
+		RelayMiningDifficultyList: []RelayMiningDifficulty{},
 		// this line is used by starport scaffolding # genesis/types/default
 		Params: DefaultParams(),
 	}
@@ -28,6 +29,17 @@ func (gs GenesisState) Validate() error {
 			return ErrServiceDuplicateIndex.Wrapf("duplicated name for service: %v", service)
 		}
 		serviceNameMap[serviceName] = struct{}{}
+	}
+
+	// Check for duplicated index in relayMiningDifficulty
+	relayMiningDifficultyIndexMap := make(map[string]struct{})
+
+	for _, elem := range gs.RelayMiningDifficultyList {
+		index := string(RelayMiningDifficultyKey(elem.ServiceId))
+		if _, ok := relayMiningDifficultyIndexMap[index]; ok {
+			return ErrServiceDuplicateIndex.Wrapf("duplicated index for relayMiningDifficulty: %s", index)
+		}
+		relayMiningDifficultyIndexMap[index] = struct{}{}
 	}
 	// this line is used by starport scaffolding # genesis/types/validate
 

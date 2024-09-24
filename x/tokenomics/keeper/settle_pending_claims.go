@@ -66,9 +66,9 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 			return settledResult, expiredResult, err
 		}
 
-		// DEV_NOTE: We are assuming that (numRelays := numComputeUnits * service.ComputeUnitsPerRelay)
+		// DEV_NOTE: We are assuming that (numClaimComputeUnits := numComputeUnits * service.ComputeUnitsPerRelay)
 		// because this code path is only reached if that has already been validated.
-		numClaimComputeUnits, err = claim.GetNumComputeUnits()
+		numClaimComputeUnits, err = claim.GetNumClaimedComputeUnits()
 		if err != nil {
 			return settledResult, expiredResult, err
 		}
@@ -113,10 +113,11 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 				// Proof was required but is invalid or not found.
 				// Emit an event that a claim has expired and being removed without being settled.
 				claimExpiredEvent := tokenomicstypes.EventClaimExpired{
-					Claim:            &claim,
-					ExpirationReason: expirationReason,
-					NumRelays:        numClaimRelays,
-					NumComputeUnits:  numClaimComputeUnits,
+					Claim:                  &claim,
+					ExpirationReason:       expirationReason,
+					NumRelays:              numClaimRelays,
+					NumClaimedComputeUnits: numClaimComputeUnits,
+					// TODO_FOLLOWUP: Add NumEstimatedComputeUnits and ClaimedAmountUpokt
 				}
 				if err = ctx.EventManager().EmitTypedEvent(&claimExpiredEvent); err != nil {
 					return settledResult, expiredResult, err
@@ -159,9 +160,10 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 		}
 
 		claimSettledEvent := tokenomicstypes.EventClaimSettled{
-			Claim:            &claim,
-			NumRelays:        numClaimRelays,
-			NumComputeUnits:  numClaimComputeUnits,
+			Claim:                  &claim,
+			NumRelays:              numClaimRelays,
+			NumClaimedComputeUnits: numClaimComputeUnits,
+			// TODO_FOLLOWUP: Add NumEstimatedComputeUnits and ClaimedAmountUpokt
 			ProofRequirement: proofRequirement,
 		}
 
@@ -170,10 +172,11 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 		}
 
 		if err = ctx.EventManager().EmitTypedEvent(&prooftypes.EventProofUpdated{
-			Claim:           &claim,
-			Proof:           nil,
-			NumRelays:       0,
-			NumComputeUnits: 0,
+			Claim:                  &claim,
+			Proof:                  nil,
+			NumRelays:              0,
+			NumClaimedComputeUnits: 0,
+			// TODO_FOLLOWUP: Add NumEstimatedComputeUnits and ClaimedAmountUpokt
 		}); err != nil {
 			return settledResult, expiredResult, err
 		}

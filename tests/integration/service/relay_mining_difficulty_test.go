@@ -16,10 +16,10 @@ import (
 	testutil "github.com/pokt-network/poktroll/testutil/integration"
 	"github.com/pokt-network/poktroll/testutil/testrelayer"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 func init() {
@@ -100,8 +100,8 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 
 	// Check that the expected events are emitted
 	events := sdkCtx.EventManager().Events()
-	relayMiningEvents := testutilevents.FilterEvents[*tokenomicstypes.EventRelayMiningDifficultyUpdated](t,
-		events, "poktroll.tokenomics.EventRelayMiningDifficultyUpdated")
+	relayMiningEvents := testutilevents.FilterEvents[*servicetypes.EventRelayMiningDifficultyUpdated](t,
+		events, "poktroll.service.EventRelayMiningDifficultyUpdated")
 	require.Len(t, relayMiningEvents, 1, "unexpected number of relay mining difficulty updated events")
 	relayMiningEvent := relayMiningEvents[0]
 	require.Equal(t, "svc1", relayMiningEvent.ServiceId)

@@ -49,8 +49,6 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 
 	// Parameter name must be supported by this module.
 	switch msg.Name {
-	case ParamRelayDifficultyTargetHash:
-		return msg.paramTypeIsBytes()
 	case ParamProofRequestProbability:
 		return msg.paramTypeIsFloat()
 	case ParamProofRequirementThreshold:

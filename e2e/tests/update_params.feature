@@ -17,12 +17,11 @@ Feature: Params Namespace
     And all "proof" module params are set to their default values
     And an authz grant from the "gov" "module" account to the "pnf" "user" account for the "/poktroll.proof.MsgUpdateParams" message exists
     When the "pnf" account sends an authz exec message to update all "proof" module params
-      | name                         | value                                                            | type  |
-      | relay_difficulty_target_hash | 00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff | bytes |
-      | proof_request_probability    | 0.1                                                              | float |
-      | proof_requirement_threshold  | 100                                                              | coin  |
-      | proof_missing_penalty        | 500                                                              | coin  |
-      | proof_submission_fee         | 5000000                                                          | coin  |
+      | name                         | value   | type  |
+      | proof_request_probability    | 0.1     | float |
+      | proof_requirement_threshold  | 100     | coin  |
+      | proof_missing_penalty        | 500     | coin  |
+      | proof_submission_fee         | 5000000 | coin  |
     Then all "proof" module params should be updated
 
   # NB: If you are reading this and the proof module has parameters

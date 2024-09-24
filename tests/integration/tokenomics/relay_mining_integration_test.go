@@ -16,9 +16,9 @@ import (
 	"github.com/pokt-network/poktroll/testutil/testrelayer"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
@@ -118,7 +118,7 @@ func prepareRealClaim(
 	supplier *sharedtypes.Supplier,
 	session *sessiontypes.Session,
 	service *sharedtypes.Service,
-	relayMiningDifficulty *tokenomicstypes.RelayMiningDifficulty,
+	relayMiningDifficulty *servicetypes.RelayMiningDifficulty,
 ) *prooftypes.Claim {
 	t.Helper()
 
