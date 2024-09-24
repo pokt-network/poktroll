@@ -399,9 +399,9 @@ func scaleRelaysFromActualToTarget(t *testing.T, relayDifficultyProbability *big
 func TestRelayDifficulty_EnsureRelayMiningMultiplierIsProportional(t *testing.T) {
 	// Target Num Relays is the target number of volume applicable relays a session tree should have.
 	const (
-		targetNumRelays   = uint64(10e2) // Target number of volume applicable relays
-		lowVolumeService  = 1e4          // Number of actual off-chain relays serviced by a RelayMiner
-		highVolumeService = 1e6          // Number of actual off-chain relays serviced by a RelayMiner
+		targetNumRelays   = uint64(10e3) // Target number of volume applicable relays
+		lowVolumeService  = 1e5          // Number of actual off-chain relays serviced by a RelayMiner
+		highVolumeService = 1e7          // Number of actual off-chain relays serviced by a RelayMiner
 		allowableDelta    = 0.05         // Allow a 5% error margin between estimated probabilities and results
 	)
 
