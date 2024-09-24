@@ -24,7 +24,8 @@ func TestClaim_Show(t *testing.T) {
 	numSuppliers := 3
 	numApps := 3
 
-	net, claims, clientCtx := networkWithClaimObjects(t, numSessions, numApps, numSuppliers)
+	sharedParams := sharedtypes.DefaultParams()
+	net, claims, clientCtx := networkWithClaimObjects(t, numSessions, numApps, numSuppliers, &sharedParams)
 
 	commonArgs := []string{
 		fmt.Sprintf("--%s=json", cometcli.OutputFlag),
@@ -122,17 +123,30 @@ func TestClaim_Show(t *testing.T) {
 func TestClaim_List(t *testing.T) {
 	numSuppliers := 4
 	numApps := 1
+	numBlocksPerSession := 4
+	sharedParams := &sharedtypes.Params{
+		NumBlocksPerSession:                uint64(numBlocksPerSession),
+		GracePeriodEndOffsetBlocks:         1,
+		ClaimWindowOpenOffsetBlocks:        1,
+		ClaimWindowCloseOffsetBlocks:       4,
+		ProofWindowOpenOffsetBlocks:        0,
+		ProofWindowCloseOffsetBlocks:       4,
+		SupplierUnbondingPeriodSessions:    1,
+		ApplicationUnbondingPeriodSessions: 1,
+		ComputeUnitsToTokensMultiplier:     42,
+	}
+
 	// TODO_HACK(@Olshansk): Due to the bug found in `networkWithClaimObjects`, this
 	// is a temporary workaround instead of setting numSessions to its own
 	// independent constant, which requires us to temporarily align the
 	// with the num blocks per session. See the `forloop` in `networkWithClaimObjects`
 	// that has a TODO_HACK as well.
-	require.Equal(t, 0, numSuppliers*numApps%sharedtypes.DefaultNumBlocksPerSession)
+	require.Equal(t, 0, numSuppliers*numApps%numBlocksPerSession)
 
-	numSessions := numSuppliers * numApps / sharedtypes.DefaultNumBlocksPerSession
+	numSessions := numSuppliers * numApps / numBlocksPerSession
 
 	// Submitting one claim per block for simplicity
-	numClaimsPerSession := sharedtypes.DefaultNumBlocksPerSession
+	numClaimsPerSession := numBlocksPerSession
 	totalClaims := numSessions * numClaimsPerSession
 
 	// TODO_FLAKY(@bryanchriswhite): The `networkWithClaimObjects is flaky because
@@ -145,7 +159,7 @@ func TestClaim_List(t *testing.T) {
 			t.Errorf("Test panicked: %s", r)
 		}
 	}()
-	net, claims, clientCtx := networkWithClaimObjects(t, numSessions, numSuppliers, numApps)
+	net, claims, clientCtx := networkWithClaimObjects(t, numSessions, numSuppliers, numApps, sharedParams)
 
 	prepareArgs := func(next []byte, offset, limit uint64, total bool) []string {
 		args := []string{

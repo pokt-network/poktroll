@@ -776,8 +776,8 @@ func (s *suite) getSupplierUnbondingHeight(accName string) int64 {
 	var resp sharedtypes.QueryParamsResponse
 	responseBz := []byte(strings.TrimSpace(res.Stdout))
 	s.cdc.MustUnmarshalJSON(responseBz, &resp)
-	unbondingHeight := shared.GetSupplierUnbondingHeight(&resp.Params, supplier)
-	return unbondingHeight
+
+	return shared.GetSupplierUnbondingHeight(&resp.Params, supplier)
 }
 
 // getApplicationInfo returns the application information for a given application address.

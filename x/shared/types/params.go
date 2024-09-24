@@ -5,11 +5,11 @@ import (
 )
 
 const (
-	DefaultNumBlocksPerSession                = 4
+	DefaultNumBlocksPerSession                = 10
 	ParamNumBlocksPerSession                  = "num_blocks_per_session"
 	DefaultGracePeriodEndOffsetBlocks         = 1
 	ParamGracePeriodEndOffsetBlocks           = "grace_period_end_offset_blocks"
-	DefaultClaimWindowOpenOffsetBlocks        = 2
+	DefaultClaimWindowOpenOffsetBlocks        = 1
 	ParamClaimWindowOpenOffsetBlocks          = "claim_window_open_offset_blocks"
 	DefaultClaimWindowCloseOffsetBlocks       = 4
 	ParamClaimWindowCloseOffsetBlocks         = "claim_window_close_offset_blocks"
@@ -17,9 +17,9 @@ const (
 	ParamProofWindowOpenOffsetBlocks          = "proof_window_open_offset_blocks"
 	DefaultProofWindowCloseOffsetBlocks       = 4
 	ParamProofWindowCloseOffsetBlocks         = "proof_window_close_offset_blocks"
-	DefaultSupplierUnbondingPeriodSessions    = 4 // 4 sessions
+	DefaultSupplierUnbondingPeriodSessions    = 1 // 1 session
 	ParamSupplierUnbondingPeriodSessions      = "supplier_unbonding_period_sessions"
-	DefaultApplicationUnbondingPeriodSessions = 4 // 4 sessions
+	DefaultApplicationUnbondingPeriodSessions = 1 // 1 session
 	ParamApplicationUnbondingPeriodSessions   = "application_unbonding_period_sessions"
 	DefaultComputeUnitsToTokensMultiplier     = 42 // TODO_MAINNET: Determine the default value.
 	ParamComputeUnitsToTokensMultiplier       = "compute_units_to_tokens_multiplier"
