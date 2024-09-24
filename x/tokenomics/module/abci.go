@@ -3,16 +3,20 @@ package tokenomics
 import (
 	"fmt"
 
+	cosmostelemetry "github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/telemetry"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	"github.com/pokt-network/poktroll/x/tokenomics/keeper"
+	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 // EndBlocker called at every block and settles all pending claims.
 func EndBlocker(ctx sdk.Context, k keeper.Keeper) (err error) {
+	defer cosmostelemetry.ModuleMeasureSince(types.ModuleName, cosmostelemetry.Now(), cosmostelemetry.MetricKeyEndBlocker)
+
 	logger := k.Logger().With("method", "EndBlocker")
 
 	// NB: There are two main reasons why we settle expiring claims in the end
