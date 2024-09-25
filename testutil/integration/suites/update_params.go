@@ -111,9 +111,11 @@ type ParamsSuite struct {
 
 	// AuthorityAddr is the cosmos account address of the authority for the integration
 	// app. It is used as the **granter** of authz grants for parameter update messages.
+	// In practice, is an address sourced by an on-chain string and no one has the private key.
 	AuthorityAddr cosmostypes.AccAddress
 	// AuthorizedAddr is the cosmos account address which is the **grantee** of authz
 	// grants for parameter update messages.
+	// In practice, it is the address of the foundation or the DAO.
 	AuthorizedAddr cosmostypes.AccAddress
 }
 
