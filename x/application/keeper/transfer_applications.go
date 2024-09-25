@@ -11,10 +11,12 @@ import (
 	"github.com/pokt-network/poktroll/x/shared"
 )
 
-// EndBlockerTransferApplication completes pending application transfers at the
-// end of the session in which they began by copying the current state of the source
-// application onto a new destination application, unstaking (removing) the source,
-// and staking (storing) the destination.
+// EndBlockerTransferApplication completes pending application transfers.
+// This always happens on the last block of a session during which the transfer started.
+// It is accomplished by:
+//  1. Copying the current state of the source app onto a new destination app
+//  2. Unstaking (removing) the source app
+//  3. Staking (storing) the destination app
 func (k Keeper) EndBlockerTransferApplication(ctx context.Context) error {
 	isSuccessful := false
 	defer telemetry.EventSuccessCounter(
@@ -28,13 +30,14 @@ func (k Keeper) EndBlockerTransferApplication(ctx context.Context) error {
 	sharedParams := k.sharedKeeper.GetParams(ctx)
 	logger := k.Logger().With("method", "EndBlockerTransferApplication")
 
-	// Only process application transfers at the end of the session.
+	// Only process application transfers at the end of the session in
+	// order toto avoid inconsistent/unpredictable mid-session behavior.
 	if !shared.IsSessionEndHeight(&sharedParams, currentHeight) {
 		return nil
 	}
 
 	// Iterate over all applications and transfer the ones that have finished the transfer period.
-	// TODO_IMPROVE: Use an index to iterate over the applications that have initiated
+	// TODO_MAINNET: Use an index to iterate over the applications that have initiated
 	// the transfer action instead of iterating over all of them.
 	for _, srcApp := range k.GetAllApplications(ctx) {
 		// Ignore applications that have not initiated the transfer action.
@@ -42,7 +45,9 @@ func (k Keeper) EndBlockerTransferApplication(ctx context.Context) error {
 			continue
 		}
 
-		// Ignore applications that have initiated a transfer but still active
+		// Ignore applications that have initiated a transfer but still active.
+		// This spans the period from the end of the session in which the transfer
+		// began to the end of settlement for that session.
 		transferEndHeight := types.GetApplicationTransferHeight(&sharedParams, &srcApp)
 		if sdkCtx.BlockHeight() < transferEndHeight {
 			continue
@@ -80,6 +85,16 @@ func (k Keeper) EndBlockerTransferApplication(ctx context.Context) error {
 // delegatees and service configs of the destination application are set to the union of the
 // source and destination applications' delegatees and service configs. It is intended
 // to be called during the EndBlock ABCI method.
+
+// transferApplication transfers srcApp to srcApp.PendingTransfer.destination.
+// If the destination application does not exist, it is created.
+// If it does exist, then destination app is updated as follows:
+//   - The application stake is incremented by the stake of the source application
+//   - The delegatees and service configs of the destination application are set to the union of the src and dest
+//   - The pending undelegations of the source are merged into the destination.
+//     Duplicate pending undelegations resolve to the destination application's.
+//
+// It is intended to be called during the EndBlock ABCI method.
 func (k Keeper) transferApplication(ctx context.Context, srcApp types.Application) error {
 	logger := k.Logger().With("method", "transferApplication")
 
@@ -90,15 +105,21 @@ func (k Keeper) transferApplication(ctx context.Context, srcApp types.Applicatio
 		return types.ErrAppIsUnstaking.Wrapf("cannot transfer stake of unbonding source application (%s)", srcApp.GetAddress())
 	}
 
-	// Check if the destination application already exists. If not, derive it from
-	// the source application. If so, "merge" the source application into the
-	// destination by summing stake amounts and taking the union of delegations
-	// and service configs.
+	// Check if the destination application already exists:
+	// If it does not: derive it from the source application.
+	// If it does: "merge" the src app into the dst app by:
+	// - summing stake amounts
+	// - taking the union of delegations and service configs
 	dstApp, isDstFound := k.GetApplication(ctx, srcApp.GetPendingTransfer().GetDestinationAddress())
 	if !isDstFound {
 		dstApp = srcApp //intentional copy
 		dstApp.Address = srcApp.GetPendingTransfer().GetDestinationAddress()
 		dstApp.PendingTransfer = nil
+
+		logger.Info(fmt.Sprintf(
+			"transferring application from %q to new application %q",
+			srcApp.GetAddress(), dstApp.GetAddress(),
+		))
 	} else {
 		srcStakeSumCoin := dstApp.GetStake().Add(*dstApp.GetStake())
 		dstApp.Stake = &srcStakeSumCoin
@@ -106,6 +127,11 @@ func (k Keeper) transferApplication(ctx context.Context, srcApp types.Applicatio
 		MergeAppDelegatees(&srcApp, &dstApp)
 		MergeAppPendingUndelegations(&srcApp, &dstApp)
 		MergeAppServiceConfigs(&srcApp, &dstApp)
+
+		logger.Info(fmt.Sprintf(
+			"transferring application from %q to existing application %q",
+			srcApp.GetAddress(), dstApp.GetAddress(),
+		))
 	}
 
 	// Remove srcApp from the store

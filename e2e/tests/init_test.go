@@ -45,6 +45,8 @@ import (
 
 const (
 	numQueryRetries = uint8(3)
+	unbondingPeriod = "unbonding"
+	transferPeriod  = "transfer"
 )
 
 var (
@@ -317,13 +319,13 @@ func (s *suite) getConfigFileContent(
 ) string {
 	var configContent string
 	switch actorType {
-	case "application":
+	case apptypes.ModuleName:
 		configContent = fmt.Sprintf(`
 		stake_amount: %dupokt
 		service_ids:
 		  - %s`,
 			amount, serviceId)
-	case "supplier":
+	case suppliertypes.ModuleName:
 		configContent = fmt.Sprintf(`
 			owner_address: %s
 			operator_address: %s
@@ -344,7 +346,7 @@ func (s *suite) TheUserUnstakesAFromTheAccount(actorType string, accName string)
 	var args []string
 
 	switch actorType {
-	case "supplier":
+	case suppliertypes.ModuleName:
 		args = []string{
 			"tx",
 			actorType,
@@ -527,16 +529,18 @@ func (s *suite) TheApplicationForAccountIsInThePeriod(appName, periodName string
 		isAppInState func(*apptypes.Application) bool
 	)
 	switch periodName {
-	case "unbonding":
+	case unbondingPeriod:
 		msgType = "UnstakeApplication"
 		isAppInState = func(app *apptypes.Application) bool {
 			return app.IsUnbonding()
 		}
-	case "transfer":
+	case transferPeriod:
 		msgType = "TransferApplication"
 		isAppInState = func(application *apptypes.Application) bool {
 			return application.HasPendingTransfer()
 		}
+	default:
+		s.Fatalf("unsupported period type: %q", periodName)
 	}
 
 	s.waitForTxResultEvent(newEventMsgTypeMatchFn("application", msgType))
@@ -553,10 +557,10 @@ func (s *suite) TheUserWaitsForTheApplicationForAccountPeriodToFinish(accName, p
 	// refactoring and/or splitting of this method for each event type.
 
 	switch periodType {
-	case "unbonding":
+	case unbondingPeriod:
 		unbondingHeight := s.getApplicationUnbondingHeight(accName)
 		s.waitForBlockHeight(unbondingHeight + 1) // Add 1 to ensure the unbonding block has been committed
-	case "transfer":
+	case transferPeriod:
 		transferEndHeight := s.getApplicationTransferEndHeight(accName)
 		s.waitForBlockHeight(transferEndHeight + 1) // Add 1 to ensure the transfer end block has been committed
 	}
