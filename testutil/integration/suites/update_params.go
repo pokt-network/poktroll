@@ -289,13 +289,13 @@ func (s *ParamsSuite) RunUpdateParamAsSigner(
 
 	// Send an authz MsgExec from the authority address.
 	execMsg := authz.NewMsgExec(signerAddr, []cosmostypes.Msg{msgUpdateParam})
-	execResps, err := s.RunAuthzExecMsg(t, signerAddr, &execMsg)
+	msgRespsBz, err := s.RunAuthzExecMsg(t, signerAddr, &execMsg)
 	if err != nil {
 		return nil, err
 	}
 
-	require.Equal(t, 1, len(execResps), "expected exactly 1 message response")
-	return execResps[0], err
+	require.Equal(t, 1, len(msgRespsBz), "expected exactly 1 message response")
+	return msgRespsBz[0], err
 }
 
 // RequireModuleHasDefaultParams asserts that the given module's parameters are set

@@ -105,10 +105,11 @@ func (s *msgUpdateParamSuite) TestAuthorizedMsgUpdateParamSucceeds() {
 				require.NoError(t, err)
 				require.NotNil(t, updateResBz)
 
-				// TODO_TECHDEBT / TODO_TEST: It seems like the response objects are encoded in
-				// an unexpected way. It's unclear whether this is the result of being
-				// executed via authz. Looking at the code, it seems like authz utilizes the
-				// sdk.Result#Data field of the result which is returned from the message handler.
+				// TODO_INVESTIGATE(https://github.com/cosmos/cosmos-sdk/issues/21904):
+				// It seems like the response objects are encoded in an unexpected way.
+				// It's unclear whether this is the result of being executed via authz.
+				// Looking at the code, it seems like authz utilizes the sdk.Result#Data
+				// field of the result which is returned from the message handler.
 				// These result byte slices are accumulated for each message in the MsgExec and
 				// set on the MsgExecResponse#Results field.
 				//

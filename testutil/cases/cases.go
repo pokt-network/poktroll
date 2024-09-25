@@ -5,6 +5,9 @@ import (
 	"unicode"
 )
 
+// TODO_CONSIDERATION: Prefer using an external library (e.g.
+// https://github.com/iancoleman/strcase) over implementing more cases.
+
 func ToSnakeCase(str string) string {
 	var result strings.Builder
 

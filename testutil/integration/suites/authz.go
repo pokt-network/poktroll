@@ -99,10 +99,7 @@ func (s *AuthzIntegrationSuite) RunAuthzExecMsg(
 	}
 
 	require.NotNil(t, execResAny)
-	execRes := execResAny.(*authz.MsgExecResponse)
-	msgRespsBz = append(msgRespsBz, execRes.Results...)
-
-	return msgRespsBz, nil
+	return execResAny.(*authz.MsgExecResponse).Results, nil
 }
 
 // fmtPoktrollMsgType returns the formatted message type for a poktroll module.
