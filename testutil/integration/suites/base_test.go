@@ -15,7 +15,7 @@ import (
 )
 
 // baseIntegrationSuiteTestSuite is a test suite which embeds BaseIntegrationSuite.
-// **in order to test it**. It is intended to be embedded in other test suites.
+// **in order to test it**. It is NOT intended to be embedded in other test suites.
 type baseIntegrationSuiteTestSuite struct {
 	BaseIntegrationSuite
 }
