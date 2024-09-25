@@ -31,6 +31,7 @@ var (
 type AppTransferSuite struct {
 	suites.ApplicationModuleSuite
 	gatewaySuite suites.GatewayModuleSuite
+	paramsSuite  suites.ParamsSuite
 
 	gateway1 string
 	gateway2 string
@@ -47,9 +48,11 @@ func (s *AppTransferSuite) SetupTest() {
 	// Construct a new integration app for each test.
 	s.NewApp(s.T())
 	s.gatewaySuite.SetApp(s.GetApp())
+	s.paramsSuite.SetApp(s.GetApp())
 
-	// TODO_IN_THIS_COMMIT: use ParamsSuite to set the pending
-	// undelegation retention to a safe and known value.
+	// Setup authz accounts and grants to enable updating params.
+	s.paramsSuite.SetupTestAuthzAccounts(s.T())
+	s.paramsSuite.SetupTestAuthzGrants(s.T())
 
 	// Ensure gateways and apps have bank balances.
 	s.setupTestAddresses()
@@ -83,9 +86,10 @@ func (s *AppTransferSuite) SetupTest() {
 }
 
 func (s *AppTransferSuite) TestSingleSourceToNonexistentDestinationSucceeds() {
-	// TODO_TECHDEBT(#826): Once the ParamsSuite is available, embed it in the
-	// AppTransferSuite to fetch the current integration app's params instead.
-	sharedParams := sharedtypes.DefaultParams()
+	sharedParamsAny, err := s.paramsSuite.QueryModuleParams(s.T(), sharedtypes.ModuleName)
+	require.NoError(s.T(), err)
+
+	sharedParams := sharedParamsAny.(sharedtypes.Params)
 	sessionEndHeight := shared.GetSessionEndHeight(&sharedParams, s.SdkCtx().BlockHeight())
 
 	transferBeginHeight := s.SdkCtx().BlockHeight()
@@ -178,9 +182,10 @@ func (s *AppTransferSuite) TestSingleSourceToNonexistentDestinationSucceeds() {
 }
 
 func (s *AppTransferSuite) TestMultipleSourceToSameNonexistentDestinationMergesSources() {
-	// TODO_TECHDEBT(#826): Once the ParamsSuite is available, embed it in the
-	// AppTransferSuite to fetch the current integration app's params instead.
-	sharedParams := sharedtypes.DefaultParams()
+	sharedParamsAny, err := s.paramsSuite.QueryModuleParams(s.T(), sharedtypes.ModuleName)
+	require.NoError(s.T(), err)
+
+	sharedParams := sharedParamsAny.(sharedtypes.Params)
 	msgTransferAppTypeURL := cosmostypes.MsgTypeURL(&apptypes.MsgTransferApplication{})
 	sessionEndHeight := shared.GetSessionEndHeight(&sharedParams, s.SdkCtx().BlockHeight())
 
