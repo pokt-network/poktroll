@@ -11,3 +11,6 @@ config:
   pprof:
     enabled: true
     addr: localhost:6060
+  ping:
+    enabled: true
+    addr: localhost:8081

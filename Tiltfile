@@ -224,16 +224,28 @@ helm_resource(
 actor_number = 0
 for x in range(localnet_config["relayminers"]["count"]):
     actor_number = actor_number + 1
-    helm_resource(
-        "relayminer" + str(actor_number),
-        chart_prefix + "relayminer",
-        flags=[
+
+    flags = [
             "--values=./localnet/kubernetes/values-common.yaml",
             "--values=./localnet/kubernetes/values-relayminer-common.yaml",
             "--values=./localnet/kubernetes/values-relayminer-" + str(actor_number) + ".yaml",
             "--set=metrics.serviceMonitor.enabled=" + str(localnet_config["observability"]["enabled"]),
             "--set=development.delve.enabled=" + str(localnet_config["relayminers"]["delve"]["enabled"]),
-        ],
+    ]
+
+    if localnet_config["rest"]["enabled"]:
+       flags.append("--values=./localnet/kubernetes/values-relayminer-" + str(actor_number) + "-rest" + ".yaml")
+
+    if localnet_config["ollama"]["enabled"]:
+       flags.append("--values=./localnet/kubernetes/values-relayminer-" + str(actor_number) + "-ollama" + ".yaml")
+
+    if localnet_config["rest"]["enabled"] and localnet_config["ollama"]["enabled"]:
+       flags.append("--values=./localnet/kubernetes/values-relayminer-" + str(actor_number) + "-all" + ".yaml")
+
+    helm_resource(
+        "relayminer" + str(actor_number),
+        chart_prefix + "relayminer",
+        flags=flags,
         image_deps=["poktrolld"],
         image_keys=[("image.repository", "image.tag")],
     )
@@ -257,6 +269,7 @@ for x in range(localnet_config["relayminers"]["count"]):
             # Use with pprof like this: `go tool pprof -http=:3333 http://localhost:6070/debug/pprof/goroutine`
             str(6069 + actor_number)
             + ":6060",  # Relayminer pprof port. relayminer1 - exposes 6070, relayminer2 exposes 6071, etc.
+            str(7000 + actor_number) + ":8081", # Relayminer ping port. relayminer1 - exposes 7001, relayminer2 exposes 7002, ect.
         ],
     )
 
