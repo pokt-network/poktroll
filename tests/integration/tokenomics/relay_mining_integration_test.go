@@ -21,6 +21,7 @@ import (
 )
 
 var (
+// TODO_BETA(#826): Uncomment these
 // Test params.
 // computeUnitsToTokensMultiplier = uint64(1) // keeping the math simple
 // proofRequirementThreshold      = sdk.NewInt64Coin(volatile.DenomuPOKT, 1e18)
