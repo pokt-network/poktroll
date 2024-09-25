@@ -172,9 +172,24 @@ func MergeAppDelegatees(srcApp, dstApp *types.Application) {
 	}
 }
 
-// TODO_IN_THIS_COMMIT: godoc... dst pending undelegations are not overwritten by src pending undelegations...
+// MergeAppPendingUndelegations takes the union of the srcApp and dstApp's pending undelegations
+// and sets the result in dstApp. Pending undelegations are merged according to the following algorithm:
+// - At each pending undelegation height in the destination application:
+//   - Take the union of the gateway addresses in source and destination applications'
+//     pending undelegations at that height.
+//   - If a gateway address is present in both source and destination application's pending undelegations
+//     **at different heights**, the destination application's undelegation height is used
+//     (i.e. this undelegation is unchanged) and that gateway address is excluded from the
+//     gateway address union at the height which it is present in the source application's
+//     pending undelegations.
+//
 // It is exported for testing purposes.
 func MergeAppPendingUndelegations(srcApp, dstApp *types.Application) {
+	// Build a set of all gateway addresses which have pending undelegations
+	// **at any height** so that we may exclude duplicate pending undelegations
+	// in different heights. E.g., app1 has a pending undelegation at height 10
+	// from gateway1 and app2 has pending undelegation from gateway1 at height 20;
+	// only one pending undelegation from gateway1 should be present in the merged result.
 	allPendingUndelegationGatewayAddrs := make(map[string]struct{})
 
 	for dstHeight, dstUndelegatingGatewaysList := range dstApp.PendingUndelegations {
@@ -207,7 +222,7 @@ func MergeAppPendingUndelegations(srcApp, dstApp *types.Application) {
 		// undelegations at the current height by appending source application
 		// pending undelegations which are not already in the set.
 		for _, srcGatewayBech32 := range srcPendingUndelegationsAtDstHeight.GatewayAddresses {
-			// TDOO_IN_THIS_COMMIT: comment...
+			// Add the gateway address to the set of all pending undelegations.
 			if _, ok := allPendingUndelegationGatewayAddrs[srcGatewayBech32]; ok {
 				continue
 			}
@@ -228,13 +243,10 @@ func MergeAppPendingUndelegations(srcApp, dstApp *types.Application) {
 	for srcHeight, srcUndelegatingGatewayList := range srcApp.PendingUndelegations {
 		if _, ok := dstApp.PendingUndelegations[srcHeight]; !ok {
 			for _, srcGatewayBech32 := range srcUndelegatingGatewayList.GatewayAddresses {
-				// TDOO_IN_THIS_COMMIT: comment...
+				// Add the gateway address to the set of all pending undelegations.
 				if _, ok := allPendingUndelegationGatewayAddrs[srcGatewayBech32]; ok {
 					continue
 				}
-
-				// TODO_IN_THIS_COMMIT: add test case for and check when a src pending
-				// undelegation address is in allPendingUndelegationGatewayAddrs.
 
 				dstPendingUndelegationsAtSrcHeight := dstApp.PendingUndelegations[srcHeight]
 				dstGatewayAddrsAtSrcHeight := dstPendingUndelegationsAtSrcHeight.GatewayAddresses

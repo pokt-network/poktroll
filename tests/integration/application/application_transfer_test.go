@@ -364,7 +364,7 @@ func (s *AppTransferSuite) setupTestAccount() *testkeyring.PreGeneratedAccount {
 	return appAccount
 }
 
-// TODO_IN_THIS_COMMIT: move & godoc...
+// setupStakeGateways stakes the gateways required for the test suite.
 func (s *AppTransferSuite) setupStakeGateways() {
 	gatewayBech32s := []string{
 		s.gateway1,
@@ -381,7 +381,8 @@ func (s *AppTransferSuite) setupStakeGateways() {
 	}
 }
 
-// TODO_IN_THIS_COMMIT: move & godoc...
+// setupStakeApps stakes the applications required for the test suite
+// according to appBech32ToServiceIdsMap.
 func (s *AppTransferSuite) setupStakeApps(appBech32ToServiceIdsMap map[string][]string) {
 	// Stake application.
 	for appBech32, serviceIds := range appBech32ToServiceIdsMap {
@@ -397,9 +398,10 @@ func (s *AppTransferSuite) setupStakeApps(appBech32ToServiceIdsMap map[string][]
 	}
 }
 
-// TODO_IN_THIS_COMMIT: move & godoc...
-func (s *AppTransferSuite) setupDelegateAppsToGateway(appBech32ToServiceIdsMap map[string][]string) {
-	delegateResps := s.DelegateAppsToGateways(s.T(), appBech32ToServiceIdsMap)
+// setupDelegateAppsToGateway delegates the applications (keys) to the gateways
+// (values) specified in appBech32ToServiceIdsMap.
+func (s *AppTransferSuite) setupDelegateAppsToGateway(appBech32ToGatewayBech32sMap map[string][]string) {
+	delegateResps := s.DelegateAppsToGateways(s.T(), appBech32ToGatewayBech32sMap)
 	for _, delegateRes := range delegateResps {
 		require.NotNil(s.T(), delegateRes)
 		require.NotNil(s.T(), delegateRes.GetApplication())
@@ -407,12 +409,14 @@ func (s *AppTransferSuite) setupDelegateAppsToGateway(appBech32ToServiceIdsMap m
 	}
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
-func (s *AppTransferSuite) setupUndelegateAppsFromGateway(appBech32ToServiceIdsMap map[string][]string) {
-	undelegateResps := s.UndelegateAppsFromGateways(s.T(), appBech32ToServiceIdsMap)
+// setupUndelegateAppsFromGateway undelegates the applications (keys) from the
+// gateways (values) specified in appBech32ToServiceIdsMap.
+func (s *AppTransferSuite) setupUndelegateAppsFromGateway(appBech32ToGetwayBech32sMap map[string][]string) {
+	undelegateResps := s.UndelegateAppsFromGateways(s.T(), appBech32ToGetwayBech32sMap)
 	for _, undelegateRes := range undelegateResps {
 		require.NotNil(s.T(), undelegateRes)
-		// TODO_TECHDEBT(#663): Uncomment the following lines once MsgUndelegateToGatewayResponse has contents.
+		// TODO_TECHDEBT(#663): Uncomment the following lines once
+		// MsgUndelegateToGatewayResponse has contents:
 		// require.NotNil(s.T(), undelegateRes.GetApplication())
 		// require.Empty(s.T(), undelegateRes.GetApplication().GetDelegateeGatewayAddresses())
 	}

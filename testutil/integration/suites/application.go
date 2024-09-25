@@ -124,7 +124,9 @@ func (s *ApplicationModuleSuite) DelegateAppToGateway(
 	return txMsgRes.(*apptypes.MsgDelegateToGatewayResponse)
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// DelegateAppsToGateways sends multiple MsgDelegateToGateway messages to delegate
+// applications to gateways. The applications and gateways are specified in the
+// appToGatewayBech32Map. All delegate messages are included in a single transaction.
 func (s *ApplicationModuleSuite) DelegateAppsToGateways(
 	t *testing.T,
 	appToGatewayBech32Map map[string][]string,
@@ -153,7 +155,8 @@ func (s *ApplicationModuleSuite) DelegateAppsToGateways(
 	return delegateResps
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// UndelegateAppFromGateway sends a MsgUndelegateFromGateway to undelegate the
+// application with address appBech32 from the gateway with address gatewayBech32.
 func (s *ApplicationModuleSuite) UndelegateAppFromGateway(
 	t *testing.T,
 	appBech32, gatewayBech32 string,
@@ -167,7 +170,9 @@ func (s *ApplicationModuleSuite) UndelegateAppFromGateway(
 	return txMsgRes.(*apptypes.MsgUndelegateFromGatewayResponse)
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// UndelegateAppsFromGateways sends multiple MsgUndelegateFromGateway messages to
+// undelegate applications from gateways. The applications and gateways are specified
+// in the appToGatewayBech32Map. All undelegate messages are included in a single transaction.
 func (s *ApplicationModuleSuite) UndelegateAppsFromGateways(
 	t *testing.T,
 	appToGatewayBech32Map map[string][]string,
