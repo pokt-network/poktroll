@@ -33,8 +33,8 @@ func (s *msgUpdateParamSuite) SetupSubTest() {
 	s.NewApp(s.T())
 
 	// Initialize the test accounts and create authz grants.
-	s.SetupTestAuthzAccounts()
-	s.SetupTestAuthzGrants()
+	s.SetupTestAuthzAccounts(s.T())
+	s.SetupTestAuthzGrants(s.T())
 
 	// Allocate an address for unauthorized user.
 	nextAcct, ok := s.GetApp().GetPreGeneratedAccounts().Next()
