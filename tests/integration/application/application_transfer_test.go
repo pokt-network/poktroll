@@ -28,7 +28,7 @@ var (
 	service3Id = "svc3"
 )
 
-type AppTransferSuite struct {
+type appTransferTestSuite struct {
 	suites.ApplicationModuleSuite
 	gatewaySuite suites.GatewayModuleSuite
 	paramsSuite  suites.ParamsSuite
@@ -44,7 +44,7 @@ type AppTransferSuite struct {
 	app3 string
 }
 
-func (s *AppTransferSuite) SetupTest() {
+func (s *appTransferTestSuite) SetupTest() {
 	// Construct a new integration app for each test.
 	s.NewApp(s.T())
 	s.gatewaySuite.SetApp(s.GetApp())
@@ -85,7 +85,7 @@ func (s *AppTransferSuite) SetupTest() {
 	require.ErrorContains(s.T(), queryErr, s.app3)
 }
 
-func (s *AppTransferSuite) TestSingleSourceToNonexistentDestinationSucceeds() {
+func (s *appTransferTestSuite) TestSingleSourceToNonexistentDestinationSucceeds() {
 	sharedParamsAny, err := s.paramsSuite.QueryModuleParams(s.T(), sharedtypes.ModuleName)
 	require.NoError(s.T(), err)
 
@@ -181,7 +181,7 @@ func (s *AppTransferSuite) TestSingleSourceToNonexistentDestinationSucceeds() {
 	)
 }
 
-func (s *AppTransferSuite) TestMultipleSourceToSameNonexistentDestinationMergesSources() {
+func (s *appTransferTestSuite) TestMultipleSourceToSameNonexistentDestinationMergesSources() {
 	sharedParamsAny, err := s.paramsSuite.QueryModuleParams(s.T(), sharedtypes.ModuleName)
 	require.NoError(s.T(), err)
 
@@ -335,7 +335,7 @@ func (s *AppTransferSuite) TestMultipleSourceToSameNonexistentDestinationMergesS
 }
 
 // TODO_TEST:
-//func (s *AppTransferSuite) TestSequentialTransfersSucceed() {}
+//func (s *appTransferTestSuite) TestSequentialTransfersSucceed() {}
 
 // TODO_TEST: Scenario: User cannot start an Application stake transfer from Application which has a pending transfer
 // TODO_TEST: Scenario: The user cannot unstake an Application which has a pending transfer
@@ -343,7 +343,7 @@ func (s *AppTransferSuite) TestMultipleSourceToSameNonexistentDestinationMergesS
 
 // setupTestAddresses sets up the required addresses for the test suite using
 // pre-generated accounts.
-func (s *AppTransferSuite) setupTestAddresses() {
+func (s *appTransferTestSuite) setupTestAddresses() {
 	s.gateway1 = s.setupTestAccount().Address.String()
 	s.gateway2 = s.setupTestAccount().Address.String()
 	s.gateway3 = s.setupTestAccount().Address.String()
@@ -355,7 +355,7 @@ func (s *AppTransferSuite) setupTestAddresses() {
 	s.app3 = s.setupTestAccount().Address.String()
 }
 
-func (s *AppTransferSuite) setupTestAccount() *testkeyring.PreGeneratedAccount {
+func (s *appTransferTestSuite) setupTestAccount() *testkeyring.PreGeneratedAccount {
 	appAccount, ok := s.GetApp().GetPreGeneratedAccounts().Next()
 	require.Truef(s.T(), ok, "insufficient pre-generated accounts available")
 
@@ -365,7 +365,7 @@ func (s *AppTransferSuite) setupTestAccount() *testkeyring.PreGeneratedAccount {
 }
 
 // setupStakeGateways stakes the gateways required for the test suite.
-func (s *AppTransferSuite) setupStakeGateways() {
+func (s *appTransferTestSuite) setupStakeGateways() {
 	gatewayBech32s := []string{
 		s.gateway1,
 		s.gateway2,
@@ -383,7 +383,7 @@ func (s *AppTransferSuite) setupStakeGateways() {
 
 // setupStakeApps stakes the applications required for the test suite
 // according to appBech32ToServiceIdsMap.
-func (s *AppTransferSuite) setupStakeApps(appBech32ToServiceIdsMap map[string][]string) {
+func (s *appTransferTestSuite) setupStakeApps(appBech32ToServiceIdsMap map[string][]string) {
 	// Stake application.
 	for appBech32, serviceIds := range appBech32ToServiceIdsMap {
 		stakeAppRes := s.StakeApp(s.T(), appBech32, stakeAmount, serviceIds)
@@ -400,7 +400,7 @@ func (s *AppTransferSuite) setupStakeApps(appBech32ToServiceIdsMap map[string][]
 
 // setupDelegateAppsToGateway delegates the applications (keys) to the gateways
 // (values) specified in appBech32ToServiceIdsMap.
-func (s *AppTransferSuite) setupDelegateAppsToGateway(appBech32ToGatewayBech32sMap map[string][]string) {
+func (s *appTransferTestSuite) setupDelegateAppsToGateway(appBech32ToGatewayBech32sMap map[string][]string) {
 	delegateResps := s.DelegateAppsToGateways(s.T(), appBech32ToGatewayBech32sMap)
 	for _, delegateRes := range delegateResps {
 		require.NotNil(s.T(), delegateRes)
@@ -411,7 +411,7 @@ func (s *AppTransferSuite) setupDelegateAppsToGateway(appBech32ToGatewayBech32sM
 
 // setupUndelegateAppsFromGateway undelegates the applications (keys) from the
 // gateways (values) specified in appBech32ToServiceIdsMap.
-func (s *AppTransferSuite) setupUndelegateAppsFromGateway(appBech32ToGetwayBech32sMap map[string][]string) {
+func (s *appTransferTestSuite) setupUndelegateAppsFromGateway(appBech32ToGetwayBech32sMap map[string][]string) {
 	undelegateResps := s.UndelegateAppsFromGateways(s.T(), appBech32ToGetwayBech32sMap)
 	for _, undelegateRes := range undelegateResps {
 		require.NotNil(s.T(), undelegateRes)
@@ -424,7 +424,7 @@ func (s *AppTransferSuite) setupUndelegateAppsFromGateway(appBech32ToGetwayBech3
 
 // shouldObserveTransferBeginEvent asserts that the transfer begin event from
 // expectedSrcApp to expectedDstAppBech32 is observed.
-func (s *AppTransferSuite) shouldObserveTransferBeginEvent(
+func (s *appTransferTestSuite) shouldObserveTransferBeginEvent(
 	expectedSrcApp *apptypes.Application,
 	expectedDstAppBech32 string,
 ) {
@@ -464,7 +464,7 @@ func (s *AppTransferSuite) shouldObserveTransferBeginEvent(
 
 // shouldObserveTransferEndEvent asserts that the transfer end event from
 // expectedSrcAppBech32 to expectedDstApp is observed.
-func (s *AppTransferSuite) shouldObserveTransferEndEvent(
+func (s *appTransferTestSuite) shouldObserveTransferEndEvent(
 	expectedDstApp *apptypes.Application,
 	expectedSrcAppBech32 string,
 ) {
@@ -492,5 +492,5 @@ func (s *AppTransferSuite) shouldObserveTransferEndEvent(
 
 // TestAppTransferSuite runs the application transfer test suite.
 func TestAppTransferSuite(t *testing.T) {
-	suite.Run(t, new(AppTransferSuite))
+	suite.Run(t, new(appTransferTestSuite))
 }
