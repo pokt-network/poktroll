@@ -123,3 +123,75 @@ func (s *ApplicationModuleSuite) DelegateAppToGateway(
 
 	return txMsgRes.(*apptypes.MsgDelegateToGatewayResponse)
 }
+
+// TODO_IN_THIS_COMMIT: godoc...
+func (s *ApplicationModuleSuite) DelegateAppsToGateways(
+	t *testing.T,
+	appToGatewayBech32Map map[string][]string,
+) (delegateResps []*apptypes.MsgDelegateToGatewayResponse) {
+	t.Helper()
+
+	var delegateAppToGatewayMsgs []cosmostypes.Msg
+	for appBech32, gatewayBech32s := range appToGatewayBech32Map {
+		for _, gatewayBech32 := range gatewayBech32s {
+			delegateAppToGatewayMsgs = append(
+				delegateAppToGatewayMsgs,
+				apptypes.NewMsgDelegateToGateway(appBech32, gatewayBech32),
+			)
+		}
+	}
+
+	txMsgResps, err := s.GetApp().RunMsgs(t, delegateAppToGatewayMsgs...)
+	require.NoError(t, err)
+
+	for _, txMsgRes := range txMsgResps {
+		delegateRes, ok := txMsgRes.(*apptypes.MsgDelegateToGatewayResponse)
+		require.Truef(t, ok, "unexpected txMsgRes type: %T", txMsgRes)
+		delegateResps = append(delegateResps, delegateRes)
+	}
+
+	return delegateResps
+}
+
+// TODO_IN_THIS_COMMIT: godoc...
+func (s *ApplicationModuleSuite) UndelegateAppFromGateway(
+	t *testing.T,
+	appBech32, gatewayBech32 string,
+) *apptypes.MsgUndelegateFromGatewayResponse {
+	t.Helper()
+
+	undelegateAppFromGatewayMsg := apptypes.NewMsgUndelegateFromGateway(appBech32, gatewayBech32)
+	txMsgRes, err := s.GetApp().RunMsg(t, undelegateAppFromGatewayMsg)
+	require.NoError(t, err)
+
+	return txMsgRes.(*apptypes.MsgUndelegateFromGatewayResponse)
+}
+
+// TODO_IN_THIS_COMMIT: godoc...
+func (s *ApplicationModuleSuite) UndelegateAppsFromGateways(
+	t *testing.T,
+	appToGatewayBech32Map map[string][]string,
+) (undelegateResps []*apptypes.MsgUndelegateFromGatewayResponse) {
+	t.Helper()
+
+	var undelegateAppFromGatewayMsgs []cosmostypes.Msg
+	for appBech32, gatewayBech32s := range appToGatewayBech32Map {
+		for _, gatewayBech32 := range gatewayBech32s {
+			undelegateAppFromGatewayMsgs = append(
+				undelegateAppFromGatewayMsgs,
+				apptypes.NewMsgUndelegateFromGateway(appBech32, gatewayBech32),
+			)
+		}
+	}
+
+	txMsgResps, err := s.GetApp().RunMsgs(t, undelegateAppFromGatewayMsgs...)
+	require.NoError(t, err)
+
+	for _, txMsgRes := range txMsgResps {
+		undelegateRes, ok := txMsgRes.(*apptypes.MsgUndelegateFromGatewayResponse)
+		require.Truef(t, ok, "unexpected txMsgRes type: %T", txMsgRes)
+		undelegateResps = append(undelegateResps, undelegateRes)
+	}
+
+	return undelegateResps
+}

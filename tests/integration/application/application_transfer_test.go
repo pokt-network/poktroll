@@ -32,19 +32,24 @@ type AppTransferSuite struct {
 	suites.ApplicationModuleSuite
 	gatewaySuite suites.GatewayModuleSuite
 
-	gateway1Bech32 string
-	gateway2Bech32 string
-	gateway3Bech32 string
+	gateway1 string
+	gateway2 string
+	gateway3 string
+	gateway4 string
+	gateway5 string
 
-	app1Bech32 string
-	app2Bech32 string
-	app3Bech32 string
+	app1 string
+	app2 string
+	app3 string
 }
 
 func (s *AppTransferSuite) SetupTest() {
 	// Construct a new integration app for each test.
 	s.NewApp(s.T())
 	s.gatewaySuite.SetApp(s.GetApp())
+
+	// TODO_IN_THIS_COMMIT: use ParamsSuite to set the pending
+	// undelegation retention to a safe and known value.
 
 	// Ensure gateways and apps have bank balances.
 	s.setupTestAddresses()
@@ -54,20 +59,27 @@ func (s *AppTransferSuite) SetupTest() {
 
 	// Stake app1 and app2.
 	s.setupStakeApps(map[string][]string{
-		s.app1Bech32: {service1Id, service3Id},
-		s.app2Bech32: {service1Id, service2Id},
+		s.app1: {service1Id, service3Id},
+		s.app2: {service1Id, service2Id},
 	})
 
 	// Delegate app 1 to gateway 1 and 3 and app 2 to gateways 1 and 2.
 	s.setupDelegateAppsToGateway(map[string][]string{
-		s.app1Bech32: {s.gateway1Bech32, s.gateway3Bech32},
-		s.app2Bech32: {s.gateway1Bech32, s.gateway2Bech32},
+		s.app1: {s.gateway1, s.gateway3, s.gateway4},
+		s.app2: {s.gateway1, s.gateway2, s.gateway5},
+	})
+
+	// Undelegate app 1 from gateways 3 & 4 and app 2 from gateways 3 & 5
+	// in order to populate their pending undelegations.
+	s.setupUndelegateAppsFromGateway(map[string][]string{
+		s.app1: {s.gateway1, s.gateway4},
+		s.app2: {s.gateway1, s.gateway5},
 	})
 
 	// Assert the on-chain state shows the application 3 as NOT staked.
-	_, queryErr := s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app3Bech32)
+	_, queryErr := s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app3)
 	require.ErrorContains(s.T(), queryErr, "application not found")
-	require.ErrorContains(s.T(), queryErr, s.app3Bech32)
+	require.ErrorContains(s.T(), queryErr, s.app3)
 }
 
 func (s *AppTransferSuite) TestSingleSourceToNonexistentDestinationSucceeds() {
@@ -79,7 +91,7 @@ func (s *AppTransferSuite) TestSingleSourceToNonexistentDestinationSucceeds() {
 	transferBeginHeight := s.SdkCtx().BlockHeight()
 
 	// Transfer app1 to app3
-	transferRes := s.Transfer(s.T(), s.app1Bech32, s.app3Bech32)
+	transferRes := s.Transfer(s.T(), s.app1, s.app3)
 	srcApp := transferRes.GetApplication()
 
 	// Assert application pending transfer field updated in the msg response.
@@ -87,13 +99,13 @@ func (s *AppTransferSuite) TestSingleSourceToNonexistentDestinationSucceeds() {
 	require.NotNil(s.T(), pendingTransfer)
 
 	expectedPendingTransfer := &apptypes.PendingApplicationTransfer{
-		DestinationAddress: s.app3Bech32,
+		DestinationAddress: s.app3,
 		SessionEndHeight:   uint64(sessionEndHeight),
 	}
 	require.EqualValues(s.T(), expectedPendingTransfer, pendingTransfer)
 
 	// Query and assert application pending transfer field updated in the store.
-	foundApp1, err := s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app1Bech32)
+	foundApp1, err := s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app1)
 	require.NoError(s.T(), err)
 	require.EqualValues(s.T(), expectedPendingTransfer, foundApp1.GetPendingTransfer())
 
@@ -104,7 +116,7 @@ func (s *AppTransferSuite) TestSingleSourceToNonexistentDestinationSucceeds() {
 	require.NotNil(s.T(), msgEvent, "expected transfer application message event")
 
 	// Assert that the transfer begin event (tx result event) is observed.
-	s.shouldObserveTransferBeginEvent(&foundApp1, s.app3Bech32)
+	s.shouldObserveTransferBeginEvent(&foundApp1, s.app3)
 
 	// Continue until transfer end commit height - 1.
 	transferEndHeight := apptypes.GetApplicationTransferHeight(&sharedParams, &foundApp1)
@@ -112,34 +124,48 @@ func (s *AppTransferSuite) TestSingleSourceToNonexistentDestinationSucceeds() {
 	s.GetApp().NextBlocks(s.T(), int(blocksUntilTransferEndHeight)-1)
 
 	// Assert that app1 is in transfer period.
-	foundApp1, err = s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app1Bech32)
+	foundApp1, err = s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app1)
 	require.NoError(s.T(), err)
 
-	require.Equal(s.T(), s.app1Bech32, foundApp1.GetAddress())
+	require.Equal(s.T(), s.app1, foundApp1.GetAddress())
 	require.Equal(s.T(), expectedPendingTransfer, foundApp1.GetPendingTransfer())
 
 	// Continue to transfer end height.
 	s.GetApp().NextBlock(s.T())
 
 	// Query for and assert that the destination application was created.
-	foundApp3, err := s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app3Bech32)
+	foundApp3, err := s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app3)
 	require.NoError(s.T(), err)
 
-	// Assert that the application was created with the correct address and stake amount.
-	require.Equal(s.T(), s.app3Bech32, foundApp3.GetAddress())
+	// Assert that the destination application was created with the correct state.
+	require.Equal(s.T(), s.app3, foundApp3.GetAddress())
 	require.Equal(s.T(), stakeAmount, foundApp3.GetStake().Amount.Int64())
 
+	// Assert that remaining delegation is transferred.
+	require.ElementsMatch(s.T(), []string{s.gateway3}, foundApp3.DelegateeGatewayAddresses)
+
+	expectedApp3Undelegations := map[uint64][]string{
+		uint64(sessionEndHeight): {s.gateway1, s.gateway4},
+	}
+	for height, expectedUndelegatingGatewayList := range expectedApp3Undelegations {
+		undelegatingGatewayList, ok := foundApp3.GetPendingUndelegations()[height]
+		require.Truef(s.T(), ok, "unexpected undelegation height: %d", height)
+		require.Equal(s.T(), uint64(sessionEndHeight), height)
+		require.ElementsMatch(s.T(), expectedUndelegatingGatewayList, undelegatingGatewayList.GatewayAddresses)
+	}
+	require.Equal(s.T(), len(expectedApp3Undelegations), len(foundApp3.GetPendingUndelegations()))
+
 	// Assert that the transfer end event (end block event) is observed.
-	s.shouldObserveTransferEndEvent(&foundApp3, s.app1Bech32)
+	s.shouldObserveTransferEndEvent(&foundApp3, s.app1)
 
 	// Assert that app1 is unstaked.
-	_, err = s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app1Bech32)
+	_, err = s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app1)
 	require.ErrorContains(s.T(), err, "application not found")
-	require.ErrorContains(s.T(), err, s.app1Bech32)
+	require.ErrorContains(s.T(), err, s.app1)
 
 	// Assert that app1's bank balance has not changed.
 	balanceRes, err := s.GetBankQueryClient().Balance(s.SdkCtx(), &banktypes.QueryBalanceRequest{
-		Address: s.app1Bech32,
+		Address: s.app1,
 		Denom:   volatile.DenomuPOKT,
 	})
 	require.NoError(s.T(), err)
@@ -162,14 +188,14 @@ func (s *AppTransferSuite) TestMultipleSourceToSameNonexistentDestinationMergesS
 
 	// Transfer app1 & app2 to app3 in the same session (and tx).
 	srcToDstTransferMap := map[string]string{
-		s.app1Bech32: s.app3Bech32,
-		s.app2Bech32: s.app3Bech32,
+		s.app1: s.app3,
+		s.app2: s.app3,
 	}
 	transferResps := s.MultiTransfer(s.T(), srcToDstTransferMap)
 
 	transferResSrcIndices := []string{
-		s.app1Bech32,
-		s.app2Bech32,
+		s.app1,
+		s.app2,
 	}
 	var (
 		transferEndHeight       int64
@@ -225,40 +251,48 @@ func (s *AppTransferSuite) TestMultipleSourceToSameNonexistentDestinationMergesS
 	s.GetApp().NextBlocks(s.T(), int(blocksUntilTransferEndHeight)-1)
 
 	// Assert that app1 is in transfer period.
-	foundApp1, err := s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app1Bech32)
+	foundApp1, err := s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app1)
 	require.NoError(s.T(), err)
 
-	require.Equal(s.T(), s.app1Bech32, foundApp1.GetAddress())
+	require.Equal(s.T(), s.app1, foundApp1.GetAddress())
 	require.Equal(s.T(), expectedPendingTransfer, foundApp1.GetPendingTransfer())
 
 	// Continue to transfer end height.
 	s.GetApp().NextBlock(s.T())
 
 	// Assert that app3 is staked with the sum amount: app1 + app2.
-	foundApp3, err := s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app3Bech32)
+	foundApp3, err := s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app3)
 	require.NoError(s.T(), err)
 
-	require.Equal(s.T(), s.app3Bech32, foundApp3.GetAddress())
+	require.Equal(s.T(), s.app3, foundApp3.GetAddress())
 	require.Equal(s.T(), stakeAmount*2, foundApp3.GetStake().Amount.Int64())
 
-	// Assert that delegations were merged.
-	gatewayBech32s := []string{
-		s.gateway1Bech32,
-		s.gateway2Bech32,
-		s.gateway3Bech32,
+	// Assert that remaining delegations were merged.
+	expectedApp3Delegations := []string{
+		s.gateway2,
+		s.gateway3,
 	}
-	for _, gatewayBech32 := range gatewayBech32s {
-		require.Contains(s.T(), foundApp3.GetDelegateeGatewayAddresses(), gatewayBech32)
+	require.ElementsMatch(s.T(), expectedApp3Delegations, foundApp3.GetDelegateeGatewayAddresses())
+
+	// Assert that pending undelegetions were merged.
+	expectedApp3Undelegations := map[uint64][]string{
+		uint64(sessionEndHeight): {s.gateway1, s.gateway4, s.gateway5},
 	}
-	require.Equal(s.T(), len(gatewayBech32s), len(foundApp3.GetDelegateeGatewayAddresses()))
+	for height, expectedUndelegatingGatewayList := range expectedApp3Undelegations {
+		undelegatingGatewayList, ok := foundApp3.GetPendingUndelegations()[height]
+		require.Truef(s.T(), ok, "missing undelegation height: %d; expected gateways: %v", height, expectedUndelegatingGatewayList)
+		require.Equal(s.T(), uint64(sessionEndHeight), height)
+		require.ElementsMatch(s.T(), expectedUndelegatingGatewayList, undelegatingGatewayList.GatewayAddresses)
+	}
+	require.Equal(s.T(), len(expectedApp3Undelegations), len(foundApp3.GetPendingUndelegations()))
 
 	// Assert that services were merged.
-	serviceIds := []string{
+	expectedApp3ServiceIds := []string{
 		service1Id,
 		service2Id,
 		service3Id,
 	}
-	for _, serviceId := range serviceIds {
+	for _, serviceId := range expectedApp3ServiceIds {
 		require.Contains(s.T(),
 			foundApp3.GetServiceConfigs(),
 			&sharedtypes.ApplicationServiceConfig{
@@ -266,21 +300,21 @@ func (s *AppTransferSuite) TestMultipleSourceToSameNonexistentDestinationMergesS
 			},
 		)
 	}
-	require.Equal(s.T(), len(serviceIds), len(foundApp3.GetServiceConfigs()))
+	require.Equal(s.T(), len(expectedApp3ServiceIds), len(foundApp3.GetServiceConfigs()))
 
 	// Assert that app1 is unstaked.
-	foundApp1, err = s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app1Bech32)
+	foundApp1, err = s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app1)
 	require.ErrorContains(s.T(), err, "application not found")
-	require.ErrorContains(s.T(), err, s.app1Bech32)
+	require.ErrorContains(s.T(), err, s.app1)
 
 	// Assert that app2 is unstaked.
-	_, err = s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app2Bech32)
+	_, err = s.GetAppQueryClient().GetApplication(s.SdkCtx(), s.app2)
 	require.ErrorContains(s.T(), err, "application not found")
-	require.ErrorContains(s.T(), err, s.app2Bech32)
+	require.ErrorContains(s.T(), err, s.app2)
 
 	// Assert that app1's bank balance has not changed
 	balRes, err := s.GetBankQueryClient().Balance(s.SdkCtx(), &banktypes.QueryBalanceRequest{
-		Address: s.app1Bech32,
+		Address: s.app1,
 		Denom:   volatile.DenomuPOKT,
 	})
 	require.NoError(s.T(), err)
@@ -288,7 +322,7 @@ func (s *AppTransferSuite) TestMultipleSourceToSameNonexistentDestinationMergesS
 
 	// Assert that app2's bank balance has not changed
 	balRes, err = s.GetBankQueryClient().Balance(s.SdkCtx(), &banktypes.QueryBalanceRequest{
-		Address: s.app2Bech32,
+		Address: s.app2,
 		Denom:   volatile.DenomuPOKT,
 	})
 	require.NoError(s.T(), err)
@@ -305,12 +339,15 @@ func (s *AppTransferSuite) TestMultipleSourceToSameNonexistentDestinationMergesS
 // setupTestAddresses sets up the required addresses for the test suite using
 // pre-generated accounts.
 func (s *AppTransferSuite) setupTestAddresses() {
-	s.gateway1Bech32 = s.setupTestAccount().Address.String()
-	s.gateway2Bech32 = s.setupTestAccount().Address.String()
-	s.gateway3Bech32 = s.setupTestAccount().Address.String()
-	s.app1Bech32 = s.setupTestAccount().Address.String()
-	s.app2Bech32 = s.setupTestAccount().Address.String()
-	s.app3Bech32 = s.setupTestAccount().Address.String()
+	s.gateway1 = s.setupTestAccount().Address.String()
+	s.gateway2 = s.setupTestAccount().Address.String()
+	s.gateway3 = s.setupTestAccount().Address.String()
+	s.gateway4 = s.setupTestAccount().Address.String()
+	s.gateway5 = s.setupTestAccount().Address.String()
+
+	s.app1 = s.setupTestAccount().Address.String()
+	s.app2 = s.setupTestAccount().Address.String()
+	s.app3 = s.setupTestAccount().Address.String()
 }
 
 func (s *AppTransferSuite) setupTestAccount() *testkeyring.PreGeneratedAccount {
@@ -325,9 +362,11 @@ func (s *AppTransferSuite) setupTestAccount() *testkeyring.PreGeneratedAccount {
 // TODO_IN_THIS_COMMIT: move & godoc...
 func (s *AppTransferSuite) setupStakeGateways() {
 	gatewayBech32s := []string{
-		s.gateway1Bech32,
-		s.gateway2Bech32,
-		s.gateway3Bech32,
+		s.gateway1,
+		s.gateway2,
+		s.gateway3,
+		s.gateway4,
+		s.gateway5,
 	}
 
 	for _, gatewayBech32 := range gatewayBech32s {
@@ -355,12 +394,22 @@ func (s *AppTransferSuite) setupStakeApps(appBech32ToServiceIdsMap map[string][]
 
 // TODO_IN_THIS_COMMIT: move & godoc...
 func (s *AppTransferSuite) setupDelegateAppsToGateway(appBech32ToServiceIdsMap map[string][]string) {
-	for appBech32, gatewayBech32s := range appBech32ToServiceIdsMap {
-		for _, gatewayBech32 := range gatewayBech32s {
-			delegateRes := s.DelegateAppToGateway(s.T(), appBech32, gatewayBech32)
-			require.Equal(s.T(), appBech32, delegateRes.GetApplication().GetAddress())
-			require.Contains(s.T(), delegateRes.GetApplication().GetDelegateeGatewayAddresses(), gatewayBech32)
-		}
+	delegateResps := s.DelegateAppsToGateways(s.T(), appBech32ToServiceIdsMap)
+	for _, delegateRes := range delegateResps {
+		require.NotNil(s.T(), delegateRes)
+		require.NotNil(s.T(), delegateRes.GetApplication())
+		require.NotEmpty(s.T(), delegateRes.GetApplication().GetDelegateeGatewayAddresses())
+	}
+}
+
+// TODO_IN_THIS_COMMIT: godoc...
+func (s *AppTransferSuite) setupUndelegateAppsFromGateway(appBech32ToServiceIdsMap map[string][]string) {
+	undelegateResps := s.UndelegateAppsFromGateways(s.T(), appBech32ToServiceIdsMap)
+	for _, undelegateRes := range undelegateResps {
+		require.NotNil(s.T(), undelegateRes)
+		// TODO_TECHDEBT(#663): Uncomment the following lines once MsgUndelegateToGatewayResponse has contents.
+		// require.NotNil(s.T(), undelegateRes.GetApplication())
+		// require.Empty(s.T(), undelegateRes.GetApplication().GetDelegateeGatewayAddresses())
 	}
 }
 
