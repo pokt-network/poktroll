@@ -101,17 +101,25 @@ func (k Keeper) EnsureValidProof(
 	}
 
 	// Unmarshal the closest merkle proof from the message.
-	sparseMerkleClosestProof := &smt.SparseMerkleClosestProof{}
-	if err = sparseMerkleClosestProof.Unmarshal(proof.ClosestMerkleProof); err != nil {
-		telemetryFailProofValidationIncrement(serviceId, "closest_proof_unmarshal")
+	sparseCompactMerkleClosestProof := &smt.SparseCompactMerkleClosestProof{}
+	if err = sparseCompactMerkleClosestProof.Unmarshal(proof.ClosestMerkleProof); err != nil {
+		telemetryFailProofValidationIncrement(serviceId, "closest_compact_proof_unmarshal")
 		return types.ErrProofInvalidProof.Wrapf(
 			"failed to unmarshal closest merkle proof: %s",
 			err,
 		)
 	}
 
-	// TODO_MAINNET(#427): Utilize smt.VerifyCompactClosestProof here to
-	// reduce on-chain storage requirements for proofs.
+	// SparseCompactMerkeClosestProof does not implement GetValueHash, so we need to decompact it.
+	sparseMerkleClosestProof, err := smt.DecompactClosestProof(sparseCompactMerkleClosestProof, &protocol.SmtSpec)
+	if err != nil {
+		telemetryFailProofValidationIncrement(serviceId, "decompact_closest_proof")
+		return types.ErrProofInvalidProof.Wrapf(
+			"failed to decompact closest merkle proof: %s",
+			err,
+		)
+	}
+
 	// Get the relay request and response from the proof.GetClosestMerkleProof.
 	relayBz := sparseMerkleClosestProof.GetValueHash(&protocol.SmtSpec)
 	relay := &servicetypes.Relay{}
@@ -210,6 +218,7 @@ func (k Keeper) EnsureValidProof(
 	// used in the proof validation below.
 	claim, err := k.queryAndValidateClaimForProof(ctx, sessionHeader, supplierOperatorAddr)
 	if err != nil {
+		telemetryFailProofValidationIncrement(serviceId, "retrieve_claim")
 		return err
 	}
 
