@@ -20,6 +20,7 @@ import (
 )
 
 var (
+// TODO_BETA(#826): Uncomment these
 // Test params.
 // computeUnitsToTokensMultiplier = uint64(1) // keeping the math simple
 // proofRequirementThreshold      = sdk.NewInt64Coin(volatile.DenomuPOKT, 1e18)
@@ -27,7 +28,7 @@ var (
 
 type RelayMiningIntegrationTestSuite struct {
 	// TODO_BETA(#826): wait for integration app & suites refactor to be merged.
-	// Once suites.ParamsSuite is avialable, embed it here. In the meantime, we
+	// Once suites.ParamsSuite is available, embed it here. In the meantime, we
 	// MUST embed suite.Suite to avoid compilation errors.
 	//
 	// suites.ParamsSuite

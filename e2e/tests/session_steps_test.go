@@ -227,8 +227,7 @@ func (s *suite) waitForTxResultEvent(eventIsMatch func(*abci.Event) bool) (match
 	ctx, cancel := context.WithCancel(s.ctx)
 
 	// For each observed event, **asynchronously** check if it contains the given action.
-	channel.ForEach[*abci.TxResult](
-		ctx, s.txResultReplayClient.EventsSequence(ctx),
+	s.forEachTxResult(ctx,
 		func(_ context.Context, txResult *abci.TxResult) {
 			if txResult == nil {
 				return
@@ -245,13 +244,6 @@ func (s *suite) waitForTxResultEvent(eventIsMatch func(*abci.Event) bool) (match
 		},
 	)
 
-	select {
-	case <-time.After(eventTimeout):
-		s.Fatalf("ERROR: timed out waiting for tx result event")
-	case <-ctx.Done():
-		s.Log("Success; message detected before timeout.")
-	}
-
 	return matchedEvent
 }
 
@@ -265,8 +257,7 @@ func (s *suite) waitForNewBlockEvent(
 	ctx, done := context.WithCancel(s.ctx)
 
 	// For each observed event, **asynchronously** check if it contains the given action.
-	channel.ForEach[*block.CometNewBlockEvent](
-		ctx, s.newBlockEventsReplayClient.EventsSequence(ctx),
+	s.forEachBlockEvent(ctx,
 		func(_ context.Context, newBlockEvent *block.CometNewBlockEvent) {
 			if newBlockEvent == nil {
 				return
@@ -284,13 +275,6 @@ func (s *suite) waitForNewBlockEvent(
 			}
 		},
 	)
-
-	select {
-	case <-time.After(eventTimeout):
-		s.Fatalf("ERROR: timed out waiting for NewBlock event")
-	case <-ctx.Done():
-		s.Log("Success; message detected before timeout.")
-	}
 }
 
 // waitForBlockHeight waits for a NewBlock event to be observed whose height is
@@ -300,8 +284,7 @@ func (s *suite) waitForBlockHeight(targetHeight int64) {
 
 	// For each observed event, **asynchronously** check if it is greater than
 	// or equal to the target height
-	channel.ForEach[*block.CometNewBlockEvent](
-		ctx, s.newBlockEventsReplayClient.EventsSequence(ctx),
+	s.forEachBlockEvent(ctx,
 		func(_ context.Context, newBlockEvent *block.CometNewBlockEvent) {
 			if newBlockEvent == nil {
 				return
@@ -313,12 +296,46 @@ func (s *suite) waitForBlockHeight(targetHeight int64) {
 			}
 		},
 	)
+}
+
+// forEachBlockEvent calls blockEventFn for each observed block event **asynchronously**
+// and blocks on waiting for the given context to be cancelled. If the context is
+// not cancelled before eventTimeout, the test will fail.
+func (s *suite) forEachBlockEvent(
+	ctx context.Context,
+	blockEventFn func(_ context.Context, newBlockEvent *block.CometNewBlockEvent),
+) {
+	channel.ForEach[*block.CometNewBlockEvent](ctx,
+		s.newBlockEventsReplayClient.EventsSequence(ctx),
+		blockEventFn,
+	)
 
 	select {
 	case <-time.After(eventTimeout):
-		s.Fatalf("ERROR: timed out waiting for block height", targetHeight)
+		s.Fatalf("ERROR: timed out waiting new block event")
 	case <-ctx.Done():
-		s.Log("Success; height detected before timeout.")
+		s.Log("Success; new block event detected before timeout.")
+	}
+}
+
+// forEachTxResult calls txResult for each observed tx result **asynchronously**
+// and blocks on waiting for the given context to be cancelled. If the context is
+// not cancelled before eventTimeout, the test will fail.
+func (s *suite) forEachTxResult(
+	ctx context.Context,
+	txResultFn func(_ context.Context, txResult *abci.TxResult),
+) {
+
+	channel.ForEach[*abci.TxResult](ctx,
+		s.txResultReplayClient.EventsSequence(ctx),
+		txResultFn,
+	)
+
+	select {
+	case <-time.After(eventTimeout):
+		s.Fatalf("ERROR: timed out waiting for tx result")
+	case <-ctx.Done():
+		s.Log("Success; tx result detected before timeout.")
 	}
 }
 
