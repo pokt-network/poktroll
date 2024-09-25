@@ -9,7 +9,7 @@ type (
 	paramNameKey = string
 )
 
-// paramsAnyMap is a map of param names to param values.
+// paramsAnyMap is a map of param names to param any values.
 type paramsAnyMap map[paramNameKey]paramAny
 
 // moduleParamsMap is a map of module names to params maps.
