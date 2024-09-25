@@ -209,6 +209,7 @@ func setupRelayerDependencies(
 		config.NewSupplyTokenomicsQueryClientFn(),
 		supplyMiner,
 		config.NewSupplyAccountQuerierFn(),
+		config.NewSupplyBankQuerierFn(),
 		config.NewSupplyApplicationQuerierFn(),
 		config.NewSupplySupplierQuerierFn(),
 		config.NewSupplySessionQuerierFn(),

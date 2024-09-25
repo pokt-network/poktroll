@@ -137,7 +137,7 @@ type SessionTree interface {
 	// ProveClosest is a wrapper for the SMST's ProveClosest function. It returns the
 	// proof for the given path.
 	// This function should be called several blocks after a session has been claimed and needs to be proven.
-	ProveClosest(path []byte) (proof *smt.SparseMerkleClosestProof, err error)
+	ProveClosest(path []byte) (proof *smt.SparseCompactMerkleClosestProof, err error)
 
 	// GetClaimRoot returns the root hash of the SMST needed for creating the claim.
 	GetClaimRoot() []byte
@@ -167,4 +167,7 @@ type SessionTree interface {
 
 	// GetSupplierOperatorAddress returns the supplier operator address building this tree.
 	GetSupplierOperatorAddress() *cosmostypes.AccAddress
+
+	// GetTrieSpec returns the trie spec of the SMST.
+	GetTrieSpec() smt.TrieSpec
 }

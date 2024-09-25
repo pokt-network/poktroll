@@ -10,10 +10,29 @@ import (
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/x/session/keeper"
 	"github.com/pokt-network/poktroll/x/session/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+)
+
+var (
+	testSharedParams = sharedtypes.Params{
+		NumBlocksPerSession:                4,
+		GracePeriodEndOffsetBlocks:         1,
+		ClaimWindowOpenOffsetBlocks:        1,
+		ClaimWindowCloseOffsetBlocks:       0,
+		ProofWindowOpenOffsetBlocks:        4,
+		ProofWindowCloseOffsetBlocks:       4,
+		SupplierUnbondingPeriodSessions:    1,
+		ApplicationUnbondingPeriodSessions: 1,
+		ComputeUnitsToTokensMultiplier:     42,
+	}
+
+	sharedParamsOpt = keepertest.WithModuleParams(map[string]sdk.Msg{
+		sharedtypes.ModuleName: &testSharedParams,
+	})
 )
 
 func TestSession_HydrateSession_Success_BaseCase(t *testing.T) {
-	sessionKeeper, ctx := keepertest.SessionKeeper(t)
+	sessionKeeper, ctx := keepertest.SessionKeeper(t, sharedParamsOpt)
 
 	ctx = sdk.UnwrapSDKContext(ctx).WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
 	blockHeight := int64(10)
@@ -112,7 +131,7 @@ func TestSession_HydrateSession_Metadata(t *testing.T) {
 
 	appAddr := keepertest.TestApp1Address
 	serviceId := keepertest.TestServiceId1
-	sessionKeeper, ctx := keepertest.SessionKeeper(t)
+	sessionKeeper, ctx := keepertest.SessionKeeper(t, sharedParamsOpt)
 	ctx = sdk.UnwrapSDKContext(ctx).WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
 
 	for _, test := range tests {
@@ -199,7 +218,7 @@ func TestSession_HydrateSession_SessionId(t *testing.T) {
 		},
 	}
 
-	sessionKeeper, ctx := keepertest.SessionKeeper(t)
+	sessionKeeper, ctx := keepertest.SessionKeeper(t, sharedParamsOpt)
 	ctx = sdk.UnwrapSDKContext(ctx).WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
 
 	for _, test := range tests {
@@ -270,7 +289,7 @@ func TestSession_HydrateSession_Application(t *testing.T) {
 	}
 
 	blockHeight := int64(10)
-	sessionKeeper, ctx := keepertest.SessionKeeper(t)
+	sessionKeeper, ctx := keepertest.SessionKeeper(t, sharedParamsOpt)
 	ctx = sdk.UnwrapSDKContext(ctx).WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
 
 	for _, test := range tests {
@@ -331,7 +350,7 @@ func TestSession_HydrateSession_Suppliers(t *testing.T) {
 	}
 
 	blockHeight := int64(10)
-	sessionKeeper, ctx := keepertest.SessionKeeper(t)
+	sessionKeeper, ctx := keepertest.SessionKeeper(t, sharedParamsOpt)
 	ctx = sdk.UnwrapSDKContext(ctx).WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
 
 	for _, test := range tests {
