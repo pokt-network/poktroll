@@ -328,10 +328,10 @@ Implement a validation function for the new parameter in `x/examplemod/types/par
 #### 5.2 Parameter Validation in Workflow
 
 Integrate the usage of the new `ValidateNewParameter` function in the corresponding
-`Params#ValidateBasic()` function where this is used:
+`Params#Validate()` function where this is used:
 
 ```go
-  func (params *Params) ValidateBasic() error {
+  func (params *Params) Validate() error {
     // ...
 +   if err := ValidateNewParameter(params.NewParameter); err != nil {
 +     return err
@@ -342,12 +342,12 @@ Integrate the usage of the new `ValidateNewParameter` function in the correspond
 
 ### 6. Add the Parameter to `ParamSetPairs()`
 
-Include the new parameter in the `ParamSetPairs` function:
+Include the new parameter in the `ParamSetPairs` function return:
 
 ```go
   func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
     return paramtypes.ParamSetPairs{
-      // Other existing parameters...
+      // Other existing param set pairs...
   
 +     paramtypes.NewParamSetPair(
 +       KeyNewParameter,
@@ -360,70 +360,94 @@ Include the new parameter in the `ParamSetPairs` function:
 
 ### 7. Update Unit Tests
 
-Add tests which exercise validation of the new parameter in your test files
-(e.g., `x/examplemod/types/params_test.go` and `x/examplemod/keeper/msg_server_update_param_test.go`).
-
 #### 7.1 Parameter Validation Tests
 
-```go
-func TestParams_ValidateNewParameter(t *testing.T) {
-  tests := []struct {
-    desc string
-    newParameter interface{}
-    expectedErr error
-  }{
-    {
-      desc: "invalid type",
-      newParameter: uint64(1),
-      expectedErr: fmt.Errorf("invalid parameter type: int64"),
-    },
-    {
-      desc: "valid newParameter",
-      newParameterName: int64(42),
-    },
-  }
+Add unit tests which exercise validation of the new parameter(s) in `x/examplemod/keeper/params_test.go`:
+Ensure there is a test function for each parameter which covers all cases of invalid input
 
-  for _, tt := range tests {
-    t.Run(tt.desc, func(t *testing.T) {
-      err := ValidateNewParameter(tt.newParameter)
-      if tt.expectedErr != nil {
-        require.Error(t, err)
-        require.Contains(t, err.Error(), tt.expectedErr.Error())
-      } else {
-        require.NoError(t, err)
-      }
-    })
+```go
+  func TestGetParams(t *testing.T) {
+    // ...
   }
-}
+  
++ func TestParams_ValidateNewParameter(t *testing.T) {
++   tests := []struct {
++     desc string
++     newParameter interface{}
++     expectedErr error
++   }{
++     {
++       desc: "invalid type",
++       newParameter: "420",
++       expectedErr: fmt.Errorf("invalid parameter type: string"),
++     },
++     {
++       desc: "valid newParameterName",
++       newParameter: int64(420),
++     },
++   }
++ 
++   for _, tt := range tests {
++     t.Run(tt.desc, func(t *testing.T) {
++       err := ValidateNewParameter(tt.newParameter)
++       if tt.expectedErr != nil {
++         require.Error(t, err)
++         require.Contains(t, err.Error(), tt.expectedErr.Error())
++       } else {
++         require.NoError(t, err)
++       }
++     })
++   }
++ }
 ```
 
 #### 7.2 Parameter Update Tests
 
+Add test cases to `x/examplemod/keeper/msg_update_params_test.go` to ensure coverage over any invalid parameter configurations.
+Add a case for the "minimal params" if some subset of the params are "required".
+If one already exist, update it if applicable; e.g.:
+
 ```go
-func TestMsgUpdateParam_UpdateNewParameterOnly(t *testing.T) {
-  var expectedNewParameter uint64 = 420
++ {
++     desc: "valid: send minimal params", // For parameters which MUST NEVER be their zero value or nil.
++     input: &examplemodtypes.MsgUpdateParams{
++         Authority: k.GetAuthority(),
++         Params: examplemodtypes.Params{
++             NewParameter: 42, 
++         },
++     },
++     shouldError: false,
++ },
+```
 
-  // Set the parameters to their default values
-  k, msgSrv, ctx := setupMsgServer(t)
-  defaultParams := prooftypes.DefaultParams()
-  require.NoError(t, k.SetParams(ctx, defaultParams))
+Add unit tests which exercise individual parameter updates in `x/examplemod/keeper/msg_server_update_param_test.go`.
+These tests assert that the value of a given parameter is:
 
-  // Ensure the default values are different from the new values we want to set
-  require.NotEqual(t, expectedNewParameterName, defaultParams.NewParameterName)
-
-  // Update the new parameter
-  updateParamMsg := &examplemodtypes.MsgUpdateParam{
-    Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-    Name: examplemodtypes.ParamNewParameter,
-    AsType: &examplemodtypes.MsgUpdateParam_AsInt64{AsInt64: int64(expectedNewParameter)},
-  }
-  res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
-  require.NoError(t, err)
-
-  require.Equal(t, expectedNewParameter, res.Params.NewParameter)
-
-  // IMPORTANT!: THIS TEST SHOULD ALSO ASSERT THAT ALL OTHER PARAMS OF THE SAME MODULE REMAIN UNCHANGED
-}
+```go
++ func TestMsgUpdateParam_UpdateNewParameterOnly(t *testing.T) {
++   var expectedNewParameter uint64 = 420
++ 
++   // Set the parameters to their default values
++   k, msgSrv, ctx := setupMsgServer(t)
++   defaultParams := prooftypes.DefaultParams()
++   require.NoError(t, k.SetParams(ctx, defaultParams))
++ 
++   // Ensure the default values are different from the new values we want to set
++   require.NotEqual(t, expectedNewParameter, defaultParams.NewParameter)
++ 
++   // Update the new parameter
++   updateParamMsg := &examplemodtypes.MsgUpdateParam{
++     Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
++     Name: examplemodtypes.ParamNewParameter,
++     AsType: &examplemodtypes.MsgUpdateParam_AsInt64{AsInt64: int64(expectedNewParameter)},
++   }
++   res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
++   require.NoError(t, err)
++ 
++   require.Equal(t, expectedNewParameter, res.Params.NewParameter)
++ 
++   // IMPORTANT!: THIS TEST SHOULD ALSO ASSERT THAT ALL OTHER PARAMS OF THE SAME MODULE REMAIN UNCHANGED
++ }
 ```
 
 ### 8. Add Parameter Case to Switch Statements
