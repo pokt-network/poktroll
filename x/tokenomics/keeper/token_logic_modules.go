@@ -316,9 +316,8 @@ func (k Keeper) TokenLogicModuleRelayBurnEqualsMint(
 	// Mint new uPOKT to the supplier module account.
 	// These funds will be transferred to the supplier's shareholders below.
 	// For reference, see operate/configs/supplier_staking_config.md.
-	coinsToMint := sdk.NewCoins(settlementCoin)
 	if err := k.bankKeeper.MintCoins(
-		ctx, suppliertypes.ModuleName, coinsToMint,
+		ctx, suppliertypes.ModuleName, sdk.NewCoins(settlementCoin),
 	); err != nil {
 		return tokenomicstypes.ErrTokenomicsSupplierModuleSendFailed.Wrapf(
 			"minting %s to the supplier module account: %v",
@@ -327,11 +326,10 @@ func (k Keeper) TokenLogicModuleRelayBurnEqualsMint(
 		)
 	}
 
-	for _, coin := range coinsToMint {
-		if coin.Amount.IsInt64() {
-			defer telemetry.MintedTokensFromModule(suppliertypes.ModuleName, float32(coin.Amount.Int64()))
-		}
+	if settlementCoin.Amount.IsInt64() {
+		defer telemetry.MintedTokensFromModule(suppliertypes.ModuleName, float32(settlementCoin.Amount.Int64()))
 	}
+
 	logger.Debug(fmt.Sprintf("minted (%v) coins in the supplier module", settlementCoin))
 
 	// Distribute the rewards to the supplier's shareholders based on the rev share percentage.
@@ -346,18 +344,16 @@ func (k Keeper) TokenLogicModuleRelayBurnEqualsMint(
 
 	// Burn uPOKT from the application module account which was held in escrow
 	// on behalf of the application account.
-	coinsToBurn := sdk.NewCoins(settlementCoin)
 	if err := k.bankKeeper.BurnCoins(
-		ctx, apptypes.ModuleName, coinsToBurn,
+		ctx, apptypes.ModuleName, sdk.NewCoins(settlementCoin),
 	); err != nil {
 		return tokenomicstypes.ErrTokenomicsApplicationModuleBurn.Wrapf("burning %s from the application module account: %v", settlementCoin, err)
 	}
 
-	for _, coin := range coinsToBurn {
-		if coin.Amount.IsInt64() {
-			defer telemetry.BurnedTokensFromModule(apptypes.ModuleName, float32(coin.Amount.Int64()))
-		}
+	if settlementCoin.Amount.IsInt64() {
+		defer telemetry.BurnedTokensFromModule(apptypes.ModuleName, float32(settlementCoin.Amount.Int64()))
 	}
+
 	logger.Debug(fmt.Sprintf("burned (%v) from the application module account", settlementCoin))
 
 	// Update the application's on-chain stake
@@ -396,17 +392,15 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 	}
 
 	// Mint new uPOKT to the tokenomics module account
-	coinsToMint := sdk.NewCoins(newMintCoin)
 	if err := k.bankKeeper.MintCoins(ctx, tokenomictypes.ModuleName, sdk.NewCoins(newMintCoin)); err != nil {
 		return tokenomicstypes.ErrTokenomicsModuleMintFailed.Wrapf(
 			"minting (%s) to the tokenomics module account: %v", newMintCoin, err)
 	}
 
-	for _, coin := range coinsToMint {
-		if coin.Amount.IsInt64() {
-			defer telemetry.MintedTokensFromModule(tokenomictypes.ModuleName, float32(coin.Amount.Int64()))
-		}
+	if newMintCoin.Amount.IsInt64() {
+		defer telemetry.MintedTokensFromModule(tokenomictypes.ModuleName, float32(newMintCoin.Amount.Int64()))
 	}
+
 	logger.Info(fmt.Sprintf("minted (%s) to the tokenomics module account", newMintCoin))
 
 	// Send a portion of the rewards to the application
