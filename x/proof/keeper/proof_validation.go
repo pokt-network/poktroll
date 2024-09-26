@@ -83,7 +83,6 @@ func (k Keeper) EnsureValidProof(
 	// This corrects for discrepancies between unvalidated fields in the session
 	// header which can be derived from known values (e.g. session end height).
 	sessionHeader := onChainSession.GetHeader()
-	serviceId := sessionHeader.ServiceId
 
 	// Validate proof message commit height is within the respective session's
 	// proof submission window using the on-chain session header.
@@ -181,7 +180,7 @@ func (k Keeper) EnsureValidProof(
 		relayBz,
 		serviceRelayDifficultyTargetHash,
 	); err != nil {
-		return types.ErrProofInvalidRelayDifficulty.Wrapf("failed to validate relay difficulty for service %s due to: %v", serviceId, err)
+		return types.ErrProofInvalidRelayDifficulty.Wrapf("failed to validate relay difficulty for service %s due to: %v", sessionHeader.ServiceId, err)
 	}
 	logger.Debug("successfully validated relay mining difficulty")
 
