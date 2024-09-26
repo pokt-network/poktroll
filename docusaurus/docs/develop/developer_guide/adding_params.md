@@ -537,7 +537,7 @@ Prepare `x/examplemod/keeper/msg_server_update_param.go` to handle parameter upd
 
 #### 8.1 `MsgUpdateParam#ValidateBasic()`
 
-Add the parameter name (e.g. `ParamNameNewParameter`) to a new case in the switch in `MsgUpdateParam#ValidateBasic()` in `x/types/message_update_param.go`:
+Add the parameter name (e.g. `ParamNameNewParameter`) to a new case in the switch in `MsgUpdateParam#ValidateBasic()` in `x/examplemod/types/message_update_param.go`:
 
 ```go
   func NewMsgUpdateParam(authority string, name string, value any) *MsgUpdateParam {
@@ -576,7 +576,7 @@ Add the parameter name (e.g. `ParamNameNewParameter`) to a new case in the switc
 
 #### 8.2 `msgServer#UpdateParam()`
 
-Add the parameter name (e.g. `ParamNameNewParameter`) to a new case in the switch statement in `msgServer#UpdateParam()` in `x/keeper/msg_server_update_param.go`:
+Add the parameter name (e.g. `ParamNameNewParameter`) to a new case in the switch statement in `msgServer#UpdateParam()` in `x/examplemod/keeper/msg_server_update_param.go`:
 
 ```go
   // UpdateParam updates a single parameter in the proof module and returns
