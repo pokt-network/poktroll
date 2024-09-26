@@ -454,88 +454,154 @@ These tests assert that the value of a given parameter is:
 
 #### 8.0 If the Module Doesn't Already Support a `MsgUpdateParam` Message
 
-Prepare `x/examplemod/types/message_update_param.go` to handle parameter updates by type:
+Prepare `x/examplemod/types/message_update_param.go` to handle parameter validations by type:
 
 ```go
 - func NewMsgUpdateParam(authority string, name string, asType string) *MsgUpdateParam {
 + func NewMsgUpdateParam(authority string, name string, value any) *MsgUpdateParam {
 +        var valueAsType isMsgUpdateParam_AsType
-+ 
++
 +        switch v := value.(type) {
-+        case int64:
-+                valueAsType = &MsgUpdateParam_AsCoin{AsInt64: v}
 +        default:
 +                panic(fmt.Sprintf("unexpected param value type: %T", value))
 +        }
-+ 
-         return &MsgUpdateParam{
-                 Authority: authority,
-                 Name:      name,
++
+     return &MsgUpdateParam{
+             Authority: authority,
+             Name:      name,
 -                AsType:    asType,
 +                AsType:    valueAsType,
          }
   }
-  
+
   func (msg *MsgUpdateParam) ValidateBasic() error {
-         _, err := cosmostypes.AccAddressFromBech32(msg.Authority)
-         if err != nil {
-                 return errorsmod.Wrapf(sdkerrors.ErrInvalidAddress, "invalid authority address (%s)", err)
-         }
-+ 
-+        // Parameter value cannot be nil.
-+        if msg.AsType == nil {
-+                return ErrGatewayParamInvalid.Wrap("missing param AsType")
-+        }
-+ 
-+        // Parameter name must be supported by this module.
-+        switch msg.Name {
-+        case ParamNewParameter:
-+                return msg.paramTypeIsInt64()
-+        default:
-+                return ErrExamplemodParamInvalid.Wrapf("unsupported param %q", msg.Name)
-+        }
-+ }
-+ 
-+ func (msg *MsgUpdateParam) paramTypeIsInt64() error {
-+        _, ok := msg.AsType.(*MsgUpdateParam_AsInt64)
-+        if !ok {
-+                return ErrGatewayParamInvalid.Wrapf(
-+                        "invalid type for param %q expected %T type: %T",
-+                        msg.Name, &MsgUpdateParam_AsInt64{}, msg.AsType,
-+                )
-+        }
-+ 
-         return nil
+	    _, err := cosmostypes.AccAddressFromBech32(msg.Authority)
+		if err != nil {
+            return errorsmod.Wrapf(sdkerrors.ErrInvalidAddress, "invalid authority address (%s)", err)
+        }
++
++       // Parameter value cannot be nil.
++       if msg.AsType == nil {
++               return ErrGatewayParamInvalid.Wrap("missing param AsType")
++       }
++
++       // Parameter name must be supported by this module.
++       switch msg.Name {
++       default:
++               return ErrExamplemodParamInvalid.Wrapf("unsupported param %q", msg.Name)
++       }
+
+        return nil
+  }
+```
+
+Prepare `x/examplemod/keeper/msg_server_update_param.go` to handle parameter updates by type:
+
+```go
++ // UpdateParam updates a single parameter in the proof module and returns
++ // all active parameters.
+  func (k msgServer) UpdateParam(
+    ctx context.Context,
+    msg *types.MsgUpdateParam,
+  ) (*types.MsgUpdateParamResponse, error) {
+-   ctx := sdk.UnwrapSDKContext(goCtx)
+-
+-   // TODO: Handling the message
+-   _ = ctx
+-
++   if err := msg.ValidateBasic(); err != nil {
++       return nil, err
++   }
++
++ 	if k.GetAuthority() != msg.Authority {
++ 		return nil, types.ErrProofInvalidSigner.Wrapf("invalid authority; expected %s, got %s", k.GetAuthority(), msg.Authority)
++ 	}
++
++ 	params := k.GetParams(ctx)
++
++ 	switch msg.Name {
++ 	default:
++ 		return nil, types.ErrProofParamInvalid.Wrapf("unsupported param %q", msg.Name)
++ 	}
++
++ 	if err := k.SetParams(ctx, params); err != nil {
++ 		return nil, err
++ 	}
++
++ 	updatedParams := k.GetParams(ctx)
++ 	return &types.MsgUpdateParamResponse{
++ 		Params: &updatedParams,
++ 	}, nil
   }
 ```
 
 #### 8.1 `MsgUpdateParam#ValidateBasic()`
 
-Add `ParamNameNewParameterName` to `MsgUpdateParam#ValidateBasic()` in `x/types/message_update_param.go`:
+Add the parameter name (e.g. `ParamNameNewParameter`) to a new case in the switch in `MsgUpdateParam#ValidateBasic()` in `x/types/message_update_param.go`:
 
 ```go
-  // Parameter name must be supported by this module.
-  switch msg.Name {
-  case ParamNumBlocksPerSession,
-    ParamNewParameterName:
-    return msg.paramTypeIsInt64()
+  func NewMsgUpdateParam(authority string, name string, value any) *MsgUpdateParam {
+        // ...
+        switch v := value.(type) {
++       case int64:
++               valueAsType = &MsgUpdateParam_AsCoin{AsInt64: v}
+        default:
+                panic(fmt.Sprintf("unexpected param value type: %T", value))
+        }
+        // ...
+  }
+
+  func (msg *MsgUpdateParam) ValidateBasic() error {
+        // ...
+        switch msg.Name {
++       case ParamNewParameter:
++               return msg.paramTypeIsInt64()
+        default:
+                return ErrExamplemodParamInvalid.Wrapf("unsupported param %q", msg.Name)
+        }
+  }
++
++ func (msg *MsgUpdateParam) paramTypeIsInt64() error {
++       _, ok := msg.AsType.(*MsgUpdateParam_AsInt64)
++       if !ok {
++               return ErrGatewayParamInvalid.Wrapf(
++                       "invalid type for param %q expected %T type: %T",
++                       msg.Name, &MsgUpdateParam_AsInt64{}, msg.AsType,
++               )
++       }
++
++       return nil
++ }
 ```
 
 #### 8.2 `msgServer#UpdateParam()`
 
-Add `ParamNameNewParameterName` to `msgServer#UpdateParam()` in `x/keeper/msg_server_update_param.go`:
+Add the parameter name (e.g. `ParamNameNewParameter`) to a new case in the switch statement in `msgServer#UpdateParam()` in `x/keeper/msg_server_update_param.go`:
 
 ```go
-case types.ParamNewParameterName:
-  value, ok := msg.AsType.(*types.MsgUpdateParam_AsInt64)
-  if !ok {
-    return nil, types.ErrProofParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
+  // UpdateParam updates a single parameter in the proof module and returns
+  // all active parameters.
+  func (k msgServer) UpdateParam(
+      ctx context.Context,
+      msg *types.MsgUpdateParam,
+  ) (*types.MsgUpdateParamResponse, error) {
+    // ...
+  	switch msg.Name {
++ 	case types.ParamRelayDifficultyTargetHash:
++ 		value, ok := msg.AsType.(*types.MsgUpdateParam_AsBytes)
++ 		if !ok {
++ 			return nil, types.ErrProofParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
++ 		}
++ 		relayDifficultyTargetHash := value.AsBytes
++
++ 		if err := types.ValidateRelayDifficultyTargetHash(relayDifficultyTargetHash); err != nil {
++ 			return nil, err
++ 		}
++
++ 		params.RelayDifficultyTargetHash = relayDifficultyTargetHash
+  	default:
+  		return nil, types.ErrProofParamInvalid.Wrapf("unsupported param %q", msg.Name)
+  	}
+    // ...
   }
-  newParameter := uint64(value.AsInt64)
-
-  if err := types.ValidateNewParameter(newParameter); err != nil {
-    return nil, err
-  }
-
-  params.NewParameter = newParameter
 ```
