@@ -69,6 +69,7 @@ var (
 	ValidProofSubmissionFeeCoin        = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 5000000)
 	ValidProofRequirementThresholdCoin = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 100)
 	ValidRelayDifficultyTargetHash, _  = hex.DecodeString("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff")
+	ValidActorMinStake                 = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 100)
 
 	SharedModuleParamConfig = ModuleParamConfig{
 		ParamsMsgs: ModuleParamsMessages{
@@ -149,10 +150,17 @@ var (
 		ParamsMsgs: ModuleParamsMessages{
 			MsgUpdateParams:         gatewaytypes.MsgUpdateParams{},
 			MsgUpdateParamsResponse: gatewaytypes.MsgUpdateParamsResponse{},
+			MsgUpdateParam:          gatewaytypes.MsgUpdateParam{},
+			MsgUpdateParamResponse:  gatewaytypes.MsgUpdateParamResponse{},
 			QueryParamsRequest:      gatewaytypes.QueryParamsRequest{},
 			QueryParamsResponse:     gatewaytypes.QueryParamsResponse{},
 		},
-		ValidParams:      gatewaytypes.Params{},
+		ValidParams: gatewaytypes.Params{
+			MinStake: &ValidActorMinStake,
+		},
+		ParamTypes: map[ParamType]any{
+			ParamTypeCoin: gatewaytypes.MsgUpdateParam_AsCoin{},
+		},
 		DefaultParams:    gatewaytypes.DefaultParams(),
 		NewParamClientFn: gatewaytypes.NewQueryClient,
 	}
