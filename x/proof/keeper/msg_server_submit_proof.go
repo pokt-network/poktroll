@@ -15,9 +15,9 @@ import (
 
 	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/proof/types"
+	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
 	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	"github.com/pokt-network/poktroll/x/tokenomics"
 )
 
 // SubmitProof is the server handler to submit and store a proof on-chain.
@@ -223,22 +223,19 @@ func (k Keeper) ProofRequirementForClaim(ctx context.Context, claim *types.Claim
 		telemetry.ProofRequirementCounter(requirementReason, err)
 	}()
 
-	// NB: Assumption that claim is non-nil and has a valid root sum because it
-	// is retrieved from the store and validated, on-chain, at time of creation.
-	// TODO(@red-0ne, #781): Ensure we're using the scaled/estimated compute units here.
-	var numClaimComputeUnits uint64
-	numClaimComputeUnits, err = claim.GetNumClaimedComputeUnits()
-	if err != nil {
-		return requirementReason, err
-	}
-
 	proofParams := k.GetParams(ctx)
 	sharedParams := k.sharedKeeper.GetParams(ctx)
+
+	serviceId := claim.GetSessionHeader().GetServiceId()
+	relayMiningDifficulty, found := k.serviceKeeper.GetRelayMiningDifficulty(ctx, serviceId)
+	if !found {
+		relayMiningDifficulty = servicekeeper.NewDefaultRelayMiningDifficulty(ctx, logger, serviceId, 0)
+	}
 
 	// Retrieve the number of tokens claimed to compare against the threshold.
 	// Different services have varying compute_unit -> token multipliers, so the
 	// threshold value is done in a common unit denomination.
-	claimeduPOKT, err := tokenomics.NumComputeUnitsToCoin(sharedParams, numClaimComputeUnits)
+	claimeduPOKT, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
 	if err != nil {
 		return requirementReason, err
 	}

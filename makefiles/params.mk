@@ -35,10 +35,6 @@ params_update_tokenomics_compute_units_to_tokens_multiplier: ## Update the token
 params_update_proof_all: ## Update the proof module params
 	poktrolld tx authz exec ./tools/scripts/params/proof_all.json $(PARAM_FLAGS)
 
-.PHONY: params_update_proof_min_relay_difficulty_bits
-params_update_proof_min_relay_difficulty_bits: ## Update the proof module min_relay_difficulty_bits param
-	poktrolld tx authz exec ./tools/scripts/params/proof_min_relay_difficulty_bits.json $(PARAM_FLAGS)
-
 .PHONY: params_update_proof_proof_request_probability
 params_update_proof_proof_request_probability: ## Update the proof module proof_request_probability param
 	poktrolld tx authz exec ./tools/scripts/params/proof_proof_request_probability.json $(PARAM_FLAGS)

@@ -509,7 +509,10 @@ func TestProcessTokenLogicModules_InvalidRoot(t *testing.T) {
 		{
 			desc: "correct size but invalid value",
 			root: func() []byte {
-				return bytes.Repeat([]byte("a"), protocol.TrieRootSize)
+				root := bytes.Repeat([]byte("a"), protocol.TrieRootSize)
+				// Change the last byte to 'b'
+				root = append(root[:len(root)-1], 'b')
+				return root
 			}(),
 			errExpected: true,
 		},

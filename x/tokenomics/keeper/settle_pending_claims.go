@@ -9,6 +9,7 @@ import (
 
 	"github.com/pokt-network/poktroll/app/volatile"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
 	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
@@ -59,21 +60,41 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 
 		// NB: Not every (Req, Res) pair in the session is inserted into the tree due
 		// to the relay mining difficulty. This is the count of non-empty leaves that
-		// matched the necessary difficulty and is therefore an estimation of the total
-		// number of relays serviced and work done.
+		// matched the necessary difficulty.
 		numClaimRelays, err = claim.GetNumRelays()
 		if err != nil {
 			return settledResult, expiredResult, err
 		}
 
-		// DEV_NOTE: We are assuming that (numClaimComputeUnits := numComputeUnits * service.ComputeUnitsPerRelay)
+		// DEV_NOTE: We are assuming that (numClaimComputeUnits := numClaimRelays * service.ComputeUnitsPerRelay)
 		// because this code path is only reached if that has already been validated.
 		numClaimComputeUnits, err = claim.GetNumClaimedComputeUnits()
 		if err != nil {
 			return settledResult, expiredResult, err
 		}
 
-		// TODO(@red-0ne, #781): Convert numClaimedComputeUnits to numEstimatedComputeUnits to reflect reward/payment based on real usage.
+		// Get the relay mining difficulty for the service that this claim is for.
+		serviceId := claim.GetSessionHeader().GetServiceId()
+		relayMiningDifficulty, found := k.serviceKeeper.GetRelayMiningDifficulty(ctx, serviceId)
+		if !found {
+			relayMiningDifficulty = servicekeeper.NewDefaultRelayMiningDifficulty(ctx, logger, serviceId, 0)
+		}
+		// numEstimatedComputeUnits is the probabilistic estimation of the off-chain
+		// work done by the relay miner in this session. It is derived from the claimed
+		// work and the relay mining difficulty.
+		numEstimatedComputeUnits, err := claim.GetNumEstimatedComputeUnits(relayMiningDifficulty)
+		if err != nil {
+			return settledResult, expiredResult, err
+		}
+
+		sharedParams := k.sharedKeeper.GetParams(ctx)
+		// claimedAmount is the amount of uPOKT that the supplier would receive if the
+		// claim is settled. It is derived from the claimed number of relays, the service
+		// current minding difficulty and the global network parameters.
+		claimedAmount, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
+		if err != nil {
+			return settledResult, expiredResult, err
+		}
 
 		proof, isProofFound := k.proofKeeper.GetProof(ctx, sessionId, claim.SupplierOperatorAddress)
 		// Using the probabilistic proofs approach, determine if this expiring
@@ -88,6 +109,8 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 			"supplier_operator_address", claim.SupplierOperatorAddress,
 			"num_claim_compute_units", numClaimComputeUnits,
 			"num_relays_in_session_tree", numClaimRelays,
+			"num_estimated_compute_units", numEstimatedComputeUnits,
+			"claimed_amount_upokt", claimedAmount,
 			"proof_requirement", proofRequirement,
 		)
 
@@ -113,11 +136,12 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 				// Proof was required but is invalid or not found.
 				// Emit an event that a claim has expired and being removed without being settled.
 				claimExpiredEvent := tokenomicstypes.EventClaimExpired{
-					Claim:                  &claim,
-					ExpirationReason:       expirationReason,
-					NumRelays:              numClaimRelays,
-					NumClaimedComputeUnits: numClaimComputeUnits,
-					// TODO_FOLLOWUP: Add NumEstimatedComputeUnits and ClaimedAmountUpokt
+					Claim:                    &claim,
+					ExpirationReason:         expirationReason,
+					NumRelays:                numClaimRelays,
+					NumClaimedComputeUnits:   numClaimComputeUnits,
+					NumEstimatedComputeUnits: numEstimatedComputeUnits,
+					ClaimedAmountUpokt:       &claimedAmount,
 				}
 				if err = ctx.EventManager().EmitTypedEvent(&claimExpiredEvent); err != nil {
 					return settledResult, expiredResult, err
@@ -160,11 +184,12 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 		}
 
 		claimSettledEvent := tokenomicstypes.EventClaimSettled{
-			Claim:                  &claim,
-			NumRelays:              numClaimRelays,
-			NumClaimedComputeUnits: numClaimComputeUnits,
-			// TODO_FOLLOWUP: Add NumEstimatedComputeUnits and ClaimedAmountUpokt
-			ProofRequirement: proofRequirement,
+			Claim:                    &claim,
+			NumRelays:                numClaimRelays,
+			NumClaimedComputeUnits:   numClaimComputeUnits,
+			NumEstimatedComputeUnits: numEstimatedComputeUnits,
+			ClaimedAmountUpokt:       &claimedAmount,
+			ProofRequirement:         proofRequirement,
 		}
 
 		if err = ctx.EventManager().EmitTypedEvent(&claimSettledEvent); err != nil {
@@ -172,11 +197,12 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 		}
 
 		if err = ctx.EventManager().EmitTypedEvent(&prooftypes.EventProofUpdated{
-			Claim:                  &claim,
-			Proof:                  nil,
-			NumRelays:              0,
-			NumClaimedComputeUnits: 0,
-			// TODO_FOLLOWUP: Add NumEstimatedComputeUnits and ClaimedAmountUpokt
+			Claim:                    &claim,
+			Proof:                    nil,
+			NumRelays:                0,
+			NumClaimedComputeUnits:   0,
+			NumEstimatedComputeUnits: numEstimatedComputeUnits,
+			ClaimedAmountUpokt:       &claimedAmount,
 		}); err != nil {
 			return settledResult, expiredResult, err
 		}

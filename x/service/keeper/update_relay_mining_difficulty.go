@@ -14,27 +14,29 @@ import (
 	"github.com/pokt-network/poktroll/x/service/types"
 )
 
-// TargetNumRelays is the target number of relays we want the network to mine for
-// a specific service across all applications & suppliers per session.
-// This number determines the total number of leafs to be created across in
-// the off-chain SMTs, across all suppliers, for each service.
-// It indirectly drives the off-chain resource requirements of the network
-// in additional to playing a critical role in Relay Mining.
-// TODO_MAINNET(#542): Make this a governance parameter and figure out the correct value.
-const TargetNumRelays = uint64(10e4)
+var (
+	// TargetNumRelays is the target number of relays we want the network to mine for
+	// a specific service across all applications & suppliers per session.
+	// This number determines the total number of leafs to be created across in
+	// the off-chain SMTs, across all suppliers, for each service.
+	// It indirectly drives the off-chain resource requirements of the network
+	// in additional to playing a critical role in Relay Mining.
+	// TODO_MAINNET(#542): Make this a governance parameter and figure out the correct value.
+	TargetNumRelays = uint64(10e4)
 
-// Exponential moving average (ema) smoothing factor, commonly known as alpha.
-// Usually, alpha = 2 / (N+1), where N is the number of periods.
-// Large alpha -> more weight on recent data; less smoothing and fast response.
-// Small alpha -> more weight on past data; more smoothing and slow response.
-//
-// TODO_MAINNET: Use a language agnostic float implementation or arithmetic library
-// to ensure deterministic results across different language implementations of the
-// protocol.
-//
-// TODO_MAINNET(@olshansk, @rawthil): Play around with the value N for EMA to
-// capture what the memory should be.
-var emaSmoothingFactor = new(big.Float).SetFloat64(0.1)
+	// Exponential moving average (ema) smoothing factor, commonly known as alpha.
+	// Usually, alpha = 2 / (N+1), where N is the number of periods.
+	// Large alpha -> more weight on recent data; less smoothing and fast response.
+	// Small alpha -> more weight on past data; more smoothing and slow response.
+	//
+	// TODO_MAINNET: Use a language agnostic float implementation or arithmetic library
+	// to ensure deterministic results across different language implementations of the
+	// protocol.
+	//
+	// TODO_MAINNET(@olshansk, @rawthil): Play around with the value N for EMA to
+	// capture what the memory should be.
+	EMASmoothingFactor = new(big.Float).SetFloat64(0.1)
+)
 
 // UpdateRelayMiningDifficulty updates the on-chain relay mining difficulty
 // based on the amount of on-chain relays for each service, given a map of serviceId->numRelays.
@@ -57,7 +59,7 @@ func (k Keeper) UpdateRelayMiningDifficulty(
 		// of periods.
 		// N := ctx.BlockHeight() - prevDifficulty.BlockHeight
 		// alpha := 2 / (1 + N)
-		alpha := emaSmoothingFactor
+		alpha := EMASmoothingFactor
 
 		// Compute the updated EMA of the number of relays.
 		prevRelaysEma := prevDifficulty.NumRelaysEma

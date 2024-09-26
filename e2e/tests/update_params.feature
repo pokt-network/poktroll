@@ -68,7 +68,6 @@ Feature: Params Namespace
 
     Examples:
       | module  | message_type                     | param_name                            | param_value | param_type |
-      | proof   | /poktroll.proof.MsgUpdateParam   | min_relay_difficulty_bits             | 12          | int64      |
       | proof   | /poktroll.proof.MsgUpdateParam   | proof_request_probability             | 0.1         | float      |
       | proof   | /poktroll.proof.MsgUpdateParam   | proof_requirement_threshold           | 100         | coin       |
       | proof   | /poktroll.proof.MsgUpdateParam   | proof_missing_penalty                 | 500         | coin       |
@@ -91,4 +90,4 @@ Feature: Params Namespace
     When the "unauthorized" account sends an authz exec message to update "proof" the module param
       | name                      | value | type  |
       | proof_request_probability | 0.1   | float |
-    Then the "proof" module param "min_relay_difficulty_bits" should be set to its default value
+    Then the "proof" module param "proof_request_probability" should be set to its default value
