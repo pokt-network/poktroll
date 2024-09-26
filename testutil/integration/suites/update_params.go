@@ -1,7 +1,10 @@
 package suites
 
 import (
+	"os"
+	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
@@ -44,8 +47,14 @@ var (
 		tokenomicstypes.ModuleName: TokenomicsModuleParamConfig,
 	}
 
-	_ IntegrationSuite = (*ParamsSuite)(nil)
+	// paramConfigsPath is the path, relative to the project root, to the go file
+	// containing the ModuleParamConfig declaration. It is set in init() and is
+	// interpolated into error messages when a module's ModuleParamConfig seems
+	// misconfigured (e.g. missing expected values).
+	paramConfigsPath string
 )
+
+var _ IntegrationSuite = (*ParamsSuite)(nil)
 
 func init() {
 	for moduleName, moduleParamCfg := range ModuleParamConfigMap {
@@ -53,6 +62,13 @@ func init() {
 			MsgUpdateParamEnabledModuleNames = append(MsgUpdateParamEnabledModuleNames, moduleName)
 		}
 	}
+
+	// Take the package path of the ModuleParamConfig type and drop the github.com/<org>/<repo> prefix.
+	paramConfigsPkgPath := reflect.TypeOf(ModuleParamConfig{}).PkgPath()
+	paramConfigsPathParts := strings.Split(paramConfigsPkgPath, string(os.PathSeparator))
+	paramConfigsDir := filepath.Join(paramConfigsPathParts[3:]...)
+	// NB: The file name is not included in the package path and must be updated here if it changes.
+	paramConfigsPath = filepath.Join(paramConfigsDir, "param_configs.go")
 }
 
 // ParamsSuite is an integration test suite that provides helper functions for
@@ -215,7 +231,11 @@ func (s *ParamsSuite) RunUpdateParamAsSigner(
 
 	msgUpdateParamValue.Elem().FieldByName("Name").SetString(cases.ToSnakeCase(paramName))
 
-	msgAsTypeStruct := moduleCfg.ParamTypes[paramType]
+	msgAsTypeStruct, hasParamType := moduleCfg.ParamTypes[paramType]
+	require.Truef(t, hasParamType,
+		"module %q does not include param type %q in its ModuleParamConfig#ParamTypes; consider updating %s",
+		moduleName, paramType, paramConfigsPath,
+	)
 	msgAsTypeType := reflect.TypeOf(msgAsTypeStruct)
 	msgAsTypeValue := reflect.New(msgAsTypeType)
 	switch paramType {
