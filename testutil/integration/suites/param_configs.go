@@ -16,6 +16,53 @@ import (
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
+// ParamType is a type alias for a module parameter type. It is the string that
+// is returned when calling reflect.Value#Type()#Name() on a module parameter.
+type ParamType = string
+
+const (
+	ParamTypeInt64   ParamType = "int64"
+	ParamTypeUint64  ParamType = "uint64"
+	ParamTypeFloat32 ParamType = "float32"
+	ParamTypeString  ParamType = "string"
+	ParamTypeBytes   ParamType = "uint8"
+	ParamTypeCoin    ParamType = "Coin"
+)
+
+// ModuleParamConfig holds type information about a module's parameters update
+// message(s) along with default and valid non-default values and a query constructor
+// function for the module. It is used by ParamsSuite to construct and send
+// parameter update messages and assert on their results.
+type ModuleParamConfig struct {
+	ParamsMsgs ModuleParamsMessages
+	// ParamTypes is a map of parameter types to their respective MsgUpdateParam_As*
+	// types which satisfy the oneof for the MsgUpdateParam#AsType field. Each AsType
+	// type which the module supports should be included in this map.
+	ParamTypes map[ParamType]any
+	// ValidParams is a set of parameters which are expected to be valid when used
+	// together AND when used individually, where the reamining parameters are set
+	// to their default values.
+	ValidParams      any
+	DefaultParams    any
+	NewParamClientFn any
+}
+
+// ModuleParamsMessages holds a reference to each of the params-related message
+// types for a given module. The values are only used for their type information
+// which is obtained via reflection. The values are not used for their actual
+// message contents and MAY be the zero value.
+// If MsgUpdateParam is omitted (i.e. nil), ParamsSuite will assume that
+// this module does not support individual parameter updates (i.e. MsgUpdateParam).
+// In this case, MsgUpdateParamResponse SHOULD also be omitted.
+type ModuleParamsMessages struct {
+	MsgUpdateParams         any
+	MsgUpdateParamsResponse any
+	MsgUpdateParam          any
+	MsgUpdateParamResponse  any
+	QueryParamsRequest      any
+	QueryParamsResponse     any
+}
+
 var (
 	ValidAddServiceFeeCoin             = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1000000001)
 	ValidProofMissingPenaltyCoin       = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 500)
