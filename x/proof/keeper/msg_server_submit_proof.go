@@ -120,11 +120,12 @@ func (k msgServer) SubmitProof(
 	if err != nil {
 		return nil, status.Error(codes.Internal, types.ErrProofInvalidClaimRootHash.Wrap(err.Error()).Error())
 	}
+	// DEV_NOTE: It is assumed that numClaimComputeUnits = numRelays * serviceComputeUnitsPerRelay
+	// has been checked during the claim creation process.
 	numClaimComputeUnits, err = claim.GetNumClaimedComputeUnits()
 	if err != nil {
 		return nil, status.Error(codes.Internal, types.ErrProofInvalidClaimRootHash.Wrap(err.Error()).Error())
 	}
-	// DEV_NOTE: It is assumed that numComputeUnits = numRelays * serviceComputeUnitsPerRelay
 
 	// Check if a prior proof already exists.
 	_, isExistingProof = k.GetProof(ctx, proof.SessionHeader.SessionId, proof.SupplierOperatorAddress)
