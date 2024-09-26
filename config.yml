@@ -223,6 +223,9 @@ genesis:
             amount: "1000068"
             denom: upokt
     gateway:
+      params:
+        # TODO_MAINNER: Determine realistic amount for minimum gateway stake amount.
+        min_stake: 100
       gatewayList:
         - address: pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4
           stake:
