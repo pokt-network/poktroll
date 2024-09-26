@@ -43,6 +43,83 @@ https://github.com/ignite/cli/issues/3684#issuecomment-2299796210
 
 ## Step-by-Step Instructions
 
+### 0. If the Module Doesn't Already Support a `MsgUpdateParam` Message
+
+In order to support **individual parameter updates**, the module MUST have a `MsgUpdateParam` message.
+If the module doesn't already support this message, it will need to be added.
+
+### 0.1 Scaffold the `MsgUpdateParam` Message
+
+```bash
+ignite scaffold message update-param --module <module-name> --signer authority name as_type --response params
+```
+
+### 0.2 Update the `MsgUpdateParam` Message Fields
+
+Update the `MsgUpdateParam` message fields in the module's `tx.proto` file to include the following comments and protobuf options:
+
+```diff
++// MsgUpdateParam is the Msg/UpdateParam request type to update a single param.
+ message MsgUpdateParam {
+   option (cosmos.msg.v1.signer) = "authority";
+-  string authority = 1;
++
++  // authority is the address that controls the module (defaults to x/gov unless overwritten).
++  string authority = 1  [(cosmos_proto.scalar) = "cosmos.AddressString"];
++
+   string name      = 2;
+-  string asType    = 3;
++  oneof as_type {
++    // Add `as_<type>` fields for each type in this module's Params type; e.g.:
++    // int64 as_int64 = 3 [(gogoproto.jsontag) = "as_int64"];
++    // bytes as_bytes = 4 [(gogoproto.jsontag) = "as_bytes"];
++    // cosmos.base.v1beta1.Coin as_coin = 5 [(gogoproto.jsontag) = "as_coin"];
++  }
+ }
+ 
+ message MsgUpdateParamResponse {
+```
+
+### 0.3 Comment Out AutoCLI
+
+When scaffolding the `MsgUpdateParam` message, lines are added to `x/<module>/module/autocli.go`.
+Since governance parameters aren't updated via `poktrolld` CLI, comment out these new lines:
+
+```diff
+...
+Tx: &autocliv1.ServiceCommandDescriptor{
+    Service:              modulev1.Msg_ServiceDesc.ServiceName,
+    EnhanceCustomCommand: true, // only required if you want to use the custom command
+    RpcCommandOptions:    []*autocliv1.RpcCommandOptions{
+        ...
++       //	{
++       //		RpcMethod:      "UpdateParam",
++       //		Use:            "update-param [name] [as-type]",
++       //		Short:          "Send a update-param tx",
++       //		PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "name"}, {ProtoField: "asType"}},
++       //	},
+        // this line is used by ignite scaffolding # autocli/tx
+    },
+},
+...
+```
+
+### 0.4. Update the DAO Genesis Authorizations JSON File
+
+Add a grant (array element) to `tools/scripts/authz/dao_genesis_authorizations.json` with the `authorization.msg` typeURL for this module's `MsgUpdateType`:
+
+```json
+  {
+    "granter": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
+    "grantee": "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw",
+    "authorization": {
+      "@type": "\/cosmos.authz.v1beta1.GenericAuthorization",
+      "msg": "\/poktroll.<module>.MsgUpdateParam"
+    },
+    "expiration": "2500-01-01T00:00:00Z"
+  },
+```
+
 ### 1. Define the Parameter in the Protocol Buffers File
 
 Open the appropriate `.proto` file for your module (e.g., `params.proto`) and define the new parameter.
@@ -56,9 +133,57 @@ message Params {
 }
 ```
 
-### 2 Update the Parameter Integration Tests
+### 2 Update the Parameter Integration Tests 
 
-// TODO_DOCUMENT(@bryanchriswhite, #826)
+Integration tests which cover parameter updates utilize the `ModuleParamConfig`s defined in [`testutil/integration/params/param_configs.go`](https://github.com/pokt-network/poktroll/blob/main/testutil/integration/suites/param_configs.go) to dynamically (i.e. using reflection) construct and send parameter update messages in a test environment.
+When adding parameters to a module, it is necessary to update that module's `ModuleParamConfig` to include the new parameter, othwerwise it will not be covered by the integration test suite.
+
+### 2.1 If the Module Didn't Previously Support a `MsgUpdateParam` Message
+
+  Add `MsgUpdateParam` & `MsgUpdateParamResponse` to the module's `ModuleParamConfig#ParamsMsg`:
+
+```diff
+SomeModuleParamConfig = ModuleParamConfig{
+  ParamsMsgs: ModuleParamsMessages{
+    MsgUpdateParams:         gatewaytypes.MsgUpdateParams{},
+    MsgUpdateParamsResponse: gatewaytypes.MsgUpdateParamsResponse{},
++   MsgUpdateParam:          gatewaytypes.MsgUpdateParam{},
++   MsgUpdateParamResponse:  gatewaytypes.MsgUpdateParamResponse{},
+    QueryParamsRequest:      gatewaytypes.QueryParamsRequest{},
+    QueryParamsResponse:     gatewaytypes.QueryParamsResponse{},
+  },
+  ...
+}
+```
+
+### 2.2 Add a valid param
+
+Update `ModuleParamConfig#ValidParams` to include a valid and non-default value for the new parameter.
+
+```diff
+SomeModuleParamConfig = ModuleParamConfig{
+    ...
+    ValidParams: gatewaytypes.Params{
++       MinStake: &ValidActorMinStake,
+    },
+    ...
+}
+```
+
+### 2.3 Check for `as_<type>` on `MsgUpdateParam`
+
+Ensure an `as_<type>` field exists on `MsgUpdateParam` corresponding to the type of the new parameter.
+Below is an example of adding an `int64` type parameter to a new `MsgUpdateParam` message:
+
+```diff
+ message MsgUpdateParam {
+   ...
+   oneof as_type {
+-    // Add `as_<type>` fields for each type in this module's Params type; e.g.:
++    int64 as_int64 = 3 [(gogoproto.jsontag) = "as_int64"];
+   }
+ }
+```
 
 ### 3. Update the Default Parameter Values
 
@@ -110,9 +235,9 @@ genesis:
 Add a new target in the `Makefile` to update the new parameter.
 
 ```makefile
-.PHONY: params_update_proof_new_parameter_name
-params_update_proof_new_parameter_name: ## Update the proof module new_parameter_name param
-  poktrolld tx authz exec ./tools/scripts/params/proof_new_parameter_name.json $(PARAM_FLAGS)
+.PHONY: params_update_<module>_<new_param_name>
+params_update_<module>_<new_param_name>: ## Update the <module> module <new_parameter_name> param
+  poktrolld tx authz exec ./tools/scripts/params/<module>_<new_param_name>.json $(PARAM_FLAGS)
 ```
 
 ### 6. Create a new JSON File for the Individual Parameter Update
@@ -127,8 +252,8 @@ directory to specify how to update the new parameter.
       {
         "@type": "/poktroll.proof.MsgUpdateParam",
         "authority": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
-        "name": "new_parameter_name",
-        "as_int64": "100"
+        "name": "<new_parameter_name>",
+        "as_int64": "<default_value>"
       }
     ]
   }
@@ -151,7 +276,7 @@ with the default value for the new parameter.
           "min_relay_difficulty_bits": "0",
           "proof_request_probability": "0.25",
           "proof_requirement_threshold": "20",
-          "new_parameter_name": "100" // Add this line
+          "<new_parameter_name>": "<default value>" // Add this line
         }
       }
     ]
