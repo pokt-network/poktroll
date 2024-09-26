@@ -58,6 +58,10 @@ func ValidateMinStake(minStakeAny any) error {
 		return ErrGatewayParamInvalid.Wrapf("invalid type for %s: %T; expected *cosmostypes.Coin", ParamMinStake, minStakeAny)
 	}
 
+	if minStakeCoin == nil {
+		return ErrGatewayParamInvalid.Wrap("missing min_stake")
+	}
+
 	if err := ValidateMinStakeDenom(minStakeCoin); err != nil {
 		return err
 	}
