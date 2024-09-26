@@ -6,8 +6,6 @@
 package telemetry
 
 import (
-	"strconv"
-
 	"github.com/cosmos/cosmos-sdk/telemetry"
 	"github.com/hashicorp/go-metrics"
 
@@ -15,11 +13,8 @@ import (
 )
 
 const (
-	// TODO_DECIDE: Decide if we want to continue using these generic metrics keys
-	// or opt for specific keys for each event_type.
-	// See: https://github.com/pokt-network/poktroll/pull/631#discussion_r1653760820
-	eventTypeMetricKey      = "event_type"
-	eventTypeMetricKeyGauge = "event_type_gauge"
+	// Prefix all metric names with "poktroll" for easier search
+	metricNamePrefix = "poktroll"
 )
 
 // EventSuccessCounter increments a counter with the given data type and success status.
@@ -33,9 +28,9 @@ func EventSuccessCounter(
 	var metricName []string
 
 	if isSuccessful() {
-		metricName = []string{"event", "success"}
+		metricName = MetricNameKeys("successful", "events")
 	} else {
-		metricName = []string{"event", "failed"}
+		metricName = MetricNameKeys("failed", "events")
 	}
 
 	telemetry.IncrCounterWithLabels(
@@ -56,10 +51,8 @@ func ProofRequirementCounter(
 	err error,
 ) {
 	incrementAmount := 1
-	isRequired := strconv.FormatBool(reason != prooftypes.ProofRequirementReason_NOT_REQUIRED)
 	labels := []metrics.Label{
-		{Name: "proof_required_reason", Value: reason.String()},
-		{Name: "is_required", Value: isRequired},
+		{Name: "reason", Value: reason.String()},
 	}
 
 	// Ensure the counter is not incremented if there was an error.
@@ -68,7 +61,7 @@ func ProofRequirementCounter(
 	}
 
 	telemetry.IncrCounterWithLabels(
-		[]string{eventTypeMetricKey},
+		MetricNameKeys("proof", "requirements"),
 		float32(incrementAmount),
 		labels,
 	)
@@ -84,8 +77,7 @@ func ClaimComputeUnitsCounter(
 ) {
 	incrementAmount := numComputeUnits
 	labels := []metrics.Label{
-		{Name: "unit", Value: "compute_units"},
-		{Name: "claim_proof_stage", Value: claimProofStage.String()},
+		{Name: "proof_stage", Value: claimProofStage.String()},
 	}
 
 	// Ensure the counter is not incremented if there was an error.
@@ -94,7 +86,7 @@ func ClaimComputeUnitsCounter(
 	}
 
 	telemetry.IncrCounterWithLabels(
-		[]string{eventTypeMetricKey},
+		MetricNameKeys("compute_units"),
 		float32(incrementAmount),
 		labels,
 	)
@@ -111,8 +103,7 @@ func ClaimRelaysCounter(
 ) {
 	incrementAmount := numRelays
 	labels := []metrics.Label{
-		{Name: "unit", Value: "relays"},
-		{Name: "claim_proof_stage", Value: claimProofStage.String()},
+		{Name: "proof_stage", Value: claimProofStage.String()},
 	}
 
 	// Ensure the counter is not incremented if there was an error.
@@ -121,7 +112,7 @@ func ClaimRelaysCounter(
 	}
 
 	telemetry.IncrCounterWithLabels(
-		[]string{eventTypeMetricKey},
+		MetricNameKeys("relays"),
 		float32(incrementAmount),
 		labels,
 	)
@@ -137,8 +128,7 @@ func ClaimCounter(
 ) {
 	incrementAmount := numClaims
 	labels := []metrics.Label{
-		{Name: "unit", Value: "claims"},
-		{Name: "claim_proof_stage", Value: claimProofStage.String()},
+		{Name: "proof_stage", Value: claimProofStage.String()},
 	}
 
 	// Ensure the counter is not incremented if there was an error.
@@ -147,7 +137,7 @@ func ClaimCounter(
 	}
 
 	telemetry.IncrCounterWithLabels(
-		[]string{eventTypeMetricKey},
+		MetricNameKeys("claims"),
 		float32(incrementAmount),
 		labels,
 	)
@@ -158,12 +148,11 @@ func ClaimCounter(
 // track the difficulty for each service.
 func RelayMiningDifficultyGauge(difficulty float32, serviceId string) {
 	labels := []metrics.Label{
-		{Name: "type", Value: "relay_mining_difficulty"},
 		{Name: "service_id", Value: serviceId},
 	}
 
 	telemetry.SetGaugeWithLabels(
-		[]string{eventTypeMetricKeyGauge},
+		MetricNameKeys("relay_mining", "difficulty"),
 		difficulty,
 		labels,
 	)
@@ -173,12 +162,11 @@ func RelayMiningDifficultyGauge(difficulty float32, serviceId string) {
 // The serviceId is used as a label to be able to track the EMA for each service.
 func RelayEMAGauge(relayEMA uint64, serviceId string) {
 	labels := []metrics.Label{
-		{Name: "type", Value: "relay_ema"},
 		{Name: "service_id", Value: serviceId},
 	}
 
 	telemetry.SetGaugeWithLabels(
-		[]string{eventTypeMetricKeyGauge},
+		MetricNameKeys("relay", "ema"),
 		float32(relayEMA),
 		labels,
 	)

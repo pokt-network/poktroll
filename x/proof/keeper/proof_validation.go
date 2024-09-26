@@ -31,13 +31,12 @@ package keeper
 import (
 	"bytes"
 	"context"
-	"fmt"
 
 	cosmostelemetry "github.com/cosmos/cosmos-sdk/telemetry"
-	"github.com/hashicorp/go-metrics"
 	"github.com/pokt-network/smt"
 
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
+	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/proof/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
@@ -61,7 +60,7 @@ func (k Keeper) EnsureValidProof(
 	ctx context.Context,
 	proof *types.Proof,
 ) error {
-	defer cosmostelemetry.MeasureSince(cosmostelemetry.Now(), "proof", "validation")
+	defer cosmostelemetry.MeasureSince(cosmostelemetry.Now(), telemetry.MetricNameKeys("proof", "validation")...)
 
 	logger := k.Logger().With("method", "ValidateProof")
 
@@ -69,7 +68,6 @@ func (k Keeper) EnsureValidProof(
 	supplierOperatorAddr := proof.SupplierOperatorAddress
 	supplierOperatorPubKey, err := k.accountQuerier.GetPubKeyFromAddress(ctx, supplierOperatorAddr)
 	if err != nil {
-		telemetryFailProofValidationIncrement("unknown", "address_to_pubkey")
 		return err
 	}
 
@@ -77,7 +75,6 @@ func (k Keeper) EnsureValidProof(
 	var onChainSession *sessiontypes.Session
 	onChainSession, err = k.queryAndValidateSessionHeader(ctx, proof.SessionHeader, supplierOperatorAddr)
 	if err != nil {
-		telemetryFailProofValidationIncrement("unknown", "session_header")
 		return err
 	}
 	logger.Info("queried and validated the session header")
@@ -91,19 +88,16 @@ func (k Keeper) EnsureValidProof(
 	// Validate proof message commit height is within the respective session's
 	// proof submission window using the on-chain session header.
 	if err = k.validateProofWindow(ctx, sessionHeader, supplierOperatorAddr); err != nil {
-		telemetryFailProofValidationIncrement(serviceId, "proof_window")
 		return err
 	}
 
 	if len(proof.ClosestMerkleProof) == 0 {
-		telemetryFailProofValidationIncrement(serviceId, "empty_proof")
 		return types.ErrProofInvalidProof.Wrap("proof cannot be empty")
 	}
 
 	// Unmarshal the closest merkle proof from the message.
 	sparseCompactMerkleClosestProof := &smt.SparseCompactMerkleClosestProof{}
 	if err = sparseCompactMerkleClosestProof.Unmarshal(proof.ClosestMerkleProof); err != nil {
-		telemetryFailProofValidationIncrement(serviceId, "closest_compact_proof_unmarshal")
 		return types.ErrProofInvalidProof.Wrapf(
 			"failed to unmarshal closest merkle proof: %s",
 			err,
@@ -113,7 +107,6 @@ func (k Keeper) EnsureValidProof(
 	// SparseCompactMerkeClosestProof does not implement GetValueHash, so we need to decompact it.
 	sparseMerkleClosestProof, err := smt.DecompactClosestProof(sparseCompactMerkleClosestProof, &protocol.SmtSpec)
 	if err != nil {
-		telemetryFailProofValidationIncrement(serviceId, "decompact_closest_proof")
 		return types.ErrProofInvalidProof.Wrapf(
 			"failed to decompact closest merkle proof: %s",
 			err,
@@ -124,7 +117,6 @@ func (k Keeper) EnsureValidProof(
 	relayBz := sparseMerkleClosestProof.GetValueHash(&protocol.SmtSpec)
 	relay := &servicetypes.Relay{}
 	if err = k.cdc.Unmarshal(relayBz, relay); err != nil {
-		telemetryFailProofValidationIncrement(serviceId, "relay_unmarshal")
 		return types.ErrProofInvalidRelay.Wrapf(
 			"failed to unmarshal relay: %s",
 			err,
@@ -134,14 +126,12 @@ func (k Keeper) EnsureValidProof(
 	// Basic validation of the relay request.
 	relayReq := relay.GetReq()
 	if err = relayReq.ValidateBasic(); err != nil {
-		telemetryFailProofValidationIncrement(serviceId, "req_validate_basic")
 		return err
 	}
 	logger.Debug("successfully validated relay request")
 
 	// Make sure that the supplier operator address in the proof matches the one in the relay request.
 	if supplierOperatorAddr != relayReq.Meta.SupplierOperatorAddress {
-		telemetryFailProofValidationIncrement(serviceId, "supplier_mismatch")
 		return types.ErrProofSupplierMismatch.Wrapf("supplier type mismatch")
 	}
 	logger.Debug("the proof supplier operator address matches the relay request supplier operator address")
@@ -149,35 +139,30 @@ func (k Keeper) EnsureValidProof(
 	// Basic validation of the relay response.
 	relayRes := relay.GetRes()
 	if err = relayRes.ValidateBasic(); err != nil {
-		telemetryFailProofValidationIncrement(serviceId, "res_validate_basic")
 		return err
 	}
 	logger.Debug("successfully validated relay response")
 
 	// Verify that the relay request session header matches the proof session header.
 	if err = compareSessionHeaders(sessionHeader, relayReq.Meta.GetSessionHeader()); err != nil {
-		telemetryFailProofValidationIncrement(serviceId, "req_proof_session_header_mismatch")
 		return err
 	}
 	logger.Debug("successfully compared relay request session header")
 
 	// Verify that the relay response session header matches the proof session header.
 	if err = compareSessionHeaders(sessionHeader, relayRes.Meta.GetSessionHeader()); err != nil {
-		telemetryFailProofValidationIncrement(serviceId, "res_proof_session_header_mismatch")
 		return err
 	}
 	logger.Debug("successfully compared relay response session header")
 
 	// Verify the relay request's signature.
 	if err = k.ringClient.VerifyRelayRequestSignature(ctx, relayReq); err != nil {
-		telemetryFailProofValidationIncrement(serviceId, "relay_req_signature")
 		return err
 	}
 	logger.Debug("successfully verified relay request signature")
 
 	// Verify the relay response's signature.
 	if err = relayRes.VerifySupplierOperatorSignature(supplierOperatorPubKey); err != nil {
-		telemetryFailProofValidationIncrement(serviceId, "res_signature")
 		return err
 	}
 	logger.Debug("successfully verified relay response signature")
@@ -196,7 +181,6 @@ func (k Keeper) EnsureValidProof(
 		relayBz,
 		serviceRelayDifficultyTargetHash,
 	); err != nil {
-		telemetryFailProofValidationIncrement(serviceId, fmt.Sprint(types.ErrProofInvalidRelayDifficulty.ABCICode()))
 		return types.ErrProofInvalidRelayDifficulty.Wrapf("failed to validate relay difficulty for service %s due to: %v", serviceId, err)
 	}
 	logger.Debug("successfully validated relay mining difficulty")
@@ -209,7 +193,6 @@ func (k Keeper) EnsureValidProof(
 		sessionHeader,
 		supplierOperatorAddr,
 	); err != nil {
-		telemetryFailProofValidationIncrement(serviceId, "closest_path")
 		return err
 	}
 	logger.Debug("successfully validated proof path")
@@ -218,7 +201,6 @@ func (k Keeper) EnsureValidProof(
 	// used in the proof validation below.
 	claim, err := k.queryAndValidateClaimForProof(ctx, sessionHeader, supplierOperatorAddr)
 	if err != nil {
-		telemetryFailProofValidationIncrement(serviceId, "retrieve_claim")
 		return err
 	}
 
@@ -226,12 +208,9 @@ func (k Keeper) EnsureValidProof(
 
 	// Verify the proof's closest merkle proof.
 	if err = verifyClosestProof(sparseMerkleClosestProof, claim.GetRootHash()); err != nil {
-		telemetryFailProofValidationIncrement(serviceId, "closest_proof")
 		return err
 	}
 	logger.Debug("successfully verified closest merkle proof")
-
-	telemetryValidProofIncrement(serviceId)
 
 	return nil
 }
@@ -455,25 +434,4 @@ func validateRelayDifficulty(relayBz, serviceRelayDifficultyTargetHash []byte) e
 		targetDifficultyMultiplierStr,
 	)
 
-}
-
-// telemetryValidProofIncrement increases the `proof_valid` metric.
-func telemetryValidProofIncrement(serviceId string) {
-	cosmostelemetry.IncrCounterWithLabels(
-		[]string{types.ModuleName, "valid"},
-		float32(1),
-		[]metrics.Label{cosmostelemetry.NewLabel("service_id", serviceId)},
-	)
-}
-
-// telemetryFailProofValidationIncrement increases the `proof_validation_fail` metric labeled with a reason and service id.
-func telemetryFailProofValidationIncrement(serviceId string, reason string) {
-	cosmostelemetry.IncrCounterWithLabels(
-		[]string{types.ModuleName, "validation_fail"},
-		float32(1),
-		[]metrics.Label{
-			cosmostelemetry.NewLabel("service_id", serviceId),
-			cosmostelemetry.NewLabel("reason", reason),
-		},
-	)
 }
