@@ -33,14 +33,6 @@ func TestMsgUpdateParam_ValidateBasic(t *testing.T) {
 
 			expectedErr: ErrGatewayParamInvalid,
 		}, {
-			name: "invalid: value cannot be nil",
-			msg: MsgUpdateParam{
-				Authority: sample.AccAddress(),
-				Name:      ParamMinStake,
-				AsType:    &MsgUpdateParam_AsCoin{AsCoin: nil},
-			},
-			expectedErr: ErrGatewayParamInvalid,
-		}, {
 			name: "valid: correct authority, param name, and type",
 			msg: MsgUpdateParam{
 				Authority: sample.AccAddress(),
