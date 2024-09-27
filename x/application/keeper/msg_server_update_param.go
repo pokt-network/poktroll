@@ -3,16 +3,51 @@ package keeper
 import (
 	"context"
 
-    "github.com/pokt-network/poktroll/x/application/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
 )
 
+func (k msgServer) UpdateParam(ctx context.Context, msg *apptypes.MsgUpdateParam) (*apptypes.MsgUpdateParamResponse, error) {
+	if err := msg.ValidateBasic(); err != nil {
+		return nil, err
+	}
 
-func (k msgServer) UpdateParam(goCtx context.Context,  msg *types.MsgUpdateParam) (*types.MsgUpdateParamResponse, error) {
-	ctx := sdk.UnwrapSDKContext(goCtx)
+	if k.GetAuthority() != msg.Authority {
+		return nil, apptypes.ErrAppInvalidSigner.Wrapf("invalid authority; expected %s, got %s", k.GetAuthority(), msg.Authority)
+	}
 
-    // TODO: Handling the message
-    _ = ctx
+	params := k.GetParams(ctx)
 
-	return &types.MsgUpdateParamResponse{}, nil
+	switch msg.Name {
+	case apptypes.ParamMaxDelegatedGateways:
+		if _, ok := msg.AsType.(*apptypes.MsgUpdateParam_AsUint64); !ok {
+			return nil, apptypes.ErrAppParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
+		}
+		maxDelegatedGateways := msg.GetAsUint64()
+
+		if err := apptypes.ValidateMaxDelegatedGateways(maxDelegatedGateways); err != nil {
+			return nil, apptypes.ErrAppParamInvalid.Wrapf("maxdelegegated_gateways (%d): %v", maxDelegatedGateways, err)
+		}
+		params.MaxDelegatedGateways = maxDelegatedGateways
+	case apptypes.ParamMinStake:
+		if _, ok := msg.AsType.(*apptypes.MsgUpdateParam_AsCoin); !ok {
+			return nil, apptypes.ErrAppParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
+		}
+		minStake := msg.GetAsCoin()
+
+		if err := apptypes.ValidateMinStake(minStake); err != nil {
+			return nil, err
+		}
+		params.MinStake = minStake
+	default:
+		return nil, apptypes.ErrAppParamInvalid.Wrapf("unsupported param %q", msg.Name)
+	}
+
+	if err := k.SetParams(ctx, params); err != nil {
+		return nil, err
+	}
+
+	updatedParams := k.GetParams(ctx)
+	return &apptypes.MsgUpdateParamResponse{
+		Params: &updatedParams,
+	}, nil
 }
