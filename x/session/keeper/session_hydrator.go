@@ -12,6 +12,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	_ "golang.org/x/crypto/sha3"
 
+	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/session/types"
 	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -68,22 +69,22 @@ func (k Keeper) HydrateSession(ctx context.Context, sh *sessionHydrator) (*types
 	if err := k.hydrateSessionMetadata(ctx, sh); err != nil {
 		return nil, err
 	}
-	logger.Info("Finished hydrating session metadata")
+	logger.Debug("Finished hydrating session metadata")
 
 	if err := k.hydrateSessionID(ctx, sh); err != nil {
 		return nil, err
 	}
-	logger.Info(fmt.Sprintf("Finished hydrating session ID: %s", sh.sessionHeader.SessionId))
+	logger.Debug(fmt.Sprintf("Finished hydrating session ID: %s", sh.sessionHeader.SessionId))
 
 	if err := k.hydrateSessionApplication(ctx, sh); err != nil {
 		return nil, err
 	}
-	logger.Info(fmt.Sprintf("Finished hydrating session application: %+v", sh.session.Application))
+	logger.Debug(fmt.Sprintf("Finished hydrating session application: %+v", sh.session.Application))
 
 	if err := k.hydrateSessionSuppliers(ctx, sh); err != nil {
 		return nil, err
 	}
-	logger.Info("Finished hydrating session suppliers")
+	logger.Debug("Finished hydrating session suppliers")
 
 	sh.session.Header = sh.sessionHeader
 	sh.session.SessionId = sh.sessionHeader.SessionId
@@ -198,6 +199,8 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 		}
 	}
 
+	telemetry.SessionSuppliersGauge(len(candidateSuppliers), NumSupplierPerSession, sh.sessionHeader.ServiceId)
+
 	if len(candidateSuppliers) == 0 {
 		logger.Error("[ERROR] no suppliers found for session")
 		return types.ErrSessionSuppliersNotFound.Wrapf(
@@ -208,7 +211,7 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 	}
 
 	if len(candidateSuppliers) < NumSupplierPerSession {
-		logger.Info(fmt.Sprintf(
+		logger.Debug(fmt.Sprintf(
 			"Number of available suppliers (%d) is less than the maximum number of possible suppliers per session (%d)",
 			len(candidateSuppliers),
 			NumSupplierPerSession,

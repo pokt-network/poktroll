@@ -6,6 +6,8 @@
 package telemetry
 
 import (
+	"strconv"
+
 	"github.com/cosmos/cosmos-sdk/telemetry"
 	"github.com/hashicorp/go-metrics"
 
@@ -168,6 +170,23 @@ func RelayEMAGauge(relayEMA uint64, serviceId string) {
 	telemetry.SetGaugeWithLabels(
 		MetricNameKeys("relay", "ema"),
 		float32(relayEMA),
+		labels,
+	)
+}
+
+// SessionSuppliersGauge sets a gauge which tracks the number of candidates available
+// for session suppliers at the given maxPerSession value.
+// The serviceId is used as a label to be able to track this information for each service.
+func SessionSuppliersGauge(candidates int, maxPerSession int, serviceId string) {
+	maxPerSessionStr := strconv.Itoa(maxPerSession)
+	labels := []metrics.Label{
+		{Name: "service_id", Value: serviceId},
+		{Name: "max_per_session", Value: maxPerSessionStr},
+	}
+
+	telemetry.SetGaugeWithLabels(
+		MetricNameKeys("session", "suppliers"),
+		float32(candidates),
 		labels,
 	)
 }

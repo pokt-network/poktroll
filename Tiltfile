@@ -38,14 +38,26 @@ localnet_config_defaults = {
         "enabled": True,
         "grafana": {"defaultDashboardsEnabled": False},
     },
-    "relayminers": {"count": 1, "delve": {"enabled": False}},
+    "relayminers": {
+        "count": 1,
+        "delve": {"enabled": False},
+        "logs": {
+            "level": "debug",
+        },
+    },
     "gateways": {
         "count": 1,
         "delve": {"enabled": False},
+        "logs": {
+            "level": "debug",
+        },
     },
     "appgateservers": {
         "count": 1,
         "delve": {"enabled": False},
+        "logs": {
+            "level": "debug",
+        },
     },
     # TODO_BLOCKER(@red-0ne, #511): Add support for `REST` and enabled this.
     "ollama": {
@@ -89,8 +101,9 @@ if localnet_config["observability"]["enabled"]:
     helm_repo("prometheus-community", "https://prometheus-community.github.io/helm-charts")
     helm_repo("grafana-helm-repo", "https://grafana.github.io/helm-charts")
 
-    # Increase timeout for building the image
-    update_settings(k8s_upsert_timeout_secs=60)
+    # Increase timeout for building the imagedefault is 30, which can be too low for slow internet connections to pull
+    # container images.
+    update_settings(k8s_upsert_timeout_secs=120) #
 
     helm_resource(
         "observability",
@@ -233,6 +246,7 @@ for x in range(localnet_config["relayminers"]["count"]):
             "--values=./localnet/kubernetes/values-relayminer-" + str(actor_number) + ".yaml",
             "--set=metrics.serviceMonitor.enabled=" + str(localnet_config["observability"]["enabled"]),
             "--set=development.delve.enabled=" + str(localnet_config["relayminers"]["delve"]["enabled"]),
+            "--set=logLevel=" + str(localnet_config["relayminers"]["logs"]["level"]),
         ],
         image_deps=["poktrolld"],
         image_keys=[("image.repository", "image.tag")],
@@ -273,6 +287,7 @@ for x in range(localnet_config["appgateservers"]["count"]):
             "--set=config.signing_key=app" + str(actor_number),
             "--set=metrics.serviceMonitor.enabled=" + str(localnet_config["observability"]["enabled"]),
             "--set=development.delve.enabled=" + str(localnet_config["appgateservers"]["delve"]["enabled"]),
+            "--set=logLevel=" + str(localnet_config["appgateservers"]["logs"]["level"]),
         ],
         image_deps=["poktrolld"],
         image_keys=[("image.repository", "image.tag")],
@@ -314,6 +329,7 @@ for x in range(localnet_config["gateways"]["count"]):
             "--set=config.signing_key=gateway" + str(actor_number),
             "--set=metrics.serviceMonitor.enabled=" + str(localnet_config["observability"]["enabled"]),
             "--set=development.delve.enabled=" + str(localnet_config["gateways"]["delve"]["enabled"]),
+            "--set=logLevel=" + str(localnet_config["gateways"]["logs"]["level"]),
         ],
         image_deps=["poktrolld"],
         image_keys=[("image.repository", "image.tag")],
