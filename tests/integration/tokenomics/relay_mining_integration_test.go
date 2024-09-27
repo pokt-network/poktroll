@@ -142,9 +142,9 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 
 		prevDifficultyMultiplier := protocol.GetRelayDifficultyMultiplier(relayMiningDifficulty.TargetHash)
 		newDifficultyMultiplier := protocol.GetRelayDifficultyMultiplier(updatedRelayMiningDifficulty.TargetHash)
-		// Check that the new difficulty has increased when the target number of relays is reached.
+		// Check that the new difficulty has increased when it's no longer the base difficulty.
 		if newDifficultyMultiplier.Cmp(big.NewRat(1, 1)) == 1 {
-			require.True(t, newDifficultyMultiplier.Cmp(prevDifficultyMultiplier) == 0)
+			require.True(t, newDifficultyMultiplier.Cmp(prevDifficultyMultiplier) == 1)
 		}
 
 		// Make sure that the rewards reflect the work completed and that it increases
