@@ -11,9 +11,11 @@ title: Adding On-Chain Module Parameters
     - [0.2 Update the `MsgUpdateParam` Message Fields](#02-update-the-msgupdateparam-message-fields)
     - [0.3 Comment Out AutoCLI](#03-comment-out-autocli)
     - [0.4. Update the DAO Genesis Authorizations JSON File](#04-update-the-dao-genesis-authorizations-json-file)
+    - [0.5 Update the `NewMsgUpdateParam` Constructor and `MsgUpdateParam#ValidateBasic()`](#05-update-the-newmsgupdateparam-constructor-and-msgupdateparamvalidatebasic)
+    - [0.6 Update the Module's `msgServer#UpdateParam()` Handler](#06-update-the-modules-msgserverupdateparam-handler)
+    - [0.7 Update Module's Params Test Suite `ModuleParamConfig`](#07-update-modules-params-test-suite-moduleparamconfig)
     - [1. Define the Parameter in the Protocol Buffers File](#1-define-the-parameter-in-the-protocol-buffers-file)
     - [2 Update the Parameter Integration Tests](#2-update-the-parameter-integration-tests)
-      - [2.0 If the Module Didn't Previously Support a `MsgUpdateParam` Message](#20-if-the-module-didnt-previously-support-a-msgupdateparam-message)
       - [2.1 Add a valid param](#21-add-a-valid-param)
       - [2.2 Check for `as_<type>` on `MsgUpdateParam`](#22-check-for-as_type-on-msgupdateparam)
     - [3. Update the Default Parameter Values](#3-update-the-default-parameter-values)
@@ -31,7 +33,6 @@ title: Adding On-Chain Module Parameters
       - [7.1 Parameter Validation Tests](#71-parameter-validation-tests)
       - [7.2 Parameter Update Tests](#72-parameter-update-tests)
     - [8. Add Parameter Case to Switch Statements](#8-add-parameter-case-to-switch-statements)
-      - [8.0 If the Module Doesn't Already Support a `MsgUpdateParam` Message](#80-if-the-module-doesnt-already-support-a-msgupdateparam-message)
       - [8.1 `MsgUpdateParam#ValidateBasic()`](#81-msgupdateparamvalidatebasic)
       - [8.2 `msgServer#UpdateParam()`](#82-msgserverupdateparam)
 
@@ -259,7 +260,6 @@ Add `MsgUpdateParam` & `MsgUpdateParamResponse` to the module's `ModuleParamConf
     // ...
   }
 ```
-
 
 ### 1. Define the Parameter in the Protocol Buffers File
 
