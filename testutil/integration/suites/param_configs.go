@@ -146,7 +146,8 @@ var (
 			MinStake:             &ValidActorMinStake,
 		},
 		ParamTypes: map[ParamType]any{
-			ParamTypeCoin: apptypes.MsgUpdateParam_AsCoin{},
+			ParamTypeUint64: apptypes.MsgUpdateParam_AsUint64{},
+			ParamTypeCoin:   apptypes.MsgUpdateParam_AsCoin{},
 		},
 		DefaultParams:    apptypes.DefaultParams(),
 		NewParamClientFn: apptypes.NewQueryClient,
