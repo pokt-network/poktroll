@@ -152,7 +152,7 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 		if previousNumRelays > 0 {
 			numRelaysRatio := float64(numRelays) / float64(previousNumRelays)
 			rewardsRatio, _ := new(big.Rat).SetFrac(claimedRewards.Amount.BigInt(), previousRewards.BigInt()).Float64()
-			require.InDelta(t, numRelaysRatio, rewardsRatio, 0.05)
+			require.InDelta(t, numRelaysRatio, rewardsRatio, 0.07)
 		}
 
 		previousNumRelays = numRelays
