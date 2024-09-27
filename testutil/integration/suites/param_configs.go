@@ -136,11 +136,17 @@ var (
 		ParamsMsgs: ModuleParamsMessages{
 			MsgUpdateParams:         apptypes.MsgUpdateParams{},
 			MsgUpdateParamsResponse: apptypes.MsgUpdateParamsResponse{},
+			MsgUpdateParam:          apptypes.MsgUpdateParam{},
+			MsgUpdateParamResponse:  apptypes.MsgUpdateParamResponse{},
 			QueryParamsRequest:      apptypes.QueryParamsRequest{},
 			QueryParamsResponse:     apptypes.QueryParamsResponse{},
 		},
 		ValidParams: apptypes.Params{
 			MaxDelegatedGateways: 999,
+			MinStake:             &ValidActorMinStake,
+		},
+		ParamTypes: map[ParamType]any{
+			ParamTypeCoin: apptypes.MsgUpdateParam_AsCoin{},
 		},
 		DefaultParams:    apptypes.DefaultParams(),
 		NewParamClientFn: apptypes.NewQueryClient,
