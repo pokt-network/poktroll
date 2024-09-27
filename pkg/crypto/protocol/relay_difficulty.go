@@ -34,7 +34,7 @@ func IsRelayVolumeApplicable(relayHash, targetHash []byte) bool {
 // the number of relays.
 func ComputeNewDifficultyTargetHash(prevTargetHash []byte, targetNumRelays, newRelaysEma uint64) []byte {
 	// If targetNumRelays == newRelaysEma -> do not scale -> keep the same difficulty to mine relays
-	// TODO_IMPROVE: Figure out if there's a range (e.g. 5%) withing which it is reasonable
+	// TODO_IMPROVE: Figure out if there's a range (e.g. 5%) within which it is reasonable
 	// to keep the same difficulty.
 	if targetNumRelays == newRelaysEma {
 		return prevTargetHash
