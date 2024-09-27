@@ -65,11 +65,9 @@ type SupplierClient interface {
 		ctx context.Context,
 		claimMsgs ...MsgCreateClaim,
 	) error
-	// SubmitProof sends proof messages which contain the smt.SparseMerkleClosestProof,
+	// SubmitProof sends proof messages which contain the smt.SparseCompactMerkleClosestProof,
 	// corresponding to some previously created claim for the same session.
 	// The proof is validated on-chain as part of the pocket protocol.
-	// TODO_MAINNET(#427): Use SparseCompactClosestProof here to reduce
-	// the amount of data stored on-chain.
 	SubmitProofs(
 		ctx context.Context,
 		sessionProofs ...MsgSubmitProof,

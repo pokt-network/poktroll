@@ -121,18 +121,18 @@ func NewProof(
 	t.Helper()
 
 	// Generate a closest proof from the session tree using closestProofPath.
-	merkleProof, err := sessionTree.ProveClosest(closestProofPath)
+	merkleCompactProof, err := sessionTree.ProveClosest(closestProofPath)
 	require.NoError(t, err)
-	require.NotNil(t, merkleProof)
+	require.NotNil(t, merkleCompactProof)
 
 	// Serialize the closest merkle proof.
-	merkleProofBz, err := merkleProof.Marshal()
+	merkleCompactProofBz, err := merkleCompactProof.Marshal()
 	require.NoError(t, err)
 
 	return &prooftypes.Proof{
 		SupplierOperatorAddress: supplierOperatorAddr,
 		SessionHeader:           sessionHeader,
-		ClosestMerkleProof:      merkleProofBz,
+		ClosestMerkleProof:      merkleCompactProofBz,
 	}
 }
 
