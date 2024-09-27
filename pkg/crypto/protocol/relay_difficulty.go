@@ -34,6 +34,8 @@ func IsRelayVolumeApplicable(relayHash, targetHash []byte) bool {
 // the number of relays.
 func ComputeNewDifficultyTargetHash(prevTargetHash []byte, targetNumRelays, newRelaysEma uint64) []byte {
 	// If targetNumRelays == newRelaysEma -> do not scale -> keep the same difficulty to mine relays
+	// TODO_IMPROVE: Figure out if there's a range (e.g. 5%) withing which it is reasonable
+	// to keep the same difficulty.
 	if targetNumRelays == newRelaysEma {
 		return prevTargetHash
 	}
@@ -43,6 +45,9 @@ func ComputeNewDifficultyTargetHash(prevTargetHash []byte, targetNumRelays, newR
 	// If difficultyScalingRatio > 1 -> scale up -> decrease difficulty to mine relays
 	difficultyScalingRatio := big.NewRat(int64(targetNumRelays), int64(newRelaysEma))
 	scaledDifficultyHashBz := ScaleRelayDifficultyHash(prevTargetHash, difficultyScalingRatio)
+	// Trim any extra zeros from the scaled hash to ensure that it only contains
+	// the meaningful bytes.
+	scaledDifficultyHashBz = bytes.TrimLeft(scaledDifficultyHashBz, "\x00")
 	// If scaledDifficultyHash is longer than BaseRelayDifficultyHashBz, then use
 	// BaseRelayDifficultyHashBz as we should not have a bigger hash than the base.
 	if len(scaledDifficultyHashBz) > len(BaseRelayDifficultyHashBz) {
