@@ -64,6 +64,10 @@ When following these steps, be sure to substitute these example values with your
 In order to support **individual parameter updates**, the module MUST have a `MsgUpdateParam` message.
 If the module doesn't already support this message, it will need to be added.
 
+:::tip
+At any point, you can always run `go test ./x/examplemod/...` to check whether everything is working or locate outstanding necessary changes.
+:::
+
 #### 0.1 Scaffold the `MsgUpdateParam` Message
 
 Use `ignite` to scaffold a new `MsgUpdateParam` message for the module.
@@ -72,6 +76,21 @@ Additional flags are used for convenience:
 ```bash
 ignite scaffold message update-param --module examplemod --signer authority name as_type --response params
 ```
+
+:::info
+If you experience errors like these:
+```
+✘ Error while running command /home/bwhite/go/bin/buf generate /tmp/proto-sdk2893110128/cosmos/upgrade/v1beta1/tx.proto ...: {..."message":"import \"gogoproto/gogo.proto\": file does not exist"}
+: exit status 100
+```
+```
+✘ Error while running command go mod tidy: go: 
+...                                                                                              
+go: github.com/pokt-network/poktroll/api/poktroll/examplemod imports                                                                                   
+        cosmossdk.io/api/poktroll/shared: module cosmossdk.io/api@latest found (v0.7.6), but does not contain package cosmossdk.io/api/poktroll/shared
+```
+Then try running `make proto_clean_pulsar`.
+:::
 
 #### 0.2 Update the `MsgUpdateParam` Message Fields
 
@@ -139,30 +158,96 @@ Add a grant (array element) to `tools/scripts/authz/dao_genesis_authorizations.j
 + },
 ```
 
-### 1. Define the Parameter in the Protocol Buffers File
+#### 0.5 Update the `NewMsgUpdateParam` Constructor and `MsgUpdateParam#ValidateBasic()`
 
-Open the appropriate `.proto` file for your module (e.g., `params.proto`) and define the new parameter.
+Prepare `x/examplemod/types/message_update_param.go` to handle message construction and parameter validations by type:
 
-```protobuf
-  message Params {
-    // Other existing parameters...
-  
-    // Description of the new parameter.
-+   uint64 new_parameter = 3 [(gogoproto.jsontag) = "new_parameter"];
+```go
+- func NewMsgUpdateParam(authority string, name string, asType string) *MsgUpdateParam {
++ func NewMsgUpdateParam(authority string, name string, asType any) *MsgUpdateParam {
++ 	var asTypeIface isMsgUpdateParam_AsType
++
++ 	switch t := asType.(type) {
++ 	default:
++ 		panic(fmt.Sprintf("unexpected param value type: %T", asType))
++ 	}
++
+    return &MsgUpdateParam{
+	    Authority: authority,
+		Name: name,
+-       AsType: asType,
++       AsType: asTypeIface,
+    }
+  }
+
+  func (msg *MsgUpdateParam) ValidateBasic() error {
+        _, err := cosmostypes.AccAddressFromBech32(msg.Authority)
+        if err != nil {
+                return errorsmod.Wrapf(sdkerrors.ErrInvalidAddress, "invalid authority address (%s)", err)
+        }
++
++       // Parameter value cannot be nil.
++       if msg.AsType == nil {
++               return ErrGatewayParamInvalid.Wrap("missing param AsType")
++       }
++
++       // Parameter name must be supported by this module.
++       switch msg.Name {
++       default:
++               return ErrExamplemodParamInvalid.Wrapf("unsupported param %q", msg.Name)
++       }
+
+return nil
+}
+```
+#### 0.6 Update the Module's `msgServer#UpdateParam()` Handler
+
+Prepare `x/examplemod/keeper/msg_server_update_param.go` to handle parameter updates by type:
+
+```go
++ // UpdateParam updates a single parameter in the proof module and returns
++ // all active parameters.
+  func (k msgServer) UpdateParam(
+    ctx context.Context,
+    msg *types.MsgUpdateParam,
+  ) (*types.MsgUpdateParamResponse, error) {
+-   ctx := sdk.UnwrapSDKContext(goCtx)
+-
+-   // TODO: Handling the message
+-   _ = ctx
+-
++   if err := msg.ValidateBasic(); err != nil {
++       return nil, err
++   }
++
++ 	if k.GetAuthority() != msg.Authority {
++ 		return nil, types.ErrProofInvalidSigner.Wrapf("invalid authority; expected %s, got %s", k.GetAuthority(), msg.Authority)
++ 	}
++
++ 	params := k.GetParams(ctx)
++
++ 	switch msg.Name {
++ 	default:
++ 		return nil, types.ErrExamplemodParamInvalid.Wrapf("unsupported param %q", msg.Name)
++ 	}
++
++ 	if err := k.SetParams(ctx, params); err != nil {
++ 		return nil, err
++ 	}
++
++ 	updatedParams := k.GetParams(ctx)
++ 	return &types.MsgUpdateParamResponse{
++ 		Params: &updatedParams,
++ 	}, nil
   }
 ```
 
-### 2 Update the Parameter Integration Tests 
-
-Integration tests which cover parameter updates utilize the `ModuleParamConfig`s defined in [`testutil/integration/params/param_configs.go`](https://github.com/pokt-network/poktroll/blob/main/testutil/integration/suites/param_configs.go) to dynamically (i.e. using reflection) construct and send parameter update messages in a test environment.
-When adding parameters to a module, it is necessary to update that module's `ModuleParamConfig` to include the new parameter, othwerwise it will not be covered by the integration test suite.
-
-#### 2.0 If the Module Didn't Previously Support a `MsgUpdateParam` Message
+#### 0.7 Update Module's Params Test Suite `ModuleParamConfig`
 
 Add `MsgUpdateParam` & `MsgUpdateParamResponse` to the module's `ModuleParamConfig#ParamsMsg`:
 
 ```go
-  SomeModuleParamConfig = ModuleParamConfig{
+  ExamplemodModuleParamConfig = ModuleParamConfig{
     ParamsMsgs: ModuleParamsMessages{
       MsgUpdateParams:         gatewaytypes.MsgUpdateParams{},
       MsgUpdateParamsResponse: gatewaytypes.MsgUpdateParamsResponse{},
@@ -174,6 +259,29 @@ Add `MsgUpdateParam` & `MsgUpdateParamResponse` to the module's `ModuleParamConf
     // ...
   }
 ```
+
+
+### 1. Define the Parameter in the Protocol Buffers File
+
+Open the appropriate `.proto` file for your module (e.g., `params.proto`) and define the new parameter.
+
+```protobuf
+  message Params {
+    // Other existing parameters...
+  
++   // Description of the new parameter.
++   uint64 new_parameter = 3 [(gogoproto.jsontag) = "new_parameter", (gogoproto.moretags) = "yaml:\"new_parameter\""];
+  }
+```
+
+:::tip
+Don't forget to run `make proto_regen` to update generated protobuf go code.
+:::
+
+### 2 Update the Parameter Integration Tests 
+
+Integration tests which cover parameter updates utilize the `ModuleParamConfig`s defined in [`testutil/integration/params/param_configs.go`](https://github.com/pokt-network/poktroll/blob/main/testutil/integration/suites/param_configs.go) to dynamically (i.e. using reflection) construct and send parameter update messages in a test environment.
+When adding parameters to a module, it is necessary to update that module's `ModuleParamConfig` to include the new parameter, othwerwise it will not be covered by the integration test suite.
 
 #### 2.1 Add a valid param
 
@@ -452,101 +560,18 @@ These tests assert that the value of a given parameter is:
 
 ### 8. Add Parameter Case to Switch Statements
 
-#### 8.0 If the Module Doesn't Already Support a `MsgUpdateParam` Message
-
-Prepare `x/examplemod/types/message_update_param.go` to handle parameter validations by type:
-
-```go
-- func NewMsgUpdateParam(authority string, name string, asType string) *MsgUpdateParam {
-+ func NewMsgUpdateParam(authority string, name string, value any) *MsgUpdateParam {
-+        var valueAsType isMsgUpdateParam_AsType
-+
-+        switch v := value.(type) {
-+        default:
-+                panic(fmt.Sprintf("unexpected param value type: %T", value))
-+        }
-+
-     return &MsgUpdateParam{
-             Authority: authority,
-             Name:      name,
--                AsType:    asType,
-+                AsType:    valueAsType,
-         }
-  }
-
-  func (msg *MsgUpdateParam) ValidateBasic() error {
-	    _, err := cosmostypes.AccAddressFromBech32(msg.Authority)
-		if err != nil {
-            return errorsmod.Wrapf(sdkerrors.ErrInvalidAddress, "invalid authority address (%s)", err)
-        }
-+
-+       // Parameter value cannot be nil.
-+       if msg.AsType == nil {
-+               return ErrGatewayParamInvalid.Wrap("missing param AsType")
-+       }
-+
-+       // Parameter name must be supported by this module.
-+       switch msg.Name {
-+       default:
-+               return ErrExamplemodParamInvalid.Wrapf("unsupported param %q", msg.Name)
-+       }
-
-        return nil
-  }
-```
-
-Prepare `x/examplemod/keeper/msg_server_update_param.go` to handle parameter updates by type:
-
-```go
-+ // UpdateParam updates a single parameter in the proof module and returns
-+ // all active parameters.
-  func (k msgServer) UpdateParam(
-    ctx context.Context,
-    msg *types.MsgUpdateParam,
-  ) (*types.MsgUpdateParamResponse, error) {
--   ctx := sdk.UnwrapSDKContext(goCtx)
--
--   // TODO: Handling the message
--   _ = ctx
--
-+   if err := msg.ValidateBasic(); err != nil {
-+       return nil, err
-+   }
-+
-+ 	if k.GetAuthority() != msg.Authority {
-+ 		return nil, types.ErrProofInvalidSigner.Wrapf("invalid authority; expected %s, got %s", k.GetAuthority(), msg.Authority)
-+ 	}
-+
-+ 	params := k.GetParams(ctx)
-+
-+ 	switch msg.Name {
-+ 	default:
-+ 		return nil, types.ErrProofParamInvalid.Wrapf("unsupported param %q", msg.Name)
-+ 	}
-+
-+ 	if err := k.SetParams(ctx, params); err != nil {
-+ 		return nil, err
-+ 	}
-+
-+ 	updatedParams := k.GetParams(ctx)
-+ 	return &types.MsgUpdateParamResponse{
-+ 		Params: &updatedParams,
-+ 	}, nil
-  }
-```
-
 #### 8.1 `MsgUpdateParam#ValidateBasic()`
 
 Add the parameter name (e.g. `ParamNameNewParameter`) to a new case in the switch in `MsgUpdateParam#ValidateBasic()` in `x/examplemod/types/message_update_param.go`:
 
 ```go
-  func NewMsgUpdateParam(authority string, name string, value any) *MsgUpdateParam {
+  func NewMsgUpdateParam(authority string, name string, asType any) *MsgUpdateParam {
         // ...
-        switch v := value.(type) {
+        switch t := asType.(type) {
 +       case int64:
-+               valueAsType = &MsgUpdateParam_AsCoin{AsInt64: v}
++               asTypeIface = &MsgUpdateParam_AsCoin{AsInt64: t}
         default:
-                panic(fmt.Sprintf("unexpected param value type: %T", value))
+                panic(fmt.Sprintf("unexpected param value type: %T", asType))
         }
         // ...
   }
@@ -564,7 +589,7 @@ Add the parameter name (e.g. `ParamNameNewParameter`) to a new case in the switc
 + func (msg *MsgUpdateParam) paramTypeIsInt64() error {
 +       _, ok := msg.AsType.(*MsgUpdateParam_AsInt64)
 +       if !ok {
-+               return ErrGatewayParamInvalid.Wrapf(
++               return ErrExamplemodParamInvalid.Wrapf(
 +                       "invalid type for param %q expected %T type: %T",
 +                       msg.Name, &MsgUpdateParam_AsInt64{}, msg.AsType,
 +               )
@@ -587,20 +612,20 @@ Add the parameter name (e.g. `ParamNameNewParameter`) to a new case in the switc
   ) (*types.MsgUpdateParamResponse, error) {
     // ...
   	switch msg.Name {
-+ 	case types.ParamRelayDifficultyTargetHash:
-+ 		value, ok := msg.AsType.(*types.MsgUpdateParam_AsBytes)
++ 	case types.ParamNewParameter:
++ 		asType, ok := msg.AsType.(*types.MsgUpdateParam_AsInt64)
 + 		if !ok {
 + 			return nil, types.ErrProofParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
 + 		}
-+ 		relayDifficultyTargetHash := value.AsBytes
++ 		newParameter := value.AsInt64
 +
-+ 		if err := types.ValidateRelayDifficultyTargetHash(relayDifficultyTargetHash); err != nil {
++ 		if err := types.ValidateNewParameter(newParameter); err != nil {
 + 			return nil, err
 + 		}
 +
-+ 		params.RelayDifficultyTargetHash = relayDifficultyTargetHash
++ 		params.NewParameter = newParameter
   	default:
-  		return nil, types.ErrProofParamInvalid.Wrapf("unsupported param %q", msg.Name)
+  		return nil, types.ErrExamplemodParamInvalid.Wrapf("unsupported param %q", msg.Name)
   	}
     // ...
   }
