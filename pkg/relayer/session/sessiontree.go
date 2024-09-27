@@ -279,7 +279,7 @@ func (st *sessionTree) Delete() error {
 			return err
 		}
 	} else {
-		fmt.Println("DIMA: the tree store has been deleted already. How come?")
+		fmt.Println("Unable to delete as tree store is nil")
 	}
 
 	// Delete the KVStore from disk
