@@ -103,11 +103,12 @@ message MsgUpdateParam {
 
   string name = 2;
   oneof asType    {
-    cosmos.base.v1beta1.Coin as_coin = 3;
+    uint64 as_uint64 = 3;
+    cosmos.base.v1beta1.Coin as_coin = 4;
   };
 }
 
 message MsgUpdateParamResponse {
-  string params = 1;
+  Params params = 1;
 }
 
