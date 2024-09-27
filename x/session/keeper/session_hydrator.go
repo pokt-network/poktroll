@@ -199,7 +199,7 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 		}
 	}
 
-	telemetry.SessionSuppliersGauge(len(candidateSuppliers), NumSupplierPerSession, sh.sessionHeader.ServiceId)
+	defer telemetry.SessionSuppliersGauge(len(candidateSuppliers), NumSupplierPerSession, sh.sessionHeader.ServiceId)
 
 	if len(candidateSuppliers) == 0 {
 		logger.Error("[ERROR] no suppliers found for session")
