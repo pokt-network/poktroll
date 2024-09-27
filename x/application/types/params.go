@@ -17,7 +17,7 @@ var (
 	KeyMinStake                        = []byte("MinStake")
 	ParamMinStake                      = "min_stake"
 	// TODO_MAINNET: Determine the default value
-	DefaultMinStake = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 100)
+	DefaultMinStake = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1000000) // 1 POKT
 )
 
 // ParamKeyTable the param key table for launch module
@@ -49,6 +49,10 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 // Validate validates the set of params
 func (p Params) Validate() error {
 	if err := ValidateMaxDelegatedGateways(p.MaxDelegatedGateways); err != nil {
+		return err
+	}
+
+	if err := ValidateMinStake(p.MinStake); err != nil {
 		return err
 	}
 
