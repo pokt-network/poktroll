@@ -6,6 +6,7 @@ option (gogoproto.stable_marshaler_all) = true;
 
 import "amino/amino.proto";
 import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
 
 // Params defines the parameters for the module.
 message Params {
@@ -15,4 +16,5 @@ message Params {
   // application can delegate to. This is used to prevent performance issues
   // in case the relay ring signature becomes too large.
   uint64 max_delegated_gateways = 1 [(gogoproto.jsontag) = "max_delegated_gateways", (gogoproto.moretags) = "yaml:\"max_delegated_gateways\""];
+  cosmos.base.v1beta1.Coin min_stake = 2 [(gogoproto.jsontag) = "min_stake", (gogoproto.moretags) = "yaml:\"min_stake\""];
 }
