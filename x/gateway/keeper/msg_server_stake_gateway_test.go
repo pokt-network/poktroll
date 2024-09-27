@@ -4,13 +4,14 @@ import (
 	"testing"
 
 	"cosmossdk.io/math"
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/app/volatile"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/x/gateway/keeper"
-	"github.com/pokt-network/poktroll/x/gateway/types"
+	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 )
 
 func TestMsgServer_StakeGateway_SuccessfulCreateAndUpdate(t *testing.T) {
@@ -25,8 +26,8 @@ func TestMsgServer_StakeGateway_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.False(t, isGatewayFound)
 
 	// Prepare the gateway
-	initialStake := sdk.NewCoin("upokt", math.NewInt(100))
-	stakeMsg := &types.MsgStakeGateway{
+	initialStake := cosmostypes.NewCoin("upokt", math.NewInt(100))
+	stakeMsg := &gatewaytypes.MsgStakeGateway{
 		Address: addr,
 		Stake:   &initialStake,
 	}
@@ -42,8 +43,8 @@ func TestMsgServer_StakeGateway_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.Equal(t, initialStake.Amount, foundGateway.Stake.Amount)
 
 	// Prepare an updated gateway with a higher stake
-	updatedStake := sdk.NewCoin("upokt", math.NewInt(200))
-	updateMsg := &types.MsgStakeGateway{
+	updatedStake := cosmostypes.NewCoin("upokt", math.NewInt(200))
+	updateMsg := &gatewaytypes.MsgStakeGateway{
 		Address: addr,
 		Stake:   &updatedStake,
 	}
@@ -62,8 +63,8 @@ func TestMsgServer_StakeGateway_FailLoweringStake(t *testing.T) {
 
 	// Prepare the gateway
 	addr := sample.AccAddress()
-	initialStake := sdk.NewCoin("upokt", math.NewInt(100))
-	stakeMsg := &types.MsgStakeGateway{
+	initialStake := cosmostypes.NewCoin("upokt", math.NewInt(100))
+	stakeMsg := &gatewaytypes.MsgStakeGateway{
 		Address: addr,
 		Stake:   &initialStake,
 	}
@@ -75,8 +76,8 @@ func TestMsgServer_StakeGateway_FailLoweringStake(t *testing.T) {
 	require.True(t, isGatewayFound)
 
 	// Prepare an updated gateway with a lower stake
-	updatedStake := sdk.NewCoin("upokt", math.NewInt(50))
-	updateMsg := &types.MsgStakeGateway{
+	updatedStake := cosmostypes.NewCoin("upokt", math.NewInt(50))
+	updateMsg := &gatewaytypes.MsgStakeGateway{
 		Address: addr,
 		Stake:   &updatedStake,
 	}
@@ -89,4 +90,32 @@ func TestMsgServer_StakeGateway_FailLoweringStake(t *testing.T) {
 	gatewayFound, isGatewayFound := k.GetGateway(ctx, addr)
 	require.True(t, isGatewayFound)
 	require.Equal(t, initialStake.Amount, gatewayFound.Stake.Amount)
+}
+
+func TestMsgServer_StakeGateway_FailBelowMinStake(t *testing.T) {
+	k, ctx := keepertest.GatewayKeeper(t)
+	srv := keeper.NewMsgServerImpl(k)
+
+	addr := sample.AccAddress()
+	gatewayStake := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 100)
+	minStake := gatewayStake.AddAmount(math.NewInt(1))
+	expectedErr := gatewaytypes.ErrGatewayInvalidStake.Wrapf("gateway %q must stake at least %s", addr, minStake)
+
+	// Set the minimum stake to be greater than the gateway stake.
+	err := k.SetParams(ctx, gatewaytypes.Params{
+		MinStake: &minStake,
+	})
+	require.NoError(t, err)
+
+	// Prepare the gateway
+	stakeMsg := &gatewaytypes.MsgStakeGateway{
+		Address: addr,
+		Stake:   &gatewayStake,
+	}
+
+	// Stake the gateway & verify that the gateway exists
+	_, err = srv.StakeGateway(ctx, stakeMsg)
+	require.ErrorContains(t, err, expectedErr.Error())
+	_, isGatewayFound := k.GetGateway(ctx, addr)
+	require.False(t, isGatewayFound)
 }
