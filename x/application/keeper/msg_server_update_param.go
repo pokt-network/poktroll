@@ -18,11 +18,12 @@ func (k msgServer) UpdateParam(ctx context.Context, msg *apptypes.MsgUpdateParam
 	params := k.GetParams(ctx)
 
 	switch msg.Name {
+	// TODO_IMPROVE: Add a Uint64 asType instead of using int64 for uint64 params.
 	case apptypes.ParamMaxDelegatedGateways:
-		if _, ok := msg.AsType.(*apptypes.MsgUpdateParam_AsUint64); !ok {
+		if _, ok := msg.AsType.(*apptypes.MsgUpdateParam_AsInt64); !ok {
 			return nil, apptypes.ErrAppParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
 		}
-		maxDelegatedGateways := msg.GetAsUint64()
+		maxDelegatedGateways := uint64(msg.GetAsInt64())
 
 		if err := apptypes.ValidateMaxDelegatedGateways(maxDelegatedGateways); err != nil {
 			return nil, apptypes.ErrAppParamInvalid.Wrapf("maxdelegegated_gateways (%d): %v", maxDelegatedGateways, err)
