@@ -185,12 +185,13 @@ func MergeAppDelegatees(srcApp, dstApp *types.Application) {
 //
 // It is exported for testing purposes.
 func MergeAppPendingUndelegations(srcApp, dstApp *types.Application) {
-	// Build a map from all gateway addresses which have pending undelegations
-	// to their respective undelegation session end heights. If the source and destination
+	// Build a map from all gateway addresses which have pending undelegations to
+	// their respective undelegation session end heights. If the source and destination
 	// applications both contain pending undelegations from the same gateway address, the
-	// source pending undelegation is ignored. E.g., app1 has a pending undelegation at
-	// height 10 from gateway1 and app2 has pending undelegation from gateway1 at height 20;
-	// only one pending undelegation from gateway1 should be present in the merged result.
+	// source pending undelegation is ignored. E.g., srcApp has a pending undelegation at
+	// height 10 from gateway1 and dstApp has pending undelegation from gateway1 atheight
+	// 20; only one pending undelegation from gateway1 should be present in the merged
+	// result, at height 20.
 	undelegationsUnionAddrToHeightMap := make(map[string]uint64)
 
 	for srcHeight, srcUndelegetingGatewaysList := range srcApp.PendingUndelegations {
