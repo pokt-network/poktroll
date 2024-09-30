@@ -62,27 +62,18 @@ func ValidateMinStake(minStakeAny any) error {
 		return ErrGatewayParamInvalid.Wrap("missing min_stake")
 	}
 
-	if err := ValidateMinStakeDenom(minStakeCoin); err != nil {
-		return err
-	}
-
-	if err := ValidateMinStakeAboveZero(minStakeCoin); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func ValidateMinStakeDenom(minStakeCoin *cosmostypes.Coin) error {
 	if minStakeCoin.Denom != volatile.DenomuPOKT {
-		return ErrGatewayParamInvalid.Wrapf("min stake denom must be %s: %s", volatile.DenomuPOKT, minStakeCoin)
+		return ErrGatewayParamInvalid.Wrapf(
+			"invalid min_stake denom %q; expected %q",
+			minStakeCoin.Denom, volatile.DenomuPOKT,
+		)
 	}
-	return nil
-}
+	if minStakeCoin.IsZero() || minStakeCoin.IsNegative() {
+		return ErrGatewayParamInvalid.Wrapf("invalid min_stake amount: %s <= 0", minStakeCoin)
+	}
+	if minStakeCoin.Denom != volatile.DenomuPOKT {
+		return ErrGatewayParamInvalid.Wrapf("invalid min_stake amount denom %s", minStakeCoin)
+	}
 
-func ValidateMinStakeAboveZero(minStakeCoin *cosmostypes.Coin) error {
-	if minStakeCoin.Amount.Int64() <= 0 {
-		return ErrGatewayParamInvalid.Wrapf("min stake amount must be greater than zero: %s", minStakeCoin)
-	}
 	return nil
 }
