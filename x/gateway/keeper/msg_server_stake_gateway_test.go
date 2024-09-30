@@ -102,9 +102,9 @@ func TestMsgServer_StakeGateway_FailBelowMinStake(t *testing.T) {
 	expectedErr := gatewaytypes.ErrGatewayInvalidStake.Wrapf("gateway %q must stake at least %s", addr, minStake)
 
 	// Set the minimum stake to be greater than the gateway stake.
-	err := k.SetParams(ctx, gatewaytypes.Params{
-		MinStake: &minStake,
-	})
+	params := k.GetParams(ctx)
+	params.MinStake = &minStake
+	err := k.SetParams(ctx, params)
 	require.NoError(t, err)
 
 	// Prepare the gateway.

@@ -21,7 +21,7 @@ func TestGetParams(t *testing.T) {
 	require.EqualValues(t, params, k.GetParams(ctx))
 }
 
-func TestParams_ValidateMinRelayDifficulty(t *testing.T) {
+func TestParams_ValidateMinStake(t *testing.T) {
 	tests := []struct {
 		desc        string
 		minStake    any

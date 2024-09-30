@@ -27,7 +27,7 @@ func TestMsgUpdateParam_UpdateMinRelayDifficultyBitsOnly(t *testing.T) {
 	// Ensure the default values are different from the new values we want to set
 	require.NotEqual(t, expectedRelayDifficultyTargetHash, defaultParams.RelayDifficultyTargetHash)
 
-	// Update the min relay difficulty bits
+	// Update the min stake.
 	updateParamMsg := &prooftypes.MsgUpdateParam{
 		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		Name:      prooftypes.ParamRelayDifficultyTargetHash,
