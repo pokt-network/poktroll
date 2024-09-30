@@ -5,7 +5,10 @@
         "@type": "/poktroll.gateway.MsgUpdateParam",
         "authority": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
         "name": "min_stake",
-        "as_int64": "42"
+        "as_coin": {
+          "amount": "1000000",
+          "denom": "upokt"
+        }
       }
     ]
   }
