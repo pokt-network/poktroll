@@ -69,7 +69,7 @@ func ValidateMinStake(minStakeAny any) error {
 		)
 	}
 	if minStakeCoin.IsZero() || minStakeCoin.IsNegative() {
-		return ErrGatewayParamInvalid.Wrapf("invalid min_stake amount: %s <= 0", minStakeCoin)
+		return ErrGatewayParamInvalid.Wrapf("invalid min stake amount must be greater than zero: %s", minStakeCoin)
 	}
 	if minStakeCoin.Denom != volatile.DenomuPOKT {
 		return ErrGatewayParamInvalid.Wrapf("invalid min_stake amount denom %s", minStakeCoin)
