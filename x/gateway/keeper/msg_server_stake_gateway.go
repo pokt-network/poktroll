@@ -42,16 +42,12 @@ func (k msgServer) StakeGateway(
 	}
 
 	// Check if the gateway already exists or not
-	var (
-		coinsToEscrow sdk.Coin
-		totalStake    sdk.Coin
-	)
+	var coinsToEscrow sdk.Coin
 	gateway, isGatewayFound := k.GetGateway(ctx, msg.Address)
 	if !isGatewayFound {
 		logger.Info(fmt.Sprintf("gateway not found. Creating new gateway for address %q", msg.Address))
 		gateway = k.createGateway(ctx, msg)
 		coinsToEscrow = *msg.Stake
-		totalStake = *msg.Stake
 	} else {
 		logger.Info(fmt.Sprintf("gateway found. About to try and update gateway for address %q", msg.Address))
 		currGatewayStake := *gateway.Stake
@@ -69,7 +65,6 @@ func (k msgServer) StakeGateway(
 				).Error(),
 			)
 		}
-		totalStake = currGatewayStake.Add(*msg.Stake)
 		logger.Info(fmt.Sprintf("gateway is going to escrow an additional %+v coins", coinsToEscrow))
 	}
 
@@ -85,7 +80,7 @@ func (k msgServer) StakeGateway(
 
 	// MUST ALWAYS have at least minimum stake.
 	minStake := k.GetParams(ctx).MinStake
-	if totalStake.Amount.LT(minStake.Amount) {
+	if msg.Stake.Amount.LT(minStake.Amount) {
 		errFmt := "gateway %q must stake at least %s"
 		logger.Info(fmt.Sprintf(errFmt, msg.Address, minStake))
 		return nil, status.Error(
