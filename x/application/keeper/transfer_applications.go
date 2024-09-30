@@ -31,7 +31,7 @@ func (k Keeper) EndBlockerTransferApplication(ctx context.Context) error {
 	logger := k.Logger().With("method", "EndBlockerTransferApplication")
 
 	// Only process application transfers at the end of the session in
-	// order toto avoid inconsistent/unpredictable mid-session behavior.
+	// order to avoid inconsistent/unpredictable mid-session behavior.
 	if !shared.IsSessionEndHeight(&sharedParams, currentHeight) {
 		return nil
 	}
@@ -185,74 +185,38 @@ func MergeAppDelegatees(srcApp, dstApp *types.Application) {
 //
 // It is exported for testing purposes.
 func MergeAppPendingUndelegations(srcApp, dstApp *types.Application) {
-	// Build a set of all gateway addresses which have pending undelegations
-	// **at any height** so that we may exclude duplicate pending undelegations
-	// in different heights. E.g., app1 has a pending undelegation at height 10
-	// from gateway1 and app2 has pending undelegation from gateway1 at height 20;
+	// Build a map from all gateway addresses which have pending undelegations
+	// to their respective undelegation session end heights. If the source and destination
+	// applications both contain pending undelegations from the same gateway address, the
+	// source pending undelegation is ignored. E.g., app1 has a pending undelegation at
+	// height 10 from gateway1 and app2 has pending undelegation from gateway1 at height 20;
 	// only one pending undelegation from gateway1 should be present in the merged result.
-	allPendingUndelegationGatewayAddrs := make(map[string]struct{})
+	undelegationsUnionAddrToHeightMap := make(map[string]uint64)
 
-	for dstHeight, dstUndelegatingGatewaysList := range dstApp.PendingUndelegations {
-		for _, gatewayBech32 := range dstUndelegatingGatewaysList.GatewayAddresses {
-			allPendingUndelegationGatewayAddrs[gatewayBech32] = struct{}{}
-		}
-
-		srcPendingUndelegationsAtDstHeight, srcHasPendingUndelegationsAtDstHeight := srcApp.PendingUndelegations[dstHeight]
-
-		// Skip this height if the source application does not have pending undelegations in it.
-		if !srcHasPendingUndelegationsAtDstHeight {
-			continue
-		}
-
-		// Build a set of gateway addresses from which the destination application
-		// has pending undelegations.
-		dstGatewayAddrsAtHeight := make(map[string]struct{})
-		for _, dstGatewayBech32 := range dstUndelegatingGatewaysList.GatewayAddresses {
-			if _, ok := dstGatewayAddrsAtHeight[dstGatewayBech32]; !ok {
-				dstGatewayAddrsAtHeight[dstGatewayBech32] = struct{}{}
-			}
-
-			// Also add the gateway address to the set of all pending undelegations.
-			if _, ok := allPendingUndelegationGatewayAddrs[dstGatewayBech32]; !ok {
-				allPendingUndelegationGatewayAddrs[dstGatewayBech32] = struct{}{}
-			}
-		}
-
-		// Build the union of the source and destination applications' pending
-		// undelegations at the current height by appending source application
-		// pending undelegations which are not already in the set.
-		for _, srcGatewayBech32 := range srcPendingUndelegationsAtDstHeight.GatewayAddresses {
-			// Add the gateway address to the set of all pending undelegations.
-			if _, ok := allPendingUndelegationGatewayAddrs[srcGatewayBech32]; ok {
-				continue
-			}
-
-			allPendingUndelegationGatewayAddrs[srcGatewayBech32] = struct{}{}
-
-			if _, ok := dstGatewayAddrsAtHeight[srcGatewayBech32]; !ok {
-				dstPendingUndelegationsAtDstHeight := dstApp.PendingUndelegations[dstHeight]
-				dstGatewayAddrsAtDstHeight := dstPendingUndelegationsAtDstHeight.GatewayAddresses
-				dstPendingUndelegationsAtDstHeight.GatewayAddresses = append(dstGatewayAddrsAtDstHeight, srcGatewayBech32)
-				dstApp.PendingUndelegations[dstHeight] = dstPendingUndelegationsAtDstHeight
-			}
+	for srcHeight, srcUndelegetingGatewaysList := range srcApp.PendingUndelegations {
+		for _, srcGateway := range srcUndelegetingGatewaysList.GatewayAddresses {
+			undelegationsUnionAddrToHeightMap[srcGateway] = srcHeight
 		}
 	}
 
-	// Complete the union by adding source application pending undelegations for heights
-	// which were not present in the destination application pending undelegations map.
-	for srcHeight, srcUndelegatingGatewayList := range srcApp.PendingUndelegations {
-		if _, ok := dstApp.PendingUndelegations[srcHeight]; !ok {
-			for _, srcGatewayBech32 := range srcUndelegatingGatewayList.GatewayAddresses {
-				// Add the gateway address to the set of all pending undelegations.
-				if _, ok := allPendingUndelegationGatewayAddrs[srcGatewayBech32]; ok {
-					continue
-				}
+	for dstHeight, dstUndelegatingGatewaysList := range dstApp.PendingUndelegations {
+		for _, dstGateway := range dstUndelegatingGatewaysList.GatewayAddresses {
+			undelegationsUnionAddrToHeightMap[dstGateway] = dstHeight
+		}
+	}
 
-				dstPendingUndelegationsAtSrcHeight := dstApp.PendingUndelegations[srcHeight]
-				dstGatewayAddrsAtSrcHeight := dstPendingUndelegationsAtSrcHeight.GatewayAddresses
-				dstPendingUndelegationsAtSrcHeight.GatewayAddresses = append(dstGatewayAddrsAtSrcHeight, srcGatewayBech32)
-				dstApp.PendingUndelegations[srcHeight] = dstPendingUndelegationsAtSrcHeight
+	// Reset the destination application's pending undelegations and rebuild it
+	// from the undelegations union map.
+	dstApp.PendingUndelegations = make(map[uint64]types.UndelegatingGatewayList)
+	for gatewayAddr, height := range undelegationsUnionAddrToHeightMap {
+		dstPendingUndelegationsAtHeight, ok := dstApp.PendingUndelegations[height]
+		if !ok {
+			dstApp.PendingUndelegations[height] = types.UndelegatingGatewayList{
+				GatewayAddresses: []string{gatewayAddr},
 			}
+		} else {
+			dstPendingUndelegationsAtHeight.GatewayAddresses = append(dstApp.PendingUndelegations[height].GatewayAddresses, gatewayAddr)
+			dstApp.PendingUndelegations[height] = dstPendingUndelegationsAtHeight
 		}
 	}
 }

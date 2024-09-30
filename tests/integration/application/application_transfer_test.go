@@ -44,6 +44,11 @@ type appTransferTestSuite struct {
 	app3 string
 }
 
+// TestAppTransferSuite runs the application transfer test suite.
+func TestAppTransferSuite(t *testing.T) {
+	suite.Run(t, new(appTransferTestSuite))
+}
+
 func (s *appTransferTestSuite) SetupTest() {
 	// Construct a new integration app for each test.
 	s.NewApp(s.T())
@@ -216,14 +221,14 @@ func (s *appTransferTestSuite) TestMultipleSourceToSameNonexistentDestinationMer
 		pendingTransfer := srcApp.GetPendingTransfer()
 		require.NotNil(s.T(), pendingTransfer)
 
-		nextExpectedPendingTransfer := &apptypes.PendingApplicationTransfer{
-			DestinationAddress: expectedDstBech32,
-			SessionEndHeight:   uint64(sessionEndHeight),
+		// Assert that the PendingApplicationTransfer fields in both transfer
+		// responses match the expected PendingApplicationTransfer.
+		if expectedPendingTransfer == nil {
+			expectedPendingTransfer = &apptypes.PendingApplicationTransfer{
+				DestinationAddress: expectedDstBech32,
+				SessionEndHeight:   uint64(sessionEndHeight),
+			}
 		}
-		if expectedPendingTransfer != nil {
-			require.EqualValues(s.T(), expectedPendingTransfer, nextExpectedPendingTransfer)
-		}
-		expectedPendingTransfer = nextExpectedPendingTransfer
 		require.EqualValues(s.T(), expectedPendingTransfer, pendingTransfer)
 
 		// Query and assert application pending transfer field updated in the store.
@@ -429,31 +434,29 @@ func (s *appTransferTestSuite) shouldObserveTransferBeginEvent(
 	expectedDstAppBech32 string,
 ) {
 	eventTypeURL := cosmostypes.MsgTypeURL(&apptypes.EventTransferBegin{})
-	transferBeginEvents := s.FilterEvents(events.NewEventTypeMatchFn(eventTypeURL))
-	require.NotEmpty(s.T(), transferBeginEvents)
+	isTransferBeginEventFn := events.NewEventTypeMatchFn(eventTypeURL)
+	targetTransferBeginEvent := s.LatestMatchingEvent(func(event *cosmostypes.Event) bool {
+		if !isTransferBeginEventFn(event) {
+			return false
+		}
 
-	transferBeginEvent := new(cosmostypes.Event)
-	for _, event := range transferBeginEvents {
 		eventSrcAddr, hasSrcAddr := events.GetAttributeValue(event, "source_address")
 		require.True(s.T(), hasSrcAddr)
 
-		if eventSrcAddr == expectedSrcApp.GetAddress() {
-			transferBeginEvent = event
-			break
-		}
-	}
-	require.NotNil(s.T(), transferBeginEvent)
+		return eventSrcAddr == expectedSrcApp.GetAddress()
+	})
+	require.NotEmpty(s.T(), targetTransferBeginEvent)
 
-	evtSrcAddr, hasSrcAddr := events.GetAttributeValue(transferBeginEvent, "source_address")
+	evtSrcAddr, hasSrcAddr := events.GetAttributeValue(targetTransferBeginEvent, "source_address")
 	require.True(s.T(), hasSrcAddr)
 	require.Equal(s.T(), expectedSrcApp.GetAddress(), evtSrcAddr)
 
-	evtDstAddr, hasDstAddr := events.GetAttributeValue(transferBeginEvent, "destination_address")
+	evtDstAddr, hasDstAddr := events.GetAttributeValue(targetTransferBeginEvent, "destination_address")
 	require.True(s.T(), hasDstAddr)
 	require.Equal(s.T(), expectedDstAppBech32, evtDstAddr)
 
 	evtSrcApp := new(apptypes.Application)
-	evtSrcAppStr, hasSrcApp := events.GetAttributeValue(transferBeginEvent, "source_application")
+	evtSrcAppStr, hasSrcApp := events.GetAttributeValue(targetTransferBeginEvent, "source_application")
 	require.True(s.T(), hasSrcApp)
 
 	evtSrcAppBz := []byte(evtSrcAppStr)
@@ -469,28 +472,33 @@ func (s *appTransferTestSuite) shouldObserveTransferEndEvent(
 	expectedSrcAppBech32 string,
 ) {
 	eventTypeURL := cosmostypes.MsgTypeURL(&apptypes.EventTransferEnd{})
-	transferEndEvent := s.LatestMatchingEvent(events.NewEventTypeMatchFn(eventTypeURL))
-	require.NotNil(s.T(), transferEndEvent)
+	isTransferEndEventFn := events.NewEventTypeMatchFn(eventTypeURL)
+	targetTransferEndEvent := s.LatestMatchingEvent(func(event *cosmostypes.Event) bool {
+		if !isTransferEndEventFn(event) {
+			return false
+		}
 
-	evtSrcAddr, hasSrcAddrAttr := events.GetAttributeValue(transferEndEvent, "source_address")
+		eventSrcAddr, hasSrcAddr := events.GetAttributeValue(event, "source_address")
+		require.True(s.T(), hasSrcAddr)
+
+		return eventSrcAddr == expectedDstApp.GetAddress()
+	})
+	require.NotNil(s.T(), targetTransferEndEvent)
+
+	evtSrcAddr, hasSrcAddrAttr := events.GetAttributeValue(targetTransferEndEvent, "source_address")
 	require.True(s.T(), hasSrcAddrAttr)
 	require.Equal(s.T(), expectedSrcAppBech32, evtSrcAddr)
 
-	evtDstAddr, hasDstAddrAttr := events.GetAttributeValue(transferEndEvent, "destination_address")
+	evtDstAddr, hasDstAddrAttr := events.GetAttributeValue(targetTransferEndEvent, "destination_address")
 	require.True(s.T(), hasDstAddrAttr)
 	require.Equal(s.T(), expectedDstApp.GetAddress(), evtDstAddr)
 
 	evtDstApp := new(apptypes.Application)
-	evtDstAppStr, hasDstAppAttr := events.GetAttributeValue(transferEndEvent, "destination_application")
+	evtDstAppStr, hasDstAppAttr := events.GetAttributeValue(targetTransferEndEvent, "destination_application")
 	require.True(s.T(), hasDstAppAttr)
 
 	evtDstAppBz := []byte(evtDstAppStr)
 	err := s.GetApp().GetCodec().UnmarshalJSON(evtDstAppBz, evtDstApp)
 	require.NoError(s.T(), err)
 	require.EqualValues(s.T(), expectedDstApp.GetPendingTransfer(), evtDstApp.GetPendingTransfer())
-}
-
-// TestAppTransferSuite runs the application transfer test suite.
-func TestAppTransferSuite(t *testing.T) {
-	suite.Run(t, new(appTransferTestSuite))
 }

@@ -62,7 +62,7 @@ func (s *ApplicationModuleSuite) StakeApp(
 }
 
 // Transfer sends a MsgApplicationTransfer to begin an application transfer
-// from srcBech32 to dstDst32.
+// from srcBech32 to dstBech32.
 func (s *ApplicationModuleSuite) Transfer(
 	t *testing.T,
 	srcBech32, dstBech32 string,
