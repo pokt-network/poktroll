@@ -3,8 +3,6 @@ package keeper_test
 import (
 	"testing"
 
-	"cosmossdk.io/math"
-	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
@@ -26,7 +24,7 @@ func TestMsgServer_TransferApplication_Success(t *testing.T) {
 	_, isSrcFound := k.GetApplication(ctx, srcAddr)
 	require.False(t, isSrcFound)
 
-	expectedAppStake := &cosmostypes.Coin{Denom: "upokt", Amount: math.NewInt(100)}
+	expectedAppStake := &apptypes.DefaultMinStake
 
 	// Prepare the application.
 	stakeMsg := &apptypes.MsgStakeApplication{
@@ -89,7 +87,7 @@ func TestMsgServer_TransferApplication_Error_DestinationExists(t *testing.T) {
 	_, isDstFound := k.GetApplication(ctx, dstAddr)
 	require.False(t, isDstFound)
 
-	expectedAppStake := &cosmostypes.Coin{Denom: "upokt", Amount: math.NewInt(100)}
+	expectedAppStake := &apptypes.DefaultMinStake
 
 	// Prepare and stake the source application.
 	appStakeMsg := &apptypes.MsgStakeApplication{
@@ -130,7 +128,11 @@ func TestMsgServer_TransferApplication_Error_DestinationExists(t *testing.T) {
 	foundApp, isSrcFound = k.GetApplication(ctx, srcAddr)
 	require.True(t, isSrcFound)
 	require.Equal(t, srcAddr, foundApp.Address)
-	require.Equal(t, int64(100), foundApp.Stake.Amount.Int64())
+	require.Truef(t,
+		expectedAppStake.Amount.Equal(foundApp.Stake.Amount),
+		"expected %d, got %d",
+		expectedAppStake.Amount.Int64(), foundApp.Stake.Amount.Int64(),
+	)
 	require.Len(t, foundApp.ServiceConfigs, 1)
 	require.Equal(t, "svc1", foundApp.ServiceConfigs[0].ServiceId)
 }
