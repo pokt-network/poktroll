@@ -54,7 +54,7 @@ func (k msgServer) StakeApplication(ctx context.Context, msg *types.MsgStakeAppl
 		foundApp.UnstakeSessionEndHeight = types.ApplicationNotUnstaking
 	}
 
-	// Must always stake or upstake (> 0 delta)
+	// MUST ALWAYS stake or upstake (> 0 delta)
 	if coinsToEscrow.IsZero() {
 		logger.Warn(fmt.Sprintf("Application %q must escrow more than 0 additional coins", msg.Address))
 		return nil, status.Error(
@@ -63,6 +63,17 @@ func (k msgServer) StakeApplication(ctx context.Context, msg *types.MsgStakeAppl
 				"application %q must escrow more than 0 additional coins",
 				msg.Address,
 			).Error())
+	}
+
+	// MUST ALWAYS have at least minimum stake.
+	minStake := k.GetParams(ctx).MinStake
+	if msg.Stake.Amount.LT(minStake.Amount) {
+		errFmt := "application %q must stake at least %s"
+		logger.Info(fmt.Sprintf(errFmt, msg.Address, minStake))
+		return nil, status.Error(
+			codes.InvalidArgument,
+			types.ErrAppInvalidStake.Wrapf(errFmt, msg.Address, minStake).Error(),
+		)
 	}
 
 	// Retrieve the address of the application
