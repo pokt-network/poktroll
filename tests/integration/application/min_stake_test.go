@@ -6,6 +6,7 @@ import (
 
 	"cosmossdk.io/depinject"
 	cosmoslog "cosmossdk.io/log"
+	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
@@ -46,6 +47,11 @@ type applicationMinStakeTestSuite struct {
 	appBech32,
 	supplierKeyUid,
 	supplierBech32 string
+
+	appStake *cosmostypes.Coin
+
+	numRelays,
+	numComputeUnitsPerRelay uint64
 }
 
 func TestApplicationMinStakeTestSuite(t *testing.T) {
@@ -66,6 +72,10 @@ func (s *applicationMinStakeTestSuite) SetupTest() {
 
 	// Set block height to 1.
 	s.ctx = cosmostypes.UnwrapSDKContext(s.ctx).WithBlockHeight(1)
+
+	s.appStake = &apptypes.DefaultMinStake
+	s.numRelays = 10
+	s.numComputeUnitsPerRelay = 1
 }
 
 func (s *applicationMinStakeTestSuite) TestAppCannotStakeLessThanMinStake() {
@@ -101,9 +111,10 @@ func (s *applicationMinStakeTestSuite) TestAppIsUnbondedIfBelowMinStakeWhenSettl
 	require.False(s.T(), isAppFound)
 
 	// Assert that the application's stake was returned to its bank balance.
+	expectedAppBurn := math.NewInt(int64(s.numRelays * s.numComputeUnitsPerRelay * sharedtypes.DefaultComputeUnitsToTokensMultiplier))
+	expectedAppBalance := s.appStake.SubAmount(expectedAppBurn)
 	appBalance = s.getAppBalance()
-	require.Greater(s.T(), appBalance.Amount.Int64(), int64(0))
-	require.Less(s.T(), appBalance.Amount.Int64(), apptypes.DefaultMinStake.Amount.Int64())
+	require.Equal(s.T(), expectedAppBalance.Amount.Int64(), appBalance.Amount.Int64())
 
 }
 
@@ -163,7 +174,7 @@ func (s *applicationMinStakeTestSuite) addService() {
 func (s *applicationMinStakeTestSuite) stakeApp() {
 	s.keepers.ApplicationKeeper.SetApplication(s.ctx, apptypes.Application{
 		Address:        s.appBech32,
-		Stake:          &apptypes.DefaultMinStake,
+		Stake:          s.appStake,
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{ServiceId: s.serviceId}},
 	})
 }
@@ -210,7 +221,7 @@ func (s *applicationMinStakeTestSuite) getClaim(
 ) *prooftypes.Claim {
 	sessionTree := testtree.NewFilledSessionTree(
 		s.ctx, s.T(),
-		1, 100,
+		s.numRelays, s.numComputeUnitsPerRelay,
 		s.supplierKeyUid, s.supplierBech32,
 		sessionHeader, sessionHeader, sessionHeader,
 		s.keyRing, s.ringClient,
