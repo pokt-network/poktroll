@@ -51,7 +51,7 @@ func (k msgServer) StakeApplication(ctx context.Context, msg *types.MsgStakeAppl
 		logger.Info(fmt.Sprintf("Application is going to escrow an additional %+v coins", coinsToEscrow))
 
 		// If the application has initiated an unstake action, cancel it since it is staking again.
-		// TODO_NEXT:(@bryanchriswhite): assert on EventApplicationUnbondingCanceled
+		// TODO_UPNEXT:(@bryanchriswhite): assert that an EventApplicationUnbondingCanceled event was emitted.
 		foundApp.UnstakeSessionEndHeight = types.ApplicationNotUnstaking
 	}
 

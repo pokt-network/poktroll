@@ -286,6 +286,8 @@ func (k Keeper) ProcessTokenLogicModules(
 		if err := k.applicationKeeper.UnbondApplication(ctx, &application); err != nil {
 			return err
 		}
+
+		// TODO_UPNEXT:(@bryanchriswhite): emit a new EventApplicationUnbondedBelowMinStake event.
 	} else {
 		// State mutation: update the application's on-chain record.
 		k.applicationKeeper.SetApplication(ctx, application)

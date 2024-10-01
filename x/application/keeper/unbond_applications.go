@@ -42,7 +42,7 @@ func (k Keeper) EndBlockerUnbondApplications(ctx context.Context) error {
 			return err
 		}
 
-		// TODO_NEXT(@bryanchriswhite): emit a new EventApplicationUnbondingEnd.
+		// TODO_UPNEXT(@bryanchriswhite): emit a new EventApplicationUnbondingEnd event.
 	}
 
 	return nil

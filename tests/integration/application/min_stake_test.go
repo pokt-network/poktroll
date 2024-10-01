@@ -181,7 +181,7 @@ func (s *applicationMinStakeTestSuite) stakeApp() {
 
 // stakeSupplier stakes a supplier for service 1.
 func (s *applicationMinStakeTestSuite) stakeSupplier() {
-	// TODO_NEXT(@bryanchriswhite, #612): Replace supplierStake with suppleirtypes.DefaultMinStake.
+	// TODO_UPNEXT(@bryanchriswhite, #612): Replace supplierStake with suppleirtypes.DefaultMinStake.
 	supplierStake := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1000000) // 1 POKT.
 	s.keepers.SupplierKeeper.SetSupplier(s.ctx, sharedtypes.Supplier{
 		OwnerAddress:    s.supplierBech32,
@@ -236,7 +236,7 @@ func (s *applicationMinStakeTestSuite) getClaim(
 	}
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// getAppBalance returns the bank module balance for the application.
 func (s *applicationMinStakeTestSuite) getAppBalance() *cosmostypes.Coin {
 	appBalRes, err := s.keepers.BankKeeper.Balance(s.ctx, &banktypes.QueryBalanceRequest{
 		Address: s.appBech32, Denom: volatile.DenomuPOKT,

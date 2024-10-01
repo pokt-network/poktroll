@@ -57,7 +57,7 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 	_, err = srv.UnstakeApplication(ctx, unstakeMsg)
 	require.NoError(t, err)
 
-	// TODO_NEXT:(@bryanchriswhite): assert on EventApplicationUnbondingBegin
+	// TODO_UPNEXT:(@bryanchriswhite): assert that an EventApplicationUnbondingBegin event was emitted.
 
 	// Make sure the application entered the unbonding period
 	foundApp, isAppFound = applicationModuleKeepers.GetApplication(ctx, unstakingAppAddr)
@@ -72,7 +72,7 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 	err = applicationModuleKeepers.EndBlockerUnbondApplications(ctx)
 	require.NoError(t, err)
 
-	// TODO_NEXT:(@bryanchriswhite): assert on EventApplicationUnbondingEnd
+	// TODO_UPNEXT:(@bryanchriswhite): assert that an EventApplicationUnbondingEnd event was emitted.
 
 	// Make sure the unstaking application is removed from the applications list when
 	// the unbonding period is over.
@@ -109,7 +109,7 @@ func TestMsgServer_UnstakeApplication_CancelUnbondingIfRestaked(t *testing.T) {
 	_, err = srv.UnstakeApplication(ctx, unstakeMsg)
 	require.NoError(t, err)
 
-	// TODO_NEXT:(@bryanchriswhite): assert on EventApplicationUnbondingBegin
+	// TODO_UPNEXT:(@bryanchriswhite): assert that an EventApplicationUnbondingBegin event was emitted.
 
 	// Make sure the application entered the unbonding period
 	foundApp, isAppFound = applicationModuleKeepers.GetApplication(ctx, appAddr)
@@ -123,7 +123,7 @@ func TestMsgServer_UnstakeApplication_CancelUnbondingIfRestaked(t *testing.T) {
 	_, err = srv.StakeApplication(ctx, stakeMsg)
 	require.NoError(t, err)
 
-	// TODO_NEXT:(@bryanchriswhite): assert on EventApplicationUnbondingCancelled
+	// TODO_UPNEXT:(@bryanchriswhite): assert that an EventApplicationUnbondingCanceled event was emitted.
 
 	// Make sure the application is no longer in the unbonding period
 	foundApp, isAppFound = applicationModuleKeepers.GetApplication(ctx, appAddr)
