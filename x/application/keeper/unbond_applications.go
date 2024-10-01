@@ -41,6 +41,8 @@ func (k Keeper) EndBlockerUnbondApplications(ctx context.Context) error {
 		if err := k.UnbondApplication(ctx, &application); err != nil {
 			return err
 		}
+
+		// TODO_NEXT(@bryanchriswhite): emit a new EventApplicationUnbondingEnd.
 	}
 
 	return nil

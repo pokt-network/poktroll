@@ -51,6 +51,8 @@ func (k msgServer) UnstakeApplication(
 	foundApp.UnstakeSessionEndHeight = uint64(shared.GetSessionEndHeight(&sharedParams, currentHeight))
 	k.SetApplication(ctx, foundApp)
 
+	// TODO_NEXT:(@bryanchriswhite): emit a new EventApplicationUnbondingBegin
+
 	isSuccessful = true
 	return &types.MsgUnstakeApplicationResponse{}, nil
 }
