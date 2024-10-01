@@ -48,6 +48,8 @@ func (k Keeper) EndBlockerUnbondApplications(ctx context.Context) error {
 	return nil
 }
 
+// UnbondApplication transfers the application stake to the bank module balance for the
+// corresponding account and removes the application from the application module state.
 func (k Keeper) UnbondApplication(ctx context.Context, app *apptypes.Application) error {
 	logger := k.Logger().With("method", "UnbondApplication")
 
