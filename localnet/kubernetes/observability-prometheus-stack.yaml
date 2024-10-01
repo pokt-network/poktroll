@@ -20,15 +20,11 @@ grafana:
 
 prometheus:
   prometheusSpec:
-    # podMonitorNamespaceSelector:
-    #   any: true
-    # podMonitorSelector: {}
-    # podMonitorSelectorNilUsesHelmValues: false
-    # ruleNamespaceSelector:
-    #   any: true
-    # ruleSelector: {}
-    # ruleSelectorNilUsesHelmValues: false
-    # serviceMonitorNamespaceSelector:
-    #   any: true
-    # serviceMonitorSelector: {}
-    serviceMonitorSelectorNilUsesHelmValues: false
+    scrapeConfigSelector:
+      matchLabels: null
+    serviceMonitorSelector:
+      matchLabels: null
+    ruleSelector:
+      matchLabels: null
+    podMonitorSelector:
+      matchLabels: null
