@@ -57,7 +57,7 @@ func (p Params) Validate() error {
 func ValidateMinStake(minStakeAny any) error {
 	minStakeCoin, ok := minStakeAny.(*cosmostypes.Coin)
 	if !ok {
-		return ErrSupplierParamInvalid.Wrapf("invalid param type: %T", minStakeAny)
+		return ErrSupplierParamInvalid.Wrapf("invalid parameter type: %T", minStakeAny)
 	}
 
 	if minStakeCoin == nil {
@@ -72,7 +72,7 @@ func ValidateMinStake(minStakeAny any) error {
 	}
 
 	if minStakeCoin.IsZero() || minStakeCoin.IsNegative() {
-		return ErrSupplierParamInvalid.Wrapf("invalid min_stake amount: %s <= 0", minStakeCoin)
+		return ErrSupplierParamInvalid.Wrapf("min_stake amount must be greater than 0: got %s", minStakeCoin)
 	}
 
 	return nil

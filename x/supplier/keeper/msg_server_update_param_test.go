@@ -37,5 +37,5 @@ func TestMsgUpdateParam_UpdateMinStakeOnly(t *testing.T) {
 	require.Equal(t, expectedMinStake.Amount, res.Params.MinStake.Amount)
 
 	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, suppliertypes.ParamMinStake)
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, string(suppliertypes.KeyMinStake))
 }

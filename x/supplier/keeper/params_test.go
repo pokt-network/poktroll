@@ -9,7 +9,6 @@ import (
 
 	"github.com/pokt-network/poktroll/app/volatile"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
-	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
@@ -38,11 +37,14 @@ func TestParams_ValidateMinStake(t *testing.T) {
 				Denom:  volatile.DenomuPOKT,
 				Amount: math.NewInt(-1),
 			},
-			expectedErr: gatewaytypes.ErrGatewayParamInvalid.Wrapf("min stake amount must be greater than zero: -1%s", volatile.DenomuPOKT),
+			expectedErr: suppliertypes.ErrSupplierParamInvalid.Wrapf(
+				"min_stake amount must be greater than 0: got -1%s",
+				volatile.DenomuPOKT,
+			),
 		},
 		{
 			desc:     "valid MinStake",
-			minStake: int64(420),
+			minStake: &suppliertypes.DefaultMinStake,
 		},
 	}
 
