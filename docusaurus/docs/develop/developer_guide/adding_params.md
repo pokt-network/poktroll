@@ -175,39 +175,39 @@ Prepare `x/examplemod/types/message_update_param.go` to handle message construct
 ```go
 - func NewMsgUpdateParam(authority string, name string, asType string) *MsgUpdateParam {
 + func NewMsgUpdateParam(authority string, name string, asType any) *MsgUpdateParam {
-+ 	var asTypeIface isMsgUpdateParam_AsType
++   var asTypeIface isMsgUpdateParam_AsType
 +
-+ 	switch t := asType.(type) {
-+ 	default:
-+ 		panic(fmt.Sprintf("unexpected param value type: %T", asType))
-+ 	}
++   switch t := asType.(type) {
++   default:
++     panic(fmt.Sprintf("unexpected param value type: %T", asType))
++   }
 +
     return &MsgUpdateParam{
-	    Authority: authority,
-		Name: name,
--       AsType: asType,
-+       AsType: asTypeIface,
+      Authority: authority,
+      Name: name,
+-     AsType: asType,
++     AsType: asTypeIface,
     }
   }
 
   func (msg *MsgUpdateParam) ValidateBasic() error {
-        _, err := cosmostypes.AccAddressFromBech32(msg.Authority)
-        if err != nil {
-                return errorsmod.Wrapf(sdkerrors.ErrInvalidAddress, "invalid authority address (%s)", err)
-        }
+    _, err := cosmostypes.AccAddressFromBech32(msg.Authority)
+    if err != nil {
+      return errorsmod.Wrapf(sdkerrors.ErrInvalidAddress, "invalid authority address (%s)", err)
+	}
 -
--       return nil
+-   return nil
 +
-+       // Parameter value MUST NOT be nil.
-+       if msg.AsType == nil {
-+               return ErrExamplemodParamInvalid.Wrap("missing param AsType")
-+       }
++   // Parameter value MUST NOT be nil.
++   if msg.AsType == nil {
++     return ErrExamplemodParamInvalid.Wrap("missing param AsType")
++   }
 +
-+       // Parameter name MUST be supported by this module.
-+       switch msg.Name {
-+       default:
-+               return ErrExamplemodParamInvalid.Wrapf("unsupported param %q", msg.Name)
-+       }
++   // Parameter name MUST be supported by this module.
++   switch msg.Name {
++   default:
++     return ErrExamplemodParamInvalid.Wrapf("unsupported param %q", msg.Name)
++   }
   }
 ```
 #### 0.6 Update the Module's `msgServer#UpdateParam()` Handler
@@ -228,25 +228,25 @@ Prepare `x/examplemod/keeper/msg_server_update_param.go` to handle parameter upd
 +       return nil, err
 +   }
 +
-+ 	if k.GetAuthority() != msg.Authority {
-+ 		return nil, types.ErrExamplemodInvalidSigner.Wrapf("invalid authority; expected %s, got %s", k.GetAuthority(), msg.Authority)
-+ 	}
++   if k.GetAuthority() != msg.Authority {
++     return nil, types.ErrExamplemodInvalidSigner.Wrapf("invalid authority; expected %s, got %s", k.GetAuthority(), msg.Authority)
++   }
 +
-+ 	params := k.GetParams(ctx)
++   params := k.GetParams(ctx)
 +
-+ 	switch msg.Name {
-+ 	default:
-+ 		return nil, types.ErrExamplemodParamInvalid.Wrapf("unsupported param %q", msg.Name)
-+ 	}
++   switch msg.Name {
++   default:
++     return nil, types.ErrExamplemodParamInvalid.Wrapf("unsupported param %q", msg.Name)
++   }
 +
-+ 	if err := k.SetParams(ctx, params); err != nil {
-+ 		return nil, err
-+ 	}
++   if err := k.SetParams(ctx, params); err != nil {
++     return nil, err
++   }
 +
-+ 	updatedParams := k.GetParams(ctx)
-+ 	return &types.MsgUpdateParamResponse{
-+ 		Params: &updatedParams,
-+ 	}, nil
++   updatedParams := k.GetParams(ctx)
++   return &types.MsgUpdateParamResponse{
++     Params: &updatedParams,
++   }, nil
   }
 ```
 
@@ -441,25 +441,16 @@ Add the parameter name (e.g. `ParamNameNewParameter`) to a new case in the switc
   // UpdateParam updates a single parameter in the proof module and returns
   // all active parameters.
   func (k msgServer) UpdateParam(
-      ctx context.Context,
-      msg *types.MsgUpdateParam,
+    ctx context.Context,
+    msg *types.MsgUpdateParam,
   ) (*types.MsgUpdateParamResponse, error) {
     // ...
-  	switch msg.Name {
-+ 	case types.ParamNewParameter:
-+ 		if _, ok := msg.AsType.(*types.MsgUpdateParam_AsInt64); !ok {
-+ 			return nil, types.ErrExamplemodParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
-+ 		}
-+ 		newParameter := msg.GetAsInt64()
-+
-+ 		if err := types.ValidateNewParameter(newParameter); err != nil {
-+ 			return nil, err
-+ 		}
-+
-+ 		params.NewParameter = newParameter
-  	default:
-  		return nil, types.ErrExamplemodParamInvalid.Wrapf("unsupported param %q", msg.Name)
-  	}
+    switch msg.Name {
++   case types.ParamNewParameter:
++     params.NewParameter = msg.GetAsInt64()
+    default:
+      return nil, types.ErrExamplemodParamInvalid.Wrapf("unsupported param %q", msg.Name)
+    }
     // ...
   }
 ```
@@ -478,9 +469,9 @@ Ensure there is a test function for each parameter which covers all cases of inv
   
 + func TestParams_ValidateNewParameter(t *testing.T) {
 +   tests := []struct {
-+     desc string
-+     newParameter interface{}
-+     expectedErr error
++     desc         string
++     newParameter any
++     expectedErr  error
 +   }{
 +     {
 +       desc: "invalid type",
@@ -488,7 +479,7 @@ Ensure there is a test function for each parameter which covers all cases of inv
 +       expectedErr: ErrExamplemodParamInvalid.Wrapf("invalid parameter type: string"),
 +     },
 +     {
-+       desc: "valid newParameterName",
++       desc: "valid NewParameterName",
 +       newParameter: int64(420),
 +     },
 +   }
@@ -515,14 +506,14 @@ If one already exist, update it if applicable; e.g.:
 
 ```go
 + {
-+     desc: "valid: send minimal params", // For parameters which MUST NEVER be their zero value or nil.
-+     input: &examplemodtypes.MsgUpdateParams{
-+         Authority: k.GetAuthority(),
-+         Params: examplemodtypes.Params{
-+             NewParameter: 42, 
-+         },
++   desc: "valid: send minimal params", // For parameters which MUST NEVER be their zero value or nil.
++   input: &examplemodtypes.MsgUpdateParams{
++     Authority: k.GetAuthority(),
++     Params: examplemodtypes.Params{
++       NewParameter: 42, 
 +     },
-+     shouldError: false,
++   },
++   shouldError: false,
 + },
 ```
 
@@ -552,7 +543,7 @@ This test asserts that updating was successful and that no other parameter was e
 +   require.Equal(t, expectedNewParameter, res.Params.NewParameter)
 +
 +   // Ensure the other parameters are unchanged
-+   testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, "MinStake")
++   testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, examplemodtypes.ParamNewParameter)
 + }
 ```
 
