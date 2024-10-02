@@ -70,11 +70,11 @@ func (k msgServer) StakeGateway(
 
 	// MUST ALWAYS stake or upstake (> 0 delta).
 	if coinsToEscrow.IsZero() {
-		errFmt := "gateway %q must escrow more than 0 additional coins"
-		logger.Info(fmt.Sprintf(errFmt, msg.Address))
+		errMsg := fmt.Sprintf("gateway %q must escrow more than 0 additional coins", msg.GetAddress())
+		logger.Info(errMsg)
 		return nil, status.Error(
 			codes.InvalidArgument,
-			types.ErrGatewayInvalidStake.Wrapf(errFmt, msg.Address).Error(),
+			types.ErrGatewayInvalidStake.Wrap(errMsg).Error(),
 		)
 	}
 
