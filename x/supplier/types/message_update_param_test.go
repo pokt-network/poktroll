@@ -28,17 +28,15 @@ func TestMsgUpdateParam_ValidateBasic(t *testing.T) {
 			msg: MsgUpdateParam{
 				Authority: sample.AccAddress(),
 				Name:      "non_existent",
-				// TODO_UPNEXT(@bryanchriswhite, #612): replace with default min_stake.
-				AsType: &MsgUpdateParam_AsCoin{AsCoin: nil},
+				AsType:    &MsgUpdateParam_AsCoin{AsCoin: &DefaultMinStake},
 			},
 			err: ErrSupplierParamInvalid,
 		}, {
 			name: "valid: correct address, param name, and type",
 			msg: MsgUpdateParam{
 				Authority: sample.AccAddress(),
-				Name:      "",
-				// TODO_UPNEXT(@bryanchriswhite, #612): replace with default min_stake.
-				AsType: &MsgUpdateParam_AsCoin{AsCoin: nil},
+				Name:      ParamMinStake,
+				AsType:    &MsgUpdateParam_AsCoin{AsCoin: &DefaultMinStake},
 			},
 		},
 	}
