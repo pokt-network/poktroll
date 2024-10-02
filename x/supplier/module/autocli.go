@@ -34,7 +34,7 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 		Tx: &autocliv1.ServiceCommandDescriptor{
 			Service:              modulev1.Msg_ServiceDesc.ServiceName,
 			EnhanceCustomCommand: true, // only required if you want to use the custom command
-			RpcCommandOptions:    []*autocliv1.RpcCommandOptions{
+			RpcCommandOptions: []*autocliv1.RpcCommandOptions{
 				//{
 				//	RpcMethod: "UpdateParams",
 				//	Skip:      true, // skipped because authority gated
@@ -51,6 +51,12 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 				//	Short:          "Send a unstake-supplier tx",
 				//	PositionalArgs: []*autocliv1.PositionalArgDescriptor{},
 				//},
+				{
+					RpcMethod:      "UpdateParam",
+					Use:            "update-param [name] [as-type]",
+					Short:          "Send a update-param tx",
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "name"}, {ProtoField: "asType"}},
+				},
 				// this line is used by ignite scaffolding # autocli/tx
 			},
 		},
