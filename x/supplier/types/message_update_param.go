@@ -1,26 +1,48 @@
 package types
 
 import (
+	"fmt"
+
 	errorsmod "cosmossdk.io/errors"
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-var _ sdk.Msg = &MsgUpdateParam{}
+var _ cosmostypes.Msg = &MsgUpdateParam{}
 
-func NewMsgUpdateParam(authority string, name string, asType string) *MsgUpdateParam {
-  return &MsgUpdateParam{
+func NewMsgUpdateParam(authority string, name string, asType any) *MsgUpdateParam {
+	var asTypeIface isMsgUpdateParam_AsType
+
+	switch t := asType.(type) {
+	case *cosmostypes.Coin:
+		asTypeIface = &MsgUpdateParam_AsCoin{AsCoin: t}
+	default:
+		panic(fmt.Sprintf("unexpected param value type: %T", asType))
+	}
+
+	return &MsgUpdateParam{
 		Authority: authority,
-    Name: name,
-    AsType: asType,
+		Name:      name,
+		AsType:    asTypeIface,
 	}
 }
 
 func (msg *MsgUpdateParam) ValidateBasic() error {
-  _, err := sdk.AccAddressFromBech32(msg.Authority)
-  	if err != nil {
-  		return errorsmod.Wrapf(sdkerrors.ErrInvalidAddress, "invalid authority address (%s)", err)
-  	}
-  return nil
-}
+	_, err := cosmostypes.AccAddressFromBech32(msg.Authority)
+	if err != nil {
+		return errorsmod.Wrapf(sdkerrors.ErrInvalidAddress, "invalid authority address (%s)", err)
+	}
 
+	// Parameter value MUST NOT be nil.
+	if msg.AsType == nil {
+		return ErrSupplierParamInvalid.Wrap("missing param AsType")
+	}
+
+	// Parameter name MUST be supported by this module.
+	switch msg.Name {
+	default:
+		return ErrSupplierParamInvalid.Wrapf("unsupported param %q", msg.Name)
+	}
+
+	return nil
+}
