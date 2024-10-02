@@ -4,15 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"cosmossdk.io/depinject"
 	cosmoslog "cosmossdk.io/log"
 	"cosmossdk.io/math"
-	"github.com/cosmos/cosmos-sdk/codec"
-	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
-	"github.com/cosmos/cosmos-sdk/crypto/keyring"
-	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
-	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
-	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/stretchr/testify/require"
@@ -20,14 +13,10 @@ import (
 
 	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
-	"github.com/pokt-network/poktroll/pkg/crypto"
-	"github.com/pokt-network/poktroll/pkg/crypto/rings"
-	"github.com/pokt-network/poktroll/pkg/polylog"
 	_ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/testutil/keeper"
+	testproof "github.com/pokt-network/poktroll/testutil/proof"
 	"github.com/pokt-network/poktroll/testutil/sample"
-	"github.com/pokt-network/poktroll/testutil/testkeyring"
-	"github.com/pokt-network/poktroll/testutil/testtree"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
@@ -37,15 +26,11 @@ import (
 type applicationMinStakeTestSuite struct {
 	suite.Suite
 
-	ctx        context.Context
-	keepers    keeper.TokenomicsModuleKeepers
-	keyRing    keyring.Keyring
-	ringClient crypto.RingClient
+	ctx     context.Context
+	keepers keeper.TokenomicsModuleKeepers
 
 	serviceId,
-	appKeyUid,
 	appBech32,
-	supplierKeyUid,
 	supplierBech32 string
 
 	appStake *cosmostypes.Coin
@@ -61,21 +46,17 @@ func TestApplicationMinStakeTestSuite(t *testing.T) {
 }
 
 func (s *applicationMinStakeTestSuite) SetupTest() {
-	s.serviceId = "svc1"
-	s.appKeyUid = "app"
-	s.supplierKeyUid = "supplier"
 	s.keepers, s.ctx = keeper.NewTokenomicsModuleKeepers(s.T(), cosmoslog.NewNopLogger())
 
-	s.setupRingClient()
-	s.setupKeyring()
-	s.setupAccounts()
-
-	// Set block height to 1.
-	s.ctx = cosmostypes.UnwrapSDKContext(s.ctx).WithBlockHeight(1)
-
+	s.serviceId = "svc1"
+	s.appBech32 = sample.AccAddress()
+	s.supplierBech32 = sample.AccAddress()
 	s.appStake = &apptypes.DefaultMinStake
 	s.numRelays = 10
 	s.numComputeUnitsPerRelay = 1
+
+	// Set block height to 1.
+	s.ctx = cosmostypes.UnwrapSDKContext(s.ctx).WithBlockHeight(1)
 }
 
 func (s *applicationMinStakeTestSuite) TestAppCannotStakeLessThanMinStake() {
@@ -116,49 +97,6 @@ func (s *applicationMinStakeTestSuite) TestAppIsUnbondedIfBelowMinStakeWhenSettl
 	appBalance = s.getAppBalance()
 	require.Equal(s.T(), expectedAppBalance.Amount.Int64(), appBalance.Amount.Int64())
 
-}
-
-// setupRingClient initializes the suite's ring client.
-func (s *applicationMinStakeTestSuite) setupRingClient() {
-	var err error
-	deps := depinject.Supply(
-		polylog.Ctx(s.ctx),
-		prooftypes.NewAppKeeperQueryClient(s.keepers.ApplicationKeeper),
-		prooftypes.NewAccountKeeperQueryClient(s.keepers.AccountKeeper),
-		prooftypes.NewSharedKeeperQueryClient(s.keepers.SharedKeeper, s.keepers.SessionKeeper),
-	)
-	s.ringClient, err = rings.NewRingClient(deps)
-	require.NoError(s.T(), err)
-}
-
-// setupKeyring initializes the suite's keyring.
-func (s *applicationMinStakeTestSuite) setupKeyring() {
-	registry := codectypes.NewInterfaceRegistry()
-	registry.RegisterImplementations((*cryptotypes.PubKey)(nil), &secp256k1.PubKey{}, &ed25519.PubKey{})
-	registry.RegisterImplementations((*cryptotypes.PrivKey)(nil), &secp256k1.PrivKey{}, &ed25519.PrivKey{})
-	cdc := codec.NewProtoCodec(registry)
-	s.keyRing = keyring.NewInMemory(cdc)
-}
-
-// setupAccounts uses pre-generated accounts to populate the necessary
-// accounts in the keyring and account module state. It also populates
-// the suite's addresses for the application and supplier.
-func (s *applicationMinStakeTestSuite) setupAccounts() {
-	acctIterator := testkeyring.PreGeneratedAccounts()
-	s.appBech32 = testkeyring.CreateOnChainAccount(
-		s.ctx, s.T(),
-		s.appKeyUid,
-		s.keyRing,
-		s.keepers.AccountKeeper,
-		acctIterator,
-	).String()
-	s.supplierBech32 = testkeyring.CreateOnChainAccount(
-		s.ctx, s.T(),
-		s.supplierKeyUid,
-		s.keyRing,
-		s.keepers.AccountKeeper,
-		acctIterator,
-	).String()
 }
 
 // addService adds the test service to the service module state.
@@ -219,15 +157,7 @@ func (s *applicationMinStakeTestSuite) getSessionHeader() *sessiontypes.SessionH
 func (s *applicationMinStakeTestSuite) getClaim(
 	sessionHeader *sessiontypes.SessionHeader,
 ) *prooftypes.Claim {
-	sessionTree := testtree.NewFilledSessionTree(
-		s.ctx, s.T(),
-		s.numRelays, s.numComputeUnitsPerRelay,
-		s.supplierKeyUid, s.supplierBech32,
-		sessionHeader, sessionHeader, sessionHeader,
-		s.keyRing, s.ringClient,
-	)
-	claimRoot, err := sessionTree.Flush()
-	require.NoError(s.T(), err)
+	claimRoot := testproof.SmstRootWithSumAndCount(s.numRelays*s.numComputeUnitsPerRelay, s.numRelays)
 
 	return &prooftypes.Claim{
 		SupplierOperatorAddress: s.supplierBech32,
