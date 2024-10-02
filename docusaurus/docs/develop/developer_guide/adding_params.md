@@ -341,11 +341,14 @@ Implement a validation function for the new parameter in `x/examplemod/types/par
 
 ```go
 + // ValidateNewParameter validates the NewParameter param.
-+ func ValidateNewParameter(v interface{}) error {
-+   _, ok := v.(int64)
++ func ValidateNewParameter(newParamAny any) error {
++   newParam, ok := newParamAny.(int64)
 +   if !ok {
-+     return ErrExamplemodParamInvalid.Wrapf("invalid parameter type: %T", v)
++     return ErrExamplemodParamInvalid.Wrapf("invalid parameter type: %T", newParamAny)
 +   }
++
++   // Any additional validation...
++
 +   return nil
 + }
 ```
@@ -401,11 +404,18 @@ Add the parameter type and name (e.g. `ParamNameNewParameter`) to new cases in t
     // ...
   }
 
++ // ValidateBasic performs a basic validation of the MsgUpdateParam fields. It ensures:
++ // 1. The parameter name is supported.
++ // 2. The parameter type matches the expected type for a given parameter name.
++ // 3. The parameter value is valid (according to its respective validation function).
   func (msg *MsgUpdateParam) ValidateBasic() error {
     // ...
     switch msg.Name {
 +   case ParamNewParameter:
-+     return msg.paramTypeIsInt64()
++     if err := msg.paramTypeIsInt64(); err != nil {
++       return err
++     }
++     return ValidateNewParameter(msg.GetAsInt64())
     default:
       return ErrExamplemodParamInvalid.Wrapf("unsupported param %q", msg.Name)
     }
