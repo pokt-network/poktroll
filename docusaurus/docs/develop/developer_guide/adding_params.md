@@ -15,26 +15,27 @@ title: Adding On-Chain Module Parameters
     - [0.6 Update the Module's `msgServer#UpdateParam()` Handler](#06-update-the-modules-msgserverupdateparam-handler)
     - [0.7 Update Module's Params Test Suite `ModuleParamConfig`](#07-update-modules-params-test-suite-moduleparamconfig)
     - [1. Define the Parameter in the Protocol Buffers File](#1-define-the-parameter-in-the-protocol-buffers-file)
-    - [2 Update the Parameter Integration Tests](#2-update-the-parameter-integration-tests)
-      - [2.1 Add a valid param](#21-add-a-valid-param)
-      - [2.2 Check for `as_<type>` on `MsgUpdateParam`](#22-check-for-as_type-on-msgupdateparam)
-    - [3. Update the Default Parameter Values](#3-update-the-default-parameter-values)
-      - [3.1 Go Source Defaults](#31-go-source-defaults)
-      - [3.2 Genesis Configuration Parameter Defaults](#32-genesis-configuration-parameter-defaults)
-    - [4. Update the Makefile and Supporting JSON Files](#4-update-the-makefile-and-supporting-json-files)
-      - [4.1 Update the Makefile](#41-update-the-makefile)
-      - [4.2 Create a new JSON File for the Individual Parameter Update](#42-create-a-new-json-file-for-the-individual-parameter-update)
-      - [4.3 Update the JSON File for Updating All Parameters for the Module](#43-update-the-json-file-for-updating-all-parameters-for-the-module)
-    - [5. Parameter Validation](#5-parameter-validation)
-      - [5.1 New Parameter Validation](#51-new-parameter-validation)
-      - [5.2 Parameter Validation in Workflow](#52-parameter-validation-in-workflow)
-    - [6. Add the Parameter to `ParamSetPairs()`](#6-add-the-parameter-to-paramsetpairs)
-    - [7. Update Unit Tests](#7-update-unit-tests)
-      - [7.1 Parameter Validation Tests](#71-parameter-validation-tests)
-      - [7.2 Parameter Update Tests](#72-parameter-update-tests)
-    - [8. Add Parameter Case to Switch Statements](#8-add-parameter-case-to-switch-statements)
-      - [8.1 `MsgUpdateParam#ValidateBasic()`](#81-msgupdateparamvalidatebasic)
-      - [8.2 `msgServer#UpdateParam()`](#82-msgserverupdateparam)
+    - [2. Update the Default Parameter Values](#2-update-the-default-parameter-values)
+      - [2.1 Go Source Defaults](#21-go-source-defaults)
+      - [2.2 Genesis Configuration Parameter Defaults](#22-genesis-configuration-parameter-defaults)
+    - [3. Parameter Validation](#3-parameter-validation)
+      - [3.1 Define a Validation Function](#31-define-a-validation-function)
+      - [3.2 Call it in the `Params#Validate()`](#32-call-it-in-the-paramsvalidate)
+      - [3.3 Add a `ParamSetPair` to `ParamSetPairs()`](#33-add-a-paramsetpair-to-paramsetpairs)
+    - [4. Add Parameter Case to Switch Statements](#4-add-parameter-case-to-switch-statements)
+      - [4.1 `MsgUpdateParam#ValidateBasic()`](#41-msgupdateparamvalidatebasic)
+      - [4.2 `msgServer#UpdateParam()`](#42-msgserverupdateparam)
+    - [5. Update Unit Tests](#5-update-unit-tests)
+      - [5.1 Parameter Validation Tests](#51-parameter-validation-tests)
+      - [5.2 Parameter Update Tests](#52-parameter-update-tests)
+    - [6. Update the Parameter Integration Tests](#6-update-the-parameter-integration-tests)
+      - [6.1 Add a valid param](#61-add-a-valid-param)
+      - [6.2 Check for `as_<type>` on `MsgUpdateParam`](#62-check-for-as_type-on-msgupdateparam)
+      - [6.3 Update the module's `ModuleParamConfig`](#63-update-the-modules-moduleparamconfig)
+    - [7. Update the Makefile and Supporting JSON Files](#7-update-the-makefile-and-supporting-json-files)
+      - [7.1 Update the Makefile](#71-update-the-makefile)
+      - [7.2 Create a new JSON File for the Individual Parameter Update](#72-create-a-new-json-file-for-the-individual-parameter-update)
+      - [7.3 Update the JSON File for Updating All Parameters for the Module](#73-update-the-json-file-for-updating-all-parameters-for-the-module)
 
 Adding a new on-chain module parameter involves multiple steps to ensure that the
 parameter is properly integrated into the system. This guide will walk you through
@@ -194,6 +195,8 @@ Prepare `x/examplemod/types/message_update_param.go` to handle message construct
         if err != nil {
                 return errorsmod.Wrapf(sdkerrors.ErrInvalidAddress, "invalid authority address (%s)", err)
         }
+-
+-       return nil
 +
 +       // Parameter value MUST NOT be nil.
 +       if msg.AsType == nil {
@@ -205,9 +208,7 @@ Prepare `x/examplemod/types/message_update_param.go` to handle message construct
 +       default:
 +               return ErrExamplemodParamInvalid.Wrapf("unsupported param %q", msg.Name)
 +       }
-
-        return nil
-}
+  }
 ```
 #### 0.6 Update the Module's `msgServer#UpdateParam()` Handler
 
@@ -284,42 +285,9 @@ Define the new parameter in the module's `params.proto` file (e.g., `proto/poktr
 Don't forget to run `make proto_regen` to update generated protobuf go code.
 :::
 
-### 2. Update the Parameter Integration Tests 
+### 2. Update the Default Parameter Values
 
-Integration tests which cover parameter updates utilize the `ModuleParamConfig`s defined in [`testutil/integration/params/param_configs.go`](https://github.com/pokt-network/poktroll/blob/main/testutil/integration/suites/param_configs.go) to dynamically (i.e. using reflection) construct and send parameter update messages in a test environment.
-When adding parameters to a module, it is necessary to update that module's `ModuleParamConfig` to include the new parameter, othwerwise it will not be covered by the integration test suite.
-
-#### 2.1 Add a valid param
-
-Update `ModuleParamConfig#ValidParams` to include a valid and non-default value for the new parameter in the module's `tx.proto` file (e.g. `proto/poktroll/examplemod/tx.proto`):
-
-```go
-  ExamplemodModuleParamConfig = ModuleParamConfig{
-      // ...
-      ValidParams: gatewaytypes.Params{
-+         NewParameter: 420,
-      },
-      // ...
-  }
-```
-
-#### 2.2 Check for `as_<type>` on `MsgUpdateParam`
-
-Ensure an `as_<type>` field exists on `MsgUpdateParam` corresponding to the type of the new parameter (`proto/poktroll/examplemod/tx.proto`):
-
-```proto
- message MsgUpdateParam {
-   ...
-   oneof as_type {
--    // Add `as_<type>` fields for each type in this module's Params type; e.g.:
-+    int64 as_int64 = 3 [(gogoproto.jsontag) = "as_int64"];
-   }
- }
-```
-
-### 3. Update the Default Parameter Values
-
-#### 3.1 Go Source Defaults
+#### 2.1 Go Source Defaults
 
 In the corresponding Go file (e.g., `x/examplemod/types/params.go`), define the default
 value, key, and parameter name for the new parameter and include the default in the
@@ -352,7 +320,7 @@ value, key, and parameter name for the new parameter and include the default in 
   }
 ```
 
-#### 3.2 Genesis Configuration Parameter Defaults
+#### 2.2 Genesis Configuration Parameter Defaults
 
 Add the new parameter to the genesis configuration file (e.g., `config.yml`):
 
@@ -365,9 +333,9 @@ Add the new parameter to the genesis configuration file (e.g., `config.yml`):
 +       new_parameter: 42
 ```
 
-### 4. Parameter Validation
+### 3. Parameter Validation
 
-#### 4.1 Define a Validation Function
+#### 3.1 Define a Validation Function
 
 Implement a validation function for the new parameter in `x/examplemod/types/params.go`:
 
@@ -382,7 +350,7 @@ Implement a validation function for the new parameter in `x/examplemod/types/par
 + }
 ```
 
-#### 4.2 Call it in the `Params#Validate()`
+#### 3.2 Call it in the `Params#Validate()`
 
 Integrate the usage of the new `ValidateNewParameter` function in the corresponding
 `Params#Validate()` function where this is used:
@@ -397,7 +365,7 @@ Integrate the usage of the new `ValidateNewParameter` function in the correspond
   }
 ```
 
-#### 4.3 Add a `ParamSetPair` to `ParamSetPairs()`
+#### 3.3 Add a `ParamSetPair` to `ParamSetPairs()`
 
 Include a call to `NewParamSetPair()`, passing the parameter's key, value pointer, and validation function in the `ParamSetPairs` function return:
 
@@ -412,6 +380,77 @@ Include a call to `NewParamSetPair()`, passing the parameter's key, value pointe
 +       ValidateNewParameter,
 +     ),
     }
+  }
+```
+
+### 4. Add Parameter Case to Switch Statements
+
+#### 4.1 `MsgUpdateParam#ValidateBasic()`
+
+Add the parameter type and name (e.g. `ParamNameNewParameter`) to new cases in the switch statements in `NewMsgUpdateParam()` and `MsgUpdateParam#ValidateBasic()` in `x/examplemod/types/message_update_param.go`:
+
+```go
+  func NewMsgUpdateParam(authority string, name string, asType any) *MsgUpdateParam {
+    // ...
+    switch t := asType.(type) {
++   case int64:
++     asTypeIface = &MsgUpdateParam_AsCoin{AsInt64: t}
+    default:
+      panic(fmt.Sprintf("unexpected param value type: %T", asType))
+    }
+    // ...
+  }
+
+  func (msg *MsgUpdateParam) ValidateBasic() error {
+    // ...
+    switch msg.Name {
++   case ParamNewParameter:
++     return msg.paramTypeIsInt64()
+    default:
+      return ErrExamplemodParamInvalid.Wrapf("unsupported param %q", msg.Name)
+    }
+  }
++
++ func (msg *MsgUpdateParam) paramTypeIsInt64() error {
++   if _, ok := msg.AsType.(*MsgUpdateParam_AsInt64); !ok {
++     return ErrExamplemodParamInvalid.Wrapf(
++       "invalid type for param %q expected %T, got: %T",
++       msg.Name, &MsgUpdateParam_AsInt64{}, msg.AsType,
++     )
++   }
++
++   return nil
++ }
+```
+
+#### 4.2 `msgServer#UpdateParam()`
+
+Add the parameter name (e.g. `ParamNameNewParameter`) to a new case in the switch statement in `msgServer#UpdateParam()` in `x/examplemod/keeper/msg_server_update_param.go`:
+
+```go
+  // UpdateParam updates a single parameter in the proof module and returns
+  // all active parameters.
+  func (k msgServer) UpdateParam(
+      ctx context.Context,
+      msg *types.MsgUpdateParam,
+  ) (*types.MsgUpdateParamResponse, error) {
+    // ...
+  	switch msg.Name {
++ 	case types.ParamNewParameter:
++ 		if _, ok := msg.AsType.(*types.MsgUpdateParam_AsInt64); !ok {
++ 			return nil, types.ErrExamplemodParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
++ 		}
++ 		newParameter := msg.GetAsInt64()
++
++ 		if err := types.ValidateNewParameter(newParameter); err != nil {
++ 			return nil, err
++ 		}
++
++ 		params.NewParameter = newParameter
+  	default:
+  		return nil, types.ErrExamplemodParamInvalid.Wrapf("unsupported param %q", msg.Name)
+  	}
+    // ...
   }
 ```
 
@@ -555,75 +594,54 @@ Start with the following cases and add those which cover all invalid values for 
   }
 ```
 
-### 6. Add Parameter Case to Switch Statements
+### 6. Update the Parameter Integration Tests 
 
-#### 6.1 `MsgUpdateParam#ValidateBasic()`
+Integration tests which cover parameter updates utilize the `ModuleParamConfig`s defined in [`testutil/integration/params/param_configs.go`](https://github.com/pokt-network/poktroll/blob/main/testutil/integration/suites/param_configs.go) to dynamically (i.e. using reflection) construct and send parameter update messages in a test environment.
+When adding parameters to a module, it is necessary to update that module's `ModuleParamConfig` to include the new parameter, othwerwise it will not be covered by the integration test suite.
 
-Add the parameter type and name (e.g. `ParamNameNewParameter`) to new cases in the switch statements in `NewMsgUpdateParam()` and `MsgUpdateParam#ValidateBasic()` in `x/examplemod/types/message_update_param.go`:
+#### 6.1 Add a valid param
+
+Update `ModuleParamConfig#ValidParams` to include a valid and non-default value for the new parameter in the module's `tx.proto` file (e.g. `proto/poktroll/examplemod/tx.proto`):
 
 ```go
-  func NewMsgUpdateParam(authority string, name string, asType any) *MsgUpdateParam {
-    // ...
-    switch t := asType.(type) {
-+   case int64:
-+     asTypeIface = &MsgUpdateParam_AsCoin{AsInt64: t}
-    default:
-      panic(fmt.Sprintf("unexpected param value type: %T", asType))
-    }
-    // ...
+  ExamplemodModuleParamConfig = ModuleParamConfig{
+      // ...
+      ValidParams: gatewaytypes.Params{
++         NewParameter: 420,
+      },
+      // ...
   }
-
-  func (msg *MsgUpdateParam) ValidateBasic() error {
-    // ...
-    switch msg.Name {
-+   case ParamNewParameter:
-+     return msg.paramTypeIsInt64()
-    default:
-      return ErrExamplemodParamInvalid.Wrapf("unsupported param %q", msg.Name)
-    }
-  }
-+
-+ func (msg *MsgUpdateParam) paramTypeIsInt64() error {
-+   if _, ok := msg.AsType.(*MsgUpdateParam_AsInt64); !ok {
-+     return ErrExamplemodParamInvalid.Wrapf(
-+       "invalid type for param %q expected %T, got: %T",
-+       msg.Name, &MsgUpdateParam_AsInt64{}, msg.AsType,
-+     )
-+   }
-+
-+   return nil
-+ }
 ```
 
-#### 6.2 `msgServer#UpdateParam()`
+#### 6.2 Check for `as_<type>` on `MsgUpdateParam`
 
-Add the parameter name (e.g. `ParamNameNewParameter`) to a new case in the switch statement in `msgServer#UpdateParam()` in `x/examplemod/keeper/msg_server_update_param.go`:
+Ensure an `as_<type>` field exists on `MsgUpdateParam` corresponding to the type of the new parameter (`proto/poktroll/examplemod/tx.proto`):
+
+```proto
+ message MsgUpdateParam {
+   ...
+   oneof as_type {
+-    // Add `as_<type>` fields for each type in this module's Params type; e.g.:
++    int64 as_int64 = 3 [(gogoproto.jsontag) = "as_int64"];
+   }
+ }
+```
+
+#### 6.3 Update the module's `ModuleParamConfig`
+
+Ensure that all available `as_<type>` types for the module are present on the module's `ModuleParamConfig#ParamTypes` field:
 
 ```go
-  // UpdateParam updates a single parameter in the proof module and returns
-  // all active parameters.
-  func (k msgServer) UpdateParam(
-      ctx context.Context,
-      msg *types.MsgUpdateParam,
-  ) (*types.MsgUpdateParamResponse, error) {
+  ExamplemodModuleParamConfig = ModuleParamConfig{
     // ...
-  	switch msg.Name {
-+ 	case types.ParamNewParameter:
-+ 		if _, ok := msg.AsType.(*types.MsgUpdateParam_AsInt64); !ok {
-+ 			return nil, types.ErrExamplemodParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
-+ 		}
-+ 		newParameter := msg.GetAsInt64()
-+
-+ 		if err := types.ValidateNewParameter(newParameter); err != nil {
-+ 			return nil, err
-+ 		}
-+
-+ 		params.NewParameter = newParameter
-  	default:
-  		return nil, types.ErrExamplemodParamInvalid.Wrapf("unsupported param %q", msg.Name)
-  	}
+    ValidParams: suppliertypes.Params{},
++   ParamTypes: map[ParamType]any{
++     ParamTypeInt64: suppliertypes.MsgUpdateParam_AsInt64{},
++   },
+    DefaultParams:    suppliertypes.DefaultParams(),
     // ...
   }
+
 ```
 
 ### 7. Update the Makefile and Supporting JSON Files
