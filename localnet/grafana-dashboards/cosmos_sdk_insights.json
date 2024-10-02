@@ -18,7 +18,6 @@
     "editable": true,
     "fiscalYearStartMonth": 0,
     "graphTooltip": 0,
-    "id": 11,
     "links": [],
     "panels": [
       {
@@ -81,7 +80,20 @@
             },
             "unit": "ms"
           },
-          "overrides": []
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byRegexp",
+                "options": ".*: avg$"
+              },
+              "properties": [
+                {
+                  "id": "custom.lineWidth",
+                  "value": 3
+                }
+              ]
+            }
+          ]
         },
         "gridPos": {
           "h": 8,
@@ -192,7 +204,20 @@
             },
             "unit": "ms"
           },
-          "overrides": []
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byRegexp",
+                "options": ".*: avg$"
+              },
+              "properties": [
+                {
+                  "id": "custom.lineWidth",
+                  "value": 3
+                }
+              ]
+            }
+          ]
         },
         "gridPos": {
           "h": 8,
@@ -242,6 +267,240 @@
         ],
         "title": "End Blocker Time",
         "type": "timeseries"
+      },
+      {
+        "datasource": {
+          "default": true,
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisBorderShow": false,
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "barWidthFactor": 0.6,
+              "drawStyle": "line",
+              "fillOpacity": 0,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              },
+              "insertNulls": false,
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "auto",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 8
+        },
+        "id": 3,
+        "options": {
+          "legend": {
+            "calcs": [],
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true
+          },
+          "tooltip": {
+            "mode": "single",
+            "sort": "none"
+          }
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "prometheus"
+            },
+            "editorMode": "code",
+            "expr": "sum(increase(poktroll_minted_tokens[1m])) by (module)",
+            "instant": false,
+            "legendFormat": "minted by {{module}}",
+            "range": true,
+            "refId": "A"
+          },
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "prometheus"
+            },
+            "editorMode": "code",
+            "expr": "sum(increase(poktroll_burned_tokens[1m])) by (module)",
+            "hide": false,
+            "instant": false,
+            "legendFormat": "burned by {{module}}",
+            "range": true,
+            "refId": "B"
+          }
+        ],
+        "title": "Minted / Burned Tokens",
+        "type": "timeseries"
+      },
+      {
+        "datasource": {
+          "default": true,
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisBorderShow": false,
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "barWidthFactor": 0.6,
+              "drawStyle": "line",
+              "fillOpacity": 0,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              },
+              "insertNulls": false,
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "auto",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            },
+            "unit": "ms"
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byRegexp",
+                "options": ".*: avg$"
+              },
+              "properties": [
+                {
+                  "id": "custom.lineWidth",
+                  "value": 3
+                }
+              ]
+            }
+          ]
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 8
+        },
+        "id": 4,
+        "options": {
+          "legend": {
+            "calcs": [],
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true
+          },
+          "tooltip": {
+            "mode": "single",
+            "sort": "none"
+          }
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "prometheus"
+            },
+            "editorMode": "code",
+            "expr": "sum(poktroll_proof_validation) by (quantile)",
+            "instant": false,
+            "legendFormat": "{{module}}: q{{quantile}}",
+            "range": true,
+            "refId": "A"
+          },
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "prometheus"
+            },
+            "editorMode": "code",
+            "expr": "sum(poktroll_proof_validation_sum) / sum(poktroll_proof_validation_count)",
+            "hide": false,
+            "instant": false,
+            "legendFormat": "{{module}}: avg",
+            "range": true,
+            "refId": "B"
+          }
+        ],
+        "title": "Proof Validation Time",
+        "type": "timeseries"
       }
     ],
     "schemaVersion": 39,
@@ -250,7 +509,7 @@
       "list": []
     },
     "time": {
-      "from": "now-3h",
+      "from": "now-1h",
       "to": "now"
     },
     "timepicker": {},

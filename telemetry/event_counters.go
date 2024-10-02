@@ -50,11 +50,13 @@ func EventSuccessCounter(
 // If err is not nil, the counter is not incremented but Prometheus will ingest this event.
 func ProofRequirementCounter(
 	reason prooftypes.ProofRequirementReason,
+	serviceId string,
 	err error,
 ) {
 	incrementAmount := 1
 	labels := []metrics.Label{
 		{Name: "reason", Value: reason.String()},
+		{Name: "service_id", Value: serviceId},
 	}
 
 	// Ensure the counter is not incremented if there was an error.
@@ -75,6 +77,7 @@ func ProofRequirementCounter(
 func ClaimComputeUnitsCounter(
 	claimProofStage prooftypes.ClaimProofStage,
 	numComputeUnits uint64,
+	serviceId string,
 	err error,
 ) {
 	incrementAmount := numComputeUnits
@@ -101,6 +104,7 @@ func ClaimComputeUnitsCounter(
 func ClaimRelaysCounter(
 	claimProofStage prooftypes.ClaimProofStage,
 	numRelays uint64,
+	serviceId string,
 	err error,
 ) {
 	incrementAmount := numRelays
@@ -126,6 +130,7 @@ func ClaimRelaysCounter(
 func ClaimCounter(
 	claimProofStage prooftypes.ClaimProofStage,
 	numClaims uint64,
+	serviceId string,
 	err error,
 ) {
 	incrementAmount := numClaims

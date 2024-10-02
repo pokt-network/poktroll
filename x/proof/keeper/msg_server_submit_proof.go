@@ -218,7 +218,7 @@ func (k Keeper) ProofRequirementForClaim(ctx context.Context, claim *types.Claim
 
 	// Defer telemetry calls so that they reference the final values the relevant variables.
 	defer func() {
-		telemetry.ProofRequirementCounter(requirementReason, err)
+		telemetry.ProofRequirementCounter(requirementReason, claim.SessionHeader.ServiceId, err)
 	}()
 
 	// NB: Assumption that claim is non-nil and has a valid root sum because it
