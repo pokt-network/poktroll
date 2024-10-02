@@ -10,20 +10,20 @@ import (
 
 var _ cosmostypes.Msg = (*MsgUpdateParam)(nil)
 
-func NewMsgUpdateParam(authority string, name string, value any) *MsgUpdateParam {
-	var valueAsType isMsgUpdateParam_AsType
+func NewMsgUpdateParam(authority string, name string, asType any) *MsgUpdateParam {
+	var asTypeIface isMsgUpdateParam_AsType
 
-	switch v := value.(type) {
+	switch t := asType.(type) {
 	case *cosmostypes.Coin:
-		valueAsType = &MsgUpdateParam_AsCoin{AsCoin: v}
+		asTypeIface = &MsgUpdateParam_AsCoin{AsCoin: t}
 	default:
-		panic(fmt.Sprintf("unexpected param value type: %T", value))
+		panic(fmt.Sprintf("unexpected param value type: %T", asType))
 	}
 
 	return &MsgUpdateParam{
 		Authority: authority,
 		Name:      name,
-		AsType:    valueAsType,
+		AsType:    asTypeIface,
 	}
 }
 
