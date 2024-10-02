@@ -6,6 +6,8 @@ import (
 	"github.com/pokt-network/poktroll/x/gateway/types"
 )
 
+// UpdateParam updates a single parameter in the proof module and returns
+// all active parameters.
 func (k msgServer) UpdateParam(ctx context.Context, msg *types.MsgUpdateParam) (*types.MsgUpdateParamResponse, error) {
 	if err := msg.ValidateBasic(); err != nil {
 		return nil, err
@@ -19,12 +21,7 @@ func (k msgServer) UpdateParam(ctx context.Context, msg *types.MsgUpdateParam) (
 
 	switch msg.Name {
 	case types.ParamMinStake:
-		value, ok := msg.AsType.(*types.MsgUpdateParam_AsCoin)
-		if !ok {
-			return nil, types.ErrGatewayParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
-		}
-
-		params.MinStake = value.AsCoin
+		params.MinStake = msg.GetAsCoin()
 	default:
 		return nil, types.ErrGatewayParamInvalid.Wrapf("unsupported param %q", msg.Name)
 	}
