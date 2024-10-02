@@ -183,7 +183,12 @@ var (
 			QueryParamsRequest:      suppliertypes.QueryParamsRequest{},
 			QueryParamsResponse:     suppliertypes.QueryParamsResponse{},
 		},
-		ValidParams:      suppliertypes.Params{},
+		ValidParams: suppliertypes.Params{
+			MinStake: &ValidActorMinStake,
+		},
+		ParamTypes: map[ParamType]any{
+			ParamTypeCoin: suppliertypes.MsgUpdateParam_AsCoin{},
+		},
 		DefaultParams:    suppliertypes.DefaultParams(),
 		NewParamClientFn: suppliertypes.NewQueryClient,
 	}
