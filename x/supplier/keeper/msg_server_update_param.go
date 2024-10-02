@@ -3,6 +3,9 @@ package keeper
 import (
 	"context"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
@@ -10,11 +13,17 @@ import (
 // all active parameters.
 func (k msgServer) UpdateParam(ctx context.Context, msg *suppliertypes.MsgUpdateParam) (*suppliertypes.MsgUpdateParamResponse, error) {
 	if err := msg.ValidateBasic(); err != nil {
-		return nil, err
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	if k.GetAuthority() != msg.Authority {
-		return nil, suppliertypes.ErrSupplierInvalidSigner.Wrapf("invalid authority; expected %s, got %s", k.GetAuthority(), msg.Authority)
+		return nil, status.Error(
+			codes.InvalidArgument,
+			suppliertypes.ErrSupplierInvalidSigner.Wrapf(
+				"invalid authority; expected %s, got %s",
+				k.GetAuthority(), msg.Authority,
+			).Error(),
+		)
 	}
 
 	params := k.GetParams(ctx)
@@ -23,11 +32,14 @@ func (k msgServer) UpdateParam(ctx context.Context, msg *suppliertypes.MsgUpdate
 	case suppliertypes.ParamMinStake:
 		params.MinStake = msg.GetAsCoin()
 	default:
-		return nil, suppliertypes.ErrSupplierParamInvalid.Wrapf("unsupported param %q", msg.Name)
+		return nil, status.Error(
+			codes.InvalidArgument,
+			suppliertypes.ErrSupplierParamInvalid.Wrapf("unsupported param %q", msg.Name).Error(),
+		)
 	}
 
 	if err := k.SetParams(ctx, params); err != nil {
-		return nil, err
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	updatedParams := k.GetParams(ctx)
