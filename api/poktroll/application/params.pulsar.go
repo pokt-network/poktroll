@@ -520,8 +520,9 @@ type Params struct {
 	// max_delegated_gateways defines the maximum number of gateways that a single
 	// application can delegate to. This is used to prevent performance issues
 	// in case the relay ring signature becomes too large.
-	MaxDelegatedGateways uint64        `protobuf:"varint,1,opt,name=max_delegated_gateways,json=maxDelegatedGateways,proto3" json:"max_delegated_gateways,omitempty"`
-	MinStake             *v1beta1.Coin `protobuf:"bytes,2,opt,name=min_stake,json=minStake,proto3" json:"min_stake,omitempty"`
+	MaxDelegatedGateways uint64 `protobuf:"varint,1,opt,name=max_delegated_gateways,json=maxDelegatedGateways,proto3" json:"max_delegated_gateways,omitempty"`
+	// min_stake is the minimum stake in upokt that an application must have to remain staked.
+	MinStake *v1beta1.Coin `protobuf:"bytes,2,opt,name=min_stake,json=minStake,proto3" json:"min_stake,omitempty"`
 }
 
 func (x *Params) Reset() {
