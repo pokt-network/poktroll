@@ -95,8 +95,6 @@ func (s *suite) paramsMapToMsgUpdateParams(moduleName string, paramsMap paramsAn
 		msgUpdateParams = s.newAppMsgUpdateParams(paramsMap)
 	case servicetypes.ModuleName:
 		msgUpdateParams = s.newServiceMsgUpdateParams(paramsMap)
-	case gatewaytypes.ModuleName:
-		msgUpdateParams = s.newGatewayMsgUpdateParams(paramsMap)
 	// NB: supplier module currently has no parameters
 	default:
 		err := fmt.Errorf("ERROR: unexpected module name %q", moduleName)
