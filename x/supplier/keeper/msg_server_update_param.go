@@ -17,19 +17,21 @@ func (k msgServer) UpdateParam(ctx context.Context, msg *suppliertypes.MsgUpdate
 		return nil, suppliertypes.ErrSupplierInvalidSigner.Wrapf("invalid authority; expected %s, got %s", k.GetAuthority(), msg.Authority)
 	}
 
-	params := k.GetParams(ctx)
+	// TODO_UPNEXT(@bryanchriswhite, #612): uncomment & add a min_stake case.
+
+	//params := k.GetParams(ctx)
 
 	switch msg.Name {
 	default:
 		return nil, suppliertypes.ErrSupplierParamInvalid.Wrapf("unsupported param %q", msg.Name)
 	}
 
-	if err := k.SetParams(ctx, params); err != nil {
-		return nil, err
-	}
-
-	updatedParams := k.GetParams(ctx)
-	return &suppliertypes.MsgUpdateParamResponse{
-		Params: &updatedParams,
-	}, nil
+	//if err := k.SetParams(ctx, params); err != nil {
+	//	return nil, err
+	//}
+	//
+	//updatedParams := k.GetParams(ctx)
+	//return &suppliertypes.MsgUpdateParamResponse{
+	//	Params: &updatedParams,
+	//}, nil
 }

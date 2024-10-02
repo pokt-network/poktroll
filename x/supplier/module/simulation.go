@@ -93,7 +93,7 @@ func (am AppModule) WeightedOperations(simState module.SimulationState) []simtyp
 	)
 	operations = append(operations, simulation.NewWeightedOperation(
 		weightMsgUpdateParam,
-		suppliersimulation.SimulateMsgUpdateParam(am.accountKeeper, am.bankKeeper, am.keeper),
+		suppliersimulation.SimulateMsgUpdateParam(am.accountKeeper, am.bankKeeper, am.supplierKeeper),
 	))
 
 	// this line is used by starport scaffolding # simapp/module/operation
@@ -124,7 +124,7 @@ func (am AppModule) ProposalMsgs(simState module.SimulationState) []simtypes.Wei
 			opWeightMsgUpdateParam,
 			defaultWeightMsgUpdateParam,
 			func(r *rand.Rand, ctx sdk.Context, accs []simtypes.Account) sdk.Msg {
-				suppliersimulation.SimulateMsgUpdateParam(am.accountKeeper, am.bankKeeper, am.keeper)
+				suppliersimulation.SimulateMsgUpdateParam(am.accountKeeper, am.bankKeeper, am.supplierKeeper)
 				return nil
 			},
 		),

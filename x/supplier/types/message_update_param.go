@@ -43,6 +43,4 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 	default:
 		return ErrSupplierParamInvalid.Wrapf("unsupported param %q", msg.Name)
 	}
-
-	return nil
 }
