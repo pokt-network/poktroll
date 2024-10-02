@@ -40,6 +40,9 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 
 	// Parameter name MUST be supported by this module.
 	switch msg.Name {
+	// TODO_UPNEXT(@bryanchriswhite, #612): replace with min_stake param name and call validation function.
+	case "":
+		return nil
 	default:
 		return ErrSupplierParamInvalid.Wrapf("unsupported param %q", msg.Name)
 	}
