@@ -326,6 +326,7 @@ func (k Keeper) TokenLogicModuleRelayBurnEqualsMint(
 		)
 	}
 
+	// Update telemetry information
 	if settlementCoin.Amount.IsInt64() {
 		defer telemetry.MintedTokensFromModule(suppliertypes.ModuleName, float32(settlementCoin.Amount.Int64()))
 	}
@@ -350,6 +351,7 @@ func (k Keeper) TokenLogicModuleRelayBurnEqualsMint(
 		return tokenomicstypes.ErrTokenomicsApplicationModuleBurn.Wrapf("burning %s from the application module account: %v", settlementCoin, err)
 	}
 
+	// Update telemetry information
 	if settlementCoin.Amount.IsInt64() {
 		defer telemetry.BurnedTokensFromModule(apptypes.ModuleName, float32(settlementCoin.Amount.Int64()))
 	}
@@ -397,6 +399,7 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 			"minting (%s) to the tokenomics module account: %v", newMintCoin, err)
 	}
 
+	// Update telemetry information
 	if newMintCoin.Amount.IsInt64() {
 		defer telemetry.MintedTokensFromModule(tokenomictypes.ModuleName, float32(newMintCoin.Amount.Int64()))
 	}

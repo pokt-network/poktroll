@@ -8,6 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/query"
 
 	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/telemetry"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -144,6 +145,29 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 				expiredResult.NumClaims++
 				expiredResult.NumRelays += numClaimRelays
 				expiredResult.NumComputeUnits += numClaimComputeUnits
+
+				// Telemetry - defer telemetry calls so that they reference the final values the relevant variables.
+				defer func() {
+					telemetry.ClaimCounter(
+						prooftypes.ClaimProofStage_EXPIRED,
+						1,
+						claim.SessionHeader.ServiceId,
+						err,
+					)
+					telemetry.ClaimRelaysCounter(
+						prooftypes.ClaimProofStage_EXPIRED,
+						numClaimRelays,
+						claim.SessionHeader.ServiceId,
+						err,
+					)
+					telemetry.ClaimComputeUnitsCounter(
+						prooftypes.ClaimProofStage_EXPIRED,
+						numClaimComputeUnits,
+						claim.SessionHeader.ServiceId,
+						err,
+					)
+				}()
+
 				continue
 			}
 		}
@@ -196,7 +220,29 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 		settledResult.NumComputeUnits += numClaimComputeUnits
 		settledResult.RelaysPerServiceMap[claim.SessionHeader.ServiceId] += numClaimRelays
 
-		logger.Info(fmt.Sprintf("Successfully settled claim for session ID %q at block height %d", claim.SessionHeader.SessionId, blockHeight))
+		logger.Debug(fmt.Sprintf("Successfully settled claim for session ID %q at block height %d", claim.SessionHeader.SessionId, blockHeight))
+
+		// Telemetry - defer telemetry calls so that they reference the final values the relevant variables.
+		defer func() {
+			telemetry.ClaimCounter(
+				prooftypes.ClaimProofStage_SETTLED,
+				1,
+				claim.SessionHeader.ServiceId,
+				err,
+			)
+			telemetry.ClaimRelaysCounter(
+				prooftypes.ClaimProofStage_SETTLED,
+				numClaimRelays,
+				claim.SessionHeader.ServiceId,
+				err,
+			)
+			telemetry.ClaimComputeUnitsCounter(
+				prooftypes.ClaimProofStage_SETTLED,
+				numClaimComputeUnits,
+				claim.SessionHeader.ServiceId,
+				err,
+			)
+		}()
 	}
 
 	// Slash all the suppliers that have been marked for slashing slashingCount times.
@@ -309,6 +355,11 @@ func (k Keeper) slashSupplierStake(
 	// account to the tokenomics module account.
 	if err := k.bankKeeper.SendCoinsFromModuleToModule(ctx, suppliertypes.ModuleName, tokenomicstypes.ModuleName, sdk.NewCoins(totalSlashingCoin)); err != nil {
 		return err
+	}
+
+	// Update telemetry information
+	if totalSlashingCoin.Amount.IsInt64() {
+		defer telemetry.SlashedTokensFromModule(suppliertypes.ModuleName, float32(totalSlashingCoin.Amount.Int64()))
 	}
 
 	supplierToSlash.Stake = &remainingStakeCoin

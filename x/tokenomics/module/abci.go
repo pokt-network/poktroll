@@ -8,7 +8,6 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/telemetry"
-	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	"github.com/pokt-network/poktroll/x/tokenomics/keeper"
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
@@ -36,42 +35,6 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) (err error) {
 		settledResult.NumClaims,
 		expiredResult.NumClaims,
 	))
-
-	// Telemetry - defer telemetry calls so that they reference the final values the relevant variables.
-	defer func() {
-		telemetry.ClaimCounter(
-			prooftypes.ClaimProofStage_SETTLED,
-			settledResult.NumClaims,
-			err,
-		)
-		telemetry.ClaimRelaysCounter(
-			prooftypes.ClaimProofStage_SETTLED,
-			settledResult.NumRelays,
-			err,
-		)
-		telemetry.ClaimComputeUnitsCounter(
-			prooftypes.ClaimProofStage_SETTLED,
-			settledResult.NumComputeUnits,
-			err,
-		)
-
-		telemetry.ClaimCounter(
-			prooftypes.ClaimProofStage_EXPIRED,
-			expiredResult.NumClaims,
-			err,
-		)
-		telemetry.ClaimRelaysCounter(
-			prooftypes.ClaimProofStage_EXPIRED,
-			expiredResult.NumRelays,
-			err,
-		)
-		telemetry.ClaimComputeUnitsCounter(
-			prooftypes.ClaimProofStage_EXPIRED,
-			expiredResult.NumComputeUnits,
-			err,
-		)
-		// TODO_IMPROVE(#observability): Add a counter for expired compute units.
-	}()
 
 	// Update the relay mining difficulty for every service that settled pending
 	// claims based on how many estimated relays were serviced for it.

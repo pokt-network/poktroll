@@ -83,6 +83,7 @@ func ClaimComputeUnitsCounter(
 	incrementAmount := numComputeUnits
 	labels := []metrics.Label{
 		{Name: "proof_stage", Value: claimProofStage.String()},
+		{Name: "service_id", Value: serviceId},
 	}
 
 	// Ensure the counter is not incremented if there was an error.
@@ -110,6 +111,7 @@ func ClaimRelaysCounter(
 	incrementAmount := numRelays
 	labels := []metrics.Label{
 		{Name: "proof_stage", Value: claimProofStage.String()},
+		{Name: "service_id", Value: serviceId},
 	}
 
 	// Ensure the counter is not incremented if there was an error.
@@ -136,6 +138,7 @@ func ClaimCounter(
 	incrementAmount := numClaims
 	labels := []metrics.Label{
 		{Name: "proof_stage", Value: claimProofStage.String()},
+		{Name: "service_id", Value: serviceId},
 	}
 
 	// Ensure the counter is not incremented if there was an error.

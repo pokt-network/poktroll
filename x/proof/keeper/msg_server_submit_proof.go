@@ -48,16 +48,6 @@ func (k msgServer) SubmitProof(
 		numComputeUnits uint64
 	)
 
-	// Defer telemetry calls so that they reference the final values the relevant variables.
-	defer func() {
-		// Only increment these metrics counters if handling a new claim.
-		if !isExistingProof {
-			telemetry.ClaimCounter(types.ClaimProofStage_PROVEN, 1, err)
-			telemetry.ClaimRelaysCounter(types.ClaimProofStage_PROVEN, numRelays, err)
-			telemetry.ClaimComputeUnitsCounter(types.ClaimProofStage_PROVEN, numComputeUnits, err)
-		}
-	}()
-
 	logger := k.Logger().With("method", "SubmitProof")
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	logger.Info("About to start submitting proof")
@@ -73,6 +63,17 @@ func (k msgServer) SubmitProof(
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
+
+	// Defer telemetry calls so that they reference the final values the relevant variables.
+	defer func() {
+		serviceId := session.Header.ServiceId
+		// Only increment these metrics counters if handling a new claim.
+		if !isExistingProof {
+			telemetry.ClaimCounter(types.ClaimProofStage_PROVEN, 1, serviceId, err)
+			telemetry.ClaimRelaysCounter(types.ClaimProofStage_PROVEN, numRelays, serviceId, err)
+			telemetry.ClaimComputeUnitsCounter(types.ClaimProofStage_PROVEN, numComputeUnits, serviceId, err)
+		}
+	}()
 
 	if err = k.deductProofSubmissionFee(ctx, msg.GetSupplierOperatorAddress()); err != nil {
 		logger.Error(fmt.Sprintf("failed to deduct proof submission fee: %v", err))

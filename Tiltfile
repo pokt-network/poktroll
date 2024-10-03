@@ -6,7 +6,7 @@ load("ext://deployment", "deployment_create")
 load("ext://execute_in_pod", "execute_in_pod")
 
 # A list of directories where changes trigger a hot-reload of the validator
-hot_reload_dirs = ["app", "cmd", "tools", "x", "pkg"]
+hot_reload_dirs = ["app", "cmd", "tools", "x", "pkg", "telemetry"]
 
 
 def merge_dicts(base, updates):
