@@ -43,9 +43,15 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 	// Parameter name MUST be supported by this module.
 	switch msg.Name {
 	case ParamMaxDelegatedGateways:
-		return msg.paramTypeIsUint64()
+		if err := msg.paramTypeIsUint64(); err != nil {
+			return err
+		}
+		return ValidateMaxDelegatedGateways(uint64(msg.GetAsInt64()))
 	case ParamMinStake:
-		return msg.paramTypeIsCoin()
+		if err := msg.paramTypeIsCoin(); err != nil {
+			return err
+		}
+		return ValidateMinStake(msg.GetAsCoin())
 	default:
 		return ErrAppParamInvalid.Wrapf("unsupported param %q", msg.Name)
 	}

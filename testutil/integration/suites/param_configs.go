@@ -40,7 +40,7 @@ type ModuleParamConfig struct {
 	// type which the module supports should be included in this map.
 	ParamTypes map[ParamType]any
 	// ValidParams is a set of parameters which are expected to be valid when used
-	// together AND when used individually, where the reamining parameters are set
+	// together AND when used individually, where the renaming parameters are set
 	// to their default values.
 	ValidParams      any
 	DefaultParams    any
