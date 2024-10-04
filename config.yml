@@ -34,7 +34,7 @@ accounts:
   - name: supplier1
     mnemonic: "cool industry busy tumble funny relax error state height like board wing goat emerge visual idle never unveil announce hill primary okay spatial frog"
     coins:
-      - 11000000000000upokt
+      - 110000000upokt
   - name: supplier2
     mnemonic: "peanut hen enroll meat legal have error input bulk later correct denial onion fossil wing excuse elephant object apology switch claim rare decide surface"
     coins:

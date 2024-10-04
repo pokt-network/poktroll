@@ -146,7 +146,7 @@ func initAppConfig() (string, interface{}) {
 }
 
 // customAppConfigTemplate extends the default configuration `app.toml` file with our own configs. They are going to be
-// used on validators and full-nodes, and they render using default values from `initAppConfig`.
+// used on validators and full-nodes, and they render using default values from `poktrollAdditionalConfigDefaults()`.
 func customAppConfigTemplate() string {
 	return serverconfig.DefaultConfigTemplate + `
 		###############################################################################

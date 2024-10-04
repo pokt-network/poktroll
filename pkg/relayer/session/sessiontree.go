@@ -279,7 +279,7 @@ func (st *sessionTree) Delete() error {
 			return err
 		}
 	} else {
-		fmt.Println("Unable to delete as tree store is nil")
+		fmt.Println("Unable to delete as tree store is nil. This shouldn't happen.")
 	}
 
 	// Delete the KVStore from disk

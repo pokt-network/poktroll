@@ -2,7 +2,6 @@ package app
 
 import (
 	// this line is used by starport scaffolding # stargate/app/moduleImport
-
 	"io"
 	"os"
 	"path/filepath"
