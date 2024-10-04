@@ -37,7 +37,7 @@ func (k msgServer) StakeGateway(
 	// NB: This SHOULD NEVER happen because msg.ValidateBasic() validates the address as bech32.
 	if err != nil {
 		// TODO_TECHDEBT(#384): determine whether to continue using cosmos logger for debug level.
-		logger.Info(fmt.Sprintf("could not parse address %q", msg.Address))
+		logger.Info(fmt.Sprintf("ERROR: could not parse address %q", msg.Address))
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -45,11 +45,11 @@ func (k msgServer) StakeGateway(
 	var coinsToEscrow sdk.Coin
 	gateway, isGatewayFound := k.GetGateway(ctx, msg.Address)
 	if !isGatewayFound {
-		logger.Info(fmt.Sprintf("gateway not found. Creating new gateway for address %q", msg.Address))
+		logger.Info(fmt.Sprintf("gateway not found; creating new gateway for address %q", msg.Address))
 		gateway = k.createGateway(ctx, msg)
 		coinsToEscrow = *msg.Stake
 	} else {
-		logger.Info(fmt.Sprintf("gateway found. About to try and update gateway for address %q", msg.Address))
+		logger.Info(fmt.Sprintf("gateway found; about to try and update gateway for address %q", msg.Address))
 		currGatewayStake := *gateway.Stake
 		if err = k.updateGateway(ctx, &gateway, msg); err != nil {
 			logger.Error(fmt.Sprintf("could not update gateway for address %q due to error %v", msg.Address, err))
@@ -70,23 +70,17 @@ func (k msgServer) StakeGateway(
 
 	// MUST ALWAYS stake or upstake (> 0 delta).
 	if coinsToEscrow.IsZero() {
-		errMsg := fmt.Sprintf("gateway %q must escrow more than 0 additional coins", msg.GetAddress())
-		logger.Info(errMsg)
-		return nil, status.Error(
-			codes.InvalidArgument,
-			types.ErrGatewayInvalidStake.Wrap(errMsg).Error(),
-		)
+		err := types.ErrGatewayInvalidStake.Wrap("gateway %q must escrow more than 0 additional coins", msg.GetAddress())
+		logger.Info(fmt.Sprintf("ERROR: %s", err)
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	// MUST ALWAYS have at least minimum stake.
 	minStake := k.GetParams(ctx).MinStake
 	if msg.Stake.Amount.LT(minStake.Amount) {
-		errFmt := "gateway %q must stake at least %s"
-		logger.Info(fmt.Sprintf(errFmt, msg.Address, minStake))
-		return nil, status.Error(
-			codes.InvalidArgument,
-			types.ErrGatewayInvalidStake.Wrapf(errFmt, msg.Address, minStake).Error(),
-		)
+		err := types.ErrGatewayInvalidStake.Wrapf("gateway %q must stake at least %s", msg.Address, minStake)
+		logger.Info(fmt.Sprintf("ERROR: %s", err))
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	// Send the coins from the gateway to the staked gateway pool
