@@ -14,6 +14,8 @@ func NewMsgUpdateParam(authority string, name string, asType any) *MsgUpdatePara
 	var asTypeIface isMsgUpdateParam_AsType
 
 	switch t := asType.(type) {
+	case uint64:
+		asTypeIface = &MsgUpdateParam_AsInt64{AsInt64: int64(t)}
 	case *cosmostypes.Coin:
 		asTypeIface = &MsgUpdateParam_AsCoin{AsCoin: t}
 	default:
@@ -33,31 +35,44 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 		return errorsmod.Wrapf(sdkerrors.ErrInvalidAddress, "invalid authority address (%s)", err)
 	}
 
-	// Parameter value cannot be nil.
+	// Parameter value MUST NOT be nil.
 	if msg.AsType == nil {
-		return ErrGatewayParamInvalid.Wrap("missing param AsType")
+		return ErrAppParamInvalid.Wrapf("missing param AsType for parameter %q", msg.Name)
 	}
 
-	// Parameter name must be supported by this module.
+	// Parameter name MUST be supported by this module.
 	switch msg.Name {
+	case ParamMaxDelegatedGateways:
+		if err := msg.paramTypeIsUint64(); err != nil {
+			return err
+		}
+		return ValidateMaxDelegatedGateways(uint64(msg.GetAsInt64()))
 	case ParamMinStake:
 		if err := msg.paramTypeIsCoin(); err != nil {
 			return err
 		}
 		return ValidateMinStake(msg.GetAsCoin())
 	default:
-		return ErrGatewayParamInvalid.Wrapf("unsupported param %q", msg.Name)
+		return ErrAppParamInvalid.Wrapf("unsupported param %q", msg.Name)
 	}
 }
 
+func (msg *MsgUpdateParam) paramTypeIsUint64() error {
+	if _, ok := msg.AsType.(*MsgUpdateParam_AsInt64); !ok {
+		return ErrAppParamInvalid.Wrapf(""+
+			"invalid type for param %q; expected %T, got %T",
+			msg.Name, &MsgUpdateParam_AsInt64{}, msg.AsType,
+		)
+	}
+	return nil
+}
+
 func (msg *MsgUpdateParam) paramTypeIsCoin() error {
-	_, ok := msg.AsType.(*MsgUpdateParam_AsCoin)
-	if !ok {
-		return ErrGatewayParamInvalid.Wrapf(
-			"invalid type for param %q expected %T type: %T",
+	if _, ok := msg.AsType.(*MsgUpdateParam_AsCoin); !ok {
+		return ErrAppParamInvalid.Wrapf(""+
+			"invalid type for param %q; expected %T, got %T",
 			msg.Name, &MsgUpdateParam_AsCoin{}, msg.AsType,
 		)
 	}
-
 	return nil
 }

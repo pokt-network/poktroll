@@ -165,6 +165,10 @@ genesis:
     application:
       params:
         max_delegated_gateways: "7"
+        min_stake:
+          # TODO_MAINNET: Determine realistic amount for minimum application stake amount.
+          amount: "1000000" # 1 POKT
+          denom: upokt
       applicationList:
         - address: pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4
           delegatee_gateway_addresses: []
@@ -223,6 +227,11 @@ genesis:
             amount: "1000068"
             denom: upokt
     gateway:
+      params:
+        # TODO_MAINNET: Determine realistic amount for minimum gateway stake amount.
+        min_stake:
+            amount: "1000000" # 1 POKT
+            denom: upokt
       gatewayList:
         - address: pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4
           stake:

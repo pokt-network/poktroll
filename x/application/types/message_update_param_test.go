@@ -11,27 +11,26 @@ import (
 
 func TestMsgUpdateParam_ValidateBasic(t *testing.T) {
 	tests := []struct {
-		name        string
-		msg         MsgUpdateParam
-		expectedErr error
+		name string
+		msg  MsgUpdateParam
+		err  error
 	}{
 		{
 			name: "invalid: authority address invalid",
 			msg: MsgUpdateParam{
 				Authority: "invalid_address",
-				Name:      "", // Doesn't matter for this test
+				Name:      "",
 				AsType:    &MsgUpdateParam_AsCoin{AsCoin: &DefaultMinStake},
 			},
-			expectedErr: sdkerrors.ErrInvalidAddress,
+			err: sdkerrors.ErrInvalidAddress,
 		}, {
 			name: "invalid: param name incorrect (non-existent)",
 			msg: MsgUpdateParam{
 				Authority: sample.AccAddress(),
-				Name:      "WRONG_relay_difficulty_target_hash",
+				Name:      "non_existent",
 				AsType:    &MsgUpdateParam_AsCoin{AsCoin: nil},
 			},
-
-			expectedErr: ErrGatewayParamInvalid,
+			err: ErrAppParamInvalid,
 		}, {
 			name: "valid: correct authority, param name, and type",
 			msg: MsgUpdateParam{
@@ -44,8 +43,8 @@ func TestMsgUpdateParam_ValidateBasic(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.msg.ValidateBasic()
-			if tt.expectedErr != nil {
-				require.ErrorIs(t, err, tt.expectedErr)
+			if tt.err != nil {
+				require.ErrorIs(t, err, tt.err)
 				return
 			}
 			require.NoError(t, err)
