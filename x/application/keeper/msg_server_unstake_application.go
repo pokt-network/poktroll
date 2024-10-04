@@ -41,6 +41,7 @@ func (k msgServer) UnstakeApplication(
 	}
 
 	// Check if the application has already initiated a transfer process.
+	// Transferring applications CANNOT unstake.
 	if foundApp.HasPendingTransfer() {
 		logger.Warn(fmt.Sprintf(
 			"Application (%s) has a pending transfer to (%s)",

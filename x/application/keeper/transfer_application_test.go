@@ -1,5 +1,4 @@
-// NB: MUST NOT share keeper pkg to avoid import cycle with testutil/testkeyring.
-package keeper_test
+package keeper
 
 import (
 	"fmt"
@@ -8,16 +7,13 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/pokt-network/poktroll/testutil/testkeyring"
-	appkeeper "github.com/pokt-network/poktroll/x/application/keeper"
+	"github.com/pokt-network/poktroll/testutil/sample"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 type MergeAppDelegateesSuite struct {
 	suite.Suite
-
-	preGenAcctsIterator *testkeyring.PreGeneratedAccountIterator
 
 	gateway1,
 	gateway2,
@@ -31,12 +27,11 @@ func TestMergeAppSuite(t *testing.T) {
 }
 
 func (s *MergeAppDelegateesSuite) SetupTest() {
-	s.preGenAcctsIterator = testkeyring.PreGeneratedAccounts()
-	s.gateway1 = s.preGenAcctsIterator.MustNext().Address.String()
-	s.gateway2 = s.preGenAcctsIterator.MustNext().Address.String()
-	s.gateway3 = s.preGenAcctsIterator.MustNext().Address.String()
-	s.gateway4 = s.preGenAcctsIterator.MustNext().Address.String()
-	s.gateway5 = s.preGenAcctsIterator.MustNext().Address.String()
+	s.gateway1 = sample.AccAddress()
+	s.gateway2 = sample.AccAddress()
+	s.gateway3 = sample.AccAddress()
+	s.gateway4 = sample.AccAddress()
+	s.gateway5 = sample.AccAddress()
 
 	s.T().Logf(`
 gateway1: %s
@@ -65,7 +60,7 @@ func (s *MergeAppDelegateesSuite) TestMergeAppDelegatees() {
 		},
 	}
 
-	appkeeper.MergeAppDelegatees(srcApp, dstApp)
+	mergeAppDelegatees(srcApp, dstApp)
 
 	expectedDelegatees := []string{
 		s.gateway1, s.gateway2, s.gateway3,
@@ -155,7 +150,7 @@ func (s *MergeAppDelegateesSuite) TestMergePendingUndelegations() {
 		s.T().Run(test.desc, func(t *testing.T) {
 			srcApp := &apptypes.Application{PendingUndelegations: test.srcPendingUndelegations}
 			dstApp := &apptypes.Application{PendingUndelegations: test.dstPendingUndelegations}
-			appkeeper.MergeAppPendingUndelegations(srcApp, dstApp)
+			mergeAppPendingUndelegations(srcApp, dstApp)
 
 			for height, expectedUndelegatingGatewayList := range test.expectedPendingUndelegations {
 				t.Run(fmt.Sprintf("height_%d", height), func(t *testing.T) {
@@ -186,7 +181,7 @@ func (s *MergeAppDelegateesSuite) TestMergeServiceConfigs() {
 		},
 	}
 
-	appkeeper.MergeAppServiceConfigs(srcApp, dstApp)
+	mergeAppServiceConfigs(srcApp, dstApp)
 
 	expectedSvcCfgs := []*sharedtypes.ApplicationServiceConfig{
 		svc1Cfg, svc2Cfg, svc3Cfg,

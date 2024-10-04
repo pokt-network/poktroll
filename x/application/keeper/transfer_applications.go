@@ -28,7 +28,11 @@ func (k Keeper) EndBlockerTransferApplication(ctx context.Context) error {
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	currentHeight := sdkCtx.BlockHeight()
 	sharedParams := k.sharedKeeper.GetParams(ctx)
-	logger := k.Logger().With("method", "EndBlockerTransferApplication")
+	sessionEndHeight := shared.GetSessionEndHeight(&sharedParams, currentHeight)
+	logger := k.Logger().
+		With("method", "EndBlockerTransferApplication").
+		With("current_height", currentHeight).
+		With("session_end_height", sessionEndHeight)
 
 	// Only process application transfers at the end of the session in
 	// order to avoid inconsistent/unpredictable mid-session behavior.
@@ -37,7 +41,7 @@ func (k Keeper) EndBlockerTransferApplication(ctx context.Context) error {
 	}
 
 	// Iterate over all applications and transfer the ones that have finished the transfer period.
-	// TODO_MAINNET: Use an index to iterate over the applications that have initiated
+	// TODO_MAINNET(@bryanchriswhite, #854): Use an index to iterate over the applications that have initiated
 	// the transfer action instead of iterating over all of them.
 	for _, srcApp := range k.GetAllApplications(ctx) {
 		// Ignore applications that have not initiated the transfer action.
@@ -124,9 +128,9 @@ func (k Keeper) transferApplication(ctx context.Context, srcApp types.Applicatio
 		srcStakeSumCoin := dstApp.GetStake().Add(*dstApp.GetStake())
 		dstApp.Stake = &srcStakeSumCoin
 
-		MergeAppDelegatees(&srcApp, &dstApp)
-		MergeAppPendingUndelegations(&srcApp, &dstApp)
-		MergeAppServiceConfigs(&srcApp, &dstApp)
+		mergeAppDelegatees(&srcApp, &dstApp)
+		mergeAppPendingUndelegations(&srcApp, &dstApp)
+		mergeAppServiceConfigs(&srcApp, &dstApp)
 
 		logger.Info(fmt.Sprintf(
 			"transferring application from %q to existing application %q",
@@ -154,9 +158,9 @@ func (k Keeper) transferApplication(ctx context.Context, srcApp types.Applicatio
 	return nil
 }
 
-// MergeAppDelegatees takes the union of the srcApp and dstApp's delegatees and
-// sets the result in dstApp. It is exported for testing purposes.
-func MergeAppDelegatees(srcApp, dstApp *types.Application) {
+// mergeAppDelegatees takes the union of the srcApp and dstApp's delegatees and
+// sets the result in dstApp.
+func mergeAppDelegatees(srcApp, dstApp *types.Application) {
 	// Build a set of the destination application's delegatees.
 	delagateeBech32Set := make(map[string]struct{})
 	for _, dstDelegateeBech32 := range dstApp.DelegateeGatewayAddresses {
@@ -172,7 +176,7 @@ func MergeAppDelegatees(srcApp, dstApp *types.Application) {
 	}
 }
 
-// MergeAppPendingUndelegations takes the union of the srcApp and dstApp's pending undelegations
+// mergeAppPendingUndelegations takes the union of the srcApp and dstApp's pending undelegations
 // and sets the result in dstApp. Pending undelegations are merged according to the following algorithm:
 // - At each pending undelegation height in the destination application:
 //   - Take the union of the gateway addresses in source and destination applications'
@@ -182,9 +186,7 @@ func MergeAppDelegatees(srcApp, dstApp *types.Application) {
 //     (i.e. this undelegation is unchanged) and that gateway address is excluded from the
 //     gateway address union at the height which it is present in the source application's
 //     pending undelegations.
-//
-// It is exported for testing purposes.
-func MergeAppPendingUndelegations(srcApp, dstApp *types.Application) {
+func mergeAppPendingUndelegations(srcApp, dstApp *types.Application) {
 	// Build a map from all gateway addresses which have pending undelegations to
 	// their respective undelegation session end heights. If the source and destination
 	// applications both contain pending undelegations from the same gateway address, the
@@ -222,9 +224,9 @@ func MergeAppPendingUndelegations(srcApp, dstApp *types.Application) {
 	}
 }
 
-// MergeAppServiceConfigs takes the union of the srcApp and dstApp's service configs
-// and sets the result in dstApp. It is exported for testing purposes.
-func MergeAppServiceConfigs(srcApp, dstApp *types.Application) {
+// mergeAppServiceConfigs takes the union of the srcApp and dstApp's service configs
+// and sets the result in dstApp.
+func mergeAppServiceConfigs(srcApp, dstApp *types.Application) {
 	// Build a set of the destination application's service configs.
 	serviceIDSet := make(map[string]struct{})
 	for _, dstServiceConfig := range dstApp.ServiceConfigs {

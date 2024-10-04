@@ -62,7 +62,7 @@ func (k msgServer) TransferApplication(ctx context.Context, msg *types.MsgTransf
 		SessionEndHeight:   uint64(sessionEndHeight),
 	}
 
-	// Update the dstApp in the store
+	// Update the srcApp in the store
 	k.SetApplication(ctx, srcApp)
 	logger.Info(fmt.Sprintf(
 		"Successfully began transfer of application stake from (%s) to (%s)",
