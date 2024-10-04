@@ -36,10 +36,18 @@ message Application {
   // The end height of the session at which an application initiated its unstaking process.
   // If the application did not unstake, this value will be 0.
   uint64 unstake_session_end_height = 6;
+  PendingApplicationTransfer pending_transfer = 7;
 }
 
 // UndelegatingGatewayList is used as the Value of `pending_undelegations`.
 // It is required to store a repeated list of strings as a map value.
 message UndelegatingGatewayList {
   repeated string gateway_addresses = 2 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.nullable) = false];
+}
+
+// PendingTransfer is used to store the details of a pending transfer.
+// It is only intended to be used inside of an Application object.
+message PendingApplicationTransfer {
+  string destination_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  uint64 session_end_height = 2;
 }

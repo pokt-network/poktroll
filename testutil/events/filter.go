@@ -20,7 +20,7 @@ func FilterEvents[T proto.Message](
 	t.Helper()
 
 	for _, event := range allEvents.ToABCIEvents() {
-		if event.Type != protoType {
+		if event.Type != strings.Trim(protoType, "/") {
 			continue
 		}
 		QuoteEventMode(&event)
