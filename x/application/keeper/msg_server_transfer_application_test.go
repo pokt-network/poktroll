@@ -13,7 +13,6 @@ import (
 	"github.com/pokt-network/poktroll/testutil/sample"
 	appkeeper "github.com/pokt-network/poktroll/x/application/keeper"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -56,7 +55,7 @@ func TestMsgServer_TransferApplication_Success(t *testing.T) {
 	require.Equal(t, "svc1", srcApp.GetServiceConfigs()[0].GetServiceId())
 
 	transferBeginHeight := cosmostypes.UnwrapSDKContext(ctx).BlockHeight()
-	transferSessionEndHeight := shared.GetSessionEndHeight(&sharedParams, transferBeginHeight)
+	transferSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, transferBeginHeight)
 	expectedPendingTransfer := &apptypes.PendingApplicationTransfer{
 		DestinationAddress: dstBech32,
 		SessionEndHeight:   uint64(transferSessionEndHeight),

@@ -12,10 +12,9 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/filter"
 	"github.com/pokt-network/poktroll/pkg/observable/logging"
 	"github.com/pokt-network/poktroll/pkg/relayer"
-	"github.com/pokt-network/poktroll/x/proof/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
-	"github.com/pokt-network/poktroll/x/shared"
-	tokenomics "github.com/pokt-network/poktroll/x/tokenomics"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/poktroll/x/tokenomics"
 )
 
 // submitProofs maps over the given claimedSessions observable.
@@ -54,7 +53,7 @@ func (rs *relayerSessionsManager) submitProofs(
 	// Delete expired session trees so they don't get proven again.
 	channel.ForEach(
 		ctx, failedSubmitProofsSessionsObs,
-		rs.deleteExpiredSessionTreesFn(shared.GetProofWindowCloseHeight),
+		rs.deleteExpiredSessionTreesFn(sharedtypes.GetProofWindowCloseHeight),
 	)
 }
 
@@ -103,7 +102,7 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 		return nil
 	}
 
-	proofWindowOpenHeight := shared.GetProofWindowOpenHeight(sharedParams, sessionEndHeight)
+	proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(sharedParams, sessionEndHeight)
 
 	// we wait for proofWindowOpenHeight to be received before proceeding since we need
 	// its hash to seed the pseudo-random number generator for the proof submission
@@ -128,7 +127,7 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 
 	// Get the earliest proof commit height for this supplier.
 	supplierOperatorAddr := sessionTrees[0].GetSupplierOperatorAddress().String()
-	earliestSupplierProofsCommitHeight := shared.GetEarliestSupplierProofCommitHeight(
+	earliestSupplierProofsCommitHeight := sharedtypes.GetEarliestSupplierProofCommitHeight(
 		sharedParams,
 		sessionEndHeight,
 		proofsWindowOpenBlock.Hash(),
@@ -171,7 +170,7 @@ func (rs *relayerSessionsManager) newMapProveSessionsFn(
 		// Map key is the supplier operator address.
 		proofMsgs := make([]client.MsgSubmitProof, len(sessionTrees))
 		for idx, session := range sessionTrees {
-			proofMsgs[idx] = &types.MsgSubmitProof{
+			proofMsgs[idx] = &prooftypes.MsgSubmitProof{
 				Proof:                   session.GetProofBz(),
 				SessionHeader:           session.GetSessionHeader(),
 				SupplierOperatorAddress: session.GetSupplierOperatorAddress().String(),
