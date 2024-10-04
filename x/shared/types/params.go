@@ -344,14 +344,3 @@ func validateApplicationUnbondingPeriodIsGreaterThanCumulativeProofWindowCloseBl
 
 	return nil
 }
-
-// GetSessionEndToProofWindowCloseBlocks returns the total number of blocks
-// from the moment a session ends until the proof window closes.
-// NB: Using shared.GetProofWindowCloseOffsetHeight is not possible because of the
-// circular dependency between the shared and session modules.
-func GetSessionEndToProofWindowCloseBlocks(params *Params) uint64 {
-	return params.ClaimWindowOpenOffsetBlocks +
-		params.ClaimWindowCloseOffsetBlocks +
-		params.ProofWindowOpenOffsetBlocks +
-		params.ProofWindowCloseOffsetBlocks
-}

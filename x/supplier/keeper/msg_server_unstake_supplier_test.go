@@ -9,7 +9,6 @@ import (
 
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
-	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/keeper"
 	"github.com/pokt-network/poktroll/x/supplier/types"
@@ -67,7 +66,7 @@ func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
 	require.True(t, foundSupplier.IsUnbonding())
 
 	// Move block height to the end of the unbonding period
-	unbondingHeight := shared.GetSupplierUnbondingHeight(&sharedParams, &foundSupplier)
+	unbondingHeight := sharedtypes.GetSupplierUnbondingHeight(&sharedParams, &foundSupplier)
 	ctx = keepertest.SetBlockHeight(ctx, int64(unbondingHeight))
 
 	// Run the endblocker to unbond suppliers
@@ -118,7 +117,7 @@ func TestMsgServer_UnstakeSupplier_CancelUnbondingIfRestaked(t *testing.T) {
 	require.True(t, isSupplierFound)
 	require.True(t, foundSupplier.IsUnbonding())
 
-	unbondingHeight := shared.GetSupplierUnbondingHeight(&sharedParams, &foundSupplier)
+	unbondingHeight := sharedtypes.GetSupplierUnbondingHeight(&sharedParams, &foundSupplier)
 
 	// Stake the supplier again
 	stakeMsg = createStakeMsg(supplierOperatorAddr, initialStake+1)
@@ -224,7 +223,7 @@ func TestMsgServer_UnstakeSupplier_OperatorCanUnstake(t *testing.T) {
 
 	// Move block height to the end of the unbonding period
 	sharedParams := supplierModuleKeepers.SharedKeeper.GetParams(ctx)
-	unbondingHeight := shared.GetSupplierUnbondingHeight(&sharedParams, &foundSupplier)
+	unbondingHeight := sharedtypes.GetSupplierUnbondingHeight(&sharedParams, &foundSupplier)
 	ctx = keepertest.SetBlockHeight(ctx, int64(unbondingHeight))
 
 	// Ensure that the initial stake is not returned to the owner yet

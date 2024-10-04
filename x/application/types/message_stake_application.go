@@ -3,7 +3,6 @@ package types
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	servicehelpers "github.com/pokt-network/poktroll/x/shared/helpers"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -49,7 +48,7 @@ func (msg *MsgStakeApplication) ValidateBasic() error {
 	}
 
 	// Validate the application service configs
-	if err := servicehelpers.ValidateAppServiceConfigs(msg.Services); err != nil {
+	if err := sharedtypes.ValidateAppServiceConfigs(msg.Services); err != nil {
 		return ErrAppInvalidServiceConfigs.Wrapf("%s", err.Error())
 	}
 

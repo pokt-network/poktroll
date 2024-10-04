@@ -7,8 +7,8 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/pokt-network/poktroll/x/application/types"
-	"github.com/pokt-network/poktroll/x/shared"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // EndBlockerUnbondApplications unbonds applications whose unbonding period has elapsed.
@@ -18,7 +18,7 @@ func (k Keeper) EndBlockerUnbondApplications(ctx context.Context) error {
 	currentHeight := sdkCtx.BlockHeight()
 
 	// Only process unbonding applications at the end of the session.
-	if shared.IsSessionEndHeight(&sharedParams, currentHeight) {
+	if sharedtypes.IsSessionEndHeight(&sharedParams, currentHeight) {
 		return nil
 	}
 
@@ -33,7 +33,7 @@ func (k Keeper) EndBlockerUnbondApplications(ctx context.Context) error {
 			continue
 		}
 
-		unbondingHeight := types.GetApplicationUnbondingHeight(&sharedParams, &application)
+		unbondingHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, &application)
 
 		// If the unbonding height is ahead of the current height, the application
 		// stays in the unbonding state.
@@ -50,12 +50,12 @@ func (k Keeper) EndBlockerUnbondApplications(ctx context.Context) error {
 
 		// Send the coins from the application pool back to the application
 		err = k.bankKeeper.SendCoinsFromModuleToAccount(
-			ctx, types.ModuleName, applicationAccAddress, []sdk.Coin{*application.Stake},
+			ctx, apptypes.ModuleName, applicationAccAddress, []sdk.Coin{*application.Stake},
 		)
 		if err != nil {
 			logger.Error(fmt.Sprintf(
 				"could not send %v coins from module %s to account %s due to %v",
-				application.Stake, applicationAccAddress, types.ModuleName, err,
+				application.Stake, applicationAccAddress, apptypes.ModuleName, err,
 			))
 			return err
 		}

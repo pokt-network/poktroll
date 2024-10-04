@@ -10,7 +10,6 @@ import (
 	testutilproof "github.com/pokt-network/poktroll/testutil/proof"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -55,7 +54,7 @@ func TestTokenomicsIntegrationExample(t *testing.T) {
 	// Figure out how many blocks we need to wait until the earliest claim commit height
 	// Query and validate the default shared params
 	var claimWindowOpenBlockHash []byte
-	earliestClaimCommitHeight := shared.GetEarliestSupplierClaimCommitHeight(
+	earliestClaimCommitHeight := sharedtypes.GetEarliestSupplierClaimCommitHeight(
 		&sharedParams,
 		session.GetHeader().GetSessionEndBlockHeight(),
 		claimWindowOpenBlockHash,

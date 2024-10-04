@@ -1,4 +1,4 @@
-package helpers
+package types
 
 import (
 	"testing"
@@ -6,7 +6,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/testutil/sample"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func TestIsValidService(t *testing.T) {
@@ -70,7 +69,7 @@ func TestIsValidService(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			service := &sharedtypes.Service{
+			service := &Service{
 				Id:                   test.serviceId,
 				Name:                 test.serviceName,
 				ComputeUnitsPerRelay: 1,
@@ -131,7 +130,7 @@ func TestIsValidServiceName(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			service := &sharedtypes.Service{
+			service := &Service{
 				Id:                   "svc",
 				Name:                 test.serviceName,
 				ComputeUnitsPerRelay: 1,
@@ -141,7 +140,7 @@ func TestIsValidServiceName(t *testing.T) {
 			if test.expectedIsValid {
 				require.NoError(t, err)
 			} else {
-				require.ErrorIs(t, err, sharedtypes.ErrSharedInvalidService.Wrapf("invalid service name: %s", test.serviceName))
+				require.ErrorIs(t, err, ErrSharedInvalidService.Wrapf("invalid service name: %s", test.serviceName))
 			}
 		})
 	}
@@ -212,7 +211,7 @@ func TestIsValidServiceId(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			service := &sharedtypes.Service{
+			service := &Service{
 				Id:                   test.serviceId,
 				ComputeUnitsPerRelay: 1,
 				OwnerAddress:         sample.AccAddress(),
@@ -221,7 +220,7 @@ func TestIsValidServiceId(t *testing.T) {
 			if test.expectedIsValid {
 				require.NoError(t, err)
 			} else {
-				require.ErrorIs(t, err, sharedtypes.ErrSharedInvalidService.Wrapf("invalid service ID: %s", test.serviceId))
+				require.ErrorIs(t, err, ErrSharedInvalidService.Wrapf("invalid service ID: %s", test.serviceId))
 			}
 		})
 	}
@@ -280,7 +279,7 @@ func TestIsValidEndpointUrl(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			isValid := sharedtypes.IsValidEndpointUrl(test.endpointURL)
+			isValid := IsValidEndpointUrl(test.endpointURL)
 			require.Equal(t, test.expectedIsValid, isValid)
 		})
 	}

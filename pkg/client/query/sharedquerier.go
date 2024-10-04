@@ -7,7 +7,6 @@ import (
 	"github.com/cosmos/gogoproto/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/client"
-	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -71,7 +70,7 @@ func (sq *sharedQuerier) GetClaimWindowOpenHeight(ctx context.Context, queryHeig
 	if err != nil {
 		return 0, err
 	}
-	return shared.GetClaimWindowOpenHeight(sharedParams, queryHeight), nil
+	return sharedtypes.GetClaimWindowOpenHeight(sharedParams, queryHeight), nil
 }
 
 // GetProofWindowOpenHeight returns the block height at which the proof window of
@@ -87,7 +86,7 @@ func (sq *sharedQuerier) GetProofWindowOpenHeight(ctx context.Context, queryHeig
 	if err != nil {
 		return 0, err
 	}
-	return shared.GetProofWindowOpenHeight(sharedParams, queryHeight), nil
+	return sharedtypes.GetProofWindowOpenHeight(sharedParams, queryHeight), nil
 }
 
 // GetSessionGracePeriodEndHeight returns the block height at which the grace period
@@ -108,7 +107,7 @@ func (sq *sharedQuerier) GetSessionGracePeriodEndHeight(
 	if err != nil {
 		return 0, err
 	}
-	return shared.GetSessionGracePeriodEndHeight(sharedParams, queryHeight), nil
+	return sharedtypes.GetSessionGracePeriodEndHeight(sharedParams, queryHeight), nil
 }
 
 // GetEarliestSupplierClaimCommitHeight returns the earliest block height at which a claim
@@ -127,7 +126,7 @@ func (sq *sharedQuerier) GetEarliestSupplierClaimCommitHeight(ctx context.Contex
 
 	// Fetch the block at the proof window open height. Its hash is used as part
 	// of the seed to the pseudo-random number generator.
-	claimWindowOpenHeight := shared.GetClaimWindowOpenHeight(sharedParams, queryHeight)
+	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(sharedParams, queryHeight)
 	claimWindowOpenBlock, err := sq.blockQuerier.Block(ctx, &claimWindowOpenHeight)
 	if err != nil {
 		return 0, err
@@ -136,7 +135,7 @@ func (sq *sharedQuerier) GetEarliestSupplierClaimCommitHeight(ctx context.Contex
 	// NB: Byte slice representation of block hashes don't need to be normalized.
 	claimWindowOpenBlockHash := claimWindowOpenBlock.BlockID.Hash.Bytes()
 
-	return shared.GetEarliestSupplierClaimCommitHeight(
+	return sharedtypes.GetEarliestSupplierClaimCommitHeight(
 		sharedParams,
 		queryHeight,
 		claimWindowOpenBlockHash,
@@ -160,13 +159,13 @@ func (sq *sharedQuerier) GetEarliestSupplierProofCommitHeight(ctx context.Contex
 
 	// Fetch the block at the proof window open height. Its hash is used as part
 	// of the seed to the pseudo-random number generator.
-	proofWindowOpenHeight := shared.GetProofWindowOpenHeight(sharedParams, queryHeight)
+	proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(sharedParams, queryHeight)
 	proofWindowOpenBlock, err := sq.blockQuerier.Block(ctx, &proofWindowOpenHeight)
 	if err != nil {
 		return 0, err
 	}
 
-	return shared.GetEarliestSupplierProofCommitHeight(
+	return sharedtypes.GetEarliestSupplierProofCommitHeight(
 		sharedParams,
 		queryHeight,
 		proofWindowOpenBlock.BlockID.Hash,

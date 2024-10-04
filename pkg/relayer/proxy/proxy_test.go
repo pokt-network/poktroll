@@ -18,7 +18,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/relayer/config"
 	"github.com/pokt-network/poktroll/pkg/relayer/proxy"
 	"github.com/pokt-network/poktroll/testutil/testproxy"
-	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -356,17 +355,17 @@ func TestRelayerProxy_Relays(t *testing.T) {
 
 	sharedParams := sharedtypes.DefaultParams()
 
-	sessionTwoStartHeight := shared.GetSessionEndHeight(&sharedParams, blockHeight) + 1
+	sessionTwoStartHeight := sharedtypes.GetSessionEndHeight(&sharedParams, blockHeight) + 1
 
 	// blockOutsideSessionGracePeriod is the block height that is after the first
 	// session's grace period and within the second session's grace period,
 	// meaning a relay should be handled as part of the session two AND NOT session one.
-	blockOutsideSessionGracePeriod := shared.GetSessionGracePeriodEndHeight(&sharedParams, sessionTwoStartHeight)
+	blockOutsideSessionGracePeriod := sharedtypes.GetSessionGracePeriodEndHeight(&sharedParams, sessionTwoStartHeight)
 
 	// blockWithinSessionGracePeriod is the block height that is after the first
 	// session but within its session's grace period, meaning a relay should be
 	// handled at this block height.
-	blockWithinSessionGracePeriod := shared.GetSessionGracePeriodEndHeight(&sharedParams, blockHeight) - 1
+	blockWithinSessionGracePeriod := sharedtypes.GetSessionGracePeriodEndHeight(&sharedParams, blockHeight) - 1
 
 	tests := []struct {
 		desc string

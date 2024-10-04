@@ -7,7 +7,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/telemetry"
-	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
@@ -66,11 +65,11 @@ func (k msgServer) UnstakeSupplier(
 	// Removing it right away could have undesired effects on the network
 	// (e.g. a session with less than the minimum or 0 number of suppliers,
 	// off-chain actors that need to listen to session supplier's change mid-session, etc).
-	supplier.UnstakeSessionEndHeight = uint64(shared.GetSessionEndHeight(&sharedParams, currentHeight))
+	supplier.UnstakeSessionEndHeight = uint64(sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight))
 	k.SetSupplier(ctx, supplier)
 
 	// Emit an event which signals that the supplier successfully began unbonding their stake.
-	unbondingHeight := shared.GetSupplierUnbondingHeight(&sharedParams, &supplier)
+	unbondingHeight := sharedtypes.GetSupplierUnbondingHeight(&sharedParams, &supplier)
 	event := &types.EventSupplierUnbondingBegin{
 		Supplier:        &supplier,
 		UnbondingHeight: unbondingHeight,

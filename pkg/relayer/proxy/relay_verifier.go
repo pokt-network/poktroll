@@ -3,15 +3,15 @@ package proxy
 import (
 	"context"
 
-	"github.com/pokt-network/poktroll/x/service/types"
-	"github.com/pokt-network/poktroll/x/shared"
+	servicetypes "github.com/pokt-network/poktroll/x/service/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // VerifyRelayRequest is a shared method used by RelayServers to check the relay
 // request signature and session validity.
 func (rp *relayerProxy) VerifyRelayRequest(
 	ctx context.Context,
-	relayRequest *types.RelayRequest,
+	relayRequest *servicetypes.RelayRequest,
 	supplierServiceId string,
 ) error {
 	// Get the block height at which the relayRequest should be processed.
@@ -97,7 +97,7 @@ func (rp *relayerProxy) VerifyRelayRequest(
 // If the session has expired, then return an error.
 func (rp *relayerProxy) getTargetSessionBlockHeight(
 	ctx context.Context,
-	relayRequest *types.RelayRequest,
+	relayRequest *servicetypes.RelayRequest,
 ) (sessionHeight int64, err error) {
 	currentHeight := rp.blockClient.LastBlock(ctx).Height()
 	sessionEndHeight := relayRequest.Meta.SessionHeader.GetSessionEndBlockHeight()
@@ -116,7 +116,7 @@ func (rp *relayerProxy) getTargetSessionBlockHeight(
 	if sessionEndHeight < currentHeight {
 		// Do not process the `RelayRequest` if the session has expired and the current
 		// block height is outside the session's grace period.
-		if !shared.IsGracePeriodElapsed(sharedParams, sessionEndHeight, currentHeight) {
+		if !sharedtypes.IsGracePeriodElapsed(sharedParams, sessionEndHeight, currentHeight) {
 			// The RelayRequest's session has expired but is still within the
 			// grace period so process it as if the session is still active.
 			return sessionEndHeight, nil

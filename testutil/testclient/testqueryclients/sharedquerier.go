@@ -7,7 +7,6 @@ import (
 	"github.com/golang/mock/gomock"
 
 	"github.com/pokt-network/poktroll/testutil/mockclient"
-	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -31,7 +30,7 @@ func NewTestSharedQueryClient(
 		DoAndReturn(
 			func(ctx context.Context, queryHeight int64) (int64, error) {
 				sharedParams := sharedtypes.DefaultParams()
-				return shared.GetClaimWindowOpenHeight(&sharedParams, queryHeight), nil
+				return sharedtypes.GetClaimWindowOpenHeight(&sharedParams, queryHeight), nil
 			},
 		).
 		AnyTimes()
@@ -41,7 +40,7 @@ func NewTestSharedQueryClient(
 		DoAndReturn(
 			func(ctx context.Context, queryHeight int64) (int64, error) {
 				sharedParams := sharedtypes.DefaultParams()
-				return shared.GetProofWindowOpenHeight(&sharedParams, queryHeight), nil
+				return sharedtypes.GetProofWindowOpenHeight(&sharedParams, queryHeight), nil
 			},
 		).
 		AnyTimes()
@@ -51,7 +50,7 @@ func NewTestSharedQueryClient(
 		DoAndReturn(
 			func(ctx context.Context, queryHeight int64) (int64, error) {
 				sharedParams := sharedtypes.DefaultParams()
-				return shared.GetSessionGracePeriodEndHeight(&sharedParams, queryHeight), nil
+				return sharedtypes.GetSessionGracePeriodEndHeight(&sharedParams, queryHeight), nil
 			},
 		).
 		AnyTimes()
@@ -65,7 +64,7 @@ func NewTestSharedQueryClient(
 				supplierOperatorAddr string,
 			) (int64, error) {
 				sharedParams := sharedtypes.DefaultParams()
-				return shared.GetEarliestSupplierClaimCommitHeight(
+				return sharedtypes.GetEarliestSupplierClaimCommitHeight(
 					&sharedParams,
 					sessionEndHeight,
 					[]byte{},
@@ -84,7 +83,7 @@ func NewTestSharedQueryClient(
 				supplierOperatorAddr string,
 			) (int64, error) {
 				sharedParams := sharedtypes.DefaultParams()
-				return shared.GetEarliestSupplierProofCommitHeight(
+				return sharedtypes.GetEarliestSupplierProofCommitHeight(
 					&sharedParams,
 					sessionEndHeight,
 					[]byte{},

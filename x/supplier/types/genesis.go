@@ -5,7 +5,6 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	servicehelpers "github.com/pokt-network/poktroll/x/shared/helpers"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -53,7 +52,7 @@ func (gs GenesisState) Validate() error {
 		}
 
 		// Validate the application service configs
-		if err := servicehelpers.ValidateSupplierServiceConfigs(supplier.Services); err != nil {
+		if err := sharedtypes.ValidateSupplierServiceConfigs(supplier.Services); err != nil {
 			return ErrSupplierInvalidServiceConfig.Wrapf("%s", err.Error())
 		}
 

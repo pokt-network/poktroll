@@ -1,11 +1,9 @@
-package helpers
+package types
 
 import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 const (
@@ -13,7 +11,7 @@ const (
 )
 
 // ValidateAppServiceConfigs returns an error if any of the application service configs are invalid
-func ValidateAppServiceConfigs(services []*sharedtypes.ApplicationServiceConfig) error {
+func ValidateAppServiceConfigs(services []*ApplicationServiceConfig) error {
 	if len(services) == 0 {
 		return fmt.Errorf("no services configs provided for application: %v", services)
 	}
@@ -22,15 +20,15 @@ func ValidateAppServiceConfigs(services []*sharedtypes.ApplicationServiceConfig)
 			return fmt.Errorf("serviceConfig cannot be nil: %v", services)
 		}
 		// Check the Service ID
-		if !sharedtypes.IsValidServiceId(serviceConfig.GetServiceId()) {
-			return sharedtypes.ErrSharedInvalidService.Wrapf("invalid service ID: %q", serviceConfig.GetServiceId())
+		if !IsValidServiceId(serviceConfig.GetServiceId()) {
+			return ErrSharedInvalidService.Wrapf("invalid service ID: %q", serviceConfig.GetServiceId())
 		}
 	}
 	return nil
 }
 
 // ValidateSupplierServiceConfigs returns an error if any of the supplier service configs are invalid
-func ValidateSupplierServiceConfigs(services []*sharedtypes.SupplierServiceConfig) error {
+func ValidateSupplierServiceConfigs(services []*SupplierServiceConfig) error {
 	if len(services) == 0 {
 		return fmt.Errorf("no services provided for supplier: %v", services)
 	}
@@ -40,8 +38,8 @@ func ValidateSupplierServiceConfigs(services []*sharedtypes.SupplierServiceConfi
 		}
 
 		// Check the Service ID
-		if !sharedtypes.IsValidServiceId(serviceConfig.GetServiceId()) {
-			return sharedtypes.ErrSharedInvalidService.Wrapf("invalid service ID: %s", serviceConfig.GetServiceId())
+		if !IsValidServiceId(serviceConfig.GetServiceId()) {
+			return ErrSharedInvalidService.Wrapf("invalid service ID: %s", serviceConfig.GetServiceId())
 		}
 
 		// Check the Endpoints
@@ -62,15 +60,15 @@ func ValidateSupplierServiceConfigs(services []*sharedtypes.SupplierServiceConfi
 			if endpoint.Url == "" {
 				return fmt.Errorf("endpoint.Url cannot be empty: %v", serviceConfig)
 			}
-			if !sharedtypes.IsValidEndpointUrl(endpoint.Url) {
+			if !IsValidEndpointUrl(endpoint.Url) {
 				return fmt.Errorf("invalid endpoint.Url: %v", serviceConfig)
 			}
 
 			// Validate the RPC type
-			if endpoint.RpcType == sharedtypes.RPCType_UNKNOWN_RPC {
+			if endpoint.RpcType == RPCType_UNKNOWN_RPC {
 				return fmt.Errorf("endpoint.RpcType cannot be UNKNOWN_RPC: %v", serviceConfig)
 			}
-			if _, ok := sharedtypes.RPCType_name[int32(endpoint.RpcType)]; !ok {
+			if _, ok := RPCType_name[int32(endpoint.RpcType)]; !ok {
 				return fmt.Errorf("endpoint.RpcType is not a valid RPCType: %v", serviceConfig)
 			}
 
@@ -96,29 +94,29 @@ func ValidateSupplierServiceConfigs(services []*sharedtypes.SupplierServiceConfi
 // ValidateServiceRevShare validates the supplier's service revenue share,
 // ensuring that the sum of the revenue share percentages is 100.
 // NB: This function is unit tested via the supplier staking config tests.
-func ValidateServiceRevShare(revShareList []*sharedtypes.ServiceRevenueShare) error {
+func ValidateServiceRevShare(revShareList []*ServiceRevenueShare) error {
 	revSharePercentageSum := float32(0)
 
 	if len(revShareList) == 0 {
-		return sharedtypes.ErrSharedInvalidRevShare.Wrap("no rev share configurations")
+		return ErrSharedInvalidRevShare.Wrap("no rev share configurations")
 	}
 
 	for _, revShare := range revShareList {
 		if revShare == nil {
-			return sharedtypes.ErrSharedInvalidRevShare.Wrap("rev share cannot be nil")
+			return ErrSharedInvalidRevShare.Wrap("rev share cannot be nil")
 		}
 
 		// Validate the revshare address
 		if revShare.Address == "" {
-			return sharedtypes.ErrSharedInvalidRevShare.Wrapf("rev share address cannot be empty: %v", revShare)
+			return ErrSharedInvalidRevShare.Wrapf("rev share address cannot be empty: %v", revShare)
 		}
 
 		if _, err := sdk.AccAddressFromBech32(revShare.Address); err != nil {
-			return sharedtypes.ErrSharedInvalidRevShare.Wrapf("invalid rev share address %s; (%v)", revShare.Address, err)
+			return ErrSharedInvalidRevShare.Wrapf("invalid rev share address %s; (%v)", revShare.Address, err)
 		}
 
 		if revShare.RevSharePercentage <= 0 || revShare.RevSharePercentage > 100 {
-			return sharedtypes.ErrSharedInvalidRevShare.Wrapf(
+			return ErrSharedInvalidRevShare.Wrapf(
 				"invalid rev share value %v; must be between 0 and 100",
 				revShare.RevSharePercentage,
 			)
@@ -128,7 +126,7 @@ func ValidateServiceRevShare(revShareList []*sharedtypes.ServiceRevenueShare) er
 	}
 
 	if revSharePercentageSum != requiredRevSharePercentageSum {
-		return sharedtypes.ErrSharedInvalidRevShare.Wrapf(
+		return ErrSharedInvalidRevShare.Wrapf(
 			"invalid rev share percentage sum %v; must be equal to %v",
 			revSharePercentageSum,
 			requiredRevSharePercentageSum,

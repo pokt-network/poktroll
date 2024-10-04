@@ -5,7 +5,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	servicehelpers "github.com/pokt-network/poktroll/x/shared/helpers"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // DefaultGenesis returns the default genesis state
@@ -60,7 +60,7 @@ func (gs GenesisState) Validate() error {
 		}
 
 		// Validate the application service configs
-		if err := servicehelpers.ValidateAppServiceConfigs(app.ServiceConfigs); err != nil {
+		if err := sharedtypes.ValidateAppServiceConfigs(app.ServiceConfigs); err != nil {
 			return ErrAppInvalidServiceConfigs.Wrapf("%s", err.Error())
 		}
 	}

@@ -13,7 +13,6 @@ import (
 	_ "golang.org/x/crypto/sha3"
 
 	"github.com/pokt-network/poktroll/x/session/types"
-	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -107,10 +106,10 @@ func (k Keeper) hydrateSessionMetadata(ctx context.Context, sh *sessionHydrator)
 	// this function may cause unexpected behavior for historical sessions.
 	sharedParams := k.sharedKeeper.GetParams(ctx)
 	sh.session.NumBlocksPerSession = int64(sharedParams.NumBlocksPerSession)
-	sh.session.SessionNumber = shared.GetSessionNumber(&sharedParams, sh.blockHeight)
+	sh.session.SessionNumber = sharedtypes.GetSessionNumber(&sharedParams, sh.blockHeight)
 
-	sh.sessionHeader.SessionStartBlockHeight = shared.GetSessionStartHeight(&sharedParams, sh.blockHeight)
-	sh.sessionHeader.SessionEndBlockHeight = shared.GetSessionEndHeight(&sharedParams, sh.blockHeight)
+	sh.sessionHeader.SessionStartBlockHeight = sharedtypes.GetSessionStartHeight(&sharedParams, sh.blockHeight)
+	sh.sessionHeader.SessionEndBlockHeight = sharedtypes.GetSessionEndHeight(&sharedParams, sh.blockHeight)
 	return nil
 }
 
@@ -322,7 +321,7 @@ func GetSessionId(
 // start height for the session containing blockHeight, given the shared on-chain
 // parameters.
 func getSessionStartBlockHeightBz(sharedParams *sharedtypes.Params, blockHeight int64) []byte {
-	sessionStartBlockHeight := shared.GetSessionStartHeight(sharedParams, blockHeight)
+	sessionStartBlockHeight := sharedtypes.GetSessionStartHeight(sharedParams, blockHeight)
 	sessionStartBlockHeightBz := make([]byte, 8)
 	binary.LittleEndian.PutUint64(sessionStartBlockHeightBz, uint64(sessionStartBlockHeight))
 	return sessionStartBlockHeightBz
