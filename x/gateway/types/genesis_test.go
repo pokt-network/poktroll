@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/testutil/sample"
-	"github.com/pokt-network/poktroll/x/gateway/types"
+	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 )
 
 func TestGenesisState_Validate(t *testing.T) {
@@ -20,18 +20,19 @@ func TestGenesisState_Validate(t *testing.T) {
 
 	tests := []struct {
 		desc     string
-		genState *types.GenesisState
+		genState *gatewaytypes.GenesisState
 		valid    bool
 	}{
 		{
 			desc:     "default is valid",
-			genState: types.DefaultGenesis(),
+			genState: gatewaytypes.DefaultGenesis(),
 			valid:    true,
 		},
 		{
 			desc: "valid genesis state",
-			genState: &types.GenesisState{
-				GatewayList: []types.Gateway{
+			genState: &gatewaytypes.GenesisState{
+				Params: gatewaytypes.DefaultParams(),
+				GatewayList: []gatewaytypes.Gateway{
 					{
 						Address: addr1,
 						Stake:   &stake1,
@@ -41,14 +42,14 @@ func TestGenesisState_Validate(t *testing.T) {
 						Stake:   &stake2,
 					},
 				},
-				// this line is used by starport scaffolding # types/genesis/validField
+				// this line is used by starport scaffolding # gatewaytypes/genesis/validField
 			},
 			valid: true,
 		},
 		{
 			desc: "invalid - duplicated gateway address",
-			genState: &types.GenesisState{
-				GatewayList: []types.Gateway{
+			genState: &gatewaytypes.GenesisState{
+				GatewayList: []gatewaytypes.Gateway{
 					{
 						Address: addr1,
 						Stake:   &stake1,
@@ -63,8 +64,8 @@ func TestGenesisState_Validate(t *testing.T) {
 		},
 		{
 			desc: "invalid - nil gateway stake",
-			genState: &types.GenesisState{
-				GatewayList: []types.Gateway{
+			genState: &gatewaytypes.GenesisState{
+				GatewayList: []gatewaytypes.Gateway{
 					{
 						Address: addr1,
 						Stake:   &stake1,
@@ -79,8 +80,8 @@ func TestGenesisState_Validate(t *testing.T) {
 		},
 		{
 			desc: "invalid - missing gateway stake",
-			genState: &types.GenesisState{
-				GatewayList: []types.Gateway{
+			genState: &gatewaytypes.GenesisState{
+				GatewayList: []gatewaytypes.Gateway{
 					{
 						Address: addr1,
 						Stake:   &stake1,
@@ -95,8 +96,8 @@ func TestGenesisState_Validate(t *testing.T) {
 		},
 		{
 			desc: "invalid - zero gateway stake",
-			genState: &types.GenesisState{
-				GatewayList: []types.Gateway{
+			genState: &gatewaytypes.GenesisState{
+				GatewayList: []gatewaytypes.Gateway{
 					{
 						Address: addr1,
 						Stake:   &stake1,
@@ -111,8 +112,8 @@ func TestGenesisState_Validate(t *testing.T) {
 		},
 		{
 			desc: "invalid - negative gateway stake",
-			genState: &types.GenesisState{
-				GatewayList: []types.Gateway{
+			genState: &gatewaytypes.GenesisState{
+				GatewayList: []gatewaytypes.Gateway{
 					{
 						Address: addr1,
 						Stake:   &stake1,
@@ -127,8 +128,8 @@ func TestGenesisState_Validate(t *testing.T) {
 		},
 		{
 			desc: "invalid - wrong stake denom",
-			genState: &types.GenesisState{
-				GatewayList: []types.Gateway{
+			genState: &gatewaytypes.GenesisState{
+				GatewayList: []gatewaytypes.Gateway{
 					{
 						Address: addr1,
 						Stake:   &stake1,
@@ -143,8 +144,8 @@ func TestGenesisState_Validate(t *testing.T) {
 		},
 		{
 			desc: "invalid - missing denom",
-			genState: &types.GenesisState{
-				GatewayList: []types.Gateway{
+			genState: &gatewaytypes.GenesisState{
+				GatewayList: []gatewaytypes.Gateway{
 					{
 						Address: addr1,
 						Stake:   &stake1,
@@ -157,7 +158,7 @@ func TestGenesisState_Validate(t *testing.T) {
 			},
 			valid: false,
 		},
-		// this line is used by starport scaffolding # types/genesis/testcase
+		// this line is used by starport scaffolding # gatewaytypes/genesis/testcase
 	}
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {

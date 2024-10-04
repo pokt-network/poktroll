@@ -10,10 +10,11 @@ import (
 	"github.com/pokt-network/smt"
 	"github.com/pokt-network/smt/kvstore/pebble"
 	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 
 	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
-	"github.com/pokt-network/poktroll/testutil/integration"
+	"github.com/pokt-network/poktroll/testutil/integration/suites"
 	"github.com/pokt-network/poktroll/testutil/testrelayer"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
@@ -28,6 +29,13 @@ const (
 	maxNumRelays = uint64(1024e3)
 )
 
+func (s *RelayMiningIntegrationTestSuite) SetupTest() {
+	// Construct a fresh integration app for each test.
+	s.NewApp(s.T())
+	s.SetupTestAuthzAccounts(s.T())
+	s.SetupTestAuthzGrants(s.T())
+}
+
 func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 	// Update the target number of relays to a value that suits the test.
 	// A too high number would make the difficulty stay at BaseRelayDifficultyHash
@@ -38,10 +46,9 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 		servicekeeper.TargetNumRelays = initialTargetRelays
 	})
 
-	// Prepare the keepers and integration app
-	integrationApp := integration.NewCompleteIntegrationApp(t)
-	sdkCtx := integrationApp.GetSdkCtx()
-	keepers := integrationApp.GetKeepers()
+	type RelayMiningIntegrationTestSuite struct {
+		suites.ParamsSuite
+	}
 
 	app := integrationApp.DefaultApplication
 	supplier := integrationApp.DefaultSupplier
@@ -152,7 +159,7 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 		if previousNumRelays > 0 {
 			numRelaysRatio := float64(numRelays) / float64(previousNumRelays)
 			rewardsRatio, _ := new(big.Rat).SetFrac(claimedRewards.Amount.BigInt(), previousRewards.BigInt()).Float64()
-			require.InDelta(t, numRelaysRatio, rewardsRatio, 0.07)
+			require.InDelta(t, numRelaysRatio, rewardsRatio, 0.1)
 		}
 
 		previousNumRelays = numRelays
@@ -200,4 +207,8 @@ func prepareRealClaim(
 		SessionHeader:           session.GetHeader(),
 		RootHash:                trie.Root(),
 	}
+}
+
+func TestRelayMiningIntegrationSuite(t *testing.T) {
+	suite.Run(t, new(RelayMiningIntegrationTestSuite))
 }

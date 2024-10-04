@@ -20,4 +20,5 @@ var (
 	ErrAppNotDelegated                = sdkerrors.Register(ModuleName, 1112, "application not delegated to gateway")
 	ErrAppIsUnstaking                 = sdkerrors.Register(ModuleName, 1113, "application is in unbonding period")
 	ErrAppDuplicateAddress            = sdkerrors.Register(ModuleName, 1114, "duplicate application address")
+	ErrAppHasPendingTransfer          = sdkerrors.Register(ModuleName, 1115, "application is in transfer period")
 )
