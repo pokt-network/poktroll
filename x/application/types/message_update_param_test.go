@@ -16,15 +16,27 @@ func TestMsgUpdateParam_ValidateBasic(t *testing.T) {
 		err  error
 	}{
 		{
-			name: "invalid address",
+			name: "invalid: authority address invalid",
 			msg: MsgUpdateParam{
 				Authority: "invalid_address",
+				Name:      "",
+				AsType:    &MsgUpdateParam_AsCoin{AsCoin: &DefaultMinStake},
 			},
 			err: sdkerrors.ErrInvalidAddress,
 		}, {
-			name: "valid address",
+			name: "invalid: param name incorrect (non-existent)",
 			msg: MsgUpdateParam{
 				Authority: sample.AccAddress(),
+				Name:      "non_existent",
+				AsType:    &MsgUpdateParam_AsCoin{AsCoin: nil},
+			},
+			err: ErrAppParamInvalid,
+		}, {
+			name: "valid: correct authority, param name, and type",
+			msg: MsgUpdateParam{
+				Authority: sample.AccAddress(),
+				Name:      ParamMinStake,
+				AsType:    &MsgUpdateParam_AsCoin{AsCoin: &DefaultMinStake},
 			},
 		},
 	}
