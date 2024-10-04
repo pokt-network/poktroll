@@ -70,7 +70,7 @@ func (k msgServer) StakeGateway(
 
 	// MUST ALWAYS stake or upstake (> 0 delta).
 	if coinsToEscrow.IsZero() {
-		err := types.ErrGatewayInvalidStake.Wrapf("gateway %q must escrow more than 0 additional coins", msg.GetAddress())
+		err = types.ErrGatewayInvalidStake.Wrapf("gateway %q must escrow more than 0 additional coins", msg.GetAddress())
 		logger.Info(fmt.Sprintf("ERROR: %s", err))
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -78,7 +78,7 @@ func (k msgServer) StakeGateway(
 	// MUST ALWAYS have at least minimum stake.
 	minStake := k.GetParams(ctx).MinStake
 	if msg.Stake.Amount.LT(minStake.Amount) {
-		err := types.ErrGatewayInvalidStake.Wrapf("gateway %q must stake at least %s", msg.Address, minStake)
+		err = types.ErrGatewayInvalidStake.Wrapf("gateway %q must stake at least %s", msg.Address, minStake)
 		logger.Info(fmt.Sprintf("ERROR: %s", err))
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
