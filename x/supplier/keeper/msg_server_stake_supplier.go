@@ -104,10 +104,21 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 		supplier.UnstakeSessionEndHeight = sharedtypes.SupplierNotUnstaking
 	}
 
-	// Must always stake or upstake (> 0 delta)
+	// MUST ALWAYS stake or upstake (> 0 delta)
 	if coinsToEscrow.IsZero() {
 		err = types.ErrSupplierInvalidStake.Wrapf("Signer %q must escrow more than 0 additional coins", msg.Signer)
 		logger.Info(fmt.Sprintf("WARN: %s", err))
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	// MUST ALWAYS have at least minimum stake.
+	minStake := k.GetParams(ctx).MinStake
+	if msg.Stake.Amount.LT(minStake.Amount) {
+		err = types.ErrSupplierInvalidStake.Wrapf(
+			"supplier with owner %q must stake at least %s",
+			msg.GetOwnerAddress(), minStake,
+		)
+		logger.Info(fmt.Sprintf("ERROR: %s", err))
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
