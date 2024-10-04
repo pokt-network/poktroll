@@ -102,7 +102,9 @@ func (k msgServer) StakeGateway(
 	logger.Info(fmt.Sprintf("Successfully updated stake for gateway: %+v", gateway))
 
 	isSuccessful = true
-	return &types.MsgStakeGatewayResponse{}, nil
+	return &types.MsgStakeGatewayResponse{
+		Gateway: &gateway,
+	}, nil
 }
 
 func (k msgServer) createGateway(
