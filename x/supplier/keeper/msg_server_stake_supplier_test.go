@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"cosmossdk.io/math"
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -14,7 +14,7 @@ import (
 	"github.com/pokt-network/poktroll/testutil/sample"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/keeper"
-	"github.com/pokt-network/poktroll/x/supplier/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
@@ -160,7 +160,7 @@ func TestMsgServer_StakeSupplier_FailWithNonExistingService(t *testing.T) {
 	// Stake the supplier & verify that it fails because the service does not exist.
 	_, err := srv.StakeSupplier(ctx, stakeMsg)
 	require.Equal(t, codes.InvalidArgument, status.Code(err))
-	require.ErrorContains(t, err, types.ErrSupplierServiceNotFound.Wrapf(
+	require.ErrorContains(t, err, suppliertypes.ErrSupplierServiceNotFound.Wrapf(
 		"service %q does not exist", "newService",
 	).Error())
 }
@@ -255,7 +255,8 @@ func TestMsgServer_StakeSupplier_OperatorAuthorizations(t *testing.T) {
 	_, err = srv.StakeSupplier(ctx, stakeMsgUpdateOwner)
 	require.Equal(t, codes.InvalidArgument, status.Code(err))
 	require.ErrorContains(t, err, sharedtypes.ErrSharedUnauthorizedSupplierUpdate.Wrapf(
-		"signer %q is not allowed to update the owner address %q", operatorAddr, ownerAddr,
+		"signer %q is not allowed to update the owner address %q",
+		operatorAddr, ownerAddr,
 	).Error())
 
 	// Update the supplier's owner address using the owner as a signer and verify that it succeeds.
@@ -284,7 +285,7 @@ func TestMsgServer_StakeSupplier_ActiveSupplier(t *testing.T) {
 	_, err := srv.StakeSupplier(ctx, stakeMsg)
 	require.NoError(t, err)
 
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	currentHeight := sdkCtx.BlockHeight()
 	sessionEndHeight := supplierModuleKeepers.SharedKeeper.GetSessionEndHeight(ctx, currentHeight)
 
@@ -342,7 +343,7 @@ func stakeSupplierForServicesMsg(
 	ownerAddr, operatorAddr string,
 	amount int64,
 	serviceIds ...string,
-) *types.MsgStakeSupplier {
+) *suppliertypes.MsgStakeSupplier {
 	services := make([]*sharedtypes.SupplierServiceConfig, 0, len(serviceIds))
 	for _, serviceId := range serviceIds {
 		services = append(services, &sharedtypes.SupplierServiceConfig{
@@ -363,20 +364,67 @@ func stakeSupplierForServicesMsg(
 		})
 	}
 
-	return &types.MsgStakeSupplier{
+	return &suppliertypes.MsgStakeSupplier{
 		Signer:          ownerAddr,
 		OwnerAddress:    ownerAddr,
 		OperatorAddress: operatorAddr,
-		Stake:           &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(amount)},
+		Stake:           &cosmostypes.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(amount)},
 		Services:        services,
 	}
 }
 
 // setStakeMsgSigner sets the signer of the given MsgStakeSupplier to the given address
 func setStakeMsgSigner(
-	msg *types.MsgStakeSupplier,
+	msg *suppliertypes.MsgStakeSupplier,
 	signer string,
-) *types.MsgStakeSupplier {
+) *suppliertypes.MsgStakeSupplier {
 	msg.Signer = signer
 	return msg
+}
+
+func TestMsgServer_StakeSupplier_FailBelowMinStake(t *testing.T) {
+	k, ctx := keepertest.SupplierKeeper(t)
+	srv := keeper.NewMsgServerImpl(*k.Keeper)
+
+	addr := sample.AccAddress()
+	supplierStake := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 100)
+	minStake := supplierStake.AddAmount(math.NewInt(1))
+	expectedErr := suppliertypes.ErrSupplierInvalidStake.Wrapf("supplier with owner %q must stake at least %s", addr, minStake)
+
+	// Set the minimum stake to be greater than the supplier stake.
+	params := k.Keeper.GetParams(ctx)
+	params.MinStake = &minStake
+	err := k.SetParams(ctx, params)
+	require.NoError(t, err)
+
+	// Prepare the application.
+	stakeMsg := &suppliertypes.MsgStakeSupplier{
+		Signer:          addr,
+		OwnerAddress:    addr,
+		OperatorAddress: addr,
+		Stake:           &supplierStake,
+		Services: []*sharedtypes.SupplierServiceConfig{
+			{
+				ServiceId: "svcId",
+				Endpoints: []*sharedtypes.SupplierEndpoint{
+					{
+						Url:     "http://test.example:8080",
+						RpcType: sharedtypes.RPCType_JSON_RPC,
+					},
+				},
+				RevShare: []*sharedtypes.ServiceRevenueShare{
+					{
+						Address:            addr,
+						RevSharePercentage: 100,
+					},
+				},
+			},
+		},
+	}
+
+	// Attempt to stake the supplier & verify that the supplier does NOT exist.
+	_, err = srv.StakeSupplier(ctx, stakeMsg)
+	require.ErrorContains(t, err, expectedErr.Error())
+	_, isGatewayFound := k.GetSupplier(ctx, addr)
+	require.False(t, isGatewayFound)
 }
