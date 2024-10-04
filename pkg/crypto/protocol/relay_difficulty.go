@@ -57,11 +57,7 @@ func ComputeNewDifficultyTargetHash(prevTargetHash []byte, targetNumRelays, newR
 
 	// Ensure the scaled hash is padded to (at least) the same length as the provided hash.
 	if len(scaledDifficultyHashBz) < len(prevTargetHash) {
-		paddingOffset := len(prevTargetHash) - len(scaledDifficultyHashBz)
-
-		paddedScaledDifficultyHash := make([]byte, len(prevTargetHash))
-		copy(paddedScaledDifficultyHash[paddingOffset:], scaledDifficultyHashBz)
-		return paddedScaledDifficultyHash
+		return padBytesToLength(scaledDifficultyHashBz, len(prevTargetHash))
 	}
 
 	return scaledDifficultyHashBz
