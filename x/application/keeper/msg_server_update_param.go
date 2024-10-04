@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -10,6 +11,11 @@ import (
 )
 
 func (k msgServer) UpdateParam(ctx context.Context, msg *apptypes.MsgUpdateParam) (*apptypes.MsgUpdateParamResponse, error) {
+	logger := k.logger.With(
+		"method", "UpdateParam",
+		"param_name", msg.Name,
+	)
+
 	if err := msg.ValidateBasic(); err != nil {
 		return nil, err
 	}
@@ -29,8 +35,10 @@ func (k msgServer) UpdateParam(ctx context.Context, msg *apptypes.MsgUpdateParam
 	switch msg.Name {
 	// TODO_IMPROVE: Add a Uint64 asType instead of using int64 for uint64 params.
 	case apptypes.ParamMaxDelegatedGateways:
+		logger = logger.With("param_value", msg.GetAsInt64())
 		params.MaxDelegatedGateways = uint64(msg.GetAsInt64())
 	case apptypes.ParamMinStake:
+		logger = logger.With("param_value", msg.GetAsCoin())
 		params.MinStake = msg.GetAsCoin()
 	default:
 		return nil, status.Error(
@@ -47,10 +55,13 @@ func (k msgServer) UpdateParam(ctx context.Context, msg *apptypes.MsgUpdateParam
 	}
 
 	if err := k.SetParams(ctx, params); err != nil {
-		return nil, err
+		err = fmt.Errorf("unable to set params: %w", err)
+		logger.Error(err.Error())
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	updatedParams := k.GetParams(ctx)
+
 	return &apptypes.MsgUpdateParamResponse{
 		Params: &updatedParams,
 	}, nil
