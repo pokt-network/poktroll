@@ -3,6 +3,7 @@ package gateway
 
 import (
 	_ "cosmossdk.io/api/amino"
+	v1beta1 "cosmossdk.io/api/cosmos/base/v1beta1"
 	fmt "fmt"
 	runtime "github.com/cosmos/cosmos-proto/runtime"
 	_ "github.com/cosmos/gogoproto/gogoproto"
@@ -15,12 +16,14 @@ import (
 )
 
 var (
-	md_Params protoreflect.MessageDescriptor
+	md_Params           protoreflect.MessageDescriptor
+	fd_Params_min_stake protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_poktroll_gateway_params_proto_init()
 	md_Params = File_poktroll_gateway_params_proto.Messages().ByName("Params")
+	fd_Params_min_stake = md_Params.Fields().ByName("min_stake")
 }
 
 var _ protoreflect.Message = (*fastReflection_Params)(nil)
@@ -88,6 +91,12 @@ func (x *fastReflection_Params) Interface() protoreflect.ProtoMessage {
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
 func (x *fastReflection_Params) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.MinStake != nil {
+		value := protoreflect.ValueOfMessage(x.MinStake.ProtoReflect())
+		if !f(fd_Params_min_stake, value) {
+			return
+		}
+	}
 }
 
 // Has reports whether a field is populated.
@@ -103,6 +112,8 @@ func (x *fastReflection_Params) Range(f func(protoreflect.FieldDescriptor, proto
 // a repeated field is populated if it is non-empty.
 func (x *fastReflection_Params) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
+	case "poktroll.gateway.Params.min_stake":
+		return x.MinStake != nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.Params"))
@@ -119,6 +130,8 @@ func (x *fastReflection_Params) Has(fd protoreflect.FieldDescriptor) bool {
 // Clear is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_Params) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
+	case "poktroll.gateway.Params.min_stake":
+		x.MinStake = nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.Params"))
@@ -135,6 +148,9 @@ func (x *fastReflection_Params) Clear(fd protoreflect.FieldDescriptor) {
 // of the value; to obtain a mutable reference, use Mutable.
 func (x *fastReflection_Params) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
+	case "poktroll.gateway.Params.min_stake":
+		value := x.MinStake
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.Params"))
@@ -155,6 +171,8 @@ func (x *fastReflection_Params) Get(descriptor protoreflect.FieldDescriptor) pro
 // Set is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_Params) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
+	case "poktroll.gateway.Params.min_stake":
+		x.MinStake = value.Message().Interface().(*v1beta1.Coin)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.Params"))
@@ -175,6 +193,11 @@ func (x *fastReflection_Params) Set(fd protoreflect.FieldDescriptor, value proto
 // Mutable is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_Params) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
+	case "poktroll.gateway.Params.min_stake":
+		if x.MinStake == nil {
+			x.MinStake = new(v1beta1.Coin)
+		}
+		return protoreflect.ValueOfMessage(x.MinStake.ProtoReflect())
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.Params"))
@@ -188,6 +211,9 @@ func (x *fastReflection_Params) Mutable(fd protoreflect.FieldDescriptor) protore
 // For lists, maps, and messages, this returns a new, empty, mutable value.
 func (x *fastReflection_Params) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
+	case "poktroll.gateway.Params.min_stake":
+		m := new(v1beta1.Coin)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.Params"))
@@ -257,6 +283,10 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 		var n int
 		var l int
 		_ = l
+		if x.MinStake != nil {
+			l = options.Size(x.MinStake)
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
 		}
@@ -285,6 +315,20 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 		if x.unknownFields != nil {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
+		}
+		if x.MinStake != nil {
+			encoded, err := options.Marshal(x.MinStake)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			i--
+			dAtA[i] = 0xa
 		}
 		if input.Buf != nil {
 			input.Buf = append(input.Buf, dAtA...)
@@ -335,6 +379,42 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: Params: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
+			case 1:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field MinStake", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if x.MinStake == nil {
+					x.MinStake = &v1beta1.Coin{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.MinStake); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
 				skippy, err := runtime.Skip(dAtA[iNdEx:])
@@ -388,6 +468,9 @@ type Params struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
+
+	// min_stake is the minimum amount of uPOKT that a gateway must stake.
+	MinStake *v1beta1.Coin `protobuf:"bytes,1,opt,name=min_stake,json=minStake,proto3" json:"min_stake,omitempty"`
 }
 
 func (x *Params) Reset() {
@@ -410,6 +493,13 @@ func (*Params) Descriptor() ([]byte, []int) {
 	return file_poktroll_gateway_params_proto_rawDescGZIP(), []int{0}
 }
 
+func (x *Params) GetMinStake() *v1beta1.Coin {
+	if x != nil {
+		return x.MinStake
+	}
+	return nil
+}
+
 var File_poktroll_gateway_params_proto protoreflect.FileDescriptor
 
 var file_poktroll_gateway_params_proto_rawDesc = []byte{
@@ -417,22 +507,29 @@ var file_poktroll_gateway_params_proto_rawDesc = []byte{
 	0x61, 0x79, 0x2f, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12,
 	0x10, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61,
 	0x79, 0x1a, 0x11, 0x61, 0x6d, 0x69, 0x6e, 0x6f, 0x2f, 0x61, 0x6d, 0x69, 0x6e, 0x6f, 0x2e, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x1e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2f, 0x62, 0x61, 0x73,
+	0x65, 0x2f, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2f, 0x63, 0x6f, 0x69, 0x6e, 0x2e, 0x70,
 	0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x14, 0x67, 0x6f, 0x67, 0x6f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f,
-	0x67, 0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x2c, 0x0a, 0x06, 0x50, 0x61,
-	0x72, 0x61, 0x6d, 0x73, 0x3a, 0x22, 0xe8, 0xa0, 0x1f, 0x01, 0x8a, 0xe7, 0xb0, 0x2a, 0x19, 0x70,
-	0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x78, 0x2f, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61,
-	0x79, 0x2f, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x42, 0xab, 0x01, 0xd8, 0xe2, 0x1e, 0x01, 0x0a,
-	0x14, 0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x67, 0x61,
-	0x74, 0x65, 0x77, 0x61, 0x79, 0x42, 0x0b, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x50, 0x72, 0x6f,
-	0x74, 0x6f, 0x50, 0x01, 0x5a, 0x21, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e,
-	0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f,
-	0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0xa2, 0x02, 0x03, 0x50, 0x47, 0x58, 0xaa, 0x02, 0x10,
-	0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79,
-	0xca, 0x02, 0x10, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x47, 0x61, 0x74, 0x65,
-	0x77, 0x61, 0x79, 0xe2, 0x02, 0x1c, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x47,
-	0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61,
-	0x74, 0x61, 0xea, 0x02, 0x11, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x3a, 0x3a, 0x47,
-	0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x67, 0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x73, 0x0a, 0x06, 0x50, 0x61,
+	0x72, 0x61, 0x6d, 0x73, 0x12, 0x45, 0x0a, 0x09, 0x6d, 0x69, 0x6e, 0x5f, 0x73, 0x74, 0x61, 0x6b,
+	0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73,
+	0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f,
+	0x69, 0x6e, 0x42, 0x0d, 0xea, 0xde, 0x1f, 0x09, 0x6d, 0x69, 0x6e, 0x5f, 0x73, 0x74, 0x61, 0x6b,
+	0x65, 0x52, 0x08, 0x6d, 0x69, 0x6e, 0x53, 0x74, 0x61, 0x6b, 0x65, 0x3a, 0x22, 0xe8, 0xa0, 0x1f,
+	0x01, 0x8a, 0xe7, 0xb0, 0x2a, 0x19, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x78,
+	0x2f, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x2f, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x42,
+	0xab, 0x01, 0xd8, 0xe2, 0x1e, 0x01, 0x0a, 0x14, 0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x6b, 0x74,
+	0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x42, 0x0b, 0x50, 0x61,
+	0x72, 0x61, 0x6d, 0x73, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x21, 0x63, 0x6f, 0x73,
+	0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f,
+	0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0xa2, 0x02,
+	0x03, 0x50, 0x47, 0x58, 0xaa, 0x02, 0x10, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e,
+	0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0xca, 0x02, 0x10, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f,
+	0x6c, 0x6c, 0x5c, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0xe2, 0x02, 0x1c, 0x50, 0x6f, 0x6b,
+	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x5c, 0x47, 0x50,
+	0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x11, 0x50, 0x6f, 0x6b, 0x74,
+	0x72, 0x6f, 0x6c, 0x6c, 0x3a, 0x3a, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x62, 0x06, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -449,14 +546,16 @@ func file_poktroll_gateway_params_proto_rawDescGZIP() []byte {
 
 var file_poktroll_gateway_params_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_poktroll_gateway_params_proto_goTypes = []interface{}{
-	(*Params)(nil), // 0: poktroll.gateway.Params
+	(*Params)(nil),       // 0: poktroll.gateway.Params
+	(*v1beta1.Coin)(nil), // 1: cosmos.base.v1beta1.Coin
 }
 var file_poktroll_gateway_params_proto_depIdxs = []int32{
-	0, // [0:0] is the sub-list for method output_type
-	0, // [0:0] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	1, // 0: poktroll.gateway.Params.min_stake:type_name -> cosmos.base.v1beta1.Coin
+	1, // [1:1] is the sub-list for method output_type
+	1, // [1:1] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_poktroll_gateway_params_proto_init() }

@@ -5,24 +5,24 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/x/gateway/types"
+	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 )
 
 func TestMsgUpdateParams(t *testing.T) {
 	k, ms, ctx := setupMsgServer(t)
-	params := types.DefaultParams()
+	params := gatewaytypes.DefaultParams()
 	require.NoError(t, k.SetParams(ctx, params))
 
 	// default params
 	tests := []struct {
 		desc           string
-		input          *types.MsgUpdateParams
+		input          *gatewaytypes.MsgUpdateParams
 		shouldError    bool
 		expectedErrMsg string
 	}{
 		{
 			desc: "invalid: authority address invalid",
-			input: &types.MsgUpdateParams{
+			input: &gatewaytypes.MsgUpdateParams{
 				Authority: "invalid",
 				Params:    params,
 			},
@@ -30,16 +30,26 @@ func TestMsgUpdateParams(t *testing.T) {
 			expectedErrMsg: "invalid authority",
 		},
 		{
-			desc: "send empty params",
-			input: &types.MsgUpdateParams{
+			desc: "invalid: send empty params",
+			input: &gatewaytypes.MsgUpdateParams{
 				Authority: k.GetAuthority(),
-				Params:    types.Params{},
+				Params:    gatewaytypes.Params{},
+			},
+			shouldError: true,
+		},
+		{
+			desc: "valid: send minimal params",
+			input: &gatewaytypes.MsgUpdateParams{
+				Authority: k.GetAuthority(),
+				Params: gatewaytypes.Params{
+					MinStake: &gatewaytypes.DefaultMinStake,
+				},
 			},
 			shouldError: false,
 		},
 		{
 			desc: "valid: send default params",
-			input: &types.MsgUpdateParams{
+			input: &gatewaytypes.MsgUpdateParams{
 				Authority: k.GetAuthority(),
 				Params:    params,
 			},
