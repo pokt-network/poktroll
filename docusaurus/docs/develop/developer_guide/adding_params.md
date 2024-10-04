@@ -224,26 +224,49 @@ Prepare `x/examplemod/keeper/msg_server_update_param.go` to handle parameter upd
 + // UpdateParam updates a single parameter in the proof module and returns
 + // all active parameters.
 + func (k msgServer) UpdateParam(ctx context.Context, msg *types.MsgUpdateParam) (*types.MsgUpdateParamResponse, error) {
++   logger := k.logger.With(
++     "method", "UpdateParam",
++     "param_name", msg.Name,
++   )
++
 +   if err := msg.ValidateBasic(); err != nil {
-+       return nil, err
++     return nil, status.Error(codes.InvalidArgument, err.Error())
 +   }
 +
 +   if k.GetAuthority() != msg.Authority {
-+     return nil, types.ErrExamplemodInvalidSigner.Wrapf("invalid authority; expected %s, got %s", k.GetAuthority(), msg.Authority)
++     return nil, status.Error(
++       codes.InvalidArgument,
++       suppliertypes.ErrSupplierInvalidSigner.Wrapf(
++         "invalid authority; expected %s, got %s",
++         k.GetAuthority(), msg.Authority,
++       ).Error(),
++     )
 +   }
 +
 +   params := k.GetParams(ctx)
 +
 +   switch msg.Name {
 +   default:
-+     return nil, types.ErrExamplemodParamInvalid.Wrapf("unsupported param %q", msg.Name)
++     return nil, status.Error(
++       codes.InvalidArgument,
++       suppliertypes.ErrSupplierParamInvalid.Wrapf("unsupported param %q", msg.Name).Error(),
++     )
++   }
++
++   // Perform a global validation on all params, which includes the updated param.
++   // This is needed to ensure that the updated param is valid in the context of all other params.
++   if err := params.Validate(); err != nil {
++     return nil, status.Error(codes.InvalidArgument, err.Error())
 +   }
 +
 +   if err := k.SetParams(ctx, params); err != nil {
-+     return nil, err
++     err = fmt.Errorf("unable to set params: %w", err)
++     logger.Error(err.Error())
++     return nil, status.Error(codes.Internal, err.Error())
 +   }
 +
 +   updatedParams := k.GetParams(ctx)
++
 +   return &types.MsgUpdateParamResponse{
 +     Params: &updatedParams,
 +   }, nil
@@ -437,6 +460,10 @@ Add the parameter type and name (e.g. `ParamNameNewParameter`) to new cases in t
 
 Add the parameter name (e.g. `ParamNameNewParameter`) to a new case in the switch statement in `msgServer#UpdateParam()` in `x/examplemod/keeper/msg_server_update_param.go`:
 
+:::warning
+Every error return from `msgServer` methods (e.g. `#UpdateParams()`) **SHOULD** be encapsulated in a gRPC status error!
+:::
+
 ```go
   // UpdateParam updates a single parameter in the proof module and returns
   // all active parameters.
@@ -447,9 +474,13 @@ Add the parameter name (e.g. `ParamNameNewParameter`) to a new case in the switc
     // ...
     switch msg.Name {
 +   case types.ParamNewParameter:
++     logger = logger.with("param_value", msg.GetAsInt64())
 +     params.NewParameter = msg.GetAsInt64()
     default:
-      return nil, types.ErrExamplemodParamInvalid.Wrapf("unsupported param %q", msg.Name)
+      return nil, status.Error(
+        codes.InvalidArgument,
+        suppliertypes.ErrSupplierParamInvalid.Wrapf("unsupported param %q", msg.Name).Error(),
+      )
     }
     // ...
   }
@@ -543,7 +574,7 @@ This test asserts that updating was successful and that no other parameter was e
 +   require.Equal(t, expectedNewParameter, res.Params.NewParameter)
 +
 +   // Ensure the other parameters are unchanged
-+   testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, examplemodtypes.ParamNewParameter)
++   testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, string(examplemodtypes.KeyNewParameter))
 + }
 ```
 
