@@ -69,6 +69,7 @@ func (k msgServer) StakeGateway(
 	}
 
 	// MUST ALWAYS stake or upstake (> 0 delta).
+	// TODO_MAINNET(#853): Consider removing the requirement above.
 	if coinsToEscrow.IsZero() {
 		err = types.ErrGatewayInvalidStake.Wrapf("gateway %q must escrow more than 0 additional coins", msg.GetAddress())
 		logger.Info(fmt.Sprintf("ERROR: %s", err))
