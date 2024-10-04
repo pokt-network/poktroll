@@ -12,12 +12,12 @@ import (
 	"github.com/pokt-network/poktroll/testutil/integration/suites"
 )
 
-// msgUpdateParamsSuite is a test suite which exercises the MsgUpdateParams message
+// msgUpdateParamsTestSuite is a test suite which exercises the MsgUpdateParams message
 // for each poktroll module via authz, as would be done in a live network in order
 // to update **all** parameter values for a given module.
 // NB: Not to be confused with MsgUpdateParam (singular), which updates a single
 // parameter value for a module.
-type msgUpdateParamsSuite struct {
+type msgUpdateParamsTestSuite struct {
 	suites.ParamsSuite
 
 	unauthorizedAddr cosmostypes.AccAddress
@@ -29,16 +29,16 @@ type msgUpdateParamsSuite struct {
 // reflection to construct the messages and make assertions about the results to
 // improve maintainability and reduce boilerplate.
 func TestUpdateParamsSuite(t *testing.T) {
-	suite.Run(t, &msgUpdateParamsSuite{})
+	suite.Run(t, &msgUpdateParamsTestSuite{})
 }
 
-func (s *msgUpdateParamsSuite) SetupTest() {
+func (s *msgUpdateParamsTestSuite) SetupTest() {
 	// Create a fresh integration app for each test.
 	s.NewApp(s.T())
 
 	// Initialize the test accounts and create authz grants.
-	s.SetupTestAuthzAccounts()
-	s.SetupTestAuthzGrants()
+	s.SetupTestAuthzAccounts(s.T())
+	s.SetupTestAuthzGrants(s.T())
 
 	// Allocate an address for unauthorized user.
 	nextAcct, ok := s.GetApp().GetPreGeneratedAccounts().Next()
@@ -46,7 +46,7 @@ func (s *msgUpdateParamsSuite) SetupTest() {
 	s.unauthorizedAddr = nextAcct.Address
 }
 
-func (s *msgUpdateParamsSuite) TestUnauthorizedMsgUpdateParamsFails() {
+func (s *msgUpdateParamsTestSuite) TestUnauthorizedMsgUpdateParamsFails() {
 	for _, moduleName := range s.GetPoktrollModuleNames() {
 		moduleCfg := suites.ModuleParamConfigMap[moduleName]
 
@@ -69,7 +69,7 @@ func (s *msgUpdateParamsSuite) TestUnauthorizedMsgUpdateParamsFails() {
 	}
 }
 
-func (s *msgUpdateParamsSuite) TestAuthorizedMsgUpdateParamsSucceeds() {
+func (s *msgUpdateParamsTestSuite) TestAuthorizedMsgUpdateParamsSucceeds() {
 	for _, moduleName := range s.GetPoktrollModuleNames() {
 		moduleCfg := suites.ModuleParamConfigMap[moduleName]
 
