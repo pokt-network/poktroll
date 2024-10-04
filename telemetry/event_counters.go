@@ -25,6 +25,10 @@ func EventSuccessCounter(
 	getValue func() float32,
 	isSuccessful func() bool,
 ) {
+	if !isTelemetyEnabled() {
+		return
+	}
+
 	value := getValue()
 
 	var metricName []string
@@ -53,15 +57,19 @@ func ProofRequirementCounter(
 	serviceId string,
 	err error,
 ) {
+	if !isTelemetyEnabled() {
+		return
+	}
+
 	incrementAmount := 1
 	labels := []metrics.Label{
 		{Name: "reason", Value: reason.String()},
-		{Name: "service_id", Value: serviceId},
 	}
+	labels = addMediumCardinalityLabel(labels, "service_id", serviceId)
 
 	// Ensure the counter is not incremented if there was an error.
 	if err != nil {
-		incrementAmount = 0
+		return
 	}
 
 	telemetry.IncrCounterWithLabels(
@@ -78,13 +86,21 @@ func ClaimComputeUnitsCounter(
 	claimProofStage prooftypes.ClaimProofStage,
 	numComputeUnits uint64,
 	serviceId string,
+	applicationAddress string,
+	supplierOperatorAddress string,
 	err error,
 ) {
+	if !isTelemetyEnabled() {
+		return
+	}
+
 	incrementAmount := numComputeUnits
 	labels := []metrics.Label{
 		{Name: "proof_stage", Value: claimProofStage.String()},
-		{Name: "service_id", Value: serviceId},
 	}
+	labels = addMediumCardinalityLabel(labels, "service_id", serviceId)
+	labels = addHighCardinalityLabel(labels, "application_address", applicationAddress)
+	labels = addHighCardinalityLabel(labels, "supplier_operator_address", supplierOperatorAddress)
 
 	// Ensure the counter is not incremented if there was an error.
 	if err != nil {
@@ -106,13 +122,21 @@ func ClaimRelaysCounter(
 	claimProofStage prooftypes.ClaimProofStage,
 	numRelays uint64,
 	serviceId string,
+	applicationAddress string,
+	supplierOperatorAddress string,
 	err error,
 ) {
+	if !isTelemetyEnabled() {
+		return
+	}
+
 	incrementAmount := numRelays
 	labels := []metrics.Label{
 		{Name: "proof_stage", Value: claimProofStage.String()},
-		{Name: "service_id", Value: serviceId},
 	}
+	labels = addMediumCardinalityLabel(labels, "service_id", serviceId)
+	labels = addHighCardinalityLabel(labels, "application_address", applicationAddress)
+	labels = addHighCardinalityLabel(labels, "supplier_operator_address", supplierOperatorAddress)
 
 	// Ensure the counter is not incremented if there was an error.
 	if err != nil {
@@ -133,13 +157,22 @@ func ClaimCounter(
 	claimProofStage prooftypes.ClaimProofStage,
 	numClaims uint64,
 	serviceId string,
+	applicationAddress string,
+	supplierOperatorAddress string,
 	err error,
 ) {
+	if !isTelemetyEnabled() {
+		return
+	}
+
 	incrementAmount := numClaims
 	labels := []metrics.Label{
 		{Name: "proof_stage", Value: claimProofStage.String()},
-		{Name: "service_id", Value: serviceId},
 	}
+
+	labels = addMediumCardinalityLabel(labels, "service_id", serviceId)
+	labels = addHighCardinalityLabel(labels, "application_address", applicationAddress)
+	labels = addHighCardinalityLabel(labels, "supplier_operator_address", supplierOperatorAddress)
 
 	// Ensure the counter is not incremented if there was an error.
 	if err != nil {
@@ -157,9 +190,12 @@ func ClaimCounter(
 // of the relay mining difficulty. The serviceId is used as a label to be able to
 // track the difficulty for each service.
 func RelayMiningDifficultyGauge(difficulty float32, serviceId string) {
-	labels := []metrics.Label{
-		{Name: "service_id", Value: serviceId},
+	if !isTelemetyEnabled() {
+		return
 	}
+
+	labels := []metrics.Label{}
+	labels = addMediumCardinalityLabel(labels, "service_id", serviceId)
 
 	telemetry.SetGaugeWithLabels(
 		MetricNameKeys("relay_mining", "difficulty"),
@@ -171,9 +207,12 @@ func RelayMiningDifficultyGauge(difficulty float32, serviceId string) {
 // RelayEMAGauge sets a gauge which tracks the relay EMA for a service.
 // The serviceId is used as a label to be able to track the EMA for each service.
 func RelayEMAGauge(relayEMA uint64, serviceId string) {
-	labels := []metrics.Label{
-		{Name: "service_id", Value: serviceId},
+	if !isTelemetyEnabled() {
+		return
 	}
+
+	labels := []metrics.Label{}
+	labels = addMediumCardinalityLabel(labels, "service_id", serviceId)
 
 	telemetry.SetGaugeWithLabels(
 		MetricNameKeys("relay", "ema"),
@@ -186,11 +225,14 @@ func RelayEMAGauge(relayEMA uint64, serviceId string) {
 // for session suppliers at the given maxPerSession value.
 // The serviceId is used as a label to be able to track this information for each service.
 func SessionSuppliersGauge(candidates int, maxPerSession int, serviceId string) {
-	maxPerSessionStr := strconv.Itoa(maxPerSession)
-	labels := []metrics.Label{
-		{Name: "service_id", Value: serviceId},
-		{Name: "max_per_session", Value: maxPerSessionStr},
+	if !isTelemetyEnabled() {
+		return
 	}
+
+	maxPerSessionStr := strconv.Itoa(maxPerSession)
+	labels := []metrics.Label{}
+	labels = addMediumCardinalityLabel(labels, "service_id", serviceId)
+	labels = addMediumCardinalityLabel(labels, "max_per_session", maxPerSessionStr)
 
 	telemetry.SetGaugeWithLabels(
 		MetricNameKeys("session", "suppliers"),

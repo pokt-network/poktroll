@@ -44,12 +44,15 @@ func (k msgServer) CreateClaim(
 
 	// Defer telemetry calls so that they reference the final values the relevant variables.
 	defer func() {
-		serviceId := session.Header.ServiceId
 		// Only increment these metrics counters if handling a new claim.
 		if !isExistingClaim {
-			telemetry.ClaimCounter(types.ClaimProofStage_CLAIMED, 1, serviceId, err)
-			telemetry.ClaimRelaysCounter(types.ClaimProofStage_CLAIMED, numRelays, serviceId, err)
-			telemetry.ClaimComputeUnitsCounter(types.ClaimProofStage_CLAIMED, numClaimComputeUnits, serviceId, err)
+			serviceId := session.Header.ServiceId
+			applicationAddress := session.Header.ApplicationAddress
+			supplierOperatorAddress := msg.GetSupplierOperatorAddress()
+
+			telemetry.ClaimCounter(types.ClaimProofStage_CLAIMED, 1, serviceId, applicationAddress, supplierOperatorAddress, err)
+			telemetry.ClaimRelaysCounter(types.ClaimProofStage_CLAIMED, numRelays, serviceId, applicationAddress, supplierOperatorAddress, err)
+			telemetry.ClaimComputeUnitsCounter(types.ClaimProofStage_CLAIMED, numClaimComputeUnits, serviceId, applicationAddress, supplierOperatorAddress, err)
 		}
 	}()
 

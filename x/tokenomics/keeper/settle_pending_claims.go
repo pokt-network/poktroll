@@ -148,22 +148,30 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 
 				// Telemetry - defer telemetry calls so that they reference the final values the relevant variables.
 				defer func() {
+					applicationAddress := claim.SessionHeader.ApplicationAddress
+
 					telemetry.ClaimCounter(
 						prooftypes.ClaimProofStage_EXPIRED,
 						1,
 						claim.SessionHeader.ServiceId,
+						applicationAddress,
+						claim.SupplierOperatorAddress,
 						err,
 					)
 					telemetry.ClaimRelaysCounter(
 						prooftypes.ClaimProofStage_EXPIRED,
 						numClaimRelays,
 						claim.SessionHeader.ServiceId,
+						applicationAddress,
+						claim.SupplierOperatorAddress,
 						err,
 					)
 					telemetry.ClaimComputeUnitsCounter(
 						prooftypes.ClaimProofStage_EXPIRED,
 						numClaimComputeUnits,
 						claim.SessionHeader.ServiceId,
+						applicationAddress,
+						claim.SupplierOperatorAddress,
 						err,
 					)
 				}()
@@ -224,22 +232,30 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 
 		// Telemetry - defer telemetry calls so that they reference the final values the relevant variables.
 		defer func() {
+			applicationAddress := claim.SessionHeader.ApplicationAddress
+
 			telemetry.ClaimCounter(
 				prooftypes.ClaimProofStage_SETTLED,
 				1,
 				claim.SessionHeader.ServiceId,
+				applicationAddress,
+				claim.SupplierOperatorAddress,
 				err,
 			)
 			telemetry.ClaimRelaysCounter(
 				prooftypes.ClaimProofStage_SETTLED,
 				numClaimRelays,
 				claim.SessionHeader.ServiceId,
+				applicationAddress,
+				claim.SupplierOperatorAddress,
 				err,
 			)
 			telemetry.ClaimComputeUnitsCounter(
 				prooftypes.ClaimProofStage_SETTLED,
 				numClaimComputeUnits,
 				claim.SessionHeader.ServiceId,
+				applicationAddress,
+				claim.SupplierOperatorAddress,
 				err,
 			)
 		}()

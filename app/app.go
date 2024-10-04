@@ -2,6 +2,7 @@ package app
 
 import (
 	// this line is used by starport scaffolding # stargate/app/moduleImport
+
 	"io"
 	"os"
 	"path/filepath"
@@ -299,6 +300,10 @@ func New(
 	}
 
 	if err := app.Load(loadLatest); err != nil {
+		return nil, err
+	}
+
+	if err := telemetry.New(appOpts); err != nil {
 		return nil, err
 	}
 

@@ -18,7 +18,7 @@ accounts:
   - name: app1
     mnemonic: "mention spy involve verb exercise fiction catalog order agent envelope mystery text defy sing royal fringe return face alpha knife wonder vocal virus drum"
     coins:
-      - 10000000000000upokt
+      - 100000000upokt
   - name: app2
     mnemonic: "material little labor strong search device trick amateur action crouch invite glide provide elite mango now paper sense found hamster neglect work install bulk"
     coins:
@@ -46,7 +46,7 @@ accounts:
   - name: gateway1
     mnemonic: "salt iron goat also absorb depend involve agent apology between lift shy door left bulb arrange industry father jelly olive rifle return predict into"
     coins:
-      - 10000000000000upokt
+      - 100000000upokt
   - name: gateway2
     mnemonic: "suffer wet jelly furnace cousin flip layer render finish frequent pledge feature economy wink like water disease final erase goat include apple state furnace"
     coins:
@@ -92,6 +92,10 @@ validators:
       telemetry:
         enabled: true
         prometheus-retention-time: "600" # seconds
+      poktroll:
+        telemetry:
+          # "high" produces a lot of timeseries. Only suitable for small networks such as LocalNet.
+          cardinality-level: high
     config:
       moniker: "validator1"
       consensus:
@@ -175,7 +179,7 @@ genesis:
           stake:
             # NB: This value should be exactly 1upokt smaller than the value in
             # `supplier1_stake_config.yaml` so that the stake command causes a state change.
-            amount: "100000000068"
+            amount: "1000068"
             denom: upokt
         - address: pokt1ad28jdap2zfanjd7hpkh984yveney6k9a42man
           delegatee_gateway_addresses: []
@@ -186,7 +190,7 @@ genesis:
           stake:
             # NB: This value should be exactly 1upokt smaller than the value in
             # `supplier1_stake_config.yaml` so that the stake command causes a state change.
-            amount: "100000000068"
+            amount: "1000068"
             denom: upokt
     supplier:
       supplierList:
@@ -220,7 +224,7 @@ genesis:
           stake:
             # NB: This value should be exactly 1upokt smaller than the value in
             # `application1_stake_config.yaml` so that the stake command causes a state change.
-            amount: "100000000068"
+            amount: "1000068"
             denom: upokt
     gateway:
       gatewayList:
@@ -228,7 +232,7 @@ genesis:
           stake:
             # NB: This value should be exactly 1upokt smaller than the value in
             # `gateway1_stake_config.yaml` so that the stake command causes a state change.
-            amount: "100000000068"
+            amount: "1000068"
             denom: upokt
     service:
       params:

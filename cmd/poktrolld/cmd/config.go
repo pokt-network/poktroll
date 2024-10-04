@@ -9,9 +9,25 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/app"
+	"github.com/pokt-network/poktroll/telemetry"
 )
 
 var once sync.Once
+
+// PoktrollAdditionalConfig represents a poktroll-specific part of `app.toml` file.
+// See the `customAppConfigTemplate()` for additional information about each setting.
+type PoktrollAdditionalConfig struct {
+	Telemetry telemetry.PoktrollTelemetryConfig `mapstructure:"telemetry"`
+}
+
+// poktrollAdditionalConfigDefaults sets default values to render in `app.toml`.
+func poktrollAdditionalConfigDefaults() PoktrollAdditionalConfig {
+	return PoktrollAdditionalConfig{
+		Telemetry: telemetry.PoktrollTelemetryConfig{
+			CardinalityLevel: "medium",
+		},
+	}
+}
 
 func InitSDKConfig() {
 	once.Do(func() {
@@ -90,6 +106,7 @@ func initAppConfig() (string, interface{}) {
 	// The following code snippet is just for reference.
 	type CustomAppConfig struct {
 		serverconfig.Config `mapstructure:",squash"`
+		Poktroll            PoktrollAdditionalConfig `mapstructure:"poktroll"`
 	}
 
 	// Optionally allow the chain developer to overwrite the SDK's default
@@ -113,7 +130,7 @@ func initAppConfig() (string, interface{}) {
 	srvCfg.MinGasPrices = "0.000000001upokt" // Also adjust ignite's `config.yml`.
 	srvCfg.Mempool.MaxTxs = 10000
 	srvCfg.Telemetry.Enabled = true
-	srvCfg.Telemetry.PrometheusRetentionTime = 60 // in seconds. This turns on Prometheus support.
+	srvCfg.Telemetry.PrometheusRetentionTime = 60 * 10 // in seconds. This turns on Prometheus support.
 	srvCfg.Telemetry.MetricsSink = "mem"
 	srvCfg.Pruning = "nothing" // archiving node by default
 	srvCfg.API.Enable = true
@@ -121,19 +138,37 @@ func initAppConfig() (string, interface{}) {
 	srvCfg.GRPCWeb.Enable = true
 
 	customAppConfig := CustomAppConfig{
-		Config: *srvCfg,
+		Config:   *srvCfg,
+		Poktroll: poktrollAdditionalConfigDefaults(),
 	}
 
-	customAppTemplate := serverconfig.DefaultConfigTemplate
-	// Edit the default template file
-	//
-	// customAppTemplate := serverconfig.DefaultConfigTemplate + `
-	// [wasm]
-	// # This is the maximum sdk gas (wasm and storage) that we allow for any x/wasm "smart" queries
-	// query_gas_limit = 300000
-	// # This is the number of wasm vm instances we keep cached in memory for speed-up
-	// # Warning: this is currently unstable and may lead to crashes, best to keep for 0 unless testing locally
-	// lru_size = 0`
+	return customAppConfigTemplate(), customAppConfig
+}
 
-	return customAppTemplate, customAppConfig
+// customAppConfigTemplate extends the default configuration `app.toml` file with our own configs. They are going to be
+// used on validators and full-nodes, and they render using default values from `initAppConfig`.
+func customAppConfigTemplate() string {
+	return serverconfig.DefaultConfigTemplate + `
+		###############################################################################
+		###                               Poktroll                                  ###
+		###############################################################################
+		
+		# Poktroll-specific configuration for Full Nodes and Validators.
+		[poktroll]
+
+		# Telemetry configuration in addition to the [telemetry] settings.
+		[poktroll.telemetry]
+	
+		# Cardinality level for telemetry metrics collection
+		# This controls the level of detail (number of unique labels) in metrics.
+		# Options:
+		#   - "low":    Collects basic metrics with low cardinality. 
+		#              Suitable for production environments with tight performance constraints.
+		#   - "medium": Collects a moderate number of labels, balancing detail and performance.
+		#              Suitable for moderate workloads or staging environments.
+		#   - "high":   WARNING: WILL CAUSE STRESS TO YOUR MONITORING ENVIRONMENT! Collects detailed metrics with high 
+		#              cardinality, including labels with many unique values (e.g., application_id, session_id).
+		#              Recommended for debugging or testing environments.
+		cardinality-level = "{{ .Poktroll.Telemetry.CardinalityLevel }}"
+		`
 }

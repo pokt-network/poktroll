@@ -66,12 +66,15 @@ func (k msgServer) SubmitProof(
 
 	// Defer telemetry calls so that they reference the final values the relevant variables.
 	defer func() {
-		serviceId := session.Header.ServiceId
 		// Only increment these metrics counters if handling a new claim.
 		if !isExistingProof {
-			telemetry.ClaimCounter(types.ClaimProofStage_PROVEN, 1, serviceId, err)
-			telemetry.ClaimRelaysCounter(types.ClaimProofStage_PROVEN, numRelays, serviceId, err)
-			telemetry.ClaimComputeUnitsCounter(types.ClaimProofStage_PROVEN, numComputeUnits, serviceId, err)
+			serviceId := session.Header.ServiceId
+			applicationAddress := session.Header.ApplicationAddress
+			supplierOperatorAddress := msg.GetSupplierOperatorAddress()
+
+			telemetry.ClaimCounter(types.ClaimProofStage_PROVEN, 1, serviceId, applicationAddress, supplierOperatorAddress, err)
+			telemetry.ClaimRelaysCounter(types.ClaimProofStage_PROVEN, numRelays, serviceId, applicationAddress, supplierOperatorAddress, err)
+			telemetry.ClaimComputeUnitsCounter(types.ClaimProofStage_PROVEN, numComputeUnits, serviceId, applicationAddress, supplierOperatorAddress, err)
 		}
 	}()
 
