@@ -141,21 +141,25 @@ func NewMsgUpdateParams(
 // from the integration app. It also assigns a new pre-generated identity to be used
 // as the AuthorizedAddr for the suite. It is expected to be called after s.NewApp()
 // as it depends on the integration app and its pre-generated account iterator.
-func (s *ParamsSuite) SetupTestAuthzAccounts() {
+func (s *ParamsSuite) SetupTestAuthzAccounts(t *testing.T) {
+	t.Helper()
+
 	// Set the authority, authorized, and unauthorized addresses.
 	s.AuthorityAddr = cosmostypes.MustAccAddressFromBech32(s.GetApp().GetAuthority())
 
 	nextAcct, ok := s.GetApp().GetPreGeneratedAccounts().Next()
-	require.True(s.T(), ok, "insufficient pre-generated accounts available")
+	require.True(t, ok, "insufficient pre-generated accounts available")
 	s.AuthorizedAddr = nextAcct.Address
 }
 
 // SetupTestAuthzGrants creates on-chain authz grants for the MsgUpdateUpdateParam and
 // MsgUpdateParams message for each module. It is expected to be called after s.NewApp()
 // as it depends on the authority and authorized addresses having been set.
-func (s *ParamsSuite) SetupTestAuthzGrants() {
+func (s *ParamsSuite) SetupTestAuthzGrants(t *testing.T) {
+	t.Helper()
+
 	// Create authz grants for all poktroll modules' MsgUpdateParams messages.
-	s.RunAuthzGrantMsgForPoktrollModules(s.T(),
+	s.RunAuthzGrantMsgForPoktrollModules(t,
 		s.AuthorityAddr,
 		s.AuthorizedAddr,
 		MsgUpdateParamsName,
@@ -163,7 +167,7 @@ func (s *ParamsSuite) SetupTestAuthzGrants() {
 	)
 
 	// Create authz grants for all poktroll modules' MsgUpdateParam messages.
-	s.RunAuthzGrantMsgForPoktrollModules(s.T(),
+	s.RunAuthzGrantMsgForPoktrollModules(t,
 		s.AuthorityAddr,
 		s.AuthorizedAddr,
 		MsgUpdateParamName,
