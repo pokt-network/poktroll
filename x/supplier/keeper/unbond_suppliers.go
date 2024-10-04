@@ -17,7 +17,7 @@ func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) error {
 	currentHeight := sdkCtx.BlockHeight()
 
 	// Only process unbonding suppliers at the end of the session.
-	if currentHeight != k.sharedKeeper.GetSessionEndHeight(ctx, currentHeight) {
+	if shared.IsSessionEndHeight(&sharedParams, currentHeight) {
 		return nil
 	}
 
