@@ -13,6 +13,10 @@ Pocket Network utilizes an off-chain governance mechanism that enables the commu
 - [Examples](#examples)
   - [Block Size Change](#block-size-change)
 
+## Access Control
+
+// TODO_DOCUMENT(@bryanchriswhite) tl;dr, authz.
+
 ## Examples
 
 ### Block Size Change

@@ -77,10 +77,7 @@ func TestTokenomicsIntegrationExample(t *testing.T) {
 	}
 
 	// Run the message to create the claim
-	result := integrationApp.RunMsg(t,
-		&createClaimMsg,
-		integration.WithAutomaticFinalizeBlock(),
-		integration.WithAutomaticCommit(),
-	)
+	result, err := integrationApp.RunMsg(t, &createClaimMsg)
+	require.NoError(t, err)
 	require.NotNil(t, result, "unexpected nil result")
 }

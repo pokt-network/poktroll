@@ -4,11 +4,10 @@ package e2e
 
 import (
 	"reflect"
-	"strings"
-	"unicode"
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/testutil/cases"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -61,7 +60,7 @@ func paramsAnyMapFromParamsStruct(paramStruct any) paramsAnyMap {
 	for i := 0; i < paramsReflectValue.NumField(); i++ {
 		fieldValue := paramsReflectValue.Field(i)
 		fieldStruct := paramsReflectValue.Type().Field(i)
-		paramName := toSnakeCase(fieldStruct.Name)
+		paramName := cases.ToSnakeCase(fieldStruct.Name)
 
 		fieldTypeName := fieldStruct.Type.Name()
 		// TODO_IMPROVE: MsgUpdateParam currently only supports int64 and not uint64 value types.
@@ -77,24 +76,4 @@ func paramsAnyMapFromParamsStruct(paramStruct any) paramsAnyMap {
 		}
 	}
 	return paramsMap
-}
-
-func toSnakeCase(str string) string {
-	var result strings.Builder
-
-	for i, runeValue := range str {
-		if unicode.IsUpper(runeValue) {
-			// If it's not the first letter, add an underscore
-			if i > 0 {
-				result.WriteRune('_')
-			}
-			// Convert to lowercase
-			result.WriteRune(unicode.ToLower(runeValue))
-		} else {
-			// Otherwise, just append the rune as-is
-			result.WriteRune(runeValue)
-		}
-	}
-
-	return result.String()
 }

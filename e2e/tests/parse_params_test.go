@@ -15,6 +15,7 @@ import (
 
 	"github.com/pokt-network/poktroll/app/volatile"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -93,7 +94,7 @@ func (s *suite) paramsMapToMsgUpdateParams(moduleName string, paramsMap paramsAn
 		msgUpdateParams = s.newAppMsgUpdateParams(paramsMap)
 	case servicetypes.ModuleName:
 		msgUpdateParams = s.newServiceMsgUpdateParams(paramsMap)
-	// NB: gateway & supplier modules currently have no parameters
+	// NB: supplier module currently has no parameters
 	default:
 		err := fmt.Errorf("ERROR: unexpected module name %q", moduleName)
 		s.Fatal(err)
@@ -376,6 +377,23 @@ func (s *suite) newServiceMsgUpdateParam(authority string, param paramAny) (msg 
 			Authority: authority,
 			Name:      param.name,
 			AsType: &servicetypes.MsgUpdateParam_AsCoin{
+				AsCoin: param.value.(*cosmostypes.Coin),
+			},
+		})
+	default:
+		s.Fatalf("unexpected param type %q for %s module", param.typeStr, tokenomicstypes.ModuleName)
+	}
+
+	return msg
+}
+
+func (s *suite) newGatewayMsgUpdateParam(authority string, param paramAny) (msg proto.Message) {
+	switch param.typeStr {
+	case "coin":
+		msg = proto.Message(&gatewaytypes.MsgUpdateParam{
+			Authority: authority,
+			Name:      param.name,
+			AsType: &gatewaytypes.MsgUpdateParam_AsCoin{
 				AsCoin: param.value.(*cosmostypes.Coin),
 			},
 		})

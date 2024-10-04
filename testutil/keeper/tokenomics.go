@@ -245,7 +245,7 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 	)
 
 	// Add a block proposer address to the context
-	valAddr, err := cosmostypes.ValAddressFromBech32(sample.ConsAddress())
+	valAddr, err := cosmostypes.ValAddressFromBech32(sample.ValAddress())
 	require.NoError(t, err)
 	consensusAddr := cosmostypes.ConsAddress(valAddr)
 	sdkCtx = sdkCtx.WithProposer(consensusAddr)
@@ -292,7 +292,7 @@ func NewTokenomicsModuleKeepers(
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
 	// Add a block proposer address to the context
-	valAddr, err := cosmostypes.ValAddressFromBech32(sample.ConsAddress())
+	valAddr, err := cosmostypes.ValAddressFromBech32(sample.ValAddress())
 	require.NoError(t, err)
 	consensusAddr := cosmostypes.ConsAddress(valAddr)
 	sdkCtx = sdkCtx.WithProposer(consensusAddr)
