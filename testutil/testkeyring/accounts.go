@@ -117,6 +117,14 @@ func (iter *PreGeneratedAccountIterator) Next() (_ *PreGeneratedAccount, ok bool
 	return iter.accounts[currentIndex], true
 }
 
+func (iter *PreGeneratedAccountIterator) MustNext() *PreGeneratedAccount {
+	account, ok := iter.Next()
+	if !ok {
+		panic("insufficient number of pre-generated accounts")
+	}
+	return account
+}
+
 // Clone returns a new PreGeneratedAccountIterator with the same accounts as the
 // receiver but with its nextIndex reset to 0.
 func (iter *PreGeneratedAccountIterator) Clone() *PreGeneratedAccountIterator {
