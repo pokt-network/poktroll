@@ -350,7 +350,7 @@ func TestRelayDifficulty_ScaleDifficultyTargetHash(t *testing.T) {
 					require.Equal(t, len(expectedNewHashBz), len(newDifficultyHash), "scaled down difficulty should have been padded")
 				} else if targetNumRelays > newRelaysEma {
 					require.Greater(t, len(expectedScaledHashBz), len(newDifficultyHash))
-					require.Equal(t, len(expectedNewHashBz), len(newDifficultyHash), "scaled down difficulty should have been padded")
+					require.Equal(t, len(expectedNewHashBz), len(newDifficultyHash), "scaled down difficulty should have been truncated")
 				}
 			}
 		})
@@ -379,6 +379,34 @@ func TestRelayDifficulty_EnsureRelayMiningProbabilityIsProportional(t *testing.T
 			require.InDelta(t, targetNumRelays, volumeApplicableRelays, 1)
 		}
 	}
+}
+
+// This test ensure that a difficulty hash byte representation that is trimmed
+// of its meaningless zeros does not change its value.
+// See the discussion below for more details:
+// https://github.com/pokt-network/poktroll/pull/831#discussion_r1774183541
+func TestRelayDifficulty_TruncateRelayDifficultyHashToBaseSizeDoesNotChangeItsValue(t *testing.T) {
+	difficultyInt := big.NewInt(256)
+	expectedDifficultyHash := []byte{0x01, 0x00}
+	// big.Int#Bytes returns a big endian representation, this means that any
+	// leftmost consecutive zeros are non-meaningful to the represented value.
+	difficultyHashBz := difficultyInt.Bytes()
+
+	// Ensure that big.Int do not produce non-meaningful bytes
+	require.Equal(t, expectedDifficultyHash, difficultyHashBz)
+
+	// Assuming that more non-meaningful bytes have been added to the difficulty,
+	// ensure that truncating them does not affect the value.
+
+	difficultyHashWithNonMeaningfulBz := append([]byte{0x00, 0x00, 0x00}, difficultyHashBz...)
+	nonTrimmedDifficultyInt := big.NewInt(0).SetBytes(difficultyHashWithNonMeaningfulBz)
+
+	trimmedDifficultyBz := bytes.TrimLeft(difficultyHashWithNonMeaningfulBz, "\x00")
+	trimmedDifficultyInt := big.NewInt(0).SetBytes(trimmedDifficultyBz)
+
+	require.Len(t, trimmedDifficultyBz, 2)
+	require.Equal(t, difficultyInt, trimmedDifficultyInt)
+	require.Equal(t, difficultyInt, nonTrimmedDifficultyInt)
 }
 
 // scaleRelaysFromActualToTarget scales the number of relays (i.e. estimated offchain serviced relays)

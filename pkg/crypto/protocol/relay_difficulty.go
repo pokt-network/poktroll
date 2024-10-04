@@ -45,9 +45,10 @@ func ComputeNewDifficultyTargetHash(prevTargetHash []byte, targetNumRelays, newR
 	// If difficultyScalingRatio > 1 -> scale up -> decrease difficulty to mine relays
 	difficultyScalingRatio := big.NewRat(int64(targetNumRelays), int64(newRelaysEma))
 	scaledDifficultyHashBz := ScaleRelayDifficultyHash(prevTargetHash, difficultyScalingRatio)
-	// Trim any extra zeros from the scaled hash to ensure that it only contains
-	// the meaningful bytes.
+	// Trim all the leftmost zeros from the big endian representation of the scaled
+	// hash to ensure that it only contains the meaningful bytes.
 	scaledDifficultyHashBz = bytes.TrimLeft(scaledDifficultyHashBz, "\x00")
+	// TODO_IMPROVE: Make it so scaling up -> increase difficulty while scaling down -> decrease difficulty.
 	// If scaledDifficultyHash is longer than BaseRelayDifficultyHashBz, then use
 	// BaseRelayDifficultyHashBz as we should not have a bigger hash than the base.
 	if len(scaledDifficultyHashBz) > len(BaseRelayDifficultyHashBz) {
@@ -116,4 +117,17 @@ func GetRelayDifficultyMultiplierToFloat32(relayDifficultyHash []byte) float32 {
 // Convert byte slice to a big integer
 func bytesToBigInt(b []byte) *big.Int {
 	return new(big.Int).SetBytes(b)
+}
+
+// padBytesToLength returns a zero padded representation of the given value.
+// If the value is longer the desired length, it is returned as is.
+func padBytesToLength(valueToPad []byte, length int) []byte {
+	paddingOffset := length - len(valueToPad)
+	if paddingOffset <= 0 {
+		return valueToPad
+	}
+
+	paddedScaledDifficultyHash := make([]byte, length)
+	copy(paddedScaledDifficultyHash[paddingOffset:], valueToPad)
+	return paddedScaledDifficultyHash
 }
