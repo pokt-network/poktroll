@@ -470,7 +470,7 @@ type Params struct {
 	unknownFields protoimpl.UnknownFields
 
 	// min_stake is the minimum amount of uPOKT that a supplier must stake to be
-	// included in network sessions.
+	// included in network sessions and remain staked.
 	MinStake *v1beta1.Coin `protobuf:"bytes,1,opt,name=min_stake,json=minStake,proto3" json:"min_stake,omitempty"`
 }
 

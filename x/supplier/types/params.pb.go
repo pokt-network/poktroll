@@ -28,7 +28,7 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 // Params defines the parameters for the module.
 type Params struct {
 	// min_stake is the minimum amount of uPOKT that a supplier must stake to be
-	// included in network sessions.
+	// included in network sessions and remain staked.
 	MinStake *types.Coin `protobuf:"bytes,1,opt,name=min_stake,json=minStake,proto3" json:"min_stake" yaml:"min_stake"`
 }
 

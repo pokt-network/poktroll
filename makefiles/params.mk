@@ -127,7 +127,7 @@ params_update_application_max_delegated_gateways: ## Update the application modu
 params_update_application_min_stake: ## Update the application module min_stake param
 	poktrolld tx authz exec ./tools/scripts/params/application_min_stake.json $(PARAM_FLAGS)
 
-### Gateway Module Params ###
+### Supplier Module Params ###
 .PHONY: params_get_supplier
 params_get_supplier: ## Get the supplier module params
 	poktrolld query supplier params --node $(POCKET_NODE)
