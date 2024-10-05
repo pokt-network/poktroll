@@ -18,8 +18,9 @@ const (
 	// Prefix all metric names with "poktroll" for easier search
 	metricNamePrefix = "poktroll"
 
-	ApplicationAddressLabelName      = "app_addr"
-	SupplierOperatorAddressLabelName = "supop_addr"
+	// Label Names
+	applicationAddressLabelName      = "app_addr"
+	supplierOperatorAddressLabelName = "supop_addr"
 )
 
 // EventSuccessCounter increments a counter with the given data type and success status.
@@ -71,8 +72,8 @@ func ProofRequirementCounter(
 		{Name: "reason", Value: reason.String()},
 	}
 	labels = addMediumCardinalityLabel(labels, "service_id", serviceId)
-	labels = addHighCardinalityLabel(labels, ApplicationAddressLabelName, applicationAddress)
-	labels = addHighCardinalityLabel(labels, SupplierOperatorAddressLabelName, supplierOperatorAddress)
+	labels = addHighCardinalityLabel(labels, applicationAddressLabelName, applicationAddress)
+	labels = addHighCardinalityLabel(labels, supplierOperatorAddressLabelName, supplierOperatorAddress)
 
 	// Ensure the counter is not incremented if there was an error.
 	if err != nil {
@@ -106,8 +107,8 @@ func ClaimComputeUnitsCounter(
 		{Name: "proof_stage", Value: claimProofStage.String()},
 	}
 	labels = addMediumCardinalityLabel(labels, "service_id", serviceId)
-	labels = addHighCardinalityLabel(labels, ApplicationAddressLabelName, applicationAddress)
-	labels = addHighCardinalityLabel(labels, SupplierOperatorAddressLabelName, supplierOperatorAddress)
+	labels = addHighCardinalityLabel(labels, applicationAddressLabelName, applicationAddress)
+	labels = addHighCardinalityLabel(labels, supplierOperatorAddressLabelName, supplierOperatorAddress)
 
 	// Ensure the counter is not incremented if there was an error.
 	if err != nil {
@@ -142,8 +143,8 @@ func ClaimRelaysCounter(
 		{Name: "proof_stage", Value: claimProofStage.String()},
 	}
 	labels = addMediumCardinalityLabel(labels, "service_id", serviceId)
-	labels = addHighCardinalityLabel(labels, ApplicationAddressLabelName, applicationAddress)
-	labels = addHighCardinalityLabel(labels, SupplierOperatorAddressLabelName, supplierOperatorAddress)
+	labels = addHighCardinalityLabel(labels, applicationAddressLabelName, applicationAddress)
+	labels = addHighCardinalityLabel(labels, supplierOperatorAddressLabelName, supplierOperatorAddress)
 
 	// Ensure the counter is not incremented if there was an error.
 	if err != nil {
@@ -178,8 +179,8 @@ func ClaimCounter(
 	}
 
 	labels = addMediumCardinalityLabel(labels, "service_id", serviceId)
-	labels = addHighCardinalityLabel(labels, ApplicationAddressLabelName, applicationAddress)
-	labels = addHighCardinalityLabel(labels, SupplierOperatorAddressLabelName, supplierOperatorAddress)
+	labels = addHighCardinalityLabel(labels, applicationAddressLabelName, applicationAddress)
+	labels = addHighCardinalityLabel(labels, supplierOperatorAddressLabelName, supplierOperatorAddress)
 
 	// Ensure the counter is not incremented if there was an error.
 	if err != nil {
