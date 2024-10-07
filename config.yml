@@ -193,6 +193,11 @@ genesis:
             amount: "100000068" # ~100 POKT
             denom: upokt
     supplier:
+      params:
+        # TODO_MAINNET: Determine realistic amount for minimum gateway stake amount.
+        min_stake:
+          amount: "1000000" # 1 POKT
+          denom: upokt
       supplierList:
         - owner_address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
           operator_address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj

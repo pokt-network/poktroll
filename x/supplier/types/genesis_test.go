@@ -66,6 +66,7 @@ func TestGenesisState_Validate(t *testing.T) {
 		{
 			desc: "valid genesis state",
 			genState: &types.GenesisState{
+				Params: types.DefaultParams(),
 				SupplierList: []sharedtypes.Supplier{
 					{
 						OwnerAddress:    addr1,
@@ -87,6 +88,7 @@ func TestGenesisState_Validate(t *testing.T) {
 		{
 			desc: "invalid - zero supplier stake",
 			genState: &types.GenesisState{
+				Params: types.DefaultParams(),
 				SupplierList: []sharedtypes.Supplier{
 					{
 						OwnerAddress:    addr1,
@@ -107,6 +109,7 @@ func TestGenesisState_Validate(t *testing.T) {
 		{
 			desc: "invalid - negative supplier stake",
 			genState: &types.GenesisState{
+				Params: types.DefaultParams(),
 				SupplierList: []sharedtypes.Supplier{
 					{
 						OwnerAddress:    addr1,
@@ -127,6 +130,7 @@ func TestGenesisState_Validate(t *testing.T) {
 		{
 			desc: "invalid - wrong stake denom",
 			genState: &types.GenesisState{
+				Params: types.DefaultParams(),
 				SupplierList: []sharedtypes.Supplier{
 					{
 						OwnerAddress:    addr1,
@@ -147,6 +151,7 @@ func TestGenesisState_Validate(t *testing.T) {
 		{
 			desc: "invalid - missing denom",
 			genState: &types.GenesisState{
+				Params: types.DefaultParams(),
 				SupplierList: []sharedtypes.Supplier{
 					{
 						OwnerAddress:    addr1,
@@ -167,6 +172,7 @@ func TestGenesisState_Validate(t *testing.T) {
 		{
 			desc: "invalid - due to duplicated supplier operator address",
 			genState: &types.GenesisState{
+				Params: types.DefaultParams(),
 				SupplierList: []sharedtypes.Supplier{
 					{
 						OwnerAddress:    addr1,
@@ -187,6 +193,7 @@ func TestGenesisState_Validate(t *testing.T) {
 		{
 			desc: "invalid - due to nil supplier stake",
 			genState: &types.GenesisState{
+				Params: types.DefaultParams(),
 				SupplierList: []sharedtypes.Supplier{
 					{
 						OwnerAddress:    addr1,
@@ -207,6 +214,7 @@ func TestGenesisState_Validate(t *testing.T) {
 		{
 			desc: "invalid - due to missing supplier stake",
 			genState: &types.GenesisState{
+				Params: types.DefaultParams(),
 				SupplierList: []sharedtypes.Supplier{
 					{
 						OwnerAddress:    addr1,
@@ -227,6 +235,7 @@ func TestGenesisState_Validate(t *testing.T) {
 		{
 			desc: "invalid - missing services list",
 			genState: &types.GenesisState{
+				Params: types.DefaultParams(),
 				SupplierList: []sharedtypes.Supplier{
 					{
 						OwnerAddress:    addr1,
@@ -247,6 +256,7 @@ func TestGenesisState_Validate(t *testing.T) {
 		{
 			desc: "invalid - empty services list",
 			genState: &types.GenesisState{
+				Params: types.DefaultParams(),
 				SupplierList: []sharedtypes.Supplier{
 					{
 						OwnerAddress:    addr1,
@@ -267,6 +277,7 @@ func TestGenesisState_Validate(t *testing.T) {
 		{
 			desc: "invalid - invalid URL",
 			genState: &types.GenesisState{
+				Params: types.DefaultParams(),
 				SupplierList: []sharedtypes.Supplier{
 					{
 						OwnerAddress:    addr1,
@@ -304,6 +315,7 @@ func TestGenesisState_Validate(t *testing.T) {
 		{
 			desc: "invalid - invalid RPC Type",
 			genState: &types.GenesisState{
+				Params: types.DefaultParams(),
 				SupplierList: []sharedtypes.Supplier{
 					{
 						OwnerAddress:    addr1,
