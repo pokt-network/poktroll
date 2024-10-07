@@ -15,7 +15,7 @@ func NewMsgUpdateParam(authority string, name string, asType any) *MsgUpdatePara
 
 	switch t := asType.(type) {
 	case uint64:
-		asTypeIface = &MsgUpdateParam_AsInt64{AsInt64: int64(t)}
+		asTypeIface = &MsgUpdateParam_AsUint64{AsUint64: t}
 	case *cosmostypes.Coin:
 		asTypeIface = &MsgUpdateParam_AsCoin{AsCoin: t}
 	default:
@@ -52,10 +52,10 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 }
 
 func (msg *MsgUpdateParam) paramTypeIsUint64() error {
-	if _, ok := msg.AsType.(*MsgUpdateParam_AsInt64); !ok {
+	if _, ok := msg.AsType.(*MsgUpdateParam_AsUint64); !ok {
 		return ErrAppParamInvalid.Wrapf(""+
 			"invalid type for param %q; expected %T, got %T",
-			msg.Name, &MsgUpdateParam_AsInt64{}, msg.AsType,
+			msg.Name, &MsgUpdateParam_AsUint64{}, msg.AsType,
 		)
 	}
 	return nil
