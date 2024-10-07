@@ -210,9 +210,6 @@ var (
 			ProofSubmissionFee:        &ValidProofSubmissionFeeCoin,
 		},
 		ParamTypes: map[ParamType]any{
-			ParamTypeUint64:  prooftypes.MsgUpdateParam_AsInt64{},
-			ParamTypeInt64:   prooftypes.MsgUpdateParam_AsInt64{},
-			ParamTypeString:  prooftypes.MsgUpdateParam_AsString{},
 			ParamTypeBytes:   prooftypes.MsgUpdateParam_AsBytes{},
 			ParamTypeFloat32: prooftypes.MsgUpdateParam_AsFloat{},
 			ParamTypeCoin:    prooftypes.MsgUpdateParam_AsCoin{},
