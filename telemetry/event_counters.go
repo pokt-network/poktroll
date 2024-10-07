@@ -71,9 +71,12 @@ func ProofRequirementCounter(
 	labels := []metrics.Label{
 		{Name: "reason", Value: reason.String()},
 	}
-	labels = addMediumCardinalityLabel(labels, "service_id", serviceId)
-	labels = addHighCardinalityLabel(labels, applicationAddressLabelName, applicationAddress)
-	labels = addHighCardinalityLabel(labels, supplierOperatorAddressLabelName, supplierOperatorAddress)
+	labels = appendMediumCardinalityLabels(labels, toMetricLabel("service_id", serviceId))
+	labels = appendHighCardinalityLabels(
+		labels,
+		toMetricLabel(applicationAddressLabelName, applicationAddress),
+		toMetricLabel(supplierOperatorAddressLabelName, supplierOperatorAddress),
+	)
 
 	// Ensure the counter is not incremented if there was an error.
 	if err != nil {
@@ -106,9 +109,12 @@ func ClaimComputeUnitsCounter(
 	labels := []metrics.Label{
 		{Name: "proof_stage", Value: claimProofStage.String()},
 	}
-	labels = addMediumCardinalityLabel(labels, "service_id", serviceId)
-	labels = addHighCardinalityLabel(labels, applicationAddressLabelName, applicationAddress)
-	labels = addHighCardinalityLabel(labels, supplierOperatorAddressLabelName, supplierOperatorAddress)
+	labels = appendMediumCardinalityLabels(labels, toMetricLabel("service_id", serviceId))
+	labels = appendHighCardinalityLabels(
+		labels,
+		toMetricLabel(applicationAddressLabelName, applicationAddress),
+		toMetricLabel(supplierOperatorAddressLabelName, supplierOperatorAddress),
+	)
 
 	// Ensure the counter is not incremented if there was an error.
 	if err != nil {
@@ -142,9 +148,12 @@ func ClaimRelaysCounter(
 	labels := []metrics.Label{
 		{Name: "proof_stage", Value: claimProofStage.String()},
 	}
-	labels = addMediumCardinalityLabel(labels, "service_id", serviceId)
-	labels = addHighCardinalityLabel(labels, applicationAddressLabelName, applicationAddress)
-	labels = addHighCardinalityLabel(labels, supplierOperatorAddressLabelName, supplierOperatorAddress)
+	labels = appendMediumCardinalityLabels(labels, toMetricLabel("service_id", serviceId))
+	labels = appendHighCardinalityLabels(
+		labels,
+		toMetricLabel(applicationAddressLabelName, applicationAddress),
+		toMetricLabel(supplierOperatorAddressLabelName, supplierOperatorAddress),
+	)
 
 	// Ensure the counter is not incremented if there was an error.
 	if err != nil {
@@ -178,9 +187,12 @@ func ClaimCounter(
 		{Name: "proof_stage", Value: claimProofStage.String()},
 	}
 
-	labels = addMediumCardinalityLabel(labels, "service_id", serviceId)
-	labels = addHighCardinalityLabel(labels, applicationAddressLabelName, applicationAddress)
-	labels = addHighCardinalityLabel(labels, supplierOperatorAddressLabelName, supplierOperatorAddress)
+	labels = appendMediumCardinalityLabels(labels, toMetricLabel("service_id", serviceId))
+	labels = appendHighCardinalityLabels(
+		labels,
+		toMetricLabel(applicationAddressLabelName, applicationAddress),
+		toMetricLabel(supplierOperatorAddressLabelName, supplierOperatorAddress),
+	)
 
 	// Ensure the counter is not incremented if there was an error.
 	if err != nil {
@@ -203,7 +215,7 @@ func RelayMiningDifficultyGauge(difficulty float32, serviceId string) {
 	}
 
 	labels := []metrics.Label{}
-	labels = addMediumCardinalityLabel(labels, "service_id", serviceId)
+	labels = appendMediumCardinalityLabels(labels, toMetricLabel("service_id", serviceId))
 
 	telemetry.SetGaugeWithLabels(
 		MetricNameKeys("relay_mining", "difficulty"),
@@ -220,7 +232,7 @@ func RelayEMAGauge(relayEMA uint64, serviceId string) {
 	}
 
 	labels := []metrics.Label{}
-	labels = addMediumCardinalityLabel(labels, "service_id", serviceId)
+	labels = appendMediumCardinalityLabels(labels, toMetricLabel("service_id", serviceId))
 
 	telemetry.SetGaugeWithLabels(
 		MetricNameKeys("relay", "ema"),
@@ -239,8 +251,11 @@ func SessionSuppliersGauge(candidates int, maxPerSession int, serviceId string) 
 
 	maxPerSessionStr := strconv.Itoa(maxPerSession)
 	labels := []metrics.Label{}
-	labels = addMediumCardinalityLabel(labels, "service_id", serviceId)
-	labels = addMediumCardinalityLabel(labels, "max_per_session", maxPerSessionStr)
+	labels = appendMediumCardinalityLabels(
+		labels,
+		toMetricLabel("service_id", serviceId),
+		toMetricLabel("max_per_session", maxPerSessionStr),
+	)
 
 	telemetry.SetGaugeWithLabels(
 		MetricNameKeys("session", "suppliers"),

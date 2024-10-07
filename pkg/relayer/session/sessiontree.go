@@ -3,7 +3,6 @@ package session
 import (
 	"bytes"
 	"crypto/sha256"
-	"fmt"
 	"os"
 	"path/filepath"
 	"sync"
@@ -274,12 +273,8 @@ func (st *sessionTree) Delete() error {
 	// This was intentionally removed to lower the IO load.
 	// When the database is closed, it is deleted it from disk right away.
 
-	if st.treeStore != nil {
-		if err := st.treeStore.Stop(); err != nil {
-			return err
-		}
-	} else {
-		fmt.Println("Unable to delete as tree store is nil. This shouldn't happen.")
+	if err := st.treeStore.Stop(); err != nil {
+		return err
 	}
 
 	// Delete the KVStore from disk
