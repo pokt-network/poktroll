@@ -17,7 +17,9 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/block"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	testutilevents "github.com/pokt-network/poktroll/testutil/events"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
@@ -49,7 +51,8 @@ func (s *suite) TheUserShouldWaitForTheModuleMessageToBeSubmitted(module, msgTyp
 	// If the message type is "SubmitProof", save the supplier balance
 	// so that next steps that assert on supplier rewards can do it without having
 	// the proof submission fee skewing the results.
-	if msgType == "SubmitProof" {
+	switch msgType {
+	case "SubmitProof":
 		supplierOperatorAddress := getMsgSubmitProofSenderAddress(event)
 		require.NotEmpty(s, supplierOperatorAddress)
 
@@ -59,11 +62,33 @@ func (s *suite) TheUserShouldWaitForTheModuleMessageToBeSubmitted(module, msgTyp
 		balanceKey := accBalanceKey(supplierAccName)
 		currBalance := s.getAccBalance(supplierAccName)
 		s.scenarioState[balanceKey] = currBalance // save the balance for later
+	default:
+		s.Log("no test suite state to update for message type %s", msgType)
+	}
+
+	// Rebuild actor maps after the relevant messages have been committed.
+	switch module {
+	case apptypes.ModuleName:
+		s.buildAppMap()
+	case suppliertypes.ModuleName:
+		s.buildSupplierMap()
+	default:
+		s.Log("no test suite state to update for module %s", module)
 	}
 }
 
 func (s *suite) TheUserShouldWaitForTheModuleTxEventToBeBroadcast(module, eventType string) {
 	s.waitForTxResultEvent(newEventTypeMatchFn(module, eventType))
+
+	// Rebuild actor maps after the relevant messages have been committed.
+	switch module {
+	case apptypes.ModuleName:
+		s.buildAppMap()
+	case suppliertypes.ModuleName:
+		s.buildSupplierMap()
+	default:
+		s.Log("no test suite state to update for module %s", module)
+	}
 }
 
 func (s *suite) TheUserShouldWaitForTheClaimsettledEventWithProofRequirementToBeBroadcast(proofRequirement string) {
@@ -74,6 +99,10 @@ func (s *suite) TheUserShouldWaitForTheClaimsettledEventWithProofRequirementToBe
 			newEventAttributeMatchFn("proof_requirement", fmt.Sprintf("%q", proofRequirement)),
 		),
 	)
+
+	// Update the actor maps after end block events have been emitted.
+	s.buildAppMap()
+	s.buildSupplierMap()
 }
 
 // TODO_FLAKY: See how 'TheClaimCreatedBySupplierForServiceForApplicationShouldBeSuccessfullySettled'

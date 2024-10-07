@@ -24,5 +24,9 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) error {
 		return err
 	}
 
+	if err := k.EndBlockerTransferApplication(ctx); err != nil {
+		return err
+	}
+
 	return nil
 }

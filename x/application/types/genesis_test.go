@@ -38,9 +38,7 @@ func TestGenesisState_Validate(t *testing.T) {
 		{
 			desc: "valid genesis state",
 			genState: &types.GenesisState{
-				Params: types.Params{
-					MaxDelegatedGateways: 7,
-				},
+				Params: types.DefaultParams(),
 				ApplicationList: []types.Application{
 					{
 						Address:                   addr1,
@@ -62,9 +60,7 @@ func TestGenesisState_Validate(t *testing.T) {
 		{
 			desc: "invalid - zero app stake",
 			genState: &types.GenesisState{
-				Params: types.Params{
-					MaxDelegatedGateways: 7,
-				},
+				Params: types.DefaultParams(),
 				ApplicationList: []types.Application{
 					{
 						Address:                   addr1,
@@ -108,9 +104,7 @@ func TestGenesisState_Validate(t *testing.T) {
 		{
 			desc: "invalid - wrong stake denom",
 			genState: &types.GenesisState{
-				Params: types.Params{
-					MaxDelegatedGateways: 7,
-				},
+				Params: types.DefaultParams(),
 				ApplicationList: []types.Application{
 					{
 						Address:                   addr1,
@@ -131,9 +125,7 @@ func TestGenesisState_Validate(t *testing.T) {
 		{
 			desc: "invalid - missing denom",
 			genState: &types.GenesisState{
-				Params: types.Params{
-					MaxDelegatedGateways: 7,
-				},
+				Params: types.DefaultParams(),
 				ApplicationList: []types.Application{
 					{
 						Address:                   addr1,
@@ -154,9 +146,7 @@ func TestGenesisState_Validate(t *testing.T) {
 		{
 			desc: "invalid - due to duplicated app address",
 			genState: &types.GenesisState{
-				Params: types.Params{
-					MaxDelegatedGateways: 7,
-				},
+				Params: types.DefaultParams(),
 				ApplicationList: []types.Application{
 					{
 						Address:                   addr1,
@@ -177,9 +167,7 @@ func TestGenesisState_Validate(t *testing.T) {
 		{
 			desc: "invalid - due to nil app stake",
 			genState: &types.GenesisState{
-				Params: types.Params{
-					MaxDelegatedGateways: 7,
-				},
+				Params: types.DefaultParams(),
 				ApplicationList: []types.Application{
 					{
 						Address:                   addr1,
@@ -200,9 +188,7 @@ func TestGenesisState_Validate(t *testing.T) {
 		{
 			desc: "invalid - due to missing app stake",
 			genState: &types.GenesisState{
-				Params: types.Params{
-					MaxDelegatedGateways: 7,
-				},
+				Params: types.DefaultParams(),
 				ApplicationList: []types.Application{
 					{
 						Address:                   addr1,
@@ -223,9 +209,7 @@ func TestGenesisState_Validate(t *testing.T) {
 		{
 			desc: "invalid - due to invalid delegatee pub key",
 			genState: &types.GenesisState{
-				Params: types.Params{
-					MaxDelegatedGateways: 7,
-				},
+				Params: types.DefaultParams(),
 				ApplicationList: []types.Application{
 					{
 						Address:                   addr1,
@@ -246,9 +230,7 @@ func TestGenesisState_Validate(t *testing.T) {
 		{
 			desc: "invalid - due to invalid delegatee pub keys",
 			genState: &types.GenesisState{
-				Params: types.Params{
-					MaxDelegatedGateways: 7,
-				},
+				Params: types.DefaultParams(),
 				ApplicationList: []types.Application{
 					{
 						Address:                   addr1,
@@ -269,9 +251,7 @@ func TestGenesisState_Validate(t *testing.T) {
 		{
 			desc: "invalid - service config not present",
 			genState: &types.GenesisState{
-				Params: types.Params{
-					MaxDelegatedGateways: 7,
-				},
+				Params: types.DefaultParams(),
 				ApplicationList: []types.Application{
 					{
 						Address: addr1,
@@ -286,9 +266,7 @@ func TestGenesisState_Validate(t *testing.T) {
 		{
 			desc: "invalid - empty service config",
 			genState: &types.GenesisState{
-				Params: types.Params{
-					MaxDelegatedGateways: 7,
-				},
+				Params: types.DefaultParams(),
 				ApplicationList: []types.Application{
 					{
 						Address:                   addr1,
@@ -303,9 +281,7 @@ func TestGenesisState_Validate(t *testing.T) {
 		{
 			desc: "invalid - service ID too long",
 			genState: &types.GenesisState{
-				Params: types.Params{
-					MaxDelegatedGateways: 7,
-				},
+				Params: types.DefaultParams(),
 				ApplicationList: []types.Application{
 					{
 						Address: addr1,
@@ -322,9 +298,7 @@ func TestGenesisState_Validate(t *testing.T) {
 		{
 			desc: "invalid - service ID with invalid characters",
 			genState: &types.GenesisState{
-				Params: types.Params{
-					MaxDelegatedGateways: 7,
-				},
+				Params: types.DefaultParams(),
 				ApplicationList: []types.Application{
 					{
 						Address: addr1,
@@ -350,6 +324,7 @@ func TestGenesisState_Validate(t *testing.T) {
 		{
 			desc: "duplicated application",
 			genState: &types.GenesisState{
+				Params: types.DefaultParams(),
 				ApplicationList: []types.Application{
 					{
 						Address:                   addr1,

@@ -1,7 +1,10 @@
 package suites
 
 import (
+	"os"
+	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
@@ -19,57 +22,10 @@ import (
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-// ParamType is a type alias for a module parameter type. It is the string that
-// is returned when calling reflect.Value#Type()#Name() on a module parameter.
-type ParamType = string
-
-const (
-	ParamTypeInt64   ParamType = "int64"
-	ParamTypeUint64  ParamType = "uint64"
-	ParamTypeFloat32 ParamType = "float32"
-	ParamTypeString  ParamType = "string"
-	ParamTypeBytes   ParamType = "uint8"
-	ParamTypeCoin    ParamType = "Coin"
-)
-
 const (
 	MsgUpdateParamsName = "MsgUpdateParams"
 	MsgUpdateParamName  = "MsgUpdateParam"
 )
-
-// ModuleParamConfig holds type information about a module's parameters update
-// message(s) along with default and valid non-default values and a query constructor
-// function for the module. It is used by ParamsSuite to construct and send
-// parameter update messages and assert on their results.
-type ModuleParamConfig struct {
-	ParamsMsgs ModuleParamsMessages
-	// ParamTypes is a map of parameter types to their respective MsgUpdateParam_As*
-	// types which satisfy the oneof for the MsgUpdateParam#AsType field. Each AsType
-	// type which the module supports should be included in this map.
-	ParamTypes map[ParamType]any
-	// ValidParams is a set of parameters which are expected to be valid when used
-	// together AND when used individually, where the reamining parameters are set
-	// to their default values.
-	ValidParams      any
-	DefaultParams    any
-	NewParamClientFn any
-}
-
-// ModuleParamsMessages holds a reference to each of the params-related message
-// types for a given module. The values are only used for their type information
-// which is obtained via reflection. The values are not used for their actual
-// message contents and MAY be the zero value.
-// If MsgUpdateParam is omitted (i.e. nil), ParamsSuite will assume that
-// this module does not support individual parameter updates (i.e. MsgUpdateParam).
-// In this case, MsgUpdateParamResponse SHOULD also be omitted.
-type ModuleParamsMessages struct {
-	MsgUpdateParams         any
-	MsgUpdateParamsResponse any
-	MsgUpdateParam          any
-	MsgUpdateParamResponse  any
-	QueryParamsRequest      any
-	QueryParamsResponse     any
-}
 
 var (
 	// MsgUpdateParamEnabledModuleNames is a list of module names which support
@@ -91,8 +47,14 @@ var (
 		tokenomicstypes.ModuleName: TokenomicsModuleParamConfig,
 	}
 
-	_ IntegrationSuite = (*ParamsSuite)(nil)
+	// paramConfigsPath is the path, relative to the project root, to the go file
+	// containing the ModuleParamConfig declaration. It is set in init() and is
+	// interpolated into error messages when a module's ModuleParamConfig seems
+	// misconfigured (e.g. missing expected values).
+	paramConfigsPath string
 )
+
+var _ IntegrationSuite = (*ParamsSuite)(nil)
 
 func init() {
 	for moduleName, moduleParamCfg := range ModuleParamConfigMap {
@@ -100,6 +62,13 @@ func init() {
 			MsgUpdateParamEnabledModuleNames = append(MsgUpdateParamEnabledModuleNames, moduleName)
 		}
 	}
+
+	// Take the package path of the ModuleParamConfig type and drop the github.com/<org>/<repo> prefix.
+	paramConfigsPkgPath := reflect.TypeOf(ModuleParamConfig{}).PkgPath()
+	paramConfigsPathParts := strings.Split(paramConfigsPkgPath, string(os.PathSeparator))
+	paramConfigsDir := filepath.Join(paramConfigsPathParts[3:]...)
+	// NB: The file name is not included in the package path and must be updated here if it changes.
+	paramConfigsPath = filepath.Join(paramConfigsDir, "param_configs.go")
 }
 
 // ParamsSuite is an integration test suite that provides helper functions for
@@ -141,21 +110,25 @@ func NewMsgUpdateParams(
 // from the integration app. It also assigns a new pre-generated identity to be used
 // as the AuthorizedAddr for the suite. It is expected to be called after s.NewApp()
 // as it depends on the integration app and its pre-generated account iterator.
-func (s *ParamsSuite) SetupTestAuthzAccounts() {
+func (s *ParamsSuite) SetupTestAuthzAccounts(t *testing.T) {
+	t.Helper()
+
 	// Set the authority, authorized, and unauthorized addresses.
 	s.AuthorityAddr = cosmostypes.MustAccAddressFromBech32(s.GetApp().GetAuthority())
 
 	nextAcct, ok := s.GetApp().GetPreGeneratedAccounts().Next()
-	require.True(s.T(), ok, "insufficient pre-generated accounts available")
+	require.True(t, ok, "insufficient pre-generated accounts available")
 	s.AuthorizedAddr = nextAcct.Address
 }
 
 // SetupTestAuthzGrants creates on-chain authz grants for the MsgUpdateUpdateParam and
 // MsgUpdateParams message for each module. It is expected to be called after s.NewApp()
 // as it depends on the authority and authorized addresses having been set.
-func (s *ParamsSuite) SetupTestAuthzGrants() {
+func (s *ParamsSuite) SetupTestAuthzGrants(t *testing.T) {
+	t.Helper()
+
 	// Create authz grants for all poktroll modules' MsgUpdateParams messages.
-	s.RunAuthzGrantMsgForPoktrollModules(s.T(),
+	s.RunAuthzGrantMsgForPoktrollModules(t,
 		s.AuthorityAddr,
 		s.AuthorizedAddr,
 		MsgUpdateParamsName,
@@ -163,7 +136,7 @@ func (s *ParamsSuite) SetupTestAuthzGrants() {
 	)
 
 	// Create authz grants for all poktroll modules' MsgUpdateParam messages.
-	s.RunAuthzGrantMsgForPoktrollModules(s.T(),
+	s.RunAuthzGrantMsgForPoktrollModules(t,
 		s.AuthorityAddr,
 		s.AuthorizedAddr,
 		MsgUpdateParamName,
@@ -262,7 +235,11 @@ func (s *ParamsSuite) RunUpdateParamAsSigner(
 
 	msgUpdateParamValue.Elem().FieldByName("Name").SetString(cases.ToSnakeCase(paramName))
 
-	msgAsTypeStruct := moduleCfg.ParamTypes[paramType]
+	msgAsTypeStruct, hasParamType := moduleCfg.ParamTypes[paramType]
+	require.Truef(t, hasParamType,
+		"module %q does not include param type %q in its ModuleParamConfig#ParamTypes; consider updating %s",
+		moduleName, paramType, paramConfigsPath,
+	)
 	msgAsTypeType := reflect.TypeOf(msgAsTypeStruct)
 	msgAsTypeValue := reflect.New(msgAsTypeType)
 	switch paramType {
