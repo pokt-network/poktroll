@@ -34,8 +34,8 @@ type RelayMiningIntegrationTestSuite struct {
 func (s *RelayMiningIntegrationTestSuite) SetupTest() {
 	// Construct a fresh integration app for each test.
 	s.NewApp(s.T())
-	s.SetupTestAuthzAccounts()
-	s.SetupTestAuthzGrants()
+	s.SetupTestAuthzAccounts(s.T())
+	s.SetupTestAuthzGrants(s.T())
 }
 
 func (s *RelayMiningIntegrationTestSuite) TestComputeNewDifficultyHash_RewardsReflectWorkCompleted() {

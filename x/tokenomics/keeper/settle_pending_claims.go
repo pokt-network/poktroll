@@ -222,6 +222,11 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 // If the proof window closes and a proof IS NOT required -> settle the claim.
 // If the proof window closes and a proof IS required -> only settle it if a proof is available.
 func (k Keeper) getExpiringClaims(ctx sdk.Context) (expiringClaims []prooftypes.Claim, err error) {
+	// TODO_IMPROVE(@bryanchriswhite):
+	//   1. Move height logic up to SettlePendingClaims.
+	//   2. Ensure that claims are only settled or expired on a session end height.
+	//     2a. This likely also requires adding validation to the shared module params.
+
 	blockHeight := ctx.BlockHeight()
 
 	// NB: This error can be safely ignored as on-chain SharedQueryClient implementation cannot return an error.
