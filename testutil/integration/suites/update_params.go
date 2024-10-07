@@ -241,7 +241,7 @@ func (s *ParamsSuite) RunUpdateParamAsSigner(
 	switch paramType {
 	case ParamTypeUint64:
 		// NB: MsgUpdateParam doesn't currently support uint64 param type.
-		msgAsTypeValue.Elem().FieldByName("AsInt64").SetInt(int64(paramReflectValue.Interface().(uint64)))
+		msgAsTypeValue.Elem().FieldByName("AsUint64").Set(paramReflectValue)
 	case ParamTypeInt64:
 		msgAsTypeValue.Elem().FieldByName("AsInt64").Set(paramReflectValue)
 	case ParamTypeFloat32:

@@ -34,32 +34,32 @@ func (k msgServer) UpdateParam(ctx context.Context, msg *types.MsgUpdateParam) (
 
 	switch msg.Name {
 	case types.ParamNumBlocksPerSession:
-		logger = logger.With("param_value", msg.GetAsInt64())
-		params.NumBlocksPerSession = uint64(msg.GetAsInt64())
+		logger = logger.With("param_value", msg.GetAsUint64())
+		params.NumBlocksPerSession = msg.GetAsUint64()
 	case types.ParamGracePeriodEndOffsetBlocks:
-		logger = logger.With("param_value", msg.GetAsInt64())
-		params.GracePeriodEndOffsetBlocks = uint64(msg.GetAsInt64())
+		logger = logger.With("param_value", msg.GetAsUint64())
+		params.GracePeriodEndOffsetBlocks = msg.GetAsUint64()
 	case types.ParamClaimWindowOpenOffsetBlocks:
-		logger = logger.With("param_value", msg.GetAsInt64())
-		params.ClaimWindowOpenOffsetBlocks = uint64(msg.GetAsInt64())
+		logger = logger.With("param_value", msg.GetAsUint64())
+		params.ClaimWindowOpenOffsetBlocks = msg.GetAsUint64()
 	case types.ParamClaimWindowCloseOffsetBlocks:
-		logger = logger.With("param_value", msg.GetAsInt64())
-		params.ClaimWindowCloseOffsetBlocks = uint64(msg.GetAsInt64())
+		logger = logger.With("param_value", msg.GetAsUint64())
+		params.ClaimWindowCloseOffsetBlocks = msg.GetAsUint64()
 	case types.ParamProofWindowOpenOffsetBlocks:
-		logger = logger.With("param_value", msg.GetAsInt64())
-		params.ProofWindowOpenOffsetBlocks = uint64(msg.GetAsInt64())
+		logger = logger.With("param_value", msg.GetAsUint64())
+		params.ProofWindowOpenOffsetBlocks = msg.GetAsUint64()
 	case types.ParamProofWindowCloseOffsetBlocks:
-		logger = logger.With("param_value", msg.GetAsInt64())
-		params.ProofWindowCloseOffsetBlocks = uint64(msg.GetAsInt64())
+		logger = logger.With("param_value", msg.GetAsUint64())
+		params.ProofWindowCloseOffsetBlocks = msg.GetAsUint64()
 	case types.ParamSupplierUnbondingPeriodSessions:
-		logger = logger.With("param_value", msg.GetAsInt64())
-		params.SupplierUnbondingPeriodSessions = uint64(msg.GetAsInt64())
+		logger = logger.With("param_value", msg.GetAsUint64())
+		params.SupplierUnbondingPeriodSessions = msg.GetAsUint64()
 	case types.ParamApplicationUnbondingPeriodSessions:
-		logger = logger.With("param_value", msg.GetAsInt64())
-		params.ApplicationUnbondingPeriodSessions = uint64(msg.GetAsInt64())
+		logger = logger.With("param_value", msg.GetAsUint64())
+		params.ApplicationUnbondingPeriodSessions = msg.GetAsUint64()
 	case types.ParamComputeUnitsToTokensMultiplier:
-		logger = logger.With("param_value", msg.GetAsInt64())
-		params.ComputeUnitsToTokensMultiplier = uint64(msg.GetAsInt64())
+		logger = logger.With("param_value", msg.GetAsUint64())
+		params.ComputeUnitsToTokensMultiplier = msg.GetAsUint64()
 	default:
 		return nil, status.Error(
 			codes.InvalidArgument,

@@ -20,7 +20,7 @@ func TestMsgUpdateParam_ValidateBasic(t *testing.T) {
 			msg: MsgUpdateParam{
 				Authority: "invalid_address",
 				Name:      "", // Doesn't matter for this test
-				AsType:    &MsgUpdateParam_AsInt64{AsInt64: 1},
+				AsType:    &MsgUpdateParam_AsFloat{AsFloat: 0},
 			},
 
 			expectedErr: ErrProofInvalidAddress,
@@ -29,7 +29,7 @@ func TestMsgUpdateParam_ValidateBasic(t *testing.T) {
 			msg: MsgUpdateParam{
 				Authority: sample.AccAddress(),
 				Name:      "WRONG_relay_difficulty_target_hash",
-				AsType:    &MsgUpdateParam_AsInt64{AsInt64: 1},
+				AsType:    &MsgUpdateParam_AsFloat{AsFloat: 0},
 			},
 
 			expectedErr: ErrProofParamNameInvalid,
@@ -38,7 +38,7 @@ func TestMsgUpdateParam_ValidateBasic(t *testing.T) {
 			msg: MsgUpdateParam{
 				Authority: sample.AccAddress(),
 				Name:      ParamRelayDifficultyTargetHash,
-				AsType:    &MsgUpdateParam_AsString{AsString: "invalid"},
+				AsType:    &MsgUpdateParam_AsFloat{AsFloat: 0},
 			},
 			expectedErr: ErrProofParamInvalid,
 		}, {

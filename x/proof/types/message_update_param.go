@@ -14,10 +14,6 @@ func NewMsgUpdateParam(authority string, name string, value any) (*MsgUpdatePara
 	var valueAsType isMsgUpdateParam_AsType
 
 	switch v := value.(type) {
-	case string:
-		valueAsType = &MsgUpdateParam_AsString{AsString: v}
-	case int64:
-		valueAsType = &MsgUpdateParam_AsInt64{AsInt64: v}
 	case []byte:
 		valueAsType = &MsgUpdateParam_AsBytes{AsBytes: v}
 	case *sdk.Coin:
