@@ -174,27 +174,28 @@ Prepare `x/examplemod/types/message_update_param.go` to handle message construct
 
 ```go
 - func NewMsgUpdateParam(authority string, name string, asType string) *MsgUpdateParam {
-+ func NewMsgUpdateParam(authority string, name string, asType any) *MsgUpdateParam {
++ func NewMsgUpdateParam(authority string, name string, asType any) (*MsgUpdateParam, error) {
 +   var asTypeIface isMsgUpdateParam_AsType
 +
 +   switch t := asType.(type) {
 +   default:
-+     panic(fmt.Sprintf("unexpected param value type: %T", asType))
++     return nil, ExamplemodParamInvalid.Wrapf("unexpected param value type: %T", asType)
 +   }
 +
     return &MsgUpdateParam{
       Authority: authority,
       Name: name,
 -     AsType: asType,
+-   }
 +     AsType: asTypeIface,
-    }
++   }, nil
   }
 
   func (msg *MsgUpdateParam) ValidateBasic() error {
     _, err := cosmostypes.AccAddressFromBech32(msg.Authority)
     if err != nil {
       return errorsmod.Wrapf(sdkerrors.ErrInvalidAddress, "invalid authority address (%s)", err)
-	}
+    }
 -
 -   return nil
 +
@@ -275,7 +276,7 @@ Prepare `x/examplemod/keeper/msg_server_update_param.go` to handle parameter upd
 
 #### 0.7 Update Module's Params Test Suite `ModuleParamConfig`
 
-Add `MsgUpdateParam` & `MsgUpdateParamResponse` to the module's `ModuleParamConfig#ParamsMsg`:
+Add `MsgUpdateParam` & `MsgUpdateParamResponse` to the module's `ModuleParamConfig#ParamsMsg` in `testutil/integration/suites/param_config.go`:
 
 ```go
   ExamplemodModuleParamConfig = ModuleParamConfig{
@@ -416,13 +417,13 @@ Include a call to `NewParamSetPair()`, passing the parameter's key, value pointe
 Add the parameter type and name (e.g. `ParamNameNewParameter`) to new cases in the switch statements in `NewMsgUpdateParam()` and `MsgUpdateParam#ValidateBasic()` in `x/examplemod/types/message_update_param.go`:
 
 ```go
-  func NewMsgUpdateParam(authority string, name string, asType any) *MsgUpdateParam {
+  func NewMsgUpdateParam(authority string, name string, asType any) (*MsgUpdateParam, error) {
     // ...
     switch t := asType.(type) {
 +   case int64:
 +     asTypeIface = &MsgUpdateParam_AsCoin{AsInt64: t}
     default:
-      panic(fmt.Sprintf("unexpected param value type: %T", asType))
+      return nil, ErrExamplemodParamInvalid.Wrapf("unexpected param value type: %T", asType))
     }
     // ...
   }
@@ -471,6 +472,9 @@ Every error return from `msgServer` methods (e.g. `#UpdateParams()`) **SHOULD** 
     ctx context.Context,
     msg *types.MsgUpdateParam,
   ) (*types.MsgUpdateParamResponse, error) {
+    if err := msg.ValidateBasic(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+    }
     // ...
     switch msg.Name {
 +   case types.ParamNewParameter:
@@ -481,6 +485,10 @@ Every error return from `msgServer` methods (e.g. `#UpdateParams()`) **SHOULD** 
         codes.InvalidArgument,
         suppliertypes.ErrSupplierParamInvalid.Wrapf("unsupported param %q", msg.Name).Error(),
       )
+    }
+    // ...
+    if err := params.Validate(); err != nil {
+      return nil, status.Error(codes.InvalidArgument, err.Error())
     }
     // ...
   }
@@ -593,7 +601,8 @@ Start with the following cases and add those which cover all invalid values for 
 -     name string
 +     desc string
       msg  MsgUpdateParam
-      err  error
+-     err  error
++     expectedErr  error
     }{
       {
 -       name: "invalid address",
@@ -603,7 +612,8 @@ Start with the following cases and add those which cover all invalid values for 
 +         Name: "",   // Doesn't matter for this test
 +         AsType:     &MsgUpdateParam_AsInt64{AsInt64: 0},
         },
-        err: sdkerrors.ErrInvalidAddress,
+-       err: sdkerrors.ErrInvalidAddress,
++       expectedErr: sdkerrors.ErrInvalidAddress,
 +     }, {
 +       desc: "invalid: param name incorrect (non-existent)",
 +       msg: MsgUpdateParam{
@@ -611,7 +621,7 @@ Start with the following cases and add those which cover all invalid values for 
 +         Name:      "non_existent",
 +         AsType:    &MsgUpdateParam_AsInt64{AsInt64: DefaultNewParameter},
 +       },
-+       err: ErrExamplemodParamInvalid,
++       expectedErr: ErrExamplemodParamInvalid,
       }, {
 -       name: "valid address",
 +       desc: "valid: correct address, param name, and type",
