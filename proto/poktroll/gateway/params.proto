@@ -13,5 +13,6 @@ message Params {
   option (amino.name) = "poktroll/x/gateway/Params";
   option (gogoproto.equal) = true;
 
+  // min_stake is the minimum amount of uPOKT that a gateway must stake.
   cosmos.base.v1beta1.Coin min_stake  = 1 [(gogoproto.jsontag) = "min_stake"];
 }
