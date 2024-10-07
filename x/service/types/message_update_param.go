@@ -1,8 +1,6 @@
 package types
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
@@ -10,20 +8,20 @@ var _ sdk.Msg = (*MsgUpdateParam)(nil)
 
 // NewMsgUpdateParam creates a new MsgUpdateParam instance for a single
 // governance parameter update.
-func NewMsgUpdateParam(authority string, name string, value any) (*MsgUpdateParam, error) {
-	var valueAsType isMsgUpdateParam_AsType
+func NewMsgUpdateParam(authority string, name string, asType any) (*MsgUpdateParam, error) {
+	var asTypeIface isMsgUpdateParam_AsType
 
-	switch v := value.(type) {
+	switch t := asType.(type) {
 	case *sdk.Coin:
-		valueAsType = &MsgUpdateParam_AsCoin{AsCoin: v}
+		asTypeIface = &MsgUpdateParam_AsCoin{AsCoin: t}
 	default:
-		return nil, fmt.Errorf("unexpected param value type: %T", value)
+		return nil, ErrServiceParamInvalid.Wrapf("unexpected param value type: %T", asType)
 	}
 
 	return &MsgUpdateParam{
 		Authority: authority,
 		Name:      name,
-		AsType:    valueAsType,
+		AsType:    asTypeIface,
 	}, nil
 }
 
@@ -36,17 +34,20 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 		return ErrServiceInvalidAddress.Wrapf("invalid authority address %s; (%v)", msg.Authority, err)
 	}
 
-	// Parameter value cannot be nil.
+	// Parameter value MUST NOT be nil.
 	if msg.AsType == nil {
 		return ErrServiceParamInvalid.Wrap("missing param AsType")
 	}
 
-	// Parameter name must be supported by this module.
+	// Parameter name MUST be supported by this module.
 	switch msg.Name {
 	case ParamAddServiceFee:
-		return msg.paramTypeIsCoin()
+		if err := msg.paramTypeIsCoin(); err != nil {
+			return err
+		}
+		return ValidateAddServiceFee(msg.GetAsCoin())
 	default:
-		return ErrServiceParamNameInvalid.Wrapf("unsupported param %q", msg.Name)
+		return ErrServiceParamInvalid.Wrapf("unsupported param %q", msg.Name)
 	}
 }
 

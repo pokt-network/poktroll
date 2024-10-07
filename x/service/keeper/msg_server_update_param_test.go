@@ -14,7 +14,7 @@ import (
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 )
 
-func TestMsgUpdateParam_UpdateAddServiceFee(t *testing.T) {
+func TestMsgUpdateParam_UpdateAddServiceFeeOnly(t *testing.T) {
 	expectedAddServiceFee := &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(1000000001)}
 
 	// Set the parameters to their default values
