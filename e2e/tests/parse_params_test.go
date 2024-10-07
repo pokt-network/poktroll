@@ -293,22 +293,6 @@ func (s *suite) newTokenomicsMsgUpdateParam(authority string, param paramAny) (m
 
 func (s *suite) newProofMsgUpdateParam(authority string, param paramAny) (msg proto.Message) {
 	switch param.typeStr {
-	case "string":
-		msg = proto.Message(&prooftypes.MsgUpdateParam{
-			Authority: authority,
-			Name:      param.name,
-			AsType: &prooftypes.MsgUpdateParam_AsString{
-				AsString: param.value.(string),
-			},
-		})
-	case "int64":
-		msg = proto.Message(&prooftypes.MsgUpdateParam{
-			Authority: authority,
-			Name:      param.name,
-			AsType: &prooftypes.MsgUpdateParam_AsInt64{
-				AsInt64: param.value.(int64),
-			},
-		})
 	case "bytes":
 		msg = proto.Message(&prooftypes.MsgUpdateParam{
 			Authority: authority,
@@ -350,12 +334,12 @@ func (s *suite) newSharedMsgUpdateParam(authority string, param paramAny) (msg p
 				AsString: param.value.(string),
 			},
 		})
-	case "int64":
+	case "uint64":
 		msg = proto.Message(&sharedtypes.MsgUpdateParam{
 			Authority: authority,
 			Name:      param.name,
-			AsType: &sharedtypes.MsgUpdateParam_AsInt64{
-				AsInt64: param.value.(int64),
+			AsType: &sharedtypes.MsgUpdateParam_AsUint64{
+				AsUint64: param.value.(uint64),
 			},
 		})
 	case "bytes":
