@@ -99,7 +99,10 @@ func (k msgServer) StakeApplication(ctx context.Context, msg *types.MsgStakeAppl
 	logger.Info(fmt.Sprintf("Successfully updated application stake for app: %+v", foundApp))
 
 	isSuccessful = true
-	return &types.MsgStakeApplicationResponse{}, nil
+
+	return &types.MsgStakeApplicationResponse{
+		Application: &foundApp,
+	}, nil
 }
 
 func (k msgServer) createApplication(

@@ -93,6 +93,14 @@ params_update_shared_proof_window_open_offset_blocks: ## Update the shared modul
 params_update_shared_proof_window_close_offset_blocks: ## Update the shared module proof_window_close_offset_blocks param
 	poktrolld tx authz exec ./tools/scripts/params/shared_proof_window_close_offset_blocks.json $(PARAM_FLAGS)
 
+.PHONY: params_update_shared_supplier_unbonding_period_sessions
+params_update_shared_supplier_unbonding_period_sessions: ## Update the shared module supplier_unbonding_period_sessions param
+	poktrolld tx authz exec ./tools/scripts/params/shared_supplier_unbonding_period_sessions.json $(PARAM_FLAGS)
+
+.PHONY: params_update_shared_application_unbonding_period_sessions
+params_update_shared_application_unbonding_period_sessions: ## Update the shared module application_unbonding_period_sessions param
+	poktrolld tx authz exec ./tools/scripts/params/shared_application_unbonding_period_sessions.json $(PARAM_FLAGS)
+
 .PHONY: params_update_shared_compute_units_to_tokens_multiplier
 params_update_shared_compute_units_to_tokens_multiplier: ## Update the shared module compute_units_to_tokens_multiplier param
 	poktrolld tx authz exec ./tools/scripts/params/shared_compute_units_to_tokens_multiplier.json $(PARAM_FLAGS)
