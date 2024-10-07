@@ -96,7 +96,8 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 		}
 		coinsToEscrow, err = (*msg.Stake).SafeSub(currSupplierStake)
 		if err != nil {
-			return nil, err
+			logger.Info(fmt.Sprintf("ERROR: %s", err))
+			return nil, status.Error(codes.Internal, err.Error())
 		}
 		logger.Info(fmt.Sprintf("Supplier is going to escrow an additional %+v coins", coinsToEscrow))
 
