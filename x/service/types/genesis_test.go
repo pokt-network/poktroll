@@ -79,7 +79,7 @@ func TestGenesisState_Validate(t *testing.T) {
 					*svc1, *svc2,
 				},
 			},
-			expectedErr: types.ErrServiceInvalidServiceFee,
+			expectedErr: types.ErrServiceParamInvalid,
 		},
 		// this line is used by starport scaffolding # types/genesis/testcase
 	}
