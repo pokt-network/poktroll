@@ -79,7 +79,7 @@ func prepareGovernanceParamsDocs(protoFilesRootDir string, template string) (str
 		protoFilesRootDir,
 		forEachMatchingFileWalkFn(
 			"params.proto",
-			newCollectParamsDescsFn(paramsFieldNodesByModule),
+			newCollectParamsFieldNodesFn(paramsFieldNodesByModule),
 		),
 	); pathWalkErr != nil {
 		logger.Error().Err(pathWalkErr)
@@ -121,7 +121,7 @@ func prepareGovernanceParamsDocs(protoFilesRootDir string, template string) (str
 	return template, nil
 }
 
-func newCollectParamsDescsFn(paramsFieldNodesByModule map[string][]*ast.FieldNode) func(protoFilePath string) {
+func newCollectParamsFieldNodesFn(paramsFieldNodesByModule map[string][]*ast.FieldNode) func(protoFilePath string) {
 	return func(protoFilePath string) {
 		logger.Debug().Str("protoFilePath", protoFilePath).Send()
 		protoFileNodes, parseErr := protoParser.ParseToAST(protoFilePath)
@@ -147,7 +147,6 @@ func newCollectParamsDescsFn(paramsFieldNodesByModule map[string][]*ast.FieldNod
 				if msgNode, ok := node.(*ast.MessageNode); ok {
 					// Filter out messages with names other than "Params".
 					if msgNode.Name.Val == "Params" {
-						// TODO_IN_THIS_COMMIT: factor out...
 						return true, func(node ast.Node) (bool, ast.VisitFunc) {
 							if fieldNode, ok := node.(*ast.FieldNode); ok {
 								moduleFieldNodes := append(paramsFieldNodesByModule[moduleName], fieldNode)
@@ -168,7 +167,6 @@ func main() {
 	// This is necessary because multiline strings in golang do not support embedded backticks.
 	template := fmt.Sprintf(paramsDocsTemplateStr, "```", "```")
 
-	// TODO_IN_THIS_COMMIT: register flagRootValue...
 	docs, err := prepareGovernanceParamsDocs(flagProtoRootPathValue, template)
 	if err != nil {
 		fmt.Println("Error preparing governance params docs:", err)
