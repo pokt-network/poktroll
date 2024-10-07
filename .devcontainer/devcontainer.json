@@ -12,7 +12,7 @@
 	// "forwardPorts": [],
 
 	// Use 'postCreateCommand' to run commands after the container is created.
-	"postCreateCommand": "go install \"github.com/golang/mock/mockgen@v1.6.0\""
+	"postCreateCommand": "go install \"go.uber.org/mock/mockgen@v0.4.0\""
 
 	// Configure tool-specific properties.
 	// "customizations": {},
