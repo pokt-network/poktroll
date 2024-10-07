@@ -54,7 +54,7 @@ func (k msgServer) UpdateParam(
 	}
 
 	if err := k.SetParams(ctx, params); err != nil {
-		k.logger.Info("ERROR: %s", err)
+		logger.Info("ERROR: %s", err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
