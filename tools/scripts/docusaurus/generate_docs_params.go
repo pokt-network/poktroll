@@ -1,12 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
+	"text/template"
 
 	"github.com/jhump/protoreflect/desc/protoparse"
 	"github.com/jhump/protoreflect/desc/protoparse/ast"
@@ -15,27 +17,23 @@ import (
 	_ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 )
 
-type ProtoField struct {
-	Name        string
-	Type        string
-	Tag         string
-	Options     string
-	Description string
-}
-
-type ProtoMessage struct {
-	Name   string
-	Fields []ProtoField
+// paramField is used to hold param message field information for interpolation
+// into the param_field_row_template.md template.
+type paramField struct {
+	Module  string
+	Name    string
+	Type    string
+	Comment string
 }
 
 const (
-	destinationFile = "docusaurus/docs/protocol/governance/params.md"
-	tableRowFmt     = "| `%-10s` | `%-10s` | `%-10s` | %-7s |\n"
+	paramsDocTemplatePath     = "./tools/scripts/docusaurus/params_doc_template.md"
+	paramFieldRowTemplatePath = "./tools/scripts/docusaurus/param_field_row_template.md"
+	destinationPath           = "docusaurus/docs/protocol/governance/params.md"
 )
 
 var (
-	paramsDocsTemplateStr string
-	protoParser           = protoparse.Parser{
+	protoParser = protoparse.Parser{
 		IncludeSourceCodeInfo: true,
 	}
 	logger = polylog.DefaultContextLogger
@@ -46,33 +44,40 @@ var (
 func init() {
 	flag.StringVar(&flagProtoRootPathValue, "proto-root", "./proto", "path to the proto files root directory; this directory will be walked, looking for Params.proto files")
 	flag.Parse()
+}
 
-	paramsTempalteFile, err := os.ReadFile("./tools/scripts/docusaurus/params_template.md")
+func main() {
+	// Parse templates.
+	templs, err := template.ParseFiles(paramsDocTemplatePath, paramFieldRowTemplatePath)
 	if err != nil {
-		polylog.DefaultContextLogger.Error().Err(err).Send()
+		logger.Error().Err(err).Msgf("Unable to parse template path %q", paramsDocTemplatePath)
 		os.Exit(1)
 	}
-	paramsDocsTemplateStr = string(paramsTempalteFile) + "\n"
-}
 
-// writeContentToFile writes the given content to the specified file.
-func writeContentToFile(file_path, content string) error {
-	file, err := os.Create(file_path)
+	// Interpolate templates.
+	docs, err := prepareGovernanceParamsDocs(flagProtoRootPathValue, templs)
 	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	// Write the string to the file
-	_, err = file.WriteString(content)
-	if err != nil {
-		return err
+		logger.Error().Err(err).Msg("Error preparing governance params docs")
+		os.Exit(1)
 	}
 
-	return nil
+	// Write output to destination.
+	err = writeContentToFile(destinationPath, docs)
+	if err != nil {
+		logger.Error().Err(err).Msg("Error writing content to file")
+		os.Exit(1)
+	}
+
 }
 
-func prepareGovernanceParamsDocs(protoFilesRootDir string, template string) (string, error) {
+// prapareGovernanceParamsDocs recursively walks the filesystem starting from
+// protoFilesRootDir, looking for files names matching "params.proto". For each
+// matching proto file, the fields on any "Params" message types are discovered.
+// All discovered param fields are interpolated into the templates provided by
+// templs and the final output is returned.
+func prepareGovernanceParamsDocs(protoFilesRootDir string, templs *template.Template) (string, error) {
+	paramsDocOutputBuf := new(bytes.Buffer)
+	paramFieldRowsOutputBuf := new(bytes.Buffer)
 	paramsFieldNodesByModule := make(map[string][]*ast.FieldNode)
 
 	if pathWalkErr := filepath.Walk(
@@ -98,21 +103,68 @@ func prepareGovernanceParamsDocs(protoFilesRootDir string, template string) (str
 
 				comment += fmt.Sprintf(commentFmt, strings.Trim(commentLine.Text, " /"))
 			}
-			logger.Info().Str("comment", comment).Send()
 
 			// Extract the field's type information.
-			fieldType := fieldNode.FldType.AsIdentifier()
-
-			template += fmt.Sprintf(tableRowFmt, moduleName, fieldType, fieldNode.Name.Val, comment)
+			paramField := paramField{
+				Module:  moduleName,
+				Name:    fieldNode.Name.Val,
+				Type:    string(fieldNode.FldType.AsIdentifier()),
+				Comment: comment,
+			}
+			_, paramFieldRowTemplateFileName := filepath.Split(paramFieldRowTemplatePath)
+			if err := templs.ExecuteTemplate(paramFieldRowsOutputBuf, paramFieldRowTemplateFileName, paramField); err != nil {
+				return "", err
+			}
 		}
 	}
 
-	return template, nil
+	_, paramsDocTemplateFileName := filepath.Split(paramsDocTemplatePath)
+	if err := templs.ExecuteTemplate(
+		paramsDocOutputBuf,
+		paramsDocTemplateFileName,
+		paramFieldRowsOutputBuf.String(),
+	); err != nil {
+		return "", err
+	}
+
+	return paramsDocOutputBuf.String(), nil
 }
 
+// forEachMatchingFileWalkFn returns a filepath.WalkFunc which does the following:
+// 1. Iterates over files matching fileNamePattern against each file name.
+// 2. For matching files, it calls fileMatchedFn with the respective path.
+func forEachMatchingFileWalkFn(
+	fileNamePattern string,
+	fileMatchedFn func(path string),
+) filepath.WalkFunc {
+	return func(path string, info fs.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// Ignore directories
+		if info.IsDir() {
+			return nil
+		}
+
+		matched, matchErr := filepath.Match(fileNamePattern, info.Name())
+		if matchErr != nil {
+			return matchErr
+		}
+
+		if matched {
+			fileMatchedFn(path)
+		}
+		return nil
+	}
+}
+
+// newCollectParamsFieldNodesFn returns a function which receives a proto file path
+// that walks its AST to discover all fields (*ast.fieldNode) which are present on
+// a "Params" message, if present. Discovered fields are appended to the []*ast.fieldNode
+// in paramsFieldNodesByModule for the corresponding module name key.
 func newCollectParamsFieldNodesFn(paramsFieldNodesByModule map[string][]*ast.FieldNode) func(protoFilePath string) {
 	return func(protoFilePath string) {
-		logger.Debug().Str("protoFilePath", protoFilePath).Send()
 		protoFileNodes, parseErr := protoParser.ParseToAST(protoFilePath)
 		if parseErr != nil {
 			logger.Error().Err(parseErr).Msgf("Unable to parse proto file: %q", protoFilePath)
@@ -152,49 +204,19 @@ func newCollectParamsFieldNodesFn(paramsFieldNodesByModule map[string][]*ast.Fie
 	}
 }
 
-func main() {
-	// This is necessary because multiline strings in golang do not support embedded backticks.
-	template := fmt.Sprintf(paramsDocsTemplateStr, "```", "```")
-
-	docs, err := prepareGovernanceParamsDocs(flagProtoRootPathValue, template)
+// writeContentToFile writes the given content to the specified file.
+func writeContentToFile(file_path, content string) error {
+	file, err := os.Create(file_path)
 	if err != nil {
-		fmt.Println("Error preparing governance params docs:", err)
-		return
+		return err
 	}
+	defer file.Close()
 
-	err = writeContentToFile(destinationFile, docs)
+	// Write the string to the file
+	_, err = file.WriteString(content)
 	if err != nil {
-		fmt.Println("Error writing content to file:", err)
-		return
+		return err
 	}
 
-}
-
-// forEachMatchingFileWalkFn returns a filepath.WalkFunc which does the following:
-// 1. Iterates over files matching fileNamePattern against each file name.
-// 2. For matching files, it calls fileMatchedFn with the respective path.
-func forEachMatchingFileWalkFn(
-	fileNamePattern string,
-	fileMatchedFn func(path string),
-) filepath.WalkFunc {
-	return func(path string, info fs.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-
-		// Ignore directories
-		if info.IsDir() {
-			return nil
-		}
-
-		matched, matchErr := filepath.Match(fileNamePattern, info.Name())
-		if matchErr != nil {
-			return matchErr
-		}
-
-		if matched {
-			fileMatchedFn(path)
-		}
-		return nil
-	}
+	return nil
 }
