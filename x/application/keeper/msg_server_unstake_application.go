@@ -61,6 +61,15 @@ func (k msgServer) UnstakeApplication(
 	foundApp.UnstakeSessionEndHeight = uint64(shared.GetSessionEndHeight(&sharedParams, currentHeight))
 	k.SetApplication(ctx, foundApp)
 
+	sdkCtx = sdk.UnwrapSDKContext(ctx)
+	unbondingBeginEvent := &types.EventApplicationUnbondingBegin{
+		AppAddress: foundApp.GetAddress(),
+	}
+	if err := sdkCtx.EventManager().EmitTypedEvent(unbondingBeginEvent); err != nil {
+		err = types.ErrAppEmitEvent.Wrapf("(%+v): %s", unbondingBeginEvent, err)
+		logger.Error(err.Error())
+	}
+
 	isSuccessful = true
 	return &types.MsgUnstakeApplicationResponse{}, nil
 }

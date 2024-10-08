@@ -60,3 +60,11 @@ message EventTransferError {
   poktroll.application.Application source_application = 3;
   string error = 4;
 }
+
+message EventApplicationUnbondingBegin {
+  string app_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+}
+
+message EventApplicationUnbondingEnd {
+  string app_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+}

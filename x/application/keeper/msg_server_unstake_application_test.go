@@ -53,10 +53,28 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 	_, isAppFound = applicationModuleKeepers.GetApplication(ctx, nonUnstakingAppAddr)
 	require.True(t, isAppFound)
 
+	// Reset the events, as if a new block were created.
+	ctx = resetEvents(ctx)
+
 	// Unstake the application
 	unstakeMsg := &types.MsgUnstakeApplication{Address: unstakingAppAddr}
 	_, err = srv.UnstakeApplication(ctx, unstakeMsg)
 	require.NoError(t, err)
+
+	// Assert that the EventApplicationStaked event is emitted.
+	expectedEvent, err := sdk.TypedEventToEvent(
+		&types.EventApplicationUnbondingBegin{
+			AppAddress: unstakeMsg.GetAddress(),
+		},
+	)
+	require.NoError(t, err)
+
+	events := sdk.UnwrapSDKContext(ctx).EventManager().Events()
+	require.Equalf(t, 1, len(events), "expected exactly 1 event")
+	require.EqualValues(t, expectedEvent, events[0])
+
+	// Reset the events, as if a new block were created.
+	ctx = resetEvents(ctx)
 
 	// Make sure the application entered the unbonding period
 	foundApp, isAppFound = applicationModuleKeepers.GetApplication(ctx, unstakingAppAddr)
@@ -70,6 +88,21 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 	// Run the endblocker to unbond applications
 	err = applicationModuleKeepers.EndBlockerUnbondApplications(ctx)
 	require.NoError(t, err)
+
+	// Assert that the EventApplicationStaked event is emitted.
+	expectedEvent, err = sdk.TypedEventToEvent(
+		&types.EventApplicationUnbondingEnd{
+			AppAddress: foundApp.GetAddress(),
+		},
+	)
+	require.NoError(t, err)
+
+	events = sdk.UnwrapSDKContext(ctx).EventManager().Events()
+	require.Equalf(t, 1, len(events), "expected exactly 1 event")
+	require.EqualValues(t, expectedEvent, events[0])
+
+	// Reset the events, as if a new block were created.
+	ctx = resetEvents(ctx)
 
 	// Make sure the unstaking application is removed from the applications list when
 	// the unbonding period is over.

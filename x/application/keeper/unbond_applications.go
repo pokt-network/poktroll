@@ -63,6 +63,15 @@ func (k Keeper) EndBlockerUnbondApplications(ctx context.Context) error {
 		// Update the Application in the store
 		k.RemoveApplication(ctx, applicationAccAddress.String())
 		logger.Info(fmt.Sprintf("Successfully removed the application: %+v", application))
+
+		sdkCtx = sdk.UnwrapSDKContext(ctx)
+		unbondingBeginEvent := &types.EventApplicationUnbondingEnd{
+			AppAddress: application.GetAddress(),
+		}
+		if err := sdkCtx.EventManager().EmitTypedEvent(unbondingBeginEvent); err != nil {
+			err = types.ErrAppEmitEvent.Wrapf("(%+v): %s", unbondingBeginEvent, err)
+			logger.Error(err.Error())
+		}
 	}
 
 	return nil
