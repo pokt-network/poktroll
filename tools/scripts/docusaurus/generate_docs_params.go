@@ -101,18 +101,7 @@ func prepareGovernanceParamsDocs(protoFilesRootDir string, template string) (str
 			logger.Info().Str("comment", comment).Send()
 
 			// Extract the field's type information.
-			var fieldType string
-			ast.Walk(fieldNode, func(n ast.Node) (bool, ast.VisitFunc) {
-				switch node := n.(type) {
-				case *ast.IdentNode:
-					fieldType = node.Val
-					return false, nil
-				case *ast.CompoundIdentNode:
-					fieldType = node.Val
-					return false, nil
-				}
-				return true, nil
-			})
+			fieldType := fieldNode.FldType.AsIdentifier()
 
 			template += fmt.Sprintf(tableRowFmt, moduleName, fieldType, fieldNode.Name.Val, comment)
 		}
