@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"context"
 	"testing"
 
 	"cosmossdk.io/math"
@@ -35,8 +36,31 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	}
 
 	// Stake the application
-	_, err := srv.StakeApplication(ctx, stakeMsg)
+	stakeAppRes, err := srv.StakeApplication(ctx, stakeMsg)
 	require.NoError(t, err)
+
+	// Assert that the response contains the staked application.
+	app := stakeAppRes.GetApplication()
+	require.Equal(t, stakeMsg.GetAddress(), app.GetAddress())
+	require.Equal(t, stakeMsg.GetStake(), app.GetStake())
+	require.Equal(t, stakeMsg.GetServices(), app.GetServiceConfigs())
+
+	// Assert that the EventApplicationStaked event is emitted.
+	expectedEvent, err := sdk.TypedEventToEvent(
+		&types.EventApplicationStaked{
+			AppAddress: stakeMsg.GetAddress(),
+			Stake:      stakeMsg.GetStake(),
+			Services:   stakeMsg.GetServices(),
+		},
+	)
+	require.NoError(t, err)
+
+	events := sdk.UnwrapSDKContext(ctx).EventManager().Events()
+	require.Equalf(t, 1, len(events), "expected exactly 1 event")
+	require.EqualValues(t, expectedEvent, events[0])
+
+	// Reset the events, as if a new block were created.
+	ctx = resetEvents(ctx)
 
 	// Verify that the application exists
 	foundApp, isAppFound := k.GetApplication(ctx, appAddr)
@@ -65,6 +89,23 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.Len(t, foundApp.ServiceConfigs, 2)
 	require.Equal(t, "svc1", foundApp.ServiceConfigs[0].ServiceId)
 	require.Equal(t, "svc2", foundApp.ServiceConfigs[1].ServiceId)
+
+	// Assert that the EventApplicationStaked event is emitted.
+	expectedEvent, err = sdk.TypedEventToEvent(
+		&types.EventApplicationUpStaked{
+			AppAddress: updateStakeMsg.GetAddress(),
+			Stake:      updateStakeMsg.GetStake(),
+			Services:   updateStakeMsg.GetServices(),
+		},
+	)
+	require.NoError(t, err)
+
+	events = sdk.UnwrapSDKContext(ctx).EventManager().Events()
+	require.Equalf(t, 1, len(events), "expected exactly 1 event")
+	require.EqualValues(t, expectedEvent, events[0])
+
+	// Reset the events, as if a new block were created.
+	ctx = resetEvents(ctx)
 }
 
 func TestMsgServer_StakeApplication_FailRestakingDueToInvalidServices(t *testing.T) {
@@ -162,4 +203,10 @@ func TestMsgServer_StakeApplication_FailLoweringStake(t *testing.T) {
 	foundApp, isAppFound := k.GetApplication(ctx, appAddr)
 	require.True(t, isAppFound)
 	require.Equal(t, int64(100), foundApp.Stake.Amount.Int64())
+}
+
+// resetEvents re-initializes the cosmos event manager in the context such that
+// prior event emissions are erased.
+func resetEvents(ctx context.Context) context.Context {
+	return sdk.UnwrapSDKContext(ctx).WithEventManager(sdk.NewEventManager())
 }
