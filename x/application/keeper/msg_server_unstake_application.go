@@ -68,6 +68,7 @@ func (k msgServer) UnstakeApplication(
 	if err := sdkCtx.EventManager().EmitTypedEvent(unbondingBeginEvent); err != nil {
 		err = types.ErrAppEmitEvent.Wrapf("(%+v): %s", unbondingBeginEvent, err)
 		logger.Error(err.Error())
+		return nil, err
 	}
 
 	isSuccessful = true
