@@ -40,7 +40,6 @@ require (
 	github.com/cosmos/ibc-go/v8 v8.2.0
 	github.com/go-kit/kit v0.13.0
 	github.com/gogo/status v1.1.0
-	github.com/golang/mock v1.6.0
 	github.com/golang/protobuf v1.5.4
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.5.3
@@ -82,6 +81,7 @@ require (
 require (
 	cosmossdk.io/x/tx v0.13.5
 	github.com/jhump/protoreflect v1.16.0
+	go.uber.org/mock v0.4.0
 )
 
 require (
@@ -178,6 +178,7 @@ require (
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/glog v1.2.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
+	github.com/golang/mock v1.6.0 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/btree v1.1.2 // indirect
 	github.com/google/cel-go v0.20.1 // indirect
