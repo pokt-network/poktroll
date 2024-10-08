@@ -13,4 +13,8 @@ import (
 	_ "golang.org/x/tools/cmd/goimports"
 	_ "google.golang.org/grpc/cmd/protoc-gen-go-grpc"
 	_ "google.golang.org/protobuf/cmd/protoc-gen-go"
+
+	// Fix for: cannot find module providing package go.uber.org/mock/mockgen/model: import lookup disabled by -mod=vendor
+	// More info: https://github.com/uber-go/mock/issues/83#issuecomment-1931054917
+	_ "go.uber.org/mock/mockgen/model"
 )

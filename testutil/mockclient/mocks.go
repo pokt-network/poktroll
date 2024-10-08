@@ -1,11 +1,5 @@
 package mockclient
 
-import (
-	// Fix for: cannot find module providing package go.uber.org/mock/mockgen/model: import lookup disabled by -mod=vendor
-	// More info: https://github.com/uber-go/mock/issues/83#issuecomment-1931054917
-	_ "go.uber.org/mock/mockgen/model"
-)
-
 // This file is in place to declare the package for dynamically generated structs.
 //
 // Note that this does not follow the Cosmos SDK pattern of committing Mocks to main.
