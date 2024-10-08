@@ -79,19 +79,12 @@ func (k msgServer) StakeApplication(ctx context.Context, msg *types.MsgStakeAppl
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	var event sdk.Msg
-	if isAppFound {
-		event = &types.EventApplicationUpStaked{
-			AppAddress: foundApp.GetAddress(),
-			Stake:      foundApp.Stake,
-			Services:   foundApp.ServiceConfigs,
-		}
-	} else {
-		event = &types.EventApplicationStaked{
-			AppAddress: foundApp.GetAddress(),
-			Stake:      foundApp.Stake,
-			Services:   foundApp.ServiceConfigs,
-		}
+	event = &types.EventApplicationStaked{
+		AppAddress: foundApp.GetAddress(),
+		Stake:      foundApp.Stake,
+		Services:   foundApp.ServiceConfigs,
 	}
+
 	if err := sdkCtx.EventManager().EmitTypedEvent(event); err != nil {
 		err = types.ErrAppEmitEvent.Wrapf("(%+v): %s", event, err)
 		logger.Error(err.Error())

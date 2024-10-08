@@ -653,643 +653,6 @@ func (x *fastReflection_EventApplicationStaked) ProtoMethods() *protoiface.Metho
 	}
 }
 
-var _ protoreflect.List = (*_EventApplicationUpStaked_3_list)(nil)
-
-type _EventApplicationUpStaked_3_list struct {
-	list *[]*shared.ApplicationServiceConfig
-}
-
-func (x *_EventApplicationUpStaked_3_list) Len() int {
-	if x.list == nil {
-		return 0
-	}
-	return len(*x.list)
-}
-
-func (x *_EventApplicationUpStaked_3_list) Get(i int) protoreflect.Value {
-	return protoreflect.ValueOfMessage((*x.list)[i].ProtoReflect())
-}
-
-func (x *_EventApplicationUpStaked_3_list) Set(i int, value protoreflect.Value) {
-	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*shared.ApplicationServiceConfig)
-	(*x.list)[i] = concreteValue
-}
-
-func (x *_EventApplicationUpStaked_3_list) Append(value protoreflect.Value) {
-	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*shared.ApplicationServiceConfig)
-	*x.list = append(*x.list, concreteValue)
-}
-
-func (x *_EventApplicationUpStaked_3_list) AppendMutable() protoreflect.Value {
-	v := new(shared.ApplicationServiceConfig)
-	*x.list = append(*x.list, v)
-	return protoreflect.ValueOfMessage(v.ProtoReflect())
-}
-
-func (x *_EventApplicationUpStaked_3_list) Truncate(n int) {
-	for i := n; i < len(*x.list); i++ {
-		(*x.list)[i] = nil
-	}
-	*x.list = (*x.list)[:n]
-}
-
-func (x *_EventApplicationUpStaked_3_list) NewElement() protoreflect.Value {
-	v := new(shared.ApplicationServiceConfig)
-	return protoreflect.ValueOfMessage(v.ProtoReflect())
-}
-
-func (x *_EventApplicationUpStaked_3_list) IsValid() bool {
-	return x.list != nil
-}
-
-var (
-	md_EventApplicationUpStaked             protoreflect.MessageDescriptor
-	fd_EventApplicationUpStaked_app_address protoreflect.FieldDescriptor
-	fd_EventApplicationUpStaked_stake       protoreflect.FieldDescriptor
-	fd_EventApplicationUpStaked_services    protoreflect.FieldDescriptor
-)
-
-func init() {
-	file_poktroll_application_event_proto_init()
-	md_EventApplicationUpStaked = File_poktroll_application_event_proto.Messages().ByName("EventApplicationUpStaked")
-	fd_EventApplicationUpStaked_app_address = md_EventApplicationUpStaked.Fields().ByName("app_address")
-	fd_EventApplicationUpStaked_stake = md_EventApplicationUpStaked.Fields().ByName("stake")
-	fd_EventApplicationUpStaked_services = md_EventApplicationUpStaked.Fields().ByName("services")
-}
-
-var _ protoreflect.Message = (*fastReflection_EventApplicationUpStaked)(nil)
-
-type fastReflection_EventApplicationUpStaked EventApplicationUpStaked
-
-func (x *EventApplicationUpStaked) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_EventApplicationUpStaked)(x)
-}
-
-func (x *EventApplicationUpStaked) slowProtoReflect() protoreflect.Message {
-	mi := &file_poktroll_application_event_proto_msgTypes[1]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-var _fastReflection_EventApplicationUpStaked_messageType fastReflection_EventApplicationUpStaked_messageType
-var _ protoreflect.MessageType = fastReflection_EventApplicationUpStaked_messageType{}
-
-type fastReflection_EventApplicationUpStaked_messageType struct{}
-
-func (x fastReflection_EventApplicationUpStaked_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_EventApplicationUpStaked)(nil)
-}
-func (x fastReflection_EventApplicationUpStaked_messageType) New() protoreflect.Message {
-	return new(fastReflection_EventApplicationUpStaked)
-}
-func (x fastReflection_EventApplicationUpStaked_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_EventApplicationUpStaked
-}
-
-// Descriptor returns message descriptor, which contains only the protobuf
-// type information for the message.
-func (x *fastReflection_EventApplicationUpStaked) Descriptor() protoreflect.MessageDescriptor {
-	return md_EventApplicationUpStaked
-}
-
-// Type returns the message type, which encapsulates both Go and protobuf
-// type information. If the Go type information is not needed,
-// it is recommended that the message descriptor be used instead.
-func (x *fastReflection_EventApplicationUpStaked) Type() protoreflect.MessageType {
-	return _fastReflection_EventApplicationUpStaked_messageType
-}
-
-// New returns a newly allocated and mutable empty message.
-func (x *fastReflection_EventApplicationUpStaked) New() protoreflect.Message {
-	return new(fastReflection_EventApplicationUpStaked)
-}
-
-// Interface unwraps the message reflection interface and
-// returns the underlying ProtoMessage interface.
-func (x *fastReflection_EventApplicationUpStaked) Interface() protoreflect.ProtoMessage {
-	return (*EventApplicationUpStaked)(x)
-}
-
-// Range iterates over every populated field in an undefined order,
-// calling f for each field descriptor and value encountered.
-// Range returns immediately if f returns false.
-// While iterating, mutating operations may only be performed
-// on the current field descriptor.
-func (x *fastReflection_EventApplicationUpStaked) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.AppAddress != "" {
-		value := protoreflect.ValueOfString(x.AppAddress)
-		if !f(fd_EventApplicationUpStaked_app_address, value) {
-			return
-		}
-	}
-	if x.Stake != nil {
-		value := protoreflect.ValueOfMessage(x.Stake.ProtoReflect())
-		if !f(fd_EventApplicationUpStaked_stake, value) {
-			return
-		}
-	}
-	if len(x.Services) != 0 {
-		value := protoreflect.ValueOfList(&_EventApplicationUpStaked_3_list{list: &x.Services})
-		if !f(fd_EventApplicationUpStaked_services, value) {
-			return
-		}
-	}
-}
-
-// Has reports whether a field is populated.
-//
-// Some fields have the property of nullability where it is possible to
-// distinguish between the default value of a field and whether the field
-// was explicitly populated with the default value. Singular message fields,
-// member fields of a oneof, and proto2 scalar fields are nullable. Such
-// fields are populated only if explicitly set.
-//
-// In other cases (aside from the nullable cases above),
-// a proto3 scalar field is populated if it contains a non-zero value, and
-// a repeated field is populated if it is non-empty.
-func (x *fastReflection_EventApplicationUpStaked) Has(fd protoreflect.FieldDescriptor) bool {
-	switch fd.FullName() {
-	case "poktroll.application.EventApplicationUpStaked.app_address":
-		return x.AppAddress != ""
-	case "poktroll.application.EventApplicationUpStaked.stake":
-		return x.Stake != nil
-	case "poktroll.application.EventApplicationUpStaked.services":
-		return len(x.Services) != 0
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationUpStaked"))
-		}
-		panic(fmt.Errorf("message poktroll.application.EventApplicationUpStaked does not contain field %s", fd.FullName()))
-	}
-}
-
-// Clear clears the field such that a subsequent Has call reports false.
-//
-// Clearing an extension field clears both the extension type and value
-// associated with the given field number.
-//
-// Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EventApplicationUpStaked) Clear(fd protoreflect.FieldDescriptor) {
-	switch fd.FullName() {
-	case "poktroll.application.EventApplicationUpStaked.app_address":
-		x.AppAddress = ""
-	case "poktroll.application.EventApplicationUpStaked.stake":
-		x.Stake = nil
-	case "poktroll.application.EventApplicationUpStaked.services":
-		x.Services = nil
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationUpStaked"))
-		}
-		panic(fmt.Errorf("message poktroll.application.EventApplicationUpStaked does not contain field %s", fd.FullName()))
-	}
-}
-
-// Get retrieves the value for a field.
-//
-// For unpopulated scalars, it returns the default value, where
-// the default value of a bytes scalar is guaranteed to be a copy.
-// For unpopulated composite types, it returns an empty, read-only view
-// of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_EventApplicationUpStaked) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
-	switch descriptor.FullName() {
-	case "poktroll.application.EventApplicationUpStaked.app_address":
-		value := x.AppAddress
-		return protoreflect.ValueOfString(value)
-	case "poktroll.application.EventApplicationUpStaked.stake":
-		value := x.Stake
-		return protoreflect.ValueOfMessage(value.ProtoReflect())
-	case "poktroll.application.EventApplicationUpStaked.services":
-		if len(x.Services) == 0 {
-			return protoreflect.ValueOfList(&_EventApplicationUpStaked_3_list{})
-		}
-		listValue := &_EventApplicationUpStaked_3_list{list: &x.Services}
-		return protoreflect.ValueOfList(listValue)
-	default:
-		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationUpStaked"))
-		}
-		panic(fmt.Errorf("message poktroll.application.EventApplicationUpStaked does not contain field %s", descriptor.FullName()))
-	}
-}
-
-// Set stores the value for a field.
-//
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType.
-// When setting a composite type, it is unspecified whether the stored value
-// aliases the source's memory in any way. If the composite value is an
-// empty, read-only value, then it panics.
-//
-// Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EventApplicationUpStaked) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
-	switch fd.FullName() {
-	case "poktroll.application.EventApplicationUpStaked.app_address":
-		x.AppAddress = value.Interface().(string)
-	case "poktroll.application.EventApplicationUpStaked.stake":
-		x.Stake = value.Message().Interface().(*v1beta1.Coin)
-	case "poktroll.application.EventApplicationUpStaked.services":
-		lv := value.List()
-		clv := lv.(*_EventApplicationUpStaked_3_list)
-		x.Services = *clv.list
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationUpStaked"))
-		}
-		panic(fmt.Errorf("message poktroll.application.EventApplicationUpStaked does not contain field %s", fd.FullName()))
-	}
-}
-
-// Mutable returns a mutable reference to a composite type.
-//
-// If the field is unpopulated, it may allocate a composite value.
-// For a field belonging to a oneof, it implicitly clears any other field
-// that may be currently set within the same oneof.
-// For extension fields, it implicitly stores the provided ExtensionType
-// if not already stored.
-// It panics if the field does not contain a composite type.
-//
-// Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EventApplicationUpStaked) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	case "poktroll.application.EventApplicationUpStaked.stake":
-		if x.Stake == nil {
-			x.Stake = new(v1beta1.Coin)
-		}
-		return protoreflect.ValueOfMessage(x.Stake.ProtoReflect())
-	case "poktroll.application.EventApplicationUpStaked.services":
-		if x.Services == nil {
-			x.Services = []*shared.ApplicationServiceConfig{}
-		}
-		value := &_EventApplicationUpStaked_3_list{list: &x.Services}
-		return protoreflect.ValueOfList(value)
-	case "poktroll.application.EventApplicationUpStaked.app_address":
-		panic(fmt.Errorf("field app_address of message poktroll.application.EventApplicationUpStaked is not mutable"))
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationUpStaked"))
-		}
-		panic(fmt.Errorf("message poktroll.application.EventApplicationUpStaked does not contain field %s", fd.FullName()))
-	}
-}
-
-// NewField returns a new value that is assignable to the field
-// for the given descriptor. For scalars, this returns the default value.
-// For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_EventApplicationUpStaked) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
-	switch fd.FullName() {
-	case "poktroll.application.EventApplicationUpStaked.app_address":
-		return protoreflect.ValueOfString("")
-	case "poktroll.application.EventApplicationUpStaked.stake":
-		m := new(v1beta1.Coin)
-		return protoreflect.ValueOfMessage(m.ProtoReflect())
-	case "poktroll.application.EventApplicationUpStaked.services":
-		list := []*shared.ApplicationServiceConfig{}
-		return protoreflect.ValueOfList(&_EventApplicationUpStaked_3_list{list: &list})
-	default:
-		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationUpStaked"))
-		}
-		panic(fmt.Errorf("message poktroll.application.EventApplicationUpStaked does not contain field %s", fd.FullName()))
-	}
-}
-
-// WhichOneof reports which field within the oneof is populated,
-// returning nil if none are populated.
-// It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_EventApplicationUpStaked) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
-	switch d.FullName() {
-	default:
-		panic(fmt.Errorf("%s is not a oneof field in poktroll.application.EventApplicationUpStaked", d.FullName()))
-	}
-	panic("unreachable")
-}
-
-// GetUnknown retrieves the entire list of unknown fields.
-// The caller may only mutate the contents of the RawFields
-// if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_EventApplicationUpStaked) GetUnknown() protoreflect.RawFields {
-	return x.unknownFields
-}
-
-// SetUnknown stores an entire list of unknown fields.
-// The raw fields must be syntactically valid according to the wire format.
-// An implementation may panic if this is not the case.
-// Once stored, the caller must not mutate the content of the RawFields.
-// An empty RawFields may be passed to clear the fields.
-//
-// SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_EventApplicationUpStaked) SetUnknown(fields protoreflect.RawFields) {
-	x.unknownFields = fields
-}
-
-// IsValid reports whether the message is valid.
-//
-// An invalid message is an empty, read-only value.
-//
-// An invalid message often corresponds to a nil pointer of the concrete
-// message type, but the details are implementation dependent.
-// Validity is not part of the protobuf data model, and may not
-// be preserved in marshaling or other operations.
-func (x *fastReflection_EventApplicationUpStaked) IsValid() bool {
-	return x != nil
-}
-
-// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
-// This method may return nil.
-//
-// The returned methods type is identical to
-// "google.golang.org/protobuf/runtime/protoiface".Methods.
-// Consult the protoiface package documentation for details.
-func (x *fastReflection_EventApplicationUpStaked) ProtoMethods() *protoiface.Methods {
-	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*EventApplicationUpStaked)
-		if x == nil {
-			return protoiface.SizeOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Size:              0,
-			}
-		}
-		options := runtime.SizeInputToOptions(input)
-		_ = options
-		var n int
-		var l int
-		_ = l
-		l = len(x.AppAddress)
-		if l > 0 {
-			n += 1 + l + runtime.Sov(uint64(l))
-		}
-		if x.Stake != nil {
-			l = options.Size(x.Stake)
-			n += 1 + l + runtime.Sov(uint64(l))
-		}
-		if len(x.Services) > 0 {
-			for _, e := range x.Services {
-				l = options.Size(e)
-				n += 1 + l + runtime.Sov(uint64(l))
-			}
-		}
-		if x.unknownFields != nil {
-			n += len(x.unknownFields)
-		}
-		return protoiface.SizeOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Size:              n,
-		}
-	}
-
-	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*EventApplicationUpStaked)
-		if x == nil {
-			return protoiface.MarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Buf:               input.Buf,
-			}, nil
-		}
-		options := runtime.MarshalInputToOptions(input)
-		_ = options
-		size := options.Size(x)
-		dAtA := make([]byte, size)
-		i := len(dAtA)
-		_ = i
-		var l int
-		_ = l
-		if x.unknownFields != nil {
-			i -= len(x.unknownFields)
-			copy(dAtA[i:], x.unknownFields)
-		}
-		if len(x.Services) > 0 {
-			for iNdEx := len(x.Services) - 1; iNdEx >= 0; iNdEx-- {
-				encoded, err := options.Marshal(x.Services[iNdEx])
-				if err != nil {
-					return protoiface.MarshalOutput{
-						NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-						Buf:               input.Buf,
-					}, err
-				}
-				i -= len(encoded)
-				copy(dAtA[i:], encoded)
-				i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
-				i--
-				dAtA[i] = 0x1a
-			}
-		}
-		if x.Stake != nil {
-			encoded, err := options.Marshal(x.Stake)
-			if err != nil {
-				return protoiface.MarshalOutput{
-					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-					Buf:               input.Buf,
-				}, err
-			}
-			i -= len(encoded)
-			copy(dAtA[i:], encoded)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
-			i--
-			dAtA[i] = 0x12
-		}
-		if len(x.AppAddress) > 0 {
-			i -= len(x.AppAddress)
-			copy(dAtA[i:], x.AppAddress)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.AppAddress)))
-			i--
-			dAtA[i] = 0xa
-		}
-		if input.Buf != nil {
-			input.Buf = append(input.Buf, dAtA...)
-		} else {
-			input.Buf = dAtA
-		}
-		return protoiface.MarshalOutput{
-			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-			Buf:               input.Buf,
-		}, nil
-	}
-	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*EventApplicationUpStaked)
-		if x == nil {
-			return protoiface.UnmarshalOutput{
-				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-				Flags:             input.Flags,
-			}, nil
-		}
-		options := runtime.UnmarshalInputToOptions(input)
-		_ = options
-		dAtA := input.Buf
-		l := len(dAtA)
-		iNdEx := 0
-		for iNdEx < l {
-			preIndex := iNdEx
-			var wire uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				wire |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			fieldNum := int32(wire >> 3)
-			wireType := int(wire & 0x7)
-			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventApplicationUpStaked: wiretype end group for non-group")
-			}
-			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventApplicationUpStaked: illegal tag %d (wire type %d)", fieldNum, wire)
-			}
-			switch fieldNum {
-			case 1:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field AppAddress", wireType)
-				}
-				var stringLen uint64
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + intStringLen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.AppAddress = string(dAtA[iNdEx:postIndex])
-				iNdEx = postIndex
-			case 2:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Stake", wireType)
-				}
-				var msglen int
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					msglen |= int(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				if msglen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + msglen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				if x.Stake == nil {
-					x.Stake = &v1beta1.Coin{}
-				}
-				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Stake); err != nil {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
-				}
-				iNdEx = postIndex
-			case 3:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Services", wireType)
-				}
-				var msglen int
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					msglen |= int(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				if msglen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + msglen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.Services = append(x.Services, &shared.ApplicationServiceConfig{})
-				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Services[len(x.Services)-1]); err != nil {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
-				}
-				iNdEx = postIndex
-			default:
-				iNdEx = preIndex
-				skippy, err := runtime.Skip(dAtA[iNdEx:])
-				if err != nil {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
-				}
-				if (skippy < 0) || (iNdEx+skippy) < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if (iNdEx + skippy) > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				if !options.DiscardUnknown {
-					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
-				}
-				iNdEx += skippy
-			}
-		}
-
-		if iNdEx > l {
-			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-		}
-		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
-	}
-	return &protoiface.Methods{
-		NoUnkeyedLiterals: struct{}{},
-		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
-		Size:              size,
-		Marshal:           marshal,
-		Unmarshal:         unmarshal,
-		Merge:             nil,
-		CheckInitialized:  nil,
-	}
-}
-
 var (
 	md_EventRedelegation                 protoreflect.MessageDescriptor
 	fd_EventRedelegation_app_address     protoreflect.FieldDescriptor
@@ -1312,7 +675,7 @@ func (x *EventRedelegation) ProtoReflect() protoreflect.Message {
 }
 
 func (x *EventRedelegation) slowProtoReflect() protoreflect.Message {
-	mi := &file_poktroll_application_event_proto_msgTypes[2]
+	mi := &file_poktroll_application_event_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1798,7 +1161,7 @@ func (x *EventTransferBegin) ProtoReflect() protoreflect.Message {
 }
 
 func (x *EventTransferBegin) slowProtoReflect() protoreflect.Message {
-	mi := &file_poktroll_application_event_proto_msgTypes[3]
+	mi := &file_poktroll_application_event_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2361,7 +1724,7 @@ func (x *EventTransferEnd) ProtoReflect() protoreflect.Message {
 }
 
 func (x *EventTransferEnd) slowProtoReflect() protoreflect.Message {
-	mi := &file_poktroll_application_event_proto_msgTypes[4]
+	mi := &file_poktroll_application_event_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2926,7 +2289,7 @@ func (x *EventTransferError) ProtoReflect() protoreflect.Message {
 }
 
 func (x *EventTransferError) slowProtoReflect() protoreflect.Message {
-	mi := &file_poktroll_application_event_proto_msgTypes[5]
+	mi := &file_poktroll_application_event_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3547,7 +2910,7 @@ func (x *EventApplicationUnbondingBegin) ProtoReflect() protoreflect.Message {
 }
 
 func (x *EventApplicationUnbondingBegin) slowProtoReflect() protoreflect.Message {
-	mi := &file_poktroll_application_event_proto_msgTypes[6]
+	mi := &file_poktroll_application_event_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3967,7 +3330,7 @@ func (x *EventApplicationUnbondingEnd) ProtoReflect() protoreflect.Message {
 }
 
 func (x *EventApplicationUnbondingEnd) slowProtoReflect() protoreflect.Message {
-	mi := &file_poktroll_application_event_proto_msgTypes[7]
+	mi := &file_poktroll_application_event_proto_msgTypes[6]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4380,6 +3743,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// EventApplicationStaked is emitted when an application is staked or up-staked.
 type EventApplicationStaked struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -4431,57 +3795,6 @@ func (x *EventApplicationStaked) GetServices() []*shared.ApplicationServiceConfi
 	return nil
 }
 
-type EventApplicationUpStaked struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	AppAddress string                             `protobuf:"bytes,1,opt,name=app_address,json=appAddress,proto3" json:"app_address,omitempty"` // The Bech32 address of the application.
-	Stake      *v1beta1.Coin                      `protobuf:"bytes,2,opt,name=stake,proto3" json:"stake,omitempty"`                             // The total amount of uPOKT the application has staked. Must be ≥ to the current amount that the application has staked (if any)
-	Services   []*shared.ApplicationServiceConfig `protobuf:"bytes,3,rep,name=services,proto3" json:"services,omitempty"`                       // The list of services this application is staked to request service for
-}
-
-func (x *EventApplicationUpStaked) Reset() {
-	*x = EventApplicationUpStaked{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_poktroll_application_event_proto_msgTypes[1]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *EventApplicationUpStaked) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*EventApplicationUpStaked) ProtoMessage() {}
-
-// Deprecated: Use EventApplicationUpStaked.ProtoReflect.Descriptor instead.
-func (*EventApplicationUpStaked) Descriptor() ([]byte, []int) {
-	return file_poktroll_application_event_proto_rawDescGZIP(), []int{1}
-}
-
-func (x *EventApplicationUpStaked) GetAppAddress() string {
-	if x != nil {
-		return x.AppAddress
-	}
-	return ""
-}
-
-func (x *EventApplicationUpStaked) GetStake() *v1beta1.Coin {
-	if x != nil {
-		return x.Stake
-	}
-	return nil
-}
-
-func (x *EventApplicationUpStaked) GetServices() []*shared.ApplicationServiceConfig {
-	if x != nil {
-		return x.Services
-	}
-	return nil
-}
-
 // EventRedelegation is an event emitted whenever an application changes its
 // delegatee gateways on chain. This is in response to both a DelegateToGateway
 // and UndelegateFromGateway message.
@@ -4497,7 +3810,7 @@ type EventRedelegation struct {
 func (x *EventRedelegation) Reset() {
 	*x = EventRedelegation{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_poktroll_application_event_proto_msgTypes[2]
+		mi := &file_poktroll_application_event_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4511,7 +3824,7 @@ func (*EventRedelegation) ProtoMessage() {}
 
 // Deprecated: Use EventRedelegation.ProtoReflect.Descriptor instead.
 func (*EventRedelegation) Descriptor() ([]byte, []int) {
-	return file_poktroll_application_event_proto_rawDescGZIP(), []int{2}
+	return file_poktroll_application_event_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *EventRedelegation) GetAppAddress() string {
@@ -4543,7 +3856,7 @@ type EventTransferBegin struct {
 func (x *EventTransferBegin) Reset() {
 	*x = EventTransferBegin{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_poktroll_application_event_proto_msgTypes[3]
+		mi := &file_poktroll_application_event_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4557,7 +3870,7 @@ func (*EventTransferBegin) ProtoMessage() {}
 
 // Deprecated: Use EventTransferBegin.ProtoReflect.Descriptor instead.
 func (*EventTransferBegin) Descriptor() ([]byte, []int) {
-	return file_poktroll_application_event_proto_rawDescGZIP(), []int{3}
+	return file_poktroll_application_event_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *EventTransferBegin) GetSourceAddress() string {
@@ -4598,7 +3911,7 @@ type EventTransferEnd struct {
 func (x *EventTransferEnd) Reset() {
 	*x = EventTransferEnd{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_poktroll_application_event_proto_msgTypes[4]
+		mi := &file_poktroll_application_event_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4612,7 +3925,7 @@ func (*EventTransferEnd) ProtoMessage() {}
 
 // Deprecated: Use EventTransferEnd.ProtoReflect.Descriptor instead.
 func (*EventTransferEnd) Descriptor() ([]byte, []int) {
-	return file_poktroll_application_event_proto_rawDescGZIP(), []int{4}
+	return file_poktroll_application_event_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *EventTransferEnd) GetSourceAddress() string {
@@ -4655,7 +3968,7 @@ type EventTransferError struct {
 func (x *EventTransferError) Reset() {
 	*x = EventTransferError{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_poktroll_application_event_proto_msgTypes[5]
+		mi := &file_poktroll_application_event_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4669,7 +3982,7 @@ func (*EventTransferError) ProtoMessage() {}
 
 // Deprecated: Use EventTransferError.ProtoReflect.Descriptor instead.
 func (*EventTransferError) Descriptor() ([]byte, []int) {
-	return file_poktroll_application_event_proto_rawDescGZIP(), []int{5}
+	return file_poktroll_application_event_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *EventTransferError) GetSourceAddress() string {
@@ -4711,7 +4024,7 @@ type EventApplicationUnbondingBegin struct {
 func (x *EventApplicationUnbondingBegin) Reset() {
 	*x = EventApplicationUnbondingBegin{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_poktroll_application_event_proto_msgTypes[6]
+		mi := &file_poktroll_application_event_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4725,7 +4038,7 @@ func (*EventApplicationUnbondingBegin) ProtoMessage() {}
 
 // Deprecated: Use EventApplicationUnbondingBegin.ProtoReflect.Descriptor instead.
 func (*EventApplicationUnbondingBegin) Descriptor() ([]byte, []int) {
-	return file_poktroll_application_event_proto_rawDescGZIP(), []int{6}
+	return file_poktroll_application_event_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *EventApplicationUnbondingBegin) GetAppAddress() string {
@@ -4746,7 +4059,7 @@ type EventApplicationUnbondingEnd struct {
 func (x *EventApplicationUnbondingEnd) Reset() {
 	*x = EventApplicationUnbondingEnd{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_poktroll_application_event_proto_msgTypes[7]
+		mi := &file_poktroll_application_event_proto_msgTypes[6]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -4760,7 +4073,7 @@ func (*EventApplicationUnbondingEnd) ProtoMessage() {}
 
 // Deprecated: Use EventApplicationUnbondingEnd.ProtoReflect.Descriptor instead.
 func (*EventApplicationUnbondingEnd) Descriptor() ([]byte, []int) {
-	return file_poktroll_application_event_proto_rawDescGZIP(), []int{7}
+	return file_poktroll_application_event_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *EventApplicationUnbondingEnd) GetAppAddress() string {
@@ -4787,19 +4100,6 @@ var file_poktroll_application_event_proto_rawDesc = []byte{
 	0x6c, 0x6c, 0x2f, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2f, 0x74,
 	0x79, 0x70, 0x65, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xcb, 0x01, 0x0a, 0x16, 0x45,
 	0x76, 0x65, 0x6e, 0x74, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53,
-	0x74, 0x61, 0x6b, 0x65, 0x64, 0x12, 0x39, 0x0a, 0x0b, 0x61, 0x70, 0x70, 0x5f, 0x61, 0x64, 0x64,
-	0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14,
-	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74,
-	0x72, 0x69, 0x6e, 0x67, 0x52, 0x0a, 0x61, 0x70, 0x70, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73,
-	0x12, 0x2f, 0x0a, 0x05, 0x73, 0x74, 0x61, 0x6b, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32,
-	0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31,
-	0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x52, 0x05, 0x73, 0x74, 0x61, 0x6b,
-	0x65, 0x12, 0x45, 0x0a, 0x08, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x73, 0x18, 0x03, 0x20,
-	0x03, 0x28, 0x0b, 0x32, 0x29, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73,
-	0x68, 0x61, 0x72, 0x65, 0x64, 0x2e, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f,
-	0x6e, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x52, 0x08,
-	0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x73, 0x22, 0xcd, 0x01, 0x0a, 0x18, 0x45, 0x76, 0x65,
-	0x6e, 0x74, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x55, 0x70, 0x53,
 	0x74, 0x61, 0x6b, 0x65, 0x64, 0x12, 0x39, 0x0a, 0x0b, 0x61, 0x70, 0x70, 0x5f, 0x61, 0x64, 0x64,
 	0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14,
 	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74,
@@ -4907,33 +4207,30 @@ func file_poktroll_application_event_proto_rawDescGZIP() []byte {
 	return file_poktroll_application_event_proto_rawDescData
 }
 
-var file_poktroll_application_event_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_poktroll_application_event_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_poktroll_application_event_proto_goTypes = []interface{}{
 	(*EventApplicationStaked)(nil),          // 0: poktroll.application.EventApplicationStaked
-	(*EventApplicationUpStaked)(nil),        // 1: poktroll.application.EventApplicationUpStaked
-	(*EventRedelegation)(nil),               // 2: poktroll.application.EventRedelegation
-	(*EventTransferBegin)(nil),              // 3: poktroll.application.EventTransferBegin
-	(*EventTransferEnd)(nil),                // 4: poktroll.application.EventTransferEnd
-	(*EventTransferError)(nil),              // 5: poktroll.application.EventTransferError
-	(*EventApplicationUnbondingBegin)(nil),  // 6: poktroll.application.EventApplicationUnbondingBegin
-	(*EventApplicationUnbondingEnd)(nil),    // 7: poktroll.application.EventApplicationUnbondingEnd
-	(*v1beta1.Coin)(nil),                    // 8: cosmos.base.v1beta1.Coin
-	(*shared.ApplicationServiceConfig)(nil), // 9: poktroll.shared.ApplicationServiceConfig
-	(*Application)(nil),                     // 10: poktroll.application.Application
+	(*EventRedelegation)(nil),               // 1: poktroll.application.EventRedelegation
+	(*EventTransferBegin)(nil),              // 2: poktroll.application.EventTransferBegin
+	(*EventTransferEnd)(nil),                // 3: poktroll.application.EventTransferEnd
+	(*EventTransferError)(nil),              // 4: poktroll.application.EventTransferError
+	(*EventApplicationUnbondingBegin)(nil),  // 5: poktroll.application.EventApplicationUnbondingBegin
+	(*EventApplicationUnbondingEnd)(nil),    // 6: poktroll.application.EventApplicationUnbondingEnd
+	(*v1beta1.Coin)(nil),                    // 7: cosmos.base.v1beta1.Coin
+	(*shared.ApplicationServiceConfig)(nil), // 8: poktroll.shared.ApplicationServiceConfig
+	(*Application)(nil),                     // 9: poktroll.application.Application
 }
 var file_poktroll_application_event_proto_depIdxs = []int32{
-	8,  // 0: poktroll.application.EventApplicationStaked.stake:type_name -> cosmos.base.v1beta1.Coin
-	9,  // 1: poktroll.application.EventApplicationStaked.services:type_name -> poktroll.shared.ApplicationServiceConfig
-	8,  // 2: poktroll.application.EventApplicationUpStaked.stake:type_name -> cosmos.base.v1beta1.Coin
-	9,  // 3: poktroll.application.EventApplicationUpStaked.services:type_name -> poktroll.shared.ApplicationServiceConfig
-	10, // 4: poktroll.application.EventTransferBegin.source_application:type_name -> poktroll.application.Application
-	10, // 5: poktroll.application.EventTransferEnd.destination_application:type_name -> poktroll.application.Application
-	10, // 6: poktroll.application.EventTransferError.source_application:type_name -> poktroll.application.Application
-	7,  // [7:7] is the sub-list for method output_type
-	7,  // [7:7] is the sub-list for method input_type
-	7,  // [7:7] is the sub-list for extension type_name
-	7,  // [7:7] is the sub-list for extension extendee
-	0,  // [0:7] is the sub-list for field type_name
+	7, // 0: poktroll.application.EventApplicationStaked.stake:type_name -> cosmos.base.v1beta1.Coin
+	8, // 1: poktroll.application.EventApplicationStaked.services:type_name -> poktroll.shared.ApplicationServiceConfig
+	9, // 2: poktroll.application.EventTransferBegin.source_application:type_name -> poktroll.application.Application
+	9, // 3: poktroll.application.EventTransferEnd.destination_application:type_name -> poktroll.application.Application
+	9, // 4: poktroll.application.EventTransferError.source_application:type_name -> poktroll.application.Application
+	5, // [5:5] is the sub-list for method output_type
+	5, // [5:5] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_poktroll_application_event_proto_init() }
@@ -4956,18 +4253,6 @@ func file_poktroll_application_event_proto_init() {
 			}
 		}
 		file_poktroll_application_event_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EventApplicationUpStaked); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_poktroll_application_event_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*EventRedelegation); i {
 			case 0:
 				return &v.state
@@ -4979,7 +4264,7 @@ func file_poktroll_application_event_proto_init() {
 				return nil
 			}
 		}
-		file_poktroll_application_event_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
+		file_poktroll_application_event_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*EventTransferBegin); i {
 			case 0:
 				return &v.state
@@ -4991,7 +4276,7 @@ func file_poktroll_application_event_proto_init() {
 				return nil
 			}
 		}
-		file_poktroll_application_event_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
+		file_poktroll_application_event_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*EventTransferEnd); i {
 			case 0:
 				return &v.state
@@ -5003,7 +4288,7 @@ func file_poktroll_application_event_proto_init() {
 				return nil
 			}
 		}
-		file_poktroll_application_event_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
+		file_poktroll_application_event_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*EventTransferError); i {
 			case 0:
 				return &v.state
@@ -5015,7 +4300,7 @@ func file_poktroll_application_event_proto_init() {
 				return nil
 			}
 		}
-		file_poktroll_application_event_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
+		file_poktroll_application_event_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*EventApplicationUnbondingBegin); i {
 			case 0:
 				return &v.state
@@ -5027,7 +4312,7 @@ func file_poktroll_application_event_proto_init() {
 				return nil
 			}
 		}
-		file_poktroll_application_event_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
+		file_poktroll_application_event_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*EventApplicationUnbondingEnd); i {
 			case 0:
 				return &v.state
@@ -5046,7 +4331,7 @@ func file_poktroll_application_event_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_poktroll_application_event_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   8,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

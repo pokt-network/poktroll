@@ -90,9 +90,9 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.Equal(t, "svc1", foundApp.ServiceConfigs[0].ServiceId)
 	require.Equal(t, "svc2", foundApp.ServiceConfigs[1].ServiceId)
 
-	// Assert that the EventApplicationUpStaked event is emitted.
+	// Assert that the EventApplicationStaked event is emitted.
 	expectedEvent, err = sdk.TypedEventToEvent(
-		&types.EventApplicationUpStaked{
+		&types.EventApplicationStaked{
 			AppAddress: updateStakeMsg.GetAddress(),
 			Stake:      updateStakeMsg.GetStake(),
 			Services:   updateStakeMsg.GetServices(),
