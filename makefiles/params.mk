@@ -118,6 +118,23 @@ params_update_gateway_all: ## Update the session module params
 params_update_gateway_min_stake: ## Update the gateway module min_stake param
 	poktrolld tx authz exec ./tools/scripts/params/gateway_min_stake.json $(PARAM_FLAGS)
 
+### Application Module Params ###
+.PHONY: params_get_application
+params_get_application: ## Get the application module params
+	poktrolld query application params --node $(POCKET_NODE)
+
+.PHONY: params_update_application_all
+params_update_application_all: ## Update the application module params
+	poktrolld tx authz exec ./tools/scripts/params/application_all.json $(PARAM_FLAGS)
+
+.PHONY: params_update_application_max_delegated_gateways
+params_update_application_max_delegated_gateways: ## Update the application module max_delegated_gateways param
+	poktrolld tx authz exec ./tools/scripts/params/application_max_delegated_gateways.json $(PARAM_FLAGS)
+
+.PHONY: params_update_application_min_stake
+params_update_application_min_stake: ## Update the application module min_stake param
+	poktrolld tx authz exec ./tools/scripts/params/application_min_stake.json $(PARAM_FLAGS)
+
 .PHONY: params_query_all
 params_query_all: check_jq ## Query the params from all available modules
 	@for module in $(MODULES); do \

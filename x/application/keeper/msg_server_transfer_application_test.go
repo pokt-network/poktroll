@@ -3,7 +3,6 @@ package keeper_test
 import (
 	"testing"
 
-	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/codec/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
@@ -30,7 +29,7 @@ func TestMsgServer_TransferApplication_Success(t *testing.T) {
 	_, isSrcFound := k.GetApplication(ctx, srcBech32)
 	require.False(t, isSrcFound)
 
-	expectedAppStake := &cosmostypes.Coin{Denom: "upokt", Amount: math.NewInt(100)}
+	expectedAppStake := &apptypes.DefaultMinStake
 
 	// Prepare the application.
 	stakeMsg := &apptypes.MsgStakeApplication{

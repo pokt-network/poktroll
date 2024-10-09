@@ -81,6 +81,7 @@ var (
 			QueryParamsResponse:     sharedtypes.QueryParamsResponse{},
 		},
 		ParamTypes: map[ParamType]any{
+			// TODO_IMPROVE: Add a Uint64 asType instead of using int64 for uint64 params.
 			ParamTypeUint64: sharedtypes.MsgUpdateParam_AsInt64{},
 			ParamTypeInt64:  sharedtypes.MsgUpdateParam_AsInt64{},
 			ParamTypeString: sharedtypes.MsgUpdateParam_AsString{},
@@ -136,11 +137,19 @@ var (
 		ParamsMsgs: ModuleParamsMessages{
 			MsgUpdateParams:         apptypes.MsgUpdateParams{},
 			MsgUpdateParamsResponse: apptypes.MsgUpdateParamsResponse{},
+			MsgUpdateParam:          apptypes.MsgUpdateParam{},
+			MsgUpdateParamResponse:  apptypes.MsgUpdateParamResponse{},
 			QueryParamsRequest:      apptypes.QueryParamsRequest{},
 			QueryParamsResponse:     apptypes.QueryParamsResponse{},
 		},
 		ValidParams: apptypes.Params{
 			MaxDelegatedGateways: 999,
+			MinStake:             &ValidActorMinStake,
+		},
+		ParamTypes: map[ParamType]any{
+			// TODO_IMPROVE: Add a Uint64 asType instead of using int64 for uint64 params.
+			ParamTypeUint64: apptypes.MsgUpdateParam_AsInt64{},
+			ParamTypeCoin:   apptypes.MsgUpdateParam_AsCoin{},
 		},
 		DefaultParams:    apptypes.DefaultParams(),
 		NewParamClientFn: apptypes.NewQueryClient,
