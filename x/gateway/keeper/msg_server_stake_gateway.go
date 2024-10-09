@@ -96,6 +96,14 @@ func (k msgServer) StakeGateway(
 	k.SetGateway(ctx, gateway)
 	logger.Info(fmt.Sprintf("Successfully updated stake for gateway: %+v", gateway))
 
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	gatewayStakedEvent := &types.EventGatewayStaked{Address: gateway.GetAddress()}
+	if eventErr := sdkCtx.EventManager().EmitTypedEvent(gatewayStakedEvent); eventErr != nil {
+		err = types.ErrGatewayEmitEvent.Wrapf("(%+v): %s", gatewayStakedEvent, err)
+		logger.Error(err.Error())
+		return nil, err
+	}
+
 	isSuccessful = true
 	return &types.MsgStakeGatewayResponse{
 		Gateway: &gateway,
