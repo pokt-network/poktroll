@@ -1,13 +1,13 @@
 package keeper_test
 
 import (
-	"context"
 	"testing"
 
 	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
+	testevents "github.com/pokt-network/poktroll/testutil/events"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/x/application/keeper"
@@ -60,7 +60,7 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.EqualValues(t, expectedEvent, events[0])
 
 	// Reset the events, as if a new block were created.
-	ctx = resetEvents(ctx)
+	ctx = testevents.ResetEventManager(ctx)
 
 	// Verify that the application exists
 	foundApp, isAppFound := k.GetApplication(ctx, appAddr)
@@ -203,10 +203,4 @@ func TestMsgServer_StakeApplication_FailLoweringStake(t *testing.T) {
 	foundApp, isAppFound := k.GetApplication(ctx, appAddr)
 	require.True(t, isAppFound)
 	require.Equal(t, int64(100), foundApp.Stake.Amount.Int64())
-}
-
-// resetEvents re-initializes the cosmos event manager in the context such that
-// prior event emissions are erased.
-func resetEvents(ctx context.Context) context.Context {
-	return sdk.UnwrapSDKContext(ctx).WithEventManager(sdk.NewEventManager())
 }
