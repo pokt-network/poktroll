@@ -10,12 +10,13 @@ import (
 	"github.com/pokt-network/smt"
 	"github.com/pokt-network/smt/kvstore/pebble"
 	"github.com/stretchr/testify/require"
-	"github.com/stretchr/testify/suite"
 
 	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
-	"github.com/pokt-network/poktroll/testutil/integration/suites"
+	testutils "github.com/pokt-network/poktroll/testutil/keeper"
+	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/testutil/testrelayer"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
@@ -29,13 +30,6 @@ const (
 	maxNumRelays = uint64(1024e3)
 )
 
-func (s *RelayMiningIntegrationTestSuite) SetupTest() {
-	// Construct a fresh integration app for each test.
-	s.NewApp(s.T())
-	s.SetupTestAuthzAccounts(s.T())
-	s.SetupTestAuthzGrants(s.T())
-}
-
 func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 	// Update the target number of relays to a value that suits the test.
 	// A too high number would make the difficulty stay at BaseRelayDifficultyHash
@@ -46,13 +40,52 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 		servicekeeper.TargetNumRelays = initialTargetRelays
 	})
 
-	type RelayMiningIntegrationTestSuite struct {
-		suites.ParamsSuite
+	// Prepare the test service.
+	service := sharedtypes.Service{
+		Id:                   "svc1",
+		Name:                 "svcName1",
+		ComputeUnitsPerRelay: 1,
+		OwnerAddress:         sample.AccAddress(),
 	}
 
-	app := integrationApp.DefaultApplication
-	supplier := integrationApp.DefaultSupplier
-	service := integrationApp.DefaultService
+	// Prepare the test application.
+	appAddress := sample.AccAddress()
+	appStake := sdk.NewInt64Coin(volatile.DenomuPOKT, 1000)
+	application := apptypes.Application{
+		Address: appAddress,
+		Stake:   &appStake,
+		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
+			{ServiceId: service.Id},
+		},
+	}
+
+	// Prepare the test supplier.
+	supplierAddress := sample.AccAddress()
+	supplierStake := sdk.NewInt64Coin(volatile.DenomuPOKT, 1000)
+	supplier := sharedtypes.Supplier{
+		OperatorAddress: supplierAddress,
+		OwnerAddress:    supplierAddress,
+		Stake:           &supplierStake,
+		Services: []*sharedtypes.SupplierServiceConfig{
+			{
+				ServiceId: service.Id,
+				RevShare: []*sharedtypes.ServiceRevenueShare{
+					{
+						Address:            supplierAddress,
+						RevSharePercentage: 100,
+					},
+				},
+			},
+		},
+	}
+
+	keepers, ctx := testutils.NewTokenomicsModuleKeepers(t, nil,
+		testutils.WithService(service),
+		testutils.WithApplication(application),
+		testutils.WithSupplier(supplier),
+	)
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	sdkCtx = sdkCtx.WithBlockHeight(1)
 
 	// Set the CUTTM to 1 to simplify the math
 	sharedParams := keepers.SharedKeeper.GetParams(sdkCtx)
@@ -83,7 +116,7 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 	// to a very large number.
 	for numRelays := initialNumRelays; numRelays <= maxNumRelays; numRelays *= 2 {
 		getSessionReq := sessiontypes.QueryGetSessionRequest{
-			ApplicationAddress: app.Address,
+			ApplicationAddress: appAddress,
 			ServiceId:          service.Id,
 			BlockHeight:        sdkCtx.BlockHeight(),
 		}
@@ -104,7 +137,7 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 		require.True(t, ok)
 
 		// Prepare a claim with the given number of relays.
-		claim := prepareRealClaim(t, numRelays, supplier, session, service, &relayMiningDifficulty)
+		claim := prepareRealClaim(t, numRelays, supplierAddress, session, &service, &relayMiningDifficulty)
 
 		// Get the claim's expected reward.
 		claimedRewards, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
@@ -118,13 +151,13 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 		keepers.ProofKeeper.UpsertClaim(ctxAtHeight, *claim)
 
 		// Calling SettlePendingClaims calls ProcessTokenLogicModules behind the scenes
-		settledResult, expiredResult, err := keepers.TokenomicsKeeper.SettlePendingClaims(ctxAtHeight)
+		settledResult, expiredResult, err := keepers.Keeper.SettlePendingClaims(ctxAtHeight)
 		require.NoError(t, err)
 		require.Equal(t, 1, int(settledResult.NumClaims))
 		require.Equal(t, 0, int(expiredResult.NumClaims))
 
 		// Update the relay mining difficulty
-		_, err = keepers.TokenomicsKeeper.UpdateRelayMiningDifficulty(ctxAtHeight, map[string]uint64{service.Id: claimNumRelays})
+		_, err = keepers.Keeper.UpdateRelayMiningDifficulty(ctxAtHeight, map[string]uint64{service.Id: claimNumRelays})
 		require.NoError(t, err)
 
 		// Get the updated relay mining difficulty
@@ -175,7 +208,7 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 func prepareRealClaim(
 	t *testing.T,
 	numRelays uint64,
-	supplier *sharedtypes.Supplier,
+	supplierAddress string,
 	session *sessiontypes.Session,
 	service *sharedtypes.Service,
 	relayMiningDifficulty *servicetypes.RelayMiningDifficulty,
@@ -194,7 +227,7 @@ func prepareRealClaim(
 		// DEV_NOTE: Unsigned relays are mined instead of signed relays to avoid calling
 		// the application querier and signature logic which make the test very slow
 		// given the large number of iterations involved.
-		minedRelay := testrelayer.NewUnsignedMinedRelay(t, session, supplier.OperatorAddress)
+		minedRelay := testrelayer.NewUnsignedMinedRelay(t, session, supplierAddress)
 		// Ensure that the relay is applicable to the relay mining difficulty
 		if protocol.IsRelayVolumeApplicable(minedRelay.Hash, relayMiningDifficulty.TargetHash) {
 			err = trie.Update(minedRelay.Hash, minedRelay.Bytes, service.ComputeUnitsPerRelay)
@@ -203,12 +236,8 @@ func prepareRealClaim(
 	}
 	// Return the applicable claim
 	return &prooftypes.Claim{
-		SupplierOperatorAddress: supplier.OperatorAddress,
+		SupplierOperatorAddress: supplierAddress,
 		SessionHeader:           session.GetHeader(),
 		RootHash:                trie.Root(),
 	}
-}
-
-func TestRelayMiningIntegrationSuite(t *testing.T) {
-	suite.Run(t, new(RelayMiningIntegrationTestSuite))
 }
