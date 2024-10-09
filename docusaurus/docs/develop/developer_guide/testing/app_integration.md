@@ -25,7 +25,9 @@ This construction integrates all the poktroll modules (and their cosmos-sdk depe
 
 Tests in this level conventionally use the `testutil/integration` package's `App` structure and constructors to set up the appchain, execute messages, and make assertions against the resulting appchain state.
 
-_NOTE: See [App Integration Suites](integration_suites) for organizing larger or higher-level app integration tests._
+:::info
+See [App Integration Suites](integration_suites) for organizing larger or higher-level app integration tests.
+:::
 
 ## Using `integration.App`
 
