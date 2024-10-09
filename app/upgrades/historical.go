@@ -86,3 +86,10 @@ var Upgrade_0_0_4 = Upgrade{
 	// No changes to the KVStore in this upgrade.
 	StoreUpgrades: storetypes.StoreUpgrades{},
 }
+
+// Upgrade_0_0_9 is a small upgrade on TestNet.
+var Upgrade_0_0_9 = Upgrade{
+	PlanName:             "v0.0.9",
+	CreateUpgradeHandler: defaultUpgradeHandler,
+	StoreUpgrades:        storetypes.StoreUpgrades{},
+}

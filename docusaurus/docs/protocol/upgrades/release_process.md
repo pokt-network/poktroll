@@ -59,6 +59,13 @@ You can find an example [here](https://github.com/pokt-network/poktroll/releases
 ```text
 ## Protocol Upgrades
 
+<!--
+
+If this release will be used to issue upgrade on the network, add a link to the upgrade code
+such as https://github.com/pokt-network/poktroll/blob/main/app/upgrades/historical.go#L51.
+
+-->
+
 - **Planned Upgrade:** ❌ Not applicable for this release.
 - **Breaking Change:** ❌ Not applicable for this release.
 - **Manual Intervention Required:** ✅ Yes, but only for Alpha TestNet participants. If you are participating, please follow the [instructions provided here](https://dev.poktroll.com/operate/quickstart/docker_compose_walkthrough#restarting-a-full-node-after-re-genesis-) for restarting your full node after re-genesis.
