@@ -103,9 +103,6 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	events = sdk.UnwrapSDKContext(ctx).EventManager().Events()
 	require.Equalf(t, 1, len(events), "expected exactly 1 event")
 	require.EqualValues(t, expectedEvent, events[0])
-
-	// Reset the events, as if a new block were created.
-	ctx = resetEvents(ctx)
 }
 
 func TestMsgServer_StakeApplication_FailRestakingDueToInvalidServices(t *testing.T) {

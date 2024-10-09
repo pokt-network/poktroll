@@ -78,8 +78,7 @@ func (k msgServer) StakeApplication(ctx context.Context, msg *types.MsgStakeAppl
 	logger.Info(fmt.Sprintf("Successfully updated application stake for app: %+v", foundApp))
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	var event sdk.Msg
-	event = &types.EventApplicationStaked{
+	event := &types.EventApplicationStaked{
 		AppAddress: foundApp.GetAddress(),
 		Stake:      foundApp.Stake,
 		Services:   foundApp.ServiceConfigs,
