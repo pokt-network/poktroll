@@ -92,6 +92,10 @@ validators:
       telemetry:
         enabled: true
         prometheus-retention-time: "600" # seconds
+      poktroll:
+        telemetry:
+          # "high" produces a lot of timeseries. Only suitable for small networks such as LocalNet.
+          cardinality-level: high
     config:
       moniker: "validator1"
       consensus:

@@ -20,4 +20,11 @@ grafana:
 
 prometheus:
   prometheusSpec:
-    serviceMonitorSelectorNilUsesHelmValues: false
+    scrapeConfigSelector:
+      matchLabels: null
+    serviceMonitorSelector:
+      matchLabels: null
+    ruleSelector:
+      matchLabels: null
+    podMonitorSelector:
+      matchLabels: null

@@ -34,6 +34,11 @@ query-gas-limit = "0"
 [mempool]
   max-txs = 10000
 
+[poktroll]
+
+  [poktroll.telemetry]
+    cardinality-level = "high"
+
 [rpc]
   cors_allowed_origins = ["*"]
 

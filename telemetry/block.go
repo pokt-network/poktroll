@@ -77,6 +77,10 @@ func (mal metricsABCIListener) ListenFinalizeBlock(
 	req abci.RequestFinalizeBlock,
 	res abci.ResponseFinalizeBlock,
 ) error {
+	if !isTelemetyEnabled() {
+		return nil
+	}
+
 	telemetry.SetGauge(
 		float32(res.Size()),
 		blockResultSizeBytesMetric,
@@ -94,5 +98,9 @@ func (mal metricsABCIListener) ListenCommit(
 	res abci.ResponseCommit,
 	changeSet []*storetypes.StoreKVPair,
 ) error {
+	if !isTelemetyEnabled() {
+		return nil
+	}
+
 	return nil
 }
