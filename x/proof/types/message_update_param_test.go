@@ -28,7 +28,7 @@ func TestMsgUpdateParam_ValidateBasic(t *testing.T) {
 			name: "invalid: param name incorrect (non-existent)",
 			msg: MsgUpdateParam{
 				Authority: sample.AccAddress(),
-				Name:      "WRONG_proof_missing_penalty",
+				Name:      "non_existent",
 				AsType:    &MsgUpdateParam_AsInt64{AsInt64: 1},
 			},
 
