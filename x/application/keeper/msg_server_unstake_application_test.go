@@ -7,6 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
+	testevents "github.com/pokt-network/poktroll/testutil/events"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/x/application/keeper"
@@ -54,7 +55,7 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 	require.True(t, isAppFound)
 
 	// Reset the events, as if a new block were created.
-	ctx = resetEvents(ctx)
+	ctx = testevents.ResetEventManager(ctx)
 
 	// Unstake the application
 	unstakeMsg := &types.MsgUnstakeApplication{Address: unstakingAppAddr}
@@ -74,7 +75,7 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 	require.EqualValues(t, expectedEvent, events[0])
 
 	// Reset the events, as if a new block were created.
-	ctx = resetEvents(ctx)
+	ctx = testevents.ResetEventManager(ctx)
 
 	// Make sure the application entered the unbonding period
 	foundApp, isAppFound = applicationModuleKeepers.GetApplication(ctx, unstakingAppAddr)
@@ -102,7 +103,7 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 	require.EqualValues(t, expectedEvent, events[0])
 
 	// Reset the events, as if a new block were created.
-	ctx = resetEvents(ctx)
+	ctx = testevents.ResetEventManager(ctx)
 
 	// Make sure the unstaking application is removed from the applications list when
 	// the unbonding period is over.
