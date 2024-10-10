@@ -48,8 +48,8 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.Equal(t, stakeMsg.GetServices(), app.GetServiceConfigs())
 
 	// Assert that the EventApplicationStaked event is emitted.
-	expectedEvent, err := sdk.TypedEventToEvent(
-		&types.EventApplicationStaked{
+	expectedEvent, err := cosmostypes.TypedEventToEvent(
+		&apptypes.EventApplicationStaked{
 			AppAddress: stakeMsg.GetAddress(),
 			Stake:      stakeMsg.GetStake(),
 			Services:   stakeMsg.GetServices(),
@@ -57,7 +57,7 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	events := sdk.UnwrapSDKContext(ctx).EventManager().Events()
+	events := cosmostypes.UnwrapSDKContext(ctx).EventManager().Events()
 	require.Equalf(t, 1, len(events), "expected exactly 1 event")
 	require.EqualValues(t, expectedEvent, events[0])
 
@@ -94,8 +94,8 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.Equal(t, "svc2", foundApp.ServiceConfigs[1].ServiceId)
 
 	// Assert that the EventApplicationStaked event is emitted.
-	expectedEvent, err = sdk.TypedEventToEvent(
-		&types.EventApplicationStaked{
+	expectedEvent, err = cosmostypes.TypedEventToEvent(
+		&apptypes.EventApplicationStaked{
 			AppAddress: updateStakeMsg.GetAddress(),
 			Stake:      updateStakeMsg.GetStake(),
 			Services:   updateStakeMsg.GetServices(),
@@ -103,7 +103,7 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	events = sdk.UnwrapSDKContext(ctx).EventManager().Events()
+	events = cosmostypes.UnwrapSDKContext(ctx).EventManager().Events()
 	require.Equalf(t, 1, len(events), "expected exactly 1 event")
 	require.EqualValues(t, expectedEvent, events[0])
 }

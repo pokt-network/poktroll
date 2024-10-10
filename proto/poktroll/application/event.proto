@@ -63,3 +63,11 @@ message EventApplicationUnbondingBegin {
 message EventApplicationUnbondingEnd {
   string app_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
 }
+
+message EventApplicationUnbondingCanceled {
+  string app_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+}
+
+message EventApplicationUnbondedBelowMinStake {
+  string app_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+}

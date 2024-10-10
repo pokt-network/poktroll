@@ -283,6 +283,16 @@ func (k Keeper) ProcessTokenLogicModules(
 	// TODO_CONSIDERATION: If we support multiple native tokens, we will need to
 	// start checking the denom here.
 	if application.Stake.Amount.LT(apptypes.DefaultMinStake.Amount) {
+		sdkCtx := sdk.UnwrapSDKContext(ctx)
+		unbondedBelowMinStakeEvent := &apptypes.EventApplicationUnbondedBelowMinStake{
+			AppAddress: application.GetAddress(),
+		}
+		if err := sdkCtx.EventManager().EmitTypedEvent(unbondedBelowMinStakeEvent); err != nil {
+			err = apptypes.ErrAppEmitEvent.Wrapf("(%+v): %s", unbondedBelowMinStakeEvent, err)
+			logger.Error(err.Error())
+			return err
+		}
+
 		// Unbond the application because it has less than the minimum stake.
 		if err = k.applicationKeeper.UnbondApplication(ctx, &application); err != nil {
 			return err

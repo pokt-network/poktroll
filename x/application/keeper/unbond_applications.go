@@ -13,6 +13,8 @@ import (
 
 // EndBlockerUnbondApplications unbonds applications whose unbonding period has elapsed.
 func (k Keeper) EndBlockerUnbondApplications(ctx context.Context) error {
+	logger := k.Logger().With("method", "EndBlockerUnbondApplications")
+
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	sharedParams := k.sharedKeeper.GetParams(sdkCtx)
 	currentHeight := sdkCtx.BlockHeight()
@@ -43,7 +45,15 @@ func (k Keeper) EndBlockerUnbondApplications(ctx context.Context) error {
 			return err
 		}
 
-		// TODO_UPNEXT(@bryanchriswhite): emit a new EventApplicationUnbondingEnd event.
+		sdkCtx := sdk.UnwrapSDKContext(ctx)
+		unbondingBeginEvent := &apptypes.EventApplicationUnbondingEnd{
+			AppAddress: application.GetAddress(),
+		}
+		if err := sdkCtx.EventManager().EmitTypedEvent(unbondingBeginEvent); err != nil {
+			err = apptypes.ErrAppEmitEvent.Wrapf("(%+v): %s", unbondingBeginEvent, err)
+			logger.Error(err.Error())
+			return err
+		}
 	}
 
 	return nil
@@ -76,16 +86,6 @@ func (k Keeper) UnbondApplication(ctx context.Context, app *apptypes.Application
 	// Remove the Application from the store.
 	k.RemoveApplication(ctx, app.GetAddress())
 	logger.Info(fmt.Sprintf("Successfully removed the application: %+v", app))
-
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	unbondingBeginEvent := &apptypes.EventApplicationUnbondingEnd{
-		AppAddress: app.GetAddress(),
-	}
-	if err := sdkCtx.EventManager().EmitTypedEvent(unbondingBeginEvent); err != nil {
-		err = apptypes.ErrAppEmitEvent.Wrapf("(%+v): %s", unbondingBeginEvent, err)
-		logger.Error(err.Error())
-		return err
-	}
 
 	return nil
 }

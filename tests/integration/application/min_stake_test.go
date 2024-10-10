@@ -6,6 +6,7 @@ import (
 
 	cosmoslog "cosmossdk.io/log"
 	"cosmossdk.io/math"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/stretchr/testify/require"
@@ -14,6 +15,7 @@ import (
 	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
 	_ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
+	testevents "github.com/pokt-network/poktroll/testutil/events"
 	"github.com/pokt-network/poktroll/testutil/keeper"
 	testproof "github.com/pokt-network/poktroll/testutil/proof"
 	"github.com/pokt-network/poktroll/testutil/sample"
@@ -83,9 +85,23 @@ func (s *applicationMinStakeTestSuite) TestAppIsUnbondedIfBelowMinStakeWhenSettl
 	// Create a claim whose settlement amount drops the application below min stake
 	claim := s.getClaim(sessionHeader)
 
+	//// Reset the events, as if a new block were created.
+	//s.ctx = testevents.ResetEventManager(s.ctx)
+
 	// Process TLMs for the claim.
 	err := s.keepers.Keeper.ProcessTokenLogicModules(s.ctx, claim)
 	require.NoError(s.T(), err)
+
+	// Assert that the EventApplicationUnbondedBelowMinStake event is emitted.
+	expectedEvent := &apptypes.EventApplicationUnbondingBegin{AppAddress: s.appBech32}
+	events := cosmostypes.UnwrapSDKContext(s.ctx).EventManager().Events()
+	eventTypeURL := codectypes.MsgTypeURL(&apptypes.EventApplicationUnbondedBelowMinStake{})
+	filteredEvents := testevents.FilterEvents[*apptypes.EventApplicationUnbondedBelowMinStake](s.T(), events, eventTypeURL)
+	require.Equal(s.T(), 1, len(filteredEvents), "expected exactly 1 event")
+	require.EqualValues(s.T(), expectedEvent, filteredEvents[0])
+
+	// Reset the events, as if a new block were created.
+	s.ctx = testevents.ResetEventManager(s.ctx)
 
 	// Assert that the application was unbonded.
 	_, isAppFound := s.keepers.ApplicationKeeper.GetApplication(s.ctx, s.appBech32)
