@@ -171,7 +171,7 @@ genesis:
           denom: upokt
       applicationList:
         - address: pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4
-          delegatee_gateway_addresses: []
+          delegatee_gateway_addresses: [pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4]
           service_configs:
             - service_id: anvil
             - service_id: rest

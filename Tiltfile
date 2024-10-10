@@ -55,6 +55,9 @@ localnet_config_defaults = {
     "rest": {
         "enabled": True,
     },
+    "path_gateways": {
+        "count": 1,
+    },
     # By default, we use the `helm_repo` function below to point to the remote repository
     # but can update it to the locally cloned repo for testing & development
     "helm_chart_local_repo": {"enabled": False, "path": "../helm-charts"},
@@ -383,3 +386,18 @@ if localnet_config["rest"]["enabled"]:
     print("REST enabled: " + str(localnet_config["rest"]["enabled"]))
     deployment_create("rest", image="davarski/go-rest-api-demo")
     k8s_resource("rest", labels=["data_nodes"], port_forwards=["10000"])
+
+path_deployment_yaml = str(read_file("./localnet/kubernetes/path.yaml", "r"))
+
+actor_number = 0
+for x in range(localnet_config["path_gateways"]["count"]):
+    formatted_path_deployment_yaml = path_deployment_yaml.format(actor_number=actor_number+1)
+    k8s_yaml(blob(path_deployment_yaml))
+    actor_number = actor_number + 1
+    deployment_create("path-gateway", image="ghcr.io/buildwithgrove/path:sha-fcf75fe-rc")
+    k8s_resource(
+        "path-gateway",
+        labels=["gateways"],
+        resource_deps=["validator"],
+        port_forwards=["3000"],
+    )

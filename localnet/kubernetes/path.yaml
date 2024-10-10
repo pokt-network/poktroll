@@ -1,0 +1,42 @@
+#---
+#apiVersion: apps/v1
+#kind: Deployment
+#metadata:
+#  name: path-gateway
+#spec:
+#  replicas: 1
+#  selector:
+#    matchLabels:
+#      app: path-gateway
+#  template:
+#    metadata:
+#      labels:
+#        app: path-gateway
+#    spec:
+#      # TODO: Add resource limits
+#      containers:
+#        - name: path-gateway
+#          image: ghcr.io/buildwithgrove/path:sha-fcf75fe-rc
+#          ports:
+#            - containerPort: 3000
+#          volumeMounts:
+#            - name: path-gateway-config
+#              mountPath: /app/.config.yaml
+#      volumes:
+#        - name: path-gateway-config
+#          hostPath:
+#            type: File
+#            path: /home/red0ne/Job/pokt-network/poktroll/localnet/kubernetes/values-path.yaml
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: path-gateway
+spec:
+  selector:
+    app: path-gateway
+  ports:
+    - protocol: TCP
+      name: rpc
+      port: 3000
+      targetPort: 3000
