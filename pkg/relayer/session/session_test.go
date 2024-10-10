@@ -60,6 +60,8 @@ func requireProofCountEqualsExpectedValueFromProofParams(t *testing.T, proofPara
 		Id:                   "svc",
 		ComputeUnitsPerRelay: 2,
 	}
+
+	testqueryclients.SetServiceRelayDifficultyTargetHash(t, service.Id, protocol.BaseRelayDifficultyHashBz)
 	// Add the service to the existing services.
 	testqueryclients.AddToExistingServices(t, service)
 
@@ -157,12 +159,14 @@ func TestRelayerSessionsManager_InsufficientBalanceForProofSubmission(t *testing
 		ComputeUnitsPerRelay: 1,
 	}
 	testqueryclients.AddToExistingServices(t, lowCUPRService)
+	testqueryclients.SetServiceRelayDifficultyTargetHash(t, lowCUPRService.Id, protocol.BaseRelayDifficultyHashBz)
 
 	highCUPRService := sharedtypes.Service{
 		Id:                   "highCUPRService",
 		ComputeUnitsPerRelay: 2,
 	}
 	testqueryclients.AddToExistingServices(t, highCUPRService)
+	testqueryclients.SetServiceRelayDifficultyTargetHash(t, highCUPRService.Id, protocol.BaseRelayDifficultyHashBz)
 
 	lowCUPRServiceActiveSession := &sessiontypes.Session{
 		Header: &sessiontypes.SessionHeader{

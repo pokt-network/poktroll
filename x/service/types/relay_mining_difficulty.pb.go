@@ -25,6 +25,7 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 // RelayMiningDifficulty is a message used to store the on-chain Relay Mining
 // difficulty associated with a specific service ID.
+// TODO_TECHDEBT: Embed this message in the Service message.
 type RelayMiningDifficulty struct {
 	// The service ID the relay mining difficulty is associated with.
 	ServiceId string `protobuf:"bytes,1,opt,name=service_id,json=serviceId,proto3" json:"service_id,omitempty"`

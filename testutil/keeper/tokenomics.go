@@ -473,6 +473,20 @@ func WithService(service sharedtypes.Service) TokenomicsModuleKeepersOpt {
 	}
 }
 
+func WithApplication(applicaion apptypes.Application) TokenomicsModuleKeepersOpt {
+	return func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
+		keepers.SetApplication(ctx, applicaion)
+		return ctx
+	}
+}
+
+func WithSupplier(supplier sharedtypes.Supplier) TokenomicsModuleKeepersOpt {
+	return func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
+		keepers.SetSupplier(ctx, supplier)
+		return ctx
+	}
+}
+
 func WithProposerAddr(addr string) TokenomicsModuleKeepersOpt {
 	return func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
 		valAddr, err := cosmostypes.ValAddressFromBech32(addr)

@@ -15,7 +15,6 @@ import (
 	"github.com/pokt-network/poktroll/x/proof/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	"github.com/pokt-network/poktroll/x/shared"
-	tokenomics "github.com/pokt-network/poktroll/x/tokenomics"
 )
 
 // submitProofs maps over the given claimedSessions observable.
@@ -277,12 +276,6 @@ func (rs *relayerSessionsManager) isProofRequired(
 	// Create the claim object and use its methods to determine if a proof is required.
 	claim := claimFromSessionTree(sessionTree)
 
-	// Get the number of compute units accumulated through the given session.
-	numClaimComputeUnits, err := claim.GetNumClaimedComputeUnits()
-	if err != nil {
-		return false, err
-	}
-
 	proofParams, err := rs.proofQueryClient.GetParams(ctx)
 	if err != nil {
 		return false, err
@@ -293,8 +286,15 @@ func (rs *relayerSessionsManager) isProofRequired(
 		return false, err
 	}
 
+	// Retrieving the relay mining difficulty for the service at hand
+	serviceId := claim.GetSessionHeader().GetServiceId()
+	relayMiningDifficulty, err := rs.serviceQueryClient.GetServiceRelayDifficulty(ctx, serviceId)
+	if err != nil {
+		return false, err
+	}
+
 	// The amount of uPOKT being claimed.
-	claimedAmount, err := tokenomics.NumComputeUnitsToCoin(*sharedParams, numClaimComputeUnits)
+	claimedAmount, err := claim.GetClaimeduPOKT(*sharedParams, relayMiningDifficulty)
 	if err != nil {
 		return false, err
 	}

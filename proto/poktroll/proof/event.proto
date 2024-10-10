@@ -13,7 +13,7 @@ message EventClaimCreated {
   uint64 num_relays = 2 [(gogoproto.jsontag) = "num_relays"];
   uint64 num_claimed_compute_units = 4 [(gogoproto.jsontag) = "num_claimed_compute_units"];
   uint64 num_estimated_compute_units = 5 [(gogoproto.jsontag) = "num_estimated_compute_units"];
-  cosmos.base.v1beta1.Coin claimed_amount_upokt = 6 [(gogoproto.jsontag) = "claimed_amount_upokt"];
+  cosmos.base.v1beta1.Coin claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
 }
 
 // TODO_TEST: Add coverage for claim updates.
@@ -22,7 +22,7 @@ message EventClaimUpdated {
   uint64 num_relays = 2 [(gogoproto.jsontag) = "num_relays"];
   uint64 num_claimed_compute_units = 4 [(gogoproto.jsontag) = "num_claimed_compute_units"];
   uint64 num_estimated_compute_units = 5 [(gogoproto.jsontag) = "num_estimated_compute_units"];
-  cosmos.base.v1beta1.Coin claimed_amount_upokt = 6 [(gogoproto.jsontag) = "claimed_amount_upokt"];
+  cosmos.base.v1beta1.Coin claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
 }
 
 message EventProofSubmitted {
@@ -31,7 +31,7 @@ message EventProofSubmitted {
   uint64 num_relays = 3 [(gogoproto.jsontag) = "num_relays"];
   uint64 num_claimed_compute_units = 4 [(gogoproto.jsontag) = "num_claimed_compute_units"];
   uint64 num_estimated_compute_units = 5 [(gogoproto.jsontag) = "num_estimated_compute_units"];
-  cosmos.base.v1beta1.Coin claimed_amount_upokt = 6 [(gogoproto.jsontag) = "claimed_amount_upokt"];
+  cosmos.base.v1beta1.Coin claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
 }
 
 // TODO_TEST: Add coverage for proof updates.
@@ -41,5 +41,5 @@ message EventProofUpdated {
   uint64 num_relays = 3 [(gogoproto.jsontag) = "num_relays"];
   uint64 num_claimed_compute_units = 4 [(gogoproto.jsontag) = "num_claimed_compute_units"];
   uint64 num_estimated_compute_units = 5 [(gogoproto.jsontag) = "num_estimated_compute_units"];
-  cosmos.base.v1beta1.Coin claimed_amount_upokt = 6 [(gogoproto.jsontag) = "claimed_amount_upokt"];
+  cosmos.base.v1beta1.Coin claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
 }

@@ -315,10 +315,12 @@ func (rs *relayerSessionsManager) payableProofsSessionTrees(
 		).Warn().Msg("supplier operator cannot afford to submit proof for claim, skipping")
 	}
 
-	logger.Warn().Msgf(
-		"Supplier operator %q can only afford %d out of %d claims",
-		supplierOpeartorAddress, len(claimableSessionTrees), len(sessionTrees),
-	)
+	if len(claimableSessionTrees) < len(sessionTrees) {
+		logger.Warn().Msgf(
+			"Supplier operator %q can only afford %d out of %d claims",
+			supplierOpeartorAddress, len(claimableSessionTrees), len(sessionTrees),
+		)
+	}
 
 	return claimableSessionTrees, nil
 }
