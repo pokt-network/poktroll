@@ -274,15 +274,27 @@ func (k Keeper) ProcessTokenLogicModules(
 	// Execute all the token logic modules processors
 	for tlm, tlmProcessor := range tokenLogicModuleProcessorMap {
 		logger.Info(fmt.Sprintf("Starting TLM processing: %q", tlm))
-		if err := tlmProcessor(k, ctx, &service, claim.GetSessionHeader(), &application, &supplier, actualSettlementCoin, &relayMiningDifficulty); err != nil {
+		if err = tlmProcessor(k, ctx, &service, claim.GetSessionHeader(), &application, &supplier, actualSettlementCoin, &relayMiningDifficulty); err != nil {
 			return tokenomicstypes.ErrTokenomicsTLMError.Wrapf("TLM %q: %v", tlm, err)
 		}
 		logger.Info(fmt.Sprintf("Finished TLM processing: %q", tlm))
 	}
 
-	// State mutation: update the application's on-chain record
-	k.applicationKeeper.SetApplication(ctx, application)
-	logger.Info(fmt.Sprintf("updated on-chain application record with address %q", application.Address))
+	// TODO_CONSIDERATION: If we support multiple native tokens, we will need to
+	// start checking the denom here.
+	if application.Stake.Amount.LT(apptypes.DefaultMinStake.Amount) {
+		// Unbond the application because it has less than the minimum stake.
+		if err = k.applicationKeeper.UnbondApplication(ctx, &application); err != nil {
+			return err
+		}
+
+		// TODO_UPNEXT:(@bryanchriswhite): emit a new EventApplicationUnbondedBelowMinStake event.
+	} else {
+		// State mutation: update the application's on-chain record.
+		k.applicationKeeper.SetApplication(ctx, application)
+		logger.Info(fmt.Sprintf("updated on-chain application record with address %q", application.Address))
+
+	}
 
 	// TODO_MAINNET: If the application stake has dropped to (near?) zero, should
 	// we unstake it? Should we use it's balance? Should there be a payee of last resort?

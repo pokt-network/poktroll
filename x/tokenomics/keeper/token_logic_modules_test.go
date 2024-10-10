@@ -42,7 +42,7 @@ func init() {
 
 func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 	// Test Parameters
-	appInitialStake := math.NewInt(1000000)
+	appInitialStake := apptypes.DefaultMinStake.Amount.Mul(math.NewInt(2))
 	supplierInitialStake := math.NewInt(1000000)
 	supplierRevShareRatios := []float32{12.5, 37.5, 50}
 	globalComputeUnitsToTokensMultiplier := uint64(1)
@@ -169,7 +169,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 func TestProcessTokenLogicModules_TLMBurnEqualsMint_Invalid_SupplierExceedsMaxClaimableAmount(t *testing.T) {
 	// Test Parameters
 	globalComputeUnitsToTokensMultiplier := uint64(1)
-	serviceComputeUnitsPerRelay := uint64(1)
+	serviceComputeUnitsPerRelay := uint64(100)
 	service := prepareTestService(serviceComputeUnitsPerRelay)
 	numRelays := uint64(1000) // By a single supplier for application in this session
 	supplierInitialStake := math.NewInt(1000000)
@@ -314,7 +314,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Invalid_SupplierExceedsMaxCl
 
 func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t *testing.T) {
 	// Test Parameters
-	appInitialStake := math.NewInt(1000000)
+	appInitialStake := apptypes.DefaultMinStake.Amount.Mul(math.NewInt(2))
 	supplierInitialStake := math.NewInt(1000000)
 	supplierRevShareRatios := []float32{12.5, 37.5, 50}
 	globalComputeUnitsToTokensMultiplier := uint64(1)
