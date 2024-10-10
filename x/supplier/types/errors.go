@@ -18,4 +18,5 @@ var (
 	ErrSupplierIsUnstaking               = sdkerrors.Register(ModuleName, 1109, "supplier is in unbonding period")
 	ErrSupplierParamsInvalid             = sdkerrors.Register(ModuleName, 1110, "invalid supplier params")
 	ErrSupplierServiceNotFound           = sdkerrors.Register(ModuleName, 1111, "service not found")
+	ErrSupplierParamInvalid              = sdkerrors.Register(ModuleName, 1112, "the provided param is invalid")
 )

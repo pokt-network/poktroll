@@ -178,6 +178,8 @@ var (
 		ParamsMsgs: ModuleParamsMessages{
 			MsgUpdateParams:         suppliertypes.MsgUpdateParams{},
 			MsgUpdateParamsResponse: suppliertypes.MsgUpdateParamsResponse{},
+			MsgUpdateParam:          suppliertypes.MsgUpdateParam{},
+			MsgUpdateParamResponse:  suppliertypes.MsgUpdateParamResponse{},
 			QueryParamsRequest:      suppliertypes.QueryParamsRequest{},
 			QueryParamsResponse:     suppliertypes.QueryParamsResponse{},
 		},
