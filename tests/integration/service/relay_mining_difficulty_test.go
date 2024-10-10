@@ -2,12 +2,15 @@ package integration_test
 
 import (
 	"context"
+	"math"
 	"testing"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/smt"
 	"github.com/pokt-network/smt/kvstore/pebble"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	testutilevents "github.com/pokt-network/poktroll/testutil/events"
@@ -38,6 +41,20 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	// Get the current session and shared params
 	session := getSession(t, integrationApp)
 	sharedParams := getSharedParams(t, integrationApp)
+	proofParams := getProofParams(t, integrationApp)
+
+	// Update the proof parameters to never require a proof, since this test is not
+	// submitting any proofs.
+	lowProofRequirementThreshold := sdk.NewInt64Coin(volatile.DenomuPOKT, math.MaxInt64)
+	proofParams.ProofRequirementThreshold = &lowProofRequirementThreshold
+	proofParams.ProofRequestProbability = 0
+
+	msgProofParams := prooftypes.MsgUpdateParams{
+		Authority: integrationApp.GetAuthority(),
+		Params:    proofParams,
+	}
+	_, err := integrationApp.RunMsg(t, &msgProofParams)
+	require.NoError(t, err)
 
 	// Prepare the trie with several mined relays
 	expectedNumRelays := uint64(100)
@@ -136,6 +153,21 @@ func getSharedParams(t *testing.T, integrationApp *testutil.App) sharedtypes.Par
 	require.NoError(t, err)
 
 	return sharedQueryRes.Params
+}
+
+// getProofParams returns the proof parameters for the current block height.
+func getProofParams(t *testing.T, integrationApp *testutil.App) prooftypes.Params {
+	t.Helper()
+
+	sdkCtx := integrationApp.GetSdkCtx()
+
+	proofQueryClient := prooftypes.NewQueryClient(integrationApp.QueryHelper())
+	proofParamsReq := prooftypes.QueryParamsRequest{}
+
+	proofQueryRes, err := proofQueryClient.Params(sdkCtx, &proofParamsReq)
+	require.NoError(t, err)
+
+	return proofQueryRes.Params
 }
 
 // getSession returns the current session for the default application and service.

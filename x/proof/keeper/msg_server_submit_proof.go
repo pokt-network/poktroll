@@ -230,7 +230,7 @@ func (k Keeper) ProofRequirementForClaim(ctx context.Context, claim *types.Claim
 	serviceId := claim.GetSessionHeader().GetServiceId()
 	relayMiningDifficulty, found := k.serviceKeeper.GetRelayMiningDifficulty(ctx, serviceId)
 	if !found {
-		relayMiningDifficulty = servicekeeper.NewDefaultRelayMiningDifficulty(ctx, logger, serviceId, 0)
+		relayMiningDifficulty = servicekeeper.NewDefaultRelayMiningDifficulty(ctx, logger, serviceId, servicekeeper.TargetNumRelays)
 	}
 
 	// Retrieve the number of tokens claimed to compare against the threshold.

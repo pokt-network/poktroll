@@ -77,7 +77,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 		serviceId := claim.GetSessionHeader().GetServiceId()
 		relayMiningDifficulty, found := k.serviceKeeper.GetRelayMiningDifficulty(ctx, serviceId)
 		if !found {
-			relayMiningDifficulty = servicekeeper.NewDefaultRelayMiningDifficulty(ctx, logger, serviceId, 0)
+			relayMiningDifficulty = servicekeeper.NewDefaultRelayMiningDifficulty(ctx, logger, serviceId, servicekeeper.TargetNumRelays)
 		}
 		// numEstimatedComputeUnits is the probabilistic estimation of the off-chain
 		// work done by the relay miner in this session. It is derived from the claimed
