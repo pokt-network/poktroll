@@ -3,7 +3,6 @@ package integration_test
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/pokt-network/smt"
 	"github.com/pokt-network/smt/kvstore/pebble"
@@ -90,10 +89,6 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 
 	// TODO_TECHDEBT(@bryanchriswhite): Olshansky is unsure why the +1 is necessary here but it was required to pass the test.
 	integrationApp.NextBlocks(t, int(numBlocksUntilProofWindowCloseHeight)+1)
-
-	// TODO_TECHDEBT: Aiming to get PR #771 over the finish line and this is a hacky
-	// workaround: https://github.com/pokt-network/poktroll/pull/771#issuecomment-2364071636
-	time.Sleep(3 * time.Second)
 
 	// Check that the expected events are emitted
 	events := sdkCtx.EventManager().Events()

@@ -251,7 +251,7 @@ func (k Keeper) ProcessTokenLogicModules(
 	// Retrieving the relay mining difficulty for the service at hand
 	relayMiningDifficulty, found := k.serviceKeeper.GetRelayMiningDifficulty(ctx, service.Id)
 	if !found {
-		relayMiningDifficulty = servicekeeper.NewDefaultRelayMiningDifficulty(ctx, logger, service.Id, numRelays)
+		relayMiningDifficulty = servicekeeper.NewDefaultRelayMiningDifficulty(ctx, logger, service.Id, servicekeeper.TargetNumRelays)
 	}
 	sharedParams := k.sharedKeeper.GetParams(ctx)
 
@@ -648,6 +648,11 @@ func calculateGlobalPerClaimMintInflationFromSettlementAmount(settlementCoin sdk
 	// TODO_MAINNET: Consider using fixed point arithmetic for deterministic results.
 	settlementAmtFloat := new(big.Float).SetUint64(settlementCoin.Amount.Uint64())
 	newMintAmtFloat := new(big.Float).Mul(settlementAmtFloat, big.NewFloat(MintPerClaimedTokenGlobalInflation))
+	// DEV_NOTE: If new mint is less than 1 and more than 0, ceil it to 1 so that
+	// we never expect to process a claim with 0 minted tokens.
+	if newMintAmtFloat.Cmp(big.NewFloat(1)) < 0 && newMintAmtFloat.Cmp(big.NewFloat(0)) > 0 {
+		newMintAmtFloat = big.NewFloat(1)
+	}
 	newMintAmtInt, _ := newMintAmtFloat.Int64()
 	mintAmtCoin := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(newMintAmtInt))
 	return mintAmtCoin, *newMintAmtFloat
