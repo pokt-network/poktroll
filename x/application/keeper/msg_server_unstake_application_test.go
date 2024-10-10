@@ -148,8 +148,10 @@ func TestMsgServer_UnstakeApplication_CancelUnbondingIfRestaked(t *testing.T) {
 	require.NoError(t, err)
 
 	events := sdk.UnwrapSDKContext(ctx).EventManager().Events()
-	require.Equalf(t, 1, len(events), "expected exactly 1 event")
-	require.EqualValues(t, expectedEvent, events[0])
+	appUnbondingBeginTypeURL := sdk.MsgTypeURL(&apptypes.EventApplicationUnbondingBegin{})
+	filteredEvents := testevents.FilterEvents[*apptypes.EventApplicationUnbondingBegin](t, events, appUnbondingBeginTypeURL)
+	require.Equalf(t, 1, len(filteredEvents), "expected exactly 1 event")
+	require.EqualValues(t, expectedEvent, filteredEvents[0])
 
 	// Reset the events, as if a new block were created.
 	ctx = testevents.ResetEventManager(ctx)
