@@ -284,7 +284,7 @@ func (k Keeper) ProcessTokenLogicModules(
 	// start checking the denom here.
 	if application.Stake.Amount.LT(apptypes.DefaultMinStake.Amount) {
 		// Unbond the application because it has less than the minimum stake.
-		if err := k.applicationKeeper.UnbondApplication(ctx, &application); err != nil {
+		if err = k.applicationKeeper.UnbondApplication(ctx, &application); err != nil {
 			return err
 		}
 
