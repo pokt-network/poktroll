@@ -56,7 +56,7 @@ type TestSuite struct {
 	numRelays                uint64
 	numClaimedComputeUnits   uint64
 	numEstimatedComputeUnits uint64
-	claimedAmountUpokt       sdk.Coin
+	claimedUpokt             sdk.Coin
 	relayMiningDifficulty    servicetypes.RelayMiningDifficulty
 }
 
@@ -173,7 +173,7 @@ func (s *TestSuite) SetupTest() {
 
 	// Calculate the claimed amount in uPOKT.
 	sharedParams := s.keepers.SharedKeeper.GetParams(sdkCtx)
-	s.claimedAmountUpokt = getClaimedAmountUpokt(sharedParams, s.numEstimatedComputeUnits, s.relayMiningDifficulty)
+	s.claimedUpokt = getClaimedUpokt(sharedParams, s.numEstimatedComputeUnits, s.relayMiningDifficulty)
 
 	blockHeaderHash := make([]byte, 0)
 	expectedMerkleProofPath := protocol.GetPathForProof(blockHeaderHash, sessionHeader.SessionId)
@@ -319,7 +319,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequiredAndNotProv
 	require.Equal(t, s.numRelays, expectedClaimExpiredEvent.GetNumRelays())
 	require.Equal(t, s.numClaimedComputeUnits, expectedClaimExpiredEvent.GetNumClaimedComputeUnits())
 	require.Equal(t, s.numEstimatedComputeUnits, expectedClaimExpiredEvent.GetNumClaimedComputeUnits())
-	require.Equal(t, s.claimedAmountUpokt, *expectedClaimExpiredEvent.GetClaimedAmountUpokt())
+	require.Equal(t, s.claimedUpokt, *expectedClaimExpiredEvent.GetClaimedUpokt())
 
 	// Confirm that a slashing event was emitted
 	expectedSlashingEvents := testutilevents.FilterEvents[*tokenomicstypes.EventSupplierSlashed](t, events, "poktroll.tokenomics.EventSupplierSlashed")
@@ -385,7 +385,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimSettled_ProofRequiredAndProvide
 	require.Equal(t, s.numRelays, expectedEvent.GetNumRelays())
 	require.Equal(t, s.numClaimedComputeUnits, expectedEvent.GetNumClaimedComputeUnits())
 	require.Equal(t, s.numEstimatedComputeUnits, expectedEvent.GetNumClaimedComputeUnits())
-	require.Equal(t, s.claimedAmountUpokt, *expectedEvent.GetClaimedAmountUpokt())
+	require.Equal(t, s.claimedUpokt, *expectedEvent.GetClaimedUpokt())
 }
 
 func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOneProvided() {
@@ -452,7 +452,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOn
 	require.Equal(t, s.numRelays, expectedClaimExpiredEvent.GetNumRelays())
 	require.Equal(t, s.numClaimedComputeUnits, expectedClaimExpiredEvent.GetNumClaimedComputeUnits())
 	require.Equal(t, s.numEstimatedComputeUnits, expectedClaimExpiredEvent.GetNumClaimedComputeUnits())
-	require.Equal(t, s.claimedAmountUpokt, *expectedClaimExpiredEvent.GetClaimedAmountUpokt())
+	require.Equal(t, s.claimedUpokt, *expectedClaimExpiredEvent.GetClaimedUpokt())
 
 	// Confirm that a slashing event was emitted
 	expectedSlashingEvents := testutilevents.FilterEvents[*tokenomicstypes.EventSupplierSlashed](t, events, "poktroll.tokenomics.EventSupplierSlashed")
@@ -518,7 +518,7 @@ func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_Vi
 	require.Equal(t, s.numRelays, expectedEvent.GetNumRelays())
 	require.Equal(t, s.numClaimedComputeUnits, expectedEvent.GetNumClaimedComputeUnits())
 	require.Equal(t, s.numEstimatedComputeUnits, expectedEvent.GetNumClaimedComputeUnits())
-	require.Equal(t, s.claimedAmountUpokt, *expectedEvent.GetClaimedAmountUpokt())
+	require.Equal(t, s.claimedUpokt, *expectedEvent.GetClaimedUpokt())
 }
 
 func (s *TestSuite) TestSettlePendingClaims_Settles_WhenAProofIsNotRequired() {
@@ -573,7 +573,7 @@ func (s *TestSuite) TestSettlePendingClaims_Settles_WhenAProofIsNotRequired() {
 	require.Equal(t, s.numRelays, expectedEvent.GetNumRelays())
 	require.Equal(t, s.numClaimedComputeUnits, expectedEvent.GetNumClaimedComputeUnits())
 	require.Equal(t, s.numEstimatedComputeUnits, expectedEvent.GetNumClaimedComputeUnits())
-	require.Equal(t, s.claimedAmountUpokt, *expectedEvent.GetClaimedAmountUpokt())
+	require.Equal(t, s.claimedUpokt, *expectedEvent.GetClaimedUpokt())
 }
 
 func (s *TestSuite) TestSettlePendingClaims_DoesNotSettle_BeforeProofWindowCloses() {
@@ -750,8 +750,8 @@ func getEstimatedComputeUnits(
 	return new(big.Int).Div(numEstimatedComputeUnitsRat.Num(), numEstimatedComputeUnitsRat.Denom()).Uint64()
 }
 
-// getClaimedAmountUpokt returns the claimed amount in uPOKT.
-func getClaimedAmountUpokt(
+// getClaimedUpokt returns the claimed amount in uPOKT.
+func getClaimedUpokt(
 	sharedParams sharedtypes.Params,
 	numClaimedComputeUnits uint64,
 	relayMiningDifficulty servicetypes.RelayMiningDifficulty,
@@ -764,10 +764,10 @@ func getClaimedAmountUpokt(
 
 	computeUnitsToTokenMultiplierRat := new(big.Rat).SetUint64(sharedParams.GetComputeUnitsToTokensMultiplier())
 
-	claimedAmountUpoktRat := new(big.Rat).Mul(numEstimatedComputeUnitsRat, computeUnitsToTokenMultiplierRat)
-	claimedAmountUpoktInt := new(big.Int).Div(claimedAmountUpoktRat.Num(), claimedAmountUpoktRat.Denom())
+	claimedUpoktRat := new(big.Rat).Mul(numEstimatedComputeUnitsRat, computeUnitsToTokenMultiplierRat)
+	claimedUpoktInt := new(big.Int).Div(claimedUpoktRat.Num(), claimedUpoktRat.Denom())
 
-	return sdk.NewCoin(volatile.DenomuPOKT, math.NewIntFromBigInt(claimedAmountUpoktInt))
+	return sdk.NewCoin(volatile.DenomuPOKT, math.NewIntFromBigInt(claimedUpoktInt))
 }
 
 // uPOKTCoin returns a uPOKT coin with the given amount.

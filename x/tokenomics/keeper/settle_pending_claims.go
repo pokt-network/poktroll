@@ -88,10 +88,10 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 		}
 
 		sharedParams := k.sharedKeeper.GetParams(ctx)
-		// claimedAmount is the amount of uPOKT that the supplier would receive if the
+		// claimeduPOKT is the amount of uPOKT that the supplier would receive if the
 		// claim is settled. It is derived from the claimed number of relays, the service
 		// current minding difficulty and the global network parameters.
-		claimedAmount, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
+		claimeduPOKT, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
 		if err != nil {
 			return settledResult, expiredResult, err
 		}
@@ -110,7 +110,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 			"num_claim_compute_units", numClaimComputeUnits,
 			"num_relays_in_session_tree", numClaimRelays,
 			"num_estimated_compute_units", numEstimatedComputeUnits,
-			"claimed_amount_upokt", claimedAmount,
+			"claimed_upokt", claimeduPOKT,
 			"proof_requirement", proofRequirement,
 		)
 
@@ -141,7 +141,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 					NumRelays:                numClaimRelays,
 					NumClaimedComputeUnits:   numClaimComputeUnits,
 					NumEstimatedComputeUnits: numEstimatedComputeUnits,
-					ClaimedAmountUpokt:       &claimedAmount,
+					ClaimedUpokt:             &claimeduPOKT,
 				}
 				if err = ctx.EventManager().EmitTypedEvent(&claimExpiredEvent); err != nil {
 					return settledResult, expiredResult, err
@@ -188,7 +188,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 			NumRelays:                numClaimRelays,
 			NumClaimedComputeUnits:   numClaimComputeUnits,
 			NumEstimatedComputeUnits: numEstimatedComputeUnits,
-			ClaimedAmountUpokt:       &claimedAmount,
+			ClaimedUpokt:             &claimeduPOKT,
 			ProofRequirement:         proofRequirement,
 		}
 
@@ -202,7 +202,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 			NumRelays:                0,
 			NumClaimedComputeUnits:   0,
 			NumEstimatedComputeUnits: numEstimatedComputeUnits,
-			ClaimedAmountUpokt:       &claimedAmount,
+			ClaimedUpokt:             &claimeduPOKT,
 		}); err != nil {
 			return settledResult, expiredResult, err
 		}

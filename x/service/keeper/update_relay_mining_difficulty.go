@@ -35,7 +35,7 @@ var (
 	//
 	// TODO_MAINNET(@olshansk, @rawthil): Play around with the value N for EMA to
 	// capture what the memory should be.
-	EMASmoothingFactor = new(big.Float).SetFloat64(0.1)
+	emaSmoothingFactor = new(big.Float).SetFloat64(0.1)
 )
 
 // UpdateRelayMiningDifficulty updates the on-chain relay mining difficulty
@@ -59,7 +59,7 @@ func (k Keeper) UpdateRelayMiningDifficulty(
 		// of periods.
 		// N := ctx.BlockHeight() - prevDifficulty.BlockHeight
 		// alpha := 2 / (1 + N)
-		alpha := EMASmoothingFactor
+		alpha := emaSmoothingFactor
 
 		// Compute the updated EMA of the number of relays.
 		prevRelaysEma := prevDifficulty.NumRelaysEma

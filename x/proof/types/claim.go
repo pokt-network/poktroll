@@ -64,7 +64,7 @@ func (claim *Claim) GetClaimeduPOKT(
 	upoktAmount := new(big.Int).Div(upoktAmountRat.Num(), upoktAmountRat.Denom())
 	if upoktAmount.Sign() < 0 {
 		return sdk.Coin{}, ErrProofInvalidClaimedAmount.Wrapf(
-			"num estimated compute units to coin (%s) * CUTTM (%d) resulted in a negative amount: %s",
+			"num estimated compute units (%s) * CUTTM (%d) resulted in a negative amount: %s",
 			numEstimatedComputeUnitsRat.RatString(),
 			sharedParams.GetComputeUnitsToTokensMultiplier(),
 			upoktAmountRat,

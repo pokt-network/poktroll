@@ -102,7 +102,7 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 
 	// Update the relay mining difficulty so there's always a difficulty to retrieve
 	// for the test service.
-	_, err = keepers.ServiceKeeper.UpdateRelayMiningDifficulty(sdkCtx, map[string]uint64{service.Id: 0})
+	_, err = keepers.ServiceKeeper.UpdateRelayMiningDifficulty(sdkCtx, map[string]uint64{service.Id: 1})
 	require.NoError(t, err)
 
 	// Set the previous relays and rewards to be used to calculate the increase ratio.
