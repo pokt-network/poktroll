@@ -15,7 +15,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/filter"
 	"github.com/pokt-network/poktroll/pkg/observable/logging"
 	"github.com/pokt-network/poktroll/pkg/relayer"
-	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 )
 
@@ -25,16 +24,16 @@ var _ relayer.Miner = (*miner)(nil)
 // difficulty of each, finally publishing those with sufficient difficulty to
 // minedRelayObs as they are applicable for relay volume.
 type miner struct {
-	// tokenomicsQueryClient is used to query for the relay difficulty target hash of a service.
+	// serviceQueryClient is used to query for the relay difficulty target hash of a service.
 	// relay_difficulty is the target hash which a relay hash must be less than to be volume/reward applicable.
-	tokenomicsQueryClient client.TokenomicsQueryClient
+	serviceQueryClient client.ServiceQueryClient
 }
 
 // NewMiner creates a new miner from the given dependencies and options. It
 // returns an error if it has not been sufficiently configured or supplied.
 //
 // Required Dependencies:
-// - ProofQueryClient
+// - ServiceQueryClient
 //
 // Available options:
 //   - WithRelayDifficultyTargetHash
@@ -44,7 +43,7 @@ func NewMiner(
 ) (*miner, error) {
 	mnr := &miner{}
 
-	if err := depinject.Inject(deps, &mnr.tokenomicsQueryClient); err != nil {
+	if err := depinject.Inject(deps, &mnr.serviceQueryClient); err != nil {
 		return nil, err
 	}
 
@@ -129,11 +128,11 @@ func (mnr *miner) getServiceRelayDifficultyTargetHash(ctx context.Context, req *
 		return nil, fmt.Errorf("invalid session header: %w", err)
 	}
 
-	serviceRelayDifficulty, err := mnr.tokenomicsQueryClient.GetServiceRelayDifficultyTargetHash(ctx, sessionHeader.ServiceId)
+	serviceRelayDifficulty, err := mnr.serviceQueryClient.GetServiceRelayDifficultyTargetHash(ctx, sessionHeader.ServiceId)
 	if err != nil {
 		// TODO_IMPROVE: log the error and a message saying the default relay difficulty target hash
 		// is being used.
-		return prooftypes.DefaultRelayDifficultyTargetHash, nil
+		return protocol.BaseRelayDifficultyHashBz, nil
 	}
 
 	return serviceRelayDifficulty.GetTargetHash(), nil
