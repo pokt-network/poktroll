@@ -46,8 +46,7 @@ var (
 	//  - the relay difficulty target hash to the easiest difficulty so that these tests don't need to mine for valid relays.
 	//  - the proof request probability to 1 so that all test sessions require a proof.
 	testProofParams = prooftypes.Params{
-		RelayDifficultyTargetHash: protocol.BaseRelayDifficultyHashBz,
-		ProofRequestProbability:   1,
+		ProofRequestProbability: 1,
 	}
 )
 
@@ -99,7 +98,6 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 			// Set proof keeper params to disable relay mining and always require a proof.
 			proofParams := keepers.Keeper.GetParams(ctx)
 			proofParams.ProofRequestProbability = testProofParams.ProofRequestProbability
-			proofParams.RelayDifficultyTargetHash = testProofParams.RelayDifficultyTargetHash
 			err := keepers.Keeper.SetParams(ctx, proofParams)
 			require.NoError(t, err)
 
@@ -157,7 +155,7 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 
 			// Submit the corresponding proof.
 			numRelays := uint64(5)
-			numComputeUnits := numRelays * service.ComputeUnitsPerRelay
+			numClaimComputeUnits := numRelays * service.ComputeUnitsPerRelay
 			sessionTree := testtree.NewFilledSessionTree(
 				ctx, t,
 				numRelays, service.ComputeUnitsPerRelay,
@@ -240,7 +238,8 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 			require.EqualValues(t, claim, proofSubmittedEvent.GetClaim())
 			require.EqualValues(t, &proofs[0], proofSubmittedEvent.GetProof())
 			require.Equal(t, uint64(numRelays), proofSubmittedEvent.GetNumRelays())
-			require.Equal(t, uint64(numComputeUnits), proofSubmittedEvent.GetNumComputeUnits())
+			require.Equal(t, uint64(numClaimComputeUnits), proofSubmittedEvent.GetNumClaimedComputeUnits())
+			// TODO_FOLLOWUP: Add NumEstimatedComputeUnits and ClaimedAmountUpokt assertions
 		})
 	}
 }
@@ -259,7 +258,6 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 	// Set proof keeper params to disable relaymining and always require a proof.
 	proofParams := keepers.Keeper.GetParams(ctx)
 	proofParams.ProofRequestProbability = testProofParams.ProofRequestProbability
-	proofParams.RelayDifficultyTargetHash = testProofParams.RelayDifficultyTargetHash
 	err := keepers.Keeper.SetParams(ctx, proofParams)
 	require.NoError(t, err)
 
@@ -705,7 +703,6 @@ func TestMsgServer_SubmitProof_FailSubmittingNonRequiredProof(t *testing.T) {
 	// Set proof keeper params to disable relay mining but never require a proof.
 	proofParams := keepers.Keeper.GetParams(ctx)
 	proofParams.ProofRequestProbability = 0
-	proofParams.RelayDifficultyTargetHash = testProofParams.RelayDifficultyTargetHash
 	err := keepers.Keeper.SetParams(ctx, proofParams)
 	require.NoError(t, err)
 

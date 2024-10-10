@@ -9,8 +9,8 @@ import (
 
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
-	"github.com/pokt-network/poktroll/x/tokenomics/keeper"
-	"github.com/pokt-network/poktroll/x/tokenomics/types"
+	"github.com/pokt-network/poktroll/x/service/keeper"
+	"github.com/pokt-network/poktroll/x/service/types"
 )
 
 // Prevent strconv unused error
@@ -27,7 +27,7 @@ func createNRelayMiningDifficulty(keeper keeper.Keeper, ctx context.Context, n i
 }
 
 func TestRelayMiningDifficultyGet(t *testing.T) {
-	keeper, ctx := keepertest.TokenomicsKeeper(t)
+	keeper, ctx := keepertest.ServiceKeeper(t)
 	difficulties := createNRelayMiningDifficulty(keeper, ctx, 10)
 	for _, difficulty := range difficulties {
 		rst, found := keeper.GetRelayMiningDifficulty(ctx,
@@ -41,7 +41,7 @@ func TestRelayMiningDifficultyGet(t *testing.T) {
 	}
 }
 func TestRelayMiningDifficultyRemove(t *testing.T) {
-	keeper, ctx := keepertest.TokenomicsKeeper(t)
+	keeper, ctx := keepertest.ServiceKeeper(t)
 	difficulties := createNRelayMiningDifficulty(keeper, ctx, 10)
 	for _, difficulty := range difficulties {
 		keeper.RemoveRelayMiningDifficulty(ctx,
@@ -55,7 +55,7 @@ func TestRelayMiningDifficultyRemove(t *testing.T) {
 }
 
 func TestRelayMiningDifficultyGetAll(t *testing.T) {
-	keeper, ctx := keepertest.TokenomicsKeeper(t)
+	keeper, ctx := keepertest.ServiceKeeper(t)
 	difficulties := createNRelayMiningDifficulty(keeper, ctx, 10)
 	require.ElementsMatch(t,
 		nullify.Fill(difficulties),

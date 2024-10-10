@@ -313,7 +313,6 @@ func setupDependencies(
 	sharedQueryClientMock := testqueryclients.NewTestSharedQueryClient(t)
 	serviceQueryClientMock := testqueryclients.NewTestServiceQueryClient(t)
 	proofQueryClientMock := testqueryclients.NewTestProofQueryClientWithParams(t, &proofParams)
-	tokenomicsQueryClient := testqueryclients.NewTestTokenomicsQueryClient(t)
 	bankQueryClient := testqueryclients.NewTestBankQueryClientWithBalance(t, supplierOperatorBalance)
 
 	deps := depinject.Supply(
@@ -323,7 +322,6 @@ func setupDependencies(
 		sharedQueryClientMock,
 		serviceQueryClientMock,
 		proofQueryClientMock,
-		tokenomicsQueryClient,
 		bankQueryClient,
 	)
 	storesDirectoryOpt := testrelayer.WithTempStoresDirectory(t)

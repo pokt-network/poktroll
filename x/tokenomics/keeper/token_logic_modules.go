@@ -16,13 +16,14 @@ import (
 	"github.com/pokt-network/poktroll/telemetry"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
+	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	"github.com/pokt-network/poktroll/x/tokenomics"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
-	tokenomictypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 var (
@@ -100,7 +101,7 @@ type TokenLogicModuleProcessor func(
 	*apptypes.Application,
 	*sharedtypes.Supplier,
 	cosmostypes.Coin, // This is the "actualSettlementCoin" rather than just the "claimCoin" because of how settlement functions; see ensureClaimAmountLimits for details.
-	*tokenomictypes.RelayMiningDifficulty,
+	*servicetypes.RelayMiningDifficulty,
 ) error
 
 // tokenLogicModuleProcessorMap is a map of TLMs to their respective independent processors.
@@ -177,7 +178,7 @@ func (k Keeper) ProcessTokenLogicModules(
 	}
 
 	// Retrieve the sum (i.e. number of compute units) to determine the amount of work done
-	numClaimComputeUnits, err := claim.GetNumComputeUnits()
+	numClaimComputeUnits, err := claim.GetNumClaimedComputeUnits()
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrapf("failed to retrieve numClaimComputeUnits: %s", err)
 	}
@@ -265,16 +266,16 @@ func (k Keeper) ProcessTokenLogicModules(
 	logger.Info(fmt.Sprintf("About to start processing TLMs for (%d) compute units, equal to (%s) claimed", numClaimComputeUnits, actualSettlementCoin))
 
 	// Retrieving the relay mining difficulty for the service at hand
-	relayMiningDifficulty, found := k.GetRelayMiningDifficulty(ctx, service.Id)
+	relayMiningDifficulty, found := k.serviceKeeper.GetRelayMiningDifficulty(ctx, service.Id)
 	if !found {
-		relayMiningDifficulty = newDefaultRelayMiningDifficulty(ctx, logger, service.Id, numRelays)
+		relayMiningDifficulty = servicekeeper.NewDefaultRelayMiningDifficulty(ctx, logger, service.Id, servicekeeper.TargetNumRelays)
 	}
 
 	// Execute all the token logic modules processors
 	for tlm, tlmProcessor := range tokenLogicModuleProcessorMap {
 		logger.Info(fmt.Sprintf("Starting TLM processing: %q", tlm))
 		if err := tlmProcessor(k, ctx, &service, claim.GetSessionHeader(), &application, &supplier, actualSettlementCoin, &relayMiningDifficulty); err != nil {
-			return tokenomictypes.ErrTokenomicsTLMError.Wrapf("TLM %q: %v", tlm, err)
+			return tokenomicstypes.ErrTokenomicsTLMError.Wrapf("TLM %q: %v", tlm, err)
 		}
 		logger.Info(fmt.Sprintf("Finished TLM processing: %q", tlm))
 	}
@@ -316,7 +317,7 @@ func (k Keeper) TokenLogicModuleRelayBurnEqualsMint(
 	application *apptypes.Application,
 	supplier *sharedtypes.Supplier,
 	settlementCoin cosmostypes.Coin,
-	relayMiningDifficulty *tokenomictypes.RelayMiningDifficulty,
+	relayMiningDifficulty *servicetypes.RelayMiningDifficulty,
 ) error {
 	logger := k.Logger().With("method", "TokenLogicModuleRelayBurnEqualsMint")
 
@@ -377,7 +378,7 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 	application *apptypes.Application,
 	supplier *sharedtypes.Supplier,
 	settlementCoin cosmostypes.Coin,
-	relayMiningDifficulty *tokenomictypes.RelayMiningDifficulty,
+	relayMiningDifficulty *servicetypes.RelayMiningDifficulty,
 ) error {
 	logger := k.Logger().With("method", "TokenLogicModuleGlobalMint")
 
@@ -394,16 +395,16 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 	}
 
 	// Mint new uPOKT to the tokenomics module account
-	if err := k.bankKeeper.MintCoins(ctx, tokenomictypes.ModuleName, sdk.NewCoins(newMintCoin)); err != nil {
+	if err := k.bankKeeper.MintCoins(ctx, tokenomicstypes.ModuleName, sdk.NewCoins(newMintCoin)); err != nil {
 		return tokenomicstypes.ErrTokenomicsModuleMintFailed.Wrapf(
 			"minting (%s) to the tokenomics module account: %v", newMintCoin, err)
 	}
 	logger.Info(fmt.Sprintf("minted (%s) to the tokenomics module account", newMintCoin))
 
 	// Send a portion of the rewards to the application
-	appCoin, err := k.sendRewardsToAccount(ctx, tokenomictypes.ModuleName, application.GetAddress(), &newMintAmtFloat, MintAllocationApplication)
+	appCoin, err := k.sendRewardsToAccount(ctx, tokenomicstypes.ModuleName, application.GetAddress(), &newMintAmtFloat, MintAllocationApplication)
 	if err != nil {
-		return tokenomictypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to application: %v", err)
+		return tokenomicstypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to application: %v", err)
 	}
 	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the application with address %q", appCoin, application.Address))
 
@@ -429,24 +430,24 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the supplier with address %q", supplierCoin, supplier.OperatorAddress))
 
 	// Send a portion of the rewards to the DAO
-	daoCoin, err := k.sendRewardsToAccount(ctx, tokenomictypes.ModuleName, k.GetAuthority(), &newMintAmtFloat, MintAllocationDAO)
+	daoCoin, err := k.sendRewardsToAccount(ctx, tokenomicstypes.ModuleName, k.GetAuthority(), &newMintAmtFloat, MintAllocationDAO)
 	if err != nil {
-		return tokenomictypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to DAO: %v", err)
+		return tokenomicstypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to DAO: %v", err)
 	}
 	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the DAO with address %q", daoCoin, k.GetAuthority()))
 
 	// Send a portion of the rewards to the source owner
-	serviceCoin, err := k.sendRewardsToAccount(ctx, tokenomictypes.ModuleName, service.OwnerAddress, &newMintAmtFloat, MintAllocationSourceOwner)
+	serviceCoin, err := k.sendRewardsToAccount(ctx, tokenomicstypes.ModuleName, service.OwnerAddress, &newMintAmtFloat, MintAllocationSourceOwner)
 	if err != nil {
-		return tokenomictypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to source owner: %v", err)
+		return tokenomicstypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to source owner: %v", err)
 	}
 	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the source owner with address %q", serviceCoin, service.OwnerAddress))
 
 	// Send a portion of the rewards to the block proposer
 	proposerAddr := cosmostypes.AccAddress(sdk.UnwrapSDKContext(ctx).BlockHeader().ProposerAddress).String()
-	proposerCoin, err := k.sendRewardsToAccount(ctx, tokenomictypes.ModuleName, proposerAddr, &newMintAmtFloat, MintAllocationProposer)
+	proposerCoin, err := k.sendRewardsToAccount(ctx, tokenomicstypes.ModuleName, proposerAddr, &newMintAmtFloat, MintAllocationProposer)
 	if err != nil {
-		return tokenomictypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to proposer: %v", err)
+		return tokenomicstypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to proposer: %v", err)
 	}
 	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the proposer with address %q", proposerCoin, proposerAddr))
 
@@ -481,7 +482,7 @@ func (k Keeper) ensureMintedCoinsAreDistributed(
 
 	// Discrepancy exists and is too large, return an error
 	if isPercentDifferenceTooLarge && isAbsDifferenceSignificant {
-		return tokenomictypes.ErrTokenomicsAmountMismatchTooLarge.Wrapf(
+		return tokenomicstypes.ErrTokenomicsAmountMismatchTooLarge.Wrapf(
 			"the total distributed coins (%v) do not equal the amount of newly minted coins (%v) with a percent difference of (%f). Likely floating point arithmetic.\n"+
 				"appCoin: %v, supplierCoin: %v, daoCoin: %v, serviceCoin: %v, proposerCoin: %v",
 			totalMintDistributedCoin, newMintCoin, percentDifference,

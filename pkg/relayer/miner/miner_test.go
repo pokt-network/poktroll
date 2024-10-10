@@ -49,9 +49,9 @@ func TestMiner_MinedRelays(t *testing.T) {
 	proofQueryClientMock := testqueryclients.NewTestProofQueryClient(t)
 
 	testqueryclients.SetServiceRelayDifficultyTargetHash(t, testSvcId, testRelayMiningTargetHash)
-	tokenomicsQueryClientMock := testqueryclients.NewTestTokenomicsQueryClient(t)
+	serviceQueryClientMock := testqueryclients.NewTestServiceQueryClient(t)
 
-	deps := depinject.Supply(proofQueryClientMock, tokenomicsQueryClientMock)
+	deps := depinject.Supply(proofQueryClientMock, serviceQueryClientMock)
 	mnr, err := miner.NewMiner(deps)
 	require.NoError(t, err)
 
