@@ -8,6 +8,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -58,6 +59,8 @@ type SharedKeeper interface {
 // ServiceKeeper defines the expected interface for the Service module.
 type ServiceKeeper interface {
 	GetService(ctx context.Context, serviceID string) (sharedtypes.Service, bool)
+	GetRelayMiningDifficulty(ctx context.Context, serviceID string) (servicetypes.RelayMiningDifficulty, bool)
 	// Only used for testing & simulation
 	SetService(ctx context.Context, service sharedtypes.Service)
+	SetRelayMiningDifficulty(ctx context.Context, relayMiningDifficulty servicetypes.RelayMiningDifficulty)
 }
