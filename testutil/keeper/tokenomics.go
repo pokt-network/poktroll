@@ -223,7 +223,7 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		Return(sharedtypes.Service{}, false).
 		AnyTimes()
 
-	relayMiningDifficulty := servicekeeper.NewDefaultRelayMiningDifficulty(sdkCtx, log.NewNopLogger(), service.Id, 0)
+	relayMiningDifficulty := servicekeeper.NewDefaultRelayMiningDifficulty(sdkCtx, log.NewNopLogger(), service.Id, servicekeeper.TargetNumRelays)
 	mockServiceKeeper.EXPECT().
 		GetRelayMiningDifficulty(gomock.Any(), gomock.Any()).
 		Return(relayMiningDifficulty, true).

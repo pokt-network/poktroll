@@ -167,7 +167,7 @@ func (k Keeper) EnsureValidProof(
 	serviceRelayDifficulty, found := k.serviceKeeper.GetRelayMiningDifficulty(ctx, sessionHeader.GetServiceId())
 	if !found {
 		// If the relay mining difficulty is not found, use the default relay mining difficulty.
-		serviceRelayDifficulty = servicekeeper.NewDefaultRelayMiningDifficulty(ctx, k.Logger(), sessionHeader.GetServiceId(), 0)
+		serviceRelayDifficulty = servicekeeper.NewDefaultRelayMiningDifficulty(ctx, k.Logger(), sessionHeader.GetServiceId(), servicekeeper.TargetNumRelays)
 	}
 
 	// Verify the relay difficulty is above the minimum required to earn rewards.

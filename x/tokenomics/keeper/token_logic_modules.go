@@ -268,7 +268,7 @@ func (k Keeper) ProcessTokenLogicModules(
 	// Retrieving the relay mining difficulty for the service at hand
 	relayMiningDifficulty, found := k.serviceKeeper.GetRelayMiningDifficulty(ctx, service.Id)
 	if !found {
-		relayMiningDifficulty = servicekeeper.NewDefaultRelayMiningDifficulty(ctx, logger, service.Id, numRelays)
+		relayMiningDifficulty = servicekeeper.NewDefaultRelayMiningDifficulty(ctx, logger, service.Id, servicekeeper.TargetNumRelays)
 	}
 
 	// Execute all the token logic modules processors

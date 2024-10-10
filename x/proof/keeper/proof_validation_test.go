@@ -783,7 +783,7 @@ func setRelayMiningDifficultyHash(
 	targetHash []byte,
 	logger log.Logger,
 ) {
-	relayMiningDifficulty := servicekeeper.NewDefaultRelayMiningDifficulty(ctx, logger, serviceId, 0)
+	relayMiningDifficulty := servicekeeper.NewDefaultRelayMiningDifficulty(ctx, logger, serviceId, servicekeeper.TargetNumRelays)
 	relayMiningDifficulty.TargetHash = targetHash
 	serviceKeeper.SetRelayMiningDifficulty(ctx, relayMiningDifficulty)
 }
