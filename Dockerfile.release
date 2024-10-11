@@ -3,6 +3,12 @@
 FROM debian:bookworm
 ARG TARGETARCH
 
+# Install necessary packages.
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+
 # Use `1025` G/UID so users can switch between this and `heighliner` image without a need to chown the files.
 RUN groupadd -g 1025 pocket && useradd -u 1025 -g pocket -m -s /sbin/nologin pocket
 
