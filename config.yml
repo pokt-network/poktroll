@@ -173,7 +173,7 @@ genesis:
         - address: pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4
           delegatee_gateway_addresses: [pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4]
           service_configs:
-            - service_id: anvil
+            - service_id: "0021"
             - service_id: rest
             - service_id: ollama
           stake:
@@ -184,7 +184,7 @@ genesis:
         - address: pokt1ad28jdap2zfanjd7hpkh984yveney6k9a42man
           delegatee_gateway_addresses: []
           service_configs:
-            - service_id: anvil
+            - service_id: "0021"
             - service_id: rest
             - service_id: ollama
           stake:
@@ -197,7 +197,7 @@ genesis:
         - owner_address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
           operator_address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
           services:
-            - service_id: anvil
+            - service_id: "0021"
               endpoints:
                 - configs: []
                   rpc_type: JSON_RPC
@@ -245,7 +245,7 @@ genesis:
           amount: "1000000000"
           denom: upokt
       serviceList:
-        - id: anvil
+        - id: "0021"
           name: "anvil"
           compute_units_per_relay: 1
           owner_address: pokt1cwnu460557x0z78jv3hhc7356hhkrgc86c87q5
