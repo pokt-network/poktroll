@@ -283,10 +283,8 @@ func (k Keeper) ProcessTokenLogicModules(
 	// TODO_CONSIDERATION: If we support multiple native tokens, we will need to
 	// start checking the denom here.
 	if application.Stake.Amount.LT(apptypes.DefaultMinStake.Amount) {
-		// Unbond the application because it has less than the minimum stake.
-		if err = k.applicationKeeper.UnbondApplication(ctx, &application); err != nil {
-			return err
-		}
+		// Mark the application as unbonding if it has less than the minimum stake.
+		application.UnstakeSessionEndHeight = apptypes.ApplicationBelowMinStake
 
 		// TODO_UPNEXT:(@bryanchriswhite): emit a new EventApplicationUnbondedBelowMinStake event.
 	} else {
