@@ -45,8 +45,8 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 
 	// Update the proof parameters to never require a proof, since this test is not
 	// submitting any proofs.
-	lowProofRequirementThreshold := sdk.NewInt64Coin(volatile.DenomuPOKT, math.MaxInt64)
-	proofParams.ProofRequirementThreshold = &lowProofRequirementThreshold
+	maxProofRequirementThreshold := sdk.NewInt64Coin(volatile.DenomuPOKT, math.MaxInt64)
+	proofParams.ProofRequirementThreshold = &maxProofRequirementThreshold
 	proofParams.ProofRequestProbability = 0
 
 	msgProofParams := prooftypes.MsgUpdateParams{
