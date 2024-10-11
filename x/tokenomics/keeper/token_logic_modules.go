@@ -287,12 +287,11 @@ func (k Keeper) ProcessTokenLogicModules(
 		application.UnstakeSessionEndHeight = apptypes.ApplicationBelowMinStake
 
 		// TODO_UPNEXT:(@bryanchriswhite): emit a new EventApplicationUnbondedBelowMinStake event.
-	} else {
-		// State mutation: update the application's on-chain record.
-		k.applicationKeeper.SetApplication(ctx, application)
-		logger.Info(fmt.Sprintf("updated on-chain application record with address %q", application.Address))
-
 	}
+
+	// State mutation: update the application's on-chain record.
+	k.applicationKeeper.SetApplication(ctx, application)
+	logger.Info(fmt.Sprintf("updated on-chain application record with address %q", application.Address))
 
 	// TODO_MAINNET: If the application stake has dropped to (near?) zero, should
 	// we unstake it? Should we use it's balance? Should there be a payee of last resort?
