@@ -91,8 +91,8 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 
 		sharedParams := k.sharedKeeper.GetParams(ctx)
 		// claimeduPOKT is the amount of uPOKT that the supplier would receive if the
-		// claim is settled. It is derived from the claimed number of relays, the service
-		// current minding difficulty and the global network parameters.
+		// claim is settled. It is derived from the claimed number of relays, the current
+		// service mining difficulty and the global network parameters.
 		claimeduPOKT, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
 		if err != nil {
 			return settledResult, expiredResult, err

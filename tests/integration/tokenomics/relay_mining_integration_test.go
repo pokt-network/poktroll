@@ -50,7 +50,7 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 
 	// Prepare the test application.
 	appAddress := sample.AccAddress()
-	appStake := sdk.NewInt64Coin(volatile.DenomuPOKT, 1000)
+	appStake := apptypes.DefaultMinStake.Add(apptypes.DefaultMinStake)
 	application := apptypes.Application{
 		Address: appAddress,
 		Stake:   &appStake,
@@ -61,6 +61,7 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 
 	// Prepare the test supplier.
 	supplierAddress := sample.AccAddress()
+	// TODO(#850): Update supplier stake to be min stake
 	supplierStake := sdk.NewInt64Coin(volatile.DenomuPOKT, 1000)
 	supplier := sharedtypes.Supplier{
 		OperatorAddress: supplierAddress,
@@ -107,7 +108,7 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 
 	// Set the previous relays and rewards to be used to calculate the increase ratio.
 	previousNumRelays := uint64(0)
-	previousRewards := sdkmath.NewInt(0)
+	previousRewardsAmount := sdkmath.NewInt(0)
 
 	// Set the initial difficulty multiplier to later check that it has increased.
 	difficultyMultiplier := big.NewRat(1, 1)
@@ -128,12 +129,12 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 		// Determine the height at which the claim will expire.
 		sessionEndToProofWindowCloseBlocks := sharedtypes.GetSessionEndToProofWindowCloseBlocks(&sharedParams)
 		sessionEndHeight := session.GetHeader().GetSessionEndBlockHeight()
-		claimWindowOpenHeight := sessionEndHeight + int64(sessionEndToProofWindowCloseBlocks) + 1
+		claimExpirationHeight := sessionEndHeight + int64(sessionEndToProofWindowCloseBlocks) + 1
 
-		ctxAtHeight := sdkCtx.WithBlockHeight(claimWindowOpenHeight)
+		sdkCtx := sdkCtx.WithBlockHeight(claimExpirationHeight)
 
 		// Get the relay mining difficulty that will be used when settling the pending claims.
-		relayMiningDifficulty, ok := keepers.ServiceKeeper.GetRelayMiningDifficulty(ctxAtHeight, service.Id)
+		relayMiningDifficulty, ok := keepers.ServiceKeeper.GetRelayMiningDifficulty(sdkCtx, service.Id)
 		require.True(t, ok)
 
 		// Prepare a claim with the given number of relays.
@@ -148,20 +149,20 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 		require.NoError(t, err)
 
 		// Store the claim before settling it.
-		keepers.ProofKeeper.UpsertClaim(ctxAtHeight, *claim)
+		keepers.ProofKeeper.UpsertClaim(sdkCtx, *claim)
 
 		// Calling SettlePendingClaims calls ProcessTokenLogicModules behind the scenes
-		settledResult, expiredResult, err := keepers.Keeper.SettlePendingClaims(ctxAtHeight)
+		settledResult, expiredResult, err := keepers.Keeper.SettlePendingClaims(sdkCtx)
 		require.NoError(t, err)
 		require.Equal(t, 1, int(settledResult.NumClaims))
 		require.Equal(t, 0, int(expiredResult.NumClaims))
 
 		// Update the relay mining difficulty
-		_, err = keepers.Keeper.UpdateRelayMiningDifficulty(ctxAtHeight, map[string]uint64{service.Id: claimNumRelays})
+		_, err = keepers.Keeper.UpdateRelayMiningDifficulty(sdkCtx, map[string]uint64{service.Id: claimNumRelays})
 		require.NoError(t, err)
 
 		// Get the updated relay mining difficulty
-		updatedRelayMiningDifficulty, ok := keepers.ServiceKeeper.GetRelayMiningDifficulty(ctxAtHeight, service.Id)
+		updatedRelayMiningDifficulty, ok := keepers.ServiceKeeper.GetRelayMiningDifficulty(sdkCtx, service.Id)
 		require.True(t, ok)
 
 		// Compute the new difficulty hash based on the updated relay mining difficulty.
@@ -191,12 +192,12 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 		// proportionally to the number of relays mined.
 		if previousNumRelays > 0 {
 			numRelaysRatio := float64(numRelays) / float64(previousNumRelays)
-			rewardsRatio, _ := new(big.Rat).SetFrac(claimedRewards.Amount.BigInt(), previousRewards.BigInt()).Float64()
+			rewardsRatio, _ := new(big.Rat).SetFrac(claimedRewards.Amount.BigInt(), previousRewardsAmount.BigInt()).Float64()
 			require.InDelta(t, numRelaysRatio, rewardsRatio, 0.1)
 		}
 
 		previousNumRelays = numRelays
-		previousRewards = claimedRewards.Amount
+		previousRewardsAmount = claimedRewards.Amount
 		difficultyMultiplier = newDifficultyMultiplier
 	}
 

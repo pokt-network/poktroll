@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/big"
+	"sort"
 
 	"cosmossdk.io/log"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -48,7 +49,13 @@ func (k Keeper) UpdateRelayMiningDifficulty(
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
 	difficultyPerServiceMap = make(map[string]types.RelayMiningDifficulty, len(relaysPerServiceMap))
-	for serviceId, numRelays := range relaysPerServiceMap {
+
+	// Iterate over the relaysPerServiceMap deterministically by sorting the keys.
+	// This ensures that the order of the keys is consistent across different nodes.
+	// See comment: https://github.com/pokt-network/poktroll/pull/840#discussion_r1796663285
+	sortedRelayPerServiceMapKeys := getSortedMapKeys(relaysPerServiceMap)
+	for _, serviceId := range sortedRelayPerServiceMapKeys {
+		numRelays := relaysPerServiceMap[serviceId]
 		prevDifficulty, found := k.GetRelayMiningDifficulty(ctx, serviceId)
 		if !found {
 			prevDifficulty = NewDefaultRelayMiningDifficulty(ctx, logger, serviceId, numRelays)
@@ -164,4 +171,15 @@ func NewDefaultRelayMiningDifficulty(
 		TargetHash:   newDifficultyHash,
 	}
 
+}
+
+// getSortedMapKeys returns the keys of a map lexicographically sorted.
+func getSortedMapKeys(m map[string]uint64) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+
+	sort.Strings(keys)
+	return keys
 }
