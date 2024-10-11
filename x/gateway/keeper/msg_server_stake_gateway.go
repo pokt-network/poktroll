@@ -101,7 +101,7 @@ func (k msgServer) StakeGateway(
 	if eventErr := sdkCtx.EventManager().EmitTypedEvent(gatewayStakedEvent); eventErr != nil {
 		err = types.ErrGatewayEmitEvent.Wrapf("(%+v): %s", gatewayStakedEvent, err)
 		logger.Error(err.Error())
-		return nil, err
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	isSuccessful = true
