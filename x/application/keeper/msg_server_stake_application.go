@@ -51,6 +51,7 @@ func (k msgServer) StakeApplication(ctx context.Context, msg *types.MsgStakeAppl
 		logger.Info(fmt.Sprintf("Application is going to escrow an additional %+v coins", coinsToEscrow))
 
 		// If the application has initiated an unstake action, cancel it since it is staking again.
+		// TODO_UPNEXT:(@bryanchriswhite): assert that an EventApplicationUnbondingCanceled event was emitted.
 		foundApp.UnstakeSessionEndHeight = types.ApplicationNotUnstaking
 	}
 
@@ -67,12 +68,14 @@ func (k msgServer) StakeApplication(ctx context.Context, msg *types.MsgStakeAppl
 
 	// MUST ALWAYS have at least minimum stake.
 	minStake := k.GetParams(ctx).MinStake
+	// TODO_CONSIDERATION: If we support multiple native tokens, we will need to
+	// start checking the denom here.
 	if msg.Stake.Amount.LT(minStake.Amount) {
-		errFmt := "application %q must stake at least %s"
-		logger.Info(fmt.Sprintf(errFmt, msg.Address, minStake))
+		err = fmt.Errorf("application %q must stake at least %s", msg.GetAddress(), minStake)
+		logger.Info(err.Error())
 		return nil, status.Error(
 			codes.InvalidArgument,
-			types.ErrAppInvalidStake.Wrapf(errFmt, msg.Address, minStake).Error(),
+			types.ErrAppInvalidStake.Wrapf("%s", err).Error(),
 		)
 	}
 

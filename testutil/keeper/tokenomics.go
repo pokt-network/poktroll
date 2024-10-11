@@ -160,6 +160,10 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 	mockApplicationKeeper.EXPECT().
 		SetApplication(gomock.Any(), gomock.Any()).
 		AnyTimes()
+	mockApplicationKeeper.EXPECT().
+		UnbondApplication(gomock.Any(), gomock.Any()).
+		Return(nil).
+		AnyTimes()
 
 	// Mock the supplier keeper.
 	mockSupplierKeeper := mocks.NewMockSupplierKeeper(ctrl)
