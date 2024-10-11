@@ -397,7 +397,7 @@ func TestMsgServer_StakeSupplier_FailBelowMinStake(t *testing.T) {
 	err := k.SetParams(ctx, params)
 	require.NoError(t, err)
 
-	// Prepare the application.
+	// Prepare the supplier stake message.
 	stakeMsg := &suppliertypes.MsgStakeSupplier{
 		Signer:          addr,
 		OwnerAddress:    addr,
@@ -425,6 +425,6 @@ func TestMsgServer_StakeSupplier_FailBelowMinStake(t *testing.T) {
 	// Attempt to stake the supplier & verify that the supplier does NOT exist.
 	_, err = srv.StakeSupplier(ctx, stakeMsg)
 	require.ErrorContains(t, err, expectedErr.Error())
-	_, isGatewayFound := k.GetSupplier(ctx, addr)
-	require.False(t, isGatewayFound)
+	_, isSupplierFound := k.GetSupplier(ctx, addr)
+	require.False(t, isSupplierFound)
 }
