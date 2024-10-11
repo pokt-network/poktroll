@@ -151,7 +151,7 @@ func TestMsgServer_StakeApplication_FailRestakingDueToInvalidServices(t *testing
 		},
 	}
 
-	// Fail updating the application when the list of services is empty
+	// Fail updating the application when the list of services contains an invalid ID
 	_, err = srv.StakeApplication(ctx, updateStakeMsg)
 	require.Error(t, err)
 

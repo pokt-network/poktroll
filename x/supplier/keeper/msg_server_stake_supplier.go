@@ -38,8 +38,11 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 	}
 
 	// Check if the supplier already exists or not
-	var err error
-	var coinsToEscrow sdk.Coin
+	var (
+		err                  error
+		coinsToEscrow        sdk.Coin
+		wasSupplierUnbonding bool
+	)
 	supplier, isSupplierFound := k.GetSupplier(ctx, msg.OperatorAddress)
 
 	if !isSupplierFound {
@@ -94,7 +97,10 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 		logger.Info(fmt.Sprintf("Supplier is going to escrow an additional %+v coins", coinsToEscrow))
 
 		// If the supplier has initiated an unstake action, cancel it since they are staking again.
-		supplier.UnstakeSessionEndHeight = sharedtypes.SupplierNotUnstaking
+		if supplier.UnstakeSessionEndHeight != sharedtypes.SupplierNotUnstaking {
+			wasSupplierUnbonding = true
+			supplier.UnstakeSessionEndHeight = sharedtypes.SupplierNotUnstaking
+		}
 	}
 
 	// Must always stake or upstake (> 0 delta)
@@ -123,12 +129,20 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 	logger.Info(fmt.Sprintf("Successfully updated supplier stake for supplier: %+v", supplier))
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	// Emit an event which signals that the supplier staked.
-	event := &types.EventSupplierStaked{
-		Supplier: &supplier,
+	events := make([]sdk.Msg, 0)
+
+	if wasSupplierUnbonding {
+		events = append(events, &types.EventSupplierUnbondingCanceled{
+			Supplier: &supplier,
+		})
 	}
-	if eventErr := sdkCtx.EventManager().EmitTypedEvent(event); eventErr != nil {
-		logger.Error(fmt.Sprintf("failed to emit event: %+v; %s", event, eventErr))
+
+	// Emit an event which signals that the supplier staked.
+	events = append(events, &types.EventSupplierStaked{
+		Supplier: &supplier,
+	})
+	if err = sdkCtx.EventManager().EmitTypedEvents(events...); err != nil {
+		logger.Error(fmt.Sprintf("failed to emit events: %+v; %s", events, err))
 	}
 
 	isSuccessful = true

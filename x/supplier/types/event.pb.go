@@ -66,7 +66,8 @@ func (m *EventSupplierStaked) GetSupplier() *types.Supplier {
 	return nil
 }
 
-// EventSupplierUnstaked is emitted with the commitment of the supplier unstake message.
+// EventSupplierUnbondingBegin is emitted when an application unstake message
+// is committed, indicating that an application has begun unbonding.
 type EventSupplierUnbondingBegin struct {
 	Supplier        *types.Supplier `protobuf:"bytes,1,opt,name=supplier,proto3" json:"supplier"`
 	UnbondingHeight int64           `protobuf:"varint,2,opt,name=unbonding_height,json=unbondingHeight,proto3" json:"unbonding_height"`
@@ -115,8 +116,9 @@ func (m *EventSupplierUnbondingBegin) GetUnbondingHeight() int64 {
 	return 0
 }
 
-// EventSupplierUnbondingEnd is emitted with the commitment of last block of the
-// supplier unbonding period.
+// EventSupplierUnbondingEnd is emitted when an supplier has completed
+// unbonding. The unbonding period is determined by the shared param,
+// supplier_unbonding_period_sessions.
 type EventSupplierUnbondingEnd struct {
 	Supplier        *types.Supplier `protobuf:"bytes,1,opt,name=supplier,proto3" json:"supplier"`
 	UnbondingHeight int64           `protobuf:"varint,2,opt,name=unbonding_height,json=unbondingHeight,proto3" json:"unbonding_height"`
@@ -165,16 +167,60 @@ func (m *EventSupplierUnbondingEnd) GetUnbondingHeight() int64 {
 	return 0
 }
 
+// EventSupplierUnbondingCanceled is emitted when an supplier which was unbonding
+// successfully (re-)stakes before the unbonding period has elapsed. An EventSupplierStaked
+// event will also be emitted immediately after this event.
+type EventSupplierUnbondingCanceled struct {
+	Supplier *types.Supplier `protobuf:"bytes,1,opt,name=supplier,proto3" json:"supplier"`
+}
+
+func (m *EventSupplierUnbondingCanceled) Reset()         { *m = EventSupplierUnbondingCanceled{} }
+func (m *EventSupplierUnbondingCanceled) String() string { return proto.CompactTextString(m) }
+func (*EventSupplierUnbondingCanceled) ProtoMessage()    {}
+func (*EventSupplierUnbondingCanceled) Descriptor() ([]byte, []int) {
+	return fileDescriptor_22d2d1a82853ce0a, []int{3}
+}
+func (m *EventSupplierUnbondingCanceled) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *EventSupplierUnbondingCanceled) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	b = b[:cap(b)]
+	n, err := m.MarshalToSizedBuffer(b)
+	if err != nil {
+		return nil, err
+	}
+	return b[:n], nil
+}
+func (m *EventSupplierUnbondingCanceled) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EventSupplierUnbondingCanceled.Merge(m, src)
+}
+func (m *EventSupplierUnbondingCanceled) XXX_Size() int {
+	return m.Size()
+}
+func (m *EventSupplierUnbondingCanceled) XXX_DiscardUnknown() {
+	xxx_messageInfo_EventSupplierUnbondingCanceled.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EventSupplierUnbondingCanceled proto.InternalMessageInfo
+
+func (m *EventSupplierUnbondingCanceled) GetSupplier() *types.Supplier {
+	if m != nil {
+		return m.Supplier
+	}
+	return nil
+}
+
 func init() {
 	proto.RegisterType((*EventSupplierStaked)(nil), "poktroll.supplier.EventSupplierStaked")
 	proto.RegisterType((*EventSupplierUnbondingBegin)(nil), "poktroll.supplier.EventSupplierUnbondingBegin")
 	proto.RegisterType((*EventSupplierUnbondingEnd)(nil), "poktroll.supplier.EventSupplierUnbondingEnd")
+	proto.RegisterType((*EventSupplierUnbondingCanceled)(nil), "poktroll.supplier.EventSupplierUnbondingCanceled")
 }
 
 func init() { proto.RegisterFile("poktroll/supplier/event.proto", fileDescriptor_22d2d1a82853ce0a) }
 
 var fileDescriptor_22d2d1a82853ce0a = []byte{
-	// 294 bytes of a gzipped FileDescriptorProto
+	// 308 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x92, 0x2d, 0xc8, 0xcf, 0x2e,
 	0x29, 0xca, 0xcf, 0xc9, 0xd1, 0x2f, 0x2e, 0x2d, 0x28, 0xc8, 0xc9, 0x4c, 0x2d, 0xd2, 0x4f, 0x2d,
 	0x4b, 0xcd, 0x2b, 0xd1, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x12, 0x84, 0x49, 0xeb, 0xc1, 0xa4,
@@ -187,13 +233,14 @@ var fileDescriptor_22d2d1a82853ce0a = []byte{
 	0xe6, 0x25, 0xe5, 0xe7, 0xa5, 0x64, 0xe6, 0xa5, 0x3b, 0xa5, 0xa6, 0x67, 0xe6, 0x51, 0xc5, 0x12,
 	0x21, 0x7b, 0x2e, 0x81, 0x52, 0x98, 0xb1, 0xf1, 0x19, 0xa9, 0x99, 0xe9, 0x19, 0x25, 0x12, 0x4c,
 	0x0a, 0x8c, 0x1a, 0xcc, 0x4e, 0x22, 0xaf, 0xee, 0xc9, 0x63, 0xc8, 0x05, 0xf1, 0xc3, 0x45, 0x3c,
-	0xc0, 0x02, 0x4a, 0x0b, 0x19, 0xb9, 0x24, 0xb1, 0xbb, 0xd2, 0x35, 0x2f, 0x65, 0x70, 0xb8, 0xd1,
-	0xc9, 0xff, 0xc4, 0x23, 0x39, 0xc6, 0x0b, 0x8f, 0xe4, 0x18, 0x6f, 0x3c, 0x92, 0x63, 0x7c, 0xf0,
-	0x48, 0x8e, 0x71, 0xc2, 0x63, 0x39, 0x86, 0x0b, 0x8f, 0xe5, 0x18, 0x6e, 0x3c, 0x96, 0x63, 0x88,
-	0x32, 0x4c, 0xcf, 0x2c, 0xc9, 0x28, 0x4d, 0xd2, 0x4b, 0xce, 0xcf, 0xd5, 0x07, 0xb9, 0x4d, 0x37,
-	0x2f, 0xb5, 0xa4, 0x3c, 0xbf, 0x28, 0x5b, 0x1f, 0x1e, 0xf7, 0x15, 0x88, 0x04, 0x56, 0x52, 0x59,
-	0x90, 0x5a, 0x9c, 0xc4, 0x06, 0x8e, 0x7d, 0x63, 0x40, 0x00, 0x00, 0x00, 0xff, 0xff, 0x65, 0x42,
-	0x78, 0xcc, 0x82, 0x02, 0x00, 0x00,
+	0xc0, 0x02, 0x4a, 0x0b, 0x19, 0xb9, 0x24, 0xb1, 0xbb, 0xd2, 0x35, 0x2f, 0x65, 0x90, 0xb8, 0x31,
+	0x95, 0x4b, 0x0e, 0xbb, 0x13, 0x9d, 0x13, 0xf3, 0x92, 0x53, 0x73, 0xa8, 0x14, 0x61, 0x4e, 0xfe,
+	0x27, 0x1e, 0xc9, 0x31, 0x5e, 0x78, 0x24, 0xc7, 0x78, 0xe3, 0x91, 0x1c, 0xe3, 0x83, 0x47, 0x72,
+	0x8c, 0x13, 0x1e, 0xcb, 0x31, 0x5c, 0x78, 0x2c, 0xc7, 0x70, 0xe3, 0xb1, 0x1c, 0x43, 0x94, 0x61,
+	0x7a, 0x66, 0x49, 0x46, 0x69, 0x92, 0x5e, 0x72, 0x7e, 0xae, 0x3e, 0xc8, 0x68, 0xdd, 0xbc, 0xd4,
+	0x92, 0xf2, 0xfc, 0xa2, 0x6c, 0x7d, 0x78, 0x12, 0xab, 0x40, 0xa4, 0xe3, 0x92, 0xca, 0x82, 0xd4,
+	0xe2, 0x24, 0x36, 0x70, 0x22, 0x33, 0x06, 0x04, 0x00, 0x00, 0xff, 0xff, 0x7c, 0x23, 0x9a, 0x96,
+	0xe9, 0x02, 0x00, 0x00,
 }
 
 func (m *EventSupplierStaked) Marshal() (dAtA []byte, err error) {
@@ -311,6 +358,41 @@ func (m *EventSupplierUnbondingEnd) MarshalToSizedBuffer(dAtA []byte) (int, erro
 	return len(dAtA) - i, nil
 }
 
+func (m *EventSupplierUnbondingCanceled) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *EventSupplierUnbondingCanceled) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *EventSupplierUnbondingCanceled) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.Supplier != nil {
+		{
+			size, err := m.Supplier.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintEvent(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintEvent(dAtA []byte, offset int, v uint64) int {
 	offset -= sovEvent(v)
 	base := offset
@@ -363,6 +445,19 @@ func (m *EventSupplierUnbondingEnd) Size() (n int) {
 	}
 	if m.UnbondingHeight != 0 {
 		n += 1 + sovEvent(uint64(m.UnbondingHeight))
+	}
+	return n
+}
+
+func (m *EventSupplierUnbondingCanceled) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Supplier != nil {
+		l = m.Supplier.Size()
+		n += 1 + l + sovEvent(uint64(l))
 	}
 	return n
 }
@@ -648,6 +743,92 @@ func (m *EventSupplierUnbondingEnd) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipEvent(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *EventSupplierUnbondingCanceled) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowEvent
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: EventSupplierUnbondingCanceled: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: EventSupplierUnbondingCanceled: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Supplier", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Supplier == nil {
+				m.Supplier = &types.Supplier{}
+			}
+			if err := m.Supplier.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipEvent(dAtA[iNdEx:])
