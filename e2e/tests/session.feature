@@ -6,7 +6,6 @@ Feature: Session Namespace
     # to make sure a proof is required.
     And the "proof" module parameters are set as follows
         | name                         | value                                                            | type  |
-        | relay_difficulty_target_hash | ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff | bytes |
         | proof_request_probability    | 0.25                                                             | float |
         | proof_requirement_threshold  | 209                                                              | coin  |
         | proof_missing_penalty        | 320                                                              | coin  |

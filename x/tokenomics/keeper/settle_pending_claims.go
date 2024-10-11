@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"context"
 	"fmt"
 
 	"cosmossdk.io/math"
@@ -8,6 +9,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/query"
 
 	"github.com/pokt-network/poktroll/app/volatile"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -66,9 +68,9 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 			return settledResult, expiredResult, err
 		}
 
-		// DEV_NOTE: We are assuming that (numRelays := numComputeUnits * service.ComputeUnitsPerRelay)
+		// DEV_NOTE: We are assuming that (numClaimComputeUnits := numComputeUnits * service.ComputeUnitsPerRelay)
 		// because this code path is only reached if that has already been validated.
-		numClaimComputeUnits, err = claim.GetNumComputeUnits()
+		numClaimComputeUnits, err = claim.GetNumClaimedComputeUnits()
 		if err != nil {
 			return settledResult, expiredResult, err
 		}
@@ -113,10 +115,11 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 				// Proof was required but is invalid or not found.
 				// Emit an event that a claim has expired and being removed without being settled.
 				claimExpiredEvent := tokenomicstypes.EventClaimExpired{
-					Claim:            &claim,
-					ExpirationReason: expirationReason,
-					NumRelays:        numClaimRelays,
-					NumComputeUnits:  numClaimComputeUnits,
+					Claim:                  &claim,
+					ExpirationReason:       expirationReason,
+					NumRelays:              numClaimRelays,
+					NumClaimedComputeUnits: numClaimComputeUnits,
+					// TODO_FOLLOWUP: Add NumEstimatedComputeUnits and ClaimedAmountUpokt
 				}
 				if err = ctx.EventManager().EmitTypedEvent(&claimExpiredEvent); err != nil {
 					return settledResult, expiredResult, err
@@ -159,9 +162,10 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 		}
 
 		claimSettledEvent := tokenomicstypes.EventClaimSettled{
-			Claim:            &claim,
-			NumRelays:        numClaimRelays,
-			NumComputeUnits:  numClaimComputeUnits,
+			Claim:                  &claim,
+			NumRelays:              numClaimRelays,
+			NumClaimedComputeUnits: numClaimComputeUnits,
+			// TODO_FOLLOWUP: Add NumEstimatedComputeUnits and ClaimedAmountUpokt
 			ProofRequirement: proofRequirement,
 		}
 
@@ -170,10 +174,11 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 		}
 
 		if err = ctx.EventManager().EmitTypedEvent(&prooftypes.EventProofUpdated{
-			Claim:           &claim,
-			Proof:           nil,
-			NumRelays:       0,
-			NumComputeUnits: 0,
+			Claim:                  &claim,
+			Proof:                  nil,
+			NumRelays:              0,
+			NumClaimedComputeUnits: 0,
+			// TODO_FOLLOWUP: Add NumEstimatedComputeUnits and ClaimedAmountUpokt
 		}); err != nil {
 			return settledResult, expiredResult, err
 		}
@@ -199,6 +204,10 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 		logger.Info(fmt.Sprintf("Successfully settled claim for session ID %q at block height %d", claim.SessionHeader.SessionId, blockHeight))
 	}
 
+	// Unbond applications whose post-settlement stake has dropped below the
+	// application minimum stake requirement.
+	k.unbondApplicationsBelowMinStake(ctx, expiringClaims)
+
 	// Slash all the suppliers that have been marked for slashing slashingCount times.
 	for supplierOperatorAddress, slashingCount := range supplierToExpiredClaimCount {
 		if err := k.slashSupplierStake(ctx, supplierOperatorAddress, slashingCount); err != nil {
@@ -222,6 +231,11 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 // If the proof window closes and a proof IS NOT required -> settle the claim.
 // If the proof window closes and a proof IS required -> only settle it if a proof is available.
 func (k Keeper) getExpiringClaims(ctx sdk.Context) (expiringClaims []prooftypes.Claim, err error) {
+	// TODO_IMPROVE(@bryanchriswhite):
+	//   1. Move height logic up to SettlePendingClaims.
+	//   2. Ensure that claims are only settled or expired on a session end height.
+	//     2a. This likely also requires adding validation to the shared module params.
+
 	blockHeight := ctx.BlockHeight()
 
 	// NB: This error can be safely ignored as on-chain SharedQueryClient implementation cannot return an error.
@@ -259,6 +273,28 @@ func (k Keeper) getExpiringClaims(ctx sdk.Context) (expiringClaims []prooftypes.
 
 	// Return the actually expiring claims
 	return expiringClaims, nil
+}
+
+// unbondApplicationsBelowMinStake unbonds applications whose post-settlement stake has dropped below the
+// application minimum stake requirement.
+func (k Keeper) unbondApplicationsBelowMinStake(ctx context.Context, claims []prooftypes.Claim) {
+	logger := k.logger.With("method", "unbondApplicationsBelowMinStake")
+
+	for _, claim := range claims {
+		app, isAppFound := k.applicationKeeper.GetApplication(ctx, claim.SessionHeader.ApplicationAddress)
+		if !isAppFound {
+			logger.Error(apptypes.ErrAppNotFound.Wrapf("application address: %q", claim.SessionHeader.ApplicationAddress).Error())
+			continue
+		}
+
+		// Unbond the application because it has less than the minimum stake.
+		if app.GetUnstakeSessionEndHeight() == apptypes.ApplicationBelowMinStake {
+			if err := k.applicationKeeper.UnbondApplication(ctx, &app); err != nil {
+				logger.Error(fmt.Sprintf("unbonding application (%+v): %s", app, err))
+				continue
+			}
+		}
+	}
 }
 
 // slashSupplierStake slashes the stake of a supplier and transfers the total

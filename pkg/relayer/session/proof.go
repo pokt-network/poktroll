@@ -278,7 +278,7 @@ func (rs *relayerSessionsManager) isProofRequired(
 	claim := claimFromSessionTree(sessionTree)
 
 	// Get the number of compute units accumulated through the given session.
-	numClaimComputeUnits, err := claim.GetNumComputeUnits()
+	numClaimComputeUnits, err := claim.GetNumClaimedComputeUnits()
 	if err != nil {
 		return false, err
 	}

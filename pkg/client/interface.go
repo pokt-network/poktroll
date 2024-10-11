@@ -9,7 +9,6 @@
 //go:generate mockgen -destination=../../testutil/mockclient/session_query_client_mock.go -package=mockclient . SessionQueryClient
 //go:generate mockgen -destination=../../testutil/mockclient/shared_query_client_mock.go -package=mockclient . SharedQueryClient
 //go:generate mockgen -destination=../../testutil/mockclient/proof_query_client_mock.go -package=mockclient . ProofQueryClient
-//go:generate mockgen -destination=../../testutil/mockclient/tokenomics_query_client_mock.go -package=mockclient . TokenomicsQueryClient
 //go:generate mockgen -destination=../../testutil/mockclient/service_query_client_mock.go -package=mockclient . ServiceQueryClient
 //go:generate mockgen -destination=../../testutil/mockclient/bank_query_client_mock.go -package=mockclient . BankQueryClient
 //go:generate mockgen -destination=../../testutil/mockclient/cosmos_tx_builder_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/client TxBuilder
@@ -32,6 +31,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -351,24 +351,12 @@ type ProofQueryClient interface {
 	GetParams(ctx context.Context) (ProofParams, error)
 }
 
-// TokenomicsRelayMiningDifficulty is a go interface type which corresponding to the poktroll.tokenomics.RelayMiningDifficulty
-// protobuf message. This is necessary to prevent dependency cycles.
-type TokenomicsRelayMiningDifficulty interface {
-	GetTargetHash() []byte
-}
-
-// TokenomicsQueryClient defines an interface that enables the querying of the
-// on-chain tokenomics information
-type TokenomicsQueryClient interface {
-	GetServiceRelayDifficultyTargetHash(ctx context.Context, serviceId string) (TokenomicsRelayMiningDifficulty, error)
-	// GetParams queries the chain for the current tokenomics module parameters.
-}
-
 // ServiceQueryClient defines an interface that enables the querying of the
 // on-chain service information
 type ServiceQueryClient interface {
 	// GetService queries the chain for the details of the service provided
 	GetService(ctx context.Context, serviceId string) (sharedtypes.Service, error)
+	GetServiceRelayDifficultyTargetHash(ctx context.Context, serviceId string) (servicetypes.RelayMiningDifficulty, error)
 }
 
 // BankQueryClient defines an interface that enables the querying of the
