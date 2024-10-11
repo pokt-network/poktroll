@@ -22,7 +22,6 @@ import (
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
-	"github.com/pokt-network/poktroll/x/tokenomics"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
@@ -146,7 +145,10 @@ func (k Keeper) ProcessTokenLogicModules(
 			if claimSettlementCoin.Amount.BigInt() == nil {
 				return 0
 			}
-			return float32(claimSettlementCoin.Amount.Int64())
+
+			// Avoid out of range errors by converting to float64 first
+			claimSettlementFloat64, _ := claimSettlementCoin.Amount.BigInt().Float64()
+			return float32(claimSettlementFloat64)
 		},
 		func() bool { return isSuccessful },
 	)
@@ -235,12 +237,28 @@ func (k Keeper) ProcessTokenLogicModules(
 		return tokenomicstypes.ErrTokenomicsServiceNotFound.Wrapf("service with ID %q not found", sessionHeader.ServiceId)
 	}
 
+	// Ensure the number of compute units claimed is equal to the number of relays * CUPR
+	expectedClaimComputeUnits := numRelays * service.ComputeUnitsPerRelay
+	if numClaimComputeUnits != expectedClaimComputeUnits {
+		return tokenomicstypes.ErrTokenomicsRootHashInvalid.Wrapf(
+			"mismatch: claim compute units (%d) != number of relays (%d) * service compute units per relay (%d)",
+			numClaimComputeUnits,
+			numRelays,
+			service.ComputeUnitsPerRelay,
+		)
+	}
+
+	// Retrieving the relay mining difficulty for service.
+	relayMiningDifficulty, found := k.serviceKeeper.GetRelayMiningDifficulty(ctx, service.Id)
+	if !found {
+		relayMiningDifficulty = servicekeeper.NewDefaultRelayMiningDifficulty(ctx, logger, service.Id, servicekeeper.TargetNumRelays)
+	}
 	sharedParams := k.sharedKeeper.GetParams(ctx)
 
 	// Determine the total number of tokens being claimed (i.e. for the work completed)
 	// by the supplier for the amount of work they did to service the application
 	// in the session.
-	claimSettlementCoin, err = tokenomics.NumComputeUnitsToCoin(sharedParams, numClaimComputeUnits)
+	claimSettlementCoin, err = claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
 	if err != nil {
 		return err
 	}
@@ -265,12 +283,6 @@ func (k Keeper) ProcessTokenLogicModules(
 	logger = logger.With("actual_settlement_upokt", actualSettlementCoin)
 	logger.Info(fmt.Sprintf("About to start processing TLMs for (%d) compute units, equal to (%s) claimed", numClaimComputeUnits, actualSettlementCoin))
 
-	// Retrieving the relay mining difficulty for the service at hand
-	relayMiningDifficulty, found := k.serviceKeeper.GetRelayMiningDifficulty(ctx, service.Id)
-	if !found {
-		relayMiningDifficulty = servicekeeper.NewDefaultRelayMiningDifficulty(ctx, logger, service.Id, servicekeeper.TargetNumRelays)
-	}
-
 	// Execute all the token logic modules processors
 	for tlm, tlmProcessor := range tokenLogicModuleProcessorMap {
 		logger.Info(fmt.Sprintf("Starting TLM processing: %q", tlm))
@@ -280,7 +292,16 @@ func (k Keeper) ProcessTokenLogicModules(
 		logger.Info(fmt.Sprintf("Finished TLM processing: %q", tlm))
 	}
 
-	// State mutation: update the application's on-chain record
+	// TODO_CONSIDERATION: If we support multiple native tokens, we will need to
+	// start checking the denom here.
+	if application.Stake.Amount.LT(apptypes.DefaultMinStake.Amount) {
+		// Mark the application as unbonding if it has less than the minimum stake.
+		application.UnstakeSessionEndHeight = apptypes.ApplicationBelowMinStake
+
+		// TODO_UPNEXT:(@bryanchriswhite): emit a new EventApplicationUnbondedBelowMinStake event.
+	}
+
+	// State mutation: update the application's on-chain record.
 	k.applicationKeeper.SetApplication(ctx, application)
 	logger.Info(fmt.Sprintf("updated on-chain application record with address %q", application.Address))
 
