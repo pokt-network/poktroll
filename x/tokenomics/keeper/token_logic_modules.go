@@ -274,13 +274,22 @@ func (k Keeper) ProcessTokenLogicModules(
 	// Execute all the token logic modules processors
 	for tlm, tlmProcessor := range tokenLogicModuleProcessorMap {
 		logger.Info(fmt.Sprintf("Starting TLM processing: %q", tlm))
-		if err := tlmProcessor(k, ctx, &service, claim.GetSessionHeader(), &application, &supplier, actualSettlementCoin, &relayMiningDifficulty); err != nil {
+		if err = tlmProcessor(k, ctx, &service, claim.GetSessionHeader(), &application, &supplier, actualSettlementCoin, &relayMiningDifficulty); err != nil {
 			return tokenomicstypes.ErrTokenomicsTLMError.Wrapf("TLM %q: %v", tlm, err)
 		}
 		logger.Info(fmt.Sprintf("Finished TLM processing: %q", tlm))
 	}
 
-	// State mutation: update the application's on-chain record
+	// TODO_CONSIDERATION: If we support multiple native tokens, we will need to
+	// start checking the denom here.
+	if application.Stake.Amount.LT(apptypes.DefaultMinStake.Amount) {
+		// Mark the application as unbonding if it has less than the minimum stake.
+		application.UnstakeSessionEndHeight = apptypes.ApplicationBelowMinStake
+
+		// TODO_UPNEXT:(@bryanchriswhite): emit a new EventApplicationUnbondedBelowMinStake event.
+	}
+
+	// State mutation: update the application's on-chain record.
 	k.applicationKeeper.SetApplication(ctx, application)
 	logger.Info(fmt.Sprintf("updated on-chain application record with address %q", application.Address))
 
