@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/application/types"
@@ -68,7 +70,7 @@ func (k msgServer) UnstakeApplication(
 	if err := sdkCtx.EventManager().EmitTypedEvent(unbondingBeginEvent); err != nil {
 		err = types.ErrAppEmitEvent.Wrapf("(%+v): %s", unbondingBeginEvent, err)
 		logger.Error(err.Error())
-		return nil, err
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	isSuccessful = true

@@ -123,7 +123,7 @@ func (k msgServer) StakeApplication(ctx context.Context, msg *types.MsgStakeAppl
 	for _, event := range events {
 		if err = sdkCtx.EventManager().EmitTypedEvent(event); err != nil {
 			err = types.ErrAppEmitEvent.Wrapf("(%+v): %s", event, err)
-			logger.Error(fmt.Sprintf("ERROR: %s", err))
+			logger.Error(err.Error())
 			return nil, status.Error(codes.Internal, err.Error())
 		}
 	}

@@ -85,9 +85,6 @@ func (s *applicationMinStakeTestSuite) TestAppIsUnbondedIfBelowMinStakeWhenSettl
 	// Create a claim whose settlement amount drops the application below min stake
 	claim := s.getClaim(sessionHeader)
 
-	//// Reset the events, as if a new block were created.
-	//s.ctx = testevents.ResetEventManager(s.ctx)
-
 	// Process TLMs for the claim.
 	err := s.keepers.Keeper.ProcessTokenLogicModules(s.ctx, claim)
 	require.NoError(s.T(), err)

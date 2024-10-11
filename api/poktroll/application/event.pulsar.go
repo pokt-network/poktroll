@@ -4853,6 +4853,8 @@ func (x *EventTransferError) GetError() string {
 	return ""
 }
 
+// EventApplicationUnbondingBegin is emitted when an application unstake message
+// is committed, indicating that an application has begun unbonding.
 type EventApplicationUnbondingBegin struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -4888,6 +4890,9 @@ func (x *EventApplicationUnbondingBegin) GetAppAddress() string {
 	return ""
 }
 
+// EventApplicationUnbondingEnd is emitted when an application has completed
+// unbonding. The unbonding period is determined by the shared param,
+// application_unbonding_period_sessions.
 type EventApplicationUnbondingEnd struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -4923,6 +4928,9 @@ func (x *EventApplicationUnbondingEnd) GetAppAddress() string {
 	return ""
 }
 
+// EventApplicationUnbondingCanceled is emitted when an application which was unbonding
+// successfully (re-)stakes before the unbonding period has elapsed. An EventApplicationStaked
+// event will also be emmitted immediatly after this event.
 type EventApplicationUnbondingCanceled struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -4958,6 +4966,9 @@ func (x *EventApplicationUnbondingCanceled) GetAppAddress() string {
 	return ""
 }
 
+// EventApplicationUnbondedBelowMinStake is emitted when an application has been
+// unbonded during settlement because their post-settlement stake dropped below
+// the minimum application stake requirement.
 type EventApplicationUnbondedBelowMinStake struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
