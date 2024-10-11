@@ -287,7 +287,7 @@ func (k Keeper) ProcessTokenLogicModules(
 		unbondedBelowMinStakeEvent := &apptypes.EventApplicationUnbondedBelowMinStake{
 			AppAddress: application.GetAddress(),
 		}
-		if err := sdkCtx.EventManager().EmitTypedEvent(unbondedBelowMinStakeEvent); err != nil {
+		if err = sdkCtx.EventManager().EmitTypedEvent(unbondedBelowMinStakeEvent); err != nil {
 			err = apptypes.ErrAppEmitEvent.Wrapf("(%+v): %s", unbondedBelowMinStakeEvent, err)
 			logger.Error(err.Error())
 			return err
