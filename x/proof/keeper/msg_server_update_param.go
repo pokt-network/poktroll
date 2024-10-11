@@ -23,68 +23,40 @@ func (k msgServer) UpdateParam(
 	params := k.GetParams(ctx)
 
 	switch msg.Name {
-	case types.ParamRelayDifficultyTargetHash:
-		value, ok := msg.AsType.(*types.MsgUpdateParam_AsBytes)
-		if !ok {
-			return nil, types.ErrProofParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
-		}
-		relayDifficultyTargetHash := value.AsBytes
-
-		if err := types.ValidateRelayDifficultyTargetHash(relayDifficultyTargetHash); err != nil {
-			return nil, err
-		}
-
-		params.RelayDifficultyTargetHash = relayDifficultyTargetHash
 	case types.ParamProofRequestProbability:
 		value, ok := msg.AsType.(*types.MsgUpdateParam_AsFloat)
 		if !ok {
 			return nil, types.ErrProofParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
 		}
-		proofRequestProbability := value.AsFloat
 
-		if err := types.ValidateProofRequestProbability(proofRequestProbability); err != nil {
-			return nil, err
-		}
-
-		params.ProofRequestProbability = proofRequestProbability
+		params.ProofRequestProbability = value.AsFloat
 	case types.ParamProofRequirementThreshold:
 		value, ok := msg.AsType.(*types.MsgUpdateParam_AsCoin)
 		if !ok {
 			return nil, types.ErrProofParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
 		}
-		proofRequirementThreshold := value.AsCoin
 
-		if err := types.ValidateProofRequirementThreshold(proofRequirementThreshold); err != nil {
-			return nil, err
-		}
-
-		params.ProofRequirementThreshold = proofRequirementThreshold
+		params.ProofRequirementThreshold = value.AsCoin
 	case types.ParamProofMissingPenalty:
 		value, ok := msg.AsType.(*types.MsgUpdateParam_AsCoin)
 		if !ok {
 			return nil, types.ErrProofParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
 		}
-		proofMissingPenalty := value.AsCoin
 
-		if err := types.ValidateProofMissingPenalty(proofMissingPenalty); err != nil {
-			return nil, err
-		}
-
-		params.ProofMissingPenalty = proofMissingPenalty
+		params.ProofMissingPenalty = value.AsCoin
 	case types.ParamProofSubmissionFee:
 		value, ok := msg.AsType.(*types.MsgUpdateParam_AsCoin)
 		if !ok {
 			return nil, types.ErrProofParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
 		}
-		proofSubmissionFee := value.AsCoin
 
-		if err := types.ValidateProofSubmissionFee(proofSubmissionFee); err != nil {
-			return nil, err
-		}
-
-		params.ProofSubmissionFee = proofSubmissionFee
+		params.ProofSubmissionFee = value.AsCoin
 	default:
 		return nil, types.ErrProofParamInvalid.Wrapf("unsupported param %q", msg.Name)
+	}
+
+	if err := params.ValidateBasic(); err != nil {
+		return nil, err
 	}
 
 	if err := k.SetParams(ctx, params); err != nil {

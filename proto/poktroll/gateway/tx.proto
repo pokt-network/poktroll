@@ -11,6 +11,7 @@ import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 import "cosmos/base/v1beta1/coin.proto";
 import "poktroll/gateway/params.proto";
+import "poktroll/gateway/types.proto";
 
 // Msg defines the Msg service.
 service Msg {
@@ -50,7 +51,9 @@ message MsgStakeGateway {
   cosmos.base.v1beta1.Coin stake   = 2; // The total amount of uPOKT the gateway is staking. Must be ≥ to the current amount that the gateway has staked (if any)
 }
 
-message MsgStakeGatewayResponse {}
+message MsgStakeGatewayResponse {
+  poktroll.gateway.Gateway gateway = 1;
+}
 
 message MsgUnstakeGateway {
   option (cosmos.msg.v1.signer) = "address";
@@ -67,7 +70,9 @@ message MsgUpdateParam {
   string authority = 1  [(cosmos_proto.scalar) = "cosmos.AddressString"];
 
   string name      = 2;
-  string as_type   = 3;
+  oneof as_type {
+    cosmos.base.v1beta1.Coin as_coin = 3 [(gogoproto.jsontag) = "as_coin"];
+  }
 }
 
 message MsgUpdateParamResponse {
