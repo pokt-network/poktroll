@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/shared"
@@ -25,15 +27,18 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 
 	// ValidateBasic also validates that the msg signer is the owner or operator of the supplier
 	if err := msg.ValidateBasic(); err != nil {
-		logger.Error(fmt.Sprintf("invalid MsgStakeSupplier: %v", msg))
-		return nil, err
+		logger.Info(fmt.Sprintf("invalid MsgStakeSupplier: %v", msg))
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	// Check if the services the supplier is staking for exist
 	for _, serviceConfig := range msg.Services {
 		if _, serviceFound := k.serviceKeeper.GetService(ctx, serviceConfig.ServiceId); !serviceFound {
-			logger.Error(fmt.Sprintf("service %q does not exist", serviceConfig.ServiceId))
-			return nil, types.ErrSupplierServiceNotFound.Wrapf("service %q does not exist", serviceConfig.ServiceId)
+			logger.Info(fmt.Sprintf("service %q does not exist", serviceConfig.ServiceId))
+			return nil, status.Error(
+				codes.InvalidArgument,
+				types.ErrSupplierServiceNotFound.Wrapf("service %q does not exist", serviceConfig.ServiceId).Error(),
+			)
 		}
 	}
 
@@ -55,40 +60,42 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 
 		// Ensure the signer is either the owner or the operator of the supplier.
 		if !msg.IsSigner(supplier.OwnerAddress) && !msg.IsSigner(supplier.OperatorAddress) {
-			return nil, sharedtypes.ErrSharedUnauthorizedSupplierUpdate.Wrapf(
-				"signer address %s does not match owner address %s or supplier operator address %s",
-				msg.Signer,
-				msg.OwnerAddress,
-				msg.OperatorAddress,
+			return nil, status.Error(
+				codes.InvalidArgument,
+				sharedtypes.ErrSharedUnauthorizedSupplierUpdate.Wrapf(
+					"signer address %s does not match owner address %s or supplier operator address %s",
+					msg.Signer, msg.OwnerAddress, msg.OperatorAddress,
+				).Error(),
 			)
 		}
 
 		// Ensure that only the owner can change the OwnerAddress.
 		// (i.e. fail if owner address changed and the owner is not the msg signer)
 		if !supplier.HasOwner(msg.OwnerAddress) && !msg.IsSigner(supplier.OwnerAddress) {
-			logger.Error("only the supplier owner is allowed to update the owner address")
-
-			return nil, sharedtypes.ErrSharedUnauthorizedSupplierUpdate.Wrapf(
+			err = sharedtypes.ErrSharedUnauthorizedSupplierUpdate.Wrapf(
 				"signer %q is not allowed to update the owner address %q",
-				msg.Signer,
-				supplier.OwnerAddress,
+				msg.Signer, supplier.OwnerAddress,
 			)
+			logger.Info(fmt.Sprintf("ERROR: %s", err))
+
+			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
 
 		// Ensure that the operator addresses cannot be changed. This is because changing
 		// it mid-session invalidates the current session.
 		if !supplier.HasOperator(msg.OperatorAddress) {
-			logger.Error("updating the supplier's operator address forbidden")
-
-			return nil, sharedtypes.ErrSharedUnauthorizedSupplierUpdate.Wrap(
+			err = sharedtypes.ErrSharedUnauthorizedSupplierUpdate.Wrap(
 				"updating the operator address is forbidden, unstake then re-stake with the updated operator address",
 			)
+			logger.Info(fmt.Sprintf("ERROR: %s", err))
+
+			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
 
 		currSupplierStake := *supplier.Stake
 		if err = k.updateSupplier(ctx, &supplier, msg); err != nil {
-			logger.Error(fmt.Sprintf("could not update supplier for address %q due to error %v", msg.OperatorAddress, err))
-			return nil, err
+			logger.Info(fmt.Sprintf("ERROR: could not update supplier for address %q due to error %v", msg.OperatorAddress, err))
+			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
 		coinsToEscrow, err = (*msg.Stake).SafeSub(currSupplierStake)
 		if err != nil {
@@ -105,22 +112,23 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 
 	// Must always stake or upstake (> 0 delta)
 	if coinsToEscrow.IsZero() {
-		logger.Warn(fmt.Sprintf("Signer %q must escrow more than 0 additional coins", msg.Signer))
-		return nil, types.ErrSupplierInvalidStake.Wrapf("Signer %q must escrow more than 0 additional coins", msg.Signer)
+		err = types.ErrSupplierInvalidStake.Wrapf("Signer %q must escrow more than 0 additional coins", msg.Signer)
+		logger.Info(fmt.Sprintf("WARN: %s", err))
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	// Retrieve the account address of the message signer
 	msgSignerAddress, err := sdk.AccAddressFromBech32(msg.Signer)
 	if err != nil {
-		logger.Error(fmt.Sprintf("could not parse address %q", msg.Signer))
-		return nil, err
+		logger.Info(fmt.Sprintf("ERROR: could not parse address %q", msg.Signer))
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	// Send the coins from the message signer account to the staked supplier pool
 	err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, msgSignerAddress, types.ModuleName, []sdk.Coin{coinsToEscrow})
 	if err != nil {
-		logger.Error(fmt.Sprintf("could not send %v coins from %q to %q module account due to %v", coinsToEscrow, msgSignerAddress, types.ModuleName, err))
-		return nil, err
+		logger.Info(fmt.Sprintf("ERROR: could not send %v coins from %q to %q module account due to %v", coinsToEscrow, msgSignerAddress, types.ModuleName, err))
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 	logger.Info(fmt.Sprintf("Successfully escrowed %v coins from %q to %q module account", coinsToEscrow, msgSignerAddress, types.ModuleName))
 

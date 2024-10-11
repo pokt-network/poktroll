@@ -4,14 +4,13 @@ import (
 	"fmt"
 	"testing"
 
-	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/x/application/keeper"
-	"github.com/pokt-network/poktroll/x/application/types"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -28,9 +27,9 @@ func TestMsgServer_DelegateToGateway_SuccessfullyDelegate(t *testing.T) {
 	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr2)
 
 	// Prepare the application
-	stakeMsg := &types.MsgStakeApplication{
+	stakeMsg := &apptypes.MsgStakeApplication{
 		Address: appAddr,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
+		Stake:   &apptypes.DefaultMinStake,
 		Services: []*sharedtypes.ApplicationServiceConfig{
 			{
 				ServiceId: "svc1",
@@ -45,7 +44,7 @@ func TestMsgServer_DelegateToGateway_SuccessfullyDelegate(t *testing.T) {
 	require.True(t, isAppFound)
 
 	// Prepare the delegation message
-	delegateMsg := &types.MsgDelegateToGateway{
+	delegateMsg := &apptypes.MsgDelegateToGateway{
 		AppAddress:     appAddr,
 		GatewayAddress: gatewayAddr1,
 	}
@@ -72,7 +71,7 @@ func TestMsgServer_DelegateToGateway_SuccessfullyDelegate(t *testing.T) {
 	require.Equal(t, gatewayAddr1, foundApp.DelegateeGatewayAddresses[0])
 
 	// Prepare a second delegation message
-	delegateMsg2 := &types.MsgDelegateToGateway{
+	delegateMsg2 := &apptypes.MsgDelegateToGateway{
 		AppAddress:     appAddr,
 		GatewayAddress: gatewayAddr2,
 	}
@@ -108,9 +107,9 @@ func TestMsgServer_DelegateToGateway_FailDuplicate(t *testing.T) {
 	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr)
 
 	// Prepare the application
-	stakeMsg := &types.MsgStakeApplication{
+	stakeMsg := &apptypes.MsgStakeApplication{
 		Address: appAddr,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
+		Stake:   &apptypes.DefaultMinStake,
 		Services: []*sharedtypes.ApplicationServiceConfig{
 			{
 				ServiceId: "svc1",
@@ -125,7 +124,7 @@ func TestMsgServer_DelegateToGateway_FailDuplicate(t *testing.T) {
 	require.True(t, isAppFound)
 
 	// Prepare the delegation message
-	delegateMsg := &types.MsgDelegateToGateway{
+	delegateMsg := &apptypes.MsgDelegateToGateway{
 		AppAddress:     appAddr,
 		GatewayAddress: gatewayAddr,
 	}
@@ -152,14 +151,14 @@ func TestMsgServer_DelegateToGateway_FailDuplicate(t *testing.T) {
 	require.Equal(t, gatewayAddr, foundApp.DelegateeGatewayAddresses[0])
 
 	// Prepare a second delegation message
-	delegateMsg2 := &types.MsgDelegateToGateway{
+	delegateMsg2 := &apptypes.MsgDelegateToGateway{
 		AppAddress:     appAddr,
 		GatewayAddress: gatewayAddr,
 	}
 
 	// Attempt to delegate the application to the gateway again
 	_, err = srv.DelegateToGateway(ctx, delegateMsg2)
-	require.ErrorIs(t, err, types.ErrAppAlreadyDelegated)
+	require.ErrorIs(t, err, apptypes.ErrAppAlreadyDelegated)
 	events = sdkCtx.EventManager().Events()
 	require.Equal(t, 1, len(events))
 	foundApp, isAppFound = k.GetApplication(ctx, appAddr)
@@ -177,9 +176,9 @@ func TestMsgServer_DelegateToGateway_FailGatewayNotStaked(t *testing.T) {
 	gatewayAddr := sample.AccAddress()
 
 	// Prepare the application
-	stakeMsg := &types.MsgStakeApplication{
+	stakeMsg := &apptypes.MsgStakeApplication{
 		Address: appAddr,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
+		Stake:   &apptypes.DefaultMinStake,
 		Services: []*sharedtypes.ApplicationServiceConfig{
 			{
 				ServiceId: "svc1",
@@ -194,14 +193,14 @@ func TestMsgServer_DelegateToGateway_FailGatewayNotStaked(t *testing.T) {
 	require.True(t, isAppFound)
 
 	// Prepare the delegation message
-	delegateMsg := &types.MsgDelegateToGateway{
+	delegateMsg := &apptypes.MsgDelegateToGateway{
 		AppAddress:     appAddr,
 		GatewayAddress: gatewayAddr,
 	}
 
 	// Attempt to delegate the application to the unstaked gateway
 	_, err = srv.DelegateToGateway(ctx, delegateMsg)
-	require.ErrorIs(t, err, types.ErrAppGatewayNotFound)
+	require.ErrorIs(t, err, apptypes.ErrAppGatewayNotFound)
 	foundApp, isAppFound := k.GetApplication(ctx, appAddr)
 	require.True(t, isAppFound)
 	require.Equal(t, 0, len(foundApp.DelegateeGatewayAddresses))
@@ -215,9 +214,9 @@ func TestMsgServer_DelegateToGateway_FailMaxReached(t *testing.T) {
 	appAddr := sample.AccAddress()
 
 	// Prepare the application
-	stakeMsg := &types.MsgStakeApplication{
+	stakeMsg := &apptypes.MsgStakeApplication{
 		Address: appAddr,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
+		Stake:   &apptypes.DefaultMinStake,
 		Services: []*sharedtypes.ApplicationServiceConfig{
 			{
 				ServiceId: "svc1",
@@ -240,7 +239,7 @@ func TestMsgServer_DelegateToGateway_FailMaxReached(t *testing.T) {
 		gatewayAddresses[i] = gatewayAddr
 		// Mock the gateway being staked via the staked gateway map
 		keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr)
-		delegateMsg := &types.MsgDelegateToGateway{
+		delegateMsg := &apptypes.MsgDelegateToGateway{
 			AppAddress:     appAddr,
 			GatewayAddress: gatewayAddr,
 		}
@@ -270,14 +269,14 @@ func TestMsgServer_DelegateToGateway_FailMaxReached(t *testing.T) {
 	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr)
 
 	// Prepare the delegation message
-	delegateMsg := &types.MsgDelegateToGateway{
+	delegateMsg := &apptypes.MsgDelegateToGateway{
 		AppAddress:     appAddr,
 		GatewayAddress: gatewayAddr,
 	}
 
 	// Attempt to delegate the application when the max is already reached
 	_, err = srv.DelegateToGateway(ctx, delegateMsg)
-	require.ErrorIs(t, err, types.ErrAppMaxDelegatedGateways)
+	require.ErrorIs(t, err, apptypes.ErrAppMaxDelegatedGateways)
 	events = sdkCtx.EventManager().Events()
 	require.Equal(t, int(maxDelegatedParam), len(events))
 	foundApp, isStakedAppFound := k.GetApplication(ctx, appAddr)

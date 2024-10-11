@@ -166,7 +166,9 @@ func TestMsgServer_StakeSupplier_FailWithNonExistingService(t *testing.T) {
 
 	// Stake the supplier & verify that it fails because the service does not exist.
 	_, err := srv.StakeSupplier(ctx, stakeMsg)
-	require.ErrorIs(t, err, suppliertypes.ErrSupplierServiceNotFound)
+	require.ErrorContains(t, err, suppliertypes.ErrSupplierServiceNotFound.Wrapf(
+		"service %q does not exist", "newService",
+	).Error())
 
 	// Verify that the supplier does not exist
 	_, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
@@ -260,7 +262,10 @@ func TestMsgServer_StakeSupplier_OperatorAuthorizations(t *testing.T) {
 	stakeMsgUpdateOwner.OwnerAddress = newOwnerAddress
 	setStakeMsgSigner(stakeMsgUpdateOwner, operatorAddr)
 	_, err = srv.StakeSupplier(ctx, stakeMsgUpdateOwner)
-	require.ErrorIs(t, err, sharedtypes.ErrSharedUnauthorizedSupplierUpdate)
+	require.ErrorContains(t, err, sharedtypes.ErrSharedUnauthorizedSupplierUpdate.Wrapf(
+		"signer %q is not allowed to update the owner address %q",
+		operatorAddr, ownerAddr,
+	).Error())
 
 	// Update the supplier's owner address using the owner as a signer and verify that it succeeds.
 	setStakeMsgSigner(stakeMsgUpdateOwner, ownerAddr)

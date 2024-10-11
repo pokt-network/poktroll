@@ -43,6 +43,7 @@ type ApplicationKeeper interface {
 	GetApplication(ctx context.Context, appAddr string) (app apptypes.Application, found bool)
 	SetApplication(ctx context.Context, app apptypes.Application)
 	GetAllApplications(ctx context.Context) []apptypes.Application
+	UnbondApplication(ctx context.Context, app *apptypes.Application) error
 }
 
 type ProofKeeper interface {
