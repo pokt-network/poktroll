@@ -198,7 +198,6 @@ var (
 			QueryParamsResponse:     prooftypes.QueryParamsResponse{},
 		},
 		ValidParams: prooftypes.Params{
-			RelayDifficultyTargetHash: ValidRelayDifficultyTargetHash,
 			ProofRequestProbability:   0.1,
 			ProofRequirementThreshold: &ValidProofRequirementThresholdCoin,
 			ProofMissingPenalty:       &ValidProofMissingPenaltyCoin,

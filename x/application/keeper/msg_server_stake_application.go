@@ -71,11 +71,11 @@ func (k msgServer) StakeApplication(ctx context.Context, msg *types.MsgStakeAppl
 	// TODO_CONSIDERATION: If we support multiple native tokens, we will need to
 	// start checking the denom here.
 	if msg.Stake.Amount.LT(minStake.Amount) {
-		errFmt := "application %q must stake at least %s"
-		logger.Info(fmt.Sprintf(errFmt, msg.Address, minStake))
+		err = fmt.Errorf("application %q must stake at least %s", msg.GetAddress(), minStake)
+		logger.Info(err.Error())
 		return nil, status.Error(
 			codes.InvalidArgument,
-			types.ErrAppInvalidStake.Wrapf(errFmt, msg.Address, minStake).Error(),
+			types.ErrAppInvalidStake.Wrapf("%s", err).Error(),
 		)
 	}
 
