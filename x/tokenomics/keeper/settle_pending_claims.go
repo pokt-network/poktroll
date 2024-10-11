@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"cosmossdk.io/math"
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
 
 	"github.com/pokt-network/poktroll/app/volatile"
@@ -23,7 +23,7 @@ import (
 // On-chain Claims & Proofs are deleted after they're settled or expired to free up space.
 //
 // TODO_TECHDEBT: Refactor this function to return a struct instead of multiple return values.
-func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
+func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 	settledResult tokenomicstypes.PendingClaimsResult,
 	expiredResult tokenomicstypes.PendingClaimsResult,
 	err error,
@@ -221,12 +221,11 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 // This is the height at which the proof window closes.
 // If the proof window closes and a proof IS NOT required -> settle the claim.
 // If the proof window closes and a proof IS required -> only settle it if a proof is available.
-func (k Keeper) getExpiringClaims(ctx sdk.Context) (expiringClaims []prooftypes.Claim, err error) {
+func (k Keeper) getExpiringClaims(ctx cosmostypes.Context) (expiringClaims []prooftypes.Claim, err error) {
 	// TODO_IMPROVE(@bryanchriswhite):
 	//   1. Move height logic up to SettlePendingClaims.
 	//   2. Ensure that claims are only settled or expired on a session end height.
 	//     2a. This likely also requires adding validation to the shared module params.
-
 	blockHeight := ctx.BlockHeight()
 
 	// NB: This error can be safely ignored as on-chain SharedQueryClient implementation cannot return an error.
@@ -269,7 +268,7 @@ func (k Keeper) getExpiringClaims(ctx sdk.Context) (expiringClaims []prooftypes.
 // slashSupplierStake slashes the stake of a supplier and transfers the total
 // slashing amount from the supplier bank module to the tokenomics module account.
 func (k Keeper) slashSupplierStake(
-	ctx sdk.Context,
+	ctx cosmostypes.Context,
 	supplierOperatorAddress string,
 	slashingCount uint64,
 ) error {
@@ -279,10 +278,10 @@ func (k Keeper) slashSupplierStake(
 	slashingPenaltyPerExpiredClaim := proofParams.GetProofMissingPenalty()
 
 	totalSlashingAmt := slashingPenaltyPerExpiredClaim.Amount.Mul(math.NewIntFromUint64(slashingCount))
-	totalSlashingCoin := sdk.NewCoin(volatile.DenomuPOKT, totalSlashingAmt)
+	totalSlashingCoin := cosmostypes.NewCoin(volatile.DenomuPOKT, totalSlashingAmt)
 
-	supplierToSlash, supplierFound := k.supplierKeeper.GetSupplier(ctx, supplierOperatorAddress)
-	if !supplierFound {
+	supplierToSlash, isSupplierFound := k.supplierKeeper.GetSupplier(ctx, supplierOperatorAddress)
+	if !isSupplierFound {
 		return tokenomicstypes.ErrTokenomicsSupplierNotFound.Wrapf(
 			"cannot slash supplier with operator address: %q",
 			supplierOperatorAddress,
@@ -291,7 +290,7 @@ func (k Keeper) slashSupplierStake(
 
 	slashedSupplierInitialStakeCoin := supplierToSlash.GetStake()
 
-	var remainingStakeCoin sdk.Coin
+	var remainingStakeCoin cosmostypes.Coin
 	if slashedSupplierInitialStakeCoin.IsGTE(totalSlashingCoin) {
 		remainingStakeCoin = slashedSupplierInitialStakeCoin.Sub(totalSlashingCoin)
 	} else {
@@ -304,15 +303,15 @@ func (k Keeper) slashSupplierStake(
 		))
 
 		// Set the remaining stake to 0 if the slashing amount is greater than the stake.
-		remainingStakeCoin = sdk.NewCoin(volatile.DenomuPOKT, math.NewInt(0))
+		remainingStakeCoin = cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(0))
 		// Total slashing amount is the whole supplier's stake.
-		totalSlashingCoin = sdk.NewCoin(volatile.DenomuPOKT, slashedSupplierInitialStakeCoin.Amount)
+		totalSlashingCoin = cosmostypes.NewCoin(volatile.DenomuPOKT, slashedSupplierInitialStakeCoin.Amount)
 	}
 
 	// Since staking mints tokens to the supplier module account, to have a correct
 	// accounting, the slashing amount needs to be sent from the supplier module
 	// account to the tokenomics module account.
-	if err := k.bankKeeper.SendCoinsFromModuleToModule(ctx, suppliertypes.ModuleName, tokenomicstypes.ModuleName, sdk.NewCoins(totalSlashingCoin)); err != nil {
+	if err := k.bankKeeper.SendCoinsFromModuleToModule(ctx, suppliertypes.ModuleName, tokenomicstypes.ModuleName, cosmostypes.NewCoins(totalSlashingCoin)); err != nil {
 		return err
 	}
 
@@ -326,9 +325,11 @@ func (k Keeper) slashSupplierStake(
 		supplierToSlash.GetStake(),
 	))
 
+	events := make([]cosmostypes.Msg, 0)
+
 	// Check if the supplier's stake is below the minimum and unstake it if necessary.
 	// TODO_BETA(@bryanchriswhite, #612): Use minimum stake governance parameter once available.
-	minSupplierStakeCoin := sdk.NewCoin(volatile.DenomuPOKT, math.NewInt(1))
+	minSupplierStakeCoin := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(1))
 	// TODO_MAINNET(@red-0ne): SettlePendingClaims is called at the end of every block,
 	// but not every block corresponds to the end of a session. This may lead to a situation
 	// where a force unstaked supplier may still be able to interact with a Gateway or Application.
@@ -337,7 +338,7 @@ func (k Keeper) slashSupplierStake(
 	// at all and fixed only if it does.
 	if supplierToSlash.GetStake().IsLT(minSupplierStakeCoin) {
 		sharedParams := k.sharedKeeper.GetParams(ctx)
-		sdkCtx := sdk.UnwrapSDKContext(ctx)
+		sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 		currentHeight := sdkCtx.BlockHeight()
 		unstakeSessionEndHeight := uint64(shared.GetSessionEndHeight(&sharedParams, currentHeight))
 
@@ -354,17 +355,27 @@ func (k Keeper) slashSupplierStake(
 		// inconsistent session supplier list? See the comment above for more details.
 		supplierToSlash.UnstakeSessionEndHeight = unstakeSessionEndHeight
 
+		supplierParams := k.supplierKeeper.GetParams(ctx)
+
+		events = append(events, &suppliertypes.EventSupplierUnbondedBelowMinStake{
+			Supplier:        &supplierToSlash,
+			MinStake:        supplierParams.GetMinStake(),
+			UnbondingHeight: 0,
+		})
 	}
 
 	k.supplierKeeper.SetSupplier(ctx, supplierToSlash)
 
 	// Emit an event that a supplier has been slashed.
-	supplierSlashedEvent := tokenomicstypes.EventSupplierSlashed{
+	events = append(events, &tokenomicstypes.EventSupplierSlashed{
 		SupplierOperatorAddr: supplierOperatorAddress,
 		NumExpiredClaims:     slashingCount,
 		SlashingAmount:       &totalSlashingCoin,
-	}
-	if err := ctx.EventManager().EmitTypedEvent(&supplierSlashedEvent); err != nil {
+	})
+
+	if err := ctx.EventManager().EmitTypedEvents(events...); err != nil {
+		err = suppliertypes.ErrSupplierEmitEvent.Wrapf("(%+v): %s", events, err)
+		logger.Error(err.Error())
 		return err
 	}
 
