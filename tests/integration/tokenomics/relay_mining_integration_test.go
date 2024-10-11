@@ -131,7 +131,7 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 		sessionEndHeight := session.GetHeader().GetSessionEndBlockHeight()
 		claimExpirationHeight := sessionEndHeight + int64(sessionEndToProofWindowCloseBlocks) + 1
 
-		sdkCtx := sdkCtx.WithBlockHeight(claimExpirationHeight)
+		sdkCtx = sdkCtx.WithBlockHeight(claimExpirationHeight)
 
 		// Get the relay mining difficulty that will be used when settling the pending claims.
 		relayMiningDifficulty, ok := keepers.ServiceKeeper.GetRelayMiningDifficulty(sdkCtx, service.Id)
