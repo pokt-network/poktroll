@@ -19,9 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion8
 
 const (
-	Query_Params_FullMethodName      = "/poktroll.service.Query/Params"
-	Query_Service_FullMethodName     = "/poktroll.service.Query/Service"
-	Query_AllServices_FullMethodName = "/poktroll.service.Query/AllServices"
+	Query_Params_FullMethodName                   = "/poktroll.service.Query/Params"
+	Query_Service_FullMethodName                  = "/poktroll.service.Query/Service"
+	Query_AllServices_FullMethodName              = "/poktroll.service.Query/AllServices"
+	Query_RelayMiningDifficulty_FullMethodName    = "/poktroll.service.Query/RelayMiningDifficulty"
+	Query_RelayMiningDifficultyAll_FullMethodName = "/poktroll.service.Query/RelayMiningDifficultyAll"
 )
 
 // QueryClient is the client API for Query service.
@@ -35,6 +37,9 @@ type QueryClient interface {
 	// Queries a list of Service items.
 	Service(ctx context.Context, in *QueryGetServiceRequest, opts ...grpc.CallOption) (*QueryGetServiceResponse, error)
 	AllServices(ctx context.Context, in *QueryAllServicesRequest, opts ...grpc.CallOption) (*QueryAllServicesResponse, error)
+	// Queries a list of RelayMiningDifficulty items.
+	RelayMiningDifficulty(ctx context.Context, in *QueryGetRelayMiningDifficultyRequest, opts ...grpc.CallOption) (*QueryGetRelayMiningDifficultyResponse, error)
+	RelayMiningDifficultyAll(ctx context.Context, in *QueryAllRelayMiningDifficultyRequest, opts ...grpc.CallOption) (*QueryAllRelayMiningDifficultyResponse, error)
 }
 
 type queryClient struct {
@@ -75,6 +80,26 @@ func (c *queryClient) AllServices(ctx context.Context, in *QueryAllServicesReque
 	return out, nil
 }
 
+func (c *queryClient) RelayMiningDifficulty(ctx context.Context, in *QueryGetRelayMiningDifficultyRequest, opts ...grpc.CallOption) (*QueryGetRelayMiningDifficultyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(QueryGetRelayMiningDifficultyResponse)
+	err := c.cc.Invoke(ctx, Query_RelayMiningDifficulty_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *queryClient) RelayMiningDifficultyAll(ctx context.Context, in *QueryAllRelayMiningDifficultyRequest, opts ...grpc.CallOption) (*QueryAllRelayMiningDifficultyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(QueryAllRelayMiningDifficultyResponse)
+	err := c.cc.Invoke(ctx, Query_RelayMiningDifficultyAll_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // QueryServer is the server API for Query service.
 // All implementations must embed UnimplementedQueryServer
 // for forward compatibility
@@ -86,6 +111,9 @@ type QueryServer interface {
 	// Queries a list of Service items.
 	Service(context.Context, *QueryGetServiceRequest) (*QueryGetServiceResponse, error)
 	AllServices(context.Context, *QueryAllServicesRequest) (*QueryAllServicesResponse, error)
+	// Queries a list of RelayMiningDifficulty items.
+	RelayMiningDifficulty(context.Context, *QueryGetRelayMiningDifficultyRequest) (*QueryGetRelayMiningDifficultyResponse, error)
+	RelayMiningDifficultyAll(context.Context, *QueryAllRelayMiningDifficultyRequest) (*QueryAllRelayMiningDifficultyResponse, error)
 	mustEmbedUnimplementedQueryServer()
 }
 
@@ -101,6 +129,12 @@ func (UnimplementedQueryServer) Service(context.Context, *QueryGetServiceRequest
 }
 func (UnimplementedQueryServer) AllServices(context.Context, *QueryAllServicesRequest) (*QueryAllServicesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AllServices not implemented")
+}
+func (UnimplementedQueryServer) RelayMiningDifficulty(context.Context, *QueryGetRelayMiningDifficultyRequest) (*QueryGetRelayMiningDifficultyResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RelayMiningDifficulty not implemented")
+}
+func (UnimplementedQueryServer) RelayMiningDifficultyAll(context.Context, *QueryAllRelayMiningDifficultyRequest) (*QueryAllRelayMiningDifficultyResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RelayMiningDifficultyAll not implemented")
 }
 func (UnimplementedQueryServer) mustEmbedUnimplementedQueryServer() {}
 
@@ -169,6 +203,42 @@ func _Query_AllServices_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Query_RelayMiningDifficulty_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryGetRelayMiningDifficultyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).RelayMiningDifficulty(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_RelayMiningDifficulty_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).RelayMiningDifficulty(ctx, req.(*QueryGetRelayMiningDifficultyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Query_RelayMiningDifficultyAll_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryAllRelayMiningDifficultyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).RelayMiningDifficultyAll(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_RelayMiningDifficultyAll_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).RelayMiningDifficultyAll(ctx, req.(*QueryAllRelayMiningDifficultyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Query_ServiceDesc is the grpc.ServiceDesc for Query service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -187,6 +257,14 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AllServices",
 			Handler:    _Query_AllServices_Handler,
+		},
+		{
+			MethodName: "RelayMiningDifficulty",
+			Handler:    _Query_RelayMiningDifficulty_Handler,
+		},
+		{
+			MethodName: "RelayMiningDifficultyAll",
+			Handler:    _Query_RelayMiningDifficultyAll_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

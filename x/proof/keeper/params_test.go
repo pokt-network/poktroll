@@ -19,35 +19,6 @@ func TestGetParams(t *testing.T) {
 	require.NoError(t, k.SetParams(ctx, params))
 	require.EqualValues(t, params, k.GetParams(ctx))
 }
-func TestParams_ValidateMinRelayDifficulty(t *testing.T) {
-	tests := []struct {
-		desc                      string
-		relayDifficultyTargetHash any
-		expectedErr               error
-	}{
-		{
-			desc:                      "invalid type",
-			relayDifficultyTargetHash: int64(-1),
-			expectedErr:               prooftypes.ErrProofParamInvalid.Wrapf("invalid parameter type: int64"),
-		},
-		{
-			desc:                      "valid RelayDifficultyTargetHash",
-			relayDifficultyTargetHash: prooftypes.DefaultRelayDifficultyTargetHash,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.desc, func(t *testing.T) {
-			err := prooftypes.ValidateRelayDifficultyTargetHash(tt.relayDifficultyTargetHash)
-			if tt.expectedErr != nil {
-				require.Error(t, err)
-				require.Contains(t, err.Error(), tt.expectedErr.Error())
-			} else {
-				require.NoError(t, err)
-			}
-		})
-	}
-}
 
 func TestParams_ValidateProofRequestProbability(t *testing.T) {
 	tests := []struct {

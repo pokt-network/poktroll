@@ -47,6 +47,7 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 
 	// Parameter name must be supported by this module.
 	switch msg.Name {
+	// TODO_IMPROVE: Add a Uint64 asType instead of using int64 for uint64 params.
 	case ParamNumBlocksPerSession,
 		ParamGracePeriodEndOffsetBlocks,
 		ParamClaimWindowOpenOffsetBlocks,

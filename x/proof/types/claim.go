@@ -2,14 +2,14 @@ package types
 
 import (
 	"github.com/cometbft/cometbft/crypto"
+	"github.com/pokt-network/smt"
 
 	poktrand "github.com/pokt-network/poktroll/pkg/crypto/rand"
-	"github.com/pokt-network/smt"
 )
 
-// GetNumComputeUnits returns the number of compute units for a given claim
+// GetNumClaimedComputeUnits returns the number of compute units for a given claim
 // as determined by the sum of the root hash.
-func (claim *Claim) GetNumComputeUnits() (numComputeUnits uint64, err error) {
+func (claim *Claim) GetNumClaimedComputeUnits() (numClaimedComputeUnits uint64, err error) {
 	return smt.MerkleSumRoot(claim.GetRootHash()).Sum()
 }
 

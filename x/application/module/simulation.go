@@ -39,6 +39,14 @@ const (
 	// TODO: Determine the simulation weight value
 	defaultWeightMsgUndelegateFromGateway int = 100
 
+	opWeightMsgTransferApplication = "op_weight_msg_transfer_application"
+	// TODO: Determine the simulation weight value
+	defaultWeightMsgTransferApplication int = 100
+
+	opWeightMsgUpdateParam = "op_weight_msg_update_param"
+	// TODO: Determine the simulation weight value
+	defaultWeightMsgUpdateParam int = 100
+
 	// this line is used by starport scaffolding # simapp/module/const
 )
 
@@ -111,6 +119,28 @@ func (am AppModule) WeightedOperations(simState module.SimulationState) []simtyp
 		applicationsimulation.SimulateMsgUndelegateFromGateway(am.accountKeeper, am.bankKeeper, am.applicationKeeper),
 	))
 
+	var weightMsgTransferApplication int
+	simState.AppParams.GetOrGenerate(opWeightMsgTransferApplication, &weightMsgTransferApplication, nil,
+		func(_ *rand.Rand) {
+			weightMsgTransferApplication = defaultWeightMsgTransferApplication
+		},
+	)
+	operations = append(operations, simulation.NewWeightedOperation(
+		weightMsgTransferApplication,
+		applicationsimulation.SimulateMsgTransferApplication(am.accountKeeper, am.bankKeeper, am.applicationKeeper),
+	))
+
+	var weightMsgUpdateParam int
+	simState.AppParams.GetOrGenerate(opWeightMsgUpdateParam, &weightMsgUpdateParam, nil,
+		func(_ *rand.Rand) {
+			weightMsgUpdateParam = defaultWeightMsgUpdateParam
+		},
+	)
+	operations = append(operations, simulation.NewWeightedOperation(
+		weightMsgUpdateParam,
+		applicationsimulation.SimulateMsgUpdateParam(am.accountKeeper, am.bankKeeper, am.applicationKeeper),
+	))
+
 	// this line is used by starport scaffolding # simapp/module/operation
 
 	return operations
@@ -148,6 +178,22 @@ func (am AppModule) ProposalMsgs(simState module.SimulationState) []simtypes.Wei
 			defaultWeightMsgUndelegateFromGateway,
 			func(r *rand.Rand, ctx sdk.Context, accs []simtypes.Account) sdk.Msg {
 				applicationsimulation.SimulateMsgUndelegateFromGateway(am.accountKeeper, am.bankKeeper, am.applicationKeeper)
+				return nil
+			},
+		),
+		simulation.NewWeightedProposalMsg(
+			opWeightMsgTransferApplication,
+			defaultWeightMsgTransferApplication,
+			func(r *rand.Rand, ctx sdk.Context, accs []simtypes.Account) sdk.Msg {
+				applicationsimulation.SimulateMsgTransferApplication(am.accountKeeper, am.bankKeeper, am.applicationKeeper)
+				return nil
+			},
+		),
+		simulation.NewWeightedProposalMsg(
+			opWeightMsgUpdateParam,
+			defaultWeightMsgUpdateParam,
+			func(r *rand.Rand, ctx sdk.Context, accs []simtypes.Account) sdk.Msg {
+				applicationsimulation.SimulateMsgUpdateParam(am.accountKeeper, am.bankKeeper, am.applicationKeeper)
 				return nil
 			},
 		),

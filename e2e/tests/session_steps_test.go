@@ -17,7 +17,9 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/block"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	testutilevents "github.com/pokt-network/poktroll/testutil/events"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
@@ -49,7 +51,8 @@ func (s *suite) TheUserShouldWaitForTheModuleMessageToBeSubmitted(module, msgTyp
 	// If the message type is "SubmitProof", save the supplier balance
 	// so that next steps that assert on supplier rewards can do it without having
 	// the proof submission fee skewing the results.
-	if msgType == "SubmitProof" {
+	switch msgType {
+	case "SubmitProof":
 		supplierOperatorAddress := getMsgSubmitProofSenderAddress(event)
 		require.NotEmpty(s, supplierOperatorAddress)
 
@@ -59,11 +62,33 @@ func (s *suite) TheUserShouldWaitForTheModuleMessageToBeSubmitted(module, msgTyp
 		balanceKey := accBalanceKey(supplierAccName)
 		currBalance := s.getAccBalance(supplierAccName)
 		s.scenarioState[balanceKey] = currBalance // save the balance for later
+	default:
+		s.Log("no test suite state to update for message type %s", msgType)
+	}
+
+	// Rebuild actor maps after the relevant messages have been committed.
+	switch module {
+	case apptypes.ModuleName:
+		s.buildAppMap()
+	case suppliertypes.ModuleName:
+		s.buildSupplierMap()
+	default:
+		s.Log("no test suite state to update for module %s", module)
 	}
 }
 
 func (s *suite) TheUserShouldWaitForTheModuleTxEventToBeBroadcast(module, eventType string) {
 	s.waitForTxResultEvent(newEventTypeMatchFn(module, eventType))
+
+	// Rebuild actor maps after the relevant messages have been committed.
+	switch module {
+	case apptypes.ModuleName:
+		s.buildAppMap()
+	case suppliertypes.ModuleName:
+		s.buildSupplierMap()
+	default:
+		s.Log("no test suite state to update for module %s", module)
+	}
 }
 
 func (s *suite) TheUserShouldWaitForTheClaimsettledEventWithProofRequirementToBeBroadcast(proofRequirement string) {
@@ -74,6 +99,10 @@ func (s *suite) TheUserShouldWaitForTheClaimsettledEventWithProofRequirementToBe
 			newEventAttributeMatchFn("proof_requirement", fmt.Sprintf("%q", proofRequirement)),
 		),
 	)
+
+	// Update the actor maps after end block events have been emitted.
+	s.buildAppMap()
+	s.buildSupplierMap()
 }
 
 // TODO_FLAKY: See how 'TheClaimCreatedBySupplierForServiceForApplicationShouldBeSuccessfullySettled'
@@ -162,7 +191,8 @@ func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBeSuccess
 		require.Equal(s, app.Address, claim.SessionHeader.ApplicationAddress)
 		require.Equal(s, supplier.OperatorAddress, claim.SupplierOperatorAddress)
 		require.Equal(s, serviceId, claim.SessionHeader.ServiceId)
-		require.Greater(s, claimSettledEvent.NumComputeUnits, uint64(0), "compute units should be greater than 0")
+		require.Greater(s, claimSettledEvent.NumClaimedComputeUnits, uint64(0), "claimed compute units should be greater than 0")
+		// TODO_FOLLOWUP: Add NumEstimatedComputeUnits and ClaimedAmountUpokt
 		return true
 	}
 
@@ -207,8 +237,7 @@ func (s *suite) waitForTxResultEvent(eventIsMatch func(*abci.Event) bool) (match
 	ctx, cancel := context.WithCancel(s.ctx)
 
 	// For each observed event, **asynchronously** check if it contains the given action.
-	channel.ForEach[*abci.TxResult](
-		ctx, s.txResultReplayClient.EventsSequence(ctx),
+	s.forEachTxResult(ctx,
 		func(_ context.Context, txResult *abci.TxResult) {
 			if txResult == nil {
 				return
@@ -225,13 +254,6 @@ func (s *suite) waitForTxResultEvent(eventIsMatch func(*abci.Event) bool) (match
 		},
 	)
 
-	select {
-	case <-time.After(eventTimeout):
-		s.Fatalf("ERROR: timed out waiting for tx result event")
-	case <-ctx.Done():
-		s.Log("Success; message detected before timeout.")
-	}
-
 	return matchedEvent
 }
 
@@ -245,8 +267,7 @@ func (s *suite) waitForNewBlockEvent(
 	ctx, done := context.WithCancel(s.ctx)
 
 	// For each observed event, **asynchronously** check if it contains the given action.
-	channel.ForEach[*block.CometNewBlockEvent](
-		ctx, s.newBlockEventsReplayClient.EventsSequence(ctx),
+	s.forEachBlockEvent(ctx,
 		func(_ context.Context, newBlockEvent *block.CometNewBlockEvent) {
 			if newBlockEvent == nil {
 				return
@@ -264,13 +285,6 @@ func (s *suite) waitForNewBlockEvent(
 			}
 		},
 	)
-
-	select {
-	case <-time.After(eventTimeout):
-		s.Fatalf("ERROR: timed out waiting for NewBlock event")
-	case <-ctx.Done():
-		s.Log("Success; message detected before timeout.")
-	}
 }
 
 // waitForBlockHeight waits for a NewBlock event to be observed whose height is
@@ -280,8 +294,7 @@ func (s *suite) waitForBlockHeight(targetHeight int64) {
 
 	// For each observed event, **asynchronously** check if it is greater than
 	// or equal to the target height
-	channel.ForEach[*block.CometNewBlockEvent](
-		ctx, s.newBlockEventsReplayClient.EventsSequence(ctx),
+	s.forEachBlockEvent(ctx,
 		func(_ context.Context, newBlockEvent *block.CometNewBlockEvent) {
 			if newBlockEvent == nil {
 				return
@@ -293,12 +306,46 @@ func (s *suite) waitForBlockHeight(targetHeight int64) {
 			}
 		},
 	)
+}
+
+// forEachBlockEvent calls blockEventFn for each observed block event **asynchronously**
+// and blocks on waiting for the given context to be cancelled. If the context is
+// not cancelled before eventTimeout, the test will fail.
+func (s *suite) forEachBlockEvent(
+	ctx context.Context,
+	blockEventFn func(_ context.Context, newBlockEvent *block.CometNewBlockEvent),
+) {
+	channel.ForEach[*block.CometNewBlockEvent](ctx,
+		s.newBlockEventsReplayClient.EventsSequence(ctx),
+		blockEventFn,
+	)
 
 	select {
 	case <-time.After(eventTimeout):
-		s.Fatalf("ERROR: timed out waiting for block height", targetHeight)
+		s.Fatalf("ERROR: timed out waiting new block event")
 	case <-ctx.Done():
-		s.Log("Success; height detected before timeout.")
+		s.Log("Success; new block event detected before timeout.")
+	}
+}
+
+// forEachTxResult calls txResult for each observed tx result **asynchronously**
+// and blocks on waiting for the given context to be cancelled. If the context is
+// not cancelled before eventTimeout, the test will fail.
+func (s *suite) forEachTxResult(
+	ctx context.Context,
+	txResultFn func(_ context.Context, txResult *abci.TxResult),
+) {
+
+	channel.ForEach[*abci.TxResult](ctx,
+		s.txResultReplayClient.EventsSequence(ctx),
+		txResultFn,
+	)
+
+	select {
+	case <-time.After(eventTimeout):
+		s.Fatalf("ERROR: timed out waiting for tx result")
+	case <-ctx.Done():
+		s.Log("Success; tx result detected before timeout.")
 	}
 }
 

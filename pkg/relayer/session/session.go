@@ -65,8 +65,8 @@ type relayerSessionsManager struct {
 	// claim requires a proof.
 	proofQueryClient client.ProofQueryClient
 
-	// tokenomicsQueryClient is used to query for the tokenomics module parameters.
-	tokenomicsQueryClient client.TokenomicsQueryClient
+	// bankQueryClient is used to query for the bank module parameters.
+	bankQueryClient client.BankQueryClient
 }
 
 // NewRelayerSessions creates a new relayerSessions.
@@ -97,7 +97,7 @@ func NewRelayerSessions(
 		&rs.sharedQueryClient,
 		&rs.serviceQueryClient,
 		&rs.proofQueryClient,
-		&rs.tokenomicsQueryClient,
+		&rs.bankQueryClient,
 	); err != nil {
 		return nil, err
 	}

@@ -1,10 +1,12 @@
 package keeper_test
 
 import (
+	"context"
 	"encoding/hex"
 	"testing"
 
 	"cosmossdk.io/depinject"
+	"cosmossdk.io/log"
 	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
@@ -15,13 +17,14 @@ import (
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
-	"github.com/pokt-network/poktroll/pkg/relayer"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/testutil/testkeyring"
 	"github.com/pokt-network/poktroll/testutil/testrelayer"
 	"github.com/pokt-network/poktroll/testutil/testtree"
+	"github.com/pokt-network/poktroll/x/proof/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -150,17 +153,14 @@ func TestEnsureValidProof_Error(t *testing.T) {
 	}
 	keepers.UpsertClaim(ctx, claim)
 
-	// Compute the difficulty in bits of the closest relay from the valid session tree.
-	validClosestRelayDifficultyBits := getClosestRelayDifficulty(t, validSessionTree, expectedMerkleProofPath)
-
 	// Copy `emptyBlockHash` to `wrongClosestProofPath` to with a missing byte
 	// so the closest proof is invalid (i.e. unmarshalable).
 	invalidClosestProofBytes := make([]byte, len(expectedMerkleProofPath)-1)
 
 	// Store the expected error returned during deserialization of the invalid
 	// closest Merkle proof bytes.
-	sparseMerkleClosestProof := &smt.SparseMerkleClosestProof{}
-	expectedInvalidProofUnmarshalErr := sparseMerkleClosestProof.Unmarshal(invalidClosestProofBytes)
+	sparseCompactMerkleClosestProof := &smt.SparseCompactMerkleClosestProof{}
+	expectedInvalidProofUnmarshalErr := sparseCompactMerkleClosestProof.Unmarshal(invalidClosestProofBytes)
 
 	// Construct a relay to be mangled such that it fails to deserialize in order
 	// to set the error expectation for the relevant test case.
@@ -188,10 +188,8 @@ func TestEnsureValidProof_Error(t *testing.T) {
 	copy(wrongClosestProofPath, expectedMerkleProofPath)
 	copy(wrongClosestProofPath, "wrong closest proof path")
 
-	lowTargetHash, _ := hex.DecodeString("00000000000000000000000000000000000000000000000000000000000000ff")
-	var lowTargetHashArr [protocol.RelayHasherSize]byte
-	copy(lowTargetHashArr[:], lowTargetHash)
-	highExpectedTargetDifficulty := protocol.GetDifficultyFromHash(lowTargetHashArr)
+	lowTargetHash, err := hex.DecodeString("00000000000000000000000000000000000000000000000000000000000000ff")
+	require.NoError(t, err)
 
 	tests := []struct {
 		desc        string
@@ -593,34 +591,44 @@ func TestEnsureValidProof_Error(t *testing.T) {
 		{
 			desc: "relay difficulty must be greater than or equal to a high difficulty (low target hash)",
 			newProof: func(t *testing.T) *prooftypes.Proof {
-				// Set the minimum relay difficulty to a non-zero value such that the relays
-				// constructed by the test helpers have a negligible chance of being valid.
-				err = keepers.Keeper.SetParams(ctx, prooftypes.Params{
-					RelayDifficultyTargetHash: lowTargetHash,
-				})
-				require.NoError(t, err)
-
+				serviceId := validSessionHeader.GetServiceId()
+				logger := log.NewNopLogger()
+				setRelayMiningDifficultyHash(ctx, keepers.ServiceKeeper, serviceId, lowTargetHash, logger)
 				// Reset the minimum relay difficulty to zero after this test case.
 				t.Cleanup(func() {
-					err = keepers.Keeper.SetParams(ctx, prooftypes.DefaultParams())
-					require.NoError(t, err)
+					setRelayMiningDifficultyHash(ctx, keepers.ServiceKeeper, serviceId, protocol.BaseRelayDifficultyHashBz, logger)
 				})
 
 				// Construct a proof message with a session tree containing
-				// a relay of insufficient difficulty.
-				return testtree.NewProof(t,
+				// a valid relay but of insufficient difficulty.
+				proof := testtree.NewProof(t,
 					supplierOperatorAddr,
 					validSessionHeader,
 					validSessionTree,
 					expectedMerkleProofPath,
 				)
+
+				// Extract relayHash to check below that it's difficulty is insufficient
+				err = sparseCompactMerkleClosestProof.Unmarshal(proof.ClosestMerkleProof)
+				require.NoError(t, err)
+				var sparseMerkleClosestProof *smt.SparseMerkleClosestProof
+				sparseMerkleClosestProof, err = smt.DecompactClosestProof(sparseCompactMerkleClosestProof, &protocol.SmtSpec)
+				require.NoError(t, err)
+
+				relayBz := sparseMerkleClosestProof.GetValueHash(&protocol.SmtSpec)
+				relayHashArr := protocol.GetRelayHashFromBytes(relayBz)
+				relayHash := relayHashArr[:]
+
+				// Check that the relay difficulty is insufficient
+				// DEV_NOTE: We are doing this validation in the "newProof" function
+				// because of the scoping complexities of including it in expectedErr.
+				isRelayVolumeApplicable := protocol.IsRelayVolumeApplicable(relayHash, lowTargetHash)
+				require.False(t, isRelayVolumeApplicable)
+
+				return proof
+
 			},
-			expectedErr: prooftypes.ErrProofInvalidRelay.Wrapf(
-				"the difficulty relay being proven is (%d), and is smaller than the target difficulty (%d) for service %s",
-				validClosestRelayDifficultyBits,
-				highExpectedTargetDifficulty,
-				validSessionHeader.ServiceId,
-			),
+			expectedErr: types.ErrProofInvalidRelayDifficulty, // Asserting on the default error but validation of values is done above
 		},
 		{
 			desc: "claim must exist for proof message",
@@ -768,27 +776,14 @@ func TestEnsureValidProof_Error(t *testing.T) {
 	}
 }
 
-// getClosestRelayDifficulty returns the mining difficulty number which corresponds
-// to the relayHash stored in the sessionTree that is closest to the merkle proof
-// path provided.
-func getClosestRelayDifficulty(
-	t *testing.T,
-	sessionTree relayer.SessionTree,
-	closestMerkleProofPath []byte,
-) int64 {
-	// Retrieve a merkle proof that is closest to the path provided
-	closestMerkleProof, err := sessionTree.ProveClosest(closestMerkleProofPath)
-	require.NoError(t, err)
-
-	// Extract the Relay (containing the RelayResponse & RelayRequest) from the merkle proof.
-	relay := new(servicetypes.Relay)
-	relayBz := closestMerkleProof.GetValueHash(&protocol.SmtSpec)
-	err = relay.Unmarshal(relayBz)
-	require.NoError(t, err)
-
-	// Retrieve the hash of the relay.
-	relayHash, err := relay.GetHash()
-	require.NoError(t, err)
-
-	return protocol.GetDifficultyFromHash(relayHash)
+func setRelayMiningDifficultyHash(
+	ctx context.Context,
+	serviceKeeper prooftypes.ServiceKeeper,
+	serviceId string,
+	targetHash []byte,
+	logger log.Logger,
+) {
+	relayMiningDifficulty := servicekeeper.NewDefaultRelayMiningDifficulty(ctx, logger, serviceId, servicekeeper.TargetNumRelays)
+	relayMiningDifficulty.TargetHash = targetHash
+	serviceKeeper.SetRelayMiningDifficulty(ctx, relayMiningDifficulty)
 }

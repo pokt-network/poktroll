@@ -24,6 +24,8 @@ const (
 	Msg_UnstakeApplication_FullMethodName    = "/poktroll.application.Msg/UnstakeApplication"
 	Msg_DelegateToGateway_FullMethodName     = "/poktroll.application.Msg/DelegateToGateway"
 	Msg_UndelegateFromGateway_FullMethodName = "/poktroll.application.Msg/UndelegateFromGateway"
+	Msg_TransferApplication_FullMethodName   = "/poktroll.application.Msg/TransferApplication"
+	Msg_UpdateParam_FullMethodName           = "/poktroll.application.Msg/UpdateParam"
 )
 
 // MsgClient is the client API for Msg service.
@@ -39,6 +41,8 @@ type MsgClient interface {
 	UnstakeApplication(ctx context.Context, in *MsgUnstakeApplication, opts ...grpc.CallOption) (*MsgUnstakeApplicationResponse, error)
 	DelegateToGateway(ctx context.Context, in *MsgDelegateToGateway, opts ...grpc.CallOption) (*MsgDelegateToGatewayResponse, error)
 	UndelegateFromGateway(ctx context.Context, in *MsgUndelegateFromGateway, opts ...grpc.CallOption) (*MsgUndelegateFromGatewayResponse, error)
+	TransferApplication(ctx context.Context, in *MsgTransferApplication, opts ...grpc.CallOption) (*MsgTransferApplicationResponse, error)
+	UpdateParam(ctx context.Context, in *MsgUpdateParam, opts ...grpc.CallOption) (*MsgUpdateParamResponse, error)
 }
 
 type msgClient struct {
@@ -99,6 +103,26 @@ func (c *msgClient) UndelegateFromGateway(ctx context.Context, in *MsgUndelegate
 	return out, nil
 }
 
+func (c *msgClient) TransferApplication(ctx context.Context, in *MsgTransferApplication, opts ...grpc.CallOption) (*MsgTransferApplicationResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MsgTransferApplicationResponse)
+	err := c.cc.Invoke(ctx, Msg_TransferApplication_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) UpdateParam(ctx context.Context, in *MsgUpdateParam, opts ...grpc.CallOption) (*MsgUpdateParamResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MsgUpdateParamResponse)
+	err := c.cc.Invoke(ctx, Msg_UpdateParam_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MsgServer is the server API for Msg service.
 // All implementations must embed UnimplementedMsgServer
 // for forward compatibility
@@ -112,6 +136,8 @@ type MsgServer interface {
 	UnstakeApplication(context.Context, *MsgUnstakeApplication) (*MsgUnstakeApplicationResponse, error)
 	DelegateToGateway(context.Context, *MsgDelegateToGateway) (*MsgDelegateToGatewayResponse, error)
 	UndelegateFromGateway(context.Context, *MsgUndelegateFromGateway) (*MsgUndelegateFromGatewayResponse, error)
+	TransferApplication(context.Context, *MsgTransferApplication) (*MsgTransferApplicationResponse, error)
+	UpdateParam(context.Context, *MsgUpdateParam) (*MsgUpdateParamResponse, error)
 	mustEmbedUnimplementedMsgServer()
 }
 
@@ -133,6 +159,12 @@ func (UnimplementedMsgServer) DelegateToGateway(context.Context, *MsgDelegateToG
 }
 func (UnimplementedMsgServer) UndelegateFromGateway(context.Context, *MsgUndelegateFromGateway) (*MsgUndelegateFromGatewayResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UndelegateFromGateway not implemented")
+}
+func (UnimplementedMsgServer) TransferApplication(context.Context, *MsgTransferApplication) (*MsgTransferApplicationResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method TransferApplication not implemented")
+}
+func (UnimplementedMsgServer) UpdateParam(context.Context, *MsgUpdateParam) (*MsgUpdateParamResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateParam not implemented")
 }
 func (UnimplementedMsgServer) mustEmbedUnimplementedMsgServer() {}
 
@@ -237,6 +269,42 @@ func _Msg_UndelegateFromGateway_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Msg_TransferApplication_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgTransferApplication)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).TransferApplication(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_TransferApplication_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).TransferApplication(ctx, req.(*MsgTransferApplication))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_UpdateParam_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgUpdateParam)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).UpdateParam(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_UpdateParam_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).UpdateParam(ctx, req.(*MsgUpdateParam))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Msg_ServiceDesc is the grpc.ServiceDesc for Msg service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -263,6 +331,14 @@ var Msg_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UndelegateFromGateway",
 			Handler:    _Msg_UndelegateFromGateway_Handler,
+		},
+		{
+			MethodName: "TransferApplication",
+			Handler:    _Msg_TransferApplication_Handler,
+		},
+		{
+			MethodName: "UpdateParam",
+			Handler:    _Msg_UpdateParam_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

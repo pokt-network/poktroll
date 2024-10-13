@@ -50,11 +50,11 @@ type sessionTree struct {
 	// proofPath is the path for which the proof was generated.
 	proofPath []byte
 
-	// proof is the generated proof for the session given a proofPath.
-	proof *smt.SparseMerkleClosestProof
+	// compactProof is the generated compactProof for the session given a proofPath.
+	compactProof *smt.SparseCompactMerkleClosestProof
 
-	// proofBz is the marshaled proof for the session.
-	proofBz []byte
+	// compactProofBz is the marshaled proof for the session.
+	compactProofBz []byte
 
 	// treeStore is the KVStore used to store the SMST.
 	treeStore pebble.PebbleKVStore
@@ -154,9 +154,7 @@ func (st *sessionTree) Update(key, value []byte, weight uint64) error {
 // This function is intended to be called after a session has been claimed and needs to be proven.
 // If the proof has already been generated, it returns the cached proof.
 // It returns an error if the SMST has not been flushed yet (the claim has not been generated)
-// TODO_IMPROVE(#427): Compress the proof into a SparseCompactClosestMerkleProof
-// prior to submitting to chain to reduce on-chain storage requirements for proofs.
-func (st *sessionTree) ProveClosest(path []byte) (proof *smt.SparseMerkleClosestProof, err error) {
+func (st *sessionTree) ProveClosest(path []byte) (compactProof *smt.SparseCompactMerkleClosestProof, err error) {
 	st.sessionMu.Lock()
 	defer st.sessionMu.Unlock()
 
@@ -166,13 +164,13 @@ func (st *sessionTree) ProveClosest(path []byte) (proof *smt.SparseMerkleClosest
 	}
 
 	// If the proof has already been generated, return the cached proof.
-	if st.proof != nil {
+	if st.compactProof != nil {
 		// Make sure the path is the same as the one for which the proof was generated.
 		if !bytes.Equal(path, st.proofPath) {
 			return nil, ErrSessionTreeProofPathMismatch
 		}
 
-		return st.proof, nil
+		return st.compactProof, nil
 	}
 
 	// Restore the KVStore from disk since it has been closed after the claim has been generated.
@@ -184,12 +182,19 @@ func (st *sessionTree) ProveClosest(path []byte) (proof *smt.SparseMerkleClosest
 	sessionSMT := smt.ImportSparseMerkleSumTrie(st.treeStore, sha256.New(), st.claimedRoot, smt.WithValueHasher(nil))
 
 	// Generate the proof and cache it along with the path for which it was generated.
-	proof, err = sessionSMT.ProveClosest(path)
+	// There is no ProveClosest variant that generates a compact proof directly.
+	// Generate a regular SparseMerkleClosestProof then compact it.
+	proof, err := sessionSMT.ProveClosest(path)
 	if err != nil {
 		return nil, err
 	}
 
-	proofBz, err := proof.Marshal()
+	compactProof, err = smt.CompactClosestProof(proof, &sessionSMT.TrieSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	compactProofBz, err := compactProof.Marshal()
 	if err != nil {
 		return nil, err
 	}
@@ -197,20 +202,25 @@ func (st *sessionTree) ProveClosest(path []byte) (proof *smt.SparseMerkleClosest
 	// If no error occurred, cache the proof and the path for which it was generated.
 	st.sessionSMT = sessionSMT
 	st.proofPath = path
-	st.proof = proof
-	st.proofBz = proofBz
+	st.compactProof = compactProof
+	st.compactProofBz = compactProofBz
 
-	return st.proof, nil
+	return st.compactProof, nil
 }
 
 // GetProofBz returns the marshaled proof for the session.
 func (st *sessionTree) GetProofBz() []byte {
-	return st.proofBz
+	return st.compactProofBz
+}
+
+// GetTrieSpec returns the trie spec of the SMST.
+func (st *sessionTree) GetTrieSpec() smt.TrieSpec {
+	return *st.sessionSMT.Spec()
 }
 
 // GetProof returns the proof for the SMST if it has been generated or nil otherwise.
-func (st *sessionTree) GetProof() *smt.SparseMerkleClosestProof {
-	return st.proof
+func (st *sessionTree) GetProof() *smt.SparseCompactMerkleClosestProof {
+	return st.compactProof
 }
 
 // Flush gets the root hash of the SMST needed for submitting the claim;

@@ -113,8 +113,33 @@ var (
 	}
 )
 
-func SessionKeeper(t testing.TB) (keeper.Keeper, context.Context) {
+// keeperConfig is a configuration struct to be used during keeper construction
+// to modify its behavior.
+type keeperConfig struct {
+	// moduleParams is a map of module names to their respective module parameters.
+	// This is used to set the initial module parameters in the keeper.
+	moduleParams map[string]sdk.Msg
+}
+
+// KeeperOptionFn is a function type that sets/updates fields on the keeperConfig.
+type KeeperOptionFn func(*keeperConfig)
+
+// WithModuleParams returns a KeeperOptionFn that sets the moduleParams field
+// on the keeperConfig.
+func WithModuleParams(moduleParams map[string]sdk.Msg) KeeperOptionFn {
+	return func(c *keeperConfig) {
+		c.moduleParams = moduleParams
+	}
+}
+
+func SessionKeeper(t testing.TB, opts ...KeeperOptionFn) (keeper.Keeper, context.Context) {
 	t.Helper()
+
+	cfg := &keeperConfig{}
+	for _, opt := range opts {
+		opt(cfg)
+	}
+
 	storeKey := storetypes.NewKVStoreKey(types.StoreKey)
 
 	db := dbm.NewMemDB()
@@ -134,7 +159,12 @@ func SessionKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 
 	mockAppKeeper := defaultAppKeeperMock(t)
 	mockSupplierKeeper := defaultSupplierKeeperMock(t)
-	mockSharedKeeper := defaultSharedKeeperMock(t)
+
+	sharedParams := new(sharedtypes.Params)
+	if params, ok := cfg.moduleParams[sharedtypes.ModuleName]; ok {
+		sharedParams = params.(*sharedtypes.Params)
+	}
+	mockSharedKeeper := defaultSharedKeeperMock(t, sharedParams)
 
 	k := keeper.NewKeeper(
 		cdc,
@@ -218,25 +248,18 @@ func defaultSupplierKeeperMock(t testing.TB) types.SupplierKeeper {
 	return mockSupplierKeeper
 }
 
-func defaultSharedKeeperMock(t testing.TB) types.SharedKeeper {
+func defaultSharedKeeperMock(t testing.TB, params *sharedtypes.Params) types.SharedKeeper {
 	t.Helper()
 	ctrl := gomock.NewController(t)
 
+	if params == nil {
+		params = new(sharedtypes.Params)
+		*params = sharedtypes.DefaultParams()
+	}
+
 	mockSharedKeeper := mocks.NewMockSharedKeeper(ctrl)
 	mockSharedKeeper.EXPECT().GetParams(gomock.Any()).
-		Return(sharedtypes.DefaultParams()).
+		Return(*params).
 		AnyTimes()
 	return mockSharedKeeper
 }
-
-// TODO_TECHDEBT: Figure out how to vary the supplierKeep on a per test basis with exposing `SupplierKeeper publically`
-
-// type option[V any] func(k *keeper.Keeper)
-
-// WithPublisher returns an option function which sets the given publishCh of the
-// resulting observable when passed to NewObservable().
-// func WithSupplierKeeperMock(supplierKeeper types.SupplierKeeper) option[any] {
-// 	return func(k *keeper.Keeper) {
-// 		k.supplierKeeper = supplierKeeper
-// 	}
-// }

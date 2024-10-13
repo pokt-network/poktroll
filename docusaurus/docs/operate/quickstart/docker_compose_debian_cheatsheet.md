@@ -111,9 +111,9 @@ source ~/.bashrc
 ## Start up the full node
 
 ```bash
-docker compose up -d poktrolld poktrolld
+docker compose up -d full-node
 # Optional: watch the block height sync up & logs
-docker logs -f --tail 100 full_node
+docker logs -f --tail 100 full-node
 watch_height
 ```
 
@@ -180,16 +180,16 @@ poktrolld tx supplier stake-supplier --config=/poktroll/stake_configs/supplier_s
 poktrolld query supplier show-supplier $SUPPLIER_ADDR
 
 # Start the relay miner (please update the grove app ID if you can)
-sed -i -e s/YOUR_NODE_IP_OR_HOST/$NODE_HOSTNAME/g relayminer-example/config/relayminer_config.yaml
-sed -i -e "s|backend_url: \".*\"|backend_url: \"https://eth-mainnet.rpc.grove.city/v1/c7f14c60\"|g" relayminer-example/config/relayminer_config.yaml
+sed -i -e s/YOUR_NODE_IP_OR_HOST/$NODE_HOSTNAME/g relayminer/config/relayminer_config.yaml
+sed -i -e "s|backend_url: \".*\"|backend_url: \"https://eth-mainnet.rpc.grove.city/v1/c7f14c60\"|g" relayminer/config/relayminer_config.yaml
 ```
 
 Start the supplier
 
 ```bash
-docker compose up -d relayminer-example
+docker compose up -d relayminer
 # OPTIONALLY view the logs
-docker logs -f --tail 100 relay_miner
+docker logs -f --tail 100 relayminer
 ```
 
 ## Stake an Application & Deploy an AppGate Server
@@ -206,9 +206,9 @@ poktrolld query application show-application $APPLICATION_ADDR
 Start the appgate server:
 
 ```bash
-docker compose up -d appgate-server-example
+docker compose up -d appgate
 # OPTIONALLY view the logs
-docker logs -f --tail 100 appgate_server
+docker logs -f --tail 100 appgate
 ```
 
 ## Send a Relay
@@ -264,17 +264,17 @@ docker compose down
 docker rm $(docker ps -aq) -f
 
 # Remove existing data
-rm -rf poktrolld-data/config/addrbook.json poktrolld-data/config/genesis.json poktrolld-data/data/ poktrolld-data/config/node_key.json poktrolld-data/config/priv_validator_key.json
+rm -rf poktrolld-data/config/addrbook.json poktrolld-data/config/genesis.json poktrolld-data/config/genesis.seeds poktrolld-data/data/ poktrolld-data/config/node_key.json poktrolld-data/config/priv_validator_key.json
 ```
 
 Update `POKTROLLD_IMAGE_TAG` in `.env` based on the releases [here](https://github.com/pokt-network/poktroll/releases).
 
 ```bash
 # Start the full
-docker compose up -d poktrolld poktrolld
+docker compose up -d full-node
 
 # Sanity check the logs
-docker logs full_node -f --tail 100
+docker logs full-node -f --tail 100
 ```
 
 ### Fund the same accounts
@@ -303,9 +303,9 @@ poktrolld tx supplier stake-supplier --config=/poktroll/stake_configs/supplier_s
 # Check
 poktrolld query supplier show-supplier $SUPPLIER_ADDR
 # Start
-docker compose up -d relayminer-example
+docker compose up -d relayminer
 # View
-docker logs -f --tail 100 relay_miner
+docker logs -f --tail 100 relayminer
 ```
 
 ### Start the AppGate Server
@@ -316,9 +316,9 @@ poktrolld tx application stake-application --config=/poktroll/stake_configs/appl
 # Check
 poktrolld query application show-application $APPLICATION_ADDR
 # Start
-docker compose up -d appgate-server-example
+docker compose up -d appgate
 # View
-docker logs -f --tail 100 appgate_server
+docker logs -f --tail 100 appgate
 ```
 
 ### Re-stake the gateway

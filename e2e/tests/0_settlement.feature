@@ -20,13 +20,14 @@ Feature: Tokenomics Namespace
         # to make sure a proof is required.
         And the "proof" module parameters are set as follows
             | name                         | value                                                            | type  |
-            | relay_difficulty_target_hash | ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff | bytes |
             | proof_request_probability    | 0.25                                                             | float |
             | proof_requirement_threshold  | 839                                                              | coin  |
             | proof_missing_penalty        | 320                                                              | coin  |
             | proof_submission_fee         | 1000000                                                          | coin  |
-        And the "tokenomics" module parameters are set as follows
+        And all "proof" module params should be updated
+        And the "shared" module parameters are set as follows
             | compute_units_to_tokens_multiplier | 42                                                         | int64 |
+        And all "shared" module params should be updated
         When the supplier "supplier1" has serviced a session with "20" relays for service "anvil" for application "app1"
         # Wait for the Claim & Proof lifecycle
         And the user should wait for the "proof" module "CreateClaim" Message to be submitted
@@ -53,14 +54,15 @@ Feature: Tokenomics Namespace
         # to make sure a proof is not required.
         And the "proof" module parameters are set as follows
             | name                         | value                                                            | type  |
-            | relay_difficulty_target_hash | ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff | bytes |
             | proof_request_probability    | 0                                                                | float |
             | proof_requirement_threshold  | 421                                                              | coin  |
             | proof_missing_penalty        | 320                                                              | coin  |
             | proof_submission_fee         | 1000000                                                          | coin  |
-        And the "tokenomics" module parameters are set as follows
+        And all "proof" module params should be updated
+        And the "shared" module parameters are set as follows
             | compute_units_to_tokens_multiplier | 42                                                         | int64 |
-        # Start servicing relays
+        And all "shared" module params should be updated
+        # Start servicing
         When the supplier "supplier1" has serviced a session with "10" relays for service "anvil" for application "app1"
         # Wait for the Claim & Proof lifecycle
         And the user should wait for the "proof" module "CreateClaim" Message to be submitted

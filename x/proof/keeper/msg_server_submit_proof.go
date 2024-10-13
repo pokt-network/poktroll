@@ -42,10 +42,10 @@ func (k msgServer) SubmitProof(
 ) (_ *types.MsgSubmitProofResponse, err error) {
 	// Declare claim to reference in telemetry.
 	var (
-		claim           = new(types.Claim)
-		isExistingProof bool
-		numRelays       uint64
-		numComputeUnits uint64
+		claim                = new(types.Claim)
+		isExistingProof      bool
+		numRelays            uint64
+		numClaimComputeUnits uint64
 	)
 
 	// Defer telemetry calls so that they reference the final values the relevant variables.
@@ -54,7 +54,7 @@ func (k msgServer) SubmitProof(
 		if !isExistingProof {
 			telemetry.ClaimCounter(types.ClaimProofStage_PROVEN, 1, err)
 			telemetry.ClaimRelaysCounter(types.ClaimProofStage_PROVEN, numRelays, err)
-			telemetry.ClaimComputeUnitsCounter(types.ClaimProofStage_PROVEN, numComputeUnits, err)
+			telemetry.ClaimComputeUnitsCounter(types.ClaimProofStage_PROVEN, numClaimComputeUnits, err)
 		}
 	}()
 
@@ -120,10 +120,13 @@ func (k msgServer) SubmitProof(
 	if err != nil {
 		return nil, status.Error(codes.Internal, types.ErrProofInvalidClaimRootHash.Wrap(err.Error()).Error())
 	}
-	numComputeUnits, err = claim.GetNumComputeUnits()
+	numClaimComputeUnits, err = claim.GetNumClaimedComputeUnits()
 	if err != nil {
 		return nil, status.Error(codes.Internal, types.ErrProofInvalidClaimRootHash.Wrap(err.Error()).Error())
 	}
+	// DEV_NOTE: It is assumed that numComputeUnits = numRelays * serviceComputeUnitsPerRelay
+
+	// Check if a prior proof already exists.
 	_, isExistingProof = k.GetProof(ctx, proof.SessionHeader.SessionId, proof.SupplierOperatorAddress)
 
 	// Upsert the proof
@@ -136,19 +139,21 @@ func (k msgServer) SubmitProof(
 	case true:
 		proofUpsertEvent = proto.Message(
 			&types.EventProofUpdated{
-				Claim:           claim,
-				Proof:           &proof,
-				NumRelays:       numRelays,
-				NumComputeUnits: numComputeUnits,
+				Claim:                  claim,
+				Proof:                  &proof,
+				NumRelays:              numRelays,
+				NumClaimedComputeUnits: numClaimComputeUnits,
+				// TODO_FOLLOWUP: Add NumEstimatedComputeUnits and ClaimedAmountUpokt
 			},
 		)
 	case false:
 		proofUpsertEvent = proto.Message(
 			&types.EventProofSubmitted{
-				Claim:           claim,
-				Proof:           &proof,
-				NumRelays:       numRelays,
-				NumComputeUnits: numComputeUnits,
+				Claim:                  claim,
+				Proof:                  &proof,
+				NumRelays:              numRelays,
+				NumClaimedComputeUnits: numClaimComputeUnits,
+				// TODO_FOLLOWUP: Add NumEstimatedComputeUnits and ClaimedAmountUpokt
 			},
 		)
 	}
@@ -220,8 +225,9 @@ func (k Keeper) ProofRequirementForClaim(ctx context.Context, claim *types.Claim
 
 	// NB: Assumption that claim is non-nil and has a valid root sum because it
 	// is retrieved from the store and validated, on-chain, at time of creation.
+	// TODO(@red-0ne, #781): Ensure we're using the scaled/estimated compute units here.
 	var numClaimComputeUnits uint64
-	numClaimComputeUnits, err = claim.GetNumComputeUnits()
+	numClaimComputeUnits, err = claim.GetNumClaimedComputeUnits()
 	if err != nil {
 		return requirementReason, err
 	}
@@ -238,19 +244,15 @@ func (k Keeper) ProofRequirementForClaim(ctx context.Context, claim *types.Claim
 	}
 
 	// Require a proof if the claim's compute units meets or exceeds the threshold.
-	//
-	// TODO_BLOCKER(@Olshansk, #419): This is just VERY BASIC placeholder logic to have something
-	// in place while we implement proper probabilistic proofs. If you're reading it,
-	// do not overthink it and look at the documents linked in #419.
-	//
-	// TODO_IMPROVE(@bryanchriswhite, @red-0ne): It might make sense to include
-	// whether there was a proof submission error downstream from here. This would
-	// require a more comprehensive metrics API.
+	// TODO_MAINNET(@olshansk, @red-0ne): Should the threshold be dependant on the stake as well
+	// so we slash proportional to the compute units?
+	// TODO_IMPROVE(@red-0ne): It might make sense to include whether there was a proof
+	// submission error downstream from here. This would require a more comprehensive metrics API.
 	if claimeduPOKT.Amount.GTE(proofParams.GetProofRequirementThreshold().Amount) {
 		requirementReason = types.ProofRequirementReason_THRESHOLD
 
 		logger.Info(fmt.Sprintf(
-			"claim requires proof due to compute units (%s) exceeding threshold (%s)",
+			"claim requires proof due to claimed tokens (%s) exceeding threshold (%s)",
 			claimeduPOKT,
 			proofParams.GetProofRequirementThreshold(),
 		))

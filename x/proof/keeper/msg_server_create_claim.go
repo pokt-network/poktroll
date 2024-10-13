@@ -73,27 +73,30 @@ func (k msgServer) CreateClaim(
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 
-	// Get metadata for the event we want to emit
+	// Get the number of volume applicable relays in the claim
 	numRelays, err = claim.GetNumRelays()
 	if err != nil {
 		return nil, status.Error(codes.Internal, types.ErrProofInvalidClaimRootHash.Wrap(err.Error()).Error())
 	}
 
-	numClaimComputeUnits, err = claim.GetNumComputeUnits()
+	// Get the number of claimed compute units in the claim
+	numClaimComputeUnits, err = claim.GetNumClaimedComputeUnits()
 	if err != nil {
 		return nil, status.Error(codes.Internal, types.ErrProofInvalidClaimRootHash.Wrapf("%v", err).Error())
 	}
 
-	// DEV_NOTE: For now, we expect the following equation to always hold:
-	// numClaimComputeUnits = numRelays * service.computeUnitsPerRelay
-	// This is because for any specific service, every relay is worth the same.
-	// However, this may change in the future.
+	// Get the number of compute units per relay for the service
 	serviceComputeUnitsPerRelay, err := k.getServiceComputeUnitsPerRelay(ctx, claim.SessionHeader.ServiceId)
 	if err != nil {
 		return nil, status.Error(codes.NotFound, types.ErrProofServiceNotFound.Wrapf("%v", err).Error())
 	}
 
+	// For a specific service, each relay costs the same amount.
+	// TODO_POST_MAINNET: Investigate ways of having request specific compute unit
+	// costs within the same service.
 	numExpectedComputeUnitsToClaim := numRelays * serviceComputeUnitsPerRelay
+
+	// Ensure the number of compute units claimed is equal to the number of relays
 	if numClaimComputeUnits != numExpectedComputeUnitsToClaim {
 		return nil, status.Error(
 			codes.InvalidArgument,
@@ -120,17 +123,19 @@ func (k msgServer) CreateClaim(
 	case true:
 		claimUpsertEvent = proto.Message(
 			&types.EventClaimUpdated{
-				Claim:           &claim,
-				NumRelays:       numRelays,
-				NumComputeUnits: numClaimComputeUnits,
+				Claim:                  &claim,
+				NumRelays:              numRelays,
+				NumClaimedComputeUnits: numClaimComputeUnits,
+				// TODO_FOLLOWUP: Add NumEstimatedComputeUnits and ClaimedAmountUpokt
 			},
 		)
 	case false:
 		claimUpsertEvent = proto.Message(
 			&types.EventClaimCreated{
-				Claim:           &claim,
-				NumRelays:       numRelays,
-				NumComputeUnits: numClaimComputeUnits,
+				Claim:                  &claim,
+				NumRelays:              numRelays,
+				NumClaimedComputeUnits: numClaimComputeUnits,
+				// TODO_FOLLOWUP: Add NumEstimatedComputeUnits and ClaimedAmountUpokt
 			},
 		)
 	}

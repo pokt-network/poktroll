@@ -140,6 +140,8 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		},
 	}
 
+	sdkCtx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
+
 	ctrl := gomock.NewController(t)
 
 	// Mock the application keeper.
@@ -157,6 +159,10 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 	// Mock SetApplication.
 	mockApplicationKeeper.EXPECT().
 		SetApplication(gomock.Any(), gomock.Any()).
+		AnyTimes()
+	mockApplicationKeeper.EXPECT().
+		UnbondApplication(gomock.Any(), gomock.Any()).
+		Return(nil).
 		AnyTimes()
 
 	// Mock the supplier keeper.
@@ -221,6 +227,12 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		Return(sharedtypes.Service{}, false).
 		AnyTimes()
 
+	relayMiningDifficulty := servicekeeper.NewDefaultRelayMiningDifficulty(sdkCtx, log.NewNopLogger(), service.Id, servicekeeper.TargetNumRelays)
+	mockServiceKeeper.EXPECT().
+		GetRelayMiningDifficulty(gomock.Any(), gomock.Any()).
+		Return(relayMiningDifficulty, true).
+		AnyTimes()
+
 	k := tokenomicskeeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKey),
@@ -236,10 +248,8 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		mockServiceKeeper,
 	)
 
-	sdkCtx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
-
 	// Add a block proposer address to the context
-	valAddr, err := cosmostypes.ValAddressFromBech32(sample.ConsAddress())
+	valAddr, err := cosmostypes.ValAddressFromBech32(sample.ValAddress())
 	require.NoError(t, err)
 	consensusAddr := cosmostypes.ConsAddress(valAddr)
 	sdkCtx = sdkCtx.WithProposer(consensusAddr)
@@ -286,7 +296,7 @@ func NewTokenomicsModuleKeepers(
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
 	// Add a block proposer address to the context
-	valAddr, err := cosmostypes.ValAddressFromBech32(sample.ConsAddress())
+	valAddr, err := cosmostypes.ValAddressFromBech32(sample.ValAddress())
 	require.NoError(t, err)
 	consensusAddr := cosmostypes.ConsAddress(valAddr)
 	sdkCtx = sdkCtx.WithProposer(consensusAddr)

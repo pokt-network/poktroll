@@ -31,14 +31,14 @@ func TestMsgUpdateParams(t *testing.T) {
 			expectedErrMsg: "invalid authority",
 		},
 		{
-			desc: "send empty params",
+			desc: "invalid: send empty params",
 			input: &types.MsgUpdateParams{
 				Authority: k.GetAuthority(),
 				Params:    types.Params{},
 			},
 
 			shouldError:    true,
-			expectedErrMsg: "invalid MaxDelegatedGateways parameter",
+			expectedErrMsg: "max_delegated_gateways must be greater than 0",
 		},
 		{
 			desc: "valid: send default params",

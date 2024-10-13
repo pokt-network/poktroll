@@ -58,10 +58,19 @@ func (ClaimExpirationReason) EnumDescriptor() ([]byte, []int) {
 // never being rewarded.
 type EventClaimExpired struct {
 	Claim *types.Claim `protobuf:"bytes,1,opt,name=claim,proto3" json:"claim"`
-	// TODO_MAINNET: Shold we include the proof here too?
-	NumRelays        uint64                `protobuf:"varint,2,opt,name=num_relays,json=numRelays,proto3" json:"num_relays"`
-	NumComputeUnits  uint64                `protobuf:"varint,3,opt,name=num_compute_units,json=numComputeUnits,proto3" json:"num_compute_units"`
-	ExpirationReason ClaimExpirationReason `protobuf:"varint,4,opt,name=expiration_reason,json=expirationReason,proto3,enum=poktroll.tokenomics.ClaimExpirationReason" json:"expiration_reason"`
+	// The reason why the claim expired, leading to a Supplier being penalized (i.e. burn).
+	ExpirationReason ClaimExpirationReason `protobuf:"varint,2,opt,name=expiration_reason,json=expirationReason,proto3,enum=poktroll.tokenomics.ClaimExpirationReason" json:"expiration_reason"`
+	//Number of relays claimed to be in the session tree.
+	NumRelays uint64 `protobuf:"varint,3,opt,name=num_relays,json=numRelays,proto3" json:"num_relays"`
+	// Number of compute units claimed as a function of the number of relays
+	// and the compute units per relay for the particular service.
+	NumClaimedComputeUnits uint64 `protobuf:"varint,4,opt,name=num_claimed_compute_units,json=numClaimedComputeUnits,proto3" json:"num_claimed_compute_units"`
+	// Number of estimated compute units claimed as a function of the number of claimed
+	// compute units and the relay difficulty multiplier for the particular service.
+	NumEstimatedComputeUnits uint64 `protobuf:"varint,5,opt,name=num_estimated_compute_units,json=numEstimatedComputeUnits,proto3" json:"num_estimated_compute_units"`
+	// The amount of uPOKT claimed to be rewarded for the work done as a function of
+	// the number of estimated compute units and the compute uints to token multiplier.
+	ClaimedAmountUpokt *types1.Coin `protobuf:"bytes,6,opt,name=claimed_amount_upokt,json=claimedAmountUpokt,proto3" json:"claimed_amount_upokt"`
 }
 
 func (m *EventClaimExpired) Reset()         { *m = EventClaimExpired{} }
@@ -100,20 +109,6 @@ func (m *EventClaimExpired) GetClaim() *types.Claim {
 	return nil
 }
 
-func (m *EventClaimExpired) GetNumRelays() uint64 {
-	if m != nil {
-		return m.NumRelays
-	}
-	return 0
-}
-
-func (m *EventClaimExpired) GetNumComputeUnits() uint64 {
-	if m != nil {
-		return m.NumComputeUnits
-	}
-	return 0
-}
-
 func (m *EventClaimExpired) GetExpirationReason() ClaimExpirationReason {
 	if m != nil {
 		return m.ExpirationReason
@@ -121,13 +116,51 @@ func (m *EventClaimExpired) GetExpirationReason() ClaimExpirationReason {
 	return ClaimExpirationReason_EXPIRATION_REASON_UNSPECIFIED
 }
 
+func (m *EventClaimExpired) GetNumRelays() uint64 {
+	if m != nil {
+		return m.NumRelays
+	}
+	return 0
+}
+
+func (m *EventClaimExpired) GetNumClaimedComputeUnits() uint64 {
+	if m != nil {
+		return m.NumClaimedComputeUnits
+	}
+	return 0
+}
+
+func (m *EventClaimExpired) GetNumEstimatedComputeUnits() uint64 {
+	if m != nil {
+		return m.NumEstimatedComputeUnits
+	}
+	return 0
+}
+
+func (m *EventClaimExpired) GetClaimedAmountUpokt() *types1.Coin {
+	if m != nil {
+		return m.ClaimedAmountUpokt
+	}
+	return nil
+}
+
 // EventClaimSettled is an event emitted whenever a claim is settled.
 // The proof_required determines whether the claim requires a proof that has been submitted or not
 type EventClaimSettled struct {
-	Claim            *types.Claim                 `protobuf:"bytes,1,opt,name=claim,proto3" json:"claim"`
-	NumRelays        uint64                       `protobuf:"varint,2,opt,name=num_relays,json=numRelays,proto3" json:"num_relays"`
-	NumComputeUnits  uint64                       `protobuf:"varint,3,opt,name=num_compute_units,json=numComputeUnits,proto3" json:"num_compute_units"`
-	ProofRequirement types.ProofRequirementReason `protobuf:"varint,4,opt,name=proof_requirement,json=proofRequirement,proto3,enum=poktroll.proof.ProofRequirementReason" json:"proof_requirement"`
+	Claim *types.Claim `protobuf:"bytes,1,opt,name=claim,proto3" json:"claim"`
+	// The reason why the claim was settled, leading to a Supplier being rewarded (i.e. mint).
+	ProofRequirement types.ProofRequirementReason `protobuf:"varint,2,opt,name=proof_requirement,json=proofRequirement,proto3,enum=poktroll.proof.ProofRequirementReason" json:"proof_requirement"`
+	// Number of relays claimed to be in the session tree.
+	NumRelays uint64 `protobuf:"varint,3,opt,name=num_relays,json=numRelays,proto3" json:"num_relays"`
+	// Number of compute units claimed as a function of the number of relays
+	// and the compute units per relay for the particular service.
+	NumClaimedComputeUnits uint64 `protobuf:"varint,4,opt,name=num_claimed_compute_units,json=numClaimedComputeUnits,proto3" json:"num_claimed_compute_units"`
+	// Number of estimated compute units claimed as a function of the number of claimed
+	// compute units and the relay difficulty multiplier for the particular service.
+	NumEstimatedComputeUnits uint64 `protobuf:"varint,5,opt,name=num_estimated_compute_units,json=numEstimatedComputeUnits,proto3" json:"num_estimated_compute_units"`
+	// The amount of uPOKT claimed to be rewarded for the work done as a function of
+	// the number of estimated compute units and the compute uints to token multiplier.
+	ClaimedAmountUpokt *types1.Coin `protobuf:"bytes,6,opt,name=claimed_amount_upokt,json=claimedAmountUpokt,proto3" json:"claimed_amount_upokt"`
 }
 
 func (m *EventClaimSettled) Reset()         { *m = EventClaimSettled{} }
@@ -166,20 +199,6 @@ func (m *EventClaimSettled) GetClaim() *types.Claim {
 	return nil
 }
 
-func (m *EventClaimSettled) GetNumRelays() uint64 {
-	if m != nil {
-		return m.NumRelays
-	}
-	return 0
-}
-
-func (m *EventClaimSettled) GetNumComputeUnits() uint64 {
-	if m != nil {
-		return m.NumComputeUnits
-	}
-	return 0
-}
-
 func (m *EventClaimSettled) GetProofRequirement() types.ProofRequirementReason {
 	if m != nil {
 		return m.ProofRequirement
@@ -187,78 +206,32 @@ func (m *EventClaimSettled) GetProofRequirement() types.ProofRequirementReason {
 	return types.ProofRequirementReason_NOT_REQUIRED
 }
 
-// EventRelayMiningDifficultyUpdated is an event emitted whenever the relay mining difficulty is updated
-// for a given service.
-type EventRelayMiningDifficultyUpdated struct {
-	ServiceId                string `protobuf:"bytes,1,opt,name=service_id,json=serviceId,proto3" json:"service_id,omitempty"`
-	PrevTargetHashHexEncoded string `protobuf:"bytes,2,opt,name=prev_target_hash_hex_encoded,json=prevTargetHashHexEncoded,proto3" json:"prev_target_hash_hex_encoded,omitempty"`
-	NewTargetHashHexEncoded  string `protobuf:"bytes,3,opt,name=new_target_hash_hex_encoded,json=newTargetHashHexEncoded,proto3" json:"new_target_hash_hex_encoded,omitempty"`
-	PrevNumRelaysEma         uint64 `protobuf:"varint,4,opt,name=prev_num_relays_ema,json=prevNumRelaysEma,proto3" json:"prev_num_relays_ema,omitempty"`
-	NewNumRelaysEma          uint64 `protobuf:"varint,5,opt,name=new_num_relays_ema,json=newNumRelaysEma,proto3" json:"new_num_relays_ema,omitempty"`
-}
-
-func (m *EventRelayMiningDifficultyUpdated) Reset()         { *m = EventRelayMiningDifficultyUpdated{} }
-func (m *EventRelayMiningDifficultyUpdated) String() string { return proto.CompactTextString(m) }
-func (*EventRelayMiningDifficultyUpdated) ProtoMessage()    {}
-func (*EventRelayMiningDifficultyUpdated) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a78874bbf91a58c7, []int{2}
-}
-func (m *EventRelayMiningDifficultyUpdated) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *EventRelayMiningDifficultyUpdated) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	b = b[:cap(b)]
-	n, err := m.MarshalToSizedBuffer(b)
-	if err != nil {
-		return nil, err
-	}
-	return b[:n], nil
-}
-func (m *EventRelayMiningDifficultyUpdated) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_EventRelayMiningDifficultyUpdated.Merge(m, src)
-}
-func (m *EventRelayMiningDifficultyUpdated) XXX_Size() int {
-	return m.Size()
-}
-func (m *EventRelayMiningDifficultyUpdated) XXX_DiscardUnknown() {
-	xxx_messageInfo_EventRelayMiningDifficultyUpdated.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_EventRelayMiningDifficultyUpdated proto.InternalMessageInfo
-
-func (m *EventRelayMiningDifficultyUpdated) GetServiceId() string {
+func (m *EventClaimSettled) GetNumRelays() uint64 {
 	if m != nil {
-		return m.ServiceId
-	}
-	return ""
-}
-
-func (m *EventRelayMiningDifficultyUpdated) GetPrevTargetHashHexEncoded() string {
-	if m != nil {
-		return m.PrevTargetHashHexEncoded
-	}
-	return ""
-}
-
-func (m *EventRelayMiningDifficultyUpdated) GetNewTargetHashHexEncoded() string {
-	if m != nil {
-		return m.NewTargetHashHexEncoded
-	}
-	return ""
-}
-
-func (m *EventRelayMiningDifficultyUpdated) GetPrevNumRelaysEma() uint64 {
-	if m != nil {
-		return m.PrevNumRelaysEma
+		return m.NumRelays
 	}
 	return 0
 }
 
-func (m *EventRelayMiningDifficultyUpdated) GetNewNumRelaysEma() uint64 {
+func (m *EventClaimSettled) GetNumClaimedComputeUnits() uint64 {
 	if m != nil {
-		return m.NewNumRelaysEma
+		return m.NumClaimedComputeUnits
 	}
 	return 0
+}
+
+func (m *EventClaimSettled) GetNumEstimatedComputeUnits() uint64 {
+	if m != nil {
+		return m.NumEstimatedComputeUnits
+	}
+	return 0
+}
+
+func (m *EventClaimSettled) GetClaimedAmountUpokt() *types1.Coin {
+	if m != nil {
+		return m.ClaimedAmountUpokt
+	}
+	return nil
 }
 
 // EventApplicationOverserviced is emitted when an application has less stake than
@@ -282,7 +255,7 @@ func (m *EventApplicationOverserviced) Reset()         { *m = EventApplicationOv
 func (m *EventApplicationOverserviced) String() string { return proto.CompactTextString(m) }
 func (*EventApplicationOverserviced) ProtoMessage()    {}
 func (*EventApplicationOverserviced) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a78874bbf91a58c7, []int{3}
+	return fileDescriptor_a78874bbf91a58c7, []int{2}
 }
 func (m *EventApplicationOverserviced) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -350,7 +323,7 @@ func (m *EventSupplierSlashed) Reset()         { *m = EventSupplierSlashed{} }
 func (m *EventSupplierSlashed) String() string { return proto.CompactTextString(m) }
 func (*EventSupplierSlashed) ProtoMessage()    {}
 func (*EventSupplierSlashed) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a78874bbf91a58c7, []int{4}
+	return fileDescriptor_a78874bbf91a58c7, []int{3}
 }
 func (m *EventSupplierSlashed) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -409,7 +382,7 @@ func (m *EventApplicationReimbursementRequest) Reset()         { *m = EventAppli
 func (m *EventApplicationReimbursementRequest) String() string { return proto.CompactTextString(m) }
 func (*EventApplicationReimbursementRequest) ProtoMessage()    {}
 func (*EventApplicationReimbursementRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a78874bbf91a58c7, []int{5}
+	return fileDescriptor_a78874bbf91a58c7, []int{4}
 }
 func (m *EventApplicationReimbursementRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -466,7 +439,6 @@ func init() {
 	proto.RegisterEnum("poktroll.tokenomics.ClaimExpirationReason", ClaimExpirationReason_name, ClaimExpirationReason_value)
 	proto.RegisterType((*EventClaimExpired)(nil), "poktroll.tokenomics.EventClaimExpired")
 	proto.RegisterType((*EventClaimSettled)(nil), "poktroll.tokenomics.EventClaimSettled")
-	proto.RegisterType((*EventRelayMiningDifficultyUpdated)(nil), "poktroll.tokenomics.EventRelayMiningDifficultyUpdated")
 	proto.RegisterType((*EventApplicationOverserviced)(nil), "poktroll.tokenomics.EventApplicationOverserviced")
 	proto.RegisterType((*EventSupplierSlashed)(nil), "poktroll.tokenomics.EventSupplierSlashed")
 	proto.RegisterType((*EventApplicationReimbursementRequest)(nil), "poktroll.tokenomics.EventApplicationReimbursementRequest")
@@ -475,61 +447,58 @@ func init() {
 func init() { proto.RegisterFile("poktroll/tokenomics/event.proto", fileDescriptor_a78874bbf91a58c7) }
 
 var fileDescriptor_a78874bbf91a58c7 = []byte{
-	// 862 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xd4, 0x55, 0x4f, 0x6f, 0x1b, 0x45,
-	0x14, 0xcf, 0xba, 0x69, 0x25, 0x4f, 0x49, 0x62, 0x4f, 0x13, 0x30, 0xa1, 0x75, 0x52, 0x0b, 0xa1,
-	0x50, 0xc8, 0xae, 0x92, 0x22, 0x4e, 0xa8, 0xc2, 0x4e, 0x5c, 0xba, 0x12, 0xb5, 0xc3, 0xba, 0x41,
-	0x88, 0xcb, 0x30, 0xde, 0x7d, 0xb6, 0x87, 0x78, 0x67, 0xb6, 0x33, 0xb3, 0x8e, 0x73, 0xe4, 0x1b,
-	0xf0, 0x01, 0xf8, 0x02, 0x1c, 0xf8, 0x0a, 0x1c, 0x38, 0x71, 0xec, 0xb1, 0xa7, 0x08, 0x25, 0xb7,
-	0x7c, 0x0a, 0x34, 0xb3, 0xeb, 0xd8, 0x75, 0x42, 0x23, 0x8e, 0xbd, 0x24, 0xe3, 0xf7, 0x7e, 0xbf,
-	0xf7, 0xe7, 0x37, 0xfb, 0xde, 0xa0, 0x8d, 0x44, 0x1c, 0x69, 0x29, 0x86, 0x43, 0x4f, 0x8b, 0x23,
-	0xe0, 0x22, 0x66, 0xa1, 0xf2, 0x60, 0x04, 0x5c, 0xbb, 0x89, 0x14, 0x5a, 0xe0, 0x7b, 0x13, 0x80,
-	0x3b, 0x05, 0xac, 0x57, 0x43, 0xa1, 0x62, 0xa1, 0xbc, 0x2e, 0x55, 0xe0, 0x8d, 0x76, 0xba, 0xa0,
-	0xe9, 0x8e, 0x17, 0x0a, 0xc6, 0x33, 0xd2, 0xfa, 0x6a, 0x5f, 0xf4, 0x85, 0x3d, 0x7a, 0xe6, 0x94,
-	0x5b, 0xd7, 0x2f, 0x73, 0x25, 0x52, 0x88, 0x9e, 0xa7, 0x4f, 0x12, 0x50, 0x99, 0xaf, 0xf6, 0x47,
-	0x01, 0x95, 0x9b, 0x26, 0xed, 0xde, 0x90, 0xb2, 0xb8, 0x39, 0x4e, 0x98, 0x84, 0x08, 0x7f, 0x89,
-	0x6e, 0x87, 0xe6, 0x77, 0xc5, 0xd9, 0x74, 0xb6, 0xee, 0xee, 0xae, 0xb9, 0x97, 0xc5, 0xd8, 0x08,
-	0xae, 0x05, 0x37, 0x8a, 0x17, 0xa7, 0x1b, 0x19, 0x2e, 0xc8, 0xfe, 0xe1, 0x6d, 0x84, 0x78, 0x1a,
-	0x13, 0x09, 0x43, 0x7a, 0xa2, 0x2a, 0x85, 0x4d, 0x67, 0x6b, 0xb1, 0xb1, 0x7c, 0x71, 0xba, 0x31,
-	0x63, 0x0d, 0x8a, 0x3c, 0x8d, 0x03, 0x7b, 0xc4, 0x75, 0x54, 0x36, 0x8e, 0x50, 0xc4, 0x49, 0xaa,
-	0x81, 0xa4, 0x9c, 0x69, 0x55, 0xb9, 0x65, 0x59, 0x6b, 0x17, 0xa7, 0x1b, 0x57, 0x9d, 0xc1, 0x0a,
-	0x4f, 0xe3, 0xbd, 0xcc, 0x72, 0x68, 0x0c, 0x98, 0xa3, 0x32, 0x98, 0xa2, 0xa9, 0x66, 0x82, 0x13,
-	0x09, 0x54, 0x09, 0x5e, 0x59, 0xdc, 0x74, 0xb6, 0x96, 0x77, 0x1f, 0xb9, 0xd7, 0x48, 0xe8, 0x4e,
-	0xfb, 0xb4, 0x94, 0xc0, 0x32, 0xb2, 0x74, 0x57, 0x02, 0x05, 0x25, 0x98, 0x03, 0xd6, 0x7e, 0x7f,
-	0x43, 0xaf, 0x0e, 0x68, 0x3d, 0x7c, 0xa7, 0xf4, 0xfa, 0x19, 0x95, 0x6d, 0x49, 0x44, 0xc2, 0xcb,
-	0x94, 0x49, 0x88, 0x81, 0xeb, 0x5c, 0xaf, 0x4f, 0xe6, 0xab, 0x3e, 0x30, 0x7f, 0x83, 0x29, 0x6e,
-	0x56, 0xab, 0x2b, 0x41, 0x82, 0x52, 0x32, 0x07, 0xaf, 0xfd, 0x56, 0x40, 0x0f, 0xad, 0x56, 0xb6,
-	0xfc, 0xe7, 0x8c, 0x33, 0xde, 0xdf, 0x67, 0xbd, 0x1e, 0x0b, 0xd3, 0xa1, 0x3e, 0x39, 0x4c, 0x22,
-	0xaa, 0x21, 0xc2, 0x0f, 0x10, 0x52, 0x20, 0x47, 0x2c, 0x04, 0xc2, 0x22, 0x2b, 0x60, 0x31, 0x28,
-	0xe6, 0x16, 0x3f, 0xc2, 0x4f, 0xd0, 0xfd, 0x44, 0xc2, 0x88, 0x68, 0x2a, 0xfb, 0xa0, 0xc9, 0x80,
-	0xaa, 0x01, 0x19, 0xc0, 0x98, 0x00, 0x0f, 0x45, 0x04, 0x91, 0x15, 0xad, 0x18, 0x54, 0x0c, 0xe6,
-	0x85, 0x85, 0x3c, 0xa3, 0x6a, 0xf0, 0x0c, 0xc6, 0xcd, 0xcc, 0x8f, 0xbf, 0x42, 0x1f, 0x71, 0x38,
-	0xfe, 0x4f, 0xfa, 0x2d, 0x4b, 0xff, 0x80, 0xc3, 0xf1, 0xb5, 0xec, 0x6d, 0x74, 0xcf, 0x66, 0x9f,
-	0xde, 0x07, 0x81, 0x98, 0x5a, 0xc1, 0x16, 0x4d, 0xc7, 0x30, 0x6a, 0x4d, 0x6e, 0xa7, 0x19, 0x53,
-	0xfc, 0x19, 0xc2, 0x26, 0xd9, 0x1c, 0xfa, 0xb6, 0x45, 0xaf, 0x70, 0x38, 0x9e, 0x05, 0xd7, 0x7e,
-	0x29, 0xa0, 0xfb, 0x56, 0x9e, 0x7a, 0x92, 0x0c, 0x59, 0x68, 0xbf, 0xb2, 0xf6, 0x08, 0x64, 0xde,
-	0x7b, 0x84, 0x3f, 0x45, 0x25, 0x3a, 0x75, 0x11, 0x1a, 0x45, 0x32, 0xd7, 0x67, 0x65, 0xc6, 0x5e,
-	0x8f, 0x22, 0x89, 0xbf, 0x40, 0xef, 0xab, 0xd4, 0xd8, 0x40, 0x12, 0x91, 0x80, 0xa4, 0x5a, 0xc8,
-	0x8c, 0x90, 0xe9, 0xb3, 0x3a, 0xf1, 0xb6, 0x73, 0xa7, 0x65, 0x3d, 0x41, 0x4b, 0x30, 0x4e, 0x20,
-	0xd4, 0x10, 0x91, 0x6e, 0x2a, 0xb9, 0x55, 0xe3, 0xee, 0xee, 0x87, 0x6e, 0xb6, 0x66, 0x5c, 0xb3,
-	0x66, 0xdc, 0x7c, 0xcd, 0xb8, 0x7b, 0x82, 0xf1, 0xe0, 0xbd, 0x09, 0xbe, 0x91, 0x4a, 0x8e, 0xbf,
-	0x46, 0xcb, 0xd0, 0xeb, 0x41, 0xa8, 0xd9, 0x08, 0xb2, 0x00, 0x8b, 0x37, 0x05, 0x58, 0xba, 0x24,
-	0x98, 0x08, 0xb5, 0x3f, 0x1d, 0xb4, 0x6a, 0x35, 0xe8, 0xe4, 0xf5, 0x75, 0x86, 0x54, 0x0d, 0x20,
-	0x7a, 0x4b, 0x43, 0xce, 0x5b, 0x1a, 0xfa, 0x1c, 0x61, 0xa3, 0x3d, 0x64, 0x6b, 0x8c, 0xd8, 0x21,
-	0xcb, 0xe7, 0x2a, 0x28, 0xf1, 0x74, 0xb2, 0xdf, 0xec, 0x38, 0x2a, 0xdc, 0x40, 0x2b, 0xca, 0xa4,
-	0x63, 0xbc, 0x4f, 0x68, 0x2c, 0x52, 0xae, 0x6f, 0x16, 0x60, 0x79, 0xc2, 0xa8, 0x5b, 0x42, 0xed,
-	0x2f, 0x07, 0x7d, 0x3c, 0x7f, 0x89, 0x01, 0xb0, 0xb8, 0x9b, 0x4a, 0x95, 0x0f, 0xcd, 0xcb, 0x14,
-	0x94, 0xfe, 0x3f, 0x97, 0xf9, 0xe6, 0x44, 0x14, 0xe6, 0x27, 0xc2, 0xba, 0x95, 0x32, 0x51, 0xd8,
-	0xe4, 0x03, 0x2e, 0xe6, 0x16, 0x3f, 0xc2, 0x3b, 0xe8, 0x4e, 0xde, 0xcc, 0x8d, 0x97, 0x91, 0x03,
-	0x1f, 0xfd, 0x84, 0xd6, 0xae, 0x5d, 0x8b, 0xf8, 0x21, 0x7a, 0xd0, 0xfc, 0xe1, 0xc0, 0x0f, 0xea,
-	0x2f, 0xfc, 0x76, 0x8b, 0x04, 0xcd, 0x7a, 0xa7, 0xdd, 0x22, 0x87, 0xad, 0xce, 0x41, 0x73, 0xcf,
-	0x7f, 0xea, 0x37, 0xf7, 0x4b, 0x0b, 0xb8, 0x8c, 0x96, 0x0e, 0x82, 0x76, 0xfb, 0x29, 0x79, 0xee,
-	0x77, 0x3a, 0x7e, 0xeb, 0x9b, 0x92, 0x33, 0x35, 0xf9, 0xad, 0xef, 0xeb, 0xdf, 0xfa, 0xfb, 0xa5,
-	0x42, 0xe3, 0xbb, 0xbf, 0xcf, 0xaa, 0xce, 0xab, 0xb3, 0xaa, 0xf3, 0xfa, 0xac, 0xea, 0xfc, 0x73,
-	0x56, 0x75, 0x7e, 0x3d, 0xaf, 0x2e, 0xbc, 0x3a, 0xaf, 0x2e, 0xbc, 0x3e, 0xaf, 0x2e, 0xfc, 0xf8,
-	0xb8, 0xcf, 0xf4, 0x20, 0xed, 0xba, 0xa1, 0x88, 0x3d, 0xb3, 0x83, 0xb6, 0x39, 0xe8, 0x63, 0x21,
-	0x8f, 0xbc, 0xcb, 0x87, 0x6b, 0x3c, 0xfb, 0x4c, 0xda, 0xf7, 0xab, 0x7b, 0xc7, 0x3e, 0x60, 0x8f,
-	0xff, 0x0d, 0x00, 0x00, 0xff, 0xff, 0xea, 0x24, 0xad, 0x2e, 0x4a, 0x07, 0x00, 0x00,
+	// 803 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xec, 0x55, 0x4d, 0x6f, 0x1b, 0x45,
+	0x18, 0xce, 0x1a, 0x37, 0x92, 0x07, 0xe2, 0xda, 0x8b, 0x53, 0xb9, 0x81, 0xec, 0x06, 0x0b, 0xa1,
+	0x50, 0xd1, 0x5d, 0xa5, 0x45, 0x1c, 0x11, 0xb6, 0xeb, 0xa2, 0x95, 0xc0, 0x36, 0x63, 0x82, 0x2a,
+	0x0e, 0x2c, 0xeb, 0xdd, 0x37, 0xee, 0x10, 0xef, 0xcc, 0x76, 0x66, 0xd6, 0xa4, 0x47, 0x4e, 0x1c,
+	0xb8, 0xf0, 0x8b, 0x38, 0x70, 0xe2, 0xd8, 0x63, 0x4f, 0x16, 0x72, 0x6e, 0xfe, 0x15, 0x68, 0x66,
+	0xd7, 0x1f, 0x71, 0x82, 0x23, 0x04, 0x47, 0x2e, 0xf6, 0xf8, 0x7d, 0x3e, 0xe6, 0xe3, 0x7d, 0xc6,
+	0x83, 0xec, 0x84, 0x9d, 0x4b, 0xce, 0xc6, 0x63, 0x57, 0xb2, 0x73, 0xa0, 0x2c, 0x26, 0xa1, 0x70,
+	0x61, 0x02, 0x54, 0x3a, 0x09, 0x67, 0x92, 0x99, 0x6f, 0x2f, 0x08, 0xce, 0x8a, 0x70, 0x60, 0x85,
+	0x4c, 0xc4, 0x4c, 0xb8, 0xc3, 0x40, 0x80, 0x3b, 0x39, 0x19, 0x82, 0x0c, 0x4e, 0xdc, 0x90, 0x11,
+	0x9a, 0x89, 0x0e, 0x6a, 0x23, 0x36, 0x62, 0x7a, 0xe8, 0xaa, 0x51, 0x5e, 0x3d, 0x58, 0xce, 0x95,
+	0x70, 0xc6, 0xce, 0x5c, 0xf9, 0x32, 0x01, 0x91, 0x61, 0x8d, 0x5f, 0x8a, 0xa8, 0xda, 0x51, 0xd3,
+	0xb6, 0xc7, 0x01, 0x89, 0x3b, 0x17, 0x09, 0xe1, 0x10, 0x99, 0x9f, 0xa0, 0x3b, 0xa1, 0xfa, 0x5d,
+	0x37, 0x8e, 0x8c, 0xe3, 0x37, 0x1f, 0xed, 0x3b, 0xcb, 0xc5, 0x68, 0x07, 0x47, 0x93, 0x5b, 0xa5,
+	0xf9, 0xd4, 0xce, 0x78, 0x38, 0xfb, 0x32, 0x29, 0xaa, 0x82, 0xb2, 0x08, 0x24, 0x61, 0xd4, 0xe7,
+	0x10, 0x08, 0x46, 0xeb, 0x85, 0x23, 0xe3, 0xb8, 0xfc, 0xe8, 0x81, 0x73, 0xc3, 0x86, 0x9c, 0xd5,
+	0xac, 0x5a, 0x82, 0xb5, 0xa2, 0xb5, 0x3f, 0x9f, 0xda, 0xd7, 0x8d, 0x70, 0x05, 0x36, 0x88, 0xe6,
+	0x43, 0x84, 0x68, 0x1a, 0xfb, 0x1c, 0xc6, 0xc1, 0x4b, 0x51, 0x7f, 0xe3, 0xc8, 0x38, 0x2e, 0xb6,
+	0xca, 0xf3, 0xa9, 0xbd, 0x56, 0xc5, 0x25, 0x9a, 0xc6, 0x58, 0x0f, 0xcd, 0x67, 0xe8, 0xbe, 0x02,
+	0xf4, 0x5a, 0x21, 0xf2, 0x43, 0x16, 0x27, 0xa9, 0x04, 0x3f, 0xa5, 0x44, 0x8a, 0x7a, 0x51, 0xab,
+	0x0f, 0xe7, 0x53, 0xfb, 0xef, 0x49, 0xf8, 0x1e, 0x4d, 0xe3, 0x76, 0x86, 0xb4, 0x33, 0xe0, 0x54,
+	0xd5, 0xcd, 0xef, 0xd0, 0x3b, 0x4a, 0x04, 0x42, 0x92, 0x38, 0x90, 0xd7, 0xbc, 0xef, 0x68, 0x6f,
+	0x7b, 0x3e, 0xb5, 0xb7, 0xd1, 0x70, 0x9d, 0xa6, 0x71, 0x67, 0x81, 0x5d, 0xf1, 0x07, 0x54, 0x5b,
+	0x2c, 0x28, 0x88, 0x59, 0x4a, 0xa5, 0x9f, 0xaa, 0xe3, 0xac, 0xef, 0xea, 0xfe, 0xdc, 0x77, 0xb2,
+	0x5c, 0x38, 0x2a, 0x17, 0x4e, 0x9e, 0x0b, 0xa7, 0xcd, 0x08, 0x6d, 0xd5, 0xe7, 0x53, 0xfb, 0x46,
+	0x29, 0x36, 0xf3, 0x6a, 0x53, 0x17, 0x4f, 0x55, 0xad, 0xf1, 0xf3, 0x95, 0x34, 0x0c, 0x40, 0xca,
+	0xf1, 0xbf, 0x48, 0xc3, 0x0f, 0xa8, 0xaa, 0x09, 0x3e, 0x87, 0x17, 0x29, 0xe1, 0x10, 0x03, 0x95,
+	0x79, 0x1a, 0x3e, 0xd8, 0xf4, 0xe8, 0xab, 0x4f, 0xbc, 0xe2, 0xad, 0x27, 0xe1, 0x9a, 0x09, 0xae,
+	0x24, 0x1b, 0xf4, 0xff, 0x93, 0xf0, 0x1f, 0x27, 0xe1, 0xa7, 0x02, 0x7a, 0x57, 0x27, 0xa1, 0x99,
+	0x24, 0x63, 0x12, 0xea, 0x4b, 0xd7, 0x9b, 0x00, 0x17, 0xc0, 0x27, 0x24, 0x84, 0xc8, 0xfc, 0x10,
+	0x55, 0x82, 0x15, 0xe4, 0x07, 0x51, 0xc4, 0x75, 0x3e, 0x4a, 0xf8, 0xee, 0x5a, 0xbd, 0x19, 0x45,
+	0xdc, 0xfc, 0x18, 0xdd, 0x13, 0xa9, 0xaa, 0x01, 0xf7, 0x59, 0x02, 0x3c, 0x90, 0x8c, 0x67, 0x82,
+	0x82, 0x16, 0xd4, 0x16, 0x68, 0x2f, 0x07, 0xb5, 0xea, 0x53, 0xb4, 0x07, 0x17, 0x09, 0x84, 0xea,
+	0x70, 0x86, 0x29, 0xa7, 0xba, 0xa9, 0xdb, 0x76, 0x88, 0xdf, 0x5a, 0xf0, 0x5b, 0x29, 0xa7, 0xe6,
+	0x67, 0xa8, 0x0c, 0x67, 0x67, 0x10, 0x4a, 0x32, 0x81, 0xcc, 0xa0, 0x78, 0x9b, 0xc1, 0xde, 0x52,
+	0xa0, 0x1c, 0x1a, 0xbf, 0x19, 0xa8, 0xa6, 0xcf, 0x60, 0x90, 0xaf, 0x6f, 0x30, 0x0e, 0xc4, 0x73,
+	0x88, 0xb6, 0x6c, 0xc8, 0xd8, 0xb2, 0xa1, 0x8f, 0x90, 0xa9, 0x5b, 0x9e, 0xfd, 0xc7, 0x66, 0xb1,
+	0x12, 0xfa, 0x08, 0x8a, 0xb8, 0xa2, 0xfa, 0x9d, 0x01, 0x3a, 0x54, 0xc2, 0x6c, 0xa1, 0xbb, 0x42,
+	0x4d, 0x47, 0xe8, 0x28, 0xef, 0xd6, 0xed, 0x07, 0x50, 0x5e, 0x28, 0xb2, 0x4e, 0x36, 0x7e, 0x37,
+	0xd0, 0xfb, 0x9b, 0x4d, 0xc4, 0x40, 0xe2, 0x61, 0xca, 0x45, 0x7e, 0xcb, 0x5e, 0xa4, 0x20, 0xe4,
+	0x3f, 0x69, 0xe6, 0x21, 0x42, 0x79, 0x06, 0x7c, 0x12, 0xe5, 0x0d, 0x2c, 0xe5, 0x15, 0x2f, 0xca,
+	0x60, 0x21, 0x94, 0x0b, 0x89, 0xf4, 0x8a, 0x35, 0xac, 0x2b, 0x5e, 0x64, 0x9e, 0xa0, 0xdd, 0x7c,
+	0x33, 0xb7, 0x36, 0x23, 0x27, 0x3e, 0xf8, 0x1e, 0xed, 0xdf, 0xf8, 0x4a, 0x98, 0xef, 0xa1, 0xc3,
+	0xce, 0xb3, 0xbe, 0x87, 0x9b, 0x5f, 0x7b, 0xbd, 0xae, 0x8f, 0x3b, 0xcd, 0x41, 0xaf, 0xeb, 0x9f,
+	0x76, 0x07, 0xfd, 0x4e, 0xdb, 0x7b, 0xea, 0x75, 0x9e, 0x54, 0x76, 0xcc, 0x2a, 0xda, 0xeb, 0xe3,
+	0x5e, 0xef, 0xa9, 0xff, 0xa5, 0x37, 0x18, 0x78, 0xdd, 0xcf, 0x2b, 0xc6, 0xaa, 0xe4, 0x75, 0xbf,
+	0x69, 0x7e, 0xe1, 0x3d, 0xa9, 0x14, 0x5a, 0x5f, 0xfd, 0x31, 0xb3, 0x8c, 0x57, 0x33, 0xcb, 0x78,
+	0x3d, 0xb3, 0x8c, 0x3f, 0x67, 0x96, 0xf1, 0xeb, 0xa5, 0xb5, 0xf3, 0xea, 0xd2, 0xda, 0x79, 0x7d,
+	0x69, 0xed, 0x7c, 0xfb, 0x78, 0x44, 0xe4, 0xf3, 0x74, 0xe8, 0x84, 0x2c, 0x76, 0xd5, 0xd5, 0x78,
+	0x48, 0x41, 0xfe, 0xc8, 0xf8, 0xb9, 0xbb, 0x7c, 0x55, 0x2f, 0xd6, 0xdf, 0x70, 0xfd, 0xb8, 0x0e,
+	0x77, 0xf5, 0xeb, 0xfa, 0xf8, 0xaf, 0x00, 0x00, 0x00, 0xff, 0xff, 0xb7, 0xb3, 0x9e, 0xec, 0xe7,
+	0x07, 0x00, 0x00,
 }
 
 func (m *EventClaimExpired) Marshal() (dAtA []byte, err error) {
@@ -552,18 +521,35 @@ func (m *EventClaimExpired) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.ExpirationReason != 0 {
-		i = encodeVarintEvent(dAtA, i, uint64(m.ExpirationReason))
+	if m.ClaimedAmountUpokt != nil {
+		{
+			size, err := m.ClaimedAmountUpokt.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintEvent(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x32
+	}
+	if m.NumEstimatedComputeUnits != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.NumEstimatedComputeUnits))
+		i--
+		dAtA[i] = 0x28
+	}
+	if m.NumClaimedComputeUnits != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.NumClaimedComputeUnits))
 		i--
 		dAtA[i] = 0x20
 	}
-	if m.NumComputeUnits != 0 {
-		i = encodeVarintEvent(dAtA, i, uint64(m.NumComputeUnits))
+	if m.NumRelays != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.NumRelays))
 		i--
 		dAtA[i] = 0x18
 	}
-	if m.NumRelays != 0 {
-		i = encodeVarintEvent(dAtA, i, uint64(m.NumRelays))
+	if m.ExpirationReason != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.ExpirationReason))
 		i--
 		dAtA[i] = 0x10
 	}
@@ -602,18 +588,35 @@ func (m *EventClaimSettled) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.ProofRequirement != 0 {
-		i = encodeVarintEvent(dAtA, i, uint64(m.ProofRequirement))
+	if m.ClaimedAmountUpokt != nil {
+		{
+			size, err := m.ClaimedAmountUpokt.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintEvent(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x32
+	}
+	if m.NumEstimatedComputeUnits != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.NumEstimatedComputeUnits))
+		i--
+		dAtA[i] = 0x28
+	}
+	if m.NumClaimedComputeUnits != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.NumClaimedComputeUnits))
 		i--
 		dAtA[i] = 0x20
 	}
-	if m.NumComputeUnits != 0 {
-		i = encodeVarintEvent(dAtA, i, uint64(m.NumComputeUnits))
+	if m.NumRelays != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.NumRelays))
 		i--
 		dAtA[i] = 0x18
 	}
-	if m.NumRelays != 0 {
-		i = encodeVarintEvent(dAtA, i, uint64(m.NumRelays))
+	if m.ProofRequirement != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.ProofRequirement))
 		i--
 		dAtA[i] = 0x10
 	}
@@ -626,60 +629,6 @@ func (m *EventClaimSettled) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 			i -= size
 			i = encodeVarintEvent(dAtA, i, uint64(size))
 		}
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *EventRelayMiningDifficultyUpdated) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *EventRelayMiningDifficultyUpdated) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *EventRelayMiningDifficultyUpdated) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.NewNumRelaysEma != 0 {
-		i = encodeVarintEvent(dAtA, i, uint64(m.NewNumRelaysEma))
-		i--
-		dAtA[i] = 0x28
-	}
-	if m.PrevNumRelaysEma != 0 {
-		i = encodeVarintEvent(dAtA, i, uint64(m.PrevNumRelaysEma))
-		i--
-		dAtA[i] = 0x20
-	}
-	if len(m.NewTargetHashHexEncoded) > 0 {
-		i -= len(m.NewTargetHashHexEncoded)
-		copy(dAtA[i:], m.NewTargetHashHexEncoded)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.NewTargetHashHexEncoded)))
-		i--
-		dAtA[i] = 0x1a
-	}
-	if len(m.PrevTargetHashHexEncoded) > 0 {
-		i -= len(m.PrevTargetHashHexEncoded)
-		copy(dAtA[i:], m.PrevTargetHashHexEncoded)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.PrevTargetHashHexEncoded)))
-		i--
-		dAtA[i] = 0x12
-	}
-	if len(m.ServiceId) > 0 {
-		i -= len(m.ServiceId)
-		copy(dAtA[i:], m.ServiceId)
-		i = encodeVarintEvent(dAtA, i, uint64(len(m.ServiceId)))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -871,14 +820,21 @@ func (m *EventClaimExpired) Size() (n int) {
 		l = m.Claim.Size()
 		n += 1 + l + sovEvent(uint64(l))
 	}
+	if m.ExpirationReason != 0 {
+		n += 1 + sovEvent(uint64(m.ExpirationReason))
+	}
 	if m.NumRelays != 0 {
 		n += 1 + sovEvent(uint64(m.NumRelays))
 	}
-	if m.NumComputeUnits != 0 {
-		n += 1 + sovEvent(uint64(m.NumComputeUnits))
+	if m.NumClaimedComputeUnits != 0 {
+		n += 1 + sovEvent(uint64(m.NumClaimedComputeUnits))
 	}
-	if m.ExpirationReason != 0 {
-		n += 1 + sovEvent(uint64(m.ExpirationReason))
+	if m.NumEstimatedComputeUnits != 0 {
+		n += 1 + sovEvent(uint64(m.NumEstimatedComputeUnits))
+	}
+	if m.ClaimedAmountUpokt != nil {
+		l = m.ClaimedAmountUpokt.Size()
+		n += 1 + l + sovEvent(uint64(l))
 	}
 	return n
 }
@@ -893,41 +849,21 @@ func (m *EventClaimSettled) Size() (n int) {
 		l = m.Claim.Size()
 		n += 1 + l + sovEvent(uint64(l))
 	}
-	if m.NumRelays != 0 {
-		n += 1 + sovEvent(uint64(m.NumRelays))
-	}
-	if m.NumComputeUnits != 0 {
-		n += 1 + sovEvent(uint64(m.NumComputeUnits))
-	}
 	if m.ProofRequirement != 0 {
 		n += 1 + sovEvent(uint64(m.ProofRequirement))
 	}
-	return n
-}
-
-func (m *EventRelayMiningDifficultyUpdated) Size() (n int) {
-	if m == nil {
-		return 0
+	if m.NumRelays != 0 {
+		n += 1 + sovEvent(uint64(m.NumRelays))
 	}
-	var l int
-	_ = l
-	l = len(m.ServiceId)
-	if l > 0 {
+	if m.NumClaimedComputeUnits != 0 {
+		n += 1 + sovEvent(uint64(m.NumClaimedComputeUnits))
+	}
+	if m.NumEstimatedComputeUnits != 0 {
+		n += 1 + sovEvent(uint64(m.NumEstimatedComputeUnits))
+	}
+	if m.ClaimedAmountUpokt != nil {
+		l = m.ClaimedAmountUpokt.Size()
 		n += 1 + l + sovEvent(uint64(l))
-	}
-	l = len(m.PrevTargetHashHexEncoded)
-	if l > 0 {
-		n += 1 + l + sovEvent(uint64(l))
-	}
-	l = len(m.NewTargetHashHexEncoded)
-	if l > 0 {
-		n += 1 + l + sovEvent(uint64(l))
-	}
-	if m.PrevNumRelaysEma != 0 {
-		n += 1 + sovEvent(uint64(m.PrevNumRelaysEma))
-	}
-	if m.NewNumRelaysEma != 0 {
-		n += 1 + sovEvent(uint64(m.NewNumRelaysEma))
 	}
 	return n
 }
@@ -1075,44 +1011,6 @@ func (m *EventClaimExpired) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 2:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field NumRelays", wireType)
-			}
-			m.NumRelays = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowEvent
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.NumRelays |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 3:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field NumComputeUnits", wireType)
-			}
-			m.NumComputeUnits = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowEvent
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.NumComputeUnits |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 4:
-			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ExpirationReason", wireType)
 			}
 			m.ExpirationReason = 0
@@ -1130,6 +1028,99 @@ func (m *EventClaimExpired) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NumRelays", wireType)
+			}
+			m.NumRelays = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.NumRelays |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NumClaimedComputeUnits", wireType)
+			}
+			m.NumClaimedComputeUnits = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.NumClaimedComputeUnits |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NumEstimatedComputeUnits", wireType)
+			}
+			m.NumEstimatedComputeUnits = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.NumEstimatedComputeUnits |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClaimedAmountUpokt", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.ClaimedAmountUpokt == nil {
+				m.ClaimedAmountUpokt = &types1.Coin{}
+			}
+			if err := m.ClaimedAmountUpokt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipEvent(dAtA[iNdEx:])
@@ -1218,44 +1209,6 @@ func (m *EventClaimSettled) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 2:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field NumRelays", wireType)
-			}
-			m.NumRelays = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowEvent
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.NumRelays |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 3:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field NumComputeUnits", wireType)
-			}
-			m.NumComputeUnits = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowEvent
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.NumComputeUnits |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 4:
-			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ProofRequirement", wireType)
 			}
 			m.ProofRequirement = 0
@@ -1273,125 +1226,11 @@ func (m *EventClaimSettled) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
-		default:
-			iNdEx = preIndex
-			skippy, err := skipEvent(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthEvent
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *EventRelayMiningDifficultyUpdated) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowEvent
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: EventRelayMiningDifficultyUpdated: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: EventRelayMiningDifficultyUpdated: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ServiceId", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowEvent
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthEvent
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthEvent
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ServiceId = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field PrevTargetHashHexEncoded", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowEvent
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthEvent
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthEvent
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.PrevTargetHashHexEncoded = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
 		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field NewTargetHashHexEncoded", wireType)
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NumRelays", wireType)
 			}
-			var stringLen uint64
+			m.NumRelays = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowEvent
@@ -1401,29 +1240,16 @@ func (m *EventRelayMiningDifficultyUpdated) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				m.NumRelays |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthEvent
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthEvent
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.NewTargetHashHexEncoded = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
 		case 4:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field PrevNumRelaysEma", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field NumClaimedComputeUnits", wireType)
 			}
-			m.PrevNumRelaysEma = 0
+			m.NumClaimedComputeUnits = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowEvent
@@ -1433,16 +1259,16 @@ func (m *EventRelayMiningDifficultyUpdated) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.PrevNumRelaysEma |= uint64(b&0x7F) << shift
+				m.NumClaimedComputeUnits |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
 		case 5:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field NewNumRelaysEma", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field NumEstimatedComputeUnits", wireType)
 			}
-			m.NewNumRelaysEma = 0
+			m.NumEstimatedComputeUnits = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowEvent
@@ -1452,11 +1278,47 @@ func (m *EventRelayMiningDifficultyUpdated) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.NewNumRelaysEma |= uint64(b&0x7F) << shift
+				m.NumEstimatedComputeUnits |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClaimedAmountUpokt", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.ClaimedAmountUpokt == nil {
+				m.ClaimedAmountUpokt = &types1.Coin{}
+			}
+			if err := m.ClaimedAmountUpokt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipEvent(dAtA[iNdEx:])

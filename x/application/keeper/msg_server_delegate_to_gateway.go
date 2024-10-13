@@ -74,5 +74,7 @@ func (k msgServer) DelegateToGateway(ctx context.Context, msg *types.MsgDelegate
 	}
 
 	isSuccessful = true
-	return &types.MsgDelegateToGatewayResponse{}, nil
+	return &types.MsgDelegateToGatewayResponse{
+		Application: &app,
+	}, nil
 }

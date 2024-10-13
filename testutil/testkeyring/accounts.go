@@ -117,6 +117,16 @@ func (iter *PreGeneratedAccountIterator) Next() (_ *PreGeneratedAccount, ok bool
 	return iter.accounts[currentIndex], true
 }
 
+// MustNext returns the next account in the iterator. It panics if the iterator
+// is out of accounts; see testutil/testkeyring/gen_accounts.
+func (iter *PreGeneratedAccountIterator) MustNext() *PreGeneratedAccount {
+	account, ok := iter.Next()
+	if !ok {
+		panic("insufficient number of pre-generated accounts; see testutil/testkeyring/gen_accounts")
+	}
+	return account
+}
+
 // Clone returns a new PreGeneratedAccountIterator with the same accounts as the
 // receiver but with its nextIndex reset to 0.
 func (iter *PreGeneratedAccountIterator) Clone() *PreGeneratedAccountIterator {
