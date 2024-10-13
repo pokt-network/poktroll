@@ -387,17 +387,16 @@ if localnet_config["rest"]["enabled"]:
     deployment_create("rest", image="davarski/go-rest-api-demo")
     k8s_resource("rest", labels=["data_nodes"], port_forwards=["10000"])
 
-configmap_create("path-config", from_file="localnet/kubernetes/path-config.yaml")
 path_deployment_yaml = str(read_file("./localnet/kubernetes/path.yaml", "r"))
-
 actor_number = 0
 for x in range(localnet_config["path_gateways"]["count"]):
-    formatted_path_deployment_yaml = path_deployment_yaml.format(actor_number=actor_number+1)
-    k8s_yaml(blob(path_deployment_yaml))
     actor_number = actor_number + 1
+    configmap_create("path-config" + str(actor_number), from_file="localnet/kubernetes/path-config-"+str(actor_number)+".yaml")
+    formatted_path_deployment_yaml = path_deployment_yaml.format(actor_number=actor_number, port=2999 + actor_number)
+    k8s_yaml(blob(formatted_path_deployment_yaml))
     k8s_resource(
-        "path-gateway",
+        "path-gateway" + str(actor_number),
         labels=["gateways"],
         resource_deps=["validator"],
-        port_forwards=["3000"],
+        port_forwards=[str(2999 + actor_number)+":3000"],
     )

@@ -2,16 +2,16 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: path-gateway
+  name: path-gateway{actor_number}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: path-gateway
+      app: path-gateway{actor_number}
   template:
     metadata:
       labels:
-        app: path-gateway
+        app: path-gateway{actor_number}
     spec:
       # TODO: Add resource limits
       containers:
@@ -20,26 +20,26 @@ spec:
           ports:
             - containerPort: 3000
           volumeMounts:
-            - name: path-config
+            - name: path-config{actor_number}
               mountPath: /app/.config.yaml
               subPath: .config.yaml
       volumes:
-        - name: path-config
+        - name: path-config{actor_number}
           configMap:
-            name: path-config
+            name: path-config{actor_number}
             items:
-              - key: path-config.yaml
+              - key: path-config-{actor_number}.yaml
                 path: .config.yaml
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: path-gateway
+  name: path-gateway{actor_number}
 spec:
   selector:
-    app: path-gateway
+    app: path-gateway{actor_number}
   ports:
     - protocol: TCP
       name: rpc
-      port: 3000
+      port: {port}
       targetPort: 3000
