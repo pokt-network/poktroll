@@ -1,7 +1,6 @@
 package keeper_test
 
 import (
-	"encoding/hex"
 	"testing"
 
 	"cosmossdk.io/math"
@@ -15,33 +14,6 @@ import (
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 )
-
-func TestMsgUpdateParam_UpdateMinRelayDifficultyBitsOnly(t *testing.T) {
-	expectedRelayDifficultyTargetHash, _ := hex.DecodeString("0000000000000000ffffffffffffffffffffffffffffffffffffffffffffffff")
-
-	// Set the parameters to their default values
-	k, msgSrv, ctx := setupMsgServer(t)
-	defaultParams := prooftypes.DefaultParams()
-	require.NoError(t, k.SetParams(ctx, defaultParams))
-
-	// Ensure the default values are different from the new values we want to set
-	require.NotEqual(t, expectedRelayDifficultyTargetHash, defaultParams.RelayDifficultyTargetHash)
-
-	// Update the min stake.
-	updateParamMsg := &prooftypes.MsgUpdateParam{
-		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
-		Name:      prooftypes.ParamRelayDifficultyTargetHash,
-		AsType:    &prooftypes.MsgUpdateParam_AsBytes{AsBytes: expectedRelayDifficultyTargetHash},
-	}
-	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
-	require.NoError(t, err)
-
-	require.NotEqual(t, defaultParams.RelayDifficultyTargetHash, res.Params.RelayDifficultyTargetHash)
-	require.Equal(t, expectedRelayDifficultyTargetHash, res.Params.RelayDifficultyTargetHash)
-
-	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, string(prooftypes.KeyRelayDifficultyTargetHash))
-}
 
 func TestMsgUpdateParam_UpdateProofRequestProbabilityOnly(t *testing.T) {
 	var expectedProofRequestProbability float32 = 0.1

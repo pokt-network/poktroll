@@ -19,5 +19,6 @@ var (
 	ErrAppNotDelegated          = sdkerrors.Register(ModuleName, 1111, "application not delegated to gateway")
 	ErrAppIsUnstaking           = sdkerrors.Register(ModuleName, 1112, "application is in unbonding period")
 	ErrAppDuplicateAddress      = sdkerrors.Register(ModuleName, 1113, "duplicate application address")
-	ErrAppParamInvalid          = sdkerrors.Register(ModuleName, 1114, "the provided param is invalid")
+	ErrAppHasPendingTransfer    = sdkerrors.Register(ModuleName, 1114, "application is in transfer period")
+	ErrAppParamInvalid          = sdkerrors.Register(ModuleName, 1115, "the provided param is invalid")
 )

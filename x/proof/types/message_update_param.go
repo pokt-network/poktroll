@@ -46,11 +46,6 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 
 	// Parameter name must be supported by this module.
 	switch msg.Name {
-	case ParamRelayDifficultyTargetHash:
-		if err := msg.paramTypeIsBytes(); err != nil {
-			return err
-		}
-		return ValidateRelayDifficultyTargetHash(msg.GetAsBytes())
 	case ParamProofRequestProbability:
 		if err := msg.paramTypeIsFloat(); err != nil {
 			return err
@@ -74,18 +69,6 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 	default:
 		return ErrProofParamNameInvalid.Wrapf("unsupported param %q", msg.Name)
 	}
-}
-
-// paramTypeIsBytes checks if the parameter type is a byte slice, returning an error if not.
-func (msg *MsgUpdateParam) paramTypeIsBytes() error {
-	if _, ok := msg.AsType.(*MsgUpdateParam_AsBytes); !ok {
-		return ErrProofParamInvalid.Wrapf(
-			"invalid type for param %q expected %T, got %T",
-			msg.Name, &MsgUpdateParam_AsBytes{},
-			msg.AsType,
-		)
-	}
-	return nil
 }
 
 // paramTypeIsFloat checks if the parameter type is Float, returning an error if not.

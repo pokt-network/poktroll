@@ -37,7 +37,7 @@ func TestMsgUpdateParam_UpdateMaxDelegatedGatewaysOnly(t *testing.T) {
 	require.Equal(t, expectedMaxDelegatedGateways, res.Params.MaxDelegatedGateways)
 
 	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, "MaxDelegatedGateways")
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, string(apptypes.KeyMaxDelegatedGateways))
 }
 
 func TestMsgUpdateParam_UpdateMinStakeOnly(t *testing.T) {
@@ -64,5 +64,5 @@ func TestMsgUpdateParam_UpdateMinStakeOnly(t *testing.T) {
 	require.Equal(t, expectedMinStake.Amount, res.Params.MinStake.Amount)
 
 	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, "MinStake")
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, string(apptypes.KeyMinStake))
 }

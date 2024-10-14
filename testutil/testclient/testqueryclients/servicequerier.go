@@ -8,8 +8,18 @@ import (
 
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
+
+// TODO_TECHDEBT: refactor the methods using this variable to avoid having a global scope
+// for the map across unit tests run under the same testing.T instance.
+// Ditto for other similar package-level variables in this package.
+// relayDifficultyTargets is a map of: serviceId -> RelayMiningDifficulty
+// It is updated by the SetServiceRelayDifficultyTargetHash, and read by
+// the mock tokenomics query client to get a specific service's relay difficulty
+// target hash.
+var relayDifficultyTargets = make(map[string]*servicetypes.RelayMiningDifficulty)
 
 // TODO_TECHDEBT: refactor the methods using this variable to avoid having a global scope
 // for the map across unit tests run under the same testing.T instance.
@@ -40,6 +50,20 @@ func NewTestServiceQueryClient(
 		}).
 		AnyTimes()
 
+	serviceQuerier.EXPECT().GetServiceRelayDifficultyTargetHash(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(
+			_ context.Context,
+			serviceId string,
+		) (servicetypes.RelayMiningDifficulty, error) {
+			relayDifficulty, ok := relayDifficultyTargets[serviceId]
+			if !ok {
+				return servicetypes.RelayMiningDifficulty{}, servicetypes.ErrServiceMissingRelayMiningDifficulty.Wrapf("retrieving the relay mining difficulty for service %s", serviceId)
+			}
+
+			return *relayDifficulty, nil
+		}).
+		AnyTimes()
+
 	return serviceQuerier
 }
 
@@ -55,5 +79,24 @@ func AddToExistingServices(
 
 	t.Cleanup(func() {
 		delete(services, service.Id)
+	})
+}
+
+// AddServiceRelayDifficultyTargetHash sets the relay difficulty target hash
+// for the given service to mock it "existing" on chain.
+// It will also remove the service relay difficulty target hashes from the map when the test is cleaned up.
+func SetServiceRelayDifficultyTargetHash(t *testing.T,
+	serviceId string,
+	relayDifficultyTargetHash []byte,
+) {
+	t.Helper()
+
+	relayDifficultyTargets[serviceId] = &servicetypes.RelayMiningDifficulty{
+		ServiceId:  serviceId,
+		TargetHash: relayDifficultyTargetHash,
+	}
+
+	t.Cleanup(func() {
+		delete(relayDifficultyTargets, serviceId)
 	})
 }

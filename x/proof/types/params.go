@@ -7,19 +7,11 @@ import (
 
 	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/pkg/client"
-	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 )
 
 var (
 	_ client.ProofParams  = (*Params)(nil)
 	_ paramtypes.ParamSet = (*Params)(nil)
-
-	// TODO_TECHDEBT(#690): Delete this parameter and just use "protocol.BaseRelayDifficultyHashBz"
-	// as a hard-coded version. This param was originally intended to be a "minimum",
-	// but the minimum equivalent of "0" in this case is "BaseRelayDifficultyHashBz".
-	KeyRelayDifficultyTargetHash     = []byte("RelayDifficultyTargetHash")
-	ParamRelayDifficultyTargetHash   = "relay_difficulty_target_hash"
-	DefaultRelayDifficultyTargetHash = protocol.BaseRelayDifficultyHashBz
 
 	// TODO_BETA(@red-0ne): Iterate on the parameters below by adding unit suffixes and
 	// consider having the proof_requirement_threshold to be a function of the supplier's stake amount.
@@ -54,14 +46,12 @@ func ParamKeyTable() paramtypes.KeyTable {
 
 // NewParams creates a new Params instance
 func NewParams(
-	relayDifficultyTargetHash []byte,
 	proofRequestProbability float32,
 	proofRequirementThreshold *cosmostypes.Coin,
 	proofMissingPenalty *cosmostypes.Coin,
 	proofSubmissionFee *cosmostypes.Coin,
 ) Params {
 	return Params{
-		RelayDifficultyTargetHash: relayDifficultyTargetHash,
 		ProofRequestProbability:   proofRequestProbability,
 		ProofRequirementThreshold: proofRequirementThreshold,
 		ProofMissingPenalty:       proofMissingPenalty,
@@ -72,7 +62,6 @@ func NewParams(
 // DefaultParams returns a default set of parameters
 func DefaultParams() Params {
 	return NewParams(
-		DefaultRelayDifficultyTargetHash,
 		DefaultProofRequestProbability,
 		&DefaultProofRequirementThreshold,
 		&DefaultProofMissingPenalty,
@@ -83,11 +72,6 @@ func DefaultParams() Params {
 // ParamSetPairs get the params.ParamSet
 func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 	return paramtypes.ParamSetPairs{
-		paramtypes.NewParamSetPair(
-			KeyRelayDifficultyTargetHash,
-			&p.RelayDifficultyTargetHash,
-			ValidateRelayDifficultyTargetHash,
-		),
 		paramtypes.NewParamSetPair(
 			KeyProofRequestProbability,
 			&p.ProofRequestProbability,
@@ -113,11 +97,6 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 
 // ValidateBasic does a sanity check on the provided params.
 func (params *Params) ValidateBasic() error {
-	// Validate the ComputeUnitsToTokensMultiplier
-	if err := ValidateRelayDifficultyTargetHash(params.RelayDifficultyTargetHash); err != nil {
-		return err
-	}
-
 	if err := ValidateProofRequestProbability(params.ProofRequestProbability); err != nil {
 		return err
 	}
@@ -132,26 +111,6 @@ func (params *Params) ValidateBasic() error {
 
 	if err := ValidateProofSubmissionFee(params.ProofSubmissionFee); err != nil {
 		return err
-	}
-
-	return nil
-}
-
-// ValidateRelayDifficultyTargetHash validates the MinRelayDifficultyBits param.
-// NB: The argument is an interface type to satisfy the ParamSetPair function signature.
-func ValidateRelayDifficultyTargetHash(relayDifficultyTargetHashAny any) error {
-	relayDifficultyTargetHash, ok := relayDifficultyTargetHashAny.([]byte)
-	if !ok {
-		return ErrProofParamInvalid.Wrapf("invalid parameter type: %T", relayDifficultyTargetHashAny)
-	}
-
-	if len(relayDifficultyTargetHash) != protocol.RelayHasherSize {
-		return ErrProofParamInvalid.Wrapf(
-			"invalid RelayDifficultyTargetHash: (%x); length wanted: %d; got: %d",
-			relayDifficultyTargetHash,
-			32,
-			len(relayDifficultyTargetHash),
-		)
 	}
 
 	return nil

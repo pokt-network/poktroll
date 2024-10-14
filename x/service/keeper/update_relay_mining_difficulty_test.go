@@ -10,16 +10,14 @@ import (
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	testutilevents "github.com/pokt-network/poktroll/testutil/events"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
-	"github.com/pokt-network/poktroll/x/tokenomics/keeper"
-	tokenomicskeeper "github.com/pokt-network/poktroll/x/tokenomics/keeper"
-	"github.com/pokt-network/poktroll/x/tokenomics/types"
-	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
+	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
+	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 )
 
 func TestComputeNewDifficultyHash_MonotonicallyIncreasingRelays(t *testing.T) {
 	svcId := "svc1"
 
-	keeper, ctx := keepertest.TokenomicsKeeper(t)
+	keeper, ctx := keepertest.ServiceKeeper(t)
 
 	prevEMA := uint64(0)
 	prevTargetHash := protocol.BaseRelayDifficultyHashBz
@@ -53,7 +51,7 @@ func TestComputeNewDifficultyHash_MonotonicallyIncreasingRelays(t *testing.T) {
 func TestComputeNewDifficultyHash_MonotonicallyDecreasingRelays(t *testing.T) {
 	svcId := "svc1"
 
-	keeper, ctx := keepertest.TokenomicsKeeper(t)
+	keeper, ctx := keepertest.ServiceKeeper(t)
 
 	prevEMA := uint64(0)
 	prevTargetHash := protocol.BaseRelayDifficultyHashBz
@@ -91,7 +89,7 @@ func TestComputeNewDifficultyHash_MonotonicallyDecreasingRelays(t *testing.T) {
 // a flow testing a few different scenarios, but does not cover the full range
 // of edge or use cases.
 func TestUpdateRelayMiningDifficulty_Base(t *testing.T) {
-	keeper, ctx := keepertest.TokenomicsKeeper(t)
+	keeper, ctx := keepertest.ServiceKeeper(t)
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 
 	// Introduce svc1 for the first time
@@ -152,7 +150,7 @@ func TestUpdateRelayMiningDifficulty_Base(t *testing.T) {
 	require.True(t, found)
 	require.Less(t, difficultySvc22.NumRelaysEma, difficultySvc21.NumRelaysEma)
 	// Since the relays EMA is lower than the target, the difficulty hash is all 1s
-	require.Less(t, difficultySvc22.NumRelaysEma, tokenomicskeeper.TargetNumRelays)
+	require.Less(t, difficultySvc22.NumRelaysEma, servicekeeper.TargetNumRelays)
 	require.Equal(t, difficultySvc22.TargetHash, makeBytesFullOfOnes(32))
 
 	// svc3 is new so the relay ema is equal to the first value provided
@@ -162,8 +160,8 @@ func TestUpdateRelayMiningDifficulty_Base(t *testing.T) {
 
 	// Confirm a relay mining difficulty update event was emitted
 	events := sdkCtx.EventManager().Events()
-	expectedEvents := testutilevents.FilterEvents[*tokenomicstypes.EventRelayMiningDifficultyUpdated](t,
-		events, "poktroll.tokenomics.EventRelayMiningDifficultyUpdated")
+	expectedEvents := testutilevents.FilterEvents[*servicetypes.EventRelayMiningDifficultyUpdated](t,
+		events, "poktroll.service.EventRelayMiningDifficultyUpdated")
 	require.Len(t, expectedEvents, 6) // 3 for svc1, 2 for svc2, 1 for svc3
 }
 
@@ -171,33 +169,33 @@ func TestUpdateRelayMiningDifficulty_FirstDifficulty(t *testing.T) {
 	tests := []struct {
 		desc                          string
 		numRelays                     uint64
-		expectedRelayMiningDifficulty types.RelayMiningDifficulty
+		expectedRelayMiningDifficulty servicetypes.RelayMiningDifficulty
 	}{
 		{
 			desc:      "First Difficulty way below target",
-			numRelays: keeper.TargetNumRelays / 1e3,
-			expectedRelayMiningDifficulty: types.RelayMiningDifficulty{
+			numRelays: servicekeeper.TargetNumRelays / 1e3,
+			expectedRelayMiningDifficulty: servicetypes.RelayMiningDifficulty{
 				ServiceId:    "svc1",
 				BlockHeight:  1,
-				NumRelaysEma: keeper.TargetNumRelays / 1e3,
+				NumRelaysEma: servicekeeper.TargetNumRelays / 1e3,
 				TargetHash:   defaultDifficulty(), // default difficulty without any leading 0 bits
 			},
 		}, {
 			desc:      "First Difficulty equal to target",
-			numRelays: keeper.TargetNumRelays,
-			expectedRelayMiningDifficulty: types.RelayMiningDifficulty{
+			numRelays: servicekeeper.TargetNumRelays,
+			expectedRelayMiningDifficulty: servicetypes.RelayMiningDifficulty{
 				ServiceId:    "svc1",
 				BlockHeight:  1,
-				NumRelaysEma: keeper.TargetNumRelays,
+				NumRelaysEma: servicekeeper.TargetNumRelays,
 				TargetHash:   defaultDifficulty(), // default difficulty without any leading 0 bits
 			},
 		}, {
 			desc:      "First Difficulty way above target",
-			numRelays: keeper.TargetNumRelays * 1e3,
-			expectedRelayMiningDifficulty: types.RelayMiningDifficulty{
+			numRelays: servicekeeper.TargetNumRelays * 1e3,
+			expectedRelayMiningDifficulty: servicetypes.RelayMiningDifficulty{
 				ServiceId:    "svc1",
 				BlockHeight:  1,
-				NumRelaysEma: keeper.TargetNumRelays * 1e3,
+				NumRelaysEma: servicekeeper.TargetNumRelays * 1e3,
 				TargetHash: append(
 					[]byte{0b00000000}, // at least 8 leading 0 bits
 					makeBytesFullOfOnes(31)...,
@@ -207,7 +205,7 @@ func TestUpdateRelayMiningDifficulty_FirstDifficulty(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			keeper, ctx := keepertest.TokenomicsKeeper(t)
+			keeper, ctx := keepertest.ServiceKeeper(t)
 			relaysPerServiceMap := map[string]uint64{
 				"svc1": tt.numRelays,
 			}
