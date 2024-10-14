@@ -274,8 +274,11 @@ func TestMsgServer_DelegateToGateway_FailMaxReached(t *testing.T) {
 	// Attempt to delegate the application when the max is already reached
 	_, err = srv.DelegateToGateway(ctx, delegateMsg)
 	require.ErrorIs(t, err, apptypes.ErrAppMaxDelegatedGateways)
+
 	events = sdkCtx.EventManager().Events()
-	require.Equal(t, int(maxDelegatedParam), len(events))
+	filteredEvents = testevents.FilterEvents[*apptypes.EventRedelegation](t, events, eventRedelegationTypeURL)
+	require.Equal(t, int(maxDelegatedParam), len(filteredEvents))
+
 	foundApp, isStakedAppFound := k.GetApplication(ctx, appAddr)
 	require.True(t, isStakedAppFound)
 	require.Equal(t, maxDelegatedParam, uint64(len(foundApp.DelegateeGatewayAddresses)))

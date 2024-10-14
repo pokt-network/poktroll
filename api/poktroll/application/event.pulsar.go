@@ -2,12 +2,12 @@
 package application
 
 import (
-	v1beta1 "cosmossdk.io/api/cosmos/base/v1beta1"
+	_ "cosmossdk.io/api/cosmos/base/v1beta1"
 	fmt "fmt"
 	_ "github.com/cosmos/cosmos-proto"
 	runtime "github.com/cosmos/cosmos-proto/runtime"
 	_ "github.com/cosmos/gogoproto/gogoproto"
-	shared "github.com/pokt-network/poktroll/api/poktroll/shared"
+	_ "github.com/pokt-network/poktroll/api/poktroll/shared"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoiface "google.golang.org/protobuf/runtime/protoiface"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -16,70 +16,15 @@ import (
 	sync "sync"
 )
 
-var _ protoreflect.List = (*_EventApplicationStaked_3_list)(nil)
-
-type _EventApplicationStaked_3_list struct {
-	list *[]*shared.ApplicationServiceConfig
-}
-
-func (x *_EventApplicationStaked_3_list) Len() int {
-	if x.list == nil {
-		return 0
-	}
-	return len(*x.list)
-}
-
-func (x *_EventApplicationStaked_3_list) Get(i int) protoreflect.Value {
-	return protoreflect.ValueOfMessage((*x.list)[i].ProtoReflect())
-}
-
-func (x *_EventApplicationStaked_3_list) Set(i int, value protoreflect.Value) {
-	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*shared.ApplicationServiceConfig)
-	(*x.list)[i] = concreteValue
-}
-
-func (x *_EventApplicationStaked_3_list) Append(value protoreflect.Value) {
-	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*shared.ApplicationServiceConfig)
-	*x.list = append(*x.list, concreteValue)
-}
-
-func (x *_EventApplicationStaked_3_list) AppendMutable() protoreflect.Value {
-	v := new(shared.ApplicationServiceConfig)
-	*x.list = append(*x.list, v)
-	return protoreflect.ValueOfMessage(v.ProtoReflect())
-}
-
-func (x *_EventApplicationStaked_3_list) Truncate(n int) {
-	for i := n; i < len(*x.list); i++ {
-		(*x.list)[i] = nil
-	}
-	*x.list = (*x.list)[:n]
-}
-
-func (x *_EventApplicationStaked_3_list) NewElement() protoreflect.Value {
-	v := new(shared.ApplicationServiceConfig)
-	return protoreflect.ValueOfMessage(v.ProtoReflect())
-}
-
-func (x *_EventApplicationStaked_3_list) IsValid() bool {
-	return x.list != nil
-}
-
 var (
 	md_EventApplicationStaked             protoreflect.MessageDescriptor
-	fd_EventApplicationStaked_app_address protoreflect.FieldDescriptor
-	fd_EventApplicationStaked_stake       protoreflect.FieldDescriptor
-	fd_EventApplicationStaked_services    protoreflect.FieldDescriptor
+	fd_EventApplicationStaked_application protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_poktroll_application_event_proto_init()
 	md_EventApplicationStaked = File_poktroll_application_event_proto.Messages().ByName("EventApplicationStaked")
-	fd_EventApplicationStaked_app_address = md_EventApplicationStaked.Fields().ByName("app_address")
-	fd_EventApplicationStaked_stake = md_EventApplicationStaked.Fields().ByName("stake")
-	fd_EventApplicationStaked_services = md_EventApplicationStaked.Fields().ByName("services")
+	fd_EventApplicationStaked_application = md_EventApplicationStaked.Fields().ByName("application")
 }
 
 var _ protoreflect.Message = (*fastReflection_EventApplicationStaked)(nil)
@@ -147,21 +92,9 @@ func (x *fastReflection_EventApplicationStaked) Interface() protoreflect.ProtoMe
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
 func (x *fastReflection_EventApplicationStaked) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.AppAddress != "" {
-		value := protoreflect.ValueOfString(x.AppAddress)
-		if !f(fd_EventApplicationStaked_app_address, value) {
-			return
-		}
-	}
-	if x.Stake != nil {
-		value := protoreflect.ValueOfMessage(x.Stake.ProtoReflect())
-		if !f(fd_EventApplicationStaked_stake, value) {
-			return
-		}
-	}
-	if len(x.Services) != 0 {
-		value := protoreflect.ValueOfList(&_EventApplicationStaked_3_list{list: &x.Services})
-		if !f(fd_EventApplicationStaked_services, value) {
+	if x.Application != nil {
+		value := protoreflect.ValueOfMessage(x.Application.ProtoReflect())
+		if !f(fd_EventApplicationStaked_application, value) {
 			return
 		}
 	}
@@ -180,12 +113,8 @@ func (x *fastReflection_EventApplicationStaked) Range(f func(protoreflect.FieldD
 // a repeated field is populated if it is non-empty.
 func (x *fastReflection_EventApplicationStaked) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "poktroll.application.EventApplicationStaked.app_address":
-		return x.AppAddress != ""
-	case "poktroll.application.EventApplicationStaked.stake":
-		return x.Stake != nil
-	case "poktroll.application.EventApplicationStaked.services":
-		return len(x.Services) != 0
+	case "poktroll.application.EventApplicationStaked.application":
+		return x.Application != nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationStaked"))
@@ -202,12 +131,8 @@ func (x *fastReflection_EventApplicationStaked) Has(fd protoreflect.FieldDescrip
 // Clear is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_EventApplicationStaked) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "poktroll.application.EventApplicationStaked.app_address":
-		x.AppAddress = ""
-	case "poktroll.application.EventApplicationStaked.stake":
-		x.Stake = nil
-	case "poktroll.application.EventApplicationStaked.services":
-		x.Services = nil
+	case "poktroll.application.EventApplicationStaked.application":
+		x.Application = nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationStaked"))
@@ -224,18 +149,9 @@ func (x *fastReflection_EventApplicationStaked) Clear(fd protoreflect.FieldDescr
 // of the value; to obtain a mutable reference, use Mutable.
 func (x *fastReflection_EventApplicationStaked) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "poktroll.application.EventApplicationStaked.app_address":
-		value := x.AppAddress
-		return protoreflect.ValueOfString(value)
-	case "poktroll.application.EventApplicationStaked.stake":
-		value := x.Stake
+	case "poktroll.application.EventApplicationStaked.application":
+		value := x.Application
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
-	case "poktroll.application.EventApplicationStaked.services":
-		if len(x.Services) == 0 {
-			return protoreflect.ValueOfList(&_EventApplicationStaked_3_list{})
-		}
-		listValue := &_EventApplicationStaked_3_list{list: &x.Services}
-		return protoreflect.ValueOfList(listValue)
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationStaked"))
@@ -256,14 +172,8 @@ func (x *fastReflection_EventApplicationStaked) Get(descriptor protoreflect.Fiel
 // Set is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_EventApplicationStaked) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "poktroll.application.EventApplicationStaked.app_address":
-		x.AppAddress = value.Interface().(string)
-	case "poktroll.application.EventApplicationStaked.stake":
-		x.Stake = value.Message().Interface().(*v1beta1.Coin)
-	case "poktroll.application.EventApplicationStaked.services":
-		lv := value.List()
-		clv := lv.(*_EventApplicationStaked_3_list)
-		x.Services = *clv.list
+	case "poktroll.application.EventApplicationStaked.application":
+		x.Application = value.Message().Interface().(*Application)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationStaked"))
@@ -284,19 +194,11 @@ func (x *fastReflection_EventApplicationStaked) Set(fd protoreflect.FieldDescrip
 // Mutable is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_EventApplicationStaked) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.application.EventApplicationStaked.stake":
-		if x.Stake == nil {
-			x.Stake = new(v1beta1.Coin)
+	case "poktroll.application.EventApplicationStaked.application":
+		if x.Application == nil {
+			x.Application = new(Application)
 		}
-		return protoreflect.ValueOfMessage(x.Stake.ProtoReflect())
-	case "poktroll.application.EventApplicationStaked.services":
-		if x.Services == nil {
-			x.Services = []*shared.ApplicationServiceConfig{}
-		}
-		value := &_EventApplicationStaked_3_list{list: &x.Services}
-		return protoreflect.ValueOfList(value)
-	case "poktroll.application.EventApplicationStaked.app_address":
-		panic(fmt.Errorf("field app_address of message poktroll.application.EventApplicationStaked is not mutable"))
+		return protoreflect.ValueOfMessage(x.Application.ProtoReflect())
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationStaked"))
@@ -310,14 +212,9 @@ func (x *fastReflection_EventApplicationStaked) Mutable(fd protoreflect.FieldDes
 // For lists, maps, and messages, this returns a new, empty, mutable value.
 func (x *fastReflection_EventApplicationStaked) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.application.EventApplicationStaked.app_address":
-		return protoreflect.ValueOfString("")
-	case "poktroll.application.EventApplicationStaked.stake":
-		m := new(v1beta1.Coin)
+	case "poktroll.application.EventApplicationStaked.application":
+		m := new(Application)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
-	case "poktroll.application.EventApplicationStaked.services":
-		list := []*shared.ApplicationServiceConfig{}
-		return protoreflect.ValueOfList(&_EventApplicationStaked_3_list{list: &list})
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationStaked"))
@@ -387,19 +284,9 @@ func (x *fastReflection_EventApplicationStaked) ProtoMethods() *protoiface.Metho
 		var n int
 		var l int
 		_ = l
-		l = len(x.AppAddress)
-		if l > 0 {
+		if x.Application != nil {
+			l = options.Size(x.Application)
 			n += 1 + l + runtime.Sov(uint64(l))
-		}
-		if x.Stake != nil {
-			l = options.Size(x.Stake)
-			n += 1 + l + runtime.Sov(uint64(l))
-		}
-		if len(x.Services) > 0 {
-			for _, e := range x.Services {
-				l = options.Size(e)
-				n += 1 + l + runtime.Sov(uint64(l))
-			}
 		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
@@ -430,24 +317,8 @@ func (x *fastReflection_EventApplicationStaked) ProtoMethods() *protoiface.Metho
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if len(x.Services) > 0 {
-			for iNdEx := len(x.Services) - 1; iNdEx >= 0; iNdEx-- {
-				encoded, err := options.Marshal(x.Services[iNdEx])
-				if err != nil {
-					return protoiface.MarshalOutput{
-						NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-						Buf:               input.Buf,
-					}, err
-				}
-				i -= len(encoded)
-				copy(dAtA[i:], encoded)
-				i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
-				i--
-				dAtA[i] = 0x1a
-			}
-		}
-		if x.Stake != nil {
-			encoded, err := options.Marshal(x.Stake)
+		if x.Application != nil {
+			encoded, err := options.Marshal(x.Application)
 			if err != nil {
 				return protoiface.MarshalOutput{
 					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -457,13 +328,6 @@ func (x *fastReflection_EventApplicationStaked) ProtoMethods() *protoiface.Metho
 			i -= len(encoded)
 			copy(dAtA[i:], encoded)
 			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
-			i--
-			dAtA[i] = 0x12
-		}
-		if len(x.AppAddress) > 0 {
-			i -= len(x.AppAddress)
-			copy(dAtA[i:], x.AppAddress)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.AppAddress)))
 			i--
 			dAtA[i] = 0xa
 		}
@@ -518,39 +382,7 @@ func (x *fastReflection_EventApplicationStaked) ProtoMethods() *protoiface.Metho
 			switch fieldNum {
 			case 1:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field AppAddress", wireType)
-				}
-				var stringLen uint64
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + intStringLen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.AppAddress = string(dAtA[iNdEx:postIndex])
-				iNdEx = postIndex
-			case 2:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Stake", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Application", wireType)
 				}
 				var msglen int
 				for shift := uint(0); ; shift += 7 {
@@ -577,44 +409,10 @@ func (x *fastReflection_EventApplicationStaked) ProtoMethods() *protoiface.Metho
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				if x.Stake == nil {
-					x.Stake = &v1beta1.Coin{}
+				if x.Application == nil {
+					x.Application = &Application{}
 				}
-				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Stake); err != nil {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
-				}
-				iNdEx = postIndex
-			case 3:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Services", wireType)
-				}
-				var msglen int
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					msglen |= int(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				if msglen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + msglen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.Services = append(x.Services, &shared.ApplicationServiceConfig{})
-				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Services[len(x.Services)-1]); err != nil {
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Application); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
@@ -2892,13 +2690,13 @@ func (x *fastReflection_EventTransferError) ProtoMethods() *protoiface.Methods {
 
 var (
 	md_EventApplicationUnbondingBegin             protoreflect.MessageDescriptor
-	fd_EventApplicationUnbondingBegin_app_address protoreflect.FieldDescriptor
+	fd_EventApplicationUnbondingBegin_application protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_poktroll_application_event_proto_init()
 	md_EventApplicationUnbondingBegin = File_poktroll_application_event_proto.Messages().ByName("EventApplicationUnbondingBegin")
-	fd_EventApplicationUnbondingBegin_app_address = md_EventApplicationUnbondingBegin.Fields().ByName("app_address")
+	fd_EventApplicationUnbondingBegin_application = md_EventApplicationUnbondingBegin.Fields().ByName("application")
 }
 
 var _ protoreflect.Message = (*fastReflection_EventApplicationUnbondingBegin)(nil)
@@ -2966,9 +2764,9 @@ func (x *fastReflection_EventApplicationUnbondingBegin) Interface() protoreflect
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
 func (x *fastReflection_EventApplicationUnbondingBegin) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.AppAddress != "" {
-		value := protoreflect.ValueOfString(x.AppAddress)
-		if !f(fd_EventApplicationUnbondingBegin_app_address, value) {
+	if x.Application != nil {
+		value := protoreflect.ValueOfMessage(x.Application.ProtoReflect())
+		if !f(fd_EventApplicationUnbondingBegin_application, value) {
 			return
 		}
 	}
@@ -2987,8 +2785,8 @@ func (x *fastReflection_EventApplicationUnbondingBegin) Range(f func(protoreflec
 // a repeated field is populated if it is non-empty.
 func (x *fastReflection_EventApplicationUnbondingBegin) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "poktroll.application.EventApplicationUnbondingBegin.app_address":
-		return x.AppAddress != ""
+	case "poktroll.application.EventApplicationUnbondingBegin.application":
+		return x.Application != nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationUnbondingBegin"))
@@ -3005,8 +2803,8 @@ func (x *fastReflection_EventApplicationUnbondingBegin) Has(fd protoreflect.Fiel
 // Clear is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_EventApplicationUnbondingBegin) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "poktroll.application.EventApplicationUnbondingBegin.app_address":
-		x.AppAddress = ""
+	case "poktroll.application.EventApplicationUnbondingBegin.application":
+		x.Application = nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationUnbondingBegin"))
@@ -3023,9 +2821,9 @@ func (x *fastReflection_EventApplicationUnbondingBegin) Clear(fd protoreflect.Fi
 // of the value; to obtain a mutable reference, use Mutable.
 func (x *fastReflection_EventApplicationUnbondingBegin) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "poktroll.application.EventApplicationUnbondingBegin.app_address":
-		value := x.AppAddress
-		return protoreflect.ValueOfString(value)
+	case "poktroll.application.EventApplicationUnbondingBegin.application":
+		value := x.Application
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationUnbondingBegin"))
@@ -3046,8 +2844,8 @@ func (x *fastReflection_EventApplicationUnbondingBegin) Get(descriptor protorefl
 // Set is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_EventApplicationUnbondingBegin) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "poktroll.application.EventApplicationUnbondingBegin.app_address":
-		x.AppAddress = value.Interface().(string)
+	case "poktroll.application.EventApplicationUnbondingBegin.application":
+		x.Application = value.Message().Interface().(*Application)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationUnbondingBegin"))
@@ -3068,8 +2866,11 @@ func (x *fastReflection_EventApplicationUnbondingBegin) Set(fd protoreflect.Fiel
 // Mutable is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_EventApplicationUnbondingBegin) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.application.EventApplicationUnbondingBegin.app_address":
-		panic(fmt.Errorf("field app_address of message poktroll.application.EventApplicationUnbondingBegin is not mutable"))
+	case "poktroll.application.EventApplicationUnbondingBegin.application":
+		if x.Application == nil {
+			x.Application = new(Application)
+		}
+		return protoreflect.ValueOfMessage(x.Application.ProtoReflect())
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationUnbondingBegin"))
@@ -3083,8 +2884,9 @@ func (x *fastReflection_EventApplicationUnbondingBegin) Mutable(fd protoreflect.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
 func (x *fastReflection_EventApplicationUnbondingBegin) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.application.EventApplicationUnbondingBegin.app_address":
-		return protoreflect.ValueOfString("")
+	case "poktroll.application.EventApplicationUnbondingBegin.application":
+		m := new(Application)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationUnbondingBegin"))
@@ -3154,8 +2956,8 @@ func (x *fastReflection_EventApplicationUnbondingBegin) ProtoMethods() *protoifa
 		var n int
 		var l int
 		_ = l
-		l = len(x.AppAddress)
-		if l > 0 {
+		if x.Application != nil {
+			l = options.Size(x.Application)
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
 		if x.unknownFields != nil {
@@ -3187,10 +2989,17 @@ func (x *fastReflection_EventApplicationUnbondingBegin) ProtoMethods() *protoifa
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if len(x.AppAddress) > 0 {
-			i -= len(x.AppAddress)
-			copy(dAtA[i:], x.AppAddress)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.AppAddress)))
+		if x.Application != nil {
+			encoded, err := options.Marshal(x.Application)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			i--
 			dAtA[i] = 0xa
 		}
@@ -3245,9 +3054,9 @@ func (x *fastReflection_EventApplicationUnbondingBegin) ProtoMethods() *protoifa
 			switch fieldNum {
 			case 1:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field AppAddress", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Application", wireType)
 				}
-				var stringLen uint64
+				var msglen int
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -3257,23 +3066,27 @@ func (x *fastReflection_EventApplicationUnbondingBegin) ProtoMethods() *protoifa
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
+					msglen |= int(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
+				if msglen < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
-				postIndex := iNdEx + intStringLen
+				postIndex := iNdEx + msglen
 				if postIndex < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.AppAddress = string(dAtA[iNdEx:postIndex])
+				if x.Application == nil {
+					x.Application = &Application{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Application); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
 				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
@@ -3312,13 +3125,13 @@ func (x *fastReflection_EventApplicationUnbondingBegin) ProtoMethods() *protoifa
 
 var (
 	md_EventApplicationUnbondingEnd             protoreflect.MessageDescriptor
-	fd_EventApplicationUnbondingEnd_app_address protoreflect.FieldDescriptor
+	fd_EventApplicationUnbondingEnd_application protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_poktroll_application_event_proto_init()
 	md_EventApplicationUnbondingEnd = File_poktroll_application_event_proto.Messages().ByName("EventApplicationUnbondingEnd")
-	fd_EventApplicationUnbondingEnd_app_address = md_EventApplicationUnbondingEnd.Fields().ByName("app_address")
+	fd_EventApplicationUnbondingEnd_application = md_EventApplicationUnbondingEnd.Fields().ByName("application")
 }
 
 var _ protoreflect.Message = (*fastReflection_EventApplicationUnbondingEnd)(nil)
@@ -3386,9 +3199,9 @@ func (x *fastReflection_EventApplicationUnbondingEnd) Interface() protoreflect.P
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
 func (x *fastReflection_EventApplicationUnbondingEnd) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.AppAddress != "" {
-		value := protoreflect.ValueOfString(x.AppAddress)
-		if !f(fd_EventApplicationUnbondingEnd_app_address, value) {
+	if x.Application != nil {
+		value := protoreflect.ValueOfMessage(x.Application.ProtoReflect())
+		if !f(fd_EventApplicationUnbondingEnd_application, value) {
 			return
 		}
 	}
@@ -3407,8 +3220,8 @@ func (x *fastReflection_EventApplicationUnbondingEnd) Range(f func(protoreflect.
 // a repeated field is populated if it is non-empty.
 func (x *fastReflection_EventApplicationUnbondingEnd) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "poktroll.application.EventApplicationUnbondingEnd.app_address":
-		return x.AppAddress != ""
+	case "poktroll.application.EventApplicationUnbondingEnd.application":
+		return x.Application != nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationUnbondingEnd"))
@@ -3425,8 +3238,8 @@ func (x *fastReflection_EventApplicationUnbondingEnd) Has(fd protoreflect.FieldD
 // Clear is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_EventApplicationUnbondingEnd) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "poktroll.application.EventApplicationUnbondingEnd.app_address":
-		x.AppAddress = ""
+	case "poktroll.application.EventApplicationUnbondingEnd.application":
+		x.Application = nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationUnbondingEnd"))
@@ -3443,9 +3256,9 @@ func (x *fastReflection_EventApplicationUnbondingEnd) Clear(fd protoreflect.Fiel
 // of the value; to obtain a mutable reference, use Mutable.
 func (x *fastReflection_EventApplicationUnbondingEnd) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "poktroll.application.EventApplicationUnbondingEnd.app_address":
-		value := x.AppAddress
-		return protoreflect.ValueOfString(value)
+	case "poktroll.application.EventApplicationUnbondingEnd.application":
+		value := x.Application
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationUnbondingEnd"))
@@ -3466,8 +3279,8 @@ func (x *fastReflection_EventApplicationUnbondingEnd) Get(descriptor protoreflec
 // Set is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_EventApplicationUnbondingEnd) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "poktroll.application.EventApplicationUnbondingEnd.app_address":
-		x.AppAddress = value.Interface().(string)
+	case "poktroll.application.EventApplicationUnbondingEnd.application":
+		x.Application = value.Message().Interface().(*Application)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationUnbondingEnd"))
@@ -3488,8 +3301,11 @@ func (x *fastReflection_EventApplicationUnbondingEnd) Set(fd protoreflect.FieldD
 // Mutable is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_EventApplicationUnbondingEnd) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.application.EventApplicationUnbondingEnd.app_address":
-		panic(fmt.Errorf("field app_address of message poktroll.application.EventApplicationUnbondingEnd is not mutable"))
+	case "poktroll.application.EventApplicationUnbondingEnd.application":
+		if x.Application == nil {
+			x.Application = new(Application)
+		}
+		return protoreflect.ValueOfMessage(x.Application.ProtoReflect())
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationUnbondingEnd"))
@@ -3503,8 +3319,9 @@ func (x *fastReflection_EventApplicationUnbondingEnd) Mutable(fd protoreflect.Fi
 // For lists, maps, and messages, this returns a new, empty, mutable value.
 func (x *fastReflection_EventApplicationUnbondingEnd) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.application.EventApplicationUnbondingEnd.app_address":
-		return protoreflect.ValueOfString("")
+	case "poktroll.application.EventApplicationUnbondingEnd.application":
+		m := new(Application)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationUnbondingEnd"))
@@ -3574,8 +3391,8 @@ func (x *fastReflection_EventApplicationUnbondingEnd) ProtoMethods() *protoiface
 		var n int
 		var l int
 		_ = l
-		l = len(x.AppAddress)
-		if l > 0 {
+		if x.Application != nil {
+			l = options.Size(x.Application)
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
 		if x.unknownFields != nil {
@@ -3607,10 +3424,17 @@ func (x *fastReflection_EventApplicationUnbondingEnd) ProtoMethods() *protoiface
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if len(x.AppAddress) > 0 {
-			i -= len(x.AppAddress)
-			copy(dAtA[i:], x.AppAddress)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.AppAddress)))
+		if x.Application != nil {
+			encoded, err := options.Marshal(x.Application)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			i--
 			dAtA[i] = 0xa
 		}
@@ -3665,9 +3489,9 @@ func (x *fastReflection_EventApplicationUnbondingEnd) ProtoMethods() *protoiface
 			switch fieldNum {
 			case 1:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field AppAddress", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Application", wireType)
 				}
-				var stringLen uint64
+				var msglen int
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -3677,23 +3501,27 @@ func (x *fastReflection_EventApplicationUnbondingEnd) ProtoMethods() *protoiface
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
+					msglen |= int(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
+				if msglen < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
-				postIndex := iNdEx + intStringLen
+				postIndex := iNdEx + msglen
 				if postIndex < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.AppAddress = string(dAtA[iNdEx:postIndex])
+				if x.Application == nil {
+					x.Application = &Application{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Application); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
 				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
@@ -3732,13 +3560,13 @@ func (x *fastReflection_EventApplicationUnbondingEnd) ProtoMethods() *protoiface
 
 var (
 	md_EventApplicationUnbondingCanceled             protoreflect.MessageDescriptor
-	fd_EventApplicationUnbondingCanceled_app_address protoreflect.FieldDescriptor
+	fd_EventApplicationUnbondingCanceled_application protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_poktroll_application_event_proto_init()
 	md_EventApplicationUnbondingCanceled = File_poktroll_application_event_proto.Messages().ByName("EventApplicationUnbondingCanceled")
-	fd_EventApplicationUnbondingCanceled_app_address = md_EventApplicationUnbondingCanceled.Fields().ByName("app_address")
+	fd_EventApplicationUnbondingCanceled_application = md_EventApplicationUnbondingCanceled.Fields().ByName("application")
 }
 
 var _ protoreflect.Message = (*fastReflection_EventApplicationUnbondingCanceled)(nil)
@@ -3806,9 +3634,9 @@ func (x *fastReflection_EventApplicationUnbondingCanceled) Interface() protorefl
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
 func (x *fastReflection_EventApplicationUnbondingCanceled) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.AppAddress != "" {
-		value := protoreflect.ValueOfString(x.AppAddress)
-		if !f(fd_EventApplicationUnbondingCanceled_app_address, value) {
+	if x.Application != nil {
+		value := protoreflect.ValueOfMessage(x.Application.ProtoReflect())
+		if !f(fd_EventApplicationUnbondingCanceled_application, value) {
 			return
 		}
 	}
@@ -3827,8 +3655,8 @@ func (x *fastReflection_EventApplicationUnbondingCanceled) Range(f func(protoref
 // a repeated field is populated if it is non-empty.
 func (x *fastReflection_EventApplicationUnbondingCanceled) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "poktroll.application.EventApplicationUnbondingCanceled.app_address":
-		return x.AppAddress != ""
+	case "poktroll.application.EventApplicationUnbondingCanceled.application":
+		return x.Application != nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationUnbondingCanceled"))
@@ -3845,8 +3673,8 @@ func (x *fastReflection_EventApplicationUnbondingCanceled) Has(fd protoreflect.F
 // Clear is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_EventApplicationUnbondingCanceled) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "poktroll.application.EventApplicationUnbondingCanceled.app_address":
-		x.AppAddress = ""
+	case "poktroll.application.EventApplicationUnbondingCanceled.application":
+		x.Application = nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationUnbondingCanceled"))
@@ -3863,9 +3691,9 @@ func (x *fastReflection_EventApplicationUnbondingCanceled) Clear(fd protoreflect
 // of the value; to obtain a mutable reference, use Mutable.
 func (x *fastReflection_EventApplicationUnbondingCanceled) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "poktroll.application.EventApplicationUnbondingCanceled.app_address":
-		value := x.AppAddress
-		return protoreflect.ValueOfString(value)
+	case "poktroll.application.EventApplicationUnbondingCanceled.application":
+		value := x.Application
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationUnbondingCanceled"))
@@ -3886,8 +3714,8 @@ func (x *fastReflection_EventApplicationUnbondingCanceled) Get(descriptor protor
 // Set is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_EventApplicationUnbondingCanceled) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "poktroll.application.EventApplicationUnbondingCanceled.app_address":
-		x.AppAddress = value.Interface().(string)
+	case "poktroll.application.EventApplicationUnbondingCanceled.application":
+		x.Application = value.Message().Interface().(*Application)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationUnbondingCanceled"))
@@ -3908,8 +3736,11 @@ func (x *fastReflection_EventApplicationUnbondingCanceled) Set(fd protoreflect.F
 // Mutable is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_EventApplicationUnbondingCanceled) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.application.EventApplicationUnbondingCanceled.app_address":
-		panic(fmt.Errorf("field app_address of message poktroll.application.EventApplicationUnbondingCanceled is not mutable"))
+	case "poktroll.application.EventApplicationUnbondingCanceled.application":
+		if x.Application == nil {
+			x.Application = new(Application)
+		}
+		return protoreflect.ValueOfMessage(x.Application.ProtoReflect())
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationUnbondingCanceled"))
@@ -3923,8 +3754,9 @@ func (x *fastReflection_EventApplicationUnbondingCanceled) Mutable(fd protorefle
 // For lists, maps, and messages, this returns a new, empty, mutable value.
 func (x *fastReflection_EventApplicationUnbondingCanceled) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.application.EventApplicationUnbondingCanceled.app_address":
-		return protoreflect.ValueOfString("")
+	case "poktroll.application.EventApplicationUnbondingCanceled.application":
+		m := new(Application)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationUnbondingCanceled"))
@@ -3994,8 +3826,8 @@ func (x *fastReflection_EventApplicationUnbondingCanceled) ProtoMethods() *proto
 		var n int
 		var l int
 		_ = l
-		l = len(x.AppAddress)
-		if l > 0 {
+		if x.Application != nil {
+			l = options.Size(x.Application)
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
 		if x.unknownFields != nil {
@@ -4027,10 +3859,17 @@ func (x *fastReflection_EventApplicationUnbondingCanceled) ProtoMethods() *proto
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if len(x.AppAddress) > 0 {
-			i -= len(x.AppAddress)
-			copy(dAtA[i:], x.AppAddress)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.AppAddress)))
+		if x.Application != nil {
+			encoded, err := options.Marshal(x.Application)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			i--
 			dAtA[i] = 0xa
 		}
@@ -4085,9 +3924,9 @@ func (x *fastReflection_EventApplicationUnbondingCanceled) ProtoMethods() *proto
 			switch fieldNum {
 			case 1:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field AppAddress", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Application", wireType)
 				}
-				var stringLen uint64
+				var msglen int
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -4097,23 +3936,27 @@ func (x *fastReflection_EventApplicationUnbondingCanceled) ProtoMethods() *proto
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
+					msglen |= int(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
+				if msglen < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
-				postIndex := iNdEx + intStringLen
+				postIndex := iNdEx + msglen
 				if postIndex < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.AppAddress = string(dAtA[iNdEx:postIndex])
+				if x.Application == nil {
+					x.Application = &Application{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Application); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
 				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
@@ -4152,13 +3995,13 @@ func (x *fastReflection_EventApplicationUnbondingCanceled) ProtoMethods() *proto
 
 var (
 	md_EventApplicationUnbondedBelowMinStake             protoreflect.MessageDescriptor
-	fd_EventApplicationUnbondedBelowMinStake_app_address protoreflect.FieldDescriptor
+	fd_EventApplicationUnbondedBelowMinStake_application protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_poktroll_application_event_proto_init()
 	md_EventApplicationUnbondedBelowMinStake = File_poktroll_application_event_proto.Messages().ByName("EventApplicationUnbondedBelowMinStake")
-	fd_EventApplicationUnbondedBelowMinStake_app_address = md_EventApplicationUnbondedBelowMinStake.Fields().ByName("app_address")
+	fd_EventApplicationUnbondedBelowMinStake_application = md_EventApplicationUnbondedBelowMinStake.Fields().ByName("application")
 }
 
 var _ protoreflect.Message = (*fastReflection_EventApplicationUnbondedBelowMinStake)(nil)
@@ -4226,9 +4069,9 @@ func (x *fastReflection_EventApplicationUnbondedBelowMinStake) Interface() proto
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
 func (x *fastReflection_EventApplicationUnbondedBelowMinStake) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.AppAddress != "" {
-		value := protoreflect.ValueOfString(x.AppAddress)
-		if !f(fd_EventApplicationUnbondedBelowMinStake_app_address, value) {
+	if x.Application != nil {
+		value := protoreflect.ValueOfMessage(x.Application.ProtoReflect())
+		if !f(fd_EventApplicationUnbondedBelowMinStake_application, value) {
 			return
 		}
 	}
@@ -4247,8 +4090,8 @@ func (x *fastReflection_EventApplicationUnbondedBelowMinStake) Range(f func(prot
 // a repeated field is populated if it is non-empty.
 func (x *fastReflection_EventApplicationUnbondedBelowMinStake) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "poktroll.application.EventApplicationUnbondedBelowMinStake.app_address":
-		return x.AppAddress != ""
+	case "poktroll.application.EventApplicationUnbondedBelowMinStake.application":
+		return x.Application != nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationUnbondedBelowMinStake"))
@@ -4265,8 +4108,8 @@ func (x *fastReflection_EventApplicationUnbondedBelowMinStake) Has(fd protorefle
 // Clear is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_EventApplicationUnbondedBelowMinStake) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "poktroll.application.EventApplicationUnbondedBelowMinStake.app_address":
-		x.AppAddress = ""
+	case "poktroll.application.EventApplicationUnbondedBelowMinStake.application":
+		x.Application = nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationUnbondedBelowMinStake"))
@@ -4283,9 +4126,9 @@ func (x *fastReflection_EventApplicationUnbondedBelowMinStake) Clear(fd protoref
 // of the value; to obtain a mutable reference, use Mutable.
 func (x *fastReflection_EventApplicationUnbondedBelowMinStake) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "poktroll.application.EventApplicationUnbondedBelowMinStake.app_address":
-		value := x.AppAddress
-		return protoreflect.ValueOfString(value)
+	case "poktroll.application.EventApplicationUnbondedBelowMinStake.application":
+		value := x.Application
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationUnbondedBelowMinStake"))
@@ -4306,8 +4149,8 @@ func (x *fastReflection_EventApplicationUnbondedBelowMinStake) Get(descriptor pr
 // Set is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_EventApplicationUnbondedBelowMinStake) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "poktroll.application.EventApplicationUnbondedBelowMinStake.app_address":
-		x.AppAddress = value.Interface().(string)
+	case "poktroll.application.EventApplicationUnbondedBelowMinStake.application":
+		x.Application = value.Message().Interface().(*Application)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationUnbondedBelowMinStake"))
@@ -4328,8 +4171,11 @@ func (x *fastReflection_EventApplicationUnbondedBelowMinStake) Set(fd protorefle
 // Mutable is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_EventApplicationUnbondedBelowMinStake) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.application.EventApplicationUnbondedBelowMinStake.app_address":
-		panic(fmt.Errorf("field app_address of message poktroll.application.EventApplicationUnbondedBelowMinStake is not mutable"))
+	case "poktroll.application.EventApplicationUnbondedBelowMinStake.application":
+		if x.Application == nil {
+			x.Application = new(Application)
+		}
+		return protoreflect.ValueOfMessage(x.Application.ProtoReflect())
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationUnbondedBelowMinStake"))
@@ -4343,8 +4189,9 @@ func (x *fastReflection_EventApplicationUnbondedBelowMinStake) Mutable(fd protor
 // For lists, maps, and messages, this returns a new, empty, mutable value.
 func (x *fastReflection_EventApplicationUnbondedBelowMinStake) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.application.EventApplicationUnbondedBelowMinStake.app_address":
-		return protoreflect.ValueOfString("")
+	case "poktroll.application.EventApplicationUnbondedBelowMinStake.application":
+		m := new(Application)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationUnbondedBelowMinStake"))
@@ -4414,8 +4261,8 @@ func (x *fastReflection_EventApplicationUnbondedBelowMinStake) ProtoMethods() *p
 		var n int
 		var l int
 		_ = l
-		l = len(x.AppAddress)
-		if l > 0 {
+		if x.Application != nil {
+			l = options.Size(x.Application)
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
 		if x.unknownFields != nil {
@@ -4447,10 +4294,17 @@ func (x *fastReflection_EventApplicationUnbondedBelowMinStake) ProtoMethods() *p
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if len(x.AppAddress) > 0 {
-			i -= len(x.AppAddress)
-			copy(dAtA[i:], x.AppAddress)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.AppAddress)))
+		if x.Application != nil {
+			encoded, err := options.Marshal(x.Application)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			i--
 			dAtA[i] = 0xa
 		}
@@ -4505,9 +4359,9 @@ func (x *fastReflection_EventApplicationUnbondedBelowMinStake) ProtoMethods() *p
 			switch fieldNum {
 			case 1:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field AppAddress", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Application", wireType)
 				}
-				var stringLen uint64
+				var msglen int
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -4517,23 +4371,27 @@ func (x *fastReflection_EventApplicationUnbondedBelowMinStake) ProtoMethods() *p
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
+					msglen |= int(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
+				if msglen < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
-				postIndex := iNdEx + intStringLen
+				postIndex := iNdEx + msglen
 				if postIndex < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.AppAddress = string(dAtA[iNdEx:postIndex])
+				if x.Application == nil {
+					x.Application = &Application{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Application); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
 				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
@@ -4589,9 +4447,7 @@ type EventApplicationStaked struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	AppAddress string                             `protobuf:"bytes,1,opt,name=app_address,json=appAddress,proto3" json:"app_address,omitempty"` // The Bech32 address of the application.
-	Stake      *v1beta1.Coin                      `protobuf:"bytes,2,opt,name=stake,proto3" json:"stake,omitempty"`                             // The total amount of uPOKT the application has staked. Must be ≥ to the current amount that the application has staked (if any)
-	Services   []*shared.ApplicationServiceConfig `protobuf:"bytes,3,rep,name=services,proto3" json:"services,omitempty"`                       // The list of services this application is staked to request service for
+	Application *Application `protobuf:"bytes,1,opt,name=application,proto3" json:"application,omitempty"`
 }
 
 func (x *EventApplicationStaked) Reset() {
@@ -4614,23 +4470,9 @@ func (*EventApplicationStaked) Descriptor() ([]byte, []int) {
 	return file_poktroll_application_event_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *EventApplicationStaked) GetAppAddress() string {
+func (x *EventApplicationStaked) GetApplication() *Application {
 	if x != nil {
-		return x.AppAddress
-	}
-	return ""
-}
-
-func (x *EventApplicationStaked) GetStake() *v1beta1.Coin {
-	if x != nil {
-		return x.Stake
-	}
-	return nil
-}
-
-func (x *EventApplicationStaked) GetServices() []*shared.ApplicationServiceConfig {
-	if x != nil {
-		return x.Services
+		return x.Application
 	}
 	return nil
 }
@@ -4638,6 +4480,8 @@ func (x *EventApplicationStaked) GetServices() []*shared.ApplicationServiceConfi
 // EventRedelegation is an event emitted whenever an application changes its
 // delegatee gateways on chain. This is in response to both a DelegateToGateway
 // and UndelegateFromGateway message.
+//
+// TODO_CONSIDERATION: Emitting the updated application would be more consistent with other events.
 type EventRedelegation struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -4860,7 +4704,7 @@ type EventApplicationUnbondingBegin struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	AppAddress string `protobuf:"bytes,1,opt,name=app_address,json=appAddress,proto3" json:"app_address,omitempty"`
+	Application *Application `protobuf:"bytes,1,opt,name=application,proto3" json:"application,omitempty"`
 }
 
 func (x *EventApplicationUnbondingBegin) Reset() {
@@ -4883,11 +4727,11 @@ func (*EventApplicationUnbondingBegin) Descriptor() ([]byte, []int) {
 	return file_poktroll_application_event_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *EventApplicationUnbondingBegin) GetAppAddress() string {
+func (x *EventApplicationUnbondingBegin) GetApplication() *Application {
 	if x != nil {
-		return x.AppAddress
+		return x.Application
 	}
-	return ""
+	return nil
 }
 
 // EventApplicationUnbondingEnd is emitted when an application has completed
@@ -4898,7 +4742,7 @@ type EventApplicationUnbondingEnd struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	AppAddress string `protobuf:"bytes,1,opt,name=app_address,json=appAddress,proto3" json:"app_address,omitempty"`
+	Application *Application `protobuf:"bytes,1,opt,name=application,proto3" json:"application,omitempty"`
 }
 
 func (x *EventApplicationUnbondingEnd) Reset() {
@@ -4921,11 +4765,11 @@ func (*EventApplicationUnbondingEnd) Descriptor() ([]byte, []int) {
 	return file_poktroll_application_event_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *EventApplicationUnbondingEnd) GetAppAddress() string {
+func (x *EventApplicationUnbondingEnd) GetApplication() *Application {
 	if x != nil {
-		return x.AppAddress
+		return x.Application
 	}
-	return ""
+	return nil
 }
 
 // EventApplicationUnbondingCanceled is emitted when an application which was unbonding
@@ -4936,7 +4780,7 @@ type EventApplicationUnbondingCanceled struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	AppAddress string `protobuf:"bytes,1,opt,name=app_address,json=appAddress,proto3" json:"app_address,omitempty"`
+	Application *Application `protobuf:"bytes,1,opt,name=application,proto3" json:"application,omitempty"`
 }
 
 func (x *EventApplicationUnbondingCanceled) Reset() {
@@ -4959,11 +4803,11 @@ func (*EventApplicationUnbondingCanceled) Descriptor() ([]byte, []int) {
 	return file_poktroll_application_event_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *EventApplicationUnbondingCanceled) GetAppAddress() string {
+func (x *EventApplicationUnbondingCanceled) GetApplication() *Application {
 	if x != nil {
-		return x.AppAddress
+		return x.Application
 	}
-	return ""
+	return nil
 }
 
 // EventApplicationUnbondedBelowMinStake is emitted when an application has been
@@ -4974,7 +4818,7 @@ type EventApplicationUnbondedBelowMinStake struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	AppAddress string `protobuf:"bytes,1,opt,name=app_address,json=appAddress,proto3" json:"app_address,omitempty"`
+	Application *Application `protobuf:"bytes,1,opt,name=application,proto3" json:"application,omitempty"`
 }
 
 func (x *EventApplicationUnbondedBelowMinStake) Reset() {
@@ -4997,11 +4841,11 @@ func (*EventApplicationUnbondedBelowMinStake) Descriptor() ([]byte, []int) {
 	return file_poktroll_application_event_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *EventApplicationUnbondedBelowMinStake) GetAppAddress() string {
+func (x *EventApplicationUnbondedBelowMinStake) GetApplication() *Application {
 	if x != nil {
-		return x.AppAddress
+		return x.Application
 	}
-	return ""
+	return nil
 }
 
 var File_poktroll_application_event_proto protoreflect.FileDescriptor
@@ -5019,62 +4863,25 @@ var file_poktroll_application_event_proto_rawDesc = []byte{
 	0x6f, 0x6c, 0x6c, 0x2f, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2f, 0x73, 0x65, 0x72, 0x76, 0x69,
 	0x63, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x20, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f,
 	0x6c, 0x6c, 0x2f, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2f, 0x74,
-	0x79, 0x70, 0x65, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xcb, 0x01, 0x0a, 0x16, 0x45,
-	0x76, 0x65, 0x6e, 0x74, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53,
-	0x74, 0x61, 0x6b, 0x65, 0x64, 0x12, 0x39, 0x0a, 0x0b, 0x61, 0x70, 0x70, 0x5f, 0x61, 0x64, 0x64,
-	0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14,
-	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74,
-	0x72, 0x69, 0x6e, 0x67, 0x52, 0x0a, 0x61, 0x70, 0x70, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73,
-	0x12, 0x2f, 0x0a, 0x05, 0x73, 0x74, 0x61, 0x6b, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32,
-	0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31,
-	0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x52, 0x05, 0x73, 0x74, 0x61, 0x6b,
-	0x65, 0x12, 0x45, 0x0a, 0x08, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x73, 0x18, 0x03, 0x20,
-	0x03, 0x28, 0x0b, 0x32, 0x29, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73,
-	0x68, 0x61, 0x72, 0x65, 0x64, 0x2e, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f,
-	0x6e, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x52, 0x08,
-	0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x73, 0x22, 0x91, 0x01, 0x0a, 0x11, 0x45, 0x76, 0x65,
-	0x6e, 0x74, 0x52, 0x65, 0x64, 0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x39,
-	0x0a, 0x0b, 0x61, 0x70, 0x70, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20,
-	0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e,
-	0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x0a, 0x61,
-	0x70, 0x70, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x41, 0x0a, 0x0f, 0x67, 0x61, 0x74,
-	0x65, 0x77, 0x61, 0x79, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x02, 0x20, 0x01,
-	0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41,
-	0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x0e, 0x67, 0x61,
-	0x74, 0x65, 0x77, 0x61, 0x79, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x22, 0xf2, 0x01, 0x0a,
-	0x12, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x54, 0x72, 0x61, 0x6e, 0x73, 0x66, 0x65, 0x72, 0x42, 0x65,
-	0x67, 0x69, 0x6e, 0x12, 0x3f, 0x0a, 0x0e, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x5f, 0x61, 0x64,
-	0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d,
-	0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53,
-	0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x0d, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x41, 0x64, 0x64,
-	0x72, 0x65, 0x73, 0x73, 0x12, 0x49, 0x0a, 0x13, 0x64, 0x65, 0x73, 0x74, 0x69, 0x6e, 0x61, 0x74,
-	0x69, 0x6f, 0x6e, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28,
-	0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64,
-	0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x12, 0x64, 0x65, 0x73,
-	0x74, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12,
-	0x50, 0x0a, 0x12, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x5f, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63,
-	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x21, 0x2e, 0x70, 0x6f,
-	0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69,
-	0x6f, 0x6e, 0x2e, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x11,
-	0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f,
-	0x6e, 0x22, 0xfa, 0x01, 0x0a, 0x10, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x54, 0x72, 0x61, 0x6e, 0x73,
-	0x66, 0x65, 0x72, 0x45, 0x6e, 0x64, 0x12, 0x3f, 0x0a, 0x0e, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65,
-	0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18,
-	0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65,
-	0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x0d, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65,
-	0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x49, 0x0a, 0x13, 0x64, 0x65, 0x73, 0x74, 0x69,
-	0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x02,
+	0x79, 0x70, 0x65, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x6e, 0x0a, 0x16, 0x45, 0x76,
+	0x65, 0x6e, 0x74, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x74,
+	0x61, 0x6b, 0x65, 0x64, 0x12, 0x54, 0x0a, 0x0b, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x21, 0x2e, 0x70, 0x6f, 0x6b, 0x74,
+	0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x2e, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x42, 0x0f, 0xea, 0xde,
+	0x1f, 0x0b, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x0b, 0x61,
+	0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x22, 0x91, 0x01, 0x0a, 0x11, 0x45,
+	0x76, 0x65, 0x6e, 0x74, 0x52, 0x65, 0x64, 0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x12, 0x39, 0x0a, 0x0b, 0x61, 0x70, 0x70, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
+	0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52,
+	0x0a, 0x61, 0x70, 0x70, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x41, 0x0a, 0x0f, 0x67,
+	0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x02,
 	0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73,
-	0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x12,
-	0x64, 0x65, 0x73, 0x74, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x41, 0x64, 0x64, 0x72, 0x65,
-	0x73, 0x73, 0x12, 0x5a, 0x0a, 0x17, 0x64, 0x65, 0x73, 0x74, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f,
-	0x6e, 0x5f, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x03, 0x20,
-	0x01, 0x28, 0x0b, 0x32, 0x21, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61,
-	0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x41, 0x70, 0x70, 0x6c, 0x69,
-	0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x16, 0x64, 0x65, 0x73, 0x74, 0x69, 0x6e, 0x61, 0x74,
-	0x69, 0x6f, 0x6e, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x22, 0x88,
-	0x02, 0x0a, 0x12, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x54, 0x72, 0x61, 0x6e, 0x73, 0x66, 0x65, 0x72,
-	0x45, 0x72, 0x72, 0x6f, 0x72, 0x12, 0x3f, 0x0a, 0x0e, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x5f,
+	0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x0e,
+	0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x22, 0xf2,
+	0x01, 0x0a, 0x12, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x54, 0x72, 0x61, 0x6e, 0x73, 0x66, 0x65, 0x72,
+	0x42, 0x65, 0x67, 0x69, 0x6e, 0x12, 0x3f, 0x0a, 0x0e, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x5f,
 	0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2,
 	0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73,
 	0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x0d, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x41,
@@ -5088,45 +4895,82 @@ var file_poktroll_application_event_proto_rawDesc = []byte{
 	0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61,
 	0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e,
 	0x52, 0x11, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74,
-	0x69, 0x6f, 0x6e, 0x12, 0x14, 0x0a, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x18, 0x04, 0x20, 0x01,
-	0x28, 0x09, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x22, 0x5b, 0x0a, 0x1e, 0x45, 0x76, 0x65,
-	0x6e, 0x74, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x55, 0x6e, 0x62,
-	0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x42, 0x65, 0x67, 0x69, 0x6e, 0x12, 0x39, 0x0a, 0x0b, 0x61,
-	0x70, 0x70, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
+	0x69, 0x6f, 0x6e, 0x22, 0xfa, 0x01, 0x0a, 0x10, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x54, 0x72, 0x61,
+	0x6e, 0x73, 0x66, 0x65, 0x72, 0x45, 0x6e, 0x64, 0x12, 0x3f, 0x0a, 0x0e, 0x73, 0x6f, 0x75, 0x72,
+	0x63, 0x65, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
 	0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64,
-	0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x0a, 0x61, 0x70, 0x70, 0x41,
-	0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x22, 0x59, 0x0a, 0x1c, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x41,
-	0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x55, 0x6e, 0x62, 0x6f, 0x6e, 0x64,
-	0x69, 0x6e, 0x67, 0x45, 0x6e, 0x64, 0x12, 0x39, 0x0a, 0x0b, 0x61, 0x70, 0x70, 0x5f, 0x61, 0x64,
-	0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d,
-	0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53,
-	0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x0a, 0x61, 0x70, 0x70, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73,
-	0x73, 0x22, 0x5e, 0x0a, 0x21, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63,
-	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x55, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x43, 0x61,
-	0x6e, 0x63, 0x65, 0x6c, 0x65, 0x64, 0x12, 0x39, 0x0a, 0x0b, 0x61, 0x70, 0x70, 0x5f, 0x61, 0x64,
-	0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d,
-	0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53,
-	0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x0a, 0x61, 0x70, 0x70, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73,
-	0x73, 0x22, 0x62, 0x0a, 0x25, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63,
-	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x55, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x65, 0x64, 0x42, 0x65, 0x6c,
-	0x6f, 0x77, 0x4d, 0x69, 0x6e, 0x53, 0x74, 0x61, 0x6b, 0x65, 0x12, 0x39, 0x0a, 0x0b, 0x61, 0x70,
-	0x70, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42,
+	0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x0d, 0x73, 0x6f, 0x75, 0x72,
+	0x63, 0x65, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x49, 0x0a, 0x13, 0x64, 0x65, 0x73,
+	0x74, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73,
+	0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d,
+	0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67,
+	0x52, 0x12, 0x64, 0x65, 0x73, 0x74, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x41, 0x64, 0x64,
+	0x72, 0x65, 0x73, 0x73, 0x12, 0x5a, 0x0a, 0x17, 0x64, 0x65, 0x73, 0x74, 0x69, 0x6e, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0x5f, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18,
+	0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x21, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c,
+	0x2e, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x41, 0x70, 0x70,
+	0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x16, 0x64, 0x65, 0x73, 0x74, 0x69, 0x6e,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x22, 0x88, 0x02, 0x0a, 0x12, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x54, 0x72, 0x61, 0x6e, 0x73, 0x66,
+	0x65, 0x72, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x12, 0x3f, 0x0a, 0x0e, 0x73, 0x6f, 0x75, 0x72, 0x63,
+	0x65, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42,
 	0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72,
-	0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x0a, 0x61, 0x70, 0x70, 0x41, 0x64,
-	0x64, 0x72, 0x65, 0x73, 0x73, 0x42, 0xc2, 0x01, 0xd8, 0xe2, 0x1e, 0x01, 0x0a, 0x18, 0x63, 0x6f,
-	0x6d, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70, 0x70, 0x6c, 0x69,
-	0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x42, 0x0a, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x50, 0x72, 0x6f,
-	0x74, 0x6f, 0x50, 0x01, 0x5a, 0x25, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e,
-	0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f,
-	0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xa2, 0x02, 0x03, 0x50, 0x41,
-	0x58, 0xaa, 0x02, 0x14, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x41, 0x70, 0x70,
-	0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xca, 0x02, 0x14, 0x50, 0x6f, 0x6b, 0x74, 0x72,
-	0x6f, 0x6c, 0x6c, 0x5c, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xe2,
-	0x02, 0x20, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x41, 0x70, 0x70, 0x6c, 0x69,
-	0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61,
-	0x74, 0x61, 0xea, 0x02, 0x15, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x3a, 0x3a, 0x41,
-	0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74,
-	0x6f, 0x33,
+	0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x0d, 0x73, 0x6f, 0x75, 0x72, 0x63,
+	0x65, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x49, 0x0a, 0x13, 0x64, 0x65, 0x73, 0x74,
+	0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18,
+	0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
+	0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52,
+	0x12, 0x64, 0x65, 0x73, 0x74, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x41, 0x64, 0x64, 0x72,
+	0x65, 0x73, 0x73, 0x12, 0x50, 0x0a, 0x12, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x5f, 0x61, 0x70,
+	0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x21, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70, 0x70, 0x6c, 0x69,
+	0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x52, 0x11, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x14, 0x0a, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x18, 0x04,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x22, 0x76, 0x0a, 0x1e, 0x45,
+	0x76, 0x65, 0x6e, 0x74, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x55,
+	0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x42, 0x65, 0x67, 0x69, 0x6e, 0x12, 0x54, 0x0a,
+	0x0b, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x0b, 0x32, 0x21, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70,
+	0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x42, 0x0f, 0xea, 0xde, 0x1f, 0x0b, 0x61, 0x70, 0x70, 0x6c, 0x69,
+	0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x0b, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0x22, 0x74, 0x0a, 0x1c, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x41, 0x70, 0x70, 0x6c,
+	0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x55, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67,
+	0x45, 0x6e, 0x64, 0x12, 0x54, 0x0a, 0x0b, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x21, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72,
+	0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e,
+	0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x42, 0x0f, 0xea, 0xde, 0x1f,
+	0x0b, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x0b, 0x61, 0x70,
+	0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x22, 0x79, 0x0a, 0x21, 0x45, 0x76, 0x65,
+	0x6e, 0x74, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x55, 0x6e, 0x62,
+	0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x65, 0x64, 0x12, 0x54,
+	0x0a, 0x0b, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x21, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61,
+	0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x41, 0x70, 0x70, 0x6c, 0x69,
+	0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x42, 0x0f, 0xea, 0xde, 0x1f, 0x0b, 0x61, 0x70, 0x70, 0x6c,
+	0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x0b, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61,
+	0x74, 0x69, 0x6f, 0x6e, 0x22, 0x7d, 0x0a, 0x25, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x41, 0x70, 0x70,
+	0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x55, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x65, 0x64,
+	0x42, 0x65, 0x6c, 0x6f, 0x77, 0x4d, 0x69, 0x6e, 0x53, 0x74, 0x61, 0x6b, 0x65, 0x12, 0x54, 0x0a,
+	0x0b, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x0b, 0x32, 0x21, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70,
+	0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x42, 0x0f, 0xea, 0xde, 0x1f, 0x0b, 0x61, 0x70, 0x70, 0x6c, 0x69,
+	0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x0b, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0x42, 0xc2, 0x01, 0xd8, 0xe2, 0x1e, 0x01, 0x0a, 0x18, 0x63, 0x6f, 0x6d, 0x2e,
+	0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61,
+	0x74, 0x69, 0x6f, 0x6e, 0x42, 0x0a, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x50, 0x72, 0x6f, 0x74, 0x6f,
+	0x50, 0x01, 0x5a, 0x25, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f,
+	0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x61, 0x70,
+	0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xa2, 0x02, 0x03, 0x50, 0x41, 0x58, 0xaa,
+	0x02, 0x14, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x41, 0x70, 0x70, 0x6c, 0x69,
+	0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xca, 0x02, 0x14, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c,
+	0x6c, 0x5c, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xe2, 0x02, 0x20,
+	0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61,
+	0x74, 0x69, 0x6f, 0x6e, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61,
+	0xea, 0x02, 0x15, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x3a, 0x3a, 0x41, 0x70, 0x70,
+	0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -5152,21 +4996,22 @@ var file_poktroll_application_event_proto_goTypes = []interface{}{
 	(*EventApplicationUnbondingEnd)(nil),          // 6: poktroll.application.EventApplicationUnbondingEnd
 	(*EventApplicationUnbondingCanceled)(nil),     // 7: poktroll.application.EventApplicationUnbondingCanceled
 	(*EventApplicationUnbondedBelowMinStake)(nil), // 8: poktroll.application.EventApplicationUnbondedBelowMinStake
-	(*v1beta1.Coin)(nil),                          // 9: cosmos.base.v1beta1.Coin
-	(*shared.ApplicationServiceConfig)(nil),       // 10: poktroll.shared.ApplicationServiceConfig
-	(*Application)(nil),                           // 11: poktroll.application.Application
+	(*Application)(nil),                           // 9: poktroll.application.Application
 }
 var file_poktroll_application_event_proto_depIdxs = []int32{
-	9,  // 0: poktroll.application.EventApplicationStaked.stake:type_name -> cosmos.base.v1beta1.Coin
-	10, // 1: poktroll.application.EventApplicationStaked.services:type_name -> poktroll.shared.ApplicationServiceConfig
-	11, // 2: poktroll.application.EventTransferBegin.source_application:type_name -> poktroll.application.Application
-	11, // 3: poktroll.application.EventTransferEnd.destination_application:type_name -> poktroll.application.Application
-	11, // 4: poktroll.application.EventTransferError.source_application:type_name -> poktroll.application.Application
-	5,  // [5:5] is the sub-list for method output_type
-	5,  // [5:5] is the sub-list for method input_type
-	5,  // [5:5] is the sub-list for extension type_name
-	5,  // [5:5] is the sub-list for extension extendee
-	0,  // [0:5] is the sub-list for field type_name
+	9, // 0: poktroll.application.EventApplicationStaked.application:type_name -> poktroll.application.Application
+	9, // 1: poktroll.application.EventTransferBegin.source_application:type_name -> poktroll.application.Application
+	9, // 2: poktroll.application.EventTransferEnd.destination_application:type_name -> poktroll.application.Application
+	9, // 3: poktroll.application.EventTransferError.source_application:type_name -> poktroll.application.Application
+	9, // 4: poktroll.application.EventApplicationUnbondingBegin.application:type_name -> poktroll.application.Application
+	9, // 5: poktroll.application.EventApplicationUnbondingEnd.application:type_name -> poktroll.application.Application
+	9, // 6: poktroll.application.EventApplicationUnbondingCanceled.application:type_name -> poktroll.application.Application
+	9, // 7: poktroll.application.EventApplicationUnbondedBelowMinStake.application:type_name -> poktroll.application.Application
+	8, // [8:8] is the sub-list for method output_type
+	8, // [8:8] is the sub-list for method input_type
+	8, // [8:8] is the sub-list for extension type_name
+	8, // [8:8] is the sub-list for extension extendee
+	0, // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_poktroll_application_event_proto_init() }

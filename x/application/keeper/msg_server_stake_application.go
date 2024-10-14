@@ -109,15 +109,13 @@ func (k msgServer) StakeApplication(ctx context.Context, msg *types.MsgStakeAppl
 	// If application unbonding was canceled, emit the corresponding event.
 	if wasAppUnbonding {
 		events = append(events, &types.EventApplicationUnbondingCanceled{
-			AppAddress: foundApp.GetAddress(),
+			Application: &foundApp,
 		})
 	}
 
 	// ALWAYS emit an application staked event.
 	events = append(events, &types.EventApplicationStaked{
-		AppAddress: foundApp.GetAddress(),
-		Stake:      foundApp.Stake,
-		Services:   foundApp.ServiceConfigs,
+		Application: &foundApp,
 	})
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)

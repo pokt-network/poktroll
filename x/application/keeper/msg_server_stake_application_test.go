@@ -49,11 +49,7 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 
 	// Assert that the EventApplicationStaked event is emitted.
 	expectedEvent, err := cosmostypes.TypedEventToEvent(
-		&apptypes.EventApplicationStaked{
-			AppAddress: stakeMsg.GetAddress(),
-			Stake:      stakeMsg.GetStake(),
-			Services:   stakeMsg.GetServices(),
-		},
+		&apptypes.EventApplicationStaked{Application: app},
 	)
 	require.NoError(t, err)
 
@@ -95,11 +91,7 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 
 	// Assert that the EventApplicationStaked event is emitted.
 	expectedEvent, err = cosmostypes.TypedEventToEvent(
-		&apptypes.EventApplicationStaked{
-			AppAddress: updateStakeMsg.GetAddress(),
-			Stake:      updateStakeMsg.GetStake(),
-			Services:   updateStakeMsg.GetServices(),
-		},
+		&apptypes.EventApplicationStaked{Application: &foundApp},
 	)
 	require.NoError(t, err)
 
