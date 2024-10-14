@@ -45,9 +45,32 @@ func TestGenesisState_Validate(t *testing.T) {
 				ServiceList: []sharedtypes.Service{
 					*svc1, *svc2,
 				},
+				RelayMiningDifficultyList: []types.RelayMiningDifficulty{
+					{
+						ServiceId: "0",
+					},
+					{
+						ServiceId: "1",
+					},
+				},
 				// this line is used by starport scaffolding # types/genesis/validField
 			},
 			expectedErr: nil,
+		},
+		{
+			desc: "invalid - duplicated relayMiningDifficulty",
+			genState: &types.GenesisState{
+				Params: types.DefaultParams(),
+				RelayMiningDifficultyList: []types.RelayMiningDifficulty{
+					{
+						ServiceId: "0",
+					},
+					{
+						ServiceId: "0",
+					},
+				},
+			},
+			expectedErr: types.ErrServiceDuplicateIndex,
 		},
 		{
 			desc: "invalid - duplicate service ID",

@@ -2,6 +2,7 @@
 package proof
 
 import (
+	v1beta1 "cosmossdk.io/api/cosmos/base/v1beta1"
 	fmt "fmt"
 	runtime "github.com/cosmos/cosmos-proto/runtime"
 	_ "github.com/cosmos/gogoproto/gogoproto"
@@ -14,10 +15,12 @@ import (
 )
 
 var (
-	md_EventClaimCreated                   protoreflect.MessageDescriptor
-	fd_EventClaimCreated_claim             protoreflect.FieldDescriptor
-	fd_EventClaimCreated_num_relays        protoreflect.FieldDescriptor
-	fd_EventClaimCreated_num_compute_units protoreflect.FieldDescriptor
+	md_EventClaimCreated                             protoreflect.MessageDescriptor
+	fd_EventClaimCreated_claim                       protoreflect.FieldDescriptor
+	fd_EventClaimCreated_num_relays                  protoreflect.FieldDescriptor
+	fd_EventClaimCreated_num_claimed_compute_units   protoreflect.FieldDescriptor
+	fd_EventClaimCreated_num_estimated_compute_units protoreflect.FieldDescriptor
+	fd_EventClaimCreated_claimed_amount_upokt        protoreflect.FieldDescriptor
 )
 
 func init() {
@@ -25,7 +28,9 @@ func init() {
 	md_EventClaimCreated = File_poktroll_proof_event_proto.Messages().ByName("EventClaimCreated")
 	fd_EventClaimCreated_claim = md_EventClaimCreated.Fields().ByName("claim")
 	fd_EventClaimCreated_num_relays = md_EventClaimCreated.Fields().ByName("num_relays")
-	fd_EventClaimCreated_num_compute_units = md_EventClaimCreated.Fields().ByName("num_compute_units")
+	fd_EventClaimCreated_num_claimed_compute_units = md_EventClaimCreated.Fields().ByName("num_claimed_compute_units")
+	fd_EventClaimCreated_num_estimated_compute_units = md_EventClaimCreated.Fields().ByName("num_estimated_compute_units")
+	fd_EventClaimCreated_claimed_amount_upokt = md_EventClaimCreated.Fields().ByName("claimed_amount_upokt")
 }
 
 var _ protoreflect.Message = (*fastReflection_EventClaimCreated)(nil)
@@ -105,9 +110,21 @@ func (x *fastReflection_EventClaimCreated) Range(f func(protoreflect.FieldDescri
 			return
 		}
 	}
-	if x.NumComputeUnits != uint64(0) {
-		value := protoreflect.ValueOfUint64(x.NumComputeUnits)
-		if !f(fd_EventClaimCreated_num_compute_units, value) {
+	if x.NumClaimedComputeUnits != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.NumClaimedComputeUnits)
+		if !f(fd_EventClaimCreated_num_claimed_compute_units, value) {
+			return
+		}
+	}
+	if x.NumEstimatedComputeUnits != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.NumEstimatedComputeUnits)
+		if !f(fd_EventClaimCreated_num_estimated_compute_units, value) {
+			return
+		}
+	}
+	if x.ClaimedAmountUpokt != nil {
+		value := protoreflect.ValueOfMessage(x.ClaimedAmountUpokt.ProtoReflect())
+		if !f(fd_EventClaimCreated_claimed_amount_upokt, value) {
 			return
 		}
 	}
@@ -130,8 +147,12 @@ func (x *fastReflection_EventClaimCreated) Has(fd protoreflect.FieldDescriptor) 
 		return x.Claim != nil
 	case "poktroll.proof.EventClaimCreated.num_relays":
 		return x.NumRelays != uint64(0)
-	case "poktroll.proof.EventClaimCreated.num_compute_units":
-		return x.NumComputeUnits != uint64(0)
+	case "poktroll.proof.EventClaimCreated.num_claimed_compute_units":
+		return x.NumClaimedComputeUnits != uint64(0)
+	case "poktroll.proof.EventClaimCreated.num_estimated_compute_units":
+		return x.NumEstimatedComputeUnits != uint64(0)
+	case "poktroll.proof.EventClaimCreated.claimed_amount_upokt":
+		return x.ClaimedAmountUpokt != nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.EventClaimCreated"))
@@ -152,8 +173,12 @@ func (x *fastReflection_EventClaimCreated) Clear(fd protoreflect.FieldDescriptor
 		x.Claim = nil
 	case "poktroll.proof.EventClaimCreated.num_relays":
 		x.NumRelays = uint64(0)
-	case "poktroll.proof.EventClaimCreated.num_compute_units":
-		x.NumComputeUnits = uint64(0)
+	case "poktroll.proof.EventClaimCreated.num_claimed_compute_units":
+		x.NumClaimedComputeUnits = uint64(0)
+	case "poktroll.proof.EventClaimCreated.num_estimated_compute_units":
+		x.NumEstimatedComputeUnits = uint64(0)
+	case "poktroll.proof.EventClaimCreated.claimed_amount_upokt":
+		x.ClaimedAmountUpokt = nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.EventClaimCreated"))
@@ -176,9 +201,15 @@ func (x *fastReflection_EventClaimCreated) Get(descriptor protoreflect.FieldDesc
 	case "poktroll.proof.EventClaimCreated.num_relays":
 		value := x.NumRelays
 		return protoreflect.ValueOfUint64(value)
-	case "poktroll.proof.EventClaimCreated.num_compute_units":
-		value := x.NumComputeUnits
+	case "poktroll.proof.EventClaimCreated.num_claimed_compute_units":
+		value := x.NumClaimedComputeUnits
 		return protoreflect.ValueOfUint64(value)
+	case "poktroll.proof.EventClaimCreated.num_estimated_compute_units":
+		value := x.NumEstimatedComputeUnits
+		return protoreflect.ValueOfUint64(value)
+	case "poktroll.proof.EventClaimCreated.claimed_amount_upokt":
+		value := x.ClaimedAmountUpokt
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.EventClaimCreated"))
@@ -203,8 +234,12 @@ func (x *fastReflection_EventClaimCreated) Set(fd protoreflect.FieldDescriptor, 
 		x.Claim = value.Message().Interface().(*Claim)
 	case "poktroll.proof.EventClaimCreated.num_relays":
 		x.NumRelays = value.Uint()
-	case "poktroll.proof.EventClaimCreated.num_compute_units":
-		x.NumComputeUnits = value.Uint()
+	case "poktroll.proof.EventClaimCreated.num_claimed_compute_units":
+		x.NumClaimedComputeUnits = value.Uint()
+	case "poktroll.proof.EventClaimCreated.num_estimated_compute_units":
+		x.NumEstimatedComputeUnits = value.Uint()
+	case "poktroll.proof.EventClaimCreated.claimed_amount_upokt":
+		x.ClaimedAmountUpokt = value.Message().Interface().(*v1beta1.Coin)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.EventClaimCreated"))
@@ -230,10 +265,17 @@ func (x *fastReflection_EventClaimCreated) Mutable(fd protoreflect.FieldDescript
 			x.Claim = new(Claim)
 		}
 		return protoreflect.ValueOfMessage(x.Claim.ProtoReflect())
+	case "poktroll.proof.EventClaimCreated.claimed_amount_upokt":
+		if x.ClaimedAmountUpokt == nil {
+			x.ClaimedAmountUpokt = new(v1beta1.Coin)
+		}
+		return protoreflect.ValueOfMessage(x.ClaimedAmountUpokt.ProtoReflect())
 	case "poktroll.proof.EventClaimCreated.num_relays":
 		panic(fmt.Errorf("field num_relays of message poktroll.proof.EventClaimCreated is not mutable"))
-	case "poktroll.proof.EventClaimCreated.num_compute_units":
-		panic(fmt.Errorf("field num_compute_units of message poktroll.proof.EventClaimCreated is not mutable"))
+	case "poktroll.proof.EventClaimCreated.num_claimed_compute_units":
+		panic(fmt.Errorf("field num_claimed_compute_units of message poktroll.proof.EventClaimCreated is not mutable"))
+	case "poktroll.proof.EventClaimCreated.num_estimated_compute_units":
+		panic(fmt.Errorf("field num_estimated_compute_units of message poktroll.proof.EventClaimCreated is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.EventClaimCreated"))
@@ -252,8 +294,13 @@ func (x *fastReflection_EventClaimCreated) NewField(fd protoreflect.FieldDescrip
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	case "poktroll.proof.EventClaimCreated.num_relays":
 		return protoreflect.ValueOfUint64(uint64(0))
-	case "poktroll.proof.EventClaimCreated.num_compute_units":
+	case "poktroll.proof.EventClaimCreated.num_claimed_compute_units":
 		return protoreflect.ValueOfUint64(uint64(0))
+	case "poktroll.proof.EventClaimCreated.num_estimated_compute_units":
+		return protoreflect.ValueOfUint64(uint64(0))
+	case "poktroll.proof.EventClaimCreated.claimed_amount_upokt":
+		m := new(v1beta1.Coin)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.EventClaimCreated"))
@@ -330,8 +377,15 @@ func (x *fastReflection_EventClaimCreated) ProtoMethods() *protoiface.Methods {
 		if x.NumRelays != 0 {
 			n += 1 + runtime.Sov(uint64(x.NumRelays))
 		}
-		if x.NumComputeUnits != 0 {
-			n += 1 + runtime.Sov(uint64(x.NumComputeUnits))
+		if x.NumClaimedComputeUnits != 0 {
+			n += 1 + runtime.Sov(uint64(x.NumClaimedComputeUnits))
+		}
+		if x.NumEstimatedComputeUnits != 0 {
+			n += 1 + runtime.Sov(uint64(x.NumEstimatedComputeUnits))
+		}
+		if x.ClaimedAmountUpokt != nil {
+			l = options.Size(x.ClaimedAmountUpokt)
+			n += 1 + l + runtime.Sov(uint64(l))
 		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
@@ -362,10 +416,29 @@ func (x *fastReflection_EventClaimCreated) ProtoMethods() *protoiface.Methods {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if x.NumComputeUnits != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.NumComputeUnits))
+		if x.ClaimedAmountUpokt != nil {
+			encoded, err := options.Marshal(x.ClaimedAmountUpokt)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			i--
-			dAtA[i] = 0x18
+			dAtA[i] = 0x32
+		}
+		if x.NumEstimatedComputeUnits != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.NumEstimatedComputeUnits))
+			i--
+			dAtA[i] = 0x28
+		}
+		if x.NumClaimedComputeUnits != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.NumClaimedComputeUnits))
+			i--
+			dAtA[i] = 0x20
 		}
 		if x.NumRelays != 0 {
 			i = runtime.EncodeVarint(dAtA, i, uint64(x.NumRelays))
@@ -490,11 +563,11 @@ func (x *fastReflection_EventClaimCreated) ProtoMethods() *protoiface.Methods {
 						break
 					}
 				}
-			case 3:
+			case 4:
 				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field NumComputeUnits", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field NumClaimedComputeUnits", wireType)
 				}
-				x.NumComputeUnits = 0
+				x.NumClaimedComputeUnits = 0
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -504,11 +577,66 @@ func (x *fastReflection_EventClaimCreated) ProtoMethods() *protoiface.Methods {
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					x.NumComputeUnits |= uint64(b&0x7F) << shift
+					x.NumClaimedComputeUnits |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
+			case 5:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field NumEstimatedComputeUnits", wireType)
+				}
+				x.NumEstimatedComputeUnits = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.NumEstimatedComputeUnits |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			case 6:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ClaimedAmountUpokt", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if x.ClaimedAmountUpokt == nil {
+					x.ClaimedAmountUpokt = &v1beta1.Coin{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.ClaimedAmountUpokt); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
 				skippy, err := runtime.Skip(dAtA[iNdEx:])
@@ -545,10 +673,12 @@ func (x *fastReflection_EventClaimCreated) ProtoMethods() *protoiface.Methods {
 }
 
 var (
-	md_EventClaimUpdated                   protoreflect.MessageDescriptor
-	fd_EventClaimUpdated_claim             protoreflect.FieldDescriptor
-	fd_EventClaimUpdated_num_relays        protoreflect.FieldDescriptor
-	fd_EventClaimUpdated_num_compute_units protoreflect.FieldDescriptor
+	md_EventClaimUpdated                             protoreflect.MessageDescriptor
+	fd_EventClaimUpdated_claim                       protoreflect.FieldDescriptor
+	fd_EventClaimUpdated_num_relays                  protoreflect.FieldDescriptor
+	fd_EventClaimUpdated_num_claimed_compute_units   protoreflect.FieldDescriptor
+	fd_EventClaimUpdated_num_estimated_compute_units protoreflect.FieldDescriptor
+	fd_EventClaimUpdated_claimed_amount_upokt        protoreflect.FieldDescriptor
 )
 
 func init() {
@@ -556,7 +686,9 @@ func init() {
 	md_EventClaimUpdated = File_poktroll_proof_event_proto.Messages().ByName("EventClaimUpdated")
 	fd_EventClaimUpdated_claim = md_EventClaimUpdated.Fields().ByName("claim")
 	fd_EventClaimUpdated_num_relays = md_EventClaimUpdated.Fields().ByName("num_relays")
-	fd_EventClaimUpdated_num_compute_units = md_EventClaimUpdated.Fields().ByName("num_compute_units")
+	fd_EventClaimUpdated_num_claimed_compute_units = md_EventClaimUpdated.Fields().ByName("num_claimed_compute_units")
+	fd_EventClaimUpdated_num_estimated_compute_units = md_EventClaimUpdated.Fields().ByName("num_estimated_compute_units")
+	fd_EventClaimUpdated_claimed_amount_upokt = md_EventClaimUpdated.Fields().ByName("claimed_amount_upokt")
 }
 
 var _ protoreflect.Message = (*fastReflection_EventClaimUpdated)(nil)
@@ -636,9 +768,21 @@ func (x *fastReflection_EventClaimUpdated) Range(f func(protoreflect.FieldDescri
 			return
 		}
 	}
-	if x.NumComputeUnits != uint64(0) {
-		value := protoreflect.ValueOfUint64(x.NumComputeUnits)
-		if !f(fd_EventClaimUpdated_num_compute_units, value) {
+	if x.NumClaimedComputeUnits != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.NumClaimedComputeUnits)
+		if !f(fd_EventClaimUpdated_num_claimed_compute_units, value) {
+			return
+		}
+	}
+	if x.NumEstimatedComputeUnits != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.NumEstimatedComputeUnits)
+		if !f(fd_EventClaimUpdated_num_estimated_compute_units, value) {
+			return
+		}
+	}
+	if x.ClaimedAmountUpokt != nil {
+		value := protoreflect.ValueOfMessage(x.ClaimedAmountUpokt.ProtoReflect())
+		if !f(fd_EventClaimUpdated_claimed_amount_upokt, value) {
 			return
 		}
 	}
@@ -661,8 +805,12 @@ func (x *fastReflection_EventClaimUpdated) Has(fd protoreflect.FieldDescriptor) 
 		return x.Claim != nil
 	case "poktroll.proof.EventClaimUpdated.num_relays":
 		return x.NumRelays != uint64(0)
-	case "poktroll.proof.EventClaimUpdated.num_compute_units":
-		return x.NumComputeUnits != uint64(0)
+	case "poktroll.proof.EventClaimUpdated.num_claimed_compute_units":
+		return x.NumClaimedComputeUnits != uint64(0)
+	case "poktroll.proof.EventClaimUpdated.num_estimated_compute_units":
+		return x.NumEstimatedComputeUnits != uint64(0)
+	case "poktroll.proof.EventClaimUpdated.claimed_amount_upokt":
+		return x.ClaimedAmountUpokt != nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.EventClaimUpdated"))
@@ -683,8 +831,12 @@ func (x *fastReflection_EventClaimUpdated) Clear(fd protoreflect.FieldDescriptor
 		x.Claim = nil
 	case "poktroll.proof.EventClaimUpdated.num_relays":
 		x.NumRelays = uint64(0)
-	case "poktroll.proof.EventClaimUpdated.num_compute_units":
-		x.NumComputeUnits = uint64(0)
+	case "poktroll.proof.EventClaimUpdated.num_claimed_compute_units":
+		x.NumClaimedComputeUnits = uint64(0)
+	case "poktroll.proof.EventClaimUpdated.num_estimated_compute_units":
+		x.NumEstimatedComputeUnits = uint64(0)
+	case "poktroll.proof.EventClaimUpdated.claimed_amount_upokt":
+		x.ClaimedAmountUpokt = nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.EventClaimUpdated"))
@@ -707,9 +859,15 @@ func (x *fastReflection_EventClaimUpdated) Get(descriptor protoreflect.FieldDesc
 	case "poktroll.proof.EventClaimUpdated.num_relays":
 		value := x.NumRelays
 		return protoreflect.ValueOfUint64(value)
-	case "poktroll.proof.EventClaimUpdated.num_compute_units":
-		value := x.NumComputeUnits
+	case "poktroll.proof.EventClaimUpdated.num_claimed_compute_units":
+		value := x.NumClaimedComputeUnits
 		return protoreflect.ValueOfUint64(value)
+	case "poktroll.proof.EventClaimUpdated.num_estimated_compute_units":
+		value := x.NumEstimatedComputeUnits
+		return protoreflect.ValueOfUint64(value)
+	case "poktroll.proof.EventClaimUpdated.claimed_amount_upokt":
+		value := x.ClaimedAmountUpokt
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.EventClaimUpdated"))
@@ -734,8 +892,12 @@ func (x *fastReflection_EventClaimUpdated) Set(fd protoreflect.FieldDescriptor, 
 		x.Claim = value.Message().Interface().(*Claim)
 	case "poktroll.proof.EventClaimUpdated.num_relays":
 		x.NumRelays = value.Uint()
-	case "poktroll.proof.EventClaimUpdated.num_compute_units":
-		x.NumComputeUnits = value.Uint()
+	case "poktroll.proof.EventClaimUpdated.num_claimed_compute_units":
+		x.NumClaimedComputeUnits = value.Uint()
+	case "poktroll.proof.EventClaimUpdated.num_estimated_compute_units":
+		x.NumEstimatedComputeUnits = value.Uint()
+	case "poktroll.proof.EventClaimUpdated.claimed_amount_upokt":
+		x.ClaimedAmountUpokt = value.Message().Interface().(*v1beta1.Coin)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.EventClaimUpdated"))
@@ -761,10 +923,17 @@ func (x *fastReflection_EventClaimUpdated) Mutable(fd protoreflect.FieldDescript
 			x.Claim = new(Claim)
 		}
 		return protoreflect.ValueOfMessage(x.Claim.ProtoReflect())
+	case "poktroll.proof.EventClaimUpdated.claimed_amount_upokt":
+		if x.ClaimedAmountUpokt == nil {
+			x.ClaimedAmountUpokt = new(v1beta1.Coin)
+		}
+		return protoreflect.ValueOfMessage(x.ClaimedAmountUpokt.ProtoReflect())
 	case "poktroll.proof.EventClaimUpdated.num_relays":
 		panic(fmt.Errorf("field num_relays of message poktroll.proof.EventClaimUpdated is not mutable"))
-	case "poktroll.proof.EventClaimUpdated.num_compute_units":
-		panic(fmt.Errorf("field num_compute_units of message poktroll.proof.EventClaimUpdated is not mutable"))
+	case "poktroll.proof.EventClaimUpdated.num_claimed_compute_units":
+		panic(fmt.Errorf("field num_claimed_compute_units of message poktroll.proof.EventClaimUpdated is not mutable"))
+	case "poktroll.proof.EventClaimUpdated.num_estimated_compute_units":
+		panic(fmt.Errorf("field num_estimated_compute_units of message poktroll.proof.EventClaimUpdated is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.EventClaimUpdated"))
@@ -783,8 +952,13 @@ func (x *fastReflection_EventClaimUpdated) NewField(fd protoreflect.FieldDescrip
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	case "poktroll.proof.EventClaimUpdated.num_relays":
 		return protoreflect.ValueOfUint64(uint64(0))
-	case "poktroll.proof.EventClaimUpdated.num_compute_units":
+	case "poktroll.proof.EventClaimUpdated.num_claimed_compute_units":
 		return protoreflect.ValueOfUint64(uint64(0))
+	case "poktroll.proof.EventClaimUpdated.num_estimated_compute_units":
+		return protoreflect.ValueOfUint64(uint64(0))
+	case "poktroll.proof.EventClaimUpdated.claimed_amount_upokt":
+		m := new(v1beta1.Coin)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.EventClaimUpdated"))
@@ -861,8 +1035,15 @@ func (x *fastReflection_EventClaimUpdated) ProtoMethods() *protoiface.Methods {
 		if x.NumRelays != 0 {
 			n += 1 + runtime.Sov(uint64(x.NumRelays))
 		}
-		if x.NumComputeUnits != 0 {
-			n += 1 + runtime.Sov(uint64(x.NumComputeUnits))
+		if x.NumClaimedComputeUnits != 0 {
+			n += 1 + runtime.Sov(uint64(x.NumClaimedComputeUnits))
+		}
+		if x.NumEstimatedComputeUnits != 0 {
+			n += 1 + runtime.Sov(uint64(x.NumEstimatedComputeUnits))
+		}
+		if x.ClaimedAmountUpokt != nil {
+			l = options.Size(x.ClaimedAmountUpokt)
+			n += 1 + l + runtime.Sov(uint64(l))
 		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
@@ -893,10 +1074,29 @@ func (x *fastReflection_EventClaimUpdated) ProtoMethods() *protoiface.Methods {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if x.NumComputeUnits != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.NumComputeUnits))
+		if x.ClaimedAmountUpokt != nil {
+			encoded, err := options.Marshal(x.ClaimedAmountUpokt)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			i--
-			dAtA[i] = 0x18
+			dAtA[i] = 0x32
+		}
+		if x.NumEstimatedComputeUnits != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.NumEstimatedComputeUnits))
+			i--
+			dAtA[i] = 0x28
+		}
+		if x.NumClaimedComputeUnits != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.NumClaimedComputeUnits))
+			i--
+			dAtA[i] = 0x20
 		}
 		if x.NumRelays != 0 {
 			i = runtime.EncodeVarint(dAtA, i, uint64(x.NumRelays))
@@ -1021,11 +1221,11 @@ func (x *fastReflection_EventClaimUpdated) ProtoMethods() *protoiface.Methods {
 						break
 					}
 				}
-			case 3:
+			case 4:
 				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field NumComputeUnits", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field NumClaimedComputeUnits", wireType)
 				}
-				x.NumComputeUnits = 0
+				x.NumClaimedComputeUnits = 0
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -1035,11 +1235,66 @@ func (x *fastReflection_EventClaimUpdated) ProtoMethods() *protoiface.Methods {
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					x.NumComputeUnits |= uint64(b&0x7F) << shift
+					x.NumClaimedComputeUnits |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
+			case 5:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field NumEstimatedComputeUnits", wireType)
+				}
+				x.NumEstimatedComputeUnits = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.NumEstimatedComputeUnits |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			case 6:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ClaimedAmountUpokt", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if x.ClaimedAmountUpokt == nil {
+					x.ClaimedAmountUpokt = &v1beta1.Coin{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.ClaimedAmountUpokt); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
 				skippy, err := runtime.Skip(dAtA[iNdEx:])
@@ -1076,11 +1331,13 @@ func (x *fastReflection_EventClaimUpdated) ProtoMethods() *protoiface.Methods {
 }
 
 var (
-	md_EventProofSubmitted                   protoreflect.MessageDescriptor
-	fd_EventProofSubmitted_claim             protoreflect.FieldDescriptor
-	fd_EventProofSubmitted_proof             protoreflect.FieldDescriptor
-	fd_EventProofSubmitted_num_relays        protoreflect.FieldDescriptor
-	fd_EventProofSubmitted_num_compute_units protoreflect.FieldDescriptor
+	md_EventProofSubmitted                             protoreflect.MessageDescriptor
+	fd_EventProofSubmitted_claim                       protoreflect.FieldDescriptor
+	fd_EventProofSubmitted_proof                       protoreflect.FieldDescriptor
+	fd_EventProofSubmitted_num_relays                  protoreflect.FieldDescriptor
+	fd_EventProofSubmitted_num_claimed_compute_units   protoreflect.FieldDescriptor
+	fd_EventProofSubmitted_num_estimated_compute_units protoreflect.FieldDescriptor
+	fd_EventProofSubmitted_claimed_amount_upokt        protoreflect.FieldDescriptor
 )
 
 func init() {
@@ -1089,7 +1346,9 @@ func init() {
 	fd_EventProofSubmitted_claim = md_EventProofSubmitted.Fields().ByName("claim")
 	fd_EventProofSubmitted_proof = md_EventProofSubmitted.Fields().ByName("proof")
 	fd_EventProofSubmitted_num_relays = md_EventProofSubmitted.Fields().ByName("num_relays")
-	fd_EventProofSubmitted_num_compute_units = md_EventProofSubmitted.Fields().ByName("num_compute_units")
+	fd_EventProofSubmitted_num_claimed_compute_units = md_EventProofSubmitted.Fields().ByName("num_claimed_compute_units")
+	fd_EventProofSubmitted_num_estimated_compute_units = md_EventProofSubmitted.Fields().ByName("num_estimated_compute_units")
+	fd_EventProofSubmitted_claimed_amount_upokt = md_EventProofSubmitted.Fields().ByName("claimed_amount_upokt")
 }
 
 var _ protoreflect.Message = (*fastReflection_EventProofSubmitted)(nil)
@@ -1175,9 +1434,21 @@ func (x *fastReflection_EventProofSubmitted) Range(f func(protoreflect.FieldDesc
 			return
 		}
 	}
-	if x.NumComputeUnits != uint64(0) {
-		value := protoreflect.ValueOfUint64(x.NumComputeUnits)
-		if !f(fd_EventProofSubmitted_num_compute_units, value) {
+	if x.NumClaimedComputeUnits != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.NumClaimedComputeUnits)
+		if !f(fd_EventProofSubmitted_num_claimed_compute_units, value) {
+			return
+		}
+	}
+	if x.NumEstimatedComputeUnits != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.NumEstimatedComputeUnits)
+		if !f(fd_EventProofSubmitted_num_estimated_compute_units, value) {
+			return
+		}
+	}
+	if x.ClaimedAmountUpokt != nil {
+		value := protoreflect.ValueOfMessage(x.ClaimedAmountUpokt.ProtoReflect())
+		if !f(fd_EventProofSubmitted_claimed_amount_upokt, value) {
 			return
 		}
 	}
@@ -1202,8 +1473,12 @@ func (x *fastReflection_EventProofSubmitted) Has(fd protoreflect.FieldDescriptor
 		return x.Proof != nil
 	case "poktroll.proof.EventProofSubmitted.num_relays":
 		return x.NumRelays != uint64(0)
-	case "poktroll.proof.EventProofSubmitted.num_compute_units":
-		return x.NumComputeUnits != uint64(0)
+	case "poktroll.proof.EventProofSubmitted.num_claimed_compute_units":
+		return x.NumClaimedComputeUnits != uint64(0)
+	case "poktroll.proof.EventProofSubmitted.num_estimated_compute_units":
+		return x.NumEstimatedComputeUnits != uint64(0)
+	case "poktroll.proof.EventProofSubmitted.claimed_amount_upokt":
+		return x.ClaimedAmountUpokt != nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.EventProofSubmitted"))
@@ -1226,8 +1501,12 @@ func (x *fastReflection_EventProofSubmitted) Clear(fd protoreflect.FieldDescript
 		x.Proof = nil
 	case "poktroll.proof.EventProofSubmitted.num_relays":
 		x.NumRelays = uint64(0)
-	case "poktroll.proof.EventProofSubmitted.num_compute_units":
-		x.NumComputeUnits = uint64(0)
+	case "poktroll.proof.EventProofSubmitted.num_claimed_compute_units":
+		x.NumClaimedComputeUnits = uint64(0)
+	case "poktroll.proof.EventProofSubmitted.num_estimated_compute_units":
+		x.NumEstimatedComputeUnits = uint64(0)
+	case "poktroll.proof.EventProofSubmitted.claimed_amount_upokt":
+		x.ClaimedAmountUpokt = nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.EventProofSubmitted"))
@@ -1253,9 +1532,15 @@ func (x *fastReflection_EventProofSubmitted) Get(descriptor protoreflect.FieldDe
 	case "poktroll.proof.EventProofSubmitted.num_relays":
 		value := x.NumRelays
 		return protoreflect.ValueOfUint64(value)
-	case "poktroll.proof.EventProofSubmitted.num_compute_units":
-		value := x.NumComputeUnits
+	case "poktroll.proof.EventProofSubmitted.num_claimed_compute_units":
+		value := x.NumClaimedComputeUnits
 		return protoreflect.ValueOfUint64(value)
+	case "poktroll.proof.EventProofSubmitted.num_estimated_compute_units":
+		value := x.NumEstimatedComputeUnits
+		return protoreflect.ValueOfUint64(value)
+	case "poktroll.proof.EventProofSubmitted.claimed_amount_upokt":
+		value := x.ClaimedAmountUpokt
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.EventProofSubmitted"))
@@ -1282,8 +1567,12 @@ func (x *fastReflection_EventProofSubmitted) Set(fd protoreflect.FieldDescriptor
 		x.Proof = value.Message().Interface().(*Proof)
 	case "poktroll.proof.EventProofSubmitted.num_relays":
 		x.NumRelays = value.Uint()
-	case "poktroll.proof.EventProofSubmitted.num_compute_units":
-		x.NumComputeUnits = value.Uint()
+	case "poktroll.proof.EventProofSubmitted.num_claimed_compute_units":
+		x.NumClaimedComputeUnits = value.Uint()
+	case "poktroll.proof.EventProofSubmitted.num_estimated_compute_units":
+		x.NumEstimatedComputeUnits = value.Uint()
+	case "poktroll.proof.EventProofSubmitted.claimed_amount_upokt":
+		x.ClaimedAmountUpokt = value.Message().Interface().(*v1beta1.Coin)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.EventProofSubmitted"))
@@ -1314,10 +1603,17 @@ func (x *fastReflection_EventProofSubmitted) Mutable(fd protoreflect.FieldDescri
 			x.Proof = new(Proof)
 		}
 		return protoreflect.ValueOfMessage(x.Proof.ProtoReflect())
+	case "poktroll.proof.EventProofSubmitted.claimed_amount_upokt":
+		if x.ClaimedAmountUpokt == nil {
+			x.ClaimedAmountUpokt = new(v1beta1.Coin)
+		}
+		return protoreflect.ValueOfMessage(x.ClaimedAmountUpokt.ProtoReflect())
 	case "poktroll.proof.EventProofSubmitted.num_relays":
 		panic(fmt.Errorf("field num_relays of message poktroll.proof.EventProofSubmitted is not mutable"))
-	case "poktroll.proof.EventProofSubmitted.num_compute_units":
-		panic(fmt.Errorf("field num_compute_units of message poktroll.proof.EventProofSubmitted is not mutable"))
+	case "poktroll.proof.EventProofSubmitted.num_claimed_compute_units":
+		panic(fmt.Errorf("field num_claimed_compute_units of message poktroll.proof.EventProofSubmitted is not mutable"))
+	case "poktroll.proof.EventProofSubmitted.num_estimated_compute_units":
+		panic(fmt.Errorf("field num_estimated_compute_units of message poktroll.proof.EventProofSubmitted is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.EventProofSubmitted"))
@@ -1339,8 +1635,13 @@ func (x *fastReflection_EventProofSubmitted) NewField(fd protoreflect.FieldDescr
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	case "poktroll.proof.EventProofSubmitted.num_relays":
 		return protoreflect.ValueOfUint64(uint64(0))
-	case "poktroll.proof.EventProofSubmitted.num_compute_units":
+	case "poktroll.proof.EventProofSubmitted.num_claimed_compute_units":
 		return protoreflect.ValueOfUint64(uint64(0))
+	case "poktroll.proof.EventProofSubmitted.num_estimated_compute_units":
+		return protoreflect.ValueOfUint64(uint64(0))
+	case "poktroll.proof.EventProofSubmitted.claimed_amount_upokt":
+		m := new(v1beta1.Coin)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.EventProofSubmitted"))
@@ -1421,8 +1722,15 @@ func (x *fastReflection_EventProofSubmitted) ProtoMethods() *protoiface.Methods 
 		if x.NumRelays != 0 {
 			n += 1 + runtime.Sov(uint64(x.NumRelays))
 		}
-		if x.NumComputeUnits != 0 {
-			n += 1 + runtime.Sov(uint64(x.NumComputeUnits))
+		if x.NumClaimedComputeUnits != 0 {
+			n += 1 + runtime.Sov(uint64(x.NumClaimedComputeUnits))
+		}
+		if x.NumEstimatedComputeUnits != 0 {
+			n += 1 + runtime.Sov(uint64(x.NumEstimatedComputeUnits))
+		}
+		if x.ClaimedAmountUpokt != nil {
+			l = options.Size(x.ClaimedAmountUpokt)
+			n += 1 + l + runtime.Sov(uint64(l))
 		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
@@ -1453,8 +1761,27 @@ func (x *fastReflection_EventProofSubmitted) ProtoMethods() *protoiface.Methods 
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if x.NumComputeUnits != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.NumComputeUnits))
+		if x.ClaimedAmountUpokt != nil {
+			encoded, err := options.Marshal(x.ClaimedAmountUpokt)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			i--
+			dAtA[i] = 0x32
+		}
+		if x.NumEstimatedComputeUnits != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.NumEstimatedComputeUnits))
+			i--
+			dAtA[i] = 0x28
+		}
+		if x.NumClaimedComputeUnits != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.NumClaimedComputeUnits))
 			i--
 			dAtA[i] = 0x20
 		}
@@ -1633,9 +1960,9 @@ func (x *fastReflection_EventProofSubmitted) ProtoMethods() *protoiface.Methods 
 				}
 			case 4:
 				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field NumComputeUnits", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field NumClaimedComputeUnits", wireType)
 				}
-				x.NumComputeUnits = 0
+				x.NumClaimedComputeUnits = 0
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -1645,11 +1972,66 @@ func (x *fastReflection_EventProofSubmitted) ProtoMethods() *protoiface.Methods 
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					x.NumComputeUnits |= uint64(b&0x7F) << shift
+					x.NumClaimedComputeUnits |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
+			case 5:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field NumEstimatedComputeUnits", wireType)
+				}
+				x.NumEstimatedComputeUnits = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.NumEstimatedComputeUnits |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			case 6:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ClaimedAmountUpokt", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if x.ClaimedAmountUpokt == nil {
+					x.ClaimedAmountUpokt = &v1beta1.Coin{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.ClaimedAmountUpokt); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
 				skippy, err := runtime.Skip(dAtA[iNdEx:])
@@ -1686,11 +2068,13 @@ func (x *fastReflection_EventProofSubmitted) ProtoMethods() *protoiface.Methods 
 }
 
 var (
-	md_EventProofUpdated                   protoreflect.MessageDescriptor
-	fd_EventProofUpdated_claim             protoreflect.FieldDescriptor
-	fd_EventProofUpdated_proof             protoreflect.FieldDescriptor
-	fd_EventProofUpdated_num_relays        protoreflect.FieldDescriptor
-	fd_EventProofUpdated_num_compute_units protoreflect.FieldDescriptor
+	md_EventProofUpdated                             protoreflect.MessageDescriptor
+	fd_EventProofUpdated_claim                       protoreflect.FieldDescriptor
+	fd_EventProofUpdated_proof                       protoreflect.FieldDescriptor
+	fd_EventProofUpdated_num_relays                  protoreflect.FieldDescriptor
+	fd_EventProofUpdated_num_claimed_compute_units   protoreflect.FieldDescriptor
+	fd_EventProofUpdated_num_estimated_compute_units protoreflect.FieldDescriptor
+	fd_EventProofUpdated_claimed_amount_upokt        protoreflect.FieldDescriptor
 )
 
 func init() {
@@ -1699,7 +2083,9 @@ func init() {
 	fd_EventProofUpdated_claim = md_EventProofUpdated.Fields().ByName("claim")
 	fd_EventProofUpdated_proof = md_EventProofUpdated.Fields().ByName("proof")
 	fd_EventProofUpdated_num_relays = md_EventProofUpdated.Fields().ByName("num_relays")
-	fd_EventProofUpdated_num_compute_units = md_EventProofUpdated.Fields().ByName("num_compute_units")
+	fd_EventProofUpdated_num_claimed_compute_units = md_EventProofUpdated.Fields().ByName("num_claimed_compute_units")
+	fd_EventProofUpdated_num_estimated_compute_units = md_EventProofUpdated.Fields().ByName("num_estimated_compute_units")
+	fd_EventProofUpdated_claimed_amount_upokt = md_EventProofUpdated.Fields().ByName("claimed_amount_upokt")
 }
 
 var _ protoreflect.Message = (*fastReflection_EventProofUpdated)(nil)
@@ -1785,9 +2171,21 @@ func (x *fastReflection_EventProofUpdated) Range(f func(protoreflect.FieldDescri
 			return
 		}
 	}
-	if x.NumComputeUnits != uint64(0) {
-		value := protoreflect.ValueOfUint64(x.NumComputeUnits)
-		if !f(fd_EventProofUpdated_num_compute_units, value) {
+	if x.NumClaimedComputeUnits != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.NumClaimedComputeUnits)
+		if !f(fd_EventProofUpdated_num_claimed_compute_units, value) {
+			return
+		}
+	}
+	if x.NumEstimatedComputeUnits != uint64(0) {
+		value := protoreflect.ValueOfUint64(x.NumEstimatedComputeUnits)
+		if !f(fd_EventProofUpdated_num_estimated_compute_units, value) {
+			return
+		}
+	}
+	if x.ClaimedAmountUpokt != nil {
+		value := protoreflect.ValueOfMessage(x.ClaimedAmountUpokt.ProtoReflect())
+		if !f(fd_EventProofUpdated_claimed_amount_upokt, value) {
 			return
 		}
 	}
@@ -1812,8 +2210,12 @@ func (x *fastReflection_EventProofUpdated) Has(fd protoreflect.FieldDescriptor) 
 		return x.Proof != nil
 	case "poktroll.proof.EventProofUpdated.num_relays":
 		return x.NumRelays != uint64(0)
-	case "poktroll.proof.EventProofUpdated.num_compute_units":
-		return x.NumComputeUnits != uint64(0)
+	case "poktroll.proof.EventProofUpdated.num_claimed_compute_units":
+		return x.NumClaimedComputeUnits != uint64(0)
+	case "poktroll.proof.EventProofUpdated.num_estimated_compute_units":
+		return x.NumEstimatedComputeUnits != uint64(0)
+	case "poktroll.proof.EventProofUpdated.claimed_amount_upokt":
+		return x.ClaimedAmountUpokt != nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.EventProofUpdated"))
@@ -1836,8 +2238,12 @@ func (x *fastReflection_EventProofUpdated) Clear(fd protoreflect.FieldDescriptor
 		x.Proof = nil
 	case "poktroll.proof.EventProofUpdated.num_relays":
 		x.NumRelays = uint64(0)
-	case "poktroll.proof.EventProofUpdated.num_compute_units":
-		x.NumComputeUnits = uint64(0)
+	case "poktroll.proof.EventProofUpdated.num_claimed_compute_units":
+		x.NumClaimedComputeUnits = uint64(0)
+	case "poktroll.proof.EventProofUpdated.num_estimated_compute_units":
+		x.NumEstimatedComputeUnits = uint64(0)
+	case "poktroll.proof.EventProofUpdated.claimed_amount_upokt":
+		x.ClaimedAmountUpokt = nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.EventProofUpdated"))
@@ -1863,9 +2269,15 @@ func (x *fastReflection_EventProofUpdated) Get(descriptor protoreflect.FieldDesc
 	case "poktroll.proof.EventProofUpdated.num_relays":
 		value := x.NumRelays
 		return protoreflect.ValueOfUint64(value)
-	case "poktroll.proof.EventProofUpdated.num_compute_units":
-		value := x.NumComputeUnits
+	case "poktroll.proof.EventProofUpdated.num_claimed_compute_units":
+		value := x.NumClaimedComputeUnits
 		return protoreflect.ValueOfUint64(value)
+	case "poktroll.proof.EventProofUpdated.num_estimated_compute_units":
+		value := x.NumEstimatedComputeUnits
+		return protoreflect.ValueOfUint64(value)
+	case "poktroll.proof.EventProofUpdated.claimed_amount_upokt":
+		value := x.ClaimedAmountUpokt
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.EventProofUpdated"))
@@ -1892,8 +2304,12 @@ func (x *fastReflection_EventProofUpdated) Set(fd protoreflect.FieldDescriptor, 
 		x.Proof = value.Message().Interface().(*Proof)
 	case "poktroll.proof.EventProofUpdated.num_relays":
 		x.NumRelays = value.Uint()
-	case "poktroll.proof.EventProofUpdated.num_compute_units":
-		x.NumComputeUnits = value.Uint()
+	case "poktroll.proof.EventProofUpdated.num_claimed_compute_units":
+		x.NumClaimedComputeUnits = value.Uint()
+	case "poktroll.proof.EventProofUpdated.num_estimated_compute_units":
+		x.NumEstimatedComputeUnits = value.Uint()
+	case "poktroll.proof.EventProofUpdated.claimed_amount_upokt":
+		x.ClaimedAmountUpokt = value.Message().Interface().(*v1beta1.Coin)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.EventProofUpdated"))
@@ -1924,10 +2340,17 @@ func (x *fastReflection_EventProofUpdated) Mutable(fd protoreflect.FieldDescript
 			x.Proof = new(Proof)
 		}
 		return protoreflect.ValueOfMessage(x.Proof.ProtoReflect())
+	case "poktroll.proof.EventProofUpdated.claimed_amount_upokt":
+		if x.ClaimedAmountUpokt == nil {
+			x.ClaimedAmountUpokt = new(v1beta1.Coin)
+		}
+		return protoreflect.ValueOfMessage(x.ClaimedAmountUpokt.ProtoReflect())
 	case "poktroll.proof.EventProofUpdated.num_relays":
 		panic(fmt.Errorf("field num_relays of message poktroll.proof.EventProofUpdated is not mutable"))
-	case "poktroll.proof.EventProofUpdated.num_compute_units":
-		panic(fmt.Errorf("field num_compute_units of message poktroll.proof.EventProofUpdated is not mutable"))
+	case "poktroll.proof.EventProofUpdated.num_claimed_compute_units":
+		panic(fmt.Errorf("field num_claimed_compute_units of message poktroll.proof.EventProofUpdated is not mutable"))
+	case "poktroll.proof.EventProofUpdated.num_estimated_compute_units":
+		panic(fmt.Errorf("field num_estimated_compute_units of message poktroll.proof.EventProofUpdated is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.EventProofUpdated"))
@@ -1949,8 +2372,13 @@ func (x *fastReflection_EventProofUpdated) NewField(fd protoreflect.FieldDescrip
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	case "poktroll.proof.EventProofUpdated.num_relays":
 		return protoreflect.ValueOfUint64(uint64(0))
-	case "poktroll.proof.EventProofUpdated.num_compute_units":
+	case "poktroll.proof.EventProofUpdated.num_claimed_compute_units":
 		return protoreflect.ValueOfUint64(uint64(0))
+	case "poktroll.proof.EventProofUpdated.num_estimated_compute_units":
+		return protoreflect.ValueOfUint64(uint64(0))
+	case "poktroll.proof.EventProofUpdated.claimed_amount_upokt":
+		m := new(v1beta1.Coin)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.EventProofUpdated"))
@@ -2031,8 +2459,15 @@ func (x *fastReflection_EventProofUpdated) ProtoMethods() *protoiface.Methods {
 		if x.NumRelays != 0 {
 			n += 1 + runtime.Sov(uint64(x.NumRelays))
 		}
-		if x.NumComputeUnits != 0 {
-			n += 1 + runtime.Sov(uint64(x.NumComputeUnits))
+		if x.NumClaimedComputeUnits != 0 {
+			n += 1 + runtime.Sov(uint64(x.NumClaimedComputeUnits))
+		}
+		if x.NumEstimatedComputeUnits != 0 {
+			n += 1 + runtime.Sov(uint64(x.NumEstimatedComputeUnits))
+		}
+		if x.ClaimedAmountUpokt != nil {
+			l = options.Size(x.ClaimedAmountUpokt)
+			n += 1 + l + runtime.Sov(uint64(l))
 		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
@@ -2063,8 +2498,27 @@ func (x *fastReflection_EventProofUpdated) ProtoMethods() *protoiface.Methods {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if x.NumComputeUnits != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.NumComputeUnits))
+		if x.ClaimedAmountUpokt != nil {
+			encoded, err := options.Marshal(x.ClaimedAmountUpokt)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			i--
+			dAtA[i] = 0x32
+		}
+		if x.NumEstimatedComputeUnits != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.NumEstimatedComputeUnits))
+			i--
+			dAtA[i] = 0x28
+		}
+		if x.NumClaimedComputeUnits != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.NumClaimedComputeUnits))
 			i--
 			dAtA[i] = 0x20
 		}
@@ -2243,9 +2697,9 @@ func (x *fastReflection_EventProofUpdated) ProtoMethods() *protoiface.Methods {
 				}
 			case 4:
 				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field NumComputeUnits", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field NumClaimedComputeUnits", wireType)
 				}
-				x.NumComputeUnits = 0
+				x.NumClaimedComputeUnits = 0
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -2255,11 +2709,66 @@ func (x *fastReflection_EventProofUpdated) ProtoMethods() *protoiface.Methods {
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					x.NumComputeUnits |= uint64(b&0x7F) << shift
+					x.NumClaimedComputeUnits |= uint64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
+			case 5:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field NumEstimatedComputeUnits", wireType)
+				}
+				x.NumEstimatedComputeUnits = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.NumEstimatedComputeUnits |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			case 6:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ClaimedAmountUpokt", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if x.ClaimedAmountUpokt == nil {
+					x.ClaimedAmountUpokt = &v1beta1.Coin{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.ClaimedAmountUpokt); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
 				skippy, err := runtime.Skip(dAtA[iNdEx:])
@@ -2313,9 +2822,11 @@ type EventClaimCreated struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Claim           *Claim `protobuf:"bytes,1,opt,name=claim,proto3" json:"claim,omitempty"`
-	NumRelays       uint64 `protobuf:"varint,2,opt,name=num_relays,json=numRelays,proto3" json:"num_relays,omitempty"`
-	NumComputeUnits uint64 `protobuf:"varint,3,opt,name=num_compute_units,json=numComputeUnits,proto3" json:"num_compute_units,omitempty"`
+	Claim                    *Claim        `protobuf:"bytes,1,opt,name=claim,proto3" json:"claim,omitempty"`
+	NumRelays                uint64        `protobuf:"varint,2,opt,name=num_relays,json=numRelays,proto3" json:"num_relays,omitempty"`
+	NumClaimedComputeUnits   uint64        `protobuf:"varint,4,opt,name=num_claimed_compute_units,json=numClaimedComputeUnits,proto3" json:"num_claimed_compute_units,omitempty"`
+	NumEstimatedComputeUnits uint64        `protobuf:"varint,5,opt,name=num_estimated_compute_units,json=numEstimatedComputeUnits,proto3" json:"num_estimated_compute_units,omitempty"`
+	ClaimedAmountUpokt       *v1beta1.Coin `protobuf:"bytes,6,opt,name=claimed_amount_upokt,json=claimedAmountUpokt,proto3" json:"claimed_amount_upokt,omitempty"`
 }
 
 func (x *EventClaimCreated) Reset() {
@@ -2352,11 +2863,25 @@ func (x *EventClaimCreated) GetNumRelays() uint64 {
 	return 0
 }
 
-func (x *EventClaimCreated) GetNumComputeUnits() uint64 {
+func (x *EventClaimCreated) GetNumClaimedComputeUnits() uint64 {
 	if x != nil {
-		return x.NumComputeUnits
+		return x.NumClaimedComputeUnits
 	}
 	return 0
+}
+
+func (x *EventClaimCreated) GetNumEstimatedComputeUnits() uint64 {
+	if x != nil {
+		return x.NumEstimatedComputeUnits
+	}
+	return 0
+}
+
+func (x *EventClaimCreated) GetClaimedAmountUpokt() *v1beta1.Coin {
+	if x != nil {
+		return x.ClaimedAmountUpokt
+	}
+	return nil
 }
 
 // TODO_TEST: Add coverage for claim updates.
@@ -2365,9 +2890,11 @@ type EventClaimUpdated struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Claim           *Claim `protobuf:"bytes,1,opt,name=claim,proto3" json:"claim,omitempty"`
-	NumRelays       uint64 `protobuf:"varint,2,opt,name=num_relays,json=numRelays,proto3" json:"num_relays,omitempty"`
-	NumComputeUnits uint64 `protobuf:"varint,3,opt,name=num_compute_units,json=numComputeUnits,proto3" json:"num_compute_units,omitempty"`
+	Claim                    *Claim        `protobuf:"bytes,1,opt,name=claim,proto3" json:"claim,omitempty"`
+	NumRelays                uint64        `protobuf:"varint,2,opt,name=num_relays,json=numRelays,proto3" json:"num_relays,omitempty"`
+	NumClaimedComputeUnits   uint64        `protobuf:"varint,4,opt,name=num_claimed_compute_units,json=numClaimedComputeUnits,proto3" json:"num_claimed_compute_units,omitempty"`
+	NumEstimatedComputeUnits uint64        `protobuf:"varint,5,opt,name=num_estimated_compute_units,json=numEstimatedComputeUnits,proto3" json:"num_estimated_compute_units,omitempty"`
+	ClaimedAmountUpokt       *v1beta1.Coin `protobuf:"bytes,6,opt,name=claimed_amount_upokt,json=claimedAmountUpokt,proto3" json:"claimed_amount_upokt,omitempty"`
 }
 
 func (x *EventClaimUpdated) Reset() {
@@ -2404,11 +2931,25 @@ func (x *EventClaimUpdated) GetNumRelays() uint64 {
 	return 0
 }
 
-func (x *EventClaimUpdated) GetNumComputeUnits() uint64 {
+func (x *EventClaimUpdated) GetNumClaimedComputeUnits() uint64 {
 	if x != nil {
-		return x.NumComputeUnits
+		return x.NumClaimedComputeUnits
 	}
 	return 0
+}
+
+func (x *EventClaimUpdated) GetNumEstimatedComputeUnits() uint64 {
+	if x != nil {
+		return x.NumEstimatedComputeUnits
+	}
+	return 0
+}
+
+func (x *EventClaimUpdated) GetClaimedAmountUpokt() *v1beta1.Coin {
+	if x != nil {
+		return x.ClaimedAmountUpokt
+	}
+	return nil
 }
 
 type EventProofSubmitted struct {
@@ -2416,10 +2957,12 @@ type EventProofSubmitted struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Claim           *Claim `protobuf:"bytes,1,opt,name=claim,proto3" json:"claim,omitempty"`
-	Proof           *Proof `protobuf:"bytes,2,opt,name=proof,proto3" json:"proof,omitempty"`
-	NumRelays       uint64 `protobuf:"varint,3,opt,name=num_relays,json=numRelays,proto3" json:"num_relays,omitempty"`
-	NumComputeUnits uint64 `protobuf:"varint,4,opt,name=num_compute_units,json=numComputeUnits,proto3" json:"num_compute_units,omitempty"`
+	Claim                    *Claim        `protobuf:"bytes,1,opt,name=claim,proto3" json:"claim,omitempty"`
+	Proof                    *Proof        `protobuf:"bytes,2,opt,name=proof,proto3" json:"proof,omitempty"`
+	NumRelays                uint64        `protobuf:"varint,3,opt,name=num_relays,json=numRelays,proto3" json:"num_relays,omitempty"`
+	NumClaimedComputeUnits   uint64        `protobuf:"varint,4,opt,name=num_claimed_compute_units,json=numClaimedComputeUnits,proto3" json:"num_claimed_compute_units,omitempty"`
+	NumEstimatedComputeUnits uint64        `protobuf:"varint,5,opt,name=num_estimated_compute_units,json=numEstimatedComputeUnits,proto3" json:"num_estimated_compute_units,omitempty"`
+	ClaimedAmountUpokt       *v1beta1.Coin `protobuf:"bytes,6,opt,name=claimed_amount_upokt,json=claimedAmountUpokt,proto3" json:"claimed_amount_upokt,omitempty"`
 }
 
 func (x *EventProofSubmitted) Reset() {
@@ -2463,11 +3006,25 @@ func (x *EventProofSubmitted) GetNumRelays() uint64 {
 	return 0
 }
 
-func (x *EventProofSubmitted) GetNumComputeUnits() uint64 {
+func (x *EventProofSubmitted) GetNumClaimedComputeUnits() uint64 {
 	if x != nil {
-		return x.NumComputeUnits
+		return x.NumClaimedComputeUnits
 	}
 	return 0
+}
+
+func (x *EventProofSubmitted) GetNumEstimatedComputeUnits() uint64 {
+	if x != nil {
+		return x.NumEstimatedComputeUnits
+	}
+	return 0
+}
+
+func (x *EventProofSubmitted) GetClaimedAmountUpokt() *v1beta1.Coin {
+	if x != nil {
+		return x.ClaimedAmountUpokt
+	}
+	return nil
 }
 
 // TODO_TEST: Add coverage for proof updates.
@@ -2476,10 +3033,12 @@ type EventProofUpdated struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Claim           *Claim `protobuf:"bytes,1,opt,name=claim,proto3" json:"claim,omitempty"`
-	Proof           *Proof `protobuf:"bytes,2,opt,name=proof,proto3" json:"proof,omitempty"`
-	NumRelays       uint64 `protobuf:"varint,3,opt,name=num_relays,json=numRelays,proto3" json:"num_relays,omitempty"`
-	NumComputeUnits uint64 `protobuf:"varint,4,opt,name=num_compute_units,json=numComputeUnits,proto3" json:"num_compute_units,omitempty"`
+	Claim                    *Claim        `protobuf:"bytes,1,opt,name=claim,proto3" json:"claim,omitempty"`
+	Proof                    *Proof        `protobuf:"bytes,2,opt,name=proof,proto3" json:"proof,omitempty"`
+	NumRelays                uint64        `protobuf:"varint,3,opt,name=num_relays,json=numRelays,proto3" json:"num_relays,omitempty"`
+	NumClaimedComputeUnits   uint64        `protobuf:"varint,4,opt,name=num_claimed_compute_units,json=numClaimedComputeUnits,proto3" json:"num_claimed_compute_units,omitempty"`
+	NumEstimatedComputeUnits uint64        `protobuf:"varint,5,opt,name=num_estimated_compute_units,json=numEstimatedComputeUnits,proto3" json:"num_estimated_compute_units,omitempty"`
+	ClaimedAmountUpokt       *v1beta1.Coin `protobuf:"bytes,6,opt,name=claimed_amount_upokt,json=claimedAmountUpokt,proto3" json:"claimed_amount_upokt,omitempty"`
 }
 
 func (x *EventProofUpdated) Reset() {
@@ -2523,11 +3082,25 @@ func (x *EventProofUpdated) GetNumRelays() uint64 {
 	return 0
 }
 
-func (x *EventProofUpdated) GetNumComputeUnits() uint64 {
+func (x *EventProofUpdated) GetNumClaimedComputeUnits() uint64 {
 	if x != nil {
-		return x.NumComputeUnits
+		return x.NumClaimedComputeUnits
 	}
 	return 0
+}
+
+func (x *EventProofUpdated) GetNumEstimatedComputeUnits() uint64 {
+	if x != nil {
+		return x.NumEstimatedComputeUnits
+	}
+	return 0
+}
+
+func (x *EventProofUpdated) GetClaimedAmountUpokt() *v1beta1.Coin {
+	if x != nil {
+		return x.ClaimedAmountUpokt
+	}
+	return nil
 }
 
 var File_poktroll_proof_event_proto protoreflect.FileDescriptor
@@ -2535,76 +3108,134 @@ var File_poktroll_proof_event_proto protoreflect.FileDescriptor
 var file_poktroll_proof_event_proto_rawDesc = []byte{
 	0x0a, 0x1a, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x70, 0x72, 0x6f, 0x6f, 0x66,
 	0x2f, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x0e, 0x70, 0x6f,
-	0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x1a, 0x14, 0x67, 0x6f,
+	0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x1a, 0x1e, 0x63, 0x6f,
+	0x73, 0x6d, 0x6f, 0x73, 0x2f, 0x62, 0x61, 0x73, 0x65, 0x2f, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61,
+	0x31, 0x2f, 0x63, 0x6f, 0x69, 0x6e, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x14, 0x67, 0x6f,
 	0x67, 0x6f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x67, 0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f,
 	0x74, 0x6f, 0x1a, 0x1a, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x70, 0x72, 0x6f,
-	0x6f, 0x66, 0x2f, 0x74, 0x79, 0x70, 0x65, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xbd,
-	0x01, 0x0a, 0x11, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x43, 0x72, 0x65,
+	0x6f, 0x66, 0x2f, 0x74, 0x79, 0x70, 0x65, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x9b,
+	0x03, 0x0a, 0x11, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x43, 0x72, 0x65,
 	0x61, 0x74, 0x65, 0x64, 0x12, 0x36, 0x0a, 0x05, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x18, 0x01, 0x20,
 	0x01, 0x28, 0x0b, 0x32, 0x15, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x70,
 	0x72, 0x6f, 0x6f, 0x66, 0x2e, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x42, 0x09, 0xea, 0xde, 0x1f, 0x05,
 	0x63, 0x6c, 0x61, 0x69, 0x6d, 0x52, 0x05, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x12, 0x2d, 0x0a, 0x0a,
 	0x6e, 0x75, 0x6d, 0x5f, 0x72, 0x65, 0x6c, 0x61, 0x79, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04,
 	0x42, 0x0e, 0xea, 0xde, 0x1f, 0x0a, 0x6e, 0x75, 0x6d, 0x5f, 0x72, 0x65, 0x6c, 0x61, 0x79, 0x73,
-	0x52, 0x09, 0x6e, 0x75, 0x6d, 0x52, 0x65, 0x6c, 0x61, 0x79, 0x73, 0x12, 0x41, 0x0a, 0x11, 0x6e,
-	0x75, 0x6d, 0x5f, 0x63, 0x6f, 0x6d, 0x70, 0x75, 0x74, 0x65, 0x5f, 0x75, 0x6e, 0x69, 0x74, 0x73,
-	0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x42, 0x15, 0xea, 0xde, 0x1f, 0x11, 0x6e, 0x75, 0x6d, 0x5f,
-	0x63, 0x6f, 0x6d, 0x70, 0x75, 0x74, 0x65, 0x5f, 0x75, 0x6e, 0x69, 0x74, 0x73, 0x52, 0x0f, 0x6e,
-	0x75, 0x6d, 0x43, 0x6f, 0x6d, 0x70, 0x75, 0x74, 0x65, 0x55, 0x6e, 0x69, 0x74, 0x73, 0x22, 0xbd,
-	0x01, 0x0a, 0x11, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x55, 0x70, 0x64,
-	0x61, 0x74, 0x65, 0x64, 0x12, 0x36, 0x0a, 0x05, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x18, 0x01, 0x20,
-	0x01, 0x28, 0x0b, 0x32, 0x15, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x70,
-	0x72, 0x6f, 0x6f, 0x66, 0x2e, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x42, 0x09, 0xea, 0xde, 0x1f, 0x05,
-	0x63, 0x6c, 0x61, 0x69, 0x6d, 0x52, 0x05, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x12, 0x2d, 0x0a, 0x0a,
-	0x6e, 0x75, 0x6d, 0x5f, 0x72, 0x65, 0x6c, 0x61, 0x79, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04,
-	0x42, 0x0e, 0xea, 0xde, 0x1f, 0x0a, 0x6e, 0x75, 0x6d, 0x5f, 0x72, 0x65, 0x6c, 0x61, 0x79, 0x73,
-	0x52, 0x09, 0x6e, 0x75, 0x6d, 0x52, 0x65, 0x6c, 0x61, 0x79, 0x73, 0x12, 0x41, 0x0a, 0x11, 0x6e,
-	0x75, 0x6d, 0x5f, 0x63, 0x6f, 0x6d, 0x70, 0x75, 0x74, 0x65, 0x5f, 0x75, 0x6e, 0x69, 0x74, 0x73,
-	0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x42, 0x15, 0xea, 0xde, 0x1f, 0x11, 0x6e, 0x75, 0x6d, 0x5f,
-	0x63, 0x6f, 0x6d, 0x70, 0x75, 0x74, 0x65, 0x5f, 0x75, 0x6e, 0x69, 0x74, 0x73, 0x52, 0x0f, 0x6e,
-	0x75, 0x6d, 0x43, 0x6f, 0x6d, 0x70, 0x75, 0x74, 0x65, 0x55, 0x6e, 0x69, 0x74, 0x73, 0x22, 0xf7,
-	0x01, 0x0a, 0x13, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x53, 0x75, 0x62,
-	0x6d, 0x69, 0x74, 0x74, 0x65, 0x64, 0x12, 0x36, 0x0a, 0x05, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x15, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c,
-	0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2e, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x42, 0x09, 0xea, 0xde,
-	0x1f, 0x05, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x52, 0x05, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x12, 0x36,
-	0x0a, 0x05, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x15, 0x2e,
-	0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2e, 0x50,
-	0x72, 0x6f, 0x6f, 0x66, 0x42, 0x09, 0xea, 0xde, 0x1f, 0x05, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x52,
-	0x05, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x12, 0x2d, 0x0a, 0x0a, 0x6e, 0x75, 0x6d, 0x5f, 0x72, 0x65,
-	0x6c, 0x61, 0x79, 0x73, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x42, 0x0e, 0xea, 0xde, 0x1f, 0x0a,
-	0x6e, 0x75, 0x6d, 0x5f, 0x72, 0x65, 0x6c, 0x61, 0x79, 0x73, 0x52, 0x09, 0x6e, 0x75, 0x6d, 0x52,
-	0x65, 0x6c, 0x61, 0x79, 0x73, 0x12, 0x41, 0x0a, 0x11, 0x6e, 0x75, 0x6d, 0x5f, 0x63, 0x6f, 0x6d,
-	0x70, 0x75, 0x74, 0x65, 0x5f, 0x75, 0x6e, 0x69, 0x74, 0x73, 0x18, 0x04, 0x20, 0x01, 0x28, 0x04,
-	0x42, 0x15, 0xea, 0xde, 0x1f, 0x11, 0x6e, 0x75, 0x6d, 0x5f, 0x63, 0x6f, 0x6d, 0x70, 0x75, 0x74,
-	0x65, 0x5f, 0x75, 0x6e, 0x69, 0x74, 0x73, 0x52, 0x0f, 0x6e, 0x75, 0x6d, 0x43, 0x6f, 0x6d, 0x70,
-	0x75, 0x74, 0x65, 0x55, 0x6e, 0x69, 0x74, 0x73, 0x22, 0xf5, 0x01, 0x0a, 0x11, 0x45, 0x76, 0x65,
-	0x6e, 0x74, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x64, 0x12, 0x36,
-	0x0a, 0x05, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x15, 0x2e,
-	0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2e, 0x43,
-	0x6c, 0x61, 0x69, 0x6d, 0x42, 0x09, 0xea, 0xde, 0x1f, 0x05, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x52,
-	0x05, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x12, 0x36, 0x0a, 0x05, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x18,
-	0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x15, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c,
-	0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2e, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x42, 0x09, 0xea, 0xde,
-	0x1f, 0x05, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x52, 0x05, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x12, 0x2d,
-	0x0a, 0x0a, 0x6e, 0x75, 0x6d, 0x5f, 0x72, 0x65, 0x6c, 0x61, 0x79, 0x73, 0x18, 0x03, 0x20, 0x01,
-	0x28, 0x04, 0x42, 0x0e, 0xea, 0xde, 0x1f, 0x0a, 0x6e, 0x75, 0x6d, 0x5f, 0x72, 0x65, 0x6c, 0x61,
-	0x79, 0x73, 0x52, 0x09, 0x6e, 0x75, 0x6d, 0x52, 0x65, 0x6c, 0x61, 0x79, 0x73, 0x12, 0x41, 0x0a,
-	0x11, 0x6e, 0x75, 0x6d, 0x5f, 0x63, 0x6f, 0x6d, 0x70, 0x75, 0x74, 0x65, 0x5f, 0x75, 0x6e, 0x69,
-	0x74, 0x73, 0x18, 0x04, 0x20, 0x01, 0x28, 0x04, 0x42, 0x15, 0xea, 0xde, 0x1f, 0x11, 0x6e, 0x75,
-	0x6d, 0x5f, 0x63, 0x6f, 0x6d, 0x70, 0x75, 0x74, 0x65, 0x5f, 0x75, 0x6e, 0x69, 0x74, 0x73, 0x52,
-	0x0f, 0x6e, 0x75, 0x6d, 0x43, 0x6f, 0x6d, 0x70, 0x75, 0x74, 0x65, 0x55, 0x6e, 0x69, 0x74, 0x73,
-	0x42, 0x9e, 0x01, 0xd8, 0xe2, 0x1e, 0x01, 0x0a, 0x12, 0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x6b,
-	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x42, 0x0a, 0x45, 0x76, 0x65,
-	0x6e, 0x74, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x1f, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
-	0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x6b, 0x74,
-	0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0xa2, 0x02, 0x03, 0x50, 0x50, 0x58,
-	0xaa, 0x02, 0x0e, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x50, 0x72, 0x6f, 0x6f,
-	0x66, 0xca, 0x02, 0x0e, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x50, 0x72, 0x6f,
-	0x6f, 0x66, 0xe2, 0x02, 0x1a, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x50, 0x72,
-	0x6f, 0x6f, 0x66, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea,
-	0x02, 0x0f, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x3a, 0x3a, 0x50, 0x72, 0x6f, 0x6f,
-	0x66, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x52, 0x09, 0x6e, 0x75, 0x6d, 0x52, 0x65, 0x6c, 0x61, 0x79, 0x73, 0x12, 0x58, 0x0a, 0x19, 0x6e,
+	0x75, 0x6d, 0x5f, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x5f, 0x63, 0x6f, 0x6d, 0x70, 0x75,
+	0x74, 0x65, 0x5f, 0x75, 0x6e, 0x69, 0x74, 0x73, 0x18, 0x04, 0x20, 0x01, 0x28, 0x04, 0x42, 0x1d,
+	0xea, 0xde, 0x1f, 0x19, 0x6e, 0x75, 0x6d, 0x5f, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x5f,
+	0x63, 0x6f, 0x6d, 0x70, 0x75, 0x74, 0x65, 0x5f, 0x75, 0x6e, 0x69, 0x74, 0x73, 0x52, 0x16, 0x6e,
+	0x75, 0x6d, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x43, 0x6f, 0x6d, 0x70, 0x75, 0x74, 0x65,
+	0x55, 0x6e, 0x69, 0x74, 0x73, 0x12, 0x5e, 0x0a, 0x1b, 0x6e, 0x75, 0x6d, 0x5f, 0x65, 0x73, 0x74,
+	0x69, 0x6d, 0x61, 0x74, 0x65, 0x64, 0x5f, 0x63, 0x6f, 0x6d, 0x70, 0x75, 0x74, 0x65, 0x5f, 0x75,
+	0x6e, 0x69, 0x74, 0x73, 0x18, 0x05, 0x20, 0x01, 0x28, 0x04, 0x42, 0x1f, 0xea, 0xde, 0x1f, 0x1b,
+	0x6e, 0x75, 0x6d, 0x5f, 0x65, 0x73, 0x74, 0x69, 0x6d, 0x61, 0x74, 0x65, 0x64, 0x5f, 0x63, 0x6f,
+	0x6d, 0x70, 0x75, 0x74, 0x65, 0x5f, 0x75, 0x6e, 0x69, 0x74, 0x73, 0x52, 0x18, 0x6e, 0x75, 0x6d,
+	0x45, 0x73, 0x74, 0x69, 0x6d, 0x61, 0x74, 0x65, 0x64, 0x43, 0x6f, 0x6d, 0x70, 0x75, 0x74, 0x65,
+	0x55, 0x6e, 0x69, 0x74, 0x73, 0x12, 0x65, 0x0a, 0x14, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64,
+	0x5f, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x5f, 0x75, 0x70, 0x6f, 0x6b, 0x74, 0x18, 0x06, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73,
+	0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x18,
+	0xea, 0xde, 0x1f, 0x14, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x5f, 0x61, 0x6d, 0x6f, 0x75,
+	0x6e, 0x74, 0x5f, 0x75, 0x70, 0x6f, 0x6b, 0x74, 0x52, 0x12, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65,
+	0x64, 0x41, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x55, 0x70, 0x6f, 0x6b, 0x74, 0x22, 0x9b, 0x03, 0x0a,
+	0x11, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x55, 0x70, 0x64, 0x61, 0x74,
+	0x65, 0x64, 0x12, 0x36, 0x0a, 0x05, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x15, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x70, 0x72, 0x6f,
+	0x6f, 0x66, 0x2e, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x42, 0x09, 0xea, 0xde, 0x1f, 0x05, 0x63, 0x6c,
+	0x61, 0x69, 0x6d, 0x52, 0x05, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x12, 0x2d, 0x0a, 0x0a, 0x6e, 0x75,
+	0x6d, 0x5f, 0x72, 0x65, 0x6c, 0x61, 0x79, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x42, 0x0e,
+	0xea, 0xde, 0x1f, 0x0a, 0x6e, 0x75, 0x6d, 0x5f, 0x72, 0x65, 0x6c, 0x61, 0x79, 0x73, 0x52, 0x09,
+	0x6e, 0x75, 0x6d, 0x52, 0x65, 0x6c, 0x61, 0x79, 0x73, 0x12, 0x58, 0x0a, 0x19, 0x6e, 0x75, 0x6d,
+	0x5f, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x5f, 0x63, 0x6f, 0x6d, 0x70, 0x75, 0x74, 0x65,
+	0x5f, 0x75, 0x6e, 0x69, 0x74, 0x73, 0x18, 0x04, 0x20, 0x01, 0x28, 0x04, 0x42, 0x1d, 0xea, 0xde,
+	0x1f, 0x19, 0x6e, 0x75, 0x6d, 0x5f, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x5f, 0x63, 0x6f,
+	0x6d, 0x70, 0x75, 0x74, 0x65, 0x5f, 0x75, 0x6e, 0x69, 0x74, 0x73, 0x52, 0x16, 0x6e, 0x75, 0x6d,
+	0x43, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x43, 0x6f, 0x6d, 0x70, 0x75, 0x74, 0x65, 0x55, 0x6e,
+	0x69, 0x74, 0x73, 0x12, 0x5e, 0x0a, 0x1b, 0x6e, 0x75, 0x6d, 0x5f, 0x65, 0x73, 0x74, 0x69, 0x6d,
+	0x61, 0x74, 0x65, 0x64, 0x5f, 0x63, 0x6f, 0x6d, 0x70, 0x75, 0x74, 0x65, 0x5f, 0x75, 0x6e, 0x69,
+	0x74, 0x73, 0x18, 0x05, 0x20, 0x01, 0x28, 0x04, 0x42, 0x1f, 0xea, 0xde, 0x1f, 0x1b, 0x6e, 0x75,
+	0x6d, 0x5f, 0x65, 0x73, 0x74, 0x69, 0x6d, 0x61, 0x74, 0x65, 0x64, 0x5f, 0x63, 0x6f, 0x6d, 0x70,
+	0x75, 0x74, 0x65, 0x5f, 0x75, 0x6e, 0x69, 0x74, 0x73, 0x52, 0x18, 0x6e, 0x75, 0x6d, 0x45, 0x73,
+	0x74, 0x69, 0x6d, 0x61, 0x74, 0x65, 0x64, 0x43, 0x6f, 0x6d, 0x70, 0x75, 0x74, 0x65, 0x55, 0x6e,
+	0x69, 0x74, 0x73, 0x12, 0x65, 0x0a, 0x14, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x5f, 0x61,
+	0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x5f, 0x75, 0x70, 0x6f, 0x6b, 0x74, 0x18, 0x06, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e,
+	0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x18, 0xea, 0xde,
+	0x1f, 0x14, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x5f, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74,
+	0x5f, 0x75, 0x70, 0x6f, 0x6b, 0x74, 0x52, 0x12, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x41,
+	0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x55, 0x70, 0x6f, 0x6b, 0x74, 0x22, 0xd5, 0x03, 0x0a, 0x13, 0x45,
+	0x76, 0x65, 0x6e, 0x74, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x53, 0x75, 0x62, 0x6d, 0x69, 0x74, 0x74,
+	0x65, 0x64, 0x12, 0x36, 0x0a, 0x05, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x15, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x70, 0x72, 0x6f,
+	0x6f, 0x66, 0x2e, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x42, 0x09, 0xea, 0xde, 0x1f, 0x05, 0x63, 0x6c,
+	0x61, 0x69, 0x6d, 0x52, 0x05, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x12, 0x36, 0x0a, 0x05, 0x70, 0x72,
+	0x6f, 0x6f, 0x66, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x15, 0x2e, 0x70, 0x6f, 0x6b, 0x74,
+	0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2e, 0x50, 0x72, 0x6f, 0x6f, 0x66,
+	0x42, 0x09, 0xea, 0xde, 0x1f, 0x05, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x52, 0x05, 0x70, 0x72, 0x6f,
+	0x6f, 0x66, 0x12, 0x2d, 0x0a, 0x0a, 0x6e, 0x75, 0x6d, 0x5f, 0x72, 0x65, 0x6c, 0x61, 0x79, 0x73,
+	0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x42, 0x0e, 0xea, 0xde, 0x1f, 0x0a, 0x6e, 0x75, 0x6d, 0x5f,
+	0x72, 0x65, 0x6c, 0x61, 0x79, 0x73, 0x52, 0x09, 0x6e, 0x75, 0x6d, 0x52, 0x65, 0x6c, 0x61, 0x79,
+	0x73, 0x12, 0x58, 0x0a, 0x19, 0x6e, 0x75, 0x6d, 0x5f, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64,
+	0x5f, 0x63, 0x6f, 0x6d, 0x70, 0x75, 0x74, 0x65, 0x5f, 0x75, 0x6e, 0x69, 0x74, 0x73, 0x18, 0x04,
+	0x20, 0x01, 0x28, 0x04, 0x42, 0x1d, 0xea, 0xde, 0x1f, 0x19, 0x6e, 0x75, 0x6d, 0x5f, 0x63, 0x6c,
+	0x61, 0x69, 0x6d, 0x65, 0x64, 0x5f, 0x63, 0x6f, 0x6d, 0x70, 0x75, 0x74, 0x65, 0x5f, 0x75, 0x6e,
+	0x69, 0x74, 0x73, 0x52, 0x16, 0x6e, 0x75, 0x6d, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x43,
+	0x6f, 0x6d, 0x70, 0x75, 0x74, 0x65, 0x55, 0x6e, 0x69, 0x74, 0x73, 0x12, 0x5e, 0x0a, 0x1b, 0x6e,
+	0x75, 0x6d, 0x5f, 0x65, 0x73, 0x74, 0x69, 0x6d, 0x61, 0x74, 0x65, 0x64, 0x5f, 0x63, 0x6f, 0x6d,
+	0x70, 0x75, 0x74, 0x65, 0x5f, 0x75, 0x6e, 0x69, 0x74, 0x73, 0x18, 0x05, 0x20, 0x01, 0x28, 0x04,
+	0x42, 0x1f, 0xea, 0xde, 0x1f, 0x1b, 0x6e, 0x75, 0x6d, 0x5f, 0x65, 0x73, 0x74, 0x69, 0x6d, 0x61,
+	0x74, 0x65, 0x64, 0x5f, 0x63, 0x6f, 0x6d, 0x70, 0x75, 0x74, 0x65, 0x5f, 0x75, 0x6e, 0x69, 0x74,
+	0x73, 0x52, 0x18, 0x6e, 0x75, 0x6d, 0x45, 0x73, 0x74, 0x69, 0x6d, 0x61, 0x74, 0x65, 0x64, 0x43,
+	0x6f, 0x6d, 0x70, 0x75, 0x74, 0x65, 0x55, 0x6e, 0x69, 0x74, 0x73, 0x12, 0x65, 0x0a, 0x14, 0x63,
+	0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x5f, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x5f, 0x75, 0x70,
+	0x6f, 0x6b, 0x74, 0x18, 0x06, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d,
+	0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e,
+	0x43, 0x6f, 0x69, 0x6e, 0x42, 0x18, 0xea, 0xde, 0x1f, 0x14, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65,
+	0x64, 0x5f, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x5f, 0x75, 0x70, 0x6f, 0x6b, 0x74, 0x52, 0x12,
+	0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x41, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x55, 0x70, 0x6f,
+	0x6b, 0x74, 0x22, 0xd3, 0x03, 0x0a, 0x11, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x50, 0x72, 0x6f, 0x6f,
+	0x66, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x64, 0x12, 0x36, 0x0a, 0x05, 0x63, 0x6c, 0x61, 0x69,
+	0x6d, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x15, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f,
+	0x6c, 0x6c, 0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2e, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x42, 0x09,
+	0xea, 0xde, 0x1f, 0x05, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x52, 0x05, 0x63, 0x6c, 0x61, 0x69, 0x6d,
+	0x12, 0x36, 0x0a, 0x05, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x15, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66,
+	0x2e, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x42, 0x09, 0xea, 0xde, 0x1f, 0x05, 0x70, 0x72, 0x6f, 0x6f,
+	0x66, 0x52, 0x05, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x12, 0x2d, 0x0a, 0x0a, 0x6e, 0x75, 0x6d, 0x5f,
+	0x72, 0x65, 0x6c, 0x61, 0x79, 0x73, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x42, 0x0e, 0xea, 0xde,
+	0x1f, 0x0a, 0x6e, 0x75, 0x6d, 0x5f, 0x72, 0x65, 0x6c, 0x61, 0x79, 0x73, 0x52, 0x09, 0x6e, 0x75,
+	0x6d, 0x52, 0x65, 0x6c, 0x61, 0x79, 0x73, 0x12, 0x58, 0x0a, 0x19, 0x6e, 0x75, 0x6d, 0x5f, 0x63,
+	0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x5f, 0x63, 0x6f, 0x6d, 0x70, 0x75, 0x74, 0x65, 0x5f, 0x75,
+	0x6e, 0x69, 0x74, 0x73, 0x18, 0x04, 0x20, 0x01, 0x28, 0x04, 0x42, 0x1d, 0xea, 0xde, 0x1f, 0x19,
+	0x6e, 0x75, 0x6d, 0x5f, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x5f, 0x63, 0x6f, 0x6d, 0x70,
+	0x75, 0x74, 0x65, 0x5f, 0x75, 0x6e, 0x69, 0x74, 0x73, 0x52, 0x16, 0x6e, 0x75, 0x6d, 0x43, 0x6c,
+	0x61, 0x69, 0x6d, 0x65, 0x64, 0x43, 0x6f, 0x6d, 0x70, 0x75, 0x74, 0x65, 0x55, 0x6e, 0x69, 0x74,
+	0x73, 0x12, 0x5e, 0x0a, 0x1b, 0x6e, 0x75, 0x6d, 0x5f, 0x65, 0x73, 0x74, 0x69, 0x6d, 0x61, 0x74,
+	0x65, 0x64, 0x5f, 0x63, 0x6f, 0x6d, 0x70, 0x75, 0x74, 0x65, 0x5f, 0x75, 0x6e, 0x69, 0x74, 0x73,
+	0x18, 0x05, 0x20, 0x01, 0x28, 0x04, 0x42, 0x1f, 0xea, 0xde, 0x1f, 0x1b, 0x6e, 0x75, 0x6d, 0x5f,
+	0x65, 0x73, 0x74, 0x69, 0x6d, 0x61, 0x74, 0x65, 0x64, 0x5f, 0x63, 0x6f, 0x6d, 0x70, 0x75, 0x74,
+	0x65, 0x5f, 0x75, 0x6e, 0x69, 0x74, 0x73, 0x52, 0x18, 0x6e, 0x75, 0x6d, 0x45, 0x73, 0x74, 0x69,
+	0x6d, 0x61, 0x74, 0x65, 0x64, 0x43, 0x6f, 0x6d, 0x70, 0x75, 0x74, 0x65, 0x55, 0x6e, 0x69, 0x74,
+	0x73, 0x12, 0x65, 0x0a, 0x14, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x5f, 0x61, 0x6d, 0x6f,
+	0x75, 0x6e, 0x74, 0x5f, 0x75, 0x70, 0x6f, 0x6b, 0x74, 0x18, 0x06, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x76, 0x31,
+	0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x18, 0xea, 0xde, 0x1f, 0x14,
+	0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x5f, 0x61, 0x6d, 0x6f, 0x75, 0x6e, 0x74, 0x5f, 0x75,
+	0x70, 0x6f, 0x6b, 0x74, 0x52, 0x12, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x65, 0x64, 0x41, 0x6d, 0x6f,
+	0x75, 0x6e, 0x74, 0x55, 0x70, 0x6f, 0x6b, 0x74, 0x42, 0x9e, 0x01, 0xd8, 0xe2, 0x1e, 0x01, 0x0a,
+	0x12, 0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x70, 0x72,
+	0x6f, 0x6f, 0x66, 0x42, 0x0a, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50,
+	0x01, 0x5a, 0x1f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f,
+	0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x70, 0x72, 0x6f,
+	0x6f, 0x66, 0xa2, 0x02, 0x03, 0x50, 0x50, 0x58, 0xaa, 0x02, 0x0e, 0x50, 0x6f, 0x6b, 0x74, 0x72,
+	0x6f, 0x6c, 0x6c, 0x2e, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0xca, 0x02, 0x0e, 0x50, 0x6f, 0x6b, 0x74,
+	0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0xe2, 0x02, 0x1a, 0x50, 0x6f, 0x6b,
+	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x5c, 0x47, 0x50, 0x42, 0x4d,
+	0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x0f, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f,
+	0x6c, 0x6c, 0x3a, 0x3a, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x33,
 }
 
 var (
@@ -2626,20 +3257,25 @@ var file_poktroll_proof_event_proto_goTypes = []interface{}{
 	(*EventProofSubmitted)(nil), // 2: poktroll.proof.EventProofSubmitted
 	(*EventProofUpdated)(nil),   // 3: poktroll.proof.EventProofUpdated
 	(*Claim)(nil),               // 4: poktroll.proof.Claim
-	(*Proof)(nil),               // 5: poktroll.proof.Proof
+	(*v1beta1.Coin)(nil),        // 5: cosmos.base.v1beta1.Coin
+	(*Proof)(nil),               // 6: poktroll.proof.Proof
 }
 var file_poktroll_proof_event_proto_depIdxs = []int32{
-	4, // 0: poktroll.proof.EventClaimCreated.claim:type_name -> poktroll.proof.Claim
-	4, // 1: poktroll.proof.EventClaimUpdated.claim:type_name -> poktroll.proof.Claim
-	4, // 2: poktroll.proof.EventProofSubmitted.claim:type_name -> poktroll.proof.Claim
-	5, // 3: poktroll.proof.EventProofSubmitted.proof:type_name -> poktroll.proof.Proof
-	4, // 4: poktroll.proof.EventProofUpdated.claim:type_name -> poktroll.proof.Claim
-	5, // 5: poktroll.proof.EventProofUpdated.proof:type_name -> poktroll.proof.Proof
-	6, // [6:6] is the sub-list for method output_type
-	6, // [6:6] is the sub-list for method input_type
-	6, // [6:6] is the sub-list for extension type_name
-	6, // [6:6] is the sub-list for extension extendee
-	0, // [0:6] is the sub-list for field type_name
+	4,  // 0: poktroll.proof.EventClaimCreated.claim:type_name -> poktroll.proof.Claim
+	5,  // 1: poktroll.proof.EventClaimCreated.claimed_amount_upokt:type_name -> cosmos.base.v1beta1.Coin
+	4,  // 2: poktroll.proof.EventClaimUpdated.claim:type_name -> poktroll.proof.Claim
+	5,  // 3: poktroll.proof.EventClaimUpdated.claimed_amount_upokt:type_name -> cosmos.base.v1beta1.Coin
+	4,  // 4: poktroll.proof.EventProofSubmitted.claim:type_name -> poktroll.proof.Claim
+	6,  // 5: poktroll.proof.EventProofSubmitted.proof:type_name -> poktroll.proof.Proof
+	5,  // 6: poktroll.proof.EventProofSubmitted.claimed_amount_upokt:type_name -> cosmos.base.v1beta1.Coin
+	4,  // 7: poktroll.proof.EventProofUpdated.claim:type_name -> poktroll.proof.Claim
+	6,  // 8: poktroll.proof.EventProofUpdated.proof:type_name -> poktroll.proof.Proof
+	5,  // 9: poktroll.proof.EventProofUpdated.claimed_amount_upokt:type_name -> cosmos.base.v1beta1.Coin
+	10, // [10:10] is the sub-list for method output_type
+	10, // [10:10] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_poktroll_proof_event_proto_init() }
