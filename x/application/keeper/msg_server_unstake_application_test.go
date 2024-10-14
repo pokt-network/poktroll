@@ -146,8 +146,7 @@ func TestMsgServer_UnstakeApplication_CancelUnbondingIfRestaked(t *testing.T) {
 	foundApp.DelegateeGatewayAddresses = make([]string, 0)
 	expectedAppUnbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{Application: &foundApp}
 	events := sdk.UnwrapSDKContext(ctx).EventManager().Events()
-	appUnbondingBeginTypeURL := sdk.MsgTypeURL(&apptypes.EventApplicationUnbondingBegin{})
-	appUnbondingBeginEvents := testevents.FilterEvents[*apptypes.EventApplicationUnbondingBegin](t, events, appUnbondingBeginTypeURL)
+	appUnbondingBeginEvents := testevents.FilterEvents[*apptypes.EventApplicationUnbondingBegin](t, events)
 	require.Equalf(t, 1, len(appUnbondingBeginEvents), "expected exactly 1 event")
 	require.EqualValues(t, expectedAppUnbondingBeginEvent, appUnbondingBeginEvents[0])
 
@@ -171,8 +170,7 @@ func TestMsgServer_UnstakeApplication_CancelUnbondingIfRestaked(t *testing.T) {
 	expectedApp.DelegateeGatewayAddresses = make([]string, 0)
 	expectedAppUnbondingCanceledEvent := &apptypes.EventApplicationUnbondingCanceled{Application: expectedApp}
 	events = sdk.UnwrapSDKContext(ctx).EventManager().Events()
-	appUnbondingCanceledTypeURL := sdk.MsgTypeURL(&apptypes.EventApplicationUnbondingCanceled{})
-	appUnbondingEvents := testevents.FilterEvents[*apptypes.EventApplicationUnbondingCanceled](t, events, appUnbondingCanceledTypeURL)
+	appUnbondingEvents := testevents.FilterEvents[*apptypes.EventApplicationUnbondingCanceled](t, events)
 	require.Equalf(t, 1, len(appUnbondingEvents), "expected exactly 1 event")
 	require.EqualValues(t, expectedAppUnbondingCanceledEvent, appUnbondingEvents[0])
 

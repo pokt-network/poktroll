@@ -160,8 +160,7 @@ func TestUpdateRelayMiningDifficulty_Base(t *testing.T) {
 
 	// Confirm a relay mining difficulty update event was emitted
 	events := sdkCtx.EventManager().Events()
-	expectedEvents := testutilevents.FilterEvents[*servicetypes.EventRelayMiningDifficultyUpdated](t,
-		events, "poktroll.service.EventRelayMiningDifficultyUpdated")
+	expectedEvents := testutilevents.FilterEvents[*servicetypes.EventRelayMiningDifficultyUpdated](t, events)
 	require.Len(t, expectedEvents, 6) // 3 for svc1, 2 for svc2, 1 for svc3
 }
 

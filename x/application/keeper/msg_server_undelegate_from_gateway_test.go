@@ -65,7 +65,7 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
 	events := sdkCtx.EventManager().Events()
-	redelgationEvents := testevents.FilterEvents[*apptypes.EventRedelegation](t, events, eventRedelegationTypeURL)
+	redelgationEvents := testevents.FilterEvents[*apptypes.EventRedelegation](t, events)
 	require.Equal(t, int(maxDelegatedGateways), len(redelgationEvents))
 
 	for i, redelegationEvent := range redelgationEvents {
@@ -97,7 +97,7 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 	require.NoError(t, err)
 
 	events = sdkCtx.EventManager().Events()
-	redelgationEvents = testevents.FilterEvents[*apptypes.EventRedelegation](t, events, eventRedelegationTypeURL)
+	redelgationEvents = testevents.FilterEvents[*apptypes.EventRedelegation](t, events)
 	lastEventIdx := len(redelgationEvents) - 1
 	expectedEvent := &apptypes.EventRedelegation{
 		AppAddress:     appAddr,
@@ -162,7 +162,7 @@ func TestMsgServer_UndelegateFromGateway_FailNotDelegated(t *testing.T) {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
 	events := sdkCtx.EventManager().Events()
-	redelegationEvents := testevents.FilterEvents[*apptypes.EventRedelegation](t, events, eventRedelegationTypeURL)
+	redelegationEvents := testevents.FilterEvents[*apptypes.EventRedelegation](t, events)
 	require.Equal(t, 0, len(redelegationEvents))
 
 	// Prepare a delegation message
@@ -181,7 +181,7 @@ func TestMsgServer_UndelegateFromGateway_FailNotDelegated(t *testing.T) {
 	}
 
 	events = sdkCtx.EventManager().Events()
-	redelegationEvents = testevents.FilterEvents[*apptypes.EventRedelegation](t, events, eventRedelegationTypeURL)
+	redelegationEvents = testevents.FilterEvents[*apptypes.EventRedelegation](t, events)
 	require.Equal(t, 1, len(redelegationEvents))
 	require.EqualValues(t, expectedRedelegationEvent, redelegationEvents[0])
 
@@ -241,7 +241,7 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegateFromUnstakedGatew
 	}
 
 	events := sdkCtx.EventManager().Events()
-	redelegationEvents := testevents.FilterEvents[*apptypes.EventRedelegation](t, events, eventRedelegationTypeURL)
+	redelegationEvents := testevents.FilterEvents[*apptypes.EventRedelegation](t, events)
 	require.Equal(t, 1, len(redelegationEvents))
 	require.EqualValues(t, expectedRedelegationEvent, redelegationEvents[0])
 
@@ -270,7 +270,7 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegateFromUnstakedGatew
 	require.NoError(t, err)
 
 	events = sdkCtx.EventManager().Events()
-	redelegationEvents = testevents.FilterEvents[*apptypes.EventRedelegation](t, events, eventRedelegationTypeURL)
+	redelegationEvents = testevents.FilterEvents[*apptypes.EventRedelegation](t, events)
 	require.Equal(t, 1, len(redelegationEvents))
 
 	expectedEvent := &apptypes.EventRedelegation{

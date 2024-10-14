@@ -109,8 +109,7 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 
 	// Check that the expected events are emitted
 	events := sdkCtx.EventManager().Events()
-	relayMiningEvents := testutilevents.FilterEvents[*servicetypes.EventRelayMiningDifficultyUpdated](t,
-		events, "poktroll.service.EventRelayMiningDifficultyUpdated")
+	relayMiningEvents := testutilevents.FilterEvents[*servicetypes.EventRelayMiningDifficultyUpdated](t, events)
 	require.Len(t, relayMiningEvents, 1, "unexpected number of relay mining difficulty updated events")
 	relayMiningEvent := relayMiningEvents[0]
 	require.Equal(t, "svc1", relayMiningEvent.ServiceId)

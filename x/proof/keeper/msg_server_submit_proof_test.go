@@ -227,10 +227,10 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 
 			events := sdkCtx.EventManager().Events()
 
-			claimCreatedEvents := testutilevents.FilterEvents[*prooftypes.EventClaimCreated](t, events, "poktroll.proof.EventClaimCreated")
+			claimCreatedEvents := testutilevents.FilterEvents[*prooftypes.EventClaimCreated](t, events)
 			require.Len(t, claimCreatedEvents, 1)
 
-			proofSubmittedEvents := testutilevents.FilterEvents[*prooftypes.EventProofSubmitted](t, events, "poktroll.proof.EventProofSubmitted")
+			proofSubmittedEvents := testutilevents.FilterEvents[*prooftypes.EventProofSubmitted](t, events)
 			require.Len(t, proofSubmittedEvents, 1)
 
 			proofSubmittedEvent := proofSubmittedEvents[0]
@@ -411,10 +411,10 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 			// Assert that only the create claim event was emitted.
 			events := sdkCtx.EventManager().Events()
 
-			claimCreatedEvents := testutilevents.FilterEvents[*prooftypes.EventClaimCreated](t, events, "poktroll.proof.EventClaimCreated")
+			claimCreatedEvents := testutilevents.FilterEvents[*prooftypes.EventClaimCreated](t, events)
 			require.Len(t, claimCreatedEvents, 1)
 
-			proofSubmittedEvents := testutilevents.FilterEvents[*prooftypes.EventProofSubmitted](t, events, "poktroll.proof.EventProofSubmitted")
+			proofSubmittedEvents := testutilevents.FilterEvents[*prooftypes.EventProofSubmitted](t, events)
 			require.Len(t, proofSubmittedEvents, 0)
 		})
 	}
@@ -684,7 +684,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 
 			// Assert that no proof submitted events were emitted.
 			events := sdkCtx.EventManager().Events()
-			proofSubmittedEvents := testutilevents.FilterEvents[*prooftypes.EventProofSubmitted](t, events, "poktroll.proof.EventProofSubmitted")
+			proofSubmittedEvents := testutilevents.FilterEvents[*prooftypes.EventProofSubmitted](t, events)
 			require.Equal(t, 0, len(proofSubmittedEvents))
 		})
 	}

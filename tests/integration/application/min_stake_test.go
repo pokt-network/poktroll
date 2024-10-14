@@ -6,7 +6,6 @@ import (
 
 	cosmoslog "cosmossdk.io/log"
 	"cosmossdk.io/math"
-	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/stretchr/testify/require"
@@ -108,8 +107,7 @@ func (s *applicationMinStakeTestSuite) TestAppIsUnbondedIfBelowMinStakeWhenSettl
 	// Assert that the EventApplicationUnbondedBelowMinStake event is emitted.
 	expectedEvent := &apptypes.EventApplicationUnbondingBegin{AppAddress: s.appBech32}
 	events := cosmostypes.UnwrapSDKContext(s.ctx).EventManager().Events()
-	eventTypeURL := codectypes.MsgTypeURL(&apptypes.EventApplicationUnbondedBelowMinStake{})
-	filteredEvents := testevents.FilterEvents[*apptypes.EventApplicationUnbondedBelowMinStake](s.T(), events, eventTypeURL)
+	filteredEvents := testevents.FilterEvents[*apptypes.EventApplicationUnbondedBelowMinStake](s.T(), events)
 	require.Equal(s.T(), 1, len(filteredEvents), "expected exactly 1 event")
 	require.EqualValues(s.T(), expectedEvent, filteredEvents[0])
 

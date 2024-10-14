@@ -310,7 +310,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequiredAndNotProv
 	require.Len(t, events, 10) // asserting on the length of events so the developer must consciously update it upon changes
 
 	// Confirm an expiration event was emitted
-	expectedClaimExpiredEvents := testutilevents.FilterEvents[*tokenomicstypes.EventClaimExpired](t, events, "poktroll.tokenomics.EventClaimExpired")
+	expectedClaimExpiredEvents := testutilevents.FilterEvents[*tokenomicstypes.EventClaimExpired](t, events)
 	require.Len(t, expectedClaimExpiredEvents, 1)
 
 	// Validate the claim expired event
@@ -322,7 +322,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequiredAndNotProv
 	require.Equal(t, s.claimedUpokt, *expectedClaimExpiredEvent.GetClaimedUpokt())
 
 	// Confirm that a slashing event was emitted
-	expectedSlashingEvents := testutilevents.FilterEvents[*tokenomicstypes.EventSupplierSlashed](t, events, "poktroll.tokenomics.EventSupplierSlashed")
+	expectedSlashingEvents := testutilevents.FilterEvents[*tokenomicstypes.EventSupplierSlashed](t, events)
 	require.Len(t, expectedSlashingEvents, 1)
 
 	// Validate the slashing event
@@ -376,7 +376,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimSettled_ProofRequiredAndProvide
 
 	// Confirm an settlement event was emitted
 	events := sdkCtx.EventManager().Events()
-	expectedEvents := testutilevents.FilterEvents[*tokenomicstypes.EventClaimSettled](t, events, "poktroll.tokenomics.EventClaimSettled")
+	expectedEvents := testutilevents.FilterEvents[*tokenomicstypes.EventClaimSettled](t, events)
 	require.Len(t, expectedEvents, 1)
 
 	// Validate the event
@@ -443,7 +443,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOn
 	// Confirm an expiration event was emitted
 	events := sdkCtx.EventManager().Events()
 	require.Len(t, events, 10) // minting, burning, settling, etc..
-	expectedClaimExpiredEvents := testutilevents.FilterEvents[*tokenomicstypes.EventClaimExpired](t, events, "poktroll.tokenomics.EventClaimExpired")
+	expectedClaimExpiredEvents := testutilevents.FilterEvents[*tokenomicstypes.EventClaimExpired](t, events)
 	require.Len(t, expectedClaimExpiredEvents, 1)
 
 	// Validate the event
@@ -455,7 +455,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOn
 	require.Equal(t, s.claimedUpokt, *expectedClaimExpiredEvent.GetClaimedUpokt())
 
 	// Confirm that a slashing event was emitted
-	expectedSlashingEvents := testutilevents.FilterEvents[*tokenomicstypes.EventSupplierSlashed](t, events, "poktroll.tokenomics.EventSupplierSlashed")
+	expectedSlashingEvents := testutilevents.FilterEvents[*tokenomicstypes.EventSupplierSlashed](t, events)
 	require.Len(t, expectedSlashingEvents, 1)
 
 	// Validate the slashing event
@@ -509,7 +509,7 @@ func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_Vi
 
 	// Confirm an settlement event was emitted
 	events := sdkCtx.EventManager().Events()
-	expectedEvents := testutilevents.FilterEvents[*tokenomicstypes.EventClaimSettled](t, events, "poktroll.tokenomics.EventClaimSettled")
+	expectedEvents := testutilevents.FilterEvents[*tokenomicstypes.EventClaimSettled](t, events)
 	require.Len(t, expectedEvents, 1)
 
 	// Validate the settlement event
@@ -564,7 +564,7 @@ func (s *TestSuite) TestSettlePendingClaims_Settles_WhenAProofIsNotRequired() {
 
 	// Confirm a settlement event was emitted
 	events := sdkCtx.EventManager().Events()
-	expectedEvents := testutilevents.FilterEvents[*tokenomicstypes.EventClaimSettled](t, events, "poktroll.tokenomics.EventClaimSettled")
+	expectedEvents := testutilevents.FilterEvents[*tokenomicstypes.EventClaimSettled](t, events)
 	require.Len(t, expectedEvents, 1)
 
 	// Validate the settlement event
@@ -727,7 +727,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	events := sdkCtx.EventManager().Events()
 
 	// Confirm that a slashing event was emitted
-	expectedSlashingEvents := testutilevents.FilterEvents[*tokenomicstypes.EventSupplierSlashed](t, events, "poktroll.tokenomics.EventSupplierSlashed")
+	expectedSlashingEvents := testutilevents.FilterEvents[*tokenomicstypes.EventSupplierSlashed](t, events)
 	require.Len(t, expectedSlashingEvents, 1)
 
 	// Validate the slashing event

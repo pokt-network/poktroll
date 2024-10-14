@@ -14,8 +14,6 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-var eventRedelegationTypeURL = sdk.MsgTypeURL(&apptypes.EventRedelegation{})
-
 func TestMsgServer_DelegateToGateway_SuccessfullyDelegate(t *testing.T) {
 	k, ctx := keepertest.ApplicationKeeper(t)
 	srv := keeper.NewMsgServerImpl(k)
@@ -62,7 +60,7 @@ func TestMsgServer_DelegateToGateway_SuccessfullyDelegate(t *testing.T) {
 	}
 
 	events := sdkCtx.EventManager().Events()
-	filteredEvents := testevents.FilterEvents[*apptypes.EventRedelegation](t, events, eventRedelegationTypeURL)
+	filteredEvents := testevents.FilterEvents[*apptypes.EventRedelegation](t, events)
 	require.Equal(t, 1, len(filteredEvents), "expected exactly 1 EventRedelegation event")
 	require.EqualValues(t, expectedEvent, filteredEvents[0])
 
@@ -87,7 +85,7 @@ func TestMsgServer_DelegateToGateway_SuccessfullyDelegate(t *testing.T) {
 	require.NoError(t, err)
 
 	events = sdkCtx.EventManager().Events()
-	filteredEvents = testevents.FilterEvents[*apptypes.EventRedelegation](t, events, eventRedelegationTypeURL)
+	filteredEvents = testevents.FilterEvents[*apptypes.EventRedelegation](t, events)
 	require.Equal(t, 1, len(filteredEvents))
 	require.EqualValues(t, expectedEvent, filteredEvents[0])
 
@@ -143,7 +141,7 @@ func TestMsgServer_DelegateToGateway_FailDuplicate(t *testing.T) {
 	}
 
 	events := sdkCtx.EventManager().Events()
-	filteredEvents := testevents.FilterEvents[*apptypes.EventRedelegation](t, events, eventRedelegationTypeURL)
+	filteredEvents := testevents.FilterEvents[*apptypes.EventRedelegation](t, events)
 	require.Equal(t, 1, len(filteredEvents))
 	require.EqualValues(t, expectedEvent, filteredEvents[0])
 
@@ -260,7 +258,7 @@ func TestMsgServer_DelegateToGateway_FailMaxReached(t *testing.T) {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
 	events := sdkCtx.EventManager().Events()
-	filteredEvents := testevents.FilterEvents[*apptypes.EventRedelegation](t, events, eventRedelegationTypeURL)
+	filteredEvents := testevents.FilterEvents[*apptypes.EventRedelegation](t, events)
 	require.Equal(t, int(maxDelegatedParam), len(filteredEvents))
 
 	// TODO_UPNEXT(@bryanchriswhite): These events should be distinguishable.
@@ -291,7 +289,7 @@ func TestMsgServer_DelegateToGateway_FailMaxReached(t *testing.T) {
 	require.ErrorIs(t, err, apptypes.ErrAppMaxDelegatedGateways)
 
 	events = sdkCtx.EventManager().Events()
-	filteredEvents = testevents.FilterEvents[*apptypes.EventRedelegation](t, events, eventRedelegationTypeURL)
+	filteredEvents = testevents.FilterEvents[*apptypes.EventRedelegation](t, events)
 	require.Equal(t, 0, len(filteredEvents), "expected no redelegation events")
 
 	foundApp, isStakedAppFound := k.GetApplication(ctx, appAddr)
