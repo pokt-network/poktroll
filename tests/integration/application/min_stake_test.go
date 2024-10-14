@@ -49,6 +49,11 @@ func TestApplicationMinStakeTestSuite(t *testing.T) {
 func (s *applicationMinStakeTestSuite) SetupTest() {
 	s.keepers, s.ctx = keeper.NewTokenomicsModuleKeepers(s.T(), cosmoslog.NewNopLogger())
 
+	proofParams := prooftypes.DefaultParams()
+	proofParams.ProofRequestProbability = 0
+	err := s.keepers.ProofKeeper.SetParams(s.ctx, proofParams)
+	require.NoError(s.T(), err)
+
 	s.serviceId = "svc1"
 	s.appBech32 = sample.AccAddress()
 	s.supplierBech32 = sample.AccAddress()
