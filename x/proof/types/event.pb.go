@@ -5,6 +5,7 @@ package types
 
 import (
 	fmt "fmt"
+	types "github.com/cosmos/cosmos-sdk/types"
 	_ "github.com/cosmos/gogoproto/gogoproto"
 	proto "github.com/cosmos/gogoproto/proto"
 	io "io"
@@ -24,9 +25,11 @@ var _ = math.Inf
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 type EventClaimCreated struct {
-	Claim           *Claim `protobuf:"bytes,1,opt,name=claim,proto3" json:"claim"`
-	NumRelays       uint64 `protobuf:"varint,2,opt,name=num_relays,json=numRelays,proto3" json:"num_relays"`
-	NumComputeUnits uint64 `protobuf:"varint,3,opt,name=num_compute_units,json=numComputeUnits,proto3" json:"num_compute_units"`
+	Claim                    *Claim      `protobuf:"bytes,1,opt,name=claim,proto3" json:"claim"`
+	NumRelays                uint64      `protobuf:"varint,2,opt,name=num_relays,json=numRelays,proto3" json:"num_relays"`
+	NumClaimedComputeUnits   uint64      `protobuf:"varint,4,opt,name=num_claimed_compute_units,json=numClaimedComputeUnits,proto3" json:"num_claimed_compute_units"`
+	NumEstimatedComputeUnits uint64      `protobuf:"varint,5,opt,name=num_estimated_compute_units,json=numEstimatedComputeUnits,proto3" json:"num_estimated_compute_units"`
+	ClaimedAmountUpokt       *types.Coin `protobuf:"bytes,6,opt,name=claimed_amount_upokt,json=claimedAmountUpokt,proto3" json:"claimed_amount_upokt"`
 }
 
 func (m *EventClaimCreated) Reset()         { *m = EventClaimCreated{} }
@@ -72,18 +75,34 @@ func (m *EventClaimCreated) GetNumRelays() uint64 {
 	return 0
 }
 
-func (m *EventClaimCreated) GetNumComputeUnits() uint64 {
+func (m *EventClaimCreated) GetNumClaimedComputeUnits() uint64 {
 	if m != nil {
-		return m.NumComputeUnits
+		return m.NumClaimedComputeUnits
 	}
 	return 0
 }
 
+func (m *EventClaimCreated) GetNumEstimatedComputeUnits() uint64 {
+	if m != nil {
+		return m.NumEstimatedComputeUnits
+	}
+	return 0
+}
+
+func (m *EventClaimCreated) GetClaimedAmountUpokt() *types.Coin {
+	if m != nil {
+		return m.ClaimedAmountUpokt
+	}
+	return nil
+}
+
 // TODO_TEST: Add coverage for claim updates.
 type EventClaimUpdated struct {
-	Claim           *Claim `protobuf:"bytes,1,opt,name=claim,proto3" json:"claim"`
-	NumRelays       uint64 `protobuf:"varint,2,opt,name=num_relays,json=numRelays,proto3" json:"num_relays"`
-	NumComputeUnits uint64 `protobuf:"varint,3,opt,name=num_compute_units,json=numComputeUnits,proto3" json:"num_compute_units"`
+	Claim                    *Claim      `protobuf:"bytes,1,opt,name=claim,proto3" json:"claim"`
+	NumRelays                uint64      `protobuf:"varint,2,opt,name=num_relays,json=numRelays,proto3" json:"num_relays"`
+	NumClaimedComputeUnits   uint64      `protobuf:"varint,4,opt,name=num_claimed_compute_units,json=numClaimedComputeUnits,proto3" json:"num_claimed_compute_units"`
+	NumEstimatedComputeUnits uint64      `protobuf:"varint,5,opt,name=num_estimated_compute_units,json=numEstimatedComputeUnits,proto3" json:"num_estimated_compute_units"`
+	ClaimedAmountUpokt       *types.Coin `protobuf:"bytes,6,opt,name=claimed_amount_upokt,json=claimedAmountUpokt,proto3" json:"claimed_amount_upokt"`
 }
 
 func (m *EventClaimUpdated) Reset()         { *m = EventClaimUpdated{} }
@@ -129,18 +148,34 @@ func (m *EventClaimUpdated) GetNumRelays() uint64 {
 	return 0
 }
 
-func (m *EventClaimUpdated) GetNumComputeUnits() uint64 {
+func (m *EventClaimUpdated) GetNumClaimedComputeUnits() uint64 {
 	if m != nil {
-		return m.NumComputeUnits
+		return m.NumClaimedComputeUnits
 	}
 	return 0
 }
 
+func (m *EventClaimUpdated) GetNumEstimatedComputeUnits() uint64 {
+	if m != nil {
+		return m.NumEstimatedComputeUnits
+	}
+	return 0
+}
+
+func (m *EventClaimUpdated) GetClaimedAmountUpokt() *types.Coin {
+	if m != nil {
+		return m.ClaimedAmountUpokt
+	}
+	return nil
+}
+
 type EventProofSubmitted struct {
-	Claim           *Claim `protobuf:"bytes,1,opt,name=claim,proto3" json:"claim"`
-	Proof           *Proof `protobuf:"bytes,2,opt,name=proof,proto3" json:"proof"`
-	NumRelays       uint64 `protobuf:"varint,3,opt,name=num_relays,json=numRelays,proto3" json:"num_relays"`
-	NumComputeUnits uint64 `protobuf:"varint,4,opt,name=num_compute_units,json=numComputeUnits,proto3" json:"num_compute_units"`
+	Claim                    *Claim      `protobuf:"bytes,1,opt,name=claim,proto3" json:"claim"`
+	Proof                    *Proof      `protobuf:"bytes,2,opt,name=proof,proto3" json:"proof"`
+	NumRelays                uint64      `protobuf:"varint,3,opt,name=num_relays,json=numRelays,proto3" json:"num_relays"`
+	NumClaimedComputeUnits   uint64      `protobuf:"varint,4,opt,name=num_claimed_compute_units,json=numClaimedComputeUnits,proto3" json:"num_claimed_compute_units"`
+	NumEstimatedComputeUnits uint64      `protobuf:"varint,5,opt,name=num_estimated_compute_units,json=numEstimatedComputeUnits,proto3" json:"num_estimated_compute_units"`
+	ClaimedAmountUpokt       *types.Coin `protobuf:"bytes,6,opt,name=claimed_amount_upokt,json=claimedAmountUpokt,proto3" json:"claimed_amount_upokt"`
 }
 
 func (m *EventProofSubmitted) Reset()         { *m = EventProofSubmitted{} }
@@ -193,19 +228,35 @@ func (m *EventProofSubmitted) GetNumRelays() uint64 {
 	return 0
 }
 
-func (m *EventProofSubmitted) GetNumComputeUnits() uint64 {
+func (m *EventProofSubmitted) GetNumClaimedComputeUnits() uint64 {
 	if m != nil {
-		return m.NumComputeUnits
+		return m.NumClaimedComputeUnits
 	}
 	return 0
 }
 
+func (m *EventProofSubmitted) GetNumEstimatedComputeUnits() uint64 {
+	if m != nil {
+		return m.NumEstimatedComputeUnits
+	}
+	return 0
+}
+
+func (m *EventProofSubmitted) GetClaimedAmountUpokt() *types.Coin {
+	if m != nil {
+		return m.ClaimedAmountUpokt
+	}
+	return nil
+}
+
 // TODO_TEST: Add coverage for proof updates.
 type EventProofUpdated struct {
-	Claim           *Claim `protobuf:"bytes,1,opt,name=claim,proto3" json:"claim"`
-	Proof           *Proof `protobuf:"bytes,2,opt,name=proof,proto3" json:"proof"`
-	NumRelays       uint64 `protobuf:"varint,3,opt,name=num_relays,json=numRelays,proto3" json:"num_relays"`
-	NumComputeUnits uint64 `protobuf:"varint,4,opt,name=num_compute_units,json=numComputeUnits,proto3" json:"num_compute_units"`
+	Claim                    *Claim      `protobuf:"bytes,1,opt,name=claim,proto3" json:"claim"`
+	Proof                    *Proof      `protobuf:"bytes,2,opt,name=proof,proto3" json:"proof"`
+	NumRelays                uint64      `protobuf:"varint,3,opt,name=num_relays,json=numRelays,proto3" json:"num_relays"`
+	NumClaimedComputeUnits   uint64      `protobuf:"varint,4,opt,name=num_claimed_compute_units,json=numClaimedComputeUnits,proto3" json:"num_claimed_compute_units"`
+	NumEstimatedComputeUnits uint64      `protobuf:"varint,5,opt,name=num_estimated_compute_units,json=numEstimatedComputeUnits,proto3" json:"num_estimated_compute_units"`
+	ClaimedAmountUpokt       *types.Coin `protobuf:"bytes,6,opt,name=claimed_amount_upokt,json=claimedAmountUpokt,proto3" json:"claimed_amount_upokt"`
 }
 
 func (m *EventProofUpdated) Reset()         { *m = EventProofUpdated{} }
@@ -258,11 +309,25 @@ func (m *EventProofUpdated) GetNumRelays() uint64 {
 	return 0
 }
 
-func (m *EventProofUpdated) GetNumComputeUnits() uint64 {
+func (m *EventProofUpdated) GetNumClaimedComputeUnits() uint64 {
 	if m != nil {
-		return m.NumComputeUnits
+		return m.NumClaimedComputeUnits
 	}
 	return 0
+}
+
+func (m *EventProofUpdated) GetNumEstimatedComputeUnits() uint64 {
+	if m != nil {
+		return m.NumEstimatedComputeUnits
+	}
+	return 0
+}
+
+func (m *EventProofUpdated) GetClaimedAmountUpokt() *types.Coin {
+	if m != nil {
+		return m.ClaimedAmountUpokt
+	}
+	return nil
 }
 
 func init() {
@@ -275,29 +340,36 @@ func init() {
 func init() { proto.RegisterFile("poktroll/proof/event.proto", fileDescriptor_dd4c19e04487fbec) }
 
 var fileDescriptor_dd4c19e04487fbec = []byte{
-	// 341 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x92, 0x2a, 0xc8, 0xcf, 0x2e,
-	0x29, 0xca, 0xcf, 0xc9, 0xd1, 0x2f, 0x28, 0xca, 0xcf, 0x4f, 0xd3, 0x4f, 0x2d, 0x4b, 0xcd, 0x2b,
-	0xd1, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0xe2, 0x83, 0xc9, 0xe9, 0x81, 0xe5, 0xa4, 0x44, 0xd2,
-	0xf3, 0xd3, 0xf3, 0xc1, 0x52, 0xfa, 0x20, 0x16, 0x44, 0x95, 0x14, 0xba, 0x09, 0x25, 0x95, 0x05,
-	0xa9, 0xc5, 0x10, 0x39, 0xa5, 0xbd, 0x8c, 0x5c, 0x82, 0xae, 0x20, 0x13, 0x9d, 0x73, 0x12, 0x33,
-	0x73, 0x9d, 0x8b, 0x52, 0x13, 0x4b, 0x52, 0x53, 0x84, 0xcc, 0xb8, 0x58, 0x93, 0x41, 0x7c, 0x09,
-	0x46, 0x05, 0x46, 0x0d, 0x6e, 0x23, 0x51, 0x3d, 0x54, 0x7b, 0xf4, 0xc0, 0x8a, 0x9d, 0x38, 0x5f,
-	0xdd, 0x93, 0x87, 0xa8, 0x0b, 0x82, 0x50, 0x42, 0xba, 0x5c, 0x5c, 0x79, 0xa5, 0xb9, 0xf1, 0x45,
-	0xa9, 0x39, 0x89, 0x95, 0xc5, 0x12, 0x4c, 0x0a, 0x8c, 0x1a, 0x2c, 0x4e, 0x7c, 0xaf, 0xee, 0xc9,
-	0x23, 0x89, 0x06, 0x71, 0xe6, 0x95, 0xe6, 0x06, 0x81, 0x99, 0x42, 0x8e, 0x5c, 0x82, 0x20, 0x89,
-	0xe4, 0xfc, 0xdc, 0x82, 0xd2, 0x92, 0xd4, 0xf8, 0xd2, 0xbc, 0xcc, 0x92, 0x62, 0x09, 0x66, 0xb0,
-	0x2e, 0xd1, 0x57, 0xf7, 0xe4, 0x31, 0x25, 0x83, 0xf8, 0xf3, 0x4a, 0x73, 0x9d, 0x21, 0x22, 0xa1,
-	0x20, 0x01, 0x34, 0xf7, 0x87, 0x16, 0xa4, 0x0c, 0x31, 0xf7, 0x7f, 0x67, 0xe4, 0x12, 0x06, 0xbb,
-	0x3f, 0x00, 0xe4, 0xb0, 0xe0, 0xd2, 0xa4, 0xdc, 0xcc, 0x12, 0x4a, 0x7c, 0x60, 0xc6, 0xc5, 0x0a,
-	0x56, 0x00, 0x76, 0x3c, 0x16, 0x7d, 0x60, 0x6b, 0x20, 0xfa, 0xc0, 0x02, 0x41, 0x10, 0x0a, 0xcd,
-	0xe7, 0xcc, 0x64, 0xf9, 0x9c, 0x85, 0x24, 0x9f, 0x7f, 0x85, 0xc5, 0x1c, 0xd8, 0x49, 0x94, 0xc6,
-	0xdc, 0x90, 0xf1, 0xb7, 0x93, 0xcf, 0x89, 0x47, 0x72, 0x8c, 0x17, 0x1e, 0xc9, 0x31, 0xde, 0x78,
-	0x24, 0xc7, 0xf8, 0xe0, 0x91, 0x1c, 0xe3, 0x84, 0xc7, 0x72, 0x0c, 0x17, 0x1e, 0xcb, 0x31, 0xdc,
-	0x78, 0x2c, 0xc7, 0x10, 0xa5, 0x97, 0x9e, 0x59, 0x92, 0x51, 0x9a, 0xa4, 0x97, 0x9c, 0x9f, 0xab,
-	0x0f, 0xf2, 0x82, 0x6e, 0x5e, 0x6a, 0x49, 0x79, 0x7e, 0x51, 0xb6, 0x3e, 0x3c, 0x0f, 0x57, 0x20,
-	0xe7, 0xe2, 0x24, 0x36, 0x70, 0x36, 0x36, 0x06, 0x04, 0x00, 0x00, 0xff, 0xff, 0xfc, 0x84, 0x01,
-	0x75, 0x26, 0x04, 0x00, 0x00,
+	// 456 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xec, 0x95, 0x41, 0x6b, 0xdb, 0x30,
+	0x14, 0xc7, 0xe3, 0xa5, 0x29, 0x54, 0x83, 0xc2, 0xbc, 0x6e, 0xb8, 0x19, 0x93, 0xcb, 0x4e, 0xbd,
+	0x54, 0xa2, 0x1b, 0xf4, 0xbe, 0x98, 0xde, 0x76, 0x18, 0x1e, 0x81, 0xb1, 0xc3, 0x82, 0xed, 0x68,
+	0x99, 0x69, 0xa4, 0x67, 0x6c, 0xa9, 0x5b, 0xbf, 0xc5, 0xee, 0xfb, 0x42, 0x3b, 0x16, 0xc6, 0xa0,
+	0x27, 0x33, 0x92, 0x9b, 0x3f, 0xc5, 0xd0, 0x53, 0x3c, 0x5a, 0xd3, 0xed, 0x92, 0x4b, 0x0e, 0x39,
+	0x49, 0xfe, 0xff, 0xff, 0x4f, 0x92, 0xdf, 0x0f, 0x21, 0x32, 0x2c, 0xe0, 0x42, 0x97, 0x30, 0x9f,
+	0xf3, 0xa2, 0x04, 0xf8, 0xc4, 0xc5, 0xa5, 0x50, 0x9a, 0x15, 0x25, 0x68, 0xf0, 0xf7, 0x5b, 0x8f,
+	0xa1, 0x37, 0xa4, 0x19, 0x54, 0x12, 0x2a, 0x9e, 0x26, 0x95, 0xe0, 0x97, 0xa7, 0xa9, 0xd0, 0xc9,
+	0x29, 0xcf, 0x20, 0x57, 0x2e, 0x3f, 0x3c, 0x98, 0xc1, 0x0c, 0x70, 0xca, 0xed, 0x6c, 0xa5, 0x76,
+	0x77, 0xd0, 0x57, 0x85, 0xa8, 0x9c, 0xf7, 0xe2, 0x7b, 0x9f, 0x3c, 0x3a, 0xb7, 0x3b, 0x46, 0xf3,
+	0x24, 0x97, 0x51, 0x29, 0x12, 0x2d, 0xa6, 0xfe, 0x19, 0x19, 0x64, 0xf6, 0x3b, 0xf0, 0x8e, 0xbc,
+	0xe3, 0x87, 0x2f, 0x9f, 0xb0, 0xbb, 0xe7, 0x60, 0x18, 0x1e, 0xed, 0x35, 0x75, 0xe8, 0x72, 0xb1,
+	0x1b, 0xfc, 0x13, 0x42, 0x94, 0x91, 0x93, 0x52, 0xcc, 0x93, 0xab, 0x2a, 0x78, 0x70, 0xe4, 0x1d,
+	0xef, 0x8c, 0xf6, 0x9b, 0x3a, 0xbc, 0xa5, 0xc6, 0x7b, 0xca, 0xc8, 0x18, 0xa7, 0xfe, 0x7b, 0x72,
+	0x68, 0x0d, 0xac, 0x15, 0xd3, 0x49, 0x06, 0xb2, 0x30, 0x5a, 0x4c, 0x8c, 0xca, 0x75, 0x15, 0xec,
+	0x60, 0xf5, 0xf3, 0xa6, 0x0e, 0xff, 0x1d, 0x8a, 0x9f, 0x2a, 0x23, 0x23, 0xe7, 0x44, 0xce, 0x18,
+	0x5b, 0xdd, 0xff, 0x48, 0x9e, 0xd9, 0x22, 0x51, 0xe9, 0x5c, 0xda, 0x3f, 0xea, 0xac, 0x3d, 0xc0,
+	0xb5, 0xc3, 0xa6, 0x0e, 0xff, 0x17, 0x8b, 0x03, 0x65, 0xe4, 0x79, 0xeb, 0xdd, 0x59, 0x5f, 0x90,
+	0x83, 0xf6, 0x40, 0x89, 0x04, 0xa3, 0xf4, 0xc4, 0xd8, 0x16, 0x05, 0xbb, 0xd8, 0xaf, 0x43, 0xe6,
+	0x38, 0x31, 0xcb, 0x89, 0xad, 0x38, 0xb1, 0x08, 0x72, 0x35, 0x0a, 0x9a, 0x3a, 0xbc, 0xb7, 0x34,
+	0xf6, 0x57, 0xea, 0x6b, 0x14, 0xc7, 0x56, 0xeb, 0xd0, 0x19, 0x17, 0xd3, 0x2d, 0x9d, 0x0d, 0xa2,
+	0xf3, 0xab, 0x4f, 0x1e, 0x23, 0x9d, 0xb7, 0xb6, 0xed, 0xef, 0x4c, 0x2a, 0x73, 0xbd, 0x0e, 0x9f,
+	0x33, 0x32, 0xc0, 0x00, 0xa2, 0xb9, 0xa7, 0x0e, 0xb7, 0x71, 0x75, 0x28, 0xc4, 0x6e, 0xe8, 0x70,
+	0xed, 0x6f, 0xb9, 0xae, 0xc9, 0xf5, 0x67, 0x7b, 0xeb, 0xb0, 0xe1, 0xeb, 0xde, 0xba, 0x2d, 0xd5,
+	0x8d, 0xa0, 0x3a, 0x7a, 0xf3, 0x63, 0x41, 0xbd, 0xeb, 0x05, 0xf5, 0x6e, 0x16, 0xd4, 0xfb, 0xbd,
+	0xa0, 0xde, 0xb7, 0x25, 0xed, 0x5d, 0x2f, 0x69, 0xef, 0x66, 0x49, 0x7b, 0x1f, 0xd8, 0x2c, 0xd7,
+	0x9f, 0x4d, 0xca, 0x32, 0x90, 0xdc, 0xc6, 0x4f, 0x94, 0xd0, 0x5f, 0xa0, 0xbc, 0xe0, 0x7f, 0xdf,
+	0xce, 0xaf, 0xb7, 0x5f, 0xcf, 0x74, 0x17, 0x9f, 0xcf, 0x57, 0x7f, 0x02, 0x00, 0x00, 0xff, 0xff,
+	0x9b, 0x4e, 0x00, 0x80, 0xbe, 0x07, 0x00, 0x00,
 }
 
 func (m *EventClaimCreated) Marshal() (dAtA []byte, err error) {
@@ -320,10 +392,27 @@ func (m *EventClaimCreated) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.NumComputeUnits != 0 {
-		i = encodeVarintEvent(dAtA, i, uint64(m.NumComputeUnits))
+	if m.ClaimedAmountUpokt != nil {
+		{
+			size, err := m.ClaimedAmountUpokt.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintEvent(dAtA, i, uint64(size))
+		}
 		i--
-		dAtA[i] = 0x18
+		dAtA[i] = 0x32
+	}
+	if m.NumEstimatedComputeUnits != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.NumEstimatedComputeUnits))
+		i--
+		dAtA[i] = 0x28
+	}
+	if m.NumClaimedComputeUnits != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.NumClaimedComputeUnits))
+		i--
+		dAtA[i] = 0x20
 	}
 	if m.NumRelays != 0 {
 		i = encodeVarintEvent(dAtA, i, uint64(m.NumRelays))
@@ -365,10 +454,27 @@ func (m *EventClaimUpdated) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.NumComputeUnits != 0 {
-		i = encodeVarintEvent(dAtA, i, uint64(m.NumComputeUnits))
+	if m.ClaimedAmountUpokt != nil {
+		{
+			size, err := m.ClaimedAmountUpokt.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintEvent(dAtA, i, uint64(size))
+		}
 		i--
-		dAtA[i] = 0x18
+		dAtA[i] = 0x32
+	}
+	if m.NumEstimatedComputeUnits != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.NumEstimatedComputeUnits))
+		i--
+		dAtA[i] = 0x28
+	}
+	if m.NumClaimedComputeUnits != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.NumClaimedComputeUnits))
+		i--
+		dAtA[i] = 0x20
 	}
 	if m.NumRelays != 0 {
 		i = encodeVarintEvent(dAtA, i, uint64(m.NumRelays))
@@ -410,8 +516,25 @@ func (m *EventProofSubmitted) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.NumComputeUnits != 0 {
-		i = encodeVarintEvent(dAtA, i, uint64(m.NumComputeUnits))
+	if m.ClaimedAmountUpokt != nil {
+		{
+			size, err := m.ClaimedAmountUpokt.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintEvent(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x32
+	}
+	if m.NumEstimatedComputeUnits != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.NumEstimatedComputeUnits))
+		i--
+		dAtA[i] = 0x28
+	}
+	if m.NumClaimedComputeUnits != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.NumClaimedComputeUnits))
 		i--
 		dAtA[i] = 0x20
 	}
@@ -467,8 +590,25 @@ func (m *EventProofUpdated) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.NumComputeUnits != 0 {
-		i = encodeVarintEvent(dAtA, i, uint64(m.NumComputeUnits))
+	if m.ClaimedAmountUpokt != nil {
+		{
+			size, err := m.ClaimedAmountUpokt.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintEvent(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x32
+	}
+	if m.NumEstimatedComputeUnits != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.NumEstimatedComputeUnits))
+		i--
+		dAtA[i] = 0x28
+	}
+	if m.NumClaimedComputeUnits != 0 {
+		i = encodeVarintEvent(dAtA, i, uint64(m.NumClaimedComputeUnits))
 		i--
 		dAtA[i] = 0x20
 	}
@@ -528,8 +668,15 @@ func (m *EventClaimCreated) Size() (n int) {
 	if m.NumRelays != 0 {
 		n += 1 + sovEvent(uint64(m.NumRelays))
 	}
-	if m.NumComputeUnits != 0 {
-		n += 1 + sovEvent(uint64(m.NumComputeUnits))
+	if m.NumClaimedComputeUnits != 0 {
+		n += 1 + sovEvent(uint64(m.NumClaimedComputeUnits))
+	}
+	if m.NumEstimatedComputeUnits != 0 {
+		n += 1 + sovEvent(uint64(m.NumEstimatedComputeUnits))
+	}
+	if m.ClaimedAmountUpokt != nil {
+		l = m.ClaimedAmountUpokt.Size()
+		n += 1 + l + sovEvent(uint64(l))
 	}
 	return n
 }
@@ -547,8 +694,15 @@ func (m *EventClaimUpdated) Size() (n int) {
 	if m.NumRelays != 0 {
 		n += 1 + sovEvent(uint64(m.NumRelays))
 	}
-	if m.NumComputeUnits != 0 {
-		n += 1 + sovEvent(uint64(m.NumComputeUnits))
+	if m.NumClaimedComputeUnits != 0 {
+		n += 1 + sovEvent(uint64(m.NumClaimedComputeUnits))
+	}
+	if m.NumEstimatedComputeUnits != 0 {
+		n += 1 + sovEvent(uint64(m.NumEstimatedComputeUnits))
+	}
+	if m.ClaimedAmountUpokt != nil {
+		l = m.ClaimedAmountUpokt.Size()
+		n += 1 + l + sovEvent(uint64(l))
 	}
 	return n
 }
@@ -570,8 +724,15 @@ func (m *EventProofSubmitted) Size() (n int) {
 	if m.NumRelays != 0 {
 		n += 1 + sovEvent(uint64(m.NumRelays))
 	}
-	if m.NumComputeUnits != 0 {
-		n += 1 + sovEvent(uint64(m.NumComputeUnits))
+	if m.NumClaimedComputeUnits != 0 {
+		n += 1 + sovEvent(uint64(m.NumClaimedComputeUnits))
+	}
+	if m.NumEstimatedComputeUnits != 0 {
+		n += 1 + sovEvent(uint64(m.NumEstimatedComputeUnits))
+	}
+	if m.ClaimedAmountUpokt != nil {
+		l = m.ClaimedAmountUpokt.Size()
+		n += 1 + l + sovEvent(uint64(l))
 	}
 	return n
 }
@@ -593,8 +754,15 @@ func (m *EventProofUpdated) Size() (n int) {
 	if m.NumRelays != 0 {
 		n += 1 + sovEvent(uint64(m.NumRelays))
 	}
-	if m.NumComputeUnits != 0 {
-		n += 1 + sovEvent(uint64(m.NumComputeUnits))
+	if m.NumClaimedComputeUnits != 0 {
+		n += 1 + sovEvent(uint64(m.NumClaimedComputeUnits))
+	}
+	if m.NumEstimatedComputeUnits != 0 {
+		n += 1 + sovEvent(uint64(m.NumEstimatedComputeUnits))
+	}
+	if m.ClaimedAmountUpokt != nil {
+		l = m.ClaimedAmountUpokt.Size()
+		n += 1 + l + sovEvent(uint64(l))
 	}
 	return n
 }
@@ -689,11 +857,11 @@ func (m *EventClaimCreated) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
-		case 3:
+		case 4:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field NumComputeUnits", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field NumClaimedComputeUnits", wireType)
 			}
-			m.NumComputeUnits = 0
+			m.NumClaimedComputeUnits = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowEvent
@@ -703,11 +871,66 @@ func (m *EventClaimCreated) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.NumComputeUnits |= uint64(b&0x7F) << shift
+				m.NumClaimedComputeUnits |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NumEstimatedComputeUnits", wireType)
+			}
+			m.NumEstimatedComputeUnits = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.NumEstimatedComputeUnits |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClaimedAmountUpokt", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.ClaimedAmountUpokt == nil {
+				m.ClaimedAmountUpokt = &types.Coin{}
+			}
+			if err := m.ClaimedAmountUpokt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipEvent(dAtA[iNdEx:])
@@ -813,11 +1036,11 @@ func (m *EventClaimUpdated) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
-		case 3:
+		case 4:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field NumComputeUnits", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field NumClaimedComputeUnits", wireType)
 			}
-			m.NumComputeUnits = 0
+			m.NumClaimedComputeUnits = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowEvent
@@ -827,11 +1050,66 @@ func (m *EventClaimUpdated) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.NumComputeUnits |= uint64(b&0x7F) << shift
+				m.NumClaimedComputeUnits |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NumEstimatedComputeUnits", wireType)
+			}
+			m.NumEstimatedComputeUnits = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.NumEstimatedComputeUnits |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClaimedAmountUpokt", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.ClaimedAmountUpokt == nil {
+				m.ClaimedAmountUpokt = &types.Coin{}
+			}
+			if err := m.ClaimedAmountUpokt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipEvent(dAtA[iNdEx:])
@@ -975,9 +1253,9 @@ func (m *EventProofSubmitted) Unmarshal(dAtA []byte) error {
 			}
 		case 4:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field NumComputeUnits", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field NumClaimedComputeUnits", wireType)
 			}
-			m.NumComputeUnits = 0
+			m.NumClaimedComputeUnits = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowEvent
@@ -987,11 +1265,66 @@ func (m *EventProofSubmitted) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.NumComputeUnits |= uint64(b&0x7F) << shift
+				m.NumClaimedComputeUnits |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NumEstimatedComputeUnits", wireType)
+			}
+			m.NumEstimatedComputeUnits = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.NumEstimatedComputeUnits |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClaimedAmountUpokt", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.ClaimedAmountUpokt == nil {
+				m.ClaimedAmountUpokt = &types.Coin{}
+			}
+			if err := m.ClaimedAmountUpokt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipEvent(dAtA[iNdEx:])
@@ -1135,9 +1468,9 @@ func (m *EventProofUpdated) Unmarshal(dAtA []byte) error {
 			}
 		case 4:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field NumComputeUnits", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field NumClaimedComputeUnits", wireType)
 			}
-			m.NumComputeUnits = 0
+			m.NumClaimedComputeUnits = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowEvent
@@ -1147,11 +1480,66 @@ func (m *EventProofUpdated) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.NumComputeUnits |= uint64(b&0x7F) << shift
+				m.NumClaimedComputeUnits |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NumEstimatedComputeUnits", wireType)
+			}
+			m.NumEstimatedComputeUnits = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.NumEstimatedComputeUnits |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClaimedAmountUpokt", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowEvent
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthEvent
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthEvent
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.ClaimedAmountUpokt == nil {
+				m.ClaimedAmountUpokt = &types.Coin{}
+			}
+			if err := m.ClaimedAmountUpokt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipEvent(dAtA[iNdEx:])
