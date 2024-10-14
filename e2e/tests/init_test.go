@@ -45,6 +45,8 @@ import (
 
 const (
 	numQueryRetries = uint8(3)
+	unbondingPeriod = "unbonding"
+	transferPeriod  = "transfer"
 )
 
 var (
@@ -174,7 +176,7 @@ func (s *suite) TheUserRunsTheCommand(cmd string) {
 }
 
 func (s *suite) TheUserShouldBeAbleToSeeStandardOutputContaining(arg1 string) {
-	require.Contains(s, s.pocketd.result.Stdout, arg1)
+	require.Containsf(s, s.pocketd.result.Stdout, arg1, s.pocketd.result.Stderr)
 }
 
 func (s *suite) TheUserSendsUpoktFromAccountToAccount(amount int64, accName1, accName2 string) {
@@ -317,13 +319,13 @@ func (s *suite) getConfigFileContent(
 ) string {
 	var configContent string
 	switch actorType {
-	case "application":
+	case apptypes.ModuleName:
 		configContent = fmt.Sprintf(`
 		stake_amount: %dupokt
 		service_ids:
 		  - %s`,
 			amount, serviceId)
-	case "supplier":
+	case suppliertypes.ModuleName:
 		configContent = fmt.Sprintf(`
 			owner_address: %s
 			operator_address: %s
@@ -344,7 +346,7 @@ func (s *suite) TheUserUnstakesAFromTheAccount(actorType string, accName string)
 	var args []string
 
 	switch actorType {
-	case "supplier":
+	case suppliertypes.ModuleName:
 		args = []string{
 			"tx",
 			actorType,
@@ -372,6 +374,13 @@ func (s *suite) TheUserUnstakesAFromTheAccount(actorType string, accName string)
 	res, err := s.pocketd.RunCommandOnHost("", args...)
 	require.NoError(s, err, "error unstaking %s", actorType)
 
+	// Get current balance
+	balanceKey := accBalanceKey(accName)
+	currBalance := s.getAccBalance(accName)
+	s.scenarioState[balanceKey] = currBalance // save the balance for later
+
+	// NB: s.pocketd.result MUST be set AFTER the balance is queried because the
+	// balance query sets the result first while getting the account balance.
 	s.pocketd.result = res
 }
 
@@ -409,7 +418,7 @@ func (s *suite) TheUserVerifiesTheForAccountIsNotStaked(actorType, accName strin
 func (s *suite) TheForAccountIsStakedWithUpokt(actorType, accName string, amount int64) {
 	stakeAmount, ok := s.getStakedAmount(actorType, accName)
 	require.Truef(s, ok, "account %s of type %s SHOULD be staked", accName, actorType)
-	require.Equalf(s, int64(stakeAmount), amount, "account %s stake amount is not %d", accName, amount)
+	require.Equalf(s, amount, int64(stakeAmount), "account %s stake amount is not %d", accName, amount)
 	s.scenarioState[accStakeKey(actorType, accName)] = stakeAmount // save the stakeAmount for later
 }
 
@@ -511,22 +520,53 @@ func (s *suite) TheUserWaitsForTheSupplierForAccountUnbondingPeriodToFinish(accN
 	s.waitForBlockHeight(unbondingHeight + 1) // Add 1 to ensure the unbonding block has been committed
 }
 
-func (s *suite) TheApplicationForAccountIsUnbonding(appName string) {
+func (s *suite) TheApplicationForAccountIsInThePeriod(appName, periodName string) {
 	_, ok := accNameToAppMap[appName]
 	require.True(s, ok, "application %s not found", appName)
 
-	s.waitForTxResultEvent(newEventMsgTypeMatchFn("application", "UnstakeApplication"))
+	var (
+		msgType      string
+		isAppInState func(*apptypes.Application) bool
+	)
+	switch periodName {
+	case unbondingPeriod:
+		msgType = "UnstakeApplication"
+		isAppInState = func(app *apptypes.Application) bool {
+			return app.IsUnbonding()
+		}
+	case transferPeriod:
+		msgType = "TransferApplication"
+		isAppInState = func(application *apptypes.Application) bool {
+			return application.HasPendingTransfer()
+		}
+	default:
+		s.Fatalf("unsupported period type: %q", periodName)
+	}
 
-	supplier := s.getApplicationInfo(appName)
-	require.True(s, supplier.IsUnbonding())
+	s.waitForTxResultEvent(newEventMsgTypeMatchFn("application", msgType))
+
+	application := s.getApplicationInfo(appName)
+	require.True(s, isAppInState(application))
 }
 
-func (s *suite) TheUserWaitsForTheApplicationForAccountUnbondingPeriodToFinish(accName string) {
+func (s *suite) TheUserWaitsForTheApplicationForAccountPeriodToFinish(accName, periodType string) {
 	_, ok := accNameToAppMap[accName]
 	require.True(s, ok, "application %s not found", accName)
 
-	unbondingHeight := s.getApplicationUnbondingHeight(accName)
-	s.waitForBlockHeight(unbondingHeight + 1) // Add 1 to ensure the unbonding block has been committed
+	// TODO_IMPROVE: Add an event to listen for instead. This will require
+	// refactoring and/or splitting of this method for each event type.
+
+	switch periodType {
+	case unbondingPeriod:
+		unbondingHeight := s.getApplicationUnbondingHeight(accName)
+		s.waitForBlockHeight(unbondingHeight + 1) // Add 1 to ensure the unbonding block has been committed
+	case transferPeriod:
+		transferEndHeight := s.getApplicationTransferEndHeight(accName)
+		s.waitForBlockHeight(transferEndHeight + 1) // Add 1 to ensure the transfer end block has been committed
+	}
+
+	// Rebuild app map after the relevant period has elapsed.
+	s.buildAppMap()
 }
 
 func (s *suite) getStakedAmount(actorType, accName string) (int, bool) {
@@ -784,6 +824,28 @@ func (s *suite) getApplicationUnbondingHeight(accName string) int64 {
 	s.cdc.MustUnmarshalJSON(responseBz, &resp)
 	unbondingHeight := apptypes.GetApplicationUnbondingHeight(&resp.Params, application)
 	return unbondingHeight
+}
+
+// getApplicationTransferEndHeight returns the height at which the application will be transferred to the destination.
+func (s *suite) getApplicationTransferEndHeight(accName string) int64 {
+	application := s.getApplicationInfo(accName)
+	require.NotNil(s, application.GetPendingTransfer())
+
+	args := []string{
+		"query",
+		"shared",
+		"params",
+		"--output=json",
+	}
+
+	res, err := s.pocketd.RunCommandOnHostWithRetry("", numQueryRetries, args...)
+	require.NoError(s, err, "error getting shared module params")
+
+	var resp sharedtypes.QueryParamsResponse
+	responseBz := []byte(strings.TrimSpace(res.Stdout))
+	s.cdc.MustUnmarshalJSON(responseBz, &resp)
+
+	return apptypes.GetApplicationTransferHeight(&resp.Params, application)
 }
 
 // getServiceComputeUnitsPerRelay returns the compute units per relay for a given service ID

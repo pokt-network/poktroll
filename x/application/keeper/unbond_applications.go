@@ -8,6 +8,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	"github.com/pokt-network/poktroll/x/shared"
 )
 
 // EndBlockerUnbondApplications unbonds applications whose unbonding period has elapsed.
@@ -17,7 +18,7 @@ func (k Keeper) EndBlockerUnbondApplications(ctx context.Context) error {
 	currentHeight := sdkCtx.BlockHeight()
 
 	// Only process unbonding applications at the end of the session.
-	if currentHeight != k.sharedKeeper.GetSessionEndHeight(ctx, currentHeight) {
+	if shared.IsSessionEndHeight(&sharedParams, currentHeight) {
 		return nil
 	}
 

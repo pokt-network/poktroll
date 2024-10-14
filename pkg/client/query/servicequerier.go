@@ -60,3 +60,20 @@ func (servq *serviceQuerier) GetService(
 	}
 	return res.Service, nil
 }
+
+// GetServiceRelayDifficultyTargetHash queries the onchain data for
+// the relay mining difficulty associated with the given service.
+func (servq *serviceQuerier) GetServiceRelayDifficultyTargetHash(
+	ctx context.Context,
+	serviceId string,
+) (servicetypes.RelayMiningDifficulty, error) {
+	req := &servicetypes.QueryGetRelayMiningDifficultyRequest{
+		ServiceId: serviceId,
+	}
+
+	res, err := servq.serviceQuerier.RelayMiningDifficulty(ctx, req)
+	if err != nil {
+		return servicetypes.RelayMiningDifficulty{}, err
+	}
+	return res.RelayMiningDifficulty, nil
+}

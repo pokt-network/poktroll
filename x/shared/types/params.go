@@ -168,6 +168,9 @@ func (params *Params) ValidateBasic() error {
 		return err
 	}
 
+	// TODO_MAINNET(@bryanchriswhite): Add validation which ensures that
+	// SessionEndToProofWindowCloseBlocks is a multiple of NumBlocksPerSession.
+
 	return nil
 }
 

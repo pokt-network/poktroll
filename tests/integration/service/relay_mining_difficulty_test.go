@@ -3,7 +3,6 @@ package integration_test
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/pokt-network/smt"
 	"github.com/pokt-network/smt/kvstore/pebble"
@@ -16,10 +15,10 @@ import (
 	testutil "github.com/pokt-network/poktroll/testutil/integration"
 	"github.com/pokt-network/poktroll/testutil/testrelayer"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 func init() {
@@ -91,14 +90,10 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	// TODO_TECHDEBT(@bryanchriswhite): Olshansky is unsure why the +1 is necessary here but it was required to pass the test.
 	integrationApp.NextBlocks(t, int(numBlocksUntilProofWindowCloseHeight)+1)
 
-	// TODO_TECHDEBT: Aiming to get PR #771 over the finish line and this is a hacky
-	// workaround: https://github.com/pokt-network/poktroll/pull/771#issuecomment-2364071636
-	time.Sleep(3 * time.Second)
-
 	// Check that the expected events are emitted
 	events := sdkCtx.EventManager().Events()
-	relayMiningEvents := testutilevents.FilterEvents[*tokenomicstypes.EventRelayMiningDifficultyUpdated](t,
-		events, "poktroll.tokenomics.EventRelayMiningDifficultyUpdated")
+	relayMiningEvents := testutilevents.FilterEvents[*servicetypes.EventRelayMiningDifficultyUpdated](t,
+		events, "poktroll.service.EventRelayMiningDifficultyUpdated")
 	require.Len(t, relayMiningEvents, 1, "unexpected number of relay mining difficulty updated events")
 	relayMiningEvent := relayMiningEvents[0]
 	require.Equal(t, "svc1", relayMiningEvent.ServiceId)

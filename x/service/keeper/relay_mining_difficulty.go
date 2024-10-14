@@ -8,7 +8,7 @@ import (
 	storetypes "cosmossdk.io/store/types"
 	"github.com/cosmos/cosmos-sdk/runtime"
 
-	"github.com/pokt-network/poktroll/x/tokenomics/types"
+	"github.com/pokt-network/poktroll/x/service/types"
 )
 
 // SetRelayMiningDifficulty set a specific relayMiningDifficulty in the store from its index

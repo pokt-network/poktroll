@@ -469,6 +469,7 @@ type Params struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// min_stake is the minimum amount of uPOKT that a gateway must stake.
 	MinStake *v1beta1.Coin `protobuf:"bytes,1,opt,name=min_stake,json=minStake,proto3" json:"min_stake,omitempty"`
 }
 
