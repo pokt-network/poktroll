@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 
 	"google.golang.org/grpc/codes"
@@ -39,9 +38,6 @@ func (k msgServer) UpdateParam(
 	params := k.GetParams(ctx)
 
 	switch msg.Name {
-	case types.ParamRelayDifficultyTargetHash:
-		logger = logger.With("param_value", hex.EncodeToString(msg.GetAsBytes()))
-		params.RelayDifficultyTargetHash = msg.GetAsBytes()
 	case types.ParamProofRequestProbability:
 		logger = logger.With("param_value", msg.GetAsFloat())
 		params.ProofRequestProbability = msg.GetAsFloat()

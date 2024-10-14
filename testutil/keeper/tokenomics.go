@@ -140,6 +140,8 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		},
 	}
 
+	sdkCtx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
+
 	ctrl := gomock.NewController(t)
 
 	// Mock the application keeper.
@@ -225,6 +227,12 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		Return(sharedtypes.Service{}, false).
 		AnyTimes()
 
+	relayMiningDifficulty := servicekeeper.NewDefaultRelayMiningDifficulty(sdkCtx, log.NewNopLogger(), service.Id, servicekeeper.TargetNumRelays)
+	mockServiceKeeper.EXPECT().
+		GetRelayMiningDifficulty(gomock.Any(), gomock.Any()).
+		Return(relayMiningDifficulty, true).
+		AnyTimes()
+
 	k := tokenomicskeeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKey),
@@ -239,8 +247,6 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		mockSessionKeeper,
 		mockServiceKeeper,
 	)
-
-	sdkCtx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
 
 	// Add a block proposer address to the context
 	valAddr, err := cosmostypes.ValAddressFromBech32(sample.ValAddress())

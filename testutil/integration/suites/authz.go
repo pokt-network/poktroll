@@ -78,7 +78,7 @@ func (s *AuthzIntegrationSuite) RunAuthzGrantMsg(
 	grantMsg, err := authz.NewMsgGrant(granterAddr, granteeAddr, authorization, &defaultAuthzGrantExpiration)
 	require.NoError(t, err)
 
-	grantResAny, err := s.app.RunMsg(s.T(), grantMsg)
+	grantResAny, err := s.app.RunMsg(t, grantMsg)
 	require.NoError(t, err)
 	require.NotNil(t, grantResAny)
 }
@@ -93,7 +93,7 @@ func (s *AuthzIntegrationSuite) RunAuthzExecMsg(
 	t.Helper()
 
 	execMsg := authz.NewMsgExec(signerAddr, msgs)
-	execResAny, err := s.GetApp().RunMsg(s.T(), &execMsg)
+	execResAny, err := s.GetApp().RunMsg(t, &execMsg)
 	if err != nil {
 		return nil, err
 	}
