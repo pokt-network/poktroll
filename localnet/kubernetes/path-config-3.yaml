@@ -4,8 +4,8 @@ shannon_config:
     grpc_config:
       host_port: validator-poktroll-validator:9090
       insecure: true
-    gateway_address: pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4
-    gateway_private_key: 2d00ef074d9b51e46886dc9a1df11e7b986611d0f336bdcf1f0adce3e037ec0a
+    gateway_address: pokt1zhmkkd0rh788mc9prfq0m2h88t9ge0j83gnxya
+    gateway_private_key: f73b6f7f0b9c99603c7eeddbf1c419c6f6bbc241f3798e3e4c8da9769ca81c26
     delegated_app_addresses:
       - pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4
 
