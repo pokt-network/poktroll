@@ -11,6 +11,7 @@ import "cosmos/base/query/v1beta1/pagination.proto";
 
 import "poktroll/service/params.proto";
 import "poktroll/shared/service.proto";
+import "poktroll/service/relay_mining_difficulty.proto";
 
 // Query defines the gRPC querier service.
 service Query {
@@ -29,6 +30,15 @@ service Query {
   rpc AllServices (QueryAllServicesRequest) returns (QueryAllServicesResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/service/service";
 
+  }
+
+  // Queries a list of RelayMiningDifficulty items.
+  rpc RelayMiningDifficulty    (QueryGetRelayMiningDifficultyRequest) returns (QueryGetRelayMiningDifficultyResponse) {
+    option (google.api.http).get = "/pokt-network/poktroll/service/relay_mining_difficulty/{serviceId}";
+
+  }
+  rpc RelayMiningDifficultyAll (QueryAllRelayMiningDifficultyRequest) returns (QueryAllRelayMiningDifficultyResponse) {
+    option (google.api.http).get = "/pokt-network/poktroll/service/relay_mining_difficulty";
   }
 }
 // QueryParamsRequest is request type for the Query/Params RPC method.
@@ -59,3 +69,19 @@ message QueryAllServicesResponse {
   cosmos.base.query.v1beta1.PageResponse pagination = 2;
 }
 
+message QueryGetRelayMiningDifficultyRequest {
+  string serviceId = 1;
+}
+
+message QueryGetRelayMiningDifficultyResponse {
+  RelayMiningDifficulty relayMiningDifficulty = 1 [(gogoproto.nullable) = false];
+}
+
+message QueryAllRelayMiningDifficultyRequest {
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+}
+
+message QueryAllRelayMiningDifficultyResponse {
+  repeated RelayMiningDifficulty                  relayMiningDifficulty = 1 [(gogoproto.nullable) = false];
+           cosmos.base.query.v1beta1.PageResponse pagination            = 2;
+}

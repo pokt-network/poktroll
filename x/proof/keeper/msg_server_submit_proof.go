@@ -42,10 +42,10 @@ func (k msgServer) SubmitProof(
 ) (_ *types.MsgSubmitProofResponse, err error) {
 	// Declare claim to reference in telemetry.
 	var (
-		claim           = new(types.Claim)
-		isExistingProof bool
-		numRelays       uint64
-		numComputeUnits uint64
+		claim                = new(types.Claim)
+		isExistingProof      bool
+		numRelays            uint64
+		numClaimComputeUnits uint64
 	)
 
 	// Defer telemetry calls so that they reference the final values the relevant variables.
@@ -54,7 +54,7 @@ func (k msgServer) SubmitProof(
 		if !isExistingProof {
 			telemetry.ClaimCounter(types.ClaimProofStage_PROVEN, 1, err)
 			telemetry.ClaimRelaysCounter(types.ClaimProofStage_PROVEN, numRelays, err)
-			telemetry.ClaimComputeUnitsCounter(types.ClaimProofStage_PROVEN, numComputeUnits, err)
+			telemetry.ClaimComputeUnitsCounter(types.ClaimProofStage_PROVEN, numClaimComputeUnits, err)
 		}
 	}()
 
@@ -120,7 +120,7 @@ func (k msgServer) SubmitProof(
 	if err != nil {
 		return nil, status.Error(codes.Internal, types.ErrProofInvalidClaimRootHash.Wrap(err.Error()).Error())
 	}
-	numComputeUnits, err = claim.GetNumComputeUnits()
+	numClaimComputeUnits, err = claim.GetNumClaimedComputeUnits()
 	if err != nil {
 		return nil, status.Error(codes.Internal, types.ErrProofInvalidClaimRootHash.Wrap(err.Error()).Error())
 	}
@@ -139,19 +139,21 @@ func (k msgServer) SubmitProof(
 	case true:
 		proofUpsertEvent = proto.Message(
 			&types.EventProofUpdated{
-				Claim:           claim,
-				Proof:           &proof,
-				NumRelays:       numRelays,
-				NumComputeUnits: numComputeUnits,
+				Claim:                  claim,
+				Proof:                  &proof,
+				NumRelays:              numRelays,
+				NumClaimedComputeUnits: numClaimComputeUnits,
+				// TODO_FOLLOWUP: Add NumEstimatedComputeUnits and ClaimedAmountUpokt
 			},
 		)
 	case false:
 		proofUpsertEvent = proto.Message(
 			&types.EventProofSubmitted{
-				Claim:           claim,
-				Proof:           &proof,
-				NumRelays:       numRelays,
-				NumComputeUnits: numComputeUnits,
+				Claim:                  claim,
+				Proof:                  &proof,
+				NumRelays:              numRelays,
+				NumClaimedComputeUnits: numClaimComputeUnits,
+				// TODO_FOLLOWUP: Add NumEstimatedComputeUnits and ClaimedAmountUpokt
 			},
 		)
 	}
@@ -225,7 +227,7 @@ func (k Keeper) ProofRequirementForClaim(ctx context.Context, claim *types.Claim
 	// is retrieved from the store and validated, on-chain, at time of creation.
 	// TODO(@red-0ne, #781): Ensure we're using the scaled/estimated compute units here.
 	var numClaimComputeUnits uint64
-	numClaimComputeUnits, err = claim.GetNumComputeUnits()
+	numClaimComputeUnits, err = claim.GetNumClaimedComputeUnits()
 	if err != nil {
 		return requirementReason, err
 	}
