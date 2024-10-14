@@ -2,10 +2,11 @@ package application
 
 import (
 	"context"
+	"math"
 	"testing"
 
 	cosmoslog "cosmossdk.io/log"
-	"cosmossdk.io/math"
+	sdkmath "cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/stretchr/testify/require"
@@ -22,6 +23,7 @@ import (
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	tokenomicskeeper "github.com/pokt-network/poktroll/x/tokenomics/keeper"
 )
 
 type applicationMinStakeTestSuite struct {
@@ -83,6 +85,12 @@ func (s *applicationMinStakeTestSuite) TestAppIsUnbondedIfBelowMinStakeWhenSettl
 	// Stake a supplier for service 1.
 	s.stakeSupplier()
 
+	proofParams := s.keepers.ProofKeeper.GetParams(s.ctx)
+	proofParams.ProofRequestProbability = 0
+	proofRequirementThreshold := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, math.MaxInt64)
+	proofParams.ProofRequirementThreshold = &proofRequirementThreshold
+	s.keepers.ProofKeeper.SetParams(s.ctx, proofParams)
+
 	// Get the session header.
 	sessionHeader := s.getSessionHeader()
 
@@ -107,9 +115,11 @@ func (s *applicationMinStakeTestSuite) TestAppIsUnbondedIfBelowMinStakeWhenSettl
 	_, isAppFound := s.keepers.ApplicationKeeper.GetApplication(s.ctx, s.appBech32)
 	require.False(s.T(), isAppFound)
 
-	// Assert that the application's stake was returned to its bank balance.
-	expectedAppBurn := math.NewInt(int64(s.numRelays * s.numComputeUnitsPerRelay * sharedtypes.DefaultComputeUnitsToTokensMultiplier))
-	expectedAppBalance := s.appStake.SubAmount(expectedAppBurn)
+	// Assert that the remaining application's stake was returned to its bank balance.
+	expectedAppBurn := sdkmath.NewInt(int64(s.numRelays * s.numComputeUnitsPerRelay * sharedtypes.DefaultComputeUnitsToTokensMultiplier))
+	globalInflationAmount := float64(expectedAppBurn.Uint64()) * tokenomicskeeper.MintPerClaimedTokenGlobalInflation
+	globalInflationAmountInt := sdkmath.NewInt(int64(globalInflationAmount))
+	expectedAppBalance := s.appStake.SubAmount(expectedAppBurn).SubAmount(globalInflationAmountInt)
 	appBalance = s.getAppBalance()
 	require.Equal(s.T(), expectedAppBalance.Amount.Int64(), appBalance.Amount.Int64())
 
