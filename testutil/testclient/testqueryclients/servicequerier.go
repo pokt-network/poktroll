@@ -50,7 +50,7 @@ func NewTestServiceQueryClient(
 		}).
 		AnyTimes()
 
-	serviceQuerier.EXPECT().GetServiceRelayDifficultyTargetHash(gomock.Any(), gomock.Any()).
+	serviceQuerier.EXPECT().GetServiceRelayDifficulty(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(
 			_ context.Context,
 			serviceId string,

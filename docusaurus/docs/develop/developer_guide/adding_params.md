@@ -148,9 +148,19 @@ with the default value for the new parameter.
         "@type": "/poktroll.proof.MsgUpdateParams",
         "authority": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
         "params": {
-          "min_relay_difficulty_bits": "0",
           "proof_request_probability": "0.25",
-          "proof_requirement_threshold": "20",
+          "proof_requirement_threshold":  {
+            "denom": "upokt",
+            "amount": "20000000"
+          },
+          "proof_missing_penalty": {
+            "amount": "320000000",
+            "denom": "upokt"
+          },
+          "proof_submission_fee": {
+            "amount": "1000000",
+            "denom": "upokt"
+          },
           "new_parameter_name": "100" // Add this line
         }
       }

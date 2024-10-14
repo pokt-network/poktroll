@@ -29,9 +29,9 @@ message EventClaimExpired {
     // Number of estimated compute units claimed as a function of the number of claimed
     // compute units and the relay difficulty multiplier for the particular service.
     uint64 num_estimated_compute_units = 5 [(gogoproto.jsontag) = "num_estimated_compute_units"];
-    // The amount of uPOKT claimed to be rewarded for the work done as a function of
+    // The uPOKT coin claimed to be rewarded for the work done as a function of
     // the number of estimated compute units and the compute uints to token multiplier.
-    cosmos.base.v1beta1.Coin claimed_amount_upokt = 6 [(gogoproto.jsontag) = "claimed_amount_upokt"];
+    cosmos.base.v1beta1.Coin claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
 }
 
 // EventClaimSettled is an event emitted whenever a claim is settled.
@@ -48,9 +48,9 @@ message EventClaimSettled {
     // Number of estimated compute units claimed as a function of the number of claimed
     // compute units and the relay difficulty multiplier for the particular service.
     uint64 num_estimated_compute_units = 5 [(gogoproto.jsontag) = "num_estimated_compute_units"];
-    // The amount of uPOKT claimed to be rewarded for the work done as a function of
+    // The uPOKT coin claimed to be rewarded for the work done as a function of
     // the number of estimated compute units and the compute uints to token multiplier.
-    cosmos.base.v1beta1.Coin claimed_amount_upokt = 6 [(gogoproto.jsontag) = "claimed_amount_upokt"];
+    cosmos.base.v1beta1.Coin claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
 }
 
 // EventApplicationOverserviced is emitted when an application has less stake than
