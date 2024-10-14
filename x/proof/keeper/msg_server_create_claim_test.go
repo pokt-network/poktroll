@@ -51,8 +51,8 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 		) int64
 		merkleRoot smt.MerkleSumRoot
 		// The Compute Units Per Relay for the service used in the test.
-		serviceComputeUnitsPerRelay uint64
-		expectedNumComputeUnits     uint64
+		serviceComputeUnitsPerRelay    uint64
+		expectedNumClaimedComputeUnits uint64
 	}{
 		{
 			desc: "claim message height equals supplier's earliest claim commit height",
@@ -64,23 +64,23 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 					supplierOperatorAddr,
 				)
 			},
-			merkleRoot:                  defaultMerkleRoot,
-			serviceComputeUnitsPerRelay: computeUnitsPerRelay,
-			expectedNumComputeUnits:     expectedNumComputeUnits,
+			merkleRoot:                     defaultMerkleRoot,
+			serviceComputeUnitsPerRelay:    computeUnitsPerRelay,
+			expectedNumClaimedComputeUnits: expectedNumComputeUnits,
 		},
 		{
-			desc:                        "claim message height equals claim window close height",
-			getClaimMsgHeight:           shared.GetClaimWindowCloseHeight,
-			merkleRoot:                  defaultMerkleRoot,
-			serviceComputeUnitsPerRelay: computeUnitsPerRelay,
-			expectedNumComputeUnits:     expectedNumComputeUnits,
+			desc:                           "claim message height equals claim window close height",
+			getClaimMsgHeight:              shared.GetClaimWindowCloseHeight,
+			merkleRoot:                     defaultMerkleRoot,
+			serviceComputeUnitsPerRelay:    computeUnitsPerRelay,
+			expectedNumClaimedComputeUnits: expectedNumComputeUnits,
 		},
 		{
-			desc:                        "claim message for service with >1 compute units per relay",
-			getClaimMsgHeight:           shared.GetClaimWindowCloseHeight,
-			merkleRoot:                  customComputeUnitsPerRelayMerkleRoot,
-			serviceComputeUnitsPerRelay: nonDefaultComputeUnitsPerRelay,
-			expectedNumComputeUnits:     expectedNonDefaultNumComputeUnits,
+			desc:                           "claim message for service with >1 compute units per relay",
+			getClaimMsgHeight:              shared.GetClaimWindowCloseHeight,
+			merkleRoot:                     customComputeUnitsPerRelayMerkleRoot,
+			serviceComputeUnitsPerRelay:    nonDefaultComputeUnitsPerRelay,
+			expectedNumClaimedComputeUnits: expectedNonDefaultNumComputeUnits,
 		},
 	}
 
@@ -175,7 +175,7 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 			require.Len(t, claimCreatedEvents, 1)
 
 			require.EqualValues(t, &claim, claimCreatedEvents[0].GetClaim())
-			require.Equal(t, uint64(test.expectedNumComputeUnits), claimCreatedEvents[0].GetNumComputeUnits())
+			require.Equal(t, uint64(test.expectedNumClaimedComputeUnits), claimCreatedEvents[0].GetNumClaimedComputeUnits())
 			require.Equal(t, uint64(expectedNumRelays), claimCreatedEvents[0].GetNumRelays())
 		})
 	}
@@ -599,7 +599,7 @@ func TestMsgServer_CreateClaim_Error_ComputeUnitsMismatch(t *testing.T) {
 
 	// use the test claim message to create a claim object to get the number of relays and compute units in the claim.
 	testClaim := types.Claim{RootHash: testClaimMsg.GetRootHash()}
-	testClaimNumComputeUnits, err := testClaim.GetNumComputeUnits()
+	testClaimNumComputeUnits, err := testClaim.GetNumClaimedComputeUnits()
 	require.NoError(t, err)
 	testClaimNumRelays, err := testClaim.GetNumRelays()
 	require.NoError(t, err)

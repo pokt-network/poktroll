@@ -23,31 +23,9 @@ func TestGenesisState_Validate(t *testing.T) {
 			desc: "valid genesis state",
 			genState: &types.GenesisState{
 				Params: types.Params{},
-				RelayMiningDifficultyList: []types.RelayMiningDifficulty{
-					{
-						ServiceId: "0",
-					},
-					{
-						ServiceId: "1",
-					},
-				},
 				// this line is used by starport scaffolding # types/genesis/validField
 			},
 			isValid: true,
-		},
-		{
-			desc: "duplicated relayMiningDifficulty",
-			genState: &types.GenesisState{
-				RelayMiningDifficultyList: []types.RelayMiningDifficulty{
-					{
-						ServiceId: "0",
-					},
-					{
-						ServiceId: "0",
-					},
-				},
-			},
-			isValid: false,
 		},
 		// this line is used by starport scaffolding # types/genesis/testcase
 	}

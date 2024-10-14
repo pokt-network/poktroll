@@ -3,7 +3,6 @@ package keeper_test
 import (
 	"testing"
 
-	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
@@ -11,7 +10,8 @@ import (
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/x/application/keeper"
-	"github.com/pokt-network/poktroll/x/application/types"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -28,7 +28,7 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 	require.False(t, isAppFound)
 
 	// Prepare the application
-	initialStake := int64(100)
+	initialStake := apptypes.DefaultMinStake.Amount.Int64()
 	stakeMsg := createAppStakeMsg(unstakingAppAddr, initialStake)
 
 	// Stake the application
@@ -58,14 +58,15 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 	ctx = testevents.ResetEventManager(ctx)
 
 	// Unstake the application
-	unstakeMsg := &types.MsgUnstakeApplication{Address: unstakingAppAddr}
+	unstakeMsg := &apptypes.MsgUnstakeApplication{Address: unstakingAppAddr}
 	_, err = srv.UnstakeApplication(ctx, unstakeMsg)
 	require.NoError(t, err)
 
 	// Assert that the EventApplicationStaked event is emitted.
+	foundApp.UnstakeSessionEndHeight = uint64(apptypes.GetApplicationUnbondingHeight(&sharedParams, &foundApp))
 	expectedEvent, err := sdk.TypedEventToEvent(
-		&types.EventApplicationUnbondingBegin{
-			AppAddress: unstakeMsg.GetAddress(),
+		&apptypes.EventApplicationUnbondingBegin{
+			Application: &foundApp,
 		},
 	)
 	require.NoError(t, err)
@@ -83,7 +84,7 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 	require.True(t, foundApp.IsUnbonding())
 
 	// Move block height to the end of the unbonding period
-	unbondingHeight := types.GetApplicationUnbondingHeight(&sharedParams, &foundApp)
+	unbondingHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, &foundApp)
 	ctx = keepertest.SetBlockHeight(ctx, unbondingHeight)
 
 	// Run the endblocker to unbond applications
@@ -92,8 +93,8 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 
 	// Assert that the EventApplicationStaked event is emitted.
 	expectedEvent, err = sdk.TypedEventToEvent(
-		&types.EventApplicationUnbondingEnd{
-			AppAddress: foundApp.GetAddress(),
+		&apptypes.EventApplicationUnbondingEnd{
+			Application: &foundApp,
 		},
 	)
 	require.NoError(t, err)
@@ -125,7 +126,7 @@ func TestMsgServer_UnstakeApplication_CancelUnbondingIfRestaked(t *testing.T) {
 	appAddr := sample.AccAddress()
 
 	// Stake the application
-	initialStake := int64(100)
+	initialStake := apptypes.DefaultMinStake.Amount.Int64()
 	stakeMsg := createAppStakeMsg(appAddr, initialStake)
 	_, err := srv.StakeApplication(ctx, stakeMsg)
 	require.NoError(t, err)
@@ -136,28 +137,54 @@ func TestMsgServer_UnstakeApplication_CancelUnbondingIfRestaked(t *testing.T) {
 	require.False(t, foundApp.IsUnbonding())
 
 	// Initiate the application unstaking
-	unstakeMsg := &types.MsgUnstakeApplication{Address: appAddr}
+	unstakeMsg := &apptypes.MsgUnstakeApplication{Address: appAddr}
 	_, err = srv.UnstakeApplication(ctx, unstakeMsg)
 	require.NoError(t, err)
+
+	// Assert that the EventApplicationUnbondingCanceled event is emitted.
+	foundApp.UnstakeSessionEndHeight = uint64(shared.GetSessionEndHeight(&sharedParams, sdk.UnwrapSDKContext(ctx).BlockHeight()))
+	foundApp.DelegateeGatewayAddresses = make([]string, 0)
+	expectedAppUnbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{Application: &foundApp}
+	events := sdk.UnwrapSDKContext(ctx).EventManager().Events()
+	appUnbondingBeginTypeURL := sdk.MsgTypeURL(&apptypes.EventApplicationUnbondingBegin{})
+	appUnbondingBeginEvents := testevents.FilterEvents[*apptypes.EventApplicationUnbondingBegin](t, events, appUnbondingBeginTypeURL)
+	require.Equalf(t, 1, len(appUnbondingBeginEvents), "expected exactly 1 event")
+	require.EqualValues(t, expectedAppUnbondingBeginEvent, appUnbondingBeginEvents[0])
+
+	// Reset the events, as if a new block were created.
+	ctx = testevents.ResetEventManager(ctx)
 
 	// Make sure the application entered the unbonding period
 	foundApp, isAppFound = applicationModuleKeepers.GetApplication(ctx, appAddr)
 	require.True(t, isAppFound)
 	require.True(t, foundApp.IsUnbonding())
 
-	unbondingHeight := types.GetApplicationUnbondingHeight(&sharedParams, &foundApp)
+	unbondingHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, &foundApp)
 
 	// Stake the application again
 	stakeMsg = createAppStakeMsg(appAddr, initialStake+1)
-	_, err = srv.StakeApplication(ctx, stakeMsg)
+	stakeRes, err := srv.StakeApplication(ctx, stakeMsg)
 	require.NoError(t, err)
+
+	// Assert that the EventApplicationUnbondingCanceled event is emitted.
+	expectedApp := stakeRes.GetApplication()
+	expectedApp.DelegateeGatewayAddresses = make([]string, 0)
+	expectedAppUnbondingCanceledEvent := &apptypes.EventApplicationUnbondingCanceled{Application: expectedApp}
+	events = sdk.UnwrapSDKContext(ctx).EventManager().Events()
+	appUnbondingCanceledTypeURL := sdk.MsgTypeURL(&apptypes.EventApplicationUnbondingCanceled{})
+	appUnbondingEvents := testevents.FilterEvents[*apptypes.EventApplicationUnbondingCanceled](t, events, appUnbondingCanceledTypeURL)
+	require.Equalf(t, 1, len(appUnbondingEvents), "expected exactly 1 event")
+	require.EqualValues(t, expectedAppUnbondingCanceledEvent, appUnbondingEvents[0])
+
+	// Reset the events, as if a new block were created.
+	ctx = testevents.ResetEventManager(ctx)
 
 	// Make sure the application is no longer in the unbonding period
 	foundApp, isAppFound = applicationModuleKeepers.GetApplication(ctx, appAddr)
 	require.True(t, isAppFound)
 	require.False(t, foundApp.IsUnbonding())
 
-	ctx = keepertest.SetBlockHeight(ctx, int64(unbondingHeight))
+	ctx = keepertest.SetBlockHeight(ctx, unbondingHeight)
 
 	// Run the EndBlocker, the application should not be unbonding.
 	err = applicationModuleKeepers.EndBlockerUnbondApplications(ctx)
@@ -181,10 +208,10 @@ func TestMsgServer_UnstakeApplication_FailIfNotStaked(t *testing.T) {
 	require.False(t, isAppFound)
 
 	// Unstake the application
-	unstakeMsg := &types.MsgUnstakeApplication{Address: appAddr}
+	unstakeMsg := &apptypes.MsgUnstakeApplication{Address: appAddr}
 	_, err := srv.UnstakeApplication(ctx, unstakeMsg)
 	require.Error(t, err)
-	require.ErrorIs(t, err, types.ErrAppNotFound)
+	require.ErrorIs(t, err, apptypes.ErrAppNotFound)
 
 	_, isAppFound = applicationModuleKeepers.GetApplication(ctx, appAddr)
 	require.False(t, isAppFound)
@@ -198,28 +225,28 @@ func TestMsgServer_UnstakeApplication_FailIfCurrentlyUnstaking(t *testing.T) {
 	appAddr := sample.AccAddress()
 
 	// Stake the application
-	initialStake := int64(100)
+	initialStake := apptypes.DefaultMinStake.Amount.Int64()
 	stakeMsg := createAppStakeMsg(appAddr, initialStake)
 	_, err := srv.StakeApplication(ctx, stakeMsg)
 	require.NoError(t, err)
 
 	// Initiate the application unstaking
-	unstakeMsg := &types.MsgUnstakeApplication{Address: appAddr}
+	unstakeMsg := &apptypes.MsgUnstakeApplication{Address: appAddr}
 	_, err = srv.UnstakeApplication(ctx, unstakeMsg)
 	require.NoError(t, err)
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	ctx = keepertest.SetBlockHeight(ctx, int64(sdkCtx.BlockHeight()+1))
+	ctx = keepertest.SetBlockHeight(ctx, sdkCtx.BlockHeight()+1)
 
 	// Verify that the application cannot unstake if it is already unstaking.
 	_, err = srv.UnstakeApplication(ctx, unstakeMsg)
-	require.ErrorIs(t, err, types.ErrAppIsUnstaking)
+	require.ErrorIs(t, err, apptypes.ErrAppIsUnstaking)
 }
 
-func createAppStakeMsg(appAddr string, stakeAmount int64) *types.MsgStakeApplication {
-	initialStake := sdk.NewCoin("upokt", math.NewInt(stakeAmount))
+func createAppStakeMsg(appAddr string, stakeAmount int64) *apptypes.MsgStakeApplication {
+	initialStake := sdk.NewInt64Coin("upokt", stakeAmount)
 
-	return &types.MsgStakeApplication{
+	return &apptypes.MsgStakeApplication{
 		Address: appAddr,
 		Stake:   &initialStake,
 		Services: []*sharedtypes.ApplicationServiceConfig{

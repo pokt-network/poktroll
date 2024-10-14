@@ -178,10 +178,17 @@ var (
 		ParamsMsgs: ModuleParamsMessages{
 			MsgUpdateParams:         suppliertypes.MsgUpdateParams{},
 			MsgUpdateParamsResponse: suppliertypes.MsgUpdateParamsResponse{},
+			MsgUpdateParam:          suppliertypes.MsgUpdateParam{},
+			MsgUpdateParamResponse:  suppliertypes.MsgUpdateParamResponse{},
 			QueryParamsRequest:      suppliertypes.QueryParamsRequest{},
 			QueryParamsResponse:     suppliertypes.QueryParamsResponse{},
 		},
-		ValidParams:      suppliertypes.Params{},
+		ValidParams: suppliertypes.Params{
+			MinStake: &ValidActorMinStake,
+		},
+		ParamTypes: map[ParamType]any{
+			ParamTypeCoin: suppliertypes.MsgUpdateParam_AsCoin{},
+		},
 		DefaultParams:    suppliertypes.DefaultParams(),
 		NewParamClientFn: suppliertypes.NewQueryClient,
 	}
@@ -196,7 +203,6 @@ var (
 			QueryParamsResponse:     prooftypes.QueryParamsResponse{},
 		},
 		ValidParams: prooftypes.Params{
-			RelayDifficultyTargetHash: ValidRelayDifficultyTargetHash,
 			ProofRequestProbability:   0.1,
 			ProofRequirementThreshold: &ValidProofRequirementThresholdCoin,
 			ProofMissingPenalty:       &ValidProofMissingPenaltyCoin,
