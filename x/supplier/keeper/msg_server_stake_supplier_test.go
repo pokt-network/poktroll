@@ -4,15 +4,17 @@ import (
 	"testing"
 
 	"cosmossdk.io/math"
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/pokt-network/poktroll/app/volatile"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/keeper"
-	"github.com/pokt-network/poktroll/x/supplier/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
@@ -28,7 +30,7 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.False(t, isSupplierFound)
 
 	// Prepare the stakeMsg
-	stakeMsg := stakeSupplierForServicesMsg(ownerAddr, operatorAddr, 100, "svcId")
+	stakeMsg := stakeSupplierForServicesMsg(ownerAddr, operatorAddr, 1000000, "svcId")
 
 	// Stake the supplier
 	_, err := srv.StakeSupplier(ctx, stakeMsg)
@@ -38,14 +40,14 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 	foundSupplier, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
 	require.True(t, isSupplierFound)
 	require.Equal(t, operatorAddr, foundSupplier.OperatorAddress)
-	require.Equal(t, int64(100), foundSupplier.Stake.Amount.Int64())
+	require.Equal(t, int64(1000000), foundSupplier.Stake.Amount.Int64())
 	require.Len(t, foundSupplier.Services, 1)
 	require.Equal(t, "svcId", foundSupplier.Services[0].ServiceId)
 	require.Len(t, foundSupplier.Services[0].Endpoints, 1)
 	require.Equal(t, "http://localhost:8080", foundSupplier.Services[0].Endpoints[0].Url)
 
 	// Prepare an updated supplier with a higher stake and a different URL for the service
-	updateMsg := stakeSupplierForServicesMsg(ownerAddr, operatorAddr, 200, "svcId2")
+	updateMsg := stakeSupplierForServicesMsg(ownerAddr, operatorAddr, 2000000, "svcId2")
 	updateMsg.Services[0].Endpoints[0].Url = "http://localhost:8082"
 
 	// Update the staked supplier
@@ -54,7 +56,7 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 
 	foundSupplier, isSupplierFound = supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
 	require.True(t, isSupplierFound)
-	require.Equal(t, int64(200), foundSupplier.Stake.Amount.Int64())
+	require.Equal(t, int64(2000000), foundSupplier.Stake.Amount.Int64())
 	require.Len(t, foundSupplier.Services, 1)
 	require.Equal(t, "svcId2", foundSupplier.Services[0].ServiceId)
 	require.Len(t, foundSupplier.Services[0].Endpoints, 1)
@@ -70,7 +72,7 @@ func TestMsgServer_StakeSupplier_FailRestakingDueToInvalidServices(t *testing.T)
 	operatorAddr := sample.AccAddress()
 
 	// Prepare the supplier stake message
-	stakeMsg := stakeSupplierForServicesMsg(ownerAddr, operatorAddr, 100, "svcId")
+	stakeMsg := stakeSupplierForServicesMsg(ownerAddr, operatorAddr, 1000000, "svcId")
 
 	// Stake the supplier
 	_, err := srv.StakeSupplier(ctx, stakeMsg)
@@ -120,7 +122,7 @@ func TestMsgServer_StakeSupplier_FailLoweringStake(t *testing.T) {
 	operatorAddr := sample.AccAddress()
 
 	// Prepare the supplier stake message
-	stakeMsg := stakeSupplierForServicesMsg(ownerAddr, operatorAddr, 100, "svcId")
+	stakeMsg := stakeSupplierForServicesMsg(ownerAddr, operatorAddr, 1000000, "svcId")
 
 	// Stake the supplier & verify that the supplier exists
 	_, err := srv.StakeSupplier(ctx, stakeMsg)
@@ -140,7 +142,7 @@ func TestMsgServer_StakeSupplier_FailLoweringStake(t *testing.T) {
 	// Verify that the supplier stake is unchanged
 	supplierFound, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
 	require.True(t, isSupplierFound)
-	require.Equal(t, int64(100), supplierFound.Stake.Amount.Int64())
+	require.Equal(t, int64(1000000), supplierFound.Stake.Amount.Int64())
 	require.Len(t, supplierFound.Services, 1)
 }
 
@@ -153,11 +155,14 @@ func TestMsgServer_StakeSupplier_FailWithNonExistingService(t *testing.T) {
 	operatorAddr := sample.AccAddress()
 
 	// Prepare the supplier stake message with a non-existing service ID
-	stakeMsg := stakeSupplierForServicesMsg(ownerAddr, operatorAddr, 100, "newService")
+	stakeMsg := stakeSupplierForServicesMsg(ownerAddr, operatorAddr, 1000000, "newService")
 
 	// Stake the supplier & verify that it fails because the service does not exist.
 	_, err := srv.StakeSupplier(ctx, stakeMsg)
-	require.ErrorIs(t, err, types.ErrSupplierServiceNotFound)
+	require.Equal(t, codes.InvalidArgument, status.Code(err))
+	require.ErrorContains(t, err, suppliertypes.ErrSupplierServiceNotFound.Wrapf(
+		"service %q does not exist", "newService",
+	).Error())
 }
 
 func TestMsgServer_StakeSupplier_OperatorAuthorizations(t *testing.T) {
@@ -169,7 +174,7 @@ func TestMsgServer_StakeSupplier_OperatorAuthorizations(t *testing.T) {
 	operatorAddr := sample.AccAddress()
 
 	// Stake using the operator address as the signer and verify that it succeeds.
-	stakeMsg := stakeSupplierForServicesMsg(ownerAddr, operatorAddr, 100, "svcId")
+	stakeMsg := stakeSupplierForServicesMsg(ownerAddr, operatorAddr, 1000000, "svcId")
 	setStakeMsgSigner(stakeMsg, operatorAddr)
 	_, err := srv.StakeSupplier(ctx, stakeMsg)
 	require.NoError(t, err)
@@ -179,7 +184,7 @@ func TestMsgServer_StakeSupplier_OperatorAuthorizations(t *testing.T) {
 	require.Equal(t, ownerAddr, supplier.OwnerAddress)
 
 	// Update the supplier using the operator address as the signer and verify that it succeeds.
-	stakeMsgUpdateUrl := stakeSupplierForServicesMsg(ownerAddr, operatorAddr, 200, "svcId")
+	stakeMsgUpdateUrl := stakeSupplierForServicesMsg(ownerAddr, operatorAddr, 2000000, "svcId")
 	operatorUpdatedServiceUrl := "http://localhost:8081"
 	stakeMsgUpdateUrl.Services[0].Endpoints[0].Url = operatorUpdatedServiceUrl
 	setStakeMsgSigner(stakeMsgUpdateUrl, operatorAddr)
@@ -194,7 +199,7 @@ func TestMsgServer_StakeSupplier_OperatorAuthorizations(t *testing.T) {
 	// Update the supplier URL by using the owner address as the singer and verify that it succeeds.
 	ownerUpdaterServiceUrl := "http://localhost:8082"
 	stakeMsgUpdateUrl.Services[0].Endpoints[0].Url = ownerUpdaterServiceUrl
-	stakeMsgUpdateUrl.Stake.Amount = math.NewInt(300)
+	stakeMsgUpdateUrl.Stake.Amount = math.NewInt(3000000)
 	setStakeMsgSigner(stakeMsgUpdateUrl, ownerAddr)
 	_, err = srv.StakeSupplier(ctx, stakeMsgUpdateUrl)
 	require.NoError(t, err)
@@ -207,7 +212,7 @@ func TestMsgServer_StakeSupplier_OperatorAuthorizations(t *testing.T) {
 
 	// Try updating the supplier's operator address using the old operator as a signer
 	// will create a new supplier.
-	stakeMsgUpdateOperator := stakeSupplierForServicesMsg(ownerAddr, operatorAddr, 300, "svcId")
+	stakeMsgUpdateOperator := stakeSupplierForServicesMsg(ownerAddr, operatorAddr, 3000000, "svcId")
 	newOperatorAddress := sample.AccAddress()
 	stakeMsgUpdateOperator.OperatorAddress = newOperatorAddress
 	setStakeMsgSigner(stakeMsgUpdateOperator, operatorAddr)
@@ -227,7 +232,7 @@ func TestMsgServer_StakeSupplier_OperatorAuthorizations(t *testing.T) {
 	// will create a new supplier.
 	newOperatorAddress = sample.AccAddress()
 	stakeMsgUpdateOperator.OperatorAddress = newOperatorAddress
-	stakeMsgUpdateOperator.Stake.Amount = math.NewInt(400)
+	stakeMsgUpdateOperator.Stake.Amount = math.NewInt(4000000)
 	setStakeMsgSigner(stakeMsgUpdateOperator, ownerAddr)
 	_, err = srv.StakeSupplier(ctx, stakeMsgUpdateOperator)
 	require.NoError(t, err)
@@ -244,11 +249,15 @@ func TestMsgServer_StakeSupplier_OperatorAuthorizations(t *testing.T) {
 	// Try updating the supplier's owner address using the operator as a signer
 	// and verify that it fails.
 	newOwnerAddress := sample.AccAddress()
-	stakeMsgUpdateOwner := stakeSupplierForServicesMsg(ownerAddr, operatorAddr, 500, "svcId")
+	stakeMsgUpdateOwner := stakeSupplierForServicesMsg(ownerAddr, operatorAddr, 5000000, "svcId")
 	stakeMsgUpdateOwner.OwnerAddress = newOwnerAddress
 	setStakeMsgSigner(stakeMsgUpdateOwner, operatorAddr)
 	_, err = srv.StakeSupplier(ctx, stakeMsgUpdateOwner)
-	require.ErrorIs(t, err, sharedtypes.ErrSharedUnauthorizedSupplierUpdate)
+	require.Equal(t, codes.InvalidArgument, status.Code(err))
+	require.ErrorContains(t, err, sharedtypes.ErrSharedUnauthorizedSupplierUpdate.Wrapf(
+		"signer %q is not allowed to update the owner address %q",
+		operatorAddr, ownerAddr,
+	).Error())
 
 	// Update the supplier's owner address using the owner as a signer and verify that it succeeds.
 	setStakeMsgSigner(stakeMsgUpdateOwner, ownerAddr)
@@ -270,13 +279,13 @@ func TestMsgServer_StakeSupplier_ActiveSupplier(t *testing.T) {
 	operatorAddr := sample.AccAddress()
 
 	// Prepare the supplier
-	stakeMsg := stakeSupplierForServicesMsg(ownerAddr, operatorAddr, 100, "svcId")
+	stakeMsg := stakeSupplierForServicesMsg(ownerAddr, operatorAddr, 1000000, "svcId")
 
 	// Stake the supplier & verify that the supplier exists.
 	_, err := srv.StakeSupplier(ctx, stakeMsg)
 	require.NoError(t, err)
 
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	currentHeight := sdkCtx.BlockHeight()
 	sessionEndHeight := supplierModuleKeepers.SharedKeeper.GetSessionEndHeight(ctx, currentHeight)
 
@@ -299,7 +308,7 @@ func TestMsgServer_StakeSupplier_ActiveSupplier(t *testing.T) {
 	ctx = keepertest.SetBlockHeight(ctx, sessionEndHeight+1)
 
 	// Prepare the supplier stake message with a different service
-	updateMsg := stakeSupplierForServicesMsg(ownerAddr, operatorAddr, 200, "svcId", "svcId2")
+	updateMsg := stakeSupplierForServicesMsg(ownerAddr, operatorAddr, 2000000, "svcId", "svcId2")
 	updateMsg.Signer = operatorAddr
 
 	// Update the staked supplier
@@ -334,7 +343,7 @@ func stakeSupplierForServicesMsg(
 	ownerAddr, operatorAddr string,
 	amount int64,
 	serviceIds ...string,
-) *types.MsgStakeSupplier {
+) *suppliertypes.MsgStakeSupplier {
 	services := make([]*sharedtypes.SupplierServiceConfig, 0, len(serviceIds))
 	for _, serviceId := range serviceIds {
 		services = append(services, &sharedtypes.SupplierServiceConfig{
@@ -343,7 +352,7 @@ func stakeSupplierForServicesMsg(
 				{
 					Url:     "http://localhost:8080",
 					RpcType: sharedtypes.RPCType_JSON_RPC,
-					Configs: make([]*sharedtypes.ConfigOption, 0),
+					Configs: nil,
 				},
 			},
 			RevShare: []*sharedtypes.ServiceRevenueShare{
@@ -355,20 +364,82 @@ func stakeSupplierForServicesMsg(
 		})
 	}
 
-	return &types.MsgStakeSupplier{
+	return &suppliertypes.MsgStakeSupplier{
 		Signer:          ownerAddr,
 		OwnerAddress:    ownerAddr,
 		OperatorAddress: operatorAddr,
-		Stake:           &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(amount)},
+		Stake:           &cosmostypes.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(amount)},
 		Services:        services,
 	}
 }
 
 // setStakeMsgSigner sets the signer of the given MsgStakeSupplier to the given address
 func setStakeMsgSigner(
-	msg *types.MsgStakeSupplier,
+	msg *suppliertypes.MsgStakeSupplier,
 	signer string,
-) *types.MsgStakeSupplier {
+) *suppliertypes.MsgStakeSupplier {
 	msg.Signer = signer
 	return msg
+}
+
+func TestMsgServer_StakeSupplier_FailBelowMinStake(t *testing.T) {
+	k, ctx := keepertest.SupplierKeeper(t)
+	srv := keeper.NewMsgServerImpl(*k.Keeper)
+
+	addr := sample.AccAddress()
+	supplierStake := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 100)
+	minStake := supplierStake.AddAmount(math.NewInt(1))
+	expectedErr := suppliertypes.ErrSupplierInvalidStake.Wrapf("supplier with owner %q must stake at least %s", addr, minStake)
+
+	// Set the minimum stake to be greater than the supplier stake.
+	params := k.Keeper.GetParams(ctx)
+	params.MinStake = &minStake
+	err := k.SetParams(ctx, params)
+	require.NoError(t, err)
+
+	// Prepare the supplier stake message.
+	stakeMsg := stakeSupplierForServicesMsg(addr, addr, 100, "svcId")
+
+	// Attempt to stake the supplier & verify that the supplier does NOT exist.
+	_, err = srv.StakeSupplier(ctx, stakeMsg)
+	require.ErrorContains(t, err, expectedErr.Error())
+	_, isSupplierFound := k.GetSupplier(ctx, addr)
+	require.False(t, isSupplierFound)
+}
+
+func TestMsgServer_StakeSupplier_UpStakeFromBelowMinStake(t *testing.T) {
+	k, ctx := keepertest.SupplierKeeper(t)
+	srv := keeper.NewMsgServerImpl(*k.Keeper)
+
+	addr := sample.AccAddress()
+	supplierParams := k.Keeper.GetParams(ctx)
+	minStake := supplierParams.GetMinStake()
+	belowMinStake := minStake.AddAmount(math.NewInt(-1))
+	aboveMinStake := minStake.AddAmount(math.NewInt(1))
+
+	stakeMsg := stakeSupplierForServicesMsg(addr, addr, aboveMinStake.Amount.Int64(), "svcId")
+
+	// Stake (via keeper methods) a supplier with stake below min. stake.
+	initialSupplier := sharedtypes.Supplier{
+		OwnerAddress:    addr,
+		OperatorAddress: addr,
+		Stake:           &belowMinStake,
+		Services:        stakeMsg.GetServices(),
+		ServicesActivationHeightsMap: map[string]uint64{
+			"svcId": 0,
+		},
+	}
+
+	k.SetSupplier(ctx, initialSupplier)
+
+	// Attempt to upstake the supplier with stake above min. stake.
+	_, err := srv.StakeSupplier(ctx, stakeMsg)
+	require.NoError(t, err)
+
+	// Assert supplier is staked for above min. stake.
+	expectedSupplier := initialSupplier
+	expectedSupplier.Stake = &aboveMinStake
+	supplier, isSupplierFound := k.GetSupplier(ctx, addr)
+	require.True(t, isSupplierFound)
+	require.EqualValues(t, expectedSupplier, supplier)
 }
