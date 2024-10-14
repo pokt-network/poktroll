@@ -30,8 +30,8 @@ stake_amount: 1000069upokt
 # or include at least one item.
 default_rev_share_percent:
   # The sum of all shares MUST equal 100%. Staking will fail otherwise.
-  - pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4: 80.5
-  - pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw: 19.5
+  pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4: 80.5
+  pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw: 19.5
 services:
   # The endpoint URL for the Anvil service is provided via the RelayMiner.
   # The RelayMiner acts as a proxy, forwarding requests to the actual Anvil data node behind it.
@@ -45,8 +45,8 @@ services:
     # service, default_rev_share_percent is used.
     # The sum of all shares MUST equal 100%. Staking will fail otherwise.
     rev_share_percent:
-      - pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4: 50
-      - pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw: 50
+      pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4: 50
+      pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw: 50
     endpoints:
       - publicly_exposed_url: http://relayminer1:8545
         rpc_type: REST
