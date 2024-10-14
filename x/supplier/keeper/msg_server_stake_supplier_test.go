@@ -352,7 +352,7 @@ func stakeSupplierForServicesMsg(
 				{
 					Url:     "http://localhost:8080",
 					RpcType: sharedtypes.RPCType_JSON_RPC,
-					Configs: make([]*sharedtypes.ConfigOption, 0),
+					Configs: nil,
 				},
 			},
 			RevShare: []*sharedtypes.ServiceRevenueShare{
@@ -398,33 +398,48 @@ func TestMsgServer_StakeSupplier_FailBelowMinStake(t *testing.T) {
 	require.NoError(t, err)
 
 	// Prepare the supplier stake message.
-	stakeMsg := &suppliertypes.MsgStakeSupplier{
-		Signer:          addr,
-		OwnerAddress:    addr,
-		OperatorAddress: addr,
-		Stake:           &supplierStake,
-		Services: []*sharedtypes.SupplierServiceConfig{
-			{
-				ServiceId: "svcId",
-				Endpoints: []*sharedtypes.SupplierEndpoint{
-					{
-						Url:     "http://test.example:8080",
-						RpcType: sharedtypes.RPCType_JSON_RPC,
-					},
-				},
-				RevShare: []*sharedtypes.ServiceRevenueShare{
-					{
-						Address:            addr,
-						RevSharePercentage: 100,
-					},
-				},
-			},
-		},
-	}
+	stakeMsg := stakeSupplierForServicesMsg(addr, addr, 100, "svcId")
 
 	// Attempt to stake the supplier & verify that the supplier does NOT exist.
 	_, err = srv.StakeSupplier(ctx, stakeMsg)
 	require.ErrorContains(t, err, expectedErr.Error())
 	_, isSupplierFound := k.GetSupplier(ctx, addr)
 	require.False(t, isSupplierFound)
+}
+
+func TestMsgServer_StakeSupplier_UpStakeFromBelowMinStake(t *testing.T) {
+	k, ctx := keepertest.SupplierKeeper(t)
+	srv := keeper.NewMsgServerImpl(*k.Keeper)
+
+	addr := sample.AccAddress()
+	supplierParams := k.Keeper.GetParams(ctx)
+	minStake := supplierParams.GetMinStake()
+	belowMinStake := minStake.AddAmount(math.NewInt(-1))
+	aboveMinStake := minStake.AddAmount(math.NewInt(1))
+
+	stakeMsg := stakeSupplierForServicesMsg(addr, addr, aboveMinStake.Amount.Int64(), "svcId")
+
+	// Stake (via keeper methods) a supplier with stake below min. stake.
+	initialSupplier := sharedtypes.Supplier{
+		OwnerAddress:    addr,
+		OperatorAddress: addr,
+		Stake:           &belowMinStake,
+		Services:        stakeMsg.GetServices(),
+		ServicesActivationHeightsMap: map[string]uint64{
+			"svcId": 0,
+		},
+	}
+
+	k.SetSupplier(ctx, initialSupplier)
+
+	// Attempt to upstake the supplier with stake above min. stake.
+	_, err := srv.StakeSupplier(ctx, stakeMsg)
+	require.NoError(t, err)
+
+	// Assert supplier is staked for above min. stake.
+	expectedSupplier := initialSupplier
+	expectedSupplier.Stake = &aboveMinStake
+	supplier, isSupplierFound := k.GetSupplier(ctx, addr)
+	require.True(t, isSupplierFound)
+	require.EqualValues(t, expectedSupplier, supplier)
 }
