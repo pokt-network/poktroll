@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/big"
+	"sort"
 
 	"cosmossdk.io/log"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -14,27 +15,29 @@ import (
 	"github.com/pokt-network/poktroll/x/service/types"
 )
 
-// TargetNumRelays is the target number of relays we want the network to mine for
-// a specific service across all applications & suppliers per session.
-// This number determines the total number of leafs to be created across in
-// the off-chain SMTs, across all suppliers, for each service.
-// It indirectly drives the off-chain resource requirements of the network
-// in additional to playing a critical role in Relay Mining.
-// TODO_MAINNET(#542): Make this a governance parameter and figure out the correct value.
-const TargetNumRelays = uint64(10e4)
+var (
+	// TargetNumRelays is the target number of relays we want the network to mine for
+	// a specific service across all applications & suppliers per session.
+	// This number determines the total number of leafs to be created across in
+	// the off-chain SMTs, across all suppliers, for each service.
+	// It indirectly drives the off-chain resource requirements of the network
+	// in additional to playing a critical role in Relay Mining.
+	// TODO_MAINNET(#542): Make this a governance parameter and figure out the correct value.
+	TargetNumRelays = uint64(10e4)
 
-// Exponential moving average (ema) smoothing factor, commonly known as alpha.
-// Usually, alpha = 2 / (N+1), where N is the number of periods.
-// Large alpha -> more weight on recent data; less smoothing and fast response.
-// Small alpha -> more weight on past data; more smoothing and slow response.
-//
-// TODO_MAINNET: Use a language agnostic float implementation or arithmetic library
-// to ensure deterministic results across different language implementations of the
-// protocol.
-//
-// TODO_MAINNET(@olshansk, @rawthil): Play around with the value N for EMA to
-// capture what the memory should be.
-var emaSmoothingFactor = new(big.Float).SetFloat64(0.1)
+	// Exponential moving average (ema) smoothing factor, commonly known as alpha.
+	// Usually, alpha = 2 / (N+1), where N is the number of periods.
+	// Large alpha -> more weight on recent data; less smoothing and fast response.
+	// Small alpha -> more weight on past data; more smoothing and slow response.
+	//
+	// TODO_MAINNET: Use a language agnostic float implementation or arithmetic library
+	// to ensure deterministic results across different language implementations of the
+	// protocol.
+	//
+	// TODO_MAINNET(@olshansk, @rawthil): Play around with the value N for EMA to
+	// capture what the memory should be.
+	emaSmoothingFactor = new(big.Float).SetFloat64(0.1)
+)
 
 // UpdateRelayMiningDifficulty updates the on-chain relay mining difficulty
 // based on the amount of on-chain relays for each service, given a map of serviceId->numRelays.
@@ -46,7 +49,13 @@ func (k Keeper) UpdateRelayMiningDifficulty(
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
 	difficultyPerServiceMap = make(map[string]types.RelayMiningDifficulty, len(relaysPerServiceMap))
-	for serviceId, numRelays := range relaysPerServiceMap {
+
+	// Iterate over the relaysPerServiceMap deterministically by sorting the keys.
+	// This ensures that the order of the keys is consistent across different nodes.
+	// See comment: https://github.com/pokt-network/poktroll/pull/840#discussion_r1796663285
+	sortedRelayPerServiceMapKeys := getSortedMapKeys(relaysPerServiceMap)
+	for _, serviceId := range sortedRelayPerServiceMapKeys {
+		numRelays := relaysPerServiceMap[serviceId]
 		prevDifficulty, found := k.GetRelayMiningDifficulty(ctx, serviceId)
 		if !found {
 			prevDifficulty = NewDefaultRelayMiningDifficulty(ctx, logger, serviceId, numRelays)
@@ -162,4 +171,15 @@ func NewDefaultRelayMiningDifficulty(
 		TargetHash:   newDifficultyHash,
 	}
 
+}
+
+// getSortedMapKeys returns the keys of a map lexicographically sorted.
+func getSortedMapKeys(m map[string]uint64) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+
+	sort.Strings(keys)
+	return keys
 }
