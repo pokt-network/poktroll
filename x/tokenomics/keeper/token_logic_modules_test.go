@@ -509,7 +509,13 @@ func TestProcessTokenLogicModules_InvalidRoot(t *testing.T) {
 		{
 			desc: "correct size but invalid value",
 			root: func() []byte {
-				return bytes.Repeat([]byte("a"), protocol.TrieRootSize)
+				// A root with all 'a's is a valid value since each of the hash, sum and size
+				// will be []byte{0x61, 0x61, ...} with their respective sizes.
+				// The current test suite sets the CUPR to 1, making sum == count * CUPR
+				// valid. So, we can change the last byte to 'b' to make it invalid.
+				root := bytes.Repeat([]byte("a"), protocol.TrieRootSize)
+				root = append(root[:len(root)-1], 'b')
+				return root
 			}(),
 			errExpected: true,
 		},

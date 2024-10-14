@@ -356,7 +356,7 @@ type ProofQueryClient interface {
 type ServiceQueryClient interface {
 	// GetService queries the chain for the details of the service provided
 	GetService(ctx context.Context, serviceId string) (sharedtypes.Service, error)
-	GetServiceRelayDifficultyTargetHash(ctx context.Context, serviceId string) (servicetypes.RelayMiningDifficulty, error)
+	GetServiceRelayDifficulty(ctx context.Context, serviceId string) (servicetypes.RelayMiningDifficulty, error)
 }
 
 // BankQueryClient defines an interface that enables the querying of the
