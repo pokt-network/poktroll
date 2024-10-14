@@ -56,88 +56,13 @@ message Params {
 }
 ```
 
-### 2 Update the Parameter E2E Tests
+### 2 Update the Parameter Integration Tests
 
-Update the E2E test files (e.g., `update_params.feature` and `update_params_test.go`)
-to include scenarios that test the new parameter.
-
-#### 2.1 Scenario Example
-
-```gherkin
-# NB: If you are reading this and the proof module has parameters
-# that are not being updated in this test, please update the test.
-Scenario: An authorized user updates all "proof" module params
-  Given the user has the pocketd binary installed
-  And all "proof" module params are set to their default values
-  And an authz grant from the "gov" "module" account to the "pnf" "user" account for the "/poktroll.proof.MsgUpdateParams" message exists
-  When the "pnf" account sends an authz exec message to update all "proof" module params
-    | name                | value | type  |
-    | new_parameter_name  | 100   | int64 |
-  Then all "proof" module params should be updated
-```
-
-#### 2.2 Scenario Outline Example
-
-```gherkin
-# NB: If you are reading this and any module has parameters that
-# are not being updated in this test, please update the test.
-Scenario Outline: An authorized user updates individual <module> module params
-  Given the user has the pocketd binary installed
-  And all "<module>" module params are set to their default values
-  And an authz grant from the "gov" "module" account to the "pnf" "user" account for the "<message_type>" message exists
-  When the "pnf" account sends an authz exec message to update "<module>" the module param
-    | name         | value         | type         |
-    | <param_name> | <param_value> | <param_type> |
-  Then the "<module>" module param "<param_name>" should be updated
-
-  Examples:
-    | module | message_type                   | param_name         | param_value | param_type |
-    | proof  | /poktroll.proof.MsgUpdateParam | new_parameter_name | 100         | int64      |
-```
-
-#### 2.3 Step Definition Helpers Example
-
-The related changes to the step definition, presented below via an example,
-should be made in `e2e/tests/parse_params_test.go`.
-
-```go
-func (s *suite) newProofMsgUpdateParams(params paramsMap) cosmostypes.Msg {
-  msgUpdateParams := &prooftypes.MsgUpdateParam{
-    Params: &prooftypes.Params{},
-  }
-
-  for paramName, paramValue := range params {
-    switch paramName {
-    case prooftypes.ParamNewParameterName:
-      msgUpdateParams.Params.NewParameterName = uint64(paramValue.value.(int64))
-    default:
-      s.Fatalf("unexpected %q type param name %q", paramValue.typeStr, paramName)
-    }
-  }
-
-  return msgUpdateParams
-}
-```
-
-#### 2.4 Update switch statement to support new param
-
-The related changes to the step definition, presented below via an example,
-should be made in `e2e/tests/parse_params_test.go`.
-
-```go
-case prooftypes.ModuleName:
-  params := prooftypes.DefaultParams()
-  paramsMap := s.expectedModuleParams[moduleName]
-
-  newParameter, ok := paramsMap[prooftypes.ParamNewParameterName]
-  if ok {
-    params.NewParameter = uint64(newParameter.value.(int64))
-  }
-```
+// TODO_DOCUMENT(@bryanchriswhite, #826)
 
 ### 3. Update the Default Parameter Values
 
-In the corresponding Go file (e.g., `params.go`), define the default value, key, and parameter name for the
+In the corresponding Go file (e.g., `x/<module>/types/params.go`), define the default value, key, and parameter name for the
 new parameter and include the default in the `NewParams` and `DefaultParams` functions.
 
 ```go
@@ -223,9 +148,19 @@ with the default value for the new parameter.
         "@type": "/poktroll.proof.MsgUpdateParams",
         "authority": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
         "params": {
-          "min_relay_difficulty_bits": "0",
           "proof_request_probability": "0.25",
-          "proof_requirement_threshold": "20",
+          "proof_requirement_threshold":  {
+            "denom": "upokt",
+            "amount": "20000000"
+          },
+          "proof_missing_penalty": {
+            "amount": "320000000",
+            "denom": "upokt"
+          },
+          "proof_submission_fee": {
+            "amount": "1000000",
+            "denom": "upokt"
+          },
           "new_parameter_name": "100" // Add this line
         }
       }

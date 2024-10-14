@@ -165,6 +165,10 @@ genesis:
     application:
       params:
         max_delegated_gateways: "7"
+        min_stake:
+          # TODO_MAINNET: Determine realistic amount for minimum application stake amount.
+          amount: "100000000" # 100 POKT
+          denom: upokt
       applicationList:
         - address: pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4
           delegatee_gateway_addresses: []
@@ -175,7 +179,7 @@ genesis:
           stake:
             # NB: This value should be exactly 1upokt smaller than the value in
             # `supplier1_stake_config.yaml` so that the stake command causes a state change.
-            amount: "1000068"
+            amount: "100000068" # ~100 POKT
             denom: upokt
         - address: pokt1ad28jdap2zfanjd7hpkh984yveney6k9a42man
           delegatee_gateway_addresses: []
@@ -186,9 +190,14 @@ genesis:
           stake:
             # NB: This value should be exactly 1upokt smaller than the value in
             # `supplier1_stake_config.yaml` so that the stake command causes a state change.
-            amount: "1000068"
+            amount: "100000068" # ~100 POKT
             denom: upokt
     supplier:
+      params:
+        # TODO_MAINNET: Determine realistic amount for minimum gateway stake amount.
+        min_stake:
+          amount: "1000000" # 1 POKT
+          denom: upokt
       supplierList:
         - owner_address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
           operator_address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
@@ -223,6 +232,11 @@ genesis:
             amount: "1000068"
             denom: upokt
     gateway:
+      params:
+        # TODO_MAINNET: Determine realistic amount for minimum gateway stake amount.
+        min_stake:
+            amount: "1000000" # 1 POKT
+            denom: upokt
       gatewayList:
         - address: pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4
           stake:

@@ -161,3 +161,8 @@ func GetEarliestSupplierProofCommitHeight(
 func GetNextSessionStartHeight(sharedParams *sharedtypes.Params, queryHeight int64) int64 {
 	return GetSessionEndHeight(sharedParams, queryHeight) + 1
 }
+
+// IsSessionEndHeight returns true if the queryHeight is the last block of the session.
+func IsSessionEndHeight(sharedParams *sharedtypes.Params, queryHeight int64) bool {
+	return queryHeight != GetSessionEndHeight(sharedParams, queryHeight)
+}

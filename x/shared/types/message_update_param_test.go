@@ -52,13 +52,14 @@ func TestMsgUpdateParam_ValidateBasic(t *testing.T) {
 				Name:      ParamComputeUnitsToTokensMultiplier,
 				AsType:    &MsgUpdateParam_AsInt64{AsInt64: 0},
 			},
+			expectedErr: ErrSharedParamInvalid,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.desc, func(t *testing.T) {
-			err := tt.msg.ValidateBasic()
-			if tt.expectedErr != nil {
-				require.ErrorContains(t, err, tt.expectedErr.Error())
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			err := test.msg.ValidateBasic()
+			if test.expectedErr != nil {
+				require.ErrorContains(t, err, test.expectedErr.Error())
 				return
 			}
 			require.NoError(t, err)

@@ -2,6 +2,10 @@ package keeper
 
 import (
 	"context"
+	"fmt"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/pokt-network/poktroll/x/proof/types"
 )
@@ -12,86 +16,59 @@ func (k msgServer) UpdateParam(
 	ctx context.Context,
 	msg *types.MsgUpdateParam,
 ) (*types.MsgUpdateParamResponse, error) {
+	logger := k.logger.With(
+		"method", "UpdateParam",
+		"param_name", msg.Name,
+	)
+
 	if err := msg.ValidateBasic(); err != nil {
-		return nil, err
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	if k.GetAuthority() != msg.Authority {
-		return nil, types.ErrProofInvalidSigner.Wrapf("invalid authority; expected %s, got %s", k.GetAuthority(), msg.Authority)
+		return nil, status.Error(
+			codes.InvalidArgument,
+			types.ErrProofInvalidSigner.Wrapf(
+				"invalid authority; expected %s, got %s",
+				k.GetAuthority(), msg.Authority,
+			).Error(),
+		)
 	}
 
 	params := k.GetParams(ctx)
 
 	switch msg.Name {
-	case types.ParamRelayDifficultyTargetHash:
-		value, ok := msg.AsType.(*types.MsgUpdateParam_AsBytes)
-		if !ok {
-			return nil, types.ErrProofParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
-		}
-		relayDifficultyTargetHash := value.AsBytes
-
-		if err := types.ValidateRelayDifficultyTargetHash(relayDifficultyTargetHash); err != nil {
-			return nil, err
-		}
-
-		params.RelayDifficultyTargetHash = relayDifficultyTargetHash
 	case types.ParamProofRequestProbability:
-		value, ok := msg.AsType.(*types.MsgUpdateParam_AsFloat)
-		if !ok {
-			return nil, types.ErrProofParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
-		}
-		proofRequestProbability := value.AsFloat
-
-		if err := types.ValidateProofRequestProbability(proofRequestProbability); err != nil {
-			return nil, err
-		}
-
-		params.ProofRequestProbability = proofRequestProbability
+		logger = logger.With("param_value", msg.GetAsFloat())
+		params.ProofRequestProbability = msg.GetAsFloat()
 	case types.ParamProofRequirementThreshold:
-		value, ok := msg.AsType.(*types.MsgUpdateParam_AsCoin)
-		if !ok {
-			return nil, types.ErrProofParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
-		}
-		proofRequirementThreshold := value.AsCoin
-
-		if err := types.ValidateProofRequirementThreshold(proofRequirementThreshold); err != nil {
-			return nil, err
-		}
-
-		params.ProofRequirementThreshold = proofRequirementThreshold
+		logger = logger.With("param_value", msg.GetAsCoin())
+		params.ProofRequirementThreshold = msg.GetAsCoin()
 	case types.ParamProofMissingPenalty:
-		value, ok := msg.AsType.(*types.MsgUpdateParam_AsCoin)
-		if !ok {
-			return nil, types.ErrProofParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
-		}
-		proofMissingPenalty := value.AsCoin
-
-		if err := types.ValidateProofMissingPenalty(proofMissingPenalty); err != nil {
-			return nil, err
-		}
-
-		params.ProofMissingPenalty = proofMissingPenalty
+		logger = logger.With("param_value", msg.GetAsCoin())
+		params.ProofMissingPenalty = msg.GetAsCoin()
 	case types.ParamProofSubmissionFee:
-		value, ok := msg.AsType.(*types.MsgUpdateParam_AsCoin)
-		if !ok {
-			return nil, types.ErrProofParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
-		}
-		proofSubmissionFee := value.AsCoin
-
-		if err := types.ValidateProofSubmissionFee(proofSubmissionFee); err != nil {
-			return nil, err
-		}
-
-		params.ProofSubmissionFee = proofSubmissionFee
+		logger = logger.With("param_value", msg.GetAsCoin())
+		params.ProofSubmissionFee = msg.GetAsCoin()
 	default:
-		return nil, types.ErrProofParamInvalid.Wrapf("unsupported param %q", msg.Name)
+		return nil, status.Error(
+			codes.InvalidArgument,
+			types.ErrProofParamInvalid.Wrapf("unsupported param %q", msg.Name).Error(),
+		)
+	}
+
+	if err := params.ValidateBasic(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	if err := k.SetParams(ctx, params); err != nil {
-		return nil, err
+		err = fmt.Errorf("unable to set params: %w", err)
+		logger.Error(fmt.Sprintf("ERROR: %s", err))
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	updatedParams := k.GetParams(ctx)
+
 	return &types.MsgUpdateParamResponse{
 		Params: &updatedParams,
 	}, nil
