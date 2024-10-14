@@ -45,13 +45,13 @@ func NewUnsignedMinedRelay(
 				SessionHeader:           session.Header,
 				SupplierOperatorAddress: supplierOperatorAddress,
 			},
-			Payload: []byte("request_payload"),
+			Payload: randomPayload(),
 		},
 		Res: &servicetypes.RelayResponse{
 			Meta: servicetypes.RelayResponseMetadata{
 				SessionHeader: session.Header,
 			},
-			Payload: []byte("response_payload"),
+			Payload: randomPayload(),
 		},
 	}
 
