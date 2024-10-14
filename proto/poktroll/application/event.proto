@@ -71,7 +71,7 @@ message EventApplicationUnbondingEnd {
 
 // EventApplicationUnbondingCanceled is emitted when an application which was unbonding
 // successfully (re-)stakes before the unbonding period has elapsed. An EventApplicationStaked
-// event will also be emmitted immediatly after this event.
+// event will also be emitted immediately after this event.
 message EventApplicationUnbondingCanceled {
   poktroll.application.Application application = 1 [(gogoproto.jsontag) = "application"];
 }

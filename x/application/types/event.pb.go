@@ -394,7 +394,7 @@ func (m *EventApplicationUnbondingEnd) GetApplication() *Application {
 
 // EventApplicationUnbondingCanceled is emitted when an application which was unbonding
 // successfully (re-)stakes before the unbonding period has elapsed. An EventApplicationStaked
-// event will also be emmitted immediatly after this event.
+// event will also be emitted immediately after this event.
 type EventApplicationUnbondingCanceled struct {
 	Application *Application `protobuf:"bytes,1,opt,name=application,proto3" json:"application"`
 }

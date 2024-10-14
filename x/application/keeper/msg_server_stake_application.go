@@ -119,12 +119,10 @@ func (k msgServer) StakeApplication(ctx context.Context, msg *types.MsgStakeAppl
 	})
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	for _, event := range events {
-		if err = sdkCtx.EventManager().EmitTypedEvent(event); err != nil {
-			err = types.ErrAppEmitEvent.Wrapf("(%+v): %s", event, err)
-			logger.Error(err.Error())
-			return nil, status.Error(codes.Internal, err.Error())
-		}
+	if err = sdkCtx.EventManager().EmitTypedEvents(events...); err != nil {
+		err = types.ErrAppEmitEvent.Wrapf("(%+v): %s", events, err)
+		logger.Error(err.Error())
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	isSuccessful = true

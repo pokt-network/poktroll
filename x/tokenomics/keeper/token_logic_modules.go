@@ -285,8 +285,6 @@ func (k Keeper) ProcessTokenLogicModules(
 	if application.Stake.Amount.LT(apptypes.DefaultMinStake.Amount) {
 		// Mark the application as unbonding if it has less than the minimum stake.
 		application.UnstakeSessionEndHeight = apptypes.ApplicationBelowMinStake
-
-		// TODO_UPNEXT:(@bryanchriswhite): emit a new EventApplicationUnbondedBelowMinStake event.
 	} else {
 		// State mutation: update the application's on-chain record.
 		k.applicationKeeper.SetApplication(ctx, application)
