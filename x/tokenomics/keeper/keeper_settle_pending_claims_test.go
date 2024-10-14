@@ -29,6 +29,7 @@ import (
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	"github.com/pokt-network/poktroll/x/tokenomics"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
@@ -663,6 +664,9 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimPendingAfterSettlement() {
 }
 
 func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
+	// TODO_IN_THIS_COMMIT: update penalty to supplier min-stake.
+	// TODO_IN_THIS_COMMIT: assert that EventSupplierUnbondedBelowMinStake is emitted.
+
 	// Retrieve default values
 	t := s.T()
 	ctx := s.ctx
@@ -712,12 +716,29 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	events := sdkCtx.EventManager().Events()
 
 	// Confirm that a slashing event was emitted
-	expectedSlashingEvents := testutilevents.FilterEvents[*tokenomicstypes.EventSupplierSlashed](t, events, "poktroll.tokenomics.EventSupplierSlashed")
-	require.Len(t, expectedSlashingEvents, 1)
+	supplierSlashedEventTypeURL := cosmostypes.MsgTypeURL(&tokenomicstypes.EventSupplierSlashed{})
+	slashingEvents := testutilevents.FilterEvents[*tokenomicstypes.EventSupplierSlashed](t, events, supplierSlashedEventTypeURL)
+	require.Len(t, slashingEvents, 1)
 
 	// Validate the slashing event
-	expectedSlashingEvent := expectedSlashingEvents[0]
-	require.Equal(t, slashedSupplier.GetOperatorAddress(), expectedSlashingEvent.GetSupplierOperatorAddr())
-	require.Equal(t, uint64(1), expectedSlashingEvent.GetNumExpiredClaims())
-	require.Equal(t, proofParams.ProofMissingPenalty, expectedSlashingEvent.GetSlashingAmount())
+	expectedSlashingEvent := &tokenomicstypes.EventSupplierSlashed{
+		SupplierOperatorAddr: slashedSupplier.GetOperatorAddress(),
+		NumExpiredClaims:     uint64(1),
+		SlashingAmount:       proofParams.GetProofMissingPenalty(),
+	}
+	require.EqualValues(t, expectedSlashingEvent, slashingEvents[0])
+
+	// Confirm that a slashing event was emitted
+	supplierUnbondedBelowMinStakeEventTypeURL := cosmostypes.MsgTypeURL(&suppliertypes.EventSupplierUnbondedBelowMinStake{})
+	unbondedEvents := testutilevents.FilterEvents[*suppliertypes.EventSupplierUnbondedBelowMinStake](t, events, supplierUnbondedBelowMinStakeEventTypeURL)
+	require.Len(t, unbondedEvents, 1)
+
+	// Validate the slashing event
+	supplierParams := s.keepers.SupplierKeeper.GetParams(ctx)
+	expectedUnbondedEvent := &suppliertypes.EventSupplierUnbondedBelowMinStake{
+		Supplier:        &slashedSupplier,
+		MinStake:        supplierParams.GetMinStake(),
+		UnbondingHeight: shared.GetSupplierUnbondingHeight(&sharedParams, &slashedSupplier),
+	}
+	require.EqualValues(t, expectedUnbondedEvent, unbondedEvents[0])
 }
