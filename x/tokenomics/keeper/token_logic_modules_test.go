@@ -400,6 +400,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 
 	// Compute mint per actor
 	numTokensMinted := numTokensClaimed * tokenomicskeeper.MintPerClaimedTokenGlobalInflation
+	numTokensMintedInt := math.NewIntFromUint64(uint64(numTokensMinted))
 	daoMint := math.NewInt(int64(numTokensMinted * tokenomicskeeper.MintAllocationDAO))
 	propMint := math.NewInt(int64(numTokensMinted * tokenomicskeeper.MintAllocationProposer))
 	serviceOwnerMint := math.NewInt(int64(numTokensMinted * tokenomicskeeper.MintAllocationSourceOwner))
@@ -407,7 +408,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	supplierMint := float32(numTokensMinted * tokenomicskeeper.MintAllocationSupplier)
 
 	// Ensure the balance was increase be the appropriate amount
-	require.Equal(t, daoBalanceBefore.Amount.Add(daoMint), daoBalanceAfter.Amount)
+	require.Equal(t, daoBalanceBefore.Amount.Add(daoMint).Add(numTokensMintedInt), daoBalanceAfter.Amount)
 	require.Equal(t, propBalanceBefore.Amount.Add(propMint), propBalanceAfter.Amount)
 	require.Equal(t, serviceOwnerBalanceBefore.Amount.Add(serviceOwnerMint), serviceOwnerBalanceAfter.Amount)
 	require.Equal(t, appBalanceBefore.Amount.Add(appMint), appBalanceAfter.Amount)
@@ -423,6 +424,13 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 		acceptableRoundingDelta := tokenomicskeeper.MintDistributionAllowableTolerancePercent * float64(balanceAfter)
 		require.InDelta(t, expectedBalanceAfter, balanceAfter, acceptableRoundingDelta)
 	}
+
+	foundApp, appFound := keepers.GetApplication(ctx, appAddress)
+	require.True(t, appFound)
+
+	appStakeAfter := foundApp.GetStake().Amount
+	numTokensClaimedInt := math.NewIntFromUint64(uint64(numTokensClaimed))
+	require.Equal(t, appInitialStake.Sub(numTokensMintedInt).Sub(numTokensClaimedInt), appStakeAfter)
 }
 
 func TestProcessTokenLogicModules_AppNotFound(t *testing.T) {

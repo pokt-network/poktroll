@@ -115,8 +115,9 @@ type TokenLogicModuleProcessor func(
 
 // tokenLogicModuleProcessorMap is a map of TLMs to their respective independent processors.
 var tokenLogicModuleProcessorMap = map[TokenLogicModule]TokenLogicModuleProcessor{
-	TLMRelayBurnEqualsMint: Keeper.TokenLogicModuleRelayBurnEqualsMint,
-	TLMGlobalMint:          Keeper.TokenLogicModuleGlobalMint,
+	TLMRelayBurnEqualsMint:            Keeper.TokenLogicModuleRelayBurnEqualsMint,
+	TLMGlobalMint:                     Keeper.TokenLogicModuleGlobalMint,
+	TLMGlobalMintReimbursementRequest: Keeper.TokenLogicModuleGlobalMintReimbursementRequest,
 }
 
 func init() {
@@ -332,24 +333,6 @@ func (k Keeper) TokenLogicModuleRelayBurnEqualsMint(
 	// order economic effects with more optionality. This could include funds
 	// going to pnf, delegators, enabling bonuses/rebates, etc...
 
-	// Update the application's on-chain stake
-	newAppStake, err := application.Stake.SafeSub(settlementCoin)
-	if err != nil {
-		amountDiffCoin := settlementCoin.Amount.Sub(application.Stake.Amount)
-		return tokenomicstypes.ErrTokenomicsApplicationNewStakeInvalid.Wrapf("application %q stake cannot be reduced to a negative amount -%s", application.Address, amountDiffCoin)
-	}
-	application.Stake = &newAppStake
-	logger.Info(fmt.Sprintf("updated application %q stake to %s", application.Address, newAppStake))
-
-	// Burn uPOKT from the application module account which was held in escrow
-	// on behalf of the application account.
-	if err := k.bankKeeper.BurnCoins(
-		ctx, apptypes.ModuleName, sdk.NewCoins(settlementCoin),
-	); err != nil {
-		return tokenomicstypes.ErrTokenomicsApplicationModuleBurn.Wrapf("burning %s from the application module account: %v", settlementCoin, err)
-	}
-	logger.Info(fmt.Sprintf("burned (%s) from the application module account", settlementCoin))
-
 	// Mint new uPOKT to the supplier module account.
 	// These funds will be transferred to the supplier's shareholders below.
 	// For reference, see operate/configs/supplier_staking_config.md.
@@ -384,7 +367,7 @@ func (k Keeper) TokenLogicModuleRelayBurnEqualsMint(
 	logger.Info(fmt.Sprintf("burned (%v) from the application module account", settlementCoin))
 
 	// Update the application's on-chain stake
-	newAppStake, err = application.Stake.SafeSub(settlementCoin)
+	newAppStake, err := application.Stake.SafeSub(settlementCoin)
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsApplicationNewStakeInvalid.Wrapf("application %q stake cannot be reduced to a negative amount %v", application.Address, newAppStake)
 	}
@@ -495,6 +478,7 @@ func (k Keeper) TokenLogicModuleGlobalMintReimbursementRequest(
 ) error {
 	logger := k.Logger().With("method", "TokenLogicModuleGlobalMintReimbursementRequest")
 
+	// Do not process the reimbursement request if there is no global inflation.
 	if MintPerClaimedTokenGlobalInflation == 0 {
 		logger.Warn("global inflation is set to zero. Skipping Global Mint Reimbursement Request TLM.")
 		return nil
@@ -664,9 +648,8 @@ func (k Keeper) ensureClaimAmountLimits(
 	// before being reimbursed to the application in the future.
 	appStake := application.GetStake()
 
-	// Global inflation per claim amount should be accounted for in the max claimable amount.
-	// The application should have this additional amount in its stake to account
-	// so it can be deducted and sent to the DAO/PNF.
+	// The application should have enough stake to cover for the global mint reimbursement.
+	// This amount is deducted from the maximum claimable amount.
 	globalInflationCoin, _ := calculateGlobalPerClaimMintInflationFromSettlementAmount(claimSettlementCoin)
 	maxCalibmableAmt := appStake.Amount.Quo(math.NewInt(sessionkeeper.NumSupplierPerSession)).Sub(globalInflationCoin.Amount)
 
