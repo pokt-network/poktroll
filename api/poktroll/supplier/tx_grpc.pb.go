@@ -22,6 +22,7 @@ const (
 	Msg_UpdateParams_FullMethodName    = "/poktroll.supplier.Msg/UpdateParams"
 	Msg_StakeSupplier_FullMethodName   = "/poktroll.supplier.Msg/StakeSupplier"
 	Msg_UnstakeSupplier_FullMethodName = "/poktroll.supplier.Msg/UnstakeSupplier"
+	Msg_UpdateParam_FullMethodName     = "/poktroll.supplier.Msg/UpdateParam"
 )
 
 // MsgClient is the client API for Msg service.
@@ -35,6 +36,7 @@ type MsgClient interface {
 	UpdateParams(ctx context.Context, in *MsgUpdateParams, opts ...grpc.CallOption) (*MsgUpdateParamsResponse, error)
 	StakeSupplier(ctx context.Context, in *MsgStakeSupplier, opts ...grpc.CallOption) (*MsgStakeSupplierResponse, error)
 	UnstakeSupplier(ctx context.Context, in *MsgUnstakeSupplier, opts ...grpc.CallOption) (*MsgUnstakeSupplierResponse, error)
+	UpdateParam(ctx context.Context, in *MsgUpdateParam, opts ...grpc.CallOption) (*MsgUpdateParamResponse, error)
 }
 
 type msgClient struct {
@@ -75,6 +77,16 @@ func (c *msgClient) UnstakeSupplier(ctx context.Context, in *MsgUnstakeSupplier,
 	return out, nil
 }
 
+func (c *msgClient) UpdateParam(ctx context.Context, in *MsgUpdateParam, opts ...grpc.CallOption) (*MsgUpdateParamResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MsgUpdateParamResponse)
+	err := c.cc.Invoke(ctx, Msg_UpdateParam_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MsgServer is the server API for Msg service.
 // All implementations must embed UnimplementedMsgServer
 // for forward compatibility
@@ -86,6 +98,7 @@ type MsgServer interface {
 	UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error)
 	StakeSupplier(context.Context, *MsgStakeSupplier) (*MsgStakeSupplierResponse, error)
 	UnstakeSupplier(context.Context, *MsgUnstakeSupplier) (*MsgUnstakeSupplierResponse, error)
+	UpdateParam(context.Context, *MsgUpdateParam) (*MsgUpdateParamResponse, error)
 	mustEmbedUnimplementedMsgServer()
 }
 
@@ -101,6 +114,9 @@ func (UnimplementedMsgServer) StakeSupplier(context.Context, *MsgStakeSupplier) 
 }
 func (UnimplementedMsgServer) UnstakeSupplier(context.Context, *MsgUnstakeSupplier) (*MsgUnstakeSupplierResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UnstakeSupplier not implemented")
+}
+func (UnimplementedMsgServer) UpdateParam(context.Context, *MsgUpdateParam) (*MsgUpdateParamResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateParam not implemented")
 }
 func (UnimplementedMsgServer) mustEmbedUnimplementedMsgServer() {}
 
@@ -169,6 +185,24 @@ func _Msg_UnstakeSupplier_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Msg_UpdateParam_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgUpdateParam)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).UpdateParam(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_UpdateParam_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).UpdateParam(ctx, req.(*MsgUpdateParam))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Msg_ServiceDesc is the grpc.ServiceDesc for Msg service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -187,6 +221,10 @@ var Msg_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UnstakeSupplier",
 			Handler:    _Msg_UnstakeSupplier_Handler,
+		},
+		{
+			MethodName: "UpdateParam",
+			Handler:    _Msg_UpdateParam_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
