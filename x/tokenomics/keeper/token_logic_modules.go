@@ -283,27 +283,14 @@ func (k Keeper) ProcessTokenLogicModules(
 	// TODO_CONSIDERATION: If we support multiple native tokens, we will need to
 	// start checking the denom here.
 	if application.Stake.Amount.LT(apptypes.DefaultMinStake.Amount) {
-		sdkCtx := sdk.UnwrapSDKContext(ctx)
-		unbondedBelowMinStakeEvent := &apptypes.EventApplicationUnbondedBelowMinStake{
-			AppAddress: application.GetAddress(),
-		}
-		if err = sdkCtx.EventManager().EmitTypedEvent(unbondedBelowMinStakeEvent); err != nil {
-			err = apptypes.ErrAppEmitEvent.Wrapf("(%+v): %s", unbondedBelowMinStakeEvent, err)
-			logger.Error(err.Error())
-			return err
-		}
-
-		// Unbond the application because it has less than the minimum stake.
-		if err = k.applicationKeeper.UnbondApplication(ctx, &application); err != nil {
-			return err
-		}
+		// Mark the application as unbonding if it has less than the minimum stake.
+		application.UnstakeSessionEndHeight = apptypes.ApplicationBelowMinStake
 
 		// TODO_UPNEXT:(@bryanchriswhite): emit a new EventApplicationUnbondedBelowMinStake event.
 	} else {
 		// State mutation: update the application's on-chain record.
 		k.applicationKeeper.SetApplication(ctx, application)
 		logger.Info(fmt.Sprintf("updated on-chain application record with address %q", application.Address))
-
 	}
 
 	// TODO_MAINNET: If the application stake has dropped to (near?) zero, should

@@ -22,6 +22,7 @@ import (
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -49,6 +50,11 @@ func TestApplicationMinStakeTestSuite(t *testing.T) {
 
 func (s *applicationMinStakeTestSuite) SetupTest() {
 	s.keepers, s.ctx = keeper.NewTokenomicsModuleKeepers(s.T(), cosmoslog.NewNopLogger())
+
+	proofParams := prooftypes.DefaultParams()
+	proofParams.ProofRequestProbability = 0
+	err := s.keepers.ProofKeeper.SetParams(s.ctx, proofParams)
+	require.NoError(s.T(), err)
 
 	s.serviceId = "svc1"
 	s.appBech32 = sample.AccAddress()
@@ -84,9 +90,19 @@ func (s *applicationMinStakeTestSuite) TestAppIsUnbondedIfBelowMinStakeWhenSettl
 
 	// Create a claim whose settlement amount drops the application below min stake
 	claim := s.getClaim(sessionHeader)
+	s.keepers.ProofKeeper.UpsertClaim(s.ctx, *claim)
 
-	// Process TLMs for the claim.
-	err := s.keepers.Keeper.ProcessTokenLogicModules(s.ctx, claim)
+	// Set the current height to the claim settlement height.
+	sdkCtx := cosmostypes.UnwrapSDKContext(s.ctx)
+	currentHeight := sdkCtx.BlockHeight()
+	sharedParams := s.keepers.SharedKeeper.GetParams(s.ctx)
+	currentSessionEndHeight := shared.GetSessionEndHeight(&sharedParams, currentHeight)
+	claimSettlementHeight := currentSessionEndHeight + int64(sharedtypes.GetSessionEndToProofWindowCloseBlocks(&sharedParams)) + 1
+	sdkCtx = sdkCtx.WithBlockHeight(claimSettlementHeight)
+	s.ctx = sdkCtx
+
+	// Settle pending claims; this should cause the application to be unbonded.
+	_, _, err := s.keepers.Keeper.SettlePendingClaims(sdkCtx)
 	require.NoError(s.T(), err)
 
 	// Assert that the EventApplicationUnbondedBelowMinStake event is emitted.
@@ -144,7 +160,7 @@ func (s *applicationMinStakeTestSuite) stakeSupplier() {
 				RevShare: []*sharedtypes.ServiceRevenueShare{
 					{
 						Address:            s.supplierBech32,
-						RevSharePercentage: 1,
+						RevSharePercentage: 100,
 					},
 				},
 			},
