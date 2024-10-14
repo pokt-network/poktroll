@@ -610,6 +610,7 @@ const (
 
 // RelayMiningDifficulty is a message used to store the on-chain Relay Mining
 // difficulty associated with a specific service ID.
+// TODO_TECHDEBT: Embed this message in the Service message.
 type RelayMiningDifficulty struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
