@@ -650,6 +650,8 @@ func (k Keeper) ensureClaimAmountLimits(
 
 	// The application should have enough stake to cover for the global mint reimbursement.
 	// This amount is deducted from the maximum claimable amount.
+	// TODO_BETA(red-0ne): Make sure that the relay miner logic also accounts for this
+	// when deciding to serve an application.
 	globalInflationCoin, _ := calculateGlobalPerClaimMintInflationFromSettlementAmount(claimSettlementCoin)
 	maxCalibmableAmt := appStake.Amount.Quo(math.NewInt(sessionkeeper.NumSupplierPerSession)).Sub(globalInflationCoin.Amount)
 
