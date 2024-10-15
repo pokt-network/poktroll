@@ -245,7 +245,7 @@ docker-compose down
 docker rm $(docker ps -aq) -f
 
 # Remove existing data and renew genesis
-rm -rf poktrolld-data/config/addrbook.json poktrolld-data/config/genesis.json poktrolld-data/config/genesis.seeds poktrolld-data/data/ poktrolld-data/config/node_key.json poktrolld-data/config/priv_validator_key.json
+rm -rf poktrolld-data/config/addrbook.json poktrolld-data/config/genesis.json poktrolld-data/config/genesis.seeds poktrolld-data/data/ poktrolld-data/cosmovisor/ poktrolld-data/config/node_key.json poktrolld-data/config/priv_validator_key.json
 
 # Re-start the node
 docker-compose up -d
