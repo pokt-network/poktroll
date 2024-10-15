@@ -11,7 +11,6 @@ import (
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/x/application/keeper"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -142,7 +141,7 @@ func TestMsgServer_UnstakeApplication_CancelUnbondingIfRestaked(t *testing.T) {
 	require.NoError(t, err)
 
 	// Assert that the EventApplicationUnbondingCanceled event is emitted.
-	foundApp.UnstakeSessionEndHeight = uint64(shared.GetSessionEndHeight(&sharedParams, sdk.UnwrapSDKContext(ctx).BlockHeight()))
+	foundApp.UnstakeSessionEndHeight = uint64(sharedtypes.GetSessionEndHeight(&sharedParams, sdk.UnwrapSDKContext(ctx).BlockHeight()))
 	foundApp.DelegateeGatewayAddresses = make([]string, 0)
 	expectedAppUnbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{Application: &foundApp}
 	events := sdk.UnwrapSDKContext(ctx).EventManager().Events()
