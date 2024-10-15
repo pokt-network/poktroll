@@ -36,4 +36,5 @@ var (
 	ErrTokenomicsMintAmountZero                        = sdkerrors.Register(ModuleName, 1127, "mint amount cannot be zero")
 	ErrTokenomicsTLMError                              = sdkerrors.Register(ModuleName, 1128, "failed to process TLM")
 	ErrTokenomicsCalculation                           = sdkerrors.Register(ModuleName, 1129, "tokenomics calculation error")
+	ErrTokenomicsApplicationModuleSendFailed           = sdkerrors.Register(ModuleName, 1130, "failed to send uPOKT from application module account")
 )
