@@ -62,7 +62,7 @@ var (
 	flagFeaturesPath string
 	keyRingFlag      = "--keyring-backend=test"
 	chainIdFlag      = "--chain-id=poktroll"
-	appGateServerUrl = "http://localhost:42069" // Keeping localhost by default because that is how we run the tests on our machines locally
+	appGateServerUrl = "localhost:3000" // Keeping localhost by default because that is how we run the tests on our machines locally
 )
 
 func init() {

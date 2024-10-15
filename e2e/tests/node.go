@@ -172,13 +172,8 @@ func (p *pocketdBin) runPocketCmd(args ...string) (*commandResult, error) {
 
 // runCurlPostCmd is a helper to run a command using the local pocketd binary with the flags provided
 func (p *pocketdBin) runCurlCmd(rpcUrl, service, method, path, data string, args ...string) (*commandResult, error) {
-	// Ensure that if a path is provided, it starts with a "/".
-	// This is required for RESTful APIs that use a path to identify resources.
-	// For JSON-RPC APIs, the resource path should be empty, so empty paths are allowed.
-	if len(path) > 0 && path[0] != '/' {
-		path = "/" + path
-	}
-	urlStr := fmt.Sprintf("%s/%s%s", rpcUrl, service, path)
+	urlStr := fmt.Sprintf("http://%s.%s/v1%s", service, rpcUrl, path)
+	fmt.Println("============URL:", urlStr)
 	base := []string{
 		"-v",         // verbose output
 		"-sS",        // silent with error

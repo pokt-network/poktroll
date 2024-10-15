@@ -20,7 +20,7 @@ Feature: Session Namespace
     Then the claim created by supplier "supplier1" for service "svc1" for application "app1" should be persisted on-chain
     And the user should wait for the "proof" module "SubmitProof" Message to be submitted
     And the user should wait for the "proof" module "ProofSubmitted" tx event to be broadcast
-    Then the claim created by supplier "supplier1" for service "anvil" for application "app1" should be successfully settled
+    Then the claim created by supplier "supplier1" for service "0021" for application "app1" should be successfully settled
 
 # TODO_BLOCKER(@red-0ne): Make sure to implement and validate this test
 # One way to exercise this behavior is to close the `RelayMiner` port to prevent

@@ -14,7 +14,7 @@ Feature: Tokenomics Namespace
         And the "supplier" account for "supplier1" is staked
         And an account exists for "app1"
         And the "application" account for "app1" is staked
-        And the service "anvil" registered for application "app1" has a compute units per relay of "1"
+        And the service "0021" registered for application "app1" has a compute units per relay of "1"
         # Start servicing relays
         # Set proof_requirement_threshold to 839 < num_relays (20) * compute_units_per_relay (1) * compute_units_to_tokens_multiplier (42)
         # to make sure a proof is required.
@@ -48,7 +48,7 @@ Feature: Tokenomics Namespace
         And the "supplier" account for "supplier1" is staked
         And an account exists for "app1"
         And the "application" account for "app1" is staked
-        And the service "anvil" registered for application "app1" has a compute units per relay of "1"
+        And the service "0021" registered for application "app1" has a compute units per relay of "1"
         # Set proof_request_probability to 0 and proof_requirement_threshold to
         # 421 > num_relays (10) * compute_units_per_relay (1) * compute_units_to_tokens_multiplier (42)
         # to make sure a proof is not required.

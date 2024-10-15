@@ -4,7 +4,7 @@ Feature: Stake App Namespaces
         Given the user has the pocketd binary installed
         And the user verifies the "application" for account "app2" is not staked
         And the account "app2" has a balance greater than "1000070" uPOKT
-        When the user stakes a "application" with "1000070" uPOKT for "anvil" service from the account "app2"
+        When the user stakes a "application" with "1000070" uPOKT for "0021" service from the account "app2"
         Then the user should be able to see standard output containing "txhash:"
         And the user should be able to see standard output containing "code: 0"
         And the pocketd binary should exit without error
