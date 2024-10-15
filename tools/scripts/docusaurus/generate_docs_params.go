@@ -85,7 +85,7 @@ func prepareGovernanceParamsDocs(protoFilesRootDir string, templs *template.Temp
 		protoFilesRootDir,
 		forEachMatchingFileWalkFn(
 			"params.proto",
-			newCollectParamsFieldNodesFn(paramsFieldNodesByModule),
+			newCollectParamsFieldNodesInFileFn(paramsFieldNodesByModule),
 		),
 	); pathWalkErr != nil {
 		logger.Error().Err(pathWalkErr)
@@ -172,11 +172,11 @@ func forEachMatchingFileWalkFn(
 	}
 }
 
-// newCollectParamsFieldNodesFn returns a function which receives a proto file path
-// that walks its AST to discover all fields (*ast.fieldNode) which are present on
-// a "Params" message, if present. Discovered fields are appended to the []*ast.fieldNode
-// in paramsFieldNodesByModule for the corresponding module name key.
-func newCollectParamsFieldNodesFn(paramsFieldNodesByModule map[string][]*ast.FieldNode) func(protoFilePath string) {
+// newCollectParamsFieldNodesInFileFn returns a function which receives a proto file
+// path and walks its AST to discover all fields (*ast.fieldNode) which are present
+// on any message named "Params", if present. Discovered fields are appended to the
+// []*ast.fieldNode in paramsFieldNodesByModule for the corresponding module name key.
+func newCollectParamsFieldNodesInFileFn(paramsFieldNodesByModule map[string][]*ast.FieldNode) func(protoFilePath string) {
 	return func(protoFilePath string) {
 		protoFileNodes, parseErr := protoParser.ParseToAST(protoFilePath)
 		if parseErr != nil {
@@ -194,26 +194,53 @@ func newCollectParamsFieldNodesFn(paramsFieldNodesByModule map[string][]*ast.Fie
 			break
 		}
 
+		collectParamFieldNodesVisitFn := newCollectParamFieldNodesVisitFn(moduleName, paramsFieldNodesByModule)
+		filterMsgNodesVisitFn := newFilterMsgNodesVisitFn("Params", collectParamFieldNodesVisitFn)
+
 		// Iterate through the file node and walk its AST.
 		for _, fileNode := range protoFileNodes {
-			ast.Walk(fileNode, func(node ast.Node) (bool, ast.VisitFunc) {
-				// Search for Message nodes:
-				if msgNode, ok := node.(*ast.MessageNode); ok {
-					// Filter out messages with names other than "Params".
-					if msgNode.Name.Val == "Params" {
-						return true, func(node ast.Node) (bool, ast.VisitFunc) {
-							if fieldNode, ok := node.(*ast.FieldNode); ok {
-								moduleFieldNodes := append(paramsFieldNodesByModule[moduleName], fieldNode)
-								paramsFieldNodesByModule[moduleName] = moduleFieldNodes
-							}
-							return false, nil
-						}
-					}
-					return false, nil
-				}
-				return true, nil
-			})
+			ast.Walk(fileNode, filterMsgNodesVisitFn)
 		}
+	}
+}
+
+// newFilterMsgNodesVisitFn returns an ast.VisitFunc which filters out MessageNodes
+// whose name does not match the given name. When the returned visit function is passed
+// to ast.Walk(), msgNodeVisitFn will be called when a matching message node id discovered.
+func newFilterMsgNodesVisitFn(name string, msgNodeVisitFn ast.VisitFunc) ast.VisitFunc {
+	return func(node ast.Node) (bool, ast.VisitFunc) {
+
+		// Continue walking the AST if the node is not a MessageNode.
+		msgNode, isMsgNode := node.(*ast.MessageNode)
+		if !isMsgNode {
+			return true, nil
+		}
+
+		// Filter out messages with names other than those with matching name.
+		if msgNode.Name.Val != name {
+			return false, nil
+		}
+
+		// MsgNode found, walk its AST using msgNodeVisitFn.
+		return true, msgNodeVisitFn
+	}
+}
+
+// newCollectParamFieldNodesVisitFn returns an ast.VisitFunc which collects all
+// FieldNodes discovered and appends them to the []*ast.FieldNode slice in the
+// paramsFieldNodesByModule map under the given moduleName key.
+func newCollectParamFieldNodesVisitFn(
+	moduleName string, paramsFieldNodesByModule map[string][]*ast.FieldNode,
+) ast.VisitFunc {
+	return func(node ast.Node) (bool, ast.VisitFunc) {
+		fieldNode, isFieldNode := node.(*ast.FieldNode)
+		if !isFieldNode {
+			return true, nil
+		}
+
+		moduleFieldNodes := append(paramsFieldNodesByModule[moduleName], fieldNode)
+		paramsFieldNodesByModule[moduleName] = moduleFieldNodes
+		return false, nil
 	}
 }
 
