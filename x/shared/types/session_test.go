@@ -1,4 +1,4 @@
-package shared
+package types_test
 
 import (
 	"context"
@@ -40,7 +40,7 @@ func TestGetEarliestSupplierClaimCommitHeight_IsDeterministic(t *testing.T) {
 			_, err := rand.Read(claimWindowOpenBlockHash[:]) //nolint:staticcheck // We need a deterministic pseudo-random source.
 			require.NoError(t, err)
 
-			expected := GetEarliestSupplierClaimCommitHeight(
+			expected := sharedtypes.GetEarliestSupplierClaimCommitHeight(
 				&sharedParams,
 				queryHeight,
 				claimWindowOpenBlockHash[:],
@@ -58,7 +58,7 @@ func TestGetEarliestSupplierClaimCommitHeight_IsDeterministic(t *testing.T) {
 
 				wg.Add(1)
 				go func(deterministicIdx int) {
-					actual := GetEarliestSupplierClaimCommitHeight(
+					actual := sharedtypes.GetEarliestSupplierClaimCommitHeight(
 						&sharedParams,
 						queryHeight,
 						claimWindowOpenBlockHash[:],
@@ -107,7 +107,7 @@ func TestGetEarliestSupplierProofCommitHeight_IsDeterministic(t *testing.T) {
 			}
 
 			// Compute expected value.
-			expected := GetEarliestSupplierProofCommitHeight(
+			expected := sharedtypes.GetEarliestSupplierProofCommitHeight(
 				&sharedParams,
 				queryHeight,
 				proofWindowOpenBlockHash[:],
@@ -126,7 +126,7 @@ func TestGetEarliestSupplierProofCommitHeight_IsDeterministic(t *testing.T) {
 
 				// NB: sample concurrently to save time.
 				go func(deterministicIdx int) {
-					actual := GetEarliestSupplierProofCommitHeight(
+					actual := sharedtypes.GetEarliestSupplierProofCommitHeight(
 						&sharedParams,
 						queryHeight,
 						proofWindowOpenBlockHash[:],
@@ -187,18 +187,18 @@ func TestClaimProofWindows(t *testing.T) {
 					// This will produce different randomized earliest claim & proof offsets.
 					supplierOperatorAddr := sample.AccAddress()
 
-					claimWindowOpenHeight := GetClaimWindowOpenHeight(&test.sharedParams, test.queryHeight)
-					claimWindowCloseHeight := GetClaimWindowCloseHeight(&test.sharedParams, test.queryHeight)
+					claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(&test.sharedParams, test.queryHeight)
+					claimWindowCloseHeight := sharedtypes.GetClaimWindowCloseHeight(&test.sharedParams, test.queryHeight)
 
 					require.Greater(t, claimWindowCloseHeight, claimWindowOpenHeight)
 
-					proofWindowOpenHeight := GetProofWindowOpenHeight(&test.sharedParams, test.queryHeight)
-					proofWindowCloseHeight := GetProofWindowCloseHeight(&test.sharedParams, test.queryHeight)
+					proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(&test.sharedParams, test.queryHeight)
+					proofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(&test.sharedParams, test.queryHeight)
 
 					require.GreaterOrEqual(t, proofWindowOpenHeight, claimWindowCloseHeight)
 					require.Greater(t, proofWindowCloseHeight, proofWindowOpenHeight)
 
-					earliestClaimCommitHeight := GetEarliestSupplierClaimCommitHeight(
+					earliestClaimCommitHeight := sharedtypes.GetEarliestSupplierClaimCommitHeight(
 						&test.sharedParams,
 						test.queryHeight,
 						blockHash,
@@ -207,7 +207,7 @@ func TestClaimProofWindows(t *testing.T) {
 
 					require.Greater(t, claimWindowCloseHeight, earliestClaimCommitHeight)
 
-					earliestProofCommitHeight := GetEarliestSupplierProofCommitHeight(
+					earliestProofCommitHeight := sharedtypes.GetEarliestSupplierProofCommitHeight(
 						&test.sharedParams,
 						test.queryHeight,
 						blockHash,

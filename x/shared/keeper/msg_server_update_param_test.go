@@ -9,10 +9,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/pokt-network/poktroll/x/shared/keeper"
-	"github.com/pokt-network/poktroll/x/shared/types"
-
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
+	"github.com/pokt-network/poktroll/x/shared/keeper"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -404,6 +402,6 @@ func getMinActorUnbondingPeriodSessions(
 	newParamBlocksValue uint64,
 ) uint64 {
 	deltaBlocks := newParamBlocksValue - oldParamBlocksValue
-	newProofWindowCloseBlocks := types.GetSessionEndToProofWindowCloseBlocks(params) + deltaBlocks
+	newProofWindowCloseBlocks := sharedtypes.GetSessionEndToProofWindowCloseBlocks(params) + deltaBlocks
 	return (newProofWindowCloseBlocks / params.NumBlocksPerSession) + 1
 }
