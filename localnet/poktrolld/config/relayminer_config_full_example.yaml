@@ -18,6 +18,12 @@ pprof:
   enabled: false
   addr: localhost:6060
 
+# Ping server configuration to test the connectivity of every
+# suppliers.[].service_config.backend_url
+ping:
+  enabled: false
+  addr: localhost:8081
+
 pocket_node:
   # Pocket node URL exposing the CometBFT JSON-RPC API.
   # Used by the Cosmos client SDK, event subscriptions, etc.
