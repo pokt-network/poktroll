@@ -45,9 +45,12 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.Equal(t, "svcId", foundSupplier.Services[0].ServiceId)
 	require.Len(t, foundSupplier.Services[0].Endpoints, 1)
 	require.Equal(t, "http://localhost:8080", foundSupplier.Services[0].Endpoints[0].Url)
+	// Assert that the supplier's account balance got deducted by the staking fee
+	balanceDecrease := keeper.SupplierStakingFee.Amount.Int64() + foundSupplier.Stake.Amount.Int64()
+	require.Equal(t, -balanceDecrease, supplierModuleKeepers.SupplierBalanceMap[ownerAddr])
 
-	// Prepare an updated supplier with a higher stake and a different URL for the service
-	updateMsg := stakeSupplierForServicesMsg(ownerAddr, operatorAddr, 2000000, "svcId2")
+	// Prepare an updated supplier with the same stake and a different URL for the service
+	updateMsg := stakeSupplierForServicesMsg(ownerAddr, operatorAddr, 1000000, "svcId2")
 	updateMsg.Services[0].Endpoints[0].Url = "http://localhost:8082"
 
 	// Update the staked supplier
@@ -56,7 +59,7 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 
 	foundSupplier, isSupplierFound = supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
 	require.True(t, isSupplierFound)
-	require.Equal(t, int64(2000000), foundSupplier.Stake.Amount.Int64())
+	require.Equal(t, int64(1000000), foundSupplier.Stake.Amount.Int64())
 	require.Len(t, foundSupplier.Services, 1)
 	require.Equal(t, "svcId2", foundSupplier.Services[0].ServiceId)
 	require.Len(t, foundSupplier.Services[0].Endpoints, 1)

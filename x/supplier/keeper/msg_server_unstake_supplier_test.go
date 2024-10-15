@@ -227,15 +227,19 @@ func TestMsgServer_UnstakeSupplier_OperatorCanUnstake(t *testing.T) {
 	unbondingHeight := shared.GetSupplierUnbondingHeight(&sharedParams, &foundSupplier)
 	ctx = keepertest.SetBlockHeight(ctx, int64(unbondingHeight))
 
+	// Balance decrease is the total amount deducted from the supplier's balance, including
+	// the initial stake and the staking fee.
+	balanceDecrease := keeper.SupplierStakingFee.Amount.Int64() + foundSupplier.Stake.Amount.Int64()
 	// Ensure that the initial stake is not returned to the owner yet
-	require.Equal(t, int64(0), supplierModuleKeepers.SupplierUnstakedFundsMap[ownerAddr])
+	require.Equal(t, -balanceDecrease, supplierModuleKeepers.SupplierBalanceMap[ownerAddr])
 
 	// Run the endblocker to unbond suppliers
 	err = supplierModuleKeepers.EndBlockerUnbondSuppliers(ctx)
 	require.NoError(t, err)
 
-	// Ensure that the initial stake is returned to the owner
-	require.Equal(t, initialStake, supplierModuleKeepers.SupplierUnstakedFundsMap[ownerAddr])
+	// Ensure that the initial stake is returned to the owner while the staking fee
+	// remains deducted from the supplier's balance.
+	require.Equal(t, -keeper.SupplierStakingFee.Amount.Int64(), supplierModuleKeepers.SupplierBalanceMap[ownerAddr])
 }
 
 func createStakeMsg(supplierOwnerAddr string, stakeAmount int64) *suppliertypes.MsgStakeSupplier {

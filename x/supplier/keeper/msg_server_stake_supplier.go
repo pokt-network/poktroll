@@ -8,10 +8,18 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/types"
+)
+
+var (
+	// TODO_UPNEXT: Make supplier staking fee a governance parameter
+	// TODO_UPNEXT: Update supplier staking documentation to remove the upstaking
+	// requirement and introduce the staking fee.
+	SupplierStakingFee = sdk.NewInt64Coin(volatile.DenomuPOKT, 1)
 )
 
 func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplier) (*types.MsgStakeSupplierResponse, error) {
@@ -105,9 +113,10 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 		supplier.UnstakeSessionEndHeight = sharedtypes.SupplierNotUnstaking
 	}
 
-	// MUST ALWAYS stake or upstake (> 0 delta)
-	if coinsToEscrow.IsZero() {
-		err = types.ErrSupplierInvalidStake.Wrapf("Signer %q must escrow more than 0 additional coins", msg.Signer)
+	// MUST ALWAYS stake or upstake (>= 0 delta)
+	// TODO_CONSIDERATION: Should we allow stake decrease down to min stake?
+	if coinsToEscrow.IsNegative() {
+		err = types.ErrSupplierInvalidStake.Wrapf("Signer %q must be higher or equal to the current stake", msg.Signer)
 		logger.Info(fmt.Sprintf("WARN: %s", err))
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -131,7 +140,7 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 	}
 
 	// Send the coins from the message signer account to the staked supplier pool
-	err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, msgSignerAddress, types.ModuleName, []sdk.Coin{coinsToEscrow})
+	err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, msgSignerAddress, types.ModuleName, sdk.NewCoins(coinsToEscrow.Add(SupplierStakingFee)))
 	if err != nil {
 		logger.Info(fmt.Sprintf("ERROR: could not send %v coins from %q to %q module account due to %v", coinsToEscrow, msgSignerAddress, types.ModuleName, err))
 		return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -192,8 +201,8 @@ func (k msgServer) updateSupplier(
 		return types.ErrSupplierInvalidStake.Wrapf("stake amount cannot be nil")
 	}
 
-	if msg.Stake.IsLTE(*supplier.Stake) {
-		return types.ErrSupplierInvalidStake.Wrapf("stake amount %v must be higher than previous stake amount %v", msg.Stake, supplier.Stake)
+	if msg.Stake.IsLT(*supplier.Stake) {
+		return types.ErrSupplierInvalidStake.Wrapf("stake amount %v must be higher or equal than previous stake amount %v", msg.Stake, supplier.Stake)
 	}
 	supplier.Stake = msg.Stake
 

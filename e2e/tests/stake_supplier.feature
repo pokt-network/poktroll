@@ -3,7 +3,7 @@ Feature: Stake Supplier Namespace
     Scenario: User can stake a Supplier
         Given the user has the pocketd binary installed
         And the user verifies the "supplier" for account "supplier2" is not staked
-        And the account "supplier2" has a balance greater than "1000070" uPOKT
+        And the account "supplier2" has a balance greater than "1000071" uPOKT
         When the user stakes a "supplier" with "1000070" uPOKT for "anvil" service from the account "supplier2"
         Then the user should be able to see standard output containing "txhash:"
         And the user should be able to see standard output containing "code: 0"
@@ -11,7 +11,7 @@ Feature: Stake Supplier Namespace
         And the user should wait for the "supplier" module "StakeSupplier" message to be submitted
         And the user should wait for the "supplier" module "SupplierStaked" tx event to be broadcast
         And the "supplier" for account "supplier2" is staked with "1000070" uPOKT
-        And the account balance of "supplier2" should be "1000070" uPOKT "less" than before
+        And the account balance of "supplier2" should be "1000071" uPOKT "less" than before
 
     Scenario: User can unstake a Supplier
         Given the user has the pocketd binary installed
