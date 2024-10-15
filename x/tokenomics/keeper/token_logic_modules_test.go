@@ -300,8 +300,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Invalid_SupplierExceedsMaxCl
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	events := sdkCtx.EventManager().Events()
-	appOverservicedEvents := testutilevents.FilterEvents[*tokenomicstypes.EventApplicationOverserviced](t,
-		events, "poktroll.tokenomics.EventApplicationOverserviced")
+	appOverservicedEvents := testutilevents.FilterEvents[*tokenomicstypes.EventApplicationOverserviced](t, events)
 	require.Len(t, appOverservicedEvents, 1, "unexpected number of event overserviced events")
 	appOverservicedEvent := appOverservicedEvents[0]
 
