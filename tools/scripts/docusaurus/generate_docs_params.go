@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"text/template"
 
@@ -91,6 +92,7 @@ func prepareGovernanceParamsDocs(protoFilesRootDir string, templs *template.Temp
 		os.Exit(1)
 	}
 
+	var paramFields = make([]paramField, 0)
 	for moduleName, fieldNodes := range paramsFieldNodesByModule {
 		for _, fieldNode := range fieldNodes {
 			// Uncomment and concatenate the field's comment lines.
@@ -105,16 +107,27 @@ func prepareGovernanceParamsDocs(protoFilesRootDir string, templs *template.Temp
 			}
 
 			// Extract the field's type information.
-			paramField := paramField{
+			paramFields = append(paramFields, paramField{
 				Module:  moduleName,
 				Name:    fieldNode.Name.Val,
 				Type:    string(fieldNode.FldType.AsIdentifier()),
 				Comment: comment,
-			}
-			_, paramFieldRowTemplateFileName := filepath.Split(paramFieldRowTemplatePath)
-			if err := templs.ExecuteTemplate(paramFieldRowsOutputBuf, paramFieldRowTemplateFileName, paramField); err != nil {
-				return "", err
-			}
+			})
+		}
+	}
+
+	// Sort param field rows by module name and field name.
+	sort.Slice(paramFields, func(i, j int) bool {
+		if paramFields[i].Module == paramFields[j].Module {
+			return paramFields[i].Name < paramFields[j].Name
+		}
+		return paramFields[i].Module < paramFields[j].Module
+	})
+
+	for _, param := range paramFields {
+		_, paramFieldRowTemplateFileName := filepath.Split(paramFieldRowTemplatePath)
+		if err := templs.ExecuteTemplate(paramFieldRowsOutputBuf, paramFieldRowTemplateFileName, param); err != nil {
+			return "", err
 		}
 	}
 
