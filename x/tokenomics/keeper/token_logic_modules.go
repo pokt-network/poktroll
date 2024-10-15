@@ -292,16 +292,29 @@ func (k Keeper) ProcessTokenLogicModules(
 		logger.Info(fmt.Sprintf("Finished TLM processing: %q", tlm))
 	}
 
+	// Mark the application as unbonding if it has less than the minimum stake.
+	//
 	// TODO_CONSIDERATION: If we support multiple native tokens, we will need to
 	// start checking the denom here.
 	if application.Stake.Amount.LT(apptypes.DefaultMinStake.Amount) {
-		// Mark the application as unbonding if it has less than the minimum stake.
 		application.UnstakeSessionEndHeight = apptypes.ApplicationBelowMinStake
-	} else {
-		// State mutation: update the application's on-chain record.
-		k.applicationKeeper.SetApplication(ctx, application)
-		logger.Info(fmt.Sprintf("updated on-chain application record with address %q", application.Address))
+
+		appUnbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
+			Application: &application,
+			Reason:      apptypes.ApplicationUnbondingReason_BELOW_MIN_STAKE,
+		}
+
+		sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+		if err := sdkCtx.EventManager().EmitTypedEvent(appUnbondingBeginEvent); err != nil {
+			err = apptypes.ErrAppEmitEvent.Wrapf("(%+v): %s", appUnbondingBeginEvent, err)
+			logger.Error(err.Error())
+			return err
+		}
 	}
+
+	// State mutation: update the application's on-chain record.
+	k.applicationKeeper.SetApplication(ctx, application)
+	logger.Info(fmt.Sprintf("updated on-chain application record with address %q", application.Address))
 
 	// TODO_MAINNET: If the application stake has dropped to (near?) zero, should
 	// we unstake it? Should we use it's balance? Should there be a payee of last resort?

@@ -66,6 +66,7 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 	expectedEvent, err := sdk.TypedEventToEvent(
 		&apptypes.EventApplicationUnbondingBegin{
 			Application: &foundApp,
+			Reason:      apptypes.ApplicationUnbondingReason_ELECTIVE,
 		},
 	)
 	require.NoError(t, err)
@@ -94,6 +95,7 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 	expectedEvent, err = sdk.TypedEventToEvent(
 		&apptypes.EventApplicationUnbondingEnd{
 			Application: &foundApp,
+			Reason:      apptypes.ApplicationUnbondingReason_ELECTIVE,
 		},
 	)
 	require.NoError(t, err)
@@ -143,7 +145,10 @@ func TestMsgServer_UnstakeApplication_CancelUnbondingIfRestaked(t *testing.T) {
 	// Assert that the EventApplicationUnbondingCanceled event is emitted.
 	foundApp.UnstakeSessionEndHeight = uint64(sharedtypes.GetSessionEndHeight(&sharedParams, sdk.UnwrapSDKContext(ctx).BlockHeight()))
 	foundApp.DelegateeGatewayAddresses = make([]string, 0)
-	expectedAppUnbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{Application: &foundApp}
+	expectedAppUnbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
+		Application: &foundApp,
+		Reason:      apptypes.ApplicationUnbondingReason_ELECTIVE,
+	}
 	events := sdk.UnwrapSDKContext(ctx).EventManager().Events()
 	appUnbondingBeginEvents := testevents.FilterEvents[*apptypes.EventApplicationUnbondingBegin](t, events)
 	require.Equalf(t, 1, len(appUnbondingBeginEvents), "expected exactly 1 event")

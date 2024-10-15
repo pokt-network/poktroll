@@ -46,11 +46,18 @@ func (k Keeper) EndBlockerUnbondApplications(ctx context.Context) error {
 		}
 
 		sdkCtx = sdk.UnwrapSDKContext(ctx)
-		unbondingBeginEvent := &apptypes.EventApplicationUnbondingEnd{
-			Application: &application,
+
+		unbondingReason := apptypes.ApplicationUnbondingReason_ELECTIVE
+		if application.GetUnstakeSessionEndHeight() == apptypes.ApplicationBelowMinStake {
+			unbondingReason = apptypes.ApplicationUnbondingReason_BELOW_MIN_STAKE
 		}
-		if err := sdkCtx.EventManager().EmitTypedEvent(unbondingBeginEvent); err != nil {
-			err = apptypes.ErrAppEmitEvent.Wrapf("(%+v): %s", unbondingBeginEvent, err)
+
+		unbondingEndEvent := &apptypes.EventApplicationUnbondingEnd{
+			Application: &application,
+			Reason:      unbondingReason,
+		}
+		if err := sdkCtx.EventManager().EmitTypedEvent(unbondingEndEvent); err != nil {
+			err = apptypes.ErrAppEmitEvent.Wrapf("(%+v): %s", unbondingEndEvent, err)
 			logger.Error(err.Error())
 			return err
 		}

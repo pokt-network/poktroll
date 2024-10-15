@@ -64,11 +64,12 @@ func (k msgServer) UnstakeApplication(
 	k.SetApplication(ctx, foundApp)
 
 	sdkCtx = sdk.UnwrapSDKContext(ctx)
-	unbondingBeginEvent := &types.EventApplicationUnbondingBegin{
+	unbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
 		Application: &foundApp,
+		Reason:      apptypes.ApplicationUnbondingReason_ELECTIVE,
 	}
 	if err := sdkCtx.EventManager().EmitTypedEvent(unbondingBeginEvent); err != nil {
-		err = types.ErrAppEmitEvent.Wrapf("(%+v): %s", unbondingBeginEvent, err)
+		err = apptypes.ErrAppEmitEvent.Wrapf("(%+v): %s", unbondingBeginEvent, err)
 		logger.Error(err.Error())
 		return nil, status.Error(codes.Internal, err.Error())
 	}
