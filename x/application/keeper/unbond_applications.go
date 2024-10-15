@@ -8,7 +8,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	"github.com/pokt-network/poktroll/x/shared"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // EndBlockerUnbondApplications unbonds applications whose unbonding period has elapsed.
@@ -20,7 +20,7 @@ func (k Keeper) EndBlockerUnbondApplications(ctx context.Context) error {
 	currentHeight := sdkCtx.BlockHeight()
 
 	// Only process unbonding applications at the end of the session.
-	if shared.IsSessionEndHeight(&sharedParams, currentHeight) {
+	if sharedtypes.IsSessionEndHeight(&sharedParams, currentHeight) {
 		return nil
 	}
 
@@ -46,11 +46,18 @@ func (k Keeper) EndBlockerUnbondApplications(ctx context.Context) error {
 		}
 
 		sdkCtx = sdk.UnwrapSDKContext(ctx)
-		unbondingBeginEvent := &apptypes.EventApplicationUnbondingEnd{
-			Application: &application,
+
+		unbondingReason := apptypes.ApplicationUnbondingReason_ELECTIVE
+		if application.GetUnstakeSessionEndHeight() == apptypes.ApplicationBelowMinStake {
+			unbondingReason = apptypes.ApplicationUnbondingReason_BELOW_MIN_STAKE
 		}
-		if err := sdkCtx.EventManager().EmitTypedEvent(unbondingBeginEvent); err != nil {
-			err = apptypes.ErrAppEmitEvent.Wrapf("(%+v): %s", unbondingBeginEvent, err)
+
+		unbondingEndEvent := &apptypes.EventApplicationUnbondingEnd{
+			Application: &application,
+			Reason:      unbondingReason,
+		}
+		if err := sdkCtx.EventManager().EmitTypedEvent(unbondingEndEvent); err != nil {
+			err = apptypes.ErrAppEmitEvent.Wrapf("(%+v): %s", unbondingEndEvent, err)
 			logger.Error(err.Error())
 			return err
 		}

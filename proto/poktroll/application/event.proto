@@ -11,6 +11,11 @@ import "cosmos/base/v1beta1/coin.proto";
 import "poktroll/shared/service.proto";
 import "poktroll/application/types.proto";
 
+enum ApplicationUnbondingReason {
+  ELECTIVE = 0;
+  BELOW_MIN_STAKE = 1;
+}
+
 // EventApplicationStaked is emitted when an application is staked or up-staked.
 message EventApplicationStaked {
   poktroll.application.Application application = 1 [(gogoproto.jsontag) = "application"];
@@ -56,10 +61,14 @@ message EventTransferError {
   string error = 4;
 }
 
-// EventApplicationUnbondingBegin is emitted when an application unstake message
-// is committed, indicating that an application has begun unbonding.
+// EventApplicationUnbondingBegin is emitted when an application begins unbonding.
+// This can be triggered by the commitment of an unstake message or by the applicaiton's
+// stake dropping below the minimum. This event signals that an application has begun
+// unbonding. The unbonding period is determined by the shared param,
+// application_unbonding_period_sessions.
 message EventApplicationUnbondingBegin {
   poktroll.application.Application application = 1 [(gogoproto.jsontag) = "application"];
+  ApplicationUnbondingReason reason = 2 [(gogoproto.jsontag) = "reason"];
 }
 
 // EventApplicationUnbondingEnd is emitted when an application has completed
@@ -67,18 +76,12 @@ message EventApplicationUnbondingBegin {
 // application_unbonding_period_sessions.
 message EventApplicationUnbondingEnd {
   poktroll.application.Application application = 1 [(gogoproto.jsontag) = "application"];
+  ApplicationUnbondingReason reason = 2 [(gogoproto.jsontag) = "reason"];
 }
 
 // EventApplicationUnbondingCanceled is emitted when an application which was unbonding
 // successfully (re-)stakes before the unbonding period has elapsed. An EventApplicationStaked
 // event will also be emitted immediately after this event.
 message EventApplicationUnbondingCanceled {
-  poktroll.application.Application application = 1 [(gogoproto.jsontag) = "application"];
-}
-
-// EventApplicationUnbondedBelowMinStake is emitted when an application has been
-// unbonded during settlement because their post-settlement stake dropped below
-// the minimum application stake requirement.
-message EventApplicationUnbondedBelowMinStake {
   poktroll.application.Application application = 1 [(gogoproto.jsontag) = "application"];
 }

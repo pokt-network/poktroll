@@ -19,7 +19,6 @@ import (
 	"github.com/pokt-network/poktroll/x/proof/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -57,7 +56,7 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 		{
 			desc: "claim message height equals supplier's earliest claim commit height",
 			getClaimMsgHeight: func(sharedParams *sharedtypes.Params, queryHeight int64) int64 {
-				return shared.GetEarliestSupplierClaimCommitHeight(
+				return sharedtypes.GetEarliestSupplierClaimCommitHeight(
 					sharedParams,
 					queryHeight,
 					claimWindowOpenBlockHash,
@@ -70,14 +69,14 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 		},
 		{
 			desc:                           "claim message height equals claim window close height",
-			getClaimMsgHeight:              shared.GetClaimWindowCloseHeight,
+			getClaimMsgHeight:              sharedtypes.GetClaimWindowCloseHeight,
 			merkleRoot:                     defaultMerkleRoot,
 			serviceComputeUnitsPerRelay:    computeUnitsPerRelay,
 			expectedNumClaimedComputeUnits: expectedNumComputeUnits,
 		},
 		{
 			desc:                           "claim message for service with >1 compute units per relay",
-			getClaimMsgHeight:              shared.GetClaimWindowCloseHeight,
+			getClaimMsgHeight:              sharedtypes.GetClaimWindowCloseHeight,
 			merkleRoot:                     customComputeUnitsPerRelayMerkleRoot,
 			serviceComputeUnitsPerRelay:    nonDefaultComputeUnitsPerRelay,
 			expectedNumClaimedComputeUnits: expectedNonDefaultNumComputeUnits,
@@ -171,7 +170,7 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 
 			events := sdkCtx.EventManager().Events()
 
-			claimCreatedEvents := testutilevents.FilterEvents[*prooftypes.EventClaimCreated](t, events, "poktroll.proof.EventClaimCreated")
+			claimCreatedEvents := testutilevents.FilterEvents[*prooftypes.EventClaimCreated](t, events)
 			require.Len(t, claimCreatedEvents, 1)
 
 			require.EqualValues(t, &claim, claimCreatedEvents[0].GetClaim())
@@ -228,12 +227,12 @@ func TestMsgServer_CreateClaim_Error_OutsideOfWindow(t *testing.T) {
 
 	sessionHeader := sessionRes.GetSession().GetHeader()
 
-	claimWindowCloseHeight := shared.GetClaimWindowCloseHeight(
+	claimWindowCloseHeight := sharedtypes.GetClaimWindowCloseHeight(
 		&sharedParams,
 		sessionHeader.GetSessionEndBlockHeight(),
 	)
 
-	earliestClaimCommitHeight := shared.GetEarliestSupplierClaimCommitHeight(
+	earliestClaimCommitHeight := sharedtypes.GetEarliestSupplierClaimCommitHeight(
 		&sharedParams,
 		sessionHeader.GetSessionEndBlockHeight(),
 		claimWindowOpenBlockHash,
@@ -253,7 +252,7 @@ func TestMsgServer_CreateClaim_Error_OutsideOfWindow(t *testing.T) {
 				types.ErrProofClaimOutsideOfWindow.Wrapf(
 					"current block height (%d) is less than the session's earliest claim commit height (%d)",
 					earliestClaimCommitHeight-1,
-					shared.GetEarliestSupplierClaimCommitHeight(
+					sharedtypes.GetEarliestSupplierClaimCommitHeight(
 						&sharedParams,
 						sessionHeader.GetSessionEndBlockHeight(),
 						claimWindowOpenBlockHash,
@@ -302,7 +301,7 @@ func TestMsgServer_CreateClaim_Error_OutsideOfWindow(t *testing.T) {
 
 			// Assert that no events were emitted.
 			events := sdkCtx.EventManager().Events()
-			claimCreatedEvents := testutilevents.FilterEvents[*prooftypes.EventClaimCreated](t, events, "poktroll.proof.EventClaimCreated")
+			claimCreatedEvents := testutilevents.FilterEvents[*prooftypes.EventClaimCreated](t, events)
 			require.Len(t, claimCreatedEvents, 0)
 		})
 	}
@@ -515,7 +514,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 			// Assert that no events were emitted.
 			sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 			events := sdkCtx.EventManager().Events()
-			claimCreatedEvents := testutilevents.FilterEvents[*prooftypes.EventClaimCreated](t, events, "poktroll.proof.EventClaimCreated")
+			claimCreatedEvents := testutilevents.FilterEvents[*prooftypes.EventClaimCreated](t, events)
 			require.Len(t, claimCreatedEvents, 0)
 		})
 	}
@@ -583,7 +582,7 @@ func TestMsgServer_CreateClaim_Error_ComputeUnitsMismatch(t *testing.T) {
 	// Increment the block height to the test claim height.
 	sessionHeader := sessionRes.GetSession().GetHeader()
 	sharedParams := keepers.SharedKeeper.GetParams(ctx)
-	testClaimHeight := shared.GetClaimWindowCloseHeight(&sharedParams, sessionHeader.GetSessionEndBlockHeight())
+	testClaimHeight := sharedtypes.GetClaimWindowCloseHeight(&sharedParams, sessionHeader.GetSessionEndBlockHeight())
 	sdkCtx = sdkCtx.WithBlockHeight(testClaimHeight)
 	ctx = sdkCtx
 
@@ -626,7 +625,7 @@ func TestMsgServer_CreateClaim_Error_ComputeUnitsMismatch(t *testing.T) {
 	// Assert that no events were emitted.
 	sdkCtx = cosmostypes.UnwrapSDKContext(ctx)
 	events := sdkCtx.EventManager().Events()
-	claimCreatedEvents := testutilevents.FilterEvents[*prooftypes.EventClaimCreated](t, events, "poktroll.proof.EventClaimCreated")
+	claimCreatedEvents := testutilevents.FilterEvents[*prooftypes.EventClaimCreated](t, events)
 	require.Len(t, claimCreatedEvents, 0)
 }
 

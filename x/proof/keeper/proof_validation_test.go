@@ -26,7 +26,6 @@ import (
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
-	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -133,7 +132,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 
 	// Advance the block height to the earliest claim commit height.
 	sharedParams := keepers.SharedKeeper.GetParams(ctx)
-	claimMsgHeight := shared.GetEarliestSupplierClaimCommitHeight(
+	claimMsgHeight := sharedtypes.GetEarliestSupplierClaimCommitHeight(
 		&sharedParams,
 		validSessionHeader.GetSessionEndBlockHeight(),
 		blockHeaderHash,
@@ -756,7 +755,7 @@ func TestEnsureValidProof_Error(t *testing.T) {
 			proof := test.newProof(t)
 
 			// Advance the block height to the proof path seed height.
-			earliestSupplierProofCommitHeight := shared.GetEarliestSupplierProofCommitHeight(
+			earliestSupplierProofCommitHeight := sharedtypes.GetEarliestSupplierProofCommitHeight(
 				&sharedParams,
 				proof.GetSessionHeader().GetSessionEndBlockHeight(),
 				blockHeaderHash,

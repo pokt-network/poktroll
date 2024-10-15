@@ -11,7 +11,6 @@ import (
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/x/application/keeper"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -67,6 +66,7 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 	expectedEvent, err := sdk.TypedEventToEvent(
 		&apptypes.EventApplicationUnbondingBegin{
 			Application: &foundApp,
+			Reason:      apptypes.ApplicationUnbondingReason_ELECTIVE,
 		},
 	)
 	require.NoError(t, err)
@@ -95,6 +95,7 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 	expectedEvent, err = sdk.TypedEventToEvent(
 		&apptypes.EventApplicationUnbondingEnd{
 			Application: &foundApp,
+			Reason:      apptypes.ApplicationUnbondingReason_ELECTIVE,
 		},
 	)
 	require.NoError(t, err)
@@ -142,12 +143,14 @@ func TestMsgServer_UnstakeApplication_CancelUnbondingIfRestaked(t *testing.T) {
 	require.NoError(t, err)
 
 	// Assert that the EventApplicationUnbondingCanceled event is emitted.
-	foundApp.UnstakeSessionEndHeight = uint64(shared.GetSessionEndHeight(&sharedParams, sdk.UnwrapSDKContext(ctx).BlockHeight()))
+	foundApp.UnstakeSessionEndHeight = uint64(sharedtypes.GetSessionEndHeight(&sharedParams, sdk.UnwrapSDKContext(ctx).BlockHeight()))
 	foundApp.DelegateeGatewayAddresses = make([]string, 0)
-	expectedAppUnbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{Application: &foundApp}
+	expectedAppUnbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
+		Application: &foundApp,
+		Reason:      apptypes.ApplicationUnbondingReason_ELECTIVE,
+	}
 	events := sdk.UnwrapSDKContext(ctx).EventManager().Events()
-	appUnbondingBeginTypeURL := sdk.MsgTypeURL(&apptypes.EventApplicationUnbondingBegin{})
-	appUnbondingBeginEvents := testevents.FilterEvents[*apptypes.EventApplicationUnbondingBegin](t, events, appUnbondingBeginTypeURL)
+	appUnbondingBeginEvents := testevents.FilterEvents[*apptypes.EventApplicationUnbondingBegin](t, events)
 	require.Equalf(t, 1, len(appUnbondingBeginEvents), "expected exactly 1 event")
 	require.EqualValues(t, expectedAppUnbondingBeginEvent, appUnbondingBeginEvents[0])
 
@@ -171,8 +174,7 @@ func TestMsgServer_UnstakeApplication_CancelUnbondingIfRestaked(t *testing.T) {
 	expectedApp.DelegateeGatewayAddresses = make([]string, 0)
 	expectedAppUnbondingCanceledEvent := &apptypes.EventApplicationUnbondingCanceled{Application: expectedApp}
 	events = sdk.UnwrapSDKContext(ctx).EventManager().Events()
-	appUnbondingCanceledTypeURL := sdk.MsgTypeURL(&apptypes.EventApplicationUnbondingCanceled{})
-	appUnbondingEvents := testevents.FilterEvents[*apptypes.EventApplicationUnbondingCanceled](t, events, appUnbondingCanceledTypeURL)
+	appUnbondingEvents := testevents.FilterEvents[*apptypes.EventApplicationUnbondingCanceled](t, events)
 	require.Equalf(t, 1, len(appUnbondingEvents), "expected exactly 1 event")
 	require.EqualValues(t, expectedAppUnbondingCanceledEvent, appUnbondingEvents[0])
 

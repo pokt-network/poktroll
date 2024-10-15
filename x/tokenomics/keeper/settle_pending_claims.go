@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"context"
 	"fmt"
 
 	"cosmossdk.io/math"
@@ -9,10 +8,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/query"
 
 	"github.com/pokt-network/poktroll/app/volatile"
-	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
-	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
@@ -230,10 +227,6 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 		logger.Info(fmt.Sprintf("Successfully settled claim for session ID %q at block height %d", claim.SessionHeader.SessionId, blockHeight))
 	}
 
-	// Unbond applications whose post-settlement stake has dropped below the
-	// application minimum stake requirement.
-	k.unbondApplicationsBelowMinStake(ctx, expiringClaims)
-
 	// Slash all the suppliers that have been marked for slashing slashingCount times.
 	for supplierOperatorAddress, slashingCount := range supplierToExpiredClaimCount {
 		if err := k.slashSupplierStake(ctx, supplierOperatorAddress, slashingCount); err != nil {
@@ -299,28 +292,6 @@ func (k Keeper) getExpiringClaims(ctx sdk.Context) (expiringClaims []prooftypes.
 
 	// Return the actually expiring claims
 	return expiringClaims, nil
-}
-
-// unbondApplicationsBelowMinStake unbonds applications whose post-settlement stake has dropped below the
-// application minimum stake requirement.
-func (k Keeper) unbondApplicationsBelowMinStake(ctx context.Context, claims []prooftypes.Claim) {
-	logger := k.logger.With("method", "unbondApplicationsBelowMinStake")
-
-	for _, claim := range claims {
-		app, isAppFound := k.applicationKeeper.GetApplication(ctx, claim.SessionHeader.ApplicationAddress)
-		if !isAppFound {
-			logger.Error(apptypes.ErrAppNotFound.Wrapf("application address: %q", claim.SessionHeader.ApplicationAddress).Error())
-			continue
-		}
-
-		// Unbond the application because it has less than the minimum stake.
-		if app.GetUnstakeSessionEndHeight() == apptypes.ApplicationBelowMinStake {
-			if err := k.applicationKeeper.UnbondApplication(ctx, &app); err != nil {
-				logger.Error(fmt.Sprintf("unbonding application (%+v): %s", app, err))
-				continue
-			}
-		}
-	}
 }
 
 // slashSupplierStake slashes the stake of a supplier and transfers the total
@@ -396,7 +367,7 @@ func (k Keeper) slashSupplierStake(
 		sharedParams := k.sharedKeeper.GetParams(ctx)
 		sdkCtx := sdk.UnwrapSDKContext(ctx)
 		currentHeight := sdkCtx.BlockHeight()
-		unstakeSessionEndHeight := uint64(shared.GetSessionEndHeight(&sharedParams, currentHeight))
+		unstakeSessionEndHeight := uint64(sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight))
 
 		logger.Warn(fmt.Sprintf(
 			"unstaking supplier %q owned by %q due to stake (%s) below the minimum (%s)",

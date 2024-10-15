@@ -39,7 +39,7 @@ func TestMsgUpdateParam_UpdateProofRequestProbabilityOnly(t *testing.T) {
 	require.Equal(t, expectedProofRequestProbability, res.Params.ProofRequestProbability)
 
 	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, "ProofRequestProbability")
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, string(prooftypes.KeyProofRequestProbability))
 }
 
 func TestMsgUpdateParam_UpdateProofRequirementThresholdOnly(t *testing.T) {
@@ -66,7 +66,7 @@ func TestMsgUpdateParam_UpdateProofRequirementThresholdOnly(t *testing.T) {
 	require.Equal(t, &expectedProofRequirementThreshold, res.Params.ProofRequirementThreshold)
 
 	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, "ProofRequirementThreshold")
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, string(prooftypes.KeyProofRequirementThreshold))
 }
 
 func TestMsgUpdateParam_UpdateProofMissingPenaltyOnly(t *testing.T) {
@@ -93,7 +93,7 @@ func TestMsgUpdateParam_UpdateProofMissingPenaltyOnly(t *testing.T) {
 	require.Equal(t, &expectedProofMissingPenalty, res.Params.ProofMissingPenalty)
 
 	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, "ProofMissingPenalty")
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, string(prooftypes.KeyProofMissingPenalty))
 }
 
 func TestMsgUpdateParam_UpdateProofSubmissionFeeOnly(t *testing.T) {
@@ -120,5 +120,5 @@ func TestMsgUpdateParam_UpdateProofSubmissionFeeOnly(t *testing.T) {
 	require.Equal(t, &expectedProofSubmissionFee, res.Params.ProofSubmissionFee)
 
 	// Ensure the other parameters are unchanged
-	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, "ProofSubmissionFee")
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, string(prooftypes.KeyProofSubmissionFee))
 }
