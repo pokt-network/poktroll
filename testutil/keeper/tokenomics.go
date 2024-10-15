@@ -140,6 +140,8 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		},
 	}
 
+	sdkCtx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
+
 	ctrl := gomock.NewController(t)
 
 	// Mock the application keeper.
@@ -225,6 +227,12 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		Return(sharedtypes.Service{}, false).
 		AnyTimes()
 
+	relayMiningDifficulty := servicekeeper.NewDefaultRelayMiningDifficulty(sdkCtx, log.NewNopLogger(), service.Id, servicekeeper.TargetNumRelays)
+	mockServiceKeeper.EXPECT().
+		GetRelayMiningDifficulty(gomock.Any(), gomock.Any()).
+		Return(relayMiningDifficulty, true).
+		AnyTimes()
+
 	k := tokenomicskeeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKey),
@@ -239,8 +247,6 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		mockSessionKeeper,
 		mockServiceKeeper,
 	)
-
-	sdkCtx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
 
 	// Add a block proposer address to the context
 	valAddr, err := cosmostypes.ValAddressFromBech32(sample.ValAddress())
@@ -464,6 +470,7 @@ func NewTokenomicsModuleKeepers(
 	return keepers, ctx
 }
 
+// WithService is an option to set the service in the tokenomics module keepers.
 func WithService(service sharedtypes.Service) TokenomicsModuleKeepersOpt {
 	return func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
 		keepers.SetService(ctx, service)
@@ -471,6 +478,24 @@ func WithService(service sharedtypes.Service) TokenomicsModuleKeepersOpt {
 	}
 }
 
+// WithApplication is an option to set the application in the tokenomics module keepers.
+func WithApplication(applicaion apptypes.Application) TokenomicsModuleKeepersOpt {
+	return func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
+		keepers.SetApplication(ctx, applicaion)
+		return ctx
+	}
+}
+
+// WithSupplier is an option to set the supplier in the tokenomics module keepers.
+func WithSupplier(supplier sharedtypes.Supplier) TokenomicsModuleKeepersOpt {
+	return func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
+		keepers.SetSupplier(ctx, supplier)
+		return ctx
+	}
+}
+
+// WithProposerAddr is an option to set the proposer address in the context used
+// by the tokenomics module keepers.
 func WithProposerAddr(addr string) TokenomicsModuleKeepersOpt {
 	return func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
 		valAddr, err := cosmostypes.ValAddressFromBech32(addr)

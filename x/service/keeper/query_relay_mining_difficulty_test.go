@@ -11,14 +11,14 @@ import (
 
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
-	"github.com/pokt-network/poktroll/x/tokenomics/types"
+	"github.com/pokt-network/poktroll/x/service/types"
 )
 
 // Prevent strconv unused error
 var _ = strconv.IntSize
 
 func TestRelayMiningDifficultyQuerySingle(t *testing.T) {
-	keeper, ctx := keepertest.TokenomicsKeeper(t)
+	keeper, ctx := keepertest.ServiceKeeper(t)
 	msgs := createNRelayMiningDifficulty(keeper, ctx, 2)
 	tests := []struct {
 		desc        string
@@ -69,7 +69,7 @@ func TestRelayMiningDifficultyQuerySingle(t *testing.T) {
 }
 
 func TestRelayMiningDifficultyQueryPaginated(t *testing.T) {
-	keeper, ctx := keepertest.TokenomicsKeeper(t)
+	keeper, ctx := keepertest.ServiceKeeper(t)
 	msgs := createNRelayMiningDifficulty(keeper, ctx, 5)
 
 	request := func(next []byte, offset, limit uint64, total bool) *types.QueryAllRelayMiningDifficultyRequest {

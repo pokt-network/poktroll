@@ -107,8 +107,8 @@ message MsgUpdateParam {
 
   string name = 2;
   oneof asType    {
-    int64 as_int64 = 3;
-    cosmos.base.v1beta1.Coin as_coin = 4;
+    uint64 as_uint64 = 3 [(gogoproto.jsontag) = "as_uint64"];
+    cosmos.base.v1beta1.Coin as_coin = 4 [(gogoproto.jsontag) = "as_coin"];
   };
 }
 
