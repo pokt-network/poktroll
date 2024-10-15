@@ -21,7 +21,6 @@ import (
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -95,7 +94,7 @@ func (s *applicationMinStakeTestSuite) TestAppIsUnbondedIfBelowMinStakeWhenSettl
 	sdkCtx := cosmostypes.UnwrapSDKContext(s.ctx)
 	currentHeight := sdkCtx.BlockHeight()
 	sharedParams := s.keepers.SharedKeeper.GetParams(s.ctx)
-	currentSessionEndHeight := shared.GetSessionEndHeight(&sharedParams, currentHeight)
+	currentSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
 	claimSettlementHeight := currentSessionEndHeight + int64(sharedtypes.GetSessionEndToProofWindowCloseBlocks(&sharedParams)) + 1
 	sdkCtx = sdkCtx.WithBlockHeight(claimSettlementHeight)
 	s.ctx = sdkCtx

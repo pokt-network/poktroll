@@ -20,7 +20,6 @@ import (
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -63,19 +62,19 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	// Compute the number of blocks to wait between different events
 	// TODO_BLOCKER(@bryanchriswhite): See this comment: https://github.com/pokt-network/poktroll/pull/610#discussion_r1645777322
 	sessionEndHeight := session.Header.SessionEndBlockHeight
-	earliestSupplierClaimCommitHeight := shared.GetEarliestSupplierClaimCommitHeight(
+	earliestSupplierClaimCommitHeight := sharedtypes.GetEarliestSupplierClaimCommitHeight(
 		&sharedParams,
 		sessionEndHeight,
 		claimWindowOpenBlockHash,
 		integrationApp.DefaultSupplier.GetOperatorAddress(),
 	)
-	earliestSupplierProofCommitHeight := shared.GetEarliestSupplierProofCommitHeight(
+	earliestSupplierProofCommitHeight := sharedtypes.GetEarliestSupplierProofCommitHeight(
 		&sharedParams,
 		sessionEndHeight,
 		proofWindowOpenBlockHash,
 		integrationApp.DefaultSupplier.GetOperatorAddress(),
 	)
-	proofWindowCloseHeight := shared.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
+	proofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
 
 	// Wait until the earliest claim commit height.
 	currentBlockHeight := sdkCtx.BlockHeight()

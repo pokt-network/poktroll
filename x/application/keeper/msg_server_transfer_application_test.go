@@ -6,12 +6,11 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	events2 "github.com/pokt-network/poktroll/testutil/events"
+	testutilevents "github.com/pokt-network/poktroll/testutil/events"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	appkeeper "github.com/pokt-network/poktroll/x/application/keeper"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -54,7 +53,7 @@ func TestMsgServer_TransferApplication_Success(t *testing.T) {
 	require.Equal(t, "svc1", srcApp.GetServiceConfigs()[0].GetServiceId())
 
 	transferBeginHeight := cosmostypes.UnwrapSDKContext(ctx).BlockHeight()
-	transferSessionEndHeight := shared.GetSessionEndHeight(&sharedParams, transferBeginHeight)
+	transferSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, transferBeginHeight)
 	expectedPendingTransfer := &apptypes.PendingApplicationTransfer{
 		DestinationAddress: dstBech32,
 		SessionEndHeight:   uint64(transferSessionEndHeight),
@@ -74,7 +73,7 @@ func TestMsgServer_TransferApplication_Success(t *testing.T) {
 
 	// Assert that the transfer end event was emitted.
 	events := cosmostypes.UnwrapSDKContext(ctx).EventManager().Events()
-	transferBeginEvents := events2.FilterEvents[*apptypes.EventTransferBegin](t, events)
+	transferBeginEvents := testutilevents.FilterEvents[*apptypes.EventTransferBegin](t, events)
 	require.Equal(t, 1, len(transferBeginEvents), "expected 1 transfer begin event")
 	require.Equal(t, srcBech32, transferBeginEvents[0].GetSourceAddress())
 	require.Equal(t, dstBech32, transferBeginEvents[0].GetDestinationAddress())
@@ -116,7 +115,7 @@ func TestMsgServer_TransferApplication_Success(t *testing.T) {
 
 	// Assert that the transfer end event was emitted.
 	events = cosmostypes.UnwrapSDKContext(ctx).EventManager().Events()
-	transferEndEvents := events2.FilterEvents[*apptypes.EventTransferEnd](t, events)
+	transferEndEvents := testutilevents.FilterEvents[*apptypes.EventTransferEnd](t, events)
 	require.Equal(t, 1, len(transferEndEvents), "expected 1 transfer end event")
 	require.Equal(t, srcBech32, transferEndEvents[0].GetSourceAddress())
 	require.Equal(t, dstBech32, transferEndEvents[0].GetDestinationAddress())

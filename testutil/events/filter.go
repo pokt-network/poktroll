@@ -18,10 +18,9 @@ func FilterEvents[T proto.Message](
 ) (parsedEvents []T) {
 	t.Helper()
 
-	protoType := cosmostypes.MsgTypeURL(*(new(T)))
-
+	messageTypeURL := proto.MessageName(*new(T))
 	for _, event := range allEvents.ToABCIEvents() {
-		if event.Type != strings.Trim(protoType, "/") {
+		if event.Type != strings.Trim(messageTypeURL, "/") {
 			continue
 		}
 		QuoteEventMode(&event)
