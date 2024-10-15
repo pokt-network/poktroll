@@ -170,7 +170,7 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 
 			events := sdkCtx.EventManager().Events()
 
-			claimCreatedEvents := testutilevents.FilterEvents[*prooftypes.EventClaimCreated](t, events, "poktroll.proof.EventClaimCreated")
+			claimCreatedEvents := testutilevents.FilterEvents[*prooftypes.EventClaimCreated](t, events)
 			require.Len(t, claimCreatedEvents, 1)
 
 			require.EqualValues(t, &claim, claimCreatedEvents[0].GetClaim())
@@ -301,7 +301,7 @@ func TestMsgServer_CreateClaim_Error_OutsideOfWindow(t *testing.T) {
 
 			// Assert that no events were emitted.
 			events := sdkCtx.EventManager().Events()
-			claimCreatedEvents := testutilevents.FilterEvents[*prooftypes.EventClaimCreated](t, events, "poktroll.proof.EventClaimCreated")
+			claimCreatedEvents := testutilevents.FilterEvents[*prooftypes.EventClaimCreated](t, events)
 			require.Len(t, claimCreatedEvents, 0)
 		})
 	}
@@ -514,7 +514,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 			// Assert that no events were emitted.
 			sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 			events := sdkCtx.EventManager().Events()
-			claimCreatedEvents := testutilevents.FilterEvents[*prooftypes.EventClaimCreated](t, events, "poktroll.proof.EventClaimCreated")
+			claimCreatedEvents := testutilevents.FilterEvents[*prooftypes.EventClaimCreated](t, events)
 			require.Len(t, claimCreatedEvents, 0)
 		})
 	}
@@ -625,7 +625,7 @@ func TestMsgServer_CreateClaim_Error_ComputeUnitsMismatch(t *testing.T) {
 	// Assert that no events were emitted.
 	sdkCtx = cosmostypes.UnwrapSDKContext(ctx)
 	events := sdkCtx.EventManager().Events()
-	claimCreatedEvents := testutilevents.FilterEvents[*prooftypes.EventClaimCreated](t, events, "poktroll.proof.EventClaimCreated")
+	claimCreatedEvents := testutilevents.FilterEvents[*prooftypes.EventClaimCreated](t, events)
 	require.Len(t, claimCreatedEvents, 0)
 }
 
