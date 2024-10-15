@@ -11,6 +11,7 @@ package upgrades
 
 import (
 	"context"
+	"fmt"
 
 	storetypes "cosmossdk.io/store/types"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
@@ -28,6 +29,7 @@ func defaultUpgradeHandler(
 	configurator module.Configurator,
 ) upgradetypes.UpgradeHandler {
 	return func(ctx context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
+		fmt.Println("Starting the migration in defaultUpgradeHandler.")
 		return mm.RunMigrations(ctx, configurator, vm)
 	}
 }

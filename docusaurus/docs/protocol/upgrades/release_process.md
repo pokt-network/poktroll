@@ -16,12 +16,6 @@ sidebar_position: 4
 This document is for the Pocket Network protocol team's internal use only.
 :::
 
-- [1. Determine if the Release is Consensus-Breaking](#1-determine-if-the-release-is-consensus-breaking)
-- [2. Create a GitHub Release](#2-create-a-github-release)
-  - [Legend](#legend)
-- [3. Write an Upgrade Plan](#3-write-an-upgrade-plan)
-- [4. Issue Upgrade on TestNet](#4-issue-upgrade-on-testnet)
-- [5. Issue Upgrade on MainNet](#5-issue-upgrade-on-mainnet)
 
 ### 1. Determine if the Release is Consensus-Breaking
 
