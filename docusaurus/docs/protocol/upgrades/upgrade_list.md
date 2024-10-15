@@ -26,12 +26,14 @@ This table is currently incomplete and does not include all protocol upgrades. O
 
 <!-- DEVELOPER: if important information about the release is changing (e.g. upgrade hight is changed) - make sure to update the information in GitHub relase as well. -->
 
-| Version                                                                  | Planned | Breaking |    Requires Manual Intervention     | Upgrade Height |
-| ------------------------------------------------------------------------ | :-----: | :------: | :---------------------------------: | -------------- |
-| [`v0.0.7`](https://github.com/pokt-network/poktroll/releases/tag/v0.0.7) |    ❓    |    ❓     | ✅ (Alpha TestNet Participants Only) | ❓              |
-| [`v0.0.6`](https://github.com/pokt-network/poktroll/releases/tag/v0.0.6) |    ❓    |    ❓     | ✅ (Alpha TestNet Participants Only) | ❓              |
-| [`v0.0.5`](https://github.com/pokt-network/poktroll/releases/tag/v0.0.5) |    ❓    |    ❓     | ✅ (Alpha TestNet Participants Only) | ❓              |
-| [`v0.0.4`](https://github.com/pokt-network/poktroll/releases/tag/v0.0.4) |    ❓    |    ❓     | ✅ (Alpha TestNet Participants Only) | ❓              |
+| Version                                                                      | Planned | Breaking |    Requires Manual Intervention     | Upgrade Height |
+| ---------------------------------------------------------------------------- | :-----: | :------: | :---------------------------------: | -------------- |
+| [`v0.0.9-3`](https://github.com/pokt-network/poktroll/releases/tag/v0.0.9-3) |    ❌    |    ✅     | ✅ (Alpha TestNet Participants Only) | `17102`        |
+| [`v0.0.9`](https://github.com/pokt-network/poktroll/releases/tag/v0.0.9)     |    ❓    |    ❓     | ✅ (Alpha TestNet Participants Only) | ❓              |
+| [`v0.0.8`](https://github.com/pokt-network/poktroll/releases/tag/v0.0.8)     |    ❓    |    ❓     | ✅ (Alpha TestNet Participants Only) | ❓              |
+| [`v0.0.6`](https://github.com/pokt-network/poktroll/releases/tag/v0.0.6)     |    ❓    |    ❓     | ✅ (Alpha TestNet Participants Only) | ❓              |
+| [`v0.0.5`](https://github.com/pokt-network/poktroll/releases/tag/v0.0.5)     |    ❓    |    ❓     | ✅ (Alpha TestNet Participants Only) | ❓              |
+| [`v0.0.4`](https://github.com/pokt-network/poktroll/releases/tag/v0.0.4)     |    ❓    |    ❓     | ✅ (Alpha TestNet Participants Only) | ❓              |
 
 ## MainNet
 
