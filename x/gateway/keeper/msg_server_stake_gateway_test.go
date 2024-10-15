@@ -44,7 +44,7 @@ func TestMsgServer_StakeGateway_SuccessfulCreateAndUpdate(t *testing.T) {
 
 	// Assert that the EventGatewayStaked event is emitted.
 	expectedEvent, err := cosmostypes.TypedEventToEvent(
-		&gatewaytypes.EventGatewayStaked{Address: addr},
+		&gatewaytypes.EventGatewayStaked{Gateway: gateway},
 	)
 	require.NoError(t, err)
 
@@ -82,7 +82,7 @@ func TestMsgServer_StakeGateway_SuccessfulCreateAndUpdate(t *testing.T) {
 
 	// Assert that the EventGatewayStaked event is emitted.
 	expectedEvent, err = cosmostypes.TypedEventToEvent(
-		&gatewaytypes.EventGatewayStaked{Address: addr},
+		&gatewaytypes.EventGatewayStaked{Gateway: upStakedGateway},
 	)
 	require.NoError(t, err)
 

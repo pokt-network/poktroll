@@ -7,12 +7,14 @@ option (gogoproto.stable_marshaler_all) = true;
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 
+import "poktroll/gateway/types.proto";
+
 // GatewayStaked is emitted when a gateway is staked or up-staked.
 message EventGatewayStaked {
-  string address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the gateway.
+  Gateway gateway = 1 [(gogoproto.jsontag) = "gateway"]; // The gateway that has been staked.
 }
 
 // GatewayUnstaked defines the event emitted when a gateway has been unstaked.
 message EventGatewayUnstaked {
-  string address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the gateway the application has changed their delegation of.
+  Gateway gateway = 1 [(gogoproto.jsontag) = "gateway"]; // The gateway that has been unstaked.
 }

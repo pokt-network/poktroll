@@ -58,7 +58,7 @@ func (k msgServer) UnstakeGateway(
 	k.RemoveGateway(ctx, gatewayAddress.String())
 	logger.Info(fmt.Sprintf("Successfully removed the gateway: %+v", gateway))
 
-	err = ctx.EventManager().EmitTypedEvent(&types.EventGatewayUnstaked{Address: msg.Address})
+	err = ctx.EventManager().EmitTypedEvent(&types.EventGatewayUnstaked{Gateway: &gateway})
 	if err != nil {
 		logger.Error(fmt.Sprintf("failed to emit event for unstaking gateway: %v", err))
 		return nil, err
