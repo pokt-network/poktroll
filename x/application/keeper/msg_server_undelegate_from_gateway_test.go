@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
@@ -38,7 +37,7 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 	// Prepare the application
 	stakeMsg := &types.MsgStakeApplication{
 		Address: appAddr,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
+		Stake:   &apptypes.DefaultMinStake,
 		Services: []*sharedtypes.ApplicationServiceConfig{
 			{ServiceId: "svc1"},
 		},
@@ -130,7 +129,7 @@ func TestMsgServer_UndelegateFromGateway_FailNotDelegated(t *testing.T) {
 	// Prepare the application
 	stakeMsg := &types.MsgStakeApplication{
 		Address: appAddr,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
+		Stake:   &apptypes.DefaultMinStake,
 		Services: []*sharedtypes.ApplicationServiceConfig{
 			{ServiceId: "svc1"},
 		},
@@ -205,7 +204,7 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegateFromUnstakedGatew
 	// Prepare the application
 	stakeMsg := &types.MsgStakeApplication{
 		Address: appAddr,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
+		Stake:   &apptypes.DefaultMinStake,
 		Services: []*sharedtypes.ApplicationServiceConfig{
 			{ServiceId: "svc1"},
 		},
@@ -513,7 +512,7 @@ func createAppStakeDelegateAndUndelegate(
 	appAddr := sample.AccAddress()
 	stakeMsg := &types.MsgStakeApplication{
 		Address: appAddr,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
+		Stake:   &apptypes.DefaultMinStake,
 		Services: []*sharedtypes.ApplicationServiceConfig{
 			{ServiceId: "svc1"},
 		},

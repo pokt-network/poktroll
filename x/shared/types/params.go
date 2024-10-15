@@ -168,13 +168,16 @@ func (params *Params) ValidateBasic() error {
 		return err
 	}
 
+	// TODO_MAINNET(@bryanchriswhite): Add validation which ensures that
+	// SessionEndToProofWindowCloseBlocks is a multiple of NumBlocksPerSession.
+
 	return nil
 }
 
 // ValidateNumBlocksPerSession validates the NumBlocksPerSession param
 // NB: The argument is an interface type to satisfy the ParamSetPair function signature.
-func ValidateNumBlocksPerSession(v interface{}) error {
-	numBlocksPerSession, err := validateIsUint64(v)
+func ValidateNumBlocksPerSession(numBlocksPerSessionAny any) error {
+	numBlocksPerSession, err := validateIsUint64(numBlocksPerSessionAny)
 	if err != nil {
 		return err
 	}
@@ -188,44 +191,44 @@ func ValidateNumBlocksPerSession(v interface{}) error {
 
 // ValidateClaimWindowOpenOffsetBlocks validates the ClaimWindowOpenOffsetBlocks param
 // NB: The argument is an interface type to satisfy the ParamSetPair function signature.
-func ValidateClaimWindowOpenOffsetBlocks(v interface{}) error {
-	_, err := validateIsUint64(v)
+func ValidateClaimWindowOpenOffsetBlocks(claimWindowOpenOffsetBlocksAny any) error {
+	_, err := validateIsUint64(claimWindowOpenOffsetBlocksAny)
 	return err
 }
 
 // ValidateClaimWindowCloseOffsetBlocks validates the ClaimWindowCloseOffsetBlocks param
 // NB: The argument is an interface type to satisfy the ParamSetPair function signature.
-func ValidateClaimWindowCloseOffsetBlocks(v interface{}) error {
-	_, err := validateIsUint64(v)
+func ValidateClaimWindowCloseOffsetBlocks(claimWindowCloseOffsetBlocksAny any) error {
+	_, err := validateIsUint64(claimWindowCloseOffsetBlocksAny)
 	return err
 }
 
 // ValidateProofWindowOpenOffsetBlocks validates the ProofWindowOpenOffsetBlocks param
 // NB: The argument is an interface type to satisfy the ParamSetPair function signature.
-func ValidateProofWindowOpenOffsetBlocks(v interface{}) error {
-	_, err := validateIsUint64(v)
+func ValidateProofWindowOpenOffsetBlocks(proofWindowOpenOffsetBlocksAny any) error {
+	_, err := validateIsUint64(proofWindowOpenOffsetBlocksAny)
 	return err
 }
 
 // ValidateProofWindowCloseOffsetBlocks validates the ProofWindowCloseOffsetBlocks param
 // NB: The argument is an interface type to satisfy the ParamSetPair function signature.
-func ValidateProofWindowCloseOffsetBlocks(v interface{}) error {
-	_, err := validateIsUint64(v)
+func ValidateProofWindowCloseOffsetBlocks(proofWindowCloseOffsetBlocksAny any) error {
+	_, err := validateIsUint64(proofWindowCloseOffsetBlocksAny)
 	return err
 }
 
 // ValidateGracePeriodEndOffsetBlocks validates the GracePeriodEndOffsetBlocks param
 // NB: The argument is an interface type to satisfy the ParamSetPair function signature.
-func ValidateGracePeriodEndOffsetBlocks(v interface{}) error {
-	_, err := validateIsUint64(v)
+func ValidateGracePeriodEndOffsetBlocks(gracePeriodEndOffsetBlocksAny any) error {
+	_, err := validateIsUint64(gracePeriodEndOffsetBlocksAny)
 	return err
 }
 
-// ValidateSupplierUnbondingPeriodSession validates the SupplierUnbondingPeriodSessions
+// ValidateSupplierUnbondingPeriodSessions validates the SupplierUnbondingPeriodSessions
 // governance parameter.
 // NB: The argument is an interface type to satisfy the ParamSetPair function signature.
-func ValidateSupplierUnbondingPeriodSessions(v interface{}) error {
-	supplierUnbondingPeriodSessions, err := validateIsUint64(v)
+func ValidateSupplierUnbondingPeriodSessions(supplierUnbondingPeriodSessionsAny any) error {
+	supplierUnbondingPeriodSessions, err := validateIsUint64(supplierUnbondingPeriodSessionsAny)
 	if err != nil {
 		return err
 	}
@@ -237,11 +240,11 @@ func ValidateSupplierUnbondingPeriodSessions(v interface{}) error {
 	return nil
 }
 
-// ValidateApplicationUnbondingPeriodSession validates the ApplicationUnbondingPeriodSessions
+// ValidateApplicationUnbondingPeriodSessions validates the ApplicationUnbondingPeriodSessions
 // governance parameter.
 // NB: The argument is an interface type to satisfy the ParamSetPair function signature.
-func ValidateApplicationUnbondingPeriodSessions(v interface{}) error {
-	applicationUnbondingPeriodSessions, err := validateIsUint64(v)
+func ValidateApplicationUnbondingPeriodSessions(applicationUnboindingPeriodSessionsAny any) error {
+	applicationUnbondingPeriodSessions, err := validateIsUint64(applicationUnboindingPeriodSessionsAny)
 	if err != nil {
 		return err
 	}
@@ -255,10 +258,10 @@ func ValidateApplicationUnbondingPeriodSessions(v interface{}) error {
 
 // ValidateComputeUnitsToTokensMultiplier validates the ComputeUnitsToTokensMultiplier governance parameter.
 // NB: The argument is an interface type to satisfy the ParamSetPair function signature.
-func ValidateComputeUnitsToTokensMultiplier(v interface{}) error {
-	computeUnitsToTokensMultiplier, ok := v.(uint64)
+func ValidateComputeUnitsToTokensMultiplier(computeUnitsToTokensMultiplerAny any) error {
+	computeUnitsToTokensMultiplier, ok := computeUnitsToTokensMultiplerAny.(uint64)
 	if !ok {
-		return ErrSharedParamInvalid.Wrapf("invalid parameter type: %T", v)
+		return ErrSharedParamInvalid.Wrapf("invalid parameter type: %T", computeUnitsToTokensMultiplerAny)
 	}
 
 	if computeUnitsToTokensMultiplier <= 0 {

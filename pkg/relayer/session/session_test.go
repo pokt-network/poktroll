@@ -59,6 +59,8 @@ func requireProofCountEqualsExpectedValueFromProofParams(t *testing.T, proofPara
 		Id:                   "svc",
 		ComputeUnitsPerRelay: 2,
 	}
+
+	testqueryclients.SetServiceRelayDifficultyTargetHash(t, service.Id, protocol.BaseRelayDifficultyHashBz)
 	// Add the service to the existing services.
 	testqueryclients.AddToExistingServices(t, service)
 
@@ -156,12 +158,14 @@ func TestRelayerSessionsManager_InsufficientBalanceForProofSubmission(t *testing
 		ComputeUnitsPerRelay: 1,
 	}
 	testqueryclients.AddToExistingServices(t, lowCUPRService)
+	testqueryclients.SetServiceRelayDifficultyTargetHash(t, lowCUPRService.Id, protocol.BaseRelayDifficultyHashBz)
 
 	highCUPRService := sharedtypes.Service{
 		Id:                   "highCUPRService",
 		ComputeUnitsPerRelay: 2,
 	}
 	testqueryclients.AddToExistingServices(t, highCUPRService)
+	testqueryclients.SetServiceRelayDifficultyTargetHash(t, highCUPRService.Id, protocol.BaseRelayDifficultyHashBz)
 
 	lowCUPRServiceActiveSession := &sessiontypes.Session{
 		Header: &sessiontypes.SessionHeader{
@@ -312,7 +316,6 @@ func setupDependencies(
 	sharedQueryClientMock := testqueryclients.NewTestSharedQueryClient(t)
 	serviceQueryClientMock := testqueryclients.NewTestServiceQueryClient(t)
 	proofQueryClientMock := testqueryclients.NewTestProofQueryClientWithParams(t, &proofParams)
-	tokenomicsQueryClient := testqueryclients.NewTestTokenomicsQueryClient(t)
 	bankQueryClient := testqueryclients.NewTestBankQueryClientWithBalance(t, supplierOperatorBalance)
 
 	deps := depinject.Supply(
@@ -322,7 +325,6 @@ func setupDependencies(
 		sharedQueryClientMock,
 		serviceQueryClientMock,
 		proofQueryClientMock,
-		tokenomicsQueryClient,
 		bankQueryClient,
 	)
 	storesDirectoryOpt := testrelayer.WithTempStoresDirectory(t)

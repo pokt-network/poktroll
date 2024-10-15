@@ -6,7 +6,10 @@ import (
 
 // ApplicationNotUnstaking is the value of `unstake_session_end_height` if the
 // application is not actively in the unbonding period.
-const ApplicationNotUnstaking uint64 = 0
+const (
+	ApplicationNotUnstaking uint64 = iota
+	ApplicationBelowMinStake
+)
 
 // IsUnbonding returns true if the application is actively unbonding.
 // It determines if the application has submitted an unstake message, in which case

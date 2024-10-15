@@ -9,6 +9,7 @@ import "gogoproto/gogo.proto";
 
 import "poktroll/service/params.proto";
 import "poktroll/shared/service.proto";
+import "poktroll/service/relay_mining_difficulty.proto";
 
 
 // GenesisState defines the service module's genesis state.
@@ -17,5 +18,6 @@ message GenesisState {
   // params defines all the parameters of the module.
   Params  params = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
   repeated poktroll.shared.Service service_list = 2 [(gogoproto.nullable) = false] ;
+  repeated RelayMiningDifficulty relayMiningDifficultyList = 3 [(gogoproto.nullable) = false] ;
 }
 

@@ -6,9 +6,14 @@ option (gogoproto.stable_marshaler_all) = true;
 
 import "amino/amino.proto";
 import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
 
 // Params defines the parameters for the module.
 message Params {
   option (amino.name) = "poktroll/x/supplier/Params";
   option (gogoproto.equal) = true;
+
+  // min_stake is the minimum amount of uPOKT that a supplier must stake to be
+  // included in network sessions and remain staked.
+  cosmos.base.v1beta1.Coin min_stake = 1 [(gogoproto.jsontag) = "min_stake", (gogoproto.moretags) = "yaml:\"min_stake\""];
 }

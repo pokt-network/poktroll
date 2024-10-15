@@ -2,105 +2,85 @@ package keeper
 
 import (
 	"context"
+	"fmt"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func (k msgServer) UpdateParam(ctx context.Context, msg *types.MsgUpdateParam) (*types.MsgUpdateParamResponse, error) {
+	logger := k.logger.With(
+		"method", "UpdateParam",
+		"param_name", msg.Name,
+	)
+
 	if err := msg.ValidateBasic(); err != nil {
-		return nil, err
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	if k.GetAuthority() != msg.Authority {
-		return nil, types.ErrSharedInvalidSigner.Wrapf("invalid authority; expected %s, got %s", k.GetAuthority(), msg.Authority)
+		return nil, status.Error(
+			codes.InvalidArgument,
+			types.ErrSharedInvalidSigner.Wrapf(
+				"invalid authority; expected %s, got %s",
+				k.GetAuthority(), msg.Authority,
+			).Error(),
+		)
 	}
 
 	params := k.GetParams(ctx)
 
 	switch msg.Name {
 	case types.ParamNumBlocksPerSession:
-		value, ok := msg.AsType.(*types.MsgUpdateParam_AsInt64)
-		if !ok {
-			return nil, types.ErrSharedParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
-		}
-
-		params.NumBlocksPerSession = uint64(value.AsInt64)
+		logger = logger.With("param_value", msg.GetAsUint64())
+		params.NumBlocksPerSession = msg.GetAsUint64()
 	case types.ParamGracePeriodEndOffsetBlocks:
-		value, ok := msg.AsType.(*types.MsgUpdateParam_AsInt64)
-		if !ok {
-			return nil, types.ErrSharedParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
-		}
-
-		params.GracePeriodEndOffsetBlocks = uint64(value.AsInt64)
+		logger = logger.With("param_value", msg.GetAsUint64())
+		params.GracePeriodEndOffsetBlocks = msg.GetAsUint64()
 	case types.ParamClaimWindowOpenOffsetBlocks:
-		value, ok := msg.AsType.(*types.MsgUpdateParam_AsInt64)
-		if !ok {
-			return nil, types.ErrSharedParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
-		}
-
-		params.ClaimWindowOpenOffsetBlocks = uint64(value.AsInt64)
+		logger = logger.With("param_value", msg.GetAsUint64())
+		params.ClaimWindowOpenOffsetBlocks = msg.GetAsUint64()
 	case types.ParamClaimWindowCloseOffsetBlocks:
-		value, ok := msg.AsType.(*types.MsgUpdateParam_AsInt64)
-		if !ok {
-			return nil, types.ErrSharedParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
-		}
-
-		params.ClaimWindowCloseOffsetBlocks = uint64(value.AsInt64)
+		logger = logger.With("param_value", msg.GetAsUint64())
+		params.ClaimWindowCloseOffsetBlocks = msg.GetAsUint64()
 	case types.ParamProofWindowOpenOffsetBlocks:
-		value, ok := msg.AsType.(*types.MsgUpdateParam_AsInt64)
-		if !ok {
-			return nil, types.ErrSharedParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
-		}
-
-		params.ProofWindowOpenOffsetBlocks = uint64(value.AsInt64)
+		logger = logger.With("param_value", msg.GetAsUint64())
+		params.ProofWindowOpenOffsetBlocks = msg.GetAsUint64()
 	case types.ParamProofWindowCloseOffsetBlocks:
-		value, ok := msg.AsType.(*types.MsgUpdateParam_AsInt64)
-		if !ok {
-			return nil, types.ErrSharedParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
-		}
-
-		params.ProofWindowCloseOffsetBlocks = uint64(value.AsInt64)
+		logger = logger.With("param_value", msg.GetAsUint64())
+		params.ProofWindowCloseOffsetBlocks = msg.GetAsUint64()
 	case types.ParamSupplierUnbondingPeriodSessions:
-		value, ok := msg.AsType.(*types.MsgUpdateParam_AsInt64)
-		if !ok {
-			return nil, types.ErrSharedParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
-		}
-
-		params.SupplierUnbondingPeriodSessions = uint64(value.AsInt64)
+		logger = logger.With("param_value", msg.GetAsUint64())
+		params.SupplierUnbondingPeriodSessions = msg.GetAsUint64()
 	case types.ParamApplicationUnbondingPeriodSessions:
-		value, ok := msg.AsType.(*types.MsgUpdateParam_AsInt64)
-		if !ok {
-			return nil, types.ErrSharedParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
-		}
-
-		params.ApplicationUnbondingPeriodSessions = uint64(value.AsInt64)
+		logger = logger.With("param_value", msg.GetAsUint64())
+		params.ApplicationUnbondingPeriodSessions = msg.GetAsUint64()
 	case types.ParamComputeUnitsToTokensMultiplier:
-		value, ok := msg.AsType.(*types.MsgUpdateParam_AsInt64)
-		if !ok {
-			return nil, types.ErrSharedParamInvalid.Wrapf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
-		}
-		computeUnitsToTokensMultiplier := uint64(value.AsInt64)
-
-		if err := types.ValidateComputeUnitsToTokensMultiplier(computeUnitsToTokensMultiplier); err != nil {
-			return nil, err
-		}
-
-		params.ComputeUnitsToTokensMultiplier = computeUnitsToTokensMultiplier
+		logger = logger.With("param_value", msg.GetAsUint64())
+		params.ComputeUnitsToTokensMultiplier = msg.GetAsUint64()
 	default:
-		return nil, types.ErrSharedParamInvalid.Wrapf("unsupported param %q", msg.Name)
+		return nil, status.Error(
+			codes.InvalidArgument,
+			types.ErrSharedParamInvalid.Wrapf("unsupported param %q", msg.Name).Error(),
+		)
 	}
 
 	// Perform a global validation on all params, which includes the updated param.
 	// This is needed to ensure that the updated param is valid in the context of all other params.
 	if err := params.ValidateBasic(); err != nil {
-		return nil, err
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	if err := k.SetParams(ctx, params); err != nil {
-		return nil, err
+		err = fmt.Errorf("unable to set params: %w", err)
+		logger.Error(fmt.Sprintf("ERROR: %s", err))
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	updatedParams := k.GetParams(ctx)
+
 	return &types.MsgUpdateParamResponse{
 		Params: &updatedParams,
 	}, nil

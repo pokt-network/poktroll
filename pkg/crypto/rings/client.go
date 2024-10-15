@@ -45,6 +45,7 @@ type ringClient struct {
 // - polylog.Logger
 // - client.ApplicationQueryClient
 // - client.AccountQueryClient
+// - client.SharedQueryClient
 func NewRingClient(deps depinject.Config) (_ crypto.RingClient, err error) {
 	rc := new(ringClient)
 

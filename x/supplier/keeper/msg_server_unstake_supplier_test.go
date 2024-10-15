@@ -11,7 +11,7 @@ import (
 	"github.com/pokt-network/poktroll/testutil/sample"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/keeper"
-	"github.com/pokt-network/poktroll/x/supplier/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
@@ -27,7 +27,7 @@ func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
 	_, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, unstakingSupplierOperatorAddr)
 	require.False(t, isSupplierFound)
 
-	initialStake := int64(100)
+	initialStake := suppliertypes.DefaultMinStake.Amount.Int64()
 	stakeMsg := createStakeMsg(unstakingSupplierOperatorAddr, initialStake)
 
 	// Stake the supplier
@@ -53,7 +53,7 @@ func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
 	require.True(t, isSupplierFound)
 
 	// Initiate the supplier unstaking
-	unstakeMsg := &types.MsgUnstakeSupplier{
+	unstakeMsg := &suppliertypes.MsgUnstakeSupplier{
 		Signer:          unstakingSupplierOperatorAddr,
 		OperatorAddress: unstakingSupplierOperatorAddr,
 	}
@@ -94,7 +94,7 @@ func TestMsgServer_UnstakeSupplier_CancelUnbondingIfRestaked(t *testing.T) {
 	supplierOperatorAddr := sample.AccAddress()
 
 	// Stake the supplier
-	initialStake := int64(100)
+	initialStake := suppliertypes.DefaultMinStake.Amount.Int64()
 	stakeMsg := createStakeMsg(supplierOperatorAddr, initialStake)
 	_, err := srv.StakeSupplier(ctx, stakeMsg)
 	require.NoError(t, err)
@@ -105,7 +105,7 @@ func TestMsgServer_UnstakeSupplier_CancelUnbondingIfRestaked(t *testing.T) {
 	require.False(t, foundSupplier.IsUnbonding())
 
 	// Initiate the supplier unstaking
-	unstakeMsg := &types.MsgUnstakeSupplier{
+	unstakeMsg := &suppliertypes.MsgUnstakeSupplier{
 		Signer:          supplierOperatorAddr,
 		OperatorAddress: supplierOperatorAddr,
 	}
@@ -153,13 +153,13 @@ func TestMsgServer_UnstakeSupplier_FailIfNotStaked(t *testing.T) {
 	require.False(t, isSupplierFound)
 
 	// Initiate the supplier unstaking
-	unstakeMsg := &types.MsgUnstakeSupplier{
+	unstakeMsg := &suppliertypes.MsgUnstakeSupplier{
 		Signer:          supplierOperatorAddr,
 		OperatorAddress: supplierOperatorAddr,
 	}
 	_, err := srv.UnstakeSupplier(ctx, unstakeMsg)
 	require.Error(t, err)
-	require.ErrorIs(t, err, types.ErrSupplierNotFound)
+	require.ErrorIs(t, err, suppliertypes.ErrSupplierNotFound)
 
 	_, isSupplierFound = supplierModuleKeepers.GetSupplier(ctx, supplierOperatorAddr)
 	require.False(t, isSupplierFound)
@@ -173,13 +173,13 @@ func TestMsgServer_UnstakeSupplier_FailIfCurrentlyUnstaking(t *testing.T) {
 	supplierOperatorAddr := sample.AccAddress()
 
 	// Stake the supplier
-	initialStake := int64(100)
+	initialStake := suppliertypes.DefaultMinStake.Amount.Int64()
 	stakeMsg := createStakeMsg(supplierOperatorAddr, initialStake)
 	_, err := srv.StakeSupplier(ctx, stakeMsg)
 	require.NoError(t, err)
 
 	// Initiate the supplier unstaking
-	unstakeMsg := &types.MsgUnstakeSupplier{
+	unstakeMsg := &suppliertypes.MsgUnstakeSupplier{
 		Signer:          supplierOperatorAddr,
 		OperatorAddress: supplierOperatorAddr,
 	}
@@ -190,7 +190,7 @@ func TestMsgServer_UnstakeSupplier_FailIfCurrentlyUnstaking(t *testing.T) {
 	ctx = keepertest.SetBlockHeight(ctx, int64(sdkCtx.BlockHeight()+1))
 
 	_, err = srv.UnstakeSupplier(ctx, unstakeMsg)
-	require.ErrorIs(t, err, types.ErrSupplierIsUnstaking)
+	require.ErrorIs(t, err, suppliertypes.ErrSupplierIsUnstaking)
 }
 
 func TestMsgServer_UnstakeSupplier_OperatorCanUnstake(t *testing.T) {
@@ -202,14 +202,14 @@ func TestMsgServer_UnstakeSupplier_OperatorCanUnstake(t *testing.T) {
 	supplierOperatorAddr := sample.AccAddress()
 
 	// Stake the supplier
-	initialStake := int64(100)
+	initialStake := suppliertypes.DefaultMinStake.Amount.Int64()
 	stakeMsg := createStakeMsg(ownerAddr, initialStake)
 	stakeMsg.OperatorAddress = supplierOperatorAddr
 	_, err := srv.StakeSupplier(ctx, stakeMsg)
 	require.NoError(t, err)
 
 	// Initiate the supplier unstaking
-	unstakeMsg := &types.MsgUnstakeSupplier{
+	unstakeMsg := &suppliertypes.MsgUnstakeSupplier{
 		Signer:          supplierOperatorAddr,
 		OperatorAddress: supplierOperatorAddr,
 	}
@@ -237,9 +237,9 @@ func TestMsgServer_UnstakeSupplier_OperatorCanUnstake(t *testing.T) {
 	require.Equal(t, initialStake, supplierModuleKeepers.SupplierUnstakedFundsMap[ownerAddr])
 }
 
-func createStakeMsg(supplierOwnerAddr string, stakeAmount int64) *types.MsgStakeSupplier {
+func createStakeMsg(supplierOwnerAddr string, stakeAmount int64) *suppliertypes.MsgStakeSupplier {
 	initialStake := sdk.NewCoin("upokt", math.NewInt(stakeAmount))
-	return &types.MsgStakeSupplier{
+	return &suppliertypes.MsgStakeSupplier{
 		Signer:          supplierOwnerAddr,
 		OwnerAddress:    supplierOwnerAddr,
 		OperatorAddress: supplierOwnerAddr,

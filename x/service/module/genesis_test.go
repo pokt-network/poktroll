@@ -26,6 +26,15 @@ func TestGenesis(t *testing.T) {
 				Name: "service two",
 			},
 		},
+
+		RelayMiningDifficultyList: []types.RelayMiningDifficulty{
+			{
+				ServiceId: "0",
+			},
+			{
+				ServiceId: "1",
+			},
+		},
 		// this line is used by starport scaffolding # genesis/test/state
 	}
 
@@ -38,5 +47,6 @@ func TestGenesis(t *testing.T) {
 	nullify.Fill(got)
 
 	require.ElementsMatch(t, genesisState.ServiceList, got.ServiceList)
+	require.ElementsMatch(t, genesisState.RelayMiningDifficultyList, got.RelayMiningDifficultyList)
 	// this line is used by starport scaffolding # genesis/test/assert
 }

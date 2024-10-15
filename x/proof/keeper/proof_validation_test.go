@@ -1,10 +1,12 @@
 package keeper_test
 
 import (
+	"context"
 	"encoding/hex"
 	"testing"
 
 	"cosmossdk.io/depinject"
+	"cosmossdk.io/log"
 	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
@@ -22,6 +24,7 @@ import (
 	"github.com/pokt-network/poktroll/testutil/testtree"
 	"github.com/pokt-network/poktroll/x/proof/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -587,17 +590,12 @@ func TestEnsureValidProof_Error(t *testing.T) {
 		{
 			desc: "relay difficulty must be greater than or equal to a high difficulty (low target hash)",
 			newProof: func(t *testing.T) *prooftypes.Proof {
-				// Set the minimum relay difficulty to a non-zero value such that the relays
-				// constructed by the test helpers have a negligible chance of being valid.
-				err = keepers.Keeper.SetParams(ctx, prooftypes.Params{
-					RelayDifficultyTargetHash: lowTargetHash,
-				})
-				require.NoError(t, err)
-
+				serviceId := validSessionHeader.GetServiceId()
+				logger := log.NewNopLogger()
+				setRelayMiningDifficultyHash(ctx, keepers.ServiceKeeper, serviceId, lowTargetHash, logger)
 				// Reset the minimum relay difficulty to zero after this test case.
 				t.Cleanup(func() {
-					err = keepers.Keeper.SetParams(ctx, prooftypes.DefaultParams())
-					require.NoError(t, err)
+					setRelayMiningDifficultyHash(ctx, keepers.ServiceKeeper, serviceId, protocol.BaseRelayDifficultyHashBz, logger)
 				})
 
 				// Construct a proof message with a session tree containing
@@ -775,4 +773,16 @@ func TestEnsureValidProof_Error(t *testing.T) {
 			require.ErrorContains(t, err, test.expectedErr.Error())
 		})
 	}
+}
+
+func setRelayMiningDifficultyHash(
+	ctx context.Context,
+	serviceKeeper prooftypes.ServiceKeeper,
+	serviceId string,
+	targetHash []byte,
+	logger log.Logger,
+) {
+	relayMiningDifficulty := servicekeeper.NewDefaultRelayMiningDifficulty(ctx, logger, serviceId, servicekeeper.TargetNumRelays)
+	relayMiningDifficulty.TargetHash = targetHash
+	serviceKeeper.SetRelayMiningDifficulty(ctx, relayMiningDifficulty)
 }

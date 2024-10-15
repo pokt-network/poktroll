@@ -5,8 +5,11 @@ import (
 
 	"cosmossdk.io/depinject"
 	"github.com/cosmos/gogoproto/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -59,4 +62,32 @@ func (servq *serviceQuerier) GetService(
 		)
 	}
 	return res.Service, nil
+}
+
+// GetServiceRelayDifficulty queries the onchain data for
+// the relay mining difficulty associated with the given service.
+func (servq *serviceQuerier) GetServiceRelayDifficulty(
+	ctx context.Context,
+	serviceId string,
+) (servicetypes.RelayMiningDifficulty, error) {
+	req := &servicetypes.QueryGetRelayMiningDifficultyRequest{
+		ServiceId: serviceId,
+	}
+
+	res, err := servq.serviceQuerier.RelayMiningDifficulty(ctx, req)
+	if status.Code(err) == codes.NotFound {
+		newServiceDifficulty := servicetypes.RelayMiningDifficulty{
+			ServiceId:    serviceId,
+			BlockHeight:  0,
+			NumRelaysEma: 0,
+			TargetHash:   protocol.BaseRelayDifficultyHashBz,
+		}
+
+		return newServiceDifficulty, nil
+	}
+	if err != nil {
+		return servicetypes.RelayMiningDifficulty{}, err
+	}
+
+	return res.RelayMiningDifficulty, nil
 }
