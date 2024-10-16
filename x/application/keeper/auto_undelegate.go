@@ -47,8 +47,7 @@ func (k Keeper) EndBlockerAutoUndelegateFromUnstakedGateways(ctx sdk.Context) er
 	return nil
 }
 
-// getUnstakedGateways returns the addresses of the gateways that were
-// unstaked in the block.
+// getUnstakedGateways returns the gateways which were unstaked in the given tx events.
 func (k Keeper) getUnstakedGateways(
 	abciEvents ...abci.Event,
 ) (unstakedGateways []*gatewaytypes.Gateway, err error) {
