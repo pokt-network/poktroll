@@ -98,8 +98,9 @@ func (s *applicationMinStakeTestSuite) TestAppIsUnbondedIfBelowMinStakeWhenSettl
 	sdkCtx := cosmostypes.UnwrapSDKContext(s.ctx)
 	currentHeight := sdkCtx.BlockHeight()
 	sharedParams := s.keepers.SharedKeeper.GetParams(s.ctx)
-	currentSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
-	claimSettlementHeight := currentSessionEndHeight + int64(sharedtypes.GetSessionEndToProofWindowCloseBlocks(&sharedParams)) + 1
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
+	claimSettlementHeight := sessionEndHeight + int64(sharedtypes.GetSessionEndToProofWindowCloseBlocks(&sharedParams)) + 1
+	settlementSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, claimSettlementHeight)
 	sdkCtx = sdkCtx.WithBlockHeight(claimSettlementHeight)
 	s.ctx = sdkCtx
 
@@ -127,7 +128,7 @@ func (s *applicationMinStakeTestSuite) TestAppIsUnbondedIfBelowMinStakeWhenSettl
 	expectedAppUnbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
 		Application:      expectedApp,
 		Reason:           apptypes.ApplicationUnbondingReason_BELOW_MIN_STAKE,
-		SessionEndHeight: currentSessionEndHeight,
+		SessionEndHeight: settlementSessionEndHeight,
 	}
 	events := cosmostypes.UnwrapSDKContext(s.ctx).EventManager().Events()
 	appUnbondingBeginEvents := testevents.FilterEvents[*apptypes.EventApplicationUnbondingBegin](s.T(), events)
@@ -143,8 +144,9 @@ func (s *applicationMinStakeTestSuite) TestAppIsUnbondedIfBelowMinStakeWhenSettl
 
 	// Assert that the EventApplicationUnbondingEnd event is emitted.
 	expectedAppUnbondingEndEvent := &apptypes.EventApplicationUnbondingEnd{
-		Application: expectedApp,
-		Reason:      apptypes.ApplicationUnbondingReason_BELOW_MIN_STAKE,
+		Application:      expectedApp,
+		Reason:           apptypes.ApplicationUnbondingReason_BELOW_MIN_STAKE,
+		SessionEndHeight: settlementSessionEndHeight,
 	}
 	events = cosmostypes.UnwrapSDKContext(s.ctx).EventManager().Events()
 	appUnbondingEndEvents := testevents.FilterEvents[*apptypes.EventApplicationUnbondingEnd](s.T(), events)

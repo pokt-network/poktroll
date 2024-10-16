@@ -52,9 +52,11 @@ func (k Keeper) EndBlockerUnbondApplications(ctx context.Context) error {
 			unbondingReason = apptypes.ApplicationUnbondingReason_BELOW_MIN_STAKE
 		}
 
+		sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
 		unbondingEndEvent := &apptypes.EventApplicationUnbondingEnd{
-			Application: &application,
-			Reason:      unbondingReason,
+			Application:      &application,
+			Reason:           unbondingReason,
+			SessionEndHeight: sessionEndHeight,
 		}
 		if err := sdkCtx.EventManager().EmitTypedEvent(unbondingEndEvent); err != nil {
 			err = apptypes.ErrAppEmitEvent.Wrapf("(%+v): %s", unbondingEndEvent, err)

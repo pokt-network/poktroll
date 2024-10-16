@@ -88,6 +88,7 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 	// Move block height to the end of the unbonding period
 	unbondingHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, &foundApp)
 	ctx = keepertest.SetBlockHeight(ctx, unbondingHeight)
+	unbondingSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, unbondingHeight)
 
 	// Run the endblocker to unbond applications
 	err = applicationModuleKeepers.EndBlockerUnbondApplications(ctx)
@@ -96,8 +97,9 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 	// Assert that the EventApplicationStaked event is emitted.
 	expectedEvent, err = sdk.TypedEventToEvent(
 		&apptypes.EventApplicationUnbondingEnd{
-			Application: &foundApp,
-			Reason:      apptypes.ApplicationUnbondingReason_ELECTIVE,
+			Application:      &foundApp,
+			Reason:           apptypes.ApplicationUnbondingReason_ELECTIVE,
+			SessionEndHeight: unbondingSessionEndHeight,
 		},
 	)
 	require.NoError(t, err)
