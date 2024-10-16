@@ -5,7 +5,7 @@ package delegation
 // of listening to all events and doing a verbose filter.
 
 import (
-	"strconv"
+	"strings"
 
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
@@ -33,7 +33,7 @@ func newRedelegationEventFactoryFn() events.NewEventsFn[*apptypes.EventRedelegat
 
 		// Iterate through the log entries to find EventRedelegation
 		for _, event := range txResult.Result.Events {
-			if event.GetType() != redelegationEventType {
+			if strings.Trim(event.GetType(), "/") != strings.Trim(redelegationEventType, "/") {
 				continue
 			}
 
@@ -52,8 +52,4 @@ func newRedelegationEventFactoryFn() events.NewEventsFn[*apptypes.EventRedelegat
 		}
 		return nil, events.ErrEventsUnmarshalEvent.Wrap("no redelegation event found")
 	}
-}
-
-func unescape(s string) (string, error) {
-	return strconv.Unquote(s)
 }

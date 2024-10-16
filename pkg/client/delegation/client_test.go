@@ -8,11 +8,11 @@ import (
 	"cosmossdk.io/depinject"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/delegation"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/testutil/testclient/testdelegation"
 	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
 )
 
 const (
@@ -47,27 +47,27 @@ func TestDelegationClient(t *testing.T) {
 
 	tests := []struct {
 		name string
-		fn   func() client.Redelegation
+		fn   func() *apptypes.EventRedelegation
 	}{
 		{
 			name: "LastNRedelegations successfully returns latest redelegation",
-			fn: func() client.Redelegation {
+			fn: func() *apptypes.EventRedelegation {
 				lastRedelegation := delegationClient.LastNRedelegations(ctx, 1)[0]
-				require.Equal(t, expectedAppAddress, lastRedelegation.GetAppAddress())
-				require.Equal(t, expectedGatewayAddress, lastRedelegation.GetGatewayAddress())
+				require.Equal(t, expectedAppAddress, lastRedelegation.GetApplication().GetAddress())
+				require.Contains(t, lastRedelegation.GetApplication().GetDelegateeGatewayAddresses(), expectedGatewayAddress)
 				return lastRedelegation
 			},
 		},
 		{
 			name: "RedelegationsSequence successfully returns latest redelegation",
-			fn: func() client.Redelegation {
+			fn: func() *apptypes.EventRedelegation {
 				redelegationObs := delegationClient.RedelegationsSequence(ctx)
 				require.NotNil(t, redelegationObs)
 
 				// Ensure that the observable is replayable via Last.
 				lastRedelegation := redelegationObs.Last(ctx, 1)[0]
-				require.Equal(t, expectedAppAddress, lastRedelegation.GetAppAddress())
-				require.Equal(t, expectedGatewayAddress, lastRedelegation.GetGatewayAddress())
+				require.Equal(t, expectedAppAddress, lastRedelegation.GetApplication().GetAddress())
+				require.Contains(t, lastRedelegation.GetApplication().GetDelegateeGatewayAddresses(), expectedGatewayAddress)
 
 				return lastRedelegation
 			},
@@ -76,20 +76,20 @@ func TestDelegationClient(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			actualRedelegationCh := make(chan client.Redelegation, 10)
+			actualRedelegationCh := make(chan *apptypes.EventRedelegation, 10)
 
 			// Run test functions asynchronously because they can block, leading
 			// to an unresponsive test. If any of the methods under test hang,
 			// the test will time out in the select statement that follows.
-			go func(fn func() client.Redelegation) {
+			go func(fn func() *apptypes.EventRedelegation) {
 				actualRedelegationCh <- fn()
 				close(actualRedelegationCh)
 			}(test.fn)
 
 			select {
 			case actualRedelegation := <-actualRedelegationCh:
-				require.Equal(t, expectedAppAddress, actualRedelegation.GetAppAddress())
-				require.Equal(t, expectedGatewayAddress, actualRedelegation.GetGatewayAddress())
+				require.Equal(t, expectedAppAddress, actualRedelegation.GetApplication().GetAddress())
+				require.Contains(t, actualRedelegation.GetApplication().GetDelegateeGatewayAddresses(), expectedGatewayAddress)
 			case <-time.After(testTimeoutDuration):
 				t.Fatal("timed out waiting for redelegation event")
 			}
