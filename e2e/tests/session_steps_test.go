@@ -29,7 +29,7 @@ const (
 	eventTimeout = 100 * time.Second
 	// testServiceId is the service ID used for testing purposes that is
 	// expected to be available in LocalNet.
-	testServiceId = "0021"
+	testServiceId = "anvil"
 	// defaultJSONPRCPath is the default path used for sending JSON-RPC relay requests.
 	defaultJSONPRCPath = ""
 

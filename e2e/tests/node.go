@@ -28,7 +28,7 @@ var (
 	defaultDebugOutput = os.Getenv("E2E_DEBUG_OUTPUT")
 	// serviceIdToAliasMap maps service IDs to their respective aliases
 	serviceIdToAliasMap = map[string]string{
-		"0021": "anvil",
+		"anvil": "anvil",
 	}
 )
 

@@ -4,7 +4,7 @@ Feature: Stake Supplier Namespace
         Given the user has the pocketd binary installed
         And the user verifies the "supplier" for account "supplier2" is not staked
         And the account "supplier2" has a balance greater than "1000070" uPOKT
-        When the user stakes a "supplier" with "1000070" uPOKT for "0021" service from the account "supplier2"
+        When the user stakes a "supplier" with "1000070" uPOKT for "anvil" service from the account "supplier2"
         Then the user should be able to see standard output containing "txhash:"
         And the user should be able to see standard output containing "code: 0"
         And the pocketd binary should exit without error
@@ -34,12 +34,12 @@ Feature: Stake Supplier Namespace
         # Reduce the application unbonding period to avoid timeouts and speed up scenarios.
         And the "supplier" unbonding period param is successfully set to "1" sessions of "2" blocks
         And the user verifies the "supplier" for account "supplier2" is not staked
-        Then the user stakes a "supplier" with "1000070" uPOKT for "0021" service from the account "supplier2"
+        Then the user stakes a "supplier" with "1000070" uPOKT for "anvil" service from the account "supplier2"
         And the user should wait for the "supplier" module "StakeSupplier" message to be submitted
         Then the user should see that the supplier for account "supplier2" is staked
-        But the session for application "app1" and service "0021" does not contain "supplier2"
-        When the user waits for supplier "supplier2" to become active for service "0021"
-        Then the session for application "app1" and service "0021" contains the supplier "supplier2"
+        But the session for application "app1" and service "anvil" does not contain "supplier2"
+        When the user waits for supplier "supplier2" to become active for service "anvil"
+        Then the session for application "app1" and service "anvil" contains the supplier "supplier2"
         # Cleanup to make this feature idempotent.
         And the user unstakes a "supplier" from the account "supplier2"
         And the supplier for account "supplier2" is unbonding

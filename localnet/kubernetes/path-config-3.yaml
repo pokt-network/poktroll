@@ -10,5 +10,5 @@ shannon_config:
       - pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4
 
 services:
-  "0021":
+  "anvil":
     alias: anvil

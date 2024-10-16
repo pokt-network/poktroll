@@ -344,6 +344,24 @@ for x in range(localnet_config["gateways"]["count"]):
         ],
     )
 
+# Provision PATH Gateway
+path_deployment_yaml = str(read_file("./localnet/kubernetes/path.yaml", "r"))
+actor_number = 0
+for x in range(localnet_config["path_gateways"]["count"]):
+    actor_number = actor_number + 1
+    configmap_create(
+        "path-config" + str(actor_number), from_file="localnet/kubernetes/path-config-" + str(actor_number) + ".yaml"
+    )
+    formatted_path_deployment_yaml = path_deployment_yaml.format(actor_number=actor_number, port=2999 + actor_number)
+    k8s_yaml(blob(formatted_path_deployment_yaml))
+    k8s_resource(
+        "path-gateway" + str(actor_number),
+        labels=["gateways"],
+        resource_deps=["validator"],
+        port_forwards=[str(2999 + actor_number) + ":3000"],
+    )
+
+# Provision Validators
 k8s_resource(
     "validator",
     labels=["pocket_network"],
@@ -362,8 +380,10 @@ k8s_resource(
     ],
 )
 
+# Provision anvil (test Ethereum) service nodes
 k8s_resource("anvil", labels=["data_nodes"], port_forwards=["8547"])
 
+# Provision ollama (LLM) service nodes
 if localnet_config["ollama"]["enabled"]:
     print("Ollama enabled: " + str(localnet_config["ollama"]["enabled"]))
 
@@ -382,21 +402,8 @@ if localnet_config["ollama"]["enabled"]:
         resource_deps=["ollama"],
     )
 
+# Provision RESTful (not JSON-RPC) test service nodes
 if localnet_config["rest"]["enabled"]:
     print("REST enabled: " + str(localnet_config["rest"]["enabled"]))
     deployment_create("rest", image="davarski/go-rest-api-demo")
     k8s_resource("rest", labels=["data_nodes"], port_forwards=["10000"])
-
-path_deployment_yaml = str(read_file("./localnet/kubernetes/path.yaml", "r"))
-actor_number = 0
-for x in range(localnet_config["path_gateways"]["count"]):
-    actor_number = actor_number + 1
-    configmap_create("path-config" + str(actor_number), from_file="localnet/kubernetes/path-config-"+str(actor_number)+".yaml")
-    formatted_path_deployment_yaml = path_deployment_yaml.format(actor_number=actor_number, port=2999 + actor_number)
-    k8s_yaml(blob(formatted_path_deployment_yaml))
-    k8s_resource(
-        "path-gateway" + str(actor_number),
-        labels=["gateways"],
-        resource_deps=["validator"],
-        port_forwards=[str(2999 + actor_number)+":3000"],
-    )

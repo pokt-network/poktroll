@@ -14,13 +14,13 @@ Feature: Session Namespace
     And the "shared" module parameters are set as follows
         | compute_units_to_tokens_multiplier | 42                                                         | int64 |
     And all "shared" module params should be updated
-    When the supplier "supplier1" has serviced a session with "5" relays for service "0021" for application "app1"
+    When the supplier "supplier1" has serviced a session with "5" relays for service "anvil" for application "app1"
     And the user should wait for the "proof" module "CreateClaim" Message to be submitted
     And the user should wait for the "proof" module "ClaimCreated" tx event to be broadcast
     Then the claim created by supplier "supplier1" for service "svc1" for application "app1" should be persisted on-chain
     And the user should wait for the "proof" module "SubmitProof" Message to be submitted
     And the user should wait for the "proof" module "ProofSubmitted" tx event to be broadcast
-    Then the claim created by supplier "supplier1" for service "0021" for application "app1" should be successfully settled
+    Then the claim created by supplier "supplier1" for service "anvil" for application "app1" should be successfully settled
 
 # TODO_BLOCKER(@red-0ne): Make sure to implement and validate this test
 # One way to exercise this behavior is to close the `RelayMiner` port to prevent

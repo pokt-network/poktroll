@@ -13,5 +13,5 @@ shannon_config:
 
 services:
   # Path needs 0021 service ID to handle EVM relays.
-  "0021":
+  "anvil":
     alias: anvil
