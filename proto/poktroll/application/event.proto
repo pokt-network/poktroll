@@ -87,7 +87,7 @@ message EventApplicationUnbondingBegin {
 message EventApplicationUnbondingEnd {
   poktroll.application.Application application = 1 [(gogoproto.jsontag) = "application"];
   ApplicationUnbondingReason reason = 2 [(gogoproto.jsontag) = "reason"];
-  // The end height of the session in which the transfer began.
+  // The end height of the session in which the transfer ended.
   int64 session_end_height = 3 [(gogoproto.jsontag) = "session_end_height"];
 }
 
@@ -96,6 +96,6 @@ message EventApplicationUnbondingEnd {
 // event will also be emitted immediately after this event.
 message EventApplicationUnbondingCanceled {
   poktroll.application.Application application = 1 [(gogoproto.jsontag) = "application"];
-  // The end height of the session in which the transfer began.
+  // The end height of the session in which the transfer was canceled.
   int64 session_end_height = 2 [(gogoproto.jsontag) = "session_end_height"];
 }

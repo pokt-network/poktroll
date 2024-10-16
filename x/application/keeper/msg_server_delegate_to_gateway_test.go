@@ -284,7 +284,6 @@ func TestMsgServer_DelegateToGateway_FailMaxReached(t *testing.T) {
 	filteredEvents := testevents.FilterEvents[*apptypes.EventRedelegation](t, events)
 	require.Equal(t, int(maxDelegatedParam), len(filteredEvents))
 
-	// TODO_UPNEXT(@bryanchriswhite): These events should be distinguishable.
 	for i, event := range filteredEvents {
 		expectedApp := &apptypes.Application{
 			Address:                   stakeMsg.GetAddress(),

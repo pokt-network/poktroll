@@ -4842,7 +4842,7 @@ type EventApplicationUnbondingEnd struct {
 
 	Application *Application               `protobuf:"bytes,1,opt,name=application,proto3" json:"application,omitempty"`
 	Reason      ApplicationUnbondingReason `protobuf:"varint,2,opt,name=reason,proto3,enum=poktroll.application.ApplicationUnbondingReason" json:"reason,omitempty"`
-	// The end height of the session in which the transfer began.
+	// The end height of the session in which the transfer ended.
 	SessionEndHeight int64 `protobuf:"varint,3,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height,omitempty"`
 }
 
@@ -4896,7 +4896,7 @@ type EventApplicationUnbondingCanceled struct {
 	unknownFields protoimpl.UnknownFields
 
 	Application *Application `protobuf:"bytes,1,opt,name=application,proto3" json:"application,omitempty"`
-	// The end height of the session in which the transfer began.
+	// The end height of the session in which the transfer was canceled.
 	SessionEndHeight int64 `protobuf:"varint,2,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height,omitempty"`
 }
 

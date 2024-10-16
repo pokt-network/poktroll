@@ -136,14 +136,6 @@ type Block interface {
 	Txs() []comettypes.Tx
 }
 
-// Redelegation is an interface which wraps the EventRedelegation event
-// emitted by the application module.
-// See: proto/poktroll/application/types/event.proto#EventRedelegation
-type Redelegation interface {
-	GetAppAddress() string
-	GetGatewayAddress() string
-}
-
 // EventsObservable is a replay observable for events of some type T.
 // NB: This cannot be an alias due to gomock's lack of support for generic types.
 type EventsObservable[T any] observable.ReplayObservable[T]
@@ -180,7 +172,7 @@ type BlockClient interface {
 // RedelegationReplayObservable is a defined type which is a replay observable
 // of type Redelegation.
 // NB: This cannot be an alias due to gomock's lack of support for generic types.
-type RedelegationReplayObservable EventsObservable[Redelegation]
+type RedelegationReplayObservable EventsObservable[*apptypes.EventRedelegation]
 
 // DelegationClient is an interface that wraps the EventsReplayClient interface
 // specific for the EventsReplayClient[Redelegation] implementation
@@ -190,7 +182,7 @@ type DelegationClient interface {
 	RedelegationsSequence(context.Context) RedelegationReplayObservable
 	// LastNRedelegations returns the latest N redelegation events that have
 	// occurred on chain.
-	LastNRedelegations(context.Context, int) []Redelegation
+	LastNRedelegations(context.Context, int) []*apptypes.EventRedelegation
 	// Close unsubscribes all observers of the committed block sequence
 	// observable and closes the events query client.
 	Close()
