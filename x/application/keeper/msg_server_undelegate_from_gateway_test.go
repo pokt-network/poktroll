@@ -106,6 +106,7 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 	_, err = srv.UndelegateFromGateway(ctx, undelegateMsg)
 	require.NoError(t, err)
 
+	// Assert that the EventRedelegation event is emitted.
 	expectedGatewayAddresses = append(expectedGatewayAddresses[:3], expectedGatewayAddresses[4:]...)
 	expectedApp := &apptypes.Application{
 		Address:                   stakeMsg.GetAddress(),
