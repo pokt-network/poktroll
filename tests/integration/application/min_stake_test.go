@@ -108,7 +108,7 @@ func (s *applicationMinStakeTestSuite) TestAppIsUnbondedIfBelowMinStakeWhenSettl
 	_, _, err := s.keepers.Keeper.SettlePendingClaims(sdkCtx)
 	require.NoError(s.T(), err)
 
-	// Assert that the EventApplicationUnbondedBelowMinStake event is emitted.
+	// Assert that the EventApplicationUnbondingBegin event is emitted.
 	expectedApp := &apptypes.Application{
 		Address:                   s.appBech32,
 		Stake:                     s.appStake,
