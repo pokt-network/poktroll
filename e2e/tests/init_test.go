@@ -61,7 +61,8 @@ var (
 	flagFeaturesPath string
 	keyRingFlag      = "--keyring-backend=test"
 	chainIdFlag      = "--chain-id=poktroll"
-	appGateServerUrl = "localhost:3000" // Keeping localhost by default because that is how we run the tests on our machines locally
+	appGateServerUrl = "http://localhost:42069" // Keeping localhost by default because that is how we run the tests on our machines locally
+	pathUrl          = "localhost:3000"         // Keeping localhost by default because that is how we run the tests on our machines locally
 )
 
 func init() {
@@ -74,6 +75,11 @@ func init() {
 	// If "APPGATE_SERVER_URL" envar is present, use it for appGateServerUrl
 	if url := os.Getenv("APPGATE_SERVER_URL"); url != "" {
 		appGateServerUrl = url
+	}
+
+	// If "APPGATE_SERVER_URL" envar is present, use it for pathUrl
+	if url := os.Getenv("PATH_URL"); url != "" {
+		pathUrl = url
 	}
 }
 
@@ -463,7 +469,9 @@ func (s *suite) TheApplicationSendsTheSupplierASuccessfulRequestForServiceWithPa
 		method = "GET"
 	}
 
-	res, err := s.pocketd.RunCurlWithRetry(appGateServerUrl, serviceId, method, path, requestData, 5)
+	// TODO_IN_THIS_PR: Figure out a plan for deprecating appGateServerUrl in a followup (cleaner) PR
+	// res, err := s.pocketd.RunCurlWithRetry(appGateServerUrl, serviceId, method, path, requestData, 5)
+	res, err := s.pocketd.RunCurlWithRetry(pathUrl, serviceId, method, path, requestData, 5)
 	require.NoError(s, err, "error sending relay request from app %q to supplier %q for service %q", appName, supplierOperatorName, serviceId)
 
 	var jsonContent json.RawMessage

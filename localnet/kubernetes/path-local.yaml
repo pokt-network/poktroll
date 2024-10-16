@@ -13,10 +13,10 @@ spec:
       labels:
         app: path-gateway{actor_number}
     spec:
-      # TODO_IMPROVE(@okdas): Add resource limits
       containers:
         - name: path-gateway
-          image: ghcr.io/buildwithgrove/path:sha-fcf75fe-rc
+          image: path-gateway-local:latest # Local image tag
+          imagePullPolicy: Never # Ensure Kubernetes uses local image
           ports:
             - containerPort: 3000
           volumeMounts:

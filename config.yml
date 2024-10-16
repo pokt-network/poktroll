@@ -170,9 +170,10 @@ genesis:
           amount: "100000000" # 100 POKT
           denom: upokt
       applicationList:
-        - address: pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4
-          delegatee_gateway_addresses:
-            [pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4]
+        - address: pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4 # app1
+          delegatee_gateway_addresses: [
+              pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4, # gateway1
+            ]
           service_configs:
             - service_id: "anvil"
             - service_id: rest
@@ -182,7 +183,7 @@ genesis:
             # `supplier1_stake_config.yaml` so that the stake command causes a state change.
             amount: "100000068" # ~100 POKT
             denom: upokt
-        - address: pokt1ad28jdap2zfanjd7hpkh984yveney6k9a42man
+        - address: pokt1ad28jdap2zfanjd7hpkh984yveney6k9a42man # apptiny
           delegatee_gateway_addresses: []
           service_configs:
             - service_id: "anvil"

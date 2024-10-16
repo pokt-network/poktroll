@@ -27,10 +27,14 @@ var (
 	// defaultDebugOutput provides verbose output on manipulations with binaries (cli command, stdout, stderr)
 	defaultDebugOutput = os.Getenv("E2E_DEBUG_OUTPUT")
 	// serviceIdToAliasMap maps service IDs to their respective aliases
+	// This is useful for gateway operators that map static on-chain names
+	// to semantic, easier to understand, off-chain names.
 	serviceIdToAliasMap = map[string]string{
 		"anvil": "anvil",
 	}
 )
+
+const ()
 
 func isVerbose() bool {
 	return defaultDebugOutput == "true"
@@ -177,7 +181,7 @@ func (p *pocketdBin) runPocketCmd(args ...string) (*commandResult, error) {
 // runCurlPostCmd is a helper to run a command using the local pocketd binary with the flags provided
 func (p *pocketdBin) runCurlCmd(rpcUrl, service, method, path, data string, args ...string) (*commandResult, error) {
 	serviceAlias := serviceIdToAliasMap[service]
-	urlStr := fmt.Sprintf("http://%s.%s/v1%s", serviceAlias, rpcUrl, path)
+	urlStr := formatURLString(serviceAlias, rpcUrl, path)
 	base := []string{
 		"-v",         // verbose output
 		"-sS",        // silent with error
@@ -189,8 +193,7 @@ func (p *pocketdBin) runCurlCmd(rpcUrl, service, method, path, data string, args
 	if method == "POST" {
 		base = append(base, "--data", data)
 	} else if len(data) > 0 {
-		fmt.Println(fmt.Sprintf("WARN: data provided but not being included in the %s request", method))
-
+		fmt.Printf("WARN: data provided but not being included in the %s request", method)
 	}
 	args = append(base, args...)
 	commandStr := "curl " + strings.Join(args, " ") // Create a string representation of the command
@@ -218,4 +221,20 @@ func (p *pocketdBin) runCurlCmd(rpcUrl, service, method, path, data string, args
 	}
 
 	return r, err
+}
+
+// formatURLString returns  RESTful or JSON-RPC API endpoint URL depending
+// on the parameters provided.
+func formatURLString(serviceAlias, rpcUrl, path string) string {
+	// For JSON-RPC APIs, the path should be empty
+	if len(path) == 0 {
+		return fmt.Sprintf("http://%s.%s/v1", serviceAlias, rpcUrl)
+	}
+
+	// For RESTful APIs, the path should not be empty.
+	// We remove the leading / to make the format string below easier to read.
+	if path[0] == '/' {
+		path = path[1:]
+	}
+	return fmt.Sprintf("http://%s.%s/v1/%s", serviceAlias, rpcUrl, path)
 }
