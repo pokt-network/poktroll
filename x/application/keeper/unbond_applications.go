@@ -8,17 +8,19 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	"github.com/pokt-network/poktroll/x/shared"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // EndBlockerUnbondApplications unbonds applications whose unbonding period has elapsed.
 func (k Keeper) EndBlockerUnbondApplications(ctx context.Context) error {
+	logger := k.Logger().With("method", "EndBlockerUnbondApplications")
+
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	sharedParams := k.sharedKeeper.GetParams(sdkCtx)
 	currentHeight := sdkCtx.BlockHeight()
 
 	// Only process unbonding applications at the end of the session.
-	if shared.IsSessionEndHeight(&sharedParams, currentHeight) {
+	if sharedtypes.IsSessionEndHeight(&sharedParams, currentHeight) {
 		return nil
 	}
 
@@ -43,7 +45,24 @@ func (k Keeper) EndBlockerUnbondApplications(ctx context.Context) error {
 			return err
 		}
 
-		// TODO_UPNEXT(@bryanchriswhite): emit a new EventApplicationUnbondingEnd event.
+		sdkCtx = sdk.UnwrapSDKContext(ctx)
+
+		unbondingReason := apptypes.ApplicationUnbondingReason_ELECTIVE
+		if application.GetStake().Amount.LT(k.GetParams(ctx).MinStake.Amount) {
+			unbondingReason = apptypes.ApplicationUnbondingReason_BELOW_MIN_STAKE
+		}
+
+		sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
+		unbondingEndEvent := &apptypes.EventApplicationUnbondingEnd{
+			Application:      &application,
+			Reason:           unbondingReason,
+			SessionEndHeight: sessionEndHeight,
+		}
+		if err := sdkCtx.EventManager().EmitTypedEvent(unbondingEndEvent); err != nil {
+			err = apptypes.ErrAppEmitEvent.Wrapf("(%+v): %s", unbondingEndEvent, err)
+			logger.Error(err.Error())
+			return err
+		}
 	}
 
 	return nil
@@ -73,19 +92,9 @@ func (k Keeper) UnbondApplication(ctx context.Context, app *apptypes.Application
 		return err
 	}
 
-		// Remove the Application from the store
-		k.RemoveApplication(ctx, app.String())
-		logger.Info(fmt.Sprintf("Successfully removed the application: %+v", app))
+	// Remove the Application from the store.
+	k.RemoveApplication(ctx, app.GetAddress())
+	logger.Info(fmt.Sprintf("Successfully removed the application: %+v", app))
 
-		sdkCtx := sdk.UnwrapSDKContext(ctx)
-		unbondingBeginEvent := &apptypes.EventApplicationUnbondingEnd{
-			AppAddress: app.GetAddress(),
-		}
-		if err := sdkCtx.EventManager().EmitTypedEvent(unbondingBeginEvent); err != nil {
-			err = apptypes.ErrAppEmitEvent.Wrapf("(%+v): %s", unbondingBeginEvent, err)
-			logger.Error(err.Error())
-			return err
-		}
-
-		return nil
-	}
+	return nil
+}

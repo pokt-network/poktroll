@@ -7,8 +7,8 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/telemetry"
-	"github.com/pokt-network/poktroll/x/application/types"
-	"github.com/pokt-network/poktroll/x/shared"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // EndBlockerTransferApplication completes pending application transfers.
@@ -28,7 +28,7 @@ func (k Keeper) EndBlockerTransferApplication(ctx context.Context) error {
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	currentHeight := sdkCtx.BlockHeight()
 	sharedParams := k.sharedKeeper.GetParams(ctx)
-	sessionEndHeight := shared.GetSessionEndHeight(&sharedParams, currentHeight)
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
 	logger := k.Logger().
 		With("method", "EndBlockerTransferApplication").
 		With("current_height", currentHeight).
@@ -36,7 +36,7 @@ func (k Keeper) EndBlockerTransferApplication(ctx context.Context) error {
 
 	// Only process application transfers at the end of the session in
 	// order to avoid inconsistent/unpredictable mid-session behavior.
-	if !shared.IsSessionEndHeight(&sharedParams, currentHeight) {
+	if !sharedtypes.IsSessionEndHeight(&sharedParams, currentHeight) {
 		return nil
 	}
 
@@ -52,7 +52,7 @@ func (k Keeper) EndBlockerTransferApplication(ctx context.Context) error {
 		// Ignore applications that have initiated a transfer but still active.
 		// This spans the period from the end of the session in which the transfer
 		// began to the end of settlement for that session.
-		transferEndHeight := types.GetApplicationTransferHeight(&sharedParams, &srcApp)
+		transferEndHeight := apptypes.GetApplicationTransferHeight(&sharedParams, &srcApp)
 		if sdkCtx.BlockHeight() < transferEndHeight {
 			continue
 		}
@@ -67,10 +67,11 @@ func (k Keeper) EndBlockerTransferApplication(ctx context.Context) error {
 			srcApp.PendingTransfer = nil
 			k.SetApplication(ctx, srcApp)
 
-			if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventTransferError{
+			if err := sdkCtx.EventManager().EmitTypedEvent(&apptypes.EventTransferError{
 				SourceAddress:      srcApp.GetAddress(),
 				DestinationAddress: dstBech32,
 				SourceApplication:  &srcApp,
+				SessionEndHeight:   sessionEndHeight,
 				Error:              transferErr.Error(),
 			}); err != nil {
 				return err
@@ -99,14 +100,14 @@ func (k Keeper) EndBlockerTransferApplication(ctx context.Context) error {
 //     Duplicate pending undelegations resolve to the destination application's.
 //
 // It is intended to be called during the EndBlock ABCI method.
-func (k Keeper) transferApplication(ctx context.Context, srcApp types.Application) error {
+func (k Keeper) transferApplication(ctx context.Context, srcApp apptypes.Application) error {
 	logger := k.Logger().With("method", "transferApplication")
 
 	// Double-check that the source application is not unbonding.
 	// NB: This SHOULD NOT be possible because applications SHOULD NOT be able
 	// to unstake when they have a pending transfer.
 	if srcApp.IsUnbonding() {
-		return types.ErrAppIsUnstaking.Wrapf("cannot transfer stake of unbonding source application (%s)", srcApp.GetAddress())
+		return apptypes.ErrAppIsUnstaking.Wrapf("cannot transfer stake of unbonding source application (%s)", srcApp.GetAddress())
 	}
 
 	// Check if the destination application already exists:
@@ -147,10 +148,12 @@ func (k Keeper) transferApplication(ctx context.Context, srcApp types.Applicatio
 	logger.Info(fmt.Sprintf("Successfully transferred application stake from (%s) to (%s)", srcApp.GetAddress(), dstApp.GetAddress()))
 
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
-	if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventTransferEnd{
+	sessionEndHeight := k.sharedKeeper.GetSessionEndHeight(ctx, sdkCtx.BlockHeight())
+	if err := sdkCtx.EventManager().EmitTypedEvent(&apptypes.EventTransferEnd{
 		SourceAddress:          srcApp.GetAddress(),
 		DestinationAddress:     dstApp.GetAddress(),
 		DestinationApplication: &dstApp,
+		SessionEndHeight:       sessionEndHeight,
 	}); err != nil {
 		logger.Error(fmt.Sprintf("could not emit transfer end event: %v", err))
 	}
@@ -160,7 +163,7 @@ func (k Keeper) transferApplication(ctx context.Context, srcApp types.Applicatio
 
 // mergeAppDelegatees takes the union of the srcApp and dstApp's delegatees and
 // sets the result in dstApp.
-func mergeAppDelegatees(srcApp, dstApp *types.Application) {
+func mergeAppDelegatees(srcApp, dstApp *apptypes.Application) {
 	// Build a set of the destination application's delegatees.
 	delagateeBech32Set := make(map[string]struct{})
 	for _, dstDelegateeBech32 := range dstApp.DelegateeGatewayAddresses {
@@ -186,7 +189,7 @@ func mergeAppDelegatees(srcApp, dstApp *types.Application) {
 //     (i.e. this undelegation is unchanged) and that gateway address is excluded from the
 //     gateway address union at the height which it is present in the source application's
 //     pending undelegations.
-func mergeAppPendingUndelegations(srcApp, dstApp *types.Application) {
+func mergeAppPendingUndelegations(srcApp, dstApp *apptypes.Application) {
 	// Build a map from all gateway addresses which have pending undelegations to
 	// their respective undelegation session end heights. If the source and destination
 	// applications both contain pending undelegations from the same gateway address, the
@@ -210,11 +213,11 @@ func mergeAppPendingUndelegations(srcApp, dstApp *types.Application) {
 
 	// Reset the destination application's pending undelegations and rebuild it
 	// from the undelegations union map.
-	dstApp.PendingUndelegations = make(map[uint64]types.UndelegatingGatewayList)
+	dstApp.PendingUndelegations = make(map[uint64]apptypes.UndelegatingGatewayList)
 	for gatewayAddr, height := range undelegationsUnionAddrToHeightMap {
 		dstPendingUndelegationsAtHeight, ok := dstApp.PendingUndelegations[height]
 		if !ok {
-			dstApp.PendingUndelegations[height] = types.UndelegatingGatewayList{
+			dstApp.PendingUndelegations[height] = apptypes.UndelegatingGatewayList{
 				GatewayAddresses: []string{gatewayAddr},
 			}
 		} else {
@@ -226,7 +229,7 @@ func mergeAppPendingUndelegations(srcApp, dstApp *types.Application) {
 
 // mergeAppServiceConfigs takes the union of the srcApp and dstApp's service configs
 // and sets the result in dstApp.
-func mergeAppServiceConfigs(srcApp, dstApp *types.Application) {
+func mergeAppServiceConfigs(srcApp, dstApp *apptypes.Application) {
 	// Build a set of the destination application's service configs.
 	serviceIDSet := make(map[string]struct{})
 	for _, dstServiceConfig := range dstApp.ServiceConfigs {

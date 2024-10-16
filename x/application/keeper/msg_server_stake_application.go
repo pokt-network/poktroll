@@ -29,8 +29,11 @@ func (k msgServer) StakeApplication(ctx context.Context, msg *types.MsgStakeAppl
 	}
 
 	// Check if the application already exists or not
-	var err error
-	var coinsToEscrow sdk.Coin
+	var (
+		err             error
+		coinsToEscrow   sdk.Coin
+		wasAppUnbonding bool
+	)
 	foundApp, isAppFound := k.GetApplication(ctx, msg.Address)
 	if !isAppFound {
 		logger.Info(fmt.Sprintf("Application not found. Creating new application for address %q", msg.Address))
@@ -51,8 +54,10 @@ func (k msgServer) StakeApplication(ctx context.Context, msg *types.MsgStakeAppl
 		logger.Info(fmt.Sprintf("Application is going to escrow an additional %+v coins", coinsToEscrow))
 
 		// If the application has initiated an unstake action, cancel it since it is staking again.
-		// TODO_UPNEXT:(@bryanchriswhite): assert that an EventApplicationUnbondingCanceled event was emitted.
-		foundApp.UnstakeSessionEndHeight = types.ApplicationNotUnstaking
+		if foundApp.UnstakeSessionEndHeight != types.ApplicationNotUnstaking {
+			wasAppUnbonding = true
+			foundApp.UnstakeSessionEndHeight = types.ApplicationNotUnstaking
+		}
 	}
 
 	// MUST ALWAYS stake or upstake (> 0 delta)
@@ -71,11 +76,11 @@ func (k msgServer) StakeApplication(ctx context.Context, msg *types.MsgStakeAppl
 	// TODO_CONSIDERATION: If we support multiple native tokens, we will need to
 	// start checking the denom here.
 	if msg.Stake.Amount.LT(minStake.Amount) {
-		errFmt := "application %q must stake at least %s"
-		logger.Info(fmt.Sprintf(errFmt, msg.Address, minStake))
+		err = fmt.Errorf("application %q must stake at least %s", msg.GetAddress(), minStake)
+		logger.Info(err.Error())
 		return nil, status.Error(
 			codes.InvalidArgument,
-			types.ErrAppInvalidStake.Wrapf(errFmt, msg.Address, minStake).Error(),
+			types.ErrAppInvalidStake.Wrapf("%s", err).Error(),
 		)
 	}
 
@@ -98,17 +103,29 @@ func (k msgServer) StakeApplication(ctx context.Context, msg *types.MsgStakeAppl
 	k.SetApplication(ctx, foundApp)
 	logger.Info(fmt.Sprintf("Successfully updated application stake for app: %+v", foundApp))
 
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	event := &types.EventApplicationStaked{
-		AppAddress: foundApp.GetAddress(),
-		Stake:      foundApp.Stake,
-		Services:   foundApp.ServiceConfigs,
+	events := make([]sdk.Msg, 0)
+
+	// If application unbonding was canceled, emit the corresponding event.
+	if wasAppUnbonding {
+		sessionEndHeight := k.sharedKeeper.GetSessionEndHeight(ctx, sdk.UnwrapSDKContext(ctx).BlockHeight())
+		events = append(events, &types.EventApplicationUnbondingCanceled{
+			Application:      &foundApp,
+			SessionEndHeight: sessionEndHeight,
+		})
 	}
 
-	if err := sdkCtx.EventManager().EmitTypedEvent(event); err != nil {
-		err = types.ErrAppEmitEvent.Wrapf("(%+v): %s", event, err)
+	// ALWAYS emit an application staked event.
+	currentHeight := sdk.UnwrapSDKContext(ctx).BlockHeight()
+	events = append(events, &types.EventApplicationStaked{
+		Application:      &foundApp,
+		SessionEndHeight: k.sharedKeeper.GetSessionEndHeight(ctx, currentHeight),
+	})
+
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	if err = sdkCtx.EventManager().EmitTypedEvents(events...); err != nil {
+		err = types.ErrAppEmitEvent.Wrapf("(%+v): %s", events, err)
 		logger.Error(err.Error())
-		return nil, err
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	isSuccessful = true

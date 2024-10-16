@@ -10,7 +10,6 @@ import (
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/crypto"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
@@ -173,24 +172,29 @@ func TestRingCache_BuildRing_Cached(t *testing.T) {
 			require.Equal(t, noDelegateesRingSize, ring1.Size())
 			require.Equal(t, 1, len(rc.GetCachedAddresses()))
 
-			accMap := make(map[string]cryptotypes.PubKey)
+			gatewayAddrToPubKeyMap := make(map[string]cryptotypes.PubKey)
 			// if the test expects a ring > 2 we have delegated gateways
 			if test.expectedRingSize != noDelegateesRingSize {
 				// create accounts for all the expected delegated gateways
 				// and add them to the map
 				for i := 0; i < test.expectedRingSize-1; i++ {
 					gatewayAcc := newAccount("secp256k1")
-					accMap[gatewayAcc.address] = gatewayAcc.pubKey
+					gatewayAddrToPubKeyMap[gatewayAcc.address] = gatewayAcc.pubKey
 				}
 			}
 
 			// add the application's account and the accounts of all its
 			// delegated gateways to the testing state simulating a change
-			testqueryclients.AddAddressToApplicationMap(t, test.appAccount.address, test.appAccount.pubKey, accMap)
-			for k := range accMap {
-				t.Log(accMap)
+			testqueryclients.AddAddressToApplicationMap(t, test.appAccount.address, test.appAccount.pubKey, gatewayAddrToPubKeyMap)
+			for gatewayAddr := range gatewayAddrToPubKeyMap {
+				t.Log(gatewayAddrToPubKeyMap)
 				// publish a redelegation event
-				pubCh <- testdelegation.NewAnyTimesRedelegation(t, test.appAccount.address, k)
+				pubCh <- &apptypes.EventRedelegation{
+					Application: &apptypes.Application{
+						Address:                   test.appAccount.address,
+						DelegateeGatewayAddresses: []string{gatewayAddr},
+					},
+				}
 			}
 
 			// Wait a tick to allow the ring cache to process asynchronously.
@@ -300,9 +304,9 @@ func TestRingCache_CancelContext(t *testing.T) {
 // createRingCache creates the RingCache using mocked AccountQueryClient and
 // ApplicatioQueryClient instances and returns the RingCache and the delegatee
 // change replay observable.
-func createRingCache(ctx context.Context, t *testing.T, appAddress string) (crypto.RingCache, chan<- client.Redelegation) {
+func createRingCache(ctx context.Context, t *testing.T, appAddress string) (crypto.RingCache, chan<- *apptypes.EventRedelegation) {
 	t.Helper()
-	redelegationObs, redelegationPublishCh := channel.NewReplayObservable[client.Redelegation](ctx, 1)
+	redelegationObs, redelegationPublishCh := channel.NewReplayObservable[*apptypes.EventRedelegation](ctx, 1)
 	delegationClient := testdelegation.NewAnyTimesRedelegationsSequence(ctx, t, appAddress, redelegationObs)
 	accQuerier := testqueryclients.NewTestAccountQueryClient(t)
 	appQuerier := testqueryclients.NewTestApplicationQueryClient(t)

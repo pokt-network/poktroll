@@ -10,7 +10,6 @@ import (
 	testevents "github.com/pokt-network/poktroll/testutil/events"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
-	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/keeper"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
@@ -31,7 +30,7 @@ func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
 	_, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, unstakingSupplierOperatorAddr)
 	require.False(t, isSupplierFound)
 
-	initialStake := int64(100)
+	initialStake := suppliertypes.DefaultMinStake.Amount.Int64()
 	stakeMsg, expectedSupplier := newSupplierStakeMsg(unstakingSupplierOperatorAddr, unstakingSupplierOperatorAddr, initialStake, serviceID)
 
 	// Stake the supplier
@@ -145,7 +144,7 @@ func TestMsgServer_UnstakeSupplier_CancelUnbondingIfRestaked(t *testing.T) {
 	supplierOperatorAddr := sample.AccAddress()
 
 	// Stake the supplier
-	initialStake := int64(100)
+	initialStake := suppliertypes.DefaultMinStake.Amount.Int64()
 	stakeMsg, expectedSupplier := newSupplierStakeMsg(supplierOperatorAddr, supplierOperatorAddr, initialStake, serviceID)
 	_, err := srv.StakeSupplier(ctx, stakeMsg)
 	require.NoError(t, err)
@@ -177,7 +176,7 @@ func TestMsgServer_UnstakeSupplier_CancelUnbondingIfRestaked(t *testing.T) {
 	require.NoError(t, err)
 
 	expectedSupplier.UnstakeSessionEndHeight = uint64(shared.GetSessionEndHeight(&sharedParams, sdk.UnwrapSDKContext(ctx).BlockHeight()))
-	unbondingHeight := shared.GetSupplierUnbondingHeight(&sharedParams, expectedSupplier)
+	unbondingHeight := sharedtypes.GetSupplierUnbondingHeight(&sharedParams, expectedSupplier)
 
 	// Assert that the EventSupplierUnbondingBegin event is emitted.
 	expectedEvent, err = sdk.TypedEventToEvent(
@@ -273,7 +272,7 @@ func TestMsgServer_UnstakeSupplier_FailIfCurrentlyUnstaking(t *testing.T) {
 	supplierOperatorAddr := sample.AccAddress()
 
 	// Stake the supplier
-	initialStake := int64(100)
+	initialStake := suppliertypes.DefaultMinStake.Amount.Int64()
 	stakeMsg, _ := newSupplierStakeMsg(supplierOperatorAddr, supplierOperatorAddr, initialStake, serviceID)
 	_, err := srv.StakeSupplier(ctx, stakeMsg)
 	require.NoError(t, err)
@@ -302,7 +301,7 @@ func TestMsgServer_UnstakeSupplier_OperatorCanUnstake(t *testing.T) {
 	supplierOperatorAddr := sample.AccAddress()
 
 	// Stake the supplier
-	initialStake := int64(100)
+	initialStake := suppliertypes.DefaultMinStake.Amount.Int64()
 	stakeMsg, _ := newSupplierStakeMsg(ownerAddr, ownerAddr, initialStake, serviceID)
 	stakeMsg.OperatorAddress = supplierOperatorAddr
 	_, err := srv.StakeSupplier(ctx, stakeMsg)
@@ -323,7 +322,7 @@ func TestMsgServer_UnstakeSupplier_OperatorCanUnstake(t *testing.T) {
 
 	// Move block height to the end of the unbonding period
 	sharedParams := supplierModuleKeepers.SharedKeeper.GetParams(ctx)
-	unbondingHeight := shared.GetSupplierUnbondingHeight(&sharedParams, &foundSupplier)
+	unbondingHeight := sharedtypes.GetSupplierUnbondingHeight(&sharedParams, &foundSupplier)
 	ctx = keepertest.SetBlockHeight(ctx, int64(unbondingHeight))
 
 	// Ensure that the initial stake is not returned to the owner yet
@@ -335,4 +334,32 @@ func TestMsgServer_UnstakeSupplier_OperatorCanUnstake(t *testing.T) {
 
 	// Ensure that the initial stake is returned to the owner
 	require.Equal(t, initialStake, supplierModuleKeepers.SupplierUnstakedFundsMap[ownerAddr])
+}
+
+func createStakeMsg(supplierOwnerAddr string, stakeAmount int64) *suppliertypes.MsgStakeSupplier {
+	initialStake := sdk.NewCoin("upokt", math.NewInt(stakeAmount))
+	return &suppliertypes.MsgStakeSupplier{
+		Signer:          supplierOwnerAddr,
+		OwnerAddress:    supplierOwnerAddr,
+		OperatorAddress: supplierOwnerAddr,
+		Stake:           &initialStake,
+		Services: []*sharedtypes.SupplierServiceConfig{
+			{
+				ServiceId: "svcId",
+				Endpoints: []*sharedtypes.SupplierEndpoint{
+					{
+						Url:     "http://localhost:8080",
+						RpcType: sharedtypes.RPCType_JSON_RPC,
+						Configs: make([]*sharedtypes.ConfigOption, 0),
+					},
+				},
+				RevShare: []*sharedtypes.ServiceRevenueShare{
+					{
+						Address:            supplierOwnerAddr,
+						RevSharePercentage: 100,
+					},
+				},
+			},
+		},
+	}
 }

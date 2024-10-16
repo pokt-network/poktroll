@@ -2,13 +2,15 @@ package integration_test
 
 import (
 	"context"
+	"math"
 	"testing"
-	"time"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/smt"
 	"github.com/pokt-network/smt/kvstore/pebble"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
 	testutilevents "github.com/pokt-network/poktroll/testutil/events"
@@ -16,10 +18,9 @@ import (
 	testutil "github.com/pokt-network/poktroll/testutil/integration"
 	"github.com/pokt-network/poktroll/testutil/testrelayer"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 func init() {
@@ -39,6 +40,20 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	// Get the current session and shared params
 	session := getSession(t, integrationApp)
 	sharedParams := getSharedParams(t, integrationApp)
+	proofParams := getProofParams(t, integrationApp)
+
+	// Update the proof parameters to never require a proof, since this test is not
+	// submitting any proofs.
+	maxProofRequirementThreshold := sdk.NewInt64Coin(volatile.DenomuPOKT, math.MaxInt64)
+	proofParams.ProofRequirementThreshold = &maxProofRequirementThreshold
+	proofParams.ProofRequestProbability = 0
+
+	msgProofParams := prooftypes.MsgUpdateParams{
+		Authority: integrationApp.GetAuthority(),
+		Params:    proofParams,
+	}
+	_, err := integrationApp.RunMsg(t, &msgProofParams)
+	require.NoError(t, err)
 
 	// Prepare the trie with several mined relays
 	expectedNumRelays := uint64(100)
@@ -47,19 +62,19 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	// Compute the number of blocks to wait between different events
 	// TODO_BLOCKER(@bryanchriswhite): See this comment: https://github.com/pokt-network/poktroll/pull/610#discussion_r1645777322
 	sessionEndHeight := session.Header.SessionEndBlockHeight
-	earliestSupplierClaimCommitHeight := shared.GetEarliestSupplierClaimCommitHeight(
+	earliestSupplierClaimCommitHeight := sharedtypes.GetEarliestSupplierClaimCommitHeight(
 		&sharedParams,
 		sessionEndHeight,
 		claimWindowOpenBlockHash,
 		integrationApp.DefaultSupplier.GetOperatorAddress(),
 	)
-	earliestSupplierProofCommitHeight := shared.GetEarliestSupplierProofCommitHeight(
+	earliestSupplierProofCommitHeight := sharedtypes.GetEarliestSupplierProofCommitHeight(
 		&sharedParams,
 		sessionEndHeight,
 		proofWindowOpenBlockHash,
 		integrationApp.DefaultSupplier.GetOperatorAddress(),
 	)
-	proofWindowCloseHeight := shared.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
+	proofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
 
 	// Wait until the earliest claim commit height.
 	currentBlockHeight := sdkCtx.BlockHeight()
@@ -91,14 +106,9 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	// TODO_TECHDEBT(@bryanchriswhite): Olshansky is unsure why the +1 is necessary here but it was required to pass the test.
 	integrationApp.NextBlocks(t, int(numBlocksUntilProofWindowCloseHeight)+1)
 
-	// TODO_TECHDEBT: Aiming to get PR #771 over the finish line and this is a hacky
-	// workaround: https://github.com/pokt-network/poktroll/pull/771#issuecomment-2364071636
-	time.Sleep(3 * time.Second)
-
 	// Check that the expected events are emitted
 	events := sdkCtx.EventManager().Events()
-	relayMiningEvents := testutilevents.FilterEvents[*tokenomicstypes.EventRelayMiningDifficultyUpdated](t,
-		events, "poktroll.tokenomics.EventRelayMiningDifficultyUpdated")
+	relayMiningEvents := testutilevents.FilterEvents[*servicetypes.EventRelayMiningDifficultyUpdated](t, events)
 	require.Len(t, relayMiningEvents, 1, "unexpected number of relay mining difficulty updated events")
 	relayMiningEvent := relayMiningEvents[0]
 	require.Equal(t, "svc1", relayMiningEvent.ServiceId)
@@ -141,6 +151,21 @@ func getSharedParams(t *testing.T, integrationApp *testutil.App) sharedtypes.Par
 	require.NoError(t, err)
 
 	return sharedQueryRes.Params
+}
+
+// getProofParams returns the proof parameters for the current block height.
+func getProofParams(t *testing.T, integrationApp *testutil.App) prooftypes.Params {
+	t.Helper()
+
+	sdkCtx := integrationApp.GetSdkCtx()
+
+	proofQueryClient := prooftypes.NewQueryClient(integrationApp.QueryHelper())
+	proofParamsReq := prooftypes.QueryParamsRequest{}
+
+	proofQueryRes, err := proofQueryClient.Params(sdkCtx, &proofParamsReq)
+	require.NoError(t, err)
+
+	return proofQueryRes.Params
 }
 
 // getSession returns the current session for the default application and service.

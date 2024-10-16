@@ -9,7 +9,6 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/pokt-network/poktroll/telemetry"
-	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
@@ -99,7 +98,8 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 		}
 		coinsToEscrow, err = (*msg.Stake).SafeSub(currSupplierStake)
 		if err != nil {
-			return nil, err
+			logger.Info(fmt.Sprintf("ERROR: %s", err))
+			return nil, status.Error(codes.Internal, err.Error())
 		}
 		logger.Info(fmt.Sprintf("Supplier is going to escrow an additional %+v coins", coinsToEscrow))
 
@@ -110,10 +110,21 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 		}
 	}
 
-	// Must always stake or upstake (> 0 delta)
+	// MUST ALWAYS stake or upstake (> 0 delta)
 	if coinsToEscrow.IsZero() {
 		err = types.ErrSupplierInvalidStake.Wrapf("Signer %q must escrow more than 0 additional coins", msg.Signer)
 		logger.Info(fmt.Sprintf("WARN: %s", err))
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	// MUST ALWAYS have at least minimum stake.
+	minStake := k.GetParams(ctx).MinStake
+	if msg.Stake.Amount.LT(minStake.Amount) {
+		err = types.ErrSupplierInvalidStake.Wrapf(
+			"supplier with owner %q must stake at least %s",
+			msg.GetOwnerAddress(), minStake,
+		)
+		logger.Info(fmt.Sprintf("ERROR: %s", err))
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -165,7 +176,7 @@ func (k msgServer) createSupplier(
 	sharedParams := k.sharedKeeper.GetParams(ctx)
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	currentHeight := sdkCtx.BlockHeight()
-	nextSessionStartHeight := shared.GetNextSessionStartHeight(&sharedParams, currentHeight)
+	nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, currentHeight)
 
 	// Register activation height for each service. Since the supplier is new,
 	// all services are activated at the end of the current session.
@@ -210,7 +221,7 @@ func (k msgServer) updateSupplier(
 	sharedParams := k.sharedKeeper.GetParams(ctx)
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	currentHeight := sdkCtx.BlockHeight()
-	nextSessionStartHeight := shared.GetNextSessionStartHeight(&sharedParams, currentHeight)
+	nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, currentHeight)
 
 	// Update activation height for services update. New services are activated at the
 	// end of the current session, while existing ones keep their activation height.

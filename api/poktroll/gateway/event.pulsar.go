@@ -15,14 +15,16 @@ import (
 )
 
 var (
-	md_EventGatewayStaked         protoreflect.MessageDescriptor
-	fd_EventGatewayStaked_address protoreflect.FieldDescriptor
+	md_EventGatewayStaked                    protoreflect.MessageDescriptor
+	fd_EventGatewayStaked_gateway            protoreflect.FieldDescriptor
+	fd_EventGatewayStaked_session_end_height protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_poktroll_gateway_event_proto_init()
 	md_EventGatewayStaked = File_poktroll_gateway_event_proto.Messages().ByName("EventGatewayStaked")
-	fd_EventGatewayStaked_address = md_EventGatewayStaked.Fields().ByName("address")
+	fd_EventGatewayStaked_gateway = md_EventGatewayStaked.Fields().ByName("gateway")
+	fd_EventGatewayStaked_session_end_height = md_EventGatewayStaked.Fields().ByName("session_end_height")
 }
 
 var _ protoreflect.Message = (*fastReflection_EventGatewayStaked)(nil)
@@ -90,9 +92,15 @@ func (x *fastReflection_EventGatewayStaked) Interface() protoreflect.ProtoMessag
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
 func (x *fastReflection_EventGatewayStaked) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.Address != "" {
-		value := protoreflect.ValueOfString(x.Address)
-		if !f(fd_EventGatewayStaked_address, value) {
+	if x.Gateway != nil {
+		value := protoreflect.ValueOfMessage(x.Gateway.ProtoReflect())
+		if !f(fd_EventGatewayStaked_gateway, value) {
+			return
+		}
+	}
+	if x.SessionEndHeight != int64(0) {
+		value := protoreflect.ValueOfInt64(x.SessionEndHeight)
+		if !f(fd_EventGatewayStaked_session_end_height, value) {
 			return
 		}
 	}
@@ -111,8 +119,10 @@ func (x *fastReflection_EventGatewayStaked) Range(f func(protoreflect.FieldDescr
 // a repeated field is populated if it is non-empty.
 func (x *fastReflection_EventGatewayStaked) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "poktroll.gateway.EventGatewayStaked.address":
-		return x.Address != ""
+	case "poktroll.gateway.EventGatewayStaked.gateway":
+		return x.Gateway != nil
+	case "poktroll.gateway.EventGatewayStaked.session_end_height":
+		return x.SessionEndHeight != int64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.EventGatewayStaked"))
@@ -129,8 +139,10 @@ func (x *fastReflection_EventGatewayStaked) Has(fd protoreflect.FieldDescriptor)
 // Clear is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_EventGatewayStaked) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "poktroll.gateway.EventGatewayStaked.address":
-		x.Address = ""
+	case "poktroll.gateway.EventGatewayStaked.gateway":
+		x.Gateway = nil
+	case "poktroll.gateway.EventGatewayStaked.session_end_height":
+		x.SessionEndHeight = int64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.EventGatewayStaked"))
@@ -147,9 +159,12 @@ func (x *fastReflection_EventGatewayStaked) Clear(fd protoreflect.FieldDescripto
 // of the value; to obtain a mutable reference, use Mutable.
 func (x *fastReflection_EventGatewayStaked) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "poktroll.gateway.EventGatewayStaked.address":
-		value := x.Address
-		return protoreflect.ValueOfString(value)
+	case "poktroll.gateway.EventGatewayStaked.gateway":
+		value := x.Gateway
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	case "poktroll.gateway.EventGatewayStaked.session_end_height":
+		value := x.SessionEndHeight
+		return protoreflect.ValueOfInt64(value)
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.EventGatewayStaked"))
@@ -170,8 +185,10 @@ func (x *fastReflection_EventGatewayStaked) Get(descriptor protoreflect.FieldDes
 // Set is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_EventGatewayStaked) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "poktroll.gateway.EventGatewayStaked.address":
-		x.Address = value.Interface().(string)
+	case "poktroll.gateway.EventGatewayStaked.gateway":
+		x.Gateway = value.Message().Interface().(*Gateway)
+	case "poktroll.gateway.EventGatewayStaked.session_end_height":
+		x.SessionEndHeight = value.Int()
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.EventGatewayStaked"))
@@ -192,8 +209,13 @@ func (x *fastReflection_EventGatewayStaked) Set(fd protoreflect.FieldDescriptor,
 // Mutable is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_EventGatewayStaked) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.gateway.EventGatewayStaked.address":
-		panic(fmt.Errorf("field address of message poktroll.gateway.EventGatewayStaked is not mutable"))
+	case "poktroll.gateway.EventGatewayStaked.gateway":
+		if x.Gateway == nil {
+			x.Gateway = new(Gateway)
+		}
+		return protoreflect.ValueOfMessage(x.Gateway.ProtoReflect())
+	case "poktroll.gateway.EventGatewayStaked.session_end_height":
+		panic(fmt.Errorf("field session_end_height of message poktroll.gateway.EventGatewayStaked is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.EventGatewayStaked"))
@@ -207,8 +229,11 @@ func (x *fastReflection_EventGatewayStaked) Mutable(fd protoreflect.FieldDescrip
 // For lists, maps, and messages, this returns a new, empty, mutable value.
 func (x *fastReflection_EventGatewayStaked) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.gateway.EventGatewayStaked.address":
-		return protoreflect.ValueOfString("")
+	case "poktroll.gateway.EventGatewayStaked.gateway":
+		m := new(Gateway)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
+	case "poktroll.gateway.EventGatewayStaked.session_end_height":
+		return protoreflect.ValueOfInt64(int64(0))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.EventGatewayStaked"))
@@ -278,9 +303,12 @@ func (x *fastReflection_EventGatewayStaked) ProtoMethods() *protoiface.Methods {
 		var n int
 		var l int
 		_ = l
-		l = len(x.Address)
-		if l > 0 {
+		if x.Gateway != nil {
+			l = options.Size(x.Gateway)
 			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.SessionEndHeight != 0 {
+			n += 1 + runtime.Sov(uint64(x.SessionEndHeight))
 		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
@@ -311,10 +339,22 @@ func (x *fastReflection_EventGatewayStaked) ProtoMethods() *protoiface.Methods {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if len(x.Address) > 0 {
-			i -= len(x.Address)
-			copy(dAtA[i:], x.Address)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Address)))
+		if x.SessionEndHeight != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.SessionEndHeight))
+			i--
+			dAtA[i] = 0x10
+		}
+		if x.Gateway != nil {
+			encoded, err := options.Marshal(x.Gateway)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			i--
 			dAtA[i] = 0xa
 		}
@@ -369,9 +409,9 @@ func (x *fastReflection_EventGatewayStaked) ProtoMethods() *protoiface.Methods {
 			switch fieldNum {
 			case 1:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Address", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Gateway", wireType)
 				}
-				var stringLen uint64
+				var msglen int
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -381,24 +421,47 @@ func (x *fastReflection_EventGatewayStaked) ProtoMethods() *protoiface.Methods {
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
+					msglen |= int(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
+				if msglen < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
-				postIndex := iNdEx + intStringLen
+				postIndex := iNdEx + msglen
 				if postIndex < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.Address = string(dAtA[iNdEx:postIndex])
+				if x.Gateway == nil {
+					x.Gateway = &Gateway{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Gateway); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
 				iNdEx = postIndex
+			case 2:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field SessionEndHeight", wireType)
+				}
+				x.SessionEndHeight = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.SessionEndHeight |= int64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
 			default:
 				iNdEx = preIndex
 				skippy, err := runtime.Skip(dAtA[iNdEx:])
@@ -435,14 +498,16 @@ func (x *fastReflection_EventGatewayStaked) ProtoMethods() *protoiface.Methods {
 }
 
 var (
-	md_EventGatewayUnstaked         protoreflect.MessageDescriptor
-	fd_EventGatewayUnstaked_address protoreflect.FieldDescriptor
+	md_EventGatewayUnstaked                    protoreflect.MessageDescriptor
+	fd_EventGatewayUnstaked_gateway            protoreflect.FieldDescriptor
+	fd_EventGatewayUnstaked_session_end_height protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_poktroll_gateway_event_proto_init()
 	md_EventGatewayUnstaked = File_poktroll_gateway_event_proto.Messages().ByName("EventGatewayUnstaked")
-	fd_EventGatewayUnstaked_address = md_EventGatewayUnstaked.Fields().ByName("address")
+	fd_EventGatewayUnstaked_gateway = md_EventGatewayUnstaked.Fields().ByName("gateway")
+	fd_EventGatewayUnstaked_session_end_height = md_EventGatewayUnstaked.Fields().ByName("session_end_height")
 }
 
 var _ protoreflect.Message = (*fastReflection_EventGatewayUnstaked)(nil)
@@ -510,9 +575,15 @@ func (x *fastReflection_EventGatewayUnstaked) Interface() protoreflect.ProtoMess
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
 func (x *fastReflection_EventGatewayUnstaked) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.Address != "" {
-		value := protoreflect.ValueOfString(x.Address)
-		if !f(fd_EventGatewayUnstaked_address, value) {
+	if x.Gateway != nil {
+		value := protoreflect.ValueOfMessage(x.Gateway.ProtoReflect())
+		if !f(fd_EventGatewayUnstaked_gateway, value) {
+			return
+		}
+	}
+	if x.SessionEndHeight != int64(0) {
+		value := protoreflect.ValueOfInt64(x.SessionEndHeight)
+		if !f(fd_EventGatewayUnstaked_session_end_height, value) {
 			return
 		}
 	}
@@ -531,8 +602,10 @@ func (x *fastReflection_EventGatewayUnstaked) Range(f func(protoreflect.FieldDes
 // a repeated field is populated if it is non-empty.
 func (x *fastReflection_EventGatewayUnstaked) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "poktroll.gateway.EventGatewayUnstaked.address":
-		return x.Address != ""
+	case "poktroll.gateway.EventGatewayUnstaked.gateway":
+		return x.Gateway != nil
+	case "poktroll.gateway.EventGatewayUnstaked.session_end_height":
+		return x.SessionEndHeight != int64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.EventGatewayUnstaked"))
@@ -549,8 +622,10 @@ func (x *fastReflection_EventGatewayUnstaked) Has(fd protoreflect.FieldDescripto
 // Clear is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_EventGatewayUnstaked) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "poktroll.gateway.EventGatewayUnstaked.address":
-		x.Address = ""
+	case "poktroll.gateway.EventGatewayUnstaked.gateway":
+		x.Gateway = nil
+	case "poktroll.gateway.EventGatewayUnstaked.session_end_height":
+		x.SessionEndHeight = int64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.EventGatewayUnstaked"))
@@ -567,9 +642,12 @@ func (x *fastReflection_EventGatewayUnstaked) Clear(fd protoreflect.FieldDescrip
 // of the value; to obtain a mutable reference, use Mutable.
 func (x *fastReflection_EventGatewayUnstaked) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "poktroll.gateway.EventGatewayUnstaked.address":
-		value := x.Address
-		return protoreflect.ValueOfString(value)
+	case "poktroll.gateway.EventGatewayUnstaked.gateway":
+		value := x.Gateway
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	case "poktroll.gateway.EventGatewayUnstaked.session_end_height":
+		value := x.SessionEndHeight
+		return protoreflect.ValueOfInt64(value)
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.EventGatewayUnstaked"))
@@ -590,8 +668,10 @@ func (x *fastReflection_EventGatewayUnstaked) Get(descriptor protoreflect.FieldD
 // Set is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_EventGatewayUnstaked) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "poktroll.gateway.EventGatewayUnstaked.address":
-		x.Address = value.Interface().(string)
+	case "poktroll.gateway.EventGatewayUnstaked.gateway":
+		x.Gateway = value.Message().Interface().(*Gateway)
+	case "poktroll.gateway.EventGatewayUnstaked.session_end_height":
+		x.SessionEndHeight = value.Int()
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.EventGatewayUnstaked"))
@@ -612,8 +692,13 @@ func (x *fastReflection_EventGatewayUnstaked) Set(fd protoreflect.FieldDescripto
 // Mutable is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_EventGatewayUnstaked) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.gateway.EventGatewayUnstaked.address":
-		panic(fmt.Errorf("field address of message poktroll.gateway.EventGatewayUnstaked is not mutable"))
+	case "poktroll.gateway.EventGatewayUnstaked.gateway":
+		if x.Gateway == nil {
+			x.Gateway = new(Gateway)
+		}
+		return protoreflect.ValueOfMessage(x.Gateway.ProtoReflect())
+	case "poktroll.gateway.EventGatewayUnstaked.session_end_height":
+		panic(fmt.Errorf("field session_end_height of message poktroll.gateway.EventGatewayUnstaked is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.EventGatewayUnstaked"))
@@ -627,8 +712,11 @@ func (x *fastReflection_EventGatewayUnstaked) Mutable(fd protoreflect.FieldDescr
 // For lists, maps, and messages, this returns a new, empty, mutable value.
 func (x *fastReflection_EventGatewayUnstaked) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.gateway.EventGatewayUnstaked.address":
-		return protoreflect.ValueOfString("")
+	case "poktroll.gateway.EventGatewayUnstaked.gateway":
+		m := new(Gateway)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
+	case "poktroll.gateway.EventGatewayUnstaked.session_end_height":
+		return protoreflect.ValueOfInt64(int64(0))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.EventGatewayUnstaked"))
@@ -698,9 +786,12 @@ func (x *fastReflection_EventGatewayUnstaked) ProtoMethods() *protoiface.Methods
 		var n int
 		var l int
 		_ = l
-		l = len(x.Address)
-		if l > 0 {
+		if x.Gateway != nil {
+			l = options.Size(x.Gateway)
 			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.SessionEndHeight != 0 {
+			n += 1 + runtime.Sov(uint64(x.SessionEndHeight))
 		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
@@ -731,10 +822,22 @@ func (x *fastReflection_EventGatewayUnstaked) ProtoMethods() *protoiface.Methods
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if len(x.Address) > 0 {
-			i -= len(x.Address)
-			copy(dAtA[i:], x.Address)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Address)))
+		if x.SessionEndHeight != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.SessionEndHeight))
+			i--
+			dAtA[i] = 0x10
+		}
+		if x.Gateway != nil {
+			encoded, err := options.Marshal(x.Gateway)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			i--
 			dAtA[i] = 0xa
 		}
@@ -789,9 +892,9 @@ func (x *fastReflection_EventGatewayUnstaked) ProtoMethods() *protoiface.Methods
 			switch fieldNum {
 			case 1:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Address", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Gateway", wireType)
 				}
-				var stringLen uint64
+				var msglen int
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -801,24 +904,47 @@ func (x *fastReflection_EventGatewayUnstaked) ProtoMethods() *protoiface.Methods
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
+					msglen |= int(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
+				if msglen < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
-				postIndex := iNdEx + intStringLen
+				postIndex := iNdEx + msglen
 				if postIndex < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.Address = string(dAtA[iNdEx:postIndex])
+				if x.Gateway == nil {
+					x.Gateway = &Gateway{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Gateway); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
 				iNdEx = postIndex
+			case 2:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field SessionEndHeight", wireType)
+				}
+				x.SessionEndHeight = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.SessionEndHeight |= int64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
 			default:
 				iNdEx = preIndex
 				skippy, err := runtime.Skip(dAtA[iNdEx:])
@@ -873,7 +999,10 @@ type EventGatewayStaked struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Address string `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"` // The Bech32 address of the gateway.
+	// The gateway that has been staked.
+	Gateway *Gateway `protobuf:"bytes,1,opt,name=gateway,proto3" json:"gateway,omitempty"`
+	// The end height of the session in which gateway was staked.
+	SessionEndHeight int64 `protobuf:"varint,2,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height,omitempty"`
 }
 
 func (x *EventGatewayStaked) Reset() {
@@ -896,11 +1025,18 @@ func (*EventGatewayStaked) Descriptor() ([]byte, []int) {
 	return file_poktroll_gateway_event_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *EventGatewayStaked) GetAddress() string {
+func (x *EventGatewayStaked) GetGateway() *Gateway {
 	if x != nil {
-		return x.Address
+		return x.Gateway
 	}
-	return ""
+	return nil
+}
+
+func (x *EventGatewayStaked) GetSessionEndHeight() int64 {
+	if x != nil {
+		return x.SessionEndHeight
+	}
+	return 0
 }
 
 // GatewayUnstaked defines the event emitted when a gateway has been unstaked.
@@ -909,7 +1045,10 @@ type EventGatewayUnstaked struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Address string `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"` // The Bech32 address of the gateway the application has changed their delegation of.
+	// The gateway that has been unstaked.
+	Gateway *Gateway `protobuf:"bytes,1,opt,name=gateway,proto3" json:"gateway,omitempty"`
+	// The end height of the session in which gateway was staked.
+	SessionEndHeight int64 `protobuf:"varint,2,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height,omitempty"`
 }
 
 func (x *EventGatewayUnstaked) Reset() {
@@ -932,11 +1071,18 @@ func (*EventGatewayUnstaked) Descriptor() ([]byte, []int) {
 	return file_poktroll_gateway_event_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *EventGatewayUnstaked) GetAddress() string {
+func (x *EventGatewayUnstaked) GetGateway() *Gateway {
 	if x != nil {
-		return x.Address
+		return x.Gateway
 	}
-	return ""
+	return nil
+}
+
+func (x *EventGatewayUnstaked) GetSessionEndHeight() int64 {
+	if x != nil {
+		return x.SessionEndHeight
+	}
+	return 0
 }
 
 var File_poktroll_gateway_event_proto protoreflect.FileDescriptor
@@ -948,27 +1094,40 @@ var file_poktroll_gateway_event_proto_rawDesc = []byte{
 	0x1a, 0x19, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x5f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x63,
 	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x14, 0x67, 0x6f, 0x67,
 	0x6f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x67, 0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74,
-	0x6f, 0x22, 0x48, 0x0a, 0x12, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61,
-	0x79, 0x53, 0x74, 0x61, 0x6b, 0x65, 0x64, 0x12, 0x32, 0x0a, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65,
-	0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f,
-	0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69,
-	0x6e, 0x67, 0x52, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x22, 0x4a, 0x0a, 0x14, 0x45,
-	0x76, 0x65, 0x6e, 0x74, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x55, 0x6e, 0x73, 0x74, 0x61,
-	0x6b, 0x65, 0x64, 0x12, 0x32, 0x0a, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01,
-	0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73,
-	0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x07,
-	0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x42, 0xaa, 0x01, 0xd8, 0xe2, 0x1e, 0x01, 0x0a, 0x14,
-	0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x67, 0x61, 0x74,
-	0x65, 0x77, 0x61, 0x79, 0x42, 0x0a, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x50, 0x72, 0x6f, 0x74, 0x6f,
-	0x50, 0x01, 0x5a, 0x21, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f,
-	0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x67, 0x61,
-	0x74, 0x65, 0x77, 0x61, 0x79, 0xa2, 0x02, 0x03, 0x50, 0x47, 0x58, 0xaa, 0x02, 0x10, 0x50, 0x6f,
-	0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0xca, 0x02,
-	0x10, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61,
-	0x79, 0xe2, 0x02, 0x1c, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x47, 0x61, 0x74,
-	0x65, 0x77, 0x61, 0x79, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61,
-	0xea, 0x02, 0x11, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x3a, 0x3a, 0x47, 0x61, 0x74,
-	0x65, 0x77, 0x61, 0x79, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x6f, 0x1a, 0x1c, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x67, 0x61, 0x74, 0x65,
+	0x77, 0x61, 0x79, 0x2f, 0x74, 0x79, 0x70, 0x65, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22,
+	0x9c, 0x01, 0x0a, 0x12, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79,
+	0x53, 0x74, 0x61, 0x6b, 0x65, 0x64, 0x12, 0x40, 0x0a, 0x07, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61,
+	0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f,
+	0x6c, 0x6c, 0x2e, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x2e, 0x47, 0x61, 0x74, 0x65, 0x77,
+	0x61, 0x79, 0x42, 0x0b, 0xea, 0xde, 0x1f, 0x07, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x52,
+	0x07, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x12, 0x44, 0x0a, 0x12, 0x73, 0x65, 0x73, 0x73,
+	0x69, 0x6f, 0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x02,
+	0x20, 0x01, 0x28, 0x03, 0x42, 0x16, 0xea, 0xde, 0x1f, 0x12, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f,
+	0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x52, 0x10, 0x73, 0x65,
+	0x73, 0x73, 0x69, 0x6f, 0x6e, 0x45, 0x6e, 0x64, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x22, 0x9e,
+	0x01, 0x0a, 0x14, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x55,
+	0x6e, 0x73, 0x74, 0x61, 0x6b, 0x65, 0x64, 0x12, 0x40, 0x0a, 0x07, 0x67, 0x61, 0x74, 0x65, 0x77,
+	0x61, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72,
+	0x6f, 0x6c, 0x6c, 0x2e, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x2e, 0x47, 0x61, 0x74, 0x65,
+	0x77, 0x61, 0x79, 0x42, 0x0b, 0xea, 0xde, 0x1f, 0x07, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79,
+	0x52, 0x07, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x12, 0x44, 0x0a, 0x12, 0x73, 0x65, 0x73,
+	0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18,
+	0x02, 0x20, 0x01, 0x28, 0x03, 0x42, 0x16, 0xea, 0xde, 0x1f, 0x12, 0x73, 0x65, 0x73, 0x73, 0x69,
+	0x6f, 0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x52, 0x10, 0x73,
+	0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x45, 0x6e, 0x64, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x42,
+	0xaa, 0x01, 0xd8, 0xe2, 0x1e, 0x01, 0x0a, 0x14, 0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x6b, 0x74,
+	0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x42, 0x0a, 0x45, 0x76,
+	0x65, 0x6e, 0x74, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x21, 0x63, 0x6f, 0x73, 0x6d,
+	0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x6b,
+	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0xa2, 0x02, 0x03,
+	0x50, 0x47, 0x58, 0xaa, 0x02, 0x10, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x47,
+	0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0xca, 0x02, 0x10, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c,
+	0x6c, 0x5c, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0xe2, 0x02, 0x1c, 0x50, 0x6f, 0x6b, 0x74,
+	0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x5c, 0x47, 0x50, 0x42,
+	0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x11, 0x50, 0x6f, 0x6b, 0x74, 0x72,
+	0x6f, 0x6c, 0x6c, 0x3a, 0x3a, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x62, 0x06, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -987,13 +1146,16 @@ var file_poktroll_gateway_event_proto_msgTypes = make([]protoimpl.MessageInfo, 2
 var file_poktroll_gateway_event_proto_goTypes = []interface{}{
 	(*EventGatewayStaked)(nil),   // 0: poktroll.gateway.EventGatewayStaked
 	(*EventGatewayUnstaked)(nil), // 1: poktroll.gateway.EventGatewayUnstaked
+	(*Gateway)(nil),              // 2: poktroll.gateway.Gateway
 }
 var file_poktroll_gateway_event_proto_depIdxs = []int32{
-	0, // [0:0] is the sub-list for method output_type
-	0, // [0:0] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	2, // 0: poktroll.gateway.EventGatewayStaked.gateway:type_name -> poktroll.gateway.Gateway
+	2, // 1: poktroll.gateway.EventGatewayUnstaked.gateway:type_name -> poktroll.gateway.Gateway
+	2, // [2:2] is the sub-list for method output_type
+	2, // [2:2] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_poktroll_gateway_event_proto_init() }
@@ -1001,6 +1163,7 @@ func file_poktroll_gateway_event_proto_init() {
 	if File_poktroll_gateway_event_proto != nil {
 		return
 	}
+	file_poktroll_gateway_types_proto_init()
 	if !protoimpl.UnsafeEnabled {
 		file_poktroll_gateway_event_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*EventGatewayStaked); i {

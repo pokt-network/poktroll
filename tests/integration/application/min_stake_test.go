@@ -14,11 +14,13 @@ import (
 	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
 	_ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
+	testevents "github.com/pokt-network/poktroll/testutil/events"
 	"github.com/pokt-network/poktroll/testutil/keeper"
 	testproof "github.com/pokt-network/poktroll/testutil/proof"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -33,7 +35,8 @@ type applicationMinStakeTestSuite struct {
 	appBech32,
 	supplierBech32 string
 
-	appStake *cosmostypes.Coin
+	appStake          *cosmostypes.Coin
+	appServiceConfigs []*sharedtypes.ApplicationServiceConfig
 
 	numRelays,
 	numComputeUnitsPerRelay uint64
@@ -48,12 +51,19 @@ func TestApplicationMinStakeTestSuite(t *testing.T) {
 func (s *applicationMinStakeTestSuite) SetupTest() {
 	s.keepers, s.ctx = keeper.NewTokenomicsModuleKeepers(s.T(), cosmoslog.NewNopLogger())
 
+	proofParams := prooftypes.DefaultParams()
+	proofParams.ProofRequestProbability = 0
+	err := s.keepers.ProofKeeper.SetParams(s.ctx, proofParams)
+	require.NoError(s.T(), err)
+
 	s.serviceId = "svc1"
 	s.appBech32 = sample.AccAddress()
 	s.supplierBech32 = sample.AccAddress()
-	s.appStake = &apptypes.DefaultMinStake
 	s.numRelays = 10
 	s.numComputeUnitsPerRelay = 1
+
+	s.appStake = &apptypes.DefaultMinStake
+	s.appServiceConfigs = []*sharedtypes.ApplicationServiceConfig{{ServiceId: s.serviceId}}
 
 	// Set block height to 1.
 	s.ctx = cosmostypes.UnwrapSDKContext(s.ctx).WithBlockHeight(1)
@@ -82,10 +92,66 @@ func (s *applicationMinStakeTestSuite) TestAppIsUnbondedIfBelowMinStakeWhenSettl
 
 	// Create a claim whose settlement amount drops the application below min stake
 	claim := s.getClaim(sessionHeader)
+	s.keepers.ProofKeeper.UpsertClaim(s.ctx, *claim)
 
-	// Process TLMs for the claim.
-	err := s.keepers.Keeper.ProcessTokenLogicModules(s.ctx, claim)
+	// Set the current height to the claim settlement height.
+	sdkCtx := cosmostypes.UnwrapSDKContext(s.ctx)
+	currentHeight := sdkCtx.BlockHeight()
+	sharedParams := s.keepers.SharedKeeper.GetParams(s.ctx)
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
+	claimSettlementHeight := sessionEndHeight + int64(sharedtypes.GetSessionEndToProofWindowCloseBlocks(&sharedParams)) + 1
+	settlementSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, claimSettlementHeight)
+	sdkCtx = sdkCtx.WithBlockHeight(claimSettlementHeight)
+	s.ctx = sdkCtx
+
+	// Settle pending claims; this should cause the application to be unbonded.
+	_, _, err := s.keepers.Keeper.SettlePendingClaims(sdkCtx)
 	require.NoError(s.T(), err)
+
+	// Assert that the EventApplicationUnbondingBegin event is emitted.
+	expectedApp := &apptypes.Application{
+		Address:                   s.appBech32,
+		Stake:                     s.appStake,
+		ServiceConfigs:            s.appServiceConfigs,
+		DelegateeGatewayAddresses: make([]string, 0),
+		PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
+		UnstakeSessionEndHeight:   apptypes.ApplicationBelowMinStake,
+	}
+
+	relayMiningDifficulty := servicekeeper.NewDefaultRelayMiningDifficulty(s.ctx, cosmoslog.NewNopLogger(), s.serviceId, servicekeeper.TargetNumRelays)
+	expectedBurnCoin, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
+	require.NoError(s.T(), err)
+
+	expectedEndStake := expectedApp.GetStake().Sub(expectedBurnCoin)
+	expectedApp.Stake = &expectedEndStake
+
+	expectedAppUnbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
+		Application:      expectedApp,
+		Reason:           apptypes.ApplicationUnbondingReason_BELOW_MIN_STAKE,
+		SessionEndHeight: settlementSessionEndHeight,
+	}
+	events := cosmostypes.UnwrapSDKContext(s.ctx).EventManager().Events()
+	appUnbondingBeginEvents := testevents.FilterEvents[*apptypes.EventApplicationUnbondingBegin](s.T(), events)
+	require.Equal(s.T(), 1, len(appUnbondingBeginEvents), "expected exactly 1 event")
+	require.EqualValues(s.T(), expectedAppUnbondingBeginEvent, appUnbondingBeginEvents[0])
+
+	// Reset the events, as if a new block were created.
+	s.ctx = testevents.ResetEventManager(s.ctx)
+
+	// Run app module end blockers to complete unbonding.
+	err = s.keepers.ApplicationKeeper.EndBlockerUnbondApplications(s.ctx)
+	require.NoError(s.T(), err)
+
+	// Assert that the EventApplicationUnbondingEnd event is emitted.
+	expectedAppUnbondingEndEvent := &apptypes.EventApplicationUnbondingEnd{
+		Application:      expectedApp,
+		Reason:           apptypes.ApplicationUnbondingReason_BELOW_MIN_STAKE,
+		SessionEndHeight: settlementSessionEndHeight,
+	}
+	events = cosmostypes.UnwrapSDKContext(s.ctx).EventManager().Events()
+	appUnbondingEndEvents := testevents.FilterEvents[*apptypes.EventApplicationUnbondingEnd](s.T(), events)
+	require.Equal(s.T(), 1, len(appUnbondingEndEvents), "expected exactly 1 event")
+	require.EqualValues(s.T(), expectedAppUnbondingEndEvent, appUnbondingEndEvents[0])
 
 	// Assert that the application was unbonded.
 	_, isAppFound := s.keepers.ApplicationKeeper.GetApplication(s.ctx, s.appBech32)
@@ -113,7 +179,7 @@ func (s *applicationMinStakeTestSuite) stakeApp() {
 	s.keepers.ApplicationKeeper.SetApplication(s.ctx, apptypes.Application{
 		Address:        s.appBech32,
 		Stake:          s.appStake,
-		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{ServiceId: s.serviceId}},
+		ServiceConfigs: s.appServiceConfigs,
 	})
 }
 
@@ -131,7 +197,7 @@ func (s *applicationMinStakeTestSuite) stakeSupplier() {
 				RevShare: []*sharedtypes.ServiceRevenueShare{
 					{
 						Address:            s.supplierBech32,
-						RevSharePercentage: 1,
+						RevSharePercentage: 100,
 					},
 				},
 			},

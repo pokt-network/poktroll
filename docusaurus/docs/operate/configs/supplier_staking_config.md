@@ -232,7 +232,8 @@ _`Optional`_, _`Non-empty`_
 
 ```yaml
 default_rev_share_percent:
-  <shareholder_address>: <float>
+  <shareholder_address_1>: <float>
+  <shareholder_address_2>: <float>
 ```
 
 `default_rev_share_percent` is an optional map that defines the default the revenue

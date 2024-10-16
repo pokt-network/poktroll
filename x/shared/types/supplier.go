@@ -44,3 +44,14 @@ func (s *Supplier) HasOwner(address string) bool {
 func (s *Supplier) HasOperator(address string) bool {
 	return s.OperatorAddress == address
 }
+
+// GetSupplierUnbondingHeight returns the session end height at which the given
+// supplier finishes unbonding.
+func GetSupplierUnbondingHeight(
+	sharedParams *Params,
+	supplier *Supplier,
+) int64 {
+	supplierUnbondingPeriodBlocks := sharedParams.GetSupplierUnbondingPeriodSessions() * sharedParams.GetNumBlocksPerSession()
+
+	return int64(supplier.GetUnstakeSessionEndHeight() + supplierUnbondingPeriodBlocks)
+}
