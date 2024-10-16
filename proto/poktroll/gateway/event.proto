@@ -11,10 +11,16 @@ import "poktroll/gateway/types.proto";
 
 // GatewayStaked is emitted when a gateway is staked or up-staked.
 message EventGatewayStaked {
-  Gateway gateway = 1 [(gogoproto.jsontag) = "gateway"]; // The gateway that has been staked.
+  // The gateway that has been staked.
+  Gateway gateway = 1 [(gogoproto.jsontag) = "gateway"];
+  // The end height of the session in which gateway was staked.
+  int64 session_end_height = 2 [(gogoproto.jsontag) = "session_end_height"];
 }
 
 // GatewayUnstaked defines the event emitted when a gateway has been unstaked.
 message EventGatewayUnstaked {
-  Gateway gateway = 1 [(gogoproto.jsontag) = "gateway"]; // The gateway that has been unstaked.
+  // The gateway that has been unstaked.
+  Gateway gateway = 1 [(gogoproto.jsontag) = "gateway"];
+  // The end height of the session in which gateway was staked.
+  int64 session_end_height = 2 [(gogoproto.jsontag) = "session_end_height"];
 }

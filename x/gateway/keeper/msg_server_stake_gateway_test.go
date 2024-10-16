@@ -13,6 +13,7 @@ import (
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/x/gateway/keeper"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func TestMsgServer_StakeGateway_SuccessfulCreateAndUpdate(t *testing.T) {
@@ -43,8 +44,14 @@ func TestMsgServer_StakeGateway_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.Equal(t, stakeMsg.GetStake(), gateway.GetStake())
 
 	// Assert that the EventGatewayStaked event is emitted.
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	sharedParams := sharedtypes.DefaultParams()
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, sdkCtx.BlockHeight())
 	expectedEvent, err := cosmostypes.TypedEventToEvent(
-		&gatewaytypes.EventGatewayStaked{Gateway: gateway},
+		&gatewaytypes.EventGatewayStaked{
+			Gateway:          gateway,
+			SessionEndHeight: sessionEndHeight,
+		},
 	)
 	require.NoError(t, err)
 
@@ -82,7 +89,10 @@ func TestMsgServer_StakeGateway_SuccessfulCreateAndUpdate(t *testing.T) {
 
 	// Assert that the EventGatewayStaked event is emitted.
 	expectedEvent, err = cosmostypes.TypedEventToEvent(
-		&gatewaytypes.EventGatewayStaked{Gateway: upStakedGateway},
+		&gatewaytypes.EventGatewayStaked{
+			Gateway:          upStakedGateway,
+			SessionEndHeight: sessionEndHeight,
+		},
 	)
 	require.NoError(t, err)
 
