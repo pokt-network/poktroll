@@ -51,6 +51,8 @@ spec:
               value: /root/.poktroll
             - name: APPGATE_SERVER_URL
               value: http://${NAMESPACE}-appgate-server:80
+            - name: PATH_URL
+              value: http://${NAMESPACE}-path:80
             - name: GATEWAY_URL
               value: http://${NAMESPACE}-gateway:80
           volumeMounts:
