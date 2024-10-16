@@ -53,7 +53,7 @@ type commandResult struct {
 type PocketClient interface {
 	RunCommand(args ...string) (*commandResult, error)
 	RunCommandOnHost(rpcUrl string, args ...string) (*commandResult, error)
-	RunCurl(rpcUrl, service, method, path, data string, args ...string) (*commandResult, error)
+	RunCurl(rpcUrl, service, method, path, appAddr, data string, args ...string) (*commandResult, error)
 }
 
 // Ensure that pocketdBin struct fulfills PocketClient
@@ -98,24 +98,24 @@ func (p *pocketdBin) RunCommandOnHostWithRetry(rpcUrl string, numRetries uint8, 
 }
 
 // RunCurl runs a curl command on the local machine
-func (p *pocketdBin) RunCurl(rpcUrl, service, method, path, data string, args ...string) (*commandResult, error) {
+func (p *pocketdBin) RunCurl(rpcUrl, service, method, path, appAddr, data string, args ...string) (*commandResult, error) {
 	if rpcUrl == "" {
 		rpcUrl = defaultAppGateServerURL
 	}
-	return p.runCurlCmd(rpcUrl, service, method, path, data, args...)
+	return p.runCurlCmd(rpcUrl, service, method, path, appAddr, data, args...)
 }
 
 // RunCurlWithRetry runs a curl command on the local machine with multiple retries.
 // It also accounts for an ephemeral error that may occur due to DNS resolution such as "no such host".
-func (p *pocketdBin) RunCurlWithRetry(rpcUrl, service, method, path, data string, numRetries uint8, args ...string) (*commandResult, error) {
+func (p *pocketdBin) RunCurlWithRetry(rpcUrl, service, method, path, appAddr, data string, numRetries uint8, args ...string) (*commandResult, error) {
 	// No more retries left
 	if numRetries <= 0 {
-		return p.RunCurl(rpcUrl, service, method, path, data, args...)
+		return p.RunCurl(rpcUrl, service, method, path, appAddr, data, args...)
 	}
 	// Run the curl command
-	res, err := p.RunCurl(rpcUrl, service, method, path, data, args...)
+	res, err := p.RunCurl(rpcUrl, service, method, path, appAddr, data, args...)
 	if err != nil {
-		return p.RunCurlWithRetry(rpcUrl, service, method, path, data, numRetries-1, args...)
+		return p.RunCurlWithRetry(rpcUrl, service, method, path, appAddr, data, numRetries-1, args...)
 	}
 
 	// TODO_HACK: This is a list of common flaky / ephemeral errors that can occur
@@ -130,7 +130,7 @@ func (p *pocketdBin) RunCurlWithRetry(rpcUrl, service, method, path, data string
 				fmt.Println("Retrying due to ephemeral error:", res.Stdout)
 			}
 			time.Sleep(10 * time.Millisecond)
-			return p.RunCurlWithRetry(rpcUrl, service, method, path, data, numRetries-1, args...)
+			return p.RunCurlWithRetry(rpcUrl, service, method, path, appAddr, data, numRetries-1, args...)
 		}
 	}
 
@@ -171,14 +171,21 @@ func (p *pocketdBin) runPocketCmd(args ...string) (*commandResult, error) {
 }
 
 // runCurlPostCmd is a helper to run a command using the local pocketd binary with the flags provided
-func (p *pocketdBin) runCurlCmd(rpcUrl, service, method, path, data string, args ...string) (*commandResult, error) {
+func (p *pocketdBin) runCurlCmd(rpcUrl, service, method, path, appAddr, data string, args ...string) (*commandResult, error) {
 	// Ensure that if a path is provided, it starts with a "/".
 	// This is required for RESTful APIs that use a path to identify resources.
 	// For JSON-RPC APIs, the resource path should be empty, so empty paths are allowed.
 	if len(path) > 0 && path[0] != '/' {
 		path = "/" + path
 	}
-	urlStr := fmt.Sprintf("%s/%s%s", rpcUrl, service, path)
+
+	// When sending a relay request, through a gateway (i.e. non-sovereign application)
+	// then, the application address must be provided.
+	appAddrQueryString := ""
+	if len(appAddr) > 0 {
+		appAddrQueryString = fmt.Sprintf("?applicationAddr=%s", appAddr)
+	}
+	urlStr := fmt.Sprintf("%s/%s%s%s", rpcUrl, service, path, appAddrQueryString)
 	base := []string{
 		"-v",         // verbose output
 		"-sS",        // silent with error

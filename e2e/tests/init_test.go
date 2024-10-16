@@ -61,7 +61,10 @@ var (
 	flagFeaturesPath string
 	keyRingFlag      = "--keyring-backend=test"
 	chainIdFlag      = "--chain-id=poktroll"
-	appGateServerUrl = "http://localhost:42069" // Keeping localhost by default because that is how we run the tests on our machines locally
+	// Keeping localhost by default because that is how we run the tests on our machines locally
+	// appGateServerUrl is pointing to a non-sovereign app gate server so multiple
+	// apps could relay through it.
+	appGateServerUrl = "http://localhost:42079"
 )
 
 func init() {
@@ -453,17 +456,15 @@ func (s *suite) TheSessionForApplicationAndServiceContainsTheSupplier(appName st
 }
 
 func (s *suite) TheApplicationSendsTheSupplierASuccessfulRequestForServiceWithPathAndData(appName, supplierOperatorName, serviceId, path, requestData string) {
-	// TODO_HACK: We need to support a non self_signing LocalNet AppGateServer
-	// that allows any application to send a relay in LocalNet and our E2E Tests.
-	require.Equal(s, "app1", appName, "TODO_HACK: The LocalNet AppGateServer is self_signing and only supports app1.")
-
 	method := "POST"
 	// If requestData is empty, assume a GET request
 	if requestData == "" {
 		method = "GET"
 	}
 
-	res, err := s.pocketd.RunCurlWithRetry(appGateServerUrl, serviceId, method, path, requestData, 5)
+	appAddr := accNameToAddrMap[appName]
+
+	res, err := s.pocketd.RunCurlWithRetry(appGateServerUrl, serviceId, method, path, appAddr, requestData, 5)
 	require.NoError(s, err, "error sending relay request from app %q to supplier %q for service %q", appName, supplierOperatorName, serviceId)
 
 	var jsonContent json.RawMessage
