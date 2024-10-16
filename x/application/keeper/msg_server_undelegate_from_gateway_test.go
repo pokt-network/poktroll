@@ -16,7 +16,6 @@ import (
 	"github.com/pokt-network/poktroll/x/application/types"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gwtypes "github.com/pokt-network/poktroll/x/gateway/types"
-	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -344,7 +343,7 @@ func TestMsgServer_UndelegateFromGateway_DelegationIsActiveUntilNextSession(t *t
 	// Increment the block height past the tested session's grace period and run
 	// the pruning undelegations logic again.
 	sharedParams := sharedtypes.DefaultParams()
-	afterSessionGracePeriodEndHeight := shared.GetSessionGracePeriodEndHeight(&sharedParams, sessionEndHeight) + 1
+	afterSessionGracePeriodEndHeight := sharedtypes.GetSessionGracePeriodEndHeight(&sharedParams, sessionEndHeight) + 1
 	sdkCtx = sdkCtx.WithBlockHeight(afterSessionGracePeriodEndHeight)
 	k.EndBlockerPruneAppToGatewayPendingUndelegation(sdkCtx)
 

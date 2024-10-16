@@ -1,6 +1,8 @@
 package types
 
-import sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+import (
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+)
 
 // ApplicationNotUnstaking is the value of `unstake_session_end_height` if the
 // application is not actively in the unbonding period.

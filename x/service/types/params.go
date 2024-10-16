@@ -4,6 +4,7 @@ import (
 	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
+
 	"github.com/pokt-network/poktroll/app/volatile"
 )
 
@@ -55,26 +56,26 @@ func (p Params) ValidateBasic() error {
 }
 
 // validateAddServiceFee validates the AddServiceFee param
-func ValidateAddServiceFee(v interface{}) error {
-	addServiceFeeCoin, ok := v.(*cosmostypes.Coin)
+func ValidateAddServiceFee(addServiceFeeAny any) error {
+	addServiceFee, ok := addServiceFeeAny.(*cosmostypes.Coin)
 	if !ok {
-		return ErrServiceInvalidServiceFee.Wrapf("invalid parameter type: %T", v)
+		return ErrServiceParamInvalid.Wrapf("invalid parameter type: %T", addServiceFeeAny)
 	}
 
-	if addServiceFeeCoin == nil {
-		return ErrServiceInvalidServiceFee.Wrap("missing proof_submission_fee")
+	if addServiceFee == nil {
+		return ErrServiceParamInvalid.Wrap("missing add_service_fee")
 	}
 
-	if addServiceFeeCoin.Denom != volatile.DenomuPOKT {
-		return ErrServiceInvalidServiceFee.Wrapf("invalid coin denom: %s", addServiceFeeCoin.Denom)
+	if addServiceFee.Denom != volatile.DenomuPOKT {
+		return ErrServiceParamInvalid.Wrapf("invalid add_service_fee denom: %s", addServiceFee.Denom)
 	}
 
 	// TODO_MAINNET: Look into better validation
-	if addServiceFeeCoin.Amount.LT(MinAddServiceFee.Amount) {
-		return ErrServiceInvalidServiceFee.Wrapf(
-			"AddServiceFee param is below minimum value %s: got %s",
+	if addServiceFee.Amount.LT(MinAddServiceFee.Amount) {
+		return ErrServiceParamInvalid.Wrapf(
+			"add_service_fee param is below minimum value %s: got %s",
 			MinAddServiceFee,
-			addServiceFeeCoin,
+			addServiceFee,
 		)
 	}
 

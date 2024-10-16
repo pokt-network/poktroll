@@ -15,7 +15,6 @@ import (
 	"github.com/pokt-network/poktroll/testutil/integration/suites"
 	"github.com/pokt-network/poktroll/testutil/testkeyring"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -95,7 +94,7 @@ func (s *appTransferTestSuite) TestSingleSourceToNonexistentDestinationSucceeds(
 	require.NoError(s.T(), err)
 
 	sharedParams := sharedParamsAny.(sharedtypes.Params)
-	sessionEndHeight := shared.GetSessionEndHeight(&sharedParams, s.SdkCtx().BlockHeight())
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, s.SdkCtx().BlockHeight())
 
 	transferBeginHeight := s.SdkCtx().BlockHeight()
 
@@ -192,7 +191,7 @@ func (s *appTransferTestSuite) TestMultipleSourceToSameNonexistentDestinationMer
 
 	sharedParams := sharedParamsAny.(sharedtypes.Params)
 	msgTransferAppTypeURL := cosmostypes.MsgTypeURL(&apptypes.MsgTransferApplication{})
-	sessionEndHeight := shared.GetSessionEndHeight(&sharedParams, s.SdkCtx().BlockHeight())
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, s.SdkCtx().BlockHeight())
 
 	transferBeginHeight := s.SdkCtx().BlockHeight()
 

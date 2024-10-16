@@ -106,7 +106,7 @@ func TestParams_ValidateProofMissingPenalty(t *testing.T) {
 		{
 			desc:                "invalid denomination",
 			proofMissingPenalty: &invalidDenomCoin,
-			expectedErr:         prooftypes.ErrProofParamInvalid.Wrap("invalid coin denom: invalid_denom"),
+			expectedErr:         prooftypes.ErrProofParamInvalid.Wrap("invalid proof_missing_penalty denom: invalid_denom"),
 		},
 		{
 			desc:                "missing",
@@ -124,12 +124,12 @@ func TestParams_ValidateProofMissingPenalty(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.desc, func(t *testing.T) {
-			err := prooftypes.ValidateProofMissingPenalty(tt.proofMissingPenalty)
-			if tt.expectedErr != nil {
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			err := prooftypes.ValidateProofMissingPenalty(test.proofMissingPenalty)
+			if test.expectedErr != nil {
 				require.Error(t, err)
-				require.Contains(t, err.Error(), tt.expectedErr.Error())
+				require.EqualError(t, err, test.expectedErr.Error())
 			} else {
 				require.NoError(t, err)
 			}
@@ -155,7 +155,7 @@ func TestParams_ValidateProofSubmissionFee(t *testing.T) {
 		{
 			desc:               "invalid denomination",
 			proofSubmissionFee: &invalidDenomCoin,
-			expectedErr:        prooftypes.ErrProofParamInvalid.Wrap("invalid coin denom: invalid_denom"),
+			expectedErr:        prooftypes.ErrProofParamInvalid.Wrap("invalid proof_submission_fee denom: invalid_denom"),
 		},
 		{
 			desc:               "missing",
@@ -171,7 +171,7 @@ func TestParams_ValidateProofSubmissionFee(t *testing.T) {
 			desc:               "below minimum",
 			proofSubmissionFee: &belowMinProofSubmissionFee,
 			expectedErr: prooftypes.ErrProofParamInvalid.Wrapf(
-				"ProofSubmissionFee param is below minimum value %s: got %s",
+				"proof_submission_fee is below minimum value %s: got %s",
 				prooftypes.MinProofSubmissionFee,
 				belowMinProofSubmissionFee,
 			),
@@ -182,12 +182,12 @@ func TestParams_ValidateProofSubmissionFee(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.desc, func(t *testing.T) {
-			err := prooftypes.ValidateProofSubmissionFee(tt.proofSubmissionFee)
-			if tt.expectedErr != nil {
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			err := prooftypes.ValidateProofSubmissionFee(test.proofSubmissionFee)
+			if test.expectedErr != nil {
 				require.Error(t, err)
-				require.Contains(t, err.Error(), tt.expectedErr.Error())
+				require.EqualError(t, err, test.expectedErr.Error())
 			} else {
 				require.NoError(t, err)
 			}
