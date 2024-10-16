@@ -17,14 +17,16 @@ import (
 )
 
 var (
-	md_EventApplicationStaked             protoreflect.MessageDescriptor
-	fd_EventApplicationStaked_application protoreflect.FieldDescriptor
+	md_EventApplicationStaked                    protoreflect.MessageDescriptor
+	fd_EventApplicationStaked_application        protoreflect.FieldDescriptor
+	fd_EventApplicationStaked_session_end_height protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_poktroll_application_event_proto_init()
 	md_EventApplicationStaked = File_poktroll_application_event_proto.Messages().ByName("EventApplicationStaked")
 	fd_EventApplicationStaked_application = md_EventApplicationStaked.Fields().ByName("application")
+	fd_EventApplicationStaked_session_end_height = md_EventApplicationStaked.Fields().ByName("session_end_height")
 }
 
 var _ protoreflect.Message = (*fastReflection_EventApplicationStaked)(nil)
@@ -98,6 +100,12 @@ func (x *fastReflection_EventApplicationStaked) Range(f func(protoreflect.FieldD
 			return
 		}
 	}
+	if x.SessionEndHeight != int64(0) {
+		value := protoreflect.ValueOfInt64(x.SessionEndHeight)
+		if !f(fd_EventApplicationStaked_session_end_height, value) {
+			return
+		}
+	}
 }
 
 // Has reports whether a field is populated.
@@ -115,6 +123,8 @@ func (x *fastReflection_EventApplicationStaked) Has(fd protoreflect.FieldDescrip
 	switch fd.FullName() {
 	case "poktroll.application.EventApplicationStaked.application":
 		return x.Application != nil
+	case "poktroll.application.EventApplicationStaked.session_end_height":
+		return x.SessionEndHeight != int64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationStaked"))
@@ -133,6 +143,8 @@ func (x *fastReflection_EventApplicationStaked) Clear(fd protoreflect.FieldDescr
 	switch fd.FullName() {
 	case "poktroll.application.EventApplicationStaked.application":
 		x.Application = nil
+	case "poktroll.application.EventApplicationStaked.session_end_height":
+		x.SessionEndHeight = int64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationStaked"))
@@ -152,6 +164,9 @@ func (x *fastReflection_EventApplicationStaked) Get(descriptor protoreflect.Fiel
 	case "poktroll.application.EventApplicationStaked.application":
 		value := x.Application
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	case "poktroll.application.EventApplicationStaked.session_end_height":
+		value := x.SessionEndHeight
+		return protoreflect.ValueOfInt64(value)
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationStaked"))
@@ -174,6 +189,8 @@ func (x *fastReflection_EventApplicationStaked) Set(fd protoreflect.FieldDescrip
 	switch fd.FullName() {
 	case "poktroll.application.EventApplicationStaked.application":
 		x.Application = value.Message().Interface().(*Application)
+	case "poktroll.application.EventApplicationStaked.session_end_height":
+		x.SessionEndHeight = value.Int()
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationStaked"))
@@ -199,6 +216,8 @@ func (x *fastReflection_EventApplicationStaked) Mutable(fd protoreflect.FieldDes
 			x.Application = new(Application)
 		}
 		return protoreflect.ValueOfMessage(x.Application.ProtoReflect())
+	case "poktroll.application.EventApplicationStaked.session_end_height":
+		panic(fmt.Errorf("field session_end_height of message poktroll.application.EventApplicationStaked is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationStaked"))
@@ -215,6 +234,8 @@ func (x *fastReflection_EventApplicationStaked) NewField(fd protoreflect.FieldDe
 	case "poktroll.application.EventApplicationStaked.application":
 		m := new(Application)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
+	case "poktroll.application.EventApplicationStaked.session_end_height":
+		return protoreflect.ValueOfInt64(int64(0))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationStaked"))
@@ -288,6 +309,9 @@ func (x *fastReflection_EventApplicationStaked) ProtoMethods() *protoiface.Metho
 			l = options.Size(x.Application)
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
+		if x.SessionEndHeight != 0 {
+			n += 1 + runtime.Sov(uint64(x.SessionEndHeight))
+		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
 		}
@@ -316,6 +340,11 @@ func (x *fastReflection_EventApplicationStaked) ProtoMethods() *protoiface.Metho
 		if x.unknownFields != nil {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
+		}
+		if x.SessionEndHeight != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.SessionEndHeight))
+			i--
+			dAtA[i] = 0x10
 		}
 		if x.Application != nil {
 			encoded, err := options.Marshal(x.Application)
@@ -416,6 +445,25 @@ func (x *fastReflection_EventApplicationStaked) ProtoMethods() *protoiface.Metho
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
+			case 2:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field SessionEndHeight", wireType)
+				}
+				x.SessionEndHeight = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.SessionEndHeight |= int64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
 			default:
 				iNdEx = preIndex
 				skippy, err := runtime.Skip(dAtA[iNdEx:])
@@ -452,16 +500,16 @@ func (x *fastReflection_EventApplicationStaked) ProtoMethods() *protoiface.Metho
 }
 
 var (
-	md_EventRedelegation                 protoreflect.MessageDescriptor
-	fd_EventRedelegation_app_address     protoreflect.FieldDescriptor
-	fd_EventRedelegation_gateway_address protoreflect.FieldDescriptor
+	md_EventRedelegation                    protoreflect.MessageDescriptor
+	fd_EventRedelegation_application        protoreflect.FieldDescriptor
+	fd_EventRedelegation_session_end_height protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_poktroll_application_event_proto_init()
 	md_EventRedelegation = File_poktroll_application_event_proto.Messages().ByName("EventRedelegation")
-	fd_EventRedelegation_app_address = md_EventRedelegation.Fields().ByName("app_address")
-	fd_EventRedelegation_gateway_address = md_EventRedelegation.Fields().ByName("gateway_address")
+	fd_EventRedelegation_application = md_EventRedelegation.Fields().ByName("application")
+	fd_EventRedelegation_session_end_height = md_EventRedelegation.Fields().ByName("session_end_height")
 }
 
 var _ protoreflect.Message = (*fastReflection_EventRedelegation)(nil)
@@ -529,15 +577,15 @@ func (x *fastReflection_EventRedelegation) Interface() protoreflect.ProtoMessage
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
 func (x *fastReflection_EventRedelegation) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.AppAddress != "" {
-		value := protoreflect.ValueOfString(x.AppAddress)
-		if !f(fd_EventRedelegation_app_address, value) {
+	if x.Application != nil {
+		value := protoreflect.ValueOfMessage(x.Application.ProtoReflect())
+		if !f(fd_EventRedelegation_application, value) {
 			return
 		}
 	}
-	if x.GatewayAddress != "" {
-		value := protoreflect.ValueOfString(x.GatewayAddress)
-		if !f(fd_EventRedelegation_gateway_address, value) {
+	if x.SessionEndHeight != int64(0) {
+		value := protoreflect.ValueOfInt64(x.SessionEndHeight)
+		if !f(fd_EventRedelegation_session_end_height, value) {
 			return
 		}
 	}
@@ -556,10 +604,10 @@ func (x *fastReflection_EventRedelegation) Range(f func(protoreflect.FieldDescri
 // a repeated field is populated if it is non-empty.
 func (x *fastReflection_EventRedelegation) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "poktroll.application.EventRedelegation.app_address":
-		return x.AppAddress != ""
-	case "poktroll.application.EventRedelegation.gateway_address":
-		return x.GatewayAddress != ""
+	case "poktroll.application.EventRedelegation.application":
+		return x.Application != nil
+	case "poktroll.application.EventRedelegation.session_end_height":
+		return x.SessionEndHeight != int64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventRedelegation"))
@@ -576,10 +624,10 @@ func (x *fastReflection_EventRedelegation) Has(fd protoreflect.FieldDescriptor) 
 // Clear is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_EventRedelegation) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "poktroll.application.EventRedelegation.app_address":
-		x.AppAddress = ""
-	case "poktroll.application.EventRedelegation.gateway_address":
-		x.GatewayAddress = ""
+	case "poktroll.application.EventRedelegation.application":
+		x.Application = nil
+	case "poktroll.application.EventRedelegation.session_end_height":
+		x.SessionEndHeight = int64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventRedelegation"))
@@ -596,12 +644,12 @@ func (x *fastReflection_EventRedelegation) Clear(fd protoreflect.FieldDescriptor
 // of the value; to obtain a mutable reference, use Mutable.
 func (x *fastReflection_EventRedelegation) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "poktroll.application.EventRedelegation.app_address":
-		value := x.AppAddress
-		return protoreflect.ValueOfString(value)
-	case "poktroll.application.EventRedelegation.gateway_address":
-		value := x.GatewayAddress
-		return protoreflect.ValueOfString(value)
+	case "poktroll.application.EventRedelegation.application":
+		value := x.Application
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	case "poktroll.application.EventRedelegation.session_end_height":
+		value := x.SessionEndHeight
+		return protoreflect.ValueOfInt64(value)
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventRedelegation"))
@@ -622,10 +670,10 @@ func (x *fastReflection_EventRedelegation) Get(descriptor protoreflect.FieldDesc
 // Set is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_EventRedelegation) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "poktroll.application.EventRedelegation.app_address":
-		x.AppAddress = value.Interface().(string)
-	case "poktroll.application.EventRedelegation.gateway_address":
-		x.GatewayAddress = value.Interface().(string)
+	case "poktroll.application.EventRedelegation.application":
+		x.Application = value.Message().Interface().(*Application)
+	case "poktroll.application.EventRedelegation.session_end_height":
+		x.SessionEndHeight = value.Int()
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventRedelegation"))
@@ -646,10 +694,13 @@ func (x *fastReflection_EventRedelegation) Set(fd protoreflect.FieldDescriptor, 
 // Mutable is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_EventRedelegation) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.application.EventRedelegation.app_address":
-		panic(fmt.Errorf("field app_address of message poktroll.application.EventRedelegation is not mutable"))
-	case "poktroll.application.EventRedelegation.gateway_address":
-		panic(fmt.Errorf("field gateway_address of message poktroll.application.EventRedelegation is not mutable"))
+	case "poktroll.application.EventRedelegation.application":
+		if x.Application == nil {
+			x.Application = new(Application)
+		}
+		return protoreflect.ValueOfMessage(x.Application.ProtoReflect())
+	case "poktroll.application.EventRedelegation.session_end_height":
+		panic(fmt.Errorf("field session_end_height of message poktroll.application.EventRedelegation is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventRedelegation"))
@@ -663,10 +714,11 @@ func (x *fastReflection_EventRedelegation) Mutable(fd protoreflect.FieldDescript
 // For lists, maps, and messages, this returns a new, empty, mutable value.
 func (x *fastReflection_EventRedelegation) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.application.EventRedelegation.app_address":
-		return protoreflect.ValueOfString("")
-	case "poktroll.application.EventRedelegation.gateway_address":
-		return protoreflect.ValueOfString("")
+	case "poktroll.application.EventRedelegation.application":
+		m := new(Application)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
+	case "poktroll.application.EventRedelegation.session_end_height":
+		return protoreflect.ValueOfInt64(int64(0))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventRedelegation"))
@@ -736,13 +788,12 @@ func (x *fastReflection_EventRedelegation) ProtoMethods() *protoiface.Methods {
 		var n int
 		var l int
 		_ = l
-		l = len(x.AppAddress)
-		if l > 0 {
+		if x.Application != nil {
+			l = options.Size(x.Application)
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		l = len(x.GatewayAddress)
-		if l > 0 {
-			n += 1 + l + runtime.Sov(uint64(l))
+		if x.SessionEndHeight != 0 {
+			n += 1 + runtime.Sov(uint64(x.SessionEndHeight))
 		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
@@ -773,17 +824,22 @@ func (x *fastReflection_EventRedelegation) ProtoMethods() *protoiface.Methods {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if len(x.GatewayAddress) > 0 {
-			i -= len(x.GatewayAddress)
-			copy(dAtA[i:], x.GatewayAddress)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.GatewayAddress)))
+		if x.SessionEndHeight != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.SessionEndHeight))
 			i--
-			dAtA[i] = 0x12
+			dAtA[i] = 0x10
 		}
-		if len(x.AppAddress) > 0 {
-			i -= len(x.AppAddress)
-			copy(dAtA[i:], x.AppAddress)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.AppAddress)))
+		if x.Application != nil {
+			encoded, err := options.Marshal(x.Application)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			i--
 			dAtA[i] = 0xa
 		}
@@ -838,9 +894,9 @@ func (x *fastReflection_EventRedelegation) ProtoMethods() *protoiface.Methods {
 			switch fieldNum {
 			case 1:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field AppAddress", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Application", wireType)
 				}
-				var stringLen uint64
+				var msglen int
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -850,29 +906,33 @@ func (x *fastReflection_EventRedelegation) ProtoMethods() *protoiface.Methods {
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
+					msglen |= int(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
+				if msglen < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
-				postIndex := iNdEx + intStringLen
+				postIndex := iNdEx + msglen
 				if postIndex < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.AppAddress = string(dAtA[iNdEx:postIndex])
+				if x.Application == nil {
+					x.Application = &Application{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Application); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
 				iNdEx = postIndex
 			case 2:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field GatewayAddress", wireType)
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field SessionEndHeight", wireType)
 				}
-				var stringLen uint64
+				x.SessionEndHeight = 0
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -882,24 +942,11 @@ func (x *fastReflection_EventRedelegation) ProtoMethods() *protoiface.Methods {
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
+					x.SessionEndHeight |= int64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + intStringLen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.GatewayAddress = string(dAtA[iNdEx:postIndex])
-				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
 				skippy, err := runtime.Skip(dAtA[iNdEx:])
@@ -940,6 +987,7 @@ var (
 	fd_EventTransferBegin_source_address      protoreflect.FieldDescriptor
 	fd_EventTransferBegin_destination_address protoreflect.FieldDescriptor
 	fd_EventTransferBegin_source_application  protoreflect.FieldDescriptor
+	fd_EventTransferBegin_session_end_height  protoreflect.FieldDescriptor
 )
 
 func init() {
@@ -948,6 +996,7 @@ func init() {
 	fd_EventTransferBegin_source_address = md_EventTransferBegin.Fields().ByName("source_address")
 	fd_EventTransferBegin_destination_address = md_EventTransferBegin.Fields().ByName("destination_address")
 	fd_EventTransferBegin_source_application = md_EventTransferBegin.Fields().ByName("source_application")
+	fd_EventTransferBegin_session_end_height = md_EventTransferBegin.Fields().ByName("session_end_height")
 }
 
 var _ protoreflect.Message = (*fastReflection_EventTransferBegin)(nil)
@@ -1033,6 +1082,12 @@ func (x *fastReflection_EventTransferBegin) Range(f func(protoreflect.FieldDescr
 			return
 		}
 	}
+	if x.SessionEndHeight != int64(0) {
+		value := protoreflect.ValueOfInt64(x.SessionEndHeight)
+		if !f(fd_EventTransferBegin_session_end_height, value) {
+			return
+		}
+	}
 }
 
 // Has reports whether a field is populated.
@@ -1054,6 +1109,8 @@ func (x *fastReflection_EventTransferBegin) Has(fd protoreflect.FieldDescriptor)
 		return x.DestinationAddress != ""
 	case "poktroll.application.EventTransferBegin.source_application":
 		return x.SourceApplication != nil
+	case "poktroll.application.EventTransferBegin.session_end_height":
+		return x.SessionEndHeight != int64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventTransferBegin"))
@@ -1076,6 +1133,8 @@ func (x *fastReflection_EventTransferBegin) Clear(fd protoreflect.FieldDescripto
 		x.DestinationAddress = ""
 	case "poktroll.application.EventTransferBegin.source_application":
 		x.SourceApplication = nil
+	case "poktroll.application.EventTransferBegin.session_end_height":
+		x.SessionEndHeight = int64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventTransferBegin"))
@@ -1101,6 +1160,9 @@ func (x *fastReflection_EventTransferBegin) Get(descriptor protoreflect.FieldDes
 	case "poktroll.application.EventTransferBegin.source_application":
 		value := x.SourceApplication
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	case "poktroll.application.EventTransferBegin.session_end_height":
+		value := x.SessionEndHeight
+		return protoreflect.ValueOfInt64(value)
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventTransferBegin"))
@@ -1127,6 +1189,8 @@ func (x *fastReflection_EventTransferBegin) Set(fd protoreflect.FieldDescriptor,
 		x.DestinationAddress = value.Interface().(string)
 	case "poktroll.application.EventTransferBegin.source_application":
 		x.SourceApplication = value.Message().Interface().(*Application)
+	case "poktroll.application.EventTransferBegin.session_end_height":
+		x.SessionEndHeight = value.Int()
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventTransferBegin"))
@@ -1156,6 +1220,8 @@ func (x *fastReflection_EventTransferBegin) Mutable(fd protoreflect.FieldDescrip
 		panic(fmt.Errorf("field source_address of message poktroll.application.EventTransferBegin is not mutable"))
 	case "poktroll.application.EventTransferBegin.destination_address":
 		panic(fmt.Errorf("field destination_address of message poktroll.application.EventTransferBegin is not mutable"))
+	case "poktroll.application.EventTransferBegin.session_end_height":
+		panic(fmt.Errorf("field session_end_height of message poktroll.application.EventTransferBegin is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventTransferBegin"))
@@ -1176,6 +1242,8 @@ func (x *fastReflection_EventTransferBegin) NewField(fd protoreflect.FieldDescri
 	case "poktroll.application.EventTransferBegin.source_application":
 		m := new(Application)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
+	case "poktroll.application.EventTransferBegin.session_end_height":
+		return protoreflect.ValueOfInt64(int64(0))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventTransferBegin"))
@@ -1257,6 +1325,9 @@ func (x *fastReflection_EventTransferBegin) ProtoMethods() *protoiface.Methods {
 			l = options.Size(x.SourceApplication)
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
+		if x.SessionEndHeight != 0 {
+			n += 1 + runtime.Sov(uint64(x.SessionEndHeight))
+		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
 		}
@@ -1285,6 +1356,11 @@ func (x *fastReflection_EventTransferBegin) ProtoMethods() *protoiface.Methods {
 		if x.unknownFields != nil {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
+		}
+		if x.SessionEndHeight != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.SessionEndHeight))
+			i--
+			dAtA[i] = 0x20
 		}
 		if x.SourceApplication != nil {
 			encoded, err := options.Marshal(x.SourceApplication)
@@ -1463,6 +1539,25 @@ func (x *fastReflection_EventTransferBegin) ProtoMethods() *protoiface.Methods {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
+			case 4:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field SessionEndHeight", wireType)
+				}
+				x.SessionEndHeight = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.SessionEndHeight |= int64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
 			default:
 				iNdEx = preIndex
 				skippy, err := runtime.Skip(dAtA[iNdEx:])
@@ -1503,6 +1598,7 @@ var (
 	fd_EventTransferEnd_source_address          protoreflect.FieldDescriptor
 	fd_EventTransferEnd_destination_address     protoreflect.FieldDescriptor
 	fd_EventTransferEnd_destination_application protoreflect.FieldDescriptor
+	fd_EventTransferEnd_session_end_height      protoreflect.FieldDescriptor
 )
 
 func init() {
@@ -1511,6 +1607,7 @@ func init() {
 	fd_EventTransferEnd_source_address = md_EventTransferEnd.Fields().ByName("source_address")
 	fd_EventTransferEnd_destination_address = md_EventTransferEnd.Fields().ByName("destination_address")
 	fd_EventTransferEnd_destination_application = md_EventTransferEnd.Fields().ByName("destination_application")
+	fd_EventTransferEnd_session_end_height = md_EventTransferEnd.Fields().ByName("session_end_height")
 }
 
 var _ protoreflect.Message = (*fastReflection_EventTransferEnd)(nil)
@@ -1596,6 +1693,12 @@ func (x *fastReflection_EventTransferEnd) Range(f func(protoreflect.FieldDescrip
 			return
 		}
 	}
+	if x.SessionEndHeight != int64(0) {
+		value := protoreflect.ValueOfInt64(x.SessionEndHeight)
+		if !f(fd_EventTransferEnd_session_end_height, value) {
+			return
+		}
+	}
 }
 
 // Has reports whether a field is populated.
@@ -1617,6 +1720,8 @@ func (x *fastReflection_EventTransferEnd) Has(fd protoreflect.FieldDescriptor) b
 		return x.DestinationAddress != ""
 	case "poktroll.application.EventTransferEnd.destination_application":
 		return x.DestinationApplication != nil
+	case "poktroll.application.EventTransferEnd.session_end_height":
+		return x.SessionEndHeight != int64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventTransferEnd"))
@@ -1639,6 +1744,8 @@ func (x *fastReflection_EventTransferEnd) Clear(fd protoreflect.FieldDescriptor)
 		x.DestinationAddress = ""
 	case "poktroll.application.EventTransferEnd.destination_application":
 		x.DestinationApplication = nil
+	case "poktroll.application.EventTransferEnd.session_end_height":
+		x.SessionEndHeight = int64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventTransferEnd"))
@@ -1664,6 +1771,9 @@ func (x *fastReflection_EventTransferEnd) Get(descriptor protoreflect.FieldDescr
 	case "poktroll.application.EventTransferEnd.destination_application":
 		value := x.DestinationApplication
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	case "poktroll.application.EventTransferEnd.session_end_height":
+		value := x.SessionEndHeight
+		return protoreflect.ValueOfInt64(value)
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventTransferEnd"))
@@ -1690,6 +1800,8 @@ func (x *fastReflection_EventTransferEnd) Set(fd protoreflect.FieldDescriptor, v
 		x.DestinationAddress = value.Interface().(string)
 	case "poktroll.application.EventTransferEnd.destination_application":
 		x.DestinationApplication = value.Message().Interface().(*Application)
+	case "poktroll.application.EventTransferEnd.session_end_height":
+		x.SessionEndHeight = value.Int()
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventTransferEnd"))
@@ -1719,6 +1831,8 @@ func (x *fastReflection_EventTransferEnd) Mutable(fd protoreflect.FieldDescripto
 		panic(fmt.Errorf("field source_address of message poktroll.application.EventTransferEnd is not mutable"))
 	case "poktroll.application.EventTransferEnd.destination_address":
 		panic(fmt.Errorf("field destination_address of message poktroll.application.EventTransferEnd is not mutable"))
+	case "poktroll.application.EventTransferEnd.session_end_height":
+		panic(fmt.Errorf("field session_end_height of message poktroll.application.EventTransferEnd is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventTransferEnd"))
@@ -1739,6 +1853,8 @@ func (x *fastReflection_EventTransferEnd) NewField(fd protoreflect.FieldDescript
 	case "poktroll.application.EventTransferEnd.destination_application":
 		m := new(Application)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
+	case "poktroll.application.EventTransferEnd.session_end_height":
+		return protoreflect.ValueOfInt64(int64(0))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventTransferEnd"))
@@ -1820,6 +1936,9 @@ func (x *fastReflection_EventTransferEnd) ProtoMethods() *protoiface.Methods {
 			l = options.Size(x.DestinationApplication)
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
+		if x.SessionEndHeight != 0 {
+			n += 1 + runtime.Sov(uint64(x.SessionEndHeight))
+		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
 		}
@@ -1848,6 +1967,11 @@ func (x *fastReflection_EventTransferEnd) ProtoMethods() *protoiface.Methods {
 		if x.unknownFields != nil {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
+		}
+		if x.SessionEndHeight != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.SessionEndHeight))
+			i--
+			dAtA[i] = 0x20
 		}
 		if x.DestinationApplication != nil {
 			encoded, err := options.Marshal(x.DestinationApplication)
@@ -2026,6 +2150,25 @@ func (x *fastReflection_EventTransferEnd) ProtoMethods() *protoiface.Methods {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
+			case 4:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field SessionEndHeight", wireType)
+				}
+				x.SessionEndHeight = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.SessionEndHeight |= int64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
 			default:
 				iNdEx = preIndex
 				skippy, err := runtime.Skip(dAtA[iNdEx:])
@@ -2066,6 +2209,7 @@ var (
 	fd_EventTransferError_source_address      protoreflect.FieldDescriptor
 	fd_EventTransferError_destination_address protoreflect.FieldDescriptor
 	fd_EventTransferError_source_application  protoreflect.FieldDescriptor
+	fd_EventTransferError_session_end_height  protoreflect.FieldDescriptor
 	fd_EventTransferError_error               protoreflect.FieldDescriptor
 )
 
@@ -2075,6 +2219,7 @@ func init() {
 	fd_EventTransferError_source_address = md_EventTransferError.Fields().ByName("source_address")
 	fd_EventTransferError_destination_address = md_EventTransferError.Fields().ByName("destination_address")
 	fd_EventTransferError_source_application = md_EventTransferError.Fields().ByName("source_application")
+	fd_EventTransferError_session_end_height = md_EventTransferError.Fields().ByName("session_end_height")
 	fd_EventTransferError_error = md_EventTransferError.Fields().ByName("error")
 }
 
@@ -2161,6 +2306,12 @@ func (x *fastReflection_EventTransferError) Range(f func(protoreflect.FieldDescr
 			return
 		}
 	}
+	if x.SessionEndHeight != int64(0) {
+		value := protoreflect.ValueOfInt64(x.SessionEndHeight)
+		if !f(fd_EventTransferError_session_end_height, value) {
+			return
+		}
+	}
 	if x.Error != "" {
 		value := protoreflect.ValueOfString(x.Error)
 		if !f(fd_EventTransferError_error, value) {
@@ -2188,6 +2339,8 @@ func (x *fastReflection_EventTransferError) Has(fd protoreflect.FieldDescriptor)
 		return x.DestinationAddress != ""
 	case "poktroll.application.EventTransferError.source_application":
 		return x.SourceApplication != nil
+	case "poktroll.application.EventTransferError.session_end_height":
+		return x.SessionEndHeight != int64(0)
 	case "poktroll.application.EventTransferError.error":
 		return x.Error != ""
 	default:
@@ -2212,6 +2365,8 @@ func (x *fastReflection_EventTransferError) Clear(fd protoreflect.FieldDescripto
 		x.DestinationAddress = ""
 	case "poktroll.application.EventTransferError.source_application":
 		x.SourceApplication = nil
+	case "poktroll.application.EventTransferError.session_end_height":
+		x.SessionEndHeight = int64(0)
 	case "poktroll.application.EventTransferError.error":
 		x.Error = ""
 	default:
@@ -2239,6 +2394,9 @@ func (x *fastReflection_EventTransferError) Get(descriptor protoreflect.FieldDes
 	case "poktroll.application.EventTransferError.source_application":
 		value := x.SourceApplication
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	case "poktroll.application.EventTransferError.session_end_height":
+		value := x.SessionEndHeight
+		return protoreflect.ValueOfInt64(value)
 	case "poktroll.application.EventTransferError.error":
 		value := x.Error
 		return protoreflect.ValueOfString(value)
@@ -2268,6 +2426,8 @@ func (x *fastReflection_EventTransferError) Set(fd protoreflect.FieldDescriptor,
 		x.DestinationAddress = value.Interface().(string)
 	case "poktroll.application.EventTransferError.source_application":
 		x.SourceApplication = value.Message().Interface().(*Application)
+	case "poktroll.application.EventTransferError.session_end_height":
+		x.SessionEndHeight = value.Int()
 	case "poktroll.application.EventTransferError.error":
 		x.Error = value.Interface().(string)
 	default:
@@ -2299,6 +2459,8 @@ func (x *fastReflection_EventTransferError) Mutable(fd protoreflect.FieldDescrip
 		panic(fmt.Errorf("field source_address of message poktroll.application.EventTransferError is not mutable"))
 	case "poktroll.application.EventTransferError.destination_address":
 		panic(fmt.Errorf("field destination_address of message poktroll.application.EventTransferError is not mutable"))
+	case "poktroll.application.EventTransferError.session_end_height":
+		panic(fmt.Errorf("field session_end_height of message poktroll.application.EventTransferError is not mutable"))
 	case "poktroll.application.EventTransferError.error":
 		panic(fmt.Errorf("field error of message poktroll.application.EventTransferError is not mutable"))
 	default:
@@ -2321,6 +2483,8 @@ func (x *fastReflection_EventTransferError) NewField(fd protoreflect.FieldDescri
 	case "poktroll.application.EventTransferError.source_application":
 		m := new(Application)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
+	case "poktroll.application.EventTransferError.session_end_height":
+		return protoreflect.ValueOfInt64(int64(0))
 	case "poktroll.application.EventTransferError.error":
 		return protoreflect.ValueOfString("")
 	default:
@@ -2404,6 +2568,9 @@ func (x *fastReflection_EventTransferError) ProtoMethods() *protoiface.Methods {
 			l = options.Size(x.SourceApplication)
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
+		if x.SessionEndHeight != 0 {
+			n += 1 + runtime.Sov(uint64(x.SessionEndHeight))
+		}
 		l = len(x.Error)
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
@@ -2442,7 +2609,12 @@ func (x *fastReflection_EventTransferError) ProtoMethods() *protoiface.Methods {
 			copy(dAtA[i:], x.Error)
 			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Error)))
 			i--
-			dAtA[i] = 0x22
+			dAtA[i] = 0x2a
+		}
+		if x.SessionEndHeight != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.SessionEndHeight))
+			i--
+			dAtA[i] = 0x20
 		}
 		if x.SourceApplication != nil {
 			encoded, err := options.Marshal(x.SourceApplication)
@@ -2622,6 +2794,25 @@ func (x *fastReflection_EventTransferError) ProtoMethods() *protoiface.Methods {
 				}
 				iNdEx = postIndex
 			case 4:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field SessionEndHeight", wireType)
+				}
+				x.SessionEndHeight = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.SessionEndHeight |= int64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			case 5:
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Error", wireType)
 				}
@@ -2689,9 +2880,10 @@ func (x *fastReflection_EventTransferError) ProtoMethods() *protoiface.Methods {
 }
 
 var (
-	md_EventApplicationUnbondingBegin             protoreflect.MessageDescriptor
-	fd_EventApplicationUnbondingBegin_application protoreflect.FieldDescriptor
-	fd_EventApplicationUnbondingBegin_reason      protoreflect.FieldDescriptor
+	md_EventApplicationUnbondingBegin                    protoreflect.MessageDescriptor
+	fd_EventApplicationUnbondingBegin_application        protoreflect.FieldDescriptor
+	fd_EventApplicationUnbondingBegin_reason             protoreflect.FieldDescriptor
+	fd_EventApplicationUnbondingBegin_session_end_height protoreflect.FieldDescriptor
 )
 
 func init() {
@@ -2699,6 +2891,7 @@ func init() {
 	md_EventApplicationUnbondingBegin = File_poktroll_application_event_proto.Messages().ByName("EventApplicationUnbondingBegin")
 	fd_EventApplicationUnbondingBegin_application = md_EventApplicationUnbondingBegin.Fields().ByName("application")
 	fd_EventApplicationUnbondingBegin_reason = md_EventApplicationUnbondingBegin.Fields().ByName("reason")
+	fd_EventApplicationUnbondingBegin_session_end_height = md_EventApplicationUnbondingBegin.Fields().ByName("session_end_height")
 }
 
 var _ protoreflect.Message = (*fastReflection_EventApplicationUnbondingBegin)(nil)
@@ -2778,6 +2971,12 @@ func (x *fastReflection_EventApplicationUnbondingBegin) Range(f func(protoreflec
 			return
 		}
 	}
+	if x.SessionEndHeight != int64(0) {
+		value := protoreflect.ValueOfInt64(x.SessionEndHeight)
+		if !f(fd_EventApplicationUnbondingBegin_session_end_height, value) {
+			return
+		}
+	}
 }
 
 // Has reports whether a field is populated.
@@ -2797,6 +2996,8 @@ func (x *fastReflection_EventApplicationUnbondingBegin) Has(fd protoreflect.Fiel
 		return x.Application != nil
 	case "poktroll.application.EventApplicationUnbondingBegin.reason":
 		return x.Reason != 0
+	case "poktroll.application.EventApplicationUnbondingBegin.session_end_height":
+		return x.SessionEndHeight != int64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationUnbondingBegin"))
@@ -2817,6 +3018,8 @@ func (x *fastReflection_EventApplicationUnbondingBegin) Clear(fd protoreflect.Fi
 		x.Application = nil
 	case "poktroll.application.EventApplicationUnbondingBegin.reason":
 		x.Reason = 0
+	case "poktroll.application.EventApplicationUnbondingBegin.session_end_height":
+		x.SessionEndHeight = int64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationUnbondingBegin"))
@@ -2839,6 +3042,9 @@ func (x *fastReflection_EventApplicationUnbondingBegin) Get(descriptor protorefl
 	case "poktroll.application.EventApplicationUnbondingBegin.reason":
 		value := x.Reason
 		return protoreflect.ValueOfEnum((protoreflect.EnumNumber)(value))
+	case "poktroll.application.EventApplicationUnbondingBegin.session_end_height":
+		value := x.SessionEndHeight
+		return protoreflect.ValueOfInt64(value)
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationUnbondingBegin"))
@@ -2863,6 +3069,8 @@ func (x *fastReflection_EventApplicationUnbondingBegin) Set(fd protoreflect.Fiel
 		x.Application = value.Message().Interface().(*Application)
 	case "poktroll.application.EventApplicationUnbondingBegin.reason":
 		x.Reason = (ApplicationUnbondingReason)(value.Enum())
+	case "poktroll.application.EventApplicationUnbondingBegin.session_end_height":
+		x.SessionEndHeight = value.Int()
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationUnbondingBegin"))
@@ -2890,6 +3098,8 @@ func (x *fastReflection_EventApplicationUnbondingBegin) Mutable(fd protoreflect.
 		return protoreflect.ValueOfMessage(x.Application.ProtoReflect())
 	case "poktroll.application.EventApplicationUnbondingBegin.reason":
 		panic(fmt.Errorf("field reason of message poktroll.application.EventApplicationUnbondingBegin is not mutable"))
+	case "poktroll.application.EventApplicationUnbondingBegin.session_end_height":
+		panic(fmt.Errorf("field session_end_height of message poktroll.application.EventApplicationUnbondingBegin is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationUnbondingBegin"))
@@ -2908,6 +3118,8 @@ func (x *fastReflection_EventApplicationUnbondingBegin) NewField(fd protoreflect
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	case "poktroll.application.EventApplicationUnbondingBegin.reason":
 		return protoreflect.ValueOfEnum(0)
+	case "poktroll.application.EventApplicationUnbondingBegin.session_end_height":
+		return protoreflect.ValueOfInt64(int64(0))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationUnbondingBegin"))
@@ -2984,6 +3196,9 @@ func (x *fastReflection_EventApplicationUnbondingBegin) ProtoMethods() *protoifa
 		if x.Reason != 0 {
 			n += 1 + runtime.Sov(uint64(x.Reason))
 		}
+		if x.SessionEndHeight != 0 {
+			n += 1 + runtime.Sov(uint64(x.SessionEndHeight))
+		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
 		}
@@ -3012,6 +3227,11 @@ func (x *fastReflection_EventApplicationUnbondingBegin) ProtoMethods() *protoifa
 		if x.unknownFields != nil {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
+		}
+		if x.SessionEndHeight != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.SessionEndHeight))
+			i--
+			dAtA[i] = 0x18
 		}
 		if x.Reason != 0 {
 			i = runtime.EncodeVarint(dAtA, i, uint64(x.Reason))
@@ -3136,6 +3356,25 @@ func (x *fastReflection_EventApplicationUnbondingBegin) ProtoMethods() *protoifa
 						break
 					}
 				}
+			case 3:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field SessionEndHeight", wireType)
+				}
+				x.SessionEndHeight = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.SessionEndHeight |= int64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
 			default:
 				iNdEx = preIndex
 				skippy, err := runtime.Skip(dAtA[iNdEx:])
@@ -3172,9 +3411,10 @@ func (x *fastReflection_EventApplicationUnbondingBegin) ProtoMethods() *protoifa
 }
 
 var (
-	md_EventApplicationUnbondingEnd             protoreflect.MessageDescriptor
-	fd_EventApplicationUnbondingEnd_application protoreflect.FieldDescriptor
-	fd_EventApplicationUnbondingEnd_reason      protoreflect.FieldDescriptor
+	md_EventApplicationUnbondingEnd                    protoreflect.MessageDescriptor
+	fd_EventApplicationUnbondingEnd_application        protoreflect.FieldDescriptor
+	fd_EventApplicationUnbondingEnd_reason             protoreflect.FieldDescriptor
+	fd_EventApplicationUnbondingEnd_session_end_height protoreflect.FieldDescriptor
 )
 
 func init() {
@@ -3182,6 +3422,7 @@ func init() {
 	md_EventApplicationUnbondingEnd = File_poktroll_application_event_proto.Messages().ByName("EventApplicationUnbondingEnd")
 	fd_EventApplicationUnbondingEnd_application = md_EventApplicationUnbondingEnd.Fields().ByName("application")
 	fd_EventApplicationUnbondingEnd_reason = md_EventApplicationUnbondingEnd.Fields().ByName("reason")
+	fd_EventApplicationUnbondingEnd_session_end_height = md_EventApplicationUnbondingEnd.Fields().ByName("session_end_height")
 }
 
 var _ protoreflect.Message = (*fastReflection_EventApplicationUnbondingEnd)(nil)
@@ -3261,6 +3502,12 @@ func (x *fastReflection_EventApplicationUnbondingEnd) Range(f func(protoreflect.
 			return
 		}
 	}
+	if x.SessionEndHeight != int64(0) {
+		value := protoreflect.ValueOfInt64(x.SessionEndHeight)
+		if !f(fd_EventApplicationUnbondingEnd_session_end_height, value) {
+			return
+		}
+	}
 }
 
 // Has reports whether a field is populated.
@@ -3280,6 +3527,8 @@ func (x *fastReflection_EventApplicationUnbondingEnd) Has(fd protoreflect.FieldD
 		return x.Application != nil
 	case "poktroll.application.EventApplicationUnbondingEnd.reason":
 		return x.Reason != 0
+	case "poktroll.application.EventApplicationUnbondingEnd.session_end_height":
+		return x.SessionEndHeight != int64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationUnbondingEnd"))
@@ -3300,6 +3549,8 @@ func (x *fastReflection_EventApplicationUnbondingEnd) Clear(fd protoreflect.Fiel
 		x.Application = nil
 	case "poktroll.application.EventApplicationUnbondingEnd.reason":
 		x.Reason = 0
+	case "poktroll.application.EventApplicationUnbondingEnd.session_end_height":
+		x.SessionEndHeight = int64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationUnbondingEnd"))
@@ -3322,6 +3573,9 @@ func (x *fastReflection_EventApplicationUnbondingEnd) Get(descriptor protoreflec
 	case "poktroll.application.EventApplicationUnbondingEnd.reason":
 		value := x.Reason
 		return protoreflect.ValueOfEnum((protoreflect.EnumNumber)(value))
+	case "poktroll.application.EventApplicationUnbondingEnd.session_end_height":
+		value := x.SessionEndHeight
+		return protoreflect.ValueOfInt64(value)
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationUnbondingEnd"))
@@ -3346,6 +3600,8 @@ func (x *fastReflection_EventApplicationUnbondingEnd) Set(fd protoreflect.FieldD
 		x.Application = value.Message().Interface().(*Application)
 	case "poktroll.application.EventApplicationUnbondingEnd.reason":
 		x.Reason = (ApplicationUnbondingReason)(value.Enum())
+	case "poktroll.application.EventApplicationUnbondingEnd.session_end_height":
+		x.SessionEndHeight = value.Int()
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationUnbondingEnd"))
@@ -3373,6 +3629,8 @@ func (x *fastReflection_EventApplicationUnbondingEnd) Mutable(fd protoreflect.Fi
 		return protoreflect.ValueOfMessage(x.Application.ProtoReflect())
 	case "poktroll.application.EventApplicationUnbondingEnd.reason":
 		panic(fmt.Errorf("field reason of message poktroll.application.EventApplicationUnbondingEnd is not mutable"))
+	case "poktroll.application.EventApplicationUnbondingEnd.session_end_height":
+		panic(fmt.Errorf("field session_end_height of message poktroll.application.EventApplicationUnbondingEnd is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationUnbondingEnd"))
@@ -3391,6 +3649,8 @@ func (x *fastReflection_EventApplicationUnbondingEnd) NewField(fd protoreflect.F
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	case "poktroll.application.EventApplicationUnbondingEnd.reason":
 		return protoreflect.ValueOfEnum(0)
+	case "poktroll.application.EventApplicationUnbondingEnd.session_end_height":
+		return protoreflect.ValueOfInt64(int64(0))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationUnbondingEnd"))
@@ -3467,6 +3727,9 @@ func (x *fastReflection_EventApplicationUnbondingEnd) ProtoMethods() *protoiface
 		if x.Reason != 0 {
 			n += 1 + runtime.Sov(uint64(x.Reason))
 		}
+		if x.SessionEndHeight != 0 {
+			n += 1 + runtime.Sov(uint64(x.SessionEndHeight))
+		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
 		}
@@ -3495,6 +3758,11 @@ func (x *fastReflection_EventApplicationUnbondingEnd) ProtoMethods() *protoiface
 		if x.unknownFields != nil {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
+		}
+		if x.SessionEndHeight != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.SessionEndHeight))
+			i--
+			dAtA[i] = 0x18
 		}
 		if x.Reason != 0 {
 			i = runtime.EncodeVarint(dAtA, i, uint64(x.Reason))
@@ -3619,6 +3887,25 @@ func (x *fastReflection_EventApplicationUnbondingEnd) ProtoMethods() *protoiface
 						break
 					}
 				}
+			case 3:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field SessionEndHeight", wireType)
+				}
+				x.SessionEndHeight = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.SessionEndHeight |= int64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
 			default:
 				iNdEx = preIndex
 				skippy, err := runtime.Skip(dAtA[iNdEx:])
@@ -3655,14 +3942,16 @@ func (x *fastReflection_EventApplicationUnbondingEnd) ProtoMethods() *protoiface
 }
 
 var (
-	md_EventApplicationUnbondingCanceled             protoreflect.MessageDescriptor
-	fd_EventApplicationUnbondingCanceled_application protoreflect.FieldDescriptor
+	md_EventApplicationUnbondingCanceled                    protoreflect.MessageDescriptor
+	fd_EventApplicationUnbondingCanceled_application        protoreflect.FieldDescriptor
+	fd_EventApplicationUnbondingCanceled_session_end_height protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_poktroll_application_event_proto_init()
 	md_EventApplicationUnbondingCanceled = File_poktroll_application_event_proto.Messages().ByName("EventApplicationUnbondingCanceled")
 	fd_EventApplicationUnbondingCanceled_application = md_EventApplicationUnbondingCanceled.Fields().ByName("application")
+	fd_EventApplicationUnbondingCanceled_session_end_height = md_EventApplicationUnbondingCanceled.Fields().ByName("session_end_height")
 }
 
 var _ protoreflect.Message = (*fastReflection_EventApplicationUnbondingCanceled)(nil)
@@ -3736,6 +4025,12 @@ func (x *fastReflection_EventApplicationUnbondingCanceled) Range(f func(protoref
 			return
 		}
 	}
+	if x.SessionEndHeight != int64(0) {
+		value := protoreflect.ValueOfInt64(x.SessionEndHeight)
+		if !f(fd_EventApplicationUnbondingCanceled_session_end_height, value) {
+			return
+		}
+	}
 }
 
 // Has reports whether a field is populated.
@@ -3753,6 +4048,8 @@ func (x *fastReflection_EventApplicationUnbondingCanceled) Has(fd protoreflect.F
 	switch fd.FullName() {
 	case "poktroll.application.EventApplicationUnbondingCanceled.application":
 		return x.Application != nil
+	case "poktroll.application.EventApplicationUnbondingCanceled.session_end_height":
+		return x.SessionEndHeight != int64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationUnbondingCanceled"))
@@ -3771,6 +4068,8 @@ func (x *fastReflection_EventApplicationUnbondingCanceled) Clear(fd protoreflect
 	switch fd.FullName() {
 	case "poktroll.application.EventApplicationUnbondingCanceled.application":
 		x.Application = nil
+	case "poktroll.application.EventApplicationUnbondingCanceled.session_end_height":
+		x.SessionEndHeight = int64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationUnbondingCanceled"))
@@ -3790,6 +4089,9 @@ func (x *fastReflection_EventApplicationUnbondingCanceled) Get(descriptor protor
 	case "poktroll.application.EventApplicationUnbondingCanceled.application":
 		value := x.Application
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	case "poktroll.application.EventApplicationUnbondingCanceled.session_end_height":
+		value := x.SessionEndHeight
+		return protoreflect.ValueOfInt64(value)
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationUnbondingCanceled"))
@@ -3812,6 +4114,8 @@ func (x *fastReflection_EventApplicationUnbondingCanceled) Set(fd protoreflect.F
 	switch fd.FullName() {
 	case "poktroll.application.EventApplicationUnbondingCanceled.application":
 		x.Application = value.Message().Interface().(*Application)
+	case "poktroll.application.EventApplicationUnbondingCanceled.session_end_height":
+		x.SessionEndHeight = value.Int()
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationUnbondingCanceled"))
@@ -3837,6 +4141,8 @@ func (x *fastReflection_EventApplicationUnbondingCanceled) Mutable(fd protorefle
 			x.Application = new(Application)
 		}
 		return protoreflect.ValueOfMessage(x.Application.ProtoReflect())
+	case "poktroll.application.EventApplicationUnbondingCanceled.session_end_height":
+		panic(fmt.Errorf("field session_end_height of message poktroll.application.EventApplicationUnbondingCanceled is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationUnbondingCanceled"))
@@ -3853,6 +4159,8 @@ func (x *fastReflection_EventApplicationUnbondingCanceled) NewField(fd protorefl
 	case "poktroll.application.EventApplicationUnbondingCanceled.application":
 		m := new(Application)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
+	case "poktroll.application.EventApplicationUnbondingCanceled.session_end_height":
+		return protoreflect.ValueOfInt64(int64(0))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.EventApplicationUnbondingCanceled"))
@@ -3926,6 +4234,9 @@ func (x *fastReflection_EventApplicationUnbondingCanceled) ProtoMethods() *proto
 			l = options.Size(x.Application)
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
+		if x.SessionEndHeight != 0 {
+			n += 1 + runtime.Sov(uint64(x.SessionEndHeight))
+		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
 		}
@@ -3954,6 +4265,11 @@ func (x *fastReflection_EventApplicationUnbondingCanceled) ProtoMethods() *proto
 		if x.unknownFields != nil {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
+		}
+		if x.SessionEndHeight != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.SessionEndHeight))
+			i--
+			dAtA[i] = 0x10
 		}
 		if x.Application != nil {
 			encoded, err := options.Marshal(x.Application)
@@ -4054,6 +4370,25 @@ func (x *fastReflection_EventApplicationUnbondingCanceled) ProtoMethods() *proto
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
+			case 2:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field SessionEndHeight", wireType)
+				}
+				x.SessionEndHeight = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.SessionEndHeight |= int64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
 			default:
 				iNdEx = preIndex
 				skippy, err := runtime.Skip(dAtA[iNdEx:])
@@ -4155,6 +4490,8 @@ type EventApplicationStaked struct {
 	unknownFields protoimpl.UnknownFields
 
 	Application *Application `protobuf:"bytes,1,opt,name=application,proto3" json:"application,omitempty"`
+	// The end height of the session in which the transfer began.
+	SessionEndHeight int64 `protobuf:"varint,2,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height,omitempty"`
 }
 
 func (x *EventApplicationStaked) Reset() {
@@ -4184,6 +4521,13 @@ func (x *EventApplicationStaked) GetApplication() *Application {
 	return nil
 }
 
+func (x *EventApplicationStaked) GetSessionEndHeight() int64 {
+	if x != nil {
+		return x.SessionEndHeight
+	}
+	return 0
+}
+
 // EventRedelegation is an event emitted whenever an application changes its
 // delegatee gateways on chain. This is in response to both a DelegateToGateway
 // and UndelegateFromGateway message.
@@ -4194,8 +4538,10 @@ type EventRedelegation struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	AppAddress     string `protobuf:"bytes,1,opt,name=app_address,json=appAddress,proto3" json:"app_address,omitempty"`             // The Bech32 address of the application.
-	GatewayAddress string `protobuf:"bytes,2,opt,name=gateway_address,json=gatewayAddress,proto3" json:"gateway_address,omitempty"` // The Bech32 address of the gateway the application has changed their delegation of.
+	// The application which was redelegated.
+	Application *Application `protobuf:"bytes,1,opt,name=application,proto3" json:"application,omitempty"`
+	// The end height of the session in which the redelegation was committed.
+	SessionEndHeight int64 `protobuf:"varint,2,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height,omitempty"`
 }
 
 func (x *EventRedelegation) Reset() {
@@ -4218,18 +4564,18 @@ func (*EventRedelegation) Descriptor() ([]byte, []int) {
 	return file_poktroll_application_event_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *EventRedelegation) GetAppAddress() string {
+func (x *EventRedelegation) GetApplication() *Application {
 	if x != nil {
-		return x.AppAddress
+		return x.Application
 	}
-	return ""
+	return nil
 }
 
-func (x *EventRedelegation) GetGatewayAddress() string {
+func (x *EventRedelegation) GetSessionEndHeight() int64 {
 	if x != nil {
-		return x.GatewayAddress
+		return x.SessionEndHeight
 	}
-	return ""
+	return 0
 }
 
 // EventTransferBegin is emitted whenever an application begins a transfer. It
@@ -4242,6 +4588,8 @@ type EventTransferBegin struct {
 	SourceAddress      string       `protobuf:"bytes,1,opt,name=source_address,json=sourceAddress,proto3" json:"source_address,omitempty"`
 	DestinationAddress string       `protobuf:"bytes,2,opt,name=destination_address,json=destinationAddress,proto3" json:"destination_address,omitempty"`
 	SourceApplication  *Application `protobuf:"bytes,3,opt,name=source_application,json=sourceApplication,proto3" json:"source_application,omitempty"`
+	// The end height of the session in which the transfer began.
+	SessionEndHeight int64 `protobuf:"varint,4,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height,omitempty"`
 }
 
 func (x *EventTransferBegin) Reset() {
@@ -4285,6 +4633,13 @@ func (x *EventTransferBegin) GetSourceApplication() *Application {
 	return nil
 }
 
+func (x *EventTransferBegin) GetSessionEndHeight() int64 {
+	if x != nil {
+		return x.SessionEndHeight
+	}
+	return 0
+}
+
 // EventTransferEnd is emitted whenever an application transfer is completed. It
 // includes the destination application state at the time the transfer completed.
 // Either EventTransferEnd or EventTransferError will be emitted corresponding to
@@ -4297,6 +4652,8 @@ type EventTransferEnd struct {
 	SourceAddress          string       `protobuf:"bytes,1,opt,name=source_address,json=sourceAddress,proto3" json:"source_address,omitempty"`
 	DestinationAddress     string       `protobuf:"bytes,2,opt,name=destination_address,json=destinationAddress,proto3" json:"destination_address,omitempty"`
 	DestinationApplication *Application `protobuf:"bytes,3,opt,name=destination_application,json=destinationApplication,proto3" json:"destination_application,omitempty"`
+	// The end height of the session in which the transfer ended.
+	SessionEndHeight int64 `protobuf:"varint,4,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height,omitempty"`
 }
 
 func (x *EventTransferEnd) Reset() {
@@ -4340,6 +4697,13 @@ func (x *EventTransferEnd) GetDestinationApplication() *Application {
 	return nil
 }
 
+func (x *EventTransferEnd) GetSessionEndHeight() int64 {
+	if x != nil {
+		return x.SessionEndHeight
+	}
+	return 0
+}
+
 // EventTransferError is emitted whenever an application transfer fails. It
 // includes the source application state at the time the transfer failed and
 // the error message.
@@ -4353,7 +4717,9 @@ type EventTransferError struct {
 	SourceAddress      string       `protobuf:"bytes,1,opt,name=source_address,json=sourceAddress,proto3" json:"source_address,omitempty"`
 	DestinationAddress string       `protobuf:"bytes,2,opt,name=destination_address,json=destinationAddress,proto3" json:"destination_address,omitempty"`
 	SourceApplication  *Application `protobuf:"bytes,3,opt,name=source_application,json=sourceApplication,proto3" json:"source_application,omitempty"`
-	Error              string       `protobuf:"bytes,4,opt,name=error,proto3" json:"error,omitempty"`
+	// The end height of the session in which the transfer failed.
+	SessionEndHeight int64  `protobuf:"varint,4,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height,omitempty"`
+	Error            string `protobuf:"bytes,5,opt,name=error,proto3" json:"error,omitempty"`
 }
 
 func (x *EventTransferError) Reset() {
@@ -4397,6 +4763,13 @@ func (x *EventTransferError) GetSourceApplication() *Application {
 	return nil
 }
 
+func (x *EventTransferError) GetSessionEndHeight() int64 {
+	if x != nil {
+		return x.SessionEndHeight
+	}
+	return 0
+}
+
 func (x *EventTransferError) GetError() string {
 	if x != nil {
 		return x.Error
@@ -4416,6 +4789,8 @@ type EventApplicationUnbondingBegin struct {
 
 	Application *Application               `protobuf:"bytes,1,opt,name=application,proto3" json:"application,omitempty"`
 	Reason      ApplicationUnbondingReason `protobuf:"varint,2,opt,name=reason,proto3,enum=poktroll.application.ApplicationUnbondingReason" json:"reason,omitempty"`
+	// The end height of the session in which the transfer began.
+	SessionEndHeight int64 `protobuf:"varint,3,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height,omitempty"`
 }
 
 func (x *EventApplicationUnbondingBegin) Reset() {
@@ -4452,6 +4827,13 @@ func (x *EventApplicationUnbondingBegin) GetReason() ApplicationUnbondingReason 
 	return ApplicationUnbondingReason_ELECTIVE
 }
 
+func (x *EventApplicationUnbondingBegin) GetSessionEndHeight() int64 {
+	if x != nil {
+		return x.SessionEndHeight
+	}
+	return 0
+}
+
 // EventApplicationUnbondingEnd is emitted when an application has completed
 // unbonding. The unbonding period is determined by the shared param,
 // application_unbonding_period_sessions.
@@ -4462,6 +4844,8 @@ type EventApplicationUnbondingEnd struct {
 
 	Application *Application               `protobuf:"bytes,1,opt,name=application,proto3" json:"application,omitempty"`
 	Reason      ApplicationUnbondingReason `protobuf:"varint,2,opt,name=reason,proto3,enum=poktroll.application.ApplicationUnbondingReason" json:"reason,omitempty"`
+	// The end height of the session in which the transfer began.
+	SessionEndHeight int64 `protobuf:"varint,3,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height,omitempty"`
 }
 
 func (x *EventApplicationUnbondingEnd) Reset() {
@@ -4498,6 +4882,13 @@ func (x *EventApplicationUnbondingEnd) GetReason() ApplicationUnbondingReason {
 	return ApplicationUnbondingReason_ELECTIVE
 }
 
+func (x *EventApplicationUnbondingEnd) GetSessionEndHeight() int64 {
+	if x != nil {
+		return x.SessionEndHeight
+	}
+	return 0
+}
+
 // EventApplicationUnbondingCanceled is emitted when an application which was unbonding
 // successfully (re-)stakes before the unbonding period has elapsed. An EventApplicationStaked
 // event will also be emitted immediately after this event.
@@ -4507,6 +4898,8 @@ type EventApplicationUnbondingCanceled struct {
 	unknownFields protoimpl.UnknownFields
 
 	Application *Application `protobuf:"bytes,1,opt,name=application,proto3" json:"application,omitempty"`
+	// The end height of the session in which the transfer began.
+	SessionEndHeight int64 `protobuf:"varint,2,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height,omitempty"`
 }
 
 func (x *EventApplicationUnbondingCanceled) Reset() {
@@ -4536,6 +4929,13 @@ func (x *EventApplicationUnbondingCanceled) GetApplication() *Application {
 	return nil
 }
 
+func (x *EventApplicationUnbondingCanceled) GetSessionEndHeight() int64 {
+	if x != nil {
+		return x.SessionEndHeight
+	}
+	return 0
+}
+
 var File_poktroll_application_event_proto protoreflect.FileDescriptor
 
 var file_poktroll_application_event_proto_rawDesc = []byte{
@@ -4551,40 +4951,71 @@ var file_poktroll_application_event_proto_rawDesc = []byte{
 	0x6f, 0x6c, 0x6c, 0x2f, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2f, 0x73, 0x65, 0x72, 0x76, 0x69,
 	0x63, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x20, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f,
 	0x6c, 0x6c, 0x2f, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2f, 0x74,
-	0x79, 0x70, 0x65, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x6e, 0x0a, 0x16, 0x45, 0x76,
-	0x65, 0x6e, 0x74, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x74,
-	0x61, 0x6b, 0x65, 0x64, 0x12, 0x54, 0x0a, 0x0b, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74,
-	0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x21, 0x2e, 0x70, 0x6f, 0x6b, 0x74,
-	0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e,
-	0x2e, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x42, 0x0f, 0xea, 0xde,
-	0x1f, 0x0b, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x0b, 0x61,
-	0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x22, 0x91, 0x01, 0x0a, 0x11, 0x45,
-	0x76, 0x65, 0x6e, 0x74, 0x52, 0x65, 0x64, 0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e,
-	0x12, 0x39, 0x0a, 0x0b, 0x61, 0x70, 0x70, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
-	0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52,
-	0x0a, 0x61, 0x70, 0x70, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x41, 0x0a, 0x0f, 0x67,
-	0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x02,
-	0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73,
-	0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x0e,
-	0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x22, 0xf2,
-	0x01, 0x0a, 0x12, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x54, 0x72, 0x61, 0x6e, 0x73, 0x66, 0x65, 0x72,
-	0x42, 0x65, 0x67, 0x69, 0x6e, 0x12, 0x3f, 0x0a, 0x0e, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x5f,
-	0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2,
-	0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73,
-	0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x0d, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x41,
-	0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x49, 0x0a, 0x13, 0x64, 0x65, 0x73, 0x74, 0x69, 0x6e,
-	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x02, 0x20,
-	0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e,
-	0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x12, 0x64,
-	0x65, 0x73, 0x74, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73,
-	0x73, 0x12, 0x50, 0x0a, 0x12, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x5f, 0x61, 0x70, 0x70, 0x6c,
-	0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x21, 0x2e,
-	0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61,
-	0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e,
-	0x52, 0x11, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74,
-	0x69, 0x6f, 0x6e, 0x22, 0xfa, 0x01, 0x0a, 0x10, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x54, 0x72, 0x61,
-	0x6e, 0x73, 0x66, 0x65, 0x72, 0x45, 0x6e, 0x64, 0x12, 0x3f, 0x0a, 0x0e, 0x73, 0x6f, 0x75, 0x72,
+	0x79, 0x70, 0x65, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xb4, 0x01, 0x0a, 0x16, 0x45,
+	0x76, 0x65, 0x6e, 0x74, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53,
+	0x74, 0x61, 0x6b, 0x65, 0x64, 0x12, 0x54, 0x0a, 0x0b, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61,
+	0x74, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x21, 0x2e, 0x70, 0x6f, 0x6b,
+	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0x2e, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x42, 0x0f, 0xea,
+	0xde, 0x1f, 0x0b, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x0b,
+	0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x44, 0x0a, 0x12, 0x73,
+	0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68,
+	0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x03, 0x42, 0x16, 0xea, 0xde, 0x1f, 0x12, 0x73, 0x65, 0x73,
+	0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x52,
+	0x10, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x45, 0x6e, 0x64, 0x48, 0x65, 0x69, 0x67, 0x68,
+	0x74, 0x22, 0xaf, 0x01, 0x0a, 0x11, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x52, 0x65, 0x64, 0x65, 0x6c,
+	0x65, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x54, 0x0a, 0x0b, 0x61, 0x70, 0x70, 0x6c, 0x69,
+	0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x21, 0x2e, 0x70,
+	0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0x2e, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x42,
+	0x0f, 0xea, 0xde, 0x1f, 0x0b, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x52, 0x0b, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x44, 0x0a,
+	0x12, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69,
+	0x67, 0x68, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x03, 0x42, 0x16, 0xea, 0xde, 0x1f, 0x12, 0x73,
+	0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68,
+	0x74, 0x52, 0x10, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x45, 0x6e, 0x64, 0x48, 0x65, 0x69,
+	0x67, 0x68, 0x74, 0x22, 0xb8, 0x02, 0x0a, 0x12, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x54, 0x72, 0x61,
+	0x6e, 0x73, 0x66, 0x65, 0x72, 0x42, 0x65, 0x67, 0x69, 0x6e, 0x12, 0x3f, 0x0a, 0x0e, 0x73, 0x6f,
+	0x75, 0x72, 0x63, 0x65, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41,
+	0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x0d, 0x73, 0x6f,
+	0x75, 0x72, 0x63, 0x65, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x49, 0x0a, 0x13, 0x64,
+	0x65, 0x73, 0x74, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65,
+	0x73, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f,
+	0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69,
+	0x6e, 0x67, 0x52, 0x12, 0x64, 0x65, 0x73, 0x74, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x41,
+	0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x50, 0x0a, 0x12, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65,
+	0x5f, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x03, 0x20, 0x01,
+	0x28, 0x0b, 0x32, 0x21, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70,
+	0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x11, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x41, 0x70, 0x70,
+	0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x44, 0x0a, 0x12, 0x73, 0x65, 0x73, 0x73,
+	0x69, 0x6f, 0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x04,
+	0x20, 0x01, 0x28, 0x03, 0x42, 0x16, 0xea, 0xde, 0x1f, 0x12, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f,
+	0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x52, 0x10, 0x73, 0x65,
+	0x73, 0x73, 0x69, 0x6f, 0x6e, 0x45, 0x6e, 0x64, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x22, 0xc0,
+	0x02, 0x0a, 0x10, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x54, 0x72, 0x61, 0x6e, 0x73, 0x66, 0x65, 0x72,
+	0x45, 0x6e, 0x64, 0x12, 0x3f, 0x0a, 0x0e, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x5f, 0x61, 0x64,
+	0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d,
+	0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53,
+	0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x0d, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x41, 0x64, 0x64,
+	0x72, 0x65, 0x73, 0x73, 0x12, 0x49, 0x0a, 0x13, 0x64, 0x65, 0x73, 0x74, 0x69, 0x6e, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28,
+	0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64,
+	0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x12, 0x64, 0x65, 0x73,
+	0x74, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12,
+	0x5a, 0x0a, 0x17, 0x64, 0x65, 0x73, 0x74, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x61,
+	0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x21, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70, 0x70, 0x6c,
+	0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0x52, 0x16, 0x64, 0x65, 0x73, 0x74, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x44, 0x0a, 0x12, 0x73,
+	0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68,
+	0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x03, 0x42, 0x16, 0xea, 0xde, 0x1f, 0x12, 0x73, 0x65, 0x73,
+	0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x52,
+	0x10, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x45, 0x6e, 0x64, 0x48, 0x65, 0x69, 0x67, 0x68,
+	0x74, 0x22, 0xce, 0x02, 0x0a, 0x12, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x54, 0x72, 0x61, 0x6e, 0x73,
+	0x66, 0x65, 0x72, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x12, 0x3f, 0x0a, 0x0e, 0x73, 0x6f, 0x75, 0x72,
 	0x63, 0x65, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
 	0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64,
 	0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x0d, 0x73, 0x6f, 0x75, 0x72,
@@ -4593,79 +5024,81 @@ var file_poktroll_application_event_proto_rawDesc = []byte{
 	0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d,
 	0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67,
 	0x52, 0x12, 0x64, 0x65, 0x73, 0x74, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x41, 0x64, 0x64,
-	0x72, 0x65, 0x73, 0x73, 0x12, 0x5a, 0x0a, 0x17, 0x64, 0x65, 0x73, 0x74, 0x69, 0x6e, 0x61, 0x74,
-	0x69, 0x6f, 0x6e, 0x5f, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18,
-	0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x21, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c,
-	0x2e, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x41, 0x70, 0x70,
-	0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x16, 0x64, 0x65, 0x73, 0x74, 0x69, 0x6e,
-	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e,
-	0x22, 0x88, 0x02, 0x0a, 0x12, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x54, 0x72, 0x61, 0x6e, 0x73, 0x66,
-	0x65, 0x72, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x12, 0x3f, 0x0a, 0x0e, 0x73, 0x6f, 0x75, 0x72, 0x63,
-	0x65, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42,
-	0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72,
-	0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x0d, 0x73, 0x6f, 0x75, 0x72, 0x63,
-	0x65, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x49, 0x0a, 0x13, 0x64, 0x65, 0x73, 0x74,
-	0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18,
-	0x02, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
-	0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52,
-	0x12, 0x64, 0x65, 0x73, 0x74, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x41, 0x64, 0x64, 0x72,
-	0x65, 0x73, 0x73, 0x12, 0x50, 0x0a, 0x12, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x5f, 0x61, 0x70,
-	0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32,
-	0x21, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70, 0x70, 0x6c, 0x69,
-	0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69,
-	0x6f, 0x6e, 0x52, 0x11, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63,
-	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x14, 0x0a, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x18, 0x04,
-	0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x22, 0xcc, 0x01, 0x0a, 0x1e,
-	0x45, 0x76, 0x65, 0x6e, 0x74, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e,
-	0x55, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x42, 0x65, 0x67, 0x69, 0x6e, 0x12, 0x54,
-	0x0a, 0x0b, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20,
-	0x01, 0x28, 0x0b, 0x32, 0x21, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61,
-	0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x41, 0x70, 0x70, 0x6c, 0x69,
-	0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x42, 0x0f, 0xea, 0xde, 0x1f, 0x0b, 0x61, 0x70, 0x70, 0x6c,
-	0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x0b, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61,
-	0x74, 0x69, 0x6f, 0x6e, 0x12, 0x54, 0x0a, 0x06, 0x72, 0x65, 0x61, 0x73, 0x6f, 0x6e, 0x18, 0x02,
-	0x20, 0x01, 0x28, 0x0e, 0x32, 0x30, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e,
-	0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x41, 0x70, 0x70, 0x6c,
-	0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x55, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67,
-	0x52, 0x65, 0x61, 0x73, 0x6f, 0x6e, 0x42, 0x0a, 0xea, 0xde, 0x1f, 0x06, 0x72, 0x65, 0x61, 0x73,
-	0x6f, 0x6e, 0x52, 0x06, 0x72, 0x65, 0x61, 0x73, 0x6f, 0x6e, 0x22, 0xca, 0x01, 0x0a, 0x1c, 0x45,
-	0x76, 0x65, 0x6e, 0x74, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x55,
-	0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x45, 0x6e, 0x64, 0x12, 0x54, 0x0a, 0x0b, 0x61,
-	0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b,
+	0x72, 0x65, 0x73, 0x73, 0x12, 0x50, 0x0a, 0x12, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x5f, 0x61,
+	0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b,
 	0x32, 0x21, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70, 0x70, 0x6c,
 	0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74,
-	0x69, 0x6f, 0x6e, 0x42, 0x0f, 0xea, 0xde, 0x1f, 0x0b, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61,
-	0x74, 0x69, 0x6f, 0x6e, 0x52, 0x0b, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f,
-	0x6e, 0x12, 0x54, 0x0a, 0x06, 0x72, 0x65, 0x61, 0x73, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28,
-	0x0e, 0x32, 0x30, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70, 0x70,
-	0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61,
-	0x74, 0x69, 0x6f, 0x6e, 0x55, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x52, 0x65, 0x61,
-	0x73, 0x6f, 0x6e, 0x42, 0x0a, 0xea, 0xde, 0x1f, 0x06, 0x72, 0x65, 0x61, 0x73, 0x6f, 0x6e, 0x52,
-	0x06, 0x72, 0x65, 0x61, 0x73, 0x6f, 0x6e, 0x22, 0x79, 0x0a, 0x21, 0x45, 0x76, 0x65, 0x6e, 0x74,
-	0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x55, 0x6e, 0x62, 0x6f, 0x6e,
-	0x64, 0x69, 0x6e, 0x67, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x65, 0x64, 0x12, 0x54, 0x0a, 0x0b,
-	0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28,
-	0x0b, 0x32, 0x21, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70, 0x70,
-	0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61,
-	0x74, 0x69, 0x6f, 0x6e, 0x42, 0x0f, 0xea, 0xde, 0x1f, 0x0b, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63,
-	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x0b, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69,
-	0x6f, 0x6e, 0x2a, 0x3f, 0x0a, 0x1a, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f,
-	0x6e, 0x55, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x52, 0x65, 0x61, 0x73, 0x6f, 0x6e,
-	0x12, 0x0c, 0x0a, 0x08, 0x45, 0x4c, 0x45, 0x43, 0x54, 0x49, 0x56, 0x45, 0x10, 0x00, 0x12, 0x13,
-	0x0a, 0x0f, 0x42, 0x45, 0x4c, 0x4f, 0x57, 0x5f, 0x4d, 0x49, 0x4e, 0x5f, 0x53, 0x54, 0x41, 0x4b,
-	0x45, 0x10, 0x01, 0x42, 0xc2, 0x01, 0xd8, 0xe2, 0x1e, 0x01, 0x0a, 0x18, 0x63, 0x6f, 0x6d, 0x2e,
+	0x69, 0x6f, 0x6e, 0x52, 0x11, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x41, 0x70, 0x70, 0x6c, 0x69,
+	0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x44, 0x0a, 0x12, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f,
+	0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x04, 0x20, 0x01,
+	0x28, 0x03, 0x42, 0x16, 0xea, 0xde, 0x1f, 0x12, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f,
+	0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x52, 0x10, 0x73, 0x65, 0x73, 0x73,
+	0x69, 0x6f, 0x6e, 0x45, 0x6e, 0x64, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x14, 0x0a, 0x05,
+	0x65, 0x72, 0x72, 0x6f, 0x72, 0x18, 0x05, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x65, 0x72, 0x72,
+	0x6f, 0x72, 0x22, 0x92, 0x02, 0x0a, 0x1e, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x41, 0x70, 0x70, 0x6c,
+	0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x55, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67,
+	0x42, 0x65, 0x67, 0x69, 0x6e, 0x12, 0x54, 0x0a, 0x0b, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61,
+	0x74, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x21, 0x2e, 0x70, 0x6f, 0x6b,
+	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0x2e, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x42, 0x0f, 0xea,
+	0xde, 0x1f, 0x0b, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x0b,
+	0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x54, 0x0a, 0x06, 0x72,
+	0x65, 0x61, 0x73, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x30, 0x2e, 0x70, 0x6f,
+	0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x2e, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x55, 0x6e,
+	0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x52, 0x65, 0x61, 0x73, 0x6f, 0x6e, 0x42, 0x0a, 0xea,
+	0xde, 0x1f, 0x06, 0x72, 0x65, 0x61, 0x73, 0x6f, 0x6e, 0x52, 0x06, 0x72, 0x65, 0x61, 0x73, 0x6f,
+	0x6e, 0x12, 0x44, 0x0a, 0x12, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x65, 0x6e, 0x64,
+	0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x03, 0x42, 0x16, 0xea,
+	0xde, 0x1f, 0x12, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68,
+	0x65, 0x69, 0x67, 0x68, 0x74, 0x52, 0x10, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x45, 0x6e,
+	0x64, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x22, 0x90, 0x02, 0x0a, 0x1c, 0x45, 0x76, 0x65, 0x6e,
+	0x74, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x55, 0x6e, 0x62, 0x6f,
+	0x6e, 0x64, 0x69, 0x6e, 0x67, 0x45, 0x6e, 0x64, 0x12, 0x54, 0x0a, 0x0b, 0x61, 0x70, 0x70, 0x6c,
+	0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x21, 0x2e,
 	0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61,
-	0x74, 0x69, 0x6f, 0x6e, 0x42, 0x0a, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x50, 0x72, 0x6f, 0x74, 0x6f,
-	0x50, 0x01, 0x5a, 0x25, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f,
-	0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x61, 0x70,
-	0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xa2, 0x02, 0x03, 0x50, 0x41, 0x58, 0xaa,
-	0x02, 0x14, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x41, 0x70, 0x70, 0x6c, 0x69,
-	0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xca, 0x02, 0x14, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c,
-	0x6c, 0x5c, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xe2, 0x02, 0x20,
-	0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61,
-	0x74, 0x69, 0x6f, 0x6e, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61,
-	0xea, 0x02, 0x15, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x3a, 0x3a, 0x41, 0x70, 0x70,
-	0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x42, 0x0f, 0xea, 0xde, 0x1f, 0x0b, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0x52, 0x0b, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x54,
+	0x0a, 0x06, 0x72, 0x65, 0x61, 0x73, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x30,
+	0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0x55, 0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x52, 0x65, 0x61, 0x73, 0x6f, 0x6e,
+	0x42, 0x0a, 0xea, 0xde, 0x1f, 0x06, 0x72, 0x65, 0x61, 0x73, 0x6f, 0x6e, 0x52, 0x06, 0x72, 0x65,
+	0x61, 0x73, 0x6f, 0x6e, 0x12, 0x44, 0x0a, 0x12, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f,
+	0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x03,
+	0x42, 0x16, 0xea, 0xde, 0x1f, 0x12, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x65, 0x6e,
+	0x64, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x52, 0x10, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f,
+	0x6e, 0x45, 0x6e, 0x64, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x22, 0xbf, 0x01, 0x0a, 0x21, 0x45,
+	0x76, 0x65, 0x6e, 0x74, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x55,
+	0x6e, 0x62, 0x6f, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x65, 0x64,
+	0x12, 0x54, 0x0a, 0x0b, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x21, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c,
+	0x2e, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x41, 0x70, 0x70,
+	0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x42, 0x0f, 0xea, 0xde, 0x1f, 0x0b, 0x61, 0x70,
+	0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x0b, 0x61, 0x70, 0x70, 0x6c, 0x69,
+	0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x44, 0x0a, 0x12, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f,
+	0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x02, 0x20, 0x01,
+	0x28, 0x03, 0x42, 0x16, 0xea, 0xde, 0x1f, 0x12, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f,
+	0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x52, 0x10, 0x73, 0x65, 0x73, 0x73,
+	0x69, 0x6f, 0x6e, 0x45, 0x6e, 0x64, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x2a, 0x3f, 0x0a, 0x1a,
+	0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x55, 0x6e, 0x62, 0x6f, 0x6e,
+	0x64, 0x69, 0x6e, 0x67, 0x52, 0x65, 0x61, 0x73, 0x6f, 0x6e, 0x12, 0x0c, 0x0a, 0x08, 0x45, 0x4c,
+	0x45, 0x43, 0x54, 0x49, 0x56, 0x45, 0x10, 0x00, 0x12, 0x13, 0x0a, 0x0f, 0x42, 0x45, 0x4c, 0x4f,
+	0x57, 0x5f, 0x4d, 0x49, 0x4e, 0x5f, 0x53, 0x54, 0x41, 0x4b, 0x45, 0x10, 0x01, 0x42, 0xc2, 0x01,
+	0xd8, 0xe2, 0x1e, 0x01, 0x0a, 0x18, 0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f,
+	0x6c, 0x6c, 0x2e, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x42, 0x0a,
+	0x45, 0x76, 0x65, 0x6e, 0x74, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x25, 0x63, 0x6f,
+	0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70,
+	0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0xa2, 0x02, 0x03, 0x50, 0x41, 0x58, 0xaa, 0x02, 0x14, 0x50, 0x6f, 0x6b, 0x74,
+	0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0xca, 0x02, 0x14, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x41, 0x70, 0x70, 0x6c,
+	0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xe2, 0x02, 0x20, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f,
+	0x6c, 0x6c, 0x5c, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5c, 0x47,
+	0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x15, 0x50, 0x6f, 0x6b,
+	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x3a, 0x3a, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -4695,20 +5128,21 @@ var file_poktroll_application_event_proto_goTypes = []interface{}{
 	(*Application)(nil),                       // 9: poktroll.application.Application
 }
 var file_poktroll_application_event_proto_depIdxs = []int32{
-	9, // 0: poktroll.application.EventApplicationStaked.application:type_name -> poktroll.application.Application
-	9, // 1: poktroll.application.EventTransferBegin.source_application:type_name -> poktroll.application.Application
-	9, // 2: poktroll.application.EventTransferEnd.destination_application:type_name -> poktroll.application.Application
-	9, // 3: poktroll.application.EventTransferError.source_application:type_name -> poktroll.application.Application
-	9, // 4: poktroll.application.EventApplicationUnbondingBegin.application:type_name -> poktroll.application.Application
-	0, // 5: poktroll.application.EventApplicationUnbondingBegin.reason:type_name -> poktroll.application.ApplicationUnbondingReason
-	9, // 6: poktroll.application.EventApplicationUnbondingEnd.application:type_name -> poktroll.application.Application
-	0, // 7: poktroll.application.EventApplicationUnbondingEnd.reason:type_name -> poktroll.application.ApplicationUnbondingReason
-	9, // 8: poktroll.application.EventApplicationUnbondingCanceled.application:type_name -> poktroll.application.Application
-	9, // [9:9] is the sub-list for method output_type
-	9, // [9:9] is the sub-list for method input_type
-	9, // [9:9] is the sub-list for extension type_name
-	9, // [9:9] is the sub-list for extension extendee
-	0, // [0:9] is the sub-list for field type_name
+	9,  // 0: poktroll.application.EventApplicationStaked.application:type_name -> poktroll.application.Application
+	9,  // 1: poktroll.application.EventRedelegation.application:type_name -> poktroll.application.Application
+	9,  // 2: poktroll.application.EventTransferBegin.source_application:type_name -> poktroll.application.Application
+	9,  // 3: poktroll.application.EventTransferEnd.destination_application:type_name -> poktroll.application.Application
+	9,  // 4: poktroll.application.EventTransferError.source_application:type_name -> poktroll.application.Application
+	9,  // 5: poktroll.application.EventApplicationUnbondingBegin.application:type_name -> poktroll.application.Application
+	0,  // 6: poktroll.application.EventApplicationUnbondingBegin.reason:type_name -> poktroll.application.ApplicationUnbondingReason
+	9,  // 7: poktroll.application.EventApplicationUnbondingEnd.application:type_name -> poktroll.application.Application
+	0,  // 8: poktroll.application.EventApplicationUnbondingEnd.reason:type_name -> poktroll.application.ApplicationUnbondingReason
+	9,  // 9: poktroll.application.EventApplicationUnbondingCanceled.application:type_name -> poktroll.application.Application
+	10, // [10:10] is the sub-list for method output_type
+	10, // [10:10] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_poktroll_application_event_proto_init() }

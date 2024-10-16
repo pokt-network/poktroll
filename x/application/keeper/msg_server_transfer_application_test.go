@@ -72,12 +72,21 @@ func TestMsgServer_TransferApplication_Success(t *testing.T) {
 	require.EqualValues(t, srcApp, transferResAppCopy)
 
 	// Assert that the transfer end event was emitted.
+	expectedApp := srcApp
+	expectedApp.PendingTransfer = &apptypes.PendingApplicationTransfer{
+		DestinationAddress: dstBech32,
+		SessionEndHeight:   uint64(transferSessionEndHeight),
+	}
+	expectedTransferEvent := &apptypes.EventTransferBegin{
+		SourceAddress:      srcBech32,
+		DestinationAddress: dstBech32,
+		SourceApplication:  &expectedApp,
+		SessionEndHeight:   transferSessionEndHeight,
+	}
 	events := cosmostypes.UnwrapSDKContext(ctx).EventManager().Events()
 	transferBeginEvents := testutilevents.FilterEvents[*apptypes.EventTransferBegin](t, events)
 	require.Equal(t, 1, len(transferBeginEvents), "expected 1 transfer begin event")
-	require.Equal(t, srcBech32, transferBeginEvents[0].GetSourceAddress())
-	require.Equal(t, dstBech32, transferBeginEvents[0].GetDestinationAddress())
-	require.Equal(t, srcBech32, transferBeginEvents[0].GetSourceApplication().GetAddress())
+	require.Equal(t, expectedTransferEvent, transferBeginEvents[0])
 
 	// Set the height to the transfer end height - 1 for the session.
 	transferEndHeight := apptypes.GetApplicationTransferHeight(&sharedParams, transferResApp)

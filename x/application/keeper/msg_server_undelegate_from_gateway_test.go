@@ -26,12 +26,12 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 	// Generate an address for the application and gateways
 	appAddr := sample.AccAddress()
 	maxDelegatedGateways := k.GetParams(ctx).MaxDelegatedGateways
-	gatewayAddresses := make([]string, int(maxDelegatedGateways))
-	for i := 0; i < len(gatewayAddresses); i++ {
+	expectedGatewayAddresses := make([]string, int(maxDelegatedGateways))
+	for i := 0; i < len(expectedGatewayAddresses); i++ {
 		gatewayAddr := sample.AccAddress()
 		// Mock the gateway being staked via the staked gateway map
 		keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr)
-		gatewayAddresses[i] = gatewayAddr
+		expectedGatewayAddresses[i] = gatewayAddr
 	}
 
 	// Prepare the application
@@ -51,7 +51,7 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 	require.True(t, isAppFound)
 
 	// Prepare the delegation messages and delegate the application to the gateways
-	for _, gatewayAddr := range gatewayAddresses {
+	for _, gatewayAddr := range expectedGatewayAddresses {
 		delegateMsg := &types.MsgDelegateToGateway{
 			AppAddress:     appAddr,
 			GatewayAddress: gatewayAddr,
@@ -62,15 +62,26 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 	}
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	currentHeight := sdkCtx.BlockHeight()
+	sharedParams := sharedtypes.DefaultParams()
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
 
+	// Assert that the EventRedelegation events are emitted.
 	events := sdkCtx.EventManager().Events()
 	redelgationEvents := testevents.FilterEvents[*apptypes.EventRedelegation](t, events)
 	require.Equal(t, int(maxDelegatedGateways), len(redelgationEvents))
 
 	for i, redelegationEvent := range redelgationEvents {
+		expectedApp := &apptypes.Application{
+			Address:                   stakeMsg.GetAddress(),
+			Stake:                     stakeMsg.GetStake(),
+			ServiceConfigs:            stakeMsg.GetServices(),
+			DelegateeGatewayAddresses: expectedGatewayAddresses[:i+1],
+			PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
+		}
 		expectedRedelegationEvent := &apptypes.EventRedelegation{
-			AppAddress:     appAddr,
-			GatewayAddress: gatewayAddresses[i],
+			Application:      expectedApp,
+			SessionEndHeight: sessionEndHeight,
 		}
 		require.EqualValues(t, expectedRedelegationEvent, redelegationEvent)
 	}
@@ -81,26 +92,37 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 	require.Equal(t, appAddr, foundApp.Address)
 	require.Equal(t, maxDelegatedGateways, uint64(len(foundApp.DelegateeGatewayAddresses)))
 
-	for i, gatewayAddr := range gatewayAddresses {
+	for i, gatewayAddr := range expectedGatewayAddresses {
 		require.Equal(t, gatewayAddr, foundApp.DelegateeGatewayAddresses[i])
 	}
 
 	// Prepare an undelegation message
 	undelegateMsg := &types.MsgUndelegateFromGateway{
 		AppAddress:     appAddr,
-		GatewayAddress: gatewayAddresses[3],
+		GatewayAddress: expectedGatewayAddresses[3],
 	}
 
 	// Undelegate the application from the gateway
 	_, err = srv.UndelegateFromGateway(ctx, undelegateMsg)
 	require.NoError(t, err)
 
+	expectedGatewayAddresses = append(expectedGatewayAddresses[:3], expectedGatewayAddresses[4:]...)
+	expectedApp := &apptypes.Application{
+		Address:                   stakeMsg.GetAddress(),
+		Stake:                     stakeMsg.GetStake(),
+		ServiceConfigs:            stakeMsg.GetServices(),
+		DelegateeGatewayAddresses: expectedGatewayAddresses,
+		PendingUndelegations: map[uint64]apptypes.UndelegatingGatewayList{
+			uint64(sessionEndHeight): {GatewayAddresses: []string{undelegateMsg.GetGatewayAddress()}},
+		},
+	}
+
 	events = sdkCtx.EventManager().Events()
 	redelgationEvents = testevents.FilterEvents[*apptypes.EventRedelegation](t, events)
 	lastEventIdx := len(redelgationEvents) - 1
 	expectedEvent := &apptypes.EventRedelegation{
-		AppAddress:     appAddr,
-		GatewayAddress: gatewayAddresses[3],
+		Application:      expectedApp,
+		SessionEndHeight: sessionEndHeight,
 	}
 	require.Equal(t, int(maxDelegatedGateways)+1, len(redelgationEvents))
 	require.EqualValues(t, expectedEvent, redelgationEvents[lastEventIdx])
@@ -111,8 +133,7 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 	require.Equal(t, appAddr, foundApp.Address)
 	require.Equal(t, maxDelegatedGateways-1, uint64(len(foundApp.DelegateeGatewayAddresses)))
 
-	gatewayAddresses = append(gatewayAddresses[:3], gatewayAddresses[4:]...)
-	for i, gatewayAddr := range gatewayAddresses {
+	for i, gatewayAddr := range expectedGatewayAddresses {
 		require.Equal(t, gatewayAddr, foundApp.DelegateeGatewayAddresses[i])
 	}
 }
@@ -174,9 +195,19 @@ func TestMsgServer_UndelegateFromGateway_FailNotDelegated(t *testing.T) {
 	_, err = srv.DelegateToGateway(ctx, delegateMsg)
 	require.NoError(t, err)
 
+	currentHeight := sdkCtx.BlockHeight()
+	sharedParams := sharedtypes.DefaultParams()
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
+	expectedApp := &apptypes.Application{
+		Address:                   stakeMsg.GetAddress(),
+		Stake:                     stakeMsg.GetStake(),
+		ServiceConfigs:            stakeMsg.GetServices(),
+		DelegateeGatewayAddresses: []string{gatewayAddr2},
+		PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
+	}
 	expectedRedelegationEvent := &apptypes.EventRedelegation{
-		AppAddress:     appAddr,
-		GatewayAddress: gatewayAddr2,
+		Application:      expectedApp,
+		SessionEndHeight: sessionEndHeight,
 	}
 
 	events = sdkCtx.EventManager().Events()
@@ -234,9 +265,19 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegateFromUnstakedGatew
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
+	currentHeight := sdkCtx.BlockHeight()
+	sharedParams := sharedtypes.DefaultParams()
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
+	expectedApp := &apptypes.Application{
+		Address:                   stakeMsg.GetAddress(),
+		Stake:                     stakeMsg.GetStake(),
+		ServiceConfigs:            stakeMsg.GetServices(),
+		DelegateeGatewayAddresses: []string{gatewayAddr},
+		PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
+	}
 	expectedRedelegationEvent := &apptypes.EventRedelegation{
-		AppAddress:     appAddr,
-		GatewayAddress: gatewayAddr,
+		Application:      expectedApp,
+		SessionEndHeight: sessionEndHeight,
 	}
 
 	events := sdkCtx.EventManager().Events()
@@ -272,9 +313,21 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegateFromUnstakedGatew
 	redelegationEvents = testevents.FilterEvents[*apptypes.EventRedelegation](t, events)
 	require.Equal(t, 1, len(redelegationEvents))
 
+	//currentHeight := sdkCtx.BlockHeight()
+	//sharedParams := sharedtypes.DefaultParams()
+	//sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
+	expectedApp = &apptypes.Application{
+		Address:                   stakeMsg.GetAddress(),
+		Stake:                     stakeMsg.GetStake(),
+		ServiceConfigs:            stakeMsg.GetServices(),
+		DelegateeGatewayAddresses: make([]string, 0),
+		PendingUndelegations: map[uint64]apptypes.UndelegatingGatewayList{
+			uint64(sessionEndHeight): {GatewayAddresses: []string{undelegateMsg.GetGatewayAddress()}},
+		},
+	}
 	expectedEvent := &apptypes.EventRedelegation{
-		AppAddress:     appAddr,
-		GatewayAddress: gatewayAddr,
+		Application:      expectedApp,
+		SessionEndHeight: sessionEndHeight,
 	}
 	for _, event := range redelegationEvents {
 		require.EqualValues(t, expectedEvent, event)
