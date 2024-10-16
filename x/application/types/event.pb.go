@@ -104,8 +104,6 @@ func (m *EventApplicationStaked) GetSessionEndHeight() int64 {
 // EventRedelegation is an event emitted whenever an application changes its
 // delegatee gateways on chain. This is in response to both a DelegateToGateway
 // and UndelegateFromGateway message.
-//
-// TODO_CONSIDERATION: Emitting the updated application would be more consistent with other events.
 type EventRedelegation struct {
 	// The application which was redelegated.
 	Application *Application `protobuf:"bytes,1,opt,name=application,proto3" json:"application"`

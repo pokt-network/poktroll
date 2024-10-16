@@ -26,8 +26,6 @@ message EventApplicationStaked {
 // EventRedelegation is an event emitted whenever an application changes its
 // delegatee gateways on chain. This is in response to both a DelegateToGateway
 // and UndelegateFromGateway message.
-//
-// TODO_CONSIDERATION: Emitting the updated application would be more consistent with other events.
 message EventRedelegation {
   // The application which was redelegated.
   poktroll.application.Application application = 1 [(gogoproto.jsontag) = "application"];
