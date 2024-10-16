@@ -71,6 +71,7 @@ func (k Keeper) EndBlockerTransferApplication(ctx context.Context) error {
 				SourceAddress:      srcApp.GetAddress(),
 				DestinationAddress: dstBech32,
 				SourceApplication:  &srcApp,
+				SessionEndHeight:   sessionEndHeight,
 				Error:              transferErr.Error(),
 			}); err != nil {
 				return err

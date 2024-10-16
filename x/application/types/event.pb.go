@@ -104,8 +104,6 @@ func (m *EventApplicationStaked) GetSessionEndHeight() int64 {
 // EventRedelegation is an event emitted whenever an application changes its
 // delegatee gateways on chain. This is in response to both a DelegateToGateway
 // and UndelegateFromGateway message.
-//
-// TODO_CONSIDERATION: Emitting the updated application would be more consistent with other events.
 type EventRedelegation struct {
 	// The application which was redelegated.
 	Application *Application `protobuf:"bytes,1,opt,name=application,proto3" json:"application"`
@@ -438,7 +436,7 @@ func (m *EventApplicationUnbondingBegin) GetSessionEndHeight() int64 {
 type EventApplicationUnbondingEnd struct {
 	Application *Application               `protobuf:"bytes,1,opt,name=application,proto3" json:"application"`
 	Reason      ApplicationUnbondingReason `protobuf:"varint,2,opt,name=reason,proto3,enum=poktroll.application.ApplicationUnbondingReason" json:"reason"`
-	// The end height of the session in which the transfer began.
+	// The end height of the session in which the transfer ended.
 	SessionEndHeight int64 `protobuf:"varint,3,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height"`
 }
 
@@ -497,7 +495,7 @@ func (m *EventApplicationUnbondingEnd) GetSessionEndHeight() int64 {
 // event will also be emitted immediately after this event.
 type EventApplicationUnbondingCanceled struct {
 	Application *Application `protobuf:"bytes,1,opt,name=application,proto3" json:"application"`
-	// The end height of the session in which the transfer began.
+	// The end height of the session in which the transfer was canceled.
 	SessionEndHeight int64 `protobuf:"varint,2,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height"`
 }
 

@@ -313,9 +313,6 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegateFromUnstakedGatew
 	redelegationEvents = testevents.FilterEvents[*apptypes.EventRedelegation](t, events)
 	require.Equal(t, 1, len(redelegationEvents))
 
-	//currentHeight := sdkCtx.BlockHeight()
-	//sharedParams := sharedtypes.DefaultParams()
-	//sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
 	expectedApp = &apptypes.Application{
 		Address:                   stakeMsg.GetAddress(),
 		Stake:                     stakeMsg.GetStake(),

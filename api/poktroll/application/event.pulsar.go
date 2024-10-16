@@ -3,11 +3,11 @@ package application
 
 import (
 	_ "cosmossdk.io/api/cosmos/base/v1beta1"
-	_ "github.com/pokt-network/poktroll/api/poktroll/shared"
 	fmt "fmt"
 	_ "github.com/cosmos/cosmos-proto"
 	runtime "github.com/cosmos/cosmos-proto/runtime"
 	_ "github.com/cosmos/gogoproto/gogoproto"
+	_ "github.com/pokt-network/poktroll/api/poktroll/shared"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoiface "google.golang.org/protobuf/runtime/protoiface"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -4531,8 +4531,6 @@ func (x *EventApplicationStaked) GetSessionEndHeight() int64 {
 // EventRedelegation is an event emitted whenever an application changes its
 // delegatee gateways on chain. This is in response to both a DelegateToGateway
 // and UndelegateFromGateway message.
-//
-// TODO_CONSIDERATION: Emitting the updated application would be more consistent with other events.
 type EventRedelegation struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -4844,7 +4842,7 @@ type EventApplicationUnbondingEnd struct {
 
 	Application *Application               `protobuf:"bytes,1,opt,name=application,proto3" json:"application,omitempty"`
 	Reason      ApplicationUnbondingReason `protobuf:"varint,2,opt,name=reason,proto3,enum=poktroll.application.ApplicationUnbondingReason" json:"reason,omitempty"`
-	// The end height of the session in which the transfer began.
+	// The end height of the session in which the transfer ended.
 	SessionEndHeight int64 `protobuf:"varint,3,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height,omitempty"`
 }
 
@@ -4898,7 +4896,7 @@ type EventApplicationUnbondingCanceled struct {
 	unknownFields protoimpl.UnknownFields
 
 	Application *Application `protobuf:"bytes,1,opt,name=application,proto3" json:"application,omitempty"`
-	// The end height of the session in which the transfer began.
+	// The end height of the session in which the transfer was canceled.
 	SessionEndHeight int64 `protobuf:"varint,2,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height,omitempty"`
 }
 
