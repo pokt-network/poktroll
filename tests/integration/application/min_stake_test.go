@@ -125,8 +125,9 @@ func (s *applicationMinStakeTestSuite) TestAppIsUnbondedIfBelowMinStakeWhenSettl
 	expectedApp.Stake = &expectedEndStake
 
 	expectedAppUnbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
-		Application: expectedApp,
-		Reason:      apptypes.ApplicationUnbondingReason_BELOW_MIN_STAKE,
+		Application:      expectedApp,
+		Reason:           apptypes.ApplicationUnbondingReason_BELOW_MIN_STAKE,
+		SessionEndHeight: currentSessionEndHeight,
 	}
 	events := cosmostypes.UnwrapSDKContext(s.ctx).EventManager().Events()
 	appUnbondingBeginEvents := testevents.FilterEvents[*apptypes.EventApplicationUnbondingBegin](s.T(), events)

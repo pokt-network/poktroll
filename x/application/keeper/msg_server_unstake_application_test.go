@@ -18,6 +18,7 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 	applicationModuleKeepers, ctx := keepertest.NewApplicationModuleKeepers(t)
 	srv := keeper.NewMsgServerImpl(*applicationModuleKeepers.Keeper)
 	sharedParams := applicationModuleKeepers.SharedKeeper.GetParams(ctx)
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, sdk.UnwrapSDKContext(ctx).BlockHeight())
 
 	// Generate an address for the application
 	unstakingAppAddr := sample.AccAddress()
@@ -62,11 +63,12 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 	require.NoError(t, err)
 
 	// Assert that the EventApplicationStaked event is emitted.
-	foundApp.UnstakeSessionEndHeight = uint64(apptypes.GetApplicationUnbondingHeight(&sharedParams, &foundApp))
+	foundApp.UnstakeSessionEndHeight = uint64(sessionEndHeight)
 	expectedEvent, err := sdk.TypedEventToEvent(
 		&apptypes.EventApplicationUnbondingBegin{
-			Application: &foundApp,
-			Reason:      apptypes.ApplicationUnbondingReason_ELECTIVE,
+			Application:      &foundApp,
+			Reason:           apptypes.ApplicationUnbondingReason_ELECTIVE,
+			SessionEndHeight: sessionEndHeight,
 		},
 	)
 	require.NoError(t, err)
@@ -122,6 +124,7 @@ func TestMsgServer_UnstakeApplication_CancelUnbondingIfRestaked(t *testing.T) {
 	applicationModuleKeepers, ctx := keepertest.NewApplicationModuleKeepers(t)
 	srv := keeper.NewMsgServerImpl(*applicationModuleKeepers.Keeper)
 	sharedParams := applicationModuleKeepers.SharedKeeper.GetParams(ctx)
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, sdk.UnwrapSDKContext(ctx).BlockHeight())
 
 	// Generate an address for the application
 	appAddr := sample.AccAddress()
@@ -143,11 +146,12 @@ func TestMsgServer_UnstakeApplication_CancelUnbondingIfRestaked(t *testing.T) {
 	require.NoError(t, err)
 
 	// Assert that the EventApplicationUnbondingCanceled event is emitted.
-	foundApp.UnstakeSessionEndHeight = uint64(sharedtypes.GetSessionEndHeight(&sharedParams, sdk.UnwrapSDKContext(ctx).BlockHeight()))
+	foundApp.UnstakeSessionEndHeight = uint64(sessionEndHeight)
 	foundApp.DelegateeGatewayAddresses = make([]string, 0)
 	expectedAppUnbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
-		Application: &foundApp,
-		Reason:      apptypes.ApplicationUnbondingReason_ELECTIVE,
+		Application:      &foundApp,
+		Reason:           apptypes.ApplicationUnbondingReason_ELECTIVE,
+		SessionEndHeight: sessionEndHeight,
 	}
 	events := sdk.UnwrapSDKContext(ctx).EventManager().Events()
 	appUnbondingBeginEvents := testevents.FilterEvents[*apptypes.EventApplicationUnbondingBegin](t, events)
