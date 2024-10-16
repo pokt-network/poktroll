@@ -118,7 +118,7 @@ func NewAnyTimeLastNRedelegationsClient(
 	// Create a mock redelegation that returns the provided appAddress
 	redelegation := &apptypes.EventRedelegation{
 		Application: &apptypes.Application{
-			Address: appAddress,
+			Address:                   appAddress,
 			DelegateeGatewayAddresses: []string{},
 		},
 	}
