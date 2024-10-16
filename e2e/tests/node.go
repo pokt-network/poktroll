@@ -26,6 +26,10 @@ var (
 	defaultAppGateServerURL = os.Getenv("APPGATE_SERVER")
 	// defaultDebugOutput provides verbose output on manipulations with binaries (cli command, stdout, stderr)
 	defaultDebugOutput = os.Getenv("E2E_DEBUG_OUTPUT")
+	// serviceIdToAliasMap maps service IDs to their respective aliases
+	serviceIdToAliasMap = map[string]string{
+		"0021": "anvil",
+	}
 )
 
 func isVerbose() bool {
@@ -172,8 +176,8 @@ func (p *pocketdBin) runPocketCmd(args ...string) (*commandResult, error) {
 
 // runCurlPostCmd is a helper to run a command using the local pocketd binary with the flags provided
 func (p *pocketdBin) runCurlCmd(rpcUrl, service, method, path, data string, args ...string) (*commandResult, error) {
-	urlStr := fmt.Sprintf("http://%s.%s/v1%s", service, rpcUrl, path)
-	fmt.Println("============URL:", urlStr)
+	serviceAlias := serviceIdToAliasMap[service]
+	urlStr := fmt.Sprintf("http://%s.%s/v1%s", serviceAlias, rpcUrl, path)
 	base := []string{
 		"-v",         // verbose output
 		"-sS",        // silent with error

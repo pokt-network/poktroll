@@ -14,7 +14,7 @@ Feature: Session Namespace
     And the "shared" module parameters are set as follows
         | compute_units_to_tokens_multiplier | 42                                                         | int64 |
     And all "shared" module params should be updated
-    When the supplier "supplier1" has serviced a session with "5" relays for service "anvil" for application "app1"
+    When the supplier "supplier1" has serviced a session with "5" relays for service "0021" for application "app1"
     And the user should wait for the "proof" module "CreateClaim" Message to be submitted
     And the user should wait for the "proof" module "ClaimCreated" tx event to be broadcast
     Then the claim created by supplier "supplier1" for service "svc1" for application "app1" should be persisted on-chain

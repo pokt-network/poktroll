@@ -6,7 +6,7 @@ Feature: Relay Namespace
         And the application "app1" is staked for service "0021"
         And the supplier "supplier1" is staked for service "0021"
         And the session for application "app1" and service "0021" contains the supplier "supplier1"
-        Then the application "app1" sends the supplier "supplier1" a successful request for service "anvil" with path "" and data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}'
+        Then the application "app1" sends the supplier "supplier1" a successful request for service "0021" with path "" and data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}'
 
     Scenario: App can send a REST relay to Supplier
         Given the user has the pocketd binary installed

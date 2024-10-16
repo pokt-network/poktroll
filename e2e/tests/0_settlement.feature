@@ -28,7 +28,7 @@ Feature: Tokenomics Namespace
         And the "shared" module parameters are set as follows
             | compute_units_to_tokens_multiplier | 42                                                         | int64 |
         And all "shared" module params should be updated
-        When the supplier "supplier1" has serviced a session with "20" relays for service "anvil" for application "app1"
+        When the supplier "supplier1" has serviced a session with "20" relays for service "0021" for application "app1"
         # Wait for the Claim & Proof lifecycle
         And the user should wait for the "proof" module "CreateClaim" Message to be submitted
         And the user should wait for the "proof" module "SubmitProof" Message to be submitted
@@ -63,7 +63,7 @@ Feature: Tokenomics Namespace
             | compute_units_to_tokens_multiplier | 42                                                         | int64 |
         And all "shared" module params should be updated
         # Start servicing
-        When the supplier "supplier1" has serviced a session with "10" relays for service "anvil" for application "app1"
+        When the supplier "supplier1" has serviced a session with "10" relays for service "0021" for application "app1"
         # Wait for the Claim & Proof lifecycle
         And the user should wait for the "proof" module "CreateClaim" Message to be submitted
         # No proof should be submitted, don't wait for one.
