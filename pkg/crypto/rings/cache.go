@@ -11,6 +11,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/crypto"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/polylog"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	"github.com/pokt-network/poktroll/x/service/types"
 )
 
@@ -87,19 +88,20 @@ func (rc *ringCache) goInvalidateCache(ctx context.Context) {
 	redelegationObs := rc.delegationClient.RedelegationsSequence(ctx)
 	// For each redelegation event, check if the redelegation events'
 	// app address is in the cache. If it is, invalidate the cache entry.
-	channel.ForEach[client.Redelegation](
+	channel.ForEach[*apptypes.EventRedelegation](
 		ctx, redelegationObs,
-		func(ctx context.Context, redelegation client.Redelegation) {
+		func(ctx context.Context, redelegation *apptypes.EventRedelegation) {
 			// Lock ringsByAddr for writing.
 			rc.ringsByAddrMu.Lock()
 			defer rc.ringsByAddrMu.Unlock()
 			// Check if the redelegation event's app address is in the cache.
-			if _, ok := rc.ringsByAddr[redelegation.GetAppAddress()]; ok {
+			appAddr := redelegation.GetApplication().GetAddress()
+			if _, ok := rc.ringsByAddr[appAddr]; ok {
 				rc.logger.Debug().
-					Str("app_address", redelegation.GetAppAddress()).
+					Str("app_address", appAddr).
 					Msg("redelegation event received; invalidating ringsByAddr entry")
 				// Invalidate the ringsByAddr entry.
-				delete(rc.ringsByAddr, redelegation.GetAppAddress())
+				delete(rc.ringsByAddr, appAddr)
 			}
 		})
 }

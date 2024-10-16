@@ -294,11 +294,23 @@ func (k Keeper) ProcessTokenLogicModules(
 
 	// TODO_CONSIDERATION: If we support multiple native tokens, we will need to
 	// start checking the denom here.
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, cosmostypes.UnwrapSDKContext(ctx).BlockHeight())
 	if application.Stake.Amount.LT(apptypes.DefaultMinStake.Amount) {
 		// Mark the application as unbonding if it has less than the minimum stake.
 		application.UnstakeSessionEndHeight = apptypes.ApplicationBelowMinStake
 
-		// TODO_UPNEXT:(@bryanchriswhite): emit a new EventApplicationUnbondedBelowMinStake event.
+		appUnbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
+			Application:      &application,
+			Reason:           apptypes.ApplicationUnbondingReason_BELOW_MIN_STAKE,
+			SessionEndHeight: sessionEndHeight,
+		}
+
+		sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+		if err := sdkCtx.EventManager().EmitTypedEvent(appUnbondingBeginEvent); err != nil {
+			err = apptypes.ErrAppEmitEvent.Wrapf("(%+v): %s", appUnbondingBeginEvent, err)
+			logger.Error(err.Error())
+			return err
+		}
 	}
 
 	// State mutation: update the application's on-chain record.

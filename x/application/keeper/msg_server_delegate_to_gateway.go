@@ -7,10 +7,11 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/telemetry"
-	"github.com/pokt-network/poktroll/x/application/types"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-func (k msgServer) DelegateToGateway(ctx context.Context, msg *types.MsgDelegateToGateway) (*types.MsgDelegateToGatewayResponse, error) {
+func (k msgServer) DelegateToGateway(ctx context.Context, msg *apptypes.MsgDelegateToGateway) (*apptypes.MsgDelegateToGatewayResponse, error) {
 	isSuccessful := false
 	defer telemetry.EventSuccessCounter(
 		"delegate_to_gateway",
@@ -30,28 +31,28 @@ func (k msgServer) DelegateToGateway(ctx context.Context, msg *types.MsgDelegate
 	app, found := k.GetApplication(ctx, msg.AppAddress)
 	if !found {
 		logger.Info(fmt.Sprintf("Application not found with address [%s]", msg.AppAddress))
-		return nil, types.ErrAppNotFound.Wrapf("application not found with address: %s", msg.AppAddress)
+		return nil, apptypes.ErrAppNotFound.Wrapf("application not found with address: %s", msg.AppAddress)
 	}
 	logger.Info(fmt.Sprintf("Application found with address [%s]", msg.AppAddress))
 
 	// Check if the gateway is staked
 	if _, found := k.gatewayKeeper.GetGateway(ctx, msg.GatewayAddress); !found {
 		logger.Info(fmt.Sprintf("Gateway not found with address [%s]", msg.GatewayAddress))
-		return nil, types.ErrAppGatewayNotFound.Wrapf("gateway not found with address: %s", msg.GatewayAddress)
+		return nil, apptypes.ErrAppGatewayNotFound.Wrapf("gateway not found with address: %s", msg.GatewayAddress)
 	}
 
 	// Ensure the application is not already delegated to the maximum number of gateways
 	maxDelegatedParam := k.GetParams(ctx).MaxDelegatedGateways
 	if uint64(len(app.DelegateeGatewayAddresses)) >= maxDelegatedParam {
 		logger.Info(fmt.Sprintf("Application already delegated to maximum number of gateways: %d", maxDelegatedParam))
-		return nil, types.ErrAppMaxDelegatedGateways.Wrapf("application already delegated to %d gateways", maxDelegatedParam)
+		return nil, apptypes.ErrAppMaxDelegatedGateways.Wrapf("application already delegated to %d gateways", maxDelegatedParam)
 	}
 
 	// Check if the application is already delegated to the gateway
 	for _, gatewayAddr := range app.DelegateeGatewayAddresses {
 		if gatewayAddr == msg.GatewayAddress {
 			logger.Info(fmt.Sprintf("Application already delegated to gateway with address [%s]", msg.GatewayAddress))
-			return nil, types.ErrAppAlreadyDelegated.Wrapf("application already delegated to gateway with address: %s", msg.GatewayAddress)
+			return nil, apptypes.ErrAppAlreadyDelegated.Wrapf("application already delegated to gateway with address: %s", msg.GatewayAddress)
 		}
 	}
 
@@ -64,7 +65,13 @@ func (k msgServer) DelegateToGateway(ctx context.Context, msg *types.MsgDelegate
 	logger.Info(fmt.Sprintf("Successfully delegated application to gateway for app: %+v", app))
 
 	// Emit the application redelegation event
-	event := msg.NewRedelegationEvent()
+	currentHeight := sdk.UnwrapSDKContext(ctx).BlockHeight()
+	sharedParams := k.sharedKeeper.GetParams(ctx)
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
+	event := &apptypes.EventRedelegation{
+		Application:      &app,
+		SessionEndHeight: sessionEndHeight,
+	}
 	logger.Info(fmt.Sprintf("Emitting application redelegation event %v", event))
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
@@ -74,7 +81,7 @@ func (k msgServer) DelegateToGateway(ctx context.Context, msg *types.MsgDelegate
 	}
 
 	isSuccessful = true
-	return &types.MsgDelegateToGatewayResponse{
+	return &apptypes.MsgDelegateToGatewayResponse{
 		Application: &app,
 	}, nil
 }

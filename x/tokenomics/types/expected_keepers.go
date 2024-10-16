@@ -45,6 +45,7 @@ type ApplicationKeeper interface {
 	SetApplication(ctx context.Context, app apptypes.Application)
 	GetAllApplications(ctx context.Context) []apptypes.Application
 	UnbondApplication(ctx context.Context, app *apptypes.Application) error
+	EndBlockerUnbondApplications(ctx context.Context) error
 }
 
 type ProofKeeper interface {
