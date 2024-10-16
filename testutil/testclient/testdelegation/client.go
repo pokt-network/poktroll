@@ -147,10 +147,11 @@ func NewRedelegationEventBytes(
 	cdc := codec.NewProtoCodec(registry)
 	txCfg := authtx.NewTxConfig(cdc, authtx.DefaultSignModes)
 	txBuilder := txCfg.NewTxBuilder()
-	txBuilder.SetMsgs(&apptypes.MsgDelegateToGateway{
+	err := txBuilder.SetMsgs(&apptypes.MsgDelegateToGateway{
 		AppAddress:     appAddress,
 		GatewayAddress: gatewayAddress,
 	})
+	require.NoError(t, err)
 	txBz, err := txCfg.TxEncoder()(txBuilder.GetTx())
 	require.NoError(t, err)
 
