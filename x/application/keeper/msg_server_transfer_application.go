@@ -73,6 +73,7 @@ func (k msgServer) TransferApplication(ctx context.Context, msg *types.MsgTransf
 		SourceAddress:      srcApp.GetAddress(),
 		DestinationAddress: srcApp.GetPendingTransfer().GetDestinationAddress(),
 		SourceApplication:  &srcApp,
+		SessionEndHeight:   sessionEndHeight,
 	}); err != nil {
 		logger.Error(fmt.Sprintf("could not emit transfer begin event: %v", err))
 	}

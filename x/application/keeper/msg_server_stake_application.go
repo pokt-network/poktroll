@@ -114,8 +114,10 @@ func (k msgServer) StakeApplication(ctx context.Context, msg *types.MsgStakeAppl
 	}
 
 	// ALWAYS emit an application staked event.
+	currentHeight := sdk.UnwrapSDKContext(ctx).BlockHeight()
 	events = append(events, &types.EventApplicationStaked{
-		Application: &foundApp,
+		Application:      &foundApp,
+		SessionEndHeight: k.sharedKeeper.GetSessionEndHeight(ctx, currentHeight),
 	})
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)

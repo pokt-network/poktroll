@@ -54,9 +54,19 @@ func TestMsgServer_DelegateToGateway_SuccessfullyDelegate(t *testing.T) {
 	require.NoError(t, err)
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	currentHeight := sdkCtx.BlockHeight()
+	sharedParams := sharedtypes.DefaultParams()
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
+	expectedApp := &apptypes.Application{
+		Address:                   stakeMsg.GetAddress(),
+		Stake:                     stakeMsg.GetStake(),
+		ServiceConfigs:            stakeMsg.GetServices(),
+		DelegateeGatewayAddresses: []string{gatewayAddr1},
+		PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
+	}
 	expectedEvent := &apptypes.EventRedelegation{
-		AppAddress:     appAddr,
-		GatewayAddress: gatewayAddr1,
+		Application:      expectedApp,
+		SessionEndHeight: sessionEndHeight,
 	}
 
 	events := sdkCtx.EventManager().Events()
@@ -135,9 +145,19 @@ func TestMsgServer_DelegateToGateway_FailDuplicate(t *testing.T) {
 	require.NoError(t, err)
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	currentHeight := sdkCtx.BlockHeight()
+	sharedParams := sharedtypes.DefaultParams()
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
+	expectedApp := &apptypes.Application{
+		Address:                   stakeMsg.GetAddress(),
+		Stake:                     stakeMsg.GetStake(),
+		ServiceConfigs:            stakeMsg.GetServices(),
+		DelegateeGatewayAddresses: []string{gatewayAddr},
+		PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
+	}
 	expectedEvent := &apptypes.EventRedelegation{
-		AppAddress:     appAddr,
-		GatewayAddress: gatewayAddr,
+		Application:      expectedApp,
+		SessionEndHeight: sessionEndHeight,
 	}
 
 	events := sdkCtx.EventManager().Events()
@@ -256,6 +276,9 @@ func TestMsgServer_DelegateToGateway_FailMaxReached(t *testing.T) {
 	}
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	currentHeight := sdkCtx.BlockHeight()
+	sharedParams := sharedtypes.DefaultParams()
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
 
 	events := sdkCtx.EventManager().Events()
 	filteredEvents := testevents.FilterEvents[*apptypes.EventRedelegation](t, events)
@@ -263,9 +286,16 @@ func TestMsgServer_DelegateToGateway_FailMaxReached(t *testing.T) {
 
 	// TODO_UPNEXT(@bryanchriswhite): These events should be distinguishable.
 	for i, event := range filteredEvents {
+		expectedApp := &apptypes.Application{
+			Address:                   stakeMsg.GetAddress(),
+			Stake:                     stakeMsg.GetStake(),
+			ServiceConfigs:            stakeMsg.GetServices(),
+			DelegateeGatewayAddresses: gatewayAddresses[:i+1],
+			PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
+		}
 		expectedEvent := &apptypes.EventRedelegation{
-			AppAddress:     appAddr,
-			GatewayAddress: gatewayAddresses[i],
+			Application:      expectedApp,
+			SessionEndHeight: sessionEndHeight,
 		}
 		require.EqualValues(t, expectedEvent, event)
 	}
