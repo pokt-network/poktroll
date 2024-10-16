@@ -119,7 +119,6 @@ func NewAnyTimeLastNRedelegationsClient(
 	redelegation := &apptypes.EventRedelegation{
 		Application: &apptypes.Application{
 			Address: appAddress,
-			// TODO_IN_THIS_COMMIT: finished here?
 			DelegateeGatewayAddresses: []string{},
 		},
 	}
