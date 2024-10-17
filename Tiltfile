@@ -399,14 +399,12 @@ def load_pocketdex():
 if localnet_config["indexer"]["enabled"]:
     # Check if sibling pocketdex repo exists.
     pocketdex_repo_exists = local("[ -d '../pocketdex' ] && echo 'true' || echo 'false'")
-    print("POCKETDEX_REPO_EXISTS: ", str(pocketdex_repo_exists).strip())
     if str(pocketdex_repo_exists).strip() == "false":
         if localnet_config["indexer"]["clone_if_not_present"]:
             print("Cloning pocketdex repo")
             local("git clone https://github.com/pokt-network/pocketdex --branch chore/tilt ../pocketdex")
             load_pocketdex()
         else:
-            print("NOT CLONING")
             local_resource("Indexer Disabled",
                            "echo 'Pocketdex repo not found. Set `clone_if_not_present` to `true` in `localnet_config.yaml` and restart tilt to clone the repo.'",
                            labels=["Pocketdex"])
