@@ -58,6 +58,10 @@ localnet_config_defaults = {
     # By default, we use the `helm_repo` function below to point to the remote repository
     # but can update it to the locally cloned repo for testing & development
     "helm_chart_local_repo": {"enabled": False, "path": "../helm-charts"},
+    "indexer": {
+        "enabled": True,
+        "clone_if_not_present": False,
+    }
 }
 localnet_config_file = read_yaml(localnet_config_path, default=localnet_config_defaults)
 # Initial empty config
@@ -81,7 +85,6 @@ if localnet_config["helm_chart_local_repo"]["enabled"]:
     hot_reload_dirs.append(helm_chart_local_repo)
     print("Using local helm chart repo " + helm_chart_local_repo)
     chart_prefix = helm_chart_local_repo + "/charts/"
-
 
 # Observability
 print("Observability enabled: " + str(localnet_config["observability"]["enabled"]))
@@ -383,3 +386,34 @@ if localnet_config["rest"]["enabled"]:
     print("REST enabled: " + str(localnet_config["rest"]["enabled"]))
     deployment_create("rest", image="davarski/go-rest-api-demo")
     k8s_resource("rest", labels=["data_nodes"], port_forwards=["10000"])
+
+### Pocketdex Shannon Indexer
+def load_pocketdex():
+    pocketdex_tilt = load_dynamic("../pocketdex/pocketdex.tilt")
+    pocketdex_tilt["pocketdex"]("../pocketdex",
+                                genesis_file_name="localnet.json",
+                                postgres_values_path="../pocketdex/k8s/postgres/values.yaml",
+                                indexer_values_path="./localnet/kubernetes/values-pocketdex-indexer.yaml",
+                                gql_engine_values_path="./localnet/kubernetes/values-pocketdex-gql-engine.yaml")
+
+if localnet_config["indexer"]["enabled"]:
+    # Check if sibling pocketdex repo exists.
+    pocketdex_repo_exists = local("[ -d '../pocketdex' ] && echo 'true' || echo 'false'")
+    print("POCKETDEX_REPO_EXISTS: ", str(pocketdex_repo_exists).strip())
+    if str(pocketdex_repo_exists).strip() == "false":
+        if localnet_config["indexer"]["clone_if_not_present"]:
+            print("Cloning pocketdex repo")
+            local("git clone https://github.com/pokt-network/pocketdex --branch chore/tilt ../pocketdex")
+            load_pocketdex()
+        else:
+            print("NOT CLONING")
+            local_resource("Indexer Disabled",
+                           "echo 'Pocketdex repo not found. Set `clone_if_not_present` to `true` in `localnet_config.yaml` and restart tilt to clone the repo.'",
+                           labels=["Pocketdex"])
+    else:
+        print("Using existing pocketdex repo")
+        load_pocketdex()
+else:
+    local_resource("Indexer Disabled",
+                   "echo 'Pocketdex indexer disabled. Set `indexer.enabled` to `true` in `localnet_config.yaml` to enable it.'",
+                   labels=["Pocketdex"])
