@@ -388,6 +388,11 @@ if localnet_config["rest"]["enabled"]:
     k8s_resource("rest", labels=["data_nodes"], port_forwards=["10000"])
 
 ### Pocketdex Shannon Indexer
+def pocketdex_disabled(reason):
+    local_resource("Indexer Disabled",
+                   "echo '{}'".format(reason),
+                   labels=["Pocketdex"])
+
 def load_pocketdex():
     pocketdex_tilt = load_dynamic("../pocketdex/pocketdex.tilt")
     pocketdex_tilt["pocketdex"]("../pocketdex",
@@ -398,6 +403,10 @@ def load_pocketdex():
 
 if localnet_config["indexer"]["enabled"]:
     # Check if sibling pocketdex repo exists.
+    # If it does, load the pocketdex.tilt file from the sibling repo.
+    # Otherwise check the `indexer.clone_if_not_present` flag in `localnet_config.yaml`
+    # and EITHER clone pocketdex to ../pocketdex OR prints a message if true or false,
+    # respectively.
     pocketdex_repo_exists = local("[ -d '../pocketdex' ] && echo 'true' || echo 'false'")
     if str(pocketdex_repo_exists).strip() == "false":
         if localnet_config["indexer"]["clone_if_not_present"]:
@@ -405,13 +414,9 @@ if localnet_config["indexer"]["enabled"]:
             local("git clone https://github.com/pokt-network/pocketdex --branch chore/tilt ../pocketdex")
             load_pocketdex()
         else:
-            local_resource("Indexer Disabled",
-                           "echo 'Pocketdex repo not found. Set `clone_if_not_present` to `true` in `localnet_config.yaml` and restart tilt to clone the repo.'",
-                           labels=["Pocketdex"])
+            pocketdex_disabled("Pocketdex repo not found at ../pocketdex. Set `clone_if_not_present` to `true` in `localnet_config.yaml`.".format())
     else:
         print("Using existing pocketdex repo")
         load_pocketdex()
 else:
-    local_resource("Indexer Disabled",
-                   "echo 'Pocketdex indexer disabled. Set `indexer.enabled` to `true` in `localnet_config.yaml` to enable it.'",
-                   labels=["Pocketdex"])
+   pocketdex_disabled("Pocketdex indexer disabled. Set `indexer.enabled` to `true` in `localnet_config.yaml` to enable it.")
