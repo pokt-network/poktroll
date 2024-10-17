@@ -94,7 +94,7 @@ setup_env_vars() {
     echo "export DAEMON_HOME=\$HOME/.poktroll" >> \$HOME/.profile
     echo "export DAEMON_RESTART_AFTER_UPGRADE=true" >> \$HOME/.profile
     echo "export DAEMON_ALLOW_DOWNLOAD_BINARIES=true" >> \$HOME/.profile
-    echo "export UNSAFE_SKIP_BACKUP=true" >> \$HOME/.profile
+    echo "export UNSAFE_SKIP_BACKUP=false" >> \$HOME/.profile
     source \$HOME/.profile
 EOF
     print_color $GREEN "Environment variables set up successfully."
@@ -138,12 +138,15 @@ setup_poktrolld() {
         exit 1
     fi
 
-    # Use the direct download link for the latest release
-    LATEST_RELEASE_URL="https://github.com/pokt-network/poktroll/releases/latest/download/poktroll_linux_${ARCH}.tar.gz"
+    # Get the version genesis started from
+    POKTROLLD_VERSION=$(curl -s https://raw.githubusercontent.com/pokt-network/pocket-network-genesis/master/poktrolld/testnet-validated.init-version)
+
+    # Use the direct download link for the correct release
+    RELEASE_URL="https://github.com/pokt-network/poktroll/releases/download/${POKTROLLD_VERSION}/poktroll_linux_${ARCH}.tar.gz"
 
     sudo -u "$POKTROLL_USER" bash << EOF
     mkdir -p \$HOME/.poktroll/cosmovisor/genesis/bin
-    curl -L "$LATEST_RELEASE_URL" | tar -zxvf - -C \$HOME/.poktroll/cosmovisor/genesis/bin
+    curl -L "$RELEASE_URL" | tar -zxvf - -C \$HOME/.poktroll/cosmovisor/genesis/bin
     chmod +x \$HOME/.poktroll/cosmovisor/genesis/bin/poktrolld
     ln -sf \$HOME/.poktroll/cosmovisor/genesis/bin/poktrolld \$HOME/bin/poktrolld
     source \$HOME/.profile
