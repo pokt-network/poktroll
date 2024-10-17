@@ -10,10 +10,11 @@ Feature: Relay Namespace
 
     Scenario: App can send a REST relay to Supplier
         Given the user has the pocketd binary installed
-        And the application "app1" is staked for service "rest"
+        # Account "app2" is staked for service "rest"
+        And the application "app2" is staked for service "rest"
         And the supplier "supplier1" is staked for service "rest"
-        And the session for application "app1" and service "rest" contains the supplier "supplier1"
-       When the application "app1" sends the supplier "supplier1" a successful request for service "rest" with path "/quote"
+        And the session for application "app2" and service "rest" contains the supplier "supplier1"
+       When the application "app2" sends the supplier "supplier1" a successful request for service "rest" with path "/quote"
        Then a "tokenomics" module "ClaimSettled" end block event is broadcast
 
     # TODO_TEST(@Olshansk):

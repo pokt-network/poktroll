@@ -102,7 +102,7 @@ func TestTxClient_SignAndBroadcast_Succeeds(t *testing.T) {
 	appStakeMsg := &apptypes.MsgStakeApplication{
 		Address:  signingKeyAddr.String(),
 		Stake:    &appStake,
-		Services: client.NewTestApplicationServiceConfig(testServiceIdPrefix, 2),
+		Services: client.NewTestApplicationServiceConfig(testServiceIdPrefix, 1),
 	}
 
 	// Sign and broadcast the message.
@@ -339,7 +339,7 @@ $ go test -v -count=1 -run TestTxClient_SignAndBroadcast_CheckTxError ./pkg/clie
 	appStakeMsg := &apptypes.MsgStakeApplication{
 		Address:  signingKeyAddr.String(),
 		Stake:    &appStake,
-		Services: client.NewTestApplicationServiceConfig(testServiceIdPrefix, 2),
+		Services: client.NewTestApplicationServiceConfig(testServiceIdPrefix, 1),
 	}
 
 	// Sign and broadcast the message.
@@ -411,7 +411,7 @@ func TestTxClient_SignAndBroadcast_Timeout(t *testing.T) {
 	appStakeMsg := &apptypes.MsgStakeApplication{
 		Address:  signingKeyAddr.String(),
 		Stake:    &appStake,
-		Services: client.NewTestApplicationServiceConfig(testServiceIdPrefix, 2),
+		Services: client.NewTestApplicationServiceConfig(testServiceIdPrefix, 1),
 	}
 
 	// Sign and broadcast the message in a transaction.
