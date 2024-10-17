@@ -1,3 +1,4 @@
+port: 3000
 env:
   NODE_ENV: development
   # LocalNet
@@ -5,8 +6,6 @@ env:
   CHAIN_ID: "poktroll"
   # db schema name
   DB_SCHEMA: "localnet"
-  # indexer endpoint
-  indexer_endpoint: "http://indexer-service:3000"
 
   START_BLOCK: 1
   # Check docs to see what else you can set here:

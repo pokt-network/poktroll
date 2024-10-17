@@ -394,10 +394,10 @@ def pocketdex_disabled(reason):
                    labels=["Pocketdex"])
 
 def load_pocketdex():
-    pocketdex_tilt = load_dynamic("../pocketdex/pocketdex.tilt")
+    pocketdex_tilt = load_dynamic("../pocketdex/tiltfiles/pocketdex.tilt")
     pocketdex_tilt["pocketdex"]("../pocketdex",
                                 genesis_file_name="localnet.json",
-                                postgres_values_path="../pocketdex/k8s/postgres/values.yaml",
+                                postgres_values_path="./localnet/kubernetes/values-pocketdex-postgres.yaml",
                                 indexer_values_path="./localnet/kubernetes/values-pocketdex-indexer.yaml",
                                 gql_engine_values_path="./localnet/kubernetes/values-pocketdex-gql-engine.yaml")
 
