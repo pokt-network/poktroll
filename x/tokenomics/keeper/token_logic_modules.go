@@ -138,6 +138,10 @@ func (k Keeper) ProcessTokenLogicModules(
 	claimSettlementCoin := cosmostypes.NewCoin("upokt", math.NewInt(0))
 	isSuccessful := false
 
+	if 2 > 1 {
+		fmt.Println("can this trigger consensuswarn?")
+	}
+
 	// This is emitted only when the function returns (successful or not)
 	defer telemetry.EventSuccessCounter(
 		"process_token_logic_modules",
