@@ -33,7 +33,6 @@ import (
 	"github.com/pokt-network/poktroll/testutil/testrelayer"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -370,8 +369,8 @@ func playClaimAndProofSubmissionBlocks(
 	// Calculate the session grace period end block height to emit that block height
 	// to the blockPublishCh to trigger session trees processing for the session number.
 	sharedParams := sharedtypes.DefaultParams()
-	claimWindowOpenHeight := shared.GetClaimWindowOpenHeight(&sharedParams, sessionEndHeight)
-	earliestSupplierClaimCommitHeight := shared.GetEarliestSupplierClaimCommitHeight(
+	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(&sharedParams, sessionEndHeight)
+	earliestSupplierClaimCommitHeight := sharedtypes.GetEarliestSupplierClaimCommitHeight(
 		&sharedParams,
 		sessionEndHeight,
 		blockHash,
@@ -389,14 +388,14 @@ func playClaimAndProofSubmissionBlocks(
 
 	waitSimulateIO()
 
-	proofWindowOpenHeight := shared.GetProofWindowOpenHeight(&sharedParams, sessionEndHeight)
+	proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(&sharedParams, sessionEndHeight)
 	proofPathSeedBlock := testblock.NewAnyTimesBlock(t, blockHash, proofWindowOpenHeight)
 	blockPublishCh <- proofPathSeedBlock
 
 	waitSimulateIO()
 
 	// Publish a block to the blockPublishCh to trigger proof submission for the session.
-	earliestSupplierProofCommitHeight := shared.GetEarliestSupplierProofCommitHeight(
+	earliestSupplierProofCommitHeight := sharedtypes.GetEarliestSupplierProofCommitHeight(
 		&sharedParams,
 		sessionEndHeight,
 		blockHash,

@@ -118,10 +118,10 @@ func (params *Params) ValidateBasic() error {
 
 // ValidateProofRequestProbability validates the ProofRequestProbability param.
 // NB: The argument is an interface type to satisfy the ParamSetPair function signature.
-func ValidateProofRequestProbability(v interface{}) error {
-	proofRequestProbability, ok := v.(float32)
+func ValidateProofRequestProbability(proofRequestProbabilityAny any) error {
+	proofRequestProbability, ok := proofRequestProbabilityAny.(float32)
 	if !ok {
-		return ErrProofParamInvalid.Wrapf("invalid parameter type: %T", v)
+		return ErrProofParamInvalid.Wrapf("invalid parameter type: %T", proofRequestProbabilityAny)
 	}
 
 	if proofRequestProbability < 0 || proofRequestProbability > 1 {
@@ -133,10 +133,22 @@ func ValidateProofRequestProbability(v interface{}) error {
 
 // ValidateProofRequirementThreshold validates the ProofRequirementThreshold param.
 // NB: The argument is an interface type to satisfy the ParamSetPair function signature.
-func ValidateProofRequirementThreshold(v interface{}) error {
-	_, ok := v.(*cosmostypes.Coin)
+func ValidateProofRequirementThreshold(proofRequirementThresholdAny any) error {
+	proofRequirementThresholdCoin, ok := proofRequirementThresholdAny.(*cosmostypes.Coin)
 	if !ok {
-		return ErrProofParamInvalid.Wrapf("invalid parameter type: %T", v)
+		return ErrProofParamInvalid.Wrapf("invalid parameter type: %T", proofRequirementThresholdAny)
+	}
+
+	if proofRequirementThresholdCoin == nil {
+		return ErrProofParamInvalid.Wrap("missing proof_requirement_threshold")
+	}
+
+	if proofRequirementThresholdCoin.Denom != volatile.DenomuPOKT {
+		return ErrProofParamInvalid.Wrapf("invalid proof_requirement_threshold denom: %s", proofRequirementThresholdCoin.Denom)
+	}
+
+	if proofRequirementThresholdCoin.IsZero() || proofRequirementThresholdCoin.IsNegative() {
+		return ErrProofParamInvalid.Wrapf("invalid proof_requirement_threshold amount: %s <= 0", proofRequirementThresholdCoin)
 	}
 
 	return nil
@@ -144,29 +156,33 @@ func ValidateProofRequirementThreshold(v interface{}) error {
 
 // ValidateProofMissingPenalty validates the ProofMissingPenalty param.
 // NB: The argument is an interface type to satisfy the ParamSetPair function signature.
-func ValidateProofMissingPenalty(v interface{}) error {
-	coin, ok := v.(*cosmostypes.Coin)
+func ValidateProofMissingPenalty(proofMissingPenaltyAny any) error {
+	proofMissingPenaltyCoin, ok := proofMissingPenaltyAny.(*cosmostypes.Coin)
 	if !ok {
-		return ErrProofParamInvalid.Wrapf("invalid parameter type: %T", v)
+		return ErrProofParamInvalid.Wrapf("invalid parameter type: %T", proofMissingPenaltyAny)
 	}
 
-	if coin == nil {
+	if proofMissingPenaltyCoin == nil {
 		return ErrProofParamInvalid.Wrap("missing proof_missing_penalty")
 	}
 
-	if coin.Denom != volatile.DenomuPOKT {
-		return ErrProofParamInvalid.Wrapf("invalid coin denom: %s", coin.Denom)
+	if proofMissingPenaltyCoin.Denom != volatile.DenomuPOKT {
+		return ErrProofParamInvalid.Wrapf("invalid proof_missing_penalty denom: %s", proofMissingPenaltyCoin.Denom)
+	}
+
+	if proofMissingPenaltyCoin.IsZero() || proofMissingPenaltyCoin.IsNegative() {
+		return ErrProofParamInvalid.Wrapf("invalid proof_missing_penalty amount: %s <= 0", proofMissingPenaltyCoin)
 	}
 
 	return nil
 }
 
-// ValidateProofSubmission validates the ProofSubmissionFee param.
+// ValidateProofSubmissionFee validates the ProofSubmissionFee param.
 // NB: The argument is an interface type to satisfy the ParamSetPair function signature.
-func ValidateProofSubmissionFee(v interface{}) error {
-	submissionFeeCoin, ok := v.(*cosmostypes.Coin)
+func ValidateProofSubmissionFee(proofSubmissionFeeAny any) error {
+	submissionFeeCoin, ok := proofSubmissionFeeAny.(*cosmostypes.Coin)
 	if !ok {
-		return ErrProofParamInvalid.Wrapf("invalid parameter type: %T", v)
+		return ErrProofParamInvalid.Wrapf("invalid parameter type: %T", proofSubmissionFeeAny)
 	}
 
 	if submissionFeeCoin == nil {
@@ -174,12 +190,12 @@ func ValidateProofSubmissionFee(v interface{}) error {
 	}
 
 	if submissionFeeCoin.Denom != volatile.DenomuPOKT {
-		return ErrProofParamInvalid.Wrapf("invalid coin denom: %s", submissionFeeCoin.Denom)
+		return ErrProofParamInvalid.Wrapf("invalid proof_submission_fee denom: %s", submissionFeeCoin.Denom)
 	}
 
 	if submissionFeeCoin.Amount.LT(MinProofSubmissionFee.Amount) {
 		return ErrProofParamInvalid.Wrapf(
-			"ProofSubmissionFee param is below minimum value %s: got %s",
+			"proof_submission_fee is below minimum value %s: got %s",
 			MinProofSubmissionFee,
 			submissionFeeCoin,
 		)

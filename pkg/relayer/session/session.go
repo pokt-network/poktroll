@@ -14,8 +14,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/logging"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
-	"github.com/pokt-network/poktroll/x/service/types"
-	"github.com/pokt-network/poktroll/x/shared"
+	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -157,7 +156,7 @@ func (rs *relayerSessionsManager) InsertRelays(relays relayer.MinedRelaysObserva
 // corresponding to the relay request metadata.
 // If no tree for the session exists, a new SessionTree is created before returning.
 func (rs *relayerSessionsManager) ensureSessionTree(
-	relayRequestMetadata *types.RelayRequestMetadata,
+	relayRequestMetadata *servicetypes.RelayRequestMetadata,
 ) (relayer.SessionTree, error) {
 	rs.sessionsTreesMu.Lock()
 	defer rs.sessionsTreesMu.Unlock()
@@ -257,7 +256,7 @@ func (rs *relayerSessionsManager) forEachBlockClaimSessionsFn(
 			// before emitting the on-time sessions.
 			var lateSessions []relayer.SessionTree
 
-			claimWindowOpenHeight := shared.GetClaimWindowOpenHeight(sharedParams, sessionEndHeight)
+			claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(sharedParams, sessionEndHeight)
 
 			// Checking for sessions to claim with <= operator,
 			// which means that it would include sessions that were supposed to be
