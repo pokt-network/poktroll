@@ -57,7 +57,12 @@ localnet_config_defaults = {
     },
     # By default, we use the `helm_repo` function below to point to the remote repository
     # but can update it to the locally cloned repo for testing & development
-    "helm_chart_local_repo": {"enabled": False, "path": "../helm-charts"},
+    "helm_chart_local_repo": {"enabled": False, "path": os.path.join("..", "helm-charts")},
+    "indexer": {
+        "repo_path": os.path.join("..", "pocketdex"),
+        "enabled": True,
+        "clone_if_not_present": False,
+    }
 }
 localnet_config_file = read_yaml(localnet_config_path, default=localnet_config_defaults)
 # Initial empty config
@@ -75,13 +80,14 @@ if (localnet_config_file != localnet_config) or (not os.path.exists(localnet_con
 
 # Configure helm chart reference. If using a local repo, set the path to the local repo; otherwise, use our own helm repo.
 helm_repo("pokt-network", "https://pokt-network.github.io/helm-charts/")
+# TODO_IMPROVE: Use os.path.join to make this more OS-agnostic.
 chart_prefix = "pokt-network/"
 if localnet_config["helm_chart_local_repo"]["enabled"]:
     helm_chart_local_repo = localnet_config["helm_chart_local_repo"]["path"]
     hot_reload_dirs.append(helm_chart_local_repo)
     print("Using local helm chart repo " + helm_chart_local_repo)
+    # TODO_IMPROVE: Use os.path.join to make this more OS-agnostic.
     chart_prefix = helm_chart_local_repo + "/charts/"
-
 
 # Observability
 print("Observability enabled: " + str(localnet_config["observability"]["enabled"]))
@@ -383,3 +389,44 @@ if localnet_config["rest"]["enabled"]:
     print("REST enabled: " + str(localnet_config["rest"]["enabled"]))
     deployment_create("rest", image="davarski/go-rest-api-demo")
     k8s_resource("rest", labels=["data_nodes"], port_forwards=["10000"])
+
+### Pocketdex Shannon Indexer
+pocketdex_root_path = localnet_config["indexer"]["repo_path"]
+pocketdex_tilt_path = os.path.join(pocketdex_root_path, "tiltfiles", "pocketdex.tilt")
+postgres_values_path = os.path.join(".", "localnet", "kubernetes", "values-pocketdex-postgres.yaml")
+indexer_values_path = os.path.join(".", "localnet", "kubernetes", "values-pocketdex-indexer.yaml")
+gql_engine_values_path = os.path.join(".", "localnet", "kubernetes", "values-pocketdex-gql-engine.yaml")
+
+def pocketdex_disabled(reason):
+    local_resource("Indexer Disabled",
+                   "echo '{}'".format(reason),
+                   labels=["Pocketdex"])
+
+def load_pocketdex():
+    pocketdex_tilt = load_dynamic(pocketdex_tilt_path)
+    pocketdex_tilt["pocketdex"](pocketdex_root_path,
+                                genesis_file_name="localnet.json",
+                                postgres_values_path=postgres_values_path,
+                                indexer_values_path=indexer_values_path,
+                                gql_engine_values_path=gql_engine_values_path)
+
+if localnet_config["indexer"]["enabled"]:
+    # Check if sibling pocketdex repo exists.
+    # If it does, load the pocketdex.tilt file from the sibling repo.
+    # Otherwise check the `indexer.clone_if_not_present` flag in `localnet_config.yaml`
+    # and EITHER clone pocketdex to ../pocketdex OR prints a message if true or false,
+    # respectively.
+    pocketdex_repo_exists = local("[ -d {} ] && echo 'true' || echo 'false'".format(pocketdex_root_path))
+    if str(pocketdex_repo_exists).strip() == "false":
+        if localnet_config["indexer"]["clone_if_not_present"]:
+            print("Cloning pocketdex repo")
+            # TODO_INVESTIGATE: https://github.com/tilt-dev/tilt-extensions/tree/master/git_resource
+            local("git clone https://github.com/pokt-network/pocketdex --branch chore/tilt ../pocketdex")
+            load_pocketdex()
+        else:
+            pocketdex_disabled("Pocketdex repo not found at ../pocketdex. Set `clone_if_not_present` to `true` in `localnet_config.yaml`.".format())
+    else:
+        print("Using existing pocketdex repo")
+        load_pocketdex()
+else:
+   pocketdex_disabled("Pocketdex indexer disabled. Set `indexer.enabled` to `true` in `localnet_config.yaml` to enable it.")
