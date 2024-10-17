@@ -19,9 +19,10 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	mocks "github.com/pokt-network/poktroll/testutil/gateway/mocks"
+	"github.com/pokt-network/poktroll/testutil/gateway/mocks"
 	"github.com/pokt-network/poktroll/x/gateway/keeper"
 	"github.com/pokt-network/poktroll/x/gateway/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func GatewayKeeper(t testing.TB) (keeper.Keeper, context.Context) {
@@ -42,12 +43,17 @@ func GatewayKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 	mockBankKeeper.EXPECT().SendCoinsFromAccountToModule(gomock.Any(), gomock.Any(), types.ModuleName, gomock.Any()).AnyTimes()
 	mockBankKeeper.EXPECT().SendCoinsFromModuleToAccount(gomock.Any(), types.ModuleName, gomock.Any(), gomock.Any()).AnyTimes()
 
+	mockSharedKeeper := mocks.NewMockSharedKeeper(ctrl)
+	mockSharedKeeper.EXPECT().GetParams(gomock.Any()).Return(sharedtypes.DefaultParams()).AnyTimes()
+	mockSharedKeeper.EXPECT().GetSessionEndHeight(gomock.Any(), gomock.Any()).Return(int64(sharedtypes.DefaultNumBlocksPerSession)).AnyTimes()
+
 	k := keeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKey),
 		log.NewNopLogger(),
 		authority.String(),
 		mockBankKeeper,
+		mockSharedKeeper,
 	)
 
 	ctx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())

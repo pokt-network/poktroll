@@ -204,7 +204,9 @@ func (s *baseIntegrationSuiteTestSuite) emitBankMsgSendEvents(expectedNumEvents 
 func (s *baseIntegrationSuiteTestSuite) emitPoktrollGatewayUnstakedEvents(expectedNumEvents int) {
 	for i := 0; i < expectedNumEvents; i++ {
 		err := s.SdkCtx().EventManager().EmitTypedEvent(&gatewaytypes.EventGatewayUnstaked{
-			Address: sample.AccAddress(),
+			Gateway: &gatewaytypes.Gateway{
+				Address: sample.AccAddress(),
+			},
 		})
 		require.NoError(s.T(), err)
 	}
