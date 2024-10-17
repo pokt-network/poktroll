@@ -1,0 +1,25 @@
+env:
+  NODE_ENV: development
+  # Testnet
+  ENDPOINT: "https://testnet-validated-validator-rpc.poktroll.com"
+  # LocalNet
+  # ENDPOINT: "http://validator-poktroll-validator.default.svc.cluster.local:26657"
+  CHAIN_ID: "poktroll"
+  # db schema name
+  DB_SCHEMA: "localnet"
+  # indexer endpoint
+#  indexer_endpoint: "http://pocketdex-indexer.default.svc.cluster.local:3000"
+
+  START_BLOCK: 1
+  # Check docs to see what else you can set here:
+  # Ref: https://academy.subquery.network/indexer/run_publish/references.html#subql-cli
+  SUBQUERY_NODE_EXTRA_PARAMS: "--unfinalized-blocks=true"
+  # Check docs to see what else you can set here:
+  # Ref: https://academy.subquery.network/indexer/run_publish/references.html#subql-query
+  SUBQUERY_GRAPHQL_EXTRA_PARAMS: ""
+
+  DB_HOST: postgres-service
+  DB_PORT: 5432
+  DB_USER: postgres
+  DB_PASS: postgres
+  DB_DATABASE: postgres
