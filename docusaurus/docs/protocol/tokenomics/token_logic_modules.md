@@ -110,6 +110,24 @@ flowchart TB
     class CC question;
 ```
 
+:::warning
+
+In order for the `MaxClaimableAmount` to prevent Applications from over-servicing,
+the `Application.Stake` must be claimable only by `Supplier`s from the same session
+(i.e. the same service).
+
+For a given application `MaxClaimableAmount` is `Application.Stake / NumSuppliersPerSession`
+and defined per session/service.
+
+If an `Application` is able send traffic to `n` services then it could be over-servicing
+up to `n` times its stake for a given session number by performing
+`MaxClaimableAmount * NumSuppliersPerSession * n > Application.Stake` worth of work.
+
+To avoid thy type of over-servicing, The Pocket protocol requires `Application`s
+to only be able to stake to a single service.
+
+:::
+
 :::note
 
 TODO_POST_MAINNET: After the Shannon upgrade, the team at Grove has a lot of ideas
