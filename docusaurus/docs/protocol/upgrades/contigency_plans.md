@@ -27,12 +27,14 @@ Cancel the upgrade plan: [how](./upgrade_procedure.md#cancelling-the-upgrade-pla
 
 ## Option 1: The upgrade height is reached and the migration didn't start
 
-If the nodes on the network stopped at the upgrade height and the migration did not start yet (there are no logs indicating the upgrade handler and store migrations are being executed), we should gather a social consensus to restart validators with the `--unsafe-skip-upgrade=$upgradeHeightNumber` flag. This will skip the upgrade process, but it's important that all nodes on the network do this at the same time.
+If the nodes on the network stopped at the upgrade height and the migration did not start yet (there are no logs indicating the upgrade handler and store migrations are being executed), we should gather a social consensus to restart validators with the `--unsafe-skip-upgrade=$upgradeHeightNumber` flag. This will skip the upgrade process, allowing the chain to continue going and the protocol team to plan another release
 
 `--unsafe-skip-upgrade` simply skips the upgrade handler and store migrations and the chain continues as if the upgrade plan was never set. The upgrade needs to be fixed, and then a new plan needs to be submitted to the network.
 
 :::caution
 `--unsafe-skip-upgrade` needs to be documented and added to the scripts so next time somebody tries to sync the network from the genesis - they will automatically skip the failed upgrade.
+
+<!-- TODO: new cosmovisor UX can simplify this -->
 :::
 
 ## Option 2: The migration is stuck
@@ -46,4 +48,5 @@ If the migration is stuck there's always a chance the state has been mutated for
 
 ## Option 3: The network is stuck at the future height after the upgrade
 
-This should be treated as a consensus or non-determinism bug that is unrelated to the upgrade. See [here](./consensus_failure.md) for more information on how to handle such issues.
+This should be treated as a consensus or non-determinism bug that is unrelated to the upgrade. See [Recovery From Chain Halt](../../develop/developer_guide/recovery_from_chain_halt.md) for more information on how to handle such issues.
+

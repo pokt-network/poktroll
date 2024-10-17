@@ -8,13 +8,15 @@ title: Chain Halt Troubleshooting
 - [Understanding Chain Halts](#understanding-chain-halts)
   - [Definition and Causes](#definition-and-causes)
   - [Impact on Network](#impact-on-network)
-- [Troubleshooting Process](#troubleshooting-process)
+- [`wrong Block.Header.AppHash` Troubleshooting Process](#wrong-blockheaderapphash-troubleshooting-process)
   - [Step 1: Identifying the Issue](#step-1-identifying-the-issue)
   - [Step 2: Collecting Node Data](#step-2-collecting-node-data)
   - [Step 3: Analyzing Discrepancies](#step-3-analyzing-discrepancies)
   - [Step 4: Decoding and Interpreting Data](#step-4-decoding-and-interpreting-data)
   - [Step 5: Comparing Records](#step-5-comparing-records)
   - [Step 6: Investigation and Resolution](#step-6-investigation-and-resolution)
+- [`wrong Block.Header.LastResultsHash`](#wrong-blockheaderlastresultshash)
+- [Syncing from genesis](#syncing-from-genesis)
 
 ## Understanding Chain Halts
 
@@ -40,7 +42,7 @@ Chain halts can have severe consequences for the network:
 
 Given these impacts, swift and effective troubleshooting is crucial to maintain network health and user trust.
 
-## Troubleshooting Process
+## `wrong Block.Header.AppHash` Troubleshooting Process
 
 ### Step 1: Identifying the Issue
 
@@ -94,3 +96,11 @@ Based on the identified discrepancies:
 2. Develop a fix or patch to address the issue.
 3. If necessary, initiate discussions with the validator community to reach social consensus on how to proceed.
 4. Implement the agreed-upon solution and monitor the network closely during and after the fix.
+
+## `wrong Block.Header.LastResultsHash`
+
+Errors such as `reactor validation error: wrong Block.Header.LastResultsHash.` are most likely to come from the non-deterministic gas calculation. That can happen when the node runs on a different version. The solution is to use the correct binary version.
+
+## Syncing from genesis
+
+If you're encountering any of the errors mentioned above while trying to sync the historical blocks - make sure you're running correct version of the binary in accordance with this table [Upgrade List](../../protocol/upgrades/upgrade_list.md).
