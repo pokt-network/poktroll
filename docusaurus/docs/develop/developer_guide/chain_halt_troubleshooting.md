@@ -103,4 +103,4 @@ Errors such as `reactor validation error: wrong Block.Header.LastResultsHash.` a
 
 ## Syncing from genesis
 
-If you're encountering any of the errors mentioned above while trying to sync the historical blocks - make sure you're running correct version of the binary in accordance with this table [Upgrade List](../../protocol/upgrades/upgrade_list.md).
+If you're encountering any of the errors mentioned above while trying to sync the historical blocks - make sure you're running the correct version of the binary in accordance with this table [Upgrade List](../../protocol/upgrades/upgrade_list.md).

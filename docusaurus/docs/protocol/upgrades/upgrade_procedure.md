@@ -71,7 +71,7 @@ An upgrade transaction includes a [Plan](https://github.com/cosmos/cosmos-sdk/bl
 
 - `name`: Name of the upgrade. It should match the `VersionName` of `upgrades.Upgrade`.
 - `height`: The height at which an upgrade should be executed and the node will be restarted.
-- `info`: Can be empty. **Only needed for live networks where we want cosmovisor to upgrade nodes automatically**. When`cosmovisor` is configured to automatically download binaries, it will pull the binary from the link provided in this field and perform a hash verification (which is also optional). We only know the hashes **AFTER** the release has been cut and CI created artifacts for this version.
+- `info`: Can be empty. **Only needed for live networks where we want cosmovisor to upgrade nodes automatically**. When `cosmovisor` is configured to automatically download binaries, it will pull the binary from the link provided in this field and perform a hash verification (which is also optional). We only know the hashes **AFTER** the release has been cut and CI created artifacts for this version.
 
 ### Validate the URLs (live network only)
 
@@ -111,7 +111,7 @@ The `MsgSoftwareUpgrade` can be submitted using the following command:
 poktrolld tx authz exec $PATH_TO_UPGRADE_TRANSACTION_JSON --from=pnf
 ```
 
-If the transaction has been accepted, upgrade plan can be viewed with this command:
+If the transaction has been accepted, the upgrade plan can be viewed with this command:
 
 ```bash
 poktrolld query upgrade plan
@@ -148,7 +148,7 @@ In short, the procedure is:
 
 #### Full example
 
-As we are testing an upgrade, we need to have a network that first runs on the old version. So it is a good idea to have a LocalNet running using a binary from the [previous release you with to upgrade **FROM**](https://github.com/pokt-network/poktroll/releases). We also want to provision the network using this version, which requires us to pull the specific git tag.
+As we are testing an upgrade, we need to have a network that first runs on the old version. So it is a good idea to have a LocalNet running using a binary from the [previous release you wish to upgrade **FROM**](https://github.com/pokt-network/poktroll/releases). We also want to provision the network using this version, which requires us to pull the specific git tag.
 
 1. Make a note of the version you want to test an upgrade **FROM**. This will be the **OLD** version. For example, let's imagine we're upgrading from `v0.0.9`.
 2. Pull a new `poktroll` repo (will be used as an "old" version):
@@ -172,11 +172,10 @@ As we are testing an upgrade, we need to have a network that first runs on the o
 7. [Write](#writing-an-upgrade-transaction) and [Submit](#submitting-the-upgrade-on-chain) a transaction (e.g. `poktrolld tx authz exec tools/scripts/upgrades/local_test_v0.0.9-2.json --from=pnf`)
 8. Verify the plan is active: `poktrolld query upgrade plan`
 9. Wait until the height is reached and the old node dies due to the error: `ERR UPGRADE "v0.0.9-2" NEEDED at height`, which is expected.
-10. At this point, switch to the repo with the **NEW** version - the code you wish to upgrade network **TO**.
+10. At this point, switch to the repo with the **NEW** version - the code you wish to upgrade the network **TO**.
 11. In the **NEW VERSION GIT REPO** you can build binaries using `go_develop`, `ignite_release` and `ignite_release_extract_binaries` make targets.
 12. Start the new version (from the **NEW VERSION REPO**: `./release_binaries/poktroll_darwin_arm64 start`)
 13. Observe the behavior. Your node should go through the upgrade process and start using the new version.
-
 
 ### DevNet
 
