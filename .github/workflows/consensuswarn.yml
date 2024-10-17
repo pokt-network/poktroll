@@ -36,14 +36,6 @@ jobs:
           #   Commits the application state after the block has been processed.
           #   Any changes here could impact state transitions and consensus.
           #
-          # BeginBlock:
-          #   Executes logic at the start of a new block.
-          #   Changes here can influence the block initialization and its validity.
-          #
-          # EndBlock:
-          #   Executes logic at the end of the block before committing.
-          #   Can be crucial for final state updates that ensure consensus.
-          #
           # VerifyVoteExtension:
           #   Verifies extended votes in the consensus process (Tendermint).
           #   Any changes could directly impact vote verification in consensus.
@@ -72,4 +64,4 @@ jobs:
           # SimTxFinalizeBlock:
           #   Simulates a finalized block for testing and debugging purposes.
           #   Less critical, but could be monitored for changes that may affect testing and simulation behavior.
-          roots: github.com/cosmos/cosmos-sdk/baseapp.BaseApp.PrepareProposal,github.com/cosmos/cosmos-sdk/baseapp.BaseApp.ProcessProposal,github.com/cosmos/cosmos-sdk/baseapp.BaseApp.FinalizeBlock,github.com/cosmos/cosmos-sdk/baseapp.BaseApp.Commit,github.com/cosmos/cosmos-sdk/baseapp.BaseApp.BeginBlock,github.com/cosmos/cosmos-sdk/baseapp.BaseApp.EndBlock,github.com/cosmos/cosmos-sdk/baseapp.BaseApp.VerifyVoteExtension,github.com/cosmos/cosmos-sdk/baseapp.BaseApp.ExtendVote,github.com/cosmos/cosmos-sdk/baseapp.BaseApp.CheckTx,github.com/cosmos/cosmos-sdk/baseapp.BaseApp.InitChain,github.com/cosmos/cosmos-sdk/baseapp.BaseApp.StoreConsensusParams,github.com/cosmos/cosmos-sdk/baseapp.BaseApp.SimDeliver,github.com/cosmos/cosmos-sdk/baseapp.BaseApp.SimTxFinalizeBlock
+          roots: github.com/cosmos/cosmos-sdk/baseapp.BaseApp.PrepareProposal,github.com/cosmos/cosmos-sdk/baseapp.BaseApp.ProcessProposal,github.com/cosmos/cosmos-sdk/baseapp.BaseApp.FinalizeBlock,github.com/cosmos/cosmos-sdk/baseapp.BaseApp.Commit,github.com/cosmos/cosmos-sdk/baseapp.BaseApp.VerifyVoteExtension,github.com/cosmos/cosmos-sdk/baseapp.BaseApp.ExtendVote,github.com/cosmos/cosmos-sdk/baseapp.BaseApp.CheckTx,github.com/cosmos/cosmos-sdk/baseapp.BaseApp.InitChain,github.com/cosmos/cosmos-sdk/baseapp.BaseApp.StoreConsensusParams,github.com/cosmos/cosmos-sdk/baseapp.BaseApp.SimDeliver,github.com/cosmos/cosmos-sdk/baseapp.BaseApp.SimTxFinalizeBlock
