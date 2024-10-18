@@ -2,12 +2,16 @@ package testdelegation
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"cosmossdk.io/depinject"
+	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/cometbft/cometbft/libs/json"
 	rpctypes "github.com/cometbft/cometbft/rpc/jsonrpc/types"
+	"github.com/cosmos/cosmos-sdk/codec"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
@@ -18,6 +22,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
 )
 
 // NewLocalnetClient creates and returns a new DelegationClient that's configured for
@@ -42,7 +47,7 @@ func NewAnyTimesRedelegationsSequence(
 	ctx context.Context,
 	t *testing.T,
 	appAddress string,
-	redelegationObs observable.Observable[client.Redelegation],
+	redelegationObs observable.Observable[*apptypes.EventRedelegation],
 ) *mockclient.MockDelegationClient {
 	t.Helper()
 
@@ -71,7 +76,7 @@ func NewAnyTimesRedelegationsSequence(
 func NewOneTimeRedelegationsSequenceDelegationClient(
 	ctx context.Context,
 	t *testing.T,
-	redelegationPublishCh chan client.Redelegation,
+	redelegationPublishCh chan *apptypes.EventRedelegation,
 ) *mockclient.MockDelegationClient {
 	t.Helper()
 
@@ -88,7 +93,7 @@ func NewOneTimeRedelegationsSequenceDelegationClient(
 			// Redelegation events are published to this observable via the
 			// provided redelegationPublishCh.
 			withPublisherOpt := channel.WithPublisher(redelegationPublishCh)
-			obs, _ := channel.NewReplayObservable[client.Redelegation](
+			obs, _ := channel.NewReplayObservable[*apptypes.EventRedelegation](
 				ctx, 1, withPublisherOpt,
 			)
 			return obs
@@ -111,35 +116,21 @@ func NewAnyTimeLastNRedelegationsClient(
 	ctrl := gomock.NewController(t)
 
 	// Create a mock redelegation that returns the provided appAddress
-	redelegation := NewAnyTimesRedelegation(t, appAddress, "")
+	redelegation := &apptypes.EventRedelegation{
+		Application: &apptypes.Application{
+			Address:                   appAddress,
+			DelegateeGatewayAddresses: []string{},
+		},
+	}
 	// Create a mock delegation client that expects calls to
 	// LastNRedelegations method and returns the mock redelegation.
 	delegationClientMock := mockclient.NewMockDelegationClient(ctrl)
 	delegationClientMock.EXPECT().
 		LastNRedelegations(gomock.Any(), gomock.Any()).
-		Return([]client.Redelegation{redelegation}).AnyTimes()
+		Return([]*apptypes.EventRedelegation{redelegation}).AnyTimes()
 	delegationClientMock.EXPECT().Close().AnyTimes()
 
 	return delegationClientMock
-}
-
-// NewAnyTimesRedelegation creates a mock Redelegation that expects calls
-// to the AppAddress method any number of times. When the method is called, it
-// returns the provided app address.
-func NewAnyTimesRedelegation(
-	t *testing.T,
-	appAddress string,
-	gatewayAddress string,
-) *mockclient.MockRedelegation {
-	t.Helper()
-	ctrl := gomock.NewController(t)
-
-	// Create a mock redelegation that returns the provided address AnyTimes.
-	redelegation := mockclient.NewMockRedelegation(ctrl)
-	redelegation.EXPECT().GetAppAddress().Return(appAddress).AnyTimes()
-	redelegation.EXPECT().GetGatewayAddress().Return(gatewayAddress).AnyTimes()
-
-	return redelegation
 }
 
 // NewRedelegationEventBytes returns a byte slice containing a JSON string
@@ -151,16 +142,8 @@ func NewRedelegationEventBytes(
 	gatewayAddress string,
 ) []byte {
 	t.Helper()
-	jsonTemplate := `{"tx":"SGVsbG8sIHdvcmxkIQ==","result":{"events":[{"type":"message","attributes":[{"key":"action","value":"/poktroll.application.MsgDelegateToGateway"},{"key":"sender","value":"pokt1exampleaddress"},{"key":"module","value":"application"}]},{"type":"poktroll.application.EventRedelegation","attributes":[{"key":"app_address","value":"\"%s\""},{"key":"gateway_address","value":"\"%s\""}]}]}}`
 
-	txResultEvent := &tx.CometTxEvent{}
-
-	err := json.Unmarshal(
-		[]byte(fmt.Sprintf(jsonTemplate, appAddress, gatewayAddress)),
-		&txResultEvent.Data.Value.TxResult,
-	)
-	require.NoError(t, err)
-
+	txResultEvent := newRedelegationTxResultEvent(t, appAddress, gatewayAddress)
 	txResultBz, err := json.Marshal(txResultEvent)
 	require.NoError(t, err)
 
@@ -169,4 +152,95 @@ func NewRedelegationEventBytes(
 	require.NoError(t, err)
 
 	return rpcResultBz
+}
+
+// newRedelegationTxResultEvent creates a new CometTxEvent that contains a MsgDelegateToGateway
+// and the corresponding events, populated with given application and gateway addresses, which
+// are emitted when an application (re)delegation is committed:
+// 1. A "message" type event, injected by cosmos-sdk for all messages in a tx.
+// 2. A "poktroll.application.EventRedelegation" type event, emitted by the application module.
+func newRedelegationTxResultEvent(
+	t *testing.T,
+	appAddress string,
+	gatewayAddress string,
+) *tx.CometTxEvent {
+	t.Helper()
+
+	txBz := newRedelegationTxBytes(t, appAddress, gatewayAddress)
+	abciEvents := newRedelegationABCIEvents(t, appAddress, gatewayAddress)
+	txResultEvent := &tx.CometTxEvent{}
+	txResultEvent.Data.Value.TxResult = abci.TxResult{
+		Height: 999,
+		Tx:     txBz,
+		Result: abci.ExecTxResult{
+			Code:   0,
+			Data:   nil,
+			Events: abciEvents,
+		},
+	}
+	return txResultEvent
+}
+
+// newRedelegationABCIEvents creates a slice of ABCI events that are emitted
+// when an application (re)delegation is committed:
+// 1. A "message" type event, injected by cosmos-sdk for all messages in a tx.
+// 2. A "poktroll.application.EventRedelgation" type event, emitted by the application module.
+func newRedelegationABCIEvents(
+	t *testing.T,
+	appAddress string,
+	gatewayAddress string,
+) []abci.Event {
+	abciEvents := make([]abci.Event, 0)
+	msgEvent := newRedelegationTxMessageEvent(appAddress)
+
+	msgABCIEvent := abci.Event(msgEvent)
+	abciEvents = append(abciEvents, msgABCIEvent)
+
+	redelegationEvent, err := cosmostypes.TypedEventToEvent(&apptypes.EventRedelegation{
+		Application: &apptypes.Application{
+			Address:                   appAddress,
+			DelegateeGatewayAddresses: []string{gatewayAddress},
+		},
+	})
+	require.NoError(t, err)
+
+	return append(abciEvents, abci.Event(redelegationEvent))
+}
+
+// newRedelegationTxBytes creates a byte slice containing a JSON string that mocks
+// the transaction bytes sent to the events query client for a tx which contains a
+// MsgDelegateToGateway message. This transaction is NOT signed nor valid for
+// use on a real network.
+func newRedelegationTxBytes(
+	t *testing.T,
+	appAddress string,
+	gatewayAddress string,
+) []byte {
+	t.Helper()
+
+	registry := codectypes.NewInterfaceRegistry()
+	cdc := codec.NewProtoCodec(registry)
+	txCfg := authtx.NewTxConfig(cdc, authtx.DefaultSignModes)
+	txBuilder := txCfg.NewTxBuilder()
+	err := txBuilder.SetMsgs(&apptypes.MsgDelegateToGateway{
+		AppAddress:     appAddress,
+		GatewayAddress: gatewayAddress,
+	})
+	require.NoError(t, err)
+	txBz, err := txCfg.TxEncoder()(txBuilder.GetTx())
+	require.NoError(t, err)
+
+	return txBz
+}
+
+// newRedelegationTxMessageEvent creates a new "message" type ABCI event that
+// is emitted when an application (re)delegation is committed. This event type
+// is normally injected by cosmos-sdk for all messages in a tx.
+func newRedelegationTxMessageEvent(appAddress string) cosmostypes.Event {
+	return cosmostypes.NewEvent(
+		"message",
+		cosmostypes.NewAttribute("action", cosmostypes.MsgTypeURL(&apptypes.MsgDelegateToGateway{})),
+		cosmostypes.NewAttribute("sender", appAddress),
+		cosmostypes.NewAttribute("module", "application"),
+	)
 }

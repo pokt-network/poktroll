@@ -316,7 +316,7 @@ func validateGracePeriodOffsetBlocksIsLessThanNumBlocksPerSession(params *Params
 // It ensures that a supplier cannot unbond before the pending claims are settled.
 func validateSupplierUnbondingPeriodIsGreaterThanCumulativeProofWindowCloseBlocks(params *Params) error {
 	cumulativeProofWindowCloseBlocks := GetSessionEndToProofWindowCloseBlocks(params)
-	supplierUnbondingPeriodSessions := params.SupplierUnbondingPeriodSessions * params.NumBlocksPerSession
+	supplierUnbondingPeriodSessions := int64(params.SupplierUnbondingPeriodSessions * params.NumBlocksPerSession)
 
 	if supplierUnbondingPeriodSessions < cumulativeProofWindowCloseBlocks {
 		return ErrSharedParamInvalid.Wrapf(
@@ -334,7 +334,7 @@ func validateSupplierUnbondingPeriodIsGreaterThanCumulativeProofWindowCloseBlock
 // ensures that a supplier cannot unbond before the pending claims are settled.
 func validateApplicationUnbondingPeriodIsGreaterThanCumulativeProofWindowCloseBlocks(params *Params) error {
 	cumulativeProofWindowCloseBlocks := GetSessionEndToProofWindowCloseBlocks(params)
-	applicationUnbondingPeriodSessions := params.ApplicationUnbondingPeriodSessions * params.NumBlocksPerSession
+	applicationUnbondingPeriodSessions := int64(params.ApplicationUnbondingPeriodSessions * params.NumBlocksPerSession)
 
 	if applicationUnbondingPeriodSessions < cumulativeProofWindowCloseBlocks {
 		return ErrSharedParamInvalid.Wrapf(

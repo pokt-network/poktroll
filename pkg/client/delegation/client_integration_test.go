@@ -13,7 +13,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/testutil"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/delegation"
 	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/testutil/network"
@@ -59,17 +58,20 @@ func TestDelegationClient_RedelegationsObservables(t *testing.T) {
 		// and then undelegate app1 from gateway and then undelegate app2 from gateway
 		// We expect to receive 4 delegation changes where the address of the
 		// Redelegation event alternates between app1 and app2
-		var previousRedelegation client.Redelegation
+		var previousRedelegation *apptypes.EventRedelegation
 		for change := range delegationSub.Ch() {
 			t.Logf("received delegation change: %+v", change)
 			// Verify that the Redelegation event is valid and that the address
 			// of the Redelegation event alternates between app1 and app2
 			if previousRedelegation != nil {
-				require.NotEqual(t, previousRedelegation.GetAppAddress(), change.GetAppAddress())
-				if previousRedelegation.GetAppAddress() == appAddresses[0] {
-					require.Equal(t, appAddresses[1], change.GetAppAddress())
+				previousAppAddr := previousRedelegation.GetApplication().GetAddress()
+				changeAppAddr := change.GetApplication().GetAddress()
+
+				require.NotEqual(t, previousAppAddr, changeAppAddr)
+				if previousAppAddr == appAddresses[0] {
+					require.Equal(t, appAddresses[1], changeAppAddr)
 				} else {
-					require.Equal(t, appAddresses[0], change.GetAppAddress())
+					require.Equal(t, appAddresses[0], changeAppAddr)
 				}
 			}
 			previousRedelegation = change

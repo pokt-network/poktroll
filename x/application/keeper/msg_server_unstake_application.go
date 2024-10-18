@@ -5,10 +5,11 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/pokt-network/poktroll/telemetry"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // TODO(#489): Determine if an application needs an unbonding period after unstaking.
@@ -52,16 +53,29 @@ func (k msgServer) UnstakeApplication(
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	currentHeight := sdkCtx.BlockHeight()
-	sharedParams := k.sharedKeeper.GetParams(sdkCtx)
+	sessionEndHeight := k.sharedKeeper.GetSessionEndHeight(ctx, currentHeight)
 
 	// Mark the application as unstaking by recording the height at which it should
 	// no longer be able to request services.
 	// The application MAY continue to request service until the end of the current
 	// session. After that, the application will be considered inactive.
-	foundApp.UnstakeSessionEndHeight = uint64(sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight))
+	foundApp.UnstakeSessionEndHeight = uint64(sessionEndHeight)
 	k.SetApplication(ctx, foundApp)
 
-	// TODO_UPNEXT:(@bryanchriswhite): emit a new EventApplicationUnbondingBegin event.
+	sdkCtx = sdk.UnwrapSDKContext(ctx)
+	sharedParams := k.sharedKeeper.GetParams(sdkCtx)
+	unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, &foundApp)
+	unbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
+		Application:        &foundApp,
+		Reason:             apptypes.ApplicationUnbondingReason_ELECTIVE,
+		SessionEndHeight:   sessionEndHeight,
+		UnbondingEndHeight: unbondingEndHeight,
+	}
+	if err := sdkCtx.EventManager().EmitTypedEvent(unbondingBeginEvent); err != nil {
+		err = apptypes.ErrAppEmitEvent.Wrapf("(%+v): %s", unbondingBeginEvent, err)
+		logger.Error(err.Error())
+		return nil, status.Error(codes.Internal, err.Error())
+	}
 
 	isSuccessful = true
 	return &apptypes.MsgUnstakeApplicationResponse{}, nil

@@ -69,10 +69,14 @@ func (k msgServer) TransferApplication(ctx context.Context, msg *types.MsgTransf
 		srcApp.Address, msg.GetDestinationAddress(),
 	))
 
+	sharedParams := k.sharedKeeper.GetParams(sdkCtx)
+	transferEndHeight := types.GetApplicationTransferHeight(&sharedParams, &srcApp)
 	if err := sdkCtx.EventManager().EmitTypedEvent(&types.EventTransferBegin{
 		SourceAddress:      srcApp.GetAddress(),
 		DestinationAddress: srcApp.GetPendingTransfer().GetDestinationAddress(),
 		SourceApplication:  &srcApp,
+		SessionEndHeight:   sessionEndHeight,
+		TransferEndHeight:  transferEndHeight,
 	}); err != nil {
 		logger.Error(fmt.Sprintf("could not emit transfer begin event: %v", err))
 	}

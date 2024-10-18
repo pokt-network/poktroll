@@ -286,7 +286,7 @@ func (k Keeper) ProcessTokenLogicModules(
 	// Execute all the token logic modules processors
 	for tlm, tlmProcessor := range tokenLogicModuleProcessorMap {
 		logger.Info(fmt.Sprintf("Starting TLM processing: %q", tlm))
-		if err := tlmProcessor(k, ctx, &service, claim.GetSessionHeader(), &application, &supplier, actualSettlementCoin, &relayMiningDifficulty); err != nil {
+		if err = tlmProcessor(k, ctx, &service, claim.GetSessionHeader(), &application, &supplier, actualSettlementCoin, &relayMiningDifficulty); err != nil {
 			return tokenomicstypes.ErrTokenomicsTLMError.Wrapf("TLM %q: %v", tlm, err)
 		}
 		logger.Info(fmt.Sprintf("Finished TLM processing: %q", tlm))
@@ -294,11 +294,25 @@ func (k Keeper) ProcessTokenLogicModules(
 
 	// TODO_CONSIDERATION: If we support multiple native tokens, we will need to
 	// start checking the denom here.
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, cosmostypes.UnwrapSDKContext(ctx).BlockHeight())
 	if application.Stake.Amount.LT(apptypes.DefaultMinStake.Amount) {
 		// Mark the application as unbonding if it has less than the minimum stake.
-		application.UnstakeSessionEndHeight = apptypes.ApplicationBelowMinStake
+		application.UnstakeSessionEndHeight = uint64(sessionEndHeight)
+		unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, &application)
 
-		// TODO_UPNEXT:(@bryanchriswhite): emit a new EventApplicationUnbondedBelowMinStake event.
+		appUnbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
+			Application:        &application,
+			Reason:             apptypes.ApplicationUnbondingReason_BELOW_MIN_STAKE,
+			SessionEndHeight:   sessionEndHeight,
+			UnbondingEndHeight: unbondingEndHeight,
+		}
+
+		sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+		if err = sdkCtx.EventManager().EmitTypedEvent(appUnbondingBeginEvent); err != nil {
+			err = apptypes.ErrAppEmitEvent.Wrapf("(%+v): %s", appUnbondingBeginEvent, err)
+			logger.Error(err.Error())
+			return err
+		}
 	}
 
 	// State mutation: update the application's on-chain record.
