@@ -24,6 +24,7 @@ import (
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 type applicationMinStakeTestSuite struct {
@@ -151,12 +152,10 @@ func (s *applicationMinStakeTestSuite) stakeApp() {
 
 // stakeSupplier stakes a supplier for service 1.
 func (s *applicationMinStakeTestSuite) stakeSupplier() {
-	// TODO_UPNEXT(@bryanchriswhite, #612): Replace supplierStake with suppleirtypes.DefaultMinStake.
-	supplierStake := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1000000) // 1 POKT.
 	s.keepers.SupplierKeeper.SetSupplier(s.ctx, sharedtypes.Supplier{
 		OwnerAddress:    s.supplierBech32,
 		OperatorAddress: s.supplierBech32,
-		Stake:           &supplierStake,
+		Stake:           &suppliertypes.DefaultMinStake,
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
 				ServiceId: s.serviceId,
