@@ -286,7 +286,7 @@ func (k Keeper) ProcessTokenLogicModules(
 	// Execute all the token logic modules processors
 	for tlm, tlmProcessor := range tokenLogicModuleProcessorMap {
 		logger.Info(fmt.Sprintf("Starting TLM processing: %q", tlm))
-		if err := tlmProcessor(k, ctx, &service, claim.GetSessionHeader(), &application, &supplier, actualSettlementCoin, &relayMiningDifficulty); err != nil {
+		if err = tlmProcessor(k, ctx, &service, claim.GetSessionHeader(), &application, &supplier, actualSettlementCoin, &relayMiningDifficulty); err != nil {
 			return tokenomicstypes.ErrTokenomicsTLMError.Wrapf("TLM %q: %v", tlm, err)
 		}
 		logger.Info(fmt.Sprintf("Finished TLM processing: %q", tlm))
