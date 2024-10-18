@@ -94,34 +94,28 @@ func (s *applicationMinStakeTestSuite) TestAppIsUnbondedIfBelowMinStakeWhenSettl
 	claim := s.getClaim(sessionHeader)
 	s.keepers.ProofKeeper.UpsertClaim(s.ctx, *claim)
 
-	// Set the current height to the claim settlement height.
-	sdkCtx := cosmostypes.UnwrapSDKContext(s.ctx)
-	currentHeight := sdkCtx.BlockHeight()
+	// Set the current height to the claim settlement session end height.
 	sharedParams := s.keepers.SharedKeeper.GetParams(s.ctx)
-	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
-	claimSettlementHeight := sessionEndHeight + int64(sharedtypes.GetSessionEndToProofWindowCloseBlocks(&sharedParams)) + 1
-	settlementSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, claimSettlementHeight)
-	sdkCtx = sdkCtx.WithBlockHeight(claimSettlementHeight)
-	s.ctx = sdkCtx
+	settlementSessionEndHeight := sharedtypes.GetSettlementSessionEndHeight(&sharedParams, s.getCurrentHeight())
+	s.setBlockHeight(settlementSessionEndHeight)
 
 	// Settle pending claims; this should cause the application to be unbonded.
-	_, _, err := s.keepers.Keeper.SettlePendingClaims(sdkCtx)
+	_, _, err := s.keepers.Keeper.SettlePendingClaims(cosmostypes.UnwrapSDKContext(s.ctx))
 	require.NoError(s.T(), err)
 
 	// Assert that the EventApplicationUnbondingBegin event is emitted.
+	relayMiningDifficulty := servicekeeper.NewDefaultRelayMiningDifficulty(s.ctx, cosmoslog.NewNopLogger(), s.serviceId, servicekeeper.TargetNumRelays)
+	expectedBurnCoin, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
+	require.NoError(s.T(), err)
+
 	expectedApp := &apptypes.Application{
 		Address:                   s.appBech32,
 		Stake:                     s.appStake,
 		ServiceConfigs:            s.appServiceConfigs,
 		DelegateeGatewayAddresses: make([]string, 0),
 		PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
-		UnstakeSessionEndHeight:   apptypes.ApplicationBelowMinStake,
+		UnstakeSessionEndHeight:   uint64(settlementSessionEndHeight),
 	}
-
-	relayMiningDifficulty := servicekeeper.NewDefaultRelayMiningDifficulty(s.ctx, cosmoslog.NewNopLogger(), s.serviceId, servicekeeper.TargetNumRelays)
-	expectedBurnCoin, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
-	require.NoError(s.T(), err)
-
 	expectedEndStake := expectedApp.GetStake().Sub(expectedBurnCoin)
 	expectedApp.Stake = &expectedEndStake
 
@@ -138,6 +132,10 @@ func (s *applicationMinStakeTestSuite) TestAppIsUnbondedIfBelowMinStakeWhenSettl
 	// Reset the events, as if a new block were created.
 	s.ctx = testevents.ResetEventManager(s.ctx)
 
+	// Set the current height to the unbonding session end height.
+	unbondingSessionEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, expectedApp)
+	s.setBlockHeight(unbondingSessionEndHeight)
+
 	// Run app module end blockers to complete unbonding.
 	err = s.keepers.ApplicationKeeper.EndBlockerUnbondApplications(s.ctx)
 	require.NoError(s.T(), err)
@@ -146,7 +144,7 @@ func (s *applicationMinStakeTestSuite) TestAppIsUnbondedIfBelowMinStakeWhenSettl
 	expectedAppUnbondingEndEvent := &apptypes.EventApplicationUnbondingEnd{
 		Application:      expectedApp,
 		Reason:           apptypes.ApplicationUnbondingReason_BELOW_MIN_STAKE,
-		SessionEndHeight: settlementSessionEndHeight,
+		SessionEndHeight: unbondingSessionEndHeight,
 	}
 	events = cosmostypes.UnwrapSDKContext(s.ctx).EventManager().Events()
 	appUnbondingEndEvents := testevents.FilterEvents[*apptypes.EventApplicationUnbondingEnd](s.T(), events)
@@ -240,4 +238,18 @@ func (s *applicationMinStakeTestSuite) getAppBalance() *cosmostypes.Coin {
 	require.NoError(s.T(), err)
 
 	return appBalRes.GetBalance()
+}
+
+// TODO_IN_THIS_COMMIT: move & godoc
+func (s *applicationMinStakeTestSuite) setBlockHeight(targetHeight int64) cosmostypes.Context {
+	sdkCtx := cosmostypes.
+		UnwrapSDKContext(s.ctx).
+		WithBlockHeight(targetHeight)
+	s.ctx = sdkCtx
+	return sdkCtx
+}
+
+// TODO_IN_THIS_COMMIT: move & godoc
+func (s *applicationMinStakeTestSuite) getCurrentHeight() int64 {
+	return cosmostypes.UnwrapSDKContext(s.ctx).BlockHeight()
 }
