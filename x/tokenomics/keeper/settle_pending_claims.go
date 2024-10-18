@@ -262,7 +262,7 @@ func (k Keeper) getExpiringClaims(ctx cosmostypes.Context) (expiringClaims []pro
 	// expiringSessionEndHeight is the session end height of the session whose proof
 	// window has most recently closed.
 	sessionEndToProofWindowCloseNumBlocks := sharedtypes.GetSessionEndToProofWindowCloseBlocks(sharedParams)
-	expiringSessionEndHeight := blockHeight - int64(sessionEndToProofWindowCloseNumBlocks+1)
+	expiringSessionEndHeight := blockHeight - (sessionEndToProofWindowCloseNumBlocks + 1)
 
 	var nextKey []byte
 	for {

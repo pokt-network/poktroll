@@ -21,6 +21,6 @@ message EventGatewayStaked {
 message EventGatewayUnstaked {
   // The gateway that has been unstaked.
   Gateway gateway = 1 [(gogoproto.jsontag) = "gateway"];
-  // The end height of the session in which gateway was staked.
+  // The end height of the session in which gateway was unstaked.
   int64 session_end_height = 2 [(gogoproto.jsontag) = "session_end_height"];
 }

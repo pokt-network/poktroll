@@ -64,7 +64,7 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.EqualValues(t, expectedEvent, events[0])
 
 	// Reset the events, as if a new block were created.
-	ctx = testevents.ResetEventManager(ctx)
+	ctx, _ = testevents.ResetEventManager(ctx)
 
 	// Verify that the application exists
 	foundApp, isAppFound := k.GetApplication(ctx, appAddr)

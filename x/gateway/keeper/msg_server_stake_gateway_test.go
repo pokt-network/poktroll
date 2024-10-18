@@ -60,7 +60,7 @@ func TestMsgServer_StakeGateway_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.EqualValues(t, expectedEvent, events[0])
 
 	// Reset the events, as if a new block were created.
-	ctx = testevents.ResetEventManager(ctx)
+	ctx, sdkCtx = testevents.ResetEventManager(ctx)
 
 	// Verify that the gateway exists.
 	foundGateway, isGatewayFound := k.GetGateway(ctx, addr)
