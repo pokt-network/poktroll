@@ -148,12 +148,15 @@ func (k Keeper) transferApplication(ctx context.Context, srcApp apptypes.Applica
 	logger.Info(fmt.Sprintf("Successfully transferred application stake from (%s) to (%s)", srcApp.GetAddress(), dstApp.GetAddress()))
 
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
-	sessionEndHeight := k.sharedKeeper.GetSessionEndHeight(ctx, sdkCtx.BlockHeight())
+	sharedParams := k.sharedKeeper.GetParams(sdkCtx)
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, sdkCtx.BlockHeight())
+	transferEndHeight := apptypes.GetApplicationTransferHeight(&sharedParams, &srcApp)
 	if err := sdkCtx.EventManager().EmitTypedEvent(&apptypes.EventTransferEnd{
 		SourceAddress:          srcApp.GetAddress(),
 		DestinationAddress:     dstApp.GetAddress(),
 		DestinationApplication: &dstApp,
 		SessionEndHeight:       sessionEndHeight,
+		TransferEndHeight:      transferEndHeight,
 	}); err != nil {
 		logger.Error(fmt.Sprintf("could not emit transfer end event: %v", err))
 	}

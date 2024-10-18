@@ -84,7 +84,7 @@ message EventApplicationUnbondingBegin {
   // The end height of the session in which the unbonding began.
   int64 session_end_height = 3 [(gogoproto.jsontag) = "session_end_height"];
   // The height at which application unbonding will end.
-  int64 unbonding_height = 4 [(gogoproto.jsontag) = "unbonding_height"];
+  int64 unbonding_end_height = 4 [(gogoproto.jsontag) = "unbonding_height"];
 }
 
 // EventApplicationUnbondingEnd is emitted when an application has completed
@@ -96,7 +96,7 @@ message EventApplicationUnbondingEnd {
   // The end height of the session in which the unbonding ended.
   int64 session_end_height = 3 [(gogoproto.jsontag) = "session_end_height"];
   // The height at which application unbonding ended.
-  int64 unbonding_height = 4 [(gogoproto.jsontag) = "unbonding_height"];
+  int64 unbonding_end_height = 4 [(gogoproto.jsontag) = "unbonding_height"];
 }
 
 // EventApplicationUnbondingCanceled is emitted when an application which was unbonding

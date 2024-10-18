@@ -298,13 +298,13 @@ func (k Keeper) ProcessTokenLogicModules(
 	if application.Stake.Amount.LT(apptypes.DefaultMinStake.Amount) {
 		// Mark the application as unbonding if it has less than the minimum stake.
 		application.UnstakeSessionEndHeight = uint64(sessionEndHeight)
-		unbondingHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, &application)
+		unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, &application)
 
 		appUnbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
-			Application:      &application,
-			Reason:           apptypes.ApplicationUnbondingReason_BELOW_MIN_STAKE,
-			SessionEndHeight: sessionEndHeight,
-			UnbondingHeight:  unbondingHeight,
+			Application:        &application,
+			Reason:             apptypes.ApplicationUnbondingReason_BELOW_MIN_STAKE,
+			SessionEndHeight:   sessionEndHeight,
+			UnbondingEndHeight: unbondingEndHeight,
 		}
 
 		sdkCtx := cosmostypes.UnwrapSDKContext(ctx)

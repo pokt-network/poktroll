@@ -264,13 +264,13 @@ func (s *applicationMinStakeTestSuite) assertUnbondingBeginEventObserved(expecte
 	s.T().Helper()
 
 	sharedParams := s.keepers.SharedKeeper.GetParams(s.ctx)
-	unbondingHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, expectedApp)
+	unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, expectedApp)
 	sessionEndHeight := s.keepers.SharedKeeper.GetSessionEndHeight(s.ctx, s.getCurrentHeight())
 	expectedAppUnbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
-		Application:      expectedApp,
-		Reason:           apptypes.ApplicationUnbondingReason_BELOW_MIN_STAKE,
-		SessionEndHeight: sessionEndHeight,
-		UnbondingHeight:  unbondingHeight,
+		Application:        expectedApp,
+		Reason:             apptypes.ApplicationUnbondingReason_BELOW_MIN_STAKE,
+		SessionEndHeight:   sessionEndHeight,
+		UnbondingEndHeight: unbondingEndHeight,
 	}
 
 	events := cosmostypes.UnwrapSDKContext(s.ctx).EventManager().Events()
@@ -285,13 +285,13 @@ func (s *applicationMinStakeTestSuite) assertUnbondingEndEventObserved(expectedA
 	s.T().Helper()
 
 	sharedParams := s.keepers.SharedKeeper.GetParams(s.ctx)
-	unbondingHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, expectedApp)
+	unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, expectedApp)
 	unbondingSessionEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, expectedApp)
 	expectedAppUnbondingEndEvent := &apptypes.EventApplicationUnbondingEnd{
-		Application:      expectedApp,
-		Reason:           apptypes.ApplicationUnbondingReason_BELOW_MIN_STAKE,
-		SessionEndHeight: unbondingSessionEndHeight,
-		UnbondingHeight:  unbondingHeight,
+		Application:        expectedApp,
+		Reason:             apptypes.ApplicationUnbondingReason_BELOW_MIN_STAKE,
+		SessionEndHeight:   unbondingSessionEndHeight,
+		UnbondingEndHeight: unbondingEndHeight,
 	}
 
 	events := cosmostypes.UnwrapSDKContext(s.ctx).EventManager().Events()
