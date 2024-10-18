@@ -64,11 +64,13 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 
 	// Assert that the EventApplicationUnbondingBegin event is emitted.
 	foundApp.UnstakeSessionEndHeight = uint64(sessionEndHeight)
+	unbondingHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, &foundApp)
 	expectedEvent, err := sdk.TypedEventToEvent(
 		&apptypes.EventApplicationUnbondingBegin{
 			Application:      &foundApp,
 			Reason:           apptypes.ApplicationUnbondingReason_ELECTIVE,
 			SessionEndHeight: sessionEndHeight,
+			UnbondingHeight:  unbondingHeight,
 		},
 	)
 	require.NoError(t, err)
@@ -86,7 +88,6 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 	require.True(t, foundApp.IsUnbonding())
 
 	// Move block height to the end of the unbonding period
-	unbondingHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, &foundApp)
 	ctx = keepertest.SetBlockHeight(ctx, unbondingHeight)
 	unbondingSessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, unbondingHeight)
 
@@ -100,6 +101,7 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 			Application:      &foundApp,
 			Reason:           apptypes.ApplicationUnbondingReason_ELECTIVE,
 			SessionEndHeight: unbondingSessionEndHeight,
+			UnbondingHeight:  unbondingHeight,
 		},
 	)
 	require.NoError(t, err)
@@ -150,10 +152,12 @@ func TestMsgServer_UnstakeApplication_CancelUnbondingIfRestaked(t *testing.T) {
 	// Assert that the EventApplicationUnbondingBegin event is emitted.
 	foundApp.UnstakeSessionEndHeight = uint64(sessionEndHeight)
 	foundApp.DelegateeGatewayAddresses = make([]string, 0)
+	unbondingHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, &foundApp)
 	expectedAppUnbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
 		Application:      &foundApp,
 		Reason:           apptypes.ApplicationUnbondingReason_ELECTIVE,
 		SessionEndHeight: sessionEndHeight,
+		UnbondingHeight:  unbondingHeight,
 	}
 	events := sdk.UnwrapSDKContext(ctx).EventManager().Events()
 	appUnbondingBeginEvents := testevents.FilterEvents[*apptypes.EventApplicationUnbondingBegin](t, events)
@@ -167,8 +171,6 @@ func TestMsgServer_UnstakeApplication_CancelUnbondingIfRestaked(t *testing.T) {
 	foundApp, isAppFound = applicationModuleKeepers.GetApplication(ctx, appAddr)
 	require.True(t, isAppFound)
 	require.True(t, foundApp.IsUnbonding())
-
-	unbondingHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, &foundApp)
 
 	// Stake the application again
 	stakeMsg = createAppStakeMsg(appAddr, initialStake+1)

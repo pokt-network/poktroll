@@ -263,11 +263,14 @@ func (s *applicationMinStakeTestSuite) newRelayminingDifficulty() servicetypes.R
 func (s *applicationMinStakeTestSuite) assertUnbondingBeginEventObserved(expectedApp *apptypes.Application) {
 	s.T().Helper()
 
+	sharedParams := s.keepers.SharedKeeper.GetParams(s.ctx)
+	unbondingHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, expectedApp)
 	sessionEndHeight := s.keepers.SharedKeeper.GetSessionEndHeight(s.ctx, s.getCurrentHeight())
 	expectedAppUnbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
 		Application:      expectedApp,
 		Reason:           apptypes.ApplicationUnbondingReason_BELOW_MIN_STAKE,
 		SessionEndHeight: sessionEndHeight,
+		UnbondingHeight:  unbondingHeight,
 	}
 
 	events := cosmostypes.UnwrapSDKContext(s.ctx).EventManager().Events()
@@ -282,11 +285,13 @@ func (s *applicationMinStakeTestSuite) assertUnbondingEndEventObserved(expectedA
 	s.T().Helper()
 
 	sharedParams := s.keepers.SharedKeeper.GetParams(s.ctx)
+	unbondingHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, expectedApp)
 	unbondingSessionEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, expectedApp)
 	expectedAppUnbondingEndEvent := &apptypes.EventApplicationUnbondingEnd{
 		Application:      expectedApp,
 		Reason:           apptypes.ApplicationUnbondingReason_BELOW_MIN_STAKE,
 		SessionEndHeight: unbondingSessionEndHeight,
+		UnbondingHeight:  unbondingHeight,
 	}
 
 	events := cosmostypes.UnwrapSDKContext(s.ctx).EventManager().Events()

@@ -41,6 +41,8 @@ message EventTransferBegin {
   poktroll.application.Application source_application = 3;
   // The end height of the session in which the transfer began.
   int64 session_end_height = 4 [(gogoproto.jsontag) = "session_end_height"];
+  // The height at which the transfer will complete.
+  int64 transfer_end_height = 5 [(gogoproto.jsontag) = "transfer_end_height"];
 }
 
 // EventTransferEnd is emitted whenever an application transfer is completed. It
@@ -53,6 +55,8 @@ message EventTransferEnd {
   poktroll.application.Application destination_application = 3;
   // The end height of the session in which the transfer ended.
   int64 session_end_height = 4 [(gogoproto.jsontag) = "session_end_height"];
+  // The height at which the transfer completed.
+  int64 transfer_end_height = 5 [(gogoproto.jsontag) = "transfer_end_height"];
 }
 
 // EventTransferError is emitted whenever an application transfer fails. It
@@ -79,6 +83,8 @@ message EventApplicationUnbondingBegin {
   ApplicationUnbondingReason reason = 2 [(gogoproto.jsontag) = "reason"];
   // The end height of the session in which the unbonding began.
   int64 session_end_height = 3 [(gogoproto.jsontag) = "session_end_height"];
+  // The height at which application unbonding will end.
+  int64 unbonding_height = 4 [(gogoproto.jsontag) = "unbonding_height"];
 }
 
 // EventApplicationUnbondingEnd is emitted when an application has completed
@@ -89,6 +95,8 @@ message EventApplicationUnbondingEnd {
   ApplicationUnbondingReason reason = 2 [(gogoproto.jsontag) = "reason"];
   // The end height of the session in which the unbonding ended.
   int64 session_end_height = 3 [(gogoproto.jsontag) = "session_end_height"];
+  // The height at which application unbonding ended.
+  int64 unbonding_height = 4 [(gogoproto.jsontag) = "unbonding_height"];
 }
 
 // EventApplicationUnbondingCanceled is emitted when an application which was unbonding
