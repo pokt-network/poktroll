@@ -80,9 +80,7 @@ func TestMsgServer_DelegateToGateway_SuccessfullyDelegate(t *testing.T) {
 	// Verify that the application exists
 	foundApp, isAppFound := k.GetApplication(ctx, appAddr)
 	require.True(t, isAppFound)
-	require.Equal(t, appAddr, foundApp.Address)
-	require.Equal(t, 1, len(foundApp.DelegateeGatewayAddresses))
-	require.Equal(t, gatewayAddr1, foundApp.DelegateeGatewayAddresses[0])
+	require.EqualValues(t, expectedApp, &foundApp)
 
 	// Prepare a second delegation message
 	delegateMsg2 := &apptypes.MsgDelegateToGateway{
@@ -94,6 +92,9 @@ func TestMsgServer_DelegateToGateway_SuccessfullyDelegate(t *testing.T) {
 	_, err = srv.DelegateToGateway(ctx, delegateMsg2)
 	require.NoError(t, err)
 
+	// Add gateway2 to the expected application's delegations.
+	expectedApp.DelegateeGatewayAddresses = append(expectedApp.DelegateeGatewayAddresses, gatewayAddr2)
+
 	events = sdkCtx.EventManager().Events()
 	filteredEvents = testevents.FilterEvents[*apptypes.EventRedelegation](t, events)
 	require.Equal(t, 1, len(filteredEvents))
@@ -102,9 +103,7 @@ func TestMsgServer_DelegateToGateway_SuccessfullyDelegate(t *testing.T) {
 	// Verify that the application exists
 	foundApp, isAppFound = k.GetApplication(ctx, appAddr)
 	require.True(t, isAppFound)
-	require.Equal(t, 2, len(foundApp.DelegateeGatewayAddresses))
-	require.Equal(t, gatewayAddr1, foundApp.DelegateeGatewayAddresses[0])
-	require.Equal(t, gatewayAddr2, foundApp.DelegateeGatewayAddresses[1])
+	require.EqualValues(t, expectedApp, &foundApp)
 }
 
 func TestMsgServer_DelegateToGateway_FailDuplicate(t *testing.T) {
