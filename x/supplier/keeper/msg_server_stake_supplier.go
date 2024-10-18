@@ -149,9 +149,9 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *suppliertypes.MsgStak
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	events := make([]sdk.Msg, 0)
+	sessionEndHeight := k.sharedKeeper.GetSessionEndHeight(ctx, sdkCtx.BlockHeight())
 
 	if wasSupplierUnbonding {
-		sessionEndHeight := k.sharedKeeper.GetSessionEndHeight(ctx, sdkCtx.BlockHeight())
 		events = append(events, &suppliertypes.EventSupplierUnbondingCanceled{
 			Supplier:         &supplier,
 			SessionEndHeight: sessionEndHeight,
@@ -159,7 +159,6 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *suppliertypes.MsgStak
 	}
 
 	// Emit an event which signals that the supplier staked.
-	sessionEndHeight := k.sharedKeeper.GetSessionEndHeight(ctx, sdkCtx.BlockHeight())
 	events = append(events, &suppliertypes.EventSupplierStaked{
 		Supplier:         &supplier,
 		SessionEndHeight: sessionEndHeight,

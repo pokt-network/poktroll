@@ -680,9 +680,6 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimPendingAfterSettlement() {
 }
 
 func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
-	// TODO_IN_THIS_COMMIT: update penalty to supplier min-stake.
-	// TODO_IN_THIS_COMMIT: assert that EventSupplierUnbondedBelowMinStake is emitted.
-
 	// Retrieve default values
 	t := s.T()
 	ctx := s.ctx
@@ -743,22 +740,41 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	}
 	require.EqualValues(t, expectedSlashingEvent, slashingEvents[0])
 
-	// Confirm that a slashing event was emitted
-	unbondedEvents := testutilevents.FilterEvents[*suppliertypes.EventSupplierUnbondingBegin](t, events)
-	require.Len(t, unbondedEvents, 1)
+	// Assert that an EventSupplierUnbondingBegin event was emitted.
+	unbondingBeginEvents := testutilevents.FilterEvents[*suppliertypes.EventSupplierUnbondingBegin](t, events)
+	require.Len(t, unbondingBeginEvents, 1)
 
-	// Validate the slashing event
+	// Validate the EventSupplierUnbondingBegin event.
+	unbondingHeight := sharedtypes.GetSupplierUnbondingHeight(&sharedParams, &slashedSupplier)
 	slashedSupplier.ServicesActivationHeightsMap = make(map[string]uint64)
 	for i, _ := range slashedSupplier.GetServices() {
 		slashedSupplier.Services[i].Endpoints = make([]*sharedtypes.SupplierEndpoint, 0)
 	}
-	expectedUnbondedEvent := &suppliertypes.EventSupplierUnbondingBegin{
+	expectedUnbondingBeginEvent := &suppliertypes.EventSupplierUnbondingBegin{
 		Supplier:         &slashedSupplier,
 		Reason:           suppliertypes.SupplierUnbondingReason_BELOW_MIN_STAKE,
 		SessionEndHeight: sessionEndHeight,
-		UnbondingHeight:  sharedtypes.GetSupplierUnbondingHeight(&sharedParams, &slashedSupplier),
+		UnbondingHeight:  unbondingHeight,
 	}
-	require.EqualValues(t, expectedUnbondedEvent, unbondedEvents[0])
+	require.EqualValues(t, expectedUnbondingBeginEvent, unbondingBeginEvents[0])
+
+	// Advance the block height to the settlement session end height.
+	settlementHeight := sharedtypes.GetSettlementSessionEndHeight(&sharedParams, sdkCtx.BlockHeight())
+	sdkCtx = sdkCtx.WithBlockHeight(settlementHeight)
+	ctx = sdkCtx
+
+	// Assert that the EventSupplierUnbondingEnd event is emitted.
+	unbondingEndEvents := testutilevents.FilterEvents[*suppliertypes.EventSupplierUnbondingBegin](t, events)
+	require.Len(t, unbondingEndEvents, 1)
+
+	// Validate the EventSupplierUnbondingEnd event.
+	expectedUnbondingEndEvent := &suppliertypes.EventSupplierUnbondingEnd{
+		Supplier:         &slashedSupplier,
+		Reason:           suppliertypes.SupplierUnbondingReason_BELOW_MIN_STAKE,
+		SessionEndHeight: sessionEndHeight,
+		UnbondingHeight:  unbondingHeight,
+	}
+	require.EqualValues(t, expectedUnbondingEndEvent, unbondingEndEvents[0])
 }
 
 // getEstimatedComputeUnits returns the estimated number of compute units given
