@@ -1,7 +1,6 @@
 package integration_test
 
 import (
-	"math"
 	"math/big"
 	"testing"
 
@@ -84,6 +83,7 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 		testutils.WithService(service),
 		testutils.WithApplication(application),
 		testutils.WithSupplier(supplier),
+		testutils.WithProofRequirement(false),
 	)
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	sdkCtx = sdkCtx.WithBlockHeight(1)
@@ -92,13 +92,6 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 	sharedParams := keepers.SharedKeeper.GetParams(sdkCtx)
 	sharedParams.ComputeUnitsToTokensMultiplier = uint64(1)
 	err := keepers.SharedKeeper.SetParams(sdkCtx, sharedParams)
-	require.NoError(t, err)
-
-	// Set the global proof params so we never need a proof (for simplicity of this test)
-	err = keepers.ProofKeeper.SetParams(sdkCtx, prooftypes.Params{
-		ProofRequestProbability:   0,                                                                            // we never need a proof randomly
-		ProofRequirementThreshold: &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: sdkmath.NewInt(math.MaxInt64)}, // a VERY high threshold
-	})
 	require.NoError(t, err)
 
 	// Update the relay mining difficulty so there's always a difficulty to retrieve

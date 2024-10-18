@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	cosmoslog "cosmossdk.io/log"
-	"cosmossdk.io/math"
+	sdkmath "cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/stretchr/testify/require"
@@ -21,6 +21,7 @@ import (
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	tokenomicskeeper "github.com/pokt-network/poktroll/x/tokenomics/keeper"
 )
 
 type applicationMinStakeTestSuite struct {
@@ -46,7 +47,7 @@ func TestApplicationMinStakeTestSuite(t *testing.T) {
 }
 
 func (s *applicationMinStakeTestSuite) SetupTest() {
-	s.keepers, s.ctx = keeper.NewTokenomicsModuleKeepers(s.T(), cosmoslog.NewNopLogger())
+	s.keepers, s.ctx = keeper.NewTokenomicsModuleKeepers(s.T(), cosmoslog.NewNopLogger(), keeper.WithProofRequirement(false))
 
 	proofParams := prooftypes.DefaultParams()
 	proofParams.ProofRequestProbability = 0
@@ -106,9 +107,11 @@ func (s *applicationMinStakeTestSuite) TestAppIsUnbondedIfBelowMinStakeWhenSettl
 	_, isAppFound := s.keepers.ApplicationKeeper.GetApplication(s.ctx, s.appBech32)
 	require.False(s.T(), isAppFound)
 
-	// Assert that the application's stake was returned to its bank balance.
-	expectedAppBurn := math.NewInt(int64(s.numRelays * s.numComputeUnitsPerRelay * sharedtypes.DefaultComputeUnitsToTokensMultiplier))
-	expectedAppBalance := s.appStake.SubAmount(expectedAppBurn)
+	// Assert that the remaining application's stake was returned to its bank balance.
+	expectedAppBurn := sdkmath.NewInt(int64(s.numRelays * s.numComputeUnitsPerRelay * sharedtypes.DefaultComputeUnitsToTokensMultiplier))
+	globalInflationAmount := float64(expectedAppBurn.Uint64()) * tokenomicskeeper.MintPerClaimedTokenGlobalInflation
+	globalInflationAmountInt := sdkmath.NewInt(int64(globalInflationAmount))
+	expectedAppBalance := s.appStake.SubAmount(expectedAppBurn).SubAmount(globalInflationAmountInt)
 	appBalance = s.getAppBalance()
 	require.Equal(s.T(), expectedAppBalance.Amount.Int64(), appBalance.Amount.Int64())
 
