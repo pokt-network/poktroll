@@ -79,7 +79,7 @@ func (m *EventGatewayStaked) GetSessionEndHeight() int64 {
 type EventGatewayUnstaked struct {
 	// The gateway that has been unstaked.
 	Gateway *Gateway `protobuf:"bytes,1,opt,name=gateway,proto3" json:"gateway"`
-	// The end height of the session in which gateway was staked.
+	// The end height of the session in which gateway was unstaked.
 	SessionEndHeight int64 `protobuf:"varint,2,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height"`
 }
 

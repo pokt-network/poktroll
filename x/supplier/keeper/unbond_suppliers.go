@@ -69,13 +69,21 @@ func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) error {
 		k.RemoveSupplier(ctx, supplierOperatorAddress.String())
 		logger.Info(fmt.Sprintf("Successfully removed the supplier: %+v", supplier))
 
-		// Emit an event which signals that the supplier has sucessfully unbonded.
-		event := &suppliertypes.EventSupplierUnbondingEnd{
-			Supplier:        &supplier,
-			UnbondingHeight: unbondingHeight,
+		unbondingReason := suppliertypes.SupplierUnbondingReason_ELECTIVE
+		if supplier.GetStake().Amount.LT(k.GetParams(ctx).MinStake.Amount) {
+			unbondingReason = suppliertypes.SupplierUnbondingReason_BELOW_MIN_STAKE
 		}
-		if eventErr := sdkCtx.EventManager().EmitTypedEvent(event); eventErr != nil {
-			logger.Error(fmt.Sprintf("failed to emit event: %+v; %s", event, eventErr))
+
+		// Emit an event which signals that the supplier has sucessfully unbonded.
+		sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
+		unbondingEndEvent := &suppliertypes.EventSupplierUnbondingEnd{
+			Supplier:         &supplier,
+			Reason:           unbondingReason,
+			SessionEndHeight: sessionEndHeight,
+			UnbondingHeight:  unbondingHeight,
+		}
+		if eventErr := sdkCtx.EventManager().EmitTypedEvent(unbondingEndEvent); eventErr != nil {
+			logger.Error(fmt.Sprintf("failed to emit event: %+v; %s", unbondingEndEvent, eventErr))
 		}
 	}
 
