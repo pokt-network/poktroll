@@ -163,9 +163,16 @@ func IsSessionEndHeight(sharedParams *Params, queryHeight int64) bool {
 
 // GetSessionEndToProofWindowCloseBlocks returns the total number of blocks
 // from the moment a session ends until the proof window closes.
-func GetSessionEndToProofWindowCloseBlocks(params *Params) uint64 {
-	return params.GetClaimWindowOpenOffsetBlocks() +
+func GetSessionEndToProofWindowCloseBlocks(params *Params) int64 {
+	return int64(params.GetClaimWindowOpenOffsetBlocks() +
 		params.GetClaimWindowCloseOffsetBlocks() +
 		params.GetProofWindowOpenOffsetBlocks() +
-		params.GetProofWindowCloseOffsetBlocks()
+		params.GetProofWindowCloseOffsetBlocks())
+}
+
+// TODO_IN_THIS_COMMIT: godoc
+func GetSettlementSessionEndHeight(sharedParams *Params, queryHeight int64) int64 {
+	return GetSessionEndToProofWindowCloseBlocks(sharedParams) +
+		// TODO_IN_THIS_COMMIT: double-check +1
+		GetSessionEndHeight(sharedParams, queryHeight) + 1
 }

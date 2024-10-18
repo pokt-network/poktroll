@@ -55,7 +55,7 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 	require.True(t, isAppFound)
 
 	// Reset the events, as if a new block were created.
-	ctx = testevents.ResetEventManager(ctx)
+	ctx, _ = testevents.ResetEventManager(ctx)
 
 	// Unstake the application
 	unstakeMsg := &apptypes.MsgUnstakeApplication{Address: unstakingAppAddr}
@@ -78,7 +78,7 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 	require.EqualValues(t, expectedEvent, events[0])
 
 	// Reset the events, as if a new block were created.
-	ctx = testevents.ResetEventManager(ctx)
+	ctx, _ = testevents.ResetEventManager(ctx)
 
 	// Make sure the application entered the unbonding period
 	foundApp, isAppFound = applicationModuleKeepers.GetApplication(ctx, unstakingAppAddr)
@@ -109,7 +109,7 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 	require.EqualValues(t, expectedEvent, events[0])
 
 	// Reset the events, as if a new block were created.
-	ctx = testevents.ResetEventManager(ctx)
+	ctx, _ = testevents.ResetEventManager(ctx)
 
 	// Make sure the unstaking application is removed from the applications list when
 	// the unbonding period is over.
@@ -161,7 +161,7 @@ func TestMsgServer_UnstakeApplication_CancelUnbondingIfRestaked(t *testing.T) {
 	require.EqualValues(t, expectedAppUnbondingBeginEvent, appUnbondingBeginEvents[0])
 
 	// Reset the events, as if a new block were created.
-	ctx = testevents.ResetEventManager(ctx)
+	ctx, _ = testevents.ResetEventManager(ctx)
 
 	// Make sure the application entered the unbonding period
 	foundApp, isAppFound = applicationModuleKeepers.GetApplication(ctx, appAddr)
@@ -188,7 +188,7 @@ func TestMsgServer_UnstakeApplication_CancelUnbondingIfRestaked(t *testing.T) {
 	require.EqualValues(t, expectedAppUnbondingCanceledEvent, appUnbondingEvents[0])
 
 	// Reset the events, as if a new block were created.
-	ctx = testevents.ResetEventManager(ctx)
+	ctx, _ = testevents.ResetEventManager(ctx)
 
 	// Make sure the application is no longer in the unbonding period
 	foundApp, isAppFound = applicationModuleKeepers.GetApplication(ctx, appAddr)

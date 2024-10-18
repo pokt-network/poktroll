@@ -297,7 +297,7 @@ func (k Keeper) ProcessTokenLogicModules(
 	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, cosmostypes.UnwrapSDKContext(ctx).BlockHeight())
 	if application.Stake.Amount.LT(apptypes.DefaultMinStake.Amount) {
 		// Mark the application as unbonding if it has less than the minimum stake.
-		application.UnstakeSessionEndHeight = apptypes.ApplicationBelowMinStake
+		application.UnstakeSessionEndHeight = uint64(sessionEndHeight)
 
 		appUnbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
 			Application:      &application,
@@ -306,7 +306,7 @@ func (k Keeper) ProcessTokenLogicModules(
 		}
 
 		sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
-		if err := sdkCtx.EventManager().EmitTypedEvent(appUnbondingBeginEvent); err != nil {
+		if err = sdkCtx.EventManager().EmitTypedEvent(appUnbondingBeginEvent); err != nil {
 			err = apptypes.ErrAppEmitEvent.Wrapf("(%+v): %s", appUnbondingBeginEvent, err)
 			logger.Error(err.Error())
 			return err

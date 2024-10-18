@@ -216,12 +216,17 @@ func TestMsgServer_UndelegateFromGateway_FailNotDelegated(t *testing.T) {
 	require.Equal(t, 1, len(redelegationEvents))
 	require.EqualValues(t, expectedRedelegationEvent, redelegationEvents[0])
 
+	// Reset the events, as if a new block were created.
+	ctx, _ = testevents.ResetEventManager(ctx)
+	sdkCtx = sdk.UnwrapSDKContext(ctx)
+
 	// Ensure the failed undelegation did not affect the application
 	_, err = srv.UndelegateFromGateway(ctx, undelegateMsg)
 	require.ErrorIs(t, err, types.ErrAppNotDelegated)
 
+	sdkCtx = sdk.UnwrapSDKContext(ctx)
 	events = sdkCtx.EventManager().Events()
-	require.Equal(t, 2, len(events))
+	require.Equal(t, 0, len(events), "expected no events")
 
 	foundApp, isAppFound = k.GetApplication(ctx, appAddr)
 	require.True(t, isAppFound)
@@ -294,8 +299,7 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegateFromUnstakedGatew
 	require.Equal(t, gatewayAddr, foundApp.DelegateeGatewayAddresses[0])
 
 	// Reset the events, as if a new block were created.
-	ctx = testevents.ResetEventManager(ctx)
-	sdkCtx = sdk.UnwrapSDKContext(ctx)
+	ctx, sdkCtx = testevents.ResetEventManager(ctx)
 
 	// Mock unstaking the gateway
 	keepertest.RemoveGatewayFromStakedGatewayMap(t, gatewayAddr)
