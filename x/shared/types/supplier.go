@@ -2,10 +2,7 @@ package types
 
 // SupplierNotUnstaking is the value of `unstake_session_end_height` if the
 // supplier is not actively in the unbonding period.
-const (
-	SupplierNotUnstaking uint64 = iota
-	SupplierBelowMinStake
-)
+const SupplierNotUnstaking uint64 = iota
 
 // IsUnbonding returns true if the supplier is actively unbonding.
 // It determines if the supplier has submitted an unstake message, in which case
