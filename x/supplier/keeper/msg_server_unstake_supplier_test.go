@@ -86,7 +86,7 @@ func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
 	expectedSupplier.UnstakeSessionEndHeight = uint64(sharedtypes.GetSessionEndHeight(&sharedParams, cosmostypes.UnwrapSDKContext(ctx).BlockHeight()))
 	unbondingHeight := sharedtypes.GetSupplierUnbondingHeight(&sharedParams, expectedSupplier)
 
-	// Assert that the EventSupplierUnbondingCanceled event is emitted.
+	// Assert that the EventSupplierUnbondingBegin event is emitted.
 	events = cosmostypes.UnwrapSDKContext(ctx).EventManager().Events()
 	require.Equalf(t, 1, len(events), "expected exactly 1 event")
 
@@ -116,7 +116,7 @@ func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
 	err = supplierModuleKeepers.EndBlockerUnbondSuppliers(ctx)
 	require.NoError(t, err)
 
-	// Assert that the EventSupplierUnbondingCanceled event is emitted.
+	// Assert that the EventSupplierUnbondingEnd event is emitted.
 	events = cosmostypes.UnwrapSDKContext(ctx).EventManager().Events()
 	require.Equalf(t, 1, len(events), "expected exactly 2 event")
 

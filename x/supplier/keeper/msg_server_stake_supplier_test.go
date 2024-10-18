@@ -37,7 +37,7 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 	_, err := srv.StakeSupplier(ctx, stakeMsg)
 	require.NoError(t, err)
 
-	// Assert that the EventSupplierUnbondingCanceled event is emitted.
+	// Assert that the EventSupplierStaked event is emitted.
 	events := cosmostypes.UnwrapSDKContext(ctx).EventManager().Events()
 	require.Equalf(t, 1, len(events), "expected exactly 1 event")
 
