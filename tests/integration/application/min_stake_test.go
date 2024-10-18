@@ -240,16 +240,16 @@ func (s *applicationMinStakeTestSuite) getAppBalance() *cosmostypes.Coin {
 	return appBalRes.GetBalance()
 }
 
-// TODO_IN_THIS_COMMIT: move & godoc
+// getCurrentHeight gets the current height from the context.
+func (s *applicationMinStakeTestSuite) getCurrentHeight() int64 {
+	return cosmostypes.UnwrapSDKContext(s.ctx).BlockHeight()
+}
+
+// setBlockHeight sets the current block height in the context to targetHeight.
 func (s *applicationMinStakeTestSuite) setBlockHeight(targetHeight int64) cosmostypes.Context {
 	sdkCtx := cosmostypes.
 		UnwrapSDKContext(s.ctx).
 		WithBlockHeight(targetHeight)
 	s.ctx = sdkCtx
 	return sdkCtx
-}
-
-// TODO_IN_THIS_COMMIT: move & godoc
-func (s *applicationMinStakeTestSuite) getCurrentHeight() int64 {
-	return cosmostypes.UnwrapSDKContext(s.ctx).BlockHeight()
 }
