@@ -75,7 +75,7 @@ func TestMsgServer_DelegateToGateway_SuccessfullyDelegate(t *testing.T) {
 	require.EqualValues(t, expectedEvent, filteredEvents[0])
 
 	// Reset the events, as if a new block were created.
-	ctx = testevents.ResetEventManager(ctx)
+	ctx, sdkCtx = testevents.ResetEventManager(ctx)
 
 	// Verify that the application exists
 	foundApp, isAppFound := k.GetApplication(ctx, appAddr)
@@ -166,7 +166,7 @@ func TestMsgServer_DelegateToGateway_FailDuplicate(t *testing.T) {
 	require.EqualValues(t, expectedEvent, filteredEvents[0])
 
 	// Reset the events, as if a new block were created.
-	ctx = testevents.ResetEventManager(ctx)
+	ctx, sdkCtx = testevents.ResetEventManager(ctx)
 
 	// Verify that the application exists
 	foundApp, isAppFound := k.GetApplication(ctx, appAddr)
@@ -185,7 +185,6 @@ func TestMsgServer_DelegateToGateway_FailDuplicate(t *testing.T) {
 	_, err = srv.DelegateToGateway(ctx, delegateMsg2)
 	require.ErrorIs(t, err, apptypes.ErrAppAlreadyDelegated)
 
-	sdkCtx = sdk.UnwrapSDKContext(ctx)
 	events = sdkCtx.EventManager().Events()
 	require.Equal(t, 0, len(events))
 }
@@ -300,8 +299,7 @@ func TestMsgServer_DelegateToGateway_FailMaxReached(t *testing.T) {
 	}
 
 	// Reset the events, as if a new block were created.
-	ctx = testevents.ResetEventManager(ctx)
-	sdkCtx = sdk.UnwrapSDKContext(ctx)
+	ctx, sdkCtx = testevents.ResetEventManager(ctx)
 
 	// Generate an address for the gateway that'll exceed the max
 	gatewayAddr := sample.AccAddress()

@@ -130,7 +130,7 @@ func (s *applicationMinStakeTestSuite) TestAppIsUnbondedIfBelowMinStakeWhenSettl
 	require.EqualValues(s.T(), expectedAppUnbondingBeginEvent, appUnbondingBeginEvents[0])
 
 	// Reset the events, as if a new block were created.
-	s.ctx = testevents.ResetEventManager(s.ctx)
+	s.ctx, _ = testevents.ResetEventManager(s.ctx)
 
 	// Set the current height to the unbonding session end height.
 	unbondingSessionEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, expectedApp)

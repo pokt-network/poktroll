@@ -294,8 +294,7 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegateFromUnstakedGatew
 	require.Equal(t, gatewayAddr, foundApp.DelegateeGatewayAddresses[0])
 
 	// Reset the events, as if a new block were created.
-	ctx = testevents.ResetEventManager(ctx)
-	sdkCtx = sdk.UnwrapSDKContext(ctx)
+	ctx, sdkCtx = testevents.ResetEventManager(ctx)
 
 	// Mock unstaking the gateway
 	keepertest.RemoveGatewayFromStakedGatewayMap(t, gatewayAddr)
