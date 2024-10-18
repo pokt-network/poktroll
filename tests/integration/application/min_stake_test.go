@@ -21,6 +21,7 @@ import (
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
+	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -103,31 +104,10 @@ func (s *applicationMinStakeTestSuite) TestAppIsUnbondedIfBelowMinStakeWhenSettl
 	_, _, err := s.keepers.Keeper.SettlePendingClaims(cosmostypes.UnwrapSDKContext(s.ctx))
 	require.NoError(s.T(), err)
 
+	expectedApp := s.getExpectedApp(claim)
+
 	// Assert that the EventApplicationUnbondingBegin event is emitted.
-	relayMiningDifficulty := servicekeeper.NewDefaultRelayMiningDifficulty(s.ctx, cosmoslog.NewNopLogger(), s.serviceId, servicekeeper.TargetNumRelays)
-	expectedBurnCoin, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
-	require.NoError(s.T(), err)
-
-	expectedApp := &apptypes.Application{
-		Address:                   s.appBech32,
-		Stake:                     s.appStake,
-		ServiceConfigs:            s.appServiceConfigs,
-		DelegateeGatewayAddresses: make([]string, 0),
-		PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
-		UnstakeSessionEndHeight:   uint64(settlementSessionEndHeight),
-	}
-	expectedEndStake := expectedApp.GetStake().Sub(expectedBurnCoin)
-	expectedApp.Stake = &expectedEndStake
-
-	expectedAppUnbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
-		Application:      expectedApp,
-		Reason:           apptypes.ApplicationUnbondingReason_BELOW_MIN_STAKE,
-		SessionEndHeight: settlementSessionEndHeight,
-	}
-	events := cosmostypes.UnwrapSDKContext(s.ctx).EventManager().Events()
-	appUnbondingBeginEvents := testevents.FilterEvents[*apptypes.EventApplicationUnbondingBegin](s.T(), events)
-	require.Equal(s.T(), 1, len(appUnbondingBeginEvents), "expected exactly 1 event")
-	require.EqualValues(s.T(), expectedAppUnbondingBeginEvent, appUnbondingBeginEvents[0])
+	s.assertUnbondingBeginEventObserved(expectedApp)
 
 	// Reset the events, as if a new block were created.
 	s.ctx, _ = testevents.ResetEventManager(s.ctx)
@@ -141,26 +121,14 @@ func (s *applicationMinStakeTestSuite) TestAppIsUnbondedIfBelowMinStakeWhenSettl
 	require.NoError(s.T(), err)
 
 	// Assert that the EventApplicationUnbondingEnd event is emitted.
-	expectedAppUnbondingEndEvent := &apptypes.EventApplicationUnbondingEnd{
-		Application:      expectedApp,
-		Reason:           apptypes.ApplicationUnbondingReason_BELOW_MIN_STAKE,
-		SessionEndHeight: unbondingSessionEndHeight,
-	}
-	events = cosmostypes.UnwrapSDKContext(s.ctx).EventManager().Events()
-	appUnbondingEndEvents := testevents.FilterEvents[*apptypes.EventApplicationUnbondingEnd](s.T(), events)
-	require.Equal(s.T(), 1, len(appUnbondingEndEvents), "expected exactly 1 event")
-	require.EqualValues(s.T(), expectedAppUnbondingEndEvent, appUnbondingEndEvents[0])
+	s.assertUnbondingEndEventObserved(expectedApp)
 
 	// Assert that the application was unbonded.
 	_, isAppFound := s.keepers.ApplicationKeeper.GetApplication(s.ctx, s.appBech32)
 	require.False(s.T(), isAppFound)
 
 	// Assert that the application's stake was returned to its bank balance.
-	expectedAppBurn := math.NewInt(int64(s.numRelays * s.numComputeUnitsPerRelay * sharedtypes.DefaultComputeUnitsToTokensMultiplier))
-	expectedAppBalance := s.appStake.SubAmount(expectedAppBurn)
-	appBalance = s.getAppBalance()
-	require.Equal(s.T(), expectedAppBalance.Amount.Int64(), appBalance.Amount.Int64())
-
+	s.assertAppStakeIsReturnedToBalance()
 }
 
 // addService adds the test service to the service module state.
@@ -205,6 +173,8 @@ func (s *applicationMinStakeTestSuite) stakeSupplier() {
 
 // getSessionHeader gets the session header for the test session.
 func (s *applicationMinStakeTestSuite) getSessionHeader() *sessiontypes.SessionHeader {
+	s.T().Helper()
+
 	sdkCtx := cosmostypes.UnwrapSDKContext(s.ctx)
 	currentHeight := sdkCtx.BlockHeight()
 	sessionRes, err := s.keepers.SessionKeeper.GetSession(s.ctx, &sessiontypes.QueryGetSessionRequest{
@@ -232,6 +202,8 @@ func (s *applicationMinStakeTestSuite) getClaim(
 
 // getAppBalance returns the bank module balance for the application.
 func (s *applicationMinStakeTestSuite) getAppBalance() *cosmostypes.Coin {
+	s.T().Helper()
+
 	appBalRes, err := s.keepers.BankKeeper.Balance(s.ctx, &banktypes.QueryBalanceRequest{
 		Address: s.appBech32, Denom: volatile.DenomuPOKT,
 	})
@@ -252,4 +224,84 @@ func (s *applicationMinStakeTestSuite) setBlockHeight(targetHeight int64) cosmos
 		WithBlockHeight(targetHeight)
 	s.ctx = sdkCtx
 	return sdkCtx
+}
+
+// getExpectedApp returns the expected application for the given claim.
+func (s *applicationMinStakeTestSuite) getExpectedApp(claim *prooftypes.Claim) *apptypes.Application {
+	s.T().Helper()
+
+	sharedParams := s.keepers.SharedKeeper.GetParams(s.ctx)
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, s.getCurrentHeight())
+	relayMiningDifficulty := s.newRelayminingDifficulty()
+	expectedBurnCoin, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
+	require.NoError(s.T(), err)
+
+	expectedEndStake := s.appStake.Sub(expectedBurnCoin)
+	return &apptypes.Application{
+		Address:                   s.appBech32,
+		Stake:                     &expectedEndStake,
+		ServiceConfigs:            s.appServiceConfigs,
+		DelegateeGatewayAddresses: make([]string, 0),
+		PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
+		UnstakeSessionEndHeight:   uint64(sessionEndHeight),
+	}
+}
+
+// newRelayminingDifficulty creates a new RelayMiningDifficulty for use in calculating application burn.
+func (s *applicationMinStakeTestSuite) newRelayminingDifficulty() servicetypes.RelayMiningDifficulty {
+	s.T().Helper()
+
+	return servicekeeper.NewDefaultRelayMiningDifficulty(
+		s.ctx,
+		cosmoslog.NewNopLogger(),
+		s.serviceId,
+		servicekeeper.TargetNumRelays,
+	)
+}
+
+// assertUnbondingBeginEventObserved asserts that the EventApplicationUnbondingBegin
+// event is emitted and matches one derived from the given expected application.
+func (s *applicationMinStakeTestSuite) assertUnbondingBeginEventObserved(expectedApp *apptypes.Application) {
+	s.T().Helper()
+
+	sessionEndHeight := s.keepers.SharedKeeper.GetSessionEndHeight(s.ctx, s.getCurrentHeight())
+	expectedAppUnbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
+		Application:      expectedApp,
+		Reason:           apptypes.ApplicationUnbondingReason_BELOW_MIN_STAKE,
+		SessionEndHeight: sessionEndHeight,
+	}
+
+	events := cosmostypes.UnwrapSDKContext(s.ctx).EventManager().Events()
+	appUnbondingBeginEvents := testevents.FilterEvents[*apptypes.EventApplicationUnbondingBegin](s.T(), events)
+	require.Equal(s.T(), 1, len(appUnbondingBeginEvents), "expected exactly 1 event")
+	require.EqualValues(s.T(), expectedAppUnbondingBeginEvent, appUnbondingBeginEvents[0])
+}
+
+// assertUnbondingEndEventObserved asserts that the EventApplicationUnbondingEnd is
+// emitted and matches one derived from the given expected application.
+func (s *applicationMinStakeTestSuite) assertUnbondingEndEventObserved(expectedApp *apptypes.Application) {
+	s.T().Helper()
+
+	sharedParams := s.keepers.SharedKeeper.GetParams(s.ctx)
+	unbondingSessionEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, expectedApp)
+	expectedAppUnbondingEndEvent := &apptypes.EventApplicationUnbondingEnd{
+		Application:      expectedApp,
+		Reason:           apptypes.ApplicationUnbondingReason_BELOW_MIN_STAKE,
+		SessionEndHeight: unbondingSessionEndHeight,
+	}
+
+	events := cosmostypes.UnwrapSDKContext(s.ctx).EventManager().Events()
+	appUnbondingEndEvents := testevents.FilterEvents[*apptypes.EventApplicationUnbondingEnd](s.T(), events)
+	require.Equal(s.T(), 1, len(appUnbondingEndEvents), "expected exactly 1 event")
+	require.EqualValues(s.T(), expectedAppUnbondingEndEvent, appUnbondingEndEvents[0])
+}
+
+// assertAppStakeIsReturnedToBalance asserts that the application's stake is returned to its bank balance.
+func (s *applicationMinStakeTestSuite) assertAppStakeIsReturnedToBalance() {
+	s.T().Helper()
+
+	expectedAppBurn := math.NewInt(int64(s.numRelays * s.numComputeUnitsPerRelay * sharedtypes.DefaultComputeUnitsToTokensMultiplier))
+	expectedAppBalance := s.appStake.SubAmount(expectedAppBurn)
+	appBalance := s.getAppBalance()
+	require.Equal(s.T(), expectedAppBalance.Amount.Int64(), appBalance.Amount.Int64())
 }
