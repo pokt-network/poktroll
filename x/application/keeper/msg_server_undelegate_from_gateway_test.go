@@ -217,14 +217,12 @@ func TestMsgServer_UndelegateFromGateway_FailNotDelegated(t *testing.T) {
 	require.EqualValues(t, expectedRedelegationEvent, redelegationEvents[0])
 
 	// Reset the events, as if a new block were created.
-	ctx, _ = testevents.ResetEventManager(ctx)
-	sdkCtx = sdk.UnwrapSDKContext(ctx)
+	ctx, sdkCtx = testevents.ResetEventManager(ctx)
 
 	// Ensure the failed undelegation did not affect the application
 	_, err = srv.UndelegateFromGateway(ctx, undelegateMsg)
 	require.ErrorIs(t, err, types.ErrAppNotDelegated)
 
-	sdkCtx = sdk.UnwrapSDKContext(ctx)
 	events = sdkCtx.EventManager().Events()
 	require.Equal(t, 0, len(events), "expected no events")
 
