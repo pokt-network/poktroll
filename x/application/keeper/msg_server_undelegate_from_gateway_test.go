@@ -543,12 +543,14 @@ func TestMsgServer_UndelegateFromGateway_UndelegateFromUnstakedGateway(t *testin
 
 	// Auto-undelegation reacts to the unstaked gateway event but since the test
 	// does not exercise the gateway unstaking logic, the event is emitted manually.
-	sdkCtx.EventManager().EmitTypedEvents(
-		&gwtypes.EventGatewayUnstaked{Address: delegateAddr},
-		&gwtypes.EventGatewayUnstaked{Address: pendingUndelegateFromAddr},
+	err := sdkCtx.EventManager().EmitTypedEvents(
+		&gwtypes.EventGatewayUnstaked{Gateway: &gwtypes.Gateway{Address: delegateAddr}},
+		&gwtypes.EventGatewayUnstaked{Gateway: &gwtypes.Gateway{Address: pendingUndelegateFromAddr}},
 	)
+	require.NoError(t, err)
 
-	k.EndBlockerAutoUndelegateFromUnstakedGateways(sdkCtx)
+	err = k.EndBlockerAutoUndelegateFromUnstakedGateways(sdkCtx)
+	require.NoError(t, err)
 
 	app, _ = k.GetApplication(sdkCtx, app.Address)
 
@@ -556,7 +558,7 @@ func TestMsgServer_UndelegateFromGateway_UndelegateFromUnstakedGateway(t *testin
 
 	currentHeight := sdkCtx.BlockHeight()
 	sessionEndHeight := uint64(testsession.GetSessionEndHeightWithDefaultParams(currentHeight))
-	require.Len(t, app.PendingUndelegations[uint64(sessionEndHeight)].GatewayAddresses, 2)
+	require.Len(t, app.PendingUndelegations[sessionEndHeight].GatewayAddresses, 2)
 }
 
 // createAppStakeDelegateAndUndelegate is a helper function that is used in the tests

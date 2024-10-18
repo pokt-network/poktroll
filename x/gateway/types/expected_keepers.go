@@ -1,4 +1,4 @@
-//go:generate mockgen -destination ../../../testutil/gateway/mocks/expected_keepers_mock.go -package mocks . AccountKeeper,BankKeeper
+//go:generate mockgen -destination ../../../testutil/gateway/mocks/expected_keepers_mock.go -package mocks . AccountKeeper,BankKeeper,SharedKeeper
 
 package types
 
@@ -6,6 +6,8 @@ import (
 	"context"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // AccountKeeper defines the expected interface for the Account module.
@@ -22,4 +24,9 @@ type BankKeeper interface {
 	// linked to staking.
 	SendCoinsFromAccountToModule(ctx context.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error
 	SendCoinsFromModuleToAccount(ctx context.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error
+}
+
+type SharedKeeper interface {
+	GetParams(ctx context.Context) sharedtypes.Params
+	GetSessionEndHeight(ctx context.Context, queryHeight int64) int64
 }

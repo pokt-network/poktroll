@@ -199,6 +199,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 		logger,
 		authority.String(),
 		bankKeeper,
+		sharedKeeper,
 	)
 	require.NoError(t, gatewayKeeper.SetParams(ctx, gatewaytypes.DefaultParams()))
 

@@ -367,6 +367,7 @@ func NewTokenomicsModuleKeepers(
 		logger,
 		authority.String(),
 		bankKeeper,
+		sharedKeeper,
 	)
 	require.NoError(t, gatewayKeeper.SetParams(sdkCtx, gatewaytypes.DefaultParams()))
 

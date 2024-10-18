@@ -8,10 +8,12 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app/volatile"
+	testevents "github.com/pokt-network/poktroll/testutil/events"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/x/gateway/keeper"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func TestMsgServer_StakeGateway_SuccessfulCreateAndUpdate(t *testing.T) {
@@ -33,8 +35,32 @@ func TestMsgServer_StakeGateway_SuccessfulCreateAndUpdate(t *testing.T) {
 	}
 
 	// Stake the gateway.
-	_, err := srv.StakeGateway(ctx, stakeMsg)
+	stakeGatewayRes, err := srv.StakeGateway(ctx, stakeMsg)
 	require.NoError(t, err)
+
+	// Assert that the response contains the staked gateway.
+	gateway := stakeGatewayRes.GetGateway()
+	require.Equal(t, stakeMsg.GetAddress(), gateway.GetAddress())
+	require.Equal(t, stakeMsg.GetStake(), gateway.GetStake())
+
+	// Assert that the EventGatewayStaked event is emitted.
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
+	sharedParams := sharedtypes.DefaultParams()
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, sdkCtx.BlockHeight())
+	expectedEvent, err := cosmostypes.TypedEventToEvent(
+		&gatewaytypes.EventGatewayStaked{
+			Gateway:          gateway,
+			SessionEndHeight: sessionEndHeight,
+		},
+	)
+	require.NoError(t, err)
+
+	events := cosmostypes.UnwrapSDKContext(ctx).EventManager().Events()
+	require.Equal(t, 1, len(events), "expected 1 event")
+	require.EqualValues(t, expectedEvent, events[0])
+
+	// Reset the events, as if a new block were created.
+	ctx, _ = testevents.ResetEventManager(ctx)
 
 	// Verify that the gateway exists.
 	foundGateway, isGatewayFound := k.GetGateway(ctx, addr)
@@ -44,17 +70,35 @@ func TestMsgServer_StakeGateway_SuccessfulCreateAndUpdate(t *testing.T) {
 
 	// Prepare an updated gateway with a higher stake.
 	updatedStake := cosmostypes.NewCoin("upokt", math.NewInt(200))
-	updateMsg := &gatewaytypes.MsgStakeGateway{
+	upStakeMsg := &gatewaytypes.MsgStakeGateway{
 		Address: addr,
 		Stake:   &updatedStake,
 	}
 
 	// Update the staked gateway.
-	_, err = srv.StakeGateway(ctx, updateMsg)
+	stakeGatewayRes, err = srv.StakeGateway(ctx, upStakeMsg)
 	require.NoError(t, err)
 	foundGateway, isGatewayFound = k.GetGateway(ctx, addr)
 	require.True(t, isGatewayFound)
 	require.Equal(t, updatedStake.Amount, foundGateway.Stake.Amount)
+
+	// Assert that the response contains the upstaked gateway.
+	upStakedGateway := stakeGatewayRes.GetGateway()
+	require.Equal(t, upStakeMsg.GetAddress(), upStakedGateway.GetAddress())
+	require.Equal(t, upStakeMsg.GetStake(), upStakedGateway.GetStake())
+
+	// Assert that the EventGatewayStaked event is emitted.
+	expectedEvent, err = cosmostypes.TypedEventToEvent(
+		&gatewaytypes.EventGatewayStaked{
+			Gateway:          upStakedGateway,
+			SessionEndHeight: sessionEndHeight,
+		},
+	)
+	require.NoError(t, err)
+
+	events = cosmostypes.UnwrapSDKContext(ctx).EventManager().Events()
+	require.Equal(t, 1, len(events), "expected 1 event")
+	require.EqualValues(t, expectedEvent, events[0])
 }
 
 func TestMsgServer_StakeGateway_FailLoweringStake(t *testing.T) {
