@@ -170,9 +170,9 @@ func GetSessionEndToProofWindowCloseBlocks(params *Params) int64 {
 		params.GetProofWindowCloseOffsetBlocks())
 }
 
-// TODO_IN_THIS_COMMIT: godoc
+// GetSettlementSessionEndHeight returns the end height of the session in which the
+// session that includes queryHeight is settled, given the passed shared on-chain parameters.
 func GetSettlementSessionEndHeight(sharedParams *Params, queryHeight int64) int64 {
 	return GetSessionEndToProofWindowCloseBlocks(sharedParams) +
-		// TODO_IN_THIS_COMMIT: double-check +1
 		GetSessionEndHeight(sharedParams, queryHeight) + 1
 }
