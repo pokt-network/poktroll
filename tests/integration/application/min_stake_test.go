@@ -2,7 +2,6 @@ package application
 
 import (
 	"context"
-	"math"
 	"testing"
 
 	cosmoslog "cosmossdk.io/log"
@@ -48,7 +47,7 @@ func TestApplicationMinStakeTestSuite(t *testing.T) {
 }
 
 func (s *applicationMinStakeTestSuite) SetupTest() {
-	s.keepers, s.ctx = keeper.NewTokenomicsModuleKeepers(s.T(), cosmoslog.NewNopLogger())
+	s.keepers, s.ctx = keeper.NewTokenomicsModuleKeepers(s.T(), cosmoslog.NewNopLogger(), keeper.WithProofRequirement(false))
 
 	proofParams := prooftypes.DefaultParams()
 	proofParams.ProofRequestProbability = 0
@@ -83,12 +82,6 @@ func (s *applicationMinStakeTestSuite) TestAppIsUnbondedIfBelowMinStakeWhenSettl
 
 	// Stake a supplier for service 1.
 	s.stakeSupplier()
-
-	proofParams := s.keepers.ProofKeeper.GetParams(s.ctx)
-	proofParams.ProofRequestProbability = 0
-	proofRequirementThreshold := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, math.MaxInt64)
-	proofParams.ProofRequirementThreshold = &proofRequirementThreshold
-	s.keepers.ProofKeeper.SetParams(s.ctx, proofParams)
 
 	// Get the session header.
 	sessionHeader := s.getSessionHeader()

@@ -2,10 +2,11 @@ package keeper
 
 import (
 	"context"
+	"math"
 	"testing"
 
 	"cosmossdk.io/log"
-	"cosmossdk.io/math"
+	sdkmath "cosmossdk.io/math"
 	"cosmossdk.io/store"
 	"cosmossdk.io/store/metrics"
 	storetypes "cosmossdk.io/store/types"
@@ -29,6 +30,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app"
+	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/testutil/tokenomics/mocks"
 	appkeeper "github.com/pokt-network/poktroll/x/application/keeper"
@@ -117,7 +119,7 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 	// Prepare the test application.
 	application := apptypes.Application{
 		Address:        sample.AccAddress(),
-		Stake:          &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100000)},
+		Stake:          &sdk.Coin{Denom: "upokt", Amount: sdkmath.NewInt(100000)},
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{{ServiceId: service.Id}},
 	}
 
@@ -126,7 +128,7 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 	supplier := sharedtypes.Supplier{
 		OwnerAddress:    supplierOwnerAddr,
 		OperatorAddress: supplierOwnerAddr,
-		Stake:           &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100000)},
+		Stake:           &sdk.Coin{Denom: "upokt", Amount: sdkmath.NewInt(100000)},
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
 				ServiceId: service.Id,
@@ -345,9 +347,9 @@ func NewTokenomicsModuleKeepers(
 	require.NoError(t, bankKeeper.SetParams(sdkCtx, banktypes.DefaultParams()))
 
 	// Provide some initial funds to the suppliers & applications module accounts.
-	err = bankKeeper.MintCoins(sdkCtx, suppliertypes.ModuleName, sdk.NewCoins(sdk.NewCoin("upokt", math.NewInt(1000000000000))))
+	err = bankKeeper.MintCoins(sdkCtx, suppliertypes.ModuleName, sdk.NewCoins(sdk.NewCoin("upokt", sdkmath.NewInt(1000000000000))))
 	require.NoError(t, err)
-	err = bankKeeper.MintCoins(sdkCtx, apptypes.ModuleName, sdk.NewCoins(sdk.NewCoin("upokt", math.NewInt(1000000000000))))
+	err = bankKeeper.MintCoins(sdkCtx, apptypes.ModuleName, sdk.NewCoins(sdk.NewCoin("upokt", sdkmath.NewInt(1000000000000))))
 	require.NoError(t, err)
 
 	// Construct a real shared keeper.
@@ -509,5 +511,26 @@ func WithProposerAddr(addr string) TokenomicsModuleKeepersOpt {
 		sdkCtx := sdk.UnwrapSDKContext(ctx)
 		sdkCtx = sdkCtx.WithProposer(consensusAddr)
 		return sdkCtx
+	}
+}
+
+// WithProofRequirement is an option to set the proof requirement in the tokenomics module keepers.
+func WithProofRequirement(required bool) TokenomicsModuleKeepersOpt {
+	return func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
+
+		proofParams := keepers.ProofKeeper.GetParams(ctx)
+		if required {
+			proofParams.ProofRequestProbability = 1
+			proofRequirementThreshold := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0)
+			proofParams.ProofRequirementThreshold = &proofRequirementThreshold
+		} else {
+			proofParams.ProofRequestProbability = 0
+			proofRequirementThreshold := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, math.MaxInt64)
+			proofParams.ProofRequirementThreshold = &proofRequirementThreshold
+		}
+
+		keepers.ProofKeeper.SetParams(ctx, proofParams)
+
+		return ctx
 	}
 }

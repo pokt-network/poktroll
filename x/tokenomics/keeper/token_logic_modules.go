@@ -660,12 +660,37 @@ func (k Keeper) ensureClaimAmountLimits(
 	// before being reimbursed to the application in the future.
 	appStake := application.GetStake()
 
-	// The application should have enough stake to cover for the global mint reimbursement.
-	// This amount is deducted from the maximum claimable amount.
 	// TODO_BETA(red-0ne): Make sure that the relay miner logic also accounts for this
 	// when deciding to serve an application.
+
+	// The application should have enough stake to cover for the global mint reimbursement.
+	// This amount is deducted from the maximum claimable amount.
 	globalInflationCoin, _ := calculateGlobalPerClaimMintInflationFromSettlementAmount(claimSettlementCoin)
+
+	// TODO_BETA(@red-0ne): Introduce a session sliding window to account for potential consumption
+	// during the current session (i.e. Not the session being settled) such as:
+	// maxCalibmableAmt = (AppStake / (currSessNum - settlingSessNum + 1) / NumSuppliersPerSession) - GlobalInflation
+	// In conjunction with single service applications, this would make maxClaimableAmt
+	// effectively addressing the issue of over-servicing.
+	// Example:
+	// - Current session num: 3
+	// - Settling session num: 2
+	// - Application already requested work for session 3
+	// Problem:
+	// - If the application consumes its entire stake in settlement of session 2
+	// - Then over-servicing in session 3 (i.e. No stake left to consume)
+	// Solution:
+	// - By dividing the claimable stake by 2 (3 - 2 + 1), settling session 2 assumes that
+	//   the application will consume its maxClaimableAmt the current session (3).
+	// - Off-chain actors could use this formula during the servicing of session num 3
+	//   and assume maxClaimableAmt will be settled in session 2.
+	// - Garantee no over-servicing at the cost of higher application stake requirements.
 	maxCalibmableAmt := appStake.Amount.Quo(math.NewInt(sessionkeeper.NumSupplierPerSession)).Sub(globalInflationCoin.Amount)
+
+	if !maxCalibmableAmt.IsPositive() {
+		// TODO_CONSIDERATION: Should we stop processing if the app stake is not ehnough?
+		logger.Warn(fmt.Sprintf("Application %s stake (%s) cannot cover the global inflation %s", application.GetAddress(), appStake, globalInflationCoin))
+	}
 
 	// Determine the max claimable amount for the supplier based on the application's stake in this session.
 	maxClaimableCoin := sdk.NewCoin(volatile.DenomuPOKT, maxCalibmableAmt)
