@@ -19,7 +19,7 @@ enum ApplicationUnbondingReason {
 // EventApplicationStaked is emitted when an application is staked or up-staked.
 message EventApplicationStaked {
   poktroll.application.Application application = 1 [(gogoproto.jsontag) = "application"];
-  // The end height of the session in which the transfer began.
+  // The end height of the session in which the application was staked.
   int64 session_end_height = 2 [(gogoproto.jsontag) = "session_end_height"];
 }
 
@@ -77,7 +77,7 @@ message EventTransferError {
 message EventApplicationUnbondingBegin {
   poktroll.application.Application application = 1 [(gogoproto.jsontag) = "application"];
   ApplicationUnbondingReason reason = 2 [(gogoproto.jsontag) = "reason"];
-  // The end height of the session in which the transfer began.
+  // The end height of the session in which the unbonding began.
   int64 session_end_height = 3 [(gogoproto.jsontag) = "session_end_height"];
 }
 
@@ -87,7 +87,7 @@ message EventApplicationUnbondingBegin {
 message EventApplicationUnbondingEnd {
   poktroll.application.Application application = 1 [(gogoproto.jsontag) = "application"];
   ApplicationUnbondingReason reason = 2 [(gogoproto.jsontag) = "reason"];
-  // The end height of the session in which the transfer ended.
+  // The end height of the session in which the unbonding ended.
   int64 session_end_height = 3 [(gogoproto.jsontag) = "session_end_height"];
 }
 
@@ -96,6 +96,6 @@ message EventApplicationUnbondingEnd {
 // event will also be emitted immediately after this event.
 message EventApplicationUnbondingCanceled {
   poktroll.application.Application application = 1 [(gogoproto.jsontag) = "application"];
-  // The end height of the session in which the transfer was canceled.
+  // The end height of the session in which the unbonding was canceled.
   int64 session_end_height = 2 [(gogoproto.jsontag) = "session_end_height"];
 }
