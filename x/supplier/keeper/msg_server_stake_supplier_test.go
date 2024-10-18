@@ -9,6 +9,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/pokt-network/poktroll/app/volatile"
 	testevents "github.com/pokt-network/poktroll/testutil/events"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
@@ -37,17 +38,21 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.NoError(t, err)
 
 	// Assert that the EventSupplierUnbondingCanceled event is emitted.
-	events := sdk.UnwrapSDKContext(ctx).EventManager().Events()
+	events := cosmostypes.UnwrapSDKContext(ctx).EventManager().Events()
 	require.Equalf(t, 1, len(events), "expected exactly 1 event")
 
-	expectedEvent, err := sdk.TypedEventToEvent(
-		&suppliertypes.EventSupplierStaked{Supplier: expectedSupplier},
+	sessionEndHeight := supplierModuleKeepers.SharedKeeper.GetSessionEndHeight(ctx, cosmostypes.UnwrapSDKContext(ctx).BlockHeight())
+	expectedEvent, err := cosmostypes.TypedEventToEvent(
+		&suppliertypes.EventSupplierStaked{
+			Supplier:         expectedSupplier,
+			SessionEndHeight: sessionEndHeight,
+		},
 	)
 	require.NoError(t, err)
 	require.EqualValues(t, expectedEvent, events[0])
 
 	// Reset the events, as if a new block were created.
-	ctx = testevents.ResetEventManager(ctx)
+	ctx, _ = testevents.ResetEventManager(ctx)
 
 	// Verify that the supplier exists
 	foundSupplier, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
@@ -172,6 +177,10 @@ func TestMsgServer_StakeSupplier_FailWithNonExistingService(t *testing.T) {
 	require.ErrorContains(t, err, suppliertypes.ErrSupplierServiceNotFound.Wrapf(
 		"service %q does not exist", "newService",
 	).Error())
+
+	// Verify that no EventSupplierStaked events were emitted.
+	events := cosmostypes.UnwrapSDKContext(ctx).EventManager().Events()
+	require.Empty(t, events)
 
 	// Verify that the supplier does not exist
 	_, isSupplierFound := supplierModuleKeepers.GetSupplier(ctx, operatorAddr)
@@ -377,7 +386,7 @@ func newSupplierStakeMsg(
 		})
 	}
 
-	initialStake := sdk.NewCoin("upokt", math.NewInt(stakeAmount))
+	initialStake := cosmostypes.NewCoin("upokt", math.NewInt(stakeAmount))
 
 	msg := &suppliertypes.MsgStakeSupplier{
 		Signer:          ownerAddr,
@@ -425,7 +434,7 @@ func TestMsgServer_StakeSupplier_FailBelowMinStake(t *testing.T) {
 	require.NoError(t, err)
 
 	// Prepare the supplier stake message.
-	stakeMsg := stakeSupplierForServicesMsg(addr, addr, 100, "svcId")
+	stakeMsg, _ := newSupplierStakeMsg(addr, addr, 100, "svcId")
 
 	// Attempt to stake the supplier & verify that the supplier does NOT exist.
 	_, err = srv.StakeSupplier(ctx, stakeMsg)
@@ -444,7 +453,7 @@ func TestMsgServer_StakeSupplier_UpStakeFromBelowMinStake(t *testing.T) {
 	belowMinStake := minStake.AddAmount(math.NewInt(-1))
 	aboveMinStake := minStake.AddAmount(math.NewInt(1))
 
-	stakeMsg := stakeSupplierForServicesMsg(addr, addr, aboveMinStake.Amount.Int64(), "svcId")
+	stakeMsg, expectedSupplier := newSupplierStakeMsg(addr, addr, aboveMinStake.Amount.Int64(), "svcId")
 
 	// Stake (via keeper methods) a supplier with stake below min. stake.
 	initialSupplier := sharedtypes.Supplier{
@@ -453,10 +462,9 @@ func TestMsgServer_StakeSupplier_UpStakeFromBelowMinStake(t *testing.T) {
 		Stake:           &belowMinStake,
 		Services:        stakeMsg.GetServices(),
 		ServicesActivationHeightsMap: map[string]uint64{
-			"svcId": 0,
+			"svcId": 11,
 		},
 	}
-
 	k.SetSupplier(ctx, initialSupplier)
 
 	// Attempt to upstake the supplier with stake above min. stake.
@@ -464,9 +472,7 @@ func TestMsgServer_StakeSupplier_UpStakeFromBelowMinStake(t *testing.T) {
 	require.NoError(t, err)
 
 	// Assert supplier is staked for above min. stake.
-	expectedSupplier := initialSupplier
-	expectedSupplier.Stake = &aboveMinStake
 	supplier, isSupplierFound := k.GetSupplier(ctx, addr)
 	require.True(t, isSupplierFound)
-	require.EqualValues(t, expectedSupplier, supplier)
+	require.EqualValues(t, expectedSupplier, &supplier)
 }

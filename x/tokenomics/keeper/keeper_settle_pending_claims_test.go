@@ -32,7 +32,6 @@ import (
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
-	"github.com/pokt-network/poktroll/x/tokenomics"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
@@ -714,12 +713,14 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	// Expectation: All (1) claims should expire.
 	// NB: proofs should be rejected when the current height equals the proof window close height.
 	sessionEndHeight := s.claim.SessionHeader.SessionEndBlockHeight
-	blockHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
-	sdkCtx := cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(blockHeight)
+	sessionProofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(sessionProofWindowCloseHeight)
 	_, _, err = s.keepers.SettlePendingClaims(sdkCtx)
 	require.NoError(t, err)
 
-	upcomingSessionEndHeight := uint64(sharedtypes.GetNextSessionStartHeight(&sharedParams, int64(blockHeight))) - 1
+	sessionEndHeight = sharedtypes.GetSettlementSessionEndHeight(&sharedParams, sessionProofWindowCloseHeight)
+	// TODO_IN_THIS_COMMIT: Why is sharedtypes.GetNextSessionStartHeight() returning a session end height?
+	upcomingSessionEndHeight := uint64(sharedtypes.GetNextSessionStartHeight(&sharedParams, sessionProofWindowCloseHeight)) - 1
 
 	// Slashing should have occurred and the supplier is unstaked but still unbonding.
 	slashedSupplier, supplierFound := s.keepers.GetSupplier(sdkCtx, s.claim.SupplierOperatorAddress)
@@ -731,8 +732,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	events := sdkCtx.EventManager().Events()
 
 	// Confirm that a slashing event was emitted
-	supplierSlashedEventTypeURL := cosmostypes.MsgTypeURL(&tokenomicstypes.EventSupplierSlashed{})
-	slashingEvents := testutilevents.FilterEvents[*tokenomicstypes.EventSupplierSlashed](t, events, supplierSlashedEventTypeURL)
+	slashingEvents := testutilevents.FilterEvents[*tokenomicstypes.EventSupplierSlashed](t, events)
 	require.Len(t, slashingEvents, 1)
 
 	// Validate the slashing event
@@ -744,16 +744,19 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	require.EqualValues(t, expectedSlashingEvent, slashingEvents[0])
 
 	// Confirm that a slashing event was emitted
-	supplierUnbondedBelowMinStakeEventTypeURL := cosmostypes.MsgTypeURL(&suppliertypes.EventSupplierUnbondedBelowMinStake{})
-	unbondedEvents := testutilevents.FilterEvents[*suppliertypes.EventSupplierUnbondedBelowMinStake](t, events, supplierUnbondedBelowMinStakeEventTypeURL)
+	unbondedEvents := testutilevents.FilterEvents[*suppliertypes.EventSupplierUnbondingBegin](t, events)
 	require.Len(t, unbondedEvents, 1)
 
 	// Validate the slashing event
-	supplierParams := s.keepers.SupplierKeeper.GetParams(ctx)
-	expectedUnbondedEvent := &suppliertypes.EventSupplierUnbondedBelowMinStake{
-		Supplier:        &slashedSupplier,
-		MinStake:        supplierParams.GetMinStake(),
-		UnbondingHeight: shared.GetSupplierUnbondingHeight(&sharedParams, &slashedSupplier),
+	slashedSupplier.ServicesActivationHeightsMap = make(map[string]uint64)
+	for i, _ := range slashedSupplier.GetServices() {
+		slashedSupplier.Services[i].Endpoints = make([]*sharedtypes.SupplierEndpoint, 0)
+	}
+	expectedUnbondedEvent := &suppliertypes.EventSupplierUnbondingBegin{
+		Supplier:         &slashedSupplier,
+		Reason:           suppliertypes.SupplierUnbondingReason_BELOW_MIN_STAKE,
+		SessionEndHeight: sessionEndHeight,
+		UnbondingHeight:  sharedtypes.GetSupplierUnbondingHeight(&sharedParams, &slashedSupplier),
 	}
 	require.EqualValues(t, expectedUnbondedEvent, unbondedEvents[0])
 }
