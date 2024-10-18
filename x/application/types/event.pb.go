@@ -54,7 +54,7 @@ func (ApplicationUnbondingReason) EnumDescriptor() ([]byte, []int) {
 // EventApplicationStaked is emitted when an application is staked or up-staked.
 type EventApplicationStaked struct {
 	Application *Application `protobuf:"bytes,1,opt,name=application,proto3" json:"application"`
-	// The end height of the session in which the transfer began.
+	// The end height of the session in which the application was staked.
 	SessionEndHeight int64 `protobuf:"varint,2,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height"`
 }
 
@@ -376,7 +376,7 @@ func (m *EventTransferError) GetError() string {
 type EventApplicationUnbondingBegin struct {
 	Application *Application               `protobuf:"bytes,1,opt,name=application,proto3" json:"application"`
 	Reason      ApplicationUnbondingReason `protobuf:"varint,2,opt,name=reason,proto3,enum=poktroll.application.ApplicationUnbondingReason" json:"reason"`
-	// The end height of the session in which the transfer began.
+	// The end height of the session in which the unbonding began.
 	SessionEndHeight int64 `protobuf:"varint,3,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height"`
 }
 
@@ -436,7 +436,7 @@ func (m *EventApplicationUnbondingBegin) GetSessionEndHeight() int64 {
 type EventApplicationUnbondingEnd struct {
 	Application *Application               `protobuf:"bytes,1,opt,name=application,proto3" json:"application"`
 	Reason      ApplicationUnbondingReason `protobuf:"varint,2,opt,name=reason,proto3,enum=poktroll.application.ApplicationUnbondingReason" json:"reason"`
-	// The end height of the session in which the transfer ended.
+	// The end height of the session in which the unbonding ended.
 	SessionEndHeight int64 `protobuf:"varint,3,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height"`
 }
 
@@ -495,7 +495,7 @@ func (m *EventApplicationUnbondingEnd) GetSessionEndHeight() int64 {
 // event will also be emitted immediately after this event.
 type EventApplicationUnbondingCanceled struct {
 	Application *Application `protobuf:"bytes,1,opt,name=application,proto3" json:"application"`
-	// The end height of the session in which the transfer was canceled.
+	// The end height of the session in which the unbonding was canceled.
 	SessionEndHeight int64 `protobuf:"varint,2,opt,name=session_end_height,json=sessionEndHeight,proto3" json:"session_end_height"`
 }
 
