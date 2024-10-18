@@ -63,10 +63,13 @@ func (k msgServer) UnstakeApplication(
 	k.SetApplication(ctx, foundApp)
 
 	sdkCtx = sdk.UnwrapSDKContext(ctx)
+	sharedParams := k.sharedKeeper.GetParams(sdkCtx)
+	unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, &foundApp)
 	unbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
-		Application:      &foundApp,
-		Reason:           apptypes.ApplicationUnbondingReason_ELECTIVE,
-		SessionEndHeight: sessionEndHeight,
+		Application:        &foundApp,
+		Reason:             apptypes.ApplicationUnbondingReason_ELECTIVE,
+		SessionEndHeight:   sessionEndHeight,
+		UnbondingEndHeight: unbondingEndHeight,
 	}
 	if err := sdkCtx.EventManager().EmitTypedEvent(unbondingBeginEvent); err != nil {
 		err = apptypes.ErrAppEmitEvent.Wrapf("(%+v): %s", unbondingBeginEvent, err)

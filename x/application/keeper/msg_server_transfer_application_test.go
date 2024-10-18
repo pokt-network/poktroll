@@ -77,11 +77,13 @@ func TestMsgServer_TransferApplication_Success(t *testing.T) {
 		DestinationAddress: dstBech32,
 		SessionEndHeight:   uint64(transferBeginSessionEndHeight),
 	}
+	transferEndHeight := apptypes.GetApplicationTransferHeight(&sharedParams, transferResApp)
 	expectedTransferBeginEvent := &apptypes.EventTransferBegin{
 		SourceAddress:      srcBech32,
 		DestinationAddress: dstBech32,
 		SourceApplication:  &expectedApp,
 		SessionEndHeight:   transferBeginSessionEndHeight,
+		TransferEndHeight:  transferEndHeight,
 	}
 	events := cosmostypes.UnwrapSDKContext(ctx).EventManager().Events()
 	transferBeginEvents := testutilevents.FilterEvents[*apptypes.EventTransferBegin](t, events)
@@ -89,7 +91,6 @@ func TestMsgServer_TransferApplication_Success(t *testing.T) {
 	require.EqualValues(t, expectedTransferBeginEvent, transferBeginEvents[0])
 
 	// Set the height to the transfer end height - 1 for the session.
-	transferEndHeight := apptypes.GetApplicationTransferHeight(&sharedParams, transferResApp)
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	ctx = sdkCtx.WithBlockHeight(transferEndHeight - 1)
 
@@ -129,6 +130,7 @@ func TestMsgServer_TransferApplication_Success(t *testing.T) {
 		DestinationAddress:     dstBech32,
 		DestinationApplication: &dstApp,
 		SessionEndHeight:       transferEndSessionEndHeight,
+		TransferEndHeight:      transferEndHeight,
 	}
 	events = cosmostypes.UnwrapSDKContext(ctx).EventManager().Events()
 	transferEndEvents := testutilevents.FilterEvents[*apptypes.EventTransferEnd](t, events)

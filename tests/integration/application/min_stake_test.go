@@ -24,6 +24,7 @@ import (
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 type applicationMinStakeTestSuite struct {
@@ -151,12 +152,10 @@ func (s *applicationMinStakeTestSuite) stakeApp() {
 
 // stakeSupplier stakes a supplier for service 1.
 func (s *applicationMinStakeTestSuite) stakeSupplier() {
-	// TODO_UPNEXT(@bryanchriswhite, #612): Replace supplierStake with suppleirtypes.DefaultMinStake.
-	supplierStake := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1000000) // 1 POKT.
 	s.keepers.SupplierKeeper.SetSupplier(s.ctx, sharedtypes.Supplier{
 		OwnerAddress:    s.supplierBech32,
 		OperatorAddress: s.supplierBech32,
-		Stake:           &supplierStake,
+		Stake:           &suppliertypes.DefaultMinStake,
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
 				ServiceId: s.serviceId,
@@ -264,11 +263,14 @@ func (s *applicationMinStakeTestSuite) newRelayminingDifficulty() servicetypes.R
 func (s *applicationMinStakeTestSuite) assertUnbondingBeginEventObserved(expectedApp *apptypes.Application) {
 	s.T().Helper()
 
+	sharedParams := s.keepers.SharedKeeper.GetParams(s.ctx)
+	unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, expectedApp)
 	sessionEndHeight := s.keepers.SharedKeeper.GetSessionEndHeight(s.ctx, s.getCurrentHeight())
 	expectedAppUnbondingBeginEvent := &apptypes.EventApplicationUnbondingBegin{
-		Application:      expectedApp,
-		Reason:           apptypes.ApplicationUnbondingReason_BELOW_MIN_STAKE,
-		SessionEndHeight: sessionEndHeight,
+		Application:        expectedApp,
+		Reason:             apptypes.ApplicationUnbondingReason_BELOW_MIN_STAKE,
+		SessionEndHeight:   sessionEndHeight,
+		UnbondingEndHeight: unbondingEndHeight,
 	}
 
 	events := cosmostypes.UnwrapSDKContext(s.ctx).EventManager().Events()
@@ -283,11 +285,13 @@ func (s *applicationMinStakeTestSuite) assertUnbondingEndEventObserved(expectedA
 	s.T().Helper()
 
 	sharedParams := s.keepers.SharedKeeper.GetParams(s.ctx)
+	unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, expectedApp)
 	unbondingSessionEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, expectedApp)
 	expectedAppUnbondingEndEvent := &apptypes.EventApplicationUnbondingEnd{
-		Application:      expectedApp,
-		Reason:           apptypes.ApplicationUnbondingReason_BELOW_MIN_STAKE,
-		SessionEndHeight: unbondingSessionEndHeight,
+		Application:        expectedApp,
+		Reason:             apptypes.ApplicationUnbondingReason_BELOW_MIN_STAKE,
+		SessionEndHeight:   unbondingSessionEndHeight,
+		UnbondingEndHeight: unbondingEndHeight,
 	}
 
 	events := cosmostypes.UnwrapSDKContext(s.ctx).EventManager().Events()
