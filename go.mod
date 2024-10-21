@@ -79,7 +79,15 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 )
 
+<<<<<<< HEAD
 require github.com/jhump/protoreflect v1.16.0
+=======
+require (
+	cosmossdk.io/x/tx v0.13.4
+	github.com/jhump/protoreflect v1.16.0
+	go.uber.org/mock v0.4.0
+)
+>>>>>>> main
 
 require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.34.2-20240508200655-46a4cf4ba109.2 // indirect

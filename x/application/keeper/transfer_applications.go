@@ -53,26 +53,30 @@ func (k Keeper) EndBlockerTransferApplication(ctx context.Context) error {
 		// This spans the period from the end of the session in which the transfer
 		// began to the end of settlement for that session.
 		transferEndHeight := apptypes.GetApplicationTransferHeight(&sharedParams, &srcApp)
-		if sdkCtx.BlockHeight() < transferEndHeight {
+		if currentHeight < transferEndHeight {
 			continue
 		}
 
 		// Transfer the stake of the source application to the destination application and
 		// merge their gateway delegations and service configs.
-		if transferErr := k.transferApplication(ctx, srcApp); transferErr != nil {
-			logger.Warn(transferErr.Error())
+		if err := k.transferApplication(ctx, srcApp); err != nil {
+			logger.Warn(err.Error())
 
 			// Application transfer failed, removing the pending transfer from the source application.
 			dstBech32 := srcApp.GetPendingTransfer().GetDestinationAddress()
 			srcApp.PendingTransfer = nil
 			k.SetApplication(ctx, srcApp)
 
-			if err := sdkCtx.EventManager().EmitTypedEvent(&apptypes.EventTransferError{
+			transferErrorEvent := &apptypes.EventTransferError{
 				SourceAddress:      srcApp.GetAddress(),
 				DestinationAddress: dstBech32,
 				SourceApplication:  &srcApp,
-				Error:              transferErr.Error(),
-			}); err != nil {
+				SessionEndHeight:   sessionEndHeight,
+				Error:              err.Error(),
+			}
+			if err = sdkCtx.EventManager().EmitTypedEvent(transferErrorEvent); err != nil {
+				err = apptypes.ErrAppEmitEvent.Wrapf("(%+v): %s", transferErrorEvent, err)
+				logger.Error("%s", err)
 				return err
 			}
 		}
@@ -81,14 +85,6 @@ func (k Keeper) EndBlockerTransferApplication(ctx context.Context) error {
 	isSuccessful = true
 	return nil
 }
-
-// transferApplication transfers the fields of srcApp, except for address and pending_transfer,
-// to an application whose address is the destination address of the pending transfer of srcApp.
-// If the destination application does not exist, it is created. If it does exist, the stake of
-// the destination application stake is incremented by the stake of the source application, and the
-// delegatees and service configs of the destination application are set to the union of the
-// source and destination applications' delegatees and service configs. It is intended
-// to be called during the EndBlock ABCI method.
 
 // transferApplication transfers srcApp to srcApp.PendingTransfer.destination.
 // If the destination application does not exist, it is created.
@@ -99,7 +95,10 @@ func (k Keeper) EndBlockerTransferApplication(ctx context.Context) error {
 //     Duplicate pending undelegations resolve to the destination application's.
 //
 // It is intended to be called during the EndBlock ABCI method.
-func (k Keeper) transferApplication(ctx context.Context, srcApp apptypes.Application) error {
+func (k Keeper) transferApplication(
+	ctx context.Context,
+	srcApp apptypes.Application,
+) error {
 	logger := k.Logger().With("method", "transferApplication")
 
 	// Double-check that the source application is not unbonding.
@@ -147,12 +146,20 @@ func (k Keeper) transferApplication(ctx context.Context, srcApp apptypes.Applica
 	logger.Info(fmt.Sprintf("Successfully transferred application stake from (%s) to (%s)", srcApp.GetAddress(), dstApp.GetAddress()))
 
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
-	if err := sdkCtx.EventManager().EmitTypedEvent(&apptypes.EventTransferEnd{
+	sharedParams := k.sharedKeeper.GetParams(sdkCtx)
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, sdkCtx.BlockHeight())
+	transferEndHeight := apptypes.GetApplicationTransferHeight(&sharedParams, &srcApp)
+	transferEndEvent := &apptypes.EventTransferEnd{
 		SourceAddress:          srcApp.GetAddress(),
 		DestinationAddress:     dstApp.GetAddress(),
 		DestinationApplication: &dstApp,
-	}); err != nil {
-		logger.Error(fmt.Sprintf("could not emit transfer end event: %v", err))
+		SessionEndHeight:       sessionEndHeight,
+		TransferEndHeight:      transferEndHeight,
+	}
+	if err := sdkCtx.EventManager().EmitTypedEvent(transferEndEvent); err != nil {
+		err = apptypes.ErrAppEmitEvent.Wrapf("(%+v): %s", transferEndEvent, err)
+		logger.Error(err.Error())
+		return err
 	}
 
 	return nil

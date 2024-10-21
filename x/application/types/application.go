@@ -6,10 +6,7 @@ import (
 
 // ApplicationNotUnstaking is the value of `unstake_session_end_height` if the
 // application is not actively in the unbonding period.
-const (
-	ApplicationNotUnstaking uint64 = iota
-	ApplicationBelowMinStake
-)
+const ApplicationNotUnstaking uint64 = iota
 
 // IsUnbonding returns true if the application is actively unbonding.
 // It determines if the application has submitted an unstake message, in which case
@@ -57,5 +54,5 @@ func GetApplicationTransferHeight(
 ) int64 {
 	sessionEndToProofWindowCloseBlocks := sharedtypes.GetSessionEndToProofWindowCloseBlocks(sharedParams)
 
-	return int64(application.GetPendingTransfer().GetSessionEndHeight() + sessionEndToProofWindowCloseBlocks)
+	return int64(application.GetPendingTransfer().GetSessionEndHeight()) + sessionEndToProofWindowCloseBlocks
 }
