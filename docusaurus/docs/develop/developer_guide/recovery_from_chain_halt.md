@@ -5,40 +5,51 @@ title: Chain Halt Recovery
 
 ## Chain Halt Recovery <!-- omit in toc -->
 
-This document describes how to recover from a chain halt. This document assumes the cause of the chain halt has been identified and the new release has been created and verified to work.
+This document describes how to recover from a chain halt. It assumes the cause of
+the chain halt has been identified, the new release has been created, and verified
+function correctly.
 
 :::tip
 See [Chain Halt Troubleshooting](./chain_halt_troubleshooting.md) for more information on identifying the cause of a chain halt.
 :::
 
 - [Background](#background)
-- [Halt during network upgrade](#halt-during-network-upgrade)
-- [Replacing the binary manually (preferred)](#replacing-the-binary-manually-preferred)
-- [Rollback, fork and upgrade](#rollback-fork-and-upgrade)
-
+- [Resolving halts during a network upgrade](#resolving-halts-during-a-network-upgrade)
+  - [Manual binary replacement (preferred)](#manual-binary-replacement-preferred)
+  - [Rollback, fork and upgrade](#rollback-fork-and-upgrade)
 
 ## Background
 
-Pocket network is built on top of `cosmos-sdk` which utilizes CometBFT consensus engine. Byzantine Fault Tolerant (BFT) consensus algorithm requires that at least 2/3 of validators are online and voting for the same block to reach a consensus. In order to get the chain moving, we need the majority of validators to participate to get the chain moving.
+Pocket network is built on top of `cosmos-sdk`, which utilizes the CometBFT consensus engine.
+Byzantine Fault Tolerant (BFT) consensus algorithm requires that **at least** 2/3 of Validators
+are online and voting for the same block to reach a consensus. In order to maintain liveness
+and avoid a chain-halt, we need the majority (> 2/3) of Validators to participate
+and use the same version of the software.
 
-## Halt during network upgrade
+## Resolving halts during a network upgrade
 
-If the halt is caused by the network upgrade, it is possible the solution can be as simple as skipping an upgrade (`unsafe-skip-upgrade`) and creating a new (fixed) one. Read more about [upgrade contingency plans](../../protocol/upgrades/contigency_plans.md).
+If the halt is caused by the network upgrade, it is possible the solution can be as simple as
+skipping an upgrade (i.e. `unsafe-skip-upgrade`) and creating a new (fixed) upgrade.
 
+Read more about [upgrade contingency plans](../../protocol/upgrades/contigency_plans.md).
 
-## Replacing the binary manually (preferred)
+### Manual binary replacement (preferred)
+
+:::note
 
 **This is preferred way of resolving the consensus-breaking issues**.
 
-Since the chain is not moving, it would be impossible to issue an automatic upgrade with an upgrade plan. Instead, we need to gather a social consensus to manually replace the binary and get the chain moving. 
+:::
 
-Currently this means breaking a way to sync the network from genesis without human interaction, but there are some plans to make the process less painful in the future.
+Since the chain is not moving, **it is impossible** to issue an automatic upgrade with an upgrade plan.
 
+Instead, we need **social consensus** to manually replace the binary and get the chain moving.
 
-<!-- TODO: add links to Cosmovisor documentation how the new UX can be used to automate syncing from genesis without human input. -->
+Currently this involves synching the network from genesis breaking a way to sync the network from genesis without human interaction, but there are some plans to make the process less painful in the future.
 
+<!-- TODO_IMPROVE(@okdas): add links to Cosmovisor documentation how the new UX can be used to automate syncing from genesis without human input. -->
 
-## Rollback, fork and upgrade
+### Rollback, fork and upgrade
 
 :::info
 

@@ -8,14 +8,14 @@ title: Chain Halt Troubleshooting
 - [Understanding Chain Halts](#understanding-chain-halts)
   - [Definition and Causes](#definition-and-causes)
   - [Impact on Network](#impact-on-network)
-- [`wrong Block.Header.AppHash` Troubleshooting Process](#wrong-blockheaderapphash-troubleshooting-process)
+- [Troubleshooting `wrong Block.Header.AppHash`](#troubleshooting-wrong-blockheaderapphash)
   - [Step 1: Identifying the Issue](#step-1-identifying-the-issue)
   - [Step 2: Collecting Node Data](#step-2-collecting-node-data)
   - [Step 3: Analyzing Discrepancies](#step-3-analyzing-discrepancies)
   - [Step 4: Decoding and Interpreting Data](#step-4-decoding-and-interpreting-data)
   - [Step 5: Comparing Records](#step-5-comparing-records)
   - [Step 6: Investigation and Resolution](#step-6-investigation-and-resolution)
-- [`wrong Block.Header.LastResultsHash`](#wrong-blockheaderlastresultshash)
+- [Troubleshooting `wrong Block.Header.LastResultsHash`](#troubleshooting-wrong-blockheaderlastresultshash)
 - [Syncing from genesis](#syncing-from-genesis)
 
 ## Understanding Chain Halts
@@ -42,7 +42,7 @@ Chain halts can have severe consequences for the network:
 
 Given these impacts, swift and effective troubleshooting is crucial to maintain network health and user trust.
 
-## `wrong Block.Header.AppHash` Troubleshooting Process
+## Troubleshooting `wrong Block.Header.AppHash`
 
 ### Step 1: Identifying the Issue
 
@@ -97,9 +97,18 @@ Based on the identified discrepancies:
 3. If necessary, initiate discussions with the validator community to reach social consensus on how to proceed.
 4. Implement the agreed-upon solution and monitor the network closely during and after the fix.
 
-## `wrong Block.Header.LastResultsHash`
+## Troubleshooting `wrong Block.Header.LastResultsHash`
 
-Errors such as `reactor validation error: wrong Block.Header.LastResultsHash.` are most likely to come from the non-deterministic gas calculation. That can happen when the node runs on a different version. The solution is to use the correct binary version.
+Errors like the following can occur from using the incorrect binary version at a certain height.
+
+```bash
+reactor validation error: wrong Block.Header.LastResultsHash.
+```
+
+The solution is to use the correct binary version to sync the full node at the correct height.
+
+Tools like [cosmosvisor](https://docs.cosmos.network/v0.45/run-node/cosmovisor.html) make it easier
+to sync a node from genesis, using the appropriate binary for each range of block heights.
 
 ## Syncing from genesis
 
