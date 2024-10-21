@@ -164,7 +164,9 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *suppliertypes.MsgStak
 		SessionEndHeight: sessionEndHeight,
 	})
 	if err = sdkCtx.EventManager().EmitTypedEvents(events...); err != nil {
-		logger.Error(fmt.Sprintf("failed to emit events: %+v; %s", events, err))
+		err = suppliertypes.ErrSupplierEmitEvent.Wrapf("(%+v): %s", events, err)
+		logger.Error(err.Error())
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	isSuccessful = true

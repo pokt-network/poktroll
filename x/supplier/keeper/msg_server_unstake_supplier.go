@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/pokt-network/poktroll/telemetry"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -76,8 +78,10 @@ func (k msgServer) UnstakeSupplier(
 		SessionEndHeight: int64(supplier.GetUnstakeSessionEndHeight()),
 		UnbondingHeight:  unbondingHeight,
 	}
-	if eventErr := sdkCtx.EventManager().EmitTypedEvent(event); eventErr != nil {
-		logger.Error(fmt.Sprintf("failed to emit event: %+v; %s", event, eventErr))
+	if err := sdkCtx.EventManager().EmitTypedEvent(event); err != nil {
+		err = suppliertypes.ErrSupplierEmitEvent.Wrapf("(%+v): %s", event, err)
+		logger.Error(err.Error())
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	isSuccessful = true
