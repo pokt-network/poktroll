@@ -31,6 +31,14 @@ You can connect using a tool of your choice or with the CLI via:
 psql -h localhost -p 5432 -U postgres -d postgres
 ```
 
+After you've connected, you MUST update your schema to `localnet` and start exploring the data:
+
+```sql
+set schema 'localnet';
+\dt
+select * from accounts limit 10; # Example query
+```
+
 ### Debugging
 
 #### Port already in use
