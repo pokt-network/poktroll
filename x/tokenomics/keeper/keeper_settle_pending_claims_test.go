@@ -761,7 +761,6 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	// Advance the block height to the settlement session end height.
 	settlementHeight := sharedtypes.GetSettlementSessionEndHeight(&sharedParams, sdkCtx.BlockHeight())
 	sdkCtx = sdkCtx.WithBlockHeight(settlementHeight)
-	ctx = sdkCtx
 
 	// Assert that the EventSupplierUnbondingEnd event is emitted.
 	unbondingEndEvents := testutilevents.FilterEvents[*suppliertypes.EventSupplierUnbondingBegin](t, events)
