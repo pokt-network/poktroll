@@ -394,21 +394,88 @@ if localnet_config["rest"]["enabled"]:
 pocketdex_root_path = localnet_config["indexer"]["repo_path"]
 pocketdex_tilt_path = os.path.join(pocketdex_root_path, "tiltfiles", "pocketdex.tilt")
 postgres_values_path = os.path.join(".", "localnet", "kubernetes", "values-pocketdex-postgres.yaml")
+pgadmin_values_path = os.path.join(".", "localnet", "kubernetes", "values-pocketdex-pgadmin.yaml")
 indexer_values_path = os.path.join(".", "localnet", "kubernetes", "values-pocketdex-indexer.yaml")
 gql_engine_values_path = os.path.join(".", "localnet", "kubernetes", "values-pocketdex-gql-engine.yaml")
 
-def pocketdex_disabled(reason):
-    local_resource("Indexer Disabled",
+
+# pocketdex_repo_exists returns true if the sibling pocketdex repo exists.
+def pocketdex_repo_exists():
+    return str(
+        local("[ -d {} ] && echo 'true' || echo 'false'".format(pocketdex_root_path),
+              echo_off=True)
+    ).strip()
+
+
+# pocketdex_disabled_resource creates a tilt resource that prints a message indicating
+# that the indexer is disabled and how to enable it.
+def pocketdex_disabled_resource(reason):
+    local_resource("⚠️ Indexer Disabled",
                    "echo '{}'".format(reason),
                    labels=["Pocketdex"])
 
+
+# fetch_pocketdex_main fetches the main branch from the remote from which the repo was cloned.
+def fetch_pocketdex_main():
+    local("git fetch {} main".format(main_branch_remote_name()),
+          dir=pocketdex_root_path,
+          echo_off=True)
+
+
+# main_branch_remote_name returns the name of the remote from which the repo was cloned.
+def main_branch_remote_name():
+    return str(
+        local("git rev-parse --abbrev-ref @{u} | cut -d '/' -f1",
+              dir=pocketdex_root_path,
+              echo_off=True),
+    ).strip()
+
+
+# pocketdex_changes returns a tuple of integers representing the number of local
+#  and remote changes, respectively.
+def pocketdex_changes():
+    all_changes = str(
+        local("git rev-list --left-right --count HEAD...{}/main".format(main_branch_remote_name()),
+              dir=pocketdex_root_path,
+              echo_off=True)
+    )
+
+    # Split the output into local and remote changes and convert to integers.
+    num_local_changes, num_remote_changes = [int(x) for x in all_changes.split()]
+
+    return (num_local_changes, num_remote_changes)
+
+
+# pocketdex_main_is_outdated returns true if there's a diff between the local and remote main branches.
+def pocketdex_main_is_outdated():
+    fetch_pocketdex_main()
+    _, num_remote_changes = pocketdex_changes()
+    return num_remote_changes != 0
+
+
+# pocketdex_outdated_resource creates a tilt resource that prints a message indicating
+# that the indexer is outdated and how many commits behind it is.
+def pocketdex_outdated_resource():
+    _, num_remote_changes = pocketdex_changes()
+    local_resource("🔄 Updates Available",
+                   """
+                   echo 'Pocketdex main branch is outdated; {} commits behind. Please `git pull --ff-only` to update pocketdex.'
+                   """.format(num_remote_changes),
+                   labels=["Pocketdex"])
+
+
 def load_pocketdex():
+    if pocketdex_main_is_outdated():
+        pocketdex_outdated_resource()
+
     pocketdex_tilt = load_dynamic(pocketdex_tilt_path)
     pocketdex_tilt["pocketdex"](pocketdex_root_path,
                                 genesis_file_name="localnet.json",
                                 postgres_values_path=postgres_values_path,
+                                pgadmin_values_path=pgadmin_values_path,
                                 indexer_values_path=indexer_values_path,
                                 gql_engine_values_path=gql_engine_values_path)
+
 
 if localnet_config["indexer"]["enabled"]:
     # Check if sibling pocketdex repo exists.
@@ -416,17 +483,18 @@ if localnet_config["indexer"]["enabled"]:
     # Otherwise check the `indexer.clone_if_not_present` flag in `localnet_config.yaml`
     # and EITHER clone pocketdex to ../pocketdex OR prints a message if true or false,
     # respectively.
-    pocketdex_repo_exists = local("[ -d {} ] && echo 'true' || echo 'false'".format(pocketdex_root_path))
-    if str(pocketdex_repo_exists).strip() == "false":
+    if pocketdex_repo_exists == "false":
         if localnet_config["indexer"]["clone_if_not_present"]:
             print("Cloning pocketdex repo")
             # TODO_INVESTIGATE: https://github.com/tilt-dev/tilt-extensions/tree/master/git_resource
             local("git clone https://github.com/pokt-network/pocketdex --branch chore/tilt ../pocketdex")
             load_pocketdex()
         else:
-            pocketdex_disabled("Pocketdex repo not found at ../pocketdex. Set `clone_if_not_present` to `true` in `localnet_config.yaml`.".format())
+            pocketdex_disabled_resource(
+                "Pocketdex repo not found at ../pocketdex. Set `clone_if_not_present` to `true` in `localnet_config.yaml`.".format())
     else:
         print("Using existing pocketdex repo")
         load_pocketdex()
 else:
-   pocketdex_disabled("Pocketdex indexer disabled. Set `indexer.enabled` to `true` in `localnet_config.yaml` to enable it.")
+    pocketdex_disabled_resource(
+        "Pocketdex indexer disabled. Set `indexer.enabled` to `true` in `localnet_config.yaml` to enable it.")
