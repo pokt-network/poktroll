@@ -86,15 +86,6 @@ func (k Keeper) EndBlockerTransferApplication(ctx context.Context) error {
 	return nil
 }
 
-// transferApplication transfers the fields of srcApp, except for address and pending_transfer,
-// to an application whose address is the destination address of the pending transfer of srcApp.
-// If the destination application does not exist, it is created. If it does exist, the stake of
-// the destination application stake is incremented by the stake of the source application, and the
-// delegatees and service configs of the destination application are set to the union of the
-// source and destination applications' delegatees and service configs. It is intended
-// to be called during the EndBlock ABCI method.
-// It returns the context which contains the event manager with any events emitted during the end blocker.
-
 // transferApplication transfers srcApp to srcApp.PendingTransfer.destination.
 // If the destination application does not exist, it is created.
 // If it does exist, then destination app is updated as follows:
