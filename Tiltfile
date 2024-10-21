@@ -490,8 +490,7 @@ def load_pocketdex():
 #   -- OR --
 #   2. Prints a message if true or false
 if localnet_config["indexer"]["enabled"]:
-    pocketdex_repo_exists = local("[ -d {} ] && echo 'true' || echo 'false'".format(pocketdex_root_path))
-    if pocketdex_repo_exists == "false":
+    if pocketdex_repo_exists() == "false":
         if localnet_config["indexer"]["clone_if_not_present"]:
             print("Cloning pocketdex repo")
             # TODO_INVESTIGATE: https://github.com/tilt-dev/tilt-extensions/tree/master/git_resource
