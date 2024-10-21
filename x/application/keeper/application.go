@@ -39,6 +39,12 @@ func (k Keeper) GetApplication(
 		app.PendingUndelegations = make(map[uint64]types.UndelegatingGatewayList)
 	}
 
+	// Ensure that the DelegateeGatewayAddresses is an empty slice and not nil
+	// when unmarshalling an app that has no delegations.
+	if app.DelegateeGatewayAddresses == nil {
+		app.DelegateeGatewayAddresses = make([]string, 0)
+	}
+
 	return app, true
 }
 
