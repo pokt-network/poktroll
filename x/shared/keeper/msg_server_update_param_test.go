@@ -402,6 +402,6 @@ func getMinActorUnbondingPeriodSessions(
 	newParamBlocksValue uint64,
 ) uint64 {
 	deltaBlocks := newParamBlocksValue - oldParamBlocksValue
-	newProofWindowCloseBlocks := sharedtypes.GetSessionEndToProofWindowCloseBlocks(params) + deltaBlocks
+	newProofWindowCloseBlocks := uint64(sharedtypes.GetSessionEndToProofWindowCloseBlocks(params)) + deltaBlocks
 	return (newProofWindowCloseBlocks / params.NumBlocksPerSession) + 1
 }
