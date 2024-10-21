@@ -17,6 +17,8 @@ See [Chain Halt Troubleshooting](./chain_halt_troubleshooting.md) for more infor
 - [Resolving halts during a network upgrade](#resolving-halts-during-a-network-upgrade)
   - [Manual binary replacement (preferred)](#manual-binary-replacement-preferred)
   - [Rollback, fork and upgrade](#rollback-fork-and-upgrade)
+    - [Step 5: Data rollback - retrieving snapshot at a specific height](#step-5-data-rollback---retrieving-snapshot-at-a-specific-height)
+    - [Step 6: Validator Isolation - risk mitigation](#step-6-validator-isolation---risk-mitigation)
 
 ## Background
 
@@ -37,7 +39,7 @@ Read more about [upgrade contingency plans](../../protocol/upgrades/contigency_p
 
 :::note
 
-**This is preferred way of resolving the consensus-breaking issues**.
+This is preferred way of resolving the consensus-breaking issues.
 
 :::
 
@@ -53,27 +55,55 @@ Currently this involves synching the network from genesis breaking a way to sync
 
 :::info
 
-This part is relevant for Pocket Network Shannon release only, as we do not rely on `x/gov` module for upgrades in Shannon. Instead, our DAO can issue upgrade transactions on the Pocket Network chain directly. Conventional `cosmos-sdk` upgrade process would require to go through the voting process to issue an upgrade.
+These instructions are only relevant to Pocket Network's Shannon release.
+
+We do not currently use `x/gov` and on-chain voting for upgrades.
+
+Instead, our DAO votes on upgrades off-chain and the Foundation executes
+transactions on their behalf.
 
 :::
 
-Performing a rollback basically means forking the network at the older height. Modern CometBFT versions are incredibly hard to fork. As a result, **it is not recommended to perform rollbacks** unless absolutely necessary. If we do decide to go ahead with a rollback, these are the steps:
+**Performing a rollback is analogous to forking the network at the older height.**
 
-- Prepare and verify the new version that addresses the consensus-breaking issue.
-- [Create a release](../../protocol/upgrades/release_process.md).
-- [Prepare an upgrade transaction](../../protocol/upgrades/upgrade_procedure.md#writing-an-upgrade-transaction) to the new version.
-- Get the state of the validators on the network to **three blocks** prior to the consensus-breaking issue.
-  - For example, if there was an issue at height `103`, we need to get the state to the height of `100`. At `101` we will submit an upgrade transaction so the chain upgrades on `102` and avoids the issue at height `103`.
-  - Can be done in two ways:
-    - `poktrolld rollback --hard` until the command responds with the desired block number. **OR,**
-    - The node can be restored from the snapshot and started with `--halt-height=100` parameter so it only syncs up to certain height and then gracefully shuts down.
-- **Make sure all validators use the same data directory** or have been rolled back to the same height.
-- **Isolate validators from the other nodes** that have not been rolled back to the older state. If that means using a firewall or isolating from the internet - this is the way. Validators should be able to only gossip blocks between themselves. **Having at least one node that has knowledge of the forking ledger can jeopardize the whole process**. In particular, the following errors are the sign of the nodes populating existing blocks:
-  - `found conflicting vote from ourselves; did you unsafe_reset a validator?`
-  - `conflicting votes from validator`
-- Start the network and perform an upgrade (following the example above):
-  - We would not be able to submit a transaction at `100` (this needs to be investigated, but for some reason we were not able to) due to `signature verification failed; please verify account number (0) and chain-id  (poktroll): (unable to verify single signer signature): unauthorized`.
-  - On block `101`, we will submit the `MsgSoftwareUpgrade` transaction with a `Plan.height` set to `102`.
-  - `x/upgrade` performs an upgrade in the `EndBlocker` of the block `102` and waits for the node operator or `cosmovisor` to replace the binary.
-- The network should go through successful upgrade and climb to the next block.
-- After the chain has been reached over the height of the previous ledger (`104`+), validators can open the gates for other full nodes to join the network again. Full nodes can perform the rollback or use a snapshot as well.
+This should be avoided unless absolutely necessary.
+
+However, if necessary, the instructions to follow are:
+
+1. Prepare & verify a new binary that addresses the consensus-breaking issue.
+2. [Create a release](../../protocol/upgrades/release_process.md).
+3. [Prepare an upgrade transaction](../../protocol/upgrades/upgrade_procedure.md#writing-an-upgrade-transaction) to the new version.
+4. Get the Validator set off the network **3 blocks** prior to the height of the chain halt. For example:
+   - Assume an issue at height `103`
+   - Get the validator set at height `100`
+   - Submit an upgrade transaction at `101`
+   - Upgrade the chain at height `102`
+   - Avoid the issue at height `103`
+5. Ensure all validators rolled back to the same height and use the same snapshot
+   - The snapshot should be imported into each Validator's data directory
+   - This is necessary to ensure data continuity and prevent forks.
+6. Isolate the validator set from full nodes.
+   - This is necessary to avoid full nodes from gossiping blocks that have been rolled back.
+   - This may require using a firewall or a private network
+   - Validators should only be gossip blocks amongst themselves.
+7. Start the network and perform the upgrade. For example, reiterating the process above:
+   - Start all Validators at height `100`
+   - On block `101`, submit the `MsgSoftwareUpgrade` transaction with a `Plan.height` set to `102`.
+   - `x/upgrade` will perform the upgrade in the `EndBlocker` of block `102`
+   - If using `cosmosvisor`, the node will wait to replace the binary
+8. Wait for the network to reach the height of the previous ledger (`104`+)
+9. Allow validators to open their network to full nodes again.
+   - Note that full nodes will need to perform the rollback or use a snapshot as well.
+
+#### Step 5: Data rollback - retrieving snapshot at a specific height
+
+There are two ways to get a snapshot from a prior height:
+
+1. Use `poktrolld rollback --hard` repeately until the command responds with the desired block number.
+2. Use a snapshot and start the node with `--halt-height=100` parameter so it only syncs up to certain height and then gracefully shuts down.
+
+#### Step 6: Validator Isolation - risk mitigation
+
+- Having at least one node that has knowledge of the forking ledger can jeopardize the whole process. In particular, the following errors are the sign of the nodes populating existing blocks:
+- `found conflicting vote from ourselves; did you unsafe_reset a validator?`
+- `conflicting votes from validator`
