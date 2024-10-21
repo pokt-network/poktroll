@@ -55,9 +55,16 @@ localnet_config_defaults = {
     "rest": {
         "enabled": True,
     },
+
+    # TODO_CONSIDERATION: Consider using git submodules for all repos where we
+    # are dependent on a sibling directory.
+
     # By default, we use the `helm_repo` function below to point to the remote repository
     # but can update it to the locally cloned repo for testing & development
-    "helm_chart_local_repo": {"enabled": False, "path": os.path.join("..", "helm-charts")},
+    "helm_chart_local_repo": {
+        "enabled": False,
+        "path": os.path.join("..", "helm-charts")
+    },
     "indexer": {
         "repo_path": os.path.join("..", "pocketdex"),
         "enabled": True,
@@ -476,17 +483,19 @@ def load_pocketdex():
                                 indexer_values_path=indexer_values_path,
                                 gql_engine_values_path=gql_engine_values_path)
 
-
+# Check if sibling pocketdex repo exists.
+# If it does, load the pocketdex.tilt file from the sibling repo.
+# Otherwise check the `indexer.clone_if_not_present` flag in `localnet_config.yaml` and EITHER:
+#   1. clone pocketdex to ../pocketdex
+#   -- OR --
+#   2. Prints a message if true or false
 if localnet_config["indexer"]["enabled"]:
-    # Check if sibling pocketdex repo exists.
-    # If it does, load the pocketdex.tilt file from the sibling repo.
-    # Otherwise check the `indexer.clone_if_not_present` flag in `localnet_config.yaml`
-    # and EITHER clone pocketdex to ../pocketdex OR prints a message if true or false,
-    # respectively.
+    pocketdex_repo_exists = local("[ -d {} ] && echo 'true' || echo 'false'".format(pocketdex_root_path))
     if pocketdex_repo_exists == "false":
         if localnet_config["indexer"]["clone_if_not_present"]:
             print("Cloning pocketdex repo")
             # TODO_INVESTIGATE: https://github.com/tilt-dev/tilt-extensions/tree/master/git_resource
+            # TODO_IN_THIS_PR: Remove "--branch' after merging in https://github.com/pokt-network/pocketdex/pull/23/files
             local("git clone https://github.com/pokt-network/pocketdex --branch chore/tilt ../pocketdex")
             load_pocketdex()
         else:
