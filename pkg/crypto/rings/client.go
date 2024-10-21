@@ -16,7 +16,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	"github.com/pokt-network/poktroll/x/service/types"
-	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -46,6 +45,7 @@ type ringClient struct {
 // - polylog.Logger
 // - client.ApplicationQueryClient
 // - client.AccountQueryClient
+// - client.SharedQueryClient
 func NewRingClient(deps depinject.Config) (_ crypto.RingClient, err error) {
 	rc := new(ringClient)
 
@@ -293,7 +293,7 @@ func GetRingAddressesAtBlock(
 	blockHeight int64,
 ) []string {
 	// Get the target session end height at which we want to get the active delegations.
-	targetSessionEndHeight := uint64(shared.GetSessionEndHeight(sharedParams, blockHeight))
+	targetSessionEndHeight := uint64(sharedtypes.GetSessionEndHeight(sharedParams, blockHeight))
 
 	return GetRingAddressesAtSessionEndHeight(app, targetSessionEndHeight)
 }

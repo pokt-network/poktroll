@@ -42,7 +42,7 @@ func init() {
 
 func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 	// Test Parameters
-	appInitialStake := math.NewInt(1000000)
+	appInitialStake := apptypes.DefaultMinStake.Amount.Mul(math.NewInt(2))
 	supplierInitialStake := math.NewInt(1000000)
 	supplierRevShareRatios := []float32{12.5, 37.5, 50}
 	globalComputeUnitsToTokensMultiplier := uint64(1)
@@ -169,7 +169,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 func TestProcessTokenLogicModules_TLMBurnEqualsMint_Invalid_SupplierExceedsMaxClaimableAmount(t *testing.T) {
 	// Test Parameters
 	globalComputeUnitsToTokensMultiplier := uint64(1)
-	serviceComputeUnitsPerRelay := uint64(1)
+	serviceComputeUnitsPerRelay := uint64(100)
 	service := prepareTestService(serviceComputeUnitsPerRelay)
 	numRelays := uint64(1000) // By a single supplier for application in this session
 	supplierInitialStake := math.NewInt(1000000)
@@ -300,8 +300,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Invalid_SupplierExceedsMaxCl
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	events := sdkCtx.EventManager().Events()
-	appOverservicedEvents := testutilevents.FilterEvents[*tokenomicstypes.EventApplicationOverserviced](t,
-		events, "poktroll.tokenomics.EventApplicationOverserviced")
+	appOverservicedEvents := testutilevents.FilterEvents[*tokenomicstypes.EventApplicationOverserviced](t, events)
 	require.Len(t, appOverservicedEvents, 1, "unexpected number of event overserviced events")
 	appOverservicedEvent := appOverservicedEvents[0]
 
@@ -314,7 +313,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Invalid_SupplierExceedsMaxCl
 
 func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t *testing.T) {
 	// Test Parameters
-	appInitialStake := math.NewInt(1000000)
+	appInitialStake := apptypes.DefaultMinStake.Amount.Mul(math.NewInt(2))
 	supplierInitialStake := math.NewInt(1000000)
 	supplierRevShareRatios := []float32{12.5, 37.5, 50}
 	globalComputeUnitsToTokensMultiplier := uint64(1)
@@ -509,7 +508,13 @@ func TestProcessTokenLogicModules_InvalidRoot(t *testing.T) {
 		{
 			desc: "correct size but invalid value",
 			root: func() []byte {
-				return bytes.Repeat([]byte("a"), protocol.TrieRootSize)
+				// A root with all 'a's is a valid value since each of the hash, sum and size
+				// will be []byte{0x61, 0x61, ...} with their respective sizes.
+				// The current test suite sets the CUPR to 1, making sum == count * CUPR
+				// valid. So, we can change the last byte to 'b' to make it invalid.
+				root := bytes.Repeat([]byte("a"), protocol.TrieRootSize)
+				root = append(root[:len(root)-1], 'b')
+				return root
 			}(),
 			errExpected: true,
 		},

@@ -84,7 +84,7 @@ func (k msgServer) CreateClaim(
 	}
 
 	// Get the number of claimed compute units in the claim
-	numClaimComputeUnits, err = claim.GetNumComputeUnits()
+	numClaimComputeUnits, err = claim.GetNumClaimedComputeUnits()
 	if err != nil {
 		return nil, status.Error(codes.Internal, types.ErrProofInvalidClaimRootHash.Wrapf("%v", err).Error())
 	}
@@ -127,17 +127,19 @@ func (k msgServer) CreateClaim(
 	case true:
 		claimUpsertEvent = proto.Message(
 			&types.EventClaimUpdated{
-				Claim:           &claim,
-				NumRelays:       numRelays,
-				NumComputeUnits: numClaimComputeUnits,
+				Claim:                  &claim,
+				NumRelays:              numRelays,
+				NumClaimedComputeUnits: numClaimComputeUnits,
+				// TODO_FOLLOWUP: Add NumEstimatedComputeUnits and ClaimedAmountUpokt
 			},
 		)
 	case false:
 		claimUpsertEvent = proto.Message(
 			&types.EventClaimCreated{
-				Claim:           &claim,
-				NumRelays:       numRelays,
-				NumComputeUnits: numClaimComputeUnits,
+				Claim:                  &claim,
+				NumRelays:              numRelays,
+				NumClaimedComputeUnits: numClaimComputeUnits,
+				// TODO_FOLLOWUP: Add NumEstimatedComputeUnits and ClaimedAmountUpokt
 			},
 		)
 	}

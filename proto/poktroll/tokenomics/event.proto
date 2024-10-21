@@ -25,9 +25,13 @@ message EventClaimExpired {
     uint64 num_relays = 3 [(gogoproto.jsontag) = "num_relays"];
     // Number of compute units claimed as a function of the number of relays
     // and the compute units per relay for the particular service.
-    uint64 num_compute_units = 4 [(gogoproto.jsontag) = "num_compute_units"];
-    // TODO_BETA(@red-0ne): Rename 'num_compute_units' to 'num_claimed_compute_units'
-    // and introduce a 'num_estimated_compute_units' field.
+    uint64 num_claimed_compute_units = 4 [(gogoproto.jsontag) = "num_claimed_compute_units"];
+    // Number of estimated compute units claimed as a function of the number of claimed
+    // compute units and the relay difficulty multiplier for the particular service.
+    uint64 num_estimated_compute_units = 5 [(gogoproto.jsontag) = "num_estimated_compute_units"];
+    // The uPOKT coin claimed to be rewarded for the work done as a function of
+    // the number of estimated compute units and the compute uints to token multiplier.
+    cosmos.base.v1beta1.Coin claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
 }
 
 // EventClaimSettled is an event emitted whenever a claim is settled.
@@ -40,19 +44,13 @@ message EventClaimSettled {
     uint64 num_relays = 3 [(gogoproto.jsontag) = "num_relays"];
     // Number of compute units claimed as a function of the number of relays
     // and the compute units per relay for the particular service.
-    uint64 num_compute_units = 4 [(gogoproto.jsontag) = "num_compute_units"];
-    // TODO_BETA(@red-0ne): Rename 'num_compute_units' to 'num_claimed_compute_units'
-    // and introduce a 'num_estimated_compute_units' field.
-}
-
-// EventRelayMiningDifficultyUpdated is an event emitted whenever the relay mining difficulty is updated
-// for a given service.
-message EventRelayMiningDifficultyUpdated {
-    string service_id = 1;
-    string prev_target_hash_hex_encoded = 2;
-    string new_target_hash_hex_encoded = 3;
-    uint64 prev_num_relays_ema = 4;
-    uint64 new_num_relays_ema = 5;
+    uint64 num_claimed_compute_units = 4 [(gogoproto.jsontag) = "num_claimed_compute_units"];
+    // Number of estimated compute units claimed as a function of the number of claimed
+    // compute units and the relay difficulty multiplier for the particular service.
+    uint64 num_estimated_compute_units = 5 [(gogoproto.jsontag) = "num_estimated_compute_units"];
+    // The uPOKT coin claimed to be rewarded for the work done as a function of
+    // the number of estimated compute units and the compute uints to token multiplier.
+    cosmos.base.v1beta1.Coin claimed_upokt = 6 [(gogoproto.jsontag) = "claimed_upokt"];
 }
 
 // EventApplicationOverserviced is emitted when an application has less stake than

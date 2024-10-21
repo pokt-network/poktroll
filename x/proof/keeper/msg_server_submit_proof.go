@@ -15,9 +15,8 @@ import (
 
 	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/proof/types"
-	"github.com/pokt-network/poktroll/x/shared"
+	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	"github.com/pokt-network/poktroll/x/tokenomics"
 )
 
 // SubmitProof is the server handler to submit and store a proof on-chain.
@@ -42,11 +41,21 @@ func (k msgServer) SubmitProof(
 ) (_ *types.MsgSubmitProofResponse, err error) {
 	// Declare claim to reference in telemetry.
 	var (
-		claim           = new(types.Claim)
-		isExistingProof bool
-		numRelays       uint64
-		numComputeUnits uint64
+		claim                = new(types.Claim)
+		isExistingProof      bool
+		numRelays            uint64
+		numClaimComputeUnits uint64
 	)
+
+	// Defer telemetry calls so that they reference the final values the relevant variables.
+	defer func() {
+		// Only increment these metrics counters if handling a new claim.
+		if !isExistingProof {
+			telemetry.ClaimCounter(types.ClaimProofStage_PROVEN, 1, err)
+			telemetry.ClaimRelaysCounter(types.ClaimProofStage_PROVEN, numRelays, err)
+			telemetry.ClaimComputeUnitsCounter(types.ClaimProofStage_PROVEN, numClaimComputeUnits, err)
+		}
+	}()
 
 	logger := k.Logger().With("method", "SubmitProof")
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
@@ -124,11 +133,12 @@ func (k msgServer) SubmitProof(
 	if err != nil {
 		return nil, status.Error(codes.Internal, types.ErrProofInvalidClaimRootHash.Wrap(err.Error()).Error())
 	}
-	numComputeUnits, err = claim.GetNumComputeUnits()
+	// DEV_NOTE: It is assumed that numClaimComputeUnits = numRelays * serviceComputeUnitsPerRelay
+	// has been checked during the claim creation process.
+	numClaimComputeUnits, err = claim.GetNumClaimedComputeUnits()
 	if err != nil {
 		return nil, status.Error(codes.Internal, types.ErrProofInvalidClaimRootHash.Wrap(err.Error()).Error())
 	}
-	// DEV_NOTE: It is assumed that numComputeUnits = numRelays * serviceComputeUnitsPerRelay
 
 	// Check if a prior proof already exists.
 	_, isExistingProof = k.GetProof(ctx, proof.SessionHeader.SessionId, proof.SupplierOperatorAddress)
@@ -143,19 +153,21 @@ func (k msgServer) SubmitProof(
 	case true:
 		proofUpsertEvent = proto.Message(
 			&types.EventProofUpdated{
-				Claim:           claim,
-				Proof:           &proof,
-				NumRelays:       numRelays,
-				NumComputeUnits: numComputeUnits,
+				Claim:                  claim,
+				Proof:                  &proof,
+				NumRelays:              numRelays,
+				NumClaimedComputeUnits: numClaimComputeUnits,
+				// TODO_FOLLOWUP: Add NumEstimatedComputeUnits and ClaimedAmountUpokt
 			},
 		)
 	case false:
 		proofUpsertEvent = proto.Message(
 			&types.EventProofSubmitted{
-				Claim:           claim,
-				Proof:           &proof,
-				NumRelays:       numRelays,
-				NumComputeUnits: numComputeUnits,
+				Claim:                  claim,
+				Proof:                  &proof,
+				NumRelays:              numRelays,
+				NumClaimedComputeUnits: numClaimComputeUnits,
+				// TODO_FOLLOWUP: Add NumEstimatedComputeUnits and ClaimedAmountUpokt
 			},
 		)
 	}
@@ -231,22 +243,19 @@ func (k Keeper) ProofRequirementForClaim(ctx context.Context, claim *types.Claim
 		)
 	}()
 
-	// NB: Assumption that claim is non-nil and has a valid root sum because it
-	// is retrieved from the store and validated, on-chain, at time of creation.
-	// TODO(@red-0ne, #781): Ensure we're using the scaled/estimated compute units here.
-	var numClaimComputeUnits uint64
-	numClaimComputeUnits, err = claim.GetNumComputeUnits()
-	if err != nil {
-		return requirementReason, err
-	}
-
 	proofParams := k.GetParams(ctx)
 	sharedParams := k.sharedKeeper.GetParams(ctx)
+
+	serviceId := claim.GetSessionHeader().GetServiceId()
+	relayMiningDifficulty, found := k.serviceKeeper.GetRelayMiningDifficulty(ctx, serviceId)
+	if !found {
+		relayMiningDifficulty = servicekeeper.NewDefaultRelayMiningDifficulty(ctx, logger, serviceId, servicekeeper.TargetNumRelays)
+	}
 
 	// Retrieve the number of tokens claimed to compare against the threshold.
 	// Different services have varying compute_unit -> token multipliers, so the
 	// threshold value is done in a common unit denomination.
-	claimeduPOKT, err := tokenomics.NumComputeUnitsToCoin(sharedParams, numClaimComputeUnits)
+	claimeduPOKT, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
 	if err != nil {
 		return requirementReason, err
 	}
@@ -317,12 +326,12 @@ func (k Keeper) getEarliestSupplierProofCommitBlockHash(
 	sessionEndHeight := claim.GetSessionHeader().GetSessionEndBlockHeight()
 	supplierOperatorAddress := claim.GetSupplierOperatorAddress()
 
-	proofWindowOpenHeight := shared.GetProofWindowOpenHeight(sharedParams, sessionEndHeight)
+	proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(sharedParams, sessionEndHeight)
 	proofWindowOpenBlockHash := k.sessionKeeper.GetBlockHash(ctx, proofWindowOpenHeight)
 
 	// TODO_TECHDEBT(@red-0ne): Update the method header of this function to accept (sharedParams, Claim, BlockHash).
 	// After doing so, please review all calling sites and simplify them accordingly.
-	earliestSupplierProofCommitHeight := shared.GetEarliestSupplierProofCommitHeight(
+	earliestSupplierProofCommitHeight := sharedtypes.GetEarliestSupplierProofCommitHeight(
 		sharedParams,
 		sessionEndHeight,
 		proofWindowOpenBlockHash,

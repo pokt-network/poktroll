@@ -81,9 +81,7 @@ var (
 			QueryParamsResponse:     sharedtypes.QueryParamsResponse{},
 		},
 		ParamTypes: map[ParamType]any{
-			// TODO_IMPROVE: Add a Uint64 asType instead of using int64 for uint64 params.
-			ParamTypeUint64: sharedtypes.MsgUpdateParam_AsInt64{},
-			ParamTypeInt64:  sharedtypes.MsgUpdateParam_AsInt64{},
+			ParamTypeUint64: sharedtypes.MsgUpdateParam_AsUint64{},
 			ParamTypeString: sharedtypes.MsgUpdateParam_AsString{},
 			ParamTypeBytes:  sharedtypes.MsgUpdateParam_AsBytes{},
 		},
@@ -147,8 +145,7 @@ var (
 			MinStake:             &ValidActorMinStake,
 		},
 		ParamTypes: map[ParamType]any{
-			// TODO_IMPROVE: Add a Uint64 asType instead of using int64 for uint64 params.
-			ParamTypeUint64: apptypes.MsgUpdateParam_AsInt64{},
+			ParamTypeUint64: apptypes.MsgUpdateParam_AsUint64{},
 			ParamTypeCoin:   apptypes.MsgUpdateParam_AsCoin{},
 		},
 		DefaultParams:    apptypes.DefaultParams(),
@@ -178,10 +175,17 @@ var (
 		ParamsMsgs: ModuleParamsMessages{
 			MsgUpdateParams:         suppliertypes.MsgUpdateParams{},
 			MsgUpdateParamsResponse: suppliertypes.MsgUpdateParamsResponse{},
+			MsgUpdateParam:          suppliertypes.MsgUpdateParam{},
+			MsgUpdateParamResponse:  suppliertypes.MsgUpdateParamResponse{},
 			QueryParamsRequest:      suppliertypes.QueryParamsRequest{},
 			QueryParamsResponse:     suppliertypes.QueryParamsResponse{},
 		},
-		ValidParams:      suppliertypes.Params{},
+		ValidParams: suppliertypes.Params{
+			MinStake: &ValidActorMinStake,
+		},
+		ParamTypes: map[ParamType]any{
+			ParamTypeCoin: suppliertypes.MsgUpdateParam_AsCoin{},
+		},
 		DefaultParams:    suppliertypes.DefaultParams(),
 		NewParamClientFn: suppliertypes.NewQueryClient,
 	}
@@ -196,16 +200,12 @@ var (
 			QueryParamsResponse:     prooftypes.QueryParamsResponse{},
 		},
 		ValidParams: prooftypes.Params{
-			RelayDifficultyTargetHash: ValidRelayDifficultyTargetHash,
 			ProofRequestProbability:   0.1,
 			ProofRequirementThreshold: &ValidProofRequirementThresholdCoin,
 			ProofMissingPenalty:       &ValidProofMissingPenaltyCoin,
 			ProofSubmissionFee:        &ValidProofSubmissionFeeCoin,
 		},
 		ParamTypes: map[ParamType]any{
-			ParamTypeUint64:  prooftypes.MsgUpdateParam_AsInt64{},
-			ParamTypeInt64:   prooftypes.MsgUpdateParam_AsInt64{},
-			ParamTypeString:  prooftypes.MsgUpdateParam_AsString{},
 			ParamTypeBytes:   prooftypes.MsgUpdateParam_AsBytes{},
 			ParamTypeFloat32: prooftypes.MsgUpdateParam_AsFloat{},
 			ParamTypeCoin:    prooftypes.MsgUpdateParam_AsCoin{},

@@ -14,10 +14,6 @@ func NewMsgUpdateParam(authority string, name string, value any) (*MsgUpdatePara
 	var valueAsType isMsgUpdateParam_AsType
 
 	switch v := value.(type) {
-	case string:
-		valueAsType = &MsgUpdateParam_AsString{AsString: v}
-	case int64:
-		valueAsType = &MsgUpdateParam_AsInt64{AsInt64: v}
 	case []byte:
 		valueAsType = &MsgUpdateParam_AsBytes{AsBytes: v}
 	case *sdk.Coin:
@@ -33,9 +29,10 @@ func NewMsgUpdateParam(authority string, name string, value any) (*MsgUpdatePara
 	}, nil
 }
 
-// ValidateBasic performs a basic validation of the MsgUpdateParam fields. It ensures
-// the parameter name is supported and the parameter type matches the expected type for
-// a given parameter name.
+// ValidateBasic performs a basic validation of the MsgUpdateParam fields. It ensures:
+// 1. The parameter name is supported.
+// 2. The parameter type matches the expected type for a given parameter name.
+// 3. The parameter value is valid (according to its respective validation function).
 func (msg *MsgUpdateParam) ValidateBasic() error {
 	// Validate the address
 	if _, err := sdk.AccAddressFromBech32(msg.Authority); err != nil {
@@ -49,31 +46,29 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 
 	// Parameter name must be supported by this module.
 	switch msg.Name {
-	case ParamRelayDifficultyTargetHash:
-		return msg.paramTypeIsBytes()
 	case ParamProofRequestProbability:
-		return msg.paramTypeIsFloat()
+		if err := msg.paramTypeIsFloat(); err != nil {
+			return err
+		}
+		return ValidateProofRequestProbability(msg.GetAsFloat())
 	case ParamProofRequirementThreshold:
-		return msg.paramTypeIsCoin()
+		if err := msg.paramTypeIsCoin(); err != nil {
+			return err
+		}
+		return ValidateProofRequirementThreshold(msg.GetAsCoin())
 	case ParamProofMissingPenalty:
-		return msg.paramTypeIsCoin()
+		if err := msg.paramTypeIsCoin(); err != nil {
+			return err
+		}
+		return ValidateProofMissingPenalty(msg.GetAsCoin())
 	case ParamProofSubmissionFee:
-		return msg.paramTypeIsCoin()
+		if err := msg.paramTypeIsCoin(); err != nil {
+			return err
+		}
+		return ValidateProofSubmissionFee(msg.GetAsCoin())
 	default:
 		return ErrProofParamNameInvalid.Wrapf("unsupported param %q", msg.Name)
 	}
-}
-
-// paramTypeIsBytes checks if the parameter type is a byte slice, returning an error if not.
-func (msg *MsgUpdateParam) paramTypeIsBytes() error {
-	if _, ok := msg.AsType.(*MsgUpdateParam_AsBytes); !ok {
-		return ErrProofParamInvalid.Wrapf(
-			"invalid type for param %q expected %T, got %T",
-			msg.Name, &MsgUpdateParam_AsBytes{},
-			msg.AsType,
-		)
-	}
-	return nil
 }
 
 // paramTypeIsFloat checks if the parameter type is Float, returning an error if not.
