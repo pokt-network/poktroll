@@ -17,8 +17,8 @@ This page describes the protocol upgrade process, which is internal to the proto
 - [Cancelling the upgrade plan](#cancelling-the-upgrade-plan)
 - [Testing the Upgrade](#testing-the-upgrade)
   - [LocalNet](#localnet)
-    - [TLDR](#tldr)
-    - [Full example](#full-example)
+    - [LocalNet Upgrade tl;dr](#localnet-upgrade-tldr)
+    - [LocalNet Upgrade Full Example Walkthrough](#localnet-upgrade-full-example-walkthrough)
   - [DevNet](#devnet)
   - [TestNet](#testnet)
   - [Mainnet](#mainnet)
@@ -71,22 +71,20 @@ An upgrade transaction includes a [Plan](https://github.com/cosmos/cosmos-sdk/bl
 
 - `name`: Name of the upgrade. It should match the `VersionName` of `upgrades.Upgrade`.
 - `height`: The height at which an upgrade should be executed and the node will be restarted.
-- `info`: Can be empty. **Only needed for live networks where we want cosmovisor to upgrade nodes automatically**. When `cosmovisor` is configured to automatically download binaries, it will pull the binary from the link provided in this field and perform a hash verification (which is also optional). We only know the hashes **AFTER** the release has been cut and CI created artifacts for this version.
-
-### Validate the URLs (live network only)
-
-The URLs of the binaries contain checksums. It is important to make sure they are correct, otherwise Cosmovisor won't be able
-to download the binaries and go through the upgrade. Here's a little command that uses `jq` and `go-getter` (same library used by Cosmovisor - so it is a good test).
+- `info`: Can be empty. **Only needed for live networks where we want cosmovisor to upgrade nodes automatically**.
 
 :::tip
 
-Go-getter can be installed using the following command:
-
-```bash
-go install github.com/hashicorp/go-getter/cmd/go-getter@latest
-```
+When `cosmovisor` is configured to automatically download binaries, it will pull the binary from the link provided in this field and perform a hash verification (which is also optional). We only know the hashes **AFTER** the release has been cut and CI created artifacts for this version.
 
 :::
+
+### Validate the URLs (live network only)
+
+The URLs of the binaries contain checksums. It is critical to ensure they are correct.
+Otherwise Cosmovisor won't be able to download the binaries and go through the upgrade.
+
+The command below (using toold build by the authors of Cosmosvisor) can be used to achieve the above:
 
 ```bash
 jq -r '.body.messages[0].plan.info | fromjson | .binaries[]' $PATH_TO_UPGRADE_TRANSACTION_JSON | while IFS= read -r url; do
@@ -102,6 +100,16 @@ The output should look like this:
 2024/09/24 12:40:44 success!
 2024/09/24 12:40:46 success!
 ```
+
+:::tip
+
+`go-getter` can be installed using the following command:
+
+```bash
+go install github.com/hashicorp/go-getter/cmd/go-getter@latest
+```
+
+:::
 
 ## Submitting the upgrade on-chain
 
@@ -133,48 +141,88 @@ Note that for local testing, `cosmovisor` won't pull the binary from the info fi
 
 ### LocalNet
 
-LocalNet does not support `cosmovisor` and automatic upgrades at the moment. But we don't need it to simulate and test the upgrade procedure.
+LocalNet **DOES NOT** support `cosmovisor` and automatic upgrades at the moment.
 
-#### TLDR
+However, **IT IS NOT NEEDED** to simulate and test the upgrade procedure.
 
-In short, the procedure is:
-- Pull git repo with old version (separate directory)
-- Download release binary of the old version
-- Wipe localnet data and generate genesis using OLD version
-- Start node using OLD binary
-- Write and submit an upgrade transaction on-chain
-- When the Upgrade Plan height is reached, stop the old node and run the new binary
-- Observe the behavior
+#### LocalNet Upgrade tl;dr
 
-#### Full example
+1. Pull git repo with old version (separate directory)
+2. Download release binary of the old version
+3. Wipe LocalNet data and generate genesis using OLD version
+4. Start node using anOLD binary
+5. Write and submit an upgrade transaction on-chain
+6. When the Upgrade Plan height is reached, stop the old node and run the new binary
+7. Observe the behavior
 
-As we are testing an upgrade, we need to have a network that first runs on the old version. So it is a good idea to have a LocalNet running using a binary from the [previous release you wish to upgrade **FROM**](https://github.com/pokt-network/poktroll/releases). We also want to provision the network using this version, which requires us to pull the specific git tag.
+#### LocalNet Upgrade Full Example Walkthrough
+
+Testing an upgrade requires a network running on an old version.
+
+Ensure LocalNet is running using a binary from the [previous release you wish to upgrade **FROM**](https://github.com/pokt-network/poktroll/releases). We also want to provision the network using this version, which requires us to pull the specific git tag.
 
 1. Make a note of the version you want to test an upgrade **FROM**. This will be the **OLD** version. For example, let's imagine we're upgrading from `v0.0.9`.
 2. Pull a new `poktroll` repo (will be used as an "old" version):
-    ```bash
-    git clone https://github.com/pokt-network/poktroll.git poktroll-upgrade-old
-    cd poktroll-upgrade-old
-    git checkout v0.0.9
 
-    # Download the v0.0.9 binary: https://github.com/pokt-network/poktroll/releases
-    # CHANGE POKTROLLD_VERSION and ARCH
-    curl -L "https://github.com/pokt-network/poktroll/releases/download/${POKTROLLD_VERSION}/poktroll_linux_${ARCH}.tar.gz" | tar -zxvf - -C .
+   ```bash
+   git clone https://github.com/pokt-network/poktroll.git poktroll-upgrade-old
+   cd poktroll-upgrade-old
+   git checkout v0.0.9
 
-    # Validate the version
-    ./poktrolld version
-    0.0.9
-    ```
-3. Stop LocalNet: `make localnet_down`
-4. Reset the data: `./poktrolld comet unsafe-reset-all`
-5. Create new genesis using old version (from `poktroll-upgrade-old` dir): `make localnet_regenesis`
-6. Start the network: `./poktrolld start`
-7. [Write](#writing-an-upgrade-transaction) and [Submit](#submitting-the-upgrade-on-chain) a transaction (e.g. `poktrolld tx authz exec tools/scripts/upgrades/local_test_v0.0.9-2.json --from=pnf`)
-8. Verify the plan is active: `poktrolld query upgrade plan`
+   # Download the v0.0.9 binary: https://github.com/pokt-network/poktroll/releases
+   # CHANGE POKTROLLD_VERSION and ARCH
+   curl -L "https://github.com/pokt-network/poktroll/releases/download/${POKTROLLD_VERSION}/poktroll_linux_${ARCH}.tar.gz" | tar -zxvf - -C .
+
+   # Validate the version
+   ./poktrolld version
+   0.0.9
+   ```
+
+3. Stop LocalNet
+
+   ```bash
+   make localnet_down
+   ```
+
+4. Reset the data
+
+   ```bash
+   ./poktrolld comet unsafe-reset-all
+   ```
+
+5. Create new genesis using old version (from `poktroll-upgrade-old` dir)
+
+   ```bash
+   make localnet_regenesis
+   ```
+
+6. Start the network
+
+   ```bash
+   ./poktrolld start
+   ```
+
+7. [Write](#writing-an-upgrade-transaction) and [Submit](#submitting-the-upgrade-on-chain) a transaction. For example:
+
+   ```bash
+   poktrolld tx authz exec tools/scripts/upgrades/local_test_v0.0.9-2.json --from=pnf`
+   ```
+
+8. Verify the plan is active
+
+   ```bash
+   poktrolld query upgrade plan
+   ```
+
 9. Wait until the height is reached and the old node dies due to the error: `ERR UPGRADE "v0.0.9-2" NEEDED at height`, which is expected.
 10. At this point, switch to the repo with the **NEW** version - the code you wish to upgrade the network **TO**.
 11. In the **NEW VERSION GIT REPO** you can build binaries using `go_develop`, `ignite_release` and `ignite_release_extract_binaries` make targets.
-12. Start the new version (from the **NEW VERSION REPO**: `./release_binaries/poktroll_darwin_arm64 start`)
+12. Start the new version from the **NEW VERSION REPO**:
+
+    ```bash
+    ./release_binaries/poktroll_darwin_arm64 start
+    ```
+
 13. Observe the behavior. Your node should go through the upgrade process and start using the new version.
 
 ### DevNet
