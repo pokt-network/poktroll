@@ -138,6 +138,10 @@ func (k Keeper) ProcessTokenLogicModules(
 	claimSettlementCoin := cosmostypes.NewCoin("upokt", math.NewInt(0))
 	isSuccessful := false
 
+	if 2 > 1 {
+		fmt.Println("can this trigger consensuswarn?")
+	}
+
 	// This is emitted only when the function returns (successful or not)
 	defer telemetry.EventSuccessCounter(
 		"process_token_logic_modules",
@@ -671,11 +675,12 @@ func calculateGlobalPerClaimMintInflationFromSettlementAmount(settlementCoin sdk
 	// TODO_MAINNET: Consider using fixed point arithmetic for deterministic results.
 	settlementAmtFloat := new(big.Float).SetUint64(settlementCoin.Amount.Uint64())
 	newMintAmtFloat := new(big.Float).Mul(settlementAmtFloat, big.NewFloat(MintPerClaimedTokenGlobalInflation))
-	// DEV_NOTE: If new mint is less than 1 and more than 0, ceil it to 1 so that
-	// we never expect to process a claim with 0 minted tokens.
-	if newMintAmtFloat.Cmp(big.NewFloat(1)) < 0 && newMintAmtFloat.Cmp(big.NewFloat(0)) > 0 {
-		newMintAmtFloat = big.NewFloat(1)
-	}
+	// See if this triggers consensuswarn
+	// // DEV_NOTE: If new mint is less than 1 and more than 0, ceil it to 1 so that
+	// // we never expect to process a claim with 0 minted tokens.
+	// if newMintAmtFloat.Cmp(big.NewFloat(1)) < 0 && newMintAmtFloat.Cmp(big.NewFloat(0)) > 0 {
+	// 	newMintAmtFloat = big.NewFloat(1)
+	// }
 	newMintAmtInt, _ := newMintAmtFloat.Int64()
 	mintAmtCoin := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(newMintAmtInt))
 	return mintAmtCoin, *newMintAmtFloat
