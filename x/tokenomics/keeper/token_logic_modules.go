@@ -437,7 +437,7 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 
 	// Update telemetry information
 	if newMintCoin.Amount.IsInt64() {
-		defer telemetry.MintedTokensFromModule(tokenomictypes.ModuleName, float32(newMintCoin.Amount.Int64()))
+		defer telemetry.MintedTokensFromModule(tokenomicstypes.ModuleName, float32(newMintCoin.Amount.Int64()))
 	}
 
 	logger.Info(fmt.Sprintf("minted (%s) to the tokenomics module account", newMintCoin))

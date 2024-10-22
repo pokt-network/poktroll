@@ -47,16 +47,6 @@ func (k msgServer) SubmitProof(
 		numClaimComputeUnits uint64
 	)
 
-	// Defer telemetry calls so that they reference the final values the relevant variables.
-	defer func() {
-		// Only increment these metrics counters if handling a new claim.
-		if !isExistingProof {
-			telemetry.ClaimCounter(types.ClaimProofStage_PROVEN, 1, err)
-			telemetry.ClaimRelaysCounter(types.ClaimProofStage_PROVEN, numRelays, err)
-			telemetry.ClaimComputeUnitsCounter(types.ClaimProofStage_PROVEN, numClaimComputeUnits, err)
-		}
-	}()
-
 	logger := k.Logger().With("method", "SubmitProof")
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	logger.Info("About to start submitting proof")
@@ -83,7 +73,7 @@ func (k msgServer) SubmitProof(
 
 			telemetry.ClaimCounter(types.ClaimProofStage_PROVEN, 1, serviceId, applicationAddress, supplierOperatorAddress, err)
 			telemetry.ClaimRelaysCounter(types.ClaimProofStage_PROVEN, numRelays, serviceId, applicationAddress, supplierOperatorAddress, err)
-			telemetry.ClaimComputeUnitsCounter(types.ClaimProofStage_PROVEN, numComputeUnits, serviceId, applicationAddress, supplierOperatorAddress, err)
+			telemetry.ClaimComputeUnitsCounter(types.ClaimProofStage_PROVEN, numClaimComputeUnits, serviceId, applicationAddress, supplierOperatorAddress, err)
 		}
 	}()
 
