@@ -1,9 +1,9 @@
 package keeper
 
 import (
+	"context"
 	"slices"
 
-	abci "github.com/cometbft/cometbft/abci/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
@@ -19,17 +19,18 @@ func (k Keeper) EndBlockerAutoUndelegateFromUnstakedGateways(ctx sdk.Context) er
 
 	// Get all the GatewayUnstaked events emitted in the block to avoid checking
 	// each application's delegated gateways for unstaked gateways.
-	unstakedGateways, err := k.getUnstakedGateways(sdkCtx.EventManager().ABCIEvents()...)
+	unstakedGateways, err := k.getUnstakedGateways(ctx, currentHeight)
 	if err != nil {
 		return err
 	}
 
-	// TODO_IMPROVE: Once delegating applications are indexed by gateway address,
-	// this can be optimized to only check applications that have delegated to
-	// unstaked gateways.
-	for _, application := range k.GetAllApplications(ctx) {
-		for _, unstakedGateway := range unstakedGateways {
-			gwIdx := slices.Index(application.DelegateeGatewayAddresses, unstakedGateway.GetAddress())
+	for _, unstakedGateway := range unstakedGateways {
+		for _, applicationAddr := range unstakedGateway.DelegatingApplicationAddresses {
+			application, found := k.GetApplication(ctx, applicationAddr)
+			if !found {
+				continue
+			}
+			gwIdx := slices.Index(application.DelegateeGatewayAddresses, unstakedGateway.Address)
 			if gwIdx >= 0 {
 				application.DelegateeGatewayAddresses = append(
 					application.DelegateeGatewayAddresses[:gwIdx],
@@ -38,32 +39,20 @@ func (k Keeper) EndBlockerAutoUndelegateFromUnstakedGateways(ctx sdk.Context) er
 				// Record the pending undelegation for the application to allow any upcoming
 				// proofs to get the application's ring signatures.
 				k.recordPendingUndelegation(ctx, &application, unstakedGateway.GetAddress(), currentHeight)
+				k.SetApplication(ctx, application)
 			}
 		}
-
-		k.SetApplication(ctx, application)
 	}
 
 	return nil
 }
 
 // getUnstakedGateways returns the gateways which were unstaked in the given tx events.
-func (k Keeper) getUnstakedGateways(
-	abciEvents ...abci.Event,
-) (unstakedGateways []*gatewaytypes.Gateway, err error) {
-	for _, e := range abciEvents {
-		typedEvent, err := sdk.ParseTypedEvent(e)
-		if err != nil {
-			return nil, err
+func (k Keeper) getUnstakedGateways(ctx context.Context, currentHeight int64) (unstakedGateways []*gatewaytypes.Gateway, err error) {
+	for _, gateway := range k.gatewayKeeper.GetAllGateways(ctx) {
+		if gateway.UnstakeSessionEndHeight != 0 && gateway.UnstakeSessionEndHeight <= currentHeight {
+			unstakedGateways = append(unstakedGateways, &gateway)
 		}
-
-		// Ignore events which are not gateway unstaked events.
-		gatewayUnstakedEvent, ok := typedEvent.(*gatewaytypes.EventGatewayUnstaked)
-		if !ok {
-			continue
-		}
-
-		unstakedGateways = append(unstakedGateways, gatewayUnstakedEvent.GetGateway())
 	}
 
 	return unstakedGateways, nil

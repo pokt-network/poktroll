@@ -15,13 +15,15 @@ import (
 	"github.com/pokt-network/poktroll/x/application/keeper"
 	"github.com/pokt-network/poktroll/x/application/types"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	gwtypes "github.com/pokt-network/poktroll/x/gateway/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 	k, ctx := keepertest.ApplicationKeeper(t)
 	srv := keeper.NewMsgServerImpl(k)
+
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	currentHeight := sdkCtx.BlockHeight()
 
 	// Generate an address for the application and gateways
 	appAddr := sample.AccAddress()
@@ -30,7 +32,7 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 	for i := 0; i < len(expectedGatewayAddresses); i++ {
 		gatewayAddr := sample.AccAddress()
 		// Mock the gateway being staked via the staked gateway map
-		keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr)
+		keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr, currentHeight)
 		expectedGatewayAddresses[i] = gatewayAddr
 	}
 
@@ -61,8 +63,6 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	currentHeight := sdkCtx.BlockHeight()
 	sharedParams := sharedtypes.DefaultParams()
 	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
 
@@ -143,13 +143,15 @@ func TestMsgServer_UndelegateFromGateway_FailNotDelegated(t *testing.T) {
 	k, ctx := keepertest.ApplicationKeeper(t)
 	srv := keeper.NewMsgServerImpl(k)
 
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+
 	// Generate an address for the application and gateway
 	appAddr := sample.AccAddress()
 	gatewayAddr1 := sample.AccAddress()
 	gatewayAddr2 := sample.AccAddress()
 	// Mock the gateway being staked via the staked gateway map
-	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr1)
-	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr2)
+	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr1, sdkCtx.BlockHeight())
+	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr2, sdkCtx.BlockHeight())
 
 	// Prepare the application
 	stakeMsg := &types.MsgStakeApplication{
@@ -179,8 +181,6 @@ func TestMsgServer_UndelegateFromGateway_FailNotDelegated(t *testing.T) {
 	require.True(t, isAppFound)
 	require.Equal(t, appAddr, foundApp.Address)
 	require.Equal(t, 0, len(foundApp.DelegateeGatewayAddresses))
-
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
 	events := sdkCtx.EventManager().Events()
 	redelegationEvents := testevents.FilterEvents[*apptypes.EventRedelegation](t, events)
@@ -236,11 +236,14 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegateFromUnstakedGatew
 	k, ctx := keepertest.ApplicationKeeper(t)
 	srv := keeper.NewMsgServerImpl(k)
 
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	currentHeight := sdkCtx.BlockHeight()
+
 	// Generate an address for the application and gateways
 	appAddr := sample.AccAddress()
 	gatewayAddr := sample.AccAddress()
 	// Mock the gateway being staked via the staked gateway map
-	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr)
+	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr, currentHeight)
 
 	// Prepare the application
 	stakeMsg := &types.MsgStakeApplication{
@@ -266,10 +269,6 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegateFromUnstakedGatew
 	// Delegate the application to the gateway
 	_, err = srv.DelegateToGateway(ctx, delegateMsg)
 	require.NoError(t, err)
-
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-
-	currentHeight := sdkCtx.BlockHeight()
 	sharedParams := sharedtypes.DefaultParams()
 	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
 	expectedApp := &apptypes.Application{
@@ -538,27 +537,17 @@ func TestMsgServer_UndelegateFromGateway_UndelegateFromUnstakedGateway(t *testin
 	}
 	require.Contains(t, pendingUndelegateFromAddrs, pendingUndelegateFromAddr)
 
+	currentHeight := sdkCtx.BlockHeight()
+	sessionEndHeight := testsession.GetSessionEndHeightWithDefaultParams(currentHeight)
 	// Increment the block height without moving to the next session.
-	sdkCtx = sdkCtx.WithBlockHeight(undelegationHeight + 1)
+	sdkCtx = sdkCtx.WithBlockHeight(sessionEndHeight)
 
-	// Auto-undelegation reacts to the unstaked gateway event but since the test
-	// does not exercise the gateway unstaking logic, the event is emitted manually.
-	err := sdkCtx.EventManager().EmitTypedEvents(
-		&gwtypes.EventGatewayUnstaked{Gateway: &gwtypes.Gateway{Address: delegateAddr}},
-		&gwtypes.EventGatewayUnstaked{Gateway: &gwtypes.Gateway{Address: pendingUndelegateFromAddr}},
-	)
-	require.NoError(t, err)
-
-	err = k.EndBlockerAutoUndelegateFromUnstakedGateways(sdkCtx)
-	require.NoError(t, err)
-
+	k.EndBlockerAutoUndelegateFromUnstakedGateways(sdkCtx)
 	app, _ = k.GetApplication(sdkCtx, app.Address)
 
 	require.Len(t, app.DelegateeGatewayAddresses, 0)
 
-	currentHeight := sdkCtx.BlockHeight()
-	sessionEndHeight := uint64(testsession.GetSessionEndHeightWithDefaultParams(currentHeight))
-	require.Len(t, app.PendingUndelegations[sessionEndHeight].GatewayAddresses, 2)
+	require.Len(t, app.PendingUndelegations[uint64(sessionEndHeight)].GatewayAddresses, 2)
 }
 
 // createAppStakeDelegateAndUndelegate is a helper function that is used in the tests
@@ -594,7 +583,7 @@ func createAppStakeDelegateAndUndelegate(
 	// Generate gateway addresses, mock the gateways being staked then delegate the
 	// application to the gateways.
 	delegateAddr = sample.AccAddress()
-	keepertest.AddGatewayToStakedGatewayMap(t, delegateAddr)
+	keepertest.AddGatewayToStakedGatewayMap(t, delegateAddr, testsession.GetSessionEndHeightWithDefaultParams(undelegationHeight))
 
 	delegateMsg := &types.MsgDelegateToGateway{
 		AppAddress:     appAddr,
@@ -604,7 +593,7 @@ func createAppStakeDelegateAndUndelegate(
 	require.NoError(t, err)
 
 	pendingUndelegateFromAddr = sample.AccAddress()
-	keepertest.AddGatewayToStakedGatewayMap(t, pendingUndelegateFromAddr)
+	keepertest.AddGatewayToStakedGatewayMap(t, pendingUndelegateFromAddr, 0)
 
 	delegateMsg = &types.MsgDelegateToGateway{
 		AppAddress:     appAddr,

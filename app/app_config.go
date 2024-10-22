@@ -165,8 +165,8 @@ var (
 		ibcfeetypes.ModuleName,
 		// chain modules
 		servicemoduletypes.ModuleName,
-		gatewaymoduletypes.ModuleName,
 		applicationmoduletypes.ModuleName,
+		gatewaymoduletypes.ModuleName,
 		suppliermoduletypes.ModuleName,
 		sessionmoduletypes.ModuleName,
 		proofmoduletypes.ModuleName,
@@ -199,8 +199,8 @@ var (
 		// tokenomics module end blocker to ensure that the tokenomics module has
 		// processed all the pending claims, minting, burning or slashing before
 		// any of the actors have a chance to withdraw their tokens.
-		gatewaymoduletypes.ModuleName,
 		applicationmoduletypes.ModuleName,
+		gatewaymoduletypes.ModuleName,
 		suppliermoduletypes.ModuleName,
 		sharedmoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/endBlockers

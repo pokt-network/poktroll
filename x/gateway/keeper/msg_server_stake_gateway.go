@@ -121,8 +121,9 @@ func (k msgServer) createGateway(
 	msg *types.MsgStakeGateway,
 ) types.Gateway {
 	return types.Gateway{
-		Address: msg.Address,
-		Stake:   msg.Stake,
+		Address:                        msg.Address,
+		Stake:                          msg.Stake,
+		DelegatingApplicationAddresses: []string{},
 	}
 }
 

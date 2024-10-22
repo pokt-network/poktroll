@@ -42,23 +42,10 @@ func (k msgServer) UnstakeGateway(
 	}
 	logger.Info(fmt.Sprintf("Gateway found. Unstaking gateway for address %s", msg.Address))
 
-	// Retrieve the address of the gateway
-	gatewayAddress, err := sdk.AccAddressFromBech32(msg.Address)
-	if err != nil {
-		logger.Error(fmt.Sprintf("could not parse address %s", msg.Address))
-		return nil, err
-	}
+	gateway.UnstakeSessionEndHeight = k.sharedKeeper.GetSessionEndHeight(ctx, ctx.BlockHeight())
 
-	// Send the coins from the gateway pool back to the gateway
-	err = k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, gatewayAddress, []sdk.Coin{*gateway.Stake})
-	if err != nil {
-		logger.Error(fmt.Sprintf("could not send %v coins from %s module to %s account due to %v", gateway.Stake, gatewayAddress, types.ModuleName, err))
-		return nil, err
-	}
-
-	// Update the Gateway in the store
-	k.RemoveGateway(ctx, gatewayAddress.String())
-	logger.Info(fmt.Sprintf("Successfully removed the gateway: %+v", gateway))
+	k.SetGateway(ctx, gateway)
+	logger.Info(fmt.Sprintf("Successfully unstaked the gateway: %+v", gateway))
 
 	sessionEndHeight := k.sharedKeeper.GetSessionEndHeight(ctx, ctx.BlockHeight())
 	gatewayUnstakedEvent := &types.EventGatewayUnstaked{

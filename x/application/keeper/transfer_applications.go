@@ -137,8 +137,23 @@ func (k Keeper) transferApplication(
 		))
 	}
 
+	// Remove the source application from all gateways it is delegated to.
+	for _, gateway := range srcApp.DelegateeGatewayAddresses {
+		if err := k.gatewayKeeper.RemoveDelegation(ctx, gateway, srcApp.Address); err != nil {
+			logger.Error(fmt.Sprintf("failed to remove application from gateway: %v", err))
+			return err
+		}
+	}
+
 	// Remove srcApp from the store
 	k.RemoveApplication(ctx, srcApp.GetAddress())
+
+	for _, gateway := range dstApp.DelegateeGatewayAddresses {
+		if err := k.gatewayKeeper.AddDelegation(ctx, gateway, dstApp.Address); err != nil {
+			logger.Error(fmt.Sprintf("failed to add application from gateway: %v", err))
+			return err
+		}
+	}
 
 	// Add or update the dstApp in the store
 	k.SetApplication(ctx, dstApp)

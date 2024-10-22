@@ -51,6 +51,11 @@ func (k msgServer) UndelegateFromGateway(ctx context.Context, msg *apptypes.MsgU
 	// Remove the gateway from the application's delegatee gateway public keys
 	foundApp.DelegateeGatewayAddresses = append(foundApp.DelegateeGatewayAddresses[:foundIdx], foundApp.DelegateeGatewayAddresses[foundIdx+1:]...)
 
+	if err := k.gatewayKeeper.RemoveDelegation(ctx, msg.GatewayAddress, msg.AppAddress); err != nil {
+		logger.Error(fmt.Sprintf("Failed to remove application from gateway: %v", err))
+		return nil, err
+	}
+
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	currentHeight := sdkCtx.BlockHeight()
 	sessionEndHeight := k.sharedKeeper.GetSessionEndHeight(ctx, currentHeight)
