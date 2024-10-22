@@ -10,6 +10,7 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	tlm "github.com/pokt-network/poktroll/x/tokenomics/token_logic_module"
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
@@ -33,6 +34,8 @@ type Keeper struct {
 	serviceKeeper     types.ServiceKeeper
 
 	sharedQuerier client.SharedQueryClient
+
+	tokenLogicModuleProcessors []tlm.TokenLogicModuleProcessor
 }
 
 func NewKeeper(
@@ -56,6 +59,8 @@ func NewKeeper(
 
 	sharedQuerier := prooftypes.NewSharedKeeperQueryClient(sharedKeeper, sessionKeeper)
 
+	tlmProcessors := tlm.NewDefaultProcessors(authority)
+
 	return Keeper{
 		cdc:          cdc,
 		storeService: storeService,
@@ -72,6 +77,8 @@ func NewKeeper(
 		serviceKeeper:     serviceKeeper,
 
 		sharedQuerier: sharedQuerier,
+
+		tokenLogicModuleProcessors: tlmProcessors,
 	}
 }
 

@@ -35,8 +35,8 @@ import (
 )
 
 const (
-	testServiceId = "svc1"
-	supplierStake = 1000000 // uPOKT
+	testServiceId    = "svc1"
+	supplierStakeAmt = 1000000 // uPOKT
 )
 
 func init() {
@@ -107,7 +107,7 @@ func (s *TestSuite) SetupTest() {
 	}
 	s.keepers.SetService(s.ctx, service)
 
-	supplierStake := types.NewCoin("upokt", math.NewInt(supplierStake))
+	supplierStake := types.NewCoin("upokt", math.NewInt(supplierStakeAmt))
 	supplier := sharedtypes.Supplier{
 		OwnerAddress:    supplierOwnerAddr,
 		OperatorAddress: supplierOwnerAddr,
@@ -215,12 +215,12 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimPendingBeforeSettlement() {
 	// Expectations: No claims should be settled because the session is still ongoing
 	blockHeight := s.claim.SessionHeader.SessionEndBlockHeight - 2 // session is still active
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(blockHeight)
-	settledResult, expiredResult, err := s.keepers.SettlePendingClaims(sdkCtx)
+	settledResults, expiredResults, err := s.keepers.SettlePendingClaims(sdkCtx)
 	require.NoError(t, err)
 
 	// Check that no claims were settled or expired.
-	require.Equal(t, uint64(0), settledResult.NumClaims)
-	require.Equal(t, uint64(0), expiredResult.NumClaims)
+	require.Equal(t, uint64(0), settledResults.GetNumClaims())
+	require.Equal(t, uint64(0), expiredResults.GetNumClaims())
 
 	// Validate that one claim still remains.
 	claims := s.keepers.GetAllClaims(ctx)
@@ -238,12 +238,12 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimPendingBeforeSettlement() {
 	// 2. Settle pending claims just after the session ended.
 	// Expectations: Claims should not be settled because the proof window hasn't closed yet.
 	sdkCtx = sdkCtx.WithBlockHeight(blockHeight)
-	settledResult, expiredResult, err = s.keepers.SettlePendingClaims(sdkCtx)
+	settledResults, expiredResults, err = s.keepers.SettlePendingClaims(sdkCtx)
 	require.NoError(t, err)
 
 	// Check that no claims were settled or expired.
-	require.Equal(t, uint64(0), settledResult.NumClaims)
-	require.Equal(t, uint64(0), expiredResult.NumClaims)
+	require.Equal(t, uint64(0), settledResults.GetNumClaims())
+	require.Equal(t, uint64(0), expiredResults.GetNumClaims())
 
 	// Validate that the claim still exists
 	claims = s.keepers.GetAllClaims(ctx)
@@ -264,7 +264,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequiredAndNotProv
 
 	// Set the proof missing penalty to half the supplier's stake so it is not
 	// unstaked when being slashed.
-	belowStakeAmountProofMissingPenalty := sdk.NewCoin(volatile.DenomuPOKT, math.NewInt(supplierStake/2))
+	belowStakeAmountProofMissingPenalty := sdk.NewCoin(volatile.DenomuPOKT, math.NewInt(supplierStakeAmt/2))
 
 	// Set the proof parameters such that s.claim requires a proof because:
 	// - proof_request_probability is 0%
@@ -285,12 +285,12 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequiredAndNotProv
 	sessionEndHeight := s.claim.SessionHeader.SessionEndBlockHeight
 	blockHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(blockHeight)
-	settledResult, expiredResult, err := s.keepers.SettlePendingClaims(sdkCtx)
+	settledResults, expiredResults, err := s.keepers.SettlePendingClaims(sdkCtx)
 	require.NoError(t, err)
 
 	// Validate claim settlement results
-	require.Equal(t, uint64(0), settledResult.NumClaims) // 0 claims settled
-	require.Equal(t, uint64(1), expiredResult.NumClaims) // 1 claim expired
+	require.Equal(t, uint64(0), settledResults.GetNumClaims()) // 0 claims settled
+	require.Equal(t, uint64(1), expiredResults.GetNumClaims()) // 1 claim expired
 
 	// Validate that no claims remain.
 	claims := s.keepers.GetAllClaims(ctx)
@@ -302,7 +302,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequiredAndNotProv
 	// remaining stake that is above the minimum stake (i.e. new_stake == prev_stake / 2).
 	slashedSupplier, supplierFound := s.keepers.GetSupplier(sdkCtx, s.claim.SupplierOperatorAddress)
 	require.True(t, supplierFound)
-	require.Equal(t, math.NewInt(supplierStake/2), slashedSupplier.Stake.Amount)
+	require.Equal(t, math.NewInt(supplierStakeAmt/2), slashedSupplier.Stake.Amount)
 	require.Equal(t, uint64(0), slashedSupplier.UnstakeSessionEndHeight)
 
 	events := sdkCtx.EventManager().Events()
@@ -366,8 +366,8 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimSettled_ProofRequiredAndProvide
 	require.NoError(t, err)
 
 	// Validate claim settlement results
-	require.Equal(t, uint64(1), settledResult.NumClaims) // 1 claim settled
-	require.Equal(t, uint64(0), expiredResult.NumClaims) // 0 claims expired
+	require.Equal(t, uint64(1), settledResult.GetNumClaims()) // 1 claim settled
+	require.Equal(t, uint64(0), expiredResult.GetNumClaims()) // 0 claims expired
 
 	// Validate that no claims remain.
 	claims := s.keepers.GetAllClaims(ctx)
@@ -399,7 +399,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOn
 	proofParams.ProofRequestProbability = 1
 	// Set the proof missing penalty to half the supplier's stake so it is not
 	// unstaked when being slashed.
-	belowStakeAmountProofMissingPenalty := sdk.NewCoin(volatile.DenomuPOKT, math.NewInt(supplierStake/2))
+	belowStakeAmountProofMissingPenalty := sdk.NewCoin(volatile.DenomuPOKT, math.NewInt(supplierStakeAmt/2))
 	proofParams.ProofMissingPenalty = &belowStakeAmountProofMissingPenalty
 	err := s.keepers.ProofKeeper.SetParams(ctx, proofParams)
 	require.NoError(t, err)
@@ -418,12 +418,12 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOn
 	sessionEndHeight := s.claim.SessionHeader.SessionEndBlockHeight
 	blockHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(blockHeight)
-	settledResult, expiredResult, err := s.keepers.SettlePendingClaims(sdkCtx)
+	settledResults, expiredResults, err := s.keepers.SettlePendingClaims(sdkCtx)
 	require.NoError(t, err)
 
 	// Validate claim settlement results
-	require.Equal(t, uint64(0), settledResult.NumClaims) // 0 claims settled
-	require.Equal(t, uint64(1), expiredResult.NumClaims) // 1 claim expired
+	require.Equal(t, uint64(0), settledResults.GetNumClaims()) // 0 claims settled
+	require.Equal(t, uint64(1), expiredResults.GetNumClaims()) // 1 claim expired
 
 	// Validate that no claims remain.
 	claims := s.keepers.GetAllClaims(ctx)
@@ -436,7 +436,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_ProofRequired_InvalidOn
 	// Slashing should have occurred without unstaking the supplier.
 	slashedSupplier, supplierFound := s.keepers.GetSupplier(sdkCtx, s.claim.SupplierOperatorAddress)
 	require.True(t, supplierFound)
-	require.Equal(t, math.NewInt(supplierStake/2), slashedSupplier.Stake.Amount)
+	require.Equal(t, math.NewInt(supplierStakeAmt/2), slashedSupplier.Stake.Amount)
 	require.Equal(t, uint64(0), slashedSupplier.UnstakeSessionEndHeight)
 
 	// Confirm an expiration event was emitted
@@ -495,12 +495,12 @@ func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided_Vi
 	sessionEndHeight := s.claim.SessionHeader.SessionEndBlockHeight
 	blockHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(blockHeight)
-	settledResult, expiredResult, err := s.keepers.SettlePendingClaims(sdkCtx)
+	settledResults, expiredResults, err := s.keepers.SettlePendingClaims(sdkCtx)
 	require.NoError(t, err)
 
 	// Validate claim settlement results
-	require.Equal(t, uint64(1), settledResult.NumClaims) // 1 claim settled
-	require.Equal(t, uint64(0), expiredResult.NumClaims) // 0 claims expired
+	require.Equal(t, uint64(1), settledResults.GetNumClaims()) // 1 claim settled
+	require.Equal(t, uint64(0), expiredResults.GetNumClaims()) // 0 claims expired
 
 	// Validate that no claims remain.
 	claims := s.keepers.GetAllClaims(ctx)
@@ -550,12 +550,12 @@ func (s *TestSuite) TestSettlePendingClaims_Settles_WhenAProofIsNotRequired() {
 	sessionEndHeight := s.claim.SessionHeader.SessionEndBlockHeight
 	blockHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(blockHeight)
-	settledResult, expiredResult, err := s.keepers.SettlePendingClaims(sdkCtx)
+	settledResults, expiredResults, err := s.keepers.SettlePendingClaims(sdkCtx)
 	require.NoError(t, err)
 
 	// Check that one claim was settled.
-	require.Equal(t, uint64(1), settledResult.NumClaims) // 1 claim settled
-	require.Equal(t, uint64(0), expiredResult.NumClaims) // 0 claims expired
+	require.Equal(t, uint64(1), settledResults.GetNumClaims()) // 1 claim settled
+	require.Equal(t, uint64(0), expiredResults.GetNumClaims()) // 0 claims expired
 
 	// Validate that no claims remain.
 	claims := s.keepers.GetAllClaims(ctx)
@@ -647,14 +647,14 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimPendingAfterSettlement() {
 	// Expectations: No claims should be settled because the session is still ongoing
 	blockHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionOneEndHeight)
 	sdkCtx = sdkCtx.WithBlockHeight(blockHeight)
-	settledResult, expiredResult, err := s.keepers.SettlePendingClaims(sdkCtx)
+	settledResults, expiredResults, err := s.keepers.SettlePendingClaims(sdkCtx)
 	require.NoError(t, err)
 
 	// Check that one claim was settled.
-	require.Equal(t, uint64(1), settledResult.NumClaims)
+	require.Equal(t, uint64(1), settledResults.GetNumClaims())
 
 	// Validate that no claims expired.
-	require.Equal(t, uint64(0), expiredResult.NumClaims)
+	require.Equal(t, uint64(0), expiredResults.GetNumClaims())
 
 	// Validate that one claim still remains.
 	claims = s.keepers.GetAllClaims(ctx)
@@ -666,12 +666,12 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimPendingAfterSettlement() {
 	// 2. Settle pending claims just after the session ended.
 	// Expectations: Claims should not be settled because the proof window hasn't closed yet.
 	sdkCtx = sdkCtx.WithBlockHeight(blockHeight)
-	settledResult, expiredResult, err = s.keepers.SettlePendingClaims(sdkCtx)
+	settledResults, expiredResults, err = s.keepers.SettlePendingClaims(sdkCtx)
 	require.NoError(t, err)
 
 	// Check that no claims were settled or expired.
-	require.Equal(t, uint64(0), settledResult.NumClaims)
-	require.Equal(t, uint64(0), expiredResult.NumClaims)
+	require.Equal(t, uint64(0), settledResults.GetNumClaims())
+	require.Equal(t, uint64(0), expiredResults.GetNumClaims())
 
 	// Validate that the claim still exists
 	claims = s.keepers.GetAllClaims(ctx)
@@ -698,7 +698,7 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	proofParams.ProofRequirementThreshold = &proofRequirementThreshold
 	// Set the proof missing penalty to be equal to the supplier's stake to make
 	// its stake below the minimum stake requirement and trigger an unstake.
-	proofParams.ProofMissingPenalty = &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(supplierStake)}
+	proofParams.ProofMissingPenalty = &sdk.Coin{Denom: volatile.DenomuPOKT, Amount: math.NewInt(supplierStakeAmt)}
 	err = s.keepers.ProofKeeper.SetParams(ctx, proofParams)
 	require.NoError(t, err)
 
