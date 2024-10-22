@@ -5,6 +5,10 @@ import (
 	"github.com/hashicorp/go-metrics"
 )
 
+// TODO_TECHDEBT: Minted, burned and shashed tokens values might not be accurate or be inflated.
+// While we're keeping this metric for now consider removing in favor of utilizing the `cosmos-exporter` which uses on-chain data.
+// Context: https://github.com/cosmos/cosmos-sdk/issues/21614, https://github.com/pokt-network/poktroll/pull/832
+
 // MintedTokensFromModule is a function to track token minting from a specific module.
 // The metric used is an increment counter, and the label includes the module name for context.
 func MintedTokensFromModule(module string, amount float32) {
@@ -12,12 +16,6 @@ func MintedTokensFromModule(module string, amount float32) {
 		return
 	}
 
-	// CosmosSDK has a metric called `minted_tokens` (as a part of `mint` module), however it is wrongfully marked a `gauge`.
-	// It should be an `increment` because it always goes up. `gauge` tracks data that can go up and down.
-	// More info: https://prometheus.io/docs/concepts/metric_types/
-	//
-	// We can't keep the same metric name because different metric types can't collide under the same name. So we add
-	// `poktroll_` prefix instead.
 	cosmostelemetry.IncrCounterWithLabels(
 		MetricNameKeys("minted", "tokens"),
 		amount,

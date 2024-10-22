@@ -11,7 +11,7 @@ import (
 // It is set on initialization and does not change for the lifetime of the program.
 var globalTelemetryConfig PoktrollTelemetryConfig
 
-// PoktrollTelemetryConfig represents the relemetry protion of the custom poktroll config.
+// PoktrollTelemetryConfig represents the telemetry protion of the custom poktroll config.
 type PoktrollTelemetryConfig struct {
 	CardinalityLevel string `mapstructure:"cardinality-level"`
 }
@@ -23,7 +23,7 @@ func New(appOpts servertypes.AppOptions) error {
 
 	// Use mapstructure to decode the map into the struct
 	if err := mapstructure.Decode(telemetryMap, &globalTelemetryConfig); err != nil {
-		return fmt.Errorf("error decoding telemetry config: %v", err)
+		return fmt.Errorf("error decoding poktroll.telemetry config: %v", err)
 	}
 
 	return nil

@@ -10,6 +10,7 @@ import (
 
 // EndBlocker is called every block and handles supplier related updates.
 func EndBlocker(ctx sdk.Context, k keeper.Keeper) error {
+	// Telemetry: measure execution time like standard cosmos-sdk modules do that.
 	defer cosmostelemetry.ModuleMeasureSince(types.ModuleName, cosmostelemetry.Now(), cosmostelemetry.MetricKeyEndBlocker)
 
 	// TODO_IMPROVE(@red-0ne): Add logs and/or telemetry on the number of unbonded suppliers.

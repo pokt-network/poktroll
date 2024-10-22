@@ -103,7 +103,7 @@ if localnet_config["observability"]["enabled"]:
 
     # Increase timeout for building the imagedefault is 30, which can be too low for slow internet connections to pull
     # container images.
-    update_settings(k8s_upsert_timeout_secs=120) #
+    update_settings(k8s_upsert_timeout_secs=120)
 
     helm_resource(
         "observability",

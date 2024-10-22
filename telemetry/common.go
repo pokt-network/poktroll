@@ -14,7 +14,7 @@ func MetricNameKeys(metrics ...string) []string {
 	return result
 }
 
-// isTelemetyEnabled returns whether is telemetry turned on in the config file.
+// isTelemetyEnabled returns whether is telemetry turned on in the config file `app.toml` - cosmos-sdk's telemetry section.
 func isTelemetyEnabled() bool {
 	return cosmostelemetry.IsTelemetryEnabled()
 }
@@ -23,7 +23,8 @@ func isTelemetyEnabled() bool {
 // Good example of a medium cardinality label is `service_id` — we do not control the number of services
 // on the network, and as permissionless services grow the metrics can get easily out of hand. We're keeping
 // an option to turn off such labels.
-// Such labels are included when the cardinality is set to "high".
+// Medium cardinality labels are included when the cardinality is set to "high".
+// Configuration option is exposed in app.toml, our own `poktroll.telemetry` section.
 func appendMediumCardinalityLabels(labels []metrics.Label, labelPairs ...metrics.Label) []metrics.Label {
 	if globalTelemetryConfig.CardinalityLevel == "medium" || globalTelemetryConfig.CardinalityLevel == "high" {
 		return append(labels, labelPairs...)
@@ -36,6 +37,7 @@ func appendMediumCardinalityLabels(labels []metrics.Label, labelPairs ...metrics
 // This setting, on a large network, will slow down both the full node and the metric scraping system.
 // We want to have such labels exposed for local development, debugging and performance troubleshooring.
 // More background on why this is important: https://www.robustperception.io/cardinality-is-key/
+// Configuration option is exposed in app.toml, our own `poktroll.telemetry` section.
 func appendHighCardinalityLabels(labels []metrics.Label, labelPairs ...metrics.Label) []metrics.Label {
 	if globalTelemetryConfig.CardinalityLevel == "high" {
 		return append(labels, labelPairs...)
@@ -45,5 +47,5 @@ func appendHighCardinalityLabels(labels []metrics.Label, labelPairs ...metrics.L
 
 // toMetricLabel takes simple key and value of the label to return metrics.Label.
 func toMetricLabel(key, value string) metrics.Label {
-	return metrics.Label{Name: key, Value: value}
+	return cosmostelemetry.NewLabel(key, value)
 }

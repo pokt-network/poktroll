@@ -61,6 +61,7 @@ func (k Keeper) EnsureValidProof(
 	ctx context.Context,
 	proof *types.Proof,
 ) error {
+	// Telemetry: measure execution time.
 	defer cosmostelemetry.MeasureSince(cosmostelemetry.Now(), telemetry.MetricNameKeys("proof", "validation")...)
 
 	logger := k.Logger().With("method", "ValidateProof")
