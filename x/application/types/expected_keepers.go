@@ -30,6 +30,9 @@ type BankKeeper interface {
 // GatewayKeeper defines the expected interface needed to retrieve gateway information.
 type GatewayKeeper interface {
 	GetGateway(ctx context.Context, addr string) (gatewaytypes.Gateway, bool)
+	GetAllGateways(ctx context.Context) []gatewaytypes.Gateway
+	AddDelegation(ctx context.Context, gatewayAddr, AppAddr string) error
+	RemoveDelegation(ctx context.Context, gatewayAddr, AppAddr string) error
 }
 
 // SharedKeeper defines the expected interface needed to retrieve shared information.

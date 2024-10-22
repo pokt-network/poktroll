@@ -20,6 +20,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/testutil/application/mocks"
 	testsession "github.com/pokt-network/poktroll/testutil/session"
 	"github.com/pokt-network/poktroll/x/application/keeper"
@@ -32,7 +33,7 @@ import (
 // in the application's mocked gateway keeper. This enables the tester to
 // control whether a gateway is "staked" or not and whether it can be delegated to
 // WARNING: Using this map may cause issues if running multiple tests in parallel
-var stakedGatewayMap = make(map[string]struct{})
+var stakedGatewayMap = make(map[string]int64)
 
 // ApplicationModuleKeepers is a struct that contains the keepers needed for testing
 // the application module.
@@ -77,6 +78,23 @@ func NewApplicationModuleKeepers(t testing.TB) (ApplicationModuleKeepers, contex
 			}, true
 		},
 	).AnyTimes()
+	mockGatewayKeeper.EXPECT().GetAllGateways(gomock.Any()).DoAndReturn(
+		func(_ context.Context) []gatewaytypes.Gateway {
+			var gateways []gatewaytypes.Gateway
+			for addr, undelegationHeight := range stakedGatewayMap {
+				stake := sdk.NewCoin(volatile.DenomuPOKT, math.NewInt(10000))
+				gateways = append(gateways, gatewaytypes.Gateway{
+					Address:                        addr,
+					Stake:                          &stake,
+					DelegatingApplicationAddresses: []string{},
+					UnstakeSessionEndHeight:        undelegationHeight,
+				})
+			}
+			return gateways
+		},
+	).AnyTimes()
+	mockGatewayKeeper.EXPECT().AddDelegation(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	mockGatewayKeeper.EXPECT().RemoveDelegation(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
 	mockSharedKeeper := mocks.NewMockSharedKeeper(ctrl)
 	mockSharedKeeper.EXPECT().GetParams(gomock.Any()).
@@ -131,9 +149,9 @@ func ApplicationKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 // AddGatewayToStakedGatewayMap adds the given gateway address to the staked
 // gateway map for use in the application's mocked gateway keeper and ensures
 // that it is removed from the map when the test is complete
-func AddGatewayToStakedGatewayMap(t *testing.T, gatewayAddr string) {
+func AddGatewayToStakedGatewayMap(t *testing.T, gatewayAddr string, undelegationHeight int64) {
 	t.Helper()
-	stakedGatewayMap[gatewayAddr] = struct{}{}
+	stakedGatewayMap[gatewayAddr] = undelegationHeight
 	t.Cleanup(func() {
 		delete(stakedGatewayMap, gatewayAddr)
 	})

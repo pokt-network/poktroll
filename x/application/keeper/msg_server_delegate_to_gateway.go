@@ -60,6 +60,11 @@ func (k msgServer) DelegateToGateway(ctx context.Context, msg *apptypes.MsgDeleg
 	app.DelegateeGatewayAddresses = append(app.DelegateeGatewayAddresses, msg.GatewayAddress)
 	logger.Info("Successfully added delegatee public key to application")
 
+	if err := k.gatewayKeeper.AddDelegation(ctx, msg.GatewayAddress, msg.AppAddress); err != nil {
+		logger.Error(fmt.Sprintf("Failed to add application to gateway: %v", err))
+		return nil, err
+	}
+
 	// Update the application store with the new delegation
 	k.SetApplication(ctx, app)
 	logger.Info(fmt.Sprintf("Successfully delegated application to gateway for app: %+v", app))

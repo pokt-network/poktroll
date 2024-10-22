@@ -15,5 +15,7 @@ import "gogoproto/gogo.proto";
 message Gateway {
   string address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the gateway
   cosmos.base.v1beta1.Coin stake = 2; // The total amount of uPOKT the gateway has staked
+  repeated string delegating_application_addresses = 3 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.nullable) = false]; // The Bech32 encoded addresses for all delegating Applications, in a non-nullable slice
+  int64 unstake_session_end_height = 4; // The end height of the session in which the gateway got unstaked.
 }
 

@@ -55,6 +55,13 @@ func (k msgServer) UnstakeApplication(
 	currentHeight := sdkCtx.BlockHeight()
 	sessionEndHeight := k.sharedKeeper.GetSessionEndHeight(ctx, currentHeight)
 
+	for _, gateway := range foundApp.DelegateeGatewayAddresses {
+		if err := k.gatewayKeeper.RemoveDelegation(ctx, gateway, foundApp.Address); err != nil {
+			logger.Error(fmt.Sprintf("failed to remove application from gateway: %v", err))
+			return nil, err
+		}
+	}
+
 	// Mark the application as unstaking by recording the height at which it should
 	// no longer be able to request services.
 	// The application MAY continue to request service until the end of the current

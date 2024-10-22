@@ -47,7 +47,16 @@ func TestMsgServer_UnstakeGateway_Success(t *testing.T) {
 	require.NoError(t, err)
 
 	// Make sure the gateway can no longer be found after unstaking
-	_, isGatewayFound = k.GetGateway(ctx, addr)
+	foundGateway, isGatewayFound = k.GetGateway(ctx, addr)
+	require.True(t, isGatewayFound)
+	require.NotZero(t, foundGateway.UnstakeSessionEndHeight)
+
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	sdkCtx = sdkCtx.WithBlockHeight(foundGateway.UnstakeSessionEndHeight)
+	k.EndBlockerUnbondGateways(sdkCtx)
+
+	// Make sure the gateway can no longer be found after unstaking
+	_, isGatewayFound = k.GetGateway(sdkCtx, addr)
 	require.False(t, isGatewayFound)
 }
 

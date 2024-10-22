@@ -18,13 +18,16 @@ func TestMsgServer_DelegateToGateway_SuccessfullyDelegate(t *testing.T) {
 	k, ctx := keepertest.ApplicationKeeper(t)
 	srv := keeper.NewMsgServerImpl(k)
 
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	currentHeight := sdkCtx.BlockHeight()
+
 	// Generate an address for the application and gateways
 	appAddr := sample.AccAddress()
 	gatewayAddr1 := sample.AccAddress()
 	gatewayAddr2 := sample.AccAddress()
 	// Mock the gateway being staked via the staked gateway map
-	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr1)
-	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr2)
+	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr1, currentHeight)
+	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr2, currentHeight)
 
 	// Prepare the application
 	stakeMsg := &apptypes.MsgStakeApplication{
@@ -53,8 +56,6 @@ func TestMsgServer_DelegateToGateway_SuccessfullyDelegate(t *testing.T) {
 	_, err = srv.DelegateToGateway(ctx, delegateMsg)
 	require.NoError(t, err)
 
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	currentHeight := sdkCtx.BlockHeight()
 	sharedParams := sharedtypes.DefaultParams()
 	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
 	expectedApp := &apptypes.Application{
@@ -110,11 +111,14 @@ func TestMsgServer_DelegateToGateway_FailDuplicate(t *testing.T) {
 	k, ctx := keepertest.ApplicationKeeper(t)
 	srv := keeper.NewMsgServerImpl(k)
 
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	currentHeight := sdkCtx.BlockHeight()
+
 	// Generate an address for the application and gateway
 	appAddr := sample.AccAddress()
 	gatewayAddr := sample.AccAddress()
 	// Mock the gateway being staked via the staked gateway map
-	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr)
+	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr, currentHeight)
 
 	// Prepare the application
 	stakeMsg := &apptypes.MsgStakeApplication{
@@ -143,8 +147,6 @@ func TestMsgServer_DelegateToGateway_FailDuplicate(t *testing.T) {
 	_, err = srv.DelegateToGateway(ctx, delegateMsg)
 	require.NoError(t, err)
 
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	currentHeight := sdkCtx.BlockHeight()
 	sharedParams := sharedtypes.DefaultParams()
 	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
 	expectedApp := &apptypes.Application{
@@ -231,6 +233,9 @@ func TestMsgServer_DelegateToGateway_FailMaxReached(t *testing.T) {
 	k, ctx := keepertest.ApplicationKeeper(t)
 	srv := keeper.NewMsgServerImpl(k)
 
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	currentHeight := sdkCtx.BlockHeight()
+
 	// Generate an address for the application
 	appAddr := sample.AccAddress()
 
@@ -259,7 +264,7 @@ func TestMsgServer_DelegateToGateway_FailMaxReached(t *testing.T) {
 		gatewayAddr := sample.AccAddress()
 		gatewayAddresses[i] = gatewayAddr
 		// Mock the gateway being staked via the staked gateway map
-		keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr)
+		keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr, currentHeight)
 		delegateMsg := &apptypes.MsgDelegateToGateway{
 			AppAddress:     appAddr,
 			GatewayAddress: gatewayAddr,
@@ -273,8 +278,6 @@ func TestMsgServer_DelegateToGateway_FailMaxReached(t *testing.T) {
 		require.Equal(t, int(i+1), len(foundApp.DelegateeGatewayAddresses))
 	}
 
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	currentHeight := sdkCtx.BlockHeight()
 	sharedParams := sharedtypes.DefaultParams()
 	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
 
@@ -302,7 +305,7 @@ func TestMsgServer_DelegateToGateway_FailMaxReached(t *testing.T) {
 
 	// Generate an address for the gateway that'll exceed the max
 	gatewayAddr := sample.AccAddress()
-	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr)
+	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr, sdkCtx.BlockHeight())
 
 	// Prepare the delegation message
 	delegateMsg := &apptypes.MsgDelegateToGateway{
