@@ -54,15 +54,19 @@ func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) error {
 			return err
 		}
 
-		// Send the coins from the supplier pool back to the supplier.
-		if err = k.bankKeeper.SendCoinsFromModuleToAccount(
-			ctx, suppliertypes.ModuleName, ownerAddress, []cosmostypes.Coin{*supplier.Stake},
-		); err != nil {
-			logger.Error(fmt.Sprintf(
-				"could not send %s coins from module %s to account %s due to %s",
-				supplier.Stake.String(), suppliertypes.ModuleName, ownerAddress, err,
-			))
-			return err
+		// If the supplier stake is 0 due to slashing, then do not move 0 coins
+		// to its account.
+		if supplier.Stake.IsPositive() {
+			// Send the coins from the supplier pool back to the supplier.
+			if err = k.bankKeeper.SendCoinsFromModuleToAccount(
+				ctx, suppliertypes.ModuleName, ownerAddress, []cosmostypes.Coin{*supplier.Stake},
+			); err != nil {
+				logger.Error(fmt.Sprintf(
+					"could not send %s coins from module %s to account %s due to %s",
+					supplier.Stake.String(), suppliertypes.ModuleName, ownerAddress, err,
+				))
+				return err
+			}
 		}
 
 		// Remove the supplier from the store.

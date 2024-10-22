@@ -318,5 +318,5 @@ func (k Keeper) getEarliestSupplierProofCommitBlockHash(
 		supplierOperatorAddress,
 	)
 
-	return k.sessionKeeper.GetBlockHash(ctx, earliestSupplierProofCommitHeight), nil
+	return k.sessionKeeper.GetBlockHash(ctx, earliestSupplierProofCommitHeight-1), nil
 }
