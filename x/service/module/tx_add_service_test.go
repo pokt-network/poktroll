@@ -15,12 +15,17 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/pokt-network/poktroll/testutil/network"
+	"github.com/pokt-network/poktroll/testutil/sample"
 	service "github.com/pokt-network/poktroll/x/service/module"
 	"github.com/pokt-network/poktroll/x/service/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 func TestCLI_AddService(t *testing.T) {
+	// TODO_TECHDEBT: Remove once dao reward address is promoted to a tokenomics param.
+	tokenomicstypes.DaoRewardAddress = sample.AccAddress()
+
 	net := network.New(t, network.DefaultConfig())
 	val := net.Validators[0]
 	ctx := val.ClientCtx

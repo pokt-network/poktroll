@@ -1,6 +1,13 @@
 version: 1
 build:
   main: cmd/poktrolld
+  ldflags:
+    # The dao reward address SHOULD match that of the "pnf" below (i.e. `make poktrolld_addr ACC_NAME=pnf`).
+    # This is the address that will receive the dao/foundation rewards during claim settlement (global mint TLM).
+    # DEV_NOTE: This is a temporary solution which allows us to configure the dao reward address between networks
+    # (e.g. localnet, testnet, etc.)
+    # TODO_TECHDEBT: Make this a tokenomics module parameter.
+    - "-X github.com/pokt-network/poktroll/x/tokenomics/types.DaoRewardAddress=pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw"
 accounts:
   - name: faucet
     mnemonic: "baby advance work soap slow exclude blur humble lucky rough teach wide chuckle captain rack laundry butter main very cannon donate armor dress follow"

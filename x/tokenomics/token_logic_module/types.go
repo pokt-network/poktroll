@@ -71,6 +71,8 @@ type TokenLogicModuleProcessor interface {
 func NewDefaultProcessors(authorityRewardAddr string) []TokenLogicModuleProcessor {
 	return []TokenLogicModuleProcessor{
 		NewMintEqualsBurnProcessor(),
+		// TODO_TECHDEBT: Replace authorityRewardAddr with the tokenomics module
+		// params once it's refactored as a param.
 		NewGlobalMintProcessor(authorityRewardAddr),
 	}
 }
