@@ -1,0 +1,52 @@
+# dir_repo_exists returns true if the dir_path exists.
+def dir_exists(dir_path):
+    return str(
+        local("[ -d {} ] && echo 'true' || echo 'false'".format(dir_path),
+              echo_off=True)
+    ).strip()
+
+
+# repo_remote_name returns the name of the remote from which the git repo was cloned.
+def repo_remote_name(repo_root):
+    return str(
+        local("git rev-parse --abbrev-ref @{u} | cut -d '/' -f1",
+              dir=repo_root,
+              echo_off=True),
+    ).strip()
+
+
+# fetch_repo_main fetches the main branch from the remote from which the git repo was cloned.
+def fetch_repo_main(repo_root):
+    local("git fetch {} main".format(repo_remote_name(repo_root)),
+          dir=repo_root,
+          echo_off=True)
+
+
+# repo_changes returns a tuple of integers representing the number of local
+#  and remote changes for the git repos main branch, respectively.
+def repo_changes(repo_root):
+    all_changes = str(
+        local("""
+              git rev-list --left-right --count HEAD...{}/main
+              """.format(repo_remote_name(repo_root)),
+              dir=repo_root,
+              echo_off=True)
+    )
+
+    # Split the output into local and remote changes and convert to integers.
+    num_local_changes, num_remote_changes = [int(x) for x in all_changes.split()]
+
+    return (num_local_changes, num_remote_changes)
+
+
+# repo_is_outdated returns true if there's a diff between the local and remote main branches.
+def repo_is_outdated(repo_root):
+    fetch_repo_main(repo_root)
+    _, num_remote_changes = repo_changes(repo_root)
+    return num_remote_changes != 0
+
+
+def clone_repo(repo_url, local_path):
+    print("Cloning pocketdex repo")
+    # TODO_IMPROVE: https://github.com/tilt-dev/tilt-extensions/tree/master/git_resource
+    local("git clone {} --branch main {}".format(repo_url, local_path))
