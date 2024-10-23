@@ -56,7 +56,7 @@ localnet_config_defaults = {
         "enabled": True,
     },
 
-    # NOTE: git submodule usage was explicityly avoided to reduce environment complexity.
+    # NOTE: git submodule usage was explicitly avoided to reduce environment complexity.
 
     # By default, we use the `helm_repo` function below to point to the remote repository
     # but can update it to the locally cloned repo for testing & development
