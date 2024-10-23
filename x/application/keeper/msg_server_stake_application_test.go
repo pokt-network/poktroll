@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app/volatile"
+	testevents "github.com/pokt-network/poktroll/testutil/events"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/x/application/keeper"
@@ -37,8 +38,33 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	}
 
 	// Stake the application
-	_, err := srv.StakeApplication(ctx, stakeMsg)
+	stakeAppRes, err := srv.StakeApplication(ctx, stakeMsg)
 	require.NoError(t, err)
+
+	// Assert that the response contains the staked application.
+	app := stakeAppRes.GetApplication()
+	require.Equal(t, stakeMsg.GetAddress(), app.GetAddress())
+	require.Equal(t, stakeMsg.GetStake(), app.GetStake())
+	require.Equal(t, stakeMsg.GetServices(), app.GetServiceConfigs())
+
+	// Assert that the EventApplicationStaked event is emitted.
+	sharedParams := sharedtypes.DefaultParams()
+	currentHeight := cosmostypes.UnwrapSDKContext(ctx).BlockHeight()
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
+	expectedEvent, err := cosmostypes.TypedEventToEvent(
+		&apptypes.EventApplicationStaked{
+			Application:      app,
+			SessionEndHeight: sessionEndHeight,
+		},
+	)
+	require.NoError(t, err)
+
+	events := cosmostypes.UnwrapSDKContext(ctx).EventManager().Events()
+	require.Equalf(t, 1, len(events), "expected exactly 1 event")
+	require.EqualValues(t, expectedEvent, events[0])
+
+	// Reset the events, as if a new block were created.
+	ctx, _ = testevents.ResetEventManager(ctx)
 
 	// Verify that the application exists
 	foundApp, isAppFound := k.GetApplication(ctx, appAddr)
@@ -66,6 +92,18 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.Equal(t, &upStake, foundApp.Stake)
 	require.Len(t, foundApp.ServiceConfigs, 1)
 	require.Equal(t, "svc2", foundApp.ServiceConfigs[0].ServiceId)
+	// Assert that the EventApplicationStaked event is emitted.
+	expectedEvent, err = cosmostypes.TypedEventToEvent(
+		&apptypes.EventApplicationStaked{
+			Application:      &foundApp,
+			SessionEndHeight: sessionEndHeight,
+		},
+	)
+	require.NoError(t, err)
+
+	events = cosmostypes.UnwrapSDKContext(ctx).EventManager().Events()
+	require.Equalf(t, 1, len(events), "expected exactly 1 event")
+	require.EqualValues(t, expectedEvent, events[0])
 }
 
 func TestMsgServer_StakeApplication_FailRestakingDueToInvalidServices(t *testing.T) {
