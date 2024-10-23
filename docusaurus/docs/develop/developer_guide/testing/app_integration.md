@@ -7,9 +7,8 @@ title: App Integration Tests
 
 // TODO(@bryanchriswhite): Replace github source links with godocs links once available.
 
-### Table Of Contents
+### Table Of Contents <!-- omit in toc -->
 
-- [Table Of Contents](#table-of-contents)
 - [Overview](#overview)
 - [Using `integration.App`](#using-integrationapp)
   - [Constructors](#constructors)
@@ -22,6 +21,7 @@ title: App Integration Tests
 ### Overview
 
 [**App integration level**](testing_levels#app-integration-tests) tests leverage a custom construction of the poktroll appchain (for testing only).
+
 This construction integrates all the poktroll modules (and their cosmos-sdk dependencies) and exercises the appchain's message routing/handling and transaction processing logic.
 
 Tests in this level conventionally use the `testutil/integration` package's `App` structure and constructors to set up the appchain, execute messages, and make assertions against the resulting appchain state.
@@ -128,8 +128,9 @@ func TestAppIntegrationExample(t *testing.T) {
 
     // Type assert the result to the message response type
     sendRes, ok := res.(*banktypes.MsgSendResponse)
-	require.True(t, ok)
-	require.NotNil(t, sendRes)
+
+    require.True(t, ok)
+    require.NotNil(t, sendRes)
 }
 ```
 
