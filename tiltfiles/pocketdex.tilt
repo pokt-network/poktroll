@@ -26,6 +26,8 @@ def pocketdex_outdated_resource(pocketdex_root_path):
                    labels=["Pocketdex"])
 
 
+# load_pocketdex loads the pocketdex.tilt file from the pocketdex repo at pocketdex_root_path.
+# It also checks if the pocketdex repo has updates and, if so, creates a resource which prints instructions to update.
 def load_pocketdex(pocketdex_root_path):
     if repo_is_outdated(pocketdex_root_path):
         pocketdex_outdated_resource(pocketdex_root_path)

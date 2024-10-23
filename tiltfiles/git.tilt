@@ -46,6 +46,7 @@ def repo_is_outdated(repo_root):
     return num_remote_changes != 0
 
 
+# clone_repo clones the main branch from the repo at repo_url to local_path.
 def clone_repo(repo_url, local_path):
     print("Cloning pocketdex repo")
     # TODO_IMPROVE: https://github.com/tilt-dev/tilt-extensions/tree/master/git_resource
