@@ -46,6 +46,7 @@ import (
 	supplierkeeper "github.com/pokt-network/poktroll/x/supplier/keeper"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tokenomicskeeper "github.com/pokt-network/poktroll/x/tokenomics/keeper"
+	tlm "github.com/pokt-network/poktroll/x/tokenomics/token_logic_module"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
@@ -69,9 +70,18 @@ type TokenomicsModuleKeepers struct {
 	Codec *codec.ProtoCodec
 }
 
+// TODO_IN_THIS_COMMIT: godoc..
+type tokenomicsModuleKeepersConfig struct {
+	tlmProcessors  []tlm.TokenLogicModuleProcessor
+	initKeepersFns []func(context.Context, *TokenomicsModuleKeepers) context.Context
+	// moduleParams is a map of module names to their respective module parameters.
+	// This is used to set the initial module parameters in the keeper.
+	moduleParams map[string]sdk.Msg
+}
+
 // TokenomicsKeepersOpt is a function which receives and potentially modifies the context
 // and tokenomics keepers during construction of the aggregation.
-type TokenomicsModuleKeepersOpt func(context.Context, *TokenomicsModuleKeepers) context.Context
+type TokenomicsModuleKeepersOpt func(cfg *tokenomicsModuleKeepersConfig)
 
 func TokenomicsKeeper(t testing.TB) (tokenomicsKeeper tokenomicskeeper.Keeper, ctx context.Context) {
 	t.Helper()
@@ -237,6 +247,8 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		Return(relayMiningDifficulty, true).
 		AnyTimes()
 
+	tlmProcessors := tlm.NewDefaultProcessors(sample.AccAddress())
+
 	k := tokenomicskeeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKey),
@@ -250,6 +262,7 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		mockSharedKeeper,
 		mockSessionKeeper,
 		mockServiceKeeper,
+		tlmProcessors,
 	)
 
 	// Add a block proposer address to the context
@@ -272,6 +285,13 @@ func NewTokenomicsModuleKeepers(
 	opts ...TokenomicsModuleKeepersOpt,
 ) (_ TokenomicsModuleKeepers, ctx context.Context) {
 	t.Helper()
+
+	cfg := &tokenomicsModuleKeepersConfig{
+		tlmProcessors: tlm.NewDefaultProcessors(sample.AccAddress()),
+	}
+	for _, opt := range opts {
+		opt(cfg)
+	}
 
 	// Collect store keys for all keepers which be constructed & interact with the state store.
 	keys := storetypes.NewKVStoreKeys(
@@ -360,6 +380,11 @@ func NewTokenomicsModuleKeepers(
 	)
 	require.NoError(t, sharedKeeper.SetParams(sdkCtx, sharedtypes.DefaultParams()))
 
+	if params, ok := cfg.moduleParams[sharedtypes.ModuleName]; ok {
+		err = sharedKeeper.SetParams(ctx, *params.(*sharedtypes.Params))
+		require.NoError(t, err)
+	}
+
 	// Construct gateway keeper with a mocked bank keeper.
 	gatewayKeeper := gatewaykeeper.NewKeeper(
 		cdc,
@@ -370,6 +395,11 @@ func NewTokenomicsModuleKeepers(
 		sharedKeeper,
 	)
 	require.NoError(t, gatewayKeeper.SetParams(sdkCtx, gatewaytypes.DefaultParams()))
+
+	if params, ok := cfg.moduleParams[gatewaytypes.ModuleName]; ok {
+		err = gatewayKeeper.SetParams(ctx, *params.(*gatewaytypes.Params))
+		require.NoError(t, err)
+	}
 
 	// Construct an application keeper to add apps to sessions.
 	appKeeper := appkeeper.NewKeeper(
@@ -384,6 +414,11 @@ func NewTokenomicsModuleKeepers(
 	)
 	require.NoError(t, appKeeper.SetParams(sdkCtx, apptypes.DefaultParams()))
 
+	if params, ok := cfg.moduleParams[apptypes.ModuleName]; ok {
+		err = appKeeper.SetParams(ctx, *params.(*apptypes.Params))
+		require.NoError(t, err)
+	}
+
 	// Construct a service keeper needed by the supplier keeper.
 	serviceKeeper := servicekeeper.NewKeeper(
 		cdc,
@@ -392,6 +427,11 @@ func NewTokenomicsModuleKeepers(
 		authority.String(),
 		bankKeeper,
 	)
+
+	if params, ok := cfg.moduleParams[servicetypes.ModuleName]; ok {
+		err = serviceKeeper.SetParams(ctx, *params.(*servicetypes.Params))
+		require.NoError(t, err)
+	}
 
 	// Construct a real supplier keeper to add suppliers to sessions.
 	supplierKeeper := supplierkeeper.NewKeeper(
@@ -404,6 +444,11 @@ func NewTokenomicsModuleKeepers(
 		serviceKeeper,
 	)
 	require.NoError(t, supplierKeeper.SetParams(sdkCtx, suppliertypes.DefaultParams()))
+
+	if params, ok := cfg.moduleParams[suppliertypes.ModuleName]; ok {
+		err = supplierKeeper.SetParams(ctx, *params.(*suppliertypes.Params))
+		require.NoError(t, err)
+	}
 
 	// Construct a real session keeper so that sessions can be queried.
 	sessionKeeper := sessionkeeper.NewKeeper(
@@ -418,6 +463,11 @@ func NewTokenomicsModuleKeepers(
 		sharedKeeper,
 	)
 	require.NoError(t, sessionKeeper.SetParams(sdkCtx, sessiontypes.DefaultParams()))
+
+	if params, ok := cfg.moduleParams[sessiontypes.ModuleName]; ok {
+		err = sessionKeeper.SetParams(ctx, *params.(*sessiontypes.Params))
+		require.NoError(t, err)
+	}
 
 	// Construct a real proof keeper so that claims & proofs can be created.
 	proofKeeper := proofkeeper.NewKeeper(
@@ -434,6 +484,11 @@ func NewTokenomicsModuleKeepers(
 	)
 	require.NoError(t, proofKeeper.SetParams(sdkCtx, prooftypes.DefaultParams()))
 
+	if params, ok := cfg.moduleParams[prooftypes.ModuleName]; ok {
+		err = proofKeeper.SetParams(ctx, *params.(*prooftypes.Params))
+		require.NoError(t, err)
+	}
+
 	// Construct a real tokenomics keeper so that claims & tokenomics can be created.
 	tokenomicsKeeper := tokenomicskeeper.NewKeeper(
 		cdc,
@@ -448,7 +503,13 @@ func NewTokenomicsModuleKeepers(
 		sharedKeeper,
 		sessionKeeper,
 		serviceKeeper,
+		cfg.tlmProcessors,
 	)
+
+	if params, ok := cfg.moduleParams[tokenomicstypes.ModuleName]; ok {
+		err = tokenomicsKeeper.SetParams(ctx, *params.(*tokenomicstypes.Params))
+		require.NoError(t, err)
+	}
 
 	require.NoError(t, tokenomicsKeeper.SetParams(sdkCtx, tokenomicstypes.DefaultParams()))
 
@@ -468,8 +529,8 @@ func NewTokenomicsModuleKeepers(
 
 	// Apply any options to update the keepers or context prior to returning them.
 	ctx = sdkCtx
-	for _, opt := range opts {
-		ctx = opt(ctx, &keepers)
+	for _, fn := range cfg.initKeepersFns {
+		ctx = fn(ctx, &keepers)
 	}
 
 	return keepers, ctx
@@ -477,32 +538,41 @@ func NewTokenomicsModuleKeepers(
 
 // WithService is an option to set the service in the tokenomics module keepers.
 func WithService(service sharedtypes.Service) TokenomicsModuleKeepersOpt {
-	return func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
+	setService := func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
 		keepers.SetService(ctx, service)
 		return ctx
+	}
+	return func(cfg *tokenomicsModuleKeepersConfig) {
+		cfg.initKeepersFns = append(cfg.initKeepersFns, setService)
 	}
 }
 
 // WithApplication is an option to set the application in the tokenomics module keepers.
 func WithApplication(applicaion apptypes.Application) TokenomicsModuleKeepersOpt {
-	return func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
+	setApp := func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
 		keepers.SetApplication(ctx, applicaion)
 		return ctx
+	}
+	return func(cfg *tokenomicsModuleKeepersConfig) {
+		cfg.initKeepersFns = append(cfg.initKeepersFns, setApp)
 	}
 }
 
 // WithSupplier is an option to set the supplier in the tokenomics module keepers.
 func WithSupplier(supplier sharedtypes.Supplier) TokenomicsModuleKeepersOpt {
-	return func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
+	setSupplier := func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
 		keepers.SetSupplier(ctx, supplier)
 		return ctx
+	}
+	return func(cfg *tokenomicsModuleKeepersConfig) {
+		cfg.initKeepersFns = append(cfg.initKeepersFns, setSupplier)
 	}
 }
 
 // WithProposerAddr is an option to set the proposer address in the context used
 // by the tokenomics module keepers.
 func WithProposerAddr(addr string) TokenomicsModuleKeepersOpt {
-	return func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
+	setProposerAddr := func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
 		valAddr, err := cosmostypes.ValAddressFromBech32(addr)
 		if err != nil {
 			panic(err)
@@ -511,5 +581,14 @@ func WithProposerAddr(addr string) TokenomicsModuleKeepersOpt {
 		sdkCtx := sdk.UnwrapSDKContext(ctx)
 		sdkCtx = sdkCtx.WithProposer(consensusAddr)
 		return sdkCtx
+	}
+	return func(cfg *tokenomicsModuleKeepersConfig) {
+		cfg.initKeepersFns = append(cfg.initKeepersFns, setProposerAddr)
+	}
+}
+
+func WithTLMProcessors(processors []tlm.TokenLogicModuleProcessor) TokenomicsModuleKeepersOpt {
+	return func(cfg *tokenomicsModuleKeepersConfig) {
+		cfg.tlmProcessors = processors
 	}
 }

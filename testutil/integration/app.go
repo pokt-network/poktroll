@@ -78,6 +78,7 @@ import (
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tokenomicskeeper "github.com/pokt-network/poktroll/x/tokenomics/keeper"
 	tokenomics "github.com/pokt-network/poktroll/x/tokenomics/module"
+	tlm "github.com/pokt-network/poktroll/x/tokenomics/token_logic_module"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
@@ -236,6 +237,13 @@ func NewIntegrationApp(
 // as the need arises.
 func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *App {
 	t.Helper()
+
+	cfg := &IntegrationAppConfig{
+		TLMProcessors: tlm.NewDefaultProcessors(sample.ValAddress()),
+	}
+	for _, opt := range opts {
+		opt(cfg)
+	}
 
 	// Prepare & register the codec for all the interfaces
 	sdkCfg := cosmostypes.GetConfig()
@@ -497,6 +505,7 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 		sharedKeeper,
 		sessionKeeper,
 		serviceKeeper,
+		cfg.TLMProcessors,
 	)
 	tokenomicsModule := tokenomics.NewAppModule(
 		cdc,
