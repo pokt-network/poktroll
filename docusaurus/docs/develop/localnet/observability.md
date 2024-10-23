@@ -23,9 +23,19 @@ This document is a living WIP and assumes you are familiar with the LocalNet env
 
 #### GraphQL
 
+The localnet graphiql playground is available at [http://localhost:3000](http://localhost:3000), by default.
+
+![GraphiQL Playground](../../../static/img/pocketdex_graphiql_screenshot.png)
+
+A link is accessible from the ["GraphQL API" tab in tilt](http://localhost:10350/r/GraphQL%20API/overview):
+
+![LocalNet Dashboard](../../../static/img/pocketdex_graphiql_link.png)
+
+See the [pocketdex docs](https://github.com/pokt-network/pocketdex?tab=readme-ov-file#usage--query-docs) for more details.
+
 #### Postgres - CLI
 
-You can connect using a tool of your choice or with the CLI via:
+You can connect using a tool of your choice or with the `psql` CLI via:
 
 ```bash
 psql -h localhost -p 5432 -U postgres -d postgres
