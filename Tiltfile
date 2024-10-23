@@ -483,6 +483,7 @@ def load_pocketdex():
                                 indexer_values_path=indexer_values_path,
                                 gql_engine_values_path=gql_engine_values_path)
 
+
 # Check if sibling pocketdex repo exists.
 # If it does, load the pocketdex.tilt file from the sibling repo.
 # Otherwise check the `indexer.clone_if_not_present` flag in `localnet_config.yaml` and EITHER:
@@ -493,16 +494,19 @@ if localnet_config["indexer"]["enabled"]:
     if pocketdex_repo_exists() == "false":
         if localnet_config["indexer"]["clone_if_not_present"]:
             print("Cloning pocketdex repo")
-            # TODO_INVESTIGATE: https://github.com/tilt-dev/tilt-extensions/tree/master/git_resource
-            # TODO_IN_THIS_PR: Remove "--branch' after merging in https://github.com/pokt-network/pocketdex/pull/23/files
-            local("git clone https://github.com/pokt-network/pocketdex --branch chore/tilt ../pocketdex")
+            # TODO_IMPROVE: https://github.com/tilt-dev/tilt-extensions/tree/master/git_resource
+            local("""
+            git clone https://github.com/pokt-network/pocketdex --branch main {}
+            """.format(pocketdex_root_path))
             load_pocketdex()
         else:
-            pocketdex_disabled_resource(
-                "Pocketdex repo not found at ../pocketdex. Set `clone_if_not_present` to `true` in `localnet_config.yaml`.".format())
+            pocketdex_disabled_resource("""
+            Pocketdex repo not found at {}. Set `clone_if_not_present` to `true` in `localnet_config.yaml`.
+            """.format(pocketdex_root_path))
     else:
         print("Using existing pocketdex repo")
         load_pocketdex()
 else:
-    pocketdex_disabled_resource(
-        "Pocketdex indexer disabled. Set `indexer.enabled` to `true` in `localnet_config.yaml` to enable it.")
+    pocketdex_disabled_resource("""
+    Pocketdex indexer disabled. Set `indexer.enabled` to `true` in `localnet_config.yaml` to enable it.
+    """)
