@@ -3,6 +3,7 @@ package session
 import (
 	"bytes"
 	"crypto/sha256"
+	"fmt"
 	"os"
 	"path/filepath"
 	"sync"
@@ -12,6 +13,7 @@ import (
 	"github.com/pokt-network/smt/kvstore/pebble"
 
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
@@ -27,6 +29,8 @@ var _ relayer.SessionTree = (*sessionTree)(nil)
 // default value for this should be -1, implying "unlimited".
 // Ref discussion: https://github.com/pokt-network/poktroll/pull/755#discussion_r1737287860
 type sessionTree struct {
+	logger polylog.Logger
+
 	// sessionMu is a mutex used to protect sessionTree operations from concurrent access.
 	sessionMu *sync.Mutex
 
@@ -277,6 +281,11 @@ func (st *sessionTree) Delete() error {
 		if err := st.treeStore.Stop(); err != nil {
 			return err
 		}
+	} else {
+		st.logger.With(
+			"claim_root", fmt.Sprintf("%x", st.GetClaimRoot()),
+			"session_id", st.GetSessionHeader().SessionId,
+		).Info().Msg("KVStore is already stopped")
 	}
 
 	// Delete the KVStore from disk

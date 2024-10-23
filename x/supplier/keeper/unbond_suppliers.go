@@ -56,6 +56,7 @@ func (k Keeper) EndBlockerUnbondSuppliers(ctx context.Context) error {
 
 		// If the supplier stake is 0 due to slashing, then do not move 0 coins
 		// to its account.
+		// Coin#IsPositive returns false if the coin is 0.
 		if supplier.Stake.IsPositive() {
 			// Send the coins from the supplier pool back to the supplier.
 			if err = k.bankKeeper.SendCoinsFromModuleToAccount(
