@@ -3,8 +3,7 @@ package keeper
 import (
 	"slices"
 
-	abci "github.com/cometbft/cometbft/abci/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 )
@@ -13,13 +12,13 @@ import (
 // Application auto-undelegating from unstaked gateways.
 // TODO_BLOCKER: Gateway unstaking should be delayed until the current block's
 // session end height to align with the application's pending undelegations.
-func (k Keeper) EndBlockerAutoUndelegateFromUnstakedGateways(ctx sdk.Context) error {
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
+func (k Keeper) EndBlockerAutoUndelegateFromUnstakedGateways(ctx cosmostypes.Context) error {
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	currentHeight := sdkCtx.BlockHeight()
 
 	// Get all the GatewayUnstaked events emitted in the block to avoid checking
 	// each application's delegated gateways for unstaked gateways.
-	unstakedGateways, err := k.getUnstakedGateways(sdkCtx.EventManager().ABCIEvents()...)
+	unstakedGateways, err := k.getUnstakedGateways(sdkCtx.EventManager().Events())
 	if err != nil {
 		return err
 	}
@@ -49,12 +48,13 @@ func (k Keeper) EndBlockerAutoUndelegateFromUnstakedGateways(ctx sdk.Context) er
 
 // getUnstakedGateways returns the gateways which were unstaked in the given tx events.
 func (k Keeper) getUnstakedGateways(
-	abciEvents ...abci.Event,
+	events cosmostypes.Events,
 ) (unstakedGateways []*gatewaytypes.Gateway, err error) {
-	for _, e := range abciEvents {
-		typedEvent, err := sdk.ParseTypedEvent(e)
+	for _, e := range events.ToABCIEvents() {
+		typedEvent, err := cosmostypes.ParseTypedEvent(e)
 		if err != nil {
-			return nil, err
+			// Ignore non-typed errors (e.g. coin_received).
+			continue
 		}
 
 		// Ignore events which are not gateway unstaked events.
