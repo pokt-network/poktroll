@@ -592,3 +592,11 @@ func WithTLMProcessors(processors []tlm.TokenLogicModuleProcessor) TokenomicsMod
 		cfg.tlmProcessors = processors
 	}
 }
+
+// WithModuleParams returns a KeeperOptionFn that sets the moduleParams field
+// on the keeperConfig.
+func WithModuleParams(moduleParams map[string]sdk.Msg) TokenomicsModuleKeepersOpt {
+	return func(cfg *tokenomicsModuleKeepersConfig) {
+		cfg.moduleParams = moduleParams
+	}
+}
