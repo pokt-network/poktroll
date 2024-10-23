@@ -27,10 +27,10 @@ func distributeSupplierRewardsToShareHolders(
 ) error {
 	logger = logger.With("method", "distributeSupplierRewardsToShareHolders")
 
-	var serviceRevShare []*sharedtypes.ServiceRevenueShare
+	var serviceRevShares []*sharedtypes.ServiceRevenueShare
 	for _, svc := range supplier.Services {
 		if svc.ServiceId == serviceId {
-			serviceRevShare = svc.RevShare
+			serviceRevShares = svc.RevShare
 			break
 		}
 	}
@@ -39,7 +39,7 @@ func distributeSupplierRewardsToShareHolders(
 	// is done during staking: MsgStakeSupplier.ValidateBasic() -> ValidateSupplierServiceConfigs() -> ValidateServiceRevShare().
 	// The check is here just for redundancy.
 	// TODO_MAINNET(@red-0ne): Double check this doesn't happen.
-	if serviceRevShare == nil {
+	if serviceRevShares == nil {
 		return tokenomicstypes.ErrTokenomicsSupplierRevShareFailed.Wrapf(
 			"service %q not found for supplier %v",
 			serviceId,
@@ -47,14 +47,16 @@ func distributeSupplierRewardsToShareHolders(
 		)
 	}
 
-	// TODO_IN_THIS_COMMIT: remove non-deterministic usage of map.
+	// NOTE: Use the serviceRevShares slice to iterate through the serviceRevSharesMap deterministically.
 	var errs error
-	shareAmountMap := GetShareAmountMap(serviceRevShare, amountToDistribute)
-	for shareHolderAddress, shareAmount := range shareAmountMap {
+	shareAmountMap := GetShareAmountMap(serviceRevShares, amountToDistribute)
+	for _, revShare := range serviceRevShares {
+		shareAmount := shareAmountMap[revShare.GetAddress()]
+
 		// TODO_TECHDEBT(@red-0ne): Refactor to reuse the sendRewardsToAccount helper here.
 		shareAmountCoin := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(int64(shareAmount)))
 
-		shareHolderAccAddr, err := cosmostypes.AccAddressFromBech32(shareHolderAddress)
+		shareHolderAccAddr, err := cosmostypes.AccAddressFromBech32(revShare.GetAddress())
 		if err != nil {
 			errs = errors.Join(errs, err)
 		}

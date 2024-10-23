@@ -3,6 +3,7 @@ package keeper
 import (
 	"errors"
 	"fmt"
+	"slices"
 
 	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
@@ -45,6 +46,10 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 	settledResults = make(tlm.PendingSettlementResults, 0)
 	expiredResults = make(tlm.PendingSettlementResults, 0)
 
+	// expiredClaimSupplierOperatorAddresses is a slice of supplier operator addresses
+	// which are found in expiring claims. This slice is intended to be sorted once complete
+	// and used for deterministic iteration.
+	expiredClaimSupplierOperatorAddresses := make([]string, 0)
 	// A map from a supplier operator address to the number of expired claims that
 	// supplier has in this session.
 	// Expired claims due to reasons such as invalid or missing proofs when required.
@@ -158,7 +163,8 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 				// The unstaking check is not done here because the slashed supplier may
 				// have other valid claims and the protocol might want to touch the supplier
 				// owner or operator balances if the stake is negative.
-				supplierToExpiredClaimCount[claim.SupplierOperatorAddress]++
+				expiredClaimSupplierOperatorAddresses = append(expiredClaimSupplierOperatorAddresses, claim.GetSupplierOperatorAddress())
+				supplierToExpiredClaimCount[claim.GetSupplierOperatorAddress()]++
 
 				// The claim & proof are no longer necessary, so there's no need for them
 				// to take up on-chain space.
@@ -232,10 +238,11 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 		return settledResults, expiredResults, err
 	}
 
-	// TODO_IN_THIS_COMMIT: eliminate nondeterministic map iteration.
-	//
 	// Slash all the suppliers that have been marked for slashing slashingCount times.
-	for supplierOperatorAddress, slashingCount := range supplierToExpiredClaimCount {
+	// The suppliers are sorted to ensure deterministic iteration.
+	slices.Sort(expiredClaimSupplierOperatorAddresses)
+	for _, supplierOperatorAddress := range expiredClaimSupplierOperatorAddresses {
+		slashingCount := supplierToExpiredClaimCount[supplierOperatorAddress]
 		if err = k.slashSupplierStake(ctx, supplierOperatorAddress, slashingCount); err != nil {
 			logger.Error(fmt.Sprintf("error slashing supplier %s: %s", supplierOperatorAddress, err))
 			return settledResults, expiredResults, err
