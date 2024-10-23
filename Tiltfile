@@ -55,9 +55,15 @@ localnet_config_defaults = {
     "rest": {
         "enabled": True,
     },
+    "path_gateways": {
+        "count": 1,
+    },
     # By default, we use the `helm_repo` function below to point to the remote repository
     # but can update it to the locally cloned repo for testing & development
     "helm_chart_local_repo": {"enabled": False, "path": "../helm-charts"},
+    # By default, we use a pre-built PATH image, but can update it to use a local
+    # repo instead.
+    "path_local_repo": {"enabled": False, "path": "../path"},
 }
 localnet_config_file = read_yaml(localnet_config_path, default=localnet_config_defaults)
 # Initial empty config
@@ -73,7 +79,8 @@ if (localnet_config_file != localnet_config) or (not os.path.exists(localnet_con
     print("Updating " + localnet_config_path + " with defaults")
     local("cat - > " + localnet_config_path, stdin=encode_yaml(localnet_config))
 
-# Configure helm chart reference. If using a local repo, set the path to the local repo; otherwise, use our own helm repo.
+# Configure helm chart reference.
+# If using a local repo, set the path to the local repo; otherwise, use our own helm repo.
 helm_repo("pokt-network", "https://pokt-network.github.io/helm-charts/")
 chart_prefix = "pokt-network/"
 if localnet_config["helm_chart_local_repo"]["enabled"]:
@@ -82,6 +89,14 @@ if localnet_config["helm_chart_local_repo"]["enabled"]:
     print("Using local helm chart repo " + helm_chart_local_repo)
     chart_prefix = helm_chart_local_repo + "/charts/"
 
+# Configure PATH reference.
+# If using a local repo, set the path to the local repo; otherwise, use our own helm repo.
+# path_repo("pokt-network", "https://pokt-network.github.io/helm-charts/")
+path_local_repo = ""
+if localnet_config["path_local_repo"]["enabled"]:
+    path_local_repo = localnet_config["path_local_repo"]["path"]
+    hot_reload_dirs.append(path_local_repo)
+    print("Using local PATH repo " + path_local_repo)
 
 # Observability
 print("Observability enabled: " + str(localnet_config["observability"]["enabled"]))
@@ -341,6 +356,45 @@ for x in range(localnet_config["gateways"]["count"]):
         ],
     )
 
+# Provision PATH Gateway
+# Build the Docker image with Tilt (local build)
+docker_build("path-gateway-local", path_local_repo)
+
+# TODO_IN_THIS_PR(@okdas): Move configs to values and add helm charts for PATH
+path_deployment_yaml = str(read_file("./localnet/kubernetes/path-local.yaml", "r"))
+actor_number = 0
+# Loop to configure and apply multiple PATH gateway deployments
+for x in range(localnet_config["path_gateways"]["count"]):
+    actor_number += 1
+
+    # Create the ConfigMap for each gateway instance
+    configmap_create(
+        "path-config" + str(actor_number), from_file="localnet/kubernetes/path-config-" + str(actor_number) + ".yaml"
+    )
+
+    # Format the YAML deployment with the actor number and port
+    formatted_path_deployment_yaml = path_deployment_yaml.format(actor_number=actor_number, port=2999 + actor_number)
+
+    # Apply the deployment to Kubernetes using Tilt
+    k8s_yaml(blob(formatted_path_deployment_yaml))
+    k8s_resource(
+        "path-gateway" + str(actor_number),
+        labels=["gateways"],
+        resource_deps=["validator"],
+        # TODO_IMPROVE(, @HebertCL): Update this once PATH has grafana dashboards
+        # links=[
+        #     link(
+        #         "http://localhost:3003/d/path/protocol-path?orgId=1&refresh=5s&var-path=gateway"
+        #         + str(actor_number),
+        #         "Grafana dashboard",
+        #     ),
+        # ],
+        # TODO_IMPROVE(@HebertCL): Add port forwards to grafana, pprof, like the other resources
+        port_forwards=[str(2999 + actor_number) + ":3000"],
+    )
+
+
+# Provision Validators
 k8s_resource(
     "validator",
     labels=["pocket_network"],
@@ -359,8 +413,10 @@ k8s_resource(
     ],
 )
 
+# Provision anvil (test Ethereum) service nodes
 k8s_resource("anvil", labels=["data_nodes"], port_forwards=["8547"])
 
+# Provision ollama (LLM) service nodes
 if localnet_config["ollama"]["enabled"]:
     print("Ollama enabled: " + str(localnet_config["ollama"]["enabled"]))
 
@@ -379,6 +435,7 @@ if localnet_config["ollama"]["enabled"]:
         resource_deps=["ollama"],
     )
 
+# Provision RESTful (not JSON-RPC) test service nodes
 if localnet_config["rest"]["enabled"]:
     print("REST enabled: " + str(localnet_config["rest"]["enabled"]))
     deployment_create("rest", image="davarski/go-rest-api-demo")
