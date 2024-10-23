@@ -2195,7 +2195,7 @@ type Application struct {
 	// The number of service_configs is limited to 1 per service.
 	// This is to ensure that an application could not over service by making multiple
 	// claims settelments compete to burn the same stake.
-	// A slice of service_configs is still maintained to allow for future multi-service,
+	// A slice of service_configs is still maintained to allow for future multi-service
 	// capabilities to be added, such as off-chain application stake tracking by suppliers:
 	// https://www.notion.so/buildwithgrove/Off-chain-Application-Stake-Tracking-6a8bebb107db4f7f9dc62cbe7ba555f7
 	ServiceConfigs []*shared.ApplicationServiceConfig `protobuf:"bytes,3,rep,name=service_configs,json=serviceConfigs,proto3" json:"service_configs,omitempty"` // The list of services this appliccation is configured to request service for

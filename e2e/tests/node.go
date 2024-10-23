@@ -5,6 +5,7 @@ package e2e
 import (
 	"bytes"
 	"fmt"
+	"net/url"
 	"os"
 	"os/exec"
 	"strings"
@@ -171,7 +172,16 @@ func (p *pocketdBin) runPocketCmd(args ...string) (*commandResult, error) {
 }
 
 // runCurlPostCmd is a helper to run a command using the local pocketd binary with the flags provided
-func (p *pocketdBin) runCurlCmd(rpcUrl, service, method, path, appAddr, data string, args ...string) (*commandResult, error) {
+func (p *pocketdBin) runCurlCmd(rpcBaseURL, service, method, path, appAddr, data string, args ...string) (*commandResult, error) {
+	rpcUrl, err := url.Parse(rpcBaseURL)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(service) > 0 {
+		rpcUrl.Path = rpcUrl.Path + service
+	}
+
 	// Ensure that if a path is provided, it starts with a "/".
 	// This is required for RESTful APIs that use a path to identify resources.
 	// For JSON-RPC APIs, the resource path should be empty, so empty paths are allowed.
@@ -179,19 +189,22 @@ func (p *pocketdBin) runCurlCmd(rpcUrl, service, method, path, appAddr, data str
 		path = "/" + path
 	}
 
+	rpcUrl.Path = rpcUrl.Path + path
+
 	// When sending a relay request, through a gateway (i.e. non-sovereign application)
 	// then, the application address must be provided.
-	appAddrQueryString := ""
 	if len(appAddr) > 0 {
-		appAddrQueryString = fmt.Sprintf("?applicationAddr=%s", appAddr)
+		queryValues := rpcUrl.Query()
+		queryValues.Set("applicationAddr", appAddr)
+		rpcUrl.RawQuery = queryValues.Encode()
 	}
-	urlStr := fmt.Sprintf("%s/%s%s%s", rpcUrl, service, path, appAddrQueryString)
+
 	base := []string{
 		"-v",         // verbose output
 		"-sS",        // silent with error
 		"-X", method, // HTTP method
 		"-H", "Content-Type: application/json", // HTTP headers
-		urlStr,
+		rpcUrl.String(),
 	}
 
 	if method == "POST" {
@@ -207,7 +220,7 @@ func (p *pocketdBin) runCurlCmd(rpcUrl, service, method, path, appAddr, data str
 	cmd.Stdout = &stdoutBuf
 	cmd.Stderr = &stderrBuf
 
-	err := cmd.Run()
+	err = cmd.Run()
 	r := &commandResult{
 		Command: commandStr, // Set the command string
 		Stdout:  stdoutBuf.String(),
