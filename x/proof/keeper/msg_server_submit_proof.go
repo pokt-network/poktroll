@@ -16,7 +16,6 @@ import (
 	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/proof/types"
 	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
-	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -258,13 +257,13 @@ func (k Keeper) ProofRequirementForClaim(ctx context.Context, claim *types.Claim
 	}
 
 	// Hash of block when proof submission is allowed.
-	earliestProofCommitBlockHash, err := k.getEarliestSupplierProofCommitBlockHash(ctx, claim)
+	proofRequirementSeedBlockHash, err := k.getProofRequirementSeedBlockHash(ctx, claim)
 	if err != nil {
 		return requirementReason, err
 	}
 
 	// The probability that a proof is required.
-	proofRequirementSampleValue, err := claim.GetProofRequirementSampleValue(earliestProofCommitBlockHash)
+	proofRequirementSampleValue, err := claim.GetProofRequirementSampleValue(proofRequirementSeedBlockHash)
 	if err != nil {
 		return requirementReason, err
 	}
@@ -293,9 +292,9 @@ func (k Keeper) ProofRequirementForClaim(ctx context.Context, claim *types.Claim
 	return requirementReason, nil
 }
 
-// getEarliestSupplierProofCommitBlockHash returns the block hash of the earliest
-// block at which a claim may have its proof committed.
-func (k Keeper) getEarliestSupplierProofCommitBlockHash(
+// getProofRequirementSeedBlockHash returns the block hash of the seed block for
+// the proof requirement probabilistic check.
+func (k Keeper) getProofRequirementSeedBlockHash(
 	ctx context.Context,
 	claim *types.Claim,
 ) (blockHash []byte, err error) {
@@ -307,17 +306,19 @@ func (k Keeper) getEarliestSupplierProofCommitBlockHash(
 	sessionEndHeight := claim.GetSessionHeader().GetSessionEndBlockHeight()
 	supplierOperatorAddress := claim.GetSupplierOperatorAddress()
 
-	proofWindowOpenHeight := shared.GetProofWindowOpenHeight(sharedParams, sessionEndHeight)
+	proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(sharedParams, sessionEndHeight)
 	proofWindowOpenBlockHash := k.sessionKeeper.GetBlockHash(ctx, proofWindowOpenHeight)
 
 	// TODO_TECHDEBT(@red-0ne): Update the method header of this function to accept (sharedParams, Claim, BlockHash).
 	// After doing so, please review all calling sites and simplify them accordingly.
-	earliestSupplierProofCommitHeight := shared.GetEarliestSupplierProofCommitHeight(
+	earliestSupplierProofCommitHeight := sharedtypes.GetEarliestSupplierProofCommitHeight(
 		sharedParams,
 		sessionEndHeight,
 		proofWindowOpenBlockHash,
 		supplierOperatorAddress,
 	)
 
-	return k.sessionKeeper.GetBlockHash(ctx, earliestSupplierProofCommitHeight), nil
+	// The proof requirement seed block is the last block of the session, and it is
+	// the block that is before the earliest block at which a proof can be committed.
+	return k.sessionKeeper.GetBlockHash(ctx, earliestSupplierProofCommitHeight-1), nil
 }

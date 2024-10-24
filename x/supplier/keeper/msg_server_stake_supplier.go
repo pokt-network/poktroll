@@ -10,7 +10,6 @@ import (
 
 	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/telemetry"
-	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
@@ -172,7 +171,7 @@ func (k msgServer) createSupplier(
 	sharedParams := k.sharedKeeper.GetParams(ctx)
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	currentHeight := sdkCtx.BlockHeight()
-	nextSessionStartHeight := shared.GetNextSessionStartHeight(&sharedParams, currentHeight)
+	nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, currentHeight)
 
 	// Register activation height for each service. Since the supplier is new,
 	// all services are activated at the end of the current session.
@@ -217,7 +216,7 @@ func (k msgServer) updateSupplier(
 	sharedParams := k.sharedKeeper.GetParams(ctx)
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	currentHeight := sdkCtx.BlockHeight()
-	nextSessionStartHeight := shared.GetNextSessionStartHeight(&sharedParams, currentHeight)
+	nextSessionStartHeight := sharedtypes.GetNextSessionStartHeight(&sharedParams, currentHeight)
 
 	// Update activation height for services update. New services are activated at the
 	// end of the current session, while existing ones keep their activation height.
