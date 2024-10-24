@@ -9,7 +9,7 @@ import (
 
 	"github.com/pokt-network/poktroll/app/volatile"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
-	"github.com/pokt-network/poktroll/x/shared"
+	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
@@ -59,21 +59,41 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 
 		// NB: Not every (Req, Res) pair in the session is inserted into the tree due
 		// to the relay mining difficulty. This is the count of non-empty leaves that
-		// matched the necessary difficulty and is therefore an estimation of the total
-		// number of relays serviced and work done.
+		// matched the necessary difficulty.
 		numClaimRelays, err = claim.GetNumRelays()
 		if err != nil {
 			return settledResult, expiredResult, err
 		}
 
-		// DEV_NOTE: We are assuming that (numRelays := numComputeUnits * service.ComputeUnitsPerRelay)
+		// DEV_NOTE: We are assuming that (numClaimComputeUnits := numClaimRelays * service.ComputeUnitsPerRelay)
 		// because this code path is only reached if that has already been validated.
-		numClaimComputeUnits, err = claim.GetNumComputeUnits()
+		numClaimComputeUnits, err = claim.GetNumClaimedComputeUnits()
 		if err != nil {
 			return settledResult, expiredResult, err
 		}
 
-		// TODO(@red-0ne, #781): Convert numClaimedComputeUnits to numEstimatedComputeUnits to reflect reward/payment based on real usage.
+		// Get the relay mining difficulty for the service that this claim is for.
+		serviceId := claim.GetSessionHeader().GetServiceId()
+		relayMiningDifficulty, found := k.serviceKeeper.GetRelayMiningDifficulty(ctx, serviceId)
+		if !found {
+			relayMiningDifficulty = servicekeeper.NewDefaultRelayMiningDifficulty(ctx, logger, serviceId, servicekeeper.TargetNumRelays)
+		}
+		// numEstimatedComputeUnits is the probabilistic estimation of the off-chain
+		// work done by the relay miner in this session. It is derived from the claimed
+		// work and the relay mining difficulty.
+		numEstimatedComputeUnits, err := claim.GetNumEstimatedComputeUnits(relayMiningDifficulty)
+		if err != nil {
+			return settledResult, expiredResult, err
+		}
+
+		sharedParams := k.sharedKeeper.GetParams(ctx)
+		// claimeduPOKT is the amount of uPOKT that the supplier would receive if the
+		// claim is settled. It is derived from the claimed number of relays, the current
+		// service mining difficulty and the global network parameters.
+		claimeduPOKT, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
+		if err != nil {
+			return settledResult, expiredResult, err
+		}
 
 		proof, isProofFound := k.proofKeeper.GetProof(ctx, sessionId, claim.SupplierOperatorAddress)
 		// Using the probabilistic proofs approach, determine if this expiring
@@ -88,6 +108,8 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 			"supplier_operator_address", claim.SupplierOperatorAddress,
 			"num_claim_compute_units", numClaimComputeUnits,
 			"num_relays_in_session_tree", numClaimRelays,
+			"num_estimated_compute_units", numEstimatedComputeUnits,
+			"claimed_upokt", claimeduPOKT,
 			"proof_requirement", proofRequirement,
 		)
 
@@ -113,10 +135,12 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 				// Proof was required but is invalid or not found.
 				// Emit an event that a claim has expired and being removed without being settled.
 				claimExpiredEvent := tokenomicstypes.EventClaimExpired{
-					Claim:            &claim,
-					ExpirationReason: expirationReason,
-					NumRelays:        numClaimRelays,
-					NumComputeUnits:  numClaimComputeUnits,
+					Claim:                    &claim,
+					ExpirationReason:         expirationReason,
+					NumRelays:                numClaimRelays,
+					NumClaimedComputeUnits:   numClaimComputeUnits,
+					NumEstimatedComputeUnits: numEstimatedComputeUnits,
+					ClaimedUpokt:             &claimeduPOKT,
 				}
 				if err = ctx.EventManager().EmitTypedEvent(&claimExpiredEvent); err != nil {
 					return settledResult, expiredResult, err
@@ -159,10 +183,12 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 		}
 
 		claimSettledEvent := tokenomicstypes.EventClaimSettled{
-			Claim:            &claim,
-			NumRelays:        numClaimRelays,
-			NumComputeUnits:  numClaimComputeUnits,
-			ProofRequirement: proofRequirement,
+			Claim:                    &claim,
+			NumRelays:                numClaimRelays,
+			NumClaimedComputeUnits:   numClaimComputeUnits,
+			NumEstimatedComputeUnits: numEstimatedComputeUnits,
+			ClaimedUpokt:             &claimeduPOKT,
+			ProofRequirement:         proofRequirement,
 		}
 
 		if err = ctx.EventManager().EmitTypedEvent(&claimSettledEvent); err != nil {
@@ -170,10 +196,12 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 		}
 
 		if err = ctx.EventManager().EmitTypedEvent(&prooftypes.EventProofUpdated{
-			Claim:           &claim,
-			Proof:           nil,
-			NumRelays:       0,
-			NumComputeUnits: 0,
+			Claim:                    &claim,
+			Proof:                    nil,
+			NumRelays:                0,
+			NumClaimedComputeUnits:   0,
+			NumEstimatedComputeUnits: numEstimatedComputeUnits,
+			ClaimedUpokt:             &claimeduPOKT,
 		}); err != nil {
 			return settledResult, expiredResult, err
 		}
@@ -222,6 +250,11 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 // If the proof window closes and a proof IS NOT required -> settle the claim.
 // If the proof window closes and a proof IS required -> only settle it if a proof is available.
 func (k Keeper) getExpiringClaims(ctx sdk.Context) (expiringClaims []prooftypes.Claim, err error) {
+	// TODO_IMPROVE(@bryanchriswhite):
+	//   1. Move height logic up to SettlePendingClaims.
+	//   2. Ensure that claims are only settled or expired on a session end height.
+	//     2a. This likely also requires adding validation to the shared module params.
+
 	blockHeight := ctx.BlockHeight()
 
 	// NB: This error can be safely ignored as on-chain SharedQueryClient implementation cannot return an error.
@@ -230,7 +263,7 @@ func (k Keeper) getExpiringClaims(ctx sdk.Context) (expiringClaims []prooftypes.
 	// expiringSessionEndHeight is the session end height of the session whose proof
 	// window has most recently closed.
 	sessionEndToProofWindowCloseNumBlocks := sharedtypes.GetSessionEndToProofWindowCloseBlocks(sharedParams)
-	expiringSessionEndHeight := blockHeight - int64(sessionEndToProofWindowCloseNumBlocks+1)
+	expiringSessionEndHeight := blockHeight - (sessionEndToProofWindowCloseNumBlocks + 1)
 
 	var nextKey []byte
 	for {
@@ -334,7 +367,7 @@ func (k Keeper) slashSupplierStake(
 		sharedParams := k.sharedKeeper.GetParams(ctx)
 		sdkCtx := sdk.UnwrapSDKContext(ctx)
 		currentHeight := sdkCtx.BlockHeight()
-		unstakeSessionEndHeight := uint64(shared.GetSessionEndHeight(&sharedParams, currentHeight))
+		unstakeSessionEndHeight := uint64(sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight))
 
 		logger.Warn(fmt.Sprintf(
 			"unstaking supplier %q owned by %q due to stake (%s) below the minimum (%s)",

@@ -7,6 +7,7 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/events"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
 )
 
 const (
@@ -54,13 +55,13 @@ func NewDelegationClient(
 		opt(dClient)
 	}
 
-	dClient.eventsReplayClient, err = events.NewEventsReplayClient[client.Redelegation](
+	dClient.eventsReplayClient, err = events.NewEventsReplayClient[*apptypes.EventRedelegation](
 		ctx,
 		deps,
 		delegationEventQuery,
 		newRedelegationEventFactoryFn(),
 		defaultRedelegationsReplayLimit,
-		events.WithConnRetryLimit[client.Redelegation](dClient.connRetryLimit),
+		events.WithConnRetryLimit[*apptypes.EventRedelegation](dClient.connRetryLimit),
 	)
 	if err != nil {
 		return nil, err
@@ -77,7 +78,7 @@ type delegationClient struct {
 	// and the RedelegationReplayObservable type as its generic types.
 	// These enable the EventsReplayClient to correctly map the raw event bytes
 	// to Redelegation objects and to correctly return a RedelegationReplayObservable
-	eventsReplayClient client.EventsReplayClient[client.Redelegation]
+	eventsReplayClient client.EventsReplayClient[*apptypes.EventRedelegation]
 
 	// connRetryLimit is the number of times the underlying replay client
 	// should retry in the event that it encounters an error or its connection is interrupted.
@@ -92,7 +93,7 @@ func (b *delegationClient) RedelegationsSequence(ctx context.Context) client.Red
 }
 
 // LastNRedelegations returns the latest n redelegation events from the DelegationClient.
-func (b *delegationClient) LastNRedelegations(ctx context.Context, n int) []client.Redelegation {
+func (b *delegationClient) LastNRedelegations(ctx context.Context, n int) []*apptypes.EventRedelegation {
 	return b.eventsReplayClient.LastNEvents(ctx, n)
 }
 

@@ -40,7 +40,6 @@ const (
 	defaultSvcID = "svc1"
 )
 
-// TODO_FOLLOWUP(@olshansk, #690): Do a global anycase grep for "DifficultyBits" and update/remove things appropriately.
 var (
 	// flagDifficultyThresholdHashStr is the difficulty threshold hash, as a hex string, that a
 	// randomized, serialized relay must be greater than to be included in the

@@ -27,7 +27,6 @@ import (
 	"github.com/pokt-network/poktroll/x/proof/keeper"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
@@ -46,8 +45,7 @@ var (
 	//  - the relay difficulty target hash to the easiest difficulty so that these tests don't need to mine for valid relays.
 	//  - the proof request probability to 1 so that all test sessions require a proof.
 	testProofParams = prooftypes.Params{
-		RelayDifficultyTargetHash: protocol.BaseRelayDifficultyHashBz,
-		ProofRequestProbability:   1,
+		ProofRequestProbability: 1,
 	}
 )
 
@@ -68,7 +66,7 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 		{
 			desc: "proof message height equals supplier's earliest proof commit height",
 			getProofMsgHeight: func(sharedParams *sharedtypes.Params, queryHeight int64, supplierOperatorAddr string) int64 {
-				return shared.GetEarliestSupplierProofCommitHeight(
+				return sharedtypes.GetEarliestSupplierProofCommitHeight(
 					sharedParams,
 					queryHeight,
 					blockHeaderHash,
@@ -79,7 +77,7 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 		{
 			desc: "proof message height equals proof window close height",
 			getProofMsgHeight: func(sharedParams *sharedtypes.Params, queryHeight int64, _ string) int64 {
-				return shared.GetProofWindowCloseHeight(sharedParams, queryHeight)
+				return sharedtypes.GetProofWindowCloseHeight(sharedParams, queryHeight)
 			},
 		},
 	}
@@ -99,7 +97,6 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 			// Set proof keeper params to disable relay mining and always require a proof.
 			proofParams := keepers.Keeper.GetParams(ctx)
 			proofParams.ProofRequestProbability = testProofParams.ProofRequestProbability
-			proofParams.RelayDifficultyTargetHash = testProofParams.RelayDifficultyTargetHash
 			err := keepers.Keeper.SetParams(ctx, proofParams)
 			require.NoError(t, err)
 
@@ -157,7 +154,7 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 
 			// Submit the corresponding proof.
 			numRelays := uint64(5)
-			numComputeUnits := numRelays * service.ComputeUnitsPerRelay
+			numClaimComputeUnits := numRelays * service.ComputeUnitsPerRelay
 			sessionTree := testtree.NewFilledSessionTree(
 				ctx, t,
 				numRelays, service.ComputeUnitsPerRelay,
@@ -168,7 +165,7 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 			)
 
 			// Advance the block height to the test claim msg height.
-			claimMsgHeight := shared.GetEarliestSupplierClaimCommitHeight(
+			claimMsgHeight := sharedtypes.GetEarliestSupplierClaimCommitHeight(
 				&sharedParams,
 				sessionHeader.GetSessionEndBlockHeight(),
 				blockHeaderHash,
@@ -189,7 +186,7 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 			)
 
 			// Advance the block height to the proof path seed height.
-			earliestSupplierProofCommitHeight := shared.GetEarliestSupplierProofCommitHeight(
+			earliestSupplierProofCommitHeight := sharedtypes.GetEarliestSupplierProofCommitHeight(
 				&sharedParams,
 				sessionHeader.GetSessionEndBlockHeight(),
 				blockHeaderHash,
@@ -229,10 +226,10 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 
 			events := sdkCtx.EventManager().Events()
 
-			claimCreatedEvents := testutilevents.FilterEvents[*prooftypes.EventClaimCreated](t, events, "poktroll.proof.EventClaimCreated")
+			claimCreatedEvents := testutilevents.FilterEvents[*prooftypes.EventClaimCreated](t, events)
 			require.Len(t, claimCreatedEvents, 1)
 
-			proofSubmittedEvents := testutilevents.FilterEvents[*prooftypes.EventProofSubmitted](t, events, "poktroll.proof.EventProofSubmitted")
+			proofSubmittedEvents := testutilevents.FilterEvents[*prooftypes.EventProofSubmitted](t, events)
 			require.Len(t, proofSubmittedEvents, 1)
 
 			proofSubmittedEvent := proofSubmittedEvents[0]
@@ -240,7 +237,8 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 			require.EqualValues(t, claim, proofSubmittedEvent.GetClaim())
 			require.EqualValues(t, &proofs[0], proofSubmittedEvent.GetProof())
 			require.Equal(t, uint64(numRelays), proofSubmittedEvent.GetNumRelays())
-			require.Equal(t, uint64(numComputeUnits), proofSubmittedEvent.GetNumComputeUnits())
+			require.Equal(t, uint64(numClaimComputeUnits), proofSubmittedEvent.GetNumClaimedComputeUnits())
+			// TODO_FOLLOWUP: Add NumEstimatedComputeUnits and ClaimedAmountUpokt assertions
 		})
 	}
 }
@@ -259,7 +257,6 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 	// Set proof keeper params to disable relaymining and always require a proof.
 	proofParams := keepers.Keeper.GetParams(ctx)
 	proofParams.ProofRequestProbability = testProofParams.ProofRequestProbability
-	proofParams.RelayDifficultyTargetHash = testProofParams.RelayDifficultyTargetHash
 	err := keepers.Keeper.SetParams(ctx, proofParams)
 	require.NoError(t, err)
 
@@ -327,7 +324,7 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 
 	// Advance the block height to the claim window open height.
 	sharedParams := keepers.SharedKeeper.GetParams(ctx)
-	claimMsgHeight := shared.GetEarliestSupplierClaimCommitHeight(
+	claimMsgHeight := sharedtypes.GetEarliestSupplierClaimCommitHeight(
 		&sharedParams,
 		sessionHeader.GetSessionEndBlockHeight(),
 		claimWindowOpenHeightBlockHash,
@@ -349,13 +346,13 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 		keepers,
 	)
 
-	earliestProofCommitHeight := shared.GetEarliestSupplierProofCommitHeight(
+	earliestProofCommitHeight := sharedtypes.GetEarliestSupplierProofCommitHeight(
 		&sharedParams,
 		sessionHeader.GetSessionEndBlockHeight(),
 		proofWindowOpenHeightBlockHash,
 		supplierOperatorAddr,
 	)
-	proofWindowCloseHeight := shared.GetProofWindowCloseHeight(&sharedParams, sessionHeader.GetSessionEndBlockHeight())
+	proofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionHeader.GetSessionEndBlockHeight())
 
 	tests := []struct {
 		desc           string
@@ -413,10 +410,10 @@ func TestMsgServer_SubmitProof_Error_OutsideOfWindow(t *testing.T) {
 			// Assert that only the create claim event was emitted.
 			events := sdkCtx.EventManager().Events()
 
-			claimCreatedEvents := testutilevents.FilterEvents[*prooftypes.EventClaimCreated](t, events, "poktroll.proof.EventClaimCreated")
+			claimCreatedEvents := testutilevents.FilterEvents[*prooftypes.EventClaimCreated](t, events)
 			require.Len(t, claimCreatedEvents, 1)
 
-			proofSubmittedEvents := testutilevents.FilterEvents[*prooftypes.EventProofSubmitted](t, events, "poktroll.proof.EventProofSubmitted")
+			proofSubmittedEvents := testutilevents.FilterEvents[*prooftypes.EventProofSubmitted](t, events)
 			require.Len(t, proofSubmittedEvents, 0)
 		})
 	}
@@ -525,7 +522,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 
 	// Advance the block height to the earliest claim commit height.
 	sharedParams := keepers.SharedKeeper.GetParams(ctx)
-	claimMsgHeight := shared.GetEarliestSupplierClaimCommitHeight(
+	claimMsgHeight := sharedtypes.GetEarliestSupplierClaimCommitHeight(
 		&sharedParams,
 		validSessionHeader.GetSessionEndBlockHeight(),
 		blockHeaderHash,
@@ -655,7 +652,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			msgSubmitProof := test.newProofMsg(t)
 
 			// Advance the block height to the proof path seed height.
-			earliestSupplierProofCommitHeight := shared.GetEarliestSupplierProofCommitHeight(
+			earliestSupplierProofCommitHeight := sharedtypes.GetEarliestSupplierProofCommitHeight(
 				&sharedParams,
 				msgSubmitProof.GetSessionHeader().GetSessionEndBlockHeight(),
 				blockHeaderHash,
@@ -686,7 +683,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 
 			// Assert that no proof submitted events were emitted.
 			events := sdkCtx.EventManager().Events()
-			proofSubmittedEvents := testutilevents.FilterEvents[*prooftypes.EventProofSubmitted](t, events, "poktroll.proof.EventProofSubmitted")
+			proofSubmittedEvents := testutilevents.FilterEvents[*prooftypes.EventProofSubmitted](t, events)
 			require.Equal(t, 0, len(proofSubmittedEvents))
 		})
 	}
@@ -705,7 +702,6 @@ func TestMsgServer_SubmitProof_FailSubmittingNonRequiredProof(t *testing.T) {
 	// Set proof keeper params to disable relay mining but never require a proof.
 	proofParams := keepers.Keeper.GetParams(ctx)
 	proofParams.ProofRequestProbability = 0
-	proofParams.RelayDifficultyTargetHash = testProofParams.RelayDifficultyTargetHash
 	err := keepers.Keeper.SetParams(ctx, proofParams)
 	require.NoError(t, err)
 
@@ -773,7 +769,7 @@ func TestMsgServer_SubmitProof_FailSubmittingNonRequiredProof(t *testing.T) {
 	)
 
 	// Advance the block height to the test claim msg height.
-	claimMsgHeight := shared.GetEarliestSupplierClaimCommitHeight(
+	claimMsgHeight := sharedtypes.GetEarliestSupplierClaimCommitHeight(
 		&sharedParams,
 		sessionHeader.GetSessionEndBlockHeight(),
 		blockHeaderHash,
@@ -794,7 +790,7 @@ func TestMsgServer_SubmitProof_FailSubmittingNonRequiredProof(t *testing.T) {
 	)
 
 	// Advance the block height to the proof path seed height.
-	earliestSupplierProofCommitHeight := shared.GetEarliestSupplierProofCommitHeight(
+	earliestSupplierProofCommitHeight := sharedtypes.GetEarliestSupplierProofCommitHeight(
 		&sharedParams,
 		sessionHeader.GetSessionEndBlockHeight(),
 		blockHeaderHash,
@@ -810,7 +806,7 @@ func TestMsgServer_SubmitProof_FailSubmittingNonRequiredProof(t *testing.T) {
 	expectedMerkleProofPath = protocol.GetPathForProof(blockHeaderHash, sessionHeader.GetSessionId())
 
 	// Advance the block height to the test proof msg height.
-	proofMsgHeight := shared.GetEarliestSupplierProofCommitHeight(
+	proofMsgHeight := sharedtypes.GetEarliestSupplierProofCommitHeight(
 		&sharedParams,
 		sessionHeader.GetSessionEndBlockHeight(),
 		blockHeaderHash,
@@ -888,7 +884,7 @@ func createClaimAndStoreBlockHash(
 
 	sharedParams := keepers.SharedKeeper.GetParams(ctx)
 
-	claimWindowOpenHeight := shared.GetClaimWindowOpenHeight(
+	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(
 		&sharedParams,
 		sessionStartHeight,
 	)
@@ -896,7 +892,7 @@ func createClaimAndStoreBlockHash(
 	ctx = keepertest.SetBlockHeight(ctx, claimWindowOpenHeight)
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 
-	earliestSupplierClaimCommitHeight := shared.GetEarliestSupplierClaimCommitHeight(
+	earliestSupplierClaimCommitHeight := sharedtypes.GetEarliestSupplierClaimCommitHeight(
 		&sharedParams,
 		sessionStartHeight,
 		sdkCtx.HeaderHash(),

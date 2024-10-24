@@ -46,12 +46,10 @@ func TestMiner_MinedRelays(t *testing.T) {
 		expectedMinedRelays                   = unmarshalHexMinedRelays(t, marshaledMinableRelaysHex)
 	)
 
-	proofQueryClientMock := testqueryclients.NewTestProofQueryClient(t)
-
 	testqueryclients.SetServiceRelayDifficultyTargetHash(t, testSvcId, testRelayMiningTargetHash)
-	tokenomicsQueryClientMock := testqueryclients.NewTestTokenomicsQueryClient(t)
+	serviceQueryClientMock := testqueryclients.NewTestServiceQueryClient(t)
 
-	deps := depinject.Supply(proofQueryClientMock, tokenomicsQueryClientMock)
+	deps := depinject.Supply(serviceQueryClientMock)
 	mnr, err := miner.NewMiner(deps)
 	require.NoError(t, err)
 

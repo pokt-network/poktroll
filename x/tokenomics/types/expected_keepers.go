@@ -11,6 +11,7 @@ import (
 
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -43,6 +44,8 @@ type ApplicationKeeper interface {
 	GetApplication(ctx context.Context, appAddr string) (app apptypes.Application, found bool)
 	SetApplication(ctx context.Context, app apptypes.Application)
 	GetAllApplications(ctx context.Context) []apptypes.Application
+	UnbondApplication(ctx context.Context, app *apptypes.Application) error
+	EndBlockerUnbondApplications(ctx context.Context) error
 }
 
 type ProofKeeper interface {
@@ -67,6 +70,7 @@ type SharedKeeper interface {
 	GetParams(ctx context.Context) sharedtypes.Params
 	SetParams(ctx context.Context, params sharedtypes.Params) error
 
+	GetSessionEndHeight(ctx context.Context, queryHeight int64) int64
 	GetProofWindowCloseHeight(ctx context.Context, queryHeight int64) int64
 }
 
@@ -84,6 +88,8 @@ type SupplierKeeper interface {
 
 type ServiceKeeper interface {
 	GetService(ctx context.Context, serviceID string) (sharedtypes.Service, bool)
+	GetRelayMiningDifficulty(ctx context.Context, serviceID string) (servicetypes.RelayMiningDifficulty, bool)
+	UpdateRelayMiningDifficulty(ctx context.Context, relaysPerServiceMap map[string]uint64) (map[string]servicetypes.RelayMiningDifficulty, error)
 	// Only used for testing & simulation
 	SetService(ctx context.Context, service sharedtypes.Service)
 }

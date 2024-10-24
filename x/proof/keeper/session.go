@@ -7,7 +7,6 @@ import (
 
 	"github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	"github.com/pokt-network/poktroll/x/shared"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -88,8 +87,8 @@ func (k Keeper) validateClaimWindow(
 	sessionEndHeight := sessionHeader.GetSessionEndBlockHeight()
 
 	// Get the claim window open and close heights for the given session header.
-	claimWindowOpenHeight := shared.GetClaimWindowOpenHeight(&sharedParams, sessionEndHeight)
-	claimWindowCloseHeight := shared.GetClaimWindowCloseHeight(&sharedParams, sessionEndHeight)
+	claimWindowOpenHeight := sharedtypes.GetClaimWindowOpenHeight(&sharedParams, sessionEndHeight)
+	claimWindowCloseHeight := sharedtypes.GetClaimWindowCloseHeight(&sharedParams, sessionEndHeight)
 
 	// Get the earliest claim commit height for the given supplier.
 	earliestClaimCommitHeight, err := k.sharedQuerier.GetEarliestSupplierClaimCommitHeight(
@@ -156,8 +155,8 @@ func (k Keeper) validateProofWindow(
 	sessionEndHeight := sessionHeader.GetSessionEndBlockHeight()
 
 	// Get the proof window open and close heights for the given session header.
-	proofWindowOpenHeight := shared.GetProofWindowOpenHeight(&sharedParams, sessionEndHeight)
-	proofWindowCloseHeight := shared.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
+	proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(&sharedParams, sessionEndHeight)
+	proofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
 
 	// Get the earliest proof commit height for the given supplier.
 	earliestProofCommitHeight, err := k.sharedQuerier.GetEarliestSupplierProofCommitHeight(
