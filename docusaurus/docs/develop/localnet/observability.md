@@ -53,7 +53,7 @@ select * from accounts limit 10; # Example query
 
 #### Port already in use
 
-If you go to [http://localhost:10350/r/Postgres/overview] and see the following error:
+If you go to [http://localhost:10350/r/Postgres/overview](http://localhost:10350/r/Postgres/overview) and see the following error:
 
 ```bash
 Reconnecting... Error port-forwarding Postgres (5432 -> 5432): Unable to listen on port 5432: Listeners failed to create with the following errors: [unable to create listener: Error listen tcp4 127.0.0.1:5432: bind: address already in use unable to create listener: Error listen tcp6 [::1]:5432: bind: address already in use]

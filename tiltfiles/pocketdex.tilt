@@ -46,7 +46,7 @@ def load_pocketdex(pocketdex_root_path):
                                 gql_engine_values_path=gql_engine_values_path)
 
 
-# Check if sibling pocketdex repo exists.
+# check_and_load_pocketdex checks if sibling pocketdex repo exists.
 # If it does, load the pocketdex.tilt file from the sibling repo.
 # Otherwise, check the `indexer.clone_if_not_present` flag in `localnet_config.yaml` and EITHER:
 #   1. clone pocketdex to ../pocketdex
