@@ -716,7 +716,6 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	require.NoError(t, err)
 
 	sessionEndHeight = sharedtypes.GetSettlementSessionEndHeight(&sharedParams, sessionProofWindowCloseHeight)
-	// TODO_IN_THIS_COMMIT: Why is sharedtypes.GetNextSessionStartHeight() returning a session end height?
 	upcomingSessionEndHeight := uint64(sharedtypes.GetNextSessionStartHeight(&sharedParams, sessionProofWindowCloseHeight)) - 1
 
 	// Slashing should have occurred and the supplier is unstaked but still unbonding.
