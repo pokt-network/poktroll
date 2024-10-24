@@ -469,7 +469,7 @@ func (s *suite) TheApplicationSendsTheSupplierASuccessfulRequestForServiceWithPa
 
 	var jsonContent json.RawMessage
 	err = json.Unmarshal([]byte(res.Stdout), &jsonContent)
-	require.NoError(s, err, `Expected valid JSON, got: %s, accNameToAddrMap: %v`, res.Stdout, accAddrToNameMap)
+	require.NoError(s, err, `Expected valid JSON, got: %s, appName: %s, accNameToAddrMap: %v`, res.Stdout, appName, accNameToAddrMap)
 
 	jsonMap, err := jsonToMap(jsonContent)
 	require.NoError(s, err, "error converting JSON to map")
