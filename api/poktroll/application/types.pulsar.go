@@ -2190,11 +2190,14 @@ type Application struct {
 
 	Address string        `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"` // The Bech32 address of the application.
 	Stake   *v1beta1.Coin `protobuf:"bytes,2,opt,name=stake,proto3" json:"stake,omitempty"`     // The total amount of uPOKT the application has staked
-	// TODO_BETA(@red-0ne, @olshansk): Limit this to one service_config.
-	//
-	//	Remove `repeated`, drop the `s` from service_configs and document why
-	//	this is the case in the app config (and here) per this discussion:
-	//	https://github.com/pokt-network/poktroll/pull/750#discussion_r1735025033
+	// As per this discussion:
+	// https://github.com/pokt-network/poktroll/pull/750#discussion_r1735025033
+	// The number of service_configs is limited to 1 per service.
+	// This is to ensure that an application could not over service by making multiple
+	// claims settelments compete to burn the same stake.
+	// A slice of service_configs is still maintained to allow for future multi-service
+	// capabilities to be added, such as off-chain application stake tracking by suppliers:
+	// https://www.notion.so/buildwithgrove/Off-chain-Application-Stake-Tracking-6a8bebb107db4f7f9dc62cbe7ba555f7
 	ServiceConfigs []*shared.ApplicationServiceConfig `protobuf:"bytes,3,rep,name=service_configs,json=serviceConfigs,proto3" json:"service_configs,omitempty"` // The list of services this appliccation is configured to request service for
 	// TODO_BETA: Rename `delegatee_gateway_addresses` to `gateway_addresses_delegated_to`.
 	// Ensure to rename all relevant configs, comments, variables, function names, etc as well.

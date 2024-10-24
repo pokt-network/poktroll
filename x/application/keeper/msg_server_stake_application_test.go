@@ -74,13 +74,12 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.Len(t, foundApp.ServiceConfigs, 1)
 	require.Equal(t, "svc1", foundApp.ServiceConfigs[0].ServiceId)
 
-	// Prepare an updated application with a higher stake and another service
+	// Prepare an updated application with a higher stake and a different service
 	upStake := initialStake.AddAmount(math.NewInt(100))
 	updateStakeMsg := &apptypes.MsgStakeApplication{
 		Address: appAddr,
 		Stake:   &upStake,
 		Services: []*sharedtypes.ApplicationServiceConfig{
-			{ServiceId: "svc1"},
 			{ServiceId: "svc2"},
 		},
 	}
@@ -91,10 +90,8 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	foundApp, isAppFound = k.GetApplication(ctx, appAddr)
 	require.True(t, isAppFound)
 	require.Equal(t, &upStake, foundApp.Stake)
-	require.Len(t, foundApp.ServiceConfigs, 2)
-	require.Equal(t, "svc1", foundApp.ServiceConfigs[0].ServiceId)
-	require.Equal(t, "svc2", foundApp.ServiceConfigs[1].ServiceId)
-
+	require.Len(t, foundApp.ServiceConfigs, 1)
+	require.Equal(t, "svc2", foundApp.ServiceConfigs[0].ServiceId)
 	// Assert that the EventApplicationStaked event is emitted.
 	expectedEvent, err = cosmostypes.TypedEventToEvent(
 		&apptypes.EventApplicationStaked{

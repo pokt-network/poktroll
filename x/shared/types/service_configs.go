@@ -12,8 +12,8 @@ const (
 
 // ValidateAppServiceConfigs returns an error if any of the application service configs are invalid
 func ValidateAppServiceConfigs(services []*ApplicationServiceConfig) error {
-	if len(services) == 0 {
-		return fmt.Errorf("no services configs provided for application: %v", services)
+	if len(services) != 1 {
+		return fmt.Errorf("application must have exactly one service: %v", services)
 	}
 	for _, serviceConfig := range services {
 		if serviceConfig == nil {

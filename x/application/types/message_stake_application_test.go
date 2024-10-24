@@ -94,7 +94,7 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 
 		// service related tests
 		{
-			desc: "valid service configs - multiple services",
+			desc: "invalid service configs - multiple services",
 			msg: MsgStakeApplication{
 				Address: sample.AccAddress(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
@@ -103,6 +103,7 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 					{ServiceId: "svc2"},
 				},
 			},
+			expectedErr: ErrAppInvalidServiceConfigs,
 		},
 		{
 			desc: "invalid service configs - not present",
