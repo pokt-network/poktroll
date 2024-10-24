@@ -3,11 +3,9 @@ sidebar_position: 3
 title: App Integration Tests
 ---
 
-## App Integration Tests <!-- omit in toc -->
-
 // TODO(@bryanchriswhite): Replace github source links with godocs links once available.
 
-### Table Of Contents <!-- omit in toc -->
+## Table Of Contents <!-- omit in toc -->
 
 - [Overview](#overview)
 - [Using `integration.App`](#using-integrationapp)
@@ -18,7 +16,7 @@ title: App Integration Tests
   - [Message / Transaction / Block Processing](#message--transaction--block-processing)
 - [Example Test](#example-test)
 
-### Overview
+## Overview
 
 [**App integration level**](testing_levels#app-integration-tests) tests leverage a custom construction of the poktroll appchain (for testing only).
 
@@ -30,9 +28,9 @@ Tests in this level conventionally use the `testutil/integration` package's `App
 See [App Integration Suites](integration_suites) for organizing larger or higher-level app integration tests.
 :::
 
-### Using `integration.App`
+## Using `integration.App`
 
-#### Constructors
+### Constructors
 
 To create a new instance of the `IntegrationApp` for your tests, use the `NewCompleteIntegrationApp` constructor, which handles the setup of all modules, multistore, base application, etc.:
 
@@ -69,11 +67,11 @@ func NewIntegrationApp(
 ) *App {
 ```
 
-##### Customizing `integration.App` Configuration
+#### Customizing `integration.App` Configuration
 
 If the existing [`IntegrationAppConfig`](https://github.com/pokt-network/poktroll/blob/main/testutil/integration/options.go#L13) is insufficient, it may be extended with additional fields, corresponding logic, and `IntegrationAppOptionFn`s to set them.
 
-#### Module Configuration
+### Module Configuration
 
 Integrated modules can be configured using `IntegrationAppOptionFn` typed option functions.
 
@@ -83,7 +81,7 @@ Example use cases include:
 - Setting up a faucet account (see: [`newFaucetInitChainerFn()`](https://github.com/pokt-network/poktroll/blob/main/testutil/integration/app.go#L985)).
 - Collecting module info (see: [`newInitChainerCollectModuleNames()`](https://github.com/pokt-network/poktroll/blob/main/testutil/integration/suites/base.go#L157)).
 
-##### Setting Module Genesis State
+#### Setting Module Genesis State
 
 ```go
 supplierGenesisState := &suppliertypes.GenesisState{
@@ -94,7 +92,7 @@ app := NewCompleteIntegrationApp(t,
 )
 ```
 
-#### Message / Transaction / Block Processing
+### Message / Transaction / Block Processing
 
 The `IntegrationApp` provides several methods to manage the lifecycle of transactions and blocks during tests:
 
@@ -107,7 +105,7 @@ The `IntegrationApp` provides several methods to manage the lifecycle of transac
   - returning the message responses
 - `NextBlock`/`NextBlocks`: Only advances the blockchain state to subsequent blocks.
 
-### Example Test
+## Example Test
 
 Here's a simple example of how to create a new integration app instance and run a message using the helper functions:
 
