@@ -42,13 +42,12 @@ type tlmProcessorsTestSuite struct {
 	sourceOwnerBech32,
 	foundationBech32 string
 
-	// TODO_IN_THIS_COMMIT: godoc...
 	expectedSettledResults,
 	expectedExpiredResults tlm.PendingSettlementResults
 	expectedSettlementState *expectedSettlementState
 }
 
-// TODO_IN_THIS_COMMIT: godoc... field names MUST be exported to assert via reflection...
+// TODO_IN_THIS_COMMIT: godoc...
 type expectedSettlementState struct {
 	appStake             *cosmostypes.Coin
 	appBalance           *cosmostypes.Coin
@@ -62,6 +61,7 @@ func TestTLMProcessorTestSuite(t *testing.T) {
 	suite.Run(t, new(tlmProcessorsTestSuite))
 }
 
+// TODO_IN_THIS_COMMIT: godoc...
 func (s *tlmProcessorsTestSuite) SetupTest() {
 	s.foundationBech32 = sample.AccAddress()
 	s.sourceOwnerBech32 = sample.AccAddress()
@@ -103,6 +103,7 @@ func (s *tlmProcessorsTestSuite) SetupTest() {
 	}
 }
 
+// TODO_IN_THIS_COMMIT: godoc...
 func (s *tlmProcessorsTestSuite) setupKeepers(t *testing.T, opts ...testkeeper.TokenomicsModuleKeepersOpt) {
 	defaultOpts := []testkeeper.TokenomicsModuleKeepersOpt{
 		testkeeper.WithService(*s.service),
@@ -129,6 +130,7 @@ func (s *tlmProcessorsTestSuite) setupKeepers(t *testing.T, opts ...testkeeper.T
 		WithProposer(s.proposerConsAddr)
 }
 
+// TODO_IN_THIS_COMMIT: godoc...
 func (s *tlmProcessorsTestSuite) TestTLMProcessorsAreCommutative() {
 	// Generate all permutations of TLM processor ordering.
 	processors := tlm.NewDefaultProcessors(s.foundationBech32)
@@ -294,6 +296,7 @@ func (s *tlmProcessorsTestSuite) createClaims(
 	}
 }
 
+// TODO_IN_THIS_COMMIT: godoc...
 func (s *tlmProcessorsTestSuite) settleClaims(t *testing.T) (settledResults, expiredResults tlm.PendingSettlementResults) {
 	// Increment the block height to the settlement height.
 	settlementHeight := sharedtypes.GetSettlementSessionEndHeight(s.getSharedParams(), 1)
@@ -318,6 +321,8 @@ func (s *tlmProcessorsTestSuite) setBlockHeight(height int64) {
 // - Does not block settling of other claims in the same session
 // - Does not block setting subsequent sessions
 
+// TestPermute checks the correctness of the permute function such that it is
+// "safe" to use in tests (i.e. it does what it's supposed to).
 func TestPermute(t *testing.T) {
 	input := []string{"1", "2", "3", "4"}
 	expected := map[string][]string{
