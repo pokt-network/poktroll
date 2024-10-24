@@ -350,10 +350,19 @@ func TestPermute(t *testing.T) {
 	actual := permute(input)
 	require.Equal(t, factorial(len(input)), len(actual))
 
-	for _, actualPermutation := range actual {
-		expectedKey := strings.Join(actualPermutation, "")
-		require.Equal(t, expected[expectedKey], actualPermutation)
+	// Assert that each actual result matches exactly one expected permutation.
+	for _, actualPermutation := range expected {
+		actualKey := strings.Join(actualPermutation, "")
+		expectedPermutation, isExpectedPermutation := expected[actualKey]
+		require.True(t, isExpectedPermutation)
+		require.Equal(t, expectedPermutation, actualPermutation)
+
+		// Remove observed expected permutation to identify any
+		// missing permutations after the loop.
+		delete(expected, actualKey)
 	}
+	// Assert that all expected permutations were observed (and deleted).
+	require.Len(t, expected, 0)
 }
 
 // permute generates all possible permutations of the input slice 'items'.
