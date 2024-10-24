@@ -504,20 +504,16 @@ func (k Keeper) TokenLogicModuleGlobalMintReimbursementRequest(
 	}
 
 	// Update the application's on-chain stake
-	newAppStake, err := application.Stake.SafeSub(newMintCoin)
-	if err != nil {
-		amountDiffCoin := actualSettlementCoin.Amount.Sub(application.Stake.Amount)
-		return tokenomicstypes.ErrTokenomicsApplicationReimbursementRequestFailed.Wrapf(
-			"application %q stake cannot be reduced to a negative amount -%s",
-			application.Address, amountDiffCoin,
-		)
-	}
+	// This should not fall below zero since `ensureClaimAmountLimits` should have
+	// already checked and adjusted the settlement amount so that the application
+	// stake covers the global inflation.
+	newAppStake := application.Stake.Sub(newMintCoin)
 	application.Stake = &newAppStake
 	logger.Info(fmt.Sprintf("updated application %q stake to %s", application.Address, newAppStake))
 
 	// Send the global per claim mint inflation uPOKT from the application module
 	// account to the tokenomics module account.
-	if err = k.bankKeeper.SendCoinsFromModuleToModule(
+	if err := k.bankKeeper.SendCoinsFromModuleToModule(
 		ctx, apptypes.ModuleName, tokenomicstypes.ModuleName, sdk.NewCoins(newMintCoin),
 	); err != nil {
 		return tokenomicstypes.ErrTokenomicsApplicationReimbursementRequestFailed.Wrapf(
@@ -550,17 +546,19 @@ func (k Keeper) TokenLogicModuleGlobalMintReimbursementRequest(
 
 	// Prepare and emit the event for the application being overcharged.
 	reimbursementRequestEvent := &tokenomicstypes.EventApplicationReimbursementRequest{
-		ApplicationAddr: application.Address,
-		ServiceId:       service.Id,
-		SessionId:       sessionHeader.SessionId,
-		Amount:          &newMintCoin,
+		ApplicationAddr:      application.Address,
+		SupplierOperatorAddr: supplier.OperatorAddress,
+		SupplierOwnerAddr:    supplier.OwnerAddress,
+		ServiceId:            service.Id,
+		SessionId:            sessionHeader.SessionId,
+		Amount:               &newMintCoin,
 	}
 
 	eventManger := cosmostypes.UnwrapSDKContext(ctx).EventManager()
 	if err := eventManger.EmitTypedEvent(reimbursementRequestEvent); err != nil {
 		return tokenomicstypes.ErrTokenomicsEmittingEventFailed.Wrapf(
-			"error emitting event %v",
-			reimbursementRequestEvent,
+			"(%+v): %s",
+			reimbursementRequestEvent, err,
 		)
 	}
 
@@ -645,8 +643,8 @@ func (k Keeper) ensureClaimAmountLimits(
 	logger log.Logger,
 	application *apptypes.Application,
 	supplier *sharedtypes.Supplier,
-	initialApplicationStake cosmostypes.Coin,
 	claimSettlementCoin cosmostypes.Coin,
+	initialApplicationStake cosmostypes.Coin,
 ) (
 	actualSettlementCoins cosmostypes.Coin,
 	err error,
@@ -665,10 +663,11 @@ func (k Keeper) ensureClaimAmountLimits(
 	globalInflationCoin, _ := calculateGlobalPerClaimMintInflationFromSettlementAmount(claimSettlementCoin)
 	globalInflationAmt := globalInflationCoin.Amount
 	stakeRequirementAmt := claimSettlementCoin.Amount.Add(globalInflationAmt)
+	totalClaimedCoin := sdk.NewCoin(volatile.DenomuPOKT, stakeRequirementAmt)
 
 	// TODO_BETA(@red-0ne): Introduce a session sliding window to account for potential consumption
 	// during the current session (i.e. Not the session being settled) such as:
-	// maxCalibmableAmt = (AppStake / (currSessNum - settlingSessNum + 1) / NumSuppliersPerSession)
+	// maxClaimableAmt = (AppStake / (currSessNum - settlingSessNum + 1) / NumSuppliersPerSession)
 	// In conjunction with single service applications, this would make maxClaimableAmt
 	// effectively addressing the issue of over-servicing.
 	// Example:
@@ -683,7 +682,7 @@ func (k Keeper) ensureClaimAmountLimits(
 	//   the application will consume its maxClaimableAmt the current session (3).
 	// - Off-chain actors could use this formula during the servicing of session num 3
 	//   and assume maxClaimableAmt will be settled in session 2.
-	// - Garantee no over-servicing at the cost of higher application stake requirements.
+	// - Guarantee no over-servicing at the cost of higher application stake requirements.
 	maxClaimableAmt := appStake.Amount.Quo(math.NewInt(sessionkeeper.NumSupplierPerSession))
 	maxClaimSettlementAmt := stakeToMaxSettlementAmount(maxClaimableAmt)
 
@@ -717,13 +716,11 @@ func (k Keeper) ensureClaimAmountLimits(
 	// Determine the max claimable amount for the supplier based on the application's stake in this session.
 	maxClaimableCoin := sdk.NewCoin(volatile.DenomuPOKT, maxClaimSettlementAmt)
 
-	stakeRequirementCoin := sdk.NewCoin(volatile.DenomuPOKT, stakeRequirementAmt)
-
 	// Prepare and emit the event for the application being overserviced
 	applicationOverservicedEvent := &tokenomicstypes.EventApplicationOverserviced{
 		ApplicationAddr:      application.GetAddress(),
 		SupplierOperatorAddr: supplier.GetOperatorAddress(),
-		ExpectedBurn:         &stakeRequirementCoin,
+		ExpectedBurn:         &totalClaimedCoin,
 		EffectiveBurn:        &maxClaimableCoin,
 	}
 	eventManager := cosmostypes.UnwrapSDKContext(ctx).EventManager()

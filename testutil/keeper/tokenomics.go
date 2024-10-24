@@ -529,7 +529,9 @@ func WithProofRequirement(required bool) TokenomicsModuleKeepersOpt {
 			proofParams.ProofRequirementThreshold = &proofRequirementThreshold
 		}
 
-		keepers.ProofKeeper.SetParams(ctx, proofParams)
+		if err := keepers.ProofKeeper.SetParams(ctx, proofParams); err != nil {
+			panic(err)
+		}
 
 		return ctx
 	}

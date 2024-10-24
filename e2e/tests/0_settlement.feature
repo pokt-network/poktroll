@@ -38,7 +38,8 @@ Feature: Tokenomics Namespace
         # TODO_TECHDEBT: Update this test such the inflation is set and enforce that Mint=Burn
         # Then add a separate test that only validates that inflation is enforced correctly
         Then the account balance of "supplier1" should be "898" uPOKT "more" than before
-        And the "application" stake of "app1" should be "840" uPOKT "less" than before
+        # The application stake should be less 840 * (1 + glbal_inflation) = 840 * 1.1 = 924
+        And the "application" stake of "app1" should be "924" uPOKT "less" than before
 
     Scenario: TLM Mint=Burn when a valid claim is create but not required
         # Baseline
@@ -72,7 +73,8 @@ Feature: Tokenomics Namespace
         # Please note that supplier mint is > app burn because of inflation
         # TODO_TECHDEBT: Update this test such the inflation is set and enforce that Mint=Burn
         Then the account balance of "supplier1" should be "449" uPOKT "more" than before
-        And the "application" stake of "app1" should be "420" uPOKT "less" than before
+        # The application stake should be less 420 * (1 + glbal_inflation) = 420 * 1.1 = 462
+        And the "application" stake of "app1" should be "462" uPOKT "less" than before
 
     # TODO_ADDTEST: Implement the following scenarios
     # Scenario: Supplier revenue shares are properly distributed
