@@ -115,7 +115,10 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 	// MUST ALWAYS stake or upstake (>= 0 delta)
 	// TODO_CONSIDERATION: Should we allow stake decrease down to min stake?
 	if coinsToEscrow.IsNegative() {
-		err = types.ErrSupplierInvalidStake.Wrapf("Signer %q must be higher or equal to the current stake", msg.Signer)
+		err = types.ErrSupplierInvalidStake.Wrapf(
+			"Supplier signer %q stake (%s) must be greater than or equal to the current stake (%s)",
+			msg.Signer, msg.GetStake(), supplier.Stake,
+		)
 		logger.Info(fmt.Sprintf("WARN: %s", err))
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -201,7 +204,10 @@ func (k msgServer) updateSupplier(
 	}
 
 	if msg.Stake.IsLT(*supplier.Stake) {
-		return types.ErrSupplierInvalidStake.Wrapf("stake amount %v must be higher or equal than previous stake amount %v", msg.Stake, supplier.Stake)
+		return types.ErrSupplierInvalidStake.Wrapf(
+			"stake amount %v must be greater than or equal than previous stake amount %v",
+			msg.Stake, supplier.Stake,
+		)
 	}
 	supplier.Stake = msg.Stake
 
