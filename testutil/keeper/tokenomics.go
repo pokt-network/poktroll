@@ -266,10 +266,7 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 	)
 
 	// Add a block proposer address to the context
-	valAddr, err := cosmostypes.ValAddressFromBech32(sample.ValAddress())
-	require.NoError(t, err)
-	consensusAddr := cosmostypes.ConsAddress(valAddr)
-	sdkCtx = sdkCtx.WithProposer(consensusAddr)
+	sdkCtx = sdkCtx.WithProposer(sample.ConsAddress())
 
 	// Initialize params
 	require.NoError(t, k.SetParams(sdkCtx, tokenomicstypes.DefaultParams()))
@@ -320,10 +317,7 @@ func NewTokenomicsModuleKeepers(
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
 	// Add a block proposer address to the context
-	valAddr, err := cosmostypes.ValAddressFromBech32(sample.ValAddress())
-	require.NoError(t, err)
-	consensusAddr := cosmostypes.ConsAddress(valAddr)
-	sdkCtx = sdkCtx.WithProposer(consensusAddr)
+	sdkCtx = sdkCtx.WithProposer(sample.ConsAddress())
 
 	// ctx.SetAccount
 	// Prepare the account keeper.
@@ -366,7 +360,7 @@ func NewTokenomicsModuleKeepers(
 	require.NoError(t, bankKeeper.SetParams(sdkCtx, banktypes.DefaultParams()))
 
 	// Provide some initial funds to the suppliers & applications module accounts.
-	err = bankKeeper.MintCoins(sdkCtx, suppliertypes.ModuleName, sdk.NewCoins(sdk.NewCoin("upokt", math.NewInt(1000000000000))))
+	err := bankKeeper.MintCoins(sdkCtx, suppliertypes.ModuleName, sdk.NewCoins(sdk.NewCoin("upokt", math.NewInt(1000000000000))))
 	require.NoError(t, err)
 	err = bankKeeper.MintCoins(sdkCtx, apptypes.ModuleName, sdk.NewCoins(sdk.NewCoin("upokt", math.NewInt(1000000000000))))
 	require.NoError(t, err)
@@ -573,13 +567,12 @@ func WithSupplier(supplier sharedtypes.Supplier) TokenomicsModuleKeepersOpt {
 // by the tokenomics module keepers.
 func WithProposerAddr(addr string) TokenomicsModuleKeepersOpt {
 	setProposerAddr := func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
-		valAddr, err := cosmostypes.ValAddressFromBech32(addr)
+		consAddr, err := cosmostypes.ConsAddressFromBech32(addr)
 		if err != nil {
 			panic(err)
 		}
-		consensusAddr := cosmostypes.ConsAddress(valAddr)
 		sdkCtx := sdk.UnwrapSDKContext(ctx)
-		sdkCtx = sdkCtx.WithProposer(consensusAddr)
+		sdkCtx = sdkCtx.WithProposer(consAddr)
 		return sdkCtx
 	}
 	return func(cfg *tokenomicsModuleKeepersConfig) {

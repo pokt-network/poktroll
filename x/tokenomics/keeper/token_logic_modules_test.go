@@ -335,10 +335,18 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	service := prepareTestService(serviceComputeUnitsPerRelay)
 	numRelays := uint64(1000) // By supplier for application in this session
 	numTokensClaimed := float64(numRelays * serviceComputeUnitsPerRelay * globalComputeUnitsToTokensMultiplier)
-	validatorAddr := sample.ValAddress()
+	proposerConsAddr := sample.ConsAddressBech32()
+	daoAddress := authtypes.NewModuleAddress(govtypes.ModuleName)
+
+	tlmProcessors := tlm.NewDefaultProcessors(daoAddress.String())
 
 	// Prepare the keepers
-	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil, testkeeper.WithService(*service), testkeeper.WithProposerAddr(validatorAddr))
+	opts := []testkeeper.TokenomicsModuleKeepersOpt{
+		testkeeper.WithService(*service),
+		testkeeper.WithProposerAddr(proposerConsAddr),
+		testkeeper.WithTLMProcessors(tlmProcessors),
+	}
+	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t, nil, opts...)
 	keepers.SetService(ctx, *service)
 
 	// Set compute_units_to_tokens_multiplier to simplify expectation calculations.
@@ -382,9 +390,8 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	pendingResult := tlm.NewPendingSettlementResult(claim)
 
 	// Prepare addresses
-	daoAddress := authtypes.NewModuleAddress(govtypes.ModuleName)
 	appAddress := app.Address
-	proposerAddress := sample.AccAddressFromConsAddress(validatorAddr)
+	proposerAddress := sample.AccAddressFromConsBech32(proposerConsAddr)
 
 	// Determine balances before inflation
 	daoBalanceBefore := getBalance(t, ctx, keepers, daoAddress.String())

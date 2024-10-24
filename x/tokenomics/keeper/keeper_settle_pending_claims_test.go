@@ -72,10 +72,7 @@ func (s *TestSuite) SetupTest() {
 	sdkCtx := cosmostypes.UnwrapSDKContext(s.ctx).WithBlockHeight(1)
 
 	// Add a block proposer address to the context
-	valAddr, err := cosmostypes.ValAddressFromBech32(sample.ValAddress())
-	require.NoError(t, err)
-	consensusAddr := cosmostypes.ConsAddress(valAddr)
-	sdkCtx = sdkCtx.WithProposer(consensusAddr)
+	sdkCtx = sdkCtx.WithProposer(sample.ConsAddress())
 
 	// Construct a keyring to hold the keypairs for the accounts used in the test.
 	keyRing := keyring.NewInMemory(s.keepers.Codec)
