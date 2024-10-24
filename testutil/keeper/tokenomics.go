@@ -515,11 +515,11 @@ func WithProposerAddr(addr string) TokenomicsModuleKeepersOpt {
 }
 
 // WithProofRequirement is an option to set the proof requirement in the tokenomics module keepers.
-func WithProofRequirement(required bool) TokenomicsModuleKeepersOpt {
+func WithProofRequirement(proofRequired bool) TokenomicsModuleKeepersOpt {
 	return func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
 
 		proofParams := keepers.ProofKeeper.GetParams(ctx)
-		if required {
+		if proofRequired {
 			proofParams.ProofRequestProbability = 1
 			proofRequirementThreshold := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0)
 			proofParams.ProofRequirementThreshold = &proofRequirementThreshold

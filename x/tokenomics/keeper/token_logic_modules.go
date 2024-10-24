@@ -125,8 +125,11 @@ func init() {
 		panic("mint allocation percentages do not add to 1.0")
 	}
 
-	// TODO_UPNEXT(@Olshansk): Ensure that if `TLMGlobalMint` is present in the map,
-	// then TLMGlobalMintReimbursementRequest will need to be there too.
+	_, hasGlobalMintTLM := tokenLogicModuleProcessorMap[TLMGlobalMint]
+	_, hasGlobalMintReimbursementRequestTLM := tokenLogicModuleProcessorMap[TLMGlobalMintReimbursementRequest]
+	if hasGlobalMintTLM != hasGlobalMintReimbursementRequestTLM {
+		panic("TLMGlobalMint and TLMGlobalMintReimbursementRequest must be activated together")
+	}
 }
 
 // ProcessTokenLogicModules is the entrypoint for all TLM processing.
@@ -518,12 +521,12 @@ func (k Keeper) TokenLogicModuleGlobalMintReimbursementRequest(
 	); err != nil {
 		return tokenomicstypes.ErrTokenomicsApplicationReimbursementRequestFailed.Wrapf(
 			"sending %s from the application module account to the tokenomics module account: %v",
-			actualSettlementCoin, err,
+			newMintCoin, err,
 		)
 	}
 	logger.Info(fmt.Sprintf(
 		"sent (%s) from the application module account to the tokenomics module account",
-		actualSettlementCoin,
+		newMintCoin,
 	))
 
 	// Send the global per claim mint inflation uPOKT from the tokenomics module
@@ -638,6 +641,8 @@ func (k Keeper) sendRewardsToAccount(
 // If this is not the case, then the supplier essentially did "free work" and the
 // actual claim amount is less than what was claimed.
 // Ref: https://arxiv.org/pdf/2305.10672
+// TODO_TEST: Add more tests for edge cases that exercise all the code paths
+// actualSettlementCoins could be updated in this function.
 func (k Keeper) ensureClaimAmountLimits(
 	ctx context.Context,
 	logger log.Logger,
