@@ -78,6 +78,7 @@ import (
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tokenomicskeeper "github.com/pokt-network/poktroll/x/tokenomics/keeper"
 	tokenomics "github.com/pokt-network/poktroll/x/tokenomics/module"
+	tlm "github.com/pokt-network/poktroll/x/tokenomics/token_logic_module"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
@@ -171,10 +172,7 @@ func NewIntegrationApp(
 		WithEventManager(cosmostypes.NewEventManager())
 
 	// Add a block proposer address to the context
-	valAddr, err := cosmostypes.ValAddressFromBech32(sample.ValAddress())
-	require.NoError(t, err)
-	consensusAddr := cosmostypes.ConsAddress(valAddr)
-	sdkCtx = sdkCtx.WithProposer(consensusAddr)
+	sdkCtx = sdkCtx.WithProposer(sample.ConsAddress())
 
 	// Create the base application
 	bApp.MountKVStores(keys)
@@ -207,7 +205,7 @@ func NewIntegrationApp(
 	msgRouter.SetInterfaceRegistry(registry)
 	bApp.SetMsgServiceRouter(msgRouter)
 
-	err = bApp.LoadLatestVersion()
+	err := bApp.LoadLatestVersion()
 	require.NoError(t, err, "failed to load latest version")
 
 	_, err = bApp.InitChain(&cmtabcitypes.RequestInitChain{ChainId: appName})
@@ -236,6 +234,13 @@ func NewIntegrationApp(
 // as the need arises.
 func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *App {
 	t.Helper()
+
+	cfg := &IntegrationAppConfig{
+		TLMProcessors: tlm.NewDefaultProcessors(sample.ConsAddressBech32()),
+	}
+	for _, opt := range opts {
+		opt(cfg)
+	}
 
 	// Prepare & register the codec for all the interfaces
 	sdkCfg := cosmostypes.GetConfig()
@@ -497,6 +502,7 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 		sharedKeeper,
 		sessionKeeper,
 		serviceKeeper,
+		cfg.TLMProcessors,
 	)
 	tokenomicsModule := tokenomics.NewAppModule(
 		cdc,
@@ -1002,7 +1008,7 @@ func newFaucetInitChainerFn(faucetBech32 string, faucetAmtUpokt int64) InitChain
 
 // newProposerAddrBz returns a random proposer address in bytes.
 func newProposerAddrBz(t *testing.T) []byte {
-	bech32 := sample.ConsAddress()
+	bech32 := sample.ConsAddressBech32()
 	addr, err := cosmostypes.ConsAddressFromBech32(bech32)
 	require.NoError(t, err)
 

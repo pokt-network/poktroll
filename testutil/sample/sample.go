@@ -7,14 +7,14 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 )
 
 // AccAddressAndPubKey returns a sample account address and public key
 func AccAddressAndPubKey() (string, cryptotypes.PubKey) {
 	pk := secp256k1.GenPrivKey().PubKey()
 	addr := pk.Address()
-	return sdk.AccAddress(addr).String(), pk
+	return cosmostypes.AccAddress(addr).String(), pk
 }
 
 // AccAddress returns a sample account address
@@ -27,33 +27,36 @@ func AccAddress() string {
 func AccAddressAndPubKeyEd25519() (string, cryptotypes.PubKey) {
 	pk := ed25519.GenPrivKey().PubKey()
 	addr := pk.Address()
-	return sdk.AccAddress(addr).String(), pk
+	return cosmostypes.AccAddress(addr).String(), pk
 }
 
-// ValAddress returns a sample validator address, which has the prefix
-// of validators when converted to bech32. Validator addresses identify
-// the validator operator on-chain account and are derived using secp256k1.
-// See: https://docs.cosmos.network/main/learn/beginner/accounts#addresses
-func ValAddress() string {
-	_, pk := AccAddressAndPubKey()
-	validatorAddress := tmhash.SumTruncated(pk.Address())
-	valAddress := sdk.ValAddress(validatorAddress)
-	return valAddress.String()
-}
-
+// TODO_IN_THIS_COMMIT: update comment...
+//
 // ConsAddress returns a sample consensus node address, which has the prefix
 // of consensus nodes when converted to bech32. Consensus addresses identify
 // the validator node in the consensus engine and are derived using ed25519.
 // See: https://docs.cosmos.network/main/learn/beginner/accounts#addresses
-func ConsAddress() string {
+func ConsAddress() cosmostypes.ConsAddress {
 	_, pk := AccAddressAndPubKeyEd25519()
 	consensusAddress := tmhash.SumTruncated(pk.Address())
-	valAddress := sdk.ConsAddress(consensusAddress)
-	return valAddress.String()
+	consAddress := cosmostypes.ConsAddress(consensusAddress)
+	return consAddress
 }
 
-// AccAddressFromConsAddress returns an account address (with the Bech32PrefixForAccount prefix)
-// from a given consensus address (with the Bech32PrefixForValidator prefix).
+// TODO_IN_THIS_COMMIT: update comment...
+//
+// ConsAddressBech32 returns a bech32-encoded  sample consensus node address,
+// which has the prefix of consensus nodes when converted to bech32. Consensus addresses identify
+// the validator node in the consensus engine and are derived using ed25519.
+// See: https://docs.cosmos.network/main/learn/beginner/accounts#addresses
+func ConsAddressBech32() string {
+	return ConsAddress().String()
+}
+
+// TODO_IN_THIS_COMMIT: update comment...
+//
+// AccAddressFromConsBech32 returns an account address (with the Bech32PrefixForAccount prefix)
+// from a given consensus address (with the Bech32PrefixForConsensus prefix).
 //
 // Reference: see initSDKConfig in  `cmd/poktrolld/cmd`.
 //
@@ -63,10 +66,8 @@ func ConsAddress() string {
 // inflation comes from the relays serviced. Therefore, the validator's (block producer's)
 // rewards are proportional to that as well. For this reason, we need a helper function
 // to identify the proposer address from the validator consensus address.
-//
-// TODO_MAINNET: Add E2E tests to validate this works as expected.
-func AccAddressFromConsAddress(validatorConsAddr string) string {
-	valAddr, _ := sdk.ValAddressFromBech32(validatorConsAddr)
-	proposerAddress, _ := sdk.AccAddressFromHexUnsafe(hex.EncodeToString(valAddr.Bytes()))
-	return proposerAddress.String()
+func AccAddressFromConsBech32(consBech32 string) string {
+	consAccAddr, _ := cosmostypes.ConsAddressFromBech32(consBech32)
+	accAddr, _ := cosmostypes.AccAddressFromHexUnsafe(hex.EncodeToString(consAccAddr.Bytes()))
+	return accAddr.String()
 }

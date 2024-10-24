@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/testutil/network"
+	"github.com/pokt-network/poktroll/testutil/sample"
 	testsession "github.com/pokt-network/poktroll/testutil/session"
 	"github.com/pokt-network/poktroll/testutil/testkeyring"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -18,6 +19,7 @@ import (
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
+	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 const (
@@ -40,6 +42,9 @@ func networkWithClaimObjects(
 	sharedParams *sharedtypes.Params,
 ) (net *network.Network, claims []types.Claim, clientCtx cosmosclient.Context) {
 	t.Helper()
+
+	// TODO_TECHDEBT: Remove once dao reward address is promoted to a tokenomics param.
+	tokenomicstypes.DaoRewardAddress = sample.AccAddress()
 
 	// Initialize a network config.
 	cfg := network.DefaultConfig()

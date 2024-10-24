@@ -1,6 +1,7 @@
 package tokenomics
 
 import (
+	"errors"
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -21,7 +22,7 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) (err error) {
 	//    even without a proof to be able to scale to unbounded Claims & Proofs.
 	// 2. Implementation - This cannot be done from the `x/proof` module because
 	//    it would create a circular dependency.
-	settledResult, expiredResult, err := k.SettlePendingClaims(ctx)
+	settledResults, expiredResults, err := k.SettlePendingClaims(ctx)
 	if err != nil {
 		logger.Error(fmt.Sprintf("could not settle pending claims due to error %v", err))
 		return err
@@ -29,41 +30,63 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) (err error) {
 
 	logger.Info(fmt.Sprintf(
 		"settled %d claims and expired %d claims",
-		settledResult.NumClaims,
-		expiredResult.NumClaims,
+		settledResults.GetNumClaims(),
+		expiredResults.GetNumClaims(),
 	))
 
 	// Telemetry - defer telemetry calls so that they reference the final values the relevant variables.
 	defer func() {
+		errs := err
+
+		numSettledRelays, errNumRelays := settledResults.GetNumRelays()
+		if err != nil {
+			errs = errors.Join(errs, errNumRelays)
+		}
+
+		numSettledComputeUnits, errNumComputeUnits := settledResults.GetNumComputeUnits()
+		if err != nil {
+			errs = errors.Join(errs, errNumComputeUnits)
+		}
+
+		numExpiredRelays, errNumRelays := expiredResults.GetNumRelays()
+		if err != nil {
+			errs = errors.Join(errs, errNumRelays)
+		}
+
+		numExpiredComputeUnits, errNumComputeUnits := expiredResults.GetNumComputeUnits()
+		if err != nil {
+			errs = errors.Join(errs, errNumComputeUnits)
+		}
+
 		telemetry.ClaimCounter(
 			prooftypes.ClaimProofStage_SETTLED,
-			settledResult.NumClaims,
+			settledResults.GetNumClaims(),
 			err,
 		)
 		telemetry.ClaimRelaysCounter(
 			prooftypes.ClaimProofStage_SETTLED,
-			settledResult.NumRelays,
+			numSettledRelays,
 			err,
 		)
 		telemetry.ClaimComputeUnitsCounter(
 			prooftypes.ClaimProofStage_SETTLED,
-			settledResult.NumComputeUnits,
+			numSettledComputeUnits,
 			err,
 		)
 
 		telemetry.ClaimCounter(
 			prooftypes.ClaimProofStage_EXPIRED,
-			expiredResult.NumClaims,
+			expiredResults.GetNumClaims(),
 			err,
 		)
 		telemetry.ClaimRelaysCounter(
 			prooftypes.ClaimProofStage_EXPIRED,
-			expiredResult.NumRelays,
+			numExpiredRelays,
 			err,
 		)
 		telemetry.ClaimComputeUnitsCounter(
 			prooftypes.ClaimProofStage_EXPIRED,
-			expiredResult.NumComputeUnits,
+			numExpiredComputeUnits,
 			err,
 		)
 		// TODO_IMPROVE(#observability): Add a counter for expired compute units.
@@ -71,14 +94,19 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) (err error) {
 
 	// Update the relay mining difficulty for every service that settled pending
 	// claims based on how many estimated relays were serviced for it.
-	difficultyPerServiceMap, err := k.UpdateRelayMiningDifficulty(ctx, settledResult.RelaysPerServiceMap)
+	settledRelaysPerServiceIdMap, err := settledResults.GetRelaysPerServiceMap()
+	if err != nil {
+		logger.Error(fmt.Sprintf("could not get settled relays per service map due to error %v", err))
+		return
+	}
+	difficultyPerServiceMap, err := k.UpdateRelayMiningDifficulty(ctx, settledRelaysPerServiceIdMap)
 	if err != nil {
 		logger.Error(fmt.Sprintf("could not update relay mining difficulty due to error %v", err))
 		return err
 	}
 	logger.Info(fmt.Sprintf(
 		"successfully updated the relay mining difficulty for %d services",
-		len(settledResult.RelaysPerServiceMap),
+		len(settledResults.GetServiceIds()),
 	))
 
 	// Telemetry - emit telemetry for each service's relay mining difficulty.

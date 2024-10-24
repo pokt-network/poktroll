@@ -116,19 +116,17 @@ var (
 // keeperConfig is a configuration struct to be used during keeper construction
 // to modify its behavior.
 type keeperConfig struct {
-	// moduleParams is a map of module names to their respective module parameters.
-	// This is used to set the initial module parameters in the keeper.
-	moduleParams map[string]sdk.Msg
+	sharedParams *sharedtypes.Params
 }
 
 // KeeperOptionFn is a function type that sets/updates fields on the keeperConfig.
 type KeeperOptionFn func(*keeperConfig)
 
-// WithModuleParams returns a KeeperOptionFn that sets the moduleParams field
+// WithSharedModuleParams returns a KeeperOptionFn that sets the moduleParams field
 // on the keeperConfig.
-func WithModuleParams(moduleParams map[string]sdk.Msg) KeeperOptionFn {
+func WithSharedModuleParams(sharedParams *sharedtypes.Params) KeeperOptionFn {
 	return func(c *keeperConfig) {
-		c.moduleParams = moduleParams
+		c.sharedParams = sharedParams
 	}
 }
 
@@ -160,11 +158,11 @@ func SessionKeeper(t testing.TB, opts ...KeeperOptionFn) (keeper.Keeper, context
 	mockAppKeeper := defaultAppKeeperMock(t)
 	mockSupplierKeeper := defaultSupplierKeeperMock(t)
 
-	sharedParams := new(sharedtypes.Params)
-	if params, ok := cfg.moduleParams[sharedtypes.ModuleName]; ok {
-		sharedParams = params.(*sharedtypes.Params)
+	sharedParams := sharedtypes.DefaultParams()
+	if cfg.sharedParams != nil {
+		sharedParams = *cfg.sharedParams
 	}
-	mockSharedKeeper := defaultSharedKeeperMock(t, sharedParams)
+	mockSharedKeeper := defaultSharedKeeperMock(t, &sharedParams)
 
 	k := keeper.NewKeeper(
 		cdc,

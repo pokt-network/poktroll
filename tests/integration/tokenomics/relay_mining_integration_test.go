@@ -154,8 +154,8 @@ func TestComputeNewDifficultyHash_RewardsReflectWorkCompleted(t *testing.T) {
 		// Calling SettlePendingClaims calls ProcessTokenLogicModules behind the scenes
 		settledResult, expiredResult, err := keepers.Keeper.SettlePendingClaims(sdkCtx)
 		require.NoError(t, err)
-		require.Equal(t, 1, int(settledResult.NumClaims))
-		require.Equal(t, 0, int(expiredResult.NumClaims))
+		require.Equal(t, 1, int(settledResult.GetNumClaims()))
+		require.Equal(t, 0, int(expiredResult.GetNumClaims()))
 
 		// Update the relay mining difficulty
 		_, err = keepers.Keeper.UpdateRelayMiningDifficulty(sdkCtx, map[string]uint64{service.Id: claimNumRelays})
