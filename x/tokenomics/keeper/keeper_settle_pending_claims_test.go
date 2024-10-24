@@ -31,6 +31,7 @@ import (
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
@@ -709,12 +710,13 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	// Expectation: All (1) claims should expire.
 	// NB: proofs should be rejected when the current height equals the proof window close height.
 	sessionEndHeight := s.claim.SessionHeader.SessionEndBlockHeight
-	blockHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
-	sdkCtx := cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(blockHeight)
+	sessionProofWindowCloseHeight := sharedtypes.GetProofWindowCloseHeight(&sharedParams, sessionEndHeight)
+	sdkCtx := cosmostypes.UnwrapSDKContext(ctx).WithBlockHeight(sessionProofWindowCloseHeight)
 	_, _, err = s.keepers.SettlePendingClaims(sdkCtx)
 	require.NoError(t, err)
 
-	upcomingSessionEndHeight := uint64(sharedtypes.GetNextSessionStartHeight(&sharedParams, int64(blockHeight))) - 1
+	sessionEndHeight = sharedtypes.GetSettlementSessionEndHeight(&sharedParams, sessionProofWindowCloseHeight)
+	upcomingSessionEndHeight := uint64(sharedtypes.GetNextSessionStartHeight(&sharedParams, sessionProofWindowCloseHeight)) - 1
 
 	// Slashing should have occurred and the supplier is unstaked but still unbonding.
 	slashedSupplier, supplierFound := s.keepers.GetSupplier(sdkCtx, s.claim.SupplierOperatorAddress)
@@ -726,14 +728,51 @@ func (s *TestSuite) TestSettlePendingClaims_ClaimExpired_SupplierUnstaked() {
 	events := sdkCtx.EventManager().Events()
 
 	// Confirm that a slashing event was emitted
-	expectedSlashingEvents := testutilevents.FilterEvents[*tokenomicstypes.EventSupplierSlashed](t, events)
-	require.Len(t, expectedSlashingEvents, 1)
+	slashingEvents := testutilevents.FilterEvents[*tokenomicstypes.EventSupplierSlashed](t, events)
+	require.Len(t, slashingEvents, 1)
 
 	// Validate the slashing event
-	expectedSlashingEvent := expectedSlashingEvents[0]
-	require.Equal(t, slashedSupplier.GetOperatorAddress(), expectedSlashingEvent.GetSupplierOperatorAddr())
-	require.Equal(t, uint64(1), expectedSlashingEvent.GetNumExpiredClaims())
-	require.Equal(t, proofParams.ProofMissingPenalty, expectedSlashingEvent.GetSlashingAmount())
+	expectedSlashingEvent := &tokenomicstypes.EventSupplierSlashed{
+		SupplierOperatorAddr: slashedSupplier.GetOperatorAddress(),
+		NumExpiredClaims:     uint64(1),
+		SlashingAmount:       proofParams.GetProofMissingPenalty(),
+	}
+	require.EqualValues(t, expectedSlashingEvent, slashingEvents[0])
+
+	// Assert that an EventSupplierUnbondingBegin event was emitted.
+	unbondingBeginEvents := testutilevents.FilterEvents[*suppliertypes.EventSupplierUnbondingBegin](t, events)
+	require.Len(t, unbondingBeginEvents, 1)
+
+	// Validate the EventSupplierUnbondingBegin event.
+	unbondingHeight := sharedtypes.GetSupplierUnbondingHeight(&sharedParams, &slashedSupplier)
+	slashedSupplier.ServicesActivationHeightsMap = make(map[string]uint64)
+	for i, _ := range slashedSupplier.GetServices() {
+		slashedSupplier.Services[i].Endpoints = make([]*sharedtypes.SupplierEndpoint, 0)
+	}
+	expectedUnbondingBeginEvent := &suppliertypes.EventSupplierUnbondingBegin{
+		Supplier:         &slashedSupplier,
+		Reason:           suppliertypes.SupplierUnbondingReason_BELOW_MIN_STAKE,
+		SessionEndHeight: sessionEndHeight,
+		UnbondingHeight:  unbondingHeight,
+	}
+	require.EqualValues(t, expectedUnbondingBeginEvent, unbondingBeginEvents[0])
+
+	// Advance the block height to the settlement session end height.
+	settlementHeight := sharedtypes.GetSettlementSessionEndHeight(&sharedParams, sdkCtx.BlockHeight())
+	sdkCtx.WithBlockHeight(settlementHeight)
+
+	// Assert that the EventSupplierUnbondingEnd event is emitted.
+	unbondingEndEvents := testutilevents.FilterEvents[*suppliertypes.EventSupplierUnbondingBegin](t, events)
+	require.Len(t, unbondingEndEvents, 1)
+
+	// Validate the EventSupplierUnbondingEnd event.
+	expectedUnbondingEndEvent := &suppliertypes.EventSupplierUnbondingEnd{
+		Supplier:         &slashedSupplier,
+		Reason:           suppliertypes.SupplierUnbondingReason_BELOW_MIN_STAKE,
+		SessionEndHeight: sessionEndHeight,
+		UnbondingHeight:  unbondingHeight,
+	}
+	require.EqualValues(t, expectedUnbondingEndEvent, unbondingEndEvents[0])
 }
 
 // getEstimatedComputeUnits returns the estimated number of compute units given
