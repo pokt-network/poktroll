@@ -148,7 +148,7 @@ func (s *tlmProcessorsTestSuite) settleClaims(t *testing.T) (settledResults, exp
 	settledPendingResults, expiredPendingResults, err := s.keepers.SettlePendingClaims(cosmostypes.UnwrapSDKContext(s.ctx))
 	require.NoError(t, err)
 
-	require.NotZero(t, 1, len(settledPendingResults))
+	require.NotZero(t, len(settledPendingResults))
 	// TODO_IMPROVE: enhance the test scenario to include expiring claims to increase coverage.
 	require.Zero(t, len(expiredPendingResults))
 
