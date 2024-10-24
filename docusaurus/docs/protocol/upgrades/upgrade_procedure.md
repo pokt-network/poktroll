@@ -215,7 +215,8 @@ Ensure LocalNet is running using a binary from the [previous release you wish to
    ```
 
 9. Wait until the height is reached and the old node dies due to the error: `ERR UPGRADE "v0.0.9-2" NEEDED at height`, which is expected.
-10. At this point, switch to the repo with the **NEW** version - the code you wish to upgrade the network **TO**.
+10. At this point, switch to the repo with the **NEW** version - the code you wish to upgrade the network **TO**. It might be a
+    `poktroll` repo you working on or a release tag.
 11. In the **NEW VERSION GIT REPO** you can build binaries using `go_develop`, `ignite_release` and `ignite_release_extract_binaries` make targets.
 12. Start the new version from the **NEW VERSION REPO**:
 
@@ -223,7 +224,7 @@ Ensure LocalNet is running using a binary from the [previous release you wish to
     ./release_binaries/poktroll_darwin_arm64 start
     ```
 
-13. Observe the behavior. Your node should go through the upgrade process and start using the new version.
+13. Observe the output. Your node should go through the upgrade process and start using the new version.
 
 ### DevNet
 

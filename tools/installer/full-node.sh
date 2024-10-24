@@ -138,7 +138,8 @@ setup_poktrolld() {
         exit 1
     fi
 
-    # Get the version genesis started from
+    # Get the version genesis started from. We can't just use `latest` as the new binary won't sync from genesis.
+    # We need to start syncing from scratch using the version that was used when the network started.
     POKTROLLD_VERSION=$(curl -s https://raw.githubusercontent.com/pokt-network/pocket-network-genesis/master/poktrolld/testnet-validated.init-version)
 
     # Use the direct download link for the correct release

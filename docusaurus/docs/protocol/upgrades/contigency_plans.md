@@ -20,11 +20,12 @@ This document is intended to help you recover without significant downtime.
 - [Option 0: The bug is discovered before the upgrade height is reached](#option-0-the-bug-is-discovered-before-the-upgrade-height-is-reached)
 - [Option 1: The upgrade height is reached and the migration didn't start](#option-1-the-upgrade-height-is-reached-and-the-migration-didnt-start)
 - [Option 2: The migration is stuck](#option-2-the-migration-is-stuck)
+  - [Documentation and scripts to update](#documentation-and-scripts-to-update)
 - [Option 3: The network is stuck at the future height after the upgrade](#option-3-the-network-is-stuck-at-the-future-height-after-the-upgrade)
 
 ### Option 0: The bug is discovered before the upgrade height is reached
 
-**Cancel the upgrade plan!!**
+**Cancel the upgrade plan!**
 
 See the instructions of [how to do that here](./upgrade_procedure.md#cancelling-the-upgrade-plan).
 
@@ -55,11 +56,23 @@ the upgrade but the migration didn't complete.
 
 In such a case, we need to:
 
-- Roll back validators to the backup (a snapshot is taken by `cosmovisor` automatically prior to upgrade, if `UNSAFE_SKIP_BACKUP` is set to `false`).
-- Skip the upgrade handler and store migrations with `--unsafe-skip-upgrade=$upgradeHeightNumber`.
-- Document and add `--unsafe-skip-upgrade=$upgradeHeightNumber` to the scripts so the next time somebody tries to sync the network from genesis
-  they will automatically skip the failed upgrade.
+- Roll back validators to the backup. A snapshot is taken by `cosmovisor` automatically prior to upgrade,
+  if `UNSAFE_SKIP_BACKUP` is set to `false` (which is a default and recommended value -
+  [more information](https://docs.cosmos.network/main/build/tooling/cosmovisor#command-line-arguments-and-environment-variables)).
+- All full nodes and validators on the network: skip the upgrade handler and store migrations be adding `--unsafe-skip-upgrade=$upgradeHeightNumber`
+  argument to your `poktroll start` command. Like this:
+  ```bash
+  poktrolld start --unsafe-skip-upgrade=$upgradeHeightNumber
+  ```
+- Protocol team: document and add `--unsafe-skip-upgrade=$upgradeHeightNumber` to the scripts so the next time somebody
+  tries to sync the network from genesis they will automatically skip the failed upgrade. [Documentation and scripts to update](#documentation-and-scripts-to-update)
 - Resolve the issue with an upgrade and schedule another plan.
+
+#### Documentation and scripts to update
+
+- The [upgrade list](./upgrade_list.md) should reflect a failed upgrade and provide a range of heights that served by each version.
+- Systemd service should include`--unsafe-skip-upgrade=$upgradeHeightNumber` argument in its start command [here](https://github.com/pokt-network/poktroll/blob/main/tools/installer/full-node.sh).
+- [Helm chart](https://github.com/pokt-network/helm-charts/blob/main/charts/poktrolld/templates/StatefulSet.yaml) (consider exposing via a `values.yaml` file)
 
 ### Option 3: The network is stuck at the future height after the upgrade
 
