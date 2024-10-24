@@ -1,5 +1,4 @@
 load("./git.tilt",
-     "dir_exists",
      "clone_repo",
      "fetch_repo_main",
      "repo_remote_name",
@@ -56,18 +55,14 @@ def load_pocketdex(pocketdex_root_path):
 def check_and_load_pocketdex(indexer_config):
     if indexer_config["enabled"]:
         pocketdex_root_path = indexer_config["repo_path"]
-        if dir_exists(pocketdex_root_path) == "false":
+        if not os.path.exists(pocketdex_root_path):
             if indexer_config["clone_if_not_present"]:
                 clone_repo("https://github.com/pokt-network/pocketdex", pocketdex_root_path)
                 load_pocketdex(pocketdex_root_path)
             else:
-                pocketdex_disabled_resource("""
-                Pocketdex repo not found at {}. Set `clone_if_not_present` to `true` in `localnet_config.yaml`.
-                """.format(pocketdex_root_path))
+                pocketdex_disabled_resource("Pocketdex repo not found at {}. Set `clone_if_not_present` to `true` in `localnet_config.yaml`.".format(pocketdex_root_path))
         else:
             print("Using existing pocketdex repo")
             load_pocketdex(pocketdex_root_path)
     else:
-        pocketdex_disabled_resource("""
-        Pocketdex indexer disabled. Set `indexer.enabled` to `true` in `localnet_config.yaml` to enable it.
-        """)
+        pocketdex_disabled_resource("Pocketdex indexer disabled. Set `indexer.enabled` to `true` in `localnet_config.yaml` to enable it.")

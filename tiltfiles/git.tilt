@@ -1,10 +1,4 @@
-# dir_repo_exists returns true if the dir_path exists.
-def dir_exists(dir_path):
-    return str(
-        local("[ -d {} ] && echo 'true' || echo 'false'".format(dir_path),
-              echo_off=True)
-    ).strip()
-
+# TODO_INVESTIGATE: https://github.com/tilt-dev/tilt-extensions/tree/master/git_resource
 
 # repo_remote_name returns the name of the remote from which the git repo was cloned.
 def repo_remote_name(repo_root):
@@ -49,5 +43,4 @@ def repo_is_outdated(repo_root):
 # clone_repo clones the main branch from the repo at repo_url to local_path.
 def clone_repo(repo_url, local_path):
     print("Cloning pocketdex repo")
-    # TODO_IMPROVE: https://github.com/tilt-dev/tilt-extensions/tree/master/git_resource
     local("git clone {} --branch main {}".format(repo_url, local_path))
