@@ -53,6 +53,11 @@ func distributeSupplierRewardsToShareHolders(
 	for _, revShare := range serviceRevShares {
 		shareAmount := shareAmountMap[revShare.GetAddress()]
 
+		if shareAmount == 0 {
+			// TODO_IN_THIS_COMMIT: log...
+			continue
+		}
+
 		// TODO_TECHDEBT(@red-0ne): Refactor to reuse the sendRewardsToAccount helper here.
 		shareAmountCoin := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(int64(shareAmount)))
 

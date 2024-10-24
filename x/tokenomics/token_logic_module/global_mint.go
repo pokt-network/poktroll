@@ -223,13 +223,18 @@ func sendRewardsToAccount(
 	coinsToAccAmt := calculateAllocationAmount(settlementAmtFloat, allocation)
 	coinToAcc := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(coinsToAccAmt))
 
+	if coinToAcc.IsZero() {
+		// TODO_IN_THIS_COMMIT: log...
+		return cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0), nil
+	}
+
 	recipientAccAddr, err := cosmostypes.AccAddressFromBech32(recipientAddr)
 	if err != nil {
 		return cosmostypes.Coin{}, err
 	}
 
 	result.AppendModToAcctTransfer(ModToAcctTransfer{
-		TLMName:          TLMRelayBurnEqualsMint,
+		TLMName:          TLMGlobalMint,
 		SenderModule:     senderModule,
 		RecipientAddress: recipientAccAddr,
 		Coin:             coinToAcc,
