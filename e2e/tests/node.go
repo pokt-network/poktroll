@@ -199,8 +199,6 @@ func (p *pocketdBin) runCurlCmd(rpcBaseURL, service, method, path, appAddr, data
 		rpcUrl.RawQuery = queryValues.Encode()
 	}
 
-	fmt.Println("rpcUrl", rpcUrl.String())
-
 	base := []string{
 		"-v",         // verbose output
 		"-sS",        // silent with error
