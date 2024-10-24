@@ -91,7 +91,7 @@ validators:
       # minimum-gas-prices: 0.000000001upokt
       telemetry:
         enabled: true
-        prometheus-retention-time: "600" # seconds
+        prometheus-retention-time: "10" # seconds. Let's see if block time * 5 gives a better data.
       poktroll:
         telemetry:
           # "high" produces a lot of timeseries. Only suitable for small networks such as LocalNet.
@@ -239,8 +239,8 @@ genesis:
       params:
         # TODO_MAINNET: Determine realistic amount for minimum gateway stake amount.
         min_stake:
-            amount: "1000000" # 1 POKT
-            denom: upokt
+          amount: "1000000" # 1 POKT
+          denom: upokt
       gatewayList:
         - address: pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4
           stake:

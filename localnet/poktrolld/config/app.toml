@@ -61,6 +61,6 @@ query-gas-limit = "0"
   enabled = true
   global-labels = []
   metrics-sink = "mem"
-  prometheus-retention-time = "600"
+  prometheus-retention-time = "10"
   service-name = ""
   statsd-addr = ""
