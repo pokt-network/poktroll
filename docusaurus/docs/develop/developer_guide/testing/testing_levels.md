@@ -16,8 +16,8 @@ title: Testing Levels
   - [Unit Test - Limitations](#unit-test---limitations)
 - [App Integration Tests](#app-integration-tests)
   - [Integration Test Example](#integration-test-example)
-  - [Integration Test 0 Good Fit](#integration-test-0-good-fit)
-  - [Integration Test 0 Bad Fit](#integration-test-0-bad-fit)
+  - [Integration Test - Good Fit](#integration-test-0-good-fit)
+  - [Integration Test - Bad Fit](#integration-test-0-bad-fit)
   - [Integration Test - Limitations](#integration-test---limitations)
 - [In-Memory Network Integration Tests](#in-memory-network-integration-tests)
   - [In-Memory Network Example](#in-memory-network-example)
@@ -75,14 +75,14 @@ This level of testing ensures message handling logic is exercise while fully int
 
 _NOTE: See [App Integration Suites](integration_suites) for organizing larger or higher-level app integration tests._
 
-#### Integration Test 0 Good Fit
+#### Integration Test - Good Fit
 
 - Exercising a user story involving multiple messages
 - Exercising a scenario involving multiple messages
 - Exercising cross-module dependencies & interactions
 - Asserting against a new integrated state
 
-#### Integration Test 0 Bad Fit
+#### Integration Test - Bad Fit
 
 - Code under test depends/asserts on networking operations
 - Code under test depends/asserts on consensus operations
