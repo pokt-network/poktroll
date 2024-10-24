@@ -37,6 +37,19 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 		return settledResult, expiredResult, err
 	}
 
+	// Capture the applications initial stake which will be used to calculate the
+	// max share any claim could receive from the application stake.
+	applicationInitialStakeMap := make(map[string]sdk.Coin)
+	for _, claim := range expiringClaims {
+		app, isAppFound := k.applicationKeeper.GetApplication(ctx, claim.SessionHeader.ApplicationAddress)
+		if !isAppFound {
+			err := apptypes.ErrAppNotFound.Wrapf("application address: %q", claim.SessionHeader.ApplicationAddress)
+			return settledResult, expiredResult, err
+		}
+
+		applicationInitialStakeMap[claim.SessionHeader.ApplicationAddress] = *app.GetStake()
+	}
+
 	blockHeight := ctx.BlockHeight()
 
 	logger.Info(fmt.Sprintf("found %d expiring claims at block height %d", len(expiringClaims), blockHeight))
@@ -178,8 +191,11 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 		// 1. The claim does not require a proof.
 		// 2. The claim requires a proof and a valid proof was found.
 
+		claimApplication := claim.SessionHeader.ApplicationAddress
+		applicationInitialStake := applicationInitialStakeMap[claimApplication]
+
 		// Manage the mint & burn accounting for the claim.
-		if err = k.ProcessTokenLogicModules(ctx, &claim); err != nil {
+		if err = k.ProcessTokenLogicModules(ctx, &claim, applicationInitialStake); err != nil {
 			logger.Error(fmt.Sprintf("error processing token logic modules for claim %q: %v", claim.SessionHeader.SessionId, err))
 			return settledResult, expiredResult, err
 		}
