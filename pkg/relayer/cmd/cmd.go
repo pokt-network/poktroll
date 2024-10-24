@@ -39,6 +39,8 @@ var (
 	flagNodeRPCURL string
 	// flagNodeGRPCURL is the variable containing the Cosmos node GRPC URL flag value.
 	flagNodeGRPCURL string
+	// flagLogLevel is the variable to set a log level (used by cosmos and polylog).
+	flagLogLevel string
 )
 
 // RelayerCmd returns the Cobra command for running the relay miner.
@@ -72,6 +74,7 @@ for such operations.`,
 	cmd.Flags().StringVar(&flagNodeGRPCURL, cosmosflags.FlagGRPC, omittedDefaultFlagValue, "Register the default Cosmos node grpc flag, which is needed to initialize the Cosmos query context with grpc correctly. It can be used to override the `QueryNodeGRPCURL` field in the config file if specified.")
 	cmd.Flags().Bool(cosmosflags.FlagGRPCInsecure, true, "Used to initialize the Cosmos query context with grpc security options. It can be used to override the `QueryNodeGRPCInsecure` field in the config file if specified.")
 	cmd.Flags().String(cosmosflags.FlagChainID, "poktroll", "The network chain ID")
+	cmd.Flags().StringVar(&flagLogLevel, cosmosflags.FlagLogLevel, "debug", "The logging level (debug|info|warn|error)")
 
 	return cmd
 }
@@ -97,7 +100,7 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 
 	// TODO_TECHDEBT: populate logger from the config (ideally, from viper).
 	loggerOpts := []polylog.LoggerOption{
-		polyzero.WithLevel(polyzero.DebugLevel),
+		polyzero.WithLevel(polyzero.ParseLevel(flagLogLevel)),
 		polyzero.WithOutput(os.Stderr),
 	}
 

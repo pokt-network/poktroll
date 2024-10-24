@@ -47,16 +47,6 @@ func (k msgServer) SubmitProof(
 		numClaimComputeUnits uint64
 	)
 
-	// Defer telemetry calls so that they reference the final values the relevant variables.
-	defer func() {
-		// Only increment these metrics counters if handling a new claim.
-		if !isExistingProof {
-			telemetry.ClaimCounter(types.ClaimProofStage_PROVEN, 1, err)
-			telemetry.ClaimRelaysCounter(types.ClaimProofStage_PROVEN, numRelays, err)
-			telemetry.ClaimComputeUnitsCounter(types.ClaimProofStage_PROVEN, numClaimComputeUnits, err)
-		}
-	}()
-
 	logger := k.Logger().With("method", "SubmitProof")
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	logger.Info("About to start submitting proof")
@@ -72,6 +62,20 @@ func (k msgServer) SubmitProof(
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
+
+	// Defer telemetry calls so that they reference the final values the relevant variables.
+	defer func() {
+		// Only increment these metrics counters if handling a new claim.
+		if !isExistingProof {
+			serviceId := session.Header.ServiceId
+			applicationAddress := session.Header.ApplicationAddress
+			supplierOperatorAddress := msg.GetSupplierOperatorAddress()
+
+			telemetry.ClaimCounter(types.ClaimProofStage_PROVEN, 1, serviceId, applicationAddress, supplierOperatorAddress, err)
+			telemetry.ClaimRelaysCounter(types.ClaimProofStage_PROVEN, numRelays, serviceId, applicationAddress, supplierOperatorAddress, err)
+			telemetry.ClaimComputeUnitsCounter(types.ClaimProofStage_PROVEN, numClaimComputeUnits, serviceId, applicationAddress, supplierOperatorAddress, err)
+		}
+	}()
 
 	if err = k.deductProofSubmissionFee(ctx, msg.GetSupplierOperatorAddress()); err != nil {
 		logger.Error(fmt.Sprintf("failed to deduct proof submission fee: %v", err))
@@ -220,7 +224,13 @@ func (k Keeper) ProofRequirementForClaim(ctx context.Context, claim *types.Claim
 
 	// Defer telemetry calls so that they reference the final values the relevant variables.
 	defer func() {
-		telemetry.ProofRequirementCounter(requirementReason, err)
+		telemetry.ProofRequirementCounter(
+			requirementReason,
+			claim.SessionHeader.ServiceId,
+			claim.SessionHeader.ApplicationAddress,
+			claim.SupplierOperatorAddress,
+			err,
+		)
 	}()
 
 	proofParams := k.GetParams(ctx)

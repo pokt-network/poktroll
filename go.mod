@@ -82,7 +82,7 @@ require (
 require (
 	cosmossdk.io/x/tx v0.13.4
 	github.com/jhump/protoreflect v1.16.0
-	go.uber.org/mock v0.4.0
+	github.com/mitchellh/mapstructure v1.5.0
 )
 
 require (
@@ -225,7 +225,6 @@ require (
 	github.com/minio/highwayhash v1.0.2 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/go-testing-interface v1.14.1 // indirect
-	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/moby/docker-image-spec v1.3.1 // indirect
 	github.com/moby/term v0.5.0 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
