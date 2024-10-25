@@ -67,7 +67,6 @@ func (tlm tlmRelayBurnEqualsMint) Process(
 		service.Id,
 		settlementCoin.Amount.Uint64(),
 	); err != nil {
-		// TODO_IN_THIS_COMMIT: reconsider error type...
 		return tokenomicstypes.ErrTokenomicsModuleMint.Wrapf(
 			"distributing rewards to supplier with operator address %s shareholders: %v",
 			supplier.OperatorAddress,

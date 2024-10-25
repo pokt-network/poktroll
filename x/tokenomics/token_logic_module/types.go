@@ -41,16 +41,12 @@ func (tlm TokenLogicModuleId) EnumIndex() int {
 	return int(tlm)
 }
 
-// TODO_IN_THIS_COMMIT: update after renaming TokenLogicModule to TokenLogicModuleId
-// and TokenLogicModuleProcessor to TokenLogicModule.
-//
-// TokenLogicModuleProcessor is an interface that all token logic modules are
-// expected to implement.
+// TokenLogicModule is an interface that all token logic modules are expected to implement.
 // IMPORTANT_SIDE_EFFECTS: Please note that TLMs may update the application and supplier objects,
 // which is why they are passed in as pointers. NOTE: TLMs CANNOT persist any state changes.
-// Persistence of updated application and supplier to the keeper is currently done by the TLM
-// processor in `ProcessTokenLogicModules()`. This design and separation of concerns may change
-// in the future.
+// Persistence of updated application and supplier to the keeper is currently done by the
+// tokenomics keeper in `ProcessTokenLogicModules()`. This design and separation of concerns
+// may change in the future.
 // DEV_NOTE: As of writing this, this is only in anticipation of potentially unstaking
 // actors if their stake falls below a certain threshold.
 type TokenLogicModule interface {
