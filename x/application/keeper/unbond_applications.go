@@ -13,6 +13,8 @@ import (
 
 // EndBlockerUnbondApplications unbonds applications whose unbonding period has elapsed.
 func (k Keeper) EndBlockerUnbondApplications(ctx context.Context) error {
+	logger := k.Logger().With("method", "EndBlockerUnbondApplications")
+
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	sharedParams := k.sharedKeeper.GetParams(sdkCtx)
 	currentHeight := sdkCtx.BlockHeight()
@@ -31,11 +33,11 @@ func (k Keeper) EndBlockerUnbondApplications(ctx context.Context) error {
 			continue
 		}
 
-		unbondingHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, &application)
+		unbondingEndHeight := apptypes.GetApplicationUnbondingHeight(&sharedParams, &application)
 
 		// If the unbonding height is ahead of the current height, the application
 		// stays in the unbonding state.
-		if unbondingHeight > currentHeight {
+		if unbondingEndHeight > currentHeight {
 			continue
 		}
 
@@ -43,7 +45,25 @@ func (k Keeper) EndBlockerUnbondApplications(ctx context.Context) error {
 			return err
 		}
 
-		// TODO_UPNEXT(@bryanchriswhite): emit a new EventApplicationUnbondingEnd event.
+		sdkCtx = sdk.UnwrapSDKContext(ctx)
+
+		unbondingReason := apptypes.ApplicationUnbondingReason_ELECTIVE
+		if application.GetStake().Amount.LT(k.GetParams(ctx).MinStake.Amount) {
+			unbondingReason = apptypes.ApplicationUnbondingReason_BELOW_MIN_STAKE
+		}
+
+		sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
+		unbondingEndEvent := &apptypes.EventApplicationUnbondingEnd{
+			Application:        &application,
+			Reason:             unbondingReason,
+			SessionEndHeight:   sessionEndHeight,
+			UnbondingEndHeight: unbondingEndHeight,
+		}
+		if err := sdkCtx.EventManager().EmitTypedEvent(unbondingEndEvent); err != nil {
+			err = apptypes.ErrAppEmitEvent.Wrapf("(%+v): %s", unbondingEndEvent, err)
+			logger.Error(err.Error())
+			return err
+		}
 	}
 
 	return nil

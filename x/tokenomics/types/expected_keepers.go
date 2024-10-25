@@ -45,7 +45,7 @@ type ApplicationKeeper interface {
 	SetApplication(ctx context.Context, app apptypes.Application)
 	GetAllApplications(ctx context.Context) []apptypes.Application
 	UnbondApplication(ctx context.Context, app *apptypes.Application) error
-	GetParams(ctx context.Context) apptypes.Params
+	EndBlockerUnbondApplications(ctx context.Context) error
 }
 
 type ProofKeeper interface {
@@ -70,6 +70,7 @@ type SharedKeeper interface {
 	GetParams(ctx context.Context) sharedtypes.Params
 	SetParams(ctx context.Context, params sharedtypes.Params) error
 
+	GetSessionEndHeight(ctx context.Context, queryHeight int64) int64
 	GetProofWindowCloseHeight(ctx context.Context, queryHeight int64) int64
 }
 

@@ -166,6 +166,10 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		UnbondApplication(gomock.Any(), gomock.Any()).
 		Return(nil).
 		AnyTimes()
+	mockApplicationKeeper.EXPECT().
+		EndBlockerUnbondApplications(gomock.Any()).
+		Return(nil).
+		AnyTimes()
 
 	// Mock the supplier keeper.
 	mockSupplierKeeper := mocks.NewMockSupplierKeeper(ctrl)
@@ -368,6 +372,7 @@ func NewTokenomicsModuleKeepers(
 		logger,
 		authority.String(),
 		bankKeeper,
+		sharedKeeper,
 	)
 	require.NoError(t, gatewayKeeper.SetParams(sdkCtx, gatewaytypes.DefaultParams()))
 
