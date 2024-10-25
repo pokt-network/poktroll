@@ -712,7 +712,6 @@ func (k Keeper) ensureClaimAmountLimits(
 
 		stakeRequirementAmt = maxClaimableAmt
 		maxClaimSettlementAmt = stakeToMaxSettlementAmount(stakeRequirementAmt)
-		globalInflationAmt = stakeRequirementAmt.Sub(maxClaimSettlementAmt)
 	}
 
 	// Check if the claimable amount should be capped by an insufficient application stake.
@@ -721,7 +720,6 @@ func (k Keeper) ensureClaimAmountLimits(
 			supplier.GetOperatorAddress(), application.GetAddress(), claimSettlementCoin, maxClaimableAmt))
 		stakeRequirementAmt = maxClaimableAmt
 		maxClaimSettlementAmt = stakeToMaxSettlementAmount(stakeRequirementAmt)
-		globalInflationAmt = stakeRequirementAmt.Sub(maxClaimSettlementAmt)
 	}
 
 	// Nominal case: The claimable amount is within the limits set by Relay Mining.

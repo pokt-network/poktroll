@@ -42,7 +42,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 	for _, claim := range expiringClaims {
 		app, isAppFound := k.applicationKeeper.GetApplication(ctx, claim.SessionHeader.ApplicationAddress)
 		if !isAppFound {
-			err := apptypes.ErrAppNotFound.Wrapf("application address: %q", claim.SessionHeader.ApplicationAddress)
+			err = apptypes.ErrAppNotFound.Wrapf("application address: %q", claim.SessionHeader.ApplicationAddress)
 			return settledResult, expiredResult, err
 		}
 
