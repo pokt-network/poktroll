@@ -16,7 +16,7 @@ type IntegrationAppConfig struct {
 	// InitChainerModuleFns are called for each module during the integration App's
 	// InitChainer function.
 	InitChainerModuleFns []InitChainerModuleFn
-	TLMProcessors        []tlm.TokenLogicModuleProcessor
+	TokenLogicModules    []tlm.TokenLogicModule
 }
 
 // IntegrationAppOptionFn is a function that receives and has the opportunity to
@@ -65,8 +65,8 @@ func NewInitChainerModuleGenesisStateOptionFn[T module.HasGenesis](genesisState 
 
 // WithTLMProcessors returns an IntegrationAppOptionFn that sets the given
 // TLM processors on the IntegrationAppConfig.
-func WithTLMProcessors(processors []tlm.TokenLogicModuleProcessor) IntegrationAppOptionFn {
+func WithTLMProcessors(processors []tlm.TokenLogicModule) IntegrationAppOptionFn {
 	return func(config *IntegrationAppConfig) {
-		config.TLMProcessors = processors
+		config.TokenLogicModules = processors
 	}
 }

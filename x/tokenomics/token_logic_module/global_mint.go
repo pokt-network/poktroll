@@ -46,10 +46,10 @@ var (
 	// TODO_UPNEXT(@olshansk, #732): Make this a governance parameter and give it a non-zero value + tests.
 	MintPerClaimedTokenGlobalInflation = 0.1
 
-	_ TokenLogicModuleProcessor = (*tlmProcessorGlobalMint)(nil)
+	_ TokenLogicModule = (*tlmGlobalMint)(nil)
 )
 
-type tlmProcessorGlobalMint struct {
+type tlmGlobalMint struct {
 	authorityRewardAddr string
 }
 
@@ -63,16 +63,17 @@ func init() {
 	// then TLMGlobalMintReimbursementRequest will need to be there too.
 }
 
-func NewGlobalMintProcessor(authorityRewardAddr string) TokenLogicModuleProcessor {
-	return &tlmProcessorGlobalMint{authorityRewardAddr: authorityRewardAddr}
+// NewGlobalMintTLM creates a new instance of the GlobalMint TLM.
+func NewGlobalMintTLM(authorityRewardAddr string) TokenLogicModule {
+	return &tlmGlobalMint{authorityRewardAddr: authorityRewardAddr}
 }
 
-func (tlm tlmProcessorGlobalMint) GetTLM() TokenLogicModule {
+func (tlm tlmGlobalMint) GetId() TokenLogicModuleId {
 	return TLMGlobalMint
 }
 
 // Process processes the business logic for the GlobalMint TLM.
-func (tlm tlmProcessorGlobalMint) Process(
+func (tlm tlmGlobalMint) Process(
 	ctx context.Context,
 	logger cosmoslog.Logger,
 	result *PendingSettlementResult,
@@ -84,7 +85,7 @@ func (tlm tlmProcessorGlobalMint) Process(
 	_ *servicetypes.RelayMiningDifficulty,
 ) error {
 	logger = logger.With(
-		"method", "tlmProcessorGlobalMint#Process",
+		"method", "tlmGlobalMint#Process",
 		"session_id", result.GetSessionId(),
 	)
 

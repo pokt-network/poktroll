@@ -30,25 +30,25 @@ var zerouPOKT = types.NewInt64Coin(volatile.DenomuPOKT, 0)
 // 2. Create valid claims (which require no proofs).
 // 3. Advance the block height to the settlement height and settle the claims.
 // 5. Assert that the settlement state is identical to the first.
-func (s *tlmProcessorsTestSuite) TestTLMProcessorsAreCommutative() {
+func (s *tlmProcessorTestSuite) TestTLMProcessorsAreCommutative() {
 	// Generate all permutations of TLM processor ordering.
-	processors := tlm.NewDefaultProcessors(s.foundationBech32)
-	processorOrderPermutations := permute(processors)
+	tokenLogicModules := tlm.NewDefaultTokenLogicModules(s.foundationBech32)
+	tlmOrderPermutations := permute(tokenLogicModules)
 
-	numProcessorOrderPermutations := factorial(len(processors))
-	require.Equal(s.T(), numProcessorOrderPermutations, len(processorOrderPermutations))
+	numTLMOrderPermutations := factorial(len(tokenLogicModules))
+	require.Equal(s.T(), numTLMOrderPermutations, len(tlmOrderPermutations))
 
-	for i, procs := range processorOrderPermutations {
+	for i, procs := range tlmOrderPermutations {
 		var tlmProcNames []string
 		for _, proc := range procs {
-			tlmProcNames = append(tlmProcNames, proc.GetTLM().String())
+			tlmProcNames = append(tlmProcNames, proc.GetId().String())
 		}
 
 		// The test description is a unique identifier for each permutation.
 		// E.g.: "permutaiton_1_of_2__TLMRelayBurnEqualsMint_TLMGlobalMint"
 		testDesc := fmt.Sprintf(
 			"permutaiton_%d_of_%d__%s",
-			i+1, numProcessorOrderPermutations,
+			i+1, numTLMOrderPermutations,
 			strings.Join(tlmProcNames, "_"),
 		)
 
@@ -78,7 +78,7 @@ func (s *tlmProcessorsTestSuite) TestTLMProcessorsAreCommutative() {
 // with the given options, and creates the suite's service, application, and supplier
 // from SetupTest(). It also sets the block height to 1 and the proposer address to
 // the proposer address from SetupTest().
-func (s *tlmProcessorsTestSuite) setupKeepers(t *testing.T, opts ...keeper.TokenomicsModuleKeepersOptFn) {
+func (s *tlmProcessorTestSuite) setupKeepers(t *testing.T, opts ...keeper.TokenomicsModuleKeepersOptFn) {
 	defaultOpts := []keeper.TokenomicsModuleKeepersOptFn{
 		keeper.WithService(*s.service),
 		keeper.WithApplication(*s.app),
@@ -106,7 +106,7 @@ func (s *tlmProcessorsTestSuite) setupKeepers(t *testing.T, opts ...keeper.Token
 
 // setExpectedSettlementState sets the expected settlement state on the suite based
 // on the current network state and the given settledResults and expiredResults.
-func (s *tlmProcessorsTestSuite) setExpectedSettlementState(
+func (s *tlmProcessorTestSuite) setExpectedSettlementState(
 	t *testing.T,
 	settledResults,
 	expiredResults tlm.PendingSettlementResults,
@@ -119,7 +119,7 @@ func (s *tlmProcessorsTestSuite) setExpectedSettlementState(
 }
 
 // getSettlementState returns a settlement state based on the current network state.
-func (s *tlmProcessorsTestSuite) getSettlementState(t *testing.T) *settlementState {
+func (s *tlmProcessorTestSuite) getSettlementState(t *testing.T) *settlementState {
 	t.Helper()
 
 	app, isAppFound := s.keepers.GetApplication(s.ctx, s.app.GetAddress())
@@ -137,7 +137,7 @@ func (s *tlmProcessorsTestSuite) getSettlementState(t *testing.T) *settlementSta
 }
 
 // getBalance returns the current balance of the given bech32 address.
-func (s *tlmProcessorsTestSuite) getBalance(t *testing.T, bech32 string) *types.Coin {
+func (s *tlmProcessorTestSuite) getBalance(t *testing.T, bech32 string) *types.Coin {
 	t.Helper()
 
 	res, err := s.keepers.Balance(s.ctx, &banktypes.QueryBalanceRequest{
@@ -153,7 +153,7 @@ func (s *tlmProcessorsTestSuite) getBalance(t *testing.T, bech32 string) *types.
 // assertExpectedSettlementState asserts that the current network state matches the
 // expected settlement state, and that actualSettledResults and actualExpiredResults
 // match their corresponding expectations.
-func (s *tlmProcessorsTestSuite) assertExpectedSettlementState(
+func (s *tlmProcessorTestSuite) assertExpectedSettlementState(
 	t *testing.T,
 	actualSettledResults,
 	actualExpiredResults tlm.PendingSettlementResults,

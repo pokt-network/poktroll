@@ -74,8 +74,8 @@ type TokenomicsModuleKeepers struct {
 // instance. Its fields are intended to be set/updated by TokenomicsModuleKeepersOptFn
 // functions which are passed during integration construction.
 type tokenomicsModuleKeepersConfig struct {
-	tlmProcessors  []tlm.TokenLogicModuleProcessor
-	initKeepersFns []func(context.Context, *TokenomicsModuleKeepers) context.Context
+	tokenLogicModules []tlm.TokenLogicModule
+	initKeepersFns    []func(context.Context, *TokenomicsModuleKeepers) context.Context
 	// moduleParams is a map of module names to their respective module parameters.
 	// This is used to set the initial module parameters in the keeper.
 	moduleParams map[string]sdk.Msg
@@ -249,7 +249,7 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		Return(relayMiningDifficulty, true).
 		AnyTimes()
 
-	tlmProcessors := tlm.NewDefaultProcessors(sample.AccAddress())
+	tokenLogicModules := tlm.NewDefaultTokenLogicModules(sample.AccAddress())
 
 	k := tokenomicskeeper.NewKeeper(
 		cdc,
@@ -264,7 +264,7 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 		mockSharedKeeper,
 		mockSessionKeeper,
 		mockServiceKeeper,
-		tlmProcessors,
+		tokenLogicModules,
 	)
 
 	// Add a block proposer address to the context
@@ -286,7 +286,7 @@ func NewTokenomicsModuleKeepers(
 	t.Helper()
 
 	cfg := &tokenomicsModuleKeepersConfig{
-		tlmProcessors: tlm.NewDefaultProcessors(sample.AccAddress()),
+		tokenLogicModules: tlm.NewDefaultTokenLogicModules(sample.AccAddress()),
 	}
 	for _, opt := range opts {
 		opt(cfg)
@@ -499,7 +499,7 @@ func NewTokenomicsModuleKeepers(
 		sharedKeeper,
 		sessionKeeper,
 		serviceKeeper,
-		cfg.tlmProcessors,
+		cfg.tokenLogicModules,
 	)
 
 	if params, ok := cfg.moduleParams[tokenomicstypes.ModuleName]; ok {
@@ -582,9 +582,9 @@ func WithProposerAddr(addr string) TokenomicsModuleKeepersOptFn {
 	}
 }
 
-func WithTLMProcessors(processors []tlm.TokenLogicModuleProcessor) TokenomicsModuleKeepersOptFn {
+func WithTLMProcessors(processors []tlm.TokenLogicModule) TokenomicsModuleKeepersOptFn {
 	return func(cfg *tokenomicsModuleKeepersConfig) {
-		cfg.tlmProcessors = processors
+		cfg.tokenLogicModules = processors
 	}
 }
 

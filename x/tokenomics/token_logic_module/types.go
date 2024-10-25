@@ -12,7 +12,7 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-type TokenLogicModule int
+type TokenLogicModuleId int
 
 const (
 	// TLMRelayBurnEqualsMint is the token logic module that burns the application's
@@ -20,7 +20,7 @@ const (
 	// The same amount of tokens is minted and added to the supplier account balance.
 	// When the network achieves maturity in the far future, this is theoretically
 	// the only TLM that will be necessary.
-	TLMRelayBurnEqualsMint TokenLogicModule = iota
+	TLMRelayBurnEqualsMint TokenLogicModuleId = iota
 
 	// TLMGlobalMint is the token logic module that mints new tokens based on the
 	// global governance parameters in order to reward the participants providing
@@ -33,11 +33,11 @@ var tokenLogicModuleStrings = [...]string{
 	"TLMGlobalMint",
 }
 
-func (tlm TokenLogicModule) String() string {
+func (tlm TokenLogicModuleId) String() string {
 	return tokenLogicModuleStrings[tlm]
 }
 
-func (tlm TokenLogicModule) EnumIndex() int {
+func (tlm TokenLogicModuleId) EnumIndex() int {
 	return int(tlm)
 }
 
@@ -53,8 +53,8 @@ func (tlm TokenLogicModule) EnumIndex() int {
 // in the future.
 // DEV_NOTE: As of writing this, this is only in anticipation of potentially unstaking
 // actors if their stake falls below a certain threshold.
-type TokenLogicModuleProcessor interface {
-	GetTLM() TokenLogicModule
+type TokenLogicModule interface {
+	GetId() TokenLogicModuleId
 	Process(
 		context.Context,
 		cosmoslog.Logger,
@@ -68,14 +68,14 @@ type TokenLogicModuleProcessor interface {
 	) error
 }
 
-// NewDefaultProcessors returns the default token logic module processors:
+// NewDefaultTokenLogicModules returns the default token logic module processors:
 // - TLMRelayBurnEqualsMint
 // - TLMGlobalMint
-func NewDefaultProcessors(authorityRewardAddr string) []TokenLogicModuleProcessor {
-	return []TokenLogicModuleProcessor{
-		NewMintEqualsBurnProcessor(),
+func NewDefaultTokenLogicModules(authorityRewardAddr string) []TokenLogicModule {
+	return []TokenLogicModule{
+		NewRelayBurnEqualsMintTLM(),
 		// TODO_TECHDEBT: Replace authorityRewardAddr with the tokenomics module
 		// params once it's refactored as a param.
-		NewGlobalMintProcessor(authorityRewardAddr),
+		NewGlobalMintTLM(authorityRewardAddr),
 	}
 }

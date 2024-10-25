@@ -17,14 +17,14 @@ type resultOption func(*PendingSettlementResult)
 
 // MintBurn holds the parameters of a mint or burn operation.
 type MintBurn struct {
-	TLM               TokenLogicModule
+	TLM               TokenLogicModuleId
 	DestinationModule string
 	Coin              cosmostypes.Coin
 }
 
 // ModToAcctTransfer holds the parameters of a module to account transfer operation.
 type ModToAcctTransfer struct {
-	TLMName          TokenLogicModule
+	TLMName          TokenLogicModuleId
 	SenderModule     string
 	RecipientAddress cosmostypes.AccAddress
 	Coin             cosmostypes.Coin
@@ -32,7 +32,7 @@ type ModToAcctTransfer struct {
 
 // ModToModTransfer holds the parameters of a module to module transfer operation.
 type ModToModTransfer struct {
-	TLMName         TokenLogicModule
+	TLMName         TokenLogicModuleId
 	SenderModule    string
 	RecipientModule string
 	Coin            cosmostypes.Coin

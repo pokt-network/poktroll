@@ -20,7 +20,7 @@ import (
 func distributeSupplierRewardsToShareHolders(
 	logger cosmoslog.Logger,
 	result *PendingSettlementResult,
-	tokenLogicModule TokenLogicModule,
+	tokenLogicModule TokenLogicModuleId,
 	supplier *sharedtypes.Supplier,
 	serviceId string,
 	amountToDistribute uint64,

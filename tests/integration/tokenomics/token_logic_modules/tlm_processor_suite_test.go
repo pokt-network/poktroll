@@ -21,7 +21,7 @@ import (
 	tlm "github.com/pokt-network/poktroll/x/tokenomics/token_logic_module"
 )
 
-type tlmProcessorsTestSuite struct {
+type tlmProcessorTestSuite struct {
 	suite.Suite
 
 	ctx     context.Context
@@ -51,12 +51,12 @@ type settlementState struct {
 }
 
 func TestTLMProcessorTestSuite(t *testing.T) {
-	suite.Run(t, new(tlmProcessorsTestSuite))
+	suite.Run(t, new(tlmProcessorTestSuite))
 }
 
 // SetupTest generates and sets all rewardee addresses on the suite, and
 // set a service, application, and supplier on the suite.
-func (s *tlmProcessorsTestSuite) SetupTest() {
+func (s *tlmProcessorTestSuite) SetupTest() {
 	s.foundationBech32 = sample.AccAddress()
 	s.sourceOwnerBech32 = sample.AccAddress()
 	s.proposerConsAddr = sample.ConsAddress()
@@ -100,7 +100,7 @@ func (s *tlmProcessorsTestSuite) SetupTest() {
 
 // getProofParams returns the default proof params with a high proof requirement threshold
 // and no proof request probability such that no claims require a proof.
-func (s *tlmProcessorsTestSuite) getProofParams() *prooftypes.Params {
+func (s *tlmProcessorTestSuite) getProofParams() *prooftypes.Params {
 	proofParams := prooftypes.DefaultParams()
 	highProofRequirementThreshold := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, math.MaxInt64)
 	proofParams.ProofRequirementThreshold = &highProofRequirementThreshold
@@ -109,7 +109,7 @@ func (s *tlmProcessorsTestSuite) getProofParams() *prooftypes.Params {
 }
 
 // getSharedParams returns the default shared params with the CUTTM set to 1.
-func (s *tlmProcessorsTestSuite) getSharedParams() *sharedtypes.Params {
+func (s *tlmProcessorTestSuite) getSharedParams() *sharedtypes.Params {
 	sharedParams := sharedtypes.DefaultParams()
 	sharedParams.ComputeUnitsToTokensMultiplier = 1
 	return &sharedParams
@@ -119,7 +119,7 @@ func (s *tlmProcessorsTestSuite) getSharedParams() *sharedtypes.Params {
 // the suites service, application, and supplier.
 // DEV_NOTE: The sum/count must be large enough to avoid a proposer reward
 // (or other small proportion rewards) from being truncated to zero (> 1upokt).
-func (s *tlmProcessorsTestSuite) createClaims(
+func (s *tlmProcessorTestSuite) createClaims(
 	keepers *testkeeper.TokenomicsModuleKeepers,
 	numClaims int,
 ) {
@@ -146,7 +146,7 @@ func (s *tlmProcessorsTestSuite) createClaims(
 
 // settleClaims sets the block height to the settlement height for the current
 // session and triggers the settlement of all pending claims.
-func (s *tlmProcessorsTestSuite) settleClaims(t *testing.T) (settledResults, expiredResults tlm.PendingSettlementResults) {
+func (s *tlmProcessorTestSuite) settleClaims(t *testing.T) (settledResults, expiredResults tlm.PendingSettlementResults) {
 	// Increment the block height to the settlement height.
 	settlementHeight := sharedtypes.GetSettlementSessionEndHeight(s.getSharedParams(), 1)
 	s.setBlockHeight(settlementHeight)
@@ -162,6 +162,6 @@ func (s *tlmProcessorsTestSuite) settleClaims(t *testing.T) (settledResults, exp
 }
 
 // setBlockHeight sets the block height of the suite's context to height.
-func (s *tlmProcessorsTestSuite) setBlockHeight(height int64) {
+func (s *tlmProcessorTestSuite) setBlockHeight(height int64) {
 	s.ctx = cosmostypes.UnwrapSDKContext(s.ctx).WithBlockHeight(height)
 }

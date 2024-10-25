@@ -214,7 +214,7 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 	if daoRewardBech32 == "" {
 		panic(`dao/foundation reward address MUST be set; add a "-X github.com/pokt-network/poktroll/x/tokenomics/types.DaoRewardAddress" element to build.ldglags in the config.yml`)
 	}
-	tlmProcessors := tlm.NewDefaultProcessors(daoRewardBech32)
+	tokenLogicModules := tlm.NewDefaultTokenLogicModules(daoRewardBech32)
 
 	k := keeper.NewKeeper(
 		in.Cdc,
@@ -231,7 +231,7 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 		in.SessionKeeper,
 		in.ServiceKeeper,
 
-		tlmProcessors,
+		tokenLogicModules,
 	)
 	m := NewAppModule(
 		in.Cdc,

@@ -15,20 +15,21 @@ import (
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-var _ TokenLogicModuleProcessor = (*tlmRelayBurnEqualsMintProcessor)(nil)
+var _ TokenLogicModule = (*tlmRelayBurnEqualsMint)(nil)
 
-type tlmRelayBurnEqualsMintProcessor struct{}
+type tlmRelayBurnEqualsMint struct{}
 
-func NewMintEqualsBurnProcessor() TokenLogicModuleProcessor {
-	return &tlmRelayBurnEqualsMintProcessor{}
+// NewRelayBurnEqualsMintTLM returns a new RelayBurnEqualsMint TLM.
+func NewRelayBurnEqualsMintTLM() TokenLogicModule {
+	return &tlmRelayBurnEqualsMint{}
 }
 
-func (tlm tlmRelayBurnEqualsMintProcessor) GetTLM() TokenLogicModule {
+func (tlm tlmRelayBurnEqualsMint) GetId() TokenLogicModuleId {
 	return TLMRelayBurnEqualsMint
 }
 
 // Process processes the business logic for the RelayBurnEqualsMint TLM.
-func (tlm tlmRelayBurnEqualsMintProcessor) Process(
+func (tlm tlmRelayBurnEqualsMint) Process(
 	_ context.Context,
 	logger cosmoslog.Logger,
 	pendingResult *PendingSettlementResult,

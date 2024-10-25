@@ -236,7 +236,7 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 	t.Helper()
 
 	cfg := &IntegrationAppConfig{
-		TLMProcessors: tlm.NewDefaultProcessors(sample.ConsAddressBech32()),
+		TokenLogicModules: tlm.NewDefaultTokenLogicModules(sample.ConsAddressBech32()),
 	}
 	for _, opt := range opts {
 		opt(cfg)
@@ -502,7 +502,7 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 		sharedKeeper,
 		sessionKeeper,
 		serviceKeeper,
-		cfg.TLMProcessors,
+		cfg.TokenLogicModules,
 	)
 	tokenomicsModule := tokenomics.NewAppModule(
 		cdc,

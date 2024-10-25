@@ -183,7 +183,7 @@ func (k Keeper) ProcessTokenLogicModules(
 
 	// Execute all the token logic modules processors
 	for _, tlmProcessor := range k.tokenLogicModuleProcessors {
-		tlmName := tlmProcessor.GetTLM().String()
+		tlmName := tlmProcessor.GetId().String()
 		logger.Info(fmt.Sprintf("Starting TLM processing: %q", tlmName))
 
 		if err = tlmProcessor.Process(

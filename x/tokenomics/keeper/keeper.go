@@ -35,7 +35,7 @@ type Keeper struct {
 
 	sharedQuerier client.SharedQueryClient
 
-	tokenLogicModuleProcessors []tlm.TokenLogicModuleProcessor
+	tokenLogicModuleProcessors []tlm.TokenLogicModule
 }
 
 func NewKeeper(
@@ -53,7 +53,7 @@ func NewKeeper(
 	sessionKeeper types.SessionKeeper,
 	serviceKeeper types.ServiceKeeper,
 
-	tlmProcessors []tlm.TokenLogicModuleProcessor,
+	tlmProcessors []tlm.TokenLogicModule,
 ) Keeper {
 	if _, err := sdk.AccAddressFromBech32(authority); err != nil {
 		panic(fmt.Sprintf("invalid authority address: %s", authority))
