@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	// TODO_UPNEXT: Make supplier staking fee a governance parameter
+	// TODO_BETA: Make supplier staking fee a governance parameter
 	// TODO_UPNEXT: Update supplier staking documentation to remove the upstaking
 	// requirement and introduce the staking fee.
 	SupplierStakingFee = sdk.NewInt64Coin(volatile.DenomuPOKT, 1)
@@ -112,8 +112,8 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 		supplier.UnstakeSessionEndHeight = sharedtypes.SupplierNotUnstaking
 	}
 
-	// MUST ALWAYS stake or upstake (>= 0 delta)
-	// TODO_CONSIDERATION: Should we allow stake decrease down to min stake?
+	// TODO_BETA: Remove requirement of MUST ALWAYS stake or upstake (>= 0 delta)
+	// TODO_POST_MAINNET: Should we allow stake decrease down to min stake?
 	if coinsToEscrow.IsNegative() {
 		err = types.ErrSupplierInvalidStake.Wrapf(
 			"Supplier signer %q stake (%s) must be greater than or equal to the current stake (%s)",
@@ -142,7 +142,8 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 	}
 
 	// Send the coins from the message signer account to the staked supplier pool
-	err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, msgSignerAddress, types.ModuleName, sdk.NewCoins(coinsToEscrow.Add(SupplierStakingFee)))
+	stakeWithFee := sdk.NewCoins(coinsToEscrow.Add(SupplierStakingFee))
+	err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, msgSignerAddress, types.ModuleName, stakeWithFee)
 	if err != nil {
 		logger.Info(fmt.Sprintf("ERROR: could not send %v coins from %q to %q module account due to %v", coinsToEscrow, msgSignerAddress, types.ModuleName, err))
 		return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -203,6 +204,7 @@ func (k msgServer) updateSupplier(
 		return types.ErrSupplierInvalidStake.Wrapf("stake amount cannot be nil")
 	}
 
+	// TODO_BETA: No longer require upstaking. Remove this check.
 	if msg.Stake.IsLT(*supplier.Stake) {
 		return types.ErrSupplierInvalidStake.Wrapf(
 			"stake amount %v must be greater than or equal than previous stake amount %v",
