@@ -124,7 +124,7 @@ up to `n` times its stake for a given session number by performing
 `MaxClaimableAmount * NumSuppliersPerSession * n > Application.Stake` worth of work.
 
 To avoid thy type of over-servicing, The Pocket protocol requires `Application`s
-to only be able to stake to a single service.
+to only be able to stake for EXACTLY ONE service.
 
 :::
 

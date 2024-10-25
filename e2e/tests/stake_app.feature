@@ -1,6 +1,6 @@
 Feature: Stake App Namespaces
 
-    # Use the app3 account which is not staked at genesis time
+    # This test assume the account for app3 IS NOT STAKED at genesis
     Scenario: User can stake an Application waiting for it to unbond
         Given the user has the pocketd binary installed
         And the user verifies the "application" for account "app3" is not staked

@@ -62,9 +62,9 @@ var (
 	keyRingFlag      = "--keyring-backend=test"
 	chainIdFlag      = "--chain-id=poktroll"
 	// Keeping localhost by default because that is how we run the tests on our machines locally
-	// appGateServerUrl is pointing to a non-sovereign app gate server so multiple
+	// gatewayUrl is pointing to a non-sovereign app gate server so multiple
 	// apps could relay through it.
-	appGateServerUrl = "http://localhost:42079"
+	gatewayUrl = "http://localhost:42079"
 )
 
 func init() {
@@ -74,9 +74,9 @@ func init() {
 
 	flag.StringVar(&flagFeaturesPath, "features-path", "*.feature", "Specifies glob paths for the runner to look up .feature files")
 
-	// If "APPGATE_SERVER_URL" envar is present, use it for appGateServerUrl
-	if url := os.Getenv("APPGATE_SERVER_URL"); url != "" {
-		appGateServerUrl = url
+	// If "GATEWAY_URL" envar is present, use it for appGateServerUrl
+	if url := os.Getenv("GATEWAY_URL"); url != "" {
+		gatewayUrl = url
 	}
 }
 
@@ -464,7 +464,7 @@ func (s *suite) TheApplicationSendsTheSupplierASuccessfulRequestForServiceWithPa
 
 	appAddr := accNameToAddrMap[appName]
 
-	res, err := s.pocketd.RunCurlWithRetry(appGateServerUrl, serviceId, method, path, appAddr, requestData, 5)
+	res, err := s.pocketd.RunCurlWithRetry(gatewayUrl, serviceId, method, path, appAddr, requestData, 5)
 	require.NoError(s, err, "error sending relay request from app %q to supplier %q for service %q", appName, supplierOperatorName, serviceId)
 
 	var jsonContent json.RawMessage

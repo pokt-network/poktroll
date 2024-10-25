@@ -74,7 +74,7 @@ service_ids:
 
 The `service_ids` list must contain a unique entry.
 
-The current protocol requires the `service_ids` list to contain a single entry
+The current protocol requires the `service_ids` list to contain **EXACTLY ONE** entry
 to prevent `Application`s from over-servicing.
 
 A detailed explanation of why this is the case can be found in
