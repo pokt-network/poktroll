@@ -12,6 +12,7 @@ import (
 )
 
 // Upgrade_0_0_10 is the upgrade handler for v0.0.10 Alpha TestNet upgrade
+// Before/after validations should be done using the correct version (e.g. before - v0.0.9, after - v0.0.10)
 var Upgrade_0_0_10 = Upgrade{
 	PlanName: "v0.0.10",
 	CreateUpgradeHandler: func(mm *module.Manager,
@@ -25,6 +26,7 @@ var Upgrade_0_0_10 = Upgrade{
 			//
 
 			// Add application min stake
+			// Validate with: `poktrolld q application params --node=https://testnet-validated-validator-rpc.poktroll.com/`
 			appParams := keepers.ApplicationKeeper.GetParams(ctx)
 			newMinStakeApp := cosmosTypes.NewCoin("upokt", math.NewInt(100000000))
 			appParams.MinStake = &newMinStakeApp
@@ -34,6 +36,7 @@ var Upgrade_0_0_10 = Upgrade{
 			}
 
 			// Add supplier min stake
+			// Validate with: `poktrolld q supplier params --node=https://testnet-validated-validator-rpc.poktroll.com/`
 			supplierParams := keepers.SupplierKeeper.GetParams(ctx)
 			newMinStakeSupplier := cosmosTypes.NewCoin("upokt", math.NewInt(1000000))
 			supplierParams.MinStake = &newMinStakeSupplier
@@ -43,6 +46,7 @@ var Upgrade_0_0_10 = Upgrade{
 			}
 
 			// Add gateway min stake
+			// Validate with: `poktrolld q gateway params --node=https://testnet-validated-validator-rpc.poktroll.com/`
 			gatewayParams := keepers.GatewayKeeper.GetParams(ctx)
 			newMinStakeGW := cosmosTypes.NewCoin("upokt", math.NewInt(1000000))
 			gatewayParams.MinStake = &newMinStakeGW
@@ -52,6 +56,7 @@ var Upgrade_0_0_10 = Upgrade{
 			}
 
 			// Adjust proof module parameters
+			// Validate with: `poktrolld q proof params --node=https://testnet-validated-validator-rpc.poktroll.com/`
 			proofParams := keepers.ProofKeeper.GetParams(ctx)
 			newProofRequirementThreshold := cosmosTypes.NewCoin("upokt", math.NewInt(20000000))
 			newProofMissingPenalty := cosmosTypes.NewCoin("upokt", math.NewInt(320000000))
@@ -63,6 +68,7 @@ var Upgrade_0_0_10 = Upgrade{
 			}
 
 			// Add new shared module params
+			// Validate with: `poktrolld q shared params --node=https://testnet-validated-validator-rpc.poktroll.com/`
 			sharedParams := keepers.SharedKeeper.GetParams(ctx)
 			sharedParams.SupplierUnbondingPeriodSessions = uint64(1)
 			sharedParams.ApplicationUnbondingPeriodSessions = uint64(1)
@@ -72,30 +78,30 @@ var Upgrade_0_0_10 = Upgrade{
 				return vm, err
 			}
 
-			// // Get current consensus module parameters
-			// currentParams, err := keepers.ConsensusParamsKeeper.ParamsStore.Get(ctx)
-			// if err != nil {
-			// 	return vm, err
-			// }
+			//
+			// Add new authz authorizations:
+			// https://github.com/pokt-network/poktroll/compare/v0.0.9-3...96a9d29#diff-1698f4aae5353dd42a159c9dad0eca886805d5dc792a55a14f785f3b5ea767ee
+			//
 
-			// // Supply all params even when changing just one, as `ToProtoConsensusParams` requires them to be present.
-			// newParams := consensusparamtypes.MsgUpdateParams{
-			// 	Authority: keepers.ConsensusParamsKeeper.GetAuthority(),
-			// 	Block:     currentParams.Block,
-			// 	Evidence:  currentParams.Evidence,
-			// 	Validator: currentParams.Validator,
-
-			// 	// This seems to be deprecated/not needed, but it's fine as we're copying the existing data.
-			// 	Abci: currentParams.Abci,
-			// }
-
-			// // Increase block size two-fold, 22020096 is the default value.
-			// newParams.Block.MaxBytes = 22020096 * 2
-
-			// // Update the chain state
-			// if _, err = keepers.ConsensusParamsKeeper.UpdateParams(ctx, &newParams); err != nil {
-			// 	return vm, err
-			// }
+			// Validate before after with:
+			// `poktrolld q authz grants-by-granter pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t --node=https://testnet-validated-validator-rpc.poktroll.com/`
+			newAuthorizations := []grantAuthorization{
+				newTestNetGrantAuthorization("/poktroll.gateway.MsgUpdateParam"),
+				newTestNetGrantAuthorization("/poktroll.application.MsgUpdateParam"),
+				newTestNetGrantAuthorization("/poktroll.supplier.MsgUpdateParam"),
+			}
+			for _, authorization := range newAuthorizations {
+				err = keepers.AuthzKeeper.SaveGrant(
+					ctx,
+					authorization.grantee,
+					authorization.granter,
+					authorization.authorization,
+					authorization.expiration,
+				)
+				if err != nil {
+					return vm, err
+				}
+			}
 
 			return mm.RunMigrations(ctx, configurator, vm)
 		}
