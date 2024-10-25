@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/proof"
 	"github.com/pokt-network/poktroll/testutil/sample"
@@ -48,6 +49,10 @@ type settlementState struct {
 	proposerBalance      *cosmostypes.Coin
 	foundationBalance    *cosmostypes.Coin
 	sourceOwnerBalance   *cosmostypes.Coin
+}
+
+func init() {
+	cmd.InitSDKConfig()
 }
 
 func TestTLMProcessorTestSuite(t *testing.T) {

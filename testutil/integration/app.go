@@ -1008,9 +1008,11 @@ func newFaucetInitChainerFn(faucetBech32 string, faucetAmtUpokt int64) InitChain
 
 // newProposerAddrBz returns a random proposer address in bytes.
 func newProposerAddrBz(t *testing.T) []byte {
-	bech32 := sample.ConsAddressBech32()
-	addr, err := cosmostypes.ConsAddressFromBech32(bech32)
+	bech32 := sample.AccAddress()
+	addr, err := cosmostypes.AccAddressFromBech32(bech32)
 	require.NoError(t, err)
+
+	fmt.Printf("newProposerAddrBz: %s\n", addr.String())
 
 	return addr.Bytes()
 }
