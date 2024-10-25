@@ -236,7 +236,7 @@ func NewCompleteIntegrationApp(t *testing.T, opts ...IntegrationAppOptionFn) *Ap
 	t.Helper()
 
 	cfg := &IntegrationAppConfig{
-		TokenLogicModules: tlm.NewDefaultTokenLogicModules(sample.ConsAddressBech32()),
+		TokenLogicModules: tlm.NewDefaultTokenLogicModules(sample.AccAddress()),
 	}
 	for _, opt := range opts {
 		opt(cfg)
@@ -732,7 +732,7 @@ func (app *App) RunMsgs(t *testing.T, msgs ...sdk.Msg) (txMsgResps []tx.MsgRespo
 	finalizeBlockReq := &cmtabcitypes.RequestFinalizeBlock{
 		Height: app.LastBlockHeight() + 1,
 		// Randomize the proposer address for each block.
-		ProposerAddress: newProposerAddrBz(t),
+		ProposerAddress: sample.ConsAddress().Bytes(),
 		DecidedLastCommit: cmtabcitypes.CommitInfo{
 			Votes: []cmtabcitypes.VoteInfo{{}},
 		},
@@ -818,7 +818,7 @@ func (app *App) NextBlock(t *testing.T) {
 		Height: app.sdkCtx.BlockHeight(),
 		Time:   app.sdkCtx.BlockTime(),
 		// Randomize the proposer address for each block.
-		ProposerAddress: newProposerAddrBz(t),
+		ProposerAddress: sample.ConsAddress().Bytes(),
 	})
 	require.NoError(t, err)
 
@@ -1004,15 +1004,4 @@ func newFaucetInitChainerFn(faucetBech32 string, faucetAmtUpokt int64) InitChain
 			},
 		},
 	})
-}
-
-// newProposerAddrBz returns a random proposer address in bytes.
-func newProposerAddrBz(t *testing.T) []byte {
-	bech32 := sample.AccAddress()
-	addr, err := cosmostypes.AccAddressFromBech32(bech32)
-	require.NoError(t, err)
-
-	fmt.Printf("newProposerAddrBz: %s\n", addr.String())
-
-	return addr.Bytes()
 }
