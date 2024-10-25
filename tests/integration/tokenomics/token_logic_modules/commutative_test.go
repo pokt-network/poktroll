@@ -183,7 +183,7 @@ func (s *tlmProcessorTestSuite) assertExpectedSettlementState(
 
 		actualSettlementState := s.getSettlementState(t)
 
-		// Assert that app stake and rewardee balances settlementState are non-zero.
+		// Assert that app stake and rewardee balances are non-zero.
 		require.NotEqual(t, &zerouPOKT, actualSettlementState.appStake)
 		require.NotEqual(t, &zerouPOKT, actualSettlementState.appBalance)
 		require.NotEqual(t, &zerouPOKT, actualSettlementState.supplierOwnerBalance)

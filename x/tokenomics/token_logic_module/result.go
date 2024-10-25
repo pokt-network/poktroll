@@ -75,8 +75,8 @@ func (r *PendingSettlementResult) GetApplicationAddr() string {
 	return r.Claim.GetSessionHeader().GetApplicationAddress()
 }
 
-// GetSupplierAddr returns the supplier address of the result's claim.
-func (r *PendingSettlementResult) GetSupplierAddr() string {
+// GetSupplierOperatorAddr returns the supplier address of the result's claim.
+func (r *PendingSettlementResult) GetSupplierOperatorAddr() string {
 	return r.Claim.GetSupplierOperatorAddress()
 }
 
@@ -120,13 +120,13 @@ func (rs PendingSettlementResults) GetNumComputeUnits() (numComputeUnits uint64,
 	for _, result := range rs {
 		claimNumComputeUnits, err := result.GetNumComputeUnits()
 		if err != nil {
-			err = errors.Join(err, err)
+			errs = errors.Join(err, err)
 			continue
 		}
 		numComputeUnits += claimNumComputeUnits
 	}
 
-	return numComputeUnits, nil
+	return numComputeUnits, errs
 }
 
 // GetNumRelays returns the total number of relays in the combined results.
@@ -157,12 +157,12 @@ func (rs PendingSettlementResults) GetApplicationAddrs() (appAddrs []string) {
 	return appAddrs
 }
 
-// GetSupplierAddrs returns a slice of supplier addresses from the combined results' claims.
-func (rs PendingSettlementResults) GetSupplierAddrs() (supplierAddrs []string) {
+// GetSupplierOperatorAddrs returns a slice of supplier addresses from the combined results' claims.
+func (rs PendingSettlementResults) GetSupplierOperatorAddrs() (supplierOperatorAddrs []string) {
 	for _, result := range rs {
-		supplierAddrs = append(supplierAddrs, result.GetSupplierAddr())
+		supplierOperatorAddrs = append(supplierOperatorAddrs, result.GetSupplierOperatorAddr())
 	}
-	return supplierAddrs
+	return supplierOperatorAddrs
 }
 
 // GetServiceIds returns a slice of service IDs from the combined results' claims.

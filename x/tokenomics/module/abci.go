@@ -36,26 +36,24 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) (err error) {
 
 	// Telemetry - defer telemetry calls so that they reference the final values the relevant variables.
 	defer func() {
-		errs := err
-
 		numSettledRelays, errNumRelays := settledResults.GetNumRelays()
 		if err != nil {
-			errs = errors.Join(errs, errNumRelays)
+			err = errors.Join(err, errNumRelays)
 		}
 
 		numSettledComputeUnits, errNumComputeUnits := settledResults.GetNumComputeUnits()
 		if err != nil {
-			errs = errors.Join(errs, errNumComputeUnits)
+			err = errors.Join(err, errNumComputeUnits)
 		}
 
 		numExpiredRelays, errNumRelays := expiredResults.GetNumRelays()
 		if err != nil {
-			errs = errors.Join(errs, errNumRelays)
+			err = errors.Join(err, errNumRelays)
 		}
 
 		numExpiredComputeUnits, errNumComputeUnits := expiredResults.GetNumComputeUnits()
 		if err != nil {
-			errs = errors.Join(errs, errNumComputeUnits)
+			err = errors.Join(err, errNumComputeUnits)
 		}
 
 		telemetry.ClaimCounter(
@@ -97,7 +95,7 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) (err error) {
 	settledRelaysPerServiceIdMap, err := settledResults.GetRelaysPerServiceMap()
 	if err != nil {
 		logger.Error(fmt.Sprintf("could not get settled relays per service map due to error %v", err))
-		return
+		return err
 	}
 	difficultyPerServiceMap, err := k.UpdateRelayMiningDifficulty(ctx, settledRelaysPerServiceIdMap)
 	if err != nil {

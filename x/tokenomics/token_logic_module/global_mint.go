@@ -128,7 +128,7 @@ func (tlm tlmGlobalMint) Process(
 		Coin:            supplierCoin,
 	})
 	// Distribute the rewards from within the supplier's module account.
-	if err := distributeSupplierRewardsToShareHolders(logger, result, TLMGlobalMint, supplier, service.Id, uint64(supplierCoinsToShareAmt)); err != nil {
+	if err = distributeSupplierRewardsToShareHolders(logger, result, TLMGlobalMint, supplier, service.Id, uint64(supplierCoinsToShareAmt)); err != nil {
 		return tokenomicstypes.ErrTokenomicsModuleMint.Wrapf(
 			"distributing rewards to supplier with operator address %s shareholders: %v",
 			supplier.OperatorAddress,

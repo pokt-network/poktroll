@@ -3,6 +3,7 @@ package tokenomics
 import (
 	"context"
 	"encoding/json"
+
 	// this line is used by starport scaffolding # 1
 
 	"cosmossdk.io/core/appmodule"
