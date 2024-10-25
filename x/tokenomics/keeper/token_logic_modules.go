@@ -182,11 +182,11 @@ func (k Keeper) ProcessTokenLogicModules(
 	logger.Info(fmt.Sprintf("About to start processing TLMs for (%d) compute units, equal to (%s) claimed", numClaimComputeUnits, actualSettlementCoin))
 
 	// Execute all the token logic modules processors
-	for _, tlmProcessor := range k.tokenLogicModuleProcessors {
-		tlmName := tlmProcessor.GetId().String()
-		logger.Info(fmt.Sprintf("Starting TLM processing: %q", tlmName))
+	for _, tokenLogicModule := range k.tokenLogicModules {
+		tlmName := tokenLogicModule.GetId().String()
+		logger.Info(fmt.Sprintf("Starting processing TLM: %q", tlmName))
 
-		if err = tlmProcessor.Process(
+		if err = tokenLogicModule.Process(
 			ctx, logger,
 			pendingResult,
 			&service,
@@ -199,7 +199,7 @@ func (k Keeper) ProcessTokenLogicModules(
 			return tokenomicstypes.ErrTokenomicsTLMError.Wrapf("TLM %q: %s", tlmName, err)
 		}
 
-		logger.Info(fmt.Sprintf("Finished TLM processing: %q", tlmName))
+		logger.Info(fmt.Sprintf("Finished processing TLM: %q", tlmName))
 	}
 
 	// TODO_CONSIDERATION: If we support multiple native tokens, we will need to

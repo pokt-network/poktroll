@@ -114,7 +114,7 @@ func (tlm tlmGlobalMint) Process(
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to application: %v", err)
 	}
-	logMsg := fmt.Sprintf("operation queued: send (%v) newley minted coins from the tokenomics module to the application with address %q", appCoin, application.GetAddress())
+	logMsg := fmt.Sprintf("send (%v) newley minted coins from the tokenomics module to the application with address %q", appCoin, application.GetAddress())
 	logRewardOperation(logger, logMsg, &appCoin)
 
 	// Send a portion of the rewards to the supplier shareholders.
@@ -142,7 +142,7 @@ func (tlm tlmGlobalMint) Process(
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to DAO: %v", err)
 	}
-	logMsg = fmt.Sprintf("operation queued: send (%v) newley minted coins from the tokenomics module to the DAO with address %q", daoCoin, tlm.authorityRewardAddr)
+	logMsg = fmt.Sprintf("send (%v) newley minted coins from the tokenomics module to the DAO with address %q", daoCoin, tlm.authorityRewardAddr)
 	logRewardOperation(logger, logMsg, &daoCoin)
 
 	// Send a portion of the rewards to the source owner
@@ -150,7 +150,7 @@ func (tlm tlmGlobalMint) Process(
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to source owner: %v", err)
 	}
-	logMsg = fmt.Sprintf("operation queued: send (%v) newley minted coins from the tokenomics module to the source owner with address %q", serviceCoin, service.OwnerAddress)
+	logMsg = fmt.Sprintf("send (%v) newley minted coins from the tokenomics module to the source owner with address %q", serviceCoin, service.OwnerAddress)
 	logRewardOperation(logger, logMsg, &serviceCoin)
 
 	// Send a portion of the rewards to the block proposer
@@ -159,7 +159,7 @@ func (tlm tlmGlobalMint) Process(
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to proposer: %v", err)
 	}
-	logMsg = fmt.Sprintf("operation queued: send (%v) newley minted coins from the tokenomics module to the proposer with address %q", proposerCoin, proposerAddr)
+	logMsg = fmt.Sprintf("send (%v) newley minted coins from the tokenomics module to the proposer with address %q", proposerCoin, proposerAddr)
 	logRewardOperation(logger, logMsg, &proposerCoin)
 
 	// Check and log the total amount of coins distributed
@@ -168,18 +168,6 @@ func (tlm tlmGlobalMint) Process(
 	}
 
 	return nil
-}
-
-// logRewardOperation logs (at the info level) whether a particular reward operation
-// was queued or not by appending a corresponding prefix to the given message.
-func logRewardOperation(logger cosmoslog.Logger, msg string, reward *cosmostypes.Coin) {
-	var opMsgPrefix string
-	if reward.IsZero() {
-		opMsgPrefix = "operation skipped:"
-	} else {
-		opMsgPrefix = "operation queued:"
-	}
-	logger.Info(fmt.Sprintf("%s: %s", opMsgPrefix, msg))
 }
 
 // ensureMintedCoinsAreDistributed checks whether the total amount of minted coins
@@ -203,7 +191,7 @@ func ensureMintedCoinsAreDistributed(
 	isAbsDifferenceSignificant := coinDifference.Cmp(big.NewInt(int64(MintDistributionAllowableToleranceAbs))) > 0
 
 	// No discrepancy, return early
-	logger.Info(fmt.Sprintf("distributed (%v) coins to the application, supplier, DAO, source owner, and proposer", totalMintDistributedCoin))
+	logger.Info(fmt.Sprintf("operation queued: distribute (%v) coins to the application, supplier, DAO, source owner, and proposer", totalMintDistributedCoin))
 	if !doesDiscrepancyExist {
 		return nil
 	}

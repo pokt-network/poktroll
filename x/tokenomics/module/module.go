@@ -205,7 +205,7 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 		authority = authtypes.NewModuleAddressOrBech32Address(in.Config.Authority)
 	}
 
-	// DEV_NOTE: The TLM processors are provided as arguments to the keeper mainly
+	// DEV_NOTE: The token logic modules are provided as arguments to the keeper mainly
 	// to satisfy testing requirements (see: x/tokenomics/token_logic_modules_test.go).
 
 	// MintAllocationDAO proportion of minted tokens will be sent to this address

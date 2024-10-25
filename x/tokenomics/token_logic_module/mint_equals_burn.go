@@ -32,7 +32,7 @@ func (tlm tlmRelayBurnEqualsMint) GetId() TokenLogicModuleId {
 func (tlm tlmRelayBurnEqualsMint) Process(
 	_ context.Context,
 	logger cosmoslog.Logger,
-	pendingResult *PendingSettlementResult,
+	result *PendingSettlementResult,
 	service *sharedtypes.Service,
 	_ *sessiontypes.SessionHeader,
 	application *apptypes.Application,
@@ -40,7 +40,10 @@ func (tlm tlmRelayBurnEqualsMint) Process(
 	settlementCoin cosmostypes.Coin,
 	_ *servicetypes.RelayMiningDifficulty,
 ) error {
-	logger = logger.With("method", "TokenLogicModuleRelayBurnEqualsMint")
+	logger = logger.With(
+		"method", "TokenLogicModuleRelayBurnEqualsMint",
+		"session_id", result.GetSessionId(),
+	)
 
 	// DEV_NOTE: We are doing a mint & burn + transfer, instead of a simple transfer
 	// of funds from the application stake to the supplier balance in order to enable second
@@ -50,39 +53,39 @@ func (tlm tlmRelayBurnEqualsMint) Process(
 	// Mint new uPOKT to the supplier module account.
 	// These funds will be transferred to the supplier's shareholders below.
 	// For reference, see operate/configs/supplier_staking_config.md.
-	pendingResult.AppendMint(MintBurn{
+	result.AppendMint(MintBurn{
 		TLM:               TLMRelayBurnEqualsMint,
 		DestinationModule: suppliertypes.ModuleName,
 		Coin:              settlementCoin,
 	})
 
-	logger.Info(fmt.Sprintf("operation scheduled: mint (%v) coins in the supplier module", settlementCoin))
+	logger.Info(fmt.Sprintf("operation queued: mint (%v) coins in the supplier module", settlementCoin))
 
 	// Distribute the rewards to the supplier's shareholders based on the rev share percentage.
 	if err := distributeSupplierRewardsToShareHolders(
 		logger,
-		pendingResult,
+		result,
 		TLMRelayBurnEqualsMint,
 		supplier,
 		service.Id,
 		settlementCoin.Amount.Uint64(),
 	); err != nil {
 		return tokenomicstypes.ErrTokenomicsModuleMint.Wrapf(
-			"distributing rewards to supplier with operator address %s shareholders: %v",
+			"queuing operation: distributing rewards to supplier with operator address %s shareholders: %v",
 			supplier.OperatorAddress,
 			err,
 		)
 	}
-	logger.Info(fmt.Sprintf("sent (%v) from the supplier module to the supplier account with address %q", settlementCoin, supplier.OperatorAddress))
+	logger.Info(fmt.Sprintf("operation queued: sent (%v) from the supplier module to the supplier account with address %q", settlementCoin, supplier.OperatorAddress))
 
 	// Burn uPOKT from the application module account which was held in escrow
 	// on behalf of the application account.
-	pendingResult.AppendBurn(MintBurn{
+	result.AppendBurn(MintBurn{
 		TLM:               TLMRelayBurnEqualsMint,
 		DestinationModule: apptypes.ModuleName,
 		Coin:              settlementCoin,
 	})
-	logger.Info(fmt.Sprintf("operation scheduled: burn (%v) from the application module account", settlementCoin))
+	logger.Info(fmt.Sprintf("operation queued: burn (%v) from the application module account", settlementCoin))
 
 	// Update the application's on-chain stake
 	newAppStake, err := application.Stake.SafeSub(settlementCoin)
@@ -90,7 +93,7 @@ func (tlm tlmRelayBurnEqualsMint) Process(
 		return tokenomicstypes.ErrTokenomicsApplicationNewStakeInvalid.Wrapf("application %q stake cannot be reduced to a negative amount %v", application.Address, newAppStake)
 	}
 	application.Stake = &newAppStake
-	logger.Info(fmt.Sprintf("updated application %q stake to %v", application.Address, newAppStake))
+	logger.Info(fmt.Sprintf("operation scheduled: update application %q stake to %v", application.Address, newAppStake))
 
 	return nil
 }

@@ -35,7 +35,7 @@ type Keeper struct {
 
 	sharedQuerier client.SharedQueryClient
 
-	tokenLogicModuleProcessors []tlm.TokenLogicModule
+	tokenLogicModules []tlm.TokenLogicModule
 }
 
 func NewKeeper(
@@ -78,7 +78,7 @@ func NewKeeper(
 
 		sharedQuerier: sharedQuerier,
 
-		tokenLogicModuleProcessors: tlmProcessors,
+		tokenLogicModules: tlmProcessors,
 	}
 }
 

@@ -29,7 +29,7 @@ var zerouPOKT = types.NewInt64Coin(volatile.DenomuPOKT, 0)
 // 1. Construct a TokenomicsModuleKeepers instance for each TLM processor permutation.
 // 2. Create valid claims (which require no proofs).
 // 3. Advance the block height to the settlement height and settle the claims.
-// 5. Assert that the settlement state is identical to the first.
+// 5. Assert that the settlement states of all TLM order permutations match.
 func (s *tlmProcessorTestSuite) TestTLMProcessorsAreCommutative() {
 	// Generate all permutations of TLM processor ordering.
 	tokenLogicModules := tlm.NewDefaultTokenLogicModules(s.foundationBech32)
@@ -38,10 +38,10 @@ func (s *tlmProcessorTestSuite) TestTLMProcessorsAreCommutative() {
 	numTLMOrderPermutations := factorial(len(tokenLogicModules))
 	require.Equal(s.T(), numTLMOrderPermutations, len(tlmOrderPermutations))
 
-	for i, procs := range tlmOrderPermutations {
-		var tlmProcNames []string
-		for _, proc := range procs {
-			tlmProcNames = append(tlmProcNames, proc.GetId().String())
+	for i, tlmPermutation := range tlmOrderPermutations {
+		var tlmIds []string
+		for _, tokenLogicModule := range tlmPermutation {
+			tlmIds = append(tlmIds, tokenLogicModule.GetId().String())
 		}
 
 		// The test description is a unique identifier for each permutation.
@@ -49,11 +49,11 @@ func (s *tlmProcessorTestSuite) TestTLMProcessorsAreCommutative() {
 		testDesc := fmt.Sprintf(
 			"permutaiton_%d_of_%d__%s",
 			i+1, numTLMOrderPermutations,
-			strings.Join(tlmProcNames, "_"),
+			strings.Join(tlmIds, "_"),
 		)
 
 		s.T().Run(testDesc, func(t *testing.T) {
-			s.setupKeepers(t, keeper.WithTLMProcessors(procs))
+			s.setupKeepers(t, keeper.WithTLMProcessors(tlmPermutation))
 
 			// Assert that no pre-existing claims are present.
 			numExistingClaims := len(s.keepers.GetAllClaims(s.ctx))
