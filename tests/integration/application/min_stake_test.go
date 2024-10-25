@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"math/big"
 	"testing"
 
 	cosmoslog "cosmossdk.io/log"
@@ -25,6 +26,7 @@ import (
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
+	tokenomicskeeper "github.com/pokt-network/poktroll/x/tokenomics/keeper"
 )
 
 type applicationMinStakeTestSuite struct {
@@ -235,7 +237,8 @@ func (s *applicationMinStakeTestSuite) getExpectedApp(claim *prooftypes.Claim) *
 	expectedBurnCoin, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
 	require.NoError(s.T(), err)
 
-	expectedEndStake := s.appStake.Sub(expectedBurnCoin)
+	globalInflationAmt := calculateGlobalInflation(expectedBurnCoin.Amount)
+	expectedEndStake := s.appStake.Sub(expectedBurnCoin).SubAmount(globalInflationAmt)
 	return &apptypes.Application{
 		Address:                   s.appBech32,
 		Stake:                     &expectedEndStake,
@@ -305,7 +308,20 @@ func (s *applicationMinStakeTestSuite) assertAppStakeIsReturnedToBalance() {
 	s.T().Helper()
 
 	expectedAppBurn := math.NewInt(int64(s.numRelays * s.numComputeUnitsPerRelay * sharedtypes.DefaultComputeUnitsToTokensMultiplier))
-	expectedAppBalance := s.appStake.SubAmount(expectedAppBurn)
+	globalInflationAmt := calculateGlobalInflation(expectedAppBurn)
+	expectedAppBalance := s.appStake.SubAmount(expectedAppBurn).SubAmount(globalInflationAmt)
+
 	appBalance := s.getAppBalance()
 	require.Equal(s.T(), expectedAppBalance.Amount.Int64(), appBalance.Amount.Int64())
+}
+
+// calculateGlobalInflation calculates the global inflation for the given settlement amount.
+func calculateGlobalInflation(settlementAmt math.Int) math.Int {
+	globalInflationFloat := new(big.Float).Mul(
+		new(big.Float).SetInt(settlementAmt.BigInt()),
+		big.NewFloat(tokenomicskeeper.MintPerClaimedTokenGlobalInflation),
+	)
+	globalInflationInt, _ := globalInflationFloat.Int(nil)
+
+	return math.NewIntFromBigInt(globalInflationInt)
 }

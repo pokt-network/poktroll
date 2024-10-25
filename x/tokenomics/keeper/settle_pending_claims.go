@@ -8,6 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/query"
 
 	"github.com/pokt-network/poktroll/app/volatile"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
