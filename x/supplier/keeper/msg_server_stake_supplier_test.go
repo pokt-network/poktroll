@@ -45,7 +45,7 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.Equal(t, "svcId", foundSupplier.Services[0].ServiceId)
 	require.Len(t, foundSupplier.Services[0].Endpoints, 1)
 	require.Equal(t, "http://localhost:8080", foundSupplier.Services[0].Endpoints[0].Url)
-	// Assert that the supplier's account balance got deducted by the staking fee
+	// Assert that the supplier's account balance was reduced by the staking fee
 	balanceDecrease := keeper.SupplierStakingFee.Amount.Int64() + foundSupplier.Stake.Amount.Int64()
 	// SupplierBalanceMap reflects the relative changes to the supplier's balance
 	// (i.e. it starts from 0 and can go below it).
