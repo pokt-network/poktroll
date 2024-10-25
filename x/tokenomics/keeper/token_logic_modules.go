@@ -293,7 +293,7 @@ func (k Keeper) ensureClaimAmountLimits(
 		EffectiveBurn:        &maxClaimableCoin,
 	}
 	eventManager := cosmostypes.UnwrapSDKContext(ctx).EventManager()
-	if err := eventManager.EmitTypedEvent(applicationOverservicedEvent); err != nil {
+	if err = eventManager.EmitTypedEvent(applicationOverservicedEvent); err != nil {
 		return cosmostypes.Coin{},
 			tokenomicstypes.ErrTokenomicsEmittingEventFailed.Wrapf("error emitting event %v", applicationOverservicedEvent)
 	}

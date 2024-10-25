@@ -57,9 +57,11 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 	logger.Debug("settling expiring claims")
 	for _, claim := range expiringClaims {
 		var (
-			proofRequirement     prooftypes.ProofRequirementReason
-			numClaimRelays       uint64
-			numClaimComputeUnits uint64
+			proofRequirement prooftypes.ProofRequirementReason
+			claimeduPOKT     cosmostypes.Coin
+			numClaimRelays,
+			numClaimComputeUnits,
+			numEstimatedComputeUnits uint64
 		)
 
 		sessionId := claim.GetSessionHeader().GetSessionId()
@@ -88,7 +90,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 		// numEstimatedComputeUnits is the probabilistic estimation of the off-chain
 		// work done by the relay miner in this session. It is derived from the claimed
 		// work and the relay mining difficulty.
-		numEstimatedComputeUnits, err := claim.GetNumEstimatedComputeUnits(relayMiningDifficulty)
+		numEstimatedComputeUnits, err = claim.GetNumEstimatedComputeUnits(relayMiningDifficulty)
 		if err != nil {
 			return settledResults, expiredResults, err
 		}
@@ -97,7 +99,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 		// claimeduPOKT is the amount of uPOKT that the supplier would receive if the
 		// claim is settled. It is derived from the claimed number of relays, the current
 		// service mining difficulty and the global network parameters.
-		claimeduPOKT, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
+		claimeduPOKT, err = claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
 		if err != nil {
 			return settledResults, expiredResults, err
 		}
@@ -120,7 +122,7 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 			"proof_requirement", proofRequirement,
 		)
 
-		proofIsRequired := (proofRequirement != prooftypes.ProofRequirementReason_NOT_REQUIRED)
+		proofIsRequired := proofRequirement != prooftypes.ProofRequirementReason_NOT_REQUIRED
 		if proofIsRequired {
 			expirationReason := tokenomicstypes.ClaimExpirationReason_EXPIRATION_REASON_UNSPECIFIED // EXPIRATION_REASON_UNSPECIFIED is the default
 
