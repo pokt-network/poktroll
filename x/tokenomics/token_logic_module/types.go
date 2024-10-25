@@ -41,12 +41,13 @@ func (tlm TokenLogicModule) EnumIndex() int {
 	return int(tlm)
 }
 
-// TODO_IN_THIS_COMMIT: update...
+// TODO_IN_THIS_COMMIT: update after renaming TokenLogicModule to TokenLogicModuleId
+// and TokenLogicModuleProcessor to TokenLogicModule.
 //
-// TokenLogicModuleProcessor is the method signature that all token logic modules
-// are expected to implement.
+// TokenLogicModuleProcessor is an interface that all token logic modules are
+// expected to implement.
 // IMPORTANT_SIDE_EFFECTS: Please note that TLMs may update the application and supplier objects,
-// which is why they are passed in as pointers. NOTE: TLMs SHOULD NOT persist any state changes.
+// which is why they are passed in as pointers. NOTE: TLMs CANNOT persist any state changes.
 // Persistence of updated application and supplier to the keeper is currently done by the TLM
 // processor in `ProcessTokenLogicModules()`. This design and separation of concerns may change
 // in the future.
@@ -67,7 +68,9 @@ type TokenLogicModuleProcessor interface {
 	) error
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// NewDefaultProcessors returns the default token logic module processors:
+// - TLMRelayBurnEqualsMint
+// - TLMGlobalMint
 func NewDefaultProcessors(authorityRewardAddr string) []TokenLogicModuleProcessor {
 	return []TokenLogicModuleProcessor{
 		NewMintEqualsBurnProcessor(),

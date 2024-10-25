@@ -70,7 +70,9 @@ type TokenomicsModuleKeepers struct {
 	Codec *codec.ProtoCodec
 }
 
-// TODO_IN_THIS_COMMIT: godoc..
+// tokenomicsModuleKeepersConfig is a configuration struct for a TokenomicsModuleKeepers
+// instance. Its fields are intended to be set/updated by TokenomicsModuleKeepersOptFn
+// functions which are passed during integration construction.
 type tokenomicsModuleKeepersConfig struct {
 	tlmProcessors  []tlm.TokenLogicModuleProcessor
 	initKeepersFns []func(context.Context, *TokenomicsModuleKeepers) context.Context
@@ -79,9 +81,9 @@ type tokenomicsModuleKeepersConfig struct {
 	moduleParams map[string]sdk.Msg
 }
 
-// TokenomicsKeepersOpt is a function which receives and potentially modifies the context
-// and tokenomics keepers during construction of the aggregation.
-type TokenomicsModuleKeepersOpt func(cfg *tokenomicsModuleKeepersConfig)
+// TokenomicsModuleKeepersOptFn is a function which receives and potentially modifies
+// the context and tokenomics keepers during construction of the aggregation.
+type TokenomicsModuleKeepersOptFn func(cfg *tokenomicsModuleKeepersConfig)
 
 func TokenomicsKeeper(t testing.TB) (tokenomicsKeeper tokenomicskeeper.Keeper, ctx context.Context) {
 	t.Helper()
@@ -279,7 +281,7 @@ func TokenomicsKeeperWithActorAddrs(t testing.TB) (
 func NewTokenomicsModuleKeepers(
 	t testing.TB,
 	logger log.Logger,
-	opts ...TokenomicsModuleKeepersOpt,
+	opts ...TokenomicsModuleKeepersOptFn,
 ) (_ TokenomicsModuleKeepers, ctx context.Context) {
 	t.Helper()
 
@@ -531,7 +533,7 @@ func NewTokenomicsModuleKeepers(
 }
 
 // WithService is an option to set the service in the tokenomics module keepers.
-func WithService(service sharedtypes.Service) TokenomicsModuleKeepersOpt {
+func WithService(service sharedtypes.Service) TokenomicsModuleKeepersOptFn {
 	setService := func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
 		keepers.SetService(ctx, service)
 		return ctx
@@ -542,7 +544,7 @@ func WithService(service sharedtypes.Service) TokenomicsModuleKeepersOpt {
 }
 
 // WithApplication is an option to set the application in the tokenomics module keepers.
-func WithApplication(applicaion apptypes.Application) TokenomicsModuleKeepersOpt {
+func WithApplication(applicaion apptypes.Application) TokenomicsModuleKeepersOptFn {
 	setApp := func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
 		keepers.SetApplication(ctx, applicaion)
 		return ctx
@@ -553,7 +555,7 @@ func WithApplication(applicaion apptypes.Application) TokenomicsModuleKeepersOpt
 }
 
 // WithSupplier is an option to set the supplier in the tokenomics module keepers.
-func WithSupplier(supplier sharedtypes.Supplier) TokenomicsModuleKeepersOpt {
+func WithSupplier(supplier sharedtypes.Supplier) TokenomicsModuleKeepersOptFn {
 	setSupplier := func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
 		keepers.SetSupplier(ctx, supplier)
 		return ctx
@@ -565,7 +567,7 @@ func WithSupplier(supplier sharedtypes.Supplier) TokenomicsModuleKeepersOpt {
 
 // WithProposerAddr is an option to set the proposer address in the context used
 // by the tokenomics module keepers.
-func WithProposerAddr(addr string) TokenomicsModuleKeepersOpt {
+func WithProposerAddr(addr string) TokenomicsModuleKeepersOptFn {
 	setProposerAddr := func(ctx context.Context, keepers *TokenomicsModuleKeepers) context.Context {
 		consAddr, err := cosmostypes.ConsAddressFromBech32(addr)
 		if err != nil {
@@ -580,7 +582,7 @@ func WithProposerAddr(addr string) TokenomicsModuleKeepersOpt {
 	}
 }
 
-func WithTLMProcessors(processors []tlm.TokenLogicModuleProcessor) TokenomicsModuleKeepersOpt {
+func WithTLMProcessors(processors []tlm.TokenLogicModuleProcessor) TokenomicsModuleKeepersOptFn {
 	return func(cfg *tokenomicsModuleKeepersConfig) {
 		cfg.tlmProcessors = processors
 	}
@@ -588,7 +590,7 @@ func WithTLMProcessors(processors []tlm.TokenLogicModuleProcessor) TokenomicsMod
 
 // WithModuleParams returns a KeeperOptionFn that sets the moduleParams field
 // on the keeperConfig.
-func WithModuleParams(moduleParams map[string]sdk.Msg) TokenomicsModuleKeepersOpt {
+func WithModuleParams(moduleParams map[string]sdk.Msg) TokenomicsModuleKeepersOptFn {
 	return func(cfg *tokenomicsModuleKeepersConfig) {
 		cfg.moduleParams = moduleParams
 	}

@@ -25,7 +25,10 @@ func distributeSupplierRewardsToShareHolders(
 	serviceId string,
 	amountToDistribute uint64,
 ) error {
-	logger = logger.With("method", "distributeSupplierRewardsToShareHolders")
+	logger = logger.With(
+		"method", "distributeSupplierRewardsToShareHolders",
+		"session_id", result.GetSessionId(),
+	)
 
 	var serviceRevShares []*sharedtypes.ServiceRevenueShare
 	for _, svc := range supplier.Services {
@@ -53,8 +56,8 @@ func distributeSupplierRewardsToShareHolders(
 	for _, revShare := range serviceRevShares {
 		shareAmount := shareAmountMap[revShare.GetAddress()]
 
+		// Don't queue zero amount transfer operations.
 		if shareAmount == 0 {
-			// TODO_IN_THIS_COMMIT: log...
 			continue
 		}
 
@@ -75,12 +78,10 @@ func distributeSupplierRewardsToShareHolders(
 			Coin:             shareAmountCoin,
 		})
 
-		// TODO_IN_THIS_COMMIT: move...
-		logger.Info(fmt.Sprintf("sent %s from the supplier module to the supplier shareholder with address %q", shareAmountCoin, supplier.GetOperatorAddress()))
+		logger.Info(fmt.Sprintf("operation queued: send %s from the supplier module to the supplier shareholder with address %q", shareAmountCoin, supplier.GetOperatorAddress()))
 	}
 
-	// TODO_IN_THIS_COMMIT: move...
-	logger.Info(fmt.Sprintf("distributed %d uPOKT to supplier %q shareholders", amountToDistribute, supplier.GetOperatorAddress()))
+	logger.Info(fmt.Sprintf("operation queued: distribute %d uPOKT to supplier %q shareholders", amountToDistribute, supplier.GetOperatorAddress()))
 
 	return errs
 }

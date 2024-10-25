@@ -63,7 +63,8 @@ func NewInitChainerModuleGenesisStateOptionFn[T module.HasGenesis](genesisState 
 	}
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// WithTLMProcessors returns an IntegrationAppOptionFn that sets the given
+// TLM processors on the IntegrationAppConfig.
 func WithTLMProcessors(processors []tlm.TokenLogicModuleProcessor) IntegrationAppOptionFn {
 	return func(config *IntegrationAppConfig) {
 		config.TLMProcessors = processors

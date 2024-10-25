@@ -8,16 +8,21 @@ import (
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 )
 
+// PendingSettlementResults is a slice of PendingSettlementResult. It implements
+// methods for convenience when working with PendingSettlementResult objects.
 type PendingSettlementResults []*PendingSettlementResult
 
-// TODO_IN_THIS_COMMIT: godoc...
+// resultOption is a function which receives a PendingSettlementResult for modification.
+type resultOption func(*PendingSettlementResult)
+
+// MintBurn holds the parameters of a mint or burn operation.
 type MintBurn struct {
 	TLM               TokenLogicModule
 	DestinationModule string
 	Coin              cosmostypes.Coin
 }
 
-// TODO_IN_THIS_COMMIT: godoc... EITHER module OR addr for source and destination...
+// ModToAcctTransfer holds the parameters of a module to account transfer operation.
 type ModToAcctTransfer struct {
 	TLMName          TokenLogicModule
 	SenderModule     string
@@ -25,7 +30,7 @@ type ModToAcctTransfer struct {
 	Coin             cosmostypes.Coin
 }
 
-// TODO_IN_THIS_COMMIT: godoc... EITHER module OR addr for source and destination...
+// ModToModTransfer holds the parameters of a module to module transfer operation.
 type ModToModTransfer struct {
 	TLMName         TokenLogicModule
 	SenderModule    string
@@ -33,7 +38,8 @@ type ModToModTransfer struct {
 	Coin            cosmostypes.Coin
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// PendingSettlementResult holds a claim and mints, burns, and transfers that
+// result from its settlement.
 type PendingSettlementResult struct {
 	Claim              prooftypes.Claim
 	Mints              []MintBurn
@@ -42,38 +48,7 @@ type PendingSettlementResult struct {
 	ModToAcctTransfers []ModToAcctTransfer
 }
 
-// TODO_IN_THIS_COMMIT: godoc & move...
-type resultOption func(*PendingSettlementResult)
-
-// TODO_IN_THIS_COMMIT: godoc & move...
-func WithMints(mints []MintBurn) resultOption {
-	return func(r *PendingSettlementResult) {
-		r.Mints = mints
-	}
-}
-
-// TODO_IN_THIS_COMMIT: godoc & move...
-func WithBurns(burns []MintBurn) resultOption {
-	return func(r *PendingSettlementResult) {
-		r.Burns = burns
-	}
-}
-
-// TODO_IN_THIS_COMMIT: godoc & move...
-func WithModToModTransfers(transfers []ModToModTransfer) resultOption {
-	return func(r *PendingSettlementResult) {
-		r.ModToModTransfers = transfers
-	}
-}
-
-// TODO_IN_THIS_COMMIT: godoc & move...
-func WithModToAcctTransfers(transfers []ModToAcctTransfer) resultOption {
-	return func(r *PendingSettlementResult) {
-		r.ModToAcctTransfers = transfers
-	}
-}
-
-// TODO_IN_THIS_COMMIT: godoc...
+// NewPendingSettlementResult returns a new PendingSettlementResult with the given claim and options applied.
 func NewPendingSettlementResult(
 	claim prooftypes.Claim,
 	opts ...resultOption,
@@ -85,57 +60,62 @@ func NewPendingSettlementResult(
 	return result
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// GetNumComputeUnits returns the number of claimed compute units in the result's claim.
 func (r *PendingSettlementResult) GetNumComputeUnits() (uint64, error) {
 	return r.Claim.GetNumClaimedComputeUnits()
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// GetNumRelays returns the number of relays in the result's claim.
 func (r *PendingSettlementResult) GetNumRelays() (uint64, error) {
 	return r.Claim.GetNumRelays()
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// GetApplicationAddr returns the application address of the result's claim.
 func (r *PendingSettlementResult) GetApplicationAddr() string {
 	return r.Claim.GetSessionHeader().GetApplicationAddress()
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// GetSupplierAddr returns the supplier address of the result's claim.
 func (r *PendingSettlementResult) GetSupplierAddr() string {
 	return r.Claim.GetSupplierOperatorAddress()
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// GetSessionEndHeight returns the session end height of the result's claim.
 func (r *PendingSettlementResult) GetSessionEndHeight() int64 {
 	return r.Claim.GetSessionHeader().GetSessionEndBlockHeight()
 }
 
-// TODO_IN_THIS_COMMIT: godoc... use for determinstic loops
+// GetSessionId returns the session ID of the result's claim.
+func (r *PendingSettlementResult) GetSessionId() string {
+	return r.Claim.GetSessionHeader().GetSessionId()
+}
+
+// GetServiceId returns the service ID of the result's claim.
 func (r *PendingSettlementResult) GetServiceId() string {
 	return r.Claim.GetSessionHeader().GetServiceId()
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// AppendMint appends a mint operation to the result.
 func (r *PendingSettlementResult) AppendMint(mint MintBurn) {
 	r.Mints = append(r.Mints, mint)
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// AppendBurn appends a burn operation to the result.
 func (r *PendingSettlementResult) AppendBurn(burn MintBurn) {
 	r.Burns = append(r.Burns, burn)
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// AppendModToModTransfer appends a module to module transfer operation to the result.
 func (r *PendingSettlementResult) AppendModToModTransfer(transfer ModToModTransfer) {
 	r.ModToModTransfers = append(r.ModToModTransfers, transfer)
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// AppendModToAcctTransfer appends a module to account transfer operation to the result.
 func (r *PendingSettlementResult) AppendModToAcctTransfer(transfer ModToAcctTransfer) {
 	r.ModToAcctTransfers = append(r.ModToAcctTransfers, transfer)
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// GetNumComputeUnits returns the total number of claimed compute units in the results.
 func (rs PendingSettlementResults) GetNumComputeUnits() (numComputeUnits uint64, errs error) {
 	for _, result := range rs {
 		claimNumComputeUnits, err := result.GetNumComputeUnits()
@@ -149,7 +129,7 @@ func (rs PendingSettlementResults) GetNumComputeUnits() (numComputeUnits uint64,
 	return numComputeUnits, nil
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// GetNumRelays returns the total number of relays in the combined results.
 func (rs PendingSettlementResults) GetNumRelays() (numRelays uint64, errs error) {
 	for _, result := range rs {
 		claimNumRelays, err := result.Claim.GetNumRelays()
@@ -163,13 +143,13 @@ func (rs PendingSettlementResults) GetNumRelays() (numRelays uint64, errs error)
 	return numRelays, nil
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// GetNumClaims returns the number of claims in the combined results.
 func (rs PendingSettlementResults) GetNumClaims() uint64 {
 	// Each result holds a single claim.
 	return uint64(len(rs))
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// GetApplicationAddrs returns a slice of application addresses from the combined results' claims.
 func (rs PendingSettlementResults) GetApplicationAddrs() (appAddrs []string) {
 	for _, result := range rs {
 		appAddrs = append(appAddrs, result.GetApplicationAddr())
@@ -177,7 +157,7 @@ func (rs PendingSettlementResults) GetApplicationAddrs() (appAddrs []string) {
 	return appAddrs
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// GetSupplierAddrs returns a slice of supplier addresses from the combined results' claims.
 func (rs PendingSettlementResults) GetSupplierAddrs() (supplierAddrs []string) {
 	for _, result := range rs {
 		supplierAddrs = append(supplierAddrs, result.GetSupplierAddr())
@@ -185,7 +165,9 @@ func (rs PendingSettlementResults) GetSupplierAddrs() (supplierAddrs []string) {
 	return supplierAddrs
 }
 
-// TODO_IN_THIS_COMMIT: godoc... use for determinstic loops
+// GetServiceIds returns a slice of service IDs from the combined results' claims.
+// It is intended to be used for deterministic iterating over the map returned
+// from GetRelaysPerServiceMap via the serviceId key.
 func (rs PendingSettlementResults) GetServiceIds() (serviceIds []string) {
 	for _, result := range rs {
 		serviceIds = append(serviceIds, result.GetServiceId())
@@ -193,7 +175,9 @@ func (rs PendingSettlementResults) GetServiceIds() (serviceIds []string) {
 	return serviceIds
 }
 
-// TODO_IN_THIS_COMMIT: godoc... // SHOULD NEVER be used for loops
+// GetRelaysPerServiceMap returns a map of service IDs to the total number of relays
+// claimed for that service in the combined results.
+// IMPORTANT: **DO NOT** iterate over returned map in on-chain code.
 func (rs PendingSettlementResults) GetRelaysPerServiceMap() (_ map[string]uint64, errs error) {
 	relaysPerServiceMap := make(map[string]uint64)
 
@@ -210,7 +194,35 @@ func (rs PendingSettlementResults) GetRelaysPerServiceMap() (_ map[string]uint64
 	return relaysPerServiceMap, errs
 }
 
-// TODO_IN_THIS_COMMIT: godoc... // SHOULD NEVER be used for loops
+// Append appends a result to the results.
 func (rs *PendingSettlementResults) Append(result ...*PendingSettlementResult) {
 	*rs = append(*rs, result...)
+}
+
+// WithMints returns a resultOption which sets the Mints field of the PendingSettlementResult.
+func WithMints(mints []MintBurn) resultOption {
+	return func(r *PendingSettlementResult) {
+		r.Mints = mints
+	}
+}
+
+// WithBurns returns a resultOption which sets the Burns field of the PendingSettlementResult.
+func WithBurns(burns []MintBurn) resultOption {
+	return func(r *PendingSettlementResult) {
+		r.Burns = burns
+	}
+}
+
+// WithModToModTransfers returns a resultOption which sets the ModToModTransfers field of the PendingSettlementResult.
+func WithModToModTransfers(transfers []ModToModTransfer) resultOption {
+	return func(r *PendingSettlementResult) {
+		r.ModToModTransfers = transfers
+	}
+}
+
+// WithModToAcctTransfers returns a resultOption which sets the ModToAcctTransfers field of the PendingSettlementResult.
+func WithModToAcctTransfers(transfers []ModToAcctTransfer) resultOption {
+	return func(r *PendingSettlementResult) {
+		r.ModToAcctTransfers = transfers
+	}
 }

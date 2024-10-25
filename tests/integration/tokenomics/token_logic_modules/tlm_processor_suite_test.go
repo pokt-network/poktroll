@@ -37,11 +37,11 @@ type tlmProcessorsTestSuite struct {
 
 	expectedSettledResults,
 	expectedExpiredResults tlm.PendingSettlementResults
-	expectedSettlementState *expectedSettlementState
+	expectedSettlementState *settlementState
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
-type expectedSettlementState struct {
+// settlementState holds the expected post-settlement app stake and rewardee balances.
+type settlementState struct {
 	appStake             *cosmostypes.Coin
 	appBalance           *cosmostypes.Coin
 	supplierOwnerBalance *cosmostypes.Coin
@@ -54,7 +54,8 @@ func TestTLMProcessorTestSuite(t *testing.T) {
 	suite.Run(t, new(tlmProcessorsTestSuite))
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// SetupTest generates and sets all rewardee addresses on the suite, and
+// set a service, application, and supplier on the suite.
 func (s *tlmProcessorsTestSuite) SetupTest() {
 	s.foundationBech32 = sample.AccAddress()
 	s.sourceOwnerBech32 = sample.AccAddress()
@@ -97,7 +98,8 @@ func (s *tlmProcessorsTestSuite) SetupTest() {
 	}
 }
 
-// TODO_IN_THIS_COMMIT: move & godoc...
+// getProofParams returns the default proof params with a high proof requirement threshold
+// and no proof request probability such that no claims require a proof.
 func (s *tlmProcessorsTestSuite) getProofParams() *prooftypes.Params {
 	proofParams := prooftypes.DefaultParams()
 	highProofRequirementThreshold := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, math.MaxInt64)
@@ -106,14 +108,17 @@ func (s *tlmProcessorsTestSuite) getProofParams() *prooftypes.Params {
 	return &proofParams
 }
 
-// TODO_IN_THIS_COMMIT: move & godoc...
+// getSharedParams returns the default shared params with the CUTTM set to 1.
 func (s *tlmProcessorsTestSuite) getSharedParams() *sharedtypes.Params {
 	sharedParams := sharedtypes.DefaultParams()
 	sharedParams.ComputeUnitsToTokensMultiplier = 1
 	return &sharedParams
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// createClaim creates numClaims number of claims for the current session given
+// the suites service, application, and supplier.
+// DEV_NOTE: The sum/count must be large enough to avoid a proposer reward
+// (or other small proportion rewards) from being truncated to zero (> 1upokt).
 func (s *tlmProcessorsTestSuite) createClaims(
 	keepers *testkeeper.TokenomicsModuleKeepers,
 	numClaims int,
@@ -139,7 +144,8 @@ func (s *tlmProcessorsTestSuite) createClaims(
 	}
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// settleClaims sets the block height to the settlement height for the current
+// session and triggers the settlement of all pending claims.
 func (s *tlmProcessorsTestSuite) settleClaims(t *testing.T) (settledResults, expiredResults tlm.PendingSettlementResults) {
 	// Increment the block height to the settlement height.
 	settlementHeight := sharedtypes.GetSettlementSessionEndHeight(s.getSharedParams(), 1)
@@ -155,7 +161,7 @@ func (s *tlmProcessorsTestSuite) settleClaims(t *testing.T) (settledResults, exp
 	return settledPendingResults, expiredPendingResults
 }
 
-// TODO_IN_THIS_COMMIT: move & godoc...
+// setBlockHeight sets the block height of the suite's context to height.
 func (s *tlmProcessorsTestSuite) setBlockHeight(height int64) {
 	s.ctx = cosmostypes.UnwrapSDKContext(s.ctx).WithBlockHeight(height)
 }

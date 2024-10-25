@@ -30,8 +30,6 @@ func AccAddressAndPubKeyEd25519() (string, cryptotypes.PubKey) {
 	return cosmostypes.AccAddress(addr).String(), pk
 }
 
-// TODO_IN_THIS_COMMIT: update comment...
-//
 // ConsAddress returns a sample consensus node address, which has the prefix
 // of consensus nodes when converted to bech32. Consensus addresses identify
 // the validator node in the consensus engine and are derived using ed25519.
@@ -43,18 +41,15 @@ func ConsAddress() cosmostypes.ConsAddress {
 	return consAddress
 }
 
-// TODO_IN_THIS_COMMIT: update comment...
-//
 // ConsAddressBech32 returns a bech32-encoded  sample consensus node address,
-// which has the prefix of consensus nodes when converted to bech32. Consensus addresses identify
-// the validator node in the consensus engine and are derived using ed25519.
+// which has the prefix of consensus nodes when converted to bech32. Consensus
+// addresses identify the validator node in the consensus engine and are derived
+// using ed25519.
 // See: https://docs.cosmos.network/main/learn/beginner/accounts#addresses
 func ConsAddressBech32() string {
 	return ConsAddress().String()
 }
 
-// TODO_IN_THIS_COMMIT: update comment...
-//
 // AccAddressFromConsBech32 returns an account address (with the Bech32PrefixForAccount prefix)
 // from a given consensus address (with the Bech32PrefixForConsensus prefix).
 //
@@ -65,7 +60,7 @@ func ConsAddressBech32() string {
 // block validation is a small part of the network's utility, so the majority of
 // inflation comes from the relays serviced. Therefore, the validator's (block producer's)
 // rewards are proportional to that as well. For this reason, we need a helper function
-// to identify the proposer address from the validator consensus address.
+// to identify the proposer address from its validator consensus address (ed255519).
 func AccAddressFromConsBech32(consBech32 string) string {
 	consAccAddr, _ := cosmostypes.ConsAddressFromBech32(consBech32)
 	accAddr, _ := cosmostypes.AccAddressFromHexUnsafe(hex.EncodeToString(consAccAddr.Bytes()))

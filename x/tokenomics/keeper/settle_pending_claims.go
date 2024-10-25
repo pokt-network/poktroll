@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"slices"
 
+	cosmoslog "cosmossdk.io/log"
 	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
 
 	"github.com/pokt-network/poktroll/app/volatile"
+	"github.com/pokt-network/poktroll/pkg/pokterrors"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -261,27 +263,58 @@ func (k Keeper) SettlePendingClaims(ctx cosmostypes.Context) (
 	return settledResults, expiredResults, nil
 }
 
-// TODO_IN_THIS_COMMIT: godoc & move... exported for testing purposes...
+// ExecutePendingResults executes all pending mint, burn, and transfer operations.
 func (k Keeper) ExecutePendingResults(ctx cosmostypes.Context, results tlm.PendingSettlementResults) (errs error) {
+	logger := k.logger.With("method", "ExecutePendingResults")
+
 	for _, result := range results {
+		logger = logger.With("session_id", result.GetSessionId())
+		logger.Info("begin executing pending results")
+
+		logger.Info("begin executing pending mints")
 		errs = k.executePendingMints(ctx, result.Mints)
+		logErrors(logger, errs)
 
+		logger.Info("done executing pending mints")
+
+		logger.Info("begin executing pending burns")
 		if err := k.executePendingBurns(ctx, result.Burns); err != nil {
+			logErrors(logger, err)
 			errs = errors.Join(errs, err)
 		}
+		logger.Info("done executing pending burns")
 
+		logger.Info("begin executing pending module to module transfers")
 		if err := k.executePendingModToModTransfers(ctx, result.ModToModTransfers); err != nil {
+			logErrors(logger, err)
 			errs = errors.Join(errs, err)
 		}
+		logger.Info("done executing pending module to module transfers")
 
+		logger.Info("begin executing pending module to account transfers")
 		if err := k.executePendingModToAcctTransfers(ctx, result.ModToAcctTransfers); err != nil {
+			logErrors(logger, err)
 			errs = errors.Join(errs, err)
 		}
+		logger.Info("done executing pending module to account transfers")
+
+		logger.Info("done executing pending results")
 	}
 	return errs
 }
 
-// TODO_IN_THIS_COMMIT: godoc & move...
+// logErrors recursively unwraps and sequentially log all joined errors in errs.
+func logErrors(logger cosmoslog.Logger, errs error) {
+	if pokterrors.Split(errs) == nil {
+		return
+	}
+
+	for _, err := range pokterrors.Split(errs) {
+		logger.Error(err.Error())
+	}
+}
+
+// executePendingMints executes all pending mint operations.
 func (k Keeper) executePendingMints(ctx cosmostypes.Context, mints []tlm.MintBurn) (errs error) {
 	for _, mint := range mints {
 		if err := k.bankKeeper.MintCoins(ctx, mint.DestinationModule, cosmostypes.NewCoins(mint.Coin)); err != nil {
@@ -294,7 +327,7 @@ func (k Keeper) executePendingMints(ctx cosmostypes.Context, mints []tlm.MintBur
 	return errs
 }
 
-// TODO_IN_THIS_COMMIT: godoc & move...
+// executePendingBurns executes all pending burn operations.
 func (k Keeper) executePendingBurns(ctx cosmostypes.Context, burns []tlm.MintBurn) (errs error) {
 	logger := k.Logger().With("method", "executePendingBurns")
 	for _, burn := range burns {
@@ -309,7 +342,7 @@ func (k Keeper) executePendingBurns(ctx cosmostypes.Context, burns []tlm.MintBur
 	return errs
 }
 
-// TODO_IN_THIS_COMMIT: godoc & move...
+// executePendingModToModTransfers executes all pending module to module transfer operations.
 func (k Keeper) executePendingModToModTransfers(ctx cosmostypes.Context, transfers []tlm.ModToModTransfer) (errs error) {
 	logger := k.Logger().With("method", "executePendingBurns")
 	for _, transfer := range transfers {
@@ -330,7 +363,7 @@ func (k Keeper) executePendingModToModTransfers(ctx cosmostypes.Context, transfe
 	return errs
 }
 
-// TODO_IN_THIS_COMMIT: godoc & move...
+// executePendingModToAcctTransfers executes all pending module to account transfer operations.
 func (k Keeper) executePendingModToAcctTransfers(ctx cosmostypes.Context, transfers []tlm.ModToAcctTransfer) (errs error) {
 	logger := k.Logger().With("method", "executePendingBurns")
 	for _, transfer := range transfers {

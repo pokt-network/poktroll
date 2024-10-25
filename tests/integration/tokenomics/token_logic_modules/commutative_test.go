@@ -78,8 +78,8 @@ func (s *tlmProcessorsTestSuite) TestTLMProcessorsAreCommutative() {
 // with the given options, and creates the suite's service, application, and supplier
 // from SetupTest(). It also sets the block height to 1 and the proposer address to
 // the proposer address from SetupTest().
-func (s *tlmProcessorsTestSuite) setupKeepers(t *testing.T, opts ...keeper.TokenomicsModuleKeepersOpt) {
-	defaultOpts := []keeper.TokenomicsModuleKeepersOpt{
+func (s *tlmProcessorsTestSuite) setupKeepers(t *testing.T, opts ...keeper.TokenomicsModuleKeepersOptFn) {
+	defaultOpts := []keeper.TokenomicsModuleKeepersOptFn{
 		keeper.WithService(*s.service),
 		keeper.WithApplication(*s.app),
 		keeper.WithSupplier(*s.supplier),
@@ -104,7 +104,8 @@ func (s *tlmProcessorsTestSuite) setupKeepers(t *testing.T, opts ...keeper.Token
 		WithProposer(s.proposerConsAddr)
 }
 
-// TODO_IN_THIS_COMMIT: move & godoc...
+// setExpectedSettlementState sets the expected settlement state on the suite based
+// on the current network state and the given settledResults and expiredResults.
 func (s *tlmProcessorsTestSuite) setExpectedSettlementState(
 	t *testing.T,
 	settledResults,
@@ -117,8 +118,8 @@ func (s *tlmProcessorsTestSuite) setExpectedSettlementState(
 	s.expectedSettlementState = s.getSettlementState(t)
 }
 
-// TODO_IN_THIS_COMMIT: move & godoc...
-func (s *tlmProcessorsTestSuite) getSettlementState(t *testing.T) *expectedSettlementState {
+// getSettlementState returns a settlement state based on the current network state.
+func (s *tlmProcessorsTestSuite) getSettlementState(t *testing.T) *settlementState {
 	t.Helper()
 
 	app, isAppFound := s.keepers.GetApplication(s.ctx, s.app.GetAddress())
@@ -126,7 +127,7 @@ func (s *tlmProcessorsTestSuite) getSettlementState(t *testing.T) *expectedSettl
 
 	proposerBech32 := sample.AccAddressFromConsBech32(s.proposerConsAddr.String())
 
-	return &expectedSettlementState{
+	return &settlementState{
 		appStake:             app.GetStake(),
 		supplierOwnerBalance: s.getBalance(t, s.supplier.GetOwnerAddress()),
 		proposerBalance:      s.getBalance(t, proposerBech32),
@@ -135,7 +136,7 @@ func (s *tlmProcessorsTestSuite) getSettlementState(t *testing.T) *expectedSettl
 	}
 }
 
-// TODO_IN_THIS_COMMIT: move & godoc...
+// getBalance returns the current balance of the given bech32 address.
 func (s *tlmProcessorsTestSuite) getBalance(t *testing.T, bech32 string) *types.Coin {
 	t.Helper()
 
@@ -149,29 +150,19 @@ func (s *tlmProcessorsTestSuite) getBalance(t *testing.T, bech32 string) *types.
 	return res.GetBalance()
 }
 
-// TODO_IN_THIS_COMMIT: move & godoc...
+// assertExpectedSettlementState asserts that the current network state matches the
+// expected settlement state, and that actualSettledResults and actualExpiredResults
+// match their corresponding expectations.
 func (s *tlmProcessorsTestSuite) assertExpectedSettlementState(
 	t *testing.T,
 	actualSettledResults,
 	actualExpiredResults tlm.PendingSettlementResults,
 ) {
-	actualSettlementState := s.getSettlementState(t)
-
-	// Assert that app stake and rewardee balances expectedSettlementState are non-zero.
-	require.NotEqual(t, &zerouPOKT, actualSettlementState.appStake)
-	require.NotEqual(t, &zerouPOKT, actualSettlementState.appBalance)
-	require.NotEqual(t, &zerouPOKT, actualSettlementState.supplierOwnerBalance)
-	require.NotEqual(t, &zerouPOKT, actualSettlementState.proposerBalance)
-	require.NotEqual(t, &zerouPOKT, actualSettlementState.foundationBalance)
-	require.NotEqual(t, &zerouPOKT, actualSettlementState.sourceOwnerBalance)
-
-	require.EqualValues(t, s.expectedSettlementState, actualSettlementState)
-
 	require.Equal(t, len(s.expectedSettledResults), len(actualSettledResults))
 	require.Equal(t, len(s.expectedExpiredResults), len(actualExpiredResults))
 
 	for _, expectedSettledResult := range s.expectedSettledResults {
-		// Find the corresponding actual settled result.
+		// Find the corresponding actual settled result by matching on claim root hash.
 		foundActualResult := new(tlm.PendingSettlementResult)
 		for _, actualSettledResult := range actualSettledResults {
 			if bytes.Equal(expectedSettledResult.Claim.GetRootHash(), actualSettledResult.Claim.GetRootHash()) {
@@ -179,11 +170,28 @@ func (s *tlmProcessorsTestSuite) assertExpectedSettlementState(
 				break
 			}
 		}
+		// Assert that the corresponding actual settled result was found.
 		require.NotNil(t, foundActualResult)
 
+		// Assert that all mint, burn, and transfer operations match the expected settled result.
+		// Ordering of operations for a given type are not expected to be preserved between TLM
+		// processor permutations.
 		require.ElementsMatch(t, expectedSettledResult.Mints, foundActualResult.Mints)
 		require.ElementsMatch(t, expectedSettledResult.Burns, foundActualResult.Burns)
 		require.ElementsMatch(t, expectedSettledResult.ModToModTransfers, foundActualResult.ModToModTransfers)
 		require.ElementsMatch(t, expectedSettledResult.ModToAcctTransfers, foundActualResult.ModToAcctTransfers)
+
+		actualSettlementState := s.getSettlementState(t)
+
+		// Assert that app stake and rewardee balances settlementState are non-zero.
+		require.NotEqual(t, &zerouPOKT, actualSettlementState.appStake)
+		require.NotEqual(t, &zerouPOKT, actualSettlementState.appBalance)
+		require.NotEqual(t, &zerouPOKT, actualSettlementState.supplierOwnerBalance)
+		require.NotEqual(t, &zerouPOKT, actualSettlementState.proposerBalance)
+		require.NotEqual(t, &zerouPOKT, actualSettlementState.foundationBalance)
+		require.NotEqual(t, &zerouPOKT, actualSettlementState.sourceOwnerBalance)
+
+		// Assert that the expected and actual settlement states match.
+		require.EqualValues(t, s.expectedSettlementState, actualSettlementState)
 	}
 }

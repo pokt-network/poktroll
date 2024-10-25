@@ -55,8 +55,7 @@ func (tlm tlmRelayBurnEqualsMintProcessor) Process(
 		Coin:              settlementCoin,
 	})
 
-	// TODO_IN_THIS_COMMIT: move...
-	logger.Info(fmt.Sprintf("minted (%v) coins in the supplier module", settlementCoin))
+	logger.Info(fmt.Sprintf("operation scheduled: mint (%v) coins in the supplier module", settlementCoin))
 
 	// Distribute the rewards to the supplier's shareholders based on the rev share percentage.
 	if err := distributeSupplierRewardsToShareHolders(
@@ -83,8 +82,7 @@ func (tlm tlmRelayBurnEqualsMintProcessor) Process(
 		DestinationModule: apptypes.ModuleName,
 		Coin:              settlementCoin,
 	})
-	// TODO_IN_THIS_COMMIT: move...
-	logger.Info(fmt.Sprintf("burned (%v) from the application module account", settlementCoin))
+	logger.Info(fmt.Sprintf("operation scheduled: burn (%v) from the application module account", settlementCoin))
 
 	// Update the application's on-chain stake
 	newAppStake, err := application.Stake.SafeSub(settlementCoin)

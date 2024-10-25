@@ -83,7 +83,10 @@ func (tlm tlmProcessorGlobalMint) Process(
 	settlementCoin cosmostypes.Coin,
 	_ *servicetypes.RelayMiningDifficulty,
 ) error {
-	logger = logger.With("method", "tlmProcessorGlobalMint#Process")
+	logger = logger.With(
+		"method", "tlmProcessorGlobalMint#Process",
+		"session_id", result.GetSessionId(),
+	)
 
 	if MintPerClaimedTokenGlobalInflation == 0 {
 		// TODO_UPNEXT(@olshansk): Make sure to skip GMRR TLM in this case as well.
@@ -103,21 +106,15 @@ func (tlm tlmProcessorGlobalMint) Process(
 		DestinationModule: tokenomicstypes.ModuleName,
 		Coin:              newMintCoin,
 	})
-	// TODO_IN_THIS_COMMIT: move...
-	logger.Info(fmt.Sprintf("minted (%s) to the tokenomics module account", newMintCoin))
+	logger.Info(fmt.Sprintf("operation queued: mint (%s) to the tokenomics module account", newMintCoin))
 
 	// Send a portion of the rewards to the application
-	//coinsToAccAmt := calculateAllocationAmount(&newMintAmtFloat, MintAllocationApplication)
 	appCoin, err := sendRewardsToAccount(logger, result, tokenomicstypes.ModuleName, application.GetAddress(), &newMintAmtFloat, MintAllocationApplication)
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to application: %v", err)
 	}
-	//appCoin := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(coinsToAccAmt))
-	// TODO_IN_THIS_COMMIT: move...
-	logger.Info(fmt.Sprintf("sent (%v) coins from the tokenomics module to the account with address %q", appCoin, application.GetAddress()))
-
-	// TODO_IN_THIS_COMMIT: move...
-	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the application with address %q", appCoin, application.Address))
+	logMsg := fmt.Sprintf("operation queued: send (%v) newley minted coins from the tokenomics module to the application with address %q", appCoin, application.GetAddress())
+	logRewardOperation(logger, logMsg, &appCoin)
 
 	// Send a portion of the rewards to the supplier shareholders.
 	supplierCoinsToShareAmt := calculateAllocationAmount(&newMintAmtFloat, MintAllocationSupplier)
@@ -138,21 +135,23 @@ func (tlm tlmProcessorGlobalMint) Process(
 			err,
 		)
 	}
-	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the supplier with address %q", supplierCoin, supplier.OperatorAddress))
+	logger.Info(fmt.Sprintf("operation queued: send (%v) newley minted coins from the tokenomics module to the supplier with address %q", supplierCoin, supplier.OperatorAddress))
 
 	// Send a portion of the rewards to the DAO
 	daoCoin, err := sendRewardsToAccount(logger, result, tokenomicstypes.ModuleName, tlm.authorityRewardAddr, &newMintAmtFloat, MintAllocationDAO)
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to DAO: %v", err)
 	}
-	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the DAO with address %q", daoCoin, tlm.authorityRewardAddr))
+	logMsg = fmt.Sprintf("operation queued: send (%v) newley minted coins from the tokenomics module to the DAO with address %q", daoCoin, tlm.authorityRewardAddr)
+	logRewardOperation(logger, logMsg, &daoCoin)
 
 	// Send a portion of the rewards to the source owner
 	serviceCoin, err := sendRewardsToAccount(logger, result, tokenomicstypes.ModuleName, service.OwnerAddress, &newMintAmtFloat, MintAllocationSourceOwner)
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to source owner: %v", err)
 	}
-	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the source owner with address %q", serviceCoin, service.OwnerAddress))
+	logMsg = fmt.Sprintf("operation queued: send (%v) newley minted coins from the tokenomics module to the source owner with address %q", serviceCoin, service.OwnerAddress)
+	logRewardOperation(logger, logMsg, &serviceCoin)
 
 	// Send a portion of the rewards to the block proposer
 	proposerAddr := cosmostypes.AccAddress(cosmostypes.UnwrapSDKContext(ctx).BlockHeader().ProposerAddress).String()
@@ -160,7 +159,8 @@ func (tlm tlmProcessorGlobalMint) Process(
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to proposer: %v", err)
 	}
-	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the proposer with address %q", proposerCoin, proposerAddr))
+	logMsg = fmt.Sprintf("operation queued: send (%v) newley minted coins from the tokenomics module to the proposer with address %q", proposerCoin, proposerAddr)
+	logRewardOperation(logger, logMsg, &proposerCoin)
 
 	// Check and log the total amount of coins distributed
 	if err := ensureMintedCoinsAreDistributed(logger, appCoin, supplierCoin, daoCoin, serviceCoin, proposerCoin, newMintCoin); err != nil {
@@ -170,6 +170,23 @@ func (tlm tlmProcessorGlobalMint) Process(
 	return nil
 }
 
+// logRewardOperation logs (at the info level) whether a particular reward operation
+// was queued or not by appending a corresponding prefix to the given message.
+func logRewardOperation(logger cosmoslog.Logger, msg string, reward *cosmostypes.Coin) {
+	var opMsgPrefix string
+	if reward.IsZero() {
+		opMsgPrefix = "operation skipped:"
+	} else {
+		opMsgPrefix = "operation queued:"
+	}
+	logger.Info(fmt.Sprintf("%s: %s", opMsgPrefix, msg))
+}
+
+// ensureMintedCoinsAreDistributed checks whether the total amount of minted coins
+// is correctly distributed to the application, supplier, DAO, source owner, and proposer.
+// If the total distributed coins do not equal the amount of newly minted coins, an error
+// is returned. If the discrepancy is within the allowable tolerance, a warning is logged
+// and nil is returned.
 func ensureMintedCoinsAreDistributed(
 	logger cosmoslog.Logger,
 	appCoin, supplierCoin, daoCoin, serviceCoin, proposerCoin, newMintCoin cosmostypes.Coin,
@@ -218,13 +235,15 @@ func sendRewardsToAccount(
 	settlementAmtFloat *big.Float,
 	allocation float64,
 ) (cosmostypes.Coin, error) {
-	logger = logger.With("method", "mintRewardsToAccount")
+	logger = logger.With(
+		"method", "mintRewardsToAccount",
+		"session_id", result.GetSessionId(),
+	)
 
 	coinsToAccAmt := calculateAllocationAmount(settlementAmtFloat, allocation)
 	coinToAcc := cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewInt(coinsToAccAmt))
 
 	if coinToAcc.IsZero() {
-		// TODO_IN_THIS_COMMIT: log...
 		return cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0), nil
 	}
 
@@ -240,8 +259,7 @@ func sendRewardsToAccount(
 		Coin:             coinToAcc,
 	})
 
-	// TODO_IN_THIS_COMMIT: move...
-	logger.Info(fmt.Sprintf("sent (%v) coins from the tokenomics module to the account with address %q", coinToAcc, recipientAddr))
+	logger.Info(fmt.Sprintf("operation queued: send (%v) coins from the tokenomics module to the account with address %q", coinToAcc, recipientAddr))
 
 	return coinToAcc, nil
 }

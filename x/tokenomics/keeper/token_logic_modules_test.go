@@ -341,7 +341,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	tlmProcessors := tlm.NewDefaultProcessors(daoAddress.String())
 
 	// Prepare the keepers
-	opts := []testkeeper.TokenomicsModuleKeepersOpt{
+	opts := []testkeeper.TokenomicsModuleKeepersOptFn{
 		testkeeper.WithService(*service),
 		testkeeper.WithProposerAddr(proposerConsAddr),
 		testkeeper.WithTLMProcessors(tlmProcessors),
