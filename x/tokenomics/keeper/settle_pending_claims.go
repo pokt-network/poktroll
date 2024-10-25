@@ -38,6 +38,8 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 
 	// Capture the applications initial stake which will be used to calculate the
 	// max share any claim could receive from the application stake.
+	// This ensures that each claim can calculate the maximum amount it can take
+	// from an application's stake.
 	applicationInitialStakeMap := make(map[string]sdk.Coin)
 	for _, claim := range expiringClaims {
 		appAddress := claim.SessionHeader.ApplicationAddress
