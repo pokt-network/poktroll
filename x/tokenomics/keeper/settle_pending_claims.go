@@ -40,13 +40,18 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 	// max share any claim could receive from the application stake.
 	applicationInitialStakeMap := make(map[string]sdk.Coin)
 	for _, claim := range expiringClaims {
-		app, isAppFound := k.applicationKeeper.GetApplication(ctx, claim.SessionHeader.ApplicationAddress)
+		appAddress := claim.SessionHeader.ApplicationAddress
+		if _, isAppFound := applicationInitialStakeMap[appAddress]; isAppFound {
+			continue
+		}
+
+		app, isAppFound := k.applicationKeeper.GetApplication(ctx, appAddress)
 		if !isAppFound {
-			err = apptypes.ErrAppNotFound.Wrapf("application address: %q", claim.SessionHeader.ApplicationAddress)
+			err = apptypes.ErrAppNotFound.Wrapf("application address: %q", appAddress)
 			return settledResult, expiredResult, err
 		}
 
-		applicationInitialStakeMap[claim.SessionHeader.ApplicationAddress] = *app.GetStake()
+		applicationInitialStakeMap[appAddress] = *app.GetStake()
 	}
 
 	blockHeight := ctx.BlockHeight()
