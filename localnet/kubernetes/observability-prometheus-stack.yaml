@@ -17,6 +17,20 @@ grafana:
       viewers_can_edit: true
     security:
       allow_embedding: true
+  additionalDataSources:
+    - name: PostgreSQL
+      type: postgres
+      access: proxy
+      url: postgres-service:5432
+      database: postgres
+      user: postgres
+      secureJsonData:
+        password: postgres
+      jsonData:
+        sslmode: disable
+        postgresVersion: 1604 # Adjust to match your PostgreSQL version
+        # timescaledb: false  # Set to true if you are using TimescaleDB
+      schema: localnet # Specify your schema here
 
 prometheus:
   prometheusSpec:
