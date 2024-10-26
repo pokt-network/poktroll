@@ -103,6 +103,9 @@ var Upgrade_0_0_10 = Upgrade{
 				}
 			}
 
+			// Seems like RelayMiningDifficulty have been moved from `tokenomics` to `services`. Do we need to move
+			// and delete old RelayMiningDifficulty data? TODO if so.
+
 			return mm.RunMigrations(ctx, configurator, vm)
 		}
 	},
