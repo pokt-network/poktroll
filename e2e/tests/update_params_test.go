@@ -358,8 +358,6 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 				Params: tokenomicstypes.Params{},
 			},
 		)
-	// TODO_UPNEXT: This should fail
-	// TODO_UPNEXT(@olshansk): This should not fail
 	case prooftypes.ModuleName:
 		params := prooftypes.DefaultParams()
 		paramsMap := s.expectedModuleParams[moduleName]
