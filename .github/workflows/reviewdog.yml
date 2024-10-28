@@ -40,7 +40,7 @@ jobs:
           reporter: github-pr-review
           level: error
           fail_on_error: true
-          pattern: TODO_UPNEXT(?!\(@[a-zA-Z0-9]+\))'
+          pattern: TODO_UPNEXT:
 
   # Prevent the use of `sed` in helper scripts. This ensures compatibility across
   # Darwin and Linux systems.
