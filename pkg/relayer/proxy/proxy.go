@@ -118,26 +118,10 @@ func NewRelayerProxy(
 		&rp.sessionQuerier,
 		&rp.sharedQuerier,
 		&rp.keyring,
+		&rp.relayMeter,
 	); err != nil {
 		return nil, err
 	}
-
-	rm := &ProxyRelayMeter{
-		apps:                   make(map[string]*appRelayMeter),
-		overServicingAllowance: 0,
-	}
-	if err := depinject.Inject(
-		deps,
-		&rm.sharedQuerier,
-		&rm.applicationQuerier,
-		&rm.serviceQuerier,
-		&rm.blockQuerier,
-		&rm.eventsQueryClient,
-	); err != nil {
-		return nil, err
-	}
-
-	rp.relayMeter = rm
 
 	servedRelays, servedRelaysProducer := channel.NewObservable[*types.Relay]()
 

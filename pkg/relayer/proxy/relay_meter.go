@@ -6,6 +6,7 @@ import (
 	"strings"
 	"sync"
 
+	"cosmossdk.io/depinject"
 	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/gogoproto/proto"
@@ -43,6 +44,7 @@ type ProxyRelayMeter struct {
 	apps map[string]*appRelayMeter
 	// overServicingAllowance adjusts the max amount to allow for controlled over-servicing
 	// or, if negative, to create a stake buffer.
+	// TODO_TECHDEBT(@red-0ne): Expose overServicingAllowance as a configuration parameter.
 	overServicingAllowance int64
 
 	applicationQuerier client.ApplicationQueryClient
@@ -52,6 +54,26 @@ type ProxyRelayMeter struct {
 	blockQuerier       client.BlockClient
 
 	relayMeterMu sync.Mutex
+}
+
+func NewRelayMeter(deps depinject.Config) (relayer.RelayMeter, error) {
+	rm := &ProxyRelayMeter{
+		apps:                   make(map[string]*appRelayMeter),
+		overServicingAllowance: 0,
+	}
+
+	if err := depinject.Inject(
+		deps,
+		&rm.sharedQuerier,
+		&rm.applicationQuerier,
+		&rm.serviceQuerier,
+		&rm.blockQuerier,
+		&rm.eventsQueryClient,
+	); err != nil {
+		return nil, err
+	}
+
+	return rm, nil
 }
 
 // Start starts the relay meter by observing application staked events and new sessions.
