@@ -122,7 +122,8 @@ func (rmtr *ProxyRelayMeter) ClaimRelayPrice(ctx context.Context, reqMeta servic
 	// If the application is seen for the first time in this session, calculate the
 	// max amount of stake the application can consume.
 	if !ok {
-		app, err := rmtr.applicationQuerier.GetApplication(ctx, appAddress)
+		var app apptypes.Application
+		app, err = rmtr.applicationQuerier.GetApplication(ctx, appAddress)
 		if err != nil {
 			return err
 		}
@@ -189,6 +190,9 @@ func (rmtr *ProxyRelayMeter) UnclaimRelayPrice(ctx context.Context, reqMeta serv
 	}
 
 	difficulty, err := rmtr.serviceQuerier.GetServiceRelayDifficulty(ctx, serviceId)
+	if err != nil {
+		return err
+	}
 
 	// Get the cost of the relay based on the service and shared parameters.
 	relayCost, err := getMinedRelayCost(sharedParams, &service, difficulty)
