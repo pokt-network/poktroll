@@ -12,7 +12,7 @@ import (
 	"github.com/pokt-network/poktroll/x/gateway/types"
 )
 
-// TODO_BLOCKER(#489): Apps & gateways unbonding periods
+// TODO_BET(@bryanchriswhite): Apps & gateways unbonding periods
 func (k msgServer) UnstakeGateway(
 	goCtx context.Context,
 	msg *types.MsgUnstakeGateway,

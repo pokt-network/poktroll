@@ -1,6 +1,6 @@
 package service
 
-// TODO_BETA: Add `UpdateService` or modify `AddService` to `UpsertService` to allow service owners
+// TODO_MAINNET(@red-0ne): Add `UpdateService` or modify `AddService` to `UpsertService` to allow service owners
 // to update parameters of existing services. This will requiring updating `proto/poktroll/service/tx.proto` and
 // all downstream code paths.
 import (
@@ -18,7 +18,7 @@ import (
 
 var _ = strconv.Itoa(0)
 
-// TODO_UPNEXT: Change `add-service` to `update-service` so the source owner can
+// TODO_MAINNET(@red-0ne): Change `add-service` to `update-service` so the source owner can
 // update the compute units per relay for an existing service. Make it possible
 // to update a service (e.g. update # of compute units per relay). This will require
 // search for all variations of `AddService` in the codebase (filenames, helpers, etc...),

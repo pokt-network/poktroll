@@ -74,7 +74,7 @@ Feature: Tokenomics Namespace
         Then the account balance of "supplier1" should be "449" uPOKT "more" than before
         And the "application" stake of "app1" should be "420" uPOKT "less" than before
 
-    # TODO_ADDTEST: Implement the following scenarios
+    # TODO_TEST: Implement the following scenarios
     # Scenario: Supplier revenue shares are properly distributed
     # Scenario: TLM Mint=Burn when a valid claim is outside Max Limits
     #   - Ensure over serviced event is submitted

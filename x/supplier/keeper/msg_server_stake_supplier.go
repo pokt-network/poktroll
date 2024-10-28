@@ -211,7 +211,7 @@ func (k msgServer) updateSupplier(
 
 	// Update activation height for services update. New services are activated at the
 	// end of the current session, while existing ones keep their activation height.
-	// TODO_CONSIDERAION: Service removal should take effect at the beginning of the
+	// TODO_MAINNET: Service removal should take effect at the beginning of the
 	// next session, otherwise sessions that are fetched at their start height may
 	// still include Suppliers that no longer provide the services they removed.
 	// For the same reason, any SupplierEndpoint change should take effect at the

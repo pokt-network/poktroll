@@ -23,7 +23,7 @@ func SimulateMsgAddService(
 			OwnerAddress: simAccount.Address.String(),
 		}
 
-		// TODO: Handling the AddService simulation
+		// TODO_TECHDEBT: Handling the AddService simulation
 
 		return simtypes.NoOpMsg(types.ModuleName, sdk.MsgTypeURL(msg), "AddService simulation not implemented"), nil, nil
 	}

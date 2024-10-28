@@ -246,7 +246,7 @@ func (k Keeper) validateClosestPath(
 	// be received before proceeding.
 	proofPathSeedBlockHash := k.sessionKeeper.GetBlockHash(ctx, earliestSupplierProofCommitHeight-1)
 
-	// TODO_BETA: Investigate "proof for the path provided does not match one expected by the on-chain protocol"
+	// TODO_BETA(@red-0ne): Investigate "proof for the path provided does not match one expected by the on-chain protocol"
 	// error that may occur due to block height differing from the off-chain part.
 	k.logger.Info("E2E_DEBUG: height for block hash when verifying the proof", earliestSupplierProofCommitHeight, sessionHeader.GetSessionId())
 
