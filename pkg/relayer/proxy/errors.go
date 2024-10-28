@@ -17,4 +17,6 @@ var (
 	ErrRelayerProxyUnsupportedTransportType       = sdkerrors.Register(codespace, 9, "unsupported proxy transport type")
 	ErrRelayerProxyInternalError                  = sdkerrors.Register(codespace, 10, "internal error")
 	ErrRelayerProxyMissingSupplierOperatorAddress = sdkerrors.Register(codespace, 11, "supplier operator address is missing")
+	ErrRelayerProxyUnknownApplication             = sdkerrors.Register(codespace, 12, "unknown application")
+	ErrRelayerProxyRateLimited                    = sdkerrors.Register(codespace, 13, "rate limited")
 )

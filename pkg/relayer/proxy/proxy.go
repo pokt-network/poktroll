@@ -78,6 +78,10 @@ type relayerProxy struct {
 	// 1. Relay verification to check if the incoming relay matches the supplier hosted by the relay miner;
 	// 2. Relay signing to resolve which keyring key name to use for signing;
 	OperatorAddressToSigningKeyNameMap map[string]string
+
+	// relayMeter is a struct that keeps track of the claimed relay prices for each application.
+	// It also configures over servicing allowance.
+	relayMeter relayer.RelayMeter
 }
 
 // NewRelayerProxy creates a new relayer proxy with the given dependencies or returns
@@ -86,9 +90,15 @@ type relayerProxy struct {
 // Required dependencies:
 //   - cosmosclient.Context
 //   - client.BlockClient
+//   - crypto.RingCache
+//   - client.SupplierQueryClient
 //   - client.SessionQueryClient
 //   - client.SharedQueryClient
-//   - client.SupplierQueryClient
+//   - keyring.Keyring
+//   - client.SharedQueryClient
+//   - client.ApplicationQueryClient
+//   - client.ServiceQueryClient
+//   - client.EventsQueryClient
 //
 // Available options:
 //   - WithSigningKeyNames
@@ -111,6 +121,23 @@ func NewRelayerProxy(
 	); err != nil {
 		return nil, err
 	}
+
+	rm := &ProxyRelayMeter{
+		apps:                   make(map[string]*appRelayMeter),
+		overServicingAllowance: 0,
+	}
+	if err := depinject.Inject(
+		deps,
+		&rm.sharedQuerier,
+		&rm.applicationQuerier,
+		&rm.serviceQuerier,
+		&rm.blockQuerier,
+		&rm.eventsQueryClient,
+	); err != nil {
+		return nil, err
+	}
+
+	rp.relayMeter = rm
 
 	servedRelays, servedRelaysProducer := channel.NewObservable[*types.Relay]()
 
@@ -142,6 +169,11 @@ func (rp *relayerProxy) Start(ctx context.Context) error {
 
 	// Start the ring cache.
 	rp.ringCache.Start(ctx)
+
+	// Start the relay meter.
+	if err := rp.relayMeter.Start(ctx); err != nil {
+		return err
+	}
 
 	startGroup, ctx := errgroup.WithContext(ctx)
 

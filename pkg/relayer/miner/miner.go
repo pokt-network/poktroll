@@ -27,6 +27,7 @@ type miner struct {
 	// serviceQueryClient is used to query for the relay difficulty target hash of a service.
 	// relay_difficulty is the target hash which a relay hash must be less than to be volume/reward applicable.
 	serviceQueryClient client.ServiceQueryClient
+	relayMeter         relayer.RelayMeter
 }
 
 // NewMiner creates a new miner from the given dependencies and options. It
@@ -43,7 +44,7 @@ func NewMiner(
 ) (*miner, error) {
 	mnr := &miner{}
 
-	if err := depinject.Inject(deps, &mnr.serviceQueryClient); err != nil {
+	if err := depinject.Inject(deps, &mnr.serviceQueryClient, &mnr.relayMeter); err != nil {
 		return nil, err
 	}
 
@@ -88,6 +89,7 @@ func (mnr *miner) mapMineRelay(
 ) (_ either.Either[*relayer.MinedRelay], skip bool) {
 	relayBz, err := relay.Marshal()
 	if err != nil {
+		mnr.relayMeter.UnclaimRelayPrice(ctx, relay.GetReq().GetMeta())
 		return either.Error[*relayer.MinedRelay](err), false
 	}
 	relayHashArr := protocol.GetRelayHashFromBytes(relayBz)
@@ -95,11 +97,13 @@ func (mnr *miner) mapMineRelay(
 
 	relayDifficultyTargetHash, err := mnr.getServiceRelayDifficultyTargetHash(ctx, relay.Req)
 	if err != nil {
+		mnr.relayMeter.UnclaimRelayPrice(ctx, relay.GetReq().GetMeta())
 		return either.Error[*relayer.MinedRelay](err), false
 	}
 
 	// The relay IS NOT volume / reward applicable
 	if !protocol.IsRelayVolumeApplicable(relayHash, relayDifficultyTargetHash) {
+		mnr.relayMeter.UnclaimRelayPrice(ctx, relay.GetReq().GetMeta())
 		return either.Success[*relayer.MinedRelay](nil), true
 	}
 

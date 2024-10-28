@@ -47,6 +47,10 @@ type synchronousRPCServer struct {
 	// servedRelaysProducer is a channel that emits the relays that have been served, allowing
 	// the servedRelays observable to fan-out notifications to its subscribers.
 	servedRelaysProducer chan<- *types.Relay
+
+	// relayMeter is the relay meter that the server uses to meter the relays and claim the relay price.
+	// It is used to ensure that the relays are metered and priced correctly.
+	relayMeter relayer.RelayMeter
 }
 
 // NewSynchronousServer creates a new HTTP server that listens for incoming
@@ -61,6 +65,7 @@ func NewSynchronousServer(
 	serverConfig *config.RelayMinerServerConfig,
 	servedRelaysProducer chan<- *types.Relay,
 	proxy relayer.RelayerProxy,
+	relayMeter relayer.RelayMeter,
 ) relayer.RelayServer {
 	return &synchronousRPCServer{
 		logger:               logger,
@@ -68,6 +73,7 @@ func NewSynchronousServer(
 		relayerProxy:         proxy,
 		servedRelaysProducer: servedRelaysProducer,
 		serverConfig:         serverConfig,
+		relayMeter:           relayMeter,
 	}
 }
 
@@ -234,6 +240,14 @@ func (sync *synchronousRPCServer) serveHTTP(
 	// This would help in separating concerns and improving code maintainability.
 	// See https://github.com/pokt-network/poktroll/issues/160
 	if err := sync.relayerProxy.VerifyRelayRequest(ctx, relayRequest, supplierServiceId); err != nil {
+		return nil, err
+	}
+
+	// Optimistically claim the relay price before serving the relay.
+	// The relay price will be deducted from the application's stake before the relay is served.
+	// If the relay comes out to be not reward / volume applicable, the miner will refund the
+	// claimed price back to the application.
+	if err := sync.relayMeter.ClaimRelayPrice(ctx, relayRequest.Meta); err != nil {
 		return nil, err
 	}
 

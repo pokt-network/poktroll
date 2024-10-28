@@ -162,3 +162,17 @@ type SessionTree interface {
 	// GetTrieSpec returns the trie spec of the SMST.
 	GetTrieSpec() smt.TrieSpec
 }
+
+// RelayMeter is an interface that keeps track of the consumed stake for each application.
+type RelayMeter interface {
+	// Start starts the relay meter.
+	Start(ctx context.Context) error
+	// ClaimRelayPrice claims the relay price for the given relay request.
+	// The relay price is claimed optimistically, assuming that the relay will be volume / reward
+	// applicable and the relay meter will be updated accordingly.
+	ClaimRelayPrice(ctx context.Context, relayRequestMeta servicetypes.RelayRequestMetadata) error
+	// UnclaimRelayPrice unlocks the relay price for the given relay request.
+	// This is used when the relay is not volume / reward applicable but was optimistically
+	// accounted for in the relay meter.
+	UnclaimRelayPrice(ctx context.Context, relayRequestMeta servicetypes.RelayRequestMetadata) error
+}

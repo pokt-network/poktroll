@@ -290,7 +290,7 @@ func (k Keeper) ProcessTokenLogicModules(
 
 	// Ensure the claim amount is within the limits set by Relay Mining.
 	// If not, update the settlement amount and emit relevant events.
-	actualSettlementCoin, err := k.ensureClaimAmountLimits(ctx, logger, &application, &supplier, claimSettlementCoin, applicationInitialStake)
+	actualSettlementCoin, err := k.ensureClaimAmountLimits(ctx, logger, &sharedParams, &application, &supplier, claimSettlementCoin, applicationInitialStake)
 	if err != nil {
 		return err
 	}
@@ -660,6 +660,7 @@ func (k Keeper) sendRewardsToAccount(
 func (k Keeper) ensureClaimAmountLimits(
 	ctx context.Context,
 	logger log.Logger,
+	sharedParams *sharedtypes.Params,
 	application *apptypes.Application,
 	supplier *sharedtypes.Supplier,
 	claimSettlementCoin cosmostypes.Coin,
@@ -670,8 +671,6 @@ func (k Keeper) ensureClaimAmountLimits(
 ) {
 	logger = logger.With("helper", "ensureClaimAmountLimits")
 
-	// TODO_BETA(@red-0ne): Make relay miners use the appStake at the beginning
-	// of a session to determine the maximum amount they can claim.
 	// Note that this also incorporates MintPerClaimGlobalInflation since applications
 	// are being overcharged by that amount and the funds are sent to the DAO/PNF
 	// before being reimbursed to the application in the future.
@@ -684,25 +683,13 @@ func (k Keeper) ensureClaimAmountLimits(
 	stakeRequirementAmt := claimSettlementCoin.Amount.Add(globalInflationAmt)
 	totalClaimedCoin := sdk.NewCoin(volatile.DenomuPOKT, stakeRequirementAmt)
 
-	// TODO_BETA(@red-0ne): Introduce a session sliding window to account for potential consumption
-	// during the current session (i.e. Not the session being settled) such as:
-	// maxClaimableAmt = (AppStake / (currSessNum - settlingSessNum + 1) / NumSuppliersPerSession)
-	// In conjunction with single service applications, this would make maxClaimableAmt
-	// effectively addressing the issue of over-servicing.
-	// Example:
-	// - Current session num: 3
-	// - Settling session num: 2
-	// - Application already requested work for session 3
-	// Problem:
-	// - If the application consumes its entire stake in settlement of session 2
-	// - Then over-servicing in session 3 (i.e. No stake left to consume)
-	// Solution:
-	// - By dividing the claimable stake by 2 (3 - 2 + 1), settling session 2 assumes that
-	//   the application will consume its maxClaimableAmt the current session (3).
-	// - Off-chain actors could use this formula during the servicing of session num 3
-	//   and assume maxClaimableAmt will be settled in session 2.
-	// - Guarantee no over-servicing at the cost of higher application stake requirements.
-	maxClaimableAmt := appStake.Amount.Quo(math.NewInt(sessionkeeper.NumSupplierPerSession))
+	numBlocksPerSession := int64(sharedParams.GetNumBlocksPerSession())
+	pendingBlocks := sharedtypes.GetSessionEndToProofWindowCloseBlocks(sharedParams)
+	pendingSessions := (pendingBlocks + numBlocksPerSession - 1) / numBlocksPerSession
+
+	maxClaimableAmt := appStake.Amount.
+		Quo(math.NewInt(sessionkeeper.NumSupplierPerSession)).
+		Quo(math.NewInt(pendingSessions))
 	maxClaimSettlementAmt := stakeToMaxSettlementAmount(maxClaimableAmt)
 
 	// Check if the claimable amount is capped by the max claimable amount.
