@@ -89,7 +89,10 @@ func (mnr *miner) mapMineRelay(
 ) (_ either.Either[*relayer.MinedRelay], skip bool) {
 	relayBz, err := relay.Marshal()
 	if err != nil {
-		mnr.relayMeter.UnclaimRelayPrice(ctx, relay.GetReq().GetMeta())
+		meteringError := mnr.relayMeter.UnclaimRelayPrice(ctx, relay.GetReq().GetMeta())
+		if meteringError != nil {
+			return either.Error[*relayer.MinedRelay](fmt.Errorf("failed to unclaim relay price: %w", meteringError)), false
+		}
 		return either.Error[*relayer.MinedRelay](err), false
 	}
 	relayHashArr := protocol.GetRelayHashFromBytes(relayBz)
@@ -97,13 +100,19 @@ func (mnr *miner) mapMineRelay(
 
 	relayDifficultyTargetHash, err := mnr.getServiceRelayDifficultyTargetHash(ctx, relay.Req)
 	if err != nil {
-		mnr.relayMeter.UnclaimRelayPrice(ctx, relay.GetReq().GetMeta())
+		meteringError := mnr.relayMeter.UnclaimRelayPrice(ctx, relay.GetReq().GetMeta())
+		if meteringError != nil {
+			return either.Error[*relayer.MinedRelay](fmt.Errorf("failed to unclaim relay price: %w", meteringError)), false
+		}
 		return either.Error[*relayer.MinedRelay](err), false
 	}
 
 	// The relay IS NOT volume / reward applicable
 	if !protocol.IsRelayVolumeApplicable(relayHash, relayDifficultyTargetHash) {
-		mnr.relayMeter.UnclaimRelayPrice(ctx, relay.GetReq().GetMeta())
+		meteringError := mnr.relayMeter.UnclaimRelayPrice(ctx, relay.GetReq().GetMeta())
+		if meteringError != nil {
+			return either.Error[*relayer.MinedRelay](fmt.Errorf("failed to unclaim relay price: %w", meteringError)), false
+		}
 		return either.Success[*relayer.MinedRelay](nil), true
 	}
 
