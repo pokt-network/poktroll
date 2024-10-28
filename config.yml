@@ -175,25 +175,25 @@ genesis:
           denom: upokt
       applicationList:
         - address: pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4
-          delegatee_gateway_addresses: []
+          delegatee_gateway_addresses: [
+            pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4
+          ]
           service_configs:
             - service_id: anvil
-            - service_id: rest
-            - service_id: ollama
           stake:
             # NB: This value should be exactly 1upokt smaller than the value in
-            # `supplier1_stake_config.yaml` so that the stake command causes a state change.
+            # `application1_stake_config.yaml` so that the stake command causes a state change.
             amount: "100000068" # ~100 POKT
             denom: upokt
-        - address: pokt1ad28jdap2zfanjd7hpkh984yveney6k9a42man
-          delegatee_gateway_addresses: []
+        - address: pokt184zvylazwu4queyzpl0gyz9yf5yxm2kdhh9hpm
+          delegatee_gateway_addresses: [
+            pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4
+          ]
           service_configs:
-            - service_id: anvil
             - service_id: rest
-            - service_id: ollama
           stake:
             # NB: This value should be exactly 1upokt smaller than the value in
-            # `supplier1_stake_config.yaml` so that the stake command causes a state change.
+            # `application1_stake_config.yaml` so that the stake command causes a state change.
             amount: "100000068" # ~100 POKT
             denom: upokt
     supplier:
@@ -232,7 +232,7 @@ genesis:
                   rev_share_percentage: "100"
           stake:
             # NB: This value should be exactly 1upokt smaller than the value in
-            # `application1_stake_config.yaml` so that the stake command causes a state change.
+            # `supplier1_stake_config.yaml` so that the stake command causes a state change.
             amount: "1000068"
             denom: upokt
     gateway:
