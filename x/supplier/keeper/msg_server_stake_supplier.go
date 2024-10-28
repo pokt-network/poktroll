@@ -16,7 +16,7 @@ import (
 
 var (
 	// TODO_BETA: Make supplier staking fee a governance parameter
-	// TODO_UPNEXT: Update supplier staking documentation to remove the upstaking
+	// TODO_BETA(@red-0ne): Update supplier staking documentation to remove the upstaking
 	// requirement and introduce the staking fee.
 	SupplierStakingFee = sdk.NewInt64Coin(volatile.DenomuPOKT, 1)
 )
