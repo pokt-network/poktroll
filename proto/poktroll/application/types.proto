@@ -18,10 +18,12 @@ import "poktroll/shared/service.proto";
 message Application {
   string address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the application.
   cosmos.base.v1beta1.Coin stake = 2; // The total amount of uPOKT the application has staked
-  // TODO_BETA(@red-0ne, @olshansk): Limit this to one service_config.
-  //    Remove `repeated`, drop the `s` from service_configs and document why
-  //    this is the case in the app config (and here) per this discussion:
-  //    https://github.com/pokt-network/poktroll/pull/750#discussion_r1735025033
+  // CRITICAL_DEV_NOTE: The number of service_configs must be EXACTLY ONE.
+  // This prevents applications from over-servicing.
+  // The field is kept repeated (a list) for both legacy and future logic reaosns.
+  // References:
+  //  - https://github.com/pokt-network/poktroll/pull/750#discussion_r1735025033
+  //  - https://www.notion.so/buildwithgrove/Off-chain-Application-Stake-Tracking-6a8bebb107db4f7f9dc62cbe7ba555f7
   repeated poktroll.shared.ApplicationServiceConfig service_configs = 3; // The list of services this appliccation is configured to request service for
   // TODO_BETA: Rename `delegatee_gateway_addresses` to `gateway_addresses_delegated_to`.
   // Ensure to rename all relevant configs, comments, variables, function names, etc as well.
