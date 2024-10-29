@@ -47,7 +47,6 @@ localnet_config_defaults = {
         "count": 1,
         "delve": {"enabled": False},
     },
-    # TODO_BLOCKER(@red-0ne, #511): Add support for `REST` and enabled this.
     "ollama": {
         "enabled": False,
         "model": "qwen:0.5b",
