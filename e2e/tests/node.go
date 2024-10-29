@@ -199,19 +199,11 @@ func (p *pocketdBin) runCurlCmd(rpcBaseURL, service, method, path, appAddr, data
 
 	rpcUrl.Path = rpcUrl.Path + path
 
-	// When sending a relay request, through a gateway (i.e. non-sovereign application)
-	// then, the application address must be provided.
-	if len(appAddr) > 0 {
-		queryValues := rpcUrl.Query()
-		queryValues.Set("applicationAddr", appAddr)
-		rpcUrl.RawQuery = queryValues.Encode()
-	}
-
 	base := []string{
 		"-v",         // verbose output
 		"-sS",        // silent with error
 		"-X", method, // HTTP method
-		"-H", "Content-Type: application/json", // HTTP headers
+		"-H", `Content-Type: application/json`, // HTTP headers
 		rpcUrl.String(),
 	}
 
@@ -222,6 +214,7 @@ func (p *pocketdBin) runCurlCmd(rpcBaseURL, service, method, path, appAddr, data
 	}
 	args = append(base, args...)
 	commandStr := "curl " + strings.Join(args, " ") // Create a string representation of the command
+	fmt.Println(commandStr)
 	cmd := exec.Command("curl", args...)
 	var stdoutBuf, stderrBuf bytes.Buffer
 	cmd.Stdout = &stdoutBuf
@@ -235,6 +228,7 @@ func (p *pocketdBin) runCurlCmd(rpcBaseURL, service, method, path, appAddr, data
 		Err:     err,
 	}
 	p.result = r
+	fmt.Println("==================", r, "==================")
 
 	if defaultDebugOutput == "true" {
 		fmt.Printf("%#v\n", r)
