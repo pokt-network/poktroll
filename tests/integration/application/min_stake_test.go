@@ -2,11 +2,9 @@ package application
 
 import (
 	"context"
-	"math/big"
 	"testing"
 
 	cosmoslog "cosmossdk.io/log"
-	"cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/stretchr/testify/require"
@@ -237,8 +235,8 @@ func (s *applicationMinStakeTestSuite) getExpectedApp(claim *prooftypes.Claim) *
 	expectedBurnCoin, err := claim.GetClaimeduPOKT(sharedParams, relayMiningDifficulty)
 	require.NoError(s.T(), err)
 
-	globalInflationAmt := calculateGlobalInflation(expectedBurnCoin.Amount)
-	expectedEndStake := s.appStake.Sub(expectedBurnCoin).SubAmount(globalInflationAmt)
+	globalInflationAmt, _ := tokenomicskeeper.CalculateGlobalPerClaimMintInflationFromSettlementAmount(expectedBurnCoin)
+	expectedEndStake := s.appStake.Sub(expectedBurnCoin).Sub(globalInflationAmt)
 	return &apptypes.Application{
 		Address:                   s.appBech32,
 		Stake:                     &expectedEndStake,
@@ -307,21 +305,11 @@ func (s *applicationMinStakeTestSuite) assertUnbondingEndEventObserved(expectedA
 func (s *applicationMinStakeTestSuite) assertAppStakeIsReturnedToBalance() {
 	s.T().Helper()
 
-	expectedAppBurn := math.NewInt(int64(s.numRelays * s.numComputeUnitsPerRelay * sharedtypes.DefaultComputeUnitsToTokensMultiplier))
-	globalInflationAmt := calculateGlobalInflation(expectedAppBurn)
-	expectedAppBalance := s.appStake.SubAmount(expectedAppBurn).SubAmount(globalInflationAmt)
+	expectedAppBurn := int64(s.numRelays * s.numComputeUnitsPerRelay * sharedtypes.DefaultComputeUnitsToTokensMultiplier)
+	expectedAppBurnCoin := cosmostypes.NewInt64Coin(volatile.DenomuPOKT, expectedAppBurn)
+	globalInflationCoin, _ := tokenomicskeeper.CalculateGlobalPerClaimMintInflationFromSettlementAmount(expectedAppBurnCoin)
+	expectedAppBalance := s.appStake.Sub(expectedAppBurnCoin).Sub(globalInflationCoin)
 
 	appBalance := s.getAppBalance()
 	require.Equal(s.T(), expectedAppBalance.Amount.Int64(), appBalance.Amount.Int64())
-}
-
-// calculateGlobalInflation calculates the global inflation for the given settlement amount.
-func calculateGlobalInflation(settlementAmt math.Int) math.Int {
-	globalInflationFloat := new(big.Float).Mul(
-		new(big.Float).SetInt(settlementAmt.BigInt()),
-		big.NewFloat(tokenomicskeeper.MintPerClaimedTokenGlobalInflation),
-	)
-	globalInflationInt, _ := globalInflationFloat.Int(nil)
-
-	return math.NewIntFromBigInt(globalInflationInt)
 }

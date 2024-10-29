@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"context"
 	"fmt"
 
 	"cosmossdk.io/math"
@@ -37,23 +38,12 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 	}
 
 	// Capture the applications initial stake which will be used to calculate the
-	// max share any claim could receive from the application stake.
-	// This ensures that each claim can calculate the maximum amount it can take
+	// max share any claim could burn from the application stake.
+	// This ensures that each supplier can calculate the maximum amount it can take
 	// from an application's stake.
-	applicationInitialStakeMap := make(map[string]sdk.Coin)
-	for _, claim := range expiringClaims {
-		appAddress := claim.SessionHeader.ApplicationAddress
-		if _, isAppFound := applicationInitialStakeMap[appAddress]; isAppFound {
-			continue
-		}
-
-		app, isAppFound := k.applicationKeeper.GetApplication(ctx, appAddress)
-		if !isAppFound {
-			err = apptypes.ErrAppNotFound.Wrapf("application address: %q", appAddress)
-			return settledResult, expiredResult, err
-		}
-
-		applicationInitialStakeMap[appAddress] = *app.GetStake()
+	applicationInitialStakeMap, err := k.getApplicationInitialStakeMap(ctx, expiringClaims)
+	if err != nil {
+		return settledResult, expiredResult, err
 	}
 
 	blockHeight := ctx.BlockHeight()
@@ -197,8 +187,8 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 		// 1. The claim does not require a proof.
 		// 2. The claim requires a proof and a valid proof was found.
 
-		claimApplication := claim.SessionHeader.ApplicationAddress
-		applicationInitialStake := applicationInitialStakeMap[claimApplication]
+		appAddress := claim.GetSessionHeader().GetApplicationAddress()
+		applicationInitialStake := applicationInitialStakeMap[appAddress]
 
 		// Manage the mint & burn accounting for the claim.
 		if err = k.ProcessTokenLogicModules(ctx, &claim, applicationInitialStake); err != nil {
@@ -425,4 +415,35 @@ func (k Keeper) slashSupplierStake(
 	// amount from the supplier's owner or operator balances.
 
 	return nil
+}
+
+// getApplicationInitialStakeMap returns a map from an application address to the
+// initial stake of the application. This is used to calculate the maximum share
+// any claim could burn from the application stake.
+func (k Keeper) getApplicationInitialStakeMap(
+	ctx context.Context,
+	expiringClaims []prooftypes.Claim,
+) (applicationInitialStakeMap map[string]sdk.Coin, err error) {
+	applicationInitialStakeMap = make(map[string]sdk.Coin)
+	for _, claim := range expiringClaims {
+		appAddress := claim.SessionHeader.ApplicationAddress
+		// The same application is participating in other claims being settled,
+		// so we already capture its initial stake.
+		if _, isAppFound := applicationInitialStakeMap[appAddress]; isAppFound {
+			continue
+		}
+
+		app, isAppFound := k.applicationKeeper.GetApplication(ctx, appAddress)
+		if !isAppFound {
+			err := apptypes.ErrAppNotFound.Wrapf(
+				"trying to settle a claim for an application that does not exist (which should never happen) with address: %q",
+				appAddress,
+			)
+			return nil, err
+		}
+
+		applicationInitialStakeMap[appAddress] = *app.GetStake()
+	}
+
+	return applicationInitialStakeMap, nil
 }

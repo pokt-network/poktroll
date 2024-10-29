@@ -370,7 +370,7 @@ func (m *EventSupplierSlashed) GetSlashingAmount() *types1.Coin {
 }
 
 // EventApplicationReimbursementRequest is emitted when an application requests
-// a reimbursement
+// a reimbursement.
 type EventApplicationReimbursementRequest struct {
 	ApplicationAddr      string       `protobuf:"bytes,1,opt,name=application_addr,json=applicationAddr,proto3" json:"application_addr,omitempty"`
 	SupplierOperatorAddr string       `protobuf:"bytes,2,opt,name=supplier_operator_addr,json=supplierOperatorAddr,proto3" json:"supplier_operator_addr,omitempty"`

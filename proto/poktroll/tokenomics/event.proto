@@ -82,7 +82,7 @@ message EventSupplierSlashed {
 }
 
 // EventApplicationReimbursementRequest is emitted when an application requests
-// a reimbursement
+// a reimbursement.
 message EventApplicationReimbursementRequest {
     string application_addr = 1;
     string supplier_operator_addr = 2;
