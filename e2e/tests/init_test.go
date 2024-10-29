@@ -61,8 +61,11 @@ var (
 	flagFeaturesPath string
 	keyRingFlag      = "--keyring-backend=test"
 	chainIdFlag      = "--chain-id=poktroll"
-	appGateServerUrl = "http://localhost:42069" // Keeping localhost by default because that is how we run the tests on our machines locally
-	pathUrl          = "localhost:3000"         // Keeping localhost by default because that is how we run the tests on our machines locally
+	// Keeping localhost by default because that is how we run the tests on our machines locally
+	// gatewayUrl is pointing to a non-sovereign app gate server so multiple
+	// apps could relay through it.
+	gatewayUrl = "http://localhost:42079"
+	pathUrl    = "localhost:3000" // Keeping localhost by default because that is how we run the tests on our machines locally
 )
 
 func init() {
@@ -72,9 +75,9 @@ func init() {
 
 	flag.StringVar(&flagFeaturesPath, "features-path", "*.feature", "Specifies glob paths for the runner to look up .feature files")
 
-	// If "APPGATE_SERVER_URL" envar is present, use it for appGateServerUrl
-	if url := os.Getenv("APPGATE_SERVER_URL"); url != "" {
-		appGateServerUrl = url
+	// If "GATEWAY_URL" envar is present, use it for appGateServerUrl
+	if url := os.Getenv("GATEWAY_URL"); url != "" {
+		gatewayUrl = url
 	}
 
 	// If "APPGATE_SERVER_URL" envar is present, use it for pathUrl
@@ -459,24 +462,20 @@ func (s *suite) TheSessionForApplicationAndServiceContainsTheSupplier(appName st
 }
 
 func (s *suite) TheApplicationSendsTheSupplierASuccessfulRequestForServiceWithPathAndData(appName, supplierOperatorName, serviceId, path, requestData string) {
-	// TODO_HACK: We need to support a non self_signing LocalNet AppGateServer
-	// that allows any application to send a relay in LocalNet and our E2E Tests.
-	require.Equal(s, "app1", appName, "TODO_HACK: The LocalNet AppGateServer is self_signing and only supports app1.")
-
 	method := "POST"
 	// If requestData is empty, assume a GET request
 	if requestData == "" {
 		method = "GET"
 	}
 
-	// TODO_IN_THIS_PR: Figure out a plan for deprecating appGateServerUrl in a followup (cleaner) PR
-	// res, err := s.pocketd.RunCurlWithRetry(appGateServerUrl, serviceId, method, path, requestData, 5)
-	res, err := s.pocketd.RunCurlWithRetry(pathUrl, serviceId, method, path, requestData, 5)
+	appAddr := accNameToAddrMap[appName]
+
+	res, err := s.pocketd.RunCurlWithRetry(pathUrl, serviceId, method, path, appAddr, requestData, 5)
 	require.NoError(s, err, "error sending relay request from app %q to supplier %q for service %q", appName, supplierOperatorName, serviceId)
 
 	var jsonContent json.RawMessage
 	err = json.Unmarshal([]byte(res.Stdout), &jsonContent)
-	require.NoError(s, err, `Expected valid JSON, got: %s`, res.Stdout)
+	require.NoError(s, err, `Expected valid JSON, got: %s`)
 
 	jsonMap, err := jsonToMap(jsonContent)
 	require.NoError(s, err, "error converting JSON to map")

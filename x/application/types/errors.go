@@ -21,4 +21,5 @@ var (
 	ErrAppDuplicateAddress      = sdkerrors.Register(ModuleName, 1113, "duplicate application address")
 	ErrAppHasPendingTransfer    = sdkerrors.Register(ModuleName, 1114, "application is in transfer period")
 	ErrAppParamInvalid          = sdkerrors.Register(ModuleName, 1115, "the provided param is invalid")
+	ErrAppEmitEvent             = sdkerrors.Register(ModuleName, 1116, "unable to emit on-chain event")
 )

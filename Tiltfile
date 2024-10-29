@@ -58,9 +58,19 @@ localnet_config_defaults = {
     "path_gateways": {
         "count": 1,
     },
+    # NOTE: git submodule usage was explicitly avoided to reduce environment complexity.
+
     # By default, we use the `helm_repo` function below to point to the remote repository
     # but can update it to the locally cloned repo for testing & development
-    "helm_chart_local_repo": {"enabled": False, "path": "../helm-charts"},
+    "helm_chart_local_repo": {
+        "enabled": False,
+        "path": os.path.join("..", "helm-charts")
+    },
+    "indexer": {
+        "repo_path": os.path.join("..", "pocketdex"),
+        "enabled": True,
+        "clone_if_not_present": False,
+    }
     # By default, we use a pre-built PATH image, but can update it to use a local
     # repo instead.
     "path_local_repo": {"enabled": False, "path": "../path"},
@@ -82,11 +92,13 @@ if (localnet_config_file != localnet_config) or (not os.path.exists(localnet_con
 # Configure helm chart reference.
 # If using a local repo, set the path to the local repo; otherwise, use our own helm repo.
 helm_repo("pokt-network", "https://pokt-network.github.io/helm-charts/")
+# TODO_IMPROVE: Use os.path.join to make this more OS-agnostic.
 chart_prefix = "pokt-network/"
 if localnet_config["helm_chart_local_repo"]["enabled"]:
     helm_chart_local_repo = localnet_config["helm_chart_local_repo"]["path"]
     hot_reload_dirs.append(helm_chart_local_repo)
     print("Using local helm chart repo " + helm_chart_local_repo)
+    # TODO_IMPROVE: Use os.path.join to make this more OS-agnostic.
     chart_prefix = helm_chart_local_repo + "/charts/"
 
 # Configure PATH reference.
@@ -440,3 +452,14 @@ if localnet_config["rest"]["enabled"]:
     print("REST enabled: " + str(localnet_config["rest"]["enabled"]))
     deployment_create("rest", image="davarski/go-rest-api-demo")
     k8s_resource("rest", labels=["data_nodes"], port_forwards=["10000"])
+
+### Pocketdex Shannon Indexer
+load("./tiltfiles/pocketdex.tilt", "check_and_load_pocketdex")
+
+# Check if sibling pocketdex repo exists.
+# If it does, load the pocketdex.tilt file from the sibling repo.
+# Otherwise, check the `indexer.clone_if_not_present` flag in `localnet_config.yaml` and EITHER:
+#   1. clone pocketdex to ../pocketdex
+#   -- OR --
+#   2. Prints a message if true or false
+check_and_load_pocketdex(localnet_config["indexer"])

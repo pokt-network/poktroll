@@ -2,13 +2,13 @@ package keeper_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
+	testevents "github.com/pokt-network/poktroll/testutil/events"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	testsession "github.com/pokt-network/poktroll/testutil/session"
@@ -26,12 +26,12 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 	// Generate an address for the application and gateways
 	appAddr := sample.AccAddress()
 	maxDelegatedGateways := k.GetParams(ctx).MaxDelegatedGateways
-	gatewayAddresses := make([]string, int(maxDelegatedGateways))
-	for i := 0; i < len(gatewayAddresses); i++ {
+	expectedGatewayAddresses := make([]string, int(maxDelegatedGateways))
+	for i := 0; i < len(expectedGatewayAddresses); i++ {
 		gatewayAddr := sample.AccAddress()
 		// Mock the gateway being staked via the staked gateway map
 		keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr)
-		gatewayAddresses[i] = gatewayAddr
+		expectedGatewayAddresses[i] = gatewayAddr
 	}
 
 	// Prepare the application
@@ -51,7 +51,7 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 	require.True(t, isAppFound)
 
 	// Prepare the delegation messages and delegate the application to the gateways
-	for _, gatewayAddr := range gatewayAddresses {
+	for _, gatewayAddr := range expectedGatewayAddresses {
 		delegateMsg := &types.MsgDelegateToGateway{
 			AppAddress:     appAddr,
 			GatewayAddress: gatewayAddr,
@@ -62,16 +62,28 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 	}
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	currentHeight := sdkCtx.BlockHeight()
+	sharedParams := sharedtypes.DefaultParams()
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
 
+	// Assert that the EventRedelegation events are emitted.
 	events := sdkCtx.EventManager().Events()
-	require.Equal(t, int(maxDelegatedGateways), len(events))
+	redelgationEvents := testevents.FilterEvents[*apptypes.EventRedelegation](t, events)
+	require.Equal(t, int(maxDelegatedGateways), len(redelgationEvents))
 
-	for i, event := range events {
-		require.Equal(t, "poktroll.application.EventRedelegation", event.Type)
-		require.Equal(t, "app_address", event.Attributes[0].Key)
-		require.Equal(t, fmt.Sprintf("\"%s\"", appAddr), event.Attributes[0].Value)
-		require.Equal(t, "gateway_address", event.Attributes[1].Key)
-		require.Equal(t, fmt.Sprintf("\"%s\"", gatewayAddresses[i]), event.Attributes[1].Value)
+	for i, redelegationEvent := range redelgationEvents {
+		expectedApp := &apptypes.Application{
+			Address:                   stakeMsg.GetAddress(),
+			Stake:                     stakeMsg.GetStake(),
+			ServiceConfigs:            stakeMsg.GetServices(),
+			DelegateeGatewayAddresses: expectedGatewayAddresses[:i+1],
+			PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
+		}
+		expectedRedelegationEvent := &apptypes.EventRedelegation{
+			Application:      expectedApp,
+			SessionEndHeight: sessionEndHeight,
+		}
+		require.EqualValues(t, expectedRedelegationEvent, redelegationEvent)
 	}
 
 	// Verify that the application exists
@@ -80,27 +92,41 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 	require.Equal(t, appAddr, foundApp.Address)
 	require.Equal(t, maxDelegatedGateways, uint64(len(foundApp.DelegateeGatewayAddresses)))
 
-	for i, gatewayAddr := range gatewayAddresses {
+	for i, gatewayAddr := range expectedGatewayAddresses {
 		require.Equal(t, gatewayAddr, foundApp.DelegateeGatewayAddresses[i])
 	}
 
 	// Prepare an undelegation message
 	undelegateMsg := &types.MsgUndelegateFromGateway{
 		AppAddress:     appAddr,
-		GatewayAddress: gatewayAddresses[3],
+		GatewayAddress: expectedGatewayAddresses[3],
 	}
 
 	// Undelegate the application from the gateway
 	_, err = srv.UndelegateFromGateway(ctx, undelegateMsg)
 	require.NoError(t, err)
 
+	// Assert that the EventRedelegation event is emitted.
+	expectedGatewayAddresses = append(expectedGatewayAddresses[:3], expectedGatewayAddresses[4:]...)
+	expectedApp := &apptypes.Application{
+		Address:                   stakeMsg.GetAddress(),
+		Stake:                     stakeMsg.GetStake(),
+		ServiceConfigs:            stakeMsg.GetServices(),
+		DelegateeGatewayAddresses: expectedGatewayAddresses,
+		PendingUndelegations: map[uint64]apptypes.UndelegatingGatewayList{
+			uint64(sessionEndHeight): {GatewayAddresses: []string{undelegateMsg.GetGatewayAddress()}},
+		},
+	}
+
 	events = sdkCtx.EventManager().Events()
-	require.Equal(t, int(maxDelegatedGateways)+1, len(events))
-	require.Equal(t, "poktroll.application.EventRedelegation", events[7].Type)
-	require.Equal(t, "app_address", events[7].Attributes[0].Key)
-	require.Equal(t, fmt.Sprintf("\"%s\"", appAddr), events[7].Attributes[0].Value)
-	require.Equal(t, "gateway_address", events[7].Attributes[1].Key)
-	require.Equal(t, fmt.Sprintf("\"%s\"", gatewayAddresses[3]), events[7].Attributes[1].Value)
+	redelgationEvents = testevents.FilterEvents[*apptypes.EventRedelegation](t, events)
+	lastEventIdx := len(redelgationEvents) - 1
+	expectedEvent := &apptypes.EventRedelegation{
+		Application:      expectedApp,
+		SessionEndHeight: sessionEndHeight,
+	}
+	require.Equal(t, int(maxDelegatedGateways)+1, len(redelgationEvents))
+	require.EqualValues(t, expectedEvent, redelgationEvents[lastEventIdx])
 
 	// Verify that the application exists
 	foundApp, isAppFound = k.GetApplication(ctx, appAddr)
@@ -108,8 +134,7 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 	require.Equal(t, appAddr, foundApp.Address)
 	require.Equal(t, maxDelegatedGateways-1, uint64(len(foundApp.DelegateeGatewayAddresses)))
 
-	gatewayAddresses = append(gatewayAddresses[:3], gatewayAddresses[4:]...)
-	for i, gatewayAddr := range gatewayAddresses {
+	for i, gatewayAddr := range expectedGatewayAddresses {
 		require.Equal(t, gatewayAddr, foundApp.DelegateeGatewayAddresses[i])
 	}
 }
@@ -158,7 +183,8 @@ func TestMsgServer_UndelegateFromGateway_FailNotDelegated(t *testing.T) {
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
 	events := sdkCtx.EventManager().Events()
-	require.Equal(t, 0, len(events))
+	redelegationEvents := testevents.FilterEvents[*apptypes.EventRedelegation](t, events)
+	require.Equal(t, 0, len(redelegationEvents))
 
 	// Prepare a delegation message
 	delegateMsg := &types.MsgDelegateToGateway{
@@ -170,20 +196,35 @@ func TestMsgServer_UndelegateFromGateway_FailNotDelegated(t *testing.T) {
 	_, err = srv.DelegateToGateway(ctx, delegateMsg)
 	require.NoError(t, err)
 
+	currentHeight := sdkCtx.BlockHeight()
+	sharedParams := sharedtypes.DefaultParams()
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
+	expectedApp := &apptypes.Application{
+		Address:                   stakeMsg.GetAddress(),
+		Stake:                     stakeMsg.GetStake(),
+		ServiceConfigs:            stakeMsg.GetServices(),
+		DelegateeGatewayAddresses: []string{gatewayAddr2},
+		PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
+	}
+	expectedRedelegationEvent := &apptypes.EventRedelegation{
+		Application:      expectedApp,
+		SessionEndHeight: sessionEndHeight,
+	}
+
 	events = sdkCtx.EventManager().Events()
-	require.Equal(t, 1, len(events))
-	require.Equal(t, "poktroll.application.EventRedelegation", events[0].Type)
-	require.Equal(t, "app_address", events[0].Attributes[0].Key)
-	require.Equal(t, fmt.Sprintf("\"%s\"", appAddr), events[0].Attributes[0].Value)
-	require.Equal(t, "gateway_address", events[0].Attributes[1].Key)
-	require.Equal(t, fmt.Sprintf("\"%s\"", gatewayAddr2), events[0].Attributes[1].Value)
+	redelegationEvents = testevents.FilterEvents[*apptypes.EventRedelegation](t, events)
+	require.Equal(t, 1, len(redelegationEvents))
+	require.EqualValues(t, expectedRedelegationEvent, redelegationEvents[0])
+
+	// Reset the events, as if a new block were created.
+	ctx, sdkCtx = testevents.ResetEventManager(ctx)
 
 	// Ensure the failed undelegation did not affect the application
 	_, err = srv.UndelegateFromGateway(ctx, undelegateMsg)
 	require.ErrorIs(t, err, types.ErrAppNotDelegated)
 
 	events = sdkCtx.EventManager().Events()
-	require.Equal(t, 1, len(events))
+	require.Equal(t, 0, len(events), "expected no events")
 
 	foundApp, isAppFound = k.GetApplication(ctx, appAddr)
 	require.True(t, isAppFound)
@@ -228,13 +269,25 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegateFromUnstakedGatew
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
+	currentHeight := sdkCtx.BlockHeight()
+	sharedParams := sharedtypes.DefaultParams()
+	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, currentHeight)
+	expectedApp := &apptypes.Application{
+		Address:                   stakeMsg.GetAddress(),
+		Stake:                     stakeMsg.GetStake(),
+		ServiceConfigs:            stakeMsg.GetServices(),
+		DelegateeGatewayAddresses: []string{gatewayAddr},
+		PendingUndelegations:      make(map[uint64]apptypes.UndelegatingGatewayList),
+	}
+	expectedRedelegationEvent := &apptypes.EventRedelegation{
+		Application:      expectedApp,
+		SessionEndHeight: sessionEndHeight,
+	}
+
 	events := sdkCtx.EventManager().Events()
-	require.Equal(t, 1, len(events))
-	require.Equal(t, "poktroll.application.EventRedelegation", events[0].Type)
-	require.Equal(t, "app_address", events[0].Attributes[0].Key)
-	require.Equal(t, fmt.Sprintf("\"%s\"", appAddr), events[0].Attributes[0].Value)
-	require.Equal(t, "gateway_address", events[0].Attributes[1].Key)
-	require.Equal(t, fmt.Sprintf("\"%s\"", gatewayAddr), events[0].Attributes[1].Value)
+	redelegationEvents := testevents.FilterEvents[*apptypes.EventRedelegation](t, events)
+	require.Equal(t, 1, len(redelegationEvents))
+	require.EqualValues(t, expectedRedelegationEvent, redelegationEvents[0])
 
 	// Verify that the application exists
 	foundApp, isAppFound := k.GetApplication(ctx, appAddr)
@@ -242,6 +295,9 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegateFromUnstakedGatew
 	require.Equal(t, appAddr, foundApp.Address)
 	require.Equal(t, 1, len(foundApp.DelegateeGatewayAddresses))
 	require.Equal(t, gatewayAddr, foundApp.DelegateeGatewayAddresses[0])
+
+	// Reset the events, as if a new block were created.
+	ctx, sdkCtx = testevents.ResetEventManager(ctx)
 
 	// Mock unstaking the gateway
 	keepertest.RemoveGatewayFromStakedGatewayMap(t, gatewayAddr)
@@ -257,12 +313,25 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegateFromUnstakedGatew
 	require.NoError(t, err)
 
 	events = sdkCtx.EventManager().Events()
-	require.Equal(t, 2, len(events))
-	require.Equal(t, "poktroll.application.EventRedelegation", events[1].Type)
-	require.Equal(t, "app_address", events[1].Attributes[0].Key)
-	require.Equal(t, fmt.Sprintf("\"%s\"", appAddr), events[1].Attributes[0].Value)
-	require.Equal(t, "gateway_address", events[0].Attributes[1].Key)
-	require.Equal(t, fmt.Sprintf("\"%s\"", gatewayAddr), events[0].Attributes[1].Value)
+	redelegationEvents = testevents.FilterEvents[*apptypes.EventRedelegation](t, events)
+	require.Equal(t, 1, len(redelegationEvents))
+
+	expectedApp = &apptypes.Application{
+		Address:                   stakeMsg.GetAddress(),
+		Stake:                     stakeMsg.GetStake(),
+		ServiceConfigs:            stakeMsg.GetServices(),
+		DelegateeGatewayAddresses: make([]string, 0),
+		PendingUndelegations: map[uint64]apptypes.UndelegatingGatewayList{
+			uint64(sessionEndHeight): {GatewayAddresses: []string{undelegateMsg.GetGatewayAddress()}},
+		},
+	}
+	expectedEvent := &apptypes.EventRedelegation{
+		Application:      expectedApp,
+		SessionEndHeight: sessionEndHeight,
+	}
+	for _, event := range redelegationEvents {
+		require.EqualValues(t, expectedEvent, event)
+	}
 
 	// Verify that the application exists
 	foundApp, isAppFound = k.GetApplication(ctx, appAddr)
@@ -474,12 +543,14 @@ func TestMsgServer_UndelegateFromGateway_UndelegateFromUnstakedGateway(t *testin
 
 	// Auto-undelegation reacts to the unstaked gateway event but since the test
 	// does not exercise the gateway unstaking logic, the event is emitted manually.
-	sdkCtx.EventManager().EmitTypedEvents(
-		&gwtypes.EventGatewayUnstaked{Address: delegateAddr},
-		&gwtypes.EventGatewayUnstaked{Address: pendingUndelegateFromAddr},
+	err := sdkCtx.EventManager().EmitTypedEvents(
+		&gwtypes.EventGatewayUnstaked{Gateway: &gwtypes.Gateway{Address: delegateAddr}},
+		&gwtypes.EventGatewayUnstaked{Gateway: &gwtypes.Gateway{Address: pendingUndelegateFromAddr}},
 	)
+	require.NoError(t, err)
 
-	k.EndBlockerAutoUndelegateFromUnstakedGateways(sdkCtx)
+	err = k.EndBlockerAutoUndelegateFromUnstakedGateways(sdkCtx)
+	require.NoError(t, err)
 
 	app, _ = k.GetApplication(sdkCtx, app.Address)
 
@@ -487,7 +558,7 @@ func TestMsgServer_UndelegateFromGateway_UndelegateFromUnstakedGateway(t *testin
 
 	currentHeight := sdkCtx.BlockHeight()
 	sessionEndHeight := uint64(testsession.GetSessionEndHeightWithDefaultParams(currentHeight))
-	require.Len(t, app.PendingUndelegations[uint64(sessionEndHeight)].GatewayAddresses, 2)
+	require.Len(t, app.PendingUndelegations[sessionEndHeight].GatewayAddresses, 2)
 }
 
 // createAppStakeDelegateAndUndelegate is a helper function that is used in the tests

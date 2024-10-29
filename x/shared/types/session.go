@@ -163,9 +163,16 @@ func IsSessionEndHeight(sharedParams *Params, queryHeight int64) bool {
 
 // GetSessionEndToProofWindowCloseBlocks returns the total number of blocks
 // from the moment a session ends until the proof window closes.
-func GetSessionEndToProofWindowCloseBlocks(params *Params) uint64 {
-	return params.GetClaimWindowOpenOffsetBlocks() +
+func GetSessionEndToProofWindowCloseBlocks(params *Params) int64 {
+	return int64(params.GetClaimWindowOpenOffsetBlocks() +
 		params.GetClaimWindowCloseOffsetBlocks() +
 		params.GetProofWindowOpenOffsetBlocks() +
-		params.GetProofWindowCloseOffsetBlocks()
+		params.GetProofWindowCloseOffsetBlocks())
+}
+
+// GetSettlementSessionEndHeight returns the end height of the session in which the
+// session that includes queryHeight is settled, given the passed shared on-chain parameters.
+func GetSettlementSessionEndHeight(sharedParams *Params, queryHeight int64) int64 {
+	return GetSessionEndToProofWindowCloseBlocks(sharedParams) +
+		GetSessionEndHeight(sharedParams, queryHeight) + 1
 }
