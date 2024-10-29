@@ -12,7 +12,8 @@ import (
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 )
 
-// TODO_BETA(@bryanchriswhite): Determine if an application needs an unbonding period after unstaking.
+// UnstakeApplication kicks off the application unbonding process, at the end
+// of which, it'll be fully unstaked.
 func (k msgServer) UnstakeApplication(
 	ctx context.Context,
 	msg *apptypes.MsgUnstakeApplication,
