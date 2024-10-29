@@ -199,14 +199,6 @@ func (p *pocketdBin) runCurlCmd(rpcBaseURL, service, method, path, appAddr, data
 
 	rpcUrl.Path = rpcUrl.Path + path
 
-	// When sending a relay request, through a gateway (i.e. non-sovereign application)
-	// then, the application address must be provided.
-	if len(appAddr) > 0 {
-		queryValues := rpcUrl.Query()
-		queryValues.Set("applicationAddr", appAddr)
-		rpcUrl.RawQuery = queryValues.Encode()
-	}
-
 	base := []string{
 		"-v",         // verbose output
 		"-sS",        // silent with error

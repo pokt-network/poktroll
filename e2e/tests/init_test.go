@@ -65,7 +65,7 @@ var (
 	// gatewayUrl is pointing to a non-sovereign app gate server so multiple
 	// apps could relay through it.
 	gatewayUrl = "http://localhost:42079"
-	pathUrl    = "localhost:3000" // Keeping localhost by default because that is how we run the tests on our machines locally
+	pathUrl    = "http://localhost:3000/v1" // Keeping localhost by default because that is how we run the tests on our machines locally
 )
 
 func init() {
@@ -475,7 +475,7 @@ func (s *suite) TheApplicationSendsTheSupplierASuccessfulRequestForServiceWithPa
 
 	var jsonContent json.RawMessage
 	err = json.Unmarshal([]byte(res.Stdout), &jsonContent)
-	require.NoError(s, err, `Expected valid JSON, got: %s`)
+	require.NoErrorf(s, err, `Expected valid JSON, got: %s`, res.Stdout)
 
 	jsonMap, err := jsonToMap(jsonContent)
 	require.NoError(s, err, "error converting JSON to map")

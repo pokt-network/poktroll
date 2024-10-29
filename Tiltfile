@@ -70,10 +70,10 @@ localnet_config_defaults = {
         "repo_path": os.path.join("..", "pocketdex"),
         "enabled": True,
         "clone_if_not_present": False,
-    }
+    },
     # By default, we use a pre-built PATH image, but can update it to use a local
     # repo instead.
-    "path_local_repo": {"enabled": False, "path": "../path"},
+    "path_local_repo": {"enabled": False, "path": "../path"}
 }
 localnet_config_file = read_yaml(localnet_config_path, default=localnet_config_defaults)
 # Initial empty config
