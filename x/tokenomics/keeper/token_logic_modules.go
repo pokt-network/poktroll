@@ -703,7 +703,7 @@ func (k Keeper) ensureClaimAmountLimits(
 	maxClaimableAmt := appStake.Amount.
 		Quo(math.NewInt(sessionkeeper.NumSupplierPerSession)).
 		Quo(math.NewInt(pendingSessions))
-	maxClaimSettlementAmt := stakeToMaxSettlementAmount(maxClaimableAmt)
+	maxClaimSettlementAmt := stakeShareToMaxSettlementAmount(maxClaimableAmt)
 
 	// Check if the claimable amount is capped by the max claimable amount.
 	// As per the Relay Mining paper, the Supplier claim MUST NO exceed the application's
