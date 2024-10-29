@@ -59,7 +59,7 @@ type ProxyRelayMeter struct {
 func NewRelayMeter(deps depinject.Config) (relayer.RelayMeter, error) {
 	rm := &ProxyRelayMeter{
 		apps:                   make(map[string]*appRelayMeter),
-		overServicingAllowance: 0,
+		overServicingAllowance: 1000000,
 	}
 
 	if err := depinject.Inject(
@@ -151,8 +151,8 @@ func (rmtr *ProxyRelayMeter) ClaimRelayPrice(ctx context.Context, reqMeta servic
 	// If the consumed amount exceeds the max amount, return a rate limit error.
 	if appMetrics.maxAmount.IsLT(newConsumedAmount) {
 		return ErrRelayerProxyRateLimited.Wrapf(
-			"application has been rate limited, stake share: %s, expecting: %s",
-			appMetrics.consumedAmount.String(),
+			"application has been rate limited, stake needed: %s, has: %s, ",
+			newConsumedAmount.String(),
 			appMetrics.maxAmount.String(),
 		)
 	}
