@@ -827,9 +827,9 @@ func CalculateGlobalPerClaimMintInflationFromSettlementAmount(settlementCoin sdk
 // stake = maxSettlementAmt + (maxSettlementAmt * MintPerClaimedTokenGlobalInflation)
 // stake = maxSettlementAmt * (1 + MintPerClaimedTokenGlobalInflation)
 // maxSettlementAmt = stake / (1 + MintPerClaimedTokenGlobalInflation)
-func supplierAppStakeToMaxSettlementAmount(stakeShare math.Int) math.Int {
-	stakeSahreFloat := big.NewFloat(0).SetInt(stakeShare.BigInt())
-	maxSettlementAmountFloat := big.NewFloat(0).Quo(stakeSahreFloat, big.NewFloat(1+GlobalInflationPerClaim))
+func supplierAppStakeToMaxSettlementAmount(stakeAmount math.Int) math.Int {
+	stakeAmountFloat := big.NewFloat(0).SetInt(stakeAmount.BigInt())
+	maxSettlementAmountFloat := big.NewFloat(0).Quo(stakeAmountFloat, big.NewFloat(1+GlobalInflationPerClaim))
 
 	settlementAmount, _ := maxSettlementAmountFloat.Int(nil)
 	return math.NewIntFromBigInt(settlementAmount)
