@@ -112,7 +112,8 @@ if localnet_config["observability"]["enabled"]:
     helm_repo("prometheus-community", "https://prometheus-community.github.io/helm-charts")
     helm_repo("grafana-helm-repo", "https://grafana.github.io/helm-charts")
 
-    # Increase timeout for building the imagedefault is 30, which can be too low for slow internet connections to pull
+    # Timeout is increased to 120 seconds (default is 30) because a slow internet connection
+    # could timeout pulling the image.
     # container images.
     update_settings(k8s_upsert_timeout_secs=120)
 
