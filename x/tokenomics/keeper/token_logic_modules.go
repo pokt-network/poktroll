@@ -525,6 +525,7 @@ func (k Keeper) TokenLogicModuleGlobalMintReimbursementRequest(
 	// This should THEORETICALLY NEVER fall below zero.
 	// `ensureClaimAmountLimits` should have already checked and adjusted the settlement
 	// amount so that the application stake covers the global inflation.
+	// TODO_POST_MAINNET: Consider removing this since it should never happen just to simplify the code
 	if err != nil {
 		return err
 	}
@@ -715,10 +716,10 @@ func (k Keeper) ensureClaimAmountLimits(
 	//   and assume maxClaimableAmt will be settled in session 2.
 	// - Guarantee no over-servicing at the cost of higher application stake requirements.
 	maxClaimableAmt := appStake.Amount.Quo(math.NewInt(sessionkeeper.NumSupplierPerSession))
-	maxClaimSettlementAmt := stakeShareToMaxSettlementAmount(maxClaimableAmt)
+	maxClaimSettlementAmt := supplierAppStakeToMaxSettlementAmount(maxClaimableAmt)
 
 	// Check if the claimable amount is capped by the max claimable amount.
-	// As per the Relay Mining paper, the Supplier claim MUST NO exceed the application's
+	// As per the Relay Mining paper, the Supplier claim MUST NOT exceed the application's
 	// allocated stake. If it does, the claim is capped by the application's allocated stake
 	// and the supplier is effectively "overserviced".
 	if minRequiredAppStakeAmt.GT(maxClaimableAmt) {
@@ -726,7 +727,7 @@ func (k Keeper) ensureClaimAmountLimits(
 			supplier.GetOperatorAddress(), application.GetAddress(), maxClaimableAmt, claimSettlementCoin.Amount))
 
 		minRequiredAppStakeAmt = maxClaimableAmt
-		maxClaimSettlementAmt = stakeShareToMaxSettlementAmount(minRequiredAppStakeAmt)
+		maxClaimSettlementAmt = supplierAppStakeToMaxSettlementAmount(minRequiredAppStakeAmt)
 	}
 
 	// Nominal case: The claimable amount is within the limits set by Relay Mining.
@@ -831,14 +832,15 @@ func CalculateGlobalPerClaimMintInflationFromSettlementAmount(settlementCoin sdk
 	return mintAmtCoin, *newMintAmtFloat
 }
 
-// stakeShareToMaxSettlementAmount calculates the max amount of uPOKT to that the supplier
-// can claim based on the stake share and the global inflation allocation percentage.
+// supplierAppStakeToMaxSettlementAmount calculates the max amount of uPOKT the supplier
+// can claim based on the stake allocated to the supplier and the global inflation
+// allocation percentage.
 // This is the inverse of CalculateGlobalPerClaimMintInflationFromSettlementAmount:
 // stake = maxSettlementAmt + globalInflationAmt
 // stake = maxSettlementAmt + (maxSettlementAmt * MintPerClaimedTokenGlobalInflation)
 // stake = maxSettlementAmt * (1 + MintPerClaimedTokenGlobalInflation)
 // maxSettlementAmt = stake / (1 + MintPerClaimedTokenGlobalInflation)
-func stakeShareToMaxSettlementAmount(stakeShare math.Int) math.Int {
+func supplierAppStakeToMaxSettlementAmount(stakeShare math.Int) math.Int {
 	stakeSahreFloat := big.NewFloat(0).SetInt(stakeShare.BigInt())
 	maxSettlementAmountFloat := big.NewFloat(0).Quo(stakeSahreFloat, big.NewFloat(1+GlobalInflationPerClaim))
 
