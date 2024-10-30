@@ -363,7 +363,7 @@ func getMinedRelayCostCoin(
 	return cosmostypes.NewCoin(volatile.DenomuPOKT, math.NewIntFromBigInt(estimatedRelayCost)), nil
 }
 
-// getMinedRelayCost returns the share of the application's stake that can be consumed
+// getSupplierAppStake returns the portion of the application stake that can be consumed
 // per supplier per session.
 func getSupplierAppStake(
 	stake *cosmostypes.Coin,
