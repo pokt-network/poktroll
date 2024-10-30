@@ -231,7 +231,7 @@ func (rmtr *ProxyRelayMeter) forEachEventApplicationStakedFn(ctx context.Context
 			continue
 		}
 		appMetrics.app.Stake = app.GetStake()
-		appStakeShare := getApplicationStakeShare(app.GetStake(), appMetrics.sharedParams)
+		appStakeShare := getSupplierAppStake(app.GetStake(), appMetrics.sharedParams)
 		appMetrics.maxCoin = appStakeShare.Add(rmtr.overServicingAllowanceCoins)
 	}
 }
@@ -278,8 +278,8 @@ func (rmtr *ProxyRelayMeter) ensureRequestAppMetrics(ctx context.Context, reqMet
 		}
 
 		// calculate the max amount of stake the application can consume in the current session.
-		appStakeShare := getApplicationStakeShare(app.Stake, sharedParams)
-		maxAmount := appStakeShare.Add(rmtr.overServicingAllowanceCoins)
+		supplierAppStake := getSupplierAppStake(app.Stake, sharedParams)
+		maxAmount := supplierAppStake.Add(rmtr.overServicingAllowanceCoins)
 		appMetrics = &appRelayMeter{
 			app:                    app,
 			consumedCoin:           cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 0),
@@ -365,7 +365,7 @@ func getMinedRelayCostCoin(
 
 // getMinedRelayCost returns the share of the application's stake that can be consumed
 // per supplier per session.
-func getApplicationStakeShare(
+func getSupplierAppStake(
 	stake *cosmostypes.Coin,
 	sharedParams *sharedtypes.Params,
 ) cosmostypes.Coin {
