@@ -99,8 +99,8 @@ validators:
     config:
       moniker: "validator1"
       consensus:
-        timeout_commit: "5s"
-        timeout_propose: "5s"
+        timeout_commit: "2s"
+        timeout_propose: "2s"
       instrumentation:
         prometheus: true
       log_level: "info"

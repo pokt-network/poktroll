@@ -316,6 +316,7 @@ func (k Keeper) getProofRequirementSeedBlockHash(
 }
 
 // finalizeSubmitProofTelemetry finalizes telemetry updates for SubmitProof, incrementing counters as needed.
+// Meant to run deferred.
 func (k msgServer) finalizeSubmitProofTelemetry(session *sessiontypes.Session, msg *types.MsgSubmitProof, isExistingProof bool, numRelays, numClaimComputeUnits uint64, err error) {
 	if !isExistingProof {
 		serviceId := session.Header.ServiceId
@@ -329,6 +330,7 @@ func (k msgServer) finalizeSubmitProofTelemetry(session *sessiontypes.Session, m
 }
 
 // finalizeProofRequirementTelemetry finalizes telemetry updates for proof requirements.
+// Meant to run deferred.
 func (k Keeper) finalizeProofRequirementTelemetry(requirementReason types.ProofRequirementReason, claim *types.Claim, err error) {
 	telemetry.ProofRequirementCounter(
 		requirementReason,

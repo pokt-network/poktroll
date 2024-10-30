@@ -433,6 +433,7 @@ func (k Keeper) slashSupplierStake(
 }
 
 // finalizeTelemetry logs telemetry metrics for a claim based on its stage (e.g., EXPIRED, SETTLED).
+// Meant to run deferred.
 func (k Keeper) finalizeTelemetry(
 	proofStage prooftypes.ClaimProofStage,
 	serviceId string,
