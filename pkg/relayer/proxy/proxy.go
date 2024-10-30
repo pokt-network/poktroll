@@ -79,7 +79,7 @@ type relayerProxy struct {
 	// 2. Relay signing to resolve which keyring key name to use for signing;
 	OperatorAddressToSigningKeyNameMap map[string]string
 
-	// relayMeter is a struct that keeps track of the claimed relay prices for each application.
+	// relayMeter is a struct that keeps track of the claimed relay rewards for each application.
 	// It also configures over servicing allowance.
 	relayMeter relayer.RelayMeter
 }
@@ -154,7 +154,9 @@ func (rp *relayerProxy) Start(ctx context.Context) error {
 	// Start the ring cache.
 	rp.ringCache.Start(ctx)
 
-	// Start the relay meter.
+	// Start the relay meter by subscribing to the on-chain events.
+	// This function is non-blocking and the subscription cancellation is handled
+	// by the context passed to the Start method.
 	if err := rp.relayMeter.Start(ctx); err != nil {
 		return err
 	}

@@ -1,6 +1,7 @@
 //go:generate mockgen -destination=../../testutil/mockrelayer/relayer_proxy_mock.go -package=mockrelayer . RelayerProxy
 //go:generate mockgen -destination=../../testutil/mockrelayer/miner_mock.go -package=mockrelayer . Miner
 //go:generate mockgen -destination=../../testutil/mockrelayer/relayer_sessions_manager_mock.go -package=mockrelayer . RelayerSessionsManager
+//go:generate mockgen -destination=../../testutil/mockrelayer/relay_meter_mock.go -package=mockrelayer . RelayMeter
 
 package relayer
 
@@ -167,12 +168,13 @@ type SessionTree interface {
 type RelayMeter interface {
 	// Start starts the relay meter.
 	Start(ctx context.Context) error
-	// ClaimRelayPrice claims the relay price for the given relay request.
-	// The relay price is claimed optimistically, assuming that the relay will be volume / reward
-	// applicable and the relay meter will be updated accordingly.
-	ClaimRelayPrice(ctx context.Context, relayRequestMeta servicetypes.RelayRequestMetadata) error
-	// UnclaimRelayPrice unlocks the relay price for the given relay request.
+	// AccumulateRelayReward accumulates the relay reward for the given relay request.
+	// The relay cost is added optimistically, assuming that the relay will be volume / reward
+	// applicable and the relay meter would remain up to date.
+	AccumulateRelayReward(ctx context.Context, relayRequestMeta servicetypes.RelayRequestMetadata) error
+	// SetNonApplicableRelayReward updates the relay meter to make the relay reward for
+	// the given relay request as non-applicable.
 	// This is used when the relay is not volume / reward applicable but was optimistically
 	// accounted for in the relay meter.
-	UnclaimRelayPrice(ctx context.Context, relayRequestMeta servicetypes.RelayRequestMetadata) error
+	SetNonApplicableRelayReward(ctx context.Context, relayRequestMeta servicetypes.RelayRequestMetadata) error
 }

@@ -48,7 +48,7 @@ type synchronousRPCServer struct {
 	// the servedRelays observable to fan-out notifications to its subscribers.
 	servedRelaysProducer chan<- *types.Relay
 
-	// relayMeter is the relay meter that the server uses to meter the relays and claim the relay price.
+	// relayMeter is the relay meter that the RelayServer uses to meter the relays and claim the relay price.
 	// It is used to ensure that the relays are metered and priced correctly.
 	relayMeter relayer.RelayMeter
 }
@@ -243,11 +243,11 @@ func (sync *synchronousRPCServer) serveHTTP(
 		return nil, err
 	}
 
-	// Optimistically claim the relay price before serving the relay.
+	// Optimistically accumulate the relay reward before actually serving the relay.
 	// The relay price will be deducted from the application's stake before the relay is served.
 	// If the relay comes out to be not reward / volume applicable, the miner will refund the
 	// claimed price back to the application.
-	if err := sync.relayMeter.ClaimRelayPrice(ctx, relayRequest.Meta); err != nil {
+	if err := sync.relayMeter.AccumulateRelayReward(ctx, relayRequest.Meta); err != nil {
 		return nil, err
 	}
 
