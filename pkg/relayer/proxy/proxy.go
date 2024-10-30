@@ -79,7 +79,8 @@ type relayerProxy struct {
 	// 2. Relay signing to resolve which keyring key name to use for signing;
 	OperatorAddressToSigningKeyNameMap map[string]string
 
-	// relayMeter is a struct that keeps track of the claimed relay rewards for each application.
+	// relayMeter keeps track of the total amount of stake an onchhain Application
+	// will owe an onchain Supplier (backed by this RelayMiner) once the session settles.
 	// It also configures over servicing allowance.
 	relayMeter relayer.RelayMeter
 }

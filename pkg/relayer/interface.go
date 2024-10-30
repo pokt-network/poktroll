@@ -164,17 +164,25 @@ type SessionTree interface {
 	GetTrieSpec() smt.TrieSpec
 }
 
-// RelayMeter is an interface that keeps track of the consumed stake for each application.
+// RelayMeter is an interface that keeps track of the amount of stake consumed between
+// a single onchain Application and a single onchain Supplier over the course of a single session.
+// It enables the RelayMiner t orate limit the number of requests handled offchain as a function
+// of the optimistic onchain rate limits.
 type RelayMeter interface {
 	// Start starts the relay meter.
 	Start(ctx context.Context) error
-	// AccumulateRelayReward accumulates the relay reward for the given relay request.
-	// The relay cost is added optimistically, assuming that the relay will be volume / reward
-	// applicable and the relay meter would remain up to date.
+
+	// AccumulateRelayReward adds the relay reward from the incoming request to session's accumulator.
+	// The relay cost is added optimistically, assuming that the relay WILL be volume / reward applicable.
+	// The reason why optimistic AccumulateRelayReward + SetNonApplicableRelayReward is used instead of
+	// a simpler AccumulateVolumeApplicableRelayReward is that when the relay is first seen
+	// we don't know if it will be volume / reward applicable until it is served.
+	// Since the check of whether we allow the relay to be served or not is done before.
+	// To rate limit or not the current relay, we need to optimistically account
+	// for it as volume / reward applicable.
 	AccumulateRelayReward(ctx context.Context, relayRequestMeta servicetypes.RelayRequestMetadata) error
-	// SetNonApplicableRelayReward updates the relay meter to make the relay reward for
-	// the given relay request as non-applicable.
-	// This is used when the relay is not volume / reward applicable but was optimistically
-	// accounted for in the relay meter.
+
+	// SetNonApplicableRelayReward updates the relay meter for the given relay request as
+	// non-applicable between a single Application and a single Supplier for a single session.
 	SetNonApplicableRelayReward(ctx context.Context, relayRequestMeta servicetypes.RelayRequestMetadata) error
 }

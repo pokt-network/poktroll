@@ -28,16 +28,18 @@ import (
 
 var _ relayer.RelayMeter = (*ProxyRelayMeter)(nil)
 
-// appRelayMeter is the relay meter's internal representation of an application's
-// max and consumed stake.
+// appRelayMeter is the relay meter's internal representation of an onchain
+// Application's max and consumed stake.
 type appRelayMeter struct {
 	// The onchain application the relay meter is for.
 	app apptypes.Application
 	// The maximum uPOKT an application can pay this relayer for a given session.
+	// This is a fraction of the Application's overall stake.
 	maxCoin cosmostypes.Coin
 	// The amount of uPOKT a specific application has consumed from this relayer in the given session.
 	consumedCoin cosmostypes.Coin
-	// The current sessionHeader the application is metered in.
+	// The header for the session the Application and Supplier (backed by the relayer)
+	// are exchanging services in.
 	sessionHeader *sessiontypes.SessionHeader
 
 	// sharedParams, service and serviceRelayDifficulty are used to calculate the relay cost
@@ -56,13 +58,12 @@ type appRelayMeter struct {
 type ProxyRelayMeter struct {
 	// supplierToAppMetricsMap is a map of supplier addresses to application address
 	// to the application's relay meter.
-	// Only known applications (i.e. have already requested relaying) that have their stakes metered.
-	// This map gets reset every new session in order to meter new applications, since the old
-	// ones might have another Supplier set for their sessions.
+	// Only known applications (i.e. have sent at least one relay) that have their stakes metered.
+	// This map gets reset every new session in order to meter new applications.
 	supplierToAppMetricsMap map[string]map[string]*appRelayMeter
 	// overServicingAllowanceCoins allows Suppliers to overservice applications.
-	// This entails providing a free service, to mine for relays, that they will not be paid for.
-	// This is a common by some to build goodwill and receive a higher quality-of-service rating.
+	// This entails providing a free service (i.e. mine for relays), that they will not be paid for onchain.
+	// This is common by some suppliers to build goodwill and receive a higher offchain quality-of-service rating.
 	// If negative, allow infinite overservicing.
 	// TODO_MAINNET(@red-0ne): Expose overServicingAllowanceCoins as a configuration parameter.
 	overServicingAllowanceCoins cosmostypes.Coin

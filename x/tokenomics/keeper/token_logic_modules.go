@@ -698,8 +698,17 @@ func (k Keeper) ensureClaimAmountLimits(
 
 	numBlocksPerSession := int64(sharedParams.GetNumBlocksPerSession())
 	pendingBlocks := sharedtypes.GetSessionEndToProofWindowCloseBlocks(sharedParams)
+	// We are addding numBlocksPerSession - 1 to round up the integer division
+	// so that pending sessions are all the sessions that have their end height at least
+	// `pendingBlocks` old
 	pendingSessions := (pendingBlocks + numBlocksPerSession - 1) / numBlocksPerSession
 
+	// The maximum any single supplier can claim is a fraction of the app's total stake
+	// divided by the number of suppliers per session.
+	// Re decentralization - This ensures the app biases towards using all suppliers in a session.
+	// Re costs - This is an easy way to split the stake evenly.
+	// TODO_FUTURE: See if there's a way to let the application to pick a single (the best) supplier
+	// in a session while maintaining a simple solution to implement this.
 	maxClaimableAmt := appStake.Amount.
 		Quo(math.NewInt(sessionkeeper.NumSupplierPerSession)).
 		Quo(math.NewInt(pendingSessions))
