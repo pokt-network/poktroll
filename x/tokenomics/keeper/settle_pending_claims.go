@@ -480,7 +480,7 @@ func (k Keeper) getApplicationInitialStakeMap(
 // finalizeTelemetry logs telemetry metrics for a claim based on its stage (e.g., EXPIRED, SETTLED).
 // Meant to run deferred.
 func (k Keeper) finalizeTelemetry(
-	proofStage prooftypes.ClaimProofStage,
+	claimProofStage prooftypes.ClaimProofStage,
 	serviceId string,
 	applicationAddress string,
 	supplierOperatorAddress string,
@@ -488,7 +488,7 @@ func (k Keeper) finalizeTelemetry(
 	numClaimComputeUnits uint64,
 	err error,
 ) {
-	telemetry.ClaimCounter(proofStage, 1, serviceId, applicationAddress, supplierOperatorAddress, err)
-	telemetry.ClaimRelaysCounter(proofStage, numRelays, serviceId, applicationAddress, supplierOperatorAddress, err)
-	telemetry.ClaimComputeUnitsCounter(proofStage, numClaimComputeUnits, serviceId, applicationAddress, supplierOperatorAddress, err)
+	telemetry.ClaimCounter(claimProofStage, 1, serviceId, applicationAddress, supplierOperatorAddress, err)
+	telemetry.ClaimRelaysCounter(claimProofStage, numRelays, serviceId, applicationAddress, supplierOperatorAddress, err)
+	telemetry.ClaimComputeUnitsCounter(claimProofStage, numClaimComputeUnits, serviceId, applicationAddress, supplierOperatorAddress, err)
 }
