@@ -8,7 +8,7 @@ import (
 )
 
 // globalTelemetryConfig stores poktroll specific telemetry configurations.
-// This value is initialized only once at the start of the program and remains unchanged throughout its lifetime.
+// Set once on initialization and remains constant during runtime.
 var globalTelemetryConfig PoktrollTelemetryConfig
 
 // PoktrollTelemetryConfig represents the telemetry protion of the custom poktroll config section in `app.toml`.
