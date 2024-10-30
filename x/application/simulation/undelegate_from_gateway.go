@@ -25,7 +25,7 @@ func SimulateMsgUndelegateFromGateway(
 			GatewayAddress: simGatewayAccount.Address.String(),
 		}
 
-		// TODO: Handling the UndelegateFromGateway simulation
+		// TODO_TECHDEBT: Handling the UndelegateFromGateway simulation
 
 		return simtypes.NoOpMsg(types.ModuleName, sdk.MsgTypeURL(msg), "UndelegateFromGateway simulation not implemented"), nil, nil
 	}

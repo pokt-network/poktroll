@@ -126,7 +126,7 @@ func (k msgServer) CreateClaim(
 				Claim:                  &claim,
 				NumRelays:              numRelays,
 				NumClaimedComputeUnits: numClaimComputeUnits,
-				// TODO_FOLLOWUP: Add NumEstimatedComputeUnits and ClaimedAmountUpokt
+				// TODO_BETA(@red-0ne): Add NumEstimatedComputeUnits and ClaimedAmountUpokt
 			},
 		)
 	case false:
@@ -135,7 +135,7 @@ func (k msgServer) CreateClaim(
 				Claim:                  &claim,
 				NumRelays:              numRelays,
 				NumClaimedComputeUnits: numClaimComputeUnits,
-				// TODO_FOLLOWUP: Add NumEstimatedComputeUnits and ClaimedAmountUpokt
+				// TODO_BETA(@red-0ne): Add NumEstimatedComputeUnits and ClaimedAmountUpokt
 			},
 		)
 	}

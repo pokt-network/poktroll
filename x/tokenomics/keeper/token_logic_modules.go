@@ -308,8 +308,7 @@ func (k Keeper) ProcessTokenLogicModules(
 		logger.Info(fmt.Sprintf("Finished TLM processing: %q", tlm))
 	}
 
-	// TODO_CONSIDERATION: If we support multiple native tokens, we will need to
-	// start checking the denom here.
+	// TODO_POST_MAINNET: If we support multiple native tokens, we will need to start checking the denom here.
 	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, cosmostypes.UnwrapSDKContext(ctx).BlockHeight())
 	if application.Stake.Amount.LT(apptypes.DefaultMinStake.Amount) {
 		// Mark the application as unbonding if it has less than the minimum stake.
@@ -819,7 +818,7 @@ func (k Keeper) distributeSupplierRewardsToShareHolders(
 // DEV_NOTE: This function is publically exposed to be used in the tests.
 func CalculateGlobalPerClaimMintInflationFromSettlementAmount(settlementCoin sdk.Coin) (sdk.Coin, big.Float) {
 	// Determine how much new uPOKT to mint based on global per claim inflation.
-	// TODO_MAINNET: Consider using fixed point arithmetic for deterministic results.
+	// TODO_MAINNET(@red-0ne): Consider using fixed point arithmetic for deterministic results.
 	settlementAmtFloat := new(big.Float).SetUint64(settlementCoin.Amount.Uint64())
 	newMintAmtFloat := new(big.Float).Mul(settlementAmtFloat, big.NewFloat(GlobalInflationPerClaim))
 	// DEV_NOTE: If new mint is less than 1 and more than 0, ceil it to 1 so that
@@ -849,7 +848,7 @@ func stakeShareToMaxSettlementAmount(stakeShare math.Int) math.Int {
 
 // calculateAllocationAmount does big float arithmetic to determine the absolute
 // amount from amountFloat based on the allocation percentage provided.
-// TODO_MAINNET(@bryanchriswhite): Measure and limit the precision loss here.
+// TODO_MAINNET(@red-0ne): Measure and limit the precision loss here.
 func calculateAllocationAmount(
 	amountFloat *big.Float,
 	allocationPercentage float64,
@@ -870,7 +869,7 @@ func GetShareAmountMap(
 	totalDistributed := uint64(0)
 	shareAmountMap = make(map[string]uint64, len(serviceRevShare))
 	for _, revShare := range serviceRevShare {
-		// TODO_MAINNET: Consider using fixed point arithmetic for deterministic results.
+		// TODO_MAINNET(@red-0ne): Consider using fixed point arithmetic for deterministic results.
 		sharePercentageFloat := big.NewFloat(float64(revShare.RevSharePercentage) / 100)
 		amountToDistributeFloat := big.NewFloat(float64(amountToDistribute))
 		shareAmount, _ := big.NewFloat(0).Mul(amountToDistributeFloat, sharePercentageFloat).Uint64()

@@ -133,7 +133,7 @@ type Event interface {
 	// To customize the key name, use the appropriate option from the respective
 	// package when constructing a logger.
 	//
-	// TODO_UPNEXT(@bryanchriswhite): ensure implementations' godoc examples cover
+	// TODO_POST_MAINNET(@bryanchriswhite): ensure implementations' godoc examples cover
 	// options.
 	Err(err error) Event
 
@@ -141,7 +141,7 @@ type Event interface {
 	// with the "time" key. To customize the key name, use the appropriate option
 	// from the respective package when constructing a Logger.
 	//
-	// TODO_UPNEXT(@bryanchriswhite): ensure implementations' godoc examples cover
+	// TODO_POST_MAINNET(@bryanchriswhite): ensure implementations' godoc examples cover
 	// options.
 	//
 	// NOTE: It won't dedupe the "time" key if the Event (or *Context) has one

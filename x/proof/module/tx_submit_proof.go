@@ -15,7 +15,7 @@ import (
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
-// TODO(@bryanchriswhite): Add unit tests for the CLI command when implementing the business logic.
+// TODO_TECHDEBT(@bryanchriswhite): Add unit tests for the CLI command when implementing the business logic.
 
 var _ = strconv.Itoa(0)
 

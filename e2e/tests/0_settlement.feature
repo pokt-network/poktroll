@@ -76,7 +76,7 @@ Feature: Tokenomics Namespace
         # The application stake should be less 420 * (1 + glbal_inflation) = 420 * 1.1 = 462
         And the "application" stake of "app1" should be "462" uPOKT "less" than before
 
-    # TODO_ADDTEST: Implement the following scenarios
+    # TODO_TEST: Implement the following scenarios
     # Scenario: Supplier revenue shares are properly distributed
     # Scenario: TLM Mint=Burn when a valid claim is outside Max Limits
     #   - Ensure over serviced event is submitted
