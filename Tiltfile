@@ -59,7 +59,6 @@ localnet_config_defaults = {
             "level": "debug",
         },
     },
-    # TODO_BLOCKER(@red-0ne, #511): Add support for `REST` and enabled this.
     "ollama": {
         "enabled": False,
         "model": "qwen:0.5b",

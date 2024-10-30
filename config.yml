@@ -87,7 +87,7 @@ validators:
     app:
       # DEV_NOTE: Ignite does not carry over all defaults, so we are going to match `minimum-gas-prices` with `cmd/config.go`.
       # See the enhancement request here: https://github.com/ignite/cli/issues/4340
-      # TODO(#794): turn on `minimum-gas-prices` back
+      # TODO_MAINNET(#794): turn on `minimum-gas-prices` back
       # minimum-gas-prices: 0.000000001upokt
       telemetry:
         enabled: true
@@ -127,7 +127,7 @@ genesis:
     staking:
       params:
         bond_denom: upokt
-        # TODO_MAINNET(@Olshansk): Figure out what this should be on Shannon
+        # TODO_MAINNET: Figure out what this should be on Shannon
         # re-genesis. We're setting it to 1 for Alpha TestNet #1 so Grove
         # maintains the only validator until Alpha TestNet #2.
         max_validators: 1

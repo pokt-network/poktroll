@@ -27,7 +27,7 @@ import (
 
 var (
 	// Governance parameters for the TLMGlobalMint module
-	// TODO_UPNEXT(@olshansk, #732): Make this a governance parameter and give it a non-zero value + tests.
+	// TODO_BETA(@red-0ne): Make this a governance parameter and give it a non-zero value + tests.
 	MintPerClaimedTokenGlobalInflation = 0.1
 )
 
@@ -115,7 +115,7 @@ func init() {
 		panic("mint allocation percentages do not add to 1.0")
 	}
 
-	// TODO_UPNEXT(@Olshansk): Ensure that if `TLMGlobalMint` is present in the map,
+	// TODO_BETA(@red-0ne): Ensure that if `TLMGlobalMint` is present in the map,
 	// then TLMGlobalMintReimbursementRequest will need to be there too.
 }
 
@@ -292,8 +292,7 @@ func (k Keeper) ProcessTokenLogicModules(
 		logger.Info(fmt.Sprintf("Finished TLM processing: %q", tlm))
 	}
 
-	// TODO_CONSIDERATION: If we support multiple native tokens, we will need to
-	// start checking the denom here.
+	// TODO_POST_MAINNET: If we support multiple native tokens, we will need to start checking the denom here.
 	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, cosmostypes.UnwrapSDKContext(ctx).BlockHeight())
 	if application.Stake.Amount.LT(apptypes.DefaultMinStake.Amount) {
 		// Mark the application as unbonding if it has less than the minimum stake.
@@ -418,7 +417,7 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 	logger := k.Logger().With("method", "TokenLogicModuleGlobalMint")
 
 	if MintPerClaimedTokenGlobalInflation == 0 {
-		// TODO_UPNEXT(@olshansk): Make sure to skip GMRR TLM in this case as well.
+		// TODO_BETA(@red-0ne): Make sure to skip GMRR TLM in this case as well.
 		logger.Warn("global inflation is set to zero. Skipping Global Mint TLM.")
 		return nil
 	}
@@ -585,7 +584,7 @@ func (k Keeper) ensureClaimAmountLimits(
 ) {
 	logger = logger.With("helper", "ensureClaimAmountLimits")
 
-	// TODO_BETA_OR_MAINNET(@red-0ne): The application stake gets reduced with every claim
+	// TODO_BETA(@red-0ne): The application stake gets reduced with every claim
 	// settlement. Relay miners use the appStake at the beginning of a session to determine
 	// the maximum amount they can claim. We need to somehow access and propagate this
 	// value (via context?) so it is the same for all TLM processors for each claim.
@@ -686,7 +685,7 @@ func (k Keeper) distributeSupplierRewardsToShareHolders(
 // the settlement amount for a particular claim(s) or session(s).
 func calculateGlobalPerClaimMintInflationFromSettlementAmount(settlementCoin sdk.Coin) (sdk.Coin, big.Float) {
 	// Determine how much new uPOKT to mint based on global per claim inflation.
-	// TODO_MAINNET: Consider using fixed point arithmetic for deterministic results.
+	// TODO_MAINNET(@red-0ne): Consider using fixed point arithmetic for deterministic results.
 	settlementAmtFloat := new(big.Float).SetUint64(settlementCoin.Amount.Uint64())
 	newMintAmtFloat := new(big.Float).Mul(settlementAmtFloat, big.NewFloat(MintPerClaimedTokenGlobalInflation))
 	// DEV_NOTE: If new mint is less than 1 and more than 0, ceil it to 1 so that
@@ -701,7 +700,7 @@ func calculateGlobalPerClaimMintInflationFromSettlementAmount(settlementCoin sdk
 
 // calculateAllocationAmount does big float arithmetic to determine the absolute
 // amount from amountFloat based on the allocation percentage provided.
-// TODO_MAINNET(@bryanchriswhite): Measure and limit the precision loss here.
+// TODO_MAINNET(@red-0ne): Measure and limit the precision loss here.
 func calculateAllocationAmount(
 	amountFloat *big.Float,
 	allocationPercentage float64,
@@ -722,7 +721,7 @@ func GetShareAmountMap(
 	totalDistributed := uint64(0)
 	shareAmountMap = make(map[string]uint64, len(serviceRevShare))
 	for _, revShare := range serviceRevShare {
-		// TODO_MAINNET: Consider using fixed point arithmetic for deterministic results.
+		// TODO_MAINNET(@red-0ne): Consider using fixed point arithmetic for deterministic results.
 		sharePercentageFloat := big.NewFloat(float64(revShare.RevSharePercentage) / 100)
 		amountToDistributeFloat := big.NewFloat(float64(amountToDistribute))
 		shareAmount, _ := big.NewFloat(0).Mul(amountToDistributeFloat, sharePercentageFloat).Uint64()

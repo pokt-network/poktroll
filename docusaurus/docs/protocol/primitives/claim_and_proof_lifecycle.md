@@ -374,7 +374,7 @@ deep cryptographic validations needed:
 
 :::note
 
-TODO: Link to tokenomics and data integrity checks for discussion once they are written.
+TODO_DOCUMENT: Link to tokenomics and data integrity checks for discussion once they are written.
 
 :::
 

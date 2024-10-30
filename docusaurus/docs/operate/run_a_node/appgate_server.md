@@ -39,8 +39,6 @@ Please see the [Hardware Requirements](./hardware_requirements.md#appgate-server
 Please refer to the `Deploying an AppGate Server` section in [poktroll-docker-compose-example](https://github.com/pokt-network/poktroll-docker-compose-example#deploying-an-appgate-server)
 GitHub repository on how to deploy an AppGate Server using `docker-compose`.
 
-_TODO: Move over the relevant information from the `poktroll-docker-compose-example` repository into the docs_
-
 ## Kubernetes Example
 
-_TODO: Provide an example using [strangelove-ventures/cosmos-operator](https://github.com/strangelove-ventures/cosmos-operator)._
+_TODO_DOCUMENT: Provide an example using [strangelove-ventures/cosmos-operator](https://github.com/strangelove-ventures/cosmos-operator)._

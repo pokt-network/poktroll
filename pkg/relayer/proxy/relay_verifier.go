@@ -102,10 +102,10 @@ func (rp *relayerProxy) getTargetSessionBlockHeight(
 	currentHeight := rp.blockClient.LastBlock(ctx).Height()
 	sessionEndHeight := relayRequest.Meta.SessionHeader.GetSessionEndBlockHeight()
 
-	// TODO_TECHDEBT(#543): We don't really want to have to query the params for every method call.
+	// TODO_MAINNET(#543): We don't really want to have to query the params for every method call.
 	// Once `ModuleParamsClient` is implemented, use its replay observable's `#Last()` method
 	// to get the most recently (asynchronously) observed (and cached) value.
-	// TODO_BLOCKER(@bryanchriswhite, #543): We also don't really want to use the current value of the params.
+	// TODO_MAINNET(@bryanchriswhite, #543): We also don't really want to use the current value of the params.
 	// Instead, we should be using the value that the params had for the session given by sessionEndHeight.
 	sharedParams, err := rp.sharedQuerier.GetParams(ctx)
 	if err != nil {

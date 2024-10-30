@@ -25,7 +25,7 @@ func SimulateMsgDelegateToGateway(
 			GatewayAddress: simGatewayAccount.Address.String(),
 		}
 
-		// TODO: Handling the DelegateToGateway simulation
+		// TODO_TECHDEBT: Handling the DelegateToGateway simulation
 
 		return simtypes.NoOpMsg(types.ModuleName, sdk.MsgTypeURL(msg), "DelegateToGateway simulation not implemented"), nil, nil
 	}

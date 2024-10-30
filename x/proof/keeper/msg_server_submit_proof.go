@@ -147,7 +147,7 @@ func (k msgServer) SubmitProof(
 				Proof:                  &proof,
 				NumRelays:              numRelays,
 				NumClaimedComputeUnits: numClaimComputeUnits,
-				// TODO_FOLLOWUP: Add NumEstimatedComputeUnits and ClaimedAmountUpokt
+				// TODO_BETA(@red-0ne): Add NumEstimatedComputeUnits and ClaimedAmountUpokt
 			},
 		)
 	case false:
@@ -157,7 +157,7 @@ func (k msgServer) SubmitProof(
 				Proof:                  &proof,
 				NumRelays:              numRelays,
 				NumClaimedComputeUnits: numClaimComputeUnits,
-				// TODO_FOLLOWUP: Add NumEstimatedComputeUnits and ClaimedAmountUpokt
+				// TODO_BETA(@red-0ne): Add NumEstimatedComputeUnits and ClaimedAmountUpokt
 			},
 		)
 	}
@@ -216,7 +216,7 @@ func (k Keeper) deductProofSubmissionFee(ctx context.Context, supplierOperatorAd
 // ProofRequirementForClaim checks if a proof is required for a claim.
 // If it is not, the claim will be settled without a proof.
 // If it is, the claim will only be settled if a valid proof is available.
-// TODO_BLOCKER(@olshansk, #419): Document safety assumptions of the probabilistic proofs mechanism.
+// TODO_BETA(@olshansk): Document safety assumptions of the probabilistic proofs mechanism.
 func (k Keeper) ProofRequirementForClaim(ctx context.Context, claim *types.Claim) (_ types.ProofRequirementReason, err error) {
 	logger := k.logger.With("method", "proofRequirementForClaim")
 
@@ -251,9 +251,9 @@ func (k Keeper) ProofRequirementForClaim(ctx context.Context, claim *types.Claim
 	}
 
 	// Require a proof if the claim's compute units meets or exceeds the threshold.
-	// TODO_MAINNET(@olshansk, @red-0ne): Should the threshold be dependant on the stake as well
+	// TODO_BETA(@red-0ne): Should the threshold be dependant on the stake as well
 	// so we slash proportional to the compute units?
-	// TODO_IMPROVE(@red-0ne): It might make sense to include whether there was a proof
+	// TODO_BETA(@red-0ne): It might make sense to include whether there was a proof
 	// submission error downstream from here. This would require a more comprehensive metrics API.
 	if claimeduPOKT.Amount.GTE(proofParams.GetProofRequirementThreshold().Amount) {
 		requirementReason = types.ProofRequirementReason_THRESHOLD
@@ -319,7 +319,7 @@ func (k Keeper) getProofRequirementSeedBlockHash(
 	proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(sharedParams, sessionEndHeight)
 	proofWindowOpenBlockHash := k.sessionKeeper.GetBlockHash(ctx, proofWindowOpenHeight)
 
-	// TODO_TECHDEBT(@red-0ne): Update the method header of this function to accept (sharedParams, Claim, BlockHash).
+	// TODO_BETA(@red-0ne): Update the method header of this function to accept (sharedParams, Claim, BlockHash).
 	// After doing so, please review all calling sites and simplify them accordingly.
 	earliestSupplierProofCommitHeight := sharedtypes.GetEarliestSupplierProofCommitHeight(
 		sharedParams,

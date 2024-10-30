@@ -22,7 +22,7 @@ func SimulateMsgCreateClaim(
 			SupplierOperatorAddress: simAccount.Address.String(),
 		}
 
-		// TODO: Handling the CreateClaim simulation
+		// TODO_TECHDEBT: Handling the CreateClaim simulation
 
 		return simtypes.NoOpMsg(types.ModuleName, sdk.MsgTypeURL(msg), "CreateClaim simulation not implemented"), nil, nil
 	}
