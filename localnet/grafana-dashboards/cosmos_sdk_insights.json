@@ -17,7 +17,7 @@
   },
   "editable": true,
   "fiscalYearStartMonth": 0,
-  "graphTooltip": 0,
+  "graphTooltip": 1,
   "links": [],
   "panels": [
     {
@@ -349,7 +349,7 @@
           "unit": "s"
         }
       },
-      "pluginVersion": "11.2.1",
+      "pluginVersion": "11.2.2+security-01",
       "targets": [
         {
           "datasource": {
@@ -472,7 +472,7 @@
           "editorMode": "code",
           "expr": "sum(poktroll_proof_validation{job=\"$job\"}) by (quantile)",
           "instant": false,
-          "legendFormat": "{{module}}: q{{quantile}}",
+          "legendFormat": " q{{quantile}}",
           "range": true,
           "refId": "A"
         },
@@ -485,7 +485,7 @@
           "expr": "sum(poktroll_proof_validation_sum{job=\"$job\"}) / sum(poktroll_proof_validation_count{job=\"$job\"})",
           "hide": false,
           "instant": false,
-          "legendFormat": "{{module}}: avg",
+          "legendFormat": "avg",
           "range": true,
           "refId": "B"
         }
@@ -1050,7 +1050,20 @@
             ]
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "D"
+            },
+            "properties": [
+              {
+                "id": "custom.lineWidth",
+                "value": 3
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 6,
@@ -1109,6 +1122,19 @@
           "legendFormat": "slashed by {{module}}",
           "range": true,
           "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "sum(increase(poktroll_minted_tokens{job=\"$job\"}[1m])) - sum(increase(poktroll_burned_tokens{job=\"$job\"}[1m]))",
+          "hide": false,
+          "instant": false,
+          "legendFormat": "Minted total (minus burned)",
+          "range": true,
+          "refId": "D"
         }
       ],
       "title": "Minted / Burned / Slashed Tokens",
@@ -1208,7 +1234,7 @@
           "refId": "A"
         }
       ],
-      "title": "Compute Units",
+      "title": "Claims",
       "type": "timeseries"
     }
   ],

@@ -91,7 +91,6 @@ validators:
       # minimum-gas-prices: 0.000000001upokt
       telemetry:
         enabled: true
-        prometheus-retention-time: "10" # seconds. Let's see if block time * 5 gives a better data.
       poktroll:
         telemetry:
           # "high" produces a lot of timeseries. Only suitable for small networks such as LocalNet.
@@ -143,13 +142,13 @@ genesis:
             denom: upokt
     bank:
       supply:
-        - amount: "1003000204"
+        - amount: "1102000204"
           denom: upokt
       balances:
         # Application module
         - address: pokt1rl3gjgzexmplmds3tq3r3yk84zlwdl6djzgsvm
           coins:
-            - amount: "1000068" # Equals to the total of all app stakes below
+            - amount: "100000068" # Equals to the total of all app stakes below
               denom: upokt
         # Supplier module
         - address: pokt1j40dzzmn6cn9kxku7a5tjnud6hv37vesr5ccaa
@@ -175,9 +174,8 @@ genesis:
           denom: upokt
       applicationList:
         - address: pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4
-          delegatee_gateway_addresses: [
-            pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4
-          ]
+          delegatee_gateway_addresses:
+            [pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4]
           service_configs:
             - service_id: anvil
           stake:
@@ -186,9 +184,8 @@ genesis:
             amount: "100000068" # ~100 POKT
             denom: upokt
         - address: pokt184zvylazwu4queyzpl0gyz9yf5yxm2kdhh9hpm
-          delegatee_gateway_addresses: [
-            pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4
-          ]
+          delegatee_gateway_addresses:
+            [pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4]
           service_configs:
             - service_id: rest
           stake:

@@ -29,7 +29,7 @@ var (
 		Subsystem: relayMinerProcess,
 		Name:      requestsTotal,
 		Help:      "Total number of requests processed, labeled by service ID.",
-	}, []string{"service_id"})
+	}, []string{"service_id", "supplier_operator_address"})
 
 	// relaysErrorsTotal is a Counter for total error events in the relay miner.
 	// It increments with each error, labeled by 'service_id',

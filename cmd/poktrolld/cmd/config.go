@@ -130,7 +130,8 @@ func initAppConfig() (string, interface{}) {
 	srvCfg.MinGasPrices = "0.000000001upokt" // Also adjust ignite's `config.yml`.
 	srvCfg.Mempool.MaxTxs = 10000
 	srvCfg.Telemetry.Enabled = true
-	srvCfg.Telemetry.PrometheusRetentionTime = 60 * 10 // in seconds. This turns on Prometheus support.
+	// Positive value turns on prometheus support. Prometheus metrics are removed from the exporter when retention time is reached.
+	srvCfg.Telemetry.PrometheusRetentionTime = 60 * 60 * 24 // in seconds.
 	srvCfg.Telemetry.MetricsSink = "mem"
 	srvCfg.Pruning = "nothing" // archiving node by default
 	srvCfg.API.Enable = true
