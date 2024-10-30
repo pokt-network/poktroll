@@ -308,8 +308,7 @@ func (k Keeper) ProcessTokenLogicModules(
 		logger.Info(fmt.Sprintf("Finished TLM processing: %q", tlm))
 	}
 
-	// TODO_CONSIDERATION: If we support multiple native tokens, we will need to
-	// start checking the denom here.
+	// TODO_POST_MAINNET: If we support multiple native tokens, we will need to start checking the denom here.
 	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, cosmostypes.UnwrapSDKContext(ctx).BlockHeight())
 	if application.Stake.Amount.LT(apptypes.DefaultMinStake.Amount) {
 		// Mark the application as unbonding if it has less than the minimum stake.
@@ -526,6 +525,7 @@ func (k Keeper) TokenLogicModuleGlobalMintReimbursementRequest(
 	// This should THEORETICALLY NEVER fall below zero.
 	// `ensureClaimAmountLimits` should have already checked and adjusted the settlement
 	// amount so that the application stake covers the global inflation.
+	// TODO_POST_MAINNET: Consider removing this since it should never happen just to simplify the code
 	if err != nil {
 		return err
 	}
@@ -703,10 +703,10 @@ func (k Keeper) ensureClaimAmountLimits(
 	maxClaimableAmt := appStake.Amount.
 		Quo(math.NewInt(sessionkeeper.NumSupplierPerSession)).
 		Quo(math.NewInt(pendingSessions))
-	maxClaimSettlementAmt := stakeShareToMaxSettlementAmount(maxClaimableAmt)
+	maxClaimSettlementAmt := supplierAppStakeToMaxSettlementAmount(maxClaimableAmt)
 
 	// Check if the claimable amount is capped by the max claimable amount.
-	// As per the Relay Mining paper, the Supplier claim MUST NO exceed the application's
+	// As per the Relay Mining paper, the Supplier claim MUST NOT exceed the application's
 	// allocated stake. If it does, the claim is capped by the application's allocated stake
 	// and the supplier is effectively "overserviced".
 	if minRequiredAppStakeAmt.GT(maxClaimableAmt) {
@@ -714,7 +714,7 @@ func (k Keeper) ensureClaimAmountLimits(
 			supplier.GetOperatorAddress(), application.GetAddress(), maxClaimableAmt, claimSettlementCoin.Amount))
 
 		minRequiredAppStakeAmt = maxClaimableAmt
-		maxClaimSettlementAmt = stakeShareToMaxSettlementAmount(minRequiredAppStakeAmt)
+		maxClaimSettlementAmt = supplierAppStakeToMaxSettlementAmount(minRequiredAppStakeAmt)
 	}
 
 	// Nominal case: The claimable amount is within the limits set by Relay Mining.
@@ -806,7 +806,7 @@ func (k Keeper) distributeSupplierRewardsToShareHolders(
 // DEV_NOTE: This function is publically exposed to be used in the tests.
 func CalculateGlobalPerClaimMintInflationFromSettlementAmount(settlementCoin sdk.Coin) (sdk.Coin, big.Float) {
 	// Determine how much new uPOKT to mint based on global per claim inflation.
-	// TODO_MAINNET: Consider using fixed point arithmetic for deterministic results.
+	// TODO_MAINNET(@red-0ne): Consider using fixed point arithmetic for deterministic results.
 	settlementAmtFloat := new(big.Float).SetUint64(settlementCoin.Amount.Uint64())
 	newMintAmtFloat := new(big.Float).Mul(settlementAmtFloat, big.NewFloat(GlobalInflationPerClaim))
 	// DEV_NOTE: If new mint is less than 1 and more than 0, ceil it to 1 so that
@@ -819,14 +819,15 @@ func CalculateGlobalPerClaimMintInflationFromSettlementAmount(settlementCoin sdk
 	return mintAmtCoin, *newMintAmtFloat
 }
 
-// stakeShareToMaxSettlementAmount calculates the max amount of uPOKT to that the supplier
-// can claim based on the stake share and the global inflation allocation percentage.
+// supplierAppStakeToMaxSettlementAmount calculates the max amount of uPOKT the supplier
+// can claim based on the stake allocated to the supplier and the global inflation
+// allocation percentage.
 // This is the inverse of CalculateGlobalPerClaimMintInflationFromSettlementAmount:
 // stake = maxSettlementAmt + globalInflationAmt
 // stake = maxSettlementAmt + (maxSettlementAmt * MintPerClaimedTokenGlobalInflation)
 // stake = maxSettlementAmt * (1 + MintPerClaimedTokenGlobalInflation)
 // maxSettlementAmt = stake / (1 + MintPerClaimedTokenGlobalInflation)
-func stakeShareToMaxSettlementAmount(stakeShare math.Int) math.Int {
+func supplierAppStakeToMaxSettlementAmount(stakeShare math.Int) math.Int {
 	stakeSahreFloat := big.NewFloat(0).SetInt(stakeShare.BigInt())
 	maxSettlementAmountFloat := big.NewFloat(0).Quo(stakeSahreFloat, big.NewFloat(1+GlobalInflationPerClaim))
 
@@ -836,7 +837,7 @@ func stakeShareToMaxSettlementAmount(stakeShare math.Int) math.Int {
 
 // calculateAllocationAmount does big float arithmetic to determine the absolute
 // amount from amountFloat based on the allocation percentage provided.
-// TODO_MAINNET(@bryanchriswhite): Measure and limit the precision loss here.
+// TODO_MAINNET(@red-0ne): Measure and limit the precision loss here.
 func calculateAllocationAmount(
 	amountFloat *big.Float,
 	allocationPercentage float64,
@@ -857,7 +858,7 @@ func GetShareAmountMap(
 	totalDistributed := uint64(0)
 	shareAmountMap = make(map[string]uint64, len(serviceRevShare))
 	for _, revShare := range serviceRevShare {
-		// TODO_MAINNET: Consider using fixed point arithmetic for deterministic results.
+		// TODO_MAINNET(@red-0ne): Consider using fixed point arithmetic for deterministic results.
 		sharePercentageFloat := big.NewFloat(float64(revShare.RevSharePercentage) / 100)
 		amountToDistributeFloat := big.NewFloat(float64(amountToDistribute))
 		shareAmount, _ := big.NewFloat(0).Mul(amountToDistributeFloat, sharePercentageFloat).Uint64()

@@ -139,7 +139,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 
 			// If the proof is missing or invalid -> expire it
 			if expirationReason != tokenomicstypes.ClaimExpirationReason_EXPIRATION_REASON_UNSPECIFIED {
-				// TODO_BETA(@red-0ne, @olshansk): Slash the supplier in proportion
+				// TODO_BETA(@red-0ne): Slash the supplier in proportion
 				// to their stake. Consider allowing suppliers to RemoveClaim via a new
 				// message in case it was sent by accident
 

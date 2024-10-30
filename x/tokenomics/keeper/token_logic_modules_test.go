@@ -649,16 +649,16 @@ func TestProcessTokenLogicModules_InvalidClaim(t *testing.T) {
 	}
 }
 
-func TestProcessTokenLogicModules_AppStakeMissingGlobalInflationAmount(t *testing.T) {
-	t.Skip("TODO: Test application stake that does not cover the global inflation amount")
+func TestProcessTokenLogicModules_AppStakeInsufficientToCoverGlobalInflationAmount(t *testing.T) {
+	t.Skip("TODO_MAINNET(@red-0ne): Test application stake that is insufficient to cover the global inflation amount, for reimbursment and the max claim should scale down proportionally")
 }
 
-func TestProcessTokenLogicModules_ZeroAppStakeShareDueToPrecisionLoss(t *testing.T) {
-	t.Skip("TODO: Test application stake that is low enough to have a zero share due to precision loss")
+func TestProcessTokenLogicModules_AppStakeTooLowRoundingToZero(t *testing.T) {
+	t.Skip("TODO_MAINNET(@red-0ne): Test application stake that is too low which results in stake/num_suppliers rounding down to zero")
 }
 
-func TestProcessTokenLogicModules_AppStakeGoesBelowMinStake(t *testing.T) {
-	t.Skip("TODO: Test application stake that goes min stake")
+func TestProcessTokenLogicModules_AppStakeDropsBelowMinStakeAfterSession(t *testing.T) {
+	t.Skip("TODO_MAINNET(@red-0ne): Test that application stake being auto-unbonding after the stake drops below the required minimum when settling session accounting")
 }
 
 // prepareTestClaim uses the given number of relays and compute unit per relay in the

@@ -23,7 +23,7 @@ func SimulateMsgStakeApplication(
 			Address: simAccount.Address.String(),
 		}
 
-		// TODO: Handling the StakeApplication simulation
+		// TODO_TECHDEBT: Handling the StakeApplication simulation
 		// See the documentation here to simulate application staking: https://docs.cosmos.network/main/learn/advanced/simulation
 
 		return simtypes.NoOpMsg(types.ModuleName, sdk.MsgTypeURL(stakeMsg), "StakeApplication simulation not implemented"), nil, nil

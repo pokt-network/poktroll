@@ -10,7 +10,7 @@ import (
 
 // EndBlockerAutoUndelegateFromUnstakedGateways is called every block and handles
 // Application auto-undelegating from unstaked gateways.
-// TODO_BLOCKER: Gateway unstaking should be delayed until the current block's
+// TODO_BETA(@bryanchriswhite): Gateway unstaking should be delayed until the current block's
 // session end height to align with the application's pending undelegations.
 func (k Keeper) EndBlockerAutoUndelegateFromUnstakedGateways(ctx cosmostypes.Context) error {
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)

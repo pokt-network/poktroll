@@ -66,7 +66,7 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) (err error) {
 			expiredResult.NumComputeUnits,
 			err,
 		)
-		// TODO_IMPROVE(#observability): Add a counter for expired compute units.
+		// TODO_POST_MAINNET: Add a counter for expired compute units.
 	}()
 
 	// Update the relay mining difficulty for every service that settled pending
