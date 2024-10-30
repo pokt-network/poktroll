@@ -7,18 +7,19 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-// globalTelemetryConfig is a private variable that stores cardinality level.
+// globalTelemetryConfig stores poktroll specific telemetry configurations.
 // It is set on initialization and does not change for the lifetime of the program.
 var globalTelemetryConfig PoktrollTelemetryConfig
 
-// PoktrollTelemetryConfig represents the telemetry protion of the custom poktroll config.
+// PoktrollTelemetryConfig represents the telemetry protion of the custom poktroll config section in `app.toml`.
 type PoktrollTelemetryConfig struct {
 	CardinalityLevel string `mapstructure:"cardinality-level"`
 }
 
 // New sets the globalTelemetryConfig for telemetry package.
 func New(appOpts servertypes.AppOptions) error {
-	// Extract the map from appOpts. `poktroll.telemetry` comes from `app.toml` which is parsed into a map.
+	// Extract the map from appOpts.
+	// `poktroll.telemetry` comes from `app.toml` which is parsed into a map.
 	telemetryMap := appOpts.Get("poktroll.telemetry").(map[string]interface{})
 
 	// Use mapstructure to decode the map into the struct

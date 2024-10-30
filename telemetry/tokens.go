@@ -5,7 +5,10 @@ import (
 	"github.com/hashicorp/go-metrics"
 )
 
-// TODO_TECHDEBT: Minted, burned and shashed tokens values might not be accurate or be inflated.
+// TODO_MAINNET(@bryanchriswhite): Revisit how telemetry is managed under `x/tokenomics` to ensure that it
+// complies with the new hardened settlement approach.
+
+// TODO_MAINNET(@red-0ne, #897): Minted, burnt and slashd tokens values might not be completely accurate.
 // While we're keeping this metric for now consider removing in favor of utilizing the `cosmos-exporter` which uses on-chain data.
 // Context: https://github.com/cosmos/cosmos-sdk/issues/21614, https://github.com/pokt-network/poktroll/pull/832
 

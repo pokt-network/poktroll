@@ -787,9 +787,9 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(increase(poktroll_relays{job=\"$job\",service_id=~\"$service_id\"}[1m])) by (service_id, proof_stage)",
+          "expr": "sum(increase(poktroll_relays{job=\"$job\",service_id=~\"$service_id\"}[1m])) by (service_id, claim_proof_stage)",
           "instant": false,
-          "legendFormat": "{{service_id}}-{{proof_stage}}",
+          "legendFormat": "{{service_id}}-{{claim_proof_stage}}",
           "range": true,
           "refId": "A"
         }
@@ -884,9 +884,9 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(increase(poktroll_compute_units{job=\"$job\",service_id=~\"$service_id\"}[1m])) by (service_id, proof_stage)",
+          "expr": "sum(increase(poktroll_compute_units{job=\"$job\",service_id=~\"$service_id\"}[1m])) by (service_id, claim_proof_stage)",
           "instant": false,
-          "legendFormat": "{{service_id}}-{{proof_stage}}",
+          "legendFormat": "{{service_id}}-{{claim_proof_stage}}",
           "range": true,
           "refId": "A"
         }
@@ -1227,9 +1227,9 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(increase(poktroll_claims{job=\"$job\",service_id=~\"$service_id\"}[1m])) by (service_id, proof_stage)",
+          "expr": "sum(increase(poktroll_claims{job=\"$job\",service_id=~\"$service_id\"}[1m])) by (service_id, claim_proof_stage)",
           "instant": false,
-          "legendFormat": "{{service_id}}-{{proof_stage}}",
+          "legendFormat": "{{service_id}}-{{claim_proof_stage}}",
           "range": true,
           "refId": "A"
         }

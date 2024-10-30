@@ -5,8 +5,9 @@ import (
 	"github.com/hashicorp/go-metrics"
 )
 
-// MetricNameKeys constructs the full metric name by prefixing with a defined
-// prefix and appending any additional metrics provided as variadic arguments.
+// MetricNameKeys prefixes metrics with `poktroll` for easy identification.
+// E.g., `("hodlers", "regret_level")` yields `poktroll_hodlers_regret_level` — great for tracking FOMO as hodlers rethink choices.
+// Returns a slice of strings as `go-metric`, the underlying metrics library, expects.
 func MetricNameKeys(metrics ...string) []string {
 	result := make([]string, 0, len(metrics)+1)
 	result = append(result, metricNamePrefix)
@@ -19,12 +20,13 @@ func isTelemetyEnabled() bool {
 	return cosmostelemetry.IsTelemetryEnabled()
 }
 
-// appendMediumCardinalityLabels only creates the label if cardinality if set to "medium".
-// Good example of a medium cardinality label is `service_id` — we do not control the number of services
-// on the network, and as permissionless services grow the metrics can get easily out of hand. We're keeping
-// an option to turn off such labels.
-// Medium cardinality labels are included when the cardinality is set to "high".
-// Configuration option is exposed in app.toml, our own `poktroll.telemetry` section.
+// appendMediumCardinalityLabels only creates the label if cardinality if set to "medium" or higher.
+// A good example for a "medium" cardinality use-case is `service_id`:
+//   - This is a network wide parameter
+//   - It is dependenon the permissionless nature of the network and can grow unbounded
+//   - We're keeping an option to turn off such labels to avoid metric bloat
+//
+// Configuration option is exposed in app.toml under the `poktroll.telemetry` section.
 func appendMediumCardinalityLabels(labels []metrics.Label, labelPairs ...metrics.Label) []metrics.Label {
 	if globalTelemetryConfig.CardinalityLevel == "medium" || globalTelemetryConfig.CardinalityLevel == "high" {
 		return append(labels, labelPairs...)
@@ -32,12 +34,13 @@ func appendMediumCardinalityLabels(labels []metrics.Label, labelPairs ...metrics
 	return labels
 }
 
-// appendHighCardinalityLabels only creates the label if cardinality if set to "high".
-// Good examples of high cardinality labels are `application_address` or `supplier_address`.
-// This setting, on a large network, will slow down both the full node and the metric scraping system.
-// We want to have such labels exposed for local development, debugging and performance troubleshooring.
-// More background on why this is important: https://www.robustperception.io/cardinality-is-key/
-// Configuration option is exposed in app.toml, our own `poktroll.telemetry` section.
+// appendHighCardinalityLabels only creates the label if cardinality is set to "high".
+// A good example of high cardinality labels is `application_address` or `supplier_address`:
+//   - This setting, on a large network, will slow down both the full node and the metric scraping system.
+//   - These labels need to be exposed for local development, debugging and performance troubleshooting.
+//
+// Additional references on cardinality: https://www.robustperception.io/cardinality-is-key/
+// Configuration option is exposed in app.toml under the `poktroll.telemetry` section.
 func appendHighCardinalityLabels(labels []metrics.Label, labelPairs ...metrics.Label) []metrics.Label {
 	if globalTelemetryConfig.CardinalityLevel == "high" {
 		return append(labels, labelPairs...)

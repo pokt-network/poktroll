@@ -14,7 +14,7 @@ import (
 
 // EndBlocker called at every block and settles all pending claims.
 func EndBlocker(ctx sdk.Context, k keeper.Keeper) (err error) {
-	// Telemetry: measure execution time like standard cosmos-sdk modules do that.
+	// Telemetry: measure the end-block execution time following standard cosmos-sdk practices.
 	defer cosmostelemetry.ModuleMeasureSince(types.ModuleName, cosmostelemetry.Now(), cosmostelemetry.MetricKeyEndBlocker)
 
 	logger := k.Logger().With("method", "EndBlocker")

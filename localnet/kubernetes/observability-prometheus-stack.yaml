@@ -29,8 +29,8 @@ grafana:
       jsonData:
         sslmode: disable
         postgresVersion: 1604 # Adjust to match your PostgreSQL version
-        # timescaledb: false  # Set to true if you are using TimescaleDB
-      schema: localnet # Specify your schema here
+        # timescaledb: false # Set to true if you are using TimescaleDB
+      schema: localnet # Specify your postgres schema here
 
 prometheus:
   prometheusSpec:

@@ -93,13 +93,14 @@ validators:
         enabled: true
       poktroll:
         telemetry:
-          # "high" produces a lot of timeseries. Only suitable for small networks such as LocalNet.
+          # "high" produces a lot of timeseries.
+          # ONLY suitable for small networks such as LocalNet.
           cardinality-level: high
     config:
       moniker: "validator1"
       consensus:
-        timeout_commit: "2s"
-        timeout_propose: "2s"
+        timeout_commit: "5s"
+        timeout_propose: "5s"
       instrumentation:
         prometheus: true
       log_level: "info"
@@ -148,22 +149,22 @@ genesis:
         # Application module
         - address: pokt1rl3gjgzexmplmds3tq3r3yk84zlwdl6djzgsvm
           coins:
-            - amount: "100000068" # Equals to the total of all app stakes below
+            - amount: "100000068" # MUST BE equal to the total of all app stakes below
               denom: upokt
         # Supplier module
         - address: pokt1j40dzzmn6cn9kxku7a5tjnud6hv37vesr5ccaa
           coins:
-            - amount: "1000068" # Equals to the total of all supplier stakes below
+            - amount: "1000068" # MUST BE equal to the total of all supplier stakes below
               denom: upokt
         # Gateway module
         - address: pokt1f6j7u6875p2cvyrgjr0d2uecyzah0kget9vlpl
           coins:
-            - amount: "1000068" # Equals to the total of all gateway stakes below
+            - amount: "1000068" # MUST BE equal to the total of all gateway stakes below
               denom: upokt
         # Service module
         - address: pokt1nhmtqf4gcmpxu0p6e53hpgtwj0llmsqpxtumcf
           coins:
-            - amount: "1000000000" # Equals to one add_service_fee below
+            - amount: "1000000000" # MUST BE equal to one add_service_fee below
               denom: upokt
     application:
       params:

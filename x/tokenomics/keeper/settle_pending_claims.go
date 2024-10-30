@@ -171,34 +171,15 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 				expiredResult.NumComputeUnits += numClaimComputeUnits
 
 				// Telemetry - defer telemetry calls so that they reference the final values the relevant variables.
-				defer func() {
-					applicationAddress := claim.SessionHeader.ApplicationAddress
-
-					telemetry.ClaimCounter(
-						prooftypes.ClaimProofStage_EXPIRED,
-						1,
-						claim.SessionHeader.ServiceId,
-						applicationAddress,
-						claim.SupplierOperatorAddress,
-						err,
-					)
-					telemetry.ClaimRelaysCounter(
-						prooftypes.ClaimProofStage_EXPIRED,
-						numClaimRelays,
-						claim.SessionHeader.ServiceId,
-						applicationAddress,
-						claim.SupplierOperatorAddress,
-						err,
-					)
-					telemetry.ClaimComputeUnitsCounter(
-						prooftypes.ClaimProofStage_EXPIRED,
-						numClaimComputeUnits,
-						claim.SessionHeader.ServiceId,
-						applicationAddress,
-						claim.SupplierOperatorAddress,
-						err,
-					)
-				}()
+				defer k.finalizeTelemetry(
+					prooftypes.ClaimProofStage_EXPIRED,
+					claim.SessionHeader.ServiceId,
+					claim.SessionHeader.ApplicationAddress,
+					claim.SupplierOperatorAddress,
+					numClaimRelays,
+					numClaimComputeUnits,
+					err,
+				)
 
 				continue
 			}
@@ -259,34 +240,15 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 		logger.Debug(fmt.Sprintf("Successfully settled claim for session ID %q at block height %d", claim.SessionHeader.SessionId, blockHeight))
 
 		// Telemetry - defer telemetry calls so that they reference the final values the relevant variables.
-		defer func() {
-			applicationAddress := claim.SessionHeader.ApplicationAddress
-
-			telemetry.ClaimCounter(
-				prooftypes.ClaimProofStage_SETTLED,
-				1,
-				claim.SessionHeader.ServiceId,
-				applicationAddress,
-				claim.SupplierOperatorAddress,
-				err,
-			)
-			telemetry.ClaimRelaysCounter(
-				prooftypes.ClaimProofStage_SETTLED,
-				numClaimRelays,
-				claim.SessionHeader.ServiceId,
-				applicationAddress,
-				claim.SupplierOperatorAddress,
-				err,
-			)
-			telemetry.ClaimComputeUnitsCounter(
-				prooftypes.ClaimProofStage_SETTLED,
-				numClaimComputeUnits,
-				claim.SessionHeader.ServiceId,
-				applicationAddress,
-				claim.SupplierOperatorAddress,
-				err,
-			)
-		}()
+		defer k.finalizeTelemetry(
+			prooftypes.ClaimProofStage_SETTLED,
+			claim.SessionHeader.ServiceId,
+			claim.SessionHeader.ApplicationAddress,
+			claim.SupplierOperatorAddress,
+			numClaimRelays,
+			numClaimComputeUnits,
+			err,
+		)
 	}
 
 	// Slash all the suppliers that have been marked for slashing slashingCount times.
@@ -468,4 +430,19 @@ func (k Keeper) slashSupplierStake(
 	// amount from the supplier's owner or operator balances.
 
 	return nil
+}
+
+// finalizeTelemetry logs telemetry metrics for a claim based on its stage (e.g., EXPIRED, SETTLED).
+func (k Keeper) finalizeTelemetry(
+	proofStage prooftypes.ClaimProofStage,
+	serviceId string,
+	applicationAddress string,
+	supplierOperatorAddress string,
+	numRelays uint64,
+	numClaimComputeUnits uint64,
+	err error,
+) {
+	telemetry.ClaimCounter(proofStage, 1, serviceId, applicationAddress, supplierOperatorAddress, err)
+	telemetry.ClaimRelaysCounter(proofStage, numRelays, serviceId, applicationAddress, supplierOperatorAddress, err)
+	telemetry.ClaimComputeUnitsCounter(proofStage, numClaimComputeUnits, serviceId, applicationAddress, supplierOperatorAddress, err)
 }

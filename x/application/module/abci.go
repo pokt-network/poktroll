@@ -10,7 +10,7 @@ import (
 
 // EndBlocker is called every block and handles application related updates.
 func EndBlocker(ctx sdk.Context, k keeper.Keeper) error {
-	// Telemetry: measure execution time like standard cosmos-sdk modules do that.
+	// Telemetry: measure the end-block execution time following standard cosmos-sdk practices.
 	defer cosmostelemetry.ModuleMeasureSince(types.ModuleName, cosmostelemetry.Now(), cosmostelemetry.MetricKeyEndBlocker)
 
 	if err := k.EndBlockerAutoUndelegateFromUnstakedGateways(ctx); err != nil {

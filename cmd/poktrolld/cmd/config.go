@@ -14,15 +14,16 @@ import (
 
 var once sync.Once
 
-// PoktrollAdditionalConfig represents a poktroll-specific part of `app.toml` file.
-// See the `customAppConfigTemplate()` for additional information about each setting.
-type PoktrollAdditionalConfig struct {
+// PoktrollAppConfig represents a poktroll-specific part of `app.toml` file.
+// Checkout `customAppConfigTemplate()` for additional information about each setting.
+type PoktrollAppConfig struct {
 	Telemetry telemetry.PoktrollTelemetryConfig `mapstructure:"telemetry"`
 }
 
-// poktrollAdditionalConfigDefaults sets default values to render in `app.toml`.
-func poktrollAdditionalConfigDefaults() PoktrollAdditionalConfig {
-	return PoktrollAdditionalConfig{
+// poktrollAppConfigDefaults sets default values to render in `app.toml`.
+// Checkout `customAppConfigTemplate()` for additional information about each setting.
+func poktrollAppConfigDefaults() PoktrollAppConfig {
+	return PoktrollAppConfig{
 		Telemetry: telemetry.PoktrollTelemetryConfig{
 			CardinalityLevel: "medium",
 		},
@@ -106,7 +107,7 @@ func initAppConfig() (string, interface{}) {
 	// The following code snippet is just for reference.
 	type CustomAppConfig struct {
 		serverconfig.Config `mapstructure:",squash"`
-		Poktroll            PoktrollAdditionalConfig `mapstructure:"poktroll"`
+		Poktroll            PoktrollAppConfig `mapstructure:"poktroll"`
 	}
 
 	// Optionally allow the chain developer to overwrite the SDK's default
@@ -130,7 +131,8 @@ func initAppConfig() (string, interface{}) {
 	srvCfg.MinGasPrices = "0.000000001upokt" // Also adjust ignite's `config.yml`.
 	srvCfg.Mempool.MaxTxs = 10000
 	srvCfg.Telemetry.Enabled = true
-	// Positive value turns on prometheus support. Prometheus metrics are removed from the exporter when retention time is reached.
+	// Positive non-zero value turns on Prometheus support.
+	// Prometheus metrics are removed from the exporter when retention time is reached.
 	srvCfg.Telemetry.PrometheusRetentionTime = 60 * 60 * 24 // in seconds.
 	srvCfg.Telemetry.MetricsSink = "mem"
 	srvCfg.Pruning = "nothing" // archiving node by default
@@ -140,21 +142,22 @@ func initAppConfig() (string, interface{}) {
 
 	customAppConfig := CustomAppConfig{
 		Config:   *srvCfg,
-		Poktroll: poktrollAdditionalConfigDefaults(),
+		Poktroll: poktrollAppConfigDefaults(),
 	}
 
-	return customAppConfigTemplate(), customAppConfig
+	return customPoktrollAppConfigTemplate(), customAppConfig
 }
 
-// customAppConfigTemplate extends the default configuration `app.toml` file with our own configs. They are going to be
-// used on validators and full-nodes, and they render using default values from `poktrollAdditionalConfigDefaults()`.
-func customAppConfigTemplate() string {
+// customPoktrollAppConfigTemplate extends the default configuration `app.toml` file with our own configs.
+// They are going to be used by validators and full-nodes.
+// These configs are rendered using default values from `poktrollAppConfigDefaults()`.
+func customPoktrollAppConfigTemplate() string {
 	return serverconfig.DefaultConfigTemplate + `
 		###############################################################################
 		###                               Poktroll                                  ###
 		###############################################################################
 		
-		# Poktroll-specific configuration for Full Nodes and Validators.
+		# Poktroll-specific app configuration for Full Nodes and Validators.
 		[poktroll]
 
 		# Telemetry configuration in addition to the [telemetry] settings.

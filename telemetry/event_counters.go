@@ -20,7 +20,7 @@ const (
 
 	// Label Names
 	applicationAddressLabelName      = "app_addr"
-	supplierOperatorAddressLabelName = "supop_addr"
+	supplierOperatorAddressLabelName = "sup_op_addr"
 )
 
 // EventSuccessCounter increments a counter with the given data type and success status.
@@ -107,7 +107,7 @@ func ClaimComputeUnitsCounter(
 
 	incrementAmount := numComputeUnits
 	labels := []metrics.Label{
-		{Name: "proof_stage", Value: claimProofStage.String()},
+		{Name: "claim_proof_stage", Value: claimProofStage.String()},
 	}
 	labels = appendMediumCardinalityLabels(labels, toMetricLabel("service_id", serviceId))
 	labels = appendHighCardinalityLabels(
@@ -146,7 +146,7 @@ func ClaimRelaysCounter(
 
 	incrementAmount := numRelays
 	labels := []metrics.Label{
-		{Name: "proof_stage", Value: claimProofStage.String()},
+		{Name: "claim_proof_stage", Value: claimProofStage.String()},
 	}
 	labels = appendMediumCardinalityLabels(labels, toMetricLabel("service_id", serviceId))
 	labels = appendHighCardinalityLabels(
@@ -184,7 +184,7 @@ func ClaimCounter(
 
 	incrementAmount := numClaims
 	labels := []metrics.Label{
-		{Name: "proof_stage", Value: claimProofStage.String()},
+		{Name: "claim_proof_stage", Value: claimProofStage.String()},
 	}
 
 	labels = appendMediumCardinalityLabels(labels, toMetricLabel("service_id", serviceId))
@@ -244,7 +244,7 @@ func RelayEMAGauge(relayEMA uint64, serviceId string) {
 // SessionSuppliersGauge sets a gauge which tracks the number of candidates available
 // for session suppliers at the given maxPerSession value.
 // The serviceId is used as a label to be able to track this information for each service.
-func SessionSuppliersGauge(candidates int, maxPerSession int, serviceId string) {
+func SessionSuppliersGauge(numCandidates int, maxPerSession int, serviceId string) {
 	if !isTelemetyEnabled() {
 		return
 	}
@@ -259,7 +259,7 @@ func SessionSuppliersGauge(candidates int, maxPerSession int, serviceId string) 
 
 	telemetry.SetGaugeWithLabels(
 		MetricNameKeys("session", "suppliers"),
-		float32(candidates),
+		float32(numCandidates),
 		labels,
 	)
 }
