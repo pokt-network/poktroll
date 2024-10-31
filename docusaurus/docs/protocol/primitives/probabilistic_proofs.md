@@ -1,54 +1,9 @@
 ---
-title: Probabilistic Proofs
-sidebar_position: 3
+title: Probabilistic Proofs (Shannon)
+sidebar_position: 5
 ---
 
-## Probabilistic Proofs <!-- omit in toc -->
-
-Probabilistic Proofs is a method to scale Pocket Network indefinitely.
-
-- [Abstract](#abstract)
-- [Problem Statement](#problem-statement)
-- [Example Scenario](#example-scenario)
-- [High Level Approach](#high-level-approach)
-- [Key Question](#key-question)
-- [Guarantees \& Expected Values](#guarantees--expected-values)
-- [Modeling an Attack](#modeling-an-attack)
-  - [Defining a Single (Bernoulli) Trial](#defining-a-single-bernoulli-trial)
-  - [Onchain Governance Parameters](#onchain-governance-parameters)
-  - [Dishonest Supplier: Calculating the Expected Value](#dishonest-supplier-calculating-the-expected-value)
-    - [Modelling a Dishonest Supplier's Strategy using a Geometric PDF (Probability Distribution Function)](#modelling-a-dishonest-suppliers-strategy-using-a-geometric-pdf-probability-distribution-function)
-    - [Expected Number of False Claims (Failures) Before Getting Caught (Success)](#expected-number-of-false-claims-failures-before-getting-caught-success)
-    - [Modelling a Dishonest Supplier's Strategy using a Geometric CDF (Cumulative Distribution Function)](#modelling-a-dishonest-suppliers-strategy-using-a-geometric-cdf-cumulative-distribution-function)
-    - [Total Rewards: Expected Value Calculation for Dishonest Supplier Before Penalty](#total-rewards-expected-value-calculation-for-dishonest-supplier-before-penalty)
-    - [Expected Penalty: Slashing amount for Dishonest Supplier](#expected-penalty-slashing-amount-for-dishonest-supplier)
-    - [Total Profit: Expected Value Calculation for Dishonest Supplier AFTER Penalty](#total-profit-expected-value-calculation-for-dishonest-supplier-after-penalty)
-  - [Honest Supplier: Calculating the Expected Value](#honest-supplier-calculating-the-expected-value)
-  - [Setting Parameters to Deter Dishonest Behavior](#setting-parameters-to-deter-dishonest-behavior)
-    - [Solving for Penalty `S`](#solving-for-penalty-s)
-  - [Example Calculation](#example-calculation)
-  - [Generalizing the Penalty Formula](#generalizing-the-penalty-formula)
-  - [Considering false Claim Variance](#considering-false-claim-variance)
-- [Crypto-economic Analysis \& Incentives](#crypto-economic-analysis--incentives)
-  - [Impact on Honest Suppliers](#impact-on-honest-suppliers)
-  - [Impact on Dishonest Suppliers](#impact-on-dishonest-suppliers)
-  - [Analogs between Model Parameters and onchain Governance Values](#analogs-between-model-parameters-and-onchain-governance-values)
-  - [Parameter Analog for Penalty (`S`)](#parameter-analog-for-penalty-s)
-  - [Parameter Analog for Reward (`R`)](#parameter-analog-for-reward-r)
-  - [Considerations during Parameter Adjustment](#considerations-during-parameter-adjustment)
-    - [Selecting Optimal `p` and `S`](#selecting-optimal-p-and-s)
-    - [Considerations for `ProofRequirementThreshold`](#considerations-for-proofrequirementthreshold)
-      - [Modelling `ProofRequirementThreshold`](#modelling-proofrequirementthreshold)
-      - [Normal Distribution](#normal-distribution)
-      - [Non-Normal Distribution](#non-normal-distribution)
-    - [Considerations for `ProofRequestProbability` (`p`)](#considerations-for-proofrequestprobability-p)
-      - [Maximizing `Pr(X<=k)` to ensure `k or less` failures (Supplier escapes without penalty)](#maximizing-prxk-to-ensure-k-or-less-failures-supplier-escapes-without-penalty)
-- [Conclusions for Modelling](#conclusions-for-modelling)
-- [Morse Based Value Selection](#morse-based-value-selection)
-  - [Selecting `ProofRequirementThreshold`](#selecting-proofrequirementthreshold)
-  - [Calculating `p`: `ProofRequestProbability`](#calculating-p-proofrequestprobability)
-  - [Calculating `S`: `ProofMissingPenalty`](#calculating-s-proofmissingpenalty)
-- [Future Work](#future-work)
+_tl;dr Probabilistic Proofs is a method to scale Pocket Network indefinitely._
 
 ## Abstract
 

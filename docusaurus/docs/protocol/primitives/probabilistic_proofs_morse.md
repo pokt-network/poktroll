@@ -1,10 +1,14 @@
-# Probabilistic Proofs <!-- omit in toc -->
+---
+title: Probabilistic Proofs (Morse)
+sidebar_position: 6
+---
 
-<p align="center">
-    @olshansk - Daniel Olshansky<br>
-    @RawthiL - Ramiro Rodríguez Colmeiro<br>
-    Feb 2023
-</p>
+:::warning
+
+This document was copied over from the [pocket-core](https://github.com/pokt-network/pocket-core)
+repo for reference until Probabilistic Proofs are in production. Please see [Probabilisti Proofs (Shannon)](./probabilistic_proofs.md) as the primary source of truth.
+
+:::
 
 This is a specification & proposal that will be submitted to [forum.pokt.network](https://forum.pokt.network) after peer-review.
 

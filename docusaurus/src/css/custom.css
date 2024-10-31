@@ -4,6 +4,8 @@
  * work well for content-centric websites.
  */
 
+@import "katex/dist/katex.min.css";
+
 :root {
   --ifm-color-primary: #1f2327;
   --ifm-color-primary-dark: #1c2023;
@@ -41,9 +43,10 @@
   --ifm-navbar-height: 81px;
 
   /* Font Family */
-  --ifm-font-family-base: "Inter", system-ui, -apple-system, Segoe UI, Roboto, Ubuntu,
-    Cantarell, Noto Sans, sans-serif, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial,
-    sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  --ifm-font-family-base: "Inter", system-ui, -apple-system, Segoe UI, Roboto,
+    Ubuntu, Cantarell, Noto Sans, sans-serif, BlinkMacSystemFont, "Segoe UI",
+    Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+    "Segoe UI Symbol";
 
   /* Search highlight color */
   --search-local-highlight-color: var(--mantine-primary-color-filled);
@@ -187,7 +190,8 @@ nav.menu li > .menu__list-item-collapsible .menu__link {
 
 /* docs accordion */
 .docs-wrapper .mantine-Accordion-item {
-  border-left: calc(0.0625rem * var(--mantine-scale)) solid var(--_item-border-color);
+  border-left: calc(0.0625rem * var(--mantine-scale)) solid
+    var(--_item-border-color);
   border-bottom: none;
 }
 
