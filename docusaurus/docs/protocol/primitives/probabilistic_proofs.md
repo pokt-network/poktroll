@@ -7,6 +7,7 @@ sidebar_position: 3
 
 Probabilistic Proofs is a method to scale Pocket Network indefinitely.
 
+- [Abstract](#abstract)
 - [Problem Statement](#problem-statement)
 - [Example Scenario](#example-scenario)
 - [High Level Approach](#high-level-approach)
@@ -16,8 +17,9 @@ Probabilistic Proofs is a method to scale Pocket Network indefinitely.
   - [Defining a Single (Bernoulli) Trial](#defining-a-single-bernoulli-trial)
   - [Onchain Governance Parameters](#onchain-governance-parameters)
   - [Dishonest Supplier: Calculating the Expected Value](#dishonest-supplier-calculating-the-expected-value)
-    - [Modelling a Dishonest Supplier's Strategy using a Geometric Distribution](#modelling-a-dishonest-suppliers-strategy-using-a-geometric-distribution)
+    - [Modelling a Dishonest Supplier's Strategy using a Geometric PDF (Probability Distribution Function)](#modelling-a-dishonest-suppliers-strategy-using-a-geometric-pdf-probability-distribution-function)
     - [Expected Number of False Claims (Failures) Before Getting Caught (Success)](#expected-number-of-false-claims-failures-before-getting-caught-success)
+    - [Modelling a Dishonest Supplier's Strategy using a Geometric CDF (Cumulative Distribution Function)](#modelling-a-dishonest-suppliers-strategy-using-a-geometric-cdf-cumulative-distribution-function)
     - [Total Rewards: Expected Value Calculation for Dishonest Supplier Before Penalty](#total-rewards-expected-value-calculation-for-dishonest-supplier-before-penalty)
     - [Expected Penalty: Slashing amount for Dishonest Supplier](#expected-penalty-slashing-amount-for-dishonest-supplier)
     - [Total Profit: Expected Value Calculation for Dishonest Supplier AFTER Penalty](#total-profit-expected-value-calculation-for-dishonest-supplier-after-penalty)
@@ -40,7 +42,6 @@ Probabilistic Proofs is a method to scale Pocket Network indefinitely.
       - [Normal Distribution](#normal-distribution)
       - [Non-Normal Distribution](#non-normal-distribution)
     - [Considerations for `ProofRequestProbability` (`p`)](#considerations-for-proofrequestprobability-p)
-      - [Geometric CDF vs Geometric PDF when revisiting value `p`](#geometric-cdf-vs-geometric-pdf-when-revisiting-value-p)
       - [Maximizing `Pr(X<=k)` to ensure `k or less` failures (Supplier escapes without penalty)](#maximizing-prxk-to-ensure-k-or-less-failures-supplier-escapes-without-penalty)
 - [Conclusions for Modelling](#conclusions-for-modelling)
 - [Morse Based Value Selection](#morse-based-value-selection)
@@ -48,10 +49,31 @@ Probabilistic Proofs is a method to scale Pocket Network indefinitely.
   - [Calculating `p`: `ProofRequestProbability`](#calculating-p-proofrequestprobability)
   - [Calculating `S`: `ProofMissingPenalty`](#calculating-s-proofmissingpenalty)
 - [Future Work](#future-work)
-  - [](#)
-  - [Onchain Closed Feedback Loop](#onchain-closed-feedback-loop)
-  - [Reviewing External Literature](#reviewing-external-literature)
-- [References](#references)
+
+## Abstract
+
+This document explains and walks through the mechanism of Probabilistic Proofs needed
+to scale Pocket Network indefinitely. Precisely, it'll allow an unlimited number of
+sessions that pair (Applications, Suppliers, Services) by requiring a single Claim
+for each such session, but only require a proof probabilistically if it is below a
+specific threshold.
+
+External stakeholders (i.e. DAO/Foundation) need to be involved in adjusting the
+`ProofRequirementThreshold` by statistically analyzing onchain data, along with selecting
+an appropriate `ProofRequestProbability` that balances scalability and security. These values
+lead to calculating expected rewards and penalties of honest and dishonest Suppliers respectively,
+which should drive the decision for what `SupplierMinStake` should be. Reasonably
+selected values can be chosen to easily scale the network by `100x` without compromising
+security.
+
+The results show that choosing a value of `20 POKT` for `ProofRequirementThreshold`,
+the `95th percentile` of all Claims, along with a `ProofRequestProbability` of `0.01`,
+can enable `100x` scalability of the network if the `Slashing penalty` for invalid/missing
+proofs is set to `2,000 POKT`. As long as the minimum required stake for Suppliers exceeds
+this value, the funds will be available for slashing staking is set to `2,000 POKT`.
+
+Under future work, we look at a potential attack vector that still needs to be considered,
+along with further research on the topic.
 
 ## Problem Statement
 
@@ -209,7 +231,7 @@ We note that `R` is variable and that `SupplierMinStake` is not taken into accou
 As will be demonstrated by the end of this document:
 
 - Reward per Claim (`R`) will be equal to the `ProofRequirementThreshold` (POKT)
-- Penalty (`S`) will be equal to the `SupplierMinStake` (in POKT)
+- Penalty (`S`) will be less than or equal to the `SupplierMinStake` (in POKT)
 
 ### Dishonest Supplier: Calculating the Expected Value
 
@@ -218,7 +240,7 @@ The dishonest Supplier's strategy:
 - Submit false Claims repeatedly, hoping not to be selected for Proof submission.
 - Accept that eventually, they will be caught and penalized.
 
-#### Modelling a Dishonest Supplier's Strategy using a Geometric Distribution
+#### Modelling a Dishonest Supplier's Strategy using a Geometric PDF (Probability Distribution Function)
 
 The number of successful false Claims before getting caught follows a [Geometric distribution](https://en.wikipedia.org/wiki/Geometric_distribution):
 
@@ -236,6 +258,29 @@ Recall:
 
 - **Failure**: The network does not catch a dishonest Supplier
 - **Success**: The network catches a dishonest Supplier
+
+#### Modelling a Dishonest Supplier's Strategy using a Geometric CDF (Cumulative Distribution Function)
+
+Above, we have been tracking the probability that `Pr(X=k+1)`, the probability
+of `k` failures (Supplier escapes without penalty) until a single success (Supplier)
+is penalized. This can be modeled using a Geometric PDF (Probability Distribution Function).
+
+In practice, we need to track the likelihood of `k or less` failures `Pr(X<=k)`,
+until a single success. This can be modeled using a Geometric CDF.
+
+To simplify the math, we'll be using the Expected Value of a Geometric PDF
+due to its [simpler proof formulation](https://en.wikipedia.org/wiki/Geometric_distribution#Proof_of_expected_value), guaranteeing the results be **AT LEAST**
+as secure when compared to the Geometric CDF.
+
+Visual intuition of the two can be seen below:
+
+![Geometric CDF for Different p Values](./geometric_pdf_vs_cdf.png)
+
+:::tip
+
+You can generate the graph above with `make geometric_pdf_vs_cdf.py`
+
+:::
 
 #### Total Rewards: Expected Value Calculation for Dishonest Supplier Before Penalty
 
@@ -258,7 +303,7 @@ $$ E[\text{Total Profit}] = E[\text{Total Rewards}] - S = R \cdot \frac{q}{p} - 
 
 - **Expected Rewards per Claim**: $$ E[\text{Reward per Claim}] = R $$
 - **No Penalties**: Since the honest Supplier always provides valid Proofs when required, they avoid penalties.
-- **Expected Profit for Honest Supplier**:
+- **Expected Profit for Honest Supplier (1 Claim)**:
 
   $$ E[\text{Total Profit}] = R $$
 
@@ -454,35 +499,7 @@ The number of relays in the network scales inversely to `ProofRequestProbability
 - `ProofRequestProbability` = 0.25 -> 4x scale
 - `ProofRequestProbability` = 0.1 -> 10x scale
 - `ProofRequestProbability` = 0.01 -> 100x scale
-
-##### Geometric CDF vs Geometric PDF when revisiting value `p`
-
-Up until now, we have been tracking the probability that `Pr(X=k)`, the probability
-of `k` failures (Supplier escapes without penalty) until a single success (Supplier)
-is penalized. This can be modeled using a Geometric PDF (Probability Distribution Function).
-
-$$ p = ProofRequestProbability $$
-$$ q = 1 - p $$
-$$ Pr(X=k) = (1-p)^{k-1}p $$
-$$ k = \frac{ln(\frac{Pr(X=k)}{p})}{ln(1-p)} + 1 $$
-
-However, instead, we need to track the likelihood of `k or less` failures `Pr(X<=k)`,
-until a single success. This can be modeled using a Geometric CDF (Cumulative Distribution Function).
-
-$$ x ∈ ℝ ∣ 0 ≤ x < 1 $$
-$$ p = ProofRequestProbability $$
-$$ P(X<=k) = 1 - (1 - p)^{k} $$
-$$ k = \frac{log(1 - P(X<=k))}{log(1 - p)} $$
-
-Visual intuition of the two can be seen below:
-
-![Geometric CDF for Different p Values](./geometric_pdf_vs_cdf.png)
-
-:::tip
-
-You can generate the graph above with `make geometric_pdf_vs_cdf.py`
-
-:::
+- `ProofRequestProbability` = 0.001 -> 1000x scale
 
 ##### Maximizing `Pr(X<=k)` to ensure `k or less` failures (Supplier escapes without penalty)
 
@@ -496,9 +513,9 @@ perspective of what the probabilities of success and failure are.
 
 By modeling the attack using a geometric distributions and calculating expected values, we can:
 
-- Determine `ProofRequirementThreshold` using statical onchain data
-- Manually adjust `ProofRequestProbability = p` to adjust scalability
-- Compute `SupplierMinStake = S` to deter dishonest behavior
+- Determine `R = ProofRequirementThreshold` using statical onchain data
+- Manually adjust `p = ProofRequestProbability` to adjust scalability
+- Compute `S ≤ SupplierMinStake` to deter dishonest behavior
 - Determine the necessary penalty `S` to deter dishonest behavior.
 - Ensure that honest Suppliers remain profitable while dishonest Suppliers face negative expected profits.
 
@@ -515,63 +532,28 @@ Choose `R = 20` since it is greater than `p95` of all Claims collected in Morse.
 See the original proposal from Morse available in [probabilistic_proofs_morse.md](./probabilistic_proofs_morse.md)
 and [Pocket_Network_Morse_Probabilistic_Proofs.ipynb](./Pocket_Network_Morse_Probabilistic_Proofs.ipynb) for supporting data.
 
+$$ R = 20 $$
+
 ### Calculating `p`: `ProofRequestProbability`
 
-Choose `p = 0.05` to ensure high scalability.
+Choose `p = 0.01` to ensure high scalability.
 
-Choose `Pr(X<=k) = 0.99` to ensure that `99%` of the time, a dishonest Supplier will be penalized.
-
-$$ k = \frac{log(1 - P(X<=k))}{log(1 - 0.05)} $$
-$$ k = \frac{log(1 - 0.99)}{log(1 - 0.05)} $$
-$$ k ≈ 90 $$
+$$ E[K] = \frac{q}{p} = \frac{0.99}{0.01} = 99 $$
 
 ### Calculating `S`: `ProofMissingPenalty`
 
-1. **Expected Number of False Claims Before Getting Caught**:
-
-   $$ E[K] = \frac{q}{p} = \frac{0.95}{0.05} = 19 $$
-
-2. **Expected Total Rewards**:
-
-   $$ E[\text{Total Rewards}] = R \cdot E[K] = 20 \cdot 19 = 380 $$
-
-3. **Penalty**:
-
-   $$ S = R \cdot \left( \frac{1 - p}{p} \right) = 10 \cdot \left( \frac{0.8}{0.2} \right) = 40 $$
-
-4. **Expected Profit**:
-
-   $$ E[\text{Total Profit}] = E[\text{Total Rewards}] - S = 40 - 40 = 0 $$
-
-S=R⋅(
-p
-1−p
-​
-)
+$$ S = R \cdot E[K] = 20 \cdot 99 = 1980 ≈ 2,000 $$
 
 ## Future Work
 
-###
+1. **Attack Vector**: Account for the fact that a Supplier could be in multiple sessions at the same, so either:
 
-### Onchain Closed Feedback Loop
+   - The number of sessions a supplier is in will need to be limited
+   - The minimum stake amount will need to be significantly higher than the penalty to enable slashing across multiple sessions at once
 
-### Reviewing External Literature
+2. **Optimal Reward Value**: Evaluating onchain Shannon data to determine the optimal value for `R`
+3. **Closed Feedback Look**: Having `p` dynamically adjust onchain as a function of onchain data without intervention from the DAO / PNF (i.e. )
+4. Reviewing, comparing & contributing to **external literature** such as:
 
-https://research.facebook.com/publications/distributed-auditing-proofs-of-liabilities/
-https://eprint.iacr.org/2020/1568.pdf
-
-## References
-
-`ProofRequestProbability (p)` is selected as `0.25` to enable scaling the network by `4x`.
-
-`BurnForFailedClaimSubmission` - Should be set to `k * ProofRequirementThreshold` to deter `k` failures or less.
-
-`Pr(X<=k)` must be as high as possible while keeping `k` reasonably low since it'll impact the penalty for honest but faulty servicers that fail to submit a Claim within the expiration window. We are selecting `Pr(X<=k) = 0.99`
-
-$$ k = \frac{log(1 - P(X<=k))}{log(1 - p)} $$
-
-$$ k = \frac{log(1 - 0.99)}{log(1 - 0.25)} $$
-
-$$ k ≈ 16 $$
-
-Selecting `k = 16` implies that `99%` of the time, an attacker will get a penalty of `BurnForFailedClaimSubmission`, making it not worthwhile to take the risk.
+   - https://research.facebook.com/publications/distributed-auditing-proofs-of-liabilities/
+   - https://eprint.iacr.org/2020/1568.pdf
