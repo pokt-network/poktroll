@@ -158,9 +158,10 @@ func (k msgServer) finalizeCreateClaimTelemetry(session *sessiontypes.Session, m
 		serviceId := session.Header.ServiceId
 		applicationAddress := session.Header.ApplicationAddress
 		supplierOperatorAddress := msg.GetSupplierOperatorAddress()
+		claimProofStage := types.ClaimProofStage_CLAIMED.String()
 
-		telemetry.ClaimCounter(types.ClaimProofStage_CLAIMED, 1, serviceId, applicationAddress, supplierOperatorAddress, err)
-		telemetry.ClaimRelaysCounter(types.ClaimProofStage_CLAIMED, numRelays, serviceId, applicationAddress, supplierOperatorAddress, err)
-		telemetry.ClaimComputeUnitsCounter(types.ClaimProofStage_CLAIMED, numClaimComputeUnits, serviceId, applicationAddress, supplierOperatorAddress, err)
+		telemetry.ClaimCounter(claimProofStage, 1, serviceId, applicationAddress, supplierOperatorAddress, err)
+		telemetry.ClaimRelaysCounter(claimProofStage, numRelays, serviceId, applicationAddress, supplierOperatorAddress, err)
+		telemetry.ClaimComputeUnitsCounter(claimProofStage, numClaimComputeUnits, serviceId, applicationAddress, supplierOperatorAddress, err)
 	}
 }

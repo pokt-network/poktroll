@@ -10,8 +10,6 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/telemetry"
 	"github.com/hashicorp/go-metrics"
-
-	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 )
 
 const (
@@ -57,7 +55,7 @@ func EventSuccessCounter(
 // probabilistic selection, above compute unit threshold).
 // If err is not nil, the counter is not incremented but Prometheus will ingest this event.
 func ProofRequirementCounter(
-	reason prooftypes.ProofRequirementReason,
+	reason string,
 	serviceId string,
 	applicationAddress string,
 	supplierOperatorAddress string,
@@ -69,7 +67,7 @@ func ProofRequirementCounter(
 
 	incrementAmount := 1
 	labels := []metrics.Label{
-		{Name: "reason", Value: reason.String()},
+		{Name: "reason", Value: reason},
 	}
 	labels = appendMediumCardinalityLabels(labels, toMetricLabel("service_id", serviceId))
 	labels = appendHighCardinalityLabels(
@@ -94,7 +92,7 @@ func ProofRequirementCounter(
 // which are represented by on-chain claims at the given ClaimProofStage.
 // If err is not nil, the counter is not incremented but Prometheus will ingest this event.
 func ClaimComputeUnitsCounter(
-	claimProofStage prooftypes.ClaimProofStage,
+	claimProofStage string,
 	numComputeUnits uint64,
 	serviceId string,
 	applicationAddress string,
@@ -107,7 +105,7 @@ func ClaimComputeUnitsCounter(
 
 	incrementAmount := numComputeUnits
 	labels := []metrics.Label{
-		{Name: "claim_proof_stage", Value: claimProofStage.String()},
+		{Name: "claim_proof_stage", Value: claimProofStage},
 	}
 	labels = appendMediumCardinalityLabels(labels, toMetricLabel("service_id", serviceId))
 	labels = appendHighCardinalityLabels(
@@ -133,7 +131,7 @@ func ClaimComputeUnitsCounter(
 // If err is not nil, the counter is not incremented and an "error" label is added
 // with the error's message. I.e., Prometheus will ingest this event.
 func ClaimRelaysCounter(
-	claimProofStage prooftypes.ClaimProofStage,
+	claimProofStage string,
 	numRelays uint64,
 	serviceId string,
 	applicationAddress string,
@@ -146,7 +144,7 @@ func ClaimRelaysCounter(
 
 	incrementAmount := numRelays
 	labels := []metrics.Label{
-		{Name: "claim_proof_stage", Value: claimProofStage.String()},
+		{Name: "claim_proof_stage", Value: claimProofStage},
 	}
 	labels = appendMediumCardinalityLabels(labels, toMetricLabel("service_id", serviceId))
 	labels = appendHighCardinalityLabels(
@@ -171,7 +169,7 @@ func ClaimRelaysCounter(
 // ClaimProofStage.
 // If err is not nil, the counter is not incremented but Prometheus will ingest this event.
 func ClaimCounter(
-	claimProofStage prooftypes.ClaimProofStage,
+	claimProofStage string,
 	numClaims uint64,
 	serviceId string,
 	applicationAddress string,
@@ -184,7 +182,7 @@ func ClaimCounter(
 
 	incrementAmount := numClaims
 	labels := []metrics.Label{
-		{Name: "claim_proof_stage", Value: claimProofStage.String()},
+		{Name: "claim_proof_stage", Value: claimProofStage},
 	}
 
 	labels = appendMediumCardinalityLabels(labels, toMetricLabel("service_id", serviceId))

@@ -488,7 +488,7 @@ func (k Keeper) finalizeTelemetry(
 	numClaimComputeUnits uint64,
 	err error,
 ) {
-	telemetry.ClaimCounter(claimProofStage, 1, serviceId, applicationAddress, supplierOperatorAddress, err)
-	telemetry.ClaimRelaysCounter(claimProofStage, numRelays, serviceId, applicationAddress, supplierOperatorAddress, err)
-	telemetry.ClaimComputeUnitsCounter(claimProofStage, numClaimComputeUnits, serviceId, applicationAddress, supplierOperatorAddress, err)
+	telemetry.ClaimCounter(claimProofStage.String(), 1, serviceId, applicationAddress, supplierOperatorAddress, err)
+	telemetry.ClaimRelaysCounter(claimProofStage.String(), numRelays, serviceId, applicationAddress, supplierOperatorAddress, err)
+	telemetry.ClaimComputeUnitsCounter(claimProofStage.String(), numClaimComputeUnits, serviceId, applicationAddress, supplierOperatorAddress, err)
 }
