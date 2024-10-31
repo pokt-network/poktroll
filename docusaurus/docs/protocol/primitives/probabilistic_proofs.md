@@ -73,7 +73,7 @@ A very simple (conservative) scenario would result in `12GB` of disk growth per 
 
 This discounts CPU usage needed to verify the proofs.
 
-### Solution
+### Approach
 
 _tl;dr Require a claim for every (App, Supplier, Service) tuple, but only require a proof for a subset of these claims and slash Suppliers that fail to provide a proof when needed._
 
@@ -116,6 +116,90 @@ flowchart TD
     classDef decision fill:#B39CD0,stroke:#5D3FD3,color:#000;
     class ISCAT,ISPPR,ISPA decision;
 ```
+
+## Key Question
+
+What values need to be selected to deter a Supplier from submitting a false claim? How can this be modelled?
+
+## Guarantees & Expected Values
+
+Pocket Network's tokenomics DO NOT provide a 100% guarantee against gaming the system.
+This is similar to how Data Availability (DA) layers DO NOT provide a 100% guarantee
+that the data is available.
+
+Rather, there is a tradeoff of what the network's security guarantees are in exchange
+for scalability, cost, user experience, and acceptable gamability.
+
+Our goal is to model the expected value of an honest and dishonest supplier and
+have levers in place to adjust an acceptable gaming risk.
+
+A Supplier's balance can changed in the following ways:
+
+1. Earn rewards for valid Claims w/ Proofs; proof required
+2. Earn rewards for valid Claims w/o Proofs; proof not required
+3. **Earn rewards for invalid Claims w/o Proofs; proof not required**
+4. Slash stake for Claims w/ invalid Proofs; proof required
+5. Slash stake for Claims w/ missing Proofs; proof required
+
+The goal of Probabilistic Proofs is to define an acceptable risk for (3)
+such that the expected value (i.e. balance) of the Supplier is lower even
+if (1) and (2)
+
+TODO: IMPROVE THIS.
+
+## Modelling an Attack
+
+### Defining a Trial - Bernoulli Trial - A False Claim that gets caught
+
+A [Bernoulli probability distribution](https://en.wikipedia.org/wiki/Bernoulli_distribution)
+is used as the foundation of modelling an attack.
+
+Each (Claim, Proof) pair can be treated as an independent Bernoulli Trial.
+
+If `Claim.ComputeUnits > Gov.ProofRequirementThreshold`, the model is _short-circuited_ and is therefore outside the sample space for this definition.
+
+Defining Bernoulli Trial success & failure:
+
+- **Success**: False/invalid/missing Claim that penalizes the Supplier. For example:
+  - A false Claim that does not have an associated Proof
+  - A false Claim that has an associated invalid Proof
+  - A valid Claim that fails to submit a Proof on time
+- **Failure**: All other outcomes. For example:
+  - Supplier submits a false Claim and gets away with it
+  - Supplier submits a true Claim and is required prove it
+  - Supplier submits a true Claim and is not required prove it
+  - Supplier submits a true Claim and fails to prove it
+
+### Modelling k Claims that do not require a proof
+
+Successive Proof - Geometric Probability Distribution Function
+
+The foundation/DAO is responsible for selection a value `p` (ProofRequestProbability)
+that represents
+
+$$ p = ProofRequestProbability $$
+
+$$ q = 1 - p $$
+
+$$ Pr(X=k) = (1-p)^{k-1}p $$
+
+$$ k = \frac{ln(\frac{Pr(X=k)}{p})}{ln(1-p)} + 1 $$
+
+TODO: ADD GRAPH
+
+TODO_FUTURE:
+
+### Geometric CDF
+
+$$ x ∈ ℝ ∣ 0 ≤ x < 1 $$
+
+$$ p = ProofRequestProbability $$
+
+$$ P(X<=k) = 1 - (1 - p)^{k} $$
+
+$$ k = \frac{log(1 - P(X<=k))}{log(1 - p)} $$
+
+TODO: ADD GRAPH
 
 ## Crypto-economic Analysis & Incentives
 
