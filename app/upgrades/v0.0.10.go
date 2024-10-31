@@ -9,6 +9,7 @@ import (
 	cosmosTypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/pokt-network/poktroll/app/keepers"
+	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 )
 
 // Upgrade_0_0_10 is the upgrade handler for v0.0.10 Alpha TestNet upgrade
@@ -60,11 +61,18 @@ var Upgrade_0_0_10 = Upgrade{
 			//
 			// !!!! THE UPGRADE CURRENTLY BREAKS HERE !!!!
 			// https://gist.github.com/okdas/535bc3c0282483fef27454c70d889aa6
-			proofParams := keepers.ProofKeeper.GetParams(ctx)
+			// proofParams := keepers.ProofKeeper.GetParams(ctx)
+			// Need to construct params manually due to protobuf type changes:
 			newProofRequirementThreshold := cosmosTypes.NewCoin("upokt", math.NewInt(20000000))
 			newProofMissingPenalty := cosmosTypes.NewCoin("upokt", math.NewInt(320000000))
-			proofParams.ProofRequirementThreshold = &newProofRequirementThreshold
-			proofParams.ProofMissingPenalty = &newProofMissingPenalty
+			newProofSubmissionFee := cosmosTypes.NewCoin("upokt", math.NewInt(1000000))
+			proofParams := prooftypes.NewParams(
+				0.25,
+				&newProofRequirementThreshold,
+				&newProofMissingPenalty,
+				&newProofSubmissionFee,
+			)
+
 			err = keepers.ProofKeeper.SetParams(ctx, proofParams)
 			if err != nil {
 				return vm, err
