@@ -22,7 +22,7 @@ var Upgrade_0_0_10 = Upgrade{
 		return func(ctx context.Context, plan upgradetypes.Plan, vm module.VersionMap) (module.VersionMap, error) {
 			//
 			// Add missing parameters and changes from `config.yml`
-			// https://github.com/pokt-network/poktroll/compare/v0.0.9-3...96a9d29#diff-5a7db8dbadaef1b1b5a8738ba70b5ffac82b8e243732154165911284e08aad4b
+			// https://github.com/pokt-network/poktroll/compare/v0.0.9-3...ff76430
 			//
 
 			// Add application min stake
@@ -80,7 +80,7 @@ var Upgrade_0_0_10 = Upgrade{
 
 			//
 			// Add new authz authorizations:
-			// https://github.com/pokt-network/poktroll/compare/v0.0.9-3...96a9d29#diff-1698f4aae5353dd42a159c9dad0eca886805d5dc792a55a14f785f3b5ea767ee
+			// https://github.com/pokt-network/poktroll/compare/v0.0.9-3...ff76430
 			//
 
 			// Validate before after with:
@@ -103,8 +103,10 @@ var Upgrade_0_0_10 = Upgrade{
 				}
 			}
 
-			// Seems like RelayMiningDifficulty have been moved from `tokenomics` to `services`. Do we need to move
-			// and delete old RelayMiningDifficulty data? TODO if so.
+			// Seems like RelayMiningDifficulty have been moved from `tokenomics` to `services`.
+			// In the ideal scenario, we should have migrated the data before removing query/msg types in `tokenomics`
+			// module. It would be hard to do that now. We know that new RelayMiningDifficulty will be created,
+			// we can skip this step now.
 
 			return mm.RunMigrations(ctx, configurator, vm)
 		}
