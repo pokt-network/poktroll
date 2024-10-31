@@ -16,6 +16,7 @@ import (
 	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/proof/types"
 	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -47,16 +48,6 @@ func (k msgServer) SubmitProof(
 		numClaimComputeUnits uint64
 	)
 
-	// Defer telemetry calls so that they reference the final values the relevant variables.
-	defer func() {
-		// Only increment these metrics counters if handling a new claim.
-		if !isExistingProof {
-			telemetry.ClaimCounter(types.ClaimProofStage_PROVEN, 1, err)
-			telemetry.ClaimRelaysCounter(types.ClaimProofStage_PROVEN, numRelays, err)
-			telemetry.ClaimComputeUnitsCounter(types.ClaimProofStage_PROVEN, numClaimComputeUnits, err)
-		}
-	}()
-
 	logger := k.Logger().With("method", "SubmitProof")
 	sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 	logger.Info("About to start submitting proof")
@@ -72,6 +63,9 @@ func (k msgServer) SubmitProof(
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
+
+	// Defer telemetry calls so that they reference the final values the relevant variables.
+	defer k.finalizeSubmitProofTelemetry(session, msg, isExistingProof, numRelays, numClaimComputeUnits, err)
 
 	if err = k.deductProofSubmissionFee(ctx, msg.GetSupplierOperatorAddress()); err != nil {
 		logger.Error(fmt.Sprintf("failed to deduct proof submission fee: %v", err))
@@ -219,9 +213,7 @@ func (k Keeper) ProofRequirementForClaim(ctx context.Context, claim *types.Claim
 	var requirementReason = types.ProofRequirementReason_NOT_REQUIRED
 
 	// Defer telemetry calls so that they reference the final values the relevant variables.
-	defer func() {
-		telemetry.ProofRequirementCounter(requirementReason, err)
-	}()
+	defer k.finalizeProofRequirementTelemetry(requirementReason, claim, err)
 
 	proofParams := k.GetParams(ctx)
 	sharedParams := k.sharedKeeper.GetParams(ctx)
@@ -321,4 +313,31 @@ func (k Keeper) getProofRequirementSeedBlockHash(
 	// The proof requirement seed block is the last block of the session, and it is
 	// the block that is before the earliest block at which a proof can be committed.
 	return k.sessionKeeper.GetBlockHash(ctx, earliestSupplierProofCommitHeight-1), nil
+}
+
+// finalizeSubmitProofTelemetry finalizes telemetry updates for SubmitProof, incrementing counters as needed.
+// Meant to run deferred.
+func (k msgServer) finalizeSubmitProofTelemetry(session *sessiontypes.Session, msg *types.MsgSubmitProof, isExistingProof bool, numRelays, numClaimComputeUnits uint64, err error) {
+	if !isExistingProof {
+		serviceId := session.Header.ServiceId
+		applicationAddress := session.Header.ApplicationAddress
+		supplierOperatorAddress := msg.GetSupplierOperatorAddress()
+		claimProofStage := types.ClaimProofStage_PROVEN.String()
+
+		telemetry.ClaimCounter(claimProofStage, 1, serviceId, applicationAddress, supplierOperatorAddress, err)
+		telemetry.ClaimRelaysCounter(claimProofStage, numRelays, serviceId, applicationAddress, supplierOperatorAddress, err)
+		telemetry.ClaimComputeUnitsCounter(claimProofStage, numClaimComputeUnits, serviceId, applicationAddress, supplierOperatorAddress, err)
+	}
+}
+
+// finalizeProofRequirementTelemetry finalizes telemetry updates for proof requirements.
+// Meant to run deferred.
+func (k Keeper) finalizeProofRequirementTelemetry(requirementReason types.ProofRequirementReason, claim *types.Claim, err error) {
+	telemetry.ProofRequirementCounter(
+		requirementReason.String(),
+		claim.SessionHeader.ServiceId,
+		claim.SessionHeader.ApplicationAddress,
+		claim.SupplierOperatorAddress,
+		err,
+	)
 }
