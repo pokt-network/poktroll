@@ -105,7 +105,7 @@ func (k Keeper) validateClaimWindow(
 	currentHeight := sdkCtx.BlockHeight()
 
 	// Ensure the current block height is ON or AFTER the supplier's earliest claim commit height.
-	// TODO_BLOCKER(@bryanchriswhite, @red-0ne): Enforce an additional "latest
+	// TODO_MAINNET(@bryanchriswhite, @red-0ne): Enforce an additional "latest
 	// supplier claim/proof commit offset" such that all suppliers have the same
 	// "supplier claim/proof commit window" size.
 	// See: https://github.com/pokt-network/poktroll/pull/620/files#r1656548473.

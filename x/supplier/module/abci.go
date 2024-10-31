@@ -8,7 +8,7 @@ import (
 
 // EndBlocker is called every block and handles supplier related updates.
 func EndBlocker(ctx sdk.Context, k keeper.Keeper) error {
-	// TODO_IMPROVE(@red-0ne): Add logs and/or telemetry on the number of unbonded suppliers.
+	// TODO_IMPROVE: Add logs and/or telemetry on the number of unbonded suppliers.
 	if err := k.EndBlockerUnbondSuppliers(ctx); err != nil {
 		return err
 	}

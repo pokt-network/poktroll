@@ -24,7 +24,7 @@ var (
 
 const (
 	opWeightMsgAddService = "op_weight_msg_add_service"
-	// TODO: Determine the simulation weight value
+	// TODO_TECHDEBT: Determine the simulation weight value
 	defaultWeightMsgAddService int = 100
 
 	// this line is used by starport scaffolding # simapp/module/const

@@ -12,11 +12,11 @@ var (
 
 	KeyMaxDelegatedGateways   = []byte("MaxDelegatedGateways")
 	ParamMaxDelegatedGateways = "max_delegated_gateways"
-	// TODO_MAINNET: Determine the default value
+	// TODO_MAINNET(@olshansk): Determine the default value
 	DefaultMaxDelegatedGateways uint64 = 7
 	KeyMinStake                        = []byte("MinStake")
 	ParamMinStake                      = "min_stake"
-	// TODO_MAINNET: Determine the default value
+	// TODO_MAINNET(@olshansk): Determine the default value
 	DefaultMinStake = cosmostypes.NewInt64Coin(volatile.DenomuPOKT, 1000000) // 1 POKT
 )
 

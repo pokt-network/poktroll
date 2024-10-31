@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"context"
 	"fmt"
 
 	"cosmossdk.io/math"
@@ -8,6 +9,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/query"
 
 	"github.com/pokt-network/poktroll/app/volatile"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -31,6 +33,15 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 	logger := k.Logger().With("method", "SettlePendingClaims")
 
 	expiringClaims, err := k.getExpiringClaims(ctx)
+	if err != nil {
+		return settledResult, expiredResult, err
+	}
+
+	// Capture the applications initial stake which will be used to calculate the
+	// max share any claim could burn from the application stake.
+	// This ensures that each supplier can calculate the maximum amount it can take
+	// from an application's stake.
+	applicationInitialStakeMap, err := k.getApplicationInitialStakeMap(ctx, expiringClaims)
 	if err != nil {
 		return settledResult, expiredResult, err
 	}
@@ -128,7 +139,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 
 			// If the proof is missing or invalid -> expire it
 			if expirationReason != tokenomicstypes.ClaimExpirationReason_EXPIRATION_REASON_UNSPECIFIED {
-				// TODO_BETA(@red-0ne, @olshansk): Slash the supplier in proportion
+				// TODO_BETA(@red-0ne): Slash the supplier in proportion
 				// to their stake. Consider allowing suppliers to RemoveClaim via a new
 				// message in case it was sent by accident
 
@@ -176,8 +187,11 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 		// 1. The claim does not require a proof.
 		// 2. The claim requires a proof and a valid proof was found.
 
+		appAddress := claim.GetSessionHeader().GetApplicationAddress()
+		applicationInitialStake := applicationInitialStakeMap[appAddress]
+
 		// Manage the mint & burn accounting for the claim.
-		if err = k.ProcessTokenLogicModules(ctx, &claim); err != nil {
+		if err = k.ProcessTokenLogicModules(ctx, &claim, applicationInitialStake); err != nil {
 			logger.Error(fmt.Sprintf("error processing token logic modules for claim %q: %v", claim.SessionHeader.SessionId, err))
 			return settledResult, expiredResult, err
 		}
@@ -401,4 +415,35 @@ func (k Keeper) slashSupplierStake(
 	// amount from the supplier's owner or operator balances.
 
 	return nil
+}
+
+// getApplicationInitialStakeMap returns a map from an application address to the
+// initial stake of the application. This is used to calculate the maximum share
+// any claim could burn from the application stake.
+func (k Keeper) getApplicationInitialStakeMap(
+	ctx context.Context,
+	expiringClaims []prooftypes.Claim,
+) (applicationInitialStakeMap map[string]sdk.Coin, err error) {
+	applicationInitialStakeMap = make(map[string]sdk.Coin)
+	for _, claim := range expiringClaims {
+		appAddress := claim.SessionHeader.ApplicationAddress
+		// The same application is participating in other claims being settled,
+		// so we already capture its initial stake.
+		if _, isAppFound := applicationInitialStakeMap[appAddress]; isAppFound {
+			continue
+		}
+
+		app, isAppFound := k.applicationKeeper.GetApplication(ctx, appAddress)
+		if !isAppFound {
+			err := apptypes.ErrAppNotFound.Wrapf(
+				"trying to settle a claim for an application that does not exist (which should never happen) with address: %q",
+				appAddress,
+			)
+			return nil, err
+		}
+
+		applicationInitialStakeMap[appAddress] = *app.GetStake()
+	}
+
+	return applicationInitialStakeMap, nil
 }

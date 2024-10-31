@@ -111,7 +111,7 @@ func (k msgServer) CreateClaim(...) (_ *types.MsgCreateClaimResponse, err error)
 
 ### Histogram
 
-TODO: Add a code example, link to usage, and screenshot of the output.
+TODO_DOCUMENT: Add a code example, link to usage, and screenshot of the output.
 
 ## Logs
 

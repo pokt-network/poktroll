@@ -14,7 +14,7 @@ import (
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
-// TODO(@bryanchriswhite): Add unit tests for the CLI command when implementing the business logic.
+// TODO_TEST(@bryanchriswhite): Add unit tests for the CLI command when implementing the business logic.
 
 func CmdCreateClaim() *cobra.Command {
 	cmd := &cobra.Command{

@@ -20,7 +20,6 @@ In blockchain networks, a Full Node retains a complete copy of the ledger.
 You can visit the [Cosmos SDK documentation](https://docs.cosmos.network/main/user/run-node/run-node)
 for more information on Full Nodes.
 
-
 ## Roles & Responsibilities
 
 It is usually responsible for:
@@ -62,4 +61,4 @@ on how to deploy a Full Node using `docker-compose`.
 
 ## Kubernetes Example
 
-_TODO: Provide an example using [strangelove-ventures/cosmos-operator](https://github.com/strangelove-ventures/cosmos-operator)._
+_TODO_DOCUMENT: Provide an example using [strangelove-ventures/cosmos-operator](https://github.com/strangelove-ventures/cosmos-operator)._
