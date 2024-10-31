@@ -143,13 +143,13 @@ genesis:
             denom: upokt
     bank:
       supply:
-        - amount: "1103000204"
+        - amount: "1202000272"
           denom: upokt
       balances:
         # Application module
         - address: pokt1rl3gjgzexmplmds3tq3r3yk84zlwdl6djzgsvm
           coins:
-            - amount: "200000068" # MUST BE equal to the total of all app stakes below
+            - amount: "200000136" # MUST BE equal to the total of all app stakes below
               denom: upokt
         # Supplier module
         - address: pokt1j40dzzmn6cn9kxku7a5tjnud6hv37vesr5ccaa
