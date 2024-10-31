@@ -5,79 +5,115 @@ sidebar_position: 3
 
 ## Probabilistic Proofs <!-- omit in toc -->
 
-:::warning
-
-TODO_DOCUMENT(@Olshansk): This is just a placeholder. Use the [probabilistic proofs](https://github.com/pokt-network/pocket-core/blob/staging/docs/proposals/probabilistic_proofs.md) design
-document as a reference for writing this.
-
-:::
-
-- [Introduction](#introduction)
-  - [Problem Statement](#problem-statement)
-  - [Example Scenario](#example-scenario)
-- [Solution](#solution)
-
-### Introduction
-
 Probabilistic Proofs is a method to scale Pocket Network indefinitely.
 
-#### Problem Statement
+- [Problem Statement](#problem-statement)
+- [Example Scenario](#example-scenario)
+- [High Level Approach](#high-level-approach)
+- [Key Question](#key-question)
+- [Guarantees \& Expected Values](#guarantees--expected-values)
+- [Modeling an Attack](#modeling-an-attack)
+  - [Defining a Single (Bernoulli) Trial](#defining-a-single-bernoulli-trial)
+  - [Onchain Governance Parameters](#onchain-governance-parameters)
+  - [Dishonest Supplier: Calculating the Expected Value](#dishonest-supplier-calculating-the-expected-value)
+    - [Modelling a Dishonest Supplier's Strategy using a Geometric Distribution](#modelling-a-dishonest-suppliers-strategy-using-a-geometric-distribution)
+    - [Expected Number of False Claims (Failures) Before Getting Caught (Success)](#expected-number-of-false-claims-failures-before-getting-caught-success)
+    - [Total Rewards: Expected Value Calculation for Dishonest Supplier Before Penalty](#total-rewards-expected-value-calculation-for-dishonest-supplier-before-penalty)
+    - [Expected Penalty: Slashing amount for Dishonest Supplier](#expected-penalty-slashing-amount-for-dishonest-supplier)
+    - [Total Profit: Expected Value Calculation for Dishonest Supplier AFTER Penalty](#total-profit-expected-value-calculation-for-dishonest-supplier-after-penalty)
+  - [Honest Supplier: Calculating the Expected Value](#honest-supplier-calculating-the-expected-value)
+  - [Setting Parameters to Deter Dishonest Behavior](#setting-parameters-to-deter-dishonest-behavior)
+    - [Solving for Penalty `S`](#solving-for-penalty-s)
+  - [Example Calculation](#example-calculation)
+  - [Generalizing the Penalty Formula](#generalizing-the-penalty-formula)
+  - [Considering false Claim Variance](#considering-false-claim-variance)
+- [Crypto-economic Analysis \& Incentives](#crypto-economic-analysis--incentives)
+  - [Impact on Honest Suppliers](#impact-on-honest-suppliers)
+  - [Impact on Dishonest Suppliers](#impact-on-dishonest-suppliers)
+  - [Analogs between Model Parameters and onchain Governance Values](#analogs-between-model-parameters-and-onchain-governance-values)
+  - [Parameter Analog for Penalty (`S`)](#parameter-analog-for-penalty-s)
+  - [Parameter Analog for Reward (`R`)](#parameter-analog-for-reward-r)
+  - [Considerations during Parameter Adjustment](#considerations-during-parameter-adjustment)
+    - [Selecting Optimal `p` and `S`](#selecting-optimal-p-and-s)
+    - [Considerations for `ProofRequirementThreshold`](#considerations-for-proofrequirementthreshold)
+      - [Modelling `ProofRequirementThreshold`](#modelling-proofrequirementthreshold)
+      - [Normal Distribution](#normal-distribution)
+      - [Non-Normal Distribution](#non-normal-distribution)
+    - [Considerations for `ProofRequestProbability` (`p`)](#considerations-for-proofrequestprobability-p)
+      - [Geometric CDF vs Geometric PDF when revisiting value `p`](#geometric-cdf-vs-geometric-pdf-when-revisiting-value-p)
+      - [Maximizing `Pr(X<=k)` to ensure `k or less` failures (Supplier escapes without penalty)](#maximizing-prxk-to-ensure-k-or-less-failures-supplier-escapes-without-penalty)
+- [Conclusions for Modelling](#conclusions-for-modelling)
+- [Morse Based Value Selection](#morse-based-value-selection)
+  - [Selecting `ProofRequirementThreshold`](#selecting-proofrequirementthreshold)
+  - [Calculating `p`: `ProofRequestProbability`](#calculating-p-proofrequestprobability)
+  - [Calculating `S`: `ProofMissingPenalty`](#calculating-s-proofmissingpenalty)
+- [Future Work](#future-work)
+  - [](#)
+  - [Onchain Closed Feedback Loop](#onchain-closed-feedback-loop)
+  - [Reviewing External Literature](#reviewing-external-literature)
+- [References](#references)
 
-_tl;dr Too many on-chain proofs do not scale due to state bloat and excessive CPU usage._
+## Problem Statement
 
-The core limiting factor to Pocket Network's scalability is the number of necessary onchain proofs. For details on how proofs are generated and validated, see the [Claim & Proof lifecycle](./claim_and_proof_lifecycle.md) section.
+_tl;dr Too many on-chain Proofs do not scale due to state bloat and excessive CPU usage._
+
+The core limiting factor to Pocket Network's scalability is the number of required on-chain Proofs.
+For details on how Proofs are generated and validated, see the [Claim & Proof lifecycle](./Claim_and_Proof_lifecycle.md) section.
 
 In every session, for every `(Application, Supplier, Service)` tuple, there is a
-single onchain Merkle proof to prove the claimed work done.
+single on-chain Merkle required Proof to prove the Claimed work done.
 
-These proofs are large and costly to both store and verify. Too many proofs result in:
+These Proofs are large and costly to both store and verify. Too many Proofs result in:
 
-- **State Bloat**: Full Node disk space grows too quickly because blocks are large (i.e. full of transactions containing large proofs) increasing disk usage.
-- **Verification cost**: Block producers (i.e. Validators) must verify all these proofs on every block increasing CPU usage.
+- **State Bloat**: Full Node disk space grows too quickly because blocks are large (i.e.,full of transactions containing large Proofs), increasing disk usage.
+- **Verification Cost**: Block producers (i.e. Validators) must verify all these Proofs on every block, increasing CPU usage.
 
 :::note
 
-There is a lot of research around this type of problem, but our team is not looking into zero-knowledge as a solution at the time of writing (2024).
+There is a lot of research around this type of problem, but our team is not actively
+looking into `0`-knowledge as a solution at the time of writing (2024).
+
+TODO_IN_THIS_PR: Reference the papers from justin taylor, Alin Tomescu, and axelar (avalanche?).
 
 :::
 
-#### Example Scenario
+## Example Scenario
 
-Consider the hypothetical scenario below as an extremely rough approximation
+Consider the hypothetical scenario below as an extremely rough approximation.
 
 Network state and parameters:
 
 - Median Proof Size: `1,000` bytes
-- Num services: `10,000`
-- Num applications: `100,000`
-- Num suppliers: `1,00,000`
-- Num suppliers per session: `10`
+- Number of services: `10,000`
+- Number of applications: `100,000`
+- Number of suppliers: `100,000`
+- Number of suppliers per session: `10`
 - Session duration: `1` hour
-- Num proofs per session: `1`
+- Number of Proofs per session: `1`
 
-Conservative (simple) Scenario:
+Conservative (simple) scenario:
 
-- Num active applications: `10,000`
-- Num services used per application per session: `5`
-- Num suppliers used per application per session: `10`
-- 1 proof per (service, supplier) pair for each app
+- Number of active applications: `10,000`
+- Number of services used per application per session: `5`
+- Number of suppliers used per application per session: `10`
+- 1 Proof per (service, supplier) pair for each app
 - Total time: `1` day (`24` sessions)
 
 Total disk growth per day:
 
 ```bash
-10,000 app * 1 proof/(service,supplier) 10 supplier/app * 5 services/session * 24 sessions * 1,000 bytes/proof = 12 GB
+10,000 apps * 1 Proof/(service,supplier) * 10 suppliers/app * 5 services/session * 24 sessions * 1,000 bytes/Proof = 12 GB
 ```
 
-A very simple (conservative) scenario would result in `12GB` of disk growth per day, amount to more than `4TB` of disk growth in a year.
+A very simple (conservative) scenario would result in `12 GB` of disk growth per day, amounting to more than `4 TB` of disk growth in a year.
 
-This discounts CPU usage needed to verify the proofs.
+This discounts CPU usage needed to verify the Proofs.
 
-### Approach
+## High Level Approach
 
-_tl;dr Require a claim for every (App, Supplier, Service) tuple, but only require a proof for a subset of these claims and slash Suppliers that fail to provide a proof when needed._
+_tl;dr Require a Claim for every (App, Supplier, Service) tuple, but only require a Proof for a subset of these Claims and slash Suppliers that fail to provide a Proof when needed._
 
-The diagram below makes reference to some of the onchain [Governance Params](./../governance/params.md).
+The diagram below makes reference to some of the on-chain [Governance Params](./../governance/params.md).
 
 ```mermaid
 flowchart TD
@@ -102,7 +138,7 @@ flowchart TD
     ISPPR --> |No| NP
     ISPPR --> |Yes| ISPA
 
-    ISPA --> |"Yes<br>(Assume proof is valid)"| DR
+    ISPA --> |"Yes<br>(Assume Proof is valid)"| DR
     ISPA --> |No| SLASH
 
     PR --> ISPA
@@ -119,88 +155,423 @@ flowchart TD
 
 ## Key Question
 
-What values need to be selected to deter a Supplier from submitting a false claim? How can this be modelled?
+**What onchain protocol governance parameters need to be selected or created to**
+**deter a Supplier from submitting a false Claim? How can this be modeled?**
 
 ## Guarantees & Expected Values
 
-Pocket Network's tokenomics DO NOT provide a 100% guarantee against gaming the system.
-This is similar to how Data Availability (DA) layers DO NOT provide a 100% guarantee
-that the data is available.
+Pocket Network's tokenomics do not provide a 100% guarantee against gaming the system.
+Instead, there's a tradeoff between the network's security guarantees and factors
+like scalability, cost, user experience, and acceptable gamability.
 
-Rather, there is a tradeoff of what the network's security guarantees are in exchange
-for scalability, cost, user experience, and acceptable gamability.
+Our goal is to:
 
-Our goal is to model the expected value of an honest and dishonest supplier and
-have levers in place to adjust an acceptable gaming risk.
+- Model the expected value (EV) of both honest and dishonest Suppliers.
+- Adjust protocol parameters to ensure that the expected profit for dishonest behavior is less than that of honest behavior.
 
-A Supplier's balance can changed in the following ways:
+A Supplier's balance can change in the following ways:
 
-1. Earn rewards for valid Claims w/ Proofs; proof required
-2. Earn rewards for valid Claims w/o Proofs; proof not required
-3. **Earn rewards for invalid Claims w/o Proofs; proof not required**
-4. Slash stake for Claims w/ invalid Proofs; proof required
-5. Slash stake for Claims w/ missing Proofs; proof required
+1. ✅ **Earn rewards for valid Claims with Proofs** (Proof required).
+2. ✅ **Earn rewards for valid Claims without Proofs** (Proof not required).
+3. 🚨 **Earn rewards for invalid Claims without Proofs** (Proof not required).
+4. ❌ **Get slashed for invalid Proofs** (Proof required but invalid).
+5. ❌ **Get slashed for missing Proofs** (Proof required but not provided).
 
-The goal of Probabilistic Proofs is to define an acceptable risk for (3)
-such that the expected value (i.e. balance) of the Supplier is lower even
-if (1) and (2)
+The goal of Probabilistic Proofs is to minimize the profitability of scenario (3🚨)
+by adjusting protocol parameters such that dishonest Suppliers have a negative expected
+value compared to honest Suppliers.
 
-TODO: IMPROVE THIS.
+## Modeling an Attack
 
-## Modelling an Attack
+### Defining a Single (Bernoulli) Trial
 
-### Defining a Trial - Bernoulli Trial - A False Claim that gets caught
+We use a [Bernoulli distribution](https://en.wikipedia.org/wiki/Bernoulli_distribution)
+to model the probability of a dishonest Supplier getting caught when submitting false Claims.
 
-A [Bernoulli probability distribution](https://en.wikipedia.org/wiki/Bernoulli_distribution)
-is used as the foundation of modelling an attack.
+- **Trial Definition**: Each attempt by a Supplier to submit a Claim without being required to provide a Proof.
+- **Success**:
+  - A dishonest Supplier gets caught (i.e. is required to provide a Proof and fails, resulting in a penalty)
+  - Taken from the network's perspective
+- **Failure**:
+  - A dishonest Supplier does not get caught (i.e. is not required to provide a Proof and receives rewards without providing actual service)
+  - An honest Supplier is rewarded
+  - All other outcomes
+  - Does not include _short-circuited_ (i.e. Claim.ComputeUnits > ProofRequirementThreshold)
 
-Each (Claim, Proof) pair can be treated as an independent Bernoulli Trial.
+### Onchain Governance Parameters
 
-If `Claim.ComputeUnits > Gov.ProofRequirementThreshold`, the model is _short-circuited_ and is therefore outside the sample space for this definition.
+- **ProofRequestProbability (p)**: The probability that a Claim will require a Proof.
+- **Penalty (S)**: The amount of stake slashed when a Supplier fails to provide a required Proof.
+- **Reward per Claim (R)**: The reward received for a successful Claim without Proof.
+- **Maximum Claims Before Penalty (k)**: The expected number of false Claims a Supplier can make before getting caught.
 
-Defining Bernoulli Trial success & failure:
+We note that `R` is variable and that `SupplierMinStake` is not taken into account in the definition of the problem.
+As will be demonstrated by the end of this document:
 
-- **Success**: False/invalid/missing Claim that penalizes the Supplier. For example:
-  - A false Claim that does not have an associated Proof
-  - A false Claim that has an associated invalid Proof
-  - A valid Claim that fails to submit a Proof on time
-- **Failure**: All other outcomes. For example:
-  - Supplier submits a false Claim and gets away with it
-  - Supplier submits a true Claim and is required prove it
-  - Supplier submits a true Claim and is not required prove it
-  - Supplier submits a true Claim and fails to prove it
+- Reward per Claim (`R`) will be equal to the `ProofRequirementThreshold` (POKT)
+- Penalty (`S`) will be equal to the `SupplierMinStake` (in POKT)
 
-### Modelling k Claims that do not require a proof
+### Dishonest Supplier: Calculating the Expected Value
 
-Successive Proof - Geometric Probability Distribution Function
+The dishonest Supplier's strategy:
 
-The foundation/DAO is responsible for selection a value `p` (ProofRequestProbability)
-that represents
+- Submit false Claims repeatedly, hoping not to be selected for Proof submission.
+- Accept that eventually, they will be caught and penalized.
 
-$$ p = ProofRequestProbability $$
+#### Modelling a Dishonest Supplier's Strategy using a Geometric Distribution
 
+The number of successful false Claims before getting caught follows a [Geometric distribution](https://en.wikipedia.org/wiki/Geometric_distribution):
+
+**Probability of Not Getting Caught (q)**:
 $$ q = 1 - p $$
 
-$$ Pr(X=k) = (1-p)^{k-1}p $$
+**Probability of Getting Caught on the `(k+1)`th Claim**:
+$$ P(X = k+1) = q^k \cdot p $$
 
-$$ k = \frac{ln(\frac{Pr(X=k)}{p})}{ln(1-p)} + 1 $$
+#### Expected Number of False Claims (Failures) Before Getting Caught (Success)
 
-TODO: ADD GRAPH
+$$ E[K] = \frac{q}{p} $$
 
-TODO_FUTURE:
+Recall:
 
-### Geometric CDF
+- **Failure**: The network does not catch a dishonest Supplier
+- **Success**: The network catches a dishonest Supplier
 
-$$ x ∈ ℝ ∣ 0 ≤ x < 1 $$
+#### Total Rewards: Expected Value Calculation for Dishonest Supplier Before Penalty
 
-$$ p = ProofRequestProbability $$
+$$ E[\text{Total Rewards}] = R \cdot E[K] = R \cdot \frac{q}{p} $$
 
-$$ P(X<=k) = 1 - (1 - p)^{k} $$
+This represents the Supplier's earnings before the penalty is applied.
 
-$$ k = \frac{log(1 - P(X<=k))}{log(1 - p)} $$
+If the Supplier chooses to leave the network at this point in time, they will
+have successfully gamed the system.
 
-TODO: ADD GRAPH
+#### Expected Penalty: Slashing amount for Dishonest Supplier
+
+The penalty is a fixed amount `S` when caught.
+
+#### Total Profit: Expected Value Calculation for Dishonest Supplier AFTER Penalty
+
+$$ E[\text{Total Profit}] = E[\text{Total Rewards}] - S = R \cdot \frac{q}{p} - S $$
+
+### Honest Supplier: Calculating the Expected Value
+
+- **Expected Rewards per Claim**: $$ E[\text{Reward per Claim}] = R $$
+- **No Penalties**: Since the honest Supplier always provides valid Proofs when required, they avoid penalties.
+- **Expected Profit for Honest Supplier**:
+
+  $$ E[\text{Total Profit}] = R $$
+
+### Setting Parameters to Deter Dishonest Behavior
+
+To deter dishonest Suppliers, we need:
+
+$$ E[\text{Total Profit}_{\text{Dishonest}}] \leq E[\text{Total Profit}_{\text{Honest}}] $$
+
+Substituting the expected values:
+
+$$ R \cdot \frac{q}{p} - S \leq R $$
+
+Since `q = 1 -p`, we can simplify the inequality to:
+
+$$ R \left( \frac{1 - 2p}{p} \right) \leq S $$
+
+#### Solving for Penalty `S`
+
+However, since `p` is between 0 and 1, `1 - 2p` can be negative if `p > 0.5`.
+To ensure `S` is positive, we consider `p ≤ 0.5`.
+
+Alternatively, to make the penalty effective, we can set:
+
+$$ S = R \cdot \left( \frac{1 - p}{p} \right) $$
+
+This ensures that the expected profit for dishonest Suppliers is `0` or negative:
+
+$$ E[\text{Total Profit}_{\text{Dishonest}}] = R \cdot \frac{q}{p} - S = R \cdot \frac{q}{p} - R \cdot \frac{q}{p} = 0 $$
+
+### Example Calculation
+
+Assume:
+
+- Reward Per Claim: `R = 10`
+- ProofRequestProbability: `p = 0.2`
+- `q = 0.8`
+
+Calculate the expected profit for a dishonest Supplier:
+
+1. **Expected Number of False Claims Before Getting Caught**:
+
+   $$ E[K] = \frac{q}{p} = \frac{0.8}{0.2} = 4 $$
+
+2. **Expected Total Rewards**:
+
+   $$ E[\text{Total Rewards}] = R \cdot E[K] = 10 \cdot 4 = 40 $$
+
+3. **Penalty**:
+
+   $$ S = R \cdot \left( \frac{1 - p}{p} \right) = 10 \cdot \left( \frac{0.8}{0.2} \right) = 40 $$
+
+4. **Expected Profit**:
+
+   $$ E[\text{Total Profit}] = E[\text{Total Rewards}] - S = 40 - 40 = 0 $$
+
+The dishonest Supplier has an expected profit of `0`, making dishonest behavior unattractive compared to honest behavior, which yields a profit of `R = 10` units per Claim without risk of penalty.
+
+### Generalizing the Penalty Formula
+
+To ensure that dishonest Suppliers have no incentive to cheat, set the penalty `S` such that:
+
+$$ S = R \cdot \frac{q}{p} = R \cdot \left( \frac{1 - p}{p} \right) $$
+
+This makes the expected profit for dishonest behavior `0`:
+
+$$ E[\text{Total Profit}_{\text{Dishonest}}] = R \cdot \frac{q}{p} - S = 0 $$
+
+### Considering false Claim Variance
+
+While the expected profit is `0`, the variance in the number of successful false
+Claims can make dishonest behavior risky. The Supplier might get caught earlier than expected,
+leading to a net loss.
 
 ## Crypto-economic Analysis & Incentives
 
-## Motivation from Morse
+### Impact on Honest Suppliers
+
+Honest Suppliers are not affected by penalties since they always provide valid Proofs when required.
+Their expected profit remains:
+
+$$ E[\text{Total Profit}_{\text{Honest}}] = R $$
+
+### Impact on Dishonest Suppliers
+
+Dishonest Suppliers face:
+
+- A high penalty `S` that wipes out their expected gains.
+- The risk of getting caught earlier than expected, resulting in a net loss.
+- Increased uncertainty due to the probabilistic nature of Proof requests.
+
+### Analogs between Model Parameters and onchain Governance Values
+
+### Parameter Analog for Penalty (`S`)
+
+_tl;dr `S` = `Supplier.MinStake`_
+
+The penalty `S` is some amount that the protocol should be able to retrieve from the Supplier.
+
+In practice, this is the `Supplier.MinStake` parameter, which is the amount a Supplier
+always has in escrow. This amount can be slashed and/or taken from the Supplier for misbehavior.
+
+### Parameter Analog for Reward (`R`)
+
+_tl;dr `R` = `ProofRequirementThreshold`_
+
+In practice, the reward for each onchain Claim is variable and a function of the amount
+of work done.
+
+For the purposes of Probabilistic Proofs, we assume a constant reward of `R` per Claim
+because any reward greater than `ProofRequirementThreshold` requires a proof and
+short-circuits this entire document.
+
+Therefore, `R` can be assumed constant when determining the optimal `p` and `S`.
+
+### Considerations during Parameter Adjustment
+
+By tweaking `p` and `S`, the network can:
+
+- Increase the deterrent against dishonest behavior.
+- Balance the overhead of Proof verification with security needs.
+
+**Considerations:**
+
+- **Lower `p`** reduces the number of Proofs required --> improves scalability --> requires higher penalties.
+- **Higher `S`** increases the risk for dishonest Suppliers --> lead to social adversity from network participants.
+
+#### Selecting Optimal `p` and `S`
+
+To select appropriate values:
+
+1. **Determine Acceptable Proof Overhead (`p`)**:
+
+   - Choose `p` based on the desired scalability.
+   - Example: `p = 0.1` for 10% Proof submissions
+
+2. **Calculate Required Penalty (`S`)**:
+
+   - Ensure `S` is practical and enforceable.
+   - Use the formula:
+     $$ S = R \cdot \left( \frac{1 - p}{p} \right) $$
+
+3. **Assess Economic Impact**:
+
+   - Simulate scenarios to verify that dishonest Suppliers have a negative expected profit.
+   - Ensure honest Suppliers remain profitable.
+
+To illustrate the relationship between `p`, `S`, the following chart
+
+![Penalty vs. ProofRequestProbability](./Peanlty_vs_ProofRequestProbability.png)
+
+:::tip
+
+You can generate the graph above with `penalty_vs_proof_request_prob.py`
+
+:::
+
+#### Considerations for `ProofRequirementThreshold`
+
+- **Threshold Value**: Set the `ProofRequirementThreshold` low enough that most Claims are subject to probabilistic Proof requests, but high enough to prevent excessive Proof submissions.
+- **Short-Circuiting**: Claims above the threshold always require Proofs, eliminating the risk of large false Claims slipping through.
+
+##### Modelling `ProofRequirementThreshold`
+
+`ProofRequirementThreshold` should be as small as possible so that most such that
+most Claims for into the probabilistic bucket, while also balancing out penalties
+that may be too large for faulty honest Suppliers.
+
+##### Normal Distribution
+
+Assume Claim rewards are normally distributed with a mean `μ` and standard deviation `σ`.
+
+Ideally, we would choose `2σ` above the Claim `μ` such that `97.3%` fall of all Claims require a Proof.
+
+##### Non-Normal Distribution
+
+In practice, rewards are not normally distributed, so we can choose an arbitrary value (e.g. `p95`)
+such that 95% of Claims fall into the category of requiring a proof.
+
+#### Considerations for `ProofRequestProbability` (`p`)
+
+:::note
+
+See [Pocket_Network_Morse_Probabilistic_Proofs.ipynb](./Pocket_Network_Morse_Probabilistic_Proofs.ipynb) for more details from Morse backing the fact that the majority of the block space is taken up by Proofs.
+
+:::
+
+Accept the fact that the majority of the block space is taken up by Proofs.
+
+The number of relays in the network scales inversely to `ProofRequestProbability`. For example:
+
+- `ProofRequestProbability` = 0.5 -> 2x scale
+- `ProofRequestProbability` = 0.25 -> 4x scale
+- `ProofRequestProbability` = 0.1 -> 10x scale
+- `ProofRequestProbability` = 0.01 -> 100x scale
+
+##### Geometric CDF vs Geometric PDF when revisiting value `p`
+
+Up until now, we have been tracking the probability that `Pr(X=k)`, the probability
+of `k` failures (Supplier escapes without penalty) until a single success (Supplier)
+is penalized. This can be modeled using a Geometric PDF (Probability Distribution Function).
+
+$$ p = ProofRequestProbability $$
+$$ q = 1 - p $$
+$$ Pr(X=k) = (1-p)^{k-1}p $$
+$$ k = \frac{ln(\frac{Pr(X=k)}{p})}{ln(1-p)} + 1 $$
+
+However, instead, we need to track the likelihood of `k or less` failures `Pr(X<=k)`,
+until a single success. This can be modeled using a Geometric CDF (Cumulative Distribution Function).
+
+$$ x ∈ ℝ ∣ 0 ≤ x < 1 $$
+$$ p = ProofRequestProbability $$
+$$ P(X<=k) = 1 - (1 - p)^{k} $$
+$$ k = \frac{log(1 - P(X<=k))}{log(1 - p)} $$
+
+Visual intuition of the two can be seen below:
+
+![Geometric CDF for Different p Values](./geometric_pdf_vs_cdf.png)
+
+:::tip
+
+You can generate the graph above with `make geometric_pdf_vs_cdf.py`
+
+:::
+
+##### Maximizing `Pr(X<=k)` to ensure `k or less` failures (Supplier escapes without penalty)
+
+When selecting a value for `p`, our goal is not to maximize `Pr(X=k)`, but rather
+maximize `Pr(X<=k)` to ensure `k or less` failures (Supplier escapes without penalty).
+
+This does not affect the expected reward calculations above, but gives a different
+perspective of what the probabilities of success and failure are.
+
+## Conclusions for Modelling
+
+By modeling the attack using a geometric distributions and calculating expected values, we can:
+
+- Determine `ProofRequirementThreshold` using statical onchain data
+- Manually adjust `ProofRequestProbability = p` to adjust scalability
+- Compute `SupplierMinStake = S` to deter dishonest behavior
+- Determine the necessary penalty `S` to deter dishonest behavior.
+- Ensure that honest Suppliers remain profitable while dishonest Suppliers face negative expected profits.
+
+This approach allows the network to scale by reducing the number of on-chain Proofs while maintaining economic incentives that discourage dishonest behavior.
+
+## Morse Based Value Selection
+
+As of writing (October 2024), Shannon is not live and only Morse can be used to approximate realistic values.
+
+### Selecting `ProofRequirementThreshold`
+
+Choose `R = 20` since it is greater than `p95` of all Claims collected in Morse. Units are in `POKT`.
+
+See the original proposal from Morse available in [probabilistic_proofs_morse.md](./probabilistic_proofs_morse.md)
+and [Pocket_Network_Morse_Probabilistic_Proofs.ipynb](./Pocket_Network_Morse_Probabilistic_Proofs.ipynb) for supporting data.
+
+### Calculating `p`: `ProofRequestProbability`
+
+Choose `p = 0.05` to ensure high scalability.
+
+Choose `Pr(X<=k) = 0.99` to ensure that `99%` of the time, a dishonest Supplier will be penalized.
+
+$$ k = \frac{log(1 - P(X<=k))}{log(1 - 0.05)} $$
+$$ k = \frac{log(1 - 0.99)}{log(1 - 0.05)} $$
+$$ k ≈ 90 $$
+
+### Calculating `S`: `ProofMissingPenalty`
+
+1. **Expected Number of False Claims Before Getting Caught**:
+
+   $$ E[K] = \frac{q}{p} = \frac{0.95}{0.05} = 19 $$
+
+2. **Expected Total Rewards**:
+
+   $$ E[\text{Total Rewards}] = R \cdot E[K] = 20 \cdot 19 = 380 $$
+
+3. **Penalty**:
+
+   $$ S = R \cdot \left( \frac{1 - p}{p} \right) = 10 \cdot \left( \frac{0.8}{0.2} \right) = 40 $$
+
+4. **Expected Profit**:
+
+   $$ E[\text{Total Profit}] = E[\text{Total Rewards}] - S = 40 - 40 = 0 $$
+
+S=R⋅(
+p
+1−p
+​
+)
+
+## Future Work
+
+###
+
+### Onchain Closed Feedback Loop
+
+### Reviewing External Literature
+
+https://research.facebook.com/publications/distributed-auditing-proofs-of-liabilities/
+https://eprint.iacr.org/2020/1568.pdf
+
+## References
+
+`ProofRequestProbability (p)` is selected as `0.25` to enable scaling the network by `4x`.
+
+`BurnForFailedClaimSubmission` - Should be set to `k * ProofRequirementThreshold` to deter `k` failures or less.
+
+`Pr(X<=k)` must be as high as possible while keeping `k` reasonably low since it'll impact the penalty for honest but faulty servicers that fail to submit a Claim within the expiration window. We are selecting `Pr(X<=k) = 0.99`
+
+$$ k = \frac{log(1 - P(X<=k))}{log(1 - p)} $$
+
+$$ k = \frac{log(1 - 0.99)}{log(1 - 0.25)} $$
+
+$$ k ≈ 16 $$
+
+Selecting `k = 16` implies that `99%` of the time, an attacker will get a penalty of `BurnForFailedClaimSubmission`, making it not worthwhile to take the risk.
