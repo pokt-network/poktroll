@@ -32,9 +32,11 @@ import (
 	"bytes"
 	"context"
 
+	cosmostelemetry "github.com/cosmos/cosmos-sdk/telemetry"
 	"github.com/pokt-network/smt"
 
 	"github.com/pokt-network/poktroll/pkg/crypto/protocol"
+	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/proof/types"
 	servicekeeper "github.com/pokt-network/poktroll/x/service/keeper"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
@@ -59,6 +61,9 @@ func (k Keeper) EnsureValidProof(
 	ctx context.Context,
 	proof *types.Proof,
 ) error {
+	// Telemetry: measure execution time.
+	defer cosmostelemetry.MeasureSince(cosmostelemetry.Now(), telemetry.MetricNameKeys("proof", "validation")...)
+
 	logger := k.Logger().With("method", "ValidateProof")
 
 	// Retrieve the supplier operator's public key.

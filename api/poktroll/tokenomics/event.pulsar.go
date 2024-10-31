@@ -3730,7 +3730,7 @@ func (x *EventSupplierSlashed) GetSlashingAmount() *v1beta1.Coin {
 }
 
 // EventApplicationReimbursementRequest is emitted when an application requests
-// a reimbursement
+// a reimbursement.
 type EventApplicationReimbursementRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

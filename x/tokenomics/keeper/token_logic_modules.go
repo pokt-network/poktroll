@@ -376,7 +376,13 @@ func (k Keeper) TokenLogicModuleRelayBurnEqualsMint(
 			err,
 		)
 	}
-	logger.Info(fmt.Sprintf("minted (%v) coins in the supplier module", settlementCoin))
+
+	// Update telemetry information
+	if settlementCoin.Amount.IsInt64() {
+		defer telemetry.MintedTokensFromModule(suppliertypes.ModuleName, float32(settlementCoin.Amount.Int64()))
+	}
+
+	logger.Debug(fmt.Sprintf("minted (%v) coins in the supplier module", settlementCoin))
 
 	// Distribute the rewards to the supplier's shareholders based on the rev share percentage.
 	if err := k.distributeSupplierRewardsToShareHolders(ctx, supplier, service.Id, settlementCoin.Amount.Uint64()); err != nil {
@@ -386,7 +392,7 @@ func (k Keeper) TokenLogicModuleRelayBurnEqualsMint(
 			err,
 		)
 	}
-	logger.Info(fmt.Sprintf("sent (%v) from the supplier module to the supplier account with address %q", settlementCoin, supplier.OperatorAddress))
+	logger.Debug(fmt.Sprintf("sent (%v) from the supplier module to the supplier account with address %q", settlementCoin, supplier.OperatorAddress))
 
 	// Burn uPOKT from the application module account which was held in escrow
 	// on behalf of the application account.
@@ -395,7 +401,13 @@ func (k Keeper) TokenLogicModuleRelayBurnEqualsMint(
 	); err != nil {
 		return tokenomicstypes.ErrTokenomicsApplicationModuleBurn.Wrapf("burning %s from the application module account: %v", settlementCoin, err)
 	}
-	logger.Info(fmt.Sprintf("burned (%v) from the application module account", settlementCoin))
+
+	// Update telemetry information
+	if settlementCoin.Amount.IsInt64() {
+		defer telemetry.BurnedTokensFromModule(apptypes.ModuleName, float32(settlementCoin.Amount.Int64()))
+	}
+
+	logger.Debug(fmt.Sprintf("burned (%v) from the application module account", settlementCoin))
 
 	// Update the application's on-chain stake
 	newAppStake, err := application.Stake.SafeSub(settlementCoin)
@@ -403,7 +415,7 @@ func (k Keeper) TokenLogicModuleRelayBurnEqualsMint(
 		return tokenomicstypes.ErrTokenomicsApplicationNewStakeInvalid.Wrapf("application %q stake cannot be reduced to a negative amount %v", application.Address, newAppStake)
 	}
 	application.Stake = &newAppStake
-	logger.Info(fmt.Sprintf("updated application %q stake to %v", application.Address, newAppStake))
+	logger.Debug(fmt.Sprintf("updated application %q stake to %v", application.Address, newAppStake))
 
 	return nil
 }
@@ -436,6 +448,12 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 		return tokenomicstypes.ErrTokenomicsModuleMintFailed.Wrapf(
 			"minting (%s) to the tokenomics module account: %v", newMintCoin, err)
 	}
+
+	// Update telemetry information
+	if newMintCoin.Amount.IsInt64() {
+		defer telemetry.MintedTokensFromModule(tokenomicstypes.ModuleName, float32(newMintCoin.Amount.Int64()))
+	}
+
 	logger.Info(fmt.Sprintf("minted (%s) to the tokenomics module account", newMintCoin))
 
 	// Send a portion of the rewards to the application
