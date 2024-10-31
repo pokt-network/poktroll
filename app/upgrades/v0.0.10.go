@@ -57,6 +57,9 @@ var Upgrade_0_0_10 = Upgrade{
 
 			// Adjust proof module parameters
 			// Validate with: `poktrolld q proof params --node=https://testnet-validated-validator-rpc.poktroll.com/`
+			//
+			// !!!! THE UPGRADE CURRENTLY BREAKS HERE !!!!
+			// https://gist.github.com/okdas/535bc3c0282483fef27454c70d889aa6
 			proofParams := keepers.ProofKeeper.GetParams(ctx)
 			newProofRequirementThreshold := cosmosTypes.NewCoin("upokt", math.NewInt(20000000))
 			newProofMissingPenalty := cosmosTypes.NewCoin("upokt", math.NewInt(320000000))
