@@ -200,15 +200,14 @@ func (p *pocketdBin) runCurlCmd(rpcBaseURL, service, method, path, appAddr, data
 	rpcUrl.Path = rpcUrl.Path + path
 
 	base := []string{
-		"-v",         // verbose output
-		"-sS",        // silent with error
-		"-X", method, // HTTP method
+		"-v",                                   // verbose output
+		"-sS",                                  // silent with error
 		"-H", `Content-Type: application/json`, // HTTP headers
 		rpcUrl.String(),
 	}
 
 	if method == "POST" {
-		base = append(base, "--data", data)
+		base = append(base, "--data", fmt.Sprintf("%s", data))
 	} else if len(data) > 0 {
 		fmt.Printf("WARN: data provided but not being included in the %s request", method)
 	}
@@ -228,7 +227,6 @@ func (p *pocketdBin) runCurlCmd(rpcBaseURL, service, method, path, appAddr, data
 		Err:     err,
 	}
 	p.result = r
-	fmt.Println("==================", r, "==================")
 
 	if defaultDebugOutput == "true" {
 		fmt.Printf("%#v\n", r)
