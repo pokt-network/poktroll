@@ -8,6 +8,7 @@ shannon_config:
     gateway_private_key: 177ba43cec962ea407f71da9c3994ba685708e82d5d7a6d7da3268e74119bf88
     delegated_app_addresses:
       - pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4 # app1
+    lazy_mode: true
 
 services:
   "anvil":

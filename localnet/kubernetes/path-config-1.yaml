@@ -10,6 +10,7 @@ shannon_config:
     # TODO: Populate delegated_app_addres ses from on-chain records.
     delegated_app_addresses:
       - pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4 # app1
+    lazy_mode: true
 
 services:
   # Path needs 0021 service ID to handle EVM relays.
