@@ -23,7 +23,7 @@ func SimulateMsgStakeGateway(
 			Address: simAccount.Address.String(),
 		}
 
-		// TODO: Handling the StakeGateway simulation
+		// TODO_TECHDEBT: Handling the StakeGateway simulation
 
 		return simtypes.NoOpMsg(types.ModuleName, sdk.MsgTypeURL(stakeMsg), "StakeGateway simulation not implemented"), nil, nil
 	}

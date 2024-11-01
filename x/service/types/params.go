@@ -10,7 +10,7 @@ import (
 
 // DefaultAddServiceFee is the default value for the add service fee
 // parameter in the genesis state of the service module.
-// TODO_BETA: Revisit default param values for service fee
+// TODO_MAINNET: Revisit default param values for service fee
 var (
 	_ paramtypes.ParamSet = (*Params)(nil)
 

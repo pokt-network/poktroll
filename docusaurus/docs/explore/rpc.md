@@ -29,8 +29,8 @@ poktrolld query block --type=height 0 --node https://shannon-testnet-grove-seed-
 
 ### gRPC
 
-_TODO: Add a gRPC example_
+_TODO_TECHDEBT: Add a gRPC example_
 
 ### REST
 
-_TODO: Add a REST example_
+_TODO_TECHDEBT: Add a REST example_

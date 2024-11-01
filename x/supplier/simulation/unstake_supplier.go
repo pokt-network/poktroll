@@ -23,7 +23,7 @@ func SimulateMsgUnstakeSupplier(
 			OperatorAddress: simAccount.Address.String(),
 		}
 
-		// TODO: Handling the UnstakeSupplier simulation
+		// TODO_TECHDEBT: Handling the UnstakeSupplier simulation
 
 		return simtypes.NoOpMsg(types.ModuleName, sdk.MsgTypeURL(msg), "UnstakeSupplier simulation not implemented"), nil, nil
 	}
