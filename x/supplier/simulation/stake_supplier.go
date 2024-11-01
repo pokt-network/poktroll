@@ -21,10 +21,10 @@ func SimulateMsgStakeSupplier(
 		simAccount, _ := simtypes.RandomAcc(r, accs)
 		msg := &types.MsgStakeSupplier{
 			OperatorAddress: simAccount.Address.String(),
-			// TODO: Update all stake message fields
+			// TODO_TECHDEBT: Update all stake message fields
 		}
 
-		// TODO: Handling the StakeSupplier simulation
+		// TODO_TECHDEBT: Handling the StakeSupplier simulation
 
 		return simtypes.NoOpMsg(types.ModuleName, sdk.MsgTypeURL(msg), "StakeSupplier simulation not implemented"), nil, nil
 	}

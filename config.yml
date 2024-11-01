@@ -87,11 +87,15 @@ validators:
     app:
       # DEV_NOTE: Ignite does not carry over all defaults, so we are going to match `minimum-gas-prices` with `cmd/config.go`.
       # See the enhancement request here: https://github.com/ignite/cli/issues/4340
-      # TODO(#794): turn on `minimum-gas-prices` back
+      # TODO_MAINNET(#794): turn on `minimum-gas-prices` back
       # minimum-gas-prices: 0.000000001upokt
       telemetry:
         enabled: true
-        prometheus-retention-time: "600" # seconds
+      poktroll:
+        telemetry:
+          # "high" produces a lot of timeseries.
+          # ONLY suitable for small networks such as LocalNet.
+          cardinality-level: high
     config:
       moniker: "validator1"
       consensus:
@@ -124,7 +128,7 @@ genesis:
     staking:
       params:
         bond_denom: upokt
-        # TODO_MAINNET(@Olshansk): Figure out what this should be on Shannon
+        # TODO_MAINNET: Figure out what this should be on Shannon
         # re-genesis. We're setting it to 1 for Alpha TestNet #1 so Grove
         # maintains the only validator until Alpha TestNet #2.
         max_validators: 1
@@ -139,28 +143,28 @@ genesis:
             denom: upokt
     bank:
       supply:
-        - amount: "1003000204"
+        - amount: "1102000204"
           denom: upokt
       balances:
         # Application module
         - address: pokt1rl3gjgzexmplmds3tq3r3yk84zlwdl6djzgsvm
           coins:
-            - amount: "1000068" # Equals to the total of all app stakes below
+            - amount: "100000068" # MUST BE equal to the total of all app stakes below
               denom: upokt
         # Supplier module
         - address: pokt1j40dzzmn6cn9kxku7a5tjnud6hv37vesr5ccaa
           coins:
-            - amount: "1000068" # Equals to the total of all supplier stakes below
+            - amount: "1000068" # MUST BE equal to the total of all supplier stakes below
               denom: upokt
         # Gateway module
         - address: pokt1f6j7u6875p2cvyrgjr0d2uecyzah0kget9vlpl
           coins:
-            - amount: "1000068" # Equals to the total of all gateway stakes below
+            - amount: "1000068" # MUST BE equal to the total of all gateway stakes below
               denom: upokt
         # Service module
         - address: pokt1nhmtqf4gcmpxu0p6e53hpgtwj0llmsqpxtumcf
           coins:
-            - amount: "1000000000" # Equals to one add_service_fee below
+            - amount: "1000000000" # MUST BE equal to one add_service_fee below
               denom: upokt
     application:
       params:
@@ -171,9 +175,8 @@ genesis:
           denom: upokt
       applicationList:
         - address: pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4
-          delegatee_gateway_addresses: [
-            pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4
-          ]
+          delegatee_gateway_addresses:
+            [pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4]
           service_configs:
             - service_id: anvil
           stake:
@@ -182,9 +185,8 @@ genesis:
             amount: "100000068" # ~100 POKT
             denom: upokt
         - address: pokt184zvylazwu4queyzpl0gyz9yf5yxm2kdhh9hpm
-          delegatee_gateway_addresses: [
-            pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4
-          ]
+          delegatee_gateway_addresses:
+            [pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4]
           service_configs:
             - service_id: rest
           stake:

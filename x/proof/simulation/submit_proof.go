@@ -22,7 +22,7 @@ func SimulateMsgSubmitProof(
 			SupplierOperatorAddress: simAccount.Address.String(),
 		}
 
-		// TODO: Handling the SubmitProof simulation
+		// TODO_TECHDEBT: Handling the SubmitProof simulation
 
 		return simtypes.NoOpMsg(types.ModuleName, sdk.MsgTypeURL(msg), "SubmitProof simulation not implemented"), nil, nil
 	}

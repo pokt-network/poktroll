@@ -23,7 +23,7 @@ func SimulateMsgUnstakeGateway(
 			Address: simAccount.Address.String(),
 		}
 
-		// TODO: Handling the UnstakeGateway simulation
+		// TODO_TECHDEBT: Handling the UnstakeGateway simulation
 
 		return simtypes.NoOpMsg(types.ModuleName, sdk.MsgTypeURL(msg), "UnstakeGateway simulation not implemented"), nil, nil
 	}

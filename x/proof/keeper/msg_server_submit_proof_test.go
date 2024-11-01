@@ -238,7 +238,7 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 			require.EqualValues(t, &proofs[0], proofSubmittedEvent.GetProof())
 			require.Equal(t, uint64(numRelays), proofSubmittedEvent.GetNumRelays())
 			require.Equal(t, uint64(numClaimComputeUnits), proofSubmittedEvent.GetNumClaimedComputeUnits())
-			// TODO_FOLLOWUP: Add NumEstimatedComputeUnits and ClaimedAmountUpokt assertions
+			// TODO_BETA(@red-0ne): Add NumEstimatedComputeUnits and ClaimedAmountUpokt assertions
 		})
 	}
 }

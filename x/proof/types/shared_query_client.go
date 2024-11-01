@@ -42,7 +42,7 @@ func (sqc *SharedKeeperQueryClient) GetParams(
 // The grace period is the number of blocks after the session ends during which relays
 // SHOULD be included in the session which most recently ended.
 //
-// TODO_BLOCKER(@bryanchriswhite, #543): We don't really want to use the current value of the params.
+// TODO_MAINNET(@bryanchriswhite, #543): We don't really want to use the current value of the params.
 // Instead, we should be using the value that the params had for the session given by blockHeight.
 func (sqc *SharedKeeperQueryClient) GetSessionGracePeriodEndHeight(
 	ctx context.Context,
@@ -55,7 +55,7 @@ func (sqc *SharedKeeperQueryClient) GetSessionGracePeriodEndHeight(
 // GetClaimWindowOpenHeight returns the block height at which the claim window of
 // the session that includes queryHeight opens.
 //
-// TODO_BLOCKER(@bryanchriswhite, #543): We don't really want to use the current value of the params.
+// TODO_MAINNET(@bryanchriswhite, #543): We don't really want to use the current value of the params.
 // Instead, we should be using the value that the params had for the session given by blockHeight.
 func (sqc *SharedKeeperQueryClient) GetClaimWindowOpenHeight(
 	ctx context.Context,
@@ -68,7 +68,7 @@ func (sqc *SharedKeeperQueryClient) GetClaimWindowOpenHeight(
 // GetProofWindowOpenHeight returns the block height at which the proof window of
 // the session that includes queryHeight opens.
 //
-// TODO_BLOCKER(@bryanchriswhite, #543): We don't really want to use the current value of the params.
+// TODO_MAINNET(@bryanchriswhite, #543): We don't really want to use the current value of the params.
 // Instead, we should be using the value that the params had for the session given by blockHeight.
 func (sqc *SharedKeeperQueryClient) GetProofWindowOpenHeight(
 	ctx context.Context,
