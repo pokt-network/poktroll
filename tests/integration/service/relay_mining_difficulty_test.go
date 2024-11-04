@@ -60,7 +60,7 @@ func TestUpdateRelayMiningDifficulty_NewServiceSeenForTheFirstTime(t *testing.T)
 	trie := prepareSMST(t, sdkCtx, integrationApp, session, expectedNumRelays)
 
 	// Compute the number of blocks to wait between different events
-	// TODO_BLOCKER(@bryanchriswhite): See this comment: https://github.com/pokt-network/poktroll/pull/610#discussion_r1645777322
+	// TODO_BETA(@bryanchriswhite): See this comment: https://github.com/pokt-network/poktroll/pull/610#discussion_r1645777322
 	sessionEndHeight := session.Header.SessionEndBlockHeight
 	earliestSupplierClaimCommitHeight := sharedtypes.GetEarliestSupplierClaimCommitHeight(
 		&sharedParams,

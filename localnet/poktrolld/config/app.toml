@@ -34,6 +34,11 @@ query-gas-limit = "0"
 [mempool]
   max-txs = 10000
 
+[poktroll]
+
+  [poktroll.telemetry]
+    cardinality-level = "high"
+
 [rpc]
   cors_allowed_origins = ["*"]
 
@@ -56,6 +61,6 @@ query-gas-limit = "0"
   enabled = true
   global-labels = []
   metrics-sink = "mem"
-  prometheus-retention-time = "600"
+  prometheus-retention-time = 86400
   service-name = ""
   statsd-addr = ""

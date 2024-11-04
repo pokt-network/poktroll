@@ -2190,14 +2190,12 @@ type Application struct {
 
 	Address string        `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"` // The Bech32 address of the application.
 	Stake   *v1beta1.Coin `protobuf:"bytes,2,opt,name=stake,proto3" json:"stake,omitempty"`     // The total amount of uPOKT the application has staked
-	// As per this discussion:
-	// https://github.com/pokt-network/poktroll/pull/750#discussion_r1735025033
-	// The number of service_configs is limited to 1 per service.
-	// This is to ensure that an application could not over service by making multiple
-	// claims settelments compete to burn the same stake.
-	// A slice of service_configs is still maintained to allow for future multi-service
-	// capabilities to be added, such as off-chain application stake tracking by suppliers:
-	// https://www.notion.so/buildwithgrove/Off-chain-Application-Stake-Tracking-6a8bebb107db4f7f9dc62cbe7ba555f7
+	// CRITICAL_DEV_NOTE: The number of service_configs must be EXACTLY ONE.
+	// This prevents applications from over-servicing.
+	// The field is kept repeated (a list) for both legacy and future logic reaosns.
+	// References:
+	//   - https://github.com/pokt-network/poktroll/pull/750#discussion_r1735025033
+	//   - https://www.notion.so/buildwithgrove/Off-chain-Application-Stake-Tracking-6a8bebb107db4f7f9dc62cbe7ba555f7
 	ServiceConfigs []*shared.ApplicationServiceConfig `protobuf:"bytes,3,rep,name=service_configs,json=serviceConfigs,proto3" json:"service_configs,omitempty"` // The list of services this appliccation is configured to request service for
 	// TODO_BETA: Rename `delegatee_gateway_addresses` to `gateway_addresses_delegated_to`.
 	// Ensure to rename all relevant configs, comments, variables, function names, etc as well.

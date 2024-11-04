@@ -22,7 +22,7 @@ Feature: Session Namespace
     And the user should wait for the "proof" module "ProofSubmitted" tx event to be broadcast
     Then the claim created by supplier "supplier1" for service "anvil" for application "app1" should be successfully settled
 
-# TODO_BLOCKER(@red-0ne): Make sure to implement and validate this test
+# TODO_MAINNET(@red-0ne): Make sure to implement and validate this test
 # One way to exercise this behavior is to close the `RelayMiner` port to prevent
 # the `RelayRequest` from being received and processed then reopen it after the
 # the defined number of blocks has passed.

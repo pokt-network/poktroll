@@ -118,13 +118,13 @@ go get github.com/pokt-network/poktroll/pkg/client
 ### Basic Example
 
 ```go
-// TODO: Code example showcasing the use of TxClient or any other primary interface.
+// TODO_DOCUMENT: Code example showcasing the use of TxClient or any other primary interface.
 ```
 
 ### Advanced Usage
 
 ```go
-// TODO: Example illustrating advanced features or edge cases of the package.
+// TODO_DOCUMENT: Example illustrating advanced features or edge cases of the package.
 ```
 
 ### Configuration

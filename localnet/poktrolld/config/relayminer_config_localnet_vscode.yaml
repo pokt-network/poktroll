@@ -22,9 +22,9 @@ metrics:
   enabled: true
   addr: :9070
 pocket_node:
-  query_node_rpc_url: tcp://127.0.0.1:36657
-  query_node_grpc_url: tcp://127.0.0.1:36658
-  tx_node_rpc_url: tcp://127.0.0.1:36657
+  query_node_rpc_url: tcp://localhost:26657
+  query_node_grpc_url: tcp://localhost:36658
+  tx_node_rpc_url: tcp://localhost:26657
 suppliers:
   - service_id: anvil
     listen_url: http://0.0.0.0:8545
@@ -36,6 +36,12 @@ suppliers:
     listen_url: http://0.0.0.0:8545
     service_config:
       backend_url: http://localhost:11434/
+      publicly_exposed_endpoints:
+        - relayminer1
+  - service_id: rest
+    listen_url: http://0.0.0.0:8545
+    service_config:
+      backend_url: http://rest:10000/
       publicly_exposed_endpoints:
         - relayminer1
 pprof:
