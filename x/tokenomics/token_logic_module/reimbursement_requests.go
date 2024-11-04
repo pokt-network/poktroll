@@ -20,7 +20,7 @@ type tlmGlobalMintReimbursementRequest struct {
 	daoRewardBech32 string
 }
 
-// TODO_IN_THIS_COMMIT: godoc...
+// NewGlobalMintReimbursementRequestTLM returns a new GlobalMintReimbursementRequest TLM.
 func NewGlobalMintReimbursementRequestTLM(daoRewardBech32 string) TokenLogicModule {
 	return &tlmGlobalMintReimbursementRequest{
 		daoRewardBech32: daoRewardBech32,
