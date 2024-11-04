@@ -26,11 +26,20 @@ const (
 	// global governance parameters in order to reward the participants providing
 	// services while keeping inflation in check.
 	TLMGlobalMint
+
+	// TLMGlobalMintReimbursementRequest is the token logic module that complements
+	// TLMGlobalMint to enable permissionless demand.
+	// In order to prevent self-dealing attacks, applications will be overcharged by
+	// the amount equal to global inflation, those funds will be sent to the DAO/PNF,
+	// and an event will be emitted to track and send reimbursements; managed offchain by PNF.
+	// TODO_POST_MAINNET: Introduce proper tokenomics based on the research done by @rawthil and @shane.
+	TLMGlobalMintReimbursementRequest
 )
 
 var tokenLogicModuleStrings = [...]string{
 	"TLMRelayBurnEqualsMint",
 	"TLMGlobalMint",
+	"TLMGlobalMintReimbursementRequest",
 }
 
 func (tlm TokenLogicModuleId) String() string {
@@ -67,11 +76,12 @@ type TokenLogicModule interface {
 // NewDefaultTokenLogicModules returns the default token logic module processors:
 // - TLMRelayBurnEqualsMint
 // - TLMGlobalMint
-func NewDefaultTokenLogicModules(authorityRewardAddr string) []TokenLogicModule {
+func NewDefaultTokenLogicModules(daoRewardBech32 string) []TokenLogicModule {
 	return []TokenLogicModule{
 		NewRelayBurnEqualsMintTLM(),
-		// TODO_TECHDEBT: Replace authorityRewardAddr with the tokenomics module
+		// TODO_TECHDEBT: Replace daoRewardBech32 with the tokenomics module
 		// params once it's refactored as a param.
-		NewGlobalMintTLM(authorityRewardAddr),
+		NewGlobalMintTLM(daoRewardBech32),
+		NewGlobalMintReimbursementRequestTLM(daoRewardBech32),
 	}
 }

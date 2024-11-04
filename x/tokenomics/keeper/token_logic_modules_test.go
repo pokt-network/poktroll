@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"math"
 	"testing"
 
-	"cosmossdk.io/math"
+	cosmosmath "cosmossdk.io/math"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -42,8 +43,8 @@ func init() {
 
 func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 	// Test Parameters
-	appInitialStake := apptypes.DefaultMinStake.Amount.Mul(math.NewInt(2))
-	supplierInitialStake := math.NewInt(1000000)
+	appInitialStake := apptypes.DefaultMinStake.Amount.Mul(cosmosmath.NewInt(2))
+	supplierInitialStake := cosmosmath.NewInt(1000000)
 	supplierRevShareRatios := []float32{12.5, 37.5, 50}
 	globalComputeUnitsToTokensMultiplier := uint64(1)
 	serviceComputeUnitsPerRelay := uint64(1)
@@ -56,7 +57,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 
 	// Ensure the claim is within relay mining bounds
 	numTokensClaimed := int64(numRelays * serviceComputeUnitsPerRelay * globalComputeUnitsToTokensMultiplier)
-	maxClaimableAmountPerSupplier := appInitialStake.Quo(math.NewInt(sessionkeeper.NumSupplierPerSession))
+	maxClaimableAmountPerSupplier := appInitialStake.Quo(cosmosmath.NewInt(sessionkeeper.NumSupplierPerSession))
 	require.GreaterOrEqual(t, maxClaimableAmountPerSupplier.Int64(), numTokensClaimed)
 
 	// Retrieve the app and supplier module addresses
@@ -70,10 +71,10 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 	require.NoError(t, err)
 	// TODO_TECHDEBT: Setting inflation to zero so we are testing the BurnEqualsMint logic exclusively.
 	// Once it is a governance param, update it using the keeper above.
-	prevInflationValue := tlm.MintPerClaimedTokenGlobalInflation
-	tlm.MintPerClaimedTokenGlobalInflation = 0
+	prevInflationValue := tlm.GlobalInflationPerClaim
+	tlm.GlobalInflationPerClaim = 0
 	t.Cleanup(func() {
-		tlm.MintPerClaimedTokenGlobalInflation = prevInflationValue
+		tlm.GlobalInflationPerClaim = prevInflationValue
 	})
 
 	// Add a new application with non-zero app stake end balance to assert against.
@@ -119,7 +120,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 	pendingResult := tlm.NewPendingSettlementResult(claim)
 
 	// Process the token logic modules
-	err = keepers.ProcessTokenLogicModules(ctx, pendingResult)
+	err = keepers.ProcessTokenLogicModules(ctx, pendingResult, appStake)
 	require.NoError(t, err)
 
 	// Execute the pending results
@@ -133,7 +134,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 	require.EqualValues(t, appStartBalance, appEndBalance)
 
 	// Determine the expected app end stake amount and the expected app burn
-	appBurn := math.NewInt(numTokensClaimed)
+	appBurn := cosmosmath.NewInt(numTokensClaimed)
 	expectedAppEndStakeAmount := appInitialStake.Sub(appBurn)
 
 	// Assert that `applicationAddress` staked balance has decreased by the appropriate amount
@@ -173,13 +174,13 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid(t *testing.T) {
 // DEV_NOTE: Most of the setup here is a copy-paste of TLMBurnEqualsMintValid
 // except that the application stake is calculated to explicitly be too low to
 // handle all the relays completed.
-func TestProcessTokenLogicModules_TLMBurnEqualsMint_Invalid_SupplierExceedsMaxClaimableAmount(t *testing.T) {
+func TestProcessTokenLogicModules_TLMBurnEqualsMint_Valid_SupplierExceedsMaxClaimableAmount(t *testing.T) {
 	// Test Parameters
 	globalComputeUnitsToTokensMultiplier := uint64(1)
 	serviceComputeUnitsPerRelay := uint64(100)
 	service := prepareTestService(serviceComputeUnitsPerRelay)
 	numRelays := uint64(1000) // By a single supplier for application in this session
-	supplierInitialStake := math.NewInt(1000000)
+	supplierInitialStake := cosmosmath.NewInt(1000000)
 	supplierRevShareRatios := []float32{12.5, 37.5, 50}
 
 	// Prepare the keepers
@@ -190,7 +191,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Invalid_SupplierExceedsMaxCl
 	// Determine the max a supplier can claim
 	maxClaimableAmountPerSupplier := int64(numRelays * serviceComputeUnitsPerRelay * globalComputeUnitsToTokensMultiplier)
 	// Figure out what the app's initial stake should be to cover the max claimable amount
-	appInitialStake := math.NewInt(maxClaimableAmountPerSupplier*sessionkeeper.NumSupplierPerSession + 1)
+	appInitialStake := cosmosmath.NewInt(maxClaimableAmountPerSupplier*sessionkeeper.NumSupplierPerSession + 1)
 	// Increase the number of relay such that the supplier did "free work" and would
 	// be able to claim more than the max claimable amount.
 	numRelays *= 5
@@ -207,10 +208,10 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Invalid_SupplierExceedsMaxCl
 	require.NoError(t, err)
 	// TODO_TECHDEBT: Setting inflation to zero so we are testing the BurnEqualsMint logic exclusively.
 	// Once it is a governance param, update it using the keeper above.
-	prevInflationValue := tlm.MintPerClaimedTokenGlobalInflation
-	tlm.MintPerClaimedTokenGlobalInflation = 0
+	prevInflationValue := tlm.GlobalInflationPerClaim
+	tlm.GlobalInflationPerClaim = 0
 	t.Cleanup(func() {
-		tlm.MintPerClaimedTokenGlobalInflation = prevInflationValue
+		tlm.GlobalInflationPerClaim = prevInflationValue
 	})
 
 	// Add a new application with non-zero app stake end balance to assert against.
@@ -256,7 +257,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Invalid_SupplierExceedsMaxCl
 	pendingResult := tlm.NewPendingSettlementResult(claim)
 
 	// Process the token logic modules
-	err = keepers.ProcessTokenLogicModules(ctx, pendingResult)
+	err = keepers.ProcessTokenLogicModules(ctx, pendingResult, appStake)
 	require.NoError(t, err)
 
 	// Execute the pending results
@@ -270,7 +271,7 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Invalid_SupplierExceedsMaxCl
 	require.EqualValues(t, appStartBalance, appEndBalance)
 
 	// Determine the expected app end stake amount and the expected app burn
-	appBurn := math.NewInt(maxClaimableAmountPerSupplier)
+	appBurn := cosmosmath.NewInt(maxClaimableAmountPerSupplier)
 	appBurnCoin := sdk.NewCoin(volatile.DenomuPOKT, appBurn)
 	expectedAppEndStakeAmount := appInitialStake.Sub(appBurn)
 
@@ -327,8 +328,8 @@ func TestProcessTokenLogicModules_TLMBurnEqualsMint_Invalid_SupplierExceedsMaxCl
 
 func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t *testing.T) {
 	// Test Parameters
-	appInitialStake := apptypes.DefaultMinStake.Amount.Mul(math.NewInt(2))
-	supplierInitialStake := math.NewInt(1000000)
+	appInitialStake := apptypes.DefaultMinStake.Amount.Mul(cosmosmath.NewInt(2))
+	supplierInitialStake := cosmosmath.NewInt(1000000)
 	supplierRevShareRatios := []float32{12.5, 37.5, 50}
 	globalComputeUnitsToTokensMultiplier := uint64(1)
 	serviceComputeUnitsPerRelay := uint64(1)
@@ -405,7 +406,7 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	}
 
 	// Process the token logic modules
-	err = keepers.ProcessTokenLogicModules(ctx, pendingResult)
+	err = keepers.ProcessTokenLogicModules(ctx, pendingResult, appStake)
 	require.NoError(t, err)
 
 	// Execute the pending results
@@ -426,15 +427,16 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	}
 
 	// Compute mint per actor
-	numTokensMinted := numTokensClaimed * tlm.MintPerClaimedTokenGlobalInflation
-	daoMint := math.NewInt(int64(numTokensMinted * tlm.MintAllocationDAO))
-	propMint := math.NewInt(int64(numTokensMinted * tlm.MintAllocationProposer))
-	serviceOwnerMint := math.NewInt(int64(numTokensMinted * tlm.MintAllocationSourceOwner))
-	appMint := math.NewInt(int64(numTokensMinted * tlm.MintAllocationApplication))
+	numTokensMinted := numTokensClaimed * tlm.GlobalInflationPerClaim
+	numTokensMintedInt := cosmosmath.NewIntFromUint64(uint64(numTokensMinted))
+	daoMint := cosmosmath.NewInt(int64(numTokensMinted * tlm.MintAllocationDAO))
+	propMint := cosmosmath.NewInt(int64(numTokensMinted * tlm.MintAllocationProposer))
+	serviceOwnerMint := cosmosmath.NewInt(int64(numTokensMinted * tlm.MintAllocationSourceOwner))
+	appMint := cosmosmath.NewInt(int64(numTokensMinted * tlm.MintAllocationApplication))
 	supplierMint := float32(numTokensMinted * tlm.MintAllocationSupplier)
 
 	// Ensure the balance was increased to the appropriate amount.
-	require.Equal(t, daoBalanceBefore.Amount.Add(daoMint), daoBalanceAfter.Amount)
+	require.Equal(t, daoBalanceBefore.Amount.Add(daoMint).Add(numTokensMintedInt), daoBalanceAfter.Amount)
 	require.Equal(t, propBalanceBefore.Amount.Add(propMint), propBalanceAfter.Amount)
 	require.Equal(t, serviceOwnerBalanceBefore.Amount.Add(serviceOwnerMint), serviceOwnerBalanceAfter.Amount)
 	require.Equal(t, appBalanceBefore.Amount.Add(appMint), appBalanceAfter.Amount)
@@ -444,12 +446,19 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 		balanceAfter := supplierShareholderBalancesAfter[addr].Amount.Int64()
 		mintShare := int64(supplierMint * revShare.RevSharePercentage / 100)
 		rewardShare := int64(float32(numTokensClaimed) * revShare.RevSharePercentage / 100)
-		balanceIncrease := math.NewInt(mintShare + rewardShare)
+		balanceIncrease := cosmosmath.NewInt(mintShare + rewardShare)
 		expectedBalanceAfter := balanceBefore.Amount.Add(balanceIncrease).Int64()
 		// TODO_MAINNET: Remove the InDelta check and use the exact amount once the floating point arithmetic is fixed
 		acceptableRoundingDelta := tlm.MintDistributionAllowableTolerancePercent * float64(balanceAfter)
 		require.InDelta(t, expectedBalanceAfter, balanceAfter, acceptableRoundingDelta)
 	}
+
+	foundApp, appFound := keepers.GetApplication(ctx, appAddress)
+	require.True(t, appFound)
+
+	appStakeAfter := foundApp.GetStake().Amount
+	numTokensClaimedInt := cosmosmath.NewIntFromUint64(uint64(numTokensClaimed))
+	require.Equal(t, appInitialStake.Sub(numTokensMintedInt).Sub(numTokensClaimedInt), appStakeAfter)
 }
 
 func TestProcessTokenLogicModules_AppNotFound(t *testing.T) {
@@ -472,7 +481,7 @@ func TestProcessTokenLogicModules_AppNotFound(t *testing.T) {
 	pendingResult := tlm.NewPendingSettlementResult(claim)
 
 	// Process the token logic modules
-	err := keeper.ProcessTokenLogicModules(ctx, pendingResult)
+	err := keeper.ProcessTokenLogicModules(ctx, pendingResult, uPOKTCoin(math.MaxInt))
 	require.Error(t, err)
 	require.ErrorIs(t, err, tokenomicstypes.ErrTokenomicsApplicationNotFound)
 }
@@ -496,7 +505,7 @@ func TestProcessTokenLogicModules_ServiceNotFound(t *testing.T) {
 	pendingResult := tlm.NewPendingSettlementResult(claim)
 
 	// Execute test function
-	err := keeper.ProcessTokenLogicModules(ctx, pendingResult)
+	err := keeper.ProcessTokenLogicModules(ctx, pendingResult, uPOKTCoin(math.MaxInt))
 
 	require.Error(t, err)
 	require.ErrorIs(t, err, tokenomicstypes.ErrTokenomicsServiceNotFound)
@@ -567,7 +576,7 @@ func TestProcessTokenLogicModules_InvalidRoot(t *testing.T) {
 			pendingResult := tlm.NewPendingSettlementResult(claim)
 
 			// Execute test function
-			err := keeper.ProcessTokenLogicModules(ctx, pendingResult)
+			err := keeper.ProcessTokenLogicModules(ctx, pendingResult, uPOKTCoin(math.MaxInt))
 
 			// Assert the error
 			if test.errExpected {
@@ -652,7 +661,7 @@ func TestProcessTokenLogicModules_InvalidClaim(t *testing.T) {
 					}
 				}()
 				pendingResult := tlm.NewPendingSettlementResult(test.claim)
-				return keeper.ProcessTokenLogicModules(ctx, pendingResult)
+				return keeper.ProcessTokenLogicModules(ctx, pendingResult, uPOKTCoin(math.MaxInt))
 			}()
 
 			// Assert the error
@@ -664,6 +673,18 @@ func TestProcessTokenLogicModules_InvalidClaim(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestProcessTokenLogicModules_AppStakeInsufficientToCoverGlobalInflationAmount(t *testing.T) {
+	t.Skip("TODO_MAINNET(@red-0ne): Test application stake that is insufficient to cover the global inflation amount, for reimbursment and the max claim should scale down proportionally")
+}
+
+func TestProcessTokenLogicModules_AppStakeTooLowRoundingToZero(t *testing.T) {
+	t.Skip("TODO_MAINNET(@red-0ne): Test application stake that is too low which results in stake/num_suppliers rounding down to zero")
+}
+
+func TestProcessTokenLogicModules_AppStakeDropsBelowMinStakeAfterSession(t *testing.T) {
+	t.Skip("TODO_MAINNET(@red-0ne): Test that application stake being auto-unbonding after the stake drops below the required minimum when settling session accounting")
 }
 
 // prepareTestClaim uses the given number of relays and compute unit per relay in the

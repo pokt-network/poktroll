@@ -53,13 +53,16 @@ func NewKeeper(
 	sessionKeeper types.SessionKeeper,
 	serviceKeeper types.ServiceKeeper,
 
-	tlmProcessors []tlm.TokenLogicModule,
+	tokenLogicModules []tlm.TokenLogicModule,
 ) Keeper {
 	if _, err := sdk.AccAddressFromBech32(authority); err != nil {
 		panic(fmt.Sprintf("invalid authority address: %s", authority))
 	}
 
 	sharedQuerier := prooftypes.NewSharedKeeperQueryClient(sharedKeeper, sessionKeeper)
+	if err := tlm.ValidateTLMs(tokenLogicModules); err != nil {
+		panic(err)
+	}
 
 	return Keeper{
 		cdc:          cdc,
@@ -78,7 +81,7 @@ func NewKeeper(
 
 		sharedQuerier: sharedQuerier,
 
-		tokenLogicModules: tlmProcessors,
+		tokenLogicModules: tokenLogicModules,
 	}
 }
 

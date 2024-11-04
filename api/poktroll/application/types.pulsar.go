@@ -3,11 +3,11 @@ package application
 
 import (
 	v1beta1 "cosmossdk.io/api/cosmos/base/v1beta1"
-	shared "github.com/pokt-network/poktroll/api/poktroll/shared"
 	fmt "fmt"
 	_ "github.com/cosmos/cosmos-proto"
 	runtime "github.com/cosmos/cosmos-proto/runtime"
 	_ "github.com/cosmos/gogoproto/gogoproto"
+	shared "github.com/pokt-network/poktroll/api/poktroll/shared"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoiface "google.golang.org/protobuf/runtime/protoiface"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -2190,11 +2190,12 @@ type Application struct {
 
 	Address string        `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"` // The Bech32 address of the application.
 	Stake   *v1beta1.Coin `protobuf:"bytes,2,opt,name=stake,proto3" json:"stake,omitempty"`     // The total amount of uPOKT the application has staked
-	// TODO_BETA(@red-0ne, @olshansk): Limit this to one service_config.
-	//
-	//	Remove `repeated`, drop the `s` from service_configs and document why
-	//	this is the case in the app config (and here) per this discussion:
-	//	https://github.com/pokt-network/poktroll/pull/750#discussion_r1735025033
+	// CRITICAL_DEV_NOTE: The number of service_configs must be EXACTLY ONE.
+	// This prevents applications from over-servicing.
+	// The field is kept repeated (a list) for both legacy and future logic reaosns.
+	// References:
+	//   - https://github.com/pokt-network/poktroll/pull/750#discussion_r1735025033
+	//   - https://www.notion.so/buildwithgrove/Off-chain-Application-Stake-Tracking-6a8bebb107db4f7f9dc62cbe7ba555f7
 	ServiceConfigs []*shared.ApplicationServiceConfig `protobuf:"bytes,3,rep,name=service_configs,json=serviceConfigs,proto3" json:"service_configs,omitempty"` // The list of services this appliccation is configured to request service for
 	// TODO_BETA: Rename `delegatee_gateway_addresses` to `gateway_addresses_delegated_to`.
 	// Ensure to rename all relevant configs, comments, variables, function names, etc as well.

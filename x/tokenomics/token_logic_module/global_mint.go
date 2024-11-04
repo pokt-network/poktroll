@@ -42,9 +42,10 @@ const (
 )
 
 var (
-	// Governance parameters for the TLMGlobalMint module
-	// TODO_UPNEXT(@olshansk, #732): Make this a governance parameter and give it a non-zero value + tests.
-	MintPerClaimedTokenGlobalInflation = 0.1
+	// TODO_BETA(@red-0ne, #732): Make this a governance parameter and give it a non-zero value + tests.
+	// GlobalInflationPerClaim is the percentage of the claim amount that is minted
+	// by TLMGlobalMint to reward the actors in the network.
+	GlobalInflationPerClaim = 0.1
 
 	_ TokenLogicModule = (*tlmGlobalMint)(nil)
 )
@@ -58,9 +59,6 @@ func init() {
 	if 1.0 != MintAllocationDAO+MintAllocationProposer+MintAllocationSupplier+MintAllocationSourceOwner+MintAllocationApplication {
 		panic("mint allocation percentages do not add to 1.0")
 	}
-
-	// TODO_UPNEXT(@Olshansk): Ensure that if `TLMGlobalMint` is present in the map,
-	// then TLMGlobalMintReimbursementRequest will need to be there too.
 }
 
 // NewGlobalMintTLM creates a new instance of the GlobalMint TLM.
@@ -89,14 +87,14 @@ func (tlm tlmGlobalMint) Process(
 		"session_id", result.GetSessionId(),
 	)
 
-	if MintPerClaimedTokenGlobalInflation == 0 {
+	if GlobalInflationPerClaim == 0 {
 		// TODO_UPNEXT(@olshansk): Make sure to skip GMRR TLM in this case as well.
 		logger.Warn("global inflation is set to zero. Skipping Global Mint TLM.")
 		return nil
 	}
 
 	// Determine how much new uPOKT to mint based on global inflation
-	newMintCoin, newMintAmtFloat := calculateGlobalPerClaimMintInflationFromSettlementAmount(settlementCoin)
+	newMintCoin, newMintAmtFloat := CalculateGlobalPerClaimMintInflationFromSettlementAmount(settlementCoin)
 	if newMintCoin.Amount.Int64() == 0 {
 		return tokenomicstypes.ErrTokenomicsMintAmountZero
 	}
@@ -252,16 +250,16 @@ func sendRewardsToAccount(
 	return coinToAcc, nil
 }
 
-// calculateGlobalPerClaimMintInflationFromSettlementAmount calculates the amount
+// CalculateGlobalPerClaimMintInflationFromSettlementAmount calculates the amount
 // of uPOKT to mint based on the global per claim inflation rate as a function of
 // the settlement amount for a particular claim(s) or session(s).
-func calculateGlobalPerClaimMintInflationFromSettlementAmount(
+func CalculateGlobalPerClaimMintInflationFromSettlementAmount(
 	settlementCoin cosmostypes.Coin,
 ) (cosmostypes.Coin, big.Float) {
 	// Determine how much new uPOKT to mint based on global per claim inflation.
 	// TODO_MAINNET: Consider using fixed point arithmetic for deterministic results.
 	settlementAmtFloat := new(big.Float).SetUint64(settlementCoin.Amount.Uint64())
-	newMintAmtFloat := new(big.Float).Mul(settlementAmtFloat, big.NewFloat(MintPerClaimedTokenGlobalInflation))
+	newMintAmtFloat := new(big.Float).Mul(settlementAmtFloat, big.NewFloat(GlobalInflationPerClaim))
 	// DEV_NOTE: If new mint is less than 1 and more than 0, ceil it to 1 so that
 	// we never expect to process a claim with 0 minted tokens.
 	if newMintAmtFloat.Cmp(big.NewFloat(1)) < 0 && newMintAmtFloat.Cmp(big.NewFloat(0)) > 0 {

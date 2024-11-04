@@ -7,6 +7,7 @@ import (
 	cosmoslog "cosmossdk.io/log"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/pokt-network/poktroll/telemetry"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
@@ -61,6 +62,11 @@ func (tlm tlmRelayBurnEqualsMint) Process(
 
 	logger.Info(fmt.Sprintf("operation queued: mint (%v) coins in the supplier module", settlementCoin))
 
+	// Update telemetry information
+	if settlementCoin.Amount.IsInt64() {
+		defer telemetry.MintedTokensFromModule(suppliertypes.ModuleName, float32(settlementCoin.Amount.Int64()))
+	}
+
 	// Distribute the rewards to the supplier's shareholders based on the rev share percentage.
 	if err := distributeSupplierRewardsToShareHolders(
 		logger,
@@ -86,6 +92,11 @@ func (tlm tlmRelayBurnEqualsMint) Process(
 		Coin:              settlementCoin,
 	})
 	logger.Info(fmt.Sprintf("operation queued: burn (%v) from the application module account", settlementCoin))
+
+	// Update telemetry information
+	if settlementCoin.Amount.IsInt64() {
+		defer telemetry.BurnedTokensFromModule(suppliertypes.ModuleName, float32(settlementCoin.Amount.Int64()))
+	}
 
 	// Update the application's on-chain stake
 	newAppStake, err := application.Stake.SafeSub(settlementCoin)

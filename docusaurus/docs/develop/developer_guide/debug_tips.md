@@ -14,11 +14,11 @@ If you have a tip you'd like to share with others, please open a PR to add it he
 - [`itest` - Investigating Flaky Tests](#itest---investigating-flaky-tests)
   - [`itest` Usage](#itest-usage)
   - [`itest` Example](#itest-example)
-  - [TODO: pprof](#todo-pprof)
-  - [TODO: dlv](#todo-dlv)
 - [`poktrolld query tx` - Investigating Failed Transactions](#poktrolld-query-tx---investigating-failed-transactions)
   - [`poktrolld query tx` Example](#poktrolld-query-tx-example)
-   
+  - [TODO_DOCUMENT: pprof](#todo_document-pprof)
+  - [TODO_DOCUMENT: dlv](#todo_document-dlv)
+
 ## `itest` - Investigating Flaky Tests
 
 We developed a tool called `itest` to help with debugging flaky tests. It runs
@@ -43,11 +43,11 @@ make itest 5 10 ./pkg/client/tx/... -- -run TxClient_SignAndBroadcast_Succeeds
 
 ## `poktrolld query tx` - Investigating Failed Transactions
 
-_tl;dr Submitted Transaction != Committed Transaction_ 
+_tl;dr Submitted Transaction != Committed Transaction_
 
 After a transaction (e.g. staking a new service) is successfully sent to an RPC node, we have to wait
 until the next block, when a proposer will try to commit to the network's state, to see if its valid.
-If the transaction's (TX) state transition is invalid, it will not be committed. 
+If the transaction's (TX) state transition is invalid, it will not be committed.
 
 In other words, receiving a transaction (TX) hash from the `poktrolld` CLI doesn't mean it was committed.
 However, the transaction (TX) hash can be used to investigate the failed transaction.
@@ -91,7 +91,7 @@ state transition.
 
 :::note
 
-If you are reading this and the `9E4CA...` hash is no longer valid, we may have done a re-genesis of 
+If you are reading this and the `9E4CA...` hash is no longer valid, we may have done a re-genesis of
 TestNet at this point. Please consider updating with a new one!
 
 :::
@@ -115,6 +115,6 @@ The above command will produce the following output:
 
 :::
 
-### TODO: pprof
+### TODO_DOCUMENT: pprof
 
-### TODO: dlv
+### TODO_DOCUMENT: dlv

@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"fmt"
+	"math/big"
 
 	"cosmossdk.io/log"
 	"cosmossdk.io/math"
@@ -33,6 +34,7 @@ import (
 func (k Keeper) ProcessTokenLogicModules(
 	ctx context.Context,
 	pendingResult *tlm.PendingSettlementResult,
+	applicationInitialStake cosmostypes.Coin,
 ) error {
 	logger := k.Logger().With("method", "ProcessTokenLogicModules")
 
@@ -174,7 +176,7 @@ func (k Keeper) ProcessTokenLogicModules(
 
 	// Ensure the claim amount is within the limits set by Relay Mining.
 	// If not, update the settlement amount and emit relevant events.
-	actualSettlementCoin, err := k.ensureClaimAmountLimits(ctx, logger, &application, &supplier, claimSettlementCoin)
+	actualSettlementCoin, err := k.ensureClaimAmountLimits(ctx, logger, &application, &supplier, claimSettlementCoin, applicationInitialStake)
 	if err != nil {
 		return err
 	}
@@ -202,8 +204,7 @@ func (k Keeper) ProcessTokenLogicModules(
 		logger.Info(fmt.Sprintf("Finished processing TLM: %q", tlmName))
 	}
 
-	// TODO_CONSIDERATION: If we support multiple native tokens, we will need to
-	// start checking the denom here.
+	// TODO_POST_MAINNET: If we support multiple native tokens, we will need to start checking the denom here.
 	sessionEndHeight := sharedtypes.GetSessionEndHeight(&sharedParams, cosmostypes.UnwrapSDKContext(ctx).BlockHeight())
 	if application.Stake.Amount.LT(apptypes.DefaultMinStake.Amount) {
 		// Mark the application as unbonding if it has less than the minimum stake.
@@ -255,41 +256,76 @@ func (k Keeper) ensureClaimAmountLimits(
 	application *apptypes.Application,
 	supplier *sharedtypes.Supplier,
 	claimSettlementCoin cosmostypes.Coin,
+	initialApplicationStake cosmostypes.Coin,
 ) (
 	actualSettlementCoins cosmostypes.Coin,
 	err error,
 ) {
 	logger = logger.With("helper", "ensureClaimAmountLimits")
 
-	// TODO_BETA_OR_MAINNET(@red-0ne): The application stake gets reduced with every claim
-	// settlement. Relay miners use the appStake at the beginning of a session to determine
-	// the maximum amount they can claim. We need to somehow access and propagate this
-	// value (via context?) so it is the same for all TLM processors for each claim.
-	// Note that this will also need to incorporate MintPerClaimGlobalInflation because
-	// applications are being overcharged by that amount in the meantime. Whatever the
-	// solution and implementation ends up being, make sure to KISS.
-	appStake := application.GetStake()
+	// TODO_BETA(@red-0ne): Make relay miners use the appStake at the beginning
+	// of a session to determine the maximum amount they can claim.
+	// Note that this also incorporates MintPerClaimGlobalInflation since applications
+	// are being overcharged by that amount and the funds are sent to the DAO/PNF
+	// before being reimbursed to the application in the future.
+	appStake := initialApplicationStake
 
-	// Determine the max claimable amount for the supplier based on the application's stake in this session.
-	maxClaimableCoin := sdk.NewCoin(volatile.DenomuPOKT, appStake.Amount.Quo(math.NewInt(sessionkeeper.NumSupplierPerSession)))
+	// The application should have enough stake to cover for the global mint reimbursement.
+	// This amount is deducted from the maximum claimable amount.
+	globalInflationCoin, _ := tlm.CalculateGlobalPerClaimMintInflationFromSettlementAmount(claimSettlementCoin)
+	globalInflationAmt := globalInflationCoin.Amount
+	minRequiredAppStakeAmt := claimSettlementCoin.Amount.Add(globalInflationAmt)
+	totalClaimedCoin := sdk.NewCoin(volatile.DenomuPOKT, minRequiredAppStakeAmt)
 
-	if maxClaimableCoin.Amount.GTE(claimSettlementCoin.Amount) {
+	// TODO_BETA(@red-0ne): Introduce a session sliding window to account for potential consumption
+	// during the current session (i.e. Not the session being settled) such as:
+	// maxClaimableAmt = (AppStake / (currSessNum - settlingSessNum + 1) / NumSuppliersPerSession)
+	// In conjunction with single service applications, this would make maxClaimableAmt
+	// effectively addressing the issue of over-servicing.
+	// Example:
+	// - Current session num: 3
+	// - Settling session num: 2
+	// - Application already requested work for session 3
+	// Problem:
+	// - If the application consumes its entire stake in settlement of session 2
+	// - Then over-servicing in session 3 (i.e. No stake left to consume)
+	// Solution:
+	// - By dividing the claimable stake by 2 (3 - 2 + 1), settling session 2 assumes that
+	//   the application will consume its maxClaimableAmt the current session (3).
+	// - Off-chain actors could use this formula during the servicing of session num 3
+	//   and assume maxClaimableAmt will be settled in session 2.
+	// - Guarantee no over-servicing at the cost of higher application stake requirements.
+	maxClaimableAmt := appStake.Amount.Quo(math.NewInt(sessionkeeper.NumSupplierPerSession))
+	maxClaimSettlementAmt := supplierAppStakeToMaxSettlementAmount(maxClaimableAmt)
+
+	// Check if the claimable amount is capped by the max claimable amount.
+	// As per the Relay Mining paper, the Supplier claim MUST NOT exceed the application's
+	// allocated stake. If it does, the claim is capped by the application's allocated stake
+	// and the supplier is effectively "overserviced".
+	if minRequiredAppStakeAmt.GT(maxClaimableAmt) {
+		logger.Warn(fmt.Sprintf("Claim by supplier %s EXCEEDS LIMITS for application %s. Max claimable amount < Claim amount: %v < %v",
+			supplier.GetOperatorAddress(), application.GetAddress(), maxClaimableAmt, claimSettlementCoin.Amount))
+
+		minRequiredAppStakeAmt = maxClaimableAmt
+		maxClaimSettlementAmt = supplierAppStakeToMaxSettlementAmount(minRequiredAppStakeAmt)
+	}
+
+	// Nominal case: The claimable amount is within the limits set by Relay Mining.
+	if claimSettlementCoin.Amount.LTE(maxClaimSettlementAmt) {
 		logger.Info(fmt.Sprintf("Claim by supplier %s IS WITHIN LIMITS of servicing application %s. Max claimable amount >= Claim amount: %v >= %v",
-			supplier.GetOperatorAddress(), application.GetAddress(), maxClaimableCoin, claimSettlementCoin.Amount))
+			supplier.GetOperatorAddress(), application.GetAddress(), maxClaimSettlementAmt, claimSettlementCoin.Amount))
 		return claimSettlementCoin, nil
 	}
 
-	logger.Warn(fmt.Sprintf("Claim by supplier %s EXCEEDS LIMITS for application %s. Max claimable amount < Claim amount: %v < %v",
-		supplier.GetOperatorAddress(), application.GetAddress(), maxClaimableCoin, claimSettlementCoin.Amount))
-
-	// Reduce the settlement amount if the application was over-serviced
-	actualSettlementCoins = maxClaimableCoin
+	// Claimable amount is capped by the max claimable amount or the application allocated stake.
+	// Determine the max claimable amount for the supplier based on the application's stake in this session.
+	maxClaimableCoin := sdk.NewCoin(volatile.DenomuPOKT, maxClaimSettlementAmt)
 
 	// Prepare and emit the event for the application being overserviced
 	applicationOverservicedEvent := &tokenomicstypes.EventApplicationOverserviced{
-		ApplicationAddr:      application.Address,
+		ApplicationAddr:      application.GetAddress(),
 		SupplierOperatorAddr: supplier.GetOperatorAddress(),
-		ExpectedBurn:         &claimSettlementCoin,
+		ExpectedBurn:         &totalClaimedCoin,
 		EffectiveBurn:        &maxClaimableCoin,
 	}
 	eventManager := cosmostypes.UnwrapSDKContext(ctx).EventManager()
@@ -298,5 +334,21 @@ func (k Keeper) ensureClaimAmountLimits(
 			tokenomicstypes.ErrTokenomicsEmittingEventFailed.Wrapf("error emitting event %v", applicationOverservicedEvent)
 	}
 
-	return actualSettlementCoins, nil
+	return maxClaimableCoin, nil
+}
+
+// supplierAppStakeToMaxSettlementAmount calculates the max amount of uPOKT the supplier
+// can claim based on the stake allocated to the supplier and the global inflation
+// allocation percentage.
+// This is the inverse of CalculateGlobalPerClaimMintInflationFromSettlementAmount:
+// stake = maxSettlementAmt + globalInflationAmt
+// stake = maxSettlementAmt + (maxSettlementAmt * GlobalInflationPerClaim)
+// stake = maxSettlementAmt * (1 + GlobalInflationPerClaim)
+// maxSettlementAmt = stake / (1 + GlobalInflationPerClaim)
+func supplierAppStakeToMaxSettlementAmount(stakeAmount math.Int) math.Int {
+	stakeAmountFloat := big.NewFloat(0).SetInt(stakeAmount.BigInt())
+	maxSettlementAmountFloat := big.NewFloat(0).Quo(stakeAmountFloat, big.NewFloat(1+tlm.GlobalInflationPerClaim))
+
+	settlementAmount, _ := maxSettlementAmountFloat.Int(nil)
+	return math.NewIntFromBigInt(settlementAmount)
 }

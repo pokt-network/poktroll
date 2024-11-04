@@ -25,7 +25,7 @@ func SimulateMsgTransferApplication(
 			DestinationAddress: simDstAppAccount.Address.String(),
 		}
 
-		// TODO: Handling the TransferApplication simulation
+		// TODO_TECHDEBT: Handling the TransferApplication simulation
 
 		return simtypes.NoOpMsg(types.ModuleName, sdk.MsgTypeURL(msg), "TransferApplication simulation not implemented"), nil, nil
 	}
