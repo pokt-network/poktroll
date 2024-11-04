@@ -12,6 +12,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	_ "golang.org/x/crypto/sha3"
 
+	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -60,29 +61,28 @@ func NewSessionHydrator(
 
 // GetSession implements of the exposed `UtilityModule.GetSession` function
 // TECHDEBT(#519,#348): Add custom error types depending on the type of issue that occurred and assert on them in the unit tests.
-// TODO_BETA: Consider returning an error if the application's stake has become very low.
 func (k Keeper) HydrateSession(ctx context.Context, sh *sessionHydrator) (*types.Session, error) {
 	logger := k.Logger().With("method", "hydrateSession")
 
 	if err := k.hydrateSessionMetadata(ctx, sh); err != nil {
 		return nil, err
 	}
-	logger.Info("Finished hydrating session metadata")
+	logger.Debug("Finished hydrating session metadata")
 
 	if err := k.hydrateSessionID(ctx, sh); err != nil {
 		return nil, err
 	}
-	logger.Info(fmt.Sprintf("Finished hydrating session ID: %s", sh.sessionHeader.SessionId))
+	logger.Debug(fmt.Sprintf("Finished hydrating session ID: %s", sh.sessionHeader.SessionId))
 
 	if err := k.hydrateSessionApplication(ctx, sh); err != nil {
 		return nil, err
 	}
-	logger.Info(fmt.Sprintf("Finished hydrating session application: %+v", sh.session.Application))
+	logger.Debug(fmt.Sprintf("Finished hydrating session application: %+v", sh.session.Application))
 
 	if err := k.hydrateSessionSuppliers(ctx, sh); err != nil {
 		return nil, err
 	}
-	logger.Info("Finished hydrating session suppliers")
+	logger.Debug("Finished hydrating session suppliers")
 
 	sh.session.Header = sh.sessionHeader
 	sh.session.SessionId = sh.sessionHeader.SessionId
@@ -102,8 +102,8 @@ func (k Keeper) hydrateSessionMetadata(ctx context.Context, sh *sessionHydrator)
 		)
 	}
 
-	// TODO_BLOCKER(@bryanchriswhite, #543): If the num_blocks_per_session param has ever been changed,
-	// this function may cause unexpected behavior for historical sessions.
+	// TODO_MAINNET(@bryanchriswhite, #543): If the num_blocks_per_session param
+	// has ever been changed, this function may cause unexpected behavior for historical sessions.
 	sharedParams := k.sharedKeeper.GetParams(ctx)
 	sh.session.NumBlocksPerSession = int64(sharedParams.NumBlocksPerSession)
 	sh.session.SessionNumber = sharedtypes.GetSessionNumber(&sharedParams, sh.blockHeight)
@@ -197,6 +197,8 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 		}
 	}
 
+	defer telemetry.SessionSuppliersGauge(len(candidateSuppliers), NumSupplierPerSession, sh.sessionHeader.ServiceId)
+
 	if len(candidateSuppliers) == 0 {
 		logger.Error("[ERROR] no suppliers found for session")
 		return types.ErrSessionSuppliersNotFound.Wrapf(
@@ -207,7 +209,7 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 	}
 
 	if len(candidateSuppliers) < NumSupplierPerSession {
-		logger.Info(fmt.Sprintf(
+		logger.Debug(fmt.Sprintf(
 			"Number of available suppliers (%d) is less than the maximum number of possible suppliers per session (%d)",
 			len(candidateSuppliers),
 			NumSupplierPerSession,
@@ -220,7 +222,7 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 	return nil
 }
 
-// TODO_BETA: We are using a `Go` native implementation for a pseudo-random
+// TODO_MAINNET: We are using a `Go` native implementation for a pseudo-random
 // number generator. In order for it to be language agnostic, a general purpose
 // algorithm MUST be used. pseudoRandomSelection returns a random subset of the
 // candidates.

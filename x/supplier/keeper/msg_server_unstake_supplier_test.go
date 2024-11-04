@@ -389,8 +389,11 @@ func TestMsgServer_UnstakeSupplier_OperatorCanUnstake(t *testing.T) {
 	ctx = keepertest.SetBlockHeight(ctx, unbondingHeight)
 	sessionEndHeight = sharedtypes.GetSessionEndHeight(&sharedParams, cosmostypes.UnwrapSDKContext(ctx).BlockHeight())
 
+	// Balance decrease is the total amount deducted from the supplier's balance, including
+	// the initial stake and the staking fee.
+	balanceDecrease := keeper.SupplierStakingFee.Amount.Int64() + foundSupplier.Stake.Amount.Int64()
 	// Ensure that the initial stake is not returned to the owner yet
-	require.Equal(t, int64(0), supplierModuleKeepers.SupplierUnstakedFundsMap[ownerAddr])
+	require.Equal(t, -balanceDecrease, supplierModuleKeepers.SupplierBalanceMap[ownerAddr])
 
 	// Run the endblocker to unbond suppliers
 	err = supplierModuleKeepers.EndBlockerUnbondSuppliers(ctx)
@@ -409,6 +412,7 @@ func TestMsgServer_UnstakeSupplier_OperatorCanUnstake(t *testing.T) {
 	require.Equalf(t, 1, len(events), "expected exactly 1 event")
 	require.EqualValues(t, expectedEvent, events[0])
 
-	// Ensure that the initial stake is returned to the owner
-	require.Equal(t, initialStake, supplierModuleKeepers.SupplierUnstakedFundsMap[ownerAddr])
+	// Ensure that the initial stake is returned to the owner while the staking fee
+	// remains deducted from the supplier's balance.
+	require.Equal(t, -keeper.SupplierStakingFee.Amount.Int64(), supplierModuleKeepers.SupplierBalanceMap[ownerAddr])
 }

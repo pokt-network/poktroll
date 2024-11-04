@@ -8,9 +8,17 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/pokt-network/poktroll/app/volatile"
 	"github.com/pokt-network/poktroll/telemetry"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
+)
+
+var (
+	// TODO_BETA: Make supplier staking fee a governance parameter
+	// TODO_BETA(@red-0ne): Update supplier staking documentation to remove the upstaking
+	// requirement and introduce the staking fee.
+	SupplierStakingFee = sdk.NewInt64Coin(volatile.DenomuPOKT, 1)
 )
 
 func (k msgServer) StakeSupplier(ctx context.Context, msg *suppliertypes.MsgStakeSupplier) (*suppliertypes.MsgStakeSupplierResponse, error) {
@@ -110,9 +118,13 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *suppliertypes.MsgStak
 		}
 	}
 
-	// MUST ALWAYS stake or upstake (> 0 delta)
-	if coinsToEscrow.IsZero() {
-		err = suppliertypes.ErrSupplierInvalidStake.Wrapf("Signer %q must escrow more than 0 additional coins", msg.Signer)
+	// TODO_BETA: Remove requirement of MUST ALWAYS stake or upstake (>= 0 delta)
+	// TODO_POST_MAINNET: Should we allow stake decrease down to min stake?
+	if coinsToEscrow.IsNegative() {
+		err = suppliertypes.ErrSupplierInvalidStake.Wrapf(
+			"Supplier signer %q stake (%s) must be greater than or equal to the current stake (%s)",
+			msg.Signer, msg.GetStake(), supplier.Stake,
+		)
 		logger.Info(fmt.Sprintf("WARN: %s", err))
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -136,7 +148,8 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *suppliertypes.MsgStak
 	}
 
 	// Send the coins from the message signer account to the staked supplier pool
-	err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, msgSignerAddress, suppliertypes.ModuleName, []sdk.Coin{coinsToEscrow})
+	stakeWithFee := sdk.NewCoins(coinsToEscrow.Add(SupplierStakingFee))
+	err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, msgSignerAddress, suppliertypes.ModuleName, stakeWithFee)
 	if err != nil {
 		logger.Info(fmt.Sprintf("ERROR: could not send %v coins from %q to %q module account due to %v", coinsToEscrow, msgSignerAddress, suppliertypes.ModuleName, err))
 		return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -210,8 +223,12 @@ func (k msgServer) updateSupplier(
 		return suppliertypes.ErrSupplierInvalidStake.Wrapf("stake amount cannot be nil")
 	}
 
-	if msg.Stake.IsLTE(*supplier.Stake) {
-		return suppliertypes.ErrSupplierInvalidStake.Wrapf("stake amount %v must be higher than previous stake amount %v", msg.Stake, supplier.Stake)
+	// TODO_BETA: No longer require upstaking. Remove this check.
+	if msg.Stake.IsLT(*supplier.Stake) {
+		return suppliertypes.ErrSupplierInvalidStake.Wrapf(
+			"stake amount %v must be greater than or equal than previous stake amount %v",
+			msg.Stake, supplier.Stake,
+		)
 	}
 	supplier.Stake = msg.Stake
 
@@ -230,7 +247,7 @@ func (k msgServer) updateSupplier(
 
 	// Update activation height for services update. New services are activated at the
 	// end of the current session, while existing ones keep their activation height.
-	// TODO_CONSIDERAION: Service removal should take effect at the beginning of the
+	// TODO_MAINNET: Service removal should take effect at the beginning of the
 	// next session, otherwise sessions that are fetched at their start height may
 	// still include Suppliers that no longer provide the services they removed.
 	// For the same reason, any SupplierEndpoint change should take effect at the

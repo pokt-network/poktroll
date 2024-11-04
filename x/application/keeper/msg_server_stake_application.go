@@ -73,7 +73,7 @@ func (k msgServer) StakeApplication(ctx context.Context, msg *types.MsgStakeAppl
 
 	// MUST ALWAYS have at least minimum stake.
 	minStake := k.GetParams(ctx).MinStake
-	// TODO_CONSIDERATION: If we support multiple native tokens, we will need to
+	// TODO_POST_MAINNET: If we support multiple native tokens, we will need to
 	// start checking the denom here.
 	if msg.Stake.Amount.LT(minStake.Amount) {
 		err = fmt.Errorf("application %q must stake at least %s", msg.GetAddress(), minStake)

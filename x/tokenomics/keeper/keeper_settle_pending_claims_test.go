@@ -44,7 +44,7 @@ func init() {
 	cmd.InitSDKConfig()
 }
 
-// TODO_TECHDEBT(@olshansk): Consolidate the setup for all tests that use TokenomicsModuleKeepers
+// TODO_TECHDEBT: Consolidate the setup for all tests that use TokenomicsModuleKeepers
 type TestSuite struct {
 	suite.Suite
 
