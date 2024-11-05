@@ -19,8 +19,8 @@ import (
 
 var SHA3HashLen = crypto.SHA3_256.Size()
 
-// TODO_BETA(@bryanchriswhite): Make this a governance parameter
 const (
+	// TODO_BETA(@bryanchriswhite): Make this a governance parameter
 	NumSupplierPerSession = 15
 )
 

@@ -7,7 +7,7 @@ import (
 )
 
 // YAMLAppGateServerConfig is the structure used to unmarshal the AppGateServer config file
-// TODO_BETA(@red-0ne): Rename self_signing parameter to `sovereign` in code, configs
+// TODO_MAINNET(@red-0ne): Rename self_signing parameter to `sovereign` in code, configs
 // and documentation
 type YAMLAppGateServerConfig struct {
 	ListeningEndpoint string                         `yaml:"listening_endpoint"`

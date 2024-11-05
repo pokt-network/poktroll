@@ -233,8 +233,7 @@ func (k Keeper) ProofRequirementForClaim(ctx context.Context, claim *types.Claim
 	}
 
 	// Require a proof if the claim's compute units meets or exceeds the threshold.
-	// TODO_BETA(@red-0ne): Should the threshold be dependant on the stake as well
-	// so we slash proportional to the compute units?
+	// TODO_BETA(@olshansk): Should the threshold be dependant on the stake as well so we slash proportional to the compute units?
 	// TODO_BETA(@red-0ne): It might make sense to include whether there was a proof
 	// submission error downstream from here. This would require a more comprehensive metrics API.
 	if claimeduPOKT.Amount.GTE(proofParams.GetProofRequirementThreshold().Amount) {
@@ -301,7 +300,7 @@ func (k Keeper) getProofRequirementSeedBlockHash(
 	proofWindowOpenHeight := sharedtypes.GetProofWindowOpenHeight(sharedParams, sessionEndHeight)
 	proofWindowOpenBlockHash := k.sessionKeeper.GetBlockHash(ctx, proofWindowOpenHeight)
 
-	// TODO_BETA(@red-0ne): Update the method header of this function to accept (sharedParams, Claim, BlockHash).
+	// TODO_TECHDEBT(@red-0ne): Update the method header of this function to accept (sharedParams, Claim, BlockHash).
 	// After doing so, please review all calling sites and simplify them accordingly.
 	earliestSupplierProofCommitHeight := sharedtypes.GetEarliestSupplierProofCommitHeight(
 		sharedParams,
