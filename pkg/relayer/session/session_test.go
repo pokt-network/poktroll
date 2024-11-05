@@ -44,7 +44,7 @@ func TestRelayerSessionsManager_ColdStartRelayMinerWithUnclaimedRelays(t *testin
 // along with its dependencies before starting it.
 // It takes in the proofParams to configure the proof requirements and the proofCount
 // to assert the number of proofs to be requested.
-// TODO_BETA(@red-0ne): Add a test case which verifies that the service's compute units per relay is used as
+// TODO_MAINNET(@red-0ne): Add a test case which verifies that the service's compute units per relay is used as
 // the weight of a relay when updating a session's SMT.
 func requireProofCountEqualsExpectedValueFromProofParams(t *testing.T, proofParams prooftypes.Params, proofCount int) {
 	var (

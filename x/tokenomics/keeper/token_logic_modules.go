@@ -27,7 +27,7 @@ import (
 
 var (
 	// Governance parameters for the TLMGlobalMint module
-	// TODO_BETA(@red-0ne, #732): Make this a governance parameter and give it a non-zero value + tests.
+	// TODO_BETA(@red-0ne, #732): Make this a governance parameter.
 	// GlobalInflationPerClaim is the percentage of the claim amount that is minted
 	// by TLMGlobalMint to reward the actors in the network.
 	GlobalInflationPerClaim = 0.1
@@ -47,12 +47,12 @@ const (
 	// This internal constant SHOULD ONLY be used in TokenLogicModuleGlobalMint.
 	// Due to floating point arithmetic, the total amount of minted coins may be slightly
 	// larger than what is distributed to pocket network participants
-	// TODO_MAINNET: Figure out if we can avoid this tolerance and use fixed point arithmetic.
+	// TODO_MAINNET(@red-0ne): Figure out if we can avoid this tolerance and use fixed point arithmetic.
 	MintDistributionAllowableTolerancePercent = 0.02 // 2%
 	// MintDistributionAllowableToleranceAbsolution is similar to MintDistributionAllowableTolerancePercent
 	// but provides an absolute number where the % difference might no be
 	// meaningful for small absolute numbers.
-	// TODO_MAINNET: Figure out if we can avoid this tolerance and use fixed point arithmetic.
+	// TODO_MAINNET(@red-0ne): Figure out if we can avoid this tolerance and use fixed point arithmetic.
 	MintDistributionAllowableToleranceAbs = 5.0 // 5 uPOKT
 )
 
@@ -334,9 +334,11 @@ func (k Keeper) ProcessTokenLogicModules(
 	k.applicationKeeper.SetApplication(ctx, application)
 	logger.Info(fmt.Sprintf("updated on-chain application record with address %q", application.Address))
 
-	// TODO_MAINNET: If the application stake has dropped to (near?) zero, should
-	// we unstake it? Should we use it's balance? Should there be a payee of last resort?
-	// Make sure to document whatever decision we come to.
+	// TODO_MAINNET(@bryanchriswhite): If the application stake has dropped to (near?) zero:
+	// - Unstake it
+	// - Emit an event
+	// - Ensure this doesn't happen
+	// - Document the decision
 
 	// State mutation: Update the suppliers's on-chain record
 	k.supplierKeeper.SetSupplier(ctx, supplier)
@@ -717,7 +719,7 @@ func (k Keeper) ensureClaimAmountLimits(
 
 	// TODO_BETA(@red-0ne): Introduce a session sliding window to account for potential consumption
 	// during the current session (i.e. Not the session being settled) such as:
-	// maxClaimableAmt = (AppStake / (currSessNum - settlingSessNum + 1) / NumSuppliersPerSession)
+	// maxClaimableAmt = (AppStake / (currSessionNum - settlingSessionNum + 1) / NumSuppliersPerSession)
 	// In conjunction with single service applications, this would make maxClaimableAmt
 	// effectively addressing the issue of over-servicing.
 	// Example:
