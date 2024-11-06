@@ -122,6 +122,16 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 			}
 		}
 
+		app, found := k.applicationKeeper.GetApplication(ctx, claim.SessionHeader.ApplicationAddress)
+		if !found {
+			return settledResult, expiredResult, types.ErrTokenomicsApplicationNotFound
+		}
+
+		if app.GetStake().IsZero() {
+			logger.Warn(fmt.Sprintf("application %q has no stake", claim.SessionHeader.ApplicationAddress))
+			continue
+		}
+
 		// If this code path is reached, then either:
 		// 1. The claim does not require a proof.
 		// 2. The claim requires a proof and a valid proof was found.
