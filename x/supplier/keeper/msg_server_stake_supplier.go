@@ -15,9 +15,8 @@ import (
 )
 
 var (
-	// TODO_BETA: Make supplier staking fee a governance parameter
-	// TODO_BETA(@red-0ne): Update supplier staking documentation to remove the upstaking
-	// requirement and introduce the staking fee.
+	// TODO_BETA(@bryanchriswhite): Make supplier staking fee a governance parameter
+	// TODO_BETA(@red-0ne): Update supplier staking documentation to remove the upstaking requirement and introduce the staking fee.
 	SupplierStakingFee = sdk.NewInt64Coin(volatile.DenomuPOKT, 1)
 )
 
@@ -118,7 +117,7 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *suppliertypes.MsgStak
 		}
 	}
 
-	// TODO_BETA: Remove requirement of MUST ALWAYS stake or upstake (>= 0 delta)
+	// TODO_BETA(@red-0ne): Remove requirement of MUST ALWAYS stake or upstake (>= 0 delta)
 	// TODO_POST_MAINNET: Should we allow stake decrease down to min stake?
 	if coinsToEscrow.IsNegative() {
 		err = suppliertypes.ErrSupplierInvalidStake.Wrapf(
