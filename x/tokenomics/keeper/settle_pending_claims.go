@@ -127,6 +127,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (
 			return settledResult, expiredResult, types.ErrTokenomicsApplicationNotFound
 		}
 
+		logger.Info().Msgf("application stake: %s", app.GetStake())
 		if app.GetStake().IsZero() {
 			logger.Warn(fmt.Sprintf("application %q has no stake", claim.SessionHeader.ApplicationAddress))
 			continue
