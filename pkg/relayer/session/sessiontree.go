@@ -25,7 +25,7 @@ var _ relayer.SessionTree = (*sessionTree)(nil)
 // the number of requests that an application can pay for. This needs to be tracked
 // based on the app's stake in the beginning of a session and the number of nodes
 // per session. An operator should be able to specify "overservicing_compute_units_limit"
-// whereby an upper bound on how much it can overservice an application is set. The
+// whereby an upper bound on how much it can overserviced an application is set. The
 // default value for this should be -1, implying "unlimited".
 // Ref discussion: https://github.com/pokt-network/poktroll/pull/755#discussion_r1737287860
 type sessionTree struct {

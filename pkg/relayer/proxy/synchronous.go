@@ -174,7 +174,10 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 	}
 
 	// Increment the relays counter.
-	relaysTotal.With("service_id", supplierServiceId).Add(1)
+	relaysTotal.With(
+		"service_id", supplierServiceId,
+		"supplier_operator_address", relayRequest.Meta.SupplierOperatorAddress,
+	).Add(1)
 	defer func() {
 		duration := time.Since(startTime).Seconds()
 
@@ -203,7 +206,7 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 		return
 	}
 
-	sync.logger.Info().Fields(map[string]any{
+	sync.logger.Debug().Fields(map[string]any{
 		"application_address":  relay.Res.Meta.SessionHeader.ApplicationAddress,
 		"service_id":           relay.Res.Meta.SessionHeader.ServiceId,
 		"session_start_height": relay.Res.Meta.SessionHeader.SessionStartBlockHeight,
