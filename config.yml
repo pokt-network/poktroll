@@ -147,6 +147,7 @@ genesis:
         # Application module
         - address: pokt1rl3gjgzexmplmds3tq3r3yk84zlwdl6djzgsvm
           coins:
+            # TODO_MAINNET: Pass config.yml into ChatGPT to build a script that ensures the amounts line up
             - amount: "200000136" # MUST BE equal to the total of all app stakes below
               denom: upokt
         # Supplier module

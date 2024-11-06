@@ -166,7 +166,7 @@ type SessionTree interface {
 
 // RelayMeter is an interface that keeps track of the amount of stake consumed between
 // a single onchain Application and a single onchain Supplier over the course of a single session.
-// It enables the RelayMiner t orate limit the number of requests handled offchain as a function
+// It enables the RelayMiner to rate limit the number of requests handled offchain as a function
 // of the optimistic onchain rate limits.
 type RelayMeter interface {
 	// Start starts the relay meter.
@@ -174,15 +174,18 @@ type RelayMeter interface {
 
 	// AccumulateRelayReward adds the relay reward from the incoming request to session's accumulator.
 	// The relay cost is added optimistically, assuming that the relay WILL be volume / reward applicable.
+	//
 	// The reason why optimistic AccumulateRelayReward + SetNonApplicableRelayReward is used instead of
 	// a simpler AccumulateVolumeApplicableRelayReward is that when the relay is first seen
 	// we don't know if it will be volume / reward applicable until it is served.
-	// Since the check of whether we allow the relay to be served or not is done before.
-	// To rate limit or not the current relay, we need to optimistically account
-	// for it as volume / reward applicable.
+	//
+	// To rate limit or not the current relay, we need to always optimistically account all relays as being
+	// volume / reward applicable.
 	AccumulateRelayReward(ctx context.Context, relayRequestMeta servicetypes.RelayRequestMetadata) error
 
 	// SetNonApplicableRelayReward updates the relay meter for the given relay request as
 	// non-applicable between a single Application and a single Supplier for a single session.
+	// The volume / reward applicability of the relay is unknown to the relay miner
+	// until the relay is served and the relay response signed.
 	SetNonApplicableRelayReward(ctx context.Context, relayRequestMeta servicetypes.RelayRequestMetadata) error
 }
