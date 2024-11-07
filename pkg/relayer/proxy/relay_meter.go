@@ -178,7 +178,7 @@ func (rmtr *ProxyRelayMeter) AccumulateRelayReward(ctx context.Context, reqMeta 
 	// The application is over-servicing, if unlimited over-servicing is not allowed
 	// and the newConsumedCoin is greater than the maxCoin + overServicingAllowanceCoins,
 	// then return a rate limit error.
-	overServicingCoin := appRelayMeter.consumedCoin.Sub(appRelayMeter.maxCoin)
+	overServicingCoin := newConsumedCoin.Sub(appRelayMeter.maxCoin)
 
 	// In case Allowance is positive, add it to the maxCoin to allow no or limited over-servicing.
 	if !allowUnlimitedOverServicing {
@@ -196,12 +196,13 @@ func (rmtr *ProxyRelayMeter) AccumulateRelayReward(ctx context.Context, reqMeta 
 	numOverServicedRelays := appRelayMeter.numOverServicedRelays
 
 	// Exponential backoff: log only when numOverServicedRelays is a power of 2
-	isPowerOfTwo := (numOverServicedRelays & (numOverServicedRelays - 1)) == 0
+	shouldLog := (numOverServicedRelays & (numOverServicedRelays - 1)) == 0
 
 	// Log the over-servicing warning.
-	if isPowerOfTwo {
+	if shouldLog {
 		rmtr.logger.Warn().Msgf(
 			"overservicing enabled, application %q over-serviced %s",
+			appRelayMeter.app.GetAddress(),
 			overServicingCoin,
 		)
 	}
