@@ -252,7 +252,6 @@ func (m *MsgUpdateParamResponse) GetParams() *Params {
 // MsgAddService defines a message for adding a new message to the network.
 // Services can be added by any actor in the network making them truly
 // permissionless.
-// TODO_BETA: Add Champions / Sources once its fully defined.
 type MsgAddService struct {
 	OwnerAddress string         `protobuf:"bytes,1,opt,name=owner_address,json=ownerAddress,proto3" json:"owner_address,omitempty"`
 	Service      types1.Service `protobuf:"bytes,2,opt,name=service,proto3" json:"service"`
