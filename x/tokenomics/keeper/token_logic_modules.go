@@ -261,7 +261,10 @@ func (k Keeper) ProcessTokenLogicModules(
 	logger = logger.With("actual_settlement_upokt", actualSettlementCoin)
 
 	if actualSettlementCoin.Amount.IsZero() {
-		logger.Info("actual settlement coin is zero, skipping TLM processing")
+		logger.Info(fmt.Sprintf(
+			"actual settlement coin is zero, skipping TLM processing, application %q stake %s",
+			application.Address, application.Stake,
+		))
 		return nil
 	}
 
