@@ -260,6 +260,11 @@ func (k Keeper) ProcessTokenLogicModules(
 	}
 	logger = logger.With("actual_settlement_upokt", actualSettlementCoin)
 
+	if actualSettlementCoin.Amount.IsZero() {
+		logger.Info("actual settlement coin is zero, skipping TLM processing")
+		return nil
+	}
+
 	logger.Info(fmt.Sprintf("About to start processing TLMs for (%d) relays, equal to (%s) claimed", numRelays, actualSettlementCoin))
 	// Execute all the token logic modules processors
 	for tlm, tlmProcessor := range tokenLogicModuleProcessorMap {
