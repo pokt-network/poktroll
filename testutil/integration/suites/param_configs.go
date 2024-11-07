@@ -104,10 +104,17 @@ var (
 		ParamsMsgs: ModuleParamsMessages{
 			MsgUpdateParams:         sessiontypes.MsgUpdateParams{},
 			MsgUpdateParamsResponse: sessiontypes.MsgUpdateParamsResponse{},
+			MsgUpdateParam:          sessiontypes.MsgUpdateParam{},
+			MsgUpdateParamResponse:  sessiontypes.MsgUpdateParamResponse{},
 			QueryParamsRequest:      sessiontypes.QueryParamsRequest{},
 			QueryParamsResponse:     sessiontypes.QueryParamsResponse{},
 		},
-		ValidParams:      sessiontypes.Params{},
+		ValidParams: sessiontypes.Params{
+			NumSuppliersPerSession: 420,
+		},
+		ParamTypes: map[ParamType]any{
+			ParamTypeUint64: sessiontypes.MsgUpdateParam_AsUint64{},
+		},
 		DefaultParams:    sessiontypes.DefaultParams(),
 		NewParamClientFn: sessiontypes.NewQueryClient,
 	}
