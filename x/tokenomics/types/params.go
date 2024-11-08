@@ -90,7 +90,7 @@ func ValidateMintAllocationProposer(mintAllocationProposer any) error {
 	}
 
 	if mintAllocationProposerFloat < 0 {
-		return ErrTokenomicsParamInvalid.Wrapf("mint allocation to Proposer must be greater than or equal to 0: got %f", mintAllocationProposerFloat)
+		return ErrTokenomicsParamInvalid.Wrapf("mint allocation to proposer must be greater than or equal to 0: got %f", mintAllocationProposerFloat)
 	}
 
 	return nil
