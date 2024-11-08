@@ -24,6 +24,7 @@ const (
 	ParamTypeInt64   ParamType = "int64"
 	ParamTypeUint64  ParamType = "uint64"
 	ParamTypeFloat32 ParamType = "float32"
+	ParamTypeDouble  ParamType = "float64"
 	ParamTypeString  ParamType = "string"
 	ParamTypeBytes   ParamType = "uint8"
 	ParamTypeCoin    ParamType = "Coin"
@@ -234,7 +235,7 @@ var (
 			MintAllocationDao: tokenomicstypes.DefaultMintAllocationDao,
 		},
 		ParamTypes: map[ParamType]any{
-			ParamTypeFloat32: tokenomicstypes.MsgUpdateParam_AsFloat{},
+			ParamTypeDouble: tokenomicstypes.MsgUpdateParam_AsDouble{},
 		},
 		DefaultParams:    tokenomicstypes.DefaultParams(),
 		NewParamClientFn: tokenomicstypes.NewQueryClient,

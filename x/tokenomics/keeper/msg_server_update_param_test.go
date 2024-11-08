@@ -12,7 +12,7 @@ import (
 )
 
 func TestMsgUpdateParam_UpdateMintAllocationDaoOnly(t *testing.T) {
-	var expectedMintAllocationDao float32 = 3.14159
+	var expectedMintAllocationDao float64 = 3.14159
 
 	// Set the parameters to their default values
 	k, msgSrv, ctx := setupMsgServer(t)
@@ -26,7 +26,7 @@ func TestMsgUpdateParam_UpdateMintAllocationDaoOnly(t *testing.T) {
 	updateParamMsg := &tokenomicstypes.MsgUpdateParam{
 		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
 		Name:      tokenomicstypes.ParamMintAllocationDao,
-		AsType:    &tokenomicstypes.MsgUpdateParam_AsFloat{AsFloat: expectedMintAllocationDao},
+		AsType:    &tokenomicstypes.MsgUpdateParam_AsDouble{AsDouble: expectedMintAllocationDao},
 	}
 	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
 	require.NoError(t, err)

@@ -7,7 +7,7 @@ import (
 var (
 	KeyMintAllocationDao             = []byte("MintAllocationDao")
 	ParamMintAllocationDao           = "mint_allocation_dao"
-	DefaultMintAllocationDao float32 = 0.1
+	DefaultMintAllocationDao float64 = 0.1
 
 	_ paramtypes.ParamSet = (*Params)(nil)
 )
@@ -19,7 +19,7 @@ func ParamKeyTable() paramtypes.KeyTable {
 
 // NewParams creates a new Params instance
 func NewParams(
-	mintAllocationDao float32,
+	mintAllocationDao float64,
 ) Params {
 	return Params{
 		MintAllocationDao: mintAllocationDao,
@@ -53,7 +53,7 @@ func (params *Params) ValidateBasic() error {
 
 // ValidateMintAllocationDao validates the MintAllocationDao param.
 func ValidateMintAllocationDao(mintAllocationDao any) error {
-	mintAllocationDaoFloat, ok := mintAllocationDao.(float32)
+	mintAllocationDaoFloat, ok := mintAllocationDao.(float64)
 	if !ok {
 		return ErrTokenomicsParamInvalid.Wrapf("invalid parameter type: %T", mintAllocationDao)
 	}

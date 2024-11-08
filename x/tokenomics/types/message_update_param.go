@@ -12,8 +12,8 @@ func NewMsgUpdateParam(authority string, name string, asTypeAny any) (*MsgUpdate
 	var asTypeIface isMsgUpdateParam_AsType
 
 	switch asType := asTypeAny.(type) {
-	case float32:
-		asTypeIface = &MsgUpdateParam_AsFloat{AsFloat: asType}
+	case float64:
+		asTypeIface = &MsgUpdateParam_AsDouble{AsDouble: asType}
 	default:
 		return nil, fmt.Errorf("unexpected param value type: %T", asTypeAny)
 	}
@@ -45,17 +45,17 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 		if err := msg.paramTypeIsFloat(); err != nil {
 			return err
 		}
-		return ValidateMintAllocationDao(msg.GetAsFloat())
+		return ValidateMintAllocationDao(msg.GetAsDouble())
 	default:
 		return ErrTokenomicsParamNameInvalid.Wrapf("unsupported param %q", msg.Name)
 	}
 }
 
 func (msg *MsgUpdateParam) paramTypeIsFloat() error {
-	if _, ok := msg.AsType.(*MsgUpdateParam_AsFloat); !ok {
+	if _, ok := msg.AsType.(*MsgUpdateParam_AsDouble); !ok {
 		return ErrTokenomicsParamInvalid.Wrapf(
 			"invalid type for param %q; expected %T, got %T",
-			msg.Name, &MsgUpdateParam_AsFloat{}, msg.AsType,
+			msg.Name, &MsgUpdateParam_AsDouble{}, msg.AsType,
 		)
 	}
 

@@ -27,7 +27,7 @@ func (k msgServer) UpdateParam(
 
 	switch msg.Name {
 	case tokenomicstypes.ParamMintAllocationDao:
-		params.MintAllocationDao = msg.GetAsFloat()
+		params.MintAllocationDao = msg.GetAsDouble()
 	default:
 		return nil, status.Error(
 			codes.InvalidArgument,
