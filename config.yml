@@ -280,6 +280,7 @@ genesis:
     tokenomics:
       params:
         mint_allocation_dao: 0.1
+        mint_allocation_proposer: 0.05
     shared:
       params:
         num_blocks_per_session: 10

@@ -5,9 +5,12 @@ import (
 )
 
 var (
-	KeyMintAllocationDao             = []byte("MintAllocationDao")
-	ParamMintAllocationDao           = "mint_allocation_dao"
-	DefaultMintAllocationDao float64 = 0.1
+	KeyMintAllocationDao                  = []byte("MintAllocationDao")
+	ParamMintAllocationDao                = "mint_allocation_dao"
+	DefaultMintAllocationDao      float64 = 0.1
+	KeyMintAllocationProposer             = []byte("MintAllocationProposer")
+	ParamMintAllocationProposer           = "mint_allocation_proposer"
+	DefaultMintAllocationProposer float64 = 0.05
 
 	_ paramtypes.ParamSet = (*Params)(nil)
 )
@@ -19,16 +22,21 @@ func ParamKeyTable() paramtypes.KeyTable {
 
 // NewParams creates a new Params instance
 func NewParams(
-	mintAllocationDao float64,
+	mintAllocationDao,
+	mintAllocationProposer float64,
 ) Params {
 	return Params{
-		MintAllocationDao: mintAllocationDao,
+		MintAllocationDao:      mintAllocationDao,
+		MintAllocationProposer: DefaultMintAllocationProposer,
 	}
 }
 
 // DefaultParams returns a default set of parameters
 func DefaultParams() Params {
-	return NewParams(DefaultMintAllocationDao)
+	return NewParams(
+		DefaultMintAllocationDao,
+		DefaultMintAllocationProposer,
+	)
 }
 
 // ParamSetPairs get the params.ParamSet
@@ -39,12 +47,21 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 			&p.MintAllocationDao,
 			ValidateMintAllocationDao,
 		),
+		paramtypes.NewParamSetPair(
+			KeyMintAllocationProposer,
+			&p.MintAllocationProposer,
+			ValidateMintAllocationProposer,
+		),
 	}
 }
 
 // ValidateBasic does a sanity check on the provided params.
 func (params *Params) ValidateBasic() error {
 	if err := ValidateMintAllocationDao(params.MintAllocationDao); err != nil {
+		return err
+	}
+
+	if err := ValidateMintAllocationProposer(params.MintAllocationProposer); err != nil {
 		return err
 	}
 
@@ -60,6 +77,20 @@ func ValidateMintAllocationDao(mintAllocationDao any) error {
 
 	if mintAllocationDaoFloat < 0 {
 		return ErrTokenomicsParamInvalid.Wrapf("mint allocation to DAO must be greater than or equal to 0: got %f", mintAllocationDaoFloat)
+	}
+
+	return nil
+}
+
+// ValidateMintAllocationProposer validates the MintAllocationProposer param.
+func ValidateMintAllocationProposer(mintAllocationProposer any) error {
+	mintAllocationProposerFloat, ok := mintAllocationProposer.(float64)
+	if !ok {
+		return ErrTokenomicsParamInvalid.Wrapf("invalid parameter type: %T", mintAllocationProposer)
+	}
+
+	if mintAllocationProposerFloat < 0 {
+		return ErrTokenomicsParamInvalid.Wrapf("mint allocation to Proposer must be greater than or equal to 0: got %f", mintAllocationProposerFloat)
 	}
 
 	return nil

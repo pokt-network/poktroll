@@ -46,6 +46,11 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 			return err
 		}
 		return ValidateMintAllocationDao(msg.GetAsDouble())
+	case ParamMintAllocationProposer:
+		if err := msg.paramTypeIsFloat(); err != nil {
+			return err
+		}
+		return ValidateMintAllocationProposer(msg.GetAsDouble())
 	default:
 		return ErrTokenomicsParamNameInvalid.Wrapf("unsupported param %q", msg.Name)
 	}

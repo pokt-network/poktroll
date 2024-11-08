@@ -36,3 +36,32 @@ func TestParams_ValidateMintAllocationDao(t *testing.T) {
 		})
 	}
 }
+
+func TestParams_ValidateMintAllocationProposer(t *testing.T) {
+	tests := []struct {
+		desc                  string
+		mintAllocatioProposer any
+		expectedErr           error
+	}{
+		{
+			desc:                  "invalid type",
+			mintAllocatioProposer: "0",
+			expectedErr:           tokenomicstypes.ErrTokenomicsParamInvalid.Wrap("invalid parameter type: string"),
+		},
+		{
+			desc:                  "valid MintAllocationProposer",
+			mintAllocatioProposer: tokenomicstypes.DefaultMintAllocationProposer,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			err := tokenomicstypes.ValidateMintAllocationProposer(test.mintAllocatioProposer)
+			if test.expectedErr != nil {
+				require.ErrorContains(t, err, test.expectedErr.Error())
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
