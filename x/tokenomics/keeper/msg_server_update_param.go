@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -15,6 +16,11 @@ func (k msgServer) UpdateParam(
 	ctx context.Context,
 	msg *tokenomicstypes.MsgUpdateParam,
 ) (*tokenomicstypes.MsgUpdateParamResponse, error) {
+	logger := k.logger.With(
+		"method", "UpdateParam",
+		"param_name", msg.Name,
+	)
+
 	if err := msg.ValidateBasic(); err != nil {
 		return nil, err
 	}
@@ -27,6 +33,7 @@ func (k msgServer) UpdateParam(
 
 	switch msg.Name {
 	case tokenomicstypes.ParamMintAllocationDao:
+		logger = logger.With("param_value", msg.GetAsDouble())
 		params.MintAllocationDao = msg.GetAsDouble()
 	default:
 		return nil, status.Error(
@@ -40,7 +47,9 @@ func (k msgServer) UpdateParam(
 	}
 
 	if err := k.SetParams(ctx, params); err != nil {
-		return nil, err
+		err = fmt.Errorf("unable to set params: %w", err)
+		logger.Error(err.Error())
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	updatedParams := k.GetParams(ctx)
