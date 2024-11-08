@@ -60,3 +60,28 @@ func TestMsgUpdateParam_UpdateMintAllocationProposerOnly(t *testing.T) {
 	// Ensure the other parameters are unchanged
 	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, string(tokenomicstypes.KeyMintAllocationProposer))
 }
+
+func TestMsgUpdateParam_UpdateMintAllocationSupplierOnly(t *testing.T) {
+	var expectedMintAllocationSupplier float64 = 3.14159
+
+	// Set the parameters to their default values
+	k, msgSrv, ctx := setupMsgServer(t)
+	defaultParams := tokenomicstypes.DefaultParams()
+	require.NoError(t, k.SetParams(ctx, defaultParams))
+
+	// Ensure the default values are different from the new values we want to set
+	require.NotEqual(t, expectedMintAllocationSupplier, defaultParams.MintAllocationSupplier)
+
+	// Update the new parameter
+	updateParamMsg := &tokenomicstypes.MsgUpdateParam{
+		Authority: authtypes.NewModuleAddress(govtypes.ModuleName).String(),
+		Name:      tokenomicstypes.ParamMintAllocationSupplier,
+		AsType:    &tokenomicstypes.MsgUpdateParam_AsDouble{AsDouble: expectedMintAllocationSupplier},
+	}
+	res, err := msgSrv.UpdateParam(ctx, updateParamMsg)
+	require.NoError(t, err)
+	require.Equal(t, expectedMintAllocationSupplier, res.Params.MintAllocationSupplier)
+
+	// Ensure the other parameters are unchanged
+	testkeeper.AssertDefaultParamsEqualExceptFields(t, &defaultParams, res.Params, string(tokenomicstypes.KeyMintAllocationSupplier))
+}
