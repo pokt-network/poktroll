@@ -144,6 +144,19 @@ params_update_supplier_all: ## Update the supplier module params
 params_update_supplier_min_stake: ## Update the supplier module min_stake param
 	poktrolld tx authz exec ./tools/scripts/params/supplier_min_stake.json $(PARAM_FLAGS)
 
+### Session Module Params ###
+.PHONY: params_get_session
+params_get_session: ## Get the session module params
+	poktrolld query session params --node $(POCKET_NODE)
+
+.PHONY: params_update_session_all
+params_update_session_all: ## Update the session module params
+	poktrolld tx authz exec ./tools/scripts/params/session_all.json $(PARAM_FLAGS)
+
+.PHONY: params_update_session_num_suppliers_per_session
+params_update_session_num_suppliers_per_session: ## Update the session module num_suppliers_per_session param
+	poktrolld tx authz exec ./tools/scripts/params/session_num_suppliers_per_session.json $(PARAM_FLAGS)
+
 .PHONY: params_query_all
 params_query_all: check_jq ## Query the params from all available modules
 	@for module in $(MODULES); do \
