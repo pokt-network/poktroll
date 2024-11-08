@@ -34,7 +34,6 @@ var (
 
 const (
 	// TODO_BETA(@bryanchriswhite): Make all of these governance params
-	MintAllocationDAO         = 0.1
 	MintAllocationProposer    = 0.05
 	MintAllocationSupplier    = 0.7
 	MintAllocationSourceOwner = 0.15
@@ -121,11 +120,6 @@ var tokenLogicModuleProcessorMap = map[TokenLogicModule]TokenLogicModuleProcesso
 }
 
 func init() {
-	// Ensure 100% of minted rewards are allocated
-	if 1.0 != MintAllocationDAO+MintAllocationProposer+MintAllocationSupplier+MintAllocationSourceOwner+MintAllocationApplication {
-		panic("mint allocation percentages do not add to 1.0")
-	}
-
 	_, hasGlobalMintTLM := tokenLogicModuleProcessorMap[TLMGlobalMint]
 	_, hasGlobalMintReimbursementRequestTLM := tokenLogicModuleProcessorMap[TLMGlobalMintReimbursementRequest]
 	if hasGlobalMintTLM != hasGlobalMintReimbursementRequestTLM {
@@ -486,7 +480,8 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the supplier with address %q", supplierCoin, supplier.OperatorAddress))
 
 	// Send a portion of the rewards to the DAO
-	daoCoin, err := k.sendRewardsToAccount(ctx, tokenomicstypes.ModuleName, k.GetAuthority(), &newMintAmtFloat, MintAllocationDAO)
+	mintAllocationDao := k.GetParams(ctx).MintAllocationDao
+	daoCoin, err := k.sendRewardsToAccount(ctx, tokenomicstypes.ModuleName, k.GetAuthority(), &newMintAmtFloat, mintAllocationDao)
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to DAO: %v", err)
 	}

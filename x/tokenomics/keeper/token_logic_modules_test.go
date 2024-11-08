@@ -400,9 +400,10 @@ func TestProcessTokenLogicModules_TLMGlobalMint_Valid_MintDistributionCorrect(t 
 	}
 
 	// Compute mint per actor
+	mintAllocationDao := keepers.Keeper.GetParams(ctx).MintAllocationDao
 	numTokensMinted := numTokensClaimed * tokenomicskeeper.GlobalInflationPerClaim
 	numTokensMintedInt := cosmosmath.NewIntFromUint64(uint64(numTokensMinted))
-	daoMint := cosmosmath.NewInt(int64(numTokensMinted * tokenomicskeeper.MintAllocationDAO))
+	daoMint := cosmosmath.NewInt(int64(numTokensMinted * mintAllocationDao))
 	propMint := cosmosmath.NewInt(int64(numTokensMinted * tokenomicskeeper.MintAllocationProposer))
 	serviceOwnerMint := cosmosmath.NewInt(int64(numTokensMinted * tokenomicskeeper.MintAllocationSourceOwner))
 	appMint := cosmosmath.NewInt(int64(numTokensMinted * tokenomicskeeper.MintAllocationApplication))
