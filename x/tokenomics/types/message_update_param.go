@@ -8,24 +8,20 @@ import (
 
 var _ sdk.Msg = (*MsgUpdateParam)(nil)
 
-func NewMsgUpdateParam(authority string, name string, value any) (*MsgUpdateParam, error) {
-	var valueAsType isMsgUpdateParam_AsType
+func NewMsgUpdateParam(authority string, name string, asTypeAny any) (*MsgUpdateParam, error) {
+	var asTypeIface isMsgUpdateParam_AsType
 
-	switch v := value.(type) {
-	case string:
-		valueAsType = &MsgUpdateParam_AsString{AsString: v}
-	case int64:
-		valueAsType = &MsgUpdateParam_AsInt64{AsInt64: v}
-	case []byte:
-		valueAsType = &MsgUpdateParam_AsBytes{AsBytes: v}
+	switch asType := asTypeAny.(type) {
+	case float32:
+		asTypeIface = &MsgUpdateParam_AsFloat{AsFloat: asType}
 	default:
-		return nil, fmt.Errorf("unexpected param value type: %T", value)
+		return nil, fmt.Errorf("unexpected param value type: %T", asTypeAny)
 	}
 
 	return &MsgUpdateParam{
 		Authority: authority,
 		Name:      name,
-		AsType:    valueAsType,
+		AsType:    asTypeIface,
 	}, nil
 }
 
@@ -45,7 +41,23 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 
 	// Parameter name must be supported by this module.
 	switch msg.Name {
+	case ParamMintAllocationDao:
+		if err := msg.paramTypeIsFloat(); err != nil {
+			return err
+		}
+		return ValidateMintAllocationDao(msg.GetAsFloat())
 	default:
 		return ErrTokenomicsParamNameInvalid.Wrapf("unsupported param %q", msg.Name)
 	}
+}
+
+func (msg *MsgUpdateParam) paramTypeIsFloat() error {
+	if _, ok := msg.AsType.(*MsgUpdateParam_AsFloat); !ok {
+		return ErrTokenomicsParamInvalid.Wrapf(
+			"invalid type for param %q; expected %T, got %T",
+			msg.Name, &MsgUpdateParam_AsFloat{}, msg.AsType,
+		)
+	}
+
+	return nil
 }

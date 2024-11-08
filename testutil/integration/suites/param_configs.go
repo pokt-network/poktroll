@@ -225,10 +225,17 @@ var (
 		ParamsMsgs: ModuleParamsMessages{
 			MsgUpdateParams:         tokenomicstypes.MsgUpdateParams{},
 			MsgUpdateParamsResponse: tokenomicstypes.MsgUpdateParamsResponse{},
+			MsgUpdateParam:          tokenomicstypes.MsgUpdateParam{},
+			MsgUpdateParamResponse:  tokenomicstypes.MsgUpdateParamResponse{},
 			QueryParamsRequest:      tokenomicstypes.QueryParamsRequest{},
 			QueryParamsResponse:     tokenomicstypes.QueryParamsResponse{},
 		},
-		ValidParams:      tokenomicstypes.Params{},
+		ValidParams: tokenomicstypes.Params{
+			MintAllocationDao: tokenomicstypes.DefaultMintAllocationDao,
+		},
+		ParamTypes: map[ParamType]any{
+			ParamTypeFloat32: tokenomicstypes.MsgUpdateParam_AsFloat{},
+		},
 		DefaultParams:    tokenomicstypes.DefaultParams(),
 		NewParamClientFn: tokenomicstypes.NewQueryClient,
 	}
