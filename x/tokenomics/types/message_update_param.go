@@ -42,7 +42,7 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 	// Parameter name must be supported by this module.
 	switch msg.Name {
 	case ParamMintAllocationDao:
-		if err := msg.paramTypeIsFloat(); err != nil {
+		if err := msg.paramTypeIsDouble(); err != nil {
 			return err
 		}
 		return ValidateMintAllocationDao(msg.GetAsDouble())
@@ -51,7 +51,7 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 	}
 }
 
-func (msg *MsgUpdateParam) paramTypeIsFloat() error {
+func (msg *MsgUpdateParam) paramTypeIsDouble() error {
 	if _, ok := msg.AsType.(*MsgUpdateParam_AsDouble); !ok {
 		return ErrTokenomicsParamInvalid.Wrapf(
 			"invalid type for param %q; expected %T, got %T",
