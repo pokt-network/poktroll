@@ -5,7 +5,7 @@
         "@type": "/poktroll.session.MsgUpdateParam",
         "authority": "pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t",
         "name": "num_suppliers_per_session",
-        "as_int64": "15"
+        "as_uint64": "15"
       }
     ]
   }
