@@ -47,7 +47,7 @@ func (msg *MsgUpdateParam) ValidateBasic() error {
 		}
 		return ValidateMintAllocationDao(msg.GetAsDouble())
 	case ParamMintAllocationProposer:
-		if err := msg.paramTypeIsFloat(); err != nil {
+		if err := msg.paramTypeIsDouble(); err != nil {
 			return err
 		}
 		return ValidateMintAllocationProposer(msg.GetAsDouble())
