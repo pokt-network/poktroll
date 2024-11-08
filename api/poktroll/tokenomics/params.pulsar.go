@@ -92,8 +92,8 @@ func (x *fastReflection_Params) Interface() protoreflect.ProtoMessage {
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
 func (x *fastReflection_Params) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.MintAllocationDao != float32(0) || math.Signbit(float64(x.MintAllocationDao)) {
-		value := protoreflect.ValueOfFloat32(x.MintAllocationDao)
+	if x.MintAllocationDao != float64(0) || math.Signbit(x.MintAllocationDao) {
+		value := protoreflect.ValueOfFloat64(x.MintAllocationDao)
 		if !f(fd_Params_mint_allocation_dao, value) {
 			return
 		}
@@ -114,7 +114,7 @@ func (x *fastReflection_Params) Range(f func(protoreflect.FieldDescriptor, proto
 func (x *fastReflection_Params) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
 	case "poktroll.tokenomics.Params.mint_allocation_dao":
-		return x.MintAllocationDao != float32(0) || math.Signbit(float64(x.MintAllocationDao))
+		return x.MintAllocationDao != float64(0) || math.Signbit(x.MintAllocationDao)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.tokenomics.Params"))
@@ -132,7 +132,7 @@ func (x *fastReflection_Params) Has(fd protoreflect.FieldDescriptor) bool {
 func (x *fastReflection_Params) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
 	case "poktroll.tokenomics.Params.mint_allocation_dao":
-		x.MintAllocationDao = float32(0)
+		x.MintAllocationDao = float64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.tokenomics.Params"))
@@ -151,7 +151,7 @@ func (x *fastReflection_Params) Get(descriptor protoreflect.FieldDescriptor) pro
 	switch descriptor.FullName() {
 	case "poktroll.tokenomics.Params.mint_allocation_dao":
 		value := x.MintAllocationDao
-		return protoreflect.ValueOfFloat32(value)
+		return protoreflect.ValueOfFloat64(value)
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.tokenomics.Params"))
@@ -173,7 +173,7 @@ func (x *fastReflection_Params) Get(descriptor protoreflect.FieldDescriptor) pro
 func (x *fastReflection_Params) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
 	case "poktroll.tokenomics.Params.mint_allocation_dao":
-		x.MintAllocationDao = float32(value.Float())
+		x.MintAllocationDao = value.Float()
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.tokenomics.Params"))
@@ -210,7 +210,7 @@ func (x *fastReflection_Params) Mutable(fd protoreflect.FieldDescriptor) protore
 func (x *fastReflection_Params) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
 	case "poktroll.tokenomics.Params.mint_allocation_dao":
-		return protoreflect.ValueOfFloat32(float32(0))
+		return protoreflect.ValueOfFloat64(float64(0))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.tokenomics.Params"))
@@ -280,8 +280,8 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 		var n int
 		var l int
 		_ = l
-		if x.MintAllocationDao != 0 || math.Signbit(float64(x.MintAllocationDao)) {
-			n += 5
+		if x.MintAllocationDao != 0 || math.Signbit(x.MintAllocationDao) {
+			n += 9
 		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
@@ -312,11 +312,11 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if x.MintAllocationDao != 0 || math.Signbit(float64(x.MintAllocationDao)) {
-			i -= 4
-			binary.LittleEndian.PutUint32(dAtA[i:], uint32(math.Float32bits(float32(x.MintAllocationDao))))
+		if x.MintAllocationDao != 0 || math.Signbit(x.MintAllocationDao) {
+			i -= 8
+			binary.LittleEndian.PutUint64(dAtA[i:], uint64(math.Float64bits(float64(x.MintAllocationDao))))
 			i--
-			dAtA[i] = 0xd
+			dAtA[i] = 0x9
 		}
 		if input.Buf != nil {
 			input.Buf = append(input.Buf, dAtA...)
@@ -368,16 +368,16 @@ func (x *fastReflection_Params) ProtoMethods() *protoiface.Methods {
 			}
 			switch fieldNum {
 			case 1:
-				if wireType != 5 {
+				if wireType != 1 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field MintAllocationDao", wireType)
 				}
-				var v uint32
-				if (iNdEx + 4) > l {
+				var v uint64
+				if (iNdEx + 8) > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				v = uint32(binary.LittleEndian.Uint32(dAtA[iNdEx:]))
-				iNdEx += 4
-				x.MintAllocationDao = float32(math.Float32frombits(v))
+				v = uint64(binary.LittleEndian.Uint64(dAtA[iNdEx:]))
+				iNdEx += 8
+				x.MintAllocationDao = float64(math.Float64frombits(v))
 			default:
 				iNdEx = preIndex
 				skippy, err := runtime.Skip(dAtA[iNdEx:])
@@ -434,7 +434,7 @@ type Params struct {
 
 	// mint_allocation_dao is the percentage of the minted tokens which are sent
 	// to the DAO reward address during claim settlement.
-	MintAllocationDao float32 `protobuf:"fixed32,1,opt,name=mint_allocation_dao,json=mintAllocationDao,proto3" json:"mint_allocation_dao,omitempty"`
+	MintAllocationDao float64 `protobuf:"fixed64,1,opt,name=mint_allocation_dao,json=mintAllocationDao,proto3" json:"mint_allocation_dao,omitempty"`
 }
 
 func (x *Params) Reset() {
@@ -457,7 +457,7 @@ func (*Params) Descriptor() ([]byte, []int) {
 	return file_poktroll_tokenomics_params_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *Params) GetMintAllocationDao() float32 {
+func (x *Params) GetMintAllocationDao() float64 {
 	if x != nil {
 		return x.MintAllocationDao
 	}
@@ -475,7 +475,7 @@ var file_poktroll_tokenomics_params_proto_rawDesc = []byte{
 	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x67, 0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
 	0x22, 0x96, 0x01, 0x0a, 0x06, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x65, 0x0a, 0x13, 0x6d,
 	0x69, 0x6e, 0x74, 0x5f, 0x61, 0x6c, 0x6c, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x64,
-	0x61, 0x6f, 0x18, 0x01, 0x20, 0x01, 0x28, 0x02, 0x42, 0x35, 0xea, 0xde, 0x1f, 0x13, 0x6d, 0x69,
+	0x61, 0x6f, 0x18, 0x01, 0x20, 0x01, 0x28, 0x01, 0x42, 0x35, 0xea, 0xde, 0x1f, 0x13, 0x6d, 0x69,
 	0x6e, 0x74, 0x5f, 0x61, 0x6c, 0x6c, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x64, 0x61,
 	0x6f, 0xf2, 0xde, 0x1f, 0x1a, 0x79, 0x61, 0x6d, 0x6c, 0x3a, 0x22, 0x6d, 0x69, 0x6e, 0x74, 0x5f,
 	0x61, 0x6c, 0x6c, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x64, 0x61, 0x6f, 0x22, 0x52,
