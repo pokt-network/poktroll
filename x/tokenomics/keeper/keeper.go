@@ -87,8 +87,6 @@ func (k Keeper) GetAuthority() string {
 }
 
 // MintAllocationsSum returns the sum of all mint allocation percentages.
-// TODO_UPNEXT(@bryanchriswhite): Move this to a method on tokenomics params once
-// all allocation params are available.
 func (k Keeper) MintAllocationsSum(ctx context.Context) float64 {
 	params := k.GetParams(ctx)
 	mintAllocationDAO := params.GetMintAllocationDao()

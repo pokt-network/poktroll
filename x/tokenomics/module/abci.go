@@ -14,6 +14,9 @@ import (
 )
 
 // BeginBlocker called at the start of every block.
+//
+// TODO_UPNEXT(@bryanchriswhite): Revert the addition of this and move this check into the
+// tokenomics module ParamsValidateBasic() method once all allocation params are available.
 func BeginBlocker(ctx context.Context, k keeper.Keeper) error {
 	// Ensure 100% of minted rewards are allocated
 	if 1.0 != k.MintAllocationsSum(ctx) {
