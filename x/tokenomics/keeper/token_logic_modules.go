@@ -34,7 +34,6 @@ var (
 
 const (
 	// TODO_BETA(@bryanchriswhite): Make all of these governance params
-	MintAllocationProposer    = 0.05
 	MintAllocationSupplier    = 0.7
 	MintAllocationSourceOwner = 0.15
 	MintAllocationApplication = 0.0
@@ -495,8 +494,9 @@ func (k Keeper) TokenLogicModuleGlobalMint(
 	logger.Debug(fmt.Sprintf("sent (%v) newley minted coins from the tokenomics module to the source owner with address %q", serviceCoin, service.OwnerAddress))
 
 	// Send a portion of the rewards to the block proposer
+	mintAllocationProposer := k.GetParams(ctx).MintAllocationProposer
 	proposerAddr := cosmostypes.AccAddress(sdk.UnwrapSDKContext(ctx).BlockHeader().ProposerAddress).String()
-	proposerCoin, err := k.sendRewardsToAccount(ctx, tokenomicstypes.ModuleName, proposerAddr, &newMintAmtFloat, MintAllocationProposer)
+	proposerCoin, err := k.sendRewardsToAccount(ctx, tokenomicstypes.ModuleName, proposerAddr, &newMintAmtFloat, mintAllocationProposer)
 	if err != nil {
 		return tokenomicstypes.ErrTokenomicsSendingMintRewards.Wrapf("sending rewards to proposer: %v", err)
 	}
