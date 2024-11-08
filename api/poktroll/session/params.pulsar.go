@@ -437,7 +437,8 @@ type Params struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// TODO_IN_THIS_COMMIT: godoc...
+	// num_suppliers_per_session is the maximun number of suppliers per session
+	// (applicaiton:supplier pair for a given session number).
 	NumSuppliersPerSession uint64 `protobuf:"varint,3,opt,name=num_suppliers_per_session,json=numSuppliersPerSession,proto3" json:"num_suppliers_per_session,omitempty"`
 }
 
