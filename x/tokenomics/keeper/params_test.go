@@ -54,6 +54,11 @@ func TestParams_ValidateMintAllocationProposer(t *testing.T) {
 			expectedErr:           tokenomicstypes.ErrTokenomicsParamInvalid.Wrap("invalid parameter type: string"),
 		},
 		{
+			desc:                  "invalid MintAllocationProposer (<0)",
+			mintAllocatioProposer: -0.1,
+			expectedErr:           tokenomicstypes.ErrTokenomicsParamInvalid.Wrapf("mint allocation to proposer must be greater than or equal to 0: got %f", -0.1),
+		},
+		{
 			desc:                  "valid MintAllocationProposer",
 			mintAllocatioProposer: tokenomicstypes.DefaultMintAllocationProposer,
 		},
