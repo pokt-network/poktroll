@@ -138,24 +138,28 @@ func (rel *relayMiner) ServePprof(ctx context.Context, addr string) error {
 // ServePing exposes ping HTTP server to check the reachability between the
 // relay miner and its dependencies (Ex: relay server and their respective
 // backend URLs).
-func (rel *relayMiner) ServePing(ctx context.Context, ln net.Listener) error {
+func (rel *relayMiner) ServePing(ctx context.Context, ln net.Listener) {
 	// Start a long-lived goroutine that starts an HTTP server responding to
 	// ping requests. A single ping request on the relay server broadcasts a
 	// ping to all backing services/data nodes.
 	go func() {
-		if err := http.Serve(ln, http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-			rel.logger.Debug().Msg("pinging relay servers...")
-
-			if err := rel.relayerProxy.PingAll(ctx); err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-
-			w.WriteHeader(http.StatusOK)
-		})); err != nil {
-			return
+		if err := http.Serve(ln, rel.newPinghandlerFn(ctx, ln)); err != nil {
+			rel.logger.Error().Err(err).Msg("unable to serve ping server")
 		}
 	}()
 
-	return nil
+	return
+}
+
+func (rel *relayMiner) newPinghandlerFn(ctx context.Context, ln net.Listener) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		rel.logger.Debug().Msg("pinging relay servers...")
+
+		if err := rel.relayerProxy.PingAll(ctx); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+	})
 }
