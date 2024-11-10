@@ -140,6 +140,7 @@ func (rp *relayerProxy) Start(ctx context.Context) error {
 	if err := rp.BuildProvidedServices(ctx); err != nil {
 		return err
 	}
+
 	// Start the ring cache.
 	rp.ringCache.Start(ctx)
 
