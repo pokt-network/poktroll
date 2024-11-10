@@ -160,6 +160,6 @@ func (rel *relayMiner) newPinghandlerFn(ctx context.Context, ln net.Listener) ht
 			return
 		}
 
-		w.WriteHeader(http.StatusOK)
+		w.WriteHeader(http.StatusNoContent)
 	})
 }
