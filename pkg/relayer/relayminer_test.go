@@ -62,9 +62,11 @@ func TestRelayMiner_StartAndStop(t *testing.T) {
 }
 
 func TestRelayMiner_Ping(t *testing.T) {
+	// servedRelaysObs is NEVER published to. It exists to satisfy test mocks.
 	srObs, _ := channel.NewObservable[*servicetypes.Relay]()
 	servedRelaysObs := relayer.RelaysObservable(srObs)
 
+	// minedRelaysObs is NEVER published to. It exists to satisfy test mocks.
 	mrObs, _ := channel.NewObservable[*relayer.MinedRelay]()
 	minedRelaysObs := relayer.MinedRelaysObservable(mrObs)
 
